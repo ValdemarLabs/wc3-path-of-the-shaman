@@ -59,3 +59,11 @@ Epic Quests 25.6.2025 - List of actions:
 -- Now testing: 
 ----- disabled UnitHider + related triggers and functions in CinematicON, CinematicOFF, Intro Cinematic Cleanup
 ----- disabled DestructibleHider
+
+==================================================================================================================================================
+
+Epic Quests 27.6.2025 - List of actions:
+
+- Sirensong:
+-- Continued terraining southern end of the map, sea shore area
+- Lag issue still remains to be checked
