@@ -1,3 +1,20 @@
+
+//===========================================================================
+/*
+    Snow System 1.0
+
+    Author: [Queel]
+
+    Description:
+    This system manages snow units in multiple zones, allowing for random snow generation and gradual destruction.
+
+    API:
+    -   call CreateRandomSnow(integer zone)
+    -   call DestroySnow(integer zone)
+    -   call StartGradualDestroy(integer zone)
+
+*/ 
+//===========================================================================
 globals
     integer MAX_SNOW_ZONES = 10    // Max number of snow zones
     integer array snowUnitCount    // Tracks how many snow units exist per zone

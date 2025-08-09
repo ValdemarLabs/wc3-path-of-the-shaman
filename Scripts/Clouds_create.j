@@ -1,3 +1,22 @@
+//===========================================================================
+/*
+    Clouds_create.j
+    ----------------
+
+    Author: [Queel]
+
+    Description:
+    This system creates cloud effects in the playable area of the map.
+    Clouds are spawned at random locations with a specified height and scale.   
+
+    API:
+    -   call SpawnClouds() - Spawns a number of cloud effects at random locations in the playable area.
+    -   call RemoveClouds() - Removes all cloud effects created by SpawnClouds.    
+
+*/ 
+//===========================================================================
+//////////////////////////////////////////////////
+
 //////////////////////////////////////////////////
 globals
     integer CLOUD_COUNT = 20 // Number of clouds

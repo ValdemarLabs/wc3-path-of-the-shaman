@@ -1,11 +1,30 @@
 library CampFire initializer InitCampFireBuffSystem
-
 //===========================================================================
-// CAMPFIRE BUFF SYSTEM
-// Adds a "Rested" buff to hero units that remain near a campfire for 15 seconds
-// Requires:
-//   - Unit indexer (uses GetUnitUserData for indexing)
-//   - Dummy unit with ability to apply rested buff via Acid Bomb (or similar)
+/*
+    CampFire Buff System 1.0
+
+    Author: [Queel]
+
+    Description:
+    This system adds a "Rested" buff to hero units that remain near a campfire for 15 seconds.
+    It requires a unit indexer (uses GetUnitUserData for indexing) and a dummy unit with an ability to apply the rested buff via Acid Bomb (or similar).    
+    The system tracks campfires, applies buffs, and manages timers for heroes.
+
+    Adds a "Rested" buff to hero units that remain near a campfire for 15 seconds
+    Requires:
+    - Unit indexer (uses GetUnitUserData for indexing)
+    - Dummy unit with ability to apply rested buff via Acid Bomb (or similar)
+
+    API:
+    -   call AddCampfire(unit u) - Adds a new campfire to the system    
+    -   call RemoveCampfire(unit u) - Removes a campfire from the system
+    -   call InitCampFireBuffSystem() - Initializes the system and sets up the main loop
+    -   call CampFireBuffLoop() - Main loop that checks for heroes near campfires and applies buffs 
+    -   call ApplyRestedBuff() - Callback function that applies the rested buff when the timer expires
+    -   call FilterRestedHeroes() - Filters for nearby hero units that can receive the rested buff
+*/ 
+//===========================================================================
+//////////////////////////////////////////////////
 //===========================================================================
 globals
     // === CONSTANTS ===

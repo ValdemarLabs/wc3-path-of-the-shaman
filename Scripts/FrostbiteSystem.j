@@ -1,5 +1,5 @@
 /*
-    FrostbiteSystem 1.0 – Cold Exposure Debuff System
+    FrostbiteSystem 1.1 – Cold Exposure Debuff System
 
     Overview:
     This system simulates cold weather debuff mechanics for units exposed to cold aura areas in your map.
@@ -120,6 +120,7 @@ function Frostbite_ApplyDebuff takes unit target returns nothing
     call UnitAddAbility(dummy, FROSTBITE_ABILITY_ID)
     call IssueTargetOrder(dummy, FROSTBITE_ORDER_STRING, target)
     call UnitApplyTimedLife(dummy, 'BTLF', 2.0)
+    set dummy = null
 endfunction
 
 // Remove the debuff from the target unit
@@ -199,6 +200,7 @@ function Frostbite_Periodic takes nothing returns nothing
                 endif
                 if Frostbite_ExposureTime[id] > 0 then
                     call Frostbite_Debug("Resetting exposure time for " + GetUnitName(u))
+                    set Frostbite_ExposureTime[id] = Frostbite_ExposureTime[id] - 1
                 endif
                 set udg_Frostbite_ColdEvent = 0
             endif

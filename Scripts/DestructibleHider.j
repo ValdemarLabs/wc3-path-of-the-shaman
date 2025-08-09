@@ -10,6 +10,8 @@ library DestructableHider initializer init
         - Fixes invalid tile indices causing save/load crashes
         - Cleans up hashtable memory properly
         - Avoids redundant ShowDestructable() calls
+
+        Modified by: Queel
     */
 
     globals

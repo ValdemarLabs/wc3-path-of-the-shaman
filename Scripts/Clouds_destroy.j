@@ -1,3 +1,19 @@
+//===========================================================================
+/*
+    RemoveClouds.j
+    ----------------
+
+    Author: [Queel]
+
+    Description:
+    This function removes all cloud effects created by the SpawnClouds function.    
+
+    API:
+    -   call RemoveClouds() - Removes all cloud effects from the game.
+*/ 
+//===========================================================================
+//////////////////////////////////////////////////
+
 function RemoveClouds takes nothing returns nothing
     local integer i = 0
     loop
