@@ -3,7 +3,7 @@
     RemoveClouds.j
     ----------------
 
-    Author: [Queel]
+    Author: [Valdemar]
 
     Description:
     This function removes all cloud effects created by the SpawnClouds function.    

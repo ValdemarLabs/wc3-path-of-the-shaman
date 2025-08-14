@@ -3,7 +3,7 @@
     Clouds_create.j
     ----------------
 
-    Author: [Queel]
+    Author: [Valdemar]
 
     Description:
     This system creates cloud effects in the playable area of the map.

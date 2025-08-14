@@ -11,7 +11,7 @@ library DestructableHider initializer init
         - Cleans up hashtable memory properly
         - Avoids redundant ShowDestructable() calls
 
-        Modified by: Queel
+        Modified by: Valdemar
     */
 
     globals

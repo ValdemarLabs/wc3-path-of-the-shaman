@@ -1,6 +1,8 @@
 /*
     FrostbiteSystem 1.1 – Cold Exposure Debuff System
 
+    Author: [Valdemar]
+
     Overview:
     This system simulates cold weather debuff mechanics for units exposed to cold aura areas in your map.
     Units standing in snow-covered regions (with the "Cold" buff) for too long will receive a stacking exposure effect.

@@ -3,7 +3,7 @@ library CampFire initializer InitCampFireBuffSystem
 /*
     CampFire Buff System 1.0
 
-    Author: [Queel]
+    Author: [Valdemar]
 
     Description:
     This system adds a "Rested" buff to hero units that remain near a campfire for 15 seconds.

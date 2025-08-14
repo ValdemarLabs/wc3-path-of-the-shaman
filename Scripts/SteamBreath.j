@@ -3,7 +3,7 @@
 /*
     SteamBreath System 1.0
 
-    Author: [Queel]
+    Author: [Valdemar]
 
     Description:
     This system manages the visual effects of steam breath on units in the game.

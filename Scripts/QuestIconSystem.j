@@ -3,7 +3,7 @@ library QuestIconSystem
 /*
     QuestIconSystem 1.0
 
-    Author: [Queel]
+    Author: [Valdemar]
 
     Description:
     This system handles the visual display of overhead quest icons on quest giver units, such as question marks and exclamation points.

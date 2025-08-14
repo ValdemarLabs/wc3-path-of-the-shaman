@@ -3,6 +3,8 @@ library UnitHider
 /*
     UnitHider1.0 - Unit Hiding System Documentation
 
+    Author: [Valdemar]
+
     Overview:
     This system allows you to hide or unhide units based on their proximity to reference units. 
     The system continuously checks and updates the visibility of all units on the map, hiding units that are far from reference units and unhiding those that are close.

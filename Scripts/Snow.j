@@ -3,7 +3,7 @@
 /*
     Snow System 1.0
 
-    Author: [Queel]
+    Author: [Valdemar]
 
     Description:
     This system manages snow units in multiple zones, allowing for random snow generation and gradual destruction.
