@@ -1,7 +1,5 @@
 CHANGELOG
 ==================================================================================================================================================
-CHANGELOG
-==================================================================================================================================================
 Epic Quests 21.6.2025 - List of actions:
 
 - Testing UnitHider1.1
@@ -520,4 +518,517 @@ Epic Quests 10.8.2025 - List of Actions:
 QUEST ICON SYSTEM
 - reworked the system
 - related quest system triggers call scripts updated to match the updated quest icon system function calls
+- Testing;
+>> Red (Grey) Exclamation mark on BoomBrothers Init Icon
+>>>>> Also this mark came when Quest was COMPLETED!
+>>>>>> EDITED - should be now fixed - State was set to 1 (unavailable) instead of 2 (available)
+>> Grey question mark when quest is accepted (CREATED) >> OK
+>> Note: Set quest requirement complete when you have requirement complete and then set the QuestIcon to Yellow Question mark (Ready to turn in)
+>> Note: Should the MapIcon be Question mark when quest is "in Progress?"
 
+>> Note: after edits, now yellow exclamation mark when it should be Grey Question mark when Quest is CREATED! - Previosly it worked, it seems that priority system is taking affect???
+>> note: "Debug quest reward item" -message was shown when quest is CREATED! >> REMOVED TEXT
+
+Modular quests:
+- Note that there should be empty space with "|n|n" after Quest Discovered + Quest TItle + (here) + Quest Requirement + n....
+
+AtexBlix
+- did not fit through mine pathing blockers to come at the entrance - need to at abilty Ghost (visible) to him
+
+Boom Brothers
+- prevent "normal talk" when Quest Boom Will Be Back is discovered
+- did not stop following after completing quest Mandatory Training
+- Boom Will Be Back could not be completed after Defeating Mad Blix -> no dialog button to complete
+
+Bridges:
+- Added bridge008 activate/deactivate triggers in Sirensong
+- Switched entering regions Event logic, should be now correct? >>> Yes.
+- Note# Need to add check target of issue of the unit to move the units correctly near the bridge (especially when the pathing blockers on bridge entering sides are active)
+- Make the related triggers (e.g. creating side pathing blockers) more easy using "For Each Loops"
+
+Terrain:
+- Minor continue of Boom Brother mine
+
+Lag note:
+- Without disabling ai with "debug aidisablemainstates" - things get pretty stuttering and laggy at some point
+- However, when disabling ai with above command, things settle and fps kind of stabilizes, there are some spikes still
+
+=================================================================================================================================================
+Epic Quests 11.8.2025 - List of Actions:
+
+Boom Brothers
+- EDITED: prevent "normal talk" when Quest Boom Will Be Back is discovered
+- EDITED: did not stop following after completing quest Mandatory Training
+- EDITED: Boom Will Be Back could not be completed after Defeating Mad Blix -> no dialog button to complete
+
+AtexBlix
+- EDITED: did not fit through mine pathing blockers to come at the entrance - need to at abilty Ghost (visible) to him
+
+Modular quests:
+- EDITED: Note that there should be empty space with "|n|n" after Quest Discovered + Quest TItle + (here) + Quest Requirement + n....
+- Note: QuestGiverUnit should be stored per QuestID related to the quest to QuestData hashtable
+--- This is stored into questData already, but not utilized properly, >> now should be used
+- EDITED: Modified quest create / quest complete triggers; set quest that is being completed QuestState to 4 (complete) - then create new dummy quest with id 9990 to create visual effect of new Quest available (yellow exclamation mark)
+- EDITED: Save hashtable trigger - separated from Quest Create triggers
+- EDITED: QuestGiverUnit[QuestID / QuestID_Temp] created + now using QuestGiverUnitTemp to initially set the Quest Giver unit that will be stored into QuestGiverUnit[QuestID]
+
+Quest Explosive Crisis
+- Added Quest Update trigger to update "Ready to turn in" state for Boom Brothers - needs testing that all relevant Call QuestIcon_xxx are used
+>>> TEST RESULT: OK
+
+Terrain:
+- Minor continue of Boom Brother mine (almost ready Major terrain parts)
+
+=================================================================================================================================================
+Epic Quests 13.8.2025 - List of Actions:
+
+Modular Quests:
+- Empty space \n\n added to proper space in Quest Discovered trigger
+- Added "- " to all Quest Requirements 
+
+Quest Icon system / Quests
+- After completing "Explosive Crisis":
+--> Quest Grey mark was removed - OK
+--> No new "dummy" quest icon marks for Atex Blix and Boom Brothers were created!
+--> After getting Boom Compliance quest (CREATE) - both Atex Blix and Boom Brothers have Grey Quest mark (normal quest) - is it wanted?
+- Also new quest markers for these quest should be updated when QUEST 1Q1C etc is run at the end (after all the chat) 
+>>> EDIT: Reason was; using QuestState that was set to 4 (for previous quest), dummy quest icon needs QuestState = 2 - corrected and also placed "New Quest" to place after dialogs (vs. not immediately after completing the quest)
+
+Quest Explosive Crisis
+- Added turn on Quest Update and turn off Quest Update calls
+>>> This Quest Ready to turn in did not seem to work...
+
+Boomsite Compliance
+- Remove quest mark from Atex Blix when all wood collected
+>>> EDITED and added Quest Ready trigger that will be run during AtexBlix dialog if all 10 woods are accepted
+- Change BoomBrothers quest icon "Ready to turn in" when all wood collected
+>>> EDITED and added Quest Ready trigger that will be run during AtexBlix dialog if all 10 woods are accepted
+>>> When Quest Update ready to turn in, BoomBrothers dont have any Yellow question mark! 
+>>>>>> Reason: Call QuestIcon_RemoveQuest(unit u, integer questID) was called, this will delete the Quest from NPC, which should not be used but only when completing the quest!
+
+Abilities:
+- NOTE: Texts for many abilities wrong e.g., Healing Wave does not match what it heals (base heal amount)
+
+NIGH / DAY + Zones:
+- When NighEvent or DayEVent triggers - Run some zone trigger that will check what zone player is in - then run that zones Zone specific trigger
+---> might need some array system to run the proper zone! + store where player currently is!
+>>> EDITED: added DayNightEvent to run Zone trigger based on what the current Zone/Dungeon the player is in
+>>>>> Does not 1st time work, 2nd time works, 3rd time Zone is stuck in NightTime fog setting
+
+Zones:
+- Added zoneCurrent and ZoneLast functionalities; Zone trigger must trigger only once, but work other time when coming from other zone
+>>> Logic:
+>>>>>> First hero to enter a specific zone triggers it.
+>>>>>>Any other hero entering that same zone right after won’t trigger it again.
+>>>>>>If you move to another zone, that zone’s trigger still works normally.
+- Needs to be tested, maybe the setup now is too complicated vs. what the function needed is....
+
+> ZoneCurrent/ZoneLast logic did not work, other unit entering the region also triggered the trigger
+>>> EDITED; Streamlined and made the logic much more simpler....
+
+Spirit Shards
+- Wrong tooltip / shows Storm Bolt (Level 1) when it should show "Revive Hero" / "Spirit Shard" / "Resurrect"
+- Maybe should resurrect the fallen Hero at the location of the resurrecting hero
+- Hard to click the "!" unit - maybe make it hover / fly +200 etc. and test if its easier to click?
+
+=================================================================================================================================================
+Epic Quests 14.8.2025 - List of Actions:
+
+Item abilities:
+- If the ability is set to "Item ability" true; then its tooltips will be hidden
+>>> Item ability must be set to false to modify the tooltip that will be shown when ability is cast
+
+Spirit Shards
+- Modified "Revive" ability item ability to false and changed tooltip text to "Revive"
+- Changed "Deceased" unit from Hover unit to Flying unit
+- Changed height from 50 to 100
+>>> Note: this looked worse than original Hover + 50 Height setting and clickability did not improve!
+
+Note on graveyard revive:
+- Should the time for revival be something like 60s? or be 30s but have option to "release" the corpse
+>>> This would add time to decide whether to use Spirit shard or if AI Hero is close and can resurrect
+>>> AI heroes to have longer respawn, e.g., 60-120s time
+
+Quest Icon troubleshooting
+- There was unnecessary / improper use of functions like RemoveQuest / UpdateNPC in wrong places;
+- Quest Icon Refresh had RemoveQuest, which does delete the quest with ID XXX, so if we want to update quest's status to 5 etc. we cant remove the quest
+>>> Use: call QuestIcon_RegisterQuest -function with same questID to refresh the quest's state.
+
+Creep Unit Assignments -trigger created
+- Started mapping units to proper unit variables when they are respawned (e.g., Quest givers, important npcs which Unit variable must be set)
+>>> Note: Made first trigger but realized that the Creep Respawn trigger uses local variables that are important to respawn / variable re-assignment and so thus transferred unit assignments into "Creep Respawn" trigger
+
+Debug DayNight
+- using "debug daynight" command: it returns FALSE (NIGHT) when it is DAY (6:45) and it should be TRUE
+>>> THIS CAN AFFECT CAMPING FOR AI HEROES ETC MANY OTHER TRIGGERS which use Boolean DNE_IsDay
+
+Zone DayNight
+- event seems to work now and will change fog to night setting or day setting when night or day event is fired
+
+Zone Entering texts
+- NOTE: Discovered zone + followed by Entered zone when coming with Zulkis after Nazgrek, then it wont refire again
+>>> Edit: this only seemed to occur atleast for Riverbane, but e.g. Siresong worked properly
+
+Quest Explosive Crisis
+- NOTE: Quest Update Ready to turn in only triggered when Nazgrek had more than 6 Barrels in inventory, 
+- it did not set the Question mark to yellow (State 5)
+- it also trigger 2 times
+- Quest Requirement was not completed - but is this wanted (if the player is attacked and thus barrels might be removed, the quest requirement should be set back to discovered)
+
+Quest Boomsite Compliance
+- NOTE: Quest mark for Boom Brothers did not change to yellow question mark (QuestState 5)
+- NOTE: Quest mark of AtexBlix was not removed
+>>> Something probably not correct in QuestIcon System jass
+
+Quest More Hazard Mitigation
+- NOTE:Quest is updated twice when Quest item is acquired, is still related to Item Stack system?
+
+Quest Mandatory Training
+- NOTE: Goblin miners are not following BoomBrothers / tried to follow but stopped???
+>>> They followed BoomBRothers when they were close to BoomBrothers - some InRange typish check logic is now wrong and needs modification
+- Note: Mad Blix Temp cant get through the mine to the entrance, too big collision - Ghost visible did not seem to work - change spawn location more closer to entrance
+- Note: has to remove the Mad Blix after some time / entering region, because now using generic timer for unit - causes him to die in tunnel which looks poor
+
+Quest Boom Will Be Back
+- NOTE: Cameras dont pan to right location
+- NOTE: BoomBrothers should move to BoomBrotherWP0XXX and have new dummy quest available after the turrets / enemies are dead
+- NOTE: Quest mark should be yellow question (ready to turn in / quest state 5) when Mad Blix is defeated
+- NOTE: After completing the quest - dialog button Boom Will Be Back (completion) is created, when it should not be visible anymore
+
+SteamBreath
+- NOTE: SteamBreath stuck on even when its not raining!
+- NOTE: SteamBreath remains on unit that is dead, it should be removed when the unit dies!
+
+Zone/Dungeon - Boom Mine
+- NOTE: No trigger to trigger Sirensong Zone after leaving the Mine! Stuck on Boom Mine fog / etc setting
+- NOTE: Add pan camera function
+
+=== LAG PREVENTION NOTE:
+use command "debug aidisablemainstates" to prevent AI Hero system causing lag
+>>> Testing for longer time the map without AI - theres no lag / spikes - so look for AI system to remove Leaks / etc.
+
+=================================================================================================================================================
+Epic Quests 15.8.2025 - List of Actions:
+
+Creep Respawn System - Creep Unit Assignment
+- Added JASS script that will be called from Creep Respawn -trigger. This script will assign global unit variable to the last created unit if unit-type matches.
+--- The JASS script will be faster to update vs. using the huge and in the end messy custom script wall of text within the respawn trigger itself.
+
+SteamBreath
+- Added functions to remove the steam breath effect from dying unit using;
+--- function SteamBreath_Death
+--- function RemoveSteamEffectUnit 
+--- function HasSteamEffect
+
+Spirit Shards
+- Modified "Revive" ability item ability to false and changed tooltip text to "Revive"
+- Changed "Deceased" unit back to Hover
+- Changed height from 100 to 75
+- Changed scale to 1.5 from 1.2
+
+Revival
+- Changed AI hero revival time from 20s to 60s
+- Changed player Hero revival time from 20s to 30s
+- Added circling camera to pan slowly around the died player hero if:
+--- Both Nazgrek and Zulkis are dead
+--- Nazgrek dies and Zulkis is not yet playable
+- Note: The camera settings need to go back to the normal used by the player when reviving
+- Note: The camera should be locked and player should not be able to move the camera during the Death Camera time
+
+Zone Entering
+- Changed location of Turn off this trigger, might not affect the trigger firing 2nd time for other unit - needs thinking
+
+Quest Icon System
+- modified Boomsite Compliance Ready trigger - see if yellow question mark now for BoomBrothers
+- Added dummy quest icon creation / removal to differ from the real quest icon register system:
+--- call CreateDummyQuestIcon(someUnit, "normal", 2)
+--- call RemoveDummyQuestIcon(someUnit)
+
+Quest Mandatory Training
+- Goblin Miners and BoomBrothers follow logic improved; Miners should only follow BoomBrothers without any distance check and BoomBrothers should only follow Nazgrek is the distance is less than 1000, forcing player to "escort" the BoomBrothers
+- Mad Blix temp unit spawn location changed closer to entrance (fitting / collision reasons)
+- Removed generic timer and replaced with Enters Region to remove BossMadBlixTemp unit
+
+Quest Boom Will Be Back
+- EDITED: Cameras dont pan to right location (at least in Quests of Boom Brothers, individual event after pressing Dialog button might need adjustment OR/AND move the Boom Brothers to correct location after turrets are destroyed,...
+- NOTE: BoomBrothers should move to BoomBrotherWP0XXX and have new dummy quest available after the turrets / enemies are dead
+- EDITED: Quest mark should be yellow question (ready to turn in / quest state 5) when Mad Blix is defeated
+- EDITED: After completing the quest - dialog button Boom Will Be Back (completion) is created, when it should not be visible anymore
+
+Boom Brothers Mine Cam
+- Camera should change for the first entering OR leaving PLAYER 1 unit
+--- Player 2 (AI Heroes) cant make this occur
+--- THINK: what about if the other PLAYER 1 hero is outside the dungeon and we click/ change to him? The Camera should change back to normal and when we change to the unit that is inside the dungeon the Camera should change to Dungeon Camera
+>>>> This kind of action should also make RUN DNC OUTDOORS / INDOORS AND FOGS etc. depending on where the outside HERO is and where inside dungeon HERO is
+>>>>>>>>
+
+=================================================================================================================================================
+Epic Quests 22.8.2025 - List of Actions:
+
+Patrol System
+- Added patrol / waypoint system that can be used to set NPC to walk certain path with settings like; how long the NPC waits at each waypoint etc.
+--- NOTE: Need to test the system with multiple Patrol NPCs and different settings!
+--- NOTE 2: there was issue with WayPoints! (not set correctly?)
+--- NOTE 3: debugging the waypoints; waypoints are set correctly, however something wrong with the JASS system itself, as it seems that the NPC is walking towards map center 0.0, 0.0
+--- NOTE 4: New version in VSCode to be transferred to World Editor and to be tested....
+
+Boom Brothers Mine
+- Continued terrain
+- Added Pathing Blockers (Both air & ground)
+- Note: next time; lower the torch "lights" 
+
+=================================================================================================================================================
+Epic Quests 23.8.2025 - List of Actions:
+
+Patrol System
+- Modified the script
+--- NOTE 1: Pause didnt work + no debug msg
+--- NOTE 2: Stop didnt work - debug msg came
+--- NOTE 3: unit is still going to some nonsense location
+--- NOTE 4: Saved WP that is debug messaged from system itself matches with the waypoint location debug msg in GUI trigger
+
+=================================================================================================================================================
+Epic Quests 25.8.2025 - List of Actions:
+
+Patrol System
+- Modified the script
+--- NOTE 1: Now it works like it should; the unit can be paused, and will continue where it was going
+>>> To be teste with multiple settings and multiple units
+
+=================================================================================================================================================
+Epic Quests 26.8.2025 - List of Actions:
+
+Outcast Jinzun
+- Added PatrolSystem call
+- Removed old movement trigger
+- NOTE: Sounds triggers does work poorly
+-----> Need to add condition "issued order is move" to the sound trigger
+- NOTE: Was not properly paused when starting to talk to Jinzun
+
+Kribugs
+- Added as Quest Neutral folder
+- Added PatrolSystem call
+- Removed old movement trigger
+
+### Notes on Patrol System:
+- Tested with multiple units, seems to work fine
+- unit is not stopped when it is attacked or damaged!
+
+
+Death Camera
+- Works poorly, should disable player control (see in Cinematics - disable control for Player)
+- Camera is off compared to that it should be hovering near the dead player unit
+
+=================================================================================================================================================
+Epic Quests 26.8.2025 -2 - List of Actions:
+
+PatrolSystem
+- Fixed patrol unit not stopping when damaged or attacked or paused
+
+DialogCamera (NEW)
+- Added function to use generic DialogCamera that should make dialog cinematic cameras more easy
+- NOTE: DialogCamera didn't work - Reason: no camera settings was applied >> DialogNPC was = No unit
+
+Kribugs
+- Movement speed increased from 50 to 140
+- Added 3 quests
+- Added dialog system
+- A way to "trade"
+
+Note: 
+- Something might have gone wrong with BoomBrother triggers - because falsely editing them instead of Kribugs triggers
+
+Outcast Jinzun
+- Sounds when issued order "move" added additional conditions to consider only orders o Outcast Jinzun
+
+Raining
+- Added FX_Ripples -doodads that can be used with Play Animation Stand - 100 and Death
+- These can be preplaced or placed via Special Effect (TBD)
+
+Warlock Blood Pact
+- Heal Engine text reads funnily when unit gets Blood Pact aura
+---- Is there way to prevent text for this?
+
+Curse of Agony / garrote / and other similar abilities based of "Parasite" will not work when the unit is close to death
+- Add triggered damage to kill the unit with DamageEngine? Maybe not...
+---- Stacking type of the ability to: "Kill Unit" - TEST
+
+NOTES===
+- Camera for Jinzun too close, maybe set distance to 1000?
+- Now Jinzun seems to stay and not wander during PatrolSystem_Pause
+- Selecting Kribugs did not start anything
+- DeathCamera to be more further distance (maybe 1400) + angle can be more +30? Maybe 315?
+
+=================================================================================================================================================
+Epic Quests 27.8.2025 - List of Actions:
+
+OutcastJinzun
+- Camera distance and angle modified
+>>> Result: BAD
+>>> Camera position seems like its off many units, why?
+>>> What would be best all-time use generic camera parameters for dialog NPCs? Note that the location may sometimes be more smaller and could have doodads etc blocking the view
+
+Kribugs
+- Deleted IsUnitMoving condition from "Quests of Kribugs" initial check
+
+DeathCamera
+- Modified angle/distance etc.
+
+Boom Brothers Mine
+- Added draft events for:
+--- exploding rocks
+--- attacking units (note: Event triggers many times - it should have timer e.g. 360s etc. - also the spawned units should be removed or something and/or not to spawn more units if they are still alive?
+
+
+=================================================================================================================================================
+Epic Quests 29.8.2025 - List of Actions:
+
+Sounds
+- Imported many Ambient, Interface related sounds
+--- To be used for many events player does (like selecting unit) and also ambient sounds for dungeons, lakes, etc.
+
+Dialogamera
+- Modified
+- Testing with Kribugs
+- OutcastJinzun settings may be now wrong...
+
+Boom Brothers Mine
+- more terraining
+- triggering events
+
+Ambient sounds
+- Testing ambient sounds for Zones
+--- Note: Need a way to remove the ambient sound from zone that the Player no longer is in / switched to other zone
+
+Interface sounds
+- Started creating interface sounds, e.g., levelup, dialog button pressing
+
+NOTE: Test checking how to use local audio files for WE / WC3!
+
+=================================================================================================================================================
+Epic Quests 31.8.2025 - List of Actions:
+
+Dialog Camera
+- Added NearZ
+- Added default cam time, and set to 0 instead of 0.5
+
+Boom Brothers Mine
+- more terraining
+
+See more notes at To-Do app....
+
+
+=================================================================================================================================================
+Epic Quests 1.9.2025 - List of Actions:
+
+DeatCamera
+- Angle adjustd
+- Rotating camera 30s --> change to 45s
+
+Neutral Player (Player 17)
+- Adjusted Player 1 to have friendly with spells towards Player 17
+- This should have effect to be able to place items inside that player units inventory
+
+Player Bounties
+- Added player bounties for other players in addition of neutral hostile
+
+ItemDropLocation -unit
+- Adjusted model again
+
+Moknatha Battle
+- Fixed and edited ogre and orc attack waves triggers
+- added craters with Ubersplats
+
+Boom Brothers Mine
+- Edited BoomMine AttackWave R7 trigger to have range check before turning the hostile goblins to Neutral Passive
+
+DialogButtons (global)
+- Testing using global DialogButton_XXX variables instead of unit specific dialog button variables for KRIBUGS
+
+Moknatha Craters
+- Added
+- Note: not working / visible
+
+Moknatha Catapults
+- make attack speed very slow
+- make damage very high - almost instant death if hit?
+
+Zones:
+- Note: Serenaglade entered text not working
+- Note: Twilight Gtove entered text not working
+- Note: see other zones e.g., Riverbane, Sirensong that work
+
+=================================================================================================================================================
+Epic Quests 2.9.2025 - List of Actions:
+
+Kribugs
+- Added quests
+- Made DialogButtons (global) as normal variables to be used
+- IMPORTANT NOTE!: Utilize the same logic to other NPCS! - REMOVE THE UNNECESSARY UNIC SPECIFIC DIALOG BUTTON VARIABLES - THIS NEEDS SOME TIME EDITING...
+- Added dialogs
+- Added function inside Complete Quest 4 to loop-check hero's inventory and first item with the word "meat" will be set as QuestItemTemp item-type
+--- Note: this would be better if this was a JASS Script and we pass string e.g., "meat" and the jass function will return back with Item-type
+- Fixed wrong quest Discovered/create triggers
+- Fixed wrong conditions for "Meat For the Ogre" quest completion dialog button visibility
+
+- added debug command: " debug kribugs questmark " to test create normal quest exclamation mark
+- added debug command: " debug change kribugs " to change the kribugs unit
+
+- Test quest Meat For The Ogre - can it be re-done and re-completed?
+
+FindItemByKeyword -JASS function created
+- This can be utilized to check if UNIT has item in inventory with specific keyword like "meat"
+
+DialogCamera
+- Added IsCameraBlocked function (when destructibles in the way of camera)
+
+ItemDropLocation
+- Added debug functions to test how to drop items to its inventory
+- Added Init 04b Players - 1s gametime set Player 1 friendly with spells with Player 17
+
+Indicators
+- Imported https://www.hiveworkshop.com/threads/target-and-circle-indicator-tc-vfx.349193/
+- Imported https://www.hiveworkshop.com/threads/skill-indicator.357350/
+- These can be used to indicate:
+--- AoE / incoming damage
+--- Objective location
+--- Item drop location
+--- Secret location
+--- Quest / event location point of interest
+--- etc.
+
+Quest Icon system
+- Edited Dummy Icon/marker function
+
+Boom Brothers Mine
+- removed range for leave region triggers (for now)
+- Added Shredder units
+--- Note: Edit the abilities to be unique to Shredder vs. now using Mad Blix abilities
+
+Interface Dialog Sounds
+- Added 0.1s wait before playing InterfaceSound
+
+=================================================================================================================================================
+Epic Quests 3.9.2025 - List of Actions:
+
+Imported:
+- Potions - various shapes and colors by stan0033
+- Shovel model Narberal Gamm (XGM Guru)
+- Webbed victim by Zenonoth
+
+ItemDropLocationUnits
+- added trigger to drop any not Campaign class item immediately, Campaign class item will also be dropped from the unit after 5s wait (to prevent player misplacing items into ItemDropLocation unit's inventory)
+
+Kribugs
+- Added more debug commands to test special effect overhead on Kribugs
+
+Zones
+- Zone "entered" text was not shown for Twilight Grove and Serenaglade, because they had old LocalPlayer handle usage, but this was not anymore used thus no message was displayed
+
+FindItemByKeyword
+- Fixed wrong string parsing in the function
+- Now works with any keyword e.g., "meat", "gnollhead"
+- Unsure if this works when keywords is two words; e.g., "Angry Chicken"
+- Renamed to "ItemSearch"
+- Made as library with private functions and private global variables
+- Function now to use: call ItemSearch_FindItemByKeyword(unit, string)
