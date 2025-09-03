@@ -78,3 +78,51 @@ function RemoveSteamEffects takes nothing returns nothing
         set i = i + 1
     endloop
 endfunction
+//===========================================================================
+// Checks if a unit has a steam breath effect
+//===========================================================================
+function HasSteamEffect takes unit u returns boolean
+    local integer i = 0
+    loop
+        exitwhen i >= MAX_UNITS
+        if RandomUnits[i] == u then
+            return true
+        endif
+        set i = i + 1
+    endloop
+    return false
+endfunction
+//===========================================================================
+// Removes steam effect from a single unit
+//===========================================================================
+function RemoveSteamEffectUnit takes unit u returns nothing
+    local integer i = 0
+    loop
+        exitwhen i >= MAX_UNITS
+        if RandomUnits[i] == u then
+            if SteamEffects[i] != null then
+                call DestroyEffect(SteamEffects[i])
+                set SteamEffects[i] = null
+            endif
+            set RandomUnits[i] = null
+            exitwhen true
+        endif
+        set i = i + 1
+    endloop
+endfunction
+//===========================================================================
+// Trigger to detect death and remove steam breath
+//===========================================================================
+function SteamBreath_Death takes nothing returns nothing
+    local unit u = GetTriggerUnit()
+    if HasSteamEffect(u) then
+        call RemoveSteamEffectUnit(u)
+    endif
+    set u = null
+endfunction
+
+function InitTrig_SteamBreathDeath takes nothing returns nothing
+    local trigger t = CreateTrigger()
+    call TriggerRegisterAnyUnitEventBJ(t, EVENT_PLAYER_UNIT_DEATH)
+    call TriggerAddAction(t, function SteamBreath_Death)
+endfunction

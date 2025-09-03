@@ -33,6 +33,13 @@ library QuestIconSystem
     - call QuestIcon_UpdateForNPC(unit u)
     - call QuestIcon_RefreshIcon(unit u, integer questID, string questType, integer questState) 
     - call QuestIcon_UpdateForNPC(u)   
+
+    Dummy Quest Icons:
+    - call CreateDummyQuestIcon(unit u, string questType, integer questState)
+    - call RemoveDummyQuestIcon(unit u)
+
+    E.g, to register dummy "normal" quest:
+    call CreateDummyQuestIcon(udg_unitXXX, "normal", 2)
 */ 
 //===========================================================================
 globals
@@ -66,6 +73,8 @@ globals
     constant integer QUEST_PRIORITY_STATE_3 = 3 // Completed (gray ?)
     constant integer QUEST_PRIORITY_STATE_1 = 2 // Unavailable
     constant integer QUEST_PRIORITY_STATE_4 = 1 // Complete (no quests)
+
+    constant integer DUMMY_OFFSET = 1000 // Offset for dummy quest IDs to avoid conflicts with real quests
 
 endglobals
 
@@ -342,6 +351,22 @@ function QuestIcon_RemoveQuest takes unit u, integer questID returns nothing
 
     // Refresh icons for this NPC
     call QuestIcon_UpdateForNPC(u)
+endfunction
+//===========================================================================
+// Dummy Quest Icon Function
+// Creates a dummy quest icon for a unit with type and state
+function CreateDummyQuestIcon takes unit u, string questType, integer questState returns nothing
+    local integer dummyID = R2I(GetUnitUserData(u)) + DUMMY_OFFSET
+    // Register dummy quest so the system has something to show
+    call QuestIcon_RegisterQuest(u, dummyID, questType, questState)
+endfunction
+
+//===========================================================================
+// REMOVE DUMMY QUEST ICON
+// Removes any dummy quest icon attached to the unit
+function RemoveDummyQuestIcon takes unit u returns nothing
+    local integer dummyQuestID = DUMMY_OFFSET + R2I(GetUnitUserData(u))
+    call QuestIcon_RemoveQuest(u, dummyQuestID)
 endfunction
 //===========================================================================
 // PRIORITY COMPARISON FUNCTION
