@@ -13,6 +13,22 @@ library PatrolSystem initializer Init
     - Reset timer after interruption (auto/manual resume)
     - Scales to hundreds of NPCs without lag
 
+    Difference in PATH STYLE behavior:
+
+        PATROL_STYLE_LOOP (0):
+
+            When the unit reaches the last waypoint, it loops back to the first waypoint.
+
+            Example with waypoints [A → B → C]:
+            Patrol goes A → B → C → A → B → C → ...
+
+        PATROL_STYLE_PINGPONG (1):
+
+            The unit "bounces" back and forth through the waypoints.
+
+            Example with waypoints [A → B → C]:
+            Patrol goes A → B → C → B → A → B → C → ...
+
     Usage from GUI:
     1. Set variable "PatrolSystem_Point[index]" to your waypoint points
     2. Set variable "PatrolSystem_Wait[index]" to the wait time for each waypoint

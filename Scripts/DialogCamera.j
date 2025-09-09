@@ -93,8 +93,8 @@ endfunction
 // === Check if camera is blocked by destructibles in forward line ===
 //===========================================================================
 private function IsCameraBlocked takes real x, real y, real rotation, real distance, real radius returns boolean
-    local real checkX = x + distance * Cos(rotation * bj_DEGTORAD) // Forward point in the direction of rotation
-    local real checkY = y + distance * Sin(rotation * bj_DEGTORAD)
+    local real checkX = x - distance * Cos(rotation * bj_DEGTORAD) // Forward point in the direction of rotation
+    local real checkY = y - distance * Sin(rotation * bj_DEGTORAD)
     local rect r
 
     set CAMERA_CHECKX = checkX

@@ -45,6 +45,8 @@ function CreepUnitAssignment takes integer utype returns nothing
         set udg_Grum = bj_lastCreatedUnit
     elseif utype == 'o60X' then
         set udg_OutcastJinzun = bj_lastCreatedUnit
+        // Start patrol movement
+        call TriggerExecute(gg_trg_Outcast_Jinzun_Movement_Start)    
     elseif utype == 'o60D' then
         set udg_Drekthor = bj_lastCreatedUnit
     elseif utype == 'o612' then
@@ -62,6 +64,8 @@ function CreepUnitAssignment takes integer utype returns nothing
         set udg_AtexBlix = bj_lastCreatedUnit
     elseif utype == 'n61E' then
         set udg_Kribugs = bj_lastCreatedUnit
+        // Start patrol movement
+        call TriggerExecute(gg_trg_Kribugs_Movement_Start)        
     //===========================================================================
 
     //===========================================================================
@@ -77,6 +81,15 @@ function CreepUnitAssignment takes integer utype returns nothing
     // HUMAN
     elseif utype == 'h60Z' then
         set udg_MysterWizard = bj_lastCreatedUnit
+    
+    //===========================================================================
+
+    //===========================================================================
+    // BOSS
+    elseif utype == 'n645' then
+        set udg_BossMordrax = bj_lastCreatedUnit
+        // Start patrol movement
+        call TriggerExecute(gg_trg_Mordrax_Movement_Start)        
     endif
     
     //===========================================================================

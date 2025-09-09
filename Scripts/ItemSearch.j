@@ -23,7 +23,7 @@ library ItemSearch initializer Init
 //===========================================================================
 
 globals
-    private boolean DEBUG_MODE              = true // set false to disable debug messages
+    private boolean DEBUG_MODE              = false // set false to disable debug messages
 
 endglobals
 //===========================================================================
