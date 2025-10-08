@@ -1,7 +1,7 @@
 library QuestIconSystem
 //===========================================================================
 /*
-    QuestIconSystem 1.0
+    QuestIconSystem 1.1
 
     Author: [Valdemar]
 
@@ -54,9 +54,11 @@ globals
     private constant string QUEST_ICON_MODEL_GRAY_EXCLAMATION   = "war3campImported\\ExcMark_Grey_UnavailableQuest.mdl"
 
     private integer QUEST_ICON_EFFECT_ID = StringHash("effect")
+    private integer QUEST_ICON_MINIMAP_ID = StringHash("minimaps")
     private integer QUEST_ICON_QUESTS_ID = StringHash("quests")
 
     private minimapicon array QuestIconMapPing // indexed by unit handle ID or other way
+    private integer MinimapIconIndex = 0
 
     // ---- per-unit quest list key offsets ----
     // Each unit stores an indexed list of quests. For index i:
@@ -82,14 +84,31 @@ endglobals
 // STORE QUEST MINIMAP ICON
 // Store minimap/world-map quest ping for a unit
 function StoreQuestMinimapIcon takes unit u, minimapicon mi returns nothing
-    set QuestIconMapPing[GetHandleId(u)] = mi
+    //set QuestIconMapPing[GetHandleId(u)] = mi - OLD WAY
+    //call SaveHandle(QUEST_ICON_TABLE, GetHandleId(u), QUEST_ICON_MINIMAP_ID, mi)
+
+    if mi != null then
+        set QuestIconMapPing[MinimapIconIndex] = mi
+        call SaveInteger(QUEST_ICON_TABLE, GetHandleId(u), QUEST_ICON_MINIMAP_ID, MinimapIconIndex)
+        set MinimapIconIndex = MinimapIconIndex + 1
+    endif
+
 endfunction
 //===========================================================================
 // GET QUEST MINIMAP ICON
 // Get minimap/world-map quest ping for a unit
 // This function retrieves the minimap icon associated with a unit.
 private function GetQuestMinimapIcon takes unit u returns minimapicon
-    return QuestIconMapPing[GetHandleId(u)]
+    local integer index = LoadInteger(QUEST_ICON_TABLE, GetHandleId(u), QUEST_ICON_MINIMAP_ID)
+
+    //return QuestIconMapPing[GetHandleId(u)] - OLD WAY
+    //return LoadHandle(QUEST_ICON_TABLE, GetHandleId(u), QUEST_ICON_MINIMAP_ID)
+
+    if index >= 0 and index < MinimapIconIndex then
+        return QuestIconMapPing[index]
+    endif
+    return null
+
 endfunction
 //===========================================================================
 // REMOVE OLD MINIMAP ICON
@@ -97,11 +116,24 @@ endfunction
 // This function removes the minimap icon associated with a unit, if it exists.
 // It checks if the icon exists, destroys it, and sets the reference to null.
 private function RemoveOldMapPing takes unit u returns nothing
-    local minimapicon mi = GetQuestMinimapIcon(u)
+    //local minimapicon mi = GetQuestMinimapIcon(u)
+    local integer index = LoadInteger(QUEST_ICON_TABLE, GetHandleId(u), QUEST_ICON_MINIMAP_ID)
+
+    /* OLD WAY
     if mi != null then
         call DestroyMinimapIcon(mi)
-        set QuestIconMapPing[GetHandleId(u)] = null
+        // set QuestIconMapPing[GetHandleId(u)] = null - OLD WAY
+        // remove saved handle so future lookups return null
+        call RemoveSavedHandle(QUEST_ICON_TABLE, GetHandleId(u), QUEST_MINIMAPICON_ID)
     endif
+    */
+
+    if index >= 0 and index < MinimapIconIndex then
+        call DestroyMinimapIcon(QuestIconMapPing[index])
+        set QuestIconMapPing[index] = null
+        call RemoveSavedInteger(QUEST_ICON_TABLE, GetHandleId(u), QUEST_ICON_MINIMAP_ID)
+    endif
+
 endfunction
 //===========================================================================
 // CREATE MAP PING FOR UNIT
@@ -111,10 +143,18 @@ endfunction
 private function CreateMapPingForUnit takes unit u, integer style returns nothing
     local minimapicon qi
 
+    // always remove previous map icon
     call RemoveOldMapPing(u)
+
+    // create new minimap icon
     call CampaignMinimapIconUnitBJ(u, style)
     set qi = GetLastCreatedMinimapIcon()
-    call StoreQuestMinimapIcon(u, qi)
+    if qi != null then
+        call StoreQuestMinimapIcon(u, qi)
+    else
+        // optional debug message if the creation failed
+        //call BJDebugMsg("CreateMapPingForUnit: GetLastCreatedMinimapIcon returned null for unit " + I2S(GetHandleId(u)))
+    endif 
 endfunction
 //===========================================================================
 // REMOVE QUEST MARKER EFFECT
@@ -143,12 +183,14 @@ function QuestIcon_RefreshIcon takes unit u, integer questID, string questType, 
     call RemoveOldEffect(u)
     call RemoveOldMapPing(u)
 
-    // Icon logic
+    //  Icon logic
+    // Unavailable (gray exclamation)
     if questState == 1 then
         set model = QUEST_ICON_MODEL_GRAY_EXCLAMATION
         set pingStyle = bj_CAMPPINGSTYLE_BONUS
 
-    elseif questState == 2 then // Available
+    // Available (exclamation)
+    elseif questState == 2 then                         
         if questType == "daily" or questType == "repeatable" then
             set model = QUEST_ICON_MODEL_BLUE_EXCLAMATION
         elseif questType == "normal" or questType == "dungeon" then
@@ -158,10 +200,14 @@ function QuestIcon_RefreshIcon takes unit u, integer questID, string questType, 
         endif
         set pingStyle = bj_CAMPPINGSTYLE_BONUS
 
-    elseif questState == 3 then // In progress but not ready to turn in
+    // In progress but not ready to turn in
+    elseif questState == 3 then               
         set model = QUEST_ICON_MODEL_GRAY_QUESTION
+        // gray question ping (note there are no grey question pings, so we just use regular bonus ping)
+        set pingStyle = bj_CAMPPINGSTYLE_BONUS       
 
-    elseif questState == 5 then // Ready to turn in
+    // Ready to turn in
+    elseif questState == 5 then                         
         if questType == "daily" or questType == "repeatable" then
             set model = QUEST_ICON_MODEL_BLUE_QUESTION
         elseif questType == "normal" or questType == "dungeon" then

@@ -72,7 +72,7 @@ function ExSound_Register takes string key, string path returns nothing
     set es_KeyList[es_KeyCount] = key
     set es_KeyCount = es_KeyCount + 1
 
-    call BJDebugMsg("Registered sound: " + key + " -> " + path)
+    //call BJDebugMsg("Registered sound: " + key + " -> " + path)
 
 endfunction
 
@@ -101,7 +101,7 @@ function ExSound_RegisterSequence takes string base, integer first, integer last
         set i = i + 1
     endloop
 
-    call BJDebugMsg("Registered sequence: " + base + I2S(first) + " -> " + I2S(last))
+    //call BJDebugMsg("Registered sequence: " + base + I2S(first) + " -> " + I2S(last))
     
 endfunction
 
@@ -125,7 +125,7 @@ function ExSound_PreloadAll takes nothing returns nothing
             call StartSound(s)
             call StopSound(s, true, false)
             call KillSoundWhenDone(s)
-            call BJDebugMsg("Preloaded sound: " + key)
+            //call BJDebugMsg("Preloaded sound: " + key)
         endif
 
         set i = i + 1
@@ -142,41 +142,51 @@ private function Init takes nothing returns nothing
 
     //=================================================================
     // Nazgrek Event lines
-    call ExSound_Register("Nazgrek_Farewell1", "Pots\\Sound\\Voicelines\\Nazgrek\\Nazgrek_Farewell1.mp3")
-    call ExSound_Register("Nazgrek_Farewell2", "Pots\\Sound\\Voicelines\\Nazgrek\\Nazgrek_Farewell2.mp3")
-    call ExSound_Register("Nazgrek_Farewell3", "Pots\\Sound\\Voicelines\\Nazgrek\\Nazgrek_Farewell3.mp3")
-    call ExSound_Register("Nazgrek_Farewell4", "Pots\\Sound\\Voicelines\\Nazgrek\\Nazgrek_Farewell4.mp3")    
-    call ExSound_Register("Nazgrek_Greet1", "Pots\\Sound\\Voicelines\\Nazgrek\\Nazgrek_Greet1.mp3")
-    call ExSound_Register("Nazgrek_Greet2", "Pots\\Sound\\Voicelines\\Nazgrek\\Nazgrek_Greet2.mp3")
-    call ExSound_Register("Nazgrek_Greet3", "Pots\\Sound\\Voicelines\\Nazgrek\\Nazgrek_Greet3.mp3")
-    call ExSound_Register("Nazgrek_Greet4", "Pots\\Sound\\Voicelines\\Nazgrek\\Nazgrek_Greet4.mp3")
-    call ExSound_Register("Nazgrek_GeneralError1", "Pots\\Sound\\Voicelines\\Nazgrek\\Nazgrek_GeneralError1.mp3")
-    call ExSound_Register("Nazgrek_GeneralError2", "Pots\\Sound\\Voicelines\\Nazgrek\\Nazgrek_GeneralError2.mp3")
-    call ExSound_Register("Nazgrek_ItemError2HShield", "Pots\\Sound\\Voicelines\\Nazgrek\\Nazgrek_ItemError2HShield.mp3")
-    call ExSound_Register("Nazgrek_ItemError2Any", "Pots\\Sound\\Voicelines\\Nazgrek\\Nazgrek_ItemErrorAny.mp3")
-    call ExSound_Register("Nazgrek_ItemErrorGeneral", "Pots\\Sound\\Voicelines\\Nazgrek\\Nazgrek_ItemErrorGeneral.mp3")   
-    call ExSound_Register("Nazgrek_ItemErrorGenera2", "Pots\\Sound\\Voicelines\\Nazgrek\\Nazgrek_ItemErrorGenera2.mp3")    
-    call ExSound_Register("Nazgrek_ItemErrorRings", "Pots\\Sound\\Voicelines\\Nazgrek\\Nazgrek_ItemErrorRings.mp3")   
-    call ExSound_Register("Nazgrek_ItemErrorWeapons", "Pots\\Sound\\Voicelines\\Nazgrek\\Nazgrek_ItemErrorWeapons.mp3")     
+    call ExSound_Register("Nazgrek_Farewell1", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_Farewell1.mp3")
+    call ExSound_Register("Nazgrek_Farewell2", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_Farewell2.mp3")
+    call ExSound_Register("Nazgrek_Farewell3", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_Farewell3.mp3")
+    call ExSound_Register("Nazgrek_Farewell4", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_Farewell4.mp3")
+    call ExSound_Register("Nazgrek_Farewell5", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_Farewell5.mp3")   
+    call ExSound_Register("Nazgrek_Farewell6", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_Farewell6.mp3") 
+    call ExSound_Register("Nazgrek_Farewell7", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_Farewell7.mp3")    
+    call ExSound_Register("Nazgrek_Farewell8", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_Farewell8.mp3")    
+    call ExSound_Register("Nazgrek_Farewell9", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_Farewell9.mp3") 
+    call ExSound_Register("Nazgrek_Farewell10", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_Farewell10.mp3") 
+    call ExSound_Register("Nazgrek_Greet1", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_Greet1.mp3")
+    call ExSound_Register("Nazgrek_Greet2", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_Greet2.mp3")
+    call ExSound_Register("Nazgrek_Greet3", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_Greet3.mp3")
+    call ExSound_Register("Nazgrek_Greet4", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_Greet4.mp3")
+    call ExSound_Register("Nazgrek_Greet5", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_Greet5.mp3")
+    call ExSound_Register("Nazgrek_Greet6", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_Greet6.mp3")
+    call ExSound_Register("Nazgrek_Greet7", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_Greet7.mp3")
+    call ExSound_Register("Nazgrek_Greet8", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_Greet8.mp3")
+    call ExSound_Register("Nazgrek_GeneralError1", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_GeneralError1.mp3")
+    call ExSound_Register("Nazgrek_GeneralError2", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_GeneralError2.mp3")
+    call ExSound_Register("Nazgrek_ItemError2HShield", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_ItemError2HShield.mp3")
+    call ExSound_Register("Nazgrek_ItemError2Any", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_ItemErrorAny.mp3")
+    call ExSound_Register("Nazgrek_ItemErrorGeneral", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_ItemErrorGeneral.mp3")   
+    call ExSound_Register("Nazgrek_ItemErrorGenera2", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_ItemErrorGenera2.mp3")    
+    call ExSound_Register("Nazgrek_ItemErrorRings", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_ItemErrorRings.mp3")   
+    call ExSound_Register("Nazgrek_ItemErrorWeapons", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_ItemErrorWeapons.mp3")     
 
     //=================================================================
     // Zulkis Event lines
-    call ExSound_Register("Zulkis_Greet1", "Pots\\Sound\\Voicelines\\Zulkis\\Zulkis_Greet1.mp3")
-    call ExSound_Register("Zulkis_Greet2", "Pots\\Sound\\Voicelines\\Zulkis\\Zulkis_Greet2.mp3")
-    call ExSound_Register("Zulkis_Greet3", "Pots\\Sound\\Voicelines\\Zulkis\\Zulkis_Greet3.mp3")
-    call ExSound_Register("Zulkis_Greet4", "Pots\\Sound\\Voicelines\\Zulkis\\Zulkis_Greet4.mp3")
-    call ExSound_Register("Zulkis_Farewell1", "Pots\\Sound\\Voicelines\\Zulkis\\Zulkis_Farewell1.mp3")
-    call ExSound_Register("Zulkis_Farewell2", "Pots\\Sound\\Voicelines\\Zulkis\\Zulkis_Farewell2.mp3")
-    call ExSound_Register("Zulkis_Farewell3", "Pots\\Sound\\Voicelines\\Zulkis\\Zulkis_Farewell3.mp3")
-    call ExSound_Register("Zulkis_Farewell4", "Pots\\Sound\\Voicelines\\Zulkis\\Zulkis_Farewell4.mp3")
-    call ExSound_Register("Zulkis_GeneralError1", "Pots\\Sound\\Voicelines\\Zulkis\\Zulkis_GeneralError1.mp3")
-    call ExSound_Register("Zulkis_GeneralError2", "Pots\\Sound\\Voicelines\\Zulkis\\Zulkis_GeneralError2.mp3")
-    call ExSound_Register("Zulkis_ItemError2HShield", "Pots\\Sound\\Voicelines\\Zulkis\\Zulkis_ItemError2HShield.mp3")
-    call ExSound_Register("Zulkis_ItemError2Any", "Pots\\Sound\\Voicelines\\Zulkis\\Zulkis_ItemErrorAny.mp3")
-    call ExSound_Register("Zulkis_ItemErrorGeneral", "Pots\\Sound\\Voicelines\\Zulkis\\Zulkis_ItemErrorGeneral.mp3")
-    call ExSound_Register("Zulkis_ItemErrorGenera2", "Pots\\Sound\\Voicelines\\Zulkis\\Zulkis_ItemErrorGenera2.mp3")
-    call ExSound_Register("Zulkis_ItemErrorRings", "Pots\\Sound\\Voicelines\\Zulkis\\Zulkis_ItemErrorRings.mp3")
-    call ExSound_Register("Zulkis_ItemErrorWeapons", "Pots\\Sound\\Voicelines\\Zulkis\\Zulkis_ItemErrorWeapons.mp3")
+    call ExSound_Register("Zulkis_Greet1", "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisEventLines\\Zulkis_Greet1.mp3")
+    call ExSound_Register("Zulkis_Greet2", "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisEventLines\\Zulkis_Greet2.mp3")
+    call ExSound_Register("Zulkis_Greet3", "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisEventLines\\Zulkis_Greet3.mp3")
+    call ExSound_Register("Zulkis_Greet4", "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisEventLines\\Zulkis_Greet4.mp3")
+    call ExSound_Register("Zulkis_Farewell1", "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisEventLines\\Zulkis_Farewell1.mp3")
+    call ExSound_Register("Zulkis_Farewell2", "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisEventLines\\Zulkis_Farewell2.mp3")
+    call ExSound_Register("Zulkis_Farewell3", "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisEventLines\\Zulkis_Farewell3.mp3")
+    call ExSound_Register("Zulkis_Farewell4", "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisEventLines\\Zulkis_Farewell4.mp3")
+    call ExSound_Register("Zulkis_GeneralError1", "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisEventLines\\Zulkis_GeneralError1.mp3")
+    call ExSound_Register("Zulkis_GeneralError2", "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisEventLines\\Zulkis_GeneralError2.mp3")
+    call ExSound_Register("Zulkis_ItemError2HShield", "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisEventLines\\Zulkis_ItemError2HShield.mp3")
+    call ExSound_Register("Zulkis_ItemError2Any", "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisEventLines\\Zulkis_ItemErrorAny.mp3")
+    call ExSound_Register("Zulkis_ItemErrorGeneral", "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisEventLines\\Zulkis_ItemErrorGeneral.mp3")
+    call ExSound_Register("Zulkis_ItemErrorGenera2", "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisEventLines\\Zulkis_ItemErrorGenera2.mp3")
+    call ExSound_Register("Zulkis_ItemErrorRings", "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisEventLines\\Zulkis_ItemErrorRings.mp3")
+    call ExSound_Register("Zulkis_ItemErrorWeapons", "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisEventLines\\Zulkis_ItemErrorWeapons.mp3")
 
     //=================================================================
     // HeroEngineer Event/chat lines
@@ -1084,7 +1094,15 @@ private function Init takes nothing returns nothing
     call ExSound_RegisterSequence("Satyr_", 1, 100, "Pots\\Sound\\Voicelines\\Satyr\\")
     call ExSound_RegisterSequence("Shipmaster_", 1, 50, "Pots\\Sound\\Voicelines\\Shipmaster\\")
     call ExSound_RegisterSequence("Thork_", 1, 50, "Pots\\Sound\\Voicelines\\Thork\\")    
-    call ExSound_RegisterSequence("Zulkis_", 1, 300, "Pots\\Sound\\Voicelines\\Zulkis\\")    
+    call ExSound_RegisterSequence("Zulkis_", 1, 300, "Pots\\Sound\\Voicelines\\Zulkis\\")  
+    call ExSound_RegisterSequence("Aradion_", 1, 300, "Pots\\Sound\\Voicelines\\AradionFarseer\\")    
+    call ExSound_RegisterSequence("Valeria_", 1, 300, "Pots\\Sound\\Voicelines\\Valeria\\")   
+    call ExSound_RegisterSequence("Kaelthir_", 1, 300, "Pots\\Sound\\Voicelines\\Kaelthir\\")  
+    call ExSound_RegisterSequence("Zerathis_", 1, 300, "Pots\\Sound\\Voicelines\\Zerathis\\")  
+    call ExSound_RegisterSequence("VoidEntity_", 1, 33, "Pots\\Sound\\Voicelines\\VoidEntity\\")  
+    call ExSound_RegisterSequence("DarkShaman_", 1, 30, "Pots\\Sound\\Voicelines\\DarkShaman\\")  
+    call ExSound_RegisterSequence("Mordrax_", 1, 30, "Pots\\Sound\\Voicelines\\Mordrax\\")  
+  
 
     // preload all sounds after 0.0s - Note: done manually in PoTS
     // call TimerStart(CreateTimer(), 0.0, false, function ExSound_PreloadAll)
@@ -1151,7 +1169,7 @@ function ExSound_Stop takes nothing returns nothing
     endloop
     set es_CurrentSoundCount = 0
     set udg_ExSoundDuration = 0.0
-    call BJDebugMsg("Stopped all current sounds")
+    //call BJDebugMsg("Stopped all current sounds")
 
 endfunction
 
@@ -1164,7 +1182,7 @@ private function ExSound_PlayInternal takes string key, boolean is3D, real x, re
     local integer durMS
     
     if path == null or path == "" then
-        call BJDebugMsg("ExSound ERROR: key '" + key + "' not registered.")
+        //call BJDebugMsg("ExSound ERROR: key '" + key + "' not registered.")
     endif
 
     // Cleanup finished sounds
@@ -1198,14 +1216,15 @@ private function ExSound_PlayInternal takes string key, boolean is3D, real x, re
         set udg_ExSoundDuration = EstimateDurationFromText(dialogtext)
         call BJDebugMsg("ExSound WARNING: '" + key + "' missing, estimated from text: " + R2S(udg_ExSoundDuration) + "s")
 
-    else
+    // Fallback to constant duration - UNUSED, because sound and/or dialogtext should always be provided
+    //elseif dialogtext == null then
         // Fallback to constant if no dialog text provided
-        set udg_ExSoundDuration = EXSOUND_FALLBACK_DURATION
-        call BJDebugMsg("ExSound WARNING: '" + key + "' missing, using constant fallback: " + R2S(udg_ExSoundDuration) + "s")
+    //    set udg_ExSoundDuration = EXSOUND_FALLBACK_DURATION
+    //    call BJDebugMsg("ExSound WARNING: '" + key + "' missing, using constant fallback: " + R2S(udg_ExSoundDuration) + "s")
 
     endif
 
-    call BJDebugMsg("Play: " + key + " (" + R2S(udg_ExSoundDuration) + "s)")
+    //call BJDebugMsg("Play: " + key + " (" + R2S(udg_ExSoundDuration) + "s)")
 
     call StartSound(s)
 
@@ -1216,12 +1235,12 @@ endfunction
 //=================================================================
 function ExSound_Play takes string key, string dialogtext returns nothing
     call ExSound_PlayInternal(key, false, 0, 0, null, dialogtext)
-    call BJDebugMsg("ExSound_Play called: " + key)
+    //call BJDebugMsg("ExSound_Play called: " + key)
 endfunction
 
 function ExSound_PlayAtUnit takes string key, unit u, string dialogtext returns nothing
     call ExSound_PlayInternal(key, true, 0, 0, u, dialogtext)
-    call BJDebugMsg("ExSound_PlayAtUnit called: " + key)
+    //call BJDebugMsg("ExSound_PlayAtUnit called: " + key)
 endfunction
 
 function ExSound_PlayAtPoint takes string key, location soundpoint, string dialogtext returns nothing
@@ -1229,7 +1248,7 @@ function ExSound_PlayAtPoint takes string key, location soundpoint, string dialo
     local real y = GetLocationY(soundpoint)
 
     call ExSound_PlayInternal(key, true, x, y, null, dialogtext)
-    call BJDebugMsg("ExSound_PlayAtPoint called at point: " + R2S(x) + "," + R2S(y) + " -> " + key)
+    //call BJDebugMsg("ExSound_PlayAtPoint called at point: " + R2S(x) + "," + R2S(y) + " -> " + key)
 endfunction
 
 //=================================================================
@@ -1237,8 +1256,6 @@ endfunction
 //=================================================================
 // Plays ambience for a specific region
 function ExSound_PlayAmbience takes rect r, string key returns nothing
-    local real x
-    local real y
     local sound s
     local string path
     local integer idx
@@ -1246,40 +1263,53 @@ function ExSound_PlayAmbience takes rect r, string key returns nothing
     // Load the path from registration table
     set path = LoadStr(es_Table, StringHash(key), 0)
     if path == null or path == "" then
-        call BJDebugMsg("ExSound ERROR: key '" + key + "' not registered for ambience.")
+        //call BJDebugMsg("ExSound ERROR: key '" + key + "' not registered for ambience.")
         return
     endif
 
-    // Get center of rect
-    set x = GetRectCenterX(r)
-    set y = GetRectCenterY(r)
-
-    // Stop previous ambience for this rect if exists
+    // Stop and destroy previous ambience for this rect if exists
     set idx = GetHandleId(r)
     if es_AmbienceByRect[idx] != null then
-        call StopSound(es_AmbienceByRect[idx], true, true)
+        call SetStackedSoundBJ(false, es_AmbienceByRect[idx], r)
+        set es_AmbienceByRect[idx] = null
     endif
 
-    // Create and play sound
+    // Create new sound
     set s = CreateSound(path, true, true, true, 12700, 12700, "")
-    call SetSoundDistances(s, 600.0, 3000.0)
-    call SetSoundDistanceCutoff(s, 3000.0)
-    call SetSoundPosition(s, x, y, 0)
-    call StartSound(s)
+    
+    // Add sound to rect
+    call SetStackedSoundBJ(true, s, r)
 
-    // store the sound by rect
+    // Store reference by rect handle
     set es_AmbienceByRect[idx] = s
-    call BJDebugMsg("Playing ambience: " + key + " in rect id " + I2S(idx))
+
+    //call BJDebugMsg("Playing ambience: " + key + " in rect id " + I2S(idx))
 endfunction
 
 // Stops ambience in a specific rect
 function ExSound_StopAmbience takes rect r returns nothing
     local integer idx = GetHandleId(r)
+    local sound s = es_AmbienceByRect[idx]
+
     if es_AmbienceByRect[idx] != null then
-        call StopSound(es_AmbienceByRect[idx], true, true)
+
+        // Detach from rect
+        call SetStackedSoundBJ(false, s, r)
+
+        // Explicitly stop it
+        call StopSound(s, true, true)
+
+        // Kill handle
+        call KillSoundWhenDone(s)
+
+        // Clear reference
         set es_AmbienceByRect[idx] = null
-        call BJDebugMsg("Stopped ambience in rect id " + I2S(idx))
+
+        call BJDebugMsg("Stopped and destroyed ambience in rect id " + I2S(idx))
+
+
     endif
+
 endfunction
 
 //=================================================================

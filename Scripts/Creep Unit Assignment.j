@@ -30,7 +30,7 @@ function CreepUnitAssignment takes integer utype returns nothing
     //===========================================================================
     // HORDE
     if utype == 'O606' then
-        set udg_ThorkHellscream = bj_lastCreatedUnit
+        set udg_Thork = bj_lastCreatedUnit
     elseif utype == 'o61L' then
         set udg_Ragno = bj_lastCreatedUnit
     elseif utype == 'o60A' then
@@ -53,9 +53,6 @@ function CreepUnitAssignment takes integer utype returns nothing
         set udg_Ogmar = bj_lastCreatedUnit
     elseif utype == 'o61C' then
         set udg_Erduk = bj_lastCreatedUnit
-    
-    //===========================================================================
-
     //===========================================================================
     // GOBLINS
     elseif utype == 'n013' then
@@ -67,34 +64,33 @@ function CreepUnitAssignment takes integer utype returns nothing
         // Start patrol movement
         call TriggerExecute(gg_trg_Kribugs_Movement_Start)        
     //===========================================================================
-
-    //===========================================================================
     // SATYR
     elseif utype == 'n636' then
         set udg_Succubus = bj_lastCreatedUnit
     elseif utype == 'n62W' then
         set udg_Zaekolaerr = bj_lastCreatedUnit
-    
-    //===========================================================================
-
     //===========================================================================
     // HUMAN
     elseif utype == 'h60Z' then
         set udg_MysterWizard = bj_lastCreatedUnit
-    
-    //===========================================================================
-
     //===========================================================================
     // BOSS
     elseif utype == 'n645' then
         set udg_BossMordrax = bj_lastCreatedUnit
         // Start patrol movement
-        call TriggerExecute(gg_trg_Mordrax_Movement_Start)        
-    endif
-    
+        call TriggerExecute(gg_trg_Mordrax_Movement_Start)     
+    elseif utype == 'n020' then
+        set udg_BossMorthun = bj_lastCreatedUnit
+        // Start patrol movement
+        call TriggerExecute(gg_trg_Morthun_Movement_Start)      
     //===========================================================================
-
-    // MORE TYPES HERE
-    
+    // ELVES
+    elseif utype == 'h00A' then
+        set udg_Aradion = bj_lastCreatedUnit
+    elseif utype == 'n01W' then
+        set udg_Valeria = bj_lastCreatedUnit
+    //==========================================================
+    //===========================================================================
+    endif
 endfunction
 //===========================================================================

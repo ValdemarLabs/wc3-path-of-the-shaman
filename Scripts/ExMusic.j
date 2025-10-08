@@ -30,28 +30,33 @@ globals
     private integer ms_CurrentTrack = -1            // currently playing track index
 
 endglobals
-//=================================================================
 
 //=================================================================
-// Preload all registered music tracks silently
+// Preload all registered music tracks as sounds
 //=================================================================
 function ExMusic_PreloadAll takes nothing returns nothing
     local integer i = 0
     local string track
 
-    call SetMusicVolume(0) // mute music for preload
+    call SetMusicVolume(0)                  // mute music for preload
 
     loop
         exitwhen i >= ms_MusicCount
         set track = ms_MusicPaths[i]
         if GetSoundFileDuration(track) > 0 then
-            call PlayMusic(track)   // briefly plays track at volume 0
-            call StopMusic(true)    // immediately stops
+            call StopMusicBJ(false)
+            call PlayMusic(track)           // briefly plays track at volume 0
         endif
         set i = i + 1
     endloop
 
-    call SetMusicVolume(100) // restore music volume
+    //call BJDebugMsg("ExMusic: Preloaded " + I2S(ms_MusicCount) + " tracks.")
+
+    // clear any music that might be playing
+    call ClearMapMusicBJ()  
+    call StopMusicBJ(false)
+
+    call SetMusicVolume(50)                 // restore music volume
 endfunction
 
 //=================================================================
@@ -168,16 +173,39 @@ endfunction
 // Play a track by index
 //=================================================================
 function ExMusic_PlayTrack takes integer index returns nothing
+    local string track
+
+    // Skip music if cinematic trailer is active
+    if udg_CinematicTrailer == true then
+        return
+    endif
+
+    // Ensure index is valid
     if index < 0 or index >= ms_MusicCount then
+        call BJDebugMsg("ExMusic_PlayTrack: Invalid index " + I2S(index))
+        return
+    endif
+
+    // Skip if this track is already playing
+    if ms_CurrentTrack == index then
+        // call BJDebugMsg("ExMusic_PlayTrack: Track " + I2S(index) + " already playing, skipping.")
         return
     endif
 
     set ms_TempString = ms_MusicPaths[index]
-    
+
     if GetSoundFileDuration(ms_TempString) > 0 then
-        call StopMusic(true)
+        call StopMusicBJ(true)
+        // To prevent lag spikes, music must be stopped instantly before playing new track
+        call TriggerSleepAction(2.00)
+        call StopMusicBJ(false)
+        call ClearMapMusicBJ()  
         call PlayMusic(ms_TempString)
         set ms_CurrentTrack = index
+
+        // Debug line to display track name
+        // call BJDebugMsg("ExMusic_PlayTrack called: Playing track -> " + ms_TempString)
+
     endif
 
 endfunction
@@ -203,13 +231,71 @@ function ExMusic_PlayNext takes nothing returns nothing
     call ExMusic_PlayTrack(next)
 
 endfunction
+
 //=================================================================
 // Stop currently playing music
 //=================================================================
 function ExSMusic_Stop takes nothing returns nothing
-    call StopMusic(true)
+    call StopMusicBJ(false)
+    call ClearMapMusicBJ()
+
     set ms_CurrentTrack = -1
 
 endfunction
+
+//=================================================================
+// Get the currently playing track index
+// Returns -1 if no track is playing
+//=================================================================
+function ExMusic_GetCurrentTrackIndex takes nothing returns integer
+    return ms_CurrentTrack
+endfunction
+
+//=================================================================
+// Get the currently playing track file name without path or ".mp3"
+// Returns "" if no track is playing
+//=================================================================
+private function GetCurrentTrackName takes nothing returns string
+    local string fullPath
+    local integer len
+    local integer i
+    local string fileName
+
+    if ms_CurrentTrack >= 0 and ms_CurrentTrack < ms_MusicCount then
+        set fullPath = ms_MusicPaths[ms_CurrentTrack]
+        set len = StringLength(fullPath)
+        set i = len - 1
+
+        // Walk backwards until backslash found or start of string
+        loop
+            exitwhen i < 0 or SubString(fullPath, i, i+1) == "\\"
+            set i = i - 1
+        endloop
+
+        // Extract only the filename
+        set fileName = SubString(fullPath, i+1, len)
+
+        // Remove ".mp3" extension if present
+        set len = StringLength(fileName)
+        if len > 4 and SubString(fileName, len-4, len) == ".mp3" then
+            set fileName = SubString(fileName, 0, len-4)
+        endif
+
+        return fileName
+    endif
+
+    return ""
+endfunction
+
+//=================================================================
+// Update a global string variable with the current track name
+//=================================================================
+function ExMusic_GetCurrentTrack takes nothing returns nothing
+    local string currentTrack = GetCurrentTrackName()
+
+    set udg_ExMusicString = currentTrack
+    
+endfunction
+
 //=================================================================
 endlibrary
