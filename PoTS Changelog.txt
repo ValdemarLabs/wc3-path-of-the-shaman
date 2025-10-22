@@ -1,0 +1,2378 @@
+=================================================================================================================================================
+------------- WC3 - Path of the Shaman: CHANGELOG -------------
+=================================================================================================================================================
+
+
+=================================================================================================================================================
+Epic Quests 22.10.2025 - List of Actions:
+
+DInv & DEquipment system(s):
+- Bug 1: Issue with using HeroItemCheck and GetDInvItemChargesByTypeThreshold(whichHero, itemId, requiredAmount) in SharedDInvLib will seems to randomly remove charges from items where it should not removed them
+- Bug 2: Campaign items (and other item types) were showing charge numbers even when they shouldn't
+- Bug 3: HeroItemCheck for 0-Charge Items / single items didn't work
+
+
+BUG 1 FIX: RemoveDInvItemChargesByType
+When using HeroItemCheck or any function that removes items from DInventory, there was a critical loop bug causing random items to disappear.
+
+The Bug:
+In RemoveDInvItemChargesByType (SharedDInvLib.j), when deleting items:
+
+Item deleted from slot 3 → all items shift down (slot 4→3, 5→4, etc.)
+Loop counter ALWAYS incremented → next check at slot 4
+Result: Item that shifted from slot 4 to slot 3 was SKIPPED! ❌
+Example:
+Inventory: Gold(0), Water(1), Potion(2), Water(3), Mana(4)
+
+Command: Remove 6 Water charges
+
+BUG 2 FIX:
+Campaign item with Level = 0 (not stackable) was showing "0" or "1"
+Should only show charges if the item can actually stack (Level > 0)
+The Fix: Updated DInventoryIsItemStackable to check Item Level
+
+BUG 3 FIX:
+- Now treat 0-charge items as 1 item when checking for item
+- Treat 0-charge items as 1 item when removing item
+
+
+Aradion
+- edited Fading Sparks voicelines slightly
+- All Aradion quest descriptions missed \n\n - fixed
+- Fading Sparks quest title was incorrectly Crystal of Hope - fixed
+- Rifts quest should now have Aradion properly added to multiboard when starting
+
+Rifts Corruption
+- wrong create trigger was used, fixed and it should now work
+- Cinematic will start when preparing for RIFT closing
+- Valeria + Player and companions are move near Aradion when preparing for RIFT closing
+- Aradion should cast life drain based channel spell on DummyTargetUnit
+- Added enabling fail conditions (Valeria or Aradion) dies to triggers upon quest start
+- Added disabling fail conditions (Valeria or Aradion) dies to triggers upon quest complete
+
+Fading Sparks
+- changed Rod to cause attack type Spells and damage type Normal when using of Mana Wraith
+
+
+-------------------
+
+
+
+=================================================================================================================================================
+Epic Quests 19.10.2025 - List of Actions:
+
+DInv & DEquipment system(s): Serious BUG - Some item may (Spring Water 3rd slot in this case) lose charges / get disappeared - Is it because of some function?
+- Bugs found:
+>>> 1. CRITICAL BUG in Item Swapping (DInventory.j, lines 857-865)
+>>> 2. CRITICAL BUG in Equipment Transfer (SharedDInvLib.j, line 4829)
+>>> 3. Item Stacking Issues (SharedDInvLib.j, lines 3615-3670)
+>>> 4. 4. Missing Handle DB Updates in Unequip (SharedDInvLib.j, line 4683)
+- Bugs Fixed:
+>>> Item Swap Bug (DInventory.j)
+Problem: When swapping items, the system never updated the slot tracking database
+Result: Items appeared to move but system thought they were in old slots → deleted wrong items
+Fixed: Now updates DInvItemHandleDB[].integer[2] for both items after every swap
+
+>>>Equipment Transfer Bug (SharedDInvLib.j)
+
+Problem: Code accessed item data AFTER removing it from inventory
+Result: Corrupted references, unpredictable item loss
+Fixed: Now stores item handle ID before deletion
+>>> Missing Slot ID Storage (SharedDInvLib.j, 2 locations)
+
+Problem: When storing items, the slot ID field was never set
+Result: System couldn't reliably locate items for later operations
+>>>Fixed: Now properly stores slot ID in integer[2] field
+
+Vanguard Vale / Elarindor story acts
+- more lines for Rifts of Corruption quest
+- Completed (almost, chat related parts mostly) trigger: Quest Rifts Corruption Ritual Valeria Dies
+- Completed (almost, chat related parts mostly) trigger: Quest Rifts Corruption Ritual Aradion Dies
+- Completed (almost, chat related parts mostly) trigger: Quest Rifts Corruption Ritual Prepare
+- Completed (almost, chat related parts mostly) trigger: Quest Rifts Corruption Ritual Combat
+- Completed (almost, chat related parts mostly) trigger: Quest Rifts Corruption Ritual CombatIncoming
+- Completed (almost, chat related parts mostly) trigger: Quest Rifts Corruption Ritual FinishOne
+- Completed (almost, chat related parts mostly) trigger: Quest Rifts Corruption Ritual FinishAll
+
+Vanguard Vale
+- terraining
+
+Mana Crystals
+- Created "Mana Crystal" unit
+- Logic for spawning mana crystals
+- Logic for mining mana crystals (including random explode chance)
+- adjusted scale and height of vein glow for mana crystals
+- debug spawn: manacrystalstest
+
+Aradion
+- Adjusted quests for new Reputation system, DInv item check & remove functions
+- Created Fading Sparks quest and related events (Rod that is used to harvest the essences and its associated triggers)
+- Created Rifts of Corruption quest and related events 
+
+Valeria
+- Adjusted quests for new Reputation system, DInv item check & remove functions
+
+Note on abilities:
+- Item abilities need to be temporalily made non-item ability to change the Description tooltip that will be shown in-game!
+
+Reputations system
+- Disabled debug messages
+
+UnitExperience system
+- Disabled most debug messages
+
+RangeCheck
+- BossMordax and BossVoidEntity; fixed wrong player (Player1) instead to be Player0
+
+SharedDInvLib
+- modified GetDInvItemChargesByTypeThreshold because it only worked for more than 1 charges item-type check
+- Campaign classified items should now stack
+
+Crypt
+- Attemp to fix crash at Crypt Trap1
+
+=================================================================================================================================================
+Epic Quests 18.10.2025 - List of Actions:
+
+Redone storyline / voicelines for Vanguard Vale / Elarindor story acts
+- still needs heavy editing before advancing to creating the voice files / quests
+- Now should be able to edit/make voicelines/quests/events until the quest "The Witch's Smile"
+- WIP: Continue from Aradion / Valeria quests
+
+Crypt Trap
+- edited trap trigger
+
+
+
+=================================================================================================================================================
+Epic Quests 15.10.2025 - List of Actions:
+
+
+DummyUnits
+- set Art - Backswing = 0.00.
+- set Cast Point = 0.00
+- set Speed Base 0
+- set Movement Type = None
+
+UnitExperience
+- added function ForceLevelUp
+- added debug to levelup pet with " debug pet levelup "
+- added debug to retrieve pet xp to level with " debug pet status "
+
+Terraining
+- Crypt; walling / trap testing
+- Elarindor (walls)
+
+RangeCheck
+- new library that provides functions to check the range from a unit or point to the closest unit owned by a specified player. 
+
+
+
+
+=================================================================================================================================================
+Epic Quests 14.10.2025 - List of Actions:
+
+Reminder: RUN " debug aidisablemainstates " to disable Ai
+
+BoomBrothers
+- added safety instructions item to "Mandatory Training"
+- BoomBrothers EDIT / SOUNDS/CAMERAS/CINEMATIC SETTINGS/QUEST CREATION - continued working on THIS > Mostly done
+>>> Need to edit still: Cameras, cinematic settings, quest creations, DInv & DEquip related item removal from inventory and checking
+
+Dragonpeaks
+- Testing adjusting fog
+
+HealEngine
+- Disabled trigger "Heal Adjust On Damage"
+- Disabled trigger "Heal Adjust After Damage"
+>>> These one caused atleast Nazgrek have "Healed XXX" texts...
+- set in library: "IS_NATIVE_REGEN_SELF"   = true
+
+UnitExperience
+- Will only remove units that are: Have a valid Custom Value (id > 0), AND Are actually registered in the XP system (registered.boolean[id])
+- Changed the registration logic to initialize the unit with 0 XP at their current level, rather than calculating cumulative XP. This way:
+>>> E.g., Unit registers at level 6 with 0 XP
+>>> They start fresh and need to gain XP to progress to level 7
+>>> No immediate level-ups upon registration
+
+Imported:
+- Unit models
+>>> Skeleton
+>>> SkeletonNaked
+>>>>> These should replace regular skeleton units
+>>> Dwarf Prospector Gehn.mdx
+
+
+- Axes; 
+>>> Axe_1H_Flint_A_01
+>>> Axe_1H_Hatchet_A_01
+>>> Axe_1H_Hatchet_A_02
+>>> Axe_1H_Hatchet_A_03
+
+- Fires
+>>> LargeBuildingFire0, 2, 2
+>>> SmallBuildingFire0, 1, 2
+
+-Staves
+>>> Stave1, 2, 3, 4, 5, 6, 7, 8, 9
+
+- Tools
+>>> itemWeaponAxe1.mdx"
+>>> itemWeaponBroom.mdx"
+>>> itemWeaponHammer.mdx"
+>>> itemWeaponPick1.mdx"
+>>> itemWeaponPitchfork.mdx"
+>>> itemWeaponRake.mdx"
+>>> itemWeaponShovel.mdx"
+>>> itemWeaponWrench.mdx"
+>>> WeaponAxe1.mdx"
+>>> WeaponBroom.mdx"
+>>> WeaponHammer.mdx"
+>>> WeaponPick1.mdx"
+>>> WeaponPitchfork.mdx"
+>>> WeaponRake.mdx"
+>>> WeaponShovel.mdx"
+>>> WeaponSickle1.mdx"
+>>> WeaponWrench.mdx"
+>>> ... And also suitable Icons for these models
+
+- Swords
+>>> Sword_Bronze
+>>> Sword_Ebonite
+>>> Sword_Iron
+>>> Sword_Steel
+>>> Almalexia_Scimitar
+>>> Bipolar_Blade
+>>> Chrisamer
+>>> IceMonarch
+>>> Umbra
+>>> Sword of Death
+
+Shields
+>>> Buckler_Damaged_A_01.m2"
+>>> Buckler_Damaged_A_02.m2"
+>>> Buckler_Oval_A_01.m2"
+>>> Buckler_Round_A_01.m2"
+>>> Shield_Crest_A_01.m2"
+>>> Shield_Crest_A_02.m2"
+>>> Shield_Crest_B_01.m2"
+>>> Shield_Crest_B_02.m2"
+>>> Shield_Crest_B_03.m2"
+>>> Shield_Engineer_A_01.m2"
+>>> Shield_Horde_B_04.mdx"
+>>> Shield_Horde_B_03.mdx"
+>>> Shield_Horde_B_02.mdx"
+>>> Shield_Horde_B_01.mdx"
+>>> Shield_Horde_A_04.mdx"
+>>> Shield_Horde_A_03.mdx"
+>>> Shield_Horde_A_02.mdx"
+>>> Shield_Horde_A_01.mdx"
+>>> Shield_Engineer_C_01.mdx"
+>>> Shield_Engineer_B_01.mdx"
+
+Multicategory weapons
+>>> Adamantium_Claymore.mdx"
+>>> Adamantium_Mace.mdx"
+>>> Adamantium_Shortsword.mdx"
+>>> Adamantium_Spear.mdx"
+>>> Adamantium_WarAxe.mdx"
+
+Maces
+>>> Mace_2H_Spiked_A_02\Mace_2H_Spiked_A_02.mdx"
+>>> Mace_2H_Spiked_A_03.mdx"
+>>> Mace_2H_Spiked_B_02.mdx"
+>>> Mace_2H_ZulGurub_D_01.mdx"
+>>> Mace_2H_Stratholme_D_02.mdx"
+>>> Mace_2H_Spiked_B_01.mdx"
+>>> Mace_2H_Standard_A_02.mdx"
+>>> Mace_2H_Standard_A_03.mdx"
+>>> Mace_2H_Standard_A_01.mdx"
+>>> Mace_1H_Blood_A_01.mdx"
+>>> Mace_1H_AhnQiraj_D_03.mdx"
+>>> Mace_1H_AhnQiraj_D_02.mdx"
+>>> MaceNaxxramas01.mdx"
+>>> MaceBlackWing01.mdx"
+>>> MaceBlacksmithing03.mdx"
+>>> MaceBlackWing02.mdx"
+>>> MaceCoilfang01.mdx"
+>>> MaceAhnQiraj01.mdx"
+>>> MaceHellfire.mdx"
+>>> MaceBlood02.mdx"
+
+=================================================================================================================================================
+Epic Quests 13.10.2025 - List of Actions:
+
+
+UnitExperience -v3
+- Updating
+
+Tamed Unit Dies
+- Changed pause to be after animation to try to solve why Stand animation gets stuck for tamed unit
+
+Imported:
+- HarvestMana model
+- Mythic Storms models
+- Overhead Buff Pack models
+
+Taming
+- should now take 75 % more dmg during taming
+- new tame issue not registering should be fixed now
+
+VeinGlow
+- should now be correctly positioned in Z height
+
+UnitHider V3 worked, but disabled for now,...
+
+Dead Woods
+- terraining (draft)
+
+
+=================================================================================================================================================
+Epic Quests 12.10.2025 - List of Actions:
+
+Major updates:
+
+UnitExperience -v3
+- Now using custom value of unit vs. previously unit handle
+- massively updated the system, to also include unit-type predefined stats, e.g., turtle having more HP / block per level vs. tiger etc.
+
+UnitHider v2
+- revamped the whole system to use Table by Briebe and TimerUtils (unsure about this)
+- needs to be tested is it now useable all the time
+- Disabled for now as there are issues with:
+>>> UnitHider: not working correctly - it hides most, it seems to hide units very slowly
+>>> UnitHider: severe lag introduced when now in use
+
+Tamed Unit - multiboard
+- Stats will now be added initially when pet is added to multiboard
+
+UnitStats v1
+- jass library version created and old GUI version disabled for now
+- also added HIT stats, although for unit may not be used...
+
+Old bags systems related
+- Disabled trigger "Bag Follow"
+- Disabled trigger "Bag Add"
+- Preplace bag unit deleted
+- Disabled bag related variable setting in Initialization and Init 01a Units triggers
+>>> To be replaced with new logic that will expand DInv slots
+>>> Also DInv initial slots should be like 6 or 12 slots
+
+EDIT / SOUNDS/CAMERAS/CINEMATIC SETTINGS/QUEST CREATION
+- Intro Cinematic -> Done
+- BoomBrothers -> started
+
+
+=================================================================================================================================================
+Epic Quests 11.10.2025 - List of Actions:
+
+Pet related
+- Shadowclaw will now be vulnerable when invited back into the group (as TamedUnit)
+- Pet crit, block, dodge, hit, spell power are now shown in multiboard
+- Pet values are correctly cleaned after pet removed from multiboard
+- Pet death counter functionality added
+
+UnitExperience
+- Testing with different methods why only the 1st unit register works
+- Testing filter methods to reduce lag for XP gaining when unit dies near
+- The library left in error state - needs fixing
+
+Dark Shamans (Boss Scorchion)
+- Removed IsUnitAlive(CV) check from Reset trigger - needs testing that the Reset trigger works correctly
+
+
+=================================================================================================================================================
+Epic Quests 10.10.2025 - List of Actions:
+
+Reputation System
+- updated library; multiboard silently failing
+
+Shadowclaw Stats trigger disabled as now using generic UnitExperiece stats increase logic
+
+BossScorchion
+- Dark Shamans should not correctly stay in combat and not reset in the middle of combat (wrong logic in the loop)
+
+Vanguard Vale
+- terraining
+- created B yellow version of Bush
+- added brambles04 and bushes around the Vanguard Vale trees
+
+Tame Beast Start
+- added more units that can be tamed (unfinished)
+
+Tamed Units animation
+- tried to fix stuck animation after death (test)
+
+Tamed Units level up
+- added triggr MultiboarUpdateLevelTamed to be used by UnitExperience system when unit levels up
+
+UnitExperience
+- added ScaleUnitStats function that will increase the following stats of the pet;
+>>> armor
+>>> hp
+>>> hp regen
+>>> min dmg
+>>> max dmg
+>>> secondary stats; block, crit, hit, dodge 
+- Still to be decided whether this is good way to increase stats, also is there possibility of very overpowered pets at high levels?
+
+CinematicTrailer1
+- testing FoV 120
+
+
+NOTE: CRASH UPON SAVE!!!!
+- all these editions below not saved!
+- causer: UnitExperience system! Some incorrect function usage perhaps
+- Redone the edits...
+
+=================================================================================================================================================
+Epic Quests 9.10.2025 - List of Actions:
+
+Quest Hashtable System
+- Added reward Reputation with Faction to the system
+>>> Note: needs to be implemented to already created ones!
+
+Reputation and Stats -dummy units
+- created
+- setting variables at Init 01a Units
+- testing to use these to Open either multiboard Reputations or Stats
+- NOTE: Has to be taken into account possibly in many triggers...
+
+Pets
+- Tamed pet should now be added to focus unit group Nazgrek or Zulkis depending who was the "tamer"
+- Pet name should now update after renaming pet
+- pet level should be erased from multiboard when kicked out
+- pet level should now update correctly to multiboard
+- if the pet was previously registered to UnitExperience system, XP is just enabled again, not registered again
+
+UnitExperience
+- pet level will be taken into account upon registering to the system
+
+Invite / Kick Companion
+- Shadowclaw should now be able to be invited to group
+- Shadowclaw XP is just enabled again, not registered again
+- kicking TamedUnit will disable it's XP gain in UnitExperience system
+
+Reputation system
+- fixed incorrect index using in loops from "0" to "1"
+
+Imported WoW models wit fixes to "head" attachement point
+- nazgrek
+- elf-sorcerer (Evil witch elf illusion)
+- magister-duskwither (Aradion)
+- dark-ranger (Valeria)
+
+Imported (finally) big amount of Icons for items to be used
+- axes
+- bags
+- belts
+- boots
+- boxes and barrels
+- bracers
+- chests
+- cloaks
+- cloth and leather
+- food
+- gloves
+- hammers
+- heads
+- helmets
+- herbs
+- keys
+- maces
+- mail
+- necklaces
+- other
+- pelts
+- potions and bottles
+- rings
+- shields
+- staves
+- swords
+
+Imported following item weapon models and set as ability attachement items for future item creations:
+itemweapons\Ashkandi, Greatsword of the Brotherhood.mdx
+itemweapons\axe_1h_pvehorde_d_01_Green.mdx
+itemweapons\axe_1h_pvehorde_d_01_red.mdx
+itemweapons\Betrayer of Humanity.mdx
+itemweapons\Blade of the Warlord - D3.mdx
+itemweapons\Bloodmaw Magus-Blade.mdx
+itemweapons\bloodrazor.mdx
+itemweapons\Bonereaver's Edge.mdx
+itemweapons\Crux of the Apocalypse.mdx
+itemweapons\Deadly Strike of the Hydra.mdx
+itemweapons\Iridal, the Earth's Master.mdx
+itemweapons\jelly-sword.mdx
+itemweapons\Kalimdor's Revenge.mdx
+itemweapons\Kang the Decapitator.mdx
+itemweapons\MaldraxxusLordAxe.mdx
+itemweapons\Seraph's Strike.mdx
+itemweapons\Shin'ka, Execution of Dominion.mdx
+itemweapons\Starshatter.mdx
+itemweapons\Stave_2H_Jeweled_D_01.mdx
+itemweapons\sword_1h_long_d_03.mdx
+itemweapons\Syphon of the Nathrezim.mdx
+itemweapons\Teebu's Blazing Longsword.mdx
+itemweapons\The Gidbinn.mdx
+itemweapons\The Turning Tide.mdx
+itemweapons\The Widow's Embrace.mdx
+itemweapons\Tomb Reaver .mdx
+itemweapons\Verigan'sFist.mdx
+itemweapons\Whirlwind Axe.mdx
+
+
+=================================================================================================================================================
+Epic Quests 8.10.2025 - List of Actions:
+
+Reputation system
+- continued creating the jass library and now compiled without errors
+- will need proper testing; debugging
+- show multiboard: debug repmb show
+- hide multiboard: debug repmb hide
+- multiple edits
+- added possibility for unit type factions - e.g., neutral hostile gnolls as faction etc.
+
+Patrol System
+- V2 using Table and TimerUtils is under draft
+
+debug changeowner -command added
+- changes the selecte unit(s) to player 1 ownership
+
+UnitExperience V2
+- fixed not giving any XP - missing initializer Init at the library header...
+
+Multiboard (stats)
+- reverted: - MultiboardCreate on map init vs. previously after 1s game time
+
+Companion Invite
+- added inviting Shadowclaw possible if player doesn't have any tamed unit
+
+FloatingTextTagSimple
+- added boolean to control if we want the text to drift upwards or not
+- added boolean to control if we want the text to follow the unit
+
+Tamed Unit Dies
+- floating text tag should now remain still with new modifications to FloatingTextTag.create function
+
+Mordrax
+- added "death flight" when Mordrax has been defeated
+
+
+=================================================================================================================================================
+Epic Quests 7.10.2025 - List of Actions:
+
+Reputation system
+- Started drafting reputation library in vjass that will replace the current draft reputation system
+- Note: May require intensive testing and good API for quests to add rep properly
+- Idea is for the GUI triggering to only call ADD or REMOVE REP in quests or events, death events will be handled by the system internally
+- ADDING or REMOVING REP by quest should not be linked to other functions? only killing?
+- Continue editing the LIBRARY
+
+Tamed Units
+- fixed wrong UnitExperience register unit when Finishing tame beast
+- when kicking Tamed unit, it's XP will be disabled but it can be continued as long as that unit stays alive
+- fixed some multiboard tamed unit related bugs
+
+UnitExperience
+- added function UnitExperience_DisableXP
+- V2 that should be more lag-free and perform better utilizing Table under testing
+
+Tame Beast -abilities
+- changed Hit points drained to 0; note that it can affect the unit not attacking the taming unit
+
+Mordrax
+- created voicelines for combat and register to ExSound
+- triggered voicelines to Boss Mordrax
+
+Models uploaded/updated
+- old Nazgrek model replaced
+- new elf model: elventowersilithus01.mdx
+- Faerie Dragon ghost form: FaerieDragon_Ghost.mdx
+- elf sorcerer model added (witch illusion): elf-sorcerer.mdx
+- elf statue: StatueofAzshara1.mdx
+
+Sound files (NOTE: IMPORTANT) <<<<<<<<<<<<<<<<<<<<<<<<
+- removed all imported voicefiles except AIHero lines for now
+- remove reason: now using external sound files that are called by ExSound system
+- note: that most sounds/cinematics wont work, because need to use ExSound!
+- copy style for older cinematics/dialogues from Grum/Aradion for example, check the camera / DInv stuff as well.
+
+CinematicMover
+- edited Shadowclaw out, and use only TamedUnit / RevivalTimerPet
+- pets dont really die, so we have to use "fake" triggers
+- using trigger Tamed Unit Dies (to "kill" pet) and triger Tamed Unit Revival to "revive" pet
+
+Multiboard (Stats)
+- MultiboardCreate on map init vs. previously after 1s game time
+>>> Reason: Reputation system uses/calls udg_Multiboard (stats)
+
+Vein Glow
+- now using position of vein unit instead of attachement point, as there were not attachement point for OreVeins or Crystals
+
+=================================================================================================================================================
+Epic Quests 6.10.2025 - List of Actions:
+
+CinematicMover
+- added debug commands;
+>>> debug cinematicmove
+>>> debug cinematicmove withpoints (target of current camera view)
+>>> debug cinematicreturn
+- fixed not moving companions/tamed units in "CinematicMove
+- fixed moved CinematicTriggerUnit also returning to init location 
+>>> Note: It maybe sometimes wanted to move the unit to return location?
+
+Tamed Units (pets)
+- Tamed units now won't completely die when killed, instead they are kind of freezed for RevivalTimerPet and after that they are back to normal
+- Before this only Shadowclaw was revived, but now all pets share same logic, otherwise leveling pet wouldn't make sense in case they die and progress is lost
+>>> Note: Pet Death Animation and animation when Revived needs to be sorted out - How do we play Death animation for the pet and how do we keep the pet staying in paused death animation?
+>>> Note: may have to adjust FloatingTextSimple, we want the new floating text to act similarly as the old one; floating slowly above the dead pet
+
+Multiboard
+- Added pet level (when new pet is added and update multiboard
+- Changed ReviveTimerShadowclaw to ReviveTimerPet
+
+Pets (Tamed Units)
+- Added Pet Rename function; player can change the pets name by typing: /pet rename <name>
+
+
+=================================================================================================================================================
+Epic Quests 5.10.2025 - List of Actions:
+
+DestructibleDeathEngine
+- created simple destructible death event that utilizes DestructibleRevival system for getting the dying destructible
+DestructibleRevival
+- added hook after "set argDest = GetTriggerDestructable() -- call FireDestructibleDeathEvent(argDest)
+
+Destructible Item Spawn
+- created first trigger to try spawn items from dying destructibles - note how to get level area of destructible?
+- createde various range of Crates and use Editor suffix (Level 1-5) etc.
+- Note: do for barrels etc.
+- Note: Fill the map with zone / specific destructibles
+- Note: Drop rate could be lower? / less crap?
+
+CinematicMover 
+- once again fixing companions and tamed units not storing...
+
+Floating Spell Event Text
+- Once again trying to use Arcing TT Linear function (will see if this one still lags)
+
+FloatingTextTag
+- created similar style library for simple text tags
+
+Vanguard Vale
+- terraining
+
+Sirensong
+- terraining
+
+Morthun
+- Added patrol slow speed and when engaged normal speed triggers
+- adjusted animation walk and run speeds
+
+Mordrax
+- removed movement speeds settings as PatrolSystem now handles it on its own
+
+Valeria
+. added ValeriaEncounterReset Boolean to prevent random movement triggering from periodic timer
+
+Cloned more voices for future quest givers and bosses etc.
+
+Boom Brothers
+- Added CinematicMove related positioning - to test how companion units are moved (if at all)
+
+=================================================================================================================================================
+Epic Quests 4.10.2025 - List of Actions:
+
+UnitExperience
+- fixing issues with lag / wrong xp gain
+
+CinematicMove -library
+- editing the library
+
+Morthun
+- Mini boss added to Verdant Plains wandering around the area
+
+Vanguard Vale
+- terraining
+
+Vein Glow
+- Fixed special effect not showing
+- Note: there mighty be issues with Crystal and Ore vein spawn triggers as they use utilize same locations when spawning at once, therefore possibility of point being null and the ore spawning at the center of the map
+
+Arcing TT
+- again, some fixing (try)
+
+DestructibleRevival
+- added DESTRUCTABLE DEATH CALLBACKS / hook to when destructible dies
+- to be used in trigger(s) to spawn items from crates, barrels, etc.
+
+
+=================================================================================================================================================
+Epic Quests 3.10.2025 - List of Actions:
+
+UnitExperience
+- some fixes
+- debug messages to help checking the system
+
+Arcing TT
+- changed camera distance to 2500 from 1200
+
+CinematicMove -library
+- to make simple cinematic storing / restoring of units for and after cinematic
+- CinematicTriggerUnit = Nazgrek (Quests of Grum trigger)
+--- this basically handles around what unit things will be moved
+- unfinished yet and definitely needs some testing etc. setting up
+
+
+=================================================================================================================================================
+Epic Quests 2.10.2025 - List of Actions:
+
+Floating Spell Event Text
+- made some modifications fix lag caused by heavy stringHash color conversion before creating Arcing text
+
+Arcing TT
+- some fixes
+
+=================================================================================================================================================
+Epic Quests 1.10.2025 - List of Actions:
+
+DInv & DEquip system
+- HeroItemCheck and HeroItemCheckBoth (Nazgrek and Zulkis) added as "addon"
+>>> These help fastly check whether either hero has item of type and with amount for quests/dialogs etc.
+- Note on getting item of type from hero Inventory:
+>>> In SharedDInvLib.j there are also: DInvUnitHasItemType and DInvUnitGetItemSlotOfFirstItemByItemType original functions
+>>> We currently utilize our own GetDInvItemChargesByTypeThreshold
+- Added "RemoveDInvItemChargesByType" function
+>>> This is to be used together with HeroItemCheckBoth or HeroItemCheck
+
+Arcing TT
+- added createLinear method for simple floating texts
+- changed this: "set .t = duration" >>> "set .t = TIME_LIFE" like originally is to try fix texts disappearing
+
+Grum Bloodfang
+- added proper item checks for Whelps of Destruction, Dragon Eggs and GrumDialog completion checks
+
+Quest Icon System V1.0 -> V1.1
+- fixed not properly saved and handled minimap ping icons
+
+DInv and DEquip initialized for Zulkis in triggers (unfinished / need remake) Giving The Letter Q / Giving The Letter Q debug (command "debug givezulkis")
+
+ExMusic
+- wait before starting new track increased from 1.00s to 2.00s to reduce lag caused by music, might not help at all
+
+Zones
+- Added ZoneDayNightEvent Boolean to prevent "Entered Zone XXX" appearing during DayNightEvent
+
+=================================================================================================================================================
+Epic Quests 30.9.2025 - List of Actions:
+
+GetItemCost -added
+- use GetItemTypeIdGoldCost to get item cost (gold)
+- use GetItemTypeIdWoodCost to get item cost (lumber)
+>> Note: still cant use them as DInv system says undeclared function - something needs setting up even though setting GetItemCost as "requires"
+
+DInv & DEquip system
+- Stacking now works without player needing to press "Infite Stacking"
+- SharedDInvLib.j
+	>>> Changed the texts and the order of texts in function UpdateDEqCSheet
+	>>> Added colors to the stat texts
+	>>> Note: the coloring / stat names have to match also on the item itself vs. DEqCSheet
+	>>> GenerateDEqTooltip function:
+		>>> Modified texts + some modifications to showing the numbers
+		>>> If item contains ability with string containing "EQUIP" it wont be displayed
+
+- DInventory.j
+	>>> function InitializeDInventoryForUnit
+		>>> added: set PlayerStackingMode[pid] = 2
+		>>> this should allow stacking of charges.
+
+- Spell damage changed to Spell Power (now there can be "+ XX % Spell Power" (perc amount) and "+ XX Spell Power (flat amount)"
+
+- Spell power flat amount increase needs to be created as system; 
+	Stat_SpellPowerPerc[ ] 	- Original variable
+	Stat_SpellPowerFlat[ ]	- New variable
+
+- trigger "Stat Spell Power Damage" -added flat spell damage increase
+- trigger "Stat Spell Power Healing" -added flat spell healing increase
+
+Block Chance
+- fixed incorrect damage amount block; previously blocked only 25 % when it should be other way around and block 75 %
+- TBD: Block reflection damage of DMG event amount x 0.25 that is caused by block to the DMG event source
+
+UnitExperience
+- created to system for unit experience (tamed pets in mind)
+- first iteration only considers increasing Shadowclaw's stats when it levels up - other pets should also level up, but stat increase are not implemented
+
+Ore Veins and Crystals
+- Added glow effect to some veins, upon death the effect is removed
+
+
+=================================================================================================================================================
+Epic Quests 29.9.2025 - List of Actions:
+
+Item Unstack system
+- Added debug messages
+- Fixed item disappearing when splitting charge 
+- Note: split charge item will go from vanilla inventory to the new Custom inventory
+- Note 2: should the unstack/split function be inside the new custom inventory?
+
+Heal Engine
+- DRAFT (WIP): Stat Healing bonus -trigger: If unit has Spell bonus, it should now adjust healing received
+
+DInv & DEquip system
+- modified stat names in DEquipment.j
+- modified item slot names in DEquipment.j
+- Note: Modify what the stats do in "SharedDInvLib.j"
+>>> added definitions to add Crit, Dodge, Block, Hit, Spell Power
+- DInventory.j
+	>>> change PlayerStackingMode[24] to PlayerStackingMode[1] 
+	>>> Maybe need to test whether it must be 1 or 2?
+- SharedDInvLib.j
+	>>> Added max charge functionality by using Item levels as charge
+- SharedDInvLib.j
+	>>> Modified function UpdateDEqCSheet for correct percentage Crit, Dodge, Hit, Block, Spell Power, ...
+- SharedDInvLib.j
+	>>> Added function to easily returns the number of charges of a given item-type carried by a unit. 
+	Usage:
+	DInvUnit = unit
+	DInvItemType = item to be searched
+	DInvItemAmount = how many items
+	set udg_DInvItemCarrierHasItems = GetDInvItemChargesByTypeThreshold(udg_DInvUnit, udg_DInvItemType, udg_DInvItemAmount)
+
+ExMusic
+- Added stop with fade with wait + then stop music immediately to PlayMusic function to prevent lag spike occurring
+
+Following doodads has been imported:
+Aiur_Plantlife_00
+Aiur_Plantlife_01
+Aiur_Plantlife_02
+Aiur_Plantlife_03
+Aiur_Plantlife_16
+
+Elsecaro_Curtain1x1_00
+Elsecaro_Curtain1x1_01
+Elsecaro_Curtain1x1_02
+Elsecaro_Curtain1x1_03
+Elsecaro_Curtain1x1_04
+Elsecaro_Curtain2x2_00
+Elsecaro_Curtain2x2_01
+Elsecaro_Curtain2x2_02
+Elsecaro_Curtain2x2_03
+Elsecaro_Curtain2x2_04
+Elsecaro_Curtain4x2_00
+Elsecaro_Curtain4x2_01
+Elsecaro_Curtain4x2_02
+Elsecaro_Curtain4x2_03
+Elsecaro_Curtain4x2_04
+
+credits Renn01
+
+These are mainly to be used in Sirensong zone and subzones
+
+
+=================================================================================================================================================
+Epic Quests 28.9.2025 - List of Actions:
+
+HealEngine
+- IS_NATIVE_REGEN_SELF set to false
+- HealingDisplay; added condition HealSource Equal to No unit
+- RegenerationDisplay; added condition; (HealTarget has buff Warmth ) Equal to False
+>>> This maybe redundant with IS_NATIVE_REGEN_SELF
+
+Blood Splats
+- added condition to return (skip creating blood splat) if the dying unit has "Locust" (Aloc) ability
+
+Item Drop System
+- added condition to return (not spawn any item) if the dying unit has "Locust" (Aloc) ability
+
+DInv
+- added wait 0.05s to GetDInvItemChargesByTypeThreshold to help system see proper charges when unit acquires item
+- The wait worked, but is it good practice - no, but can be thinked later maybe...
+>>> Note: waits should not be used here, maybe use timer and refresh?
+
+Item Unstack system created and added
+
+=================================================================================================================================================
+Epic Quests 27.9.2025 - List of Actions:
+
+Unit Within Range 1.5 (by Tasyen - New System added)
+- all current range check (that most currently leak position) should be replaced with this?
+- remember need to register unit again if the unit dies and respawns
+
+Void Entity
+- fixed voicelines triggers spamming
+
+Boss Scorchion
+- Fixed following issue: After engage reset - Scorchion is not set vulnerable again
+- Fixed following issue: Darkshamans during engage voicelines?
+- NOTE: To be fixed: When engage reset is triggered, dark shaman voiceline should only be played if player unit is near
+- NOTE: To be fixed: last dark shaman will stay for voiceline and then die before Scorchion boss fight starts
+- Added: Extra high HP regen to Scorchion before Boss Fight and set HP regen to normal when the fight starts and set to High again when combat resets
+
+Destroyer Inventory - Charges
+- Testing how to retrieve charges of item type from the custom inventory with added API function "GetUnitItemChargesByType" to SharerdDInvLib
+- Test on trigger Quest Whelps of Destruction Update - the quest should now update when player picks the 10th item
+
+
+Imported doodads specifically for Vanguard Vale zone in mind
+
+Debug
+- added debug that will see what dying dummy unit is
+>>> Solve what unit is causing these blood splats spawning everywhere
+
+=================================================================================================================================================
+Epic Quests 26.9.2025 - List of Actions:
+
+Dark Shamans (by BossScorchious)
+- Added voicelines Engage, Start, Reset, Distant (filmed from far away)
+--- NOTE: need to trigger last shaman dying and stopping animation for the line and then "finish" him off before Scorchion starts fully
+
+AI Heroes
+- Closest unit functions (Rogue, Warrior, Paladin, Engineer (shredder form); Leak inside "Pick every unit in Closest_Group" removed (cascading point leaks)
+- dsiabled debug messages from AI actions
+
+AI Heroe - New vJass system on develop
+- Aim is to be more event-driven logic, and easy to maintain
+- basic actions should be functions that can be easily bug fixed etc.
+- Must be lag free vs. current Logic tree style made in GUI triggers is heavy process on map
+
+Disabled most found debug messages from Abilities
+
+BossScorchion
+- disabled debug messages (dark shamans Engage Reset)
+- disabled debug messages (Fire Orbs Start Q, Loop, End)
+- disabled debug messages (Temporal Instability)
+- disabled debug messages (Fire Ward)
+
+Cinematic ON
+- enabling / disabling Isometric Camera disabled with bool "AlwaysFALSE" - this interfered with old cinematic dialogues
+
+Void Entity
+- Added chat related triggers
+
+Note on Lag previously known to be caused by AI Heroes logic
+- Now no lag spikes - issue was "closest unit function point leaks"
+
+=================================================================================================================================================
+Epic Quests 25.9.2025 - List of Actions:
+
+Inventory systems
+- EasyItemStacking system disabled - it interfered with DestroyerInventory system
+>>> Note: may need to enable stacking from gameplay constants
+
+Void Entity
+- started adding some triggers
+
+=================================================================================================================================================
+Epic Quests 23.9.2025 - List of Actions:
+
+Cinematic Trailer 
+- created script for creating cinematic teaser trailers
+- played with command: " trailer1 "
+- with snow: " trailer1snow "
+- Using command:
+--- disables/releases Isometric camera lock
+--- disables AI heroes
+--- Runs Cinematic ON trigger
+RUN debug aidisablemainstates to disable Ai
+
+AI Heroes lag NOTE
+- Note: when multiple AI heroes spawned, fps dropped to 2 fps.
+- There is definitely somethings very wrong there...
+
+PDMS Periodic Damage added
+- not configured yet / nothing using it atm
+
+NOTE new lag:
+- some system is causing periodic lag - PDMS?
+
+A-B cam pan did not work
+
+AI Heroes
+- Will now start spawning only after Intro Cinematic
+
+Imported Entropius model by Sarsaparilla
+- to be used as Void Entity boss at Vanguard Vale
+
+Started testing DestroyerEquipment custom definitions
+- with Colossus loot
+
+Arcing TT by Maker
+- Modified to prevent seeing far away occurring floating texts
+- added RGB
+- DamageEngine, HealEngine, FloatingSpellEventText now use the modified ArcingText 
+
+=================================================================================================================================================
+Epic Quests 22.9.2025 - List of Actions:
+
+Destroyer Inventory & Equipment System
+- testing again
+- apparently previous lag / unit pathing errors were caused by some getWorldBounds / PlayableMapArea related functions?
+- Works after these modifications DConfigurationArea:
+--- boolean AutomaticallyAddHeroesToTheDEqSystem = FALSE (default TRUE)
+--- boolean AutomaticallyAddHeroesToTheSystem = FALSE (default TRUE)
+
+TasQuestBox
+- Added
+- Initial idea to use for quests, but probably too much rework to current Quest system?
+- To be used for Zone descriptions etc.? / Info?
+>>> If used for info/general/etc. then normal quest dialog could be changed to have Normal quests and daily quests separated?
+
+Valeria
+- Token of Love triggers fixing
+- Lost Supplies triggers fixing 
+- Added patrol after Ranger Missing is completed
+--- NOTE: Neutral passive cant Patrol because it will always return to its initial location - Either way need to utilize some PlayerX for the Valeria, so that she attacks hostile units...
+
+ExMusic
+- Preload function changed to similar as in ExSound (all music files preloaded and played as "sounds"
+--- NOTE: Umm... now music files dont work at all - reverted to old style which still doesn't completely preload music files
+
+ShowUnitLevel by Tasyen
+- Added
+
+Other minor fixes / terraning Vanguard Vale
+
+=================================================================================================================================================
+Epic Quests 21.9.2025 - List of Actions:
+
+Valeria & Aradion & Nazgrek
+- Created more voicelines
+- Created 3 quests and related voicelines and dialogues for Aradion (wip)
+
+TasInventoryEx
+- Added "call TasInventoryEx_ReAddInventories(unit)" to CinematicOFF and Game Start triggers
+--- This function needs to be called: after revive/reinc, unpause, channel ability with "disable other abilities", doom ability debuff, Probably for all skills/situations that silence inventories. Right after you unpause the unit tell the system to readd the inventories and items. Otherwise the unit can only fill the main inventory with items (no more additional inventories). - Tasyen
+
+Stealth
+- trying to fix spin attack animation (stuck animation when casting stealth when unit not moving)
+
+=================================================================================================================================================
+Epic Quests 20.9.2025 - List of Actions:
+
+Valeria & Aradion related
+- fixed some issues related to cameras, movements, etc.
+- Added Token of Love, Lost Supplies quests to Valeria, some work still need to be done
+
+Cinematic Store/Move units function
+- Added pets (TamedUnits unitgroup)
+
+TasInventoryEx
+- under testing, issued found with items not being inserted into custom inventory, ...
+
+Stealth
+- Now should not break when directly behind the enemy even if close to enemy
+
+Tiles
+- Added some new tiles to create variation to zones
+
+=================================================================================================================================================
+Epic Quests 19.9.2025 - List of Actions:
+
+Grum Bloodfang
+- Fixed some quests related issues
+- Drake attack can now occur in the middle of dialogue, and when occurs will interrupt it.
+
+Cinematics
+- Added triggers to store and restore player units locations and pet/companion locations
+- If CinematicRestoreNazgrek = true -> moves Nazgrek to stored location after cinematic
+- If CinematicRestoreZulkis = true -> moves Zulkis to stored location after cinematic
+- Currently pet and companions will always be restored to their stored location before the cinematic
+
+Valeria fight / negotiate dialog triggering
+- continued editing
+- Added more cinematic/dialogue movements/events
+
+Ranger Missing
+- added quest related triggers and dialogues
+
+Creep Respawn system
+- Added some fix to Creep Respawn trigger to respawn specific Player 19 units
+
+Vanguard Vale
+- some lite terraining to sketch the zone
+
+Nazgrek
+- Unit model updated once again; could use some torn / fur-like cloak to make it complete?
+
+=================================================================================================================================================
+Epic Quests 18.9.2025 - List of Actions:
+
+Inventory system under testing: https://www.hiveworkshop.com/threads/a-modern-inventory-and-equipment-system-prototype.351433/
+- Result: game break (maybe related to unit enters playable map area ? - search if there is such function inside jass scripts)
+>>> Removed for now....
+
+Updated Valeria, Aradion, Nazgrek dialogues
+
+Mana Wraiths
+- Fixed DamageEngine issue with all units being immune to physical dmg
+
+Nazgrek
+- Created more greet / farewell lines
+
+Valeria fight / negotiate dialog triggering started (WIP)
+
+=================================================================================================================================================
+Epic Quests 17.9.2025 - List of Actions:
+
+Lirael -> Valeria (new name)
+
+Updated Valeria, Aradion, Nazgrek related dialogues
+
+Updated (under testing) Easy Item Stack n Split v3
+
+Mana Wraiths
+- Now immune to physical dmg by using DamageEngine
+
+=================================================================================================================================================
+Epic Quests 16.9.2025 - List of Actions:
+
+Vanguard Vale elves Storyline
+- Drafted storyline, npcs, quests, locations for elf questlne
+
+Imported new models:
+- model for Wretched elf
+- model for Aradion the Farseer
+- model for Lirael Dawnwhisper
+
+Draft for Quests/dialogs/... for:
+- Aradion the Farseer
+- Lirael Dawnwhisper 
+- Kaelthir
+
+Added Wretched units
+
+Aradion
+- continued dialogs/first quest (WIP)
+
+Mana wraiths
+- Made attackable with spells and magic only by discarding "Ethereal" ability and instead use Hardened Skin and Elune's Grace
+
+Kaelthir
+- added dialogue and first quest (WIP)
+
+Grum Bloodfang
+- fixed issue with voicelines triggerent without player presence in the zone / near
+
+=================================================================================================================================================
+Epic Quests 15.9.2025 - List of Actions:
+
+Mana Wraiths
+- Added abilities Arcane Bolt, Shadowstep, Siphon Life and Mana
+
+Intro Cinematic
+- Switched "Intro Setup" trigger to be after "CINEMATIC ON" Trigger
+
+Grum Bloodfang
+- Created voicelines for Nazgrek
+- Created more voicelines to Drake attack event
+
+=================================================================================================================================================
+Epic Quests 12.9.2025 - List of Actions:
+
+Zones
+- Changed Blizzard music functions to call ExMusic system external music files
+
+HeroDeath Animation (WIP)
+- Added to try remove hero dissipation animation
+
+ExMusic
+- added function to get current track name / index
+- added in-game function to display current track name with command " /music current "
+- added in-game function to play random music with command " /music random "
+
+Intro Cinematic
+- Trying to solve issues with grunts not moving
+
+Mana Wraiths
+- added "Ethereal" ability to make them only attackable with spells and magic and also to prevent Blood Splat visual effects for these
+
+=================================================================================================================================================
+Epic Quests 10.9.2025 - List of Actions:
+
+Triggers
+- Reorganized Utility & core, and main map system triggers to upper part of triggers (after Global variables and Init)
+>>> Some systems might still be across the trigger folders, but main systems are now in upper part.
+
+
+Kodo Beast Drums
+- Imported empty KodoDrum1.wav and KodoDrum2.wav to bypass drum sounds (that could be heard with Salamanders....)
+
+DestructibleRevival system
+- Added to map with necessary Util systems
+>>> Note: Need to configure
+
+=================================================================================================================================================
+Epic Quests 9.9.2025 - List of Actions:
+
+Grum Bloodfang
+- All voicelines now modified for ExSound -system
+
+ExSound system
+- Added all <CURRENT> voicelines to register paths
+- removed automatic preload within the code itself, instead map will call preload function manually
+- commented out (=disabled) fallback to constant duration if no sound and text is not provided, because sound and/or dialogtext should always be provided
+
+ExMusic system
+- removed automatic preload within the code itself, instead map will call preload function manually
+
+PatrolSystem
+- removed all debug calls
+- Added option to choose what movestyle (order issue) patrol unit has; "move", "attack", "patrol", ...
+- Updated all PatrolSystem related calls in WE side to take into account the new movestyle
+
+TravelShip
+- Enabled again
+
+Quest updates twice when picking up all required items
+- this might be because of EasyItemSystem
+--- to prevent this - need to add EasyItem_SystemActive == false in conditions >> TEST
+
+Mordrax
+- fixed Reset trigger issue not working
+- adjusted attacking flying height
+
+=================================================================================================================================================
+Epic Quests 8.9.2025 - List of Actions:
+
+ExSound system
+- Added fallback value to ExSoundDuration that will be based on the length of the ExSoundString (if provided), if ExSoundString == null, then use constant value fallback_duration (5s)
+- added preload function
+- added "takes string dialogtext" to play/playUnit/playPoint functions
+
+Grum Bloodfang
+- started doing ExSound -modification - WIP on "Quests of Grum"
+- fixed some errors related to quest creation (used TriggerExecute instead of correct ConditionalTriggerExecute)
+- Drake attack interval increased
+- typo fixed in Whelps of Destruction
+- Some other minor fixes to quests triggers
+
+TravelShip
+- Temporary disabled UnitAttach to travel ship and using Hide unit instead
+
+Map Init
+- Added Preload trigger on map start
+- Game start and init related triggers need to be re-organized, its a slightly messy
+
+=================================================================================================================================================
+Epic Quests 7.9.2025 - List of Actions:
+
+BOSS Mordrax
+- Created WayPoints
+- Added PatrolSystem triggers
+- Added attacked/attacking start and reset related triggers
+
+Creep Unit Assignment
+- Added Mordrax to list
+- Added PatrolSystem start trigger calls to relevant unit 
+>>> Note: one should also call QuestIcon systems for relevant units!
+
+Whelps
+- Edited item drop loot tables
+- Added dragon related misc items
+
+ExSound -system
+- Created first version
+- Added testing trigger "exsound test1" that can be triggered with command " exsound test1 " & " exsound test2 " - it should Play Nazgrek_0001 sound
+- API:
+    call ExSound_Register(key, path)
+    call ExSound_RegisterSequence("Nazgrek_", 1, 50, "Pots\\Sound\\Dialogs\\")
+    call ExSound_Play("Nazgrek_0001")
+    call ExSound_PlayAtUnit("Nazgrek_0002", udg_Hero)
+    call ExSound_PlayAtPoint("Nazgrek_0003", x, y)
+
+    call ExSound_Stop()
+    call ExSound_PlayAmbience(udg_ExSoundRegion, "ForestAmbience")
+    call ExSound_StopAmbience(udg_ExSoundRegionn)
+
+    duration of played sound can be get from variable: udg_ExSoundDuration
+
+Unit Sounds Attacked/Attacking
+- Salamander added
+
+=================================================================================================================================================
+Epic Quests 6.9.2025 - List of Actions:
+
+Grum Bloodfang
+- Drake attack trigger edited
+- Updated quest related update quest triggers
+
+ExMusic (external music system)
+- Created and under testing
+
+Item Drops
+- Whelp Scales drop added
+- Scale of Mordrax drop added
+- temp Dragon egg drop added
+
+Thornwoods / Emberpeak Highlands
+- Slight terraining
+
+Orc Spearthrower
+- Added level 12 variant and changed these to Grum location to match zone level units
+
+=================================================================================================================================================
+Epic Quests 5.9.2025 - List of Actions:
+
+Grum Bloodfang
+- Created voicelines and audio files
+- Note: Need to create small lines for Nazgrek
+- Created dialog/quest related triggers
+
+Travel system
+- Added Cinematic mode for travel (test)
+- Note: camera should be freely rotated during the travel
+- Note: it should be possible to skip the travel by using ESC key?
+>>>> This can be hard to implement, as we would need a way for the PatrolSystem unit to skip it's waypoint
+>>>> Maybe can implement function into PatrolSystem with function like PatrolSystem_SkipToWP takes integer index, etc....
+
+
+=================================================================================================================================================
+Epic Quests 4.9.2025 - List of Actions:
+
+Travel system
+- Edited TravelShipB Patrol waypoints / wait times / using PathStyle 0
+- Created simple TravelShipB_MovementStart jass script (because of way too many regions, that are more easier to set in JASS vs. GUI...)
+- Transport ship speed and turn rate reduced
+
+- Added shipmaster[1] (MOKNATHA) - travel related triggers
+- Added logic for when ship arrives at each dock
+- Shipmaster (goblin) lines created and imported
+
+Items
+- Shovel fixed missing item attachment ability
+- Note: looks like shit when attached to unit hand!
+
+Boom Brothers Mine
+- Fixed wrong point at AoE barrels of explosives damage at rocks1 & rocks2
+- Goblins should return to their init location / area after they are turned back to Neutral Passive
+
+Grum Bloodfang
+- Started doing dialogs and quests
+- Note: Unfinished Button Pressed in...
+- Note: Unfinished DialogOver
+- Note: Unfinished Quests
+
+UnitAttch jass script added
+- Utilized in TravelShip visualization of Hero being onboard the ship
+
+=================================================================================================================================================
+Epic Quests 3.9.2025 - List of Actions:
+
+Imported:
+- Potions - various shapes and colors by stan0033
+- Shovel model Narberal Gamm (XGM Guru)
+- Webbed victim by Zenonoth
+
+ItemDropLocationUnits
+- added trigger to drop any not Campaign class item immediately, Campaign class item will also be dropped from the unit after 5s wait (to prevent player misplacing items into ItemDropLocation unit's inventory)
+
+Kribugs
+- Added more debug commands to test special effect overhead on Kribugs
+
+Zones
+- Zone "entered" text was not shown for Twilight Grove and Serenaglade, because they had old LocalPlayer handle usage, but this was not anymore used thus no message was displayed
+
+FindItemByKeyword
+- Fixed wrong string parsing in the function
+- Now works with any keyword e.g., "meat", "gnollhead"
+- Unsure if this works when keywords is two words; e.g., "Angry Chicken"
+- Renamed to "ItemSearch"
+- Made as library with private functions and private global variables
+- Function now to use: call ItemSearch_FindItemByKeyword(unit, string)
+
+Travel system
+- Started drafting this old system...
+- Travel Ship Moknatha patrol system utilized to create movement between travel locations
+- Added Shipmasters (goblins) on the map
+- Added Flight point icons on map for current flight masters (Control Point Ally)
+
+=================================================================================================================================================
+Epic Quests 2.9.2025 - List of Actions:
+
+Kribugs
+- Added quests
+- Made DialogButtons (global) as normal variables to be used
+- IMPORTANT NOTE!: Utilize the same logic to other NPCS! - REMOVE THE UNNECESSARY UNIC SPECIFIC DIALOG BUTTON VARIABLES - THIS NEEDS SOME TIME EDITING...
+- Added dialogs
+- Added function inside Complete Quest 4 to loop-check hero's inventory and first item with the word "meat" will be set as QuestItemTemp item-type
+--- Note: this would be better if this was a JASS Script and we pass string e.g., "meat" and the jass function will return back with Item-type
+- Fixed wrong quest Discovered/create triggers
+- Fixed wrong conditions for "Meat For the Ogre" quest completion dialog button visibility
+
+- added debug command: " debug kribugs questmark " to test create normal quest exclamation mark
+- added debug command: " debug change kribugs " to change the kribugs unit
+
+- Test quest Meat For The Ogre - can it be re-done and re-completed?
+
+FindItemByKeyword -JASS function created
+- This can be utilized to check if UNIT has item in inventory with specific keyword like "meat"
+
+DialogCamera
+- Added IsCameraBlocked function (when destructibles in the way of camera)
+
+ItemDropLocation
+- Added debug functions to test how to drop items to its inventory
+- Added Init 04b Players - 1s gametime set Player 1 friendly with spells with Player 17
+
+Indicators
+- Imported https://www.hiveworkshop.com/threads/target-and-circle-indicator-tc-vfx.349193/
+- Imported https://www.hiveworkshop.com/threads/skill-indicator.357350/
+- These can be used to indicate:
+--- AoE / incoming damage
+--- Objective location
+--- Item drop location
+--- Secret location
+--- Quest / event location point of interest
+--- etc.
+
+Quest Icon system
+- Edited Dummy Icon/marker function
+
+Boom Brothers Mine
+- removed range for leave region triggers (for now)
+- Added Shredder units
+--- Note: Edit the abilities to be unique to Shredder vs. now using Mad Blix abilities
+
+Interface Dialog Sounds
+- Added 0.1s wait before playing InterfaceSound
+
+=================================================================================================================================================
+Epic Quests 1.9.2025 - List of Actions:
+
+DeatCamera
+- Angle adjustd
+- Rotating camera 30s --> change to 45s
+
+Neutral Player (Player 17)
+- Adjusted Player 1 to have friendly with spells towards Player 17
+- This should have effect to be able to place items inside that player units inventory
+
+Player Bounties
+- Added player bounties for other players in addition of neutral hostile
+
+ItemDropLocation -unit
+- Adjusted model again
+
+Moknatha Battle
+- Fixed and edited ogre and orc attack waves triggers
+- added craters with Ubersplats
+
+Boom Brothers Mine
+- Edited BoomMine AttackWave R7 trigger to have range check before turning the hostile goblins to Neutral Passive
+
+DialogButtons (global)
+- Testing using global DialogButton_XXX variables instead of unit specific dialog button variables for KRIBUGS
+
+Moknatha Craters
+- Added
+- Note: not working / visible
+
+Moknatha Catapults
+- make attack speed very slow
+- make damage very high - almost instant death if hit?
+
+Zones:
+- Note: Serenaglade entered text not working
+- Note: Twilight Gtove entered text not working
+- Note: see other zones e.g., Riverbane, Sirensong that work
+
+=================================================================================================================================================
+Epic Quests 31.8.2025 - List of Actions:
+
+Dialog Camera
+- Added NearZ
+- Added default cam time, and set to 0 instead of 0.5
+
+Boom Brothers Mine
+- more terraining
+
+See more notes at To-Do app....
+
+
+=================================================================================================================================================
+Epic Quests 29.8.2025 - List of Actions:
+
+Sounds
+- Imported many Ambient, Interface related sounds
+--- To be used for many events player does (like selecting unit) and also ambient sounds for dungeons, lakes, etc.
+
+Dialogamera
+- Modified
+- Testing with Kribugs
+- OutcastJinzun settings may be now wrong...
+
+Boom Brothers Mine
+- more terraining
+- triggering events
+
+Ambient sounds
+- Testing ambient sounds for Zones
+--- Note: Need a way to remove the ambient sound from zone that the Player no longer is in / switched to other zone
+
+Interface sounds
+- Started creating interface sounds, e.g., levelup, dialog button pressing
+
+NOTE: Test checking how to use local audio files for WE / WC3!
+
+=================================================================================================================================================
+Epic Quests 27.8.2025 - List of Actions:
+
+OutcastJinzun
+- Camera distance and angle modified
+>>> Result: BAD
+>>> Camera position seems like its off many units, why?
+>>> What would be best all-time use generic camera parameters for dialog NPCs? Note that the location may sometimes be more smaller and could have doodads etc blocking the view
+
+Kribugs
+- Deleted IsUnitMoving condition from "Quests of Kribugs" initial check
+
+DeathCamera
+- Modified angle/distance etc.
+
+Boom Brothers Mine
+- Added draft events for:
+--- exploding rocks
+--- attacking units (note: Event triggers many times - it should have timer e.g. 360s etc. - also the spawned units should be removed or something and/or not to spawn more units if they are still alive?
+
+=================================================================================================================================================
+Epic Quests 26.8.2025 -2 - List of Actions:
+
+PatrolSystem
+- Fixed patrol unit not stopping when damaged or attacked or paused
+
+DialogCamera (NEW)
+- Added function to use generic DialogCamera that should make dialog cinematic cameras more easy
+- NOTE: DialogCamera didn't work - Reason: no camera settings was applied >> DialogNPC was = No unit
+
+Kribugs
+- Movement speed increased from 50 to 140
+- Added 3 quests
+- Added dialog system
+- A way to "trade"
+
+Note: 
+- Something might have gone wrong with BoomBrother triggers - because falsely editing them instead of Kribugs triggers
+
+Outcast Jinzun
+- Sounds when issued order "move" added additional conditions to consider only orders o Outcast Jinzun
+
+Raining
+- Added FX_Ripples -doodads that can be used with Play Animation Stand - 100 and Death
+- These can be preplaced or placed via Special Effect (TBD)
+
+Warlock Blood Pact
+- Heal Engine text reads funnily when unit gets Blood Pact aura
+---- Is there way to prevent text for this?
+
+Curse of Agony / garrote / and other similar abilities based of "Parasite" will not work when the unit is close to death
+- Add triggered damage to kill the unit with DamageEngine? Maybe not...
+---- Stacking type of the ability to: "Kill Unit" - TEST
+
+NOTES===
+- Camera for Jinzun too close, maybe set distance to 1000?
+- Now Jinzun seems to stay and not wander during PatrolSystem_Pause
+- Selecting Kribugs did not start anything
+- DeathCamera to be more further distance (maybe 1400) + angle can be more +30? Maybe 315?
+
+=================================================================================================================================================
+Epic Quests 26.8.2025 - List of Actions:
+
+Outcast Jinzun
+- Added PatrolSystem call
+- Removed old movement trigger
+- NOTE: Sounds triggers does work poorly
+-----> Need to add condition "issued order is move" to the sound trigger
+- NOTE: Was not properly paused when starting to talk to Jinzun
+
+Kribugs
+- Added as Quest Neutral folder
+- Added PatrolSystem call
+- Removed old movement trigger
+
+### Notes on Patrol System:
+- Tested with multiple units, seems to work fine
+- unit is not stopped when it is attacked or damaged!
+
+
+Death Camera
+- Works poorly, should disable player control (see in Cinematics - disable control for Player)
+- Camera is off compared to that it should be hovering near the dead player unit
+
+=================================================================================================================================================
+Epic Quests 25.8.2025 - List of Actions:
+
+Patrol System
+- Modified the script
+--- NOTE 1: Now it works like it should; the unit can be paused, and will continue where it was going
+>>> To be teste with multiple settings and multiple units
+
+
+=================================================================================================================================================
+Epic Quests 23.8.2025 - List of Actions:
+
+Patrol System
+- Modified the script
+--- NOTE 1: Pause didnt work + no debug msg
+--- NOTE 2: Stop didnt work - debug msg came
+--- NOTE 3: unit is still going to some nonsense location
+--- NOTE 4: Saved WP that is debug messaged from system itself matches with the waypoint location debug msg in GUI trigger
+
+=================================================================================================================================================
+Epic Quests 22.8.2025 - List of Actions:
+
+Patrol System
+- Added patrol / waypoint system that can be used to set NPC to walk certain path with settings like; how long the NPC waits at each waypoint etc.
+--- NOTE: Need to test the system with multiple Patrol NPCs and different settings!
+--- NOTE 2: there was issue with WayPoints! (not set correctly?)
+--- NOTE 3: debugging the waypoints; waypoints are set correctly, however something wrong with the JASS system itself, as it seems that the NPC is walking towards map center 0.0, 0.0
+--- NOTE 4: New version in VSCode to be transferred to World Editor and to be tested....
+
+Boom Brothers Mine
+- Continued terrain
+- Added Pathing Blockers (Both air & ground)
+- Note: next time; lower the torch "lights" 
+
+=================================================================================================================================================
+Epic Quests 15.8.2025 - List of Actions:
+
+Creep Respawn System - Creep Unit Assignment
+- Added JASS script that will be called from Creep Respawn -trigger. This script will assign global unit variable to the last created unit if unit-type matches.
+--- The JASS script will be faster to update vs. using the huge and in the end messy custom script wall of text within the respawn trigger itself.
+
+SteamBreath
+- Added functions to remove the steam breath effect from dying unit using;
+--- function SteamBreath_Death
+--- function RemoveSteamEffectUnit 
+--- function HasSteamEffect
+
+Spirit Shards
+- Modified "Revive" ability item ability to false and changed tooltip text to "Revive"
+- Changed "Deceased" unit back to Hover
+- Changed height from 100 to 75
+- Changed scale to 1.5 from 1.2
+
+Revival
+- Changed AI hero revival time from 20s to 60s
+- Changed player Hero revival time from 20s to 30s
+- Added circling camera to pan slowly around the died player hero if:
+--- Both Nazgrek and Zulkis are dead
+--- Nazgrek dies and Zulkis is not yet playable
+- Note: The camera settings need to go back to the normal used by the player when reviving
+- Note: The camera should be locked and player should not be able to move the camera during the Death Camera time
+
+Zone Entering
+- Changed location of Turn off this trigger, might not affect the trigger firing 2nd time for other unit - needs thinking
+
+Quest Icon System
+- modified Boomsite Compliance Ready trigger - see if yellow question mark now for BoomBrothers
+- Added dummy quest icon creation / removal to differ from the real quest icon register system:
+--- call CreateDummyQuestIcon(someUnit, "normal", 2)
+--- call RemoveDummyQuestIcon(someUnit)
+
+Quest Mandatory Training
+- Goblin Miners and BoomBrothers follow logic improved; Miners should only follow BoomBrothers without any distance check and BoomBrothers should only follow Nazgrek is the distance is less than 1000, forcing player to "escort" the BoomBrothers
+- Mad Blix temp unit spawn location changed closer to entrance (fitting / collision reasons)
+- Removed generic timer and replaced with Enters Region to remove BossMadBlixTemp unit
+
+Quest Boom Will Be Back
+- EDITED: Cameras dont pan to right location (at least in Quests of Boom Brothers, individual event after pressing Dialog button might need adjustment OR/AND move the Boom Brothers to correct location after turrets are destroyed,...
+- NOTE: BoomBrothers should move to BoomBrotherWP0XXX and have new dummy quest available after the turrets / enemies are dead
+- EDITED: Quest mark should be yellow question (ready to turn in / quest state 5) when Mad Blix is defeated
+- EDITED: After completing the quest - dialog button Boom Will Be Back (completion) is created, when it should not be visible anymore
+
+Boom Brothers Mine Cam
+- Camera should change for the first entering OR leaving PLAYER 1 unit
+--- Player 2 (AI Heroes) cant make this occur
+--- THINK: what about if the other PLAYER 1 hero is outside the dungeon and we click/ change to him? The Camera should change back to normal and when we change to the unit that is inside the dungeon the Camera should change to Dungeon Camera
+>>>> This kind of action should also make RUN DNC OUTDOORS / INDOORS AND FOGS etc. depending on where the outside HERO is and where inside dungeon HERO is
+>>>>>>>>
+
+=================================================================================================================================================
+Epic Quests 14.8.2025 - List of Actions:
+
+Item abilities:
+- If the ability is set to "Item ability" true; then its tooltips will be hidden
+>>> Item ability must be set to false to modify the tooltip that will be shown when ability is cast
+
+Spirit Shards
+- Modified "Revive" ability item ability to false and changed tooltip text to "Revive"
+- Changed "Deceased" unit from Hover unit to Flying unit
+- Changed height from 50 to 100
+>>> Note: this looked worse than original Hover + 50 Height setting and clickability did not improve!
+
+Note on graveyard revive:
+- Should the time for revival be something like 60s? or be 30s but have option to "release" the corpse
+>>> This would add time to decide whether to use Spirit shard or if AI Hero is close and can resurrect
+>>> AI heroes to have longer respawn, e.g., 60-120s time
+
+Quest Icon troubleshooting
+- There was unnecessary / improper use of functions like RemoveQuest / UpdateNPC in wrong places;
+- Quest Icon Refresh had RemoveQuest, which does delete the quest with ID XXX, so if we want to update quest's status to 5 etc. we cant remove the quest
+>>> Use: call QuestIcon_RegisterQuest -function with same questID to refresh the quest's state.
+
+Creep Unit Assignments -trigger created
+- Started mapping units to proper unit variables when they are respawned (e.g., Quest givers, important npcs which Unit variable must be set)
+>>> Note: Made first trigger but realized that the Creep Respawn trigger uses local variables that are important to respawn / variable re-assignment and so thus transferred unit assignments into "Creep Respawn" trigger
+
+Debug DayNight
+- using "debug daynight" command: it returns FALSE (NIGHT) when it is DAY (6:45) and it should be TRUE
+>>> THIS CAN AFFECT CAMPING FOR AI HEROES ETC MANY OTHER TRIGGERS which use Boolean DNE_IsDay
+
+Zone DayNight
+- event seems to work now and will change fog to night setting or day setting when night or day event is fired
+
+Zone Entering texts
+- NOTE: Discovered zone + followed by Entered zone when coming with Zulkis after Nazgrek, then it wont refire again
+>>> Edit: this only seemed to occur atleast for Riverbane, but e.g. Siresong worked properly
+
+Quest Explosive Crisis
+- NOTE: Quest Update Ready to turn in only triggered when Nazgrek had more than 6 Barrels in inventory, 
+- it did not set the Question mark to yellow (State 5)
+- it also trigger 2 times
+- Quest Requirement was not completed - but is this wanted (if the player is attacked and thus barrels might be removed, the quest requirement should be set back to discovered)
+
+Quest Boomsite Compliance
+- NOTE: Quest mark for Boom Brothers did not change to yellow question mark (QuestState 5)
+- NOTE: Quest mark of AtexBlix was not removed
+>>> Something probably not correct in QuestIcon System jass
+
+Quest More Hazard Mitigation
+- NOTE:Quest is updated twice when Quest item is acquired, is still related to Item Stack system?
+
+Quest Mandatory Training
+- NOTE: Goblin miners are not following BoomBrothers / tried to follow but stopped???
+>>> They followed BoomBRothers when they were close to BoomBrothers - some InRange typish check logic is now wrong and needs modification
+- Note: Mad Blix Temp cant get through the mine to the entrance, too big collision - Ghost visible did not seem to work - change spawn location more closer to entrance
+- Note: has to remove the Mad Blix after some time / entering region, because now using generic timer for unit - causes him to die in tunnel which looks poor
+
+Quest Boom Will Be Back
+- NOTE: Cameras dont pan to right location
+- NOTE: BoomBrothers should move to BoomBrotherWP0XXX and have new dummy quest available after the turrets / enemies are dead
+- NOTE: Quest mark should be yellow question (ready to turn in / quest state 5) when Mad Blix is defeated
+- NOTE: After completing the quest - dialog button Boom Will Be Back (completion) is created, when it should not be visible anymore
+
+SteamBreath
+- NOTE: SteamBreath stuck on even when its not raining!
+- NOTE: SteamBreath remains on unit that is dead, it should be removed when the unit dies!
+
+Zone/Dungeon - Boom Mine
+- NOTE: No trigger to trigger Sirensong Zone after leaving the Mine! Stuck on Boom Mine fog / etc setting
+- NOTE: Add pan camera function
+
+=== LAG PREVENTION NOTE:
+use command "debug aidisablemainstates" to prevent AI Hero system causing lag
+>>> Testing for longer time the map without AI - theres no lag / spikes - so look for AI system to remove Leaks / etc.
+
+=================================================================================================================================================
+Epic Quests 13.8.2025 - List of Actions:
+
+Modular Quests:
+- Empty space \n\n added to proper space in Quest Discovered trigger
+- Added "- " to all Quest Requirements 
+
+Quest Icon system / Quests
+- After completing "Explosive Crisis":
+--> Quest Grey mark was removed - OK
+--> No new "dummy" quest icon marks for Atex Blix and Boom Brothers were created!
+--> After getting Boom Compliance quest (CREATE) - both Atex Blix and Boom Brothers have Grey Quest mark (normal quest) - is it wanted?
+- Also new quest markers for these quest should be updated when QUEST 1Q1C etc is run at the end (after all the chat) 
+>>> EDIT: Reason was; using QuestState that was set to 4 (for previous quest), dummy quest icon needs QuestState = 2 - corrected and also placed "New Quest" to place after dialogs (vs. not immediately after completing the quest)
+
+Quest Explosive Crisis
+- Added turn on Quest Update and turn off Quest Update calls
+>>> This Quest Ready to turn in did not seem to work...
+
+Boomsite Compliance
+- Remove quest mark from Atex Blix when all wood collected
+>>> EDITED and added Quest Ready trigger that will be run during AtexBlix dialog if all 10 woods are accepted
+- Change BoomBrothers quest icon "Ready to turn in" when all wood collected
+>>> EDITED and added Quest Ready trigger that will be run during AtexBlix dialog if all 10 woods are accepted
+>>> When Quest Update ready to turn in, BoomBrothers dont have any Yellow question mark! 
+>>>>>> Reason: Call QuestIcon_RemoveQuest(unit u, integer questID) was called, this will delete the Quest from NPC, which should not be used but only when completing the quest!
+
+Abilities:
+- NOTE: Texts for many abilities wrong e.g., Healing Wave does not match what it heals (base heal amount)
+
+NIGH / DAY + Zones:
+- When NighEvent or DayEVent triggers - Run some zone trigger that will check what zone player is in - then run that zones Zone specific trigger
+---> might need some array system to run the proper zone! + store where player currently is!
+>>> EDITED: added DayNightEvent to run Zone trigger based on what the current Zone/Dungeon the player is in
+>>>>> Does not 1st time work, 2nd time works, 3rd time Zone is stuck in NightTime fog setting
+
+Zones:
+- Added zoneCurrent and ZoneLast functionalities; Zone trigger must trigger only once, but work other time when coming from other zone
+>>> Logic:
+>>>>>> First hero to enter a specific zone triggers it.
+>>>>>>Any other hero entering that same zone right after won’t trigger it again.
+>>>>>>If you move to another zone, that zone’s trigger still works normally.
+- Needs to be tested, maybe the setup now is too complicated vs. what the function needed is....
+
+> ZoneCurrent/ZoneLast logic did not work, other unit entering the region also triggered the trigger
+>>> EDITED; Streamlined and made the logic much more simpler....
+
+Spirit Shards
+- Wrong tooltip / shows Storm Bolt (Level 1) when it should show "Revive Hero" / "Spirit Shard" / "Resurrect"
+- Maybe should resurrect the fallen Hero at the location of the resurrecting hero
+- Hard to click the "!" unit - maybe make it hover / fly +200 etc. and test if its easier to click?
+
+=================================================================================================================================================
+Epic Quests 11.8.2025 - List of Actions:
+
+Boom Brothers
+- EDITED: prevent "normal talk" when Quest Boom Will Be Back is discovered
+- EDITED: did not stop following after completing quest Mandatory Training
+- EDITED: Boom Will Be Back could not be completed after Defeating Mad Blix -> no dialog button to complete
+
+AtexBlix
+- EDITED: did not fit through mine pathing blockers to come at the entrance - need to at abilty Ghost (visible) to him
+
+Modular quests:
+- EDITED: Note that there should be empty space with "|n|n" after Quest Discovered + Quest TItle + (here) + Quest Requirement + n....
+- Note: QuestGiverUnit should be stored per QuestID related to the quest to QuestData hashtable
+--- This is stored into questData already, but not utilized properly, >> now should be used
+- EDITED: Modified quest create / quest complete triggers; set quest that is being completed QuestState to 4 (complete) - then create new dummy quest with id 9990 to create visual effect of new Quest available (yellow exclamation mark)
+- EDITED: Save hashtable trigger - separated from Quest Create triggers
+- EDITED: QuestGiverUnit[QuestID / QuestID_Temp] created + now using QuestGiverUnitTemp to initially set the Quest Giver unit that will be stored into QuestGiverUnit[QuestID]
+
+Quest Explosive Crisis
+- Added Quest Update trigger to update "Ready to turn in" state for Boom Brothers - needs testing that all relevant Call QuestIcon_xxx are used
+>>> TEST RESULT: OK
+
+Terrain:
+- Minor continue of Boom Brother mine (almost ready Major terrain parts)
+
+=================================================================================================================================================
+Epic Quests 10.8.2025 - List of Actions:
+
+QUEST ICON SYSTEM
+- reworked the system
+- related quest system triggers call scripts updated to match the updated quest icon system function calls
+- Testing;
+>> Red (Grey) Exclamation mark on BoomBrothers Init Icon
+>>>>> Also this mark came when Quest was COMPLETED!
+>>>>>> EDITED - should be now fixed - State was set to 1 (unavailable) instead of 2 (available)
+>> Grey question mark when quest is accepted (CREATED) >> OK
+>> Note: Set quest requirement complete when you have requirement complete and then set the QuestIcon to Yellow Question mark (Ready to turn in)
+>> Note: Should the MapIcon be Question mark when quest is "in Progress?"
+
+>> Note: after edits, now yellow exclamation mark when it should be Grey Question mark when Quest is CREATED! - Previosly it worked, it seems that priority system is taking affect???
+>> note: "Debug quest reward item" -message was shown when quest is CREATED! >> REMOVED TEXT
+
+Modular quests:
+- Note that there should be empty space with "|n|n" after Quest Discovered + Quest TItle + (here) + Quest Requirement + n....
+
+AtexBlix
+- did not fit through mine pathing blockers to come at the entrance - need to at abilty Ghost (visible) to him
+
+Boom Brothers
+- prevent "normal talk" when Quest Boom Will Be Back is discovered
+- did not stop following after completing quest Mandatory Training
+- Boom Will Be Back could not be completed after Defeating Mad Blix -> no dialog button to complete
+
+Bridges:
+- Added bridge008 activate/deactivate triggers in Sirensong
+- Switched entering regions Event logic, should be now correct? >>> Yes.
+- Note# Need to add check target of issue of the unit to move the units correctly near the bridge (especially when the pathing blockers on bridge entering sides are active)
+- Make the related triggers (e.g. creating side pathing blockers) more easy using "For Each Loops"
+
+Terrain:
+- Minor continue of Boom Brother mine
+
+Lag note:
+- Without disabling ai with "debug aidisablemainstates" - things get pretty stuttering and laggy at some point
+- However, when disabling ai with above command, things settle and fps kind of stabilizes, there are some spikes still
+
+=================================================================================================================================================
+Epic Quests 9.8.2025 - List of Actions:
+
+QUEST ICON SYSTEM
+- working on making the system working and without compiler errors
+- Testing results:
+--- Init trigger - quest icon/marker on map works
+--- On Quest Discover - quest icon/marker correctly changed - except - on map the icon is yellow Turn In question mark (is it wanted or more preferable to have no icon on map when quest is in-progress?
+--- After completing the quest; 
+>>>>> Quest Turnin map icon was not removed
+>>>>> Quest Exclamination mark was not created on the BoomBrothers or on the map
+>>>>>>>>>> Probably trigger related stuff..
+>>>>> But then when getting NEW quest - correctly made Question mark on the Unit/map
+
+>>> EDITED by setting QuestState to 2 after quest completion and when no quests anymore to 4, now test!
+
+MODULAR QUESTS
+- Quest System Complete Rewards added - all rewards related are now also generic, which is run from the unique Quest XXX Completed trigger
+
+=================================================================================================================================================
+Epic Quests 8.8.2025 - List of Actions:
+
+MODULAR QUESTS
+- added QuestType and QuestState and QuestGiverUnit
+- Load Hashtable, Complete, Discover related Generic functions made into separate triggers, which are called by the unique Quest XXX Discover/Quest XXX Completed triggers
+>>> things that don't change quest by quest, this way easier to manage if changes to design of the Hashtables / etc. error finding.
+
+QUEST ICON SYSTEM added
+- modular quests will have calls to this system
+- multiple Quest Icon MAP related errors; can not be used with Hashtables?
+- see if the code can be adjusted, notice that the latest script is not in the map!
+
+=================================================================================================================================================
+Epic Quests 6.8.2025 - List of Actions:
+
+MODULAR QUESTS
+- Modified strings for linebreaks "\n"
+- Added generic kill and gather arrays + texts if using those (Boolean Active = TRUE)
+
+XP:
+- Modified Cinematic OFF trigger to prevent enabling XP gain for other units than Nazgrek and Zulkis (e.g., bag, companiondummy unit, etc.)
+
+=================================================================================================================================================
+Epic Quests 5.8.2025 - List of Actions:
+
+MODULAR QUEST REWARDS:
+- Quest reward item name get function created
+- Finalized rewards texts
+- added Quest Icon Path array string
+- Now should be fully usable for new (+ re-edit older quests) quests, there is still some manual work, but now should be less work involved...
+
+- Issues found so far:
+--- Quest discovered Text reads QUEST|n|n|n|n
+>>> Edited; Should now work, as reading from hashtable was set too early before creating the quest, meaning nothing was really stored inside the quest
+
+--- Quest requirement text does not need additional "-" sign, Quest log will add it automatically, however Quest Display text wont have it..., so ...
+>> Edited
+
+--- Quest Completed text reads: Rewards|nXP: 500|nGold: 500 - however in Message log it looks properly
+>> EDITED - TEST!
+
+--- QUEST COMPLETED|nBoomsite Compliance (in message log it reads correctly...)
+>> EDITED - TEST!
+
+- Notes:
+--- After Boomsite Compliance - set Boom Brothers to go "inside" the mine and then return (set collision to 0 / add ghost visible ability and then remove it
+--- After Dust Migation - set AtexBlix to go "inside" the mine and then return (set collision to 0 / add ghost visible ability and then remove it
+>> EDITED and added
+
+- Boom Brothers if killed, should then respawn and continue following Player
+- Goblin miners if killed, should then respawn at Boom Brothers and continue following player (stop respawn/follow) and remove units when quest completed
+----- NOT ADDED LOGIC YET!
+
+- If Nazgrek is further than 1000-2000 yards, stop follow for goblin miners and Boom Brothers
+>> EDITED - TEST!
+
+- Add Grenade ability to Boom Brothers and other gadgets, but not normal attack
+- will assist player if player units are attacked (= make them as companions player units, but not add into companion group)
+>> EDITED - TEST!
+
+- maybe goblin miners should follow Boom Brothers instead of player
+>> EDITED - TEST!
+
+- when player selects Boom Brothers;
+--- camera must pan to BOom Brothers
+--- dialog button to command Hold position
+--- dialog button to follow
+------ ADDED: logic created inside "Button Pressed..." - TEST
+
+- When AT KOBOLD MINE; Camera looks weird, because panned to Boom Brothers but angle/etc. camera settings make camera go underground
+>> EDITED - TEST!
+
+- Returning back to Boom Brother mine did not trigger
+--- Issue with CV not set to BoomBrothers -unit -- probably
+>> EDITED - TEST!
+
+=================================================================================================================================================
+Epic Quests 2.8.2025 - List of Actions:
+
+MODULAR QUEST REWARDS:
+- Started using strings also during QUEST ID creation -
+---> Make changes to Boom Brother quests so that they follow the template (there will be some work.....)
+- Rewards:
+--- Added Arena Marks as option for reward
+--- Added Item-type as option for reward
+------ Note: Need a way to get a name of Item-Type, so less manual work. ELSE NEED TO WRITE DOWN THE NAME OF THE ITEM (but it could be useful)
+--- Rewards Texts still under work in Quest System Create and all the QUEST TEMPLATES
+--- Note#: RewardsText may look funny now if there are no e.g., Gold reward with those "| " lines
+--- Note#: RewardsText to be separate for QUEST DISCOVERED and for inside the QUEST DESCRIPTION!
+--- NOTE#:  local item i = CreateItem(udg_QuestRewardItem[QuestID],0,0) does not work as locals are only supported at the top of the function!
+
+=================================================================================================================================================
+Epic Quests 1.8.2025 - List of Actions:
+
+Lag testing
+--- LAG severly got less bad when disabling AI using "debug aidisablemainstates" 
+------ Still some lag spikes after this, probably Steam Breath affects
+------ Try adding debug disable SteamBreath / Thunderstorm
+
+MODULAR QUEST REWARDS:
+--> RESULT: Seems to work fine other than text rows needs some editing. 
+- EXTRA TESTS: Try discovering QUESTS in random order then complete them in random order --> Verify that Player is receiving correct REWARDS related to the quest - to see that QUEST ID / HASHtable is working
+
+---> See if you could get less re-writing of STRINGS, by possible storing string values into QuestID and retrieve them through Hashtable!
+
+=================================================================================================================================================
+Epic Quests 31.7.2025 - List of Actions:
+
+Lag checking:
+- When checking memory used by Warcraft III.exe, it keeps incrementing where rabidly, over 4- up to 5GB RAM
+
+- To be tested:
+---- Disable UnitHider again
+---- Disable New added Heal Engine - this could be source of new lag - despite the effort cleaning older triggers from memory leaks...
+---- SteamBreath / Rain / Thunderstorm causing laggyness?
+
+AI
+--- Added command "debug aidisablemainstates" - that will disable AI mainstates AND prevent new AI Hero Spawn
+
+Without AI and UnitHider systems, there seems to be lingering lag spikes;
+--- Try disable Heal Engine and see how it works then
+
+BUT RESULT: >>>>>> NO LAG
+--- LAG Causer either: AI system related triggers or AND UnitHider system
+---
+
+#Note regarding LAG:
+--- Memory keeps increasing steadily, but FPS remains OK (this might still be ok, as map has lots of things going on the background (item spawns, etc.)
+
+Quest System
+--- Modification to make modular quest rewards / texts system
+--- Problems with Hashtable / arrays to fetch proper QuestIDs - WIP!
+--- There needs to be way to check not to run QUEST ID etc related generation when QUEST DISCOVERED / QUEST COMPLETED ARE RUN
+--- Quest description text didnt work as planned: description of the text was old and Rewads only text without gold /XP ----> Reason: Create trigger has old stuff, latest ones are inthe Quest System trigger
+--- Now done for quests QuestExplosiveCrisis & BoomsiteCompliance
+------> To be tested 
+
+-Continued Boom Brother Mine terraining
+
+
+Quest Mandatory Training
+- Wrong quest More Hazard Trainign was discovered!
+- Goblins dont follow Nazgrek
+->> Should be NOW fixed.
+
+=================================================================================================================================================
+Epic Quests 30.7.2025 - List of Actions:
+
+AI triggers added/modified:
+- New "Horde NPC Inventory State XXX"
+--- will trigger when AI hero loses/acquires/uses item and then logic is made whether to go buy new item(s) or go sell item(s)
+--- Logic transferred from MAIN STATE trigger
+- New "Horde NPC Buy Items Q XXX"
+--- Logic transferred from MAIN STATE -trigger "ITEMS BOUGHT"
+- New "Horde NPC Sell Items Q XXX" trigger
+--- Logic transferred from MAIN STATE -trigger "ITEMS SOLD"
+- New "Horde NPC Camp Night Time XXX" -trigger - where actually start AI camping when night starts (vs. not check periodically is it night)
+--- previous camp trigger name changed to "Horde NPC Camp Night Time Q XXX"
+- These changes made to Rogue, Warlock, Warrior
+
+- Started thinking and drafting "Quest Rewards" template that is to be used in every quest related XP / Gold / other rewards
+
+=================================================================================================================================================
+Epic Quests 29.7.2025 - List of Actions:
+
+- Heal Engine 1.0.4 by Marchombre
+--- System added to the map
+
+- NPC AI Heroes:
+--- CampFire position memory leaks fixed
+--- Shop BUY - multiple position memory leaks fixed - Note: Can there be conflict using same NPC_VarPointX for each AI Hero MAIN STATE triggers?
+--- Note: AI logic system can be the cause of lags / memory leaks staggering up
+
+- Experience / Rested experience
+--- Disabled: Experience Rested Unit Dies
+--- Disabled: Experience Rested System Init
+--- Cause: XP floating text comes 2 times or more
+--- Created Experience Rested Unit Dies Test for testing XP floating text
+
+=================================================================================================================================================
+Epic Quests 28.7.2025 - List of Actions:
+
+- Trying to fix leaks:
+--- SteamBreath edited -> Script combined into one single script instead of "create" & "destroy"
+--- FrostbiteSystem edited
+--- Item Remove trigger edited
+--- Destroy Crystals Limit trigger edited
+--- Destroy Ore Limits trigger edited
+--- Bag Follow trigger edited
+--- HeroDeathRessurect AI Hero Reviver + Loop triggers disabled as they could be worked more + they are not working currently + possible causers of lag
+--- Notes: Gar & Gor movement triggers are shit, poor / no conditions
+--- Notes: AI hero states can cause lag, especially if they get stuck repeat on some actions like warrior's buy
+--- Notes: RAGE ENERGY SYSTEM could cause lags - especially if the unit tries to keep using item, but its denied
+--- Fog Fade system (The_Flood's Fog System) - could it cause lag?
+--- Disabled Wandering Hostile NPCs triggers - these should be checked/re-edited to be more fine adjusted + check no leaks
+--- ... lots of more triggers to check....
+
+=================================================================================================================================================
+Epic Quests 27.7.2025 - List of Actions:
+
+- Cinematic Player (Player 22 Snow) now treated as ally by all players (previously was neutral and was attacked during a cinematic cutscene)
+--- Problem with this version is; Player 22 or vise versa could go assist others which can break the immersion
+
+- AtexBlix and BoomBrothers quest / dungeon continue
+
+=================================================================================================================================================
+Epic Quests 26.7.2025 - List of Actions:
+
+- AtexBlix
+--- Fixing dialog
+
+- Boom Brothers Mine
+--- Terraining / doodads
+
+- UnitHider; now re-enabled - cause of lag must be found from other periodic triggers/newer JASS scripts (like Frostbite system / etc.)
+
+=================================================================================================================================================
+Epic Quests 25.7.2025 - List of Actions:
+
+Create neutral sea life creatues (crab, turtle, ...) with proper levels
+--- Created 10, 12, 14 level Spider Crabs
+--- Created 10, 15, 14 level Sea Turtles + 16 level Azuron - sea turtle miniboss
+--- Spider Crab Shorecrawler, Sea Turtle (lvl 10) + Giant Sea Turtle (lvl 15) added Neutral unit trigger
+
+- AtexBlix
+--- Clicking Blix before his quests will result in just Blix turning to Nazgrek, and no dialog / etc.
+--- need to add normal greets/ etc?, or just can be talked when: 1st quest complete, 2nd quest discovered
+
+- Sounds 
+--- Finalized adding seaturtle, Firefly (Moth), crab sound files (attacked/attacking / death)
+
+- Sky
+--- SkyHellish + SkyDungeon removed (related triggers + model files)
+
+DNC
+- added String-type condition check to not run the trigger, if its setting is already run before
+- added DNC_OutdoorsRed
+
+Zones:
+--- Combined Discovered and normal Zone triggers into one for more clearer structure/readability + less same kind of triggers...
+--- Added some new zones to Sirensong, Verdant Plains
+
+Boom Brothers / Atex Blix:
+- Continued with more quests / voicelines
+- Created Boom Brothers Mine -dungeon - not finished yet
+
+=================================================================================================================================================
+Epic Quests 22.7.2025 - List of Actions:
+
+- Fixed issues related to AtexBlix / BoomBrothers quests/events - not finished yet...
+--- Note 6 fixed
+--- Note 2, 3, 6 could be fixed now - cause was DialogSkipped was set to TRUE, causing the triggers not to continue... Now each DialogOver trigger contains DialogSkipped = False at the end
+--- Note 4; created Atex wood inspection, could be improved though
+----- Need to remove completion at Boom Brothers for these quests (Note 5 related)
+--- More Hazard Mitigation quest created; could need some more work with lines, etc. way of handling the quest
+
+=================================================================================================================================================
+Epic Quests 21.7.2025 - List of Actions:
+
+- Boom Brothers / "AtexBlix" quests continued working
+--- Note #1: All quests available at dialog - should be 1 at a time, check conditions in trigger "Create BoomBrotherDialog01"
+--- Note #2: Completing Explosive Crisis results in new camera angle, but nothing happens after that and stuck in cinematic mode, it could however be skipped and then Explosive Crisis will be completed
+--- Note #3: Nothing happens when clicking Boomsite Compliance, but using ESC key to skip, then the quest is discovered
+--- Note #4: add return / click trigger to AtexBlix after quest is discovered
+--- Note #5: quest will be completed at AtexBlix, not BoomBrothers
+--- Note #6: same thing when completing BoomSite compliance, skipping works, but no dialogue before that
+--- Note #7: Whoa whoa whoa -line only should have one "whoah" for AtexBlix
+- Added triggers for attacked/attacking sounds for Tigers, panthers, lynx, stags/deers
+- Skybox testing;
+--- SkyDungeon edited now as static
+--- SkyHellish red and animated
+--- Notes: Sky sphre looks shit, and also sometimes looks black???/
+--- SkyDungeon sky crashed game, could be just Blizzard bug, but also could be model issus / corrupt of deleting Global Sequence / animation...
+
+=================================================================================================================================================
+Epic Quests 20.7.2025 - List of Actions:
+
+- Fixed Boom Brothers moving / couldn't talk to him bug
+- Added "Explosive Risk Assessor Blix" with quest follow ups for Boom Brothers
+--- Voicelines + voice files
+--- Triggers; Buttons pressed / dialogues / quest creation
+- Note 1#: Cannot complete quest with 6 barrels in inventory, just says the lines when not all items in inventory
+- Note 2#: if not taken any quests, there are no "NORMAL GREET" -lines - should there be?
+
+- Skybox testing:
+--- Sky is animated; remove animation for SkyDungeon
+--- Sky (RED) can be animated, but requires testing
+
+- Sirensong; continued terraining
+
+- NPCs;
+--- Tigers with proper levels
+--- Panthers with proper levels
+--- Raptors with proper levels
+
+- Sounds
+--- Added raptor, tiger, seaturtle, nagaFemale, deer/elk, Firefly, crab sound files (attacked/attacking / death)
+--- abilities; could create new variations to Dash/Shred/RIP etc.
+
+- TO BE Removed 2nd player / GetLocalPlayer features --> 2-player playable map feature discarded as too much work would be involved - Zul'kis will remain as 2nd playable hero for Player 1
+-- TO BE Edited following associated triggers/functions/configurations:
+--- XXX
+
+=================================================================================================================================================
+Epic Quests 19.7.2025 - List of Actions:
+- Testing skyboxes (see previous notes)
+--- Note: Added skyboxes dont stretch, and are displayed like normal models, it can be seen around the camera, --> not looking great!
+--- Modified to Zones / DNCs / Entering/leaving Gnoll Hideout
+- Fixed Boomer Brothers dialog if/elses + now correct quest should be discovered
+- Added random movement to Boom Brothers;
+--- Bug on; wait for issue order stop is not working, the Boomer is stuck on "Moving"
+--- See if it could be simplified more + usable for other NPCs in the map
+--- Safety-mechanism should be added in case the NPC gets stuck for any reason (other unit blocking, etc.) --> If not using "current order not equal smart / or move...", maybe it will work
+- Add "Unstable explosives" buff to unit carrying 1 or more "Barrel of Explosives" -> When carrying Barrel of Explosives, there is 25 % chance for them to explode, greatly damaging the carrier!
+- Camera lock bugged after new patch 2.03! --> Lock to unit does not work
+- Discovery? AI heroes, especially different periodically run triggers causes lag spikes
+
+=================================================================================================================================================
+Epic Quests 18.7.2025 - List of Actions:
+
+- Creep Respawn System / Creep Respawn -trigger
+--- Modified to set Unit variable e.g., Ragno if the respawning unit-type is Ragno etc. 
+--- Test now with Ragno 1) kill Ragno 2) wait for respawn 3) try to click him to get dialogue / quest(s), if it works, the system works and you should add all important units like quest givers to the Creep Respawn -trigger if they are not invulnerable and can be killed.
+- Imported dungeon like skybox shibi.mdx and hellish/fiery skybox xingkong3.mdx
+--- Use shibi.mdx for dungeons like: Gnoll Hideout, The Crypt
+--- Use xingkong3.mdx for: The Firelands, Dragon Lair
+- Sirensong;
+--- goblins "Boom Brothers" created; fixed / edited dialogue triggers (bug on Farewell, etc.)
+--- Some lite terraining
+
+=================================================================================================================================================
+Epic Quests 10.7.2025 - List of Actions
+- Sirensong;
+--- Added draft idea for goblin sappers at the entrance of old mine who will need the Hero to search for Explosive barrels, barrels are highly unstable
+--- Created base for quest dialogs
+
+=================================================================================================================================================
+Epic Quests 6.7.2025-2 - List of actions:
+- Blood/bleed effects:
+--- Fixed Point for the generic blood splat unit
+--- Added SFX for the Blood Effect
+- Units:
+--- Added Panther boss and renamed Devilsaur as boss
+- Terrain:
+--- Continued Sirensong
+
+=================================================================================================================================================
+Epic Quests 5.7.2025 - List of actions:
+- Blood/bleed effects:
+--- Added Blood Splats and modified Bleed triggers, there is a chance to spawn blood effects on ground when attacked and under 25% hp or when the unit dies
+
+=================================================================================================================================================
+Epic Quests 4.7.2025 - List of actions:
+- Sirensong:
+-- Continued terraining southern end of the map, ogre / mine entrance areas
+- Added models:
+-- zombie, ghoul, moth, potions (potions models not used by any item, but imported)
+-- Withering Presence (based on immolation)
+-- Endemic Field (added as ability (test) for Soul Devourer Undead boss
+- Blood/bleed effects added when unit is 25% low and taking damage and chance to spawn blood effect on the unit
+-- Chance to occur maybe too low? + maybe start bleeding when below 25 %? or that kind of thing only for Heroes?
+
+==================================================================================================================================================
+Epic Quests 1.7.2025 - List of actions:
+- Sirensong:
+-- Continued terraining southern end of the map, sea shore area
+-- Bridge lifted near naga area
+- DestructibleHider >> enabled
+- Floating Text Spell:
+--- Modified floating text: "level of ability being cast -1
+--- Note: "tooltip missing" e.g., when using item (e.g., Spring Water)
+--- coloring now just uses the fixed coloring that is set in the tooltip text itself, its ok.
+- Camera:
+--- Interesting view by using: FoV 50-60, Dist 2200
+--- Rotate left & right should be inversed?
+--- BUG cinematics: if using arrow keys to rotate while transiting to Cinematic, camera will bug out in the cinematic but it will also remain bugged and stuck moving after the cinematic, can only be reset via /camera normal /cameral default etc. trying to use arrow keys....
+- Note on Riverbane bridge: need to lower bridge end/start Invisible platforms
+- Note on lag:
+--- It is possible that Frostbite system or other newest system cause lag by utilizing periodic timers...
+
+==================================================================================================================================================
+Epic Quests 30.6.2025 - List of actions:
+
+- Floating texts:
+-- Added "Floating Spell Name" + Floating Spell Configuration triggers to have floating texts for spells;
+--- This will need some conditions for blocking dummy units, and some wc3 internal spells e.g., critical strike, etc.
+--- Critical note: Can't use "unit enters playable map area" as event, because of the huge number of pre-placed units OR/AND many unit enters region events
+--- NEW: Init 07 on SETUP for "unit enters playable map area" events --> only use this trigger to run other triggers that need this event (SINGLE place for the generic event)
+--- Note: need to add "level of ability being cast + 1", now its level 1 for e.g., level 2 ability
+--- Note: coloring of ability does not work, it only works for some abilities tooltips as they already might have HEX coloring in them, so results is not clear always, best would be to have the ability text without coloring and then only the level is in different color
+- Sirensong:
+
+==================================================================================================================================================
+Epic Quests 27.6.2025 - List of actions:
+
+- Sirensong:
+-- Continued terraining southern end of the map, sea shore area
+
+==================================================================================================================================================
+Epic Quests 25.6.2025 - List of actions:
+
+- Note on textures: lots of imported duplicate textures with path war3mapImported / war3campImported .blp files that should be removed 
+- Note on re-imported textures:
+"C:\Users\Valtteri\Desktop\WowExport\Model and texture fixes 2025-06\orczeppelinhouse_durotar01\Texture re import\mm_ogrmr_floor_01.blp"
+"C:\Users\Valtteri\Desktop\WowExport\Model and texture fixes 2025-06\orczeppelinhouse_durotar01\Texture re import\mm_ogrmr_floor_02.blp"
+"C:\Users\Valtteri\Desktop\WowExport\Model and texture fixes 2025-06\orczeppelinhouse_durotar01\Texture re import\mm_ogrmr_floor_03.blp"
+"C:\Users\Valtteri\Desktop\WowExport\Model and texture fixes 2025-06\orczeppelinhouse_durotar01\Texture re import\mm_ogrmr_int_trim_01.blp"
+"C:\Users\Valtteri\Desktop\WowExport\Model and texture fixes 2025-06\orczeppelinhouse_durotar01\Texture re import\mm_ogrmr_int_trim_02.blp"
+"C:\Users\Valtteri\Desktop\WowExport\Model and texture fixes 2025-06\orczeppelinhouse_durotar01\Texture re import\mm_ogrmr_int_wall_01.blp"
+"C:\Users\Valtteri\Desktop\WowExport\Model and texture fixes 2025-06\orczeppelinhouse_durotar01\Texture re import\mm_ogrmr_int_wall_02.blp"
+"C:\Users\Valtteri\Desktop\WowExport\Model and texture fixes 2025-06\orczeppelinhouse_durotar01\Texture re import\mm_ogrmr_roof_02.blp"
+"C:\Users\Valtteri\Desktop\WowExport\Model and texture fixes 2025-06\orczeppelinhouse_durotar01\Texture re import\mm_ogrmr_roof_03.blp"
+"C:\Users\Valtteri\Desktop\WowExport\Model and texture fixes 2025-06\orczeppelinhouse_durotar01\Texture re import\mm_ogrmr_trim_01.blp"
+"C:\Users\Valtteri\Desktop\WowExport\Model and texture fixes 2025-06\orczeppelinhouse_durotar01\Texture re import\mm_ogrmr_trim_02.blp"
+"C:\Users\Valtteri\Desktop\WowExport\Model and texture fixes 2025-06\orczeppelinhouse_durotar01\Texture re import\mm_ogrmr_wall_01.blp"
+"C:\Users\Valtteri\Desktop\WowExport\Model and texture fixes 2025-06\orczeppelinhouse_durotar01\Texture re import\mm_ogrmr_wall_02.blp"
+"C:\Users\Valtteri\Desktop\WowExport\Model and texture fixes 2025-06\orczeppelinhouse_durotar01\Texture re import\mm_ogrmr_window_01.blp"
+---> Now black / glitching occurs also on orc hut!!!!!! Previous textures worked better!
+- Sirensong:
+-- Continued terraining southern end of the map, sea shore area
+
+- Note on lag issues:
+-- Previously disabled Stats check 2 -trigger was not the (main) cause of lag, still getting laggier after some time
+-- Also; when units shown? or area near at water elemental boss caused fps to drop to 2 fps, could also be because of overlapping of Unit hider on AI / other units??
+-- Now testing: 
+----- disabled UnitHider + related triggers and functions in CinematicON, CinematicOFF, Intro Cinematic Cleanup
+----- disabled DestructibleHider
+
+==================================================================================================================================================
+Epic Quests 24.6.2025 - List of actions:
+
+- Crash after doing countless regions for zones + some STV/jungle like doodad search, nothing fully inserted
+-- Crash caused by STV_root01, could be others that may cause similar crash, or its related to the weirdly huge sizes, but most likely texture issue.
+- modify Valkier to be "on foot" instead of on air, still need to fix her stand animation OR remove
+- Stats check 2 -trigger disabled temporally
+-- To check if this is causing lag / memory leak
+--- seemed to be better, but needs more testing, still some minor peaks not that bad?
+
+==================================================================================================================================================
+Epic Quests 21.6.2025 - List of actions:
+
+- Testing UnitHider1.1
+-- whether it even works AND if memory leaks are reduced
+-- Results: it does not work AND it lags even more!
+-- Reverting to UnitHider1.0
+
+Added units in WE:
+- Core Hound
+- NorthrendskeletonmaleBosses (Skullreaver)
+- Valkier (Seralyth)
+
+Terrain / doodads
+- Added altar of storms to Dragonfire Peaks
+- Added fel orcs at the altar of storms, some quest related to multiple Altar of Storms located in multiple locations in the map
+- Sirensong terraining forward slightly
+-- Sirensong Orc base edited forward
+-- Sirensong orc base doodads some may require some editing (black textures when viewed from afar
+
+Issues after testing:
+- Valkier model bad; in air + changing stand animation to flying
+
+Orc doodads (zeppelin):
+- Tried to use UV remapping on black/glitchy orc zeppelin -> did not work
+- Tried to use wrap width & wrap height on orc zeppelin and re-import the model (without re-importing textures) -> did not work, maybe need to re-import textures or related to Material filter modes
+
+- Progressive lag / memory leak; gets bad quite quickly; 
+-- To test in next revision:
+--- Disable UnitHider
+--- Disable DestructibleHider
+--- Disable AI hero spawning >> a)
+--- Disable AI hero spawning, but leave UnitHider enabled >> b)
+
+==================================================================================================================================================
