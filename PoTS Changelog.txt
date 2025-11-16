@@ -2,6 +2,555 @@
 ------------- WC3 - Path of the Shaman: CHANGELOG -------------
 =================================================================================================================================================
 
+=================================================================================================================================================
+Epic Quests 16.11.2025 - List of Actions:
+
+Imported many models from WoW (mainly Crypt-dungeon targeted, but other misc models as well:
+CRYPT / UNDEAD 	
+	md_cryptsimpleent_part1.mdx
+	md_cryptsimpleent_part2.mdx
+	md_cryptsimpleent1.mdx
+	world_wmo_dungeon_md_cryptsimpleent_md_cryptsimpleent.wmo.mdx
+	world_azeroth_karazahn_activedoodads_karazahn_gatedoors.mdx
+	world_azeroth_karazahn_passivedoodads_rubble_karazahnrockrubble01.mdx
+	world_azeroth_karazahn_passivedoodads_rubble_karazahnrockrubble02.mdx
+	world_expansion02_doodads_generic_scourge_sc_platform2.mdx
+	world_expansion02_doodads_generic_scourge_sc_spirits_02.mdx
+	world_expansion02_doodads_generic_scourge_sc_spirits_03.mdx
+	world_expansion02_doodads_generic_scourge_sc_stairs2.mdx
+	world_generic_human_passive doodads_fire_undeadcampfire.mdx
+	world_generic_passivedoodads_deathskeletons_scourgefemaledeathskeleton.mdx
+	world_generic_passivedoodads_deathskeletons_scourgemaledeathskeleton.mdx
+	world_generic_undead_passive doodads_undeadalchemytable_undead_alchemy_table.mdx
+	world_generic_undead_passive doodads_undercityslimefalls_undercityslimefalls01.mdx
+	world_lordaeron_arathi_passivedoodads_impalingstonecorpses_impalingstone_corpse_01.mdx
+	world_lordaeron_arathi_passivedoodads_impalingstonecorpses_impalingstone_corpse_02.mdx
+	world_lordaeron_plagueland_passivedoodads_hangingscourge_scourgebodyhangingfemale01.mdx
+	world_lordaeron_plagueland_passivedoodads_hangingscourge_scourgebodyhangingfemale02.mdx
+	world_lordaeron_scholomance_passivedoodads_bookshelves_scholme_bookshelf.mdx
+	world_lordaeron_scholomance_passivedoodads_bookshelves_scholme_bookshelflarge.mdx
+	world_lordaeron_scholomance_passivedoodads_bookshelves_scholme_bookshelfsmall.mdx
+	world_lordaeron_scholomance_passivedoodads_candles_floorcandlescorner01.mdx
+	world_lordaeron_scholomance_passivedoodads_candles_floorcandlescorner01green.mdx
+	world_lordaeron_scholomance_passivedoodads_candles_floorcandlesstraight02.mdx
+	world_lordaeron_scholomance_passivedoodads_candles_floorcandlesstraight02green.mdx
+	world_lordaeron_scholomance_passivedoodads_candles_floorcandlesstraight04.mdx
+	world_lordaeron_scholomance_passivedoodads_candles_floorcandlesstraight04green.mdx
+	world_lordaeron_scholomance_passivedoodads_candles_scholme_greenrug.mdx
+	world_lordaeron_scholomance_passivedoodads_candles_scholme_purplerug.mdx
+	world_lordaeron_scholomance_passivedoodads_cauldrons_greenbubblingcauldron.mdx
+	world_lordaeron_scholomance_passivedoodads_operationtables_creepyoperationtable01.mdx
+	world_lordaeron_stratholme_activedoodads_doors_largeportcullis.mdx
+	world_lordaeron_stratholme_activedoodads_doors_smallportcullis.mdx
+	world_lordaeron_stratholme_passivedoodads_anvil_nox_anvil.mdx
+	world_lordaeron_tirisfalglade_passivedoodads_bodies_massgrave.mdx
+	world_lordaeron_tirisfalglade_passivedoodads_bodies_scourgebodyhanging01.mdx
+	world_lordaeron_tirisfalglade_passivedoodads_bodies_scourgebodyhanging03.mdx
+	world_lordaeron_tirisfalglade_passivedoodads_graves_brillgraves01.mdx
+	world_wmo_azeroth_buildings_chapel_duskwoodchapel.wmo.mdx
+	world_azeroth_duskwood_passivedoodads_darkshireentrance_darkshireentrance01.mdx
+
+BANNERS	
+	world_expansion02_doodads_generic_highelf_he_banner_03.mdx
+	world_expansion02_doodads_generic_scourge_sc_banner_03.mdx
+	world_expansion02_doodads_generic_scourge_sc_banner_04.mdx
+	world_expansion02_doodads_generic_scourge_sc_banner_06.mdx
+
+COFFINS	
+	world_expansion01_doodads_auchindoun_passivedoodads_coffin_ancient_d_coffin.mdx
+	world_azeroth_duskwood_passivedoodads_coffin_coffin.mdx
+	world_azeroth_duskwood_passivedoodads_coffinlid_coffinlid.mdx
+	
+OTHER	world_critter_fireflies_fireflies01.mdx
+	world_azeroth_burningsteppes_passivedoodads_warlockshrine_warlockshrine.mdx
+	world_azeroth_duskwood_passivedoodads_duskwoodscarecrow_duskscarecrow.mdx
+	
+FIRE	
+	creature_8fx_generic_fire_basic_bonfirehuge_smoke_8fx_generic_fire_basic_bonfirehuge_smoke.mdx
+	spells_stratholmefloatingembers_centered.mdx
+	world_generic_pvp_fires_lowpolyfire.mdx
+	
+SKYBOX	
+	environments_stars_deathknightfireskybox.mdx
+	environments_stars_firelandssky01.mdx
+	environments_stars_orgrimmarraid_firesky01.mdx
+	environments_stars_skywallskybox.mdx
+	environments_stars_battlefield_dirty_skybox.mdx
+	
+WAGONS	
+	world_generic_human_passive doodads_gypsywagons_stormwindgypsywagon01.mdx
+	world_kalimdor_mulgore_passivedoodads_burnedwagons_burnedgypsywagon01.mdx
+	world_kalimdor_mulgore_passivedoodads_burnedwagons_burnedgypsywagon02.mdx
+
+
+QuestEvaluateSystem
+- Fixing issues not working for pre-configured units
+
+
+=================================================================================================================================================
+Epic Quests 14.11.2025 - List of Actions:
+
+QuestEvaluateSystem
+- made the system more "automatic";
+- usage example:
+// In ConfigureQuestRequirements():
+call AddQuest(1, udg_Thrall, 5, Faction.getFaction("Horde"), 3000, "normal")
+
+QuestIconSystem 
+- hashtable made public so QuestEvaluatinSystem can access it
+
+Quest System Quest Givers -trigger
+-previously used to set initial quest icons (dummy)
+
+=================================================================================================================================================
+Epic Quests 13.11.2025 - List of Actions:
+
+QuestEvaluateSystem -created
+- QuestEvaluationSystem.j - The main system library
+- Evaluates quest availability every 5 seconds
+- Checks level, reputation, events, and custom conditions
+- Integrates with QuestIconSystem and Reputation library
+- Key Features:
+>>> Automatic evaluation every 5 seconds
+>>> Level requirements - Hero level checking
+>>> Reputation requirements - Uses your Reputation system API
+>>> Event-based quests - Support for boolean flag requirements
+>>> Custom conditions - Advanced requirement functions
+>>> Quest types - Normal, daily, repeatable, dungeon
+>>> Dynamic icons - Automatically shows gray ! (unavailable) or yellow/blue ! (available)
+>>> No duplicates - Prevents duplicate icons when quest becomes active
+>>> Easy configuration - All setup in two functions
+- How to use:
+1. Configure quest givers in ConfigureQuestGivers():
+call QuestEval_RegisterGiver(udg_YourNPC)
+2. Configure quest requirements in ConfigureQuestRequirements():
+call AddQuestRequirement(questID, npc, minLevel, faction, minRep, "normal")
+3. In your quest triggers, when player accepts quest:
+call QuestEval_MarkQuestActive(questID)
+4. When quest is turned in:
+call QuestEval_MarkQuestInactive(questID)
+
+=================================================================================================================================================
+Epic Quests 1.11.2025 - List of Actions:
+
+Reputation
+- debug messages hidden/shown with DEBUG variable (=set to FALSE to hide)
+- mapped players to faction all should follow the primary faction player alliance state
+- added debug calls for GUI debug commands:
+>>> call SetFactionReputation(Player(0), "Horde", 5000)
+>>> call TriggerFactionTemporalHostility("Horde")
+>>> call SetReputationMultiplier(true)  // Enable 10x
+>>> call SetReputationMultiplier(false) // Disable
+
+Patrol System
+- debug messages hidden/shown with DEBUG variable (=set to FALSE to hide)
+
+Patrol Group System
+- debug messages hidden/shown with DEBUG variable (=set to FALSE to hide)
+
+Neutral Creeps
+- lightning lizard
+- removed all unit-type checks from "Neutral Unit Dies", not needed
+
+Companions
+- When kicked will change the AI heroes ownership to original player (hardcoded...)
+- using udg_NPC_AI_XXX == no unit -> to check it the AI hero of is already created...
+>>> This logic in spawnging AI heroes could be more dynamic/versatile...
+
+=================================================================================================================================================
+Epic Quests 31.10.2025 - List of Actions:
+
+Reputation
+- when temporal hostility for faction is active - show icon "Hostile" then revert to what ever icon status of that faction is
+- show temporal hostility time left
+
+Companion abilities
+- should now work on Neutral units
+
+Patrol System
+- The units should now properly engage in combat when attacked without constantly being stopped
+
+
+
+
+=================================================================================================================================================
+Epic Quests 30.10.2025 - List of Actions:
+
+Reputation
+- faction temporarily hostility when attacked/unit killed by player0
+>>> When Player(0) attacks/kills a non-hostile faction unit → faction becomes temporarily hostile
+>>> After configured duration → faction returns to original status (based on reputation)
+>>> Already hostile/enemy factions are not affected (they're already hostile
+- Note: Alliances set in Init triggers for Player needs to be re-adjusted, because Reputation system is now the master (for Player 1)
+- companion player (player(18)) alliance to follow player0's status with each faction (configurable by false/true boolean)
+
+CreepRespawn
+- Added way to configure unit-types that will not be respawned
+
+AI Heroes
+- Horde heroes changed to Player6 (HORDE)
+- Note: may be breaking change and some things may not be correct as of this change!
+- When invited to Companion Group, are now changed to Player 19
+- When kicked, then changed back to their original player ownerships (WIP)
+
+Import:
+- Imported faction icons
+- Imported faction status icons
+
+Vanguard Vale
+- some terraining
+
+
+=================================================================================================================================================
+Epic Quests 29.10.2025 - List of Actions:
+
+PatrolSystem & PatrolGroupSystem
+- Now should work
+- unified PatrolSystem4.j under work and buggy (not used in map currently)
+- added functionalities to have patrol group waypoint be random at set region OR manually set waypoints from regions
+
+Reputation
+- added faction status icons
+- added faction icons
+- all factions now use same status icons
+- Reputation system is now the master system determine alliances for Player0, every computer unit alliances towards each other could also determined with this system with configurable boolean to utilize it or not
+- added function to not show faction related rep increase/decrease messages and be visible in multiboard
+
+
+=================================================================================================================================================
+Epic Quests 27.10.2025 - List of Actions:
+
+Reputation
+- Fixes long-lasting issues with the library (failing silently)
+- Now unit death event works because the library is completely initialized properly
+
+CreepRespawn
+- fixed wrong players in the configuration
+
+PatrolGroupSystem
+- still trying to get patrol group units moving - maybe try in test map...
+
+
+=================================================================================================================================================
+Epic Quests 26.10.2025 - List of Actions:
+
+Reputation system
+- small bug fixes
+- use " debug alliancestatus " to check if the selected unit's player is enemy with player1
+- Added Player-to-Faction Mapping System
+>>> Configured Player 2 and Player 6 as Horde
+- To add more players to certain faction (EXAMPLE):
+>>> call Faction.mapPlayerToFaction(Player(1), horde)  // Player 2
+>>> call Faction.mapPlayerToFaction(Player(9), horde)  // Player 10 is also Horde
+>>> call Faction.mapPlayerToFaction(Player(4), alliance)  // Player 5 is Alliance
+- Big issue: UNIT DEATH EVENT NOT WORKING
+
+Ghost Wolf
+- Items picked in Ghost Wolf shall now be transferred to invisible (real) morphed unit
+
+Creep Unit Assignment
+- Updated; added BossMountainGiant
+- Elarindor player units should now respawn
+
+Rifts Corrution 
+- Testing different channel based abiity for Aradion ritual spell
+>>> test with: " debug aradion "
+>>> stop test with: " ddebug aradion stop "
+- should now display quest as Failed when Aradion or Valeria dies
+- Valeria/Aradion should now return to their place when quest is failed
+- all Ritual related timer/trigger should now be disabled when quest is failed
+
+CinematicMover
+- added new move mode: 9 = No Return (move all units but don't return them)
+>>> Useful for cinematics / quests where you dont want to return any unit back
+
+DInventory system
+- Bug: DInventory - Stacking bug - After picking full stack of items of Item-type XXX, then next item of that item-type are inserted into DInventory as individual 1x charges and not adding the stacks (e.g., 6x -> 1x -> 1x -> 1x, etc.)
+- Root Cause: The FirstStackableItemSlotOfBID function in SharedDInvLib.j was finding and returning any existing stack of the same item type, without checking if that stack was already full. 
+- Modified the FirstStackableItemSlotOfBID function to check if a stack has available capacity before returning it
+- File Modified: SharedDInvLib.j / Function: FirstStackableItemSlotOfBID (lines 675-710)
+
+Patrol System
+
+Patrol Group System
+- Death Check Filter Issue (PatrolGroupSystem.j)
+>>> Added IsUnitInGroup() verification to ensure only deaths of actual patrol group members trigger the respawn check.
+- The delayed patrol start timer was only paused, not destroyed, causing potential memory leaks.
+>>> Changed PauseTimer() to DestroyTimer() and set to null.
+- Critical Bug in PatrolSystem.j - Wrong Data Stored
+>>> Added new hashtable key 11 to store unit count
+>>> Updated PatrolSystem_GroupStart to save waypointCount in key 6 and unitCount in key 11
+>>> Updated all 9 functions that read unit count to use key 11 instead of key 6
+
+UnitDeathEvent (new system)
+- this is to centralize generic UnitDeathEvent
+
+Creep Respawn
+- new jass library CreepRespawn created to replace old GUI format
+- utilizes UnitDeathEvent
+
+Companions
+- The logic of checking if the target unit IS an enemy backwards; this should fix inviting new companion units from AI heroes
+
+
+=================================================================================================================================================
+Epic Quests 25.10.2025 - List of Actions:
+
+Heal Engine - Spell Power Percentual and Flat bonus
+- modified logic for both Percentual and Flat spell power bonus for healing
+
+DInventory system (bag slots)
+- 12 slots initially
+- Changes Made:
+>>> DConfigurationArea.j - Initial Inventory Size
+>>>>> Changed initial inventory from 25 slots (5×5) to 12 slots (3×4)
+>>>>> Added comprehensive documentation header explaining how to use the bag expansion system
+>>>>> Configuration:
+integer InventoryColumns = 4
+integer InventoryRows = 3
+integer InventoryCapacityBase = 12
+
+>>> SharedDInvLib.j - Added Vendor Functions
+>>>>> Added two new convenience wrapper functions specifically for vendors:
+
+DInvAddSlotsForPlayerVendor(playerId, numberOfSlots)
+- For "1PerPlayer" paradigm
+- Adds slots and shows confirmation message
+
+DInvAddSlotsForHeroVendor(heroUnit, numberOfSlots)
+- For "1PerHero" paradigm (current setting)
+- Auto-detects paradigm and calls appropriate function
+- Adds slots and shows confirmation message
+
+>>> New Files Created
+>>>>> EXAMPLE_BagVendor.j - Complete working example with:
+>>>>>>>>>> Item usage triggers (consumable bags)
+>>>>>>>>>> Vendor purchase functions
+>>>>>>>>>> Shop dialog system
+>>>>>>>>>> Chat command testing (-bag 1, -bag 2, etc.)
+>>>>> BAG_EXPANSION_GUIDE.md - Comprehensive documentation covering:
+>>>>>>>>>> How the system works
+>>>>>>>>>> All available functions
+>>>>>>>>>> Suggested bag tiers and pricing
+>>>>>>>>>> Multiple implementation methods
+>>>>>>>>>> Testing instructions
+>>>>> BAG_QUICK_REFERENCE.j - Copy-paste ready code snippets for:
+>>>>>>>>>> Vendor functions
+>>>>>>>>>> Consumable bag items
+>>>>>>>>>> Dialog shop menus
+>>>>>>>>>> Testing commands
+>>>>>>>>>> Region-based vendor interactions
+>>>>>>>>>> Existing Functions (Already in the System)
+
+// Examples and testing6
+// In your shop/vendor trigger:
+call DInvAddSlotsForHeroVendor(buyerHero, 12)  // Adds 12 slots
+Use the chat command system from EXAMPLE_BagVendor.j:
+
+- Bag Vendor
+>>> Now sells bag items (powerups) to be used to increase bag slots for the unit 
+>>> Small, Medium, Large Bags powerup items created
+>>> uses call DInvAddSlotsForHeroVendor(unit, integer)
+
+Vanguard Vale
+- Added Mountain Giant to wander at Redwind Pass
+
+Reputation
+- Fixed Linked Faction Reputation Bug
+- Added Reputation Change Messages with Blue Text and Quick Fade
+- Fixed Missing Faction Status Change Messages
+
+Krolm (outcast ogre)
+- added to Thornwoods
+- chat/quest WIP
+
+Patrol System
+- Fixed Patrol Speed Not Reverting When Paused/Stopped 
+- Added Complete Group Patrol Functionality, with functions:
+>>> PatrolSystem_GroupStart(group, waypointCount, resetTime, pathStyle, autoResume, moveOrder, patrolSpeed) → returns groupId
+>>> PatrolSystem_GroupPause(groupId)
+>>> PatrolSystem_GroupResume(groupId)
+>>> PatrolSystem_GroupStop(groupId)
+>>> PatrolSystem_GroupContinue(groupId)
+
+Patrol Group System (helper library)
+- created
+
+ThornwoodsHordePatrol (subfunction using Patrol Group System)
+-created 
+
+Rifts of Corruption
+- Accept quest; Valeria teleported outside camera at start and shall move near Aradion.
+>>> Would need another trigger to wait for Valeria enter the spot and then issue face towards player / angle 192.0
+- Added debug " debug Aradion " to test Channel spell on Nazgrek's position
+
+
+=================================================================================================================================================
+Epic Quests 24.10.2025 - List of Actions:
+
+WaveSpawner (UnitSpawner)
+- renamed to UnitSpawner 
+- refactor to be library using Briebe's table v6
+- each spawned unit "wave" can be removed individually
+
+Floating Text Spell
+- Disabled "Floating Texts Config"
+- Disabled "Flaoting Texts SPell Event"
+>>> To test if these are the causes of random lag spikes
+>>> If they are;
+>>>>> then FloatingTextTag jass system / usage must be checked
+>>>>> the triggers and function/condition usage withing the triggers themselves
+
+HealEngine
+- Fixed Critical CheckLoop Bug (Lines 173-241)
+>>> Separated loop counter i from unitIndex to prevent infinite loops/skipped units
+>>> This was the primary cause of unpredictable lag spikes
+- Removed BJ Function Overhead
+>>> Replaced RMaxBJ(0.00, regen[unitIndex]) with inline comparison
+>>> Replaced StartTimerBJ() with native TimerStart()
+- Reduced Timer Frequency
+>>> Changed HEAL_CHECK_INTERVAL from 0.05 to 0.10 seconds
+>>> Cuts CheckLoop executions from 20/sec to 10/sec = 50% reduction
+- Added Per-Frame Heal Limiter
+>>> New constant: MAX_HEALS_PER_FRAME = 25
+>>> Prevents processing 100+ heals in one frame
+>>> Excess heals automatically deferred to next frame
+- Improved Loop Reset
+>>> Added i = 1.00 reset between heals to prevent PreHealEvent counter issues
+
+Heal Engine - Spell Power Percentual bonus
+- modified, test if it works for native heals now when unit has Stat Spell power % 
+
+HeroItemCheck.j
+- There were random issues with items disappearing from Inventory when calling these functions; main culprit seems to have been using wait(s)
+- It has to be ensured that the system still works after the modifications and especially not using wait anymore, as there was reason for the wait to work for Quest Update triggers
+>>> Race Condition: HeroItemCheck had a TriggerSleepAction(0.05) that created a 50ms window where game state could change between checks
+>>> Global Variable Pollution: HeroItemCheckBoth used udg_DInvUnit as a side effect, causing items to be removed from the wrong hero when multiple checks happened rapidly
+>>> Non-Atomic Operations: Time gap between checking and removing allowed items to disappear or be consumed
+- Fixes applied:
+>>> Removed TriggerSleepAction from HeroItemCheck - now instant, no delays
+>>> Made HeroItemCheckBothAndRemove atomic - check and remove happen together using local variables
+
+Reputation system
+- modified reputation states; enemy, hostile, unfriendly, neutral, friendly, covenant, exalted
+>>> Enemy: some factions will hunt you
+>>> Hostile = You will always be attacked on sight 
+>>> Unfriendly = cannot buy items or companions, cant talk if quest givers / etc talk
+>>> Neutral = can buy basic items, can talk
+>>> Friendly = can buy more items, can talk
+>>> Covenant = can buy more items, can hire companion units, can talk
+>>> Exalted = can buy more items, can hire companion units, can talk, special item reward is given and title?
+
+Aradion
+- Rifts of Corruption:
+>>> will not say unfinished lines when quest is failed
+>>> the quest can be started again if its failed
+
+=================================================================================================================================================
+Epic Quests 23.10.2025 - List of Actions:
+
+DInv & DEquipment system(s):
+Updated the RemoveDInvItemChargesByType function in SharedDInvLib.j with:
+- Comprehensive debug logging that tracks every step of the removal process
+- Separated null and type checks for clearer logic flow
+- Added a critical safety check that re-verifies the item type immediately before deletion to prevent any wrong items from being deleted
+- Better error reporting that will show exactly which items are being processed and why
+
+Updated HeroItemCheck.j & GetDInvItemChargesByTypeThreshold + RemoveDInvItemChargesByType in (in SharedDInvLib.j)
+- Now operates in two phases:
+>>> Phase 1: Removes items from DInventory (as before)
+>>>Phase 2: If still need to remove more items, removes from vanilla inventory
+- Uses the same logic for both:
+>>> Handles 0-charge items (treats as 1 item)
+>>> Handles partial removal (when an item has more charges than needed)
+>>> Handles complete removal (when an item has equal or fewer charges)
+>>> Enhanced debug messages show which phase is executing and from which inventory items are being removed
+
+How It Works:
+- When you call HeroItemCheckAndRemove(hero, 'I000', 10):
+>>> First checks if the hero has 10+ items of type 'I000' in DInventory + vanilla inventory combined
+>>> If yes, removes 10 items, prioritizing DInventory first, then vanilla inventory
+>>> Returns true if successful, false if not enough items
+
+ItemSearch.j
+- Added requires SharedDInvLib to access DInventory functions and data structures
+- Updated Documentation
+- Added note that it now searches BOTH inventories
+- Clarified that DInventory is searched first, then vanilla inventory
+- Two-Phase Search Logic
+>> Phase 1: Search DInventory
+>>> Checks if unit has a DInventory (bid != -1)
+>>> Searches all slots in DInventory
+>>> Returns immediately if match is found
+>> Phase 2: Search Vanilla Inventory
+>>> Only executes if no match found in DInventory
+>>> Searches all 6 vanilla inventory slots
+>>> Returns if match is found
+- Enhanced Debug Messages
+>>> Shows which phase is executing
+>>> Labels slots as "DInv Slot" or "Vanilla Slot" for clarity
+>>> Shows which inventory the match was found in
+
+How It Works:
+When you call ItemSearch_FindItemByKeyword(udg_hero, "meat"):
+
+- First searches the hero's DInventory for any item with "meat" in its name
+- If found, sets udg_QuestItemTemp to that item's type ID and returns
+- If not found, continues to search the vanilla inventory
+- If found there, sets udg_QuestItemTemp to that item's type ID
+- If no match in either inventory, sets udg_QuestItemTemp = 0
+This ensures that quest items or special items can be found regardless of which inventory they're in!
+
+Blood Splats Ground
+- added condition to not trigger if the unit-type is "Totem"
+
+Rifts of Corruption
+- Ritual Prepare:
+>>> Aradion is now moved near RiftCurrent Unit
+>>> Aradion should now move to position of 500 away from from RiftCurrent unit from the direction of where Aradion is (=to not make him move to opposite side of Rift / walk pass the riftCurrent unit)
+>>> Adjusted DialogCamera; double the distance and different angle
+>>> Removed Wander ability from Aradion at start of trigger
+- Fixed incorrect voicefiles for quest unfinished talk with Aradion
+- Quest Req2 should now be also completed when all rifts closed
+
+UnitStats
+- The Problem:
+>>> Scanned entire map every 3 seconds using GetWorldBounds()
+>>> Processed hundreds of units repeatedly with 65+ ability checks each
+>>> Caused severe lag spikes: 100 fps → 2 fps
+- Fixes:
+>>> 1. Event-Driven System (NO MORE PERIODIC SCANNING!)
+>>>>> Units are processed only once when they spawn via trigger "Init 07 Unit Event Enters" and with function "call UnitStats_ProcessUnit(GetTriggerUnit())"
+>>>>> Uses triggers to detect unit creation automatically
+>>>>> No more expensive map-wide scans
+>>> 2. Smart Caching
+>>>>> Tracks which units have been processed in a processedUnits table
+>>>>> Never processes the same unit twice (unless you explicitly refresh)
+>>>>> Instant checks, no redundant work
+>>> 3. One-Time Initial Scan
+>>>>> Runs once at map start (2 seconds delay)
+>>>>> After that, only new units trigger processing
+>>>>> No periodic lag after initialization
+
+Kaelthir
+- added item check and remove for quest Kaelthir Struggle
+- voiceline (Kaelthir_0003) was missing from greet - edited to not include it
+
+WavesSpawner.j
+- Created
+- To be utilized as waves of units easy spawning around point
+- Current form should be separated, and create lite scripts that utilize this WaveSpawner to not fill it with quest/event specific scripts...
+
+Multiboard Remove Companion
+- For the Remove Companion trigger added clearing of texts of each column/row
+
+Multiboard Add Companion
+- changed "For each (Integer Multiboard_Int2) from 1 to 9, do (Actions)" to:
+>>> "For each (Integer Multiboard_Int2) from 1 to Multiboard_RowVar, do (Actions)"
+>>> This ensures that all rows (including newly added companion rows) get their widths set correctly.
+
+Vanguard Vale
+- Some terraining
 
 =================================================================================================================================================
 Epic Quests 22.10.2025 - List of Actions:
@@ -52,6 +601,18 @@ Rifts Corruption
 
 Fading Sparks
 - changed Rod to cause attack type Spells and damage type Normal when using of Mana Wraith
+
+CinematicMover
+- Added distance check in MoveCompanionCallback
+- Added distance check in MoveTamedCallback
+Added new constant:
+>>> MAX_MOVE_RANGE = 1200.0 - Controls when to skip moving companions/pets during cinematic start
+- Kept existing constant:
+>>> MAX_RETURN_RANGE = 1200.0 - Controls when to skip returning units after cinematic ends
+- Updated functions:
+>>> MoveCompanionCallback - Now uses MAX_MOVE_RANGE for distance check
+>>- MoveTamedCallback - Now uses MAX_MOVE_RANGE for distance check
+
 
 
 -------------------
