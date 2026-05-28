@@ -1,0 +1,46 @@
+# LARGE ASSESTS # WC3 Database Item Manager 
+WC3_Database/WC3ItemManager/BACKUPS/
+WC3_Database/WC3ItemManager/bin/debug/net5.0-windows/blizzard/
+WC3_Database/WC3ItemManager/bin/debug/net5.0-windows/custom/
+WC3_Database/WC3ItemManager/WC3IM_backups/
+/WC3_Database/WC3IM_backups/
+WC3_Database/_TexturesBackupFolder/
+
+# Dynamic Minimap
+DynamicMinimap/war3mapBLP/
+DynamicMinimap/war3mapImported_256x256/
+DynamicMinimap/war3mapImported_Old
+DynamicMinimap/war3mapImported2
+
+# Drafts folders
+_Drafts/
+
+# Cache/temp
+temp/
+cache/
+logs/
+
+# Warcraft 3 generated files
+#*.w3x.autosave
+
+# Archives
+#*.zip
+#*.rar
+#*.7z
+
+# Large binaries
+#*.psd
+#*.blend
+#*.mp4
+#*.mov
+#*.iso
+
+# Pictures
+*.png
+
+# OS junk
+Thumbs.db
+.DS_Store
+
+# VSCode
+.vscode/

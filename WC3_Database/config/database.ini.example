@@ -1,0 +1,25 @@
+[postgresql]
+# PostgreSQL Database Configuration for WC3 Items Database
+
+# Database connection settings
+# Set host to '127.0.0.1' or 'localhost' for local connections
+host = 127.0.0.1
+
+# Default PostgreSQL port is 5432
+port = 5432
+
+# Database name - change this to match your database
+# Note: PostgreSQL database names are case-sensitive on Linux/Mac
+# On Windows, 'WC3_POTS' and 'wc3_pots' are treated the same
+database = WC3_POTS
+
+# PostgreSQL user (default is 'postgres')
+user = postgres
+
+# PostgreSQL password - CHANGE THIS to your actual password!
+# If left empty, scripts will prompt for password
+password = YOUR_PASSWORD_HERE
+
+# Connection pooling (optional)
+# max_connections = 10
+# min_connections = 2

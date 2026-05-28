@@ -1,0 +1,36 @@
+AradionDialog01 Info Over
+    Events
+        Player - Player 1 (Red) skips a cinematic sequence
+    Conditions
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- SKIPPED --------
+        Set VariableSet DialogSkipped = True
+        -------- SKIPPED --------
+        -------- other --------
+        Set VariableSet AradionBackstoryBoolean = True
+        -------- Fade Out --------
+        Cinematic - Fade out over 0.50 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        Wait 0.50 seconds
+        -------- Reset Camera --------
+        Camera - Reset camera smoothing factor
+        Camera - Reset camera for Player 1 (Red) to standard game-view over 0.00 seconds
+        Wait 0.50 seconds
+        -------- Fade In --------
+        Cinematic - Fade in over 0.50 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        Wait 0.50 seconds
+        -------- ======== CINEMATIC ENDS ======== --------
+        -------- DEFAULT CAMERA --------
+        -------- ================================ --------
+        -------- DIALOG CAMERA == RESET --------
+        -------- USAGE: call DialogCameraReset(p, duration) to restore original camera over 'duration' seconds --------
+        Custom script:   call DialogCameraReset(Player(0), 2.0)
+        -------- ======== CINEMATIC ENDS ======== --------
+        Trigger - Run Cinematic OFF <gen> (checking conditions)
+        Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+        -------- ================================ --------
+        -------- ======= QUEST ICON STATUS --------
+        -------- ======= QUEST TYPE: normal, daily, repeatable, dungeon  --------
+        -------- ======= QUEST State 1-5: (unavailable, available, in progress, complete, ready to turn in) --------
+        Set VariableSet QuestGiverUnitTemp = Aradion
+        Custom script:   call CreateDummyQuestIcon(udg_QuestGiverUnitTemp, "normal", 2)

@@ -1,0 +1,72 @@
+Mining Mana Crystal
+    Events
+        Game - DamageModifierEvent becomes Equal to 1.00
+    Conditions
+    Actions
+        -------- Check unit type --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                And - All (Conditions) are true
+                    Conditions
+                        (Unit-type of DamageEventTarget) Equal to Mana Crystal
+                        (DamageEventSource has an item of type Mining Pick) Equal to True
+            Then - Actions
+                -------- TEMP --------
+                Set VariableSet Temp_Ore = (Custom value of DamageEventTarget)
+                -------- Mining chance --------
+                Set VariableSet MiningChance = (Random integer number between 1 and 2)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        OreAmountTotalSet[Temp_Ore] Equal to False
+                    Then - Actions
+                        -------- Initialize OreAmountTotalArray --------
+                        Set VariableSet OreAmountTotalArray[Temp_Ore] = (Random integer number between 1 and 2)
+                        Set VariableSet OreAmountTotalSet[Temp_Ore] = True
+                    Else - Actions
+                -------- Random unstable explosion --------
+                Set VariableSet MiningExplosionChance = (Random integer number between 1 and 5)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        MiningExplosionChance Equal to 1
+                    Then - Actions
+                        Set VariableSet TempPoint = (Position of DamageEventTarget)
+                        Special Effect - Create a special effect at TempPoint using Abilities\Weapons\DragonHawkMissile\DragonHawkMissile.mdl
+                        Special Effect - Destroy (Last created special effect)
+                        Unit - Cause DamageEventTarget to damage circular area after 0.00 seconds of radius 300.00 at TempPoint, dealing 400.00 damage of attack type Spells and damage type Magic
+                        Custom script:   set bj_wantDestroyGroup = true
+                        Unit Group - Pick every unit in (Units within 300.00 of TempPoint.) and do (Actions)
+                            Loop - Actions
+                                Unit - Set mana of (Picked unit) to ((Percentage mana of (Picked unit)) - 30.00)%
+                                Special Effect - Create a special effect attached to the chest of (Picked unit) using Abilities\Weapons\DragonHawkMissile\DragonHawkMissile.mdl
+                                Special Effect - Destroy (Last created special effect)
+                        Custom script:   call RemoveLocation(udg_TempPoint)
+                        Set VariableSet OreAmountArray[Temp_Ore] = 0
+                        Unit - Kill DamageEventTarget
+                        Set VariableSet OreAmountTotalSet[Temp_Ore] = False
+                    Else - Actions
+                --------  Check ore amount for this unit --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        And - All (Conditions) are true
+                            Conditions
+                                MiningChance Equal to 1
+                                OreAmountArray[Temp_Ore] Less than OreAmountTotalArray[Temp_Ore]
+                                OreAmountTotalSet[Temp_Ore] Equal to True
+                    Then - Actions
+                        Hero - Create Mana Crystal and give it to DamageEventSource
+                        Set VariableSet OreAmountArray[Temp_Ore] = (OreAmountArray[Temp_Ore] + 1)
+                    Else - Actions
+                -------- Ore gathered --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        And - All (Conditions) are true
+                            Conditions
+                                OreAmountArray[Temp_Ore] Greater than or equal to OreAmountTotalArray[Temp_Ore]
+                                OreAmountTotalSet[Temp_Ore] Equal to True
+                    Then - Actions
+                        -------- debug 2 --------
+                        Set VariableSet OreAmountArray[Temp_Ore] = 0
+                        Unit - Kill DamageEventTarget
+                        Set VariableSet OreAmountTotalSet[Temp_Ore] = False
+                    Else - Actions
+            Else - Actions

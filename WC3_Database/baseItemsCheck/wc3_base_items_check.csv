@@ -1,0 +1,62 @@
+id,item_code,item_name,item_type,description,is_common,created_at
+1,afac,Claws of Attack +15,Permanent,Common base for weapons,True,2026-03-11 19:16:21.718159
+2,rat3,Claws of Attack +3,Permanent,Low-level weapon base,True,2026-03-11 19:16:21.718159
+3,rat6,Claws of Attack +6,Permanent,Mid-level weapon base,True,2026-03-11 19:16:21.718159
+4,rat9,Claws of Attack +9,Permanent,High-level weapon base,True,2026-03-11 19:16:21.718159
+5,rhe1,Crown of Kings +5,Permanent,Common base for helmets,True,2026-03-11 19:16:21.718159
+6,rhe2,Crown of Kings +5,Permanent,Helmet base variant,False,2026-03-11 19:16:21.718159
+7,rhe3,Crown of Kings +5,Permanent,Helmet base variant,False,2026-03-11 19:16:21.718159
+8,rag1,Slippers of Agility +3,Permanent,Boots/footwear base,True,2026-03-11 19:16:21.718159
+9,rin1,Mantle of Intelligence +3,Permanent,Cloak/mantle base,True,2026-03-11 19:16:21.718159
+10,rspd,Boots of Speed,Permanent,Common boots base,True,2026-03-11 19:16:21.718159
+11,pghe,Periapt of Vitality,Permanent,Amulet/necklace base,True,2026-03-11 19:16:21.718159
+12,pnvu,Pendant of Energy,Permanent,Pendant base,True,2026-03-11 19:16:21.718159
+13,gold,Gold Coins,Permanent,Currency/gold base,True,2026-03-11 19:16:21.718159
+14,lmbr,Bundle of Lumber,Permanent,Currency/lumber base,True,2026-03-11 19:16:21.718159
+15,sres,Staff of Resurrection,Charged,Charged staff base,True,2026-03-11 19:16:21.718159
+16,sman,Staff of Sanctuary,Charged,Charged staff base,True,2026-03-11 19:16:21.718159
+17,ssil,Staff of Silence,Charged,Charged staff base,False,2026-03-11 19:16:21.718159
+18,stel,Staff of Teleportation,Charged,Teleport scroll base,True,2026-03-11 19:16:21.718159
+19,wtlg,Wand of Lightning Shield,Charged,Charged wand base,False,2026-03-11 19:16:21.718159
+20,rej1,Lesser Clarity Potion,Charged,Mana potion base,True,2026-03-11 19:16:21.718159
+21,rej2,Clarity Potion,Charged,Mana potion base,True,2026-03-11 19:16:21.718159
+22,rej3,Greater Clarity Potion,Charged,Mana potion base,True,2026-03-11 19:16:21.718159
+23,rej4,Lesser Rejuvenation Potion,Charged,Health/Mana potion base,True,2026-03-11 19:16:21.718159
+24,rej5,Rejuvenation Potion,Charged,Health/Mana potion base,True,2026-03-11 19:16:21.718159
+25,rej6,Greater Rejuvenation Potion,Charged,Health/Mana potion base,True,2026-03-11 19:16:21.718159
+26,phea,Potion of Healing,Charged,Health potion base,True,2026-03-11 19:16:21.718159
+27,phe1,Lesser Healing Potion,Charged,Health potion base,True,2026-03-11 19:16:21.718159
+28,phe2,Potion of Greater Healing,Charged,Health potion base,True,2026-03-11 19:16:21.718159
+29,pinv,Potion of Invisibility,Charged,Invisibility potion base,True,2026-03-11 19:16:21.718159
+30,pspd,Potion of Speed,Charged,Speed potion base,True,2026-03-11 19:16:21.718159
+31,pmna,Potion of Mana,Charged,Mana potion base,True,2026-03-11 19:16:21.718159
+32,sor1,Scroll of Regeneration,Powerup,Regen scroll base,True,2026-03-11 19:16:21.718159
+33,sor2,Scroll of the Beast,Powerup,Buff scroll base,False,2026-03-11 19:16:21.718159
+34,sor3,Scroll of Speed,Powerup,Speed scroll base,False,2026-03-11 19:16:21.718159
+35,sor4,Scroll of Restoration,Powerup,Restoration scroll base,False,2026-03-11 19:16:21.718159
+36,sor5,Scroll of Healing,Powerup,Healing scroll base,True,2026-03-11 19:16:21.718159
+37,sor6,Scroll of Mana,Powerup,Mana scroll base,False,2026-03-11 19:16:21.718159
+38,sor7,Scroll of Protection,Powerup,Protection scroll base,True,2026-03-11 19:16:21.718159
+39,sora,Scroll of Town Portal,Powerup,Town portal base,True,2026-03-11 19:16:21.718159
+40,stwp,Scroll of Town Portal,Powerup,Town portal base (alternate),True,2026-03-11 19:16:21.718159
+41,tstr,Tome of Strength,Charged,Strength tome base,True,2026-03-11 19:16:21.718159
+42,tint,Tome of Intelligence,Charged,Intelligence tome base,True,2026-03-11 19:16:21.718159
+43,tagi,Tome of Agility,Charged,Agility tome base,True,2026-03-11 19:16:21.718159
+44,tkno,Tome of Knowledge,Charged,Experience tome base,True,2026-03-11 19:16:21.718159
+45,tpow,Tome of Power,Charged,Power tome base,False,2026-03-11 19:16:21.718159
+46,rune,Rune of Healing,Powerup,Healing rune base,True,2026-03-11 19:16:21.718159
+47,rnsp,Rune of Speed,Powerup,Speed rune base,False,2026-03-11 19:16:21.718159
+48,rnsu,Rune of Lesser Healing,Powerup,Lesser healing rune base,False,2026-03-11 19:16:21.718159
+49,kybl,Key of Three Moons,Campaign,Quest key base,False,2026-03-11 19:16:21.718159
+50,ckng,Cheese,Campaign,Quest food base,False,2026-03-11 19:16:21.718159
+51,glsk,Gloves of Haste,Permanent,Gloves base,True,2026-03-11 19:16:21.718159
+52,gcel,Gem of True Seeing,Permanent,Gem/trinket base,False,2026-03-11 19:16:21.718159
+53,moon,Moonstone,Miscellaneous,Special stone base,False,2026-03-11 19:16:21.718159
+54,rnec,Necklace of Spell Immunity,Permanent,Immunity item base,True,2026-03-11 19:16:21.718159
+55,belv,Boots of Quel'Thalas +6,Permanent,Epic boots base,False,2026-03-11 19:16:21.718159
+56,desc,Kelen's Dagger of Escape,Permanent,Mobility item base,False,2026-03-11 19:16:21.718159
+57,bspd,Boots of Speed,Permanent,Basic boots base,True,2026-03-11 19:16:21.718159
+58,ward,Warsong Battle Drums,Charged,Drums base,False,2026-03-11 19:16:21.718159
+59,wolg,Wirt's Other Leg,Permanent,Fun item base,False,2026-03-11 19:16:21.718159
+60,ches,Cheese,Charged,Food base,False,2026-03-11 19:16:21.718159
+61,very,Very Rare Item,Permanent,Generic rare base,False,2026-03-11 19:16:21.718159

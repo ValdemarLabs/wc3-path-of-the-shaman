@@ -1,0 +1,1223 @@
+===============
+Spawn Plants (herbs)
+    Events
+        Time - Every (Random real number between 50.00 and 350.00) seconds of game time
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Terrain pathing at (Position of (Last created item)) of type Floatability is off) Equal to False
+                        (Terrain pathing at (Position of (Last created item)) of type Amphibious Pathing is off) Equal to False
+            Then - Actions
+                Set VariableSet PlantSpawnPoint = (Random point in (Playable map area))
+                Item - Create Agave at PlantSpawnPoint
+                Custom script:   call RemoveLocation(udg_PlantSpawnPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Terrain pathing at (Position of (Last created item)) of type Floatability is off) Equal to False
+                        (Terrain pathing at (Position of (Last created item)) of type Amphibious Pathing is off) Equal to False
+            Then - Actions
+                Set VariableSet PlantSpawnPoint = (Random point in (Playable map area))
+                Item - Create Agave at PlantSpawnPoint
+                Custom script:   call RemoveLocation(udg_PlantSpawnPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Terrain pathing at (Position of (Last created item)) of type Floatability is off) Equal to False
+                        (Terrain pathing at (Position of (Last created item)) of type Amphibious Pathing is off) Equal to False
+            Then - Actions
+                Set VariableSet PlantSpawnPoint = (Random point in (Playable map area))
+                Item - Create Forest Flower at PlantSpawnPoint
+                Custom script:   call RemoveLocation(udg_PlantSpawnPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Terrain pathing at (Position of (Last created item)) of type Floatability is off) Equal to False
+                        (Terrain pathing at (Position of (Last created item)) of type Amphibious Pathing is off) Equal to False
+            Then - Actions
+                Set VariableSet PlantSpawnPoint = (Random point in (Playable map area))
+                Item - Create Forest Flower at PlantSpawnPoint
+                Custom script:   call RemoveLocation(udg_PlantSpawnPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Terrain pathing at (Position of (Last created item)) of type Floatability is off) Equal to False
+                        (Terrain pathing at (Position of (Last created item)) of type Amphibious Pathing is off) Equal to False
+            Then - Actions
+                Set VariableSet PlantSpawnPoint = (Random point in (Playable map area))
+                Item - Create Forest Flower at PlantSpawnPoint
+                Custom script:   call RemoveLocation(udg_PlantSpawnPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Terrain pathing at (Position of (Last created item)) of type Floatability is off) Equal to False
+                        (Terrain pathing at (Position of (Last created item)) of type Amphibious Pathing is off) Equal to False
+            Then - Actions
+                Set VariableSet PlantSpawnPoint = (Random point in (Playable map area))
+                Item - Create Earth Roots at PlantSpawnPoint
+                Custom script:   call RemoveLocation(udg_PlantSpawnPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Terrain pathing at (Position of (Last created item)) of type Floatability is off) Equal to False
+                        (Terrain pathing at (Position of (Last created item)) of type Amphibious Pathing is off) Equal to False
+            Then - Actions
+                Set VariableSet PlantSpawnPoint = (Random point in (Playable map area))
+                Item - Create Earth Roots at PlantSpawnPoint
+                Custom script:   call RemoveLocation(udg_PlantSpawnPoint)
+            Else - Actions
+        Trigger - Remove (This trigger) from the trigger queue
+
+===============
+
+
+//===========================================================================
+Ore Veins Init
+function Trig_Ore_Veins_Init_Actions takes nothing returns nothing
+    // Define regions for spawning ores
+// -------- 1. Twilight Grove - Levels 3-8 --------
+    set udg_OreRegions[1] = gg_rct_OreVeins0001
+    set udg_OreRegions[2] = gg_rct_OreVeins0002
+    set udg_OreRegions[3] = gg_rct_OreVeins0003
+    set udg_OreRegions[4] = gg_rct_OreVeins0004
+    set udg_OreRegions[5] = gg_rct_OreVeins0005
+    set udg_OreRegions[6] = gg_rct_OreVeins0006
+    set udg_OreRegions[7] = gg_rct_OreVeins0007
+    set udg_OreRegions[8] = gg_rct_OreVeins0008
+    set udg_OreRegions[9] = gg_rct_OreVeins0009
+    set udg_OreRegions[10] = gg_rct_OreVeins0010
+    set udg_OreRegions[11] = gg_rct_OreVeins0011
+    set udg_OreRegions[12] = gg_rct_OreVeins0012
+
+    // -------- 2. Sereneglade - Levels 1-9 --------
+    set udg_OreRegions[13] = gg_rct_OreVeins0013
+    set udg_OreRegions[14] = gg_rct_OreVeins0014
+    set udg_OreRegions[15] = gg_rct_OreVeins0015
+    set udg_OreRegions[16] = gg_rct_OreVeins0016
+    set udg_OreRegions[17] = gg_rct_OreVeins0017
+    set udg_OreRegions[18] = gg_rct_OreVeins0018
+    set udg_OreRegions[19] = gg_rct_OreVeins0019
+    set udg_OreRegions[20] = gg_rct_OreVeins0020
+    set udg_OreRegions[21] = gg_rct_OreVeins0021
+    set udg_OreRegions[22] = gg_rct_OreVeins0022
+    set udg_OreRegions[23] = gg_rct_OreVeins0023
+    set udg_OreRegions[24] = gg_rct_OreVeins0024
+    set udg_OreRegions[25] = gg_rct_OreVeins0025
+    set udg_OreRegions[26] = gg_rct_OreVeins0026
+    set udg_OreRegions[27] = gg_rct_OreVeins0027
+    set udg_OreRegions[28] = gg_rct_OreVeins0028
+    set udg_OreRegions[29] = gg_rct_OreVeins0029
+    set udg_OreRegions[30] = gg_rct_OreVeins0030
+    set udg_OreRegions[31] = gg_rct_OreVeins0031
+    set udg_OreRegions[32] = gg_rct_OreVeins0032
+    set udg_OreRegions[33] = gg_rct_OreVeins0033
+    set udg_OreRegions[34] = gg_rct_OreVeins0034
+    set udg_OreRegions[35] = gg_rct_OreVeins0035
+    set udg_OreRegions[36] = gg_rct_OreVeins0036
+    set udg_OreRegions[37] = gg_rct_OreVeins0037
+    set udg_OreRegions[38] = gg_rct_OreVeins0038
+    set udg_OreRegions[39] = gg_rct_OreVeins0039
+    set udg_OreRegions[40] = gg_rct_OreVeins0040
+    set udg_OreRegions[41] = gg_rct_OreVeins0041
+    set udg_OreRegions[42] = gg_rct_OreVeins0042
+    set udg_OreRegions[43] = gg_rct_OreVeins0043
+    set udg_OreRegions[44] = gg_rct_OreVeins0045
+    set udg_OreRegions[45] = gg_rct_OreVeins0046
+    set udg_OreRegions[46] = gg_rct_OreVeins0047
+    set udg_OreRegions[47] = gg_rct_OreVeins0048
+    set udg_OreRegions[48] = gg_rct_OreVeins0049
+    set udg_OreRegions[49] = gg_rct_OreVeins0050
+    set udg_OreRegions[50] = gg_rct_OreVeins0051
+
+    // -------- 3. Emberpeak Highlands - Levels 10-15 --------
+    set udg_OreRegions[201] = gg_rct_OreVeins0201
+    set udg_OreRegions[202] = gg_rct_OreVeins0202
+    set udg_OreRegions[203] = gg_rct_OreVeins0203
+    set udg_OreRegions[204] = gg_rct_OreVeins0204
+    set udg_OreRegions[205] = gg_rct_OreVeins0205
+    set udg_OreRegions[206] = gg_rct_OreVeins0206
+    set udg_OreRegions[207] = gg_rct_OreVeins0207
+    set udg_OreRegions[208] = gg_rct_OreVeins0208
+    set udg_OreRegions[209] = gg_rct_OreVeins0209
+    set udg_OreRegions[210] = gg_rct_OreVeins0210
+    set udg_OreRegions[211] = gg_rct_OreVeins0211
+    set udg_OreRegions[212] = gg_rct_OreVeins0212
+    set udg_OreRegions[213] = gg_rct_OreVeins0213
+    set udg_OreRegions[214] = gg_rct_OreVeins0214
+    set udg_OreRegions[215] = gg_rct_OreVeins0215
+    set udg_OreRegions[216] = gg_rct_OreVeins0216
+    set udg_OreRegions[217] = gg_rct_OreVeins0217
+    set udg_OreRegions[218] = gg_rct_OreVeins0218
+    set udg_OreRegions[219] = gg_rct_OreVeins0219
+    set udg_OreRegions[220] = gg_rct_OreVeins0220
+    set udg_OreRegions[221] = gg_rct_OreVeins0221
+    set udg_OreRegions[222] = gg_rct_OreVeins0222
+    set udg_OreRegions[223] = gg_rct_OreVeins0223
+    set udg_OreRegions[224] = gg_rct_OreVeins0224
+    set udg_OreRegions[225] = gg_rct_OreVeins0225
+    set udg_OreRegions[226] = gg_rct_OreVeins0226
+    set udg_OreRegions[227] = gg_rct_OreVeins0227
+    set udg_OreRegions[228] = gg_rct_OreVeins0228
+    set udg_OreRegions[229] = gg_rct_OreVeins0229
+    set udg_OreRegions[230] = gg_rct_OreVeins0230
+    set udg_OreRegions[231] = gg_rct_OreVeins0231
+
+    // -------- 4. Thornwoods - Levels 1-10 --------
+    set udg_OreRegions[101] = gg_rct_OreVeins0101
+    set udg_OreRegions[102] = gg_rct_OreVeins0102
+    set udg_OreRegions[103] = gg_rct_OreVeins0103
+    set udg_OreRegions[104] = gg_rct_OreVeins0104
+    set udg_OreRegions[105] = gg_rct_OreVeins0105
+    set udg_OreRegions[106] = gg_rct_OreVeins0106
+    set udg_OreRegions[107] = gg_rct_OreVeins0107
+    set udg_OreRegions[108] = gg_rct_OreVeins0108
+    set udg_OreRegions[109] = gg_rct_OreVeins0109
+    set udg_OreRegions[110] = gg_rct_OreVeins0110
+    set udg_OreRegions[111] = gg_rct_OreVeins0111
+    set udg_OreRegions[112] = gg_rct_OreVeins0112
+    set udg_OreRegions[113] = gg_rct_OreVeins0113
+    set udg_OreRegions[114] = gg_rct_OreVeins0114
+    set udg_OreRegions[115] = gg_rct_OreVeins0115
+    set udg_OreRegions[116] = gg_rct_OreVeins0116
+    set udg_OreRegions[117] = gg_rct_OreVeins0117
+    set udg_OreRegions[118] = gg_rct_OreVeins0118
+    set udg_OreRegions[119] = gg_rct_OreVeins0119
+    set udg_OreRegions[120] = gg_rct_OreVeins0120
+    set udg_OreRegions[121] = gg_rct_OreVeins0121
+    set udg_OreRegions[122] = gg_rct_OreVeins0122
+    set udg_OreRegions[123] = gg_rct_OreVeins0123
+    set udg_OreRegions[124] = gg_rct_OreVeins0124
+    set udg_OreRegions[125] = gg_rct_OreVeins0125
+    set udg_OreRegions[126] = gg_rct_OreVeins0126
+    set udg_OreRegions[127] = gg_rct_OreVeins0127
+    set udg_OreRegions[128] = gg_rct_OreVeins0128
+    set udg_OreRegions[129] = gg_rct_OreVeins0129
+    set udg_OreRegions[130] = gg_rct_OreVeins0130
+    set udg_OreRegions[131] = gg_rct_OreVeins0131
+    set udg_OreRegions[132] = gg_rct_OreVeins0132
+    set udg_OreRegions[133] = gg_rct_OreVeins0133
+
+    //-------- 10. Riverbane - Levels 8-12 --------
+    set udg_OreRegions[232] = gg_rct_OreVeins0232
+    set udg_OreRegions[233] = gg_rct_OreVeins0233
+    set udg_OreRegions[234] = gg_rct_OreVeins0234
+    set udg_OreRegions[235] = gg_rct_OreVeins0235
+    set udg_OreRegions[236] = gg_rct_OreVeins0236
+    set udg_OreRegions[237] = gg_rct_OreVeins0237
+    set udg_OreRegions[238] = gg_rct_OreVeins0238
+    set udg_OreRegions[239] = gg_rct_OreVeins0239
+    set udg_OreRegions[240] = gg_rct_OreVeins0240
+    set udg_OreRegions[241] = gg_rct_OreVeins0241
+    set udg_OreRegions[242] = gg_rct_OreVeins0242
+    set udg_OreRegions[243] = gg_rct_OreVeins0243
+    set udg_OreRegions[244] = gg_rct_OreVeins0244
+    set udg_OreRegions[245] = gg_rct_OreVeins0245
+    set udg_OreRegions[246] = gg_rct_OreVeins0246
+    set udg_OreRegions[247] = gg_rct_OreVeins0247
+    set udg_OreRegions[248] = gg_rct_OreVeins0248
+    set udg_OreRegions[249] = gg_rct_OreVeins0249
+    set udg_OreRegions[250] = gg_rct_OreVeins0250
+    set udg_OreRegions[251] = gg_rct_OreVeins0251
+    set udg_OreRegions[252] = gg_rct_OreVeins0252
+    set udg_OreRegions[253] = gg_rct_OreVeins0253
+    set udg_OreRegions[254] = gg_rct_OreVeins0254
+    set udg_OreRegions[255] = gg_rct_OreVeins0255
+    set udg_OreRegions[256] = gg_rct_OreVeins0256
+    set udg_OreRegions[257] = gg_rct_OreVeins0257
+    set udg_OreRegions[258] = gg_rct_OreVeins0258
+    set udg_OreRegions[259] = gg_rct_OreVeins0259
+    set udg_OreRegions[260] = gg_rct_OreVeins0260
+    set udg_OreRegions[261] = gg_rct_OreVeins0261
+    set udg_OreRegions[262] = gg_rct_OreVeins0262
+    set udg_OreRegions[263] = gg_rct_OreVeins0263
+    set udg_OreRegions[264] = gg_rct_OreVeins0264
+    set udg_OreRegions[265] = gg_rct_OreVeins0265
+    set udg_OreRegions[266] = gg_rct_OreVeins0266
+    set udg_OreRegions[267] = gg_rct_OreVeins0267
+    set udg_OreRegions[268] = gg_rct_OreVeins0268
+    set udg_OreRegions[269] = gg_rct_OreVeins0269
+    set udg_OreRegions[270] = gg_rct_OreVeins0270
+    set udg_OreRegions[271] = gg_rct_OreVeins0271
+    set udg_OreRegions[272] = gg_rct_OreVeins0272
+    set udg_OreRegions[273] = gg_rct_OreVeins0273
+    set udg_OreRegions[274] = gg_rct_OreVeins0274
+    set udg_OreRegions[275] = gg_rct_OreVeins0275
+    set udg_OreRegions[276] = gg_rct_OreVeins0276
+    set udg_OreRegions[277] = gg_rct_OreVeins0277
+    set udg_OreRegions[278] = gg_rct_OreVeins0278
+    set udg_OreRegions[279] = gg_rct_OreVeins0279
+    set udg_OreRegions[280] = gg_rct_OreVeins0280
+    set udg_OreRegions[281] = gg_rct_OreVeins0281
+    set udg_OreRegions[282] = gg_rct_OreVeins0282
+    set udg_OreRegions[283] = gg_rct_OreVeins0283
+    set udg_OreRegions[284] = gg_rct_OreVeins0284
+    set udg_OreRegions[285] = gg_rct_OreVeins0285
+
+    // -------- 19. Ghostwalk Ridge - Levels 5-10 --------
+    // -------- 11. Deadwoods - Levels 8-12 --------
+    set udg_OreRegions[286] = gg_rct_OreVeins0286
+    set udg_OreRegions[287] = gg_rct_OreVeins0287
+    set udg_OreRegions[288] = gg_rct_OreVeins0288
+    set udg_OreRegions[289] = gg_rct_OreVeins0289
+    set udg_OreRegions[290] = gg_rct_OreVeins0290
+    set udg_OreRegions[291] = gg_rct_OreVeins0291
+    set udg_OreRegions[292] = gg_rct_OreVeins0292
+    set udg_OreRegions[293] = gg_rct_OreVeins0293
+    set udg_OreRegions[294] = gg_rct_OreVeins0294
+    set udg_OreRegions[295] = gg_rct_OreVeins0295
+    set udg_OreRegions[296] = gg_rct_OreVeins0296
+    set udg_OreRegions[297] = gg_rct_OreVeins0297
+    set udg_OreRegions[298] = gg_rct_OreVeins0298
+    set udg_OreRegions[299] = gg_rct_OreVeins0299
+    set udg_OreRegions[300] = gg_rct_OreVeins0300
+    set udg_OreRegions[301] = gg_rct_OreVeins0301
+    set udg_OreRegions[302] = gg_rct_OreVeins0302
+    set udg_OreRegions[303] = gg_rct_OreVeins0303
+    set udg_OreRegions[304] = gg_rct_OreVeins0304
+    set udg_OreRegions[305] = gg_rct_OreVeins0305
+    set udg_OreRegions[306] = gg_rct_OreVeins0306
+    set udg_OreRegions[307] = gg_rct_OreVeins0307
+    set udg_OreRegions[308] = gg_rct_OreVeins0308
+    set udg_OreRegions[309] = gg_rct_OreVeins0309
+    set udg_OreRegions[310] = gg_rct_OreVeins0310
+    set udg_OreRegions[311] = gg_rct_OreVeins0311
+    set udg_OreRegions[312] = gg_rct_OreVeins0312
+    set udg_OreRegions[313] = gg_rct_OreVeins0313
+    set udg_OreRegions[314] = gg_rct_OreVeins0314
+    set udg_OreRegions[315] = gg_rct_OreVeins0315
+    set udg_OreRegions[316] = gg_rct_OreVeins0316
+    set udg_OreRegions[317] = gg_rct_OreVeins0317
+    set udg_OreRegions[318] = gg_rct_OreVeins0318
+
+
+    // The manual pattern would continue for other zones as necessary.
+
+endfunction
+
+//===========================================================================
+//===========================================================================
+function InitTrig_Ore_Veins_Init takes nothing returns nothing
+    set gg_trg_Ore_Veins_Init = CreateTrigger(  )
+    call TriggerRegisterTimerEventSingle( gg_trg_Ore_Veins_Init, 0.00 )
+    call TriggerAddAction( gg_trg_Ore_Veins_Init, function Trig_Ore_Veins_Init_Actions )
+endfunction
+
+===========================================================================
+Ore Vein Spawn
+    Events
+        Time - Elapsed game time is 10.00 seconds
+        Time - Every (Random real number between 30.00 and 350.00) seconds of game time
+        Player - Player 1 (Red) types a chat message containing oretest as An exact match
+    Conditions
+    Actions
+        -------- == ZONES == --------
+        -------- 1. Twilight Grove - Levels 3-8 --------
+        -------- 2. Sereneglade - Levels 1-9 --------
+        -------- 3. Emberpeak Highlands - Levels 10-15 --------
+        -------- 4. Dragonfire Peaks - Levels 20-30 --------
+        -------- 5. Wyrmhold Sanctum - Levels 20-30 --------
+        -------- 6. Thornwoods - Levels 1-10 --------
+        -------- 7. Havenwoods - Levels 5-10 --------
+        -------- 8. Bonecrush Stronghold - Levels 10-12 --------
+        -------- 9. Vanguard Vale - Levels 8-12 --------
+        -------- 10. Riverbane - Levels 8-12 --------
+        -------- 11. Deadwoods - Levels 8-12 --------
+        -------- 12. Felfire Bastion - Levels 12-15 (Stronghold 25-30) --------
+        -------- 13. Stormhaven - Levels 12-18 --------
+        -------- 14. Sirensong - Levels 10-15 --------
+        -------- 15. Zul’Gurak - Levels 15-20 --------
+        -------- 16. Firelands - Levels 20-30 --------
+        -------- 17. Verdant Plains - Levels 15-20 --------
+        -------- 18. Coliseum of Ages - Levels XXX --------
+        -------- 19. Ghostwalk Ridge - Levels 5-10 --------
+        -------- ============ --------
+        -------- ============ --------
+        -------- ============ --------
+        -------- 1. Twilight Grove - Levels 3-8 --------
+        -------- Define regions for spawning ores --------
+        Set VariableSet OreSpawnRegionInt = (Random integer number between 1 and 12)
+        -------- Ore Vein Spawn Point --------
+        Set VariableSet OreVeinSpawnPoint = (Random point in OreRegions[OreSpawnRegionInt])
+        -------- Probability --------
+        Set VariableSet OreVeinTypeProbability = (Random integer number between 1 and 100)
+        -------- Copper: 60 % chance --------
+        -------- Tin: 30 % chance --------
+        -------- Silver: 10 % chance --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                OreVeinTypeProbability Less than or equal to 60
+            Then - Actions
+                -------- Copper --------
+                Unit - Create 1 Copper Vein 2 for Player 24 (Peanut) at OreVeinSpawnPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to Veins1
+                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                Custom script:   call RemoveLocation(udg_OreVeinSpawnPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                OreVeinTypeProbability Greater than 60
+                OreVeinTypeProbability Less than or equal to 90
+            Then - Actions
+                -------- Tin --------
+                Unit - Create 1 Tin Vein 2 for Player 24 (Peanut) at OreVeinSpawnPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to Veins1
+                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                Custom script:   call RemoveLocation(udg_OreVeinSpawnPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                OreVeinTypeProbability Greater than 90
+            Then - Actions
+                -------- Silver --------
+                Unit - Create 1 Silver Vein 2 for Player 24 (Peanut) at OreVeinSpawnPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to Veins1
+                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                Custom script:   call RemoveLocation(udg_OreVeinSpawnPoint)
+            Else - Actions
+        -------- ============ --------
+        -------- ============ --------
+        -------- ============ --------
+        -------- 2. Sereneglade - Levels 1-9 --------
+        -------- Define regions for spawning ores --------
+        Set VariableSet OreSpawnRegionInt = (Random integer number between 13 and 96)
+        -------- Ore Vein Spawn Point --------
+        Set VariableSet OreVeinSpawnPoint = (Random point in OreRegions[OreSpawnRegionInt])
+        -------- Probability --------
+        Set VariableSet OreVeinTypeProbability = (Random integer number between 1 and 100)
+        -------- Copper: 60 % chance --------
+        -------- Tin: 30 % chance --------
+        -------- Silver: 10 % chance --------
+        Set VariableSet OreVeinTypeProbability = (Random integer number between 1 and 100)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                OreVeinTypeProbability Less than or equal to 60
+            Then - Actions
+                -------- Copper --------
+                Unit - Create 1 Copper Vein 2 for Player 24 (Peanut) at OreVeinSpawnPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to Veins2
+                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                Custom script:   call RemoveLocation(udg_OreVeinSpawnPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                OreVeinTypeProbability Greater than 60
+                OreVeinTypeProbability Less than or equal to 90
+            Then - Actions
+                -------- Tin --------
+                Unit - Create 1 Tin Vein 2 for Player 24 (Peanut) at OreVeinSpawnPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to Veins2
+                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                Custom script:   call RemoveLocation(udg_OreVeinSpawnPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                OreVeinTypeProbability Greater than 90
+            Then - Actions
+                -------- Silver --------
+                Unit - Create 1 Silver Vein 2 for Player 24 (Peanut) at OreVeinSpawnPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to Veins2
+                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                Custom script:   call RemoveLocation(udg_OreVeinSpawnPoint)
+            Else - Actions
+        -------- ============ --------
+        -------- ============ --------
+        -------- ============ --------
+        -------- 6. Thornwoods - Levels 1-10 --------
+        -------- Define regions for spawning ores --------
+        Set VariableSet OreSpawnRegionInt = (Random integer number between 101 and 133)
+        -------- Ore Vein Spawn Point --------
+        Set VariableSet OreVeinSpawnPoint = (Random point in OreRegions[OreSpawnRegionInt])
+        -------- Probability --------
+        Set VariableSet OreVeinTypeProbability = (Random integer number between 1 and 100)
+        -------- Copper: 60 % chance --------
+        -------- Tin: 30 % chance --------
+        -------- Silver: 10 % chance --------
+        Set VariableSet OreVeinTypeProbability = (Random integer number between 1 and 100)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                OreVeinTypeProbability Less than or equal to 60
+            Then - Actions
+                -------- Copper --------
+                Unit - Create 1 Copper Vein 2 for Player 24 (Peanut) at OreVeinSpawnPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to Veins3
+                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                Custom script:   call RemoveLocation(udg_OreVeinSpawnPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                OreVeinTypeProbability Greater than 60
+                OreVeinTypeProbability Less than or equal to 90
+            Then - Actions
+                -------- Tin --------
+                Unit - Create 1 Tin Vein 2 for Player 24 (Peanut) at OreVeinSpawnPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to Veins3
+                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                Custom script:   call RemoveLocation(udg_OreVeinSpawnPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                OreVeinTypeProbability Greater than 90
+            Then - Actions
+                -------- Silver --------
+                Unit - Create 1 Silver Vein 2 for Player 24 (Peanut) at OreVeinSpawnPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to Veins3
+                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                Custom script:   call RemoveLocation(udg_OreVeinSpawnPoint)
+            Else - Actions
+        -------- ============ --------
+        -------- ============ --------
+        -------- 10. Riverbane - Levels 8-12 --------
+        -------- Define regions for spawning ores --------
+        Set VariableSet OreSpawnRegionInt = (Random integer number between 232 and 285)
+        -------- Ore Vein Spawn Point --------
+        Set VariableSet OreVeinSpawnPoint = (Random point in OreRegions[OreSpawnRegionInt])
+        -------- Probability --------
+        Set VariableSet OreVeinTypeProbability = (Random integer number between 1 and 100)
+        -------- Iron: 60 % chance --------
+        -------- Tin: 30 % chance --------
+        -------- Silver: 10 % chance --------
+        Set VariableSet OreVeinTypeProbability = (Random integer number between 1 and 100)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                OreVeinTypeProbability Less than or equal to 60
+            Then - Actions
+                -------- Copper --------
+                Unit - Create 1 Iron Vein 2 for Player 24 (Peanut) at OreVeinSpawnPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to Veins5
+                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                Custom script:   call RemoveLocation(udg_OreVeinSpawnPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                OreVeinTypeProbability Greater than 60
+                OreVeinTypeProbability Less than or equal to 90
+            Then - Actions
+                -------- Tin --------
+                Unit - Create 1 Tin Vein 2 for Player 24 (Peanut) at OreVeinSpawnPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to Veins5
+                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                Custom script:   call RemoveLocation(udg_OreVeinSpawnPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                OreVeinTypeProbability Greater than 90
+            Then - Actions
+                -------- Silver --------
+                Unit - Create 1 Silver Vein 2 for Player 24 (Peanut) at OreVeinSpawnPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to Veins5
+                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                Custom script:   call RemoveLocation(udg_OreVeinSpawnPoint)
+            Else - Actions
+        -------- ============ --------
+        -------- 11. Deadwoods - Levels 8-12 --------
+        -------- 19. Ghostwalk Ridge - Levels 5-10 --------
+        -------- Define regions for spawning ores --------
+        Set VariableSet OreSpawnRegionInt = (Random integer number between 286 and 318)
+        -------- Ore Vein Spawn Point --------
+        Set VariableSet OreVeinSpawnPoint = (Random point in OreRegions[OreSpawnRegionInt])
+        -------- Probability --------
+        Set VariableSet OreVeinTypeProbability = (Random integer number between 1 and 100)
+        -------- Iron: 60 % chance --------
+        -------- Tin: 20 % chance --------
+        -------- Silver: 10 % chance --------
+        -------- Gold: 10 % chance --------
+        Set VariableSet OreVeinTypeProbability = (Random integer number between 1 and 100)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                OreVeinTypeProbability Less than or equal to 60
+            Then - Actions
+                -------- Iron --------
+                Unit - Create 1 Iron Vein 2 for Player 24 (Peanut) at OreVeinSpawnPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to Veins6
+                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                Custom script:   call RemoveLocation(udg_OreVeinSpawnPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                OreVeinTypeProbability Greater than 60
+                OreVeinTypeProbability Less than or equal to 80
+            Then - Actions
+                -------- Tin --------
+                Unit - Create 1 Tin Vein 2 for Player 24 (Peanut) at OreVeinSpawnPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to Veins6
+                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                Custom script:   call RemoveLocation(udg_OreVeinSpawnPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                OreVeinTypeProbability Greater than 80
+                OreVeinTypeProbability Less than or equal to 90
+            Then - Actions
+                -------- Silver --------
+                Unit - Create 1 Silver Vein 2 for Player 24 (Peanut) at OreVeinSpawnPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to Veins6
+                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                Custom script:   call RemoveLocation(udg_OreVeinSpawnPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                OreVeinTypeProbability Greater than 90
+            Then - Actions
+                -------- Gold --------
+                Unit - Create 1 Gold Vein 2 for Player 24 (Peanut) at OreVeinSpawnPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to Veins6
+                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                Custom script:   call RemoveLocation(udg_OreVeinSpawnPoint)
+            Else - Actions
+        -------- ============ --------
+        -------- ============ --------
+        -------- 3. Emberpeak Highlands - Levels 10-15 --------
+        -------- Define regions for spawning ores --------
+        Set VariableSet OreSpawnRegionInt = (Random integer number between 201 and 231)
+        -------- Ore Vein Spawn Point --------
+        Set VariableSet OreVeinSpawnPoint = (Random point in OreRegions[OreSpawnRegionInt])
+        -------- Probability --------
+        Set VariableSet OreVeinTypeProbability = (Random integer number between 1 and 100)
+        -------- Iron: 60 % chance --------
+        -------- Silver: 30 % chance --------
+        -------- Gold: 10 % chance --------
+        Set VariableSet OreVeinTypeProbability = (Random integer number between 1 and 100)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                OreVeinTypeProbability Less than or equal to 60
+            Then - Actions
+                -------- Copper --------
+                Unit - Create 1 Iron Vein 2 for Player 24 (Peanut) at OreVeinSpawnPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to Veins4
+                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                Custom script:   call RemoveLocation(udg_OreVeinSpawnPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                OreVeinTypeProbability Greater than 60
+                OreVeinTypeProbability Less than or equal to 90
+            Then - Actions
+                -------- Tin --------
+                Unit - Create 1 Silver Vein 2 for Player 24 (Peanut) at OreVeinSpawnPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to Veins4
+                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                Custom script:   call RemoveLocation(udg_OreVeinSpawnPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                OreVeinTypeProbability Greater than 90
+            Then - Actions
+                -------- Gold --------
+                Unit - Create 1 Gold Vein 2 for Player 24 (Peanut) at OreVeinSpawnPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to Veins4
+                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                Custom script:   call RemoveLocation(udg_OreVeinSpawnPoint)
+            Else - Actions
+===========================================================================
+
+Destroy Veins Limit
+    Events
+        Time - Every 2.00 seconds of game time
+        Time - Every (Random real number between 180.00 and 400.00) seconds of game time
+    Conditions
+    Actions
+        -------- 1. Twilight Grove - Levels 3-8 --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in Veins1) Greater than or equal to 3
+            Then - Actions
+                Set VariableSet VeinTempInt = (Random integer number between 1 and (Number of units in Veins1))
+                Unit Group - Pick every unit in (Random VeinTempInt units from Veins1) and do (Actions)
+                    Loop - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                            Then - Actions
+                                Set VariableSet CVGlow = (Custom value of (Picked unit))
+                                Special Effect - Destroy VeinGlow[CVGlow]
+                                Unit Group - Remove (Picked unit) from Veins1.
+                                Unit - Remove (Picked unit) from the game
+                            Else - Actions
+            Else - Actions
+        -------- 2. Sereneglade - Levels 1-9 --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in Veins2) Greater than or equal to 8
+            Then - Actions
+                Set VariableSet VeinTempInt = (Random integer number between 1 and (Number of units in Veins2))
+                Unit Group - Pick every unit in (Random VeinTempInt units from Veins2) and do (Actions)
+                    Loop - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                            Then - Actions
+                                Set VariableSet CVGlow = (Custom value of (Picked unit))
+                                Special Effect - Destroy VeinGlow[CVGlow]
+                                Unit Group - Remove (Picked unit) from Veins2.
+                                Unit - Remove (Picked unit) from the game
+                            Else - Actions
+            Else - Actions
+        -------- 3. Emberpeak Highlands - Levels 10-15 --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in Veins4) Greater than or equal to 5
+            Then - Actions
+                Set VariableSet VeinTempInt = (Random integer number between 1 and (Number of units in Veins4))
+                Unit Group - Pick every unit in (Random VeinTempInt units from Veins4) and do (Actions)
+                    Loop - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                            Then - Actions
+                                Set VariableSet CVGlow = (Custom value of (Picked unit))
+                                Special Effect - Destroy VeinGlow[CVGlow]
+                                Unit Group - Remove (Picked unit) from Veins4.
+                                Unit - Remove (Picked unit) from the game
+                            Else - Actions
+            Else - Actions
+        -------- 6. Thornwoods - Levels 1-10 --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in Veins3) Greater than or equal to 8
+            Then - Actions
+                Set VariableSet VeinTempInt = (Random integer number between 1 and (Number of units in Veins3))
+                Unit Group - Pick every unit in (Random VeinTempInt units from Veins3) and do (Actions)
+                    Loop - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                            Then - Actions
+                                Set VariableSet CVGlow = (Custom value of (Picked unit))
+                                Special Effect - Destroy VeinGlow[CVGlow]
+                                Unit Group - Remove (Picked unit) from Veins3.
+                                Unit - Remove (Picked unit) from the game
+                            Else - Actions
+            Else - Actions
+        -------- 10. Riverbane - Levels 8-12 --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in Veins5) Greater than or equal to 8
+            Then - Actions
+                Set VariableSet VeinTempInt = (Random integer number between 1 and (Number of units in Veins5))
+                Unit Group - Pick every unit in (Random VeinTempInt units from Veins5) and do (Actions)
+                    Loop - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                            Then - Actions
+                                Set VariableSet CVGlow = (Custom value of (Picked unit))
+                                Special Effect - Destroy VeinGlow[CVGlow]
+                                Unit - Remove (Picked unit) from the game
+                            Else - Actions
+            Else - Actions
+        -------- 11. Deadwoods - Levels 8-12 --------
+        -------- 19. Ghostwalk Ridge - Levels 5-10 --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in Veins6) Greater than or equal to 6
+            Then - Actions
+                Set VariableSet VeinTempInt = (Random integer number between 1 and (Number of units in Veins6))
+                Unit Group - Pick every unit in (Random VeinTempInt units from Veins6) and do (Actions)
+                    Loop - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                            Then - Actions
+                                Set VariableSet CVGlow = (Custom value of (Picked unit))
+                                Special Effect - Destroy VeinGlow[CVGlow]
+                                Unit Group - Remove (Picked unit) from Veins6.
+                                Unit - Remove (Picked unit) from the game
+                            Else - Actions
+            Else - Actions
+===========================================================================
+Crystals Init
+
+//===========================================================================
+
+function Trig_Crystals_Init_Actions takes nothing returns nothing
+    // Define regions for spawning ores
+// -------- Red Crystals --------
+    set udg_CrystalRedRegions[1] = gg_rct_CrystalsRed0001
+    set udg_CrystalRedRegions[2] = gg_rct_CrystalsRed0002
+    set udg_CrystalRedRegions[3] = gg_rct_CrystalsRed0003
+    set udg_CrystalRedRegions[4] = gg_rct_CrystalsRed0004
+    set udg_CrystalRedRegions[5] = gg_rct_CrystalsRed0005
+    set udg_CrystalRedRegions[6] = gg_rct_CrystalsRed0006
+    set udg_CrystalRedRegions[7] = gg_rct_CrystalsRed0007
+    set udg_CrystalRedRegions[8] = gg_rct_CrystalsRed0008
+    set udg_CrystalRedRegions[9] = gg_rct_CrystalsRed0009
+    set udg_CrystalRedRegions[10] = gg_rct_CrystalsRed0010
+    set udg_CrystalRedRegions[11] = gg_rct_CrystalsRed0011
+    set udg_CrystalRedRegions[12] = gg_rct_CrystalsRed0012
+    set udg_CrystalRedRegions[13] = gg_rct_CrystalsRed0013
+    set udg_CrystalRedRegions[14] = gg_rct_CrystalsRed0014
+    set udg_CrystalRedRegions[15] = gg_rct_CrystalsRed0015
+    set udg_CrystalRedRegions[16] = gg_rct_CrystalsRed0016
+    set udg_CrystalRedRegions[17] = gg_rct_CrystalsRed0017
+    set udg_CrystalRedRegions[18] = gg_rct_CrystalsRed0018
+    set udg_CrystalRedRegions[19] = gg_rct_CrystalsRed0019
+    set udg_CrystalRedRegions[20] = gg_rct_CrystalsRed0020
+
+// -------- Blue Crystals --------
+
+
+// -------- Green Crystals --------
+
+
+// -------- Yellow Crystals --------
+
+
+// -------- Any Crystals --------
+    set udg_CrystalAnyRegions[1] = gg_rct_CrystalsAny0001
+    set udg_CrystalAnyRegions[2] = gg_rct_CrystalsAny0002
+    set udg_CrystalAnyRegions[3] = gg_rct_CrystalsAny0003
+    set udg_CrystalAnyRegions[4] = gg_rct_CrystalsAny0004
+    set udg_CrystalAnyRegions[5] = gg_rct_CrystalsAny0005
+    set udg_CrystalAnyRegions[6] = gg_rct_CrystalsAny0006
+// Continue making "ANY" spawn regions...
+
+endfunction
+
+
+//===========================================================================
+function InitTrig_Crystals_Init takes nothing returns nothing
+    set gg_trg_Crystals_Init = CreateTrigger(  )
+    call TriggerRegisterTimerEventSingle( gg_trg_Crystals_Init, 0.00 )
+    call TriggerAddAction( gg_trg_Crystals_Init, function Trig_Crystals_Init_Actions )
+endfunction
+
+===========================================================================
+Crystals Spawn
+    Events
+        Time - Every (Random real number between 30.00 and 350.00) seconds of game time
+        Player - Player 1 (Red) types a chat message containing crystaltest as An exact match
+    Conditions
+    Actions
+        -------- =============================================== --------
+        -------- ---------------------------------- RED CRYSTALS --------
+        -------- Define regions for spawning crystals --------
+        Set VariableSet CrystalSpawnRegionInt = (Random integer number between 1 and 20)
+        -------- Crystal Spawn Point --------
+        Set VariableSet CrystalSpawnPoint = (Random point in CrystalRedRegions[CrystalSpawnRegionInt])
+        -------- Probability --------
+        Set VariableSet CrystalTypeProbability = (Random integer number between 1 and 100)
+        -------- Regular Crystal 60 % chance --------
+        -------- Rich Crystal 10 % chance --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                CrystalTypeProbability Less than or equal to 60
+            Then - Actions
+                -------- CRYSTAL --------
+                Unit - Create 1 Red Crystal for Player 24 (Peanut) at CrystalSpawnPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to Crystals
+                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                Custom script:   call RemoveLocation(udg_CrystalSpawnPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                CrystalTypeProbability Greater than 90
+            Then - Actions
+                -------- RICH CRYSTAL --------
+                Unit - Create 1 Rich Red Crystal for Player 24 (Peanut) at CrystalSpawnPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to Crystals
+                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                Custom script:   call RemoveLocation(udg_CrystalSpawnPoint)
+            Else - Actions
+        -------- =============================================== --------
+        -------- ---------------------------------- YELLOW CRYSTALS --------
+        -------- =============================================== --------
+        -------- ---------------------------------- GREEN CRYSTALS --------
+        -------- =============================================== --------
+        -------- ---------------------------------- BLUE CRYSTALS --------
+        -------- =============================================== --------
+        -------- ---------------------------------- ANY CRYSTALS --------
+        -------- Define regions for spawning crystals --------
+        Set VariableSet CrystalSpawnRegionInt = (Random integer number between 1 and 6)
+        -------- Crystal Spawn Point --------
+        Set VariableSet CrystalSpawnPoint = (Random point in CrystalAnyRegions[CrystalSpawnRegionInt])
+        -------- Probability --------
+        Set VariableSet CrystalTypeProbability = (Random integer number between 1 and 100)
+        -------- Red Crystal 25 % chance --------
+        -------- Blue Crystal 25 % chance --------
+        -------- Yellow Crystal 25 % chance --------
+        -------- Green Crystal 25 % chance --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                CrystalTypeProbability Less than or equal to 25
+            Then - Actions
+                -------- CRYSTAL --------
+                Unit - Create 1 Red Crystal for Player 24 (Peanut) at CrystalSpawnPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to Crystals
+                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                Custom script:   call RemoveLocation(udg_CrystalSpawnPoint)
+            Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        OreVeinTypeProbability Greater than 25
+                        CrystalTypeProbability Less than or equal to 50
+                    Then - Actions
+                        -------- CRYSTAL --------
+                        Unit - Create 1 Blue Crystal for Player 24 (Peanut) at CrystalSpawnPoint facing (Random angle) degrees
+                        Unit Group - Add (Last created unit) to Crystals
+                        Set VariableSet CVGlow = (Custom value of (Last created unit))
+                        Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                        Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                        Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                        Custom script:   call RemoveLocation(udg_CrystalSpawnPoint)
+                    Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                OreVeinTypeProbability Greater than 50
+                                CrystalTypeProbability Less than or equal to 75
+                            Then - Actions
+                                -------- CRYSTAL --------
+                                Unit - Create 1 Green Crystal for Player 24 (Peanut) at CrystalSpawnPoint facing (Random angle) degrees
+                                Unit Group - Add (Last created unit) to Crystals
+                                Set VariableSet CVGlow = (Custom value of (Last created unit))
+                                Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                                Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                                Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                                Custom script:   call RemoveLocation(udg_CrystalSpawnPoint)
+                            Else - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                    Then - Actions
+                                        -------- CRYSTAL --------
+                                        Unit - Create 1 Yellow Crystal for Player 24 (Peanut) at CrystalSpawnPoint facing (Random angle) degrees
+                                        Unit Group - Add (Last created unit) to Crystals
+                                        Set VariableSet CVGlow = (Custom value of (Last created unit))
+                                        Set VariableSet VeinGlowUnit[CVGlow] = (Last created unit)
+                                        Set VariableSet VeinGlowPoint[CVGlow] = (Position of (Last created unit))
+                                        Custom script:   call TriggerExecute(gg_trg_Vein_Glow)
+                                        Custom script:   call RemoveLocation(udg_CrystalSpawnPoint)
+                                    Else - Actions
+        -------- =============================================== --------
+
+Destroy Crystals Limit
+    Events
+        Time - Every 2.00 seconds of game time
+        Time - Every (Random real number between 230.00 and 500.00) seconds of game time
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in Crystals) Greater than or equal to 15
+            Then - Actions
+                Set VariableSet CrystalTempInt = (Random integer number between 1 and (Number of units in Crystals))
+                Unit Group - Pick every unit in (Random CrystalTempInt units from Crystals) and do (Actions)
+                    Loop - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                            Then - Actions
+                                Set VariableSet CVGlow = (Custom value of (Picked unit))
+                                Special Effect - Destroy VeinGlow[CVGlow]
+                                Unit Group - Remove (Picked unit) from Crystals.
+                                Unit - Remove (Picked unit) from the game
+                            Else - Actions
+            Else - Actions
+
+
+
+//===========================================================================
+//    Mana Crystals
+//===========================================================================
+
+function Trig_ManaCrystals_Init_Actions takes nothing returns nothing
+    // Define regions for spawning ores
+// -------- Red Crystals --------
+    set udg_CrystalManaRegions[1] = gg_rct_ManaCrystal01
+    set udg_CrystalManaRegions[2] = gg_rct_ManaCrystal02
+    set udg_CrystalManaRegions[3] = gg_rct_ManaCrystal03
+    set udg_CrystalManaRegions[4] = gg_rct_ManaCrystal04
+    set udg_CrystalManaRegions[5] = gg_rct_ManaCrystal05
+    set udg_CrystalManaRegions[6] = gg_rct_ManaCrystal06
+    set udg_CrystalManaRegions[7] = gg_rct_ManaCrystal07
+    set udg_CrystalManaRegions[8] = gg_rct_ManaCrystal08
+    set udg_CrystalManaRegions[9] = gg_rct_ManaCrystal09
+    set udg_CrystalManaRegions[10] = gg_rct_ManaCrystal10
+    set udg_CrystalManaRegions[11] = gg_rct_ManaCrystal11
+    set udg_CrystalManaRegions[12] = gg_rct_ManaCrystal12
+    set udg_CrystalManaRegions[13] = gg_rct_ManaCrystal13
+    set udg_CrystalManaRegions[14] = gg_rct_ManaCrystal14
+    set udg_CrystalManaRegions[15] = gg_rct_ManaCrystal15
+    set udg_CrystalManaRegions[16] = gg_rct_ManaCrystal16
+    set udg_CrystalManaRegions[17] = gg_rct_ManaCrystal17
+    set udg_CrystalManaRegions[18] = gg_rct_ManaCrystal18
+    set udg_CrystalManaRegions[19] = gg_rct_ManaCrystal19
+
+endfunction
+
+
+//===========================================================================
+function InitTrig_ManaCrystals_Init takes nothing returns nothing
+    set gg_trg_ManaCrystals_Init = CreateTrigger(  )
+    call TriggerRegisterTimerEventSingle( gg_trg_ManaCrystals_Init, 0.00 )
+    call TriggerAddAction( gg_trg_ManaCrystals_Init, function Trig_ManaCrystals_Init_Actions )
+endfunction
+
+
+//===========================================================================
+//    Mana Crystals
+//===========================================================================
+
+function Trig_ManaCrystals_Init_Actions takes nothing returns nothing
+    // Define regions for spawning ores
+// -------- Red Crystals --------
+    set udg_CrystalManaRegions[1] = gg_rct_ManaCrystal01
+    set udg_CrystalManaRegions[2] = gg_rct_ManaCrystal02
+    set udg_CrystalManaRegions[3] = gg_rct_ManaCrystal03
+    set udg_CrystalManaRegions[4] = gg_rct_ManaCrystal04
+    set udg_CrystalManaRegions[5] = gg_rct_ManaCrystal05
+    set udg_CrystalManaRegions[6] = gg_rct_ManaCrystal06
+    set udg_CrystalManaRegions[7] = gg_rct_ManaCrystal07
+    set udg_CrystalManaRegions[8] = gg_rct_ManaCrystal08
+    set udg_CrystalManaRegions[9] = gg_rct_ManaCrystal09
+    set udg_CrystalManaRegions[10] = gg_rct_ManaCrystal10
+    set udg_CrystalManaRegions[11] = gg_rct_ManaCrystal11
+    set udg_CrystalManaRegions[12] = gg_rct_ManaCrystal12
+    set udg_CrystalManaRegions[13] = gg_rct_ManaCrystal13
+    set udg_CrystalManaRegions[14] = gg_rct_ManaCrystal14
+    set udg_CrystalManaRegions[15] = gg_rct_ManaCrystal15
+    set udg_CrystalManaRegions[16] = gg_rct_ManaCrystal16
+    set udg_CrystalManaRegions[17] = gg_rct_ManaCrystal17
+    set udg_CrystalManaRegions[18] = gg_rct_ManaCrystal18
+    set udg_CrystalManaRegions[19] = gg_rct_ManaCrystal19
+
+endfunction
+
+
+//===========================================================================
+function InitTrig_ManaCrystals_Init takes nothing returns nothing
+    set gg_trg_ManaCrystals_Init = CreateTrigger(  )
+    call TriggerRegisterTimerEventSingle( gg_trg_ManaCrystals_Init, 0.00 )
+    call TriggerAddAction( gg_trg_ManaCrystals_Init, function Trig_ManaCrystals_Init_Actions )
+endfunction
+
+
+Destroy ManaCrystals Limit
+    Events
+        Time - Every 2.00 seconds of game time
+        Time - Every (Random real number between 230.00 and 500.00) seconds of game time
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in CrystalsMana) Greater than or equal to 6
+            Then - Actions
+                Set VariableSet CrystalManaTempInt = (Random integer number between 1 and (Number of units in CrystalsMana))
+                Unit Group - Pick every unit in (Random CrystalManaTempInt units from CrystalsMana) and do (Actions)
+                    Loop - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                            Then - Actions
+                                Set VariableSet CVGlow = (Custom value of (Picked unit))
+                                Special Effect - Destroy VeinGlow[CVGlow]
+                                Unit Group - Remove (Picked unit) from Crystals.
+                                Unit - Remove (Picked unit) from the game
+                            Else - Actions
+            Else - Actions
+
+
+Vein Glow
+    Events
+    Conditions
+    Actions
+        -------- ==== VEIN GLOW --------
+        -------- == --------
+        -------- Crystals --------
+        Custom script:   local real z = GetLocationZ(udg_VeinGlowPoint[udg_CVGlow])
+        Special Effect - Create a special effect at VeinGlowPoint[CVGlow] using war3campImported\Glow.mdl
+        Custom script:   call RemoveLocation(udg_VeinGlowPoint[udg_CVGlow])
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Unit-type of VeinGlowUnit[CVGlow]) Equal to Blue Crystal
+                        (Unit-type of VeinGlowUnit[CVGlow]) Equal to Rich Blue Crystal
+            Then - Actions
+                Special Effect - Set Color of (Last created special effect) to r: 0, g: 0, b: 255
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Unit-type of VeinGlowUnit[CVGlow]) Equal to Green Crystal
+                        (Unit-type of VeinGlowUnit[CVGlow]) Equal to Rich Green Crystal
+            Then - Actions
+                Special Effect - Set Color of (Last created special effect) to r: 0, g: 255, b: 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Unit-type of VeinGlowUnit[CVGlow]) Equal to Red Crystal
+                        (Unit-type of VeinGlowUnit[CVGlow]) Equal to Rich Red Crystal
+            Then - Actions
+                Special Effect - Set Color of (Last created special effect) to r: 255, g: 0, b: 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Unit-type of VeinGlowUnit[CVGlow]) Equal to Yellow Crystal
+                        (Unit-type of VeinGlowUnit[CVGlow]) Equal to Rich Yellow Crystal
+            Then - Actions
+                Special Effect - Set Color of (Last created special effect) to r: 255, g: 255, b: 0
+            Else - Actions
+        -------- Ore veins --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of VeinGlowUnit[CVGlow]) Equal to Copper Vein 2
+            Then - Actions
+                Special Effect - Set Color of (Last created special effect) to r: 255, g: 128, b: 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of VeinGlowUnit[CVGlow]) Equal to Tin Vein 2
+            Then - Actions
+                Special Effect - Set Color of (Last created special effect) to r: 55, g: 55, b: 55
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of VeinGlowUnit[CVGlow]) Equal to Silver Vein 2
+            Then - Actions
+                Special Effect - Set Color of (Last created special effect) to r: 0, g: 255, b: 255
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of VeinGlowUnit[CVGlow]) Equal to Iron Vein 2
+            Then - Actions
+                Special Effect - Set Color of (Last created special effect) to r: 55, g: 55, b: 55
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of VeinGlowUnit[CVGlow]) Equal to Gold Vein 2
+            Then - Actions
+                Special Effect - Set Color of (Last created special effect) to r: 255, g: 255, b: 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of VeinGlowUnit[CVGlow]) Equal to Mithril Vein 2
+            Then - Actions
+                Special Effect - Set Color of (Last created special effect) to r: 238, g: 130, b: 238
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of VeinGlowUnit[CVGlow]) Equal to Thorium Vein 2
+            Then - Actions
+                Special Effect - Set Color of (Last created special effect) to r: 0, g: 128, b: 128
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of VeinGlowUnit[CVGlow]) Equal to Mana Crystal
+            Then - Actions
+                Special Effect - Set Color of (Last created special effect) to r: 0, g: 128, b: 128
+                Special Effect - Set Scale of (Last created special effect) to 3.50
+                Custom script:   call BlzSetSpecialEffectHeight( GetLastCreatedEffectBJ(), 50.00 + z )
+            Else - Actions
+        -------- =============== --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of VeinGlowUnit[CVGlow]) Not equal to Mana Crystal
+            Then - Actions
+                Special Effect - Set Scale of (Last created special effect) to 1.25
+                Custom script:   call BlzSetSpecialEffectHeight( GetLastCreatedEffectBJ(), 0.00 + z )
+            Else - Actions
+        Set VariableSet VeinGlow[CVGlow] = (Last created special effect)
+
+
+Vein Remove Glow
+    Events
+        Unit - A unit Dies
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Unit-type of (Triggering unit)) Equal to Copper Vein 2
+                (Unit-type of (Triggering unit)) Equal to Tin Vein 2
+                (Unit-type of (Triggering unit)) Equal to Silver Vein 2
+                (Unit-type of (Triggering unit)) Equal to Iron Vein 2
+                (Unit-type of (Triggering unit)) Equal to Gold Vein 2
+                (Unit-type of (Triggering unit)) Equal to Mithril Vein 2
+                (Unit-type of (Triggering unit)) Equal to Thorium Vein 2
+                (Unit-type of (Triggering unit)) Equal to Blue Crystal
+                (Unit-type of (Triggering unit)) Equal to Rich Blue Crystal
+                (Unit-type of (Triggering unit)) Equal to Green Crystal
+                (Unit-type of (Triggering unit)) Equal to Rich Green Crystal
+                (Unit-type of (Triggering unit)) Equal to Red Crystal
+                (Unit-type of (Triggering unit)) Equal to Rich Red Crystal
+                (Unit-type of (Triggering unit)) Equal to Yellow Crystal
+                (Unit-type of (Triggering unit)) Equal to Rich Yellow Crystal
+                (Unit-type of (Triggering unit)) Equal to Mana Crystal
+    Actions
+        Set VariableSet CVGlow = (Custom value of (Triggering unit))
+        Special Effect - Destroy VeinGlow[CVGlow]

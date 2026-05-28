@@ -1,0 +1,341 @@
+library ArrowKeyEvent /*
+    =========================================================================
+    ArrowKeyEvent version 1.1.0.0
+    =========================================================================
+    Credits:
+    -------------------------------------------------------------------------
+    -   Written by Bribe.
+    -   Earth-Fury for providing a lot of inspiration for the development of
+        this system (especially documentation) via his KeyAction resource.
+    -   tooltiperror & Sgqvur for providing very helpful, constructive advice.
+    -   SA Dashie for the functionality to enable/disable an individual module
+        event.
+    =========================================================================
+    Introduction:
+    -------------------------------------------------------------------------
+    Easy to use, efficient system for handling all arrow key events. It uses
+    arrays and GetHandleId lookups to avoid the trap of many cloned functions
+    that so many arrow key systems suffer from.
+    =========================================================================
+    API Guide:
+    -------------------------------------------------------------------------
+    To help centralize and make everything understandable, I originally used
+    the constants appointed by Blizzard (bj_KEYEVENTKEY_LEFT/RIGHT/etc). But
+    there was a lot of criticism over their ugliness so I made the following
+    constants to correspond accordingly. They have the same values as the BJ
+    constants, so you can use whichever is more appealing for you.
+
+    Their purpose is to be passed as arguments so you are able to query such
+    things as "is this key pressed" or simply to help make sense of what key
+    was pressed from an event response and interpret it as an integer.
+
+        constant integer ARROW_KEY_LEFT  = 0
+        constant integer ARROW_KEY_RIGHT = 1
+        constant integer ARROW_KEY_DOWN  = 2
+        constant integer ARROW_KEY_UP    = 3
+
+    -------------------------------------------------------------------------
+    As I was developing this resource, is was mostly written in vanilla JASS.
+    I had since converted it to OOP syntax but it has been requested to bring
+    it back. I have made it available once again.
+
+    function IsArrowKeyPressed
+        takes player whichPlayer, integer arrowKey
+            returns boolean
+
+        To find out if the arrow key was pressed, you need to first ask which
+        player is holding down the key, and then pass an ARROW_KEY constant
+        to represent the key you are querying for.
+
+    function RegisterArrowKeyEvent
+        takes code onEvent
+            returns nothing
+
+        Instead of making up to 8 different functions for 8 different events,
+        you can use this instead. Just specify a function that you want to be
+        called whenever any key is pressed. For event responses, reference 1
+        of the following 3 functions:
+
+    function GetEventArrowKeyPlayerId
+        takes nothing
+            returns integer
+
+        This is more of an optimization benefit than not. GetTriggerPlayer()
+        will get you the player who pressed the key, but most of the time you
+        just need to know the player ID of that person.
+
+    function GetEventArrowKey
+        takes nothing
+            returns integer
+
+        Call this function to find out which key was pressed. It will return
+        one of the four ARROW_KEY constants, of course.
+
+    function IsEventArrowKeyPressed
+        takes nothing
+            returns boolean
+
+        This is also here more for optimization's benefit. You can certainly
+        use "IsArrowKeyPressed(GetEventArrowKey(GetEventArrowKeyPlayerId()))"
+        but this is much more convenient I must say.
+
+    -------------------------------------------------------------------------
+    "implement ArrowKey"
+
+    ArrowKey API is accessible as if it were part of the implementing struct
+    itself. As a bonus, you can create a method "onArrowKeyEvent" that gets
+    called automatically when any key is pressed. The method musn't be static,
+    because the member "this" is a player ID (to mirror the ArrowKey struct's
+    own API). It must take an integer as its first argument to represent the
+    pressed or released key. As a final argument, it must take a boolean to
+    determine if the key was pressed (true) or released (false).
+
+    The member "this" taken by the method is a player ID.
+
+    NEW: Each module has its own enabler of the event, either as a whole or
+    for an individual player(s). This is entirely due to the work done by SA Dashie.
+*/
+    //=======================================================================
+    //
+    // System Code
+    //
+    //=======================================================================
+
+    globals
+        //-------------------------------------------------------------------
+        // Yo dawg, I herd you like constant variables so I gave you some new
+        // constant variables so you can have some constant variables to go
+        // with Blizzard's constant variables.
+        //
+        constant integer ARROW_KEY_LEFT  = bj_KEYEVENTKEY_LEFT
+        constant integer ARROW_KEY_RIGHT = bj_KEYEVENTKEY_RIGHT
+        constant integer ARROW_KEY_DOWN  = bj_KEYEVENTKEY_DOWN
+        constant integer ARROW_KEY_UP    = bj_KEYEVENTKEY_UP
+    endglobals
+
+    //=======================================================================
+    // Ugly modules are needed to prevent initialization bugs.
+    //
+    private module Init
+        private static method onInit takes nothing returns nothing
+            local player p
+            local integer i = 12
+            local trigger t = .trig
+            loop
+                set i = i - 1
+                set p = Player(i)
+                if GetPlayerSlotState(p) == PLAYER_SLOT_STATE_PLAYING and GetPlayerController(p) == MAP_CONTROL_USER then
+
+                    //Register arrow key events for playing players
+                    call TriggerRegisterPlayerEvent(t, p, EVENT_PLAYER_ARROW_LEFT_DOWN)
+                    call TriggerRegisterPlayerEvent(t, p, EVENT_PLAYER_ARROW_LEFT_UP)
+                    call TriggerRegisterPlayerEvent(t, p, EVENT_PLAYER_ARROW_RIGHT_DOWN)
+                    call TriggerRegisterPlayerEvent(t, p, EVENT_PLAYER_ARROW_RIGHT_UP)
+                    call TriggerRegisterPlayerEvent(t, p, EVENT_PLAYER_ARROW_DOWN_DOWN)
+                    call TriggerRegisterPlayerEvent(t, p, EVENT_PLAYER_ARROW_DOWN_UP)
+                    call TriggerRegisterPlayerEvent(t, p, EVENT_PLAYER_ARROW_UP_DOWN)
+                    call TriggerRegisterPlayerEvent(t, p, EVENT_PLAYER_ARROW_UP_UP)
+
+                    //Run if library ArrowKey is found in the map.
+                    //! runtextmacro optional INIT_ARROW_KEY_AA()
+                endif
+                exitwhen i == 0
+            endloop
+
+            //Run if library ArrowKey is found in the map.
+            //! runtextmacro optional INIT_ARROW_KEY_CALL_LINK()
+
+            call .registerEvent(function ArrowKey.actions)
+            set p = null
+            set t = null
+        endmethod
+    endmodule
+
+    //=======================================================================
+    // A central struct to handle all ArrowKey mechanics. This has its uses,
+    // giving you slightly more control over the inner system functionality.
+    //
+    struct ArrowKey extends array
+
+        //-------------------------------------------------------------------
+        // Event responses
+        //
+        readonly static integer  eventKey        = 0     //Arrow key that triggered the event.
+        readonly static boolean  eventKeyPressed = false //Was the arrow key pressed?
+        readonly static ArrowKey eventPlayerId   = 0     //The id of the player who pressed the key.
+
+        //Run if library ArrowKey is found in the map.
+        //! runtextmacro optional ARROW_KEY_DECLARE_ARRAYS()
+
+        //-------------------------------------------------------------------
+        // System variables
+        //
+        private static trigger trig = CreateTrigger()   //Handles all events.
+        private static boolean array press              //Is key pressed?
+
+        //===================================================================
+        // User-friendly typecasting.
+        //
+        static method operator [] takes player who returns ArrowKey
+            return GetPlayerId(who)
+        endmethod
+
+        //===================================================================
+        // Great for simplifying arrow key events - this function runs when
+        // any player presses or releases an arrow key. The code passed is
+        // expected to "return false".
+        //
+        static method registerEvent takes code onEvent returns nothing
+            call TriggerAddCondition(.trig, Filter(onEvent))
+            return
+        endmethod
+
+        //===================================================================
+        // Returns true if the key is pressed, false if it is released.
+        //
+        method isPressed takes integer arrow returns boolean
+            return press[this + arrow * 12]
+        endmethod
+
+        //Run if library ArrowKey is found in the map.
+        //! runtextmacro optional ARROW_KEY_AXIS_METHODS()
+
+        //===================================================================
+        // If you are running debug tests, this might come in handy.
+        //
+        static if DEBUG_MODE then
+            static method getKeyName takes integer arrow returns string
+                if arrow == ARROW_KEY_LEFT then
+                    return "LEFT"
+                elseif arrow == ARROW_KEY_RIGHT then
+                    return "RIGHT"
+                elseif arrow == ARROW_KEY_DOWN then
+                    return "DOWN"
+                elseif arrow == ARROW_KEY_UP then
+                    return "UP"
+                endif
+                return "--"
+            endmethod
+        endif
+
+        //===================================================================
+        //
+        // Private Components
+        //
+        //===================================================================
+
+        //===================================================================
+        // Key event handler.
+        //
+        private static method actions takes nothing returns nothing
+            local integer id = GetHandleId(GetTriggerEventId()) - 261
+            set .eventPlayerId = GetPlayerId(GetTriggerPlayer())
+
+            //If id is an even number, the key was pressed.
+            set .eventKey = id / 2
+            set .eventKeyPressed = .eventKey * 2 == id
+            set .press[.eventPlayerId + .eventKey * 12] = .eventKeyPressed
+
+            //Run if library ArrowKey is found in the map.
+            //! runtextmacro optional ARROW_KEY_SETUP()
+        endmethod
+
+        //Run if library ArrowKey is found in the map.
+        //! runtextmacro optional INIT_ARROW_KEY_LINK()
+
+        //Initialize the system via module
+        implement Init
+
+    endstruct
+
+    //=======================================================================
+    //
+    // Event Responses
+    //
+    //=======================================================================
+
+    //=======================================================================
+    function IsArrowKeyPressed takes player whichPlayer, integer arrowKey returns boolean
+        return ArrowKey[whichPlayer].isPressed(arrowKey)
+    endfunction
+
+    //=======================================================================
+    function RegisterArrowKeyEvent takes code onEvent returns nothing
+        call ArrowKey.registerEvent(onEvent)
+    endfunction
+
+    //=======================================================================
+    function GetEventArrowKeyPlayerId takes nothing returns integer
+        return ArrowKey.eventPlayerId
+    endfunction
+
+    //=======================================================================
+    function GetEventArrowKey takes nothing returns integer
+        return ArrowKey.eventKey
+    endfunction
+
+    //=======================================================================
+    function IsEventArrowKeyPressed takes nothing returns boolean
+        return ArrowKey.eventKeyPressed
+    endfunction
+
+    //=======================================================================
+    // Implementation of this module allows you to make your struct "extend"
+    // the ArrowKey struct. As a bonus feature, you can create a method named
+    // "onArrowKeyEvent" that is called whenever a key is pressed or released.
+    // The method needs "takes integer arrow, boolean pressed", and must be
+    // positioned *above* the "implement ArrowKey" statement (this way it is
+    // detected by the static if and doesn't compile to a function interface).
+    //
+    module ArrowKey
+
+        //Delegates are fun, you should try them out.
+        private delegate ArrowKey AK
+
+        boolean enabledFor //this variable added in version 1.1.
+
+        //===================================================================
+        // This method added in version 1.1. It disables or enables the event
+        // in this module for all players.
+        //
+        static method operator enabled= takes boolean flag returns nothing
+            local integer i = 12
+            loop
+                set i = i - 1
+                set thistype(i).enabledFor = flag
+                exitwhen i == 0
+            endloop
+        endmethod
+        //===================================================================
+        // Please call this method from *below the module implement statement
+        // if you know what's good for you.
+        //
+        static method operator [] takes player who returns thistype
+            return GetPlayerId(who)
+        endmethod
+
+        static if thistype.onArrowKeyEvent.exists then
+            private static method eventProxy takes nothing returns nothing
+                local thistype this = .eventPlayerId
+                if .enabledFor then
+                    call .onArrowKeyEvent(.eventKey, .eventKeyPressed)
+                endif
+            endmethod
+        endif
+
+        private static method onInit takes nothing returns nothing
+            local thistype i = 12
+            loop
+                set i = i - 1
+                set i.AK = i    //Delegates require some delegation of course.
+                set thistype(i).enabledFor = true //Every player active at first
+                exitwhen i == 0
+            endloop
+            static if thistype.onArrowKeyEvent.exists then
+                call ArrowKey.registerEvent(function thistype.eventProxy)
+            endif
+        endmethod
+
+    endmodule
+
+endlibrary

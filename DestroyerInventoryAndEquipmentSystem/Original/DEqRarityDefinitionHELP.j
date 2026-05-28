@@ -1,0 +1,3 @@
+/*
+Rarities do not need to have a hierarchy or a sequence. You may define them in any order.
+*/

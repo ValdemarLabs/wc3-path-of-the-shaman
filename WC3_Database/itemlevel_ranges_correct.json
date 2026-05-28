@@ -1,0 +1,469 @@
+[
+  {
+    "item_type": "Other",
+    "base_level": "0 to 49",
+    "ranges": {}
+  },
+  {
+    "item_type": "Miscellaneous",
+    "base_level": 50,
+    "ranges": {
+      "Common": {
+        "min": 50,
+        "max": 59
+      },
+      "Uncommon": {
+        "min": 60,
+        "max": 69
+      },
+      "Rare": {
+        "min": 70,
+        "max": 79
+      },
+      "Epic": {
+        "min": 80,
+        "max": 89
+      },
+      "Legendary": {
+        "min": 90,
+        "max": 99
+      }
+    }
+  },
+  {
+    "item_type": "Helm",
+    "base_level": 100,
+    "ranges": {
+      "Common": {
+        "min": 100,
+        "max": 109
+      },
+      "Uncommon": {
+        "min": 110,
+        "max": 119
+      },
+      "Rare": {
+        "min": 120,
+        "max": 129
+      },
+      "Epic": {
+        "min": 130,
+        "max": 139
+      },
+      "Legendary": {
+        "min": 140,
+        "max": 149
+      }
+    }
+  },
+  {
+    "item_type": "Neck",
+    "base_level": 150,
+    "ranges": {
+      "Common": {
+        "min": 150,
+        "max": 159
+      },
+      "Uncommon": {
+        "min": 160,
+        "max": 169
+      },
+      "Rare": {
+        "min": 170,
+        "max": 179
+      },
+      "Epic": {
+        "min": 180,
+        "max": 189
+      },
+      "Legendary": {
+        "min": 190,
+        "max": 199
+      }
+    }
+  },
+  {
+    "item_type": "Shoulders",
+    "base_level": 200,
+    "ranges": {
+      "Common": {
+        "min": 200,
+        "max": 209
+      },
+      "Uncommon": {
+        "min": 210,
+        "max": 219
+      },
+      "Rare": {
+        "min": 220,
+        "max": 229
+      },
+      "Epic": {
+        "min": 230,
+        "max": 239
+      },
+      "Legendary": {
+        "min": 240,
+        "max": 249
+      }
+    }
+  },
+  {
+    "item_type": "Back",
+    "base_level": 250,
+    "ranges": {
+      "Common": {
+        "min": 250,
+        "max": 259
+      },
+      "Uncommon": {
+        "min": 260,
+        "max": 269
+      },
+      "Rare": {
+        "min": 270,
+        "max": 279
+      },
+      "Epic": {
+        "min": 280,
+        "max": 289
+      },
+      "Legendary": {
+        "min": 290,
+        "max": 299
+      }
+    }
+  },
+  {
+    "item_type": "Chest",
+    "base_level": 300,
+    "ranges": {
+      "Common": {
+        "min": 300,
+        "max": 309
+      },
+      "Uncommon": {
+        "min": 310,
+        "max": 319
+      },
+      "Rare": {
+        "min": 320,
+        "max": 329
+      },
+      "Epic": {
+        "min": 330,
+        "max": 339
+      },
+      "Legendary": {
+        "min": 340,
+        "max": 349
+      }
+    }
+  },
+  {
+    "item_type": "Bracers",
+    "base_level": 350,
+    "ranges": {
+      "Common": {
+        "min": 350,
+        "max": 359
+      },
+      "Uncommon": {
+        "min": 360,
+        "max": 369
+      },
+      "Rare": {
+        "min": 370,
+        "max": 379
+      },
+      "Epic": {
+        "min": 380,
+        "max": 389
+      },
+      "Legendary": {
+        "min": 390,
+        "max": 399
+      }
+    }
+  },
+  {
+    "item_type": "Gloves",
+    "base_level": 400,
+    "ranges": {
+      "Common": {
+        "min": 400,
+        "max": 409
+      },
+      "Uncommon": {
+        "min": 410,
+        "max": 419
+      },
+      "Rare": {
+        "min": 420,
+        "max": 429
+      },
+      "Epic": {
+        "min": 430,
+        "max": 439
+      },
+      "Legendary": {
+        "min": 440,
+        "max": 449
+      }
+    }
+  },
+  {
+    "item_type": "Belt",
+    "base_level": 450,
+    "ranges": {
+      "Common": {
+        "min": 450,
+        "max": 459
+      },
+      "Uncommon": {
+        "min": 460,
+        "max": 469
+      },
+      "Rare": {
+        "min": 470,
+        "max": 479
+      },
+      "Epic": {
+        "min": 480,
+        "max": 489
+      },
+      "Legendary": {
+        "min": 490,
+        "max": 499
+      }
+    }
+  },
+  {
+    "item_type": "Legpiece",
+    "base_level": 500,
+    "ranges": {
+      "Common": {
+        "min": 500,
+        "max": 509
+      },
+      "Uncommon": {
+        "min": 510,
+        "max": 519
+      },
+      "Rare": {
+        "min": 520,
+        "max": 529
+      },
+      "Epic": {
+        "min": 530,
+        "max": 539
+      },
+      "Legendary": {
+        "min": 540,
+        "max": 549
+      }
+    }
+  },
+  {
+    "item_type": "Boots",
+    "base_level": 550,
+    "ranges": {
+      "Common": {
+        "min": 550,
+        "max": 559
+      },
+      "Uncommon": {
+        "min": 560,
+        "max": 569
+      },
+      "Rare": {
+        "min": 570,
+        "max": 579
+      },
+      "Epic": {
+        "min": 580,
+        "max": 589
+      },
+      "Legendary": {
+        "min": 590,
+        "max": 599
+      }
+    }
+  },
+  {
+    "item_type": "Rings",
+    "base_level": 600,
+    "ranges": {
+      "Common": {
+        "min": 600,
+        "max": 609
+      },
+      "Uncommon": {
+        "min": 610,
+        "max": 619
+      },
+      "Rare": {
+        "min": 620,
+        "max": 629
+      },
+      "Epic": {
+        "min": 630,
+        "max": 639
+      },
+      "Legendary": {
+        "min": 640,
+        "max": 649
+      }
+    }
+  },
+  {
+    "item_type": "Trinket",
+    "base_level": 650,
+    "ranges": {
+      "Common": {
+        "min": 650,
+        "max": 659
+      },
+      "Uncommon": {
+        "min": 660,
+        "max": 669
+      },
+      "Rare": {
+        "min": 670,
+        "max": 679
+      },
+      "Epic": {
+        "min": 680,
+        "max": 689
+      },
+      "Legendary": {
+        "min": 690,
+        "max": 699
+      }
+    }
+  },
+  {
+    "item_type": "1h",
+    "base_level": 700,
+    "ranges": {
+      "Common": {
+        "min": 700,
+        "max": 709
+      },
+      "Uncommon": {
+        "min": 710,
+        "max": 719
+      },
+      "Rare": {
+        "min": 720,
+        "max": 729
+      },
+      "Epic": {
+        "min": 730,
+        "max": 739
+      },
+      "Legendary": {
+        "min": 740,
+        "max": 749
+      }
+    }
+  },
+  {
+    "item_type": "2h",
+    "base_level": 750,
+    "ranges": {
+      "Common": {
+        "min": 750,
+        "max": 759
+      },
+      "Uncommon": {
+        "min": 760,
+        "max": 769
+      },
+      "Rare": {
+        "min": 770,
+        "max": 779
+      },
+      "Epic": {
+        "min": 780,
+        "max": 789
+      },
+      "Legendary": {
+        "min": 790,
+        "max": 799
+      }
+    }
+  },
+  {
+    "item_type": "Stave",
+    "base_level": 800,
+    "ranges": {
+      "Common": {
+        "min": 800,
+        "max": 809
+      },
+      "Uncommon": {
+        "min": 810,
+        "max": 819
+      },
+      "Rare": {
+        "min": 820,
+        "max": 829
+      },
+      "Epic": {
+        "min": 830,
+        "max": 839
+      },
+      "Legendary": {
+        "min": 840,
+        "max": 849
+      }
+    }
+  },
+  {
+    "item_type": "Shield",
+    "base_level": 850,
+    "ranges": {
+      "Common": {
+        "min": 850,
+        "max": 859
+      },
+      "Uncommon": {
+        "min": 860,
+        "max": 869
+      },
+      "Rare": {
+        "min": 870,
+        "max": 879
+      },
+      "Epic": {
+        "min": 880,
+        "max": 889
+      },
+      "Legendary": {
+        "min": 890,
+        "max": 899
+      }
+    }
+  },
+  {
+    "item_type": "reserved",
+    "base_level": 900,
+    "ranges": {}
+  },
+  {
+    "item_type": "reserved",
+    "base_level": 950,
+    "ranges": {}
+  },
+  {
+    "item_type": "reserved",
+    "base_level": 1000,
+    "ranges": {}
+  },
+  {
+    "item_type": "reserved",
+    "base_level": 1050,
+    "ranges": {}
+  }
+]
