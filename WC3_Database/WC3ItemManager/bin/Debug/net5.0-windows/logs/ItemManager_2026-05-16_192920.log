@@ -1,0 +1,15 @@
+﻿[2026-05-16 19.29.20] [INFO] Cleaned up 8 old log file(s)
+[2026-05-16 19.29.20] [INFO] ============================================================
+[2026-05-16 19.29.20] [INFO] ItemManager session started
+[2026-05-16 19.29.20] [INFO] Log file: H:\Pelit\PotS_JASS\WC3_Database\WC3ItemManager\bin\Debug\net5.0-windows\logs\ItemManager_2026-05-16_192920.log
+[2026-05-16 19.29.20] [INFO] ============================================================
+[2026-05-16 19.29.20] [INFO] W3B Import: Expected: 161 destructibles (12 modified, 149 custom) | Parsed: 161 destructibles |  | Note: .w3b files only contain modified fields. Destructibles with no changes from base are not included.
+[2026-05-16 19.29.36] [INFO] W3B Import: Expected: 161 destructibles (12 modified, 149 custom) | Parsed: 161 destructibles |  | Note: .w3b files only contain modified fields. Destructibles with no changes from base are not included.
+[2026-05-16 19.29.48] [INFO] W3B Import: 0 new, 161 updated, 0 skipped from POTS_DestructibleData-2026-05-16-1928.w3b
+[2026-05-16 19.33.17] [INFO] Gather nodes exported: 0 item nodes, 1 unit nodes, 3 zone assignments
+[2026-05-16 19.33.17] [INFO] Exported gather nodes to H:\Pelit\PotS_JASS\GatherSystems\ItemManagerExports
+[2026-05-16 19.34.01] [INFO] W3B Import: Expected: 164 destructibles (12 modified, 152 custom) | Parsed: 164 destructibles |  | Note: .w3b files only contain modified fields. Destructibles with no changes from base are not included.
+[2026-05-16 19.34.12] [INFO] W3B Import: 3 new, 161 updated, 0 skipped from POTS_DestructibleData-2026-05-16-1932.w3b
+[2026-05-16 19.34.19] [INFO] Updated destructible: B002
+[2026-05-16 19.34.36] [INFO] Loot system exported: 7 tiers, 6 specific drops, 164 destructible drops
+[2026-05-16 19.34.36] [INFO] Exported loot system to H:\Pelit\PotS_JASS\ItemLootSystems\ItemManagerExports

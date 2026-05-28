@@ -1,0 +1,10 @@
+﻿[2026-05-01 12.03.30] [INFO] ============================================================
+[2026-05-01 12.03.30] [INFO] ItemManager session started
+[2026-05-01 12.03.30] [INFO] Log file: H:\Pelit\PotS_JASS\WC3_Database\WC3ItemManager\bin\Debug\net5.0-windows\logs\ItemManager_2026-05-01_120330.log
+[2026-05-01 12.03.30] [INFO] ============================================================
+[2026-05-01 12.03.30] [INFO] Exported W3T file: H:\Pelit\PotS_JASS\ItemSystems\ItemManagerExports\ItemData_20260501_120329.w3t
+[2026-05-01 12.03.51] [INFO] Exported DEquipment JASS file: H:\Pelit\PotS_JASS\DestroyerInventoryAndEquipmentSystem\PoTs\ItemManagerExports\DEquipmentItemDefinitions_20260501-1203.j
+[2026-05-01 12.04.04] [INFO] Loot system exported: 7 tiers, 6 specific drops, 161 destructible drops
+[2026-05-01 12.04.04] [INFO] Exported loot system to H:\Pelit\PotS_JASS\ItemLootSystems\ItemManagerExports
+[2026-05-01 12.04.39] [INFO] Gather nodes exported: 0 item nodes, 1 unit nodes, 3 zone assignments
+[2026-05-01 12.04.39] [INFO] Exported gather nodes to H:\Pelit\PotS_JASS\GatherSystems\ItemManagerExports
