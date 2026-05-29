@@ -1,7 +1,12 @@
 # LARGE ASSESTS # WC3 Database Item Manager 
 /WC3_Database/WC3ItemManager/BACKUPS/
+/WC3_Database/WC3ItemManager/Assets/
 /WC3_Database/WC3ItemManager/bin/debug/net5.0-windows/blizzard/
 /WC3_Database/WC3ItemManager/bin/debug/net5.0-windows/custom/
+/WC3_Database/WC3ItemManager/bin/debug/net8.0-windows/blizzard/
+/WC3_Database/WC3ItemManager/bin/debug/net8.0-windows/custom/
+/WC3_Database/WC3ItemManager/bin/release/net8.0-windows/blizzard/
+/WC3_Database/WC3ItemManager/bin/release/net8.0-windows/custom/
 /WC3_Database/WC3ItemManager/WC3IM_backups/
 /WC3_Database/WC3IM_backups/
 /WC3_Database/_TexturesBackupFolder/
