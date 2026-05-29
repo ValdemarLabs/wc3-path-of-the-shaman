@@ -6,6 +6,9 @@
 /WC3_Database/WC3IM_backups/
 /WC3_Database/_TexturesBackupFolder/
 
+# SQL Server related
+/WC3_Database/SQL_Database/
+
 # Dynamic Minimap
 /DynamicMinimap/war3mapBLP/
 /DynamicMinimap/war3mapImported_256x256/
