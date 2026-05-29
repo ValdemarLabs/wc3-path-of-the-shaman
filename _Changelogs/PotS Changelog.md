@@ -1,5 +1,34 @@
-## WC3 - Path of the Shaman
-CHANGELOG
+# WC3 - Path of the Shaman
+## CHANGELOG
+
+> Changelog template / usage notes
+>
+> Use ###`Player-Facing Updates` for clear gameplay changes, player experience changes, UI changes players directly notice, balance/content changes, or anything that directly affects normal play.
+>
+> Use ###`Technical Updates` for map-development work such as JASS libraries, trigger refactors, performance/stability work, frame/UI implementation details, data structure changes, and other general mapping-related technical work.
+>
+> Use ###`Tool Updates` for `WC3ItemManager`, PotS SQL Server related work, and other similar internal development tools. These are usually not player-facing by themselves, even if they may later affect gameplay data.
+>
+> Use ###`Known Issues` for current confirmed problems, validation gaps, or incomplete/problematic behavior that still needs checking.
+>
+> Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
+
+## [30.5.2026]
+
+### Tool Updates
+- `WC3_Database/WC3ItemManager`
+  Modernized `WC3ItemManager` from the old `.NET 5` setup to a supported desktop stack using `.NET 10 SDK` with the app targeting `net8.0-windows`.
+  Updated package/runtime configuration for the newer build chain and verified successful Debug build plus self-contained Release publish.
+  Replaced the brittle old WinForms/WPF assembly-reference setup with explicit desktop project configuration.
+- `WC3_Database/WC3ItemManager/Assets`
+  Moved the integral icon texture libraries out of the old `bin\Debug\net5.0-windows` output tree into a proper source location under `Assets\blizzard` and `Assets\custom`.
+  Updated the project so both Debug and published outputs now copy the full icon libraries from `Assets` automatically.
+- `WC3_Database/WC3ItemManager/IconPathConfig.cs`
+  Changed default icon lookup paths to prefer app-local `blizzard` and `custom` folders so the newer build outputs remain self-contained even without a hand-written config file.
+
+### Actions Remaining
+- `WC3ItemManager`
+  Re-test normal item editing, icon browsing, imports, and exports in the upgraded app during regular use to confirm there are no behavior regressions beyond successful build/startup verification.
 
 
 ## [26.5.2026]
