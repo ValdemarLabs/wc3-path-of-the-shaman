@@ -15,6 +15,9 @@
 /WC3_Database/WC3IM_backups/
 /WC3_Database/_TexturesBackupFolder/
 
+# WC3 Database Item Manager - new version exceeds 100MB limit of Github
+/WC3_Database/WC3ItemManager/bin/Release/net8.0-windows/win-x64/publish/
+
 # SQL Server related
 /WC3_Database/SQL_Database/
 
