@@ -475,7 +475,7 @@ private function RUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetPoint(RUI_LeftPane, FRAMEPOINT_TOPLEFT, RUI_Parent, FRAMEPOINT_TOPLEFT, 0.014, -0.078)
     call BlzFrameSetPoint(RUI_LeftPane, FRAMEPOINT_BOTTOMRIGHT, RUI_Parent, FRAMEPOINT_BOTTOMLEFT, 0.182, 0.014)
 
-    set RUI_ListScroll = BlzCreateFrameByType("SLIDER", "ReputationUIListScroll", RUI_LeftPane, "QuestMainListScrollBar", 0)
+    set RUI_ListScroll = BlzCreateFrameByType("SLIDER", "ReputationUIListScroll", RUI_Parent, "QuestMainListScrollBar", 0)
     call BlzFrameSetPoint(RUI_ListScroll, FRAMEPOINT_TOPLEFT, RUI_LeftPane, FRAMEPOINT_TOPRIGHT, 0.004, -0.002)
     call BlzFrameSetPoint(RUI_ListScroll, FRAMEPOINT_BOTTOMLEFT, RUI_LeftPane, FRAMEPOINT_BOTTOMRIGHT, 0.004, 0.002)
     call BlzFrameSetMinMaxValue(RUI_ListScroll, 0.0, 0.0)
@@ -493,7 +493,7 @@ private function RUI_CreateFrames takes nothing returns nothing
 
     set RUI_RightPane = BlzCreateFrameByType("BACKDROP", "ReputationUIRightPane", RUI_Parent, "", 0)
     call BlzFrameSetTexture(RUI_RightPane, RUI_PanelTexture, 0, true)
-    call BlzFrameSetPoint(RUI_RightPane, FRAMEPOINT_TOPLEFT, RUI_LeftPane, FRAMEPOINT_TOPRIGHT, 0.012, 0.0)
+    call BlzFrameSetPoint(RUI_RightPane, FRAMEPOINT_TOPLEFT, RUI_ListScroll, FRAMEPOINT_TOPRIGHT, 0.010, 0.0)
     call BlzFrameSetPoint(RUI_RightPane, FRAMEPOINT_BOTTOMRIGHT, RUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.014, 0.014)
 
     set RUI_DetailIcon = BlzCreateFrameByType("BACKDROP", "ReputationUIDetailIcon", RUI_RightPane, "IconButtonTemplate", 0)

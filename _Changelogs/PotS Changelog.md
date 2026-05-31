@@ -13,6 +13,58 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [1.6.2026]
+
+### Technical Updates
+- `AbilitiesLiteUI.j`
+  Continued rebuilding the abilities browser around real player-shaman ability data instead of placeholder sample entries.
+  Added the larger rawcode-backed `Player Shaman` ability pool for `Elemental`, `Enhancement`, `Restoration`, and `Totemic` abilities so names, icons, and tooltip text can come from Warcraft object data.
+  Refined ability presentation so the visible classification line uses shared style such as `Shaman - Elemental` instead of separate `Player Shaman` / `NPC Shaman` display text.
+  Changed visible ability-title lookup to prefer the normal tooltip text and strip trailing level-style suffixes such as ` - [Level X]` before display.
+  Continued iterating on left-side slider/list behavior, wheel handling, and row-click interaction after repeated crash and drag issues.
+- `ReputationUI.j`
+  Continued reworking the left-side faction-list slider and click/scroll behavior to move it closer to the proven `TasQuestBoxLight_PotS` pattern.
+  Adjusted row visibility handling, slider interaction, and left-list click behavior after drag/click regressions during the reputation-panel refactor.
+- `MasterUI.j`, `AbilitiesLiteUI.j`
+  Added the `Abilities` entry into the `Game` menu layout and updated the open flow so `MasterUI` uses the same `ExecuteFunc(...)` pattern as the other sub-UIs.
+  Moved the selected-hero resolution into `AbilitiesLiteUI`, where the panel now determines whether to open for `Nazgrek` or `Zul'kis`, defaulting to `Nazgrek` when neither is selected.
+- `Camera` / cinematic cleanup
+  `Intro Orc Cleanup` still contained obsolete GUI-side camera-control calls that were interfering with the newer JASS camera-control flow in the main map.
+  Those old GUI camera-control function calls were disabled for now and should later be removed entirely as obsolete.
+  This also highlighted that other older triggers may still be calling first-person / GUI camera controls unnecessarily and need further cleanup.
+
+### Player-Facing Updates
+- `AbilitiesLiteUI`
+  Player shamans now expose a broader real ability list with names/icons/tooltips pulled from actual object data instead of only a few placeholder definitions.
+  Ability names and specialization labels are being presented in a cleaner format that better matches the intended class/spec display.
+- `Game` menu
+  The `Game` menu now includes direct access to `Abilities`, with the panel opening for the currently selected main shaman hero when possible.
+- Sirensong small terraining
+- Dragonpeak Mountain high mountain terraining
+
+### Known Issues
+- `AbilitiesLiteUI`
+  The left-side abilities list still has unresolved slider/drag stability problems and has remained one of the main crash-prone UI areas during this session.
+  Row selection and scroll behavior still need in-map validation after the latest slider parenting and click-interaction changes.
+- `ReputationUI`
+  The left-side faction list still needs more validation; drag/click/scroll behavior has been unstable while trying to match the quest-box pattern.
+- `Camera`
+  There may still be other old GUI-trigger paths that call outdated first-person / camera GUI functions and can conflict with the newer camera-control system.
+  `CameraUI` slider controls are not appearing correctly in the main map even though they work in the test map.
+  Current suspicion is an initialization-order issue where camera-control/UI setup can run before `Nazgrek` / `Zul'kis` globals are initialized in the main map.
+
+### Actions Remaining
+- `AbilitiesLiteUI`
+  Finish stabilizing the left-side ability-list slider and drag behavior until it safely matches `TasQuestBoxLight_PotS`.
+  Continue filling and validating class ability definitions, especially for NPC-only classes that still only have template sections.
+- `ReputationUI`
+  Finish stabilizing the left-side faction list slider and drag behavior and continue aligning it with the quest-box style interaction model.
+- `Camera` cleanup
+  Continue searching for other old GUI-trigger references to first-person / GUI camera controls and remove or disable them so only the newer JASS camera-control flow remains active.
+  Investigate the main-map-only `CameraUI` slider issue, with initialization order as the current primary suspect.
+- `MasterUI`
+  Add a public API to show/hide the `Game` menu button itself so cinematic triggers such as `Cinematic ON` and `Cinematic OFF` can control that button cleanly.
+
 ## [31.5.2026]
 
 ### Technical Updates

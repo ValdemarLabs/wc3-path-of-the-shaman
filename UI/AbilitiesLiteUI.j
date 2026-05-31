@@ -58,65 +58,64 @@ globals
     // ====== CONFIGURE: PLAYER SHAMAN ABILITY RAWCODES ======
     // Nazgrek and Zul'kis intentionally share this pool.
     // ========== ELEMENTAL ABILITIES ==========
+    private constant integer AUI_PLAYER_SHAMAN_ELEMENTAL_TREE = 'A67G'
+    private constant integer AUI_PLAYER_SHAMAN_LIGHTNING_BOLT = 'A6A0'
+    private constant integer AUI_PLAYER_SHAMAN_LIGHTNING_STRIKE = 'A67H'
+    private constant integer AUI_PLAYER_SHAMAN_CHAIN_LIGHTNING = 'A67L'
+    private constant integer AUI_PLAYER_SHAMAN_FIRE_SHOCK = 'A67J'
+    private constant integer AUI_PLAYER_SHAMAN_FROST_SHOCK = 'A69L'
+    private constant integer AUI_PLAYER_SHAMAN_NATURE_SHOCK = 'A69N'
+    private constant integer AUI_PLAYER_SHAMAN_LIGHTNING_SHIELD = 'A68H'
     private constant integer AUI_PLAYER_SHAMAN_CHANNEL_AIR_ELEMENTAL = 'A61K'
     private constant integer AUI_PLAYER_SHAMAN_CHANNEL_WATER_ELEMENTAL = 'A61L'
     private constant integer AUI_PLAYER_SHAMAN_CHANNEL_FIRE_ELEMENTAL = 'A61M'
     private constant integer AUI_PLAYER_SHAMAN_CHANNEL_EARTH_ELEMENTAL = 'A61N'
-    private constant integer AUI_PLAYER_SHAMAN_ELEMENTAL_TREE = 'A67G'
-    private constant integer AUI_PLAYER_SHAMAN_LIGHTNING_STRIKE = 'A67H'
-    private constant integer AUI_PLAYER_SHAMAN_FIRE_SHOCK = 'A67J'
-    private constant integer AUI_PLAYER_SHAMAN_CHAIN_LIGHTNING = 'A67L'
     private constant integer AUI_PLAYER_SHAMAN_SUMMON_ELEMENTAL = 'A67Q'
-    private constant integer AUI_PLAYER_SHAMAN_LIGHTNING_SHIELD = 'A68H'
-    private constant integer AUI_PLAYER_SHAMAN_FROST_SHOCK = 'A69L'
-    private constant integer AUI_PLAYER_SHAMAN_NATURE_SHOCK = 'A69N'
-    private constant integer AUI_PLAYER_SHAMAN_LIGHTNING_BOLT = 'A6A0'
     private constant integer AUI_PLAYER_SHAMAN_STORMCALLER = 'A6A3'
 
     // ========== ENHANCEMENT ABILITIES ==========
-    private constant integer AUI_PLAYER_SHAMAN_HEX = 'A673'
-    private constant integer AUI_PLAYER_SHAMAN_VOODOO_CURSE = 'A675'
-    private constant integer AUI_PLAYER_SHAMAN_VOODOO_SPIRITS = 'A677'
-    private constant integer AUI_PLAYER_SHAMAN_FERAL_SPIRITS = 'A679'
-    private constant integer AUI_PLAYER_SHAMAN_BLOODLUST = 'A67N'
     private constant integer AUI_PLAYER_SHAMAN_ENHANCEMENT_TREE = 'A67A'
     private constant integer AUI_PLAYER_SHAMAN_STORMSTRIKE = 'A685'
+    private constant integer AUI_PLAYER_SHAMAN_WHIRLWIND = 'A6DP'
+    private constant integer AUI_PLAYER_SHAMAN_WIND_SHEAR = 'A026'
+    private constant integer AUI_PLAYER_SHAMAN_PRIMAL_FORCE = 'A022'
+    private constant integer AUI_PLAYER_SHAMAN_BLOODLUST = 'A67N'
     private constant integer AUI_PLAYER_SHAMAN_GHOST_WOLF_MORPH = 'A68Y'
     private constant integer AUI_PLAYER_SHAMAN_BITE = 'A68K'
     private constant integer AUI_PLAYER_SHAMAN_FURIOUS_HOWL = 'A69C'
+    private constant integer AUI_PLAYER_SHAMAN_FERAL_SPIRITS = 'A679'
+    private constant integer AUI_PLAYER_SHAMAN_HEX = 'A673'
+    private constant integer AUI_PLAYER_SHAMAN_VOODOO_CURSE = 'A675'
+    private constant integer AUI_PLAYER_SHAMAN_VOODOO_SPIRITS = 'A677'
     private constant integer AUI_PLAYER_SHAMAN_EARTHWARDEN = 'A6A4'
-    private constant integer AUI_PLAYER_SHAMAN_WHIRLWIND = 'A6DP'
-    private constant integer AUI_PLAYER_SHAMAN_PRIMAL_FORCE = 'A022'
-    private constant integer AUI_PLAYER_SHAMAN_WIND_SHEAR = 'A026'
 
     // ========== RESTORATION ABILITIES ==========
-    private constant integer AUI_PLAYER_SHAMAN_HEALING_RAIN = 'A66W'
-    private constant integer AUI_PLAYER_SHAMAN_HEALING_WAVE = 'A66Y'
     private constant integer AUI_PLAYER_SHAMAN_RESTORATION_TREE = 'A670'
+    private constant integer AUI_PLAYER_SHAMAN_HEALING_WAVE = 'A66Y'
     private constant integer AUI_PLAYER_SHAMAN_CHAIN_HEAL = 'A672'
-    private constant integer AUI_PLAYER_SHAMAN_REINCARNATION = 'A68A'
-    private constant integer AUI_PLAYER_SHAMAN_LOADER = 'A69T'
+    private constant integer AUI_PLAYER_SHAMAN_HEALING_RAIN = 'A66W'
     private constant integer AUI_PLAYER_SHAMAN_REJUVENATION = 'A69W'
-    private constant integer AUI_PLAYER_SHAMAN_TOTEMIC_RESURGENCE = 'A69Y'
-    private constant integer AUI_PLAYER_SHAMAN_SPIRITMENDER = 'A6A2'
-    private constant integer AUI_PLAYER_SHAMAN_ANCESTRAL_WARD = 'A6AL'
-    private constant integer AUI_PLAYER_SHAMAN_SPIRITUAL_HEALING = 'A638'
     private constant integer AUI_PLAYER_SHAMAN_WATER_SHIELD = 'A62Z'
     private constant integer AUI_PLAYER_SHAMAN_SPIRIT_LINK = 'A01Z'
+    private constant integer AUI_PLAYER_SHAMAN_ANCESTRAL_WARD = 'A6AL'
+    private constant integer AUI_PLAYER_SHAMAN_SPIRITUAL_HEALING = 'A638'
+    private constant integer AUI_PLAYER_SHAMAN_TOTEMIC_RESURGENCE = 'A69Y'
+    private constant integer AUI_PLAYER_SHAMAN_SPIRITMENDER = 'A6A2'
+    private constant integer AUI_PLAYER_SHAMAN_REINCARNATION = 'A68A'
 
     // ========== TOTEMIC ABILITIES ==========
+    private constant integer AUI_PLAYER_SHAMAN_TOTEMIC_TREE = 'A67P'
     private constant integer AUI_PLAYER_SHAMAN_CHANNEL_TOTEM_EARTH = 'A63F'
     private constant integer AUI_PLAYER_SHAMAN_CHANNEL_TOTEM_FIRE = 'A63G'
     private constant integer AUI_PLAYER_SHAMAN_CHANNEL_TOTEM_WATER = 'A63H'
     private constant integer AUI_PLAYER_SHAMAN_CHANNEL_TOTEM_WIND = 'A63I'
-    private constant integer AUI_PLAYER_SHAMAN_TOTEMIC_TREE = 'A67P'
     private constant integer AUI_PLAYER_SHAMAN_STONESKIN_TOTEM = 'A68J'
     private constant integer AUI_PLAYER_SHAMAN_EARTHBIND_TOTEM = 'A68L'
-    private constant integer AUI_PLAYER_SHAMAN_WINDFURY_TOTEM = 'A68T'
-    private constant integer AUI_PLAYER_SHAMAN_TOTEMIST = 'A6A5'
-    private constant integer AUI_PLAYER_SHAMAN_TOTEM_MASTER = 'A636'
     private constant integer AUI_PLAYER_SHAMAN_CLEANSING_TOTEM = 'A68F'
+    private constant integer AUI_PLAYER_SHAMAN_WINDFURY_TOTEM = 'A68T'
     private constant integer AUI_PLAYER_SHAMAN_SKYFURY_TOTEM = 'A01U'
+    private constant integer AUI_PLAYER_SHAMAN_TOTEM_MASTER = 'A636'
+    private constant integer AUI_PLAYER_SHAMAN_TOTEMIST = 'A6A5'
 
     // NPC / Companion Shaman icon config.
     // Keep NPC shaman separate from player rawcodes unless and until the real
@@ -341,13 +340,16 @@ private function AUI_ColorizeShamanSpec takes string specText returns string
 endfunction
 
 private function AUI_ColorizePlayerClass takes string classText returns string
-    if classText == "Player Shaman" then
+    if classText == "Shaman" then
         return "|cff0070de" + classText + "|r"
     endif
     return "|cffbfbfbf" + classText + "|r"
 endfunction
 
 private function AUI_ColorizeNpcClass takes string classText returns string
+    if classText == "Shaman" then
+        return "|cff0070de" + classText + "|r"
+    endif
     return "|cff9fd3ff" + classText + "|r"
 endfunction
 
@@ -373,7 +375,7 @@ private function AUI_RegisterPlayerClassAbilityIfMissing takes integer definitio
     local string infoText = AUI_ColorizePlayerClass(classText)
 
     if specText != null and specText != "" then
-        set infoText = infoText + " |cff808080/|r " + AUI_ColorizeShamanSpec(specText)
+        set infoText = infoText + " |cff808080-|r " + AUI_ColorizeShamanSpec(specText)
     endif
     call AUI_RegisterTemplateManualLearnIfMissing(definitionKey, learnAbilityId, titleText, infoText, bodyText)
 endfunction
@@ -383,20 +385,20 @@ private function AUI_RegisterNpcClassAbilityIfMissing takes integer definitionKe
 endfunction
 
 private function AUI_RegisterPlayerShamanAbilityIfMissing takes integer learnAbilityId, string titleText, string specText, string bodyText returns nothing
-    call AUI_RegisterPlayerClassAbilityIfMissing(AUI_DEF_PLAYER_SHAMAN, "Player Shaman", learnAbilityId, titleText, specText, bodyText)
+    call AUI_RegisterPlayerClassAbilityIfMissing(AUI_DEF_PLAYER_SHAMAN, "Shaman", learnAbilityId, titleText, specText, bodyText)
 endfunction
 
 private function AUI_RegisterPlayerShamanAutoAbilityIfMissing takes integer abilityId, string specText returns nothing
-    local string infoText = AUI_ColorizePlayerClass("Player Shaman")
+    local string infoText = AUI_ColorizePlayerClass("Shaman")
 
     if specText != null and specText != "" then
-        set infoText = infoText + " |cff808080/|r " + AUI_ColorizeShamanSpec(specText)
+        set infoText = infoText + " |cff808080-|r " + AUI_ColorizeShamanSpec(specText)
     endif
     call AUI_RegisterTemplateAutoIfMissing(AUI_DEF_PLAYER_SHAMAN, abilityId, infoText)
 endfunction
 
 private function AUI_RegisterNpcShamanAbilityIfMissing takes string iconPath, string titleText, string bodyText returns nothing
-    call AUI_RegisterNpcClassAbilityIfMissing(AUI_DEF_NPC_SHAMAN, "NPC Shaman", iconPath, titleText, bodyText)
+    call AUI_RegisterNpcClassAbilityIfMissing(AUI_DEF_NPC_SHAMAN, "Shaman", iconPath, titleText, bodyText)
 endfunction
 
 private function AUI_RegisterPlayerShamanTemplates takes nothing returns nothing
@@ -408,65 +410,65 @@ private function AUI_RegisterPlayerShamanTemplates takes nothing returns nothing
     // Keep this grouped by tree so the UI list stays readable.
 
     // ========== ELEMENTAL ABILITIES ==========
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_ELEMENTAL_TREE, "Elemental")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_LIGHTNING_BOLT, "Elemental")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_LIGHTNING_STRIKE, "Elemental")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHAIN_LIGHTNING, "Elemental")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_FIRE_SHOCK, "Elemental")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_FROST_SHOCK, "Elemental")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_NATURE_SHOCK, "Elemental")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_LIGHTNING_SHIELD, "Elemental")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHANNEL_AIR_ELEMENTAL, "Elemental")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHANNEL_WATER_ELEMENTAL, "Elemental")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHANNEL_FIRE_ELEMENTAL, "Elemental")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHANNEL_EARTH_ELEMENTAL, "Elemental")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_ELEMENTAL_TREE, "Elemental")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_LIGHTNING_STRIKE, "Elemental")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_FIRE_SHOCK, "Elemental")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHAIN_LIGHTNING, "Elemental")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_SUMMON_ELEMENTAL, "Elemental")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_LIGHTNING_SHIELD, "Elemental")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_FROST_SHOCK, "Elemental")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_NATURE_SHOCK, "Elemental")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_LIGHTNING_BOLT, "Elemental")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_STORMCALLER, "Elemental")
 
     // ========== ENHANCEMENT ABILITIES ==========
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_HEX, "Enhancement")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_VOODOO_CURSE, "Enhancement")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_VOODOO_SPIRITS, "Enhancement")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_FERAL_SPIRITS, "Enhancement")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_BLOODLUST, "Enhancement")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_ENHANCEMENT_TREE, "Enhancement")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_STORMSTRIKE, "Enhancement")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_WHIRLWIND, "Enhancement")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_WIND_SHEAR, "Enhancement")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_PRIMAL_FORCE, "Enhancement")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_BLOODLUST, "Enhancement")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_GHOST_WOLF_MORPH, "Enhancement")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_BITE, "Enhancement")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_FURIOUS_HOWL, "Enhancement")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_FERAL_SPIRITS, "Enhancement")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_HEX, "Enhancement")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_VOODOO_CURSE, "Enhancement")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_VOODOO_SPIRITS, "Enhancement")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_EARTHWARDEN, "Enhancement")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_WHIRLWIND, "Enhancement")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_PRIMAL_FORCE, "Enhancement")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_WIND_SHEAR, "Enhancement")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_ENHANCEMENT_TREE, "Enhancement")
 
     // ========== RESTORATION ABILITIES ==========
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_HEALING_RAIN, "Restoration")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_HEALING_WAVE, "Restoration")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_RESTORATION_TREE, "Restoration")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_HEALING_WAVE, "Restoration")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHAIN_HEAL, "Restoration")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_REINCARNATION, "Restoration")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_LOADER, "Restoration")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_HEALING_RAIN, "Restoration")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_REJUVENATION, "Restoration")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_TOTEMIC_RESURGENCE, "Restoration")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_SPIRITMENDER, "Restoration")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_ANCESTRAL_WARD, "Restoration")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_SPIRITUAL_HEALING, "Restoration")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_WATER_SHIELD, "Restoration")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_SPIRIT_LINK, "Restoration")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_ANCESTRAL_WARD, "Restoration")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_SPIRITUAL_HEALING, "Restoration")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_TOTEMIC_RESURGENCE, "Restoration")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_SPIRITMENDER, "Restoration")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_REINCARNATION, "Restoration")
 
     // ========== TOTEMIC ABILITIES ==========
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_TOTEMIC_TREE, "Totemic")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHANNEL_TOTEM_EARTH, "Totemic")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHANNEL_TOTEM_FIRE, "Totemic")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHANNEL_TOTEM_WATER, "Totemic")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHANNEL_TOTEM_WIND, "Totemic")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_TOTEMIC_TREE, "Totemic")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_STONESKIN_TOTEM, "Totemic")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_EARTHBIND_TOTEM, "Totemic")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_WINDFURY_TOTEM, "Totemic")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_TOTEMIST, "Totemic")
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_TOTEM_MASTER, "Totemic")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CLEANSING_TOTEM, "Totemic")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_WINDFURY_TOTEM, "Totemic")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_SKYFURY_TOTEM, "Totemic")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_TOTEM_MASTER, "Totemic")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_TOTEMIST, "Totemic")
+
 endfunction
 
 private function AUI_RegisterNpcShamanTemplates takes nothing returns nothing
@@ -651,6 +653,51 @@ private function AUI_GetDefinitionIcon takes integer definitionIndex returns str
     return AUI_DefaultIcon
 endfunction
 
+private function AUI_FindPattern takes string source, string pattern returns integer
+    local integer sourceLength = StringLength(source)
+    local integer patternLength = StringLength(pattern)
+    local integer index = 0
+
+    if source == null or pattern == null or patternLength <= 0 or sourceLength < patternLength then
+        return -1
+    endif
+
+    loop
+        exitwhen index > sourceLength - patternLength
+        if SubString(source, index, index + patternLength) == pattern then
+            return index
+        endif
+        set index = index + 1
+    endloop
+
+    return -1
+endfunction
+
+private function AUI_StripTooltipLevelSuffix takes string titleText returns string
+    local integer cutIndex
+
+    if titleText == null or titleText == "" then
+        return titleText
+    endif
+
+    set cutIndex = AUI_FindPattern(titleText, " - [")
+    if cutIndex >= 0 then
+        return SubString(titleText, 0, cutIndex)
+    endif
+
+    set cutIndex = AUI_FindPattern(titleText, " (Level ")
+    if cutIndex >= 0 then
+        return SubString(titleText, 0, cutIndex)
+    endif
+
+    set cutIndex = AUI_FindPattern(titleText, " - Level ")
+    if cutIndex >= 0 then
+        return SubString(titleText, 0, cutIndex)
+    endif
+
+    return titleText
+endfunction
+
 private function AUI_GetDefinitionTitle takes integer definitionIndex returns string
     local integer abilityId = AUI_DefinitionAbilityId[definitionIndex]
     local string titleText = AUI_DefinitionTitleOverride[definitionIndex]
@@ -660,11 +707,11 @@ private function AUI_GetDefinitionTitle takes integer definitionIndex returns st
     endif
 
     if abilityId != 0 then
-        set titleText = GetObjectName(abilityId)
-        if titleText != null and titleText != "" then
-            return titleText
-        endif
         set titleText = BlzGetAbilityTooltip(abilityId, 0)
+        if titleText != null and titleText != "" then
+            return AUI_StripTooltipLevelSuffix(titleText)
+        endif
+        set titleText = GetObjectName(abilityId)
         if titleText != null and titleText != "" then
             return titleText
         endif
@@ -1233,9 +1280,19 @@ private function AUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetPoint(AUI_LeftPane, FRAMEPOINT_TOPLEFT, AUI_Parent, FRAMEPOINT_TOPLEFT, 0.014, -0.078)
     call BlzFrameSetPoint(AUI_LeftPane, FRAMEPOINT_BOTTOMRIGHT, AUI_Parent, FRAMEPOINT_BOTTOMLEFT, 0.182, 0.014)
 
+    set AUI_ListScroll = BlzCreateFrameByType("SLIDER", "AbilitiesLiteUIListScroll", AUI_Parent, "QuestMainListScrollBar", 0)
+    call BlzFrameSetPoint(AUI_ListScroll, FRAMEPOINT_TOPLEFT, AUI_LeftPane, FRAMEPOINT_TOPRIGHT, 0.004, -0.002)
+    call BlzFrameSetPoint(AUI_ListScroll, FRAMEPOINT_BOTTOMLEFT, AUI_LeftPane, FRAMEPOINT_BOTTOMRIGHT, 0.004, 0.002)
+    call BlzFrameSetMinMaxValue(AUI_ListScroll, 0.0, 0.0)
+    call BlzFrameSetStepSize(AUI_ListScroll, 1.0)
+    call BlzFrameSetValue(AUI_ListScroll, 0.0)
+    call BlzTriggerRegisterFrameEvent(AUI_ListScrollTrigger, AUI_ListScroll, FRAMEEVENT_SLIDER_VALUE_CHANGED)
+    call BlzTriggerRegisterFrameEvent(AUI_WheelTrigger, AUI_ListScroll, FRAMEEVENT_MOUSE_WHEEL)
+    call BlzTriggerRegisterFrameEvent(AUI_WheelTrigger, AUI_LeftPane, FRAMEEVENT_MOUSE_WHEEL)
+
     set AUI_RightPane = BlzCreateFrameByType("BACKDROP", "AbilitiesLiteUIRightPane", AUI_Parent, "", 0)
     call BlzFrameSetTexture(AUI_RightPane, AUI_PanelTexture, 0, true)
-    call BlzFrameSetPoint(AUI_RightPane, FRAMEPOINT_TOPLEFT, AUI_LeftPane, FRAMEPOINT_TOPRIGHT, 0.012, 0.0)
+    call BlzFrameSetPoint(AUI_RightPane, FRAMEPOINT_TOPLEFT, AUI_ListScroll, FRAMEPOINT_TOPRIGHT, 0.010, 0.0)
     call BlzFrameSetPoint(AUI_RightPane, FRAMEPOINT_BOTTOMRIGHT, AUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.014, 0.014)
 
     set AUI_DetailIcon = BlzCreateFrameByType("BACKDROP", "AbilitiesLiteUIDetailIcon", AUI_RightPane, "IconButtonTemplate", 0)
@@ -1267,16 +1324,6 @@ private function AUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetTextAlignment(AUI_DetailBodyText, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetScale(AUI_DetailBodyText, 0.90)
     call BlzFrameSetEnable(AUI_DetailBodyText, false)
-
-    set AUI_ListScroll = BlzCreateFrameByType("SLIDER", "AbilitiesLiteUIListScroll", AUI_LeftPane, "QuestMainListScrollBar", 0)
-    call BlzFrameSetPoint(AUI_ListScroll, FRAMEPOINT_TOPLEFT, AUI_LeftPane, FRAMEPOINT_TOPRIGHT, 0.004, -0.002)
-    call BlzFrameSetPoint(AUI_ListScroll, FRAMEPOINT_BOTTOMLEFT, AUI_LeftPane, FRAMEPOINT_BOTTOMRIGHT, 0.004, 0.002)
-    call BlzFrameSetMinMaxValue(AUI_ListScroll, 0.0, 0.0)
-    call BlzFrameSetStepSize(AUI_ListScroll, 1.0)
-    call BlzFrameSetValue(AUI_ListScroll, 0.0)
-    call BlzTriggerRegisterFrameEvent(AUI_ListScrollTrigger, AUI_ListScroll, FRAMEEVENT_SLIDER_VALUE_CHANGED)
-    call BlzTriggerRegisterFrameEvent(AUI_WheelTrigger, AUI_ListScroll, FRAMEEVENT_MOUSE_WHEEL)
-    call BlzTriggerRegisterFrameEvent(AUI_WheelTrigger, AUI_LeftPane, FRAMEEVENT_MOUSE_WHEEL)
 
     set AUI_ListWheelArea = BlzCreateFrameByType("SLIDER", "AbilitiesLiteUIWheelArea", AUI_Parent, "", 0)
     call BlzFrameSetPoint(AUI_ListWheelArea, FRAMEPOINT_TOPRIGHT, AUI_ListScroll, FRAMEPOINT_TOPLEFT, -0.006, 0.000)
