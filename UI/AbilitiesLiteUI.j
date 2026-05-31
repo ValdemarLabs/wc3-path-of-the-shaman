@@ -12,16 +12,120 @@ library AbilitiesLiteUI initializer AutoInit requires Table, MasterUI
 **/
 
 globals
+    // ====== CONFIGURE ======
+    // Only Player Shaman is a player-class pool in this UI.
+    // All other classes are configured as NPC-only pools.
+
     private constant integer AUI_MAX_ROWS = 8
     private constant integer AUI_VISIBLE_ROWS = 6
     private constant integer AUI_MAX_DEFINITIONS = 128
-    private constant integer AUI_COMPANION_SHAMAN_TYPE = '061H'         // match this with shaman unit-type (Restoration Shaman)
-    private constant integer AUI_KEY_PLAYER_SHAMAN = 900001
-    private constant integer AUI_KEY_COMPANION_SHAMAN = 900002
-    private constant integer AUI_ABILITY_LIGHTNING_BOLT = 'A61Q'
-    private constant integer AUI_ABILITY_HEALING_WAVE = 'A62M'
-    private constant integer AUI_ABILITY_STORMSTRIKE = 'A685'
-    private constant integer AUI_ABILITY_STONESKIN_TOTEM = 'A68J'
+
+    // =========================================================================
+    // Ability definition configuration
+    //
+    // Use the grouped definition keys below to decide which ability pool a unit
+    // should read from in AbilitiesLiteUI.
+    //
+    // `AUI_DEF_PLAYER_SHAMAN`
+    //   Shared pool for player heroes that intentionally use the same class
+    //   ability set, such as Nazgrek and Zul'kis.
+    //
+    // `AUI_DEF_NPC_*`
+    //   Separate pools for NPC / companion class versions. Keep these
+    //   independent from player rawcodes and texts, because companion / NPC
+    //   units may use different spells or reduced versions of them.
+    //
+    // Configuration flow:
+    // 1. Set rawcodes / icons in this globals block.
+    // 2. Add or edit player shaman entries in `AUI_RegisterPlayerShamanTemplates`.
+    // 3. Add or edit NPC shaman entries in `AUI_RegisterNpcShamanTemplates`.
+    // =========================================================================
+
+    private constant integer AUI_NPC_SHAMAN_TYPE = '061H'         // Restoration Shaman companion / NPC
+    // Player class definition groups.
+    // Only player shaman currently exists as a real player-class pool.
+    private constant integer AUI_DEF_PLAYER_SHAMAN = 900001
+
+    // NPC / companion class definition groups.
+    private constant integer AUI_DEF_NPC_SHAMAN = 900101
+    private constant integer AUI_DEF_NPC_WARRIOR = 900103
+    private constant integer AUI_DEF_NPC_ROGUE = 900104
+    private constant integer AUI_DEF_NPC_PALADIN = 900105
+    private constant integer AUI_DEF_NPC_ENGINEER = 900106
+    private constant integer AUI_DEF_NPC_WARLOCK = 900107
+    private constant integer AUI_DEF_NPC_RANGER = 900108
+
+    // ====== CONFIGURE: PLAYER SHAMAN ABILITY RAWCODES ======
+    // Nazgrek and Zul'kis intentionally share this pool.
+    // ========== ELEMENTAL ABILITIES ==========
+    private constant integer AUI_PLAYER_SHAMAN_CHANNEL_AIR_ELEMENTAL = 'A61K'
+    private constant integer AUI_PLAYER_SHAMAN_CHANNEL_WATER_ELEMENTAL = 'A61L'
+    private constant integer AUI_PLAYER_SHAMAN_CHANNEL_FIRE_ELEMENTAL = 'A61M'
+    private constant integer AUI_PLAYER_SHAMAN_CHANNEL_EARTH_ELEMENTAL = 'A61N'
+    private constant integer AUI_PLAYER_SHAMAN_ELEMENTAL_TREE = 'A67G'
+    private constant integer AUI_PLAYER_SHAMAN_LIGHTNING_STRIKE = 'A67H'
+    private constant integer AUI_PLAYER_SHAMAN_FIRE_SHOCK = 'A67J'
+    private constant integer AUI_PLAYER_SHAMAN_CHAIN_LIGHTNING = 'A67L'
+    private constant integer AUI_PLAYER_SHAMAN_SUMMON_ELEMENTAL = 'A67Q'
+    private constant integer AUI_PLAYER_SHAMAN_LIGHTNING_SHIELD = 'A68H'
+    private constant integer AUI_PLAYER_SHAMAN_FROST_SHOCK = 'A69L'
+    private constant integer AUI_PLAYER_SHAMAN_NATURE_SHOCK = 'A69N'
+    private constant integer AUI_PLAYER_SHAMAN_LIGHTNING_BOLT = 'A6A0'
+    private constant integer AUI_PLAYER_SHAMAN_STORMCALLER = 'A6A3'
+
+    // ========== ENHANCEMENT ABILITIES ==========
+    private constant integer AUI_PLAYER_SHAMAN_HEX = 'A673'
+    private constant integer AUI_PLAYER_SHAMAN_VOODOO_CURSE = 'A675'
+    private constant integer AUI_PLAYER_SHAMAN_VOODOO_SPIRITS = 'A677'
+    private constant integer AUI_PLAYER_SHAMAN_FERAL_SPIRITS = 'A679'
+    private constant integer AUI_PLAYER_SHAMAN_BLOODLUST = 'A67N'
+    private constant integer AUI_PLAYER_SHAMAN_ENHANCEMENT_TREE = 'A67A'
+    private constant integer AUI_PLAYER_SHAMAN_STORMSTRIKE = 'A685'
+    private constant integer AUI_PLAYER_SHAMAN_GHOST_WOLF_MORPH = 'A68Y'
+    private constant integer AUI_PLAYER_SHAMAN_BITE = 'A68K'
+    private constant integer AUI_PLAYER_SHAMAN_FURIOUS_HOWL = 'A69C'
+    private constant integer AUI_PLAYER_SHAMAN_EARTHWARDEN = 'A6A4'
+    private constant integer AUI_PLAYER_SHAMAN_WHIRLWIND = 'A6DP'
+    private constant integer AUI_PLAYER_SHAMAN_PRIMAL_FORCE = 'A022'
+    private constant integer AUI_PLAYER_SHAMAN_WIND_SHEAR = 'A026'
+
+    // ========== RESTORATION ABILITIES ==========
+    private constant integer AUI_PLAYER_SHAMAN_HEALING_RAIN = 'A66W'
+    private constant integer AUI_PLAYER_SHAMAN_HEALING_WAVE = 'A66Y'
+    private constant integer AUI_PLAYER_SHAMAN_RESTORATION_TREE = 'A670'
+    private constant integer AUI_PLAYER_SHAMAN_CHAIN_HEAL = 'A672'
+    private constant integer AUI_PLAYER_SHAMAN_REINCARNATION = 'A68A'
+    private constant integer AUI_PLAYER_SHAMAN_LOADER = 'A69T'
+    private constant integer AUI_PLAYER_SHAMAN_REJUVENATION = 'A69W'
+    private constant integer AUI_PLAYER_SHAMAN_TOTEMIC_RESURGENCE = 'A69Y'
+    private constant integer AUI_PLAYER_SHAMAN_SPIRITMENDER = 'A6A2'
+    private constant integer AUI_PLAYER_SHAMAN_ANCESTRAL_WARD = 'A6AL'
+    private constant integer AUI_PLAYER_SHAMAN_SPIRITUAL_HEALING = 'A638'
+    private constant integer AUI_PLAYER_SHAMAN_WATER_SHIELD = 'A62Z'
+    private constant integer AUI_PLAYER_SHAMAN_SPIRIT_LINK = 'A01Z'
+
+    // ========== TOTEMIC ABILITIES ==========
+    private constant integer AUI_PLAYER_SHAMAN_CHANNEL_TOTEM_EARTH = 'A63F'
+    private constant integer AUI_PLAYER_SHAMAN_CHANNEL_TOTEM_FIRE = 'A63G'
+    private constant integer AUI_PLAYER_SHAMAN_CHANNEL_TOTEM_WATER = 'A63H'
+    private constant integer AUI_PLAYER_SHAMAN_CHANNEL_TOTEM_WIND = 'A63I'
+    private constant integer AUI_PLAYER_SHAMAN_TOTEMIC_TREE = 'A67P'
+    private constant integer AUI_PLAYER_SHAMAN_STONESKIN_TOTEM = 'A68J'
+    private constant integer AUI_PLAYER_SHAMAN_EARTHBIND_TOTEM = 'A68L'
+    private constant integer AUI_PLAYER_SHAMAN_WINDFURY_TOTEM = 'A68T'
+    private constant integer AUI_PLAYER_SHAMAN_TOTEMIST = 'A6A5'
+    private constant integer AUI_PLAYER_SHAMAN_TOTEM_MASTER = 'A636'
+    private constant integer AUI_PLAYER_SHAMAN_CLEANSING_TOTEM = 'A68F'
+    private constant integer AUI_PLAYER_SHAMAN_SKYFURY_TOTEM = 'A01U'
+
+    // NPC / Companion Shaman icon config.
+    // Keep NPC shaman separate from player rawcodes unless and until the real
+    // NPC spell rawcodes are confirmed and intentionally wired in.
+    private constant string AUI_NPC_SHAMAN_LIGHTNING_BOLT_ICON = "ReplaceableTextures\\CommandButtons\\BTNSpell_Nature_Lightning.TGA"
+    private constant string AUI_NPC_SHAMAN_HEALING_WAVE_ICON = "ReplaceableTextures\\CommandButtons\\BTNNature_HealingWaveGreater.tga"
+    private constant string AUI_NPC_SHAMAN_STORMSTRIKE_ICON = "ReplaceableTextures\\CommandButtons\\BTNShamanMaster.blp"
+    private constant string AUI_NPC_SHAMAN_STONESKIN_TOTEM_ICON = "ReplaceableTextures\\CommandButtons\\BTNNature_StoneSkinTotem.tga"
+
     private constant real AUI_DETAIL_BODY_WIDTH = 0.262
     private constant real AUI_DETAIL_BODY_HEIGHT = 0.170
     private constant integer AUI_MODE_AUTO = 1
@@ -36,6 +140,7 @@ globals
     private framehandle AUI_ViewingText = null
     private framehandle AUI_LeftPane = null
     private framehandle AUI_RightPane = null
+    private framehandle AUI_ListWheelArea = null
     private framehandle AUI_CloseButton = null
     private framehandle AUI_ReturnButton = null
     private framehandle AUI_DetailIcon = null
@@ -65,6 +170,7 @@ globals
     private integer array AUI_RowHighlightVisible
     private integer AUI_SelectedDefinition = 0
     private integer AUI_ListScrollValue = 0
+    private integer AUI_ListScrollMaxCache = -1
     private integer AUI_DetailBodyHash = 0
     private string AUI_DetailBodyCache = ""
     private unit AUI_SelectedUnit = null
@@ -139,6 +245,28 @@ private function AUI_IsTrackedUnit takes unit u returns boolean
     return false
 endfunction
 
+private function AUI_GetMenuSelectedHero takes nothing returns unit
+    if AUI_IsPlayerOwnedMainHero(udg_Zulkis) and IsUnitSelected(udg_Zulkis, Player(0)) then
+        return udg_Zulkis
+    endif
+    if AUI_IsPlayerOwnedMainHero(udg_Nazgrek) and IsUnitSelected(udg_Nazgrek, Player(0)) then
+        return udg_Nazgrek
+    endif
+    if AUI_IsPlayerOwnedMainHero(udg_Nazgrek) then
+        return udg_Nazgrek
+    endif
+    if AUI_IsPlayerOwnedMainHero(udg_Zulkis) then
+        return udg_Zulkis
+    endif
+    if udg_Nazgrek != null and GetHandleId(udg_Nazgrek) != 0 then
+        return udg_Nazgrek
+    endif
+    if udg_Zulkis != null and GetHandleId(udg_Zulkis) != 0 then
+        return udg_Zulkis
+    endif
+    return null
+endfunction
+
 private function AUI_AddDefinition takes integer mode, integer unitTypeId, integer abilityId, integer learnAbilityId, string iconPath, string titleText, string infoText, string bodyText returns nothing
     if AUI_DefinitionCount >= AUI_MAX_DEFINITIONS then
         return
@@ -185,6 +313,20 @@ private function AUI_HasManualDefinition takes integer unitTypeId, string titleT
     return false
 endfunction
 
+private function AUI_HasAutoDefinition takes integer unitTypeId, integer abilityId returns boolean
+    local integer i = 1
+
+    loop
+        exitwhen i > AUI_DefinitionCount
+        if AUI_DefinitionUnitTypeId[i] == unitTypeId and AUI_DefinitionMode[i] == AUI_MODE_AUTO and AUI_DefinitionAbilityId[i] == abilityId then
+            return true
+        endif
+        set i = i + 1
+    endloop
+
+    return false
+endfunction
+
 private function AUI_ColorizeShamanSpec takes string specText returns string
     if specText == "Elemental" then
         return "|cff69ccf0" + specText + "|r"
@@ -196,6 +338,17 @@ private function AUI_ColorizeShamanSpec takes string specText returns string
         return "|cffd9b56d" + specText + "|r"
     endif
     return "|cffbfbfbf" + specText + "|r"
+endfunction
+
+private function AUI_ColorizePlayerClass takes string classText returns string
+    if classText == "Player Shaman" then
+        return "|cff0070de" + classText + "|r"
+    endif
+    return "|cffbfbfbf" + classText + "|r"
+endfunction
+
+private function AUI_ColorizeNpcClass takes string classText returns string
+    return "|cff9fd3ff" + classText + "|r"
 endfunction
 
 private function AUI_RegisterTemplateManualIfMissing takes integer definitionKey, string iconPath, string titleText, string infoText, string bodyText returns nothing
@@ -210,49 +363,156 @@ private function AUI_RegisterTemplateManualLearnIfMissing takes integer definiti
     endif
 endfunction
 
-private function AUI_RegisterPlayerShamanTemplates takes nothing returns nothing
-    local string infoText
-    local string bodyText
+private function AUI_RegisterTemplateAutoIfMissing takes integer definitionKey, integer abilityId, string infoText returns nothing
+    if not AUI_HasAutoDefinition(definitionKey, abilityId) then
+        call AUI_AddDefinition(AUI_MODE_AUTO, definitionKey, abilityId, abilityId, "", "", infoText, "")
+    endif
+endfunction
 
-    if AUI_KEY_PLAYER_SHAMAN == 0 then
+private function AUI_RegisterPlayerClassAbilityIfMissing takes integer definitionKey, string classText, integer learnAbilityId, string titleText, string specText, string bodyText returns nothing
+    local string infoText = AUI_ColorizePlayerClass(classText)
+
+    if specText != null and specText != "" then
+        set infoText = infoText + " |cff808080/|r " + AUI_ColorizeShamanSpec(specText)
+    endif
+    call AUI_RegisterTemplateManualLearnIfMissing(definitionKey, learnAbilityId, titleText, infoText, bodyText)
+endfunction
+
+private function AUI_RegisterNpcClassAbilityIfMissing takes integer definitionKey, string classText, string iconPath, string titleText, string bodyText returns nothing
+    call AUI_RegisterTemplateManualIfMissing(definitionKey, iconPath, titleText, AUI_ColorizeNpcClass(classText), bodyText)
+endfunction
+
+private function AUI_RegisterPlayerShamanAbilityIfMissing takes integer learnAbilityId, string titleText, string specText, string bodyText returns nothing
+    call AUI_RegisterPlayerClassAbilityIfMissing(AUI_DEF_PLAYER_SHAMAN, "Player Shaman", learnAbilityId, titleText, specText, bodyText)
+endfunction
+
+private function AUI_RegisterPlayerShamanAutoAbilityIfMissing takes integer abilityId, string specText returns nothing
+    local string infoText = AUI_ColorizePlayerClass("Player Shaman")
+
+    if specText != null and specText != "" then
+        set infoText = infoText + " |cff808080/|r " + AUI_ColorizeShamanSpec(specText)
+    endif
+    call AUI_RegisterTemplateAutoIfMissing(AUI_DEF_PLAYER_SHAMAN, abilityId, infoText)
+endfunction
+
+private function AUI_RegisterNpcShamanAbilityIfMissing takes string iconPath, string titleText, string bodyText returns nothing
+    call AUI_RegisterNpcClassAbilityIfMissing(AUI_DEF_NPC_SHAMAN, "NPC Shaman", iconPath, titleText, bodyText)
+endfunction
+
+private function AUI_RegisterPlayerShamanTemplates takes nothing returns nothing
+    if AUI_DEF_PLAYER_SHAMAN == 0 then
         return
     endif
 
-    set infoText = "|cff0070deShaman|r |cff808080/|r " + AUI_ColorizeShamanSpec("Elemental")
-    set bodyText = "|cffffcc00Role:|r Direct ranged spell damage|n|nCalls down a bolt of lightning to strike a single enemy target.|nDeals base damage plus heavy Intelligence scaling, making it a reliable single-target finisher for a shaman caster."
-    call AUI_RegisterTemplateManualLearnIfMissing(AUI_KEY_PLAYER_SHAMAN, AUI_ABILITY_LIGHTNING_BOLT, "Lightning Bolt", infoText, bodyText)
+    // ====== CONFIGURE: PLAYER SHAMAN REGISTRATION ORDER ======
+    // Keep this grouped by tree so the UI list stays readable.
 
-    set infoText = "|cff0070deShaman|r |cff808080/|r " + AUI_ColorizeShamanSpec("Enhancement")
-    set bodyText = "|cffffcc00Role:|r Melee burst attack|n|nEnergizes the shaman's weapons with lightning and delivers a heavy melee blow.|nBest used when committing to close-range pressure and fast follow-up damage."
-    call AUI_RegisterTemplateManualLearnIfMissing(AUI_KEY_PLAYER_SHAMAN, AUI_ABILITY_STORMSTRIKE, "Stormstrike", infoText, bodyText)
+    // ========== ELEMENTAL ABILITIES ==========
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHANNEL_AIR_ELEMENTAL, "Elemental")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHANNEL_WATER_ELEMENTAL, "Elemental")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHANNEL_FIRE_ELEMENTAL, "Elemental")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHANNEL_EARTH_ELEMENTAL, "Elemental")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_ELEMENTAL_TREE, "Elemental")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_LIGHTNING_STRIKE, "Elemental")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_FIRE_SHOCK, "Elemental")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHAIN_LIGHTNING, "Elemental")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_SUMMON_ELEMENTAL, "Elemental")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_LIGHTNING_SHIELD, "Elemental")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_FROST_SHOCK, "Elemental")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_NATURE_SHOCK, "Elemental")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_LIGHTNING_BOLT, "Elemental")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_STORMCALLER, "Elemental")
 
-    set infoText = "|cff0070deShaman|r |cff808080/|r " + AUI_ColorizeShamanSpec("Restoration")
-    set bodyText = "|cffffcc00Role:|r Direct single-target healing|n|nA reliable healing spell that restores a strong amount of health to one ally.|nThis is the straightforward answer when the group needs quick focused recovery."
-    call AUI_RegisterTemplateManualLearnIfMissing(AUI_KEY_PLAYER_SHAMAN, AUI_ABILITY_HEALING_WAVE, "Healing Wave", infoText, bodyText)
+    // ========== ENHANCEMENT ABILITIES ==========
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_HEX, "Enhancement")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_VOODOO_CURSE, "Enhancement")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_VOODOO_SPIRITS, "Enhancement")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_FERAL_SPIRITS, "Enhancement")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_BLOODLUST, "Enhancement")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_STORMSTRIKE, "Enhancement")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_GHOST_WOLF_MORPH, "Enhancement")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_BITE, "Enhancement")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_FURIOUS_HOWL, "Enhancement")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_EARTHWARDEN, "Enhancement")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_WHIRLWIND, "Enhancement")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_PRIMAL_FORCE, "Enhancement")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_WIND_SHEAR, "Enhancement")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_ENHANCEMENT_TREE, "Enhancement")
 
-    set infoText = "|cff0070deShaman|r |cff808080/|r " + AUI_ColorizeShamanSpec("Totemic")
-    set bodyText = "|cffffcc00Role:|r Defensive support totem|n|nSummons a Stoneskin Totem that hardens nearby allies and increases their armor.|nUseful before sustained pressure, pulls, or any fight where the party expects repeated incoming damage."
-    call AUI_RegisterTemplateManualLearnIfMissing(AUI_KEY_PLAYER_SHAMAN, AUI_ABILITY_STONESKIN_TOTEM, "Stoneskin Totem", infoText, bodyText)
+    // ========== RESTORATION ABILITIES ==========
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_HEALING_RAIN, "Restoration")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_HEALING_WAVE, "Restoration")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_RESTORATION_TREE, "Restoration")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHAIN_HEAL, "Restoration")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_REINCARNATION, "Restoration")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_LOADER, "Restoration")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_REJUVENATION, "Restoration")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_TOTEMIC_RESURGENCE, "Restoration")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_SPIRITMENDER, "Restoration")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_ANCESTRAL_WARD, "Restoration")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_SPIRITUAL_HEALING, "Restoration")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_WATER_SHIELD, "Restoration")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_SPIRIT_LINK, "Restoration")
+
+    // ========== TOTEMIC ABILITIES ==========
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHANNEL_TOTEM_EARTH, "Totemic")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHANNEL_TOTEM_FIRE, "Totemic")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHANNEL_TOTEM_WATER, "Totemic")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHANNEL_TOTEM_WIND, "Totemic")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_TOTEMIC_TREE, "Totemic")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_STONESKIN_TOTEM, "Totemic")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_EARTHBIND_TOTEM, "Totemic")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_WINDFURY_TOTEM, "Totemic")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_TOTEMIST, "Totemic")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_TOTEM_MASTER, "Totemic")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CLEANSING_TOTEM, "Totemic")
+    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_SKYFURY_TOTEM, "Totemic")
 endfunction
 
-private function AUI_RegisterCompanionShamanTemplates takes nothing returns nothing
+private function AUI_RegisterNpcShamanTemplates takes nothing returns nothing
     local string bodyText
 
-    if AUI_KEY_COMPANION_SHAMAN == 0 then
+    if AUI_DEF_NPC_SHAMAN == 0 then
         return
     endif
 
     set bodyText = "Calls down lightning on a single enemy target."
-    call AUI_RegisterTemplateManualLearnIfMissing(AUI_KEY_COMPANION_SHAMAN, AUI_ABILITY_LIGHTNING_BOLT, "Lightning Bolt", "|cff9fd3ffCompanion Ability|r", bodyText)
+    call AUI_RegisterNpcShamanAbilityIfMissing(AUI_NPC_SHAMAN_LIGHTNING_BOLT_ICON, "Lightning Bolt", bodyText)
 
     set bodyText = "Empowers the next melee strike with storm power for stronger close-range damage."
-    call AUI_RegisterTemplateManualLearnIfMissing(AUI_KEY_COMPANION_SHAMAN, AUI_ABILITY_STORMSTRIKE, "Stormstrike", "|cff9fd3ffCompanion Ability|r", bodyText)
+    call AUI_RegisterNpcShamanAbilityIfMissing(AUI_NPC_SHAMAN_STORMSTRIKE_ICON, "Stormstrike", bodyText)
 
     set bodyText = "Restores health to one nearby ally."
-    call AUI_RegisterTemplateManualLearnIfMissing(AUI_KEY_COMPANION_SHAMAN, AUI_ABILITY_HEALING_WAVE, "Healing Wave", "|cff9fd3ffCompanion Ability|r", bodyText)
+    call AUI_RegisterNpcShamanAbilityIfMissing(AUI_NPC_SHAMAN_HEALING_WAVE_ICON, "Healing Wave", bodyText)
 
     set bodyText = "Drops a defensive totem that helps nearby allies endure incoming damage."
-    call AUI_RegisterTemplateManualLearnIfMissing(AUI_KEY_COMPANION_SHAMAN, AUI_ABILITY_STONESKIN_TOTEM, "Stoneskin Totem", "|cff9fd3ffCompanion Ability|r", bodyText)
+    call AUI_RegisterNpcShamanAbilityIfMissing(AUI_NPC_SHAMAN_STONESKIN_TOTEM_ICON, "Stoneskin Totem", bodyText)
+endfunction
+
+private function AUI_RegisterNpcWarriorTemplates takes nothing returns nothing
+    // NPC Warrior ability definitions go here.
+    // Example flow:
+    // call AUI_RegisterNpcClassAbilityIfMissing(AUI_DEF_NPC_WARRIOR, "NPC Warrior", iconPath, "Ability Name", bodyText)
+endfunction
+
+private function AUI_RegisterNpcRogueTemplates takes nothing returns nothing
+    // NPC Rogue ability definitions go here.
+endfunction
+
+private function AUI_RegisterNpcPaladinTemplates takes nothing returns nothing
+    // NPC Paladin ability definitions go here.
+endfunction
+
+private function AUI_RegisterNpcEngineerTemplates takes nothing returns nothing
+    // NPC Engineer ability definitions go here.
+endfunction
+
+private function AUI_RegisterNpcWarlockTemplates takes nothing returns nothing
+    // NPC Warlock ability definitions go here.
+endfunction
+
+private function AUI_RegisterNpcRangerTemplates takes nothing returns nothing
+    // NPC Ranger ability definitions go here.
 endfunction
 
 private function AUI_GetDefinitionKeyForUnit takes unit u returns integer
@@ -262,12 +522,12 @@ private function AUI_GetDefinitionKeyForUnit takes unit u returns integer
         return 0
     endif
     if u == udg_Nazgrek or u == udg_Zulkis then
-        return AUI_KEY_PLAYER_SHAMAN
+        return AUI_DEF_PLAYER_SHAMAN
     endif
 
     set unitTypeId = GetUnitTypeId(u)
-    if unitTypeId == AUI_COMPANION_SHAMAN_TYPE then
-        return AUI_KEY_COMPANION_SHAMAN
+    if unitTypeId == AUI_NPC_SHAMAN_TYPE then
+        return AUI_DEF_NPC_SHAMAN
     endif
     return unitTypeId
 endfunction
@@ -286,9 +546,18 @@ private function AUI_EnsureTemplatesForUnit takes unit u returns nothing
 
     if u == udg_Nazgrek or u == udg_Zulkis then
         call AUI_RegisterPlayerShamanTemplates()
-    elseif definitionKey == AUI_KEY_COMPANION_SHAMAN then
-        call AUI_RegisterCompanionShamanTemplates()
+    elseif definitionKey == AUI_DEF_NPC_SHAMAN then
+        call AUI_RegisterNpcShamanTemplates()
     endif
+
+    // Keep the broader NPC class template sections initialized and ready so
+    // future class ability configuration has one obvious place to live.
+    call AUI_RegisterNpcWarriorTemplates()
+    call AUI_RegisterNpcRogueTemplates()
+    call AUI_RegisterNpcPaladinTemplates()
+    call AUI_RegisterNpcEngineerTemplates()
+    call AUI_RegisterNpcWarlockTemplates()
+    call AUI_RegisterNpcRangerTemplates()
 endfunction
 
 private function AUI_ResetViewState takes nothing returns nothing
@@ -429,10 +698,7 @@ private function AUI_GetDefinitionLevelText takes unit u, integer definitionInde
     local integer level
 
     if AUI_ShouldShowNotLearned(u, definitionIndex) then
-        if infoText != null and infoText != "" then
-            return infoText + " |cff808080- Not learned|r"
-        endif
-        return AUI_NotLearnedText
+        return infoText
     endif
 
     if abilityId != 0 and u != null and GetHandleId(u) != 0 then
@@ -715,6 +981,22 @@ private function AUI_ClampSelection takes nothing returns nothing
     endif
 endfunction
 
+private function AUI_SyncListScrollFrame takes integer maxStart returns nothing
+    if AUI_ListScroll == null then
+        return
+    endif
+
+    if maxStart < 0 then
+        set maxStart = 0
+    endif
+
+    if AUI_ListScrollMaxCache != maxStart then
+        set AUI_ListScrollMaxCache = maxStart
+        call BlzFrameSetMinMaxValue(AUI_ListScroll, 0.0, I2R(maxStart))
+    endif
+    call BlzFrameSetVisible(AUI_ListScroll, maxStart > 0)
+endfunction
+
 private function AUI_UpdateRows takes nothing returns nothing
     local integer rowIndex = 1
     local integer unitTypeId = AUI_GetActiveDefinitionKey()
@@ -787,18 +1069,13 @@ private function AUI_UpdateRows takes nothing returns nothing
         set rowIndex = rowIndex + 1
     endloop
 
-    if maxStart > 0 then
-        set AUI_SyncingListScroll = true
-        call BlzFrameSetMinMaxValue(AUI_ListScroll, 0.0, I2R(maxStart))
-        call BlzFrameSetValue(AUI_ListScroll, I2R(AUI_ListScrollValue))
-        set AUI_SyncingListScroll = false
-    endif
-    call BlzFrameSetVisible(AUI_ListScroll, maxStart > 0)
+    call AUI_SyncListScrollFrame(maxStart)
 endfunction
 
 private function AUI_UpdateDetail takes nothing returns nothing
     local integer definitionIndex = AUI_SelectedDefinition
     local string bodyText
+    local string infoText
 
     if AUI_SelectedUnit == null or GetHandleId(AUI_SelectedUnit) == 0 then
         call BlzFrameSetTexture(AUI_DetailIcon, AUI_DefaultIcon, 0, true)
@@ -818,11 +1095,15 @@ private function AUI_UpdateDetail takes nothing returns nothing
 
     call BlzFrameSetTexture(AUI_DetailIcon, AUI_GetDefinitionIcon(definitionIndex), 0, true)
     if AUI_ShouldShowNotLearned(AUI_SelectedUnit, definitionIndex) then
-        call BlzFrameSetText(AUI_DetailTitle, "|cff808080" + AUI_GetDefinitionTitle(definitionIndex) + "|r")
+        call BlzFrameSetText(AUI_DetailTitle, "|cffffe4a3" + AUI_GetDefinitionTitle(definitionIndex) + "|r |cff808080- Not learned|r")
     else
         call BlzFrameSetText(AUI_DetailTitle, "|cffffe4a3" + AUI_GetDefinitionTitle(definitionIndex) + "|r")
     endif
-    call BlzFrameSetText(AUI_DetailInfoText, AUI_GetDefinitionLevelText(AUI_SelectedUnit, definitionIndex))
+    set infoText = AUI_DefinitionInfoOverride[definitionIndex]
+    if infoText == null or infoText == "" then
+        set infoText = AUI_GetDefinitionLevelText(AUI_SelectedUnit, definitionIndex)
+    endif
+    call BlzFrameSetText(AUI_DetailInfoText, infoText)
 
     set bodyText = AUI_GetDefinitionBody(AUI_SelectedUnit, definitionIndex)
     call AUI_SetDetailBody(bodyText)
@@ -889,7 +1170,7 @@ private function AUI_WheelAction takes nothing returns nothing
     local real newValue
 
     if GetLocalPlayer() == GetTriggerPlayer() then
-        if (triggerFrame == AUI_ListScroll or triggerFrame == AUI_LeftPane) and AUI_ListScroll != null and BlzFrameIsVisible(AUI_ListScroll) then
+        if (triggerFrame == AUI_ListScroll or triggerFrame == AUI_LeftPane or triggerFrame == AUI_ListWheelArea) and AUI_ListScroll != null and BlzFrameIsVisible(AUI_ListScroll) then
             if BlzGetTriggerFrameValue() > 0 then
                 set newValue = BlzFrameGetValue(AUI_ListScroll) + 1.0
             else
@@ -997,6 +1278,12 @@ private function AUI_CreateFrames takes nothing returns nothing
     call BlzTriggerRegisterFrameEvent(AUI_WheelTrigger, AUI_ListScroll, FRAMEEVENT_MOUSE_WHEEL)
     call BlzTriggerRegisterFrameEvent(AUI_WheelTrigger, AUI_LeftPane, FRAMEEVENT_MOUSE_WHEEL)
 
+    set AUI_ListWheelArea = BlzCreateFrameByType("SLIDER", "AbilitiesLiteUIWheelArea", AUI_Parent, "", 0)
+    call BlzFrameSetPoint(AUI_ListWheelArea, FRAMEPOINT_TOPRIGHT, AUI_ListScroll, FRAMEPOINT_TOPLEFT, -0.006, 0.000)
+    call BlzFrameSetPoint(AUI_ListWheelArea, FRAMEPOINT_BOTTOMLEFT, AUI_LeftPane, FRAMEPOINT_BOTTOMLEFT, 0.006, 0.006)
+    call BlzFrameSetEnable(AUI_ListWheelArea, false)
+    call BlzFrameSetVisible(AUI_ListWheelArea, false)
+
     loop
         exitwhen rowIndex > AUI_MAX_ROWS
 
@@ -1005,6 +1292,7 @@ private function AUI_CreateFrames takes nothing returns nothing
         call BlzFrameSetSize(AUI_RowButton[rowIndex], 0.156, rowHeight)
         call BlzTriggerRegisterFrameEvent(AUI_RowTrigger, AUI_RowButton[rowIndex], FRAMEEVENT_CONTROL_CLICK)
         call BlzTriggerRegisterFrameEvent(AUI_ClearFocusTrigger, AUI_RowButton[rowIndex], FRAMEEVENT_CONTROL_CLICK)
+        call BlzTriggerRegisterFrameEvent(AUI_WheelTrigger, AUI_RowButton[rowIndex], FRAMEEVENT_MOUSE_WHEEL)
         set AUI_ButtonRow.integer[GetHandleId(AUI_RowButton[rowIndex])] = rowIndex
 
         set AUI_RowIcon[rowIndex] = BlzCreateFrameByType("BACKDROP", "AbilitiesLiteUIRowIcon" + I2S(rowIndex), AUI_RowButton[rowIndex], "IconButtonTemplate", 0)
@@ -1046,11 +1334,22 @@ public function ShowForUnit takes unit u returns nothing
     set AUI_SelectedUnit = u
     call AUI_EnsureTemplatesForUnit(u)
     call AUI_ResetViewState()
+    call AUI_SyncListScrollFrame(AUI_GetDefinitionCountForUnitType(AUI_GetActiveDefinitionKey()) - AUI_VISIBLE_ROWS)
+    set AUI_SyncingListScroll = true
+    call BlzFrameSetValue(AUI_ListScroll, 0.0)
+    set AUI_SyncingListScroll = false
     call BlzFrameSetVisible(AUI_Parent, true)
     call AUI_Update()
 endfunction
 
 public function Show takes nothing returns nothing
+    set AUI_SelectedUnit = AUI_GetMenuSelectedHero()
+    call AUI_EnsureTemplatesForUnit(AUI_SelectedUnit)
+    call AUI_ResetViewState()
+    call AUI_SyncListScrollFrame(AUI_GetDefinitionCountForUnitType(AUI_GetActiveDefinitionKey()) - AUI_VISIBLE_ROWS)
+    set AUI_SyncingListScroll = true
+    call BlzFrameSetValue(AUI_ListScroll, 0.0)
+    set AUI_SyncingListScroll = false
     call BlzFrameSetVisible(AUI_Parent, true)
     call AUI_Update()
 endfunction
@@ -1088,4 +1387,99 @@ public function AutoInit takes nothing returns nothing
     call Init()
 endfunction
 
+// ====== CONFIGURE: ABILITY DEFINITION GUIDE ======
+//
+// Use these sections as the canonical place for filling out class ability pools.
+// The intended split is:
+// - Player Shaman: Nazgrek and Zul'kis only
+// - NPC Shaman: regular shaman companions / NPC shamans
+// - NPC Warrior / Rogue / Paladin / Engineer / Warlock / Ranger: NPC-only classes
+//
+// Preferred definition patterns:
+//
+// 1. Manual / hardcoded NPC ability
+//    Use this when the ability has no reliable object-data setup yet, or when the
+//    final text/icon should be fully authored by hand.
+//
+//      set infoText = "NPC Warrior"
+//      set bodyText = "A reliable melee strike used by veteran frontline units."
+//      // Then register through the manual helper for that class.
+//
+// 2. Rawcode / auto-fetched ability
+//    Use this when the object editor data is valid and the UI should pull the name,
+//    icon and tooltip from the ability rawcode. This is the preferred route for most
+//    player-facing abilities and for NPC abilities that already exist in object data.
+//
+//      // Example intent:
+//      // - read ability name from rawcode
+//      // - read icon from rawcode
+//      // - read tooltip / extended tooltip from rawcode
+//      // - use the unit's current ability level when choosing level-based tooltip data
+//
+// Notes for future implementation:
+// - Player Shaman should keep using real player rawcodes.
+// - NPC classes can mix manual and rawcode-based definitions.
+// - If an ability scales by level, prefer the rawcode path so the displayed tooltip
+//   can follow the currently learned level when that data is available.
+//
+// ====== CONFIGURE: PLAYER SHAMAN TEMPLATE EXAMPLES ======
+// Lightning Bolt
+// Stormstrike
+// Healing Wave
+// Stoneskin Totem
+//
+// ====== CONFIGURE: NPC SHAMAN TEMPLATE EXAMPLES ======
+// Lightning Bolt
+// Chain Heal
+// Earthbind Totem
+// Purge
+//
+// ====== CONFIGURE: NPC WARRIOR TEMPLATE EXAMPLES ======
+// Heroic Strike
+// Shield Slam
+// Taunt
+// Cleave
+//
+// ====== CONFIGURE: NPC ROGUE TEMPLATE EXAMPLES ======
+// Backstab
+// Evasion
+// Poisoned Blade
+// Kidney Shot
+//
+// ====== CONFIGURE: NPC PALADIN TEMPLATE EXAMPLES ======
+// Holy Light
+// Hammer of Justice
+// Devotion Aura
+// Consecration
+//
+// ====== CONFIGURE: NPC ENGINEER TEMPLATE EXAMPLES ======
+// Turret Deployment
+// Wrench Slam
+// Explosive Charge
+// Overclock
+//
+// ====== CONFIGURE: NPC WARLOCK TEMPLATE EXAMPLES ======
+// Shadow Bolt
+// Corruption
+// Fear
+// Drain Life
+//
+// ====== CONFIGURE: NPC RANGER TEMPLATE EXAMPLES ======
+// Arcane Shot
+// Multi-Shot
+// Frost Trap
+// Camouflage
+//
+// Recommended completion workflow per ability:
+// 1. Decide whether the ability should be manual or rawcode-driven.
+// 2. If manual:
+//    - write the icon path
+//    - write the classification / info line
+//    - write the authored description text
+// 3. If rawcode-driven:
+//    - set the ability rawcode
+//    - verify the object data icon/name/tooltip are correct
+//    - if the ability is level-based, prefer current learned level when fetching text
+// 4. Register the ability inside the matching class section only.
+//
 endlibrary

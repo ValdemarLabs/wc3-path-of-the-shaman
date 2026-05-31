@@ -31,12 +31,13 @@ globals
     private constant integer MUI_ACTION_PROFESSIONS = 2
     private constant integer MUI_ACTION_REPUTATIONS = 3
     private constant integer MUI_ACTION_STATS = 4
-    private constant integer MUI_ACTION_CAMERA = 5
-    private constant integer MUI_ACTION_HINTS = 6
-    private constant integer MUI_ACTION_ACHIEVEMENTS = 7
-    private constant integer MUI_ACTION_SECRETS = 8
-    private constant integer MUI_ACTION_COMMANDS = 9
-    private constant integer MUI_ACTION_CHEATS = 10
+    private constant integer MUI_ACTION_ABILITIES = 5
+    private constant integer MUI_ACTION_CAMERA = 6
+    private constant integer MUI_ACTION_HINTS = 7
+    private constant integer MUI_ACTION_ACHIEVEMENTS = 8
+    private constant integer MUI_ACTION_SECRETS = 9
+    private constant integer MUI_ACTION_COMMANDS = 10
+    private constant integer MUI_ACTION_CHEATS = 11
 endglobals
 
 private function MUI_FormatButtonLabel takes string label returns string
@@ -83,6 +84,7 @@ private function MUI_HideAllPanels takes nothing returns nothing
     call ExecuteFunc("ProfessionsUI_Hide")
     call ExecuteFunc("ReputationUI_Hide")
     call ExecuteFunc("StatsUI_Hide")
+    call ExecuteFunc("AbilitiesLiteUI_Hide")
     call ExecuteFunc("CameraUI_Hide")
     call ExecuteFunc("HintsUI_Hide")
     call ExecuteFunc("AchievementsUI_Hide")
@@ -114,6 +116,11 @@ endfunction
 private function MUI_OpenStats takes nothing returns nothing
     call MUI_HideAllPanels()
     call ExecuteFunc("StatsUI_Show")
+endfunction
+
+private function MUI_OpenAbilities takes nothing returns nothing
+    call MUI_HideAllPanels()
+    call ExecuteFunc("AbilitiesLiteUI_Show")
 endfunction
 
 private function MUI_OpenCamera takes nothing returns nothing
@@ -155,6 +162,8 @@ private function MUI_RunAction takes integer actionId returns nothing
         call MUI_OpenReputations()
     elseif actionId == MUI_ACTION_STATS then
         call MUI_OpenStats()
+    elseif actionId == MUI_ACTION_ABILITIES then
+        call MUI_OpenAbilities()
     elseif actionId == MUI_ACTION_CAMERA then
         call MUI_OpenCamera()
     elseif actionId == MUI_ACTION_HINTS then
@@ -226,13 +235,14 @@ private function MUI_CreateFrames takes nothing returns nothing
     call MUI_CreateMenuButton(3, "Zones", MUI_ACTION_ZONES, 0.020, -0.144)
     call MUI_CreateMenuButton(4, "Professions", MUI_ACTION_PROFESSIONS, 0.020, -0.186)
 
-    call MUI_CreateMenuButton(5, "Hints", MUI_ACTION_HINTS, 0.155, -0.060)
-    call MUI_CreateMenuButton(6, "Achievements", MUI_ACTION_ACHIEVEMENTS, 0.155, -0.102)
-    call MUI_CreateMenuButton(7, "Secrets", MUI_ACTION_SECRETS, 0.155, -0.144)
+    call MUI_CreateMenuButton(5, "Abilities", MUI_ACTION_ABILITIES, 0.155, -0.060)
+    call MUI_CreateMenuButton(6, "Hints", MUI_ACTION_HINTS, 0.155, -0.102)
+    call MUI_CreateMenuButton(7, "Achievements", MUI_ACTION_ACHIEVEMENTS, 0.155, -0.144)
+    call MUI_CreateMenuButton(8, "Secrets", MUI_ACTION_SECRETS, 0.155, -0.186)
 
-    call MUI_CreateMenuButton(8, "Camera", MUI_ACTION_CAMERA, 0.290, -0.060)
-    call MUI_CreateMenuButton(9, "Commands", MUI_ACTION_COMMANDS, 0.290, -0.102)
-    call MUI_CreateMenuButton(10, "Cheats", MUI_ACTION_CHEATS, 0.290, -0.144)
+    call MUI_CreateMenuButton(9, "Camera", MUI_ACTION_CAMERA, 0.290, -0.060)
+    call MUI_CreateMenuButton(10, "Commands", MUI_ACTION_COMMANDS, 0.290, -0.102)
+    call MUI_CreateMenuButton(11, "Cheats", MUI_ACTION_CHEATS, 0.290, -0.144)
 
     set MUI_OpenButton = BlzCreateFrameByType("GLUETEXTBUTTON", "MasterUIOpenButton", BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "ScriptDialogButton", 0)
     call MUI_PosOpenButton(MUI_OpenButton)

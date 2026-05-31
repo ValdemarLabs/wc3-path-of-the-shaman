@@ -13,6 +13,45 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [31.5.2026]
+
+### Technical Updates
+- `MasterUI.j`, `AbilitiesLiteUI.j`
+  Added an `Abilities` button to the `Game` menu and updated the grouped menu layout/order to fit the new entry.
+  Switched the menu-side open flow back to the same `ExecuteFunc(...)` style used by the other sub-UIs.
+  Moved hero resolution into `AbilitiesLiteUI`, so opening the abilities panel now checks the current selected hero between `Zul'kis` and `Nazgrek`, with `Nazgrek` as the default fallback when neither is selected.
+- `AbilitiesLiteUI.j`
+  Reworked the class-pool configuration so only `Player Shaman` exists as a player pool, while the other class sections remain NPC-only templates for future filling.
+  Added clearer `// ====== CONFIGURE` guidance and class-template notes for future ability authoring.
+  Replaced the earlier 4-entry placeholder player-shaman setup with a much larger real rawcode-backed player-shaman registration list covering `Elemental`, `Enhancement`, `Restoration`, and `Totemic` abilities.
+  Added duplicate-safe auto-registration helpers so reopening the panel does not keep stacking ability definitions.
+  Continued reducing the earlier heavy/detail-refresh approach and adjusted the left-side scroll handling to move closer to the `TasQuestBox` slider style.
+- `ReputationUI.j`
+  Continued iterating on the left-side factions list and slider behavior so the panel can move away from the earlier unstable scroll handling.
+  Refined row visibility/highlight handling and continued trying to align the list/slider interaction more closely with `TasQuestBoxLight_PotS`.
+
+### Player-Facing Updates
+- `Game` menu
+  The main `Game` menu now includes `Abilities` as a direct submenu entry.
+- `AbilitiesLiteUI`
+  Player shamans now expose a much larger real ability list based on actual ability rawcodes instead of only a few placeholder sample abilities.
+  Opening the panel from the main menu now targets the currently selected main hero, or defaults to `Nazgrek` if neither player hero is selected.
+
+### Known Issues
+- `AbilitiesLiteUI`
+  The left-side ability list scroll/slider path is still unstable and has been causing lag or crashes during drag/scroll interaction.
+  Left-side row interaction and scroll behavior still need full validation after the latest slider changes.
+- `ReputationUI`
+  The left-side faction slider/list interaction is still not fully stable and needs more work to properly match the intended `TasQuestBox`-style behavior.
+  Layout/interaction validation is still needed for the left-side list after the latest scroll fixes.
+
+### Actions Remaining
+- `AbilitiesLiteUI`
+  Continue correcting the left-side slider/list interaction until it behaves safely and consistently like `TasQuestBoxLight_PotS`.
+  Finish authoring/validating the player-shaman rawcode list and continue filling NPC class ability definitions.
+- `ReputationUI`
+  Finish stabilizing the left-side faction scrolling and dragging behavior and fully mirror the proven `TasQuestBox` left-list interaction pattern.
+
 ## [30.5.2026]
 
 ### Technical Updates

@@ -25,6 +25,7 @@ globals
     private framehandle RUI_Title = null
     private framehandle RUI_LeftPane = null
     private framehandle RUI_RightPane = null
+    private framehandle RUI_ListWheelArea = null
     private framehandle RUI_CloseButton = null
     private framehandle RUI_ReturnButton = null
     private framehandle RUI_ListScroll = null
@@ -484,6 +485,12 @@ private function RUI_CreateFrames takes nothing returns nothing
     call BlzTriggerRegisterFrameEvent(RUI_WheelTrigger, RUI_ListScroll, FRAMEEVENT_MOUSE_WHEEL)
     call BlzTriggerRegisterFrameEvent(RUI_WheelTrigger, RUI_LeftPane, FRAMEEVENT_MOUSE_WHEEL)
 
+    set RUI_ListWheelArea = BlzCreateFrameByType("SLIDER", "ReputationUIWheelArea", RUI_Parent, "", 0)
+    call BlzFrameSetPoint(RUI_ListWheelArea, FRAMEPOINT_TOPRIGHT, RUI_ListScroll, FRAMEPOINT_TOPLEFT, -0.006, 0.000)
+    call BlzFrameSetPoint(RUI_ListWheelArea, FRAMEPOINT_BOTTOMLEFT, RUI_LeftPane, FRAMEPOINT_BOTTOMLEFT, 0.006, 0.006)
+    call BlzFrameSetEnable(RUI_ListWheelArea, false)
+    call BlzFrameSetVisible(RUI_ListWheelArea, false)
+
     set RUI_RightPane = BlzCreateFrameByType("BACKDROP", "ReputationUIRightPane", RUI_Parent, "", 0)
     call BlzFrameSetTexture(RUI_RightPane, RUI_PanelTexture, 0, true)
     call BlzFrameSetPoint(RUI_RightPane, FRAMEPOINT_TOPLEFT, RUI_LeftPane, FRAMEPOINT_TOPRIGHT, 0.012, 0.0)
@@ -521,7 +528,10 @@ private function RUI_CreateFrames takes nothing returns nothing
         call BlzFrameSetSize(RUI_RowButton[rowIndex], 0.156, rowHeight)
         call BlzTriggerRegisterFrameEvent(RUI_RowTrigger, RUI_RowButton[rowIndex], FRAMEEVENT_CONTROL_CLICK)
         call BlzTriggerRegisterFrameEvent(RUI_ClearFocusTrigger, RUI_RowButton[rowIndex], FRAMEEVENT_CONTROL_CLICK)
+        call BlzTriggerRegisterFrameEvent(RUI_WheelTrigger, RUI_RowButton[rowIndex], FRAMEEVENT_MOUSE_WHEEL)
         set RUI_ButtonRow.integer[GetHandleId(RUI_RowButton[rowIndex])] = rowIndex
+        set RUI_RowVisibleState[rowIndex] = -1
+        call BlzFrameSetVisible(RUI_RowButton[rowIndex], false)
 
         set RUI_RowIcon[rowIndex] = BlzCreateFrameByType("BACKDROP", "ReputationUIRowIcon" + I2S(rowIndex), RUI_RowButton[rowIndex], "IconButtonTemplate", 0)
         call BlzFrameSetPoint(RUI_RowIcon[rowIndex], FRAMEPOINT_LEFT, RUI_RowButton[rowIndex], FRAMEPOINT_LEFT, 0.006, 0.0)
@@ -543,6 +553,7 @@ private function RUI_CreateFrames takes nothing returns nothing
         call BlzFrameSetAllPoints(RUI_RowHighlight[rowIndex], RUI_RowButton[rowIndex])
         call BlzFrameSetModel(RUI_RowHighlight[rowIndex], RUI_RowHighlightModel, 0)
         call BlzFrameSetScale(RUI_RowHighlight[rowIndex], 0.76)
+        set RUI_RowHighlightState[rowIndex] = -1
         call BlzFrameSetVisible(RUI_RowHighlight[rowIndex], false)
         call BlzFrameSetEnable(RUI_RowHighlight[rowIndex], false)
 
