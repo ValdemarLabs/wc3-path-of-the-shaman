@@ -1,0 +1,6 @@
+30.5.2026 1.19.53: LoadEquipAbilities called
+30.5.2026 1.19.53: Database connected
+30.5.2026 1.19.53: Added 194 abilities, total items: 195
+30.5.2026 1.20.51: LoadEquipAbilities called
+30.5.2026 1.20.51: Database connected
+30.5.2026 1.20.51: Added 194 abilities, total items: 195

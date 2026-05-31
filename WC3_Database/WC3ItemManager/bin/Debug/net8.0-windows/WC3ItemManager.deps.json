@@ -1,0 +1,127 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "WC3ItemManager/1.0.0": {
+        "dependencies": {
+          "Npgsql": "8.0.9",
+          "War3Net.Drawing.Blp": "6.0.2"
+        },
+        "runtime": {
+          "WC3ItemManager.dll": {}
+        }
+      },
+      "JpegLibrary/0.3.30": {
+        "runtime": {
+          "lib/netcoreapp3.0/JpegLibrary.dll": {
+            "assemblyVersion": "0.3.0.0",
+            "fileVersion": "0.3.30.38119"
+          }
+        }
+      },
+      "Microsoft.Extensions.DependencyInjection.Abstractions/8.0.0": {
+        "runtime": {
+          "lib/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.23.53103"
+          }
+        }
+      },
+      "Microsoft.Extensions.Logging.Abstractions/8.0.0": {
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.Extensions.Logging.Abstractions.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.23.53103"
+          }
+        }
+      },
+      "Npgsql/8.0.9": {
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0"
+        },
+        "runtime": {
+          "lib/net8.0/Npgsql.dll": {
+            "assemblyVersion": "8.0.9.0",
+            "fileVersion": "8.0.9.0"
+          }
+        }
+      },
+      "War3Net.Common/6.0.2": {
+        "runtime": {
+          "lib/net6.0/War3Net.Common.dll": {
+            "assemblyVersion": "6.0.2.0",
+            "fileVersion": "6.0.2.0"
+          }
+        }
+      },
+      "War3Net.Drawing.Blp/6.0.2": {
+        "dependencies": {
+          "JpegLibrary": "0.3.30",
+          "War3Net.Common": "6.0.2"
+        },
+        "runtime": {
+          "lib/net6.0-windows7.0/War3Net.Drawing.Blp.dll": {
+            "assemblyVersion": "6.0.2.0",
+            "fileVersion": "6.0.2.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "WC3ItemManager/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "JpegLibrary/0.3.30": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-bJtTanTN1FR6zW5to7IPYtlPEZFuL/JTRzPlVoMkAN3KQHD+3VOMZ/0ALyASJa3dQpdysJ5H1pclwOpuP2JsJw==",
+      "path": "jpeglibrary/0.3.30",
+      "hashPath": "jpeglibrary.0.3.30.nupkg.sha512"
+    },
+    "Microsoft.Extensions.DependencyInjection.Abstractions/8.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-cjWrLkJXK0rs4zofsK4bSdg+jhDLTaxrkXu4gS6Y7MAlCvRyNNgwY/lJi5RDlQOnSZweHqoyvgvbdvQsRIW+hg==",
+      "path": "microsoft.extensions.dependencyinjection.abstractions/8.0.0",
+      "hashPath": "microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512"
+    },
+    "Microsoft.Extensions.Logging.Abstractions/8.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-arDBqTgFCyS0EvRV7O3MZturChstm50OJ0y9bDJvAcmEPJm0FFpFyjU/JLYyStNGGey081DvnQYlncNX5SJJGA==",
+      "path": "microsoft.extensions.logging.abstractions/8.0.0",
+      "hashPath": "microsoft.extensions.logging.abstractions.8.0.0.nupkg.sha512"
+    },
+    "Npgsql/8.0.9": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-H7O9NrvSO+BaojUOK59YmSOi7+RabnBoNPw1F7NgtZhw5uBeAA3bCjTH2VjgacUVHe8K1asPyj/a/mnhJ/e1yA==",
+      "path": "npgsql/8.0.9",
+      "hashPath": "npgsql.8.0.9.nupkg.sha512"
+    },
+    "War3Net.Common/6.0.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-yvkqqAIArv7imGrNCzLwAUZ4LeGax9LiB7fqbxTz6ZoGZWklQ7sdPKLYZj6pmV0Voo+OJLKg9XLiAPcZ4d6CDw==",
+      "path": "war3net.common/6.0.2",
+      "hashPath": "war3net.common.6.0.2.nupkg.sha512"
+    },
+    "War3Net.Drawing.Blp/6.0.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-qDEz05uElNdntasH93BSLK4WCQUiThmCPmiH09Q/c9l8lX0strp2XdhN1YWjGSvtRAOw7rMYPbGjlLTnVKPa4Q==",
+      "path": "war3net.drawing.blp/6.0.2",
+      "hashPath": "war3net.drawing.blp.6.0.2.nupkg.sha512"
+    }
+  }
+}

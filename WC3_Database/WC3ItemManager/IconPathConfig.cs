@@ -31,9 +31,10 @@ namespace WC3ItemManager
         
         private IconPathConfig()
         {
-            // Default paths
-            WarCraft3IconPath = @"C:\Program Files (x86)\Warcraft III\UI\";
-            CustomIconPath = @".\CustomIcons\";
+            // Prefer app-local asset folders so build/publish outputs are self-contained.
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            WarCraft3IconPath = Path.Combine(baseDir, "blizzard");
+            CustomIconPath = Path.Combine(baseDir, "custom");
         }
         
         public void Load()

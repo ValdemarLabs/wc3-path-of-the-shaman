@@ -2,8 +2,9 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net5.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>true</UseWPF>
     <AssemblyName>WC3ItemManager</AssemblyName>
     <RootNamespace>WC3ItemManager</RootNamespace>
     <StartupObject>WC3ItemManager.Program</StartupObject>
@@ -23,13 +24,21 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Npgsql" Version="8.0.1" />
-    <PackageReference Include="War3Net.Drawing.Blp" Version="1.2.2" />
+    <PackageReference Include="Npgsql" Version="8.0.9" />
+    <PackageReference Include="War3Net.Drawing.Blp" Version="6.0.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="WindowsBase" />
-    <Reference Include="PresentationCore" />
+    <None Update="Assets\blizzard\**\*">
+      <Link>blizzard\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+    <None Update="Assets\custom\**\*">
+      <Link>custom\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
   </ItemGroup>
 
   <!-- Copy Data folder to output -->

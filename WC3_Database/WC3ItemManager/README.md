@@ -30,9 +30,17 @@ A powerful Windows Forms application for managing Warcraft 3 items in the PotS P
 
 ## Prerequisites
 
-- .NET 6.0 SDK or later
+- .NET 10.0.300 SDK (pinned by the repository `global.json`)
 - Visual Studio 2022 (recommended) or VS Code
 - PostgreSQL database (wc3_pots)
+
+## SDK Selection
+
+This repository currently pins the .NET SDK with `global.json` to keep builds stable even if newer SDKs are installed side by side.
+
+- Current pinned SDK: `10.0.300`
+- App target framework: `net8.0-windows`
+- Reason: the app now builds on a modern SDK while staying on the .NET 8 LTS desktop runtime for lower behavioral risk than a direct jump to `net10.0-windows`.
 
 ## Building the Application
 
@@ -55,7 +63,7 @@ dotnet run
 ```bash
 cd WC3ItemManager
 dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
-# Output: bin\Release\net6.0-windows\win-x64\publish\WC3ItemManager.exe
+# Output: bin\Release\net8.0-windows\win-x64\publish\WC3ItemManager.exe
 ```
 
 ## Database Connection
@@ -131,7 +139,7 @@ private string connectionString = "Host=127.0.0.1;Port=5432;Database=wc3_pots;Us
 
 **Build Errors**
 - Restore NuGet packages: `dotnet restore`
-- Update .NET SDK: `dotnet --version` (should be 6.0+)
+- Check SDK pinning: `dotnet --version` (should resolve to `10.0.300` in this repo)
 
 **Missing Data**
 - Run importer first: `python importers/wc3_w3t_importer_v2.py`
@@ -144,7 +152,7 @@ WC3ItemManager/
 ├── Program.cs              # Entry point
 ├── MainForm.cs            # Main window (grid, filters, search)
 ├── ItemEditForm.cs        # Edit/Add dialog (tabbed interface)
-├── WC3ItemManager.csproj  # Project file (.NET 6)
+├── WC3ItemManager.csproj  # Project file (.NET 8)
 └── README.md              # This file
 ```
 

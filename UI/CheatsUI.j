@@ -22,6 +22,7 @@ globals
     private constant integer XUI_FRAME_CONTEXT = 5
 
     private boolean XUI_Initialized = false
+    private boolean XUI_SyncingSlider = false
     private integer XUI_DefinitionCount = 0
 
     private string XUI_TocPath = "war3mapImported/TasQuestBox.toc"
@@ -55,6 +56,33 @@ globals
     private Table XUI_ButtonRow = 0
 endglobals
 
+private function XUI_GetMaxPage takes nothing returns integer
+    if XUI_DefinitionCount > XUI_BUTTON_COUNT then
+        return (XUI_DefinitionCount - 1) / XUI_BUTTON_COUNT
+    endif
+    return 0
+endfunction
+
+private function XUI_SyncSliderVisual takes player whichPlayer returns nothing
+    local integer pid = GetPlayerId(whichPlayer)
+    local integer maxPage = XUI_GetMaxPage()
+
+    if XUI_Slider == null then
+        return
+    endif
+
+    if XUI_ViewOffset[pid] < 0 then
+        set XUI_ViewOffset[pid] = 0
+    elseif XUI_ViewOffset[pid] > maxPage * XUI_BUTTON_COUNT then
+        set XUI_ViewOffset[pid] = maxPage * XUI_BUTTON_COUNT
+    endif
+
+    set XUI_SyncingSlider = true
+    call BlzFrameSetMinMaxValue(XUI_Slider, 0.0, I2R(maxPage))
+    call BlzFrameSetValue(XUI_Slider, I2R(XUI_ViewOffset[pid] / XUI_BUTTON_COUNT))
+    set XUI_SyncingSlider = false
+endfunction
+
 private function XUI_ClearFocusAction takes nothing returns nothing
     if GetTriggerPlayer() == GetLocalPlayer() then
         call BlzFrameSetEnable(BlzGetTriggerFrame(), false)
@@ -78,9 +106,25 @@ private function XUI_RegisterCheat takes string cheatName, string category, stri
 endfunction
 
 private function XUI_InitDefinitions takes nothing returns nothing
-    call XUI_RegisterCheat("/torch", "Utility", "ReplaceableTextures\\CommandButtons\\BTNTorch.blp", "Category: Utility|n|nExample cheat command. Intended as a quick test or debug toggle for torch-like utility behavior.")
-    call XUI_RegisterCheat("/day", "Environment", "ReplaceableTextures\\CommandButtons\\BTNScroll.blp", "Category: Environment|n|nExample environment cheat entry. Replace or expand later with the real implemented cheat command list.")
-    call XUI_RegisterCheat("/night", "Environment", "ReplaceableTextures\\CommandButtons\\BTNScroll.blp", "Category: Environment|n|nExample environment cheat entry for forcing night conditions.")
+    call XUI_RegisterCheat("Cheats", "Warning", "ReplaceableTextures\\CommandButtons\\btncage.blp", "Warning disclaimer!|n|nCheats can and will break the normal intended gameplay. The cheats are legacy of testing the map's intense features and to speed up testing. The cheats can however add additional layer of fun and thus they remain.|n|nTip:|nRemember to save before using any cheats to easily return to \"unbroken\" game state.")
+    call XUI_RegisterCheat("/tele", "Movement", "ReplaceableTextures\\CommandButtons\\BTNMassTeleport.blp", "Teleports all Player's units to the current camera view.")
+    call XUI_RegisterCheat("/levelup", "Heroes", "ReplaceableTextures\\CommandButtons\\BTNPackBeast.blp", "Levels up all Player's Heroes to level 15.")
+    call XUI_RegisterCheat("/levelupone", "Heroes", "ReplaceableTextures\\CommandButtons\\BTNPackBeast.blp", "Levels up all Player's Heroes once.")
+    call XUI_RegisterCheat("/speedfreak", "Movement", "ReplaceableTextures\\CommandButtons\\BTNBootsOfSpeed.blp", "Highly increased movement speed for the selected units.|n|nDisabled by selecting the units and using the command again.")
+    call XUI_RegisterCheat("/powerupmyheroes", "Heroes", "ReplaceableTextures\\CommandButtons\\BTNManual3.blp", "Modifies Strength, Intelligence and Agility of Player's Heroes by +50.")
+    call XUI_RegisterCheat("/cinemaon", "Cinematic", "ReplaceableTextures\\CommandButtons\\BTNScroll.blp", "Turns cinematic mode on.|n|nDisabled upon pressing ESC key.")
+    call XUI_RegisterCheat("/wood", "Items", "ReplaceableTextures\\CommandButtons\\BTNHumanLumberUpgrade2.blp", "Create item Pile of Wood to Nazgrek.")
+    call XUI_RegisterCheat("/campfire", "Items", "ReplaceableTextures\\CommandButtons\\BTNHumanLumberUpgrade2.blp", "Create item Camp Fire to Nazgrek.")
+    call XUI_RegisterCheat("/torch", "Items", "ReplaceableTextures\\CommandButtons\\BTNINV_Torch_Lit.blp", "Create item Torch to Nazgrek.")
+    call XUI_RegisterCheat("/tent", "Items", "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_LeatherScrap_04.blp", "Create item Tent to Nazgrek.")
+    call XUI_RegisterCheat("/nazgreksflask", "Items", "ReplaceableTextures\\CommandButtons\\BTNScroll.blp", "Create item Nazgrek's Flask to Nazgrek.")
+    call XUI_RegisterCheat("/cannon", "Spawning", "ReplaceableTextures\\CommandButtons\\BTNHumanMissileUpThree.blp", "Spawns cannon.")
+    call XUI_RegisterCheat("/everyoneisdead", "World", "ReplaceableTextures\\CommandButtons\\BTNAnimateDead.blp", "Kills every unit on the map.")
+    call XUI_RegisterCheat("/hordeiseverywhere", "Faction", "ReplaceableTextures\\CommandButtons\\BTNGrunt.blp", "Changes all units ownership to Horde.")
+    call XUI_RegisterCheat("/ihavenoallies", "Faction", "ReplaceableTextures\\CommandButtons\\BTNUnsummonBuilding.blp", "Horde is hostile against Player.")
+    call XUI_RegisterCheat("/reunion", "Faction", "ReplaceableTextures\\CommandButtons\\BTNSpiritLink.blp", "Horde is again friendly to Player.")
+    call XUI_RegisterCheat("/iamnazgrek", "Fun", "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp", "Use unit model Nazgrek.")
+    call XUI_RegisterCheat("/animalslaughter", "Fun", "ReplaceableTextures\\CommandButtons\\BTNBeastMaster.blp", "What are you doing with the pigs?!")
 endfunction
 
 private function XUI_GetSelectedCheatId takes player whichPlayer returns integer
@@ -105,17 +149,12 @@ private function XUI_UpdateUI takes nothing returns nothing
         return
     endif
 
-    if XUI_DefinitionCount > XUI_BUTTON_COUNT then
-        set maxPage = (XUI_DefinitionCount - 1) / XUI_BUTTON_COUNT
-    endif
+    set maxPage = XUI_GetMaxPage()
     if XUI_ViewOffset[pid] < 0 then
         set XUI_ViewOffset[pid] = 0
     elseif XUI_ViewOffset[pid] > maxPage * XUI_BUTTON_COUNT then
         set XUI_ViewOffset[pid] = maxPage * XUI_BUTTON_COUNT
     endif
-
-    call BlzFrameSetMinMaxValue(XUI_Slider, 0.0, I2R(maxPage))
-    call BlzFrameSetValue(XUI_Slider, I2R(XUI_ViewOffset[pid] / XUI_BUTTON_COUNT))
 
     loop
         exitwhen rowIndex > XUI_BUTTON_COUNT
@@ -144,7 +183,11 @@ private function XUI_UpdateUI takes nothing returns nothing
 
     set XUI_SelectedCheatId[pid] = selectedCheatId
     call BlzFrameSetText(XUI_TitleFrame, XUI_Title + " - " + XUI_CheatName[selectedCheatId])
-    call BlzFrameSetText(XUI_TextArea, XUI_CheatBody[selectedCheatId])
+    if XUI_CheatCategory[selectedCheatId] != null and XUI_CheatCategory[selectedCheatId] != "" then
+        call BlzFrameSetText(XUI_TextArea, "Category: " + XUI_CheatCategory[selectedCheatId] + "|n|n" + XUI_CheatBody[selectedCheatId])
+    else
+        call BlzFrameSetText(XUI_TextArea, XUI_CheatBody[selectedCheatId])
+    endif
 endfunction
 
 public function ForceUpdate takes nothing returns nothing
@@ -158,6 +201,7 @@ public function Hide takes nothing returns nothing
 endfunction
 
 public function Show takes nothing returns nothing
+    call XUI_SyncSliderVisual(GetLocalPlayer())
     call BlzFrameSetVisible(XUI_Parent, true)
     call XUI_UpdateUI()
 endfunction
@@ -175,17 +219,41 @@ endfunction
 
 private function XUI_SliderAction takes nothing returns nothing
     local integer pid = GetPlayerId(GetTriggerPlayer())
+    if XUI_SyncingSlider then
+        return
+    endif
     set XUI_ViewOffset[pid] = R2I(BlzGetTriggerFrameValue()) * XUI_BUTTON_COUNT
     call XUI_UpdateUI()
 endfunction
 
 private function XUI_WheelAction takes nothing returns nothing
+    local real nextValue
+    local real maxValue
+
     if GetLocalPlayer() == GetTriggerPlayer() then
-        if BlzGetTriggerFrameValue() > 0.0 then
-            call BlzFrameSetValue(XUI_Slider, BlzFrameGetValue(XUI_Slider) + 1.0)
-        else
-            call BlzFrameSetValue(XUI_Slider, BlzFrameGetValue(XUI_Slider) - 1.0)
+        if XUI_Slider == null or XUI_Parent == null or not BlzFrameIsVisible(XUI_Parent) then
+            return
         endif
+
+        set maxValue = I2R(XUI_GetMaxPage())
+        if maxValue <= 0.0 then
+            return
+        endif
+
+        set nextValue = BlzFrameGetValue(XUI_Slider)
+        if BlzGetTriggerFrameValue() > 0.0 then
+            set nextValue = nextValue + 1.0
+        else
+            set nextValue = nextValue - 1.0
+        endif
+
+        if nextValue < 0.0 then
+            set nextValue = 0.0
+        elseif nextValue > maxValue then
+            set nextValue = maxValue
+        endif
+
+        call BlzFrameSetValue(XUI_Slider, nextValue)
     endif
 endfunction
 
@@ -210,7 +278,6 @@ private function XUI_ButtonAction takes nothing returns nothing
 endfunction
 
 private function XUI_InitFrames takes nothing returns nothing
-    local framehandle frame
     local integer rowIndex = 1
 
     call BlzLoadTOCFile(XUI_TocPath)
@@ -223,14 +290,11 @@ private function XUI_InitFrames takes nothing returns nothing
     call BlzTriggerRegisterFrameEvent(XUI_WheelTrigger, XUI_Slider, FRAMEEVENT_MOUSE_WHEEL)
     call BlzFrameSetMinMaxValue(XUI_Slider, 0.0, 0.0)
 
-    set frame = BlzCreateFrameByType("SLIDER", "CheatsUIMoreScroll", XUI_Parent, "", 0)
-    call BlzTriggerRegisterFrameEvent(XUI_WheelTrigger, frame, FRAMEEVENT_MOUSE_WHEEL)
-    call BlzFrameSetPoint(frame, FRAMEPOINT_TOPRIGHT, XUI_Slider, FRAMEPOINT_TOPLEFT, -0.006, 0.0)
-    call BlzFrameSetPoint(frame, FRAMEPOINT_BOTTOMLEFT, XUI_Parent, FRAMEPOINT_BOTTOMLEFT, 0.006, 0.006)
-
     set XUI_TextArea = BlzGetFrameByName("TasQuestBoxTextArea1", XUI_FRAME_CONTEXT)
     set XUI_TitleFrame = BlzGetFrameByName("TasQuestBoxText1", XUI_FRAME_CONTEXT)
     call BlzFrameSetText(XUI_TitleFrame, XUI_Title)
+    call BlzTriggerRegisterFrameEvent(XUI_WheelTrigger, XUI_Parent, FRAMEEVENT_MOUSE_WHEEL)
+    call BlzTriggerRegisterFrameEvent(XUI_WheelTrigger, XUI_TextArea, FRAMEEVENT_MOUSE_WHEEL)
 
     call BlzTriggerRegisterFrameEvent(XUI_CloseTrigger, BlzGetFrameByName("TasQuestBoxCloseButton1", XUI_FRAME_CONTEXT), FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(XUI_ClearFocusTrigger, BlzGetFrameByName("TasQuestBoxCloseButton1", XUI_FRAME_CONTEXT), FRAMEEVENT_CONTROL_CLICK)

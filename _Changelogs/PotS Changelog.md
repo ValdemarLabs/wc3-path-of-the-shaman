@@ -15,6 +15,39 @@
 
 ## [30.5.2026]
 
+### Technical Updates
+- `CameraControl.j`, `CameraUI.j`, `MasterUI.j`, `ProfessionsUI.j`, `ReputationUI.j`, `StatsUI.j`
+  Added short purpose-focused header descriptions to the newer JASS UI libraries so their main intent is easier to identify at a glance.
+- `Reputation.j`, `ReputationUI.j`
+  Retired the old reputation multiboard from active use while keeping the code in place as legacy fallback.
+  `ReputationUI` no longer commands the old multiboard, and `ReputationBoard` init/show flow was disabled so the frame UI is the active visual path.
+- `StatsUI.j`
+  Reworked the stats panel around UI-side unit selection instead of Warcraft's current map selection.
+  Added broader stat coverage based on `DEqStatNames`, split the view into summary stats plus a denser lower-right stat grid, and removed the old detail scrollbar path.
+  Added class/type placeholders and later hardcoded fallback metadata for player-shaman examples such as Nazgrek.
+  Added a black detail backdrop for clearer reading and wired an `Abilities` button into the unit detail view.
+  Removed direct multiboard hiding from `StatsUI` to avoid conflicts with external multiboard triggers.
+- `AbilitiesLiteUI.j`
+  Added a new lightweight ability browser opened from `StatsUI`, with separate player-shaman vs companion-shaman definition routing so their ability pools do not mix.
+  Added hardcoded starter shaman templates for `Lightning Bolt`, `Stormstrike`, `Healing Wave`, and `Stoneskin Totem`.
+  Added support for player-hero learn-state display so unlearned Nazgrek / Zulkis abilities can show greyed `Not learned` state based on real ability level checks.
+  Simplified the detail panel away from the earlier heavy scroll/body-refresh path, restored lightweight body wrapping, and began adding full black backdrop treatment similar to `StatsUI`.
+- `ReputationUI.j`
+  Kept live timed refresh, but narrowed it to cached visible-row/detail updates instead of full panel rewrites each refresh tick.
+  Added more caching around row visibility, row status text, slider sync, and detail text updates to reduce repeated frame churn while the panel is open.
+- `CheatsUI.j`
+  Replaced placeholder cheat examples with the real current cheat list and removed redundant category text duplication by making the UI render the category once from stored data.
+  Continued hardening scroll/slider behavior after crash investigation by removing brittle event coupling and reducing unsafe slider-sync paths.
+
+### Player-Facing Updates
+- `StatsUI`
+  The stats panel now shows fuller unit information through the new frame layout, including expanded summary fields and broader derived stats.
+  Unit details are now meant to follow the row selected inside the stats UI itself rather than depending on the current world selection.
+- `AbilitiesLiteUI`
+  Units opened through `StatsUI` now have a separate ability list and description view, with player shamans showing richer specialization-style text.
+- `Reputations`
+  Reputation display is now intended to use the frame UI instead of the old multiboard presentation.
+
 ### Tool Updates
 - `WC3_Database/WC3ItemManager`
   Modernized `WC3ItemManager` from the old `.NET 5` setup to a supported desktop stack using `.NET 10 SDK` with the app targeting `net8.0-windows`.
@@ -26,7 +59,25 @@
 - `WC3_Database/WC3ItemManager/IconPathConfig.cs`
   Changed default icon lookup paths to prefer app-local `blizzard` and `custom` folders so the newer build outputs remain self-contained even without a hand-written config file.
 
+### Known Issues
+- `AbilitiesLiteUI`
+  Ability definitions are still only partially populated, and the frame still needs more visual tuning around layout, text balance, and overall readability.
+- `ReputationUI`
+  The factions list is still not fully aligned inside the main frame and needs more follow-up layout work.
+- `StatsUI`, `AbilitiesLiteUI`, `ReputationUI`
+  These newer frame UIs have had several performance/stability corrections, but they still need full in-map validation after the latest refresh/scroll/backdrop changes.
+
 ### Actions Remaining
+- `AbilitiesLiteUI`
+  Add many more manually configured ability rawcodes for player and companion unit types, plus the needed configuration/text authoring work for each ability definition.
+  Continue visual adjusting so the panel layout, text blocks, icon presentation, and detail area feel finalized.
+- `Companions` / `Tamed`
+  Create a proper `Companions.j` JASS library and merge logic from the current GUI versions.
+  This is a heavy change because many systems still depend on the GUI companion / tamed trigger flow and shared `udg_` globals.
+- `ReputationUI`
+  Continue fixing the left-side faction list layout so entries stay fully inside the main reputations frame.
+- UI backdrop idea
+  Consider using the same style of black backdrop frame more broadly across newer UIs, as it makes text much easier to read during gameplay.
 - `WC3ItemManager`
   Re-test normal item editing, icon browsing, imports, and exports in the upgraded app during regular use to confirm there are no behavior regressions beyond successful build/startup verification.
 
