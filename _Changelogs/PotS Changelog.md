@@ -13,6 +13,23 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [2.6.2026]
+
+### Technical Updates
+- `AbilitiesLiteUI.j`, `ReputationUI.j`
+  Continued fixing the left-side list sliders after drag/click problems and incorrect thumb placement.
+  Re-anchored the slider track to the visible row area instead of letting the thumb drift outside the intended frame region.
+  Corrected the vertical slider value mapping so the list starts at the top while the thumb also begins at the top of the visible gold track.
+  Added stricter wheel/drag clamping so slider movement stays within the intended min/max range of the drawn scrollbar.
+  Despite these changes, the latest slider iteration did not actually improve the broken behavior yet and still needs more work.
+
+### Player-Facing Updates
+- `Terraining`
+  Continued terraining work in the `Sirensong` area, focused mostly on the `Panthera` miniboss entrance area.
+- `AbilitiesLiteUI`, `ReputationUI`
+  The left-side scrollbars were adjusted so their thumb position should now better match the visible scrollbar art and start from the top instead of the bottom.
+  In practice, this slider pass did not yet produce a real improvement and the UI scrollbars still behave incorrectly.
+
 ## [1.6.2026]
 
 ### Technical Updates

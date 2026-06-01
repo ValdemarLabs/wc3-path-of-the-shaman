@@ -177,6 +177,7 @@ globals
     private integer AUI_SelectedDefinition = 0
     private integer AUI_ListScrollValue = 0
     private integer AUI_ListScrollMaxCache = -1
+    private integer AUI_ListScrollFrameValueCache = -1
     private integer AUI_DetailBodyHash = 0
     private string AUI_DetailBodyCache = ""
     private unit AUI_SelectedUnit = null
@@ -1117,6 +1118,8 @@ private function AUI_ClampSelection takes nothing returns nothing
 endfunction
 
 private function AUI_SyncListScrollFrame takes integer maxStart returns nothing
+    local integer frameValue
+
     if AUI_ListScroll == null then
         return
     endif
@@ -1124,11 +1127,25 @@ private function AUI_SyncListScrollFrame takes integer maxStart returns nothing
     if maxStart < 0 then
         set maxStart = 0
     endif
+    if AUI_ListScrollValue < 0 then
+        set AUI_ListScrollValue = 0
+    elseif AUI_ListScrollValue > maxStart then
+        set AUI_ListScrollValue = maxStart
+    endif
+
+    set frameValue = maxStart - AUI_ListScrollValue
+
+    set AUI_SyncingListScroll = true
 
     if AUI_ListScrollMaxCache != maxStart then
         set AUI_ListScrollMaxCache = maxStart
         call BlzFrameSetMinMaxValue(AUI_ListScroll, 0.0, I2R(maxStart))
     endif
+    if AUI_ListScrollFrameValueCache != frameValue then
+        set AUI_ListScrollFrameValueCache = frameValue
+        call BlzFrameSetValue(AUI_ListScroll, I2R(frameValue))
+    endif
+    set AUI_SyncingListScroll = false
     call BlzFrameSetVisible(AUI_ListScroll, maxStart > 0)
 endfunction
 
@@ -1301,19 +1318,25 @@ private function AUI_RowAction takes nothing returns nothing
 endfunction
 
 private function AUI_ListScrollAction takes nothing returns nothing
+    local integer maxStart = AUI_GetDefinitionCountForUnitType(AUI_GetActiveDefinitionKey()) - AUI_VISIBLE_ROWS
+
     if AUI_SyncingListScroll then
         return
     endif
-    set AUI_ListScrollValue = R2I(BlzGetTriggerFrameValue())
+    if maxStart < 0 then
+        set maxStart = 0
+    endif
+
+    set AUI_ListScrollFrameValueCache = R2I(BlzGetTriggerFrameValue() + 0.5)
+    set AUI_ListScrollValue = maxStart - AUI_ListScrollFrameValueCache
     call AUI_Update()
 endfunction
 
 private function AUI_WheelAction takes nothing returns nothing
-    local framehandle triggerFrame = BlzGetTriggerFrame()
     local real newValue
 
     if GetLocalPlayer() == GetTriggerPlayer() then
-        if (triggerFrame == AUI_ListScroll or triggerFrame == AUI_LeftPane or triggerFrame == AUI_ListWheelArea) and AUI_ListScroll != null and BlzFrameIsVisible(AUI_ListScroll) then
+        if AUI_ListScroll != null and BlzFrameIsVisible(AUI_ListScroll) then
             if BlzGetTriggerFrameValue() > 0 then
                 set newValue = BlzFrameGetValue(AUI_ListScroll) + 1.0
             else
@@ -1321,11 +1344,12 @@ private function AUI_WheelAction takes nothing returns nothing
             endif
             if newValue < 0.0 then
                 set newValue = 0.0
+            elseif newValue > I2R(AUI_ListScrollMaxCache) then
+                set newValue = I2R(AUI_ListScrollMaxCache)
             endif
             call BlzFrameSetValue(AUI_ListScroll, newValue)
         endif
     endif
-    set triggerFrame = null
 endfunction
 
 private function AUI_CreateFrames takes nothing returns nothing
@@ -1474,6 +1498,14 @@ private function AUI_CreateFrames takes nothing returns nothing
         set rowIndex = rowIndex + 1
     endloop
 
+    call BlzFrameClearAllPoints(AUI_ListScroll)
+    call BlzFrameSetPoint(AUI_ListScroll, FRAMEPOINT_TOPLEFT, AUI_RowButton[1], FRAMEPOINT_TOPRIGHT, 0.004, -0.002)
+    call BlzFrameSetPoint(AUI_ListScroll, FRAMEPOINT_BOTTOMLEFT, AUI_RowButton[AUI_VISIBLE_ROWS], FRAMEPOINT_BOTTOMRIGHT, 0.004, 0.002)
+
+    call BlzFrameClearAllPoints(AUI_ListWheelArea)
+    call BlzFrameSetPoint(AUI_ListWheelArea, FRAMEPOINT_TOPRIGHT, AUI_ListScroll, FRAMEPOINT_TOPLEFT, -0.006, 0.000)
+    call BlzFrameSetPoint(AUI_ListWheelArea, FRAMEPOINT_BOTTOMLEFT, AUI_RowButton[AUI_VISIBLE_ROWS], FRAMEPOINT_BOTTOMLEFT, 0.006, 0.002)
+
     call BlzTriggerRegisterFrameEvent(AUI_CloseTrigger, AUI_CloseButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(AUI_ClearFocusTrigger, AUI_CloseButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(AUI_ReturnTrigger, AUI_ReturnButton, FRAMEEVENT_CONTROL_CLICK)
@@ -1487,9 +1519,6 @@ public function ShowForUnit takes unit u returns nothing
     call AUI_EnsureTemplatesForUnit(u)
     call AUI_ResetViewState()
     call AUI_SyncListScrollFrame(AUI_GetDefinitionCountForUnitType(AUI_GetActiveDefinitionKey()) - AUI_VISIBLE_ROWS)
-    set AUI_SyncingListScroll = true
-    call BlzFrameSetValue(AUI_ListScroll, 0.0)
-    set AUI_SyncingListScroll = false
     call BlzFrameSetVisible(AUI_Parent, true)
     call AUI_Update()
 endfunction
@@ -1499,9 +1528,6 @@ public function Show takes nothing returns nothing
     call AUI_EnsureTemplatesForUnit(AUI_SelectedUnit)
     call AUI_ResetViewState()
     call AUI_SyncListScrollFrame(AUI_GetDefinitionCountForUnitType(AUI_GetActiveDefinitionKey()) - AUI_VISIBLE_ROWS)
-    set AUI_SyncingListScroll = true
-    call BlzFrameSetValue(AUI_ListScroll, 0.0)
-    set AUI_SyncingListScroll = false
     call BlzFrameSetVisible(AUI_Parent, true)
     call AUI_Update()
 endfunction

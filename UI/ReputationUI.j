@@ -175,6 +175,7 @@ private function RUI_UpdateRows takes player whichPlayer returns nothing
     local integer rowIndex = 1
     local integer skipped = 0
     local integer maxStart = RUI_GetFactionCount() - RUI_VISIBLE_ROWS
+    local integer sliderValue
     local Faction f
     local string iconPath
     local string rowText
@@ -237,13 +238,14 @@ private function RUI_UpdateRows takes player whichPlayer returns nothing
 
     if GetLocalPlayer() == whichPlayer then
         if maxStart > 0 then
+            set sliderValue = maxStart - RUI_ListScrollValue[GetPlayerId(whichPlayer)]
             set RUI_SyncingListScroll = true
             if RUI_ListScrollMaxCache != maxStart then
                 set RUI_ListScrollMaxCache = maxStart
                 call BlzFrameSetMinMaxValue(RUI_ListScroll, 0.0, I2R(maxStart))
             endif
-            if RUI_ListScrollValueCache != RUI_ListScrollValue[GetPlayerId(whichPlayer)] then
-                set RUI_ListScrollValueCache = RUI_ListScrollValue[GetPlayerId(whichPlayer)]
+            if RUI_ListScrollValueCache != sliderValue then
+                set RUI_ListScrollValueCache = sliderValue
                 call BlzFrameSetValue(RUI_ListScroll, I2R(RUI_ListScrollValueCache))
             endif
             set RUI_SyncingListScroll = false
@@ -413,11 +415,16 @@ endfunction
 
 private function RUI_ListScrollAction takes nothing returns nothing
     local player p = GetTriggerPlayer()
+    local integer maxStart = RUI_GetFactionCount() - RUI_VISIBLE_ROWS
     if RUI_SyncingListScroll then
         set p = null
         return
     endif
-    set RUI_ListScrollValue[GetPlayerId(p)] = R2I(BlzGetTriggerFrameValue())
+    if maxStart < 0 then
+        set maxStart = 0
+    endif
+    set RUI_ListScrollValueCache = R2I(BlzGetTriggerFrameValue() + 0.5)
+    set RUI_ListScrollValue[GetPlayerId(p)] = maxStart - RUI_ListScrollValueCache
     call RUI_Update(p)
     set p = null
 endfunction
@@ -433,6 +440,8 @@ private function RUI_WheelAction takes nothing returns nothing
         endif
         if newValue < 0.0 then
             set newValue = 0.0
+        elseif newValue > I2R(RUI_ListScrollMaxCache) then
+            set newValue = I2R(RUI_ListScrollMaxCache)
         endif
         call BlzFrameSetValue(RUI_ListScroll, newValue)
     endif
@@ -561,12 +570,21 @@ private function RUI_CreateFrames takes nothing returns nothing
         set rowIndex = rowIndex + 1
     endloop
 
+    call BlzFrameClearAllPoints(RUI_ListScroll)
+    call BlzFrameSetPoint(RUI_ListScroll, FRAMEPOINT_TOPLEFT, RUI_RowButton[1], FRAMEPOINT_TOPRIGHT, 0.004, -0.002)
+    call BlzFrameSetPoint(RUI_ListScroll, FRAMEPOINT_BOTTOMLEFT, RUI_RowButton[RUI_VISIBLE_ROWS], FRAMEPOINT_BOTTOMRIGHT, 0.004, 0.002)
+
+    call BlzFrameClearAllPoints(RUI_ListWheelArea)
+    call BlzFrameSetPoint(RUI_ListWheelArea, FRAMEPOINT_TOPRIGHT, RUI_ListScroll, FRAMEPOINT_TOPLEFT, -0.006, 0.000)
+    call BlzFrameSetPoint(RUI_ListWheelArea, FRAMEPOINT_BOTTOMLEFT, RUI_RowButton[RUI_VISIBLE_ROWS], FRAMEPOINT_BOTTOMLEFT, 0.006, 0.002)
+
     call BlzFrameSetVisible(RUI_Parent, false)
 endfunction
 
 public function Show takes nothing returns nothing
     local player p = GetLocalPlayer()
     call BlzFrameSetVisible(RUI_Parent, true)
+    set RUI_ListScrollValue[GetPlayerId(p)] = 0
     call RUI_Update(p)
     call RUI_SetRefreshActive(true)
     set p = null
