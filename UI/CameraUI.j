@@ -53,6 +53,7 @@ globals
     private trigger CUI_SliderTrigger = null
     private trigger CUI_ClearFocusTrigger = null
     private trigger CUI_SelectTrigger = null
+    private trigger CUI_InitTrigger = null
 endglobals
 
 private function CUI_LoadToc takes nothing returns nothing
@@ -349,35 +350,15 @@ private function CUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetVisible(CUI_Parent, false)
 endfunction
 
+private function CUI_DelayedInit takes nothing returns nothing
+    call CUI_LoadToc()
+    call CUI_CreateFrames()
+endfunction
+
 public function Hide takes nothing returns nothing
     call CUI_HideInternal()
 endfunction
 
-public function Show takes nothing returns nothing
-    local integer i = 1
-    if CUI_Parent != null then
-        call BlzFrameSetVisible(CUI_Parent, true)
-    endif
-    loop
-        exitwhen i > 5
-        if CUI_Slider[i] != null then
-            call BlzFrameSetVisible(CUI_Slider[i], true)
-        endif
-        set i = i + 1
-    endloop
-    if CUI_ResetButton != null then
-        call BlzFrameSetVisible(CUI_ResetButton, true)
-    endif
-    call CUI_RefreshFields(GetLocalPlayer())
-endfunction
-
-public function Toggle takes nothing returns nothing
-    if CUI_Parent != null and BlzFrameIsVisible(CUI_Parent) then
-        call Hide()
-    else
-        call Show()
-    endif
-endfunction
 
 public function IsVisible takes nothing returns boolean
     return CUI_IsVisibleInternal()
@@ -389,8 +370,6 @@ public function Init takes nothing returns nothing
         return
     endif
     set CUI_Initialized = true
-
-    call CUI_LoadToc()
 
     set CUI_ButtonAction = Table.create()
     set CUI_SliderKind = Table.create()
@@ -421,7 +400,42 @@ public function Init takes nothing returns nothing
     endloop
     call TriggerAddAction(CUI_SelectTrigger, function CUI_SelectAction)
 
-    call CUI_CreateFrames()
+    set CUI_InitTrigger = CreateTrigger()
+    call TriggerRegisterTimerEvent(CUI_InitTrigger, 0.20, false)
+    call TriggerAddAction(CUI_InitTrigger, function CUI_DelayedInit)
+endfunction
+
+public function Show takes nothing returns nothing
+    local integer i = 1
+    if not CUI_Initialized then
+        call Init()
+    endif
+    if CUI_Parent != null then
+        call BlzFrameSetVisible(CUI_Parent, true)
+    endif
+    loop
+        exitwhen i > 5
+        if CUI_Slider[i] != null then
+            call BlzFrameSetVisible(CUI_Slider[i], true)
+        endif
+        set i = i + 1
+    endloop
+    if CUI_ResetButton != null then
+        call BlzFrameSetVisible(CUI_ResetButton, true)
+    endif
+    call CUI_SyncSliderValues(GetLocalPlayer())
+    call CUI_RefreshFields(GetLocalPlayer())
+endfunction
+
+public function Toggle takes nothing returns nothing
+    if not CUI_Initialized then
+        call Init()
+    endif
+    if CUI_Parent != null and BlzFrameIsVisible(CUI_Parent) then
+        call Hide()
+    else
+        call Show()
+    endif
 endfunction
 
 public function AutoInit takes nothing returns nothing

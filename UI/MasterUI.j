@@ -13,6 +13,7 @@ library MasterUI initializer AutoInit requires Table
 
 globals
     private boolean MUI_Initialized = false
+    private boolean MUI_OpenButtonVisible = true
 
     private framehandle MUI_Parent = null
     private framehandle MUI_OpenButton = null
@@ -76,6 +77,15 @@ endfunction
 private function MUI_HideMaster takes nothing returns nothing
     if MUI_Parent != null then
         call BlzFrameSetVisible(MUI_Parent, false)
+    endif
+endfunction
+
+private function MUI_ApplyOpenButtonVisibility takes nothing returns nothing
+    if not MUI_OpenButtonVisible then
+        call MUI_HideMaster()
+    endif
+    if MUI_OpenButton != null then
+        call BlzFrameSetVisible(MUI_OpenButton, MUI_OpenButtonVisible)
     endif
 endfunction
 
@@ -249,6 +259,7 @@ private function MUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetText(MUI_OpenButton, "|cffffffffGame|r")
     call BlzTriggerRegisterFrameEvent(MUI_OpenTrigger, MUI_OpenButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(MUI_ClearFocusTrigger, MUI_OpenButton, FRAMEEVENT_CONTROL_CLICK)
+    call MUI_ApplyOpenButtonVisibility()
 
     call BlzFrameSetVisible(MUI_Parent, false)
 endfunction
@@ -295,6 +306,22 @@ public function Hide takes nothing returns nothing
     if MUI_Parent != null then
         call BlzFrameSetVisible(MUI_Parent, false)
     endif
+endfunction
+
+public function ShowGameButton takes nothing returns nothing
+    if not MUI_Initialized then
+        call Init()
+    endif
+    set MUI_OpenButtonVisible = true
+    call MUI_ApplyOpenButtonVisibility()
+endfunction
+
+public function HideGameButton takes nothing returns nothing
+    if not MUI_Initialized then
+        call Init()
+    endif
+    set MUI_OpenButtonVisible = false
+    call MUI_ApplyOpenButtonVisibility()
 endfunction
 
 public function Toggle takes nothing returns nothing

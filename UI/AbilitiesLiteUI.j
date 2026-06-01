@@ -125,8 +125,14 @@ globals
     private constant string AUI_NPC_SHAMAN_STORMSTRIKE_ICON = "ReplaceableTextures\\CommandButtons\\BTNShamanMaster.blp"
     private constant string AUI_NPC_SHAMAN_STONESKIN_TOTEM_ICON = "ReplaceableTextures\\CommandButtons\\BTNNature_StoneSkinTotem.tga"
 
-    private constant real AUI_DETAIL_BODY_WIDTH = 0.262
-    private constant real AUI_DETAIL_BODY_HEIGHT = 0.170
+    private constant real AUI_DETAIL_BODY_WIDTH = 0.285
+    private constant real AUI_DETAIL_BODY_HEIGHT = 0.224
+    private constant real AUI_DETAIL_BODY_OFFSET_X = 0.046
+    private constant real AUI_DETAIL_BODY_OFFSET_Y = -0.122
+    private constant integer AUI_BODY_WRAP_CHARS = 37
+    private constant real AUI_ROW_LEVEL_SCALE = 0.90
+    private constant real AUI_ROW_NOT_LEARNED_SCALE = 0.82
+    private constant integer AUI_ROW_UNAVAILABLE_OVERLAY_ALPHA = 88
     private constant integer AUI_MODE_AUTO = 1
     private constant integer AUI_MODE_MANUAL = 2
     private constant boolean AUI_SHOW_PLAYER_LEARN_STATE = true
@@ -154,6 +160,7 @@ globals
     private framehandle array AUI_RowText
     private framehandle array AUI_RowLevel
     private framehandle array AUI_RowHighlight
+    private framehandle array AUI_RowUnavailableOverlay
 
     private integer AUI_DefinitionCount = 0
     private integer array AUI_DefinitionUnitTypeId
@@ -680,6 +687,11 @@ private function AUI_StripTooltipLevelSuffix takes string titleText returns stri
         return titleText
     endif
 
+    set cutIndex = AUI_FindPattern(titleText, " [Level ")
+    if cutIndex >= 0 then
+        return SubString(titleText, 0, cutIndex)
+    endif
+
     set cutIndex = AUI_FindPattern(titleText, " - [")
     if cutIndex >= 0 then
         return SubString(titleText, 0, cutIndex)
@@ -727,6 +739,80 @@ private function AUI_GetDefinitionLearnAbilityId takes integer definitionIndex r
     return AUI_DefinitionAbilityId[definitionIndex]
 endfunction
 
+private function AUI_GetDefinitionDisplayAbilityId takes integer definitionIndex returns integer
+    if AUI_DefinitionAbilityId[definitionIndex] != 0 then
+        return AUI_DefinitionAbilityId[definitionIndex]
+    endif
+    return AUI_GetDefinitionLearnAbilityId(definitionIndex)
+endfunction
+
+private function AUI_GetDefinitionCurrentLevel takes unit u, integer definitionIndex returns integer
+    local integer level = 0
+    local integer abilityId = AUI_DefinitionAbilityId[definitionIndex]
+    local integer learnAbilityId = AUI_GetDefinitionLearnAbilityId(definitionIndex)
+
+    if u == null or GetHandleId(u) == 0 then
+        return 0
+    endif
+
+    if abilityId != 0 then
+        set level = GetUnitAbilityLevel(u, abilityId)
+    endif
+    if level <= 0 and learnAbilityId != 0 then
+        set level = GetUnitAbilityLevel(u, learnAbilityId)
+    endif
+    return level
+endfunction
+
+private function AUI_GetDefinitionMaxLevel takes integer definitionIndex returns integer
+    local integer abilityId = AUI_GetDefinitionDisplayAbilityId(definitionIndex)
+    local integer levelIndex = 0
+    local integer maxLevel = 0
+    local string titleText = ""
+    local string tooltipText = ""
+    local string previousTitle = ""
+    local string previousTooltip = ""
+
+    if abilityId == 0 then
+        return 0
+    endif
+
+    loop
+        exitwhen levelIndex >= 10
+
+        set titleText = BlzGetAbilityTooltip(abilityId, levelIndex)
+        set tooltipText = BlzGetAbilityExtendedTooltip(abilityId, levelIndex)
+        if tooltipText == null or tooltipText == "" then
+            set tooltipText = BlzGetAbilityTooltip(abilityId, levelIndex)
+        endif
+
+        if (titleText == null or titleText == "") and (tooltipText == null or tooltipText == "") then
+            if maxLevel > 0 then
+                return maxLevel
+            endif
+            return 1
+        endif
+
+        if levelIndex > 0 and titleText == previousTitle and tooltipText == previousTooltip then
+            return maxLevel
+        endif
+
+        set maxLevel = levelIndex + 1
+        set previousTitle = titleText
+        set previousTooltip = tooltipText
+        set levelIndex = levelIndex + 1
+    endloop
+
+    if maxLevel > 0 then
+        return maxLevel
+    endif
+    return 1
+endfunction
+
+private function AUI_ShouldShowDefinitionLevel takes integer definitionIndex returns boolean
+    return AUI_GetDefinitionMaxLevel(definitionIndex) > 1
+endfunction
+
 private function AUI_ShouldShowNotLearned takes unit u, integer definitionIndex returns boolean
     local integer abilityId
 
@@ -742,35 +828,34 @@ private function AUI_GetDefinitionLevelText takes unit u, integer definitionInde
     local integer abilityId = AUI_DefinitionAbilityId[definitionIndex]
     local integer learnAbilityId = AUI_GetDefinitionLearnAbilityId(definitionIndex)
     local string infoText = AUI_DefinitionInfoOverride[definitionIndex]
-    local integer level
+    local integer level = AUI_GetDefinitionCurrentLevel(u, definitionIndex)
+    local boolean showLevel = AUI_ShouldShowDefinitionLevel(definitionIndex)
 
     if AUI_ShouldShowNotLearned(u, definitionIndex) then
         return infoText
     endif
 
     if abilityId != 0 and u != null and GetHandleId(u) != 0 then
-        set level = GetUnitAbilityLevel(u, abilityId)
         if infoText != null and infoText != "" then
-            if level > 0 then
+            if showLevel and level > 0 then
                 return infoText + " - Level " + I2S(level)
             endif
             return infoText
         endif
-        if level > 0 then
+        if showLevel and level > 0 then
             return "Level " + I2S(level)
         endif
         return "Object data"
     endif
 
     if learnAbilityId != 0 and u != null and GetHandleId(u) != 0 then
-        set level = GetUnitAbilityLevel(u, learnAbilityId)
         if infoText != null and infoText != "" then
-            if level > 0 then
+            if showLevel and level > 0 then
                 return infoText + " |cff808080-|r Level " + I2S(level)
             endif
             return infoText
         endif
-        if level > 0 then
+        if showLevel and level > 0 then
             return "Level " + I2S(level)
         endif
     endif
@@ -785,25 +870,21 @@ private function AUI_GetDefinitionLevelText takes unit u, integer definitionInde
 endfunction
 
 private function AUI_GetDefinitionBody takes unit u, integer definitionIndex returns string
-    local integer abilityId = AUI_DefinitionAbilityId[definitionIndex]
-    local integer abilityLevel = 1
+    local integer abilityId = AUI_GetDefinitionDisplayAbilityId(definitionIndex)
+    local integer currentLevel = AUI_GetDefinitionCurrentLevel(u, definitionIndex)
+    local integer abilityLevel = currentLevel
+    local integer manaCost = 0
+    local boolean showLevel = AUI_ShouldShowDefinitionLevel(definitionIndex)
     local string bodyText = AUI_DefinitionBodyOverride[definitionIndex]
     local string tooltipText = ""
-    local integer learnAbilityId = AUI_GetDefinitionLearnAbilityId(definitionIndex)
 
     if bodyText != null and bodyText != "" then
         return bodyText
     endif
 
-    if abilityId == 0 then
-        set abilityId = learnAbilityId
-    endif
     if abilityId != 0 then
-        if u != null and GetHandleId(u) != 0 then
-            set abilityLevel = GetUnitAbilityLevel(u, abilityId)
-            if abilityLevel < 1 then
-                set abilityLevel = 1
-            endif
+        if abilityLevel < 1 then
+            set abilityLevel = 1
         endif
 
         set tooltipText = BlzGetAbilityExtendedTooltip(abilityId, abilityLevel - 1)
@@ -814,10 +895,17 @@ private function AUI_GetDefinitionBody takes unit u, integer definitionIndex ret
             set tooltipText = "No description configured yet."
         endif
 
-        if u != null and GetHandleId(u) != 0 and GetUnitAbilityLevel(u, abilityId) > 0 then
-            return "|cffffcc00Level:|r " + I2S(GetUnitAbilityLevel(u, abilityId)) + "|n|n" + tooltipText
+        set manaCost = BlzGetAbilityManaCost(abilityId, abilityLevel - 1)
+        if manaCost > 0 then
+            set bodyText = "|cff69ccf0Mana Cost:|r " + I2S(manaCost) + "|n|n" + tooltipText
+        else
+            set bodyText = tooltipText
         endif
-        return tooltipText
+
+        if showLevel and currentLevel > 0 then
+            return "|cffffcc00Level:|r " + I2S(currentLevel) + "|n|n" + bodyText
+        endif
+        return bodyText
     endif
 
     return "No description configured yet."
@@ -833,7 +921,7 @@ private function AUI_WrapBodyText takes string text returns string
     local string word = ""
     local integer wordChars = 0
     local boolean pendingSpace = false
-    local integer wrapChars = 31
+    local integer wrapChars = AUI_BODY_WRAP_CHARS
 
     loop
         exitwhen i >= length
@@ -1056,6 +1144,7 @@ private function AUI_UpdateRows takes nothing returns nothing
     local integer selected
     local string levelText
     local string titleText
+    local boolean showUnavailableOverlay
 
     if maxStart < 0 then
         set maxStart = 0
@@ -1068,14 +1157,17 @@ private function AUI_UpdateRows takes nothing returns nothing
         set AUI_RowDefinitionIndex[rowIndex] = definitionIndex
         if definitionIndex != 0 then
             set titleText = AUI_GetDefinitionTitle(definitionIndex)
+            set showUnavailableOverlay = false
             if AUI_ShouldShowNotLearned(AUI_SelectedUnit, definitionIndex) then
                 set titleText = "|cff808080" + titleText + "|r"
                 set levelText = AUI_NotLearnedText
+                set showUnavailableOverlay = true
+                call BlzFrameSetScale(AUI_RowLevel[rowIndex], AUI_ROW_NOT_LEARNED_SCALE)
             else
                 set learnAbilityId = AUI_GetDefinitionLearnAbilityId(definitionIndex)
                 if learnAbilityId != 0 and AUI_SelectedUnit != null and GetHandleId(AUI_SelectedUnit) != 0 then
-                    set abilityLevel = GetUnitAbilityLevel(AUI_SelectedUnit, learnAbilityId)
-                    if abilityLevel > 0 then
+                    set abilityLevel = AUI_GetDefinitionCurrentLevel(AUI_SelectedUnit, definitionIndex)
+                    if AUI_ShouldShowDefinitionLevel(definitionIndex) and abilityLevel > 0 then
                         set levelText = "Lvl " + I2S(abilityLevel)
                     else
                         set levelText = ""
@@ -1083,11 +1175,13 @@ private function AUI_UpdateRows takes nothing returns nothing
                 else
                     set levelText = ""
                 endif
+                call BlzFrameSetScale(AUI_RowLevel[rowIndex], AUI_ROW_LEVEL_SCALE)
             endif
 
             call BlzFrameSetTexture(AUI_RowIcon[rowIndex], AUI_GetDefinitionIcon(definitionIndex), 0, true)
             call BlzFrameSetText(AUI_RowText[rowIndex], titleText)
             call BlzFrameSetText(AUI_RowLevel[rowIndex], levelText)
+            call BlzFrameSetVisible(AUI_RowUnavailableOverlay[rowIndex], showUnavailableOverlay)
             call BlzFrameSetVisible(AUI_RowButton[rowIndex], true)
 
             if definitionIndex == AUI_SelectedDefinition then
@@ -1103,6 +1197,7 @@ private function AUI_UpdateRows takes nothing returns nothing
             set AUI_RowHighlightVisible[rowIndex] = 0
             call BlzFrameSetVisible(AUI_RowButton[rowIndex], false)
             call BlzFrameSetVisible(AUI_RowHighlight[rowIndex], false)
+            call BlzFrameSetVisible(AUI_RowUnavailableOverlay[rowIndex], false)
         endif
         set rowIndex = rowIndex + 1
     endloop
@@ -1113,6 +1208,7 @@ private function AUI_UpdateRows takes nothing returns nothing
         set AUI_RowHighlightVisible[rowIndex] = 0
         call BlzFrameSetVisible(AUI_RowButton[rowIndex], false)
         call BlzFrameSetVisible(AUI_RowHighlight[rowIndex], false)
+        call BlzFrameSetVisible(AUI_RowUnavailableOverlay[rowIndex], false)
         set rowIndex = rowIndex + 1
     endloop
 
@@ -1319,7 +1415,7 @@ private function AUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetEnable(AUI_DetailInfoText, false)
 
     set AUI_DetailBodyText = BlzCreateFrameByType("TEXT", "AbilitiesLiteUIDetailBody", AUI_RightPane, "", 0)
-    call BlzFrameSetPoint(AUI_DetailBodyText, FRAMEPOINT_TOPLEFT, AUI_RightPane, FRAMEPOINT_TOPLEFT, 0.074, -0.155)
+    call BlzFrameSetPoint(AUI_DetailBodyText, FRAMEPOINT_TOPLEFT, AUI_RightPane, FRAMEPOINT_TOPLEFT, AUI_DETAIL_BODY_OFFSET_X, AUI_DETAIL_BODY_OFFSET_Y)
     call BlzFrameSetSize(AUI_DetailBodyText, AUI_DETAIL_BODY_WIDTH, AUI_DETAIL_BODY_HEIGHT)
     call BlzFrameSetTextAlignment(AUI_DetailBodyText, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetScale(AUI_DetailBodyText, 0.90)
@@ -1346,16 +1442,25 @@ private function AUI_CreateFrames takes nothing returns nothing
         call BlzFrameSetPoint(AUI_RowIcon[rowIndex], FRAMEPOINT_LEFT, AUI_RowButton[rowIndex], FRAMEPOINT_LEFT, 0.006, 0.0)
         call BlzFrameSetSize(AUI_RowIcon[rowIndex], 0.02, 0.02)
 
+        set AUI_RowUnavailableOverlay[rowIndex] = BlzCreateFrameByType("BACKDROP", "AbilitiesLiteUIRowUnavailableOverlay" + I2S(rowIndex), AUI_RowButton[rowIndex], "", 0)
+        call BlzFrameSetTexture(AUI_RowUnavailableOverlay[rowIndex], AUI_PanelTexture, 0, false)
+        call BlzFrameSetAllPoints(AUI_RowUnavailableOverlay[rowIndex], AUI_RowIcon[rowIndex])
+        call BlzFrameSetAlpha(AUI_RowUnavailableOverlay[rowIndex], AUI_ROW_UNAVAILABLE_OVERLAY_ALPHA)
+        call BlzFrameSetVertexColor(AUI_RowUnavailableOverlay[rowIndex], BlzConvertColor(AUI_ROW_UNAVAILABLE_OVERLAY_ALPHA, 0, 0, 0))
+        call BlzFrameSetVisible(AUI_RowUnavailableOverlay[rowIndex], false)
+        call BlzFrameSetEnable(AUI_RowUnavailableOverlay[rowIndex], false)
+
         set AUI_RowText[rowIndex] = BlzCreateFrameByType("TEXT", "AbilitiesLiteUIRowText" + I2S(rowIndex), AUI_RowButton[rowIndex], "", 0)
         call BlzFrameSetPoint(AUI_RowText[rowIndex], FRAMEPOINT_TOPLEFT, AUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.032, -0.004)
-        call BlzFrameSetPoint(AUI_RowText[rowIndex], FRAMEPOINT_BOTTOMRIGHT, AUI_RowButton[rowIndex], FRAMEPOINT_BOTTOMRIGHT, -0.05, 0.004)
+        call BlzFrameSetPoint(AUI_RowText[rowIndex], FRAMEPOINT_BOTTOMRIGHT, AUI_RowButton[rowIndex], FRAMEPOINT_BOTTOMRIGHT, -0.060, 0.004)
         call BlzFrameSetTextAlignment(AUI_RowText[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetEnable(AUI_RowText[rowIndex], false)
 
         set AUI_RowLevel[rowIndex] = BlzCreateFrameByType("TEXT", "AbilitiesLiteUIRowLevel" + I2S(rowIndex), AUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(AUI_RowLevel[rowIndex], FRAMEPOINT_TOPRIGHT, AUI_RowButton[rowIndex], FRAMEPOINT_TOPRIGHT, -0.006, -0.004)
-        call BlzFrameSetPoint(AUI_RowLevel[rowIndex], FRAMEPOINT_BOTTOMRIGHT, AUI_RowButton[rowIndex], FRAMEPOINT_BOTTOMRIGHT, -0.006, 0.004)
+        call BlzFrameSetPoint(AUI_RowLevel[rowIndex], FRAMEPOINT_TOPRIGHT, AUI_RowButton[rowIndex], FRAMEPOINT_TOPRIGHT, -0.010, -0.004)
+        call BlzFrameSetPoint(AUI_RowLevel[rowIndex], FRAMEPOINT_BOTTOMRIGHT, AUI_RowButton[rowIndex], FRAMEPOINT_BOTTOMRIGHT, -0.010, 0.004)
         call BlzFrameSetTextAlignment(AUI_RowLevel[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_RIGHT)
+        call BlzFrameSetScale(AUI_RowLevel[rowIndex], AUI_ROW_LEVEL_SCALE)
         call BlzFrameSetEnable(AUI_RowLevel[rowIndex], false)
 
         set AUI_RowHighlight[rowIndex] = BlzCreateFrameByType("SPRITE", "AbilitiesLiteUIRowHighlight" + I2S(rowIndex), AUI_RowButton[rowIndex], "", 0)

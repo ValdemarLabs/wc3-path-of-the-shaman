@@ -22,12 +22,26 @@
   Refined ability presentation so the visible classification line uses shared style such as `Shaman - Elemental` instead of separate `Player Shaman` / `NPC Shaman` display text.
   Changed visible ability-title lookup to prefer the normal tooltip text and strip trailing level-style suffixes such as ` - [Level X]` before display.
   Continued iterating on left-side slider/list behavior, wheel handling, and row-click interaction after repeated crash and drag issues.
+  Refined the ability list/detail presentation so single-rank abilities no longer show unnecessary level text.
+  Added mana-cost display to rawcode-driven ability details.
+  Repositioned and enlarged the detail-text area to better fit the intended right-side description region.
+  Reduced the `Not learned` row-text scale slightly and added a subtle dark overlay on unlearned ability icons so unavailable abilities read more clearly.
 - `ReputationUI.j`
   Continued reworking the left-side faction-list slider and click/scroll behavior to move it closer to the proven `TasQuestBoxLight_PotS` pattern.
   Adjusted row visibility handling, slider interaction, and left-list click behavior after drag/click regressions during the reputation-panel refactor.
 - `MasterUI.j`, `AbilitiesLiteUI.j`
   Added the `Abilities` entry into the `Game` menu layout and updated the open flow so `MasterUI` uses the same `ExecuteFunc(...)` pattern as the other sub-UIs.
   Moved the selected-hero resolution into `AbilitiesLiteUI`, where the panel now determines whether to open for `Nazgrek` or `Zul'kis`, defaulting to `Nazgrek` when neither is selected.
+- `MasterUI.j`
+  Added public `ShowGameButton` / `HideGameButton` API support for the `Game` menu button itself.
+  Wired cinematic trigger usage so `Cinematic ON` / `Cinematic OFF` can now hide/show the `Game` button cleanly through the new API.
+- `CameraControl.j`
+  Fixed advanced camera mode so switching into `Advanced` now also binds arrow-key movement through `SetMovementUnit(...)`.
+  This makes the advanced movement helper apply consistently on mode switch, target refresh/reselection, and resume because those already flow through the shared advanced bind path.
+- `CameraUI.j`
+  Reworked camera UI initialization so TOC loading and frame creation happen through a delayed init instead of immediate `AutoInit`.
+  This was done because the missing-slider issue appears to be tied to custom slider-template frame creation happening too early in the main map, not to `Nazgrek` / `Zul'kis` initialization timing.
+  Added slider-value resync on `Show()` so the visible controls refresh to current camera values when the panel is opened.
 - `Camera` / cinematic cleanup
   `Intro Orc Cleanup` still contained obsolete GUI-side camera-control calls that were interfering with the newer JASS camera-control flow in the main map.
   Those old GUI camera-control function calls were disabled for now and should later be removed entirely as obsolete.
@@ -37,8 +51,12 @@
 - `AbilitiesLiteUI`
   Player shamans now expose a broader real ability list with names/icons/tooltips pulled from actual object data instead of only a few placeholder definitions.
   Ability names and specialization labels are being presented in a cleaner format that better matches the intended class/spec display.
+  Ability details now show mana cost where available, use a better-sized description area, and make unlearned abilities easier to distinguish visually.
 - `Game` menu
   The `Game` menu now includes direct access to `Abilities`, with the panel opening for the currently selected main shaman hero when possible.
+  The `Game` button can now be hidden during cinematics and restored afterward through the newer cinematic trigger flow.
+- `Camera`
+  Advanced camera mode now restores working arrow-key movement instead of only changing the camera view.
 - Sirensong small terraining
 - Dragonpeak Mountain high mountain terraining
 
@@ -51,7 +69,7 @@
 - `Camera`
   There may still be other old GUI-trigger paths that call outdated first-person / camera GUI functions and can conflict with the newer camera-control system.
   `CameraUI` slider controls are not appearing correctly in the main map even though they work in the test map.
-  Current suspicion is an initialization-order issue where camera-control/UI setup can run before `Nazgrek` / `Zul'kis` globals are initialized in the main map.
+  Current suspicion is that custom slider-template frames from `templates.toc` are being created too early in the main map load flow rather than the issue being caused by `Nazgrek` / `Zul'kis` variable initialization.
 
 ### Actions Remaining
 - `AbilitiesLiteUI`
@@ -61,9 +79,9 @@
   Finish stabilizing the left-side faction list slider and drag behavior and continue aligning it with the quest-box style interaction model.
 - `Camera` cleanup
   Continue searching for other old GUI-trigger references to first-person / GUI camera controls and remove or disable them so only the newer JASS camera-control flow remains active.
-  Investigate the main-map-only `CameraUI` slider issue, with initialization order as the current primary suspect.
-- `MasterUI`
-  Add a public API to show/hide the `Game` menu button itself so cinematic triggers such as `Cinematic ON` and `Cinematic OFF` can control that button cleanly.
+  Re-test whether delayed `CameraUI` frame creation resolves the main-map-only slider issue; if not, inspect the built-map slider template import state rather than unit-variable timing.
+- `MasterUI` / cinematics
+  Re-test the new `Game` button hide/show flow during `Cinematic ON` / `Cinematic OFF` and any other trigger paths that should suppress menu access temporarily.
 
 ## [31.5.2026]
 

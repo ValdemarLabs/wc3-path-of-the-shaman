@@ -225,11 +225,12 @@ private function CC_BindAdvancedMode takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     set CC_TargetUnit[pid] = CC_GetFallbackTarget(whichPlayer)
     call FCL_Release(whichPlayer)
-    call ReleaseMovementUnit(whichPlayer)
     if CC_TargetUnit[pid] != null then
         call SetCameraUnit(CC_TargetUnit[pid], whichPlayer)
+        call SetMovementUnit(CC_TargetUnit[pid], whichPlayer, CAMERA_ADVANCED_WALK_ANIMATION)
     else
         call ReleaseCameraUnit(whichPlayer)
+        call ReleaseMovementUnit(whichPlayer)
     endif
     call SetCamMaxDistance(whichPlayer, CC_Distance[pid])
     call SetCamMaxZCheckDistance(whichPlayer, CC_Distance[pid] * 0.50)
