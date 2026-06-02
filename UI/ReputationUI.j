@@ -175,7 +175,6 @@ private function RUI_UpdateRows takes player whichPlayer returns nothing
     local integer rowIndex = 1
     local integer skipped = 0
     local integer maxStart = RUI_GetFactionCount() - RUI_VISIBLE_ROWS
-    local integer sliderValue
     local Faction f
     local string iconPath
     local string rowText
@@ -238,14 +237,13 @@ private function RUI_UpdateRows takes player whichPlayer returns nothing
 
     if GetLocalPlayer() == whichPlayer then
         if maxStart > 0 then
-            set sliderValue = maxStart - RUI_ListScrollValue[GetPlayerId(whichPlayer)]
             set RUI_SyncingListScroll = true
             if RUI_ListScrollMaxCache != maxStart then
                 set RUI_ListScrollMaxCache = maxStart
                 call BlzFrameSetMinMaxValue(RUI_ListScroll, 0.0, I2R(maxStart))
             endif
-            if RUI_ListScrollValueCache != sliderValue then
-                set RUI_ListScrollValueCache = sliderValue
+            if RUI_ListScrollValueCache != maxStart - RUI_ListScrollValue[GetPlayerId(whichPlayer)] then
+                set RUI_ListScrollValueCache = maxStart - RUI_ListScrollValue[GetPlayerId(whichPlayer)]
                 call BlzFrameSetValue(RUI_ListScroll, I2R(RUI_ListScrollValueCache))
             endif
             set RUI_SyncingListScroll = false

@@ -1326,7 +1326,6 @@ private function AUI_ListScrollAction takes nothing returns nothing
     if maxStart < 0 then
         set maxStart = 0
     endif
-
     set AUI_ListScrollFrameValueCache = R2I(BlzGetTriggerFrameValue() + 0.5)
     set AUI_ListScrollValue = maxStart - AUI_ListScrollFrameValueCache
     call AUI_Update()
