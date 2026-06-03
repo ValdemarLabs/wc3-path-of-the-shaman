@@ -13,6 +13,19 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [4.6.2026]
+
+### Technical Updates
+- `ReputationUI.j`, `ProfessionsUI.j`
+  Reworked the right-side description panel approach again after the stretched tooltip-texture backdrop experiment produced broken vertical gold-strip artifacts instead of the intended `TasQuestBox` panel look.
+  Embedded a hidden helper `TasQuestBox` instance inside each custom right pane and started reusing the imported `TasQuestBoxTextArea1` child for the description area so these panels can move closer to the same framed detail presentation used by `HintsUI` and the other `TasQuestBox`-based UIs.
+  Added separate frame contexts and local imported-frame lookups so the custom profession / reputation panels can reuse the shared imported text-area frame without colliding with the existing `TasQuestBox` users elsewhere in the map.
+
+### Actions Remaining
+- `ReputationUI.j`, `ProfessionsUI.j`
+  The right-side description area and its surrounding outer frame/panel layout still need more adjustment work before the final look fully matches the intended `TasQuestBox` presentation.
+  Validate the imported text-area alignment, sizing, spacing, and any remaining overlap / anchoring issues in-game, then finish polishing the outside frame treatment around the reused description panel.
+
 ## [3.6.2026]
 
 ### Technical Updates
