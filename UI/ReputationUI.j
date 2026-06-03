@@ -236,21 +236,16 @@ private function RUI_UpdateRows takes player whichPlayer returns nothing
     endloop
 
     if GetLocalPlayer() == whichPlayer then
-        if maxStart > 0 then
-            set RUI_SyncingListScroll = true
-            if RUI_ListScrollMaxCache != maxStart then
-                set RUI_ListScrollMaxCache = maxStart
-                call BlzFrameSetMinMaxValue(RUI_ListScroll, 0.0, I2R(maxStart))
-            endif
-            if RUI_ListScrollValueCache != maxStart - RUI_ListScrollValue[GetPlayerId(whichPlayer)] then
-                set RUI_ListScrollValueCache = maxStart - RUI_ListScrollValue[GetPlayerId(whichPlayer)]
-                call BlzFrameSetValue(RUI_ListScroll, I2R(RUI_ListScrollValueCache))
-            endif
-            set RUI_SyncingListScroll = false
-        else
-            set RUI_ListScrollMaxCache = 0
-            set RUI_ListScrollValueCache = 0
+        set RUI_SyncingListScroll = true
+        if RUI_ListScrollMaxCache != maxStart then
+            set RUI_ListScrollMaxCache = maxStart
+            call BlzFrameSetMinMaxValue(RUI_ListScroll, 0.0, I2R(maxStart))
         endif
+        if RUI_ListScrollValueCache != maxStart - RUI_ListScrollValue[GetPlayerId(whichPlayer)] then
+            set RUI_ListScrollValueCache = maxStart - RUI_ListScrollValue[GetPlayerId(whichPlayer)]
+            call BlzFrameSetValue(RUI_ListScroll, I2R(RUI_ListScrollValueCache))
+        endif
+        set RUI_SyncingListScroll = false
         call BlzFrameSetVisible(RUI_ListScroll, maxStart > 0)
     endif
 endfunction
@@ -482,12 +477,13 @@ private function RUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetPoint(RUI_LeftPane, FRAMEPOINT_TOPLEFT, RUI_Parent, FRAMEPOINT_TOPLEFT, 0.014, -0.078)
     call BlzFrameSetPoint(RUI_LeftPane, FRAMEPOINT_BOTTOMRIGHT, RUI_Parent, FRAMEPOINT_BOTTOMLEFT, 0.182, 0.014)
 
-    set RUI_ListScroll = BlzCreateFrameByType("SLIDER", "ReputationUIListScroll", RUI_Parent, "QuestMainListScrollBar", 0)
+    set RUI_ListScroll = BlzCreateFrameByType("SLIDER", "ReputationUIListScroll", RUI_LeftPane, "QuestMainListScrollBar", 0)
     call BlzFrameSetPoint(RUI_ListScroll, FRAMEPOINT_TOPLEFT, RUI_LeftPane, FRAMEPOINT_TOPRIGHT, 0.004, -0.002)
-    call BlzFrameSetPoint(RUI_ListScroll, FRAMEPOINT_BOTTOMLEFT, RUI_LeftPane, FRAMEPOINT_BOTTOMRIGHT, 0.004, 0.002)
+    call BlzFrameSetSize(RUI_ListScroll, BlzFrameGetWidth(RUI_ListScroll), BlzFrameGetHeight(RUI_LeftPane) - 0.004)
     call BlzFrameSetMinMaxValue(RUI_ListScroll, 0.0, 0.0)
     call BlzFrameSetStepSize(RUI_ListScroll, 1.0)
     call BlzFrameSetValue(RUI_ListScroll, 0.0)
+    call BlzFrameSetVisible(RUI_ListScroll, false)
     call BlzTriggerRegisterFrameEvent(RUI_ListScrollTrigger, RUI_ListScroll, FRAMEEVENT_SLIDER_VALUE_CHANGED)
     call BlzTriggerRegisterFrameEvent(RUI_WheelTrigger, RUI_ListScroll, FRAMEEVENT_MOUSE_WHEEL)
     call BlzTriggerRegisterFrameEvent(RUI_WheelTrigger, RUI_LeftPane, FRAMEEVENT_MOUSE_WHEEL)
@@ -570,7 +566,7 @@ private function RUI_CreateFrames takes nothing returns nothing
 
     call BlzFrameClearAllPoints(RUI_ListScroll)
     call BlzFrameSetPoint(RUI_ListScroll, FRAMEPOINT_TOPLEFT, RUI_RowButton[1], FRAMEPOINT_TOPRIGHT, 0.004, -0.002)
-    call BlzFrameSetPoint(RUI_ListScroll, FRAMEPOINT_BOTTOMLEFT, RUI_RowButton[RUI_VISIBLE_ROWS], FRAMEPOINT_BOTTOMRIGHT, 0.004, 0.002)
+    call BlzFrameSetSize(RUI_ListScroll, BlzFrameGetWidth(RUI_ListScroll), (rowHeight * I2R(RUI_VISIBLE_ROWS)) + (rowGap * I2R(RUI_VISIBLE_ROWS - 1)) + 0.004)
 
     call BlzFrameClearAllPoints(RUI_ListWheelArea)
     call BlzFrameSetPoint(RUI_ListWheelArea, FRAMEPOINT_TOPRIGHT, RUI_ListScroll, FRAMEPOINT_TOPLEFT, -0.006, 0.000)
@@ -581,8 +577,10 @@ endfunction
 
 public function Show takes nothing returns nothing
     local player p = GetLocalPlayer()
+    call BlzFrameSetVisible(RUI_ListScroll, false)
     call BlzFrameSetVisible(RUI_Parent, true)
     set RUI_ListScrollValue[GetPlayerId(p)] = 0
+    set RUI_ListScrollValueCache = -1
     call RUI_Update(p)
     call RUI_SetRefreshActive(true)
     set p = null

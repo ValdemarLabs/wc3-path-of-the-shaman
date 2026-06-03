@@ -55,13 +55,13 @@ globals
     // === VISUALS
     private constant string LAVA_EFFECT = "Abilities\\Spells\\Human\\FlameStrike\\FlameStrikeEmbers.mdl"
     private constant string LAVA_ATTACH_POINT = "chest"
-    private constant real LAVA_EFFECT_SCALE_START = 1.00
-    private constant real LAVA_EFFECT_SCALE_END = 1.25
+    private constant real LAVA_EFFECT_SCALE_START = 0.90
+    private constant real LAVA_EFFECT_SCALE_END = 1.05
 
     private constant string FEL_EFFECT = "Abilities\\Spells\\Human\\FlameStrike\\FlameStrikeDamageTarget.mdl"
     private constant string FEL_ATTACH_POINT = "chest"
-    private constant real FEL_EFFECT_SCALE_START = 1.00
-    private constant real FEL_EFFECT_SCALE_END = 1.25
+    private constant real FEL_EFFECT_SCALE_START = 0.90
+    private constant real FEL_EFFECT_SCALE_END = 1.05
     private constant real TERRAIN_EFFECT_SCALE_VARIATION_FACTOR = 0.20 // Random scale variance grows with ramp progress
 
     // variations effects

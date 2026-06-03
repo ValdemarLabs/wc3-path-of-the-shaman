@@ -53,7 +53,11 @@ globals
     private constant integer HUI_FRAME_CONTEXT = 1
 
     private boolean HUI_Initialized = false
+    private boolean HUI_SyncingSlider = false
+    private boolean HUI_HandlingSliderAction = false
     private integer HUI_DefinitionCount = 0
+    private integer HUI_SliderMaxCache = -1
+    private integer HUI_SliderValueCache = -1
 
     private string HUI_TocPath = "war3mapImported/TasQuestBox.toc"
     private string HUI_Title = "Hints"
@@ -279,6 +283,7 @@ private function HUI_UpdateUI takes nothing returns nothing
     local integer maxPage = 0
     local integer selectedHintId
     local string detailText
+    local integer frameValue
 
     if HUI_Parent == null or not BlzFrameIsVisible(HUI_Parent) then
         return
@@ -293,8 +298,21 @@ private function HUI_UpdateUI takes nothing returns nothing
         set HUI_ViewOffset[pid] = maxPage * HUI_BUTTON_COUNT
     endif
 
-    call BlzFrameSetMinMaxValue(HUI_Slider, 0.0, I2R(maxPage))
-    call BlzFrameSetValue(HUI_Slider, I2R(HUI_ViewOffset[pid] / HUI_BUTTON_COUNT))
+    if not HUI_HandlingSliderAction then
+        set frameValue = maxPage - (HUI_ViewOffset[pid] / HUI_BUTTON_COUNT)
+
+        set HUI_SyncingSlider = true
+        if HUI_SliderMaxCache != maxPage then
+            set HUI_SliderMaxCache = maxPage
+            call BlzFrameSetMinMaxValue(HUI_Slider, 0.0, I2R(maxPage))
+        endif
+        if HUI_SliderValueCache != frameValue then
+            set HUI_SliderValueCache = frameValue
+            call BlzFrameSetValue(HUI_Slider, I2R(frameValue))
+        endif
+        set HUI_SyncingSlider = false
+        call BlzFrameSetVisible(HUI_Slider, maxPage > 0)
+    endif
 
     loop
         exitwhen rowIndex > HUI_BUTTON_COUNT
@@ -338,6 +356,7 @@ public function Hide takes nothing returns nothing
 endfunction
 
 public function Show takes nothing returns nothing
+    set HUI_SliderValueCache = -1
     call BlzFrameSetVisible(HUI_Parent, true)
     call HUI_UpdateUI()
 endfunction
@@ -355,17 +374,59 @@ endfunction
 
 private function HUI_SliderAction takes nothing returns nothing
     local integer pid = GetPlayerId(GetTriggerPlayer())
-    set HUI_ViewOffset[pid] = R2I(BlzGetTriggerFrameValue()) * HUI_BUTTON_COUNT
+    local integer maxPage = 0
+    local integer targetPage
+
+    if HUI_SyncingSlider then
+        return
+    endif
+    set HUI_HandlingSliderAction = true
+    if HUI_GetPublishedCount() > HUI_BUTTON_COUNT then
+        set maxPage = (HUI_GetPublishedCount() - 1) / HUI_BUTTON_COUNT
+    endif
+    set HUI_SliderValueCache = R2I(BlzGetTriggerFrameValue() + 0.5)
+    set targetPage = maxPage - HUI_SliderValueCache
+    if targetPage < 0 then
+        set targetPage = 0
+    elseif targetPage > maxPage then
+        set targetPage = maxPage
+    endif
+    set HUI_ViewOffset[pid] = targetPage * HUI_BUTTON_COUNT
     call HUI_UpdateUI()
+    set HUI_HandlingSliderAction = false
 endfunction
 
 private function HUI_WheelAction takes nothing returns nothing
+    local real nextValue
+    local real maxValue
+
     if GetLocalPlayer() == GetTriggerPlayer() then
-        if BlzGetTriggerFrameValue() > 0.0 then
-            call BlzFrameSetValue(HUI_Slider, BlzFrameGetValue(HUI_Slider) + 1.0)
-        else
-            call BlzFrameSetValue(HUI_Slider, BlzFrameGetValue(HUI_Slider) - 1.0)
+        if HUI_Slider == null or HUI_Parent == null or not BlzFrameIsVisible(HUI_Parent) or not BlzFrameIsVisible(HUI_Slider) then
+            return
         endif
+
+        set maxValue = I2R((HUI_GetPublishedCount() - 1) / HUI_BUTTON_COUNT)
+        if HUI_GetPublishedCount() <= HUI_BUTTON_COUNT then
+            set maxValue = 0.0
+        endif
+        if maxValue <= 0.0 then
+            return
+        endif
+
+        set nextValue = BlzFrameGetValue(HUI_Slider)
+        if BlzGetTriggerFrameValue() > 0.0 then
+            set nextValue = nextValue + 1.0
+        else
+            set nextValue = nextValue - 1.0
+        endif
+
+        if nextValue < 0.0 then
+            set nextValue = 0.0
+        elseif nextValue > maxValue then
+            set nextValue = maxValue
+        endif
+
+        call BlzFrameSetValue(HUI_Slider, nextValue)
     endif
 endfunction
 
@@ -402,6 +463,7 @@ private function HUI_InitFrames takes nothing returns nothing
     call BlzTriggerRegisterFrameEvent(HUI_SliderTrigger, HUI_Slider, FRAMEEVENT_SLIDER_VALUE_CHANGED)
     call BlzTriggerRegisterFrameEvent(HUI_WheelTrigger, HUI_Slider, FRAMEEVENT_MOUSE_WHEEL)
     call BlzFrameSetMinMaxValue(HUI_Slider, 0.0, 0.0)
+    call BlzFrameSetStepSize(HUI_Slider, 1.0)
 
     set frame = BlzCreateFrameByType("SLIDER", "HintsUIMoreScroll", HUI_Parent, "", 0)
     call BlzTriggerRegisterFrameEvent(HUI_WheelTrigger, frame, FRAMEEVENT_MOUSE_WHEEL)

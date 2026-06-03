@@ -530,7 +530,7 @@ private function PUI_RefreshDetailBodyFromCache takes player whichPlayer returns
         call BlzFrameSetText(PUI_DetailBodyText, visibleText)
         set PUI_SyncingDetailScroll = true
         call BlzFrameSetMinMaxValue(PUI_DetailScroll, 0.0, I2R(maxStartLine))
-        call BlzFrameSetValue(PUI_DetailScroll, I2R(PUI_DetailScrollValue[pid]))
+        call BlzFrameSetValue(PUI_DetailScroll, I2R(maxStartLine - PUI_DetailScrollValue[pid]))
         set PUI_SyncingDetailScroll = false
         call BlzFrameSetVisible(PUI_DetailScroll, maxStartLine > 0)
     endif
@@ -617,7 +617,7 @@ private function PUI_UpdateForPlayer takes player whichPlayer returns nothing
         endloop
         set PUI_SyncingListScroll = true
         call BlzFrameSetMinMaxValue(PUI_ListScroll, 0.0, I2R(maxListStart))
-        call BlzFrameSetValue(PUI_ListScroll, I2R(PUI_ListScrollValue[pid]))
+        call BlzFrameSetValue(PUI_ListScroll, I2R(maxListStart - PUI_ListScrollValue[pid]))
         set PUI_SyncingListScroll = false
         call BlzFrameSetVisible(PUI_ListScroll, maxListStart > 0)
 
@@ -789,16 +789,18 @@ private function PUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetMinMaxValue(PUI_DetailScroll, 0.0, 0.0)
     call BlzFrameSetStepSize(PUI_DetailScroll, 1.0)
     call BlzFrameSetValue(PUI_DetailScroll, 0.0)
+    call BlzFrameSetVisible(PUI_DetailScroll, false)
     call BlzTriggerRegisterFrameEvent(PUI_ScrollTrigger, PUI_DetailScroll, FRAMEEVENT_SLIDER_VALUE_CHANGED)
     call BlzTriggerRegisterFrameEvent(PUI_WheelTrigger, PUI_DetailScroll, FRAMEEVENT_MOUSE_WHEEL)
     call BlzTriggerRegisterFrameEvent(PUI_WheelTrigger, PUI_DetailViewport, FRAMEEVENT_MOUSE_WHEEL)
 
     set PUI_ListScroll = BlzCreateFrameByType("SLIDER", "ProfessionsUIListScroll", PUI_LeftPane, "QuestMainListScrollBar", 0)
     call BlzFrameSetPoint(PUI_ListScroll, FRAMEPOINT_TOPLEFT, PUI_LeftPane, FRAMEPOINT_TOPRIGHT, 0.004, -0.002)
-    call BlzFrameSetPoint(PUI_ListScroll, FRAMEPOINT_BOTTOMLEFT, PUI_LeftPane, FRAMEPOINT_BOTTOMRIGHT, 0.004, 0.002)
+    call BlzFrameSetSize(PUI_ListScroll, BlzFrameGetWidth(PUI_ListScroll), BlzFrameGetHeight(PUI_LeftPane) - 0.004)
     call BlzFrameSetMinMaxValue(PUI_ListScroll, 0.0, 0.0)
     call BlzFrameSetStepSize(PUI_ListScroll, 1.0)
     call BlzFrameSetValue(PUI_ListScroll, 0.0)
+    call BlzFrameSetVisible(PUI_ListScroll, false)
     call BlzTriggerRegisterFrameEvent(PUI_ListScrollTrigger, PUI_ListScroll, FRAMEEVENT_SLIDER_VALUE_CHANGED)
     call BlzTriggerRegisterFrameEvent(PUI_WheelTrigger, PUI_ListScroll, FRAMEEVENT_MOUSE_WHEEL)
     call BlzTriggerRegisterFrameEvent(PUI_WheelTrigger, PUI_LeftPane, FRAMEEVENT_MOUSE_WHEEL)
@@ -840,6 +842,10 @@ private function PUI_CreateFrames takes nothing returns nothing
         set rowIndex = rowIndex + 1
         set professionId = professionId + 1
     endloop
+
+    call BlzFrameClearAllPoints(PUI_ListScroll)
+    call BlzFrameSetPoint(PUI_ListScroll, FRAMEPOINT_TOPLEFT, PUI_RowButton[1], FRAMEPOINT_TOPRIGHT, 0.004, -0.002)
+    call BlzFrameSetSize(PUI_ListScroll, BlzFrameGetWidth(PUI_ListScroll), (rowHeight * I2R(PUI_VISIBLE_LIST_ROWS)) + (rowGap * I2R(PUI_VISIBLE_LIST_ROWS - 1)) + 0.004)
 
     set PUI_OpenButton = BlzCreateFrameByType("GLUETEXTBUTTON", "ProfessionsUIOpenButton", BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "ScriptDialogButton", 0)
     call PUI_PosOpenButton(PUI_OpenButton)
@@ -935,22 +941,30 @@ endfunction
 
 private function PUI_ScrollAction takes nothing returns nothing
     local player p = GetTriggerPlayer()
+    local integer maxStartLine = PUI_DetailBodyLineCount[GetPlayerId(p)] - PUI_VISIBLE_BODY_LINES
     if PUI_SyncingDetailScroll then
         set p = null
         return
     endif
-    set PUI_DetailScrollValue[GetPlayerId(p)] = R2I(BlzGetTriggerFrameValue())
+    if maxStartLine < 0 then
+        set maxStartLine = 0
+    endif
+    set PUI_DetailScrollValue[GetPlayerId(p)] = maxStartLine - R2I(BlzGetTriggerFrameValue())
     call PUI_RefreshDetailBodyFromCache(p)
     set p = null
 endfunction
 
 private function PUI_ListScrollAction takes nothing returns nothing
     local player p = GetTriggerPlayer()
+    local integer maxListStart = PUI_ProfessionCount() - PUI_VISIBLE_LIST_ROWS
     if PUI_SyncingListScroll then
         set p = null
         return
     endif
-    set PUI_ListScrollValue[GetPlayerId(p)] = R2I(BlzGetTriggerFrameValue())
+    if maxListStart < 0 then
+        set maxListStart = 0
+    endif
+    set PUI_ListScrollValue[GetPlayerId(p)] = maxListStart - R2I(BlzGetTriggerFrameValue())
     call PUI_RequestUpdate(p)
     set p = null
 endfunction
@@ -983,6 +997,8 @@ endfunction
 public function Show takes nothing returns nothing
     call PUI_RefreshOpenButtonPosition()
     call PUI_SetRefreshActive(true)
+    call BlzFrameSetVisible(PUI_ListScroll, false)
+    call BlzFrameSetVisible(PUI_DetailScroll, false)
     call BlzFrameSetVisible(PUI_Parent, true)
     call PUI_RequestUpdate(GetLocalPlayer())
 endfunction

@@ -23,7 +23,10 @@ globals
 
     private boolean XUI_Initialized = false
     private boolean XUI_SyncingSlider = false
+    private boolean XUI_HandlingSliderAction = false
     private integer XUI_DefinitionCount = 0
+    private integer XUI_SliderMaxCache = -1
+    private integer XUI_SliderValueCache = -1
 
     private string XUI_TocPath = "war3mapImported/TasQuestBox.toc"
     private string XUI_Title = "Cheats"
@@ -66,6 +69,7 @@ endfunction
 private function XUI_SyncSliderVisual takes player whichPlayer returns nothing
     local integer pid = GetPlayerId(whichPlayer)
     local integer maxPage = XUI_GetMaxPage()
+    local integer frameValue
 
     if XUI_Slider == null then
         return
@@ -77,10 +81,19 @@ private function XUI_SyncSliderVisual takes player whichPlayer returns nothing
         set XUI_ViewOffset[pid] = maxPage * XUI_BUTTON_COUNT
     endif
 
+    set frameValue = maxPage - (XUI_ViewOffset[pid] / XUI_BUTTON_COUNT)
+
     set XUI_SyncingSlider = true
-    call BlzFrameSetMinMaxValue(XUI_Slider, 0.0, I2R(maxPage))
-    call BlzFrameSetValue(XUI_Slider, I2R(XUI_ViewOffset[pid] / XUI_BUTTON_COUNT))
+    if XUI_SliderMaxCache != maxPage then
+        set XUI_SliderMaxCache = maxPage
+        call BlzFrameSetMinMaxValue(XUI_Slider, 0.0, I2R(maxPage))
+    endif
+    if XUI_SliderValueCache != frameValue then
+        set XUI_SliderValueCache = frameValue
+        call BlzFrameSetValue(XUI_Slider, I2R(frameValue))
+    endif
     set XUI_SyncingSlider = false
+    call BlzFrameSetVisible(XUI_Slider, maxPage > 0)
 endfunction
 
 private function XUI_ClearFocusAction takes nothing returns nothing
@@ -156,6 +169,10 @@ private function XUI_UpdateUI takes nothing returns nothing
         set XUI_ViewOffset[pid] = maxPage * XUI_BUTTON_COUNT
     endif
 
+    if not XUI_HandlingSliderAction then
+        call XUI_SyncSliderVisual(GetLocalPlayer())
+    endif
+
     loop
         exitwhen rowIndex > XUI_BUTTON_COUNT
         set cheatId = XUI_ViewOffset[pid] + rowIndex
@@ -201,6 +218,7 @@ public function Hide takes nothing returns nothing
 endfunction
 
 public function Show takes nothing returns nothing
+    set XUI_SliderValueCache = -1
     call XUI_SyncSliderVisual(GetLocalPlayer())
     call BlzFrameSetVisible(XUI_Parent, true)
     call XUI_UpdateUI()
@@ -219,11 +237,22 @@ endfunction
 
 private function XUI_SliderAction takes nothing returns nothing
     local integer pid = GetPlayerId(GetTriggerPlayer())
+    local integer targetPage
+    local integer maxPage = XUI_GetMaxPage()
     if XUI_SyncingSlider then
         return
     endif
-    set XUI_ViewOffset[pid] = R2I(BlzGetTriggerFrameValue()) * XUI_BUTTON_COUNT
+    set XUI_HandlingSliderAction = true
+    set XUI_SliderValueCache = R2I(BlzGetTriggerFrameValue() + 0.5)
+    set targetPage = maxPage - XUI_SliderValueCache
+    if targetPage < 0 then
+        set targetPage = 0
+    elseif targetPage > maxPage then
+        set targetPage = maxPage
+    endif
+    set XUI_ViewOffset[pid] = targetPage * XUI_BUTTON_COUNT
     call XUI_UpdateUI()
+    set XUI_HandlingSliderAction = false
 endfunction
 
 private function XUI_WheelAction takes nothing returns nothing
@@ -231,7 +260,7 @@ private function XUI_WheelAction takes nothing returns nothing
     local real maxValue
 
     if GetLocalPlayer() == GetTriggerPlayer() then
-        if XUI_Slider == null or XUI_Parent == null or not BlzFrameIsVisible(XUI_Parent) then
+        if XUI_Slider == null or XUI_Parent == null or not BlzFrameIsVisible(XUI_Parent) or not BlzFrameIsVisible(XUI_Slider) then
             return
         endif
 
@@ -289,6 +318,7 @@ private function XUI_InitFrames takes nothing returns nothing
     call BlzTriggerRegisterFrameEvent(XUI_SliderTrigger, XUI_Slider, FRAMEEVENT_SLIDER_VALUE_CHANGED)
     call BlzTriggerRegisterFrameEvent(XUI_WheelTrigger, XUI_Slider, FRAMEEVENT_MOUSE_WHEEL)
     call BlzFrameSetMinMaxValue(XUI_Slider, 0.0, 0.0)
+    call BlzFrameSetStepSize(XUI_Slider, 1.0)
 
     set XUI_TextArea = BlzGetFrameByName("TasQuestBoxTextArea1", XUI_FRAME_CONTEXT)
     set XUI_TitleFrame = BlzGetFrameByName("TasQuestBoxText1", XUI_FRAME_CONTEXT)

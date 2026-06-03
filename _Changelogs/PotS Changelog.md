@@ -13,6 +13,31 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [3.6.2026]
+
+### Technical Updates
+- `AbilitiesLiteUI.j`, `ReputationUI.j`
+  Finished fixing the custom left-list scrollbar system so the slider track uses explicit sizing instead of stretched bottom anchoring.
+  Corrected the slider value mapping so opening the list at the top also places the thumb at the top of the visible rail.
+  Stabilized the click / drag / wheel path and initial hide-state so the thumb stays inside the intended scrollbar frame and only appears when scrolling is actually needed.
+- `ProfessionsUI.j`
+  Updated both the left profession list and the right detail-text scrollbar to use the same corrected top-resting slider mapping.
+  Replaced the old stretched left-list scrollbar setup with explicit sizing based on the visible-row region, matching the working list-scroll system used in the repaired UIs.
+  Added the same initial hide-state behavior used by the repaired list UIs so stale slider thumbs do not appear before refresh.
+- `HintsUI.j`, `CommandsUI.j`, `AchievementsUI.j`, `SecretsUI.j`, `CheatsUI.j`, `TasQuestBoxLight_PotS.j`
+  Standardized the page-slider logic so these `TasQuestBox`-style UIs now use the same top-resting scrollbar behavior as the fixed abilities / reputation lists.
+  Added cached slider sync, integer step sizing, clamped wheel movement, conditional slider visibility, and guarded slider callback handling so programmatic refreshes no longer feed back into slider events or cause the earlier slider-related crashes.
+- `TerrainDamage.j`
+  Adjusted `LAVA_EFFECT_SCALE_START`, `LAVA_EFFECT_SCALE_END`, `FEL_EFFECT_SCALE_START`, and `FEL_EFFECT_SCALE_END` closer to `1.00`.
+  This tones down the ramped terrain-damage special-effect growth so the end-state visuals no longer become too large.
+
+### Player-Facing Updates
+- `AbilitiesLiteUI`, `ReputationUI`, `ProfessionsUI`, `Hints`, `Commands`, `Achievements`, `Secrets`, `Cheats`, `Zones`
+  The affected scrollbars now start visually from the top when the list itself is at the top, move in the expected direction, and hide themselves when no scrolling is needed.
+  The latest slider pass also resolved the known slider drag / click instability, and no slider crashes are currently known after these fixes.
+- `Terrain damage visuals`
+  Lava / fel damage effects now stay closer to normal unit scale during the ramp instead of growing overly large near the end.
+
 ## [2.6.2026]
 
 ### Technical Updates

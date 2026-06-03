@@ -334,6 +334,10 @@ private function AUI_HasAutoDefinition takes integer unitTypeId, integer ability
     return false
 endfunction
 
+private function AUI_IsPlayerShamanTreeAbilityId takes integer abilityId returns boolean
+    return abilityId == AUI_PLAYER_SHAMAN_ELEMENTAL_TREE or abilityId == AUI_PLAYER_SHAMAN_ENHANCEMENT_TREE or abilityId == AUI_PLAYER_SHAMAN_RESTORATION_TREE or abilityId == AUI_PLAYER_SHAMAN_TOTEMIC_TREE
+endfunction
+
 private function AUI_ColorizeShamanSpec takes string specText returns string
     if specText == "Elemental" then
         return "|cff69ccf0" + specText + "|r"
@@ -379,6 +383,12 @@ private function AUI_RegisterTemplateAutoIfMissing takes integer definitionKey, 
     endif
 endfunction
 
+private function AUI_RegisterTemplateAutoTitleIfMissing takes integer definitionKey, integer abilityId, string titleText, string infoText returns nothing
+    if not AUI_HasAutoDefinition(definitionKey, abilityId) then
+        call AUI_AddDefinition(AUI_MODE_AUTO, definitionKey, abilityId, abilityId, "", titleText, infoText, "")
+    endif
+endfunction
+
 private function AUI_RegisterPlayerClassAbilityIfMissing takes integer definitionKey, string classText, integer learnAbilityId, string titleText, string specText, string bodyText returns nothing
     local string infoText = AUI_ColorizePlayerClass(classText)
 
@@ -405,6 +415,15 @@ private function AUI_RegisterPlayerShamanAutoAbilityIfMissing takes integer abil
     call AUI_RegisterTemplateAutoIfMissing(AUI_DEF_PLAYER_SHAMAN, abilityId, infoText)
 endfunction
 
+private function AUI_RegisterPlayerShamanTreeIfMissing takes integer abilityId, string treeTitle, string specText returns nothing
+    local string infoText = AUI_ColorizePlayerClass("Shaman")
+
+    if specText != null and specText != "" then
+        set infoText = infoText + " |cff808080-|r " + AUI_ColorizeShamanSpec(specText)
+    endif
+    call AUI_RegisterTemplateAutoTitleIfMissing(AUI_DEF_PLAYER_SHAMAN, abilityId, treeTitle, infoText)
+endfunction
+
 private function AUI_RegisterNpcShamanAbilityIfMissing takes string iconPath, string titleText, string bodyText returns nothing
     call AUI_RegisterNpcClassAbilityIfMissing(AUI_DEF_NPC_SHAMAN, "Shaman", iconPath, titleText, bodyText)
 endfunction
@@ -418,7 +437,7 @@ private function AUI_RegisterPlayerShamanTemplates takes nothing returns nothing
     // Keep this grouped by tree so the UI list stays readable.
 
     // ========== ELEMENTAL ABILITIES ==========
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_ELEMENTAL_TREE, "Elemental")
+    call AUI_RegisterPlayerShamanTreeIfMissing(AUI_PLAYER_SHAMAN_ELEMENTAL_TREE, "Elemental", "Elemental")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_LIGHTNING_BOLT, "Elemental")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_LIGHTNING_STRIKE, "Elemental")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHAIN_LIGHTNING, "Elemental")
@@ -434,7 +453,7 @@ private function AUI_RegisterPlayerShamanTemplates takes nothing returns nothing
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_STORMCALLER, "Elemental")
 
     // ========== ENHANCEMENT ABILITIES ==========
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_ENHANCEMENT_TREE, "Enhancement")
+    call AUI_RegisterPlayerShamanTreeIfMissing(AUI_PLAYER_SHAMAN_ENHANCEMENT_TREE, "Enhancement", "Enhancement")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_STORMSTRIKE, "Enhancement")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_WHIRLWIND, "Enhancement")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_WIND_SHEAR, "Enhancement")
@@ -450,7 +469,7 @@ private function AUI_RegisterPlayerShamanTemplates takes nothing returns nothing
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_EARTHWARDEN, "Enhancement")
 
     // ========== RESTORATION ABILITIES ==========
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_RESTORATION_TREE, "Restoration")
+    call AUI_RegisterPlayerShamanTreeIfMissing(AUI_PLAYER_SHAMAN_RESTORATION_TREE, "Restoration", "Restoration")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_HEALING_WAVE, "Restoration")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHAIN_HEAL, "Restoration")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_HEALING_RAIN, "Restoration")
@@ -464,7 +483,7 @@ private function AUI_RegisterPlayerShamanTemplates takes nothing returns nothing
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_REINCARNATION, "Restoration")
 
     // ========== TOTEMIC ABILITIES ==========
-    call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_TOTEMIC_TREE, "Totemic")
+    call AUI_RegisterPlayerShamanTreeIfMissing(AUI_PLAYER_SHAMAN_TOTEMIC_TREE, "Totemic", "Totemic")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHANNEL_TOTEM_EARTH, "Totemic")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHANNEL_TOTEM_FIRE, "Totemic")
     call AUI_RegisterPlayerShamanAutoAbilityIfMissing(AUI_PLAYER_SHAMAN_CHANNEL_TOTEM_WATER, "Totemic")
@@ -573,6 +592,7 @@ endfunction
 private function AUI_ResetViewState takes nothing returns nothing
     set AUI_SelectedDefinition = 0
     set AUI_ListScrollValue = 0
+    set AUI_ListScrollFrameValueCache = -1
     set AUI_DetailBodyHash = 0
     set AUI_DetailBodyCache = ""
 endfunction
@@ -822,6 +842,9 @@ private function AUI_ShouldShowNotLearned takes unit u, integer definitionIndex 
     endif
 
     set abilityId = AUI_GetDefinitionLearnAbilityId(definitionIndex)
+    if AUI_IsPlayerShamanTreeAbilityId(abilityId) then
+        return false
+    endif
     return abilityId != 0 and GetUnitAbilityLevel(u, abilityId) <= 0
 endfunction
 
@@ -1158,6 +1181,7 @@ private function AUI_UpdateRows takes nothing returns nothing
     local integer definitionIndex
     local integer abilityLevel
     local integer learnAbilityId
+    local integer displayAbilityId
     local integer selected
     local string levelText
     local string titleText
@@ -1173,9 +1197,14 @@ private function AUI_UpdateRows takes nothing returns nothing
         set definitionIndex = AUI_GetDefinitionByFilteredIndex(unitTypeId, filteredIndex)
         set AUI_RowDefinitionIndex[rowIndex] = definitionIndex
         if definitionIndex != 0 then
+            set displayAbilityId = AUI_GetDefinitionLearnAbilityId(definitionIndex)
             set titleText = AUI_GetDefinitionTitle(definitionIndex)
             set showUnavailableOverlay = false
-            if AUI_ShouldShowNotLearned(AUI_SelectedUnit, definitionIndex) then
+            if AUI_IsPlayerShamanTreeAbilityId(displayAbilityId) then
+                set titleText = "|cffd9b56d" + titleText + "|r"
+                set levelText = ""
+                call BlzFrameSetScale(AUI_RowLevel[rowIndex], AUI_ROW_LEVEL_SCALE)
+            elseif AUI_ShouldShowNotLearned(AUI_SelectedUnit, definitionIndex) then
                 set titleText = "|cff808080" + titleText + "|r"
                 set levelText = AUI_NotLearnedText
                 set showUnavailableOverlay = true
@@ -1399,12 +1428,13 @@ private function AUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetPoint(AUI_LeftPane, FRAMEPOINT_TOPLEFT, AUI_Parent, FRAMEPOINT_TOPLEFT, 0.014, -0.078)
     call BlzFrameSetPoint(AUI_LeftPane, FRAMEPOINT_BOTTOMRIGHT, AUI_Parent, FRAMEPOINT_BOTTOMLEFT, 0.182, 0.014)
 
-    set AUI_ListScroll = BlzCreateFrameByType("SLIDER", "AbilitiesLiteUIListScroll", AUI_Parent, "QuestMainListScrollBar", 0)
+    set AUI_ListScroll = BlzCreateFrameByType("SLIDER", "AbilitiesLiteUIListScroll", AUI_LeftPane, "QuestMainListScrollBar", 0)
     call BlzFrameSetPoint(AUI_ListScroll, FRAMEPOINT_TOPLEFT, AUI_LeftPane, FRAMEPOINT_TOPRIGHT, 0.004, -0.002)
-    call BlzFrameSetPoint(AUI_ListScroll, FRAMEPOINT_BOTTOMLEFT, AUI_LeftPane, FRAMEPOINT_BOTTOMRIGHT, 0.004, 0.002)
+    call BlzFrameSetSize(AUI_ListScroll, BlzFrameGetWidth(AUI_ListScroll), BlzFrameGetHeight(AUI_LeftPane) - 0.004)
     call BlzFrameSetMinMaxValue(AUI_ListScroll, 0.0, 0.0)
     call BlzFrameSetStepSize(AUI_ListScroll, 1.0)
     call BlzFrameSetValue(AUI_ListScroll, 0.0)
+    call BlzFrameSetVisible(AUI_ListScroll, false)
     call BlzTriggerRegisterFrameEvent(AUI_ListScrollTrigger, AUI_ListScroll, FRAMEEVENT_SLIDER_VALUE_CHANGED)
     call BlzTriggerRegisterFrameEvent(AUI_WheelTrigger, AUI_ListScroll, FRAMEEVENT_MOUSE_WHEEL)
     call BlzTriggerRegisterFrameEvent(AUI_WheelTrigger, AUI_LeftPane, FRAMEEVENT_MOUSE_WHEEL)
@@ -1499,7 +1529,7 @@ private function AUI_CreateFrames takes nothing returns nothing
 
     call BlzFrameClearAllPoints(AUI_ListScroll)
     call BlzFrameSetPoint(AUI_ListScroll, FRAMEPOINT_TOPLEFT, AUI_RowButton[1], FRAMEPOINT_TOPRIGHT, 0.004, -0.002)
-    call BlzFrameSetPoint(AUI_ListScroll, FRAMEPOINT_BOTTOMLEFT, AUI_RowButton[AUI_VISIBLE_ROWS], FRAMEPOINT_BOTTOMRIGHT, 0.004, 0.002)
+    call BlzFrameSetSize(AUI_ListScroll, BlzFrameGetWidth(AUI_ListScroll), (rowHeight * I2R(AUI_VISIBLE_ROWS)) + (rowGap * I2R(AUI_VISIBLE_ROWS - 1)) + 0.004)
 
     call BlzFrameClearAllPoints(AUI_ListWheelArea)
     call BlzFrameSetPoint(AUI_ListWheelArea, FRAMEPOINT_TOPRIGHT, AUI_ListScroll, FRAMEPOINT_TOPLEFT, -0.006, 0.000)
