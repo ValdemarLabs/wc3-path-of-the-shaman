@@ -55,17 +55,17 @@ globals
     private constant real MUI_MENU_TEXT_BOTTOM_OFFSET = 0.004
 
     // Set any icon path to "" to keep that menu button text-only.
-    private constant string MUI_ICON_STATS = "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp"
-    private constant string MUI_ICON_REPUTATIONS = "ReplaceableTextures\\CommandButtons\\BTNSpiritLink.blp"
-    private constant string MUI_ICON_ZONES = "ReplaceableTextures\\CommandButtons\\BTNPackBeast.blp"
-    private constant string MUI_ICON_PROFESSIONS = "ReplaceableTextures\\CommandButtons\\BTNTrade_BlackSmithing.blp"
-    private constant string MUI_ICON_ABILITIES = "ReplaceableTextures\\CommandButtons\\BTNShamanMaster.blp"
-    private constant string MUI_ICON_CAMERA = "ReplaceableTextures\\CommandButtons\\BTNMassTeleport.blp"
-    private constant string MUI_ICON_HINTS = "ReplaceableTextures\\CommandButtons\\BTNScroll.blp"
-    private constant string MUI_ICON_ACHIEVEMENTS = "ReplaceableTextures\\CommandButtons\\BTNHeroBlademaster.blp"
-    private constant string MUI_ICON_SECRETS = "ReplaceableTextures\\CommandButtons\\BTNChestOfGold.blp"
-    private constant string MUI_ICON_COMMANDS = "ReplaceableTextures\\CommandButtons\\BTNManual3.blp"
-    private constant string MUI_ICON_CHEATS = "ReplaceableTextures\\CommandButtons\\btncage.blp"
+    private constant string MUI_ICON_STATS = "ReplaceableTextures\\WorldEditUI\\Editor-MultipleUnits.blp"           // OK? or use attribute bonus icon?
+    private constant string MUI_ICON_REPUTATIONS = "ReplaceableTextures\\PassiveButtons\\PASFactionHorde.blp"       // OK?
+    private constant string MUI_ICON_ZONES = "ReplaceableTextures\\CommandButtons\\BTNMap03.blp"                     // OK
+    private constant string MUI_ICON_PROFESSIONS = "ReplaceableTextures\\CommandButtons\\BTNTrade11.blp"             // OK
+    private constant string MUI_ICON_ABILITIES = "ReplaceableTextures\\CommandButtons\\BTNBook_07.blp"              // OK
+    private constant string MUI_ICON_CAMERA = "ReplaceableTextures\\WorldEditUI\\Doodad-Cinematic.blp"              // OK
+    private constant string MUI_ICON_HINTS = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Note_01.blp"         // OK
+    private constant string MUI_ICON_ACHIEVEMENTS = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Note_02.blp"  // OK
+    private constant string MUI_ICON_SECRETS = "ReplaceableTextures\\CommandButtons\\BTNTicket_Tarot_Madness.blp"   // OK?
+    private constant string MUI_ICON_COMMANDS = "ReplaceableTextures\\CommandButtons\\BTNTicket_Tarot_Lunacy.blp"     // OK?
+    private constant string MUI_ICON_CHEATS = "ReplaceableTextures\\CommandButtons\\BTNTicket_Tarot_Lunacy.blp"     // OK?
 endglobals
 
 private function MUI_FormatButtonLabel takes string label returns string
