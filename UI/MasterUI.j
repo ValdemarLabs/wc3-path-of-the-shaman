@@ -39,6 +39,33 @@ globals
     private constant integer MUI_ACTION_SECRETS = 9
     private constant integer MUI_ACTION_COMMANDS = 10
     private constant integer MUI_ACTION_CHEATS = 11
+
+    private constant real MUI_PANEL_LEFT = 0.110
+    private constant real MUI_PANEL_RIGHT = 0.560
+    private constant real MUI_PANEL_TOP = 0.550
+    private constant real MUI_PANEL_BOTTOM = 0.285
+    private constant real MUI_TITLE_WIDTH = 0.330
+    private constant real MUI_MENU_BUTTON_WIDTH = 0.120
+    private constant real MUI_MENU_BUTTON_HEIGHT = 0.036
+    private constant real MUI_MENU_ICON_SIZE = 0.016
+    private constant real MUI_MENU_ICON_OFFSET_X = 0.006
+    private constant real MUI_MENU_TEXT_OFFSET_X = 0.027
+    private constant real MUI_MENU_TEXT_TOP_OFFSET = -0.004
+    private constant real MUI_MENU_TEXT_RIGHT_OFFSET = -0.004
+    private constant real MUI_MENU_TEXT_BOTTOM_OFFSET = 0.004
+
+    // Set any icon path to "" to keep that menu button text-only.
+    private constant string MUI_ICON_STATS = "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp"
+    private constant string MUI_ICON_REPUTATIONS = "ReplaceableTextures\\CommandButtons\\BTNSpiritLink.blp"
+    private constant string MUI_ICON_ZONES = "ReplaceableTextures\\CommandButtons\\BTNPackBeast.blp"
+    private constant string MUI_ICON_PROFESSIONS = "ReplaceableTextures\\CommandButtons\\BTNTrade_BlackSmithing.blp"
+    private constant string MUI_ICON_ABILITIES = "ReplaceableTextures\\CommandButtons\\BTNShamanMaster.blp"
+    private constant string MUI_ICON_CAMERA = "ReplaceableTextures\\CommandButtons\\BTNMassTeleport.blp"
+    private constant string MUI_ICON_HINTS = "ReplaceableTextures\\CommandButtons\\BTNScroll.blp"
+    private constant string MUI_ICON_ACHIEVEMENTS = "ReplaceableTextures\\CommandButtons\\BTNHeroBlademaster.blp"
+    private constant string MUI_ICON_SECRETS = "ReplaceableTextures\\CommandButtons\\BTNChestOfGold.blp"
+    private constant string MUI_ICON_COMMANDS = "ReplaceableTextures\\CommandButtons\\BTNManual3.blp"
+    private constant string MUI_ICON_CHEATS = "ReplaceableTextures\\CommandButtons\\btncage.blp"
 endglobals
 
 private function MUI_FormatButtonLabel takes string label returns string
@@ -210,24 +237,47 @@ private function MUI_MenuAction takes nothing returns nothing
     endif
 endfunction
 
-private function MUI_CreateMenuButton takes integer index, string label, integer actionId, real x, real y returns nothing
+private function MUI_CreateMenuButton takes integer index, string label, string iconPath, integer actionId, real x, real y returns nothing
+    local framehandle iconFrame = null
+    local framehandle textFrame = null
+    local real textLeftOffset = 0.008
+
     set MUI_MenuButton[index] = BlzCreateFrameByType("GLUETEXTBUTTON", "MasterUIMenuButton" + I2S(index), MUI_Parent, "ScriptDialogButton", 0)
-    call BlzFrameSetSize(MUI_MenuButton[index], 0.105, 0.036)
+    call BlzFrameSetSize(MUI_MenuButton[index], MUI_MENU_BUTTON_WIDTH, MUI_MENU_BUTTON_HEIGHT)
     call BlzFrameSetPoint(MUI_MenuButton[index], FRAMEPOINT_TOPLEFT, MUI_Parent, FRAMEPOINT_TOPLEFT, x, y)
-    call BlzFrameSetText(MUI_MenuButton[index], MUI_FormatButtonLabel(label))
+    call BlzFrameSetText(MUI_MenuButton[index], "")
+
+    if iconPath != "" then
+        set iconFrame = BlzCreateFrameByType("BACKDROP", "MasterUIMenuButtonIcon" + I2S(index), MUI_MenuButton[index], "IconButtonTemplate", 0)
+        call BlzFrameSetPoint(iconFrame, FRAMEPOINT_LEFT, MUI_MenuButton[index], FRAMEPOINT_LEFT, MUI_MENU_ICON_OFFSET_X, 0.0)
+        call BlzFrameSetSize(iconFrame, MUI_MENU_ICON_SIZE, MUI_MENU_ICON_SIZE)
+        call BlzFrameSetTexture(iconFrame, iconPath, 0, true)
+        set textLeftOffset = MUI_MENU_TEXT_OFFSET_X
+    endif
+
+    set textFrame = BlzCreateFrameByType("TEXT", "MasterUIMenuButtonText" + I2S(index), MUI_MenuButton[index], "", 0)
+    call BlzFrameSetPoint(textFrame, FRAMEPOINT_TOPLEFT, MUI_MenuButton[index], FRAMEPOINT_TOPLEFT, textLeftOffset, MUI_MENU_TEXT_TOP_OFFSET)
+    call BlzFrameSetPoint(textFrame, FRAMEPOINT_BOTTOMRIGHT, MUI_MenuButton[index], FRAMEPOINT_BOTTOMRIGHT, MUI_MENU_TEXT_RIGHT_OFFSET, MUI_MENU_TEXT_BOTTOM_OFFSET)
+    call BlzFrameSetTextAlignment(textFrame, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
+    call BlzFrameSetText(textFrame, MUI_FormatButtonLabel(label))
+    call BlzFrameSetEnable(textFrame, false)
+
     call BlzTriggerRegisterFrameEvent(MUI_MenuTrigger, MUI_MenuButton[index], FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(MUI_ClearFocusTrigger, MUI_MenuButton[index], FRAMEEVENT_CONTROL_CLICK)
     set MUI_ButtonAction.integer[GetHandleId(MUI_MenuButton[index])] = actionId
+
+    set textFrame = null
+    set iconFrame = null
 endfunction
 
 private function MUI_CreateFrames takes nothing returns nothing
     set MUI_Parent = BlzCreateFrameByType("BACKDROP", "MasterUIPanel", BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "EscMenuBackdrop", 0)
-    call BlzFrameSetAbsPoint(MUI_Parent, FRAMEPOINT_TOPLEFT, 0.11, 0.55)
-    call BlzFrameSetAbsPoint(MUI_Parent, FRAMEPOINT_BOTTOMRIGHT, 0.530, 0.285)
+    call BlzFrameSetAbsPoint(MUI_Parent, FRAMEPOINT_TOPLEFT, MUI_PANEL_LEFT, MUI_PANEL_TOP)
+    call BlzFrameSetAbsPoint(MUI_Parent, FRAMEPOINT_BOTTOMRIGHT, MUI_PANEL_RIGHT, MUI_PANEL_BOTTOM)
 
     set MUI_Title = BlzCreateFrameByType("TEXT", "MasterUITitle", MUI_Parent, "", 0)
     call BlzFrameSetPoint(MUI_Title, FRAMEPOINT_TOP, MUI_Parent, FRAMEPOINT_TOP, 0.0, -0.018)
-    call BlzFrameSetSize(MUI_Title, 0.290, 0.024)
+    call BlzFrameSetSize(MUI_Title, MUI_TITLE_WIDTH, 0.024)
     call BlzFrameSetTextAlignment(MUI_Title, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
     call BlzFrameSetScale(MUI_Title, 1.22)
     call BlzFrameSetEnable(MUI_Title, false)
@@ -240,19 +290,19 @@ private function MUI_CreateFrames takes nothing returns nothing
     call BlzTriggerRegisterFrameEvent(MUI_CloseTrigger, MUI_CloseButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(MUI_ClearFocusTrigger, MUI_CloseButton, FRAMEEVENT_CONTROL_CLICK)
 
-    call MUI_CreateMenuButton(1, "Stats", MUI_ACTION_STATS, 0.020, -0.060)
-    call MUI_CreateMenuButton(2, "Reputations", MUI_ACTION_REPUTATIONS, 0.020, -0.102)
-    call MUI_CreateMenuButton(3, "Zones", MUI_ACTION_ZONES, 0.020, -0.144)
-    call MUI_CreateMenuButton(4, "Professions", MUI_ACTION_PROFESSIONS, 0.020, -0.186)
+    call MUI_CreateMenuButton(1, "Stats", MUI_ICON_STATS, MUI_ACTION_STATS, 0.020, -0.060)
+    call MUI_CreateMenuButton(2, "Reputations", MUI_ICON_REPUTATIONS, MUI_ACTION_REPUTATIONS, 0.020, -0.102)
+    call MUI_CreateMenuButton(3, "Zones", MUI_ICON_ZONES, MUI_ACTION_ZONES, 0.020, -0.144)
+    call MUI_CreateMenuButton(4, "Professions", MUI_ICON_PROFESSIONS, MUI_ACTION_PROFESSIONS, 0.020, -0.186)
 
-    call MUI_CreateMenuButton(5, "Abilities", MUI_ACTION_ABILITIES, 0.155, -0.060)
-    call MUI_CreateMenuButton(6, "Hints", MUI_ACTION_HINTS, 0.155, -0.102)
-    call MUI_CreateMenuButton(7, "Achievements", MUI_ACTION_ACHIEVEMENTS, 0.155, -0.144)
-    call MUI_CreateMenuButton(8, "Secrets", MUI_ACTION_SECRETS, 0.155, -0.186)
+    call MUI_CreateMenuButton(5, "Abilities", MUI_ICON_ABILITIES, MUI_ACTION_ABILITIES, 0.160, -0.060)
+    call MUI_CreateMenuButton(6, "Hints", MUI_ICON_HINTS, MUI_ACTION_HINTS, 0.160, -0.102)
+    call MUI_CreateMenuButton(7, "Achievements", MUI_ICON_ACHIEVEMENTS, MUI_ACTION_ACHIEVEMENTS, 0.160, -0.144)
+    call MUI_CreateMenuButton(8, "Secrets", MUI_ICON_SECRETS, MUI_ACTION_SECRETS, 0.160, -0.186)
 
-    call MUI_CreateMenuButton(9, "Camera", MUI_ACTION_CAMERA, 0.290, -0.060)
-    call MUI_CreateMenuButton(10, "Commands", MUI_ACTION_COMMANDS, 0.290, -0.102)
-    call MUI_CreateMenuButton(11, "Cheats", MUI_ACTION_CHEATS, 0.290, -0.144)
+    call MUI_CreateMenuButton(9, "Camera", MUI_ICON_CAMERA, MUI_ACTION_CAMERA, 0.300, -0.060)
+    call MUI_CreateMenuButton(10, "Commands", MUI_ICON_COMMANDS, MUI_ACTION_COMMANDS, 0.300, -0.102)
+    call MUI_CreateMenuButton(11, "Cheats", MUI_ICON_CHEATS, MUI_ACTION_CHEATS, 0.300, -0.144)
 
     set MUI_OpenButton = BlzCreateFrameByType("GLUETEXTBUTTON", "MasterUIOpenButton", BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "ScriptDialogButton", 0)
     call MUI_PosOpenButton(MUI_OpenButton)

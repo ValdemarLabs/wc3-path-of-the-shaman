@@ -27,6 +27,9 @@
 - `HintsUI.j`, `CommandsUI.j`, `AchievementsUI.j`, `SecretsUI.j`, `CheatsUI.j`, `TasQuestBoxLight_PotS.j`
   Standardized the page-slider logic so these `TasQuestBox`-style UIs now use the same top-resting scrollbar behavior as the fixed abilities / reputation lists.
   Added cached slider sync, integer step sizing, clamped wheel movement, conditional slider visibility, and guarded slider callback handling so programmatic refreshes no longer feed back into slider events or cause the earlier slider-related crashes.
+- `MasterUI.j`
+  Added configurable per-button icon constants for the `Game` menu so each submenu entry can be given its own small left-side icon or left text-only by setting the path to `""`.
+  Rebuilt the menu buttons as composite button/icon/text frames and widened the panel/button layout slightly so the grouped menu can fit icons without crowding the labels.
 - `TerrainDamage.j`
   Adjusted `LAVA_EFFECT_SCALE_START`, `LAVA_EFFECT_SCALE_END`, `FEL_EFFECT_SCALE_START`, and `FEL_EFFECT_SCALE_END` closer to `1.00`.
   This tones down the ramped terrain-damage special-effect growth so the end-state visuals no longer become too large.
@@ -35,6 +38,9 @@
 - `AbilitiesLiteUI`, `ReputationUI`, `ProfessionsUI`, `Hints`, `Commands`, `Achievements`, `Secrets`, `Cheats`, `Zones`
   The affected scrollbars now start visually from the top when the list itself is at the top, move in the expected direction, and hide themselves when no scrolling is needed.
   The latest slider pass also resolved the known slider drag / click instability, and no slider crashes are currently known after these fixes.
+- `Game` menu
+  The `Game` menu buttons can now show matching submenu icons while keeping the existing grouped multi-column layout.
+  The menu frame and button widths were adjusted slightly so the new icons fit cleanly beside the labels.
 - `Terrain damage visuals`
   Lava / fel damage effects now stay closer to normal unit scale during the ramp instead of growing overly large near the end.
 
