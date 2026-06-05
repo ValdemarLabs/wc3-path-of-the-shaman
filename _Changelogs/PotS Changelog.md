@@ -13,6 +13,24 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [6.6.2026]
+
+### Technical Updates
+- `ProfessionsUI.j`
+  Investigated the slowly worsening UI-side FPS drop path against the earlier scrollbar and refresh hardening already applied in `AbilitiesLiteUI.j` and `ReputationUI.j`.
+  Reworked the professions refresh path so periodic updates stop blindly reapplying unchanged row text, row icons, row highlight state, detail icon/title, progress-bar values, and detail-body text every refresh tick.
+  Added cached list-scroll and detail-scroll synchronization, guarded slider callback state, and clamped wheel movement so programmatic frame refreshes no longer churn extra slider updates while the panel is open.
+  Added detail-body cache invalidation tied to selected profession, current skill, and milestone rebuild state so the right-side unlock text only rebuilds when the actual profession data changed.
+  Synced the open-button toggle path with the visibility-based refresh timer so the professions panel resumes refreshing when opened and reliably pauses again when closed through the same button.
+
+### Player-Facing Updates
+- `ProfessionsUI`
+  Leaving the professions panel open, switching tracked gatherers, and scrolling both panes should now produce much less long-session UI-side FPS decay than before.
+
+### Actions Remaining
+- `ProfessionsUI.j`
+  Re-test the panel in-game under longer open-idle, repeated list/detail scrolling, and tracked-gatherer switching so the slow FPS-drop path can be confirmed gone after the latest cache/sync cleanup.
+
 ## [5.6.2026]
 
 ### Technical Updates
