@@ -13,14 +13,12 @@ library ProfessionsUI initializer AutoInit requires GatherNodeSkills, GatherNode
 
 globals
     // ======== CONFIG
-    private constant integer PUI_FRAME_CONTEXT = 7
     private constant integer PUI_SKILL_MAX = 100
     private constant integer PUI_FIRST_PROFESSION = GNS_PROF_MINING
     private constant integer PUI_LAST_PROFESSION = GNS_PROF_COOKING
     private constant integer PUI_MAX_MILESTONES = 128
     // Refresh only while the panel is visible. Keep this modest to avoid UI-side FPS churn.
     private constant real PUI_REFRESH_INTERVAL = 0.75
-    private constant real PUI_DETAIL_VIEWPORT_HEIGHT = 0.102
     private constant real PUI_DETAIL_BODY_WIDTH = 0.258
     private constant integer PUI_BODY_WRAP_CHARS = 38
     private constant integer PUI_VISIBLE_BODY_LINES = 8
@@ -45,7 +43,6 @@ globals
     public string NextUnlockPrefixText = "Next unlock: "
     public string NextUnlockAtText = " at "
     public string FallbackNodeSuffixText = " node"
-    private string PUI_TocPath = "war3mapImported/TasQuestBox.toc"
     public string DefaultProfessionIcon = "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp"
     public string PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
     public string ProgressBarTexture = "UI\\Widgets\\Console\\Human\\human-tooltip-background.blp"
@@ -67,8 +64,10 @@ globals
     private framehandle PUI_RightPane = null
     private framehandle PUI_CloseButton = null
     private framehandle PUI_ReturnButton = null
+    private framehandle PUI_DetailBackdrop = null
     private framehandle PUI_DetailIcon = null
     private framehandle PUI_DetailTitle = null
+    private framehandle PUI_DetailBodyBackdrop = null
     private framehandle PUI_DetailViewport = null
     private framehandle PUI_DetailBodyText = null
     private framehandle PUI_DetailScroll = null
@@ -708,10 +707,6 @@ private function PUI_CreateFrames takes nothing returns nothing
     local real rowTopOffset = -0.012
     local real rowHeight = 0.033
     local real rowGap = 0.003
-    local framehandle detailBox
-    local framehandle detailTitleFrame
-    local framehandle detailSlider
-    local framehandle detailCloseButton
 
     set PUI_Parent = BlzCreateFrameByType("BACKDROP", "ProfessionsUIPanel", BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "EscMenuBackdrop", 0)
     call BlzFrameSetAbsPoint(PUI_Parent, FRAMEPOINT_TOPLEFT, 0.11, 0.55)
@@ -751,34 +746,32 @@ private function PUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetPoint(PUI_RightPane, FRAMEPOINT_TOPLEFT, PUI_LeftPane, FRAMEPOINT_TOPRIGHT, 0.012, 0.0)
     call BlzFrameSetPoint(PUI_RightPane, FRAMEPOINT_BOTTOMRIGHT, PUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.014, 0.014)
 
-    call BlzLoadTOCFile(PUI_TocPath)
-    set detailBox = BlzCreateFrame("TasQuestBox", PUI_RightPane, 0, PUI_FRAME_CONTEXT)
-    call BlzFrameSetAbsPoint(detailBox, FRAMEPOINT_TOPLEFT, -1.0, -1.0)
-    call BlzFrameSetSize(detailBox, 0.001, 0.001)
+    set PUI_DetailBackdrop = BlzCreateFrameByType("BACKDROP", "ProfessionsUIDetailBackdrop", PUI_RightPane, "", 0)
+    call BlzFrameSetTexture(PUI_DetailBackdrop, PanelTexture, 0, false)
+    call BlzFrameSetPoint(PUI_DetailBackdrop, FRAMEPOINT_TOPLEFT, PUI_RightPane, FRAMEPOINT_TOPLEFT, 0.010, -0.010)
+    call BlzFrameSetPoint(PUI_DetailBackdrop, FRAMEPOINT_BOTTOMRIGHT, PUI_RightPane, FRAMEPOINT_BOTTOMRIGHT, -0.010, 0.010)
+    call BlzFrameSetAlpha(PUI_DetailBackdrop, 255)
+    call BlzFrameSetVertexColor(PUI_DetailBackdrop, BlzConvertColor(255, 0, 0, 0))
+    call BlzFrameSetEnable(PUI_DetailBackdrop, false)
 
-    set detailTitleFrame = BlzGetFrameByName("TasQuestBoxText1", PUI_FRAME_CONTEXT)
-    set detailSlider = BlzGetFrameByName("TasQuestBoxSlider1", PUI_FRAME_CONTEXT)
-    set detailCloseButton = BlzGetFrameByName("TasQuestBoxCloseButton1", PUI_FRAME_CONTEXT)
-    set PUI_DetailBodyText = BlzGetFrameByName("TasQuestBoxTextArea1", PUI_FRAME_CONTEXT)
-    call BlzFrameSetVisible(detailTitleFrame, false)
-    call BlzFrameSetVisible(detailSlider, false)
-    call BlzFrameSetVisible(detailCloseButton, false)
-
-    set PUI_DetailIcon = BlzCreateFrameByType("BACKDROP", "ProfessionsUIDetailIcon", PUI_RightPane, "IconButtonTemplate", 0)
-    call BlzFrameSetPoint(PUI_DetailIcon, FRAMEPOINT_TOPLEFT, PUI_RightPane, FRAMEPOINT_TOPLEFT, 0.018, -0.018)
+    set PUI_DetailIcon = BlzCreateFrameByType("BACKDROP", "ProfessionsUIDetailIcon", PUI_DetailBackdrop, "IconButtonTemplate", 0)
+    call BlzFrameSetPoint(PUI_DetailIcon, FRAMEPOINT_TOPLEFT, PUI_DetailBackdrop, FRAMEPOINT_TOPLEFT, 0.018, -0.018)
     call BlzFrameSetSize(PUI_DetailIcon, 0.042, 0.042)
 
-    set PUI_DetailTitle = BlzCreateFrameByType("TEXT", "ProfessionsUIDetailTitle", PUI_RightPane, "", 0)
+    set PUI_DetailTitle = BlzCreateFrameByType("TEXT", "ProfessionsUIDetailTitle", PUI_DetailBackdrop, "", 0)
     call BlzFrameSetPoint(PUI_DetailTitle, FRAMEPOINT_TOPLEFT, PUI_DetailIcon, FRAMEPOINT_TOPRIGHT, 0.014, -0.002)
     call BlzFrameSetSize(PUI_DetailTitle, 0.232, 0.018)
     call BlzFrameSetTextAlignment(PUI_DetailTitle, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetScale(PUI_DetailTitle, 1.05)
     call BlzFrameSetEnable(PUI_DetailTitle, false)
 
-    set PUI_DetailBarBackdrop = BlzCreateFrameByType("BACKDROP", "ProfessionsUIBarBackdrop", PUI_RightPane, "", 0)
-    call BlzFrameSetTexture(PUI_DetailBarBackdrop, PanelTexture, 0, true)
+    set PUI_DetailBarBackdrop = BlzCreateFrameByType("BACKDROP", "ProfessionsUIBarBackdrop", PUI_DetailBackdrop, "", 0)
+    call BlzFrameSetTexture(PUI_DetailBarBackdrop, PanelTexture, 0, false)
     call BlzFrameSetPoint(PUI_DetailBarBackdrop, FRAMEPOINT_TOPLEFT, PUI_DetailIcon, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.016)
-    call BlzFrameSetSize(PUI_DetailBarBackdrop, 0.270, 0.02)
+    call BlzFrameSetSize(PUI_DetailBarBackdrop, 0.270, 0.020)
+    call BlzFrameSetAlpha(PUI_DetailBarBackdrop, 255)
+    call BlzFrameSetVertexColor(PUI_DetailBarBackdrop, BlzConvertColor(215, 16, 16, 16))
+    call BlzFrameSetEnable(PUI_DetailBarBackdrop, false)
 
     set PUI_DetailBar = BlzCreateSimpleFrame("SimpleStatusBarTemplate", PUI_DetailBarBackdrop, 0)
     call BlzFrameSetAllPoints(PUI_DetailBar, PUI_DetailBarBackdrop)
@@ -791,19 +784,28 @@ private function PUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetTextAlignment(PUI_DetailBarLabel, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
     call BlzFrameSetEnable(PUI_DetailBarLabel, false)
 
-    set PUI_DetailViewport = BlzCreateFrameByType("FRAME", "ProfessionsUIDetailViewport", PUI_RightPane, "", 0)
-    call BlzFrameClearAllPoints(PUI_DetailBodyText)
-    call BlzFrameSetPoint(PUI_DetailBodyText, FRAMEPOINT_TOPLEFT, PUI_DetailBarBackdrop, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.016)
-    call BlzFrameSetPoint(PUI_DetailBodyText, FRAMEPOINT_BOTTOMRIGHT, PUI_RightPane, FRAMEPOINT_BOTTOMRIGHT, -0.012, 0.018)
-    call BlzFrameSetPoint(PUI_DetailViewport, FRAMEPOINT_TOPLEFT, PUI_DetailBodyText, FRAMEPOINT_TOPLEFT, 0.0, 0.0)
-    call BlzFrameSetPoint(PUI_DetailViewport, FRAMEPOINT_BOTTOMRIGHT, PUI_DetailBodyText, FRAMEPOINT_BOTTOMRIGHT, 0.0, 0.0)
+    set PUI_DetailBodyBackdrop = BlzCreateFrameByType("BACKDROP", "ProfessionsUIDetailBodyBackdrop", PUI_DetailBackdrop, "", 0)
+    call BlzFrameSetTexture(PUI_DetailBodyBackdrop, PanelTexture, 0, false)
+    call BlzFrameSetPoint(PUI_DetailBodyBackdrop, FRAMEPOINT_TOPLEFT, PUI_DetailBarBackdrop, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.016)
+    call BlzFrameSetPoint(PUI_DetailBodyBackdrop, FRAMEPOINT_BOTTOMRIGHT, PUI_DetailBackdrop, FRAMEPOINT_BOTTOMRIGHT, -0.004, 0.004)
+    call BlzFrameSetAlpha(PUI_DetailBodyBackdrop, 235)
+    call BlzFrameSetVertexColor(PUI_DetailBodyBackdrop, BlzConvertColor(235, 12, 12, 12))
+    call BlzFrameSetEnable(PUI_DetailBodyBackdrop, false)
+
+    set PUI_DetailViewport = BlzCreateFrameByType("FRAME", "ProfessionsUIDetailViewport", PUI_DetailBodyBackdrop, "", 0)
+    call BlzFrameSetPoint(PUI_DetailViewport, FRAMEPOINT_TOPLEFT, PUI_DetailBodyBackdrop, FRAMEPOINT_TOPLEFT, 0.008, -0.008)
+    call BlzFrameSetPoint(PUI_DetailViewport, FRAMEPOINT_BOTTOMRIGHT, PUI_DetailBodyBackdrop, FRAMEPOINT_BOTTOMRIGHT, -0.020, 0.008)
+
+    set PUI_DetailBodyText = BlzCreateFrameByType("TEXT", "ProfessionsUIDetailBodyText", PUI_DetailViewport, "", 0)
+    call BlzFrameSetPoint(PUI_DetailBodyText, FRAMEPOINT_TOPLEFT, PUI_DetailViewport, FRAMEPOINT_TOPLEFT, 0.0, 0.0)
+    call BlzFrameSetPoint(PUI_DetailBodyText, FRAMEPOINT_BOTTOMRIGHT, PUI_DetailViewport, FRAMEPOINT_BOTTOMRIGHT, 0.0, 0.0)
     call BlzFrameSetTextAlignment(PUI_DetailBodyText, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetScale(PUI_DetailBodyText, 0.95)
     call BlzFrameSetEnable(PUI_DetailBodyText, false)
 
-    set PUI_DetailScroll = BlzCreateFrameByType("SLIDER", "ProfessionsUIDetailScroll", PUI_RightPane, "QuestMainListScrollBar", 0)
+    set PUI_DetailScroll = BlzCreateFrameByType("SLIDER", "ProfessionsUIDetailScroll", PUI_DetailBodyBackdrop, "QuestMainListScrollBar", 0)
     call BlzFrameSetPoint(PUI_DetailScroll, FRAMEPOINT_TOPLEFT, PUI_DetailViewport, FRAMEPOINT_TOPRIGHT, 0.004, 0.0)
-    call BlzFrameSetSize(PUI_DetailScroll, BlzFrameGetWidth(PUI_DetailScroll), PUI_DETAIL_VIEWPORT_HEIGHT)
+    call BlzFrameSetSize(PUI_DetailScroll, BlzFrameGetWidth(PUI_DetailScroll), BlzFrameGetHeight(PUI_DetailViewport))
     call BlzFrameSetMinMaxValue(PUI_DetailScroll, 0.0, 0.0)
     call BlzFrameSetStepSize(PUI_DetailScroll, 1.0)
     call BlzFrameSetValue(PUI_DetailScroll, 0.0)
@@ -876,10 +878,6 @@ private function PUI_CreateFrames takes nothing returns nothing
     call BlzTriggerRegisterFrameEvent(PUI_ClearFocusTrigger, PUI_ReturnButton, FRAMEEVENT_CONTROL_CLICK)
 
     call BlzFrameSetVisible(PUI_Parent, false)
-    set detailCloseButton = null
-    set detailSlider = null
-    set detailTitleFrame = null
-    set detailBox = null
 endfunction
 
 private function PUI_ClearFocusAction takes nothing returns nothing

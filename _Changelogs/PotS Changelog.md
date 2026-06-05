@@ -13,6 +13,23 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [5.6.2026]
+
+### Technical Updates
+- `ReputationUI.j`, `ProfessionsUI.j`
+  Continued rebuilding the right-side detail presentation after the earlier hidden `TasQuestBox` reuse kept leaking imported frame ornament art into the panel and produced black-backdrop spill outside the intended area.
+  Removed the hidden `TasQuestBox` text-area host approach from both UIs and replaced it with native right-pane detail backdrops, native body backdrops, and native text-frame content areas.
+  Kept the standalone list scrollbars for the left-side lists while restructuring the right-side detail stack closer to the safer native-frame pattern already used by `AbilitiesLiteUI` and `StatsUI`.
+
+### Player-Facing Updates
+- `Sirensong`
+  Continued terraining work in the `Sirensong` zone, focused mostly on the river route and the troll-side areas.
+
+### Actions Remaining
+- `ReputationUI.j`, `ProfessionsUI.j`
+  Re-test the rebuilt native right-side detail panes in-game and confirm the earlier lower-center ornament leak and black-background overflow are actually gone.
+  Continue polishing the right-side description-card presentation until it fully matches the intended final look.
+
 ## [4.6.2026]
 
 ### Technical Updates

@@ -12,7 +12,6 @@ library ReputationUI initializer AutoInit requires Table, Reputation, MasterUI
 **/
 
 globals
-    private constant integer RUI_FRAME_CONTEXT = 6
     private constant real RUI_REFRESH_INTERVAL = 5.00
     private constant integer RUI_MAX_ROWS = 10
     private constant integer RUI_VISIBLE_ROWS = 6
@@ -30,6 +29,8 @@ globals
     private framehandle RUI_CloseButton = null
     private framehandle RUI_ReturnButton = null
     private framehandle RUI_ListScroll = null
+    private framehandle RUI_DetailBackdrop = null
+    private framehandle RUI_DetailBodyBackdrop = null
     private framehandle RUI_DetailIcon = null
     private framehandle RUI_DetailTitle = null
     private framehandle RUI_DetailValue = null
@@ -64,7 +65,6 @@ globals
     private trigger RUI_WheelTrigger = null
     private timer RUI_RefreshTimer = null
 
-    private string RUI_TocPath = "war3mapImported/TasQuestBox.toc"
     private string RUI_DefaultFactionIcon = "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp"
     private string RUI_PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
     private string RUI_RowHighlightModel = "UI\\Feedback\\Autocast\\UI-ModalButtonOn.mdx"
@@ -447,10 +447,6 @@ private function RUI_CreateFrames takes nothing returns nothing
     local real rowTopOffset = -0.012
     local real rowHeight = 0.033
     local real rowGap = 0.003
-    local framehandle detailBox
-    local framehandle detailTitleFrame
-    local framehandle detailSlider
-    local framehandle detailCloseButton
 
     set RUI_Parent = BlzCreateFrameByType("BACKDROP", "ReputationUIPanel", BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "EscMenuBackdrop", 0)
     call BlzFrameSetAbsPoint(RUI_Parent, FRAMEPOINT_TOPLEFT, 0.11, 0.55)
@@ -505,40 +501,43 @@ private function RUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetPoint(RUI_RightPane, FRAMEPOINT_TOPLEFT, RUI_ListScroll, FRAMEPOINT_TOPRIGHT, 0.010, 0.0)
     call BlzFrameSetPoint(RUI_RightPane, FRAMEPOINT_BOTTOMRIGHT, RUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.014, 0.014)
 
-    call BlzLoadTOCFile(RUI_TocPath)
-    set detailBox = BlzCreateFrame("TasQuestBox", RUI_RightPane, 0, RUI_FRAME_CONTEXT)
-    call BlzFrameSetAbsPoint(detailBox, FRAMEPOINT_TOPLEFT, -1.0, -1.0)
-    call BlzFrameSetSize(detailBox, 0.001, 0.001)
+    set RUI_DetailBackdrop = BlzCreateFrameByType("BACKDROP", "ReputationUIDetailBackdrop", RUI_RightPane, "", 0)
+    call BlzFrameSetTexture(RUI_DetailBackdrop, RUI_PanelTexture, 0, false)
+    call BlzFrameSetPoint(RUI_DetailBackdrop, FRAMEPOINT_TOPLEFT, RUI_RightPane, FRAMEPOINT_TOPLEFT, 0.010, -0.010)
+    call BlzFrameSetPoint(RUI_DetailBackdrop, FRAMEPOINT_BOTTOMRIGHT, RUI_RightPane, FRAMEPOINT_BOTTOMRIGHT, -0.010, 0.010)
+    call BlzFrameSetAlpha(RUI_DetailBackdrop, 255)
+    call BlzFrameSetVertexColor(RUI_DetailBackdrop, BlzConvertColor(255, 0, 0, 0))
+    call BlzFrameSetEnable(RUI_DetailBackdrop, false)
 
-    set detailTitleFrame = BlzGetFrameByName("TasQuestBoxText1", RUI_FRAME_CONTEXT)
-    set detailSlider = BlzGetFrameByName("TasQuestBoxSlider1", RUI_FRAME_CONTEXT)
-    set detailCloseButton = BlzGetFrameByName("TasQuestBoxCloseButton1", RUI_FRAME_CONTEXT)
-    set RUI_DetailDescription = BlzGetFrameByName("TasQuestBoxTextArea1", RUI_FRAME_CONTEXT)
-    call BlzFrameSetVisible(detailTitleFrame, false)
-    call BlzFrameSetVisible(detailSlider, false)
-    call BlzFrameSetVisible(detailCloseButton, false)
-
-    set RUI_DetailIcon = BlzCreateFrameByType("BACKDROP", "ReputationUIDetailIcon", RUI_RightPane, "IconButtonTemplate", 0)
-    call BlzFrameSetPoint(RUI_DetailIcon, FRAMEPOINT_TOPLEFT, RUI_RightPane, FRAMEPOINT_TOPLEFT, 0.018, -0.018)
+    set RUI_DetailIcon = BlzCreateFrameByType("BACKDROP", "ReputationUIDetailIcon", RUI_DetailBackdrop, "IconButtonTemplate", 0)
+    call BlzFrameSetPoint(RUI_DetailIcon, FRAMEPOINT_TOPLEFT, RUI_DetailBackdrop, FRAMEPOINT_TOPLEFT, 0.018, -0.018)
     call BlzFrameSetSize(RUI_DetailIcon, 0.042, 0.042)
 
-    set RUI_DetailTitle = BlzCreateFrameByType("TEXT", "ReputationUIDetailTitle", RUI_RightPane, "", 0)
+    set RUI_DetailTitle = BlzCreateFrameByType("TEXT", "ReputationUIDetailTitle", RUI_DetailBackdrop, "", 0)
     call BlzFrameSetPoint(RUI_DetailTitle, FRAMEPOINT_TOPLEFT, RUI_DetailIcon, FRAMEPOINT_TOPRIGHT, 0.014, -0.002)
-    call BlzFrameSetSize(RUI_DetailTitle, 0.26, 0.018)
+    call BlzFrameSetSize(RUI_DetailTitle, 0.260, 0.018)
     call BlzFrameSetTextAlignment(RUI_DetailTitle, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetScale(RUI_DetailTitle, 1.05)
     call BlzFrameSetEnable(RUI_DetailTitle, false)
 
-    set RUI_DetailValue = BlzCreateFrameByType("TEXT", "ReputationUIDetailValue", RUI_RightPane, "", 0)
+    set RUI_DetailValue = BlzCreateFrameByType("TEXT", "ReputationUIDetailValue", RUI_DetailBackdrop, "", 0)
     call BlzFrameSetPoint(RUI_DetailValue, FRAMEPOINT_TOPLEFT, RUI_DetailTitle, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.004)
-    call BlzFrameSetSize(RUI_DetailValue, 0.26, 0.018)
+    call BlzFrameSetSize(RUI_DetailValue, 0.260, 0.018)
     call BlzFrameSetTextAlignment(RUI_DetailValue, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetScale(RUI_DetailValue, 0.98)
     call BlzFrameSetEnable(RUI_DetailValue, false)
 
-    call BlzFrameClearAllPoints(RUI_DetailDescription)
-    call BlzFrameSetPoint(RUI_DetailDescription, FRAMEPOINT_TOPLEFT, RUI_DetailIcon, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.020)
-    call BlzFrameSetPoint(RUI_DetailDescription, FRAMEPOINT_BOTTOMRIGHT, RUI_RightPane, FRAMEPOINT_BOTTOMRIGHT, -0.012, 0.018)
+    set RUI_DetailBodyBackdrop = BlzCreateFrameByType("BACKDROP", "ReputationUIDetailBodyBackdrop", RUI_DetailBackdrop, "", 0)
+    call BlzFrameSetTexture(RUI_DetailBodyBackdrop, RUI_PanelTexture, 0, false)
+    call BlzFrameSetPoint(RUI_DetailBodyBackdrop, FRAMEPOINT_TOPLEFT, RUI_DetailIcon, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.020)
+    call BlzFrameSetPoint(RUI_DetailBodyBackdrop, FRAMEPOINT_BOTTOMRIGHT, RUI_DetailBackdrop, FRAMEPOINT_BOTTOMRIGHT, -0.004, 0.004)
+    call BlzFrameSetAlpha(RUI_DetailBodyBackdrop, 235)
+    call BlzFrameSetVertexColor(RUI_DetailBodyBackdrop, BlzConvertColor(235, 12, 12, 12))
+    call BlzFrameSetEnable(RUI_DetailBodyBackdrop, false)
+
+    set RUI_DetailDescription = BlzCreateFrameByType("TEXT", "ReputationUIDetailDescription", RUI_DetailBodyBackdrop, "", 0)
+    call BlzFrameSetPoint(RUI_DetailDescription, FRAMEPOINT_TOPLEFT, RUI_DetailBodyBackdrop, FRAMEPOINT_TOPLEFT, 0.008, -0.008)
+    call BlzFrameSetPoint(RUI_DetailDescription, FRAMEPOINT_BOTTOMRIGHT, RUI_DetailBodyBackdrop, FRAMEPOINT_BOTTOMRIGHT, -0.010, 0.008)
     call BlzFrameSetTextAlignment(RUI_DetailDescription, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetScale(RUI_DetailDescription, 0.95)
     call BlzFrameSetEnable(RUI_DetailDescription, false)
@@ -592,10 +591,6 @@ private function RUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetPoint(RUI_ListWheelArea, FRAMEPOINT_BOTTOMLEFT, RUI_RowButton[RUI_VISIBLE_ROWS], FRAMEPOINT_BOTTOMLEFT, 0.006, 0.002)
 
     call BlzFrameSetVisible(RUI_Parent, false)
-    set detailCloseButton = null
-    set detailSlider = null
-    set detailTitleFrame = null
-    set detailBox = null
 endfunction
 
 public function Show takes nothing returns nothing
