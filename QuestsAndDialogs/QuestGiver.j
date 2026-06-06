@@ -445,33 +445,49 @@ public function IsWithinRange takes unit a, unit b, real range returns boolean
 endfunction
 
 public function GetAvailableHero takes unit giver, real range returns unit
-	local boolean nazgrekOk = false
-	local boolean zulkisOk = false
-	if udg_Nazgrek != null and IsUnitAlive(udg_Nazgrek) then
-		if range <= 0.00 or IsWithinRange(giver, udg_Nazgrek, range) then
+    local boolean nazgrekOk = false
+    local boolean zulkisOk = false
+    if udg_Nazgrek != null and IsUnitAlive(udg_Nazgrek) then
+        if range <= 0.00 or IsWithinRange(giver, udg_Nazgrek, range) then
 			set nazgrekOk = true
 		endif
 	endif
-	if udg_Zulkis != null and IsUnitAlive(udg_Zulkis) then
-		if range <= 0.00 or IsWithinRange(giver, udg_Zulkis, range) then
-			set zulkisOk = true
-		endif
-	endif
-	if nazgrekOk then
-		return udg_Nazgrek
-	endif
-	if zulkisOk then
-		return udg_Zulkis
+    if udg_Zulkis != null and IsUnitAlive(udg_Zulkis) then
+        if range <= 0.00 or IsWithinRange(giver, udg_Zulkis, range) then
+            set zulkisOk = true
+        endif
+    endif
+    if zulkisOk and IsUnitSelected(udg_Zulkis, Player(0)) then
+        return udg_Zulkis
+    endif
+    if nazgrekOk and IsUnitSelected(udg_Nazgrek, Player(0)) then
+        return udg_Nazgrek
+    endif
+    if nazgrekOk then
+        return udg_Nazgrek
+    endif
+    if zulkisOk then
+        return udg_Zulkis
 	endif
 	return null
 endfunction
 
 public function GetAllowedHero takes unit giver, real range, boolean allowNazgrek, boolean allowZulkis returns unit
-	if allowNazgrek and udg_Nazgrek != null and IsUnitAlive(udg_Nazgrek) then
-		if range <= 0.00 or IsWithinRange(giver, udg_Nazgrek, range) then
-			return udg_Nazgrek
-		endif
-	endif
+    if allowZulkis and udg_Zulkis != null and IsUnitAlive(udg_Zulkis) and IsUnitSelected(udg_Zulkis, Player(0)) then
+        if range <= 0.00 or IsWithinRange(giver, udg_Zulkis, range) then
+            return udg_Zulkis
+        endif
+    endif
+    if allowNazgrek and udg_Nazgrek != null and IsUnitAlive(udg_Nazgrek) and IsUnitSelected(udg_Nazgrek, Player(0)) then
+        if range <= 0.00 or IsWithinRange(giver, udg_Nazgrek, range) then
+            return udg_Nazgrek
+        endif
+    endif
+    if allowNazgrek and udg_Nazgrek != null and IsUnitAlive(udg_Nazgrek) then
+        if range <= 0.00 or IsWithinRange(giver, udg_Nazgrek, range) then
+            return udg_Nazgrek
+        endif
+    endif
 	if allowZulkis and udg_Zulkis != null and IsUnitAlive(udg_Zulkis) then
 		if range <= 0.00 or IsWithinRange(giver, udg_Zulkis, range) then
 			return udg_Zulkis
