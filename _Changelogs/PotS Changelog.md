@@ -22,14 +22,25 @@
   Added cached list-scroll and detail-scroll synchronization, guarded slider callback state, and clamped wheel movement so programmatic frame refreshes no longer churn extra slider updates while the panel is open.
   Added detail-body cache invalidation tied to selected profession, current skill, and milestone rebuild state so the right-side unlock text only rebuilds when the actual profession data changed.
   Synced the open-button toggle path with the visibility-based refresh timer so the professions panel resumes refreshing when opened and reliably pauses again when closed through the same button.
+- `CameraControl.j`, `DialogCamera.j`, `QuestGiver.j`, `qAradion.j`
+  Reworked the dialog-camera handoff so `DialogCamera` now suspends and resumes through `CameraControl` instead of restoring its own saved camera setup, which preserves the smooth return to the stored player camera mode and values.
+  Added a duration-aware `CameraControl` resume path, explicit tracked-target caching, and native-camera reset protection for normal mode so Warcraft III page up/down or mouse-wheel camera drift gets snapped back to the stored camera state without interfering with advanced or developer camera modes.
+  Updated quest-giver hero resolution and the `qAradion` dialog entry flow so the interacting hero is cached before dialog camera takes over, preventing dialog restore from incorrectly falling back to `Nazgrek` when `Zulkis` was the active hero.
+  Traced the remaining wrong-hero / snap-back behavior through the quest giver cleanup chain into the shared `Cinematic OFF` trigger, and confirmed a hardcoded pan-to-`Nazgrek` there was still overriding the intended camera return path after dialog.
+- `Cinematic OFF`
+  Removed the hardcoded post-dialog camera snap toward `Nazgrek` so `CameraControl` can own the final return to the interacting hero instead of being visually overridden by the cinematic shutdown trigger.
 
 ### Player-Facing Updates
 - `ProfessionsUI`
   Leaving the professions panel open, switching tracked gatherers, and scrolling both panes should now produce much less long-session UI-side FPS decay than before.
+- `Camera / Dialog`
+  Dialog and quest camera transitions should now return smoothly to the correct stored player camera and interacting hero, and normal-mode native camera drift from page up/down or mouse wheel should immediately reset back to the intended view.
 
 ### Actions Remaining
 - `ProfessionsUI.j`
   Re-test the panel in-game under longer open-idle, repeated list/detail scrolling, and tracked-gatherer switching so the slow FPS-drop path can be confirmed gone after the latest cache/sync cleanup.
+- `CameraControl.j`, `DialogCamera.j`, `QuestGiver.j`, `qAradion.j`
+  Re-test dialog entry and exit with both `Nazgrek` and `Zulkis`, and confirm normal, advanced, and developer camera modes each keep the intended ownership and restore behavior after quest-dialog cinematics now that the `Cinematic OFF` trigger no longer hardcodes a camera snap to `Nazgrek`.
 
 ## [5.6.2026]
 
