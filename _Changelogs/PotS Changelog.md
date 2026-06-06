@@ -29,6 +29,8 @@
   Traced the remaining wrong-hero / snap-back behavior through the quest giver cleanup chain into the shared `Cinematic OFF` trigger, and confirmed a hardcoded pan-to-`Nazgrek` there was still overriding the intended camera return path after dialog.
 - `Cinematic OFF`
   Removed the hardcoded post-dialog camera snap toward `Nazgrek` so `CameraControl` can own the final return to the interacting hero instead of being visually overridden by the cinematic shutdown trigger.
+- `Terrain`
+  Continued terraining work in Dragonfire Peaks.
 
 ### Player-Facing Updates
 - `ProfessionsUI`
@@ -41,6 +43,10 @@
   Re-test the panel in-game under longer open-idle, repeated list/detail scrolling, and tracked-gatherer switching so the slow FPS-drop path can be confirmed gone after the latest cache/sync cleanup.
 - `CameraControl.j`, `DialogCamera.j`, `QuestGiver.j`, `qAradion.j`
   Re-test dialog entry and exit with both `Nazgrek` and `Zulkis`, and confirm normal, advanced, and developer camera modes each keep the intended ownership and restore behavior after quest-dialog cinematics now that the `Cinematic OFF` trigger no longer hardcodes a camera snap to `Nazgrek`.
+- `qAradion.j` / related quest systems
+  `qAradion.j` is still not on the main map, so review the current `MS Todo` items around `qAradion` and the shared quest/dialog systems, and keep the modular JASS structure organized enough that new quest givers and old GUI-era quest lines can be rebuilt quickly in the same style.
+- `Cinematic ON/OFF` / quest-dialog flow
+  Check whether `Cinematic ON/OFF` and the quest/dialog system still duplicate any `CinematicMover` calls during entry and exit, and remove overlap if both paths are moving the same units.
 
 ## [5.6.2026]
 
