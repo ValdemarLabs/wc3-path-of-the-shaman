@@ -1,4 +1,4 @@
-library qAradion initializer Init requires QuestGiver, QuestMaster, DialogSystem, ExSound
+library qAradion initializer Init requires QuestGiver, QuestMaster, DialogSystem, ExSound, CameraControl
 //===========================================================================
 // qAradion
 // Quest giver dialog + quest flow for Aradion the Farseer.
@@ -1103,6 +1103,7 @@ private function OnSelected takes nothing returns nothing
 	
 	// Store hero for fade sequence
 	set SelectedHero = hero
+	call CameraControl_SetTargetUnit(Player(0), hero)
 	
 	// Enter cinematic mode and start fade sequence
 	call EnterCinematicMode()
