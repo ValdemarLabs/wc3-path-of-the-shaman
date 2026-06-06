@@ -36,6 +36,8 @@ globals
     private constant real CAMERA_KEYBOARD_FIELD_DURATION = 0.10
     private constant real CAMERA_KEYBOARD_HORIZONTAL_SPEED = 1.50
     private constant real CAMERA_KEYBOARD_VERTICAL_SPEED = 1.50
+    private constant real CAMERA_DRIFT_CHECK_INTERVAL = 0.03
+    private constant real CAMERA_FIELD_TOLERANCE = 0.75
     private constant real CAMERA_RESUME_DURATION = 2.00
 
     private boolean CC_Initialized = false
@@ -69,7 +71,10 @@ globals
     private trigger CC_UpUpTrigger = null
     private trigger CC_DownDownTrigger = null
     private trigger CC_DownUpTrigger = null
+    private trigger CC_PageResetTrigger = null
+    private trigger CC_WheelResetTrigger = null
     private timer CC_UpdateTimer = null
+    private timer CC_DriftTimer = null
 endglobals
 
 private function CC_GetPlayerIndex takes player whichPlayer returns integer
@@ -84,6 +89,25 @@ private function CC_Clamp takes real value, real minValue, real maxValue returns
         return maxValue
     endif
     return value
+endfunction
+
+private function CC_Abs takes real value returns real
+    if value < 0.00 then
+        return -value
+    endif
+    return value
+endfunction
+
+private function CC_GetRotationDelta takes real a, real b returns real
+    local real delta = a - b
+
+    if delta < 0.00 then
+        set delta = -delta
+    endif
+    if delta > 180.00 then
+        set delta = 360.00 - delta
+    endif
+    return delta
 endfunction
 
 private function CC_IsSuspended takes player whichPlayer returns boolean
@@ -105,6 +129,11 @@ private function CC_FindResumeTimerPlayer takes timer whichTimer returns integer
 endfunction
 
 private function CC_IsKeyboardModeActive takes player whichPlayer returns boolean
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    return (not CC_Suspended[pid]) and (not CC_ResumePending[pid]) and CC_Mode[pid] == CAMERA_MODE_NORMAL
+endfunction
+
+private function CC_IsNativeResetProtectionActive takes player whichPlayer returns boolean
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     return (not CC_Suspended[pid]) and (not CC_ResumePending[pid]) and CC_Mode[pid] == CAMERA_MODE_NORMAL
 endfunction
@@ -195,6 +224,15 @@ private function CC_ApplyAdvancedFields takes player whichPlayer, real duration 
     endif
 endfunction
 
+private function CC_ApplyAdvancedDriftFields takes player whichPlayer, real duration returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    call CC_ApplySharedFields(whichPlayer, duration)
+    if GetLocalPlayer() == whichPlayer then
+        call SetCameraField(CAMERA_FIELD_TARGET_DISTANCE, CC_Distance[pid], duration)
+        call SetCameraField(CAMERA_FIELD_ANGLE_OF_ATTACK, CC_GetAdvancedAngle(whichPlayer), duration)
+    endif
+endfunction
+
 private function CC_ApplyAdvancedResumePreviewFields takes player whichPlayer, real duration returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     call CC_ApplySharedFields(whichPlayer, duration)
@@ -258,19 +296,24 @@ private function CC_ApplyDeveloperMode takes player whichPlayer returns nothing
     call CC_ApplyDirectFields(whichPlayer, 0.00)
 endfunction
 
-private function CC_StartSmoothResumeVisual takes player whichPlayer returns nothing
+private function CC_StartSmoothResumeVisualWithDuration takes player whichPlayer, real duration returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     local unit target = CC_GetFallbackTarget(whichPlayer)
 
     if GetLocalPlayer() == whichPlayer and target != null then
-        call PanCameraToTimed(GetUnitX(target), GetUnitY(target), CAMERA_RESUME_DURATION)
+        call PanCameraToTimed(GetUnitX(target), GetUnitY(target), duration)
     endif
 
     if CC_Mode[pid] == CAMERA_MODE_ADVANCED then
-        call CC_ApplyAdvancedResumePreviewFields(whichPlayer, CAMERA_RESUME_DURATION)
+        call CC_ApplyAdvancedResumePreviewFields(whichPlayer, duration)
     else
-        call CC_ApplyDirectFields(whichPlayer, CAMERA_RESUME_DURATION)
+        call CC_ApplyDirectFields(whichPlayer, duration)
     endif
+endfunction
+
+
+private function CC_StartSmoothResumeVisual takes player whichPlayer returns nothing
+    call CC_StartSmoothResumeVisualWithDuration(whichPlayer, CAMERA_RESUME_DURATION)
 endfunction
 
 private function CC_UpdateKeyboardCamera takes nothing returns nothing
@@ -304,6 +347,45 @@ private function CC_UpdateKeyboardCamera takes nothing returns nothing
             endif
 
             call CC_ApplyKeyboardFields(Player(i))
+        endif
+        set i = i + 1
+    endloop
+endfunction
+
+private function CC_ReapplyStoredFields takes player whichPlayer returns nothing
+    if CC_Mode[CC_GetPlayerIndex(whichPlayer)] == CAMERA_MODE_ADVANCED then
+        call CC_ApplyAdvancedDriftFields(whichPlayer, 0.00)
+    else
+        call CC_ApplyDirectFields(whichPlayer, 0.00)
+    endif
+endfunction
+
+private function CC_CheckCameraDrift takes nothing returns nothing
+    local integer i = 0
+    local player whichPlayer
+    local real expectedAngle
+    local boolean drifted
+
+    loop
+        exitwhen i >= bj_MAX_PLAYERS
+        if CC_Mode[i] == CAMERA_MODE_NORMAL and not CC_Suspended[i] and not CC_ResumePending[i] then
+            set whichPlayer = Player(i)
+            if GetLocalPlayer() == whichPlayer then
+                set expectedAngle = CC_Angle[i]
+                set drifted = false
+
+                if CC_Abs(GetCameraField(CAMERA_FIELD_TARGET_DISTANCE) - CC_Distance[i]) > CAMERA_FIELD_TOLERANCE or CC_Abs(GetCameraField(CAMERA_FIELD_FARZ) - CC_FarZ[i]) > CAMERA_FIELD_TOLERANCE or CC_Abs(GetCameraField(CAMERA_FIELD_FIELD_OF_VIEW) - CC_Fov[i]) > CAMERA_FIELD_TOLERANCE or CC_Abs(GetCameraField(CAMERA_FIELD_ANGLE_OF_ATTACK) - expectedAngle) > CAMERA_FIELD_TOLERANCE then
+                    set drifted = true
+                endif
+                if CC_GetRotationDelta(GetCameraField(CAMERA_FIELD_ROTATION), CC_Rotation[i]) > CAMERA_FIELD_TOLERANCE then
+                    set drifted = true
+                endif
+
+                if drifted then
+                    call CC_ReapplyStoredFields(whichPlayer)
+                endif
+            endif
+            set whichPlayer = null
         endif
         set i = i + 1
     endloop
@@ -344,6 +426,24 @@ private function CC_ApplyMode takes player whichPlayer returns nothing
     endif
 endfunction
 
+private function CC_ResetStoredCameraState takes player whichPlayer returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+
+    if CC_Mode[pid] != CAMERA_MODE_NORMAL then
+        return
+    endif
+
+    if CC_ResumePending[pid] then
+        set CC_ResumePending[pid] = false
+        set CC_Suspended[pid] = false
+        call PauseTimer(CC_ResumeTimer[pid])
+    elseif CC_Suspended[pid] then
+        return
+    endif
+
+    call CC_ApplyMode(whichPlayer)
+endfunction
+
 private function CC_FinishSmoothResume takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     set CC_ResumePending[pid] = false
@@ -361,6 +461,20 @@ endfunction
 public function RefreshTarget takes player whichPlayer returns nothing
     set CC_TargetUnit[CC_GetPlayerIndex(whichPlayer)] = CC_GetFallbackTarget(whichPlayer)
     call CC_ApplyMode(whichPlayer)
+endfunction
+
+public function SetTargetUnit takes player whichPlayer, unit whichUnit returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+
+    if IsTrackedCameraUnit(whichUnit) and GetHandleId(whichUnit) != 0 and GetWidgetLife(whichUnit) > 0.405 then
+        set CC_TargetUnit[pid] = whichUnit
+        if not CC_Suspended[pid] and not CC_ResumePending[pid] then
+            call CC_ApplyMode(whichPlayer)
+        endif
+        return
+    endif
+
+    set CC_TargetUnit[pid] = null
 endfunction
 
 public function UpdateTargetCache takes player whichPlayer returns nothing
@@ -485,9 +599,14 @@ public function ResumeQuick takes player whichPlayer returns nothing
     call CC_ApplyMode(whichPlayer)
 endfunction
 
-public function Resume takes player whichPlayer returns nothing
+public function ResumeWithDuration takes player whichPlayer, real duration returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     local integer mode = CC_Mode[pid]
+
+    if duration <= 0.00 then
+        call ResumeQuick(whichPlayer)
+        return
+    endif
 
     set CC_ResumePending[pid] = false
     call PauseTimer(CC_ResumeTimer[pid])
@@ -496,17 +615,21 @@ public function Resume takes player whichPlayer returns nothing
 
     if mode == CAMERA_MODE_ADVANCED then
         set CC_ResumePending[pid] = true
-        call CC_StartSmoothResumeVisual(whichPlayer)
-        call TimerStart(CC_ResumeTimer[pid], CAMERA_RESUME_DURATION, false, function CC_OnResumeTimer)
+        call CC_StartSmoothResumeVisualWithDuration(whichPlayer, duration)
+        call TimerStart(CC_ResumeTimer[pid], duration, false, function CC_OnResumeTimer)
     elseif mode == CAMERA_MODE_DEVELOPER then
         set CC_Suspended[pid] = false
         call CC_BindDeveloperMode(whichPlayer)
-        call CC_ApplyDirectFields(whichPlayer, CAMERA_RESUME_DURATION)
+        call CC_ApplyDirectFields(whichPlayer, duration)
     else
         set CC_ResumePending[pid] = true
-        call CC_StartSmoothResumeVisual(whichPlayer)
-        call TimerStart(CC_ResumeTimer[pid], CAMERA_RESUME_DURATION, false, function CC_OnResumeTimer)
+        call CC_StartSmoothResumeVisualWithDuration(whichPlayer, duration)
+        call TimerStart(CC_ResumeTimer[pid], duration, false, function CC_OnResumeTimer)
     endif
+endfunction
+
+public function Resume takes player whichPlayer returns nothing
+    call ResumeWithDuration(whichPlayer, CAMERA_RESUME_DURATION)
 endfunction
 
 public function SuspendAll takes nothing returns nothing
@@ -699,16 +822,28 @@ private function CC_SelectAction takes nothing returns nothing
     local player whichPlayer = GetTriggerPlayer()
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     if IsTrackedCameraUnit(GetTriggerUnit()) then
-        set CC_TargetUnit[pid] = GetTriggerUnit()
-        if not CC_IsSuspended(whichPlayer) then
+        if not CC_Suspended[pid] and not CC_ResumePending[pid] then
+            set CC_TargetUnit[pid] = GetTriggerUnit()
             call CC_ApplyMode(whichPlayer)
         endif
     endif
     set whichPlayer = null
 endfunction
 
+private function CC_PageResetAction takes nothing returns nothing
+    local player whichPlayer = GetTriggerPlayer()
+
+    if CC_IsNativeResetProtectionActive(whichPlayer) then
+        call CC_ResetStoredCameraState(whichPlayer)
+    endif
+
+    set whichPlayer = null
+endfunction
+
 public function Init takes nothing returns nothing
     local integer i = 0
+    local framehandle gameUI
+    local framehandle worldFrame
     if CC_Initialized then
         return
     endif
@@ -728,6 +863,8 @@ public function Init takes nothing returns nothing
     endloop
 
     set CC_UpdateTimer = CreateTimer()
+    set CC_DriftTimer = CreateTimer()
+    call TimerStart(CC_DriftTimer, CAMERA_DRIFT_CHECK_INTERVAL, true, function CC_CheckCameraDrift)
 
     set CC_SelectTrigger = CreateTrigger()
     set CC_LeftDownTrigger = CreateTrigger()
@@ -738,6 +875,8 @@ public function Init takes nothing returns nothing
     set CC_UpUpTrigger = CreateTrigger()
     set CC_DownDownTrigger = CreateTrigger()
     set CC_DownUpTrigger = CreateTrigger()
+    set CC_PageResetTrigger = CreateTrigger()
+    set CC_WheelResetTrigger = CreateTrigger()
     set i = 0
     loop
         exitwhen i >= bj_MAX_PLAYERS
@@ -750,6 +889,10 @@ public function Init takes nothing returns nothing
         call TriggerRegisterPlayerEvent(CC_UpUpTrigger, Player(i), EVENT_PLAYER_ARROW_UP_UP)
         call TriggerRegisterPlayerEvent(CC_DownDownTrigger, Player(i), EVENT_PLAYER_ARROW_DOWN_DOWN)
         call TriggerRegisterPlayerEvent(CC_DownUpTrigger, Player(i), EVENT_PLAYER_ARROW_DOWN_UP)
+        call BlzTriggerRegisterPlayerKeyEvent(CC_PageResetTrigger, Player(i), OSKEY_PAGEUP, 0, true)
+        call BlzTriggerRegisterPlayerKeyEvent(CC_PageResetTrigger, Player(i), OSKEY_PAGEUP, 0, false)
+        call BlzTriggerRegisterPlayerKeyEvent(CC_PageResetTrigger, Player(i), OSKEY_PAGEDOWN, 0, true)
+        call BlzTriggerRegisterPlayerKeyEvent(CC_PageResetTrigger, Player(i), OSKEY_PAGEDOWN, 0, false)
         set i = i + 1
     endloop
     call TriggerAddAction(CC_SelectTrigger, function CC_SelectAction)
@@ -761,6 +904,22 @@ public function Init takes nothing returns nothing
     call TriggerAddAction(CC_UpUpTrigger, function CC_OnUpUp)
     call TriggerAddAction(CC_DownDownTrigger, function CC_OnDownDown)
     call TriggerAddAction(CC_DownUpTrigger, function CC_OnDownUp)
+    call TriggerAddAction(CC_PageResetTrigger, function CC_PageResetAction)
+
+    set gameUI = BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0)
+    if gameUI != null then
+        call BlzTriggerRegisterFrameEvent(CC_WheelResetTrigger, gameUI, FRAMEEVENT_MOUSE_WHEEL)
+    endif
+
+    set worldFrame = BlzGetOriginFrame(ORIGIN_FRAME_WORLD_FRAME, 0)
+    if worldFrame != null then
+        call BlzTriggerRegisterFrameEvent(CC_WheelResetTrigger, worldFrame, FRAMEEVENT_MOUSE_WHEEL)
+    endif
+
+    call TriggerAddAction(CC_WheelResetTrigger, function CC_PageResetAction)
+
+    set gameUI = null
+    set worldFrame = null
 endfunction
 
 public function AutoInit takes nothing returns nothing
