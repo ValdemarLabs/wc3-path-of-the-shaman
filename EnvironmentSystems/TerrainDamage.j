@@ -25,6 +25,7 @@ globals
 
     // === Scanner settings
     private constant boolean DEBUG = false
+    private constant boolean DEBUG_BYPASS_SYSTEM = false // Hard debug bypass: skips all TerrainDamage setup and runtime timers
     private constant real SCAN_INTERVAL = 0.40          // How often tracked units are checked for damaging terrain
     private constant real PLAYER_RESYNC_INTERVAL = 10.00 // Slow safety resync for registered players; avoids full player scans every Periodic tick
     private constant real MIN_FIRST_TICK_DELAY = 0.20   // Prevents first damage from firing instantly when desyncing unit timers
@@ -1082,6 +1083,11 @@ endfunction
 //===========================================================================
 // Initialization delayed
 private function InitDelayed takes nothing returns nothing
+    if DEBUG_BYPASS_SYSTEM then
+        call DebugMsg("InitDelayed skipped because DEBUG_BYPASS_SYSTEM is enabled")
+        return
+    endif
+
     set TerrainUnitTimers = Table.create()
     set TerrainUnitTerrainTypes = Table.create()
     set TerrainUnitCurrentIntervals = Table.create()
