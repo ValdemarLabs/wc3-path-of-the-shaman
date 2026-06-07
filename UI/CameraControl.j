@@ -38,7 +38,25 @@ globals
     private constant real CAMERA_KEYBOARD_VERTICAL_SPEED = 1.50
     private constant real CAMERA_DRIFT_CHECK_INTERVAL = 0.03
     private constant real CAMERA_FIELD_TOLERANCE = 0.75
+    private constant real CAMERA_NORMAL_TRACE_ACCURACY = 50.00
+    private constant real CAMERA_NORMAL_TRACE_FINE_ACCURACY = 10.00
+    private constant real CAMERA_NORMAL_TRACE_ITEM_RANGE = 1.00
+    private constant real CAMERA_NORMAL_TRACE_MIN_DISTANCE = 400.00
+    private constant real CAMERA_NORMAL_TRACE_MIN_DISTANCE_FACTOR = 0.65
+    private constant real CAMERA_NORMAL_TRACE_POSITION_THRESHOLD = 24.00
+    private constant real CAMERA_NORMAL_TRACE_ROTATION_THRESHOLD = 0.50
+    private constant real CAMERA_NORMAL_TRACE_DISTANCE_THRESHOLD = 1.00
     private constant real CAMERA_RESUME_DURATION = 2.00
+    private constant real CAMERA_WOUNDED_THRESHOLD = 0.25
+    private constant real CAMERA_WOUNDED_ENTRY_DURATION = 1.00
+    private constant real CAMERA_WOUNDED_BASE_TRANSPARENCY = 50.00
+    private constant real CAMERA_WOUNDED_PULSE_TRANSPARENCY_DELTA = 18.00
+    private constant real CAMERA_WOUNDED_PULSE_DECAY = 0.92
+    private constant integer CAMERA_WOUNDED_SECOND_BEAT_DELAY_TICKS = 7
+    private constant integer CAMERA_WOUNDED_BEAT_MIN_TICKS = 34
+    private constant integer CAMERA_WOUNDED_BEAT_MAX_TICKS = 48
+    private constant string CAMERA_WOUNDED_FILTER_TEXTURE = "ReplaceableTextures\\CameraMasks\\DiagonalSlash_mask.blp"
+    private constant string CAMERA_WOUNDED_HEARTBEAT_SOUND = "war3mapImported\\Heartbeat.mp3"
 
     private boolean CC_Initialized = false
     private boolean CC_UpdateLoopActive = false
@@ -49,6 +67,14 @@ globals
     private real array CC_Angle
     private real array CC_Rotation
     private real array CC_Fov
+    private real array CC_NormalEffectiveDistance
+    private real array CC_NormalEffectiveAngle
+    private real array CC_NormalTraceX
+    private real array CC_NormalTraceY
+    private real array CC_NormalTraceRotation
+    private real array CC_NormalTraceDistance
+    private integer array CC_NormalTraceTargetHandle
+    private boolean array CC_NormalTraceEnabled
     private unit array CC_TargetUnit
     private boolean array CC_Suspended
     private boolean array CC_PressingLeft
@@ -60,7 +86,12 @@ globals
     private boolean array CC_MoveUp
     private boolean array CC_MoveDown
     private boolean array CC_ResumePending
+    private boolean array CC_WoundedActive
     private timer array CC_ResumeTimer
+    private integer array CC_WoundedSeed
+    private integer array CC_WoundedNextBeatTicks
+    private integer array CC_WoundedSecondBeatTicks
+    private real array CC_WoundedPulse
 
     private trigger CC_SelectTrigger = null
     private trigger CC_LeftDownTrigger = null
@@ -75,6 +106,11 @@ globals
     private trigger CC_WheelResetTrigger = null
     private timer CC_UpdateTimer = null
     private timer CC_DriftTimer = null
+    private item CC_PathingProbe = null
+    private rect CC_PathingProbeRect = null
+    private item array CC_HiddenPathItems
+    private integer CC_HiddenPathItemCount = 0
+    private location CC_TerrainLoc = null
 endglobals
 
 private function CC_GetPlayerIndex takes player whichPlayer returns integer
@@ -108,6 +144,224 @@ private function CC_GetRotationDelta takes real a, real b returns real
         set delta = 360.00 - delta
     endif
     return delta
+endfunction
+
+private function CC_NormalizeAngle takes real value returns real
+    loop
+        exitwhen value >= 0.00
+        set value = value + 360.00
+    endloop
+    loop
+        exitwhen value < 360.00
+        set value = value - 360.00
+    endloop
+    return value
+endfunction
+
+private function CC_IsPointPathableRaw takes real x, real y returns boolean
+    local real dx
+    local real dy
+
+    call SetItemVisible(CC_PathingProbe, true)
+    call SetItemPosition(CC_PathingProbe, x, y)
+    set dx = GetItemX(CC_PathingProbe) - x
+    set dy = GetItemY(CC_PathingProbe) - y
+    call SetItemVisible(CC_PathingProbe, false)
+
+    return dx < CAMERA_NORMAL_TRACE_ITEM_RANGE and dx > -CAMERA_NORMAL_TRACE_ITEM_RANGE and dy < CAMERA_NORMAL_TRACE_ITEM_RANGE and dy > -CAMERA_NORMAL_TRACE_ITEM_RANGE
+endfunction
+
+private function CC_HideBlockingItems takes nothing returns nothing
+    if IsItemVisible(GetEnumItem()) then
+        set CC_HiddenPathItems[CC_HiddenPathItemCount] = GetEnumItem()
+        call SetItemVisible(CC_HiddenPathItems[CC_HiddenPathItemCount], false)
+        set CC_HiddenPathItemCount = CC_HiddenPathItemCount + 1
+    endif
+endfunction
+
+private function CC_RestoreHiddenPathItems takes nothing returns nothing
+    loop
+        exitwhen CC_HiddenPathItemCount == 0
+        set CC_HiddenPathItemCount = CC_HiddenPathItemCount - 1
+        call SetItemVisible(CC_HiddenPathItems[CC_HiddenPathItemCount], true)
+    endloop
+endfunction
+
+private function CC_IsPointPathable takes real x, real y returns boolean
+    if CC_IsPointPathableRaw(x, y) then
+        return true
+    endif
+
+    set CC_HiddenPathItemCount = 0
+    call MoveRectTo(CC_PathingProbeRect, x, y)
+    call EnumItemsInRect(CC_PathingProbeRect, null, function CC_HideBlockingItems)
+    if CC_IsPointPathableRaw(x, y) then
+        call CC_RestoreHiddenPathItems()
+        return true
+    endif
+    call CC_RestoreHiddenPathItems()
+    return false
+endfunction
+
+private function CC_GetTerrainZ takes real x, real y returns real
+    call MoveLocation(CC_TerrainLoc, x, y)
+    return GetLocationZ(CC_TerrainLoc)
+endfunction
+
+public function IsTrackedCameraUnit takes unit u returns boolean
+    return u != null and (u == udg_Nazgrek or u == udg_Zulkis)
+endfunction
+
+private function CC_GetFallbackTarget takes player whichPlayer returns unit
+    local unit u = CC_TargetUnit[CC_GetPlayerIndex(whichPlayer)]
+
+    if IsTrackedCameraUnit(u) and GetHandleId(u) != 0 and GetWidgetLife(u) > 0.405 then
+        return u
+    endif
+
+    if IsTrackedCameraUnit(udg_Nazgrek) and GetHandleId(udg_Nazgrek) != 0 and GetWidgetLife(udg_Nazgrek) > 0.405 then
+        return udg_Nazgrek
+    endif
+    if IsTrackedCameraUnit(udg_Zulkis) and GetHandleId(udg_Zulkis) != 0 and GetWidgetLife(udg_Zulkis) > 0.405 then
+        return udg_Zulkis
+    endif
+    return null
+endfunction
+
+private function CC_GetCurrentCameraUnit takes player whichPlayer returns unit
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    if CC_Mode[pid] == CAMERA_MODE_DEVELOPER or CC_Suspended[pid] then
+        return null
+    endif
+    return CC_GetFallbackTarget(whichPlayer)
+endfunction
+
+private function CC_GetLifeRatio takes unit whichUnit returns real
+    local real maxLife
+    if whichUnit == null or GetHandleId(whichUnit) == 0 or GetWidgetLife(whichUnit) <= 0.405 then
+        return 0.00
+    endif
+    set maxLife = GetUnitState(whichUnit, UNIT_STATE_MAX_LIFE)
+    if maxLife <= 0.00 then
+        return 0.00
+    endif
+    return GetUnitState(whichUnit, UNIT_STATE_LIFE) / maxLife
+endfunction
+
+private function CC_ResetWoundedState takes integer pid, player whichPlayer returns nothing
+    local boolean hadVisual = CC_WoundedActive[pid] or CC_WoundedPulse[pid] > 0.00
+    set CC_WoundedActive[pid] = false
+    set CC_WoundedNextBeatTicks[pid] = 0
+    set CC_WoundedSecondBeatTicks[pid] = 0
+    set CC_WoundedPulse[pid] = 0.00
+    if hadVisual and GetLocalPlayer() == whichPlayer then
+        call DisplayCineFilter(false)
+    endif
+endfunction
+
+private function CC_GetNextWoundedBeatTicks takes integer pid, real lifeRatio returns integer
+    local integer minTicks = CAMERA_WOUNDED_BEAT_MIN_TICKS
+    local integer maxTicks = CAMERA_WOUNDED_BEAT_MAX_TICKS
+    local integer range
+    set CC_WoundedSeed[pid] = ModuloInteger(CC_WoundedSeed[pid] * 73 + 19, 997)
+    set maxTicks = maxTicks - R2I((CAMERA_WOUNDED_THRESHOLD - lifeRatio) * 32.00)
+    if maxTicks < minTicks + 4 then
+        set maxTicks = minTicks + 4
+    endif
+    set range = maxTicks - minTicks + 1
+    return minTicks + ModuloInteger(CC_WoundedSeed[pid], range)
+endfunction
+
+private function CC_PlayWoundedHeartbeatSound takes player whichPlayer returns nothing
+    local sound s
+    if GetLocalPlayer() == whichPlayer then
+        set s = CreateSound(CAMERA_WOUNDED_HEARTBEAT_SOUND, false, false, false, 10, 10, "")
+        call StartSound(s)
+        call KillSoundWhenDone(s)
+        set s = null
+    endif
+endfunction
+
+private function CC_GetCineFilterAlphaFromTransparency takes real transparency returns integer
+    return R2I(255.00 * (100.00 - CC_Clamp(transparency, 0.00, 100.00)) / 100.00)
+endfunction
+
+private function CC_ShowWoundedFilter takes player whichPlayer, real transparency, boolean entering returns nothing
+    local integer alphaInt = CC_GetCineFilterAlphaFromTransparency(transparency)
+    if GetLocalPlayer() == whichPlayer then
+        call SetCineFilterTexture(CAMERA_WOUNDED_FILTER_TEXTURE)
+        call SetCineFilterBlendMode(BLEND_MODE_BLEND)
+        call SetCineFilterTexMapFlags(TEXMAP_FLAG_NONE)
+        call SetCineFilterStartUV(0.00, 0.00, 1.00, 1.00)
+        call SetCineFilterEndUV(0.00, 0.00, 1.00, 1.00)
+        if entering then
+            call SetCineFilterStartColor(255, 255, 255, 0)
+            call SetCineFilterEndColor(255, 0, 0, alphaInt)
+            call SetCineFilterDuration(CAMERA_WOUNDED_ENTRY_DURATION)
+        else
+            call SetCineFilterStartColor(255, 0, 0, alphaInt)
+            call SetCineFilterEndColor(255, 0, 0, alphaInt)
+            call SetCineFilterDuration(0.00)
+        endif
+        call DisplayCineFilter(true)
+    endif
+endfunction
+
+private function CC_UpdateWoundedState takes player whichPlayer returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    local unit whichUnit = CC_GetCurrentCameraUnit(whichPlayer)
+    local real lifeRatio
+
+    if whichUnit == null then
+        call CC_ResetWoundedState(pid, whichPlayer)
+        set whichUnit = null
+        return
+    endif
+
+    set lifeRatio = CC_GetLifeRatio(whichUnit)
+    if lifeRatio <= 0.00 or lifeRatio > CAMERA_WOUNDED_THRESHOLD then
+        call CC_ResetWoundedState(pid, whichPlayer)
+        set whichUnit = null
+        return
+    endif
+
+    if not CC_WoundedActive[pid] then
+        set CC_WoundedActive[pid] = true
+        set CC_WoundedSeed[pid] = 137 + pid*41
+        set CC_WoundedNextBeatTicks[pid] = 1
+        set CC_WoundedSecondBeatTicks[pid] = 0
+        set CC_WoundedPulse[pid] = 0.00
+        call CC_ShowWoundedFilter(whichPlayer, CAMERA_WOUNDED_BASE_TRANSPARENCY, true)
+    endif
+
+    if CC_WoundedSecondBeatTicks[pid] > 0 then
+        set CC_WoundedSecondBeatTicks[pid] = CC_WoundedSecondBeatTicks[pid] - 1
+        if CC_WoundedSecondBeatTicks[pid] == 0 then
+            set CC_WoundedPulse[pid] = CC_WoundedPulse[pid] + 0.55
+            if CC_WoundedPulse[pid] > 1.20 then
+                set CC_WoundedPulse[pid] = 1.20
+            endif
+            call CC_PlayWoundedHeartbeatSound(whichPlayer)
+        endif
+    endif
+
+    if CC_WoundedNextBeatTicks[pid] > 0 then
+        set CC_WoundedNextBeatTicks[pid] = CC_WoundedNextBeatTicks[pid] - 1
+    endif
+    if CC_WoundedNextBeatTicks[pid] <= 0 then
+        set CC_WoundedPulse[pid] = 1.00
+        set CC_WoundedSecondBeatTicks[pid] = CAMERA_WOUNDED_SECOND_BEAT_DELAY_TICKS
+        set CC_WoundedNextBeatTicks[pid] = CC_GetNextWoundedBeatTicks(pid, lifeRatio)
+        call CC_PlayWoundedHeartbeatSound(whichPlayer)
+    endif
+
+    set CC_WoundedPulse[pid] = CC_WoundedPulse[pid] * CAMERA_WOUNDED_PULSE_DECAY
+    if CC_WoundedPulse[pid] < 0.02 then
+        set CC_WoundedPulse[pid] = 0.00
+    endif
+    call CC_ShowWoundedFilter(whichPlayer, CAMERA_WOUNDED_BASE_TRANSPARENCY - CAMERA_WOUNDED_PULSE_TRANSPARENCY_DELTA * CC_WoundedPulse[pid], false)
+
+    set whichUnit = null
 endfunction
 
 private function CC_IsSuspended takes player whichPlayer returns boolean
@@ -164,24 +418,16 @@ private function CC_IsAnyKeyPressed takes nothing returns boolean
     return false
 endfunction
 
-public function IsTrackedCameraUnit takes unit u returns boolean
-    return u != null and (u == udg_Nazgrek or u == udg_Zulkis)
+private function CC_InvalidateNormalTraceCache takes integer pid returns nothing
+    set CC_NormalTraceTargetHandle[pid] = 0
+    set CC_NormalTraceX[pid] = 0.00
+    set CC_NormalTraceY[pid] = 0.00
+    set CC_NormalTraceRotation[pid] = 0.00
+    set CC_NormalTraceDistance[pid] = 0.00
 endfunction
 
-private function CC_GetFallbackTarget takes player whichPlayer returns unit
-    local unit u = CC_TargetUnit[CC_GetPlayerIndex(whichPlayer)]
-
-    if IsTrackedCameraUnit(u) and GetHandleId(u) != 0 and GetWidgetLife(u) > 0.405 then
-        return u
-    endif
-
-    if IsTrackedCameraUnit(udg_Nazgrek) and GetHandleId(udg_Nazgrek) != 0 and GetWidgetLife(udg_Nazgrek) > 0.405 then
-        return udg_Nazgrek
-    endif
-    if IsTrackedCameraUnit(udg_Zulkis) and GetHandleId(udg_Zulkis) != 0 and GetWidgetLife(udg_Zulkis) > 0.405 then
-        return udg_Zulkis
-    endif
-    return null
+private function CC_IsPlayerKeyboardAdjusting takes integer pid returns boolean
+    return CC_PressingLeft[pid] or CC_PressingRight[pid] or CC_PressingUp[pid] or CC_PressingDown[pid] or CC_MoveLeft[pid] or CC_MoveRight[pid] or CC_MoveUp[pid] or CC_MoveDown[pid]
 endfunction
 
 private function CC_GetAdvancedAngle takes player whichPlayer returns real
@@ -196,12 +442,129 @@ private function CC_GetAdvancedResumeRotation takes player whichPlayer returns r
     return CC_Rotation[CC_GetPlayerIndex(whichPlayer)]
 endfunction
 
+private function CC_UpdateNormalEffectiveDistance takes player whichPlayer returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    local unit target = CC_GetFallbackTarget(whichPlayer)
+    local integer targetHandle = 0
+    local real baseX
+    local real baseY
+    local real x
+    local real y
+    local real angle
+    local real maxDistance = CC_Distance[pid]
+    local real distanceDone = 0.00
+    local real checkDistance = CAMERA_NORMAL_TRACE_ACCURACY
+    local real terrainBaseAngle = CC_Angle[pid] - 324.00
+    local real baseTerrainZ
+    local real sampledTerrainZ
+    local real minDistance
+    local real rz = 0.00
+    local integer check = 1
+
+    if not CC_NormalTraceEnabled[pid] then
+        set CC_NormalEffectiveDistance[pid] = maxDistance
+        set CC_NormalEffectiveAngle[pid] = CC_Angle[pid]
+        call CC_InvalidateNormalTraceCache(pid)
+        set target = null
+        return
+    endif
+
+    if target == null or IsUnitType(target, UNIT_TYPE_FLYING) then
+        set CC_NormalEffectiveDistance[pid] = maxDistance
+        set CC_NormalEffectiveAngle[pid] = CC_Angle[pid]
+        call CC_InvalidateNormalTraceCache(pid)
+        set target = null
+        return
+    endif
+
+    set targetHandle = GetHandleId(target)
+    set baseX = GetUnitX(target)
+    set baseY = GetUnitY(target)
+    if CC_NormalTraceTargetHandle[pid] == targetHandle and CC_Abs(baseX - CC_NormalTraceX[pid]) <= CAMERA_NORMAL_TRACE_POSITION_THRESHOLD and CC_Abs(baseY - CC_NormalTraceY[pid]) <= CAMERA_NORMAL_TRACE_POSITION_THRESHOLD and CC_GetRotationDelta(CC_Rotation[pid], CC_NormalTraceRotation[pid]) <= CAMERA_NORMAL_TRACE_ROTATION_THRESHOLD and CC_Abs(maxDistance - CC_NormalTraceDistance[pid]) <= CAMERA_NORMAL_TRACE_DISTANCE_THRESHOLD then
+        set target = null
+        return
+    endif
+
+    set x = baseX
+    set y = baseY
+    set angle = (CC_Rotation[pid] - 180.00)*bj_DEGTORAD
+    set baseTerrainZ = CC_GetTerrainZ(baseX, baseY)
+    set minDistance = maxDistance * CAMERA_NORMAL_TRACE_MIN_DISTANCE_FACTOR
+    if minDistance < CAMERA_NORMAL_TRACE_MIN_DISTANCE then
+        set minDistance = CAMERA_NORMAL_TRACE_MIN_DISTANCE
+    endif
+    if minDistance > maxDistance then
+        set minDistance = maxDistance
+    endif
+
+    loop
+        exitwhen distanceDone >= maxDistance
+        if distanceDone + checkDistance > maxDistance then
+            set checkDistance = maxDistance - distanceDone
+            if checkDistance <= 0.00 then
+                exitwhen true
+            endif
+        endif
+
+        set x = x + checkDistance * Cos(angle)
+        set y = y + checkDistance * Sin(angle)
+        set distanceDone = distanceDone + checkDistance
+        set sampledTerrainZ = CC_GetTerrainZ(x, y)
+        if distanceDone <= maxDistance * 0.50 and CC_Abs(sampledTerrainZ) > CC_Abs(rz) then
+            set rz = sampledTerrainZ
+        endif
+
+        if not CC_IsPointPathable(x, y) then
+            set check = 0
+        endif
+        if check == 0 and checkDistance == CAMERA_NORMAL_TRACE_ACCURACY then
+            set distanceDone = distanceDone - checkDistance
+            set x = x - checkDistance * Cos(angle)
+            set y = y - checkDistance * Sin(angle)
+            set check = 1
+            set checkDistance = CAMERA_NORMAL_TRACE_FINE_ACCURACY
+        endif
+        exitwhen (check == 0 and checkDistance == CAMERA_NORMAL_TRACE_FINE_ACCURACY) or distanceDone > maxDistance
+    endloop
+
+    if distanceDone < minDistance then
+        set distanceDone = minDistance
+    endif
+    set CC_NormalTraceTargetHandle[pid] = targetHandle
+    set CC_NormalTraceX[pid] = baseX
+    set CC_NormalTraceY[pid] = baseY
+    set CC_NormalTraceRotation[pid] = CC_Rotation[pid]
+    set CC_NormalTraceDistance[pid] = maxDistance
+    set CC_NormalEffectiveDistance[pid] = distanceDone
+    loop
+        exitwhen baseTerrainZ - rz < 180.00
+        set baseTerrainZ = baseTerrainZ - 180.00
+    endloop
+    set CC_NormalEffectiveAngle[pid] = CC_NormalizeAngle(Atan2(baseTerrainZ - rz, 200.00) * bj_RADTODEG + terrainBaseAngle + 324.00)
+    set target = null
+endfunction
+
 private function CC_ApplySharedFields takes player whichPlayer, real duration returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     if GetLocalPlayer() == whichPlayer then
         call SetCameraField(CAMERA_FIELD_FARZ, CC_FarZ[pid], duration)
         call SetCameraField(CAMERA_FIELD_FIELD_OF_VIEW, CC_Fov[pid], duration)
     endif
+endfunction
+
+private function CC_ApplyNormalFields takes player whichPlayer, real duration returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    call CC_ApplySharedFields(whichPlayer, duration)
+    if GetLocalPlayer() == whichPlayer then
+        call SetCameraField(CAMERA_FIELD_TARGET_DISTANCE, CC_NormalEffectiveDistance[pid], duration)
+        call SetCameraField(CAMERA_FIELD_ANGLE_OF_ATTACK, CC_NormalEffectiveAngle[pid], duration)
+        call SetCameraField(CAMERA_FIELD_ROTATION, CC_Rotation[pid], duration)
+    endif
+endfunction
+
+private function CC_UpdateAndApplyNormalFields takes player whichPlayer, real duration returns nothing
+    call CC_UpdateNormalEffectiveDistance(whichPlayer)
+    call CC_ApplyNormalFields(whichPlayer, duration)
 endfunction
 
 private function CC_ApplyDirectFields takes player whichPlayer, real duration returns nothing
@@ -244,9 +607,7 @@ private function CC_ApplyAdvancedResumePreviewFields takes player whichPlayer, r
 endfunction
 
 private function CC_ApplyKeyboardFields takes player whichPlayer returns nothing
-    local integer pid = CC_GetPlayerIndex(whichPlayer)
-    call SetCameraFieldForPlayer(whichPlayer, CAMERA_FIELD_ANGLE_OF_ATTACK, CC_Angle[pid], CAMERA_KEYBOARD_FIELD_DURATION)
-    call SetCameraFieldForPlayer(whichPlayer, CAMERA_FIELD_ROTATION, CC_Rotation[pid], CAMERA_KEYBOARD_FIELD_DURATION)
+    call CC_UpdateAndApplyNormalFields(whichPlayer, CAMERA_KEYBOARD_FIELD_DURATION)
 endfunction
 
 private function CC_BindNormalMode takes player whichPlayer returns nothing
@@ -283,7 +644,7 @@ endfunction
 
 private function CC_ApplyNormalMode takes player whichPlayer returns nothing
     call CC_BindNormalMode(whichPlayer)
-    call CC_ApplyDirectFields(whichPlayer, 0.00)
+    call CC_UpdateAndApplyNormalFields(whichPlayer, 0.00)
 endfunction
 
 private function CC_ApplyAdvancedMode takes player whichPlayer returns nothing
@@ -306,6 +667,8 @@ private function CC_StartSmoothResumeVisualWithDuration takes player whichPlayer
 
     if CC_Mode[pid] == CAMERA_MODE_ADVANCED then
         call CC_ApplyAdvancedResumePreviewFields(whichPlayer, duration)
+    elseif CC_Mode[pid] == CAMERA_MODE_NORMAL then
+        call CC_UpdateAndApplyNormalFields(whichPlayer, duration)
     else
         call CC_ApplyDirectFields(whichPlayer, duration)
     endif
@@ -355,6 +718,8 @@ endfunction
 private function CC_ReapplyStoredFields takes player whichPlayer returns nothing
     if CC_Mode[CC_GetPlayerIndex(whichPlayer)] == CAMERA_MODE_ADVANCED then
         call CC_ApplyAdvancedDriftFields(whichPlayer, 0.00)
+    elseif CC_Mode[CC_GetPlayerIndex(whichPlayer)] == CAMERA_MODE_NORMAL then
+        call CC_ApplyNormalFields(whichPlayer, 0.00)
     else
         call CC_ApplyDirectFields(whichPlayer, 0.00)
     endif
@@ -363,18 +728,21 @@ endfunction
 private function CC_CheckCameraDrift takes nothing returns nothing
     local integer i = 0
     local player whichPlayer
+    local real expectedDistance
     local real expectedAngle
     local boolean drifted
 
     loop
         exitwhen i >= bj_MAX_PLAYERS
-        if CC_Mode[i] == CAMERA_MODE_NORMAL and not CC_Suspended[i] and not CC_ResumePending[i] then
-            set whichPlayer = Player(i)
+        set whichPlayer = Player(i)
+        if CC_Mode[i] == CAMERA_MODE_NORMAL and not CC_Suspended[i] and not CC_ResumePending[i] and not CC_IsPlayerKeyboardAdjusting(i) then
+            call CC_UpdateNormalEffectiveDistance(whichPlayer)
             if GetLocalPlayer() == whichPlayer then
-                set expectedAngle = CC_Angle[i]
+                set expectedDistance = CC_NormalEffectiveDistance[i]
+                set expectedAngle = CC_NormalEffectiveAngle[i]
                 set drifted = false
 
-                if CC_Abs(GetCameraField(CAMERA_FIELD_TARGET_DISTANCE) - CC_Distance[i]) > CAMERA_FIELD_TOLERANCE or CC_Abs(GetCameraField(CAMERA_FIELD_FARZ) - CC_FarZ[i]) > CAMERA_FIELD_TOLERANCE or CC_Abs(GetCameraField(CAMERA_FIELD_FIELD_OF_VIEW) - CC_Fov[i]) > CAMERA_FIELD_TOLERANCE or CC_Abs(GetCameraField(CAMERA_FIELD_ANGLE_OF_ATTACK) - expectedAngle) > CAMERA_FIELD_TOLERANCE then
+                if CC_Abs(GetCameraField(CAMERA_FIELD_TARGET_DISTANCE) - expectedDistance) > CAMERA_FIELD_TOLERANCE or CC_Abs(GetCameraField(CAMERA_FIELD_FARZ) - CC_FarZ[i]) > CAMERA_FIELD_TOLERANCE or CC_Abs(GetCameraField(CAMERA_FIELD_FIELD_OF_VIEW) - CC_Fov[i]) > CAMERA_FIELD_TOLERANCE or CC_Abs(GetCameraField(CAMERA_FIELD_ANGLE_OF_ATTACK) - expectedAngle) > CAMERA_FIELD_TOLERANCE then
                     set drifted = true
                 endif
                 if CC_GetRotationDelta(GetCameraField(CAMERA_FIELD_ROTATION), CC_Rotation[i]) > CAMERA_FIELD_TOLERANCE then
@@ -385,8 +753,9 @@ private function CC_CheckCameraDrift takes nothing returns nothing
                     call CC_ReapplyStoredFields(whichPlayer)
                 endif
             endif
-            set whichPlayer = null
         endif
+        call CC_UpdateWoundedState(whichPlayer)
+        set whichPlayer = null
         set i = i + 1
     endloop
 endfunction
@@ -530,8 +899,14 @@ public function GetFov takes player whichPlayer returns real
     return CC_Fov[CC_GetPlayerIndex(whichPlayer)]
 endfunction
 
+public function IsNormalTraceEnabled takes player whichPlayer returns boolean
+    return CC_NormalTraceEnabled[CC_GetPlayerIndex(whichPlayer)]
+endfunction
+
 public function SetDistance takes player whichPlayer, real value returns nothing
-    set CC_Distance[CC_GetPlayerIndex(whichPlayer)] = CC_Clamp(value, CAMERA_DISTANCE_MIN, CAMERA_DISTANCE_MAX)
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    set CC_Distance[pid] = CC_Clamp(value, CAMERA_DISTANCE_MIN, CAMERA_DISTANCE_MAX)
+    call CC_InvalidateNormalTraceCache(pid)
     call CC_ApplyMode(whichPlayer)
 endfunction
 
@@ -541,12 +916,16 @@ public function SetFarZ takes player whichPlayer, real value returns nothing
 endfunction
 
 public function SetAngle takes player whichPlayer, real value returns nothing
-    set CC_Angle[CC_GetPlayerIndex(whichPlayer)] = CC_Clamp(value, CAMERA_ANGLE_MIN, CAMERA_ANGLE_MAX)
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    set CC_Angle[pid] = CC_Clamp(value, CAMERA_ANGLE_MIN, CAMERA_ANGLE_MAX)
+    call CC_InvalidateNormalTraceCache(pid)
     call CC_ApplyMode(whichPlayer)
 endfunction
 
 public function SetRotation takes player whichPlayer, real value returns nothing
-    set CC_Rotation[CC_GetPlayerIndex(whichPlayer)] = CC_Clamp(value, CAMERA_ROTATION_MIN, CAMERA_ROTATION_MAX)
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    set CC_Rotation[pid] = CC_Clamp(value, CAMERA_ROTATION_MIN, CAMERA_ROTATION_MAX)
+    call CC_InvalidateNormalTraceCache(pid)
     call CC_ApplyMode(whichPlayer)
 endfunction
 
@@ -562,6 +941,14 @@ public function ResetDefaults takes player whichPlayer returns nothing
     set CC_Angle[pid] = CAMERA_DEFAULT_ANGLE
     set CC_Rotation[pid] = CAMERA_DEFAULT_ROTATION
     set CC_Fov[pid] = CAMERA_DEFAULT_FOV
+    call CC_InvalidateNormalTraceCache(pid)
+    call CC_ApplyMode(whichPlayer)
+endfunction
+
+public function SetNormalTraceEnabled takes player whichPlayer, boolean flag returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    set CC_NormalTraceEnabled[pid] = flag
+    call CC_InvalidateNormalTraceCache(pid)
     call CC_ApplyMode(whichPlayer)
 endfunction
 
@@ -857,7 +1244,16 @@ public function Init takes nothing returns nothing
         set CC_Angle[i] = CAMERA_DEFAULT_ANGLE
         set CC_Rotation[i] = CAMERA_DEFAULT_ROTATION
         set CC_Fov[i] = CAMERA_DEFAULT_FOV
+        set CC_NormalEffectiveDistance[i] = CAMERA_DEFAULT_DISTANCE
+        set CC_NormalEffectiveAngle[i] = CAMERA_DEFAULT_ANGLE
+        set CC_NormalTraceEnabled[i] = true
+        call CC_InvalidateNormalTraceCache(i)
         set CC_TargetUnit[i] = null
+        set CC_WoundedActive[i] = false
+        set CC_WoundedSeed[i] = 137 + i*41
+        set CC_WoundedNextBeatTicks[i] = 0
+        set CC_WoundedSecondBeatTicks[i] = 0
+        set CC_WoundedPulse[i] = 0.00
         set CC_ResumeTimer[i] = CreateTimer()
         set i = i + 1
     endloop
@@ -865,6 +1261,10 @@ public function Init takes nothing returns nothing
     set CC_UpdateTimer = CreateTimer()
     set CC_DriftTimer = CreateTimer()
     call TimerStart(CC_DriftTimer, CAMERA_DRIFT_CHECK_INTERVAL, true, function CC_CheckCameraDrift)
+    set CC_PathingProbe = CreateItem('wolg', 0.00, 0.00)
+    call SetItemVisible(CC_PathingProbe, false)
+    set CC_PathingProbeRect = Rect(0.00, 0.00, CAMERA_NORMAL_TRACE_ACCURACY*2.00, CAMERA_NORMAL_TRACE_ACCURACY*2.00)
+    set CC_TerrainLoc = Location(0.00, 0.00)
 
     set CC_SelectTrigger = CreateTrigger()
     set CC_LeftDownTrigger = CreateTrigger()
