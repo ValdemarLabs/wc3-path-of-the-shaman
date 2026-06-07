@@ -23,7 +23,7 @@ globals
     private constant integer CUI_ACTION_NORMAL = 1
     private constant integer CUI_ACTION_ADVANCED = 2
     private constant integer CUI_ACTION_DEVELOPER = 3
-    private constant integer CUI_ACTION_DEFAULTS = 4
+    private constant integer CUI_ACTION_NORMAL_TRACE = 4
 
     private boolean CUI_Initialized = false
     private boolean CUI_Syncing = false
@@ -39,6 +39,8 @@ globals
     private framehandle CUI_TargetValue = null
     private framehandle CUI_ModeTitle = null
     private framehandle CUI_ModeValue = null
+    private framehandle CUI_NormalTraceTitle = null
+    private framehandle CUI_NormalTraceValue = null
     private framehandle array CUI_ActionButton
     private framehandle array CUI_Slider
     private framehandle array CUI_SliderLabel
@@ -115,6 +117,20 @@ private function CUI_ApplySliderChange takes integer sliderKind, player whichPla
     endif
 endfunction
 
+private function CUI_GetNormalTraceName takes player whichPlayer returns string
+    if CameraControl_IsNormalTraceEnabled(whichPlayer) then
+        return "On"
+    endif
+    return "Off"
+endfunction
+
+private function CUI_GetNormalTraceButtonText takes player whichPlayer returns string
+    if CameraControl_IsNormalTraceEnabled(whichPlayer) then
+        return "Safe Camera: On"
+    endif
+    return "Safe Camera: Off"
+endfunction
+
 private function CUI_RefreshFields takes player whichPlayer returns nothing
     local integer i = 1
     if CUI_Parent == null then
@@ -123,6 +139,9 @@ private function CUI_RefreshFields takes player whichPlayer returns nothing
     if GetLocalPlayer() == whichPlayer then
         call BlzFrameSetText(CUI_TargetValue, CameraControl_GetTargetName(whichPlayer))
         call BlzFrameSetText(CUI_ModeValue, CameraControl_GetModeName(whichPlayer))
+        call BlzFrameSetText(CUI_NormalTraceValue, CUI_GetNormalTraceName(whichPlayer))
+        call BlzFrameSetText(CUI_ResetButton, "Defaults")
+        call BlzFrameSetText(CUI_ActionButton[4], CUI_GetNormalTraceButtonText(whichPlayer))
         loop
             exitwhen i > 5
             call BlzFrameSetText(CUI_SliderLabel[i], CUI_GetSliderDisplay(i, whichPlayer))
@@ -168,6 +187,9 @@ private function CUI_HideInternal takes nothing returns nothing
     if CUI_ResetButton != null then
         call BlzFrameSetVisible(CUI_ResetButton, false)
     endif
+    if CUI_ActionButton[4] != null then
+        call BlzFrameSetVisible(CUI_ActionButton[4], false)
+    endif
 endfunction
 
 private function CUI_ClearFocusAction takes nothing returns nothing
@@ -205,8 +227,8 @@ private function CUI_ActionAction takes nothing returns nothing
             call CameraControl_SetModeAdvanced(whichPlayer)
         elseif CUI_ButtonAction.integer[handleId] == CUI_ACTION_DEVELOPER then
             call CameraControl_SetModeDeveloper(whichPlayer)
-        else
-            call CameraControl_ResetDefaults(whichPlayer)
+        elseif CUI_ButtonAction.integer[handleId] == CUI_ACTION_NORMAL_TRACE then
+            call CameraControl_SetNormalTraceEnabled(whichPlayer, not CameraControl_IsNormalTraceEnabled(whichPlayer))
         endif
         call CUI_RefreshFields(whichPlayer)
     endif
@@ -328,10 +350,22 @@ private function CUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetTextAlignment(CUI_ModeValue, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetEnable(CUI_ModeValue, false)
 
-    call CUI_CreateActionButton(1, "Normal", CUI_ACTION_NORMAL, -0.128)
-    call CUI_CreateActionButton(2, "Advanced", CUI_ACTION_ADVANCED, -0.168)
-    call CUI_CreateActionButton(3, "Developer", CUI_ACTION_DEVELOPER, -0.208)
-    call CUI_CreateActionButton(4, "Defaults", CUI_ACTION_DEFAULTS, -0.248)
+    set CUI_NormalTraceTitle = BlzCreateFrameByType("TEXT", "CameraUINormalTraceTitle", CUI_LeftPane, "", 0)
+    call BlzFrameSetPoint(CUI_NormalTraceTitle, FRAMEPOINT_TOPLEFT, CUI_ModeValue, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.012)
+    call BlzFrameSetSize(CUI_NormalTraceTitle, 0.15, 0.014)
+    call BlzFrameSetTextAlignment(CUI_NormalTraceTitle, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
+    call BlzFrameSetEnable(CUI_NormalTraceTitle, false)
+    call BlzFrameSetText(CUI_NormalTraceTitle, "|cffffcc00Safe Camera|r")
+
+    set CUI_NormalTraceValue = BlzCreateFrameByType("TEXT", "CameraUINormalTraceValue", CUI_LeftPane, "", 0)
+    call BlzFrameSetPoint(CUI_NormalTraceValue, FRAMEPOINT_TOPLEFT, CUI_NormalTraceTitle, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.004)
+    call BlzFrameSetSize(CUI_NormalTraceValue, 0.15, 0.018)
+    call BlzFrameSetTextAlignment(CUI_NormalTraceValue, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
+    call BlzFrameSetEnable(CUI_NormalTraceValue, false)
+
+    call CUI_CreateActionButton(1, "Normal", CUI_ACTION_NORMAL, -0.166)
+    call CUI_CreateActionButton(2, "Advanced", CUI_ACTION_ADVANCED, -0.206)
+    call CUI_CreateActionButton(3, "Developer", CUI_ACTION_DEVELOPER, -0.246)
 
     call CUI_CreateSliderRow(1, "Distance", CUI_SLIDER_DISTANCE, -0.030)
     call CUI_CreateSliderRow(2, "Far Z", CUI_SLIDER_FARZ, -0.062)
@@ -340,12 +374,21 @@ private function CUI_CreateFrames takes nothing returns nothing
     call CUI_CreateSliderRow(5, "FoV", CUI_SLIDER_FOV, -0.158)
 
     set CUI_ResetButton = BlzCreateFrame("ScriptDialogButton", CUI_Parent, 0, 0)
-    call BlzFrameSetSize(CUI_ResetButton, 0.105, 0.028)
+    call BlzFrameSetSize(CUI_ResetButton, 0.120, 0.028)
     call BlzFrameSetPoint(CUI_ResetButton, FRAMEPOINT_TOPLEFT, CUI_Slider[5], FRAMEPOINT_BOTTOMLEFT, 0.016, -0.010)
-    call BlzFrameSetText(CUI_ResetButton, "Reset Sliders")
+    call BlzFrameSetText(CUI_ResetButton, "Defaults")
     call BlzTriggerRegisterFrameEvent(CUI_ResetTrigger, CUI_ResetButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(CUI_ClearFocusTrigger, CUI_ResetButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzFrameSetVisible(CUI_ResetButton, false)
+
+    set CUI_ActionButton[4] = BlzCreateFrameByType("GLUETEXTBUTTON", "CameraUISafeCamera", CUI_Parent, "ScriptDialogButton", 0)
+    call BlzFrameSetSize(CUI_ActionButton[4], 0.120, 0.028)
+    call BlzFrameSetPoint(CUI_ActionButton[4], FRAMEPOINT_TOPLEFT, CUI_ResetButton, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.010)
+    call BlzFrameSetText(CUI_ActionButton[4], "Safe Camera: On")
+    call BlzTriggerRegisterFrameEvent(CUI_ActionTrigger, CUI_ActionButton[4], FRAMEEVENT_CONTROL_CLICK)
+    call BlzTriggerRegisterFrameEvent(CUI_ClearFocusTrigger, CUI_ActionButton[4], FRAMEEVENT_CONTROL_CLICK)
+    set CUI_ButtonAction.integer[GetHandleId(CUI_ActionButton[4])] = CUI_ACTION_NORMAL_TRACE
+    call BlzFrameSetVisible(CUI_ActionButton[4], false)
 
     call BlzFrameSetVisible(CUI_Parent, false)
 endfunction
@@ -422,6 +465,9 @@ public function Show takes nothing returns nothing
     endloop
     if CUI_ResetButton != null then
         call BlzFrameSetVisible(CUI_ResetButton, true)
+    endif
+    if CUI_ActionButton[4] != null then
+        call BlzFrameSetVisible(CUI_ActionButton[4], true)
     endif
     call CUI_SyncSliderValues(GetLocalPlayer())
     call CUI_RefreshFields(GetLocalPlayer())
