@@ -19,8 +19,10 @@
 - `CameraControl.j`
   Reworked normal camera mode to use the same blocker and terrain-height adjustment approach as `AdvancedCameraSystem`, while still preserving the stored `CameraControl` rotation instead of rotating with unit facing.
   Added per-player caching and lighter refresh paths around normal-mode blocker tracing so repeated pathing-blocker camera adjustment does not recalculate as aggressively as before.
+  Added a normal-mode correction smoothing pass so blocker / terrain adjustments apply over time instead of snapping too hard when stairs, invisible platforms, or blocker-heavy height transitions would otherwise make the camera bounce.
   Added a per-player normal-mode `Safe Camera` toggle so blocker / terrain no-clip prevention can be turned off completely without affecting advanced or developer camera modes.
   Added a wounded-state camera overlay tied to the currently viewed camera unit, including a sustained red cinematic filter, pulsing transparency beats, and heartbeat sound playback while the viewed unit is below `25%` life.
+  Made `CameraControl` suspend / resume calls idempotent so duplicate dialog and cinematic trigger calls no longer keep restarting or overriding the current suspended / resume-pending camera state.
 - `CameraUI.j`
   Added `Safe Camera` status text and toggle controls for the normal-mode blocker / terrain camera protection.
   Simplified the camera panel actions by removing the duplicate left-side `Defaults` action, renaming the lower reset button to `Defaults`, and placing the `Safe Camera` toggle under it with matching button width.
@@ -29,13 +31,15 @@
 - `Camera / UI`
   Normal camera mode now handles blocker-heavy corridors, tunnels, and terrain-height differences much closer to advanced camera behavior while still respecting the stored normal camera rotation.
   The camera panel now lets players toggle `Safe Camera` on or off directly, and the wounded low-health camera effect now stays visibly active with slower heartbeat-style pulsing instead of brief flickering flashes.
+  Duplicate dialog or cinematic camera suspend / resume calls should now be much less likely to restart camera return timing or fight over the current camera state.
 
 ### Actions Remaining
 - `CameraControl.j`
   Re-test normal mode in blocker-dense tunnels, narrow pathing corridors, and elevation-heavy areas, and profile whether the latest trace caching is enough to remove the remaining FPS drop around blocker-based adjustment.
-  Continue tuning the normal-mode minimum trace distance and cache thresholds if corridor zoom still feels too strong or blocker reaction still costs too much.
+  Continue tuning the normal-mode minimum trace distance, cache thresholds, and correction smoothing if corridor zoom still feels too strong or blocker reaction still costs too much.
 - `CameraControl.j` / `CameraUI.j`
   Validate the new `Safe Camera` toggle across normal, advanced, and developer modes and confirm the wounded-state cinematic filter / heartbeat effect does not conflict with other cinematic filter usage elsewhere in the map.
+  Audit intro / main-map cinematic trigger usage so only the intended master flow owns `CameraControl_Suspend` / `Resume`, even though duplicate calls are now guarded.
 
 ## [6.6.2026]
 
