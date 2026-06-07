@@ -30,6 +30,9 @@
 # Drafts folders
 _Drafts/
 
+# Roadmap
+_Roadmap/
+
 # Cache/temp
 /temp/
 /cache/
