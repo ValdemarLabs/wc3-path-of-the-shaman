@@ -13,6 +13,39 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [8.6.2026]
+
+### Technical Updates
+- `CameraControl.j`, `ZoneEvent.j`
+  Added an internal special-camera-mode path so zones can temporarily override the player's active camera behavior without overwriting the stored base camera mode or its saved parameters.
+  Added `CAMERA_SPECIAL_MODE_BOOMMINE` and wired `Zone104 Boom Mine` through `ZoneEvent` special-effects handling so entering the zone applies the Boom Mine camera and leaving it restores the player's stored camera mode and values.
+  Reworked the Boom Mine special camera so it now supports the same keyboard angle / rotation controls as normal mode, but keeps that adjustment in special-mode-local state instead of polluting the player's stored normal camera settings.
+  Limited Boom Mine camera angle-of-attack adjustment to a maximum of `295` while keeping its own internal distance, far z, angle, rotation, and field-of-view values separate from the normal camera profile.
+  Further softened normal-mode blocker tracing so safe-camera correction does not react as heavily to pathing found too far toward the intended camera endpoint, reducing restless bounce during gameplay.
+- `WE Mainmap` - `Cinematic ON`, `Cinematic OFF`, `Intro Cinematic`
+  Verified that intro-style cinematics now return through the shared camera flow correctly after the earlier `Cinematic ON/OFF` suspend / resume trigger fixes, instead of fighting the stored player camera state during cinematic shutdown.
+
+### Player-Facing Updates
+- `Camera / Zones`
+  Entering Boom Mine now switches to a dedicated zone camera profile, and leaving it returns cleanly to the player's previous stored camera mode and settings.
+  Boom Mine camera can now be adjusted with the same keyboard rotation / angle controls as normal mode, but with a tighter maximum downward angle suited for that area.
+- `Camera / Cinematics`
+  Intro cinematic and similar shared cinematic trigger flows now appear to hand camera ownership back normally after the earlier `Cinematic ON/OFF` trigger fix.
+
+### Known Issues
+- `TerrainDamage.j`
+  The terrain-damage lag investigation is still unresolved because the bypass-mode isolation test was not actually enabled yet, so the session did not confirm whether terrain damage is the real source of the remaining FPS problem.
+- `AbilitiesLiteUI.j`
+  The gray overlay on unlearned abilities did not seem to work as intended in testing and still needs another in-game verification / fix pass.
+
+### Actions Remaining
+- `CameraControl.j`
+  Continue smoothing normal-mode safe-camera correction so blocker / terrain adjustment feels closer to advanced camera quality without adding gameplay-disrupting bounce or extra lag in blocker-dense areas.
+- `TerrainDamage.j`
+  Re-run the lag isolation test with the terrain-damage bypass mode actually enabled, then confirm whether the unresolved FPS drop is tied to terrain damage or to another always-running system.
+- `AbilitiesLiteUI.j`
+  Re-check why the unlearned-ability gray overlay did not appear correctly in-game and fix the icon-overlay path if the current unavailable-state art is still not being shown.
+
 ## [7.6.2026]
 
 ### Technical Updates
