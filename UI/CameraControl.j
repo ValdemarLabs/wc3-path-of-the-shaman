@@ -14,6 +14,8 @@ globals
     public constant integer CAMERA_MODE_NORMAL = 1
     public constant integer CAMERA_MODE_ADVANCED = 2
     public constant integer CAMERA_MODE_DEVELOPER = 3
+    public constant integer CAMERA_SPECIAL_MODE_NONE = 0
+    public constant integer CAMERA_SPECIAL_MODE_BOOMMINE = 1
 
     public constant real CAMERA_DISTANCE_MIN = 500.00
     public constant real CAMERA_DISTANCE_MAX = 4000.00
@@ -43,11 +45,20 @@ globals
     private constant real CAMERA_NORMAL_TRACE_ITEM_RANGE = 1.00
     private constant real CAMERA_NORMAL_TRACE_MIN_DISTANCE = 400.00
     private constant real CAMERA_NORMAL_TRACE_MIN_DISTANCE_FACTOR = 0.65
+    private constant real CAMERA_NORMAL_TRACE_IGNORE_END_DISTANCE = 250.00
+    private constant real CAMERA_NORMAL_TRACE_MAX_REDUCTION = 300.00
+    private constant real CAMERA_NORMAL_TRACE_MAX_REDUCTION_FACTOR = 0.18
     private constant real CAMERA_NORMAL_TRACE_POSITION_THRESHOLD = 24.00
     private constant real CAMERA_NORMAL_TRACE_ROTATION_THRESHOLD = 0.50
     private constant real CAMERA_NORMAL_TRACE_DISTANCE_THRESHOLD = 1.00
     private constant real CAMERA_NORMAL_TRACE_CORRECTION_DURATION = 0.25
     private constant real CAMERA_RESUME_DURATION = 2.00
+    private constant real CAMERA_BOOMMINE_DISTANCE = 1600.00
+    private constant real CAMERA_BOOMMINE_FARZ = 5000.00
+    private constant real CAMERA_BOOMMINE_ANGLE = 270.00
+    private constant real CAMERA_BOOMMINE_ANGLE_MAX = 295.00
+    private constant real CAMERA_BOOMMINE_ROTATION = 90.00
+    private constant real CAMERA_BOOMMINE_FOV = 70.00
     private constant real CAMERA_WOUNDED_THRESHOLD = 0.25
     private constant real CAMERA_WOUNDED_ENTRY_DURATION = 1.00
     private constant real CAMERA_WOUNDED_BASE_TRANSPARENCY = 50.00
@@ -63,6 +74,7 @@ globals
     private boolean CC_UpdateLoopActive = false
 
     private integer array CC_Mode
+    private integer array CC_SpecialMode
     private real array CC_Distance
     private real array CC_FarZ
     private real array CC_Angle
@@ -74,6 +86,8 @@ globals
     private real array CC_NormalTraceY
     private real array CC_NormalTraceRotation
     private real array CC_NormalTraceDistance
+    private real array CC_SpecialAngle
+    private real array CC_SpecialRotation
     private integer array CC_NormalTraceTargetHandle
     private boolean array CC_NormalTraceEnabled
     private unit array CC_TargetUnit
@@ -383,14 +397,22 @@ private function CC_FindResumeTimerPlayer takes timer whichTimer returns integer
     return -1
 endfunction
 
+private function CC_HasSpecialMode takes integer pid returns boolean
+    return CC_SpecialMode[pid] != CAMERA_SPECIAL_MODE_NONE
+endfunction
+
+private function CC_IsBoomMineKeyboardMode takes integer pid returns boolean
+    return CC_SpecialMode[pid] == CAMERA_SPECIAL_MODE_BOOMMINE
+endfunction
+
 private function CC_IsKeyboardModeActive takes player whichPlayer returns boolean
     local integer pid = CC_GetPlayerIndex(whichPlayer)
-    return (not CC_Suspended[pid]) and (not CC_ResumePending[pid]) and CC_Mode[pid] == CAMERA_MODE_NORMAL
+    return (not CC_Suspended[pid]) and (not CC_ResumePending[pid]) and (CC_Mode[pid] == CAMERA_MODE_NORMAL or CC_IsBoomMineKeyboardMode(pid))
 endfunction
 
 private function CC_IsNativeResetProtectionActive takes player whichPlayer returns boolean
     local integer pid = CC_GetPlayerIndex(whichPlayer)
-    return (not CC_Suspended[pid]) and (not CC_ResumePending[pid]) and CC_Mode[pid] == CAMERA_MODE_NORMAL
+    return (not CC_Suspended[pid]) and (not CC_ResumePending[pid]) and (not CC_HasSpecialMode(pid)) and CC_Mode[pid] == CAMERA_MODE_NORMAL
 endfunction
 
 private function CC_ClearKeyState takes player whichPlayer returns nothing
@@ -431,6 +453,48 @@ private function CC_IsPlayerKeyboardAdjusting takes integer pid returns boolean
     return CC_PressingLeft[pid] or CC_PressingRight[pid] or CC_PressingUp[pid] or CC_PressingDown[pid] or CC_MoveLeft[pid] or CC_MoveRight[pid] or CC_MoveUp[pid] or CC_MoveDown[pid]
 endfunction
 
+private function CC_GetSpecialDistance takes integer pid returns real
+    if CC_SpecialMode[pid] == CAMERA_SPECIAL_MODE_BOOMMINE then
+        return CAMERA_BOOMMINE_DISTANCE
+    endif
+    return CC_Distance[pid]
+endfunction
+
+private function CC_GetSpecialFarZ takes integer pid returns real
+    if CC_SpecialMode[pid] == CAMERA_SPECIAL_MODE_BOOMMINE then
+        return CAMERA_BOOMMINE_FARZ
+    endif
+    return CC_FarZ[pid]
+endfunction
+
+private function CC_GetSpecialAngle takes integer pid returns real
+    if CC_SpecialMode[pid] == CAMERA_SPECIAL_MODE_BOOMMINE then
+        return CC_SpecialAngle[pid]
+    endif
+    return CC_Angle[pid]
+endfunction
+
+private function CC_GetSpecialRotation takes integer pid returns real
+    if CC_SpecialMode[pid] == CAMERA_SPECIAL_MODE_BOOMMINE then
+        return CC_SpecialRotation[pid]
+    endif
+    return CC_Rotation[pid]
+endfunction
+
+private function CC_GetSpecialFov takes integer pid returns real
+    if CC_SpecialMode[pid] == CAMERA_SPECIAL_MODE_BOOMMINE then
+        return CAMERA_BOOMMINE_FOV
+    endif
+    return CC_Fov[pid]
+endfunction
+
+private function CC_GetSpecialModeName takes integer pid returns string
+    if CC_SpecialMode[pid] == CAMERA_SPECIAL_MODE_BOOMMINE then
+        return "Boom Mine"
+    endif
+    return ""
+endfunction
+
 private function CC_GetAdvancedAngle takes player whichPlayer returns real
     return CC_Angle[CC_GetPlayerIndex(whichPlayer)] - 324.00
 endfunction
@@ -459,6 +523,7 @@ private function CC_UpdateNormalEffectiveDistance takes player whichPlayer retur
     local real baseTerrainZ
     local real sampledTerrainZ
     local real minDistance
+    local real maxReduction
     local real rz = 0.00
     local integer check = 1
 
@@ -491,8 +556,15 @@ private function CC_UpdateNormalEffectiveDistance takes player whichPlayer retur
     set angle = (CC_Rotation[pid] - 180.00)*bj_DEGTORAD
     set baseTerrainZ = CC_GetTerrainZ(baseX, baseY)
     set minDistance = maxDistance * CAMERA_NORMAL_TRACE_MIN_DISTANCE_FACTOR
+    set maxReduction = maxDistance * CAMERA_NORMAL_TRACE_MAX_REDUCTION_FACTOR
+    if maxReduction < CAMERA_NORMAL_TRACE_MAX_REDUCTION then
+        set maxReduction = CAMERA_NORMAL_TRACE_MAX_REDUCTION
+    endif
     if minDistance < CAMERA_NORMAL_TRACE_MIN_DISTANCE then
         set minDistance = CAMERA_NORMAL_TRACE_MIN_DISTANCE
+    endif
+    if minDistance < maxDistance - maxReduction then
+        set minDistance = maxDistance - maxReduction
     endif
     if minDistance > maxDistance then
         set minDistance = maxDistance
@@ -516,6 +588,10 @@ private function CC_UpdateNormalEffectiveDistance takes player whichPlayer retur
         endif
 
         if not CC_IsPointPathable(x, y) then
+            if distanceDone >= maxDistance - CAMERA_NORMAL_TRACE_IGNORE_END_DISTANCE then
+                set distanceDone = maxDistance
+                exitwhen true
+            endif
             set check = 0
         endif
         if check == 0 and checkDistance == CAMERA_NORMAL_TRACE_ACCURACY then
@@ -550,6 +626,17 @@ private function CC_ApplySharedFields takes player whichPlayer, real duration re
     if GetLocalPlayer() == whichPlayer then
         call SetCameraField(CAMERA_FIELD_FARZ, CC_FarZ[pid], duration)
         call SetCameraField(CAMERA_FIELD_FIELD_OF_VIEW, CC_Fov[pid], duration)
+    endif
+endfunction
+
+private function CC_ApplySpecialFields takes player whichPlayer, real duration returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    if GetLocalPlayer() == whichPlayer then
+        call SetCameraField(CAMERA_FIELD_FARZ, CC_GetSpecialFarZ(pid), duration)
+        call SetCameraField(CAMERA_FIELD_FIELD_OF_VIEW, CC_GetSpecialFov(pid), duration)
+        call SetCameraField(CAMERA_FIELD_TARGET_DISTANCE, CC_GetSpecialDistance(pid), duration)
+        call SetCameraField(CAMERA_FIELD_ANGLE_OF_ATTACK, CC_GetSpecialAngle(pid), duration)
+        call SetCameraField(CAMERA_FIELD_ROTATION, CC_GetSpecialRotation(pid), duration)
     endif
 endfunction
 
@@ -608,10 +695,28 @@ private function CC_ApplyAdvancedResumePreviewFields takes player whichPlayer, r
 endfunction
 
 private function CC_ApplyKeyboardFields takes player whichPlayer returns nothing
-    call CC_UpdateAndApplyNormalFields(whichPlayer, CAMERA_KEYBOARD_FIELD_DURATION)
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    if CC_IsBoomMineKeyboardMode(pid) then
+        call CC_ApplySpecialFields(whichPlayer, CAMERA_KEYBOARD_FIELD_DURATION)
+    else
+        call CC_UpdateAndApplyNormalFields(whichPlayer, CAMERA_KEYBOARD_FIELD_DURATION)
+    endif
 endfunction
 
 private function CC_BindNormalMode takes player whichPlayer returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    set CC_TargetUnit[pid] = CC_GetFallbackTarget(whichPlayer)
+    call ReleaseCameraUnit(whichPlayer)
+    call ReleaseMovementUnit(whichPlayer)
+    if GetLocalPlayer() == whichPlayer then
+        call CameraSetSmoothingFactor(1)
+    endif
+    if CC_TargetUnit[pid] != null then
+        call FCL_Lock(CC_TargetUnit[pid], whichPlayer)
+    endif
+endfunction
+
+private function CC_BindSpecialMode takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     set CC_TargetUnit[pid] = CC_GetFallbackTarget(whichPlayer)
     call ReleaseCameraUnit(whichPlayer)
@@ -654,6 +759,11 @@ private function CC_ApplyNormalMode takes player whichPlayer returns nothing
     call CC_UpdateAndApplyNormalFields(whichPlayer, 0.00)
 endfunction
 
+private function CC_ApplySpecialMode takes player whichPlayer returns nothing
+    call CC_BindSpecialMode(whichPlayer)
+    call CC_ApplySpecialFields(whichPlayer, 0.00)
+endfunction
+
 private function CC_ApplyAdvancedMode takes player whichPlayer returns nothing
     call CC_BindAdvancedMode(whichPlayer)
     call CC_ApplyAdvancedFields(whichPlayer, 0.00)
@@ -672,7 +782,9 @@ private function CC_StartSmoothResumeVisualWithDuration takes player whichPlayer
         call PanCameraToTimed(GetUnitX(target), GetUnitY(target), duration)
     endif
 
-    if CC_Mode[pid] == CAMERA_MODE_ADVANCED then
+    if CC_HasSpecialMode(pid) then
+        call CC_ApplySpecialFields(whichPlayer, duration)
+    elseif CC_Mode[pid] == CAMERA_MODE_ADVANCED then
         call CC_ApplyAdvancedResumePreviewFields(whichPlayer, duration)
     elseif CC_Mode[pid] == CAMERA_MODE_NORMAL then
         call CC_UpdateAndApplyNormalFields(whichPlayer, duration)
@@ -691,7 +803,33 @@ private function CC_UpdateKeyboardCamera takes nothing returns nothing
 
     loop
         exitwhen i >= bj_MAX_PLAYERS
-        if CC_Mode[i] == CAMERA_MODE_NORMAL and not CC_Suspended[i] then
+        if CC_IsBoomMineKeyboardMode(i) and not CC_Suspended[i] then
+            if CC_MoveDown[i] then
+                set CC_SpecialAngle[i] = CC_SpecialAngle[i] + CAMERA_KEYBOARD_VERTICAL_SPEED
+                if CC_SpecialAngle[i] > CAMERA_BOOMMINE_ANGLE_MAX then
+                    set CC_SpecialAngle[i] = CAMERA_BOOMMINE_ANGLE_MAX
+                endif
+            elseif CC_MoveUp[i] then
+                set CC_SpecialAngle[i] = CC_SpecialAngle[i] - CAMERA_KEYBOARD_VERTICAL_SPEED
+                if CC_SpecialAngle[i] < CAMERA_ANGLE_MIN then
+                    set CC_SpecialAngle[i] = CAMERA_ANGLE_MIN
+                endif
+            endif
+
+            if CC_MoveRight[i] then
+                set CC_SpecialRotation[i] = CC_SpecialRotation[i] + CAMERA_KEYBOARD_HORIZONTAL_SPEED
+                if CC_SpecialRotation[i] >= 360.00 then
+                    set CC_SpecialRotation[i] = CC_SpecialRotation[i] - 360.00
+                endif
+            elseif CC_MoveLeft[i] then
+                set CC_SpecialRotation[i] = CC_SpecialRotation[i] - CAMERA_KEYBOARD_HORIZONTAL_SPEED
+                if CC_SpecialRotation[i] <= 0.00 then
+                    set CC_SpecialRotation[i] = CC_SpecialRotation[i] + 360.00
+                endif
+            endif
+
+            call CC_ApplyKeyboardFields(Player(i))
+        elseif CC_Mode[i] == CAMERA_MODE_NORMAL and not CC_Suspended[i] and not CC_HasSpecialMode(i) then
             if CC_MoveDown[i] then
                 set CC_Angle[i] = CC_Angle[i] + CAMERA_KEYBOARD_VERTICAL_SPEED
                 if CC_Angle[i] > CAMERA_ANGLE_MAX then
@@ -723,9 +861,12 @@ private function CC_UpdateKeyboardCamera takes nothing returns nothing
 endfunction
 
 private function CC_ReapplyStoredFields takes player whichPlayer returns nothing
-    if CC_Mode[CC_GetPlayerIndex(whichPlayer)] == CAMERA_MODE_ADVANCED then
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    if CC_HasSpecialMode(pid) then
+        call CC_ApplySpecialFields(whichPlayer, CAMERA_NORMAL_TRACE_CORRECTION_DURATION)
+    elseif CC_Mode[pid] == CAMERA_MODE_ADVANCED then
         call CC_ApplyAdvancedDriftFields(whichPlayer, 0.00)
-    elseif CC_Mode[CC_GetPlayerIndex(whichPlayer)] == CAMERA_MODE_NORMAL then
+    elseif CC_Mode[pid] == CAMERA_MODE_NORMAL then
         call CC_ApplyNormalFields(whichPlayer, CAMERA_NORMAL_TRACE_CORRECTION_DURATION)
     else
         call CC_ApplyDirectFields(whichPlayer, 0.00)
@@ -742,7 +883,7 @@ private function CC_CheckCameraDrift takes nothing returns nothing
     loop
         exitwhen i >= bj_MAX_PLAYERS
         set whichPlayer = Player(i)
-        if CC_Mode[i] == CAMERA_MODE_NORMAL and not CC_Suspended[i] and not CC_ResumePending[i] and not CC_IsPlayerKeyboardAdjusting(i) then
+        if CC_Mode[i] == CAMERA_MODE_NORMAL and not CC_HasSpecialMode(i) and not CC_Suspended[i] and not CC_ResumePending[i] and not CC_IsPlayerKeyboardAdjusting(i) then
             call CC_UpdateNormalEffectiveDistance(whichPlayer)
             if GetLocalPlayer() == whichPlayer then
                 set expectedDistance = CC_NormalEffectiveDistance[i]
@@ -784,12 +925,17 @@ private function CC_UpdateLoopState takes nothing returns nothing
 endfunction
 
 private function CC_ApplyMode takes player whichPlayer returns nothing
-    local integer mode = CC_Mode[CC_GetPlayerIndex(whichPlayer)]
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    local integer mode = CC_Mode[pid]
 
     if CC_IsSuspended(whichPlayer) then
         return
     endif
-    if mode == CAMERA_MODE_ADVANCED then
+    if CC_HasSpecialMode(pid) then
+        call CC_ClearKeyState(whichPlayer)
+        call CC_UpdateLoopState()
+        call CC_ApplySpecialMode(whichPlayer)
+    elseif mode == CAMERA_MODE_ADVANCED then
         call CC_ClearKeyState(whichPlayer)
         call CC_UpdateLoopState()
         call CC_ApplyAdvancedMode(whichPlayer)
@@ -805,7 +951,7 @@ endfunction
 private function CC_ResetStoredCameraState takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
 
-    if CC_Mode[pid] != CAMERA_MODE_NORMAL then
+    if CC_HasSpecialMode(pid) or CC_Mode[pid] != CAMERA_MODE_NORMAL then
         return
     endif
 
@@ -876,8 +1022,16 @@ public function GetMode takes player whichPlayer returns integer
     return CC_Mode[CC_GetPlayerIndex(whichPlayer)]
 endfunction
 
+public function GetSpecialMode takes player whichPlayer returns integer
+    return CC_SpecialMode[CC_GetPlayerIndex(whichPlayer)]
+endfunction
+
 public function GetModeName takes player whichPlayer returns string
-    local integer mode = GetMode(whichPlayer)
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    local integer mode = CC_Mode[pid]
+    if CC_HasSpecialMode(pid) then
+        return CC_GetSpecialModeName(pid)
+    endif
     if mode == CAMERA_MODE_ADVANCED then
         return "Advanced"
     elseif mode == CAMERA_MODE_DEVELOPER then
@@ -957,6 +1111,24 @@ public function SetNormalTraceEnabled takes player whichPlayer, boolean flag ret
     set CC_NormalTraceEnabled[pid] = flag
     call CC_InvalidateNormalTraceCache(pid)
     call CC_ApplyMode(whichPlayer)
+endfunction
+
+public function SetSpecialMode takes player whichPlayer, integer specialMode returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    if CC_SpecialMode[pid] == specialMode then
+        return
+    endif
+    set CC_SpecialMode[pid] = specialMode
+    if specialMode == CAMERA_SPECIAL_MODE_BOOMMINE then
+        set CC_SpecialAngle[pid] = CAMERA_BOOMMINE_ANGLE
+        set CC_SpecialRotation[pid] = CAMERA_BOOMMINE_ROTATION
+    endif
+    call CC_InvalidateNormalTraceCache(pid)
+    call CC_ApplyMode(whichPlayer)
+endfunction
+
+public function ClearSpecialMode takes player whichPlayer returns nothing
+    call SetSpecialMode(whichPlayer, CAMERA_SPECIAL_MODE_NONE)
 endfunction
 
 public function SetModeNormal takes player whichPlayer returns nothing
@@ -1265,11 +1437,14 @@ public function Init takes nothing returns nothing
     loop
         exitwhen i >= bj_MAX_PLAYERS
         set CC_Mode[i] = CAMERA_MODE_NORMAL
+        set CC_SpecialMode[i] = CAMERA_SPECIAL_MODE_NONE
         set CC_Distance[i] = CAMERA_DEFAULT_DISTANCE
         set CC_FarZ[i] = CAMERA_DEFAULT_FARZ
         set CC_Angle[i] = CAMERA_DEFAULT_ANGLE
         set CC_Rotation[i] = CAMERA_DEFAULT_ROTATION
         set CC_Fov[i] = CAMERA_DEFAULT_FOV
+        set CC_SpecialAngle[i] = CAMERA_BOOMMINE_ANGLE
+        set CC_SpecialRotation[i] = CAMERA_BOOMMINE_ROTATION
         set CC_NormalEffectiveDistance[i] = CAMERA_DEFAULT_DISTANCE
         set CC_NormalEffectiveAngle[i] = CAMERA_DEFAULT_ANGLE
         set CC_NormalTraceEnabled[i] = true
