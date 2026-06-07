@@ -1,4 +1,4 @@
-library ZoneEvent initializer Init requires ZonesCore, Table, DNC, ExMusic, TasQuestBox
+library ZoneEvent initializer Init requires ZonesCore, Table, DNC, ExMusic, TasQuestBox, CameraControl
 //===========================================================================
 /*
     ZoneEvent
@@ -329,20 +329,28 @@ private function RunDNC takes string dncName returns nothing
 endfunction
 
 private function HandleSpecialEffects takes ZoneData z, unit triggeringUnit returns nothing
+    local player whichPlayer = Player(0)
     // Handle special zone effects (camera, sky, etc.)
+
+    if triggeringUnit != null then
+        set whichPlayer = GetOwningPlayer(triggeringUnit)
+    endif
     
     if z.setSkyClear then
         call SetSkyModel(null)
     endif
     
-    if z.hasSpecialCamera and z.zoneId == 4 then
+    if z.hasSpecialCamera and z.zoneId == 104 then
         // Boom Mine special camera
-        // This is a placeholder for camera handling
+        call CameraControl_SetSpecialMode(whichPlayer, CameraControl_CAMERA_SPECIAL_MODE_BOOMMINE)
         if DEBUG then
             call Debug("Applying special camera for Boom Mine")
         endif
+    else
+        call CameraControl_ClearSpecialMode(whichPlayer)
     endif
-    
+
+    set whichPlayer = null
 endfunction
 
 private function CreateQuestLog takes ZoneData z returns nothing
