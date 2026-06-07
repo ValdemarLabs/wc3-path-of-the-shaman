@@ -133,6 +133,7 @@ globals
     private constant real AUI_ROW_LEVEL_SCALE = 0.90
     private constant real AUI_ROW_NOT_LEARNED_SCALE = 0.82
     private constant integer AUI_ROW_UNAVAILABLE_OVERLAY_ALPHA = 88
+    private constant integer AUI_ROW_UNAVAILABLE_OVERLAY_COLOR = 140
     private constant integer AUI_MODE_AUTO = 1
     private constant integer AUI_MODE_MANUAL = 2
     private constant boolean AUI_SHOW_PLAYER_LEARN_STATE = true
@@ -149,6 +150,7 @@ globals
     private framehandle AUI_CloseButton = null
     private framehandle AUI_ReturnButton = null
     private framehandle AUI_DetailIcon = null
+    private framehandle AUI_DetailUnavailableOverlay = null
     private framehandle AUI_DetailTitle = null
     private framehandle AUI_DetailInfoBackdrop = null
     private framehandle AUI_DetailInfoText = null
@@ -174,6 +176,8 @@ globals
 
     private integer array AUI_RowDefinitionIndex
     private integer array AUI_RowHighlightVisible
+    private integer array AUI_VisibleDefinitionIndex
+    private integer array AUI_VisibleDefinitionFilteredIndex
     private integer AUI_SelectedDefinition = 0
     private integer AUI_ListScrollValue = 0
     private integer AUI_ListScrollMaxCache = -1
@@ -181,6 +185,13 @@ globals
     private integer AUI_DetailBodyHash = 0
     private string AUI_DetailBodyCache = ""
     private unit AUI_SelectedUnit = null
+    private integer AUI_VisibleDefinitionCacheUnitTypeId = 0
+    private integer AUI_VisibleDefinitionCacheCount = 0
+    private boolean AUI_VisibleDefinitionCacheDirty = true
+    private boolean AUI_PlayerShamanElementalExpanded = true
+    private boolean AUI_PlayerShamanEnhancementExpanded = true
+    private boolean AUI_PlayerShamanRestorationExpanded = true
+    private boolean AUI_PlayerShamanTotemicExpanded = true
 
     private Table AUI_ButtonRow = 0
 
@@ -288,6 +299,7 @@ private function AUI_AddDefinition takes integer mode, integer unitTypeId, integ
     set AUI_DefinitionTitleOverride[AUI_DefinitionCount] = titleText
     set AUI_DefinitionInfoOverride[AUI_DefinitionCount] = infoText
     set AUI_DefinitionBodyOverride[AUI_DefinitionCount] = bodyText
+    set AUI_VisibleDefinitionCacheDirty = true
 endfunction
 
 public function RegisterAbilityForUnitTypeAuto takes integer unitTypeId, integer abilityId, string titleOverride, string bodyOverride returns nothing
@@ -336,6 +348,57 @@ endfunction
 
 private function AUI_IsPlayerShamanTreeAbilityId takes integer abilityId returns boolean
     return abilityId == AUI_PLAYER_SHAMAN_ELEMENTAL_TREE or abilityId == AUI_PLAYER_SHAMAN_ENHANCEMENT_TREE or abilityId == AUI_PLAYER_SHAMAN_RESTORATION_TREE or abilityId == AUI_PLAYER_SHAMAN_TOTEMIC_TREE
+endfunction
+
+private function AUI_IsPlayerShamanDefinitionKey takes integer unitTypeId returns boolean
+    return unitTypeId == AUI_DEF_PLAYER_SHAMAN
+endfunction
+
+private function AUI_IsTreeDefinition takes integer definitionIndex returns boolean
+    if definitionIndex <= 0 or not AUI_IsPlayerShamanDefinitionKey(AUI_DefinitionUnitTypeId[definitionIndex]) then
+        return false
+    endif
+    if AUI_IsPlayerShamanTreeAbilityId(AUI_DefinitionLearnAbilityId[definitionIndex]) then
+        return true
+    endif
+    return AUI_IsPlayerShamanTreeAbilityId(AUI_DefinitionAbilityId[definitionIndex])
+endfunction
+
+private function AUI_ResetPlayerShamanTreeState takes nothing returns nothing
+    set AUI_PlayerShamanElementalExpanded = false
+    set AUI_PlayerShamanEnhancementExpanded = false
+    set AUI_PlayerShamanRestorationExpanded = false
+    set AUI_PlayerShamanTotemicExpanded = false
+endfunction
+
+private function AUI_IsPlayerShamanTreeExpanded takes integer treeAbilityId returns boolean
+    if treeAbilityId == AUI_PLAYER_SHAMAN_ELEMENTAL_TREE then
+        return AUI_PlayerShamanElementalExpanded
+    elseif treeAbilityId == AUI_PLAYER_SHAMAN_ENHANCEMENT_TREE then
+        return AUI_PlayerShamanEnhancementExpanded
+    elseif treeAbilityId == AUI_PLAYER_SHAMAN_RESTORATION_TREE then
+        return AUI_PlayerShamanRestorationExpanded
+    elseif treeAbilityId == AUI_PLAYER_SHAMAN_TOTEMIC_TREE then
+        return AUI_PlayerShamanTotemicExpanded
+    endif
+    return true
+endfunction
+
+private function AUI_SetPlayerShamanTreeExpanded takes integer treeAbilityId, boolean expanded returns nothing
+    if treeAbilityId == AUI_PLAYER_SHAMAN_ELEMENTAL_TREE then
+        set AUI_PlayerShamanElementalExpanded = expanded
+    elseif treeAbilityId == AUI_PLAYER_SHAMAN_ENHANCEMENT_TREE then
+        set AUI_PlayerShamanEnhancementExpanded = expanded
+    elseif treeAbilityId == AUI_PLAYER_SHAMAN_RESTORATION_TREE then
+        set AUI_PlayerShamanRestorationExpanded = expanded
+    elseif treeAbilityId == AUI_PLAYER_SHAMAN_TOTEMIC_TREE then
+        set AUI_PlayerShamanTotemicExpanded = expanded
+    endif
+endfunction
+
+private function AUI_TogglePlayerShamanTree takes integer treeAbilityId returns nothing
+    call AUI_SetPlayerShamanTreeExpanded(treeAbilityId, not AUI_IsPlayerShamanTreeExpanded(treeAbilityId))
+    set AUI_VisibleDefinitionCacheDirty = true
 endfunction
 
 private function AUI_ColorizeShamanSpec takes string specText returns string
@@ -595,6 +658,10 @@ private function AUI_ResetViewState takes nothing returns nothing
     set AUI_ListScrollFrameValueCache = -1
     set AUI_DetailBodyHash = 0
     set AUI_DetailBodyCache = ""
+    set AUI_VisibleDefinitionCacheUnitTypeId = 0
+    set AUI_VisibleDefinitionCacheCount = 0
+    set AUI_VisibleDefinitionCacheDirty = true
+    call AUI_ResetPlayerShamanTreeState()
 endfunction
 
 private function AUI_GetActiveDefinitionKey takes nothing returns integer
@@ -658,6 +725,124 @@ endfunction
 
 private function AUI_GetFirstDefinitionForUnitType takes integer unitTypeId returns integer
     return AUI_GetDefinitionByFilteredIndex(unitTypeId, 1)
+endfunction
+
+private function AUI_GetPlayerShamanTreeDefinition takes integer definitionIndex returns integer
+    local integer i = definitionIndex
+
+    if definitionIndex <= 0 or not AUI_IsPlayerShamanDefinitionKey(AUI_DefinitionUnitTypeId[definitionIndex]) then
+        return 0
+    endif
+
+    loop
+        exitwhen i < 1
+        if AUI_DefinitionUnitTypeId[i] == AUI_DEF_PLAYER_SHAMAN and AUI_IsTreeDefinition(i) then
+            return i
+        endif
+        set i = i - 1
+    endloop
+
+    return 0
+endfunction
+
+private function AUI_GetPlayerShamanTreeAbilityIdForDefinition takes integer definitionIndex returns integer
+    local integer treeDefinitionIndex = AUI_GetPlayerShamanTreeDefinition(definitionIndex)
+
+    if treeDefinitionIndex != 0 then
+        if AUI_DefinitionLearnAbilityId[treeDefinitionIndex] != 0 then
+            return AUI_DefinitionLearnAbilityId[treeDefinitionIndex]
+        endif
+        return AUI_DefinitionAbilityId[treeDefinitionIndex]
+    endif
+    return 0
+endfunction
+
+private function AUI_IsDefinitionVisibleForUnitType takes integer unitTypeId, integer definitionIndex returns boolean
+    local integer treeAbilityId
+
+    if definitionIndex <= 0 or AUI_DefinitionUnitTypeId[definitionIndex] != unitTypeId then
+        return false
+    endif
+    if not AUI_IsPlayerShamanDefinitionKey(unitTypeId) then
+        return true
+    endif
+    if AUI_IsTreeDefinition(definitionIndex) then
+        return true
+    endif
+
+    set treeAbilityId = AUI_GetPlayerShamanTreeAbilityIdForDefinition(definitionIndex)
+    if treeAbilityId == 0 then
+        return true
+    endif
+    return AUI_IsPlayerShamanTreeExpanded(treeAbilityId)
+endfunction
+
+private function AUI_RebuildVisibleDefinitionCache takes integer unitTypeId returns nothing
+    local integer i = 1
+    local integer count = 0
+
+    loop
+        exitwhen i > AUI_DefinitionCount
+        set AUI_VisibleDefinitionFilteredIndex[i] = 0
+        set i = i + 1
+    endloop
+
+    set i = 1
+    loop
+        exitwhen i > AUI_DefinitionCount
+        if AUI_IsDefinitionVisibleForUnitType(unitTypeId, i) then
+            set count = count + 1
+            set AUI_VisibleDefinitionIndex[count] = i
+            set AUI_VisibleDefinitionFilteredIndex[i] = count
+        endif
+        set i = i + 1
+    endloop
+
+    set AUI_VisibleDefinitionCacheUnitTypeId = unitTypeId
+    set AUI_VisibleDefinitionCacheCount = count
+    set AUI_VisibleDefinitionCacheDirty = false
+endfunction
+
+private function AUI_EnsureVisibleDefinitionCache takes integer unitTypeId returns nothing
+    if unitTypeId <= 0 then
+        if AUI_VisibleDefinitionCacheUnitTypeId != 0 or AUI_VisibleDefinitionCacheCount != 0 then
+            set AUI_VisibleDefinitionCacheUnitTypeId = 0
+            set AUI_VisibleDefinitionCacheCount = 0
+        endif
+        set AUI_VisibleDefinitionCacheDirty = false
+        return
+    endif
+    if AUI_VisibleDefinitionCacheDirty or AUI_VisibleDefinitionCacheUnitTypeId != unitTypeId then
+        call AUI_RebuildVisibleDefinitionCache(unitTypeId)
+    endif
+endfunction
+
+private function AUI_GetVisibleDefinitionCountForUnitType takes integer unitTypeId returns integer
+    call AUI_EnsureVisibleDefinitionCache(unitTypeId)
+    return AUI_VisibleDefinitionCacheCount
+endfunction
+
+private function AUI_GetVisibleDefinitionByFilteredIndex takes integer unitTypeId, integer filteredIndex returns integer
+    if filteredIndex < 1 then
+        return 0
+    endif
+    call AUI_EnsureVisibleDefinitionCache(unitTypeId)
+    if filteredIndex > AUI_VisibleDefinitionCacheCount then
+        return 0
+    endif
+    return AUI_VisibleDefinitionIndex[filteredIndex]
+endfunction
+
+private function AUI_GetVisibleFilteredIndexForDefinition takes integer unitTypeId, integer definitionIndex returns integer
+    if definitionIndex <= 0 then
+        return 0
+    endif
+    call AUI_EnsureVisibleDefinitionCache(unitTypeId)
+    return AUI_VisibleDefinitionFilteredIndex[definitionIndex]
+endfunction
+
+private function AUI_GetFirstVisibleDefinitionForUnitType takes integer unitTypeId returns integer
+    return AUI_GetVisibleDefinitionByFilteredIndex(unitTypeId, 1)
 endfunction
 
 private function AUI_GetDefinitionIcon takes integer definitionIndex returns string
@@ -1112,9 +1297,10 @@ endfunction
 
 private function AUI_ClampSelection takes nothing returns nothing
     local integer unitTypeId = AUI_GetActiveDefinitionKey()
-    local integer totalCount = AUI_GetDefinitionCountForUnitType(unitTypeId)
+    local integer totalCount = AUI_GetVisibleDefinitionCountForUnitType(unitTypeId)
     local integer maxStart = totalCount - AUI_VISIBLE_ROWS
     local integer selectedFilteredIndex
+    local integer treeDefinitionIndex
 
     if maxStart < 0 then
         set maxStart = 0
@@ -1131,12 +1317,17 @@ private function AUI_ClampSelection takes nothing returns nothing
     endif
 
     if AUI_SelectedDefinition == 0 or AUI_DefinitionUnitTypeId[AUI_SelectedDefinition] != unitTypeId then
-        set AUI_SelectedDefinition = AUI_GetFirstDefinitionForUnitType(unitTypeId)
+        set AUI_SelectedDefinition = AUI_GetFirstVisibleDefinitionForUnitType(unitTypeId)
     endif
 
-    set selectedFilteredIndex = AUI_GetFilteredIndexForDefinition(unitTypeId, AUI_SelectedDefinition)
+    set selectedFilteredIndex = AUI_GetVisibleFilteredIndexForDefinition(unitTypeId, AUI_SelectedDefinition)
     if selectedFilteredIndex <= 0 then
-        set AUI_SelectedDefinition = AUI_GetFirstDefinitionForUnitType(unitTypeId)
+        set treeDefinitionIndex = AUI_GetPlayerShamanTreeDefinition(AUI_SelectedDefinition)
+        if treeDefinitionIndex != 0 and AUI_IsDefinitionVisibleForUnitType(unitTypeId, treeDefinitionIndex) then
+            set AUI_SelectedDefinition = treeDefinitionIndex
+        else
+            set AUI_SelectedDefinition = AUI_GetFirstVisibleDefinitionForUnitType(unitTypeId)
+        endif
     endif
 endfunction
 
@@ -1175,7 +1366,7 @@ endfunction
 private function AUI_UpdateRows takes nothing returns nothing
     local integer rowIndex = 1
     local integer unitTypeId = AUI_GetActiveDefinitionKey()
-    local integer totalCount = AUI_GetDefinitionCountForUnitType(unitTypeId)
+    local integer totalCount = AUI_GetVisibleDefinitionCountForUnitType(unitTypeId)
     local integer maxStart = totalCount - AUI_VISIBLE_ROWS
     local integer filteredIndex
     local integer definitionIndex
@@ -1183,6 +1374,7 @@ private function AUI_UpdateRows takes nothing returns nothing
     local integer learnAbilityId
     local integer displayAbilityId
     local integer selected
+    local integer treeAbilityId
     local string levelText
     local string titleText
     local boolean showUnavailableOverlay
@@ -1194,22 +1386,36 @@ private function AUI_UpdateRows takes nothing returns nothing
     loop
         exitwhen rowIndex > AUI_VISIBLE_ROWS
         set filteredIndex = AUI_ListScrollValue + rowIndex
-        set definitionIndex = AUI_GetDefinitionByFilteredIndex(unitTypeId, filteredIndex)
+        set definitionIndex = AUI_GetVisibleDefinitionByFilteredIndex(unitTypeId, filteredIndex)
         set AUI_RowDefinitionIndex[rowIndex] = definitionIndex
         if definitionIndex != 0 then
             set displayAbilityId = AUI_GetDefinitionLearnAbilityId(definitionIndex)
             set titleText = AUI_GetDefinitionTitle(definitionIndex)
             set showUnavailableOverlay = false
             if AUI_IsPlayerShamanTreeAbilityId(displayAbilityId) then
+                if AUI_IsPlayerShamanTreeExpanded(displayAbilityId) then
+                    set titleText = "[-] " + titleText
+                else
+                    set titleText = "[+] " + titleText
+                endif
                 set titleText = "|cffd9b56d" + titleText + "|r"
                 set levelText = ""
                 call BlzFrameSetScale(AUI_RowLevel[rowIndex], AUI_ROW_LEVEL_SCALE)
             elseif AUI_ShouldShowNotLearned(AUI_SelectedUnit, definitionIndex) then
+                if AUI_IsPlayerShamanDefinitionKey(unitTypeId) then
+                    set titleText = "    " + titleText
+                endif
                 set titleText = "|cff808080" + titleText + "|r"
                 set levelText = AUI_NotLearnedText
                 set showUnavailableOverlay = true
                 call BlzFrameSetScale(AUI_RowLevel[rowIndex], AUI_ROW_NOT_LEARNED_SCALE)
             else
+                if AUI_IsPlayerShamanDefinitionKey(unitTypeId) then
+                    set treeAbilityId = AUI_GetPlayerShamanTreeAbilityIdForDefinition(definitionIndex)
+                    if treeAbilityId != 0 then
+                        set titleText = "    " + titleText
+                    endif
+                endif
                 set learnAbilityId = AUI_GetDefinitionLearnAbilityId(definitionIndex)
                 if learnAbilityId != 0 and AUI_SelectedUnit != null and GetHandleId(AUI_SelectedUnit) != 0 then
                     set abilityLevel = AUI_GetDefinitionCurrentLevel(AUI_SelectedUnit, definitionIndex)
@@ -1270,6 +1476,7 @@ private function AUI_UpdateDetail takes nothing returns nothing
         call BlzFrameSetTexture(AUI_DetailIcon, AUI_DefaultIcon, 0, true)
         call BlzFrameSetText(AUI_DetailTitle, "No unit")
         call BlzFrameSetText(AUI_DetailInfoText, "")
+        call BlzFrameSetVisible(AUI_DetailUnavailableOverlay, false)
         call AUI_SetDetailBody(AUI_NoUnitText)
         return
     endif
@@ -1278,6 +1485,7 @@ private function AUI_UpdateDetail takes nothing returns nothing
         call BlzFrameSetTexture(AUI_DetailIcon, AUI_GetUnitIconPath(AUI_SelectedUnit), 0, true)
         call BlzFrameSetText(AUI_DetailTitle, "No abilities")
         call BlzFrameSetText(AUI_DetailInfoText, AUI_GetViewerName(AUI_SelectedUnit))
+        call BlzFrameSetVisible(AUI_DetailUnavailableOverlay, false)
         call AUI_SetDetailBody(AUI_NoAbilitiesText)
         return
     endif
@@ -1285,8 +1493,10 @@ private function AUI_UpdateDetail takes nothing returns nothing
     call BlzFrameSetTexture(AUI_DetailIcon, AUI_GetDefinitionIcon(definitionIndex), 0, true)
     if AUI_ShouldShowNotLearned(AUI_SelectedUnit, definitionIndex) then
         call BlzFrameSetText(AUI_DetailTitle, "|cffffe4a3" + AUI_GetDefinitionTitle(definitionIndex) + "|r |cff808080- Not learned|r")
+        call BlzFrameSetVisible(AUI_DetailUnavailableOverlay, true)
     else
         call BlzFrameSetText(AUI_DetailTitle, "|cffffe4a3" + AUI_GetDefinitionTitle(definitionIndex) + "|r")
+        call BlzFrameSetVisible(AUI_DetailUnavailableOverlay, false)
     endif
     set infoText = AUI_DefinitionInfoOverride[definitionIndex]
     if infoText == null or infoText == "" then
@@ -1299,10 +1509,14 @@ private function AUI_UpdateDetail takes nothing returns nothing
 endfunction
 
 private function AUI_Update takes nothing returns nothing
+    local integer unitTypeId
+
     if AUI_Parent == null then
         return
     endif
 
+    set unitTypeId = AUI_GetActiveDefinitionKey()
+    call AUI_EnsureVisibleDefinitionCache(unitTypeId)
     call AUI_ClampSelection()
     call BlzFrameSetText(AUI_ViewingText, "Viewing: " + AUI_GetViewerName(AUI_SelectedUnit))
     call AUI_UpdateRows()
@@ -1335,11 +1549,18 @@ endfunction
 private function AUI_RowAction takes nothing returns nothing
     local integer handleId = GetHandleId(BlzGetTriggerFrame())
     local integer rowIndex
+    local integer definitionIndex
+    local integer treeAbilityId
 
     if AUI_ButtonRow.has(handleId) then
         set rowIndex = AUI_ButtonRow.integer[handleId]
         if rowIndex >= 1 and rowIndex <= AUI_MAX_ROWS and AUI_RowDefinitionIndex[rowIndex] != 0 then
-            set AUI_SelectedDefinition = AUI_RowDefinitionIndex[rowIndex]
+            set definitionIndex = AUI_RowDefinitionIndex[rowIndex]
+            set AUI_SelectedDefinition = definitionIndex
+            if AUI_IsTreeDefinition(definitionIndex) then
+                set treeAbilityId = AUI_GetDefinitionLearnAbilityId(definitionIndex)
+                call AUI_TogglePlayerShamanTree(treeAbilityId)
+            endif
             set AUI_DetailBodyHash = 0
             call AUI_Update()
         endif
@@ -1347,7 +1568,7 @@ private function AUI_RowAction takes nothing returns nothing
 endfunction
 
 private function AUI_ListScrollAction takes nothing returns nothing
-    local integer maxStart = AUI_GetDefinitionCountForUnitType(AUI_GetActiveDefinitionKey()) - AUI_VISIBLE_ROWS
+    local integer maxStart = AUI_GetVisibleDefinitionCountForUnitType(AUI_GetActiveDefinitionKey()) - AUI_VISIBLE_ROWS
 
     if AUI_SyncingListScroll then
         return
@@ -1448,6 +1669,14 @@ private function AUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetPoint(AUI_DetailIcon, FRAMEPOINT_TOPLEFT, AUI_RightPane, FRAMEPOINT_TOPLEFT, 0.018, -0.018)
     call BlzFrameSetSize(AUI_DetailIcon, 0.042, 0.042)
 
+    set AUI_DetailUnavailableOverlay = BlzCreateFrameByType("BACKDROP", "AbilitiesLiteUIDetailUnavailableOverlay", AUI_RightPane, "", 0)
+    call BlzFrameSetTexture(AUI_DetailUnavailableOverlay, AUI_PanelTexture, 0, false)
+    call BlzFrameSetAllPoints(AUI_DetailUnavailableOverlay, AUI_DetailIcon)
+    call BlzFrameSetAlpha(AUI_DetailUnavailableOverlay, AUI_ROW_UNAVAILABLE_OVERLAY_ALPHA)
+    call BlzFrameSetVertexColor(AUI_DetailUnavailableOverlay, BlzConvertColor(AUI_ROW_UNAVAILABLE_OVERLAY_ALPHA, AUI_ROW_UNAVAILABLE_OVERLAY_COLOR, AUI_ROW_UNAVAILABLE_OVERLAY_COLOR, AUI_ROW_UNAVAILABLE_OVERLAY_COLOR))
+    call BlzFrameSetVisible(AUI_DetailUnavailableOverlay, false)
+    call BlzFrameSetEnable(AUI_DetailUnavailableOverlay, false)
+
     set AUI_DetailTitle = BlzCreateFrameByType("TEXT", "AbilitiesLiteUIDetailTitle", AUI_RightPane, "", 0)
     call BlzFrameSetPoint(AUI_DetailTitle, FRAMEPOINT_TOPLEFT, AUI_DetailIcon, FRAMEPOINT_TOPRIGHT, 0.014, -0.002)
     call BlzFrameSetSize(AUI_DetailTitle, 0.250, 0.018)
@@ -1499,7 +1728,7 @@ private function AUI_CreateFrames takes nothing returns nothing
         call BlzFrameSetTexture(AUI_RowUnavailableOverlay[rowIndex], AUI_PanelTexture, 0, false)
         call BlzFrameSetAllPoints(AUI_RowUnavailableOverlay[rowIndex], AUI_RowIcon[rowIndex])
         call BlzFrameSetAlpha(AUI_RowUnavailableOverlay[rowIndex], AUI_ROW_UNAVAILABLE_OVERLAY_ALPHA)
-        call BlzFrameSetVertexColor(AUI_RowUnavailableOverlay[rowIndex], BlzConvertColor(AUI_ROW_UNAVAILABLE_OVERLAY_ALPHA, 0, 0, 0))
+        call BlzFrameSetVertexColor(AUI_RowUnavailableOverlay[rowIndex], BlzConvertColor(AUI_ROW_UNAVAILABLE_OVERLAY_ALPHA, AUI_ROW_UNAVAILABLE_OVERLAY_COLOR, AUI_ROW_UNAVAILABLE_OVERLAY_COLOR, AUI_ROW_UNAVAILABLE_OVERLAY_COLOR))
         call BlzFrameSetVisible(AUI_RowUnavailableOverlay[rowIndex], false)
         call BlzFrameSetEnable(AUI_RowUnavailableOverlay[rowIndex], false)
 
@@ -1547,7 +1776,7 @@ public function ShowForUnit takes unit u returns nothing
     set AUI_SelectedUnit = u
     call AUI_EnsureTemplatesForUnit(u)
     call AUI_ResetViewState()
-    call AUI_SyncListScrollFrame(AUI_GetDefinitionCountForUnitType(AUI_GetActiveDefinitionKey()) - AUI_VISIBLE_ROWS)
+    call AUI_SyncListScrollFrame(AUI_GetVisibleDefinitionCountForUnitType(AUI_GetActiveDefinitionKey()) - AUI_VISIBLE_ROWS)
     call BlzFrameSetVisible(AUI_Parent, true)
     call AUI_Update()
 endfunction
@@ -1556,7 +1785,7 @@ public function Show takes nothing returns nothing
     set AUI_SelectedUnit = AUI_GetMenuSelectedHero()
     call AUI_EnsureTemplatesForUnit(AUI_SelectedUnit)
     call AUI_ResetViewState()
-    call AUI_SyncListScrollFrame(AUI_GetDefinitionCountForUnitType(AUI_GetActiveDefinitionKey()) - AUI_VISIBLE_ROWS)
+    call AUI_SyncListScrollFrame(AUI_GetVisibleDefinitionCountForUnitType(AUI_GetActiveDefinitionKey()) - AUI_VISIBLE_ROWS)
     call BlzFrameSetVisible(AUI_Parent, true)
     call AUI_Update()
 endfunction
