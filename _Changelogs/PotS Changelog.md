@@ -26,12 +26,22 @@
 - `CameraUI.j`
   Added `Safe Camera` status text and toggle controls for the normal-mode blocker / terrain camera protection.
   Simplified the camera panel actions by removing the duplicate left-side `Defaults` action, renaming the lower reset button to `Defaults`, and placing the `Safe Camera` toggle under it with matching button width.
+- `AbilitiesLiteUI.j`
+  Added collapsible `Player Shaman` specialization tree headers so `Elemental`, `Enhancement`, `Restoration`, and `Totemic` sections can now be opened and closed directly from the abilities list.
+  Reworked the visible-row lookup path to use a cached visible-definition list keyed to the active unit and current tree state, removing repeated full definition scans during slider movement.
+  Added tree-state-aware selection and scroll clamping so collapsing a specialization no longer leaves hidden child abilities selected or produces mismatched slider ranges.
+  Added clearer gray unavailable overlays for unlearned ability icons in both the left list and the right-side detail icon.
+  Set the default open state so all specialization trees start collapsed when the abilities panel is opened fresh or the view resets.
 
 ### Player-Facing Updates
 - `Camera / UI`
   Normal camera mode now handles blocker-heavy corridors, tunnels, and terrain-height differences much closer to advanced camera behavior while still respecting the stored normal camera rotation.
   The camera panel now lets players toggle `Safe Camera` on or off directly, and the wounded low-health camera effect now stays visibly active with slower heartbeat-style pulsing instead of brief flickering flashes.
   Duplicate dialog or cinematic camera suspend / resume calls should now be much less likely to restart camera return timing or fight over the current camera state.
+- `AbilitiesLiteUI`
+  Player shaman ability trees can now be expanded or collapsed by clicking the specialization rows, and the panel currently starts with all trees closed by default.
+  Unlearned abilities are now easier to read at a glance because their icons use a clearer gray unavailable overlay in both the list and detail view.
+  Scrolling the abilities list should now be noticeably smoother after the visible-row refresh path was cached.
 
 ### Actions Remaining
 - `CameraControl.j`
@@ -40,6 +50,9 @@
 - `CameraControl.j` / `CameraUI.j`
   Validate the new `Safe Camera` toggle across normal, advanced, and developer modes and confirm the wounded-state cinematic filter / heartbeat effect does not conflict with other cinematic filter usage elsewhere in the map.
   Audit intro / main-map cinematic trigger usage so only the intended master flow owns `CameraControl_Suspend` / `Resume`, even though duplicate calls are now guarded.
+- `AbilitiesLiteUI.j`
+  Re-test the new shaman tree collapse flow in-game with both `Nazgrek` and `Zul'kis`, including repeated slider dragging, mouse-wheel scrolling, and tree toggling while different rows are selected.
+  Confirm the new cached visible-definition path fully removes the earlier scrollbar hitching and does not introduce stale selection, stale row text, or hidden-row edge cases after rapid open/close interaction.
 
 ## [6.6.2026]
 
