@@ -13,6 +13,30 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [7.6.2026]
+
+### Technical Updates
+- `CameraControl.j`
+  Reworked normal camera mode to use the same blocker and terrain-height adjustment approach as `AdvancedCameraSystem`, while still preserving the stored `CameraControl` rotation instead of rotating with unit facing.
+  Added per-player caching and lighter refresh paths around normal-mode blocker tracing so repeated pathing-blocker camera adjustment does not recalculate as aggressively as before.
+  Added a per-player normal-mode `Safe Camera` toggle so blocker / terrain no-clip prevention can be turned off completely without affecting advanced or developer camera modes.
+  Added a wounded-state camera overlay tied to the currently viewed camera unit, including a sustained red cinematic filter, pulsing transparency beats, and heartbeat sound playback while the viewed unit is below `25%` life.
+- `CameraUI.j`
+  Added `Safe Camera` status text and toggle controls for the normal-mode blocker / terrain camera protection.
+  Simplified the camera panel actions by removing the duplicate left-side `Defaults` action, renaming the lower reset button to `Defaults`, and placing the `Safe Camera` toggle under it with matching button width.
+
+### Player-Facing Updates
+- `Camera / UI`
+  Normal camera mode now handles blocker-heavy corridors, tunnels, and terrain-height differences much closer to advanced camera behavior while still respecting the stored normal camera rotation.
+  The camera panel now lets players toggle `Safe Camera` on or off directly, and the wounded low-health camera effect now stays visibly active with slower heartbeat-style pulsing instead of brief flickering flashes.
+
+### Actions Remaining
+- `CameraControl.j`
+  Re-test normal mode in blocker-dense tunnels, narrow pathing corridors, and elevation-heavy areas, and profile whether the latest trace caching is enough to remove the remaining FPS drop around blocker-based adjustment.
+  Continue tuning the normal-mode minimum trace distance and cache thresholds if corridor zoom still feels too strong or blocker reaction still costs too much.
+- `CameraControl.j` / `CameraUI.j`
+  Validate the new `Safe Camera` toggle across normal, advanced, and developer modes and confirm the wounded-state cinematic filter / heartbeat effect does not conflict with other cinematic filter usage elsewhere in the map.
+
 ## [6.6.2026]
 
 ### Technical Updates
@@ -30,7 +54,7 @@
 - `Cinematic OFF`
   Removed the hardcoded post-dialog camera snap toward `Nazgrek` so `CameraControl` can own the final return to the interacting hero instead of being visually overridden by the cinematic shutdown trigger.
 - `Terrain`
-  Continued terraining work in Dragonfire Peaks.
+  Continued terraining work in Dragonfire Peaks, Havenwoods, Orc base in Havenwoods/Thornwoods crossover (to be named more properly)
 
 ### Player-Facing Updates
 - `ProfessionsUI`
