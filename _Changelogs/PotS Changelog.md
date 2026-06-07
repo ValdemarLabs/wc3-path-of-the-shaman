@@ -32,6 +32,11 @@
   Added tree-state-aware selection and scroll clamping so collapsing a specialization no longer leaves hidden child abilities selected or produces mismatched slider ranges.
   Added clearer gray unavailable overlays for unlearned ability icons in both the left list and the right-side detail icon.
   Set the default open state so all specialization trees start collapsed when the abilities panel is opened fresh or the view resets.
+- `TerrainDamage.j`
+  Added a hard internal `DEBUG_BYPASS_SYSTEM` switch that short-circuits `InitDelayed`, so the terrain-damage system can be disabled completely for FPS-isolation testing without removing the library from the map.
+- `WE Mainmap` - `Game Start`, `Cinematic ON`, `Cinematic OFF`
+  Disabled the hardcoded `Player 1 (Red)` startup camera pan to `Nazgrek Start Point` because it no longer had a clear ownership reason and could override the intended camera flow at map start.
+  Added `call CameraControl_Suspend(Player(0))` in `Cinematic ON` and `call CameraControl_Resume(Player(0))` in `Cinematic OFF` so these GUI cinematic triggers now hand camera ownership through the shared `CameraControl` flow.
 
 ### Player-Facing Updates
 - `Camera / UI`
@@ -42,6 +47,8 @@
   Player shaman ability trees can now be expanded or collapsed by clicking the specialization rows, and the panel currently starts with all trees closed by default.
   Unlearned abilities are now easier to read at a glance because their icons use a clearer gray unavailable overlay in both the list and detail view.
   Scrolling the abilities list should now be noticeably smoother after the visible-row refresh path was cached.
+- `Camera / Cinematics`
+  Main-map startup and GUI cinematic camera flow should now be less likely to force an unexplained snap toward `Nazgrek`, and the `Cinematic ON/OFF` triggers now suspend and resume through `CameraControl` instead of bypassing it.
 
 ### Actions Remaining
 - `CameraControl.j`
@@ -53,6 +60,10 @@
 - `AbilitiesLiteUI.j`
   Re-test the new shaman tree collapse flow in-game with both `Nazgrek` and `Zul'kis`, including repeated slider dragging, mouse-wheel scrolling, and tree toggling while different rows are selected.
   Confirm the new cached visible-definition path fully removes the earlier scrollbar hitching and does not introduce stale selection, stale row text, or hidden-row edge cases after rapid open/close interaction.
+- `TerrainDamage.j`
+  Use the new `DEBUG_BYPASS_SYSTEM` path to confirm whether disabling terrain damage removes the periodic FPS sink, then either clear the system or continue profiling the remaining always-on timers.
+- `WE Mainmap` / `CameraControl`
+  Re-test `Game Start` and the shared `Cinematic ON/OFF` flow on the main map and confirm no other GUI camera actions still override the intended `CameraControl` suspend / resume ownership.
 
 ## [6.6.2026]
 
