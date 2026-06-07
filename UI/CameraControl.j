@@ -46,6 +46,7 @@ globals
     private constant real CAMERA_NORMAL_TRACE_POSITION_THRESHOLD = 24.00
     private constant real CAMERA_NORMAL_TRACE_ROTATION_THRESHOLD = 0.50
     private constant real CAMERA_NORMAL_TRACE_DISTANCE_THRESHOLD = 1.00
+    private constant real CAMERA_NORMAL_TRACE_CORRECTION_DURATION = 0.25
     private constant real CAMERA_RESUME_DURATION = 2.00
     private constant real CAMERA_WOUNDED_THRESHOLD = 0.25
     private constant real CAMERA_WOUNDED_ENTRY_DURATION = 1.00
@@ -615,6 +616,9 @@ private function CC_BindNormalMode takes player whichPlayer returns nothing
     set CC_TargetUnit[pid] = CC_GetFallbackTarget(whichPlayer)
     call ReleaseCameraUnit(whichPlayer)
     call ReleaseMovementUnit(whichPlayer)
+    if GetLocalPlayer() == whichPlayer then
+        call CameraSetSmoothingFactor(1)
+    endif
     if CC_TargetUnit[pid] != null then
         call FCL_Lock(CC_TargetUnit[pid], whichPlayer)
     endif
@@ -637,6 +641,9 @@ private function CC_BindAdvancedMode takes player whichPlayer returns nothing
 endfunction
 
 private function CC_BindDeveloperMode takes player whichPlayer returns nothing
+    if GetLocalPlayer() == whichPlayer then
+        call CameraSetSmoothingFactor(0)
+    endif
     call FCL_Release(whichPlayer)
     call ReleaseCameraUnit(whichPlayer)
     call ReleaseMovementUnit(whichPlayer)
@@ -719,7 +726,7 @@ private function CC_ReapplyStoredFields takes player whichPlayer returns nothing
     if CC_Mode[CC_GetPlayerIndex(whichPlayer)] == CAMERA_MODE_ADVANCED then
         call CC_ApplyAdvancedDriftFields(whichPlayer, 0.00)
     elseif CC_Mode[CC_GetPlayerIndex(whichPlayer)] == CAMERA_MODE_NORMAL then
-        call CC_ApplyNormalFields(whichPlayer, 0.00)
+        call CC_ApplyNormalFields(whichPlayer, CAMERA_NORMAL_TRACE_CORRECTION_DURATION)
     else
         call CC_ApplyDirectFields(whichPlayer, 0.00)
     endif
@@ -969,11 +976,23 @@ endfunction
 
 public function Suspend takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
+    if CC_Suspended[pid] then
+        if CC_ResumePending[pid] then
+            set CC_ResumePending[pid] = false
+            call PauseTimer(CC_ResumeTimer[pid])
+            call CC_ClearKeyState(whichPlayer)
+            call CC_UpdateLoopState()
+        endif
+        return
+    endif
     set CC_Suspended[pid] = true
     set CC_ResumePending[pid] = false
     call PauseTimer(CC_ResumeTimer[pid])
     call CC_ClearKeyState(whichPlayer)
     call CC_UpdateLoopState()
+    if GetLocalPlayer() == whichPlayer then
+        call CameraSetSmoothingFactor(0)
+    endif
     call FCL_Release(whichPlayer)
     call ReleaseCameraUnit(whichPlayer)
     call ReleaseMovementUnit(whichPlayer)
@@ -981,6 +1000,9 @@ endfunction
 
 public function ResumeQuick takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
+    if CC_ResumePending[pid] or not CC_Suspended[pid] then
+        return
+    endif
     set CC_ResumePending[pid] = false
     set CC_Suspended[pid] = false
     call CC_ApplyMode(whichPlayer)
@@ -989,6 +1011,10 @@ endfunction
 public function ResumeWithDuration takes player whichPlayer, real duration returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     local integer mode = CC_Mode[pid]
+
+    if CC_ResumePending[pid] or not CC_Suspended[pid] then
+        return
+    endif
 
     if duration <= 0.00 then
         call ResumeQuick(whichPlayer)
