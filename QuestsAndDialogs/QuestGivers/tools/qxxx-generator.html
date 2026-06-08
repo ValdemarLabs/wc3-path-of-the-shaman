@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PotS qXXX Generator</title>
+  <style>
+    :root {
+      --paper: #f5eddc;
+      --paper-2: #efe2c6;
+      --ink: #1f1a16;
+      --muted: #665a4d;
+      --accent: #8b4e2e;
+      --accent-2: #2f5750;
+      --line: rgba(31, 26, 22, 0.14);
+      --shadow: 0 18px 50px rgba(31, 26, 22, 0.12);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: Georgia, "Palatino Linotype", serif;
+      background:
+        radial-gradient(circle at top left, rgba(139, 78, 46, 0.22), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(47, 87, 80, 0.18), transparent 32%),
+        linear-gradient(180deg, #f8f3e8 0%, #eadcc0 100%);
+    }
+
+    .page {
+      width: min(1400px, calc(100vw - 32px));
+      margin: 24px auto 40px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .hero,
+    .panel {
+      background: rgba(255, 250, 240, 0.9);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 24px 28px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(2rem, 3vw, 3.25rem);
+      line-height: 0.95;
+      letter-spacing: -0.03em;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 80ch;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(340px, 420px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .panel {
+      padding: 18px;
+    }
+
+    .panel h2,
+    .panel h3 {
+      margin: 0 0 12px;
+      letter-spacing: -0.02em;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .grid.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid rgba(31, 26, 22, 0.2);
+      border-radius: 12px;
+      background: #fffaf1;
+      color: var(--ink);
+      padding: 11px 12px;
+      font: inherit;
+    }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    .checkboxes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-top: 4px;
+    }
+
+    .checkbox {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      color: var(--ink);
+      font-size: 0.95rem;
+    }
+
+    .checkbox input {
+      width: auto;
+      margin: 0;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 16px;
+      font: inherit;
+      cursor: pointer;
+      transition: transform 120ms ease, opacity 120ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #fff7ef;
+    }
+
+    .secondary {
+      background: rgba(47, 87, 80, 0.12);
+      color: var(--accent-2);
+    }
+
+    .ghost {
+      background: rgba(31, 26, 22, 0.06);
+      color: var(--ink);
+    }
+
+    .quest-card {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(135deg, rgba(139, 78, 46, 0.08), transparent 50%),
+        #fff8ee;
+    }
+
+    .quest-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .quest-head h3 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .quest-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .quest-actions button {
+      padding: 8px 11px;
+    }
+
+    .hint {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .output {
+      display: grid;
+      gap: 12px;
+    }
+
+    .output textarea {
+      min-height: 720px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.9rem;
+      line-height: 1.45;
+      background: #f9f4e7;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      background: rgba(139, 78, 46, 0.1);
+      color: var(--accent);
+    }
+
+    @media (max-width: 980px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .grid.two,
+      .grid.three {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <span class="pill">Static local tool · no backend</span>
+      <h1>PotS qXXX Generator</h1>
+      <p>Generates a quest giver sublibrary scaffold that matches the current JASS quest/dialog stack. The output intentionally leaves explicit <code>TODO OLDGUI PARITY</code> markers anywhere event-specific map logic still needs a manual port.</p>
+      <div class="hero-actions">
+        <button class="primary" id="generateTop">Generate JASS</button>
+        <button class="secondary" id="addQuestTop">Add Quest</button>
+        <button class="ghost" id="exportTop">Export JSON</button>
+        <button class="ghost" id="importTop">Import JSON</button>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div class="stack">
+        <section class="panel">
+          <h2>General</h2>
+          <div class="grid two">
+            <label>Library Name
+              <input id="libraryName" value="qAradion">
+            </label>
+            <label>File Name
+              <input id="fileName" value="qAradion.j">
+            </label>
+            <label>NPC Variable
+              <input id="npcVariable" value="Aradion">
+            </label>
+            <label>Display Name
+              <input id="displayName" value="Aradion the Farseer">
+            </label>
+          </div>
+          <div class="grid two">
+            <label>Dialog Range
+              <input id="dialogRange" type="number" step="0.01" value="500">
+            </label>
+            <label>Dialog Cooldown
+              <input id="dialogCooldown" type="number" step="0.01" value="6">
+            </label>
+          </div>
+          <div class="checkboxes">
+            <label class="checkbox"><input id="allowNazgrek" type="checkbox" checked> Allow Nazgrek</label>
+            <label class="checkbox"><input id="allowZulkis" type="checkbox" checked> Allow Zulkis</label>
+            <label class="checkbox"><input id="useDialogCamera" type="checkbox" checked> Use dialog camera</label>
+            <label class="checkbox"><input id="useCinematic" type="checkbox" checked> Use cinematic mode</label>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="quest-head">
+            <div>
+              <h2>Quests</h2>
+              <p class="hint">Each quest card becomes a quest constant, a <code>CreateQuests()</code> block, dialog button wiring, and handler stubs.</p>
+            </div>
+            <div class="quest-actions">
+              <button class="secondary" id="addQuestSide">Add Quest</button>
+            </div>
+          </div>
+          <div class="stack" id="questList"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Public Hooks</h2>
+          <label>One hook name per line
+            <textarea id="publicHooks">StartRangerMissingEscort
+FailRangerMissingEscort
+BeginRiftsRitual
+CompleteRiftsCurrentRitual
+FailRifts</textarea>
+          </label>
+          <p class="hint">These generate empty public stubs for map-specific progression events.</p>
+        </section>
+      </div>
+
+      <section class="panel output">
+        <h2>Generated JASS</h2>
+        <div class="hero-actions">
+          <button class="primary" id="generateBottom">Generate JASS</button>
+          <button class="secondary" id="downloadJass">Download JASS</button>
+          <button class="ghost" id="copyOutput">Copy Output</button>
+        </div>
+        <textarea id="output" spellcheck="false"></textarea>
+      </section>
+    </section>
+  </main>
+
+  <input id="importFile" type="file" accept=".json,application/json" hidden>
+
+  <script>
+    const state = {
+      quests: [],
+    };
+
+    function defaultQuest(index) {
+      return {
+        key: `QUEST_${index}`,
+        title: `Quest ${index}`,
+        questType: "normal",
+        iconPath: "ReplaceableTextures\\\\CommandButtons\\\\BTNTome.blp",
+        description: `Describe quest ${index} here.\\n\\n`,
+        receiverMode: "giver",
+        receiverDisplayName: "",
+        requiredLevel: 1,
+        requirements: "Primary objective",
+        xpReward: 0,
+        goldReward: 0,
+        reputationReward: 100,
+        needsAccept: true,
+        needsComplete: true,
+        needsFail: false,
+      };
+    }
+
+    function defaultSpec() {
+      return {
+        libraryName: "qAradion",
+        fileName: "qAradion.j",
+        npcVariable: "Aradion",
+        displayName: "Aradion the Farseer",
+        dialogRange: 500,
+        dialogCooldown: 6,
+        allowNazgrek: true,
+        allowZulkis: true,
+        useDialogCamera: true,
+        useCinematic: true,
+        publicHooks: [
+          "StartRangerMissingEscort",
+          "FailRangerMissingEscort",
+          "BeginRiftsRitual",
+          "CompleteRiftsCurrentRitual",
+          "FailRifts",
+        ],
+        quests: [
+          {
+            key: "QUEST_RANGER_MISSING",
+            title: "Ranger Missing",
+            questType: "normal",
+            iconPath: "ReplaceableTextures\\\\CommandButtons\\\\BTNHighElvenArcher.blp",
+            description: "Find Valeria and return her to Aradion.\\n\\n",
+            receiverMode: "giver",
+            receiverDisplayName: "",
+            requiredLevel: 15,
+            requirements: "Find Valeria\\nEscort Valeria to Aradion",
+            xpReward: 0,
+            goldReward: 0,
+            reputationReward: 200,
+            needsAccept: true,
+            needsComplete: true,
+            needsFail: true,
+          },
+        ],
+      };
+    }
+
+    function sanitizeIdentifier(value, fallback) {
+      const cleaned = String(value || "")
+        .replace(/[^A-Za-z0-9_]/g, "_")
+        .replace(/^[^A-Za-z_]+/, "");
+      return cleaned || fallback;
+    }
+
+    function titleCaseConst(value, fallback) {
+      return sanitizeIdentifier(value, fallback).toUpperCase();
+    }
+
+    function toBoolString(value) {
+      return value ? "true" : "false";
+    }
+
+    function escapeJassString(value) {
+      return String(value || "")
+        .replace(/\\/g, "\\\\")
+        .replace(/"/g, '\\"')
+        .replace(/\r/g, "")
+        .replace(/\n/g, "\\n");
+    }
+
+    function splitRequirements(value) {
+      return String(value || "")
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .slice(0, 8);
+    }
+
+    function questConstName(quest, index) {
+      return titleCaseConst(quest.key, `QUEST_${index + 1}`);
+    }
+
+    function questFunctionSuffix(index) {
+      return String(index + 1);
+    }
+
+    function actionIdFor(index, kind) {
+      const base = 10 + index * 10;
+      if (kind === "accept") {
+        return base + 1;
+      }
+      if (kind === "complete") {
+        return base + 2;
+      }
+      return base + 3;
+    }
+
+    function questDependencyCondition(spec, index) {
+      if (index === 0) {
+        return "true";
+      }
+      const prevConst = questConstName(spec.quests[index - 1], index - 1);
+      return `QuestGiver_IsQuestCompletedByNameAndGiver(${prevConst}, ${sanitizeIdentifier(spec.npcVariable, "QuestNPC")})`;
+    }
+
+    function padRequirements(requirements) {
+      const padded = requirements.slice();
+      while (padded.length < 8) {
+        padded.push("");
+      }
+      return padded;
+    }
+
+    function createQuestBlock(spec, quest, index) {
+      const npcVar = sanitizeIdentifier(spec.npcVariable, "QuestNPC");
+      const constName = questConstName(quest, index);
+      const reqs = padRequirements(splitRequirements(quest.requirements)).map((req) => `"${escapeJassString(req)}"`).join(", ");
+      const xpReward = Number(quest.xpReward) || 0;
+      const goldReward = Number(quest.goldReward) || 0;
+      const repReward = Number(quest.reputationReward) || 0;
+
+      return [
+        `\tset q = QuestGiver_CreateQuest(${constName}, ${npcVar}, "${escapeJassString(quest.questType)}", ${Number(quest.requiredLevel) || 1}, null)`,
+        `\tset q.title = "${escapeJassString(quest.title)}"`,
+        `\tset q.iconPath = "${escapeJassString(quest.iconPath)}"`,
+        `\tset q.description = "${escapeJassString(quest.description)}"`,
+        `\tset q.infoText = infoText`,
+        `\tset q.info2Text = info2Text`,
+        `\tset q.requiredLevel = ${Number(quest.requiredLevel) || 1}`,
+        `\tcall q.setRewardParams(${xpReward > 0 ? "true" : "false"}, ${xpReward}, ${goldReward > 0 ? "true" : "false"}, ${goldReward}, false, 0, ${repReward > 0 ? "true" : "false"}, ${repReward}, false)`,
+        quest.receiverMode === "custom" && quest.receiverDisplayName.trim()
+          ? `\tcall q.setReceiverDisplayName("${escapeJassString(quest.receiverDisplayName.trim())}")`
+          : `\tcall q.setReceiverDisplayName(giverName)`,
+        `\tcall QuestGiver_SetRequirements(q.id, "", ${reqs})`,
+        "",
+      ].join("\n");
+    }
+
+    function buildHandlerBlocks(spec) {
+      const npcVar = sanitizeIdentifier(spec.npcVariable, "QuestNPC");
+      const displayName = escapeJassString(spec.displayName);
+      return spec.quests.map((quest, index) => {
+        const suffix = questFunctionSuffix(index);
+        const constName = questConstName(quest, index);
+        const blocks = [];
+
+        if (quest.needsAccept) {
+          blocks.push(
+`private function OnAcceptQuest${suffix}End takes nothing returns nothing
+\tcall QuestGiver_AcceptQuestByNameAndGiver(${constName}, ${npcVar})
+\t// TODO OLDGUI PARITY: quest-specific accept side effects for ${escapeJassString(quest.title)}
+endfunction
+
+private function OnAcceptQuest${suffix} takes nothing returns nothing
+\tlocal integer seq = QuestGiver_CreateBaseSequence(${npcVar}, "${displayName}")
+\tcall DialogSystem_SetSequenceCallbacks(seq, null, function OnAcceptQuest${suffix}End)
+\t// Optional: switch to QuestGiver_CreateAcceptSequence(...) if you want shared accept banter before custom lines.
+\tcall DialogSystem_AddLine(seq, ${npcVar}, "${displayName}", "TODO OLDGUI PARITY: replace ${escapeJassString(quest.title)} accept dialog.", "", true)
+\tcall DialogSystem_PlaySequence(seq, Player(0), ${npcVar})
+endfunction`
+          );
+        }
+
+        if (quest.needsComplete) {
+          blocks.push(
+`private function OnCompleteQuest${suffix}End takes nothing returns nothing
+\tcall QuestGiver_CompleteQuestByNameAndGiver(${constName}, ${npcVar})
+\t// TODO OLDGUI PARITY: quest-specific complete side effects for ${escapeJassString(quest.title)}
+endfunction
+
+private function OnCompleteQuest${suffix} takes nothing returns nothing
+\tlocal integer seq = QuestGiver_CreateBaseSequence(${npcVar}, "${displayName}")
+\tcall DialogSystem_SetSequenceCallbacks(seq, null, function OnCompleteQuest${suffix}End)
+\tcall DialogSystem_AddLine(seq, ${npcVar}, "${displayName}", "TODO OLDGUI PARITY: replace ${escapeJassString(quest.title)} completion dialog.", "", true)
+\tcall DialogSystem_PlaySequence(seq, Player(0), ${npcVar})
+endfunction`
+          );
+        }
+
+        if (quest.needsFail) {
+          blocks.push(
+`private function OnFailQuest${suffix}End takes nothing returns nothing
+\t// TODO OLDGUI PARITY: failure cleanup / retry-state logic for ${escapeJassString(quest.title)}
+endfunction
+
+private function OnFailQuest${suffix} takes nothing returns nothing
+\tlocal integer seq = QuestGiver_CreateBaseSequence(${npcVar}, "${displayName}")
+\tcall DialogSystem_SetSequenceCallbacks(seq, null, function OnFailQuest${suffix}End)
+\tcall DialogSystem_AddLine(seq, ${npcVar}, "${displayName}", "TODO OLDGUI PARITY: replace ${escapeJassString(quest.title)} fail dialog.", "", true)
+\tcall DialogSystem_PlaySequence(seq, Player(0), ${npcVar})
+endfunction`
+          );
+        }
+
+        return blocks.join("\n\n");
+      }).join("\n\n");
+    }
+
+    function buildDialogLogic(spec) {
+      const npcVar = sanitizeIdentifier(spec.npcVariable, "QuestNPC");
+      return spec.quests.map((quest, index) => {
+        const constName = questConstName(quest, index);
+        const acceptId = actionIdFor(index, "accept");
+        const completeId = actionIdFor(index, "complete");
+        const failId = actionIdFor(index, "fail");
+        const dependency = questDependencyCondition(spec, index);
+        const lines = [];
+        lines.push(`\tif QuestGiver_QuestExistsByNameAndGiver(${constName}, ${npcVar}) then`);
+        if (quest.needsAccept) {
+          lines.push(`\t\tif ${dependency} and not QuestGiver_IsQuestDiscoveredByNameAndGiver(${constName}, ${npcVar}) and QuestGiver_GetStateByNameAndGiver(${constName}, ${npcVar}) == QUEST_STATE_AVAILABLE then`);
+          lines.push(`\t\t\tset b = DialogSystem_AddButtonQuestAcceptNoAutoPlay(${npcVar}Dialog, ${constName}, ${acceptId})`);
+          lines.push(`\t\t\tcall DialogSystem_BindButtonCode(b, function OnAcceptQuest${questFunctionSuffix(index)})`);
+          if (quest.needsFail) {
+            lines.push(`\t\telseif QuestGiver_IsQuestDiscoveredByNameAndGiver(${constName}, ${npcVar}) and QuestGiver_IsQuestFailedByNameAndGiver(${constName}, ${npcVar}) then`);
+            lines.push(`\t\t\tset b = DialogSystem_AddButtonQuestFailed(${npcVar}Dialog, ${constName}, ${failId})`);
+            lines.push(`\t\t\tcall DialogSystem_BindButtonCode(b, function OnFailQuest${questFunctionSuffix(index)})`);
+          }
+          lines.push(`\t\telseif QuestGiver_IsQuestDiscoveredByNameAndGiver(${constName}, ${npcVar}) and not QuestGiver_IsQuestCompletedByNameAndGiver(${constName}, ${npcVar}) then`);
+        } else {
+          lines.push(`\t\tif QuestGiver_IsQuestDiscoveredByNameAndGiver(${constName}, ${npcVar}) and not QuestGiver_IsQuestCompletedByNameAndGiver(${constName}, ${npcVar}) then`);
+        }
+        if (quest.needsComplete) {
+          lines.push(`\t\t\tif QuestGiver_GetStateByNameAndGiver(${constName}, ${npcVar}) == QUEST_STATE_READY_TURNIN then`);
+          lines.push(`\t\t\t\tset b = DialogSystem_AddButtonQuestComplete(${npcVar}Dialog, ${constName}, ${completeId})`);
+          lines.push(`\t\t\t\tcall DialogSystem_BindButtonCode(b, function OnCompleteQuest${questFunctionSuffix(index)})`);
+          lines.push(`\t\t\tendif`);
+        }
+        lines.push(`\t\tendif`);
+        lines.push(`\tendif`);
+        return lines.join("\n");
+      }).join("\n\n");
+    }
+
+    function buildPublicHooks(spec) {
+      return spec.publicHooks
+        .map((hook) => sanitizeIdentifier(hook, "GeneratedHook"))
+        .filter(Boolean)
+        .map((hook) =>
+`public function ${hook} takes nothing returns nothing
+\t// TODO OLDGUI PARITY: external progression hook
+endfunction`)
+        .join("\n\n");
+    }
+
+    function buildJass(spec) {
+      const libraryName = sanitizeIdentifier(spec.libraryName, "qQuestGiver");
+      const fileName = spec.fileName || `${libraryName}.j`;
+      const npcVar = sanitizeIdentifier(spec.npcVariable, "QuestNPC");
+      const displayName = escapeJassString(spec.displayName);
+      const questConstants = spec.quests.map((quest, index) => `\tprivate constant string ${questConstName(quest, index)} = "${escapeJassString(quest.title)}"`).join("\n");
+      const questBlocks = spec.quests.map((quest, index) => createQuestBlock(spec, quest, index)).join("\n");
+      const handlerBlocks = buildHandlerBlocks(spec);
+      const dialogLogic = buildDialogLogic(spec);
+      const publicHooks = buildPublicHooks(spec);
+
+      return `// Generated by qxxx-generator.html
+// Target file: ${escapeJassString(fileName)}
+library ${libraryName} initializer Init requires QuestGiver, QuestMaster, DialogSystem, ExSound, CameraControl, FollowSystem
+
+globals
+\tprivate constant boolean DEBUG = false
+${questConstants}
+
+\tprivate constant real DIALOG_RANGE = ${Number(spec.dialogRange) || 500}.00
+\tprivate constant real DIALOG_COOLDOWN = ${Number(spec.dialogCooldown) || 6}.00
+\tprivate constant boolean REQUIRE_DIALOG_HERO = true
+
+\tprivate boolean ALLOW_NAZGREK = ${toBoolString(spec.allowNazgrek)}
+\tprivate boolean ALLOW_ZULKIS = ${toBoolString(spec.allowZulkis)}
+\tprivate boolean USE_DIALOG_CAMERA = ${toBoolString(spec.useDialogCamera)}
+\tprivate boolean CINEMATIC = ${toBoolString(spec.useCinematic)}
+
+\tprivate dialog ${npcVar}Dialog = null
+\tprivate timer ${npcVar}DialogCooldown = null
+\tprivate unit ${npcVar} = null
+\tprivate unit SelectedHero = null
+\tprivate boolean BackstorySeen = false
+endglobals
+
+private function DebugMsg takes string msg returns nothing
+\tif DEBUG then
+\t\tcall BJDebugMsg("[${libraryName}] " + msg)
+\tendif
+endfunction
+
+private function ResolveDialogHero takes nothing returns unit
+\tif SelectedHero != null and QuestGiver_IsUnitAlive(SelectedHero) then
+\t\treturn SelectedHero
+\tendif
+\treturn QuestGiver_GetAllowedHero(${npcVar}, DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
+endfunction
+
+private function RebuildAndShowDialogTimer takes nothing returns nothing
+\tlocal timer t = GetExpiredTimer()
+\tcall ${libraryName}_RebuildAndShowDialog()
+\tcall DestroyTimer(t)
+endfunction
+
+private function OnBackstoryEnd takes nothing returns nothing
+\tlocal timer t = CreateTimer()
+\tset BackstorySeen = true
+\tcall EnableUserControl(true)
+\tcall TimerStart(t, 0.05, false, function RebuildAndShowDialogTimer)
+endfunction
+
+private function OnBackstory takes nothing returns nothing
+\tlocal integer seq = QuestGiver_CreateBaseSequence(${npcVar}, "${displayName}")
+\tcall QuestGiver_CloseActiveDialog()
+\tcall DialogSystem_SetSequenceCallbacks(seq, null, function OnBackstoryEnd)
+\tcall DialogSystem_AddLine(seq, ${npcVar}, "${displayName}", "TODO OLDGUI PARITY: replace with the final backstory sequence.", "", true)
+\tcall DialogSystem_PlaySequence(seq, Player(0), ${npcVar})
+endfunction
+
+${handlerBlocks}
+
+private function OnFarewell takes nothing returns nothing
+\tlocal integer seq = QuestGiver_CreateFarewellSequence(${npcVar}, "${displayName}", null, "", DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
+\tcall DialogSystem_PlaySequence(seq, Player(0), ${npcVar})
+endfunction
+
+private function BuildDialog takes nothing returns nothing
+\tlocal button b
+\tif ${npcVar}Dialog == null then
+\t\tset ${npcVar}Dialog = DialogSystem_CreateDialog("${displayName}")
+\tendif
+\tcall DialogSystem_ClearDialog(${npcVar}Dialog)
+\tcall DialogSystem_SetTitle(${npcVar}Dialog, "${displayName}")
+
+\tset b = DialogSystem_AddButtonInfo(${npcVar}Dialog, 1)
+\tcall DialogSystem_BindButtonCode(b, function OnBackstory)
+
+${dialogLogic}
+
+\tset b = DialogSystem_AddFarewellButton(${npcVar}Dialog)
+\tcall DialogSystem_BindButtonCode(b, function OnFarewell)
+endfunction
+
+private function CreateQuests takes nothing returns nothing
+\tlocal QuestData q
+\tlocal string giverName = QuestGiver_GetUnitDisplayName(${npcVar})
+\tlocal string infoText = "|cffffcc00Quest giver:|r " + giverName + "\\n"
+\tlocal string info2Text = "|cffffcc00Recommended level:|r " + I2S(1) + "\\n\\n"
+
+${questBlocks}
+endfunction
+
+public function RebuildAndShowDialog takes nothing returns nothing
+\tcall BuildDialog()
+\tcall DialogSystem_ShowDialog(${npcVar}Dialog, Player(0))
+endfunction
+
+private function OnSelected takes nothing returns nothing
+\tlocal unit hero
+\tif DialogSystem_IsSequenceActive() then
+\t\treturn
+\tendif
+\tset hero = QuestGiver_GetAllowedHero(${npcVar}, DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
+\tif REQUIRE_DIALOG_HERO and hero == null then
+\t\treturn
+\tendif
+\tif not QuestGiver_PassSelectionGate(${npcVar}, hero, DIALOG_RANGE, ${npcVar}DialogCooldown) then
+\t\treturn
+\tendif
+\tset SelectedHero = hero
+\tset ${npcVar}DialogCooldown = QuestGiver_StartCooldown(${npcVar}DialogCooldown, DIALOG_COOLDOWN)
+\tcall BuildDialog()
+\tcall DialogSystem_ShowDialog(${npcVar}Dialog, Player(0))
+\t// TODO OLDGUI PARITY: swap in a cinematic mover / camera handoff if this NPC needs full Aradion-style staging.
+endfunction
+
+private function InitDelayed takes nothing returns nothing
+\tif udg_${npcVar} == null then
+\t\tcall TimerStart(${npcVar}DialogCooldown, 0.50, false, function InitDelayed)
+\t\treturn
+\tendif
+\tset ${npcVar} = udg_${npcVar}
+\tcall QuestGiver_Register(${npcVar})
+\tcall RegisterLines()
+\tcall CreateQuests()
+\tcall QuestGiver_RegisterSelectionHandler(${npcVar}, function OnSelected)
+endfunction
+
+private function RegisterLines takes nothing returns nothing
+\tcall DialogSystem_RegisterFarewellLineForUnit(${npcVar}, "Safe travels.", "", true)
+endfunction
+
+private function Init takes nothing returns nothing
+\tset ${npcVar}DialogCooldown = CreateTimer()
+\tcall TimerStart(${npcVar}DialogCooldown, 0.00, false, function InitDelayed)
+endfunction
+
+${publicHooks}
+
+endlibrary
+`;
+    }
+
+    function renderQuests() {
+      const root = document.getElementById("questList");
+      root.innerHTML = "";
+
+      state.quests.forEach((quest, index) => {
+        const card = document.createElement("section");
+        card.className = "quest-card";
+        card.innerHTML = `
+          <div class="quest-head">
+            <h3>Quest ${index + 1}</h3>
+            <div class="quest-actions">
+              <button class="ghost" data-move-up="${index}">Move Up</button>
+              <button class="ghost" data-move-down="${index}">Move Down</button>
+              <button class="ghost" data-remove="${index}">Remove</button>
+            </div>
+          </div>
+          <div class="grid two">
+            <label>Quest Key
+              <input data-field="key" data-index="${index}" value="${quest.key}">
+            </label>
+            <label>Quest Title
+              <input data-field="title" data-index="${index}" value="${quest.title}">
+            </label>
+            <label>Quest Type
+              <select data-field="questType" data-index="${index}">
+                <option value="normal">normal</option>
+                <option value="daily">daily</option>
+                <option value="repeatable">repeatable</option>
+                <option value="dungeon">dungeon</option>
+              </select>
+            </label>
+            <label>Required Level
+              <input data-field="requiredLevel" data-index="${index}" type="number" value="${quest.requiredLevel}">
+            </label>
+          </div>
+          <label>Icon Path
+            <input data-field="iconPath" data-index="${index}" value="${quest.iconPath}">
+          </label>
+          <label>Description
+            <textarea data-field="description" data-index="${index}">${quest.description}</textarea>
+          </label>
+          <label>Requirements (one per line, max 8)
+            <textarea data-field="requirements" data-index="${index}">${quest.requirements}</textarea>
+          </label>
+          <div class="grid three">
+            <label>XP Reward
+              <input data-field="xpReward" data-index="${index}" type="number" value="${quest.xpReward}">
+            </label>
+            <label>Gold Reward
+              <input data-field="goldReward" data-index="${index}" type="number" value="${quest.goldReward}">
+            </label>
+            <label>Reputation Reward
+              <input data-field="reputationReward" data-index="${index}" type="number" value="${quest.reputationReward}">
+            </label>
+          </div>
+          <div class="grid two">
+            <label>Receiver Mode
+              <select data-field="receiverMode" data-index="${index}">
+                <option value="giver">giver</option>
+                <option value="custom">custom</option>
+              </select>
+            </label>
+            <label>Custom Receiver Name
+              <input data-field="receiverDisplayName" data-index="${index}" value="${quest.receiverDisplayName}">
+            </label>
+          </div>
+          <div class="checkboxes">
+            <label class="checkbox"><input data-field="needsAccept" data-index="${index}" type="checkbox" ${quest.needsAccept ? "checked" : ""}> Accept handler</label>
+            <label class="checkbox"><input data-field="needsComplete" data-index="${index}" type="checkbox" ${quest.needsComplete ? "checked" : ""}> Complete handler</label>
+            <label class="checkbox"><input data-field="needsFail" data-index="${index}" type="checkbox" ${quest.needsFail ? "checked" : ""}> Fail handler</label>
+          </div>
+        `;
+        root.appendChild(card);
+        card.querySelector(`[data-field="questType"]`).value = quest.questType;
+        card.querySelector(`[data-field="receiverMode"]`).value = quest.receiverMode;
+      });
+
+      root.querySelectorAll("input, select, textarea").forEach((element) => {
+        element.addEventListener("input", generate);
+        element.addEventListener("change", generate);
+      });
+    }
+
+    function readGeneralSpec() {
+      return {
+        libraryName: document.getElementById("libraryName").value.trim() || "qQuestGiver",
+        fileName: document.getElementById("fileName").value.trim() || "qQuestGiver.j",
+        npcVariable: document.getElementById("npcVariable").value.trim() || "QuestNPC",
+        displayName: document.getElementById("displayName").value.trim() || "Quest Giver",
+        dialogRange: Number(document.getElementById("dialogRange").value) || 500,
+        dialogCooldown: Number(document.getElementById("dialogCooldown").value) || 6,
+        allowNazgrek: document.getElementById("allowNazgrek").checked,
+        allowZulkis: document.getElementById("allowZulkis").checked,
+        useDialogCamera: document.getElementById("useDialogCamera").checked,
+        useCinematic: document.getElementById("useCinematic").checked,
+        publicHooks: document.getElementById("publicHooks").value
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter(Boolean),
+        quests: state.quests.map((quest) => ({ ...quest })),
+      };
+    }
+
+    function applySpec(spec) {
+      document.getElementById("libraryName").value = spec.libraryName || "qQuestGiver";
+      document.getElementById("fileName").value = spec.fileName || `${spec.libraryName || "qQuestGiver"}.j`;
+      document.getElementById("npcVariable").value = spec.npcVariable || "QuestNPC";
+      document.getElementById("displayName").value = spec.displayName || "Quest Giver";
+      document.getElementById("dialogRange").value = spec.dialogRange ?? 500;
+      document.getElementById("dialogCooldown").value = spec.dialogCooldown ?? 6;
+      document.getElementById("allowNazgrek").checked = spec.allowNazgrek !== false;
+      document.getElementById("allowZulkis").checked = spec.allowZulkis !== false;
+      document.getElementById("useDialogCamera").checked = spec.useDialogCamera !== false;
+      document.getElementById("useCinematic").checked = spec.useCinematic !== false;
+      document.getElementById("publicHooks").value = (spec.publicHooks || []).join("\n");
+      state.quests = (spec.quests || []).map((quest, index) => ({ ...defaultQuest(index + 1), ...quest }));
+      renderQuests();
+      generate();
+    }
+
+    function addQuest() {
+      state.quests.push(defaultQuest(state.quests.length + 1));
+      renderQuests();
+      generate();
+    }
+
+    function generate() {
+      syncQuestStateFromDom();
+      const spec = readGeneralSpec();
+      document.getElementById("output").value = buildJass(spec);
+    }
+
+    function syncQuestStateFromDom() {
+      state.quests = state.quests.map((quest, index) => {
+        const next = { ...quest };
+        document.querySelectorAll(`[data-index="${index}"]`).forEach((field) => {
+          const name = field.getAttribute("data-field");
+          if (field.type === "checkbox") {
+            next[name] = field.checked;
+          } else if (field.type === "number") {
+            next[name] = Number(field.value) || 0;
+          } else {
+            next[name] = field.value;
+          }
+        });
+        return next;
+      });
+    }
+
+    function downloadBlob(name, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function exportJson() {
+      syncQuestStateFromDom();
+      const spec = readGeneralSpec();
+      downloadBlob(`${sanitizeIdentifier(spec.libraryName, "qQuestGiver")}.json`, JSON.stringify(spec, null, 2), "application/json");
+    }
+
+    function importJsonFile(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const spec = JSON.parse(reader.result);
+          applySpec(spec);
+        } catch (error) {
+          window.alert(`Import failed: ${error.message}`);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    document.addEventListener("click", (event) => {
+      const removeIndex = event.target.getAttribute("data-remove");
+      const moveUpIndex = event.target.getAttribute("data-move-up");
+      const moveDownIndex = event.target.getAttribute("data-move-down");
+
+      if (removeIndex !== null) {
+        state.quests.splice(Number(removeIndex), 1);
+        renderQuests();
+        generate();
+      } else if (moveUpIndex !== null) {
+        const index = Number(moveUpIndex);
+        if (index > 0) {
+          [state.quests[index - 1], state.quests[index]] = [state.quests[index], state.quests[index - 1]];
+          renderQuests();
+          generate();
+        }
+      } else if (moveDownIndex !== null) {
+        const index = Number(moveDownIndex);
+        if (index < state.quests.length - 1) {
+          [state.quests[index + 1], state.quests[index]] = [state.quests[index], state.quests[index + 1]];
+          renderQuests();
+          generate();
+        }
+      }
+    });
+
+    document.getElementById("addQuestTop").addEventListener("click", addQuest);
+    document.getElementById("addQuestSide").addEventListener("click", addQuest);
+    document.getElementById("generateTop").addEventListener("click", generate);
+    document.getElementById("generateBottom").addEventListener("click", generate);
+    document.getElementById("exportTop").addEventListener("click", exportJson);
+    document.getElementById("importTop").addEventListener("click", () => document.getElementById("importFile").click());
+    document.getElementById("downloadJass").addEventListener("click", () => {
+      generate();
+      const spec = readGeneralSpec();
+      downloadBlob(spec.fileName || "qQuestGiver.j", document.getElementById("output").value, "text/plain");
+    });
+    document.getElementById("copyOutput").addEventListener("click", async () => {
+      generate();
+      await navigator.clipboard.writeText(document.getElementById("output").value);
+    });
+    document.getElementById("importFile").addEventListener("change", (event) => {
+      const [file] = event.target.files || [];
+      if (file) {
+        importJsonFile(file);
+      }
+      event.target.value = "";
+    });
+
+    document.querySelectorAll("input, select, textarea").forEach((element) => {
+      if (element.id !== "output") {
+        element.addEventListener("input", generate);
+        element.addEventListener("change", generate);
+      }
+    });
+
+    applySpec(defaultSpec());
+  </script>
+</body>
+</html>
