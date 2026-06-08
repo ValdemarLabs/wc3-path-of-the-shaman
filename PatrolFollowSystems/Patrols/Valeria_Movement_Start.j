@@ -1,12 +1,13 @@
 function ValeriaMovementStart takes nothing returns nothing
     local integer i
     local integer patrolCount = 26
+    local unit u
 
     // ====================================
     // START PATROL
     // ====================================
 
-    set udg_TempUnit = udg_Valeria
+    set u = udg_Valeria
 
     set udg_PatrolSystem_Point[0]  = GetRectCenter(gg_rct_ValeriaNewPos)
     set udg_PatrolSystem_Wait[0]   = 60.00  // by Aradion
@@ -62,7 +63,7 @@ function ValeriaMovementStart takes nothing returns nothing
     set udg_PatrolSystem_Wait[25]  = 0.00
 
     // Call the patrol system
-    call PatrolSystem_Start(udg_TempUnit, patrolCount, 30.00, 0, true, "attack", 120.00)
+    call PatrolSystem_Start(u, patrolCount, 30.00, 0, true, "attack", 120.00)
 
     // ====================================
     // Remove leaks
