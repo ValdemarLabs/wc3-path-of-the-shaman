@@ -24,6 +24,17 @@
   Further softened normal-mode blocker tracing so safe-camera correction does not react as heavily to pathing found too far toward the intended camera endpoint, reducing restless bounce during gameplay.
 - `WE Mainmap` - `Cinematic ON`, `Cinematic OFF`, `Intro Cinematic`
   Verified that intro-style cinematics now return through the shared camera flow correctly after the earlier `Cinematic ON/OFF` suspend / resume trigger fixes, instead of fighting the stored player camera state during cinematic shutdown.
+- `QuestGiver.j`, `qAradion.j`, `QuestsAndDialogs/QuestGivers/tools/qxxx-generator.html`
+  Continued the `qAradion` parity-and-modularity pass so the current JASS quest giver behaves more like the old GUI version while also becoming the reusable template for future `qXXX` quest-giver sublibraries.
+  Added shared `QuestGiver` sequence scaffolding such as `CreateBaseSequence(...)`, kept the more generic accept / farewell helpers for cases where shared banter fits, and moved `qAradion` quest accept / complete flow onto the new lower-level reusable base path so unique questgiver dialog can stay custom without rewriting sequence setup every time.
+  Added a small local browser generator that emits `q<Name>.j` questgiver templates with quest blocks, dialog-button wiring, handler stubs, public hook placeholders, and explicit `TODO OLDGUI PARITY` markers instead of generating only an empty shell.
+  Reworked `qAradion` Ranger Missing, item-turn-in, and Rifts flow further toward JASS-owned quest logic, including escort/fail trigger setup, companion handling, ready-turn-in gating, and more stable dialog hero / cinematic return handling.
+  Fixed a strict compile-order problem in `qAradion` by moving `OnRangerMissingValeriaDamaged` before the trigger registration that binds it.
+- `PatrolFollowSystems/Patrols/Valeria_Movement_Start.j`, `qAradion.j`
+  Updated `ValeriaMovementStart` to use a local unit variable instead of `udg_TempUnit`, which is the safer direction for the other patrol-start functions that still depend on the shared temp-unit pattern.
+  Updated `qAradion` to call `ExecuteFunc("ValeriaMovementStart")` when restarting Valeria's patrol because this patrol-start entry point is still a plain function and not a JASS library API.
+- `QuestsAndDialogs/Plans/_otherPlansAndHelpers`
+  Reorganized several older quest/dialog reference markdown files into the shared helper/plans folder so the historical crash notes, requirements notes, and refactoring references are grouped in one place instead of being scattered across the top-level `QuestsAndDialogs` folders.
 
 ### Player-Facing Updates
 - `Camera / Zones`
@@ -34,17 +45,23 @@
 
 ### Known Issues
 - `TerrainDamage.j`
-  The terrain-damage lag investigation is still unresolved because the bypass-mode isolation test was not actually enabled yet, so the session did not confirm whether terrain damage is the real source of the remaining FPS problem.
+  The terrain-damage lag investigation is still unresolved. Even though the system currently has a hard internal bypass switch, the intended isolation test still needs to be repeated cleanly so the session can confirm whether the slight lag spikes are really tied to TerrainDamage's periodic timer activity or to some other always-running system.
 - `AbilitiesLiteUI.j`
   The gray overlay on unlearned abilities did not seem to work as intended in testing and still needs another in-game verification / fix pass.
+- `PatrolFollowSystems`
+  `ValeriaMovementStart` no longer depends on `udg_TempUnit`, but similar patrol-start functions such as `Mordrax` and other older patrol helpers still need the same cleanup pass.
 
 ### Actions Remaining
 - `CameraControl.j`
   Continue smoothing normal-mode safe-camera correction so blocker / terrain adjustment feels closer to advanced camera quality without adding gameplay-disrupting bounce or extra lag in blocker-dense areas.
 - `TerrainDamage.j`
-  Re-run the lag isolation test with the terrain-damage bypass mode actually enabled, then confirm whether the unresolved FPS drop is tied to terrain damage or to another always-running system.
+  Re-run the lag isolation test with TerrainDamage fully bypassed / disabled for the session and confirm whether the slight lag spikes and unresolved FPS drop are tied to TerrainDamage's periodic timers or to another always-running system.
 - `AbilitiesLiteUI.j`
   Re-check why the unlearned-ability gray overlay did not appear correctly in-game and fix the icon-overlay path if the current unavailable-state art is still not being shown.
+- `PatrolFollowSystems`
+  Apply the same `udg_TempUnit` removal pattern from `ValeriaMovementStart` to other older patrol-entry functions that still rely on shared temp globals.
+- `qAradion.j` / questgiver workflow
+  Re-test `qAradion` on-map after the latest parity pass, keep closing the remaining old-GUI parity gaps, and use the stabilized helper boundary plus generator output as the starting point for the next questgiver NPC instead of duplicating the old boilerplate by hand.
 
 ## [7.6.2026]
 
