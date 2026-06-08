@@ -253,6 +253,9 @@ public function AddCompanion takes unit companionUnit, string companionIcon retu
 	if CompanionFocusNazgrek != null then
 		call GroupAddUnit(CompanionFocusNazgrek, companionUnit)
 	endif
+	if CompanionFocusZulkis != null then
+		call GroupAddUnit(CompanionFocusZulkis, companionUnit)
+	endif
 	
 	// Display join message
 	call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(companionUnit) + " has joined the party!")
@@ -287,9 +290,6 @@ public function RemoveCompanion takes unit companionUnit returns nothing
 	
 	// Order unit to stop
 	call IssueImmediateOrder(companionUnit, "stop")
-	
-	// Display debug message
-	call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "Debug Kick: Kicked from Companion_Group: " + GetUnitName(companionUnit))
 	
 	// Remove from all companion groups
 	if Companion_Group != null then
@@ -970,10 +970,16 @@ endfunction
 //===========================================================================
 // Generic accept/complete sequence builders
 //===========================================================================
-public function CreateAcceptSequence takes unit giver, string giverName, unit hero, string heroName, real dialogRange, boolean allowNazgrek, boolean allowZulkis returns integer
+public function CreateBaseSequence takes unit giver, string giverName returns integer
 	local integer seq
 	set seq = DialogSystem_CreateSequence()
 	call DialogSystem_SetSequenceDefaultSpeaker(seq, giver, giverName)
+	return seq
+endfunction
+
+public function CreateAcceptSequence takes unit giver, string giverName, unit hero, string heroName, real dialogRange, boolean allowNazgrek, boolean allowZulkis returns integer
+	local integer seq
+	set seq = CreateBaseSequence(giver, giverName)
 	
 	// Auto-resolve hero if not provided
 	if hero == null then
@@ -995,16 +1001,12 @@ public function CreateAcceptSequence takes unit giver, string giverName, unit he
 endfunction
 
 public function CreateCompleteSequence takes unit giver, string giverName returns integer
-	local integer seq
-	set seq = DialogSystem_CreateSequence()
-	call DialogSystem_SetSequenceDefaultSpeaker(seq, giver, giverName)
-	return seq
+	return CreateBaseSequence(giver, giverName)
 endfunction
 
 public function CreateFarewellSequence takes unit giver, string giverName, unit hero, string heroName, real dialogRange, boolean allowNazgrek, boolean allowZulkis returns integer
 	local integer seq
-	set seq = DialogSystem_CreateSequence()
-	call DialogSystem_SetSequenceDefaultSpeaker(seq, giver, giverName)
+	set seq = CreateBaseSequence(giver, giverName)
 	
 	// Auto-resolve hero if not provided
 	if hero == null then
