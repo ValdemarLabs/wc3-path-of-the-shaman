@@ -3,6 +3,33 @@
 
 ---
 
+## Base Sequence Builder
+
+```jass
+QuestGiver_CreateBaseSequence(unit giver, string giverName)
+```
+
+**Use for**: Fully custom backstory / accept / complete / fail sequences where you want shared sequence setup, but not the generic accept/farewell banter.
+
+**Example**:
+```jass
+private function OnAcceptQuest1 takes nothing returns nothing
+    local integer seq
+    set seq = QuestGiver_CreateBaseSequence(MyGiver, "My Giver Name")
+    call DialogSystem_SetSequenceCallbacks(seq, null, function OnAcceptQuest1End)
+    call DialogSystem_AddLine(seq, MyGiver, "My Giver Name", "Quest-specific text...", "Sound_0001", true)
+    call DialogSystem_PlaySequence(seq, Player(0), MyGiver)
+endfunction
+```
+
+**Use this instead of**:
+```jass
+set seq = DialogSystem_CreateSequence()
+call DialogSystem_SetSequenceDefaultSpeaker(seq, MyGiver, "My Giver Name")
+```
+
+---
+
 ## Sequence-End Handler
 
 ```jass
@@ -209,7 +236,8 @@ endfunction
 
 ## Tips
 
-1. **Always pass `null, ""` for hero/heroName** to let the helper auto-resolve
-2. **Use the same callback pattern** - set callbacks, add custom lines, play sequence
-3. **Don't forget `HandleSequenceEnd`** in all end callbacks
-4. **Keep quest-specific logic separate** - helpers provide structure, you provide content
+1. **Use `CreateBaseSequence` for fully custom story content** where the generic accept/farewell banter would get in the way.
+2. **Always pass `null, ""` for hero/heroName** to let the accept/farewell helpers auto-resolve when you do want their shared banter.
+3. **Use the same callback pattern** - set callbacks, add custom lines, play sequence.
+4. **Don't forget `HandleSequenceEnd`** in end callbacks that use the standard close/cooldown/camera path.
+5. **Keep quest-specific logic separate** - helpers provide structure, you provide content.
