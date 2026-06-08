@@ -13,6 +13,33 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [9.6.2026]
+
+### Technical Updates
+- `TerrainDamage.j`
+  Completed a direct lag-isolation test with TerrainDamage disabled and confirmed that turning the system off did not reduce the periodic lag spikes in any significant way.
+  This makes TerrainDamage much less likely to be the main source of the recurring `20-40` FPS drops, such as falling from roughly `90` FPS to `60`.
+- `CameraControl.j`
+  Continued troubleshooting the remaining periodic performance drops and current testing suggests that normal camera mode's automatic safe / no-clipping adjustment path is a more likely source of the troublesome lag than TerrainDamage.
+  The next direction is to think more aggressively about running normal mode without constant safe-camera correction and relying more on internally activated special camera modes in specific zones / rects where custom camera behavior is actually needed.
+  This also points toward expanding `CameraControl` so special camera modes can be handled more easily both internally and externally beyond the current Boom Mine-specific path.
+
+### Known Issues
+- `CameraControl.j` / normal camera mode
+  Normal mode camera adjustment currently looks like the more problematic performance path. The automatic no-clipping / safe-camera correction still needs more profiling and likely a design simplification pass if it is causing the recurring drops.
+- `QuestSystems` / `qAradion`
+  During testing, entering dialog with Aradion can incorrectly turn his quest exclamation mark from yellow to red even when a quest should still be available.
+  While the marker is red, the interaction appears to get stuck at the `Info` section and does not continue into the expected quest-accept flow. After exiting dialog, the marker turns yellow again.
+
+### Actions Remaining
+- `TerrainDamage.j`
+  Re-enable TerrainDamage after the latest isolation test, because disabling it did not meaningfully improve the lag spikes and it should no longer stay bypassed on the assumption that it is the main culprit.
+- `CameraControl.j`
+  Explore a lighter normal-camera design that avoids always-on safe / no-clipping adjustment where possible, and rely more on deliberate special-camera-mode activation in selected zones or rect-driven situations.
+  If zone- or rect-specific manual camera behavior is still needed outside Boom Mine, add an easier internal and external special-camera handling path in `CameraControl.j` for more than one special camera profile.
+- `QuestSystems` / `qAradion`
+  Investigate why Aradion's quest marker flips from available-yellow to unavailable-red on dialog entry, and why that state change blocks access beyond the `Info` branch until the dialog is closed again.
+
 ## [8.6.2026]
 
 ### Technical Updates
