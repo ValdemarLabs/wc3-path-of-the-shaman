@@ -1,4 +1,4 @@
-library QuestGiver initializer Init requires QuestMaster, DialogSystem, HeroItemCheck, Table
+library QuestGiver initializer Init requires QuestMaster, DialogSystem, HeroItemCheck, CameraControl, Table
 //===========================================================================
 // QuestGiver
 // Base utilities for quest givers and dialog entry helpers.
@@ -16,6 +16,27 @@ globals
 	private unit QuestGiver_PendingNPC = null
 	private integer QuestGiver_PendingSeq = 0
 	unit QuestGiver_SelectedUnit = null
+	private unit TransitionGiver = null
+	private unit TransitionHero = null
+	private timer TransitionCooldownTimer = null
+	private real TransitionCooldownDuration = 0.00
+	private boolean TransitionStopCamera = false
+	private real TransitionCameraStopDuration = 0.00
+	private boolean TransitionUseCamera = false
+	private boolean TransitionRunCinematicTrigger = false
+	private boolean TransitionUseCinematicMode = false
+	private integer TransitionMoveMode = 0
+	private real TransitionMoveOffset = 0.00
+	private real TransitionMoveAngle = 0.00
+	private real TransitionCameraDist = 0.00
+	private real TransitionCameraZOffset = 0.00
+	private real TransitionCameraAngle = 0.00
+	private real TransitionCameraRotOffset = 0.00
+	private real TransitionCameraFarZ = 0.00
+	private real TransitionCameraFov = 0.00
+	private real TransitionCameraBlockRadius = 0.00
+	private boolean TransitionCameraBlockCheck = false
+	private string TransitionContinueFuncName = ""
 
 	constant integer QUESTGIVER_GREET_DEFAULT = 0
 	constant integer QUESTGIVER_GREET_NAZGREK_THEN_NPC = 1
@@ -236,10 +257,26 @@ endfunction
 //===========================================================================
 public function AddCompanion takes unit companionUnit, string companionIcon returns nothing
 	local integer customValue
+	local integer i = 1
 	
 	if companionUnit == null then
 		return
 	endif
+
+	loop
+		exitwhen i > udg_CompanionCount
+		if udg_CompanionUnit[i] == companionUnit then
+			if CompanionIndex != 0 then
+				set CompanionIndex.integer[GetUnitUserData(companionUnit)] = i
+			endif
+			if CompanionIcon != 0 and companionIcon != "" then
+				set CompanionIcon.string[i] = companionIcon
+			endif
+			call DebugMsg("AddCompanion skipped duplicate: " + GetUnitName(companionUnit))
+			return
+		endif
+		set i = i + 1
+	endloop
 	
 	// Play rescue sound if available
 	if RescueSound != null then
@@ -263,6 +300,7 @@ public function AddCompanion takes unit companionUnit, string companionIcon retu
 	// Update companion tracking (use udg_CompanionCount directly to avoid state mismatch)
 	set udg_CompanionCount = udg_CompanionCount + 1
 	set CompanionUnit[udg_CompanionCount] = companionUnit
+	set udg_CompanionUnit[udg_CompanionCount] = companionUnit
 	
 	// Store index by custom value
 	set customValue = GetUnitUserData(companionUnit)
@@ -284,6 +322,10 @@ public function AddCompanion takes unit companionUnit, string companionIcon retu
 endfunction
 
 public function RemoveCompanion takes unit companionUnit returns nothing
+	local integer i = 1
+	local integer foundIndex = 0
+	local integer lastIndex
+	local integer movedCustomValue
 	if companionUnit == null then
 		return
 	endif
@@ -300,6 +342,44 @@ public function RemoveCompanion takes unit companionUnit returns nothing
 	endif
 	if CompanionFocusZulkis != null then
 		call GroupRemoveUnit(CompanionFocusZulkis, companionUnit)
+	endif
+
+	set udg_CompanionUnitKicked = companionUnit
+	loop
+		exitwhen i > udg_CompanionCount
+		if udg_CompanionUnit[i] == companionUnit or CompanionUnit[i] == companionUnit then
+			set foundIndex = i
+			exitwhen true
+		endif
+		set i = i + 1
+	endloop
+
+	if foundIndex > 0 then
+		set lastIndex = udg_CompanionCount
+		loop
+			exitwhen foundIndex >= lastIndex
+			set CompanionUnit[foundIndex] = CompanionUnit[foundIndex + 1]
+			set udg_CompanionUnit[foundIndex] = udg_CompanionUnit[foundIndex + 1]
+			if CompanionIcon != 0 then
+				set CompanionIcon.string[foundIndex] = CompanionIcon.string[foundIndex + 1]
+			endif
+			if udg_CompanionUnit[foundIndex] != null and CompanionIndex != 0 then
+				set movedCustomValue = GetUnitUserData(udg_CompanionUnit[foundIndex])
+				set CompanionIndex.integer[movedCustomValue] = foundIndex
+			endif
+			set foundIndex = foundIndex + 1
+		endloop
+
+		set CompanionUnit[lastIndex] = null
+		set udg_CompanionUnit[lastIndex] = null
+		if CompanionIcon != 0 then
+			set CompanionIcon.string[lastIndex] = ""
+		endif
+		set udg_CompanionCount = udg_CompanionCount - 1
+	endif
+
+	if CompanionIndex != 0 then
+		set CompanionIndex.integer[GetUnitUserData(companionUnit)] = 0
 	endif
 	
 	// Trigger multiboard update
@@ -894,6 +974,22 @@ public function SetReceiverDisplayNameByNameAndGiver takes string questName, uni
 	call QuestMaster_SetReceiverDisplayNameByNameAndGiver(questName, questGiver, displayName)
 endfunction
 
+public function SetAllowedHeroesForLevelCheck takes integer questId, boolean allowNazgrek, boolean allowZulkis returns nothing
+	call QuestMaster_SetAllowedHeroesForLevelCheck(questId, allowNazgrek, allowZulkis)
+endfunction
+
+public function SetAllowedHeroesForLevelCheckByNameAndGiver takes string questName, unit questGiver, boolean allowNazgrek, boolean allowZulkis returns nothing
+	call QuestMaster_SetAllowedHeroesForLevelCheckByNameAndGiver(questName, questGiver, allowNazgrek, allowZulkis)
+endfunction
+
+public function AddRequiredCompletedQuest takes integer questId, string prereqQuestName, unit prereqQuestGiver returns nothing
+	call QuestMaster_AddRequiredCompletedQuest(questId, prereqQuestName, prereqQuestGiver)
+endfunction
+
+public function AddRequiredCompletedQuestByNameAndGiver takes string questName, unit questGiver, string prereqQuestName, unit prereqQuestGiver returns nothing
+	call QuestMaster_AddRequiredCompletedQuestByNameAndGiver(questName, questGiver, prereqQuestName, prereqQuestGiver)
+endfunction
+
 //===========================================================================
 // Quest lookup/state wrappers
 //===========================================================================
@@ -965,6 +1061,177 @@ public function HandleSequenceEnd takes unit giver, timer cooldownTimer, real co
 	
 	// Note: reopenDialog would require storing additional context; 
 	// for now this is a placeholder for future enhancement
+endfunction
+
+private function ClearTransitionState takes nothing returns nothing
+	set TransitionGiver = null
+	set TransitionHero = null
+	set TransitionCooldownTimer = null
+	set TransitionCooldownDuration = 0.00
+	set TransitionStopCamera = false
+	set TransitionCameraStopDuration = 0.00
+	set TransitionUseCamera = false
+	set TransitionRunCinematicTrigger = false
+	set TransitionUseCinematicMode = false
+	set TransitionMoveMode = 0
+	set TransitionMoveOffset = 0.00
+	set TransitionMoveAngle = 0.00
+	set TransitionCameraDist = 0.00
+	set TransitionCameraZOffset = 0.00
+	set TransitionCameraAngle = 0.00
+	set TransitionCameraRotOffset = 0.00
+	set TransitionCameraFarZ = 0.00
+	set TransitionCameraFov = 0.00
+	set TransitionCameraBlockRadius = 0.00
+	set TransitionCameraBlockCheck = false
+	set TransitionContinueFuncName = ""
+endfunction
+
+private function FinishDialogExitTransition takes nothing returns nothing
+	local timer t = GetExpiredTimer()
+
+	call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, 1.0, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+	call HandleSequenceEnd(TransitionGiver, TransitionCooldownTimer, TransitionCooldownDuration, TransitionStopCamera, TransitionCameraStopDuration, TransitionUseCamera, false)
+	if TransitionRunCinematicTrigger then
+		call TriggerExecute(gg_trg_Cinematic_OFF)
+	endif
+	if TransitionUseCinematicMode then
+		call CinematicModeBJ(false, GetPlayersAll())
+	endif
+	if TransitionRunCinematicTrigger or TransitionUseCinematicMode then
+		call ExecuteFunc("MasterUI_ShowGameButton")
+	endif
+	call EnableUserControl(true)
+	if TransitionHero != null and GetWidgetLife(TransitionHero) > 0.405 and not IsUnitType(TransitionHero, UNIT_TYPE_DEAD) then
+		call CameraControl_SetTargetUnit(Player(0), TransitionHero)
+		call SelectUnitForPlayerSingle(TransitionHero, Player(0))
+	endif
+
+	call ClearTransitionState()
+	call DestroyTimer(t)
+	set t = null
+endfunction
+
+private function ContinueDialogExitTransition takes nothing returns nothing
+	local timer t = GetExpiredTimer()
+	local timer nextTimer = CreateTimer()
+
+	call DestroyTimer(t)
+	set t = null
+	call TimerStart(nextTimer, 1.0, false, function FinishDialogExitTransition)
+	set nextTimer = null
+endfunction
+
+public function StartDialogExitTransition takes unit giver, unit restoreHero, timer cooldownTimer, real cooldownDuration, boolean stopCamera, real cameraStopDuration, boolean useCamera, boolean runCinematicTrigger, boolean useCinematicMode returns nothing
+	local timer t = CreateTimer()
+
+	set TransitionGiver = giver
+	set TransitionHero = restoreHero
+	set TransitionCooldownTimer = cooldownTimer
+	set TransitionCooldownDuration = cooldownDuration
+	set TransitionStopCamera = stopCamera
+	set TransitionCameraStopDuration = cameraStopDuration
+	set TransitionUseCamera = useCamera
+	set TransitionRunCinematicTrigger = runCinematicTrigger
+	set TransitionUseCinematicMode = useCinematicMode
+
+	call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUT, 1.0, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+	call TimerStart(t, 1.0, false, function ContinueDialogExitTransition)
+	set t = null
+endfunction
+
+private function ExecuteDialogEntryContinue takes nothing returns nothing
+	local timer t = GetExpiredTimer()
+	local string continueFuncName = TransitionContinueFuncName
+
+	call DestroyTimer(t)
+	set t = null
+	set TransitionContinueFuncName = ""
+	if continueFuncName != "" then
+		call ExecuteFunc(continueFuncName)
+	endif
+endfunction
+
+private function FinishDialogEntryTransition takes nothing returns nothing
+	local timer t = CreateTimer()
+
+	call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, 1.0, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+	call TimerStart(t, 1.0, false, function ExecuteDialogEntryContinue)
+	set t = null
+endfunction
+
+private function ContinueDialogEntryTransition takes nothing returns nothing
+	local timer t = GetExpiredTimer()
+	local location p1
+	local location p2
+	local unit hero = TransitionHero
+	local real x
+	local real y
+
+	call DestroyTimer(t)
+	set t = null
+
+	if hero == null then
+		set hero = TransitionGiver
+	endif
+
+	if TransitionRunCinematicTrigger and TransitionGiver != null then
+		set udg_CinematicTriggerUnit = hero
+		set udg_CinematicMoveMode = TransitionMoveMode
+		set x = GetUnitX(TransitionGiver) + TransitionMoveOffset * Cos(TransitionMoveAngle * bj_DEGTORAD)
+		set y = GetUnitY(TransitionGiver) + TransitionMoveOffset * Sin(TransitionMoveAngle * bj_DEGTORAD)
+		set p1 = Location(x, y)
+		set p2 = Location(x, y)
+		set udg_CinematicMovePoint[1] = p1
+		set udg_CinematicMovePoint[2] = p2
+		call TriggerExecute(gg_trg_Cinematic_ON)
+		call RemoveLocation(p1)
+		call RemoveLocation(p2)
+		set p1 = null
+		set p2 = null
+	endif
+
+	if TransitionGiver != null then
+		call DialogSystem_StartDialogCamera(Player(0), TransitionGiver, TransitionCameraDist, TransitionCameraZOffset, TransitionCameraAngle, TransitionCameraRotOffset, TransitionCameraFarZ, TransitionCameraFov, TransitionCameraBlockRadius, TransitionCameraBlockCheck, TransitionUseCamera)
+	endif
+
+	call FinishDialogEntryTransition()
+endfunction
+
+public function StartDialogEntryTransition takes unit giver, unit hero, integer moveMode, real moveOffset, real moveAngle, boolean runCinematicTrigger, boolean useCamera, real cameraDist, real cameraZOffset, real cameraAngle, real cameraRotOffset, real cameraFarZ, real cameraFov, real cameraBlockRadius, boolean cameraBlockCheck, boolean useCinematicMode, string continueFuncName returns nothing
+	local timer t = CreateTimer()
+
+	set TransitionGiver = giver
+	set TransitionHero = hero
+	set TransitionMoveMode = moveMode
+	set TransitionMoveOffset = moveOffset
+	set TransitionMoveAngle = moveAngle
+	set TransitionRunCinematicTrigger = runCinematicTrigger
+	set TransitionUseCamera = useCamera
+	set TransitionCameraDist = cameraDist
+	set TransitionCameraZOffset = cameraZOffset
+	set TransitionCameraAngle = cameraAngle
+	set TransitionCameraRotOffset = cameraRotOffset
+	set TransitionCameraFarZ = cameraFarZ
+	set TransitionCameraFov = cameraFov
+	set TransitionCameraBlockRadius = cameraBlockRadius
+	set TransitionCameraBlockCheck = cameraBlockCheck
+	set TransitionUseCinematicMode = useCinematicMode
+	set TransitionContinueFuncName = continueFuncName
+
+	if hero != null then
+		call CameraControl_SetTargetUnit(Player(0), hero)
+	endif
+	if runCinematicTrigger or useCinematicMode then
+		call ExecuteFunc("MasterUI_HideGameButton")
+	endif
+	if useCinematicMode then
+		call CinematicModeBJ(true, GetPlayersAll())
+	endif
+
+	call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUT, 1.0, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+	call TimerStart(t, 1.0, false, function ContinueDialogEntryTransition)
+	set t = null
 endfunction
 
 //===========================================================================
@@ -1420,10 +1687,14 @@ private function CheckEscortProgress takes nothing returns nothing
 					if EscortReqDestination[i] != null and RectContainsCoords(EscortReqDestination[i], ux, uy) then
 						call DebugMsg("CheckEscortProgress: Escort reached destination!")
 						set EscortReqComplete[i] = true
-						set reqText = "Escort " + GetUnitName(escortUnit) + " to destination (Complete)"
+						set reqText = q.getRequirementText(EscortReqIndex[i])
+						if reqText == "" then
+							set reqText = "Escort " + GetUnitName(escortUnit) + " to destination"
+						endif
 						call QuestMaster_UpdateRequirementText(EscortReqQuestId[i], EscortReqIndex[i], reqText)
 						call QuestMaster_SetRequirementCompleted(EscortReqQuestId[i], EscortReqIndex[i], true)
 						call QuestMaster_SetStateByNameAndGiver(q.name, EscortReqGiver[i], QUEST_STATE_READY_TURNIN)
+						call q.addReturnRequirement()
 					endif
 				else
 					call DebugMsg("CheckEscortProgress: Escort unit null or dead - quest may need to fail")
