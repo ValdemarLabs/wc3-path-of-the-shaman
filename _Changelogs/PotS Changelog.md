@@ -13,6 +13,43 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [10.6.2026]
+
+### Player-Facing Updates
+- `qAradion.j`
+  Reworked the Valeria encounter so it behaves closer to the old GUI version: after the opening exchange, the player is prompted to press `ESC` to open the persuasion choices instead of being forced through chained negotiation options automatically.
+  Softened the Valeria encounter close-up camera so it no longer uses the earlier aggressive low-angle setup that could clip under the terrain during the encounter.
+  Improved the `Ranger Missing` quest chain so escort completion now cleanly transitions into the return-to-Aradion phase instead of leaving the quest in a broken mixed state with missing follow-up objective handling.
+  Failed `Ranger Missing` runs are now reset toward a retryable offer path rather than leaving the quest in an unusable failed state that still showed stale dialog branches.
+
+### Technical Updates
+- `QuestGiver.j`
+  Synced JASS companion add/remove handling with the shared GUI companion arrays and counters so quest-added companions such as Valeria are visible to systems that rely on `udg_CompanionUnit[]`, including companion-facing UI like `StatsUI`.
+  Fixed escort requirement progression so escort objectives no longer write `(Complete)` into the requirement text before the quest log also marks them complete, which was causing duplicate `(Complete) (Complete)` output.
+  Added the shared return-to-questgiver requirement automatically for escort objectives when the escort actually reaches the destination, bringing escort handling in line with the other tracked requirement types.
+  Updated shared dialog transition helpers so cinematic-style quest entry and exit can consistently hide and restore the `MasterUI` `Game` button.
+- `QuestMaster.j`
+  Hardened quest state transitions so completing a quest now clears stale failed state and completed quests can no longer be failed again afterward by late event callbacks.
+  Kept required-level evaluation aligned with the allowed-heroes rule: when both `Nazgrek` and `Zulkis` are allowed, the highest valid hero level is used, and when only one hero is allowed, only that hero's level is used for availability checks.
+- `qAradion.j`
+  Continued moving Aradion / Valeria quest-owned event behavior into the `qAradion` sublibrary so the new JASS quest path owns more of the `Ranger Missing` runtime directly instead of depending on scattered old GUI trigger behavior.
+  Standardized the `Ranger Missing` retry/reset path around local JASS helpers so escort failure, Valeria-loss handling, turn-in safety, and reset-to-ambush behavior all follow the same library-owned flow.
+  Added extra guards around Aradion dialog rebuilds, ready-turn-in handling, and retry offers so the main-map availability flow has fewer chances to fall into the earlier yellow-to-red quest-marker regression path.
+  On the "`qXXX` libraries are getting large" point: they are larger mainly because quest-owned event logic is intentionally being kept local to the owning sublibrary for now.
+  No further extraction should be forced before main-map verification; the next safe shared candidates, if this passes testing, are silent objective-reset helpers and generic field-ritual runtime helpers only if the second quest giver repeats the same pattern.
+
+### Known Issues
+- `QuestSystems` / `qAradion`
+  The newest Aradion fixes still need full main-map verification, especially the availability-marker behavior after the `Info` branch, Valeria negotiation flow, and the complete `Ranger Missing` escort-to-turn-in chain.
+
+### Actions Remaining
+- `Bridges`
+  Add invisible platforms to `Bridge009`.
+- `Bridges`
+  Adjust pathing-blocker rects at `Bridge009`.
+- `QuestSystems` / `qAradion`
+  Re-test the newest Aradion changes on the main map before treating the current JASS quest-giver pattern as frozen for generator-driven `qXXX` production.
+
 ## [9.6.2026]
 
 ### Technical Updates
