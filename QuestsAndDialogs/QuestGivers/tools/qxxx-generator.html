@@ -492,6 +492,7 @@ FailRifts</textarea>
         `\tset q.infoText = infoText`,
         `\tset q.info2Text = info2Text`,
         `\tset q.requiredLevel = ${Number(quest.requiredLevel) || 1}`,
+        `\tcall q.setAllowedHeroesForLevelCheck(ALLOW_NAZGREK, ALLOW_ZULKIS)`,
         `\tcall q.setRewardParams(${xpReward > 0 ? "true" : "false"}, ${xpReward}, ${goldReward > 0 ? "true" : "false"}, ${goldReward}, false, 0, ${repReward > 0 ? "true" : "false"}, ${repReward}, false)`,
         quest.receiverMode === "custom" && quest.receiverDisplayName.trim()
           ? `\tcall q.setReceiverDisplayName("${escapeJassString(quest.receiverDisplayName.trim())}")`
