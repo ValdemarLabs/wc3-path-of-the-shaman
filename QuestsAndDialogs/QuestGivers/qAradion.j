@@ -51,6 +51,7 @@ globals
 	private constant integer VALERIA_FRIENDLY_OWNER = 18
 	private constant integer VALERIA_HOME_OWNER = 15
 	private constant integer ABIL_VALERIA_COLD_ARROWS = 'ANca'
+	private constant integer ABIL_VALERIA_GHOST = 'Agho'
 	private constant integer RIFTS_MAX = 3
 	private constant integer RIFTS_MAX_WAVES = 32
 	private constant integer RIFTS_WAVE_OWNER = 11
@@ -116,7 +117,6 @@ globals
 	private timer RiftsWaveTimer = null
 	private timer RiftsCombatTimer = null
 	private timer RiftsCountdownTimer = null
-	private trigger ValeriaNegotiationEscTrigger = null
 	private dialog ValeriaNegotiationDialog = null
 	private button array ValeriaNegotiationButtons
 	private integer array ValeriaNegotiationLineIds
@@ -125,6 +125,7 @@ globals
 	private boolean ValeriaNegotiationPromptPending = false
 	private boolean RiftsQuestActive = false
 	private boolean RiftsRitualActive = false
+	private trigger RiftsProximityTrigger = null
 	private unit RiftsCurrentRift = null
 	private unit array RiftsUnits
 	private integer array RiftsUnitTypeIds
@@ -239,8 +240,8 @@ private function RemoveRangerMissingEscortDestination takes nothing returns noth
 	endif
 endfunction
 
-private function StartValeriaDialogCameraSafe takes real rotationOffset returns nothing
-	call DialogSystem_StartDialogCamera(Player(0), Valeria, 1050.00, 320.00, 12.00, rotationOffset, CAMERA_CLOSE_FAR_Z, 60.00, 0.00, false, USE_DIALOG_CAMERA)
+private function StartValeriaDialogCameraSafe takes real rotationOffset, real fov returns nothing
+	call DialogSystem_StartDialogCamera(Player(0), Valeria, 750.00, 50.00, 355.00, rotationOffset, CAMERA_CLOSE_FAR_Z, fov, 0.00, true, USE_DIALOG_CAMERA)
 endfunction
 
 private function StopFollow takes unit follower returns nothing
@@ -285,6 +286,26 @@ private function StartValeriaHomePatrolInternal takes nothing returns nothing
 	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
 		call ExecuteFunc("ValeriaMovementStart")
 	endif
+endfunction
+
+private function PlaceValeriaNearAradion takes real offset returns nothing
+	local real facing
+	local real x
+	local real y
+	if Aradion == null or Valeria == null then
+		return
+	endif
+	if not QuestGiver_IsUnitAlive(Aradion) or not QuestGiver_IsUnitAlive(Valeria) then
+		return
+	endif
+	call StopFollow(Valeria)
+	call StopValeriaPatrolInternal()
+	set facing = GetUnitFacing(Aradion) * bj_DEGTORAD
+	set x = GetUnitX(Aradion) + offset * Cos(facing)
+	set y = GetUnitY(Aradion) + offset * Sin(facing)
+	call SetUnitPosition(Valeria, x, y)
+	call SetUnitFacing(Valeria, GetUnitFacing(Aradion))
+	call IssueImmediateOrder(Valeria, "stop")
 endfunction
 
 private function MoveValeriaHomeInternal takes nothing returns nothing
@@ -449,6 +470,7 @@ private function RecreateValeriaAtAmbush takes nothing returns nothing
 
 	set Valeria = CreateUnit(ownerP, unitTypeId, x, y, facing)
 	set udg_Valeria = Valeria
+	call UnitAddAbility(Valeria, ABIL_VALERIA_GHOST)
 	call IssueImmediateOrder(Valeria, "stop")
 	call ExecuteFunc("qAradion_RegisterValeriaEncounterProximity")
 endfunction
@@ -487,6 +509,7 @@ endfunction
 private function ClearValeriaEncounterState takes nothing returns nothing
 	call StopValeriaEncounterTimers()
 	call DisableValeriaEncounterDeathTrigger()
+	call DialogSystem_ClearEscapeAction()
 	if ValeriaNegotiationDialog != null then
 		call DialogSystem_ClearDialog(ValeriaNegotiationDialog)
 	endif
@@ -579,6 +602,11 @@ private function StartRangerMissingEscortInternal takes nothing returns nothing
 		call QuestGiver_SetRequirementCompleted(q.id, 1, true)
 	endif
 
+	call UnitRemoveAbility(Valeria, ABIL_VALERIA_GHOST)
+	call q.updateRequirementText(1, "Find Valeria")
+	call q.setRequirement(2, "Escort Valeria to Aradion")
+	call q.updateRequirementText(2, "Escort Valeria to Aradion")
+	call q.removeReturnRequirement()
 	call QuestGiver_UnregisterEscortRequirement(q.id, 2)
 	call RemoveRangerMissingEscortDestination()
 	set ax = GetUnitX(Aradion)
@@ -586,6 +614,7 @@ private function StartRangerMissingEscortInternal takes nothing returns nothing
 	set RangerMissingEscortDestination = Rect(ax - RANGER_ESCORT_DEST_RADIUS, ay - RANGER_ESCORT_DEST_RADIUS, ax + RANGER_ESCORT_DEST_RADIUS, ay + RANGER_ESCORT_DEST_RADIUS)
 	call QuestGiver_RegisterEscortRequirement(q.id, Aradion, 2, Valeria, RangerMissingEscortDestination, "Aradion")
 	call QuestGiver_SetStateByNameAndGiver(QUEST_RANGER_MISSING, Aradion, QUEST_STATE_IN_PROGRESS)
+	call q.refreshQuestLog()
 
 	set hero = ResolveDialogHero()
 	call AddValeriaCompanion()
@@ -632,6 +661,7 @@ private function ResetValeriaEncounterToAmbush takes nothing returns nothing
 	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
 		call StopFollow(Valeria)
 		call RemoveValeriaCompanion()
+		call UnitAddAbility(Valeria, ABIL_VALERIA_GHOST)
 		call UnitRemoveAbility(Valeria, ABIL_VALERIA_COLD_ARROWS)
 		call SetUnitMoveSpeed(Valeria, GetUnitDefaultMoveSpeed(Valeria))
 		call BlzSetUnitRealField(Valeria, UNIT_RF_HIT_POINTS_REGENERATION_RATE, 2.00)
@@ -813,26 +843,31 @@ private function GetValeriaNegotiationResponseSound takes integer lineId returns
 	return "Valeria_0014"
 endfunction
 
+private function RunValeriaNegotiationEscAction takes nothing returns nothing
+	call ExecuteFunc("qAradion_TryOpenValeriaNegotiation")
+endfunction
+
 private function OnValeriaSequenceStart takes nothing returns nothing
 	call EnableUserControl(false)
 	call QuestGiver_CloseActiveDialog()
+	call ExecuteFunc("TasQuestBox_Hide")
 	call EnterCinematicMode()
+endfunction
+
+private function BeginValeriaNegotiationSequence takes nothing returns nothing
+	call EnableUserControl(false)
+	call QuestGiver_CloseActiveDialog()
+	if ValeriaNegotiationDialog != null then
+		call DialogSystem_HideDialog(ValeriaNegotiationDialog, Player(0))
+	endif
+	call ExecuteFunc("TasQuestBox_Hide")
+	call ExecuteFunc("MasterUI_HideGameButton")
 endfunction
 
 private function QueueValeriaNegotiationPrompt takes nothing returns nothing
 	set ValeriaNegotiationPromptPending = true
+	call DialogSystem_SetEscapeAction(function RunValeriaNegotiationEscAction)
 	call DisplayTimedTextToPlayer(Player(0), 0.00, 0.00, 5.00, "|cffd45e19Press ESC to persuade Valeria.|r")
-endfunction
-
-private function OnValeriaNegotiationEsc takes nothing returns nothing
-	if GetTriggerPlayer() != Player(0) then
-		return
-	endif
-	if not ValeriaNegotiationPromptPending or DialogSystem_IsSequenceActive() then
-		return
-	endif
-	set ValeriaNegotiationPromptPending = false
-	call ExecuteFunc("qAradion_TryOpenValeriaNegotiation")
 endfunction
 
 private function OnValeriaEncounterProximity takes nothing returns nothing
@@ -894,6 +929,7 @@ private function TryOpenValeriaNegotiationInternal takes nothing returns nothing
 		return
 	endif
 	set ValeriaNegotiationPromptPending = false
+	call DialogSystem_ClearEscapeAction()
 	if ValeriaNegotiationDialog == null then
 		set ValeriaNegotiationDialog = DialogSystem_CreateDialog("Persuade Valeria")
 	endif
@@ -928,16 +964,20 @@ private function TryOpenValeriaNegotiationInternal takes nothing returns nothing
 endfunction
 
 private function OnValeriaResponseEnd takes nothing returns nothing
+	local unit hero = GetValeriaEncounterHero()
 	call DialogSystem_StopDialogCamera(Player(0), 2.0, USE_DIALOG_CAMERA)
-	call ExitCinematicMode()
 	call EnableUserControl(true)
+	call ExecuteFunc("MasterUI_ShowGameButton")
+	if hero != null and Valeria != null and QuestGiver_IsUnitAlive(hero) and QuestGiver_IsUnitAlive(Valeria) then
+		call IssuePointOrder(Valeria, "attack", GetUnitX(hero), GetUnitY(hero))
+	endif
 	call QueueValeriaNegotiationPrompt()
 endfunction
 
 private function OnValeriaSuccessEnd takes nothing returns nothing
 	call DialogSystem_StopDialogCamera(Player(0), 2.0, USE_DIALOG_CAMERA)
-	call ExitCinematicMode()
 	call EnableUserControl(true)
+	call ExecuteFunc("MasterUI_ShowGameButton")
 	call ClearValeriaEncounterState()
 	set ValeriaEncounterResolved = true
 	call RunUpdateQuestRangerMissing()
@@ -964,10 +1004,10 @@ endfunction
 private function PlayValeriaNegotiationResponse takes integer lineId returns nothing
 	local integer seq
 	local unit hero = GetValeriaEncounterHero()
-	call StartValeriaDialogCameraSafe(CAMERA_CLOSE_ROT_OFFSET)
+	call StartValeriaDialogCameraSafe(45.00, 60.00)
 	set seq = DialogSystem_CreateSequence()
 	call DialogSystem_SetSequenceDefaultSpeaker(seq, Valeria, "Valeria")
-	call DialogSystem_SetSequenceCallbacks(seq, function OnValeriaSequenceStart, function OnValeriaResponseEnd)
+	call DialogSystem_SetSequenceCallbacks(seq, function BeginValeriaNegotiationSequence, function OnValeriaResponseEnd)
 	if hero != null then
 		call DialogSystem_AddMakeFaceEachOther(seq, hero, Valeria, 0.50, 0.0)
 		call AddHeroLine(seq, hero, GetValeriaNegotiationPrompt(lineId), GetValeriaNegotiationHeroSound(lineId))
@@ -990,6 +1030,7 @@ private function PlayValeriaNegotiationSuccess takes nothing returns nothing
 	call IssueImmediateOrder(Valeria, "stop")
 	call SetUnitMoveSpeed(Valeria, GetUnitDefaultMoveSpeed(Valeria))
 	call UnitRemoveAbility(Valeria, ABIL_VALERIA_COLD_ARROWS)
+	call UnitRemoveAbility(Valeria, ABIL_VALERIA_GHOST)
 	call BlzSetUnitRealField(Valeria, UNIT_RF_HIT_POINTS_REGENERATION_RATE, 2.00)
 	call SetWidgetLife(Valeria, BlzGetUnitMaxHP(Valeria))
 	call SetUnitOwner(Valeria, Player(VALERIA_FRIENDLY_OWNER), true)
@@ -998,10 +1039,10 @@ private function PlayValeriaNegotiationSuccess takes nothing returns nothing
 		set y = GetUnitY(hero) + 400.00 * Sin(GetUnitFacing(hero) * bj_DEGTORAD)
 		call IssuePointOrder(Valeria, "move", x, y)
 	endif
-	call StartValeriaDialogCameraSafe(CAMERA_CLOSE_ROT_OFFSET)
+	call StartValeriaDialogCameraSafe(45.00, 60.00)
 	set seq = DialogSystem_CreateSequence()
 	call DialogSystem_SetSequenceDefaultSpeaker(seq, Valeria, "Valeria")
-	call DialogSystem_SetSequenceCallbacks(seq, function OnValeriaSequenceStart, function OnValeriaSuccessEnd)
+	call DialogSystem_SetSequenceCallbacks(seq, function BeginValeriaNegotiationSequence, function OnValeriaSuccessEnd)
 	if hero != null then
 		call DialogSystem_AddMakeFaceEachOther(seq, Valeria, hero, 0.50, 0.0)
 		call AddHeroLine(seq, hero, "I've spoken with Aradion. He told me to find you.", "Nazgrek_0353")
@@ -1029,6 +1070,9 @@ public function HandleValeriaNegotiationButton takes nothing returns nothing
 	endloop
 	if lineId == 0 then
 		return
+	endif
+	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
+		call IssueImmediateOrder(Valeria, "stop")
 	endif
 	if lineId == 10 then
 		call PlayValeriaNegotiationSuccess()
@@ -1065,11 +1109,13 @@ private function StartValeriaEncounterInternal takes unit hero returns nothing
 	set ValeriaEncounterActive = true
 	set ValeriaEncounterResolved = false
 	set ValeriaNegotiationPromptPending = false
+	call DialogSystem_ClearEscapeAction()
 	call StopFollow(Valeria)
 	call RemoveValeriaCompanion()
 	call StopValeriaPatrolInternal()
+	call UnitRemoveAbility(Valeria, ABIL_VALERIA_GHOST)
 	call SetUnitMoveSpeed(Valeria, GetUnitDefaultMoveSpeed(Valeria))
-	call StartValeriaDialogCameraSafe(180.00)
+	call StartValeriaDialogCameraSafe(180.00, 70.00)
 	set seq = DialogSystem_CreateSequence()
 	call DialogSystem_SetSequenceDefaultSpeaker(seq, Valeria, "Valeria")
 	call DialogSystem_SetSequenceCallbacks(seq, function OnValeriaSequenceStart, function OnValeriaIntroEnd)
@@ -1480,6 +1526,134 @@ private function RegisterRiftUnits takes nothing returns nothing
 		call EnsureRiftUnit(i)
 		set i = i + 1
 	endloop
+	call ExecuteFunc("qAradion_RegisterRiftsProximity")
+endfunction
+
+private function DestroyRiftsProximityTrigger takes nothing returns nothing
+	if RiftsProximityTrigger != null then
+		call DestroyTrigger(RiftsProximityTrigger)
+		set RiftsProximityTrigger = null
+	endif
+endfunction
+
+private function GetTriggeredRiftIndex takes unit hero returns integer
+	local integer i = 1
+	local unit riftUnit
+	if hero == null then
+		return 0
+	endif
+	loop
+		exitwhen i > RIFTS_MAX
+		set riftUnit = EnsureRiftUnit(i)
+		if riftUnit != null and QuestGiver_IsUnitAlive(riftUnit) and QuestGiver_IsWithinRange(riftUnit, hero, RIFTS_TRIGGER_RANGE) then
+			return i
+		endif
+		set i = i + 1
+	endloop
+	return 0
+endfunction
+
+private function PlayRiftsStartBarks takes nothing returns nothing
+	local integer roll
+	if Aradion == null or not QuestGiver_IsUnitAlive(Aradion) then
+		return
+	endif
+	set roll = GetRandomInt(1, 2)
+	if roll == 1 then
+		call ShowFieldLine(Aradion, "Aradion the Farseer", "Aradion_0074", "Stand ready. Once I begin, this place can start to crawl with wraiths.")
+	else
+		call ShowFieldLine(Aradion, "Aradion the Farseer", "Aradion_0075", "I will attempt to close this rift. But I cannot fight and focus at once... you must protect me!")
+	endif
+	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
+		if GetRandomInt(1, 2) == 1 then
+			call ShowFieldLine(Valeria, "Valeria", "Valeria_0072", "We will handle them, just keep your focus on the rift!")
+		else
+			call ShowFieldLine(Valeria, "Valeria", "Valeria_0073", "We stand ready to defend you!")
+		endif
+	endif
+endfunction
+
+private function StartRiftsRitualInternal takes unit riftUnit, integer riftIndex, unit hero returns nothing
+	local real facing
+	local real rx
+	local real ry
+	local real ax
+	local real ay
+	local real vx
+	local real vy
+	if riftUnit == null or not QuestGiver_IsUnitAlive(riftUnit) or Aradion == null then
+		return
+	endif
+	set SelectedHero = hero
+	set RiftsCurrentRift = riftUnit
+	set RiftsCurrentIndex = riftIndex
+	set RiftsRitualActive = true
+	set RiftsNextWaveN = 1
+	call StopFollow(Aradion)
+	call StopFollow(Valeria)
+	call RemoveAradionCompanion()
+	set rx = GetUnitX(riftUnit)
+	set ry = GetUnitY(riftUnit)
+	set facing = GetUnitFacing(Aradion) * bj_DEGTORAD
+	set ax = rx + RIFTS_ARADION_OFFSET * Cos(facing)
+	set ay = ry + RIFTS_ARADION_OFFSET * Sin(facing)
+	call SetUnitPosition(Aradion, ax, ay)
+	call SetUnitFacing(Aradion, bj_RADTODEG * Atan2(ry - ay, rx - ax))
+	call IssueImmediateOrder(Aradion, "stop")
+	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
+		set vx = ax + RIFTS_VALERIA_OFFSET * Cos(facing)
+		set vy = ay + RIFTS_VALERIA_OFFSET * Sin(facing)
+		call SetUnitPosition(Valeria, vx, vy)
+		call SetUnitFacing(Valeria, GetUnitFacing(Aradion))
+		call IssueImmediateOrder(Valeria, "stop")
+	endif
+	call PlayRiftsStartBarks()
+	call IssuePointOrder(Aradion, "blizzard", rx, ry)
+	call SetUnitAnimation(Aradion, "spell")
+	call ExecuteFunc("qAradion_StartRiftsRuntimeTimersPublic")
+endfunction
+
+private function OnRiftsProximity takes nothing returns nothing
+	local unit hero = GetTriggerUnit()
+	local integer riftIndex
+	local unit riftUnit
+	call SyncUnitReferences()
+	if not RiftsQuestActive or RiftsRitualActive or RiftsAwaitingReturnHome then
+		return
+	endif
+	if hero == null or not QuestGiver_IsUnitAlive(hero) then
+		return
+	endif
+	if hero != Nazgrek and hero != udg_Zulkis then
+		return
+	endif
+	if (hero == Nazgrek and not ALLOW_NAZGREK) or (hero == udg_Zulkis and not ALLOW_ZULKIS) then
+		return
+	endif
+	set riftIndex = GetTriggeredRiftIndex(hero)
+	if riftIndex <= 0 then
+		return
+	endif
+	set riftUnit = EnsureRiftUnit(riftIndex)
+	if riftUnit != null then
+		call StartRiftsRitualInternal(riftUnit, riftIndex, hero)
+	endif
+endfunction
+
+private function RegisterRiftsProximityTrigger takes nothing returns nothing
+	local integer i = 1
+	local unit riftUnit
+	call DestroyRiftsProximityTrigger()
+	set RiftsProximityTrigger = CreateTrigger()
+	loop
+		exitwhen i > RIFTS_MAX
+		set riftUnit = EnsureRiftUnit(i)
+		if riftUnit != null and QuestGiver_IsUnitAlive(riftUnit) then
+			call TriggerRegisterUnitInRange(RiftsProximityTrigger, riftUnit, RIFTS_TRIGGER_RANGE, null)
+		endif
+		set i = i + 1
+	endloop
+	call TriggerAddAction(RiftsProximityTrigger, function OnRiftsProximity)
 endfunction
 
 private function ClearRiftsWaveHandles takes nothing returns nothing
@@ -1592,26 +1766,6 @@ private function GetAllowedRiftHeroInRange takes unit riftUnit returns unit
 		endif
 	endif
 	return bestHero
-endfunction
-
-private function PlayRiftsStartBarks takes nothing returns nothing
-	local integer roll
-	if Aradion == null or not QuestGiver_IsUnitAlive(Aradion) then
-		return
-	endif
-	set roll = GetRandomInt(1, 2)
-	if roll == 1 then
-		call ShowFieldLine(Aradion, "Aradion the Farseer", "Aradion_0074", "Stand ready. Once I begin, this place can start to crawl with wraiths.")
-	else
-		call ShowFieldLine(Aradion, "Aradion the Farseer", "Aradion_0075", "I will attempt to close this rift. But I cannot fight and focus at once... you must protect me!")
-	endif
-	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
-		if GetRandomInt(1, 2) == 1 then
-			call ShowFieldLine(Valeria, "Valeria", "Valeria_0072", "We will handle them, just keep your focus on the rift!")
-		else
-			call ShowFieldLine(Valeria, "Valeria", "Valeria_0073", "We stand ready to defend you!")
-		endif
-	endif
 endfunction
 
 private function PlayRiftsIncomingWaveBark takes nothing returns nothing
@@ -1814,42 +1968,7 @@ private function StartRiftsRuntimeTimers takes nothing returns nothing
 	call TimerStart(RiftsCountdownTimer, RIFTS_COUNTDOWN_PERIOD, true, function OnRiftsCountdownTick)
 endfunction
 
-private function StartRiftsRitualInternal takes unit riftUnit, integer riftIndex, unit hero returns nothing
-	local real facing
-	local real rx
-	local real ry
-	local real ax
-	local real ay
-	local real vx
-	local real vy
-	if riftUnit == null or not QuestGiver_IsUnitAlive(riftUnit) or Aradion == null then
-		return
-	endif
-	set SelectedHero = hero
-	set RiftsCurrentRift = riftUnit
-	set RiftsCurrentIndex = riftIndex
-	set RiftsRitualActive = true
-	set RiftsNextWaveN = 1
-	call StopFollow(Aradion)
-	call StopFollow(Valeria)
-	call RemoveAradionCompanion()
-	set rx = GetUnitX(riftUnit)
-	set ry = GetUnitY(riftUnit)
-	set facing = GetUnitFacing(Aradion) * bj_DEGTORAD
-	set ax = rx + RIFTS_ARADION_OFFSET * Cos(facing)
-	set ay = ry + RIFTS_ARADION_OFFSET * Sin(facing)
-	call SetUnitPosition(Aradion, ax, ay)
-	call SetUnitFacing(Aradion, bj_RADTODEG * Atan2(ry - ay, rx - ax))
-	call IssueImmediateOrder(Aradion, "stop")
-	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
-		set vx = ax + RIFTS_VALERIA_OFFSET * Cos(facing)
-		set vy = ay + RIFTS_VALERIA_OFFSET * Sin(facing)
-		call SetUnitPosition(Valeria, vx, vy)
-		call SetUnitFacing(Valeria, GetUnitFacing(Aradion))
-		call IssueImmediateOrder(Valeria, "stop")
-	endif
-	call PlayRiftsStartBarks()
-	call SetUnitAnimation(Aradion, "spell")
+public function StartRiftsRuntimeTimersPublic takes nothing returns nothing
 	call StartRiftsRuntimeTimers()
 endfunction
 
@@ -1969,6 +2088,7 @@ endfunction
 private function BeginQuestDialogSequence takes nothing returns nothing
 	call EnableUserControl(false)
 	call QuestGiver_CloseActiveDialog()
+	call ExecuteFunc("TasQuestBox_Hide")
 	call ExecuteFunc("MasterUI_HideGameButton")
 endfunction
 
@@ -2076,6 +2196,9 @@ endfunction
 private function OnAcceptQuest1End takes nothing returns nothing
 	set AradionLastAcceptedQuest = ARADION_QID_RANGER
 	call QuestGiver_AcceptQuestByNameAndGiver(QUEST_RANGER_MISSING, Aradion)
+	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
+		call UnitRemoveAbility(Valeria, ABIL_VALERIA_GHOST)
+	endif
 	call StartExitFadeOut()
 endfunction
 
@@ -2324,6 +2447,8 @@ private function OnAcceptQuest4End takes nothing returns nothing
 		call SetUnitInvulnerable(Valeria, false)
 	endif
 	call EnableRiftsFailTriggers()
+	call StopValeriaPatrolInternal()
+	call PlaceValeriaNearAradion(RIFTS_VALERIA_OFFSET)
 	call StartFieldCompanions(hero)
 	call StartRiftsFieldMonitor()
 	call StartExitFadeOut()
@@ -2345,6 +2470,7 @@ private function OnAcceptQuest4 takes nothing returns nothing
 	
 	// Get hero for facing actions
 	set hero = ResolveDialogHero()
+	call PlaceValeriaNearAradion(RIFTS_VALERIA_OFFSET)
 	
 	// Add quest-specific lines with inline facing
 	call DialogSystem_AddMakeFaceEachOther(seq, Aradion, hero, 0.50, 0.0)
@@ -2821,9 +2947,6 @@ private function InitDelayed takes nothing returns nothing
 	call CreateQuests()
 	call QuestGiver_RefreshAvailabilityForGiver(Aradion)
 	call QuestGiver_RegisterSelectionHandler(Aradion, function OnSelected)
-	set ValeriaNegotiationEscTrigger = CreateTrigger()
-	call BlzTriggerRegisterPlayerKeyEvent(ValeriaNegotiationEscTrigger, Player(0), OSKEY_ESCAPE, 0, true)
-	call TriggerAddAction(ValeriaNegotiationEscTrigger, function OnValeriaNegotiationEsc)
 endfunction
 
 private function Init takes nothing returns nothing
@@ -2844,6 +2967,10 @@ endfunction
 
 public function RegisterValeriaEncounterProximity takes nothing returns nothing
 	call RegisterValeriaEncounterProximityTrigger()
+endfunction
+
+public function RegisterRiftsProximity takes nothing returns nothing
+	call RegisterRiftsProximityTrigger()
 endfunction
 
 public function TryOpenValeriaNegotiation takes nothing returns nothing
