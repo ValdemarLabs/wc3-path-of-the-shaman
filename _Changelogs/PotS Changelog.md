@@ -13,6 +13,40 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [11.6.2026]
+
+### Player-Facing Updates
+- `qAradion.j`
+  Reworked the `Ranger Missing` Valeria encounter closer to the old GUI flow: the intro now uses the old-style close camera values again, persuasion is opened with `ESC`, and the actual persuasion response / success exchange no longer runs as a full cinematic-mode sequence.
+  Improved Valeria negotiation behavior so choosing the correct persuasion line now stops her attack immediately instead of letting the hostile combat state linger awkwardly into the success path.
+  Fixed `Ranger Missing` progression so Valeria's ghost/invisibility state is removed when the quest advances and the escort step now appears immediately as `Escort Valeria to Aradion` instead of only surfacing too late in the chain.
+  Improved `Rifts of Corruption` setup so Valeria is pulled near Aradion for the quest-start exchange and her patrol is stopped before the field follow/escort phase begins.
+
+### Technical Updates
+- `DialogSystem.j`
+  Added a small reusable `ESC` action hook for non-sequence dialog flows: `DialogSystem` can now execute a registered escape callback when no dialog sequence is currently active, instead of hard-wiring every `ESC`-driven side flow inside each questgiver library.
+  Kept the existing sequence-skip behavior intact, so `ESC` still skips active sequences first and only falls back to the custom escape action when no sequence is playing.
+- `qAradion.j`
+  Replaced the old local Valeria-specific `ESC` trigger with the new shared `DialogSystem` escape-action path so future `qXXX` libraries can reuse the same pattern for similar non-cinematic interaction prompts.
+  Restored Valeria encounter camera values toward the old GUI setup and split the negotiation runtime into a lighter non-cinematic branch that hides dialog/UI correctly without forcing full cinematic mode.
+  Added stronger quest-owned handling for Valeria ghost state, escort objective text, retry reset state, and ambush reset so the `Ranger Missing` chain no longer depends on leftover GUI assumptions for those pieces.
+  Added a local mana-rift proximity trigger path inside `qAradion` so `Rifts of Corruption` can begin ritual logic from quest-owned JASS event handling instead of relying only on the timer-polled field check.
+  Restored an Aradion ritual-start cast order at the rift-start point and hid the obsolete `TasQuestBox` / `Zones` UI during quest-dialog sequences to reduce old cinematic/UI bleed-through.
+
+### Known Issues
+- `qAradion.j` / `Rifts of Corruption`
+  The restored ritual-start cast path still needs in-map verification. Aradion is now ordered to cast at ritual start again, but the custom portal-closing ability ownership/rawcode path has not yet been fully revalidated against the current map runtime.
+- `QuestSystems` / `qAradion`
+  Today's Valeria encounter and rift-start fixes were not yet verified live on the main map after the code pass, so camera feel, UI hiding, escort progression, and the new rift proximity trigger still need gameplay confirmation.
+
+### Actions Remaining
+- `qAradion.j` / `QuestSystems`
+  Test the full `Ranger Missing` chain again on the main map: intro camera, `ESC` persuasion prompt, hostile stop on correct answer, ghost removal, escort objective creation, escort completion, and turn-in flow.
+- `qAradion.j` / `Rifts of Corruption`
+  Re-test quest accept, Valeria patrol shutdown, Valeria placement near Aradion, mana-rift ritual start, and Aradion portal-closing cast on the main map.
+- `QuestSystems`
+  If today's `ESC` prompt pattern proves stable, reuse the new shared `DialogSystem` escape-action helper for later `qXXX` libraries instead of rebuilding separate ad hoc `ESC` triggers per questgiver.
+
 ## [10.6.2026]
 
 ### Player-Facing Updates
