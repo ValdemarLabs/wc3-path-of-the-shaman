@@ -25,7 +25,7 @@ globals
 
     // === Scanner settings
     private constant boolean DEBUG = false
-    private constant boolean DEBUG_BYPASS_SYSTEM = true // Hard debug bypass: skips all TerrainDamage setup and runtime timers
+    private constant boolean DEBUG_BYPASS_SYSTEM = false // Hard debug bypass: skips all TerrainDamage setup and runtime timers
     private constant real SCAN_INTERVAL = 0.40          // How often tracked units are checked for damaging terrain
     private constant real PLAYER_RESYNC_INTERVAL = 10.00 // Slow safety resync for registered players; avoids full player scans every Periodic tick
     private constant real MIN_FIRST_TICK_DELAY = 0.20   // Prevents first damage from firing instantly when desyncing unit timers
@@ -54,7 +54,8 @@ globals
     private constant real FEL_RAMP_DURATION  = 10.00     // Example accelerated terrain: start 1.50, end 0.60
 
     // === VISUALS
-    private constant string LAVA_EFFECT = "Abilities\\Spells\\Human\\FlameStrike\\FlameStrikeEmbers.mdl"
+    private constant string LAVA_EFFECT = "war3mapImported\\BreathOfFireDamage.mdx"
+    // Other: "Abilities\\Spells\\Human\\FlameStrike\\FlameStrikeEmbers.mdl"
     private constant string LAVA_ATTACH_POINT = "chest"
     private constant real LAVA_EFFECT_SCALE_START = 0.90
     private constant real LAVA_EFFECT_SCALE_END = 1.05
@@ -442,7 +443,7 @@ private function TerrainDamage_ApplyTick takes unit u, integer terrainType, real
     if terrainType == TERRAIN_LAVA then
         set e = AddSpecialEffectTarget(LAVA_EFFECT, u, LAVA_ATTACH_POINT)
         call BlzSetSpecialEffectScale(e, effectScale)
-        call DestroyEffect(e)
+        call SpeciFX_DestroyTimed(e, tickInterval)
         if isAlive then
             call TerrainDamage_PlaySoundOnUnit(LAVA_SOUND, u, TERRAIN_SOUND_VOLUME_NORMAL, LAVA_SOUND_VARIATION, LAVA_SOUND_PITCH_MIN, LAVA_SOUND_PITCH_MAX)
         else
