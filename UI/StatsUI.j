@@ -1,4 +1,4 @@
-library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, AbilitiesLiteUI
+library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, AbilitiesLiteUI, QuestGiver
 /**
     StatsUI
     
@@ -94,9 +94,11 @@ globals
     private string SUI_PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
     private string SUI_RowHighlightModel = "UI\\Feedback\\Autocast\\UI-ModalButtonOn.mdx"
     private string SUI_DefaultUnitIcon = "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp"
+    private string SUI_ShadowclawIcon = "ReplaceableTextures\\CommandButtons\\BTNSpiritWolf.blp"
     private integer SUI_KIND_HERO = 1
     private integer SUI_KIND_PET = 2
     private integer SUI_KIND_COMPANION = 3
+    private integer SUI_UNIT_SHADOWCLAW = 'n655'
 endglobals
 
 private function SUI_Abs takes real value returns real
@@ -107,13 +109,32 @@ private function SUI_Abs takes real value returns real
 endfunction
 
 private function SUI_GetDisplayName takes unit u returns string
+    local string displayName
+    local integer unitTypeId
+
     if u == null or GetHandleId(u) == 0 then
         return "Unavailable"
     endif
     if IsUnitType(u, UNIT_TYPE_HERO) then
         return GetHeroProperName(u)
     endif
-    return GetUnitName(u)
+
+    set unitTypeId = GetUnitTypeId(u)
+    set displayName = GetUnitName(u)
+    if displayName != null and displayName != "" then
+        return displayName
+    endif
+
+    set displayName = GetObjectName(unitTypeId)
+    if displayName != null and displayName != "" then
+        return displayName
+    endif
+
+    if u == udg_Shadowclaw or unitTypeId == SUI_UNIT_SHADOWCLAW then
+        return "Shadowclaw"
+    endif
+
+    return "Unknown"
 endfunction
 
 private function SUI_GetKindLabel takes integer kind returns string
@@ -131,12 +152,24 @@ endfunction
 
 private function SUI_GetUnitIconPath takes unit u returns string
     local string iconPath
+    local integer unitTypeId
 
     if u == null or GetHandleId(u) == 0 then
         return SUI_DefaultUnitIcon
     endif
 
-    set iconPath = BlzGetAbilityIcon(GetUnitTypeId(u))
+    set unitTypeId = GetUnitTypeId(u)
+    if u == udg_Shadowclaw or unitTypeId == SUI_UNIT_SHADOWCLAW then
+        return SUI_ShadowclawIcon
+    endif
+
+    set iconPath = QuestGiver_GetCompanionIcon(u)
+    if iconPath != null and iconPath != "" then
+        return iconPath
+    endif
+
+    // Warcraft III exposes no direct unit-icon native, so this remains a best-effort fallback.
+    set iconPath = BlzGetAbilityIcon(unitTypeId)
     if iconPath == null or iconPath == "" then
         return SUI_DefaultUnitIcon
     endif
