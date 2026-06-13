@@ -16,6 +16,10 @@ globals
     public constant integer CAMERA_MODE_DEVELOPER = 3
     public constant integer CAMERA_SPECIAL_MODE_NONE = 0
     public constant integer CAMERA_SPECIAL_MODE_BOOMMINE = 1
+    // Add more special camera mode ids here as needed.
+    // Keep them unique and then define their preset values in CC_InitSpecialModeConfigs().
+    public constant integer CAMERA_SPECIAL_MODE_TEMPLATE01 = 101
+    public constant integer CAMERA_SPECIAL_MODE_TEMPLATE02 = 102
 
     public constant real CAMERA_DISTANCE_MIN = 500.00
     public constant real CAMERA_DISTANCE_MAX = 4000.00
@@ -53,12 +57,6 @@ globals
     private constant real CAMERA_NORMAL_TRACE_DISTANCE_THRESHOLD = 1.00
     private constant real CAMERA_NORMAL_TRACE_CORRECTION_DURATION = 0.25
     private constant real CAMERA_RESUME_DURATION = 2.00
-    private constant real CAMERA_BOOMMINE_DISTANCE = 1600.00
-    private constant real CAMERA_BOOMMINE_FARZ = 5000.00
-    private constant real CAMERA_BOOMMINE_ANGLE = 270.00
-    private constant real CAMERA_BOOMMINE_ANGLE_MAX = 295.00
-    private constant real CAMERA_BOOMMINE_ROTATION = 90.00
-    private constant real CAMERA_BOOMMINE_FOV = 70.00
     private constant real CAMERA_WOUNDED_THRESHOLD = 0.25
     private constant real CAMERA_WOUNDED_ENTRY_DURATION = 1.00
     private constant real CAMERA_WOUNDED_BASE_TRANSPARENCY = 50.00
@@ -69,12 +67,22 @@ globals
     private constant integer CAMERA_WOUNDED_BEAT_MAX_TICKS = 48
     private constant string CAMERA_WOUNDED_FILTER_TEXTURE = "ReplaceableTextures\\CameraMasks\\DiagonalSlash_mask.blp"
     private constant string CAMERA_WOUNDED_HEARTBEAT_SOUND = "war3mapImported\\Heartbeat.mp3"
+    private constant integer CC_MAX_SPECIAL_CAMERA_RECTS = 16
 
     private boolean CC_Initialized = false
     private boolean CC_UpdateLoopActive = false
 
     private integer array CC_Mode
     private integer array CC_SpecialMode
+    private integer array CC_RectSpecialMode
+    private string array CC_SpecialModeLabel
+    private boolean array CC_SpecialModeKeyboardAdjustable
+    private real array CC_SpecialModeDistanceConfig
+    private real array CC_SpecialModeFarZConfig
+    private real array CC_SpecialModeAngleConfig
+    private real array CC_SpecialModeRotationConfig
+    private real array CC_SpecialModeFovConfig
+    private real array CC_SpecialModeAngleMaxConfig
     private real array CC_Distance
     private real array CC_FarZ
     private real array CC_Angle
@@ -126,6 +134,12 @@ globals
     private item array CC_HiddenPathItems
     private integer CC_HiddenPathItemCount = 0
     private location CC_TerrainLoc = null
+    private integer CC_SpecialCameraRectCount = 0
+    private rect array CC_SpecialCameraRects
+    private integer array CC_SpecialCameraRectModes
+    private trigger array CC_SpecialCameraEnterTriggers
+    private trigger array CC_SpecialCameraLeaveTriggers
+    private trigger CC_ChatResetTrigger = null
 endglobals
 
 private function CC_GetPlayerIndex takes player whichPlayer returns integer
@@ -397,22 +411,83 @@ private function CC_FindResumeTimerPlayer takes timer whichTimer returns integer
     return -1
 endfunction
 
-private function CC_HasSpecialMode takes integer pid returns boolean
-    return CC_SpecialMode[pid] != CAMERA_SPECIAL_MODE_NONE
+private function CC_GetResolvedSpecialMode takes integer pid returns integer
+    if CC_RectSpecialMode[pid] != CAMERA_SPECIAL_MODE_NONE then
+        return CC_RectSpecialMode[pid]
+    endif
+    return CC_SpecialMode[pid]
 endfunction
 
-private function CC_IsBoomMineKeyboardMode takes integer pid returns boolean
-    return CC_SpecialMode[pid] == CAMERA_SPECIAL_MODE_BOOMMINE
+private function CC_DefineSpecialMode takes integer specialMode, string label, real distance, real farZ, real angle, real rotation, real fov, boolean keyboardAdjustable, real angleMax returns nothing
+    if specialMode == CAMERA_SPECIAL_MODE_NONE then
+        return
+    endif
+    set CC_SpecialModeLabel[specialMode] = label
+    set CC_SpecialModeDistanceConfig[specialMode] = distance
+    set CC_SpecialModeFarZConfig[specialMode] = farZ
+    set CC_SpecialModeAngleConfig[specialMode] = angle
+    set CC_SpecialModeRotationConfig[specialMode] = rotation
+    set CC_SpecialModeFovConfig[specialMode] = fov
+    set CC_SpecialModeKeyboardAdjustable[specialMode] = keyboardAdjustable
+    if angleMax < CAMERA_ANGLE_MIN then
+        set CC_SpecialModeAngleMaxConfig[specialMode] = CAMERA_ANGLE_MAX
+    else
+        set CC_SpecialModeAngleMaxConfig[specialMode] = angleMax
+    endif
+endfunction
+
+private function CC_InitSpecialModeConfigs takes nothing returns nothing
+    // Adding a new special camera mode:
+    // 1. Add a new CAMERA_SPECIAL_MODE_* id in globals above.
+    // 2. Add one CC_DefineSpecialMode(...) line here with the mode's label and camera values.
+    // 3. If the mode should be arrow-key adjustable, set keyboardAdjustable=true and give an angleMax.
+    // 4. If the mode should activate from a camera-local rect, register that rect in CC_RegisterBuiltInSpecialCameraRects().
+    // 5. Leave ZoneEvent-owned zone camera switching in ZoneEvent.
+    call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_BOOMMINE, "Boom Mine", 1600.00, 5000.00, 270.00, 90.00, 70.00, true, 295.00)
+    call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_TEMPLATE01, "Template 01", 1800.00, 6000.00, 285.00, 90.00, 70.00, false, CAMERA_ANGLE_MAX)
+    call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_TEMPLATE02, "Template 02", 1400.00, 4500.00, 300.00, 180.00, 65.00, false, CAMERA_ANGLE_MAX)
+endfunction
+
+private function CC_IsSpecialModeKeyboardAdjustable takes integer specialMode returns boolean
+    return specialMode != CAMERA_SPECIAL_MODE_NONE and CC_SpecialModeKeyboardAdjustable[specialMode]
+endfunction
+
+private function CC_IsResolvedSpecialModeKeyboardAdjustable takes integer pid returns boolean
+    return CC_IsSpecialModeKeyboardAdjustable(CC_GetResolvedSpecialMode(pid))
+endfunction
+
+private function CC_GetConfiguredSpecialModeAngle takes integer specialMode returns real
+    if specialMode == CAMERA_SPECIAL_MODE_NONE then
+        return CAMERA_DEFAULT_ANGLE
+    endif
+    return CC_SpecialModeAngleConfig[specialMode]
+endfunction
+
+private function CC_GetConfiguredSpecialModeRotation takes integer specialMode returns real
+    if specialMode == CAMERA_SPECIAL_MODE_NONE then
+        return CAMERA_DEFAULT_ROTATION
+    endif
+    return CC_SpecialModeRotationConfig[specialMode]
+endfunction
+
+private function CC_GetConfiguredSpecialModeAngleMax takes integer specialMode returns real
+    if specialMode == CAMERA_SPECIAL_MODE_NONE or CC_SpecialModeAngleMaxConfig[specialMode] <= 0.00 then
+        return CAMERA_ANGLE_MAX
+    endif
+    return CC_SpecialModeAngleMaxConfig[specialMode]
+endfunction
+
+private function CC_HasSpecialMode takes integer pid returns boolean
+    return CC_GetResolvedSpecialMode(pid) != CAMERA_SPECIAL_MODE_NONE
 endfunction
 
 private function CC_IsKeyboardModeActive takes player whichPlayer returns boolean
     local integer pid = CC_GetPlayerIndex(whichPlayer)
-    return (not CC_Suspended[pid]) and (not CC_ResumePending[pid]) and (CC_Mode[pid] == CAMERA_MODE_NORMAL or CC_IsBoomMineKeyboardMode(pid))
+    return (not CC_Suspended[pid]) and (not CC_ResumePending[pid]) and (CC_Mode[pid] == CAMERA_MODE_NORMAL or CC_IsResolvedSpecialModeKeyboardAdjustable(pid))
 endfunction
 
 private function CC_IsNativeResetProtectionActive takes player whichPlayer returns boolean
-    local integer pid = CC_GetPlayerIndex(whichPlayer)
-    return (not CC_Suspended[pid]) and (not CC_ResumePending[pid]) and (not CC_HasSpecialMode(pid)) and CC_Mode[pid] == CAMERA_MODE_NORMAL
+    return false
 endfunction
 
 private function CC_ClearKeyState takes player whichPlayer returns nothing
@@ -454,43 +529,53 @@ private function CC_IsPlayerKeyboardAdjusting takes integer pid returns boolean
 endfunction
 
 private function CC_GetSpecialDistance takes integer pid returns real
-    if CC_SpecialMode[pid] == CAMERA_SPECIAL_MODE_BOOMMINE then
-        return CAMERA_BOOMMINE_DISTANCE
+    local integer specialMode = CC_GetResolvedSpecialMode(pid)
+    if specialMode != CAMERA_SPECIAL_MODE_NONE then
+        return CC_SpecialModeDistanceConfig[specialMode]
     endif
     return CC_Distance[pid]
 endfunction
 
 private function CC_GetSpecialFarZ takes integer pid returns real
-    if CC_SpecialMode[pid] == CAMERA_SPECIAL_MODE_BOOMMINE then
-        return CAMERA_BOOMMINE_FARZ
+    local integer specialMode = CC_GetResolvedSpecialMode(pid)
+    if specialMode != CAMERA_SPECIAL_MODE_NONE then
+        return CC_SpecialModeFarZConfig[specialMode]
     endif
     return CC_FarZ[pid]
 endfunction
 
 private function CC_GetSpecialAngle takes integer pid returns real
-    if CC_SpecialMode[pid] == CAMERA_SPECIAL_MODE_BOOMMINE then
+    local integer specialMode = CC_GetResolvedSpecialMode(pid)
+    if CC_IsSpecialModeKeyboardAdjustable(specialMode) then
         return CC_SpecialAngle[pid]
+    elseif specialMode != CAMERA_SPECIAL_MODE_NONE then
+        return CC_SpecialModeAngleConfig[specialMode]
     endif
     return CC_Angle[pid]
 endfunction
 
 private function CC_GetSpecialRotation takes integer pid returns real
-    if CC_SpecialMode[pid] == CAMERA_SPECIAL_MODE_BOOMMINE then
+    local integer specialMode = CC_GetResolvedSpecialMode(pid)
+    if CC_IsSpecialModeKeyboardAdjustable(specialMode) then
         return CC_SpecialRotation[pid]
+    elseif specialMode != CAMERA_SPECIAL_MODE_NONE then
+        return CC_SpecialModeRotationConfig[specialMode]
     endif
     return CC_Rotation[pid]
 endfunction
 
 private function CC_GetSpecialFov takes integer pid returns real
-    if CC_SpecialMode[pid] == CAMERA_SPECIAL_MODE_BOOMMINE then
-        return CAMERA_BOOMMINE_FOV
+    local integer specialMode = CC_GetResolvedSpecialMode(pid)
+    if specialMode != CAMERA_SPECIAL_MODE_NONE then
+        return CC_SpecialModeFovConfig[specialMode]
     endif
     return CC_Fov[pid]
 endfunction
 
 private function CC_GetSpecialModeName takes integer pid returns string
-    if CC_SpecialMode[pid] == CAMERA_SPECIAL_MODE_BOOMMINE then
-        return "Boom Mine"
+    local integer specialMode = CC_GetResolvedSpecialMode(pid)
+    if specialMode != CAMERA_SPECIAL_MODE_NONE and CC_SpecialModeLabel[specialMode] != "" then
+        return CC_SpecialModeLabel[specialMode]
     endif
     return ""
 endfunction
@@ -696,7 +781,7 @@ endfunction
 
 private function CC_ApplyKeyboardFields takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
-    if CC_IsBoomMineKeyboardMode(pid) then
+    if CC_IsResolvedSpecialModeKeyboardAdjustable(pid) then
         call CC_ApplySpecialFields(whichPlayer, CAMERA_KEYBOARD_FIELD_DURATION)
     else
         call CC_UpdateAndApplyNormalFields(whichPlayer, CAMERA_KEYBOARD_FIELD_DURATION)
@@ -787,7 +872,7 @@ private function CC_StartSmoothResumeVisualWithDuration takes player whichPlayer
     elseif CC_Mode[pid] == CAMERA_MODE_ADVANCED then
         call CC_ApplyAdvancedResumePreviewFields(whichPlayer, duration)
     elseif CC_Mode[pid] == CAMERA_MODE_NORMAL then
-        call CC_UpdateAndApplyNormalFields(whichPlayer, duration)
+        call CC_ApplyNormalFields(whichPlayer, duration)
     else
         call CC_ApplyDirectFields(whichPlayer, duration)
     endif
@@ -800,14 +885,18 @@ endfunction
 
 private function CC_UpdateKeyboardCamera takes nothing returns nothing
     local integer i = 0
+    local integer specialMode
+    local real specialAngleMax
 
     loop
         exitwhen i >= bj_MAX_PLAYERS
-        if CC_IsBoomMineKeyboardMode(i) and not CC_Suspended[i] then
+        set specialMode = CC_GetResolvedSpecialMode(i)
+        if CC_IsSpecialModeKeyboardAdjustable(specialMode) and not CC_Suspended[i] then
+            set specialAngleMax = CC_GetConfiguredSpecialModeAngleMax(specialMode)
             if CC_MoveDown[i] then
                 set CC_SpecialAngle[i] = CC_SpecialAngle[i] + CAMERA_KEYBOARD_VERTICAL_SPEED
-                if CC_SpecialAngle[i] > CAMERA_BOOMMINE_ANGLE_MAX then
-                    set CC_SpecialAngle[i] = CAMERA_BOOMMINE_ANGLE_MAX
+                if CC_SpecialAngle[i] > specialAngleMax then
+                    set CC_SpecialAngle[i] = specialAngleMax
                 endif
             elseif CC_MoveUp[i] then
                 set CC_SpecialAngle[i] = CC_SpecialAngle[i] - CAMERA_KEYBOARD_VERTICAL_SPEED
@@ -873,41 +962,6 @@ private function CC_ReapplyStoredFields takes player whichPlayer returns nothing
     endif
 endfunction
 
-private function CC_CheckCameraDrift takes nothing returns nothing
-    local integer i = 0
-    local player whichPlayer
-    local real expectedDistance
-    local real expectedAngle
-    local boolean drifted
-
-    loop
-        exitwhen i >= bj_MAX_PLAYERS
-        set whichPlayer = Player(i)
-        if CC_Mode[i] == CAMERA_MODE_NORMAL and not CC_HasSpecialMode(i) and not CC_Suspended[i] and not CC_ResumePending[i] and not CC_IsPlayerKeyboardAdjusting(i) then
-            call CC_UpdateNormalEffectiveDistance(whichPlayer)
-            if GetLocalPlayer() == whichPlayer then
-                set expectedDistance = CC_NormalEffectiveDistance[i]
-                set expectedAngle = CC_NormalEffectiveAngle[i]
-                set drifted = false
-
-                if CC_Abs(GetCameraField(CAMERA_FIELD_TARGET_DISTANCE) - expectedDistance) > CAMERA_FIELD_TOLERANCE or CC_Abs(GetCameraField(CAMERA_FIELD_FARZ) - CC_FarZ[i]) > CAMERA_FIELD_TOLERANCE or CC_Abs(GetCameraField(CAMERA_FIELD_FIELD_OF_VIEW) - CC_Fov[i]) > CAMERA_FIELD_TOLERANCE or CC_Abs(GetCameraField(CAMERA_FIELD_ANGLE_OF_ATTACK) - expectedAngle) > CAMERA_FIELD_TOLERANCE then
-                    set drifted = true
-                endif
-                if CC_GetRotationDelta(GetCameraField(CAMERA_FIELD_ROTATION), CC_Rotation[i]) > CAMERA_FIELD_TOLERANCE then
-                    set drifted = true
-                endif
-
-                if drifted then
-                    call CC_ReapplyStoredFields(whichPlayer)
-                endif
-            endif
-        endif
-        call CC_UpdateWoundedState(whichPlayer)
-        set whichPlayer = null
-        set i = i + 1
-    endloop
-endfunction
-
 private function CC_UpdateLoopState takes nothing returns nothing
     if CC_UpdateTimer == null then
         return
@@ -946,6 +1000,133 @@ private function CC_ApplyMode takes player whichPlayer returns nothing
     else
         call CC_ApplyNormalMode(whichPlayer)
     endif
+endfunction
+
+private function CC_GetSpecialRectModeForUnit takes unit whichUnit returns integer
+    local integer i = CC_SpecialCameraRectCount
+    local real x
+    local real y
+    if whichUnit == null or GetHandleId(whichUnit) == 0 or GetWidgetLife(whichUnit) <= 0.405 then
+        return CAMERA_SPECIAL_MODE_NONE
+    endif
+    set x = GetUnitX(whichUnit)
+    set y = GetUnitY(whichUnit)
+    loop
+        exitwhen i <= 0
+        if CC_SpecialCameraRects[i] != null and RectContainsCoords(CC_SpecialCameraRects[i], x, y) then
+            return CC_SpecialCameraRectModes[i]
+        endif
+        set i = i - 1
+    endloop
+    return CAMERA_SPECIAL_MODE_NONE
+endfunction
+
+private function CC_GetTrackedSpecialModeForPlayer takes player whichPlayer returns integer
+    local unit target = CC_GetFallbackTarget(whichPlayer)
+    local integer mode = CAMERA_SPECIAL_MODE_NONE
+    if IsTrackedCameraUnit(target) and GetOwningPlayer(target) == whichPlayer then
+        set mode = CC_GetSpecialRectModeForUnit(target)
+        if mode != CAMERA_SPECIAL_MODE_NONE then
+            set target = null
+            return mode
+        endif
+    endif
+    if udg_Nazgrek != target and IsTrackedCameraUnit(udg_Nazgrek) and GetOwningPlayer(udg_Nazgrek) == whichPlayer then
+        set mode = CC_GetSpecialRectModeForUnit(udg_Nazgrek)
+        if mode != CAMERA_SPECIAL_MODE_NONE then
+            set target = null
+            return mode
+        endif
+    endif
+    if udg_Zulkis != target and IsTrackedCameraUnit(udg_Zulkis) and GetOwningPlayer(udg_Zulkis) == whichPlayer then
+        set mode = CC_GetSpecialRectModeForUnit(udg_Zulkis)
+        if mode != CAMERA_SPECIAL_MODE_NONE then
+            set target = null
+            return mode
+        endif
+    endif
+    set target = null
+    return CAMERA_SPECIAL_MODE_NONE
+endfunction
+
+private function CC_RefreshSpecialRectState takes player whichPlayer returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    local integer oldResolvedMode = CC_GetResolvedSpecialMode(pid)
+    local integer newRectMode = CC_GetTrackedSpecialModeForPlayer(whichPlayer)
+    if CC_RectSpecialMode[pid] == newRectMode then
+        return
+    endif
+    set CC_RectSpecialMode[pid] = newRectMode
+    if oldResolvedMode != CC_GetResolvedSpecialMode(pid) then
+        call CC_ClearKeyState(whichPlayer)
+        call CC_UpdateLoopState()
+        if not CC_Suspended[pid] and not CC_ResumePending[pid] then
+            call CC_InvalidateNormalTraceCache(pid)
+            call CC_ApplyMode(whichPlayer)
+        endif
+    endif
+endfunction
+
+private function CC_OnSpecialCameraRectEvent takes nothing returns nothing
+    local unit whichUnit = GetTriggerUnit()
+    local player whichPlayer
+    if not IsTrackedCameraUnit(whichUnit) then
+        set whichUnit = null
+        return
+    endif
+    set whichPlayer = GetOwningPlayer(whichUnit)
+    call CC_RefreshSpecialRectState(whichPlayer)
+    set whichPlayer = null
+    set whichUnit = null
+endfunction
+
+private function CC_RegisterSpecialCameraRect takes rect whichRect, integer specialMode returns nothing
+    local integer index
+    if whichRect == null or specialMode == CAMERA_SPECIAL_MODE_NONE then
+        return
+    endif
+    if CC_SpecialCameraRectCount >= CC_MAX_SPECIAL_CAMERA_RECTS then
+        return
+    endif
+    set CC_SpecialCameraRectCount = CC_SpecialCameraRectCount + 1
+    set index = CC_SpecialCameraRectCount
+    set CC_SpecialCameraRects[index] = whichRect
+    set CC_SpecialCameraRectModes[index] = specialMode
+    set CC_SpecialCameraEnterTriggers[index] = CreateTrigger()
+    set CC_SpecialCameraLeaveTriggers[index] = CreateTrigger()
+    call TriggerRegisterEnterRectSimple(CC_SpecialCameraEnterTriggers[index], whichRect)
+    call TriggerRegisterLeaveRectSimple(CC_SpecialCameraLeaveTriggers[index], whichRect)
+    call TriggerAddAction(CC_SpecialCameraEnterTriggers[index], function CC_OnSpecialCameraRectEvent)
+    call TriggerAddAction(CC_SpecialCameraLeaveTriggers[index], function CC_OnSpecialCameraRectEvent)
+endfunction
+
+private function CC_RegisterBuiltInSpecialCameraRects takes nothing returns nothing
+    // Internal non-zone special camera rects can be registered here.
+    // Leave ZoneEvent-owned zone cameras there; use this only for camera-local rect behavior.
+    //
+    // Example template registrations:
+    call CC_RegisterSpecialCameraRect(gg_rct_camtest1, CAMERA_SPECIAL_MODE_TEMPLATE01)
+    // call CC_RegisterSpecialCameraRect(gg_rct_xxx, CAMERA_SPECIAL_MODE_TEMPLATE02)
+    //
+    // Special camera preset values are configured centrally in CC_InitSpecialModeConfigs().
+    // To add another rect-driven mode:
+    // - Define the mode in CC_InitSpecialModeConfigs().
+    // - Register one or more gg_rct_* here to activate it.
+    // - Leaving the rect automatically restores the previously resolved camera mode.
+endfunction
+
+private function CC_CheckCameraDrift takes nothing returns nothing
+    local integer i = 0
+    local player whichPlayer
+
+    loop
+        exitwhen i >= bj_MAX_PLAYERS
+        set whichPlayer = Player(i)
+        call CC_RefreshSpecialRectState(whichPlayer)
+        call CC_UpdateWoundedState(whichPlayer)
+        set whichPlayer = null
+        set i = i + 1
+    endloop
 endfunction
 
 private function CC_ResetStoredCameraState takes player whichPlayer returns nothing
@@ -1023,7 +1204,7 @@ public function GetMode takes player whichPlayer returns integer
 endfunction
 
 public function GetSpecialMode takes player whichPlayer returns integer
-    return CC_SpecialMode[CC_GetPlayerIndex(whichPlayer)]
+    return CC_GetResolvedSpecialMode(CC_GetPlayerIndex(whichPlayer))
 endfunction
 
 public function GetModeName takes player whichPlayer returns string
@@ -1061,7 +1242,7 @@ public function GetFov takes player whichPlayer returns real
 endfunction
 
 public function IsNormalTraceEnabled takes player whichPlayer returns boolean
-    return CC_NormalTraceEnabled[CC_GetPlayerIndex(whichPlayer)]
+    return false
 endfunction
 
 public function SetDistance takes player whichPlayer, real value returns nothing
@@ -1107,10 +1288,13 @@ public function ResetDefaults takes player whichPlayer returns nothing
 endfunction
 
 public function SetNormalTraceEnabled takes player whichPlayer, boolean flag returns nothing
-    local integer pid = CC_GetPlayerIndex(whichPlayer)
-    set CC_NormalTraceEnabled[pid] = flag
-    call CC_InvalidateNormalTraceCache(pid)
-    call CC_ApplyMode(whichPlayer)
+endfunction
+
+private function CC_OnChatResetKey takes nothing returns nothing
+    local player whichPlayer = GetTriggerPlayer()
+    call CC_ClearKeyState(whichPlayer)
+    call CC_UpdateLoopState()
+    set whichPlayer = null
 endfunction
 
 public function SetSpecialMode takes player whichPlayer, integer specialMode returns nothing
@@ -1119,9 +1303,9 @@ public function SetSpecialMode takes player whichPlayer, integer specialMode ret
         return
     endif
     set CC_SpecialMode[pid] = specialMode
-    if specialMode == CAMERA_SPECIAL_MODE_BOOMMINE then
-        set CC_SpecialAngle[pid] = CAMERA_BOOMMINE_ANGLE
-        set CC_SpecialRotation[pid] = CAMERA_BOOMMINE_ROTATION
+    if CC_IsSpecialModeKeyboardAdjustable(specialMode) then
+        set CC_SpecialAngle[pid] = CC_GetConfiguredSpecialModeAngle(specialMode)
+        set CC_SpecialRotation[pid] = CC_GetConfiguredSpecialModeRotation(specialMode)
     endif
     call CC_InvalidateNormalTraceCache(pid)
     call CC_ApplyMode(whichPlayer)
@@ -1433,21 +1617,23 @@ public function Init takes nothing returns nothing
         return
     endif
     set CC_Initialized = true
+    call CC_InitSpecialModeConfigs()
 
     loop
         exitwhen i >= bj_MAX_PLAYERS
         set CC_Mode[i] = CAMERA_MODE_NORMAL
         set CC_SpecialMode[i] = CAMERA_SPECIAL_MODE_NONE
+        set CC_RectSpecialMode[i] = CAMERA_SPECIAL_MODE_NONE
         set CC_Distance[i] = CAMERA_DEFAULT_DISTANCE
         set CC_FarZ[i] = CAMERA_DEFAULT_FARZ
         set CC_Angle[i] = CAMERA_DEFAULT_ANGLE
         set CC_Rotation[i] = CAMERA_DEFAULT_ROTATION
         set CC_Fov[i] = CAMERA_DEFAULT_FOV
-        set CC_SpecialAngle[i] = CAMERA_BOOMMINE_ANGLE
-        set CC_SpecialRotation[i] = CAMERA_BOOMMINE_ROTATION
+        set CC_SpecialAngle[i] = CC_GetConfiguredSpecialModeAngle(CAMERA_SPECIAL_MODE_BOOMMINE)
+        set CC_SpecialRotation[i] = CC_GetConfiguredSpecialModeRotation(CAMERA_SPECIAL_MODE_BOOMMINE)
         set CC_NormalEffectiveDistance[i] = CAMERA_DEFAULT_DISTANCE
         set CC_NormalEffectiveAngle[i] = CAMERA_DEFAULT_ANGLE
-        set CC_NormalTraceEnabled[i] = true
+        set CC_NormalTraceEnabled[i] = false
         call CC_InvalidateNormalTraceCache(i)
         set CC_TargetUnit[i] = null
         set CC_WoundedActive[i] = false
@@ -1478,6 +1664,7 @@ public function Init takes nothing returns nothing
     set CC_DownUpTrigger = CreateTrigger()
     set CC_PageResetTrigger = CreateTrigger()
     set CC_WheelResetTrigger = CreateTrigger()
+    set CC_ChatResetTrigger = CreateTrigger()
     set i = 0
     loop
         exitwhen i >= bj_MAX_PLAYERS
@@ -1494,6 +1681,7 @@ public function Init takes nothing returns nothing
         call BlzTriggerRegisterPlayerKeyEvent(CC_PageResetTrigger, Player(i), OSKEY_PAGEUP, 0, false)
         call BlzTriggerRegisterPlayerKeyEvent(CC_PageResetTrigger, Player(i), OSKEY_PAGEDOWN, 0, true)
         call BlzTriggerRegisterPlayerKeyEvent(CC_PageResetTrigger, Player(i), OSKEY_PAGEDOWN, 0, false)
+        call BlzTriggerRegisterPlayerKeyEvent(CC_ChatResetTrigger, Player(i), OSKEY_RETURN, 0, true)
         set i = i + 1
     endloop
     call TriggerAddAction(CC_SelectTrigger, function CC_SelectAction)
@@ -1506,6 +1694,7 @@ public function Init takes nothing returns nothing
     call TriggerAddAction(CC_DownDownTrigger, function CC_OnDownDown)
     call TriggerAddAction(CC_DownUpTrigger, function CC_OnDownUp)
     call TriggerAddAction(CC_PageResetTrigger, function CC_PageResetAction)
+    call TriggerAddAction(CC_ChatResetTrigger, function CC_OnChatResetKey)
 
     set gameUI = BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0)
     if gameUI != null then
@@ -1518,6 +1707,7 @@ public function Init takes nothing returns nothing
     endif
 
     call TriggerAddAction(CC_WheelResetTrigger, function CC_PageResetAction)
+    call CC_RegisterBuiltInSpecialCameraRects()
 
     set gameUI = null
     set worldFrame = null
