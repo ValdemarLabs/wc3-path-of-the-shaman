@@ -303,6 +303,15 @@ class WC3W3TExporter:
         
         for db_field, (wc3_field, field_type) in self.FIELD_MAP.items():
             value = item.get(db_field)
+
+            if db_field == 'is_powerup':
+                classification = str(item.get('wc3_classification') or '')
+                value = bool(value) or bool(item.get('use_automatically')) or classification.lower() == 'powerup'
+
+            if db_field == 'use_automatically':
+                classification = str(item.get('wc3_classification') or '')
+                if bool(item.get('actively_used')) or bool(item.get('is_powerup')) or classification.lower() == 'powerup':
+                    continue
             
             # Always include required fields
             is_required = db_field in self.REQUIRED_FIELDS
