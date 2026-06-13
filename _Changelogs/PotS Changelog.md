@@ -16,6 +16,9 @@
 ## [13.6.2026]
 
 ### Player-Facing Updates
+- `Camera / Zone transitions`
+  Camera reset inputs now snap the view back into the currently active camera mode immediately, so mouse-wheel and `PageUp` / `PageDown` usage no longer leave the player outside the intended live camera state.
+  Teleport-style entries into selected caves, interiors, and dungeon subzones now fast-pan the camera directly to the tracked hero unit instead of letting the view linger at the old location after a far transition.
 - `qAradion.j`
   Reworked more of the `Ranger Missing` Valeria encounter toward the old GUI behavior: the intro now uses stronger old-style facing/camera timing, persuasion response choices spoken through `ESC` now play during normal gameplay instead of entering a mini-cinematic, and the correct persuasion answer now lets the hero finish speaking before Valeria stops attacking and transitions into the friendly success path.
   Improved `Ranger Missing` reunion flow so the completion exchange uses more explicit old-GUI-style facing beats, and Valeria's return-home recreation is now deferred into the fade-black window instead of snapping too early while still visible.
@@ -41,6 +44,7 @@
   Hardened the shared `ESC` action path so a questgiver can safely clear or replace its own registered escape callback while that callback is executing, preventing self-destroy / stale-trigger issues during non-sequence dialog flows.
 - `CameraControl.j`
   Removed the old normal-mode safe / no-clipping correction path from active runtime use, added a safer special-camera preset configuration structure for future internal rect-driven camera modes, fixed the stuck-rotation case when chat is opened during arrow-key camera turning, and cleaned up special-camera helper ordering so the library follows plain JASS call-order rules.
+  Added a reusable fast target-pan helper, and changed mouse-wheel / `PageUp` / `PageDown` reset handling so it immediately reapplies the player's currently active camera mode instead of only restoring the older normal-mode path.
 - `CameraUI.j`
   Removed the obsolete `Safe Camera` / no-clip toggle button and related readout so the camera panel now matches the current `CameraControl` runtime instead of exposing the retired legacy option.
 - `qAradion.j`
@@ -58,6 +62,8 @@
   Fixed `GetReputationLevel` so the local `Faction` value is treated as the integer-backed struct id it actually is, avoiding the invalid `set f = null` cleanup path.
 - `QuestMaster.j`
   Corrected the reputation reward calculation path so quest reputation rewards are computed from quest level plus adjustment instead of using the broken truncated multiplier-only formula.
+- `ZoneEvent.j`
+  Added a narrow fast-pan-on-enter path for teleport-style cave / interior transitions and selected dungeon entries so zone-owned camera effects can immediately recenter the view on the tracked hero after long-distance subzone jumps without affecting normal border crossings.
 
 #### Lag and possible leak investigation
 From the 8-13 June 2026 changelog entries, the strongest suspects are not the new DialogSystem ESC hook, but the newer camera and quest-runtime polling.
@@ -75,6 +81,8 @@ Medium-low: [QuestsAndDialogs/QuestMaster.j (line 2749)](/h:/Pelit/PotS_JASS/Que
 Low: qAradion also creates a texttag every second during each rift ritual at [OnRiftsCountdownTick (line 2081)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:2081). Those tags do expire, so this is churn rather than a leak, but a full 3 x 120s run still creates a lot of short-lived UI handles.
 
 ### Known Issues
+- `CameraControl.j` / `ZoneEvent.j`
+  Today's immediate camera-reset and fast zone-pan changes were not yet verified live in the main map. The affected paths still need gameplay confirmation in normal, advanced, and special camera modes, plus a quick pass through the intended teleport-style cave/interior/dungeon entries.
 - `WC3ItemManager`
   The current authoritative build is the debug build, not the release build. Until the release package is refreshed, any newer ItemManager fixes should be verified against `ItemManager_debug`.
 - `qAradion.j` / `QuestSystems`
@@ -86,6 +94,8 @@ Low: qAradion also creates a texttag every second during each rift ritual at [On
   The current QuestSystems and Aradion-related quest fixes still need a focused end-to-end test pass before `qAradion` is restructured into a more modular questgiver/template-friendly layout for reuse by other libraries.
 
 ### Actions Remaining
+- `CameraControl.j` / `ZoneEvent.j`
+  Re-test camera reset inputs with mouse wheel and `PageUp` / `PageDown`, then verify the fast-pan behavior on the intended far-transition subzones such as cave/interior teleports, Boom Mine, Gnoll Hideout, The Crypt, and Firelands.
 - `WC3ItemManager`
   Update the release ItemManager package later so it matches the current debug build once the ongoing item/database tool changes are considered stable enough to freeze into release.
 - `qAradion.j` / `QuestSystems`
