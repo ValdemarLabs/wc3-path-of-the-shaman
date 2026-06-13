@@ -1835,15 +1835,47 @@ endfunction
 //===========================================================================
 // FindNPC requirement tracking (proximity-based)
 //===========================================================================
+private function StopFindNPCCheckTimerIfIdle takes nothing returns nothing
+	if FindNPCReqCount == 0 and FindNPCCheckTimer != null then
+		call PauseTimer(FindNPCCheckTimer)
+		call DestroyTimer(FindNPCCheckTimer)
+		set FindNPCCheckTimer = null
+	endif
+endfunction
+
+private function RemoveFindNPCRequirementAt takes integer index returns nothing
+	local integer j = index
+
+	loop
+		exitwhen j >= FindNPCReqCount
+		set FindNPCReqQuestId[j] = FindNPCReqQuestId[j + 1]
+		set FindNPCReqGiver[j] = FindNPCReqGiver[j + 1]
+		set FindNPCReqIndex[j] = FindNPCReqIndex[j + 1]
+		set FindNPCReqNPC[j] = FindNPCReqNPC[j + 1]
+		set FindNPCReqComplete[j] = FindNPCReqComplete[j + 1]
+		set j = j + 1
+	endloop
+
+	set FindNPCReqQuestId[FindNPCReqCount] = 0
+	set FindNPCReqGiver[FindNPCReqCount] = null
+	set FindNPCReqIndex[FindNPCReqCount] = 0
+	set FindNPCReqNPC[FindNPCReqCount] = null
+	set FindNPCReqComplete[FindNPCReqCount] = false
+	set FindNPCReqCount = FindNPCReqCount - 1
+
+	call StopFindNPCCheckTimerIfIdle()
+endfunction
+
 private function CheckFindNPCProgress takes nothing returns nothing
 	local integer i = 1
 	local QuestData q
 	local string reqText
 	local unit npc
-	local real dist
+	local boolean removeReq
 
 	loop
 		exitwhen i > FindNPCReqCount
+		set removeReq = false
 		if not FindNPCReqComplete[i] then
 			set npc = FindNPCReqNPC[i]
 			set q = QuestMaster_GetById(FindNPCReqQuestId[i])
@@ -1858,11 +1890,21 @@ private function CheckFindNPCProgress takes nothing returns nothing
 					call QuestMaster_SetStateByNameAndGiver(q.name, FindNPCReqGiver[i], QUEST_STATE_READY_TURNIN)
 					call q.addReturnRequirement()
 					call DebugMsg("CheckFindNPCProgress: Found " + GetUnitName(npc))
+					set removeReq = true
 				endif
 			endif
+		else
+			set removeReq = true
 		endif
-		set i = i + 1
+
+		if removeReq then
+			call RemoveFindNPCRequirementAt(i)
+		else
+			set i = i + 1
+		endif
 	endloop
+
+	set npc = null
 endfunction
 
 private function OnFindNPCCheck takes nothing returns nothing
@@ -1904,9 +1946,55 @@ public function RegisterFindNPCRequirement takes integer questId, unit questGive
 	call DebugMsg("Registered FindNPC requirement: quest=" + I2S(questId) + ", npc=" + npcName)
 endfunction
 
+public function UnregisterFindNPCRequirement takes integer questId, integer reqIndex returns nothing
+	local integer i = 1
+
+	loop
+		exitwhen i > FindNPCReqCount
+		if FindNPCReqQuestId[i] == questId and FindNPCReqIndex[i] == reqIndex then
+			call RemoveFindNPCRequirementAt(i)
+			return
+		endif
+		set i = i + 1
+	endloop
+endfunction
+
 //===========================================================================
 // GoToPlace requirement tracking (region-based)
 //===========================================================================
+private function StopGoToPlaceCheckTimerIfIdle takes nothing returns nothing
+	if GoToPlaceReqCount == 0 and GoToPlaceCheckTimer != null then
+		call PauseTimer(GoToPlaceCheckTimer)
+		call DestroyTimer(GoToPlaceCheckTimer)
+		set GoToPlaceCheckTimer = null
+	endif
+endfunction
+
+private function RemoveGoToPlaceRequirementAt takes integer index returns nothing
+	local integer j = index
+
+	loop
+		exitwhen j >= GoToPlaceReqCount
+		set GoToPlaceReqQuestId[j] = GoToPlaceReqQuestId[j + 1]
+		set GoToPlaceReqGiver[j] = GoToPlaceReqGiver[j + 1]
+		set GoToPlaceReqIndex[j] = GoToPlaceReqIndex[j + 1]
+		set GoToPlaceReqRegion[j] = GoToPlaceReqRegion[j + 1]
+		set GoToPlaceReqName[j] = GoToPlaceReqName[j + 1]
+		set GoToPlaceReqComplete[j] = GoToPlaceReqComplete[j + 1]
+		set j = j + 1
+	endloop
+
+	set GoToPlaceReqQuestId[GoToPlaceReqCount] = 0
+	set GoToPlaceReqGiver[GoToPlaceReqCount] = null
+	set GoToPlaceReqIndex[GoToPlaceReqCount] = 0
+	set GoToPlaceReqRegion[GoToPlaceReqCount] = null
+	set GoToPlaceReqName[GoToPlaceReqCount] = ""
+	set GoToPlaceReqComplete[GoToPlaceReqCount] = false
+	set GoToPlaceReqCount = GoToPlaceReqCount - 1
+
+	call StopGoToPlaceCheckTimerIfIdle()
+endfunction
+
 private function CheckGoToPlaceProgress takes nothing returns nothing
 	local integer i = 1
 	local QuestData q
@@ -1915,9 +2003,11 @@ private function CheckGoToPlaceProgress takes nothing returns nothing
 	local real ny
 	local real zx
 	local real zy
+	local boolean removeReq
 
 	loop
 		exitwhen i > GoToPlaceReqCount
+		set removeReq = false
 		if not GoToPlaceReqComplete[i] then
 			set q = QuestMaster_GetById(GoToPlaceReqQuestId[i])
 
@@ -1934,6 +2024,7 @@ private function CheckGoToPlaceProgress takes nothing returns nothing
 						call QuestMaster_SetStateByNameAndGiver(q.name, GoToPlaceReqGiver[i], QUEST_STATE_READY_TURNIN)
 						call q.addReturnRequirement()
 						call DebugMsg("CheckGoToPlaceProgress: Reached " + GoToPlaceReqName[i])
+						set removeReq = true
 					endif
 				endif
 				if not GoToPlaceReqComplete[i] and udg_Zulkis != null then
@@ -1947,11 +2038,19 @@ private function CheckGoToPlaceProgress takes nothing returns nothing
 						call QuestMaster_SetStateByNameAndGiver(q.name, GoToPlaceReqGiver[i], QUEST_STATE_READY_TURNIN)
 						call q.addReturnRequirement()
 						call DebugMsg("CheckGoToPlaceProgress: Reached " + GoToPlaceReqName[i])
+						set removeReq = true
 					endif
 				endif
 			endif
+		else
+			set removeReq = true
 		endif
-		set i = i + 1
+
+		if removeReq then
+			call RemoveGoToPlaceRequirementAt(i)
+		else
+			set i = i + 1
+		endif
 	endloop
 endfunction
 
@@ -1992,6 +2091,19 @@ public function RegisterGoToPlaceRequirement takes integer questId, unit questGi
 	call DebugMsg("Registered GoToPlace requirement: quest=" + I2S(questId) + ", place=" + placeName)
 endfunction
 
+public function UnregisterGoToPlaceRequirement takes integer questId, integer reqIndex returns nothing
+	local integer i = 1
+
+	loop
+		exitwhen i > GoToPlaceReqCount
+		if GoToPlaceReqQuestId[i] == questId and GoToPlaceReqIndex[i] == reqIndex then
+			call RemoveGoToPlaceRequirementAt(i)
+			return
+		endif
+		set i = i + 1
+	endloop
+endfunction
+
 //===========================================================================
 // Reputation requirement tracking
 //===========================================================================
@@ -1999,10 +2111,11 @@ endfunction
 // Helper function to get current reputation value with a faction
 private function GetReputationLevel takes string factionName returns integer
 	local Faction f = Faction.getFaction(factionName)
-	if f != null then
-		return Reputation.getRep(Player(0), f)
+	local integer repValue = 0
+	if f != 0 then
+		set repValue = Reputation.getRep(Player(0), f)
 	endif
-	return 0
+	return repValue
 endfunction
 
 // Helper function to get reputation level name from value
@@ -2024,14 +2137,49 @@ private function GetReputationLevelName takes integer repValue returns string
 	endif
 endfunction
 
+private function StopRepCheckTimerIfIdle takes nothing returns nothing
+	if RepReqCount == 0 and RepCheckTimer != null then
+		call PauseTimer(RepCheckTimer)
+		call DestroyTimer(RepCheckTimer)
+		set RepCheckTimer = null
+	endif
+endfunction
+
+private function RemoveReputationRequirementAt takes integer index returns nothing
+	local integer j = index
+
+	loop
+		exitwhen j >= RepReqCount
+		set RepReqQuestId[j] = RepReqQuestId[j + 1]
+		set RepReqGiver[j] = RepReqGiver[j + 1]
+		set RepReqIndex[j] = RepReqIndex[j + 1]
+		set RepReqFaction[j] = RepReqFaction[j + 1]
+		set RepReqLevel[j] = RepReqLevel[j + 1]
+		set RepReqComplete[j] = RepReqComplete[j + 1]
+		set j = j + 1
+	endloop
+
+	set RepReqQuestId[RepReqCount] = 0
+	set RepReqGiver[RepReqCount] = null
+	set RepReqIndex[RepReqCount] = 0
+	set RepReqFaction[RepReqCount] = ""
+	set RepReqLevel[RepReqCount] = 0
+	set RepReqComplete[RepReqCount] = false
+	set RepReqCount = RepReqCount - 1
+
+	call StopRepCheckTimerIfIdle()
+endfunction
+
 private function CheckReputationProgress takes nothing returns nothing
 	local integer i = 1
 	local QuestData q
 	local string reqText
 	local integer currentRep
+	local boolean removeReq
 
 	loop
 		exitwhen i > RepReqCount
+		set removeReq = false
 		if not RepReqComplete[i] then
 			set q = QuestMaster_GetById(RepReqQuestId[i])
 
@@ -2047,10 +2195,18 @@ private function CheckReputationProgress takes nothing returns nothing
 					call QuestMaster_SetStateByNameAndGiver(q.name, RepReqGiver[i], QUEST_STATE_READY_TURNIN)
 					call q.addReturnRequirement()
 					call DebugMsg("CheckReputationProgress: Reached " + GetReputationLevelName(RepReqLevel[i]) + " with " + RepReqFaction[i])
+					set removeReq = true
 				endif
 			endif
+		else
+			set removeReq = true
 		endif
-		set i = i + 1
+
+		if removeReq then
+			call RemoveReputationRequirementAt(i)
+		else
+			set i = i + 1
+		endif
 	endloop
 endfunction
 
@@ -2089,6 +2245,19 @@ public function RegisterReputationRequirement takes integer questId, unit questG
 	endif
 
 	call DebugMsg("Registered Reputation requirement: quest=" + I2S(questId) + ", faction=" + faction + ", level=" + levelName)
+endfunction
+
+public function UnregisterReputationRequirement takes integer questId, integer reqIndex returns nothing
+	local integer i = 1
+
+	loop
+		exitwhen i > RepReqCount
+		if RepReqQuestId[i] == questId and RepReqIndex[i] == reqIndex then
+			call RemoveReputationRequirementAt(i)
+			return
+		endif
+		set i = i + 1
+	endloop
 endfunction
 
 //===========================================================================
