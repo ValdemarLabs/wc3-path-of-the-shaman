@@ -1633,7 +1633,7 @@ struct QuestData
 		endif
 
 		if this.rewardRepActive then
-			set this.rewardRep = this.clampNonNegative(R2I(this.rewardRepMult) * this.rewardRepAdjust)
+			set this.rewardRep = this.clampNonNegative(R2I(this.questLevel * this.rewardRepMult) + this.rewardRepAdjust)
 		else
 			set this.rewardRep = 0
 		endif
