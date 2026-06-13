@@ -221,6 +221,11 @@ class WC3W3TImporter:
             if max_len:
                 return s[:max_len]
             return s
+
+        def safe_optional_bool(field_name):
+            if field_name not in item_data or item_data.get(field_name) is None:
+                return None
+            return safe_bool(item_data.get(field_name))
         
         # Core identification fields
         original_item_code = item_data.get('original_item_code')
@@ -245,17 +250,21 @@ class WC3W3TImporter:
         # Charges & Stacks
         max_charges = safe_int(item_data.get('max_charges'))
         max_stack = safe_int(item_data.get('max_stack'))
-        
-        # Boolean flags (12 flags)
-        actively_used = safe_bool(item_data.get('actively_used'))
-        is_droppable = safe_bool(item_data.get('is_droppable'), True)
-        is_sellable = safe_bool(item_data.get('is_sellable'), True)
-        is_pawnable = safe_bool(item_data.get('is_pawnable'), True)
-        dropped_on_death = safe_bool(item_data.get('dropped_on_death'))
-        is_perishable = safe_bool(item_data.get('is_perishable'))
-        is_powerup = safe_bool(item_data.get('is_powerup'))
-        ignore_cooldown = safe_bool(item_data.get('ignore_cooldown'))
-        pick_random = safe_bool(item_data.get('pick_random'))
+
+        # Boolean flags: keep absent fields as NULL so imports do not overwrite
+        # inherited/default WC3 values with False during merge updates.
+        actively_used = safe_optional_bool('actively_used')
+        is_droppable = safe_optional_bool('is_droppable')
+        is_sellable = safe_optional_bool('is_sellable')
+        is_pawnable = safe_optional_bool('is_pawnable')
+        dropped_on_death = safe_optional_bool('dropped_on_death')
+        is_perishable = safe_optional_bool('is_perishable')
+        is_powerup = safe_optional_bool('is_powerup')
+        ignore_cooldown = safe_optional_bool('ignore_cooldown')
+        pick_random = safe_optional_bool('pick_random')
+        if is_powerup is None and isinstance(wc3_classification, str) and wc3_classification.lower() == 'powerup':
+            is_powerup = True
+        use_automatically = True if is_powerup is True else safe_optional_bool('use_automatically')
         
         # Other fields
         morph_target = safe_str(item_data.get('morph_target'), 4)
@@ -305,7 +314,7 @@ class WC3W3TImporter:
             item_name, base_id, tooltip, tooltip_extended, description, hotkey,
             wc3_classification, gold_cost, lumber_cost, item_level, old_level, hit_points,
             max_charges, max_stack, actively_used, is_droppable, is_sellable, is_pawnable,
-            dropped_on_death, is_perishable, is_powerup, morph_target, ignore_cooldown,
+            dropped_on_death, is_perishable, is_powerup, use_automatically, morph_target, ignore_cooldown,
             pick_random, armor_type, wc3_abilities, cooldown_group, icon_path, model_path,
             scale, selection_size, tint_red, tint_green, tint_blue, button_pos_x,
             button_pos_y, priority, stock_initial, stock_max, stock_replenish,
@@ -340,6 +349,7 @@ class WC3W3TImporter:
                     'is_droppable': is_droppable, 'is_sellable': is_sellable,
                     'is_pawnable': is_pawnable, 'dropped_on_death': dropped_on_death,
                     'is_perishable': is_perishable, 'is_powerup': is_powerup,
+                    'use_automatically': use_automatically,
                     'morph_target': morph_target, 'ignore_cooldown': ignore_cooldown,
                     'pick_random': pick_random, 'armor_type': armor_type,
                     'wc3_abilities': wc3_abilities, 'cooldown_group': cooldown_group,
@@ -407,6 +417,7 @@ class WC3W3TImporter:
                         dropped_on_death = %s,
                         is_perishable = %s,
                         is_powerup = %s,
+                        use_automatically = %s,
                         morph_target = %s,
                         ignore_cooldown = %s,
                         pick_random = %s,
@@ -438,7 +449,7 @@ class WC3W3TImporter:
                     tooltip, tooltip_extended, description, hotkey, wc3_classification,
                     icon_path, model_path, max_charges, max_stack,
                     actively_used, is_droppable, is_sellable, is_pawnable,
-                    dropped_on_death, is_perishable, is_powerup, morph_target,
+                    dropped_on_death, is_perishable, is_powerup, use_automatically, morph_target,
                     ignore_cooldown, pick_random, armor_type, wc3_abilities, cooldown_group,
                     scale, selection_size, tint_red, tint_green, tint_blue,
                     button_pos_x, button_pos_y, priority, stock_initial, stock_max,
@@ -458,7 +469,7 @@ class WC3W3TImporter:
                     tooltip, tooltip_extended, description, hotkey, wc3_classification,
                     icon_path, model_path, max_charges, max_stack,
                     actively_used, is_droppable, is_sellable, is_pawnable,
-                    dropped_on_death, is_perishable, is_powerup, morph_target,
+                    dropped_on_death, is_perishable, is_powerup, use_automatically, morph_target,
                     ignore_cooldown, pick_random, armor_type, wc3_abilities, cooldown_group,
                     scale, selection_size, tint_red, tint_green, tint_blue,
                     button_pos_x, button_pos_y, priority, stock_initial, stock_max,
@@ -467,7 +478,7 @@ class WC3W3TImporter:
                 ) VALUES (
                     %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                     %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                 )
                 RETURNING id
             """
@@ -477,7 +488,7 @@ class WC3W3TImporter:
                 tooltip, tooltip_extended, description, hotkey, wc3_classification,
                 icon_path, model_path, max_charges, max_stack,
                 actively_used, is_droppable, is_sellable, is_pawnable,
-                dropped_on_death, is_perishable, is_powerup, morph_target,
+                dropped_on_death, is_perishable, is_powerup, use_automatically, morph_target,
                 ignore_cooldown, pick_random, armor_type, wc3_abilities, cooldown_group,
                 scale, selection_size, tint_red, tint_green, tint_blue,
                 button_pos_x, button_pos_y, priority, stock_initial, stock_max,
