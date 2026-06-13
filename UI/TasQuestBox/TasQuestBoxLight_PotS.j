@@ -197,7 +197,7 @@ public function Hide takes nothing returns nothing
 endfunction
 
 public function Unhide takes nothing returns nothing
-    call BlzFrameSetVisible(Open, true)
+    call BlzFrameSetVisible(Open, false)
 endfunction
 
 public function Show takes nothing returns nothing
@@ -213,7 +213,8 @@ endfunction
 
 public function SetButtonVisible takes boolean flag returns nothing
     if Open != null then
-        call BlzFrameSetVisible(Open, flag)
+        // Zones access is routed through MasterUI; keep the legacy open button hidden.
+        call BlzFrameSetVisible(Open, false)
     endif
 endfunction
 
