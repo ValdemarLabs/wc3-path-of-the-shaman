@@ -321,6 +321,38 @@ public function AddCompanion takes unit companionUnit, string companionIcon retu
 	call DebugMsg("Added companion: " + GetUnitName(companionUnit) + " (count=" + I2S(udg_CompanionCount) + ", icon=" + companionIcon + ")")
 endfunction
 
+public function GetCompanionIcon takes unit companionUnit returns string
+	local integer index = 0
+	local integer i = 1
+
+	if companionUnit == null then
+		return ""
+	endif
+
+	if CompanionIndex != 0 then
+		set index = CompanionIndex.integer[GetUnitUserData(companionUnit)]
+		if index > 0 and index <= udg_CompanionCount and udg_CompanionUnit[index] == companionUnit then
+			if CompanionIcon != 0 then
+				return CompanionIcon.string[index]
+			endif
+			return ""
+		endif
+	endif
+
+	loop
+		exitwhen i > udg_CompanionCount
+		if udg_CompanionUnit[i] == companionUnit then
+			if CompanionIcon != 0 then
+				return CompanionIcon.string[i]
+			endif
+			return ""
+		endif
+		set i = i + 1
+	endloop
+
+	return ""
+endfunction
+
 public function RemoveCompanion takes unit companionUnit returns nothing
 	local integer i = 1
 	local integer foundIndex = 0
