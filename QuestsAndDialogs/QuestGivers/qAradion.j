@@ -25,6 +25,9 @@ globals
 	private constant integer ITEM_MANA_CRYSTAL = 'I00Y'
 	private constant integer ITEM_WRAITH_ESSENCE = 'I011'
 	private constant integer ITEM_TELANOR_ROD = 'I013'
+	private constant integer ABIL_TELANOR_ROD = 'A04W'
+	private constant integer ABIL_RIFT_CLOSE = 'A04Z'
+	private constant integer UNIT_MANA_WRAITH = 'n002'
 
 	private constant real DIALOG_RANGE = 500.00
 	private constant real VALERIA_RANGE = 1000.00
@@ -54,14 +57,19 @@ globals
 	private constant integer ABIL_VALERIA_GHOST = 'Agho'
 	private constant integer RIFTS_MAX = 3
 	private constant integer RIFTS_MAX_WAVES = 32
+	private constant integer FIELD_LINE_QUEUE_MAX = 16
 	private constant integer RIFTS_WAVE_OWNER = 11
-	private constant real RIFTS_TRIGGER_RANGE = 900.00
+	private constant real RIFTS_TRIGGER_RANGE = 1050.00
 	private constant real RIFTS_RITUAL_DURATION = 120.00
 	private constant real RIFTS_WAVE_PERIOD = 30.00
 	private constant real RIFTS_COMBAT_PERIOD = 40.00
 	private constant real RIFTS_COUNTDOWN_PERIOD = 1.00
 	private constant real RIFTS_ARADION_OFFSET = 500.00
 	private constant real RIFTS_VALERIA_OFFSET = 200.00
+	private constant real RIFTS_INTRO_VALERIA_OFFSET = 900.00
+	private constant real FADING_SPARKS_CHANNEL_TIME = 2.00
+	private constant real FADING_SPARKS_HEALTH_THRESHOLD = 50.00
+	private constant real FADING_SPARKS_DAMAGE = 6000.00
 
 	//===========================================================================
 	// CONFIGURATION - Edit these to tweak dialog options, camera settings, etc.
@@ -117,6 +125,8 @@ globals
 	private timer RiftsWaveTimer = null
 	private timer RiftsCombatTimer = null
 	private timer RiftsCountdownTimer = null
+	private timer FieldLineQueueTimer = null
+	private timer FadingSparksTimer = null
 	private dialog ValeriaNegotiationDialog = null
 	private button array ValeriaNegotiationButtons
 	private integer array ValeriaNegotiationLineIds
@@ -127,17 +137,29 @@ globals
 	private boolean RiftsQuestActive = false
 	private boolean RiftsRitualActive = false
 	private trigger RiftsProximityTrigger = null
+	private trigger FadingSparksSpellEffectTrigger = null
+	private trigger FadingSparksSpellFinishTrigger = null
+	private trigger FadingSparksSpellEndCastTrigger = null
 	private unit RiftsCurrentRift = null
+	private unit FadingSparksCaster = null
+	private unit FadingSparksTarget = null
 	private unit array PlacedManaRifts
 	private unit array RiftsUnits
+	private unit array FieldLineQueueSpeakers
 	private integer array RiftsUnitTypeIds
 	private Wave array RiftsWaveHandles
+	private string array FieldLineQueueSpeakerNames
+	private string array FieldLineQueueSoundNames
+	private string array FieldLineQueueTexts
 	private integer RiftsWaveIndex = 0
 	private integer RiftsNextWaveN = 1
 	private integer RiftsCurrentIndex = 0
+	private integer FieldLineQueueCount = 0
 	private integer RiftsCountdownRemaining = 0
 	private boolean RiftsAwaitingReturnHome = false
 	private boolean RiftsReturnedHome = false
+	private boolean FadingSparksFinished = false
+	private boolean array RiftsClosed
 
 	private constant integer ARADION_QID_RANGER = 1
 	private constant integer ARADION_QID_CRYSTALS = 2
@@ -453,10 +475,10 @@ private function StartFieldCompanions takes unit hero returns nothing
 	call AddAradionCompanion()
 	if hero != null then
 		if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
-			call FollowSystem_SetFollow(Valeria, hero, FOLLOW_MAX_DISTANCE, false, 0.00, FOLLOW_STYLE_PASSIVE, true, true)
+			call FollowSystem_SetFollow(Valeria, hero, FOLLOW_MAX_DISTANCE, false, 0.00, FOLLOW_STYLE_DEFEND, true, true)
 		endif
 		if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
-			call FollowSystem_SetFollow(Aradion, hero, FOLLOW_MAX_DISTANCE, false, 0.00, FOLLOW_STYLE_PASSIVE, true, true)
+			call FollowSystem_SetFollow(Aradion, hero, FOLLOW_MAX_DISTANCE, false, 0.00, FOLLOW_STYLE_DEFEND, true, true)
 		endif
 	endif
 endfunction
@@ -535,7 +557,6 @@ private function RecreateValeriaAtAmbush takes nothing returns nothing
 
 	set Valeria = CreateUnit(ownerP, unitTypeId, x, y, facing)
 	set udg_Valeria = Valeria
-	call UnitAddAbility(Valeria, ABIL_VALERIA_GHOST)
 	call IssueImmediateOrder(Valeria, "stop")
 	call ExecuteFunc("qAradion_RegisterValeriaEncounterProximity")
 endfunction
@@ -685,7 +706,7 @@ private function StartRangerMissingEscortInternal takes nothing returns nothing
 	set hero = ResolveDialogHero()
 	call AddValeriaCompanion()
 	if hero != null then
-		call FollowSystem_SetFollow(Valeria, hero, FOLLOW_MAX_DISTANCE, false, 0.00, FOLLOW_STYLE_PASSIVE, true, true)
+		call FollowSystem_SetFollow(Valeria, hero, FOLLOW_MAX_DISTANCE, false, 0.00, FOLLOW_STYLE_DEFEND, true, true)
 	endif
 	call EnableRangerMissingDeathTrigger()
 	set RangerMissingEscortActive = true
@@ -727,7 +748,6 @@ private function ResetValeriaEncounterToAmbush takes nothing returns nothing
 	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
 		call StopFollow(Valeria)
 		call RemoveValeriaCompanion()
-		call UnitAddAbility(Valeria, ABIL_VALERIA_GHOST)
 		call UnitRemoveAbility(Valeria, ABIL_VALERIA_COLD_ARROWS)
 		call SetUnitMoveSpeed(Valeria, GetUnitDefaultMoveSpeed(Valeria))
 		call BlzSetUnitRealField(Valeria, UNIT_RF_HIT_POINTS_REGENERATION_RATE, 2.00)
@@ -755,6 +775,7 @@ private function RestoreValeriaEncounterMoveSpeed takes nothing returns nothing
 	if t != null then
 		call DestroyTimer(t)
 	endif
+	set t = null
 endfunction
 
 private function OnValeriaEncounterRandomTick takes nothing returns nothing
@@ -775,20 +796,24 @@ private function OnValeriaEncounterRandomTick takes nothing returns nothing
 	call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Items\\AIsp\\SpeedTarget.mdl", Valeria, "overhead"))
 	set t = CreateTimer()
 	call TimerStart(t, VALERIA_ENCOUNTER_SPEED_RESET_DELAY, false, function RestoreValeriaEncounterMoveSpeed)
+	set t = null
 endfunction
 
 private function OnValeriaEncounterRangeTick takes nothing returns nothing
 	local unit hero = GetValeriaEncounterHero()
 	if not ValeriaEncounterActive or ValeriaEncounterResolved or Valeria == null or hero == null then
+		set hero = null
 		return
 	endif
 	if not QuestGiver_IsUnitAlive(Valeria) or not QuestGiver_IsUnitAlive(hero) then
+		set hero = null
 		return
 	endif
 	if not QuestGiver_IsWithinRange(Valeria, hero, VALERIA_ENCOUNTER_RESET_DISTANCE) then
 		call DisplayTextToForce(GetPlayersAll(), "|cffd45e19You've lost Valeria. She slips back into the ruins.|r")
 		call ResetValeriaEncounterToAmbush()
 	endif
+	set hero = null
 endfunction
 
 private function OnValeriaEncounterDeath takes nothing returns nothing
@@ -1095,6 +1120,14 @@ endfunction
 private function PlayValeriaNegotiationResponse takes integer lineId returns nothing
 	local integer seq
 	local unit hero = GetValeriaEncounterHero()
+	set ValeriaNegotiationPromptPending = false
+	call DialogSystem_ClearEscapeAction()
+	if hero != null then
+		call IssueImmediateOrder(hero, "stop")
+	endif
+	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
+		call IssueImmediateOrder(Valeria, "stop")
+	endif
 	if hero != null then
 		call DialogSystem_MakeFaceEachOther(hero, Valeria, 0.50)
 	endif
@@ -1115,6 +1148,12 @@ private function PlayValeriaNegotiationSuccess takes nothing returns nothing
 	if Valeria == null or not QuestGiver_IsUnitAlive(Valeria) then
 		return
 	endif
+	set ValeriaNegotiationPromptPending = false
+	call DialogSystem_ClearEscapeAction()
+	if hero != null then
+		call IssueImmediateOrder(hero, "stop")
+	endif
+	call IssueImmediateOrder(Valeria, "stop")
 	call StopValeriaEncounterTimers()
 	call DisableValeriaEncounterDeathTrigger()
 	set ValeriaSuccessTransitionApplied = false
@@ -1297,6 +1336,14 @@ private function AddInProgressGreet takes integer seq, unit hero returns boolean
 		return true
 	endif
 	if questId == ARADION_QID_RIFTS then
+		if RiftsAwaitingReturnHome or RiftsReturnedHome then
+			if roll == 1 then
+				call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "We should return to our place before we speak further.", "Aradion_0085", true)
+			else
+				call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "The last rift is sealed. Escort us back to our place.", "Aradion_0084", true)
+			endif
+			return true
+		endif
 		if roll == 1 then
 			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "The rifts are still open. If they are not sealed, the Vale will never heal.", "Aradion_0069", true)
 		else
@@ -1538,14 +1585,92 @@ private function UpdateQuestRangerMissing takes nothing returns nothing
 	call QuestGiver_UpdateQuestByNameAndGiver(QUEST_RANGER_MISSING, Aradion)
 endfunction
 
+private function EstimateFieldLineDuration takes string text returns real
+	local real duration = 1.80 + I2R(StringLength(text)) * 0.05
+	if duration < 2.50 then
+		set duration = 2.50
+	elseif duration > 7.50 then
+		set duration = 7.50
+	endif
+	return duration
+endfunction
+
+private function ClearFieldLineQueue takes nothing returns nothing
+	local integer i = 1
+	if FieldLineQueueTimer != null then
+		call DestroyTimer(FieldLineQueueTimer)
+		set FieldLineQueueTimer = null
+	endif
+	loop
+		exitwhen i > FieldLineQueueCount
+		set FieldLineQueueSpeakers[i] = null
+		set FieldLineQueueSpeakerNames[i] = ""
+		set FieldLineQueueSoundNames[i] = ""
+		set FieldLineQueueTexts[i] = ""
+		set i = i + 1
+	endloop
+	set FieldLineQueueCount = 0
+endfunction
+
 private function ShowFieldLine takes unit speaker, string speakerName, string soundName, string text returns nothing
 	if speaker == null or not QuestGiver_IsUnitAlive(speaker) then
 		return
 	endif
-	if soundName != "" then
-		call ExSound_Play(soundName, text)
+	call DialogSystem_PlayLine(speaker, speakerName, text, soundName, true)
+endfunction
+
+private function PlayNextFieldLine takes nothing returns nothing
+	local real delay
+	local integer i
+	if FieldLineQueueCount <= 0 then
+		call ClearFieldLineQueue()
+		return
 	endif
-	call DisplayTimedTextToPlayer(Player(0), 0.00, 0.00, 5.00, speakerName + ": " + text)
+	call ShowFieldLine(FieldLineQueueSpeakers[1], FieldLineQueueSpeakerNames[1], FieldLineQueueSoundNames[1], FieldLineQueueTexts[1])
+	if FieldLineQueueSpeakers[1] != null and QuestGiver_IsUnitAlive(FieldLineQueueSpeakers[1]) and FieldLineQueueSoundNames[1] != "" and udg_ExSoundDuration > 0.00 then
+		set delay = udg_ExSoundDuration
+	else
+		set delay = EstimateFieldLineDuration(FieldLineQueueTexts[1])
+	endif
+	set i = 1
+	loop
+		exitwhen i >= FieldLineQueueCount
+		set FieldLineQueueSpeakers[i] = FieldLineQueueSpeakers[i + 1]
+		set FieldLineQueueSpeakerNames[i] = FieldLineQueueSpeakerNames[i + 1]
+		set FieldLineQueueSoundNames[i] = FieldLineQueueSoundNames[i + 1]
+		set FieldLineQueueTexts[i] = FieldLineQueueTexts[i + 1]
+		set i = i + 1
+	endloop
+	set FieldLineQueueSpeakers[FieldLineQueueCount] = null
+	set FieldLineQueueSpeakerNames[FieldLineQueueCount] = ""
+	set FieldLineQueueSoundNames[FieldLineQueueCount] = ""
+	set FieldLineQueueTexts[FieldLineQueueCount] = ""
+	set FieldLineQueueCount = FieldLineQueueCount - 1
+	if FieldLineQueueCount > 0 then
+		if FieldLineQueueTimer == null then
+			set FieldLineQueueTimer = CreateTimer()
+		endif
+		call TimerStart(FieldLineQueueTimer, delay, false, function PlayNextFieldLine)
+	else
+		call ClearFieldLineQueue()
+	endif
+endfunction
+
+private function QueueFieldLine takes unit speaker, string speakerName, string soundName, string text returns nothing
+	if speaker == null or not QuestGiver_IsUnitAlive(speaker) then
+		return
+	endif
+	if FieldLineQueueCount >= FIELD_LINE_QUEUE_MAX then
+		return
+	endif
+	set FieldLineQueueCount = FieldLineQueueCount + 1
+	set FieldLineQueueSpeakers[FieldLineQueueCount] = speaker
+	set FieldLineQueueSpeakerNames[FieldLineQueueCount] = speakerName
+	set FieldLineQueueSoundNames[FieldLineQueueCount] = soundName
+	set FieldLineQueueTexts[FieldLineQueueCount] = text
+	if FieldLineQueueCount == 1 and FieldLineQueueTimer == null then
+		call PlayNextFieldLine()
+	endif
 endfunction
 
 private function GetRiftRect takes integer index returns rect
@@ -1667,12 +1792,25 @@ private function FindNeutralPassiveUnitInRect takes rect r, integer expectedType
 	return fallback
 endfunction
 
+private function ResetRiftsClosedState takes nothing returns nothing
+	local integer i = 1
+	loop
+		exitwhen i > RIFTS_MAX
+		set RiftsClosed[i] = false
+		set i = i + 1
+	endloop
+endfunction
+
 private function EnsureRiftUnit takes integer index returns unit
 	local rect r = GetRiftRect(index)
 	local unit u = RiftsUnits[index]
+	if index <= 0 or index > RIFTS_MAX or RiftsClosed[index] then
+		return null
+	endif
 	if u != null and QuestGiver_IsUnitAlive(u) then
 		return u
 	endif
+	set RiftsUnits[index] = null
 	call BindPlacedRiftUnitSlot(index)
 	set u = RiftsUnits[index]
 	if u != null and QuestGiver_IsUnitAlive(u) then
@@ -1696,10 +1834,53 @@ private function RegisterRiftUnits takes nothing returns nothing
 	local integer i = 1
 	loop
 		exitwhen i > RIFTS_MAX
-		call EnsureRiftUnit(i)
+		if not RiftsClosed[i] then
+			call EnsureRiftUnit(i)
+		else
+			set RiftsUnits[i] = null
+		endif
 		set i = i + 1
 	endloop
 	call ExecuteFunc("qAradion_RegisterRiftsProximity")
+endfunction
+
+private function PrepareValeriaForRiftsIntro takes nothing returns nothing
+	local real facing
+	local real startX
+	local real startY
+	local real targetX
+	local real targetY
+	if Aradion == null or Valeria == null or not QuestGiver_IsUnitAlive(Aradion) or not QuestGiver_IsUnitAlive(Valeria) then
+		return
+	endif
+	call StopFollow(Valeria)
+	call StopValeriaPatrolInternal()
+	set facing = GetUnitFacing(Aradion) * bj_DEGTORAD
+	set startX = GetUnitX(Aradion) - RIFTS_INTRO_VALERIA_OFFSET * Cos(facing)
+	set startY = GetUnitY(Aradion) - RIFTS_INTRO_VALERIA_OFFSET * Sin(facing)
+	set targetX = GetUnitX(Aradion) + RIFTS_VALERIA_OFFSET * Cos(facing)
+	set targetY = GetUnitY(Aradion) + RIFTS_VALERIA_OFFSET * Sin(facing)
+	call SetUnitPosition(Valeria, startX, startY)
+	call SetUnitFacing(Valeria, bj_RADTODEG * Atan2(GetUnitY(Aradion) - startY, GetUnitX(Aradion) - startX))
+	call IssuePointOrder(Valeria, "move", targetX, targetY)
+endfunction
+
+private function OrderAradionToChannelCurrentRift takes nothing returns nothing
+	local real rx
+	local real ry
+	if not RiftsRitualActive or Aradion == null or RiftsCurrentRift == null then
+		return
+	endif
+	if not QuestGiver_IsUnitAlive(Aradion) or not QuestGiver_IsUnitAlive(RiftsCurrentRift) then
+		return
+	endif
+	if GetUnitAbilityLevel(Aradion, ABIL_RIFT_CLOSE) == 0 then
+		call UnitAddAbility(Aradion, ABIL_RIFT_CLOSE)
+	endif
+	set rx = GetUnitX(RiftsCurrentRift)
+	set ry = GetUnitY(RiftsCurrentRift)
+	call IssuePointOrder(Aradion, "blizzard", rx, ry)
+	call SetUnitAnimation(Aradion, "spell")
 endfunction
 
 private function DestroyRiftsProximityTrigger takes nothing returns nothing
@@ -1711,6 +1892,7 @@ endfunction
 
 private function GetTriggeredRiftIndex takes unit hero returns integer
 	local integer i = 1
+	local integer result = 0
 	local unit riftUnit
 	local rect r
 	local real hx
@@ -1721,37 +1903,37 @@ private function GetTriggeredRiftIndex takes unit hero returns integer
 	set hx = GetUnitX(hero)
 	set hy = GetUnitY(hero)
 	loop
-		exitwhen i > RIFTS_MAX
-		set riftUnit = EnsureRiftUnit(i)
-		if riftUnit != null and QuestGiver_IsUnitAlive(riftUnit) and QuestGiver_IsWithinRange(riftUnit, hero, RIFTS_TRIGGER_RANGE) then
-			return i
+		exitwhen i > RIFTS_MAX or result != 0
+		if not RiftsClosed[i] then
+			set riftUnit = EnsureRiftUnit(i)
+			if riftUnit != null and QuestGiver_IsUnitAlive(riftUnit) and QuestGiver_IsWithinRange(riftUnit, hero, RIFTS_TRIGGER_RANGE) then
+				set result = i
+			else
+				set r = GetRiftRect(i)
+				if r != null and RectContainsCoords(r, hx, hy) then
+					set result = i
+				endif
+			endif
 		endif
-		set r = GetRiftRect(i)
-		if r != null and RectContainsCoords(r, hx, hy) then
-			return i
-		endif
+		set riftUnit = null
+		set r = null
 		set i = i + 1
 	endloop
-	return 0
+	return result
 endfunction
 
 private function PlayRiftsStartBarks takes nothing returns nothing
 	local integer roll
-	if Aradion == null or not QuestGiver_IsUnitAlive(Aradion) then
-		return
-	endif
 	set roll = GetRandomInt(1, 2)
 	if roll == 1 then
-		call ShowFieldLine(Aradion, "Aradion the Farseer", "Aradion_0074", "Stand ready. Once I begin, this place can start to crawl with wraiths.")
+		call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0074", "Stand ready. Once I begin, this place can start to crawl with wraiths.")
 	else
-		call ShowFieldLine(Aradion, "Aradion the Farseer", "Aradion_0075", "I will attempt to close this rift. But I cannot fight and focus at once... you must protect me!")
+		call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0075", "I will attempt to close this rift. But I cannot fight and focus at once... you must protect me!")
 	endif
-	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
-		if GetRandomInt(1, 2) == 1 then
-			call ShowFieldLine(Valeria, "Valeria", "Valeria_0072", "We will handle them, just keep your focus on the rift!")
-		else
-			call ShowFieldLine(Valeria, "Valeria", "Valeria_0073", "We stand ready to defend you!")
-		endif
+	if GetRandomInt(1, 2) == 1 then
+		call QueueFieldLine(Valeria, "Valeria", "Valeria_0072", "We will handle them, just keep your focus on the rift!")
+	else
+		call QueueFieldLine(Valeria, "Valeria", "Valeria_0073", "We stand ready to defend you!")
 	endif
 endfunction
 
@@ -1769,11 +1951,14 @@ private function StartRiftsRitualInternal takes unit riftUnit, integer riftIndex
 	set SelectedHero = hero
 	set RiftsCurrentRift = riftUnit
 	set RiftsCurrentIndex = riftIndex
+	set RiftsUnits[riftIndex] = riftUnit
 	set RiftsRitualActive = true
 	set RiftsNextWaveN = 1
+	call ClearFieldLineQueue()
 	call StopFollow(Aradion)
 	call StopFollow(Valeria)
 	call RemoveAradionCompanion()
+	call StopValeriaPatrolInternal()
 	set rx = GetUnitX(riftUnit)
 	set ry = GetUnitY(riftUnit)
 	set facing = GetUnitFacing(Aradion) * bj_DEGTORAD
@@ -1790,8 +1975,7 @@ private function StartRiftsRitualInternal takes unit riftUnit, integer riftIndex
 		call IssueImmediateOrder(Valeria, "stop")
 	endif
 	call PlayRiftsStartBarks()
-	call IssuePointOrder(Aradion, "blizzard", rx, ry)
-	call SetUnitAnimation(Aradion, "spell")
+	call OrderAradionToChannelCurrentRift()
 	call ExecuteFunc("qAradion_StartRiftsRuntimeTimersPublic")
 endfunction
 
@@ -1801,25 +1985,32 @@ private function OnRiftsProximity takes nothing returns nothing
 	local unit riftUnit
 	call SyncUnitReferences()
 	if not RiftsQuestActive or RiftsRitualActive or RiftsAwaitingReturnHome then
+		set hero = null
 		return
 	endif
 	if hero == null or not QuestGiver_IsUnitAlive(hero) then
+		set hero = null
 		return
 	endif
 	if hero != Nazgrek and hero != udg_Zulkis then
+		set hero = null
 		return
 	endif
 	if (hero == Nazgrek and not ALLOW_NAZGREK) or (hero == udg_Zulkis and not ALLOW_ZULKIS) then
+		set hero = null
 		return
 	endif
 	set riftIndex = GetTriggeredRiftIndex(hero)
 	if riftIndex <= 0 then
+		set hero = null
 		return
 	endif
 	set riftUnit = EnsureRiftUnit(riftIndex)
 	if riftUnit != null then
 		call StartRiftsRitualInternal(riftUnit, riftIndex, hero)
 	endif
+	set riftUnit = null
+	set hero = null
 endfunction
 
 private function RegisterRiftsProximityTrigger takes nothing returns nothing
@@ -1829,10 +2020,15 @@ private function RegisterRiftsProximityTrigger takes nothing returns nothing
 	set RiftsProximityTrigger = CreateTrigger()
 	loop
 		exitwhen i > RIFTS_MAX
-		set riftUnit = EnsureRiftUnit(i)
+		if not RiftsClosed[i] then
+			set riftUnit = EnsureRiftUnit(i)
+		else
+			set riftUnit = null
+		endif
 		if riftUnit != null and QuestGiver_IsUnitAlive(riftUnit) then
 			call TriggerRegisterUnitInRange(RiftsProximityTrigger, riftUnit, RIFTS_TRIGGER_RANGE, null)
 		endif
+		set riftUnit = null
 		set i = i + 1
 	endloop
 	call TriggerAddAction(RiftsProximityTrigger, function OnRiftsProximity)
@@ -1882,19 +2078,34 @@ private function ResetRiftsObjectivesForNewRun takes QuestData q returns nothing
 	if q == 0 then
 		return
 	endif
-	call q.setRequirement(1, "Find all rifts scattered around the Vanguard Vale and have Aradion close them (Rifts closed 0 / 3)")
-	call q.updateRequirementText(1, "Find all rifts scattered around the Vanguard Vale and have Aradion close them (Rifts closed 0 / 3)")
-	call q.setRequirement(2, "Guard Aradion while he closes the rifts")
-	call q.updateRequirementText(2, "Guard Aradion while he closes the rifts")
-	call q.setRequirement(3, "Both Aradion and Valeria must stay alive")
-	call q.updateRequirementText(3, "Both Aradion and Valeria must stay alive")
-	call q.setRequirement(4, "")
-	call q.updateRequirementText(4, "")
+	call q.setRequirement(1, "Find all rifts scattered around the Vanguard Vale")
+	call q.updateRequirementText(1, "Find all rifts scattered around the Vanguard Vale")
+	call q.setRequirement(2, "Rifts closed 0 / 3")
+	call q.updateRequirementText(2, "Rifts closed 0 / 3")
+	call q.setRequirement(3, "Guard Aradion while he closes the rifts")
+	call q.updateRequirementText(3, "Guard Aradion while he closes the rifts")
+	call q.setRequirement(4, "Both Aradion and Valeria must stay alive")
+	call q.updateRequirementText(4, "Both Aradion and Valeria must stay alive")
+	call q.setRequirement(5, "")
+	call q.updateRequirementText(5, "")
 	call q.markRequirementCompleted(1, false)
 	call q.markRequirementCompleted(2, false)
 	call q.markRequirementCompleted(3, false)
 	call q.markRequirementCompleted(4, false)
+	call q.markRequirementCompleted(5, false)
 	call q.refreshQuestLog()
+endfunction
+
+private function StopRiftsCompanionsAtHomeInternal takes nothing returns nothing
+	call StopFieldCompanions()
+	if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
+		call SetUnitInvulnerable(Aradion, false)
+		call IssueImmediateOrder(Aradion, "stop")
+	endif
+	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
+		call SetUnitInvulnerable(Valeria, false)
+		call IssueImmediateOrder(Valeria, "stop")
+	endif
 endfunction
 
 private function ReturnRiftsCompanionsHomeInternal takes nothing returns nothing
@@ -1921,140 +2132,177 @@ private function HandleRiftsReturnedHome takes nothing returns nothing
 	set RiftsAwaitingReturnHome = false
 	set RiftsReturnedHome = true
 	call StopRiftsFieldMonitor()
-	call ReturnRiftsCompanionsHomeInternal()
+	call StopRiftsCompanionsAtHomeInternal()
 	set q = QuestGiver_GetByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
 	if q != 0 then
-		call q.markRequirementCompleted(4, true)
+		call q.markRequirementCompleted(5, true)
+		call QuestMaster_SetStateByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion, QUEST_STATE_READY_TURNIN)
 		call q.refreshQuestLog()
 	endif
+	call QuestGiver_UpdateQuestByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
+	call QuestGiver_RefreshAvailabilityForGiver(Aradion)
 endfunction
 
 private function GetAllowedRiftHeroInRange takes unit riftUnit returns unit
-	local unit bestHero = null
+	local integer bestHero = 0
 	local integer bestLevel = -1
 	local integer level
 	if riftUnit == null then
+		set riftUnit = null
 		return null
 	endif
 	if ALLOW_NAZGREK and Nazgrek != null and QuestGiver_IsUnitAlive(Nazgrek) and QuestGiver_IsWithinRange(riftUnit, Nazgrek, RIFTS_TRIGGER_RANGE) then
-		set bestHero = Nazgrek
+		set bestHero = 1
 		set bestLevel = GetHeroLevel(Nazgrek)
 	endif
 	if ALLOW_ZULKIS and udg_Zulkis != null and QuestGiver_IsUnitAlive(udg_Zulkis) and QuestGiver_IsWithinRange(riftUnit, udg_Zulkis, RIFTS_TRIGGER_RANGE) then
 		set level = GetHeroLevel(udg_Zulkis)
-		if bestHero == null or level > bestLevel then
-			set bestHero = udg_Zulkis
+		if bestHero == 0 or level > bestLevel then
+			set bestHero = 2
 			set bestLevel = level
 		endif
 	endif
-	return bestHero
+	set riftUnit = null
+	if bestHero == 1 then
+		return Nazgrek
+	elseif bestHero == 2 then
+		return udg_Zulkis
+	endif
+	return null
 endfunction
 
 private function GetAllowedRiftHeroForIndex takes integer index returns unit
 	local unit riftUnit = EnsureRiftUnit(index)
-	local unit bestHero = null
+	local unit nearbyHero = null
+	local integer bestHero = 0
 	local integer bestLevel = -1
 	local integer level
 	local rect r = GetRiftRect(index)
 	local real x
 	local real y
+	if index <= 0 or index > RIFTS_MAX or RiftsClosed[index] then
+		set riftUnit = null
+		set nearbyHero = null
+		set r = null
+		return null
+	endif
 	if riftUnit != null then
-		set bestHero = GetAllowedRiftHeroInRange(riftUnit)
-		if bestHero != null then
-			return bestHero
+		set nearbyHero = GetAllowedRiftHeroInRange(riftUnit)
+		if nearbyHero == Nazgrek then
+			set nearbyHero = null
+			set riftUnit = null
+			set r = null
+			return Nazgrek
+		elseif nearbyHero == udg_Zulkis then
+			set nearbyHero = null
+			set riftUnit = null
+			set r = null
+			return udg_Zulkis
 		endif
+		set nearbyHero = null
 	endif
 	if r == null then
+		set nearbyHero = null
+		set riftUnit = null
+		set r = null
 		return null
 	endif
 	set x = GetRectCenterX(r)
 	set y = GetRectCenterY(r)
 	if ALLOW_NAZGREK and Nazgrek != null and QuestGiver_IsUnitAlive(Nazgrek) and RectContainsCoords(r, GetUnitX(Nazgrek), GetUnitY(Nazgrek)) then
-		set bestHero = Nazgrek
+		set bestHero = 1
 		set bestLevel = GetHeroLevel(Nazgrek)
 	elseif ALLOW_NAZGREK and Nazgrek != null and QuestGiver_IsUnitAlive(Nazgrek) and SquareRoot((GetUnitX(Nazgrek) - x) * (GetUnitX(Nazgrek) - x) + (GetUnitY(Nazgrek) - y) * (GetUnitY(Nazgrek) - y)) <= RIFTS_TRIGGER_RANGE then
-		set bestHero = Nazgrek
+		set bestHero = 1
 		set bestLevel = GetHeroLevel(Nazgrek)
 	endif
 	if ALLOW_ZULKIS and udg_Zulkis != null and QuestGiver_IsUnitAlive(udg_Zulkis) then
 		set level = GetHeroLevel(udg_Zulkis)
 		if RectContainsCoords(r, GetUnitX(udg_Zulkis), GetUnitY(udg_Zulkis)) or SquareRoot((GetUnitX(udg_Zulkis) - x) * (GetUnitX(udg_Zulkis) - x) + (GetUnitY(udg_Zulkis) - y) * (GetUnitY(udg_Zulkis) - y)) <= RIFTS_TRIGGER_RANGE then
-			if bestHero == null or level > bestLevel then
-				set bestHero = udg_Zulkis
+			if bestHero == 0 or level > bestLevel then
+				set bestHero = 2
 				set bestLevel = level
 			endif
 		endif
 	endif
-	return bestHero
+	set nearbyHero = null
+	set riftUnit = null
+	set r = null
+	if bestHero == 1 then
+		return Nazgrek
+	elseif bestHero == 2 then
+		return udg_Zulkis
+	endif
+	return null
 endfunction
 
 private function PlayRiftsIncomingWaveBark takes nothing returns nothing
 	local integer roll
-	if Valeria == null or not QuestGiver_IsUnitAlive(Valeria) then
-		return
-	endif
 	set roll = GetRandomInt(1, 3)
 	if roll == 1 then
-		call ShowFieldLine(Valeria, "Valeria", "Valeria_0061", "Hold your ground! Don't let them reach Aradion!")
+		call QueueFieldLine(Valeria, "Valeria", "Valeria_0061", "Hold your ground! Don't let them reach Aradion!")
 	elseif roll == 2 then
-		call ShowFieldLine(Valeria, "Valeria", "Valeria_0062", "The rift is pulling every wrath towards it - brace yourself!")
+		call QueueFieldLine(Valeria, "Valeria", "Valeria_0062", "The rift is pulling every wrath towards it - brace yourself!")
 	else
-		call ShowFieldLine(Valeria, "Valeria", "Valeria_0065", "They are too many! Drive them back!")
+		call QueueFieldLine(Valeria, "Valeria", "Valeria_0065", "They are too many! Drive them back!")
 	endif
 endfunction
 
 private function PlayRiftsCombatBark takes nothing returns nothing
 	local integer roll
-	if Aradion == null or not QuestGiver_IsUnitAlive(Aradion) then
-		return
-	endif
 	set roll = GetRandomInt(1, 3)
 	if roll == 1 then
-		call ShowFieldLine(Aradion, "Aradion the Farseer", "Aradion_0076", "Hold them back! Just a little longer!")
+		call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0076", "Hold them back! Just a little longer!")
 	elseif roll == 2 then
-		call ShowFieldLine(Aradion, "Aradion the Farseer", "Aradion_0077", "The rift is still open - I need more time!")
+		call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0077", "The rift is still open - I need more time!")
 	else
-		call ShowFieldLine(Aradion, "Aradion the Farseer", "Aradion_0078", "Try to keep them away from me!")
+		call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0078", "Try to keep them away from me!")
 	endif
 endfunction
 
 private function PlayRiftsFinishBarks takes nothing returns nothing
-	if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
-		if GetRandomInt(1, 2) == 1 then
-			call ShowFieldLine(Aradion, "Aradion the Farseer", "Aradion_0080", "It is done. This rift is sealed.")
-		else
-			call ShowFieldLine(Aradion, "Aradion the Farseer", "Aradion_0082", "I managed to close this rift.")
-		endif
+	if GetRandomInt(1, 2) == 1 then
+		call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0080", "It is done. This rift is sealed.")
+	else
+		call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0082", "I managed to close this rift.")
 	endif
-	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
-		if GetRandomInt(1, 2) == 1 then
-			call ShowFieldLine(Valeria, "Valeria", "Valeria_0066", "Great job, my love!")
-		else
-			call ShowFieldLine(Valeria, "Valeria", "Valeria_0068", "You never cease to amaze me, my love.")
-		endif
+	if GetRandomInt(1, 2) == 1 then
+		call QueueFieldLine(Valeria, "Valeria", "Valeria_0066", "Great job, my love!")
+	else
+		call QueueFieldLine(Valeria, "Valeria", "Valeria_0068", "You never cease to amaze me, my love.")
 	endif
 endfunction
 
 private function PlayRiftsAllClosedBarks takes nothing returns nothing
-	if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
-		call ShowFieldLine(Aradion, "Aradion the Farseer", "Aradion_0084", "I think this was the last of them. All rifts should now be closed.")
-		call ShowFieldLine(Aradion, "Aradion the Farseer", "Aradion_0085", "In time, we will see... It's time to head back to our place.")
-	endif
-	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
-		call ShowFieldLine(Valeria, "Valeria", "Valeria_0070", "So, is it... over now? Is this the answer to our people's curse?")
-		call ShowFieldLine(Valeria, "Valeria", "Valeria_0071", "Gladly.")
-	endif
+	call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0084", "I think this was the last of them. All rifts should now be closed.")
+	call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0085", "In time, we will see... It's time to head back to our place.")
+	call QueueFieldLine(Valeria, "Valeria", "Valeria_0070", "So, is it... over now? Is this the answer to our people's curse?")
+	call QueueFieldLine(Valeria, "Valeria", "Valeria_0071", "Gladly.")
 endfunction
 
 private function SpawnRiftsWave takes nothing returns nothing
 	local location spawnLoc
-	if not RiftsRitualActive or RiftsCurrentRift == null or not QuestGiver_IsUnitAlive(RiftsCurrentRift) then
+	local rect r
+	local real spawnX
+	local real spawnY
+	if not RiftsRitualActive then
 		return
 	endif
 	if RiftsWaveIndex >= RIFTS_MAX_WAVES then
 		return
 	endif
-	set spawnLoc = Location(GetUnitX(RiftsCurrentRift), GetUnitY(RiftsCurrentRift))
+	if RiftsCurrentRift != null and QuestGiver_IsUnitAlive(RiftsCurrentRift) then
+		set spawnX = GetUnitX(RiftsCurrentRift)
+		set spawnY = GetUnitY(RiftsCurrentRift)
+	else
+		set r = GetRiftRect(RiftsCurrentIndex)
+		if r == null then
+			return
+		endif
+		set spawnX = GetRectCenterX(r)
+		set spawnY = GetRectCenterY(r)
+	endif
+	set spawnLoc = Location(spawnX, spawnY)
 	set RiftsWaveIndex = RiftsWaveIndex + 1
 	if RiftsNextWaveN == 1 then
 		set RiftsWaveHandles[RiftsWaveIndex] = WavesRiftWraits_Wave1(Player(RIFTS_WAVE_OWNER), spawnLoc)
@@ -2067,6 +2315,7 @@ private function SpawnRiftsWave takes nothing returns nothing
 	endif
 	set RiftsNextWaveN = GetRandomInt(1, 4)
 	call RemoveLocation(spawnLoc)
+	set r = null
 	call PlayRiftsIncomingWaveBark()
 endfunction
 
@@ -2083,6 +2332,9 @@ private function OnRiftsCountdownTick takes nothing returns nothing
 	if not RiftsRitualActive or Aradion == null or not QuestGiver_IsUnitAlive(Aradion) then
 		return
 	endif
+	if RiftsCurrentRift != null and QuestGiver_IsUnitAlive(RiftsCurrentRift) and GetUnitCurrentOrder(Aradion) != OrderId("blizzard") then
+		call OrderAradionToChannelCurrentRift()
+	endif
 	if RiftsCountdownRemaining <= 0 then
 		return
 	endif
@@ -2097,7 +2349,6 @@ endfunction
 
 private function UpdateQuestRiftsCorruptionInternal takes nothing returns nothing
 	local QuestData q
-	local string reqText
 	call SyncUnitReferences()
 	if not QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion) then
 		return
@@ -2106,23 +2357,23 @@ private function UpdateQuestRiftsCorruptionInternal takes nothing returns nothin
 		return
 	endif
 	set RiftsCorruptionCounter = RiftsCorruptionCounter + 1
-	set reqText = "Find all rifts scattered around the Vanguard Vale and have Aradion close them (Rifts closed " + I2S(RiftsCorruptionCounter) + " / 3)"
 	call DebugMsg("Updating Quest: Rifts of Corruption - Counter=" + I2S(RiftsCorruptionCounter))
 	set q = QuestGiver_GetByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
 	if q == 0 then
 		return
 	endif
-	call QuestGiver_SetRequirement(q.id, 1, reqText)
+	call QuestGiver_SetRequirement(q.id, 2, "Rifts closed " + I2S(RiftsCorruptionCounter) + " / 3")
 	if RiftsCorruptionCounter >= 3 then
 		call q.markRequirementCompleted(1, true)
 		call q.markRequirementCompleted(2, true)
 		call q.markRequirementCompleted(3, true)
-		call QuestGiver_AddRequirement(q.id, 4, "Escort both Aradion and Valeria back to Aradion")
-		call q.markRequirementCompleted(4, false)
+		call q.markRequirementCompleted(4, true)
+		call QuestGiver_AddRequirement(q.id, 5, "Escort Aradion and Valeria to Aradion's place")
+		call q.markRequirementCompleted(5, false)
 		call q.refreshQuestLog()
 		set RiftsAwaitingReturnHome = true
 		set RiftsReturnedHome = false
-		call QuestMaster_SetStateByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion, QUEST_STATE_READY_TURNIN)
+		call QuestMaster_SetStateByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion, QUEST_STATE_IN_PROGRESS)
 	else
 		call QuestMaster_SetStateByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion, QUEST_STATE_IN_PROGRESS)
 	endif
@@ -2137,6 +2388,11 @@ private function FinishRiftsCurrentRitual takes nothing returns nothing
 	endif
 	call StopRiftsRuntimeTimers()
 	call ClearRiftsWaveHandles()
+	call ClearFieldLineQueue()
+	if RiftsCurrentIndex > 0 and RiftsCurrentIndex <= RIFTS_MAX then
+		set RiftsClosed[RiftsCurrentIndex] = true
+		set RiftsUnits[RiftsCurrentIndex] = null
+	endif
 	if RiftsCurrentRift != null and QuestGiver_IsUnitAlive(RiftsCurrentRift) then
 		call DestroyEffect(AddSpecialEffect("Objects\\Spawnmodels\\NightElf\\NECancelDeath\\NECancelDeath.mdl", GetUnitX(RiftsCurrentRift), GetUnitY(RiftsCurrentRift)))
 		call KillUnit(RiftsCurrentRift)
@@ -2145,29 +2401,20 @@ private function FinishRiftsCurrentRitual takes nothing returns nothing
 	set RiftsCurrentRift = null
 	set RiftsCurrentIndex = 0
 	if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
+		call IssueImmediateOrder(Aradion, "stop")
+		call UnitRemoveAbility(Aradion, ABIL_RIFT_CLOSE)
 		call SetUnitAnimation(Aradion, "stand")
 	endif
 	call AddAradionCompanion()
 	call PlayRiftsFinishBarks()
 	call UpdateQuestRiftsCorruptionInternal()
 	set hero = ResolveDialogHero()
-	if hero != null then
-		if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
-			call FollowSystem_SetFollow(Valeria, hero, FOLLOW_MAX_DISTANCE, false, 0.00, FOLLOW_STYLE_PASSIVE, true, true)
-		endif
-		if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
-			call FollowSystem_SetFollow(Aradion, hero, FOLLOW_MAX_DISTANCE, false, 0.00, FOLLOW_STYLE_PASSIVE, true, true)
-		endif
-	endif
+	call StartFieldCompanions(hero)
 	if RiftsCorruptionCounter >= 3 then
 		call PlayRiftsAllClosedBarks()
 	else
-		if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
-			call ShowFieldLine(Aradion, "Aradion the Farseer", "Aradion_0083", "Let's head to the next one. Be on your guard.")
-		endif
-		if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
-			call ShowFieldLine(Valeria, "Valeria", "Valeria_0069", "Don't worry my love, we will be.")
-		endif
+		call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0083", "Let's head to the next one. Be on your guard.")
+		call QueueFieldLine(Valeria, "Valeria", "Valeria_0069", "Don't worry my love, we will be.")
 	endif
 endfunction
 
@@ -2201,9 +2448,10 @@ private function OnRiftsFieldTick takes nothing returns nothing
 	endif
 	if RiftsAwaitingReturnHome then
 		set hero = ResolveDialogHero()
-		if hero != null and RectContainsUnit(gg_rct_AradionPlace, hero) then
+		if hero != null and RectContainsUnit(gg_rct_AradionPlace, hero) and Aradion != null and Valeria != null and QuestGiver_IsUnitAlive(Aradion) and QuestGiver_IsUnitAlive(Valeria) and RectContainsUnit(gg_rct_AradionPlace, Aradion) and RectContainsUnit(gg_rct_AradionPlace, Valeria) then
 			call HandleRiftsReturnedHome()
 		endif
+		set hero = null
 		return
 	endif
 	if RiftsRitualActive then
@@ -2211,16 +2459,24 @@ private function OnRiftsFieldTick takes nothing returns nothing
 	endif
 	loop
 		exitwhen i > RIFTS_MAX
-		set hero = GetAllowedRiftHeroForIndex(i)
-		if hero != null then
-			set riftUnit = EnsureRiftUnit(i)
-			if riftUnit != null and QuestGiver_IsUnitAlive(riftUnit) then
-				call StartRiftsRitualInternal(riftUnit, i, hero)
-				return
+		if not RiftsClosed[i] then
+			set hero = GetAllowedRiftHeroForIndex(i)
+			if hero != null then
+				set riftUnit = EnsureRiftUnit(i)
+				if riftUnit != null and QuestGiver_IsUnitAlive(riftUnit) then
+					call StartRiftsRitualInternal(riftUnit, i, hero)
+					set riftUnit = null
+					set hero = null
+					return
+				endif
+				set riftUnit = null
 			endif
 		endif
+		set hero = null
 		set i = i + 1
 	endloop
+	set hero = null
+	set riftUnit = null
 endfunction
 
 private function StartRiftsFieldMonitor takes nothing returns nothing
@@ -2248,7 +2504,13 @@ private function HandleRiftsFailure takes string reason returns nothing
 	call StopRiftsRuntimeTimers()
 	call StopRiftsFieldMonitor()
 	call ClearRiftsWaveHandles()
+	call ClearFieldLineQueue()
+	call ResetRiftsClosedState()
 	call DisableRiftsFailTriggers()
+	if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
+		call IssueImmediateOrder(Aradion, "stop")
+		call UnitRemoveAbility(Aradion, ABIL_RIFT_CLOSE)
+	endif
 	call ReturnRiftsCompanionsHomeInternal()
 	call RegisterRiftUnits()
 	set q = QuestGiver_GetByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
@@ -2259,6 +2521,108 @@ private function HandleRiftsFailure takes string reason returns nothing
 	call QuestGiver_SetStateByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion, QUEST_STATE_AVAILABLE)
 	call QuestGiver_UpdateQuestByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
 	call QuestGiver_RefreshAvailabilityForGiver(Aradion)
+endfunction
+
+private function StopFadingSparksTimer takes nothing returns nothing
+	if FadingSparksTimer != null then
+		call DestroyTimer(FadingSparksTimer)
+		set FadingSparksTimer = null
+	endif
+endfunction
+
+private function ClearFadingSparksState takes nothing returns nothing
+	call StopFadingSparksTimer()
+	set FadingSparksFinished = false
+	set FadingSparksCaster = null
+	set FadingSparksTarget = null
+endfunction
+
+private function OnFadingSparksTimerExpire takes nothing returns nothing
+	local timer t = GetExpiredTimer()
+	set FadingSparksFinished = true
+	if t == FadingSparksTimer then
+		set FadingSparksTimer = null
+	endif
+	set t = null
+endfunction
+
+private function OnFadingSparksSpellEffect takes nothing returns nothing
+	local unit caster = GetTriggerUnit()
+	local unit target = GetSpellTargetUnit()
+	if GetSpellAbilityId() != ABIL_TELANOR_ROD then
+		set caster = null
+		set target = null
+		return
+	endif
+	call ClearFadingSparksState()
+	if not IsFadingSparksInProgress() or caster == null or target == null then
+		set caster = null
+		set target = null
+		return
+	endif
+	if GetUnitTypeId(target) != UNIT_MANA_WRAITH then
+		set caster = null
+		set target = null
+		return
+	endif
+	set FadingSparksCaster = caster
+	set FadingSparksTarget = target
+	call IssuePointOrder(target, "attack", GetUnitX(caster), GetUnitY(caster))
+	if GetWidgetLife(target) > BlzGetUnitMaxHP(target) * FADING_SPARKS_HEALTH_THRESHOLD * 0.01 then
+		call DisplayTimedTextToPlayer(Player(0), 0.00, 0.00, 4.00, "|cffd45e19The target must be weakened below half health before the rod can extract its essence.|r")
+		call ClearFadingSparksState()
+		set caster = null
+		set target = null
+		return
+	endif
+	set FadingSparksTimer = CreateTimer()
+	call TimerStart(FadingSparksTimer, FADING_SPARKS_CHANNEL_TIME, false, function OnFadingSparksTimerExpire)
+	set caster = null
+	set target = null
+endfunction
+
+private function OnFadingSparksSpellFinish takes nothing returns nothing
+	local real x
+	local real y
+	if GetSpellAbilityId() != ABIL_TELANOR_ROD then
+		return
+	endif
+	if not FadingSparksFinished or FadingSparksCaster == null or FadingSparksTarget == null then
+		call ClearFadingSparksState()
+		return
+	endif
+	set x = GetUnitX(FadingSparksTarget)
+	set y = GetUnitY(FadingSparksTarget)
+	call UnitDamageTarget(FadingSparksCaster, FadingSparksTarget, FADING_SPARKS_DAMAGE, true, false, ATTACK_TYPE_MAGIC, DAMAGE_TYPE_NORMAL, WEAPON_TYPE_WHOKNOWS)
+	call CreateItem(ITEM_WRAITH_ESSENCE, x, y)
+	call ClearFadingSparksState()
+endfunction
+
+private function OnFadingSparksSpellEndCast takes nothing returns nothing
+	if GetSpellAbilityId() != ABIL_TELANOR_ROD then
+		return
+	endif
+	call ClearFadingSparksState()
+endfunction
+
+private function RegisterFadingSparksSpellTriggers takes nothing returns nothing
+	local integer i = 0
+	if FadingSparksSpellEffectTrigger != null or FadingSparksSpellFinishTrigger != null or FadingSparksSpellEndCastTrigger != null then
+		return
+	endif
+	set FadingSparksSpellEffectTrigger = CreateTrigger()
+	set FadingSparksSpellFinishTrigger = CreateTrigger()
+	set FadingSparksSpellEndCastTrigger = CreateTrigger()
+	loop
+		exitwhen i >= bj_MAX_PLAYER_SLOTS
+		call TriggerRegisterPlayerUnitEvent(FadingSparksSpellEffectTrigger, Player(i), EVENT_PLAYER_UNIT_SPELL_EFFECT, null)
+		call TriggerRegisterPlayerUnitEvent(FadingSparksSpellFinishTrigger, Player(i), EVENT_PLAYER_UNIT_SPELL_FINISH, null)
+		call TriggerRegisterPlayerUnitEvent(FadingSparksSpellEndCastTrigger, Player(i), EVENT_PLAYER_UNIT_SPELL_ENDCAST, null)
+		set i = i + 1
+	endloop
+	call TriggerAddAction(FadingSparksSpellEffectTrigger, function OnFadingSparksSpellEffect)
+	call TriggerAddAction(FadingSparksSpellFinishTrigger, function OnFadingSparksSpellFinish)
+	call TriggerAddAction(FadingSparksSpellEndCastTrigger, function OnFadingSparksSpellEndCast)
 endfunction
 
 private function OnRiftsValeriaDamaged takes nothing returns nothing
@@ -2453,6 +2817,7 @@ private function OnCompleteQuest1FadeHomeReturn takes nothing returns nothing
 	if t != null then
 		call DestroyTimer(t)
 	endif
+	set t = null
 endfunction
 
 private function OnCompleteQuest1End takes nothing returns nothing
@@ -2460,7 +2825,7 @@ private function OnCompleteQuest1End takes nothing returns nothing
 	call QuestGiver_CompleteQuestByNameAndGiver(QUEST_RANGER_MISSING, Aradion)
 	call StartExitFadeOut()
 	set t = CreateTimer()
-	call TimerStart(t, 1.05, false, function OnCompleteQuest1FadeHomeReturn)
+	call TimerStart(t, 1.25, false, function OnCompleteQuest1FadeHomeReturn)
 endfunction
 
 private function OnCompleteQuest1 takes nothing returns nothing
@@ -2682,6 +3047,8 @@ private function OnAcceptQuest4End takes nothing returns nothing
 	call StopRiftsRuntimeTimers()
 	call StopRiftsFieldMonitor()
 	call ClearRiftsWaveHandles()
+	call ClearFieldLineQueue()
+	call ResetRiftsClosedState()
 	call RegisterRiftUnits()
 	if Aradion != null then
 		call SetUnitInvulnerable(Aradion, false)
@@ -2713,7 +3080,7 @@ private function OnAcceptQuest4 takes nothing returns nothing
 	
 	// Get hero for facing actions
 	set hero = ResolveDialogHero()
-	call PlaceValeriaNearAradion(RIFTS_VALERIA_OFFSET)
+	call PrepareValeriaForRiftsIntro()
 	
 	// Add quest-specific lines with inline facing
 	call DialogSystem_AddMakeFaceEachOther(seq, Aradion, hero, 0.50, 0.0)
@@ -2741,7 +3108,12 @@ private function OnCompleteQuest4End takes nothing returns nothing
 	call StopRiftsRuntimeTimers()
 	call StopRiftsFieldMonitor()
 	call ClearRiftsWaveHandles()
+	call ClearFieldLineQueue()
 	call DisableRiftsFailTriggers()
+	if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
+		call IssueImmediateOrder(Aradion, "stop")
+		call UnitRemoveAbility(Aradion, ABIL_RIFT_CLOSE)
+	endif
 	call ReturnRiftsCompanionsHomeInternal()
 	call QuestGiver_CompleteQuestByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
 	call StartExitFadeOut()
@@ -2980,6 +3352,10 @@ private function OnSelected takes nothing returns nothing
 		call DebugMsg("Select gate blocked: dialog sequence active")
 		return
 	endif
+	if RiftsRitualActive then
+		call DebugMsg("Select gate blocked: rift ritual active")
+		return
+	endif
 	
 	// Check if unit is casting or in combat
 	set customValue = GetUnitUserData(Aradion)
@@ -3087,7 +3463,7 @@ private function CreateQuests takes nothing returns nothing
 	call q.addRequiredCompletedQuest(QUEST_RANGER_MISSING, Aradion)
 	call q.addRequiredCompletedQuest(QUEST_CRYSTALS_HOPE, Aradion)
 	call q.addRequiredCompletedQuest(QUEST_FADING_SPARKS, Aradion)
-	call QuestGiver_SetRequirements(q.id, "", "Find all rifts scattered around the Vanguard Vale and have Aradion close them (Rifts closed 0 / 3)", "Guard Aradion while he closes the rifts", "Both Aradion and Valeria must stay alive", "", "", "", "", "")
+	call QuestGiver_SetRequirements(q.id, "", "Find all rifts scattered around the Vanguard Vale", "Rifts closed 0 / 3", "Guard Aradion while he closes the rifts", "Both Aradion and Valeria must stay alive", "", "", "", "")
 
 	if ENABLE_TEST_QUESTS then
 		// Test Quest 1: Kill
@@ -3190,6 +3566,7 @@ private function InitDelayed takes nothing returns nothing
 	call RegisterLines()
 	call RegisterValeriaEncounterProximityTrigger()
 	call RegisterRiftUnits()
+	call RegisterFadingSparksSpellTriggers()
 	call CreateQuests()
 	call QuestGiver_RefreshAvailabilityForGiver(Aradion)
 	call QuestGiver_RegisterSelectionHandler(Aradion, function OnSelected)
@@ -3274,6 +3651,9 @@ public function BeginRiftsRitual takes unit riftUnit returns nothing
 	loop
 		exitwhen i > RIFTS_MAX
 		if RiftsUnits[i] == riftUnit then
+			if RiftsClosed[i] then
+				return
+			endif
 			call StartRiftsRitualInternal(riftUnit, i, hero)
 			return
 		endif
@@ -3307,6 +3687,7 @@ public function ReturnRiftsCompanionsHome takes nothing returns nothing
 	call StopRiftsRuntimeTimers()
 	call StopRiftsFieldMonitor()
 	call ClearRiftsWaveHandles()
+	call ClearFieldLineQueue()
 	call ReturnRiftsCompanionsHomeInternal()
 endfunction
 
