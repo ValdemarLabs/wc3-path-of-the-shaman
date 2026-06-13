@@ -63,3 +63,7 @@ Thumbs.db
 
 # VSCode
 .vscode/
+
+# Local Codex skill workspace notes/helpers
+/codex-skills/README.md
+/codex-skills/sync-jassmaster-to-codex.ps1
