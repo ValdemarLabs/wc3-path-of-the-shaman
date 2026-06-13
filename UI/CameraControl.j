@@ -419,6 +419,10 @@ private function CC_GetResolvedSpecialMode takes integer pid returns integer
 endfunction
 
 private function CC_DefineSpecialMode takes integer specialMode, string label, real distance, real farZ, real angle, real rotation, real fov, boolean keyboardAdjustable, real angleMax returns nothing
+    // keyboardAdjustable controls whether arrow keys can change this special mode's angle/rotation.
+    // - true  = this mode uses CC_SpecialAngle / CC_SpecialRotation and arrow-key updates stay active.
+    // - false = this mode uses the fixed angle/rotation values defined here.
+    // angleMax only matters when keyboardAdjustable=true.
     if specialMode == CAMERA_SPECIAL_MODE_NONE then
         return
     endif
@@ -440,7 +444,10 @@ private function CC_InitSpecialModeConfigs takes nothing returns nothing
     // Adding a new special camera mode:
     // 1. Add a new CAMERA_SPECIAL_MODE_* id in globals above.
     // 2. Add one CC_DefineSpecialMode(...) line here with the mode's label and camera values.
-    // 3. If the mode should be arrow-key adjustable, set keyboardAdjustable=true and give an angleMax.
+    // 3. Decide if arrow-key camera control should be active for that mode:
+    //    - keyboardAdjustable=true  => left/right rotate and up/down change angle for this special mode.
+    //    - keyboardAdjustable=false => the mode keeps its fixed configured angle/rotation only.
+    //    Give an angleMax when keyboardAdjustable=true.
     // 4. If the mode should activate from a camera-local rect, register that rect in CC_RegisterBuiltInSpecialCameraRects().
     // 5. Leave ZoneEvent-owned zone camera switching in ZoneEvent.
     call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_BOOMMINE, "Boom Mine", 1600.00, 5000.00, 270.00, 90.00, 70.00, true, 295.00)
@@ -449,6 +456,7 @@ private function CC_InitSpecialModeConfigs takes nothing returns nothing
 endfunction
 
 private function CC_IsSpecialModeKeyboardAdjustable takes integer specialMode returns boolean
+    // Central per-special-mode switch for arrow-key camera control.
     return specialMode != CAMERA_SPECIAL_MODE_NONE and CC_SpecialModeKeyboardAdjustable[specialMode]
 endfunction
 
@@ -483,7 +491,14 @@ endfunction
 
 private function CC_IsKeyboardModeActive takes player whichPlayer returns boolean
     local integer pid = CC_GetPlayerIndex(whichPlayer)
-    return (not CC_Suspended[pid]) and (not CC_ResumePending[pid]) and (CC_Mode[pid] == CAMERA_MODE_NORMAL or CC_IsResolvedSpecialModeKeyboardAdjustable(pid))
+    if CC_Suspended[pid] or CC_ResumePending[pid] then
+        return false
+    endif
+    // Special modes opt into arrow-key control through CC_DefineSpecialMode(..., keyboardAdjustable, ...).
+    if CC_IsResolvedSpecialModeKeyboardAdjustable(pid) then
+        return true
+    endif
+    return CC_Mode[pid] == CAMERA_MODE_NORMAL and not CC_HasSpecialMode(pid)
 endfunction
 
 private function CC_IsNativeResetProtectionActive takes player whichPlayer returns boolean
@@ -986,7 +1001,10 @@ private function CC_ApplyMode takes player whichPlayer returns nothing
         return
     endif
     if CC_HasSpecialMode(pid) then
-        call CC_ClearKeyState(whichPlayer)
+        // Preserve held arrow-key state for special modes that are intentionally keyboard-adjustable.
+        if not CC_IsResolvedSpecialModeKeyboardAdjustable(pid) then
+            call CC_ClearKeyState(whichPlayer)
+        endif
         call CC_UpdateLoopState()
         call CC_ApplySpecialMode(whichPlayer)
     elseif mode == CAMERA_MODE_ADVANCED then
@@ -1303,6 +1321,8 @@ public function SetSpecialMode takes player whichPlayer, integer specialMode ret
         return
     endif
     set CC_SpecialMode[pid] = specialMode
+    // Keyboard-adjustable special modes get their own live angle/rotation state here.
+    // Fixed special modes ignore CC_SpecialAngle / CC_SpecialRotation and keep the preset values from CC_DefineSpecialMode().
     if CC_IsSpecialModeKeyboardAdjustable(specialMode) then
         set CC_SpecialAngle[pid] = CC_GetConfiguredSpecialModeAngle(specialMode)
         set CC_SpecialRotation[pid] = CC_GetConfiguredSpecialModeRotation(specialMode)
