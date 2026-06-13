@@ -41,6 +41,8 @@
   Added support paths for richer WC3 ability lookup/import usage in the toolchain, including ability tooltip-related schema updates and related importer/exporter compatibility work needed by the active item-database workflow.
   Improved ItemManager handling for item classes and class-driven presentation so newer slot/class entries such as `Ability` and `Skill` can be seeded into the database and used more consistently by the tool.
   Added and aligned item-class color handling work for ItemManager so class headers/tooltips can use intended colors instead of falling back toward generic gray/default presentation.
+  Fixed WC3 tooltip color output for class/rarity headers so ItemManager now writes valid opaque WC3 color codes for saved item text instead of older legacy variants that could still appear gray in-game even when the tool preview showed the intended class color.
+  Added export-side normalization in the `.w3t` pipeline so older saved tooltip strings using legacy `|c00RRGGBB` formatting are rewritten into valid `|cFFRRGGBB` color codes during item export, helping class headers such as `Ability` keep their intended color in Warcraft itself.
   `ItemManager_debug` is the current latest version and shall be used for managing the PotS database at this time.
   The `Release` ItemManager build is not yet the current authoritative version and will be updated later after the ongoing debug-side development pass is stabilized.
 
