@@ -1,0 +1,4 @@
+interface:
+  display_name: "JASS Master"
+  short_description: "PotS JASS style and library guide"
+  default_prompt: "Use $jassmaster to write or revise a PotS JASS library in the established project style."
