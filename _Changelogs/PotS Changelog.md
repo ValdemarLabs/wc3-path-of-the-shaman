@@ -21,6 +21,11 @@
   Improved `Ranger Missing` reunion flow so the completion exchange uses more explicit old-GUI-style facing beats, and Valeria's return-home recreation is now deferred into the fade-black window instead of snapping too early while still visible.
 - `Rifts of Corruption`
   Stabilized the mana-rift start path so `qAradion` now binds the three real placed main-map Mana Rift objects directly as its canonical rift slots before any fallback recreation logic, bringing the quest closer to the old GUI `QuestRifts[1..3]` behavior.
+  Continued the runtime restoration pass: Rift completion now tracks closed portals properly, the objective text now splits out `Rifts closed X / 3`, the escort-home phase now uses `Escort Aradion and Valeria to Aradion's place`, and Aradion should only become turn-in ready after both companions have actually been escorted back home.
+  Improved the post-ritual companion flow so Aradion and Valeria return with defend-style follow/combat behavior instead of passive movement-only follow, and the escort-home phase no longer teleports Valeria away immediately after the last portal closes.
+  Restored more old-GUI-style ritual behavior: Aradion now re-applies his portal-closing channel if interrupted, the start/combat/finish lines are routed through proper unit transmissions, and the return-home phase now uses generic return lines instead of still reusing portal-combat warnings.
+- `Fading Sparks`
+  Restored the missing Tel'anor Rod extraction runtime in `qAradion`: using `A04W` on a sufficiently weakened Mana Wraith now follows the old GUI-style 2-second extraction flow and creates `Wraith Essence` on success.
 
 ### Tool Updates
 - `WC3ItemManager`
@@ -43,6 +48,16 @@
   Split Valeria persuasion into two clearer runtime paths: wrong answers now use live gameplay dialog only, while the correct answer applies the hostile-stop / ownership-reset transition only after the hero line has played.
   Added a `PlacedManaRifts[1..3]` binding block in `InitDelayed` and updated rift-slot resolution so the three exact WE Mana Rift globals are the first source of truth inside `qAradion`, with rect-based lookup retained only as fallback for recreated rifts after failure/reset.
   Kept the additional rect/range fallback guards around rift start detection so main-map ritual start is more resilient if a placed rift is replaced later during quest fail/retry handling.
+  Added a larger Rift-state cleanup pass: closed-rift tracking now prevents completed portals from being recreated/restarted, ritual follow-up objectives now stay `IN_PROGRESS` until the escort-home step is actually completed, and the field monitor now waits for the hero, Aradion, and Valeria all to reach `AradionPlace` before flipping the quest to turn-in ready.
+  Reworked field-dialog handling for the Rift runtime so speaker lines use `DialogSystem_PlayLine` transmissions with a small local queue instead of stacking bare timed text, reducing overlap between Aradion/Valeria and bringing ritual dialog flow closer to the old triggers.
+  Switched the Aradion/Valeria escort runtime from passive follow toward defend-style follow and removed the unnecessary Valeria ghost re-apply on ambush reset, reducing several newer-runtime behavior mismatches from the old quest chain.
+  Added the missing `Fading Sparks` spell-event runtime for `A04W`, including effect / finish / endcast handling, target validation against Mana Wraiths, extraction timing, and quest-owned item creation on successful completion.
+  Cleaned up several newer local-handle leak candidates in the Valeria encounter / Rift event code and fixed more struct/handle cleanup mismatches discovered during the leak pass.
+- `QuestGiver.j`
+  Added unregister/removal paths for `FindNPC`, `GoToPlace`, and `Reputation` requirement polling so those timers can shut down cleanly once their tracked requirements are completed instead of accumulating permanent background checks over the whole session.
+  Fixed `GetReputationLevel` so the local `Faction` value is treated as the integer-backed struct id it actually is, avoiding the invalid `set f = null` cleanup path.
+- `QuestMaster.j`
+  Corrected the reputation reward calculation path so quest reputation rewards are computed from quest level plus adjustment instead of using the broken truncated multiplier-only formula.
 
 #### Lag and possible leak investigation
 From the 8-13 June 2026 changelog entries, the strongest suspects are not the new DialogSystem ESC hook, but the newer camera and quest-runtime polling.
@@ -66,6 +81,9 @@ Low: qAradion also creates a texttag every second during each rift ritual at [On
   Today's Valeria encounter and mana-rift binding changes were not yet verified end-to-end on the live main map after the code pass. The latest behavior still needs direct gameplay confirmation, especially around `ESC` persuasion flow, post-success hostile stop timing, and ritual start from each real Mana Rift.
 - `qAradion.j` / `Rifts of Corruption`
   The ritual-start path is now bound to the placed Mana Rift units, but the Aradion portal-closing cast / custom ability ownership path still needs in-map validation against the current runtime.
+  The newer escort-home completion path still needs direct gameplay verification after today's state-flow fixes: confirm no early question mark appears on Aradion, no premature Valeria teleport occurs after the last portal, and the quest only becomes turn-in ready once both companions actually reach Aradion's place.
+- `QuestSystems` / `qAradion.j`
+  The current QuestSystems and Aradion-related quest fixes still need a focused end-to-end test pass before `qAradion` is restructured into a more modular questgiver/template-friendly layout for reuse by other libraries.
 
 ### Actions Remaining
 - `WC3ItemManager`
@@ -74,6 +92,9 @@ Low: qAradion also creates a texttag every second during each rift ritual at [On
   Re-test the full Valeria encounter on the main map: intro facing/camera, `ESC` prompt, wrong-answer live gameplay responses, correct-answer stop timing after the hero line, and the follow-up escort progression.
 - `qAradion.j` / `Rifts of Corruption`
   Re-test all three real Mana Rift starts on the main map and confirm that placed-rift binding, ritual start, Aradion cast behavior, and fail/retry rift recreation all still resolve back into the correct local `qAradion` rift slots.
+  Re-test the full last-rift-to-home flow: objective swap to `Escort Aradion and Valeria to Aradion's place`, no early complete-quest question mark on Aradion, no immediate home teleport after the last closure, and turn-in unlock only after the escort-home step is actually done.
+- `QuestSystems` / `qAradion.j`
+  Finish the current quest-runtime validation pass before advancing to the next planned refactor, then structurize `qAradion` into a more modular and template-friendly questgiver library only after the present Aradion/QuestSystems fixes are confirmed stable in gameplay.
 
 ## [11.6.2026]
 
