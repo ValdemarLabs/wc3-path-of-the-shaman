@@ -18,13 +18,13 @@ namespace WC3ItemManager
         public ColorManager(string connectionString)
         {
             this.connectionString = connectionString;
-            this.colorCache = new Dictionary<string, Dictionary<string, string>>();
+            this.colorCache = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
             LoadColors();
         }
 
         public void LoadColors()
         {
-            colorCache.Clear();
+            colorCache = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
             
             try
             {
@@ -43,7 +43,7 @@ namespace WC3ItemManager
                             string hex = reader["color_hex"].ToString();
                             
                             if (!colorCache.ContainsKey(type))
-                                colorCache[type] = new Dictionary<string, string>();
+                                colorCache[type] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                             
                             colorCache[type][name] = hex;
                         }
