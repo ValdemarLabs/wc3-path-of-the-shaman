@@ -3152,12 +3152,12 @@ namespace WC3ItemManager
         {
             return rarity switch
             {
-                "Common" => "|c00FFFFFF",      // White
-                "Uncommon" => "|c001EFF00",    // Green
-                "Rare" => "|c000070DD",        // Blue
-                "Epic" => "|c00A335EE",        // Purple
-                "Legendary" => "|c00FF8000",   // Orange
-                _ => "|c00FFFFFF"               // Default white
+                "Common" => "|cFFFFFFFF",      // White
+                "Uncommon" => "|cFF1EFF00",    // Green
+                "Rare" => "|cFF0070DD",        // Blue
+                "Epic" => "|cFFA335EE",        // Purple
+                "Legendary" => "|cFFFF8000",   // Orange
+                _ => "|cFFFFFFFF"               // Default white
             };
         }
 

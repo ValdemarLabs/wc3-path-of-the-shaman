@@ -71,8 +71,8 @@ namespace WC3ItemManager
         {
             string hex = GetHex(className);
             return hex.StartsWith("#", StringComparison.Ordinal) && hex.Length == 7
-                ? "|c00" + hex.Substring(1)
-                : "|c00A52A2A";
+                ? "|cFF" + hex.Substring(1)
+                : "|cFFA52A2A";
         }
     }
 }
