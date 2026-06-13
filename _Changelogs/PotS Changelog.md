@@ -45,6 +45,9 @@
   The `Release` ItemManager build is not yet the current authoritative version and will be updated later after the ongoing debug-side development pass is stabilized.
 
 ### Technical Updates
+- `TasQuestBoxLight_PotS.j`
+  Locked the legacy standalone `Zones` open button behind library-level visibility handling so it no longer reappears through older `Unhide` / `SetButtonVisible` paths.
+  `Zones` access is now kept routed through `MasterUI` instead of exposing the old direct button again.
 - `QuestGiver.j`
   Added a small public companion-icon accessor so shared UI code can read the currently registered icon for companion rows directly from the quest companion registry instead of duplicating lookup state.
 - `StatsUI.j`
