@@ -41,7 +41,7 @@ namespace WC3ItemManager
             StringBuilder tooltip = new StringBuilder();
 
             // Header: [Type, Rarity] with WC3 color codes
-            string typeColor = colorManager.GetWC3ColorCode(colorManager.GetColorHex("class", className) ?? "#A52A2A");
+            string typeColor = colorManager.GetWC3ColorCode(colorManager.GetColorHex("class", className, ItemClassColorDefaults.GetHex(className)) ?? ItemClassColorDefaults.GetHex(className));
             string rarityColor = colorManager.GetWC3ColorCode(colorManager.GetColorHex("rarity", rarityName) ?? "#90EE90");
             tooltip.Append($"[{typeColor}{className}|r, {rarityColor}{rarityName}|r]");
 
@@ -89,7 +89,7 @@ namespace WC3ItemManager
             StringBuilder desc = new StringBuilder();
 
             // Header: [Type, Rarity] with WC3 color codes
-            string typeColor = colorManager.GetWC3ColorCode(colorManager.GetColorHex("class", className) ?? "#A52A2A");
+            string typeColor = colorManager.GetWC3ColorCode(colorManager.GetColorHex("class", className, ItemClassColorDefaults.GetHex(className)) ?? ItemClassColorDefaults.GetHex(className));
             string rarityColor = colorManager.GetWC3ColorCode(colorManager.GetColorHex("rarity", rarityName) ?? "#90EE90");
             desc.Append($"[{typeColor}{className}|r, {rarityColor}{rarityName}|r]");
 
