@@ -13,6 +13,25 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [13.6.2026]
+
+### Tool Updates
+- `WC3ItemManager`
+  Continued the current `ItemManager` development pass around WC3 item-data parity, manual-ability handling, tooltip generation, icon-path normalization, powerup auto-use integrity, and item-class presentation.
+  Added support paths for richer WC3 ability lookup/import usage in the toolchain, including ability tooltip-related schema updates and related importer/exporter compatibility work needed by the active item-database workflow.
+  Improved ItemManager handling for item classes and class-driven presentation so newer slot/class entries such as `Ability` and `Skill` can be seeded into the database and used more consistently by the tool.
+  Added and aligned item-class color handling work for ItemManager so class headers/tooltips can use intended colors instead of falling back toward generic gray/default presentation.
+  `ItemManager_debug` is the current latest version and shall be used for managing the PotS database at this time.
+  The `Release` ItemManager build is not yet the current authoritative version and will be updated later after the ongoing debug-side development pass is stabilized.
+
+### Known Issues
+- `WC3ItemManager`
+  The current authoritative build is the debug build, not the release build. Until the release package is refreshed, any newer ItemManager fixes should be verified against `ItemManager_debug`.
+
+### Actions Remaining
+- `WC3ItemManager`
+  Update the release ItemManager package later so it matches the current debug build once the ongoing item/database tool changes are considered stable enough to freeze into release.
+
 ## [11.6.2026]
 
 ### Player-Facing Updates
