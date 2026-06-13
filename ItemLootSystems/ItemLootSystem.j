@@ -336,8 +336,18 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
         call itemToHoverIndex.remove(itemHandleId)
     endfunction
     
-    // Item pickup handler - removes floating text
+    // Item pickup/use handler - removes floating text
     private function OnItemPickup takes nothing returns nothing
+        local item it = GetManipulatedItem()
+        
+        if it != null then
+            call RemoveItemFloatingText(it)
+        endif
+        
+        set it = null
+    endfunction
+
+    private function OnItemUse takes nothing returns nothing
         local item it = GetManipulatedItem()
         
         if it != null then
@@ -1093,6 +1103,7 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
     private function Init takes nothing returns nothing
         local trigger pickupTrig
         local trigger dropTrig
+        local trigger useTrig
         
         call InitTables()
         call InitFloatingTextConfig()
@@ -1104,6 +1115,11 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
         set pickupTrig = CreateTrigger()
         call TriggerRegisterAnyUnitEventBJ(pickupTrig, EVENT_PLAYER_UNIT_PICKUP_ITEM)
         call TriggerAddAction(pickupTrig, function OnItemPickup)
+
+        // Register item use trigger (powerups can be consumed immediately on pickup)
+        set useTrig = CreateTrigger()
+        call TriggerRegisterAnyUnitEventBJ(useTrig, EVENT_PLAYER_UNIT_USE_ITEM)
+        call TriggerAddAction(useTrig, function OnItemUse)
         
         // Register item drop trigger (to create floating text when unit drops item)
         set dropTrig = CreateTrigger()
