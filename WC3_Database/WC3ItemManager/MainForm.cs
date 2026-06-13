@@ -806,6 +806,9 @@ namespace WC3ItemManager
                 using (var conn = new NpgsqlConnection(connectionString))
                 {
                     conn.Open();
+                    EnsurePowerUpAutoUseIntegrity(conn);
+                    EnsureRequiredItemClasses(conn);
+                    EnsureItemClassColors(conn);
                     isConnected = true;
                     UpdateConnectionStatus(true, "Connected");
                 }
@@ -834,6 +837,97 @@ namespace WC3ItemManager
             btnImport.Enabled = connected;
             btnExportDEquipment.Visible = connected; // Show DEquipment export when connected
             btnConnect.Text = connected ? "🔌 Reconnect" : "🔌 Connect";
+        }
+
+        private void EnsurePowerUpAutoUseIntegrity(NpgsqlConnection conn)
+        {
+            const string alterQuery = @"
+                ALTER TABLE items
+                ADD COLUMN IF NOT EXISTS use_automatically BOOLEAN DEFAULT FALSE";
+
+            using (var alterCmd = new NpgsqlCommand(alterQuery, conn))
+            {
+                alterCmd.ExecuteNonQuery();
+            }
+
+            const string repairQuery = @"
+                UPDATE items
+                SET is_powerup = TRUE,
+                    use_automatically = TRUE,
+                    wc3_classification = CASE
+                        WHEN LOWER(COALESCE(wc3_classification, '')) = 'powerup' THEN 'PowerUp'
+                        ELSE wc3_classification
+                    END
+                WHERE COALESCE(is_powerup, FALSE) = TRUE
+                   OR LOWER(COALESCE(wc3_classification, '')) = 'powerup'";
+
+            using (var repairCmd = new NpgsqlCommand(repairQuery, conn))
+            {
+                repairCmd.ExecuteNonQuery();
+            }
+        }
+
+        private void EnsureRequiredItemClasses(NpgsqlConnection conn)
+        {
+            const string ensureQuery = @"
+                INSERT INTO item_classes (class_name, slot_type, description)
+                VALUES
+                    ('Ability', 'ABILITY', 'Ability-granting item slot/class'),
+                    ('Skill', 'SKILL', 'Skill-granting item slot/class')
+                ON CONFLICT (class_name) DO NOTHING";
+
+            using (var cmd = new NpgsqlCommand(ensureQuery, conn))
+            {
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private void EnsureItemClassColors(NpgsqlConnection conn)
+        {
+            const string ensureTableQuery = @"
+                CREATE TABLE IF NOT EXISTS ui_color_scheme (
+                    id SERIAL PRIMARY KEY,
+                    element_type VARCHAR(50) NOT NULL,
+                    element_name VARCHAR(100) NOT NULL,
+                    color_hex VARCHAR(7) NOT NULL,
+                    description TEXT,
+                    is_active BOOLEAN DEFAULT true,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(element_type, element_name)
+                )";
+
+            using (var tableCmd = new NpgsqlCommand(ensureTableQuery, conn))
+            {
+                tableCmd.ExecuteNonQuery();
+            }
+
+            const string seedQuery = @"
+                INSERT INTO ui_color_scheme (element_type, element_name, color_hex, description)
+                VALUES
+                    ('class', 'Ability', '#00CED1', 'Ability items'),
+                    ('class', 'Skill', '#1E90FF', 'Skill items'),
+                    ('class', 'Quest', '#FFFF00', 'Quest items'),
+                    ('class', 'Miscellaneous', '#D3D3D3', 'Miscellaneous items'),
+                    ('class', 'Other', '#D3D3D3', 'Other items'),
+                    ('class', 'Head Armor', '#C0C0C0', 'Head armor items'),
+                    ('class', 'Chest Armor', '#B0C4DE', 'Chest armor items'),
+                    ('class', 'Leg Armor', '#A9B7C6', 'Leg armor items'),
+                    ('class', 'Foot Armor', '#CD853F', 'Foot armor items'),
+                    ('class', 'Hand Armor', '#DEB887', 'Hand armor items'),
+                    ('class', 'Main Hand Weapon', '#A52A2A', 'Main-hand weapon items'),
+                    ('class', 'Off Hand Weapon', '#8B4513', 'Off-hand weapon items'),
+                    ('class', 'Two-Hand Weapon', '#B22222', 'Two-hand weapon items'),
+                    ('class', 'Ring', '#FFD700', 'Ring items'),
+                    ('class', 'Amulet', '#40E0D0', 'Amulet items'),
+                    ('class', 'Trinket', '#DA70D6', 'Trinket items'),
+                    ('class', 'Back', '#708090', 'Back items')
+                ON CONFLICT (element_type, element_name) DO NOTHING";
+
+            using (var seedCmd = new NpgsqlCommand(seedQuery, conn))
+            {
+                seedCmd.ExecuteNonQuery();
+            }
         }
 
         private void BtnConnect_Click(object sender, EventArgs e)
@@ -2663,8 +2757,7 @@ namespace WC3ItemManager
         /// </summary>
         private string GetWC3ColorForClass(string className)
         {
-            // Use default brown color for classes
-            return "|cffA52A2A";
+            return ItemClassColorDefaults.GetWC3ColorCode(className);
         }
 
         /// <summary>
