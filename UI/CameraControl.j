@@ -56,6 +56,7 @@ globals
     private constant real CAMERA_NORMAL_TRACE_ROTATION_THRESHOLD = 0.50
     private constant real CAMERA_NORMAL_TRACE_DISTANCE_THRESHOLD = 1.00
     private constant real CAMERA_NORMAL_TRACE_CORRECTION_DURATION = 0.25
+    private constant real CAMERA_FAST_PAN_DURATION = 0.00
     private constant real CAMERA_RESUME_DURATION = 2.00
     private constant real CAMERA_WOUNDED_THRESHOLD = 0.25
     private constant real CAMERA_WOUNDED_ENTRY_DURATION = 1.00
@@ -501,10 +502,6 @@ private function CC_IsKeyboardModeActive takes player whichPlayer returns boolea
     return CC_Mode[pid] == CAMERA_MODE_NORMAL and not CC_HasSpecialMode(pid)
 endfunction
 
-private function CC_IsNativeResetProtectionActive takes player whichPlayer returns boolean
-    return false
-endfunction
-
 private function CC_ClearKeyState takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     set CC_PressingLeft[pid] = false
@@ -874,13 +871,20 @@ private function CC_ApplyDeveloperMode takes player whichPlayer returns nothing
     call CC_ApplyDirectFields(whichPlayer, 0.00)
 endfunction
 
+private function CC_PanToUnit takes player whichPlayer, unit target, real duration returns nothing
+    if duration < 0.00 then
+        set duration = 0.00
+    endif
+    if GetLocalPlayer() == whichPlayer and target != null then
+        call PanCameraToTimed(GetUnitX(target), GetUnitY(target), duration)
+    endif
+endfunction
+
 private function CC_StartSmoothResumeVisualWithDuration takes player whichPlayer, real duration returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     local unit target = CC_GetFallbackTarget(whichPlayer)
 
-    if GetLocalPlayer() == whichPlayer and target != null then
-        call PanCameraToTimed(GetUnitX(target), GetUnitY(target), duration)
-    endif
+    call CC_PanToUnit(whichPlayer, target, duration)
 
     if CC_HasSpecialMode(pid) then
         call CC_ApplySpecialFields(whichPlayer, duration)
@@ -1150,10 +1154,6 @@ endfunction
 private function CC_ResetStoredCameraState takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
 
-    if CC_HasSpecialMode(pid) or CC_Mode[pid] != CAMERA_MODE_NORMAL then
-        return
-    endif
-
     if CC_ResumePending[pid] then
         set CC_ResumePending[pid] = false
         set CC_Suspended[pid] = false
@@ -1215,6 +1215,16 @@ public function GetTargetName takes player whichPlayer returns string
         return GetHeroProperName(u)
     endif
     return GetUnitName(u)
+endfunction
+
+public function PanToTarget takes player whichPlayer, real duration returns nothing
+    local unit target = CC_GetFallbackTarget(whichPlayer)
+    call CC_PanToUnit(whichPlayer, target, duration)
+    set target = null
+endfunction
+
+public function FastPanToTarget takes player whichPlayer returns nothing
+    call PanToTarget(whichPlayer, CAMERA_FAST_PAN_DURATION)
 endfunction
 
 public function GetMode takes player whichPlayer returns integer
@@ -1622,9 +1632,7 @@ endfunction
 private function CC_PageResetAction takes nothing returns nothing
     local player whichPlayer = GetTriggerPlayer()
 
-    if CC_IsNativeResetProtectionActive(whichPlayer) then
-        call CC_ResetStoredCameraState(whichPlayer)
-    endif
+    call CC_ResetStoredCameraState(whichPlayer)
 
     set whichPlayer = null
 endfunction
