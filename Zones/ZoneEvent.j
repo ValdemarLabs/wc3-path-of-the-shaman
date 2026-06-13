@@ -328,6 +328,20 @@ private function RunDNC takes string dncName returns nothing
     endif
 endfunction
 
+private function ShouldFastPanOnEnter takes ZoneData z returns boolean
+    if z == 0 then
+        return false
+    endif
+
+    // Keep fast camera pans limited to teleported subzones and a few explicit
+    // dungeon transitions so ordinary zone borders do not snap the camera.
+    if z.startRegion != null and z.moveRegion != null then
+        return true
+    endif
+
+    return z.zoneId == 101 or z.zoneId == 102 or z.zoneId == 104 or z.zoneId == 105
+endfunction
+
 private function HandleSpecialEffects takes ZoneData z, unit triggeringUnit returns nothing
     local player whichPlayer = Player(0)
     // Handle special zone effects (camera, sky, etc.)
@@ -348,6 +362,10 @@ private function HandleSpecialEffects takes ZoneData z, unit triggeringUnit retu
         endif
     else
         call CameraControl_ClearSpecialMode(whichPlayer)
+    endif
+
+    if triggeringUnit != null and ShouldFastPanOnEnter(z) then
+        call CameraControl_FastPanToTarget(whichPlayer)
     endif
 
     set whichPlayer = null
