@@ -15,6 +15,13 @@
 
 ## [13.6.2026]
 
+### Player-Facing Updates
+- `qAradion.j`
+  Reworked more of the `Ranger Missing` Valeria encounter toward the old GUI behavior: the intro now uses stronger old-style facing/camera timing, persuasion response choices spoken through `ESC` now play during normal gameplay instead of entering a mini-cinematic, and the correct persuasion answer now lets the hero finish speaking before Valeria stops attacking and transitions into the friendly success path.
+  Improved `Ranger Missing` reunion flow so the completion exchange uses more explicit old-GUI-style facing beats, and Valeria's return-home recreation is now deferred into the fade-black window instead of snapping too early while still visible.
+- `Rifts of Corruption`
+  Stabilized the mana-rift start path so `qAradion` now binds the three real placed main-map Mana Rift objects directly as its canonical rift slots before any fallback recreation logic, bringing the quest closer to the old GUI `QuestRifts[1..3]` behavior.
+
 ### Tool Updates
 - `WC3ItemManager`
   Continued the current `ItemManager` development pass around WC3 item-data parity, manual-ability handling, tooltip generation, icon-path normalization, powerup auto-use integrity, and item-class presentation.
@@ -24,13 +31,30 @@
   `ItemManager_debug` is the current latest version and shall be used for managing the PotS database at this time.
   The `Release` ItemManager build is not yet the current authoritative version and will be updated later after the ongoing debug-side development pass is stabilized.
 
+### Technical Updates
+- `DialogSystem.j`
+  Hardened the shared `ESC` action path so a questgiver can safely clear or replace its own registered escape callback while that callback is executing, preventing self-destroy / stale-trigger issues during non-sequence dialog flows.
+- `qAradion.j`
+  Added more quest-owned Valeria encounter helpers for hero-camera swap timing, standoff movement, standoff facing, and delayed success-state application so the persuasion runtime matches the old GUI pacing more closely without pushing every branch through cinematic-mode handling.
+  Split Valeria persuasion into two clearer runtime paths: wrong answers now use live gameplay dialog only, while the correct answer applies the hostile-stop / ownership-reset transition only after the hero line has played.
+  Added a `PlacedManaRifts[1..3]` binding block in `InitDelayed` and updated rift-slot resolution so the three exact WE Mana Rift globals are the first source of truth inside `qAradion`, with rect-based lookup retained only as fallback for recreated rifts after failure/reset.
+  Kept the additional rect/range fallback guards around rift start detection so main-map ritual start is more resilient if a placed rift is replaced later during quest fail/retry handling.
+
 ### Known Issues
 - `WC3ItemManager`
   The current authoritative build is the debug build, not the release build. Until the release package is refreshed, any newer ItemManager fixes should be verified against `ItemManager_debug`.
+- `qAradion.j` / `QuestSystems`
+  Today's Valeria encounter and mana-rift binding changes were not yet verified end-to-end on the live main map after the code pass. The latest behavior still needs direct gameplay confirmation, especially around `ESC` persuasion flow, post-success hostile stop timing, and ritual start from each real Mana Rift.
+- `qAradion.j` / `Rifts of Corruption`
+  The ritual-start path is now bound to the placed Mana Rift units, but the Aradion portal-closing cast / custom ability ownership path still needs in-map validation against the current runtime.
 
 ### Actions Remaining
 - `WC3ItemManager`
   Update the release ItemManager package later so it matches the current debug build once the ongoing item/database tool changes are considered stable enough to freeze into release.
+- `qAradion.j` / `QuestSystems`
+  Re-test the full Valeria encounter on the main map: intro facing/camera, `ESC` prompt, wrong-answer live gameplay responses, correct-answer stop timing after the hero line, and the follow-up escort progression.
+- `qAradion.j` / `Rifts of Corruption`
+  Re-test all three real Mana Rift starts on the main map and confirm that placed-rift binding, ritual start, Aradion cast behavior, and fail/retry rift recreation all still resolve back into the correct local `qAradion` rift slots.
 
 ## [11.6.2026]
 
