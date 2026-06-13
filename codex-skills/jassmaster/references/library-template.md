@@ -37,4 +37,5 @@ endlibrary
 - Fill in `Version` when the task has a meaningful version value; otherwise leave it blank instead of inventing one.
 - Keep advanced inline comments short.
 - Add basic `globals` and configuration comments when those sections exist.
+- Clean up handle-backed locals properly and null them on all exit paths when the library creates them.
 - Expand `How to install` and `API` when the library exposes setup steps or public functions.
