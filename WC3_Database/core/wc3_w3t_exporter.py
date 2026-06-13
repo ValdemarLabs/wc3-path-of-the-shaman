@@ -301,6 +301,10 @@ class WC3W3TExporter:
         for db_field, (wc3_field, field_type) in self.FIELD_MAP.items():
             # Get value from database or use default for NULL
             value = item.get(db_field)
+
+            if db_field == 'is_powerup':
+                classification = str(item.get('wc3_classification') or '')
+                value = bool(value) or bool(item.get('use_automatically')) or classification.lower() == 'powerup'
             
             # Skip "Unknown Item" names - let WC3 use default name
             if db_field == 'item_name' and value and value.startswith('Unknown Item'):
