@@ -16,6 +16,8 @@
 ## [13.6.2026]
 
 ### Player-Facing Updates
+- `ItemLootSystem.j`
+  Fixed dropped-item floating text cleanup for powerups so their hover text is now removed when the powerup is consumed on pickup instead of lingering after use.
 - `StatsUI.j`
   Restored the pet presentation fallback in `StatsUI` so Shadowclaw no longer degrades into a generic `Pet` entry without a proper name/icon.
   Companion rows now also prefer quest-registered companion icon paths instead of relying only on the weaker generic unit icon lookup fallback.
@@ -47,6 +49,8 @@
   The `Release` ItemManager build is not yet the current authoritative version and will be updated later after the ongoing debug-side development pass is stabilized.
 
 ### Technical Updates
+- `ItemLootSystem.j`
+  Extended item-loot hover-text cleanup to listen to both pickup and item-use events, covering immediate powerup consumption paths that were not fully handled by the pickup-only trigger.
 - `TasQuestBoxLight_PotS.j`
   Locked the legacy standalone `Zones` open button behind library-level visibility handling so it no longer reappears through older `Unhide` / `SetButtonVisible` paths.
   `Zones` access is now kept routed through `MasterUI` instead of exposing the old direct button again.
@@ -95,6 +99,8 @@ Medium-low: [QuestsAndDialogs/QuestMaster.j (line 2749)](/h:/Pelit/PotS_JASS/Que
 Low: qAradion also creates a texttag every second during each rift ritual at [OnRiftsCountdownTick (line 2081)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:2081). Those tags do expire, so this is churn rather than a leak, but a full 3 x 120s run still creates a lot of short-lived UI handles.
 
 ### Known Issues
+- `ItemLootSystem.j`
+  Today's powerup floating-text cleanup fix was not yet verified live in Warcraft III. The immediate check still needed is that dropped powerup text disappears correctly when the item is auto-consumed on pickup.
 - `CameraControl.j` / `ZoneEvent.j`
   Today's immediate camera-reset and fast zone-pan changes were not yet verified live in the main map. The affected paths still need gameplay confirmation in normal, advanced, and special camera modes, plus a quick pass through the intended teleport-style cave/interior/dungeon entries.
 - `WC3ItemManager`
@@ -108,6 +114,8 @@ Low: qAradion also creates a texttag every second during each rift ritual at [On
   The current QuestSystems and Aradion-related quest fixes still need a focused end-to-end test pass before `qAradion` is restructured into a more modular questgiver/template-friendly layout for reuse by other libraries.
 
 ### Actions Remaining
+- `ItemLootSystem.j`
+  Re-test dropped powerups on the main map and confirm their floating text is removed both on normal pickup and on immediate auto-use consumption.
 - `CameraControl.j` / `ZoneEvent.j`
   Re-test camera reset inputs with mouse wheel and `PageUp` / `PageDown`, then verify the fast-pan behavior on the intended far-transition subzones such as cave/interior teleports, Boom Mine, Gnoll Hideout, The Crypt, and Firelands.
 - `WC3ItemManager`
