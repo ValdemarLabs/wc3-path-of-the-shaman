@@ -34,11 +34,30 @@
 ### Technical Updates
 - `DialogSystem.j`
   Hardened the shared `ESC` action path so a questgiver can safely clear or replace its own registered escape callback while that callback is executing, preventing self-destroy / stale-trigger issues during non-sequence dialog flows.
+- `CameraControl.j`
+  Removed the old normal-mode safe / no-clipping correction path from active runtime use, added a safer special-camera preset configuration structure for future internal rect-driven camera modes, fixed the stuck-rotation case when chat is opened during arrow-key camera turning, and cleaned up special-camera helper ordering so the library follows plain JASS call-order rules.
+- `CameraUI.j`
+  Removed the obsolete `Safe Camera` / no-clip toggle button and related readout so the camera panel now matches the current `CameraControl` runtime instead of exposing the retired legacy option.
 - `qAradion.j`
   Added more quest-owned Valeria encounter helpers for hero-camera swap timing, standoff movement, standoff facing, and delayed success-state application so the persuasion runtime matches the old GUI pacing more closely without pushing every branch through cinematic-mode handling.
   Split Valeria persuasion into two clearer runtime paths: wrong answers now use live gameplay dialog only, while the correct answer applies the hostile-stop / ownership-reset transition only after the hero line has played.
   Added a `PlacedManaRifts[1..3]` binding block in `InitDelayed` and updated rift-slot resolution so the three exact WE Mana Rift globals are the first source of truth inside `qAradion`, with rect-based lookup retained only as fallback for recreated rifts after failure/reset.
   Kept the additional rect/range fallback guards around rift start detection so main-map ritual start is more resilient if a placed rift is replaced later during quest fail/retry handling.
+
+#### Lag and possible leak investigation
+From the 8-13 June 2026 changelog entries, the strongest suspects are not the new DialogSystem ESC hook, but the newer camera and quest-runtime polling.
+
+High: [UI/CameraControl.j (line 876)](/h:/Pelit/PotS_JASS/UI/CameraControl.j:876) is the clearest FPS risk. CC_DriftTimer runs every 0.03 seconds, and for each normal-mode player it can call [CC_UpdateNormalEffectiveDistance (line 510)](/h:/Pelit/PotS_JASS/UI/CameraControl.j:510), which ray-traces the camera path in 50-unit steps and, on blocked samples, falls back to [EnumItemsInRect path checks (line 205)](/h:/Pelit/PotS_JASS/UI/CameraControl.j:205). With the default 1650 distance, that is roughly 30+ samples per recompute. This matches the changelog suspicion almost exactly: heavy periodic work, no leak required, just raw CPU.
+
+High: [QuestsAndDialogs/QuestGiver.j (line 1898)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGiver.j:1898), [QuestsAndDialogs/QuestGiver.j (line 1986)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGiver.j:1986), and [QuestsAndDialogs/QuestGiver.j (line 2085)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGiver.j:2085) start permanent polling timers for FindNPC, GoToPlace, and Reputation. I found no matching unregister/destroy path for those timers anywhere in the file, while their counts only ever increase at [1881 (line 1881)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGiver.j:1881), [1971 (line 1971)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGiver.j:1971), and [2070 (line 2070)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGiver.j:2070). That means every such requirement ever registered leaves background polling behind for the rest of the session. This is a good explanation for “lag gets worse nowadays”.
+
+Medium-high: qAradion now uses both trigger-based rift detection and a separate 0.50 second field monitor. The trigger path is registered in [RegisterRiftUnits (line 1695)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:1695) and [RegisterRiftsProximityTrigger (line 1825)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:1825), while the poll loop is started at [OnAcceptQuest4End (line 2696)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:2696) and runs in [OnRiftsFieldTick (line 2195)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:2195). That poll loop repeatedly scans all rifts and calls [GetAllowedRiftHeroForIndex (line 1953)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:1953), even though the in-range trigger already exists. It is not the worst offender, but it is new, always-on during the quest, and redundant.
+
+Medium: qAradion has classic JASS handle-leak candidates in the newer timer/event code. Examples: [OnValeriaEncounterRandomTick (line 760)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:760) creates a timer and never nulls local t; [OnValeriaEncounterRangeTick (line 780)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:780), [OnRiftsProximity (line 1798)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:1798), [OnRiftsFieldTick (line 2195)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:2195), [GetAllowedRiftHeroInRange (line 1932)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:1932), and [GetAllowedRiftHeroForIndex (line 1953)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:1953) all use local unit handles without nulling them before exit. If your build path still behaves like classic JASS, these are real long-session leak candidates.
+
+Medium-low: [QuestsAndDialogs/QuestMaster.j (line 2749)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestMaster.j:2749) refreshes availability for every quest giver every 5.00 seconds from [Init (line 2756)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestMaster.j:2756). This is not a leak, but it is global background work that scales with content.
+
+Low: qAradion also creates a texttag every second during each rift ritual at [OnRiftsCountdownTick (line 2081)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:2081). Those tags do expire, so this is churn rather than a leak, but a full 3 x 120s run still creates a lot of short-lived UI handles.
 
 ### Known Issues
 - `WC3ItemManager`
