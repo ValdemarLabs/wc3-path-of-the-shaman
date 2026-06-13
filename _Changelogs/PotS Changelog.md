@@ -16,6 +16,9 @@
 ## [13.6.2026]
 
 ### Player-Facing Updates
+- `StatsUI.j`
+  Restored the pet presentation fallback in `StatsUI` so Shadowclaw no longer degrades into a generic `Pet` entry without a proper name/icon.
+  Companion rows now also prefer quest-registered companion icon paths instead of relying only on the weaker generic unit icon lookup fallback.
 - `Camera / Zone transitions`
   Camera reset inputs now snap the view back into the currently active camera mode immediately, so mouse-wheel and `PageUp` / `PageDown` usage no longer leave the player outside the intended live camera state.
   Teleport-style entries into selected caves, interiors, and dungeon subzones now fast-pan the camera directly to the tracked hero unit instead of letting the view linger at the old location after a far transition.
@@ -32,6 +35,8 @@
 
 ### Tool Updates
 - `WC3ItemManager`
+  Generated fresh ItemManager debug logs and new `ItemData_20260613_*.w3t` exports during today's database/tooling session.
+- `WC3ItemManager`
   Continued the current `ItemManager` development pass around WC3 item-data parity, manual-ability handling, tooltip generation, icon-path normalization, powerup auto-use integrity, and item-class presentation.
   Added support paths for richer WC3 ability lookup/import usage in the toolchain, including ability tooltip-related schema updates and related importer/exporter compatibility work needed by the active item-database workflow.
   Improved ItemManager handling for item classes and class-driven presentation so newer slot/class entries such as `Ability` and `Skill` can be seeded into the database and used more consistently by the tool.
@@ -40,6 +45,10 @@
   The `Release` ItemManager build is not yet the current authoritative version and will be updated later after the ongoing debug-side development pass is stabilized.
 
 ### Technical Updates
+- `QuestGiver.j`
+  Added a small public companion-icon accessor so shared UI code can read the currently registered icon for companion rows directly from the quest companion registry instead of duplicating lookup state.
+- `StatsUI.j`
+  Added explicit Shadowclaw fallback handling for display name/icon resolution and switched companion icon resolution to use the `QuestGiver` companion registry before falling back to generic runtime lookups.
 - `DialogSystem.j`
   Hardened the shared `ESC` action path so a questgiver can safely clear or replace its own registered escape callback while that callback is executing, preventing self-destroy / stale-trigger issues during non-sequence dialog flows.
 - `CameraControl.j`
