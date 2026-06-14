@@ -64,9 +64,10 @@ globals
 	private constant real RIFTS_WAVE_PERIOD = 30.00
 	private constant real RIFTS_COMBAT_PERIOD = 40.00
 	private constant real RIFTS_COUNTDOWN_PERIOD = 1.00
+	private constant real RIFTS_FAIL_RESET_DELAY = 30.00
 	private constant real RIFTS_ARADION_OFFSET = 500.00
 	private constant real RIFTS_VALERIA_OFFSET = 200.00
-	private constant real RIFTS_INTRO_VALERIA_OFFSET = 900.00
+	private constant real RIFTS_INTRO_VALERIA_OFFSET = 1200.00
 	private constant real FADING_SPARKS_CHANNEL_TIME = 2.00
 	private constant real FADING_SPARKS_HEALTH_THRESHOLD = 50.00
 	private constant real FADING_SPARKS_DAMAGE = 6000.00
@@ -99,6 +100,7 @@ globals
 	private unit Aradion = null							
 	private unit Nazgrek = null							
 	private unit Valeria = null							
+	private player AradionHomeOwner = null
 	private integer AradionInfoSeq = 0					// Stores the info sequence ID for reuse (prevents rebuilding every time)
 	private unit SelectedHero = null					// temp variable to track which hero is interacting
 
@@ -159,9 +161,13 @@ globals
 	private integer RiftsCountdownRemaining = 0
 	private boolean RiftsAwaitingReturnHome = false
 	private boolean RiftsReturnedHome = false
+	private boolean FieldLineQueueBusy = false
 	private boolean FadingSparksFinished = false
+	private boolean RiftsFailureInProgress = false
 	private boolean array RiftsClosed
 	private string RiftsPendingFailReason = ""
+	private unit RiftsFailedUnit = null
+	private unit RiftsFailureSurvivor = null
 
 	private constant integer ARADION_QID_RANGER = 1
 	private constant integer ARADION_QID_CRYSTALS = 2
@@ -1329,6 +1335,7 @@ public function HandleValeriaNegotiationButton takes nothing returns nothing
 	local button clicked = DialogSystem_LastButton
 	local integer lineId = 0
 	set ValeriaNegotiationPromptPending = false
+	call DialogSystem_ClearEscapeAction()
 	loop
 		exitwhen i > ValeriaNegotiationButtonCount
 		if clicked == ValeriaNegotiationButtons[i] then
@@ -1382,6 +1389,8 @@ private function StartValeriaEncounterInternal takes unit hero returns nothing
 	call StopValeriaPatrolInternal()
 	call UnitRemoveAbility(Valeria, ABIL_VALERIA_GHOST)
 	call SetUnitMoveSpeed(Valeria, GetUnitDefaultMoveSpeed(Valeria))
+	call IssueImmediateOrder(hero, "stop")
+	call ForceUnitsFaceEachOther(hero, Valeria)
 	call DialogSystem_MakeFaceEachOther(Valeria, hero, 0.75)
 	call StartValeriaDialogCameraSafe(180.00, 70.00)
 	set seq = DialogSystem_CreateSequence()
@@ -1394,6 +1403,9 @@ private function StartValeriaEncounterInternal takes unit hero returns nothing
 	call DialogSystem_AddDelay(seq, 1.50)
 	call DialogSystem_AddDelay(seq, 1.00)
 	call DialogSystem_AddLine(seq, Valeria, "Valeria", "Filthy orc lies! I'll drop you where you stand!", "Valeria_0002", true)
+	call DialogSystem_BindLineAction(seq, 1, function ForceValeriaNegotiationFacing)
+	call DialogSystem_BindLineAction(seq, 2, function ForceValeriaNegotiationFacing)
+	call DialogSystem_BindLineAction(seq, 3, function ForceValeriaNegotiationFacing)
 	call DialogSystem_BindLineAction(seq, 3, function StartValeriaHeroDialogCamera)
 	call DialogSystem_BindLineAction(seq, 4, function MoveValeriaBehindHeroForStandoff)
 	call DialogSystem_BindLineAction(seq, 5, function StopValeriaAtStandoff)
@@ -1750,7 +1762,7 @@ private function ClearFieldLineQueue takes nothing returns nothing
 		set FieldLineQueueTimer = null
 	endif
 	loop
-		exitwhen i > FieldLineQueueCount
+		exitwhen i > FIELD_LINE_QUEUE_MAX
 		set FieldLineQueueSpeakers[i] = null
 		set FieldLineQueueSpeakerNames[i] = ""
 		set FieldLineQueueSoundNames[i] = ""
@@ -1758,6 +1770,7 @@ private function ClearFieldLineQueue takes nothing returns nothing
 		set i = i + 1
 	endloop
 	set FieldLineQueueCount = 0
+	set FieldLineQueueBusy = false
 endfunction
 
 private function ShowFieldLine takes unit speaker, string speakerName, string soundName, string text returns nothing
@@ -1771,9 +1784,14 @@ private function PlayNextFieldLine takes nothing returns nothing
 	local real delay
 	local integer i
 	if FieldLineQueueCount <= 0 then
-		call ClearFieldLineQueue()
+		set FieldLineQueueBusy = false
+		if FieldLineQueueTimer != null then
+			call DestroyTimer(FieldLineQueueTimer)
+			set FieldLineQueueTimer = null
+		endif
 		return
 	endif
+	set FieldLineQueueBusy = true
 	call ShowFieldLine(FieldLineQueueSpeakers[1], FieldLineQueueSpeakerNames[1], FieldLineQueueSoundNames[1], FieldLineQueueTexts[1])
 	if FieldLineQueueSpeakers[1] != null and QuestGiver_IsUnitAlive(FieldLineQueueSpeakers[1]) and FieldLineQueueSoundNames[1] != "" and udg_ExSoundDuration > 0.00 then
 		set delay = udg_ExSoundDuration
@@ -1794,14 +1812,10 @@ private function PlayNextFieldLine takes nothing returns nothing
 	set FieldLineQueueSoundNames[FieldLineQueueCount] = ""
 	set FieldLineQueueTexts[FieldLineQueueCount] = ""
 	set FieldLineQueueCount = FieldLineQueueCount - 1
-	if FieldLineQueueCount > 0 then
-		if FieldLineQueueTimer == null then
-			set FieldLineQueueTimer = CreateTimer()
-		endif
-		call TimerStart(FieldLineQueueTimer, delay, false, function PlayNextFieldLine)
-	else
-		call ClearFieldLineQueue()
+	if FieldLineQueueTimer == null then
+		set FieldLineQueueTimer = CreateTimer()
 	endif
+	call TimerStart(FieldLineQueueTimer, delay, false, function PlayNextFieldLine)
 endfunction
 
 private function QueueFieldLine takes unit speaker, string speakerName, string soundName, string text returns nothing
@@ -1816,7 +1830,7 @@ private function QueueFieldLine takes unit speaker, string speakerName, string s
 	set FieldLineQueueSpeakerNames[FieldLineQueueCount] = speakerName
 	set FieldLineQueueSoundNames[FieldLineQueueCount] = soundName
 	set FieldLineQueueTexts[FieldLineQueueCount] = text
-	if FieldLineQueueCount == 1 and FieldLineQueueTimer == null then
+	if not FieldLineQueueBusy then
 		call PlayNextFieldLine()
 	endif
 endfunction
@@ -1996,21 +2010,17 @@ private function PrepareValeriaForRiftsIntro takes nothing returns nothing
 	local real facing
 	local real startX
 	local real startY
-	local real targetX
-	local real targetY
 	if Aradion == null or Valeria == null or not QuestGiver_IsUnitAlive(Aradion) or not QuestGiver_IsUnitAlive(Valeria) then
 		return
 	endif
 	call StopFollow(Valeria)
 	call StopValeriaPatrolInternal()
 	set facing = GetUnitFacing(Aradion) * bj_DEGTORAD
-	set startX = GetUnitX(Aradion) - RIFTS_INTRO_VALERIA_OFFSET * Cos(facing)
-	set startY = GetUnitY(Aradion) - RIFTS_INTRO_VALERIA_OFFSET * Sin(facing)
-	set targetX = GetUnitX(Aradion) + RIFTS_VALERIA_OFFSET * Cos(facing)
-	set targetY = GetUnitY(Aradion) + RIFTS_VALERIA_OFFSET * Sin(facing)
+	set startX = GetUnitX(Aradion) + RIFTS_INTRO_VALERIA_OFFSET * Cos(facing)
+	set startY = GetUnitY(Aradion) + RIFTS_INTRO_VALERIA_OFFSET * Sin(facing)
 	call SetUnitPosition(Valeria, startX, startY)
-	call SetUnitFacing(Valeria, bj_RADTODEG * Atan2(GetUnitY(Aradion) - startY, GetUnitX(Aradion) - startX))
-	call IssuePointOrder(Valeria, "move", targetX, targetY)
+	call SetUnitFacing(Valeria, 192.00)
+	call IssuePointOrder(Valeria, "move", GetRectCenterX(gg_rct_ValeriaNewPos), GetRectCenterY(gg_rct_ValeriaNewPos))
 endfunction
 
 private function OrderAradionToChannelCurrentRift takes nothing returns nothing
@@ -2027,8 +2037,8 @@ private function OrderAradionToChannelCurrentRift takes nothing returns nothing
 	endif
 	set rx = GetUnitX(RiftsCurrentRift)
 	set ry = GetUnitY(RiftsCurrentRift)
+	call ResetUnitAnimation(Aradion)
 	call IssuePointOrder(Aradion, "blizzard", rx, ry)
-	call SetUnitAnimation(Aradion, "spell")
 endfunction
 
 private function DestroyRiftsProximityTrigger takes nothing returns nothing
@@ -2092,7 +2102,7 @@ private function StartRiftsRitualInternal takes unit riftUnit, integer riftIndex
 	if riftIndex <= 0 or riftIndex > RIFTS_MAX or RiftsClosed[riftIndex] then
 		return
 	endif
-	if RiftsRitualActive then
+	if RiftsRitualActive or RiftsFailureInProgress then
 		return
 	endif
 	set SelectedHero = hero
@@ -2102,6 +2112,7 @@ private function StartRiftsRitualInternal takes unit riftUnit, integer riftIndex
 	set RiftsRitualActive = true
 	set RiftsNextWaveN = 1
 	call ClearFieldLineQueue()
+	call DestroyRiftsProximityTrigger()
 	call Companions_Suspend(Aradion)
 	call StopValeriaPatrolInternal()
 	call IssueImmediateOrder(Aradion, "stop")
@@ -2121,7 +2132,7 @@ private function OnRiftsProximity takes nothing returns nothing
 	local integer riftIndex
 	local unit riftUnit
 	call SyncUnitReferences()
-	if not RiftsQuestActive or RiftsRitualActive or RiftsAwaitingReturnHome then
+	if not RiftsQuestActive or RiftsRitualActive or RiftsAwaitingReturnHome or RiftsFailureInProgress then
 		set hero = null
 		return
 	endif
@@ -2211,6 +2222,13 @@ private function StopRiftsFieldMonitor takes nothing returns nothing
 	endif
 endfunction
 
+private function StopRiftsFailResetTimer takes nothing returns nothing
+	if RiftsFailResetTimer != null then
+		call DestroyTimer(RiftsFailResetTimer)
+		set RiftsFailResetTimer = null
+	endif
+endfunction
+
 private function ResetRiftsObjectivesForNewRun takes QuestData q returns nothing
 	if q == 0 then
 		return
@@ -2233,6 +2251,89 @@ private function ResetRiftsObjectivesForNewRun takes QuestData q returns nothing
 	call q.refreshQuestLog()
 endfunction
 
+private function GetRiftsFailurePrimaryText takes unit failedUnit returns string
+	if failedUnit == Valeria then
+		return "Forgive me... my love... I... have failed..."
+	elseif failedUnit == Aradion then
+		return "The current was... too strong... I..."
+	endif
+	return ""
+endfunction
+
+private function GetRiftsFailurePrimarySound takes unit failedUnit returns string
+	if failedUnit == Valeria then
+		return "Valeria_0064"
+	elseif failedUnit == Aradion then
+		return "Aradion_0086"
+	endif
+	return ""
+endfunction
+
+private function GetRiftsFailureReplyText takes unit failedUnit returns string
+	if failedUnit == Valeria then
+		return "Valeria!"
+	elseif failedUnit == Aradion then
+		return "Aradion...? No!!!"
+	endif
+	return ""
+endfunction
+
+private function GetRiftsFailureReplySound takes unit failedUnit returns string
+	if failedUnit == Valeria then
+		return "Aradion_0079"
+	elseif failedUnit == Aradion then
+		return "Valeria_0063"
+	endif
+	return ""
+endfunction
+
+private function FreezeRiftsFailedUnit takes nothing returns nothing
+	local timer t = GetExpiredTimer()
+	if RiftsFailedUnit != null and GetUnitTypeId(RiftsFailedUnit) != 0 then
+		call SetUnitTimeScale(RiftsFailedUnit, 0.00)
+	endif
+	if t != null then
+		call DestroyTimer(t)
+	endif
+	set t = null
+endfunction
+
+private function PrepareRiftsFailedUnit takes unit failedUnit returns nothing
+	local timer t
+	local real deathTime
+	if failedUnit == null or not QuestGiver_IsUnitAlive(failedUnit) then
+		return
+	endif
+	call SetUnitInvulnerable(failedUnit, true)
+	call SetUnitOwner(failedUnit, Player(PLAYER_NEUTRAL_PASSIVE), true)
+	call IssueImmediateOrder(failedUnit, "stop")
+	call SetUnitAnimation(failedUnit, "death")
+	call PauseUnit(failedUnit, true)
+	set deathTime = BlzGetUnitRealField(failedUnit, UNIT_RF_DEATH_TIME)
+	if deathTime <= 0.00 then
+		set deathTime = 1.50
+	endif
+	set t = CreateTimer()
+	call TimerStart(t, deathTime, false, function FreezeRiftsFailedUnit)
+	set t = null
+endfunction
+
+private function RestoreRiftsQuestUnitAtHome takes unit u, player ownerP, real x, real y, real facing returns nothing
+	if u == null or GetUnitTypeId(u) == 0 then
+		return
+	endif
+	call PauseUnit(u, false)
+	call SetUnitTimeScale(u, 1.00)
+	call SetUnitInvulnerable(u, false)
+	call SetUnitOwner(u, ownerP, true)
+	call SetWidgetLife(u, BlzGetUnitMaxHP(u))
+	call ResetUnitAnimation(u)
+	call SetUnitAnimation(u, "stand")
+	call SetUnitPosition(u, x, y)
+	call SetUnitFacing(u, facing)
+	call IssueImmediateOrder(u, "stop")
+endfunction
+
 private function StopRiftsCompanionsAtHomeInternal takes nothing returns nothing
 	call StopFieldCompanions()
 	if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
@@ -2246,19 +2347,19 @@ private function StopRiftsCompanionsAtHomeInternal takes nothing returns nothing
 endfunction
 
 private function ReturnRiftsCompanionsHomeInternal takes nothing returns nothing
+	local player aradionOwner = AradionHomeOwner
 	call StopFieldCompanions()
+	if aradionOwner == null and Aradion != null then
+		set aradionOwner = GetOwningPlayer(Aradion)
+	endif
 	if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
-		call SetUnitInvulnerable(Aradion, false)
-		call SetUnitPosition(Aradion, GetRectCenterX(gg_rct_AradionPos), GetRectCenterY(gg_rct_AradionPos))
-		call SetUnitFacing(Aradion, 184.00)
-		call IssueImmediateOrder(Aradion, "stop")
+		call RestoreRiftsQuestUnitAtHome(Aradion, aradionOwner, GetRectCenterX(gg_rct_AradionPos), GetRectCenterY(gg_rct_AradionPos), 184.00)
 	endif
 	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
-		call SetUnitInvulnerable(Valeria, false)
-		call SetUnitPosition(Valeria, GetRectCenterX(gg_rct_ValeriaNewPos), GetRectCenterY(gg_rct_ValeriaNewPos))
-		call SetUnitFacing(Valeria, 192.00)
+		call RestoreRiftsQuestUnitAtHome(Valeria, Player(VALERIA_HOME_OWNER), GetRectCenterX(gg_rct_ValeriaNewPos), GetRectCenterY(gg_rct_ValeriaNewPos), 192.00)
 		call StartValeriaHomePatrolInternal()
 	endif
+	set aradionOwner = null
 endfunction
 
 private function HandleRiftsReturnedHome takes nothing returns nothing
@@ -2471,8 +2572,6 @@ private function OnRiftsCountdownTick takes nothing returns nothing
 	endif
 	if RiftsCurrentRift != null and QuestGiver_IsUnitAlive(RiftsCurrentRift) and GetUnitCurrentOrder(Aradion) != OrderId("blizzard") then
 		call OrderAradionToChannelCurrentRift()
-	elseif RiftsCurrentRift != null and QuestGiver_IsUnitAlive(RiftsCurrentRift) then
-		call SetUnitAnimation(Aradion, "spell")
 	endif
 	if RiftsCountdownRemaining <= 0 then
 		return
@@ -2522,6 +2621,8 @@ endfunction
 private function FinishRiftsCurrentRitual takes nothing returns nothing
 	local unit hero
 	local unit closedRift = RiftsCurrentRift
+	local real closedRiftX = 0.00
+	local real closedRiftY = 0.00
 	call SyncUnitReferences()
 	if not RiftsQuestActive then
 		return
@@ -2533,9 +2634,13 @@ private function FinishRiftsCurrentRitual takes nothing returns nothing
 		set RiftsClosed[RiftsCurrentIndex] = true
 		set RiftsUnits[RiftsCurrentIndex] = null
 	endif
-	if closedRift != null and QuestGiver_IsUnitAlive(closedRift) then
-		call DestroyEffect(AddSpecialEffect("Objects\\Spawnmodels\\NightElf\\NECancelDeath\\NECancelDeath.mdl", GetUnitX(closedRift), GetUnitY(closedRift)))
-		call KillUnit(closedRift)
+	if closedRift != null and GetUnitTypeId(closedRift) != 0 then
+		set closedRiftX = GetUnitX(closedRift)
+		set closedRiftY = GetUnitY(closedRift)
+		call DestroyEffect(AddSpecialEffect("Objects\\Spawnmodels\\NightElf\\NECancelDeath\\NECancelDeath.mdl", closedRiftX, closedRiftY))
+		if GetWidgetLife(closedRift) > 0.405 then
+			call KillUnit(closedRift)
+		endif
 		call RemoveUnit(closedRift)
 	endif
 	set RiftsRitualActive = false
@@ -2585,7 +2690,7 @@ private function OnRiftsFieldTick takes nothing returns nothing
 	local integer i = 1
 	local unit hero
 	local unit riftUnit
-	if not RiftsQuestActive then
+	if not RiftsQuestActive or RiftsFailureInProgress then
 		return
 	endif
 	if RiftsAwaitingReturnHome then
@@ -2632,7 +2737,13 @@ private function OrderRiftsSurvivorToFallenCompanion takes nothing returns nothi
 	local unit fallen = null
 	local real x
 	local real y
-	if Aradion != null and Valeria != null and QuestGiver_IsUnitAlive(Aradion) and QuestGiver_IsUnitAlive(Valeria) then
+	if RiftsFailedUnit == Aradion and Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
+		set survivor = Valeria
+		set fallen = Aradion
+	elseif RiftsFailedUnit == Valeria and Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
+		set survivor = Aradion
+		set fallen = Valeria
+	elseif Aradion != null and Valeria != null and QuestGiver_IsUnitAlive(Aradion) and QuestGiver_IsUnitAlive(Valeria) then
 		if GetWidgetLife(Aradion) <= 1.05 then
 			set survivor = Valeria
 			set fallen = Aradion
@@ -2644,8 +2755,10 @@ private function OrderRiftsSurvivorToFallenCompanion takes nothing returns nothi
 	if survivor != null and fallen != null then
 		set x = GetUnitX(fallen)
 		set y = GetUnitY(fallen)
+		call SetUnitInvulnerable(survivor, true)
 		call IssuePointOrder(survivor, "move", x, y)
 	endif
+	set RiftsFailureSurvivor = survivor
 	set survivor = null
 	set fallen = null
 endfunction
@@ -2664,6 +2777,7 @@ private function FinalizeRiftsFailureReset takes nothing returns nothing
 	set RiftsCountdownRemaining = 0
 	set RiftsAwaitingReturnHome = false
 	set RiftsReturnedHome = false
+	set RiftsFailureInProgress = false
 	call ResetRiftsClosedState()
 	call ReturnRiftsCompanionsHomeInternal()
 	call RegisterRiftUnits()
@@ -2671,11 +2785,12 @@ private function FinalizeRiftsFailureReset takes nothing returns nothing
 	if q != 0 then
 		call ResetRiftsObjectivesForNewRun(q)
 	endif
-	call QuestGiver_FailQuestByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion, RiftsPendingFailReason)
 	call QuestGiver_SetStateByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion, QUEST_STATE_AVAILABLE)
 	call QuestGiver_UpdateQuestByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
 	call QuestGiver_RefreshAvailabilityForGiver(Aradion)
 	set RiftsPendingFailReason = ""
+	set RiftsFailedUnit = null
+	set RiftsFailureSurvivor = null
 	if t == RiftsFailResetTimer then
 		set RiftsFailResetTimer = null
 	endif
@@ -2686,16 +2801,42 @@ private function FinalizeRiftsFailureReset takes nothing returns nothing
 	set t = null
 endfunction
 
+private function PlayRiftsFailureSurvivorLine takes nothing returns nothing
+	local timer t = GetExpiredTimer()
+	local string text
+	local string soundName
+	if RiftsFailureSurvivor != null and RiftsFailedUnit != null and QuestGiver_IsUnitAlive(RiftsFailureSurvivor) then
+		set text = GetRiftsFailureReplyText(RiftsFailedUnit)
+		set soundName = GetRiftsFailureReplySound(RiftsFailedUnit)
+		call DialogSystem_PlayLine(RiftsFailureSurvivor, QuestGiver_GetUnitDisplayName(RiftsFailureSurvivor), text, soundName, true)
+	endif
+	call QuestGiver_FailQuestByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion, RiftsPendingFailReason)
+	call StopRiftsFailResetTimer()
+	set RiftsFailResetTimer = CreateTimer()
+	call TimerStart(RiftsFailResetTimer, RIFTS_FAIL_RESET_DELAY, false, function FinalizeRiftsFailureReset)
+	if t != null then
+		call DestroyTimer(t)
+	endif
+	set t = null
+endfunction
+
 private function HandleRiftsFailure takes string reason returns nothing
+	local timer t
+	local string text
+	local string soundName
+	local real delay
 	call SyncUnitReferences()
-	if not QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion) or QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion) then
+	if RiftsFailureInProgress or not QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion) or QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion) then
 		return
 	endif
+	set RiftsFailureInProgress = true
 	call StopRiftsRuntimeTimers()
 	call StopRiftsFieldMonitor()
 	call ClearRiftsWaveHandles()
 	call ClearFieldLineQueue()
 	call DisableRiftsFailTriggers()
+	call DestroyRiftsProximityTrigger()
+	call StopRiftsFailResetTimer()
 	if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
 		call IssueImmediateOrder(Aradion, "stop")
 		call UnitRemoveAbility(Aradion, ABIL_RIFT_CLOSE)
@@ -2704,15 +2845,34 @@ private function HandleRiftsFailure takes string reason returns nothing
 	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
 		call IssueImmediateOrder(Valeria, "stop")
 	endif
-	call Companions_Suspend(Aradion)
-	call Companions_Suspend(Valeria)
+	call StopFieldCompanions()
+	if RiftsFailedUnit != null and QuestGiver_IsUnitAlive(RiftsFailedUnit) then
+		call PrepareRiftsFailedUnit(RiftsFailedUnit)
+	endif
 	call OrderRiftsSurvivorToFallenCompanion()
 	set RiftsPendingFailReason = reason
-	if RiftsFailResetTimer != null then
-		call DestroyTimer(RiftsFailResetTimer)
+	if RiftsFailedUnit == null then
+		call QuestGiver_FailQuestByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion, RiftsPendingFailReason)
+		call StopRiftsFailResetTimer()
+		set RiftsFailResetTimer = CreateTimer()
+		call TimerStart(RiftsFailResetTimer, RIFTS_FAIL_RESET_DELAY, false, function FinalizeRiftsFailureReset)
+		return
 	endif
-	set RiftsFailResetTimer = CreateTimer()
-	call TimerStart(RiftsFailResetTimer, 2.00, false, function FinalizeRiftsFailureReset)
+	set text = GetRiftsFailurePrimaryText(RiftsFailedUnit)
+	set soundName = GetRiftsFailurePrimarySound(RiftsFailedUnit)
+	if text != "" then
+		call DialogSystem_PlayLine(RiftsFailedUnit, QuestGiver_GetUnitDisplayName(RiftsFailedUnit), text, soundName, true)
+		if udg_ExSoundDuration > 0.00 then
+			set delay = udg_ExSoundDuration
+		else
+			set delay = EstimateFieldLineDuration(text)
+		endif
+	else
+		set delay = 0.50
+	endif
+	set t = CreateTimer()
+	call TimerStart(t, delay, false, function PlayRiftsFailureSurvivorLine)
+	set t = null
 endfunction
 
 private function StopFadingSparksTimer takes nothing returns nothing
@@ -2821,25 +2981,35 @@ private function RegisterFadingSparksSpellTriggers takes nothing returns nothing
 endfunction
 
 private function OnRiftsValeriaDamaged takes nothing returns nothing
-	if not RiftsQuestActive or Valeria == null then
+	if not RiftsQuestActive or RiftsFailureInProgress or Valeria == null then
 		return
 	endif
 	if GetEventDamage() < GetWidgetLife(Valeria) - 0.41 then
 		return
 	endif
 	call BlzSetEventDamage(GetWidgetLife(Valeria) - 1.00)
-	call HandleRiftsFailure("Valeria fell during the ritual.")
+	set RiftsFailedUnit = Valeria
+	if RiftsRitualActive then
+		call HandleRiftsFailure("Valeria fell during the ritual.")
+	else
+		call HandleRiftsFailure("Valeria has died.")
+	endif
 endfunction
 
 private function OnRiftsAradionDamaged takes nothing returns nothing
-	if not RiftsQuestActive or Aradion == null then
+	if not RiftsQuestActive or RiftsFailureInProgress or Aradion == null then
 		return
 	endif
 	if GetEventDamage() < GetWidgetLife(Aradion) - 0.41 then
 		return
 	endif
 	call BlzSetEventDamage(GetWidgetLife(Aradion) - 1.00)
-	call HandleRiftsFailure("Aradion fell during the ritual.")
+	set RiftsFailedUnit = Aradion
+	if RiftsRitualActive then
+		call HandleRiftsFailure("Aradion fell during the ritual.")
+	else
+		call HandleRiftsFailure("Aradion has died.")
+	endif
 endfunction
 
 private function EnableRiftsFailTriggers takes nothing returns nothing
@@ -3054,19 +3224,33 @@ private function OnCompleteQuest1 takes nothing returns nothing
 	set seq = QuestGiver_CreateBaseSequence(Aradion, "Aradion the Farseer")
 	call DialogSystem_SetSequenceCallbacks(seq, null, function OnCompleteQuest1End)
 	set hero = ResolveDialogHero()
+	if Aradion != null and Valeria != null then
+		call ForceUnitsFaceEachOther(Aradion, Valeria)
+	endif
+	if hero != null and Aradion != null then
+		call ForceUnitsFaceEachOther(hero, Aradion)
+	endif
 	
+	if hero != null and Valeria != null then
+		call DialogSystem_AddMakeUnitFaceUnit(seq, hero, Valeria, 0.75, 0.0)
+	endif
 	call DialogSystem_AddMakeUnitFaceUnit(seq, Aradion, Valeria, 0.75, 0.0)
 	call DialogSystem_AddLine(seq, Valeria, "Valeria", "Aradion… It is you! I thought I'd never see you again.", "Valeria_0023", true)
+	if hero != null and Aradion != null then
+		call DialogSystem_AddMakeUnitFaceUnit(seq, hero, Aradion, 0.75, 0.0)
+	endif
 	call DialogSystem_AddMakeUnitFaceUnit(seq, Valeria, Aradion, 0.75, 0.0)
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Valeria? By the stars… you yet live!", "Aradion_0031", true)
 	call DialogSystem_AddMakeUnitFaceUnit(seq, Valeria, Aradion, 0.75, 0.0)
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "I feared that I had lost you… forgive me for losing hope.", "Aradion_0032", true)
 	if hero == Nazgrek then
+		call DialogSystem_AddMakeUnitFaceUnit(seq, hero, Valeria, 0.75, 0.0)
 		call DialogSystem_AddMakeUnitFaceUnit(seq, Valeria, hero, 0.75, 0.0)
 		call DialogSystem_AddDelay(seq, 1.00)
 		call DialogSystem_AddLine(seq, Valeria, "Valeria", "This orc… he spoke your name, my love. It is the only reason I followed him.", "Valeria_0024", true)
 	else
 		if hero != null then
+			call DialogSystem_AddMakeUnitFaceUnit(seq, hero, Valeria, 0.75, 0.0)
 			call DialogSystem_AddMakeUnitFaceUnit(seq, Valeria, hero, 0.75, 0.0)
 			call DialogSystem_AddDelay(seq, 1.00)
 		endif
@@ -3075,17 +3259,20 @@ private function OnCompleteQuest1 takes nothing returns nothing
 	if hero != null then
 		call DialogSystem_AddMakeUnitFaceUnit(seq, Valeria, Aradion, 0.75, 0.0)
 		call DialogSystem_AddMakeUnitFaceUnit(seq, Aradion, hero, 0.75, 0.0)
+		call DialogSystem_AddMakeUnitFaceUnit(seq, hero, Aradion, 0.75, 0.0)
 		call DialogSystem_AddDelay(seq, 2.00)
 	endif
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Then I was right. You are no foe, but a seeker.", "Aradion_0033", true)
 	call DialogSystem_AddMakeUnitFaceUnit(seq, Aradion, Valeria, 0.75, 0.0)
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "You have given me back my heart, shaman. For this… I owe you more than I can say.", "Aradion_0034", true)
 	if hero == Nazgrek then
+		call DialogSystem_AddMakeUnitFaceUnit(seq, hero, Valeria, 0.75, 0.0)
 		call DialogSystem_AddMakeUnitFaceUnit(seq, Valeria, hero, 0.75, 0.0)
 		call DialogSystem_AddMakeUnitFaceUnit(seq, Aradion, hero, 0.75, 0.0)
 		call DialogSystem_AddLine(seq, Valeria, "Valeria", "…Do not think this earns my trust fully, orc. But… for Aradion's sake, I'm giving you a chance.", "Valeria_0025", true)
 	else
 		if hero != null then
+			call DialogSystem_AddMakeUnitFaceUnit(seq, hero, Valeria, 0.75, 0.0)
 			call DialogSystem_AddMakeUnitFaceUnit(seq, Valeria, hero, 0.75, 0.0)
 			call DialogSystem_AddMakeUnitFaceUnit(seq, Aradion, hero, 0.75, 0.0)
 		endif
@@ -3244,6 +3431,11 @@ private function OnAcceptQuest4End takes nothing returns nothing
 	set RiftsCountdownRemaining = 0
 	set RiftsAwaitingReturnHome = false
 	set RiftsReturnedHome = false
+	set RiftsFailureInProgress = false
+	set RiftsFailedUnit = null
+	set RiftsFailureSurvivor = null
+	set RiftsPendingFailReason = ""
+	call StopRiftsFailResetTimer()
 	call StopRiftsRuntimeTimers()
 	call StopRiftsFieldMonitor()
 	call ClearRiftsWaveHandles()
@@ -3304,6 +3496,11 @@ private function OnCompleteQuest4End takes nothing returns nothing
 	set RiftsCountdownRemaining = 0
 	set RiftsAwaitingReturnHome = false
 	set RiftsReturnedHome = false
+	set RiftsFailureInProgress = false
+	set RiftsFailedUnit = null
+	set RiftsFailureSurvivor = null
+	set RiftsPendingFailReason = ""
+	call StopRiftsFailResetTimer()
 	call StopRiftsRuntimeTimers()
 	call StopRiftsFieldMonitor()
 	call ClearRiftsWaveHandles()
@@ -3763,6 +3960,7 @@ private function InitDelayed takes nothing returns nothing
 	set Aradion = udg_Aradion
 	set Nazgrek = udg_Nazgrek
 	set Valeria = udg_Valeria
+	set AradionHomeOwner = GetOwningPlayer(Aradion)
 	set PlacedManaRifts[1] = gg_unit_n023_0971
 	set PlacedManaRifts[2] = gg_unit_n023_1093
 	set PlacedManaRifts[3] = gg_unit_n023_1092
@@ -3890,10 +4088,17 @@ public function ReturnRiftsCompanionsHome takes nothing returns nothing
 	set RiftsCountdownRemaining = 0
 	set RiftsAwaitingReturnHome = false
 	set RiftsReturnedHome = false
+	set RiftsFailureInProgress = false
+	set RiftsFailedUnit = null
+	set RiftsFailureSurvivor = null
+	set RiftsPendingFailReason = ""
+	call StopRiftsFailResetTimer()
 	call StopRiftsRuntimeTimers()
 	call StopRiftsFieldMonitor()
 	call ClearRiftsWaveHandles()
 	call ClearFieldLineQueue()
+	call DisableRiftsFailTriggers()
+	call DestroyRiftsProximityTrigger()
 	call ReturnRiftsCompanionsHomeInternal()
 endfunction
 
