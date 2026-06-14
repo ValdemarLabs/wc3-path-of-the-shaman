@@ -534,6 +534,12 @@ private function MoveOut takes nothing returns nothing
         endif
         return
     endif
+    if currentZone != 0 and zoneId != currentZone then
+        if DEBUG then
+            call Debug("Ignoring exit trigger for inactive zone " + I2S(zoneId) + " while current zone is " + I2S(currentZone))
+        endif
+        return
+    endif
 
     set z = ZonesCore_GetZoneData(zoneId)
 
@@ -584,6 +590,13 @@ private function MoveOut takes nothing returns nothing
     endloop
 
     call DestroyGroup(tempGroup)
+
+    if z.hasParentZone() then
+        call ZonesCore_SetCurrentZone(z.getParentZoneId())
+        call ApplyCurrentZoneEffects()
+    else
+        call ZonesCore_ResetZone()
+    endif
 
     set u = null
 endfunction
