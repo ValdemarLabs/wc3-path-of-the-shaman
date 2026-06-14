@@ -365,6 +365,7 @@ private function HandleSpecialEffects takes ZoneData z, unit triggeringUnit retu
     endif
 
     if triggeringUnit != null and ShouldFastPanOnEnter(z) then
+        call CameraControl_UpdateTargetCache(whichPlayer)
         call CameraControl_FastPanToTarget(whichPlayer)
     endif
 
@@ -664,6 +665,7 @@ private function HandleZoneEnter takes integer newZoneId, unit triggeringUnit re
     // If this zone has a startRegion/moveRegion, move units
     if z.startRegion != null and z.moveRegion != null then
         call MoveStart(z, triggeringUnit)
+        call CameraControl_UpdateTargetCache(triggerPlayer)
     endif
 
     // Set current zone
