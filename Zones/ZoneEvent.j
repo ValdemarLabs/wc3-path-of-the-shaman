@@ -372,6 +372,58 @@ private function HandleSpecialEffects takes ZoneData z, unit triggeringUnit retu
     set whichPlayer = null
 endfunction
 
+private function ApplyCurrentZoneEffectsInternal takes player triggerPlayer, unit triggeringUnit returns nothing
+    local ZoneData z
+    local boolean isDay = udg_DNE_IsDaytime
+    local integer zoneIndex = ZonesCore_GetCurrentZone()
+    
+    if DEBUG then
+        call Debug("ApplyCurrentZoneEffects called: currentZone=" + I2S(zoneIndex) + ", isDay=" + I2S(B2I(isDay)))
+    endif
+
+    if zoneIndex == 0 then
+        if DEBUG then
+            call Debug("No current zone (currentZone=0), nothing to apply")
+        endif
+        set triggerPlayer = null
+        set triggeringUnit = null
+        return
+    endif
+
+    set z = ZonesCore_GetZoneData(zoneIndex)
+    if z == 0 then
+        if DEBUG then
+            call Debug("Zone data not found for currentZone=" + I2S(zoneIndex))
+        endif
+        set triggerPlayer = null
+        set triggeringUnit = null
+        return
+    endif
+
+    // Music
+    set udg_ExMusicInteger = z.musicTrack
+    call ExMusic_PlayTrack(udg_ExMusicInteger)
+
+    // Fog
+    if DEBUG then
+        call Debug("ApplyCurrentZoneEffects: Applying fog (udg_DNE_IsDaytime=" + I2S(B2I(udg_DNE_IsDaytime)) + ", isDay=" + I2S(B2I(isDay)) + ")")
+    endif
+    call ApplyFog(z, zoneIndex, isDay, triggerPlayer)
+
+    // Ambient
+    call ClearAmbientSounds()
+    if isDay and z.ambientDaySound != "" then
+        call AddAmbientSound(z.ambientDaySound, null)
+    elseif not isDay and z.ambientNightSound != "" then
+        call AddAmbientSound(z.ambientNightSound, null)
+    endif
+
+    call HandleSpecialEffects(z, triggeringUnit)
+
+    set triggerPlayer = null
+    set triggeringUnit = null
+endfunction
+
 private function CreateQuestLog takes ZoneData z returns nothing
     local integer id = z.zoneId
     local string boxText
@@ -593,11 +645,12 @@ private function MoveOut takes nothing returns nothing
 
     if z.hasParentZone() then
         call ZonesCore_SetCurrentZone(z.getParentZoneId())
-        call ApplyCurrentZoneEffects()
+        call ApplyCurrentZoneEffectsInternal(trigPlayer, null)
     else
         call ZonesCore_ResetZone()
     endif
 
+    set trigPlayer = null
     set u = null
 endfunction
 
@@ -852,81 +905,7 @@ endfunction
 
 // Re-applies all effects for the current zone (music, DNC, fog, ambient)
 public function ApplyCurrentZoneEffects takes nothing returns nothing
-    local ZoneData z
-    local player triggerPlayer = Player(0)
-    local boolean isDay = udg_DNE_IsDaytime
-    local integer zoneIndex = ZonesCore_GetCurrentZone()
-    
-    if DEBUG then
-        call Debug("ApplyCurrentZoneEffects called: currentZone=" + I2S(zoneIndex) + ", isDay=" + I2S(B2I(isDay)))
-    endif
-
-    if zoneIndex == 0 then
-        if DEBUG then
-            call Debug("No current zone (currentZone=0), nothing to apply")
-        endif
-        return
-    endif
-
-    set z = ZonesCore_GetZoneData(zoneIndex)
-    if z == 0 then
-        if DEBUG then
-            call Debug("Zone data not found for currentZone=" + I2S(zoneIndex))
-        endif
-        return
-    endif
-
-    /*
-    if DEBUG then
-        call Debug("Applying effects for zone: " + z.name + " (ID: " + I2S(zoneIndex) + ")")
-    endif
-    */
-
-    // Music
-    set udg_ExMusicInteger = z.musicTrack
-    /*
-    if DEBUG then
-        call Debug("ApplyCurrentZoneEffects: Setting music track to " + I2S(udg_ExMusicInteger))
-    endif
-    */
-    call ExMusic_PlayTrack(udg_ExMusicInteger)
-
-    /*
-    // DNC
-    if DEBUG then
-        call Debug("ApplyCurrentZoneEffects: Running DNC: " + z.dncName)
-    endif
-    call RunDNC(z.dncName)
-    */
-
-    // Fog
-    if DEBUG then
-        call Debug("ApplyCurrentZoneEffects: Applying fog (udg_DNE_IsDaytime=" + I2S(B2I(udg_DNE_IsDaytime)) + ", isDay=" + I2S(B2I(isDay)) + ")")
-    endif
-    call ApplyFog(z, zoneIndex, isDay, triggerPlayer)
-
-    // Ambient
-    // Clear existing ambient sounds first
-    /*
-    if DEBUG then
-        call Debug("ApplyCurrentZoneEffects: Clearing ambient sounds and applying appropriate ambient for time of day")
-    endif
-    */
-    call ClearAmbientSounds()
-    if isDay and z.ambientDaySound != "" then
-        call AddAmbientSound(z.ambientDaySound, null)
-    elseif not isDay and z.ambientNightSound != "" then
-        call AddAmbientSound(z.ambientNightSound, null)
-    endif
-
-    // Zone Special stuff
-    /*
-    if DEBUG then
-        call Debug("ApplyCurrentZoneEffects: Running zone special effects handler")
-    endif
-    */
-    call HandleSpecialEffects(z, null)
-
+    call ApplyCurrentZoneEffectsInternal(Player(0), null)
 endfunction
 
 public function ForceUpdate takes unit whichUnit returns nothing

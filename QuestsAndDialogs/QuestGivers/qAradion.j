@@ -413,7 +413,10 @@ private function ForceUnitsFaceEachOther takes unit leftUnit, unit rightUnit ret
 endfunction
 
 private function ForceValeriaNegotiationFacing takes nothing returns nothing
-	local unit hero = GetValeriaEncounterHero()
+	local unit hero = ValeriaEncounterHero
+	if hero == null or not QuestGiver_IsUnitAlive(hero) then
+		set hero = ResolveDialogHero()
+	endif
 	if hero != null and Valeria != null then
 		call ForceUnitsFaceEachOther(hero, Valeria)
 	endif
@@ -421,10 +424,13 @@ private function ForceValeriaNegotiationFacing takes nothing returns nothing
 endfunction
 
 private function IssueValeriaSuccessApproach takes nothing returns nothing
-	local unit hero = GetValeriaEncounterHero()
+	local unit hero = ValeriaEncounterHero
 	local real facing
 	local real x
 	local real y
+	if hero == null or not QuestGiver_IsUnitAlive(hero) then
+		set hero = ResolveDialogHero()
+	endif
 	if hero == null or Valeria == null then
 		return
 	endif
