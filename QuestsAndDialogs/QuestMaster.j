@@ -1043,6 +1043,7 @@ struct QuestData
 		call QuestSetIconPath(this.wcQuest, this.iconPath)
 		call QuestSetRequired(this.wcQuest, true)
 		call QuestSetDiscovered(this.wcQuest, false)
+		call QuestSetFailed(this.wcQuest, false)
 	endmethod
 
 	method applyRequirementsToLog takes nothing returns nothing
@@ -1759,6 +1760,8 @@ struct QuestData
 		local unit u
 		local unit hero = null
 		local item it
+		local boolean awardedNazgrek = false
+		local boolean awardedZulkis = false
 
 		if DEBUG then
 			call DebugMsg("awardRewards: " + this.title + " xp=" + I2S(this.rewardXP) + " gold=" + I2S(this.rewardGold) + " arena=" + I2S(this.rewardArena) + " rep=" + I2S(this.rewardRep) + " faction=" + this.faction)
@@ -1775,9 +1778,26 @@ struct QuestData
 					if hero == null then
 						set hero = u
 					endif
+					if u == udg_Nazgrek then
+						set awardedNazgrek = true
+					elseif u == udg_Zulkis then
+						set awardedZulkis = true
+					endif
 				endif
 			endloop
 			call DestroyGroup(g)
+			if udg_Nazgrek != null and IsUnitType(udg_Nazgrek, UNIT_TYPE_HERO) and not awardedNazgrek then
+				call AddHeroXP(udg_Nazgrek, this.rewardXP, true)
+				if hero == null then
+					set hero = udg_Nazgrek
+				endif
+			endif
+			if udg_Zulkis != null and IsUnitType(udg_Zulkis, UNIT_TYPE_HERO) and not awardedZulkis then
+				call AddHeroXP(udg_Zulkis, this.rewardXP, true)
+				if hero == null then
+					set hero = udg_Zulkis
+				endif
+			endif
 			set QuestRewardCurrentXP = this.rewardXP
 			set QuestRewardPrimaryHero = hero
 			if udg_Companion_Group != null then
@@ -1825,6 +1845,10 @@ struct QuestData
 				call UnitAddItem(hero, it)
 			endif
 		endif
+		set g = null
+		set u = null
+		set hero = null
+		set it = null
 	endmethod
 
 	method accept takes nothing returns nothing
@@ -1846,6 +1870,7 @@ struct QuestData
 		
 		set this.active = true
 		call this.setDiscovered(true)
+		call QuestSetFailed(this.wcQuest, false)
 		call this.refreshQuestLog()
 		
 		// Apply requirements to quest log if not already applied
@@ -1889,6 +1914,7 @@ struct QuestData
 		set this.completed = true
 		set this.active = false
 		call this.setCompleted(true)
+		call QuestSetFailed(this.wcQuest, false)
 		// Set state without updating icons - icons will update when message is shown
 		call this.setStateNoIcons(QUEST_STATE_COMPLETE)
 		if DEBUG then
@@ -1907,9 +1933,15 @@ struct QuestData
 		if this.completed or this.state == QUEST_STATE_COMPLETE then
 			return
 		endif
+		if this.wcQuest == null then
+			call this.createQuestLog()
+		endif
 		set this.failed = true
 		set this.active = false
 		set this.failReasonText = reason
+		call QuestSetDiscovered(this.wcQuest, true)
+		call QuestSetCompleted(this.wcQuest, false)
+		call QuestSetFailed(this.wcQuest, true)
 		call this.showFailedMessage()
 		call this.setState(QUEST_STATE_IN_PROGRESS)
 	endmethod
@@ -1922,11 +1954,17 @@ struct QuestData
 	method resetAfterFail takes nothing returns nothing
 		set this.failed = false
 		set this.failReasonText = ""
+		if this.wcQuest != null then
+			call QuestSetFailed(this.wcQuest, false)
+		endif
 		call this.setState(QUEST_STATE_AVAILABLE)
 	endmethod
 
 	method abandon takes nothing returns nothing
 		set this.active = false
+		if this.wcQuest != null then
+			call QuestSetFailed(this.wcQuest, false)
+		endif
 		call this.refreshQuestLog()
 		call this.setState(QUEST_STATE_AVAILABLE)
 		// TODO: reset state to undiscovered if needed
