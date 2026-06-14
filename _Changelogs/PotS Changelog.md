@@ -13,6 +13,57 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [14.6.2026]
+
+### Player-Facing Updates
+- `Ranger Missing` / `qAradion.j`
+  Valeria's escort step now transitions into `Speak with Aradion The Farseer`, and selecting Aradion at that point starts the reunion completion directly instead of relying on a separate completion dialog button.
+  The Valeria persuasion `ESC` prompt is now delayed until the intro combat beat has finished, and the standoff keeps the hero and Valeria facing each other more consistently while persuasion is available.
+- `Rifts of Corruption`
+  Aradion and Valeria now return through a proper quest-owned companion runtime instead of the older direct follow-only path, helping both companions behave more like real party companions during escort/combat phases.
+  Rift rituals no longer snap both units into teleported ritual offsets at start; Aradion now enters a dedicated ritual state while Valeria stays under companion control.
+  Closed rifts are now removed immediately on success, the all-closed bark order is closer to the old GUI sequence, and ritual failure no longer snaps both units home instantly before the surviving companion reacts.
+- `Fading Sparks`
+  Successful Tel'anor Rod extraction now kills the Mana Wraith at the same time the `Wraith Essence` drop is created.
+- `Camera / Zone transitions`
+  Mouse-wheel camera reset now snaps back into the active camera mode again, and teleport-style subzone entries refresh the tracked camera target before the fast pan is applied.
+- `StatsUI.j`
+  Shadowclaw now stays visible as a named/iconed pet entry even when the generic `udg_TamedUnit` tracking path is missing.
+- `ItemLootSystem.j`
+  Dropped powerup hover text now also self-cleans when the item vanishes before the normal pickup/use handlers remove its floating text.
+
+### Tool Updates
+- `WC3ItemManager`
+  Item ability tooltip headings and per-ability labels now use the defined `Ability` item-class color instead of the old hardcoded tooltip colors.
+
+### Technical Updates
+- `Companions.j`
+  Added a new quest-friendly companion wrapper over `QuestGiver` and `FollowSystem`, with defend/passive/hold modes plus suspend/resume handling for scripted companion control.
+- `QuestMaster.j`
+  Aligned quest reward awarding closer to the old GUI reward flow: XP now also reaches hero companions in `Companion_Group`, and faction reputation reward calls now always route through `AddReputation` / `AddReputationLinked` when a faction is set.
+- `qAradion.j`
+  Moved more of Aradion/Valeria field control onto the new companion runtime, added direct-select Ranger Missing completion handling, and reworked the Rift fail/reset state around delayed retry cleanup instead of immediate home reset.
+- `ZoneEvent.j`
+  Updated teleport-style fast-pan handling so `ZoneEvent` refreshes `CameraControl` target cache immediately after move-start teleports before applying the fast pan.
+
+### Known Issues
+- `qAradion.j` / `Rifts of Corruption`
+  Today's non-teleport ritual start, companion-combat behavior, third-rift escort-home state, and delayed fail-reset flow still need direct in-map verification across all three rifts.
+- `QuestMaster.j` / quest rewards
+  The updated reward parity path still needs live confirmation for XP on hero companions and reputation reward delivery on actual quest completion.
+- `ZoneEvent.j` / `Shadowmaw Cave`
+  Shadowmaw Cave's specific enter-rect regression was not independently resolved during today's pass and still needs direct gameplay validation after the camera/teleport adjustments.
+
+### Actions Remaining
+- `qAradion.j` / `Ranger Missing`
+  Re-test the full Valeria encounter and reunion flow: intro timing, `ESC` persuasion timing, facing lock, escort completion, and direct-select turn-in on `Speak with Aradion The Farseer`.
+- `qAradion.j` / `Rifts of Corruption`
+  Re-test all three rifts as the first target, repeated proximity while a ritual is active, closed-rift retry prevention, bark ordering, third-rift escort-home transition, and the delayed death/fail reset flow.
+- `QuestMaster.j` / quest rewards
+  Re-test XP, gold, and reputation rewards on real quest completions, including hero companions inside `Companion_Group`.
+- `CameraControl.j` / `ZoneEvent.j`
+  Re-test mouse-wheel reset and fast-pan behavior on the intended interior/subzone teleports, including Shadowmaw Cave.
+
 ## [13.6.2026]
 
 ### Player-Facing Updates
