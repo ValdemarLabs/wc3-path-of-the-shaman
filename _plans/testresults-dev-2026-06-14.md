@@ -1,4 +1,5 @@
 # Test results 2026-06-14
+## Check are the listed issues still... issues.
 
 ## QuestSystems / qAradion test
 - Ranger Missing: When WithinRange of Valeria and starting encounter with her Nazgrek slowly turns facing to random direction and not to Valeria. Nazgrek only faces Valeria after Valeria second line.
@@ -35,11 +36,6 @@
 ## Quest Systems rewards related
 - Reputation reward: ReputationUI is still not showing that Quest reputation reward actually increased the reputation level - is this ReputationUI refresh problem? It should refresh when opening the ReputationUI or when there is reputation change (ie event driven).
 - XP reward: XP reward is still not really given to player units when completing quest.
-
-## ItemLoot systems related
-==== ei annettu
-@ItemLootDestructibles
-Relational comparission between special type and native type in function "ProcessLootTableDrops ": if GetRandomInt(1, 10000) > ItemLootDestructibles___destTableDropChance[destTypeId] then
 
 ## Other todo tasks
 ==== ei annettu
