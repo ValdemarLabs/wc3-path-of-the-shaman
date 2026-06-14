@@ -19,6 +19,8 @@ namespace WC3ItemManager.Exporters
         private readonly UnitSpecificDropRepository _dropRepo;
         private readonly DestructibleSpecificDropRepository _destDropRepo;
         private readonly DestructibleTypeRepository _destTypeRepo;
+        private readonly LootTableRepository _tableRepo;
+        private readonly LootTableItemRepository _tableItemRepo;
 
         public LootSystemExporter(string connectionString)
         {
@@ -27,6 +29,8 @@ namespace WC3ItemManager.Exporters
             _dropRepo = new UnitSpecificDropRepository(connectionString);
             _destDropRepo = new DestructibleSpecificDropRepository(connectionString);
             _destTypeRepo = new DestructibleTypeRepository(connectionString);
+            _tableRepo = new LootTableRepository(connectionString);
+            _tableItemRepo = new LootTableItemRepository(connectionString);
         }
 
         /// <summary>
@@ -255,6 +259,7 @@ namespace WC3ItemManager.Exporters
         {
             var drops = _destDropRepo.GetAllEnabled();
             var destructibles = _destTypeRepo.GetAll().Where(d => d.Enabled).ToList();
+            var lootTables = _tableRepo.GetAll().ToDictionary(t => t.Id);
             var sb = new StringBuilder();
 
             // Header
@@ -297,13 +302,68 @@ namespace WC3ItemManager.Exporters
                 sb.AppendLine();
             }
 
+            var tableAssignedDestructibles = destructibles
+                .Where(d => (d.LootMode == LootMode.Specific || d.LootMode == LootMode.Both) && d.LootTableId.HasValue)
+                .OrderBy(d => d.DestructibleCode)
+                .ToList();
+
+            if (tableAssignedDestructibles.Any())
+            {
+                sb.AppendLine("        // === DESTRUCTIBLE LOOT TABLE SETTINGS ===");
+                sb.AppendLine("        // RegisterDestructibleTable(destructibleTypeId, dropChance, dropCountMin, dropCountMax)");
+                sb.AppendLine();
+
+                foreach (var dest in tableAssignedDestructibles)
+                {
+                    if (!lootTables.TryGetValue(dest.LootTableId!.Value, out var lootTable) || !lootTable.Enabled)
+                    {
+                        continue;
+                    }
+
+                    int dropChance = dest.DropChanceOverride.HasValue
+                        ? (int)(dest.DropChanceOverride.Value * 100)
+                        : lootTable.DropChance;
+                    int dropCountMin = dest.DropCountMin;
+                    int dropCountMax = dest.DropCountMax;
+
+                    sb.AppendLine($"        call RegisterDestructibleTable('{dest.DestructibleCode}', {dropChance}, {dropCountMin}, {dropCountMax})  // {lootTable.Name}");
+                }
+                sb.AppendLine();
+            }
+
             // Export specific drops for Specific and Both modes
             sb.AppendLine("        // === DESTRUCTIBLE SPECIFIC DROPS ===");
-            sb.AppendLine("        // RegisterDestructibleDrop(destructibleTypeId, itemTypeId, dropChance, isGuaranteed, weight)");
+            sb.AppendLine("        // RegisterDestructibleDropEx(destructibleTypeId, itemTypeId, dropChance, isGuaranteed, weight, quantityMin, quantityMax)");
             sb.AppendLine();
 
+            foreach (var dest in tableAssignedDestructibles)
+            {
+                if (!lootTables.TryGetValue(dest.LootTableId!.Value, out var lootTable) || !lootTable.Enabled)
+                {
+                    continue;
+                }
+
+                var tableItems = _tableItemRepo.GetByLootTableId(dest.LootTableId.Value);
+                if (tableItems.Count == 0)
+                {
+                    continue;
+                }
+
+                sb.AppendLine($"        // {dest.DisplayName} -> loot table '{lootTable.Name}'");
+
+                foreach (var item in tableItems)
+                {
+                    string isGuaranteed = item.IsGuaranteed ? "true" : "false";
+                    sb.AppendLine($"        call RegisterDestructibleDropEx('{dest.DestructibleCode}', '{item.ItemCode}', {item.DropChance}, {isGuaranteed}, {item.Weight}, {item.QuantityMin}, {item.QuantityMax})  // {item.ItemName}");
+                }
+                sb.AppendLine();
+            }
+
             // Group by destructible
-            var dropsByDestructible = drops.GroupBy(d => d.DestructibleCode);
+            var tableAssignedCodes = new HashSet<string>(tableAssignedDestructibles.Select(d => d.DestructibleCode));
+            var dropsByDestructible = drops
+                .Where(d => !tableAssignedCodes.Contains(d.DestructibleCode))
+                .GroupBy(d => d.DestructibleCode);
             
             foreach (var destGroup in dropsByDestructible)
             {
@@ -313,7 +373,7 @@ namespace WC3ItemManager.Exporters
                 {
                     string isGuaranteed = drop.IsGuaranteed ? "true" : "false";
                     int dropChance = (int)(drop.DropChance * 100);
-                    sb.AppendLine($"        call RegisterDestructibleDrop('{drop.DestructibleCode}', '{drop.ItemCode}', {dropChance}, {isGuaranteed}, {drop.Weight})");
+                    sb.AppendLine($"        call RegisterDestructibleDropEx('{drop.DestructibleCode}', '{drop.ItemCode}', {dropChance}, {isGuaranteed}, {drop.Weight}, {drop.MinQuantity}, {drop.MaxQuantity})");
                 }
                 sb.AppendLine();
             }
@@ -331,7 +391,11 @@ namespace WC3ItemManager.Exporters
 
             File.WriteAllText(outputPath, sb.ToString(), Encoding.UTF8);
             
-            return genericDestructibles.Count + drops.Count;
+            int tableItemCount = tableAssignedDestructibles
+                .Where(d => d.LootTableId.HasValue && lootTables.ContainsKey(d.LootTableId.Value) && lootTables[d.LootTableId.Value].Enabled)
+                .Sum(d => _tableItemRepo.GetByLootTableId(d.LootTableId!.Value).Count);
+
+            return genericDestructibles.Count + drops.Count + tableItemCount;
         }
 
         /// <summary>

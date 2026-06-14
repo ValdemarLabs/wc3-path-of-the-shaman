@@ -1,0 +1,3 @@
+14.6.2026 14.55.51: LoadEquipAbilities called
+14.6.2026 14.55.51: Database connected
+14.6.2026 14.55.51: Added 194 abilities, total items: 195
