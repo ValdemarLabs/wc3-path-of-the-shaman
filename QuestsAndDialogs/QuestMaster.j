@@ -76,6 +76,9 @@ globals
 	private constant integer QUEST_SAVE_GIVER_KEY = 2
 	private constant integer QUEST_SAVE_STATE_KEY = 3
 
+	private integer QuestRewardCurrentXP = 0
+	private unit QuestRewardPrimaryHero = null
+
 	// Quest icon system (embedded)
 
 	// Model paths
@@ -120,6 +123,21 @@ private function DebugMsg takes string msg returns nothing
 	if DEBUG then
 		call BJDebugMsg("[QuestMaster] " + msg)
 	endif
+endfunction
+
+private function AwardCompanionRewardXPEnum takes nothing returns nothing
+	local unit u = GetEnumUnit()
+	if QuestRewardCurrentXP <= 0 then
+		set u = null
+		return
+	endif
+	if u != null and IsUnitType(u, UNIT_TYPE_HERO) then
+		call AddHeroXP(u, QuestRewardCurrentXP, true)
+		if QuestRewardPrimaryHero == null then
+			set QuestRewardPrimaryHero = u
+		endif
+	endif
+	set u = null
 endfunction
 
 //===========================================================================
@@ -1742,6 +1760,10 @@ struct QuestData
 		local unit hero = null
 		local item it
 
+		if DEBUG then
+			call DebugMsg("awardRewards: " + this.title + " xp=" + I2S(this.rewardXP) + " gold=" + I2S(this.rewardGold) + " arena=" + I2S(this.rewardArena) + " rep=" + I2S(this.rewardRep) + " faction=" + this.faction)
+		endif
+
 		if this.rewardXP > 0 then
 			set g = GetUnitsOfPlayerAll(Player(0))
 			loop
@@ -1756,6 +1778,14 @@ struct QuestData
 				endif
 			endloop
 			call DestroyGroup(g)
+			set QuestRewardCurrentXP = this.rewardXP
+			set QuestRewardPrimaryHero = hero
+			if udg_Companion_Group != null then
+				call ForGroup(udg_Companion_Group, function AwardCompanionRewardXPEnum)
+			endif
+			set hero = QuestRewardPrimaryHero
+			set QuestRewardCurrentXP = 0
+			set QuestRewardPrimaryHero = null
 		else
 			set hero = null
 		endif
@@ -1768,7 +1798,7 @@ struct QuestData
 			call SetPlayerState(Player(0), PLAYER_STATE_RESOURCE_LUMBER, GetPlayerState(Player(0), PLAYER_STATE_RESOURCE_LUMBER) + this.rewardArena)
 		endif
 
-		if this.rewardRep > 0 and this.faction != "" then
+		if this.faction != "" then
 			if this.rewardRepLinked then
 				call AddReputationLinked(Player(0), this.faction, this.rewardRep)
 			else
@@ -1861,6 +1891,9 @@ struct QuestData
 		call this.setCompleted(true)
 		// Set state without updating icons - icons will update when message is shown
 		call this.setStateNoIcons(QUEST_STATE_COMPLETE)
+		if DEBUG then
+			call DebugMsg("complete: " + this.title + " giver=" + this.giverDisplayName)
+		endif
 		call this.awardRewards()
 		
 		// Show completion message after 5 second delay (icons will update at the same time)
