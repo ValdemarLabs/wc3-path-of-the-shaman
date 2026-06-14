@@ -1632,6 +1632,9 @@ endfunction
 private function CC_PageResetAction takes nothing returns nothing
     local player whichPlayer = GetTriggerPlayer()
 
+    if whichPlayer == null then
+        set whichPlayer = GetLocalPlayer()
+    endif
     call CC_ResetStoredCameraState(whichPlayer)
 
     set whichPlayer = null
