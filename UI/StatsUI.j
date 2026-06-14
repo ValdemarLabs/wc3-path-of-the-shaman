@@ -150,6 +150,31 @@ private function SUI_IsPlayerOwnedMainHero takes unit u returns boolean
     return u != null and GetHandleId(u) != 0 and GetOwningPlayer(u) == Player(0)
 endfunction
 
+private function SUI_IsTrackedCompanion takes unit u returns boolean
+    local integer i = 1
+    if u == null or GetHandleId(u) == 0 then
+        return false
+    endif
+    loop
+        exitwhen i > udg_CompanionCount
+        if udg_CompanionUnit[i] == u then
+            return true
+        endif
+        set i = i + 1
+    endloop
+    return false
+endfunction
+
+private function SUI_GetTrackedPetUnit takes nothing returns unit
+    if udg_TamedUnit != null and GetHandleId(udg_TamedUnit) != 0 then
+        return udg_TamedUnit
+    endif
+    if udg_Shadowclaw != null and GetHandleId(udg_Shadowclaw) != 0 and not SUI_IsTrackedCompanion(udg_Shadowclaw) then
+        return udg_Shadowclaw
+    endif
+    return null
+endfunction
+
 private function SUI_GetUnitIconPath takes unit u returns string
     local string iconPath
     local integer unitTypeId
@@ -746,6 +771,7 @@ endfunction
 private function SUI_GetRowCount takes nothing returns integer
     local integer count = 0
     local integer i = 1
+    local unit petUnit = SUI_GetTrackedPetUnit()
 
     if SUI_IsPlayerOwnedMainHero(udg_Nazgrek) then
         set count = count + 1
@@ -753,7 +779,7 @@ private function SUI_GetRowCount takes nothing returns integer
     if SUI_IsPlayerOwnedMainHero(udg_Zulkis) then
         set count = count + 1
     endif
-    if udg_TamedUnit != null and GetHandleId(udg_TamedUnit) != 0 then
+    if petUnit != null and GetHandleId(petUnit) != 0 then
         set count = count + 1
     endif
 
@@ -765,6 +791,7 @@ private function SUI_GetRowCount takes nothing returns integer
         set i = i + 1
     endloop
 
+    set petUnit = null
     return count
 endfunction
 
@@ -797,6 +824,7 @@ private function SUI_UpdateRows takes player whichPlayer returns nothing
     local integer skipped = 0
     local integer maxStart = SUI_GetRowCount() - SUI_VISIBLE_ROWS
     local unit u
+    local unit petUnit = SUI_GetTrackedPetUnit()
 
     if maxStart < 0 then
         set maxStart = 0
@@ -831,13 +859,13 @@ private function SUI_UpdateRows takes player whichPlayer returns nothing
         endif
     endif
 
-    if udg_TamedUnit != null and GetHandleId(udg_TamedUnit) != 0 then
+    if petUnit != null and GetHandleId(petUnit) != 0 then
         if skipped < listStart then
             set skipped = skipped + 1
         elseif rowIndex <= SUI_VISIBLE_ROWS then
-            set SUI_RowUnit[rowIndex] = udg_TamedUnit
+            set SUI_RowUnit[rowIndex] = petUnit
             set SUI_RowKind[rowIndex] = SUI_KIND_PET
-            call SUI_UpdateRowFrame(whichPlayer, rowIndex, udg_TamedUnit, SUI_KIND_PET)
+            call SUI_UpdateRowFrame(whichPlayer, rowIndex, petUnit, SUI_KIND_PET)
             set rowIndex = rowIndex + 1
         endif
     endif
@@ -883,6 +911,7 @@ private function SUI_UpdateRows takes player whichPlayer returns nothing
         call BlzFrameSetVisible(SUI_ListScroll, maxStart > 0)
     endif
 
+    set petUnit = null
     set u = null
 endfunction
 
