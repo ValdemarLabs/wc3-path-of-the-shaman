@@ -39,7 +39,7 @@ globals
 	private constant real VALERIA_ENCOUNTER_RANDOM_MAX_OFFSET = 700.00
 	private constant real VALERIA_ENCOUNTER_SPEED_BOOST = 420.00
 	private constant real VALERIA_ENCOUNTER_ARROW_DURATION = 5.00
-	private constant real VALERIA_ENCOUNTER_RANGE_CHECK_PERIOD = 2.00
+	private constant real VALERIA_ENCOUNTER_RANGE_CHECK_PERIOD = 0.25
 	private constant real VALERIA_ENCOUNTER_SPEED_RESET_DELAY = 3.00
 	private constant real DIALOG_COOLDOWN = 6.00
 	private constant real FOLLOW_MAX_DISTANCE = 2000.00
@@ -395,6 +395,48 @@ private function PlaceValeriaNearHeroFront takes unit hero, real offset returns 
 	call DialogSystem_MakeUnitFaceUnit(Valeria, hero, 0.75)
 	call DialogSystem_MakeUnitFaceUnit(hero, Valeria, 0.75)
 	call IssueImmediateOrder(Valeria, "stop")
+endfunction
+
+private function ForceUnitsFaceEachOther takes unit leftUnit, unit rightUnit returns nothing
+	local real leftFacing
+	local real rightFacing
+	if leftUnit == null or rightUnit == null then
+		return
+	endif
+	if not QuestGiver_IsUnitAlive(leftUnit) or not QuestGiver_IsUnitAlive(rightUnit) then
+		return
+	endif
+	set leftFacing = bj_RADTODEG * Atan2(GetUnitY(rightUnit) - GetUnitY(leftUnit), GetUnitX(rightUnit) - GetUnitX(leftUnit))
+	set rightFacing = bj_RADTODEG * Atan2(GetUnitY(leftUnit) - GetUnitY(rightUnit), GetUnitX(leftUnit) - GetUnitX(rightUnit))
+	call SetUnitFacing(leftUnit, leftFacing)
+	call SetUnitFacing(rightUnit, rightFacing)
+endfunction
+
+private function ForceValeriaNegotiationFacing takes nothing returns nothing
+	local unit hero = GetValeriaEncounterHero()
+	if hero != null and Valeria != null then
+		call ForceUnitsFaceEachOther(hero, Valeria)
+	endif
+	set hero = null
+endfunction
+
+private function IssueValeriaSuccessApproach takes nothing returns nothing
+	local unit hero = GetValeriaEncounterHero()
+	local real facing
+	local real x
+	local real y
+	if hero == null or Valeria == null then
+		return
+	endif
+	if not QuestGiver_IsUnitAlive(hero) or not QuestGiver_IsUnitAlive(Valeria) then
+		set hero = null
+		return
+	endif
+	set facing = GetUnitFacing(hero) * bj_DEGTORAD
+	set x = GetUnitX(hero) + 400.00 * Cos(facing)
+	set y = GetUnitY(hero) + 400.00 * Sin(facing)
+	call IssuePointOrder(Valeria, "move", x, y)
+	set hero = null
 endfunction
 
 private function MoveValeriaHomeInternal takes nothing returns nothing
@@ -816,7 +858,7 @@ private function OnValeriaEncounterRangeTick takes nothing returns nothing
 		return
 	endif
 	if ValeriaNegotiationPromptPending then
-		call DialogSystem_MakeFaceEachOther(hero, Valeria, 0.25)
+		call ForceUnitsFaceEachOther(hero, Valeria)
 	endif
 	if not QuestGiver_IsWithinRange(Valeria, hero, VALERIA_ENCOUNTER_RESET_DISTANCE) then
 		call DisplayTextToForce(GetPlayersAll(), "|cffd45e19You've lost Valeria. She slips back into the ruins.|r")
@@ -973,7 +1015,6 @@ private function BeginValeriaNegotiationSequence takes nothing returns nothing
 endfunction
 
 private function ApplyValeriaNegotiationSuccessState takes nothing returns nothing
-	local unit hero
 	if ValeriaSuccessTransitionApplied then
 		return
 	endif
@@ -981,7 +1022,6 @@ private function ApplyValeriaNegotiationSuccessState takes nothing returns nothi
 	if Valeria == null or not QuestGiver_IsUnitAlive(Valeria) then
 		return
 	endif
-	set hero = GetValeriaEncounterHero()
 	call IssueImmediateOrder(Valeria, "stop")
 	call SetUnitMoveSpeed(Valeria, GetUnitDefaultMoveSpeed(Valeria))
 	call UnitRemoveAbility(Valeria, ABIL_VALERIA_COLD_ARROWS)
@@ -989,9 +1029,6 @@ private function ApplyValeriaNegotiationSuccessState takes nothing returns nothi
 	call BlzSetUnitRealField(Valeria, UNIT_RF_HIT_POINTS_REGENERATION_RATE, 2.00)
 	call SetWidgetLife(Valeria, BlzGetUnitMaxHP(Valeria))
 	call SetUnitOwner(Valeria, Player(VALERIA_FRIENDLY_OWNER), true)
-	if hero != null and QuestGiver_IsUnitAlive(hero) then
-		call PlaceValeriaNearHeroFront(hero, 400.00)
-	endif
 endfunction
 
 private function QueueValeriaNegotiationPromptDelayed takes nothing returns nothing
@@ -1004,14 +1041,10 @@ private function QueueValeriaNegotiationPromptDelayed takes nothing returns noth
 endfunction
 
 private function QueueValeriaNegotiationPrompt takes nothing returns nothing
-	local unit hero = GetValeriaEncounterHero()
 	set ValeriaNegotiationPromptPending = true
-	if hero != null and Valeria != null and QuestGiver_IsUnitAlive(hero) and QuestGiver_IsUnitAlive(Valeria) then
-		call DialogSystem_MakeFaceEachOther(hero, Valeria, 0.25)
-	endif
+	call ForceValeriaNegotiationFacing()
 	call DialogSystem_SetEscapeAction(function RunValeriaNegotiationEscAction)
 	call DisplayTimedTextToPlayer(Player(0), 0.00, 0.00, 5.00, "|cffd45e19Press ESC to persuade Valeria.|r")
-	set hero = null
 endfunction
 
 public function QueueValeriaNegotiationPromptPublic takes nothing returns nothing
@@ -1076,8 +1109,11 @@ private function TryOpenValeriaNegotiationInternal takes nothing returns nothing
 		call DisplayTextToForce(GetPlayersAll(), "|cffd45e19You must stay close to Valeria to persuade her.|r")
 		return
 	endif
+	call IssueImmediateOrder(ValeriaEncounterHero, "stop")
+	call IssueImmediateOrder(Valeria, "stop")
 	set ValeriaNegotiationPromptPending = false
 	call DialogSystem_ClearEscapeAction()
+	call ForceValeriaNegotiationFacing()
 	if ValeriaNegotiationDialog == null then
 		set ValeriaNegotiationDialog = DialogSystem_CreateDialog("Persuade Valeria")
 	endif
@@ -1120,10 +1156,92 @@ private function OnValeriaResponseEnd takes nothing returns nothing
 endfunction
 
 private function OnValeriaSuccessEnd takes nothing returns nothing
-	call ApplyValeriaNegotiationSuccessState()
+	call DialogSystem_StopDialogCamera(Player(0), 2.0, USE_DIALOG_CAMERA)
+	call ExitCinematicMode()
+	call EnableUserControl(true)
 	call ClearValeriaEncounterState()
 	set ValeriaEncounterResolved = true
 	call RunUpdateQuestRangerMissing()
+endfunction
+
+private function BeginValeriaSuccessDialog takes nothing returns nothing
+	local integer seq
+	local unit hero = GetValeriaEncounterHero()
+	if Valeria == null or not QuestGiver_IsUnitAlive(Valeria) then
+		call OnValeriaSuccessEnd()
+		set hero = null
+		return
+	endif
+	set seq = DialogSystem_CreateSequence()
+	call DialogSystem_SetSequenceDefaultSpeaker(seq, Valeria, "Valeria")
+	call DialogSystem_SetSequenceCallbacks(seq, null, function OnValeriaSuccessEnd)
+	call DialogSystem_AddLine(seq, Valeria, "Valeria", "...Aradion? He... lives?", "Valeria_0014", true)
+	call DialogSystem_AddLine(seq, Valeria, "Valeria", "If he trusts you, then perhaps I must as well. For his word has never failed me.", "Valeria_0015", true)
+	call DialogSystem_AddLine(seq, Valeria, "Valeria", "If you speak the truth, then take me to him. Now.", "Valeria_0019", true)
+	if hero != null then
+		call DialogSystem_AddMakeUnitFaceUnit(seq, Valeria, hero, 0.75, 0.0)
+	endif
+	call DialogSystem_AddLine(seq, Valeria, "Valeria", "But know this, orc - I'll be watching you.", "Valeria_0020", true)
+	call DialogSystem_PlaySequence(seq, Player(0), Valeria)
+	set hero = null
+endfunction
+
+private function BeginValeriaSuccessDialogDelayed takes nothing returns nothing
+	local timer t = GetExpiredTimer()
+	call BeginValeriaSuccessDialog()
+	if t != null then
+		call DestroyTimer(t)
+	endif
+	set t = null
+endfunction
+
+private function FinishValeriaSuccessTransition takes nothing returns nothing
+	local timer t = GetExpiredTimer()
+	local timer nextTimer = CreateTimer()
+	call ForceValeriaNegotiationFacing()
+	call IssueValeriaSuccessApproach()
+	call StartValeriaDialogCameraSafe(45.00, 60.00)
+	if t != null then
+		call DestroyTimer(t)
+	endif
+	call TimerStart(nextTimer, 1.00, false, function BeginValeriaSuccessDialogDelayed)
+	set nextTimer = null
+	set t = null
+endfunction
+
+private function ContinueValeriaSuccessTransition takes nothing returns nothing
+	local timer t = GetExpiredTimer()
+	local timer nextTimer = CreateTimer()
+	call ForceValeriaNegotiationFacing()
+	call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, 1.0, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+	if t != null then
+		call DestroyTimer(t)
+	endif
+	call TimerStart(nextTimer, 1.00, false, function FinishValeriaSuccessTransition)
+	set nextTimer = null
+	set t = null
+endfunction
+
+private function StartValeriaSuccessTransitionDelayed takes nothing returns nothing
+	local timer t = GetExpiredTimer()
+	local timer nextTimer = CreateTimer()
+	call EnableUserControl(false)
+	call EnterCinematicMode()
+	call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUT, 1.0, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+	if t != null then
+		call DestroyTimer(t)
+	endif
+	call TimerStart(nextTimer, 1.00, false, function ContinueValeriaSuccessTransition)
+	set nextTimer = null
+	set t = null
+endfunction
+
+private function OnValeriaSuccessLeadInEnd takes nothing returns nothing
+	local timer t = CreateTimer()
+	call ApplyValeriaNegotiationSuccessState()
+	call ForceValeriaNegotiationFacing()
+	call TimerStart(t, 1.00, false, function StartValeriaSuccessTransitionDelayed)
+	set t = null
 endfunction
 
 private function OnValeriaIntroEnd takes nothing returns nothing
@@ -1187,23 +1305,17 @@ private function PlayValeriaNegotiationSuccess takes nothing returns nothing
 	call StopValeriaEncounterTimers()
 	call DisableValeriaEncounterDeathTrigger()
 	set ValeriaSuccessTransitionApplied = false
-	set seq = DialogSystem_CreateSequence()
-	call DialogSystem_SetSequenceDefaultSpeaker(seq, Valeria, "Valeria")
-	call DialogSystem_SetSequenceCallbacks(seq, function BeginValeriaNegotiationSequence, function OnValeriaSuccessEnd)
 	if hero != null then
+		set seq = DialogSystem_CreateSequence()
+		call DialogSystem_SetSequenceDefaultSpeaker(seq, Valeria, "Valeria")
+		call DialogSystem_SetSequenceCallbacks(seq, function BeginValeriaNegotiationSequence, function OnValeriaSuccessLeadInEnd)
 		call AddHeroLine(seq, hero, "I've spoken with Aradion. He told me to find you.", "Nazgrek_0353")
-		call DialogSystem_BindLineAction(seq, 2, function ApplyValeriaNegotiationSuccessState)
+		call DialogSystem_PlaySequence(seq, Player(0), Valeria)
 	else
-		call DialogSystem_BindLineAction(seq, 1, function ApplyValeriaNegotiationSuccessState)
+		call BeginValeriaNegotiationSequence()
+		call OnValeriaSuccessLeadInEnd()
 	endif
-	call DialogSystem_AddLine(seq, Valeria, "Valeria", "...Aradion? He... lives?", "Valeria_0014", true)
-	call DialogSystem_AddLine(seq, Valeria, "Valeria", "If he trusts you, then perhaps I must as well. For his word has never failed me.", "Valeria_0015", true)
-	call DialogSystem_AddLine(seq, Valeria, "Valeria", "If you speak the truth, then take me to him. Now.", "Valeria_0019", true)
-	if hero != null then
-		call DialogSystem_AddMakeUnitFaceUnit(seq, Valeria, hero, 0.75, 0.0)
-	endif
-	call DialogSystem_AddLine(seq, Valeria, "Valeria", "But know this, orc - I'll be watching you.", "Valeria_0020", true)
-	call DialogSystem_PlaySequence(seq, Player(0), Valeria)
+	set hero = null
 endfunction
 
 public function HandleValeriaNegotiationButton takes nothing returns nothing
@@ -2909,7 +3021,7 @@ private function OnCompleteQuest1End takes nothing returns nothing
 	call QuestGiver_CompleteQuestByNameAndGiver(QUEST_RANGER_MISSING, Aradion)
 	call StartExitFadeOut()
 	set t = CreateTimer()
-	call TimerStart(t, 1.25, false, function OnCompleteQuest1FadeHomeReturn)
+	call TimerStart(t, 1.00, false, function OnCompleteQuest1FadeHomeReturn)
 endfunction
 
 private function OnCompleteQuest1 takes nothing returns nothing
