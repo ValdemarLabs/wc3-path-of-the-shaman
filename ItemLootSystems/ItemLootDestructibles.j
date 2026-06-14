@@ -82,7 +82,7 @@ library ItemLootDestructibles initializer Init requires ItemLootSystem, Destruct
     // destructibleTypeId: WC3 destructible type rawcode
     // level: Level for tier-based drops (0 = no generic drops)
     function RegisterDestructibleLevel takes integer destructibleTypeId, integer level returns nothing
-        set destructibleLevel[destructibleTypeId] = level
+        set destructibleLevel.integer[destructibleTypeId] = level
         
         if DEBUG_MODE then
             call BJDebugMsg("Registered destructible " + I2S(destructibleTypeId) + " level: " + I2S(level))
@@ -93,10 +93,10 @@ library ItemLootDestructibles initializer Init requires ItemLootSystem, Destruct
     // dropChance: Table roll chance (0-10000 = 0-100.00%)
     // dropCountMin/dropCountMax: Additional weighted rolls after guaranteed items
     function RegisterDestructibleTable takes integer destructibleTypeId, integer dropChance, integer dropCountMin, integer dropCountMax returns nothing
-        set destHasLootTable[destructibleTypeId] = 1
-        set destTableDropChance[destructibleTypeId] = dropChance
-        set destTableDropCountMin[destructibleTypeId] = dropCountMin
-        set destTableDropCountMax[destructibleTypeId] = dropCountMax
+        set destHasLootTable.integer[destructibleTypeId] = 1
+        set destTableDropChance.integer[destructibleTypeId] = dropChance
+        set destTableDropCountMin.integer[destructibleTypeId] = dropCountMin
+        set destTableDropCountMax.integer[destructibleTypeId] = dropCountMax
         
         if DEBUG_MODE then
             call BJDebugMsg("Registered destructible table " + I2S(destructibleTypeId) + " chance=" + I2S(dropChance) + " count=" + I2S(dropCountMin) + "-" + I2S(dropCountMax))
@@ -110,27 +110,27 @@ library ItemLootDestructibles initializer Init requires ItemLootSystem, Destruct
         local integer firstEntry
         
         // Store drop data
-        set destSpecificItemType[entryIndex] = itemTypeId
-        set destSpecificDropChance[entryIndex] = dropChance
-        set destSpecificIsGuaranteed[entryIndex] = B2I(isGuaranteed)
-        set destSpecificWeight[entryIndex] = weight
-        set destSpecificQtyMin[entryIndex] = quantityMin
-        set destSpecificQtyMax[entryIndex] = quantityMax
+        set destSpecificItemType.integer[entryIndex] = itemTypeId
+        set destSpecificDropChance.integer[entryIndex] = dropChance
+        set destSpecificIsGuaranteed.integer[entryIndex] = B2I(isGuaranteed)
+        set destSpecificWeight.integer[entryIndex] = weight
+        set destSpecificQtyMin.integer[entryIndex] = quantityMin
+        set destSpecificQtyMax.integer[entryIndex] = quantityMax
         
         // Mark destructible as having specific drops
-        set destHasSpecificDrops[destructibleTypeId] = 1
+        set destHasSpecificDrops.integer[destructibleTypeId] = 1
         
         // Add to linked list for this destructible
         if destSpecificFirst.has(destructibleTypeId) then
-            set firstEntry = destSpecificFirst[destructibleTypeId]
-            set destSpecificNext[entryIndex] = firstEntry
+            set firstEntry = destSpecificFirst.integer[destructibleTypeId]
+            set destSpecificNext.integer[entryIndex] = firstEntry
         else
-            set destSpecificNext[entryIndex] = -1
-            set destSpecificCount[destructibleTypeId] = 0
+            set destSpecificNext.integer[entryIndex] = -1
+            set destSpecificCount.integer[destructibleTypeId] = 0
         endif
         
-        set destSpecificFirst[destructibleTypeId] = entryIndex
-        set destSpecificCount[destructibleTypeId] = destSpecificCount[destructibleTypeId] + 1
+        set destSpecificFirst.integer[destructibleTypeId] = entryIndex
+        set destSpecificCount.integer[destructibleTypeId] = destSpecificCount.integer[destructibleTypeId] + 1
         set destSpecificEntryCount = destSpecificEntryCount + 1
         
         if DEBUG_MODE then
@@ -216,13 +216,13 @@ library ItemLootDestructibles initializer Init requires ItemLootSystem, Destruct
         local integer roll
         local integer cumulative = 0
         
-        set entryIndex = destSpecificFirst[destTypeId]
+        set entryIndex = destSpecificFirst.integer[destTypeId]
         loop
             exitwhen entryIndex < 0
-            if destSpecificIsGuaranteed[entryIndex] == 0 and destSpecificWeight[entryIndex] > 0 then
-                set totalWeight = totalWeight + destSpecificWeight[entryIndex]
+            if destSpecificIsGuaranteed.integer[entryIndex] == 0 and destSpecificWeight.integer[entryIndex] > 0 then
+                set totalWeight = totalWeight + destSpecificWeight.integer[entryIndex]
             endif
-            set entryIndex = destSpecificNext[entryIndex]
+            set entryIndex = destSpecificNext.integer[entryIndex]
         endloop
         
         if totalWeight <= 0 then
@@ -230,16 +230,16 @@ library ItemLootDestructibles initializer Init requires ItemLootSystem, Destruct
         endif
         
         set roll = GetRandomInt(1, totalWeight)
-        set entryIndex = destSpecificFirst[destTypeId]
+        set entryIndex = destSpecificFirst.integer[destTypeId]
         loop
             exitwhen entryIndex < 0
-            if destSpecificIsGuaranteed[entryIndex] == 0 and destSpecificWeight[entryIndex] > 0 then
-                set cumulative = cumulative + destSpecificWeight[entryIndex]
+            if destSpecificIsGuaranteed.integer[entryIndex] == 0 and destSpecificWeight.integer[entryIndex] > 0 then
+                set cumulative = cumulative + destSpecificWeight.integer[entryIndex]
                 if roll <= cumulative then
                     return entryIndex
                 endif
             endif
-            set entryIndex = destSpecificNext[entryIndex]
+            set entryIndex = destSpecificNext.integer[entryIndex]
         endloop
         
         return -1
@@ -253,16 +253,16 @@ library ItemLootDestructibles initializer Init requires ItemLootSystem, Destruct
         local integer roll
         local integer dropIndex = 0
         
-        set entryIndex = destSpecificFirst[destTypeId]
+        set entryIndex = destSpecificFirst.integer[destTypeId]
         
         loop
             exitwhen entryIndex < 0
             
-            set itemType = destSpecificItemType[entryIndex]
-            set dropChance = destSpecificDropChance[entryIndex]
+            set itemType = destSpecificItemType.integer[entryIndex]
+            set dropChance = destSpecificDropChance.integer[entryIndex]
             
             // Check if guaranteed or roll for drop
-            if destSpecificIsGuaranteed[entryIndex] == 1 then
+            if destSpecificIsGuaranteed.integer[entryIndex] == 1 then
                 set dropIndex = DropItemInstances(itemType, 1, x, y, dropIndex)
             else
                 set roll = GetRandomInt(1, 10000)
@@ -271,7 +271,7 @@ library ItemLootDestructibles initializer Init requires ItemLootSystem, Destruct
                 endif
             endif
             
-            set entryIndex = destSpecificNext[entryIndex]
+            set entryIndex = destSpecificNext.integer[entryIndex]
         endloop
     endfunction
     
@@ -286,7 +286,7 @@ library ItemLootDestructibles initializer Init requires ItemLootSystem, Destruct
         local integer tableRollCount
         local integer rollIndex = 0
         
-        if GetRandomInt(1, 10000) > destTableDropChance[destTypeId] then
+        if GetRandomInt(1, 10000) > destTableDropChance.integer[destTypeId] then
             if DEBUG_MODE then
                 call BJDebugMsg("Destructible table failed roll for " + I2S(destTypeId))
             endif
@@ -294,20 +294,20 @@ library ItemLootDestructibles initializer Init requires ItemLootSystem, Destruct
         endif
         
         // Guaranteed items always drop once the table succeeds.
-        set entryIndex = destSpecificFirst[destTypeId]
+        set entryIndex = destSpecificFirst.integer[destTypeId]
         loop
             exitwhen entryIndex < 0
-            if destSpecificIsGuaranteed[entryIndex] == 1 then
-                set itemType = destSpecificItemType[entryIndex]
-                set quantity = GetRandomQuantity(destSpecificQtyMin[entryIndex], destSpecificQtyMax[entryIndex])
+            if destSpecificIsGuaranteed.integer[entryIndex] == 1 then
+                set itemType = destSpecificItemType.integer[entryIndex]
+                set quantity = GetRandomQuantity(destSpecificQtyMin.integer[entryIndex], destSpecificQtyMax.integer[entryIndex])
                 set dropIndex = DropItemInstances(itemType, quantity, x, y, dropIndex)
             endif
-            set entryIndex = destSpecificNext[entryIndex]
+            set entryIndex = destSpecificNext.integer[entryIndex]
         endloop
         
-        set tableRollCount = destTableDropCountMin[destTypeId]
-        if destTableDropCountMax[destTypeId] > tableRollCount then
-            set tableRollCount = GetRandomInt(destTableDropCountMin[destTypeId], destTableDropCountMax[destTypeId])
+        set tableRollCount = destTableDropCountMin.integer[destTypeId]
+        if destTableDropCountMax.integer[destTypeId] > tableRollCount then
+            set tableRollCount = GetRandomInt(destTableDropCountMin.integer[destTypeId], destTableDropCountMax.integer[destTypeId])
         endif
         
         loop
@@ -316,11 +316,11 @@ library ItemLootDestructibles initializer Init requires ItemLootSystem, Destruct
             set entryIndex = GetWeightedRandomSpecificEntry(destTypeId)
             exitwhen entryIndex < 0
             
-            set dropChance = destSpecificDropChance[entryIndex]
+            set dropChance = destSpecificDropChance.integer[entryIndex]
             set roll = GetRandomInt(1, 10000)
             if roll <= dropChance then
-                set itemType = destSpecificItemType[entryIndex]
-                set quantity = GetRandomQuantity(destSpecificQtyMin[entryIndex], destSpecificQtyMax[entryIndex])
+                set itemType = destSpecificItemType.integer[entryIndex]
+                set quantity = GetRandomQuantity(destSpecificQtyMin.integer[entryIndex], destSpecificQtyMax.integer[entryIndex])
                 set dropIndex = DropItemInstances(itemType, quantity, x, y, dropIndex)
             endif
             
@@ -334,11 +334,11 @@ library ItemLootDestructibles initializer Init requires ItemLootSystem, Destruct
             return
         endif
         
-        if destHasSpecificDrops[destTypeId] != 1 then
+        if destHasSpecificDrops.integer[destTypeId] != 1 then
             return
         endif
         
-        if destHasLootTable.has(destTypeId) and destHasLootTable[destTypeId] == 1 then
+        if destHasLootTable.has(destTypeId) and destHasLootTable.integer[destTypeId] == 1 then
             call ProcessLootTableDrops(destTypeId, x, y)
             return
         endif
@@ -356,7 +356,7 @@ library ItemLootDestructibles initializer Init requires ItemLootSystem, Destruct
             return
         endif
         
-        set level = destructibleLevel[destTypeId]
+        set level = destructibleLevel.integer[destTypeId]
         if level <= 0 then
             return
         endif
