@@ -1,4 +1,4 @@
-library qAradion initializer Init requires QuestGiver, QuestMaster, DialogSystem, ExSound, FollowSystem, PatrolSystem, UnitSpawn
+library qAradion initializer Init requires QuestGiver, QuestMaster, DialogSystem, ExSound, FollowSystem, PatrolSystem, UnitSpawn, Companions
 //===========================================================================
 // qAradion
 // Quest giver dialog + quest flow for Aradion the Farseer.
@@ -125,6 +125,7 @@ globals
 	private timer RiftsWaveTimer = null
 	private timer RiftsCombatTimer = null
 	private timer RiftsCountdownTimer = null
+	private timer RiftsFailResetTimer = null
 	private timer FieldLineQueueTimer = null
 	private timer FadingSparksTimer = null
 	private dialog ValeriaNegotiationDialog = null
@@ -160,6 +161,7 @@ globals
 	private boolean RiftsReturnedHome = false
 	private boolean FadingSparksFinished = false
 	private boolean array RiftsClosed
+	private string RiftsPendingFailReason = ""
 
 	private constant integer ARADION_QID_RANGER = 1
 	private constant integer ARADION_QID_CRYSTALS = 2
@@ -320,14 +322,14 @@ endfunction
 
 private function AddValeriaCompanion takes nothing returns nothing
 	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) and not ValeriaCompanionActive then
-		call QuestGiver_AddCompanion(Valeria, VALERIA_COMPANION_ICON)
+		call Companions_Add(Valeria, VALERIA_COMPANION_ICON, null, COMPANION_MODE_DEFEND)
 		set ValeriaCompanionActive = true
 	endif
 endfunction
 
 private function RemoveValeriaCompanion takes nothing returns nothing
 	if Valeria != null and ValeriaCompanionActive then
-		call QuestGiver_RemoveCompanion(Valeria)
+		call Companions_Remove(Valeria)
 	endif
 	set ValeriaCompanionActive = false
 endfunction
@@ -437,14 +439,14 @@ endfunction
 
 private function AddAradionCompanion takes nothing returns nothing
 	if Aradion != null and QuestGiver_IsUnitAlive(Aradion) and not AradionCompanionActive then
-		call QuestGiver_AddCompanion(Aradion, ARADION_COMPANION_ICON)
+		call Companions_Add(Aradion, ARADION_COMPANION_ICON, null, COMPANION_MODE_DEFEND)
 		set AradionCompanionActive = true
 	endif
 endfunction
 
 private function RemoveAradionCompanion takes nothing returns nothing
 	if Aradion != null and AradionCompanionActive then
-		call QuestGiver_RemoveCompanion(Aradion)
+		call Companions_Remove(Aradion)
 	endif
 	set AradionCompanionActive = false
 endfunction
@@ -473,13 +475,15 @@ private function StartFieldCompanions takes unit hero returns nothing
 	endif
 	call AddValeriaCompanion()
 	call AddAradionCompanion()
-	if hero != null then
-		if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
-			call FollowSystem_SetFollow(Valeria, hero, FOLLOW_MAX_DISTANCE, false, 0.00, FOLLOW_STYLE_DEFEND, true, true)
-		endif
-		if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
-			call FollowSystem_SetFollow(Aradion, hero, FOLLOW_MAX_DISTANCE, false, 0.00, FOLLOW_STYLE_DEFEND, true, true)
-		endif
+	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
+		call Companions_SetMode(Valeria, COMPANION_MODE_DEFEND)
+		call Companions_SetLeader(Valeria, hero)
+		call Companions_Resume(Valeria)
+	endif
+	if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
+		call Companions_SetMode(Aradion, COMPANION_MODE_DEFEND)
+		call Companions_SetLeader(Aradion, hero)
+		call Companions_Resume(Aradion)
 	endif
 endfunction
 
@@ -705,8 +709,10 @@ private function StartRangerMissingEscortInternal takes nothing returns nothing
 
 	set hero = ResolveDialogHero()
 	call AddValeriaCompanion()
-	if hero != null then
-		call FollowSystem_SetFollow(Valeria, hero, FOLLOW_MAX_DISTANCE, false, 0.00, FOLLOW_STYLE_DEFEND, true, true)
+	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
+		call Companions_SetMode(Valeria, COMPANION_MODE_DEFEND)
+		call Companions_SetLeader(Valeria, hero)
+		call Companions_Resume(Valeria)
 	endif
 	call EnableRangerMissingDeathTrigger()
 	set RangerMissingEscortActive = true
@@ -808,6 +814,9 @@ private function OnValeriaEncounterRangeTick takes nothing returns nothing
 	if not QuestGiver_IsUnitAlive(Valeria) or not QuestGiver_IsUnitAlive(hero) then
 		set hero = null
 		return
+	endif
+	if ValeriaNegotiationPromptPending then
+		call DialogSystem_MakeFaceEachOther(hero, Valeria, 0.25)
 	endif
 	if not QuestGiver_IsWithinRange(Valeria, hero, VALERIA_ENCOUNTER_RESET_DISTANCE) then
 		call DisplayTextToForce(GetPlayersAll(), "|cffd45e19You've lost Valeria. She slips back into the ruins.|r")
@@ -985,10 +994,28 @@ private function ApplyValeriaNegotiationSuccessState takes nothing returns nothi
 	endif
 endfunction
 
+private function QueueValeriaNegotiationPromptDelayed takes nothing returns nothing
+	local timer t = GetExpiredTimer()
+	call ExecuteFunc("qAradion_QueueValeriaNegotiationPromptPublic")
+	if t != null then
+		call DestroyTimer(t)
+	endif
+	set t = null
+endfunction
+
 private function QueueValeriaNegotiationPrompt takes nothing returns nothing
+	local unit hero = GetValeriaEncounterHero()
 	set ValeriaNegotiationPromptPending = true
+	if hero != null and Valeria != null and QuestGiver_IsUnitAlive(hero) and QuestGiver_IsUnitAlive(Valeria) then
+		call DialogSystem_MakeFaceEachOther(hero, Valeria, 0.25)
+	endif
 	call DialogSystem_SetEscapeAction(function RunValeriaNegotiationEscAction)
 	call DisplayTimedTextToPlayer(Player(0), 0.00, 0.00, 5.00, "|cffd45e19Press ESC to persuade Valeria.|r")
+	set hero = null
+endfunction
+
+public function QueueValeriaNegotiationPromptPublic takes nothing returns nothing
+	call QueueValeriaNegotiationPrompt()
 endfunction
 
 private function OnValeriaEncounterProximity takes nothing returns nothing
@@ -1101,6 +1128,7 @@ endfunction
 
 private function OnValeriaIntroEnd takes nothing returns nothing
 	local unit hero = GetValeriaEncounterHero()
+	local timer t
 	call DialogSystem_StopDialogCamera(Player(0), 2.0, USE_DIALOG_CAMERA)
 	call ExitCinematicMode()
 	call EnableUserControl(true)
@@ -1114,7 +1142,9 @@ private function OnValeriaIntroEnd takes nothing returns nothing
 		call IssuePointOrder(Valeria, "attack", GetUnitX(hero), GetUnitY(hero))
 	endif
 	call StartValeriaEncounterLoop()
-	call QueueValeriaNegotiationPrompt()
+	set t = CreateTimer()
+	call TimerStart(t, 2.00, false, function QueueValeriaNegotiationPromptDelayed)
+	set t = null
 endfunction
 
 private function PlayValeriaNegotiationResponse takes integer lineId returns nothing
@@ -1938,14 +1968,13 @@ private function PlayRiftsStartBarks takes nothing returns nothing
 endfunction
 
 private function StartRiftsRitualInternal takes unit riftUnit, integer riftIndex, unit hero returns nothing
-	local real facing
-	local real rx
-	local real ry
-	local real ax
-	local real ay
-	local real vx
-	local real vy
-	if riftUnit == null or not QuestGiver_IsUnitAlive(riftUnit) or Aradion == null then
+	if riftUnit == null or not QuestGiver_IsUnitAlive(riftUnit) or Aradion == null or not QuestGiver_IsUnitAlive(Aradion) then
+		return
+	endif
+	if riftIndex <= 0 or riftIndex > RIFTS_MAX or RiftsClosed[riftIndex] then
+		return
+	endif
+	if RiftsRitualActive then
 		return
 	endif
 	set SelectedHero = hero
@@ -1955,24 +1984,14 @@ private function StartRiftsRitualInternal takes unit riftUnit, integer riftIndex
 	set RiftsRitualActive = true
 	set RiftsNextWaveN = 1
 	call ClearFieldLineQueue()
-	call StopFollow(Aradion)
-	call StopFollow(Valeria)
-	call RemoveAradionCompanion()
+	call Companions_Suspend(Aradion)
 	call StopValeriaPatrolInternal()
-	set rx = GetUnitX(riftUnit)
-	set ry = GetUnitY(riftUnit)
-	set facing = GetUnitFacing(Aradion) * bj_DEGTORAD
-	set ax = rx + RIFTS_ARADION_OFFSET * Cos(facing)
-	set ay = ry + RIFTS_ARADION_OFFSET * Sin(facing)
-	call SetUnitPosition(Aradion, ax, ay)
-	call SetUnitFacing(Aradion, bj_RADTODEG * Atan2(ry - ay, rx - ax))
 	call IssueImmediateOrder(Aradion, "stop")
 	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
-		set vx = ax + RIFTS_VALERIA_OFFSET * Cos(facing)
-		set vy = ay + RIFTS_VALERIA_OFFSET * Sin(facing)
-		call SetUnitPosition(Valeria, vx, vy)
-		call SetUnitFacing(Valeria, GetUnitFacing(Aradion))
-		call IssueImmediateOrder(Valeria, "stop")
+		call AddValeriaCompanion()
+		call Companions_SetMode(Valeria, COMPANION_MODE_DEFEND)
+		call Companions_SetLeader(Valeria, hero)
+		call Companions_Resume(Valeria)
 	endif
 	call PlayRiftsStartBarks()
 	call OrderAradionToChannelCurrentRift()
@@ -2275,8 +2294,8 @@ endfunction
 
 private function PlayRiftsAllClosedBarks takes nothing returns nothing
 	call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0084", "I think this was the last of them. All rifts should now be closed.")
-	call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0085", "In time, we will see... It's time to head back to our place.")
 	call QueueFieldLine(Valeria, "Valeria", "Valeria_0070", "So, is it... over now? Is this the answer to our people's curse?")
+	call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0085", "In time, we will see... It's time to head back to our place.")
 	call QueueFieldLine(Valeria, "Valeria", "Valeria_0071", "Gladly.")
 endfunction
 
@@ -2334,6 +2353,8 @@ private function OnRiftsCountdownTick takes nothing returns nothing
 	endif
 	if RiftsCurrentRift != null and QuestGiver_IsUnitAlive(RiftsCurrentRift) and GetUnitCurrentOrder(Aradion) != OrderId("blizzard") then
 		call OrderAradionToChannelCurrentRift()
+	elseif RiftsCurrentRift != null and QuestGiver_IsUnitAlive(RiftsCurrentRift) then
+		call SetUnitAnimation(Aradion, "spell")
 	endif
 	if RiftsCountdownRemaining <= 0 then
 		return
@@ -2382,6 +2403,7 @@ endfunction
 
 private function FinishRiftsCurrentRitual takes nothing returns nothing
 	local unit hero
+	local unit closedRift = RiftsCurrentRift
 	call SyncUnitReferences()
 	if not RiftsQuestActive then
 		return
@@ -2393,9 +2415,10 @@ private function FinishRiftsCurrentRitual takes nothing returns nothing
 		set RiftsClosed[RiftsCurrentIndex] = true
 		set RiftsUnits[RiftsCurrentIndex] = null
 	endif
-	if RiftsCurrentRift != null and QuestGiver_IsUnitAlive(RiftsCurrentRift) then
-		call DestroyEffect(AddSpecialEffect("Objects\\Spawnmodels\\NightElf\\NECancelDeath\\NECancelDeath.mdl", GetUnitX(RiftsCurrentRift), GetUnitY(RiftsCurrentRift)))
-		call KillUnit(RiftsCurrentRift)
+	if closedRift != null and QuestGiver_IsUnitAlive(closedRift) then
+		call DestroyEffect(AddSpecialEffect("Objects\\Spawnmodels\\NightElf\\NECancelDeath\\NECancelDeath.mdl", GetUnitX(closedRift), GetUnitY(closedRift)))
+		call KillUnit(closedRift)
+		call RemoveUnit(closedRift)
 	endif
 	set RiftsRitualActive = false
 	set RiftsCurrentRift = null
@@ -2405,17 +2428,18 @@ private function FinishRiftsCurrentRitual takes nothing returns nothing
 		call UnitRemoveAbility(Aradion, ABIL_RIFT_CLOSE)
 		call SetUnitAnimation(Aradion, "stand")
 	endif
-	call AddAradionCompanion()
 	call PlayRiftsFinishBarks()
 	call UpdateQuestRiftsCorruptionInternal()
 	set hero = ResolveDialogHero()
 	call StartFieldCompanions(hero)
+	call RegisterRiftUnits()
 	if RiftsCorruptionCounter >= 3 then
 		call PlayRiftsAllClosedBarks()
 	else
 		call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0083", "Let's head to the next one. Be on your guard.")
 		call QueueFieldLine(Valeria, "Valeria", "Valeria_0069", "Don't worry my love, we will be.")
 	endif
+	set closedRift = null
 endfunction
 
 private function OnRiftsRitualExpire takes nothing returns nothing
@@ -2485,12 +2509,33 @@ private function StartRiftsFieldMonitor takes nothing returns nothing
 	call TimerStart(RiftsFieldTimer, 0.50, true, function OnRiftsFieldTick)
 endfunction
 
-private function HandleRiftsFailure takes string reason returns nothing
-	local QuestData q
-	call SyncUnitReferences()
-	if not QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion) or QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion) then
-		return
+private function OrderRiftsSurvivorToFallenCompanion takes nothing returns nothing
+	local unit survivor = null
+	local unit fallen = null
+	local real x
+	local real y
+	if Aradion != null and Valeria != null and QuestGiver_IsUnitAlive(Aradion) and QuestGiver_IsUnitAlive(Valeria) then
+		if GetWidgetLife(Aradion) <= 1.05 then
+			set survivor = Valeria
+			set fallen = Aradion
+		elseif GetWidgetLife(Valeria) <= 1.05 then
+			set survivor = Aradion
+			set fallen = Valeria
+		endif
 	endif
+	if survivor != null and fallen != null then
+		set x = GetUnitX(fallen)
+		set y = GetUnitY(fallen)
+		call IssuePointOrder(survivor, "move", x, y)
+	endif
+	set survivor = null
+	set fallen = null
+endfunction
+
+private function FinalizeRiftsFailureReset takes nothing returns nothing
+	local QuestData q
+	local timer t = GetExpiredTimer()
+	call SyncUnitReferences()
 	set RiftsQuestActive = false
 	set RiftsRitualActive = false
 	set RiftsCurrentRift = null
@@ -2501,26 +2546,55 @@ private function HandleRiftsFailure takes string reason returns nothing
 	set RiftsCountdownRemaining = 0
 	set RiftsAwaitingReturnHome = false
 	set RiftsReturnedHome = false
-	call StopRiftsRuntimeTimers()
-	call StopRiftsFieldMonitor()
-	call ClearRiftsWaveHandles()
-	call ClearFieldLineQueue()
 	call ResetRiftsClosedState()
-	call DisableRiftsFailTriggers()
-	if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
-		call IssueImmediateOrder(Aradion, "stop")
-		call UnitRemoveAbility(Aradion, ABIL_RIFT_CLOSE)
-	endif
 	call ReturnRiftsCompanionsHomeInternal()
 	call RegisterRiftUnits()
 	set q = QuestGiver_GetByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
 	if q != 0 then
 		call ResetRiftsObjectivesForNewRun(q)
 	endif
-	call QuestGiver_FailQuestByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion, reason)
+	call QuestGiver_FailQuestByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion, RiftsPendingFailReason)
 	call QuestGiver_SetStateByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion, QUEST_STATE_AVAILABLE)
 	call QuestGiver_UpdateQuestByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
 	call QuestGiver_RefreshAvailabilityForGiver(Aradion)
+	set RiftsPendingFailReason = ""
+	if t == RiftsFailResetTimer then
+		set RiftsFailResetTimer = null
+	endif
+	if t != null then
+		call DestroyTimer(t)
+	endif
+	set q = 0
+	set t = null
+endfunction
+
+private function HandleRiftsFailure takes string reason returns nothing
+	call SyncUnitReferences()
+	if not QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion) or QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion) then
+		return
+	endif
+	call StopRiftsRuntimeTimers()
+	call StopRiftsFieldMonitor()
+	call ClearRiftsWaveHandles()
+	call ClearFieldLineQueue()
+	call DisableRiftsFailTriggers()
+	if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
+		call IssueImmediateOrder(Aradion, "stop")
+		call UnitRemoveAbility(Aradion, ABIL_RIFT_CLOSE)
+		call SetUnitAnimation(Aradion, "stand")
+	endif
+	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
+		call IssueImmediateOrder(Valeria, "stop")
+	endif
+	call Companions_Suspend(Aradion)
+	call Companions_Suspend(Valeria)
+	call OrderRiftsSurvivorToFallenCompanion()
+	set RiftsPendingFailReason = reason
+	if RiftsFailResetTimer != null then
+		call DestroyTimer(RiftsFailResetTimer)
+	endif
+	set RiftsFailResetTimer = CreateTimer()
+	call TimerStart(RiftsFailResetTimer, 2.00, false, function FinalizeRiftsFailureReset)
 endfunction
 
 private function StopFadingSparksTimer takes nothing returns nothing
@@ -2594,6 +2668,9 @@ private function OnFadingSparksSpellFinish takes nothing returns nothing
 	set x = GetUnitX(FadingSparksTarget)
 	set y = GetUnitY(FadingSparksTarget)
 	call UnitDamageTarget(FadingSparksCaster, FadingSparksTarget, FADING_SPARKS_DAMAGE, true, false, ATTACK_TYPE_MAGIC, DAMAGE_TYPE_NORMAL, WEAPON_TYPE_WHOKNOWS)
+	if QuestGiver_IsUnitAlive(FadingSparksTarget) then
+		call KillUnit(FadingSparksTarget)
+	endif
 	call CreateItem(ITEM_WRAITH_ESSENCE, x, y)
 	call ClearFadingSparksState()
 endfunction
@@ -2679,12 +2756,19 @@ endfunction
 private function SyncRangerMissingReadyTurnIn takes nothing returns nothing
 	local real vx
 	local real vy
+	local QuestData q
 	call SyncUnitReferences()
 	if not RangerMissingEscortActive then
 		return
 	endif
 	if QuestGiver_GetStateByNameAndGiver(QUEST_RANGER_MISSING, Aradion) != QUEST_STATE_READY_TURNIN then
 		return
+	endif
+	set q = QuestGiver_GetByNameAndGiver(QUEST_RANGER_MISSING, Aradion)
+	if q != 0 then
+		call q.setRequirement(2, "Speak with Aradion The Farseer")
+		call q.updateRequirementText(2, "Speak with Aradion The Farseer")
+		call q.refreshQuestLog()
 	endif
 	call StopRangerMissingEscortInternal()
 	if Aradion != null and Valeria != null and QuestGiver_IsUnitAlive(Aradion) and QuestGiver_IsUnitAlive(Valeria) then
@@ -2832,8 +2916,6 @@ private function OnCompleteQuest1 takes nothing returns nothing
 	local integer seq
 	local unit hero
 	local QuestData q
-	local real vx
-	local real vy
 	
 	if Valeria == null or not UnitAlive(Valeria) then
 		call BJDebugMsg("[qAradion] ERROR: Cannot complete quest - Valeria is null or dead!")
@@ -2849,10 +2931,6 @@ private function OnCompleteQuest1 takes nothing returns nothing
 	endif
 
 	call StopRangerMissingEscortInternal()
-	call IssueImmediateOrder(Valeria, "stop")
-	set vx = GetUnitX(Aradion) + 200.00 * Cos(GetUnitFacing(Aradion) * bj_DEGTORAD)
-	set vy = GetUnitY(Aradion) + 200.00 * Sin(GetUnitFacing(Aradion) * bj_DEGTORAD)
-	call SetUnitPosition(Valeria, vx, vy)
 	call IssueImmediateOrder(Valeria, "stop")
 	
 	set seq = QuestGiver_CreateBaseSequence(Aradion, "Aradion the Farseer")
@@ -2896,6 +2974,10 @@ private function OnCompleteQuest1 takes nothing returns nothing
 		call DialogSystem_AddLine(seq, Valeria, "Valeria", "…Do not think this earns my trust fully. But for Aradion's sake, I'm giving you a chance.", "", true)
 	endif
 	call DialogSystem_PlaySequence(seq, Player(0), Aradion)
+endfunction
+
+public function StartDirectRangerMissingTurnInPublic takes nothing returns nothing
+	call OnCompleteQuest1()
 endfunction
 
 private function OnAcceptQuest2End takes nothing returns nothing
@@ -3058,7 +3140,6 @@ private function OnAcceptQuest4End takes nothing returns nothing
 	endif
 	call EnableRiftsFailTriggers()
 	call StopValeriaPatrolInternal()
-	call PlaceValeriaNearAradion(RIFTS_VALERIA_OFFSET)
 	call StartFieldCompanions(hero)
 	call StartRiftsFieldMonitor()
 	call StartExitFadeOut()
@@ -3193,10 +3274,7 @@ private function BuildDialog takes nothing returns nothing
 			set b = DialogSystem_AddButtonQuestAcceptNoAutoPlay(AradionDialog, QUEST_RANGER_MISSING, 2)
 			call DialogSystem_BindButtonCode(b, function OnAcceptQuest1)
 		elseif QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_RANGER_MISSING, Aradion) and not QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_RANGER_MISSING, Aradion) and not QuestGiver_IsQuestFailedByNameAndGiver(QUEST_RANGER_MISSING, Aradion) then
-			if QuestGiver_GetStateByNameAndGiver(QUEST_RANGER_MISSING, Aradion) == QUEST_STATE_READY_TURNIN and QuestGiver_IsUnitAlive(Valeria) then
-				set b = DialogSystem_AddButtonQuestComplete(AradionDialog, QUEST_RANGER_MISSING, 4)
-				call DialogSystem_BindButtonCode(b, function OnCompleteQuest1)
-			endif
+			// Completion is triggered directly from Aradion selection once Valeria is escorted home.
 		endif
 	endif
 
@@ -3313,9 +3391,19 @@ endfunction
 //===========================================================================
 // Selection entry - Fade sequence callbacks
 //===========================================================================
+private function ShouldDirectCompleteRangerMissing takes nothing returns boolean
+	return QuestGiver_QuestExistsByNameAndGiver(QUEST_RANGER_MISSING, Aradion) and QuestGiver_GetStateByNameAndGiver(QUEST_RANGER_MISSING, Aradion) == QUEST_STATE_READY_TURNIN and QuestGiver_IsUnitAlive(Valeria)
+endfunction
+
 private function ContinueToDialogInternal takes nothing returns nothing
 	local unit hero = SelectedHero
 	call SyncUnitReferences()
+	call SyncRangerMissingReadyTurnIn()
+
+	if ShouldDirectCompleteRangerMissing() then
+		call ExecuteFunc("qAradion_StartDirectRangerMissingTurnInPublic")
+		return
+	endif
 	
 	// Continue with dialog logic
 	if not QuestGiver_IsFirstGreetDone(Aradion) then
