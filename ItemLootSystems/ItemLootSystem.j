@@ -264,7 +264,12 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
             // Decrement expire time
             set hoverExpireTime[i] = hoverExpireTime[i] - FLOAT_HOVER_INTERVAL
             
-            if hoverExpireTime[i] > 0 then
+            if hoverItem[i] != null and GetItemTypeId(hoverItem[i]) == 0 then
+                call DestroyTextTag(hoverTextTag[i])
+                set hoverTextTag[i] = null
+                set hoverItem[i] = null
+                set hoverExpireTime[i] = 0
+            elseif hoverExpireTime[i] > 0 then
                 // Update phase
                 set hoverPhase[i] = hoverPhase[i] + (FLOAT_HOVER_SPEED * 2.0 * 3.14159 * FLOAT_HOVER_INTERVAL)
                 
