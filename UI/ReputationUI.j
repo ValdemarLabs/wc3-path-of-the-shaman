@@ -604,6 +604,17 @@ public function Show takes nothing returns nothing
     set p = null
 endfunction
 
+public function Refresh takes nothing returns nothing
+    local player p = GetLocalPlayer()
+    if RUI_Parent == null or not BlzFrameIsVisible(RUI_Parent) then
+        set p = null
+        return
+    endif
+    set RUI_ListScrollValueCache = -1
+    call RUI_Update(p)
+    set p = null
+endfunction
+
 public function Toggle takes nothing returns nothing
     if RUI_Parent != null and BlzFrameIsVisible(RUI_Parent) then
         call Hide()
