@@ -40,6 +40,8 @@
   Added batch edit support for multi-selected items directly from the main item list. The new batch editor only applies fields explicitly changed/checked by the user, so shared updates such as `base_id`, rarity, class, type, `wc3_classification`, costs, levels, tooltip text, asset paths, and main WC3 item flags can now be pushed safely across selected items without overwriting untouched fields.
 - `WC3ItemManager`
   Cleaned up the current build setup for the active desktop toolchain by excluding generated `obj` / `bin` / temp build folders from compile input, then restored a clean normal `bin/Debug/net8.0-windows` debug build after recovering from the blocked output/intermediate folder state encountered during today's ItemManager session.
+- `WC3ItemManager`
+  Fixed destructible loot-table export parity so assigned destructible loot tables now generate their table-level drop chance, drop-count range, and per-item quantity/chance/weight data into the `ItemLootDefinitionsDestructible` output instead of only exporting generic destructible levels or older direct specific-drop rows.
 
 ### Technical Updates
 - `Companions.j`
@@ -51,6 +53,8 @@
 - `ZoneEvent.j`
   Updated teleport-style fast-pan handling so `ZoneEvent` refreshes `CameraControl` target cache immediately after move-start teleports before applying the fast pan.
   Interior exits now only honor the currently active child zone on shared exit rects, and they hand zone state back to the parent zone on exit so Shadowmaw-style cave re-entry does not stay blocked by stale `currentZone` state.
+- `ItemLootDestructibles.j` / `ItemLootSystem`
+  Extended the newer destructible loot runtime so destructible loot tables can now roll a table-level chance first, apply guaranteed table items, perform weighted extra rolls using the configured drop-count range, and honor per-entry quantity ranges. This fixes the newer ItemManager destructible-table path that previously ignored named-table semantics and behaved closer to legacy per-entry direct rolls or generic-tier fallback.
 
 ### Known Issues
 - `qAradion.j` / `Rifts of Corruption`
@@ -59,6 +63,8 @@
   The updated reward parity path still needs live confirmation for XP on hero companions and reputation reward delivery on actual quest completion.
 - `ZoneEvent.j` / `Shadowmaw Cave`
   The stale interior-zone state path and shared-exit-rect overlap have now been patched, but Shadowmaw Cave still needs direct gameplay validation to confirm the enter-rect issue is fully gone in-map.
+- `Item loot systems`
+  The older `ItemDropSystem` / `ItemDropDestructible` path still exists in the repo as a legacy/manual loot system and is not driven by `WC3ItemManager` exports. Maps still importing that older runtime instead of `ItemLootSystem` + `ItemLootDestructibles` will not use the newer destructible loot-table data until their imports are aligned.
 
 ### Actions Remaining
 - `qAradion.j` / `Ranger Missing`
@@ -69,6 +75,8 @@
   Re-test XP, gold, and reputation rewards on real quest completions, including hero companions inside `Companion_Group`.
 - `CameraControl.j` / `ZoneEvent.j`
   Re-test mouse-wheel reset and fast-pan behavior on the intended interior/subzone teleports, including Shadowmaw Cave re-entry after exiting through the shared cave-out rect.
+- `Destructible loot`
+  Re-export the loot JASS from `WC3ItemManager`, then verify in-map that destructibles assigned named loot tables now follow the configured table chance/count behavior and that the active map import path is the newer `ItemLootSystem` / `ItemLootDestructibles` runtime instead of the old `ItemDropSystem`.
 
 ## [13.6.2026]
 
