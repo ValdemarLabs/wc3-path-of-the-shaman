@@ -2517,7 +2517,8 @@ namespace WC3ItemManager
             var abilityLines = LoadAndFormatItemAbilities(conn, itemId);
             if (abilityLines.Count > 0)
             {
-                tooltipParts.Add("|n|n|cff00ff00Abilities:|r|n" + string.Join("|n", abilityLines));
+                string abilityColor = GetWC3ColorForClass("Ability");
+                tooltipParts.Add($"|n|n{abilityColor}Abilities:|r|n" + string.Join("|n", abilityLines));
             }
 
             return string.Join("", tooltipParts);
@@ -2577,6 +2578,7 @@ namespace WC3ItemManager
         private List<string> LoadAndFormatItemAbilities(NpgsqlConnection conn, int itemId)
         {
             var abilityLines = new List<string>();
+            string abilityColor = GetWC3ColorForClass("Ability");
 
             string query = "SELECT manual_abilities_data FROM items WHERE id = @item_id";
 
@@ -2600,7 +2602,7 @@ namespace WC3ItemManager
                                     if (!string.IsNullOrWhiteSpace(ability.Type) && 
                                         !string.IsNullOrWhiteSpace(ability.Description))
                                     {
-                                        string formatted = $"|cffffcc00{ability.Type}:|r {ability.Description}";
+                                        string formatted = $"{abilityColor}{ability.Type}:|r {ability.Description}";
                                         abilityLines.Add(formatted);
                                     }
                                 }
