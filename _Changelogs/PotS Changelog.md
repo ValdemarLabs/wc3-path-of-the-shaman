@@ -19,6 +19,7 @@
 - `Ranger Missing` / `qAradion.j`
   Valeria's escort step now transitions into `Speak with Aradion The Farseer`, and selecting Aradion at that point starts the reunion completion directly instead of relying on a separate completion dialog button.
   The Valeria persuasion `ESC` prompt is now delayed until the intro combat beat has finished, and the standoff keeps the hero and Valeria facing each other more consistently while persuasion is available.
+  The correct persuasion answer now runs through its own fade-backed reunion beat before Valeria's follow-up lines, instead of snapping straight through the success state, and Valeria's home-return recreation is timed to the fade-black phase of the reunion completion exit.
 - `Rifts of Corruption`
   Aradion and Valeria now return through a proper quest-owned companion runtime instead of the older direct follow-only path, helping both companions behave more like real party companions during escort/combat phases.
   Rift rituals no longer snap both units into teleported ritual offsets at start; Aradion now enters a dedicated ritual state while Valeria stays under companion control.
@@ -46,9 +47,10 @@
 - `QuestMaster.j`
   Aligned quest reward awarding closer to the old GUI reward flow: XP now also reaches hero companions in `Companion_Group`, and faction reputation reward calls now always route through `AddReputation` / `AddReputationLinked` when a faction is set.
 - `qAradion.j`
-  Moved more of Aradion/Valeria field control onto the new companion runtime, added direct-select Ranger Missing completion handling, and reworked the Rift fail/reset state around delayed retry cleanup instead of immediate home reset.
+  Moved more of Aradion/Valeria field control onto the new companion runtime, added direct-select Ranger Missing completion handling, reworked the Valeria success branch into a lead-in line plus timed cinematic transition, and reworked the Rift fail/reset state around delayed retry cleanup instead of immediate home reset.
 - `ZoneEvent.j`
   Updated teleport-style fast-pan handling so `ZoneEvent` refreshes `CameraControl` target cache immediately after move-start teleports before applying the fast pan.
+  Interior exits now only honor the currently active child zone on shared exit rects, and they hand zone state back to the parent zone on exit so Shadowmaw-style cave re-entry does not stay blocked by stale `currentZone` state.
 
 ### Known Issues
 - `qAradion.j` / `Rifts of Corruption`
@@ -56,17 +58,17 @@
 - `QuestMaster.j` / quest rewards
   The updated reward parity path still needs live confirmation for XP on hero companions and reputation reward delivery on actual quest completion.
 - `ZoneEvent.j` / `Shadowmaw Cave`
-  Shadowmaw Cave's specific enter-rect regression was not independently resolved during today's pass and still needs direct gameplay validation after the camera/teleport adjustments.
+  The stale interior-zone state path and shared-exit-rect overlap have now been patched, but Shadowmaw Cave still needs direct gameplay validation to confirm the enter-rect issue is fully gone in-map.
 
 ### Actions Remaining
 - `qAradion.j` / `Ranger Missing`
-  Re-test the full Valeria encounter and reunion flow: intro timing, `ESC` persuasion timing, facing lock, escort completion, and direct-select turn-in on `Speak with Aradion The Farseer`.
+  Re-test the full Valeria encounter and reunion flow: intro timing, `ESC` persuasion timing, facing lock, correct-answer fade beat, escort completion, black-phase home return, and direct-select turn-in on `Speak with Aradion The Farseer`.
 - `qAradion.j` / `Rifts of Corruption`
   Re-test all three rifts as the first target, repeated proximity while a ritual is active, closed-rift retry prevention, bark ordering, third-rift escort-home transition, and the delayed death/fail reset flow.
 - `QuestMaster.j` / quest rewards
   Re-test XP, gold, and reputation rewards on real quest completions, including hero companions inside `Companion_Group`.
 - `CameraControl.j` / `ZoneEvent.j`
-  Re-test mouse-wheel reset and fast-pan behavior on the intended interior/subzone teleports, including Shadowmaw Cave.
+  Re-test mouse-wheel reset and fast-pan behavior on the intended interior/subzone teleports, including Shadowmaw Cave re-entry after exiting through the shared cave-out rect.
 
 ## [13.6.2026]
 
