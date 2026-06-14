@@ -65,6 +65,9 @@ Thumbs.db
 # VSCode
 .vscode/
 
+# JASS
+jass.config.json
+
 # Local Codex skill workspace notes/helpers
 /codex-skills/README.md
 /codex-skills/sync-jassmaster-to-codex.ps1
