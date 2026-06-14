@@ -20,10 +20,12 @@
   Valeria's escort step now transitions into `Speak with Aradion The Farseer`, and selecting Aradion at that point starts the reunion completion directly instead of relying on a separate completion dialog button.
   The Valeria persuasion `ESC` prompt is now delayed until the intro combat beat has finished, and the standoff keeps the hero and Valeria facing each other more consistently while persuasion is available.
   The correct persuasion answer now runs through its own fade-backed reunion beat before Valeria's follow-up lines, instead of snapping straight through the success state, and Valeria's home-return recreation is timed to the fade-black phase of the reunion completion exit.
+  Tightened the Valeria intro and reunion presentation again: Nazgrek now stops/faces Valeria immediately when the encounter opens, `ESC` persuasion choices are cleared as soon as a response is selected so they cannot reopen during the hero line, and the Aradion reunion turn-in now pushes stronger hero-to-speaker facing through the exchange.
 - `Rifts of Corruption`
   Aradion and Valeria now return through a proper quest-owned companion runtime instead of the older direct follow-only path, helping both companions behave more like real party companions during escort/combat phases.
   Rift rituals no longer snap both units into teleported ritual offsets at start; Aradion now enters a dedicated ritual state while Valeria stays under companion control.
   Closed rifts are now removed immediately on success, the all-closed bark order is closer to the old GUI sequence, and ritual failure no longer snaps both units home instantly before the surviving companion reacts.
+  Tightened more of the old-GUI ritual presentation and fail flow: Valeria now stages farther away before moving into the Aradion start scene, ritual/field lines are queued one by one instead of overlapping, fail text now splits correctly between `X has died.` and `X fell during the ritual.`, and the survivor reaction / delayed retry reset now plays out before both companions are restored home.
 - `Fading Sparks`
   Successful Tel'anor Rod extraction now kills the Mana Wraith at the same time the `Wraith Essence` drop is created.
 - `Camera / Zone transitions`
@@ -48,8 +50,12 @@
   Added a new quest-friendly companion wrapper over `QuestGiver` and `FollowSystem`, with defend/passive/hold modes plus suspend/resume handling for scripted companion control.
 - `QuestMaster.j`
   Aligned quest reward awarding closer to the old GUI reward flow: XP now also reaches hero companions in `Companion_Group`, and faction reputation reward calls now always route through `AddReputation` / `AddReputationLinked` when a faction is set.
+  Failed quests now mark properly as failed in the Warcraft III quest log and clear that failed flag again on accept, complete, abandon, and reset paths.
+  XP reward delivery now also falls back explicitly to `udg_Nazgrek` / `udg_Zulkis` when they are valid hero units but were missed by the current Player 1 hero enumeration path.
 - `qAradion.j`
   Moved more of Aradion/Valeria field control onto the new companion runtime, added direct-select Ranger Missing completion handling, reworked the Valeria success branch into a lead-in line plus timed cinematic transition, and reworked the Rift fail/reset state around delayed retry cleanup instead of immediate home reset.
+- `Reputation.j` / `ReputationUI.j`
+  Added an event-driven `ReputationUI` refresh hook so faction reputation changes now refresh the currently open UI immediately, while reopening the panel also forces a fresh rebuild instead of trusting the previous cached row state.
 - `ZoneEvent.j`
   Updated teleport-style fast-pan handling so `ZoneEvent` refreshes `CameraControl` target cache immediately after move-start teleports before applying the fast pan.
   Interior exits now only honor the currently active child zone on shared exit rects, and they hand zone state back to the parent zone on exit so Shadowmaw-style cave re-entry does not stay blocked by stale `currentZone` state.
@@ -58,9 +64,11 @@
 
 ### Known Issues
 - `qAradion.j` / `Rifts of Corruption`
-  Today's non-teleport ritual start, companion-combat behavior, third-rift escort-home state, and delayed fail-reset flow still need direct in-map verification across all three rifts.
+  Today's non-teleport ritual start, companion-combat behavior, third-rift escort-home state, sequential bark ordering, death-text split, closed-rift cleanup, and delayed fail-reset flow still need direct in-map verification across all three rifts.
 - `QuestMaster.j` / quest rewards
-  The updated reward parity path still needs live confirmation for XP on hero companions and reputation reward delivery on actual quest completion.
+  The updated reward parity path still needs live confirmation for XP on hero companions, XP fallback on Nazgrek/Zulkis, failed-quest log state, and reputation reward delivery on actual quest completion.
+- `qAradion.j` / `Rifts of Corruption`
+  The current JASS-side channel-animation fix removes the forced stuck spell pose, but the portal-closing ability itself may still need object-editor validation if it continues to override Aradion's looping channel animation in Warcraft III.
 - `ZoneEvent.j` / `Shadowmaw Cave`
   The stale interior-zone state path and shared-exit-rect overlap have now been patched, but Shadowmaw Cave still needs direct gameplay validation to confirm the enter-rect issue is fully gone in-map.
 - `Item loot systems`
@@ -70,9 +78,11 @@
 - `qAradion.j` / `Ranger Missing`
   Re-test the full Valeria encounter and reunion flow: intro timing, `ESC` persuasion timing, facing lock, correct-answer fade beat, escort completion, black-phase home return, and direct-select turn-in on `Speak with Aradion The Farseer`.
 - `qAradion.j` / `Rifts of Corruption`
-  Re-test all three rifts as the first target, repeated proximity while a ritual is active, closed-rift retry prevention, bark ordering, third-rift escort-home transition, and the delayed death/fail reset flow.
+  Re-test all three rifts as the first target, repeated proximity while a ritual is active, Valeria intro staging, closed-rift retry prevention, bark ordering, death-text split, third-rift escort-home transition, and the delayed death/fail reset flow.
 - `QuestMaster.j` / quest rewards
-  Re-test XP, gold, and reputation rewards on real quest completions, including hero companions inside `Companion_Group`.
+  Re-test XP, gold, and reputation rewards on real quest completions, including hero companions inside `Companion_Group`, Nazgrek/Zulkis fallback XP, and failed-quest quest-log state.
+- `ReputationUI.j`
+  Re-test that opening `ReputationUI` always refreshes the visible list and that live faction reputation changes refresh the open UI immediately without needing a manual close/reopen.
 - `CameraControl.j` / `ZoneEvent.j`
   Re-test mouse-wheel reset and fast-pan behavior on the intended interior/subzone teleports, including Shadowmaw Cave re-entry after exiting through the shared cave-out rect.
 - `Destructible loot`
