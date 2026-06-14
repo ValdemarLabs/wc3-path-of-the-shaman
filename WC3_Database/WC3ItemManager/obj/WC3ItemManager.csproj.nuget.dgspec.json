@@ -10,7 +10,7 @@
         "projectUniqueName": "H:\\Pelit\\PotS_JASS\\WC3_Database\\WC3ItemManager\\WC3ItemManager.csproj",
         "projectName": "WC3ItemManager",
         "projectPath": "H:\\Pelit\\PotS_JASS\\WC3_Database\\WC3ItemManager\\WC3ItemManager.csproj",
-        "packagesPath": "C:\\Users\\Valtteri\\.nuget\\packages\\",
+        "packagesPath": "C:\\Users\\Valtteri\\.nuget\\packages",
         "outputPath": "H:\\Pelit\\PotS_JASS\\WC3_Database\\WC3ItemManager\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
@@ -38,7 +38,7 @@
           ]
         },
         "restoreAuditProperties": {
-          "enableAudit": "true",
+          "enableAudit": "false",
           "auditLevel": "low",
           "auditMode": "direct"
         },

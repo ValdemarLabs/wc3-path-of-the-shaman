@@ -1309,6 +1309,12 @@ namespace WC3ItemManager
                 return;
             }
 
+            if (dgvItems.SelectedRows.Count > 1)
+            {
+                OpenBatchEditDialog();
+                return;
+            }
+
             int itemId = Convert.ToInt32(dgvItems.SelectedRows[0].Cells["id"].Value);
             using (var form = new ItemEditForm(itemId, connectionString))
             {
@@ -1362,7 +1368,7 @@ namespace WC3ItemManager
         {
             dgvContextMenu = new ContextMenuStrip();
             
-            var menuEdit = new ToolStripMenuItem("✏️ Edit", null, ContextMenu_Edit);
+            var menuEdit = new ToolStripMenuItem("Edit", null, ContextMenu_Edit);
             var menuDuplicate = new ToolStripMenuItem("📋 Duplicate", null, ContextMenu_Duplicate);
             var menuDelete = new ToolStripMenuItem("🗑️ Delete", null, ContextMenu_Delete);
             var menuSeparator = new ToolStripSeparator();
@@ -1383,7 +1389,8 @@ namespace WC3ItemManager
                 bool hasSingle = dgvItems.SelectedRows.Count == 1;
                 bool hasMultiple = dgvItems.SelectedRows.Count > 1;
                 
-                menuEdit.Enabled = hasSingle;
+                menuEdit.Enabled = hasSingle || hasMultiple;
+                menuEdit.Text = hasMultiple ? $"Batch Edit ({dgvItems.SelectedRows.Count} items)" : "Edit";
                 menuDuplicate.Enabled = hasSingle;
                 menuDelete.Enabled = hasSingle;
                 menuCopy.Enabled = hasSingle;
@@ -2806,12 +2813,13 @@ namespace WC3ItemManager
                 var row = dgvItems.SelectedRows[0];
                 UpdatePreviewPanel(row);
                 btnEdit.Enabled = true;
+                btnEdit.Text = "Edit";
                 btnDelete.Enabled = true;
             }
             else if (dgvItems.SelectedRows.Count > 1)
             {
                 lblPreviewTitle.Text = $"Item Preview ({dgvItems.SelectedRows.Count} items selected)";
-                rtbTooltipPreview.Text = $"{dgvItems.SelectedRows.Count} items selected.\n\nRight-click for batch operations.";
+                rtbTooltipPreview.Text = $"{dgvItems.SelectedRows.Count} items selected.\n\nClick Edit or right-click for batch operations.";
                 rtbTooltipPreview.ForeColor = Color.LightGray;
                 
                 // Clear icon properly
@@ -2823,7 +2831,8 @@ namespace WC3ItemManager
                 }
                 picIconPreview.BackColor = Color.FromArgb(40, 40, 50);
                 
-                btnEdit.Enabled = false;
+                btnEdit.Enabled = true;
+                btnEdit.Text = $"Batch Edit ({dgvItems.SelectedRows.Count})";
                 btnDelete.Enabled = false;
             }
             else
@@ -2842,7 +2851,29 @@ namespace WC3ItemManager
                 picIconPreview.BackColor = Color.FromArgb(40, 40, 50);
                 
                 btnEdit.Enabled = false;
+                btnEdit.Text = "Edit";
                 btnDelete.Enabled = false;
+            }
+        }
+
+        private void OpenBatchEditDialog()
+        {
+            var itemIds = new List<int>();
+            foreach (DataGridViewRow row in dgvItems.SelectedRows)
+            {
+                itemIds.Add(Convert.ToInt32(row.Cells["id"].Value));
+            }
+
+            if (itemIds.Count <= 1)
+                return;
+
+            using (var form = new BatchItemEditDialog(itemIds, connectionString))
+            {
+                if (form.ShowDialog(this) == DialogResult.OK)
+                {
+                    LoadData();
+                    lblStatus.Text = $"Batch edited {itemIds.Count} items";
+                }
             }
         }
 

@@ -35,6 +35,10 @@
 ### Tool Updates
 - `WC3ItemManager`
   Item ability tooltip headings and per-ability labels now use the defined `Ability` item-class color instead of the old hardcoded tooltip colors.
+- `WC3ItemManager`
+  Added batch edit support for multi-selected items directly from the main item list. The new batch editor only applies fields explicitly changed/checked by the user, so shared updates such as `base_id`, rarity, class, type, `wc3_classification`, costs, levels, tooltip text, asset paths, and main WC3 item flags can now be pushed safely across selected items without overwriting untouched fields.
+- `WC3ItemManager`
+  Cleaned up the current build setup for the active desktop toolchain by excluding generated `obj` / `bin` / temp build folders from compile input, then restored a clean normal `bin/Debug/net8.0-windows` debug build after recovering from the blocked output/intermediate folder state encountered during today's ItemManager session.
 
 ### Technical Updates
 - `Companions.j`

@@ -19,6 +19,10 @@
   <!-- Exclude backup folder from compilation -->
   <ItemGroup>
     <Compile Remove="BACKUPS\**" />
+    <Compile Remove="obj\**" />
+    <Compile Remove="bin\**" />
+    <Compile Remove="tmpobj\**" />
+    <Compile Remove="tmpobj2\**" />
     <None Remove="BACKUPS\**" />
     <Content Remove="BACKUPS\**" />
   </ItemGroup>
