@@ -1240,6 +1240,9 @@ function AddReputation takes player whichPlayer, string factionName, integer del
         return
     endif
     call Reputation.addRaw(whichPlayer, f, delta)
+    if whichPlayer == Player(0) then
+        call ExecuteFunc("ReputationUI_Refresh")
+    endif
 endfunction
 
 function AddReputationLinked takes player whichPlayer, string factionName, integer delta returns nothing
@@ -1249,6 +1252,9 @@ function AddReputationLinked takes player whichPlayer, string factionName, integ
         return
     endif
     call Reputation.addLinked(whichPlayer, f, delta)
+    if whichPlayer == Player(0) then
+        call ExecuteFunc("ReputationUI_Refresh")
+    endif
 endfunction
 
 //===================================================
