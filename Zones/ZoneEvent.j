@@ -147,6 +147,8 @@ globals
     
     private string tempString = ""
     private unit z_EnteringUnit = null
+    private unit z_PendingParentZoneUnit = null
+    private integer z_PendingParentZoneId = 0
     private boolean cheat_Camlock = false
     
     // Zone questbox tracking
@@ -526,6 +528,15 @@ private function MoveStart takes ZoneData z, unit enteringUnit returns nothing
     set u = null
 endfunction
 
+private function EnterPendingParentZoneDelayed takes nothing returns nothing
+    local timer t = GetExpiredTimer()
+    call ExecuteFunc("ZoneEvent_RunPendingParentZoneEnter")
+    if t != null then
+        call DestroyTimer(t)
+    endif
+    set t = null
+endfunction
+
 //======================================================
 // Zone - MoveOut Handler
 // Move unit to outRegion and issue move to moveOutRegion
@@ -538,6 +549,7 @@ private function MoveOut takes nothing returns nothing
     local trigger trig = GetTriggeringTrigger()
     local integer zoneId = 0
     local integer currentZone = ZonesCore_GetCurrentZone()
+    local integer parentZoneId = 0
     local real xStart = 0.0
     local real yStart = 0.0
     local real xMove = 0.0
@@ -610,6 +622,11 @@ private function MoveOut takes nothing returns nothing
         return
     endif
 
+    if z.hasParentZone() then
+        set parentZoneId = z.getParentZoneId()
+        call ZonesCore_ResetZone()
+    endif
+
     // Get center coordinates of outRegion and moveOutRegion
     set xStart = (GetRectMinX(z.outRegion) + GetRectMaxX(z.outRegion)) * 0.5
     set yStart = (GetRectMinY(z.outRegion) + GetRectMaxY(z.outRegion)) * 0.5
@@ -643,9 +660,12 @@ private function MoveOut takes nothing returns nothing
 
     call DestroyGroup(tempGroup)
 
-    if z.hasParentZone() then
-        call ZonesCore_SetCurrentZone(z.getParentZoneId())
-        call ApplyCurrentZoneEffectsInternal(trigPlayer, null)
+    if parentZoneId > 0 then
+        if ZonesCore_GetCurrentZone() != parentZoneId then
+            set z_PendingParentZoneId = parentZoneId
+            set z_PendingParentZoneUnit = GetTriggerUnit()
+            call TimerStart(CreateTimer(), 0.00, false, function EnterPendingParentZoneDelayed)
+        endif
     else
         call ZonesCore_ResetZone()
     endif
@@ -811,6 +831,25 @@ private function HandleZoneEnter takes integer newZoneId, unit triggeringUnit re
         endif
     endif
     set z_EnteringUnit = triggeringUnit
+endfunction
+
+public function RunPendingParentZoneEnter takes nothing returns nothing
+    local integer zoneId = z_PendingParentZoneId
+    local unit whichUnit = z_PendingParentZoneUnit
+
+    set z_PendingParentZoneId = 0
+    set z_PendingParentZoneUnit = null
+
+    if zoneId <= 0 or whichUnit == null then
+        set whichUnit = null
+        return
+    endif
+
+    if ZonesCore_GetCurrentZone() != zoneId then
+        call HandleZoneEnter(zoneId, whichUnit)
+    endif
+
+    set whichUnit = null
 endfunction
 
 //===========================================================================
