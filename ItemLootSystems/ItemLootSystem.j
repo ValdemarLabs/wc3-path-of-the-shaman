@@ -39,6 +39,7 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
         private constant real FLOAT_TEXT_HEIGHT = 90.0      // Height above item
         private constant real FLOAT_TEXT_FADE_START = 25.0  // When to start fading (seconds before end)
         private constant real FLOAT_TEXT_CHAR_WIDTH = 5.0   // World units per character for centering (tune this value)    
+        private constant real FLOAT_TEXT_VISIBLE_RANGE = 1000.0
             // Increase (e.g. 8.0, 9.0) → Text shifts more left → Use if text appears shifted right of item
             // Decrease (e.g. 5.0, 6.0) → Text shifts less left → Use if text appears shifted left of item
         
@@ -205,6 +206,37 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
     // =========================================================================
     // HOVER ANIMATION SYSTEM
     // =========================================================================
+
+    private function IsFloatingTextHeroInRange takes unit hero, real x, real y returns boolean
+        local real dx
+        local real dy
+
+        if hero == null or GetUnitTypeId(hero) == 0 or GetWidgetLife(hero) <= 0.405 then
+            return false
+        endif
+
+        set dx = GetUnitX(hero) - x
+        set dy = GetUnitY(hero) - y
+        return dx * dx + dy * dy <= FLOAT_TEXT_VISIBLE_RANGE * FLOAT_TEXT_VISIBLE_RANGE
+    endfunction
+
+    private function IsFloatingTextVisibleAt takes real x, real y returns boolean
+        return IsFloatingTextHeroInRange(udg_Nazgrek, x, y) or IsFloatingTextHeroInRange(udg_Zulkis, x, y)
+    endfunction
+
+    private function UpdateFloatingTextVisibility takes texttag tt, item it, real x, real y returns nothing
+        local real checkX = x
+        local real checkY = y
+
+        if it != null and GetItemTypeId(it) != 0 then
+            set checkX = GetItemX(it)
+            set checkY = GetItemY(it)
+        endif
+
+        if GetLocalPlayer() == Player(0) then
+            call SetTextTagVisibility(tt, IsFloatingTextVisibleAt(checkX, checkY))
+        endif
+    endfunction
     
     // Remove expired texttags and compact array
     private function CleanupExpiredHoverTexts takes nothing returns nothing
@@ -278,6 +310,7 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
                 
                 // Update texttag position
                 call SetTextTagPos(hoverTextTag[i], hoverBaseX[i], hoverBaseY[i], hoverBaseZ[i] + zOffset)
+                call UpdateFloatingTextVisibility(hoverTextTag[i], hoverItem[i], hoverBaseX[i], hoverBaseY[i])
             endif
             
             set i = i + 1
@@ -385,7 +418,8 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
         call SetTextTagLifespan(tt, FLOAT_TEXT_DURATION)
         call SetTextTagFadepoint(tt, FLOAT_TEXT_FADE_START)
         call SetTextTagVelocity(tt, 0.0, 0.0)
-        call SetTextTagVisibility(tt, true)
+        call SetTextTagVisibility(tt, false)
+        call UpdateFloatingTextVisibility(tt, it, x, y)
         
         // Register for hover animation with item tracking
         call RegisterHoverText(tt, it, centeredX, y, FLOAT_TEXT_HEIGHT)
@@ -491,7 +525,8 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
         call SetTextTagLifespan(tt, FLOAT_TEXT_DURATION)
         call SetTextTagFadepoint(tt, FLOAT_TEXT_FADE_START)
         call SetTextTagVelocity(tt, 0.0, 0.0)
-        call SetTextTagVisibility(tt, true)
+        call SetTextTagVisibility(tt, false)
+        call UpdateFloatingTextVisibility(tt, it, x, y)
         
         call RegisterHoverText(tt, it, centeredX, y, FLOAT_TEXT_HEIGHT)
     endfunction
