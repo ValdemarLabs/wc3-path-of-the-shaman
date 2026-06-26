@@ -1,4 +1,4 @@
-library qAradion initializer Init requires QuestGiver, QuestMaster, DialogSystem, ExSound, FollowSystem, PatrolSystem, UnitSpawn, Companions
+library qAradion initializer Init requires QuestGiver, QuestMaster, DialogSystem, ExSound, FollowSystem, PatrolSystem, UnitSpawn, Companions, ItemLootSystem
 //===========================================================================
 // qAradion
 // Quest giver dialog + quest flow for Aradion the Farseer.
@@ -28,6 +28,9 @@ globals
 	private constant integer ABIL_TELANOR_ROD = 'A04W'
 	private constant integer ABIL_RIFT_CLOSE = 'A04Z'
 	private constant integer UNIT_MANA_WRAITH = 'n002'
+	private constant integer UNIT_FADING_SPARKS_WRAITH_2 = 0
+	private constant integer UNIT_FADING_SPARKS_WRAITH_3 = 0
+	private constant integer UNIT_FADING_SPARKS_WRAITH_4 = 0
 
 	private constant real DIALOG_RANGE = 500.00
 	private constant real VALERIA_RANGE = 1000.00
@@ -67,7 +70,7 @@ globals
 	private constant real RIFTS_FAIL_RESET_DELAY = 30.00
 	private constant real RIFTS_ARADION_OFFSET = 500.00
 	private constant real RIFTS_VALERIA_OFFSET = 200.00
-	private constant real RIFTS_INTRO_VALERIA_OFFSET = 1200.00
+	private constant real RIFTS_INTRO_VALERIA_OFFSET = 2200.00
 	private constant real FADING_SPARKS_CHANNEL_TIME = 2.00
 	private constant real FADING_SPARKS_HEALTH_THRESHOLD = 50.00
 	private constant real FADING_SPARKS_DAMAGE = 6000.00
@@ -136,6 +139,7 @@ globals
 	private integer ValeriaNegotiationButtonCount = 0
 	private unit ValeriaEncounterHero = null
 	private boolean ValeriaNegotiationPromptPending = false
+	private boolean ValeriaNegotiationSequenceBusy = false
 	private boolean ValeriaSuccessTransitionApplied = false
 	private boolean RiftsQuestActive = false
 	private boolean RiftsRitualActive = false
@@ -659,6 +663,7 @@ private function ClearValeriaEncounterState takes nothing returns nothing
 	endif
 	set ValeriaNegotiationButtonCount = 0
 	set ValeriaNegotiationPromptPending = false
+	set ValeriaNegotiationSequenceBusy = false
 	set ValeriaSuccessTransitionApplied = false
 	set ValeriaEncounterActive = false
 	set ValeriaEncounterHero = null
@@ -687,9 +692,9 @@ endfunction
 private function FailRangerMissingForRetry takes string reason returns nothing
 	call StopRangerMissingEscortInternal()
 	call QuestGiver_FailQuestByNameAndGiver(QUEST_RANGER_MISSING, Aradion, reason)
-	call QuestGiver_AbandonQuestByNameAndGiver(QUEST_RANGER_MISSING, Aradion)
 	call ResetRangerMissingQuestProgress()
 	call ResetValeriaForRetryAtAmbush()
+	call QuestGiver_SetStateByNameAndGiver(QUEST_RANGER_MISSING, Aradion, QUEST_STATE_AVAILABLE)
 	call QuestGiver_RefreshAvailabilityForGiver(Aradion)
 endfunction
 
@@ -1001,6 +1006,9 @@ private function RunValeriaNegotiationEscAction takes nothing returns nothing
 	if not ValeriaNegotiationPromptPending then
 		return
 	endif
+	if ValeriaNegotiationSequenceBusy then
+		return
+	endif
 	if DialogSystem_IsSequenceActive() then
 		return
 	endif
@@ -1014,6 +1022,9 @@ private function RunValeriaNegotiationEscAction takes nothing returns nothing
 endfunction
 
 private function OnValeriaSequenceStart takes nothing returns nothing
+	set ValeriaNegotiationSequenceBusy = true
+	set ValeriaNegotiationPromptPending = false
+	call DialogSystem_ClearEscapeAction()
 	call EnableUserControl(false)
 	call QuestGiver_CloseActiveDialog()
 	call ExecuteFunc("TasQuestBox_Hide")
@@ -1021,6 +1032,9 @@ private function OnValeriaSequenceStart takes nothing returns nothing
 endfunction
 
 private function BeginValeriaNegotiationSequence takes nothing returns nothing
+	set ValeriaNegotiationSequenceBusy = true
+	set ValeriaNegotiationPromptPending = false
+	call DialogSystem_ClearEscapeAction()
 	if ValeriaNegotiationDialog != null then
 		call DialogSystem_HideDialog(ValeriaNegotiationDialog, Player(0))
 	endif
@@ -1053,6 +1067,15 @@ private function QueueValeriaNegotiationPromptDelayed takes nothing returns noth
 endfunction
 
 private function QueueValeriaNegotiationPrompt takes nothing returns nothing
+	if ValeriaNegotiationSequenceBusy or DialogSystem_IsSequenceActive() then
+		return
+	endif
+	if not ValeriaEncounterActive or ValeriaEncounterResolved then
+		return
+	endif
+	if Valeria == null or not QuestGiver_IsUnitAlive(Valeria) then
+		return
+	endif
 	set ValeriaNegotiationPromptPending = true
 	call ForceValeriaNegotiationFacing()
 	call DialogSystem_SetEscapeAction(function RunValeriaNegotiationEscAction)
@@ -1110,6 +1133,9 @@ private function TryOpenValeriaNegotiationInternal takes nothing returns nothing
 	local integer swapIndex
 	local integer temp
 	local button b
+	if ValeriaNegotiationSequenceBusy or DialogSystem_IsSequenceActive() then
+		return
+	endif
 	if not ValeriaEncounterActive or ValeriaEncounterResolved then
 		return
 	endif
@@ -1161,13 +1187,16 @@ endfunction
 
 private function OnValeriaResponseEnd takes nothing returns nothing
 	local unit hero = GetValeriaEncounterHero()
+	set ValeriaNegotiationSequenceBusy = false
 	if hero != null and Valeria != null and QuestGiver_IsUnitAlive(hero) and QuestGiver_IsUnitAlive(Valeria) then
 		call IssuePointOrder(Valeria, "attack", GetUnitX(hero), GetUnitY(hero))
 	endif
 	call QueueValeriaNegotiationPrompt()
+	set hero = null
 endfunction
 
 private function OnValeriaSuccessEnd takes nothing returns nothing
+	set ValeriaNegotiationSequenceBusy = false
 	call DialogSystem_StopDialogCamera(Player(0), 2.0, USE_DIALOG_CAMERA)
 	call ExitCinematicMode()
 	call EnableUserControl(true)
@@ -1262,7 +1291,9 @@ private function OnValeriaIntroEnd takes nothing returns nothing
 	call DialogSystem_StopDialogCamera(Player(0), 2.0, USE_DIALOG_CAMERA)
 	call ExitCinematicMode()
 	call EnableUserControl(true)
+	set ValeriaNegotiationSequenceBusy = false
 	if not ValeriaEncounterActive or ValeriaEncounterResolved or Valeria == null or not QuestGiver_IsUnitAlive(Valeria) then
+		set hero = null
 		return
 	endif
 	call ResetUnitAnimation(Valeria)
@@ -1275,12 +1306,14 @@ private function OnValeriaIntroEnd takes nothing returns nothing
 	set t = CreateTimer()
 	call TimerStart(t, 2.00, false, function QueueValeriaNegotiationPromptDelayed)
 	set t = null
+	set hero = null
 endfunction
 
 private function PlayValeriaNegotiationResponse takes integer lineId returns nothing
 	local integer seq
 	local unit hero = GetValeriaEncounterHero()
 	set ValeriaNegotiationPromptPending = false
+	set ValeriaNegotiationSequenceBusy = true
 	call DialogSystem_ClearEscapeAction()
 	if hero != null then
 		call IssueImmediateOrder(hero, "stop")
@@ -1300,6 +1333,7 @@ private function PlayValeriaNegotiationResponse takes integer lineId returns not
 	call DialogSystem_AddLine(seq, Valeria, "Valeria", GetValeriaNegotiationResponse(lineId), GetValeriaNegotiationResponseSound(lineId), true)
 	call DialogSystem_PlaySequence(seq, Player(0), Valeria)
 	call ActivateValeriaColdArrowsTemporary()
+	set hero = null
 endfunction
 
 private function PlayValeriaNegotiationSuccess takes nothing returns nothing
@@ -1309,6 +1343,7 @@ private function PlayValeriaNegotiationSuccess takes nothing returns nothing
 		return
 	endif
 	set ValeriaNegotiationPromptPending = false
+	set ValeriaNegotiationSequenceBusy = true
 	call DialogSystem_ClearEscapeAction()
 	if hero != null then
 		call IssueImmediateOrder(hero, "stop")
@@ -2006,21 +2041,29 @@ private function RegisterRiftUnits takes nothing returns nothing
 	call ExecuteFunc("qAradion_RegisterRiftsProximity")
 endfunction
 
-private function PrepareValeriaForRiftsIntro takes nothing returns nothing
+private function PrepareValeriaForRiftsIntro takes unit hero returns nothing
 	local real facing
 	local real startX
 	local real startY
 	if Aradion == null or Valeria == null or not QuestGiver_IsUnitAlive(Aradion) or not QuestGiver_IsUnitAlive(Valeria) then
+		set hero = null
 		return
 	endif
 	call StopFollow(Valeria)
 	call StopValeriaPatrolInternal()
-	set facing = GetUnitFacing(Aradion) * bj_DEGTORAD
-	set startX = GetUnitX(Aradion) + RIFTS_INTRO_VALERIA_OFFSET * Cos(facing)
-	set startY = GetUnitY(Aradion) + RIFTS_INTRO_VALERIA_OFFSET * Sin(facing)
+	if hero != null and QuestGiver_IsUnitAlive(hero) then
+		set facing = (GetUnitFacing(hero) + 180.00) * bj_DEGTORAD
+		set startX = GetUnitX(hero) + RIFTS_INTRO_VALERIA_OFFSET * Cos(facing)
+		set startY = GetUnitY(hero) + RIFTS_INTRO_VALERIA_OFFSET * Sin(facing)
+	else
+		set facing = GetUnitFacing(Aradion) * bj_DEGTORAD
+		set startX = GetUnitX(Aradion) + RIFTS_INTRO_VALERIA_OFFSET * Cos(facing)
+		set startY = GetUnitY(Aradion) + RIFTS_INTRO_VALERIA_OFFSET * Sin(facing)
+	endif
 	call SetUnitPosition(Valeria, startX, startY)
 	call SetUnitFacing(Valeria, 192.00)
 	call IssuePointOrder(Valeria, "move", GetRectCenterX(gg_rct_ValeriaNewPos), GetRectCenterY(gg_rct_ValeriaNewPos))
+	set hero = null
 endfunction
 
 private function OrderAradionToChannelCurrentRift takes nothing returns nothing
@@ -2625,6 +2668,7 @@ private function FinishRiftsCurrentRitual takes nothing returns nothing
 	local real closedRiftY = 0.00
 	call SyncUnitReferences()
 	if not RiftsQuestActive then
+		set closedRift = null
 		return
 	endif
 	call StopRiftsRuntimeTimers()
@@ -2690,6 +2734,7 @@ private function OnRiftsFieldTick takes nothing returns nothing
 	local integer i = 1
 	local unit hero
 	local unit riftUnit
+	call SyncUnitReferences()
 	if not RiftsQuestActive or RiftsFailureInProgress then
 		return
 	endif
@@ -2898,6 +2943,22 @@ private function OnFadingSparksTimerExpire takes nothing returns nothing
 	set t = null
 endfunction
 
+private function IsFadingSparksWraithType takes integer unitTypeId returns boolean
+	if unitTypeId == UNIT_MANA_WRAITH then
+		return true
+	endif
+	if UNIT_FADING_SPARKS_WRAITH_2 != 0 and unitTypeId == UNIT_FADING_SPARKS_WRAITH_2 then
+		return true
+	endif
+	if UNIT_FADING_SPARKS_WRAITH_3 != 0 and unitTypeId == UNIT_FADING_SPARKS_WRAITH_3 then
+		return true
+	endif
+	if UNIT_FADING_SPARKS_WRAITH_4 != 0 and unitTypeId == UNIT_FADING_SPARKS_WRAITH_4 then
+		return true
+	endif
+	return false
+endfunction
+
 private function OnFadingSparksSpellEffect takes nothing returns nothing
 	local unit caster = GetTriggerUnit()
 	local unit target = GetSpellTargetUnit()
@@ -2912,7 +2973,7 @@ private function OnFadingSparksSpellEffect takes nothing returns nothing
 		set target = null
 		return
 	endif
-	if GetUnitTypeId(target) != UNIT_MANA_WRAITH then
+	if not IsFadingSparksWraithType(GetUnitTypeId(target)) then
 		set caster = null
 		set target = null
 		return
@@ -2936,11 +2997,14 @@ endfunction
 private function OnFadingSparksSpellFinish takes nothing returns nothing
 	local real x
 	local real y
+	local item essence
 	if GetSpellAbilityId() != ABIL_TELANOR_ROD then
+		set essence = null
 		return
 	endif
 	if not FadingSparksFinished or FadingSparksCaster == null or FadingSparksTarget == null then
 		call ClearFadingSparksState()
+		set essence = null
 		return
 	endif
 	set x = GetUnitX(FadingSparksTarget)
@@ -2949,8 +3013,12 @@ private function OnFadingSparksSpellFinish takes nothing returns nothing
 	if QuestGiver_IsUnitAlive(FadingSparksTarget) then
 		call KillUnit(FadingSparksTarget)
 	endif
-	call CreateItem(ITEM_WRAITH_ESSENCE, x, y)
+	set essence = CreateItem(ITEM_WRAITH_ESSENCE, x, y)
+	if essence != null then
+		call ItemLoot_CreateFloatingTextCustom(essence, GetItemName(essence), 255, 255, 255)
+	endif
 	call ClearFadingSparksState()
+	set essence = null
 endfunction
 
 private function OnFadingSparksSpellEndCast takes nothing returns nothing
@@ -3471,7 +3539,7 @@ private function OnAcceptQuest4 takes nothing returns nothing
 	
 	// Get hero for facing actions
 	set hero = ResolveDialogHero()
-	call PrepareValeriaForRiftsIntro()
+	call PrepareValeriaForRiftsIntro(hero)
 	
 	// Add quest-specific lines with inline facing
 	call DialogSystem_AddMakeFaceEachOther(seq, Aradion, hero, 0.50, 0.0)
@@ -4000,6 +4068,19 @@ public function RegisterRiftsProximity takes nothing returns nothing
 	call RegisterRiftsProximityTrigger()
 endfunction
 
+public function RefreshRespawnedUnitHooks takes nothing returns nothing
+	call SyncUnitReferences()
+	if Aradion != null then
+		call QuestGiver_RegisterSelectionHandler(Aradion, function OnSelected)
+		call QuestGiver_RefreshAvailabilityForGiver(Aradion)
+	endif
+	call RegisterValeriaEncounterProximityTrigger()
+	if RiftsQuestActive and not RiftsFailureInProgress then
+		call EnableRiftsFailTriggers()
+		call RegisterRiftUnits()
+	endif
+endfunction
+
 public function RecreateValeriaAtHomePublic takes nothing returns nothing
 	call RecreateValeriaAtHome()
 endfunction
@@ -4046,6 +4127,7 @@ public function BeginRiftsRitual takes unit riftUnit returns nothing
 	local unit hero
 	call SyncUnitReferences()
 	if not RiftsQuestActive then
+		set riftUnit = null
 		return
 	endif
 	set hero = GetAllowedRiftHeroInRange(riftUnit)
@@ -4056,14 +4138,26 @@ public function BeginRiftsRitual takes unit riftUnit returns nothing
 		exitwhen i > RIFTS_MAX
 		if RiftsUnits[i] == riftUnit then
 			if RiftsClosed[i] then
+				set hero = null
+				set riftUnit = null
 				return
 			endif
 			call StartRiftsRitualInternal(riftUnit, i, hero)
+			set hero = null
+			set riftUnit = null
 			return
 		endif
 		set i = i + 1
 	endloop
-	call StartRiftsRitualInternal(riftUnit, 0, hero)
+	set i = GetTriggeredRiftIndex(hero)
+	if i > 0 then
+		set riftUnit = EnsureRiftUnit(i)
+		if riftUnit != null then
+			call StartRiftsRitualInternal(riftUnit, i, hero)
+		endif
+	endif
+	set hero = null
+	set riftUnit = null
 endfunction
 
 public function CompleteRiftsCurrentRitual takes nothing returns nothing
