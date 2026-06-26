@@ -13,6 +13,45 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [26.6.2026]
+
+### Player-Facing Updates
+- `Ranger Missing`
+  Hardened Valeria persuasion so the `ESC` choice prompt cannot reopen while Nazgrek/Valeria voice lines or transition beats are still running.
+- `Fading Sparks`
+  Tel'anor Rod extraction now accepts additional configured wraith unit-type placeholders and shows floating text for the created `Wraith Essence`.
+- `Rifts of Corruption`
+  Valeria now stages much farther behind the player before moving into Aradion's intro scene, public/region-started rift rituals can resolve the correct rift in any order, and respawned Aradion/Valeria handles now rebind quest hooks.
+- `Item floating text`
+  DInv ground drops and quest-created drops now create item-name floating text, while item floating text is hidden unless the player hero is within 1000 range.
+- `Camera / Zone transitions`
+  Fast camera pans now rebind the active camera mode after snapping to the target, middle mouse button presses reset stored camera state, Boom Mine camera angle is locked top-down, and Shadowmaw Cave exits defer Sirensong parent-zone activation so the parent zone can enter normally.
+- `Quest rewards`
+  Quest XP, gold, arena, reputation, and item rewards now pay from the 5-second delayed quest-completion callback instead of immediately when the dialog/cinematic completion function runs.
+
+### Technical Updates
+- `qAradion.j`
+  Added an explicit Valeria negotiation speech-busy guard, failed-log-preserving Ranger Missing retry reset, configurable Fading Sparks wraith-type checks, Rifts intro staging from the interacting hero, safer any-order ritual fallback, and a respawn hook refresh API for Aradion/Valeria.
+- `QuestMaster.j`
+  Moved `awardRewards()` into `ShowDelayedQuestCompleted`, so all quest reward side effects occur together after `QUEST_COMPLETED_DELAY`; reputation reward calls still bypass the reputation system cinematic guard only inside that delayed payout.
+- `CreepRespawn.j` / `CreepUnitAssignment.j`
+  Fixed native respawn assignment by updating `bj_lastCreatedUnit` before `CreepUnitAssignment`, then added Aradion/Valeria quest-hook refresh after their respawn assignments.
+- `ItemLootSystem.j` / `SharedDInvLib.j`
+  Added 1000-range item floating-text visibility gating and wired DInv ground placement into the item floating-text API.
+- `CameraControl.j`
+  Reapplies the current camera mode after public target pans, handles middle mouse button camera-state reset events, and makes Boom Mine's special camera non-adjustable at its configured top-down angle.
+- `ZoneEvent.j`
+  Changed parent-zone handoff after interior exits to reset child-zone state before teleporting out and force-enter the parent only if the normal parent enter trigger does not run.
+
+### Known Issues
+- `CameraControl.j`
+  Boom Mine camera is now angle-locked, but the requested centered camera offset still needs a targeted AdvancedCamera/proxy-unit implementation and in-map tuning.
+- `Quest rewards`
+  XP and reputation rewards still need direct in-map confirmation after quest completion, including the cinematic turn-in path patched today.
+
+### Actions Remaining
+- Re-test Ranger Missing persuasion timing, Fading Sparks extraction against all configured wraith types, Rifts any-order starts/fail flow, DInv/drop floating text distance visibility, quest XP/reputation rewards, Boom Mine camera behavior, and Shadowmaw-to-Sirensong zone activation.
+
 ## [14.6.2026]
 
 ### Player-Facing Updates
