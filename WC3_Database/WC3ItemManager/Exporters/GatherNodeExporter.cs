@@ -364,7 +364,7 @@ namespace WC3ItemManager.Exporters
 
                         if (point.NodeType == "unit" || point.NodeType == "both")
                         {
-                            sb.AppendLine($"        call GNU_RegisterSpawnPoint({group.Id}, {point.ZoneId}, GetRectCenterX({point.RegionVariable}), GetRectCenterY({point.RegionVariable}), 270.0, -1, {InferUnitSpawnCategoryFilter(point, unitCategoryLookup)})  // {point.PointName}");
+                            sb.AppendLine($"        call GNU_RegisterSpawnPoint({group.Id}, {GetExportSpawnPointZoneId(point, group)}, GetRectCenterX({point.RegionVariable}), GetRectCenterY({point.RegionVariable}), 270.0, -1, {InferUnitSpawnCategoryFilter(point, unitCategoryLookup)})  // {point.PointName}");
                             result.SpawnPointsExported++;
                         }
                     }
@@ -445,6 +445,21 @@ namespace WC3ItemManager.Exporters
         {
             return string.Equals(point?.NodeType, "item", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(point?.NodeType, "both", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private int GetExportSpawnPointZoneId(GatherSpawnPoint point, GatherSpawnPointGroup group)
+        {
+            if (group != null && group.ZoneId > 0)
+            {
+                if (point != null && point.ZoneId > 0 && point.ZoneId != group.ZoneId)
+                {
+                    Logger.Instance.Warn($"Gather export zone mismatch for spawn point '{point.PointName}' ({point.RegionVariable}): point zone {point.ZoneId} differs from group '{group.GroupName}' zone {group.ZoneId}. Exporting group zone.");
+                }
+
+                return group.ZoneId;
+            }
+
+            return point?.ZoneId ?? 0;
         }
 
         private string NormalizeSpawnMode(string spawnMode)
