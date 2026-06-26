@@ -1,0 +1,39 @@
+﻿[2026-06-26 14.03.24] [INFO] ============================================================
+[2026-06-26 14.03.24] [INFO] ItemManager session started
+[2026-06-26 14.03.24] [INFO] Log file: H:\Pelit\PotS_JASS\WC3_Database\WC3ItemManager\bin\Debug\net8.0-windows\logs\ItemManager_2026-06-26_140324.log
+[2026-06-26 14.03.24] [INFO] ============================================================
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0101' (gg_rct_OreVeins0101): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0102' (gg_rct_OreVeins0102): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0103' (gg_rct_OreVeins0103): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0104' (gg_rct_OreVeins0104): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0105' (gg_rct_OreVeins0105): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0106' (gg_rct_OreVeins0106): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0107' (gg_rct_OreVeins0107): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0108' (gg_rct_OreVeins0108): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0109' (gg_rct_OreVeins0109): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0110' (gg_rct_OreVeins0110): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0111' (gg_rct_OreVeins0111): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0112' (gg_rct_OreVeins0112): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0113' (gg_rct_OreVeins0113): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0114' (gg_rct_OreVeins0114): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0115' (gg_rct_OreVeins0115): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0116' (gg_rct_OreVeins0116): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0117' (gg_rct_OreVeins0117): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0118' (gg_rct_OreVeins0118): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0119' (gg_rct_OreVeins0119): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0120' (gg_rct_OreVeins0120): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0121' (gg_rct_OreVeins0121): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0122' (gg_rct_OreVeins0122): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0123' (gg_rct_OreVeins0123): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0124' (gg_rct_OreVeins0124): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0125' (gg_rct_OreVeins0125): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0126' (gg_rct_OreVeins0126): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0127' (gg_rct_OreVeins0127): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0128' (gg_rct_OreVeins0128): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0129' (gg_rct_OreVeins0129): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0130' (gg_rct_OreVeins0130): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0131' (gg_rct_OreVeins0131): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0132' (gg_rct_OreVeins0132): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [WARN] Gather export zone mismatch for spawn point 'Ore Vein 0133' (gg_rct_OreVeins0133): point zone 4 differs from group 'Thornwoods Units' zone 6. Exporting group zone.
+[2026-06-26 14.03.24] [INFO] Gather nodes exported: 27 item nodes, 18 unit nodes, 78 zone assignments
+[2026-06-26 14.03.24] [INFO] Exported gather nodes to H:\Pelit\PotS_JASS\GatherSystems\ItemManagerExports

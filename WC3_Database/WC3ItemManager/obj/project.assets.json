@@ -415,7 +415,7 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Valtteri\\.nuget\\packages\\": {},
+    "C:\\Users\\Valtteri\\.nuget\\packages": {},
     "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder": {}
   },
   "project": {
@@ -424,7 +424,7 @@
       "projectUniqueName": "H:\\Pelit\\PotS_JASS\\WC3_Database\\WC3ItemManager\\WC3ItemManager.csproj",
       "projectName": "WC3ItemManager",
       "projectPath": "H:\\Pelit\\PotS_JASS\\WC3_Database\\WC3ItemManager\\WC3ItemManager.csproj",
-      "packagesPath": "C:\\Users\\Valtteri\\.nuget\\packages\\",
+      "packagesPath": "C:\\Users\\Valtteri\\.nuget\\packages",
       "outputPath": "H:\\Pelit\\PotS_JASS\\WC3_Database\\WC3ItemManager\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
@@ -512,5 +512,13 @@
         "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json"
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1900",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Error occurred while getting package vulnerability data: Unable to load the service index for source https://api.nuget.org/v3/index.json."
+    }
+  ]
 }
