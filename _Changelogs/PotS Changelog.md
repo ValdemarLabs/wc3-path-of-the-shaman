@@ -42,6 +42,12 @@
   Reapplies the current camera mode after public target pans, handles middle mouse button camera-state reset events, and makes Boom Mine's special camera non-adjustable at its configured top-down angle.
 - `ZoneEvent.j`
   Changed parent-zone handoff after interior exits to reset child-zone state before teleporting out and force-enter the parent only if the normal parent enter trigger does not run.
+- `GatherNodeItems.j` / `GatherNodeUnits.j`
+  Fixed initial gather-node lifetime despawn tracking by switching the lifetime tables to the correct `.real` accessors for `has` / `remove`, so untouched spawned nodes can expire and schedule fresh spawn attempts again.
+
+### Tool Updates
+- `WC3ItemManager`
+  Gather-node export now uses the spawn-group zone id for grouped unit spawn points and logs a warning when a spawn point row carries a mismatched zone id, preventing stale point-level zone data from exporting the wrong `ZonesCore` zone.
 
 ### Known Issues
 - `CameraControl.j`
@@ -51,6 +57,8 @@
 
 ### Actions Remaining
 - Re-test Ranger Missing persuasion timing, Fading Sparks extraction against all configured wraith types, Rifts any-order starts/fail flow, DInv/drop floating text distance visibility, quest XP/reputation rewards, Boom Mine camera behavior, and Shadowmaw-to-Sirensong zone activation.
+- `WC3ItemManager`
+  Fix remaining item stackability data issues, including cases like `Mana Crystals` and `Wraith Essence` that still stack only to `1` when they should allow larger stacks.
 
 ## [14.6.2026]
 
