@@ -180,6 +180,9 @@ private function ShowDelayedQuestCompleted takes nothing returns nothing
 	
 	// Safety: validate quest data exists and is completed
 	if q != 0 and q.completed and q.title != "" then
+		// Rewards are intentionally delayed with the completion message so dialog/cinematic turn-ins finish first.
+		call q.awardRewards()
+
 		// Update icons now (delayed to match message)
 		call q.updateIcons()
 		
@@ -1762,6 +1765,7 @@ struct QuestData
 		local item it
 		local boolean awardedNazgrek = false
 		local boolean awardedZulkis = false
+		local boolean reputationCinematicState = false
 
 		if DEBUG then
 			call DebugMsg("awardRewards: " + this.title + " xp=" + I2S(this.rewardXP) + " gold=" + I2S(this.rewardGold) + " arena=" + I2S(this.rewardArena) + " rep=" + I2S(this.rewardRep) + " faction=" + this.faction)
@@ -1819,11 +1823,14 @@ struct QuestData
 		endif
 
 		if this.faction != "" then
+			set reputationCinematicState = udg_InCinematic
+			set udg_InCinematic = false
 			if this.rewardRepLinked then
 				call AddReputationLinked(Player(0), this.faction, this.rewardRep)
 			else
 				call AddReputation(Player(0), this.faction, this.rewardRep)
 			endif
+			set udg_InCinematic = reputationCinematicState
 		endif
 
 		if this.rewardItemActive and this.rewardItemType != 0 then
@@ -1920,9 +1927,8 @@ struct QuestData
 		if DEBUG then
 			call DebugMsg("complete: " + this.title + " giver=" + this.giverDisplayName)
 		endif
-		call this.awardRewards()
 		
-		// Show completion message after 5 second delay (icons will update at the same time)
+		// Award rewards and show completion message after 5 seconds.
 		set t = CreateTimer()
 		set tId = GetHandleId(t)
 		set QuestCompletedTimerData[tId] = this
