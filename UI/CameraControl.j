@@ -128,6 +128,7 @@ globals
     private trigger CC_DownUpTrigger = null
     private trigger CC_PageResetTrigger = null
     private trigger CC_WheelResetTrigger = null
+    private trigger CC_MouseButtonResetTrigger = null
     private timer CC_UpdateTimer = null
     private timer CC_DriftTimer = null
     private item CC_PathingProbe = null
@@ -451,7 +452,7 @@ private function CC_InitSpecialModeConfigs takes nothing returns nothing
     //    Give an angleMax when keyboardAdjustable=true.
     // 4. If the mode should activate from a camera-local rect, register that rect in CC_RegisterBuiltInSpecialCameraRects().
     // 5. Leave ZoneEvent-owned zone camera switching in ZoneEvent.
-    call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_BOOMMINE, "Boom Mine", 1600.00, 5000.00, 270.00, 90.00, 70.00, true, 295.00)
+    call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_BOOMMINE, "Boom Mine", 1600.00, 5000.00, 270.00, 90.00, 70.00, false, 270.00)
     call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_TEMPLATE01, "Template 01", 1800.00, 6000.00, 285.00, 90.00, 70.00, false, CAMERA_ANGLE_MAX)
     call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_TEMPLATE02, "Template 02", 1400.00, 4500.00, 300.00, 180.00, 65.00, false, CAMERA_ANGLE_MAX)
 endfunction
@@ -1218,8 +1219,12 @@ public function GetTargetName takes player whichPlayer returns string
 endfunction
 
 public function PanToTarget takes player whichPlayer, real duration returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
     local unit target = CC_GetFallbackTarget(whichPlayer)
     call CC_PanToUnit(whichPlayer, target, duration)
+    if not CC_Suspended[pid] and not CC_ResumePending[pid] then
+        call CC_ApplyMode(whichPlayer)
+    endif
     set target = null
 endfunction
 
@@ -1640,6 +1645,12 @@ private function CC_PageResetAction takes nothing returns nothing
     set whichPlayer = null
 endfunction
 
+private function CC_MouseButtonResetAction takes nothing returns nothing
+    if BlzGetTriggerPlayerMouseButton() == MOUSE_BUTTON_TYPE_MIDDLE then
+        call CC_PageResetAction()
+    endif
+endfunction
+
 public function Init takes nothing returns nothing
     local integer i = 0
     local framehandle gameUI
@@ -1695,6 +1706,7 @@ public function Init takes nothing returns nothing
     set CC_DownUpTrigger = CreateTrigger()
     set CC_PageResetTrigger = CreateTrigger()
     set CC_WheelResetTrigger = CreateTrigger()
+    set CC_MouseButtonResetTrigger = CreateTrigger()
     set CC_ChatResetTrigger = CreateTrigger()
     set i = 0
     loop
@@ -1712,6 +1724,8 @@ public function Init takes nothing returns nothing
         call BlzTriggerRegisterPlayerKeyEvent(CC_PageResetTrigger, Player(i), OSKEY_PAGEUP, 0, false)
         call BlzTriggerRegisterPlayerKeyEvent(CC_PageResetTrigger, Player(i), OSKEY_PAGEDOWN, 0, true)
         call BlzTriggerRegisterPlayerKeyEvent(CC_PageResetTrigger, Player(i), OSKEY_PAGEDOWN, 0, false)
+        call TriggerRegisterPlayerEvent(CC_MouseButtonResetTrigger, Player(i), EVENT_PLAYER_MOUSE_DOWN)
+        call TriggerRegisterPlayerEvent(CC_MouseButtonResetTrigger, Player(i), EVENT_PLAYER_MOUSE_UP)
         call BlzTriggerRegisterPlayerKeyEvent(CC_ChatResetTrigger, Player(i), OSKEY_RETURN, 0, true)
         set i = i + 1
     endloop
@@ -1725,6 +1739,7 @@ public function Init takes nothing returns nothing
     call TriggerAddAction(CC_DownDownTrigger, function CC_OnDownDown)
     call TriggerAddAction(CC_DownUpTrigger, function CC_OnDownUp)
     call TriggerAddAction(CC_PageResetTrigger, function CC_PageResetAction)
+    call TriggerAddAction(CC_MouseButtonResetTrigger, function CC_MouseButtonResetAction)
     call TriggerAddAction(CC_ChatResetTrigger, function CC_OnChatResetKey)
 
     set gameUI = BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0)
