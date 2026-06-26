@@ -201,8 +201,8 @@ endfunction
 private function GNU_CancelLifetimeTimer takes unit u returns nothing
     local integer handleId = GetHandleId(u)
 
-    if GNU_UnitLifetimeTimer.has(handleId) then
-        call GNU_UnitLifetimeTimer.remove(handleId)
+    if GNU_UnitLifetimeTimer.real.has(handleId) then
+        call GNU_UnitLifetimeTimer.real.remove(handleId)
     endif
 endfunction
 
@@ -810,7 +810,7 @@ private function GNU_HandleLifetimeExpire takes unit u returns nothing
     endif
 
     set unitHandleId = GetHandleId(u)
-    if GNU_UnitLifetimeTimer.has(unitHandleId) and GNU_UnitToDefId.has(unitHandleId) then
+    if GNU_UnitLifetimeTimer.real.has(unitHandleId) and GNU_UnitToDefId.has(unitHandleId) then
         set defId = GNU_UnitToDefId.integer[unitHandleId]
         set zoneId = GNU_UnitToZoneId.integer[unitHandleId]
         if GNU_UnitToAssignId.has(unitHandleId) then
@@ -820,7 +820,7 @@ private function GNU_HandleLifetimeExpire takes unit u returns nothing
         endif
         set spawnPointId = GNU_UnitToSpawnPoint.integer[unitHandleId]
 
-        call GNU_UnitLifetimeTimer.remove(unitHandleId)
+        call GNU_UnitLifetimeTimer.real.remove(unitHandleId)
         call RemoveGlowEffect(u)
         call GNU_ClearHarvestState(u)
         call GN_UnregisterUnit(u, zoneId)
@@ -860,7 +860,7 @@ private function GNU_CheckExpiredUnits takes nothing returns nothing
         set u = GN_GetActiveUnitByIndex(index)
         if u != null then
             set handleId = GetHandleId(u)
-            if GNU_UnitToDefId.has(handleId) and GNU_UnitLifetimeTimer.has(handleId) and GNU_UnitLifetimeTimer.real[handleId] <= now then
+            if GNU_UnitToDefId.has(handleId) and GNU_UnitLifetimeTimer.real.has(handleId) and GNU_UnitLifetimeTimer.real[handleId] <= now then
                 call GNU_HandleLifetimeExpire(u)
             endif
         endif
