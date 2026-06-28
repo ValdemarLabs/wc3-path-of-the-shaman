@@ -39,6 +39,7 @@ globals
     private constant integer MUI_ACTION_SECRETS = 9
     private constant integer MUI_ACTION_COMMANDS = 10
     private constant integer MUI_ACTION_CHEATS = 11
+    private constant integer MUI_ACTION_SETTINGS = 12
 
     private constant real MUI_PANEL_LEFT = 0.110
     private constant real MUI_PANEL_RIGHT = 0.560
@@ -66,6 +67,7 @@ globals
     private constant string MUI_ICON_SECRETS = "ReplaceableTextures\\CommandButtons\\BTNTicket_Tarot_Madness.blp"   // OK?
     private constant string MUI_ICON_COMMANDS = "ReplaceableTextures\\CommandButtons\\BTNTicket_Tarot_Lunacy.blp"     // OK?
     private constant string MUI_ICON_CHEATS = "ReplaceableTextures\\CommandButtons\\BTNTicket_Tarot_Lunacy.blp"     // OK?
+    private constant string MUI_ICON_SETTINGS = "ReplaceableTextures\\CommandButtons\\BTNEngineeringUpgrade.blp"     // OK
 endglobals
 
 private function MUI_FormatButtonLabel takes string label returns string
@@ -128,6 +130,7 @@ private function MUI_HideAllPanels takes nothing returns nothing
     call ExecuteFunc("SecretsUI_Hide")
     call ExecuteFunc("CommandsUI_Hide")
     call ExecuteFunc("CheatsUI_Hide")
+    call ExecuteFunc("SettingsUI_Hide")
 endfunction
 
 private function MUI_ShowPlaceholder takes string featureName returns nothing
@@ -190,6 +193,11 @@ private function MUI_OpenCheats takes nothing returns nothing
     call ExecuteFunc("CheatsUI_Show")
 endfunction
 
+private function MUI_OpenSettings takes nothing returns nothing
+    call MUI_HideAllPanels()
+    call ExecuteFunc("SettingsUI_Show")
+endfunction
+
 private function MUI_RunAction takes integer actionId returns nothing
     if actionId == MUI_ACTION_ZONES then
         call MUI_OpenZones()
@@ -213,6 +221,8 @@ private function MUI_RunAction takes integer actionId returns nothing
         call MUI_OpenCommands()
     elseif actionId == MUI_ACTION_CHEATS then
         call MUI_OpenCheats()
+    elseif actionId == MUI_ACTION_SETTINGS then
+        call MUI_OpenSettings()
     endif
 endfunction
 
@@ -303,6 +313,7 @@ private function MUI_CreateFrames takes nothing returns nothing
     call MUI_CreateMenuButton(9, "Camera", MUI_ICON_CAMERA, MUI_ACTION_CAMERA, 0.300, -0.060)
     call MUI_CreateMenuButton(10, "Commands", MUI_ICON_COMMANDS, MUI_ACTION_COMMANDS, 0.300, -0.102)
     call MUI_CreateMenuButton(11, "Cheats", MUI_ICON_CHEATS, MUI_ACTION_CHEATS, 0.300, -0.144)
+    call MUI_CreateMenuButton(12, "Settings", MUI_ICON_SETTINGS, MUI_ACTION_SETTINGS, 0.300, -0.186)
 
     set MUI_OpenButton = BlzCreateFrameByType("GLUETEXTBUTTON", "MasterUIOpenButton", BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "ScriptDialogButton", 0)
     call MUI_PosOpenButton(MUI_OpenButton)
