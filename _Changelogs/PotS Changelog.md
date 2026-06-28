@@ -9,6 +9,8 @@
 >
 > Use ###`Tool Updates` for `WC3ItemManager`, PotS SQL Server related work, and other similar internal development tools. These are usually not player-facing by themselves, even if they may later affect gameplay data.
 >
+> Use ###`Imports` for imported models, textures, icons, sounds, effects, and other asset backlog notes, including credits and intended/future usage checks.
+>
 > Use ###`Known Issues` for current confirmed problems, validation gaps, or incomplete/problematic behavior that still needs checking.
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
@@ -24,6 +26,22 @@
   Added a centralized minimap icon and ping query scheduler that keeps registered icons hidden and reveals one icon at a time by category, with a configurable rest delay after each full pass. Quest giver minimap icons now register through `IconQuery` instead of being shown immediately.
 - `MasterUI.j` / `SettingsUI.j`
   Added a `Settings` menu button and a standalone settings UI for icon query toggles, timing clamps, map difficulty state, and future settings placeholders.
+
+### Imports
+- `Imported asset backlog`
+  Added a list of imported models/effects to check for future usage, with possible placement/ability ideas tracked in MS ToDo.
+- `Gnome Tinker - Gunstriders` (by Villagerino):
+  `AutomatedMechanostriderv`, `GnomeTinkerGrenade.mdx`, `GnomeTinkerGunstriderHero.mdx`, `GnomeTinkerGunstriderUnit.mdx`, `GnomeTinkerTracerAmmo.mdx`, `GunstriderGunImpact.mdx`
+- `Firenova.mdx` (by Sarsaparilla, Blizzard Entertainment)
+- `vortex` (by GAQ):
+  `vortex1.mdx`, `vortex2.mdx`, `vortex3.mdx`, `vortex4.mdx`, `vortex5.mdx`, `vortex6.mdx`, `vortex7.mdx`, `vortex8.mdx`
+- `Poison Nova` (by Sarsaparilla)
+- `Ring` (by Sarsaparilla, Blizzard Entertainment):
+  `Ring.mdx`, `Ring_small.mdx`
+- `Skill Indicator` (by BaiyuGalan):
+  `Skill_Indicator_Circle`, `Skill_Indicator_Haymaker`, `Skill_Indicator_Move`, `Skill_Indicator_Ring`, `Skill_Indicator_Sector`, `Skill_Indicator_Square`, `Skill_Indicator_Straight`, `Skill_Indicator_Straight2`
+- `Thunder Nova.mdx` (by Sarsaparilla, Blizzard Entertainment)
+- `ZooCage.mdx` (by purparisien)
 
 ### Actions Remaining
 - Replace the old World Editor travel minimap toggle trigger with `IconQuery` registration calls for flight masters, ship masters, and route points, then validate the query pacing in-game.
