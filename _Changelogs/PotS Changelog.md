@@ -13,6 +13,21 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [28.6.2026]
+
+### Player-Facing Updates
+- `Map icons / Settings`
+  Added a Settings panel to the in-game `Game` menu with controls for quest/travel/boss/place/companion icon query categories, query timing, rest timing, and a map difficulty placeholder.
+
+### Technical Updates
+- `IconQuery.j` / `QuestMaster.j`
+  Added a centralized minimap icon and ping query scheduler that keeps registered icons hidden and reveals one icon at a time by category, with a configurable rest delay after each full pass. Quest giver minimap icons now register through `IconQuery` instead of being shown immediately.
+- `MasterUI.j` / `SettingsUI.j`
+  Added a `Settings` menu button and a standalone settings UI for icon query toggles, timing clamps, map difficulty state, and future settings placeholders.
+
+### Actions Remaining
+- Replace the old World Editor travel minimap toggle trigger with `IconQuery` registration calls for flight masters, ship masters, and route points, then validate the query pacing in-game.
+
 ## [26.6.2026]
 
 ### Player-Facing Updates
