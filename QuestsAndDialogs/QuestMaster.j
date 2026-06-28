@@ -1,4 +1,4 @@
-library QuestMaster initializer Init requires Table, SpeciFX, Reputation
+library QuestMaster initializer Init requires Table, SpeciFX, Reputation, IconQuery
 //===========================================================================
 // QuestMaster
 // Core quest data and API scaffolding. Implementation will be expanded.
@@ -423,6 +423,7 @@ endfunction
 private function GetQuestMinimapIcon takes unit u returns minimapicon
 	local integer index
 	local integer id
+	local Table iconTable
 	if u == null then
 		return null
 	endif
@@ -430,7 +431,11 @@ private function GetQuestMinimapIcon takes unit u returns minimapicon
 	if not QuestIconTable.has(id) then
 		return null
 	endif
-	set index = QuestIconTable[id].integer[QUEST_ICON_MINIMAP_ID]
+	set iconTable = QuestIconTable[id]
+	if not iconTable.integer.has(QUEST_ICON_MINIMAP_ID) then
+		return null
+	endif
+	set index = iconTable.integer[QUEST_ICON_MINIMAP_ID]
 	if index >= 0 and index < MinimapIconIndex then
 		return QuestIconMapPing[index]
 	endif
@@ -449,9 +454,12 @@ private function RemoveOldMapPing takes unit u returns nothing
 		return
 	endif
 	set iconTable = QuestIconTable[id]
+	if not iconTable.integer.has(QUEST_ICON_MINIMAP_ID) then
+		return
+	endif
 	set index = iconTable.integer[QUEST_ICON_MINIMAP_ID]
 	if index >= 0 and index < MinimapIconIndex then
-		call DestroyMinimapIcon(QuestIconMapPing[index])
+		call IconQuery_UnregisterIcon(QuestIconMapPing[index])
 		set QuestIconMapPing[index] = null
 		call iconTable.integer.remove(QUEST_ICON_MINIMAP_ID)
 	endif
@@ -461,8 +469,7 @@ private function CreateMapPingForUnit takes unit u, integer style returns nothin
 	local minimapicon qi
 
 	call RemoveOldMapPing(u)
-	call CampaignMinimapIconUnitBJ(u, style)
-	set qi = GetLastCreatedMinimapIcon()
+	set qi = IconQuery_RegisterQuestGiverUnitIcon(u, style)
 	if qi != null then
 		call StoreQuestMinimapIcon(u, qi)
 	endif
