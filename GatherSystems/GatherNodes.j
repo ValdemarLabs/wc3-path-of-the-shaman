@@ -26,7 +26,7 @@ globals
     private boolean GN_SystemEnabled = true
     
     // Debug mode
-    private boolean GN_DebugMode = true
+    private boolean GN_DebugMode = false
     
     // Glow effect model path.
     // Use a stable built-in model here; the imported Glow.mdl did not clean up reliably.
