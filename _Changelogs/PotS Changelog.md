@@ -15,6 +15,15 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [29.6.2026]
+
+### Technical Updates
+- `SettingsUI.j`
+  Delayed Settings UI TOC loading and frame creation to a `0.20` timer callback, matching the safer `CameraUI.j` / `MasterUI.j` startup pattern instead of creating the slider-backed settings frames immediately during library initialization.
+
+### Actions Remaining
+- Re-test map startup in-game to confirm whether the post-loadscreen freeze still happens after the `SettingsUI.j` delayed-initialization fix.
+
 ## [28.6.2026]
 
 ### Player-Facing Updates
