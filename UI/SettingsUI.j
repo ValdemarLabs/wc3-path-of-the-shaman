@@ -65,10 +65,15 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery
         private trigger SETUI_ButtonTrigger = null
         private trigger SETUI_SliderTrigger = null
         private trigger SETUI_ClearFocusTrigger = null
+        private trigger SETUI_InitTrigger = null
 
         private Table SETUI_ButtonActionTable = 0
         private Table SETUI_SliderKind = 0
     endglobals
+
+    private function SETUI_LoadToc takes nothing returns nothing
+        call BlzLoadTOCFile(SETUI_TOC_PATH)
+    endfunction
 
     private function SETUI_OnOff takes boolean flag returns string
         if flag then
@@ -307,6 +312,12 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery
         call BlzFrameSetVisible(SETUI_Parent, false)
     endfunction
 
+    private function SETUI_DelayedInit takes nothing returns nothing
+        call SETUI_LoadToc()
+        call SETUI_CreateFrames()
+        call SETUI_Refresh(GetLocalPlayer())
+    endfunction
+
     public function Init takes nothing returns nothing
         if SETUI_Initialized then
             return
@@ -331,9 +342,9 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery
         set SETUI_ClearFocusTrigger = CreateTrigger()
         call TriggerAddAction(SETUI_ClearFocusTrigger, function SETUI_ClearFocusAction)
 
-        call BlzLoadTOCFile(SETUI_TOC_PATH)
-        call SETUI_CreateFrames()
-        call SETUI_Refresh(GetLocalPlayer())
+        set SETUI_InitTrigger = CreateTrigger()
+        call TriggerRegisterTimerEvent(SETUI_InitTrigger, 0.20, false)
+        call TriggerAddAction(SETUI_InitTrigger, function SETUI_DelayedInit)
     endfunction
 
     public function Hide takes nothing returns nothing
