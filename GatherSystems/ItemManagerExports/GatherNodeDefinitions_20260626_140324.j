@@ -673,7 +673,7 @@ library GatherNodeDefinitions initializer Init requires GatherNodes, GatherNodeI
     private function DelayedSpawn takes nothing returns nothing
         // Spawn initial nodes after definitions and rect-backed registrations are in place
         call GNI_SpawnInitialAll()
-        call GNU_SpawnInitialAll()
+        //call GNU_SpawnInitialAll()
 
         if GN_IsDebugMode() then
             call BJDebugMsg("|cff00ff00[GatherNodeDefinitions]|r All nodes spawned")
