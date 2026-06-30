@@ -15,6 +15,33 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [1.7.2026]
+
+### Player-Facing Updates
+- `Ranger Missing`
+  Valeria's failed negotiation choices can now be reopened with `ESC` after the current hero/Valeria lines finish, failed quests no longer respawn Valeria until the player re-accepts the quest, and the successful negotiation branch now removes the old Valeria before adding the companion version.
+  The Aradion return step now accepts Valeria within a wider 500 range, and Valeria no longer leashes back toward her original spot when the reunion completion scene starts.
+- `Map icons / Settings`
+  Icon query/rest timing changes now apply immediately from Settings instead of waiting for the previous timer phase to expire.
+  Companion/follower icons now honor the Settings toggle, icon visibility/rest ranges were expanded, and quest givers plus companions/followers are prioritized ahead of secondary icon categories.
+- `Difficulty`
+  Added active `Story`, `Normal`, and `Hard` difficulty profiles wired into Settings, with configurable native difficulty, health/damage, gold, XP, and revive pacing hooks.
+
+### Technical Updates
+- `qAradion.j`
+  Reworked Valeria retry, recreation, ownership, stale companion cleanup, negotiation prompt rearming, completion range, and quest-fail reset behavior for `Ranger Missing`.
+- `QuestMaster.j`
+  Quest-giver overhead effects now refresh immediately when a quest is accepted, so an accepted/on-going quest with no newly available quests switches to the question mark state.
+- `IconQuery.j` / `SettingsUI.j`
+  Added immediate timer restarts, per-category query durations, configurable category query frequencies, wider query/rest clamps, and Settings UI controls for secondary icon pacing.
+- `FollowSystem.j`
+  Follower minimap indicators now register through `IconQuery`, allowing companion/follower icon visibility to be controlled centrally.
+- `Difficulty.j`
+  Added a central difficulty library with apply/read APIs and configurable player/hostile handicap multipliers for future gameplay systems.
+
+### Actions Remaining
+- Re-test the full `Ranger Missing` fail/re-accept/negotiate/turn-in path, IconQuery category pacing, companion/follower icon toggles, and the new difficulty profiles in-game.
+
 ## [30.6.2026]
 
 ### Player-Facing Updates
