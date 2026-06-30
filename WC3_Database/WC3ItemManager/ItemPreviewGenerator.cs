@@ -37,20 +37,22 @@ namespace WC3ItemManager
                 // [Class, Rarity] header - displays class and rarity
                 if (!string.IsNullOrEmpty(itemClass) || !string.IsNullOrEmpty(rarity))
                 {
+                    Color classColor = GetClassColor(itemClass);
+                    Color headerColor = Color.FromArgb(150, 150, 150);
+
                     rtb.AppendText("[");
                     
-                    // Class in gray
-                    AppendColoredText(rtb, itemClass, Color.FromArgb(150, 150, 150), false, 8.5f);
+                    AppendColoredText(rtb, itemClass, classColor, false, 8.5f);
                     
                     if (!string.IsNullOrEmpty(rarity))
                     {
-                        AppendColoredText(rtb, ", ", Color.FromArgb(150, 150, 150), false, 8.5f);
+                        AppendColoredText(rtb, ", ", headerColor, false, 8.5f);
                         
                         // Rarity with rarity color
                         AppendColoredText(rtb, rarity, rarityColor, false, 8.5f);
                     }
                     
-                    AppendColoredText(rtb, "]\n", Color.FromArgb(150, 150, 150), false, 8.5f);
+                    AppendColoredText(rtb, "]\n", headerColor, false, 8.5f);
                 }
                 
                 rtb.AppendText("\n");
@@ -271,6 +273,11 @@ namespace WC3ItemManager
                 "Legendary" => Color.FromArgb(255, 128, 0),
                 _ => Color.Gray
             };
+        }
+
+        private static Color GetClassColor(string itemClass)
+        {
+            return ItemClassColorDefaults.GetColor(itemClass);
         }
         
         /// <summary>

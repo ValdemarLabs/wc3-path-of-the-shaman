@@ -13,6 +13,9 @@ globals
 	private Table DialogButtonLineAction = 0
 	private trigger DialogSystem_ClickTrigger = null
 	private trigger DialogSystem_SkipTrigger = null
+	private trigger DialogSystem_EscapeActionTrigger = null
+	private trigger DialogSystem_EscapeActionExecutingTrigger = null
+	private boolean DialogSystem_EscapeActionExecuting = false
 
 	private Table DialogSequenceStore = 0
 	private integer DialogSequenceNextId = 1
@@ -991,12 +994,44 @@ public function FastForwardActiveSequence takes boolean flag returns nothing
 	set DialogSequenceFastForward = flag
 endfunction
 
+public function ClearEscapeAction takes nothing returns nothing
+	if DialogSystem_EscapeActionTrigger != null then
+		if DialogSystem_EscapeActionExecuting and DialogSystem_EscapeActionTrigger == DialogSystem_EscapeActionExecutingTrigger then
+			set DialogSystem_EscapeActionTrigger = null
+			return
+		endif
+		call DestroyTrigger(DialogSystem_EscapeActionTrigger)
+		set DialogSystem_EscapeActionTrigger = null
+	endif
+endfunction
+
+public function SetEscapeAction takes code actionFunc returns nothing
+	local trigger t
+	call ClearEscapeAction()
+	set t = CreateTrigger()
+	call TriggerAddAction(t, actionFunc)
+	set DialogSystem_EscapeActionTrigger = t
+endfunction
+
 // ESC skip handler
 private function OnSkipKey takes nothing returns nothing
+	local trigger escTrigger
 	if DialogSystem_ActivePlayer != null and GetTriggerPlayer() != DialogSystem_ActivePlayer then
 		return
 	endif
-	call SkipActiveSequence()
+	if DialogSequenceActiveId != 0 then
+		call SkipActiveSequence()
+	elseif DialogSystem_EscapeActionTrigger != null then
+		set escTrigger = DialogSystem_EscapeActionTrigger
+		set DialogSystem_EscapeActionExecuting = true
+		set DialogSystem_EscapeActionExecutingTrigger = escTrigger
+		call TriggerExecute(escTrigger)
+		set DialogSystem_EscapeActionExecuting = false
+		if DialogSystem_EscapeActionExecutingTrigger != null and DialogSystem_EscapeActionExecutingTrigger != DialogSystem_EscapeActionTrigger then
+			call DestroyTrigger(DialogSystem_EscapeActionExecutingTrigger)
+		endif
+		set DialogSystem_EscapeActionExecutingTrigger = null
+	endif
 endfunction
 
 //===========================================================================

@@ -10,7 +10,7 @@
         "projectUniqueName": "H:\\Pelit\\PotS_JASS\\WC3_Database\\WC3ItemManager\\WC3ItemManager.csproj",
         "projectName": "WC3ItemManager",
         "projectPath": "H:\\Pelit\\PotS_JASS\\WC3_Database\\WC3ItemManager\\WC3ItemManager.csproj",
-        "packagesPath": "C:\\Users\\Valtteri\\.nuget\\packages\\",
+        "packagesPath": "C:\\Users\\Valtteri\\.nuget\\packages",
         "outputPath": "H:\\Pelit\\PotS_JASS\\WC3_Database\\WC3ItemManager\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
@@ -20,14 +20,15 @@
           "C:\\Users\\Valtteri\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
-          "net5.0-windows"
+          "net8.0-windows"
         ],
         "sources": {
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "net5.0-windows7.0": {
-            "targetAlias": "net5.0-windows",
+          "net8.0-windows": {
+            "framework": "net8.0-windows7.0",
+            "targetAlias": "net8.0-windows",
             "projectReferences": {}
           }
         },
@@ -35,19 +36,26 @@
           "warnAsError": [
             "NU1605"
           ]
-        }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.300"
       },
       "frameworks": {
-        "net5.0-windows7.0": {
-          "targetAlias": "net5.0-windows",
+        "net8.0-windows": {
+          "framework": "net8.0-windows7.0",
+          "targetAlias": "net8.0-windows",
           "dependencies": {
             "Npgsql": {
               "target": "Package",
-              "version": "[8.0.1, )"
+              "version": "[8.0.9, )"
             },
             "War3Net.Drawing.Blp": {
               "target": "Package",
-              "version": "[1.2.2, )"
+              "version": "[6.0.2, )"
             }
           },
           "imports": [
@@ -56,19 +64,38 @@
             "net47",
             "net471",
             "net472",
-            "net48"
+            "net48",
+            "net481"
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[8.0.28, 8.0.28]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.win-x64",
+              "version": "[8.0.28, 8.0.28]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[8.0.28, 8.0.28]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[8.0.28, 8.0.28]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             },
-            "Microsoft.WindowsDesktop.App.WindowsForms": {
+            "Microsoft.WindowsDesktop.App": {
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.214\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

@@ -30,7 +30,11 @@ globals
     private constant integer SUI_FRAME_CONTEXT = 3
 
     private boolean SUI_Initialized = false
+    private boolean SUI_SyncingSlider = false
+    private boolean SUI_HandlingSliderAction = false
     private integer SUI_DefinitionCount = 0
+    private integer SUI_SliderMaxCache = -1
+    private integer SUI_SliderValueCache = -1
 
     private string SUI_TocPath = "war3mapImported/TasQuestBox.toc"
     private string SUI_Title = "Secrets"
@@ -142,6 +146,7 @@ private function SUI_UpdateUI takes nothing returns nothing
     local integer maxPage = 0
     local integer selectedSecretId
     local string detailText
+    local integer frameValue
 
     if SUI_Parent == null or not BlzFrameIsVisible(SUI_Parent) then
         return
@@ -156,8 +161,21 @@ private function SUI_UpdateUI takes nothing returns nothing
         set SUI_ViewOffset[pid] = maxPage * SUI_BUTTON_COUNT
     endif
 
-    call BlzFrameSetMinMaxValue(SUI_Slider, 0.0, I2R(maxPage))
-    call BlzFrameSetValue(SUI_Slider, I2R(SUI_ViewOffset[pid] / SUI_BUTTON_COUNT))
+    if not SUI_HandlingSliderAction then
+        set frameValue = maxPage - (SUI_ViewOffset[pid] / SUI_BUTTON_COUNT)
+
+        set SUI_SyncingSlider = true
+        if SUI_SliderMaxCache != maxPage then
+            set SUI_SliderMaxCache = maxPage
+            call BlzFrameSetMinMaxValue(SUI_Slider, 0.0, I2R(maxPage))
+        endif
+        if SUI_SliderValueCache != frameValue then
+            set SUI_SliderValueCache = frameValue
+            call BlzFrameSetValue(SUI_Slider, I2R(frameValue))
+        endif
+        set SUI_SyncingSlider = false
+        call BlzFrameSetVisible(SUI_Slider, maxPage > 0)
+    endif
 
     loop
         exitwhen rowIndex > SUI_BUTTON_COUNT
@@ -211,6 +229,7 @@ public function Hide takes nothing returns nothing
 endfunction
 
 public function Show takes nothing returns nothing
+    set SUI_SliderValueCache = -1
     call BlzFrameSetVisible(SUI_Parent, true)
     call SUI_UpdateUI()
 endfunction
@@ -228,17 +247,60 @@ endfunction
 
 private function SUI_SliderAction takes nothing returns nothing
     local integer pid = GetPlayerId(GetTriggerPlayer())
-    set SUI_ViewOffset[pid] = R2I(BlzGetTriggerFrameValue()) * SUI_BUTTON_COUNT
+    local integer maxPage = 0
+    local integer targetPage
+
+    if SUI_SyncingSlider then
+        return
+    endif
+    set SUI_HandlingSliderAction = true
+    if SUI_DefinitionCount > SUI_BUTTON_COUNT then
+        set maxPage = (SUI_DefinitionCount - 1) / SUI_BUTTON_COUNT
+    endif
+    set SUI_SliderValueCache = R2I(BlzGetTriggerFrameValue() + 0.5)
+    set targetPage = maxPage - SUI_SliderValueCache
+    if targetPage < 0 then
+        set targetPage = 0
+    elseif targetPage > maxPage then
+        set targetPage = maxPage
+    endif
+    set SUI_ViewOffset[pid] = targetPage * SUI_BUTTON_COUNT
     call SUI_UpdateUI()
+    set SUI_HandlingSliderAction = false
 endfunction
 
 private function SUI_WheelAction takes nothing returns nothing
+    local real nextValue
+    local real maxValue
+
     if GetLocalPlayer() == GetTriggerPlayer() then
-        if BlzGetTriggerFrameValue() > 0.0 then
-            call BlzFrameSetValue(SUI_Slider, BlzFrameGetValue(SUI_Slider) + 1.0)
-        else
-            call BlzFrameSetValue(SUI_Slider, BlzFrameGetValue(SUI_Slider) - 1.0)
+        if SUI_Slider == null or SUI_Parent == null or not BlzFrameIsVisible(SUI_Parent) or not BlzFrameIsVisible(SUI_Slider) then
+            return
         endif
+
+        if SUI_DefinitionCount > SUI_BUTTON_COUNT then
+            set maxValue = I2R((SUI_DefinitionCount - 1) / SUI_BUTTON_COUNT)
+        else
+            set maxValue = 0.0
+        endif
+        if maxValue <= 0.0 then
+            return
+        endif
+
+        set nextValue = BlzFrameGetValue(SUI_Slider)
+        if BlzGetTriggerFrameValue() > 0.0 then
+            set nextValue = nextValue + 1.0
+        else
+            set nextValue = nextValue - 1.0
+        endif
+
+        if nextValue < 0.0 then
+            set nextValue = 0.0
+        elseif nextValue > maxValue then
+            set nextValue = maxValue
+        endif
+
+        call BlzFrameSetValue(SUI_Slider, nextValue)
     endif
 endfunction
 
@@ -275,6 +337,7 @@ private function SUI_InitFrames takes nothing returns nothing
     call BlzTriggerRegisterFrameEvent(SUI_SliderTrigger, SUI_Slider, FRAMEEVENT_SLIDER_VALUE_CHANGED)
     call BlzTriggerRegisterFrameEvent(SUI_WheelTrigger, SUI_Slider, FRAMEEVENT_MOUSE_WHEEL)
     call BlzFrameSetMinMaxValue(SUI_Slider, 0.0, 0.0)
+    call BlzFrameSetStepSize(SUI_Slider, 1.0)
 
     set frame = BlzCreateFrameByType("SLIDER", "SecretsUIMoreScroll", SUI_Parent, "", 0)
     call BlzTriggerRegisterFrameEvent(SUI_WheelTrigger, frame, FRAMEEVENT_MOUSE_WHEEL)

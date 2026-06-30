@@ -39,6 +39,7 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
         private constant real FLOAT_TEXT_HEIGHT = 90.0      // Height above item
         private constant real FLOAT_TEXT_FADE_START = 25.0  // When to start fading (seconds before end)
         private constant real FLOAT_TEXT_CHAR_WIDTH = 5.0   // World units per character for centering (tune this value)    
+        private constant real FLOAT_TEXT_VISIBLE_RANGE = 1000.0
             // Increase (e.g. 8.0, 9.0) → Text shifts more left → Use if text appears shifted right of item
             // Decrease (e.g. 5.0, 6.0) → Text shifts less left → Use if text appears shifted left of item
         
@@ -205,6 +206,37 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
     // =========================================================================
     // HOVER ANIMATION SYSTEM
     // =========================================================================
+
+    private function IsFloatingTextHeroInRange takes unit hero, real x, real y returns boolean
+        local real dx
+        local real dy
+
+        if hero == null or GetUnitTypeId(hero) == 0 or GetWidgetLife(hero) <= 0.405 then
+            return false
+        endif
+
+        set dx = GetUnitX(hero) - x
+        set dy = GetUnitY(hero) - y
+        return dx * dx + dy * dy <= FLOAT_TEXT_VISIBLE_RANGE * FLOAT_TEXT_VISIBLE_RANGE
+    endfunction
+
+    private function IsFloatingTextVisibleAt takes real x, real y returns boolean
+        return IsFloatingTextHeroInRange(udg_Nazgrek, x, y) or IsFloatingTextHeroInRange(udg_Zulkis, x, y)
+    endfunction
+
+    private function UpdateFloatingTextVisibility takes texttag tt, item it, real x, real y returns nothing
+        local real checkX = x
+        local real checkY = y
+
+        if it != null and GetItemTypeId(it) != 0 then
+            set checkX = GetItemX(it)
+            set checkY = GetItemY(it)
+        endif
+
+        if GetLocalPlayer() == Player(0) then
+            call SetTextTagVisibility(tt, IsFloatingTextVisibleAt(checkX, checkY))
+        endif
+    endfunction
     
     // Remove expired texttags and compact array
     private function CleanupExpiredHoverTexts takes nothing returns nothing
@@ -264,7 +296,12 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
             // Decrement expire time
             set hoverExpireTime[i] = hoverExpireTime[i] - FLOAT_HOVER_INTERVAL
             
-            if hoverExpireTime[i] > 0 then
+            if hoverItem[i] != null and GetItemTypeId(hoverItem[i]) == 0 then
+                call DestroyTextTag(hoverTextTag[i])
+                set hoverTextTag[i] = null
+                set hoverItem[i] = null
+                set hoverExpireTime[i] = 0
+            elseif hoverExpireTime[i] > 0 then
                 // Update phase
                 set hoverPhase[i] = hoverPhase[i] + (FLOAT_HOVER_SPEED * 2.0 * 3.14159 * FLOAT_HOVER_INTERVAL)
                 
@@ -273,6 +310,7 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
                 
                 // Update texttag position
                 call SetTextTagPos(hoverTextTag[i], hoverBaseX[i], hoverBaseY[i], hoverBaseZ[i] + zOffset)
+                call UpdateFloatingTextVisibility(hoverTextTag[i], hoverItem[i], hoverBaseX[i], hoverBaseY[i])
             endif
             
             set i = i + 1
@@ -336,8 +374,18 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
         call itemToHoverIndex.remove(itemHandleId)
     endfunction
     
-    // Item pickup handler - removes floating text
+    // Item pickup/use handler - removes floating text
     private function OnItemPickup takes nothing returns nothing
+        local item it = GetManipulatedItem()
+        
+        if it != null then
+            call RemoveItemFloatingText(it)
+        endif
+        
+        set it = null
+    endfunction
+
+    private function OnItemUse takes nothing returns nothing
         local item it = GetManipulatedItem()
         
         if it != null then
@@ -370,7 +418,8 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
         call SetTextTagLifespan(tt, FLOAT_TEXT_DURATION)
         call SetTextTagFadepoint(tt, FLOAT_TEXT_FADE_START)
         call SetTextTagVelocity(tt, 0.0, 0.0)
-        call SetTextTagVisibility(tt, true)
+        call SetTextTagVisibility(tt, false)
+        call UpdateFloatingTextVisibility(tt, it, x, y)
         
         // Register for hover animation with item tracking
         call RegisterHoverText(tt, it, centeredX, y, FLOAT_TEXT_HEIGHT)
@@ -476,7 +525,8 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
         call SetTextTagLifespan(tt, FLOAT_TEXT_DURATION)
         call SetTextTagFadepoint(tt, FLOAT_TEXT_FADE_START)
         call SetTextTagVelocity(tt, 0.0, 0.0)
-        call SetTextTagVisibility(tt, true)
+        call SetTextTagVisibility(tt, false)
+        call UpdateFloatingTextVisibility(tt, it, x, y)
         
         call RegisterHoverText(tt, it, centeredX, y, FLOAT_TEXT_HEIGHT)
     endfunction
@@ -1093,6 +1143,7 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
     private function Init takes nothing returns nothing
         local trigger pickupTrig
         local trigger dropTrig
+        local trigger useTrig
         
         call InitTables()
         call InitFloatingTextConfig()
@@ -1104,6 +1155,11 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
         set pickupTrig = CreateTrigger()
         call TriggerRegisterAnyUnitEventBJ(pickupTrig, EVENT_PLAYER_UNIT_PICKUP_ITEM)
         call TriggerAddAction(pickupTrig, function OnItemPickup)
+
+        // Register item use trigger (powerups can be consumed immediately on pickup)
+        set useTrig = CreateTrigger()
+        call TriggerRegisterAnyUnitEventBJ(useTrig, EVENT_PLAYER_UNIT_USE_ITEM)
+        call TriggerAddAction(useTrig, function OnItemUse)
         
         // Register item drop trigger (to create floating text when unit drops item)
         set dropTrig = CreateTrigger()

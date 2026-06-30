@@ -401,7 +401,9 @@ INSERT INTO item_classes (class_name, slot_type, description) VALUES
 ('Ring', 'RING', 'Rings'),
 ('Amulet', 'AMULET', 'Amulets, necklaces'),
 ('Trinket', 'TRINKET', 'Trinkets, charms'),
-('Back', 'BACK', 'Cloaks, capes');
+('Back', 'BACK', 'Cloaks, capes'),
+('Ability', 'ABILITY', 'Ability-granting item slot/class'),
+('Skill', 'SKILL', 'Skill-granting item slot/class');
 
 -- ====================================================================================================
 -- UTILITY FUNCTIONS

@@ -114,6 +114,16 @@ INSERT INTO item_classes (class_name, slot_type, description)
 VALUES ('reserved_4', NULL, 'Reserved slot 4 for future expansion (from Excel)')
 ON CONFLICT (class_name) DO NOTHING;
 
+-- Ability item slot/class
+INSERT INTO item_classes (class_name, slot_type, description)
+VALUES ('Ability', 'ABILITY', 'Ability-granting item slot/class')
+ON CONFLICT (class_name) DO NOTHING;
+
+-- Skill item slot/class
+INSERT INTO item_classes (class_name, slot_type, description)
+VALUES ('Skill', 'SKILL', 'Skill-granting item slot/class')
+ON CONFLICT (class_name) DO NOTHING;
+
 -- Show results
 SELECT 'AFTER MIGRATION:' as status;
 SELECT id, class_name, slot_type, description FROM item_classes ORDER BY id;

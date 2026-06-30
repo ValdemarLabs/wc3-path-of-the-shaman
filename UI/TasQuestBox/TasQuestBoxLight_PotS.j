@@ -34,6 +34,10 @@ globals
     public string array DataIcon 
     public string array DataName
     public integer DataCount = 0
+    public boolean SyncingSlider = false
+    public boolean HandlingSliderAction = false
+    public integer SliderMaxCache = -1
+    public integer SliderValueCache = -1
 
     public framehandle Parent
     public framehandle SuperParent
@@ -76,6 +80,48 @@ public function PosOpen takes framehandle frame returns nothing
     endif
 endfunction
 
+// ParentFunc who you want as parent, this runs at InitBlizzard, if you need more control you need to modify the part that calls local function Init()
+public function ParentFunc takes nothing returns framehandle
+        return BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0)
+    endfunction
+
+private function GetMaxPage takes nothing returns integer
+    if DataCount > ButtonCount then
+        return (DataCount - 1) / ButtonCount
+    endif
+    return 0
+endfunction
+
+private function SyncSliderVisual takes player whichPlayer returns nothing
+    local integer pid = GetPlayerId(whichPlayer)
+    local integer maxPage = GetMaxPage()
+    local integer frameValue
+
+    if Slider == null then
+        return
+    endif
+
+    if ViewOffset[pid] < 0 then
+        set ViewOffset[pid] = 0
+    elseif ViewOffset[pid] > maxPage * ButtonCount then
+        set ViewOffset[pid] = maxPage * ButtonCount
+    endif
+
+    set frameValue = maxPage - (ViewOffset[pid] / ButtonCount)
+
+    set SyncingSlider = true
+    if SliderMaxCache != maxPage then
+        set SliderMaxCache = maxPage
+        call BlzFrameSetMinMaxValue(Slider, 0, maxPage)
+    endif
+    if SliderValueCache != frameValue then
+        set SliderValueCache = frameValue
+        call BlzFrameSetValue(Slider, frameValue)
+    endif
+    set SyncingSlider = false
+    call BlzFrameSetVisible(Slider, maxPage > 0)
+endfunction
+
 //Add one skill for this key
 public function Add takes string name, string text, string icon returns nothing
     set DataCount = DataCount + 1
@@ -83,7 +129,7 @@ public function Add takes string name, string text, string icon returns nothing
    set DataText[DataCount] = text
    set DataIcon[DataCount] = icon
    if Slider != null then
-    call BlzFrameSetMinMaxValue(Slider, 0, DataCount/ButtonCount)
+    call SyncSliderVisual(GetLocalPlayer())
    endif
 endfunction
 
@@ -102,17 +148,10 @@ public function Remove takes integer index returns boolean
     endloop
     set DataCount = DataCount - 1
    if Slider != null then
-    call BlzFrameSetMinMaxValue(Slider, 0, DataCount/ButtonCount)
+    call SyncSliderVisual(GetLocalPlayer())
    endif
    return true
 endfunction
-
-// config functions relevant to user
-
-// ParentFunc who you want as parent, this runs at InitBlizzard, if you need more control you need to modify the part that calls local function Init()
-    public function ParentFunc takes nothing returns framehandle
-        return BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0)
-    endfunction
 
 // System code
 
@@ -120,9 +159,13 @@ endfunction
 public function UpdateUI takes nothing returns nothing    
     local integer i
     local integer skillIndex
-    local integer view = ViewOffset[GetPlayerId(GetLocalPlayer())]
+    local integer view = 0
 
     if BlzFrameIsVisible(Parent) then
+        if not HandlingSliderAction then
+            call SyncSliderVisual(GetLocalPlayer())
+        endif
+        set view = ViewOffset[GetPlayerId(GetLocalPlayer())]
         set i = 1
     loop
         exitwhen i > ButtonCount
@@ -154,10 +197,11 @@ public function Hide takes nothing returns nothing
 endfunction
 
 public function Unhide takes nothing returns nothing
-    call BlzFrameSetVisible(Open, true)
+    call BlzFrameSetVisible(Open, false)
 endfunction
 
 public function Show takes nothing returns nothing
+    set SliderValueCache = -1
     call BlzFrameSetVisible(Parent, true)
     call UpdateUI()
 endfunction
@@ -169,7 +213,8 @@ endfunction
 
 public function SetButtonVisible takes boolean flag returns nothing
     if Open != null then
-        call BlzFrameSetVisible(Open, flag)
+        // Zones access is routed through MasterUI; keep the legacy open button hidden.
+        call BlzFrameSetVisible(Open, false)
     endif
 endfunction
 
@@ -184,16 +229,52 @@ private function ESCAction takes nothing returns nothing
 endfunction
 
 private function SliderAction takes nothing returns nothing
-    set ViewOffset[GetPlayerId(GetTriggerPlayer())] = R2I(BlzGetTriggerFrameValue()*ButtonCount)
+    local integer targetPage
+    local integer maxPage = GetMaxPage()
+
+    if SyncingSlider then
+        return
+    endif
+    set HandlingSliderAction = true
+    set SliderValueCache = R2I(BlzGetTriggerFrameValue() + 0.5)
+    set targetPage = maxPage - SliderValueCache
+    if targetPage < 0 then
+        set targetPage = 0
+    elseif targetPage > maxPage then
+        set targetPage = maxPage
+    endif
+    set ViewOffset[GetPlayerId(GetTriggerPlayer())] = targetPage*ButtonCount
     call UpdateUI()
+    set HandlingSliderAction = false
 endfunction
 private function WheelAction takes nothing returns nothing
+    local real nextValue
+    local real maxValue
+
     if GetLocalPlayer() == GetTriggerPlayer() then
-        if BlzGetTriggerFrameValue() > 0 then 
-            call BlzFrameSetValue(Slider, BlzFrameGetValue(Slider) + 1)
-        else
-            call BlzFrameSetValue(Slider, BlzFrameGetValue(Slider) - 1)
+        if Slider == null or Parent == null or not BlzFrameIsVisible(Parent) or not BlzFrameIsVisible(Slider) then
+            return
         endif
+
+        set maxValue = GetMaxPage()
+        if maxValue <= 0.0 then
+            return
+        endif
+
+        set nextValue = BlzFrameGetValue(Slider)
+        if BlzGetTriggerFrameValue() > 0 then 
+            set nextValue = nextValue + 1
+        else
+            set nextValue = nextValue - 1
+        endif
+
+        if nextValue < 0.0 then
+            set nextValue = 0.0
+        elseif nextValue > maxValue then
+            set nextValue = maxValue
+        endif
+
+        call BlzFrameSetValue(Slider, nextValue)
     endif
 endfunction
 private function ClearFoucsAction takes nothing returns nothing
@@ -207,6 +288,7 @@ endfunction
 
 private function OpenAction takes nothing returns nothing
     if GetLocalPlayer() == GetTriggerPlayer() then
+        set SliderValueCache = -1
         call StartSound(Sound)
         call BlzFrameSetVisible(Parent, not BlzFrameIsVisible(Parent))   
         call UpdateUI()     
@@ -242,7 +324,8 @@ local integer i
     set Slider = BlzGetFrameByName("TasQuestBoxSlider1", 0)
     call BlzTriggerRegisterFrameEvent(SliderTrigger, Slider, FRAMEEVENT_SLIDER_VALUE_CHANGED)
     call BlzTriggerRegisterFrameEvent(WheelTrigger, Slider, FRAMEEVENT_MOUSE_WHEEL)
-    call BlzFrameSetMinMaxValue(Slider, 0, DataCount/ButtonCount)
+    call BlzFrameSetMinMaxValue(Slider, 0, GetMaxPage())
+    call BlzFrameSetStepSize(Slider, 1.0)
 
     set frame = BlzCreateFrameByType("SLIDER", "MoreScroll", Parent, "", 0)
     call BlzTriggerRegisterFrameEvent(WheelTrigger, frame, FRAMEEVENT_MOUSE_WHEEL)

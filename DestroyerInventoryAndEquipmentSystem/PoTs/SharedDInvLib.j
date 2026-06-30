@@ -1,4 +1,4 @@
-library SharedDInvLib initializer Init requires DConfigurationArea
+library SharedDInvLib initializer Init requires DConfigurationArea, ItemLootSystem
 
 globals
 // Core
@@ -2288,6 +2288,9 @@ endfunction
 function FromItemHeavenToGround takes item it, real x, real y returns nothing
 call SetItemVisible(it, TRUE)
 call SetItemPosition(it, x, y)
+if it != null then
+call ItemLoot_CreateFloatingTextCustom(it, GetItemName(it), 255, 255, 255)
+endif
 set it = null
 endfunction
 

@@ -23,7 +23,6 @@ globals
     private constant integer CUI_ACTION_NORMAL = 1
     private constant integer CUI_ACTION_ADVANCED = 2
     private constant integer CUI_ACTION_DEVELOPER = 3
-    private constant integer CUI_ACTION_DEFAULTS = 4
 
     private boolean CUI_Initialized = false
     private boolean CUI_Syncing = false
@@ -53,6 +52,7 @@ globals
     private trigger CUI_SliderTrigger = null
     private trigger CUI_ClearFocusTrigger = null
     private trigger CUI_SelectTrigger = null
+    private trigger CUI_InitTrigger = null
 endglobals
 
 private function CUI_LoadToc takes nothing returns nothing
@@ -122,6 +122,7 @@ private function CUI_RefreshFields takes player whichPlayer returns nothing
     if GetLocalPlayer() == whichPlayer then
         call BlzFrameSetText(CUI_TargetValue, CameraControl_GetTargetName(whichPlayer))
         call BlzFrameSetText(CUI_ModeValue, CameraControl_GetModeName(whichPlayer))
+        call BlzFrameSetText(CUI_ResetButton, "Defaults")
         loop
             exitwhen i > 5
             call BlzFrameSetText(CUI_SliderLabel[i], CUI_GetSliderDisplay(i, whichPlayer))
@@ -204,8 +205,6 @@ private function CUI_ActionAction takes nothing returns nothing
             call CameraControl_SetModeAdvanced(whichPlayer)
         elseif CUI_ButtonAction.integer[handleId] == CUI_ACTION_DEVELOPER then
             call CameraControl_SetModeDeveloper(whichPlayer)
-        else
-            call CameraControl_ResetDefaults(whichPlayer)
         endif
         call CUI_RefreshFields(whichPlayer)
     endif
@@ -327,10 +326,9 @@ private function CUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetTextAlignment(CUI_ModeValue, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetEnable(CUI_ModeValue, false)
 
-    call CUI_CreateActionButton(1, "Normal", CUI_ACTION_NORMAL, -0.128)
-    call CUI_CreateActionButton(2, "Advanced", CUI_ACTION_ADVANCED, -0.168)
-    call CUI_CreateActionButton(3, "Developer", CUI_ACTION_DEVELOPER, -0.208)
-    call CUI_CreateActionButton(4, "Defaults", CUI_ACTION_DEFAULTS, -0.248)
+    call CUI_CreateActionButton(1, "Normal", CUI_ACTION_NORMAL, -0.166)
+    call CUI_CreateActionButton(2, "Advanced", CUI_ACTION_ADVANCED, -0.206)
+    call CUI_CreateActionButton(3, "Developer", CUI_ACTION_DEVELOPER, -0.246)
 
     call CUI_CreateSliderRow(1, "Distance", CUI_SLIDER_DISTANCE, -0.030)
     call CUI_CreateSliderRow(2, "Far Z", CUI_SLIDER_FARZ, -0.062)
@@ -339,9 +337,9 @@ private function CUI_CreateFrames takes nothing returns nothing
     call CUI_CreateSliderRow(5, "FoV", CUI_SLIDER_FOV, -0.158)
 
     set CUI_ResetButton = BlzCreateFrame("ScriptDialogButton", CUI_Parent, 0, 0)
-    call BlzFrameSetSize(CUI_ResetButton, 0.105, 0.028)
+    call BlzFrameSetSize(CUI_ResetButton, 0.120, 0.028)
     call BlzFrameSetPoint(CUI_ResetButton, FRAMEPOINT_TOPLEFT, CUI_Slider[5], FRAMEPOINT_BOTTOMLEFT, 0.016, -0.010)
-    call BlzFrameSetText(CUI_ResetButton, "Reset Sliders")
+    call BlzFrameSetText(CUI_ResetButton, "Defaults")
     call BlzTriggerRegisterFrameEvent(CUI_ResetTrigger, CUI_ResetButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(CUI_ClearFocusTrigger, CUI_ResetButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzFrameSetVisible(CUI_ResetButton, false)
@@ -349,35 +347,15 @@ private function CUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetVisible(CUI_Parent, false)
 endfunction
 
+private function CUI_DelayedInit takes nothing returns nothing
+    call CUI_LoadToc()
+    call CUI_CreateFrames()
+endfunction
+
 public function Hide takes nothing returns nothing
     call CUI_HideInternal()
 endfunction
 
-public function Show takes nothing returns nothing
-    local integer i = 1
-    if CUI_Parent != null then
-        call BlzFrameSetVisible(CUI_Parent, true)
-    endif
-    loop
-        exitwhen i > 5
-        if CUI_Slider[i] != null then
-            call BlzFrameSetVisible(CUI_Slider[i], true)
-        endif
-        set i = i + 1
-    endloop
-    if CUI_ResetButton != null then
-        call BlzFrameSetVisible(CUI_ResetButton, true)
-    endif
-    call CUI_RefreshFields(GetLocalPlayer())
-endfunction
-
-public function Toggle takes nothing returns nothing
-    if CUI_Parent != null and BlzFrameIsVisible(CUI_Parent) then
-        call Hide()
-    else
-        call Show()
-    endif
-endfunction
 
 public function IsVisible takes nothing returns boolean
     return CUI_IsVisibleInternal()
@@ -389,8 +367,6 @@ public function Init takes nothing returns nothing
         return
     endif
     set CUI_Initialized = true
-
-    call CUI_LoadToc()
 
     set CUI_ButtonAction = Table.create()
     set CUI_SliderKind = Table.create()
@@ -421,7 +397,42 @@ public function Init takes nothing returns nothing
     endloop
     call TriggerAddAction(CUI_SelectTrigger, function CUI_SelectAction)
 
-    call CUI_CreateFrames()
+    set CUI_InitTrigger = CreateTrigger()
+    call TriggerRegisterTimerEvent(CUI_InitTrigger, 0.20, false)
+    call TriggerAddAction(CUI_InitTrigger, function CUI_DelayedInit)
+endfunction
+
+public function Show takes nothing returns nothing
+    local integer i = 1
+    if not CUI_Initialized then
+        call Init()
+    endif
+    if CUI_Parent != null then
+        call BlzFrameSetVisible(CUI_Parent, true)
+    endif
+    loop
+        exitwhen i > 5
+        if CUI_Slider[i] != null then
+            call BlzFrameSetVisible(CUI_Slider[i], true)
+        endif
+        set i = i + 1
+    endloop
+    if CUI_ResetButton != null then
+        call BlzFrameSetVisible(CUI_ResetButton, true)
+    endif
+    call CUI_SyncSliderValues(GetLocalPlayer())
+    call CUI_RefreshFields(GetLocalPlayer())
+endfunction
+
+public function Toggle takes nothing returns nothing
+    if not CUI_Initialized then
+        call Init()
+    endif
+    if CUI_Parent != null and BlzFrameIsVisible(CUI_Parent) then
+        call Hide()
+    else
+        call Show()
+    endif
 endfunction
 
 public function AutoInit takes nothing returns nothing

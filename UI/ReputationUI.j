@@ -25,9 +25,12 @@ globals
     private framehandle RUI_Title = null
     private framehandle RUI_LeftPane = null
     private framehandle RUI_RightPane = null
+    private framehandle RUI_ListWheelArea = null
     private framehandle RUI_CloseButton = null
     private framehandle RUI_ReturnButton = null
     private framehandle RUI_ListScroll = null
+    private framehandle RUI_DetailBackdrop = null
+    private framehandle RUI_DetailBodyBackdrop = null
     private framehandle RUI_DetailIcon = null
     private framehandle RUI_DetailTitle = null
     private framehandle RUI_DetailValue = null
@@ -40,6 +43,17 @@ globals
     private framehandle array RUI_RowHighlight
     private integer array RUI_RowFactionId
     private integer array RUI_ListScrollValue
+    private integer array RUI_RowVisibleState
+    private integer array RUI_RowHighlightState
+    private string array RUI_RowIconCache
+    private string array RUI_RowTextCache
+    private string array RUI_RowLevelCache
+    private integer RUI_ListScrollMaxCache = -1
+    private integer RUI_ListScrollValueCache = -1
+    private string RUI_DetailIconCache = ""
+    private string RUI_DetailTitleCache = ""
+    private string RUI_DetailValueCache = ""
+    private string RUI_DetailDescriptionCache = ""
 
     private Table RUI_ButtonRow = 0
 
@@ -134,12 +148,39 @@ private function RUI_GetSelectedFaction takes player whichPlayer returns Faction
     return 0
 endfunction
 
+private function RUI_SetRowVisible takes integer rowIndex, boolean visible returns nothing
+    local integer visibleState = 0
+
+    if visible then
+        set visibleState = 1
+    endif
+    if RUI_RowVisibleState[rowIndex] != visibleState then
+        set RUI_RowVisibleState[rowIndex] = visibleState
+        call BlzFrameSetVisible(RUI_RowButton[rowIndex], visible)
+    endif
+endfunction
+
+private function RUI_SetRowHighlight takes integer rowIndex, boolean visible returns nothing
+    local integer visibleState = 0
+
+    if visible then
+        set visibleState = 1
+    endif
+    if RUI_RowHighlightState[rowIndex] != visibleState then
+        set RUI_RowHighlightState[rowIndex] = visibleState
+        call BlzFrameSetVisible(RUI_RowHighlight[rowIndex], visible)
+    endif
+endfunction
+
 private function RUI_UpdateRows takes player whichPlayer returns nothing
     local integer i = 1
     local integer rowIndex = 1
     local integer skipped = 0
     local integer maxStart = RUI_GetFactionCount() - RUI_VISIBLE_ROWS
     local Faction f
+    local string iconPath
+    local string rowText
+    local string rowLevel
 
     if maxStart < 0 then
         set maxStart = 0
@@ -157,15 +198,27 @@ private function RUI_UpdateRows takes player whichPlayer returns nothing
             if skipped < RUI_ListScrollValue[GetPlayerId(whichPlayer)] then
                 set skipped = skipped + 1
             elseif rowIndex <= RUI_VISIBLE_ROWS then
-            set RUI_RowFactionId[rowIndex] = f.id
-            if GetLocalPlayer() == whichPlayer then
-                call BlzFrameSetTexture(RUI_RowIcon[rowIndex], RUI_GetFactionIcon(f), 0, true)
-                call BlzFrameSetText(RUI_RowText[rowIndex], "|cff80a0ff" + f.name + "|r")
-                call BlzFrameSetText(RUI_RowLevel[rowIndex], Reputation.getStatus(Player(0), f))
-                call BlzFrameSetVisible(RUI_RowHighlight[rowIndex], f.id == RUI_SelectedFactionId)
-                call BlzFrameSetVisible(RUI_RowButton[rowIndex], true)
-            endif
-            set rowIndex = rowIndex + 1
+                set RUI_RowFactionId[rowIndex] = f.id
+                if GetLocalPlayer() == whichPlayer then
+                    set iconPath = RUI_GetFactionIcon(f)
+                    set rowText = "|cff80a0ff" + f.name + "|r"
+                    set rowLevel = Reputation.getStatus(Player(0), f)
+                    if RUI_RowIconCache[rowIndex] != iconPath then
+                        set RUI_RowIconCache[rowIndex] = iconPath
+                        call BlzFrameSetTexture(RUI_RowIcon[rowIndex], iconPath, 0, true)
+                    endif
+                    if RUI_RowTextCache[rowIndex] != rowText then
+                        set RUI_RowTextCache[rowIndex] = rowText
+                        call BlzFrameSetText(RUI_RowText[rowIndex], rowText)
+                    endif
+                    if RUI_RowLevelCache[rowIndex] != rowLevel then
+                        set RUI_RowLevelCache[rowIndex] = rowLevel
+                        call BlzFrameSetText(RUI_RowLevel[rowIndex], rowLevel)
+                    endif
+                    call RUI_SetRowHighlight(rowIndex, f.id == RUI_SelectedFactionId)
+                    call RUI_SetRowVisible(rowIndex, true)
+                endif
+                set rowIndex = rowIndex + 1
             endif
         endif
         set i = i + 1
@@ -175,15 +228,25 @@ private function RUI_UpdateRows takes player whichPlayer returns nothing
         exitwhen rowIndex > RUI_MAX_ROWS
         set RUI_RowFactionId[rowIndex] = 0
         if GetLocalPlayer() == whichPlayer then
-            call BlzFrameSetVisible(RUI_RowButton[rowIndex], false)
+            set RUI_RowIconCache[rowIndex] = ""
+            set RUI_RowTextCache[rowIndex] = ""
+            set RUI_RowLevelCache[rowIndex] = ""
+            call RUI_SetRowVisible(rowIndex, false)
+            call RUI_SetRowHighlight(rowIndex, false)
         endif
         set rowIndex = rowIndex + 1
     endloop
 
     if GetLocalPlayer() == whichPlayer then
         set RUI_SyncingListScroll = true
-        call BlzFrameSetMinMaxValue(RUI_ListScroll, 0.0, I2R(maxStart))
-        call BlzFrameSetValue(RUI_ListScroll, I2R(RUI_ListScrollValue[GetPlayerId(whichPlayer)]))
+        if RUI_ListScrollMaxCache != maxStart then
+            set RUI_ListScrollMaxCache = maxStart
+            call BlzFrameSetMinMaxValue(RUI_ListScroll, 0.0, I2R(maxStart))
+        endif
+        if RUI_ListScrollValueCache != maxStart - RUI_ListScrollValue[GetPlayerId(whichPlayer)] then
+            set RUI_ListScrollValueCache = maxStart - RUI_ListScrollValue[GetPlayerId(whichPlayer)]
+            call BlzFrameSetValue(RUI_ListScroll, I2R(RUI_ListScrollValueCache))
+        endif
         set RUI_SyncingListScroll = false
         call BlzFrameSetVisible(RUI_ListScroll, maxStart > 0)
     endif
@@ -193,25 +256,86 @@ private function RUI_UpdateDetail takes player whichPlayer returns nothing
     local Faction f = RUI_GetSelectedFaction(whichPlayer)
     local integer rep
     local string detailText
+    local string iconPath
+    local string titleText
+    local string valueText
 
     if f == 0 then
         if GetLocalPlayer() == whichPlayer then
-            call BlzFrameSetTexture(RUI_DetailIcon, RUI_DefaultFactionIcon, 0, true)
-            call BlzFrameSetText(RUI_DetailTitle, "No faction")
-            call BlzFrameSetText(RUI_DetailValue, "")
-            call BlzFrameSetText(RUI_DetailDescription, "No visible factions configured.")
+            if RUI_DetailIconCache != RUI_DefaultFactionIcon then
+                set RUI_DetailIconCache = RUI_DefaultFactionIcon
+                call BlzFrameSetTexture(RUI_DetailIcon, RUI_DefaultFactionIcon, 0, true)
+            endif
+            if RUI_DetailTitleCache != "No faction" then
+                set RUI_DetailTitleCache = "No faction"
+                call BlzFrameSetText(RUI_DetailTitle, "No faction")
+            endif
+            if RUI_DetailValueCache != "" then
+                set RUI_DetailValueCache = ""
+                call BlzFrameSetText(RUI_DetailValue, "")
+            endif
+            if RUI_DetailDescriptionCache != "No visible factions configured." then
+                set RUI_DetailDescriptionCache = "No visible factions configured."
+                call BlzFrameSetText(RUI_DetailDescription, "No visible factions configured.")
+            endif
         endif
         return
     endif
 
     set rep = Reputation.getRep(Player(0), f)
-    set detailText = RUI_GetFactionDescription(f.name) + "|n|nCurrent status: " + Reputation.getStatus(Player(0), f) + "|nReputation value: |cffffffff" + I2S(rep) + "|r"
+    set iconPath = RUI_GetFactionIcon(f)
+    set titleText = "|cff80a0ff" + f.name + "|r"
+    set valueText = Reputation.getStatus(Player(0), f)
+    set detailText = RUI_GetFactionDescription(f.name) + "|n|nCurrent status: " + valueText + "|nReputation value: |cffffffff" + I2S(rep) + "|r"
     if GetLocalPlayer() == whichPlayer then
-        call BlzFrameSetTexture(RUI_DetailIcon, RUI_GetFactionIcon(f), 0, true)
-        call BlzFrameSetText(RUI_DetailTitle, "|cff80a0ff" + f.name + "|r")
-        call BlzFrameSetText(RUI_DetailValue, Reputation.getStatus(Player(0), f))
-        call BlzFrameSetText(RUI_DetailDescription, detailText)
+        if RUI_DetailIconCache != iconPath then
+            set RUI_DetailIconCache = iconPath
+            call BlzFrameSetTexture(RUI_DetailIcon, iconPath, 0, true)
+        endif
+        if RUI_DetailTitleCache != titleText then
+            set RUI_DetailTitleCache = titleText
+            call BlzFrameSetText(RUI_DetailTitle, titleText)
+        endif
+        if RUI_DetailValueCache != valueText then
+            set RUI_DetailValueCache = valueText
+            call BlzFrameSetText(RUI_DetailValue, valueText)
+        endif
+        if RUI_DetailDescriptionCache != detailText then
+            set RUI_DetailDescriptionCache = detailText
+            call BlzFrameSetText(RUI_DetailDescription, detailText)
+        endif
     endif
+endfunction
+
+private function RUI_RefreshVisibleData takes player whichPlayer returns nothing
+    local integer rowIndex = 1
+    local integer factionId
+    local Faction f
+    local string rowLevel
+
+    if RUI_Parent == null or not BlzFrameIsVisible(RUI_Parent) then
+        return
+    endif
+
+    if GetLocalPlayer() == whichPlayer then
+        loop
+            exitwhen rowIndex > RUI_VISIBLE_ROWS
+            set factionId = RUI_RowFactionId[rowIndex]
+            if factionId > 0 then
+                set f = Faction.all[factionId]
+                if f != 0 then
+                    set rowLevel = Reputation.getStatus(Player(0), f)
+                    if RUI_RowLevelCache[rowIndex] != rowLevel then
+                        set RUI_RowLevelCache[rowIndex] = rowLevel
+                        call BlzFrameSetText(RUI_RowLevel[rowIndex], rowLevel)
+                    endif
+                endif
+            endif
+            set rowIndex = rowIndex + 1
+        endloop
+    endif
+
+    call RUI_UpdateDetail(whichPlayer)
 endfunction
 
 private function RUI_Update takes player whichPlayer returns nothing
@@ -229,7 +353,7 @@ endfunction
 
 private function RUI_PeriodicRefresh takes nothing returns nothing
     if RUI_Parent != null and BlzFrameIsVisible(RUI_Parent) then
-        call RUI_Update(GetLocalPlayer())
+        call RUI_RefreshVisibleData(GetLocalPlayer())
     endif
 endfunction
 
@@ -286,22 +410,35 @@ endfunction
 
 private function RUI_ListScrollAction takes nothing returns nothing
     local player p = GetTriggerPlayer()
+    local integer maxStart = RUI_GetFactionCount() - RUI_VISIBLE_ROWS
     if RUI_SyncingListScroll then
         set p = null
         return
     endif
-    set RUI_ListScrollValue[GetPlayerId(p)] = R2I(BlzGetTriggerFrameValue())
+    if maxStart < 0 then
+        set maxStart = 0
+    endif
+    set RUI_ListScrollValueCache = R2I(BlzGetTriggerFrameValue() + 0.5)
+    set RUI_ListScrollValue[GetPlayerId(p)] = maxStart - RUI_ListScrollValueCache
     call RUI_Update(p)
     set p = null
 endfunction
 
 private function RUI_WheelAction takes nothing returns nothing
+    local real newValue
+
     if GetLocalPlayer() == GetTriggerPlayer() and RUI_ListScroll != null and BlzFrameIsVisible(RUI_ListScroll) then
         if BlzGetTriggerFrameValue() > 0 then
-            call BlzFrameSetValue(RUI_ListScroll, BlzFrameGetValue(RUI_ListScroll) + 1.0)
+            set newValue = BlzFrameGetValue(RUI_ListScroll) + 1.0
         else
-            call BlzFrameSetValue(RUI_ListScroll, BlzFrameGetValue(RUI_ListScroll) - 1.0)
+            set newValue = BlzFrameGetValue(RUI_ListScroll) - 1.0
         endif
+        if newValue < 0.0 then
+            set newValue = 0.0
+        elseif newValue > I2R(RUI_ListScrollMaxCache) then
+            set newValue = I2R(RUI_ListScrollMaxCache)
+        endif
+        call BlzFrameSetValue(RUI_ListScroll, newValue)
     endif
 endfunction
 
@@ -339,45 +476,68 @@ private function RUI_CreateFrames takes nothing returns nothing
 
     set RUI_LeftPane = BlzCreateFrameByType("BACKDROP", "ReputationUILeftPane", RUI_Parent, "", 0)
     call BlzFrameSetTexture(RUI_LeftPane, RUI_PanelTexture, 0, true)
-    call BlzFrameSetPoint(RUI_LeftPane, FRAMEPOINT_TOPLEFT, RUI_Parent, FRAMEPOINT_TOPLEFT, 0.014, -0.058)
+    call BlzFrameSetPoint(RUI_LeftPane, FRAMEPOINT_TOPLEFT, RUI_Parent, FRAMEPOINT_TOPLEFT, 0.014, -0.078)
     call BlzFrameSetPoint(RUI_LeftPane, FRAMEPOINT_BOTTOMRIGHT, RUI_Parent, FRAMEPOINT_BOTTOMLEFT, 0.182, 0.014)
 
     set RUI_ListScroll = BlzCreateFrameByType("SLIDER", "ReputationUIListScroll", RUI_LeftPane, "QuestMainListScrollBar", 0)
     call BlzFrameSetPoint(RUI_ListScroll, FRAMEPOINT_TOPLEFT, RUI_LeftPane, FRAMEPOINT_TOPRIGHT, 0.004, -0.002)
-    call BlzFrameSetPoint(RUI_ListScroll, FRAMEPOINT_BOTTOMLEFT, RUI_LeftPane, FRAMEPOINT_BOTTOMRIGHT, 0.004, 0.002)
+    call BlzFrameSetSize(RUI_ListScroll, BlzFrameGetWidth(RUI_ListScroll), BlzFrameGetHeight(RUI_LeftPane) - 0.004)
     call BlzFrameSetMinMaxValue(RUI_ListScroll, 0.0, 0.0)
     call BlzFrameSetStepSize(RUI_ListScroll, 1.0)
     call BlzFrameSetValue(RUI_ListScroll, 0.0)
+    call BlzFrameSetVisible(RUI_ListScroll, false)
     call BlzTriggerRegisterFrameEvent(RUI_ListScrollTrigger, RUI_ListScroll, FRAMEEVENT_SLIDER_VALUE_CHANGED)
     call BlzTriggerRegisterFrameEvent(RUI_WheelTrigger, RUI_ListScroll, FRAMEEVENT_MOUSE_WHEEL)
     call BlzTriggerRegisterFrameEvent(RUI_WheelTrigger, RUI_LeftPane, FRAMEEVENT_MOUSE_WHEEL)
 
+    set RUI_ListWheelArea = BlzCreateFrameByType("SLIDER", "ReputationUIWheelArea", RUI_Parent, "", 0)
+    call BlzFrameSetPoint(RUI_ListWheelArea, FRAMEPOINT_TOPRIGHT, RUI_ListScroll, FRAMEPOINT_TOPLEFT, -0.006, 0.000)
+    call BlzFrameSetPoint(RUI_ListWheelArea, FRAMEPOINT_BOTTOMLEFT, RUI_LeftPane, FRAMEPOINT_BOTTOMLEFT, 0.006, 0.006)
+    call BlzFrameSetEnable(RUI_ListWheelArea, false)
+    call BlzFrameSetVisible(RUI_ListWheelArea, false)
+
     set RUI_RightPane = BlzCreateFrameByType("BACKDROP", "ReputationUIRightPane", RUI_Parent, "", 0)
     call BlzFrameSetTexture(RUI_RightPane, RUI_PanelTexture, 0, true)
-    call BlzFrameSetPoint(RUI_RightPane, FRAMEPOINT_TOPLEFT, RUI_LeftPane, FRAMEPOINT_TOPRIGHT, 0.012, 0.0)
+    call BlzFrameSetPoint(RUI_RightPane, FRAMEPOINT_TOPLEFT, RUI_ListScroll, FRAMEPOINT_TOPRIGHT, 0.010, 0.0)
     call BlzFrameSetPoint(RUI_RightPane, FRAMEPOINT_BOTTOMRIGHT, RUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.014, 0.014)
 
-    set RUI_DetailIcon = BlzCreateFrameByType("BACKDROP", "ReputationUIDetailIcon", RUI_RightPane, "IconButtonTemplate", 0)
-    call BlzFrameSetPoint(RUI_DetailIcon, FRAMEPOINT_TOPLEFT, RUI_RightPane, FRAMEPOINT_TOPLEFT, 0.018, -0.018)
+    set RUI_DetailBackdrop = BlzCreateFrameByType("BACKDROP", "ReputationUIDetailBackdrop", RUI_RightPane, "", 0)
+    call BlzFrameSetTexture(RUI_DetailBackdrop, RUI_PanelTexture, 0, false)
+    call BlzFrameSetPoint(RUI_DetailBackdrop, FRAMEPOINT_TOPLEFT, RUI_RightPane, FRAMEPOINT_TOPLEFT, 0.010, -0.010)
+    call BlzFrameSetPoint(RUI_DetailBackdrop, FRAMEPOINT_BOTTOMRIGHT, RUI_RightPane, FRAMEPOINT_BOTTOMRIGHT, -0.010, 0.010)
+    call BlzFrameSetAlpha(RUI_DetailBackdrop, 255)
+    call BlzFrameSetVertexColor(RUI_DetailBackdrop, BlzConvertColor(255, 0, 0, 0))
+    call BlzFrameSetEnable(RUI_DetailBackdrop, false)
+
+    set RUI_DetailIcon = BlzCreateFrameByType("BACKDROP", "ReputationUIDetailIcon", RUI_DetailBackdrop, "IconButtonTemplate", 0)
+    call BlzFrameSetPoint(RUI_DetailIcon, FRAMEPOINT_TOPLEFT, RUI_DetailBackdrop, FRAMEPOINT_TOPLEFT, 0.018, -0.018)
     call BlzFrameSetSize(RUI_DetailIcon, 0.042, 0.042)
 
-    set RUI_DetailTitle = BlzCreateFrameByType("TEXT", "ReputationUIDetailTitle", RUI_RightPane, "", 0)
+    set RUI_DetailTitle = BlzCreateFrameByType("TEXT", "ReputationUIDetailTitle", RUI_DetailBackdrop, "", 0)
     call BlzFrameSetPoint(RUI_DetailTitle, FRAMEPOINT_TOPLEFT, RUI_DetailIcon, FRAMEPOINT_TOPRIGHT, 0.014, -0.002)
-    call BlzFrameSetSize(RUI_DetailTitle, 0.26, 0.018)
+    call BlzFrameSetSize(RUI_DetailTitle, 0.260, 0.018)
     call BlzFrameSetTextAlignment(RUI_DetailTitle, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetScale(RUI_DetailTitle, 1.05)
     call BlzFrameSetEnable(RUI_DetailTitle, false)
 
-    set RUI_DetailValue = BlzCreateFrameByType("TEXT", "ReputationUIDetailValue", RUI_RightPane, "", 0)
+    set RUI_DetailValue = BlzCreateFrameByType("TEXT", "ReputationUIDetailValue", RUI_DetailBackdrop, "", 0)
     call BlzFrameSetPoint(RUI_DetailValue, FRAMEPOINT_TOPLEFT, RUI_DetailTitle, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.004)
-    call BlzFrameSetSize(RUI_DetailValue, 0.26, 0.018)
+    call BlzFrameSetSize(RUI_DetailValue, 0.260, 0.018)
     call BlzFrameSetTextAlignment(RUI_DetailValue, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetScale(RUI_DetailValue, 0.98)
     call BlzFrameSetEnable(RUI_DetailValue, false)
 
-    set RUI_DetailDescription = BlzCreateFrameByType("TEXT", "ReputationUIDetailDescription", RUI_RightPane, "", 0)
-    call BlzFrameSetPoint(RUI_DetailDescription, FRAMEPOINT_TOPLEFT, RUI_DetailIcon, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.020)
-    call BlzFrameSetPoint(RUI_DetailDescription, FRAMEPOINT_BOTTOMRIGHT, RUI_RightPane, FRAMEPOINT_BOTTOMRIGHT, -0.012, 0.018)
+    set RUI_DetailBodyBackdrop = BlzCreateFrameByType("BACKDROP", "ReputationUIDetailBodyBackdrop", RUI_DetailBackdrop, "", 0)
+    call BlzFrameSetTexture(RUI_DetailBodyBackdrop, RUI_PanelTexture, 0, false)
+    call BlzFrameSetPoint(RUI_DetailBodyBackdrop, FRAMEPOINT_TOPLEFT, RUI_DetailIcon, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.020)
+    call BlzFrameSetPoint(RUI_DetailBodyBackdrop, FRAMEPOINT_BOTTOMRIGHT, RUI_DetailBackdrop, FRAMEPOINT_BOTTOMRIGHT, -0.004, 0.004)
+    call BlzFrameSetAlpha(RUI_DetailBodyBackdrop, 235)
+    call BlzFrameSetVertexColor(RUI_DetailBodyBackdrop, BlzConvertColor(235, 12, 12, 12))
+    call BlzFrameSetEnable(RUI_DetailBodyBackdrop, false)
+
+    set RUI_DetailDescription = BlzCreateFrameByType("TEXT", "ReputationUIDetailDescription", RUI_DetailBodyBackdrop, "", 0)
+    call BlzFrameSetPoint(RUI_DetailDescription, FRAMEPOINT_TOPLEFT, RUI_DetailBodyBackdrop, FRAMEPOINT_TOPLEFT, 0.008, -0.008)
+    call BlzFrameSetPoint(RUI_DetailDescription, FRAMEPOINT_BOTTOMRIGHT, RUI_DetailBodyBackdrop, FRAMEPOINT_BOTTOMRIGHT, -0.010, 0.008)
     call BlzFrameSetTextAlignment(RUI_DetailDescription, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetScale(RUI_DetailDescription, 0.95)
     call BlzFrameSetEnable(RUI_DetailDescription, false)
@@ -389,7 +549,10 @@ private function RUI_CreateFrames takes nothing returns nothing
         call BlzFrameSetSize(RUI_RowButton[rowIndex], 0.156, rowHeight)
         call BlzTriggerRegisterFrameEvent(RUI_RowTrigger, RUI_RowButton[rowIndex], FRAMEEVENT_CONTROL_CLICK)
         call BlzTriggerRegisterFrameEvent(RUI_ClearFocusTrigger, RUI_RowButton[rowIndex], FRAMEEVENT_CONTROL_CLICK)
+        call BlzTriggerRegisterFrameEvent(RUI_WheelTrigger, RUI_RowButton[rowIndex], FRAMEEVENT_MOUSE_WHEEL)
         set RUI_ButtonRow.integer[GetHandleId(RUI_RowButton[rowIndex])] = rowIndex
+        set RUI_RowVisibleState[rowIndex] = -1
+        call BlzFrameSetVisible(RUI_RowButton[rowIndex], false)
 
         set RUI_RowIcon[rowIndex] = BlzCreateFrameByType("BACKDROP", "ReputationUIRowIcon" + I2S(rowIndex), RUI_RowButton[rowIndex], "IconButtonTemplate", 0)
         call BlzFrameSetPoint(RUI_RowIcon[rowIndex], FRAMEPOINT_LEFT, RUI_RowButton[rowIndex], FRAMEPOINT_LEFT, 0.006, 0.0)
@@ -411,6 +574,7 @@ private function RUI_CreateFrames takes nothing returns nothing
         call BlzFrameSetAllPoints(RUI_RowHighlight[rowIndex], RUI_RowButton[rowIndex])
         call BlzFrameSetModel(RUI_RowHighlight[rowIndex], RUI_RowHighlightModel, 0)
         call BlzFrameSetScale(RUI_RowHighlight[rowIndex], 0.76)
+        set RUI_RowHighlightState[rowIndex] = -1
         call BlzFrameSetVisible(RUI_RowHighlight[rowIndex], false)
         call BlzFrameSetEnable(RUI_RowHighlight[rowIndex], false)
 
@@ -418,18 +582,36 @@ private function RUI_CreateFrames takes nothing returns nothing
         set rowIndex = rowIndex + 1
     endloop
 
+    call BlzFrameClearAllPoints(RUI_ListScroll)
+    call BlzFrameSetPoint(RUI_ListScroll, FRAMEPOINT_TOPLEFT, RUI_RowButton[1], FRAMEPOINT_TOPRIGHT, 0.004, -0.002)
+    call BlzFrameSetSize(RUI_ListScroll, BlzFrameGetWidth(RUI_ListScroll), (rowHeight * I2R(RUI_VISIBLE_ROWS)) + (rowGap * I2R(RUI_VISIBLE_ROWS - 1)) + 0.004)
+
+    call BlzFrameClearAllPoints(RUI_ListWheelArea)
+    call BlzFrameSetPoint(RUI_ListWheelArea, FRAMEPOINT_TOPRIGHT, RUI_ListScroll, FRAMEPOINT_TOPLEFT, -0.006, 0.000)
+    call BlzFrameSetPoint(RUI_ListWheelArea, FRAMEPOINT_BOTTOMLEFT, RUI_RowButton[RUI_VISIBLE_ROWS], FRAMEPOINT_BOTTOMLEFT, 0.006, 0.002)
+
     call BlzFrameSetVisible(RUI_Parent, false)
 endfunction
 
 public function Show takes nothing returns nothing
     local player p = GetLocalPlayer()
-    call ReputationBoard.show(Player(0), false)
-    if udg_Multiboard != null then
-        call MultiboardDisplay(udg_Multiboard, false)
-    endif
+    call BlzFrameSetVisible(RUI_ListScroll, false)
+    call BlzFrameSetVisible(RUI_Parent, true)
+    set RUI_ListScrollValue[GetPlayerId(p)] = 0
+    set RUI_ListScrollValueCache = -1
     call RUI_Update(p)
     call RUI_SetRefreshActive(true)
-    call BlzFrameSetVisible(RUI_Parent, true)
+    set p = null
+endfunction
+
+public function Refresh takes nothing returns nothing
+    local player p = GetLocalPlayer()
+    if RUI_Parent == null or not BlzFrameIsVisible(RUI_Parent) then
+        set p = null
+        return
+    endif
+    set RUI_ListScrollValueCache = -1
+    call RUI_Update(p)
     set p = null
 endfunction
 

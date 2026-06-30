@@ -1,5 +1,811 @@
-## WC3 - Path of the Shaman
-CHANGELOG
+# WC3 - Path of the Shaman
+## CHANGELOG
+
+> Changelog template / usage notes
+>
+> Use ###`Player-Facing Updates` for clear gameplay changes, player experience changes, UI changes players directly notice, balance/content changes, or anything that directly affects normal play.
+>
+> Use ###`Technical Updates` for map-development work such as JASS libraries, trigger refactors, performance/stability work, frame/UI implementation details, data structure changes, and other general mapping-related technical work.
+>
+> Use ###`Tool Updates` for `WC3ItemManager`, PotS SQL Server related work, and other similar internal development tools. These are usually not player-facing by themselves, even if they may later affect gameplay data.
+>
+> Use ###`Imports` for imported models, textures, icons, sounds, effects, and other asset backlog notes, including credits and intended/future usage checks.
+>
+> Use ###`Known Issues` for current confirmed problems, validation gaps, or incomplete/problematic behavior that still needs checking.
+>
+> Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
+
+## [30.6.2026]
+
+### Player-Facing Updates
+- `Chimairo`
+  Added a test ability, `Poison Nova`, based on Flame Strike and using the newly imported `Poison Nova` model.
+
+### Technical Updates
+- `GatherNodeDefinitions`
+  Tested startup-freeze isolation by disabling `GNU_SpawnInitialAll()` inside `DelayedSpawn` in the gather-node definitions export sublibrary; this had no effect on the freeze.
+  Also tested disabling the `DelayedSpawn` call from `DelayedInit`; this also had no effect on the freeze.
+- `SettingsUI.j`
+  Confirmed the post-loadscreen game-start freeze was fixed by hardening the Settings UI slider refresh path. The likely risky path was slider value synchronization firing `FRAMEEVENT_SLIDER_VALUE_CHANGED`, re-entering `SETUI_SliderAction`, and calling `SETUI_Refresh` again.
+  Hardened the settings slider synchronization with cached slider values, a slider-action re-entry guard, null-safe sync helper, and initial slider value setup before slider frame-event registration.
+- `IconQuery.j`
+  Kept `IconQuery` active after the Settings UI fix; no obvious unbounded JASS loop was found in code review. Its loops are bounded by registered icon count or category count, and its query timer restarts at configured delays.
+  Remaining work is to tune the IconQuery parameters and pacing now that the startup freeze is no longer blocking in-game testing.
+
+### Known Issues
+- `IconQuery tuning`
+  Startup freeze is fixed in the latest in-game test after the `SettingsUI.j` slider re-entry hardening, but IconQuery timing/category parameters still need adjustment and validation.
+
+### Actions Remaining
+- Adjust `IconQuery` query/rest timing and category parameters, then validate in-game pacing with quest-giver minimap icons enabled.
+- Continue watching startup stability while testing IconQuery changes, since the earlier freeze was tied to UI/event refresh behavior at game start.
+
+## [29.6.2026]
+
+### Technical Updates
+- `SettingsUI.j`
+  Delayed Settings UI TOC loading and frame creation to a `0.20` timer callback, matching the safer `CameraUI.j` / `MasterUI.j` startup pattern instead of creating the slider-backed settings frames immediately during library initialization.
+
+### Actions Remaining
+- Re-test map startup in-game to confirm whether the post-loadscreen freeze still happens after the `SettingsUI.j` delayed-initialization fix.
+
+## [28.6.2026]
+
+### Player-Facing Updates
+- `Map icons / Settings`
+  Added a Settings panel to the in-game `Game` menu with controls for quest/travel/boss/place/companion icon query categories, query timing, rest timing, and a map difficulty placeholder.
+
+### Technical Updates
+- `IconQuery.j` / `QuestMaster.j`
+  Added a centralized minimap icon and ping query scheduler that keeps registered icons hidden and reveals one icon at a time by category, with a configurable rest delay after each full pass. Quest giver minimap icons now register through `IconQuery` instead of being shown immediately.
+- `MasterUI.j` / `SettingsUI.j`
+  Added a `Settings` menu button and a standalone settings UI for icon query toggles, timing clamps, map difficulty state, and future settings placeholders.
+
+### Imports
+- `Imported asset backlog`
+  Added a list of imported models/effects to check for future usage, with possible placement/ability ideas tracked in MS ToDo.
+- `Gnome Tinker - Gunstriders` (by Villagerino):
+  `AutomatedMechanostriderv`, `GnomeTinkerGrenade.mdx`, `GnomeTinkerGunstriderHero.mdx`, `GnomeTinkerGunstriderUnit.mdx`, `GnomeTinkerTracerAmmo.mdx`, `GunstriderGunImpact.mdx`
+- `Firenova.mdx` (by Sarsaparilla, Blizzard Entertainment)
+- `vortex` (by GAQ):
+  `vortex1.mdx`, `vortex2.mdx`, `vortex3.mdx`, `vortex4.mdx`, `vortex5.mdx`, `vortex6.mdx`, `vortex7.mdx`, `vortex8.mdx`
+- `Poison Nova` (by Sarsaparilla)
+- `Ring` (by Sarsaparilla, Blizzard Entertainment):
+  `Ring.mdx`, `Ring_small.mdx`
+- `Skill Indicator` (by BaiyuGalan):
+  `Skill_Indicator_Circle`, `Skill_Indicator_Haymaker`, `Skill_Indicator_Move`, `Skill_Indicator_Ring`, `Skill_Indicator_Sector`, `Skill_Indicator_Square`, `Skill_Indicator_Straight`, `Skill_Indicator_Straight2`
+- `Thunder Nova.mdx` (by Sarsaparilla, Blizzard Entertainment)
+- `ZooCage.mdx` (by purparisien)
+
+### Actions Remaining
+- Replace the old World Editor travel minimap toggle trigger with `IconQuery` registration calls for flight masters, ship masters, and route points, then validate the query pacing in-game.
+
+## [26.6.2026]
+
+### Player-Facing Updates
+- `Ranger Missing`
+  Hardened Valeria persuasion so the `ESC` choice prompt cannot reopen while Nazgrek/Valeria voice lines or transition beats are still running.
+- `Fading Sparks`
+  Tel'anor Rod extraction now accepts additional configured wraith unit-type placeholders and shows floating text for the created `Wraith Essence`.
+- `Rifts of Corruption`
+  Valeria now stages much farther behind the player before moving into Aradion's intro scene, public/region-started rift rituals can resolve the correct rift in any order, and respawned Aradion/Valeria handles now rebind quest hooks.
+- `Item floating text`
+  DInv ground drops and quest-created drops now create item-name floating text, while item floating text is hidden unless the player hero is within 1000 range.
+- `Camera / Zone transitions`
+  Fast camera pans now rebind the active camera mode after snapping to the target, middle mouse button presses reset stored camera state, Boom Mine camera angle is locked top-down, and Shadowmaw Cave exits defer Sirensong parent-zone activation so the parent zone can enter normally.
+- `Quest rewards`
+  Quest XP, gold, arena, reputation, and item rewards now pay from the 5-second delayed quest-completion callback instead of immediately when the dialog/cinematic completion function runs.
+
+### Technical Updates
+- `qAradion.j`
+  Added an explicit Valeria negotiation speech-busy guard, failed-log-preserving Ranger Missing retry reset, configurable Fading Sparks wraith-type checks, Rifts intro staging from the interacting hero, safer any-order ritual fallback, and a respawn hook refresh API for Aradion/Valeria.
+- `QuestMaster.j`
+  Moved `awardRewards()` into `ShowDelayedQuestCompleted`, so all quest reward side effects occur together after `QUEST_COMPLETED_DELAY`; reputation reward calls still bypass the reputation system cinematic guard only inside that delayed payout.
+- `CreepRespawn.j` / `CreepUnitAssignment.j`
+  Fixed native respawn assignment by updating `bj_lastCreatedUnit` before `CreepUnitAssignment`, then added Aradion/Valeria quest-hook refresh after their respawn assignments.
+- `ItemLootSystem.j` / `SharedDInvLib.j`
+  Added 1000-range item floating-text visibility gating and wired DInv ground placement into the item floating-text API.
+- `CameraControl.j`
+  Reapplies the current camera mode after public target pans, handles middle mouse button camera-state reset events, and makes Boom Mine's special camera non-adjustable at its configured top-down angle.
+- `ZoneEvent.j`
+  Changed parent-zone handoff after interior exits to reset child-zone state before teleporting out and force-enter the parent only if the normal parent enter trigger does not run.
+- `GatherNodeItems.j` / `GatherNodeUnits.j`
+  Fixed initial gather-node lifetime despawn tracking by switching the lifetime tables to the correct `.real` accessors for `has` / `remove`, so untouched spawned nodes can expire and schedule fresh spawn attempts again.
+
+### Tool Updates
+- `WC3ItemManager`
+  Gather-node export now uses the spawn-group zone id for grouped unit spawn points and logs a warning when a spawn point row carries a mismatched zone id, preventing stale point-level zone data from exporting the wrong `ZonesCore` zone.
+
+### Known Issues
+- `CameraControl.j`
+  Boom Mine camera is now angle-locked, but the requested centered camera offset still needs a targeted AdvancedCamera/proxy-unit implementation and in-map tuning.
+- `Quest rewards`
+  XP and reputation rewards still need direct in-map confirmation after quest completion, including the cinematic turn-in path patched today.
+
+### Actions Remaining
+- Re-test Ranger Missing persuasion timing, Fading Sparks extraction against all configured wraith types, Rifts any-order starts/fail flow, DInv/drop floating text distance visibility, quest XP/reputation rewards, Boom Mine camera behavior, and Shadowmaw-to-Sirensong zone activation.
+- `WC3ItemManager`
+  Fix remaining item stackability data issues, including cases like `Mana Crystals` and `Wraith Essence` that still stack only to `1` when they should allow larger stacks.
+
+## [14.6.2026]
+
+### Player-Facing Updates
+- `Ranger Missing` / `qAradion.j`
+  Valeria's escort step now transitions into `Speak with Aradion The Farseer`, and selecting Aradion at that point starts the reunion completion directly instead of relying on a separate completion dialog button.
+  The Valeria persuasion `ESC` prompt is now delayed until the intro combat beat has finished, and the standoff keeps the hero and Valeria facing each other more consistently while persuasion is available.
+  The correct persuasion answer now runs through its own fade-backed reunion beat before Valeria's follow-up lines, instead of snapping straight through the success state, and Valeria's home-return recreation is timed to the fade-black phase of the reunion completion exit.
+  Tightened the Valeria intro and reunion presentation again: Nazgrek now stops/faces Valeria immediately when the encounter opens, `ESC` persuasion choices are cleared as soon as a response is selected so they cannot reopen during the hero line, and the Aradion reunion turn-in now pushes stronger hero-to-speaker facing through the exchange.
+- `Rifts of Corruption`
+  Aradion and Valeria now return through a proper quest-owned companion runtime instead of the older direct follow-only path, helping both companions behave more like real party companions during escort/combat phases.
+  Rift rituals no longer snap both units into teleported ritual offsets at start; Aradion now enters a dedicated ritual state while Valeria stays under companion control.
+  Closed rifts are now removed immediately on success, the all-closed bark order is closer to the old GUI sequence, and ritual failure no longer snaps both units home instantly before the surviving companion reacts.
+  Tightened more of the old-GUI ritual presentation and fail flow: Valeria now stages farther away before moving into the Aradion start scene, ritual/field lines are queued one by one instead of overlapping, fail text now splits correctly between `X has died.` and `X fell during the ritual.`, and the survivor reaction / delayed retry reset now plays out before both companions are restored home.
+- `Fading Sparks`
+  Successful Tel'anor Rod extraction now kills the Mana Wraith at the same time the `Wraith Essence` drop is created.
+- `Camera / Zone transitions`
+  Mouse-wheel camera reset now snaps back into the active camera mode again, and teleport-style subzone entries refresh the tracked camera target before the fast pan is applied.
+- `StatsUI.j`
+  Shadowclaw now stays visible as a named/iconed pet entry even when the generic `udg_TamedUnit` tracking path is missing.
+- `ItemLootSystem.j`
+  Dropped powerup hover text now also self-cleans when the item vanishes before the normal pickup/use handlers remove its floating text.
+
+### Tool Updates
+- `WC3ItemManager`
+  Item ability tooltip headings and per-ability labels now use the defined `Ability` item-class color instead of the old hardcoded tooltip colors.
+- `WC3ItemManager`
+  Added batch edit support for multi-selected items directly from the main item list. The new batch editor only applies fields explicitly changed/checked by the user, so shared updates such as `base_id`, rarity, class, type, `wc3_classification`, costs, levels, tooltip text, asset paths, and main WC3 item flags can now be pushed safely across selected items without overwriting untouched fields.
+- `WC3ItemManager`
+  Cleaned up the current build setup for the active desktop toolchain by excluding generated `obj` / `bin` / temp build folders from compile input, then restored a clean normal `bin/Debug/net8.0-windows` debug build after recovering from the blocked output/intermediate folder state encountered during today's ItemManager session.
+- `WC3ItemManager`
+  Fixed destructible loot-table export parity so assigned destructible loot tables now generate their table-level drop chance, drop-count range, and per-item quantity/chance/weight data into the `ItemLootDefinitionsDestructible` output instead of only exporting generic destructible levels or older direct specific-drop rows.
+
+### Technical Updates
+- `Companions.j`
+  Added a new quest-friendly companion wrapper over `QuestGiver` and `FollowSystem`, with defend/passive/hold modes plus suspend/resume handling for scripted companion control.
+- `QuestMaster.j`
+  Aligned quest reward awarding closer to the old GUI reward flow: XP now also reaches hero companions in `Companion_Group`, and faction reputation reward calls now always route through `AddReputation` / `AddReputationLinked` when a faction is set.
+  Failed quests now mark properly as failed in the Warcraft III quest log and clear that failed flag again on accept, complete, abandon, and reset paths.
+  XP reward delivery now also falls back explicitly to `udg_Nazgrek` / `udg_Zulkis` when they are valid hero units but were missed by the current Player 1 hero enumeration path.
+- `qAradion.j`
+  Moved more of Aradion/Valeria field control onto the new companion runtime, added direct-select Ranger Missing completion handling, reworked the Valeria success branch into a lead-in line plus timed cinematic transition, and reworked the Rift fail/reset state around delayed retry cleanup instead of immediate home reset.
+- `Reputation.j` / `ReputationUI.j`
+  Added an event-driven `ReputationUI` refresh hook so faction reputation changes now refresh the currently open UI immediately, while reopening the panel also forces a fresh rebuild instead of trusting the previous cached row state.
+- `ZoneEvent.j`
+  Updated teleport-style fast-pan handling so `ZoneEvent` refreshes `CameraControl` target cache immediately after move-start teleports before applying the fast pan.
+  Interior exits now only honor the currently active child zone on shared exit rects, and they hand zone state back to the parent zone on exit so Shadowmaw-style cave re-entry does not stay blocked by stale `currentZone` state.
+- `ItemLootDestructibles.j` / `ItemLootSystem`
+  Extended the newer destructible loot runtime so destructible loot tables can now roll a table-level chance first, apply guaranteed table items, perform weighted extra rolls using the configured drop-count range, and honor per-entry quantity ranges. This fixes the newer ItemManager destructible-table path that previously ignored named-table semantics and behaved closer to legacy per-entry direct rolls or generic-tier fallback.
+
+### Known Issues
+- `qAradion.j` / `Rifts of Corruption`
+  Today's non-teleport ritual start, companion-combat behavior, third-rift escort-home state, sequential bark ordering, death-text split, closed-rift cleanup, and delayed fail-reset flow still need direct in-map verification across all three rifts.
+- `QuestMaster.j` / quest rewards
+  The updated reward parity path still needs live confirmation for XP on hero companions, XP fallback on Nazgrek/Zulkis, failed-quest log state, and reputation reward delivery on actual quest completion.
+- `qAradion.j` / `Rifts of Corruption`
+  The current JASS-side channel-animation fix removes the forced stuck spell pose, but the portal-closing ability itself may still need object-editor validation if it continues to override Aradion's looping channel animation in Warcraft III.
+- `ZoneEvent.j` / `Shadowmaw Cave`
+  The stale interior-zone state path and shared-exit-rect overlap have now been patched, but Shadowmaw Cave still needs direct gameplay validation to confirm the enter-rect issue is fully gone in-map.
+- `Item loot systems`
+  The older `ItemDropSystem` / `ItemDropDestructible` path still exists in the repo as a legacy/manual loot system and is not driven by `WC3ItemManager` exports. Maps still importing that older runtime instead of `ItemLootSystem` + `ItemLootDestructibles` will not use the newer destructible loot-table data until their imports are aligned.
+
+### Actions Remaining
+- `qAradion.j` / `Ranger Missing`
+  Re-test the full Valeria encounter and reunion flow: intro timing, `ESC` persuasion timing, facing lock, correct-answer fade beat, escort completion, black-phase home return, and direct-select turn-in on `Speak with Aradion The Farseer`.
+- `qAradion.j` / `Rifts of Corruption`
+  Re-test all three rifts as the first target, repeated proximity while a ritual is active, Valeria intro staging, closed-rift retry prevention, bark ordering, death-text split, third-rift escort-home transition, and the delayed death/fail reset flow.
+- `QuestMaster.j` / quest rewards
+  Re-test XP, gold, and reputation rewards on real quest completions, including hero companions inside `Companion_Group`, Nazgrek/Zulkis fallback XP, and failed-quest quest-log state.
+- `ReputationUI.j`
+  Re-test that opening `ReputationUI` always refreshes the visible list and that live faction reputation changes refresh the open UI immediately without needing a manual close/reopen.
+- `CameraControl.j` / `ZoneEvent.j`
+  Re-test mouse-wheel reset and fast-pan behavior on the intended interior/subzone teleports, including Shadowmaw Cave re-entry after exiting through the shared cave-out rect.
+- `Destructible loot`
+  Re-export the loot JASS from `WC3ItemManager`, then verify in-map that destructibles assigned named loot tables now follow the configured table chance/count behavior and that the active map import path is the newer `ItemLootSystem` / `ItemLootDestructibles` runtime instead of the old `ItemDropSystem`.
+
+## [13.6.2026]
+
+### Player-Facing Updates
+- `ItemLootSystem.j`
+  Fixed dropped-item floating text cleanup for powerups so their hover text is now removed when the powerup is consumed on pickup instead of lingering after use.
+- `StatsUI.j`
+  Restored the pet presentation fallback in `StatsUI` so Shadowclaw no longer degrades into a generic `Pet` entry without a proper name/icon.
+  Companion rows now also prefer quest-registered companion icon paths instead of relying only on the weaker generic unit icon lookup fallback.
+- `Camera / Zone transitions`
+  Camera reset inputs now snap the view back into the currently active camera mode immediately, so mouse-wheel and `PageUp` / `PageDown` usage no longer leave the player outside the intended live camera state.
+  Teleport-style entries into selected caves, interiors, and dungeon subzones now fast-pan the camera directly to the tracked hero unit instead of letting the view linger at the old location after a far transition.
+- `qAradion.j`
+  Reworked more of the `Ranger Missing` Valeria encounter toward the old GUI behavior: the intro now uses stronger old-style facing/camera timing, persuasion response choices spoken through `ESC` now play during normal gameplay instead of entering a mini-cinematic, and the correct persuasion answer now lets the hero finish speaking before Valeria stops attacking and transitions into the friendly success path.
+  Improved `Ranger Missing` reunion flow so the completion exchange uses more explicit old-GUI-style facing beats, and Valeria's return-home recreation is now deferred into the fade-black window instead of snapping too early while still visible.
+- `Rifts of Corruption`
+  Stabilized the mana-rift start path so `qAradion` now binds the three real placed main-map Mana Rift objects directly as its canonical rift slots before any fallback recreation logic, bringing the quest closer to the old GUI `QuestRifts[1..3]` behavior.
+  Continued the runtime restoration pass: Rift completion now tracks closed portals properly, the objective text now splits out `Rifts closed X / 3`, the escort-home phase now uses `Escort Aradion and Valeria to Aradion's place`, and Aradion should only become turn-in ready after both companions have actually been escorted back home.
+  Improved the post-ritual companion flow so Aradion and Valeria return with defend-style follow/combat behavior instead of passive movement-only follow, and the escort-home phase no longer teleports Valeria away immediately after the last portal closes.
+  Restored more old-GUI-style ritual behavior: Aradion now re-applies his portal-closing channel if interrupted, the start/combat/finish lines are routed through proper unit transmissions, and the return-home phase now uses generic return lines instead of still reusing portal-combat warnings.
+- `Fading Sparks`
+  Restored the missing Tel'anor Rod extraction runtime in `qAradion`: using `A04W` on a sufficiently weakened Mana Wraith now follows the old GUI-style 2-second extraction flow and creates `Wraith Essence` on success.
+
+### Tool Updates
+- `WC3ItemManager`
+  Generated fresh ItemManager debug logs and new `ItemData_20260613_*.w3t` exports during today's database/tooling session.
+- `WC3ItemManager`
+  Continued the current `ItemManager` development pass around WC3 item-data parity, manual-ability handling, tooltip generation, icon-path normalization, powerup auto-use integrity, and item-class presentation.
+  Added support paths for richer WC3 ability lookup/import usage in the toolchain, including ability tooltip-related schema updates and related importer/exporter compatibility work needed by the active item-database workflow.
+  Improved ItemManager handling for item classes and class-driven presentation so newer slot/class entries such as `Ability` and `Skill` can be seeded into the database and used more consistently by the tool.
+  Added and aligned item-class color handling work for ItemManager so class headers/tooltips can use intended colors instead of falling back toward generic gray/default presentation.
+  Fixed WC3 tooltip color output for class/rarity headers so ItemManager now writes valid opaque WC3 color codes for saved item text instead of older legacy variants that could still appear gray in-game even when the tool preview showed the intended class color.
+  Added export-side normalization in the `.w3t` pipeline so older saved tooltip strings using legacy `|c00RRGGBB` formatting are rewritten into valid `|cFFRRGGBB` color codes during item export, helping class headers such as `Ability` keep their intended color in Warcraft itself.
+  `ItemManager_debug` is the current latest version and shall be used for managing the PotS database at this time.
+  The `Release` ItemManager build is not yet the current authoritative version and will be updated later after the ongoing debug-side development pass is stabilized.
+
+### Technical Updates
+- `ItemLootSystem.j`
+  Extended item-loot hover-text cleanup to listen to both pickup and item-use events, covering immediate powerup consumption paths that were not fully handled by the pickup-only trigger.
+- `TasQuestBoxLight_PotS.j`
+  Locked the legacy standalone `Zones` open button behind library-level visibility handling so it no longer reappears through older `Unhide` / `SetButtonVisible` paths.
+  `Zones` access is now kept routed through `MasterUI` instead of exposing the old direct button again.
+- `QuestGiver.j`
+  Added a small public companion-icon accessor so shared UI code can read the currently registered icon for companion rows directly from the quest companion registry instead of duplicating lookup state.
+- `StatsUI.j`
+  Added explicit Shadowclaw fallback handling for display name/icon resolution and switched companion icon resolution to use the `QuestGiver` companion registry before falling back to generic runtime lookups.
+- `DialogSystem.j`
+  Hardened the shared `ESC` action path so a questgiver can safely clear or replace its own registered escape callback while that callback is executing, preventing self-destroy / stale-trigger issues during non-sequence dialog flows.
+- `CameraControl.j`
+  Removed the old normal-mode safe / no-clipping correction path from active runtime use, added a safer special-camera preset configuration structure for future internal rect-driven camera modes, fixed the stuck-rotation case when chat is opened during arrow-key camera turning, and cleaned up special-camera helper ordering so the library follows plain JASS call-order rules.
+  Added a reusable fast target-pan helper, and changed mouse-wheel / `PageUp` / `PageDown` reset handling so it immediately reapplies the player's currently active camera mode instead of only restoring the older normal-mode path.
+- `CameraUI.j`
+  Removed the obsolete `Safe Camera` / no-clip toggle button and related readout so the camera panel now matches the current `CameraControl` runtime instead of exposing the retired legacy option.
+- `qAradion.j`
+  Added more quest-owned Valeria encounter helpers for hero-camera swap timing, standoff movement, standoff facing, and delayed success-state application so the persuasion runtime matches the old GUI pacing more closely without pushing every branch through cinematic-mode handling.
+  Split Valeria persuasion into two clearer runtime paths: wrong answers now use live gameplay dialog only, while the correct answer applies the hostile-stop / ownership-reset transition only after the hero line has played.
+  Added a `PlacedManaRifts[1..3]` binding block in `InitDelayed` and updated rift-slot resolution so the three exact WE Mana Rift globals are the first source of truth inside `qAradion`, with rect-based lookup retained only as fallback for recreated rifts after failure/reset.
+  Kept the additional rect/range fallback guards around rift start detection so main-map ritual start is more resilient if a placed rift is replaced later during quest fail/retry handling.
+  Added a larger Rift-state cleanup pass: closed-rift tracking now prevents completed portals from being recreated/restarted, ritual follow-up objectives now stay `IN_PROGRESS` until the escort-home step is actually completed, and the field monitor now waits for the hero, Aradion, and Valeria all to reach `AradionPlace` before flipping the quest to turn-in ready.
+  Reworked field-dialog handling for the Rift runtime so speaker lines use `DialogSystem_PlayLine` transmissions with a small local queue instead of stacking bare timed text, reducing overlap between Aradion/Valeria and bringing ritual dialog flow closer to the old triggers.
+  Switched the Aradion/Valeria escort runtime from passive follow toward defend-style follow and removed the unnecessary Valeria ghost re-apply on ambush reset, reducing several newer-runtime behavior mismatches from the old quest chain.
+  Added the missing `Fading Sparks` spell-event runtime for `A04W`, including effect / finish / endcast handling, target validation against Mana Wraiths, extraction timing, and quest-owned item creation on successful completion.
+  Cleaned up several newer local-handle leak candidates in the Valeria encounter / Rift event code and fixed more struct/handle cleanup mismatches discovered during the leak pass.
+- `QuestGiver.j`
+  Added unregister/removal paths for `FindNPC`, `GoToPlace`, and `Reputation` requirement polling so those timers can shut down cleanly once their tracked requirements are completed instead of accumulating permanent background checks over the whole session.
+  Fixed `GetReputationLevel` so the local `Faction` value is treated as the integer-backed struct id it actually is, avoiding the invalid `set f = null` cleanup path.
+- `QuestMaster.j`
+  Corrected the reputation reward calculation path so quest reputation rewards are computed from quest level plus adjustment instead of using the broken truncated multiplier-only formula.
+- `ZoneEvent.j`
+  Added a narrow fast-pan-on-enter path for teleport-style cave / interior transitions and selected dungeon entries so zone-owned camera effects can immediately recenter the view on the tracked hero after long-distance subzone jumps without affecting normal border crossings.
+
+#### Lag and possible leak investigation
+From the 8-13 June 2026 changelog entries, the strongest suspects are not the new DialogSystem ESC hook, but the newer camera and quest-runtime polling.
+
+High: [UI/CameraControl.j (line 876)](/h:/Pelit/PotS_JASS/UI/CameraControl.j:876) is the clearest FPS risk. CC_DriftTimer runs every 0.03 seconds, and for each normal-mode player it can call [CC_UpdateNormalEffectiveDistance (line 510)](/h:/Pelit/PotS_JASS/UI/CameraControl.j:510), which ray-traces the camera path in 50-unit steps and, on blocked samples, falls back to [EnumItemsInRect path checks (line 205)](/h:/Pelit/PotS_JASS/UI/CameraControl.j:205). With the default 1650 distance, that is roughly 30+ samples per recompute. This matches the changelog suspicion almost exactly: heavy periodic work, no leak required, just raw CPU.
+
+High: [QuestsAndDialogs/QuestGiver.j (line 1898)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGiver.j:1898), [QuestsAndDialogs/QuestGiver.j (line 1986)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGiver.j:1986), and [QuestsAndDialogs/QuestGiver.j (line 2085)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGiver.j:2085) start permanent polling timers for FindNPC, GoToPlace, and Reputation. I found no matching unregister/destroy path for those timers anywhere in the file, while their counts only ever increase at [1881 (line 1881)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGiver.j:1881), [1971 (line 1971)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGiver.j:1971), and [2070 (line 2070)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGiver.j:2070). That means every such requirement ever registered leaves background polling behind for the rest of the session. This is a good explanation for “lag gets worse nowadays”.
+
+Medium-high: qAradion now uses both trigger-based rift detection and a separate 0.50 second field monitor. The trigger path is registered in [RegisterRiftUnits (line 1695)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:1695) and [RegisterRiftsProximityTrigger (line 1825)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:1825), while the poll loop is started at [OnAcceptQuest4End (line 2696)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:2696) and runs in [OnRiftsFieldTick (line 2195)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:2195). That poll loop repeatedly scans all rifts and calls [GetAllowedRiftHeroForIndex (line 1953)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:1953), even though the in-range trigger already exists. It is not the worst offender, but it is new, always-on during the quest, and redundant.
+
+Medium: qAradion has classic JASS handle-leak candidates in the newer timer/event code. Examples: [OnValeriaEncounterRandomTick (line 760)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:760) creates a timer and never nulls local t; [OnValeriaEncounterRangeTick (line 780)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:780), [OnRiftsProximity (line 1798)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:1798), [OnRiftsFieldTick (line 2195)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:2195), [GetAllowedRiftHeroInRange (line 1932)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:1932), and [GetAllowedRiftHeroForIndex (line 1953)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:1953) all use local unit handles without nulling them before exit. If your build path still behaves like classic JASS, these are real long-session leak candidates.
+
+Medium-low: [QuestsAndDialogs/QuestMaster.j (line 2749)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestMaster.j:2749) refreshes availability for every quest giver every 5.00 seconds from [Init (line 2756)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestMaster.j:2756). This is not a leak, but it is global background work that scales with content.
+
+Low: qAradion also creates a texttag every second during each rift ritual at [OnRiftsCountdownTick (line 2081)](/h:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGivers/qAradion.j:2081). Those tags do expire, so this is churn rather than a leak, but a full 3 x 120s run still creates a lot of short-lived UI handles.
+
+### Known Issues
+- `ItemLootSystem.j`
+  Today's powerup floating-text cleanup fix was not yet verified live in Warcraft III. The immediate check still needed is that dropped powerup text disappears correctly when the item is auto-consumed on pickup.
+- `CameraControl.j` / `ZoneEvent.j`
+  Today's immediate camera-reset and fast zone-pan changes were not yet verified live in the main map. The affected paths still need gameplay confirmation in normal, advanced, and special camera modes, plus a quick pass through the intended teleport-style cave/interior/dungeon entries.
+- `WC3ItemManager`
+  The current authoritative build is the debug build, not the release build. Until the release package is refreshed, any newer ItemManager fixes should be verified against `ItemManager_debug`.
+- `qAradion.j` / `QuestSystems`
+  Today's Valeria encounter and mana-rift binding changes were not yet verified end-to-end on the live main map after the code pass. The latest behavior still needs direct gameplay confirmation, especially around `ESC` persuasion flow, post-success hostile stop timing, and ritual start from each real Mana Rift.
+- `qAradion.j` / `Rifts of Corruption`
+  The ritual-start path is now bound to the placed Mana Rift units, but the Aradion portal-closing cast / custom ability ownership path still needs in-map validation against the current runtime.
+  The newer escort-home completion path still needs direct gameplay verification after today's state-flow fixes: confirm no early question mark appears on Aradion, no premature Valeria teleport occurs after the last portal, and the quest only becomes turn-in ready once both companions actually reach Aradion's place.
+- `QuestSystems` / `qAradion.j`
+  The current QuestSystems and Aradion-related quest fixes still need a focused end-to-end test pass before `qAradion` is restructured into a more modular questgiver/template-friendly layout for reuse by other libraries.
+
+### Actions Remaining
+- `ItemLootSystem.j`
+  Re-test dropped powerups on the main map and confirm their floating text is removed both on normal pickup and on immediate auto-use consumption.
+- `CameraControl.j` / `ZoneEvent.j`
+  Re-test camera reset inputs with mouse wheel and `PageUp` / `PageDown`, then verify the fast-pan behavior on the intended far-transition subzones such as cave/interior teleports, Boom Mine, Gnoll Hideout, The Crypt, and Firelands.
+- `WC3ItemManager`
+  Update the release ItemManager package later so it matches the current debug build once the ongoing item/database tool changes are considered stable enough to freeze into release.
+- `qAradion.j` / `QuestSystems`
+  Re-test the full Valeria encounter on the main map: intro facing/camera, `ESC` prompt, wrong-answer live gameplay responses, correct-answer stop timing after the hero line, and the follow-up escort progression.
+- `qAradion.j` / `Rifts of Corruption`
+  Re-test all three real Mana Rift starts on the main map and confirm that placed-rift binding, ritual start, Aradion cast behavior, and fail/retry rift recreation all still resolve back into the correct local `qAradion` rift slots.
+  Re-test the full last-rift-to-home flow: objective swap to `Escort Aradion and Valeria to Aradion's place`, no early complete-quest question mark on Aradion, no immediate home teleport after the last closure, and turn-in unlock only after the escort-home step is actually done.
+- `QuestSystems` / `qAradion.j`
+  Finish the current quest-runtime validation pass before advancing to the next planned refactor, then structurize `qAradion` into a more modular and template-friendly questgiver library only after the present Aradion/QuestSystems fixes are confirmed stable in gameplay.
+
+## [11.6.2026]
+
+### Player-Facing Updates
+- `qAradion.j`
+  Reworked the `Ranger Missing` Valeria encounter closer to the old GUI flow: the intro now uses the old-style close camera values again, persuasion is opened with `ESC`, and the actual persuasion response / success exchange no longer runs as a full cinematic-mode sequence.
+  Improved Valeria negotiation behavior so choosing the correct persuasion line now stops her attack immediately instead of letting the hostile combat state linger awkwardly into the success path.
+  Fixed `Ranger Missing` progression so Valeria's ghost/invisibility state is removed when the quest advances and the escort step now appears immediately as `Escort Valeria to Aradion` instead of only surfacing too late in the chain.
+  Improved `Rifts of Corruption` setup so Valeria is pulled near Aradion for the quest-start exchange and her patrol is stopped before the field follow/escort phase begins.
+
+### Technical Updates
+- `DialogSystem.j`
+  Added a small reusable `ESC` action hook for non-sequence dialog flows: `DialogSystem` can now execute a registered escape callback when no dialog sequence is currently active, instead of hard-wiring every `ESC`-driven side flow inside each questgiver library.
+  Kept the existing sequence-skip behavior intact, so `ESC` still skips active sequences first and only falls back to the custom escape action when no sequence is playing.
+- `qAradion.j`
+  Replaced the old local Valeria-specific `ESC` trigger with the new shared `DialogSystem` escape-action path so future `qXXX` libraries can reuse the same pattern for similar non-cinematic interaction prompts.
+  Restored Valeria encounter camera values toward the old GUI setup and split the negotiation runtime into a lighter non-cinematic branch that hides dialog/UI correctly without forcing full cinematic mode.
+  Added stronger quest-owned handling for Valeria ghost state, escort objective text, retry reset state, and ambush reset so the `Ranger Missing` chain no longer depends on leftover GUI assumptions for those pieces.
+  Added a local mana-rift proximity trigger path inside `qAradion` so `Rifts of Corruption` can begin ritual logic from quest-owned JASS event handling instead of relying only on the timer-polled field check.
+  Restored an Aradion ritual-start cast order at the rift-start point and hid the obsolete `TasQuestBox` / `Zones` UI during quest-dialog sequences to reduce old cinematic/UI bleed-through.
+
+### Known Issues
+- `qAradion.j` / `Rifts of Corruption`
+  The restored ritual-start cast path still needs in-map verification. Aradion is now ordered to cast at ritual start again, but the custom portal-closing ability ownership/rawcode path has not yet been fully revalidated against the current map runtime.
+- `QuestSystems` / `qAradion`
+  Today's Valeria encounter and rift-start fixes were not yet verified live on the main map after the code pass, so camera feel, UI hiding, escort progression, and the new rift proximity trigger still need gameplay confirmation.
+
+### Actions Remaining
+- `qAradion.j` / `QuestSystems`
+  Test the full `Ranger Missing` chain again on the main map: intro camera, `ESC` persuasion prompt, hostile stop on correct answer, ghost removal, escort objective creation, escort completion, and turn-in flow.
+- `qAradion.j` / `Rifts of Corruption`
+  Re-test quest accept, Valeria patrol shutdown, Valeria placement near Aradion, mana-rift ritual start, and Aradion portal-closing cast on the main map.
+- `QuestSystems`
+  If today's `ESC` prompt pattern proves stable, reuse the new shared `DialogSystem` escape-action helper for later `qXXX` libraries instead of rebuilding separate ad hoc `ESC` triggers per questgiver.
+
+## [10.6.2026]
+
+### Player-Facing Updates
+- `qAradion.j`
+  Reworked the Valeria encounter so it behaves closer to the old GUI version: after the opening exchange, the player is prompted to press `ESC` to open the persuasion choices instead of being forced through chained negotiation options automatically.
+  Softened the Valeria encounter close-up camera so it no longer uses the earlier aggressive low-angle setup that could clip under the terrain during the encounter.
+  Improved the `Ranger Missing` quest chain so escort completion now cleanly transitions into the return-to-Aradion phase instead of leaving the quest in a broken mixed state with missing follow-up objective handling.
+  Failed `Ranger Missing` runs are now reset toward a retryable offer path rather than leaving the quest in an unusable failed state that still showed stale dialog branches.
+
+### Technical Updates
+- `QuestGiver.j`
+  Synced JASS companion add/remove handling with the shared GUI companion arrays and counters so quest-added companions such as Valeria are visible to systems that rely on `udg_CompanionUnit[]`, including companion-facing UI like `StatsUI`.
+  Fixed escort requirement progression so escort objectives no longer write `(Complete)` into the requirement text before the quest log also marks them complete, which was causing duplicate `(Complete) (Complete)` output.
+  Added the shared return-to-questgiver requirement automatically for escort objectives when the escort actually reaches the destination, bringing escort handling in line with the other tracked requirement types.
+  Updated shared dialog transition helpers so cinematic-style quest entry and exit can consistently hide and restore the `MasterUI` `Game` button.
+- `QuestMaster.j`
+  Hardened quest state transitions so completing a quest now clears stale failed state and completed quests can no longer be failed again afterward by late event callbacks.
+  Kept required-level evaluation aligned with the allowed-heroes rule: when both `Nazgrek` and `Zulkis` are allowed, the highest valid hero level is used, and when only one hero is allowed, only that hero's level is used for availability checks.
+- `qAradion.j`
+  Continued moving Aradion / Valeria quest-owned event behavior into the `qAradion` sublibrary so the new JASS quest path owns more of the `Ranger Missing` runtime directly instead of depending on scattered old GUI trigger behavior.
+  Standardized the `Ranger Missing` retry/reset path around local JASS helpers so escort failure, Valeria-loss handling, turn-in safety, and reset-to-ambush behavior all follow the same library-owned flow.
+  Added extra guards around Aradion dialog rebuilds, ready-turn-in handling, and retry offers so the main-map availability flow has fewer chances to fall into the earlier yellow-to-red quest-marker regression path.
+  On the "`qXXX` libraries are getting large" point: they are larger mainly because quest-owned event logic is intentionally being kept local to the owning sublibrary for now.
+  No further extraction should be forced before main-map verification; the next safe shared candidates, if this passes testing, are silent objective-reset helpers and generic field-ritual runtime helpers only if the second quest giver repeats the same pattern.
+
+### Known Issues
+- `QuestSystems` / `qAradion`
+  The newest Aradion fixes still need full main-map verification, especially the availability-marker behavior after the `Info` branch, Valeria negotiation flow, and the complete `Ranger Missing` escort-to-turn-in chain.
+
+### Actions Remaining
+- `Bridges`
+  Add invisible platforms to `Bridge009`.
+- `Bridges`
+  Adjust pathing-blocker rects at `Bridge009`.
+- `QuestSystems` / `qAradion`
+  Re-test the newest Aradion changes on the main map before treating the current JASS quest-giver pattern as frozen for generator-driven `qXXX` production.
+
+## [9.6.2026]
+
+### Technical Updates
+- `TerrainDamage.j`
+  Completed a direct lag-isolation test with TerrainDamage disabled and confirmed that turning the system off did not reduce the periodic lag spikes in any significant way.
+  This makes TerrainDamage much less likely to be the main source of the recurring `20-40` FPS drops, such as falling from roughly `90` FPS to `60`.
+- `CameraControl.j`
+  Continued troubleshooting the remaining periodic performance drops and current testing suggests that normal camera mode's automatic safe / no-clipping adjustment path is a more likely source of the troublesome lag than TerrainDamage.
+  The next direction is to think more aggressively about running normal mode without constant safe-camera correction and relying more on internally activated special camera modes in specific zones / rects where custom camera behavior is actually needed.
+  This also points toward expanding `CameraControl` so special camera modes can be handled more easily both internally and externally beyond the current Boom Mine-specific path.
+
+### Known Issues
+- `CameraControl.j` / normal camera mode
+  Normal mode camera adjustment currently looks like the more problematic performance path. The automatic no-clipping / safe-camera correction still needs more profiling and likely a design simplification pass if it is causing the recurring drops.
+- `QuestSystems` / `qAradion`
+  During testing, entering dialog with Aradion can incorrectly turn his quest exclamation mark from yellow to red even when a quest should still be available.
+  While the marker is red, the interaction appears to get stuck at the `Info` section and does not continue into the expected quest-accept flow. After exiting dialog, the marker turns yellow again.
+
+### Actions Remaining
+- `TerrainDamage.j`
+  Re-enable TerrainDamage after the latest isolation test, because disabling it did not meaningfully improve the lag spikes and it should no longer stay bypassed on the assumption that it is the main culprit.
+- `CameraControl.j`
+  Explore a lighter normal-camera design that avoids always-on safe / no-clipping adjustment where possible, and rely more on deliberate special-camera-mode activation in selected zones or rect-driven situations.
+  If zone- or rect-specific manual camera behavior is still needed outside Boom Mine, add an easier internal and external special-camera handling path in `CameraControl.j` for more than one special camera profile.
+- `QuestSystems` / `qAradion`
+  Investigate why Aradion's quest marker flips from available-yellow to unavailable-red on dialog entry, and why that state change blocks access beyond the `Info` branch until the dialog is closed again.
+
+## [8.6.2026]
+
+### Technical Updates
+- `CameraControl.j`, `ZoneEvent.j`
+  Added an internal special-camera-mode path so zones can temporarily override the player's active camera behavior without overwriting the stored base camera mode or its saved parameters.
+  Added `CAMERA_SPECIAL_MODE_BOOMMINE` and wired `Zone104 Boom Mine` through `ZoneEvent` special-effects handling so entering the zone applies the Boom Mine camera and leaving it restores the player's stored camera mode and values.
+  Reworked the Boom Mine special camera so it now supports the same keyboard angle / rotation controls as normal mode, but keeps that adjustment in special-mode-local state instead of polluting the player's stored normal camera settings.
+  Limited Boom Mine camera angle-of-attack adjustment to a maximum of `295` while keeping its own internal distance, far z, angle, rotation, and field-of-view values separate from the normal camera profile.
+  Further softened normal-mode blocker tracing so safe-camera correction does not react as heavily to pathing found too far toward the intended camera endpoint, reducing restless bounce during gameplay.
+- `WE Mainmap` - `Cinematic ON`, `Cinematic OFF`, `Intro Cinematic`
+  Verified that intro-style cinematics now return through the shared camera flow correctly after the earlier `Cinematic ON/OFF` suspend / resume trigger fixes, instead of fighting the stored player camera state during cinematic shutdown.
+- `QuestGiver.j`, `qAradion.j`, `QuestsAndDialogs/QuestGivers/tools/qxxx-generator.html`
+  Continued the `qAradion` parity-and-modularity pass so the current JASS quest giver behaves more like the old GUI version while also becoming the reusable template for future `qXXX` quest-giver sublibraries.
+  Added shared `QuestGiver` sequence scaffolding such as `CreateBaseSequence(...)`, kept the more generic accept / farewell helpers for cases where shared banter fits, and moved `qAradion` quest accept / complete flow onto the new lower-level reusable base path so unique questgiver dialog can stay custom without rewriting sequence setup every time.
+  Added a small local browser generator that emits `q<Name>.j` questgiver templates with quest blocks, dialog-button wiring, handler stubs, public hook placeholders, and explicit `TODO OLDGUI PARITY` markers instead of generating only an empty shell.
+  Reworked `qAradion` Ranger Missing, item-turn-in, and Rifts flow further toward JASS-owned quest logic, including escort/fail trigger setup, companion handling, ready-turn-in gating, and more stable dialog hero / cinematic return handling.
+  Fixed a strict compile-order problem in `qAradion` by moving `OnRangerMissingValeriaDamaged` before the trigger registration that binds it.
+- `PatrolFollowSystems/Patrols/Valeria_Movement_Start.j`, `qAradion.j`
+  Updated `ValeriaMovementStart` to use a local unit variable instead of `udg_TempUnit`, which is the safer direction for the other patrol-start functions that still depend on the shared temp-unit pattern.
+  Updated `qAradion` to call `ExecuteFunc("ValeriaMovementStart")` when restarting Valeria's patrol because this patrol-start entry point is still a plain function and not a JASS library API.
+- `QuestsAndDialogs/Plans/_otherPlansAndHelpers`
+  Reorganized several older quest/dialog reference markdown files into the shared helper/plans folder so the historical crash notes, requirements notes, and refactoring references are grouped in one place instead of being scattered across the top-level `QuestsAndDialogs` folders.
+
+### Player-Facing Updates
+- `Camera / Zones`
+  Entering Boom Mine now switches to a dedicated zone camera profile, and leaving it returns cleanly to the player's previous stored camera mode and settings.
+  Boom Mine camera can now be adjusted with the same keyboard rotation / angle controls as normal mode, but with a tighter maximum downward angle suited for that area.
+- `Camera / Cinematics`
+  Intro cinematic and similar shared cinematic trigger flows now appear to hand camera ownership back normally after the earlier `Cinematic ON/OFF` trigger fix.
+
+### Known Issues
+- `TerrainDamage.j`
+  The terrain-damage lag investigation is still unresolved. Even though the system currently has a hard internal bypass switch, the intended isolation test still needs to be repeated cleanly so the session can confirm whether the slight lag spikes are really tied to TerrainDamage's periodic timer activity or to some other always-running system.
+- `AbilitiesLiteUI.j`
+  The gray overlay on unlearned abilities did not seem to work as intended in testing and still needs another in-game verification / fix pass.
+- `PatrolFollowSystems`
+  `ValeriaMovementStart` no longer depends on `udg_TempUnit`, but similar patrol-start functions such as `Mordrax` and other older patrol helpers still need the same cleanup pass.
+
+### Actions Remaining
+- `CameraControl.j`
+  Continue smoothing normal-mode safe-camera correction so blocker / terrain adjustment feels closer to advanced camera quality without adding gameplay-disrupting bounce or extra lag in blocker-dense areas.
+- `TerrainDamage.j`
+  Re-run the lag isolation test with TerrainDamage fully bypassed / disabled for the session and confirm whether the slight lag spikes and unresolved FPS drop are tied to TerrainDamage's periodic timers or to another always-running system.
+- `AbilitiesLiteUI.j`
+  Re-check why the unlearned-ability gray overlay did not appear correctly in-game and fix the icon-overlay path if the current unavailable-state art is still not being shown.
+- `PatrolFollowSystems`
+  Apply the same `udg_TempUnit` removal pattern from `ValeriaMovementStart` to other older patrol-entry functions that still rely on shared temp globals.
+- `qAradion.j` / questgiver workflow
+  Re-test `qAradion` on-map after the latest parity pass, keep closing the remaining old-GUI parity gaps, and use the stabilized helper boundary plus generator output as the starting point for the next questgiver NPC instead of duplicating the old boilerplate by hand.
+
+## [7.6.2026]
+
+### Technical Updates
+- `CameraControl.j`
+  Reworked normal camera mode to use the same blocker and terrain-height adjustment approach as `AdvancedCameraSystem`, while still preserving the stored `CameraControl` rotation instead of rotating with unit facing.
+  Added per-player caching and lighter refresh paths around normal-mode blocker tracing so repeated pathing-blocker camera adjustment does not recalculate as aggressively as before.
+  Added a normal-mode correction smoothing pass so blocker / terrain adjustments apply over time instead of snapping too hard when stairs, invisible platforms, or blocker-heavy height transitions would otherwise make the camera bounce.
+  Added a per-player normal-mode `Safe Camera` toggle so blocker / terrain no-clip prevention can be turned off completely without affecting advanced or developer camera modes.
+  Added a wounded-state camera overlay tied to the currently viewed camera unit, including a sustained red cinematic filter, pulsing transparency beats, and heartbeat sound playback while the viewed unit is below `25%` life.
+  Made `CameraControl` suspend / resume calls idempotent so duplicate dialog and cinematic trigger calls no longer keep restarting or overriding the current suspended / resume-pending camera state.
+- `CameraUI.j`
+  Added `Safe Camera` status text and toggle controls for the normal-mode blocker / terrain camera protection.
+  Simplified the camera panel actions by removing the duplicate left-side `Defaults` action, renaming the lower reset button to `Defaults`, and placing the `Safe Camera` toggle under it with matching button width.
+- `AbilitiesLiteUI.j`
+  Added collapsible `Player Shaman` specialization tree headers so `Elemental`, `Enhancement`, `Restoration`, and `Totemic` sections can now be opened and closed directly from the abilities list.
+  Reworked the visible-row lookup path to use a cached visible-definition list keyed to the active unit and current tree state, removing repeated full definition scans during slider movement.
+  Added tree-state-aware selection and scroll clamping so collapsing a specialization no longer leaves hidden child abilities selected or produces mismatched slider ranges.
+  Added clearer gray unavailable overlays for unlearned ability icons in both the left list and the right-side detail icon.
+  Set the default open state so all specialization trees start collapsed when the abilities panel is opened fresh or the view resets.
+- `TerrainDamage.j`
+  Added a hard internal `DEBUG_BYPASS_SYSTEM` switch that short-circuits `InitDelayed`, so the terrain-damage system can be disabled completely for FPS-isolation testing without removing the library from the map.
+- `WE Mainmap` - `Game Start`, `Cinematic ON`, `Cinematic OFF`
+  Disabled the hardcoded `Player 1 (Red)` startup camera pan to `Nazgrek Start Point` because it no longer had a clear ownership reason and could override the intended camera flow at map start.
+  Added `call CameraControl_Suspend(Player(0))` in `Cinematic ON` and `call CameraControl_Resume(Player(0))` in `Cinematic OFF` so these GUI cinematic triggers now hand camera ownership through the shared `CameraControl` flow.
+
+### Player-Facing Updates
+- `Camera / UI`
+  Normal camera mode now handles blocker-heavy corridors, tunnels, and terrain-height differences much closer to advanced camera behavior while still respecting the stored normal camera rotation.
+  The camera panel now lets players toggle `Safe Camera` on or off directly, and the wounded low-health camera effect now stays visibly active with slower heartbeat-style pulsing instead of brief flickering flashes.
+  Duplicate dialog or cinematic camera suspend / resume calls should now be much less likely to restart camera return timing or fight over the current camera state.
+- `AbilitiesLiteUI`
+  Player shaman ability trees can now be expanded or collapsed by clicking the specialization rows, and the panel currently starts with all trees closed by default.
+  Unlearned abilities are now easier to read at a glance because their icons use a clearer gray unavailable overlay in both the list and detail view.
+  Scrolling the abilities list should now be noticeably smoother after the visible-row refresh path was cached.
+- `Camera / Cinematics`
+  Main-map startup and GUI cinematic camera flow should now be less likely to force an unexplained snap toward `Nazgrek`, and the `Cinematic ON/OFF` triggers now suspend and resume through `CameraControl` instead of bypassing it.
+
+### Actions Remaining
+- `CameraControl.j`
+  Re-test normal mode in blocker-dense tunnels, narrow pathing corridors, and elevation-heavy areas, and profile whether the latest trace caching is enough to remove the remaining FPS drop around blocker-based adjustment.
+  Continue tuning the normal-mode minimum trace distance, cache thresholds, and correction smoothing if corridor zoom still feels too strong or blocker reaction still costs too much.
+- `CameraControl.j` / `CameraUI.j`
+  Validate the new `Safe Camera` toggle across normal, advanced, and developer modes and confirm the wounded-state cinematic filter / heartbeat effect does not conflict with other cinematic filter usage elsewhere in the map.
+  Audit intro / main-map cinematic trigger usage so only the intended master flow owns `CameraControl_Suspend` / `Resume`, even though duplicate calls are now guarded.
+- `AbilitiesLiteUI.j`
+  Re-test the new shaman tree collapse flow in-game with both `Nazgrek` and `Zul'kis`, including repeated slider dragging, mouse-wheel scrolling, and tree toggling while different rows are selected.
+  Confirm the new cached visible-definition path fully removes the earlier scrollbar hitching and does not introduce stale selection, stale row text, or hidden-row edge cases after rapid open/close interaction.
+- `TerrainDamage.j`
+  Use the new `DEBUG_BYPASS_SYSTEM` path to confirm whether disabling terrain damage removes the periodic FPS sink, then either clear the system or continue profiling the remaining always-on timers.
+- `WE Mainmap` / `CameraControl`
+  Re-test `Game Start` and the shared `Cinematic ON/OFF` flow on the main map and confirm no other GUI camera actions still override the intended `CameraControl` suspend / resume ownership.
+
+## [6.6.2026]
+
+### Technical Updates
+- `ProfessionsUI.j`
+  Investigated the slowly worsening UI-side FPS drop path against the earlier scrollbar and refresh hardening already applied in `AbilitiesLiteUI.j` and `ReputationUI.j`.
+  Reworked the professions refresh path so periodic updates stop blindly reapplying unchanged row text, row icons, row highlight state, detail icon/title, progress-bar values, and detail-body text every refresh tick.
+  Added cached list-scroll and detail-scroll synchronization, guarded slider callback state, and clamped wheel movement so programmatic frame refreshes no longer churn extra slider updates while the panel is open.
+  Added detail-body cache invalidation tied to selected profession, current skill, and milestone rebuild state so the right-side unlock text only rebuilds when the actual profession data changed.
+  Synced the open-button toggle path with the visibility-based refresh timer so the professions panel resumes refreshing when opened and reliably pauses again when closed through the same button.
+- `CameraControl.j`, `DialogCamera.j`, `QuestGiver.j`, `qAradion.j`
+  Reworked the dialog-camera handoff so `DialogCamera` now suspends and resumes through `CameraControl` instead of restoring its own saved camera setup, which preserves the smooth return to the stored player camera mode and values.
+  Added a duration-aware `CameraControl` resume path, explicit tracked-target caching, and native-camera reset protection for normal mode so Warcraft III page up/down or mouse-wheel camera drift gets snapped back to the stored camera state without interfering with advanced or developer camera modes.
+  Updated quest-giver hero resolution and the `qAradion` dialog entry flow so the interacting hero is cached before dialog camera takes over, preventing dialog restore from incorrectly falling back to `Nazgrek` when `Zulkis` was the active hero.
+  Traced the remaining wrong-hero / snap-back behavior through the quest giver cleanup chain into the shared `Cinematic OFF` trigger, and confirmed a hardcoded pan-to-`Nazgrek` there was still overriding the intended camera return path after dialog.
+- `Cinematic OFF`
+  Removed the hardcoded post-dialog camera snap toward `Nazgrek` so `CameraControl` can own the final return to the interacting hero instead of being visually overridden by the cinematic shutdown trigger.
+- `Terrain`
+  Continued terraining work in Dragonfire Peaks, Havenwoods, Orc base in Havenwoods/Thornwoods crossover (to be named more properly)
+
+### Player-Facing Updates
+- `ProfessionsUI`
+  Leaving the professions panel open, switching tracked gatherers, and scrolling both panes should now produce much less long-session UI-side FPS decay than before.
+- `Camera / Dialog`
+  Dialog and quest camera transitions should now return smoothly to the correct stored player camera and interacting hero, and normal-mode native camera drift from page up/down or mouse wheel should immediately reset back to the intended view.
+
+### Actions Remaining
+- `ProfessionsUI.j`
+  Re-test the panel in-game under longer open-idle, repeated list/detail scrolling, and tracked-gatherer switching so the slow FPS-drop path can be confirmed gone after the latest cache/sync cleanup.
+- `CameraControl.j`, `DialogCamera.j`, `QuestGiver.j`, `qAradion.j`
+  Re-test dialog entry and exit with both `Nazgrek` and `Zulkis`, and confirm normal, advanced, and developer camera modes each keep the intended ownership and restore behavior after quest-dialog cinematics now that the `Cinematic OFF` trigger no longer hardcodes a camera snap to `Nazgrek`.
+- `qAradion.j` / related quest systems
+  `qAradion.j` is still not on the main map, so review the current `MS Todo` items around `qAradion` and the shared quest/dialog systems, and keep the modular JASS structure organized enough that new quest givers and old GUI-era quest lines can be rebuilt quickly in the same style.
+- `Cinematic ON/OFF` / quest-dialog flow
+  Check whether `Cinematic ON/OFF` and the quest/dialog system still duplicate any `CinematicMover` calls during entry and exit, and remove overlap if both paths are moving the same units.
+
+## [5.6.2026]
+
+### Technical Updates
+- `ReputationUI.j`, `ProfessionsUI.j`
+  Continued rebuilding the right-side detail presentation after the earlier hidden `TasQuestBox` reuse kept leaking imported frame ornament art into the panel and produced black-backdrop spill outside the intended area.
+  Removed the hidden `TasQuestBox` text-area host approach from both UIs and replaced it with native right-pane detail backdrops, native body backdrops, and native text-frame content areas.
+  Kept the standalone list scrollbars for the left-side lists while restructuring the right-side detail stack closer to the safer native-frame pattern already used by `AbilitiesLiteUI` and `StatsUI`.
+
+### Player-Facing Updates
+- `Sirensong`
+  Continued terraining work in the `Sirensong` zone, focused mostly on the river route and the troll-side areas.
+
+### Actions Remaining
+- `ReputationUI.j`, `ProfessionsUI.j`
+  Re-test the rebuilt native right-side detail panes in-game and confirm the earlier lower-center ornament leak and black-background overflow are actually gone.
+  Continue polishing the right-side description-card presentation until it fully matches the intended final look.
+
+## [4.6.2026]
+
+### Technical Updates
+- `ReputationUI.j`, `ProfessionsUI.j`
+  Reworked the right-side description panel approach again after the stretched tooltip-texture backdrop experiment produced broken vertical gold-strip artifacts instead of the intended `TasQuestBox` panel look.
+  Embedded a hidden helper `TasQuestBox` instance inside each custom right pane and started reusing the imported `TasQuestBoxTextArea1` child for the description area so these panels can move closer to the same framed detail presentation used by `HintsUI` and the other `TasQuestBox`-based UIs.
+  Added separate frame contexts and local imported-frame lookups so the custom profession / reputation panels can reuse the shared imported text-area frame without colliding with the existing `TasQuestBox` users elsewhere in the map.
+
+### Actions Remaining
+- `ReputationUI.j`, `ProfessionsUI.j`
+  The right-side description area and its surrounding outer frame/panel layout still need more adjustment work before the final look fully matches the intended `TasQuestBox` presentation.
+  Validate the imported text-area alignment, sizing, spacing, and any remaining overlap / anchoring issues in-game, then finish polishing the outside frame treatment around the reused description panel.
+
+## [3.6.2026]
+
+### Technical Updates
+- `AbilitiesLiteUI.j`, `ReputationUI.j`
+  Finished fixing the custom left-list scrollbar system so the slider track uses explicit sizing instead of stretched bottom anchoring.
+  Corrected the slider value mapping so opening the list at the top also places the thumb at the top of the visible rail.
+  Stabilized the click / drag / wheel path and initial hide-state so the thumb stays inside the intended scrollbar frame and only appears when scrolling is actually needed.
+- `ProfessionsUI.j`
+  Updated both the left profession list and the right detail-text scrollbar to use the same corrected top-resting slider mapping.
+  Replaced the old stretched left-list scrollbar setup with explicit sizing based on the visible-row region, matching the working list-scroll system used in the repaired UIs.
+  Added the same initial hide-state behavior used by the repaired list UIs so stale slider thumbs do not appear before refresh.
+- `HintsUI.j`, `CommandsUI.j`, `AchievementsUI.j`, `SecretsUI.j`, `CheatsUI.j`, `TasQuestBoxLight_PotS.j`
+  Standardized the page-slider logic so these `TasQuestBox`-style UIs now use the same top-resting scrollbar behavior as the fixed abilities / reputation lists.
+  Added cached slider sync, integer step sizing, clamped wheel movement, conditional slider visibility, and guarded slider callback handling so programmatic refreshes no longer feed back into slider events or cause the earlier slider-related crashes.
+- `MasterUI.j`
+  Added configurable per-button icon constants for the `Game` menu so each submenu entry can be given its own small left-side icon or left text-only by setting the path to `""`.
+  Rebuilt the menu buttons as composite button/icon/text frames and widened the panel/button layout slightly so the grouped menu can fit icons without crowding the labels.
+- `TerrainDamage.j`
+  Adjusted `LAVA_EFFECT_SCALE_START`, `LAVA_EFFECT_SCALE_END`, `FEL_EFFECT_SCALE_START`, and `FEL_EFFECT_SCALE_END` closer to `1.00`.
+  This tones down the ramped terrain-damage special-effect growth so the end-state visuals no longer become too large.
+
+### Player-Facing Updates
+- `AbilitiesLiteUI`, `ReputationUI`, `ProfessionsUI`, `Hints`, `Commands`, `Achievements`, `Secrets`, `Cheats`, `Zones`
+  The affected scrollbars now start visually from the top when the list itself is at the top, move in the expected direction, and hide themselves when no scrolling is needed.
+  The latest slider pass also resolved the known slider drag / click instability, and no slider crashes are currently known after these fixes.
+- `Game` menu
+  The `Game` menu buttons can now show matching submenu icons while keeping the existing grouped multi-column layout.
+  The menu frame and button widths were adjusted slightly so the new icons fit cleanly beside the labels.
+- `Terrain damage visuals`
+  Lava / fel damage effects now stay closer to normal unit scale during the ramp instead of growing overly large near the end.
+
+## [2.6.2026]
+
+### Technical Updates
+- `AbilitiesLiteUI.j`, `ReputationUI.j`
+  Continued fixing the left-side list sliders after drag/click problems and incorrect thumb placement.
+  Re-anchored the slider track to the visible row area instead of letting the thumb drift outside the intended frame region.
+  Corrected the vertical slider value mapping so the list starts at the top while the thumb also begins at the top of the visible gold track.
+  Added stricter wheel/drag clamping so slider movement stays within the intended min/max range of the drawn scrollbar.
+  Despite these changes, the latest slider iteration did not actually improve the broken behavior yet and still needs more work.
+
+### Player-Facing Updates
+- `Terraining`
+  Continued terraining work in the `Sirensong` area, focused mostly on the `Panthera` miniboss entrance area.
+- `AbilitiesLiteUI`, `ReputationUI`
+  The left-side scrollbars were adjusted so their thumb position should now better match the visible scrollbar art and start from the top instead of the bottom.
+  In practice, this slider pass did not yet produce a real improvement and the UI scrollbars still behave incorrectly.
+
+## [1.6.2026]
+
+### Technical Updates
+- `AbilitiesLiteUI.j`
+  Continued rebuilding the abilities browser around real player-shaman ability data instead of placeholder sample entries.
+  Added the larger rawcode-backed `Player Shaman` ability pool for `Elemental`, `Enhancement`, `Restoration`, and `Totemic` abilities so names, icons, and tooltip text can come from Warcraft object data.
+  Refined ability presentation so the visible classification line uses shared style such as `Shaman - Elemental` instead of separate `Player Shaman` / `NPC Shaman` display text.
+  Changed visible ability-title lookup to prefer the normal tooltip text and strip trailing level-style suffixes such as ` - [Level X]` before display.
+  Continued iterating on left-side slider/list behavior, wheel handling, and row-click interaction after repeated crash and drag issues.
+  Refined the ability list/detail presentation so single-rank abilities no longer show unnecessary level text.
+  Added mana-cost display to rawcode-driven ability details.
+  Repositioned and enlarged the detail-text area to better fit the intended right-side description region.
+  Reduced the `Not learned` row-text scale slightly and added a subtle dark overlay on unlearned ability icons so unavailable abilities read more clearly.
+- `ReputationUI.j`
+  Continued reworking the left-side faction-list slider and click/scroll behavior to move it closer to the proven `TasQuestBoxLight_PotS` pattern.
+  Adjusted row visibility handling, slider interaction, and left-list click behavior after drag/click regressions during the reputation-panel refactor.
+- `MasterUI.j`, `AbilitiesLiteUI.j`
+  Added the `Abilities` entry into the `Game` menu layout and updated the open flow so `MasterUI` uses the same `ExecuteFunc(...)` pattern as the other sub-UIs.
+  Moved the selected-hero resolution into `AbilitiesLiteUI`, where the panel now determines whether to open for `Nazgrek` or `Zul'kis`, defaulting to `Nazgrek` when neither is selected.
+- `MasterUI.j`
+  Added public `ShowGameButton` / `HideGameButton` API support for the `Game` menu button itself.
+  Wired cinematic trigger usage so `Cinematic ON` / `Cinematic OFF` can now hide/show the `Game` button cleanly through the new API.
+- `CameraControl.j`
+  Fixed advanced camera mode so switching into `Advanced` now also binds arrow-key movement through `SetMovementUnit(...)`.
+  This makes the advanced movement helper apply consistently on mode switch, target refresh/reselection, and resume because those already flow through the shared advanced bind path.
+- `CameraUI.j`
+  Reworked camera UI initialization so TOC loading and frame creation happen through a delayed init instead of immediate `AutoInit`.
+  This was done because the missing-slider issue appears to be tied to custom slider-template frame creation happening too early in the main map, not to `Nazgrek` / `Zul'kis` initialization timing.
+  Added slider-value resync on `Show()` so the visible controls refresh to current camera values when the panel is opened.
+- `Camera` / cinematic cleanup
+  `Intro Orc Cleanup` still contained obsolete GUI-side camera-control calls that were interfering with the newer JASS camera-control flow in the main map.
+  Those old GUI camera-control function calls were disabled for now and should later be removed entirely as obsolete.
+  This also highlighted that other older triggers may still be calling first-person / GUI camera controls unnecessarily and need further cleanup.
+
+### Player-Facing Updates
+- `AbilitiesLiteUI`
+  Player shamans now expose a broader real ability list with names/icons/tooltips pulled from actual object data instead of only a few placeholder definitions.
+  Ability names and specialization labels are being presented in a cleaner format that better matches the intended class/spec display.
+  Ability details now show mana cost where available, use a better-sized description area, and make unlearned abilities easier to distinguish visually.
+- `Game` menu
+  The `Game` menu now includes direct access to `Abilities`, with the panel opening for the currently selected main shaman hero when possible.
+  The `Game` button can now be hidden during cinematics and restored afterward through the newer cinematic trigger flow.
+- `Camera`
+  Advanced camera mode now restores working arrow-key movement instead of only changing the camera view.
+- Sirensong small terraining
+- Dragonpeak Mountain high mountain terraining
+
+### Known Issues
+- `AbilitiesLiteUI`
+  The left-side abilities list still has unresolved slider/drag stability problems and has remained one of the main crash-prone UI areas during this session.
+  Row selection and scroll behavior still need in-map validation after the latest slider parenting and click-interaction changes.
+- `ReputationUI`
+  The left-side faction list still needs more validation; drag/click/scroll behavior has been unstable while trying to match the quest-box pattern.
+- `Camera`
+  There may still be other old GUI-trigger paths that call outdated first-person / camera GUI functions and can conflict with the newer camera-control system.
+  `CameraUI` slider controls are not appearing correctly in the main map even though they work in the test map.
+  Current suspicion is that custom slider-template frames from `templates.toc` are being created too early in the main map load flow rather than the issue being caused by `Nazgrek` / `Zul'kis` variable initialization.
+
+### Actions Remaining
+- `AbilitiesLiteUI`
+  Finish stabilizing the left-side ability-list slider and drag behavior until it safely matches `TasQuestBoxLight_PotS`.
+  Continue filling and validating class ability definitions, especially for NPC-only classes that still only have template sections.
+- `ReputationUI`
+  Finish stabilizing the left-side faction list slider and drag behavior and continue aligning it with the quest-box style interaction model.
+- `Camera` cleanup
+  Continue searching for other old GUI-trigger references to first-person / GUI camera controls and remove or disable them so only the newer JASS camera-control flow remains active.
+  Re-test whether delayed `CameraUI` frame creation resolves the main-map-only slider issue; if not, inspect the built-map slider template import state rather than unit-variable timing.
+- `MasterUI` / cinematics
+  Re-test the new `Game` button hide/show flow during `Cinematic ON` / `Cinematic OFF` and any other trigger paths that should suppress menu access temporarily.
+
+## [31.5.2026]
+
+### Technical Updates
+- `MasterUI.j`, `AbilitiesLiteUI.j`
+  Added an `Abilities` button to the `Game` menu and updated the grouped menu layout/order to fit the new entry.
+  Switched the menu-side open flow back to the same `ExecuteFunc(...)` style used by the other sub-UIs.
+  Moved hero resolution into `AbilitiesLiteUI`, so opening the abilities panel now checks the current selected hero between `Zul'kis` and `Nazgrek`, with `Nazgrek` as the default fallback when neither is selected.
+- `AbilitiesLiteUI.j`
+  Reworked the class-pool configuration so only `Player Shaman` exists as a player pool, while the other class sections remain NPC-only templates for future filling.
+  Added clearer `// ====== CONFIGURE` guidance and class-template notes for future ability authoring.
+  Replaced the earlier 4-entry placeholder player-shaman setup with a much larger real rawcode-backed player-shaman registration list covering `Elemental`, `Enhancement`, `Restoration`, and `Totemic` abilities.
+  Added duplicate-safe auto-registration helpers so reopening the panel does not keep stacking ability definitions.
+  Continued reducing the earlier heavy/detail-refresh approach and adjusted the left-side scroll handling to move closer to the `TasQuestBox` slider style.
+- `ReputationUI.j`
+  Continued iterating on the left-side factions list and slider behavior so the panel can move away from the earlier unstable scroll handling.
+  Refined row visibility/highlight handling and continued trying to align the list/slider interaction more closely with `TasQuestBoxLight_PotS`.
+
+### Player-Facing Updates
+- `Game` menu
+  The main `Game` menu now includes `Abilities` as a direct submenu entry.
+- `AbilitiesLiteUI`
+  Player shamans now expose a much larger real ability list based on actual ability rawcodes instead of only a few placeholder sample abilities.
+  Opening the panel from the main menu now targets the currently selected main hero, or defaults to `Nazgrek` if neither player hero is selected.
+
+### Known Issues
+- `AbilitiesLiteUI`
+  The left-side ability list scroll/slider path is still unstable and has been causing lag or crashes during drag/scroll interaction.
+  Left-side row interaction and scroll behavior still need full validation after the latest slider changes.
+- `ReputationUI`
+  The left-side faction slider/list interaction is still not fully stable and needs more work to properly match the intended `TasQuestBox`-style behavior.
+  Layout/interaction validation is still needed for the left-side list after the latest scroll fixes.
+
+### Actions Remaining
+- `AbilitiesLiteUI`
+  Continue correcting the left-side slider/list interaction until it behaves safely and consistently like `TasQuestBoxLight_PotS`.
+  Finish authoring/validating the player-shaman rawcode list and continue filling NPC class ability definitions.
+- `ReputationUI`
+  Finish stabilizing the left-side faction scrolling and dragging behavior and fully mirror the proven `TasQuestBox` left-list interaction pattern.
+
+## [30.5.2026]
+
+### Technical Updates
+- `CameraControl.j`, `CameraUI.j`, `MasterUI.j`, `ProfessionsUI.j`, `ReputationUI.j`, `StatsUI.j`
+  Added short purpose-focused header descriptions to the newer JASS UI libraries so their main intent is easier to identify at a glance.
+- `Reputation.j`, `ReputationUI.j`
+  Retired the old reputation multiboard from active use while keeping the code in place as legacy fallback.
+  `ReputationUI` no longer commands the old multiboard, and `ReputationBoard` init/show flow was disabled so the frame UI is the active visual path.
+- `StatsUI.j`
+  Reworked the stats panel around UI-side unit selection instead of Warcraft's current map selection.
+  Added broader stat coverage based on `DEqStatNames`, split the view into summary stats plus a denser lower-right stat grid, and removed the old detail scrollbar path.
+  Added class/type placeholders and later hardcoded fallback metadata for player-shaman examples such as Nazgrek.
+  Added a black detail backdrop for clearer reading and wired an `Abilities` button into the unit detail view.
+  Removed direct multiboard hiding from `StatsUI` to avoid conflicts with external multiboard triggers.
+- `AbilitiesLiteUI.j`
+  Added a new lightweight ability browser opened from `StatsUI`, with separate player-shaman vs companion-shaman definition routing so their ability pools do not mix.
+  Added hardcoded starter shaman templates for `Lightning Bolt`, `Stormstrike`, `Healing Wave`, and `Stoneskin Totem`.
+  Added support for player-hero learn-state display so unlearned Nazgrek / Zulkis abilities can show greyed `Not learned` state based on real ability level checks.
+  Simplified the detail panel away from the earlier heavy scroll/body-refresh path, restored lightweight body wrapping, and began adding full black backdrop treatment similar to `StatsUI`.
+- `ReputationUI.j`
+  Kept live timed refresh, but narrowed it to cached visible-row/detail updates instead of full panel rewrites each refresh tick.
+  Added more caching around row visibility, row status text, slider sync, and detail text updates to reduce repeated frame churn while the panel is open.
+- `CheatsUI.j`
+  Replaced placeholder cheat examples with the real current cheat list and removed redundant category text duplication by making the UI render the category once from stored data.
+  Continued hardening scroll/slider behavior after crash investigation by removing brittle event coupling and reducing unsafe slider-sync paths.
+
+### Player-Facing Updates
+- `StatsUI`
+  The stats panel now shows fuller unit information through the new frame layout, including expanded summary fields and broader derived stats.
+  Unit details are now meant to follow the row selected inside the stats UI itself rather than depending on the current world selection.
+- `AbilitiesLiteUI`
+  Units opened through `StatsUI` now have a separate ability list and description view, with player shamans showing richer specialization-style text.
+- `Reputations`
+  Reputation display is now intended to use the frame UI instead of the old multiboard presentation.
+
+### Tool Updates
+- `WC3_Database/WC3ItemManager`
+  Modernized `WC3ItemManager` from the old `.NET 5` setup to a supported desktop stack using `.NET 10 SDK` with the app targeting `net8.0-windows`.
+  Updated package/runtime configuration for the newer build chain and verified successful Debug build plus self-contained Release publish.
+  Replaced the brittle old WinForms/WPF assembly-reference setup with explicit desktop project configuration.
+- `WC3_Database/WC3ItemManager/Assets`
+  Moved the integral icon texture libraries out of the old `bin\Debug\net5.0-windows` output tree into a proper source location under `Assets\blizzard` and `Assets\custom`.
+  Updated the project so both Debug and published outputs now copy the full icon libraries from `Assets` automatically.
+- `WC3_Database/WC3ItemManager/IconPathConfig.cs`
+  Changed default icon lookup paths to prefer app-local `blizzard` and `custom` folders so the newer build outputs remain self-contained even without a hand-written config file.
+
+### Known Issues
+- `AbilitiesLiteUI`
+  Ability definitions are still only partially populated, and the frame still needs more visual tuning around layout, text balance, and overall readability.
+- `ReputationUI`
+  The factions list is still not fully aligned inside the main frame and needs more follow-up layout work.
+- `StatsUI`, `AbilitiesLiteUI`, `ReputationUI`
+  These newer frame UIs have had several performance/stability corrections, but they still need full in-map validation after the latest refresh/scroll/backdrop changes.
+
+### Actions Remaining
+- `AbilitiesLiteUI`
+  Add many more manually configured ability rawcodes for player and companion unit types, plus the needed configuration/text authoring work for each ability definition.
+  Continue visual adjusting so the panel layout, text blocks, icon presentation, and detail area feel finalized.
+- `Companions` / `Tamed`
+  Create a proper `Companions.j` JASS library and merge logic from the current GUI versions.
+  This is a heavy change because many systems still depend on the GUI companion / tamed trigger flow and shared `udg_` globals.
+- `ReputationUI`
+  Continue fixing the left-side faction list layout so entries stay fully inside the main reputations frame.
+- UI backdrop idea
+  Consider using the same style of black backdrop frame more broadly across newer UIs, as it makes text much easier to read during gameplay.
+- `WC3ItemManager`
+  Re-test normal item editing, icon browsing, imports, and exports in the upgraded app during regular use to confirm there are no behavior regressions beyond successful build/startup verification.
 
 
 ## [26.5.2026]

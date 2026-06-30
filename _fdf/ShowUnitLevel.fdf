@@ -1,0 +1,10 @@
+IncludeFile "UI\FrameDef\UI\SimpleInfoPanel.fdf",
+
+Frame "SIMPLEFRAME" "CustomSimpleUnitStatsPanel" {
+    DecorateFileNames,
+
+    String "CustomSimpleClassValue" INHERITS "SimpleInfoPanelValueTextTemplate" {
+        SetPoint TOP, "SimpleNameValue", BOTTOM,  0.0, -0.0055,
+        FontJustificationH JUSTIFYCENTER,
+    }
+}

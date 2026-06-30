@@ -1,0 +1,84 @@
+//TasInventoryEx
+IncludeFile "UI\FrameDef\UI\EscMenuTemplates.fdf",
+
+Frame "BACKDROP" "TasInventoryExBox" INHERITS "EscMenuControlBackdropTemplate" {
+}
+Frame "TEXT" "BText_XXTemplate" {
+	// forces the TEXT to take only 0/0 onto the screen, which disables any Text display on the screen
+	SetPoint TOPLEFT, "ConsoleUI", TOPLEFT, 0, 0,
+	SetPoint BOTTOMRIGHT, "ConsoleUI", TOPLEFT, 0, 0,
+}
+Frame "BACKDROP" "TasInventoryExSlot" {
+	Width 0.032,
+	Height 0.032,
+	 
+	BackdropBackground "ui\console\human\human-transport-slot",
+	BackdropBlendAll,
+	Frame "GLUETEXTBUTTON" "TasInventoryExSlotButton" {
+		Width 0.025,
+		Height 0.025,
+		UseActiveContext,
+		SetPoint TOPLEFT, "TasInventoryExSlot", TOPLEFT, 0.0035, -0.0035,
+		SetPoint BOTTOMRIGHT, "TasInventoryExSlot", BOTTOMRIGHT, -0.0035, 0.0035,
+		ControlStyle "AUTOTRACK|HIGHLIGHTONMOUSEOVER",
+		ControlBackdrop "TasInventoryExSlotButtonBackdrop",
+		Frame "BACKDROP" "TasInventoryExSlotButtonBackdrop" {
+			BackdropBackground "replaceabletextures\commandbuttons\btntemp",
+		}
+		ControlDisabledBackdrop "TasInventoryExSlotButtonBackdropDisabled",
+		Frame "BACKDROP" "TasInventoryExSlotButtonBackdropDisabled" {
+			BackdropBackground "UI/Widgets/EscMenu/Human/blank-background",
+		}
+		ControlPushedBackdrop "TasInventoryExSlotButtonBackdropPushed",
+		Frame "BACKDROP" "TasInventoryExSlotButtonBackdropPushed" {
+			BackdropBackground "replaceabletextures\commandbuttons\btntemp",
+			BackdropBackgroundInsets 0.002 0.002 0.002 0.002,
+		}
+		ControlMouseOverHighlight "ButtonHighLight",
+		Frame "HIGHLIGHT" "ButtonHighLight" {
+			HighlightType "FILETEXTURE",
+			HighlightAlphaFile "ui\widgets\console\human\commandbutton\human-activebutton",
+			HighlightAlphaMode "ADD",
+		}
+		ButtonText "BText_XX",
+		Frame "TEXT" "BText_XX" INHERITS "BText_XXTemplate" {
+		}
+		Frame "BACKDROP" "TasInventoryExSlotButtonOverLay" {
+			Width 0.015,
+			Height 0.015,
+			BackdropBackground "ui\widgets\console\human\commandbutton\human-button-lvls-overlay",
+			BackdropBlendAll,
+			UseActiveContext,
+			SetPoint BOTTOMRIGHT, "TasInventoryExSlot", BOTTOMRIGHT, 0.0000, 0.0000,
+			Frame "TEXT" "TasInventoryExSlotButtonOverLayText" {
+				LayerStyle "IGNORETRACKEVENTS",
+				DecorateFileNames,
+				FontJustificationV JUSTIFYMIDDLE,
+				FontJustificationH JUSTIFYCENTER,
+				FrameFont "MasterFont", 0.01, "",
+				Text "1",
+				SetAllPoints,
+			}
+		}
+	}
+}
+
+Frame "TEXT" "TasTooltipText" {
+    DecorateFileNames,
+    FrameFont "MasterFont", 0.0095,"",
+    LayerStyle "IGNORETRACKEVENTS", 
+    FontJustificationH JUSTIFYLEFT,
+    FontJustificationV JUSTIFYMIDDLE,
+}
+
+Frame "BACKDROP" "TasToolTipBox" {
+    DecorateFileNames,
+    BackdropTileBackground,
+    BackdropBackground  "ToolTipBackground",
+    BackdropCornerFlags "UL|UR|BL|BR|T|L|B|R",
+    BackdropCornerSize  0.01,
+    BackdropBackgroundSize  0.256,
+    BackdropBackgroundInsets 0.0003 0.0003 0.0003 0.0003,
+    BackdropEdgeFile  "ToolTipBorder",
+    //BackdropBlendAll,
+}

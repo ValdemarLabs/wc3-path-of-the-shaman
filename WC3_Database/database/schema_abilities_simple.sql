@@ -2,10 +2,11 @@
 -- WC3 ABILITIES SCHEMA - SIMPLIFIED
 -- ====================================================================================================
 -- Simplified schema for storing essential WC3 ability data for item reference
--- Stores only: ability_code, ability_name (anam), editor_suffix (ansf)
+-- Stores: ability_code, ability_name (anam), editor_suffix (ansf),
+--         tooltip_normal (atp1), tooltip_extended (aub1)
 -- Author: Generated for PotS Project
 -- Date: 2026-03-15
--- Version: 2.0.0 - Simplified for item reference only
+-- Version: 2.1.0 - Simplified for item reference with tooltip lookup
 -- ====================================================================================================
 
 -- Drop existing table if present
@@ -17,6 +18,8 @@ CREATE TABLE wc3_abilities (
     ability_code CHAR(4) NOT NULL UNIQUE,          -- WC3 4-character ability ID (e.g., 'AHhb', 'A001')
     ability_name VARCHAR(255),                     -- Name/Title of ability (anam field)
     editor_suffix VARCHAR(255),                    -- Editor suffix (ansf field)
+    tooltip_normal TEXT,                           -- Tooltip - Normal (atp1 field)
+    tooltip_extended TEXT,                         -- Tooltip - Extended (aub1 field)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
@@ -32,6 +35,8 @@ COMMENT ON TABLE wc3_abilities IS 'Simplified WC3 abilities for item reference o
 COMMENT ON COLUMN wc3_abilities.ability_code IS 'WC3 4-character ability identifier';
 COMMENT ON COLUMN wc3_abilities.ability_name IS 'Ability name (anam field)';
 COMMENT ON COLUMN wc3_abilities.editor_suffix IS 'Editor suffix (ansf field)';
+COMMENT ON COLUMN wc3_abilities.tooltip_normal IS 'Ability normal tooltip (atp1 field)';
+COMMENT ON COLUMN wc3_abilities.tooltip_extended IS 'Ability extended tooltip (aub1 field)';
 
 -- ====================================================================================================
 -- TABLE: item_abilities (junction table for items and abilities)

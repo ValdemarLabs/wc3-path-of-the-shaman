@@ -1,4 +1,4 @@
-library QuestMaster initializer Init requires Table, SpeciFX, Reputation
+library QuestMaster initializer Init requires Table, SpeciFX, Reputation, IconQuery
 //===========================================================================
 // QuestMaster
 // Core quest data and API scaffolding. Implementation will be expanded.
@@ -76,6 +76,9 @@ globals
 	private constant integer QUEST_SAVE_GIVER_KEY = 2
 	private constant integer QUEST_SAVE_STATE_KEY = 3
 
+	private integer QuestRewardCurrentXP = 0
+	private unit QuestRewardPrimaryHero = null
+
 	// Quest icon system (embedded)
 
 	// Model paths
@@ -122,6 +125,21 @@ private function DebugMsg takes string msg returns nothing
 	endif
 endfunction
 
+private function AwardCompanionRewardXPEnum takes nothing returns nothing
+	local unit u = GetEnumUnit()
+	if QuestRewardCurrentXP <= 0 then
+		set u = null
+		return
+	endif
+	if u != null and IsUnitType(u, UNIT_TYPE_HERO) then
+		call AddHeroXP(u, QuestRewardCurrentXP, true)
+		if QuestRewardPrimaryHero == null then
+			set QuestRewardPrimaryHero = u
+		endif
+	endif
+	set u = null
+endfunction
+
 //===========================================================================
 // Quest update message queue
 //===========================================================================
@@ -162,6 +180,9 @@ private function ShowDelayedQuestCompleted takes nothing returns nothing
 	
 	// Safety: validate quest data exists and is completed
 	if q != 0 and q.completed and q.title != "" then
+		// Rewards are intentionally delayed with the completion message so dialog/cinematic turn-ins finish first.
+		call q.awardRewards()
+
 		// Update icons now (delayed to match message)
 		call q.updateIcons()
 		
@@ -402,6 +423,7 @@ endfunction
 private function GetQuestMinimapIcon takes unit u returns minimapicon
 	local integer index
 	local integer id
+	local Table iconTable
 	if u == null then
 		return null
 	endif
@@ -409,7 +431,11 @@ private function GetQuestMinimapIcon takes unit u returns minimapicon
 	if not QuestIconTable.has(id) then
 		return null
 	endif
-	set index = QuestIconTable[id].integer[QUEST_ICON_MINIMAP_ID]
+	set iconTable = QuestIconTable[id]
+	if not iconTable.integer.has(QUEST_ICON_MINIMAP_ID) then
+		return null
+	endif
+	set index = iconTable.integer[QUEST_ICON_MINIMAP_ID]
 	if index >= 0 and index < MinimapIconIndex then
 		return QuestIconMapPing[index]
 	endif
@@ -428,9 +454,12 @@ private function RemoveOldMapPing takes unit u returns nothing
 		return
 	endif
 	set iconTable = QuestIconTable[id]
+	if not iconTable.integer.has(QUEST_ICON_MINIMAP_ID) then
+		return
+	endif
 	set index = iconTable.integer[QUEST_ICON_MINIMAP_ID]
 	if index >= 0 and index < MinimapIconIndex then
-		call DestroyMinimapIcon(QuestIconMapPing[index])
+		call IconQuery_UnregisterIcon(QuestIconMapPing[index])
 		set QuestIconMapPing[index] = null
 		call iconTable.integer.remove(QUEST_ICON_MINIMAP_ID)
 	endif
@@ -440,8 +469,7 @@ private function CreateMapPingForUnit takes unit u, integer style returns nothin
 	local minimapicon qi
 
 	call RemoveOldMapPing(u)
-	call CampaignMinimapIconUnitBJ(u, style)
-	set qi = GetLastCreatedMinimapIcon()
+	set qi = IconQuery_RegisterQuestGiverUnitIcon(u, style)
 	if qi != null then
 		call StoreQuestMinimapIcon(u, qi)
 	endif
@@ -721,10 +749,22 @@ struct QuestData
 	integer questLevel
 	integer giverLevel
 	integer requiredLevel
+	boolean useAllowedHeroesForLevelCheck
+	boolean levelCheckAllowNazgrek
+	boolean levelCheckAllowZulkis
 	string faction
 	integer requiredReputation
 	trigger customCondition
 	integer eventFlagIndex
+	integer requiredCompletedQuestCount
+	string requiredCompletedQuest1
+	string requiredCompletedQuest2
+	string requiredCompletedQuest3
+	string requiredCompletedQuest4
+	unit requiredCompletedQuestGiver1
+	unit requiredCompletedQuestGiver2
+	unit requiredCompletedQuestGiver3
+	unit requiredCompletedQuestGiver4
 	integer lastEvalState
 	string failReasonText
 
@@ -849,6 +889,15 @@ struct QuestData
 		set this.failed = false
 		set this.state = QUEST_STATE_UNAVAILABLE
 		set this.lastEvalState = QUEST_STATE_UNAVAILABLE
+		set this.requiredCompletedQuestCount = 0
+		set this.requiredCompletedQuest1 = ""
+		set this.requiredCompletedQuest2 = ""
+		set this.requiredCompletedQuest3 = ""
+		set this.requiredCompletedQuest4 = ""
+		set this.requiredCompletedQuestGiver1 = null
+		set this.requiredCompletedQuestGiver2 = null
+		set this.requiredCompletedQuestGiver3 = null
+		set this.requiredCompletedQuestGiver4 = null
 
 		set this.title = ""
 		set this.description = ""
@@ -918,6 +967,9 @@ struct QuestData
 		set this.rewardRepMult = REWARD_REP_MULT_DEF
 
 		set this.requiredLevel = 0
+		set this.useAllowedHeroesForLevelCheck = false
+		set this.levelCheckAllowNazgrek = true
+		set this.levelCheckAllowZulkis = true
 		set this.faction = ""
 		set this.requiredReputation = 0
 		set this.customCondition = null
@@ -1001,6 +1053,7 @@ struct QuestData
 		call QuestSetIconPath(this.wcQuest, this.iconPath)
 		call QuestSetRequired(this.wcQuest, true)
 		call QuestSetDiscovered(this.wcQuest, false)
+		call QuestSetFailed(this.wcQuest, false)
 	endmethod
 
 	method applyRequirementsToLog takes nothing returns nothing
@@ -1609,7 +1662,7 @@ struct QuestData
 		endif
 
 		if this.rewardRepActive then
-			set this.rewardRep = this.clampNonNegative(R2I(this.rewardRepMult) * this.rewardRepAdjust)
+			set this.rewardRep = this.clampNonNegative(R2I(this.questLevel * this.rewardRepMult) + this.rewardRepAdjust)
 		else
 			set this.rewardRep = 0
 		endif
@@ -1645,6 +1698,12 @@ struct QuestData
 		set this.requiredLevel = level
 	endmethod
 
+	method setAllowedHeroesForLevelCheck takes boolean allowNazgrek, boolean allowZulkis returns nothing
+		set this.useAllowedHeroesForLevelCheck = true
+		set this.levelCheckAllowNazgrek = allowNazgrek
+		set this.levelCheckAllowZulkis = allowZulkis
+	endmethod
+
 	method setFaction takes string factionName returns nothing
 		set this.faction = factionName
 	endmethod
@@ -1659,6 +1718,31 @@ struct QuestData
 
 	method setEventFlagIndex takes integer index returns nothing
 		set this.eventFlagIndex = index
+	endmethod
+
+	method addRequiredCompletedQuest takes string questName, unit questGiver returns nothing
+		if questName == "" then
+			return
+		endif
+		if questGiver == null then
+			set questGiver = this.giver
+		endif
+		if this.requiredCompletedQuestCount == 0 then
+			set this.requiredCompletedQuest1 = questName
+			set this.requiredCompletedQuestGiver1 = questGiver
+		elseif this.requiredCompletedQuestCount == 1 then
+			set this.requiredCompletedQuest2 = questName
+			set this.requiredCompletedQuestGiver2 = questGiver
+		elseif this.requiredCompletedQuestCount == 2 then
+			set this.requiredCompletedQuest3 = questName
+			set this.requiredCompletedQuestGiver3 = questGiver
+		elseif this.requiredCompletedQuestCount == 3 then
+			set this.requiredCompletedQuest4 = questName
+			set this.requiredCompletedQuestGiver4 = questGiver
+		else
+			return
+		endif
+		set this.requiredCompletedQuestCount = this.requiredCompletedQuestCount + 1
 	endmethod
 
 	method setGiverDisplayName takes string displayName returns nothing
@@ -1686,6 +1770,13 @@ struct QuestData
 		local unit u
 		local unit hero = null
 		local item it
+		local boolean awardedNazgrek = false
+		local boolean awardedZulkis = false
+		local boolean reputationCinematicState = false
+
+		if DEBUG then
+			call DebugMsg("awardRewards: " + this.title + " xp=" + I2S(this.rewardXP) + " gold=" + I2S(this.rewardGold) + " arena=" + I2S(this.rewardArena) + " rep=" + I2S(this.rewardRep) + " faction=" + this.faction)
+		endif
 
 		if this.rewardXP > 0 then
 			set g = GetUnitsOfPlayerAll(Player(0))
@@ -1698,9 +1789,34 @@ struct QuestData
 					if hero == null then
 						set hero = u
 					endif
+					if u == udg_Nazgrek then
+						set awardedNazgrek = true
+					elseif u == udg_Zulkis then
+						set awardedZulkis = true
+					endif
 				endif
 			endloop
 			call DestroyGroup(g)
+			if udg_Nazgrek != null and IsUnitType(udg_Nazgrek, UNIT_TYPE_HERO) and not awardedNazgrek then
+				call AddHeroXP(udg_Nazgrek, this.rewardXP, true)
+				if hero == null then
+					set hero = udg_Nazgrek
+				endif
+			endif
+			if udg_Zulkis != null and IsUnitType(udg_Zulkis, UNIT_TYPE_HERO) and not awardedZulkis then
+				call AddHeroXP(udg_Zulkis, this.rewardXP, true)
+				if hero == null then
+					set hero = udg_Zulkis
+				endif
+			endif
+			set QuestRewardCurrentXP = this.rewardXP
+			set QuestRewardPrimaryHero = hero
+			if udg_Companion_Group != null then
+				call ForGroup(udg_Companion_Group, function AwardCompanionRewardXPEnum)
+			endif
+			set hero = QuestRewardPrimaryHero
+			set QuestRewardCurrentXP = 0
+			set QuestRewardPrimaryHero = null
 		else
 			set hero = null
 		endif
@@ -1713,12 +1829,15 @@ struct QuestData
 			call SetPlayerState(Player(0), PLAYER_STATE_RESOURCE_LUMBER, GetPlayerState(Player(0), PLAYER_STATE_RESOURCE_LUMBER) + this.rewardArena)
 		endif
 
-		if this.rewardRep > 0 and this.faction != "" then
+		if this.faction != "" then
+			set reputationCinematicState = udg_InCinematic
+			set udg_InCinematic = false
 			if this.rewardRepLinked then
 				call AddReputationLinked(Player(0), this.faction, this.rewardRep)
 			else
 				call AddReputation(Player(0), this.faction, this.rewardRep)
 			endif
+			set udg_InCinematic = reputationCinematicState
 		endif
 
 		if this.rewardItemActive and this.rewardItemType != 0 then
@@ -1740,6 +1859,10 @@ struct QuestData
 				call UnitAddItem(hero, it)
 			endif
 		endif
+		set g = null
+		set u = null
+		set hero = null
+		set it = null
 	endmethod
 
 	method accept takes nothing returns nothing
@@ -1754,9 +1877,14 @@ struct QuestData
 		if this.title == "" then
 			return
 		endif
+		if this.failed then
+			set this.failed = false
+			set this.failReasonText = ""
+		endif
 		
 		set this.active = true
 		call this.setDiscovered(true)
+		call QuestSetFailed(this.wcQuest, false)
 		call this.refreshQuestLog()
 		
 		// Apply requirements to quest log if not already applied
@@ -1795,14 +1923,19 @@ struct QuestData
 			call this.markRequirementCompleted(this.returnReqIndex, true)
 		endif
 		
+		set this.failed = false
+		set this.failReasonText = ""
 		set this.completed = true
 		set this.active = false
 		call this.setCompleted(true)
+		call QuestSetFailed(this.wcQuest, false)
 		// Set state without updating icons - icons will update when message is shown
 		call this.setStateNoIcons(QUEST_STATE_COMPLETE)
-		call this.awardRewards()
+		if DEBUG then
+			call DebugMsg("complete: " + this.title + " giver=" + this.giverDisplayName)
+		endif
 		
-		// Show completion message after 5 second delay (icons will update at the same time)
+		// Award rewards and show completion message after 5 seconds.
 		set t = CreateTimer()
 		set tId = GetHandleId(t)
 		set QuestCompletedTimerData[tId] = this
@@ -1810,9 +1943,18 @@ struct QuestData
 	endmethod
 
 	method fail takes string reason returns nothing
+		if this.completed or this.state == QUEST_STATE_COMPLETE then
+			return
+		endif
+		if this.wcQuest == null then
+			call this.createQuestLog()
+		endif
 		set this.failed = true
 		set this.active = false
 		set this.failReasonText = reason
+		call QuestSetDiscovered(this.wcQuest, true)
+		call QuestSetCompleted(this.wcQuest, false)
+		call QuestSetFailed(this.wcQuest, true)
 		call this.showFailedMessage()
 		call this.setState(QUEST_STATE_IN_PROGRESS)
 	endmethod
@@ -1825,11 +1967,17 @@ struct QuestData
 	method resetAfterFail takes nothing returns nothing
 		set this.failed = false
 		set this.failReasonText = ""
+		if this.wcQuest != null then
+			call QuestSetFailed(this.wcQuest, false)
+		endif
 		call this.setState(QUEST_STATE_AVAILABLE)
 	endmethod
 
 	method abandon takes nothing returns nothing
 		set this.active = false
+		if this.wcQuest != null then
+			call QuestSetFailed(this.wcQuest, false)
+		endif
 		call this.refreshQuestLog()
 		call this.setState(QUEST_STATE_AVAILABLE)
 		// TODO: reset state to undiscovered if needed
@@ -1920,6 +2068,20 @@ endfunction
 
 public function GetByNameAndGiver takes string questName, unit questGiver returns QuestData
 	return QuestByNameGiver.integer[ NameGiverKey(questName, questGiver) ]
+endfunction
+
+public function AddRequiredCompletedQuest takes integer questId, string prereqQuestName, unit prereqQuestGiver returns nothing
+	local QuestData q = GetById(questId)
+	if q != 0 then
+		call q.addRequiredCompletedQuest(prereqQuestName, prereqQuestGiver)
+	endif
+endfunction
+
+public function AddRequiredCompletedQuestByNameAndGiver takes string questName, unit questGiver, string prereqQuestName, unit prereqQuestGiver returns nothing
+	local QuestData q = GetByNameAndGiver(questName, questGiver)
+	if q != 0 then
+		call q.addRequiredCompletedQuest(prereqQuestName, prereqQuestGiver)
+	endif
 endfunction
 
 public function Accept takes integer questId returns nothing
@@ -2366,6 +2528,20 @@ public function SetTargetZoneByNameAndGiver takes string questName, unit questGi
 	endif
 endfunction
 
+public function SetAllowedHeroesForLevelCheck takes integer questId, boolean allowNazgrek, boolean allowZulkis returns nothing
+	local QuestData q = GetById(questId)
+	if q != 0 then
+		call q.setAllowedHeroesForLevelCheck(allowNazgrek, allowZulkis)
+	endif
+endfunction
+
+public function SetAllowedHeroesForLevelCheckByNameAndGiver takes string questName, unit questGiver, boolean allowNazgrek, boolean allowZulkis returns nothing
+	local QuestData q = GetByNameAndGiver(questName, questGiver)
+	if q != 0 then
+		call q.setAllowedHeroesForLevelCheck(allowNazgrek, allowZulkis)
+	endif
+endfunction
+
 public function CheckHeroInTargetRect takes integer questId, unit hero returns boolean
 	local QuestData q = GetById(questId)
 	if q != 0 and q.targetRect != null then
@@ -2509,12 +2685,49 @@ private function GetHighestHeroLevel takes nothing returns integer
 	return bestLevel
 endfunction
 
+private function GetHighestAllowedHeroLevel takes QuestData q returns integer
+	local integer bestLevel = 0
+	local integer level
+
+	if q == 0 or not q.useAllowedHeroesForLevelCheck then
+		return GetHighestHeroLevel()
+	endif
+
+	if q.levelCheckAllowNazgrek and udg_Nazgrek != null and IsUnitType(udg_Nazgrek, UNIT_TYPE_HERO) then
+		set level = GetHeroLevel(udg_Nazgrek)
+		if level > bestLevel then
+			set bestLevel = level
+		endif
+	endif
+
+	if q.levelCheckAllowZulkis and udg_Zulkis != null and IsUnitType(udg_Zulkis, UNIT_TYPE_HERO) then
+		set level = GetHeroLevel(udg_Zulkis)
+		if level > bestLevel then
+			set bestLevel = level
+		endif
+	endif
+
+	return bestLevel
+endfunction
+
+private function HasCompletedRequiredQuest takes string questName, unit questGiver returns boolean
+	local QuestData q
+	if questName == "" then
+		return true
+	endif
+	set q = QuestByNameGiver.integer[ NameGiverKey(questName, questGiver) ]
+	if q == 0 then
+		return false
+	endif
+	return q.completed
+endfunction
+
 private function PassesRequirements takes QuestData q returns boolean
 	local integer heroLevel
 	local Faction f
 
 	if q.requiredLevel > 0 then
-		set heroLevel = GetHighestHeroLevel()
+		set heroLevel = GetHighestAllowedHeroLevel(q)
 		if heroLevel < q.requiredLevel then
 			return false
 		endif
@@ -2532,6 +2745,27 @@ private function PassesRequirements takes QuestData q returns boolean
 
 	if q.eventFlagIndex > 0 then
 		if not QuestEventFlags[q.eventFlagIndex] then
+			return false
+		endif
+	endif
+
+	if q.requiredCompletedQuestCount >= 1 then
+		if not HasCompletedRequiredQuest(q.requiredCompletedQuest1, q.requiredCompletedQuestGiver1) then
+			return false
+		endif
+	endif
+	if q.requiredCompletedQuestCount >= 2 then
+		if not HasCompletedRequiredQuest(q.requiredCompletedQuest2, q.requiredCompletedQuestGiver2) then
+			return false
+		endif
+	endif
+	if q.requiredCompletedQuestCount >= 3 then
+		if not HasCompletedRequiredQuest(q.requiredCompletedQuest3, q.requiredCompletedQuestGiver3) then
+			return false
+		endif
+	endif
+	if q.requiredCompletedQuestCount >= 4 then
+		if not HasCompletedRequiredQuest(q.requiredCompletedQuest4, q.requiredCompletedQuestGiver4) then
 			return false
 		endif
 	endif

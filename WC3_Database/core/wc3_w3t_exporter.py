@@ -16,6 +16,7 @@ Version: 1.4.0 - CRITICAL FIX: Use count+array format for unknown fields (War3Ne
 import struct
 import os
 import sys
+import re
 import psycopg2
 from datetime import datetime
 from typing import Dict, List, Optional, Any
@@ -30,6 +31,8 @@ if sys.stderr.encoding != 'utf-8':
 
 class WC3W3TExporter:
     """Exports items from database to .w3t binary format."""
+
+    LEGACY_COLOR_CODE_RE = re.compile(r'\|c00([0-9A-Fa-f]{6})')
     
     # Field type codes
     TYPE_INT = 0
@@ -253,6 +256,13 @@ class WC3W3TExporter:
             
         # End marker (4 bytes) - should be old_id for original objects, 0 for custom
         f.write(end_token)
+
+    def _normalize_wc3_string(self, value: Any) -> Any:
+        """Normalize legacy WC3 color codes before writing object strings."""
+        if not isinstance(value, str) or '|c00' not in value:
+            return value
+
+        return self.LEGACY_COLOR_CODE_RE.sub(r'|cFF\1', value)
         
     def _write_object(self, f, item: Dict, is_custom: bool):
         """Write a single object."""
@@ -301,6 +311,10 @@ class WC3W3TExporter:
         for db_field, (wc3_field, field_type) in self.FIELD_MAP.items():
             # Get value from database or use default for NULL
             value = item.get(db_field)
+
+            if db_field == 'is_powerup':
+                classification = str(item.get('wc3_classification') or '')
+                value = bool(value) or bool(item.get('use_automatically')) or classification.lower() == 'powerup'
             
             # Skip "Unknown Item" names - let WC3 use default name
             if db_field == 'item_name' and value and value.startswith('Unknown Item'):
@@ -411,6 +425,9 @@ class WC3W3TExporter:
                 value = ''  # Empty tooltip - basic
             elif field_code == 'utub' and not value:
                 value = ''  # Empty ubertip - extended
+
+            if field_type == self.TYPE_STRING and value:
+                value = self._normalize_wc3_string(value)
             
             # Debug: Log critical field writes
             if field_code == 'utub' and value:

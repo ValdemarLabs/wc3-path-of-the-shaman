@@ -19,7 +19,6 @@ globals
     private constant integer PUI_MAX_MILESTONES = 128
     // Refresh only while the panel is visible. Keep this modest to avoid UI-side FPS churn.
     private constant real PUI_REFRESH_INTERVAL = 0.75
-    private constant real PUI_DETAIL_VIEWPORT_HEIGHT = 0.102
     private constant real PUI_DETAIL_BODY_WIDTH = 0.258
     private constant integer PUI_BODY_WRAP_CHARS = 38
     private constant integer PUI_VISIBLE_BODY_LINES = 8
@@ -65,8 +64,10 @@ globals
     private framehandle PUI_RightPane = null
     private framehandle PUI_CloseButton = null
     private framehandle PUI_ReturnButton = null
+    private framehandle PUI_DetailBackdrop = null
     private framehandle PUI_DetailIcon = null
     private framehandle PUI_DetailTitle = null
+    private framehandle PUI_DetailBodyBackdrop = null
     private framehandle PUI_DetailViewport = null
     private framehandle PUI_DetailBodyText = null
     private framehandle PUI_DetailScroll = null
@@ -87,13 +88,33 @@ globals
     private integer array PUI_DetailBodySourceHash
     private integer array PUI_DetailBodyHash
     private integer array PUI_DetailBodyLineCount
+    private integer array PUI_DetailBodyProfessionCache
+    private integer array PUI_DetailBodySkillCache
+    private integer array PUI_DetailBodyRevisionCache
     private string array PUI_DetailBodyCache
+
+    private integer array PUI_RowVisibleState
+    private integer array PUI_RowHighlightState
+    private string array PUI_RowIconCache
+    private string array PUI_RowTextCache
+    private string array PUI_RowLevelCache
 
     private integer array PUI_MilestoneCount
     private integer array PUI_MilestoneSkill
     private string array PUI_MilestoneNode
     private integer PUI_LastItemDefinitionCount = -1
     private integer PUI_LastUnitDefinitionCount = -1
+    private integer PUI_MilestoneRevision = 0
+    private integer PUI_ListScrollMaxCache = -1
+    private integer PUI_ListScrollFrameValueCache = -1
+    private integer PUI_DetailScrollMaxCache = -1
+    private integer PUI_DetailScrollFrameValueCache = -1
+    private string PUI_ViewingTextCache = ""
+    private string PUI_DetailIconCache = ""
+    private string PUI_DetailTitleCache = ""
+    private integer PUI_DetailBarValueCache = -1
+    private string PUI_DetailBarLabelCache = ""
+    private string PUI_DetailBodyVisibleCache = ""
 
     private Table PUI_ButtonProfession = 0
 
@@ -175,6 +196,30 @@ private function PUI_GetProfessionDescriptionText takes integer professionId ret
     return ProfessionDescription[professionId]
 endfunction
 
+private function PUI_SetRowVisible takes integer rowIndex, boolean visible returns nothing
+    local integer visibleState = 0
+
+    if visible then
+        set visibleState = 1
+    endif
+    if PUI_RowVisibleState[rowIndex] != visibleState then
+        set PUI_RowVisibleState[rowIndex] = visibleState
+        call BlzFrameSetVisible(PUI_RowButton[rowIndex], visible)
+    endif
+endfunction
+
+private function PUI_SetRowHighlight takes integer rowIndex, boolean visible returns nothing
+    local integer visibleState = 0
+
+    if visible then
+        set visibleState = 1
+    endif
+    if PUI_RowHighlightState[rowIndex] != visibleState then
+        set PUI_RowHighlightState[rowIndex] = visibleState
+        call BlzFrameSetVisible(PUI_RowHighlight[rowIndex], visible)
+    endif
+endfunction
+
 private function PUI_AddMilestone takes integer professionId, integer requiredSkill, string nodeName returns nothing
     local integer i = 0
     local integer count
@@ -234,6 +279,7 @@ private function PUI_RebuildMilestones takes nothing returns nothing
 
     set PUI_LastItemDefinitionCount = itemCount
     set PUI_LastUnitDefinitionCount = unitCount
+    set PUI_MilestoneRevision = PUI_MilestoneRevision + 1
 endfunction
 
 private function PUI_EnsureMilestones takes nothing returns nothing
@@ -513,6 +559,7 @@ endfunction
 private function PUI_RefreshDetailBodyFromCache takes player whichPlayer returns nothing
     local integer pid = GetPlayerId(whichPlayer)
     local integer maxStartLine = PUI_DetailBodyLineCount[pid] - PUI_VISIBLE_BODY_LINES
+    local integer frameValue
     local string visibleText
 
     if maxStartLine < 0 then
@@ -527,10 +574,20 @@ private function PUI_RefreshDetailBodyFromCache takes player whichPlayer returns
     set visibleText = PUI_GetBodyVisibleText(PUI_DetailBodyCache[pid], PUI_DetailScrollValue[pid], PUI_VISIBLE_BODY_LINES)
 
     if GetLocalPlayer() == whichPlayer then
-        call BlzFrameSetText(PUI_DetailBodyText, visibleText)
+        if PUI_DetailBodyVisibleCache != visibleText then
+            set PUI_DetailBodyVisibleCache = visibleText
+            call BlzFrameSetText(PUI_DetailBodyText, visibleText)
+        endif
+        set frameValue = maxStartLine - PUI_DetailScrollValue[pid]
         set PUI_SyncingDetailScroll = true
-        call BlzFrameSetMinMaxValue(PUI_DetailScroll, 0.0, I2R(maxStartLine))
-        call BlzFrameSetValue(PUI_DetailScroll, I2R(PUI_DetailScrollValue[pid]))
+        if PUI_DetailScrollMaxCache != maxStartLine then
+            set PUI_DetailScrollMaxCache = maxStartLine
+            call BlzFrameSetMinMaxValue(PUI_DetailScroll, 0.0, I2R(maxStartLine))
+        endif
+        if PUI_DetailScrollFrameValueCache != frameValue then
+            set PUI_DetailScrollFrameValueCache = frameValue
+            call BlzFrameSetValue(PUI_DetailScroll, I2R(frameValue))
+        endif
         set PUI_SyncingDetailScroll = false
         call BlzFrameSetVisible(PUI_DetailScroll, maxStartLine > 0)
     endif
@@ -548,6 +605,7 @@ private function PUI_SetDetailBody takes player whichPlayer, string bodyText ret
         set PUI_DetailBodyCache[pid] = wrappedText
         set PUI_DetailBodyLineCount[pid] = PUI_GetBodyLineCount(wrappedText)
         set PUI_DetailScrollValue[pid] = 0
+        set PUI_DetailBodyVisibleCache = ""
     endif
 
     call PUI_RefreshDetailBodyFromCache(whichPlayer)
@@ -559,10 +617,15 @@ private function PUI_UpdateForPlayer takes player whichPlayer returns nothing
     local integer rowIndex
     local integer currentSkill
     local unit viewer
-    local string bodyText
-    local integer bodyHash
-    local integer visibleProfessionId
     local integer maxListStart
+    local integer frameValue
+    local string viewingText
+    local string rowIcon
+    local string rowText
+    local string rowLevel
+    local string detailIcon
+    local string detailTitle
+    local string detailBarLabel
 
     if PUI_Parent == null then
         return
@@ -590,9 +653,15 @@ private function PUI_UpdateForPlayer takes player whichPlayer returns nothing
 
     call PUI_EnsureMilestones()
     set viewer = PUI_GetViewerUnit()
+    set professionId = PUI_SelectedProfession[pid]
+    set currentSkill = GNS_GetSkill(viewer, professionId)
 
     if GetLocalPlayer() == whichPlayer then
-        call BlzFrameSetText(PUI_ViewingText, ViewingPrefixText + PUI_GetViewerName(viewer))
+        set viewingText = ViewingPrefixText + PUI_GetViewerName(viewer)
+        if PUI_ViewingTextCache != viewingText then
+            set PUI_ViewingTextCache = viewingText
+            call BlzFrameSetText(PUI_ViewingText, viewingText)
+        endif
 
         set rowIndex = 0
         set professionId = PUI_FIRST_PROFESSION + PUI_ListScrollValue[pid]
@@ -600,12 +669,24 @@ private function PUI_UpdateForPlayer takes player whichPlayer returns nothing
             exitwhen rowIndex >= PUI_VISIBLE_LIST_ROWS or professionId > PUI_LAST_PROFESSION
             set rowIndex = rowIndex + 1
             set currentSkill = GNS_GetSkill(viewer, professionId)
+            set rowIcon = PUI_GetProfessionIcon(professionId)
+            set rowText = PUI_GetProfessionColoredName(professionId)
+            set rowLevel = I2S(currentSkill) + "/" + I2S(PUI_SKILL_MAX)
 
-            call BlzFrameSetTexture(PUI_RowIcon[rowIndex], PUI_GetProfessionIcon(professionId), 0, true)
-            call BlzFrameSetText(PUI_RowText[rowIndex], PUI_GetProfessionColoredName(professionId))
-            call BlzFrameSetText(PUI_RowLevel[rowIndex], I2S(currentSkill) + "/" + I2S(PUI_SKILL_MAX))
-            call BlzFrameSetVisible(PUI_RowHighlight[rowIndex], professionId == PUI_SelectedProfession[pid])
-            call BlzFrameSetVisible(PUI_RowButton[rowIndex], true)
+            if PUI_RowIconCache[rowIndex] != rowIcon then
+                set PUI_RowIconCache[rowIndex] = rowIcon
+                call BlzFrameSetTexture(PUI_RowIcon[rowIndex], rowIcon, 0, true)
+            endif
+            if PUI_RowTextCache[rowIndex] != rowText then
+                set PUI_RowTextCache[rowIndex] = rowText
+                call BlzFrameSetText(PUI_RowText[rowIndex], rowText)
+            endif
+            if PUI_RowLevelCache[rowIndex] != rowLevel then
+                set PUI_RowLevelCache[rowIndex] = rowLevel
+                call BlzFrameSetText(PUI_RowLevel[rowIndex], rowLevel)
+            endif
+            call PUI_SetRowHighlight(rowIndex, professionId == PUI_SelectedProfession[pid])
+            call PUI_SetRowVisible(rowIndex, true)
             set PUI_ButtonProfession.integer[GetHandleId(PUI_RowButton[rowIndex])] = professionId
 
             set professionId = professionId + 1
@@ -613,27 +694,55 @@ private function PUI_UpdateForPlayer takes player whichPlayer returns nothing
         loop
             exitwhen rowIndex >= PUI_ProfessionCount()
             set rowIndex = rowIndex + 1
-            call BlzFrameSetVisible(PUI_RowButton[rowIndex], false)
+            set PUI_RowIconCache[rowIndex] = ""
+            set PUI_RowTextCache[rowIndex] = ""
+            set PUI_RowLevelCache[rowIndex] = ""
+            call PUI_SetRowHighlight(rowIndex, false)
+            call PUI_SetRowVisible(rowIndex, false)
         endloop
+
+        set frameValue = maxListStart - PUI_ListScrollValue[pid]
         set PUI_SyncingListScroll = true
-        call BlzFrameSetMinMaxValue(PUI_ListScroll, 0.0, I2R(maxListStart))
-        call BlzFrameSetValue(PUI_ListScroll, I2R(PUI_ListScrollValue[pid]))
+        if PUI_ListScrollMaxCache != maxListStart then
+            set PUI_ListScrollMaxCache = maxListStart
+            call BlzFrameSetMinMaxValue(PUI_ListScroll, 0.0, I2R(maxListStart))
+        endif
+        if PUI_ListScrollFrameValueCache != frameValue then
+            set PUI_ListScrollFrameValueCache = frameValue
+            call BlzFrameSetValue(PUI_ListScroll, I2R(frameValue))
+        endif
         set PUI_SyncingListScroll = false
         call BlzFrameSetVisible(PUI_ListScroll, maxListStart > 0)
 
         set professionId = PUI_SelectedProfession[pid]
         set currentSkill = GNS_GetSkill(viewer, professionId)
+        set detailIcon = PUI_GetProfessionIcon(professionId)
+        set detailTitle = PUI_GetProfessionColoredName(professionId)
+        set detailBarLabel = I2S(currentSkill) + " / " + I2S(PUI_SKILL_MAX)
 
-        call BlzFrameSetTexture(PUI_DetailIcon, PUI_GetProfessionIcon(professionId), 0, true)
-        call BlzFrameSetText(PUI_DetailTitle, PUI_GetProfessionColoredName(professionId))
-        call BlzFrameSetValue(PUI_DetailBar, I2R(currentSkill))
-        call BlzFrameSetText(PUI_DetailBarLabel, I2S(currentSkill) + " / " + I2S(PUI_SKILL_MAX))
+        if PUI_DetailIconCache != detailIcon then
+            set PUI_DetailIconCache = detailIcon
+            call BlzFrameSetTexture(PUI_DetailIcon, detailIcon, 0, true)
+        endif
+        if PUI_DetailTitleCache != detailTitle then
+            set PUI_DetailTitleCache = detailTitle
+            call BlzFrameSetText(PUI_DetailTitle, detailTitle)
+        endif
+        if PUI_DetailBarValueCache != currentSkill then
+            set PUI_DetailBarValueCache = currentSkill
+            call BlzFrameSetValue(PUI_DetailBar, I2R(currentSkill))
+        endif
+        if PUI_DetailBarLabelCache != detailBarLabel then
+            set PUI_DetailBarLabelCache = detailBarLabel
+            call BlzFrameSetText(PUI_DetailBarLabel, detailBarLabel)
+        endif
     endif
 
-    set bodyText = PUI_GetBodyText(professionId, currentSkill)
-    set bodyHash = StringHash(bodyText)
-    if PUI_DetailBodySourceHash[pid] != bodyHash then
-        call PUI_SetDetailBody(whichPlayer, bodyText)
+    if PUI_DetailBodyProfessionCache[pid] != professionId or PUI_DetailBodySkillCache[pid] != currentSkill or PUI_DetailBodyRevisionCache[pid] != PUI_MilestoneRevision then
+        call PUI_SetDetailBody(whichPlayer, PUI_GetBodyText(professionId, currentSkill))
+        set PUI_DetailBodyProfessionCache[pid] = professionId
+        set PUI_DetailBodySkillCache[pid] = currentSkill
+        set PUI_DetailBodyRevisionCache[pid] = PUI_MilestoneRevision
     endif
 
     set PUI_Updating[pid] = false
@@ -745,21 +854,32 @@ private function PUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetPoint(PUI_RightPane, FRAMEPOINT_TOPLEFT, PUI_LeftPane, FRAMEPOINT_TOPRIGHT, 0.012, 0.0)
     call BlzFrameSetPoint(PUI_RightPane, FRAMEPOINT_BOTTOMRIGHT, PUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.014, 0.014)
 
-    set PUI_DetailIcon = BlzCreateFrameByType("BACKDROP", "ProfessionsUIDetailIcon", PUI_RightPane, "IconButtonTemplate", 0)
-    call BlzFrameSetPoint(PUI_DetailIcon, FRAMEPOINT_TOPLEFT, PUI_RightPane, FRAMEPOINT_TOPLEFT, 0.018, -0.018)
+    set PUI_DetailBackdrop = BlzCreateFrameByType("BACKDROP", "ProfessionsUIDetailBackdrop", PUI_RightPane, "", 0)
+    call BlzFrameSetTexture(PUI_DetailBackdrop, PanelTexture, 0, false)
+    call BlzFrameSetPoint(PUI_DetailBackdrop, FRAMEPOINT_TOPLEFT, PUI_RightPane, FRAMEPOINT_TOPLEFT, 0.010, -0.010)
+    call BlzFrameSetPoint(PUI_DetailBackdrop, FRAMEPOINT_BOTTOMRIGHT, PUI_RightPane, FRAMEPOINT_BOTTOMRIGHT, -0.010, 0.010)
+    call BlzFrameSetAlpha(PUI_DetailBackdrop, 255)
+    call BlzFrameSetVertexColor(PUI_DetailBackdrop, BlzConvertColor(255, 0, 0, 0))
+    call BlzFrameSetEnable(PUI_DetailBackdrop, false)
+
+    set PUI_DetailIcon = BlzCreateFrameByType("BACKDROP", "ProfessionsUIDetailIcon", PUI_DetailBackdrop, "IconButtonTemplate", 0)
+    call BlzFrameSetPoint(PUI_DetailIcon, FRAMEPOINT_TOPLEFT, PUI_DetailBackdrop, FRAMEPOINT_TOPLEFT, 0.018, -0.018)
     call BlzFrameSetSize(PUI_DetailIcon, 0.042, 0.042)
 
-    set PUI_DetailTitle = BlzCreateFrameByType("TEXT", "ProfessionsUIDetailTitle", PUI_RightPane, "", 0)
+    set PUI_DetailTitle = BlzCreateFrameByType("TEXT", "ProfessionsUIDetailTitle", PUI_DetailBackdrop, "", 0)
     call BlzFrameSetPoint(PUI_DetailTitle, FRAMEPOINT_TOPLEFT, PUI_DetailIcon, FRAMEPOINT_TOPRIGHT, 0.014, -0.002)
     call BlzFrameSetSize(PUI_DetailTitle, 0.232, 0.018)
     call BlzFrameSetTextAlignment(PUI_DetailTitle, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetScale(PUI_DetailTitle, 1.05)
     call BlzFrameSetEnable(PUI_DetailTitle, false)
 
-    set PUI_DetailBarBackdrop = BlzCreateFrameByType("BACKDROP", "ProfessionsUIBarBackdrop", PUI_RightPane, "", 0)
-    call BlzFrameSetTexture(PUI_DetailBarBackdrop, PanelTexture, 0, true)
+    set PUI_DetailBarBackdrop = BlzCreateFrameByType("BACKDROP", "ProfessionsUIBarBackdrop", PUI_DetailBackdrop, "", 0)
+    call BlzFrameSetTexture(PUI_DetailBarBackdrop, PanelTexture, 0, false)
     call BlzFrameSetPoint(PUI_DetailBarBackdrop, FRAMEPOINT_TOPLEFT, PUI_DetailIcon, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.016)
-    call BlzFrameSetSize(PUI_DetailBarBackdrop, 0.270, 0.02)
+    call BlzFrameSetSize(PUI_DetailBarBackdrop, 0.270, 0.020)
+    call BlzFrameSetAlpha(PUI_DetailBarBackdrop, 255)
+    call BlzFrameSetVertexColor(PUI_DetailBarBackdrop, BlzConvertColor(215, 16, 16, 16))
+    call BlzFrameSetEnable(PUI_DetailBarBackdrop, false)
 
     set PUI_DetailBar = BlzCreateSimpleFrame("SimpleStatusBarTemplate", PUI_DetailBarBackdrop, 0)
     call BlzFrameSetAllPoints(PUI_DetailBar, PUI_DetailBarBackdrop)
@@ -772,33 +892,43 @@ private function PUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetTextAlignment(PUI_DetailBarLabel, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
     call BlzFrameSetEnable(PUI_DetailBarLabel, false)
 
-    set PUI_DetailViewport = BlzCreateFrameByType("FRAME", "ProfessionsUIDetailViewport", PUI_RightPane, "", 0)
-    call BlzFrameSetPoint(PUI_DetailViewport, FRAMEPOINT_TOPLEFT, PUI_DetailBarBackdrop, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.016)
-    call BlzFrameSetSize(PUI_DetailViewport, PUI_DETAIL_BODY_WIDTH, PUI_DETAIL_VIEWPORT_HEIGHT)
+    set PUI_DetailBodyBackdrop = BlzCreateFrameByType("BACKDROP", "ProfessionsUIDetailBodyBackdrop", PUI_DetailBackdrop, "", 0)
+    call BlzFrameSetTexture(PUI_DetailBodyBackdrop, PanelTexture, 0, false)
+    call BlzFrameSetPoint(PUI_DetailBodyBackdrop, FRAMEPOINT_TOPLEFT, PUI_DetailBarBackdrop, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.016)
+    call BlzFrameSetPoint(PUI_DetailBodyBackdrop, FRAMEPOINT_BOTTOMRIGHT, PUI_DetailBackdrop, FRAMEPOINT_BOTTOMRIGHT, -0.004, 0.004)
+    call BlzFrameSetAlpha(PUI_DetailBodyBackdrop, 235)
+    call BlzFrameSetVertexColor(PUI_DetailBodyBackdrop, BlzConvertColor(235, 12, 12, 12))
+    call BlzFrameSetEnable(PUI_DetailBodyBackdrop, false)
 
-    set PUI_DetailBodyText = BlzCreateFrameByType("TEXT", "ProfessionsUIDetailBody", PUI_DetailViewport, "", 0)
+    set PUI_DetailViewport = BlzCreateFrameByType("FRAME", "ProfessionsUIDetailViewport", PUI_DetailBodyBackdrop, "", 0)
+    call BlzFrameSetPoint(PUI_DetailViewport, FRAMEPOINT_TOPLEFT, PUI_DetailBodyBackdrop, FRAMEPOINT_TOPLEFT, 0.008, -0.008)
+    call BlzFrameSetPoint(PUI_DetailViewport, FRAMEPOINT_BOTTOMRIGHT, PUI_DetailBodyBackdrop, FRAMEPOINT_BOTTOMRIGHT, -0.020, 0.008)
+
+    set PUI_DetailBodyText = BlzCreateFrameByType("TEXT", "ProfessionsUIDetailBodyText", PUI_DetailViewport, "", 0)
     call BlzFrameSetPoint(PUI_DetailBodyText, FRAMEPOINT_TOPLEFT, PUI_DetailViewport, FRAMEPOINT_TOPLEFT, 0.0, 0.0)
-    call BlzFrameSetSize(PUI_DetailBodyText, PUI_DETAIL_BODY_WIDTH, PUI_DETAIL_VIEWPORT_HEIGHT)
+    call BlzFrameSetPoint(PUI_DetailBodyText, FRAMEPOINT_BOTTOMRIGHT, PUI_DetailViewport, FRAMEPOINT_BOTTOMRIGHT, 0.0, 0.0)
     call BlzFrameSetTextAlignment(PUI_DetailBodyText, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetScale(PUI_DetailBodyText, 0.95)
     call BlzFrameSetEnable(PUI_DetailBodyText, false)
 
-    set PUI_DetailScroll = BlzCreateFrameByType("SLIDER", "ProfessionsUIDetailScroll", PUI_RightPane, "QuestMainListScrollBar", 0)
+    set PUI_DetailScroll = BlzCreateFrameByType("SLIDER", "ProfessionsUIDetailScroll", PUI_DetailBodyBackdrop, "QuestMainListScrollBar", 0)
     call BlzFrameSetPoint(PUI_DetailScroll, FRAMEPOINT_TOPLEFT, PUI_DetailViewport, FRAMEPOINT_TOPRIGHT, 0.004, 0.0)
-    call BlzFrameSetSize(PUI_DetailScroll, BlzFrameGetWidth(PUI_DetailScroll), PUI_DETAIL_VIEWPORT_HEIGHT)
+    call BlzFrameSetSize(PUI_DetailScroll, BlzFrameGetWidth(PUI_DetailScroll), BlzFrameGetHeight(PUI_DetailViewport))
     call BlzFrameSetMinMaxValue(PUI_DetailScroll, 0.0, 0.0)
     call BlzFrameSetStepSize(PUI_DetailScroll, 1.0)
     call BlzFrameSetValue(PUI_DetailScroll, 0.0)
+    call BlzFrameSetVisible(PUI_DetailScroll, false)
     call BlzTriggerRegisterFrameEvent(PUI_ScrollTrigger, PUI_DetailScroll, FRAMEEVENT_SLIDER_VALUE_CHANGED)
     call BlzTriggerRegisterFrameEvent(PUI_WheelTrigger, PUI_DetailScroll, FRAMEEVENT_MOUSE_WHEEL)
     call BlzTriggerRegisterFrameEvent(PUI_WheelTrigger, PUI_DetailViewport, FRAMEEVENT_MOUSE_WHEEL)
 
     set PUI_ListScroll = BlzCreateFrameByType("SLIDER", "ProfessionsUIListScroll", PUI_LeftPane, "QuestMainListScrollBar", 0)
     call BlzFrameSetPoint(PUI_ListScroll, FRAMEPOINT_TOPLEFT, PUI_LeftPane, FRAMEPOINT_TOPRIGHT, 0.004, -0.002)
-    call BlzFrameSetPoint(PUI_ListScroll, FRAMEPOINT_BOTTOMLEFT, PUI_LeftPane, FRAMEPOINT_BOTTOMRIGHT, 0.004, 0.002)
+    call BlzFrameSetSize(PUI_ListScroll, BlzFrameGetWidth(PUI_ListScroll), BlzFrameGetHeight(PUI_LeftPane) - 0.004)
     call BlzFrameSetMinMaxValue(PUI_ListScroll, 0.0, 0.0)
     call BlzFrameSetStepSize(PUI_ListScroll, 1.0)
     call BlzFrameSetValue(PUI_ListScroll, 0.0)
+    call BlzFrameSetVisible(PUI_ListScroll, false)
     call BlzTriggerRegisterFrameEvent(PUI_ListScrollTrigger, PUI_ListScroll, FRAMEEVENT_SLIDER_VALUE_CHANGED)
     call BlzTriggerRegisterFrameEvent(PUI_WheelTrigger, PUI_ListScroll, FRAMEEVENT_MOUSE_WHEEL)
     call BlzTriggerRegisterFrameEvent(PUI_WheelTrigger, PUI_LeftPane, FRAMEEVENT_MOUSE_WHEEL)
@@ -809,6 +939,7 @@ private function PUI_CreateFrames takes nothing returns nothing
         set PUI_RowButton[rowIndex] = BlzCreateFrameByType("GLUEBUTTON", "ProfessionsUIRowButton" + I2S(rowIndex), PUI_LeftPane, "ScoreScreenTabButtonTemplate", 0)
         call BlzFrameSetPoint(PUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, PUI_LeftPane, FRAMEPOINT_TOPLEFT, 0.006, rowTopOffset)
         call BlzFrameSetSize(PUI_RowButton[rowIndex], 0.156, rowHeight)
+        call BlzFrameSetVisible(PUI_RowButton[rowIndex], false)
         call BlzTriggerRegisterFrameEvent(PUI_RowTrigger, PUI_RowButton[rowIndex], FRAMEEVENT_CONTROL_CLICK)
         call BlzTriggerRegisterFrameEvent(PUI_ClearFocusTrigger, PUI_RowButton[rowIndex], FRAMEEVENT_CONTROL_CLICK)
         set PUI_ButtonProfession.integer[GetHandleId(PUI_RowButton[rowIndex])] = professionId
@@ -841,6 +972,10 @@ private function PUI_CreateFrames takes nothing returns nothing
         set professionId = professionId + 1
     endloop
 
+    call BlzFrameClearAllPoints(PUI_ListScroll)
+    call BlzFrameSetPoint(PUI_ListScroll, FRAMEPOINT_TOPLEFT, PUI_RowButton[1], FRAMEPOINT_TOPRIGHT, 0.004, -0.002)
+    call BlzFrameSetSize(PUI_ListScroll, BlzFrameGetWidth(PUI_ListScroll), (rowHeight * I2R(PUI_VISIBLE_LIST_ROWS)) + (rowGap * I2R(PUI_VISIBLE_LIST_ROWS - 1)) + 0.004)
+
     set PUI_OpenButton = BlzCreateFrameByType("GLUETEXTBUTTON", "ProfessionsUIOpenButton", BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "ScriptDialogButton", 0)
     call PUI_PosOpenButton(PUI_OpenButton)
     call BlzFrameSetText(PUI_OpenButton, ButtonTitleText)
@@ -862,25 +997,6 @@ private function PUI_ClearFocusAction takes nothing returns nothing
     endif
 endfunction
 
-private function PUI_OpenAction takes nothing returns nothing
-    local player p = GetTriggerPlayer()
-    local integer pid = GetPlayerId(p)
-
-    if not PUI_IsProfessionValid(PUI_SelectedProfession[pid]) then
-        set PUI_SelectedProfession[pid] = GNS_PROF_MINING
-    endif
-
-    call PUI_RefreshOpenButtonPosition()
-    if GetLocalPlayer() == p then
-        call BlzFrameSetVisible(PUI_Parent, not BlzFrameIsVisible(PUI_Parent))
-    endif
-    if PUI_Parent != null and BlzFrameIsVisible(PUI_Parent) then
-        call PUI_RequestUpdate(p)
-    endif
-
-    set p = null
-endfunction
-
 private function PUI_PeriodicRefresh takes nothing returns nothing
     if PUI_Parent != null and BlzFrameIsVisible(PUI_Parent) then
         call PUI_RequestUpdate(GetLocalPlayer())
@@ -896,6 +1012,28 @@ private function PUI_SetRefreshActive takes boolean active returns nothing
     else
         call PauseTimer(PUI_RefreshTimer)
     endif
+endfunction
+
+private function PUI_OpenAction takes nothing returns nothing
+    local player p = GetTriggerPlayer()
+    local integer pid = GetPlayerId(p)
+
+    if not PUI_IsProfessionValid(PUI_SelectedProfession[pid]) then
+        set PUI_SelectedProfession[pid] = GNS_PROF_MINING
+    endif
+
+    call PUI_RefreshOpenButtonPosition()
+    if GetLocalPlayer() == p then
+        call BlzFrameSetVisible(PUI_Parent, not BlzFrameIsVisible(PUI_Parent))
+    endif
+    if PUI_Parent != null and BlzFrameIsVisible(PUI_Parent) then
+        call PUI_SetRefreshActive(true)
+        call PUI_RequestUpdate(p)
+    else
+        call PUI_SetRefreshActive(false)
+    endif
+
+    set p = null
 endfunction
 
 public function Hide takes nothing returns nothing
@@ -935,42 +1073,65 @@ endfunction
 
 private function PUI_ScrollAction takes nothing returns nothing
     local player p = GetTriggerPlayer()
+    local integer maxStartLine = PUI_DetailBodyLineCount[GetPlayerId(p)] - PUI_VISIBLE_BODY_LINES
     if PUI_SyncingDetailScroll then
         set p = null
         return
     endif
-    set PUI_DetailScrollValue[GetPlayerId(p)] = R2I(BlzGetTriggerFrameValue())
+    if maxStartLine < 0 then
+        set maxStartLine = 0
+    endif
+    set PUI_DetailScrollFrameValueCache = R2I(BlzGetTriggerFrameValue() + 0.5)
+    set PUI_DetailScrollValue[GetPlayerId(p)] = maxStartLine - PUI_DetailScrollFrameValueCache
     call PUI_RefreshDetailBodyFromCache(p)
     set p = null
 endfunction
 
 private function PUI_ListScrollAction takes nothing returns nothing
     local player p = GetTriggerPlayer()
+    local integer maxListStart = PUI_ProfessionCount() - PUI_VISIBLE_LIST_ROWS
     if PUI_SyncingListScroll then
         set p = null
         return
     endif
-    set PUI_ListScrollValue[GetPlayerId(p)] = R2I(BlzGetTriggerFrameValue())
+    if maxListStart < 0 then
+        set maxListStart = 0
+    endif
+    set PUI_ListScrollFrameValueCache = R2I(BlzGetTriggerFrameValue() + 0.5)
+    set PUI_ListScrollValue[GetPlayerId(p)] = maxListStart - PUI_ListScrollFrameValueCache
     call PUI_RequestUpdate(p)
     set p = null
 endfunction
 
 private function PUI_WheelAction takes nothing returns nothing
     local framehandle triggerFrame = BlzGetTriggerFrame()
+    local real newValue
 
     if GetLocalPlayer() == GetTriggerPlayer() then
         if (triggerFrame == PUI_ListScroll or triggerFrame == PUI_LeftPane) and PUI_ListScroll != null and BlzFrameIsVisible(PUI_ListScroll) then
             if BlzGetTriggerFrameValue() > 0 then
-                call BlzFrameSetValue(PUI_ListScroll, BlzFrameGetValue(PUI_ListScroll) + 1.0)
+                set newValue = BlzFrameGetValue(PUI_ListScroll) + 1.0
             else
-                call BlzFrameSetValue(PUI_ListScroll, BlzFrameGetValue(PUI_ListScroll) - 1.0)
+                set newValue = BlzFrameGetValue(PUI_ListScroll) - 1.0
             endif
-        elseif PUI_DetailScroll != null and BlzFrameIsVisible(PUI_DetailScroll) then
+            if newValue < 0.0 then
+                set newValue = 0.0
+            elseif newValue > I2R(PUI_ListScrollMaxCache) then
+                set newValue = I2R(PUI_ListScrollMaxCache)
+            endif
+            call BlzFrameSetValue(PUI_ListScroll, newValue)
+        elseif (triggerFrame == PUI_DetailScroll or triggerFrame == PUI_DetailViewport) and PUI_DetailScroll != null and BlzFrameIsVisible(PUI_DetailScroll) then
             if BlzGetTriggerFrameValue() > 0 then
-                call BlzFrameSetValue(PUI_DetailScroll, BlzFrameGetValue(PUI_DetailScroll) + 1.0)
+                set newValue = BlzFrameGetValue(PUI_DetailScroll) + 1.0
             else
-                call BlzFrameSetValue(PUI_DetailScroll, BlzFrameGetValue(PUI_DetailScroll) - 1.0)
+                set newValue = BlzFrameGetValue(PUI_DetailScroll) - 1.0
             endif
+            if newValue < 0.0 then
+                set newValue = 0.0
+            elseif newValue > I2R(PUI_DetailScrollMaxCache) then
+                set newValue = I2R(PUI_DetailScrollMaxCache)
+            endif
+            call BlzFrameSetValue(PUI_DetailScroll, newValue)
         endif
     endif
     set triggerFrame = null
@@ -983,6 +1144,8 @@ endfunction
 public function Show takes nothing returns nothing
     call PUI_RefreshOpenButtonPosition()
     call PUI_SetRefreshActive(true)
+    call BlzFrameSetVisible(PUI_ListScroll, false)
+    call BlzFrameSetVisible(PUI_DetailScroll, false)
     call BlzFrameSetVisible(PUI_Parent, true)
     call PUI_RequestUpdate(GetLocalPlayer())
 endfunction
@@ -1037,6 +1200,9 @@ public function Init takes nothing returns nothing
         exitwhen i >= bj_MAX_PLAYERS
         call TriggerRegisterPlayerUnitEvent(PUI_SelectTrigger, Player(i), EVENT_PLAYER_UNIT_SELECTED, null)
         set PUI_SelectedProfession[i] = GNS_PROF_MINING
+        set PUI_DetailBodyProfessionCache[i] = 0
+        set PUI_DetailBodySkillCache[i] = -1
+        set PUI_DetailBodyRevisionCache[i] = -1
         set i = i + 1
     endloop
     call TriggerAddAction(PUI_SelectTrigger, function PUI_SelectAction)

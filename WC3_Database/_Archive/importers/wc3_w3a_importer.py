@@ -4,12 +4,13 @@ WC3 .w3a Ability Importer v2.0.0 - SIMPLIFIED
 Imports essential ability data from Warcraft 3 .w3a files into PostgreSQL database.
 
 SIMPLIFIED VERSION:
-- Stores only 3 fields: ability_code, ability_name (anam), editor_suffix (ansf)
+- Stores essential lookup fields: ability_code, ability_name (anam), editor_suffix (ansf),
+  tooltip_normal (atp1), tooltip_extended (aub1)
 - For item reference purposes only
 
 Author: Generated for PotS Project
 Date: 2026-03-15
-Version: 2.0.0 - Simplified for item reference only
+Version: 2.1.0 - Simplified for item reference with tooltip lookup
 """
 
 import os
@@ -66,6 +67,7 @@ class WC3AbilityImporter:
                 password=self.db_config['password']
             )
             self.cursor = self.conn.cursor()
+            self._ensure_lookup_schema()
             print(f"✓ Connected to database: {self.db_config['database']}")
         except Exception as e:
             print(f"✗ Failed to connect to database: {e}")
@@ -81,7 +83,7 @@ class WC3AbilityImporter:
         
     def import_from_w3a(self, file_path: str) -> Dict:
         """
-        Import abilities from WC3 .w3a file (only essential fields).
+        Import abilities from WC3 .w3a file (only essential lookup fields).
         
         Args:
             file_path: Path to .w3a file
@@ -90,7 +92,7 @@ class WC3AbilityImporter:
             Dictionary with import statistics
         """
         print(f"\n=== Importing Abilities from W3A: {os.path.basename(file_path)} ===")
-        print("Mode: SIMPLIFIED (ability_code, name, editor_suffix only)\n")
+        print("Mode: SIMPLIFIED (ability_code, name, editor_suffix, tooltip_normal, tooltip_extended)\n")
         
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
@@ -137,10 +139,19 @@ class WC3AbilityImporter:
                 print(f"  ... and {len(self.stats['errors']) - 10} more errors")
         
         return self.stats
+
+    def _ensure_lookup_schema(self) -> None:
+        """Make sure simplified tooltip lookup columns exist before import."""
+        self.cursor.execute("""
+            ALTER TABLE wc3_abilities
+            ADD COLUMN IF NOT EXISTS tooltip_normal TEXT,
+            ADD COLUMN IF NOT EXISTS tooltip_extended TEXT
+        """)
+        self.conn.commit()
         
     def _insert_or_update_ability(self, ability: Dict) -> None:
         """
-        Insert or update an ability in the database (only 3 essential fields).
+        Insert or update an ability in the database (essential lookup fields only).
         
         Args:
             ability: Ability dictionary from parser
@@ -153,8 +164,10 @@ class WC3AbilityImporter:
         # Extract only the fields we need
         ability_name = None
         editor_suffix = None
+        tooltip_normal = None
+        tooltip_extended = None
         
-        # Look through modifications for anam and ansf
+        # Look through modifications for the essential tooltip/name fields.
         for mod in ability.get('modifications', []):
             field_id = mod.get('id')
             value = mod.get('value')
@@ -163,6 +176,10 @@ class WC3AbilityImporter:
                 ability_name = str(value) if value else None
             elif field_id == 'ansf':  # Editor suffix
                 editor_suffix = str(value) if value else None
+            elif field_id == 'atp1':  # Normal tooltip (level 1)
+                tooltip_normal = str(value) if value else None
+            elif field_id == 'aub1':  # Extended tooltip (level 1)
+                tooltip_extended = str(value) if value else None
                 
         # Check if ability exists
         self.cursor.execute("SELECT id FROM wc3_abilities WHERE ability_code = %s", (ability_code,))
@@ -174,16 +191,20 @@ class WC3AbilityImporter:
                 UPDATE wc3_abilities 
                 SET ability_name = %s,
                     editor_suffix = %s,
+                    tooltip_normal = %s,
+                    tooltip_extended = %s,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE ability_code = %s
-            """, (ability_name, editor_suffix, ability_code))
+            """, (ability_name, editor_suffix, tooltip_normal, tooltip_extended, ability_code))
             self.stats['updated'] += 1
         else:
             # Insert new
             self.cursor.execute("""
-                INSERT INTO wc3_abilities (ability_code, ability_name, editor_suffix)
-                VALUES (%s, %s, %s)
-            """, (ability_code, ability_name, editor_suffix))
+                INSERT INTO wc3_abilities (
+                    ability_code, ability_name, editor_suffix, tooltip_normal, tooltip_extended
+                )
+                VALUES (%s, %s, %s, %s, %s)
+            """, (ability_code, ability_name, editor_suffix, tooltip_normal, tooltip_extended))
             self.stats['imported'] += 1
 
 

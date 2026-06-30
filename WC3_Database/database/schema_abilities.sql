@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS wc3_abilities (
     race VARCHAR(50),                              -- Race: Human, Orc, Undead, NightElf, Neutral
     
     -- Text descriptions
+    tooltip_normal TEXT,                           -- Tooltip - Normal (atp1 level 1)
     tooltip TEXT,                                  -- Tooltip - Basic (atp1-5)
     tooltip_extended TEXT,                         -- Tooltip - Extended/Ubertip (aub1-5)
     research_tooltip TEXT,                         -- Research Tooltip (aret)
@@ -128,6 +129,7 @@ CREATE INDEX IF NOT EXISTS idx_abilities_original_mods ON wc3_abilities USING GI
 COMMENT ON TABLE wc3_abilities IS 'Complete WC3 ability data from .w3a files with zero data loss';
 COMMENT ON COLUMN wc3_abilities.ability_code IS 'WC3 4-character ability identifier';
 COMMENT ON COLUMN wc3_abilities.base_id IS 'Original WC3 ability this was modified from';
+COMMENT ON COLUMN wc3_abilities.tooltip_normal IS 'Ability normal tooltip (atp1 level 1)';
 COMMENT ON COLUMN wc3_abilities.data_fields IS 'Level-dependent ability fields (JSON array indexed by level)';
 COMMENT ON COLUMN wc3_abilities.original_modifications IS 'Raw WC3 modifications for perfect export round-trip';
 

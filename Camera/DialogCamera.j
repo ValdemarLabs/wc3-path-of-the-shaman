@@ -1,5 +1,5 @@
 
-library DialogCamera initializer Init
+library DialogCamera initializer Init requires CameraControl
 //===========================================================================
 /*
     DialogCamera 
@@ -9,7 +9,8 @@ library DialogCamera initializer Init
     Description:
     A simple dialog camera system for Warcraft III that focuses the camera on a specified NPC unit.
     It allows setting distance, height offset, angle, rotation, far clipping plane, and field of view.
-    It also saves and restores the player's original camera settings.
+    It applies dialog camera overrides and lets CameraControl handle restoring the
+    player's stored camera mode and values.
     
     Usage:
         call DialogCameraStart(p, u, dist, zOffset, angle, rotationOffset, farZ, fov, blockRadius, doBlockCheck)
@@ -59,7 +60,7 @@ globals
     private constant real DEFAULT_BLOCK_RADIUS   = 350.0    // how close a destructible must be to count as blocking; default 350
     private constant real BLOCK_SCANRANGE        = 200.0    // how far around the check point to scan for destructibles
 
-    private camerasetup array savedCamera // per-player restore setups
+    private boolean array dialogCameraActive
 
     // internal vars for blocking checks
     private real CAMERA_CHECKX
@@ -168,8 +169,10 @@ function DialogCameraStart takes player p, unit u, real dist, real zOffset, real
 
     set nearz = DEFAULT_NEARZ
 
-   // Save current camera settings
-    set savedCamera[pid] = GetCurrentCameraSetup()
+    if not dialogCameraActive[pid] then
+        set dialogCameraActive[pid] = true
+        call CameraControl_Suspend(p)
+    endif
 
     // pan to unit position
     set x = GetUnitX(u)
@@ -213,17 +216,9 @@ function DialogCameraReset takes player p, real duration returns nothing
     endif
     set pid = GetPlayerId(p)
 
-    if savedCamera[pid] != null then
-        // Smooth restore using BJ helper (per-player safe)
-        call CameraSetupApplyForPlayer(true, savedCamera[pid], p, duration)
-
-        // If you want a hard "force" restore instead, use this local block:
-        // if GetLocalPlayer() == p then
-        //     call CameraSetupApplyForceDuration(savedCamera[pid], true, duration)
-        // endif
-
-        // Drop reference so GC can reclaim it when appropriate
-        set savedCamera[pid] = null
+    if dialogCameraActive[pid] then
+        set dialogCameraActive[pid] = false
+        call CameraControl_ResumeWithDuration(p, duration)
     endif
 endfunction
 

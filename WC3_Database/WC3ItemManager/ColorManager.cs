@@ -18,13 +18,13 @@ namespace WC3ItemManager
         public ColorManager(string connectionString)
         {
             this.connectionString = connectionString;
-            this.colorCache = new Dictionary<string, Dictionary<string, string>>();
+            this.colorCache = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
             LoadColors();
         }
 
         public void LoadColors()
         {
-            colorCache.Clear();
+            colorCache = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
             
             try
             {
@@ -43,7 +43,7 @@ namespace WC3ItemManager
                             string hex = reader["color_hex"].ToString();
                             
                             if (!colorCache.ContainsKey(type))
-                                colorCache[type] = new Dictionary<string, string>();
+                                colorCache[type] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                             
                             colorCache[type][name] = hex;
                         }
@@ -83,12 +83,12 @@ namespace WC3ItemManager
         // Overload to convert hex directly to WC3 color code
         public string GetWC3ColorCode(string colorHex)
         {
-            // Convert #RRGGBB to WC3 format |cFFRRGGBB or |c00RRGGBB
+            // Convert #RRGGBB to WC3 format |cFFRRGGBB.
             if (!string.IsNullOrEmpty(colorHex) && colorHex.StartsWith("#") && colorHex.Length == 7)
             {
-                return "|c00" + colorHex.Substring(1);
+                return "|cFF" + colorHex.Substring(1);
             }
-            return "|c00FFFFFF";
+            return "|cFFFFFFFF";
         }
 
         public string WrapWithColor(string text, string elementType, string elementName)

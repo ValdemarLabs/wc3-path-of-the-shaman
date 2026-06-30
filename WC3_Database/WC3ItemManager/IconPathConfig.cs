@@ -31,9 +31,10 @@ namespace WC3ItemManager
         
         private IconPathConfig()
         {
-            // Default paths
-            WarCraft3IconPath = @"C:\Program Files (x86)\Warcraft III\UI\";
-            CustomIconPath = @".\CustomIcons\";
+            // Prefer app-local asset folders so build/publish outputs are self-contained.
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            WarCraft3IconPath = Path.Combine(baseDir, "blizzard");
+            CustomIconPath = Path.Combine(baseDir, "custom");
         }
         
         public void Load()
@@ -164,37 +165,65 @@ namespace WC3ItemManager
         {
             if (string.IsNullOrEmpty(iconPath))
                 return null;
-                
+
+            string normalizedIconPath = NormalizeIconPath(iconPath);
+            if (string.IsNullOrEmpty(normalizedIconPath))
+                return null;
+
             // If absolute path and exists, return it
-            if (Path.IsPathRooted(iconPath) && File.Exists(iconPath))
-                return iconPath;
-            
-            // Try WC3 path - check both .blp and .png
-            string wc3Path = Path.Combine(WarCraft3IconPath, iconPath);
-            if (File.Exists(wc3Path))
-                return wc3Path;
-            
-            // If looking for .blp, check for .png version in WC3 path
-            if (Path.GetExtension(iconPath).ToLower() == ".blp")
+            if (Path.IsPathRooted(normalizedIconPath) && File.Exists(normalizedIconPath))
+                return normalizedIconPath;
+
+            string wc3Match = ResolveIconPathUnderRoot(WarCraft3IconPath, normalizedIconPath);
+            if (!string.IsNullOrEmpty(wc3Match))
+                return wc3Match;
+
+            string customMatch = ResolveIconPathUnderRoot(CustomIconPath, normalizedIconPath);
+            if (!string.IsNullOrEmpty(customMatch))
+                return customMatch;
+
+            return null;
+        }
+
+        private static string NormalizeIconPath(string iconPath)
+        {
+            if (string.IsNullOrWhiteSpace(iconPath))
+                return null;
+
+            string normalized = iconPath
+                .Trim()
+                .Trim('"')
+                .Replace('\0', ' ')
+                .Replace('/', '\\');
+
+            while (normalized.Contains(@"\\"))
             {
-                string pngPath = Path.ChangeExtension(wc3Path, ".png");
+                normalized = normalized.Replace(@"\\", @"\");
+            }
+
+            return normalized.Trim();
+        }
+
+        private static string ResolveIconPathUnderRoot(string rootPath, string normalizedIconPath)
+        {
+            if (string.IsNullOrWhiteSpace(rootPath) || string.IsNullOrWhiteSpace(normalizedIconPath))
+                return null;
+
+            string directPath = Path.Combine(rootPath, normalizedIconPath);
+            if (File.Exists(directPath))
+                return directPath;
+
+            string extension = Path.GetExtension(normalizedIconPath).ToLowerInvariant();
+
+            // ItemManager caches game textures primarily as PNGs, so normalize native WC3
+            // texture references to the PNG cache whenever possible.
+            if (extension == ".blp" || extension == ".tga" || extension == ".dds")
+            {
+                string pngPath = Path.ChangeExtension(directPath, ".png");
                 if (File.Exists(pngPath))
                     return pngPath;
             }
-            
-            // Try custom path
-            string customPath = Path.Combine(CustomIconPath, iconPath);
-            if (File.Exists(customPath))
-                return customPath;
-                
-            // If looking for .blp, check for .png version in custom path
-            if (Path.GetExtension(iconPath).ToLower() == ".blp")
-            {
-                string pngPath = Path.ChangeExtension(customPath, ".png");
-                if (File.Exists(pngPath))
-                    return pngPath;
-            }
-            
+
             return null;
         }
     }

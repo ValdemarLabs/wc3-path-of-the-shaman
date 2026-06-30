@@ -8,14 +8,14 @@ library Reputation initializer InitReputations requires Table, UnitDeathEvent
 
     Required global variables (Path of the Shaman)
         udg_InCinematic (when cinematic is turned on in trigger CinematicON)
-        udg_Multiboard (stats multiboard)
+        udg_Multiboard (stats multiboard, legacy reputation board support only)
 
     Description:
     - Faction registry holds names and linked relationships.
     - Reputation struct stores per-player values.
     - InitReputations sets your default reputation values.
-    - ReputationBoard displays them and updates regularly.
-    - The multiboard toggles visibility with your udg_Multiboard (Stats) hidden when showing the reputation board.
+    - ReputationBoard is kept as legacy code and is no longer activated.
+    - ReputationUI now handles the active reputation display.
 
     - Every 5 seconds, the system calls UpdateFactionAlliances.
         Compares current status vs. stored status.
@@ -90,8 +90,9 @@ library Reputation initializer InitReputations requires Table, UnitDeathEvent
 
         addLinked - affects the faction and linked factions, used only when killing units
 
-    Show the Reputation Multiboard
-        call ReputationBoard.show(Player(0), true)  // Show
+    Legacy Reputation Multiboard
+        - Preserved in code for reference only.
+        - Not initialized or shown during normal gameplay.
 
     Linking factions:
         call horde.link(felorcs, -0.5)
@@ -658,25 +659,15 @@ endstruct
 // MULTIBOARD SYSTEM
 //===================================================
 
+// Legacy multiboard kept for reference only.
+// ReputationUI is now the active reputation display and this board is never initialized.
 struct ReputationBoard
     static multiboard array boards
     static timer updater
 
     static method show takes player p, boolean flag returns nothing
-        local integer pid = GetPlayerId(p)
-        if boards[pid] == null then
-            call .createBoard(p)
-        endif
-
-        if flag then
-            call MultiboardDisplay(udg_Multiboard, false)
-            call MultiboardDisplay(boards[pid], true)
-            //call BJDebugMsg("[ReputationBoard] Showing reputation board for " + GetPlayerName(p))
-        else
-            call MultiboardDisplay(boards[pid], false)
-            call MultiboardDisplay(udg_Multiboard, true)
-            //call BJDebugMsg("[ReputationBoard] Hiding reputation board for " + GetPlayerName(p))
-        endif
+        // Legacy no-op: do not activate the old reputation multiboard.
+        return
     endmethod
 
     static method createBoard takes player p returns nothing
@@ -1249,6 +1240,9 @@ function AddReputation takes player whichPlayer, string factionName, integer del
         return
     endif
     call Reputation.addRaw(whichPlayer, f, delta)
+    if whichPlayer == Player(0) then
+        call ExecuteFunc("ReputationUI_Refresh")
+    endif
 endfunction
 
 function AddReputationLinked takes player whichPlayer, string factionName, integer delta returns nothing
@@ -1258,6 +1252,9 @@ function AddReputationLinked takes player whichPlayer, string factionName, integ
         return
     endif
     call Reputation.addLinked(whichPlayer, f, delta)
+    if whichPlayer == Player(0) then
+        call ExecuteFunc("ReputationUI_Refresh")
+    endif
 endfunction
 
 //===================================================
@@ -1528,9 +1525,8 @@ private function InitReputations takes nothing returns nothing
     endif
     call InitUnitTypeFactions()   // Must be called AFTER InitFactions so factions exist!
     if RE_DEBUG then
-        call BJDebugMsg("[Reputation] Calling ReputationBoard.onInit()...")
+        call BJDebugMsg("[Reputation] Skipping legacy ReputationBoard initialization; ReputationUI handles display.")
     endif
-    call ReputationBoard.onInit()
 
     // Register with centralized death event system
     if RE_DEBUG then

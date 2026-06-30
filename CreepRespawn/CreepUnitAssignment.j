@@ -156,8 +156,11 @@ function CreepUnitAssignment takes integer utype returns nothing
     // ELVES
     elseif utype == 'h00A' then
         set udg_Aradion = bj_lastCreatedUnit
+        call TriggerQuestEvaluation(bj_lastCreatedUnit)
+        call ExecuteFunc("qAradion_RefreshRespawnedUnitHooks")
     elseif utype == 'n01W' then
         set udg_Valeria = bj_lastCreatedUnit
+        call ExecuteFunc("qAradion_RefreshRespawnedUnitHooks")
     //==========================================================
     //===========================================================================
     endif

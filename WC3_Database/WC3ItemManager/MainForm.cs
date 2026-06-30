@@ -806,6 +806,9 @@ namespace WC3ItemManager
                 using (var conn = new NpgsqlConnection(connectionString))
                 {
                     conn.Open();
+                    EnsurePowerUpAutoUseIntegrity(conn);
+                    EnsureRequiredItemClasses(conn);
+                    EnsureItemClassColors(conn);
                     isConnected = true;
                     UpdateConnectionStatus(true, "Connected");
                 }
@@ -834,6 +837,97 @@ namespace WC3ItemManager
             btnImport.Enabled = connected;
             btnExportDEquipment.Visible = connected; // Show DEquipment export when connected
             btnConnect.Text = connected ? "🔌 Reconnect" : "🔌 Connect";
+        }
+
+        private void EnsurePowerUpAutoUseIntegrity(NpgsqlConnection conn)
+        {
+            const string alterQuery = @"
+                ALTER TABLE items
+                ADD COLUMN IF NOT EXISTS use_automatically BOOLEAN DEFAULT FALSE";
+
+            using (var alterCmd = new NpgsqlCommand(alterQuery, conn))
+            {
+                alterCmd.ExecuteNonQuery();
+            }
+
+            const string repairQuery = @"
+                UPDATE items
+                SET is_powerup = TRUE,
+                    use_automatically = TRUE,
+                    wc3_classification = CASE
+                        WHEN LOWER(COALESCE(wc3_classification, '')) = 'powerup' THEN 'PowerUp'
+                        ELSE wc3_classification
+                    END
+                WHERE COALESCE(is_powerup, FALSE) = TRUE
+                   OR LOWER(COALESCE(wc3_classification, '')) = 'powerup'";
+
+            using (var repairCmd = new NpgsqlCommand(repairQuery, conn))
+            {
+                repairCmd.ExecuteNonQuery();
+            }
+        }
+
+        private void EnsureRequiredItemClasses(NpgsqlConnection conn)
+        {
+            const string ensureQuery = @"
+                INSERT INTO item_classes (class_name, slot_type, description)
+                VALUES
+                    ('Ability', 'ABILITY', 'Ability-granting item slot/class'),
+                    ('Skill', 'SKILL', 'Skill-granting item slot/class')
+                ON CONFLICT (class_name) DO NOTHING";
+
+            using (var cmd = new NpgsqlCommand(ensureQuery, conn))
+            {
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private void EnsureItemClassColors(NpgsqlConnection conn)
+        {
+            const string ensureTableQuery = @"
+                CREATE TABLE IF NOT EXISTS ui_color_scheme (
+                    id SERIAL PRIMARY KEY,
+                    element_type VARCHAR(50) NOT NULL,
+                    element_name VARCHAR(100) NOT NULL,
+                    color_hex VARCHAR(7) NOT NULL,
+                    description TEXT,
+                    is_active BOOLEAN DEFAULT true,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(element_type, element_name)
+                )";
+
+            using (var tableCmd = new NpgsqlCommand(ensureTableQuery, conn))
+            {
+                tableCmd.ExecuteNonQuery();
+            }
+
+            const string seedQuery = @"
+                INSERT INTO ui_color_scheme (element_type, element_name, color_hex, description)
+                VALUES
+                    ('class', 'Ability', '#00CED1', 'Ability items'),
+                    ('class', 'Skill', '#1E90FF', 'Skill items'),
+                    ('class', 'Quest', '#FFFF00', 'Quest items'),
+                    ('class', 'Miscellaneous', '#D3D3D3', 'Miscellaneous items'),
+                    ('class', 'Other', '#D3D3D3', 'Other items'),
+                    ('class', 'Head Armor', '#C0C0C0', 'Head armor items'),
+                    ('class', 'Chest Armor', '#B0C4DE', 'Chest armor items'),
+                    ('class', 'Leg Armor', '#A9B7C6', 'Leg armor items'),
+                    ('class', 'Foot Armor', '#CD853F', 'Foot armor items'),
+                    ('class', 'Hand Armor', '#DEB887', 'Hand armor items'),
+                    ('class', 'Main Hand Weapon', '#A52A2A', 'Main-hand weapon items'),
+                    ('class', 'Off Hand Weapon', '#8B4513', 'Off-hand weapon items'),
+                    ('class', 'Two-Hand Weapon', '#B22222', 'Two-hand weapon items'),
+                    ('class', 'Ring', '#FFD700', 'Ring items'),
+                    ('class', 'Amulet', '#40E0D0', 'Amulet items'),
+                    ('class', 'Trinket', '#DA70D6', 'Trinket items'),
+                    ('class', 'Back', '#708090', 'Back items')
+                ON CONFLICT (element_type, element_name) DO NOTHING";
+
+            using (var seedCmd = new NpgsqlCommand(seedQuery, conn))
+            {
+                seedCmd.ExecuteNonQuery();
+            }
         }
 
         private void BtnConnect_Click(object sender, EventArgs e)
@@ -1215,6 +1309,12 @@ namespace WC3ItemManager
                 return;
             }
 
+            if (dgvItems.SelectedRows.Count > 1)
+            {
+                OpenBatchEditDialog();
+                return;
+            }
+
             int itemId = Convert.ToInt32(dgvItems.SelectedRows[0].Cells["id"].Value);
             using (var form = new ItemEditForm(itemId, connectionString))
             {
@@ -1268,7 +1368,7 @@ namespace WC3ItemManager
         {
             dgvContextMenu = new ContextMenuStrip();
             
-            var menuEdit = new ToolStripMenuItem("✏️ Edit", null, ContextMenu_Edit);
+            var menuEdit = new ToolStripMenuItem("Edit", null, ContextMenu_Edit);
             var menuDuplicate = new ToolStripMenuItem("📋 Duplicate", null, ContextMenu_Duplicate);
             var menuDelete = new ToolStripMenuItem("🗑️ Delete", null, ContextMenu_Delete);
             var menuSeparator = new ToolStripSeparator();
@@ -1289,7 +1389,8 @@ namespace WC3ItemManager
                 bool hasSingle = dgvItems.SelectedRows.Count == 1;
                 bool hasMultiple = dgvItems.SelectedRows.Count > 1;
                 
-                menuEdit.Enabled = hasSingle;
+                menuEdit.Enabled = hasSingle || hasMultiple;
+                menuEdit.Text = hasMultiple ? $"Batch Edit ({dgvItems.SelectedRows.Count} items)" : "Edit";
                 menuDuplicate.Enabled = hasSingle;
                 menuDelete.Enabled = hasSingle;
                 menuCopy.Enabled = hasSingle;
@@ -2423,7 +2524,8 @@ namespace WC3ItemManager
             var abilityLines = LoadAndFormatItemAbilities(conn, itemId);
             if (abilityLines.Count > 0)
             {
-                tooltipParts.Add("|n|n|cff00ff00Abilities:|r|n" + string.Join("|n", abilityLines));
+                string abilityColor = GetWC3ColorForClass("Ability");
+                tooltipParts.Add($"|n|n{abilityColor}Abilities:|r|n" + string.Join("|n", abilityLines));
             }
 
             return string.Join("", tooltipParts);
@@ -2483,6 +2585,7 @@ namespace WC3ItemManager
         private List<string> LoadAndFormatItemAbilities(NpgsqlConnection conn, int itemId)
         {
             var abilityLines = new List<string>();
+            string abilityColor = GetWC3ColorForClass("Ability");
 
             string query = "SELECT manual_abilities_data FROM items WHERE id = @item_id";
 
@@ -2506,7 +2609,7 @@ namespace WC3ItemManager
                                     if (!string.IsNullOrWhiteSpace(ability.Type) && 
                                         !string.IsNullOrWhiteSpace(ability.Description))
                                     {
-                                        string formatted = $"|cffffcc00{ability.Type}:|r {ability.Description}";
+                                        string formatted = $"{abilityColor}{ability.Type}:|r {ability.Description}";
                                         abilityLines.Add(formatted);
                                     }
                                 }
@@ -2663,8 +2766,7 @@ namespace WC3ItemManager
         /// </summary>
         private string GetWC3ColorForClass(string className)
         {
-            // Use default brown color for classes
-            return "|cffA52A2A";
+            return ItemClassColorDefaults.GetWC3ColorCode(className);
         }
 
         /// <summary>
@@ -2711,12 +2813,13 @@ namespace WC3ItemManager
                 var row = dgvItems.SelectedRows[0];
                 UpdatePreviewPanel(row);
                 btnEdit.Enabled = true;
+                btnEdit.Text = "Edit";
                 btnDelete.Enabled = true;
             }
             else if (dgvItems.SelectedRows.Count > 1)
             {
                 lblPreviewTitle.Text = $"Item Preview ({dgvItems.SelectedRows.Count} items selected)";
-                rtbTooltipPreview.Text = $"{dgvItems.SelectedRows.Count} items selected.\n\nRight-click for batch operations.";
+                rtbTooltipPreview.Text = $"{dgvItems.SelectedRows.Count} items selected.\n\nClick Edit or right-click for batch operations.";
                 rtbTooltipPreview.ForeColor = Color.LightGray;
                 
                 // Clear icon properly
@@ -2728,7 +2831,8 @@ namespace WC3ItemManager
                 }
                 picIconPreview.BackColor = Color.FromArgb(40, 40, 50);
                 
-                btnEdit.Enabled = false;
+                btnEdit.Enabled = true;
+                btnEdit.Text = $"Batch Edit ({dgvItems.SelectedRows.Count})";
                 btnDelete.Enabled = false;
             }
             else
@@ -2747,7 +2851,29 @@ namespace WC3ItemManager
                 picIconPreview.BackColor = Color.FromArgb(40, 40, 50);
                 
                 btnEdit.Enabled = false;
+                btnEdit.Text = "Edit";
                 btnDelete.Enabled = false;
+            }
+        }
+
+        private void OpenBatchEditDialog()
+        {
+            var itemIds = new List<int>();
+            foreach (DataGridViewRow row in dgvItems.SelectedRows)
+            {
+                itemIds.Add(Convert.ToInt32(row.Cells["id"].Value));
+            }
+
+            if (itemIds.Count <= 1)
+                return;
+
+            using (var form = new BatchItemEditDialog(itemIds, connectionString))
+            {
+                if (form.ShowDialog(this) == DialogResult.OK)
+                {
+                    LoadData();
+                    lblStatus.Text = $"Batch edited {itemIds.Count} items";
+                }
             }
         }
 

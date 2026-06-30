@@ -1,4 +1,4 @@
-library QuestGiver initializer Init requires QuestMaster, DialogSystem, HeroItemCheck, Table
+library QuestGiver initializer Init requires QuestMaster, DialogSystem, HeroItemCheck, CameraControl, Table
 //===========================================================================
 // QuestGiver
 // Base utilities for quest givers and dialog entry helpers.
@@ -16,6 +16,27 @@ globals
 	private unit QuestGiver_PendingNPC = null
 	private integer QuestGiver_PendingSeq = 0
 	unit QuestGiver_SelectedUnit = null
+	private unit TransitionGiver = null
+	private unit TransitionHero = null
+	private timer TransitionCooldownTimer = null
+	private real TransitionCooldownDuration = 0.00
+	private boolean TransitionStopCamera = false
+	private real TransitionCameraStopDuration = 0.00
+	private boolean TransitionUseCamera = false
+	private boolean TransitionRunCinematicTrigger = false
+	private boolean TransitionUseCinematicMode = false
+	private integer TransitionMoveMode = 0
+	private real TransitionMoveOffset = 0.00
+	private real TransitionMoveAngle = 0.00
+	private real TransitionCameraDist = 0.00
+	private real TransitionCameraZOffset = 0.00
+	private real TransitionCameraAngle = 0.00
+	private real TransitionCameraRotOffset = 0.00
+	private real TransitionCameraFarZ = 0.00
+	private real TransitionCameraFov = 0.00
+	private real TransitionCameraBlockRadius = 0.00
+	private boolean TransitionCameraBlockCheck = false
+	private string TransitionContinueFuncName = ""
 
 	constant integer QUESTGIVER_GREET_DEFAULT = 0
 	constant integer QUESTGIVER_GREET_NAZGREK_THEN_NPC = 1
@@ -236,10 +257,26 @@ endfunction
 //===========================================================================
 public function AddCompanion takes unit companionUnit, string companionIcon returns nothing
 	local integer customValue
+	local integer i = 1
 	
 	if companionUnit == null then
 		return
 	endif
+
+	loop
+		exitwhen i > udg_CompanionCount
+		if udg_CompanionUnit[i] == companionUnit then
+			if CompanionIndex != 0 then
+				set CompanionIndex.integer[GetUnitUserData(companionUnit)] = i
+			endif
+			if CompanionIcon != 0 and companionIcon != "" then
+				set CompanionIcon.string[i] = companionIcon
+			endif
+			call DebugMsg("AddCompanion skipped duplicate: " + GetUnitName(companionUnit))
+			return
+		endif
+		set i = i + 1
+	endloop
 	
 	// Play rescue sound if available
 	if RescueSound != null then
@@ -253,6 +290,9 @@ public function AddCompanion takes unit companionUnit, string companionIcon retu
 	if CompanionFocusNazgrek != null then
 		call GroupAddUnit(CompanionFocusNazgrek, companionUnit)
 	endif
+	if CompanionFocusZulkis != null then
+		call GroupAddUnit(CompanionFocusZulkis, companionUnit)
+	endif
 	
 	// Display join message
 	call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(companionUnit) + " has joined the party!")
@@ -260,6 +300,7 @@ public function AddCompanion takes unit companionUnit, string companionIcon retu
 	// Update companion tracking (use udg_CompanionCount directly to avoid state mismatch)
 	set udg_CompanionCount = udg_CompanionCount + 1
 	set CompanionUnit[udg_CompanionCount] = companionUnit
+	set udg_CompanionUnit[udg_CompanionCount] = companionUnit
 	
 	// Store index by custom value
 	set customValue = GetUnitUserData(companionUnit)
@@ -280,16 +321,49 @@ public function AddCompanion takes unit companionUnit, string companionIcon retu
 	call DebugMsg("Added companion: " + GetUnitName(companionUnit) + " (count=" + I2S(udg_CompanionCount) + ", icon=" + companionIcon + ")")
 endfunction
 
+public function GetCompanionIcon takes unit companionUnit returns string
+	local integer index = 0
+	local integer i = 1
+
+	if companionUnit == null then
+		return ""
+	endif
+
+	if CompanionIndex != 0 then
+		set index = CompanionIndex.integer[GetUnitUserData(companionUnit)]
+		if index > 0 and index <= udg_CompanionCount and udg_CompanionUnit[index] == companionUnit then
+			if CompanionIcon != 0 then
+				return CompanionIcon.string[index]
+			endif
+			return ""
+		endif
+	endif
+
+	loop
+		exitwhen i > udg_CompanionCount
+		if udg_CompanionUnit[i] == companionUnit then
+			if CompanionIcon != 0 then
+				return CompanionIcon.string[i]
+			endif
+			return ""
+		endif
+		set i = i + 1
+	endloop
+
+	return ""
+endfunction
+
 public function RemoveCompanion takes unit companionUnit returns nothing
+	local integer i = 1
+	local integer foundIndex = 0
+	local integer lastIndex
+	local integer movedCustomValue
 	if companionUnit == null then
 		return
 	endif
 	
 	// Order unit to stop
 	call IssueImmediateOrder(companionUnit, "stop")
-	
-	// Display debug message
-	call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "Debug Kick: Kicked from Companion_Group: " + GetUnitName(companionUnit))
 	
 	// Remove from all companion groups
 	if Companion_Group != null then
@@ -300,6 +374,44 @@ public function RemoveCompanion takes unit companionUnit returns nothing
 	endif
 	if CompanionFocusZulkis != null then
 		call GroupRemoveUnit(CompanionFocusZulkis, companionUnit)
+	endif
+
+	set udg_CompanionUnitKicked = companionUnit
+	loop
+		exitwhen i > udg_CompanionCount
+		if udg_CompanionUnit[i] == companionUnit or CompanionUnit[i] == companionUnit then
+			set foundIndex = i
+			exitwhen true
+		endif
+		set i = i + 1
+	endloop
+
+	if foundIndex > 0 then
+		set lastIndex = udg_CompanionCount
+		loop
+			exitwhen foundIndex >= lastIndex
+			set CompanionUnit[foundIndex] = CompanionUnit[foundIndex + 1]
+			set udg_CompanionUnit[foundIndex] = udg_CompanionUnit[foundIndex + 1]
+			if CompanionIcon != 0 then
+				set CompanionIcon.string[foundIndex] = CompanionIcon.string[foundIndex + 1]
+			endif
+			if udg_CompanionUnit[foundIndex] != null and CompanionIndex != 0 then
+				set movedCustomValue = GetUnitUserData(udg_CompanionUnit[foundIndex])
+				set CompanionIndex.integer[movedCustomValue] = foundIndex
+			endif
+			set foundIndex = foundIndex + 1
+		endloop
+
+		set CompanionUnit[lastIndex] = null
+		set udg_CompanionUnit[lastIndex] = null
+		if CompanionIcon != 0 then
+			set CompanionIcon.string[lastIndex] = ""
+		endif
+		set udg_CompanionCount = udg_CompanionCount - 1
+	endif
+
+	if CompanionIndex != 0 then
+		set CompanionIndex.integer[GetUnitUserData(companionUnit)] = 0
 	endif
 	
 	// Trigger multiboard update
@@ -445,33 +557,49 @@ public function IsWithinRange takes unit a, unit b, real range returns boolean
 endfunction
 
 public function GetAvailableHero takes unit giver, real range returns unit
-	local boolean nazgrekOk = false
-	local boolean zulkisOk = false
-	if udg_Nazgrek != null and IsUnitAlive(udg_Nazgrek) then
-		if range <= 0.00 or IsWithinRange(giver, udg_Nazgrek, range) then
+    local boolean nazgrekOk = false
+    local boolean zulkisOk = false
+    if udg_Nazgrek != null and IsUnitAlive(udg_Nazgrek) then
+        if range <= 0.00 or IsWithinRange(giver, udg_Nazgrek, range) then
 			set nazgrekOk = true
 		endif
 	endif
-	if udg_Zulkis != null and IsUnitAlive(udg_Zulkis) then
-		if range <= 0.00 or IsWithinRange(giver, udg_Zulkis, range) then
-			set zulkisOk = true
-		endif
-	endif
-	if nazgrekOk then
-		return udg_Nazgrek
-	endif
-	if zulkisOk then
-		return udg_Zulkis
+    if udg_Zulkis != null and IsUnitAlive(udg_Zulkis) then
+        if range <= 0.00 or IsWithinRange(giver, udg_Zulkis, range) then
+            set zulkisOk = true
+        endif
+    endif
+    if zulkisOk and IsUnitSelected(udg_Zulkis, Player(0)) then
+        return udg_Zulkis
+    endif
+    if nazgrekOk and IsUnitSelected(udg_Nazgrek, Player(0)) then
+        return udg_Nazgrek
+    endif
+    if nazgrekOk then
+        return udg_Nazgrek
+    endif
+    if zulkisOk then
+        return udg_Zulkis
 	endif
 	return null
 endfunction
 
 public function GetAllowedHero takes unit giver, real range, boolean allowNazgrek, boolean allowZulkis returns unit
-	if allowNazgrek and udg_Nazgrek != null and IsUnitAlive(udg_Nazgrek) then
-		if range <= 0.00 or IsWithinRange(giver, udg_Nazgrek, range) then
-			return udg_Nazgrek
-		endif
-	endif
+    if allowZulkis and udg_Zulkis != null and IsUnitAlive(udg_Zulkis) and IsUnitSelected(udg_Zulkis, Player(0)) then
+        if range <= 0.00 or IsWithinRange(giver, udg_Zulkis, range) then
+            return udg_Zulkis
+        endif
+    endif
+    if allowNazgrek and udg_Nazgrek != null and IsUnitAlive(udg_Nazgrek) and IsUnitSelected(udg_Nazgrek, Player(0)) then
+        if range <= 0.00 or IsWithinRange(giver, udg_Nazgrek, range) then
+            return udg_Nazgrek
+        endif
+    endif
+    if allowNazgrek and udg_Nazgrek != null and IsUnitAlive(udg_Nazgrek) then
+        if range <= 0.00 or IsWithinRange(giver, udg_Nazgrek, range) then
+            return udg_Nazgrek
+        endif
+    endif
 	if allowZulkis and udg_Zulkis != null and IsUnitAlive(udg_Zulkis) then
 		if range <= 0.00 or IsWithinRange(giver, udg_Zulkis, range) then
 			return udg_Zulkis
@@ -878,6 +1006,22 @@ public function SetReceiverDisplayNameByNameAndGiver takes string questName, uni
 	call QuestMaster_SetReceiverDisplayNameByNameAndGiver(questName, questGiver, displayName)
 endfunction
 
+public function SetAllowedHeroesForLevelCheck takes integer questId, boolean allowNazgrek, boolean allowZulkis returns nothing
+	call QuestMaster_SetAllowedHeroesForLevelCheck(questId, allowNazgrek, allowZulkis)
+endfunction
+
+public function SetAllowedHeroesForLevelCheckByNameAndGiver takes string questName, unit questGiver, boolean allowNazgrek, boolean allowZulkis returns nothing
+	call QuestMaster_SetAllowedHeroesForLevelCheckByNameAndGiver(questName, questGiver, allowNazgrek, allowZulkis)
+endfunction
+
+public function AddRequiredCompletedQuest takes integer questId, string prereqQuestName, unit prereqQuestGiver returns nothing
+	call QuestMaster_AddRequiredCompletedQuest(questId, prereqQuestName, prereqQuestGiver)
+endfunction
+
+public function AddRequiredCompletedQuestByNameAndGiver takes string questName, unit questGiver, string prereqQuestName, unit prereqQuestGiver returns nothing
+	call QuestMaster_AddRequiredCompletedQuestByNameAndGiver(questName, questGiver, prereqQuestName, prereqQuestGiver)
+endfunction
+
 //===========================================================================
 // Quest lookup/state wrappers
 //===========================================================================
@@ -951,13 +1095,190 @@ public function HandleSequenceEnd takes unit giver, timer cooldownTimer, real co
 	// for now this is a placeholder for future enhancement
 endfunction
 
+private function ClearTransitionState takes nothing returns nothing
+	set TransitionGiver = null
+	set TransitionHero = null
+	set TransitionCooldownTimer = null
+	set TransitionCooldownDuration = 0.00
+	set TransitionStopCamera = false
+	set TransitionCameraStopDuration = 0.00
+	set TransitionUseCamera = false
+	set TransitionRunCinematicTrigger = false
+	set TransitionUseCinematicMode = false
+	set TransitionMoveMode = 0
+	set TransitionMoveOffset = 0.00
+	set TransitionMoveAngle = 0.00
+	set TransitionCameraDist = 0.00
+	set TransitionCameraZOffset = 0.00
+	set TransitionCameraAngle = 0.00
+	set TransitionCameraRotOffset = 0.00
+	set TransitionCameraFarZ = 0.00
+	set TransitionCameraFov = 0.00
+	set TransitionCameraBlockRadius = 0.00
+	set TransitionCameraBlockCheck = false
+	set TransitionContinueFuncName = ""
+endfunction
+
+private function FinishDialogExitTransition takes nothing returns nothing
+	local timer t = GetExpiredTimer()
+
+	call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, 1.0, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+	call HandleSequenceEnd(TransitionGiver, TransitionCooldownTimer, TransitionCooldownDuration, TransitionStopCamera, TransitionCameraStopDuration, TransitionUseCamera, false)
+	if TransitionRunCinematicTrigger then
+		call TriggerExecute(gg_trg_Cinematic_OFF)
+	endif
+	if TransitionUseCinematicMode then
+		call CinematicModeBJ(false, GetPlayersAll())
+	endif
+	if TransitionRunCinematicTrigger or TransitionUseCinematicMode then
+		call ExecuteFunc("MasterUI_ShowGameButton")
+	endif
+	call EnableUserControl(true)
+	if TransitionHero != null and GetWidgetLife(TransitionHero) > 0.405 and not IsUnitType(TransitionHero, UNIT_TYPE_DEAD) then
+		call CameraControl_SetTargetUnit(Player(0), TransitionHero)
+		call SelectUnitForPlayerSingle(TransitionHero, Player(0))
+	endif
+
+	call ClearTransitionState()
+	call DestroyTimer(t)
+	set t = null
+endfunction
+
+private function ContinueDialogExitTransition takes nothing returns nothing
+	local timer t = GetExpiredTimer()
+	local timer nextTimer = CreateTimer()
+
+	call DestroyTimer(t)
+	set t = null
+	call TimerStart(nextTimer, 1.0, false, function FinishDialogExitTransition)
+	set nextTimer = null
+endfunction
+
+public function StartDialogExitTransition takes unit giver, unit restoreHero, timer cooldownTimer, real cooldownDuration, boolean stopCamera, real cameraStopDuration, boolean useCamera, boolean runCinematicTrigger, boolean useCinematicMode returns nothing
+	local timer t = CreateTimer()
+
+	set TransitionGiver = giver
+	set TransitionHero = restoreHero
+	set TransitionCooldownTimer = cooldownTimer
+	set TransitionCooldownDuration = cooldownDuration
+	set TransitionStopCamera = stopCamera
+	set TransitionCameraStopDuration = cameraStopDuration
+	set TransitionUseCamera = useCamera
+	set TransitionRunCinematicTrigger = runCinematicTrigger
+	set TransitionUseCinematicMode = useCinematicMode
+
+	call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUT, 1.0, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+	call TimerStart(t, 1.0, false, function ContinueDialogExitTransition)
+	set t = null
+endfunction
+
+private function ExecuteDialogEntryContinue takes nothing returns nothing
+	local timer t = GetExpiredTimer()
+	local string continueFuncName = TransitionContinueFuncName
+
+	call DestroyTimer(t)
+	set t = null
+	set TransitionContinueFuncName = ""
+	if continueFuncName != "" then
+		call ExecuteFunc(continueFuncName)
+	endif
+endfunction
+
+private function FinishDialogEntryTransition takes nothing returns nothing
+	local timer t = CreateTimer()
+
+	call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, 1.0, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+	call TimerStart(t, 1.0, false, function ExecuteDialogEntryContinue)
+	set t = null
+endfunction
+
+private function ContinueDialogEntryTransition takes nothing returns nothing
+	local timer t = GetExpiredTimer()
+	local location p1
+	local location p2
+	local unit hero = TransitionHero
+	local real x
+	local real y
+
+	call DestroyTimer(t)
+	set t = null
+
+	if hero == null then
+		set hero = TransitionGiver
+	endif
+
+	if TransitionRunCinematicTrigger and TransitionGiver != null then
+		set udg_CinematicTriggerUnit = hero
+		set udg_CinematicMoveMode = TransitionMoveMode
+		set x = GetUnitX(TransitionGiver) + TransitionMoveOffset * Cos(TransitionMoveAngle * bj_DEGTORAD)
+		set y = GetUnitY(TransitionGiver) + TransitionMoveOffset * Sin(TransitionMoveAngle * bj_DEGTORAD)
+		set p1 = Location(x, y)
+		set p2 = Location(x, y)
+		set udg_CinematicMovePoint[1] = p1
+		set udg_CinematicMovePoint[2] = p2
+		call TriggerExecute(gg_trg_Cinematic_ON)
+		call RemoveLocation(p1)
+		call RemoveLocation(p2)
+		set p1 = null
+		set p2 = null
+	endif
+
+	if TransitionGiver != null then
+		call DialogSystem_StartDialogCamera(Player(0), TransitionGiver, TransitionCameraDist, TransitionCameraZOffset, TransitionCameraAngle, TransitionCameraRotOffset, TransitionCameraFarZ, TransitionCameraFov, TransitionCameraBlockRadius, TransitionCameraBlockCheck, TransitionUseCamera)
+	endif
+
+	call FinishDialogEntryTransition()
+endfunction
+
+public function StartDialogEntryTransition takes unit giver, unit hero, integer moveMode, real moveOffset, real moveAngle, boolean runCinematicTrigger, boolean useCamera, real cameraDist, real cameraZOffset, real cameraAngle, real cameraRotOffset, real cameraFarZ, real cameraFov, real cameraBlockRadius, boolean cameraBlockCheck, boolean useCinematicMode, string continueFuncName returns nothing
+	local timer t = CreateTimer()
+
+	set TransitionGiver = giver
+	set TransitionHero = hero
+	set TransitionMoveMode = moveMode
+	set TransitionMoveOffset = moveOffset
+	set TransitionMoveAngle = moveAngle
+	set TransitionRunCinematicTrigger = runCinematicTrigger
+	set TransitionUseCamera = useCamera
+	set TransitionCameraDist = cameraDist
+	set TransitionCameraZOffset = cameraZOffset
+	set TransitionCameraAngle = cameraAngle
+	set TransitionCameraRotOffset = cameraRotOffset
+	set TransitionCameraFarZ = cameraFarZ
+	set TransitionCameraFov = cameraFov
+	set TransitionCameraBlockRadius = cameraBlockRadius
+	set TransitionCameraBlockCheck = cameraBlockCheck
+	set TransitionUseCinematicMode = useCinematicMode
+	set TransitionContinueFuncName = continueFuncName
+
+	if hero != null then
+		call CameraControl_SetTargetUnit(Player(0), hero)
+	endif
+	if runCinematicTrigger or useCinematicMode then
+		call ExecuteFunc("MasterUI_HideGameButton")
+	endif
+	if useCinematicMode then
+		call CinematicModeBJ(true, GetPlayersAll())
+	endif
+
+	call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUT, 1.0, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+	call TimerStart(t, 1.0, false, function ContinueDialogEntryTransition)
+	set t = null
+endfunction
+
 //===========================================================================
 // Generic accept/complete sequence builders
 //===========================================================================
-public function CreateAcceptSequence takes unit giver, string giverName, unit hero, string heroName, real dialogRange, boolean allowNazgrek, boolean allowZulkis returns integer
+public function CreateBaseSequence takes unit giver, string giverName returns integer
 	local integer seq
 	set seq = DialogSystem_CreateSequence()
 	call DialogSystem_SetSequenceDefaultSpeaker(seq, giver, giverName)
+	return seq
+endfunction
+
+public function CreateAcceptSequence takes unit giver, string giverName, unit hero, string heroName, real dialogRange, boolean allowNazgrek, boolean allowZulkis returns integer
+	local integer seq
+	set seq = CreateBaseSequence(giver, giverName)
 	
 	// Auto-resolve hero if not provided
 	if hero == null then
@@ -979,16 +1300,12 @@ public function CreateAcceptSequence takes unit giver, string giverName, unit he
 endfunction
 
 public function CreateCompleteSequence takes unit giver, string giverName returns integer
-	local integer seq
-	set seq = DialogSystem_CreateSequence()
-	call DialogSystem_SetSequenceDefaultSpeaker(seq, giver, giverName)
-	return seq
+	return CreateBaseSequence(giver, giverName)
 endfunction
 
 public function CreateFarewellSequence takes unit giver, string giverName, unit hero, string heroName, real dialogRange, boolean allowNazgrek, boolean allowZulkis returns integer
 	local integer seq
-	set seq = DialogSystem_CreateSequence()
-	call DialogSystem_SetSequenceDefaultSpeaker(seq, giver, giverName)
+	set seq = CreateBaseSequence(giver, giverName)
 	
 	// Auto-resolve hero if not provided
 	if hero == null then
@@ -1402,10 +1719,14 @@ private function CheckEscortProgress takes nothing returns nothing
 					if EscortReqDestination[i] != null and RectContainsCoords(EscortReqDestination[i], ux, uy) then
 						call DebugMsg("CheckEscortProgress: Escort reached destination!")
 						set EscortReqComplete[i] = true
-						set reqText = "Escort " + GetUnitName(escortUnit) + " to destination (Complete)"
+						set reqText = q.getRequirementText(EscortReqIndex[i])
+						if reqText == "" then
+							set reqText = "Escort " + GetUnitName(escortUnit) + " to destination"
+						endif
 						call QuestMaster_UpdateRequirementText(EscortReqQuestId[i], EscortReqIndex[i], reqText)
 						call QuestMaster_SetRequirementCompleted(EscortReqQuestId[i], EscortReqIndex[i], true)
 						call QuestMaster_SetStateByNameAndGiver(q.name, EscortReqGiver[i], QUEST_STATE_READY_TURNIN)
+						call q.addReturnRequirement()
 					endif
 				else
 					call DebugMsg("CheckEscortProgress: Escort unit null or dead - quest may need to fail")
@@ -1546,15 +1867,47 @@ endfunction
 //===========================================================================
 // FindNPC requirement tracking (proximity-based)
 //===========================================================================
+private function StopFindNPCCheckTimerIfIdle takes nothing returns nothing
+	if FindNPCReqCount == 0 and FindNPCCheckTimer != null then
+		call PauseTimer(FindNPCCheckTimer)
+		call DestroyTimer(FindNPCCheckTimer)
+		set FindNPCCheckTimer = null
+	endif
+endfunction
+
+private function RemoveFindNPCRequirementAt takes integer index returns nothing
+	local integer j = index
+
+	loop
+		exitwhen j >= FindNPCReqCount
+		set FindNPCReqQuestId[j] = FindNPCReqQuestId[j + 1]
+		set FindNPCReqGiver[j] = FindNPCReqGiver[j + 1]
+		set FindNPCReqIndex[j] = FindNPCReqIndex[j + 1]
+		set FindNPCReqNPC[j] = FindNPCReqNPC[j + 1]
+		set FindNPCReqComplete[j] = FindNPCReqComplete[j + 1]
+		set j = j + 1
+	endloop
+
+	set FindNPCReqQuestId[FindNPCReqCount] = 0
+	set FindNPCReqGiver[FindNPCReqCount] = null
+	set FindNPCReqIndex[FindNPCReqCount] = 0
+	set FindNPCReqNPC[FindNPCReqCount] = null
+	set FindNPCReqComplete[FindNPCReqCount] = false
+	set FindNPCReqCount = FindNPCReqCount - 1
+
+	call StopFindNPCCheckTimerIfIdle()
+endfunction
+
 private function CheckFindNPCProgress takes nothing returns nothing
 	local integer i = 1
 	local QuestData q
 	local string reqText
 	local unit npc
-	local real dist
+	local boolean removeReq
 
 	loop
 		exitwhen i > FindNPCReqCount
+		set removeReq = false
 		if not FindNPCReqComplete[i] then
 			set npc = FindNPCReqNPC[i]
 			set q = QuestMaster_GetById(FindNPCReqQuestId[i])
@@ -1569,11 +1922,21 @@ private function CheckFindNPCProgress takes nothing returns nothing
 					call QuestMaster_SetStateByNameAndGiver(q.name, FindNPCReqGiver[i], QUEST_STATE_READY_TURNIN)
 					call q.addReturnRequirement()
 					call DebugMsg("CheckFindNPCProgress: Found " + GetUnitName(npc))
+					set removeReq = true
 				endif
 			endif
+		else
+			set removeReq = true
 		endif
-		set i = i + 1
+
+		if removeReq then
+			call RemoveFindNPCRequirementAt(i)
+		else
+			set i = i + 1
+		endif
 	endloop
+
+	set npc = null
 endfunction
 
 private function OnFindNPCCheck takes nothing returns nothing
@@ -1615,9 +1978,55 @@ public function RegisterFindNPCRequirement takes integer questId, unit questGive
 	call DebugMsg("Registered FindNPC requirement: quest=" + I2S(questId) + ", npc=" + npcName)
 endfunction
 
+public function UnregisterFindNPCRequirement takes integer questId, integer reqIndex returns nothing
+	local integer i = 1
+
+	loop
+		exitwhen i > FindNPCReqCount
+		if FindNPCReqQuestId[i] == questId and FindNPCReqIndex[i] == reqIndex then
+			call RemoveFindNPCRequirementAt(i)
+			return
+		endif
+		set i = i + 1
+	endloop
+endfunction
+
 //===========================================================================
 // GoToPlace requirement tracking (region-based)
 //===========================================================================
+private function StopGoToPlaceCheckTimerIfIdle takes nothing returns nothing
+	if GoToPlaceReqCount == 0 and GoToPlaceCheckTimer != null then
+		call PauseTimer(GoToPlaceCheckTimer)
+		call DestroyTimer(GoToPlaceCheckTimer)
+		set GoToPlaceCheckTimer = null
+	endif
+endfunction
+
+private function RemoveGoToPlaceRequirementAt takes integer index returns nothing
+	local integer j = index
+
+	loop
+		exitwhen j >= GoToPlaceReqCount
+		set GoToPlaceReqQuestId[j] = GoToPlaceReqQuestId[j + 1]
+		set GoToPlaceReqGiver[j] = GoToPlaceReqGiver[j + 1]
+		set GoToPlaceReqIndex[j] = GoToPlaceReqIndex[j + 1]
+		set GoToPlaceReqRegion[j] = GoToPlaceReqRegion[j + 1]
+		set GoToPlaceReqName[j] = GoToPlaceReqName[j + 1]
+		set GoToPlaceReqComplete[j] = GoToPlaceReqComplete[j + 1]
+		set j = j + 1
+	endloop
+
+	set GoToPlaceReqQuestId[GoToPlaceReqCount] = 0
+	set GoToPlaceReqGiver[GoToPlaceReqCount] = null
+	set GoToPlaceReqIndex[GoToPlaceReqCount] = 0
+	set GoToPlaceReqRegion[GoToPlaceReqCount] = null
+	set GoToPlaceReqName[GoToPlaceReqCount] = ""
+	set GoToPlaceReqComplete[GoToPlaceReqCount] = false
+	set GoToPlaceReqCount = GoToPlaceReqCount - 1
+
+	call StopGoToPlaceCheckTimerIfIdle()
+endfunction
+
 private function CheckGoToPlaceProgress takes nothing returns nothing
 	local integer i = 1
 	local QuestData q
@@ -1626,9 +2035,11 @@ private function CheckGoToPlaceProgress takes nothing returns nothing
 	local real ny
 	local real zx
 	local real zy
+	local boolean removeReq
 
 	loop
 		exitwhen i > GoToPlaceReqCount
+		set removeReq = false
 		if not GoToPlaceReqComplete[i] then
 			set q = QuestMaster_GetById(GoToPlaceReqQuestId[i])
 
@@ -1645,6 +2056,7 @@ private function CheckGoToPlaceProgress takes nothing returns nothing
 						call QuestMaster_SetStateByNameAndGiver(q.name, GoToPlaceReqGiver[i], QUEST_STATE_READY_TURNIN)
 						call q.addReturnRequirement()
 						call DebugMsg("CheckGoToPlaceProgress: Reached " + GoToPlaceReqName[i])
+						set removeReq = true
 					endif
 				endif
 				if not GoToPlaceReqComplete[i] and udg_Zulkis != null then
@@ -1658,11 +2070,19 @@ private function CheckGoToPlaceProgress takes nothing returns nothing
 						call QuestMaster_SetStateByNameAndGiver(q.name, GoToPlaceReqGiver[i], QUEST_STATE_READY_TURNIN)
 						call q.addReturnRequirement()
 						call DebugMsg("CheckGoToPlaceProgress: Reached " + GoToPlaceReqName[i])
+						set removeReq = true
 					endif
 				endif
 			endif
+		else
+			set removeReq = true
 		endif
-		set i = i + 1
+
+		if removeReq then
+			call RemoveGoToPlaceRequirementAt(i)
+		else
+			set i = i + 1
+		endif
 	endloop
 endfunction
 
@@ -1703,6 +2123,19 @@ public function RegisterGoToPlaceRequirement takes integer questId, unit questGi
 	call DebugMsg("Registered GoToPlace requirement: quest=" + I2S(questId) + ", place=" + placeName)
 endfunction
 
+public function UnregisterGoToPlaceRequirement takes integer questId, integer reqIndex returns nothing
+	local integer i = 1
+
+	loop
+		exitwhen i > GoToPlaceReqCount
+		if GoToPlaceReqQuestId[i] == questId and GoToPlaceReqIndex[i] == reqIndex then
+			call RemoveGoToPlaceRequirementAt(i)
+			return
+		endif
+		set i = i + 1
+	endloop
+endfunction
+
 //===========================================================================
 // Reputation requirement tracking
 //===========================================================================
@@ -1710,10 +2143,11 @@ endfunction
 // Helper function to get current reputation value with a faction
 private function GetReputationLevel takes string factionName returns integer
 	local Faction f = Faction.getFaction(factionName)
-	if f != null then
-		return Reputation.getRep(Player(0), f)
+	local integer repValue = 0
+	if f != 0 then
+		set repValue = Reputation.getRep(Player(0), f)
 	endif
-	return 0
+	return repValue
 endfunction
 
 // Helper function to get reputation level name from value
@@ -1735,14 +2169,49 @@ private function GetReputationLevelName takes integer repValue returns string
 	endif
 endfunction
 
+private function StopRepCheckTimerIfIdle takes nothing returns nothing
+	if RepReqCount == 0 and RepCheckTimer != null then
+		call PauseTimer(RepCheckTimer)
+		call DestroyTimer(RepCheckTimer)
+		set RepCheckTimer = null
+	endif
+endfunction
+
+private function RemoveReputationRequirementAt takes integer index returns nothing
+	local integer j = index
+
+	loop
+		exitwhen j >= RepReqCount
+		set RepReqQuestId[j] = RepReqQuestId[j + 1]
+		set RepReqGiver[j] = RepReqGiver[j + 1]
+		set RepReqIndex[j] = RepReqIndex[j + 1]
+		set RepReqFaction[j] = RepReqFaction[j + 1]
+		set RepReqLevel[j] = RepReqLevel[j + 1]
+		set RepReqComplete[j] = RepReqComplete[j + 1]
+		set j = j + 1
+	endloop
+
+	set RepReqQuestId[RepReqCount] = 0
+	set RepReqGiver[RepReqCount] = null
+	set RepReqIndex[RepReqCount] = 0
+	set RepReqFaction[RepReqCount] = ""
+	set RepReqLevel[RepReqCount] = 0
+	set RepReqComplete[RepReqCount] = false
+	set RepReqCount = RepReqCount - 1
+
+	call StopRepCheckTimerIfIdle()
+endfunction
+
 private function CheckReputationProgress takes nothing returns nothing
 	local integer i = 1
 	local QuestData q
 	local string reqText
 	local integer currentRep
+	local boolean removeReq
 
 	loop
 		exitwhen i > RepReqCount
+		set removeReq = false
 		if not RepReqComplete[i] then
 			set q = QuestMaster_GetById(RepReqQuestId[i])
 
@@ -1758,10 +2227,18 @@ private function CheckReputationProgress takes nothing returns nothing
 					call QuestMaster_SetStateByNameAndGiver(q.name, RepReqGiver[i], QUEST_STATE_READY_TURNIN)
 					call q.addReturnRequirement()
 					call DebugMsg("CheckReputationProgress: Reached " + GetReputationLevelName(RepReqLevel[i]) + " with " + RepReqFaction[i])
+					set removeReq = true
 				endif
 			endif
+		else
+			set removeReq = true
 		endif
-		set i = i + 1
+
+		if removeReq then
+			call RemoveReputationRequirementAt(i)
+		else
+			set i = i + 1
+		endif
 	endloop
 endfunction
 
@@ -1800,6 +2277,19 @@ public function RegisterReputationRequirement takes integer questId, unit questG
 	endif
 
 	call DebugMsg("Registered Reputation requirement: quest=" + I2S(questId) + ", faction=" + faction + ", level=" + levelName)
+endfunction
+
+public function UnregisterReputationRequirement takes integer questId, integer reqIndex returns nothing
+	local integer i = 1
+
+	loop
+		exitwhen i > RepReqCount
+		if RepReqQuestId[i] == questId and RepReqIndex[i] == reqIndex then
+			call RemoveReputationRequirementAt(i)
+			return
+		endif
+		set i = i + 1
+	endloop
 endfunction
 
 //===========================================================================

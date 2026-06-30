@@ -1,4 +1,4 @@
-library ZoneEvent initializer Init requires ZonesCore, Table, DNC, ExMusic, TasQuestBox
+library ZoneEvent initializer Init requires ZonesCore, Table, DNC, ExMusic, TasQuestBox, CameraControl
 //===========================================================================
 /*
     ZoneEvent
@@ -147,6 +147,8 @@ globals
     
     private string tempString = ""
     private unit z_EnteringUnit = null
+    private unit z_PendingParentZoneUnit = null
+    private integer z_PendingParentZoneId = 0
     private boolean cheat_Camlock = false
     
     // Zone questbox tracking
@@ -328,21 +330,100 @@ private function RunDNC takes string dncName returns nothing
     endif
 endfunction
 
+private function ShouldFastPanOnEnter takes ZoneData z returns boolean
+    if z == 0 then
+        return false
+    endif
+
+    // Keep fast camera pans limited to teleported subzones and a few explicit
+    // dungeon transitions so ordinary zone borders do not snap the camera.
+    if z.startRegion != null and z.moveRegion != null then
+        return true
+    endif
+
+    return z.zoneId == 101 or z.zoneId == 102 or z.zoneId == 104 or z.zoneId == 105
+endfunction
+
 private function HandleSpecialEffects takes ZoneData z, unit triggeringUnit returns nothing
+    local player whichPlayer = Player(0)
     // Handle special zone effects (camera, sky, etc.)
+
+    if triggeringUnit != null then
+        set whichPlayer = GetOwningPlayer(triggeringUnit)
+    endif
     
     if z.setSkyClear then
         call SetSkyModel(null)
     endif
     
-    if z.hasSpecialCamera and z.zoneId == 4 then
+    if z.hasSpecialCamera and z.zoneId == 104 then
         // Boom Mine special camera
-        // This is a placeholder for camera handling
+        call CameraControl_SetSpecialMode(whichPlayer, CameraControl_CAMERA_SPECIAL_MODE_BOOMMINE)
         if DEBUG then
             call Debug("Applying special camera for Boom Mine")
         endif
+    else
+        call CameraControl_ClearSpecialMode(whichPlayer)
     endif
+
+    if triggeringUnit != null and ShouldFastPanOnEnter(z) then
+        call CameraControl_UpdateTargetCache(whichPlayer)
+        call CameraControl_FastPanToTarget(whichPlayer)
+    endif
+
+    set whichPlayer = null
+endfunction
+
+private function ApplyCurrentZoneEffectsInternal takes player triggerPlayer, unit triggeringUnit returns nothing
+    local ZoneData z
+    local boolean isDay = udg_DNE_IsDaytime
+    local integer zoneIndex = ZonesCore_GetCurrentZone()
     
+    if DEBUG then
+        call Debug("ApplyCurrentZoneEffects called: currentZone=" + I2S(zoneIndex) + ", isDay=" + I2S(B2I(isDay)))
+    endif
+
+    if zoneIndex == 0 then
+        if DEBUG then
+            call Debug("No current zone (currentZone=0), nothing to apply")
+        endif
+        set triggerPlayer = null
+        set triggeringUnit = null
+        return
+    endif
+
+    set z = ZonesCore_GetZoneData(zoneIndex)
+    if z == 0 then
+        if DEBUG then
+            call Debug("Zone data not found for currentZone=" + I2S(zoneIndex))
+        endif
+        set triggerPlayer = null
+        set triggeringUnit = null
+        return
+    endif
+
+    // Music
+    set udg_ExMusicInteger = z.musicTrack
+    call ExMusic_PlayTrack(udg_ExMusicInteger)
+
+    // Fog
+    if DEBUG then
+        call Debug("ApplyCurrentZoneEffects: Applying fog (udg_DNE_IsDaytime=" + I2S(B2I(udg_DNE_IsDaytime)) + ", isDay=" + I2S(B2I(isDay)) + ")")
+    endif
+    call ApplyFog(z, zoneIndex, isDay, triggerPlayer)
+
+    // Ambient
+    call ClearAmbientSounds()
+    if isDay and z.ambientDaySound != "" then
+        call AddAmbientSound(z.ambientDaySound, null)
+    elseif not isDay and z.ambientNightSound != "" then
+        call AddAmbientSound(z.ambientNightSound, null)
+    endif
+
+    call HandleSpecialEffects(z, triggeringUnit)
+
+    set triggerPlayer = null
+    set triggeringUnit = null
 endfunction
 
 private function CreateQuestLog takes ZoneData z returns nothing
@@ -447,6 +528,15 @@ private function MoveStart takes ZoneData z, unit enteringUnit returns nothing
     set u = null
 endfunction
 
+private function EnterPendingParentZoneDelayed takes nothing returns nothing
+    local timer t = GetExpiredTimer()
+    call ExecuteFunc("ZoneEvent_RunPendingParentZoneEnter")
+    if t != null then
+        call DestroyTimer(t)
+    endif
+    set t = null
+endfunction
+
 //======================================================
 // Zone - MoveOut Handler
 // Move unit to outRegion and issue move to moveOutRegion
@@ -459,6 +549,7 @@ private function MoveOut takes nothing returns nothing
     local trigger trig = GetTriggeringTrigger()
     local integer zoneId = 0
     local integer currentZone = ZonesCore_GetCurrentZone()
+    local integer parentZoneId = 0
     local real xStart = 0.0
     local real yStart = 0.0
     local real xMove = 0.0
@@ -507,6 +598,12 @@ private function MoveOut takes nothing returns nothing
         endif
         return
     endif
+    if currentZone != 0 and zoneId != currentZone then
+        if DEBUG then
+            call Debug("Ignoring exit trigger for inactive zone " + I2S(zoneId) + " while current zone is " + I2S(currentZone))
+        endif
+        return
+    endif
 
     set z = ZonesCore_GetZoneData(zoneId)
 
@@ -523,6 +620,11 @@ private function MoveOut takes nothing returns nothing
     // Check regions exist
     if z.outRegion == null or z.moveOutRegion == null then
         return
+    endif
+
+    if z.hasParentZone() then
+        set parentZoneId = z.getParentZoneId()
+        call ZonesCore_ResetZone()
     endif
 
     // Get center coordinates of outRegion and moveOutRegion
@@ -558,6 +660,17 @@ private function MoveOut takes nothing returns nothing
 
     call DestroyGroup(tempGroup)
 
+    if parentZoneId > 0 then
+        if ZonesCore_GetCurrentZone() != parentZoneId then
+            set z_PendingParentZoneId = parentZoneId
+            set z_PendingParentZoneUnit = GetTriggerUnit()
+            call TimerStart(CreateTimer(), 0.00, false, function EnterPendingParentZoneDelayed)
+        endif
+    else
+        call ZonesCore_ResetZone()
+    endif
+
+    set trigPlayer = null
     set u = null
 endfunction
 
@@ -638,6 +751,7 @@ private function HandleZoneEnter takes integer newZoneId, unit triggeringUnit re
     // If this zone has a startRegion/moveRegion, move units
     if z.startRegion != null and z.moveRegion != null then
         call MoveStart(z, triggeringUnit)
+        call CameraControl_UpdateTargetCache(triggerPlayer)
     endif
 
     // Set current zone
@@ -717,6 +831,25 @@ private function HandleZoneEnter takes integer newZoneId, unit triggeringUnit re
         endif
     endif
     set z_EnteringUnit = triggeringUnit
+endfunction
+
+public function RunPendingParentZoneEnter takes nothing returns nothing
+    local integer zoneId = z_PendingParentZoneId
+    local unit whichUnit = z_PendingParentZoneUnit
+
+    set z_PendingParentZoneId = 0
+    set z_PendingParentZoneUnit = null
+
+    if zoneId <= 0 or whichUnit == null then
+        set whichUnit = null
+        return
+    endif
+
+    if ZonesCore_GetCurrentZone() != zoneId then
+        call HandleZoneEnter(zoneId, whichUnit)
+    endif
+
+    set whichUnit = null
 endfunction
 
 //===========================================================================
@@ -811,81 +944,7 @@ endfunction
 
 // Re-applies all effects for the current zone (music, DNC, fog, ambient)
 public function ApplyCurrentZoneEffects takes nothing returns nothing
-    local ZoneData z
-    local player triggerPlayer = Player(0)
-    local boolean isDay = udg_DNE_IsDaytime
-    local integer zoneIndex = ZonesCore_GetCurrentZone()
-    
-    if DEBUG then
-        call Debug("ApplyCurrentZoneEffects called: currentZone=" + I2S(zoneIndex) + ", isDay=" + I2S(B2I(isDay)))
-    endif
-
-    if zoneIndex == 0 then
-        if DEBUG then
-            call Debug("No current zone (currentZone=0), nothing to apply")
-        endif
-        return
-    endif
-
-    set z = ZonesCore_GetZoneData(zoneIndex)
-    if z == 0 then
-        if DEBUG then
-            call Debug("Zone data not found for currentZone=" + I2S(zoneIndex))
-        endif
-        return
-    endif
-
-    /*
-    if DEBUG then
-        call Debug("Applying effects for zone: " + z.name + " (ID: " + I2S(zoneIndex) + ")")
-    endif
-    */
-
-    // Music
-    set udg_ExMusicInteger = z.musicTrack
-    /*
-    if DEBUG then
-        call Debug("ApplyCurrentZoneEffects: Setting music track to " + I2S(udg_ExMusicInteger))
-    endif
-    */
-    call ExMusic_PlayTrack(udg_ExMusicInteger)
-
-    /*
-    // DNC
-    if DEBUG then
-        call Debug("ApplyCurrentZoneEffects: Running DNC: " + z.dncName)
-    endif
-    call RunDNC(z.dncName)
-    */
-
-    // Fog
-    if DEBUG then
-        call Debug("ApplyCurrentZoneEffects: Applying fog (udg_DNE_IsDaytime=" + I2S(B2I(udg_DNE_IsDaytime)) + ", isDay=" + I2S(B2I(isDay)) + ")")
-    endif
-    call ApplyFog(z, zoneIndex, isDay, triggerPlayer)
-
-    // Ambient
-    // Clear existing ambient sounds first
-    /*
-    if DEBUG then
-        call Debug("ApplyCurrentZoneEffects: Clearing ambient sounds and applying appropriate ambient for time of day")
-    endif
-    */
-    call ClearAmbientSounds()
-    if isDay and z.ambientDaySound != "" then
-        call AddAmbientSound(z.ambientDaySound, null)
-    elseif not isDay and z.ambientNightSound != "" then
-        call AddAmbientSound(z.ambientNightSound, null)
-    endif
-
-    // Zone Special stuff
-    /*
-    if DEBUG then
-        call Debug("ApplyCurrentZoneEffects: Running zone special effects handler")
-    endif
-    */
-    call HandleSpecialEffects(z, null)
-
+    call ApplyCurrentZoneEffectsInternal(Player(0), null)
 endfunction
 
 public function ForceUpdate takes unit whichUnit returns nothing

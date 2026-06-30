@@ -158,8 +158,8 @@ endfunction
 private function CancelLifetimeTimer takes item it returns nothing
     local integer handleId = GetHandleId(it)
 
-    if GNI_ItemLifetimeTimer.has(handleId) then
-        call GNI_ItemLifetimeTimer.remove(handleId)
+    if GNI_ItemLifetimeTimer.real.has(handleId) then
+        call GNI_ItemLifetimeTimer.real.remove(handleId)
     endif
 endfunction
 
@@ -519,7 +519,7 @@ private function GNI_HandleLifetimeExpire takes item it returns nothing
     endif
 
     set itemHandleId = GetHandleId(it)
-    if GNI_ItemLifetimeTimer.has(itemHandleId) and GNI_ItemToDefId.has(itemHandleId) then
+    if GNI_ItemLifetimeTimer.real.has(itemHandleId) and GNI_ItemToDefId.has(itemHandleId) then
         set defId = GNI_ItemToDefId.integer[itemHandleId]
         set zoneId = GNI_ItemToZoneId.integer[itemHandleId]
         if GNI_ItemToAssignId.has(itemHandleId) then
@@ -528,7 +528,7 @@ private function GNI_HandleLifetimeExpire takes item it returns nothing
             set assignId = -1
         endif
 
-        call GNI_ItemLifetimeTimer.remove(itemHandleId)
+        call GNI_ItemLifetimeTimer.real.remove(itemHandleId)
         call RemoveGlowEffect(it)
         call GN_UnregisterItem(it, zoneId)
         call GNI_ItemToDefId.remove(itemHandleId)
@@ -539,11 +539,11 @@ private function GNI_HandleLifetimeExpire takes item it returns nothing
         if GNI_ItemLocation.has(itemHandleId) then
             call GNI_ItemLocation.remove(itemHandleId)
         endif
-        if GNI_ItemSpawnX.has(itemHandleId) then
-            call GNI_ItemSpawnX.remove(itemHandleId)
+        if GNI_ItemSpawnX.real.has(itemHandleId) then
+            call GNI_ItemSpawnX.real.remove(itemHandleId)
         endif
-        if GNI_ItemSpawnY.has(itemHandleId) then
-            call GNI_ItemSpawnY.remove(itemHandleId)
+        if GNI_ItemSpawnY.real.has(itemHandleId) then
+            call GNI_ItemSpawnY.real.remove(itemHandleId)
         endif
         if assignId >= 0 then
             call DecrementAssignmentCount(assignId)
@@ -571,7 +571,7 @@ private function GNI_CheckExpiredItems takes nothing returns nothing
         set it = GN_GetActiveItemByIndex(index)
         if it != null then
             set handleId = GetHandleId(it)
-            if GNI_ItemToDefId.has(handleId) and GNI_ItemLifetimeTimer.has(handleId) and GNI_ItemLifetimeTimer.real[handleId] <= now then
+            if GNI_ItemToDefId.has(handleId) and GNI_ItemLifetimeTimer.real.has(handleId) and GNI_ItemLifetimeTimer.real[handleId] <= now then
                 call GNI_HandleLifetimeExpire(it)
             endif
         endif
@@ -828,7 +828,7 @@ private function GNI_HandleItemPickup takes item it, unit picker returns nothing
         set assignId = -1
     endif
 
-    if GNI_ItemSpawnX.has(handleId) then
+    if GNI_ItemSpawnX.real.has(handleId) then
         set originalX = GNI_ItemSpawnX.real[handleId]
         set originalY = GNI_ItemSpawnY.real[handleId]
     else
@@ -865,11 +865,11 @@ private function GNI_HandleItemPickup takes item it, unit picker returns nothing
     if GNI_ItemLocation.has(handleId) then
         call GNI_ItemLocation.remove(handleId)
     endif
-    if GNI_ItemSpawnX.has(handleId) then
-        call GNI_ItemSpawnX.remove(handleId)
+    if GNI_ItemSpawnX.real.has(handleId) then
+        call GNI_ItemSpawnX.real.remove(handleId)
     endif
-    if GNI_ItemSpawnY.has(handleId) then
-        call GNI_ItemSpawnY.remove(handleId)
+    if GNI_ItemSpawnY.real.has(handleId) then
+        call GNI_ItemSpawnY.real.remove(handleId)
     endif
     if assignId >= 0 then
         call DecrementAssignmentCount(assignId)
@@ -994,11 +994,11 @@ function GNI_DebugRefreshAll takes nothing returns nothing
             if GNI_ItemLocation.has(handleId) then
                 call GNI_ItemLocation.remove(handleId)
             endif
-            if GNI_ItemSpawnX.has(handleId) then
-                call GNI_ItemSpawnX.remove(handleId)
+            if GNI_ItemSpawnX.real.has(handleId) then
+                call GNI_ItemSpawnX.real.remove(handleId)
             endif
-            if GNI_ItemSpawnY.has(handleId) then
-                call GNI_ItemSpawnY.remove(handleId)
+            if GNI_ItemSpawnY.real.has(handleId) then
+                call GNI_ItemSpawnY.real.remove(handleId)
             endif
             if assignId >= 0 then
                 call DecrementAssignmentCount(assignId)
@@ -1125,11 +1125,11 @@ private function GNI_HandleExternalItemRemoval takes item it returns nothing
     if GNI_ItemLocation.has(handleId) then
         call GNI_ItemLocation.remove(handleId)
     endif
-    if GNI_ItemSpawnX.has(handleId) then
-        call GNI_ItemSpawnX.remove(handleId)
+    if GNI_ItemSpawnX.real.has(handleId) then
+        call GNI_ItemSpawnX.real.remove(handleId)
     endif
-    if GNI_ItemSpawnY.has(handleId) then
-        call GNI_ItemSpawnY.remove(handleId)
+    if GNI_ItemSpawnY.real.has(handleId) then
+        call GNI_ItemSpawnY.real.remove(handleId)
     endif
     if assignId >= 0 then
         call DecrementAssignmentCount(assignId)

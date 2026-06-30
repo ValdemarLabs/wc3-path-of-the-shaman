@@ -158,6 +158,31 @@ class WC3W3TImporter:
                 item_level = int(item_level)
             except:
                 item_level = 1
+
+        def safe_bool_optional(field_name):
+            if field_name not in item_data or item_data.get(field_name) is None:
+                return None
+
+            value = item_data.get(field_name)
+            if isinstance(value, bool):
+                return value
+            if isinstance(value, int):
+                return bool(value)
+            if isinstance(value, str):
+                return value.lower() in ('1', 'true', 'yes')
+            return None
+
+        actively_used = safe_bool_optional('actively_used')
+        is_droppable = safe_bool_optional('is_droppable')
+        is_sellable = safe_bool_optional('is_sellable')
+        is_pawnable = safe_bool_optional('is_pawnable')
+        is_powerup = safe_bool_optional('is_powerup')
+        wc3_classification = item_data.get('wc3_classification')
+
+        if is_powerup is None and isinstance(wc3_classification, str) and wc3_classification.lower() == 'powerup':
+            is_powerup = True
+
+        use_automatically = True if is_powerup is True else safe_bool_optional('use_automatically')
                 
         # Build SQL for item
         if existing:
@@ -176,6 +201,9 @@ class WC3W3TImporter:
                     icon_path = %s,
                     model_path = %s,
                     max_charges = %s,
+                    is_powerup = %s,
+                    use_automatically = %s,
+                    actively_used = %s,
                     is_droppable = %s,
                     is_sellable = %s,
                     is_pawnable = %s,
@@ -205,10 +233,13 @@ class WC3W3TImporter:
                 item_data.get('icon_path', '')[:255],
                 item_data.get('model_path', '')[:255],
                 item_data.get('max_charges'),
-                bool(item_data.get('is_droppable', True)),
-                bool(item_data.get('is_sellable', True)),
-                bool(item_data.get('is_pawnable', True)),
-                item_data.get('wc3_classification'),
+                is_powerup,
+                use_automatically,
+                actively_used,
+                is_droppable,
+                is_sellable,
+                is_pawnable,
+                wc3_classification,
                 item_data.get('wc3_abilities'),
                 item_data.get('cooldown_group'),
                 item_data.get('scale'),
@@ -226,10 +257,10 @@ class WC3W3TImporter:
                 INSERT INTO items (
                     item_code, item_name, base_id, type_id, rarity_id, class_id, item_level, gold_cost,
                     tooltip, description, icon_path, model_path, max_charges,
-                    is_droppable, is_sellable, is_pawnable,
+                    is_powerup, use_automatically, actively_used, is_droppable, is_sellable, is_pawnable,
                     wc3_classification, wc3_abilities, cooldown_group, scale, tint_red, tint_green, tint_blue
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                 )
                 RETURNING id
             """
@@ -249,10 +280,13 @@ class WC3W3TImporter:
                 item_data.get('icon_path', '')[:255],
                 item_data.get('model_path', '')[:255],
                 item_data.get('max_charges'),
-                bool(item_data.get('is_droppable', True)),
-                bool(item_data.get('is_sellable', True)),
-                bool(item_data.get('is_pawnable', True)),
-                item_data.get('wc3_classification'),
+                is_powerup,
+                use_automatically,
+                actively_used,
+                is_droppable,
+                is_sellable,
+                is_pawnable,
+                wc3_classification,
                 item_data.get('wc3_abilities'),
                 item_data.get('cooldown_group'),
                 item_data.get('scale'),

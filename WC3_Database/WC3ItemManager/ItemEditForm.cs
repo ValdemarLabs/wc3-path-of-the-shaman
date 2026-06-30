@@ -17,6 +17,9 @@ namespace WC3ItemManager
         public string Code { get; set; }
         public string Type { get; set; }
         public string Description { get; set; }
+        public string TooltipSource { get; set; }
+        public string TooltipNormal { get; set; }
+        public string TooltipExtended { get; set; }
     }
     public partial class ItemEditForm : Form
     {
@@ -51,6 +54,13 @@ namespace WC3ItemManager
         private Label lblSelectedAbilityInfo; // Shows selected ability name + editor suffix
         private TextBox txtAbilitiesManual; // UI-only: User-defined item abilities (hidden, updated from grid)
         private DataGridView dgvManualAbilities; // Grid for ability code, type, description
+        private TextBox txtAbilityLookupSearch;
+        private ListBox lstAbilityLookupResults;
+        private Button btnAddLookupAbility;
+        private Button btnClearLookupSearch;
+        private Label lblAbilityLookupStatus;
+        private TextBox txtAbilityLookupTooltipNormal;
+        private TextBox txtAbilityLookupTooltipExtended;
         private Label lblAbilityWarning; // Shows errors/warnings for stat ability generation
         private RichTextBox rtbAbilityDebug;
         private CheckBox chkShowAbilityNames;
@@ -69,7 +79,8 @@ namespace WC3ItemManager
         private CheckBox chkDroppable;
         private CheckBox chkSellable;
         private CheckBox chkPawnable;
-        private CheckBox chkActivelyUsed;
+        private CheckBox chkPowerUpAutoAcquire;
+        private CheckBox chkActivelyUsedWC3;
         private CheckBox chkDroppedOnDeath;
         private CheckBox chkSpecificDropOnly;
         private Button btnSave;
@@ -85,6 +96,24 @@ namespace WC3ItemManager
         private UnitSpecificDropRepository _dropSourceRepo;
         private UnitTypeRepository _unitTypeRepo;
         private List<UnitType> _allUnits;
+        private bool _syncingActivelyUsedCheckboxes;
+        private bool _syncingManualAbilityGridValues;
+
+        private sealed class AbilityLookupEntry
+        {
+            public string Code { get; set; }
+            public string Name { get; set; }
+            public string EditorSuffix { get; set; }
+            public string TooltipNormal { get; set; }
+            public string TooltipExtended { get; set; }
+
+            public override string ToString()
+            {
+                string name = string.IsNullOrWhiteSpace(Name) ? "(no name)" : Name.Trim();
+                string suffix = string.IsNullOrWhiteSpace(EditorSuffix) ? "" : $" [{EditorSuffix.Trim()}]";
+                return $"{Code} - {name}{suffix}";
+            }
+        }
 
         public ItemEditForm(int? itemId, string connectionString, bool isDuplicateMode = false)
         {
@@ -98,12 +127,17 @@ namespace WC3ItemManager
             InitializeComponent();
             SetupUI();
             UpdateDropSourceButtons();
+            
+            // Ensure database has required columns and seed data before loading UI values.
+            EnsureManualAbilitiesColumn();
+            EnsureAbilityLookupColumns();
+            EnsurePowerUpAutoUseIntegrity();
+            EnsureRequiredItemClasses();
+            EnsureItemClassColors();
+
             LoadDropdownData(); // Load database values into dropdowns
             LoadBaseItems(); // Load base items from database
             LoadEquipAbilities(); // Load EQUIP_ abilities for attachments dropdown
-            
-            // Ensure database has manual_abilities_data column
-            EnsureManualAbilitiesColumn();
             
             if (itemId.HasValue)
             {
@@ -144,6 +178,115 @@ namespace WC3ItemManager
             }
             
             return currentCode + "2";
+        }
+
+        private void WireActivelyUsedCheckbox(CheckBox checkBox)
+        {
+            if (checkBox == null)
+                return;
+
+            checkBox.CheckedChanged += (s, e) =>
+            {
+                if (_syncingActivelyUsedCheckboxes)
+                    return;
+
+                bool isChecked = checkBox.Checked;
+                _syncingActivelyUsedCheckboxes = true;
+
+                if (chkActivelyUsedWC3 != null && chkActivelyUsedWC3 != checkBox)
+                    chkActivelyUsedWC3.Checked = isChecked;
+
+                _syncingActivelyUsedCheckboxes = false;
+            };
+        }
+
+        private void SetActivelyUsedValue(bool isChecked)
+        {
+            _syncingActivelyUsedCheckboxes = true;
+
+            if (chkActivelyUsedWC3 != null)
+                chkActivelyUsedWC3.Checked = isChecked;
+
+            _syncingActivelyUsedCheckboxes = false;
+        }
+
+        private bool GetActivelyUsedValue()
+        {
+            return chkActivelyUsedWC3 != null && chkActivelyUsedWC3.Checked;
+        }
+
+        private bool IsPowerUpClassification()
+        {
+            string classification = cmbWC3Classification?.SelectedItem?.ToString() ?? "";
+            return classification.Equals("PowerUp", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void SetWC3ClassificationValue(string wc3Class)
+        {
+            if (cmbWC3Classification == null)
+                return;
+
+            string normalized = NormalizeWC3Classification(wc3Class);
+            for (int i = 0; i < cmbWC3Classification.Items.Count; i++)
+            {
+                string item = cmbWC3Classification.Items[i]?.ToString() ?? "";
+                if (item.Equals(normalized, StringComparison.OrdinalIgnoreCase))
+                {
+                    cmbWC3Classification.SelectedIndex = i;
+                    return;
+                }
+            }
+        }
+
+        private string GetWC3ClassificationValue()
+        {
+            return NormalizeWC3Classification(cmbWC3Classification?.SelectedItem?.ToString());
+        }
+
+        private string NormalizeWC3Classification(string wc3Class)
+        {
+            if (string.IsNullOrWhiteSpace(wc3Class))
+                return "Permanent";
+
+            return wc3Class.Trim().ToLowerInvariant() switch
+            {
+                "powerup" => "PowerUp",
+                "permanent" => "Permanent",
+                "charged" => "Charged",
+                "artifact" => "Artifact",
+                "campaign" => "Campaign",
+                "miscellaneous" => "Miscellaneous",
+                _ => wc3Class.Trim()
+            };
+        }
+
+        private void SetPowerUpAutoAcquireValue(bool isChecked)
+        {
+            if (chkPowerUpAutoAcquire != null)
+            {
+                chkPowerUpAutoAcquire.Checked = isChecked;
+            }
+
+            UpdatePowerUpAutoAcquireState();
+        }
+
+        private bool GetPowerUpAutoAcquireValue()
+        {
+            return IsPowerUpClassification() || (chkPowerUpAutoAcquire?.Checked ?? false);
+        }
+
+        private void UpdatePowerUpAutoAcquireState()
+        {
+            if (chkPowerUpAutoAcquire == null)
+                return;
+
+            bool forceEnabled = IsPowerUpClassification();
+            if (forceEnabled && !chkPowerUpAutoAcquire.Checked)
+            {
+                chkPowerUpAutoAcquire.Checked = true;
+            }
+
+            chkPowerUpAutoAcquire.Enabled = !forceEnabled;
         }
         
         private void EnsureManualAbilitiesColumn()
@@ -830,10 +973,7 @@ namespace WC3ItemManager
             tab.Controls.Add(chkPawnable);
             y += 30;
 
-            chkActivelyUsed = new CheckBox { Text = "Actively Used", Location = new Point(labelX, y), AutoSize = true };
-            tab.Controls.Add(chkActivelyUsed);
-            
-            chkDroppedOnDeath = new CheckBox { Text = "Dropped on Death", Location = new Point(labelX + 120, y), AutoSize = true };
+            chkDroppedOnDeath = new CheckBox { Text = "Dropped on Death", Location = new Point(labelX, y), AutoSize = true };
             tab.Controls.Add(chkDroppedOnDeath);
             y += 30;
 
@@ -1114,10 +1254,30 @@ namespace WC3ItemManager
             // WC3 Classification
             tab.Controls.Add(new Label { Text = "WC3 Classification:", Location = new Point(20, y), AutoSize = true });
             cmbWC3Classification = new ComboBox { Location = new Point(180, y), Width = 200, DropDownStyle = ComboBoxStyle.DropDownList };
-            cmbWC3Classification.Items.AddRange(new object[] { "Permanent", "Charged", "Powerup", "Artifact", "Campaign", "Miscellaneous" });
+            cmbWC3Classification.Items.AddRange(new object[] { "Permanent", "Charged", "PowerUp", "Artifact", "Campaign", "Miscellaneous" });
             cmbWC3Classification.SelectedIndex = 0; // Default to "Permanent"
+            cmbWC3Classification.SelectedIndexChanged += (s, e) => UpdatePowerUpAutoAcquireState();
             tab.Controls.Add(cmbWC3Classification);
             y += 40;
+
+            chkPowerUpAutoAcquire = new CheckBox
+            {
+                Text = "Use Automatically When Acquired (PowerUp / ipow)",
+                Location = new Point(20, y),
+                AutoSize = true
+            };
+            chkPowerUpAutoAcquire.CheckedChanged += (s, e) => UpdatePowerUpAutoAcquireState();
+            tab.Controls.Add(chkPowerUpAutoAcquire);
+
+            tab.Controls.Add(new Label
+            {
+                Text = "PowerUp classification always forces this on.",
+                Location = new Point(390, y + 2),
+                AutoSize = true,
+                ForeColor = Color.Gray,
+                Font = new Font(FontFamily.GenericSansSerif, 8)
+            });
+            y += 35;
 
             // Icon Path
             tab.Controls.Add(new Label { Text = "Icon Path:", Location = new Point(20, y), AutoSize = true });
@@ -1144,6 +1304,25 @@ namespace WC3ItemManager
                 Text = "Objects\\InventoryItems\\TreasureChest\\treasurechest.mdl" // Default model path
             };
             tab.Controls.Add(txtModelPath);
+            y += 35;
+
+            chkActivelyUsedWC3 = new CheckBox
+            {
+                Text = "Actively Used (required for right-click/use items)",
+                Location = new Point(20, y),
+                AutoSize = true
+            };
+            WireActivelyUsedCheckbox(chkActivelyUsedWC3);
+            tab.Controls.Add(chkActivelyUsedWC3);
+
+            tab.Controls.Add(new Label
+            {
+                Text = "Enable this for consumables and other items that must be used from inventory.",
+                Location = new Point(360, y + 2),
+                AutoSize = true,
+                ForeColor = Color.Gray,
+                Font = new Font(FontFamily.GenericSansSerif, 8)
+            });
             y += 35;
 
             // ==================== ABILITIES SECTION ====================
@@ -1290,6 +1469,106 @@ namespace WC3ItemManager
                 Font = new Font(FontFamily.GenericSansSerif, 9, FontStyle.Bold)
             });
             y += 25;
+
+            tab.Controls.Add(new Label
+            {
+                Text = "Lookup from wc3_abilities table:",
+                Location = new Point(20, y),
+                AutoSize = true
+            });
+            y += 22;
+
+            txtAbilityLookupSearch = new TextBox
+            {
+                Location = new Point(20, y),
+                Width = 420,
+                PlaceholderText = "Search by ability code, name, or editor suffix"
+            };
+            txtAbilityLookupSearch.TextChanged += TxtAbilityLookupSearch_TextChanged;
+            txtAbilityLookupSearch.KeyDown += TxtAbilityLookupSearch_KeyDown;
+            tab.Controls.Add(txtAbilityLookupSearch);
+
+            btnClearLookupSearch = new Button
+            {
+                Text = "Clear",
+                Location = new Point(450, y - 1),
+                Size = new Size(75, 24)
+            };
+            btnClearLookupSearch.Click += BtnClearLookupSearch_Click;
+            tab.Controls.Add(btnClearLookupSearch);
+
+            btnAddLookupAbility = new Button
+            {
+                Text = "Add Selected",
+                Location = new Point(535, y - 1),
+                Size = new Size(110, 24)
+            };
+            btnAddLookupAbility.Click += BtnAddLookupAbility_Click;
+            tab.Controls.Add(btnAddLookupAbility);
+            y += 30;
+
+            lstAbilityLookupResults = new ListBox
+            {
+                Location = new Point(20, y),
+                Width = 820,
+                Height = 85,
+                IntegralHeight = false
+            };
+            lstAbilityLookupResults.DoubleClick += LstAbilityLookupResults_DoubleClick;
+            lstAbilityLookupResults.KeyDown += LstAbilityLookupResults_KeyDown;
+            lstAbilityLookupResults.SelectedIndexChanged += LstAbilityLookupResults_SelectedIndexChanged;
+            tab.Controls.Add(lstAbilityLookupResults);
+            y += 90;
+
+            lblAbilityLookupStatus = new Label
+            {
+                Text = "Type an ability code, name, or suffix to search the Pots wc3_abilities table.",
+                Location = new Point(20, y),
+                Width = 820,
+                Height = 20,
+                AutoSize = false,
+                ForeColor = Color.Gray,
+                Font = new Font(FontFamily.GenericSansSerif, 8)
+            };
+            tab.Controls.Add(lblAbilityLookupStatus);
+            y += 25;
+
+            tab.Controls.Add(new Label
+            {
+                Text = "Basic tooltip:",
+                Location = new Point(20, y),
+                AutoSize = true
+            });
+
+            txtAbilityLookupTooltipNormal = new TextBox
+            {
+                Location = new Point(20, y + 20),
+                Width = 400,
+                Height = 65,
+                Multiline = true,
+                ReadOnly = true,
+                ScrollBars = ScrollBars.Vertical
+            };
+            tab.Controls.Add(txtAbilityLookupTooltipNormal);
+
+            tab.Controls.Add(new Label
+            {
+                Text = "Extended tooltip:",
+                Location = new Point(440, y),
+                AutoSize = true
+            });
+
+            txtAbilityLookupTooltipExtended = new TextBox
+            {
+                Location = new Point(440, y + 20),
+                Width = 400,
+                Height = 65,
+                Multiline = true,
+                ReadOnly = true,
+                ScrollBars = ScrollBars.Vertical
+            };
+            tab.Controls.Add(txtAbilityLookupTooltipExtended);
+            y += 95;
             
             // Hidden TextBox - stores comma-separated ability codes for backward compatibility
             txtAbilitiesManual = new TextBox { 
@@ -1330,28 +1609,47 @@ namespace WC3ItemManager
             {
                 Name = "Type",
                 HeaderText = "Type",
-                FillWeight = 20,
+                FillWeight = 16,
                 Items = { "Passive", "Use" },
                 ToolTipText = "Ability activation type"
             };
             dgvManualAbilities.Columns.Add(colType);
+
+            var colTooltipSource = new DataGridViewComboBoxColumn
+            {
+                Name = "TooltipSource",
+                HeaderText = "Tooltip Source",
+                FillWeight = 18,
+                Items = { "Extended", "Basic", "Custom" },
+                ToolTipText = "Choose whether Description follows the ability's normal or extended tooltip"
+            };
+            dgvManualAbilities.Columns.Add(colTooltipSource);
             
             // Column 3: Description
             var colDescription = new DataGridViewTextBoxColumn
             {
                 Name = "Description",
                 HeaderText = "Description",
-                FillWeight = 55,
+                FillWeight = 41,
                 ToolTipText = "Description text shown in tooltip (e.g., 'Flame Aura - Burns nearby units')"
             };
             dgvManualAbilities.Columns.Add(colDescription);
+
+            dgvManualAbilities.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "TooltipNormal",
+                Visible = false
+            });
+
+            dgvManualAbilities.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "TooltipExtended",
+                Visible = false
+            });
             
             // Handle cell value changes to update txtAbilitiesManual
-            dgvManualAbilities.CellValueChanged += (s, e) => 
-            { 
-                UpdateManualAbilitiesFromGrid(); 
-                UpdateItemPreview(); // Update preview when ability descriptions change
-            };
+            dgvManualAbilities.CurrentCellDirtyStateChanged += DgvManualAbilities_CurrentCellDirtyStateChanged;
+            dgvManualAbilities.CellValueChanged += DgvManualAbilities_CellValueChanged;
             dgvManualAbilities.UserDeletedRow += (s, e) => 
             { 
                 UpdateManualAbilitiesFromGrid(); 
@@ -1361,7 +1659,7 @@ namespace WC3ItemManager
             // Validate ability codes (must be exactly 4 characters)
             dgvManualAbilities.CellValidating += (s, e) =>
             {
-                if (e.ColumnIndex == 0) // Code column
+                if (dgvManualAbilities.Columns[e.ColumnIndex].Name == "Code")
                 {
                     string value = e.FormattedValue?.ToString()?.Trim() ?? "";
                     
@@ -1386,7 +1684,7 @@ namespace WC3ItemManager
             y += 155;
             
             tab.Controls.Add(new Label { 
-                Text = "Add abilities with descriptions. Format: Code | Type | Description. Descriptions appear in extended tooltip.", 
+                Text = "Add abilities with descriptions. Tooltip Source can repopulate Description from the ability's basic or extended WC3 tooltip.", 
                 Location = new Point(20, y), 
                 AutoSize = true,
                 ForeColor = Color.Gray,
@@ -1996,6 +2294,10 @@ namespace WC3ItemManager
         {
             try
             {
+                string existingAbilitiesFromDb = "";
+                string attachmentAbilitiesFromDb = "";
+                string manualAbilitiesJsonFromDb = "";
+
                 using (var conn = new NpgsqlConnection(connectionString))
                 {
                     conn.Open();
@@ -2056,26 +2358,26 @@ namespace WC3ItemManager
                                 txtModelPath.Text = reader["model_path"]?.ToString() ?? "";
                                 
                                 // Store abilities temporarily - will split them after loading stats
-                                string existingAbilities = reader["wc3_abilities"]?.ToString() ?? "";
-                                txtAbilities.Text = existingAbilities;
+                                existingAbilitiesFromDb = reader["wc3_abilities"]?.ToString() ?? "";
                                 
                                 // Load attachment abilities
-                                string attachmentAbilities = reader["wc3_abilities_attachments"]?.ToString() ?? "";
+                                attachmentAbilitiesFromDb = reader["wc3_abilities_attachments"]?.ToString() ?? "";
                                 if (txtAbilitiesAttachments != null)
-                                    txtAbilitiesAttachments.Text = attachmentAbilities;
+                                    txtAbilitiesAttachments.Text = attachmentAbilitiesFromDb;
                                 
                                 // Store manual abilities JSON data
-                                string manualAbilitiesJson = reader["manual_abilities_data"]?.ToString() ?? "";
-                                txtAbilitiesManual.Tag = manualAbilitiesJson; // Store temporarily in Tag
+                                manualAbilitiesJsonFromDb = reader["manual_abilities_data"]?.ToString() ?? "";
+                                txtAbilitiesManual.Tag = manualAbilitiesJsonFromDb; // Store temporarily in Tag
                                 
                                 // Clear both fields - will populate after loading stats
+                                txtAbilities.Text = "";
                                 txtAbilitiesStats.Text = "";
                                 txtAbilitiesManual.Text = "";
                                 
                                 chkDroppable.Checked = reader["is_droppable"] != DBNull.Value && Convert.ToBoolean(reader["is_droppable"]);
                                 chkSellable.Checked = reader["is_sellable"] != DBNull.Value && Convert.ToBoolean(reader["is_sellable"]);
                                 chkPawnable.Checked = reader["is_pawnable"] != DBNull.Value && Convert.ToBoolean(reader["is_pawnable"]);
-                                chkActivelyUsed.Checked = reader["actively_used"] != DBNull.Value && Convert.ToBoolean(reader["actively_used"]);
+                                SetActivelyUsedValue(reader["actively_used"] != DBNull.Value && Convert.ToBoolean(reader["actively_used"]));
                                 chkDroppedOnDeath.Checked = reader["dropped_on_death"] != DBNull.Value && Convert.ToBoolean(reader["dropped_on_death"]);
                                 chkSpecificDropOnly.Checked = reader["specific_drop_only"] != DBNull.Value && Convert.ToBoolean(reader["specific_drop_only"]);
 
@@ -2095,8 +2397,16 @@ namespace WC3ItemManager
                                     cmbType.SelectedItem = typeName;
 
                                 string wc3Class = reader["wc3_classification"]?.ToString();
-                                if (!string.IsNullOrEmpty(wc3Class))
-                                    cmbWC3Classification.SelectedItem = wc3Class;
+                                SetWC3ClassificationValue(wc3Class);
+
+                                bool autoAcquire = false;
+                                if (reader["is_powerup"] != DBNull.Value && Convert.ToBoolean(reader["is_powerup"]))
+                                    autoAcquire = true;
+                                if (reader["use_automatically"] != DBNull.Value && Convert.ToBoolean(reader["use_automatically"]))
+                                    autoAcquire = true;
+                                if (!string.IsNullOrEmpty(wc3Class) && wc3Class.Equals("PowerUp", StringComparison.OrdinalIgnoreCase))
+                                    autoAcquire = true;
+                                SetPowerUpAutoAcquireValue(autoAcquire);
                             }
                         }
                     }
@@ -2110,73 +2420,105 @@ namespace WC3ItemManager
                 // Now that stats are loaded, auto-generate stat abilities
                 AutoGenerateAbilities(showMessages: false);
                 
-                // Split existing abilities from DB into stat vs manual
-                string dbAbilities = txtAbilities.Text?.Trim() ?? "";
-                if (!string.IsNullOrWhiteSpace(dbAbilities))
+                var existingList = ParseAbilityCodes(existingAbilitiesFromDb);
+                var attachmentList = ParseAbilityCodes(attachmentAbilitiesFromDb);
+                var statAbilities = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var ability in ParseAbilityCodes(txtAbilitiesStats.Text))
                 {
-                    var existingList = dbAbilities.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
-                        .Select(a => a.Trim())
-                        .Where(a => !string.IsNullOrWhiteSpace(a))
-                        .ToList();
-                    
-                    // Get auto-generated stat abilities
-                    var statAbilities = new HashSet<string>();
-                    if (!string.IsNullOrWhiteSpace(txtAbilitiesStats.Text))
+                    statAbilities.Add(ability);
+                }
+
+                var attachmentSet = new HashSet<string>(attachmentList, StringComparer.OrdinalIgnoreCase);
+                var manualAbilitiesFromDb = existingList
+                    .Where(a => !statAbilities.Contains(a) && !attachmentSet.Contains(a))
+                    .ToList();
+
+                var manualAbilitiesFromJson = new List<ManualAbilityData>();
+                if (!string.IsNullOrWhiteSpace(manualAbilitiesJsonFromDb))
+                {
+                    try
                     {
-                        var statAbilityList = txtAbilitiesStats.Text.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
-                            .Select(a => a.Trim())
-                            .Where(a => !string.IsNullOrWhiteSpace(a));
-                        foreach (var ability in statAbilityList)
-                            statAbilities.Add(ability);
+                        manualAbilitiesFromJson = JsonSerializer.Deserialize<List<ManualAbilityData>>(manualAbilitiesJsonFromDb)
+                            ?? new List<ManualAbilityData>();
                     }
-                    
-                    // Manual abilities = existing abilities - stat abilities
-                    var manualAbilities = existingList.Where(a => !statAbilities.Contains(a)).ToList();
-                    txtAbilitiesManual.Text = string.Join(",", manualAbilities);
-                    
-                    // Populate DataGridView with manual ability details (Code + Type + Description)
-                    if (dgvManualAbilities != null)
+                    catch (Exception ex)
                     {
-                        dgvManualAbilities.Rows.Clear();
-                        
-                        // Try to load from JSON first (preserves Type and Description)
-                        string manualAbilitiesJson = txtAbilitiesManual.Tag as string;
-                        if (!string.IsNullOrWhiteSpace(manualAbilitiesJson))
-                        {
-                            try
-                            {
-                                var manualAbilitiesData = JsonSerializer.Deserialize<List<ManualAbilityData>>(manualAbilitiesJson);
-                                if (manualAbilitiesData != null)
-                                {
-                                    foreach (var abilityData in manualAbilitiesData)
-                                    {
-                                        if (!string.IsNullOrWhiteSpace(abilityData.Code))
-                                        {
-                                            dgvManualAbilities.Rows.Add(
-                                                abilityData.Code,
-                                                abilityData.Type ?? "",
-                                                abilityData.Description ?? ""
-                                            );
-                                        }
-                                    }
-                                    System.Diagnostics.Debug.WriteLine($"[LoadItem] Loaded {manualAbilitiesData.Count} manual abilities from JSON");
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                System.Diagnostics.Debug.WriteLine($"[LoadItem] Error deserializing manual abilities: {ex.Message}");
-                                // Fall back to code-only loading
-                                LoadManualAbilitiesFromCodes(manualAbilities);
-                            }
-                        }
-                        else
-                        {
-                            // No JSON data, load codes only (legacy behavior)
-                            LoadManualAbilitiesFromCodes(manualAbilities);
-                        }
+                        System.Diagnostics.Debug.WriteLine($"[LoadItem] Error deserializing manual abilities: {ex.Message}");
                     }
                 }
-                
+
+                var manualAbilityCodes = new List<string>();
+                foreach (var code in manualAbilitiesFromDb)
+                {
+                    if (!manualAbilityCodes.Contains(code, StringComparer.OrdinalIgnoreCase))
+                        manualAbilityCodes.Add(code);
+                }
+
+                foreach (var abilityData in manualAbilitiesFromJson)
+                {
+                    string code = abilityData?.Code?.Trim() ?? "";
+                    if (!string.IsNullOrWhiteSpace(code) && !manualAbilityCodes.Contains(code, StringComparer.OrdinalIgnoreCase))
+                        manualAbilityCodes.Add(code);
+                }
+
+                txtAbilitiesManual.Text = string.Join(",", manualAbilityCodes);
+
+                if (dgvManualAbilities != null)
+                {
+                    dgvManualAbilities.Rows.Clear();
+
+                    var populatedCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var abilityData in manualAbilitiesFromJson)
+                    {
+                        if (!string.IsNullOrWhiteSpace(abilityData?.Code))
+                        {
+                            string initialTooltipSource = NormalizeTooltipSource(
+                                abilityData.TooltipSource,
+                                abilityData.TooltipNormal ?? "",
+                                abilityData.TooltipExtended ?? "",
+                                abilityData.Description ?? "");
+
+                            int rowIndex = dgvManualAbilities.Rows.Add(
+                                abilityData.Code,
+                                abilityData.Type ?? "",
+                                initialTooltipSource,
+                                abilityData.Description ?? "",
+                                abilityData.TooltipNormal ?? "",
+                                abilityData.TooltipExtended ?? ""
+                            );
+
+                            var row = dgvManualAbilities.Rows[rowIndex];
+                            bool needsLookupHydration =
+                                string.IsNullOrWhiteSpace(abilityData.TooltipNormal) &&
+                                string.IsNullOrWhiteSpace(abilityData.TooltipExtended);
+                            PopulateManualAbilityRowFromCode(
+                                row,
+                                initializeDescriptionWhenMissing: needsLookupHydration && string.IsNullOrWhiteSpace(abilityData.Description));
+                            populatedCodes.Add(abilityData.Code.Trim());
+                        }
+                    }
+
+                    var remainingManualCodes = manualAbilityCodes
+                        .Where(code => !populatedCodes.Contains(code))
+                        .ToList();
+
+                    if (remainingManualCodes.Count > 0)
+                    {
+                        LoadManualAbilitiesFromCodes(remainingManualCodes);
+                    }
+
+                    if (manualAbilitiesFromJson.Count > 0)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[LoadItem] Loaded {manualAbilitiesFromJson.Count} manual abilities from JSON");
+                    }
+                    else if (manualAbilityCodes.Count == 0)
+                    {
+                        System.Diagnostics.Debug.WriteLine("[LoadItem] No manual abilities found in JSON or combined ability field");
+                    }
+                }
+
+                UpdateCombinedAbilitiesField();
+
                 isLoadingItem = false;
                 
                 // Update item level range validation
@@ -2196,6 +2538,18 @@ namespace WC3ItemManager
                 MessageBox.Show($"Error loading item: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+        private List<string> ParseAbilityCodes(string abilitiesText)
+        {
+            if (string.IsNullOrWhiteSpace(abilitiesText))
+                return new List<string>();
+
+            return abilitiesText
+                .Split(new[] { ',', ';', ' ', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(a => a.Trim())
+                .Where(a => !string.IsNullOrWhiteSpace(a))
+                .ToList();
+        }
         
         private void LoadManualAbilitiesFromCodes(List<string> manualAbilities)
         {
@@ -2205,8 +2559,8 @@ namespace WC3ItemManager
             {
                 if (!string.IsNullOrWhiteSpace(code) && code.Length == 4)
                 {
-                    // Add row with code only, Type and Description empty
-                    dgvManualAbilities.Rows.Add(code, "", "");
+                    int rowIndex = dgvManualAbilities.Rows.Add(code, "", null, "", "", "");
+                    PopulateManualAbilityRowFromCode(dgvManualAbilities.Rows[rowIndex], initializeDescriptionWhenMissing: true);
                 }
             }
             System.Diagnostics.Debug.WriteLine($"[LoadManualAbilitiesFromCodes] Loaded {manualAbilities.Count} ability codes (legacy mode)");
@@ -2290,6 +2644,8 @@ namespace WC3ItemManager
                                 wc3_abilities_attachments = @wc3_abilities_attachments,
                                 manual_abilities_data = @manual_abilities_data,
                                 wc3_classification = @wc3_classification,
+                                is_powerup = @is_powerup,
+                                use_automatically = @use_automatically,
                                 is_droppable = @is_droppable,
                                 is_sellable = @is_sellable,
                                 is_pawnable = @is_pawnable,
@@ -2315,12 +2671,14 @@ namespace WC3ItemManager
                                 item_level, gold_cost, lumber_cost, max_charges, max_stack,
                                 tooltip, tooltip_extended, description, hotkey,
                                 icon_path, model_path, wc3_abilities, wc3_abilities_attachments, manual_abilities_data, wc3_classification,
+                                is_powerup, use_automatically,
                                 is_droppable, is_sellable, is_pawnable, actively_used, dropped_on_death, specific_drop_only
                             ) VALUES (
                                 @item_code, @item_name, @base_id, @rarity_id, @class_id, @type_id,
                                 @item_level, @gold_cost, @lumber_cost, @max_charges, @max_stack,
                                 @tooltip, @tooltip_extended, @description, @hotkey,
                                 @icon_path, @model_path, @wc3_abilities, @wc3_abilities_attachments, @manual_abilities_data, @wc3_classification,
+                                @is_powerup, @use_automatically,
                                 @is_droppable, @is_sellable, @is_pawnable, @actively_used, @dropped_on_death, @specific_drop_only
                             ) RETURNING id";
 
@@ -2447,9 +2805,12 @@ namespace WC3ItemManager
                     {
                         if (row.IsNewRow) continue;
                         
-                        string code = row.Cells[0].Value?.ToString()?.Trim() ?? "";
-                        string type = row.Cells[1].Value?.ToString()?.Trim() ?? "";
-                        string description = row.Cells[2].Value?.ToString()?.Trim() ?? "";
+                        string code = row.Cells["Code"].Value?.ToString()?.Trim() ?? "";
+                        string type = row.Cells["Type"].Value?.ToString()?.Trim() ?? "";
+                        string tooltipSource = row.Cells["TooltipSource"].Value?.ToString()?.Trim() ?? "";
+                        string description = row.Cells["Description"].Value?.ToString()?.Trim() ?? "";
+                        string tooltipNormal = row.Cells["TooltipNormal"].Value?.ToString() ?? "";
+                        string tooltipExtended = row.Cells["TooltipExtended"].Value?.ToString() ?? "";
                         
                         if (!string.IsNullOrWhiteSpace(code))
                         {
@@ -2457,7 +2818,10 @@ namespace WC3ItemManager
                             {
                                 Code = code,
                                 Type = type,
-                                Description = description
+                                Description = description,
+                                TooltipSource = tooltipSource,
+                                TooltipNormal = tooltipNormal,
+                                TooltipExtended = tooltipExtended
                             });
                         }
                     }
@@ -2481,11 +2845,14 @@ namespace WC3ItemManager
                     cmd.Parameters.AddWithValue("manual_abilities_data", DBNull.Value);
                 }
                 
-                cmd.Parameters.AddWithValue("wc3_classification", cmbWC3Classification.SelectedItem?.ToString() ?? "Permanent");
+                cmd.Parameters.AddWithValue("wc3_classification", GetWC3ClassificationValue());
+                bool powerUpAutoAcquire = GetPowerUpAutoAcquireValue();
+                cmd.Parameters.AddWithValue("is_powerup", powerUpAutoAcquire);
+                cmd.Parameters.AddWithValue("use_automatically", powerUpAutoAcquire);
                 cmd.Parameters.AddWithValue("is_droppable", chkDroppable.Checked);
                 cmd.Parameters.AddWithValue("is_sellable", chkSellable.Checked);
                 cmd.Parameters.AddWithValue("is_pawnable", chkPawnable.Checked);
-                cmd.Parameters.AddWithValue("actively_used", chkActivelyUsed.Checked);
+                cmd.Parameters.AddWithValue("actively_used", GetActivelyUsedValue());
                 cmd.Parameters.AddWithValue("dropped_on_death", chkDroppedOnDeath.Checked);
                 cmd.Parameters.AddWithValue("specific_drop_only", chkSpecificDropOnly.Checked);
             }
@@ -2619,7 +2986,7 @@ namespace WC3ItemManager
                 if (cmbRarity.Items.Count == 0)
                     cmbRarity.Items.AddRange(new object[] { "Common", "Uncommon", "Rare", "Epic", "Legendary" });
                 if (cmbClass.Items.Count == 0)
-                    cmbClass.Items.AddRange(new object[] { "Head Armor", "Chest Armor", "Weapon" });
+                    cmbClass.Items.AddRange(new object[] { "Ability", "Skill", "Head Armor", "Chest Armor", "Weapon" });
                 if (cmbType.Items.Count == 0)
                     cmbType.Items.AddRange(new object[] { "Armor", "Weapon", "Consumable", "Other" });
                 if (cmbRarity.Items.Count > 0) cmbRarity.SelectedIndex = 0;
@@ -2785,12 +3152,12 @@ namespace WC3ItemManager
         {
             return rarity switch
             {
-                "Common" => "|c00FFFFFF",      // White
-                "Uncommon" => "|c001EFF00",    // Green
-                "Rare" => "|c000070DD",        // Blue
-                "Epic" => "|c00A335EE",        // Purple
-                "Legendary" => "|c00FF8000",   // Orange
-                _ => "|c00FFFFFF"               // Default white
+                "Common" => "|cFFFFFFFF",      // White
+                "Uncommon" => "|cFF1EFF00",    // Green
+                "Rare" => "|cFF0070DD",        // Blue
+                "Epic" => "|cFFA335EE",        // Purple
+                "Legendary" => "|cFFFF8000",   // Orange
+                _ => "|cFFFFFFFF"               // Default white
             };
         }
 
@@ -3299,6 +3666,569 @@ namespace WC3ItemManager
         }
 
         /// <summary>
+        /// Searches the wc3_abilities table and populates the manual ability lookup list.
+        /// </summary>
+        private void LoadAbilityLookupResults(string searchTerm)
+        {
+            if (lstAbilityLookupResults == null || lblAbilityLookupStatus == null)
+                return;
+
+            searchTerm = searchTerm?.Trim() ?? "";
+
+            lstAbilityLookupResults.BeginUpdate();
+            lstAbilityLookupResults.Items.Clear();
+            lstAbilityLookupResults.EndUpdate();
+            SetAbilityLookupPreview(null);
+
+            if (string.IsNullOrWhiteSpace(searchTerm))
+            {
+                lblAbilityLookupStatus.Text = "Type an ability code, name, or suffix to search the Pots wc3_abilities table.";
+                return;
+            }
+
+            try
+            {
+                using (var conn = new NpgsqlConnection(connectionString))
+                {
+                    conn.Open();
+
+                    const string query = @"
+                        SELECT ability_code, ability_name, editor_suffix, tooltip_normal, tooltip_extended
+                        FROM wc3_abilities
+                        WHERE ability_code ILIKE @pattern
+                           OR COALESCE(ability_name, '') ILIKE @pattern
+                           OR COALESCE(editor_suffix, '') ILIKE @pattern
+                        ORDER BY
+                            CASE
+                                WHEN ability_code ILIKE @exact THEN 0
+                                WHEN ability_code ILIKE @starts_with THEN 1
+                                WHEN COALESCE(ability_name, '') ILIKE @starts_with THEN 2
+                                ELSE 3
+                            END,
+                            COALESCE(ability_name, ''),
+                            ability_code
+                        LIMIT 60";
+
+                    using (var cmd = new NpgsqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("pattern", $"%{searchTerm}%");
+                        cmd.Parameters.AddWithValue("starts_with", $"{searchTerm}%");
+                        cmd.Parameters.AddWithValue("exact", searchTerm);
+
+                        var results = new List<AbilityLookupEntry>();
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                results.Add(new AbilityLookupEntry
+                                {
+                                    Code = reader["ability_code"]?.ToString()?.Trim() ?? "",
+                                    Name = reader["ability_name"]?.ToString() ?? "",
+                                    EditorSuffix = reader["editor_suffix"]?.ToString() ?? "",
+                                    TooltipNormal = reader["tooltip_normal"]?.ToString() ?? "",
+                                    TooltipExtended = reader["tooltip_extended"]?.ToString() ?? ""
+                                });
+                            }
+                        }
+
+                        lstAbilityLookupResults.BeginUpdate();
+                        foreach (var result in results)
+                        {
+                            lstAbilityLookupResults.Items.Add(result);
+                        }
+                        lstAbilityLookupResults.EndUpdate();
+
+                        if (results.Count > 0)
+                        {
+                            lstAbilityLookupResults.SelectedIndex = 0;
+                            lblAbilityLookupStatus.Text = $"Found {results.Count} matching abilities. Double-click or use Add Selected.";
+                        }
+                        else
+                        {
+                            lblAbilityLookupStatus.Text = $"No abilities found for '{searchTerm}'.";
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                lblAbilityLookupStatus.Text = $"Ability lookup failed: {ex.Message}";
+            }
+        }
+
+        private void EnsureAbilityLookupColumns()
+        {
+            try
+            {
+                using (var conn = new NpgsqlConnection(connectionString))
+                {
+                    conn.Open();
+                    const string alterQuery = @"
+                        ALTER TABLE wc3_abilities
+                        ADD COLUMN IF NOT EXISTS tooltip_normal TEXT,
+                        ADD COLUMN IF NOT EXISTS tooltip_extended TEXT";
+
+                    using (var cmd = new NpgsqlCommand(alterQuery, conn))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[EnsureAbilityLookupColumns] Error: {ex.Message}");
+                // Non-fatal - lookup UI will surface any query issues.
+            }
+        }
+
+        private void EnsurePowerUpAutoUseIntegrity()
+        {
+            try
+            {
+                using (var conn = new NpgsqlConnection(connectionString))
+                {
+                    conn.Open();
+                    const string alterQuery = @"
+                        ALTER TABLE items
+                        ADD COLUMN IF NOT EXISTS use_automatically BOOLEAN DEFAULT FALSE";
+
+                    using (var alterCmd = new NpgsqlCommand(alterQuery, conn))
+                    {
+                        alterCmd.ExecuteNonQuery();
+                    }
+
+                    const string repairQuery = @"
+                        UPDATE items
+                        SET is_powerup = TRUE,
+                            use_automatically = TRUE,
+                            wc3_classification = CASE
+                                WHEN LOWER(COALESCE(wc3_classification, '')) = 'powerup' THEN 'PowerUp'
+                                ELSE wc3_classification
+                            END
+                        WHERE COALESCE(is_powerup, FALSE) = TRUE
+                           OR LOWER(COALESCE(wc3_classification, '')) = 'powerup'";
+
+                    using (var repairCmd = new NpgsqlCommand(repairQuery, conn))
+                    {
+                        repairCmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[EnsurePowerUpAutoUseIntegrity] Error: {ex.Message}");
+            }
+        }
+
+        private void EnsureRequiredItemClasses()
+        {
+            try
+            {
+                using (var conn = new NpgsqlConnection(connectionString))
+                {
+                    conn.Open();
+                    const string ensureQuery = @"
+                        INSERT INTO item_classes (class_name, slot_type, description)
+                        VALUES
+                            ('Ability', 'ABILITY', 'Ability-granting item slot/class'),
+                            ('Skill', 'SKILL', 'Skill-granting item slot/class')
+                        ON CONFLICT (class_name) DO NOTHING";
+
+                    using (var cmd = new NpgsqlCommand(ensureQuery, conn))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[EnsureRequiredItemClasses] Error: {ex.Message}");
+            }
+        }
+
+        private void EnsureItemClassColors()
+        {
+            try
+            {
+                using (var conn = new NpgsqlConnection(connectionString))
+                {
+                    conn.Open();
+                    const string ensureTableQuery = @"
+                        CREATE TABLE IF NOT EXISTS ui_color_scheme (
+                            id SERIAL PRIMARY KEY,
+                            element_type VARCHAR(50) NOT NULL,
+                            element_name VARCHAR(100) NOT NULL,
+                            color_hex VARCHAR(7) NOT NULL,
+                            description TEXT,
+                            is_active BOOLEAN DEFAULT true,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            UNIQUE(element_type, element_name)
+                        )";
+
+                    using (var tableCmd = new NpgsqlCommand(ensureTableQuery, conn))
+                    {
+                        tableCmd.ExecuteNonQuery();
+                    }
+
+                    const string seedQuery = @"
+                        INSERT INTO ui_color_scheme (element_type, element_name, color_hex, description)
+                        VALUES
+                            ('class', 'Ability', '#00CED1', 'Ability items'),
+                            ('class', 'Skill', '#1E90FF', 'Skill items'),
+                            ('class', 'Quest', '#FFFF00', 'Quest items'),
+                            ('class', 'Miscellaneous', '#D3D3D3', 'Miscellaneous items'),
+                            ('class', 'Other', '#D3D3D3', 'Other items'),
+                            ('class', 'Head Armor', '#C0C0C0', 'Head armor items'),
+                            ('class', 'Chest Armor', '#B0C4DE', 'Chest armor items'),
+                            ('class', 'Leg Armor', '#A9B7C6', 'Leg armor items'),
+                            ('class', 'Foot Armor', '#CD853F', 'Foot armor items'),
+                            ('class', 'Hand Armor', '#DEB887', 'Hand armor items'),
+                            ('class', 'Main Hand Weapon', '#A52A2A', 'Main-hand weapon items'),
+                            ('class', 'Off Hand Weapon', '#8B4513', 'Off-hand weapon items'),
+                            ('class', 'Two-Hand Weapon', '#B22222', 'Two-hand weapon items'),
+                            ('class', 'Ring', '#FFD700', 'Ring items'),
+                            ('class', 'Amulet', '#40E0D0', 'Amulet items'),
+                            ('class', 'Trinket', '#DA70D6', 'Trinket items'),
+                            ('class', 'Back', '#708090', 'Back items')
+                        ON CONFLICT (element_type, element_name) DO NOTHING";
+
+                    using (var seedCmd = new NpgsqlCommand(seedQuery, conn))
+                    {
+                        seedCmd.ExecuteNonQuery();
+                    }
+                }
+
+                colorManager?.LoadColors();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[EnsureItemClassColors] Error: {ex.Message}");
+            }
+        }
+
+        private void TxtAbilityLookupSearch_TextChanged(object sender, EventArgs e)
+        {
+            LoadAbilityLookupResults(txtAbilityLookupSearch?.Text);
+        }
+
+        private void TxtAbilityLookupSearch_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode != Keys.Enter)
+                return;
+
+            e.Handled = true;
+            e.SuppressKeyPress = true;
+
+            if (lstAbilityLookupResults != null && lstAbilityLookupResults.Items.Count > 0)
+            {
+                AddSelectedAbilityFromLookup();
+            }
+        }
+
+        private void BtnClearLookupSearch_Click(object sender, EventArgs e)
+        {
+            if (txtAbilityLookupSearch == null)
+                return;
+
+            txtAbilityLookupSearch.Clear();
+            txtAbilityLookupSearch.Focus();
+        }
+
+        private void BtnAddLookupAbility_Click(object sender, EventArgs e)
+        {
+            AddSelectedAbilityFromLookup();
+        }
+
+        private void LstAbilityLookupResults_DoubleClick(object sender, EventArgs e)
+        {
+            AddSelectedAbilityFromLookup();
+        }
+
+        private void LstAbilityLookupResults_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode != Keys.Enter)
+                return;
+
+            e.Handled = true;
+            e.SuppressKeyPress = true;
+            AddSelectedAbilityFromLookup();
+        }
+
+        private void LstAbilityLookupResults_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (lblAbilityLookupStatus == null)
+                return;
+
+            var selectedEntry = lstAbilityLookupResults?.SelectedItem as AbilityLookupEntry;
+            if (selectedEntry == null)
+            {
+                SetAbilityLookupPreview(null);
+                return;
+            }
+
+            SetAbilityLookupPreview(selectedEntry);
+            lblAbilityLookupStatus.Text = $"{selectedEntry.Code} - {selectedEntry.Name} {selectedEntry.EditorSuffix}".Trim();
+        }
+
+        private void AddSelectedAbilityFromLookup()
+        {
+            var selectedEntry = lstAbilityLookupResults?.SelectedItem as AbilityLookupEntry;
+            if (selectedEntry == null || dgvManualAbilities == null)
+            {
+                if (lblAbilityLookupStatus != null)
+                    lblAbilityLookupStatus.Text = "Select an ability result first.";
+                return;
+            }
+
+            string abilityCode = selectedEntry.Code?.Trim() ?? "";
+            if (string.IsNullOrWhiteSpace(abilityCode))
+                return;
+
+            int existingRowIndex = FindManualAbilityRow(abilityCode);
+            if (existingRowIndex >= 0)
+            {
+                dgvManualAbilities.ClearSelection();
+                dgvManualAbilities.Rows[existingRowIndex].Selected = true;
+                dgvManualAbilities.CurrentCell = dgvManualAbilities.Rows[existingRowIndex].Cells["Type"];
+
+                if (lblAbilityLookupStatus != null)
+                    lblAbilityLookupStatus.Text = $"{abilityCode} is already in Manual Abilities.";
+                return;
+            }
+
+            int rowIndex = dgvManualAbilities.Rows.Add();
+            var row = dgvManualAbilities.Rows[rowIndex];
+            PopulateManualAbilityRow(row, selectedEntry, initializeDescriptionWhenMissing: true);
+
+            dgvManualAbilities.ClearSelection();
+            row.Selected = true;
+            dgvManualAbilities.CurrentCell = row.Cells["Type"];
+            dgvManualAbilities.BeginEdit(true);
+
+            UpdateManualAbilitiesFromGrid();
+            UpdateItemPreview();
+
+            if (lblAbilityLookupStatus != null)
+            {
+                string source = row.Cells["TooltipSource"].Value?.ToString() ?? "Custom";
+                lblAbilityLookupStatus.Text = $"Added {abilityCode}. Default description came from {source.ToLowerInvariant()} tooltip.";
+            }
+        }
+
+        private int FindManualAbilityRow(string abilityCode)
+        {
+            if (dgvManualAbilities == null || string.IsNullOrWhiteSpace(abilityCode))
+                return -1;
+
+            for (int i = 0; i < dgvManualAbilities.Rows.Count; i++)
+            {
+                var row = dgvManualAbilities.Rows[i];
+                if (row.IsNewRow)
+                    continue;
+
+                string rowCode = row.Cells["Code"].Value?.ToString()?.Trim() ?? "";
+                if (rowCode.Equals(abilityCode, StringComparison.OrdinalIgnoreCase))
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private void SetAbilityLookupPreview(AbilityLookupEntry entry)
+        {
+            if (txtAbilityLookupTooltipNormal != null)
+            {
+                txtAbilityLookupTooltipNormal.Text = string.IsNullOrWhiteSpace(entry?.TooltipNormal)
+                    ? "(none)"
+                    : entry.TooltipNormal;
+            }
+
+            if (txtAbilityLookupTooltipExtended != null)
+            {
+                txtAbilityLookupTooltipExtended.Text = string.IsNullOrWhiteSpace(entry?.TooltipExtended)
+                    ? "(none)"
+                    : entry.TooltipExtended;
+            }
+        }
+
+        private void DgvManualAbilities_CurrentCellDirtyStateChanged(object sender, EventArgs e)
+        {
+            if (dgvManualAbilities?.IsCurrentCellDirty == true)
+            {
+                dgvManualAbilities.CommitEdit(DataGridViewDataErrorContexts.Commit);
+            }
+        }
+
+        private void DgvManualAbilities_CellValueChanged(object sender, DataGridViewCellEventArgs e)
+        {
+            if (_syncingManualAbilityGridValues || dgvManualAbilities == null || e.RowIndex < 0 || e.ColumnIndex < 0)
+                return;
+
+            var row = dgvManualAbilities.Rows[e.RowIndex];
+            if (row.IsNewRow)
+                return;
+
+            string columnName = dgvManualAbilities.Columns[e.ColumnIndex].Name;
+            if (columnName == "Code")
+            {
+                PopulateManualAbilityRowFromCode(row, initializeDescriptionWhenMissing: true);
+            }
+            else if (columnName == "TooltipSource")
+            {
+                ApplyTooltipSourceToManualAbilityRow(row);
+            }
+
+            UpdateManualAbilitiesFromGrid();
+            UpdateItemPreview();
+        }
+
+        private AbilityLookupEntry LoadAbilityLookupEntryByCode(string abilityCode)
+        {
+            if (string.IsNullOrWhiteSpace(abilityCode))
+                return null;
+
+            using (var conn = new NpgsqlConnection(connectionString))
+            {
+                conn.Open();
+
+                const string query = @"
+                    SELECT ability_code, ability_name, editor_suffix, tooltip_normal, tooltip_extended
+                    FROM wc3_abilities
+                    WHERE ability_code = @code
+                    LIMIT 1";
+
+                using (var cmd = new NpgsqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("code", abilityCode.Trim());
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        if (!reader.Read())
+                            return null;
+
+                        return new AbilityLookupEntry
+                        {
+                            Code = reader["ability_code"]?.ToString()?.Trim() ?? "",
+                            Name = reader["ability_name"]?.ToString() ?? "",
+                            EditorSuffix = reader["editor_suffix"]?.ToString() ?? "",
+                            TooltipNormal = reader["tooltip_normal"]?.ToString() ?? "",
+                            TooltipExtended = reader["tooltip_extended"]?.ToString() ?? ""
+                        };
+                    }
+                }
+            }
+        }
+
+        private void PopulateManualAbilityRowFromCode(DataGridViewRow row, bool initializeDescriptionWhenMissing)
+        {
+            if (row == null)
+                return;
+
+            string abilityCode = row.Cells["Code"].Value?.ToString()?.Trim() ?? "";
+            if (string.IsNullOrWhiteSpace(abilityCode) || abilityCode.Length != 4)
+            {
+                _syncingManualAbilityGridValues = true;
+                row.Cells["TooltipNormal"].Value = "";
+                row.Cells["TooltipExtended"].Value = "";
+                _syncingManualAbilityGridValues = false;
+                return;
+            }
+
+            try
+            {
+                var entry = LoadAbilityLookupEntryByCode(abilityCode);
+                PopulateManualAbilityRow(row, entry, initializeDescriptionWhenMissing);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[PopulateManualAbilityRowFromCode] {abilityCode}: {ex.Message}");
+            }
+        }
+
+        private void PopulateManualAbilityRow(DataGridViewRow row, AbilityLookupEntry entry, bool initializeDescriptionWhenMissing)
+        {
+            if (row == null)
+                return;
+
+            string tooltipNormal = entry?.TooltipNormal ?? "";
+            string tooltipExtended = entry?.TooltipExtended ?? "";
+            string currentDescription = row.Cells["Description"].Value?.ToString() ?? "";
+            string currentSource = row.Cells["TooltipSource"].Value?.ToString() ?? "";
+
+            _syncingManualAbilityGridValues = true;
+
+            if (entry != null)
+            {
+                row.Cells["Code"].Value = entry.Code;
+            }
+
+            row.Cells["TooltipNormal"].Value = tooltipNormal;
+            row.Cells["TooltipExtended"].Value = tooltipExtended;
+
+            string normalizedSource = NormalizeTooltipSource(currentSource, tooltipNormal, tooltipExtended, currentDescription);
+            row.Cells["TooltipSource"].Value = normalizedSource;
+
+            _syncingManualAbilityGridValues = false;
+
+            if (initializeDescriptionWhenMissing || normalizedSource == "Basic" || normalizedSource == "Extended")
+            {
+                ApplyTooltipSourceToManualAbilityRow(row);
+            }
+        }
+
+        private void ApplyTooltipSourceToManualAbilityRow(DataGridViewRow row)
+        {
+            if (row == null)
+                return;
+
+            string tooltipNormal = row.Cells["TooltipNormal"].Value?.ToString() ?? "";
+            string tooltipExtended = row.Cells["TooltipExtended"].Value?.ToString() ?? "";
+            string source = NormalizeTooltipSource(
+                row.Cells["TooltipSource"].Value?.ToString(),
+                tooltipNormal,
+                tooltipExtended,
+                row.Cells["Description"].Value?.ToString() ?? "");
+
+            string description = row.Cells["Description"].Value?.ToString() ?? "";
+            if (source == "Basic")
+            {
+                description = !string.IsNullOrWhiteSpace(tooltipNormal) ? tooltipNormal : tooltipExtended;
+            }
+            else if (source == "Extended")
+            {
+                description = !string.IsNullOrWhiteSpace(tooltipExtended) ? tooltipExtended : tooltipNormal;
+            }
+
+            _syncingManualAbilityGridValues = true;
+            row.Cells["TooltipSource"].Value = source;
+            row.Cells["Description"].Value = description;
+            _syncingManualAbilityGridValues = false;
+        }
+
+        private string NormalizeTooltipSource(string source, string tooltipNormal, string tooltipExtended, string description)
+        {
+            if (string.Equals(source, "Basic", StringComparison.OrdinalIgnoreCase))
+                return "Basic";
+
+            if (string.Equals(source, "Extended", StringComparison.OrdinalIgnoreCase))
+                return "Extended";
+
+            if (string.Equals(source, "Custom", StringComparison.OrdinalIgnoreCase))
+                return "Custom";
+
+            if (!string.IsNullOrWhiteSpace(description))
+                return "Custom";
+
+            if (!string.IsNullOrWhiteSpace(tooltipExtended))
+                return "Extended";
+
+            if (!string.IsNullOrWhiteSpace(tooltipNormal))
+                return "Basic";
+
+            return "Custom";
+        }
+
+        /// <summary>
         /// Syncs DataGridView manual abilities to the hidden txtAbilitiesManual textbox.
         /// Extracts only the ability codes (4-char) from the grid.
         /// </summary>
@@ -3384,10 +4314,10 @@ namespace WC3ItemManager
             if (!string.IsNullOrEmpty(className) || !string.IsNullOrEmpty(rarityName))
             {
                 // Get colors from color manager if available, otherwise use defaults
-                string classColorHex = colorManager?.GetColorHex("class", className) ?? "#A52A2A";
+                string classColorHex = colorManager?.GetColorHex("class", className, ItemClassColorDefaults.GetHex(className)) ?? ItemClassColorDefaults.GetHex(className);
                 string rarityColorHex = colorManager?.GetColorHex("rarity", rarityName) ?? "#90EE90";
                 
-                string classColor = colorManager?.GetWC3ColorCode(classColorHex) ?? "|cffA52A2A";
+                string classColor = colorManager?.GetWC3ColorCode(classColorHex) ?? ItemClassColorDefaults.GetWC3ColorCode(className);
                 string rarityColor = colorManager?.GetWC3ColorCode(rarityColorHex) ?? "|cff90EE90";
                 
                 tooltipParts.Add($"[{classColor}{className}|r, {rarityColor}{rarityName}|r]");

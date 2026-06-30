@@ -1,10 +1,26 @@
 # LARGE ASSESTS # WC3 Database Item Manager 
 /WC3_Database/WC3ItemManager/BACKUPS/
+/WC3_Database/WC3ItemManager/Assets/
+/WC3_Database/WC3ItemManager/bin/debug/net8.0-windows_stale_20260614_045041/
 /WC3_Database/WC3ItemManager/bin/debug/net5.0-windows/blizzard/
 /WC3_Database/WC3ItemManager/bin/debug/net5.0-windows/custom/
+/WC3_Database/WC3ItemManager/bin/debug/net8.0-windows/blizzard/
+/WC3_Database/WC3ItemManager/bin/debug/net8.0-windows/custom/
+/WC3_Database/WC3ItemManager/bin/release/net8.0-windows/blizzard/
+/WC3_Database/WC3ItemManager/bin/release/net8.0-windows/custom/
+/WC3_Database/WC3ItemManager/bin/Release/net8.0-windows/win-x64/blizzard
+/WC3_Database/WC3ItemManager/bin/Release/net8.0-windows/win-x64/custom
+/WC3_Database/WC3ItemManager/bin/release/net8.0-windows/win-x64/publish/blizzard/
+/WC3_Database/WC3ItemManager/bin/release/net8.0-windows/win-x64/publish/custom/
 /WC3_Database/WC3ItemManager/WC3IM_backups/
 /WC3_Database/WC3IM_backups/
 /WC3_Database/_TexturesBackupFolder/
+
+# WC3 Database Item Manager - new version exceeds 100MB limit of Github
+/WC3_Database/WC3ItemManager/bin/Release/net8.0-windows/win-x64/publish/
+
+# SQL Server related
+/WC3_Database/SQL_Database/
 
 # Dynamic Minimap
 /DynamicMinimap/war3mapBLP/
@@ -14,6 +30,9 @@
 
 # Drafts folders
 _Drafts/
+
+# Roadmap
+_Roadmap/
 
 # Cache/temp
 /temp/
@@ -37,6 +56,7 @@ _Drafts/
 
 # Pictures
 *.png
+*.dds
 
 # OS junk
 Thumbs.db
@@ -44,3 +64,10 @@ Thumbs.db
 
 # VSCode
 .vscode/
+
+# JASS
+jass.config.json
+
+# Local Codex skill workspace notes/helpers
+/codex-skills/README.md
+/codex-skills/sync-jassmaster-to-codex.ps1

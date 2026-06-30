@@ -285,6 +285,7 @@ private function OnRespawnTimerExpire takes nothing returns nothing
     call SaveUnitPosition(newUnit)
     
     // Assign the unit to Unit variable (quest givers, etc. important units)
+    set bj_lastCreatedUnit = newUnit
     call CreepUnitAssignment(utype)
     call ClearRespawnData(respawnId)
     call ReleaseTimer(t)
