@@ -45,7 +45,7 @@
 
 //============================================================================
 
-library FollowSystem initializer Init requires Table, SpeciFX
+library FollowSystem initializer Init requires Table, SpeciFX, IconQuery
 
 //============================================================================
 // CONFIGURATION
@@ -240,7 +240,7 @@ private function RemoveUnitInternal takes unit u returns nothing
     if ENABLE_MAP_ICON then
         set mapIconIndex = unitData[KEY_MAP_ICON]
         if mapIconIndex >= 0 and mapIconIndex < MapIconIndex then
-            call DestroyMinimapIcon(FollowMapIcons[mapIconIndex])
+            call IconQuery_UnregisterIcon(FollowMapIcons[mapIconIndex])
             set FollowMapIcons[mapIconIndex] = null
         endif
     endif
@@ -279,6 +279,7 @@ endfunction
 //   enablePing: Whether to ping when unit is not following
 function FollowSystem_SetFollow takes unit follower, unit target, real maxDistance, boolean unfollowOnAttack, real unfollowDuration, integer commandStyle, boolean enableMapIcon, boolean enablePing returns nothing
     local integer unitId
+    local integer mapIconIndex
     local minimapicon mapIcon
     local Table unitData
     
@@ -321,11 +322,18 @@ function FollowSystem_SetFollow takes unit follower, unit target, real maxDistan
     set unitData[KEY_LAST_PING] = 0
     set unitData[KEY_ENABLE_PING] = B2I(enablePing)
     set unitData[KEY_ENABLE_MAP_ICON] = B2I(enableMapIcon)
+
+    if ENABLE_MAP_ICON then
+        set mapIconIndex = unitData[KEY_MAP_ICON]
+        if mapIconIndex >= 0 and mapIconIndex < MapIconIndex and FollowMapIcons[mapIconIndex] != null then
+            call IconQuery_UnregisterIcon(FollowMapIcons[mapIconIndex])
+            set FollowMapIcons[mapIconIndex] = null
+        endif
+    endif
     
     // Create map icon if enabled (using QuestIconSystem pattern)
     if ENABLE_MAP_ICON and enableMapIcon then
-        call CampaignMinimapIconUnitBJ(follower, MAP_ICON_STYLE)
-        set mapIcon = GetLastCreatedMinimapIcon()
+        set mapIcon = IconQuery_RegisterCompanionFollowerUnitIcon(follower)
         if mapIcon != null then
             set FollowMapIcons[MapIconIndex] = mapIcon
             set unitData[KEY_MAP_ICON] = MapIconIndex
