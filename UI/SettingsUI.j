@@ -6,7 +6,7 @@
 
     Description:
     In-game settings panel for icon query timing, minimap marker categories,
-    map difficulty, and future settings placeholders.
+    secondary marker scan frequency, map difficulty, and future settings placeholders.
 
     Credits:
     Tasyen (TasQuestBox as inspiration)
@@ -20,14 +20,14 @@
     call SettingsUI_GetMapDifficulty()
 
 **/
-library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery
+library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Difficulty
     globals
         // UI-limited settings ranges. IconQuery also clamps internally.
         private constant string SETUI_TOC_PATH = "war3mapimported\\templates.toc"
         private constant real SETUI_QUERY_TIME_MIN = 1.00
-        private constant real SETUI_QUERY_TIME_MAX = 6.00
-        private constant real SETUI_QUERY_REST_MIN = 30.00
-        private constant real SETUI_QUERY_REST_MAX = 60.00
+        private constant real SETUI_QUERY_TIME_MAX = 15.00
+        private constant real SETUI_QUERY_REST_MIN = 5.00
+        private constant real SETUI_QUERY_REST_MAX = 120.00
 
         private constant integer SETUI_ACTION_ALL = 1
         private constant integer SETUI_ACTION_QUEST_GIVERS = 2
@@ -36,7 +36,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery
         private constant integer SETUI_ACTION_POI = 5
         private constant integer SETUI_ACTION_COMPANIONS = 6
         private constant integer SETUI_ACTION_DIFFICULTY = 7
-        private constant integer SETUI_ACTION_PLACEHOLDER_1 = 8
+        private constant integer SETUI_ACTION_SECONDARY_FREQUENCY = 8
         private constant integer SETUI_ACTION_PLACEHOLDER_2 = 9
 
         private constant integer SETUI_SLIDER_QUERY_TIME = 1
@@ -103,6 +103,18 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery
         return "Normal"
     endfunction
 
+    private function SETUI_GetSecondaryFrequencyText takes nothing returns string
+        local integer frequency = IconQuery_GetSecondaryCategoryFrequency()
+        if frequency <= 1 then
+            return "Every"
+        elseif frequency == 2 then
+            return "Every 2nd"
+        elseif frequency == 3 then
+            return "Every 3rd"
+        endif
+        return "Every " + I2S(frequency) + "th"
+    endfunction
+
     private function SETUI_SetFrameVisible takes framehandle frame, boolean visible returns nothing
         if frame != null then
             call BlzFrameSetVisible(frame, visible)
@@ -136,6 +148,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery
 
         set SETUI_Syncing = true
         if GetLocalPlayer() == whichPlayer then
+            set SETUI_MapDifficulty = Difficulty_GetDifficulty()
             set queryTime = IconQuery_GetQueryTime()
             set restTime = IconQuery_GetQueryRestTime()
 
@@ -146,7 +159,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery
             call BlzFrameSetText(SETUI_Button[5], "Places: " + SETUI_OnOff(IconQuery_IsCategoryEnabled(ICONQUERY_CATEGORY_PLACES_OF_INTEREST)))
             call BlzFrameSetText(SETUI_Button[6], "Companions: " + SETUI_OnOff(IconQuery_IsCategoryEnabled(ICONQUERY_CATEGORY_COMPANIONS_AND_FOLLOWERS)))
             call BlzFrameSetText(SETUI_Button[7], "Difficulty: " + SETUI_GetDifficultyName())
-            call BlzFrameSetText(SETUI_Button[8], "Future Setting")
+            call BlzFrameSetText(SETUI_Button[8], "Other Icons: " + SETUI_GetSecondaryFrequencyText())
             call BlzFrameSetText(SETUI_Button[9], "Future Setting")
 
             call BlzFrameSetText(SETUI_SliderLabel[1], "Query: " + I2S(R2I(queryTime + 0.5)) + "s")
@@ -189,6 +202,15 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery
         if SETUI_MapDifficulty > SETTINGSUI_MAP_DIFFICULTY_HARD then
             set SETUI_MapDifficulty = SETTINGSUI_MAP_DIFFICULTY_STORY
         endif
+        call Difficulty_SetDifficulty(SETUI_MapDifficulty)
+    endfunction
+
+    private function SETUI_CycleSecondaryFrequency takes nothing returns nothing
+        local integer frequency = IconQuery_GetSecondaryCategoryFrequency() + 1
+        if frequency > 3 then
+            set frequency = 1
+        endif
+        call IconQuery_SetSecondaryCategoryFrequency(frequency)
     endfunction
 
     private function SETUI_ButtonClickAction takes nothing returns nothing
@@ -212,7 +234,9 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery
                 call IconQuery_SetCategoryEnabled(ICONQUERY_CATEGORY_COMPANIONS_AND_FOLLOWERS, not IconQuery_IsCategoryEnabled(ICONQUERY_CATEGORY_COMPANIONS_AND_FOLLOWERS))
             elseif actionId == SETUI_ACTION_DIFFICULTY then
                 call SETUI_CycleDifficulty()
-            elseif actionId == SETUI_ACTION_PLACEHOLDER_1 or actionId == SETUI_ACTION_PLACEHOLDER_2 then
+            elseif actionId == SETUI_ACTION_SECONDARY_FREQUENCY then
+                call SETUI_CycleSecondaryFrequency()
+            elseif actionId == SETUI_ACTION_PLACEHOLDER_2 then
                 call DisplayTextToPlayer(p, 0.0, 0.0, "|cffffcc00Settings|r option reserved for a future system.")
             endif
             call SETUI_Refresh(p)
@@ -340,7 +364,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery
         call SETUI_CreateSliderRow(1, "Query", SETUI_SLIDER_QUERY_TIME, -0.030, SETUI_QUERY_TIME_MIN, SETUI_QUERY_TIME_MAX, 1.0)
         call SETUI_CreateSliderRow(2, "Rest", SETUI_SLIDER_REST_TIME, -0.070, SETUI_QUERY_REST_MIN, SETUI_QUERY_REST_MAX, 5.0)
         call SETUI_CreateRightButton(7, "Difficulty", SETUI_ACTION_DIFFICULTY, -0.120)
-        call SETUI_CreateRightButton(8, "Future Setting", SETUI_ACTION_PLACEHOLDER_1, -0.160)
+        call SETUI_CreateRightButton(8, "Other Icons", SETUI_ACTION_SECONDARY_FREQUENCY, -0.160)
         call SETUI_CreateRightButton(9, "Future Setting", SETUI_ACTION_PLACEHOLDER_2, -0.200)
 
         call BlzFrameSetVisible(SETUI_Parent, false)
@@ -360,6 +384,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery
 
         set SETUI_ButtonActionTable = Table.create()
         set SETUI_SliderKind = Table.create()
+        call Difficulty_SetDifficulty(SETUI_MapDifficulty)
 
         set SETUI_CloseTrigger = CreateTrigger()
         call TriggerAddAction(SETUI_CloseTrigger, function SETUI_CloseAction)
@@ -423,6 +448,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery
             set difficulty = SETTINGSUI_MAP_DIFFICULTY_HARD
         endif
         set SETUI_MapDifficulty = difficulty
+        call Difficulty_SetDifficulty(SETUI_MapDifficulty)
         call SETUI_Refresh(GetLocalPlayer())
     endfunction
 
