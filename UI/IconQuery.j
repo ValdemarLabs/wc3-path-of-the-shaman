@@ -31,6 +31,10 @@
     call IconQuery_SetAllEnabled(boolean enabled)
     call IconQuery_SetQueryTime(real seconds)
     call IconQuery_SetQueryRestTime(real seconds)
+    call IconQuery_SetCategoryQueryTime(integer category, real seconds)
+    call IconQuery_ClearCategoryQueryTime(integer category)
+    call IconQuery_SetCategoryFrequency(integer category, integer everyRounds)
+    call IconQuery_SetSecondaryCategoryFrequency(integer everyRounds)
 
 **/
 library IconQuery initializer Init requires Table
@@ -46,17 +50,20 @@ library IconQuery initializer Init requires Table
         private constant integer IQ_CATEGORY_COUNT = 5
         private constant integer IQ_MAX_ENTRIES = 2048
         private constant real IQ_QUERY_TIME_MIN = 0.50
-        private constant real IQ_QUERY_TIME_MAX = 10.00
-        private constant real IQ_QUERY_REST_MIN = 30.00
-        private constant real IQ_QUERY_REST_MAX = 60.00
+        private constant real IQ_QUERY_TIME_MAX = 15.00
+        private constant real IQ_QUERY_REST_MIN = 5.00
+        private constant real IQ_QUERY_REST_MAX = 120.00
         private constant real IQ_START_DELAY = 0.03
-        private constant real IQ_DEFAULT_QUERY_TIME = 2.00
+        private constant real IQ_DEFAULT_QUERY_TIME = 4.00
         private constant real IQ_DEFAULT_QUERY_REST_TIME = 45.00
         private constant real IQ_PING_DURATION = 1.25
+        private constant integer IQ_CATEGORY_FREQUENCY_MIN = 1
+        private constant integer IQ_CATEGORY_FREQUENCY_MAX = 5
 
         private boolean IQ_Initialized = false
         private boolean IQ_AllEnabled = true
         private boolean IQ_TimerRunning = false
+        private boolean IQ_QueryResting = false
         private boolean array IQ_CategoryEnabled
 
         private real IQ_QueryTime = IQ_DEFAULT_QUERY_TIME
@@ -64,6 +71,9 @@ library IconQuery initializer Init requires Table
         private timer IQ_QueryTimer = null
         private integer IQ_QueryCategory = ICONQUERY_CATEGORY_QUEST_GIVERS
         private integer array IQ_CategoryCursor
+        private integer array IQ_CategoryRoundCounter
+        private integer array IQ_CategoryFrequency
+        private real array IQ_CategoryQueryTime
         private integer IQ_ActiveEntry = 0
 
         private integer IQ_EntryCount = 0
@@ -89,8 +99,57 @@ library IconQuery initializer Init requires Table
         return value
     endfunction
 
+    private function IQ_ClampInt takes integer value, integer minValue, integer maxValue returns integer
+        if value < minValue then
+            return minValue
+        endif
+        if value > maxValue then
+            return maxValue
+        endif
+        return value
+    endfunction
+
     private function IQ_IsCategoryValid takes integer category returns boolean
         return category >= ICONQUERY_CATEGORY_QUEST_GIVERS and category <= ICONQUERY_CATEGORY_COMPANIONS_AND_FOLLOWERS
+    endfunction
+
+    private function IQ_GetCategoryQueryTime takes integer category returns real
+        if IQ_IsCategoryValid(category) and IQ_CategoryQueryTime[category] > 0.00 then
+            return IQ_CategoryQueryTime[category]
+        endif
+        return IQ_QueryTime
+    endfunction
+
+    private function IQ_GetEntryQueryTime takes integer entryIndex returns real
+        if entryIndex > 0 and entryIndex <= IQ_EntryCount then
+            return IQ_GetCategoryQueryTime(IQ_EntryCategory[entryIndex])
+        endif
+        return IQ_QueryTime
+    endfunction
+
+    private function IQ_ShouldScanCategory takes integer category returns boolean
+        local integer frequency
+
+        if not IQ_IsCategoryValid(category) then
+            return false
+        endif
+
+        set frequency = IQ_CategoryFrequency[category]
+        if frequency <= 1 then
+            return true
+        endif
+        return ModuloInteger(IQ_CategoryRoundCounter[category], frequency) == 0
+    endfunction
+
+    private function IQ_MarkCategoryRoundComplete takes integer category returns nothing
+        if not IQ_IsCategoryValid(category) then
+            return
+        endif
+        set IQ_CategoryCursor[category] = 0
+        set IQ_CategoryRoundCounter[category] = IQ_CategoryRoundCounter[category] + 1
+        if IQ_CategoryRoundCounter[category] >= 100000 then
+            set IQ_CategoryRoundCounter[category] = 0
+        endif
     endfunction
 
     private function IQ_NextCategory takes integer category returns integer
@@ -253,17 +312,19 @@ library IconQuery initializer Init requires Table
         loop
             exitwhen checked >= IQ_CATEGORY_COUNT
             if IQ_IsCategoryValid(category) and IQ_CategoryEnabled[category] then
-                set entryIndex = IQ_FindEntryInCategory(category, IQ_CategoryCursor[category] + 1)
-                if entryIndex != 0 then
-                    set IQ_QueryCategory = category
-                    set IQ_CategoryCursor[category] = entryIndex
-                    return entryIndex
+                if IQ_ShouldScanCategory(category) then
+                    set entryIndex = IQ_FindEntryInCategory(category, IQ_CategoryCursor[category] + 1)
+                    if entryIndex != 0 then
+                        set IQ_QueryCategory = category
+                        set IQ_CategoryCursor[category] = entryIndex
+                        return entryIndex
+                    endif
                 endif
-            endif
-
-            if IQ_IsCategoryValid(category) then
+                call IQ_MarkCategoryRoundComplete(category)
+            elseif IQ_IsCategoryValid(category) then
                 set IQ_CategoryCursor[category] = 0
             endif
+
             set category = IQ_NextCategory(category)
             set IQ_QueryCategory = category
             set checked = checked + 1
@@ -305,6 +366,7 @@ library IconQuery initializer Init requires Table
 
         if not IQ_HasAnyQueryableEntry() then
             call IQ_ResetCategoryCursors()
+            set IQ_QueryResting = false
             return
         endif
 
@@ -312,13 +374,15 @@ library IconQuery initializer Init requires Table
         if entryIndex == 0 then
             call IQ_ResetCategoryCursors()
             set IQ_TimerRunning = true
+            set IQ_QueryResting = true
             call TimerStart(IQ_QueryTimer, IQ_QueryRestTime, false, function IQ_QueryTick)
             return
         endif
 
         call IQ_ShowEntry(entryIndex)
         set IQ_TimerRunning = true
-        call TimerStart(IQ_QueryTimer, IQ_QueryTime, false, function IQ_QueryTick)
+        set IQ_QueryResting = false
+        call TimerStart(IQ_QueryTimer, IQ_GetEntryQueryTime(entryIndex), false, function IQ_QueryTick)
     endfunction
 
     private function IQ_StartTimer takes real delay returns nothing
@@ -332,6 +396,7 @@ library IconQuery initializer Init requires Table
             return
         endif
         set IQ_TimerRunning = true
+        set IQ_QueryResting = false
         call TimerStart(IQ_QueryTimer, delay, false, function IQ_QueryTick)
     endfunction
 
@@ -343,10 +408,35 @@ library IconQuery initializer Init requires Table
                 call PauseTimer(IQ_QueryTimer)
             endif
             set IQ_TimerRunning = false
+            set IQ_QueryResting = false
             return
         endif
 
         call IQ_StartTimer(IQ_START_DELAY)
+    endfunction
+
+    private function IQ_RestartCurrentTimer takes nothing returns nothing
+        if IQ_QueryTimer == null then
+            set IQ_QueryTimer = CreateTimer()
+        else
+            call PauseTimer(IQ_QueryTimer)
+        endif
+
+        set IQ_TimerRunning = false
+        if not IQ_HasAnyQueryableEntry() then
+            call IQ_RefreshTimerState()
+            return
+        endif
+
+        set IQ_TimerRunning = true
+        if IQ_ActiveEntry > 0 then
+            set IQ_QueryResting = false
+            call TimerStart(IQ_QueryTimer, IQ_GetEntryQueryTime(IQ_ActiveEntry), false, function IQ_QueryTick)
+        elseif IQ_QueryResting then
+            call TimerStart(IQ_QueryTimer, IQ_QueryRestTime, false, function IQ_QueryTick)
+        else
+            call TimerStart(IQ_QueryTimer, IQ_START_DELAY, false, function IQ_QueryTick)
+        endif
     endfunction
 
     private function IQ_RemoveEntryAt takes integer entryIndex returns nothing
@@ -542,6 +632,7 @@ library IconQuery initializer Init requires Table
             call IQ_HideActive()
         endif
         call IQ_RefreshTimerState()
+        call IQ_RestartCurrentTimer()
     endfunction
 
     public function IsCategoryEnabled takes integer category returns boolean
@@ -553,6 +644,7 @@ library IconQuery initializer Init requires Table
 
     public function SetQueryTime takes real seconds returns nothing
         set IQ_QueryTime = IQ_ClampReal(seconds, IQ_QUERY_TIME_MIN, IQ_QUERY_TIME_MAX)
+        call IQ_RestartCurrentTimer()
     endfunction
 
     public function GetQueryTime takes nothing returns real
@@ -561,10 +653,61 @@ library IconQuery initializer Init requires Table
 
     public function SetQueryRestTime takes real seconds returns nothing
         set IQ_QueryRestTime = IQ_ClampReal(seconds, IQ_QUERY_REST_MIN, IQ_QUERY_REST_MAX)
+        call IQ_RestartCurrentTimer()
     endfunction
 
     public function GetQueryRestTime takes nothing returns real
         return IQ_QueryRestTime
+    endfunction
+
+    public function SetCategoryQueryTime takes integer category, real seconds returns nothing
+        if not IQ_IsCategoryValid(category) then
+            return
+        endif
+        set IQ_CategoryQueryTime[category] = IQ_ClampReal(seconds, IQ_QUERY_TIME_MIN, IQ_QUERY_TIME_MAX)
+        call IQ_RestartCurrentTimer()
+    endfunction
+
+    public function GetCategoryQueryTime takes integer category returns real
+        if not IQ_IsCategoryValid(category) then
+            return 0.00
+        endif
+        return IQ_GetCategoryQueryTime(category)
+    endfunction
+
+    public function ClearCategoryQueryTime takes integer category returns nothing
+        if not IQ_IsCategoryValid(category) then
+            return
+        endif
+        set IQ_CategoryQueryTime[category] = 0.00
+        call IQ_RestartCurrentTimer()
+    endfunction
+
+    public function SetCategoryFrequency takes integer category, integer everyRounds returns nothing
+        if not IQ_IsCategoryValid(category) then
+            return
+        endif
+        set IQ_CategoryFrequency[category] = IQ_ClampInt(everyRounds, IQ_CATEGORY_FREQUENCY_MIN, IQ_CATEGORY_FREQUENCY_MAX)
+        set IQ_CategoryRoundCounter[category] = 0
+        set IQ_CategoryCursor[category] = 0
+        call IQ_RestartCurrentTimer()
+    endfunction
+
+    public function GetCategoryFrequency takes integer category returns integer
+        if not IQ_IsCategoryValid(category) then
+            return 0
+        endif
+        return IQ_CategoryFrequency[category]
+    endfunction
+
+    public function SetSecondaryCategoryFrequency takes integer everyRounds returns nothing
+        call SetCategoryFrequency(ICONQUERY_CATEGORY_FLIGHT_MASTER, everyRounds)
+        call SetCategoryFrequency(ICONQUERY_CATEGORY_BOSSES, everyRounds)
+        call SetCategoryFrequency(ICONQUERY_CATEGORY_PLACES_OF_INTEREST, everyRounds)
+    endfunction
+
+    public function GetSecondaryCategoryFrequency takes nothing returns integer
+        return IQ_CategoryFrequency[ICONQUERY_CATEGORY_PLACES_OF_INTEREST]
     endfunction
 
     public function GetCategoryName takes integer category returns string
@@ -599,6 +742,11 @@ library IconQuery initializer Init requires Table
         set IQ_CategoryEnabled[ICONQUERY_CATEGORY_BOSSES] = true
         set IQ_CategoryEnabled[ICONQUERY_CATEGORY_PLACES_OF_INTEREST] = true
         set IQ_CategoryEnabled[ICONQUERY_CATEGORY_COMPANIONS_AND_FOLLOWERS] = true
+        set IQ_CategoryFrequency[ICONQUERY_CATEGORY_QUEST_GIVERS] = 1
+        set IQ_CategoryFrequency[ICONQUERY_CATEGORY_FLIGHT_MASTER] = 3
+        set IQ_CategoryFrequency[ICONQUERY_CATEGORY_BOSSES] = 3
+        set IQ_CategoryFrequency[ICONQUERY_CATEGORY_PLACES_OF_INTEREST] = 3
+        set IQ_CategoryFrequency[ICONQUERY_CATEGORY_COMPANIONS_AND_FOLLOWERS] = 1
         call IQ_ResetCategoryCursors()
     endfunction
 endlibrary
