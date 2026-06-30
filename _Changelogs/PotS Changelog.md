@@ -15,6 +15,19 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [30.6.2026]
+
+### Player-Facing Updates
+- `Chimairo`
+  Added a test ability, `Poison Nova`, based on Flame Strike and using the newly imported `Poison Nova` model.
+
+### Technical Updates
+- `GatherNodeDefinitions`
+  Disabled `GNU_SpawnInitialAll()` inside `DelayedSpawn` in the gather-node definitions export sublibrary as part of the startup-freeze isolation pass.
+
+### Actions Remaining
+- Re-test map startup in-game to confirm whether disabling initial gather unit-node spawning resolves the post-loadscreen freeze.
+
 ## [29.6.2026]
 
 ### Technical Updates
