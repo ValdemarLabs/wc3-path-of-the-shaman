@@ -48,6 +48,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery
 
         private boolean SETUI_Initialized = false
         private boolean SETUI_Syncing = false
+        private boolean SETUI_HandlingSliderAction = false
         private integer SETUI_MapDifficulty = SETTINGSUI_MAP_DIFFICULTY_NORMAL
 
         private framehandle SETUI_Parent = null
@@ -59,6 +60,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery
         private framehandle array SETUI_Button
         private framehandle array SETUI_Slider
         private framehandle array SETUI_SliderLabel
+        private real array SETUI_SliderValueCache
 
         private trigger SETUI_CloseTrigger = null
         private trigger SETUI_ReturnTrigger = null
@@ -107,13 +109,36 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery
         endif
     endfunction
 
+    private function SETUI_GetSliderValue takes integer index returns real
+        if index == 1 then
+            return IconQuery_GetQueryTime()
+        endif
+        return IconQuery_GetQueryRestTime()
+    endfunction
+
+    private function SETUI_SyncSliderValue takes integer index, real value returns nothing
+        if SETUI_Slider[index] == null then
+            return
+        endif
+        if SETUI_SliderValueCache[index] != value then
+            set SETUI_SliderValueCache[index] = value
+            call BlzFrameSetValue(SETUI_Slider[index], value)
+        endif
+    endfunction
+
     private function SETUI_Refresh takes player whichPlayer returns nothing
+        local real queryTime
+        local real restTime
+
         if SETUI_Parent == null then
             return
         endif
 
         set SETUI_Syncing = true
         if GetLocalPlayer() == whichPlayer then
+            set queryTime = IconQuery_GetQueryTime()
+            set restTime = IconQuery_GetQueryRestTime()
+
             call BlzFrameSetText(SETUI_Button[1], "All Icons: " + SETUI_OnOff(IconQuery_GetAllEnabled()))
             call BlzFrameSetText(SETUI_Button[2], "Quest Givers: " + SETUI_OnOff(IconQuery_IsCategoryEnabled(ICONQUERY_CATEGORY_QUEST_GIVERS)))
             call BlzFrameSetText(SETUI_Button[3], "Flight/Ship: " + SETUI_OnOff(IconQuery_IsCategoryEnabled(ICONQUERY_CATEGORY_FLIGHT_MASTER)))
@@ -124,10 +149,10 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery
             call BlzFrameSetText(SETUI_Button[8], "Future Setting")
             call BlzFrameSetText(SETUI_Button[9], "Future Setting")
 
-            call BlzFrameSetText(SETUI_SliderLabel[1], "Query: " + I2S(R2I(IconQuery_GetQueryTime() + 0.5)) + "s")
-            call BlzFrameSetText(SETUI_SliderLabel[2], "Rest: " + I2S(R2I(IconQuery_GetQueryRestTime() + 0.5)) + "s")
-            call BlzFrameSetValue(SETUI_Slider[1], IconQuery_GetQueryTime())
-            call BlzFrameSetValue(SETUI_Slider[2], IconQuery_GetQueryRestTime())
+            call BlzFrameSetText(SETUI_SliderLabel[1], "Query: " + I2S(R2I(queryTime + 0.5)) + "s")
+            call BlzFrameSetText(SETUI_SliderLabel[2], "Rest: " + I2S(R2I(restTime + 0.5)) + "s")
+            call SETUI_SyncSliderValue(1, queryTime)
+            call SETUI_SyncSliderValue(2, restTime)
         endif
         set SETUI_Syncing = false
     endfunction
@@ -202,20 +227,24 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery
         local real value
         local player p = GetTriggerPlayer()
 
-        if SETUI_Syncing then
+        if SETUI_Syncing or SETUI_HandlingSliderAction then
             set p = null
             return
         endif
 
         if SETUI_SliderKind.has(handleId) then
+            set SETUI_HandlingSliderAction = true
             set sliderKind = SETUI_SliderKind.integer[handleId]
             set value = BlzGetTriggerFrameValue()
             if sliderKind == SETUI_SLIDER_QUERY_TIME then
                 call IconQuery_SetQueryTime(SETUI_Clamp(value, SETUI_QUERY_TIME_MIN, SETUI_QUERY_TIME_MAX))
+                set SETUI_SliderValueCache[1] = IconQuery_GetQueryTime()
             elseif sliderKind == SETUI_SLIDER_REST_TIME then
                 call IconQuery_SetQueryRestTime(SETUI_Clamp(value, SETUI_QUERY_REST_MIN, SETUI_QUERY_REST_MAX))
+                set SETUI_SliderValueCache[2] = IconQuery_GetQueryRestTime()
             endif
             call SETUI_Refresh(p)
+            set SETUI_HandlingSliderAction = false
         endif
 
         set p = null
@@ -253,6 +282,11 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery
         call BlzFrameSetSize(SETUI_SliderLabel[index], 0.090, 0.016)
         call BlzFrameSetTextAlignment(SETUI_SliderLabel[index], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_RIGHT)
         call BlzFrameSetText(SETUI_SliderLabel[index], label)
+
+        set SETUI_SliderValueCache[index] = -1.00
+        set SETUI_Syncing = true
+        call SETUI_SyncSliderValue(index, SETUI_GetSliderValue(index))
+        set SETUI_Syncing = false
 
         call BlzTriggerRegisterFrameEvent(SETUI_SliderTrigger, SETUI_Slider[index], FRAMEEVENT_SLIDER_VALUE_CHANGED)
         set SETUI_SliderKind.integer[GetHandleId(SETUI_Slider[index])] = sliderKind
