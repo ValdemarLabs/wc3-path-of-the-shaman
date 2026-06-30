@@ -27,6 +27,7 @@ globals
 	private constant integer ITEM_TELANOR_ROD = 'I013'
 	private constant integer ABIL_TELANOR_ROD = 'A04W'
 	private constant integer ABIL_RIFT_CLOSE = 'A04Z'
+	private constant integer UNIT_VALERIA = 'n01W'
 	private constant integer UNIT_MANA_WRAITH = 'n002'
 	private constant integer UNIT_FADING_SPARKS_WRAITH_2 = 0
 	private constant integer UNIT_FADING_SPARKS_WRAITH_3 = 0
@@ -46,7 +47,7 @@ globals
 	private constant real VALERIA_ENCOUNTER_SPEED_RESET_DELAY = 3.00
 	private constant real DIALOG_COOLDOWN = 6.00
 	private constant real FOLLOW_MAX_DISTANCE = 2000.00
-	private constant real RANGER_ESCORT_DEST_RADIUS = 256.00
+	private constant real RANGER_ESCORT_DEST_RADIUS = 500.00
 	private constant boolean REQUIRE_DIALOG_HERO = true
 	private constant integer CINEMATIC_MOVE_MODE = 1  // 1 = All units,
 	private constant real CINEMATIC_MOVE_OFFSET = 256.00  // Offset for cinematic positioning
@@ -125,6 +126,7 @@ globals
 	private timer ValeriaEncounterRandomTimer = null
 	private timer ValeriaEncounterRangeTimer = null
 	private timer ValeriaEncounterArrowTimer = null
+	private timer ValeriaNegotiationPromptTimer = null
 	private timer RiftsFieldTimer = null
 	private timer RiftsCloseTimer = null
 	private timer RiftsWaveTimer = null
@@ -572,27 +574,44 @@ private function RecreateValeriaAtHome takes nothing returns nothing
 	local real facing = 252.00
 	local unit oldValeria
 
-	if Valeria == null then
-		return
-	endif
-
 	set oldValeria = Valeria
 	set ownerP = Player(VALERIA_HOME_OWNER)
-	set unitTypeId = GetUnitTypeId(oldValeria)
+	set unitTypeId = UNIT_VALERIA
+	if oldValeria != null and GetUnitTypeId(oldValeria) != 0 then
+		set unitTypeId = GetUnitTypeId(oldValeria)
+	endif
 	set x = GetRectCenterX(gg_rct_ValeriaNewPos)
 	set y = GetRectCenterY(gg_rct_ValeriaNewPos)
 
-	call StopFollow(oldValeria)
-	call RemoveValeriaCompanion()
-	call RemoveUnit(oldValeria)
-
-	set Valeria = CreateUnit(ownerP, unitTypeId, x, y, facing)
+	if oldValeria != null and QuestGiver_IsUnitAlive(oldValeria) then
+		call StopFollow(oldValeria)
+		call Companions_Remove(oldValeria)
+		set ValeriaCompanionActive = false
+		set Valeria = oldValeria
+		call SetUnitOwner(Valeria, ownerP, true)
+		call SetUnitPosition(Valeria, x, y)
+		call SetUnitFacing(Valeria, facing)
+	else
+		if oldValeria != null then
+			call RemoveUnit(oldValeria)
+		endif
+		set Valeria = CreateUnit(ownerP, unitTypeId, x, y, facing)
+	endif
+	if Valeria == null then
+		set oldValeria = null
+		set ownerP = null
+		return
+	endif
 	set udg_Valeria = Valeria
+	call SetUnitCreepGuard(Valeria, false)
+	call IssueImmediateOrder(Valeria, "stop")
 	call ExecuteFunc("qAradion_RegisterValeriaEncounterProximity")
 	call UnitAddAbility(Valeria, ABIL_VALERIA_COLD_ARROWS)
 	call IssueImmediateOrder(Valeria, "coldarrows")
 	// TODO OLDGUI PARITY: add Valeria's post-reunion Dash ability here once its custom rawcode is identified in the JASS/object data pipeline.
 	call StartValeriaHomePatrolInternal()
+	set oldValeria = null
+	set ownerP = null
 endfunction
 
 private function RecreateValeriaAtAmbush takes nothing returns nothing
@@ -603,24 +622,40 @@ private function RecreateValeriaAtAmbush takes nothing returns nothing
 	local real facing = 257.00
 	local unit oldValeria
 
-	if Valeria == null then
-		return
-	endif
-
 	set oldValeria = Valeria
 	set ownerP = Player(PLAYER_NEUTRAL_PASSIVE)
-	set unitTypeId = GetUnitTypeId(oldValeria)
+	set unitTypeId = UNIT_VALERIA
+	if oldValeria != null and GetUnitTypeId(oldValeria) != 0 then
+		set unitTypeId = GetUnitTypeId(oldValeria)
+	endif
 	set x = GetRectCenterX(gg_rct_ValeriaAmbushPos)
 	set y = GetRectCenterY(gg_rct_ValeriaAmbushPos)
 
-	call StopFollow(oldValeria)
-	call RemoveValeriaCompanion()
-	call RemoveUnit(oldValeria)
-
-	set Valeria = CreateUnit(ownerP, unitTypeId, x, y, facing)
+	if oldValeria != null and QuestGiver_IsUnitAlive(oldValeria) then
+		call StopFollow(oldValeria)
+		call Companions_Remove(oldValeria)
+		set ValeriaCompanionActive = false
+		set Valeria = oldValeria
+		call SetUnitOwner(Valeria, ownerP, true)
+		call SetUnitPosition(Valeria, x, y)
+		call SetUnitFacing(Valeria, facing)
+	else
+		if oldValeria != null then
+			call RemoveUnit(oldValeria)
+		endif
+		set Valeria = CreateUnit(ownerP, unitTypeId, x, y, facing)
+	endif
+	if Valeria == null then
+		set oldValeria = null
+		set ownerP = null
+		return
+	endif
 	set udg_Valeria = Valeria
+	call SetUnitCreepGuard(Valeria, false)
 	call IssueImmediateOrder(Valeria, "stop")
 	call ExecuteFunc("qAradion_RegisterValeriaEncounterProximity")
+	set oldValeria = null
+	set ownerP = null
 endfunction
 
 private function ResetValeriaForRetryAtAmbush takes nothing returns nothing
@@ -654,9 +689,17 @@ private function DisableValeriaEncounterDeathTrigger takes nothing returns nothi
 	endif
 endfunction
 
+private function StopValeriaNegotiationPromptTimer takes nothing returns nothing
+	if ValeriaNegotiationPromptTimer != null then
+		call DestroyTimer(ValeriaNegotiationPromptTimer)
+		set ValeriaNegotiationPromptTimer = null
+	endif
+endfunction
+
 private function ClearValeriaEncounterState takes nothing returns nothing
 	call StopValeriaEncounterTimers()
 	call DisableValeriaEncounterDeathTrigger()
+	call StopValeriaNegotiationPromptTimer()
 	call DialogSystem_ClearEscapeAction()
 	if ValeriaNegotiationDialog != null then
 		call DialogSystem_ClearDialog(ValeriaNegotiationDialog)
@@ -693,7 +736,6 @@ private function FailRangerMissingForRetry takes string reason returns nothing
 	call StopRangerMissingEscortInternal()
 	call QuestGiver_FailQuestByNameAndGiver(QUEST_RANGER_MISSING, Aradion, reason)
 	call ResetRangerMissingQuestProgress()
-	call ResetValeriaForRetryAtAmbush()
 	call QuestGiver_SetStateByNameAndGiver(QUEST_RANGER_MISSING, Aradion, QUEST_STATE_AVAILABLE)
 	call QuestGiver_RefreshAvailabilityForGiver(Aradion)
 endfunction
@@ -753,6 +795,7 @@ private function StartRangerMissingEscortInternal takes nothing returns nothing
 	endif
 
 	call UnitRemoveAbility(Valeria, ABIL_VALERIA_GHOST)
+	call SetUnitCreepGuard(Valeria, false)
 	call q.updateRequirementText(1, "Find Valeria")
 	call q.setRequirement(2, "Escort Valeria to Aradion")
 	call q.updateRequirementText(2, "Escort Valeria to Aradion")
@@ -818,7 +861,9 @@ private function ResetValeriaEncounterToAmbush takes nothing returns nothing
 		call BlzSetUnitRealField(Valeria, UNIT_RF_HIT_POINTS_REGENERATION_RATE, 2.00)
 		call SetWidgetLife(Valeria, BlzGetUnitMaxHP(Valeria))
 		call SetUnitOwner(Valeria, Player(PLAYER_NEUTRAL_PASSIVE), true)
+		call SetUnitCreepGuard(Valeria, false)
 		call PlaceValeriaAtAmbushInternal()
+		set udg_Valeria = Valeria
 	endif
 endfunction
 
@@ -1055,10 +1100,15 @@ private function ApplyValeriaNegotiationSuccessState takes nothing returns nothi
 	call BlzSetUnitRealField(Valeria, UNIT_RF_HIT_POINTS_REGENERATION_RATE, 2.00)
 	call SetWidgetLife(Valeria, BlzGetUnitMaxHP(Valeria))
 	call SetUnitOwner(Valeria, Player(VALERIA_FRIENDLY_OWNER), true)
+	call SetUnitCreepGuard(Valeria, false)
+	set udg_Valeria = Valeria
 endfunction
 
 private function QueueValeriaNegotiationPromptDelayed takes nothing returns nothing
 	local timer t = GetExpiredTimer()
+	if t == ValeriaNegotiationPromptTimer then
+		set ValeriaNegotiationPromptTimer = null
+	endif
 	call ExecuteFunc("qAradion_QueueValeriaNegotiationPromptPublic")
 	if t != null then
 		call DestroyTimer(t)
@@ -1066,8 +1116,15 @@ private function QueueValeriaNegotiationPromptDelayed takes nothing returns noth
 	set t = null
 endfunction
 
+private function StartValeriaNegotiationPromptTimer takes real delay returns nothing
+	call StopValeriaNegotiationPromptTimer()
+	set ValeriaNegotiationPromptTimer = CreateTimer()
+	call TimerStart(ValeriaNegotiationPromptTimer, delay, false, function QueueValeriaNegotiationPromptDelayed)
+endfunction
+
 private function QueueValeriaNegotiationPrompt takes nothing returns nothing
 	if ValeriaNegotiationSequenceBusy or DialogSystem_IsSequenceActive() then
+		call StartValeriaNegotiationPromptTimer(0.25)
 		return
 	endif
 	if not ValeriaEncounterActive or ValeriaEncounterResolved then
@@ -1076,6 +1133,7 @@ private function QueueValeriaNegotiationPrompt takes nothing returns nothing
 	if Valeria == null or not QuestGiver_IsUnitAlive(Valeria) then
 		return
 	endif
+	call StopValeriaNegotiationPromptTimer()
 	set ValeriaNegotiationPromptPending = true
 	call ForceValeriaNegotiationFacing()
 	call DialogSystem_SetEscapeAction(function RunValeriaNegotiationEscAction)
@@ -1150,6 +1208,7 @@ private function TryOpenValeriaNegotiationInternal takes nothing returns nothing
 	call IssueImmediateOrder(ValeriaEncounterHero, "stop")
 	call IssueImmediateOrder(Valeria, "stop")
 	set ValeriaNegotiationPromptPending = false
+	call StopValeriaNegotiationPromptTimer()
 	call DialogSystem_ClearEscapeAction()
 	call ForceValeriaNegotiationFacing()
 	if ValeriaNegotiationDialog == null then
@@ -1191,7 +1250,7 @@ private function OnValeriaResponseEnd takes nothing returns nothing
 	if hero != null and Valeria != null and QuestGiver_IsUnitAlive(hero) and QuestGiver_IsUnitAlive(Valeria) then
 		call IssuePointOrder(Valeria, "attack", GetUnitX(hero), GetUnitY(hero))
 	endif
-	call QueueValeriaNegotiationPrompt()
+	call StartValeriaNegotiationPromptTimer(0.25)
 	set hero = null
 endfunction
 
@@ -1287,7 +1346,6 @@ endfunction
 
 private function OnValeriaIntroEnd takes nothing returns nothing
 	local unit hero = GetValeriaEncounterHero()
-	local timer t
 	call DialogSystem_StopDialogCamera(Player(0), 2.0, USE_DIALOG_CAMERA)
 	call ExitCinematicMode()
 	call EnableUserControl(true)
@@ -1303,9 +1361,7 @@ private function OnValeriaIntroEnd takes nothing returns nothing
 		call IssuePointOrder(Valeria, "attack", GetUnitX(hero), GetUnitY(hero))
 	endif
 	call StartValeriaEncounterLoop()
-	set t = CreateTimer()
-	call TimerStart(t, 2.00, false, function QueueValeriaNegotiationPromptDelayed)
-	set t = null
+	call StartValeriaNegotiationPromptTimer(2.00)
 	set hero = null
 endfunction
 
@@ -3219,6 +3275,7 @@ endfunction
 
 private function OnAcceptQuest1End takes nothing returns nothing
 	set AradionLastAcceptedQuest = ARADION_QID_RANGER
+	call ResetValeriaForRetryAtAmbush()
 	call QuestGiver_AcceptQuestByNameAndGiver(QUEST_RANGER_MISSING, Aradion)
 	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
 		call UnitRemoveAbility(Valeria, ABIL_VALERIA_GHOST)
@@ -3287,6 +3344,9 @@ private function OnCompleteQuest1 takes nothing returns nothing
 	endif
 
 	call StopRangerMissingEscortInternal()
+	call SetUnitOwner(Valeria, Player(VALERIA_FRIENDLY_OWNER), true)
+	call SetUnitCreepGuard(Valeria, false)
+	call PlaceValeriaNearAradion(200.00)
 	call IssueImmediateOrder(Valeria, "stop")
 	
 	set seq = QuestGiver_CreateBaseSequence(Aradion, "Aradion the Farseer")
