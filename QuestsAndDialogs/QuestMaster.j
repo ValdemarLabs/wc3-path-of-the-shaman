@@ -582,6 +582,15 @@ public function IconUpdateForNPC takes unit u returns nothing
 			set questID = iconTable.integer[i*100 + QUEST_ID_KEY]
 			set curState = iconTable.integer[i*100 + QUEST_STATE_KEY]
 			set curType = iconTable.string[i*100 + QUEST_TYPE_KEY]
+			if questID > 0 and questID < QUEST_DUMMY_OFFSET then
+				set q = GetById(questID)
+				if q != 0 then
+					set curState = q.state
+					set curType = q.questType
+					set iconTable.integer[i*100 + QUEST_STATE_KEY] = curState
+					set iconTable.string[i*100 + QUEST_TYPE_KEY] = curType
+				endif
+			endif
 			set statePriority = IconStatePriority(curState)
 			set typePriority = IconTypePriority(curType)
 			if statePriority > bestStatePriority or (statePriority == bestStatePriority and typePriority > bestTypePriority) then
@@ -1893,8 +1902,8 @@ struct QuestData
 			call this.applyRequirementsToLog()
 		endif
 		
-		// Set state without updating icons - icons will update when message is shown
-		call this.setStateNoIcons(QUEST_STATE_IN_PROGRESS)
+		// Accepted quests should update giver effects immediately; the message remains delayed.
+		call this.setState(QUEST_STATE_IN_PROGRESS)
 		
 		// Delay quest discovered message by 5 seconds (icons will update at the same time)
 		set t = CreateTimer()
