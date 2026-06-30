@@ -26,19 +26,19 @@
   Tested startup-freeze isolation by disabling `GNU_SpawnInitialAll()` inside `DelayedSpawn` in the gather-node definitions export sublibrary; this had no effect on the freeze.
   Also tested disabling the `DelayedSpawn` call from `DelayedInit`; this also had no effect on the freeze.
 - `SettingsUI.j`
-  Identified `SettingsUI` as the strongest current startup-freeze suspect after disabling `SettingsUI` together with `IconQuery` stopped the post-loadscreen freeze. The likely risky path is slider value synchronization firing `FRAMEEVENT_SLIDER_VALUE_CHANGED`, re-entering `SETUI_SliderAction`, and calling `SETUI_Refresh` again.
+  Confirmed the post-loadscreen game-start freeze was fixed by hardening the Settings UI slider refresh path. The likely risky path was slider value synchronization firing `FRAMEEVENT_SLIDER_VALUE_CHANGED`, re-entering `SETUI_SliderAction`, and calling `SETUI_Refresh` again.
   Hardened the settings slider synchronization with cached slider values, a slider-action re-entry guard, null-safe sync helper, and initial slider value setup before slider frame-event registration.
 - `IconQuery.j`
-  Kept `IconQuery` as a secondary startup-freeze suspect because it is the other newly disabled system in the successful isolation test and is wired into `QuestMaster` quest-giver minimap icon registration at startup. Current code review did not find an obvious unbounded JASS loop in `IconQuery`; its loops are bounded by registered icon count or category count, and its query timer restarts at configured delays.
+  Kept `IconQuery` active after the Settings UI fix; no obvious unbounded JASS loop was found in code review. Its loops are bounded by registered icon count or category count, and its query timer restarts at configured delays.
+  Remaining work is to tune the IconQuery parameters and pacing now that the startup freeze is no longer blocking in-game testing.
 
 ### Known Issues
-- `Startup freeze`
-  The post-loadscreen game freeze still reproduces after both `GatherNodeDefinitions` export spawn-path isolation tests, but stopped when `SettingsUI` and `IconQuery` were disabled together. `SettingsUI` slider refresh/event recursion is the primary suspect; `IconQuery` remains a secondary suspect until each system is re-enabled and tested separately.
+- `IconQuery tuning`
+  Startup freeze is fixed in the latest in-game test after the `SettingsUI.j` slider re-entry hardening, but IconQuery timing/category parameters still need adjustment and validation.
 
 ### Actions Remaining
-- Re-enable `IconQuery` while keeping `SettingsUI` disabled to check whether startup remains stable without the settings panel.
-- Re-enable `SettingsUI` with the slider re-entry hardening and test startup again with `IconQuery` active.
-- If the freeze returns only when `IconQuery` is active, isolate the `QuestMaster_CreateMapPingForUnit` / `IconQuery_RegisterQuestGiverUnitIcon` startup registration path separately from the scheduler timer.
+- Adjust `IconQuery` query/rest timing and category parameters, then validate in-game pacing with quest-giver minimap icons enabled.
+- Continue watching startup stability while testing IconQuery changes, since the earlier freeze was tied to UI/event refresh behavior at game start.
 
 ## [29.6.2026]
 
