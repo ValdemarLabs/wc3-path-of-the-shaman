@@ -1654,6 +1654,68 @@ public function ValidateItemRequirements takes integer questId returns boolean
 	return allMet
 endfunction
 
+public function AddAvailableQuestAcceptButton takes dialog d, string questName, unit questGiver, integer actionId, code actionFunc, boolean noAutoPlay, boolean allowFailedRetry returns boolean
+	local button b = null
+	if not QuestExistsByNameAndGiver(questName, questGiver) then
+		return false
+	endif
+	if GetStateByNameAndGiver(questName, questGiver) != QUEST_STATE_AVAILABLE then
+		return false
+	endif
+	if IsQuestDiscoveredByNameAndGiver(questName, questGiver) and not (allowFailedRetry and IsQuestFailedByNameAndGiver(questName, questGiver)) then
+		return false
+	endif
+	if noAutoPlay then
+		set b = DialogSystem_AddButtonQuestAcceptNoAutoPlay(d, questName, actionId)
+	else
+		set b = DialogSystem_AddButtonQuestAccept(d, questName, actionId)
+	endif
+	if b == null then
+		return false
+	endif
+	call DialogSystem_BindButtonCode(b, actionFunc)
+	set b = null
+	return true
+endfunction
+
+public function AddFailedQuestButton takes dialog d, string questName, unit questGiver, integer actionId, code actionFunc returns boolean
+	local button b = null
+	if not QuestExistsByNameAndGiver(questName, questGiver) then
+		return false
+	endif
+	if not IsQuestDiscoveredByNameAndGiver(questName, questGiver) or not IsQuestFailedByNameAndGiver(questName, questGiver) then
+		return false
+	endif
+	set b = DialogSystem_AddButtonQuestFailed(d, questName, actionId)
+	if b == null then
+		return false
+	endif
+	call DialogSystem_BindButtonCode(b, actionFunc)
+	set b = null
+	return true
+endfunction
+
+public function AddReadyQuestCompleteButton takes dialog d, string questName, unit questGiver, integer actionId, code actionFunc, boolean validateItems returns boolean
+	local QuestData q = GetByNameAndGiver(questName, questGiver)
+	local button b = null
+	if q == 0 then
+		return false
+	endif
+	if not q.discovered or q.completed or q.state != QUEST_STATE_READY_TURNIN then
+		return false
+	endif
+	if validateItems and not ValidateItemRequirements(q.id) then
+		return false
+	endif
+	set b = DialogSystem_AddButtonQuestComplete(d, questName, actionId)
+	if b == null then
+		return false
+	endif
+	call DialogSystem_BindButtonCode(b, actionFunc)
+	set b = null
+	return true
+endfunction
+
 public function CompleteItemRequirements takes integer questId returns nothing
 	// Marks all item requirements for a quest as complete
 	// Call this when removing items during quest completion
