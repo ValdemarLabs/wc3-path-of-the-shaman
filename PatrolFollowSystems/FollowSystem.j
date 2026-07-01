@@ -88,6 +88,7 @@ globals
     
     // Special Effect Settings (Visual Indicators)
     private constant boolean ENABLE_SPECIAL_EFFECTS = true  // Enable/disable special effects system
+    private constant boolean ENABLE_FOLLOWING_EFFECTS = false  // TargetPreSelected can leave residual visuals after destroy.
     
     // Stopped/Not Following Effect
     private constant string EFFECT_STOPPED_PATH = "war3mapImported\\QuestMarking.mdl"  // Effect when stopped/not following
@@ -139,6 +140,18 @@ private function B2I takes boolean b returns integer
     return 0
 endfunction
 
+private function CreateIndicatorEffect takes string effectPath, unit u, string attachPoint returns effect
+    local effect sfx
+    if effectPath == "" or u == null then
+        return null
+    endif
+    set sfx = AddSpecialEffectTarget(effectPath, u, attachPoint)
+    if sfx != null then
+        call SpeciFX_MarkAsExcluded(sfx)
+    endif
+    return sfx
+endfunction
+
 // Helper function to destroy all effects for a unit (clean slate)
 private function DestroyAllEffects takes Table unitData returns nothing
     local effect sfx
@@ -178,13 +191,14 @@ private function ResumeFollowTimerExpire takes nothing returns nothing
         set unitData[KEY_IS_UNFOLLOWING] = 0
         
         // Switch from stopped effect to following effect when resuming
-        if ENABLE_SPECIAL_EFFECTS then
+        if ENABLE_SPECIAL_EFFECTS and ENABLE_FOLLOWING_EFFECTS then
             call DestroyAllEffects(unitData)
-            set unitData.effect[KEY_EFFECT_FOLLOWING] = AddSpecialEffectTarget(EFFECT_FOLLOWING_PATH, follower, EFFECT_FOLLOWING_ATTACH)
-            call SpeciFX_MarkAsExcluded(unitData.effect[KEY_EFFECT_FOLLOWING])
+            set unitData.effect[KEY_EFFECT_FOLLOWING] = CreateIndicatorEffect(EFFECT_FOLLOWING_PATH, follower, EFFECT_FOLLOWING_ATTACH)
             if DEBUG_MODE then
                 call BJDebugMsg("FollowSystem: Created FOLLOWING effect (resume)")
             endif
+        elseif ENABLE_SPECIAL_EFFECTS then
+            call DestroyAllEffects(unitData)
         endif
         
         if DEBUG_MODE then
@@ -300,6 +314,10 @@ function FollowSystem_SetFollow takes unit follower, unit target, real maxDistan
     endif
     
     set unitId = GetHandleId(follower)
+    if IsUnitInGroup(follower, FollowGroup) then
+        call RemoveUnitInternal(follower)
+    endif
+    set unitData = FollowHash.link(unitId)
     
     // Use defaults if values are 0 or invalid
     if maxDistance <= 0.0 then
@@ -310,7 +328,6 @@ function FollowSystem_SetFollow takes unit follower, unit target, real maxDistan
     endif
     
     // Store all data in Table6 (cache reference for performance)
-    set unitData = FollowHash.link(unitId)
     set unitData.unit[KEY_TARGET] = target
     set unitData.real[KEY_DISTANCE] = maxDistance
     set unitData[KEY_UNFOLLOW_ON_ATTACK] = B2I(unfollowOnAttack)
@@ -358,9 +375,8 @@ function FollowSystem_SetFollow takes unit follower, unit target, real maxDistan
     call IssueFollowOrder(follower, target, commandStyle)
     
     // Create initial following effect
-    if ENABLE_SPECIAL_EFFECTS then
-        set unitData.effect[KEY_EFFECT_FOLLOWING] = AddSpecialEffectTarget(EFFECT_FOLLOWING_PATH, follower, EFFECT_FOLLOWING_ATTACH)
-        call SpeciFX_MarkAsExcluded(unitData.effect[KEY_EFFECT_FOLLOWING])
+    if ENABLE_SPECIAL_EFFECTS and ENABLE_FOLLOWING_EFFECTS then
+        set unitData.effect[KEY_EFFECT_FOLLOWING] = CreateIndicatorEffect(EFFECT_FOLLOWING_PATH, follower, EFFECT_FOLLOWING_ATTACH)
     endif
     
     // Enable periodic trigger
@@ -475,8 +491,7 @@ private function UpdateSingleFollower takes nothing returns nothing
         if ENABLE_SPECIAL_EFFECTS then
             if unitData.effect[KEY_EFFECT_STOPPED] == null then
                 call DestroyAllEffects(unitData)
-                set unitData.effect[KEY_EFFECT_STOPPED] = AddSpecialEffectTarget(EFFECT_STOPPED_PATH, follower, EFFECT_STOPPED_ATTACH)
-                call SpeciFX_MarkAsExcluded(unitData.effect[KEY_EFFECT_STOPPED])
+                set unitData.effect[KEY_EFFECT_STOPPED] = CreateIndicatorEffect(EFFECT_STOPPED_PATH, follower, EFFECT_STOPPED_ATTACH)
                 if DEBUG_MODE then
                     call BJDebugMsg("FollowSystem: Created STOPPED effect (unfollowing)")
                 endif
@@ -520,8 +535,7 @@ private function UpdateSingleFollower takes nothing returns nothing
         if ENABLE_SPECIAL_EFFECTS then
             if unitData.effect[KEY_EFFECT_STOPPED] == null then
                 call DestroyAllEffects(unitData)
-                set unitData.effect[KEY_EFFECT_STOPPED] = AddSpecialEffectTarget(EFFECT_STOPPED_PATH, follower, EFFECT_STOPPED_ATTACH)
-                call SpeciFX_MarkAsExcluded(unitData.effect[KEY_EFFECT_STOPPED])
+                set unitData.effect[KEY_EFFECT_STOPPED] = CreateIndicatorEffect(EFFECT_STOPPED_PATH, follower, EFFECT_STOPPED_ATTACH)
                 if DEBUG_MODE then
                     call BJDebugMsg("FollowSystem: Created STOPPED effect (too far)")
                 endif
@@ -550,15 +564,16 @@ private function UpdateSingleFollower takes nothing returns nothing
     endif
     
     // Ensure ONLY following effect is active (unit is in range and following)
-    if ENABLE_SPECIAL_EFFECTS then
+    if ENABLE_SPECIAL_EFFECTS and ENABLE_FOLLOWING_EFFECTS then
         if unitData.effect[KEY_EFFECT_FOLLOWING] == null then
             call DestroyAllEffects(unitData)
-            set unitData.effect[KEY_EFFECT_FOLLOWING] = AddSpecialEffectTarget(EFFECT_FOLLOWING_PATH, follower, EFFECT_FOLLOWING_ATTACH)
-            call SpeciFX_MarkAsExcluded(unitData.effect[KEY_EFFECT_FOLLOWING])
+            set unitData.effect[KEY_EFFECT_FOLLOWING] = CreateIndicatorEffect(EFFECT_FOLLOWING_PATH, follower, EFFECT_FOLLOWING_ATTACH)
             if DEBUG_MODE then
                 call BJDebugMsg("FollowSystem: Created FOLLOWING effect (in range)")
             endif
         endif
+    elseif ENABLE_SPECIAL_EFFECTS and unitData.effect[KEY_EFFECT_STOPPED] != null then
+        call DestroyAllEffects(unitData)
     endif
     
     // Only issue new order if:
