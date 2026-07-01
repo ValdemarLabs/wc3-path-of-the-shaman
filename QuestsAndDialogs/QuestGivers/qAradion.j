@@ -3710,116 +3710,41 @@ private function BuildDialog takes nothing returns nothing
 	set b = DialogSystem_AddButtonInfo(AradionDialog, 1)
 	call DialogSystem_BindButtonCode(b, function OnBackstory)
 
-	if QuestGiver_QuestExistsByNameAndGiver(QUEST_RANGER_MISSING, Aradion) then
-		if CanOfferRangerMissing() and QuestGiver_GetStateByNameAndGiver(QUEST_RANGER_MISSING, Aradion) == QUEST_STATE_AVAILABLE and ((not QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_RANGER_MISSING, Aradion)) or QuestGiver_IsQuestFailedByNameAndGiver(QUEST_RANGER_MISSING, Aradion)) then
-			set b = DialogSystem_AddButtonQuestAcceptNoAutoPlay(AradionDialog, QUEST_RANGER_MISSING, 2)
-			call DialogSystem_BindButtonCode(b, function OnAcceptQuest1)
-		elseif QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_RANGER_MISSING, Aradion) and not QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_RANGER_MISSING, Aradion) and not QuestGiver_IsQuestFailedByNameAndGiver(QUEST_RANGER_MISSING, Aradion) then
-			// Completion is triggered directly from Aradion selection once Valeria is escorted home.
-		endif
+	if CanOfferRangerMissing() then
+		call QuestGiver_AddAvailableQuestAcceptButton(AradionDialog, QUEST_RANGER_MISSING, Aradion, 2, function OnAcceptQuest1, true, true)
 	endif
+	// Completion is triggered directly from Aradion selection once Valeria is escorted home.
 
-	if QuestGiver_QuestExistsByNameAndGiver(QUEST_CRYSTALS_HOPE, Aradion) then
-		if not QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_CRYSTALS_HOPE, Aradion) and QuestGiver_GetStateByNameAndGiver(QUEST_CRYSTALS_HOPE, Aradion) == QUEST_STATE_AVAILABLE then
-		set b = DialogSystem_AddButtonQuestAcceptNoAutoPlay(AradionDialog, QUEST_CRYSTALS_HOPE, 5)
-			call DialogSystem_BindButtonCode(b, function OnAcceptQuest2)
-		elseif QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_CRYSTALS_HOPE, Aradion) and not QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_CRYSTALS_HOPE, Aradion) then
-			// QuestGiver/QuestMaster handles item tracking automatically
-			// Verify items are still in inventory before showing completion button
-			if QuestGiver_GetStateByNameAndGiver(QUEST_CRYSTALS_HOPE, Aradion) == QUEST_STATE_READY_TURNIN and QuestGiver_ValidateItemRequirements(QuestGiver_GetByNameAndGiver(QUEST_CRYSTALS_HOPE, Aradion).id) then
-				set b = DialogSystem_AddButtonQuestComplete(AradionDialog, QUEST_CRYSTALS_HOPE, 6)
-				call DialogSystem_BindButtonCode(b, function OnCompleteQuest2)
-			endif
-		endif
-	endif
+	call QuestGiver_AddAvailableQuestAcceptButton(AradionDialog, QUEST_CRYSTALS_HOPE, Aradion, 5, function OnAcceptQuest2, true, false)
+	call QuestGiver_AddReadyQuestCompleteButton(AradionDialog, QUEST_CRYSTALS_HOPE, Aradion, 6, function OnCompleteQuest2, true)
 
-	if QuestGiver_QuestExistsByNameAndGiver(QUEST_FADING_SPARKS, Aradion) then
-		if not QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_FADING_SPARKS, Aradion) and QuestGiver_GetStateByNameAndGiver(QUEST_FADING_SPARKS, Aradion) == QUEST_STATE_AVAILABLE then
-		set b = DialogSystem_AddButtonQuestAcceptNoAutoPlay(AradionDialog, QUEST_FADING_SPARKS, 7)
-			call DialogSystem_BindButtonCode(b, function OnAcceptQuest3)
-		elseif QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_FADING_SPARKS, Aradion) and not QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_FADING_SPARKS, Aradion) then
-			// QuestGiver/QuestMaster handles item tracking automatically
-			// Verify items are still in inventory before showing completion button
-			if QuestGiver_GetStateByNameAndGiver(QUEST_FADING_SPARKS, Aradion) == QUEST_STATE_READY_TURNIN and QuestGiver_ValidateItemRequirements(QuestGiver_GetByNameAndGiver(QUEST_FADING_SPARKS, Aradion).id) then
-				set b = DialogSystem_AddButtonQuestComplete(AradionDialog, QUEST_FADING_SPARKS, 8)
-				call DialogSystem_BindButtonCode(b, function OnCompleteQuest3)
-			endif
-		endif
-	endif
+	call QuestGiver_AddAvailableQuestAcceptButton(AradionDialog, QUEST_FADING_SPARKS, Aradion, 7, function OnAcceptQuest3, true, false)
+	call QuestGiver_AddReadyQuestCompleteButton(AradionDialog, QUEST_FADING_SPARKS, Aradion, 8, function OnCompleteQuest3, true)
 
-	if QuestGiver_QuestExistsByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion) then
-			if ((not QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)) or QuestGiver_IsQuestFailedByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)) and QuestGiver_GetStateByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion) == QUEST_STATE_AVAILABLE then
-			set b = DialogSystem_AddButtonQuestAcceptNoAutoPlay(AradionDialog, QUEST_RIFTS_CORRUPTION, 9)
-				call DialogSystem_BindButtonCode(b, function OnAcceptQuest4)
-			elseif not QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion) and QuestGiver_GetStateByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion) == QUEST_STATE_READY_TURNIN and RiftsReturnedHome and QuestGiver_IsUnitAlive(Aradion) and QuestGiver_IsUnitAlive(Valeria) then
-				set b = DialogSystem_AddButtonQuestComplete(AradionDialog, QUEST_RIFTS_CORRUPTION, 10)
-				call DialogSystem_BindButtonCode(b, function OnCompleteQuest4)
-			endif
+	call QuestGiver_AddAvailableQuestAcceptButton(AradionDialog, QUEST_RIFTS_CORRUPTION, Aradion, 9, function OnAcceptQuest4, true, true)
+	if RiftsReturnedHome and QuestGiver_IsUnitAlive(Aradion) and QuestGiver_IsUnitAlive(Valeria) then
+		call QuestGiver_AddReadyQuestCompleteButton(AradionDialog, QUEST_RIFTS_CORRUPTION, Aradion, 10, function OnCompleteQuest4, false)
 	endif
 
 	// Test quests (simple accept/complete with auto-discovery)
-	if ENABLE_TEST_QUESTS and QuestGiver_QuestExistsByNameAndGiver(QUEST_TEST_KILL, Aradion) then
-		if not QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_TEST_KILL, Aradion) and QuestGiver_GetStateByNameAndGiver(QUEST_TEST_KILL, Aradion) == QUEST_STATE_AVAILABLE then
-			set b = DialogSystem_AddButtonQuestAccept(AradionDialog, QUEST_TEST_KILL, 11)
-			call DialogSystem_BindButtonCode(b, function OnAcceptTestKill)
-		elseif QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_TEST_KILL, Aradion) and QuestGiver_GetStateByNameAndGiver(QUEST_TEST_KILL, Aradion) == QUEST_STATE_READY_TURNIN then
-			set b = DialogSystem_AddButtonQuestComplete(AradionDialog, QUEST_TEST_KILL, 12)
-			call DialogSystem_BindButtonCode(b, function OnCompleteTestKill)
-		endif
-	endif
-	
-	if ENABLE_TEST_QUESTS and QuestGiver_QuestExistsByNameAndGiver(QUEST_TEST_TALKTO, Aradion) then
-		if not QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_TEST_TALKTO, Aradion) and QuestGiver_GetStateByNameAndGiver(QUEST_TEST_TALKTO, Aradion) == QUEST_STATE_AVAILABLE then
-			set b = DialogSystem_AddButtonQuestAccept(AradionDialog, QUEST_TEST_TALKTO, 13)
-			call DialogSystem_BindButtonCode(b, function OnAcceptTestTalkTo)
-		elseif QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_TEST_TALKTO, Aradion) and QuestGiver_GetStateByNameAndGiver(QUEST_TEST_TALKTO, Aradion) == QUEST_STATE_READY_TURNIN then
-			set b = DialogSystem_AddButtonQuestComplete(AradionDialog, QUEST_TEST_TALKTO, 14)
-			call DialogSystem_BindButtonCode(b, function OnCompleteTestTalkTo)
-		endif
-	endif
-	
-	if ENABLE_TEST_QUESTS and QuestGiver_QuestExistsByNameAndGiver(QUEST_TEST_FINDNPC, Aradion) then
-		if not QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_TEST_FINDNPC, Aradion) and QuestGiver_GetStateByNameAndGiver(QUEST_TEST_FINDNPC, Aradion) == QUEST_STATE_AVAILABLE then
-			set b = DialogSystem_AddButtonQuestAccept(AradionDialog, QUEST_TEST_FINDNPC, 15)
-			call DialogSystem_BindButtonCode(b, function OnAcceptTestFindNPC)
-		elseif QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_TEST_FINDNPC, Aradion) and QuestGiver_GetStateByNameAndGiver(QUEST_TEST_FINDNPC, Aradion) == QUEST_STATE_READY_TURNIN then
-			set b = DialogSystem_AddButtonQuestComplete(AradionDialog, QUEST_TEST_FINDNPC, 16)
-			call DialogSystem_BindButtonCode(b, function OnCompleteTestFindNPC)
-		endif
-	endif
-	
-	if ENABLE_TEST_QUESTS and QuestGiver_QuestExistsByNameAndGiver(QUEST_TEST_GOTO, Aradion) then
-		if not QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_TEST_GOTO, Aradion) and QuestGiver_GetStateByNameAndGiver(QUEST_TEST_GOTO, Aradion) == QUEST_STATE_AVAILABLE then
-			set b = DialogSystem_AddButtonQuestAccept(AradionDialog, QUEST_TEST_GOTO, 17)
-			call DialogSystem_BindButtonCode(b, function OnAcceptTestGoTo)
-		elseif QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_TEST_GOTO, Aradion) and QuestGiver_GetStateByNameAndGiver(QUEST_TEST_GOTO, Aradion) == QUEST_STATE_READY_TURNIN then
-			set b = DialogSystem_AddButtonQuestComplete(AradionDialog, QUEST_TEST_GOTO, 18)
-			call DialogSystem_BindButtonCode(b, function OnCompleteTestGoTo)
-		endif
-	endif
-	
-	if ENABLE_TEST_QUESTS and QuestGiver_QuestExistsByNameAndGiver(QUEST_TEST_REPUTATION, Aradion) then
-		if not QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_TEST_REPUTATION, Aradion) and QuestGiver_GetStateByNameAndGiver(QUEST_TEST_REPUTATION, Aradion) == QUEST_STATE_AVAILABLE then
-			set b = DialogSystem_AddButtonQuestAccept(AradionDialog, QUEST_TEST_REPUTATION, 19)
-			call DialogSystem_BindButtonCode(b, function OnAcceptTestReputation)
-		elseif QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_TEST_REPUTATION, Aradion) and QuestGiver_GetStateByNameAndGiver(QUEST_TEST_REPUTATION, Aradion) == QUEST_STATE_READY_TURNIN then
-			set b = DialogSystem_AddButtonQuestComplete(AradionDialog, QUEST_TEST_REPUTATION, 20)
-			call DialogSystem_BindButtonCode(b, function OnCompleteTestReputation)
-		endif
-	endif
-	
-	if ENABLE_TEST_QUESTS and QuestGiver_QuestExistsByNameAndGiver(QUEST_TEST_INVESTIGATE, Aradion) then
-		if not QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_TEST_INVESTIGATE, Aradion) and QuestGiver_GetStateByNameAndGiver(QUEST_TEST_INVESTIGATE, Aradion) == QUEST_STATE_AVAILABLE then
-			set b = DialogSystem_AddButtonQuestAccept(AradionDialog, QUEST_TEST_INVESTIGATE, 21)
-			call DialogSystem_BindButtonCode(b, function OnAcceptTestInvestigate)
-		elseif QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_TEST_INVESTIGATE, Aradion) and QuestGiver_GetStateByNameAndGiver(QUEST_TEST_INVESTIGATE, Aradion) == QUEST_STATE_READY_TURNIN then
-			set b = DialogSystem_AddButtonQuestComplete(AradionDialog, QUEST_TEST_INVESTIGATE, 22)
-			call DialogSystem_BindButtonCode(b, function OnCompleteTestInvestigate)
-		endif
+	if ENABLE_TEST_QUESTS then
+		call QuestGiver_AddAvailableQuestAcceptButton(AradionDialog, QUEST_TEST_KILL, Aradion, 11, function OnAcceptTestKill, false, false)
+		call QuestGiver_AddReadyQuestCompleteButton(AradionDialog, QUEST_TEST_KILL, Aradion, 12, function OnCompleteTestKill, false)
+		call QuestGiver_AddAvailableQuestAcceptButton(AradionDialog, QUEST_TEST_TALKTO, Aradion, 13, function OnAcceptTestTalkTo, false, false)
+		call QuestGiver_AddReadyQuestCompleteButton(AradionDialog, QUEST_TEST_TALKTO, Aradion, 14, function OnCompleteTestTalkTo, false)
+		call QuestGiver_AddAvailableQuestAcceptButton(AradionDialog, QUEST_TEST_FINDNPC, Aradion, 15, function OnAcceptTestFindNPC, false, false)
+		call QuestGiver_AddReadyQuestCompleteButton(AradionDialog, QUEST_TEST_FINDNPC, Aradion, 16, function OnCompleteTestFindNPC, false)
+		call QuestGiver_AddAvailableQuestAcceptButton(AradionDialog, QUEST_TEST_GOTO, Aradion, 17, function OnAcceptTestGoTo, false, false)
+		call QuestGiver_AddReadyQuestCompleteButton(AradionDialog, QUEST_TEST_GOTO, Aradion, 18, function OnCompleteTestGoTo, false)
+		call QuestGiver_AddAvailableQuestAcceptButton(AradionDialog, QUEST_TEST_REPUTATION, Aradion, 19, function OnAcceptTestReputation, false, false)
+		call QuestGiver_AddReadyQuestCompleteButton(AradionDialog, QUEST_TEST_REPUTATION, Aradion, 20, function OnCompleteTestReputation, false)
+		call QuestGiver_AddAvailableQuestAcceptButton(AradionDialog, QUEST_TEST_INVESTIGATE, Aradion, 21, function OnAcceptTestInvestigate, false, false)
+		call QuestGiver_AddReadyQuestCompleteButton(AradionDialog, QUEST_TEST_INVESTIGATE, Aradion, 22, function OnCompleteTestInvestigate, false)
 	endif
 
 	set b = DialogSystem_AddFarewellButton(AradionDialog)
 	call DialogSystem_BindButtonCode(b, function OnFarewell)
+	set b = null
 endfunction
 
 // Public wrapper for dialog rebuild (used by ExecuteFunc)
