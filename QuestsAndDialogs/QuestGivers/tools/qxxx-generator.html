@@ -580,28 +580,21 @@ endfunction`
         const failId = actionIdFor(index, "fail");
         const dependency = questDependencyCondition(spec, index);
         const lines = [];
-        lines.push(`\tif QuestGiver_QuestExistsByNameAndGiver(${constName}, ${npcVar}) then`);
         if (quest.needsAccept) {
-          lines.push(`\t\tif ${dependency} and not QuestGiver_IsQuestDiscoveredByNameAndGiver(${constName}, ${npcVar}) and QuestGiver_GetStateByNameAndGiver(${constName}, ${npcVar}) == QUEST_STATE_AVAILABLE then`);
-          lines.push(`\t\t\tset b = DialogSystem_AddButtonQuestAcceptNoAutoPlay(${npcVar}Dialog, ${constName}, ${acceptId})`);
-          lines.push(`\t\t\tcall DialogSystem_BindButtonCode(b, function OnAcceptQuest${questFunctionSuffix(index)})`);
-          if (quest.needsFail) {
-            lines.push(`\t\telseif QuestGiver_IsQuestDiscoveredByNameAndGiver(${constName}, ${npcVar}) and QuestGiver_IsQuestFailedByNameAndGiver(${constName}, ${npcVar}) then`);
-            lines.push(`\t\t\tset b = DialogSystem_AddButtonQuestFailed(${npcVar}Dialog, ${constName}, ${failId})`);
-            lines.push(`\t\t\tcall DialogSystem_BindButtonCode(b, function OnFailQuest${questFunctionSuffix(index)})`);
+          if (dependency === "true") {
+            lines.push(`\tcall QuestGiver_AddAvailableQuestAcceptButton(${npcVar}Dialog, ${constName}, ${npcVar}, ${acceptId}, function OnAcceptQuest${questFunctionSuffix(index)}, true, false)`);
+          } else {
+            lines.push(`\tif ${dependency} then`);
+            lines.push(`\t\tcall QuestGiver_AddAvailableQuestAcceptButton(${npcVar}Dialog, ${constName}, ${npcVar}, ${acceptId}, function OnAcceptQuest${questFunctionSuffix(index)}, true, false)`);
+            lines.push(`\tendif`);
           }
-          lines.push(`\t\telseif QuestGiver_IsQuestDiscoveredByNameAndGiver(${constName}, ${npcVar}) and not QuestGiver_IsQuestCompletedByNameAndGiver(${constName}, ${npcVar}) then`);
-        } else {
-          lines.push(`\t\tif QuestGiver_IsQuestDiscoveredByNameAndGiver(${constName}, ${npcVar}) and not QuestGiver_IsQuestCompletedByNameAndGiver(${constName}, ${npcVar}) then`);
+        }
+        if (quest.needsFail) {
+          lines.push(`\tcall QuestGiver_AddFailedQuestButton(${npcVar}Dialog, ${constName}, ${npcVar}, ${failId}, function OnFailQuest${questFunctionSuffix(index)})`);
         }
         if (quest.needsComplete) {
-          lines.push(`\t\t\tif QuestGiver_GetStateByNameAndGiver(${constName}, ${npcVar}) == QUEST_STATE_READY_TURNIN then`);
-          lines.push(`\t\t\t\tset b = DialogSystem_AddButtonQuestComplete(${npcVar}Dialog, ${constName}, ${completeId})`);
-          lines.push(`\t\t\t\tcall DialogSystem_BindButtonCode(b, function OnCompleteQuest${questFunctionSuffix(index)})`);
-          lines.push(`\t\t\tendif`);
+          lines.push(`\tcall QuestGiver_AddReadyQuestCompleteButton(${npcVar}Dialog, ${constName}, ${npcVar}, ${completeId}, function OnCompleteQuest${questFunctionSuffix(index)}, false)`);
         }
-        lines.push(`\t\tendif`);
-        lines.push(`\tendif`);
         return lines.join("\n");
       }).join("\n\n");
     }
@@ -712,6 +705,7 @@ ${dialogLogic}
 
 \tset b = DialogSystem_AddFarewellButton(${npcVar}Dialog)
 \tcall DialogSystem_BindButtonCode(b, function OnFarewell)
+\tset b = null
 endfunction
 
 private function CreateQuests takes nothing returns nothing
