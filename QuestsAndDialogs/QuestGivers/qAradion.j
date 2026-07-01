@@ -63,6 +63,13 @@ globals
 	private constant integer RIFTS_MAX_WAVES = 32
 	private constant integer FIELD_LINE_QUEUE_MAX = 16
 	private constant integer RIFTS_WAVE_OWNER = 11
+	private constant string RIFTS_WAVE_PRE_SPAWN_EFFECT = "vortex1.mdx"
+	private constant string RIFTS_WAVE_PRE_SPAWN_CREATE_SOUND = "Sound/Ambient/DoodadEffects/ShimmeringPortalBirth"
+	private constant string RIFTS_WAVE_PRE_SPAWN_DESTROY_SOUND = "Sound/Ambient/DoodadEffects/ShimmeringPortalDeath"
+	private constant string RIFTS_WAVE_SPAWN_EFFECT = ""
+	private constant real RIFTS_WAVE_PRE_SPAWN_DELAY = 2.00
+	private constant real RIFTS_WAVE_PRE_SPAWN_EFFECT_DURATION = 4.00
+	private constant real RIFTS_WAVE_SPAWN_EFFECT_DURATION = 0.00
 	private constant real RIFTS_TRIGGER_RANGE = 1050.00
 	private constant real RIFTS_RITUAL_DURATION = 120.00
 	private constant real RIFTS_WAVE_PERIOD = 30.00
@@ -327,7 +334,7 @@ private function StopValeriaAtStandoff takes nothing returns nothing
 endfunction
 
 private function StopFollow takes unit follower returns nothing
-	if follower != null and QuestGiver_IsUnitAlive(follower) then
+	if follower != null then
 		call FollowSystem_RemoveUnit(follower)
 	endif
 endfunction
@@ -340,7 +347,7 @@ private function AddValeriaCompanion takes nothing returns nothing
 endfunction
 
 private function RemoveValeriaCompanion takes nothing returns nothing
-	if Valeria != null and ValeriaCompanionActive then
+	if Valeria != null then
 		call Companions_Remove(Valeria)
 	endif
 	set ValeriaCompanionActive = false
@@ -505,7 +512,7 @@ private function AddAradionCompanion takes nothing returns nothing
 endfunction
 
 private function RemoveAradionCompanion takes nothing returns nothing
-	if Aradion != null and AradionCompanionActive then
+	if Aradion != null then
 		call Companions_Remove(Aradion)
 	endif
 	set AradionCompanionActive = false
@@ -2642,13 +2649,16 @@ private function SpawnRiftsWave takes nothing returns nothing
 	set spawnLoc = Location(spawnX, spawnY)
 	set RiftsWaveIndex = RiftsWaveIndex + 1
 	if RiftsNextWaveN == 1 then
-		set RiftsWaveHandles[RiftsWaveIndex] = WavesRiftWraits_Wave1(Player(RIFTS_WAVE_OWNER), spawnLoc)
+		set RiftsWaveHandles[RiftsWaveIndex] = WavesRiftWraits_Wave1DelayedSoundEx(Player(RIFTS_WAVE_OWNER), spawnLoc, RIFTS_WAVE_PRE_SPAWN_EFFECT, RIFTS_WAVE_PRE_SPAWN_DELAY, RIFTS_WAVE_PRE_SPAWN_EFFECT_DURATION, RIFTS_WAVE_PRE_SPAWN_CREATE_SOUND, RIFTS_WAVE_PRE_SPAWN_DESTROY_SOUND, RIFTS_WAVE_SPAWN_EFFECT, RIFTS_WAVE_SPAWN_EFFECT_DURATION, true)
 	elseif RiftsNextWaveN == 2 then
-		set RiftsWaveHandles[RiftsWaveIndex] = WavesRiftWraits_Wave2(Player(RIFTS_WAVE_OWNER), spawnLoc)
+		set RiftsWaveHandles[RiftsWaveIndex] = WavesRiftWraits_Wave2DelayedSoundEx(Player(RIFTS_WAVE_OWNER), spawnLoc, RIFTS_WAVE_PRE_SPAWN_EFFECT, RIFTS_WAVE_PRE_SPAWN_DELAY, RIFTS_WAVE_PRE_SPAWN_EFFECT_DURATION, RIFTS_WAVE_PRE_SPAWN_CREATE_SOUND, RIFTS_WAVE_PRE_SPAWN_DESTROY_SOUND, RIFTS_WAVE_SPAWN_EFFECT, RIFTS_WAVE_SPAWN_EFFECT_DURATION, true)
 	elseif RiftsNextWaveN == 3 then
-		set RiftsWaveHandles[RiftsWaveIndex] = WavesRiftWraits_Wave3(Player(RIFTS_WAVE_OWNER), spawnLoc)
+		set RiftsWaveHandles[RiftsWaveIndex] = WavesRiftWraits_Wave3DelayedSoundEx(Player(RIFTS_WAVE_OWNER), spawnLoc, RIFTS_WAVE_PRE_SPAWN_EFFECT, RIFTS_WAVE_PRE_SPAWN_DELAY, RIFTS_WAVE_PRE_SPAWN_EFFECT_DURATION, RIFTS_WAVE_PRE_SPAWN_CREATE_SOUND, RIFTS_WAVE_PRE_SPAWN_DESTROY_SOUND, RIFTS_WAVE_SPAWN_EFFECT, RIFTS_WAVE_SPAWN_EFFECT_DURATION, true)
 	else
-		set RiftsWaveHandles[RiftsWaveIndex] = WavesRiftWraits_Wave4(Player(RIFTS_WAVE_OWNER), spawnLoc)
+		set RiftsWaveHandles[RiftsWaveIndex] = WavesRiftWraits_Wave4DelayedSoundEx(Player(RIFTS_WAVE_OWNER), spawnLoc, RIFTS_WAVE_PRE_SPAWN_EFFECT, RIFTS_WAVE_PRE_SPAWN_DELAY, RIFTS_WAVE_PRE_SPAWN_EFFECT_DURATION, RIFTS_WAVE_PRE_SPAWN_CREATE_SOUND, RIFTS_WAVE_PRE_SPAWN_DESTROY_SOUND, RIFTS_WAVE_SPAWN_EFFECT, RIFTS_WAVE_SPAWN_EFFECT_DURATION, true)
+	endif
+	if RiftsWaveHandles[RiftsWaveIndex] != 0 and Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
+		call RiftsWaveHandles[RiftsWaveIndex].attackMove(GetUnitX(Aradion), GetUnitY(Aradion))
 	endif
 	set RiftsNextWaveN = GetRandomInt(1, 4)
 	call RemoveLocation(spawnLoc)
@@ -3319,6 +3329,7 @@ endfunction
 
 private function OnCompleteQuest1End takes nothing returns nothing
 	local timer t
+	call StopRangerMissingEscortInternal()
 	call QuestGiver_CompleteQuestByNameAndGiver(QUEST_RANGER_MISSING, Aradion)
 	call StartExitFadeOut()
 	set t = CreateTimer()
@@ -3414,8 +3425,13 @@ public function StartDirectRangerMissingTurnInPublic takes nothing returns nothi
 endfunction
 
 private function OnAcceptQuest2End takes nothing returns nothing
+	local QuestData q
 	set AradionLastAcceptedQuest = ARADION_QID_CRYSTALS
 	call QuestGiver_AcceptQuestByNameAndGiver(QUEST_CRYSTALS_HOPE, Aradion)
+	set q = QuestGiver_GetByNameAndGiver(QUEST_CRYSTALS_HOPE, Aradion)
+	if q != 0 then
+		call QuestGiver_RefreshItemRequirementsForQuest(q.id)
+	endif
 	call StartExitFadeOut()
 endfunction
 
@@ -3473,8 +3489,13 @@ endfunction
 
 private function OnAcceptQuest3End takes nothing returns nothing
 	local unit hero
+	local QuestData q
 	set AradionLastAcceptedQuest = ARADION_QID_FADING
 	call QuestGiver_AcceptQuestByNameAndGiver(QUEST_FADING_SPARKS, Aradion)
+	set q = QuestGiver_GetByNameAndGiver(QUEST_FADING_SPARKS, Aradion)
+	if q != 0 then
+		call QuestGiver_RefreshItemRequirementsForQuest(q.id)
+	endif
 	set hero = ResolveDialogHero()
 	if hero != null then
 		call UnitAddItemByIdSwapped(ITEM_TELANOR_ROD, hero)
