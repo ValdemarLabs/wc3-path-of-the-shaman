@@ -483,20 +483,14 @@ FailRifts</textarea>
       const xpReward = Number(quest.xpReward) || 0;
       const goldReward = Number(quest.goldReward) || 0;
       const repReward = Number(quest.reputationReward) || 0;
+      const receiverDisplayName = quest.receiverMode === "custom" && quest.receiverDisplayName.trim()
+        ? `"${escapeJassString(quest.receiverDisplayName.trim())}"`
+        : "giverName";
 
       return [
         `\tset q = QuestGiver_CreateQuest(${constName}, ${npcVar}, "${escapeJassString(quest.questType)}", ${Number(quest.requiredLevel) || 1}, null)`,
-        `\tset q.title = "${escapeJassString(quest.title)}"`,
-        `\tset q.iconPath = "${escapeJassString(quest.iconPath)}"`,
-        `\tset q.description = "${escapeJassString(quest.description)}"`,
-        `\tset q.infoText = infoText`,
-        `\tset q.info2Text = info2Text`,
-        `\tset q.requiredLevel = ${Number(quest.requiredLevel) || 1}`,
-        `\tcall q.setAllowedHeroesForLevelCheck(ALLOW_NAZGREK, ALLOW_ZULKIS)`,
+        `\tcall QuestGiver_ApplyQuestMetadata(q, "${escapeJassString(quest.title)}", "${escapeJassString(quest.iconPath)}", "${escapeJassString(quest.description)}", infoText, info2Text, ${Number(quest.requiredLevel) || 1}, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "", ${receiverDisplayName})`,
         `\tcall q.setRewardParams(${xpReward > 0 ? "true" : "false"}, ${xpReward}, ${goldReward > 0 ? "true" : "false"}, ${goldReward}, false, 0, ${repReward > 0 ? "true" : "false"}, ${repReward}, false)`,
-        quest.receiverMode === "custom" && quest.receiverDisplayName.trim()
-          ? `\tcall q.setReceiverDisplayName("${escapeJassString(quest.receiverDisplayName.trim())}")`
-          : `\tcall q.setReceiverDisplayName(giverName)`,
         `\tcall QuestGiver_SetRequirements(q.id, "", ${reqs})`,
         "",
       ].join("\n");
