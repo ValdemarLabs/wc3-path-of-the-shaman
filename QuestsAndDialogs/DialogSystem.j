@@ -99,6 +99,15 @@ globals
 	private string array DialogSystem_RandomOptTextB
 	private string array DialogSystem_RandomOptSoundB
 
+	private constant integer DIALOGSYSTEM_FIELD_LINE_QUEUE_MAX = 16
+	private timer DialogSystem_FieldLineQueueTimer = null
+	private unit array DialogSystem_FieldLineQueueSpeakers
+	private string array DialogSystem_FieldLineQueueSpeakerNames
+	private string array DialogSystem_FieldLineQueueSoundNames
+	private string array DialogSystem_FieldLineQueueTexts
+	private integer DialogSystem_FieldLineQueueCount = 0
+	private boolean DialogSystem_FieldLineQueueBusy = false
+
 	integer DialogSystem_LastAction = 0
 	button DialogSystem_LastButton = null
 	dialog DialogSystem_LastDialog = null
@@ -477,6 +486,103 @@ public function PlayLine takes unit speaker, string speakerName, string text, st
 		call TransmissionFromUnitWithNameBJ(bj_FORCE_ALL_PLAYERS, speaker, speakerName, null, text, bj_TIMETYPE_SET, duration, false)
 	else
 		call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, duration, text)
+	endif
+endfunction
+
+private function IsFieldLineSpeakerAlive takes unit speaker returns boolean
+	if speaker == null then
+		return false
+	endif
+	return GetUnitTypeId(speaker) != 0 and not IsUnitType(speaker, UNIT_TYPE_DEAD)
+endfunction
+
+public function EstimateFieldLineDuration takes string text returns real
+	local real duration = 1.80 + I2R(StringLength(text)) * 0.05
+	if duration < 2.50 then
+		set duration = 2.50
+	elseif duration > 7.50 then
+		set duration = 7.50
+	endif
+	return duration
+endfunction
+
+private function ShowFieldLine takes unit speaker, string speakerName, string soundName, string text returns nothing
+	if not IsFieldLineSpeakerAlive(speaker) then
+		return
+	endif
+	call PlayLine(speaker, speakerName, text, soundName, true)
+endfunction
+
+public function ClearFieldLineQueue takes nothing returns nothing
+	local integer i = 1
+	if DialogSystem_FieldLineQueueTimer != null then
+		call DestroyTimer(DialogSystem_FieldLineQueueTimer)
+		set DialogSystem_FieldLineQueueTimer = null
+	endif
+	loop
+		exitwhen i > DIALOGSYSTEM_FIELD_LINE_QUEUE_MAX
+		set DialogSystem_FieldLineQueueSpeakers[i] = null
+		set DialogSystem_FieldLineQueueSpeakerNames[i] = ""
+		set DialogSystem_FieldLineQueueSoundNames[i] = ""
+		set DialogSystem_FieldLineQueueTexts[i] = ""
+		set i = i + 1
+	endloop
+	set DialogSystem_FieldLineQueueCount = 0
+	set DialogSystem_FieldLineQueueBusy = false
+endfunction
+
+private function PlayNextFieldLine takes nothing returns nothing
+	local real delay
+	local integer i
+	if DialogSystem_FieldLineQueueCount <= 0 then
+		set DialogSystem_FieldLineQueueBusy = false
+		if DialogSystem_FieldLineQueueTimer != null then
+			call DestroyTimer(DialogSystem_FieldLineQueueTimer)
+			set DialogSystem_FieldLineQueueTimer = null
+		endif
+		return
+	endif
+	set DialogSystem_FieldLineQueueBusy = true
+	call ShowFieldLine(DialogSystem_FieldLineQueueSpeakers[1], DialogSystem_FieldLineQueueSpeakerNames[1], DialogSystem_FieldLineQueueSoundNames[1], DialogSystem_FieldLineQueueTexts[1])
+	if IsFieldLineSpeakerAlive(DialogSystem_FieldLineQueueSpeakers[1]) and DialogSystem_FieldLineQueueSoundNames[1] != "" and udg_ExSoundDuration > 0.00 then
+		set delay = udg_ExSoundDuration
+	else
+		set delay = EstimateFieldLineDuration(DialogSystem_FieldLineQueueTexts[1])
+	endif
+	set i = 1
+	loop
+		exitwhen i >= DialogSystem_FieldLineQueueCount
+		set DialogSystem_FieldLineQueueSpeakers[i] = DialogSystem_FieldLineQueueSpeakers[i + 1]
+		set DialogSystem_FieldLineQueueSpeakerNames[i] = DialogSystem_FieldLineQueueSpeakerNames[i + 1]
+		set DialogSystem_FieldLineQueueSoundNames[i] = DialogSystem_FieldLineQueueSoundNames[i + 1]
+		set DialogSystem_FieldLineQueueTexts[i] = DialogSystem_FieldLineQueueTexts[i + 1]
+		set i = i + 1
+	endloop
+	set DialogSystem_FieldLineQueueSpeakers[DialogSystem_FieldLineQueueCount] = null
+	set DialogSystem_FieldLineQueueSpeakerNames[DialogSystem_FieldLineQueueCount] = ""
+	set DialogSystem_FieldLineQueueSoundNames[DialogSystem_FieldLineQueueCount] = ""
+	set DialogSystem_FieldLineQueueTexts[DialogSystem_FieldLineQueueCount] = ""
+	set DialogSystem_FieldLineQueueCount = DialogSystem_FieldLineQueueCount - 1
+	if DialogSystem_FieldLineQueueTimer == null then
+		set DialogSystem_FieldLineQueueTimer = CreateTimer()
+	endif
+	call TimerStart(DialogSystem_FieldLineQueueTimer, delay, false, function PlayNextFieldLine)
+endfunction
+
+public function QueueFieldLine takes unit speaker, string speakerName, string soundName, string text returns nothing
+	if not IsFieldLineSpeakerAlive(speaker) then
+		return
+	endif
+	if DialogSystem_FieldLineQueueCount >= DIALOGSYSTEM_FIELD_LINE_QUEUE_MAX then
+		return
+	endif
+	set DialogSystem_FieldLineQueueCount = DialogSystem_FieldLineQueueCount + 1
+	set DialogSystem_FieldLineQueueSpeakers[DialogSystem_FieldLineQueueCount] = speaker
+	set DialogSystem_FieldLineQueueSpeakerNames[DialogSystem_FieldLineQueueCount] = speakerName
+	set DialogSystem_FieldLineQueueSoundNames[DialogSystem_FieldLineQueueCount] = soundName
+	set DialogSystem_FieldLineQueueTexts[DialogSystem_FieldLineQueueCount] = text
+	if not DialogSystem_FieldLineQueueBusy then
+		call PlayNextFieldLine()
 	endif
 endfunction
 
