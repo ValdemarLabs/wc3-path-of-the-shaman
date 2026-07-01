@@ -6,7 +6,7 @@
 
     Description:
     In-game settings panel for icon query timing, minimap marker categories,
-    secondary marker scan frequency, map difficulty, and future settings placeholders.
+    pings/display mode, secondary marker scan frequency, and map difficulty.
 
     Credits:
     Tasyen (TasQuestBox as inspiration)
@@ -37,7 +37,8 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
         private constant integer SETUI_ACTION_COMPANIONS = 6
         private constant integer SETUI_ACTION_DIFFICULTY = 7
         private constant integer SETUI_ACTION_SECONDARY_FREQUENCY = 8
-        private constant integer SETUI_ACTION_PLACEHOLDER_2 = 9
+        private constant integer SETUI_ACTION_PINGS = 9
+        private constant integer SETUI_ACTION_ICON_MODE = 10
 
         private constant integer SETUI_SLIDER_QUERY_TIME = 1
         private constant integer SETUI_SLIDER_REST_TIME = 2
@@ -153,14 +154,15 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
             set restTime = IconQuery_GetQueryRestTime()
 
             call BlzFrameSetText(SETUI_Button[1], "All Icons: " + SETUI_OnOff(IconQuery_GetAllEnabled()))
-            call BlzFrameSetText(SETUI_Button[2], "Quest Givers: " + SETUI_OnOff(IconQuery_IsCategoryEnabled(ICONQUERY_CATEGORY_QUEST_GIVERS)))
-            call BlzFrameSetText(SETUI_Button[3], "Flight/Ship: " + SETUI_OnOff(IconQuery_IsCategoryEnabled(ICONQUERY_CATEGORY_FLIGHT_MASTER)))
-            call BlzFrameSetText(SETUI_Button[4], "Bosses: " + SETUI_OnOff(IconQuery_IsCategoryEnabled(ICONQUERY_CATEGORY_BOSSES)))
-            call BlzFrameSetText(SETUI_Button[5], "Places: " + SETUI_OnOff(IconQuery_IsCategoryEnabled(ICONQUERY_CATEGORY_PLACES_OF_INTEREST)))
-            call BlzFrameSetText(SETUI_Button[6], "Companions: " + SETUI_OnOff(IconQuery_IsCategoryEnabled(ICONQUERY_CATEGORY_COMPANIONS_AND_FOLLOWERS)))
+            call BlzFrameSetText(SETUI_Button[2], "Quest Givers: " + IconQuery_GetCategoryModeName(ICONQUERY_CATEGORY_QUEST_GIVERS))
+            call BlzFrameSetText(SETUI_Button[3], "Flight/Ship: " + IconQuery_GetCategoryModeName(ICONQUERY_CATEGORY_FLIGHT_MASTER))
+            call BlzFrameSetText(SETUI_Button[4], "Bosses: " + IconQuery_GetCategoryModeName(ICONQUERY_CATEGORY_BOSSES))
+            call BlzFrameSetText(SETUI_Button[5], "Places: " + IconQuery_GetCategoryModeName(ICONQUERY_CATEGORY_PLACES_OF_INTEREST))
+            call BlzFrameSetText(SETUI_Button[6], "Companions: " + IconQuery_GetCategoryModeName(ICONQUERY_CATEGORY_COMPANIONS_AND_FOLLOWERS))
             call BlzFrameSetText(SETUI_Button[7], "Difficulty: " + SETUI_GetDifficultyName())
-            call BlzFrameSetText(SETUI_Button[8], "Other Icons: " + SETUI_GetSecondaryFrequencyText())
-            call BlzFrameSetText(SETUI_Button[9], "Future Setting")
+            call BlzFrameSetText(SETUI_Button[8], "Travel/Boss/Place: " + SETUI_GetSecondaryFrequencyText())
+            call BlzFrameSetText(SETUI_Button[9], "Pings: " + SETUI_OnOff(IconQuery_GetPingsEnabled()))
+            call BlzFrameSetText(SETUI_Button[10], "Mode: " + IconQuery_GetDisplayModeName())
 
             call BlzFrameSetText(SETUI_SliderLabel[1], "Query: " + I2S(R2I(queryTime + 0.5)) + "s")
             call BlzFrameSetText(SETUI_SliderLabel[2], "Rest: " + I2S(R2I(restTime + 0.5)) + "s")
@@ -223,21 +225,23 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
             if actionId == SETUI_ACTION_ALL then
                 call IconQuery_SetAllEnabled(not IconQuery_GetAllEnabled())
             elseif actionId == SETUI_ACTION_QUEST_GIVERS then
-                call IconQuery_SetCategoryEnabled(ICONQUERY_CATEGORY_QUEST_GIVERS, not IconQuery_IsCategoryEnabled(ICONQUERY_CATEGORY_QUEST_GIVERS))
+                call IconQuery_CycleCategoryMode(ICONQUERY_CATEGORY_QUEST_GIVERS)
             elseif actionId == SETUI_ACTION_FLIGHT_MASTER then
-                call IconQuery_SetCategoryEnabled(ICONQUERY_CATEGORY_FLIGHT_MASTER, not IconQuery_IsCategoryEnabled(ICONQUERY_CATEGORY_FLIGHT_MASTER))
+                call IconQuery_CycleCategoryMode(ICONQUERY_CATEGORY_FLIGHT_MASTER)
             elseif actionId == SETUI_ACTION_BOSSES then
-                call IconQuery_SetCategoryEnabled(ICONQUERY_CATEGORY_BOSSES, not IconQuery_IsCategoryEnabled(ICONQUERY_CATEGORY_BOSSES))
+                call IconQuery_CycleCategoryMode(ICONQUERY_CATEGORY_BOSSES)
             elseif actionId == SETUI_ACTION_POI then
-                call IconQuery_SetCategoryEnabled(ICONQUERY_CATEGORY_PLACES_OF_INTEREST, not IconQuery_IsCategoryEnabled(ICONQUERY_CATEGORY_PLACES_OF_INTEREST))
+                call IconQuery_CycleCategoryMode(ICONQUERY_CATEGORY_PLACES_OF_INTEREST)
             elseif actionId == SETUI_ACTION_COMPANIONS then
-                call IconQuery_SetCategoryEnabled(ICONQUERY_CATEGORY_COMPANIONS_AND_FOLLOWERS, not IconQuery_IsCategoryEnabled(ICONQUERY_CATEGORY_COMPANIONS_AND_FOLLOWERS))
+                call IconQuery_CycleCategoryMode(ICONQUERY_CATEGORY_COMPANIONS_AND_FOLLOWERS)
             elseif actionId == SETUI_ACTION_DIFFICULTY then
                 call SETUI_CycleDifficulty()
             elseif actionId == SETUI_ACTION_SECONDARY_FREQUENCY then
                 call SETUI_CycleSecondaryFrequency()
-            elseif actionId == SETUI_ACTION_PLACEHOLDER_2 then
-                call DisplayTextToPlayer(p, 0.0, 0.0, "|cffffcc00Settings|r option reserved for a future system.")
+            elseif actionId == SETUI_ACTION_PINGS then
+                call IconQuery_SetPingsEnabled(not IconQuery_GetPingsEnabled())
+            elseif actionId == SETUI_ACTION_ICON_MODE then
+                call IconQuery_CycleDisplayMode()
             endif
             call SETUI_Refresh(p)
         endif
@@ -276,7 +280,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
 
     private function SETUI_CreateButton takes integer index, string label, integer actionId, real x, real y returns nothing
         set SETUI_Button[index] = BlzCreateFrameByType("GLUETEXTBUTTON", "SettingsUIButton" + I2S(index), SETUI_LeftPane, "ScriptDialogButton", 0)
-        call BlzFrameSetSize(SETUI_Button[index], 0.145, 0.030)
+        call BlzFrameSetSize(SETUI_Button[index], 0.150, 0.030)
         call BlzFrameSetPoint(SETUI_Button[index], FRAMEPOINT_TOPLEFT, SETUI_LeftPane, FRAMEPOINT_TOPLEFT, x, y)
         call BlzFrameSetText(SETUI_Button[index], label)
         call BlzTriggerRegisterFrameEvent(SETUI_ButtonTrigger, SETUI_Button[index], FRAMEEVENT_CONTROL_CLICK)
@@ -286,7 +290,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
 
     private function SETUI_CreateRightButton takes integer index, string label, integer actionId, real y returns nothing
         set SETUI_Button[index] = BlzCreateFrameByType("GLUETEXTBUTTON", "SettingsUIButton" + I2S(index), SETUI_RightPane, "ScriptDialogButton", 0)
-        call BlzFrameSetSize(SETUI_Button[index], 0.150, 0.030)
+        call BlzFrameSetSize(SETUI_Button[index], 0.220, 0.030)
         call BlzFrameSetPoint(SETUI_Button[index], FRAMEPOINT_TOPLEFT, SETUI_RightPane, FRAMEPOINT_TOPLEFT, 0.022, y)
         call BlzFrameSetText(SETUI_Button[index], label)
         call BlzTriggerRegisterFrameEvent(SETUI_ButtonTrigger, SETUI_Button[index], FRAMEEVENT_CONTROL_CLICK)
@@ -364,8 +368,9 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
         call SETUI_CreateSliderRow(1, "Query", SETUI_SLIDER_QUERY_TIME, -0.030, SETUI_QUERY_TIME_MIN, SETUI_QUERY_TIME_MAX, 1.0)
         call SETUI_CreateSliderRow(2, "Rest", SETUI_SLIDER_REST_TIME, -0.070, SETUI_QUERY_REST_MIN, SETUI_QUERY_REST_MAX, 5.0)
         call SETUI_CreateRightButton(7, "Difficulty", SETUI_ACTION_DIFFICULTY, -0.120)
-        call SETUI_CreateRightButton(8, "Other Icons", SETUI_ACTION_SECONDARY_FREQUENCY, -0.160)
-        call SETUI_CreateRightButton(9, "Future Setting", SETUI_ACTION_PLACEHOLDER_2, -0.200)
+        call SETUI_CreateRightButton(8, "Travel/Boss/Place", SETUI_ACTION_SECONDARY_FREQUENCY, -0.160)
+        call SETUI_CreateRightButton(9, "Pings", SETUI_ACTION_PINGS, -0.200)
+        call SETUI_CreateRightButton(10, "Icon Mode", SETUI_ACTION_ICON_MODE, -0.240)
 
         call BlzFrameSetVisible(SETUI_Parent, false)
     endfunction
