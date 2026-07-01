@@ -61,7 +61,6 @@ globals
 	private constant integer ABIL_VALERIA_GHOST = 'Agho'
 	private constant integer RIFTS_MAX = 3
 	private constant integer RIFTS_MAX_WAVES = 32
-	private constant integer FIELD_LINE_QUEUE_MAX = 16
 	private constant integer RIFTS_WAVE_OWNER = 11
 	private constant string RIFTS_WAVE_PRE_SPAWN_EFFECT = "vortex1.mdx"
 	private constant string RIFTS_WAVE_PRE_SPAWN_CREATE_SOUND = "Sound/Ambient/DoodadEffects/ShimmeringPortalBirth"
@@ -140,7 +139,6 @@ globals
 	private timer RiftsCombatTimer = null
 	private timer RiftsCountdownTimer = null
 	private timer RiftsFailResetTimer = null
-	private timer FieldLineQueueTimer = null
 	private timer FadingSparksTimer = null
 	private dialog ValeriaNegotiationDialog = null
 	private button array ValeriaNegotiationButtons
@@ -161,20 +159,14 @@ globals
 	private unit FadingSparksTarget = null
 	private unit array PlacedManaRifts
 	private unit array RiftsUnits
-	private unit array FieldLineQueueSpeakers
 	private integer array RiftsUnitTypeIds
 	private Wave array RiftsWaveHandles
-	private string array FieldLineQueueSpeakerNames
-	private string array FieldLineQueueSoundNames
-	private string array FieldLineQueueTexts
 	private integer RiftsWaveIndex = 0
 	private integer RiftsNextWaveN = 1
 	private integer RiftsCurrentIndex = 0
-	private integer FieldLineQueueCount = 0
 	private integer RiftsCountdownRemaining = 0
 	private boolean RiftsAwaitingReturnHome = false
 	private boolean RiftsReturnedHome = false
-	private boolean FieldLineQueueBusy = false
 	private boolean FadingSparksFinished = false
 	private boolean RiftsFailureInProgress = false
 	private boolean array RiftsClosed
@@ -246,36 +238,11 @@ private function SyncUnitReferences takes nothing returns nothing
 endfunction
 
 private function ResolveDialogHero takes nothing returns unit
-	if SelectedHero != null and QuestGiver_IsUnitAlive(SelectedHero) then
-		return SelectedHero
-	endif
-	return QuestGiver_GetAllowedHero(Aradion, DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
+	return QuestGiver_ResolveDialogHero(SelectedHero, Aradion, DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
 endfunction
 
 private function CanOfferRangerMissing takes nothing returns boolean
 	return AradionBackstorySeen
-endfunction
-
-private function GetDialogHeroName takes unit hero returns string
-	return QuestGiver_GetHeroName(hero)
-endfunction
-
-private function AddHeroLine takes integer seq, unit hero, string text, string nazgrekSound returns nothing
-	if hero == null then
-		return
-	endif
-	if hero == Nazgrek then
-		call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", text, nazgrekSound, true)
-	else
-		call DialogSystem_AddLine(seq, hero, GetDialogHeroName(hero), text, "", true)
-	endif
-endfunction
-
-private function AddHeroLookAtAradionLine takes integer seq, unit hero, string text, string nazgrekSound returns nothing
-	if hero != null then
-		call DialogSystem_AddLookAtUnit(seq, hero, Aradion, 0.5)
-	endif
-	call AddHeroLine(seq, hero, text, nazgrekSound)
 endfunction
 
 private function RemoveRangerMissingEscortDestination takes nothing returns nothing
@@ -1393,7 +1360,7 @@ private function PlayValeriaNegotiationResponse takes integer lineId returns not
 	call DialogSystem_SetSequenceDefaultSpeaker(seq, Valeria, "Valeria")
 	call DialogSystem_SetSequenceCallbacks(seq, function BeginValeriaNegotiationSequence, function OnValeriaResponseEnd)
 	if hero != null then
-		call AddHeroLine(seq, hero, GetValeriaNegotiationPrompt(lineId), GetValeriaNegotiationHeroSound(lineId))
+		call QuestGiver_AddHeroLine(seq, hero, GetValeriaNegotiationPrompt(lineId), GetValeriaNegotiationHeroSound(lineId))
 	endif
 	call DialogSystem_AddLine(seq, Valeria, "Valeria", GetValeriaNegotiationResponse(lineId), GetValeriaNegotiationResponseSound(lineId), true)
 	call DialogSystem_PlaySequence(seq, Player(0), Valeria)
@@ -1421,7 +1388,7 @@ private function PlayValeriaNegotiationSuccess takes nothing returns nothing
 		set seq = DialogSystem_CreateSequence()
 		call DialogSystem_SetSequenceDefaultSpeaker(seq, Valeria, "Valeria")
 		call DialogSystem_SetSequenceCallbacks(seq, function BeginValeriaNegotiationSequence, function OnValeriaSuccessLeadInEnd)
-		call AddHeroLine(seq, hero, "I've spoken with Aradion. He told me to find you.", "Nazgrek_0353")
+		call QuestGiver_AddHeroLine(seq, hero, "I've spoken with Aradion. He told me to find you.", "Nazgrek_0353")
 		call DialogSystem_PlaySequence(seq, Player(0), Valeria)
 	else
 		call BeginValeriaNegotiationSequence()
@@ -1498,8 +1465,8 @@ private function StartValeriaEncounterInternal takes unit hero returns nothing
 	call DialogSystem_SetSequenceCallbacks(seq, function OnValeriaSequenceStart, function OnValeriaIntroEnd)
 	call SetUnitAnimation(Valeria, "stand ready")
 	call DialogSystem_AddLine(seq, Valeria, "Valeria", "Hold, intruder! Another step and you bleed where you stand!", "Valeria_0001", true)
-	call AddHeroLine(seq, hero, "You must be Valeria.", "Nazgrek_0340")
-	call AddHeroLine(seq, hero, "I am not your enemy...", "Nazgrek_0341")
+	call QuestGiver_AddHeroLine(seq, hero, "You must be Valeria.", "Nazgrek_0340")
+	call QuestGiver_AddHeroLine(seq, hero, "I am not your enemy...", "Nazgrek_0341")
 	call DialogSystem_AddDelay(seq, 1.50)
 	call DialogSystem_AddDelay(seq, 1.00)
 	call DialogSystem_AddLine(seq, Valeria, "Valeria", "Filthy orc lies! I'll drop you where you stand!", "Valeria_0002", true)
@@ -1575,7 +1542,7 @@ private function AddInProgressGreet takes integer seq, unit hero returns boolean
 			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "More and more wraiths are circling around Elarindor... please, do not let her be lost to them.", "Aradion_0038", true)
 		endif
 		if GetRandomInt(1, 2) == 1 then
-			call AddHeroLine(seq, hero, "I'll see if I come across her.", "Nazgrek_0337")
+			call QuestGiver_AddHeroLine(seq, hero, "I'll see if I come across her.", "Nazgrek_0337")
 		endif
 		return true
 	endif
@@ -1653,7 +1620,7 @@ private function PlayGreetFirstSequence takes unit hero returns nothing
 		call DialogSystem_AddDelay(seq, 1.0)
 	endif
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "An… orc? Here? If you came for blood, take mine swiftly. I will not flee…", "Aradion_0001", true)
-	call AddHeroLine(seq, hero, "Your blood is not what I seek, elf. I walk the spirit path, not the path of slaughter.", "Nazgrek_0331")
+	call QuestGiver_AddHeroLine(seq, hero, "Your blood is not what I seek, elf. I walk the spirit path, not the path of slaughter.", "Nazgrek_0331")
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "…No. Orcs do not speak so. You… are different.", "Aradion_0002", true)
 	call QuestGiver_PlayFirstGreetSequence(Aradion, Player(0), AradionDialog, seq)
 endfunction
@@ -1794,22 +1761,22 @@ private function BuildInfoSequence takes nothing returns integer
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "My beloved Valeria and I begged our kin to turn away... but what are two voices against the choir of greed?", "Aradion_0007", true)
 	if hero != null then
 		call DialogSystem_AddLookAtUnit(seq, hero, Aradion, 0.5)
-		call AddHeroLine(seq, hero, "You said... a witch deceived you?", "Nazgrek_0332")
+		call QuestGiver_AddHeroLine(seq, hero, "You said... a witch deceived you?", "Nazgrek_0332")
 		call DialogSystem_AddLookAtUnit(seq, hero, Aradion, 0.5)
-		call AddHeroLine(seq, hero, "Why did your kin trust this witch?", "Nazgrek_0333")
+		call QuestGiver_AddHeroLine(seq, hero, "Why did your kin trust this witch?", "Nazgrek_0333")
 	endif
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Her words promised glory - strength to rival Quel'Thalas itself. Her lies were sweet... and my people were starving for more.", "Aradion_0008", true)
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "But every promise was poison. Each draught of her 'gift' deepened the hunger, until the hunger itself consumed them.", "Aradion_0009", true)
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Now my people are twisted, their flesh withering, their souls bleeding into wraiths. Soon... nothing of them will remain.", "Aradion_0010", true)
 	if hero != null then
 		call DialogSystem_AddLookAtUnit(seq, hero, Aradion, 0.5)
-		call AddHeroLine(seq, hero, "The wraiths I see... they were once elves?", "Nazgrek_0334")
+		call QuestGiver_AddHeroLine(seq, hero, "The wraiths I see... they were once elves?", "Nazgrek_0334")
 	endif
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Yes. Once mothers, fathers, children. Now only hollow echoes bound to the Void by the magic that devoured them.", "Aradion_0011", true)
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "The wretched who remain will share the same fate - it is only a matter of time before they too dissolve into wraiths.", "Aradion_0012", true)
 	if hero != null then
 		call DialogSystem_AddLookAtUnit(seq, hero, Aradion, 0.5)
-		call AddHeroLine(seq, hero, "And you? How did you resist where others fell?", "Nazgrek_0336")
+		call QuestGiver_AddHeroLine(seq, hero, "And you? How did you resist where others fell?", "Nazgrek_0336")
 	endif
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "I resisted... because I feared. And because Valeria feared with me. Together we begged them to turn away. None listened.", "Aradion_0013", true)
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "The witch saw no worth in those who refused her. So she left us alive - to watch the slow death of our kin.", "Aradion_0014", true)
@@ -1843,96 +1810,6 @@ private function UpdateQuestRangerMissing takes nothing returns nothing
 	call DebugMsg("Updating Quest: Ranger Missing")
 	call StartRangerMissingEscortInternal()
 	call QuestGiver_UpdateQuestByNameAndGiver(QUEST_RANGER_MISSING, Aradion)
-endfunction
-
-private function EstimateFieldLineDuration takes string text returns real
-	local real duration = 1.80 + I2R(StringLength(text)) * 0.05
-	if duration < 2.50 then
-		set duration = 2.50
-	elseif duration > 7.50 then
-		set duration = 7.50
-	endif
-	return duration
-endfunction
-
-private function ClearFieldLineQueue takes nothing returns nothing
-	local integer i = 1
-	if FieldLineQueueTimer != null then
-		call DestroyTimer(FieldLineQueueTimer)
-		set FieldLineQueueTimer = null
-	endif
-	loop
-		exitwhen i > FIELD_LINE_QUEUE_MAX
-		set FieldLineQueueSpeakers[i] = null
-		set FieldLineQueueSpeakerNames[i] = ""
-		set FieldLineQueueSoundNames[i] = ""
-		set FieldLineQueueTexts[i] = ""
-		set i = i + 1
-	endloop
-	set FieldLineQueueCount = 0
-	set FieldLineQueueBusy = false
-endfunction
-
-private function ShowFieldLine takes unit speaker, string speakerName, string soundName, string text returns nothing
-	if speaker == null or not QuestGiver_IsUnitAlive(speaker) then
-		return
-	endif
-	call DialogSystem_PlayLine(speaker, speakerName, text, soundName, true)
-endfunction
-
-private function PlayNextFieldLine takes nothing returns nothing
-	local real delay
-	local integer i
-	if FieldLineQueueCount <= 0 then
-		set FieldLineQueueBusy = false
-		if FieldLineQueueTimer != null then
-			call DestroyTimer(FieldLineQueueTimer)
-			set FieldLineQueueTimer = null
-		endif
-		return
-	endif
-	set FieldLineQueueBusy = true
-	call ShowFieldLine(FieldLineQueueSpeakers[1], FieldLineQueueSpeakerNames[1], FieldLineQueueSoundNames[1], FieldLineQueueTexts[1])
-	if FieldLineQueueSpeakers[1] != null and QuestGiver_IsUnitAlive(FieldLineQueueSpeakers[1]) and FieldLineQueueSoundNames[1] != "" and udg_ExSoundDuration > 0.00 then
-		set delay = udg_ExSoundDuration
-	else
-		set delay = EstimateFieldLineDuration(FieldLineQueueTexts[1])
-	endif
-	set i = 1
-	loop
-		exitwhen i >= FieldLineQueueCount
-		set FieldLineQueueSpeakers[i] = FieldLineQueueSpeakers[i + 1]
-		set FieldLineQueueSpeakerNames[i] = FieldLineQueueSpeakerNames[i + 1]
-		set FieldLineQueueSoundNames[i] = FieldLineQueueSoundNames[i + 1]
-		set FieldLineQueueTexts[i] = FieldLineQueueTexts[i + 1]
-		set i = i + 1
-	endloop
-	set FieldLineQueueSpeakers[FieldLineQueueCount] = null
-	set FieldLineQueueSpeakerNames[FieldLineQueueCount] = ""
-	set FieldLineQueueSoundNames[FieldLineQueueCount] = ""
-	set FieldLineQueueTexts[FieldLineQueueCount] = ""
-	set FieldLineQueueCount = FieldLineQueueCount - 1
-	if FieldLineQueueTimer == null then
-		set FieldLineQueueTimer = CreateTimer()
-	endif
-	call TimerStart(FieldLineQueueTimer, delay, false, function PlayNextFieldLine)
-endfunction
-
-private function QueueFieldLine takes unit speaker, string speakerName, string soundName, string text returns nothing
-	if speaker == null or not QuestGiver_IsUnitAlive(speaker) then
-		return
-	endif
-	if FieldLineQueueCount >= FIELD_LINE_QUEUE_MAX then
-		return
-	endif
-	set FieldLineQueueCount = FieldLineQueueCount + 1
-	set FieldLineQueueSpeakers[FieldLineQueueCount] = speaker
-	set FieldLineQueueSpeakerNames[FieldLineQueueCount] = speakerName
-	set FieldLineQueueSoundNames[FieldLineQueueCount] = soundName
-	set FieldLineQueueTexts[FieldLineQueueCount] = text
-	if not FieldLineQueueBusy then
-		call PlayNextFieldLine()
-	endif
 endfunction
 
 private function GetRiftRect takes integer index returns rect
@@ -2292,14 +2169,14 @@ private function PlayRiftsStartBarks takes nothing returns nothing
 	local integer roll
 	set roll = GetRandomInt(1, 2)
 	if roll == 1 then
-		call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0074", "Stand ready. Once I begin, this place can start to crawl with wraiths.")
+		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0074", "Stand ready. Once I begin, this place can start to crawl with wraiths.")
 	else
-		call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0075", "I will attempt to close this rift. But I cannot fight and focus at once... you must protect me!")
+		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0075", "I will attempt to close this rift. But I cannot fight and focus at once... you must protect me!")
 	endif
 	if GetRandomInt(1, 2) == 1 then
-		call QueueFieldLine(Valeria, "Valeria", "Valeria_0072", "We will handle them, just keep your focus on the rift!")
+		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0072", "We will handle them, just keep your focus on the rift!")
 	else
-		call QueueFieldLine(Valeria, "Valeria", "Valeria_0073", "We stand ready to defend you!")
+		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0073", "We stand ready to defend you!")
 	endif
 endfunction
 
@@ -2319,7 +2196,7 @@ private function StartRiftsRitualInternal takes unit riftUnit, integer riftIndex
 	set RiftsUnits[riftIndex] = riftUnit
 	set RiftsRitualActive = true
 	set RiftsNextWaveN = 1
-	call ClearFieldLineQueue()
+	call DialogSystem_ClearFieldLineQueue()
 	call DestroyRiftsProximityTrigger()
 	call Companions_Suspend(Aradion)
 	call StopValeriaPatrolInternal()
@@ -2695,11 +2572,11 @@ private function PlayRiftsIncomingWaveBark takes nothing returns nothing
 	local integer roll
 	set roll = GetRandomInt(1, 3)
 	if roll == 1 then
-		call QueueFieldLine(Valeria, "Valeria", "Valeria_0061", "Hold your ground! Don't let them reach Aradion!")
+		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0061", "Hold your ground! Don't let them reach Aradion!")
 	elseif roll == 2 then
-		call QueueFieldLine(Valeria, "Valeria", "Valeria_0062", "The rift is pulling every wrath towards it - brace yourself!")
+		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0062", "The rift is pulling every wrath towards it - brace yourself!")
 	else
-		call QueueFieldLine(Valeria, "Valeria", "Valeria_0065", "They are too many! Drive them back!")
+		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0065", "They are too many! Drive them back!")
 	endif
 endfunction
 
@@ -2707,32 +2584,32 @@ private function PlayRiftsCombatBark takes nothing returns nothing
 	local integer roll
 	set roll = GetRandomInt(1, 3)
 	if roll == 1 then
-		call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0076", "Hold them back! Just a little longer!")
+		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0076", "Hold them back! Just a little longer!")
 	elseif roll == 2 then
-		call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0077", "The rift is still open - I need more time!")
+		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0077", "The rift is still open - I need more time!")
 	else
-		call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0078", "Try to keep them away from me!")
+		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0078", "Try to keep them away from me!")
 	endif
 endfunction
 
 private function PlayRiftsFinishBarks takes nothing returns nothing
 	if GetRandomInt(1, 2) == 1 then
-		call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0080", "It is done. This rift is sealed.")
+		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0080", "It is done. This rift is sealed.")
 	else
-		call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0082", "I managed to close this rift.")
+		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0082", "I managed to close this rift.")
 	endif
 	if GetRandomInt(1, 2) == 1 then
-		call QueueFieldLine(Valeria, "Valeria", "Valeria_0066", "Great job, my love!")
+		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0066", "Great job, my love!")
 	else
-		call QueueFieldLine(Valeria, "Valeria", "Valeria_0068", "You never cease to amaze me, my love.")
+		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0068", "You never cease to amaze me, my love.")
 	endif
 endfunction
 
 private function PlayRiftsAllClosedBarks takes nothing returns nothing
-	call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0084", "I think this was the last of them. All rifts should now be closed.")
-	call QueueFieldLine(Valeria, "Valeria", "Valeria_0070", "So, is it... over now? Is this the answer to our people's curse?")
-	call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0085", "In time, we will see... It's time to head back to our place.")
-	call QueueFieldLine(Valeria, "Valeria", "Valeria_0071", "Gladly.")
+	call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0084", "I think this was the last of them. All rifts should now be closed.")
+	call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0070", "So, is it... over now? Is this the answer to our people's curse?")
+	call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0085", "In time, we will see... It's time to head back to our place.")
+	call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0071", "Gladly.")
 endfunction
 
 private function SpawnRiftsWave takes nothing returns nothing
@@ -2853,7 +2730,7 @@ private function FinishRiftsCurrentRitual takes nothing returns nothing
 	endif
 	call StopRiftsRuntimeTimers()
 	call ClearRiftsWaveHandles()
-	call ClearFieldLineQueue()
+	call DialogSystem_ClearFieldLineQueue()
 	if closedIndex > 0 and closedIndex <= RIFTS_MAX then
 		set placedRift = PlacedManaRifts[closedIndex]
 		set RiftsClosed[closedIndex] = true
@@ -2885,8 +2762,8 @@ private function FinishRiftsCurrentRitual takes nothing returns nothing
 	if RiftsCorruptionCounter >= 3 then
 		call PlayRiftsAllClosedBarks()
 	else
-		call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0083", "Let's head to the next one. Be on your guard.")
-		call QueueFieldLine(Valeria, "Valeria", "Valeria_0069", "Don't worry my love, we will be.")
+		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0083", "Let's head to the next one. Be on your guard.")
+		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0069", "Don't worry my love, we will be.")
 	endif
 	set hero = null
 	set closedRift = null
@@ -3047,7 +2924,7 @@ private function HandleRiftsFailure takes string reason returns nothing
 	call StopRiftsRuntimeTimers()
 	call StopRiftsFieldMonitor()
 	call ClearRiftsWaveHandles()
-	call ClearFieldLineQueue()
+	call DialogSystem_ClearFieldLineQueue()
 	call DisableRiftsFailTriggers()
 	call DestroyRiftsProximityTrigger()
 	call StopRiftsFailResetTimer()
@@ -3079,7 +2956,7 @@ private function HandleRiftsFailure takes string reason returns nothing
 		if udg_ExSoundDuration > 0.00 then
 			set delay = udg_ExSoundDuration
 		else
-			set delay = EstimateFieldLineDuration(text)
+			set delay = DialogSystem_EstimateFieldLineDuration(text)
 		endif
 	else
 		set delay = 0.50
@@ -3272,10 +3149,7 @@ private function StartExitFadeOut takes nothing returns nothing
 endfunction
 
 private function BeginQuestDialogSequence takes nothing returns nothing
-	call EnableUserControl(false)
-	call QuestGiver_CloseActiveDialog()
-	call ExecuteFunc("TasQuestBox_Hide")
-	call ExecuteFunc("MasterUI_HideGameButton")
+	call QuestGiver_BeginDialogSequence()
 endfunction
 
 private function SyncRangerMissingReadyTurnIn takes nothing returns nothing
@@ -3411,7 +3285,7 @@ private function OnAcceptQuest1 takes nothing returns nothing
 	// Add quest-specific lines
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "In the chaos, when the wraiths struck, my beloved Valeria was torn from my side.", "Aradion_0035", true)
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "I have searched, but the shadows grow thick. If she still lives and you find her, bring her to me, shaman… before they claim her as well.", "Aradion_0036", true)
-	call AddHeroLine(seq, hero, "I'll see if I come across her.", "Nazgrek_0337")
+	call QuestGiver_AddHeroLine(seq, hero, "I'll see if I come across her.", "Nazgrek_0337")
 	call DialogSystem_PlaySequence(seq, Player(0), Aradion)
 endfunction
 
@@ -3551,7 +3425,7 @@ private function OnAcceptQuest2 takes nothing returns nothing
 	// Add quest-specific lines with inline facing
 	call DialogSystem_AddMakeFaceEachOther(seq, Aradion, hero, 0.50, 0.0)
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "In the ruins of Elarindor, there are crystals… pulsing, alive with energy.", "Aradion_0041", true)
-	call AddHeroLookAtAradionLine(seq, hero, "I have walked near them. Their song is some what… twisted, yet beautiful.", "Nazgrek_0366")
+	call QuestGiver_AddHeroLookAtLine(seq, hero, Aradion, "I have walked near them. Their song is some what… twisted, yet beautiful.", "Nazgrek_0366")
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "I believe they are remnants of our ancient magical pools, fractured when our people consumed too much magical energies.", "Aradion_0042", true)
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "If their power can be harnessed, perhaps… perhaps they may quiet the hunger, even if only for a time.", "Aradion_0043", true)
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Bring me shards of these crystals, shaman. Let us not forsake even the faintest hope.", "Aradion_0044", true)
@@ -3585,7 +3459,7 @@ private function OnCompleteQuest2 takes nothing returns nothing
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Yes… these shards still resonate with power, I can feel it... It is almost... mesmerizing.", "Aradion_0047", true)
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "If we can bend the crystals energy to our control, it might reverse the damage of the wretched elves decay… Or only soothe for a fleeting moment.…", "Aradion_0048", true)
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Yet the pulse of these crystals seems odd... As if the crystals themselves cry out in pain.", "Aradion_0049", true)
-	call AddHeroLookAtAradionLine(seq, hero, "I can hear the spirits whisper caution. These crystals may feed hunger, not heal it.", "Nazgrek_0367")
+	call QuestGiver_AddHeroLookAtLine(seq, hero, Aradion, "I can hear the spirits whisper caution. These crystals may feed hunger, not heal it.", "Nazgrek_0367")
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "I must study these shards you brought me… very carefully", "Aradion_0050", true)
 	call DialogSystem_PlaySequence(seq, Player(0), Aradion)
 endfunction
@@ -3624,7 +3498,7 @@ private function OnAcceptQuest3 takes nothing returns nothing
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Yet even in their twisted forms, I sense a faint light — echoes of the elves they once were.", "Aradion_0054", true)
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "If we can gather those sparks, perhaps they hold some secret… some key we have overlooked.", "Aradion_0055", true)
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Bring me their essences, shaman. Let us see if even wraiths may whisper truth.", "Aradion_0056", true)
-	call AddHeroLine(seq, hero, "I will do this Aradion, but I see little hope in the shadows.", "Nazgrek_0371")
+	call QuestGiver_AddHeroLine(seq, hero, "I will do this Aradion, but I see little hope in the shadows.", "Nazgrek_0371")
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "I'll give you the rod of Tel'anor which can be used to safely extract the essence of mana wraith when it is weakened enough.", "Aradion_0063", true)
 	call DialogSystem_PlaySequence(seq, Player(0), Aradion)
 endfunction
@@ -3659,7 +3533,7 @@ private function OnCompleteQuest3 takes nothing returns nothing
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "So fragile… yet for a moment, I can feel all the memories.... everything they once were…", "Aradion_0060", true)
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "But it all slips away, fading faster than breath. They are too far gone.", "Aradion_0061", true)
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "…If even wraiths leave behind only ashes of the soul, then perhaps our people's fate is truly sealed... ", "Aradion_0062", true)
-	call AddHeroLine(seq, hero, "Do not surrender to despair, Aradion. There may yet be an answer to all of it.", "Nazgrek_0372")
+	call QuestGiver_AddHeroLine(seq, hero, "Do not surrender to despair, Aradion. There may yet be an answer to all of it.", "Nazgrek_0372")
 	call DialogSystem_PlaySequence(seq, Player(0), Aradion)
 endfunction
 
@@ -3691,7 +3565,7 @@ private function OnAcceptQuest4End takes nothing returns nothing
 	call StopRiftsRuntimeTimers()
 	call StopRiftsFieldMonitor()
 	call ClearRiftsWaveHandles()
-	call ClearFieldLineQueue()
+	call DialogSystem_ClearFieldLineQueue()
 	call ResetRiftsClosedState()
 	call RegisterRiftUnits()
 	if Aradion != null then
@@ -3733,7 +3607,7 @@ private function OnAcceptQuest4 takes nothing returns nothing
 	// NOTE: Valeria null check in DialogSystem - this will be skipped if Valeria is invalid
 	call DialogSystem_AddLookAtUnit(seq, Valeria, Aradion, 0.5)
 	call DialogSystem_AddLine(seq, Valeria, "Valeria", "We have planned this forever… I can handle it, my love. ", "Valeria_0060", true)
-	call AddHeroLine(seq, hero, "The spirits whisper of broken currents here. I will see Valeria through this.", "Nazgrek_0377")
+	call QuestGiver_AddHeroLine(seq, hero, "The spirits whisper of broken currents here. I will see Valeria through this.", "Nazgrek_0377")
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Stand with us, shaman. Guard me while I close the rifts — and strike down whatever nightmares the rifts unleash.", "Aradion_0068", true)
 	call DialogSystem_PlaySequence(seq, Player(0), Aradion)
 endfunction
@@ -3756,7 +3630,7 @@ private function OnCompleteQuest4End takes nothing returns nothing
 	call StopRiftsRuntimeTimers()
 	call StopRiftsFieldMonitor()
 	call ClearRiftsWaveHandles()
-	call ClearFieldLineQueue()
+	call DialogSystem_ClearFieldLineQueue()
 	call DisableRiftsFailTriggers()
 	if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
 		call IssueImmediateOrder(Aradion, "stop")
@@ -3788,7 +3662,7 @@ private function OnCompleteQuest4 takes nothing returns nothing
 	call DialogSystem_AddMakeFaceEachOther(seq, Aradion, hero, 0.50, 0.0)
 	// NOTE: Valeria null check in DialogSystem - this will be skipped if Valeria is invalid
 	call DialogSystem_AddMakeFaceEachOther(seq, Valeria, Aradion, 0.50, 0.0)
-	call AddHeroLine(seq, hero, "The wound in the land is remedied… for now.", "Nazgrek_0378")
+	call QuestGiver_AddHeroLine(seq, hero, "The wound in the land is remedied… for now.", "Nazgrek_0378")
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "The rifts… are sealed. For the first time in years, the air feels lighter in the Vale.", "Aradion_0071", true)
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "You stood unbroken, my dear friend. Hope stirs again — faint, but alive.", "Aradion_0072", true)
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Thank you, shaman. You have given us more than victory — you have given us belief.", "Aradion_0073", true)
@@ -4376,7 +4250,7 @@ public function ReturnRiftsCompanionsHome takes nothing returns nothing
 	call StopRiftsRuntimeTimers()
 	call StopRiftsFieldMonitor()
 	call ClearRiftsWaveHandles()
-	call ClearFieldLineQueue()
+	call DialogSystem_ClearFieldLineQueue()
 	call DisableRiftsFailTriggers()
 	call DestroyRiftsProximityTrigger()
 	call ReturnRiftsCompanionsHomeInternal()
