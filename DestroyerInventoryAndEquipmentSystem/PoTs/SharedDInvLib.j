@@ -2136,6 +2136,9 @@ function RemoveDInvItemChargesByType takes unit u, integer itemTypeId, integer a
             if it == null then
                 call BJDebugMsg("  Vanilla Slot[" + I2S(vanillaSlot) + "] is null, skipping")
                 set vanillaSlot = vanillaSlot + 1
+            elseif IsItemStoredInDInv(it) then
+                call BJDebugMsg("  Vanilla Slot[" + I2S(vanillaSlot) + "] is still DInventory-managed, skipping duplicate count")
+                set vanillaSlot = vanillaSlot + 1
             else
                 set currentItemType = GetItemTypeId(it)
                 set itemMatches = (currentItemType == itemTypeId)
@@ -5140,7 +5143,7 @@ function GetDInvItemChargesByType takes unit u, integer itemTypeId returns integ
     loop
         exitwhen vanillaSlot >= vanillaInvSize
         set it = UnitItemInSlot(u, vanillaSlot)
-        if it != null and GetItemTypeId(it) == itemTypeId then
+        if it != null and not IsItemStoredInDInv(it) and GetItemTypeId(it) == itemTypeId then
             set charges = GetItemCharges(it)
             // Count items with 0 charges as 1 item
             if charges <= 0 then
@@ -5201,7 +5204,7 @@ function GetDInvItemChargesByTypeThreshold takes unit u, integer itemTypeId, int
     loop
         exitwhen vanillaSlot >= vanillaInvSize
         set it = UnitItemInSlot(u, vanillaSlot)
-        if it != null and GetItemTypeId(it) == itemTypeId then
+        if it != null and not IsItemStoredInDInv(it) and GetItemTypeId(it) == itemTypeId then
             set charges = GetItemCharges(it)
             // Count items with 0 charges as 1 item
             if charges <= 0 then
