@@ -546,6 +546,113 @@ public function IsUnitAlive takes unit u returns boolean
 	return GetUnitTypeId(u) != 0 and not IsUnitType(u, UNIT_TYPE_DEAD)
 endfunction
 
+public function FindPreferredUnitInRect takes rect searchRect, integer expectedTypeId, player preferredOwner, unit excludeA, unit excludeB, unit excludeC, unit excludeD, boolean excludeHeroes returns unit
+	local group g
+	local unit u
+	local unit bestExact = null
+	local unit bestPreferred = null
+	local unit bestFallback = null
+	local real centerX
+	local real centerY
+	local real dx
+	local real dy
+	local real distSq
+	local real bestExactDistSq = 999999999.00
+	local real bestPreferredDistSq = 999999999.00
+	local real bestFallbackDistSq = 999999999.00
+	if searchRect == null then
+		return null
+	endif
+	set centerX = GetRectCenterX(searchRect)
+	set centerY = GetRectCenterY(searchRect)
+	set g = CreateGroup()
+	call GroupEnumUnitsInRect(g, searchRect, null)
+	loop
+		set u = FirstOfGroup(g)
+		exitwhen u == null
+		call GroupRemoveUnit(g, u)
+		if IsUnitAlive(u) and u != excludeA and u != excludeB and u != excludeC and u != excludeD and (not excludeHeroes or not IsUnitType(u, UNIT_TYPE_HERO)) then
+			set dx = GetUnitX(u) - centerX
+			set dy = GetUnitY(u) - centerY
+			set distSq = dx * dx + dy * dy
+			if expectedTypeId != 0 and GetUnitTypeId(u) == expectedTypeId and distSq < bestExactDistSq then
+				set bestExact = u
+				set bestExactDistSq = distSq
+			endif
+			if preferredOwner != null and GetOwningPlayer(u) == preferredOwner and distSq < bestPreferredDistSq then
+				set bestPreferred = u
+				set bestPreferredDistSq = distSq
+			endif
+			if distSq < bestFallbackDistSq then
+				set bestFallback = u
+				set bestFallbackDistSq = distSq
+			endif
+		endif
+	endloop
+	call DestroyGroup(g)
+	set g = null
+	set u = null
+	if bestExact != null then
+		return bestExact
+	endif
+	if bestPreferred != null then
+		return bestPreferred
+	endif
+	return bestFallback
+endfunction
+
+public function ReuseOrCreateUnitAtPoint takes unit existingUnit, player ownerP, integer defaultUnitTypeId, real x, real y, real facing, boolean disableCreepGuard returns unit
+	local integer unitTypeId = defaultUnitTypeId
+	local unit result = existingUnit
+	if result != null and GetUnitTypeId(result) != 0 then
+		set unitTypeId = GetUnitTypeId(result)
+		if ownerP == null then
+			set ownerP = GetOwningPlayer(result)
+		endif
+	endif
+	if ownerP == null or unitTypeId == 0 then
+		set result = null
+		return null
+	endif
+	if result != null and IsUnitAlive(result) then
+		call SetUnitOwner(result, ownerP, true)
+		call SetUnitPosition(result, x, y)
+		call SetUnitFacing(result, facing)
+	else
+		if result != null then
+			call RemoveUnit(result)
+		endif
+		set result = CreateUnit(ownerP, unitTypeId, x, y, facing)
+	endif
+	if result != null then
+		if disableCreepGuard then
+			call SetUnitCreepGuard(result, false)
+		endif
+		call IssueImmediateOrder(result, "stop")
+	endif
+	return result
+endfunction
+
+public function ResetFieldUnitAtPoint takes unit u, player ownerP, real x, real y, real facing, boolean healToFull returns nothing
+	if u == null or GetUnitTypeId(u) == 0 then
+		return
+	endif
+	call PauseUnit(u, false)
+	call SetUnitTimeScale(u, 1.00)
+	call SetUnitInvulnerable(u, false)
+	if ownerP != null then
+		call SetUnitOwner(u, ownerP, true)
+	endif
+	if healToFull then
+		call SetWidgetLife(u, BlzGetUnitMaxHP(u))
+	endif
+	call ResetUnitAnimation(u)
+	call SetUnitAnimation(u, "stand")
+	call SetUnitPosition(u, x, y)
+	call SetUnitFacing(u, facing)
+	call IssueImmediateOrder(u, "stop")
+endfunction
+
 
 public function IsWithinRange takes unit a, unit b, real range returns boolean
 	local real dx
