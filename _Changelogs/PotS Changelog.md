@@ -21,6 +21,10 @@
 - `Ranger Missing`
   Valeria's failed negotiation choices can now be reopened with `ESC` after the current hero/Valeria lines finish, failed quests no longer respawn Valeria until the player re-accepts the quest, and the successful negotiation branch now removes the old Valeria before adding the companion version.
   The Aradion return step now accepts Valeria within a wider 500 range, and Valeria no longer leashes back toward her original spot when the reunion completion scene starts.
+- `Rifts of Corruption`
+  Void units now telegraph their arrival with delayed `vortex1.mdx` portal effects, including portal birth and death sounds at the spawn point.
+- `Quest item tracking`
+  Item collection quests now refresh against items already carried by the hero, and DInv-managed items are no longer double-counted when mirrored through vanilla inventory slots.
 - `Map icons / Settings`
   Icon query/rest timing changes now apply immediately from Settings instead of waiting for the previous timer phase to expire.
   Companion/follower icons now honor the Settings toggle, icon visibility/rest ranges were expanded, and quest givers plus companions/followers are prioritized ahead of secondary icon categories.
@@ -30,6 +34,11 @@
 ### Technical Updates
 - `qAradion.j`
   Reworked Valeria retry, recreation, ownership, stale companion cleanup, negotiation prompt rearming, completion range, and quest-fail reset behavior for `Ranger Missing`.
+  Routed `Rifts of Corruption` void waves through delayed portal spawning with vortex create/destroy sounds and sticky attack-move orders toward Aradion.
+- `UnitSpawn.j`
+  Added delayed wave spawn APIs that support pre-spawn special-effect birth and timed-destroy sounds while preserving the existing delayed spawn calls.
+- `QuestGiver.j` / `SharedDInvLib.j`
+  Added item-requirement refresh APIs and a lightweight periodic requirement scan, then made DInv charge counting skip vanilla-slot handles that are still owned by DInv.
 - `QuestMaster.j`
   Quest-giver overhead effects now refresh immediately when a quest is accepted, so an accepted/on-going quest with no newly available quests switches to the question mark state.
 - `IconQuery.j` / `SettingsUI.j`
@@ -40,7 +49,7 @@
   Added a central difficulty library with apply/read APIs and configurable player/hostile handicap multipliers for future gameplay systems.
 
 ### Actions Remaining
-- Re-test the full `Ranger Missing` fail/re-accept/negotiate/turn-in path, IconQuery category pacing, companion/follower icon toggles, and the new difficulty profiles in-game.
+- Re-test the full `Ranger Missing` fail/re-accept/negotiate/turn-in path, Rifts portal wave telegraphs/sounds, carried-item quest progress, DInv/vanilla item count parity, IconQuery category pacing, companion/follower icon toggles, and the new difficulty profiles in-game.
 
 ## [30.6.2026]
 
