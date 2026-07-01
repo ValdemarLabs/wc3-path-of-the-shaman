@@ -515,10 +515,13 @@ FailRifts</textarea>
 `private function OnAcceptQuest${suffix}End takes nothing returns nothing
 \tcall QuestGiver_AcceptQuestByNameAndGiver(${constName}, ${npcVar})
 \t// TODO OLDGUI PARITY: quest-specific accept side effects for ${escapeJassString(quest.title)}
+\tcall FinishDialogSequence()
 endfunction
 
 private function OnAcceptQuest${suffix} takes nothing returns nothing
-\tlocal integer seq = QuestGiver_CreateBaseSequence(${npcVar}, "${displayName}")
+\tlocal integer seq
+\tcall QuestGiver_BeginDialogSequence()
+\tset seq = QuestGiver_CreateBaseSequence(${npcVar}, "${displayName}")
 \tcall DialogSystem_SetSequenceCallbacks(seq, null, function OnAcceptQuest${suffix}End)
 \t// Optional: switch to QuestGiver_CreateAcceptSequence(...) if you want shared accept banter before custom lines.
 \tcall DialogSystem_AddLine(seq, ${npcVar}, "${displayName}", "TODO OLDGUI PARITY: replace ${escapeJassString(quest.title)} accept dialog.", "", true)
@@ -532,10 +535,13 @@ endfunction`
 `private function OnCompleteQuest${suffix}End takes nothing returns nothing
 \tcall QuestGiver_CompleteQuestByNameAndGiver(${constName}, ${npcVar})
 \t// TODO OLDGUI PARITY: quest-specific complete side effects for ${escapeJassString(quest.title)}
+\tcall FinishDialogSequence()
 endfunction
 
 private function OnCompleteQuest${suffix} takes nothing returns nothing
-\tlocal integer seq = QuestGiver_CreateBaseSequence(${npcVar}, "${displayName}")
+\tlocal integer seq
+\tcall QuestGiver_BeginDialogSequence()
+\tset seq = QuestGiver_CreateBaseSequence(${npcVar}, "${displayName}")
 \tcall DialogSystem_SetSequenceCallbacks(seq, null, function OnCompleteQuest${suffix}End)
 \tcall DialogSystem_AddLine(seq, ${npcVar}, "${displayName}", "TODO OLDGUI PARITY: replace ${escapeJassString(quest.title)} completion dialog.", "", true)
 \tcall DialogSystem_PlaySequence(seq, Player(0), ${npcVar})
@@ -547,10 +553,13 @@ endfunction`
           blocks.push(
 `private function OnFailQuest${suffix}End takes nothing returns nothing
 \t// TODO OLDGUI PARITY: failure cleanup / retry-state logic for ${escapeJassString(quest.title)}
+\tcall FinishDialogSequence()
 endfunction
 
 private function OnFailQuest${suffix} takes nothing returns nothing
-\tlocal integer seq = QuestGiver_CreateBaseSequence(${npcVar}, "${displayName}")
+\tlocal integer seq
+\tcall QuestGiver_BeginDialogSequence()
+\tset seq = QuestGiver_CreateBaseSequence(${npcVar}, "${displayName}")
 \tcall DialogSystem_SetSequenceCallbacks(seq, null, function OnFailQuest${suffix}End)
 \tcall DialogSystem_AddLine(seq, ${npcVar}, "${displayName}", "TODO OLDGUI PARITY: replace ${escapeJassString(quest.title)} fail dialog.", "", true)
 \tcall DialogSystem_PlaySequence(seq, Player(0), ${npcVar})
@@ -650,10 +659,11 @@ private function DebugMsg takes string msg returns nothing
 endfunction
 
 private function ResolveDialogHero takes nothing returns unit
-\tif SelectedHero != null and QuestGiver_IsUnitAlive(SelectedHero) then
-\t\treturn SelectedHero
-\tendif
-\treturn QuestGiver_GetAllowedHero(${npcVar}, DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
+\treturn QuestGiver_ResolveDialogHero(SelectedHero, ${npcVar}, DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
+endfunction
+
+private function FinishDialogSequence takes nothing returns nothing
+\tcall QuestGiver_StartDialogExitTransition(${npcVar}, SelectedHero, ${npcVar}DialogCooldown, DIALOG_COOLDOWN, true, 2.00, USE_DIALOG_CAMERA, false, CINEMATIC)
 endfunction
 
 private function RebuildAndShowDialogTimer takes nothing returns nothing
@@ -680,7 +690,10 @@ endfunction
 ${handlerBlocks}
 
 private function OnFarewell takes nothing returns nothing
-\tlocal integer seq = QuestGiver_CreateFarewellSequence(${npcVar}, "${displayName}", null, "", DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
+\tlocal integer seq
+\tcall QuestGiver_BeginDialogSequence()
+\tset seq = QuestGiver_CreateFarewellSequence(${npcVar}, "${displayName}", null, "", DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
+\tcall DialogSystem_SetSequenceCallbacks(seq, null, function FinishDialogSequence)
 \tcall DialogSystem_PlaySequence(seq, Player(0), ${npcVar})
 endfunction
 
@@ -728,7 +741,6 @@ private function OnSelected takes nothing returns nothing
 \t\treturn
 \tendif
 \tset SelectedHero = hero
-\tset ${npcVar}DialogCooldown = QuestGiver_StartCooldown(${npcVar}DialogCooldown, DIALOG_COOLDOWN)
 \tcall BuildDialog()
 \tcall DialogSystem_ShowDialog(${npcVar}Dialog, Player(0))
 \t// TODO OLDGUI PARITY: swap in a cinematic mover / camera handoff if this NPC needs full Aradion-style staging.
