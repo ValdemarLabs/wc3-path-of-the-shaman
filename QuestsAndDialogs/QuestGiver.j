@@ -610,6 +610,13 @@ public function GetAllowedHero takes unit giver, real range, boolean allowNazgre
 	return null
 endfunction
 
+public function ResolveDialogHero takes unit selectedHero, unit giver, real range, boolean allowNazgrek, boolean allowZulkis returns unit
+	if selectedHero != null and IsUnitAlive(selectedHero) then
+		return selectedHero
+	endif
+	return GetAllowedHero(giver, range, allowNazgrek, allowZulkis)
+endfunction
+
 public function GetHeroName takes unit hero returns string
 	if hero == null then
 		return ""
@@ -621,6 +628,24 @@ public function GetHeroName takes unit hero returns string
 		return "Zulkis"
 	endif
 	return GetUnitName(hero)
+endfunction
+
+public function AddHeroLine takes integer seq, unit hero, string text, string nazgrekSound returns nothing
+	if hero == null then
+		return
+	endif
+	if hero == udg_Nazgrek then
+		call DialogSystem_AddLine(seq, hero, "Nazgrek", text, nazgrekSound, true)
+	else
+		call DialogSystem_AddLine(seq, hero, GetHeroName(hero), text, "", true)
+	endif
+endfunction
+
+public function AddHeroLookAtLine takes integer seq, unit hero, unit lookTarget, string text, string nazgrekSound returns nothing
+	if hero != null and lookTarget != null then
+		call DialogSystem_AddLookAtUnit(seq, hero, lookTarget, 0.50)
+	endif
+	call AddHeroLine(seq, hero, text, nazgrekSound)
 endfunction
 
 public function GetUnitDisplayName takes unit u returns string
@@ -808,6 +833,13 @@ public function CloseActiveDialog takes nothing returns nothing
 	endif
 	call DebugMsg("Close active dialog")
 	call DialogSystem_HideDialog(DialogSystem_LastDialog, DialogSystem_ActivePlayer)
+endfunction
+
+public function BeginDialogSequence takes nothing returns nothing
+	call EnableUserControl(false)
+	call CloseActiveDialog()
+	call ExecuteFunc("TasQuestBox_Hide")
+	call ExecuteFunc("MasterUI_HideGameButton")
 endfunction
 
 //===========================================================================
