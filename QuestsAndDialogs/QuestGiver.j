@@ -56,6 +56,8 @@ globals
 	private unit array ItemReqGiver
 	private trigger ItemPickupTrigger = null
 	private integer ItemDropCheckType = 0  // Item type to check after drop delay
+	private constant real ITEM_REQUIREMENT_SCAN_INTERVAL = 0.50
+	private timer ItemRequirementScanTimer = null
 
 	// Unit kill requirement tracking
 	private constant integer MAX_UNIT_REQUIREMENTS = 100
@@ -1421,6 +1423,51 @@ private function CheckItemProgress takes integer itemTypeId returns nothing
 	endif
 endfunction
 
+private function RefreshAllItemRequirements takes nothing returns nothing
+	local integer i = 1
+
+	loop
+		exitwhen i > ItemReqCount
+		call CheckItemProgress(ItemReqItemType[i])
+		set i = i + 1
+	endloop
+endfunction
+
+public function RefreshItemRequirementsForQuest takes integer questId returns nothing
+	local integer i = 1
+
+	loop
+		exitwhen i > ItemReqCount
+		if ItemReqQuestId[i] == questId then
+			call CheckItemProgress(ItemReqItemType[i])
+		endif
+		set i = i + 1
+	endloop
+endfunction
+
+private function OnItemRequirementScan takes nothing returns nothing
+	if ItemReqCount <= 0 then
+		if ItemRequirementScanTimer != null then
+			call PauseTimer(ItemRequirementScanTimer)
+		endif
+		return
+	endif
+	call RefreshAllItemRequirements()
+endfunction
+
+private function StartItemRequirementScan takes nothing returns nothing
+	if ItemRequirementScanTimer == null then
+		set ItemRequirementScanTimer = CreateTimer()
+	endif
+	call TimerStart(ItemRequirementScanTimer, ITEM_REQUIREMENT_SCAN_INTERVAL, true, function OnItemRequirementScan)
+endfunction
+
+private function StopItemRequirementScanIfEmpty takes nothing returns nothing
+	if ItemReqCount <= 0 and ItemRequirementScanTimer != null then
+		call PauseTimer(ItemRequirementScanTimer)
+	endif
+endfunction
+
 private function OnItemPickup takes nothing returns nothing
 	local item pickedItem
 	local integer itemTypeId
@@ -1517,6 +1564,8 @@ public function RegisterItemRequirement takes integer questId, unit questGiver, 
 	endif
 
 	call DebugMsg("Registered item requirement: quest=" + I2S(questId) + ", item=" + GetObjectName(itemTypeId) + ", amount=" + I2S(amount))
+	call StartItemRequirementScan()
+	call RefreshItemRequirementsForQuest(questId)
 endfunction
 
 public function UnregisterItemRequirement takes integer questId, integer reqIndex returns nothing
@@ -1539,6 +1588,7 @@ public function UnregisterItemRequirement takes integer questId, integer reqInde
 				set j = j + 1
 			endloop
 			set ItemReqCount = ItemReqCount - 1
+			call StopItemRequirementScanIfEmpty()
 			return
 		endif
 		set i = i + 1
