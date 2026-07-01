@@ -996,6 +996,27 @@ public function CreateQuest takes string questName, unit questGiver, string ques
 	return QuestMaster_Create(questName, questGiver, questType, questLevel, questReceiver)
 endfunction
 
+public function ApplyQuestMetadata takes QuestData q, string title, string iconPath, string description, string infoText, string info2Text, integer requiredLevel, boolean useAllowedHeroesForLevelCheck, boolean allowNazgrek, boolean allowZulkis, string faction, string receiverDisplayName returns nothing
+	if q == 0 then
+		return
+	endif
+	set q.title = title
+	set q.iconPath = iconPath
+	set q.description = description
+	set q.infoText = infoText
+	set q.info2Text = info2Text
+	call q.setRequiredLevel(requiredLevel)
+	if useAllowedHeroesForLevelCheck then
+		call q.setAllowedHeroesForLevelCheck(allowNazgrek, allowZulkis)
+	endif
+	if faction != "" then
+		call q.setFaction(faction)
+	endif
+	if receiverDisplayName != "" then
+		call q.setReceiverDisplayName(receiverDisplayName)
+	endif
+endfunction
+
 public function SetRequirements takes integer questId, string heading, string r1, string r2, string r3, string r4, string r5, string r6, string r7, string r8 returns nothing
 	call QuestMaster_SetRequirements(questId, heading, r1, r2, r3, r4, r5, r6, r7, r8)
 endfunction
