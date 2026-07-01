@@ -15,6 +15,36 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [2.7.2026]
+
+### Player-Facing Updates
+- `Vanguard Vale`
+  Continued terrain work in Vanguard Vale, including additional pathing blockers and general terrain/pathing polish.
+- `Void Entity`
+  Added the WIP `Void Entity` boss as a hidden initial map presence for future quest-related use, possibly tied to Aradion's questline.
+  The boss can currently be revealed for testing with the debug command `/debug VoidEntity`.
+
+### Technical Updates
+- `QuestGiver.j`
+  Added shared quest-giver helpers for recurring qXXX boilerplate: dialog hero resolution, hero line insertion, dialog-sequence start handling, quest accept/fail/complete button wiring, quest metadata application, preferred unit lookup inside a rect, reusable quest-unit recreate/reposition handling, and field-unit reset-to-position cleanup.
+  These helpers let quest giver sublibraries keep more of their custom content local while moving repeatable setup, lookup, and lifecycle behavior into the upper quest-giver system.
+- `DialogSystem.j`
+  Added shared field-line queue helpers for estimating field-line duration, clearing queued field lines, and queueing delayed field barks from quest runtime systems.
+- `qAradion.j`
+  Refactored Aradion's quest-giver library onto the new shared `QuestGiver` and `DialogSystem` helper APIs, removing local copies of common dialog, button, metadata, field-line, unit-lookup, unit-recreate, and unit-reset patterns.
+  The file was reduced from over 4000 lines to roughly 3700 lines while keeping Aradion/Valeria-specific encounter, rift, Fading Sparks, and dialogue behavior inside `qAradion`.
+  Converted the external progression helpers to proper public library APIs, so the exposed names are `qAradion_SetBackstorySeen` and `qAradion_SetRangerMissingReq1Complete`.
+
+### Tool Updates
+- `qxxx-generator.html`
+  Updated the qXXX generator to emit scaffolds that use the newer shared quest-giver helpers for metadata, hero resolution, quest buttons, and dialog flow.
+  Replaced stale `TODO OLDGUI PARITY` wording with `TODO QUEST-SPECIFIC` so new quest-giver templates reflect the current JASS quest system instead of the removed GUI-trigger workflow.
+
+### Actions Remaining
+- Decide how the hidden `Void Entity` boss should be connected to quest progression, including whether it belongs in Aradion's questline.
+- Re-test `qAradion` in-game after the helper extractions, especially Valeria recreation at home/ambush, Ranger Missing completion, Rifts of Corruption rift binding/retry/return-home behavior, field-line barks, and the public progression hooks.
+- Continue the next modularization pass only after the practical helper extraction is verified; the remaining larger candidate is a reusable `DialogSystem` choice/response dialog scaffold for Valeria-style persuasion prompts.
+
 ## [1.7.2026]
 
 ### Player-Facing Updates
