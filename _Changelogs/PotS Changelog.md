@@ -21,8 +21,10 @@
 - `Ranger Missing`
   Valeria's failed negotiation choices can now be reopened with `ESC` after the current hero/Valeria lines finish, failed quests no longer respawn Valeria until the player re-accepts the quest, and the successful negotiation branch now removes the old Valeria before adding the companion version.
   The Aradion return step now accepts Valeria within a wider 500 range, and Valeria no longer leashes back toward her original spot when the reunion completion scene starts.
+  Completing the reunion now forces Valeria out of companion/follow state so leftover follower indicators do not remain on her.
 - `Rifts of Corruption`
   Void units now telegraph their arrival with delayed `vortex1.mdx` portal effects, including portal birth and death sounds at the spawn point.
+  Rift rituals can now start at any unclosed mana rift in any order, and completing a ritual now removes the placed mana rift unit from its active slot.
 - `Quest item tracking`
   Item collection quests now refresh against items already carried by the hero, and DInv-managed items are no longer double-counted when mirrored through vanilla inventory slots.
 - `Map icons / Settings`
@@ -38,6 +40,7 @@
 - `qAradion.j`
   Reworked Valeria retry, recreation, ownership, stale companion cleanup, negotiation prompt rearming, completion range, and quest-fail reset behavior for `Ranger Missing`.
   Routed `Rifts of Corruption` void waves through delayed portal spawning with vortex create/destroy sounds and sticky attack-move orders toward Aradion.
+  Hardened `Rifts of Corruption` cleanup by removing Valeria and Aradion from companion/follow state on fail/finish paths, selecting the nearest valid unclosed rift for ritual starts, and clearing killed `PlacedManaRifts` handles after ritual completion.
 - `UnitSpawn.j`
   Added delayed wave spawn APIs that support pre-spawn special-effect birth and timed-destroy sounds while preserving the existing delayed spawn calls.
 - `QuestGiver.j` / `SharedDInvLib.j`
@@ -51,11 +54,12 @@
   Replaced category on/off toggles with per-category mode cycling and renamed the secondary icon pacing control to clarify that it affects travel, boss, and place query categories.
 - `FollowSystem.j`
   Follower minimap indicators now register through `IconQuery`, allowing companion/follower icon visibility to be controlled centrally.
+  Re-applying follow state now clears the previous follow entry first, and the risky `TargetPreSelected.mdl` following ring is disabled by default to avoid residual companion visuals after removal.
 - `Difficulty.j`
   Added a central difficulty library with apply/read APIs and configurable player/hostile handicap multipliers for future gameplay systems.
 
 ### Actions Remaining
-- Re-test the full `Ranger Missing` fail/re-accept/negotiate/turn-in path, Rifts portal wave telegraphs/sounds, carried-item quest progress, DInv/vanilla item count parity, IconQuery category pacing, companion/follower icon toggles, and the new difficulty profiles in-game.
+- Re-test the full `Ranger Missing` fail/re-accept/negotiate/turn-in path, Rifts portal wave telegraphs/sounds, any-order rift ritual starts, mana rift removal after ritual completion, carried-item quest progress, DInv/vanilla item count parity, IconQuery category pacing, companion/follower icon toggles, and the new difficulty profiles in-game.
 
 ## [30.6.2026]
 
