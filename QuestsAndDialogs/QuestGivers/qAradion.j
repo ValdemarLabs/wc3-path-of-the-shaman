@@ -70,7 +70,7 @@ globals
 	private constant real RIFTS_WAVE_PRE_SPAWN_DELAY = 2.00
 	private constant real RIFTS_WAVE_PRE_SPAWN_EFFECT_DURATION = 4.00
 	private constant real RIFTS_WAVE_SPAWN_EFFECT_DURATION = 0.00
-	private constant real RIFTS_TRIGGER_RANGE = 1050.00
+	private constant real RIFTS_TRIGGER_RANGE = 1200.00
 	private constant real RIFTS_RITUAL_DURATION = 120.00
 	private constant real RIFTS_WAVE_PERIOD = 30.00
 	private constant real RIFTS_COMBAT_PERIOD = 40.00
@@ -347,6 +347,7 @@ private function AddValeriaCompanion takes nothing returns nothing
 endfunction
 
 private function RemoveValeriaCompanion takes nothing returns nothing
+	call StopFollow(Valeria)
 	if Valeria != null then
 		call Companions_Remove(Valeria)
 	endif
@@ -512,6 +513,7 @@ private function AddAradionCompanion takes nothing returns nothing
 endfunction
 
 private function RemoveAradionCompanion takes nothing returns nothing
+	call StopFollow(Aradion)
 	if Aradion != null then
 		call Companions_Remove(Aradion)
 	endif
@@ -2154,35 +2156,135 @@ private function DestroyRiftsProximityTrigger takes nothing returns nothing
 	endif
 endfunction
 
+private function GetRiftIndexForUnit takes unit riftUnit returns integer
+	local integer i = 1
+	local unit slotUnit
+	local rect r
+	if riftUnit == null or GetUnitTypeId(riftUnit) == 0 then
+		return 0
+	endif
+	loop
+		exitwhen i > RIFTS_MAX
+		if not RiftsClosed[i] then
+			set slotUnit = EnsureRiftUnit(i)
+			if slotUnit == riftUnit or PlacedManaRifts[i] == riftUnit then
+				set slotUnit = null
+				set r = null
+				return i
+			endif
+			set r = GetRiftRect(i)
+			if r != null and RectContainsCoords(r, GetUnitX(riftUnit), GetUnitY(riftUnit)) and (RiftsUnitTypeIds[i] == 0 or GetUnitTypeId(riftUnit) == RiftsUnitTypeIds[i]) then
+				set slotUnit = null
+				set r = null
+				return i
+			endif
+		endif
+		set slotUnit = null
+		set r = null
+		set i = i + 1
+	endloop
+	return 0
+endfunction
+
 private function GetTriggeredRiftIndex takes unit hero returns integer
 	local integer i = 1
 	local integer result = 0
+	local real bestDistSq = 999999999.00
+	local real rangeSq = RIFTS_TRIGGER_RANGE * RIFTS_TRIGGER_RANGE
+	local real distSq
 	local unit riftUnit
 	local rect r
 	local real hx
 	local real hy
+	local real rx
+	local real ry
 	if hero == null then
 		return 0
 	endif
 	set hx = GetUnitX(hero)
 	set hy = GetUnitY(hero)
 	loop
-		exitwhen i > RIFTS_MAX or result != 0
+		exitwhen i > RIFTS_MAX
 		if not RiftsClosed[i] then
 			set riftUnit = EnsureRiftUnit(i)
-			if riftUnit != null and QuestGiver_IsUnitAlive(riftUnit) and QuestGiver_IsWithinRange(riftUnit, hero, RIFTS_TRIGGER_RANGE) then
-				set result = i
-			else
-				set r = GetRiftRect(i)
-				if r != null and RectContainsCoords(r, hx, hy) then
-					set result = i
+			set distSq = 999999999.00
+			if riftUnit != null and QuestGiver_IsUnitAlive(riftUnit) then
+				set rx = GetUnitX(riftUnit)
+				set ry = GetUnitY(riftUnit)
+				set distSq = (hx - rx) * (hx - rx) + (hy - ry) * (hy - ry)
+			endif
+			set r = GetRiftRect(i)
+			if r != null then
+				if RectContainsCoords(r, hx, hy) then
+					set distSq = 0.00
+				else
+					set rx = GetRectCenterX(r)
+					set ry = GetRectCenterY(r)
+					if (hx - rx) * (hx - rx) + (hy - ry) * (hy - ry) < distSq then
+						set distSq = (hx - rx) * (hx - rx) + (hy - ry) * (hy - ry)
+					endif
 				endif
+			endif
+			if distSq <= rangeSq and distSq < bestDistSq then
+				set bestDistSq = distSq
+				set result = i
 			endif
 		endif
 		set riftUnit = null
 		set r = null
 		set i = i + 1
 	endloop
+	return result
+endfunction
+
+private function RemoveRiftUnit takes unit riftUnit returns nothing
+	if riftUnit != null and GetUnitTypeId(riftUnit) != 0 then
+		if GetWidgetLife(riftUnit) > 0.405 then
+			call KillUnit(riftUnit)
+		endif
+		call RemoveUnit(riftUnit)
+	endif
+endfunction
+
+private function GetRiftEffectX takes unit closedRift, unit placedRift, integer riftIndex returns real
+	local rect r
+	local real result
+	if closedRift != null and GetUnitTypeId(closedRift) != 0 then
+		set result = GetUnitX(closedRift)
+	elseif placedRift != null and GetUnitTypeId(placedRift) != 0 then
+		set result = GetUnitX(placedRift)
+	else
+		set r = GetRiftRect(riftIndex)
+		if r != null then
+			set result = GetRectCenterX(r)
+		else
+			set result = 0.00
+		endif
+	endif
+	set closedRift = null
+	set placedRift = null
+	set r = null
+	return result
+endfunction
+
+private function GetRiftEffectY takes unit closedRift, unit placedRift, integer riftIndex returns real
+	local rect r
+	local real result
+	if closedRift != null and GetUnitTypeId(closedRift) != 0 then
+		set result = GetUnitY(closedRift)
+	elseif placedRift != null and GetUnitTypeId(placedRift) != 0 then
+		set result = GetUnitY(placedRift)
+	else
+		set r = GetRiftRect(riftIndex)
+		if r != null then
+			set result = GetRectCenterY(r)
+		else
+			set result = 0.00
+		endif
+	endif
+	set closedRift = null
+	set placedRift = null
+	set r = null
 	return result
 endfunction
 
@@ -2233,10 +2335,28 @@ private function StartRiftsRitualInternal takes unit riftUnit, integer riftIndex
 	call ExecuteFunc("qAradion_StartRiftsRuntimeTimersPublic")
 endfunction
 
-private function OnRiftsProximity takes nothing returns nothing
-	local unit hero = GetTriggerUnit()
+private function TryStartRiftsRitualForHero takes unit hero returns boolean
 	local integer riftIndex
 	local unit riftUnit
+	if hero == null or not QuestGiver_IsUnitAlive(hero) then
+		return false
+	endif
+	set riftIndex = GetTriggeredRiftIndex(hero)
+	if riftIndex <= 0 then
+		return false
+	endif
+	set riftUnit = EnsureRiftUnit(riftIndex)
+	if riftUnit != null and QuestGiver_IsUnitAlive(riftUnit) then
+		call StartRiftsRitualInternal(riftUnit, riftIndex, hero)
+		set riftUnit = null
+		return true
+	endif
+	set riftUnit = null
+	return false
+endfunction
+
+private function OnRiftsProximity takes nothing returns nothing
+	local unit hero = GetTriggerUnit()
 	call SyncUnitReferences()
 	if not RiftsQuestActive or RiftsRitualActive or RiftsAwaitingReturnHome or RiftsFailureInProgress then
 		set hero = null
@@ -2254,16 +2374,7 @@ private function OnRiftsProximity takes nothing returns nothing
 		set hero = null
 		return
 	endif
-	set riftIndex = GetTriggeredRiftIndex(hero)
-	if riftIndex <= 0 then
-		set hero = null
-		return
-	endif
-	set riftUnit = EnsureRiftUnit(riftIndex)
-	if riftUnit != null then
-		call StartRiftsRitualInternal(riftUnit, riftIndex, hero)
-	endif
-	set riftUnit = null
+	call TryStartRiftsRitualForHero(hero)
 	set hero = null
 endfunction
 
@@ -2730,28 +2841,33 @@ endfunction
 private function FinishRiftsCurrentRitual takes nothing returns nothing
 	local unit hero
 	local unit closedRift = RiftsCurrentRift
+	local unit placedRift = null
+	local integer closedIndex = RiftsCurrentIndex
 	local real closedRiftX = 0.00
 	local real closedRiftY = 0.00
 	call SyncUnitReferences()
 	if not RiftsQuestActive then
 		set closedRift = null
+		set placedRift = null
 		return
 	endif
 	call StopRiftsRuntimeTimers()
 	call ClearRiftsWaveHandles()
 	call ClearFieldLineQueue()
-	if RiftsCurrentIndex > 0 and RiftsCurrentIndex <= RIFTS_MAX then
-		set RiftsClosed[RiftsCurrentIndex] = true
-		set RiftsUnits[RiftsCurrentIndex] = null
+	if closedIndex > 0 and closedIndex <= RIFTS_MAX then
+		set placedRift = PlacedManaRifts[closedIndex]
+		set RiftsClosed[closedIndex] = true
+		set RiftsUnits[closedIndex] = null
+		set PlacedManaRifts[closedIndex] = null
 	endif
-	if closedRift != null and GetUnitTypeId(closedRift) != 0 then
-		set closedRiftX = GetUnitX(closedRift)
-		set closedRiftY = GetUnitY(closedRift)
+	set closedRiftX = GetRiftEffectX(closedRift, placedRift, closedIndex)
+	set closedRiftY = GetRiftEffectY(closedRift, placedRift, closedIndex)
+	if closedRiftX != 0.00 or closedRiftY != 0.00 then
 		call DestroyEffect(AddSpecialEffect("Objects\\Spawnmodels\\NightElf\\NECancelDeath\\NECancelDeath.mdl", closedRiftX, closedRiftY))
-		if GetWidgetLife(closedRift) > 0.405 then
-			call KillUnit(closedRift)
-		endif
-		call RemoveUnit(closedRift)
+	endif
+	call RemoveRiftUnit(closedRift)
+	if placedRift != closedRift then
+		call RemoveRiftUnit(placedRift)
 	endif
 	set RiftsRitualActive = false
 	set RiftsCurrentRift = null
@@ -2772,7 +2888,9 @@ private function FinishRiftsCurrentRitual takes nothing returns nothing
 		call QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0083", "Let's head to the next one. Be on your guard.")
 		call QueueFieldLine(Valeria, "Valeria", "Valeria_0069", "Don't worry my love, we will be.")
 	endif
+	set hero = null
 	set closedRift = null
+	set placedRift = null
 endfunction
 
 private function OnRiftsRitualExpire takes nothing returns nothing
@@ -2797,9 +2915,7 @@ public function StartRiftsRuntimeTimersPublic takes nothing returns nothing
 endfunction
 
 private function OnRiftsFieldTick takes nothing returns nothing
-	local integer i = 1
 	local unit hero
-	local unit riftUnit
 	call SyncUnitReferences()
 	if not RiftsQuestActive or RiftsFailureInProgress then
 		return
@@ -2815,26 +2931,13 @@ private function OnRiftsFieldTick takes nothing returns nothing
 	if RiftsRitualActive then
 		return
 	endif
-	loop
-		exitwhen i > RIFTS_MAX
-		if not RiftsClosed[i] then
-			set hero = GetAllowedRiftHeroForIndex(i)
-			if hero != null then
-				set riftUnit = EnsureRiftUnit(i)
-				if riftUnit != null and QuestGiver_IsUnitAlive(riftUnit) then
-					call StartRiftsRitualInternal(riftUnit, i, hero)
-					set riftUnit = null
-					set hero = null
-					return
-				endif
-				set riftUnit = null
-			endif
-		endif
-		set hero = null
-		set i = i + 1
-	endloop
+	if ALLOW_NAZGREK and Nazgrek != null and TryStartRiftsRitualForHero(Nazgrek) then
+		return
+	endif
+	if ALLOW_ZULKIS and udg_Zulkis != null and TryStartRiftsRitualForHero(udg_Zulkis) then
+		return
+	endif
 	set hero = null
-	set riftUnit = null
 endfunction
 
 private function StartRiftsFieldMonitor takes nothing returns nothing
@@ -4204,10 +4307,14 @@ public function FailRangerMissingEscort takes nothing returns nothing
 endfunction
 
 public function BeginRiftsRitual takes unit riftUnit returns nothing
-	local integer i = 1
+	local integer i = 0
 	local unit hero
 	call SyncUnitReferences()
 	if not RiftsQuestActive then
+		set riftUnit = null
+		return
+	endif
+	if RiftsRitualActive or RiftsAwaitingReturnHome or RiftsFailureInProgress then
 		set riftUnit = null
 		return
 	endif
@@ -4215,26 +4322,24 @@ public function BeginRiftsRitual takes unit riftUnit returns nothing
 	if hero == null then
 		set hero = ResolveDialogHero()
 	endif
-	loop
-		exitwhen i > RIFTS_MAX
-		if RiftsUnits[i] == riftUnit then
-			if RiftsClosed[i] then
-				set hero = null
-				set riftUnit = null
-				return
+	set i = GetRiftIndexForUnit(riftUnit)
+	if i > 0 then
+		if hero != null and GetTriggeredRiftIndex(hero) == i then
+			set riftUnit = EnsureRiftUnit(i)
+			if riftUnit != null then
+				call StartRiftsRitualInternal(riftUnit, i, hero)
 			endif
-			call StartRiftsRitualInternal(riftUnit, i, hero)
 			set hero = null
 			set riftUnit = null
 			return
 		endif
-		set i = i + 1
-	endloop
-	set i = GetTriggeredRiftIndex(hero)
-	if i > 0 then
-		set riftUnit = EnsureRiftUnit(i)
-		if riftUnit != null then
-			call StartRiftsRitualInternal(riftUnit, i, hero)
+	endif
+	if not TryStartRiftsRitualForHero(hero) then
+		if ALLOW_NAZGREK and Nazgrek != null then
+			call TryStartRiftsRitualForHero(Nazgrek)
+		endif
+		if not RiftsRitualActive and ALLOW_ZULKIS and udg_Zulkis != null then
+			call TryStartRiftsRitualForHero(udg_Zulkis)
 		endif
 	endif
 	set hero = null
