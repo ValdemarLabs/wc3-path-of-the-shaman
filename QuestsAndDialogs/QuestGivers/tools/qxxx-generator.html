@@ -261,7 +261,7 @@
     <section class="hero">
       <span class="pill">Static local tool · no backend</span>
       <h1>PotS qXXX Generator</h1>
-      <p>Generates a quest giver sublibrary scaffold that matches the current JASS quest/dialog stack. The output intentionally leaves explicit <code>TODO OLDGUI PARITY</code> markers anywhere event-specific map logic still needs a manual port.</p>
+      <p>Generates a quest giver sublibrary scaffold that matches the current JASS quest/dialog stack. The output intentionally leaves explicit <code>TODO QUEST-SPECIFIC</code> markers anywhere event-specific map logic still needs manual implementation.</p>
       <div class="hero-actions">
         <button class="primary" id="generateTop">Generate JASS</button>
         <button class="secondary" id="addQuestTop">Add Quest</button>
@@ -508,7 +508,7 @@ FailRifts</textarea>
           blocks.push(
 `private function OnAcceptQuest${suffix}End takes nothing returns nothing
 \tcall QuestGiver_AcceptQuestByNameAndGiver(${constName}, ${npcVar})
-\t// TODO OLDGUI PARITY: quest-specific accept side effects for ${escapeJassString(quest.title)}
+\t// TODO QUEST-SPECIFIC: accept side effects for ${escapeJassString(quest.title)}
 \tcall FinishDialogSequence()
 endfunction
 
@@ -518,7 +518,7 @@ private function OnAcceptQuest${suffix} takes nothing returns nothing
 \tset seq = QuestGiver_CreateBaseSequence(${npcVar}, "${displayName}")
 \tcall DialogSystem_SetSequenceCallbacks(seq, null, function OnAcceptQuest${suffix}End)
 \t// Optional: switch to QuestGiver_CreateAcceptSequence(...) if you want shared accept banter before custom lines.
-\tcall DialogSystem_AddLine(seq, ${npcVar}, "${displayName}", "TODO OLDGUI PARITY: replace ${escapeJassString(quest.title)} accept dialog.", "", true)
+\tcall DialogSystem_AddLine(seq, ${npcVar}, "${displayName}", "TODO QUEST-SPECIFIC: replace ${escapeJassString(quest.title)} accept dialog.", "", true)
 \tcall DialogSystem_PlaySequence(seq, Player(0), ${npcVar})
 endfunction`
           );
@@ -528,7 +528,7 @@ endfunction`
           blocks.push(
 `private function OnCompleteQuest${suffix}End takes nothing returns nothing
 \tcall QuestGiver_CompleteQuestByNameAndGiver(${constName}, ${npcVar})
-\t// TODO OLDGUI PARITY: quest-specific complete side effects for ${escapeJassString(quest.title)}
+\t// TODO QUEST-SPECIFIC: complete side effects for ${escapeJassString(quest.title)}
 \tcall FinishDialogSequence()
 endfunction
 
@@ -537,7 +537,7 @@ private function OnCompleteQuest${suffix} takes nothing returns nothing
 \tcall QuestGiver_BeginDialogSequence()
 \tset seq = QuestGiver_CreateBaseSequence(${npcVar}, "${displayName}")
 \tcall DialogSystem_SetSequenceCallbacks(seq, null, function OnCompleteQuest${suffix}End)
-\tcall DialogSystem_AddLine(seq, ${npcVar}, "${displayName}", "TODO OLDGUI PARITY: replace ${escapeJassString(quest.title)} completion dialog.", "", true)
+\tcall DialogSystem_AddLine(seq, ${npcVar}, "${displayName}", "TODO QUEST-SPECIFIC: replace ${escapeJassString(quest.title)} completion dialog.", "", true)
 \tcall DialogSystem_PlaySequence(seq, Player(0), ${npcVar})
 endfunction`
           );
@@ -546,7 +546,7 @@ endfunction`
         if (quest.needsFail) {
           blocks.push(
 `private function OnFailQuest${suffix}End takes nothing returns nothing
-\t// TODO OLDGUI PARITY: failure cleanup / retry-state logic for ${escapeJassString(quest.title)}
+\t// TODO QUEST-SPECIFIC: failure cleanup / retry-state logic for ${escapeJassString(quest.title)}
 \tcall FinishDialogSequence()
 endfunction
 
@@ -555,7 +555,7 @@ private function OnFailQuest${suffix} takes nothing returns nothing
 \tcall QuestGiver_BeginDialogSequence()
 \tset seq = QuestGiver_CreateBaseSequence(${npcVar}, "${displayName}")
 \tcall DialogSystem_SetSequenceCallbacks(seq, null, function OnFailQuest${suffix}End)
-\tcall DialogSystem_AddLine(seq, ${npcVar}, "${displayName}", "TODO OLDGUI PARITY: replace ${escapeJassString(quest.title)} fail dialog.", "", true)
+\tcall DialogSystem_AddLine(seq, ${npcVar}, "${displayName}", "TODO QUEST-SPECIFIC: replace ${escapeJassString(quest.title)} fail dialog.", "", true)
 \tcall DialogSystem_PlaySequence(seq, Player(0), ${npcVar})
 endfunction`
           );
@@ -599,7 +599,7 @@ endfunction`
         .filter(Boolean)
         .map((hook) =>
 `public function ${hook} takes nothing returns nothing
-\t// TODO OLDGUI PARITY: external progression hook
+\t// TODO QUEST-SPECIFIC: external progression hook
 endfunction`)
         .join("\n\n");
     }
@@ -670,7 +670,7 @@ private function OnBackstory takes nothing returns nothing
 \tlocal integer seq = QuestGiver_CreateBaseSequence(${npcVar}, "${displayName}")
 \tcall QuestGiver_CloseActiveDialog()
 \tcall DialogSystem_SetSequenceCallbacks(seq, null, function OnBackstoryEnd)
-\tcall DialogSystem_AddLine(seq, ${npcVar}, "${displayName}", "TODO OLDGUI PARITY: replace with the final backstory sequence.", "", true)
+\tcall DialogSystem_AddLine(seq, ${npcVar}, "${displayName}", "TODO QUEST-SPECIFIC: replace with the final backstory sequence.", "", true)
 \tcall DialogSystem_PlaySequence(seq, Player(0), ${npcVar})
 endfunction
 
@@ -731,7 +731,7 @@ private function OnSelected takes nothing returns nothing
 \tset SelectedHero = hero
 \tcall BuildDialog()
 \tcall DialogSystem_ShowDialog(${npcVar}Dialog, Player(0))
-\t// TODO OLDGUI PARITY: swap in a cinematic mover / camera handoff if this NPC needs full Aradion-style staging.
+\t// TODO QUEST-SPECIFIC: swap in a cinematic mover / camera handoff if this NPC needs full Aradion-style staging.
 endfunction
 
 private function InitDelayed takes nothing returns nothing
