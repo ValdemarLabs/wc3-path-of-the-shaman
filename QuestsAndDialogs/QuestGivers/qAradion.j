@@ -3858,62 +3858,30 @@ private function CreateQuests takes nothing returns nothing
 	set info2Text = "|cffffcc00Recommended level:|r 18\n\n"
 
 	set q = QuestGiver_CreateQuest(QUEST_RANGER_MISSING, Aradion, "normal", 18, null)
-	set q.title = "Ranger Missing"
-	set q.iconPath = "ReplaceableTextures\\CommandButtons\\BTNHighElvenArcher.blp"
-	set q.description = "Find Valeria somewhere in Vanguard Vale or Verdant Plains.\n\n"
-	set q.infoText = infoText
-	set q.info2Text = info2Text
-	set q.requiredLevel = 15
-	call q.setAllowedHeroesForLevelCheck(ALLOW_NAZGREK, ALLOW_ZULKIS)
-	call q.setFaction("Elarindor")
+	call QuestGiver_ApplyQuestMetadata(q, "Ranger Missing", "ReplaceableTextures\\CommandButtons\\BTNHighElvenArcher.blp", "Find Valeria somewhere in Vanguard Vale or Verdant Plains.\n\n", infoText, info2Text, 15, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
 	call q.setRewardParams(true, 0, true, 0, false, 0, true, 200, false)
-	call q.setReceiverDisplayName(giverName)
 	set availabilityCondition = CreateTrigger()
 	call TriggerAddCondition(availabilityCondition, Condition(function CanOfferRangerMissing))
 	call q.setCustomCondition(availabilityCondition)
 	call QuestGiver_SetRequirements(q.id, "", "Find Valeria", "", "", "", "", "", "", "")
 
 	set q = QuestGiver_CreateQuest(QUEST_CRYSTALS_HOPE, Aradion, "normal", 18, null)
-	set q.title = "Crystals of Hope"
-	set q.iconPath = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Gem_Crystal_01.blp"
-	set q.description = "Aradion wants to study the mana crystals that can be found anywhere in Vanguard Vale.\n\n"
-	set q.infoText = infoText
-	set q.info2Text = info2Text
-	set q.requiredLevel = 15
-	call q.setAllowedHeroesForLevelCheck(ALLOW_NAZGREK, ALLOW_ZULKIS)
-	call q.setFaction("Elarindor")
+	call QuestGiver_ApplyQuestMetadata(q, "Crystals of Hope", "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Gem_Crystal_01.blp", "Aradion wants to study the mana crystals that can be found anywhere in Vanguard Vale.\n\n", infoText, info2Text, 15, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
 	call q.setRewardParams(true, 0, true, 0, false, 0, true, 200, false)
-	call q.setReceiverDisplayName(giverName)
 	call q.addRequiredCompletedQuest(QUEST_RANGER_MISSING, Aradion)
 	// Register automatic item tracking for Mana Crystals
 	call QuestGiver_RegisterItemRequirement(q.id, Aradion, 1, ITEM_MANA_CRYSTAL, 6)
 
 	set q = QuestGiver_CreateQuest(QUEST_FADING_SPARKS, Aradion, "normal", 18, null)
-	set q.title = "Fading Sparks"
-	set q.iconPath = "ReplaceableTextures\\CommandButtons\\BTNHeartOfAszune.blp"
-	set q.description = "Aradion wants you to gather essences from the wraiths wandering around the Vanguard Vale. Use provided |cffffff00Tel'anor Rod|r when the wraith is at half health.\n\n"
-	set q.infoText = infoText
-	set q.info2Text = info2Text
-	set q.requiredLevel = 15
-	call q.setAllowedHeroesForLevelCheck(ALLOW_NAZGREK, ALLOW_ZULKIS)
-	call q.setFaction("Elarindor")
+	call QuestGiver_ApplyQuestMetadata(q, "Fading Sparks", "ReplaceableTextures\\CommandButtons\\BTNHeartOfAszune.blp", "Aradion wants you to gather essences from the wraiths wandering around the Vanguard Vale. Use provided |cffffff00Tel'anor Rod|r when the wraith is at half health.\n\n", infoText, info2Text, 15, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
 	call q.setRewardParams(true, 0, true, 0, false, 0, true, 200, false)
-	call q.setReceiverDisplayName(giverName)
 	call q.addRequiredCompletedQuest(QUEST_RANGER_MISSING, Aradion)
 	// Register automatic item tracking for Wraith Essences
 	call QuestGiver_RegisterItemRequirement(q.id, Aradion, 1, ITEM_WRAITH_ESSENCE, 10)
 
 	set q = QuestGiver_CreateQuest(QUEST_RIFTS_CORRUPTION, Aradion, "normal", 18, null)
-	set q.title = "Rifts of Corruption"
-	set q.iconPath = "ReplaceableTextures\\CommandButtons\\BTNDizzy.blp"
-	set q.description = "Find all rifts scattered around the Vanguard Vale and escort Valeria and Aradion to them. Guard Aradion while he will close the rifts. Both Aradion and Valeria must stay alive.\n\n"
-	set q.infoText = infoText
-	set q.info2Text = info2Text
-	set q.requiredLevel = 15
-	call q.setAllowedHeroesForLevelCheck(ALLOW_NAZGREK, ALLOW_ZULKIS)
-	call q.setFaction("Elarindor")
+	call QuestGiver_ApplyQuestMetadata(q, "Rifts of Corruption", "ReplaceableTextures\\CommandButtons\\BTNDizzy.blp", "Find all rifts scattered around the Vanguard Vale and escort Valeria and Aradion to them. Guard Aradion while he will close the rifts. Both Aradion and Valeria must stay alive.\n\n", infoText, info2Text, 15, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
 	call q.setRewardParams(true, 0, true, 0, false, 0, true, 200, false)
-	call q.setReceiverDisplayName(giverName)
 	call q.addRequiredCompletedQuest(QUEST_RANGER_MISSING, Aradion)
 	call q.addRequiredCompletedQuest(QUEST_CRYSTALS_HOPE, Aradion)
 	call q.addRequiredCompletedQuest(QUEST_FADING_SPARKS, Aradion)
@@ -3923,77 +3891,36 @@ private function CreateQuests takes nothing returns nothing
 		// Test Quest 1: Kill
 		set q = QuestMaster_TemplateKill(QUEST_TEST_KILL, Aradion, "normal", 1, 'ngno', 3)
 		call QuestGiver_RegisterUnitKillRequirement(q.id, Aradion, 1, 'ngno', 3)
-		set q.title = "Test: Kill Quest"
-		set q.iconPath = "ReplaceableTextures\\CommandButtons\\BTNFootman.blp"
-		set q.description = "Test quest for killing units.\n\n"
-		set q.infoText = infoText
-		set q.info2Text = "|cffffcc00Recommended level:|r 1\n\n"
-		set q.requiredLevel = 1
-		call q.setFaction("Elarindor")
+		call QuestGiver_ApplyQuestMetadata(q, "Test: Kill Quest", "ReplaceableTextures\\CommandButtons\\BTNFootman.blp", "Test quest for killing units.\n\n", infoText, "|cffffcc00Recommended level:|r 1\n\n", 1, false, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
 		call q.setRewardParams(true, 0, true, 50, false, 0, true, 100, false)
-		call q.setReceiverDisplayName(giverName)
 		
 		// Test Quest 2: Talk To
 		set q = QuestMaster_TemplateTalkTo(QUEST_TEST_TALKTO, Aradion, "normal", 1, "Valeria")
-		set q.title = "Test: Talk To Quest"
-		set q.iconPath = "ReplaceableTextures\\CommandButtons\\BTNHighElvenArcher.blp"
-		set q.description = "Test quest for talking to NPC.\n\n"
-		set q.infoText = infoText
-		set q.info2Text = "|cffffcc00Recommended level:|r 1\n\n"
-		set q.requiredLevel = 1
-		call q.setFaction("Elarindor")
+		call QuestGiver_ApplyQuestMetadata(q, "Test: Talk To Quest", "ReplaceableTextures\\CommandButtons\\BTNHighElvenArcher.blp", "Test quest for talking to NPC.\n\n", infoText, "|cffffcc00Recommended level:|r 1\n\n", 1, false, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
 		call q.setRewardParams(true, 0, true, 50, false, 0, true, 100, false)
-		call q.setReceiverDisplayName(giverName)
 		
 		// Test Quest 3: Find NPC
 		set q = QuestMaster_TemplateFindNPC(QUEST_TEST_FINDNPC, Aradion, "normal", 1, "Valeria")
-		set q.title = "Test: Find NPC Quest"
-		set q.iconPath = "ReplaceableTextures\\CommandButtons\\BTNHeroTaurenChieftain.blp"
-		set q.description = "Test quest for finding an NPC.\n\n"
-		set q.infoText = infoText
-		set q.info2Text = "|cffffcc00Recommended level:|r 1\n\n"
-		set q.requiredLevel = 1
-		call q.setFaction("Elarindor")
+		call QuestGiver_ApplyQuestMetadata(q, "Test: Find NPC Quest", "ReplaceableTextures\\CommandButtons\\BTNHeroTaurenChieftain.blp", "Test quest for finding an NPC.\n\n", infoText, "|cffffcc00Recommended level:|r 1\n\n", 1, false, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
 		call q.setRewardParams(true, 0, true, 50, false, 0, true, 100, false)
-		call q.setReceiverDisplayName(giverName)
 		
 		// Test Quest 4: Go To Place
 		set q = QuestMaster_TemplateGoToPlace(QUEST_TEST_GOTO, Aradion, "normal", 1, "Verdant Plains")
-		set q.title = "Test: Go To Place Quest"
-		set q.iconPath = "ReplaceableTextures\\CommandButtons\\BTNWaypoint.blp"
-		set q.description = "Test quest for going to a location.\n\n"
-		set q.infoText = infoText
-		set q.info2Text = "|cffffcc00Recommended level:|r 1\n\n"
-		set q.requiredLevel = 1
-		call q.setFaction("Elarindor")
+		call QuestGiver_ApplyQuestMetadata(q, "Test: Go To Place Quest", "ReplaceableTextures\\CommandButtons\\BTNWaypoint.blp", "Test quest for going to a location.\n\n", infoText, "|cffffcc00Recommended level:|r 1\n\n", 1, false, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
 		call q.setRewardParams(true, 0, true, 50, false, 0, true, 100, false)
-		call q.setReceiverDisplayName(giverName)
 		
 		// Test Quest 5: Reputation
 		set q = QuestMaster_TemplateReputation(QUEST_TEST_REPUTATION, Aradion, "normal", 1, "Elarindor", "Friendly")
-		set q.title = "Test: Reputation Quest"
-		set q.iconPath = "ReplaceableTextures\\CommandButtons\\BTNTome.blp"
-		set q.description = "Test quest for reputation gain.\n\n"
-		set q.infoText = infoText
-		set q.info2Text = "|cffffcc00Recommended level:|r 1\n\n"
-		set q.requiredLevel = 1
-		call q.setFaction("Elarindor")
+		call QuestGiver_ApplyQuestMetadata(q, "Test: Reputation Quest", "ReplaceableTextures\\CommandButtons\\BTNTome.blp", "Test quest for reputation gain.\n\n", infoText, "|cffffcc00Recommended level:|r 1\n\n", 1, false, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
 		call q.setRewardParams(true, 0, true, 50, false, 0, true, 500, false)
-		call q.setReceiverDisplayName(giverName)
 		
 		// Test Quest 6: Investigate
 		set q = QuestMaster_TemplateInvestigate(QUEST_TEST_INVESTIGATE, Aradion, "normal", 1, "the strange ruins near the Vale")
-		set q.title = "Test: Investigate Quest"
-		set q.iconPath = "ReplaceableTextures\\CommandButtons\\BTNAncientRelic.blp"
-		set q.description = "Test quest for investigating.\n\n"
-		set q.infoText = infoText
-		set q.info2Text = "|cffffcc00Recommended level:|r 1\n\n"
-		set q.requiredLevel = 1
-		call q.setFaction("Elarindor")
+		call QuestGiver_ApplyQuestMetadata(q, "Test: Investigate Quest", "ReplaceableTextures\\CommandButtons\\BTNAncientRelic.blp", "Test quest for investigating.\n\n", infoText, "|cffffcc00Recommended level:|r 1\n\n", 1, false, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
 		call q.setRewardParams(true, 0, true, 50, false, 0, true, 100, false)
-		call q.setReceiverDisplayName(giverName)
 	endif
 
+	set availabilityCondition = null
 endfunction
 
 //===========================================================================
