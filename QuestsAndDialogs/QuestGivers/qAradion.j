@@ -214,14 +214,14 @@ endfunction
 //===========================================================================
 // External state helpers
 //===========================================================================
-function SetBackstorySeen takes boolean flag returns nothing
+public function SetBackstorySeen takes boolean flag returns nothing
 	set AradionBackstorySeen = flag
 	if Aradion != null and QuestGiver_QuestExistsByNameAndGiver(QUEST_RANGER_MISSING, Aradion) then
 		call QuestGiver_RefreshAvailabilityForGiver(Aradion)
 	endif
 endfunction
 
-function SetRangerMissingReq1Complete takes boolean flag returns nothing
+public function SetRangerMissingReq1Complete takes boolean flag returns nothing
 	set RangerMissingReq1Complete = flag
 endfunction
 
@@ -544,7 +544,6 @@ endfunction
 
 private function RecreateValeriaAtHome takes nothing returns nothing
 	local player ownerP
-	local integer unitTypeId
 	local real x
 	local real y
 	local real facing = 252.00
@@ -552,10 +551,6 @@ private function RecreateValeriaAtHome takes nothing returns nothing
 
 	set oldValeria = Valeria
 	set ownerP = Player(VALERIA_HOME_OWNER)
-	set unitTypeId = UNIT_VALERIA
-	if oldValeria != null and GetUnitTypeId(oldValeria) != 0 then
-		set unitTypeId = GetUnitTypeId(oldValeria)
-	endif
 	set x = GetRectCenterX(gg_rct_ValeriaNewPos)
 	set y = GetRectCenterY(gg_rct_ValeriaNewPos)
 
@@ -563,28 +558,18 @@ private function RecreateValeriaAtHome takes nothing returns nothing
 		call StopFollow(oldValeria)
 		call Companions_Remove(oldValeria)
 		set ValeriaCompanionActive = false
-		set Valeria = oldValeria
-		call SetUnitOwner(Valeria, ownerP, true)
-		call SetUnitPosition(Valeria, x, y)
-		call SetUnitFacing(Valeria, facing)
-	else
-		if oldValeria != null then
-			call RemoveUnit(oldValeria)
-		endif
-		set Valeria = CreateUnit(ownerP, unitTypeId, x, y, facing)
 	endif
+	set Valeria = QuestGiver_ReuseOrCreateUnitAtPoint(oldValeria, ownerP, UNIT_VALERIA, x, y, facing, true)
 	if Valeria == null then
 		set oldValeria = null
 		set ownerP = null
 		return
 	endif
 	set udg_Valeria = Valeria
-	call SetUnitCreepGuard(Valeria, false)
-	call IssueImmediateOrder(Valeria, "stop")
 	call ExecuteFunc("qAradion_RegisterValeriaEncounterProximity")
 	call UnitAddAbility(Valeria, ABIL_VALERIA_COLD_ARROWS)
 	call IssueImmediateOrder(Valeria, "coldarrows")
-	// TODO OLDGUI PARITY: add Valeria's post-reunion Dash ability here once its custom rawcode is identified in the JASS/object data pipeline.
+	// TODO: add Valeria's post-reunion Dash ability here once its custom rawcode is identified in the JASS/object data pipeline.
 	call StartValeriaHomePatrolInternal()
 	set oldValeria = null
 	set ownerP = null
@@ -592,7 +577,6 @@ endfunction
 
 private function RecreateValeriaAtAmbush takes nothing returns nothing
 	local player ownerP
-	local integer unitTypeId
 	local real x
 	local real y
 	local real facing = 257.00
@@ -600,10 +584,6 @@ private function RecreateValeriaAtAmbush takes nothing returns nothing
 
 	set oldValeria = Valeria
 	set ownerP = Player(PLAYER_NEUTRAL_PASSIVE)
-	set unitTypeId = UNIT_VALERIA
-	if oldValeria != null and GetUnitTypeId(oldValeria) != 0 then
-		set unitTypeId = GetUnitTypeId(oldValeria)
-	endif
 	set x = GetRectCenterX(gg_rct_ValeriaAmbushPos)
 	set y = GetRectCenterY(gg_rct_ValeriaAmbushPos)
 
@@ -611,24 +591,14 @@ private function RecreateValeriaAtAmbush takes nothing returns nothing
 		call StopFollow(oldValeria)
 		call Companions_Remove(oldValeria)
 		set ValeriaCompanionActive = false
-		set Valeria = oldValeria
-		call SetUnitOwner(Valeria, ownerP, true)
-		call SetUnitPosition(Valeria, x, y)
-		call SetUnitFacing(Valeria, facing)
-	else
-		if oldValeria != null then
-			call RemoveUnit(oldValeria)
-		endif
-		set Valeria = CreateUnit(ownerP, unitTypeId, x, y, facing)
 	endif
+	set Valeria = QuestGiver_ReuseOrCreateUnitAtPoint(oldValeria, ownerP, UNIT_VALERIA, x, y, facing, true)
 	if Valeria == null then
 		set oldValeria = null
 		set ownerP = null
 		return
 	endif
 	set udg_Valeria = Valeria
-	call SetUnitCreepGuard(Valeria, false)
-	call IssueImmediateOrder(Valeria, "stop")
 	call ExecuteFunc("qAradion_RegisterValeriaEncounterProximity")
 	set oldValeria = null
 	set ownerP = null
@@ -1823,60 +1793,6 @@ private function GetRiftRect takes integer index returns rect
 	return null
 endfunction
 
-private function FindPlacedRiftUnitInRect takes rect r, integer expectedTypeId returns unit
-	local group g
-	local unit u
-	local unit bestExact = null
-	local unit bestPassive = null
-	local unit bestFallback = null
-	local real centerX
-	local real centerY
-	local real dx
-	local real dy
-	local real distSq
-	local real bestExactDistSq = 999999999.00
-	local real bestPassiveDistSq = 999999999.00
-	local real bestFallbackDistSq = 999999999.00
-	if r == null then
-		return null
-	endif
-	set centerX = GetRectCenterX(r)
-	set centerY = GetRectCenterY(r)
-	set g = CreateGroup()
-	call GroupEnumUnitsInRect(g, r, null)
-	loop
-		set u = FirstOfGroup(g)
-		exitwhen u == null
-		call GroupRemoveUnit(g, u)
-		if QuestGiver_IsUnitAlive(u) and u != Nazgrek and u != udg_Zulkis and u != Aradion and u != Valeria and not IsUnitType(u, UNIT_TYPE_HERO) then
-			set dx = GetUnitX(u) - centerX
-			set dy = GetUnitY(u) - centerY
-			set distSq = dx * dx + dy * dy
-			if expectedTypeId != 0 and GetUnitTypeId(u) == expectedTypeId and distSq < bestExactDistSq then
-				set bestExact = u
-				set bestExactDistSq = distSq
-			endif
-			if GetOwningPlayer(u) == Player(PLAYER_NEUTRAL_PASSIVE) and distSq < bestPassiveDistSq then
-				set bestPassive = u
-				set bestPassiveDistSq = distSq
-			endif
-			if distSq < bestFallbackDistSq then
-				set bestFallback = u
-				set bestFallbackDistSq = distSq
-			endif
-		endif
-	endloop
-	call DestroyGroup(g)
-	set g = null
-	if bestExact != null then
-		return bestExact
-	endif
-	if bestPassive != null then
-		return bestPassive
-	endif
-	return bestFallback
-endfunction
-
 private function BindPlacedRiftUnitSlot takes integer index returns nothing
 	local unit u = PlacedManaRifts[index]
 	local rect r = GetRiftRect(index)
@@ -1885,50 +1801,11 @@ private function BindPlacedRiftUnitSlot takes integer index returns nothing
 		set RiftsUnitTypeIds[index] = GetUnitTypeId(u)
 		return
 	endif
-	set u = FindPlacedRiftUnitInRect(r, RiftsUnitTypeIds[index])
+	set u = QuestGiver_FindPreferredUnitInRect(r, RiftsUnitTypeIds[index], Player(PLAYER_NEUTRAL_PASSIVE), Nazgrek, udg_Zulkis, Aradion, Valeria, true)
 	if u != null then
 		set RiftsUnits[index] = u
 		set RiftsUnitTypeIds[index] = GetUnitTypeId(u)
 	endif
-endfunction
-
-private function FindNeutralPassiveUnitInRect takes rect r, integer expectedTypeId returns unit
-	local group g
-	local unit u
-	local unit exact = null
-	local unit passiveMatch = null
-	local unit fallback = null
-	if r == null then
-		return null
-	endif
-	set g = CreateGroup()
-	call GroupEnumUnitsInRect(g, r, null)
-	loop
-		set u = FirstOfGroup(g)
-		exitwhen u == null
-		call GroupRemoveUnit(g, u)
-		if QuestGiver_IsUnitAlive(u) and u != Nazgrek and u != udg_Zulkis and u != Aradion and u != Valeria and not IsUnitType(u, UNIT_TYPE_HERO) then
-			if expectedTypeId != 0 and GetUnitTypeId(u) == expectedTypeId then
-				set exact = u
-				exitwhen true
-			endif
-			if passiveMatch == null and GetOwningPlayer(u) == Player(PLAYER_NEUTRAL_PASSIVE) then
-				set passiveMatch = u
-			endif
-			if fallback == null then
-				set fallback = u
-			endif
-		endif
-	endloop
-	call DestroyGroup(g)
-	set g = null
-	if exact != null then
-		return exact
-	endif
-	if passiveMatch != null then
-		return passiveMatch
-	endif
-	return fallback
 endfunction
 
 private function ResetRiftsClosedState takes nothing returns nothing
@@ -1955,7 +1832,7 @@ private function EnsureRiftUnit takes integer index returns unit
 	if u != null and QuestGiver_IsUnitAlive(u) then
 		return u
 	endif
-	set u = FindNeutralPassiveUnitInRect(r, RiftsUnitTypeIds[index])
+	set u = QuestGiver_FindPreferredUnitInRect(r, RiftsUnitTypeIds[index], Player(PLAYER_NEUTRAL_PASSIVE), Nazgrek, udg_Zulkis, Aradion, Valeria, true)
 	if u != null then
 		set RiftsUnits[index] = u
 		set RiftsUnitTypeIds[index] = GetUnitTypeId(u)
@@ -2412,22 +2289,6 @@ private function PrepareRiftsFailedUnit takes unit failedUnit returns nothing
 	set t = null
 endfunction
 
-private function RestoreRiftsQuestUnitAtHome takes unit u, player ownerP, real x, real y, real facing returns nothing
-	if u == null or GetUnitTypeId(u) == 0 then
-		return
-	endif
-	call PauseUnit(u, false)
-	call SetUnitTimeScale(u, 1.00)
-	call SetUnitInvulnerable(u, false)
-	call SetUnitOwner(u, ownerP, true)
-	call SetWidgetLife(u, BlzGetUnitMaxHP(u))
-	call ResetUnitAnimation(u)
-	call SetUnitAnimation(u, "stand")
-	call SetUnitPosition(u, x, y)
-	call SetUnitFacing(u, facing)
-	call IssueImmediateOrder(u, "stop")
-endfunction
-
 private function StopRiftsCompanionsAtHomeInternal takes nothing returns nothing
 	call StopFieldCompanions()
 	if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
@@ -2447,10 +2308,10 @@ private function ReturnRiftsCompanionsHomeInternal takes nothing returns nothing
 		set aradionOwner = GetOwningPlayer(Aradion)
 	endif
 	if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
-		call RestoreRiftsQuestUnitAtHome(Aradion, aradionOwner, GetRectCenterX(gg_rct_AradionPos), GetRectCenterY(gg_rct_AradionPos), 184.00)
+		call QuestGiver_ResetFieldUnitAtPoint(Aradion, aradionOwner, GetRectCenterX(gg_rct_AradionPos), GetRectCenterY(gg_rct_AradionPos), 184.00, true)
 	endif
 	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
-		call RestoreRiftsQuestUnitAtHome(Valeria, Player(VALERIA_HOME_OWNER), GetRectCenterX(gg_rct_ValeriaNewPos), GetRectCenterY(gg_rct_ValeriaNewPos), 192.00)
+		call QuestGiver_ResetFieldUnitAtPoint(Valeria, Player(VALERIA_HOME_OWNER), GetRectCenterX(gg_rct_ValeriaNewPos), GetRectCenterY(gg_rct_ValeriaNewPos), 192.00, true)
 		call StartValeriaHomePatrolInternal()
 	endif
 	set aradionOwner = null
