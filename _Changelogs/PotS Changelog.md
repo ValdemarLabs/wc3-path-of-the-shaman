@@ -28,6 +28,9 @@
 - `Map icons / Settings`
   Icon query/rest timing changes now apply immediately from Settings instead of waiting for the previous timer phase to expire.
   Companion/follower icons now honor the Settings toggle, icon visibility/rest ranges were expanded, and quest givers plus companions/followers are prioritized ahead of secondary icon categories.
+  Flight master and ship master travel icons can now be shown together during the travel icon query pass.
+  Map icon pings can now be disabled while keeping icon reveals, and icons can now be switched from query mode to all-icons timed or all-icons always-visible display modes.
+  Each icon category now supports `Query`, `On`, and `Off` states in Settings; companion/follower icons default to `On`, while other categories default to `Query`.
 - `Difficulty`
   Added active `Story`, `Normal`, and `Hard` difficulty profiles wired into Settings, with configurable native difficulty, health/damage, gold, XP, and revive pacing hooks.
 
@@ -43,6 +46,9 @@
   Quest-giver overhead effects now refresh immediately when a quest is accepted, so an accepted/on-going quest with no newly available quests switches to the question mark state.
 - `IconQuery.j` / `SettingsUI.j`
   Added immediate timer restarts, per-category query durations, configurable category query frequencies, wider query/rest clamps, and Settings UI controls for secondary icon pacing.
+  Added a configurable `IconQuery` travel-master grouping option, enabled by default, so flight master and ship master markers reveal as one grouped query step.
+  Added `IconQuery` ping enablement and display-mode APIs, plus Settings UI buttons for ping toggling and cycling query/all-timed/all-always icon display.
+  Replaced category on/off toggles with per-category mode cycling and renamed the secondary icon pacing control to clarify that it affects travel, boss, and place query categories.
 - `FollowSystem.j`
   Follower minimap indicators now register through `IconQuery`, allowing companion/follower icon visibility to be controlled centrally.
 - `Difficulty.j`
