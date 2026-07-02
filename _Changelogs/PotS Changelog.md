@@ -23,6 +23,10 @@
   Shadowclaw now keeps Nazgrek as the initial pet focus, walks back to `NazgrekIntroPoint` when kicked, and only teleports home after 120 seconds if stuck or still away from home.
 - `StatsUI`
   Kicking Shadowclaw or another pet now clears the active pet display instead of showing Shadowclaw through the old fallback when `udg_TamedUnit` is empty.
+- `Ranger Missing`
+  Valeria now starts her home patrol again after the reunion completion flow recreates her at Aradion's home position, restoring the old GUI behavior where she waits at Aradion before continuing her route.
+- `Rifts of Corruption`
+  Accepting the quest no longer teleports Valeria away for the intro staging when she is already near Aradion; she is instead ordered to move normally toward her home/start position.
 
 ### Technical Updates
 - `Companions.j`
@@ -32,9 +36,12 @@
   Companion focus commands now play the old GUI `GoodJob` sound, and empty companion icon paths now fall back through the existing `BlzGetAbilityIcon(unitTypeId)` lookup when possible.
 - `Pet.j`
   Ensures `udg_TamedUnits` exists before pet registration, forces Shadowclaw registration toward Nazgrek, and clears `udg_TamedUnit` before old multiboard pet-removal hooks run.
+- `qAradion.j`
+  Added a near-Aradion guard to the Rifts intro preparation path, restarted Valeria's home patrol after the Ranger Missing fade-black home recreation callback, and cleaned up the completion timer local.
 
 ### Actions Remaining
 - Re-test invited companions with `CinematicMover`, selected-unit mode casts, companion self command-card casts, Kick Companion on non-pet companions, Shadowclaw kick/reinvite, and StatsUI pet rows in-game.
+- Re-test Ranger Missing completion to confirm Valeria waits at Aradion before patrolling, and accept Rifts of Corruption while Valeria is already near Aradion to confirm she is not teleported away.
 
 ## [2.7.2026]
 
