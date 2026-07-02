@@ -1,4 +1,4 @@
-library qAradion initializer Init requires QuestGiver, QuestMaster, DialogSystem, ExSound, FollowSystem, PatrolSystem, UnitSpawn, Companions, ItemLootSystem
+library qAradion initializer Init requires QuestGiver, QuestMaster, DialogSystem, ExSound, FollowSystem, PatrolSystem, UnitSpawn, Companions, ItemLootSystem, ZonesCore
 //===========================================================================
 // qAradion
 // Quest giver dialog + quest flow for Aradion the Farseer.
@@ -29,6 +29,7 @@ globals
 	private constant integer ABIL_RIFT_CLOSE = 'A04Z'
 	private constant integer UNIT_VALERIA = 'n01W'
 	private constant integer UNIT_MANA_WRAITH = 'n002'
+	private constant integer UNIT_MANA_RIFT = 'n023'
 	private constant integer UNIT_FADING_SPARKS_WRAITH_2 = 0
 	private constant integer UNIT_FADING_SPARKS_WRAITH_3 = 0
 	private constant integer UNIT_FADING_SPARKS_WRAITH_4 = 0
@@ -62,6 +63,8 @@ globals
 	private constant integer RIFTS_MAX = 3
 	private constant integer RIFTS_MAX_WAVES = 32
 	private constant integer RIFTS_WAVE_OWNER = 11
+	private constant integer VANGUARD_VALE_ZONE_ID = 9
+	private constant integer VERDANT_PLAINS_ZONE_ID = 17
 	private constant string RIFTS_WAVE_PRE_SPAWN_EFFECT = "vortex1.mdx"
 	private constant string RIFTS_WAVE_PRE_SPAWN_CREATE_SOUND = "Sound/Ambient/DoodadEffects/ShimmeringPortalBirth"
 	private constant string RIFTS_WAVE_PRE_SPAWN_DESTROY_SOUND = "Sound/Ambient/DoodadEffects/ShimmeringPortalDeath"
@@ -71,9 +74,11 @@ globals
 	private constant real RIFTS_WAVE_SPAWN_EFFECT_DURATION = 0.00
 	private constant real RIFTS_TRIGGER_RANGE = 1200.00
 	private constant real RIFTS_RITUAL_DURATION = 120.00
-	private constant real RIFTS_WAVE_PERIOD = 30.00
-	private constant real RIFTS_COMBAT_PERIOD = 40.00
+	private constant real RIFTS_WAVE_PERIOD = 20.00
+	private constant real RIFTS_COMBAT_PERIOD = 20.00
 	private constant real RIFTS_COUNTDOWN_PERIOD = 1.00
+	private constant real RIFTS_WAVE_END_BUFFER = 10.00
+	private constant real RIFTS_OVERWHELMED_WAVE_AGE = 25.00
 	private constant real RIFTS_FAIL_RESET_DELAY = 30.00
 	private constant real RIFTS_ARADION_OFFSET = 500.00
 	private constant real RIFTS_VALERIA_OFFSET = 200.00
@@ -133,6 +138,7 @@ globals
 	private timer ValeriaEncounterRangeTimer = null
 	private timer ValeriaEncounterArrowTimer = null
 	private timer ValeriaNegotiationPromptTimer = null
+	private timer RangerMissingZoneTimer = null
 	private timer RiftsFieldTimer = null
 	private timer RiftsCloseTimer = null
 	private timer RiftsWaveTimer = null
@@ -161,6 +167,7 @@ globals
 	private unit array RiftsUnits
 	private integer array RiftsUnitTypeIds
 	private Wave array RiftsWaveHandles
+	private integer array RiftsWaveSpawnCountdown
 	private integer RiftsWaveIndex = 0
 	private integer RiftsNextWaveN = 1
 	private integer RiftsCurrentIndex = 0
@@ -239,6 +246,20 @@ endfunction
 
 private function ResolveDialogHero takes nothing returns unit
 	return QuestGiver_ResolveDialogHero(SelectedHero, Aradion, DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
+endfunction
+
+private function IsAradionFieldZoneActive takes nothing returns boolean
+	local integer zoneId = ZonesCore_GetCurrentZone()
+	if zoneId == VANGUARD_VALE_ZONE_ID then
+		return true
+	endif
+	if ZonesCore_IsChildZoneOf(zoneId, VANGUARD_VALE_ZONE_ID) then
+		return true
+	endif
+	if zoneId == VERDANT_PLAINS_ZONE_ID then
+		return true
+	endif
+	return ZonesCore_IsChildZoneOf(zoneId, VERDANT_PLAINS_ZONE_ID)
 endfunction
 
 private function CanOfferRangerMissing takes nothing returns boolean
@@ -506,6 +527,9 @@ private function DisableRiftsFailTriggers takes nothing returns nothing
 endfunction
 
 private function StartFieldCompanions takes unit hero returns nothing
+	if not IsAradionFieldZoneActive() then
+		return
+	endif
 	if hero == null then
 		set hero = ResolveDialogHero()
 	endif
@@ -530,8 +554,16 @@ private function StopFieldCompanions takes nothing returns nothing
 	call RemoveAradionCompanion()
 endfunction
 
+private function StopRangerMissingZoneMonitor takes nothing returns nothing
+	if RangerMissingZoneTimer != null then
+		call DestroyTimer(RangerMissingZoneTimer)
+		set RangerMissingZoneTimer = null
+	endif
+endfunction
+
 private function StopRangerMissingEscortInternal takes nothing returns nothing
 	local QuestData q = QuestGiver_GetByNameAndGiver(QUEST_RANGER_MISSING, Aradion)
+	call StopRangerMissingZoneMonitor()
 	if q != 0 then
 		call QuestGiver_UnregisterEscortRequirement(q.id, 2)
 	endif
@@ -540,6 +572,32 @@ private function StopRangerMissingEscortInternal takes nothing returns nothing
 	call DisableRangerMissingDeathTrigger()
 	call RemoveRangerMissingEscortDestination()
 	set RangerMissingEscortActive = false
+endfunction
+
+private function OnRangerMissingZoneTick takes nothing returns nothing
+	local QuestData q
+	if not RangerMissingEscortActive then
+		call StopRangerMissingZoneMonitor()
+		return
+	endif
+	if not IsAradionFieldZoneActive() then
+		set q = QuestGiver_GetByNameAndGiver(QUEST_RANGER_MISSING, Aradion)
+		call StopRangerMissingEscortInternal()
+		if q != 0 then
+			call q.setRequirement(2, "Find Valeria in Vanguard Vale or Verdant Plains")
+			call q.updateRequirementText(2, "Find Valeria in Vanguard Vale or Verdant Plains")
+			call q.refreshQuestLog()
+		endif
+		if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
+			call IssueImmediateOrder(Valeria, "stop")
+		endif
+	endif
+endfunction
+
+private function StartRangerMissingZoneMonitor takes nothing returns nothing
+	call StopRangerMissingZoneMonitor()
+	set RangerMissingZoneTimer = CreateTimer()
+	call TimerStart(RangerMissingZoneTimer, 1.00, true, function OnRangerMissingZoneTick)
 endfunction
 
 private function RecreateValeriaAtHome takes nothing returns nothing
@@ -566,11 +624,11 @@ private function RecreateValeriaAtHome takes nothing returns nothing
 		return
 	endif
 	set udg_Valeria = Valeria
+	call QuestGiver_ResetFieldUnitAtPoint(Valeria, ownerP, x, y, facing, true)
 	call ExecuteFunc("qAradion_RegisterValeriaEncounterProximity")
 	call UnitAddAbility(Valeria, ABIL_VALERIA_COLD_ARROWS)
 	call IssueImmediateOrder(Valeria, "coldarrows")
 	// TODO: add Valeria's post-reunion Dash ability here once its custom rawcode is identified in the JASS/object data pipeline.
-	call StartValeriaHomePatrolInternal()
 	set oldValeria = null
 	set ownerP = null
 endfunction
@@ -729,6 +787,9 @@ private function StartRangerMissingEscortInternal takes nothing returns nothing
 	if Aradion == null or Valeria == null then
 		return
 	endif
+	if not IsAradionFieldZoneActive() then
+		return
+	endif
 
 	set q = QuestGiver_GetByNameAndGiver(QUEST_RANGER_MISSING, Aradion)
 	if q == 0 then
@@ -764,6 +825,7 @@ private function StartRangerMissingEscortInternal takes nothing returns nothing
 	endif
 	call EnableRangerMissingDeathTrigger()
 	set RangerMissingEscortActive = true
+	call StartRangerMissingZoneMonitor()
 endfunction
 
 //===========================================================================
@@ -1796,7 +1858,7 @@ endfunction
 private function BindPlacedRiftUnitSlot takes integer index returns nothing
 	local unit u = PlacedManaRifts[index]
 	local rect r = GetRiftRect(index)
-	if u != null and QuestGiver_IsUnitAlive(u) then
+	if u != null and QuestGiver_IsUnitAlive(u) and (RiftsUnitTypeIds[index] == 0 or GetUnitTypeId(u) == RiftsUnitTypeIds[index]) then
 		set RiftsUnits[index] = u
 		set RiftsUnitTypeIds[index] = GetUnitTypeId(u)
 		return
@@ -1940,6 +2002,59 @@ private function GetRiftIndexForUnit takes unit riftUnit returns integer
 	return 0
 endfunction
 
+private function GetPointRectDistanceSq takes rect r, real x, real y returns real
+	local real closestX
+	local real closestY
+	local real dx
+	local real dy
+	if r == null then
+		return 999999999.00
+	endif
+	set closestX = x
+	set closestY = y
+	if closestX < GetRectMinX(r) then
+		set closestX = GetRectMinX(r)
+	elseif closestX > GetRectMaxX(r) then
+		set closestX = GetRectMaxX(r)
+	endif
+	if closestY < GetRectMinY(r) then
+		set closestY = GetRectMinY(r)
+	elseif closestY > GetRectMaxY(r) then
+		set closestY = GetRectMaxY(r)
+	endif
+	set dx = x - closestX
+	set dy = y - closestY
+	return dx * dx + dy * dy
+endfunction
+
+private function IsUnitNearRiftIndex takes unit u, integer index returns boolean
+	local rect r
+	local unit riftUnit
+	local real rangeSq = RIFTS_TRIGGER_RANGE * RIFTS_TRIGGER_RANGE
+	local boolean result = false
+	if u == null or not QuestGiver_IsUnitAlive(u) or index <= 0 or index > RIFTS_MAX or RiftsClosed[index] then
+		set u = null
+		return false
+	endif
+	set riftUnit = RiftsUnits[index]
+	if riftUnit == null or not QuestGiver_IsUnitAlive(riftUnit) then
+		set riftUnit = EnsureRiftUnit(index)
+	endif
+	if riftUnit != null and QuestGiver_IsUnitAlive(riftUnit) and QuestGiver_IsWithinRange(riftUnit, u, RIFTS_TRIGGER_RANGE) then
+		set result = true
+	endif
+	if not result then
+		set r = GetRiftRect(index)
+		if r != null and GetPointRectDistanceSq(r, GetUnitX(u), GetUnitY(u)) <= rangeSq then
+			set result = true
+		endif
+	endif
+	set r = null
+	set riftUnit = null
+	set u = null
+	return result
+endfunction
+
 private function GetTriggeredRiftIndex takes unit hero returns integer
 	local integer i = 1
 	local integer result = 0
@@ -1971,12 +2086,8 @@ private function GetTriggeredRiftIndex takes unit hero returns integer
 			if r != null then
 				if RectContainsCoords(r, hx, hy) then
 					set distSq = 0.00
-				else
-					set rx = GetRectCenterX(r)
-					set ry = GetRectCenterY(r)
-					if (hx - rx) * (hx - rx) + (hy - ry) * (hy - ry) < distSq then
-						set distSq = (hx - rx) * (hx - rx) + (hy - ry) * (hy - ry)
-					endif
+				elseif GetPointRectDistanceSq(r, hx, hy) < distSq then
+					set distSq = GetPointRectDistanceSq(r, hx, hy)
 				endif
 			endif
 			if distSq <= rangeSq and distSq < bestDistSq then
@@ -1991,13 +2102,13 @@ private function GetTriggeredRiftIndex takes unit hero returns integer
 	return result
 endfunction
 
-private function RemoveRiftUnit takes unit riftUnit returns nothing
-	if riftUnit != null and GetUnitTypeId(riftUnit) != 0 then
+private function KillManaRiftUnit takes unit riftUnit returns nothing
+	if riftUnit != null and GetUnitTypeId(riftUnit) == UNIT_MANA_RIFT then
 		if GetWidgetLife(riftUnit) > 0.405 then
 			call KillUnit(riftUnit)
 		endif
-		call RemoveUnit(riftUnit)
 	endif
+	set riftUnit = null
 endfunction
 
 private function GetRiftEffectX takes unit closedRift, unit placedRift, integer riftIndex returns real
@@ -2061,6 +2172,9 @@ private function StartRiftsRitualInternal takes unit riftUnit, integer riftIndex
 	if riftUnit == null or not QuestGiver_IsUnitAlive(riftUnit) or Aradion == null or not QuestGiver_IsUnitAlive(Aradion) then
 		return
 	endif
+	if not IsAradionFieldZoneActive() then
+		return
+	endif
 	if riftIndex <= 0 or riftIndex > RIFTS_MAX or RiftsClosed[riftIndex] then
 		return
 	endif
@@ -2095,8 +2209,14 @@ private function TryStartRiftsRitualForHero takes unit hero returns boolean
 	if hero == null or not QuestGiver_IsUnitAlive(hero) then
 		return false
 	endif
+	if not IsAradionFieldZoneActive() then
+		return false
+	endif
 	set riftIndex = GetTriggeredRiftIndex(hero)
 	if riftIndex <= 0 then
+		return false
+	endif
+	if not IsUnitNearRiftIndex(Aradion, riftIndex) then
 		return false
 	endif
 	set riftUnit = EnsureRiftUnit(riftIndex)
@@ -2156,12 +2276,13 @@ endfunction
 private function ClearRiftsWaveHandles takes nothing returns nothing
 	local integer i = 1
 	loop
-		exitwhen i > RiftsWaveIndex or i > RIFTS_MAX_WAVES
+		exitwhen i > RIFTS_MAX_WAVES
 		if RiftsWaveHandles[i] != 0 then
 			call RiftsWaveHandles[i].killAllUnits()
 			call RiftsWaveHandles[i].destroy()
 			set RiftsWaveHandles[i] = 0
 		endif
+		set RiftsWaveSpawnCountdown[i] = 0
 		set i = i + 1
 	endloop
 	set RiftsWaveIndex = 0
@@ -2370,13 +2491,9 @@ private function GetAllowedRiftHeroForIndex takes integer index returns unit
 	local integer bestHero = 0
 	local integer bestLevel = -1
 	local integer level
-	local rect r = GetRiftRect(index)
-	local real x
-	local real y
 	if index <= 0 or index > RIFTS_MAX or RiftsClosed[index] then
 		set riftUnit = null
 		set nearbyHero = null
-		set r = null
 		return null
 	endif
 	if riftUnit != null then
@@ -2384,43 +2501,27 @@ private function GetAllowedRiftHeroForIndex takes integer index returns unit
 		if nearbyHero == Nazgrek then
 			set nearbyHero = null
 			set riftUnit = null
-			set r = null
 			return Nazgrek
 		elseif nearbyHero == udg_Zulkis then
 			set nearbyHero = null
 			set riftUnit = null
-			set r = null
 			return udg_Zulkis
 		endif
 		set nearbyHero = null
 	endif
-	if r == null then
-		set nearbyHero = null
-		set riftUnit = null
-		set r = null
-		return null
-	endif
-	set x = GetRectCenterX(r)
-	set y = GetRectCenterY(r)
-	if ALLOW_NAZGREK and Nazgrek != null and QuestGiver_IsUnitAlive(Nazgrek) and RectContainsCoords(r, GetUnitX(Nazgrek), GetUnitY(Nazgrek)) then
-		set bestHero = 1
-		set bestLevel = GetHeroLevel(Nazgrek)
-	elseif ALLOW_NAZGREK and Nazgrek != null and QuestGiver_IsUnitAlive(Nazgrek) and SquareRoot((GetUnitX(Nazgrek) - x) * (GetUnitX(Nazgrek) - x) + (GetUnitY(Nazgrek) - y) * (GetUnitY(Nazgrek) - y)) <= RIFTS_TRIGGER_RANGE then
+	if ALLOW_NAZGREK and IsUnitNearRiftIndex(Nazgrek, index) then
 		set bestHero = 1
 		set bestLevel = GetHeroLevel(Nazgrek)
 	endif
-	if ALLOW_ZULKIS and udg_Zulkis != null and QuestGiver_IsUnitAlive(udg_Zulkis) then
+	if ALLOW_ZULKIS and IsUnitNearRiftIndex(udg_Zulkis, index) then
 		set level = GetHeroLevel(udg_Zulkis)
-		if RectContainsCoords(r, GetUnitX(udg_Zulkis), GetUnitY(udg_Zulkis)) or SquareRoot((GetUnitX(udg_Zulkis) - x) * (GetUnitX(udg_Zulkis) - x) + (GetUnitY(udg_Zulkis) - y) * (GetUnitY(udg_Zulkis) - y)) <= RIFTS_TRIGGER_RANGE then
-			if bestHero == 0 or level > bestLevel then
-				set bestHero = 2
-				set bestLevel = level
-			endif
+		if bestHero == 0 or level > bestLevel then
+			set bestHero = 2
+			set bestLevel = level
 		endif
 	endif
 	set nearbyHero = null
 	set riftUnit = null
-	set r = null
 	if bestHero == 1 then
 		return Nazgrek
 	elseif bestHero == 2 then
@@ -2429,20 +2530,51 @@ private function GetAllowedRiftHeroForIndex takes integer index returns unit
 	return null
 endfunction
 
+private function GetRiftsLiveWaveCount takes nothing returns integer
+	local integer i = 1
+	local integer count = 0
+	loop
+		exitwhen i > RiftsWaveIndex or i > RIFTS_MAX_WAVES
+		if RiftsWaveHandles[i] != 0 and RiftsWaveHandles[i].getRemainingCount() > 0 then
+			set count = count + 1
+		endif
+		set i = i + 1
+	endloop
+	return count
+endfunction
+
+private function HasOldRiftsWaveAlive takes nothing returns boolean
+	local integer i = 1
+	loop
+		exitwhen i > RiftsWaveIndex or i > RIFTS_MAX_WAVES
+		if RiftsWaveHandles[i] != 0 and RiftsWaveHandles[i].getRemainingCount() > 0 and I2R(RiftsWaveSpawnCountdown[i] - RiftsCountdownRemaining) >= RIFTS_OVERWHELMED_WAVE_AGE then
+			return true
+		endif
+		set i = i + 1
+	endloop
+	return false
+endfunction
+
+private function ShouldPlayRiftsOverwhelmedLine takes nothing returns boolean
+	return GetRiftsLiveWaveCount() > 1 or HasOldRiftsWaveAlive()
+endfunction
+
 private function PlayRiftsIncomingWaveBark takes nothing returns nothing
 	local integer roll
-	set roll = GetRandomInt(1, 3)
+	set roll = GetRandomInt(1, 2)
 	if roll == 1 then
 		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0061", "Hold your ground! Don't let them reach Aradion!")
-	elseif roll == 2 then
-		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0062", "The rift is pulling every wrath towards it - brace yourself!")
 	else
-		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0065", "They are too many! Drive them back!")
+		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0062", "The rift is pulling every wrath towards it - brace yourself!")
 	endif
 endfunction
 
 private function PlayRiftsCombatBark takes nothing returns nothing
 	local integer roll
+	if ShouldPlayRiftsOverwhelmedLine() then
+		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0065", "They are too many! Drive them back!")
+		return
+	endif
 	set roll = GetRandomInt(1, 3)
 	if roll == 1 then
 		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0076", "Hold them back! Just a little longer!")
@@ -2481,7 +2613,13 @@ private function SpawnRiftsWave takes nothing returns nothing
 	if not RiftsRitualActive then
 		return
 	endif
+	if not IsAradionFieldZoneActive() then
+		return
+	endif
 	if RiftsWaveIndex >= RIFTS_MAX_WAVES then
+		return
+	endif
+	if I2R(RiftsCountdownRemaining) <= RIFTS_WAVE_END_BUFFER then
 		return
 	endif
 	if RiftsCurrentRift != null and QuestGiver_IsUnitAlive(RiftsCurrentRift) then
@@ -2497,6 +2635,7 @@ private function SpawnRiftsWave takes nothing returns nothing
 	endif
 	set spawnLoc = Location(spawnX, spawnY)
 	set RiftsWaveIndex = RiftsWaveIndex + 1
+	set RiftsWaveSpawnCountdown[RiftsWaveIndex] = RiftsCountdownRemaining
 	if RiftsNextWaveN == 1 then
 		set RiftsWaveHandles[RiftsWaveIndex] = WavesRiftWraits_Wave1DelayedSoundEx(Player(RIFTS_WAVE_OWNER), spawnLoc, RIFTS_WAVE_PRE_SPAWN_EFFECT, RIFTS_WAVE_PRE_SPAWN_DELAY, RIFTS_WAVE_PRE_SPAWN_EFFECT_DURATION, RIFTS_WAVE_PRE_SPAWN_CREATE_SOUND, RIFTS_WAVE_PRE_SPAWN_DESTROY_SOUND, RIFTS_WAVE_SPAWN_EFFECT, RIFTS_WAVE_SPAWN_EFFECT_DURATION, true)
 	elseif RiftsNextWaveN == 2 then
@@ -2603,9 +2742,10 @@ private function FinishRiftsCurrentRitual takes nothing returns nothing
 	if closedRiftX != 0.00 or closedRiftY != 0.00 then
 		call DestroyEffect(AddSpecialEffect("Objects\\Spawnmodels\\NightElf\\NECancelDeath\\NECancelDeath.mdl", closedRiftX, closedRiftY))
 	endif
-	call RemoveRiftUnit(closedRift)
-	if placedRift != closedRift then
-		call RemoveRiftUnit(placedRift)
+	if placedRift != null then
+		call KillManaRiftUnit(placedRift)
+	else
+		call KillManaRiftUnit(closedRift)
 	endif
 	set RiftsRitualActive = false
 	set RiftsCurrentRift = null
@@ -2656,6 +2796,10 @@ private function OnRiftsFieldTick takes nothing returns nothing
 	local unit hero
 	call SyncUnitReferences()
 	if not RiftsQuestActive or RiftsFailureInProgress then
+		return
+	endif
+	if not IsAradionFieldZoneActive() then
+		call StopFieldCompanions()
 		return
 	endif
 	if RiftsAwaitingReturnHome then
@@ -2730,6 +2874,9 @@ private function FinalizeRiftsFailureReset takes nothing returns nothing
 	set RiftsAwaitingReturnHome = false
 	set RiftsReturnedHome = false
 	set RiftsFailureInProgress = false
+	set RiftsUnitTypeIds[1] = UNIT_MANA_RIFT
+	set RiftsUnitTypeIds[2] = UNIT_MANA_RIFT
+	set RiftsUnitTypeIds[3] = UNIT_MANA_RIFT
 	call ResetRiftsClosedState()
 	call ReturnRiftsCompanionsHomeInternal()
 	call RegisterRiftUnits()
@@ -3422,6 +3569,9 @@ private function OnAcceptQuest4End takes nothing returns nothing
 	set RiftsFailedUnit = null
 	set RiftsFailureSurvivor = null
 	set RiftsPendingFailReason = ""
+	set RiftsUnitTypeIds[1] = UNIT_MANA_RIFT
+	set RiftsUnitTypeIds[2] = UNIT_MANA_RIFT
+	set RiftsUnitTypeIds[3] = UNIT_MANA_RIFT
 	call StopRiftsFailResetTimer()
 	call StopRiftsRuntimeTimers()
 	call StopRiftsFieldMonitor()
@@ -3803,6 +3953,9 @@ private function InitDelayed takes nothing returns nothing
 	set PlacedManaRifts[1] = gg_unit_n023_0971
 	set PlacedManaRifts[2] = gg_unit_n023_1093
 	set PlacedManaRifts[3] = gg_unit_n023_1092
+	set RiftsUnitTypeIds[1] = UNIT_MANA_RIFT
+	set RiftsUnitTypeIds[2] = UNIT_MANA_RIFT
+	set RiftsUnitTypeIds[3] = UNIT_MANA_RIFT
 	call DebugMsg("Init Aradion giver id=" + I2S(GetHandleId(Aradion)))
 	call QuestGiver_Register(Aradion)
 	call QuestGiver_SetGreetOrder(Aradion, QUESTGIVER_GREET_NAZGREK_THEN_NPC)
@@ -3911,7 +4064,7 @@ public function BeginRiftsRitual takes unit riftUnit returns nothing
 	endif
 	set i = GetRiftIndexForUnit(riftUnit)
 	if i > 0 then
-		if hero != null and GetTriggeredRiftIndex(hero) == i then
+		if hero != null and GetTriggeredRiftIndex(hero) == i and IsUnitNearRiftIndex(Aradion, i) then
 			set riftUnit = EnsureRiftUnit(i)
 			if riftUnit != null then
 				call StartRiftsRitualInternal(riftUnit, i, hero)
