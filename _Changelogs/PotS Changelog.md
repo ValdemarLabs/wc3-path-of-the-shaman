@@ -48,6 +48,13 @@
   Fixed `Wave.getRemainingCount()` so checking live wave counts no longer empties the tracked wave group.
 - `FollowSystem.j`
   Re-enabled the `TargetPreSelected.mdl` following ring as a persistent effect that hides/shows via alpha and scale instead of being destroyed during normal follow-state transitions, avoiding residual visuals from the model's missing death animation.
+- `Companions.j` / `Pet.j`
+  Merged the old GUI companion and pet control flow into JASS libraries. `Companions.j` now owns companion invite/kick, hired-unit add/reject, focus target selection, information/drop-items commands, non-hero companion death cleanup, and Passive/Normal/Aggressive/Hold control modes through `FollowSystem.j`.
+  Companion control modes now apply to selected companion/pet units when one is selected, and fall back to the full companion/pet group when no controlled unit is selected.
+  `Pet.j` now owns Shadowclaw initialization/reinvite, Tame Beast I/II/III, pet registration, pet kick, fatigue/revival, raw-meat healing, pet rename, and the tame-channeling damage multiplier while using the companion control layer for follow behavior.
+  Kept compatibility with the current GUI globals and old multiboard hooks, including `udg_Companion_Group`, `udg_CompanionUnit[]`, `udg_CompanionCount`, `udg_TamedUnits`, `udg_TamedUnit`, `udg_TM_*`, and the multiboard add/remove triggers.
+- `QuestGiver.j`
+  Mirrored companion icon/index/reference writes into `udg_CompanionIcon[]`, `udg_CompanionIndex[]`, and `udg_UnitHider_ReferenceUnits[]` so current GUI multiboard code can keep reading the legacy arrays until the later `StatsBoardUI.j` rewrite.
 - `SteamBreath.j`
   Registered `SteamBreathSystem` through a library initializer so its centralized `UnitDeathEvent` callback actually runs, switched the death cleanup to `GetDyingUnit()`, and made single-unit cleanup destroy all tracked steam effects for the dying unit.
 - `ItemLootSystem.j` / `SharedDInvLib.j`
@@ -62,6 +69,8 @@
 ### Actions Remaining
 - Decide how the hidden `Void Entity` boss should be connected to quest progression, including whether it belongs in Aradion's questline.
 - Re-test `qAradion` in-game after the helper extractions, especially Valeria recreation at home/ambush, Ranger Missing completion, Rifts of Corruption rift binding/retry/return-home behavior, field-line barks, and the public progression hooks.
+- Disable the old GUI companion/pet triggers listed in `Companions/companions-to-do.md`, then test companion invite/kick, hired units, focus swaps, selected-unit mode changes, Shadowclaw, Tame Beast ranks, pet fatigue/revive, pet rename, and old multiboard rows in-game.
+- Move companion/pet bark triggers into the later AI library update and replace the current GUI multiboard hooks with the planned `StatsBoardUI.j` work.
 - Re-test DInv-to-vanilla item transfers by moving a named item into vanilla inventory and dropping it from there, confirming the floating text appears and cleans up normally on pickup/use.
 - Continue the next modularization pass only after the practical helper extraction is verified; the remaining larger candidate is a reusable `DialogSystem` choice/response dialog scaffold for Valeria-style persuasion prompts.
 
