@@ -259,7 +259,7 @@
 <body>
   <main class="page">
     <section class="hero">
-      <span class="pill">Static local tool · no backend</span>
+      <span class="pill">Static local tool - no backend</span>
       <h1>PotS qXXX Generator</h1>
       <p>Generates a quest giver sublibrary scaffold that matches the current JASS quest/dialog stack. The output intentionally leaves explicit <code>TODO QUEST-SPECIFIC</code> markers anywhere event-specific map logic still needs manual implementation.</p>
       <div class="hero-actions">
@@ -319,14 +319,14 @@
 
         <section class="panel">
           <h2>Public Hooks</h2>
-          <label>One hook name per line
+          <label>One hook declaration per line
             <textarea id="publicHooks">StartRangerMissingEscort
 FailRangerMissingEscort
-BeginRiftsRitual
+BeginRiftsRitual takes unit riftUnit returns nothing
 CompleteRiftsCurrentRitual
-FailRifts</textarea>
+FailRifts takes string reason returns nothing</textarea>
           </label>
-          <p class="hint">These generate empty public stubs for map-specific progression events.</p>
+          <p class="hint">Use a bare name for a no-argument hook, or a full <code>takes ... returns ...</code> signature for hooks called by map events.</p>
         </section>
       </div>
 
@@ -384,9 +384,9 @@ FailRifts</textarea>
         publicHooks: [
           "StartRangerMissingEscort",
           "FailRangerMissingEscort",
-          "BeginRiftsRitual",
+          "BeginRiftsRitual takes unit riftUnit returns nothing",
           "CompleteRiftsCurrentRitual",
-          "FailRifts",
+          "FailRifts takes string reason returns nothing",
         ],
         quests: [
           {
@@ -431,6 +431,103 @@ FailRifts</textarea>
         .replace(/"/g, '\\"')
         .replace(/\r/g, "")
         .replace(/\n/g, "\\n");
+    }
+
+    function sanitizeCommentText(value) {
+      return String(value || "")
+        .replace(/\*\//g, "* /")
+        .replace(/\r/g, "")
+        .replace(/\n/g, " ")
+        .trim();
+    }
+
+    function sanitizeJassSignaturePart(value, fallback) {
+      const cleaned = String(value || "")
+        .replace(/[^A-Za-z0-9_, ]/g, " ")
+        .replace(/\s*,\s*/g, ", ")
+        .replace(/\s+/g, " ")
+        .trim();
+      return cleaned || fallback;
+    }
+
+    function parsePublicHook(value) {
+      const raw = String(value || "").trim();
+      const match = raw.match(/^([A-Za-z_][A-Za-z0-9_]*)(?:\s+takes\s+(.+?)\s+returns\s+(.+))?$/i);
+      if (!raw) {
+        return null;
+      }
+      if (!match) {
+        return {
+          name: sanitizeIdentifier(raw.split(/\s+/)[0], "GeneratedHook"),
+          takes: "nothing",
+          returns: "nothing",
+        };
+      }
+      return {
+        name: sanitizeIdentifier(match[1], "GeneratedHook"),
+        takes: sanitizeJassSignaturePart(match[2], "nothing"),
+        returns: sanitizeJassSignaturePart(match[3], "nothing"),
+      };
+    }
+
+    function defaultReturnForType(returnType) {
+      const type = String(returnType || "nothing").trim().toLowerCase();
+      const nullTypes = new Set([
+        "unit", "player", "group", "force", "timer", "trigger", "triggercondition", "triggeraction",
+        "location", "rect", "effect", "dialog", "button", "quest", "item", "destructable", "widget",
+        "boolexpr", "sound", "texttag", "lightning", "image", "ubersplat", "hashtable", "framehandle",
+      ]);
+      if (type === "nothing") {
+        return null;
+      }
+      if (type === "boolean") {
+        return "false";
+      }
+      if (type === "integer") {
+        return "0";
+      }
+      if (type === "real") {
+        return "0.00";
+      }
+      if (type === "string") {
+        return "\"\"";
+      }
+      if (nullTypes.has(type)) {
+        return "null";
+      }
+      return "0";
+    }
+
+    function buildGeneratedHeader(libraryName, displayName, fileName, publicHookSpecs) {
+      const headerDisplayName = sanitizeCommentText(displayName) || libraryName;
+      const headerFileName = sanitizeCommentText(fileName) || `${libraryName}.j`;
+      const apiLines = publicHookSpecs.length
+        ? publicHookSpecs.map((hook) => `    - ${libraryName}_${hook.name} takes ${hook.takes} returns ${hook.returns}`).join("\n")
+        : "    - No public API hooks generated.";
+
+      return `/**
+    ${libraryName}
+
+    Author: Valdemar
+    Version:
+
+    Description:
+    Generated quest giver sublibrary scaffold for ${headerDisplayName}.
+    Target file: ${headerFileName}
+    Replace all TODO QUEST-SPECIFIC sections before map import.
+
+    Credits:
+    Generated with QuestsAndDialogs/QuestGivers/tools/qxxx-generator.html.
+
+    How to install:
+    Place this file under QuestsAndDialogs/QuestGivers and import it after
+    QuestGiver, QuestMaster, and DialogSystem.
+
+    API:
+${apiLines}
+
+**/
+`;
     }
 
     function splitRequirements(value) {
@@ -479,6 +576,7 @@ FailRifts</textarea>
     function createQuestBlock(spec, quest, index) {
       const npcVar = sanitizeIdentifier(spec.npcVariable, "QuestNPC");
       const constName = questConstName(quest, index);
+      const requiredLevel = Number(quest.requiredLevel) || 1;
       const reqs = padRequirements(splitRequirements(quest.requirements)).map((req) => `"${escapeJassString(req)}"`).join(", ");
       const xpReward = Number(quest.xpReward) || 0;
       const goldReward = Number(quest.goldReward) || 0;
@@ -488,8 +586,9 @@ FailRifts</textarea>
         : "giverName";
 
       return [
-        `\tset q = QuestGiver_CreateQuest(${constName}, ${npcVar}, "${escapeJassString(quest.questType)}", ${Number(quest.requiredLevel) || 1}, null)`,
-        `\tcall QuestGiver_ApplyQuestMetadata(q, "${escapeJassString(quest.title)}", "${escapeJassString(quest.iconPath)}", "${escapeJassString(quest.description)}", infoText, info2Text, ${Number(quest.requiredLevel) || 1}, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "", ${receiverDisplayName})`,
+        `\tset info2Text = "|cffffcc00Recommended level:|r ${requiredLevel}\\n\\n"`,
+        `\tset q = QuestGiver_CreateQuest(${constName}, ${npcVar}, "${escapeJassString(quest.questType)}", ${requiredLevel}, null)`,
+        `\tcall QuestGiver_ApplyQuestMetadata(q, "${escapeJassString(quest.title)}", "${escapeJassString(quest.iconPath)}", "${escapeJassString(quest.description)}", infoText, info2Text, ${requiredLevel}, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "", ${receiverDisplayName})`,
         `\tcall q.setRewardParams(${xpReward > 0 ? "true" : "false"}, ${xpReward}, ${goldReward > 0 ? "true" : "false"}, ${goldReward}, false, 0, ${repReward > 0 ? "true" : "false"}, ${repReward}, false)`,
         `\tcall QuestGiver_SetRequirements(q.id, "", ${reqs})`,
         "",
@@ -593,14 +692,20 @@ endfunction`
       }).join("\n\n");
     }
 
-    function buildPublicHooks(spec) {
-      return spec.publicHooks
-        .map((hook) => sanitizeIdentifier(hook, "GeneratedHook"))
-        .filter(Boolean)
-        .map((hook) =>
-`public function ${hook} takes nothing returns nothing
-\t// TODO QUEST-SPECIFIC: external progression hook
-endfunction`)
+    function buildPublicHooks(publicHookSpecs) {
+      return publicHookSpecs
+        .map((hook) => {
+          const defaultReturn = defaultReturnForType(hook.returns);
+          const lines = [
+            `public function ${hook.name} takes ${hook.takes} returns ${hook.returns}`,
+            "\t// TODO QUEST-SPECIFIC: external progression hook",
+          ];
+          if (defaultReturn !== null) {
+            lines.push(`\treturn ${defaultReturn}`);
+          }
+          lines.push("endfunction");
+          return lines.join("\n");
+        })
         .join("\n\n");
     }
 
@@ -609,15 +714,15 @@ endfunction`)
       const fileName = spec.fileName || `${libraryName}.j`;
       const npcVar = sanitizeIdentifier(spec.npcVariable, "QuestNPC");
       const displayName = escapeJassString(spec.displayName);
+      const publicHookSpecs = (spec.publicHooks || []).map(parsePublicHook).filter(Boolean);
+      const generatedHeader = buildGeneratedHeader(libraryName, spec.displayName, fileName, publicHookSpecs);
       const questConstants = spec.quests.map((quest, index) => `\tprivate constant string ${questConstName(quest, index)} = "${escapeJassString(quest.title)}"`).join("\n");
       const questBlocks = spec.quests.map((quest, index) => createQuestBlock(spec, quest, index)).join("\n");
       const handlerBlocks = buildHandlerBlocks(spec);
       const dialogLogic = buildDialogLogic(spec);
-      const publicHooks = buildPublicHooks(spec);
+      const publicHooks = buildPublicHooks(publicHookSpecs);
 
-      return `// Generated by qxxx-generator.html
-// Target file: ${escapeJassString(fileName)}
-library ${libraryName} initializer Init requires QuestGiver, QuestMaster, DialogSystem, ExSound, CameraControl, FollowSystem
+      return `${generatedHeader}library ${libraryName} initializer Init requires QuestGiver, QuestMaster, DialogSystem
 
 globals
 \tprivate constant boolean DEBUG = false
@@ -655,8 +760,9 @@ endfunction
 
 private function RebuildAndShowDialogTimer takes nothing returns nothing
 \tlocal timer t = GetExpiredTimer()
-\tcall ${libraryName}_RebuildAndShowDialog()
+\tcall ExecuteFunc("${libraryName}_RebuildAndShowDialog")
 \tcall DestroyTimer(t)
+\tset t = null
 endfunction
 
 private function OnBackstoryEnd takes nothing returns nothing
@@ -664,11 +770,13 @@ private function OnBackstoryEnd takes nothing returns nothing
 \tset BackstorySeen = true
 \tcall EnableUserControl(true)
 \tcall TimerStart(t, 0.05, false, function RebuildAndShowDialogTimer)
+\tset t = null
 endfunction
 
 private function OnBackstory takes nothing returns nothing
-\tlocal integer seq = QuestGiver_CreateBaseSequence(${npcVar}, "${displayName}")
-\tcall QuestGiver_CloseActiveDialog()
+\tlocal integer seq
+\tcall QuestGiver_BeginDialogSequence()
+\tset seq = QuestGiver_CreateBaseSequence(${npcVar}, "${displayName}")
 \tcall DialogSystem_SetSequenceCallbacks(seq, null, function OnBackstoryEnd)
 \tcall DialogSystem_AddLine(seq, ${npcVar}, "${displayName}", "TODO QUEST-SPECIFIC: replace with the final backstory sequence.", "", true)
 \tcall DialogSystem_PlaySequence(seq, Player(0), ${npcVar})
@@ -706,7 +814,7 @@ private function CreateQuests takes nothing returns nothing
 \tlocal QuestData q
 \tlocal string giverName = QuestGiver_GetUnitDisplayName(${npcVar})
 \tlocal string infoText = "|cffffcc00Quest giver:|r " + giverName + "\\n"
-\tlocal string info2Text = "|cffffcc00Recommended level:|r " + I2S(1) + "\\n\\n"
+\tlocal string info2Text = ""
 
 ${questBlocks}
 endfunction
@@ -717,21 +825,29 @@ public function RebuildAndShowDialog takes nothing returns nothing
 endfunction
 
 private function OnSelected takes nothing returns nothing
-\tlocal unit hero
+\tlocal unit hero = null
 \tif DialogSystem_IsSequenceActive() then
+\t\tset hero = null
 \t\treturn
 \tendif
 \tset hero = QuestGiver_GetAllowedHero(${npcVar}, DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
 \tif REQUIRE_DIALOG_HERO and hero == null then
+\t\tset hero = null
 \t\treturn
 \tendif
 \tif not QuestGiver_PassSelectionGate(${npcVar}, hero, DIALOG_RANGE, ${npcVar}DialogCooldown) then
+\t\tset hero = null
 \t\treturn
 \tendif
 \tset SelectedHero = hero
 \tcall BuildDialog()
 \tcall DialogSystem_ShowDialog(${npcVar}Dialog, Player(0))
 \t// TODO QUEST-SPECIFIC: swap in a cinematic mover / camera handoff if this NPC needs full Aradion-style staging.
+\tset hero = null
+endfunction
+
+private function RegisterLines takes nothing returns nothing
+\tcall DialogSystem_RegisterFarewellLineForUnit(${npcVar}, "Safe travels.", "", true)
 endfunction
 
 private function InitDelayed takes nothing returns nothing
@@ -744,10 +860,6 @@ private function InitDelayed takes nothing returns nothing
 \tcall RegisterLines()
 \tcall CreateQuests()
 \tcall QuestGiver_RegisterSelectionHandler(${npcVar}, function OnSelected)
-endfunction
-
-private function RegisterLines takes nothing returns nothing
-\tcall DialogSystem_RegisterFarewellLineForUnit(${npcVar}, "Safe travels.", "", true)
 endfunction
 
 private function Init takes nothing returns nothing
