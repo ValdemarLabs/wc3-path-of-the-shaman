@@ -166,3 +166,16 @@ Build/test follow-up:
 - Run a full map compile once the generated map globals are available in the active build pipeline.
 - In-game test all migrated spell rawcodes:
   `A622`, `A621`, `A61Z`, `A61X`, `A61S`, `A6DX`, `A6E9`, `A6DZ`, `A6E4`, `A6E5`, `A623`, `A625`, `A627`.
+
+# Triggers still utilizing the old Companion GUI triggers that are now disabled
+GUI Companion triggers disabling effects:
+- Intro Orc Cleanup uses these - replace with Companion.j relevant API (single API would suffice ie. companions logic disabled etc.)
+-- Companion Passive Mode Active
+-- Companion Normal Mode Active
+-- Companion Aggressive Mode Active
+
+@Pet.j
+- we need to check raw codes for the abilities the system uses, mainly Tame Beast abilities (I, II, III) 
+-- check against ItemManager databse, they seem to be correct
+- we need to check Tamed unit heal event items (meats) raw codes that they are correct 
+-- check against ItemManager databse, they seem to be correct
