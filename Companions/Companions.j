@@ -1262,31 +1262,35 @@ endfunction
 
 private function Init takes nothing returns nothing
     local integer playerIndex = 0
+    local trigger spellTrigger = null
+    local trigger sellTrigger = null
 
     call EnsureState()
 
-    set bj_lastCreatedTrigger = CreateTrigger()
+    set spellTrigger = CreateTrigger()
     loop
-        call TriggerRegisterPlayerUnitEvent(bj_lastCreatedTrigger, Player(playerIndex), EVENT_PLAYER_UNIT_SPELL_EFFECT, null)
+        call TriggerRegisterPlayerUnitEvent(spellTrigger, Player(playerIndex), EVENT_PLAYER_UNIT_SPELL_EFFECT, null)
         set playerIndex = playerIndex + 1
         exitwhen playerIndex > MAX_PLAYER_INDEX
     endloop
-    call TriggerAddAction(bj_lastCreatedTrigger, function OnSpellEffect)
+    call TriggerAddAction(spellTrigger, function OnSpellEffect)
 
-    set bj_lastCreatedTrigger = CreateTrigger()
+    set sellTrigger = CreateTrigger()
     set playerIndex = 0
     loop
-        call TriggerRegisterPlayerUnitEvent(bj_lastCreatedTrigger, Player(playerIndex), EVENT_PLAYER_UNIT_SELL, null)
+        call TriggerRegisterPlayerUnitEvent(sellTrigger, Player(playerIndex), EVENT_PLAYER_UNIT_SELL, null)
         set playerIndex = playerIndex + 1
         exitwhen playerIndex > MAX_PLAYER_INDEX
     endloop
-    call TriggerAddAction(bj_lastCreatedTrigger, function HandleSoldUnit)
+    call TriggerAddAction(sellTrigger, function HandleSoldUnit)
 
     set IdleTrigger = CreateTrigger()
     call TriggerRegisterTimerEvent(IdleTrigger, COMPANION_IDLE_CHECK_INTERVAL, true)
     call TriggerAddAction(IdleTrigger, function OnIdlePeriodic)
 
     call UnitDeathEvent_Register(function OnUnitDeath)
+    set spellTrigger = null
+    set sellTrigger = null
 endfunction
 
 endlibrary
