@@ -20,7 +20,7 @@
 */ 
 //===========================================================================
 
-library SteamBreathSystem requires UnitDeathEvent
+library SteamBreathSystem initializer Init requires UnitDeathEvent
 
 globals
     private constant integer MAX_UNITS_PER_REGION = 1000 // Maximum units that can have steam in one region
@@ -32,18 +32,26 @@ endglobals
 //===========================================================================
 function Filter_IsSteamTarget takes nothing returns boolean
     local unit u = GetFilterUnit()
-    return IsUnitAliveBJ(u) and not IsUnitType(u, UNIT_TYPE_MECHANICAL) and not IsUnitType(u, UNIT_TYPE_STRUCTURE) and not IsUnitType(u, UNIT_TYPE_SUMMONED)
+    local boolean result = IsUnitAliveBJ(u) and not IsUnitType(u, UNIT_TYPE_MECHANICAL) and not IsUnitType(u, UNIT_TYPE_STRUCTURE) and not IsUnitType(u, UNIT_TYPE_SUMMONED)
+    set u = null
+    return result
 endfunction
 
 function SteamBreathCleanup takes nothing returns nothing
     local integer i = 0
     local integer j = 0
+    local integer index
     loop
         exitwhen i >= MAX_REGIONS
         set j = 0
         loop
             exitwhen j >= MAX_UNITS_PER_REGION
-            set RandomUnits[i * MAX_UNITS_PER_REGION + j] = null
+            set index = i * MAX_UNITS_PER_REGION + j
+            if SteamEffects[index] != null then
+                call DestroyEffect(SteamEffects[index])
+                set SteamEffects[index] = null
+            endif
+            set RandomUnits[index] = null
             set j = j + 1
         endloop
         set RegionUnitCount[i] = 0
@@ -84,6 +92,7 @@ function AttachSteamEffectsInRegion takes rect whichRegion, integer regionIndex 
     
     if whichRegion == null or regionIndex < 0 or regionIndex >= MAX_REGIONS then
         call DestroyGroup(g)
+        set g = null
         return
     endif
     
@@ -111,6 +120,8 @@ function AttachSteamEffectsInRegion takes rect whichRegion, integer regionIndex 
     set RegionUnitCount[regionIndex] = i
 
     call DestroyGroup(g)
+    set u = null
+    set g = null
 endfunction
 //===========================================================================
 // Legacy function - attaches steam effects globally (deprecated)
@@ -138,7 +149,10 @@ function AttachSteamEffects takes nothing returns nothing
         set i = i + 1
     endloop
 
+    set RegionUnitCount[0] = i
     call DestroyGroup(g)
+    set u = null
+    set g = null
 endfunction
 //===========================================================================
 // Legacy function - removes all steam effects globally (deprecated)
@@ -153,6 +167,7 @@ function RemoveSteamEffects takes nothing returns nothing
         set RandomUnits[i] = null
         set i = i + 1
     endloop
+    set RegionUnitCount[0] = 0
 endfunction
 //===========================================================================
 // Checks if a unit has a steam breath effect
@@ -161,6 +176,9 @@ function HasSteamEffect takes unit u returns boolean
     local integer i = 0
     local integer j = 0
     local integer index
+    if u == null then
+        return false
+    endif
     loop
         exitwhen i >= MAX_REGIONS
         set j = 0
@@ -183,6 +201,9 @@ function RemoveSteamEffectUnit takes unit u returns nothing
     local integer i = 0
     local integer j = 0
     local integer index
+    if u == null then
+        return
+    endif
     loop
         exitwhen i >= MAX_REGIONS
         set j = 0
@@ -195,7 +216,6 @@ function RemoveSteamEffectUnit takes unit u returns nothing
                     set SteamEffects[index] = null
                 endif
                 set RandomUnits[index] = null
-                return
             endif
             set j = j + 1
         endloop
@@ -206,17 +226,14 @@ endfunction
 // Trigger to detect death and remove steam breath
 //===========================================================================
 function SteamBreath_Death takes nothing returns nothing
-    local unit u = GetTriggerUnit()
-    if HasSteamEffect(u) then
-        call RemoveSteamEffectUnit(u)
-    endif
+    local unit u = GetDyingUnit()
+    call RemoveSteamEffectUnit(u)
     set u = null
 endfunction
 
-function InitTrig_SteamBreathDeath takes nothing returns nothing
+private function Init takes nothing returns nothing
     // Register with centralized death event system
     call UnitDeathEvent_Register(function SteamBreath_Death)
-    // Note: Requires UnitDeathEvent library to be loaded first
 endfunction
 
 endlibrary
