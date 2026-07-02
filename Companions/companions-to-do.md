@@ -1,6 +1,6 @@
 # Companions / Pets JASS Migration To-Do
 
-Last updated: 2.7.2026
+Last updated: 3.7.2026
 
 This note tracks what was moved from the old GUI companion/pet triggers into `Companions.j` and `Pet.j`, what GUI state still remains intentionally shared, and what should wait for later AI and StatsBoard work.
 
@@ -120,6 +120,9 @@ Notes:
 - The old Shadowclaw invite/kick branches inside `Horde AI Companion Invite` and `Horde AI Companion Kick` are handled by `Pet.j`.
 - The old active mode triggers should stay disabled once the JASS libraries are active because `Companions.j` now owns normal companion/pet mode application and periodic orders directly.
 - `FollowSystem.j` is not full companion AI parity by itself. Quest escort or strict-close-follow NPCs can use it directly, and `Companions_SetEscortBehavior(unit, true)` opts a controlled unit into that leash behavior. Normal companions/pets stay on `Companions.j` for selected-unit mode control, combat posture, focus, idle/wander state, far-away IconQuery markers, information output, and shared GUI globals.
+- `Companions.j` now repairs stale GUI companion state by creating missing companion/focus groups and re-adding `udg_CompanionUnit[]` entries into `udg_Companion_Group` before command/order enumeration. This keeps systems like `CinematicMover` from seeing an empty companion group while StatsUI or arrays still show companions.
+- Companion command-card casts from companion-owned units now resolve through the real control player selection and can fall back to the casting companion/pet itself. This is required for Passive/Normal/Aggressive/Hold, Kick, Focus, Information, and Drop Items when the command-card unit is owned by Player 19/Mint.
+- Cinematic code can call `Companions_Halt(unit)`, `Companions_HaltAll()`, `Companions_Resume(unit)`, or `Companions_ResumeAll()` to stop/resume companion and pet orders without changing party membership.
 - `Companion Idle or Move` chat calls are intentionally not ported here; only the idle/wander state maintenance was moved.
 
 ## GUI Triggers To Keep For Now
@@ -152,7 +155,8 @@ Stats board / old multiboard:
 Behavior parity checks:
 - Validate that Passive, Normal, Aggressive, and Hold Position feel correct through `Companions.j`. The old GUI active triggers used periodic follow/right-click/attack-move orders; the new implementation keeps those normal companion/pet orders in `Companions.j` and only uses `FollowSystem.j` for explicit escort-profile quest cases.
 - Validate the new selected-unit mode behavior: selected companion/pet gets the mode alone; no selected controlled unit applies the mode to the full companion/pet group.
-- Validate Kick Companion through both explicit target casts and selected-unit fallback for companion and pet targets.
+- Validate Kick Companion through explicit target casts, selected-unit fallback, and companion/pet self command-card fallback.
+- Validate that `CinematicMover` sees invited companions through `udg_Companion_Group` after `Companions.j` repairs stale GUI state.
 - Validate the rebuilt `Companion Idle or Move` behavior in-game. `Companions.j` now adds/removes `Wander (Neutral)` and updates `udg_CompanionUnitIdle[]`; it also fixes the old GUI branch that cleared `CompanionUnitIdle[0]` instead of the picked unit custom value. Idle and moving chat barks still belong to the later AI library migration.
 - Validate the rebuilt `Companion Information` output in-game. `Companions.j` now restores the old name/type/attack/faction/stats/abilities categories and adds current mode/focus/life/mana/damage/armor. Exact long ability description text was not restored because the old GUI export only preserves those lines in truncated form.
 - Validate hired unit rawcodes and icon/level mappings in-game.
@@ -161,7 +165,8 @@ Pet-specific follow-up:
 - Confirm the intended differences for `Tame Beast II` and `Tame Beast III`; old GUI files were empty, so the current JASS implementation uses higher tame-level caps.
 - Confirm whether tame-channeling damage should also set a custom critical/feedback damage type. `Pet.j` currently preserves the old 1.75 damage multiplier but does not set the old `DamageTypeCriticalStrike` GUI value.
 - Confirm whether `udg_UnitHider_ReferenceGroup` still needs pet additions. The new libraries update `udg_UnitHider_ReferenceUnits[]`, but the old tame finish trigger also added the tamed beast to a UnitHider reference group.
-- Re-test Shadowclaw kick/reinvite, including the move back to `NazgrekIntroPoint`.
+- Re-test Shadowclaw kick/reinvite, including the move order back to `NazgrekIntroPoint` and the 120 second stuck fallback teleport.
+- Re-test StatsUI pet rows after kicking Shadowclaw or another pet; `StatsUI.j` now treats `udg_TamedUnit == null` as no current pet instead of displaying Shadowclaw through a fallback.
 - Re-test pet fatigue/revive timing and old multiboard display while `ReviveTimerPet` is running.
 
 Build/test follow-up:
