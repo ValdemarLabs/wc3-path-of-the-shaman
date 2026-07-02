@@ -70,35 +70,35 @@ Old multiboard hooks still called until `StatsBoardUI.j` replaces them:
 Disable these old GUI triggers to avoid double orders, double add/remove, or duplicate pet state changes. Their core gameplay logic is now owned by `Companions.j` or `Pet.j`.
 
 Companion control and follow state:
-- `Companion Passive Mode`
-- `Companion Passive Mode Active`
-- `Companion Normal Mode`
-- `Companion Normal Mode Active`
-- `Companion Aggressive Mode`
-- `Companion Aggressive Mode Active`
-- `Companion Hold Position`
-- `Companion Focus Set`
+- `Companion Passive Mode` -Disabled 2.7.2026
+- `Companion Passive Mode Active` -Disabled 2.7.2026
+- `Companion Normal Mode` -Disabled 2.7.2026
+- `Companion Normal Mode Active` -Disabled 2.7.2026
+- `Companion Aggressive Mode` -Disabled 2.7.2026
+- `Companion Aggressive Mode Active` -Disabled 2.7.2026
+- `Companion Hold Position` -Disabled 2.7.2026
+- `Companion Focus Set` -Disabled 2.7.2026
 
 Companion add/remove and hired units:
-- `Horde AI Companion Invite`
-- `Horde AI Companion Kick`
-- `Party Other Companion Invite`
-- `Party Other Companion Dies`
+- `Horde AI Companion Invite` -Disabled 2.7.2026
+- `Horde AI Companion Kick` -Disabled 2.7.2026
+- `Party Other Companion Invite` -Disabled 2.7.2026
+- `Party Other Companion Dies` -Disabled 2.7.2026
 
 Companion utility commands:
-- `Companion Drop Items`
+- `Companion Drop Items` -Disabled 2.7.2026
 
 Pet and tame flow:
-- `Shadowclaw Init`
-- `Tame Beast I Start`
-- `Tame Beast I Timer`
-- `Tame Beast I Stop`
-- `Tame Beast I Finish`
-- `Tame Beast ExtraDmg`
-- `Tame Beast Rename`
-- `Tamed Unit Dies`
-- `Tamed Unit Revival`
-- `Tamed Unit Heal Event and items`
+- `Shadowclaw Init` -Disabled 2.7.2026
+- `Tame Beast I Start` -Disabled 2.7.2026
+- `Tame Beast I Timer` -Disabled 2.7.2026
+- `Tame Beast I Stop` -Disabled 2.7.2026
+- `Tame Beast I Finish` -Disabled 2.7.2026
+- `Tame Beast ExtraDmg` -Disabled 2.7.2026
+- `Tame Beast Rename` -Disabled 2.7.2026
+- `Tamed Unit Dies` -Disabled 2.7.2026
+- `Tamed Unit Revival` -Disabled 2.7.2026
+- `Tamed Unit Heal Event and items` -Disabled 2.7.2026
 
 Notes:
 - `Tame Beast II` and `Tame Beast III` were empty GUI exports. `Pet.j` now handles their ability rawcodes as higher-rank tame spells.
