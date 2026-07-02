@@ -1,0 +1,11 @@
+Tame Beast ExtraDmg
+    Events
+        Game - DamageModifierEvent becomes Equal to 1.00
+    Conditions
+        Pet_TamerChanneling[(Custom value of DamageEventTarget)] Equal to True
+    Actions
+        --------   --------
+        -------- Extra DMG --------
+        --------   --------
+        Set VariableSet DamageEventAmount = (DamageEventAmount x 1.75)
+        Set VariableSet DamageEventType = DamageTypeCriticalStrike

@@ -1,0 +1,158 @@
+Companion Idle or Move
+    Events
+        Time - Every 10.00 seconds of game time
+    Conditions
+        InCinematic Not equal to True
+        Or - Any (Conditions) are true
+            Conditions
+                (Number of units in Companion_Group) Greater than 0
+                (Number of units in TamedUnits) Greater than 0
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in Companion_Group) Greater than 0
+            Then - Actions
+                Unit Group - Pick every unit in Companion_Group and do (Actions)
+                    Loop - Actions
+                        Set VariableSet CV = (Custom value of (Picked unit))
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                IsUnitAlive[CV] Equal to True
+                                UnitMoving[CV] Equal to False
+                                GCSM_UnitInCombat[CV] Equal to False
+                                CompanionDialogueActive Equal to False
+                            Then - Actions
+                                Unit - Add Wander (Neutral) to (Picked unit)
+                                Set VariableSet CompanionUnitIdle[CV] = True
+                                -------- ====================================================== --------
+                                -------- ================= --------
+                                -------- CHANCE FOR CHAT --------
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (Random integer number between 1 and 4) Equal to 1
+                                    Then - Actions
+                                        -------- CHAT FROM AI HERO --------
+                                        Set VariableSet Companion_Group_ChatUnit = (Random unit from Companion_Group)
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                Companion_Group_ChatUnit Equal to NPC_Horde_AI_Shaman
+                                            Then - Actions
+                                                Trigger - Run Horde NPC Chat Idle Restoshaman <gen> (checking conditions)
+                                            Else - Actions
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                Companion_Group_ChatUnit Equal to NPC_Horde_AI_Rogue
+                                            Then - Actions
+                                                Trigger - Run Horde NPC Chat Idle Rogue <gen> (checking conditions)
+                                            Else - Actions
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                Companion_Group_ChatUnit Equal to NPC_Horde_AI_Warlock
+                                            Then - Actions
+                                                Trigger - Run Horde NPC Chat Idle Warlock <gen> (checking conditions)
+                                            Else - Actions
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                Companion_Group_ChatUnit Equal to NPC_Horde_AI_Warrior
+                                            Then - Actions
+                                                Trigger - Run Horde NPC Chat Idle Warrior <gen> (checking conditions)
+                                            Else - Actions
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                Companion_Group_ChatUnit Equal to NPC_Neutral_Engineer
+                                            Then - Actions
+                                                Trigger - Run Horde NPC Chat Idle Engineer <gen> (checking conditions)
+                                            Else - Actions
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                Companion_Group_ChatUnit Equal to NPC_Riverbane_Paladin
+                                            Then - Actions
+                                                Trigger - Run Horde NPC Chat Idle Paladin <gen> (checking conditions)
+                                            Else - Actions
+                                        -------- ================= --------
+                                    Else - Actions
+                                -------- ================= --------
+                            Else - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (Level of Wander (Neutral) for (Picked unit)) Greater than 0
+                                    Then - Actions
+                                        Unit - Remove Wander (Neutral) from (Picked unit)
+                                        Set VariableSet CompanionUnitIdle[0] = False
+                                    Else - Actions
+                                -------- ====================================================== --------
+                                -------- ================= --------
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        GCSM_UnitInCombat[CV] Equal to False
+                                        CompanionDialogueActive Equal to False
+                                    Then - Actions
+                                        -------- CHANCE FOR CHAT --------
+                                        -------- while moving --------
+                                        -------- and not in combat --------
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                (Random integer number between 1 and 4) Equal to 1
+                                            Then - Actions
+                                                -------- CHAT FROM AI HERO --------
+                                                Set VariableSet Companion_Group_ChatUnit = (Random unit from Companion_Group)
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        Companion_Group_ChatUnit Equal to NPC_Horde_AI_Shaman
+                                                    Then - Actions
+                                                        Trigger - Run Horde NPC Chat Moving Restoshaman <gen> (checking conditions)
+                                                    Else - Actions
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        Companion_Group_ChatUnit Equal to NPC_Horde_AI_Rogue
+                                                    Then - Actions
+                                                        Trigger - Run Horde NPC Chat Moving Rogue <gen> (checking conditions)
+                                                    Else - Actions
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        Companion_Group_ChatUnit Equal to NPC_Horde_AI_Warlock
+                                                    Then - Actions
+                                                        Trigger - Run Horde NPC Chat Moving Warlock <gen> (checking conditions)
+                                                    Else - Actions
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        Companion_Group_ChatUnit Equal to NPC_Horde_AI_Warrior
+                                                    Then - Actions
+                                                        Trigger - Run Horde NPC Chat Moving Warrior <gen> (checking conditions)
+                                                    Else - Actions
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        Companion_Group_ChatUnit Equal to NPC_Neutral_Engineer
+                                                    Then - Actions
+                                                        Trigger - Run Horde NPC Chat Moving Engineer <gen> (checking conditions)
+                                                    Else - Actions
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        Companion_Group_ChatUnit Equal to NPC_Riverbane_Paladin
+                                                    Then - Actions
+                                                        Trigger - Run Horde NPC Chat Moving Paladin <gen> (checking conditions)
+                                                    Else - Actions
+                                                -------- ================= --------
+                                            Else - Actions
+                                        -------- ================= --------
+                                        -------- ================= --------
+                                    Else - Actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in TamedUnits) Greater than 0
+            Then - Actions
+                Unit Group - Pick every unit in TamedUnits and do (Actions)
+                    Loop - Actions
+                        Set VariableSet CV = (Custom value of (Picked unit))
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                IsUnitAlive[CV] Equal to True
+                                UnitMoving[CV] Equal to False
+                            Then - Actions
+                                Unit - Add Wander (Neutral) to (Picked unit)
+                                Set VariableSet CompanionUnitIdle[CV] = True
+                            Else - Actions
+                                Unit - Remove Wander (Neutral) from (Picked unit)
+                                Set VariableSet CompanionUnitIdle[CV] = False
+            Else - Actions

@@ -1,0 +1,61 @@
+NPC Ability Array
+    Events
+        Map initialization
+    Conditions
+    Actions
+        -------- Ability Array Setup (For leveling up) --------
+        -------- note: only abilities that have more than 1 level! --------
+        -------- WARLOCK --------
+        Set VariableSet HeroWarlockAbilities[1] = HeroWarlock_Banish 
+        Set VariableSet HeroWarlockAbilities[2] = HeroWarlock_CurseOfAgony 
+        Set VariableSet HeroWarlockAbilities[3] = HeroWarlock_Fear 
+        Set VariableSet HeroWarlockAbilities[4] = HeroWarlock_LifeDrain 
+        Set VariableSet HeroWarlockAbilities[5] = HeroWarlock_RainOfFire 
+        Set VariableSet HeroWarlockAbilities[6] = HeroWarlock_ShadowBolt 
+        Set VariableSet HeroWarlockAbilities[7] = HeroWarlock_SummonImp 
+        -------- WARRIOR --------
+        Set VariableSet HeroWarriorAbilities[1] = HeroWarrior_BattleShout 
+        Set VariableSet HeroWarriorAbilities[2] = HeroWarrior_Charge 
+        Set VariableSet HeroWarriorAbilities[3] = HeroWarrior_HeroicStrike 
+        Set VariableSet HeroWarriorAbilities[4] = HeroWarrior_Rend 
+        Set VariableSet HeroWarriorAbilities[5] = HeroWarrior_SunderArmor 
+        Set VariableSet HeroWarriorAbilities[6] = HeroWarrior_ThunderClap 
+        Set VariableSet HeroWarriorAbilities[7] = HeroWarrior_Retaliation 
+        Set VariableSet HeroWarriorAbilities[8] = HeroWarrior_Recklessness 
+        -------- ROGUE --------
+        Set VariableSet HeroRogueAbilities[1] = HeroRogue_Evasion 
+        Set VariableSet HeroRogueAbilities[2] = HeroRogue_Garrote 
+        Set VariableSet HeroRogueAbilities[3] = HeroRogue_Shadowstep 
+        Set VariableSet HeroRogueAbilities[4] = HeroRogue_SinisterStrike 
+        Set VariableSet HeroRogueAbilities[5] = HeroRogue_SliceAndDice 
+        Set VariableSet HeroRogueAbilities[6] = HeroRogue_SurpriseAttack 
+        Set VariableSet HeroRogueAbilities[7] = HeroRogue_ToxicVenom 
+        Set VariableSet HeroRogueAbilities[8] = HeroRogue_ToxicVenom 
+        -------- SHAMAN --------
+        Set VariableSet HeroShamanAbilities[1] = HeroShaman_ChainHeal 
+        Set VariableSet HeroShamanAbilities[2] = HeroShaman_ChainLightning 
+        Set VariableSet HeroShamanAbilities[3] = HeroShaman_Channel_TotemEarth 
+        Set VariableSet HeroShamanAbilities[4] = HeroShaman_Channel_TotemEarthbind 
+        Set VariableSet HeroShamanAbilities[5] = HeroShaman_Channel_TotemFire 
+        Set VariableSet HeroShamanAbilities[6] = HeroShaman_Channel_TotemStoneskin 
+        Set VariableSet HeroShamanAbilities[7] = HeroShaman_Channel_TotemWater 
+        Set VariableSet HeroShamanAbilities[8] = HeroShaman_Channel_TotemWind 
+        Set VariableSet HeroShamanAbilities[9] = HeroShaman_Channel_TotemWindfury 
+        Set VariableSet HeroShamanAbilities[10] = HeroShaman_HealingWave 
+        Set VariableSet HeroShamanAbilities[11] = HeroShaman_Hex 
+        Set VariableSet HeroShamanAbilities[12] = HeroShaman_LightningBolt 
+        -------- PALADIN --------
+        Set VariableSet HeroPaladinAbilities[1] = HeroPaladin_DivineShield 
+        Set VariableSet HeroPaladinAbilities[2] = HeroPaladin_HolyLight 
+        Set VariableSet HeroPaladinAbilities[3] = HeroPaladin_InnerFire 
+        Set VariableSet HeroPaladinAbilities[4] = HeroPaladin_JudgementStrike 
+        Set VariableSet HeroPaladinAbilities[5] = HeroPaladin_LayOnHands 
+        -------- ENGINEER --------
+        Set VariableSet HeroEngineerAbilities[1] = HeroEngineerShredder_ClusterRockets 
+        Set VariableSet HeroEngineerAbilities[2] = HeroEngineerShredder_Shred 
+        Set VariableSet HeroEngineerAbilities[3] = HeroEngineerShredder_Slam 
+        Set VariableSet HeroEngineerAbilities[4] = HeroEngineer_Drone 
+        Set VariableSet HeroEngineerAbilities[5] = HeroEngineer_Grenade 
+        Set VariableSet HeroEngineerAbilities[6] = HeroEngineer_MechanicalConstruct 
+        Set VariableSet HeroEngineerAbilities[7] = HeroEngineer_SmokeBomb 
+        Set VariableSet HeroEngineerAbilities[8] = HeroEngineer_Turret 

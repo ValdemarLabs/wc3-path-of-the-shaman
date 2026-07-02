@@ -1,0 +1,55 @@
+Companion Passive Mode
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to Passive Mode 
+    Actions
+        Sound - Play GoodJob <gen>
+        -------- Turn off other Modes --------
+        Trigger - Turn off Companion Aggressive Mode Active <gen>
+        Trigger - Turn off Companion Normal Mode Active <gen>
+        Trigger - Turn on Companion Passive Mode Active <gen>
+        -------- Start current mode --------
+        Game - Display to (All players) the text: Companions: Passive...
+        Trigger - Run Companion Passive Mode Active <gen> (checking conditions)
+        -------- ====================================================== --------
+        -------- ================= --------
+        -------- CHAT FROM AI HERO --------
+        Set VariableSet Companion_Group_ChatUnit = (Random unit from Companion_Group)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Companion_Group_ChatUnit Equal to NPC_Horde_AI_Shaman
+            Then - Actions
+                Trigger - Run Horde NPC Chat Passive Restoshaman <gen> (checking conditions)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Companion_Group_ChatUnit Equal to NPC_Horde_AI_Rogue
+            Then - Actions
+                Trigger - Run Horde NPC Chat Passive Rogue <gen> (checking conditions)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Companion_Group_ChatUnit Equal to NPC_Horde_AI_Warlock
+            Then - Actions
+                Trigger - Run Horde NPC Chat Passive Warlock <gen> (checking conditions)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Companion_Group_ChatUnit Equal to NPC_Horde_AI_Warrior
+            Then - Actions
+                Trigger - Run Horde NPC Chat Passive Warrior <gen> (checking conditions)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Companion_Group_ChatUnit Equal to NPC_Neutral_Engineer
+            Then - Actions
+                Trigger - Run Horde NPC Chat Passive Engineer <gen> (checking conditions)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Companion_Group_ChatUnit Equal to NPC_Riverbane_Paladin
+            Then - Actions
+                Trigger - Run Horde NPC Chat Passive Paladin <gen> (checking conditions)
+            Else - Actions
+        -------- ================= --------

@@ -1,0 +1,18 @@
+NPC Pick Items
+    Events
+        Unit - A unit Dies
+    Conditions
+        ((Killing unit) is A Hero) Equal to True
+        (Owner of (Killing unit)) Equal to Player 2 (Blue)
+    Actions
+        -------- =================================== --------
+        -------- ALL AI Players / Unit groups will pick items from units they have killed --------
+        -------- =================================== --------
+        Set VariableSet NPC_TempPoint = (Position of (Dying unit))
+        Set VariableSet NPC_TempRegion = (Region centered at NPC_TempPoint with size (1000.00, 1000.00))
+        -------- =================================== --------
+        Item - Pick every item in NPC_TempRegion and do (Unit - Order (Killing unit) to Right-Click (Picked item))
+        -------- =================================== --------
+        Custom script:   call RemoveLocation(udg_NPC_TempPoint)
+        Custom script:   call RemoveRect(udg_NPC_TempRegion)
+        -------- =================================== --------

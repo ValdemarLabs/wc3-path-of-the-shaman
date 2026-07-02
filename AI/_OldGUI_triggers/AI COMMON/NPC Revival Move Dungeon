@@ -1,0 +1,54 @@
+NPC Revival Move Dungeon
+    Events
+        Game - DeathEvent becomes Equal to 2.00
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (UDexUnits[UDex] is in Companion_Group.) Equal to True
+                (UDexUnits[UDex] is in TamedUnits.) Equal to True
+        Or - Any (Conditions) are true
+            Conditions
+                InDungeon_Crypt Equal to True
+                InDungeon_DragonDen Equal to True
+                InDungeon_Firelands Equal to True
+                InDungeon_GnollHideout Equal to True
+                InDungeon_TrollTemple Equal to True
+    Actions
+        Set VariableSet NPC_DungeonReturnUnit = UDexUnits[UDex]
+        -------- ===================================== --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                InDungeon_Crypt Equal to True
+            Then - Actions
+                -------- ================== CRYPT =================== --------
+                Set VariableSet VarPoint = (Center of DungeonCrypt01B <gen>)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                InDungeon_DragonDen Equal to True
+            Then - Actions
+                -------- ================== DRAGON DEN =================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                InDungeon_Firelands Equal to True
+            Then - Actions
+                -------- ================== FIRELANDS =================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                InDungeon_GnollHideout Equal to True
+            Then - Actions
+                -------- ================== GNOLL HIDEOUT =================== --------
+                Set VariableSet VarPoint = (Center of EnteringDungeon01 <gen>)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                InDungeon_TrollTemple Equal to True
+            Then - Actions
+                -------- ================== TROLL TEMPLE =================== --------
+            Else - Actions
+        -------- ===================================== --------
+        Unit - Order NPC_DungeonReturnUnit to Move To VarPoint
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- ===================================== --------

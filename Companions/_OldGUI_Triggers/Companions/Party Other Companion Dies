@@ -1,0 +1,13 @@
+Party Other Companion Dies
+    Events
+        Unit - A unit Dies
+    Conditions
+        ((Triggering unit) is in Companion_Group.) Equal to True
+        ((Triggering unit) is A Hero) Not equal to True
+        (Triggering unit) Not equal to Valeria
+        (Triggering unit) Not equal to Aradion
+    Actions
+        Unit Group - Remove (Triggering unit) from Companion_Group.
+        Set VariableSet CompanionUnitKicked = (Triggering unit)
+        Set VariableSet UnitHider_ReferenceUnits[(Custom value of (Triggering unit))] = (Triggering unit)
+        Trigger - Run MultiboardUpdate Remove Companion <gen> (checking conditions)

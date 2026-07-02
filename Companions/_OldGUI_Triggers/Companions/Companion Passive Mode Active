@@ -1,0 +1,45 @@
+Companion Passive Mode Active
+    Events
+        Time - Every 2.00 seconds of game time
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Number of units in Companion_Group) Greater than 0
+                (Number of units in TamedUnits) Greater than 0
+    Actions
+        -------- ===================================== --------
+        -------- FOCUS NAZGREK GROUP --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in CompanionFocusNazgrek) Greater than 0
+            Then - Actions
+                Unit Group - Pick every unit in CompanionFocusNazgrek and do (Actions)
+                    Loop - Actions
+                        Set VariableSet CV = (Custom value of (Picked unit))
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                IsUnitAlive[CV] Equal to True
+                                UnitIsCasting[CV] Equal to False
+                                (Current order of (Picked unit)) Not equal to (Order(follow))
+                            Then - Actions
+                                Unit - Order (Picked unit) to Follow Nazgrek
+                            Else - Actions
+            Else - Actions
+        -------- ===================================== --------
+        -------- FOCUS ZULKIS GROUP --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in CompanionFocusZulkis) Greater than 0
+            Then - Actions
+                Unit Group - Pick every unit in CompanionFocusZulkis and do (Actions)
+                    Loop - Actions
+                        Set VariableSet CV = (Custom value of (Picked unit))
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                IsUnitAlive[CV] Equal to True
+                                UnitIsCasting[CV] Equal to False
+                                (Current order of (Picked unit)) Not equal to (Order(follow))
+                            Then - Actions
+                                Unit - Order (Picked unit) to Follow Zulkis
+                            Else - Actions
+            Else - Actions

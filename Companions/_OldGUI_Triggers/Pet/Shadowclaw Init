@@ -1,0 +1,28 @@
+Shadowclaw Init
+    Events
+        Time - Elapsed game time is 2.00 seconds
+    Conditions
+    Actions
+        Set VariableSet Pet_Dead = False
+        Set VariableSet Shadowclaw = Shadowclaw 0835 <gen>
+        Unit Group - Add Shadowclaw to TamedUnits
+        Unit Group - Add Shadowclaw to CompanionFocusNazgrek
+        Set VariableSet TamedUnit = Shadowclaw
+        -------- UNIT HIDER --------
+        -------- Store Base values --------
+        Set VariableSet Shadowclaw_hp_base = (Max HP of Shadowclaw)
+        Set VariableSet Shadowclaw_armor_base = (Armor of Shadowclaw)
+        Set VariableSet Shadowclaw_dmg_base = (Base Damage of Shadowclaw for weapon index 0)
+        -------- Set hp --------
+        Set VariableSet Shadowclaw_hp = (Shadowclaw_hp_base + (Integer(((Max life of Nazgrek) x 0.75))))
+        Unit - Set Max HP of Shadowclaw to Shadowclaw_hp
+        -------- Set armor --------
+        Set VariableSet Shadowclaw_armor = (Shadowclaw_armor_base + ((Armor of Nazgrek) x 0.80))
+        Unit - Set Armor of Shadowclaw to Shadowclaw_armor
+        -------- Set dmg --------
+        Set VariableSet Shadowclaw_dmg = (Shadowclaw_dmg_base + (Integer(((Real((Base Damage of Nazgrek for weapon index 0))) x 0.75))))
+        Unit - Set Base Damage of Shadowclaw to Shadowclaw_dmg for weapon index: 0
+        -------- Experience --------
+        Custom script:   call UnitExperience_RegisterUnit(udg_Shadowclaw)
+        -------- Multiboard --------
+        Trigger - Run MultiboardUpdate Add Tamed <gen> (ignoring conditions)

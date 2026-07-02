@@ -1,0 +1,7 @@
+Tame Beast I Timer
+    Events
+        Time - TM_Timer expires
+    Conditions
+    Actions
+        Set VariableSet TM_TimerFinished = True
+        Set VariableSet Pet_TamerChanneling[TM_Value] = False

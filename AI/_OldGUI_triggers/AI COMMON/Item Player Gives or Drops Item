@@ -1,0 +1,7 @@
+Item Player Gives or Drops item
+    Events
+        Unit - A unit Loses an item
+    Conditions
+        (Owner of (Triggering unit)) Equal to Player 1 (Red)
+    Actions
+        Set VariableSet LastDroppedItem = (Item being manipulated)

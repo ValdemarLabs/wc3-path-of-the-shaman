@@ -1,0 +1,70 @@
+Companion Hold Position
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to Hold Position 
+    Actions
+        Sound - Play GoodJob <gen>
+        -------- Turn off other Modes --------
+        Trigger - Turn off Companion Passive Mode Active <gen>
+        Trigger - Turn off Companion Normal Mode Active <gen>
+        Trigger - Turn off Companion Aggressive Mode Active <gen>
+        -------- Hold position --------
+        Game - Display to (All players) the text: Companions: Hold Po...
+        Unit Group - Pick every unit in Companion_Group and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ((Picked unit) is alive) Equal to True
+                    Then - Actions
+                        Unit - Order (Picked unit) to Hold Position.
+                    Else - Actions
+        Unit Group - Pick every unit in TamedUnits and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ((Picked unit) is alive) Equal to True
+                    Then - Actions
+                        Unit - Order (Picked unit) to Hold Position.
+                    Else - Actions
+        -------- ====================================================== --------
+        -------- ================= --------
+        -------- CHAT FROM AI HERO --------
+        Set VariableSet Companion_Group_ChatUnit = (Random unit from Companion_Group)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Companion_Group_ChatUnit Equal to NPC_Horde_AI_Shaman
+            Then - Actions
+                Trigger - Run Horde NPC Chat Hold Positions Restoshaman <gen> (checking conditions)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Companion_Group_ChatUnit Equal to NPC_Horde_AI_Rogue
+            Then - Actions
+                Trigger - Run Horde NPC Chat Hold Positions Rogue <gen> (checking conditions)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Companion_Group_ChatUnit Equal to NPC_Horde_AI_Warlock
+            Then - Actions
+                Trigger - Run Horde NPC Chat Hold Positions Warlock <gen> (checking conditions)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Companion_Group_ChatUnit Equal to NPC_Horde_AI_Warrior
+            Then - Actions
+                Trigger - Run Horde NPC Chat Hold Positions Warrior <gen> (checking conditions)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Companion_Group_ChatUnit Equal to NPC_Neutral_Engineer
+            Then - Actions
+                Trigger - Run Horde NPC Chat Hold Positions Engineer <gen> (checking conditions)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Companion_Group_ChatUnit Equal to NPC_Riverbane_Paladin
+            Then - Actions
+                Trigger - Run Horde NPC Chat Hold Positions Paladin <gen> (checking conditions)
+            Else - Actions
+        -------- ================= --------

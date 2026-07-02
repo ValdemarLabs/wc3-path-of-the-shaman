@@ -1,0 +1,65 @@
+NPC Ability Learn
+    Events
+        Unit - A unit Gains a level
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Unit-type of (Triggering unit)) Equal to Warlock (Companion)
+                (Unit-type of (Triggering unit)) Equal to Rogue (Companion)
+                (Unit-type of (Triggering unit)) Equal to Restoration Shaman (Companion)
+                (Unit-type of (Triggering unit)) Equal to Tauren Warrior (Companion)
+                (Unit-type of (Triggering unit)) Equal to Paladin (Companion)
+                (Unit-type of (Triggering unit)) Equal to Engineer
+                (Unit-type of (Triggering unit)) Equal to Engineer (Shredder)
+    Actions
+        Set VariableSet CV = (Custom value of (Triggering unit))
+        Set VariableSet RandNumberAbility = (Random integer number between 1 and 7)
+        -------- Check And Increase Ability Level --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of (Triggering unit)) Equal to Warlock (Companion)
+            Then - Actions
+                -------- WARLOCK --------
+                Set VariableSet HeroSelectedAbility = HeroWarlockAbilities[RandNumberAbility]
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of (Triggering unit)) Equal to Rogue (Companion)
+            Then - Actions
+                -------- ROGUE --------
+                Set VariableSet HeroSelectedAbility = HeroRogueAbilities[RandNumberAbility]
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of (Triggering unit)) Equal to Restoration Shaman (Companion)
+            Then - Actions
+                -------- SHAMAN --------
+                Set VariableSet HeroSelectedAbility = HeroShamanAbilities[RandNumberAbility]
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of (Triggering unit)) Equal to Tauren Warrior (Companion)
+            Then - Actions
+                -------- WARRIOR --------
+                Set VariableSet HeroSelectedAbility = HeroWarriorAbilities[RandNumberAbility]
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of (Triggering unit)) Equal to Paladin (Companion)
+            Then - Actions
+                -------- PALADIN --------
+                Set VariableSet HeroSelectedAbility = HeroPaladinAbilities[RandNumberAbility]
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Unit-type of (Triggering unit)) Equal to Engineer
+                        (Unit-type of (Triggering unit)) Equal to Engineer (Shredder)
+            Then - Actions
+                -------- ENGINEER --------
+                Set VariableSet HeroSelectedAbility = HeroEngineerAbilities[RandNumberAbility]
+            Else - Actions
+        -------- ============================= --------
+        Unit - Set level of HeroSelectedAbility for (Triggering unit) to ((Level of HeroSelectedAbility for (Triggering unit)) + 1)
+        -------- ============================= --------

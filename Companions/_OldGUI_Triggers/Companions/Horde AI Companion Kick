@@ -1,0 +1,153 @@
+Horde AI Companion Kick
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to Kick Companion 
+        Or - Any (Conditions) are true
+            Conditions
+                ((Target unit of ability being cast) is in Companion_Group.) Equal to True
+                ((Target unit of ability being cast) is in TamedUnits.) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        Set VariableSet CompanionUnitKicked = (Target unit of ability being cast)
+        Sound - Play UpkeepRing <gen>
+        Set VariableSet PartyKickVoice = (Random integer number between 1 and 3)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                PartyKickVoice Equal to 1
+            Then - Actions
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0002 <gen> and display Farewell for now, u....  Modify duration: Set to 3.00 seconds and Don't wait
+            Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        PartyKickVoice Equal to 2
+                    Then - Actions
+                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0003 <gen> and display It’s been a pleas....  Modify duration: Set to 3.00 seconds and Don't wait
+                    Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                PartyKickVoice Equal to 3
+                            Then - Actions
+                                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0004 <gen> and display Until our paths cro....  Modify duration: Set to 3.00 seconds and Don't wait
+                            Else - Actions
+        Wait 3.50 seconds
+        -------- ========= Hero companions --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                CompanionUnitKicked Equal to NPC_Horde_AI_Rogue
+            Then - Actions
+                Game - Display to (All players) the text: ((Proper name of CompanionUnitKicked) +  has been kicked from the party!)
+                Unit - Change ownership of CompanionUnitKicked to Player 6 (Orange) and Retain color
+                Trigger - Run Horde NPC Chat Kicked Rogue <gen> (checking conditions)
+            Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        CompanionUnitKicked Equal to NPC_Horde_AI_Warlock
+                    Then - Actions
+                        Game - Display to (All players) the text: ((Proper name of CompanionUnitKicked) +  has been kicked from the party!)
+                        Unit - Change ownership of CompanionUnitKicked to Player 6 (Orange) and Retain color
+                        Trigger - Run Horde NPC Chat Kicked Warlock <gen> (checking conditions)
+                    Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                CompanionUnitKicked Equal to NPC_Horde_AI_Shaman
+                            Then - Actions
+                                Game - Display to (All players) the text: ((Proper name of CompanionUnitKicked) +  has been kicked from the party!)
+                                Unit - Change ownership of CompanionUnitKicked to Player 6 (Orange) and Retain color
+                                Trigger - Run Horde NPC Chat Kicked Restoshaman <gen> (checking conditions)
+                            Else - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        CompanionUnitKicked Equal to NPC_Horde_AI_Warrior
+                                    Then - Actions
+                                        Game - Display to (All players) the text: ((Proper name of CompanionUnitKicked) +  has been kicked from the party!)
+                                        Unit - Change ownership of CompanionUnitKicked to Player 6 (Orange) and Retain color
+                                        Trigger - Run Horde NPC Chat Kicked Warrior <gen> (checking conditions)
+                                    Else - Actions
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                CompanionUnitKicked Equal to NPC_Neutral_Engineer
+                                            Then - Actions
+                                                Game - Display to (All players) the text: ((Proper name of CompanionUnitKicked) +  has been kicked from the party!)
+                                                Unit - Change ownership of CompanionUnitKicked to Player 7 (Green) and Retain color
+                                                Trigger - Run Horde NPC Chat Kicked Engineer <gen> (checking conditions)
+                                            Else - Actions
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        CompanionUnitKicked Equal to NPC_Riverbane_Paladin
+                                                    Then - Actions
+                                                        Game - Display to (All players) the text: ((Proper name of CompanionUnitKicked) +  has been kicked from the party!)
+                                                        Unit - Change ownership of CompanionUnitKicked to Player 15 (Turquoise) and Retain color
+                                                        Trigger - Run Horde NPC Chat Kicked Paladin <gen> (checking conditions)
+                                                    Else - Actions
+        -------- ========= Remove Companion from the group --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (CompanionUnitKicked is in Companion_Group.) Equal to True
+                (CompanionUnitKicked is A Hero) Equal to True
+            Then - Actions
+                Unit - Order CompanionUnitKicked to Stop.
+                Game - Display to (All players) the text: (Debug Kick:  + (Kicked from Companion_Group:  + (Proper name of CompanionUnitKicked)))
+                Unit Group - Remove CompanionUnitKicked from Companion_Group.
+                Unit Group - Remove CompanionUnitKicked from CompanionFocusNazgrek.
+                Unit Group - Remove CompanionUnitKicked from CompanionFocusZulkis.
+                Trigger - Run MultiboardUpdate Remove Companion <gen> (checking conditions)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of Wander (Neutral) for CompanionUnitKicked) Greater than 0
+                    Then - Actions
+                        Unit - Remove Wander (Neutral) from CompanionUnitKicked
+                    Else - Actions
+            Else - Actions
+        -------- ========= Tamed unit --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (CompanionUnitKicked is in TamedUnits.) Equal to True
+            Then - Actions
+                Game - Display to (All players) the text: ((Name of CompanionUnitKicked) +  is no longer your beast and will not following you!)
+                -------- Disable XP for the unit --------
+                Custom script:   call UnitExperience_DisableXP(udg_TamedUnit, true)
+                -------- - --------
+                Unit Group - Remove CompanionUnitKicked from TamedUnits.
+                Unit Group - Remove CompanionUnitKicked from CompanionFocusNazgrek.
+                Unit Group - Remove CompanionUnitKicked from CompanionFocusZulkis.
+                Unit - Order CompanionUnitKicked to Stop.
+                Unit - Change ownership of CompanionUnitKicked to Neutral Passive and Retain color
+                Unit - Add Wander (Neutral) to CompanionUnitKicked
+                Trigger - Run MultiboardUpdate Remove Tamed <gen> (checking conditions)
+                Custom script:   call UnitExperience_DisableXP(udg_TamedUnit, true)
+                Set VariableSet TamedUnit = No unit
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        CompanionUnitKicked Equal to Shadowclaw
+                    Then - Actions
+                        -------- IF SHADOWCLAW --------
+                        Unit - Make Shadowclaw Invulnerable
+                        Unit - Change ownership of CompanionUnitKicked to Player 19 (Mint) and Retain color
+                        Set VariableSet VarPoint = (Center of NazgrekIntroPoint <gen>)
+                        Unit - Order Shadowclaw to Move To VarPoint
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+                    Else - Actions
+            Else - Actions
+        -------- ========= Regular unit --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (CompanionUnitKicked is in Companion_Group.) Equal to True
+                (CompanionUnitKicked is A Hero) Not equal to True
+            Then - Actions
+                Unit - Order CompanionUnitKicked to Stop.
+                Unit Group - Remove CompanionUnitKicked from Companion_Group.
+                Unit Group - Remove CompanionUnitKicked from CompanionFocusNazgrek.
+                Unit Group - Remove CompanionUnitKicked from CompanionFocusZulkis.
+                Game - Display to (All players) the text: ((Name of CompanionUnitKicked) +  has been kicked from the party!)
+                Set VariableSet CompVarPoint = (Random point in (Playable map area))
+                Unit - Order CompanionUnitKicked to Attack-Move To CompVarPoint
+                Unit - Add a 60.00 second Generic expiration timer to CompanionUnitKicked
+                Custom script:   call RemoveLocation(udg_CompVarPoint)
+                Trigger - Run MultiboardUpdate Remove Companion <gen> (checking conditions)
+            Else - Actions
+        -------- ========= ===================== --------
+        -------- ========= TURN ON trigger --------
+        Wait 1.50 seconds
+        Trigger - Turn on (This trigger)
+        -------- ========= ===================== --------

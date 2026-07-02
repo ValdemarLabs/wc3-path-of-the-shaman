@@ -1,0 +1,11 @@
+NPC Chat Dialogue
+    Events
+        Time - CompanionDialogueTimer expires
+    Conditions
+    Actions
+        -------- ================================= --------
+        -------- ALL companio chats will start CompanionDialogueTimer (specific time set in each trigger) AND CompanionDialogueActive = true,  --------
+        -------- during this time other companion may NOT start chat --------
+        -------- ================================= --------
+        Set VariableSet CompanionDialogueActive = False
+        -------- ================================= --------

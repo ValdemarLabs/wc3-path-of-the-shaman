@@ -1,0 +1,54 @@
+Tame Beast I Start
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to Tame Beast I
+        Or - Any (Conditions) are true
+            Conditions
+                (Unit-type of (Target unit of ability being cast)) Equal to Pig (Level 5)
+                (Unit-type of (Target unit of ability being cast)) Equal to Timber Wolf (Level 2)
+                (Unit-type of (Target unit of ability being cast)) Equal to Giant Wolf (Level 4)
+                (Unit-type of (Target unit of ability being cast)) Equal to Dire Wolf (Level 5)
+                (Unit-type of (Target unit of ability being cast)) Equal to Stag (Level 1)
+                (Unit-type of (Target unit of ability being cast)) Equal to Stag (Level 5)
+                (Unit-type of (Target unit of ability being cast)) Equal to Stag (Level 10)
+                (Unit-type of (Target unit of ability being cast)) Equal to Bear Cub
+                (Unit-type of (Target unit of ability being cast)) Equal to Bear
+                (Unit-type of (Target unit of ability being cast)) Equal to Ferocious Bear
+                (Unit-type of (Target unit of ability being cast)) Equal to Mother Bear
+                (Unit-type of (Target unit of ability being cast)) Equal to Panther Club (Level 2)
+                (Unit-type of (Target unit of ability being cast)) Equal to Panther (Level 10)
+                (Unit-type of (Target unit of ability being cast)) Equal to Panther (Level 15)
+                (Unit-type of (Target unit of ability being cast)) Equal to Tiger (Level 2)
+                (Unit-type of (Target unit of ability being cast)) Equal to Tiger (Level 10)
+                (Unit-type of (Target unit of ability being cast)) Equal to Tiger (Level 15)
+                (Unit-type of (Target unit of ability being cast)) Equal to Sea Turtle (Level 10)
+                (Unit-type of (Target unit of ability being cast)) Equal to Giant Sea Turtle (Level 15)
+                (Unit-type of (Target unit of ability being cast)) Equal to Giant Moth (Level 12)
+                (Unit-type of (Target unit of ability being cast)) Equal to Lynx (Level 5)
+    Actions
+        Set VariableSet VarPoint = (Position of (Triggering unit))
+        Unit - Order (Target unit of ability being cast) to Attack-Move To VarPoint
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in TamedUnits) Greater than or equal to 1
+            Then - Actions
+                -------- More than 1 beast tamed already --------
+                Game - Display to (All players) the text: You already have a ...
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Level of (Target unit of ability being cast)) Greater than (Hero level of (Triggering unit))
+            Then - Actions
+                -------- Too High LVL --------
+                Game - Display to (All players) the text: The beast is too hi...
+                Skip remaining actions
+            Else - Actions
+                -------- Otherwise allow taming --------
+                Set VariableSet TM_Value = (Custom value of (Triggering unit))
+                Set VariableSet Pet_Tamer[TM_Value] = (Triggering unit)
+                Set VariableSet Pet_TamerChanneling[TM_Value] = True
+                Set VariableSet UDexUnits[TM_Value] = (Target unit of ability being cast)
+                Countdown Timer - Start TM_Timer as a One-shot timer that will expire in 10.00 seconds

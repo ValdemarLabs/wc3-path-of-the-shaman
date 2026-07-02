@@ -1,0 +1,90 @@
+Companion Normal Mode Active
+    Events
+        Time - Every 2.00 seconds of game time
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Number of units in Companion_Group) Greater than 0
+                (Number of units in TamedUnits) Greater than 0
+    Actions
+        -------- ===================================== --------
+        -------- FOCUS NAZGREK GROUP --------
+        Set VariableSet CompVarPoint = (Position of Nazgrek)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in CompanionFocusNazgrek) Greater than 0
+            Then - Actions
+                Unit Group - Pick every unit in CompanionFocusNazgrek and do (Actions)
+                    Loop - Actions
+                        Set VariableSet CV = (Custom value of (Picked unit))
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                IsUnitAlive[CV] Equal to True
+                                UnitIsCasting[CV] Equal to False
+                                GCSM_UnitInCombat[CV] Equal to False
+                                UnitMoving[CV] Equal to False
+                                CompanionUnitIdle[CV] Equal to False
+                            Then - Actions
+                                Set VariableSet CompVarAngle = (Random angle)
+                                Set VariableSet CompVarDistance = (Random real number between 100.00 and 300.00)
+                                Set VariableSet CompVarTarget = (CompVarPoint offset by CompVarDistance towards CompVarAngle degrees.)
+                                Unit - Order (Picked unit) to Attack-Move To CompVarTarget
+                                Custom script:   call RemoveLocation(udg_CompVarTarget)
+                            Else - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        IsUnitAlive[CV] Equal to True
+                                        UnitIsCasting[CV] Equal to False
+                                        (Current order of (Picked unit)) Not equal to (Order(smart))
+                                        Or - Any (Conditions) are true
+                                            Conditions
+                                                GCSM_UnitInCombat[(Custom value of Nazgrek)] Equal to True
+                                                (Distance between (Position of (Picked unit)) and (Position of Nazgrek)) Greater than or equal to 600.00
+                                    Then - Actions
+                                        Unit - Order (Picked unit) to Right-Click Nazgrek
+                                    Else - Actions
+            Else - Actions
+        -------- ===================================== --------
+        -------- Remove LEAKS --------
+        Custom script:   call RemoveLocation(udg_CompVarPoint)
+        -------- ===================================== --------
+        -------- FOCUS ZULKIS GROUP --------
+        Set VariableSet CompVarPoint2 = (Position of Zulkis)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in CompanionFocusZulkis) Greater than 0
+            Then - Actions
+                Unit Group - Pick every unit in CompanionFocusZulkis and do (Actions)
+                    Loop - Actions
+                        Set VariableSet CV = (Custom value of (Picked unit))
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                IsUnitAlive[CV] Equal to True
+                                UnitIsCasting[CV] Equal to False
+                                GCSM_UnitInCombat[CV] Equal to False
+                                UnitMoving[CV] Equal to False
+                                CompanionUnitIdle[CV] Equal to False
+                            Then - Actions
+                                Set VariableSet CompVarAngle = (Random angle)
+                                Set VariableSet CompVarDistance = (Random real number between 100.00 and 300.00)
+                                Set VariableSet CompVarTarget = (CompVarPoint2 offset by CompVarDistance towards CompVarAngle degrees.)
+                                Unit - Order (Picked unit) to Attack-Move To CompVarTarget
+                                Custom script:   call RemoveLocation(udg_CompVarTarget)
+                            Else - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        IsUnitAlive[CV] Equal to True
+                                        UnitIsCasting[CV] Equal to False
+                                        (Current order of (Picked unit)) Not equal to (Order(smart))
+                                        Or - Any (Conditions) are true
+                                            Conditions
+                                                GCSM_UnitInCombat[(Custom value of Zulkis)] Equal to True
+                                                (Distance between (Position of (Picked unit)) and (Position of Zulkis)) Greater than or equal to 600.00
+                                    Then - Actions
+                                        Unit - Order (Picked unit) to Right-Click Zulkis
+                                    Else - Actions
+            Else - Actions
+        -------- ===================================== --------
+        -------- Remove LEAKS --------
+        Custom script:   call RemoveLocation(udg_CompVarPoint2)
+        -------- ===================================== --------

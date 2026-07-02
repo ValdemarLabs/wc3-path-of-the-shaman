@@ -1,0 +1,23 @@
+Hired Units Init Shops
+    Events
+        Time - Elapsed game time is 1.00 seconds
+    Conditions
+    Actions
+        -------- INITIAL UNITS FOR HIRE --------
+        -------- ============================= --------
+        -------- ============================= --------
+        -------- ============================= --------
+        -------- Thornwoods Horde units --------
+        Neutral Building - Add Grunt (Level 1) to Barracks 0019 <gen> with 1 in stock and a max stock of 1
+        Neutral Building - Add Grunt (Level 5) to Barracks 0019 <gen> with 1 in stock and a max stock of 1
+        Neutral Building - Add Grunt (Level 10) to Barracks 0019 <gen> with 1 in stock and a max stock of 1
+        -------- ============================= --------
+        -------- Sirensong Horde units --------
+        -------- ============================= --------
+        -------- Ghostridge Horde units --------
+        -------- ============================= --------
+        -------- Forward base Horde Units --------
+        -------- ============================= --------
+        -------- ============================= --------
+        -------- ============================= --------
+        -------- ============================= --------

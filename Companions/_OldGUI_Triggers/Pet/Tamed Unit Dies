@@ -1,0 +1,33 @@
+Tamed Unit Dies
+    Events
+        Unit - A unit Takes damage
+    Conditions
+        Pet_Dead Equal to False
+        (Damage Target) Equal to TamedUnit
+        (Damage taken) Greater than or equal to ((Life of TamedUnit) - 0.41)
+    Actions
+        Custom script:   local string txt
+        Custom script:   local player p
+        -------- ===== --------
+        Set VariableSet Pet_Dead = True
+        -------- We don't really want the Tamed unit to die --------
+        Event Response - Set Damage of Unit Damaged Event to ((Life of TamedUnit) - 1.00)
+        Unit - Order TamedUnit to Stop.
+        Unit - Make TamedUnit Invulnerable
+        Unit - Change ownership of TamedUnit to Neutral Passive and Retain color
+        Animation - Play TamedUnit's death animation
+        Unit - Pause TamedUnit
+        -------- Update multiboard --------
+        Set VariableSet TamedUnitDeathCount = (TamedUnitDeathCount + 1)
+        Multiboard - Set the text for Multiboard item in column 13, row 5 to (String(TamedUnitDeathCount))
+        -------- Texts --------
+        Custom script:   set txt = GetUnitName(udg_TamedUnit) + " is fatigued!"
+        Custom script:    set p = GetOwningPlayer(udg_TamedUnit)
+        -------- Start revival timer --------
+        Set VariableSet Pet_DeathPoint = (Position of TamedUnit)
+        Countdown Timer - Start ReviveTimerPet as a One-shot timer that will expire in 20.00 seconds
+        -------- Duration = 2.0 sec, Size = 1.2, Color = reddish (100%, 5%, 10%) --------
+        Custom script:   call FloatingTextTag.create(txt, udg_TamedUnit, 20.0, 1.2, p, 1.00, 0.05, 0.10, false, true)
+        -------- Adjust animation --------
+        Wait (Unit: TamedUnit's Real Field: Death Time (seconds) ('udtm')) seconds
+        Animation - Change TamedUnit's animation speed to 0.00% of its original speed

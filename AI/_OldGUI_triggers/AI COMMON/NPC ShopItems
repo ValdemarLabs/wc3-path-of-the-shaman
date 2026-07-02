@@ -1,0 +1,14 @@
+NPC ShopItems
+    Events
+        Time - Elapsed game time is 0.30 seconds
+    Conditions
+    Actions
+        Set VariableSet NPC_ShopItem[1] = Minor Mana Potion
+        Set VariableSet NPC_ShopItem[2] = Mana Potion
+        Set VariableSet NPC_ShopItem[3] = Major Mana Potion
+        Set VariableSet NPC_ShopItem[4] = Minor Healing Potion
+        Set VariableSet NPC_ShopItem[5] = Healing Potion
+        Set VariableSet NPC_ShopItem[6] = Major Healing Potion
+        Set VariableSet NPC_ShopItem[7] = Spring Water
+        Set VariableSet NPC_ShopItem[8] = Healing Salve
+        Set VariableSet NPC_ShopItem[9] = Greater Healing Salve

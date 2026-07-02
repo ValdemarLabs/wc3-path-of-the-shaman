@@ -1,0 +1,24 @@
+NPC Shield Use
+    Events
+        Unit - A unit Is attacked
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Level of Shield Block (50) for (Triggering unit)) Greater than 0
+                (Level of Shield Block (75) for (Triggering unit)) Greater than 0
+                (Level of Shield Block (100) for (Triggering unit)) Greater than 0
+        Or - Any (Conditions) are true
+            Conditions
+                (Unit-type of (Triggering unit)) Equal to Rogue (Companion)
+                (Unit-type of (Triggering unit)) Equal to Tauren Warrior (Companion)
+                (Unit-type of (Triggering unit)) Equal to Paladin (Companion)
+                (Unit-type of (Triggering unit)) Equal to Engineer
+    Actions
+        -------- Restoshaman, Warlock excluded --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Random integer number between 1 and 3) Equal to 1
+            Then - Actions
+                -------- Shield Block usage --------
+                Unit - Order (Attacked unit) to Orc Troll Berserker - Berserk.
+            Else - Actions

@@ -1,0 +1,60 @@
+Companion Drop Items
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to Drop Items 
+        ((Target unit of ability being cast) is in Companion_Group.) Equal to True
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                ((Unit-type of CompanionUnit[CompanionCount]) is A Hero) Equal to True
+            Then - Actions
+                -------- HERO --------
+                Game - Display to (All players) the text: ((Proper name of (Target unit of ability being cast)) +  has dropped all items!)
+            Else - Actions
+                -------- UNIT --------
+                Game - Display to (All players) the text: ((Name of (Target unit of ability being cast)) +  has dropped all items!)
+        -------- ====================================================== --------
+        -------- ================= --------
+        -------- CHAT FROM AI HERO --------
+        Set VariableSet Companion_Group_ChatUnit = (Target unit of ability being cast)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Companion_Group_ChatUnit Equal to NPC_Horde_AI_Shaman
+            Then - Actions
+                Trigger - Run Horde NPC Chat Drop Items Restoshaman <gen> (checking conditions)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Companion_Group_ChatUnit Equal to NPC_Horde_AI_Rogue
+            Then - Actions
+                Trigger - Run Horde NPC Chat Drop Items Rogue <gen> (checking conditions)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Companion_Group_ChatUnit Equal to NPC_Horde_AI_Warlock
+            Then - Actions
+                Trigger - Run Horde NPC Chat Drop Items Warlock <gen> (checking conditions)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Companion_Group_ChatUnit Equal to NPC_Horde_AI_Warrior
+            Then - Actions
+                Trigger - Run Horde NPC Chat Drop Items Warrior <gen> (checking conditions)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Companion_Group_ChatUnit Equal to NPC_Neutral_Engineer
+            Then - Actions
+                Trigger - Run Horde NPC Chat Drop Items Engineer <gen> (checking conditions)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Companion_Group_ChatUnit Equal to NPC_Riverbane_Paladin
+            Then - Actions
+                Trigger - Run Horde NPC Chat Drop Items Paladin <gen> (checking conditions)
+            Else - Actions
+        -------- ================= --------
+        For each (Integer A) from 1 to 6, do (Actions)
+            Loop - Actions
+                Hero - Drop the item from slot (Integer A) of (Target unit of ability being cast).

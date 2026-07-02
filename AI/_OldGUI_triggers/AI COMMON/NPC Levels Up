@@ -1,0 +1,20 @@
+NPC Levels up
+    Events
+        Unit - A unit Gains a level
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Unit-type of (Triggering unit)) Equal to Rogue (Companion)
+                (Unit-type of (Triggering unit)) Equal to Tauren Warrior (Companion)
+                (Unit-type of (Triggering unit)) Equal to Restoration Shaman (Companion)
+                (Unit-type of (Triggering unit)) Equal to Warlock (Companion)
+                (Unit-type of (Triggering unit)) Equal to Paladin (Companion)
+                (Unit-type of (Triggering unit)) Equal to Engineer
+    Actions
+        Unit - Set life of (Leveling Hero) to 100.00%
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of (Triggering unit)) Not equal to Tauren Warrior (Companion)
+            Then - Actions
+                Unit - Set mana of (Leveling Hero) to 100.00%
+            Else - Actions

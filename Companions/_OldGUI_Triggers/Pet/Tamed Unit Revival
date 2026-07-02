@@ -1,0 +1,17 @@
+Tamed Unit Revival
+    Events
+        Time - ReviveTimerPet expires
+    Conditions
+    Actions
+        Unit - Unpause TamedUnit
+        Animation - Change TamedUnit's animation speed to 100.00% of its original speed
+        Animation - Reset TamedUnit's animation
+        Animation - Play TamedUnit's stand animation
+        Special Effect - Create a special effect attached to the origin of TamedUnit using Abilities\Spells\Other\Levelup\Levelupcaster.mdx
+        -------- -- --------
+        Set VariableSet Pet_Dead = False
+        -------- -- --------
+        Unit - Set life of TamedUnit to ((Percentage life of TamedUnit) + 25.00)%
+        Unit - Make TamedUnit Vulnerable
+        Unit - Change ownership of TamedUnit to Player 19 (Mint) and Retain color
+        Custom script:   call RemoveLocation(udg_Pet_DeathPoint)

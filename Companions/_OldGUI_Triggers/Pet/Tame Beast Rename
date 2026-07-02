@@ -1,0 +1,30 @@
+Tame Beast Rename
+    Events
+        Player - Player 1 (Red) types a chat message containing /pet rename  as A substring
+    Conditions
+    Actions
+        Set VariableSet Pet_Name = (Substring((Entered chat string), 13, (Length of (Entered chat string))))
+        -------- "/pet rename " = 12 characters, so name starts at position 13 --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                TamedUnit Equal to Shadowclaw
+            Then - Actions
+                Quest - Display to (All players) the Hint message: |cffffff00Shadowcla...
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in TamedUnits) Greater than 0
+            Then - Actions
+                Set VariableSet Pet_Index = (Custom value of TamedUnit)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Pet_Renamed[Pet_Index] Equal to False
+                    Then - Actions
+                        Unit - Set Unit: TamedUnit's String Field: Name ('unam') to Value: Pet_Name
+                        Quest - Display to (All players) the Hint message: (|cff00ff00Your pet has been renamed to|r  + Pet_Name)
+                        Trigger - Run MultiboardUpdate Add Tamed <gen> (checking conditions)
+                    Else - Actions
+                        Quest - Display to (All players) the Hint message: |cffffff00The pet c...
+            Else - Actions
+                Quest - Display to (All players) the Hint message: |cffffff00You don't...

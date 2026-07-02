@@ -1,0 +1,130 @@
+Horde AI Companion Invite
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to Invite Companion 
+        ((Target unit of ability being cast) is Summoned) Not equal to True
+        ((Target unit of ability being cast) is an illusion) Not equal to True
+    Actions
+        -------- --------- CHECK If invitable --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Target unit of ability being cast) Equal to Shadowclaw
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Number of units in TamedUnits) Greater than or equal to 1
+                    Then - Actions
+                        -------- More than 1 beast tamed already --------
+                        Game - Display to (All players) the text: You already have a ...
+                        Skip remaining actions
+                    Else - Actions
+                        Sound - Play Rescue <gen>
+                        Unit - Change ownership of Shadowclaw to Player 19 (Mint) and Retain color
+                        Unit Group - Add Shadowclaw to TamedUnits
+                        Unit Group - Add Shadowclaw to CompanionFocusNazgrek
+                        Unit - Make Shadowclaw Vulnerable
+                        Set VariableSet TamedUnit = Shadowclaw
+                        -------- UNIT HIDER --------
+                        Set VariableSet UnitHider_ReferenceUnits[(Custom value of Shadowclaw)] = Shadowclaw
+                        Unit Group - Add Shadowclaw to UnitHider_ReferenceGroup
+                        -------- Experience --------
+                        Custom script:   call UnitExperience_DisableXP(udg_TamedUnit, false)
+                        -------- Multiboard --------
+                        -------- Reset values --------
+                        Set VariableSet TamedUnitKillCount = 0
+                        Set VariableSet TamedUnitDeathCount = 0
+                        Trigger - Run MultiboardUpdate Add Tamed <gen> (ignoring conditions)
+                        Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Unit-type of (Target unit of ability being cast)) Equal to Warlock (Companion)
+                        (Unit-type of (Target unit of ability being cast)) Equal to Rogue (Companion)
+                        (Unit-type of (Target unit of ability being cast)) Equal to Tauren Warrior (Companion)
+                        (Unit-type of (Target unit of ability being cast)) Equal to Restoration Shaman (Companion)
+                        (Unit-type of (Target unit of ability being cast)) Equal to Engineer
+                        (Unit-type of (Target unit of ability being cast)) Equal to Engineer (Shredder)
+                        (Unit-type of (Target unit of ability being cast)) Equal to Paladin (Companion)
+            Then - Actions
+                -------- CHECK reputation of the unit's Faction --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ((Target unit of ability being cast) belongs to an enemy of (Owner of (Casting unit)).) Equal to False
+                    Then - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Number of units in Companion_Group) Less than Companion_GroupSize
+                            Then - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (Hero level of (Target unit of ability being cast)) Less than or equal to ((Hero level of Nazgrek) + 5)
+                                    Then - Actions
+                                        Sound - Play Rescue <gen>
+                                        Unit Group - Add (Target unit of ability being cast) to Companion_Group
+                                        Unit Group - Add (Target unit of ability being cast) to CompanionFocusNazgrek
+                                        Unit - Change ownership of (Target unit of ability being cast) to Player 19 (Mint) and Change color
+                                        Game - Display to (All players) the text: ((Proper name of (Target unit of ability being cast)) +  has joined the party!)
+                                        Set VariableSet CompanionCount = (CompanionCount + 1)
+                                        Set VariableSet CompanionUnit[CompanionCount] = (Target unit of ability being cast)
+                                        Set VariableSet CompanionIndex[(Custom value of (Target unit of ability being cast))] = CompanionCount
+                                        Game - Display to (All players) the text: (debug companionCount value:  + (String(CompanionCount)))
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                (Target unit of ability being cast) Equal to NPC_Horde_AI_Rogue
+                                            Then - Actions
+                                                Set VariableSet CompanionIcon[CompanionCount] = ReplaceableTextures\CommandButtons\BTNHeroBlademaster.blp
+                                                -------- CHAT --------
+                                                Trigger - Run Horde NPC Chat Greet Rogue <gen> (checking conditions)
+                                            Else - Actions
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        (Target unit of ability being cast) Equal to NPC_Horde_AI_Warlock
+                                                    Then - Actions
+                                                        Set VariableSet CompanionIcon[CompanionCount] = ReplaceableTextures\CommandButtons\BTNChaosWarlockGreen.blp
+                                                        -------- CHAT --------
+                                                        Trigger - Run Horde NPC Chat Greet Warlock <gen> (checking conditions)
+                                                    Else - Actions
+                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                            If - Conditions
+                                                                (Target unit of ability being cast) Equal to NPC_Horde_AI_Shaman
+                                                            Then - Actions
+                                                                Set VariableSet CompanionIcon[CompanionCount] = ReplaceableTextures\CommandButtons\BTNShaman.blp
+                                                                -------- CHAT --------
+                                                                Trigger - Run Horde NPC Chat Greet Restoshaman <gen> (checking conditions)
+                                                            Else - Actions
+                                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                    If - Conditions
+                                                                        (Target unit of ability being cast) Equal to NPC_Horde_AI_Warrior
+                                                                    Then - Actions
+                                                                        Set VariableSet CompanionIcon[CompanionCount] = ReplaceableTextures\CommandButtons\BTNHeroTaurenChieftain.blp
+                                                                        -------- CHAT --------
+                                                                        Trigger - Run Horde NPC Chat Greet Warrior <gen> (checking conditions)
+                                                                    Else - Actions
+                                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                            If - Conditions
+                                                                                (Target unit of ability being cast) Equal to NPC_Neutral_Engineer
+                                                                            Then - Actions
+                                                                                Set VariableSet CompanionIcon[CompanionCount] = ReplaceableTextures\CommandButtons\BTNHeroTinker.blp
+                                                                                -------- CHAT --------
+                                                                                Trigger - Run Horde NPC Chat Greet Engineer <gen> (checking conditions)
+                                                                            Else - Actions
+                                                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                                    If - Conditions
+                                                                                        (Target unit of ability being cast) Equal to NPC_Riverbane_Paladin
+                                                                                    Then - Actions
+                                                                                        Set VariableSet CompanionIcon[CompanionCount] = ReplaceableTextures\CommandButtons\BTNHeroPaladin.blp
+                                                                                        -------- CHAT --------
+                                                                                        Trigger - Run Horde NPC Chat Greet Paladin <gen> (checking conditions)
+                                                                                    Else - Actions
+                                        Trigger - Run MultiboardUpdate Add Companion <gen> (checking conditions)
+                                    Else - Actions
+                                        Game - Display to (All players) the text: The target's level ...
+                            Else - Actions
+                                Game - Display to (All players) the text: |cFFFF0000Error: |r...
+                    Else - Actions
+                        Game - Display to (All players) the text: |cFFFF0000Error|r|c...
+            Else - Actions
+                Game - Display to (All players) the text: |cFFFF0000Error|r|c...

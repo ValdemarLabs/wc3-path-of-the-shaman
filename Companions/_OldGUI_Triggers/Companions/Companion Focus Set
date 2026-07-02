@@ -1,0 +1,36 @@
+Companion Focus Set
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Ability being cast) Equal to Focus Nazgrek 
+                (Ability being cast) Equal to Focus Zulkis 
+    Actions
+        Sound - Play GoodJob <gen>
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to Focus Nazgrek 
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ((Target unit of ability being cast) is in CompanionFocusZulkis.) Equal to True
+                    Then - Actions
+                        Unit Group - Remove (Target unit of ability being cast) from CompanionFocusZulkis.
+                    Else - Actions
+                -------- ============= FOCUS NAZGREK --------
+                Unit Group - Add (Target unit of ability being cast) to CompanionFocusNazgrek
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to Focus Zulkis 
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ((Target unit of ability being cast) is in CompanionFocusNazgrek.) Equal to True
+                    Then - Actions
+                        Unit Group - Remove (Target unit of ability being cast) from CompanionFocusNazgrek.
+                    Else - Actions
+                -------- ============= FOCUS ZULKIS --------
+                Unit Group - Add (Target unit of ability being cast) to CompanionFocusZulkis
+            Else - Actions

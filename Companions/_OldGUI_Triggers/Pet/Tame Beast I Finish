@@ -1,0 +1,55 @@
+Tame Beast I Finish
+    Events
+        Unit - A unit Finishes casting an ability
+    Conditions
+        And - All (Conditions) are true
+            Conditions
+                (Ability being cast) Equal to Tame Beast I
+                TM_TimerFinished Equal to True
+    Actions
+        -------- Locals --------
+        Custom script:   local boolean registered
+        -------- ================= --------
+        Set VariableSet TM_Value = (Custom value of (Triggering unit))
+        Set VariableSet Pet_TamerChanneling[TM_Value] = False
+        Unit - Change ownership of UDexUnits[TM_Value] to Player 19 (Mint) and Retain color
+        -------- UNIT HIDER --------
+        Set VariableSet UnitHider_ReferenceUnits[(Custom value of UDexUnits[TM_Value])] = UDexUnits[TM_Value]
+        Unit Group - Add UDexUnits[TM_Value] to UnitHider_ReferenceGroup
+        -------- ============  --------
+        Sound - Play Rescue <gen>
+        Game - Display to (All players) the text: (Name of UDexUnits[TM_Value])
+        Game - Display to (All players) the text: (Pets:  + ((String((Number of units in TamedUnits))) +  / 1))
+        -------- Player can have only 1 tamed beast at a time --------
+        Unit Group - Add UDexUnits[TM_Value] to TamedUnits
+        Unit - Add Inventory (Hero) to UDexUnits[TM_Value]
+        Unit - Make TamedUnit Vulnerable
+        -------- Decide what focus group --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Pet_Tamer[TM_Value] Equal to Nazgrek
+            Then - Actions
+                Unit Group - Add UDexUnits[TM_Value] to CompanionFocusNazgrek
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Pet_Tamer[TM_Value] Equal to Zulkis
+            Then - Actions
+                Unit Group - Add UDexUnits[TM_Value] to CompanionFocusZulkis
+            Else - Actions
+        -------- Add to multiboard --------
+        Set VariableSet TamedUnit = UDexUnits[TM_Value]
+        -------- xp --------
+        Custom script:   set registered = UnitExperience_IsUnitRegistered(udg_TamedUnit)
+        Custom script:   if registered != true then
+        -------- Register to XP system --------
+        Custom script:   call UnitExperience_RegisterUnit(udg_TamedUnit)
+        Custom script:   else
+        -------- Unit already registered by XP system - just re-enable XP --------
+        Custom script:   call UnitExperience_DisableXP(udg_TamedUnit, false)
+        Custom script:   endif
+        Set VariableSet Pet_Dead = False
+        -------- Reset values --------
+        Set VariableSet TamedUnitKillCount = 0
+        Set VariableSet TamedUnitDeathCount = 0
+        Trigger - Run MultiboardUpdate Add Tamed <gen> (checking conditions)

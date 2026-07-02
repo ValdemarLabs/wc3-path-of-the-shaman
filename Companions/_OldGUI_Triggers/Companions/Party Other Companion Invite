@@ -1,0 +1,148 @@
+Party Other Companion Invite
+    Events
+        Unit - A unit Sells a unit
+    Conditions
+        (Owner of (Sold unit)) Equal to Player 1 (Red)
+        (Unit-type of (Sold unit)) Not equal to Bag
+        (Unit-type of (Sold unit)) Not equal to Bag TRIGSTR_4985
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in Companion_Group) Less than Companion_GroupSize
+            Then - Actions
+                Unit - Change ownership of (Sold unit) to Player 19 (Mint) and Change color
+                -------- ================================ --------
+                -------- ================================ --------
+                Set VariableSet CompanionCount = (CompanionCount + 1)
+                Set VariableSet CompanionUnit[CompanionCount] = (Sold unit)
+                Set VariableSet CompanionIndex[(Custom value of (Sold unit))] = CompanionCount
+                Set VariableSet UnitHider_ReferenceUnits[(Custom value of (Sold unit))] = (Sold unit)
+                -------- ================================ --------
+                -------- GRUNT (LEVEL 1) --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Unit-type of (Sold unit)) Equal to Grunt (Level 1)
+                    Then - Actions
+                        Set VariableSet CompanionIcon[CompanionCount] = ReplaceableTextures\CommandButtons\BTNGrunt.blp
+                        Set VariableSet CompanionHiredUnitLevel[(Custom value of CompanionUnit[CompanionCount])] = 1
+                    Else - Actions
+                -------- GRUNT (LEVEL 5) --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Unit-type of (Sold unit)) Equal to Grunt (Level 5)
+                    Then - Actions
+                        Set VariableSet CompanionIcon[CompanionCount] = ReplaceableTextures\CommandButtons\BTNGrunt.blp
+                        Set VariableSet CompanionHiredUnitLevel[(Custom value of CompanionUnit[CompanionCount])] = 5
+                    Else - Actions
+                -------- GRUNT (LEVEL 10) --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Unit-type of (Sold unit)) Equal to Grunt (Level 10)
+                    Then - Actions
+                        Set VariableSet CompanionIcon[CompanionCount] = ReplaceableTextures\CommandButtons\BTNGrunt.blp
+                        Set VariableSet CompanionHiredUnitLevel[(Custom value of CompanionUnit[CompanionCount])] = 10
+                    Else - Actions
+                -------- GRUNT (LEVEL 15) --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Unit-type of (Sold unit)) Equal to Grunt (Level 15)
+                    Then - Actions
+                        Set VariableSet CompanionIcon[CompanionCount] = ReplaceableTextures\CommandButtons\BTNGrunt.blp
+                        Set VariableSet CompanionHiredUnitLevel[(Custom value of CompanionUnit[CompanionCount])] = 15
+                    Else - Actions
+                -------- GRUNT (LEVEL 20) --------
+                -------- GRUNT (LEVEL 25) --------
+                -------- ================================ --------
+                -------- MARAUDER (LEVEL 1) --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Unit-type of (Sold unit)) Equal to Marauder (Level 1)
+                    Then - Actions
+                        Set VariableSet CompanionIcon[CompanionCount] = ReplaceableTextures\CommandButtons\BTNGrunt.blp
+                    Else - Actions
+                -------- MARAUDER (LEVEL 5) --------
+                -------- MARAUDER (LEVEL 10) --------
+                -------- MARAUDER (LEVEL 15) --------
+                -------- MARAUDER (LEVEL 20) --------
+                -------- MARAUDER (LEVEL 25) --------
+                -------- ================================ --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Unit-type of (Sold unit)) Equal to Stoneguard (Level 1)
+                    Then - Actions
+                        Set VariableSet CompanionIcon[CompanionCount] = ReplaceableTextures\CommandButtons\BTNGrunt.blp
+                        Set VariableSet CompanionHiredUnitLevel[(Custom value of CompanionUnit[CompanionCount])] = 5
+                    Else - Actions
+                -------- ================================ --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Unit-type of (Sold unit)) Equal to Raider
+                    Then - Actions
+                        Set VariableSet CompanionIcon[CompanionCount] = ReplaceableTextures\CommandButtons\BTNRaider.blp
+                    Else - Actions
+                -------- ================================ --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Unit-type of (Sold unit)) Equal to Headhunter
+                    Then - Actions
+                        Set VariableSet CompanionIcon[CompanionCount] = ReplaceableTextures\CommandButtons\BTNHeadHunterBerserker.blp
+                    Else - Actions
+                -------- ================================ --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Unit-type of (Sold unit)) Equal to Witch Doctor
+                    Then - Actions
+                        Set VariableSet CompanionIcon[CompanionCount] = ReplaceableTextures\CommandButtons\BTNWitchDoctor.blp
+                    Else - Actions
+                -------- ================================ --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Unit-type of (Sold unit)) Equal to Shaman
+                    Then - Actions
+                        Set VariableSet CompanionIcon[CompanionCount] = ReplaceableTextures\CommandButtons\BTNShaman.blp
+                    Else - Actions
+                -------- ================================ --------
+                Trigger - Run MultiboardUpdate Add Companion <gen> (checking conditions)
+                -------- ================================ --------
+                -------- ================= CHECK that hired unit is less than or equal to level of either Nazgrek or Zul'kis --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Or - Any (Conditions) are true
+                            Conditions
+                                CompanionHiredUnitLevel[(Custom value of CompanionUnit[CompanionCount])] Less than or equal to (Hero level of Nazgrek)
+                                CompanionHiredUnitLevel[(Custom value of CompanionUnit[CompanionCount])] Less than or equal to (Hero level of Zulkis)
+                    Then - Actions
+                        -------- Add the hired unit to Companion_Group & Multiboard --------
+                        Sound - Play Rescue <gen>
+                        Game - Display to (All players) the text: ((Name of (Sold unit)) +  has joined the party!)
+                        Unit Group - Add CompanionUnit[CompanionCount] to Companion_Group
+                        Unit Group - Add CompanionUnit[CompanionCount] to CompanionFocusNazgrek
+                        -------- ================================ --------
+                    Else - Actions
+                        -------- Hired unit was too high level for the player! --------
+                        Set VariableSet CompanionUnitKicked = CompanionUnit[CompanionCount]
+                        Trigger - Run MultiboardUpdate Remove Companion <gen> (checking conditions)
+                        -------- ================================ --------
+                        Game - Display to (All players) the text: |cFFFF0000Error: |r...
+                        -------- ================================ --------
+                        Cinematic - Send transmission to (All players) from (Sold unit) named (Name of (Sold unit)): Play No sound and display It looks like your ....  Modify duration: Set to 2.00 seconds and Don't wait
+                        -------- ================================ --------
+                        Unit - Change ownership of (Sold unit) to Player 2 (Blue) and Change color
+                        Unit - Add a 60.00 second Generic expiration timer to (Sold unit)
+                        Set VariableSet CompVarPoint = (Random point in (Playable map area))
+                        Unit - Order (Sold unit) to Move To CompVarPoint
+                        -------- ================================ --------
+                        Custom script:   call RemoveLocation(udg_CompVarPoint)
+                        -------- ================================ --------
+            Else - Actions
+                -------- Party full --------
+                -------- ================================ --------
+                Game - Display to (All players) the text: |cFFFF0000Error: |r...
+                -------- ================================ --------
+                Unit - Change ownership of (Sold unit) to Player 2 (Blue) and Change color
+                Unit - Add a 60.00 second Generic expiration timer to (Sold unit)
+                Set VariableSet CompVarPoint = (Random point in (Playable map area))
+                Unit - Order (Sold unit) to Move To CompVarPoint
+                -------- ================================ --------
+                Custom script:   call RemoveLocation(udg_CompVarPoint)
+                -------- ================================ --------

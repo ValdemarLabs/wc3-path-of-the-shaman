@@ -1,0 +1,34 @@
+Tamed Unit Heal Event and items
+    Events
+        Unit - A unit Acquires an item
+    Conditions
+        ((Triggering unit) is in TamedUnits.) Equal to True
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Item-type of (Item being manipulated)) Equal to Raw Bear Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Boar Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Cow Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Crawler Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Hawk Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Lizard Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Makrura Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Murloc Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Panther Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Rabbit Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Raptor Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Snake Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Snake Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Stag Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Tiger Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Turtle Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Wolf Meat
+            Then - Actions
+                Item - Remove (Item being manipulated)
+                Unit - Set life of (Triggering unit) to ((Percentage life of (Triggering unit)) + 25.00)%
+                Special Effect - Create a special effect attached to the origin of (Triggering unit) using Abilities\Spells\Human\Heal\HealTarget.mdl
+                Sound - Play Devour <gen> at 100.00% volume, attached to (Triggering unit)
+            Else - Actions
+                Hero - Drop (Item being manipulated) from (Triggering unit).

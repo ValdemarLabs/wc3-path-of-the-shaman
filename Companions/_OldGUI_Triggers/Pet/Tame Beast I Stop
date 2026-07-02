@@ -1,0 +1,9 @@
+Tame Beast I Stop
+    Events
+        Unit - A unit Stops casting an ability
+    Conditions
+        (Ability being cast) Equal to Tame Beast I
+    Actions
+        Set VariableSet TM_TimerFinished = False
+        Set VariableSet Pet_TamerChanneling[TM_Value] = False
+        Countdown Timer - Pause TM_Timer

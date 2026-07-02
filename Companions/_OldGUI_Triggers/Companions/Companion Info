@@ -1,0 +1,87 @@
+Companion Information
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to Information 
+    Actions
+        Sound - Play GoodJob <gen>
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of (Target unit of ability being cast)) Equal to Warlock (Companion)
+            Then - Actions
+                -------- ============= WARLOCK --------
+                Game - Display to (All players) the text: (|cFFFFCC00Name:|r|cFFFFFFFF |r + (Proper name of (Target unit of ability being cast)))
+                Game - Display to (All players) the text: (|cFFFFCC00Unit type: |r + Warlock)
+                Game - Display to (All players) the text: (|cFFFFCC00Attack type: |r + Ranged)
+                Game - Display to (All players) the text: (|cFFFFCC00Faction: |r + Horde)
+                Game - Display to (All players) the text: (|cFFFFCC00Stats: | |r + ((String(Stats_Hit[(Custom value of (Target unit of ability being cast))])) + (|cFFFFFFFF % |r|cFFFFCC00Hit | |r + ((String(Stats_Crit[(Custom value of (Target unit of ability being cast))])) + (|cFFFFFFFF % |r|cFFFFCC00Crit | |r + ((
+                Game - Display to (All players) the text: |cFF7EBFF1Abilities...
+                Game - Display to (All players) the text: |cFFFFCC00Shadow Bo...
+                Game - Display to (All players) the text: |cFFFFCC00Life Drai...
+                Game - Display to (All players) the text: |cFFFFCC00Rain of F...
+                Game - Display to (All players) the text: |cFFFFCC00Banish - ...
+                Game - Display to (All players) the text: |cFFFFCC00Fear |r|c...
+                Game - Display to (All players) the text: |cFFFFCC00Curse of ...
+                Game - Display to (All players) the text: |cFFFFCC00Life Tap ...
+                Game - Display to (All players) the text: |cFFFFCC00Summon Im...
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of (Target unit of ability being cast)) Equal to Rogue (Companion)
+            Then - Actions
+                -------- ============= ROGUE --------
+                Game - Display to (All players) the text: (|cFFFFCC00Name:|r|cFFFFFFFF |r + (Proper name of (Target unit of ability being cast)))
+                Game - Display to (All players) the text: (|cFFFFCC00Unit type: |r + Rogue)
+                Game - Display to (All players) the text: (|cFFFFCC00Attack type: |r + Melee)
+                Game - Display to (All players) the text: (|cFFFFCC00Faction: |r + Horde)
+                Game - Display to (All players) the text: (|cFFFFCC00Stats: | |r + ((String(Stats_Hit[(Custom value of (Target unit of ability being cast))])) + (|cFFFFFFFF % |r|cFFFFCC00Hit | |r + ((String(Stats_Crit[(Custom value of (Target unit of ability being cast))])) + (|cFFFFFFFF % |r|cFFFFCC00Crit | |r + ((
+                Game - Display to (All players) the text: |cFF7EBFF1Abilities...
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of (Target unit of ability being cast)) Equal to Tauren Warrior (Companion)
+            Then - Actions
+                -------- ============= WARRIOR --------
+                Game - Display to (All players) the text: (|cFFFFCC00Name:|r|cFFFFFFFF |r + (Proper name of (Target unit of ability being cast)))
+                Game - Display to (All players) the text: (|cFFFFCC00Unit type: |r + Warrior)
+                Game - Display to (All players) the text: (|cFFFFCC00Attack type: |r + Melee)
+                Game - Display to (All players) the text: (|cFFFFCC00Faction: |r + Horde)
+                Game - Display to (All players) the text: (|cFFFFCC00Stats: | |r + ((String(Stats_Hit[(Custom value of (Target unit of ability being cast))])) + (|cFFFFFFFF % |r|cFFFFCC00Hit | |r + ((String(Stats_Crit[(Custom value of (Target unit of ability being cast))])) + (|cFFFFFFFF % |r|cFFFFCC00Crit | |r + ((
+                Game - Display to (All players) the text: |cFF7EBFF1Abilities...
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of (Target unit of ability being cast)) Equal to Restoration Shaman (Companion)
+            Then - Actions
+                -------- ============= RESTORATION SHAMAN --------
+                Game - Display to (All players) the text: (|cFFFFCC00Name:|r|cFFFFFFFF |r + (Proper name of (Target unit of ability being cast)))
+                Game - Display to (All players) the text: (|cFFFFCC00Unit type: |r + Restoration Shaman)
+                Game - Display to (All players) the text: (|cFFFFCC00Attack type: |r + Ranged)
+                Game - Display to (All players) the text: (|cFFFFCC00Faction: |r + Horde)
+                Game - Display to (All players) the text: (|cFFFFCC00Stats: | |r + ((String(Stats_Hit[(Custom value of (Target unit of ability being cast))])) + (|cFFFFFFFF % |r|cFFFFCC00Hit | |r + ((String(Stats_Crit[(Custom value of (Target unit of ability being cast))])) + (|cFFFFFFFF % |r|cFFFFCC00Crit | |r + ((
+                Game - Display to (All players) the text: |cFF7EBFF1Abilities...
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of (Target unit of ability being cast)) Equal to Engineer
+            Then - Actions
+                -------- ============= ENGINEER --------
+                Game - Display to (All players) the text: (|cFFFFCC00Name:|r|cFFFFFFFF |r + (Proper name of (Target unit of ability being cast)))
+                Game - Display to (All players) the text: (|cFFFFCC00Unit type: |r + Engineer)
+                Game - Display to (All players) the text: (|cFFFFCC00Attack type: |r + Melee)
+                Game - Display to (All players) the text: (|cFFFFCC00Faction: |r + Goblins)
+                Game - Display to (All players) the text: (|cFFFFCC00Stats: | |r + ((String(Stats_Hit[(Custom value of (Target unit of ability being cast))])) + (|cFFFFFFFF % |r|cFFFFCC00Hit | |r + ((String(Stats_Crit[(Custom value of (Target unit of ability being cast))])) + (|cFFFFFFFF % |r|cFFFFCC00Crit | |r + ((
+                Game - Display to (All players) the text: |cFF7EBFF1Abilities...
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of (Target unit of ability being cast)) Equal to Paladin (Companion)
+            Then - Actions
+                -------- ============= PALADIN --------
+                Game - Display to (All players) the text: (|cFFFFCC00Name:|r|cFFFFFFFF |r + (Proper name of (Target unit of ability being cast)))
+                Game - Display to (All players) the text: (|cFFFFCC00Unit type: |r + Paladin)
+                Game - Display to (All players) the text: (|cFFFFCC00Attack type: |r + Melee)
+                Game - Display to (All players) the text: (|cFFFFCC00Faction: |r + Riverbane Citizen)
+                Game - Display to (All players) the text: (|cFFFFCC00Stats: | |r + ((String(Stats_Hit[(Custom value of (Target unit of ability being cast))])) + (|cFFFFFFFF % |r|cFFFFCC00Hit | |r + ((String(Stats_Crit[(Custom value of (Target unit of ability being cast))])) + (|cFFFFFFFF % |r|cFFFFCC00Crit | |r + ((
+                Game - Display to (All players) the text: |cFF7EBFF1Abilities...
+            Else - Actions
