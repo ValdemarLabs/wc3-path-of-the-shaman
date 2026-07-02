@@ -33,6 +33,9 @@
   Items transferred from DInv into vanilla inventory now show their item-name floating text again when later dropped from the vanilla inventory.
 - `Steam Breath`
   Steam breath effects are now removed from units when they die, so dead units no longer keep the breath visual attached.
+- `Companions / pets`
+  Companion and pet control modes now keep normal companions following the focused hero without the escort-style leash stop, while Hold Position still keeps them stationary.
+  Kick Companion can now resolve a selected companion or pet when the control ability has no explicit target unit.
 
 ### Technical Updates
 - `QuestGiver.j`
@@ -50,8 +53,11 @@
   Re-enabled the `TargetPreSelected.mdl` following ring as a persistent effect that hides/shows via alpha and scale instead of being destroyed during normal follow-state transitions, avoiding residual visuals from the model's missing death animation.
 - `Companions.j` / `Pet.j`
   Merged the old GUI companion and pet control flow into JASS libraries. `Companions.j` now owns companion invite/kick, hired-unit add/reject, focus target selection, information/drop-items commands, non-hero companion death cleanup, idle/wander state maintenance, and Passive/Normal/Aggressive/Hold control modes.
-  `Companions.j` uses `FollowSystem.j` as the low-level follow-order helper, but companion/pet mode ownership remains in the companion layer so normal companion combat behavior stays separate from quest escort or strict-close-follow NPC use cases.
+  Normal companions and pets now use a dedicated companion-order controller instead of `FollowSystem.j`, so Passive/Normal/Aggressive modes no longer stop issuing follow orders when the focused hero is outside the escort max range.
+  Added explicit escort behavior opt-in through `Companions_SetEscortBehavior`, allowing quest-specific followers such as Ranger Missing Valeria to keep using `FollowSystem.j` while normal companions, hired units, invited units, and pets stay on companion orders.
   Companion control modes now apply to selected companion/pet units when one is selected, and fall back to the full companion/pet group when no controlled unit is selected.
+  Far-away normal companions and pets now register through the companion/follower `IconQuery` category and ping their location while outside the companion follow distance, matching the existing follower visibility workflow without giving normal companions an escort leash.
+  Kick Companion now supports selected-unit fallback for both companion and pet paths, fixing casts where `GetSpellTargetUnit()` was empty.
   Rebuilt the old `Companion Information` behavior with name, unit type, attack type, faction, shared stat, ability, current mode, focus, life, mana, damage, and armor output.
   Rebuilt the old `Companion Idle or Move` core behavior in JASS: companions and pets now gain/remove `Wander (Neutral)` during idle checks and update `udg_CompanionUnitIdle[]`, while Hold/Suspended units stay stationary. The old GUI branch that cleared `CompanionUnitIdle[0]` was corrected to use the picked unit custom value.
   `Pet.j` now owns Shadowclaw initialization/reinvite, Tame Beast I/II/III, pet registration, pet kick, fatigue/revival, raw-meat healing, pet rename, and the tame-channeling damage multiplier while using the companion control layer for follow behavior.
