@@ -55,6 +55,7 @@
   Rebuilt the old `Companion Information` behavior with name, unit type, attack type, faction, shared stat, ability, current mode, focus, life, mana, damage, and armor output.
   Rebuilt the old `Companion Idle or Move` core behavior in JASS: companions and pets now gain/remove `Wander (Neutral)` during idle checks and update `udg_CompanionUnitIdle[]`, while Hold/Suspended units stay stationary. The old GUI branch that cleared `CompanionUnitIdle[0]` was corrected to use the picked unit custom value.
   `Pet.j` now owns Shadowclaw initialization/reinvite, Tame Beast I/II/III, pet registration, pet kick, fatigue/revival, raw-meat healing, pet rename, and the tame-channeling damage multiplier while using the companion control layer for follow behavior.
+  Cleaned up JASS compile-order/tooling issues by moving the pet damage-trigger refresh below `OnPetDamaged` and replacing `bj_lastCreatedTrigger` use in `Companions.j` with explicit spell/sell trigger handles.
   Kept compatibility with the current GUI globals and old multiboard hooks, including `udg_Companion_Group`, `udg_CompanionUnit[]`, `udg_CompanionCount`, `udg_TamedUnits`, `udg_TamedUnit`, `udg_TM_*`, and the multiboard add/remove triggers.
   Added `Companions/companions-to-do.md` to track remaining legacy GUI variable usage, disable-now GUI triggers, and follow-up work for chat barks, AI migration, and the later `StatsBoardUI.j` replacement.
 - `QuestGiver.j`
