@@ -425,6 +425,12 @@ FailRifts takes string reason returns nothing</textarea>
       return value ? "true" : "false";
     }
 
+    function formatJassReal(value, fallback) {
+      const numberValue = Number(value);
+      const safeValue = Number.isFinite(numberValue) ? numberValue : fallback;
+      return safeValue.toFixed(2);
+    }
+
     function escapeJassString(value) {
       return String(value || "")
         .replace(/\\/g, "\\\\")
@@ -728,9 +734,20 @@ globals
 \tprivate constant boolean DEBUG = false
 ${questConstants}
 
-\tprivate constant real DIALOG_RANGE = ${Number(spec.dialogRange) || 500}.00
-\tprivate constant real DIALOG_COOLDOWN = ${Number(spec.dialogCooldown) || 6}.00
+\tprivate constant real DIALOG_RANGE = ${formatJassReal(spec.dialogRange, 500)}
+\tprivate constant real DIALOG_COOLDOWN = ${formatJassReal(spec.dialogCooldown, 6)}
 \tprivate constant boolean REQUIRE_DIALOG_HERO = true
+\tprivate constant integer CINEMATIC_MOVE_MODE = 1
+\tprivate constant real CINEMATIC_MOVE_OFFSET = 256.00
+\tprivate constant real CINEMATIC_MOVE_ANGLE = 210.00
+\tprivate constant real CAMERA_DIST = 1050.00
+\tprivate constant real CAMERA_Z_OFFSET = 20.00
+\tprivate constant real CAMERA_ANGLE = 350.00
+\tprivate constant real CAMERA_ROT_OFFSET = 180.00
+\tprivate constant real CAMERA_FAR_Z = 10000.00
+\tprivate constant real CAMERA_FOV = 60.00
+\tprivate constant real CAMERA_BLOCK_RADIUS = 0.00
+\tprivate constant boolean CAMERA_BLOCK_CHECK = true
 
 \tprivate boolean ALLOW_NAZGREK = ${toBoolString(spec.allowNazgrek)}
 \tprivate boolean ALLOW_ZULKIS = ${toBoolString(spec.allowZulkis)}
@@ -755,7 +772,7 @@ private function ResolveDialogHero takes nothing returns unit
 endfunction
 
 private function FinishDialogSequence takes nothing returns nothing
-\tcall QuestGiver_StartDialogExitTransition(${npcVar}, SelectedHero, ${npcVar}DialogCooldown, DIALOG_COOLDOWN, true, 2.00, USE_DIALOG_CAMERA, false, CINEMATIC)
+\tcall QuestGiver_StartDialogExitTransition(${npcVar}, SelectedHero, ${npcVar}DialogCooldown, DIALOG_COOLDOWN, true, 2.00, USE_DIALOG_CAMERA, CINEMATIC, CINEMATIC)
 endfunction
 
 private function RebuildAndShowDialogTimer takes nothing returns nothing
@@ -819,9 +836,22 @@ private function CreateQuests takes nothing returns nothing
 ${questBlocks}
 endfunction
 
-public function RebuildAndShowDialog takes nothing returns nothing
+private function ShowBuiltDialog takes nothing returns nothing
 \tcall BuildDialog()
+\tcall DialogSystem_SetContext(${npcVar}, Player(0))
 \tcall DialogSystem_ShowDialog(${npcVar}Dialog, Player(0))
+endfunction
+
+public function RebuildAndShowDialog takes nothing returns nothing
+\tcall ShowBuiltDialog()
+endfunction
+
+private function ContinueToDialogInternal takes nothing returns nothing
+\tcall ShowBuiltDialog()
+endfunction
+
+public function ContinueToDialogAfterSelection takes nothing returns nothing
+\tcall ContinueToDialogInternal()
 endfunction
 
 private function OnSelected takes nothing returns nothing
@@ -840,9 +870,11 @@ private function OnSelected takes nothing returns nothing
 \t\treturn
 \tendif
 \tset SelectedHero = hero
-\tcall BuildDialog()
-\tcall DialogSystem_ShowDialog(${npcVar}Dialog, Player(0))
-\t// TODO QUEST-SPECIFIC: swap in a cinematic mover / camera handoff if this NPC needs full Aradion-style staging.
+\tif USE_DIALOG_CAMERA or CINEMATIC then
+\t\tcall QuestGiver_StartDialogEntryTransition(${npcVar}, hero, CINEMATIC_MOVE_MODE, CINEMATIC_MOVE_OFFSET, CINEMATIC_MOVE_ANGLE, CINEMATIC, USE_DIALOG_CAMERA, CAMERA_DIST, CAMERA_Z_OFFSET, CAMERA_ANGLE, CAMERA_ROT_OFFSET, CAMERA_FAR_Z, CAMERA_FOV, CAMERA_BLOCK_RADIUS, CAMERA_BLOCK_CHECK, CINEMATIC, "${libraryName}_ContinueToDialogAfterSelection")
+\telse
+\t\tcall ContinueToDialogInternal()
+\tendif
 \tset hero = null
 endfunction
 
