@@ -2304,6 +2304,7 @@ if IsVanillaInventoryFull(u) == TRUE then
 call FromItemHeavenToGround(it, GetUnitX(u), GetUnitY(u))
 else
 call SetItemVisible(it, TRUE)
+call ItemLoot_RegisterCustomDropTextItem(it)
 call UnitAddItem(u, it)
 endif
 set it = null
