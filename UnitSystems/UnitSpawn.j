@@ -188,6 +188,7 @@ struct Wave
     method getRemainingCount takes nothing returns integer
         local integer count = 0
         local unit u
+        local group temp = CreateGroup()
         
         // Count living units in the group
         loop
@@ -197,7 +198,19 @@ struct Wave
             if GetUnitTypeId(u) != 0 and IsUnitType(u, UNIT_TYPE_DEAD) == false then
                 set count = count + 1
             endif
+            call GroupAddUnit(temp, u)
         endloop
+
+        loop
+            set u = FirstOfGroup(temp)
+            exitwhen u == null
+            call GroupRemoveUnit(temp, u)
+            call GroupAddUnit(this.units, u)
+        endloop
+
+        call DestroyGroup(temp)
+        set temp = null
+        set u = null
         
         return count
     endmethod
