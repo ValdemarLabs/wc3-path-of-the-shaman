@@ -29,6 +29,8 @@
   Mana-rift ritual starts are more reliable across all three rifts, with the player hero and Aradion both required near the rift area.
   Rift waves now arrive more often, stop spawning near the final ritual countdown, and Valeria's "They are too many!" line is reserved for sustained or overlapping waves instead of normal wave spawns.
   Completed rituals now kill the current indexed mana-rift unit directly, and Aradion/Valeria followers stay active in Vanguard Vale, Verdant Plains, and their child zones.
+- `Item floating text`
+  Items transferred from DInv into vanilla inventory now show their item-name floating text again when later dropped from the vanilla inventory.
 
 ### Technical Updates
 - `QuestGiver.j`
@@ -44,6 +46,8 @@
   Fixed `Wave.getRemainingCount()` so checking live wave counts no longer empties the tracked wave group.
 - `FollowSystem.j`
   Re-enabled the `TargetPreSelected.mdl` following ring as a persistent effect that hides/shows via alpha and scale instead of being destroyed during normal follow-state transitions, avoiding residual visuals from the model's missing death animation.
+- `ItemLootSystem.j` / `SharedDInvLib.j`
+  Added a per-item custom drop-text marker for DInv-origin items moved into vanilla inventory, so `EVENT_PLAYER_UNIT_DROP_ITEM` can recreate item-name floating text instead of treating unregistered item types as Common rarity with disabled text.
 
 ### Tool Updates
 - `qxxx-generator.html`
@@ -54,6 +58,7 @@
 ### Actions Remaining
 - Decide how the hidden `Void Entity` boss should be connected to quest progression, including whether it belongs in Aradion's questline.
 - Re-test `qAradion` in-game after the helper extractions, especially Valeria recreation at home/ambush, Ranger Missing completion, Rifts of Corruption rift binding/retry/return-home behavior, field-line barks, and the public progression hooks.
+- Re-test DInv-to-vanilla item transfers by moving a named item into vanilla inventory and dropping it from there, confirming the floating text appears and cleans up normally on pickup/use.
 - Continue the next modularization pass only after the practical helper extraction is verified; the remaining larger candidate is a reusable `DialogSystem` choice/response dialog scaffold for Valeria-style persuasion prompts.
 
 ## [1.7.2026]
