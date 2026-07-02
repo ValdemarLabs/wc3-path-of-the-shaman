@@ -274,6 +274,11 @@ public function AddCompanion takes unit companionUnit, string companionIcon retu
 			if CompanionIcon != 0 and companionIcon != "" then
 				set CompanionIcon.string[i] = companionIcon
 			endif
+			set udg_CompanionIndex[GetUnitUserData(companionUnit)] = i
+			set udg_UnitHider_ReferenceUnits[GetUnitUserData(companionUnit)] = companionUnit
+			if companionIcon != "" then
+				set udg_CompanionIcon[i] = companionIcon
+			endif
 			call DebugMsg("AddCompanion skipped duplicate: " + GetUnitName(companionUnit))
 			return
 		endif
@@ -309,10 +314,15 @@ public function AddCompanion takes unit companionUnit, string companionIcon retu
 	if CompanionIndex != 0 then
 		set CompanionIndex.integer[customValue] = udg_CompanionCount
 	endif
+	set udg_CompanionIndex[customValue] = udg_CompanionCount
+	set udg_UnitHider_ReferenceUnits[customValue] = companionUnit
 	
 	// Store icon path
 	if CompanionIcon != 0 and companionIcon != "" then
 		set CompanionIcon.string[udg_CompanionCount] = companionIcon
+	endif
+	if companionIcon != "" then
+		set udg_CompanionIcon[udg_CompanionCount] = companionIcon
 	endif
 	
 	// Trigger multiboard update
@@ -397,9 +407,11 @@ public function RemoveCompanion takes unit companionUnit returns nothing
 			if CompanionIcon != 0 then
 				set CompanionIcon.string[foundIndex] = CompanionIcon.string[foundIndex + 1]
 			endif
+			set udg_CompanionIcon[foundIndex] = udg_CompanionIcon[foundIndex + 1]
 			if udg_CompanionUnit[foundIndex] != null and CompanionIndex != 0 then
 				set movedCustomValue = GetUnitUserData(udg_CompanionUnit[foundIndex])
 				set CompanionIndex.integer[movedCustomValue] = foundIndex
+				set udg_CompanionIndex[movedCustomValue] = foundIndex
 			endif
 			set foundIndex = foundIndex + 1
 		endloop
@@ -409,12 +421,14 @@ public function RemoveCompanion takes unit companionUnit returns nothing
 		if CompanionIcon != 0 then
 			set CompanionIcon.string[lastIndex] = ""
 		endif
+		set udg_CompanionIcon[lastIndex] = ""
 		set udg_CompanionCount = udg_CompanionCount - 1
 	endif
 
 	if CompanionIndex != 0 then
 		set CompanionIndex.integer[GetUnitUserData(companionUnit)] = 0
 	endif
+	set udg_CompanionIndex[GetUnitUserData(companionUnit)] = 0
 	
 	// Trigger multiboard update
 	if MultiboardUpdateRemoveCompanion != null then
