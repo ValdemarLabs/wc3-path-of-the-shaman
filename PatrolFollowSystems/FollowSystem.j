@@ -88,7 +88,7 @@ globals
     
     // Special Effect Settings (Visual Indicators)
     private constant boolean ENABLE_SPECIAL_EFFECTS = true  // Enable/disable special effects system
-    private constant boolean ENABLE_FOLLOWING_EFFECTS = false  // TargetPreSelected can leave residual visuals after destroy.
+    private constant boolean ENABLE_FOLLOWING_EFFECTS = true  // Keep TargetPreSelected persistent and hide/show it to avoid residual visuals.
     
     // Stopped/Not Following Effect
     private constant string EFFECT_STOPPED_PATH = "war3mapImported\\QuestMarking.mdl"  // Effect when stopped/not following
@@ -97,6 +97,10 @@ globals
     // Following Effect  
     private constant string EFFECT_FOLLOWING_PATH = "UI\\Feedback\\TargetPreSelected\\TargetPreSelected.mdl"  // Effect when actively following
     private constant string EFFECT_FOLLOWING_ATTACH = "origin"  // Attachment point for following effect
+    private constant integer EFFECT_FOLLOWING_VISIBLE_ALPHA = 255
+    private constant integer EFFECT_FOLLOWING_HIDDEN_ALPHA = 0
+    private constant real EFFECT_FOLLOWING_VISIBLE_SCALE = 1.00
+    private constant real EFFECT_FOLLOWING_HIDDEN_SCALE = 0.001
     
     // System Globals
     private group FollowGroup = CreateGroup()
@@ -152,11 +156,9 @@ private function CreateIndicatorEffect takes string effectPath, unit u, string a
     return sfx
 endfunction
 
-// Helper function to destroy all effects for a unit (clean slate)
-private function DestroyAllEffects takes Table unitData returns nothing
-    local effect sfx
+private function DestroyStoppedEffect takes Table unitData returns nothing
+    local effect sfx = unitData.effect[KEY_EFFECT_STOPPED]
     
-    set sfx = unitData.effect[KEY_EFFECT_STOPPED]
     if sfx != null then
         call DestroyEffect(sfx)
         set unitData.effect[KEY_EFFECT_STOPPED] = null
@@ -165,8 +167,53 @@ private function DestroyAllEffects takes Table unitData returns nothing
         endif
     endif
     
+    set sfx = null
+endfunction
+
+private function HideFollowingEffect takes Table unitData returns nothing
+    local effect sfx = unitData.effect[KEY_EFFECT_FOLLOWING]
+
+    if sfx != null then
+        call BlzSetSpecialEffectAlpha(sfx, EFFECT_FOLLOWING_HIDDEN_ALPHA)
+        call BlzSetSpecialEffectScale(sfx, EFFECT_FOLLOWING_HIDDEN_SCALE)
+    endif
+
+    set sfx = null
+endfunction
+
+private function ShowFollowingEffect takes Table unitData, unit follower returns nothing
+    local effect sfx
+
+    if not (ENABLE_SPECIAL_EFFECTS and ENABLE_FOLLOWING_EFFECTS) then
+        return
+    endif
+
+    set sfx = unitData.effect[KEY_EFFECT_FOLLOWING]
+    if sfx == null then
+        set sfx = CreateIndicatorEffect(EFFECT_FOLLOWING_PATH, follower, EFFECT_FOLLOWING_ATTACH)
+        set unitData.effect[KEY_EFFECT_FOLLOWING] = sfx
+        if DEBUG_MODE then
+            call BJDebugMsg("FollowSystem: Created FOLLOWING effect")
+        endif
+    endif
+
+    if sfx != null then
+        call BlzSetSpecialEffectScale(sfx, EFFECT_FOLLOWING_VISIBLE_SCALE)
+        call BlzSetSpecialEffectAlpha(sfx, EFFECT_FOLLOWING_VISIBLE_ALPHA)
+    endif
+
+    set sfx = null
+endfunction
+
+// Helper function to destroy all effects for a unit (clean slate)
+private function DestroyAllEffects takes Table unitData returns nothing
+    local effect sfx
+
+    call DestroyStoppedEffect(unitData)
+
     set sfx = unitData.effect[KEY_EFFECT_FOLLOWING]
     if sfx != null then
+        call HideFollowingEffect(unitData)
         call DestroyEffect(sfx)
         set unitData.effect[KEY_EFFECT_FOLLOWING] = null
         if DEBUG_MODE then
@@ -192,13 +239,10 @@ private function ResumeFollowTimerExpire takes nothing returns nothing
         
         // Switch from stopped effect to following effect when resuming
         if ENABLE_SPECIAL_EFFECTS and ENABLE_FOLLOWING_EFFECTS then
-            call DestroyAllEffects(unitData)
-            set unitData.effect[KEY_EFFECT_FOLLOWING] = CreateIndicatorEffect(EFFECT_FOLLOWING_PATH, follower, EFFECT_FOLLOWING_ATTACH)
-            if DEBUG_MODE then
-                call BJDebugMsg("FollowSystem: Created FOLLOWING effect (resume)")
-            endif
+            call DestroyStoppedEffect(unitData)
+            call ShowFollowingEffect(unitData, follower)
         elseif ENABLE_SPECIAL_EFFECTS then
-            call DestroyAllEffects(unitData)
+            call DestroyStoppedEffect(unitData)
         endif
         
         if DEBUG_MODE then
@@ -376,7 +420,7 @@ function FollowSystem_SetFollow takes unit follower, unit target, real maxDistan
     
     // Create initial following effect
     if ENABLE_SPECIAL_EFFECTS and ENABLE_FOLLOWING_EFFECTS then
-        set unitData.effect[KEY_EFFECT_FOLLOWING] = CreateIndicatorEffect(EFFECT_FOLLOWING_PATH, follower, EFFECT_FOLLOWING_ATTACH)
+        call ShowFollowingEffect(unitData, follower)
     endif
     
     // Enable periodic trigger
@@ -489,8 +533,9 @@ private function UpdateSingleFollower takes nothing returns nothing
     if unitData[KEY_IS_UNFOLLOWING] != 0 then
         // Ensure ONLY stopped effect is active
         if ENABLE_SPECIAL_EFFECTS then
+            call HideFollowingEffect(unitData)
             if unitData.effect[KEY_EFFECT_STOPPED] == null then
-                call DestroyAllEffects(unitData)
+                call DestroyStoppedEffect(unitData)
                 set unitData.effect[KEY_EFFECT_STOPPED] = CreateIndicatorEffect(EFFECT_STOPPED_PATH, follower, EFFECT_STOPPED_ATTACH)
                 if DEBUG_MODE then
                     call BJDebugMsg("FollowSystem: Created STOPPED effect (unfollowing)")
@@ -533,8 +578,9 @@ private function UpdateSingleFollower takes nothing returns nothing
         
         // Ensure ONLY stopped effect is active
         if ENABLE_SPECIAL_EFFECTS then
+            call HideFollowingEffect(unitData)
             if unitData.effect[KEY_EFFECT_STOPPED] == null then
-                call DestroyAllEffects(unitData)
+                call DestroyStoppedEffect(unitData)
                 set unitData.effect[KEY_EFFECT_STOPPED] = CreateIndicatorEffect(EFFECT_STOPPED_PATH, follower, EFFECT_STOPPED_ATTACH)
                 if DEBUG_MODE then
                     call BJDebugMsg("FollowSystem: Created STOPPED effect (too far)")
@@ -565,15 +611,10 @@ private function UpdateSingleFollower takes nothing returns nothing
     
     // Ensure ONLY following effect is active (unit is in range and following)
     if ENABLE_SPECIAL_EFFECTS and ENABLE_FOLLOWING_EFFECTS then
-        if unitData.effect[KEY_EFFECT_FOLLOWING] == null then
-            call DestroyAllEffects(unitData)
-            set unitData.effect[KEY_EFFECT_FOLLOWING] = CreateIndicatorEffect(EFFECT_FOLLOWING_PATH, follower, EFFECT_FOLLOWING_ATTACH)
-            if DEBUG_MODE then
-                call BJDebugMsg("FollowSystem: Created FOLLOWING effect (in range)")
-            endif
-        endif
+        call DestroyStoppedEffect(unitData)
+        call ShowFollowingEffect(unitData, follower)
     elseif ENABLE_SPECIAL_EFFECTS and unitData.effect[KEY_EFFECT_STOPPED] != null then
-        call DestroyAllEffects(unitData)
+        call DestroyStoppedEffect(unitData)
     endif
     
     // Only issue new order if:
