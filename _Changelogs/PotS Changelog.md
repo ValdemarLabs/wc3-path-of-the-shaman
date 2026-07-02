@@ -23,6 +23,12 @@
 - `Void Entity`
   Added the WIP `Void Entity` boss as a hidden initial map presence for future quest-related use, possibly tied to Aradion's questline.
   The boss can currently be revealed for testing with the debug command `/debug VoidEntity`.
+- `Ranger Missing`
+  Valeria now hard-resets to her home spot after the reunion completion instead of immediately resuming her home patrol.
+- `Rifts of Corruption`
+  Mana-rift ritual starts are more reliable across all three rifts, with the player hero and Aradion both required near the rift area.
+  Rift waves now arrive more often, stop spawning near the final ritual countdown, and Valeria's "They are too many!" line is reserved for sustained or overlapping waves instead of normal wave spawns.
+  Completed rituals now kill the current indexed mana-rift unit directly, and Aradion/Valeria followers stay active in Vanguard Vale, Verdant Plains, and their child zones.
 
 ### Technical Updates
 - `QuestGiver.j`
@@ -34,11 +40,16 @@
   Refactored Aradion's quest-giver library onto the new shared `QuestGiver` and `DialogSystem` helper APIs, removing local copies of common dialog, button, metadata, field-line, unit-lookup, unit-recreate, and unit-reset patterns.
   The file was reduced from over 4000 lines to roughly 3700 lines while keeping Aradion/Valeria-specific encounter, rift, Fading Sparks, and dialogue behavior inside `qAradion`.
   Converted the external progression helpers to proper public library APIs, so the exposed names are `qAradion_SetBackstorySeen` and `qAradion_SetRangerMissingReq1Complete`.
+- `UnitSpawn.j`
+  Fixed `Wave.getRemainingCount()` so checking live wave counts no longer empties the tracked wave group.
+- `FollowSystem.j`
+  Re-enabled the `TargetPreSelected.mdl` following ring as a persistent effect that hides/shows via alpha and scale instead of being destroyed during normal follow-state transitions, avoiding residual visuals from the model's missing death animation.
 
 ### Tool Updates
 - `qxxx-generator.html`
   Updated the qXXX generator to emit scaffolds that use the newer shared quest-giver helpers for metadata, hero resolution, quest buttons, and dialog flow.
   Replaced stale `TODO OLDGUI PARITY` wording with `TODO QUEST-SPECIFIC` so new quest-giver templates reflect the current JASS quest system instead of the removed GUI-trigger workflow.
+  Added the standard PotS library header, safer generated function ordering, public hook signatures, handle-local cleanup, leaner core `requires`, and per-quest recommended-level metadata.
 
 ### Actions Remaining
 - Decide how the hidden `Void Entity` boss should be connected to quest progression, including whether it belongs in Aradion's questline.
