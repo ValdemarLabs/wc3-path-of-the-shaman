@@ -335,18 +335,6 @@ private function StartFreezeTimer takes unit pet returns nothing
     set t = null
 endfunction
 
-private function RefreshPetDamageTrigger takes unit pet returns nothing
-    if PetDamageTrigger != null then
-        call DestroyTrigger(PetDamageTrigger)
-        set PetDamageTrigger = null
-    endif
-    if pet != null and GetUnitTypeId(pet) != 0 then
-        set PetDamageTrigger = CreateTrigger()
-        call TriggerRegisterUnitEvent(PetDamageTrigger, pet, EVENT_UNIT_DAMAGED)
-        call TriggerAddAction(PetDamageTrigger, function OnPetDamaged)
-    endif
-endfunction
-
 private function OnReviveTimer takes nothing returns nothing
     local unit pet = udg_TamedUnit
 
@@ -366,7 +354,6 @@ private function OnReviveTimer takes nothing returns nothing
     call SetUnitInvulnerable(pet, false)
     call SetUnitOwner(pet, Player(PET_OWNER_INDEX), true)
     call Companions_Resume(pet)
-    call RefreshPetDamageTrigger(pet)
 
     if udg_Pet_DeathPoint != null then
         call RemoveLocation(udg_Pet_DeathPoint)
@@ -429,6 +416,18 @@ private function OnPetDamaged takes nothing returns nothing
     endif
 
     set pet = null
+endfunction
+
+private function RefreshPetDamageTrigger takes unit pet returns nothing
+    if PetDamageTrigger != null then
+        call DestroyTrigger(PetDamageTrigger)
+        set PetDamageTrigger = null
+    endif
+    if pet != null and GetUnitTypeId(pet) != 0 then
+        set PetDamageTrigger = CreateTrigger()
+        call TriggerRegisterUnitEvent(PetDamageTrigger, pet, EVENT_UNIT_DAMAGED)
+        call TriggerAddAction(PetDamageTrigger, function OnPetDamaged)
+    endif
 endfunction
 
 private function RegisterPetUnit takes unit pet, unit leader, boolean resetCounters returns nothing
