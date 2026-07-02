@@ -7,9 +7,10 @@
     Version:
 
     Description:
-    Companion party registration and control-mode handling. This library keeps
-    the existing GUI companion globals synchronized for older systems while
-    routing movement through FollowSystem.
+    Companion party registration, information, idle state, and control-mode
+    handling. This library keeps the existing GUI companion globals
+    synchronized for older systems while using FollowSystem for the actual
+    follow orders where appropriate.
 
     API:
     call Companions_Add(unit companionUnit, string companionIcon, unit leader, integer mode)
@@ -38,6 +39,7 @@ globals
     private constant integer REJECT_OWNER_INDEX = 1
     private constant real COMPANION_FOLLOW_DISTANCE = 2500.00
     private constant real COMPANION_AGGRESSIVE_DISTANCE = 3500.00
+    private constant real COMPANION_IDLE_CHECK_INTERVAL = 10.00
 
     private constant integer ABIL_INVITE = 'A622'
     private constant integer ABIL_KICK = 'A621'
@@ -83,6 +85,7 @@ globals
     private Table CompanionTracked = 0
 
     private group ModeTargetGroup = null
+    private trigger IdleTrigger = null
     private player ModeSelectionPlayer = null
     private boolean ModeSelectionFound = false
     private integer ModeActionMode = COMPANION_MODE_DEFEND
@@ -226,6 +229,12 @@ endfunction
 private function RemoveWanderAbility takes unit u returns nothing
     if u != null and GetUnitAbilityLevel(u, ABIL_WANDER_NEUTRAL) > 0 then
         call UnitRemoveAbility(u, ABIL_WANDER_NEUTRAL)
+    endif
+endfunction
+
+private function AddWanderAbility takes unit u returns nothing
+    if u != null and GetUnitAbilityLevel(u, ABIL_WANDER_NEUTRAL) == 0 then
+        call UnitAddAbility(u, ABIL_WANDER_NEUTRAL)
     endif
 endfunction
 
@@ -421,6 +430,104 @@ private function SetModeInternal takes unit companionUnit, integer mode returns 
 
     set CompanionMode[unitId] = NormalizeMode(mode)
     call ApplyOrders(companionUnit)
+endfunction
+
+private function SetIdleFlag takes unit controlledUnit, boolean isIdle returns nothing
+    local integer customValue
+
+    if controlledUnit == null then
+        return
+    endif
+
+    set customValue = GetUnitUserData(controlledUnit)
+    if customValue > 0 then
+        set udg_CompanionUnitIdle[customValue] = isIdle
+    endif
+endfunction
+
+private function ClearIdleState takes unit controlledUnit returns nothing
+    call RemoveWanderAbility(controlledUnit)
+    call SetIdleFlag(controlledUnit, false)
+endfunction
+
+private function IsCompanionIdleBlocked takes unit controlledUnit returns boolean
+    local integer unitId
+    local integer mode
+
+    if controlledUnit == null or CompanionTracked == 0 then
+        return false
+    endif
+
+    set unitId = GetHandleId(controlledUnit)
+    if CompanionTracked[unitId] == 0 then
+        return false
+    endif
+
+    set mode = NormalizeMode(CompanionMode[unitId])
+    return CompanionSuspended[unitId] == 1 or mode == COMPANION_MODE_HOLD
+endfunction
+
+private function UpdateCompanionIdleUnit takes unit controlledUnit, boolean isPet returns nothing
+    local integer customValue
+
+    if controlledUnit == null or GetUnitTypeId(controlledUnit) == 0 then
+        return
+    endif
+
+    call TrackExistingControlUnit(controlledUnit)
+    set customValue = GetUnitUserData(controlledUnit)
+    if customValue <= 0 or not IsAliveUnit(controlledUnit) or not udg_IsUnitAlive[customValue] then
+        call ClearIdleState(controlledUnit)
+        return
+    endif
+
+    if IsCompanionIdleBlocked(controlledUnit) then
+        call ClearIdleState(controlledUnit)
+        return
+    endif
+
+    if isPet then
+        if not udg_UnitMoving[customValue] then
+            call AddWanderAbility(controlledUnit)
+            set udg_CompanionUnitIdle[customValue] = true
+        else
+            call ClearIdleState(controlledUnit)
+        endif
+    elseif not udg_UnitMoving[customValue] and not udg_GCSM_UnitInCombat[customValue] and not udg_CompanionDialogueActive then
+        call AddWanderAbility(controlledUnit)
+        set udg_CompanionUnitIdle[customValue] = true
+    else
+        call ClearIdleState(controlledUnit)
+    endif
+endfunction
+
+private function UpdateCompanionIdleEnum takes nothing returns nothing
+    local unit controlledUnit = GetEnumUnit()
+
+    call UpdateCompanionIdleUnit(controlledUnit, false)
+
+    set controlledUnit = null
+endfunction
+
+private function UpdatePetIdleEnum takes nothing returns nothing
+    local unit controlledUnit = GetEnumUnit()
+
+    call UpdateCompanionIdleUnit(controlledUnit, true)
+
+    set controlledUnit = null
+endfunction
+
+private function OnIdlePeriodic takes nothing returns nothing
+    if udg_InCinematic then
+        return
+    endif
+
+    if udg_Companion_Group != null then
+        call ForGroup(udg_Companion_Group, function UpdateCompanionIdleEnum)
+    endif
+    if udg_TamedUnits != null then
+        call ForGroup(udg_TamedUnits, function UpdatePetIdleEnum)
+    endif
 endfunction
 
 private function IsNamedCompanionType takes integer unitTypeId returns boolean
@@ -699,23 +806,252 @@ private function HandleFocus takes unit target, unit leader returns nothing
     endif
 endfunction
 
-private function HandleInformation takes unit target returns nothing
-    local integer unitId
-    local string modeText = "Uncontrolled"
+private function IsHiredUnitType takes integer unitTypeId returns boolean
+    if unitTypeId == UNIT_GRUNT_1 or unitTypeId == UNIT_GRUNT_5 or unitTypeId == UNIT_GRUNT_10 or unitTypeId == UNIT_GRUNT_15 or unitTypeId == UNIT_GRUNT_20 or unitTypeId == UNIT_GRUNT_25 then
+        return true
+    endif
+    if unitTypeId == UNIT_MARAUDER_1 or unitTypeId == UNIT_MARAUDER_5 or unitTypeId == UNIT_STONEGUARD_5 then
+        return true
+    endif
+    return unitTypeId == UNIT_RAIDER or unitTypeId == UNIT_HEADHUNTER or unitTypeId == UNIT_WITCH_DOCTOR or unitTypeId == UNIT_HIRED_SHAMAN
+endfunction
 
-    if target == null or not IsControlGroupUnit(target) then
-        return
+private function GetDisplayName takes unit target returns string
+    local string displayName
+
+    if target == null or GetUnitTypeId(target) == 0 then
+        return "Unknown"
     endif
 
-    call TrackExistingControlUnit(target)
-    if CompanionTracked != 0 then
-        set unitId = GetHandleId(target)
-        if CompanionTracked[unitId] == 1 then
-            set modeText = GetModeName(CompanionMode[unitId])
+    if IsUnitType(target, UNIT_TYPE_HERO) then
+        set displayName = GetHeroProperName(target)
+        if displayName != null and displayName != "" then
+            return displayName
         endif
     endif
 
-    call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Companion:|r " + GetUnitName(target) + "|n|cFFFFCC00Level:|r " + I2S(GetUnitLevel(target)) + "|n|cFFFFCC00Life:|r " + I2S(R2I(GetUnitState(target, UNIT_STATE_LIFE))) + " / " + I2S(R2I(GetUnitState(target, UNIT_STATE_MAX_LIFE))) + "|n|cFFFFCC00Mode:|r " + modeText)
+    set displayName = GetUnitName(target)
+    if displayName != null and displayName != "" then
+        return displayName
+    endif
+
+    set displayName = GetObjectName(GetUnitTypeId(target))
+    if displayName != null and displayName != "" then
+        return displayName
+    endif
+
+    return "Unknown"
+endfunction
+
+private function GetUnitTypeInfoName takes integer unitTypeId returns string
+    local string objectName
+
+    if unitTypeId == UNIT_ROGUE then
+        return "Rogue"
+    elseif unitTypeId == UNIT_WARLOCK or unitTypeId == UNIT_RIVERBANE_WARLOCK then
+        return "Warlock"
+    elseif unitTypeId == UNIT_SHAMAN then
+        return "Restoration Shaman"
+    elseif unitTypeId == UNIT_WARRIOR then
+        return "Warrior"
+    elseif unitTypeId == UNIT_ENGINEER or unitTypeId == UNIT_ENGINEER_SHREDDER then
+        return "Engineer"
+    elseif unitTypeId == UNIT_PALADIN then
+        return "Paladin"
+    elseif unitTypeId == UNIT_GRUNT_1 or unitTypeId == UNIT_GRUNT_5 or unitTypeId == UNIT_GRUNT_10 or unitTypeId == UNIT_GRUNT_15 or unitTypeId == UNIT_GRUNT_20 or unitTypeId == UNIT_GRUNT_25 then
+        return "Grunt"
+    elseif unitTypeId == UNIT_MARAUDER_1 or unitTypeId == UNIT_MARAUDER_5 then
+        return "Marauder"
+    elseif unitTypeId == UNIT_STONEGUARD_5 then
+        return "Stoneguard"
+    elseif unitTypeId == UNIT_RAIDER then
+        return "Raider"
+    elseif unitTypeId == UNIT_HEADHUNTER then
+        return "Headhunter"
+    elseif unitTypeId == UNIT_WITCH_DOCTOR then
+        return "Witch Doctor"
+    elseif unitTypeId == UNIT_HIRED_SHAMAN then
+        return "Shaman"
+    endif
+
+    set objectName = GetObjectName(unitTypeId)
+    if objectName != null and objectName != "" then
+        return objectName
+    endif
+
+    return "Controlled Unit"
+endfunction
+
+private function GetFactionInfoText takes unit target returns string
+    local integer unitTypeId
+
+    if target == null then
+        return "Unknown"
+    endif
+
+    set unitTypeId = GetUnitTypeId(target)
+    if udg_TamedUnits != null and IsUnitInGroup(target, udg_TamedUnits) then
+        return "Tamed Beast"
+    elseif target == udg_Shadowclaw then
+        return "Shadowclaw"
+    elseif unitTypeId == UNIT_ENGINEER or unitTypeId == UNIT_ENGINEER_SHREDDER then
+        return "Goblins"
+    elseif unitTypeId == UNIT_PALADIN or unitTypeId == UNIT_RIVERBANE_WARLOCK then
+        return "Riverbane Citizen"
+    elseif IsNamedCompanionType(unitTypeId) or IsHiredUnitType(unitTypeId) then
+        return "Horde"
+    endif
+
+    return "Unknown"
+endfunction
+
+private function GetAttackTypeInfoText takes unit target returns string
+    if target != null and IsUnitType(target, UNIT_TYPE_RANGED_ATTACKER) then
+        return "Ranged"
+    endif
+    return "Melee"
+endfunction
+
+private function GetLevelInfoText takes unit target returns string
+    if target == null then
+        return "0"
+    endif
+    if IsUnitType(target, UNIT_TYPE_HERO) then
+        return I2S(GetHeroLevel(target))
+    endif
+    return I2S(GetUnitLevel(target))
+endfunction
+
+private function GetDamageInfoText takes unit target returns string
+    local integer baseDamage
+    local integer diceCount
+    local integer diceSides
+
+    if target == null then
+        return "0-0"
+    endif
+
+    set baseDamage = BlzGetUnitBaseDamage(target, 0)
+    set diceCount = BlzGetUnitDiceNumber(target, 0)
+    set diceSides = BlzGetUnitDiceSides(target, 0)
+
+    if diceCount < 0 then
+        set diceCount = 0
+    endif
+    if diceSides < 1 then
+        set diceSides = 1
+    endif
+
+    return I2S(baseDamage + diceCount) + "-" + I2S(baseDamage + diceCount * diceSides)
+endfunction
+
+private function GetSharedStatsInfoText takes unit target returns string
+    local integer customValue
+
+    if target == null then
+        return "-"
+    endif
+
+    set customValue = GetUnitUserData(target)
+    if customValue <= 0 then
+        return "-"
+    endif
+
+    return I2S(udg_Stats_Hit[customValue]) + "% Hit | " + I2S(udg_Stats_Crit[customValue]) + "% Crit | " + I2S(udg_Stats_Dodge[customValue]) + "% Dodge | " + I2S(udg_Stats_Block[customValue]) + "% Block | " + I2S(udg_Stats_SpellPowerPct[customValue]) + "% Spell | " + I2S(udg_Stats_SpellPowerFlat[customValue]) + " Spell Power"
+endfunction
+
+private function GetFocusInfoText takes unit target returns string
+    local unit leader = GetFocusedLeader(target)
+    local string result = "None"
+
+    if IsControlGroupUnit(target) and IsAliveUnit(leader) then
+        set result = GetDisplayName(leader)
+    endif
+
+    set leader = null
+    return result
+endfunction
+
+private function GetAbilityInfoText takes unit target returns string
+    local integer unitTypeId
+
+    if target == null then
+        return "-"
+    endif
+
+    set unitTypeId = GetUnitTypeId(target)
+    if unitTypeId == UNIT_WARLOCK or unitTypeId == UNIT_RIVERBANE_WARLOCK then
+        return "Shadow Bolt, Life Drain, Rain of Fire, Banish, Fear, Curse of Agony, Life Tap, Summon Imp"
+    elseif unitTypeId == UNIT_ROGUE then
+        return "Evasion, Garrote, Shadowstep, Sinister Strike, Slice and Dice, Surprise Attack, Toxic Venom"
+    elseif unitTypeId == UNIT_WARRIOR then
+        return "Battle Shout, Charge, Heroic Strike, Rend, Sunder Armor, Thunder Clap, Retaliation, Recklessness"
+    elseif unitTypeId == UNIT_SHAMAN then
+        return "Chain Heal, Chain Lightning, Earth Totem, Earthbind Totem, Fire Totem, Stoneskin Totem, Water Totem, Wind Totem, Windfury Totem, Healing Wave, Hex, Lightning Bolt"
+    elseif unitTypeId == UNIT_ENGINEER then
+        return "Repair, Mechanical Construct, Grenade, Turret, Shredder, Drone, Smoke Bomb"
+    elseif unitTypeId == UNIT_ENGINEER_SHREDDER then
+        return "Shred, Charge, Slam, Cluster Rockets, Smoke Bomb"
+    elseif unitTypeId == UNIT_PALADIN then
+        return "Divine Shield, Holy Light, Inner Fire, Judgement Strike, Lay on Hands"
+    elseif target == udg_Shadowclaw then
+        return "Initial pet rules, scaled stats, pet inventory, fatigue, revive"
+    elseif udg_TamedUnits != null and IsUnitInGroup(target, udg_TamedUnits) then
+        return "Tamed beast abilities, pet inventory, fatigue, revive"
+    elseif IsHiredUnitType(unitTypeId) then
+        return "Hired unit command-card abilities"
+    endif
+
+    return "Unit command-card abilities"
+endfunction
+
+private function HandleInformation takes unit target returns nothing
+    local integer unitId
+    local integer unitTypeId
+    local real maxMana
+    local string modeText = "Uncontrolled"
+
+    if target == null or GetUnitTypeId(target) == 0 then
+        return
+    endif
+
+    set unitTypeId = GetUnitTypeId(target)
+    if not IsControlGroupUnit(target) and not IsNamedCompanionType(unitTypeId) and not IsHiredUnitType(unitTypeId) then
+        return
+    endif
+
+    if gg_snd_GoodJob != null then
+        call StartSound(gg_snd_GoodJob)
+    endif
+
+    if IsControlGroupUnit(target) then
+        call TrackExistingControlUnit(target)
+        if CompanionTracked != 0 then
+            set unitId = GetHandleId(target)
+            if CompanionTracked[unitId] == 1 then
+                set modeText = GetModeName(CompanionMode[unitId])
+            endif
+        endif
+    else
+        set modeText = "Not in party"
+    endif
+
+    call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Name:|r " + GetDisplayName(target))
+    call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Unit type: |r" + GetUnitTypeInfoName(unitTypeId))
+    call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Attack type: |r" + GetAttackTypeInfoText(target))
+    call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Faction: |r" + GetFactionInfoText(target))
+    call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Level: |r" + GetLevelInfoText(target) + " | |cFFFFCC00Life: |r" + I2S(R2I(GetUnitState(target, UNIT_STATE_LIFE))) + " / " + I2S(R2I(GetUnitState(target, UNIT_STATE_MAX_LIFE))))
+
+    set maxMana = GetUnitState(target, UNIT_STATE_MAX_MANA)
+    if maxMana > 0.00 then
+        call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Mana: |r" + I2S(R2I(GetUnitState(target, UNIT_STATE_MANA))) + " / " + I2S(R2I(maxMana)) + " | |cFFFFCC00Damage: |r" + GetDamageInfoText(target) + " | |cFFFFCC00Armor: |r" + I2S(R2I(BlzGetUnitArmor(target))))
+    else
+        call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Damage: |r" + GetDamageInfoText(target) + " | |cFFFFCC00Armor: |r" + I2S(R2I(BlzGetUnitArmor(target))))
+    endif
+
+    call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Stats: |r" + GetSharedStatsInfoText(target))
+    call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Mode: |r" + modeText + " | |cFFFFCC00Focus: |r" + GetFocusInfoText(target))
+    call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFF7EBFF1Abilities:|r " + GetAbilityInfoText(target))
 endfunction
 
 private function DropUnitItems takes unit target returns nothing
@@ -945,6 +1281,10 @@ private function Init takes nothing returns nothing
         exitwhen playerIndex > MAX_PLAYER_INDEX
     endloop
     call TriggerAddAction(bj_lastCreatedTrigger, function HandleSoldUnit)
+
+    set IdleTrigger = CreateTrigger()
+    call TriggerRegisterTimerEvent(IdleTrigger, COMPANION_IDLE_CHECK_INTERVAL, true)
+    call TriggerAddAction(IdleTrigger, function OnIdlePeriodic)
 
     call UnitDeathEvent_Register(function OnUnitDeath)
 endfunction
