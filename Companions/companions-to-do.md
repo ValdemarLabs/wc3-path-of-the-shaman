@@ -50,6 +50,18 @@ Shared map/system state:
 - `udg_Zulkis`
 - `udg_Valeria`
 - `udg_Aradion`
+- `udg_InCinematic`
+- `udg_IsUnitAlive[]`
+- `udg_UnitMoving[]`
+- `udg_GCSM_UnitInCombat[]`
+- `udg_CompanionDialogueActive`
+- `udg_CompanionUnitIdle[]`
+- `udg_Stats_Hit[]`
+- `udg_Stats_Crit[]`
+- `udg_Stats_Dodge[]`
+- `udg_Stats_Block[]`
+- `udg_Stats_SpellPowerPct[]`
+- `udg_Stats_SpellPowerFlat[]`
 - `udg_UnitHider_ReferenceUnits[]`
 - `udg_DamageEventTarget`
 - `udg_DamageEventAmount`
@@ -86,6 +98,8 @@ Companion add/remove and hired units:
 - `Party Other Companion Dies` -Disabled 2.7.2026
 
 Companion utility commands:
+- `Companion Information` -Disabled 2.7.2026
+- `Companion Idle or Move` -Disabled 2.7.2026
 - `Companion Drop Items` -Disabled 2.7.2026
 
 Pet and tame flow:
@@ -103,7 +117,9 @@ Pet and tame flow:
 Notes:
 - `Tame Beast II` and `Tame Beast III` were empty GUI exports. `Pet.j` now handles their ability rawcodes as higher-rank tame spells.
 - The old Shadowclaw invite/kick branches inside `Horde AI Companion Invite` and `Horde AI Companion Kick` are handled by `Pet.j`.
-- The old active mode triggers should stay disabled once the JASS libraries are active because `FollowSystem.j` now issues follow/control orders.
+- The old active mode triggers should stay disabled once the JASS libraries are active because `Companions.j` now owns companion/pet mode application and calls `FollowSystem.j` as the low-level follow-order helper.
+- `FollowSystem.j` is not full companion AI parity by itself. Quest escort or strict-close-follow NPCs can use it directly, while normal companions/pets still need `Companions.j` for selected-unit mode control, combat posture, focus, idle/wander state, information output, and shared GUI globals.
+- `Companion Idle or Move` chat calls are intentionally not ported here; only the idle/wander state maintenance was moved.
 
 ## GUI Triggers To Keep For Now
 
@@ -133,10 +149,10 @@ Stats board / old multiboard:
 - After `StatsBoardUI.j` is active, remove direct calls to `gg_trg_MultiboardUpdate_Add_Companion`, `gg_trg_MultiboardUpdate_Remove_Companion`, `gg_trg_MultiboardUpdate_Add_Tamed`, and `gg_trg_MultiboardUpdate_Remove_Tamed`.
 
 Behavior parity checks:
-- Validate that Passive, Normal, Aggressive, and Hold Position feel correct through `FollowSystem.j`. The old GUI active triggers used periodic follow/right-click/attack-move orders; the new implementation uses follow styles and mode-specific follow distance.
+- Validate that Passive, Normal, Aggressive, and Hold Position feel correct through `Companions.j`. The old GUI active triggers used periodic follow/right-click/attack-move orders; the new implementation applies mode selection in `Companions.j` and delegates low-level follow orders to `FollowSystem.j`.
 - Validate the new selected-unit mode behavior: selected companion/pet gets the mode alone; no selected controlled unit applies the mode to the full companion/pet group.
-- Decide whether the old `Companion Idle or Move` wander behavior should stay retired or be rebuilt inside the future AI libraries. It was not copied because it conflicts with `FollowSystem.j` order ownership.
-- Expand or replace the simplified `Companion Information` output if exact old info text is still wanted.
+- Validate the rebuilt `Companion Idle or Move` behavior in-game. `Companions.j` now adds/removes `Wander (Neutral)` and updates `udg_CompanionUnitIdle[]`; it also fixes the old GUI branch that cleared `CompanionUnitIdle[0]` instead of the picked unit custom value. Idle and moving chat barks still belong to the later AI library migration.
+- Validate the rebuilt `Companion Information` output in-game. `Companions.j` now restores the old name/type/attack/faction/stats/abilities categories and adds current mode/focus/life/mana/damage/armor. Exact long ability description text was not restored because the old GUI export only preserves those lines in truncated form.
 - Validate hired unit rawcodes and icon/level mappings in-game.
 
 Pet-specific follow-up:
