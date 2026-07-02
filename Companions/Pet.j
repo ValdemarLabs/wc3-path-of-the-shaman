@@ -80,6 +80,9 @@ globals
 
     private group PetEnumGroup = null
     private unit FoundShadowclaw = null
+    private player SelectedPetPlayer = null
+    private unit SelectedPetTarget = null
+    private integer SelectedPetCount = 0
     private trigger PetDamageTrigger = null
 endglobals
 
@@ -650,6 +653,43 @@ private function KickPet takes unit pet returns nothing
     call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(pet) + " is no longer your pet.")
 endfunction
 
+private function FindSelectedPetTarget takes nothing returns nothing
+    local unit pet = GetEnumUnit()
+
+    if pet != null and IsUnitSelected(pet, SelectedPetPlayer) then
+        set SelectedPetCount = SelectedPetCount + 1
+        if SelectedPetTarget == null then
+            set SelectedPetTarget = pet
+        endif
+    endif
+
+    set pet = null
+endfunction
+
+private function GetSelectedPetTarget takes player commandPlayer returns unit
+    local unit selectedTarget
+
+    if udg_TamedUnits == null then
+        return null
+    endif
+
+    set SelectedPetPlayer = commandPlayer
+    set SelectedPetTarget = null
+    set SelectedPetCount = 0
+    call ForGroup(udg_TamedUnits, function FindSelectedPetTarget)
+
+    if SelectedPetCount == 1 then
+        set selectedTarget = SelectedPetTarget
+    else
+        set selectedTarget = null
+    endif
+
+    set SelectedPetPlayer = null
+    set SelectedPetTarget = null
+    set SelectedPetCount = 0
+    return selectedTarget
+endfunction
+
 private function OnSpellEffect takes nothing returns nothing
     local integer abilityId = GetSpellAbilityId()
     local unit caster = GetTriggerUnit()
@@ -660,6 +700,9 @@ private function OnSpellEffect takes nothing returns nothing
     elseif abilityId == ABIL_INVITE then
         call InviteShadowclaw(caster, target)
     elseif abilityId == ABIL_KICK then
+        if target == null then
+            set target = GetSelectedPetTarget(GetOwningPlayer(caster))
+        endif
         call KickPet(target)
     endif
 
