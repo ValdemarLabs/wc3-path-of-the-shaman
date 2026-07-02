@@ -1938,6 +1938,11 @@ private function PrepareValeriaForRiftsIntro takes unit hero returns nothing
 	endif
 	call StopFollow(Valeria)
 	call StopValeriaPatrolInternal()
+	if QuestGiver_IsWithinRange(Aradion, Valeria, VALERIA_RANGE) then
+		call IssuePointOrder(Valeria, "move", GetRectCenterX(gg_rct_ValeriaNewPos), GetRectCenterY(gg_rct_ValeriaNewPos))
+		set hero = null
+		return
+	endif
 	if hero != null and QuestGiver_IsUnitAlive(hero) then
 		set facing = (GetUnitFacing(hero) + 180.00) * bj_DEGTORAD
 		set startX = GetUnitX(hero) + RIFTS_INTRO_VALERIA_OFFSET * Cos(facing)
@@ -3313,6 +3318,7 @@ endfunction
 private function OnCompleteQuest1FadeHomeReturn takes nothing returns nothing
 	local timer t = GetExpiredTimer()
 	call ExecuteFunc("qAradion_RecreateValeriaAtHomePublic")
+	call StartValeriaHomePatrolInternal()
 	if t != null then
 		call DestroyTimer(t)
 	endif
@@ -3326,6 +3332,7 @@ private function OnCompleteQuest1End takes nothing returns nothing
 	call StartExitFadeOut()
 	set t = CreateTimer()
 	call TimerStart(t, 1.00, false, function OnCompleteQuest1FadeHomeReturn)
+	set t = null
 endfunction
 
 private function OnCompleteQuest1 takes nothing returns nothing
