@@ -18,8 +18,11 @@
     call Companions_Remove(unit companionUnit)
     call Companions_SetLeader(unit companionUnit, unit leader)
     call Companions_SetMode(unit companionUnit, integer mode)
+    call Companions_Halt(unit companionUnit)
+    call Companions_HaltAll()
     call Companions_Suspend(unit companionUnit)
     call Companions_Resume(unit companionUnit)
+    call Companions_ResumeAll()
     call Companions_RegisterControlled(unit controlledUnit, unit leader, integer mode)
     call Companions_UnregisterControlled(unit controlledUnit)
     call Companions_IsControlled(unit controlledUnit) returns boolean
@@ -37,6 +40,7 @@ globals
 
     private constant boolean DEBUG = false
     private constant integer MAX_PLAYER_INDEX = 27
+    private constant integer CONTROL_PLAYER_INDEX = 0
     private constant integer COMPANION_OWNER_INDEX = 18
     private constant integer REJECT_OWNER_INDEX = 1
     private constant real COMPANION_FOLLOW_DISTANCE = 2500.00
@@ -109,6 +113,7 @@ globals
     private trigger IdleTrigger = null
     private trigger OrderTrigger = null
     private player ModeSelectionPlayer = null
+    private unit ModeCommandCaster = null
     private boolean ModeSelectionFound = false
     private player CommandSelectionPlayer = null
     private unit CommandSelectionTarget = null
@@ -241,6 +246,12 @@ private function SetFocusUnit takes unit u, unit leader returns nothing
     if u == null then
         return
     endif
+    if udg_CompanionFocusNazgrek == null then
+        set udg_CompanionFocusNazgrek = CreateGroup()
+    endif
+    if udg_CompanionFocusZulkis == null then
+        set udg_CompanionFocusZulkis = CreateGroup()
+    endif
     if udg_CompanionFocusNazgrek != null then
         call GroupRemoveUnit(udg_CompanionFocusNazgrek, u)
     endif
@@ -278,6 +289,27 @@ private function FindCompanionIndex takes unit companionUnit returns integer
     return 0
 endfunction
 
+private function GetUnitTypeIconPath takes integer unitTypeId returns string
+    local string iconPath = BlzGetAbilityIcon(unitTypeId)
+
+    if iconPath == null then
+        return ""
+    endif
+    return iconPath
+endfunction
+
+private function EnsureGuiCompanionGroups takes nothing returns nothing
+    if udg_Companion_Group == null then
+        set udg_Companion_Group = CreateGroup()
+    endif
+    if udg_CompanionFocusNazgrek == null then
+        set udg_CompanionFocusNazgrek = CreateGroup()
+    endif
+    if udg_CompanionFocusZulkis == null then
+        set udg_CompanionFocusZulkis = CreateGroup()
+    endif
+endfunction
+
 private function SyncGuiCompanionEntry takes unit companionUnit, string companionIcon returns nothing
     local integer index
     local integer customValue
@@ -286,11 +318,22 @@ private function SyncGuiCompanionEntry takes unit companionUnit, string companio
         return
     endif
 
+    call EnsureGuiCompanionGroups()
+    call GroupAddUnit(udg_Companion_Group, companionUnit)
+
     set index = FindCompanionIndex(companionUnit)
     set customValue = GetUnitUserData(companionUnit)
 
+    if index == 0 then
+        set udg_CompanionCount = udg_CompanionCount + 1
+        set index = udg_CompanionCount
+        set udg_CompanionUnit[index] = companionUnit
+    endif
+
     if index > 0 then
-        set udg_CompanionIndex[customValue] = index
+        if customValue > 0 then
+            set udg_CompanionIndex[customValue] = index
+        endif
         if companionIcon != "" then
             set udg_CompanionIcon[index] = companionIcon
         endif
@@ -298,6 +341,32 @@ private function SyncGuiCompanionEntry takes unit companionUnit, string companio
     if customValue > 0 then
         set udg_UnitHider_ReferenceUnits[customValue] = companionUnit
     endif
+endfunction
+
+private function RepairGuiCompanionState takes nothing returns nothing
+    local integer i = 1
+    local unit companionUnit
+    local integer customValue
+
+    call EnsureGuiCompanionGroups()
+    loop
+        exitwhen i > udg_CompanionCount
+        set companionUnit = udg_CompanionUnit[i]
+        if companionUnit != null and GetUnitTypeId(companionUnit) != 0 then
+            call GroupAddUnit(udg_Companion_Group, companionUnit)
+            set customValue = GetUnitUserData(companionUnit)
+            if customValue > 0 then
+                set udg_CompanionIndex[customValue] = i
+                set udg_UnitHider_ReferenceUnits[customValue] = companionUnit
+            endif
+            if not IsUnitInGroup(companionUnit, udg_CompanionFocusNazgrek) and not IsUnitInGroup(companionUnit, udg_CompanionFocusZulkis) then
+                call SetFocusUnit(companionUnit, GetFocusedLeader(companionUnit))
+            endif
+        endif
+        set i = i + 1
+    endloop
+
+    set companionUnit = null
 endfunction
 
 private function RegisterControlledInternal takes unit controlledUnit, unit leader, integer mode, boolean registered, string icon returns nothing
@@ -509,9 +578,15 @@ private function UpdateCompanionOrderUnit takes unit controlledUnit returns noth
         return
     endif
 
-    set leader = CompanionLeader.unit[unitId]
     set mode = NormalizeMode(CompanionMode[unitId])
     set CompanionMode[unitId] = mode
+    set leader = CompanionLeader.unit[unitId]
+    if not IsAliveUnit(leader) then
+        set leader = GetFocusedLeader(controlledUnit)
+        if IsAliveUnit(leader) then
+            set CompanionLeader.unit[unitId] = leader
+        endif
+    endif
     set customValue = GetUnitUserData(controlledUnit)
     if not IsAliveByCustomValue(controlledUnit, customValue) or not IsAliveUnit(leader) or leader == controlledUnit then
         call ClearCompanionFarIcon(controlledUnit)
@@ -555,6 +630,7 @@ private function OnOrderPeriodic takes nothing returns nothing
         return
     endif
 
+    call RepairGuiCompanionState()
     if udg_Companion_Group != null then
         call ForGroup(udg_Companion_Group, function UpdateCompanionOrderEnum)
     endif
@@ -587,9 +663,15 @@ private function ApplyOrders takes unit companionUnit returns nothing
         return
     endif
 
-    set leader = CompanionLeader.unit[unitId]
     set mode = NormalizeMode(CompanionMode[unitId])
     set CompanionMode[unitId] = mode
+    set leader = CompanionLeader.unit[unitId]
+    if not IsAliveUnit(leader) then
+        set leader = GetFocusedLeader(companionUnit)
+        if IsAliveUnit(leader) then
+            set CompanionLeader.unit[unitId] = leader
+        endif
+    endif
 
     if mode == COMPANION_MODE_HOLD then
         call FollowSystem_RemoveUnit(companionUnit)
@@ -621,6 +703,9 @@ private function AddInternal takes unit companionUnit, string companionIcon, uni
 
     call EnsureState()
     set unitId = GetHandleId(companionUnit)
+    if companionIcon == "" then
+        set companionIcon = GetUnitTypeIconPath(GetUnitTypeId(companionUnit))
+    endif
 
     if CompanionRegistered[unitId] == 0 then
         call QuestGiver_AddCompanion(companionUnit, companionIcon)
@@ -643,8 +728,17 @@ private function RemoveInternal takes unit companionUnit returns nothing
     call FollowSystem_RemoveUnit(companionUnit)
     call ClearCompanionFarIcon(companionUnit)
 
-    if CompanionRegistered[unitId] == 1 then
+    if CompanionRegistered[unitId] == 1 or FindCompanionIndex(companionUnit) > 0 then
         call QuestGiver_RemoveCompanion(companionUnit)
+    endif
+    if udg_Companion_Group != null then
+        call GroupRemoveUnit(udg_Companion_Group, companionUnit)
+    endif
+    if udg_CompanionFocusNazgrek != null then
+        call GroupRemoveUnit(udg_CompanionFocusNazgrek, companionUnit)
+    endif
+    if udg_CompanionFocusZulkis != null then
+        call GroupRemoveUnit(udg_CompanionFocusZulkis, companionUnit)
     endif
 
     call CompanionLeader.remove(unitId)
@@ -714,6 +808,26 @@ private function SetEscortBehaviorInternal takes unit controlledUnit, boolean en
         call FollowSystem_RemoveUnit(controlledUnit)
     endif
     call ApplyOrders(controlledUnit)
+endfunction
+
+private function SetSuspendedInternal takes unit companionUnit, boolean suspended returns nothing
+    local integer unitId
+
+    if companionUnit == null or GetUnitTypeId(companionUnit) == 0 or CompanionTracked == 0 then
+        return
+    endif
+
+    set unitId = GetHandleId(companionUnit)
+    if CompanionTracked[unitId] == 0 then
+        return
+    endif
+
+    if suspended then
+        set CompanionSuspended[unitId] = 1
+    else
+        set CompanionSuspended[unitId] = 0
+    endif
+    call ApplyOrders(companionUnit)
 endfunction
 
 private function SetIdleFlag takes unit controlledUnit, boolean isIdle returns nothing
@@ -806,6 +920,7 @@ private function OnIdlePeriodic takes nothing returns nothing
         return
     endif
 
+    call RepairGuiCompanionState()
     if udg_Companion_Group != null then
         call ForGroup(udg_Companion_Group, function UpdateCompanionIdleEnum)
     endif
@@ -928,10 +1043,20 @@ private function RejectTemporaryCompanion takes unit companionUnit, string messa
     call IssuePointOrder(companionUnit, "attack", GetUnitX(companionUnit) + GetRandomReal(-600.00, 600.00), GetUnitY(companionUnit) + GetRandomReal(-600.00, 600.00))
 endfunction
 
+private function GetCommandPlayer takes unit caster returns player
+    if caster == null then
+        return Player(CONTROL_PLAYER_INDEX)
+    endif
+    if GetOwningPlayer(caster) == Player(COMPANION_OWNER_INDEX) then
+        return Player(CONTROL_PLAYER_INDEX)
+    endif
+    return GetOwningPlayer(caster)
+endfunction
+
 private function AddSelectedModeTarget takes nothing returns nothing
     local unit u = GetEnumUnit()
 
-    if IsValidControlTarget(u) and IsUnitSelected(u, ModeSelectionPlayer) then
+    if IsValidControlTarget(u) and (IsUnitSelected(u, ModeSelectionPlayer) or u == ModeCommandCaster) then
         call GroupAddUnit(ModeTargetGroup, u)
         set ModeSelectionFound = true
     endif
@@ -956,6 +1081,7 @@ private function GetSelectedCommandTarget takes player commandPlayer returns uni
     local unit selectedTarget
 
     call EnsureState()
+    call RepairGuiCompanionState()
     set CommandSelectionPlayer = commandPlayer
     set CommandSelectionTarget = null
     set CommandSelectionCount = 0
@@ -979,6 +1105,17 @@ private function GetSelectedCommandTarget takes player commandPlayer returns uni
     return selectedTarget
 endfunction
 
+private function ResolveCommandTarget takes unit caster, unit target, player commandPlayer returns unit
+    call RepairGuiCompanionState()
+    if target != null then
+        return target
+    endif
+    if IsValidControlTarget(caster) then
+        return caster
+    endif
+    return GetSelectedCommandTarget(commandPlayer)
+endfunction
+
 private function AddAllModeTarget takes nothing returns nothing
     local unit u = GetEnumUnit()
 
@@ -1000,6 +1137,7 @@ private function ApplyModeFromPlayer takes player modePlayer, integer mode retur
     local integer count
 
     call EnsureState()
+    call RepairGuiCompanionState()
     set mode = NormalizeMode(mode)
     set ModeSelectionPlayer = modePlayer
     set ModeSelectionFound = false
@@ -1039,6 +1177,17 @@ private function ApplyModeFromPlayer takes player modePlayer, integer mode retur
 
     call GroupClear(ModeTargetGroup)
     set ModeSelectionPlayer = null
+    set ModeCommandCaster = null
+endfunction
+
+private function ApplyModeFromCommand takes unit caster, player modePlayer, integer mode returns nothing
+    call RepairGuiCompanionState()
+    if IsValidControlTarget(caster) then
+        set ModeCommandCaster = caster
+    else
+        set ModeCommandCaster = null
+    endif
+    call ApplyModeFromPlayer(modePlayer, mode)
 endfunction
 
 private function GetModeFromAbility takes integer abilityId returns integer
@@ -1123,6 +1272,9 @@ private function HandleFocus takes unit target, unit leader returns nothing
         return
     endif
 
+    if gg_snd_GoodJob != null then
+        call StartSound(gg_snd_GoodJob)
+    endif
     call TrackExistingControlUnit(target)
     call SetLeaderInternal(target, leader)
     if leader != null then
@@ -1482,13 +1634,14 @@ private function OnSpellEffect takes nothing returns nothing
     local integer mode = GetModeFromAbility(abilityId)
     local unit caster = GetTriggerUnit()
     local unit target = GetSpellTargetUnit()
+    local player commandPlayer = GetCommandPlayer(caster)
 
     if target == null and (abilityId == ABIL_KICK or abilityId == ABIL_FOCUS_NAZGREK or abilityId == ABIL_FOCUS_ZULKIS or abilityId == ABIL_INFORMATION or abilityId == ABIL_DROP_ITEMS) then
-        set target = GetSelectedCommandTarget(GetOwningPlayer(caster))
+        set target = ResolveCommandTarget(caster, target, commandPlayer)
     endif
 
     if mode != 0 then
-        call ApplyModeFromPlayer(GetOwningPlayer(caster), mode)
+        call ApplyModeFromCommand(caster, commandPlayer, mode)
     elseif abilityId == ABIL_INVITE then
         if target != udg_Shadowclaw then
             call HandleInvite(caster, target)
@@ -1509,6 +1662,15 @@ private function OnSpellEffect takes nothing returns nothing
 
     set caster = null
     set target = null
+    set commandPlayer = null
+endfunction
+
+private function HaltControlledEnum takes nothing returns nothing
+    call SetSuspendedInternal(GetEnumUnit(), true)
+endfunction
+
+private function ResumeControlledEnum takes nothing returns nothing
+    call SetSuspendedInternal(GetEnumUnit(), false)
 endfunction
 
 public function Add takes unit companionUnit, string companionIcon, unit leader, integer mode returns nothing
@@ -1531,36 +1693,36 @@ public function SetEscortBehavior takes unit controlledUnit, boolean enabled ret
     call SetEscortBehaviorInternal(controlledUnit, enabled)
 endfunction
 
+public function Halt takes unit companionUnit returns nothing
+    call SetSuspendedInternal(companionUnit, true)
+endfunction
+
+public function HaltAll takes nothing returns nothing
+    call RepairGuiCompanionState()
+    if udg_Companion_Group != null then
+        call ForGroup(udg_Companion_Group, function HaltControlledEnum)
+    endif
+    if udg_TamedUnits != null then
+        call ForGroup(udg_TamedUnits, function HaltControlledEnum)
+    endif
+endfunction
+
 public function Suspend takes unit companionUnit returns nothing
-    local integer unitId
-
-    if companionUnit == null or GetUnitTypeId(companionUnit) == 0 or CompanionTracked == 0 then
-        return
-    endif
-
-    set unitId = GetHandleId(companionUnit)
-    if CompanionTracked[unitId] == 0 then
-        return
-    endif
-
-    set CompanionSuspended[unitId] = 1
-    call ApplyOrders(companionUnit)
+    call SetSuspendedInternal(companionUnit, true)
 endfunction
 
 public function Resume takes unit companionUnit returns nothing
-    local integer unitId
+    call SetSuspendedInternal(companionUnit, false)
+endfunction
 
-    if companionUnit == null or GetUnitTypeId(companionUnit) == 0 or CompanionTracked == 0 then
-        return
+public function ResumeAll takes nothing returns nothing
+    call RepairGuiCompanionState()
+    if udg_Companion_Group != null then
+        call ForGroup(udg_Companion_Group, function ResumeControlledEnum)
     endif
-
-    set unitId = GetHandleId(companionUnit)
-    if CompanionTracked[unitId] == 0 then
-        return
+    if udg_TamedUnits != null then
+        call ForGroup(udg_TamedUnits, function ResumeControlledEnum)
     endif
-
-    set CompanionSuspended[unitId] = 0
-    call ApplyOrders(companionUnit)
 endfunction
 
 public function RegisterControlled takes unit controlledUnit, unit leader, integer mode returns nothing
