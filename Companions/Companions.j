@@ -9,8 +9,9 @@
     Description:
     Companion party registration, information, idle state, and control-mode
     handling. This library keeps the existing GUI companion globals
-    synchronized for older systems while using FollowSystem for the actual
-    follow orders where appropriate.
+    synchronized for older systems. Normal companions and pets use this
+    library's companion controller; quest escort cases can opt into
+    FollowSystem leash behavior explicitly.
 
     API:
     call Companions_Add(unit companionUnit, string companionIcon, unit leader, integer mode)
@@ -22,9 +23,10 @@
     call Companions_RegisterControlled(unit controlledUnit, unit leader, integer mode)
     call Companions_UnregisterControlled(unit controlledUnit)
     call Companions_IsControlled(unit controlledUnit) returns boolean
+    call Companions_SetEscortBehavior(unit controlledUnit, boolean enabled)
 
 **/
-library Companions initializer Init requires QuestGiver, FollowSystem, Table, UnitDeathEvent
+library Companions initializer Init requires QuestGiver, FollowSystem, IconQuery, Table, UnitDeathEvent
 
 globals
     constant integer COMPANION_MODE_DEFEND = 1
@@ -40,6 +42,20 @@ globals
     private constant real COMPANION_FOLLOW_DISTANCE = 2500.00
     private constant real COMPANION_AGGRESSIVE_DISTANCE = 3500.00
     private constant real COMPANION_IDLE_CHECK_INTERVAL = 10.00
+    private constant real COMPANION_ORDER_INTERVAL = 2.00
+    private constant real COMPANION_NORMAL_CATCHUP_DISTANCE = 600.00
+    private constant real COMPANION_AGGRESSIVE_CATCHUP_DISTANCE = 1800.00
+    private constant real COMPANION_NORMAL_MIN_OFFSET = 100.00
+    private constant real COMPANION_NORMAL_MAX_OFFSET = 300.00
+    private constant real COMPANION_AGGRESSIVE_MIN_OFFSET = 400.00
+    private constant real COMPANION_AGGRESSIVE_MAX_OFFSET = 1800.00
+    private constant integer COMPANION_PING_TICKS = 3
+    private constant integer COMPANION_PING_STYLE = bj_MINIMAPPINGSTYLE_SIMPLE
+    private constant integer COMPANION_PING_RED = 255
+    private constant integer COMPANION_PING_GREEN = 255
+    private constant integer COMPANION_PING_BLUE = 0
+    private constant integer COMPANION_PROFILE_NORMAL = 0
+    private constant integer COMPANION_PROFILE_ESCORT = 1
 
     private constant integer ABIL_INVITE = 'A622'
     private constant integer ABIL_KICK = 'A621'
@@ -83,11 +99,20 @@ globals
     private Table CompanionIcon = 0
     private Table CompanionRegistered = 0
     private Table CompanionTracked = 0
+    private Table CompanionOrderProfile = 0
+    private Table CompanionMapIconSlot = 0
+    private Table CompanionPingCycle = 0
+    private minimapicon array CompanionMapIcons
+    private integer CompanionMapIconCount = 0
 
     private group ModeTargetGroup = null
     private trigger IdleTrigger = null
+    private trigger OrderTrigger = null
     private player ModeSelectionPlayer = null
     private boolean ModeSelectionFound = false
+    private player CommandSelectionPlayer = null
+    private unit CommandSelectionTarget = null
+    private integer CommandSelectionCount = 0
     private integer ModeActionMode = COMPANION_MODE_DEFEND
     private integer CurrentGroupMode = COMPANION_MODE_DEFEND
 endglobals
@@ -106,6 +131,9 @@ private function EnsureState takes nothing returns nothing
         set CompanionIcon = Table.create()
         set CompanionRegistered = Table.create()
         set CompanionTracked = Table.create()
+        set CompanionOrderProfile = Table.create()
+        set CompanionMapIconSlot = Table.create()
+        set CompanionPingCycle = Table.create()
     endif
     if ModeTargetGroup == null then
         set ModeTargetGroup = CreateGroup()
@@ -293,6 +321,9 @@ private function RegisterControlledInternal takes unit controlledUnit, unit lead
 
     call RemoveWanderAbility(controlledUnit)
     call SetFocusUnit(controlledUnit, leader)
+    if not CompanionOrderProfile.has(unitId) then
+        set CompanionOrderProfile[unitId] = COMPANION_PROFILE_NORMAL
+    endif
 endfunction
 
 private function TrackExistingControlUnit takes unit controlledUnit returns nothing
@@ -314,6 +345,224 @@ private function TrackExistingControlUnit takes unit controlledUnit returns noth
     set leader = null
 endfunction
 
+private function GetDistanceBetweenUnits takes unit a, unit b returns real
+    local real dx = GetUnitX(a) - GetUnitX(b)
+    local real dy = GetUnitY(a) - GetUnitY(b)
+    return SquareRoot(dx * dx + dy * dy)
+endfunction
+
+private function ClearCompanionFarIcon takes unit controlledUnit returns nothing
+    local integer unitId
+    local integer iconSlot
+
+    if controlledUnit == null or CompanionMapIconSlot == 0 then
+        return
+    endif
+
+    set unitId = GetHandleId(controlledUnit)
+    set iconSlot = CompanionMapIconSlot[unitId] - 1
+    if iconSlot >= 0 and CompanionMapIcons[iconSlot] != null then
+        call IconQuery_UnregisterIcon(CompanionMapIcons[iconSlot])
+        set CompanionMapIcons[iconSlot] = null
+    endif
+    call CompanionMapIconSlot.remove(unitId)
+    call CompanionPingCycle.remove(unitId)
+endfunction
+
+private function EnsureCompanionFarIcon takes unit controlledUnit returns nothing
+    local integer unitId
+    local minimapicon mapIcon
+
+    if controlledUnit == null then
+        return
+    endif
+
+    call EnsureState()
+    set unitId = GetHandleId(controlledUnit)
+    if CompanionMapIconSlot[unitId] > 0 then
+        return
+    endif
+
+    set mapIcon = IconQuery_RegisterCompanionFollowerUnitIcon(controlledUnit)
+    if mapIcon != null then
+        set CompanionMapIcons[CompanionMapIconCount] = mapIcon
+        set CompanionMapIconSlot[unitId] = CompanionMapIconCount + 1
+        set CompanionMapIconCount = CompanionMapIconCount + 1
+    endif
+    set mapIcon = null
+endfunction
+
+private function PingCompanionIfReady takes unit controlledUnit returns nothing
+    local integer unitId = GetHandleId(controlledUnit)
+    local integer cycles = CompanionPingCycle[unitId] + 1
+    local location pingLoc
+
+    if cycles >= COMPANION_PING_TICKS then
+        set pingLoc = Location(GetUnitX(controlledUnit), GetUnitY(controlledUnit))
+        call PingMinimapLocForForceEx(GetPlayersAll(), pingLoc, 1.00, COMPANION_PING_STYLE, COMPANION_PING_RED, COMPANION_PING_GREEN, COMPANION_PING_BLUE)
+        call RemoveLocation(pingLoc)
+        set pingLoc = null
+        set cycles = 0
+    endif
+    set CompanionPingCycle[unitId] = cycles
+endfunction
+
+private function UpdateCompanionFarIcon takes unit controlledUnit, unit leader, real distance, integer mode returns nothing
+    if distance > GetModeDistance(mode) then
+        call EnsureCompanionFarIcon(controlledUnit)
+        call PingCompanionIfReady(controlledUnit)
+    else
+        call ClearCompanionFarIcon(controlledUnit)
+    endif
+endfunction
+
+private function IsUnitCastingByCustomValue takes integer customValue returns boolean
+    return customValue > 0 and udg_UnitIsCasting[customValue]
+endfunction
+
+private function IsUnitMovingByCustomValue takes integer customValue returns boolean
+    return customValue > 0 and udg_UnitMoving[customValue]
+endfunction
+
+private function IsUnitInCombatByCustomValue takes integer customValue returns boolean
+    return customValue > 0 and udg_GCSM_UnitInCombat[customValue]
+endfunction
+
+private function IsUnitIdleByCustomValue takes integer customValue returns boolean
+    return customValue > 0 and udg_CompanionUnitIdle[customValue]
+endfunction
+
+private function IsAliveByCustomValue takes unit controlledUnit, integer customValue returns boolean
+    if customValue <= 0 then
+        return IsAliveUnit(controlledUnit)
+    endif
+    return IsAliveUnit(controlledUnit) and udg_IsUnitAlive[customValue]
+endfunction
+
+private function ClearOrderIdleState takes unit controlledUnit, integer customValue returns nothing
+    call RemoveWanderAbility(controlledUnit)
+    if customValue > 0 then
+        set udg_CompanionUnitIdle[customValue] = false
+    endif
+endfunction
+
+private function IssueRandomAttackMoveNearLeader takes unit controlledUnit, unit leader, real minOffset, real maxOffset returns nothing
+    local real angle = GetRandomReal(0.00, 6.2831853)
+    local real offset = GetRandomReal(minOffset, maxOffset)
+
+    call IssuePointOrder(controlledUnit, "attack", GetUnitX(leader) + offset * Cos(angle), GetUnitY(leader) + offset * Sin(angle))
+endfunction
+
+private function IssueCompanionPassiveOrder takes unit controlledUnit, unit leader, real distance, integer currentOrder returns nothing
+    if distance > 150.00 or currentOrder != OrderId("move") then
+        call IssueTargetOrder(controlledUnit, "move", leader)
+    endif
+endfunction
+
+private function IssueCompanionNormalOrder takes unit controlledUnit, unit leader, real distance, integer customValue, integer currentOrder returns nothing
+    if not IsUnitInCombatByCustomValue(customValue) and not IsUnitMovingByCustomValue(customValue) and not IsUnitIdleByCustomValue(customValue) and not udg_CompanionDialogueActive then
+        call ClearOrderIdleState(controlledUnit, customValue)
+        call IssueRandomAttackMoveNearLeader(controlledUnit, leader, COMPANION_NORMAL_MIN_OFFSET, COMPANION_NORMAL_MAX_OFFSET)
+    elseif distance >= COMPANION_NORMAL_CATCHUP_DISTANCE or IsUnitInCombatByCustomValue(GetUnitUserData(leader)) then
+        if currentOrder != OrderId("smart") or distance > GetModeDistance(COMPANION_MODE_DEFEND) then
+            call ClearOrderIdleState(controlledUnit, customValue)
+            call IssueTargetOrder(controlledUnit, "smart", leader)
+        endif
+    endif
+endfunction
+
+private function IssueCompanionAggressiveOrder takes unit controlledUnit, unit leader, real distance, integer customValue, integer currentOrder returns nothing
+    if not IsUnitInCombatByCustomValue(customValue) and currentOrder != OrderId("attack") then
+        call ClearOrderIdleState(controlledUnit, customValue)
+        call IssueRandomAttackMoveNearLeader(controlledUnit, leader, COMPANION_AGGRESSIVE_MIN_OFFSET, COMPANION_AGGRESSIVE_MAX_OFFSET)
+    elseif distance >= COMPANION_AGGRESSIVE_CATCHUP_DISTANCE or IsUnitInCombatByCustomValue(GetUnitUserData(leader)) then
+        if currentOrder != OrderId("smart") or distance > GetModeDistance(COMPANION_MODE_AGGRESSIVE) then
+            call ClearOrderIdleState(controlledUnit, customValue)
+            call IssueTargetOrder(controlledUnit, "smart", leader)
+        endif
+    endif
+endfunction
+
+private function UpdateCompanionOrderUnit takes unit controlledUnit returns nothing
+    local integer unitId
+    local integer mode
+    local integer customValue
+    local integer currentOrder
+    local unit leader
+    local real distance
+
+    if controlledUnit == null or GetUnitTypeId(controlledUnit) == 0 or CompanionTracked == 0 then
+        return
+    endif
+
+    call TrackExistingControlUnit(controlledUnit)
+    set unitId = GetHandleId(controlledUnit)
+    if CompanionTracked[unitId] == 0 then
+        return
+    endif
+    if CompanionOrderProfile[unitId] == COMPANION_PROFILE_ESCORT then
+        return
+    endif
+    call FollowSystem_RemoveUnit(controlledUnit)
+    if CompanionSuspended[unitId] == 1 then
+        call ClearCompanionFarIcon(controlledUnit)
+        return
+    endif
+
+    set leader = CompanionLeader.unit[unitId]
+    set mode = NormalizeMode(CompanionMode[unitId])
+    set CompanionMode[unitId] = mode
+    set customValue = GetUnitUserData(controlledUnit)
+    if not IsAliveByCustomValue(controlledUnit, customValue) or not IsAliveUnit(leader) or leader == controlledUnit then
+        call ClearCompanionFarIcon(controlledUnit)
+        set leader = null
+        return
+    endif
+
+    if mode == COMPANION_MODE_HOLD then
+        call ClearCompanionFarIcon(controlledUnit)
+        set leader = null
+        return
+    endif
+
+    set distance = GetDistanceBetweenUnits(controlledUnit, leader)
+    call UpdateCompanionFarIcon(controlledUnit, leader, distance, mode)
+
+    if IsUnitCastingByCustomValue(customValue) then
+        set leader = null
+        return
+    endif
+
+    set currentOrder = GetUnitCurrentOrder(controlledUnit)
+    if mode == COMPANION_MODE_PASSIVE then
+        call ClearOrderIdleState(controlledUnit, customValue)
+        call IssueCompanionPassiveOrder(controlledUnit, leader, distance, currentOrder)
+    elseif mode == COMPANION_MODE_AGGRESSIVE then
+        call IssueCompanionAggressiveOrder(controlledUnit, leader, distance, customValue, currentOrder)
+    else
+        call IssueCompanionNormalOrder(controlledUnit, leader, distance, customValue, currentOrder)
+    endif
+
+    set leader = null
+endfunction
+
+private function UpdateCompanionOrderEnum takes nothing returns nothing
+    call UpdateCompanionOrderUnit(GetEnumUnit())
+endfunction
+
+private function OnOrderPeriodic takes nothing returns nothing
+    if udg_InCinematic then
+        return
+    endif
+
+    if udg_Companion_Group != null then
+        call ForGroup(udg_Companion_Group, function UpdateCompanionOrderEnum)
+    endif
+    if udg_TamedUnits != null then
+        call ForGroup(udg_TamedUnits, function UpdateCompanionOrderEnum)
+    endif
+endfunction
+
 private function ApplyOrders takes unit companionUnit returns nothing
     local integer unitId
     local unit leader
@@ -333,6 +582,7 @@ private function ApplyOrders takes unit companionUnit returns nothing
 
     if CompanionSuspended[unitId] == 1 then
         call FollowSystem_RemoveUnit(companionUnit)
+        call ClearCompanionFarIcon(companionUnit)
         call IssueImmediateOrder(companionUnit, "stop")
         return
     endif
@@ -343,11 +593,19 @@ private function ApplyOrders takes unit companionUnit returns nothing
 
     if mode == COMPANION_MODE_HOLD then
         call FollowSystem_RemoveUnit(companionUnit)
+        call ClearCompanionFarIcon(companionUnit)
         call IssueImmediateOrder(companionUnit, "holdposition")
     elseif IsAliveUnit(companionUnit) and IsAliveUnit(leader) and leader != companionUnit then
-        call FollowSystem_SetFollow(companionUnit, leader, GetModeDistance(mode), false, 0.00, GetModeFollowStyle(mode), true, true)
+        if CompanionOrderProfile[unitId] == COMPANION_PROFILE_ESCORT then
+            call ClearCompanionFarIcon(companionUnit)
+            call FollowSystem_SetFollow(companionUnit, leader, GetModeDistance(mode), false, 0.00, GetModeFollowStyle(mode), true, true)
+        else
+            call FollowSystem_RemoveUnit(companionUnit)
+            call UpdateCompanionOrderUnit(companionUnit)
+        endif
     else
         call FollowSystem_RemoveUnit(companionUnit)
+        call ClearCompanionFarIcon(companionUnit)
         call IssueImmediateOrder(companionUnit, "stop")
     endif
 
@@ -383,6 +641,7 @@ private function RemoveInternal takes unit companionUnit returns nothing
 
     set unitId = GetHandleId(companionUnit)
     call FollowSystem_RemoveUnit(companionUnit)
+    call ClearCompanionFarIcon(companionUnit)
 
     if CompanionRegistered[unitId] == 1 then
         call QuestGiver_RemoveCompanion(companionUnit)
@@ -394,6 +653,7 @@ private function RemoveInternal takes unit companionUnit returns nothing
     call CompanionIcon.remove(unitId)
     call CompanionRegistered.remove(unitId)
     call CompanionTracked.remove(unitId)
+    call CompanionOrderProfile.remove(unitId)
     call DebugMsg("Remove " + GetUnitName(companionUnit))
 endfunction
 
@@ -430,6 +690,30 @@ private function SetModeInternal takes unit companionUnit, integer mode returns 
 
     set CompanionMode[unitId] = NormalizeMode(mode)
     call ApplyOrders(companionUnit)
+endfunction
+
+private function SetEscortBehaviorInternal takes unit controlledUnit, boolean enabled returns nothing
+    local integer unitId
+
+    if controlledUnit == null or GetUnitTypeId(controlledUnit) == 0 then
+        return
+    endif
+
+    call EnsureState()
+    call TrackExistingControlUnit(controlledUnit)
+    set unitId = GetHandleId(controlledUnit)
+    if CompanionTracked[unitId] == 0 then
+        return
+    endif
+
+    if enabled then
+        set CompanionOrderProfile[unitId] = COMPANION_PROFILE_ESCORT
+        call ClearCompanionFarIcon(controlledUnit)
+    else
+        set CompanionOrderProfile[unitId] = COMPANION_PROFILE_NORMAL
+        call FollowSystem_RemoveUnit(controlledUnit)
+    endif
+    call ApplyOrders(controlledUnit)
 endfunction
 
 private function SetIdleFlag takes unit controlledUnit, boolean isIdle returns nothing
@@ -653,6 +937,46 @@ private function AddSelectedModeTarget takes nothing returns nothing
     endif
 
     set u = null
+endfunction
+
+private function FindSelectedCommandTarget takes nothing returns nothing
+    local unit u = GetEnumUnit()
+
+    if IsValidControlTarget(u) and IsUnitSelected(u, CommandSelectionPlayer) then
+        set CommandSelectionCount = CommandSelectionCount + 1
+        if CommandSelectionTarget == null then
+            set CommandSelectionTarget = u
+        endif
+    endif
+
+    set u = null
+endfunction
+
+private function GetSelectedCommandTarget takes player commandPlayer returns unit
+    local unit selectedTarget
+
+    call EnsureState()
+    set CommandSelectionPlayer = commandPlayer
+    set CommandSelectionTarget = null
+    set CommandSelectionCount = 0
+
+    if udg_Companion_Group != null then
+        call ForGroup(udg_Companion_Group, function FindSelectedCommandTarget)
+    endif
+    if udg_TamedUnits != null then
+        call ForGroup(udg_TamedUnits, function FindSelectedCommandTarget)
+    endif
+
+    if CommandSelectionCount == 1 then
+        set selectedTarget = CommandSelectionTarget
+    else
+        set selectedTarget = null
+    endif
+
+    set CommandSelectionTarget = null
+    set CommandSelectionPlayer = null
+    set CommandSelectionCount = 0
+    return selectedTarget
 endfunction
 
 private function AddAllModeTarget takes nothing returns nothing
@@ -1159,6 +1483,10 @@ private function OnSpellEffect takes nothing returns nothing
     local unit caster = GetTriggerUnit()
     local unit target = GetSpellTargetUnit()
 
+    if target == null and (abilityId == ABIL_KICK or abilityId == ABIL_FOCUS_NAZGREK or abilityId == ABIL_FOCUS_ZULKIS or abilityId == ABIL_INFORMATION or abilityId == ABIL_DROP_ITEMS) then
+        set target = GetSelectedCommandTarget(GetOwningPlayer(caster))
+    endif
+
     if mode != 0 then
         call ApplyModeFromPlayer(GetOwningPlayer(caster), mode)
     elseif abilityId == ABIL_INVITE then
@@ -1197,6 +1525,10 @@ endfunction
 
 public function SetMode takes unit companionUnit, integer mode returns nothing
     call SetModeInternal(companionUnit, mode)
+endfunction
+
+public function SetEscortBehavior takes unit controlledUnit, boolean enabled returns nothing
+    call SetEscortBehaviorInternal(controlledUnit, enabled)
 endfunction
 
 public function Suspend takes unit companionUnit returns nothing
@@ -1245,12 +1577,14 @@ public function UnregisterControlled takes unit controlledUnit returns nothing
 
     set unitId = GetHandleId(controlledUnit)
     call FollowSystem_RemoveUnit(controlledUnit)
+    call ClearCompanionFarIcon(controlledUnit)
     call CompanionLeader.remove(unitId)
     call CompanionMode.remove(unitId)
     call CompanionSuspended.remove(unitId)
     call CompanionIcon.remove(unitId)
     call CompanionRegistered.remove(unitId)
     call CompanionTracked.remove(unitId)
+    call CompanionOrderProfile.remove(unitId)
 endfunction
 
 public function IsControlled takes unit controlledUnit returns boolean
@@ -1287,6 +1621,10 @@ private function Init takes nothing returns nothing
     set IdleTrigger = CreateTrigger()
     call TriggerRegisterTimerEvent(IdleTrigger, COMPANION_IDLE_CHECK_INTERVAL, true)
     call TriggerAddAction(IdleTrigger, function OnIdlePeriodic)
+
+    set OrderTrigger = CreateTrigger()
+    call TriggerRegisterTimerEvent(OrderTrigger, COMPANION_ORDER_INTERVAL, true)
+    call TriggerAddAction(OrderTrigger, function OnOrderPeriodic)
 
     call UnitDeathEvent_Register(function OnUnitDeath)
     set spellTrigger = null
