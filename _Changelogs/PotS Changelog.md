@@ -15,6 +15,27 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [3.7.2026]
+
+### Player-Facing Updates
+- `Companions / pets`
+  Companion command-card abilities now resolve correctly after invite/reinvite, including Passive/Normal/Aggressive/Hold modes, Kick Companion, Focus Nazgrek/Zulkis, Information, and Drop Items from companion-owned command cards.
+  Shadowclaw now keeps Nazgrek as the initial pet focus, walks back to `NazgrekIntroPoint` when kicked, and only teleports home after 120 seconds if stuck or still away from home.
+- `StatsUI`
+  Kicking Shadowclaw or another pet now clears the active pet display instead of showing Shadowclaw through the old fallback when `udg_TamedUnit` is empty.
+
+### Technical Updates
+- `Companions.j`
+  Added defensive GUI-state repair so missing companion/focus groups are created and `udg_CompanionUnit[]` entries are re-added to `udg_Companion_Group` before command/order enumeration, keeping `CinematicMover`, StatsUI, and old GUI consumers in sync.
+  Added `Companions_Halt`, `Companions_HaltAll`, and `Companions_ResumeAll` for cinematic-safe companion/pet order suspension on top of the existing per-unit resume path.
+  Companion-owned command-card casts now map back to the real control player for selected-unit lookup and can fall back to the casting companion/pet itself.
+  Companion focus commands now play the old GUI `GoodJob` sound, and empty companion icon paths now fall back through the existing `BlzGetAbilityIcon(unitTypeId)` lookup when possible.
+- `Pet.j`
+  Ensures `udg_TamedUnits` exists before pet registration, forces Shadowclaw registration toward Nazgrek, and clears `udg_TamedUnit` before old multiboard pet-removal hooks run.
+
+### Actions Remaining
+- Re-test invited companions with `CinematicMover`, selected-unit mode casts, companion self command-card casts, Kick Companion on non-pet companions, Shadowclaw kick/reinvite, and StatsUI pet rows in-game.
+
 ## [2.7.2026]
 
 ### Player-Facing Updates
