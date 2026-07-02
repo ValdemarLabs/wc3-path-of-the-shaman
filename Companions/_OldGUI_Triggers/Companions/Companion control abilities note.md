@@ -1,0 +1,11 @@
+# Abilities raw codes:
+Invite Companion: 'A622'
+Kick Companion: 'A621'
+Passive Mode: 'A61Z'
+Normal Mode: 'A61X'
+Aggressive Mode: 'A61S'
+Hold Position: 'A6DX'
+Information: 'A6E9'
+Drop Items: 'A6DZ'
+Focus Nazgrek: 'A6E4'
+Focus Zulkis: 'A6E5'
