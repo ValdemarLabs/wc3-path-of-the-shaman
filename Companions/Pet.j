@@ -17,10 +17,13 @@ library Pet initializer Init requires Table, Companions, UnitExperience, DamageE
 globals
     private constant boolean DEBUG = false
     private constant integer MAX_PLAYER_INDEX = 27
+    private constant integer CONTROL_PLAYER_INDEX = 0
     private constant integer PET_OWNER_INDEX = 18
     private constant real TAME_DURATION = 10.00
     private constant real PET_REVIVE_DURATION = 20.00
     private constant real TAME_DAMAGE_MULTIPLIER = 1.75
+    private constant real SHADOWCLAW_HOME_TELEPORT_DELAY = 120.00
+    private constant real SHADOWCLAW_HOME_ARRIVE_DISTANCE = 300.00
 
     private constant integer ABIL_INVITE = 'A622'
     private constant integer ABIL_KICK = 'A621'
@@ -84,6 +87,7 @@ globals
     private unit SelectedPetTarget = null
     private integer SelectedPetCount = 0
     private trigger PetDamageTrigger = null
+    private timer ShadowclawHomeTimer = null
 endglobals
 
 private function DebugMsg takes string msg returns nothing
@@ -115,6 +119,12 @@ private function GetPetCount takes nothing returns integer
         return 0
     endif
     return CountUnitsInGroup(udg_TamedUnits)
+endfunction
+
+private function EnsurePetGroup takes nothing returns nothing
+    if udg_TamedUnits == null then
+        set udg_TamedUnits = CreateGroup()
+    endif
 endfunction
 
 private function GetPreferredLeader takes unit caster returns unit
@@ -433,12 +443,79 @@ private function RefreshPetDamageTrigger takes unit pet returns nothing
     endif
 endfunction
 
+private function StopShadowclawHomeFallback takes nothing returns nothing
+    if ShadowclawHomeTimer != null then
+        call PauseTimer(ShadowclawHomeTimer)
+        call DestroyTimer(ShadowclawHomeTimer)
+        set ShadowclawHomeTimer = null
+    endif
+endfunction
+
+private function IsShadowclawAtHome takes unit pet returns boolean
+    local real dx
+    local real dy
+
+    if pet == null or gg_rct_NazgrekIntroPoint == null then
+        return true
+    endif
+
+    set dx = GetUnitX(pet) - GetRectCenterX(gg_rct_NazgrekIntroPoint)
+    set dy = GetUnitY(pet) - GetRectCenterY(gg_rct_NazgrekIntroPoint)
+    return dx * dx + dy * dy <= SHADOWCLAW_HOME_ARRIVE_DISTANCE * SHADOWCLAW_HOME_ARRIVE_DISTANCE
+endfunction
+
+private function TeleportShadowclawHomeFallback takes nothing returns nothing
+    local unit pet = udg_Shadowclaw
+
+    if pet != null and GetUnitTypeId(pet) != 0 and gg_rct_NazgrekIntroPoint != null and not IsShadowclawAtHome(pet) then
+        call SetUnitX(pet, GetRectCenterX(gg_rct_NazgrekIntroPoint))
+        call SetUnitY(pet, GetRectCenterY(gg_rct_NazgrekIntroPoint))
+        call IssueImmediateOrder(pet, "stop")
+    endif
+
+    call StopShadowclawHomeFallback()
+    set pet = null
+endfunction
+
+private function StartShadowclawHomeFallback takes unit pet returns nothing
+    if pet == null or gg_rct_NazgrekIntroPoint == null then
+        return
+    endif
+
+    call StopShadowclawHomeFallback()
+    set ShadowclawHomeTimer = CreateTimer()
+    call TimerStart(ShadowclawHomeTimer, SHADOWCLAW_HOME_TELEPORT_DELAY, false, function TeleportShadowclawHomeFallback)
+endfunction
+
+private function SendShadowclawHome takes unit pet returns nothing
+    if pet == null then
+        return
+    endif
+
+    call SetUnitInvulnerable(pet, true)
+    call SetUnitOwner(pet, Player(PET_OWNER_INDEX), true)
+    call RemovePetWander(pet)
+    if gg_rct_NazgrekIntroPoint != null then
+        call IssuePointOrder(pet, "move", GetRectCenterX(gg_rct_NazgrekIntroPoint), GetRectCenterY(gg_rct_NazgrekIntroPoint))
+        call StartShadowclawHomeFallback(pet)
+    endif
+endfunction
+
 private function RegisterPetUnit takes unit pet, unit leader, boolean resetCounters returns nothing
     local integer petKey
     local boolean registered
+    local unit focusLeader = leader
 
     if pet == null or GetUnitTypeId(pet) == 0 then
+        set focusLeader = null
         return
+    endif
+
+    if pet == udg_Shadowclaw then
+        call StopShadowclawHomeFallback()
+        if udg_Nazgrek != null then
+            set focusLeader = udg_Nazgrek
+        endif
     endif
 
     set petKey = GetUnitUserData(pet)
@@ -446,11 +523,10 @@ private function RegisterPetUnit takes unit pet, unit leader, boolean resetCount
         set udg_UnitHider_ReferenceUnits[petKey] = pet
     endif
 
-    if udg_TamedUnits != null then
-        call GroupAddUnit(udg_TamedUnits, pet)
-    endif
+    call EnsurePetGroup()
+    call GroupAddUnit(udg_TamedUnits, pet)
     call RemovePetWander(pet)
-    call SetPetFocus(pet, leader)
+    call SetPetFocus(pet, focusLeader)
     call SetUnitOwner(pet, Player(PET_OWNER_INDEX), true)
     call SetUnitInvulnerable(pet, false)
     if UnitInventorySize(pet) == 0 then
@@ -471,12 +547,14 @@ private function RegisterPetUnit takes unit pet, unit leader, boolean resetCount
         call UnitExperience_RegisterUnit(pet)
     endif
 
-    call Companions_RegisterControlled(pet, leader, COMPANION_MODE_DEFEND)
+    call Companions_RegisterControlled(pet, focusLeader, COMPANION_MODE_DEFEND)
     call RefreshPetDamageTrigger(pet)
 
     if gg_trg_MultiboardUpdate_Add_Tamed != null then
         call TriggerExecute(gg_trg_MultiboardUpdate_Add_Tamed)
     endif
+
+    set focusLeader = null
 endfunction
 
 private function ScaleShadowclawStats takes unit pet returns nothing
@@ -628,21 +706,15 @@ private function KickPet takes unit pet returns nothing
     call IssueImmediateOrder(pet, "stop")
     call RefreshPetDamageTrigger(null)
 
+    set udg_TamedUnit = null
+    set udg_Pet_Dead = false
+
     if gg_trg_MultiboardUpdate_Remove_Tamed != null then
         call TriggerExecute(gg_trg_MultiboardUpdate_Remove_Tamed)
     endif
 
-    set udg_TamedUnit = null
-    set udg_Pet_Dead = false
-
     if pet == udg_Shadowclaw then
-        call SetUnitInvulnerable(pet, true)
-        call SetUnitOwner(pet, Player(PET_OWNER_INDEX), true)
-        call RemovePetWander(pet)
-        if gg_rct_NazgrekIntroPoint != null then
-            call SetUnitX(pet, GetRectCenterX(gg_rct_NazgrekIntroPoint))
-            call SetUnitY(pet, GetRectCenterY(gg_rct_NazgrekIntroPoint))
-        endif
+        call SendShadowclawHome(pet)
     else
         call SetUnitOwner(pet, Player(PLAYER_NEUTRAL_PASSIVE), true)
         if GetUnitAbilityLevel(pet, ABIL_WANDER_NEUTRAL) == 0 then
@@ -651,6 +723,16 @@ private function KickPet takes unit pet returns nothing
     endif
 
     call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(pet) + " is no longer your pet.")
+endfunction
+
+private function GetCommandPlayer takes unit caster returns player
+    if caster == null then
+        return Player(CONTROL_PLAYER_INDEX)
+    endif
+    if GetOwningPlayer(caster) == Player(PET_OWNER_INDEX) then
+        return Player(CONTROL_PLAYER_INDEX)
+    endif
+    return GetOwningPlayer(caster)
 endfunction
 
 private function FindSelectedPetTarget takes nothing returns nothing
@@ -690,6 +772,16 @@ private function GetSelectedPetTarget takes player commandPlayer returns unit
     return selectedTarget
 endfunction
 
+private function ResolvePetCommandTarget takes unit caster, unit target returns unit
+    if target != null then
+        return target
+    endif
+    if caster != null and udg_TamedUnits != null and IsUnitInGroup(caster, udg_TamedUnits) then
+        return caster
+    endif
+    return GetSelectedPetTarget(GetCommandPlayer(caster))
+endfunction
+
 private function OnSpellEffect takes nothing returns nothing
     local integer abilityId = GetSpellAbilityId()
     local unit caster = GetTriggerUnit()
@@ -700,9 +792,7 @@ private function OnSpellEffect takes nothing returns nothing
     elseif abilityId == ABIL_INVITE then
         call InviteShadowclaw(caster, target)
     elseif abilityId == ABIL_KICK then
-        if target == null then
-            set target = GetSelectedPetTarget(GetOwningPlayer(caster))
-        endif
+        set target = ResolvePetCommandTarget(caster, target)
         call KickPet(target)
     endif
 
