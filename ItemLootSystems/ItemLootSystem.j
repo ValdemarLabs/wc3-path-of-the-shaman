@@ -138,10 +138,12 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
         
         // Item handle to hover index lookup
         private Table itemToHoverIndex                    // item_handle_id -> hover_array_index + 1 (0 = not tracked)
+        private Table customDropTextItem                  // item_handle_id -> 1 if vanilla drops should use item-name text
         
         // === DELAYED DROP TEXT (for OnItemDrop) ===
         private item pendingDropItem = null               // Item waiting for position finalization
         private integer pendingDropRarity = 0             // Rarity of pending item
+        private boolean pendingDropUseCustomText = false  // Use item-name text for DInv-origin vanilla drops
         private timer pendingDropTimer = null             // Timer for delayed text creation
     endglobals
     
@@ -424,6 +426,37 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
         // Register for hover animation with item tracking
         call RegisterHoverText(tt, it, centeredX, y, FLOAT_TEXT_HEIGHT)
     endfunction
+
+    private function CreateItemFloatingTextCustomInternal takes item it, string customName, integer r, integer g, integer b returns nothing
+        local texttag tt
+        local real textWidth
+        local real centeredX
+        local real x
+        local real y
+
+        if it == null then
+            return
+        endif
+
+        set x = GetItemX(it)
+        set y = GetItemY(it)
+
+        set textWidth = I2R(StringLength(customName)) * FLOAT_TEXT_CHAR_WIDTH
+        set centeredX = x - (textWidth / 2.0)
+
+        set tt = CreateTextTag()
+        call SetTextTagText(tt, customName, FLOAT_TEXT_SIZE * 0.023 / 10.0)
+        call SetTextTagPos(tt, centeredX, y, FLOAT_TEXT_HEIGHT)
+        call SetTextTagColor(tt, r, g, b, 255)
+        call SetTextTagPermanent(tt, false)
+        call SetTextTagLifespan(tt, FLOAT_TEXT_DURATION)
+        call SetTextTagFadepoint(tt, FLOAT_TEXT_FADE_START)
+        call SetTextTagVelocity(tt, 0.0, 0.0)
+        call SetTextTagVisibility(tt, false)
+        call UpdateFloatingTextVisibility(tt, it, x, y)
+
+        call RegisterHoverText(tt, it, centeredX, y, FLOAT_TEXT_HEIGHT)
+    endfunction
     
     // Timer callback for delayed floating text creation (item position finalized)
     private function OnItemDropDelayed takes nothing returns nothing
@@ -432,10 +465,15 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
         
         if it != null then
             // Now item position is finalized - use actual item coordinates
-            call CreateItemFloatingTextInternal(it, GetItemName(it), GetItemX(it), GetItemY(it), rarityId)
+            if pendingDropUseCustomText then
+                call CreateItemFloatingTextCustomInternal(it, GetItemName(it), 255, 255, 255)
+            else
+                call CreateItemFloatingTextInternal(it, GetItemName(it), GetItemX(it), GetItemY(it), rarityId)
+            endif
         endif
         
         set pendingDropItem = null
+        set pendingDropUseCustomText = false
     endfunction
     
     // Item drop handler - creates floating text when unit drops item
@@ -449,6 +487,7 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
         endif
         
         set itemTypeId = GetItemTypeId(it)
+        set pendingDropUseCustomText = customDropTextItem.has(GetHandleId(it))
         
         // Look up rarity from registered items, default to Common
         if itemRarity.has(itemTypeId) then
@@ -501,34 +540,16 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
     
     // Create floating text with custom name and color (for special items)
     function ItemLoot_CreateFloatingTextCustom takes item it, string customName, integer r, integer g, integer b returns nothing
-        local texttag tt
-        local real textWidth
-        local real centeredX
-        local real x
-        local real y
-        
+        call CreateItemFloatingTextCustomInternal(it, customName, r, g, b)
+    endfunction
+
+    // Remember DInv-origin items that should show their own item-name text on vanilla drops.
+    function ItemLoot_RegisterCustomDropTextItem takes item it returns nothing
         if it == null then
             return
         endif
-        
-        set x = GetItemX(it)
-        set y = GetItemY(it)
-        
-        set textWidth = I2R(StringLength(customName)) * FLOAT_TEXT_CHAR_WIDTH
-        set centeredX = x - (textWidth / 2.0)
-        
-        set tt = CreateTextTag()
-        call SetTextTagText(tt, customName, FLOAT_TEXT_SIZE * 0.023 / 10.0)
-        call SetTextTagPos(tt, centeredX, y, FLOAT_TEXT_HEIGHT)
-        call SetTextTagColor(tt, r, g, b, 255)
-        call SetTextTagPermanent(tt, false)
-        call SetTextTagLifespan(tt, FLOAT_TEXT_DURATION)
-        call SetTextTagFadepoint(tt, FLOAT_TEXT_FADE_START)
-        call SetTextTagVelocity(tt, 0.0, 0.0)
-        call SetTextTagVisibility(tt, false)
-        call UpdateFloatingTextVisibility(tt, it, x, y)
-        
-        call RegisterHoverText(tt, it, centeredX, y, FLOAT_TEXT_HEIGHT)
+
+        set customDropTextItem[GetHandleId(it)] = 1
     endfunction
     
     // Verify items still exist (debug helper)
@@ -1132,6 +1153,7 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
         
         // Create item-to-hover lookup table
         set itemToHoverIndex = Table.create()
+        set customDropTextItem = Table.create()
         
         set initialized = true
         
