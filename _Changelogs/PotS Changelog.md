@@ -76,6 +76,7 @@
   Updated the qXXX generator to emit scaffolds that use the newer shared quest-giver helpers for metadata, hero resolution, quest buttons, and dialog flow.
   Replaced stale `TODO OLDGUI PARITY` wording with `TODO QUEST-SPECIFIC` so new quest-giver templates reflect the current JASS quest system instead of the removed GUI-trigger workflow.
   Added the standard PotS library header, safer generated function ordering, public hook signatures, handle-local cleanup, leaner core `requires`, and per-quest recommended-level metadata.
+  Updated generated dialog selection to use `QuestGiver_StartDialogEntryTransition` / `QuestGiver_StartDialogExitTransition` with generated camera and cinematic constants, set dialog context before raw dialog display, and fixed real-number formatting for dialog range/cooldown values.
 
 ### Actions Remaining
 - Decide how the hidden `Void Entity` boss should be connected to quest progression, including whether it belongs in Aradion's questline.
