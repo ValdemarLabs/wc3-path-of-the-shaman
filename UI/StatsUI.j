@@ -169,9 +169,6 @@ private function SUI_GetTrackedPetUnit takes nothing returns unit
     if udg_TamedUnit != null and GetHandleId(udg_TamedUnit) != 0 then
         return udg_TamedUnit
     endif
-    if udg_Shadowclaw != null and GetHandleId(udg_Shadowclaw) != 0 and not SUI_IsTrackedCompanion(udg_Shadowclaw) then
-        return udg_Shadowclaw
-    endif
     return null
 endfunction
 
