@@ -94,7 +94,6 @@ globals
     private string SUI_PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
     private string SUI_RowHighlightModel = "UI\\Feedback\\Autocast\\UI-ModalButtonOn.mdx"
     private string SUI_DefaultUnitIcon = "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp"
-    private string SUI_ShadowclawIcon = "ReplaceableTextures\\CommandButtons\\BTNSpiritWolf.blp"
     private integer SUI_KIND_HERO = 1
     private integer SUI_KIND_PET = 2
     private integer SUI_KIND_COMPANION = 3
@@ -181,8 +180,9 @@ private function SUI_GetUnitIconPath takes unit u returns string
     endif
 
     set unitTypeId = GetUnitTypeId(u)
-    if u == udg_Shadowclaw or unitTypeId == SUI_UNIT_SHADOWCLAW then
-        return SUI_ShadowclawIcon
+    set iconPath = BlzGetAbilityIcon(unitTypeId)
+    if iconPath != null and iconPath != "" then
+        return iconPath
     endif
 
     set iconPath = QuestGiver_GetCompanionIcon(u)
@@ -190,12 +190,7 @@ private function SUI_GetUnitIconPath takes unit u returns string
         return iconPath
     endif
 
-    // Warcraft III exposes no direct unit-icon native, so this remains a best-effort fallback.
-    set iconPath = BlzGetAbilityIcon(unitTypeId)
-    if iconPath == null or iconPath == "" then
-        return SUI_DefaultUnitIcon
-    endif
-    return iconPath
+    return SUI_DefaultUnitIcon
 endfunction
 
 private function SUI_GetHealthColor takes integer percent returns string
