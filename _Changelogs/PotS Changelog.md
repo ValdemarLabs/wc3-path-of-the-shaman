@@ -24,14 +24,22 @@
   Shadowclaw now registers as a Nazgrek-focused pet during startup but can stay halted during the intro cinematic until the companion system is resumed.
   Pets now use the fatigue/fake-death flow on fatal damage instead of dying normally, and active pets are included with companions when dungeon or zone movement relocates the hero.
   Aradion and Valeria now return to Elarindor ownership and can be invited back after being kicked from the companion group.
+  Companion/follower map icons now support an `Always` setting that is the default for companions and pets, keeping their icons visible without extra pings unless they are actually too far from the focused hero.
+  Far-away companion and pet map icons now continue to work while Hold Position mode is active.
 - `StatsUI`
   Kicking Shadowclaw or another pet now clears the active pet display instead of showing Shadowclaw through the old fallback when `udg_TamedUnit` is empty.
   Companion and pet icons in StatsUI now prefer the real unit object icon before falling back to companion metadata icons.
+  Companion and pet Class, Type, and Abilities details now come from `Companions.j` / `Pet.j` unit metadata, and fake-dead pets are shown through the pet library status instead of misleading current HP.
 - `Ranger Missing`
   Valeria now starts her home patrol again after the reunion completion flow recreates her at Aradion's home position, restoring the old GUI behavior where she waits at Aradion before continuing her route.
   The quest now fails if Valeria is lost while the quest is in progress or ready to turn in, including during the successful negotiation transition.
 - `Rifts of Corruption`
   Accepting the quest no longer teleports Valeria away for the intro staging when she is already near Aradion; she is instead ordered to move normally toward her home/start position.
+  Aradion and Valeria now remain companion-mode quest units during the field phase, but use follower-style visuals and stop behavior when they are too far away.
+  Leaving Vanguard Vale, Verdant Plains, or Redwind Pass now pauses Aradion/Valeria companion/follower orders, updates the quest log, and shows a quest update message; returning to a valid field zone shows a rejoined update and resumes their companion/follower behavior.
+  Aradion and Valeria now show left-behind map icons and pings when they are outside valid field zones and far from the focused hero.
+- `Item floating text`
+  Items dropped by units and destructibles now use the shared item-name floating text presentation, matching DInv-origin item drops.
 - `Weather`
   Wind weather is now shorter and much less frequent, especially in zones where wind was previously the only available dry-weather result.
 
@@ -42,16 +50,27 @@
   Companion-owned command-card casts now map back to the real control player for selected-unit lookup and can fall back to the casting companion/pet itself.
   Companion focus commands now play the old GUI `GoodJob` sound, and empty companion icon paths now fall back through the existing `BlzGetAbilityIcon(unitTypeId)` lookup when possible.
   Added Aradion and Valeria named-companion metadata, icons, Elarindor faction text, info text, and Elarindor return-owner handling so the generic invite flow can restore them after a kick.
+  Added companion class/type/ability metadata APIs for StatsUI and companion information output, plus a follower-behavior profile for quest companions that should stay in companion mode while still using follower-style effects and leash-stop behavior.
+  Companion far-icon registration now separates icon visibility from pinging so the `Always` setting can keep icons visible while pings still only fire when the unit is outside the configured follow distance.
 - `Pet.j`
   Ensures `udg_TamedUnits` exists before pet registration, forces Shadowclaw registration toward Nazgrek, and clears `udg_TamedUnit` before old multiboard pet-removal hooks run.
   Added delayed Shadowclaw init retry, intro-aware pet suspension, explicit Shadowclaw leader assignment, and DamageEngine lethal-damage clamping for pet fatigue.
+  Moved pet Class, Type, and Abilities text into pet-library helper functions, including separate class helpers for wolves, bears, felines, turtles, stags, boars, moths, and Shadowclaw.
 - `ZoneEvent.j`
   Centralized controlled-unit collection for zone transitions so `udg_Companion_Group`, `udg_TamedUnits`, and the explicit active `udg_TamedUnit` are all moved with the entering hero.
 - `StatsUI.j`
   Replaced the hardcoded Shadowclaw icon fallback with the same object-icon-first lookup used by the abilities UI, retaining quest companion icons as fallback metadata.
+  StatsUI now reads companion/pet Class, Type, and Abilities through `Companions.j` / `Pet.j` instead of keeping those definitions local, and treats pet fake-death status as Dead through `Pet.j`.
+- `IconQuery.j` / `SettingsUI.j`
+  Added the per-category `Always` mode, exposed it through the existing Settings category button cycle, and made companions/followers default to `Always`.
 - `qAradion.j`
   Added a near-Aradion guard to the Rifts intro preparation path, restarted Valeria's home patrol after the Ranger Missing fade-black home recreation callback, and cleaned up the completion timer local.
   Added Ranger Missing Valeria death protection through a fatal-damage clamp plus a global death fallback, with duplicate failure protection during quest reset.
+  Rifts field companions now use companion follower behavior instead of escort-mode follow logic, Redwind Pass is accepted as a field zone, and invalid-zone ticks strip Aradion/Valeria from companion/follower control until the player returns to a valid zone.
+  Added leave/rejoin quest update messages and quest-log objective refreshes for the Rifts field zone gate, including correct requirement handling during both the rift-search phase and the escort-home phase.
+  Added temporary left-behind IconQuery markers and minimap pings for Aradion/Valeria while they are outside valid field zones and far from the focused hero.
+- `ItemLootSystem.j` / `ItemLootDestructibles.j`
+  Unit and destructible item drops now call the shared item floating-text helpers so dropped loot consistently displays item-name floating text.
 - `WeatherSystemV4.j` / `ZonesCore.j`
   Reduced wind durations and wind weather weights, and added an extra wind start gate so wind-only weather pools no longer keep wind active too often.
 
@@ -64,6 +83,7 @@
 - Re-test invited companions with `CinematicMover`, selected-unit mode casts, companion self command-card casts, Kick Companion on non-pet companions, Shadowclaw kick/reinvite, and StatsUI pet rows in-game.
 - Re-test Ranger Missing completion to confirm Valeria waits at Aradion before patrolling, and accept Rifts of Corruption while Valeria is already near Aradion to confirm she is not teleported away.
 - Re-test Shadowclaw intro halt/resume, initial Nazgrek focus without casting Focus Nazgrek, pet fatigue/revive, pet dungeon transfers, Aradion/Valeria reinvite after kick, Ranger Missing Valeria death during negotiation, wind pacing in affected zones, and in-map destructible drops from the newly exported named loot tables.
+- Re-test the companion/follower IconQuery `Always` setting, far-away icons while Hold Position is active, StatsUI companion/pet Class/Type/Abilities, Rifts leave/rejoin zone updates, Rifts left-behind icons/pings, and floating text from unit/destructible loot drops.
 
 ## [2.7.2026]
 
