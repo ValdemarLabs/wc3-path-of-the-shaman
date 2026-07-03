@@ -579,13 +579,13 @@ private function StartFieldCompanions takes unit hero returns nothing
 	call AddValeriaCompanion()
 	call AddAradionCompanion()
 	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
-		call Companions_SetEscortBehavior(Valeria, true)
+		call Companions_SetFollowerBehavior(Valeria, true)
 		call Companions_SetMode(Valeria, COMPANION_MODE_DEFEND)
 		call Companions_SetLeader(Valeria, hero)
 		call Companions_Resume(Valeria)
 	endif
 	if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
-		call Companions_SetEscortBehavior(Aradion, true)
+		call Companions_SetFollowerBehavior(Aradion, true)
 		call Companions_SetMode(Aradion, COMPANION_MODE_DEFEND)
 		call Companions_SetLeader(Aradion, hero)
 		call Companions_Resume(Aradion)
@@ -2274,7 +2274,7 @@ private function StartRiftsRitualInternal takes unit riftUnit, integer riftIndex
 	call IssueImmediateOrder(Aradion, "stop")
 	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
 		call AddValeriaCompanion()
-		call Companions_SetEscortBehavior(Valeria, false)
+		call Companions_SetFollowerBehavior(Valeria, false)
 		call Companions_SetMode(Valeria, COMPANION_MODE_DEFEND)
 		call Companions_SetLeader(Valeria, hero)
 		call Companions_Resume(Valeria)
