@@ -1,0 +1,11 @@
+Horde NPC Buy Items Restoshaman
+    Events
+    Conditions
+    Actions
+        -------- =================================== --------
+        Set VariableSet NPC_Horde_AI_ShamanBuy = True
+        -------- Random integer according to the maximum number of units in unit array AI_Shop_Horde[ ] --------
+        Set VariableSet NPC_ShopPoint = (Position of AI_Shop_Horde[(Random integer number between 1 and 4)])
+        -------- =================================== --------
+        Unit - Order NPC_Horde_AI_Shaman to Move To NPC_ShopPoint
+        Custom script:   call RemoveLocation(udg_NPC_ShopPoint)

@@ -1,0 +1,52 @@
+Horde NPC Inventory State Engineer
+    Events
+        Unit - A unit Acquires an item
+        Unit - A unit Loses an item
+        Unit - A unit Uses an item
+    Conditions
+        (Triggering unit) Equal to NPC_Neutral_Engineer
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (NPC_Neutral_Engineer is in Companion_Group.) Not equal to True
+                (Current order of NPC_Neutral_Engineer) Not equal to (Order(attack))
+                NPC_Neutral_EngineerBuy Not equal to True
+                NPC_Neutral_EngineerSell Not equal to True
+                NPC_Neutral_Engineer_Camp Not equal to True
+                And - All (Conditions) are true
+                    Conditions
+                        (Random integer number between 1 and 50) Equal to 1
+                        (Item carried by NPC_Neutral_Engineer in slot 1) Equal to No item
+                        (Item carried by NPC_Neutral_Engineer in slot 2) Equal to No item
+                        (Item carried by NPC_Neutral_Engineer in slot 3) Equal to No item
+                        (Item carried by NPC_Neutral_Engineer in slot 4) Equal to No item
+                        (Item carried by NPC_Neutral_Engineer in slot 5) Equal to No item
+                        (Item carried by NPC_Neutral_Engineer in slot 6) Equal to No item
+            Then - Actions
+                -------- =================================== --------
+                -------- BUY ITEMS --------
+                Trigger - Run Horde NPC Buy Items Engineer <gen> (checking conditions)
+                Trigger - Turn on Horde NPC Buy Items Q Engineer <gen>
+                Game - Display to (All players) the text: (Engineer + (MAIN STATE -  + buying items))
+                -------- =================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (NPC_Neutral_Engineer is in Companion_Group.) Not equal to True
+                (Item carried by NPC_Neutral_Engineer in slot 1) Not equal to No item
+                (Item carried by NPC_Neutral_Engineer in slot 2) Not equal to No item
+                (Item carried by NPC_Neutral_Engineer in slot 3) Not equal to No item
+                (Item carried by NPC_Neutral_Engineer in slot 4) Not equal to No item
+                (Item carried by NPC_Neutral_Engineer in slot 5) Not equal to No item
+                (Item carried by NPC_Neutral_Engineer in slot 6) Not equal to No item
+                NPC_Neutral_EngineerBuy Not equal to True
+                NPC_Neutral_EngineerSell Not equal to True
+                NPC_Neutral_EngineerRetB Not equal to True
+                NPC_Neutral_Engineer_Camp Not equal to True
+            Then - Actions
+                -------- =================================== --------
+                -------- SELL ITEMS --------
+                Trigger - Run Horde NPC Sell Items Engineer <gen> (checking conditions)
+                Trigger - Turn on Horde NPC Sell Items Q Engineer <gen>
+                -------- =================================== --------
+            Else - Actions

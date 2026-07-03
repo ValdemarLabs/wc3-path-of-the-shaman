@@ -1,0 +1,13 @@
+Riverbane NPC Init Locations
+    Events
+        Time - Elapsed game time is 0.00 seconds
+    Conditions
+    Actions
+        -------- Spawn locations --------
+        Set VariableSet NPC_RIVERBANESPAWNLOC[1] = RiverbaneHeroSpawn1 <gen>
+        Set VariableSet NPC_RIVERBANESPAWNLOC[2] = RiverbaneHeroSpawn2 <gen>
+        -------- Retreat locations --------
+        Set VariableSet NPC_RiverbaneRetreatLocation[1] = RiverbaneRetreat1 <gen>
+        Set VariableSet NPC_RiverbaneRetreatLocation[2] = RiverbaneRetreat2 <gen>
+        Set VariableSet NPC_RiverbaneRetreatLocation[3] = RiverbaneRetreat3 <gen>
+        Set VariableSet NPC_RiverbaneRetreatLocation[4] = RiverbaneRetreat4 <gen>

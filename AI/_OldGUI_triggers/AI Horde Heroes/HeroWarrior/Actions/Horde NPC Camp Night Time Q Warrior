@@ -1,0 +1,7 @@
+Horde NPC Camp Night Time Q Warrior
+    Events
+        Time - NPC_Horde_AI_WarriorCamp2 expires
+    Conditions
+    Actions
+        Set VariableSet NPC_Horde_AI_WarriorCamp = False
+        Countdown Timer - Start NPC_Horde_AI_WarriorCamp2 as a One-shot timer that will expire in (Random real number between 240.00 and 400.00) seconds

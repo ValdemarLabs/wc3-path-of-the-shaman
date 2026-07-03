@@ -1,0 +1,21 @@
+Horde NPC Sell Items Q Restoshaman
+    Events
+        Time - Every 1.00 seconds of game time
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Item carried by NPC_Horde_AI_Shaman in slot 1) Not equal to No item
+                (Item carried by NPC_Horde_AI_Shaman in slot 2) Not equal to No item
+                (Item carried by NPC_Horde_AI_Shaman in slot 3) Not equal to No item
+                (Item carried by NPC_Horde_AI_Shaman in slot 4) Not equal to No item
+                (Item carried by NPC_Horde_AI_Shaman in slot 5) Not equal to No item
+                (Item carried by NPC_Horde_AI_Shaman in slot 6) Not equal to No item
+        NPC_Horde_AI_ShamanSell Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- =================================== --------
+        -------- Check that if any inventory slot is now empty after selling --------
+        -------- =================================== --------
+        -------- ITEM SOLD --------
+        Set VariableSet NPC_Horde_AI_ShamanSell = False
+        -------- =================================== --------

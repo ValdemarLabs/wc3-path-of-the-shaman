@@ -1,0 +1,15 @@
+Horde NPC Retreat Combat Paladin
+    Events
+    Conditions
+    Actions
+        -------- =================================== --------
+        Set VariableSet NPC_Riverbane_PaladinRetC = True
+        Set VariableSet NPC_RiverbaneRetreatPoint = (Position of NPC_Riverbane_Paladin)
+        -------- =================================== --------
+        Unit - Order NPC_Riverbane_Paladin to Move To (NPC_RiverbaneRetreatPoint offset by (Random real number between 400.00 and 1000.00) towards (Random angle) degrees.)
+        Custom script:   call RemoveLocation(udg_NPC_RiverbaneRetreatPoint)
+        -------- =================================== --------
+        -------- /////////// This needs to be changed? --------
+        Wait 5.00 seconds
+        Set VariableSet NPC_Riverbane_PaladinRetC = False
+        -------- =================================== --------

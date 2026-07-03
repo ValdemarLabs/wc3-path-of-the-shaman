@@ -1,0 +1,174 @@
+Horde NPC Ability Item Usage Warrior
+    Events
+    Conditions
+    Actions
+        -------- =================================== --------
+        Set VariableSet NPC_VarPoint = (Position of NPC_Horde_AI_Warrior)
+        Set VariableSet NPC_VarUnitGroup = (Units within 600.00 of NPC_VarPoint matching ((((Matching unit) is alive) Equal to True) and (((Matching unit) belongs to an enemy of (Owner of NPC_Horde_AI_Warrior).) Equal to True)).)
+        -------- =================================== --------
+        Set VariableSet Closest_Unit = No unit
+        Set VariableSet Closest_ClosestDistance = 600.00
+        Set VariableSet Closest_Group = (Units in (Playable map area) matching (((Matching unit) belongs to an enemy of (Owner of NPC_Horde_AI_Warrior).) Equal to True))
+        Unit Group - Pick every unit in Closest_Group and do (Actions)
+            Loop - Actions
+                Set VariableSet Closest_Point = (Position of (Picked unit))
+                Set VariableSet Closest_CurrentDistance = (Distance between NPC_VarPoint and Closest_Point)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Closest_CurrentDistance Less than Closest_ClosestDistance
+                    Then - Actions
+                        Set VariableSet Closest_Unit = (Picked unit)
+                        Set VariableSet Closest_ClosestDistance = Closest_CurrentDistance
+                    Else - Actions
+                Custom script:   call RemoveLocation(udg_Closest_Point)
+        -------- =================================== --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Item-class of (Item carried by NPC_Horde_AI_Warrior in slot 1)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Horde_AI_Warrior in slot 2)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Horde_AI_Warrior in slot 3)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Horde_AI_Warrior in slot 4)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Horde_AI_Warrior in slot 5)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Horde_AI_Warrior in slot 6)) Equal to Charged
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Percentage life of NPC_Horde_AI_Warrior) Less than or equal to 50.00
+                        (Percentage mana of NPC_Horde_AI_Warrior) Less than or equal to 50.00
+            Then - Actions
+                -------- =================================== --------
+                -------- If Hero Has any consumables, USE them (NOW: Try to use any ITEM, could be modfied to consern only Charges and Purchable) --------
+                Hero - Order NPC_Horde_AI_Warrior to use (Item carried by NPC_Horde_AI_Warrior of type (Random level -1.Any Class item-type))
+                -------- =================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (NPC_Horde_AI_Warrior has buff Battle Shout ) Not equal to True
+            Then - Actions
+                -------- =================================== --------
+                -------- Battle Shout --------
+                Unit - Order NPC_Horde_AI_Warrior to Night Elf Druid Of The Claw - Roar.
+                Countdown Timer - Start NPC_Horde_AI_Warrior_Casting as a One-shot timer that will expire in 1.00 seconds
+                -------- =================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in NPC_VarUnitGroup) Greater than 0
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (NPC_Horde_AI_Warrior has buff Bloodrage ) Not equal to True
+                        (Percentage life of NPC_Horde_AI_Warrior) Greater than or equal to 50.00
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Bloodrage --------
+                        Unit - Order NPC_Horde_AI_Warrior to Human Mountain King - Activate Avatar.
+                        Countdown Timer - Start NPC_Horde_AI_Warrior_Casting as a One-shot timer that will expire in 1.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Horde_AI_Warrior_Casting) Equal to 0.00
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Charge --------
+                        Unit - Order NPC_Horde_AI_Warrior to Undead Destroyer - Absorb Mana (Random unit from NPC_VarUnitGroup)
+                        Countdown Timer - Start NPC_Horde_AI_Warrior_Casting as a One-shot timer that will expire in 1.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Horde_AI_Warrior_Casting) Equal to 0.00
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Heroic Strike --------
+                        Unit - Order NPC_Horde_AI_Warrior to Human Mountain King - Storm Bolt Closest_Unit
+                        Countdown Timer - Start NPC_Horde_AI_Warrior_Casting as a One-shot timer that will expire in 1.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Horde_AI_Warrior_Casting) Equal to 0.00
+                        (Random integer number between 1 and 2) Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Rend --------
+                        Unit - Order NPC_Horde_AI_Warrior to Neutral - Parasite Closest_Unit
+                        Countdown Timer - Start NPC_Horde_AI_Warrior_Casting as a One-shot timer that will expire in 1.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Horde_AI_Warrior_Casting) Equal to 0.00
+                        (Random integer number between 1 and 2) Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Sunder Armor --------
+                        Unit - Order NPC_Horde_AI_Warrior to Night Elf Druid Of The Talon - Faerie Fire Closest_Unit
+                        Countdown Timer - Start NPC_Horde_AI_Warrior_Casting as a One-shot timer that will expire in 1.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Horde_AI_Warrior_Casting) Equal to 0.00
+                        (Random integer number between 1 and 2) Equal to 1
+                        (Number of units in NPC_VarUnitGroup) Greater than or equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Thunder Clap --------
+                        -------- -- waterelemental 852097 --------
+                        Custom script:   call IssueImmediateOrderById(udg_NPC_Horde_AI_Warrior, 852097)
+                        Countdown Timer - Start NPC_Horde_AI_Warrior_Casting as a One-shot timer that will expire in 1.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Horde_AI_Warrior_Casting) Equal to 0.00
+                        (Percentage life of NPC_Horde_AI_Warrior) Greater than or equal to 10.00
+                        (Number of units in NPC_VarUnitGroup) Greater than or equal to 2
+                        (Random integer number between 1 and 4) Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Challenging Shout --------
+                        Unit - Order NPC_Horde_AI_Warrior to Night Elf Mountain Giant - Taunt.
+                        Countdown Timer - Start NPC_Horde_AI_Warrior_Casting as a One-shot timer that will expire in 1.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Horde_AI_Warrior_Casting) Equal to 0.00
+                        (Random integer number between 1 and 2) Equal to 1
+                        (Number of units in NPC_VarUnitGroup) Greater than or equal to 2
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Retaliation --------
+                        Game - Display to (All players) the text: (Warrior + Casting Retaliation)
+                        Unit - Order NPC_Horde_AI_Warrior to Orc Troll Berserker - Berserk.
+                        Countdown Timer - Start NPC_Horde_AI_Warrior_Casting as a One-shot timer that will expire in 1.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Horde_AI_Warrior_Casting) Equal to 0.00
+                        (Random integer number between 1 and 2) Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Recklessness --------
+                        Unit - Remove HeroWarrior_Retaliation  from NPC_Horde_AI_Warrior
+                        Unit - Add HeroWarrior_Recklessness  to NPC_Horde_AI_Warrior
+                        Game - Display to (All players) the text: (Warrior + Recklessness)
+                        Unit - Order NPC_Horde_AI_Warrior to Night Elf Warden - Fan Of Knives.
+                        Countdown Timer - Start NPC_Horde_AI_Warrior_Casting as a One-shot timer that will expire in 1.00 seconds
+                        Countdown Timer - Start NPC_Horde_AI_Warrior_RemoveAbi as a One-shot timer that will expire in 1.00 seconds
+                        Set VariableSet NPC_Horde_AI_Warrior_Abi = HeroWarrior_Recklessness 
+                        Set VariableSet NPC_Horde_AI_Warrior_Abi2 = HeroWarrior_Retaliation 
+                        -------- =================================== --------
+                    Else - Actions
+            Else - Actions
+        -------- =================================== --------
+        Custom script:   call RemoveLocation(udg_NPC_VarPoint)
+        Custom script:   call DestroyGroup(udg_NPC_VarUnitGroup)
+        Custom script:   call RemoveLocation(udg_Closest_Point)
+        Custom script:   call DestroyGroup(udg_Closest_Group)
+        -------- =================================== --------

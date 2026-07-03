@@ -1,0 +1,7 @@
+Horde NPC Ability Remove Paladin
+    Events
+        Time - NPC_Riverbane_Paladin_RemoveAb expires
+    Conditions
+    Actions
+        Unit - Remove NPC_Riverbane_Paladin_Abil from NPC_Riverbane_Paladin
+        Unit - Add NPC_Riverbane_Paladin_Abil2 to NPC_Riverbane_Paladin

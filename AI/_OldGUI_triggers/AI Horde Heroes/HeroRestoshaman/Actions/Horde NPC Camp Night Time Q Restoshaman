@@ -1,0 +1,7 @@
+Horde NPC Camp Night Time Q Restoshaman
+    Events
+        Time - NPC_Horde_AI_ShamanCamp1 expires
+    Conditions
+    Actions
+        Set VariableSet NPC_Horde_AI_ShamanCamp = False
+        Countdown Timer - Start NPC_Horde_AI_ShamanCamp2 as a One-shot timer that will expire in (Random real number between 240.00 and 400.00) seconds

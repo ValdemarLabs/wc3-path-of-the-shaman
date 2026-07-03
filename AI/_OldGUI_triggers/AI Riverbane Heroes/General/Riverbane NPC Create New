@@ -1,0 +1,62 @@
+Riverbane NPC Create New
+    Events
+        Time - Every (Random real number between 50.00 and 150.00) seconds of game time
+        Player - Player 1 (Red) types a chat message containing aispawn as An exact match
+    Conditions
+        (Number of units in NPC_WANDERINGRIVERBANEUNITS) Not equal to 2
+        debugAI Equal to False
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in NPC_WANDERINGRIVERBANEUNITS) Equal to 1
+            Then - Actions
+                -------- ================================ --------
+                -------- Turn OFF - This trigger - IF all AI Heroes of this trigger are created --------
+                Trigger - Turn off (This trigger)
+                -------- Prevent any other actions --------
+                Skip remaining actions
+                -------- ================================ --------
+            Else - Actions
+        Set VariableSet INT_random = (Random integer number between 1 and 4)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                And - All (Conditions) are true
+                    Conditions
+                        INT_random Equal to 1
+                        NPC_Riverbane_Paladin Equal to No unit
+            Then - Actions
+                -------- ================================ --------
+                Set VariableSet NPC_Riverbane_AI_Rect = NPC_RIVERBANESPAWNLOC[(Random integer number between 1 and 2)]
+                Set VariableSet NPC_Riverbane_AI_Point = (Center of NPC_Riverbane_AI_Rect)
+                -------- ================================ --------
+                Unit - Create 1 Paladin (Companion) for Player 15 (Turquoise) at NPC_Riverbane_AI_Point facing Default building facing degrees
+                Unit - Change color of (Last created unit) to (Color of (Player((Random integer number between 1 and 28))))
+                Set VariableSet NPC_Riverbane_Paladin = (Last created unit)
+                Unit Group - Add (Last created unit) to NPC_WANDERINGRIVERBANEUNITS
+                -------- UNIT HIDER --------
+                Set VariableSet UnitHider_ReferenceUnits[(Custom value of (Last created unit))] = (Last created unit)
+                Unit Group - Add (Last created unit) to UnitHider_ReferenceGroup
+                -------- ================================ --------
+                Unit - Add HeroPaladin_BlessingOfLight  to NPC_Riverbane_Paladin
+                Unit - Add HeroPaladin_DivineShield  to NPC_Riverbane_Paladin
+                Unit - Add HeroPaladin_HolyLight  to NPC_Riverbane_Paladin
+                Unit - Add HeroPaladin_InnerFire  to NPC_Riverbane_Paladin
+                Unit - Add HeroPaladin_JudgementStrike  to NPC_Riverbane_Paladin
+                Unit - Add HeroPaladin_LayOnHands  to NPC_Riverbane_Paladin
+                Unit - Add HeroPaladin_Taunt  to NPC_Riverbane_Paladin
+                -------- ================================ --------
+                -------- Level the hero random 1-15 times --------
+                For each (Integer A) from 1 to (Random integer number between 1 and 15), do (Actions)
+                    Loop - Actions
+                        Hero - Set (Last created unit) Hero-level to ((Hero level of (Last created unit)) + 1), Hide level-up graphics
+                -------- ================================ --------
+                Game - Display to (All players) the text: (|cff808000AI Heroes: |r + (|cffff8080Paladin|r +  entered the world...))
+                -------- ================================ --------
+                Custom script:   call RemoveRect(udg_NPC_Riverbane_AI_Rect)
+                Custom script:   call RemoveLocation(udg_NPC_Riverbane_AI_Point)
+                -------- ================================ --------
+                -------- turn ON - GAME STATE for the created AI NPC --------
+                Trigger - Turn on MAIN STATE Riverbane NPC AI Paladin <gen>
+                -------- ================================ --------
+                Skip remaining actions
+            Else - Actions

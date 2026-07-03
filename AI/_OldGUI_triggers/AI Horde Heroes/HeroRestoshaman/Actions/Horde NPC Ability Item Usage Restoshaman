@@ -1,0 +1,211 @@
+Horde NPC Ability Item Usage Restoshaman
+    Events
+    Conditions
+    Actions
+        -------- =================================== --------
+        Set VariableSet NPC_VarPoint = (Position of NPC_Horde_AI_Shaman)
+        Set VariableSet NPC_VarUnitGroup = (Units within 600.00 of NPC_VarPoint matching ((((Matching unit) is alive) Equal to True) and (((Matching unit) belongs to an enemy of (Owner of NPC_Horde_AI_Shaman).) Equal to True)).)
+        Set VariableSet NPC_VarUnitGroup2 = (Units within 800.00 of NPC_VarPoint matching ((((Matching unit) is alive) Equal to True) and (((Matching unit) belongs to an ally of (Owner of NPC_Horde_AI_Shaman).) Equal to True)).)
+        Set VariableSet NPC_VarPoint2 = (Position of (Random unit from NPC_VarUnitGroup2))
+        Set VariableSet NPC_VarPoint3 = (NPC_VarPoint offset by (Random real number between 300.00 and 600.00) towards (Random angle) degrees.)
+        -------- =================================== --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Item-class of (Item carried by NPC_Horde_AI_Shaman in slot 1)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Horde_AI_Shaman in slot 2)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Horde_AI_Shaman in slot 3)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Horde_AI_Shaman in slot 4)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Horde_AI_Shaman in slot 5)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Horde_AI_Shaman in slot 6)) Equal to Charged
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Percentage life of NPC_Horde_AI_Shaman) Less than or equal to 50.00
+                        (Percentage mana of NPC_Horde_AI_Shaman) Less than or equal to 50.00
+            Then - Actions
+                -------- =================================== --------
+                -------- If Hero Has any consumables, USE them (NOW: Try to use any ITEM, could be modfied to consern only Charges and Purchable) --------
+                Hero - Order NPC_Horde_AI_Shaman to use (Item carried by NPC_Horde_AI_Shaman of type (Random level -1.Any Class item-type))
+                -------- =================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Percentage life of (Random unit from NPC_VarUnitGroup2)) Less than or equal to 75.00
+                (Integer((Mana of NPC_Horde_AI_Shaman))) Greater than or equal to (For NPC_Horde_AI_Shaman, Mana cost of HeroShaman_HealingWave , Level (Level of HeroShaman_HealingWave  for NPC_Horde_AI_Shaman).)
+                (Random integer number between 1 and 2) Equal to 1
+            Then - Actions
+                -------- =================================== --------
+                -------- Healing Wave --------
+                Unit - Order NPC_Horde_AI_Shaman to Human Paladin - Holy Light (Random unit from NPC_VarUnitGroup2)
+                Countdown Timer - Start NPC_Horde_AI_Shaman_Casting as a One-shot timer that will expire in 2.00 seconds
+                -------- =================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in NPC_VarUnitGroup) Greater than 0
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Horde_AI_Shaman_Casting) Equal to 0.00
+                        (Integer((Mana of NPC_Horde_AI_Shaman))) Greater than or equal to (For NPC_Horde_AI_Shaman, Mana cost of HeroShaman_ChainHeal , Level (Level of HeroShaman_ChainHeal  for NPC_Horde_AI_Shaman).)
+                        (Number of units in NPC_VarUnitGroup) Greater than or equal to 2
+                        (Percentage life of (Random unit from NPC_VarUnitGroup2)) Less than or equal to 75.00
+                        (Random integer number between 1 and 2) Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Chain Heal --------
+                        Unit - Order NPC_Horde_AI_Shaman to Orc Shadow Hunter - Healing Wave (Random unit from NPC_VarUnitGroup2)
+                        Countdown Timer - Start NPC_Horde_AI_Shaman_Casting as a One-shot timer that will expire in 2.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Horde_AI_Shaman_Casting) Equal to 0.00
+                        (Integer((Mana of NPC_Horde_AI_Shaman))) Greater than or equal to (For NPC_Horde_AI_Shaman, Mana cost of HeroShaman_ChainLightning , Level (Level of HeroShaman_ChainLightning  for NPC_Horde_AI_Shaman).)
+                        (Number of units in NPC_VarUnitGroup) Greater than 2
+                        (Random integer number between 1 and 2) Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Chain Lightning --------
+                        Unit - Order NPC_Horde_AI_Shaman to Orc Far Seer - Chain Lightning (Random unit from NPC_VarUnitGroup)
+                        Countdown Timer - Start NPC_Horde_AI_Shaman_Casting as a One-shot timer that will expire in 2.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Horde_AI_Shaman_Casting) Equal to 0.00
+                        (Integer((Mana of NPC_Horde_AI_Shaman))) Greater than or equal to (For NPC_Horde_AI_Shaman, Mana cost of HeroShaman_Hex , Level (Level of HeroShaman_Hex  for NPC_Horde_AI_Shaman).)
+                        (Number of units in NPC_VarUnitGroup) Greater than 2
+                        (Random integer number between 1 and 4) Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Hex --------
+                        Unit - Order NPC_Horde_AI_Shaman to Orc Shadow Hunter - Hex (Random unit from NPC_VarUnitGroup)
+                        Countdown Timer - Start NPC_Horde_AI_Shaman_Casting as a One-shot timer that will expire in 2.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Horde_AI_Shaman_Casting) Equal to 0.00
+                        (Integer((Mana of NPC_Horde_AI_Shaman))) Greater than or equal to (For NPC_Horde_AI_Shaman, Mana cost of HeroShaman_Channel_TotemEarth , Level (Level of HeroShaman_Channel_TotemEarth  for NPC_Horde_AI_Shaman).)
+                        (Number of units in TotemGroupRestoshamanEarth) Less than or equal to 0
+                        (Percentage life of (Random unit from NPC_VarUnitGroup2)) Less than or equal to 90.00
+                        (Random integer number between 1 and 3) Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Totem Earth --------
+                        Unit - Add HeroShaman_Channel_TotemEarth  to NPC_Horde_AI_Shaman
+                        Unit - Order NPC_Horde_AI_Shaman to Orc Witch Doctor - Healing Ward NPC_VarPoint3
+                        Countdown Timer - Start NPC_Horde_AI_Shaman_Casting as a One-shot timer that will expire in 3.00 seconds
+                        Countdown Timer - Start NPC_Horde_AI_Shaman_RemoveAbi as a One-shot timer that will expire in 2.00 seconds
+                        Set VariableSet NPC_Horde_AI_Shaman_Abil = HeroShaman_Channel_TotemEarth 
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Horde_AI_Shaman_Casting) Equal to 0.00
+                        (Integer((Mana of NPC_Horde_AI_Shaman))) Greater than or equal to (For NPC_Horde_AI_Shaman, Mana cost of HeroShaman_Channel_TotemEarthbind , Level (Level of HeroShaman_Channel_TotemEarthbind  for NPC_Horde_AI_Shaman).)
+                        NPC_Horde_AI_ShamanRetC Equal to True
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Totem Earthbind --------
+                        Unit - Add HeroShaman_Channel_TotemEarthbind  to NPC_Horde_AI_Shaman
+                        Unit - Order NPC_Horde_AI_Shaman to Orc Witch Doctor - Healing Ward NPC_VarPoint
+                        Countdown Timer - Start NPC_Horde_AI_Shaman_Casting as a One-shot timer that will expire in 3.00 seconds
+                        Countdown Timer - Start NPC_Horde_AI_Shaman_RemoveAbi as a One-shot timer that will expire in 2.00 seconds
+                        Set VariableSet NPC_Horde_AI_Shaman_Abil = HeroShaman_Channel_TotemEarthbind 
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Horde_AI_Shaman_Casting) Equal to 0.00
+                        (Integer((Mana of NPC_Horde_AI_Shaman))) Greater than or equal to (For NPC_Horde_AI_Shaman, Mana cost of HeroShaman_Channel_TotemFire , Level (Level of HeroShaman_Channel_TotemFire  for NPC_Horde_AI_Shaman).)
+                        (Number of units in TotemGroupRestoshamanFire) Less than or equal to 0
+                        (Random integer number between 1 and 3) Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Totem Fire --------
+                        Unit - Add HeroShaman_Channel_TotemFire  to NPC_Horde_AI_Shaman
+                        Unit - Order NPC_Horde_AI_Shaman to Orc Witch Doctor - Healing Ward NPC_VarPoint3
+                        Countdown Timer - Start NPC_Horde_AI_Shaman_Casting as a One-shot timer that will expire in 3.00 seconds
+                        Countdown Timer - Start NPC_Horde_AI_Shaman_RemoveAbi as a One-shot timer that will expire in 2.00 seconds
+                        Set VariableSet NPC_Horde_AI_Shaman_Abil = HeroShaman_Channel_TotemFire 
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Horde_AI_Shaman_Casting) Equal to 0.00
+                        (Integer((Mana of NPC_Horde_AI_Shaman))) Greater than or equal to (For NPC_Horde_AI_Shaman, Mana cost of HeroShaman_Channel_TotemStoneskin , Level (Level of HeroShaman_Channel_TotemStoneskin  for NPC_Horde_AI_Shaman).)
+                        (Number of units in TotemGroupRestoshamanEarth) Less than or equal to 0
+                        ((Random unit from NPC_VarUnitGroup) is A melee attacker) Equal to True
+                        (Number of units in NPC_VarUnitGroup) Greater than 2
+                        (Random integer number between 1 and 3) Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Totem Stoneskin --------
+                        Unit - Add HeroShaman_Channel_TotemStoneskin  to NPC_Horde_AI_Shaman
+                        Unit - Order NPC_Horde_AI_Shaman to Orc Witch Doctor - Healing Ward NPC_VarPoint3
+                        Countdown Timer - Start NPC_Horde_AI_Shaman_Casting as a One-shot timer that will expire in 3.00 seconds
+                        Countdown Timer - Start NPC_Horde_AI_Shaman_RemoveAbi as a One-shot timer that will expire in 2.00 seconds
+                        Set VariableSet NPC_Horde_AI_Shaman_Abil = HeroShaman_Channel_TotemStoneskin 
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Horde_AI_Shaman_Casting) Equal to 0.00
+                        (Integer((Mana of NPC_Horde_AI_Shaman))) Greater than or equal to (For NPC_Horde_AI_Shaman, Mana cost of HeroShaman_Channel_TotemWater , Level (Level of HeroShaman_Channel_TotemWater  for NPC_Horde_AI_Shaman).)
+                        (Number of units in TotemGroupRestoshamanWater) Less than or equal to 0
+                        (Percentage mana of (Random unit from NPC_VarUnitGroup2)) Less than or equal to 75.00
+                        (Random integer number between 1 and 3) Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Totem Water --------
+                        Unit - Add HeroShaman_Channel_TotemWater  to NPC_Horde_AI_Shaman
+                        Unit - Order NPC_Horde_AI_Shaman to Orc Witch Doctor - Healing Ward NPC_VarPoint3
+                        Countdown Timer - Start NPC_Horde_AI_Shaman_Casting as a One-shot timer that will expire in 3.00 seconds
+                        Countdown Timer - Start NPC_Horde_AI_Shaman_RemoveAbi as a One-shot timer that will expire in 2.00 seconds
+                        Set VariableSet NPC_Horde_AI_Shaman_Abil = HeroShaman_Channel_TotemWater 
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Horde_AI_Shaman_Casting) Equal to 0.00
+                        (Integer((Mana of NPC_Horde_AI_Shaman))) Greater than or equal to (For NPC_Horde_AI_Shaman, Mana cost of HeroShaman_Channel_TotemWind , Level (Level of HeroShaman_Channel_TotemWind  for NPC_Horde_AI_Shaman).)
+                        (Number of units in TotemGroupRestoshamanWind) Less than or equal to 0
+                        (Number of units in NPC_VarUnitGroup) Greater than 2
+                        (Random integer number between 1 and 4) Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Totem Wind --------
+                        Unit - Add HeroShaman_Channel_TotemWind  to NPC_Horde_AI_Shaman
+                        Unit - Order NPC_Horde_AI_Shaman to Orc Witch Doctor - Healing Ward NPC_VarPoint3
+                        Countdown Timer - Start NPC_Horde_AI_Shaman_Casting as a One-shot timer that will expire in 3.00 seconds
+                        Countdown Timer - Start NPC_Horde_AI_Shaman_RemoveAbi as a One-shot timer that will expire in 2.00 seconds
+                        Set VariableSet NPC_Horde_AI_Shaman_Abil = HeroShaman_Channel_TotemWind 
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Horde_AI_Shaman_Casting) Equal to 0.00
+                        (Integer((Mana of NPC_Horde_AI_Shaman))) Greater than or equal to (For NPC_Horde_AI_Shaman, Mana cost of HeroShaman_Channel_TotemWindfury , Level (Level of HeroShaman_Channel_TotemWindfury  for NPC_Horde_AI_Shaman).)
+                        (Number of units in TotemGroupRestoshamanWind) Less than or equal to 0
+                        (Random integer number between 1 and 4) Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Totem Windfury --------
+                        Unit - Add HeroShaman_Channel_TotemWindfury  to NPC_Horde_AI_Shaman
+                        Unit - Order NPC_Horde_AI_Shaman to Orc Witch Doctor - Healing Ward NPC_VarPoint3
+                        Countdown Timer - Start NPC_Horde_AI_Shaman_Casting as a One-shot timer that will expire in 3.00 seconds
+                        Countdown Timer - Start NPC_Horde_AI_Shaman_RemoveAbi as a One-shot timer that will expire in 2.00 seconds
+                        Set VariableSet NPC_Horde_AI_Shaman_Abil = HeroShaman_Channel_TotemWindfury 
+                        -------- =================================== --------
+                    Else - Actions
+            Else - Actions
+        -------- =================================== --------
+        Custom script:   call RemoveLocation(udg_NPC_VarPoint)
+        Custom script:   call RemoveLocation(udg_NPC_VarPoint2)
+        Custom script:   call RemoveLocation(udg_NPC_VarPoint3)
+        Custom script:   call DestroyGroup(udg_NPC_VarUnitGroup)
+        Custom script:   call DestroyGroup(udg_NPC_VarUnitGroup2)
+        -------- =================================== --------

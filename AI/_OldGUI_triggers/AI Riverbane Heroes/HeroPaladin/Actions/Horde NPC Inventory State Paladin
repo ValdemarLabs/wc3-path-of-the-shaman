@@ -1,0 +1,53 @@
+Horde NPC Inventory State Paladin
+    Events
+        Unit - A unit Acquires an item
+        Unit - A unit Loses an item
+        Unit - A unit Uses an item
+    Conditions
+        (Triggering unit) Equal to NPC_Riverbane_Paladin
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (NPC_Riverbane_Paladin is in Companion_Group.) Not equal to True
+                (Current order of NPC_Riverbane_Paladin) Not equal to (Order(attack))
+                NPC_Riverbane_PaladinBuy Not equal to True
+                NPC_Riverbane_PaladinSell Not equal to True
+                NPC_Riverbane_Paladin_Camp Not equal to True
+                And - All (Conditions) are true
+                    Conditions
+                        (Random integer number between 1 and 100) Greater than 95
+                        (Item carried by NPC_Riverbane_Paladin in slot 1) Equal to No item
+                        (Item carried by NPC_Riverbane_Paladin in slot 2) Equal to No item
+                        (Item carried by NPC_Riverbane_Paladin in slot 3) Equal to No item
+                        (Item carried by NPC_Riverbane_Paladin in slot 4) Equal to No item
+                        (Item carried by NPC_Riverbane_Paladin in slot 5) Equal to No item
+                        (Item carried by NPC_Riverbane_Paladin in slot 6) Equal to No item
+            Then - Actions
+                -------- =================================== --------
+                -------- BUY ITEMS --------
+                Trigger - Run Horde NPC Buy Items Paladin <gen> (checking conditions)
+                Trigger - Turn on Horde NPC Buy Items Q Paladin <gen>
+                Game - Display to (All players) the text: (Paladin + (MAIN STATE -  + buying items))
+                -------- =================================== --------
+            Else - Actions
+        -------- =================================== --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (NPC_Riverbane_Paladin is in Companion_Group.) Not equal to True
+                (Item carried by NPC_Riverbane_Paladin in slot 1) Not equal to No item
+                (Item carried by NPC_Riverbane_Paladin in slot 2) Not equal to No item
+                (Item carried by NPC_Riverbane_Paladin in slot 3) Not equal to No item
+                (Item carried by NPC_Riverbane_Paladin in slot 4) Not equal to No item
+                (Item carried by NPC_Riverbane_Paladin in slot 5) Not equal to No item
+                (Item carried by NPC_Riverbane_Paladin in slot 6) Not equal to No item
+                NPC_Riverbane_PaladinBuy Not equal to True
+                NPC_Riverbane_PaladinSell Not equal to True
+                NPC_Riverbane_PaladinRetB Not equal to True
+                NPC_Riverbane_Paladin_Camp Not equal to True
+            Then - Actions
+                -------- =================================== --------
+                -------- SELL ITEMS --------
+                Trigger - Run Horde NPC Sell Items Paladin <gen> (checking conditions)
+                Trigger - Turn on Horde NPC Sell Items Q Paladin <gen>
+                -------- =================================== --------
+            Else - Actions

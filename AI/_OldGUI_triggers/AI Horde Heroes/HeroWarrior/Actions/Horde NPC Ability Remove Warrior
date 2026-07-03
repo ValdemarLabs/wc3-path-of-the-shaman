@@ -1,0 +1,7 @@
+Horde NPC Ability Remove Warrior
+    Events
+        Time - NPC_Horde_AI_Warrior_RemoveAbi expires
+    Conditions
+    Actions
+        Unit - Remove NPC_Horde_AI_Warrior_Abi from NPC_Horde_AI_Warrior
+        Unit - Add NPC_Horde_AI_Warrior_Abi2 to NPC_Horde_AI_Warrior

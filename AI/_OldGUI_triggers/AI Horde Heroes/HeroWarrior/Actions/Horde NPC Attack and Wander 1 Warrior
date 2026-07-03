@@ -1,0 +1,17 @@
+Horde NPC Attack and Wander 1 Warrior
+    Events
+    Conditions
+    Actions
+        -------- =================================== --------
+        Set VariableSet NPC_Horde_AI_WarriorWander = True
+        -------- =================================== --------
+        -------- Not allowed, IF NPC is in group with Player --------
+        -------- Not allowed, IF NPC already on move --------
+        -------- Not allowed, IF NPC Buying --------
+        -------- Not allowed, IF NPC Selling --------
+        -------- Not allowed, IF NPC Retreat Base --------
+        -------- Not allowed, IF NPC Camp --------
+        Set VariableSet NPC_RandomPoint = (Random point in (Playable map area))
+        Unit - Order NPC_Horde_AI_Warrior to Attack-Move To NPC_RandomPoint
+        Custom script:   call RemoveLocation(udg_NPC_RandomPoint)
+        -------- =================================== --------

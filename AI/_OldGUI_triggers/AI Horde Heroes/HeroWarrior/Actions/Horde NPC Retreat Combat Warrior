@@ -1,0 +1,15 @@
+Horde NPC Retreat Combat Warrior
+    Events
+    Conditions
+    Actions
+        -------- =================================== --------
+        Set VariableSet NPC_Horde_AI_WarriorRetC = True
+        Set VariableSet NPC_HordeRetreatPoint = (Position of NPC_Horde_AI_Warrior)
+        -------- =================================== --------
+        Unit - Order NPC_Horde_AI_Warrior to Move To (NPC_HordeRetreatPoint offset by (Random real number between 400.00 and 1000.00) towards (Random angle) degrees.)
+        Custom script:   call RemoveLocation(udg_NPC_HordeRetreatPoint)
+        -------- =================================== --------
+        -------- /////////// This needs to be changed? --------
+        Wait 5.00 seconds
+        Set VariableSet NPC_Horde_AI_WarriorRetC = False
+        -------- =================================== --------

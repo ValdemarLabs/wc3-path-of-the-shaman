@@ -1,0 +1,53 @@
+Horde NPC Inventory State Restoshaman
+    Events
+        Unit - A unit Acquires an item
+        Unit - A unit Loses an item
+        Unit - A unit Uses an item
+    Conditions
+        (Triggering unit) Equal to NPC_Horde_AI_Shaman
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (NPC_Horde_AI_Shaman is in Companion_Group.) Not equal to True
+                (Current order of NPC_Horde_AI_Shaman) Not equal to (Order(attack))
+                NPC_Horde_AI_ShamanBuy Not equal to True
+                NPC_Horde_AI_ShamanSell Not equal to True
+                NPC_Horde_AI_ShamanCamp Not equal to True
+                And - All (Conditions) are true
+                    Conditions
+                        (Random integer number between 1 and 50) Equal to 1
+                        (Item carried by NPC_Horde_AI_Shaman in slot 1) Equal to No item
+                        (Item carried by NPC_Horde_AI_Shaman in slot 2) Equal to No item
+                        (Item carried by NPC_Horde_AI_Shaman in slot 3) Equal to No item
+                        (Item carried by NPC_Horde_AI_Shaman in slot 4) Equal to No item
+                        (Item carried by NPC_Horde_AI_Shaman in slot 5) Equal to No item
+                        (Item carried by NPC_Horde_AI_Shaman in slot 6) Equal to No item
+            Then - Actions
+                -------- =================================== --------
+                -------- BUY ITEMS --------
+                Trigger - Run Horde NPC Buy Items Restoshaman <gen> (checking conditions)
+                Trigger - Turn on Horde NPC Buy Items Q Restoshaman <gen>
+                Game - Display to (All players) the text: (Shaman  + (MAIN STATE -  + buying items))
+                -------- =================================== --------
+            Else - Actions
+        -------- =================================== --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (NPC_Horde_AI_Shaman is in Companion_Group.) Not equal to True
+                (Item carried by NPC_Horde_AI_Shaman in slot 1) Not equal to No item
+                (Item carried by NPC_Horde_AI_Shaman in slot 2) Not equal to No item
+                (Item carried by NPC_Horde_AI_Shaman in slot 3) Not equal to No item
+                (Item carried by NPC_Horde_AI_Shaman in slot 4) Not equal to No item
+                (Item carried by NPC_Horde_AI_Shaman in slot 5) Not equal to No item
+                (Item carried by NPC_Horde_AI_Shaman in slot 6) Not equal to No item
+                NPC_Horde_AI_ShamanBuy Not equal to True
+                NPC_Horde_AI_ShamanSell Not equal to True
+                NPC_Horde_AI_ShamanRetB Not equal to True
+                NPC_Horde_AI_ShamanCamp Not equal to True
+            Then - Actions
+                -------- =================================== --------
+                -------- SELL ITEMS --------
+                Trigger - Run Horde NPC Sell Items Restoshaman <gen> (checking conditions)
+                Trigger - Turn on Horde NPC Sell Items Q Restoshaman <gen>
+                -------- =================================== --------
+            Else - Actions

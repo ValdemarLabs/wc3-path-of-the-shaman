@@ -1,0 +1,114 @@
+Horde NPC Ability Item Usage Engineer
+    Events
+    Conditions
+    Actions
+        -------- =================================== --------
+        Set VariableSet NPC_VarPoint = (Position of NPC_Neutral_Engineer)
+        Set VariableSet NPC_VarUnitGroup = (Units within 600.00 of NPC_VarPoint matching ((((Matching unit) is alive) Equal to True) and (((Matching unit) belongs to an enemy of (Owner of NPC_Neutral_Engineer).) Equal to True)).)
+        Set VariableSet NPC_VarPoint2 = (Position of (Random unit from NPC_VarUnitGroup))
+        Set VariableSet NPC_VarPoint3 = ((Position of NPC_Neutral_Engineer) offset by (Random real number between 100.00 and 400.00) towards (Random angle) degrees.)
+        -------- =================================== --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Item-class of (Item carried by NPC_Neutral_Engineer in slot 1)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Neutral_Engineer in slot 2)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Neutral_Engineer in slot 3)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Neutral_Engineer in slot 4)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Neutral_Engineer in slot 5)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Neutral_Engineer in slot 6)) Equal to Charged
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Percentage life of NPC_Neutral_Engineer) Less than or equal to 50.00
+                        (Percentage mana of NPC_Neutral_Engineer) Less than or equal to 50.00
+            Then - Actions
+                -------- =================================== --------
+                -------- If Hero Has any consumables, USE them (NOW: Try to use any ITEM, could be modfied to consern only Charges and Purchable) --------
+                Hero - Order NPC_Neutral_Engineer to use (Item carried by NPC_Neutral_Engineer of type (Random level -1.Any Class item-type))
+                -------- =================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in NPC_VarUnitGroup) Greater than 0
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Neutral_Engineer_Casting) Equal to 0.00
+                        (Random integer number between 1 and 3) Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Grenade --------
+                        Unit - Order NPC_Neutral_Engineer to Neutral Tinker - Cluster Rockets NPC_VarPoint2
+                        Countdown Timer - Start NPC_Neutral_Engineer_Casting as a One-shot timer that will expire in 2.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Neutral_Engineer_Casting) Equal to 0.00
+                        (Random integer number between 1 and 3) Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Mechanical Construct --------
+                        Unit - Order NPC_Neutral_Engineer to Orc Far Seer - Feral Spirit.
+                        Countdown Timer - Start NPC_Neutral_Engineer_Casting as a One-shot timer that will expire in 2.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Neutral_Engineer_Casting) Equal to 0.00
+                        (Random integer number between 1 and 6) Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Shredder --------
+                        Unit - Order NPC_Neutral_Engineer to Night Elf Druid Of The Claw - Bear Form.
+                        Countdown Timer - Start NPC_Neutral_Engineer_Casting as a One-shot timer that will expire in 5.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Neutral_Engineer_Casting) Equal to 0.00
+                        (Random integer number between 1 and 3) Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Turret --------
+                        Unit - Order NPC_Neutral_Engineer to Neutral Beastmaster - Summon Quilbeast.
+                        Countdown Timer - Start NPC_Neutral_Engineer_Casting as a One-shot timer that will expire in 5.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Number of units in NPC_VarUnitGroup) Greater than or equal to 2
+                        (Remaining time for NPC_Neutral_Engineer_Casting) Equal to 0.00
+                        (Random integer number between 1 and 3) Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Smoke Bomb --------
+                        Unit - Remove HeroEngineer_Grenade  from NPC_Neutral_Engineer
+                        Unit - Add HeroEngineer_SmokeBomb  to NPC_Neutral_Engineer
+                        Game - Display to (All players) the text: (Engineer + Smoke Bomb)
+                        Unit - Order NPC_Neutral_Engineer to Neutral Tinker - Cluster Rockets NPC_VarPoint3
+                        Countdown Timer - Start NPC_Neutral_Engineer_Casting as a One-shot timer that will expire in 4.00 seconds
+                        Countdown Timer - Start NPC_Neutral_Engineer_RemoveAbi as a One-shot timer that will expire in 1.00 seconds
+                        Set VariableSet NPC_Neutral_Engineer_Abil = HeroEngineer_SmokeBomb 
+                        Set VariableSet NPC_Neutral_Engineer_Abil2 = HeroEngineer_Grenade 
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Neutral_Engineer_Casting) Equal to 0.00
+                        (Random integer number between 1 and 3) Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Drone --------
+                        Unit - Order NPC_Neutral_Engineer to Neutral Beastmaster - Summon Hawk.
+                        Countdown Timer - Start NPC_Neutral_Engineer_Casting as a One-shot timer that will expire in 2.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+            Else - Actions
+        -------- =================================== --------
+        Custom script:   call RemoveLocation(udg_NPC_VarPoint)
+        Custom script:   call RemoveLocation(udg_NPC_VarPoint2)
+        Custom script:   call RemoveLocation(udg_NPC_VarPoint3)
+        Custom script:   call DestroyGroup(udg_NPC_VarUnitGroup)
+        -------- =================================== --------

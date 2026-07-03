@@ -1,0 +1,7 @@
+Horde NPC Camp Night Time Q Paladin
+    Events
+        Time - NPC_Riverbane_Paladin_Camp1 expires
+    Conditions
+    Actions
+        Set VariableSet NPC_Riverbane_Paladin_Camp = False
+        Countdown Timer - Start NPC_Riverbane_Paladin_Camp2 as a One-shot timer that will expire in (Random real number between 240.00 and 400.00) seconds

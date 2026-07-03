@@ -1,0 +1,148 @@
+Horde NPC Ability Item Usage Paladin
+    Events
+    Conditions
+    Actions
+        -------- =================================== --------
+        Set VariableSet NPC_VarPoint = (Position of NPC_Riverbane_Paladin)
+        Set VariableSet NPC_VarUnitGroup = (Units within 600.00 of NPC_VarPoint matching ((((Matching unit) is alive) Equal to True) and (((Matching unit) belongs to an enemy of (Owner of NPC_Riverbane_Paladin).) Equal to True)).)
+        Unit Group - Pick every unit in (Units within 800.00 of NPC_VarPoint.) and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        IsUnitAlive[(Custom value of (Picked unit))] Equal to True
+                        ((Picked unit) belongs to an ally of Player 2 (Blue).) Equal to True
+                        (Owner of (Picked unit)) Not equal to Neutral Passive
+                    Then - Actions
+                        Unit Group - Add (Picked unit) to NPC_VarUnitGroup2
+                    Else - Actions
+        -------- =================================== --------
+        Set VariableSet Closest_Unit = No unit
+        Set VariableSet Closest_ClosestDistance = 600.00
+        Set VariableSet Closest_Group = (Units in (Playable map area) matching (((Matching unit) belongs to an enemy of (Owner of NPC_Riverbane_Paladin).) Equal to True))
+        Unit Group - Pick every unit in Closest_Group and do (Actions)
+            Loop - Actions
+                Set VariableSet Closest_Point = (Position of (Picked unit))
+                Set VariableSet Closest_CurrentDistance = (Distance between NPC_VarPoint and Closest_Point)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Closest_CurrentDistance Less than Closest_ClosestDistance
+                    Then - Actions
+                        Set VariableSet Closest_Unit = (Picked unit)
+                        Set VariableSet Closest_ClosestDistance = Closest_CurrentDistance
+                    Else - Actions
+                Custom script:   call RemoveLocation(udg_Closest_Point)
+        Set VariableSet NPC_VarPoint2 = (Position of (Random unit from NPC_VarUnitGroup))
+        -------- =================================== --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Item-class of (Item carried by NPC_Riverbane_Paladin in slot 1)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Riverbane_Paladin in slot 2)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Riverbane_Paladin in slot 3)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Riverbane_Paladin in slot 4)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Riverbane_Paladin in slot 5)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Riverbane_Paladin in slot 6)) Equal to Charged
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Percentage life of NPC_Riverbane_Paladin) Less than or equal to 50.00
+                        (Percentage mana of NPC_Riverbane_Paladin) Less than or equal to 50.00
+            Then - Actions
+                -------- =================================== --------
+                -------- If Hero Has any consumables, USE them (NOW: Try to use any ITEM, could be modfied to consern only Charges and Purchable) --------
+                Hero - Order NPC_Riverbane_Paladin to use (Item carried by NPC_Riverbane_Paladin of type (Random level -1.Any Class item-type))
+                -------- =================================== --------
+            Else - Actions
+        Unit - Add HeroPaladin_DivineShield  to NPC_Riverbane_Paladin
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Remaining time for NPC_Riverbane_Paladin_Casting) Equal to 0.00
+                ((Random unit from NPC_VarUnitGroup2) has buff Inner Fire) Equal to False
+                (Random integer number between 1 and 3) Equal to 1
+            Then - Actions
+                -------- =================================== --------
+                -------- Inner Fire --------
+                Unit - Order NPC_Riverbane_Paladin to Human Priest - Inner Fire (Random unit from NPC_VarUnitGroup2)
+                Countdown Timer - Start NPC_Riverbane_Paladin_Casting as a One-shot timer that will expire in 2.00 seconds
+                -------- =================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Remaining time for NPC_Riverbane_Paladin_Casting) Equal to 0.00
+                (Percentage life of (Random unit from NPC_VarUnitGroup2)) Less than or equal to 75.00
+                (Random integer number between 1 and 3) Equal to 1
+            Then - Actions
+                -------- =================================== --------
+                -------- Holy Light --------
+                Unit - Order NPC_Riverbane_Paladin to Human Paladin - Holy Light (Random unit from NPC_VarUnitGroup2)
+                Countdown Timer - Start NPC_Riverbane_Paladin_Casting as a One-shot timer that will expire in 3.00 seconds
+                -------- =================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in NPC_VarUnitGroup) Greater than 0
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Riverbane_Paladin_Casting) Equal to 0.00
+                        (Random integer number between 1 and 2) Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Judgement Strike --------
+                        Unit - Order NPC_Riverbane_Paladin to Human Mountain King - Storm Bolt Closest_Unit
+                        Countdown Timer - Start NPC_Riverbane_Paladin_Casting as a One-shot timer that will expire in 2.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Riverbane_Paladin_Casting) Equal to 0.00
+                        (Percentage life of NPC_Riverbane_Paladin) Less than or equal to 20.00
+                        (Random integer number between 1 and 2) Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Divine Shield --------
+                        Unit - Order NPC_Riverbane_Paladin to Human Paladin - Activate Divine Shield.
+                        Countdown Timer - Start NPC_Riverbane_Paladin_Casting as a One-shot timer that will expire in 2.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Riverbane_Paladin_Casting) Equal to 0.00
+                        (Percentage life of NPC_Riverbane_Paladin) Greater than or equal to 10.00
+                        (Number of units in NPC_VarUnitGroup) Greater than or equal to 2
+                        (Random integer number between 1 and 4) Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Taunt --------
+                        Game - Display to (All players) the text: (Paladin  + Casting Taunt)
+                        Unit - Order NPC_Riverbane_Paladin to Night Elf Mountain Giant - Taunt.
+                        Countdown Timer - Start NPC_Riverbane_Paladin_Casting as a One-shot timer that will expire in 2.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for NPC_Riverbane_Paladin_Casting) Equal to 0.00
+                        (Random integer number between 1 and 2) Equal to 1
+                        (Percentage life of (Random unit from NPC_VarUnitGroup2)) Less than or equal to 30.00
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Lay On Hands --------
+                        Game - Display to (All players) the text: (Paladin  + Casting Lay On Hands)
+                        Unit - Remove HeroPaladin_HolyLight  from NPC_Riverbane_Paladin
+                        Unit - Add HeroPaladin_LayOnHands  to NPC_Riverbane_Paladin
+                        Unit - Order NPC_Riverbane_Paladin to Human Paladin - Holy Light (Random unit from NPC_VarUnitGroup2)
+                        Countdown Timer - Start NPC_Riverbane_Paladin_Casting as a One-shot timer that will expire in 2.00 seconds
+                        Countdown Timer - Start NPC_Riverbane_Paladin_RemoveAb as a One-shot timer that will expire in 3.50 seconds
+                        Set VariableSet NPC_Riverbane_Paladin_Abil = HeroPaladin_LayOnHands 
+                        Set VariableSet NPC_Riverbane_Paladin_Abil2 = HeroPaladin_HolyLight 
+                        -------- =================================== --------
+                    Else - Actions
+            Else - Actions
+        -------- =================================== --------
+        Custom script:   call RemoveLocation(udg_NPC_VarPoint)
+        Custom script:   call RemoveLocation(udg_NPC_VarPoint2)
+        Custom script:   call DestroyGroup(udg_NPC_VarUnitGroup)
+        Custom script:   call DestroyGroup(udg_NPC_VarUnitGroup2)
+        Custom script:   call RemoveLocation(udg_Closest_Point)
+        Custom script:   call DestroyGroup(udg_Closest_Group)
+        -------- =================================== --------

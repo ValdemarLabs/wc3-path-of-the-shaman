@@ -1,0 +1,56 @@
+Horde NPC Sell Items Paladin
+    Events
+    Conditions
+    Actions
+        -------- =================================== --------
+        -------- Chance to either for the NPC to drop extra item from inventory OR  --------
+        -------- 1) Drop extra item from inventory OR  --------
+        -------- 2) Move to random shop to sell items --------
+        -------- 3) Try to consume any inventory item first --------
+        -------- =================================== --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- =================================== --------
+                -------- If Hero Has any consumables, USE them (NOW: Try to use any ITEM, could be modfied to consern only Charges and Purchable) --------
+                Hero - Order NPC_Riverbane_Paladin to use (Item carried by NPC_Riverbane_Paladin of type (Random level -1.Any Class item-type))
+                -------- =================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Item carried by NPC_Riverbane_Paladin in slot 1) Not equal to No item
+                (Item carried by NPC_Riverbane_Paladin in slot 2) Not equal to No item
+                (Item carried by NPC_Riverbane_Paladin in slot 3) Not equal to No item
+                (Item carried by NPC_Riverbane_Paladin in slot 4) Not equal to No item
+                (Item carried by NPC_Riverbane_Paladin in slot 5) Not equal to No item
+                (Item carried by NPC_Riverbane_Paladin in slot 6) Not equal to No item
+            Then - Actions
+                -------- =================================== --------
+                -------- If STILL inventory full; DROP ITEM or SELL ITEM --------
+                -------- =================================== --------
+                Set VariableSet NPC_VarInventoryFullChance = (Random integer number between 1 and 3)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        NPC_VarInventoryFullChance Equal to 1
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Issue Hero to drop random item slots 1-6 --------
+                        Hero - Drop (Item carried by NPC_Riverbane_Paladin in slot (Random integer number between 1 and 6)) from NPC_Riverbane_Paladin.
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        NPC_VarInventoryFullChance Equal to 2
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- Issue Hero to move Shop Zone --------
+                        -------- =================================== --------
+                        -------- **PLACEHORDER** --------
+                        -------- =================================== --------
+                        -------- Issue Hero to sell random item to nearby Shop --------
+                        -------- =================================== --------
+                        Unit - Order NPC_Riverbane_Paladin to give (Item carried by NPC_Riverbane_Paladin in slot (Random integer number between 1 and 6)) to Voodoo Lounge 0021 <gen>
+                        Set VariableSet NPC_Riverbane_PaladinSell = True
+                        -------- =================================== --------
+                    Else - Actions
+            Else - Actions

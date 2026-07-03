@@ -1,0 +1,98 @@
+MAIN STATE Horde NPC AI Warrior
+    Events
+        Time - Every 1.00 seconds of game time
+    Conditions
+        NPC_Horde_AI_Warrior Not equal to No unit
+        (NPC_Horde_AI_Warrior is hidden) Equal to False
+        IsUnitAlive[(Custom value of NPC_Horde_AI_Warrior)] Equal to True
+    Actions
+        -------- =================================== --------
+        -------- =================================== --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (NPC_Horde_AI_Warrior is in Companion_Group.) Not equal to True
+                (Percentage life of NPC_Horde_AI_Warrior) Greater than or equal to (Random real number between 25.00 and 30.00)
+                (Random integer number between 1 and 10) Equal to 1
+                NPC_Horde_AI_WarriorWander Not equal to True
+                NPC_Horde_AI_WarriorBuy Not equal to True
+                NPC_Horde_AI_WarriorSell Not equal to True
+                NPC_Horde_AI_WarriorRetB Not equal to True
+                NPC_Horde_AI_WarriorRetC Not equal to True
+                NPC_Horde_AI_WarriorCamp Not equal to True
+            Then - Actions
+                -------- Not allowed, IF NPC is in group with Player --------
+                -------- Not allowed, IF NPC already on move to attack --------
+                -------- Not allowed, IF NPC Buying --------
+                -------- Not allowed, IF NPC Selling --------
+                -------- Not allowed, IF NPC Retreat Base --------
+                -------- Not allowed, IF NPC Camp --------
+                -------- =================================== --------
+                -------- WANDER AND ATTACK --------
+                Trigger - Run Horde NPC Attack and Wander 1 Warrior <gen> (checking conditions)
+                -------- =================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Current order of NPC_Horde_AI_Warrior) Equal to (Order(none))
+                (Remaining time for NPC_Horde_AI_WarriorIdleTime) Equal to 0.00
+            Then - Actions
+                -------- =================================== --------
+                -------- NPC IS IDLE --------
+                Set VariableSet NPC_Horde_AI_WarriorWander = False
+                Countdown Timer - Start NPC_Horde_AI_WarriorIdleTime as a One-shot timer that will expire in (Random real number between 5.00 and 10.00) seconds
+                -------- ================ SET all states that might bug the AI hero --------
+                Set VariableSet NPC_Horde_AI_WarriorBuy = False
+                Set VariableSet NPC_Horde_AI_WarriorSell = False
+                Set VariableSet NPC_Horde_AI_WarriorRetB = False
+                -------- =================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Current order of NPC_Horde_AI_Warrior) Not equal to (Order(spell))
+                (Current order of NPC_Horde_AI_Warrior) Not equal to (Order(cast))
+                (Remaining time for NPC_Horde_AI_Warrior_Casting) Equal to 0.00
+                NPC_Horde_AI_WarriorBuy Not equal to True
+                NPC_Horde_AI_WarriorSell Not equal to True
+                NPC_Horde_AI_WarriorRetB Not equal to True
+            Then - Actions
+                -------- =================================== --------
+                -------- ABILITY and ITEM Usage --------
+                Trigger - Run Horde NPC Ability Item Usage Warrior <gen> (checking conditions)
+                -------- =================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (NPC_Horde_AI_Warrior is in Companion_Group.) Not equal to True
+                (Percentage life of NPC_Horde_AI_Warrior) Less than or equal to (Random real number between 10.00 and 25.00)
+                NPC_Horde_AI_WarriorBuy Not equal to True
+                NPC_Horde_AI_WarriorSell Not equal to True
+                NPC_Horde_AI_WarriorRetB Not equal to True
+                NPC_Horde_AI_WarriorRetC Not equal to True
+                NPC_Horde_AI_WarriorCamp Not equal to True
+            Then - Actions
+                -------- =================================== --------
+                -------- RETREAT COMBAT --------
+                Trigger - Run Horde NPC Retreat Combat Warrior <gen> (checking conditions)
+                -------- =================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (NPC_Horde_AI_Warrior is in Companion_Group.) Not equal to True
+                (Percentage life of NPC_Horde_AI_Warrior) Less than or equal to 10.00
+                NPC_Horde_AI_WarriorBuy Not equal to True
+                NPC_Horde_AI_WarriorSell Not equal to True
+                NPC_Horde_AI_WarriorRetB Not equal to True
+                NPC_Horde_AI_WarriorCamp Not equal to True
+            Then - Actions
+                -------- =================================== --------
+                -------- RETREAT BASE --------
+                Trigger - Run Horde NPC Retreat Base Warrior <gen> (checking conditions)
+                -------- =================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- =================================== --------
+                -------- ASSIST ALLIES --------
+                -------- =================================== --------
+            Else - Actions

@@ -1,0 +1,10 @@
+Neutral NPC Init Locations
+    Events
+        Time - Elapsed game time is 0.00 seconds
+    Conditions
+    Actions
+        -------- Spawn locations --------
+        Set VariableSet NPC_NEUTRALSPAWNLOCATION[1] = NeutralHeroSpawn1 <gen>
+        Set VariableSet NPC_NEUTRALSPAWNLOCATION[2] = NeutralHeroSpawn2 <gen>
+        Set VariableSet NPC_NEUTRALSPAWNLOCATION[3] = NeutralHeroSpawn3 <gen>
+        -------- Retreat locations --------

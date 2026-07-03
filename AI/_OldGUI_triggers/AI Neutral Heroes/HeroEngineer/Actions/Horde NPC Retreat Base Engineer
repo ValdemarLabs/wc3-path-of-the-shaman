@@ -1,0 +1,15 @@
+Horde NPC Retreat Base Engineer
+    Events
+    Conditions
+    Actions
+        -------- =================================== --------
+        Set VariableSet NPC_Neutral_EngineerRetB = True
+        Set VariableSet NPC_HordeRetreatPoint = (Center of NPC_HordeRetreatLocation[(Random integer number between 1 and 13)])
+        -------- =================================== --------
+        Unit - Order NPC_Neutral_Engineer to Move To NPC_HordeRetreatPoint
+        Custom script:   call RemoveLocation(udg_NPC_HordeRetreatPoint)
+        -------- =================================== --------
+        -------- /////////// This needs to be changed, we need to track when the NPC is at Base --------
+        Wait 30.00 seconds
+        Set VariableSet NPC_Neutral_EngineerRetB = False
+        -------- =================================== --------

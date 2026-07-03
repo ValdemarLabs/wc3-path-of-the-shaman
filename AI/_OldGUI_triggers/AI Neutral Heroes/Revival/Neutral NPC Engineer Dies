@@ -1,0 +1,28 @@
+Neutral NPC Engineer Dies
+    Events
+        Unit - A unit Dies
+    Conditions
+        (Triggering unit) Equal to NPC_Neutral_Engineer
+    Actions
+        Custom script:   local string a
+        Custom script:   local string b
+        Custom script:   local string c
+        Custom script:   local string d
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (NPC_Neutral_Engineer is in Companion_Group.) Equal to True
+                InCinematic Equal to False
+            Then - Actions
+                -------- ======================= --------
+                Custom script:   set a = "|cffffcc00"
+                Custom script:   set b = GetHeroProperName(GetTriggerUnit())
+                Custom script:   set c = "|r has |cffff0000died..|r"
+                Custom script:   set d = a + b + c
+                -------- ======================= --------
+                Custom script:   call ShowSingleLineText(d, 0.5, 3, 1.5, 1.5)
+                Game - Display to (All players) the text: (|cffffff00|r + ((Proper name of (Triggering unit)) + ( (|cff808080Engineer|r) +  |cffffffffhas|r |cffff0000died!|r)))
+            Else - Actions
+        -------- Start timer --------
+        Countdown Timer - Start ReviveTimerEngineer as a One-shot timer that will expire in 60.00 seconds
+        -------- Drop items --------
+        Trigger - Remove (This trigger) from the trigger queue

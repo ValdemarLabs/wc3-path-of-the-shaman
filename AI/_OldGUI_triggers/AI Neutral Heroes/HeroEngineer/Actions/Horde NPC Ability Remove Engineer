@@ -1,0 +1,7 @@
+Horde NPC Ability Remove Engineer
+    Events
+        Time - NPC_Neutral_Engineer_RemoveAbi expires
+    Conditions
+    Actions
+        Unit - Remove NPC_Neutral_Engineer_Abil from NPC_Neutral_Engineer
+        Unit - Add NPC_Neutral_Engineer_Abil2 to NPC_Neutral_Engineer

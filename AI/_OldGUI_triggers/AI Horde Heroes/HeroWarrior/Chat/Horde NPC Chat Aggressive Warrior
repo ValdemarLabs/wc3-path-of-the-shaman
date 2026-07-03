@@ -1,0 +1,43 @@
+Horde NPC Chat Aggressive Warrior
+    Events
+    Conditions
+        IsUnitAlive[(Custom value of NPC_Horde_AI_Warrior)] Equal to True
+        (NPC_Horde_AI_Warrior is in Companion_Group.) Equal to True
+        And - All (Conditions) are true
+            Conditions
+                InCinematic Equal to False
+                CompanionDialogueActive Equal to False
+    Actions
+        -------- ======================= --------
+        Set VariableSet CompanionDialogueActive = True
+        -------- ======================= --------
+        -------- ------------------ ADJUST chat values --------
+        Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Warrior
+        Set VariableSet CompanionChatRandomInt = (Random integer number between 1 and 2)
+        -------- ======================= --------
+        -------- ======================= --------
+        -------- CHAT --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                CompanionChatRandomInt Equal to 1
+            Then - Actions
+                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroWarrior_Aggressive1 <gen> and display For the ancestors, ....  Modify duration: Set to 2.00 seconds and Don't wait
+                Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+            Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        CompanionChatRandomInt Equal to 2
+                    Then - Actions
+                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroWarrior_Aggressive2 <gen> and display Honor demands actio....  Modify duration: Set to 2.00 seconds and Don't wait
+                        Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                    Else - Actions
+        -------- ======================= --------
+        Set VariableSet CompanionDialogueTimerValue = (CompanionDialogueTime1 + CompanionDialogueTime2)
+        -------- ======================= --------
+        Countdown Timer - Start CompanionDialogueTimer as a One-shot timer that will expire in CompanionDialogueTimerValue seconds
+        -------- ======================= --------
+        -------- Reset values --------
+        Set VariableSet CompanionDialogueTime1 = 0.00
+        Set VariableSet CompanionDialogueTime2 = 0.00
+        Set VariableSet CompanionDialogueTimerValue = 0.00
+        -------- ======================= --------

@@ -1,0 +1,60 @@
+Neutral NPC Create New
+    Events
+        Time - Every (Random real number between 50.00 and 150.00) seconds of game time
+        Player - Player 1 (Red) types a chat message containing aispawn as An exact match
+    Conditions
+        (Number of units in NPC_WANDERINGNEUTRALUNITS) Not equal to 2
+        debugAI Equal to False
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in NPC_WANDERINGNEUTRALUNITS) Equal to 1
+            Then - Actions
+                -------- ================================ --------
+                -------- Turn OFF - This trigger - IF all AI Heroes of this trigger are created --------
+                Trigger - Turn off (This trigger)
+                -------- Prevent any other actions --------
+                Skip remaining actions
+                -------- ================================ --------
+            Else - Actions
+        Set VariableSet INT_random = (Random integer number between 1 and 2)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                And - All (Conditions) are true
+                    Conditions
+                        INT_random Equal to 1
+                        NPC_Neutral_Engineer Equal to No unit
+            Then - Actions
+                -------- ================================ --------
+                Set VariableSet NPC_Neutral_AI_Rect = NPC_NEUTRALSPAWNLOCATION[(Random integer number between 1 and 3)]
+                Set VariableSet NPC_Neutral_AI_Point = (Center of NPC_Neutral_AI_Rect)
+                -------- ================================ --------
+                Unit - Create 1 Engineer for Player 7 (Green) at NPC_Neutral_AI_Point facing Default building facing degrees
+                Unit - Change color of (Last created unit) to (Color of (Player((Random integer number between 1 and 28))))
+                Set VariableSet NPC_Neutral_Engineer = (Last created unit)
+                Unit Group - Add (Last created unit) to NPC_WANDERINGNEUTRALUNITS
+                -------- UNIT HIDER --------
+                Set VariableSet UnitHider_ReferenceUnits[(Custom value of (Last created unit))] = (Last created unit)
+                Unit Group - Add (Last created unit) to UnitHider_ReferenceGroup
+                -------- ================================ --------
+                Unit - Add HeroEngineer_Grenade  to NPC_Neutral_Engineer
+                Unit - Add HeroEngineer_MechanicalConstruct  to NPC_Neutral_Engineer
+                Unit - Add HeroEngineer_Drone  to NPC_Neutral_Engineer
+                Unit - Add HeroEngineer_Turret  to NPC_Neutral_Engineer
+                Unit - Add HeroEngineer_Repair  to NPC_Neutral_Engineer
+                -------- ================================ --------
+                -------- Level the hero random 1-15 times --------
+                For each (Integer A) from 1 to (Random integer number between 1 and 15), do (Actions)
+                    Loop - Actions
+                        Hero - Set (Last created unit) Hero-level to ((Hero level of (Last created unit)) + 1), Hide level-up graphics
+                -------- ================================ --------
+                Game - Display to (All players) the text: (|cff808000AI Heroes: |r + (|cff808080Engineer|r +  entered the world...))
+                -------- ================================ --------
+                Custom script:   call RemoveRect(udg_NPC_Neutral_AI_Rect)
+                Custom script:   call RemoveLocation(udg_NPC_Neutral_AI_Point)
+                -------- ================================ --------
+                -------- turn ON - GAME STATE for the created AI NPC --------
+                Trigger - Turn on MAIN STATE Neutral NPC AI Engineer <gen>
+                -------- ================================ --------
+                Skip remaining actions
+            Else - Actions
