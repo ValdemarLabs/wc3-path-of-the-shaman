@@ -57,6 +57,7 @@ library IconQuery initializer Init requires Table
         constant integer ICONQUERY_CATEGORY_MODE_OFF = 0
         constant integer ICONQUERY_CATEGORY_MODE_QUERY = 1
         constant integer ICONQUERY_CATEGORY_MODE_ON = 2
+        constant integer ICONQUERY_CATEGORY_MODE_ALWAYS = 3
 
         // Query timing configuration.
         private constant integer IQ_CATEGORY_COUNT = 5
@@ -358,12 +359,23 @@ library IconQuery initializer Init requires Table
         return IQ_CategoryMode[IQ_EntryCategory[entryIndex]] == ICONQUERY_CATEGORY_MODE_QUERY
     endfunction
 
+    private function IQ_IsPinnedCategoryMode takes integer mode returns boolean
+        return mode == ICONQUERY_CATEGORY_MODE_ON or mode == ICONQUERY_CATEGORY_MODE_ALWAYS
+    endfunction
+
+    private function IQ_GetCategoryMaxMode takes integer category returns integer
+        if category == ICONQUERY_CATEGORY_COMPANIONS_AND_FOLLOWERS then
+            return ICONQUERY_CATEGORY_MODE_ALWAYS
+        endif
+        return ICONQUERY_CATEGORY_MODE_ON
+    endfunction
+
     private function IQ_ShowPinnedEntries takes nothing returns nothing
         local integer i = 1
 
         loop
             exitwhen i > IQ_EntryCount
-            if IQ_IsEntryCandidate(i) and IQ_CategoryMode[IQ_EntryCategory[i]] == ICONQUERY_CATEGORY_MODE_ON then
+            if IQ_IsEntryCandidate(i) and IQ_IsPinnedCategoryMode(IQ_CategoryMode[IQ_EntryCategory[i]]) then
                 call IQ_SetEntryVisible(i, true)
             elseif not IQ_IsEntryCandidate(i) then
                 call IQ_SetEntryVisible(i, false)
@@ -920,7 +932,7 @@ library IconQuery initializer Init requires Table
         if not IQ_IsCategoryValid(category) then
             return
         endif
-        if mode < ICONQUERY_CATEGORY_MODE_OFF or mode > ICONQUERY_CATEGORY_MODE_ON then
+        if mode < ICONQUERY_CATEGORY_MODE_OFF or mode > IQ_GetCategoryMaxMode(category) then
             set mode = ICONQUERY_CATEGORY_MODE_QUERY
         endif
 
@@ -933,7 +945,7 @@ library IconQuery initializer Init requires Table
         if IQ_ActiveEntry > 0 and IQ_EntryCategory[IQ_ActiveEntry] == category then
             call IQ_HideActive()
         endif
-        if mode != ICONQUERY_CATEGORY_MODE_ON then
+        if not IQ_IsPinnedCategoryMode(mode) then
             call IQ_HideCategoryEntries(category)
         endif
         call IQ_ShowPinnedEntries()
@@ -954,7 +966,7 @@ library IconQuery initializer Init requires Table
             return
         endif
         set mode = IQ_CategoryMode[category] + 1
-        if mode > ICONQUERY_CATEGORY_MODE_ON then
+        if mode > IQ_GetCategoryMaxMode(category) then
             set mode = ICONQUERY_CATEGORY_MODE_OFF
         endif
         call SetCategoryMode(category, mode)
@@ -963,6 +975,8 @@ library IconQuery initializer Init requires Table
     public function GetCategoryModeName takes integer category returns string
         if not IQ_IsCategoryValid(category) or IQ_CategoryMode[category] == ICONQUERY_CATEGORY_MODE_OFF then
             return "Off"
+        elseif IQ_CategoryMode[category] == ICONQUERY_CATEGORY_MODE_ALWAYS then
+            return "Always"
         elseif IQ_CategoryMode[category] == ICONQUERY_CATEGORY_MODE_ON then
             return "On"
         endif
@@ -1083,7 +1097,7 @@ library IconQuery initializer Init requires Table
         set IQ_CategoryMode[ICONQUERY_CATEGORY_FLIGHT_MASTER] = ICONQUERY_CATEGORY_MODE_QUERY
         set IQ_CategoryMode[ICONQUERY_CATEGORY_BOSSES] = ICONQUERY_CATEGORY_MODE_QUERY
         set IQ_CategoryMode[ICONQUERY_CATEGORY_PLACES_OF_INTEREST] = ICONQUERY_CATEGORY_MODE_QUERY
-        set IQ_CategoryMode[ICONQUERY_CATEGORY_COMPANIONS_AND_FOLLOWERS] = ICONQUERY_CATEGORY_MODE_ON
+        set IQ_CategoryMode[ICONQUERY_CATEGORY_COMPANIONS_AND_FOLLOWERS] = ICONQUERY_CATEGORY_MODE_ALWAYS
         set IQ_CategoryFrequency[ICONQUERY_CATEGORY_QUEST_GIVERS] = 1
         set IQ_CategoryFrequency[ICONQUERY_CATEGORY_FLIGHT_MASTER] = 3
         set IQ_CategoryFrequency[ICONQUERY_CATEGORY_BOSSES] = 3
