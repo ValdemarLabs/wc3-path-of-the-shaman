@@ -1,4 +1,4 @@
-library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, AbilitiesLiteUI, QuestGiver
+library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, AbilitiesLiteUI, QuestGiver, Companions, Pet
 /**
     StatsUI
     
@@ -228,6 +228,16 @@ private function SUI_GetManaPercent takes unit u returns integer
     return R2I((GetUnitState(u, UNIT_STATE_MANA) / maxMana) * 100.0)
 endfunction
 
+private function SUI_IsDeadForDisplay takes unit u returns boolean
+    if u == null or GetHandleId(u) == 0 then
+        return false
+    endif
+    if Pet_IsDead(u) then
+        return true
+    endif
+    return GetWidgetLife(u) <= 0.405
+endfunction
+
 private function SUI_GetStatusText takes unit u returns string
     local integer hp
     local integer mp
@@ -235,7 +245,7 @@ private function SUI_GetStatusText takes unit u returns string
     if u == null or GetHandleId(u) == 0 then
         return "|cff7f7f7fUnavailable|r"
     endif
-    if GetWidgetLife(u) <= 0.405 then
+    if SUI_IsDeadForDisplay(u) then
         return "|cffff0000Dead|r"
     endif
 
@@ -497,7 +507,7 @@ private function SUI_UpdateRowFrame takes player whichPlayer, integer rowIndex, 
         call BlzFrameSetText(SUI_RowText[rowIndex], SUI_GetKindLabel(kind) + " " + SUI_GetDisplayName(u))
     endif
 
-    if GetWidgetLife(u) <= 0.405 then
+    if SUI_IsDeadForDisplay(u) then
         set dead = 1
     else
         set hp = SUI_GetHealthPercent(u)
@@ -664,6 +674,12 @@ private function SUI_GetUnitClassText takes unit u returns string
     if u == null or GetHandleId(u) == 0 then
         return "-"
     endif
+    if Pet_IsPetUnit(u) then
+        return Pet_GetClassInfoText(u)
+    endif
+    if SUI_IsTrackedCompanion(u) or Companions_IsControlled(u) then
+        return Companions_GetClassInfoText(u)
+    endif
     return SUI_GetFallbackUnitClassText(u)
 endfunction
 
@@ -671,7 +687,26 @@ private function SUI_GetUnitRoleText takes unit u returns string
     if u == null or GetHandleId(u) == 0 then
         return "-"
     endif
+    if Pet_IsPetUnit(u) then
+        return Pet_GetTypeInfoText(u)
+    endif
+    if SUI_IsTrackedCompanion(u) or Companions_IsControlled(u) then
+        return Companions_GetTypeInfoText(u)
+    endif
     return SUI_GetFallbackUnitRoleText(u)
+endfunction
+
+private function SUI_GetUnitAbilitiesText takes unit u returns string
+    if u == null or GetHandleId(u) == 0 then
+        return "-"
+    endif
+    if Pet_IsPetUnit(u) then
+        return Pet_GetAbilityInfoText(u)
+    endif
+    if SUI_IsTrackedCompanion(u) or Companions_IsControlled(u) then
+        return Companions_GetAbilityInfoText(u)
+    endif
+    return "Unit command-card abilities"
 endfunction
 
 private function SUI_SetStatRowVisible takes integer index, boolean flag returns nothing
@@ -940,7 +975,7 @@ private function SUI_UpdateDetailSummary takes player whichPlayer, unit u return
     endif
 
     set handleId = GetHandleId(u)
-    if GetWidgetLife(u) <= 0.405 then
+    if SUI_IsDeadForDisplay(u) then
         set dead = 1
     else
         set hp = SUI_GetHealthPercent(u)
@@ -954,6 +989,9 @@ private function SUI_UpdateDetailSummary takes player whichPlayer, unit u return
     set points = SUI_GetUnitPoints(u)
     set life = R2I(GetUnitState(u, UNIT_STATE_LIFE))
     set maxLife = R2I(GetUnitState(u, UNIT_STATE_MAX_LIFE))
+    if dead == 1 then
+        set life = 0
+    endif
     set mana = R2I(GetUnitState(u, UNIT_STATE_MANA))
     set maxMana = R2I(GetUnitState(u, UNIT_STATE_MAX_MANA))
     set kills = SUI_GetUnitKills(u)
@@ -1109,10 +1147,17 @@ private function SUI_ReturnAction takes nothing returns nothing
 endfunction
 
 private function SUI_AbilitiesAction takes nothing returns nothing
+    local player p = GetTriggerPlayer()
+
     if SUI_IsTrackedUnit(SUI_SelectedUnit) then
+        if Pet_IsPetUnit(SUI_SelectedUnit) or SUI_IsTrackedCompanion(SUI_SelectedUnit) or Companions_IsControlled(SUI_SelectedUnit) then
+            call DisplayTextToPlayer(p, 0.00, 0.00, "|cFF7EBFF1Abilities:|r " + SUI_GetUnitAbilitiesText(SUI_SelectedUnit))
+        endif
         call Hide()
         call AbilitiesLiteUI_ShowForUnit(SUI_SelectedUnit)
     endif
+
+    set p = null
 endfunction
 
 private function SUI_RowAction takes nothing returns nothing
