@@ -65,6 +65,7 @@ globals
 	private constant integer RIFTS_WAVE_OWNER = 11
 	private constant integer VANGUARD_VALE_ZONE_ID = 9
 	private constant integer VERDANT_PLAINS_ZONE_ID = 17
+	private constant integer REDWIND_PASS_ZONE_ID = 1703
 	private constant string RIFTS_WAVE_PRE_SPAWN_EFFECT = "vortex1.mdx"
 	private constant string RIFTS_WAVE_PRE_SPAWN_CREATE_SOUND = "Sound/Ambient/DoodadEffects/ShimmeringPortalBirth"
 	private constant string RIFTS_WAVE_PRE_SPAWN_DESTROY_SOUND = "Sound/Ambient/DoodadEffects/ShimmeringPortalDeath"
@@ -157,6 +158,7 @@ globals
 	private boolean ValeriaNegotiationSequenceBusy = false
 	private boolean ValeriaSuccessTransitionApplied = false
 	private boolean RiftsQuestActive = false
+	private boolean RiftsLeftFieldZoneNotified = false
 	private boolean RiftsRitualActive = false
 	private trigger RiftsProximityTrigger = null
 	private trigger FadingSparksSpellEffectTrigger = null
@@ -250,6 +252,14 @@ private function ResolveDialogHero takes nothing returns unit
 	return QuestGiver_ResolveDialogHero(SelectedHero, Aradion, DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
 endfunction
 
+private function GetAradionFieldZoneListText takes nothing returns string
+	return "Vanguard Vale, Verdant Plains, or Redwind Pass"
+endfunction
+
+private function GetFindValeriaFieldText takes nothing returns string
+	return "Find Valeria in " + GetAradionFieldZoneListText()
+endfunction
+
 private function IsAradionFieldZoneActive takes nothing returns boolean
 	local integer zoneId = ZonesCore_GetCurrentZone()
 	if zoneId == VANGUARD_VALE_ZONE_ID then
@@ -259,6 +269,9 @@ private function IsAradionFieldZoneActive takes nothing returns boolean
 		return true
 	endif
 	if zoneId == VERDANT_PLAINS_ZONE_ID then
+		return true
+	endif
+	if zoneId == REDWIND_PASS_ZONE_ID then
 		return true
 	endif
 	return ZonesCore_IsChildZoneOf(zoneId, VERDANT_PLAINS_ZONE_ID)
@@ -332,6 +345,28 @@ private function StopFollow takes unit follower returns nothing
 	endif
 endfunction
 
+private function GetAradionHomeOwner takes nothing returns player
+	if AradionHomeOwner != null then
+		return AradionHomeOwner
+	endif
+	return Player(VALERIA_HOME_OWNER)
+endfunction
+
+private function RestoreValeriaFieldOwner takes nothing returns nothing
+	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
+		call SetUnitOwner(Valeria, Player(VALERIA_HOME_OWNER), true)
+	endif
+endfunction
+
+private function RestoreAradionFieldOwner takes nothing returns nothing
+	local player ownerP
+	if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
+		set ownerP = GetAradionHomeOwner()
+		call SetUnitOwner(Aradion, ownerP, true)
+	endif
+	set ownerP = null
+endfunction
+
 private function AddValeriaCompanion takes nothing returns nothing
 	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) and not ValeriaCompanionActive then
 		call Companions_Add(Valeria, VALERIA_COMPANION_ICON, null, COMPANION_MODE_DEFEND)
@@ -343,6 +378,7 @@ private function RemoveValeriaCompanion takes nothing returns nothing
 	call StopFollow(Valeria)
 	if Valeria != null then
 		call Companions_Remove(Valeria)
+		call RestoreValeriaFieldOwner()
 	endif
 	set ValeriaCompanionActive = false
 endfunction
@@ -509,6 +545,7 @@ private function RemoveAradionCompanion takes nothing returns nothing
 	call StopFollow(Aradion)
 	if Aradion != null then
 		call Companions_Remove(Aradion)
+		call RestoreAradionFieldOwner()
 	endif
 	set AradionCompanionActive = false
 endfunction
@@ -538,16 +575,17 @@ private function StartFieldCompanions takes unit hero returns nothing
 	if hero == null then
 		set hero = ResolveDialogHero()
 	endif
+	set RiftsLeftFieldZoneNotified = false
 	call AddValeriaCompanion()
 	call AddAradionCompanion()
 	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
-		call Companions_SetEscortBehavior(Valeria, false)
+		call Companions_SetEscortBehavior(Valeria, true)
 		call Companions_SetMode(Valeria, COMPANION_MODE_DEFEND)
 		call Companions_SetLeader(Valeria, hero)
 		call Companions_Resume(Valeria)
 	endif
 	if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
-		call Companions_SetEscortBehavior(Aradion, false)
+		call Companions_SetEscortBehavior(Aradion, true)
 		call Companions_SetMode(Aradion, COMPANION_MODE_DEFEND)
 		call Companions_SetLeader(Aradion, hero)
 		call Companions_Resume(Aradion)
@@ -591,9 +629,7 @@ private function OnRangerMissingZoneTick takes nothing returns nothing
 		set q = QuestGiver_GetByNameAndGiver(QUEST_RANGER_MISSING, Aradion)
 		call StopRangerMissingEscortInternal()
 		if q != 0 then
-			call q.setRequirement(2, "Find Valeria in Vanguard Vale or Verdant Plains")
-			call q.updateRequirementText(2, "Find Valeria in Vanguard Vale or Verdant Plains")
-			call q.refreshQuestLog()
+			call QuestGiver_UpdateRequirementText(q.id, 2, GetFindValeriaFieldText())
 		endif
 		if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
 			call IssueImmediateOrder(Valeria, "stop")
@@ -844,9 +880,8 @@ private function StartRangerMissingEscortInternal takes nothing returns nothing
 
 	call UnitRemoveAbility(Valeria, ABIL_VALERIA_GHOST)
 	call SetUnitCreepGuard(Valeria, false)
-	call q.updateRequirementText(1, "Find Valeria")
-	call q.setRequirement(2, "Escort Valeria to Aradion")
-	call q.updateRequirementText(2, "Escort Valeria to Aradion")
+	call QuestGiver_UpdateRequirementText(q.id, 1, "Find Valeria")
+	call QuestGiver_SetRequirement(q.id, 2, "Escort Valeria to Aradion")
 	call q.removeReturnRequirement()
 	call QuestGiver_UnregisterEscortRequirement(q.id, 2)
 	call RemoveRangerMissingEscortDestination()
@@ -855,7 +890,6 @@ private function StartRangerMissingEscortInternal takes nothing returns nothing
 	set RangerMissingEscortDestination = Rect(ax - RANGER_ESCORT_DEST_RADIUS, ay - RANGER_ESCORT_DEST_RADIUS, ax + RANGER_ESCORT_DEST_RADIUS, ay + RANGER_ESCORT_DEST_RADIUS)
 	call QuestGiver_RegisterEscortRequirement(q.id, Aradion, 2, Valeria, RangerMissingEscortDestination, "Aradion")
 	call QuestGiver_SetStateByNameAndGiver(QUEST_RANGER_MISSING, Aradion, QUEST_STATE_IN_PROGRESS)
-	call q.refreshQuestLog()
 
 	set hero = ResolveDialogHero()
 	call AddValeriaCompanion()
@@ -2372,8 +2406,8 @@ private function ResetRiftsObjectivesForNewRun takes QuestData q returns nothing
 	if q == 0 then
 		return
 	endif
-	call q.setRequirement(1, "Find all rifts scattered around the Vanguard Vale")
-	call q.updateRequirementText(1, "Find all rifts scattered around the Vanguard Vale")
+	call q.setRequirement(1, "Find all rifts scattered around " + GetAradionFieldZoneListText())
+	call q.updateRequirementText(1, "Find all rifts scattered around " + GetAradionFieldZoneListText())
 	call q.setRequirement(2, "Rifts closed 0 / 3")
 	call q.updateRequirementText(2, "Rifts closed 0 / 3")
 	call q.setRequirement(3, "Guard Aradion while he closes the rifts")
@@ -2841,13 +2875,27 @@ endfunction
 
 private function OnRiftsFieldTick takes nothing returns nothing
 	local unit hero
+	local QuestData q
 	call SyncUnitReferences()
 	if not RiftsQuestActive or RiftsFailureInProgress then
 		return
 	endif
 	if not IsAradionFieldZoneActive() then
 		call StopFieldCompanions()
+		if not RiftsLeftFieldZoneNotified then
+			set RiftsLeftFieldZoneNotified = true
+			set q = QuestGiver_GetByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
+			if q != 0 then
+				call QuestMaster_ShowUpdateMessage(q.id, "|cffffcc00QUEST UPDATED|r\n" + q.title + "\n\n|cff80a0ffObjective updated:|r Return to " + GetAradionFieldZoneListText() + " to continue escorting Aradion and Valeria.")
+			endif
+		endif
+		set q = 0
 		return
+	endif
+	if RiftsLeftFieldZoneNotified then
+		set hero = ResolveDialogHero()
+		call StartFieldCompanions(hero)
+		set hero = null
 	endif
 	if RiftsAwaitingReturnHome then
 		set hero = ResolveDialogHero()
@@ -2911,6 +2959,7 @@ private function FinalizeRiftsFailureReset takes nothing returns nothing
 	local timer t = GetExpiredTimer()
 	call SyncUnitReferences()
 	set RiftsQuestActive = false
+	set RiftsLeftFieldZoneNotified = false
 	set RiftsRitualActive = false
 	set RiftsCurrentRift = null
 	set RiftsCurrentIndex = 0
@@ -3605,6 +3654,7 @@ private function OnAcceptQuest4End takes nothing returns nothing
 	call QuestGiver_AcceptQuestByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
 	set hero = ResolveDialogHero()
 	set RiftsQuestActive = true
+	set RiftsLeftFieldZoneNotified = false
 	set RiftsRitualActive = false
 	set RiftsCurrentRift = null
 	set RiftsCurrentIndex = 0
@@ -3674,6 +3724,7 @@ endfunction
 
 private function OnCompleteQuest4End takes nothing returns nothing
 	set RiftsQuestActive = false
+	set RiftsLeftFieldZoneNotified = false
 	set RiftsRitualActive = false
 	set RiftsCurrentRift = null
 	set RiftsCurrentIndex = 0
@@ -3918,7 +3969,7 @@ private function CreateQuests takes nothing returns nothing
 	set info2Text = "|cffffcc00Recommended level:|r 18\n\n"
 
 	set q = QuestGiver_CreateQuest(QUEST_RANGER_MISSING, Aradion, "normal", 18, null)
-	call QuestGiver_ApplyQuestMetadata(q, "Ranger Missing", "ReplaceableTextures\\CommandButtons\\BTNHighElvenArcher.blp", "Find Valeria somewhere in Vanguard Vale or Verdant Plains.\n\n", infoText, info2Text, 15, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
+	call QuestGiver_ApplyQuestMetadata(q, "Ranger Missing", "ReplaceableTextures\\CommandButtons\\BTNHighElvenArcher.blp", "Find Valeria somewhere in " + GetAradionFieldZoneListText() + ".\n\n", infoText, info2Text, 15, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
 	call q.setRewardParams(true, 0, true, 0, false, 0, true, 200, false)
 	set availabilityCondition = CreateTrigger()
 	call TriggerAddCondition(availabilityCondition, Condition(function CanOfferRangerMissing))
@@ -3940,12 +3991,12 @@ private function CreateQuests takes nothing returns nothing
 	call QuestGiver_RegisterItemRequirement(q.id, Aradion, 1, ITEM_WRAITH_ESSENCE, 10)
 
 	set q = QuestGiver_CreateQuest(QUEST_RIFTS_CORRUPTION, Aradion, "normal", 18, null)
-	call QuestGiver_ApplyQuestMetadata(q, "Rifts of Corruption", "ReplaceableTextures\\CommandButtons\\BTNDizzy.blp", "Find all rifts scattered around the Vanguard Vale and escort Valeria and Aradion to them. Guard Aradion while he will close the rifts. Both Aradion and Valeria must stay alive.\n\n", infoText, info2Text, 15, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
+	call QuestGiver_ApplyQuestMetadata(q, "Rifts of Corruption", "ReplaceableTextures\\CommandButtons\\BTNDizzy.blp", "Find all rifts scattered around " + GetAradionFieldZoneListText() + " and escort Valeria and Aradion to them. Guard Aradion while he will close the rifts. Both Aradion and Valeria must stay alive.\n\n", infoText, info2Text, 15, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
 	call q.setRewardParams(true, 0, true, 0, false, 0, true, 200, false)
 	call q.addRequiredCompletedQuest(QUEST_RANGER_MISSING, Aradion)
 	call q.addRequiredCompletedQuest(QUEST_CRYSTALS_HOPE, Aradion)
 	call q.addRequiredCompletedQuest(QUEST_FADING_SPARKS, Aradion)
-	call QuestGiver_SetRequirements(q.id, "", "Find all rifts scattered around the Vanguard Vale", "Rifts closed 0 / 3", "Guard Aradion while he closes the rifts", "Both Aradion and Valeria must stay alive", "", "", "", "")
+	call QuestGiver_SetRequirements(q.id, "", "Find all rifts scattered around " + GetAradionFieldZoneListText(), "Rifts closed 0 / 3", "Guard Aradion while he closes the rifts", "Both Aradion and Valeria must stay alive", "", "", "", "")
 
 	if ENABLE_TEST_QUESTS then
 		// Test Quest 1: Kill
@@ -4150,6 +4201,7 @@ endfunction
 
 public function ReturnRiftsCompanionsHome takes nothing returns nothing
 	set RiftsQuestActive = false
+	set RiftsLeftFieldZoneNotified = false
 	set RiftsRitualActive = false
 	set RiftsCurrentRift = null
 	set RiftsCurrentIndex = 0
