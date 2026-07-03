@@ -21,12 +21,19 @@
 - `Companions / pets`
   Companion command-card abilities now resolve correctly after invite/reinvite, including Passive/Normal/Aggressive/Hold modes, Kick Companion, Focus Nazgrek/Zulkis, Information, and Drop Items from companion-owned command cards.
   Shadowclaw now keeps Nazgrek as the initial pet focus, walks back to `NazgrekIntroPoint` when kicked, and only teleports home after 120 seconds if stuck or still away from home.
+  Shadowclaw now registers as a Nazgrek-focused pet during startup but can stay halted during the intro cinematic until the companion system is resumed.
+  Pets now use the fatigue/fake-death flow on fatal damage instead of dying normally, and active pets are included with companions when dungeon or zone movement relocates the hero.
+  Aradion and Valeria now return to Elarindor ownership and can be invited back after being kicked from the companion group.
 - `StatsUI`
   Kicking Shadowclaw or another pet now clears the active pet display instead of showing Shadowclaw through the old fallback when `udg_TamedUnit` is empty.
+  Companion and pet icons in StatsUI now prefer the real unit object icon before falling back to companion metadata icons.
 - `Ranger Missing`
   Valeria now starts her home patrol again after the reunion completion flow recreates her at Aradion's home position, restoring the old GUI behavior where she waits at Aradion before continuing her route.
+  The quest now fails if Valeria is lost while the quest is in progress or ready to turn in, including during the successful negotiation transition.
 - `Rifts of Corruption`
   Accepting the quest no longer teleports Valeria away for the intro staging when she is already near Aradion; she is instead ordered to move normally toward her home/start position.
+- `Weather`
+  Wind weather is now shorter and much less frequent, especially in zones where wind was previously the only available dry-weather result.
 
 ### Technical Updates
 - `Companions.j`
@@ -34,14 +41,24 @@
   Added `Companions_Halt`, `Companions_HaltAll`, and `Companions_ResumeAll` for cinematic-safe companion/pet order suspension on top of the existing per-unit resume path.
   Companion-owned command-card casts now map back to the real control player for selected-unit lookup and can fall back to the casting companion/pet itself.
   Companion focus commands now play the old GUI `GoodJob` sound, and empty companion icon paths now fall back through the existing `BlzGetAbilityIcon(unitTypeId)` lookup when possible.
+  Added Aradion and Valeria named-companion metadata, icons, Elarindor faction text, info text, and Elarindor return-owner handling so the generic invite flow can restore them after a kick.
 - `Pet.j`
   Ensures `udg_TamedUnits` exists before pet registration, forces Shadowclaw registration toward Nazgrek, and clears `udg_TamedUnit` before old multiboard pet-removal hooks run.
+  Added delayed Shadowclaw init retry, intro-aware pet suspension, explicit Shadowclaw leader assignment, and DamageEngine lethal-damage clamping for pet fatigue.
+- `ZoneEvent.j`
+  Centralized controlled-unit collection for zone transitions so `udg_Companion_Group`, `udg_TamedUnits`, and the explicit active `udg_TamedUnit` are all moved with the entering hero.
+- `StatsUI.j`
+  Replaced the hardcoded Shadowclaw icon fallback with the same object-icon-first lookup used by the abilities UI, retaining quest companion icons as fallback metadata.
 - `qAradion.j`
   Added a near-Aradion guard to the Rifts intro preparation path, restarted Valeria's home patrol after the Ranger Missing fade-black home recreation callback, and cleaned up the completion timer local.
+  Added Ranger Missing Valeria death protection through a fatal-damage clamp plus a global death fallback, with duplicate failure protection during quest reset.
+- `WeatherSystemV4.j` / `ZonesCore.j`
+  Reduced wind durations and wind weather weights, and added an extra wind start gate so wind-only weather pools no longer keep wind active too often.
 
 ### Actions Remaining
 - Re-test invited companions with `CinematicMover`, selected-unit mode casts, companion self command-card casts, Kick Companion on non-pet companions, Shadowclaw kick/reinvite, and StatsUI pet rows in-game.
 - Re-test Ranger Missing completion to confirm Valeria waits at Aradion before patrolling, and accept Rifts of Corruption while Valeria is already near Aradion to confirm she is not teleported away.
+- Re-test Shadowclaw intro halt/resume, initial Nazgrek focus without casting Focus Nazgrek, pet fatigue/revive, pet dungeon transfers, Aradion/Valeria reinvite after kick, Ranger Missing Valeria death during negotiation, and wind pacing in affected zones.
 
 ## [2.7.2026]
 
