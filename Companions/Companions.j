@@ -27,9 +27,12 @@
     call Companions_UnregisterControlled(unit controlledUnit)
     call Companions_IsControlled(unit controlledUnit) returns boolean
     call Companions_SetEscortBehavior(unit controlledUnit, boolean enabled)
+    call Companions_GetClassInfoText(unit controlledUnit) returns string
+    call Companions_GetTypeInfoText(unit controlledUnit) returns string
+    call Companions_GetAbilityInfoText(unit controlledUnit) returns string
 
 **/
-library Companions initializer Init requires QuestGiver, FollowSystem, IconQuery, Table, UnitDeathEvent
+library Companions initializer Init requires QuestGiver, FollowSystem, IconQuery, Table, UnitDeathEvent, Reputation
 
 globals
     constant integer COMPANION_MODE_DEFEND = 1
@@ -597,14 +600,13 @@ private function UpdateCompanionOrderUnit takes unit controlledUnit returns noth
         return
     endif
 
+    set distance = GetDistanceBetweenUnits(controlledUnit, leader)
+    call UpdateCompanionFarIcon(controlledUnit, leader, distance, mode)
+
     if mode == COMPANION_MODE_HOLD then
-        call ClearCompanionFarIcon(controlledUnit)
         set leader = null
         return
     endif
-
-    set distance = GetDistanceBetweenUnits(controlledUnit, leader)
-    call UpdateCompanionFarIcon(controlledUnit, leader, distance, mode)
 
     if IsUnitCastingByCustomValue(customValue) then
         set leader = null
@@ -678,7 +680,11 @@ private function ApplyOrders takes unit companionUnit returns nothing
 
     if mode == COMPANION_MODE_HOLD then
         call FollowSystem_RemoveUnit(companionUnit)
-        call ClearCompanionFarIcon(companionUnit)
+        if IsAliveUnit(companionUnit) and IsAliveUnit(leader) and leader != companionUnit then
+            call UpdateCompanionFarIcon(companionUnit, leader, GetDistanceBetweenUnits(companionUnit, leader), mode)
+        else
+            call ClearCompanionFarIcon(companionUnit)
+        endif
         call IssueImmediateOrder(companionUnit, "holdposition")
     elseif IsAliveUnit(companionUnit) and IsAliveUnit(leader) and leader != companionUnit then
         if CompanionOrderProfile[unitId] == COMPANION_PROFILE_ESCORT then
@@ -1212,6 +1218,35 @@ private function GetModeFromAbility takes integer abilityId returns integer
     return 0
 endfunction
 
+private function CanHireByReputation takes unit target returns boolean
+    local Faction f
+
+    if target == null then
+        return false
+    endif
+
+    set f = Faction.getByUnit(target)
+    if f == 0 then
+        return true
+    endif
+
+    return Reputation.getRep(Player(CONTROL_PLAYER_INDEX), f) >= Reputation_REP_COVENANT
+endfunction
+
+private function GetHireReputationFailureText takes unit target returns string
+    local Faction f
+
+    if target == null then
+        return "This unit will not join the party."
+    endif
+
+    set f = Faction.getByUnit(target)
+    if f != 0 then
+        return GetUnitName(target) + " requires Covenant reputation with " + f.name + " to join."
+    endif
+    return GetUnitName(target) + " will not join the party."
+endfunction
+
 private function HandleInvite takes unit caster, unit target returns nothing
     local integer unitTypeId
     local string icon
@@ -1229,6 +1264,11 @@ private function HandleInvite takes unit caster, unit target returns nothing
 
     if IsUnitEnemy(target, GetOwningPlayer(caster)) then
         call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(target) + " is hostile and cannot be invited.")
+        return
+    endif
+
+    if not CanHireByReputation(target) then
+        call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetHireReputationFailureText(target))
         return
     endif
 
@@ -1371,6 +1411,73 @@ private function GetUnitTypeInfoName takes integer unitTypeId returns string
     return "Controlled Unit"
 endfunction
 
+private function GetCompanionClassInfoTextInternal takes unit target returns string
+    local integer unitTypeId
+
+    if target == null then
+        return "-"
+    endif
+
+    set unitTypeId = GetUnitTypeId(target)
+    if unitTypeId == UNIT_ROGUE then
+        return "Rogue"
+    elseif unitTypeId == UNIT_WARLOCK or unitTypeId == UNIT_RIVERBANE_WARLOCK then
+        return "Warlock"
+    elseif unitTypeId == UNIT_SHAMAN or unitTypeId == UNIT_HIRED_SHAMAN then
+        return "Shaman"
+    elseif unitTypeId == UNIT_WARRIOR then
+        return "Warrior"
+    elseif unitTypeId == UNIT_ENGINEER or unitTypeId == UNIT_ENGINEER_SHREDDER then
+        return "Engineer"
+    elseif unitTypeId == UNIT_PALADIN then
+        return "Paladin"
+    elseif unitTypeId == UNIT_ARADION then
+        return "Farseer"
+    elseif unitTypeId == UNIT_VALERIA then
+        return "Ranger"
+    elseif unitTypeId == UNIT_GRUNT_1 or unitTypeId == UNIT_GRUNT_5 or unitTypeId == UNIT_GRUNT_10 or unitTypeId == UNIT_GRUNT_15 or unitTypeId == UNIT_GRUNT_20 or unitTypeId == UNIT_GRUNT_25 then
+        return "Grunt"
+    elseif unitTypeId == UNIT_MARAUDER_1 or unitTypeId == UNIT_MARAUDER_5 then
+        return "Marauder"
+    elseif unitTypeId == UNIT_STONEGUARD_5 then
+        return "Stoneguard"
+    elseif unitTypeId == UNIT_RAIDER then
+        return "Raider"
+    elseif unitTypeId == UNIT_HEADHUNTER then
+        return "Headhunter"
+    elseif unitTypeId == UNIT_WITCH_DOCTOR then
+        return "Witch Doctor"
+    endif
+
+    return GetUnitTypeInfoName(unitTypeId)
+endfunction
+
+private function GetCompanionTypeInfoTextInternal takes unit target returns string
+    local integer unitTypeId
+
+    if target == null then
+        return "-"
+    endif
+
+    set unitTypeId = GetUnitTypeId(target)
+    if unitTypeId == UNIT_WARRIOR or unitTypeId == UNIT_GRUNT_1 or unitTypeId == UNIT_GRUNT_5 or unitTypeId == UNIT_GRUNT_10 or unitTypeId == UNIT_GRUNT_15 or unitTypeId == UNIT_GRUNT_20 or unitTypeId == UNIT_GRUNT_25 or unitTypeId == UNIT_STONEGUARD_5 then
+        return "Tank"
+    elseif unitTypeId == UNIT_PALADIN or unitTypeId == UNIT_SHAMAN or unitTypeId == UNIT_HIRED_SHAMAN then
+        return "Healer"
+    elseif unitTypeId == UNIT_ROGUE or unitTypeId == UNIT_MARAUDER_1 or unitTypeId == UNIT_MARAUDER_5 or unitTypeId == UNIT_RAIDER or unitTypeId == UNIT_ENGINEER_SHREDDER then
+        return "Melee Damage"
+    elseif unitTypeId == UNIT_WARLOCK or unitTypeId == UNIT_RIVERBANE_WARLOCK or unitTypeId == UNIT_VALERIA or unitTypeId == UNIT_HEADHUNTER then
+        return "Ranged Damage"
+    elseif unitTypeId == UNIT_ENGINEER or unitTypeId == UNIT_ARADION or unitTypeId == UNIT_WITCH_DOCTOR then
+        return "Support"
+    endif
+
+    if IsUnitType(target, UNIT_TYPE_RANGED_ATTACKER) then
+        return "Ranged Damage"
+    endif
+    return "Melee Damage"
+endfunction
+
 private function GetFactionInfoText takes unit target returns string
     local integer unitTypeId
 
@@ -1463,7 +1570,7 @@ private function GetFocusInfoText takes unit target returns string
     return result
 endfunction
 
-private function GetAbilityInfoText takes unit target returns string
+private function GetCompanionAbilityInfoTextInternal takes unit target returns string
     local integer unitTypeId
 
     if target == null then
@@ -1546,7 +1653,7 @@ private function HandleInformation takes unit target returns nothing
 
     call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Stats: |r" + GetSharedStatsInfoText(target))
     call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Mode: |r" + modeText + " | |cFFFFCC00Focus: |r" + GetFocusInfoText(target))
-    call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFF7EBFF1Abilities:|r " + GetAbilityInfoText(target))
+    call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFF7EBFF1Abilities:|r " + GetCompanionAbilityInfoTextInternal(target))
 endfunction
 
 private function DropUnitItems takes unit target returns nothing
@@ -1773,6 +1880,18 @@ public function IsControlled takes unit controlledUnit returns boolean
         return false
     endif
     return CompanionTracked[GetHandleId(controlledUnit)] == 1
+endfunction
+
+public function GetClassInfoText takes unit controlledUnit returns string
+    return GetCompanionClassInfoTextInternal(controlledUnit)
+endfunction
+
+public function GetTypeInfoText takes unit controlledUnit returns string
+    return GetCompanionTypeInfoTextInternal(controlledUnit)
+endfunction
+
+public function GetAbilityInfoText takes unit controlledUnit returns string
+    return GetCompanionAbilityInfoTextInternal(controlledUnit)
 endfunction
 
 private function Init takes nothing returns nothing
