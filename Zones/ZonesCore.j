@@ -396,14 +396,14 @@ private function DefaultWeather takes ZoneData z returns nothing
     call z.weatherChance("snow_medium", 0.3)
     call z.weatherChance("snow_heavy", 0.2)
     call z.weatherChance("storm", 0.1)
-    call z.weatherChance("wind", 0.4)
+    call z.weatherChance("wind", 0.08)
 
 endfunction
 
 private function SetDryMountainWeather takes ZoneData z returns nothing
     call z.addWeatherType("wind")
 
-    call z.weatherChance("wind", 0.60)
+    call z.weatherChance("wind", 0.20)
 endfunction
 
 //===========================================================================

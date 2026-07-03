@@ -66,8 +66,9 @@ globals
     private constant real SNOW_HEAVY_MAX_DURATION = 240.0
     private constant real STORM_MIN_DURATION    = 60.0
     private constant real STORM_MAX_DURATION    = 120.0
-    private constant real WIND_MIN_DURATION     = 180.0
-    private constant real WIND_MAX_DURATION     = 400.0
+    private constant real WIND_MIN_DURATION     = 35.0
+    private constant real WIND_MAX_DURATION     = 75.0
+    private constant real WIND_START_CHANCE     = 0.25
     
     // Weather Check Intervals (in seconds)
     private constant real WEATHER_CHECK_INTERVAL = 250.0
@@ -340,13 +341,13 @@ public function GetZoneWeatherChance takes integer zoneIndex, string season, str
     elseif weatherType == WEATHER_WIND then
         // Wind is more common in spring and autumn
         if season == SEASON_SPRING then
-            set baseChance = 0.4
+            set baseChance = 0.12
         elseif season == SEASON_AUTUMN then
-            set baseChance = 0.3
+            set baseChance = 0.10
         elseif season == SEASON_WINTER then
-            set baseChance = 0.2
+            set baseChance = 0.07
         else
-            set baseChance = 0.15
+            set baseChance = 0.05
         endif
         // Use zone-specific chance if set, otherwise use base
         // Find index of weatherType in z.weatherTypes
@@ -1406,6 +1407,9 @@ private function ZoneSeasonalWeatherCheck takes integer zoneIndex returns nothin
         return
     endif
     set wtype = z.getWeatherType(chosen)
+    if wtype == WEATHER_WIND and GetRandomReal(0.00, 1.00) > WIND_START_CHANCE then
+        return
+    endif
     // Set duration based on type
     if wtype == WEATHER_RAIN_LIGHT then
         set duration = GetRandomReal(RAIN_MIN_DURATION, RAIN_MAX_DURATION)
