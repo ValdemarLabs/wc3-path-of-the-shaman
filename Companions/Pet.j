@@ -22,6 +22,7 @@ globals
     private constant real TAME_DURATION = 10.00
     private constant real PET_REVIVE_DURATION = 20.00
     private constant real TAME_DAMAGE_MULTIPLIER = 1.75
+    private constant real SHADOWCLAW_INIT_RETRY_DELAY = 0.50
     private constant real SHADOWCLAW_HOME_TELEPORT_DELAY = 120.00
     private constant real SHADOWCLAW_HOME_ARRIVE_DISTANCE = 300.00
 
@@ -501,7 +502,7 @@ private function SendShadowclawHome takes unit pet returns nothing
     endif
 endfunction
 
-private function RegisterPetUnit takes unit pet, unit leader, boolean resetCounters returns nothing
+private function RegisterPetUnit takes unit pet, unit leader, boolean resetCounters, boolean startSuspended returns nothing
     local integer petKey
     local boolean registered
     local unit focusLeader = leader
@@ -548,6 +549,12 @@ private function RegisterPetUnit takes unit pet, unit leader, boolean resetCount
     endif
 
     call Companions_RegisterControlled(pet, focusLeader, COMPANION_MODE_DEFEND)
+    if pet == udg_Shadowclaw then
+        call Companions_SetLeader(pet, focusLeader)
+    endif
+    if startSuspended then
+        call Companions_Halt(pet)
+    endif
     call RefreshPetDamageTrigger(pet)
 
     if gg_trg_MultiboardUpdate_Add_Tamed != null then
@@ -594,6 +601,7 @@ private function FindShadowclaw takes nothing returns unit
 endfunction
 
 private function OnShadowclawInitTimer takes nothing returns nothing
+    local timer expired = GetExpiredTimer()
     local unit shadowclaw = udg_Shadowclaw
 
     if shadowclaw == null or GetUnitTypeId(shadowclaw) == 0 then
@@ -601,12 +609,25 @@ private function OnShadowclawInitTimer takes nothing returns nothing
         set udg_Shadowclaw = shadowclaw
     endif
 
-    if shadowclaw != null then
-        call ScaleShadowclawStats(shadowclaw)
-        call RegisterPetUnit(shadowclaw, udg_Nazgrek, true)
+    if shadowclaw == null or udg_Nazgrek == null then
+        if expired != null then
+            call TimerStart(expired, SHADOWCLAW_INIT_RETRY_DELAY, false, function OnShadowclawInitTimer)
+        endif
+        set shadowclaw = null
+        set expired = null
+        return
     endif
 
+    if shadowclaw != null then
+        call ScaleShadowclawStats(shadowclaw)
+        call RegisterPetUnit(shadowclaw, udg_Nazgrek, true, udg_InCinematic)
+    endif
+
+    if expired != null then
+        call DestroyTimer(expired)
+    endif
     set shadowclaw = null
+    set expired = null
 endfunction
 
 private function CompleteTame takes unit caster, unit target returns nothing
@@ -622,7 +643,7 @@ private function CompleteTame takes unit caster, unit target returns nothing
     endif
 
     set leader = GetPreferredLeader(caster)
-    call RegisterPetUnit(target, leader, true)
+    call RegisterPetUnit(target, leader, true, false)
 
     if gg_snd_Rescue != null then
         call StartSound(gg_snd_Rescue)
@@ -682,7 +703,7 @@ private function InviteShadowclaw takes unit caster, unit target returns nothing
     endif
 
     call ScaleShadowclawStats(target)
-    call RegisterPetUnit(target, GetPreferredLeader(caster), true)
+    call RegisterPetUnit(target, GetPreferredLeader(caster), true, false)
     if gg_snd_Rescue != null then
         call StartSound(gg_snd_Rescue)
     endif
@@ -811,6 +832,7 @@ endfunction
 private function OnDamageModifier takes nothing returns nothing
     local unit damaged = udg_DamageEventTarget
     local integer damagedKey
+    local real life
 
     if damaged == null then
         return
@@ -819,6 +841,18 @@ private function OnDamageModifier takes nothing returns nothing
     set damagedKey = GetUnitUserData(damaged)
     if damagedKey > 0 and udg_Pet_TamerChanneling[damagedKey] then
         set udg_DamageEventAmount = udg_DamageEventAmount * TAME_DAMAGE_MULTIPLIER
+    endif
+
+    if damaged == udg_TamedUnit and not udg_Pet_Dead and udg_DamageEventAmount > 0.00 then
+        set life = GetWidgetLife(damaged)
+        if udg_DamageEventAmount >= life - 0.41 then
+            if life > 1.00 then
+                set udg_DamageEventAmount = life - 1.00
+            else
+                set udg_DamageEventAmount = 0.00
+            endif
+            call FatiguePet(damaged)
+        endif
     endif
 
     set damaged = null
