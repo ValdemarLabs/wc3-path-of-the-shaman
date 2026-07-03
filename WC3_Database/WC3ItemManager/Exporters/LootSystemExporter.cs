@@ -282,9 +282,10 @@ namespace WC3ItemManager.Exporters
             sb.AppendLine("        call DestroyTimer(GetExpiredTimer())");
             sb.AppendLine();
 
-            // Export destructible levels for Generic and Both modes
+            // Export destructible levels for Generic and Both modes.
+            // A named loot table overrides the level/tier fallback for Generic mode.
             var genericDestructibles = destructibles
-                .Where(d => d.LootMode == LootMode.Generic || d.LootMode == LootMode.Both)
+                .Where(d => d.LootMode == LootMode.Both || (d.LootMode == LootMode.Generic && !d.LootTableId.HasValue))
                 .OrderBy(d => d.DestructibleLevel)
                 .ThenBy(d => d.DestructibleCode)
                 .ToList();
@@ -303,7 +304,7 @@ namespace WC3ItemManager.Exporters
             }
 
             var tableAssignedDestructibles = destructibles
-                .Where(d => (d.LootMode == LootMode.Specific || d.LootMode == LootMode.Both) && d.LootTableId.HasValue)
+                .Where(d => d.LootMode != LootMode.None && d.LootTableId.HasValue)
                 .OrderBy(d => d.DestructibleCode)
                 .ToList();
 
