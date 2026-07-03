@@ -1,0 +1,30 @@
+Horde NPC Ability Imp Follow
+    Events
+        Time - Every 2.00 seconds of game time
+    Conditions
+    Actions
+        -------- ===================================== --------
+        Set VariableSet NPC_ImpVarPoint = (Position of NPC_Horde_AI_Warlock)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (NPC_Horde_AI_WarlockImp is alive) Equal to True
+                (Distance between (Position of NPC_Horde_AI_WarlockImp) and NPC_ImpVarPoint) Greater than 600.00
+            Then - Actions
+                Unit - Order NPC_Horde_AI_WarlockImp to Right-Click NPC_Horde_AI_Warlock
+            Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Current order of NPC_Horde_AI_Warlock) Equal to (Order(attack))
+                        (Current order of NPC_Horde_AI_WarlockImp) Not equal to (Order(smart))
+                    Then - Actions
+                        Unit - Order NPC_Horde_AI_WarlockImp to Right-Click NPC_Horde_AI_Warlock
+                    Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Current order of NPC_Horde_AI_WarlockImp) Not equal to (Order(smart))
+                            Then - Actions
+                                Unit - Order NPC_Horde_AI_WarlockImp to Right-Click NPC_Horde_AI_Warlock
+                            Else - Actions
+        -------- ===================================== --------
+        -------- Remove LEAKS --------
+        Custom script:   call RemoveLocation(udg_NPC_ImpVarPoint)

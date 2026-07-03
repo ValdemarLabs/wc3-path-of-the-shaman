@@ -1,0 +1,21 @@
+Horde NPC Ability Imp FireBolt Cast
+    Events
+        Time - Every 2.00 seconds of game time
+    Conditions
+    Actions
+        -------- =================================== --------
+        Set VariableSet NPC_VarPoint = (Position of NPC_Horde_AI_WarlockImp)
+        Set VariableSet NPC_VarUnitGroup = (Units within 600.00 of NPC_VarPoint matching ((((Matching unit) is alive) Equal to True) and (((Matching unit) belongs to an enemy of (Owner of NPC_Horde_AI_WarlockImp).) Equal to True)).)
+        -------- =================================== --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- =================================== --------
+                -------- FIREBOLT --------
+                Unit - Order NPC_Horde_AI_WarlockImp to Neutral - Firebolt (Random unit from NPC_VarUnitGroup)
+                -------- =================================== --------
+            Else - Actions
+        -------- =================================== --------
+        Custom script:   call DestroyGroup(udg_NPC_VarUnitGroup)
+        Custom script:   call RemoveLocation(udg_NPC_VarPoint)
+        -------- =================================== --------

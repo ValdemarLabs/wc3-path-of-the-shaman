@@ -1,0 +1,17 @@
+Horde NPC Ability Imp Summoned
+    Events
+        Unit - A unit Spawns a summoned unit
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Unit-type of (Summoned unit)) Equal to Imp (Level 1)
+                (Unit-type of (Summoned unit)) Equal to Imp (Level 2)
+                (Unit-type of (Summoned unit)) Equal to Imp (Level 3)
+    Actions
+        Set VariableSet NPC_Horde_AI_WarlockImp = (Summoned unit)
+        -------- Turn ON follow trigger --------
+        Trigger - Turn on Horde NPC Ability Imp Follow <gen>
+        Trigger - Turn on Horde NPC Ability Imp FireBolt Cast <gen>
+        -------- === BLOOD PACT ==== --------
+        Set VariableSet BP_Source = NPC_Horde_AI_WarlockImp
+        Trigger - Run HeroWarlock Blood Pact Add Source <gen> (ignoring conditions)

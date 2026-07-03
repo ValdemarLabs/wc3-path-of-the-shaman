@@ -1,0 +1,137 @@
+Horde NPC Ability Item Usage Warlock
+    Events
+    Conditions
+    Actions
+        -------- =================================== --------
+        Set VariableSet NPC_VarPoint = (Position of NPC_Horde_AI_Warlock)
+        Set VariableSet NPC_VarUnitGroup = (Units within 600.00 of NPC_VarPoint matching ((((Matching unit) is alive) Equal to True) and (((Matching unit) belongs to an enemy of (Owner of NPC_Horde_AI_Warlock).) Equal to True)).)
+        Set VariableSet NPC_VarPoint2 = (Position of (Random unit from NPC_VarUnitGroup))
+        -------- =================================== --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Item-class of (Item carried by NPC_Horde_AI_Warlock in slot 1)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Horde_AI_Warlock in slot 2)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Horde_AI_Warlock in slot 3)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Horde_AI_Warlock in slot 4)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Horde_AI_Warlock in slot 5)) Equal to Charged
+                        (Item-class of (Item carried by NPC_Horde_AI_Warlock in slot 6)) Equal to Charged
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Percentage life of NPC_Horde_AI_Warlock) Less than or equal to 50.00
+                        (Percentage mana of NPC_Horde_AI_Warlock) Less than or equal to 50.00
+            Then - Actions
+                -------- =================================== --------
+                -------- If Hero Has any consumables, USE them (NOW: Try to use any ITEM, could be modfied to consern only Charges and Purchable) --------
+                Hero - Order NPC_Horde_AI_Warlock to use (Item carried by NPC_Horde_AI_Warlock of type (Random level -1.Any Class item-type))
+                -------- =================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                IsUnitAlive[(Custom value of NPC_Horde_AI_WarlockImp)] Not equal to True
+                (Remaining time for NPC_Horde_AI_Warlock_Casting) Equal to 0.00
+            Then - Actions
+                -------- =================================== --------
+                -------- SUMMON IMP --------
+                Unit - Order NPC_Horde_AI_Warlock to Orc Far Seer - Feral Spirit.
+                Countdown Timer - Start NPC_Horde_AI_Warlock_Casting as a One-shot timer that will expire in 3.00 seconds
+                -------- =================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Percentage mana of NPC_Horde_AI_Warlock) Less than or equal to 75.00
+                (Percentage life of NPC_Horde_AI_Warlock) Greater than or equal to 30.00
+                (Random integer number between 1 and 2) Equal to 1
+                (Remaining time for NPC_Horde_AI_Warlock_Casting) Equal to 0.00
+            Then - Actions
+                -------- =================================== --------
+                -------- LIFE TAP --------
+                Unit - Add HeroWarlock_LifeTap  to NPC_Horde_AI_Warlock
+                Unit - Order NPC_Horde_AI_Warlock to Orc Troll Berserker - Berserk.
+                Countdown Timer - Start NPC_Horde_AI_Warlock_Casting as a One-shot timer that will expire in 2.00 seconds
+                Countdown Timer - Start NPC_Horde_AI_Warlock_RemoveAbi as a One-shot timer that will expire in 1.20 seconds
+                Set VariableSet NPC_Horde_AI_Warlock_Abil = HeroWarlock_LifeTap 
+                -------- =================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in NPC_VarUnitGroup) Greater than 0
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Random integer number between 1 and 2) Equal to 1
+                        (Remaining time for NPC_Horde_AI_Warlock_Casting) Equal to 0.00
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- SHADOWBOLT --------
+                        Unit - Order NPC_Horde_AI_Warlock to Neutral - Firebolt (Random unit from NPC_VarUnitGroup)
+                        Countdown Timer - Start NPC_Horde_AI_Warlock_Casting as a One-shot timer that will expire in 2.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Random integer number between 1 and 2) Equal to 1
+                        (Remaining time for NPC_Horde_AI_Warlock_Casting) Equal to 0.00
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- CURSE OF AGONY --------
+                        Unit - Order NPC_Horde_AI_Warlock to Neutral - Parasite (Random unit from NPC_VarUnitGroup)
+                        Countdown Timer - Start NPC_Horde_AI_Warlock_Casting as a One-shot timer that will expire in 1.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Percentage life of NPC_Horde_AI_Warlock) Less than or equal to 75.00
+                        (Random integer number between 1 and 3) Equal to 1
+                        (Remaining time for NPC_Horde_AI_Warlock_Casting) Equal to 0.00
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- LIFE DRAIN --------
+                        Unit - Order NPC_Horde_AI_Warlock to Neutral Dark Ranger - Life Drain (Random unit from NPC_VarUnitGroup)
+                        Countdown Timer - Start NPC_Horde_AI_Warlock_Casting as a One-shot timer that will expire in 5.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Number of units in NPC_VarUnitGroup) Greater than 2
+                        (Random integer number between 1 and 3) Equal to 1
+                        (Remaining time for NPC_Horde_AI_Warlock_Casting) Equal to 0.00
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- FEAR --------
+                        Unit - Order NPC_Horde_AI_Warlock to Undead Dreadlord - Sleep (Random unit from NPC_VarUnitGroup)
+                        Countdown Timer - Start NPC_Horde_AI_Warlock_Casting as a One-shot timer that will expire in 2.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Number of units in NPC_VarUnitGroup) Greater than 2
+                        (Random integer number between 1 and 5) Equal to 1
+                        (Remaining time for NPC_Horde_AI_Warlock_Casting) Equal to 0.00
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- RAIN OF FIRE --------
+                        Unit - Order NPC_Horde_AI_Warlock to Neutral Pit Lord - Rain Of Fire NPC_VarPoint2
+                        Countdown Timer - Start NPC_Horde_AI_Warlock_Casting as a One-shot timer that will expire in 6.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Number of units in NPC_VarUnitGroup) Greater than 2
+                        (Random integer number between 1 and 4) Equal to 1
+                        (Remaining time for NPC_Horde_AI_Warlock_Casting) Equal to 0.00
+                    Then - Actions
+                        -------- =================================== --------
+                        -------- BANISH --------
+                        Unit - Order NPC_Horde_AI_Warlock to Human Blood Mage - Banish (Random unit from NPC_VarUnitGroup)
+                        Countdown Timer - Start NPC_Horde_AI_Warlock_Casting as a One-shot timer that will expire in 3.00 seconds
+                        -------- =================================== --------
+                    Else - Actions
+            Else - Actions
+        -------- =================================== --------
+        -------- =================================== --------
+        Custom script:   call DestroyGroup(udg_NPC_VarUnitGroup)
+        Custom script:   call RemoveLocation(udg_NPC_VarPoint)
+        Custom script:   call RemoveLocation(udg_NPC_VarPoint2)
+        -------- =================================== --------

@@ -1,0 +1,6 @@
+Horde NPC Ability Remove Warlock
+    Events
+        Time - NPC_Horde_AI_Warlock_RemoveAbi expires
+    Conditions
+    Actions
+        Unit - Remove NPC_Horde_AI_Warlock_Abil from NPC_Horde_AI_Warlock

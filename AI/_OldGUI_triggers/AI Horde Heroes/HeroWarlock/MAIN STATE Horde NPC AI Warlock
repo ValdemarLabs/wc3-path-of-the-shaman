@@ -1,0 +1,98 @@
+MAIN STATE Horde NPC AI Warlock
+    Events
+        Time - Every 1.00 seconds of game time
+    Conditions
+        NPC_Horde_AI_Warlock Not equal to No unit
+        (NPC_Horde_AI_Warlock is hidden) Equal to False
+        IsUnitAlive[(Custom value of NPC_Horde_AI_Warlock)] Equal to True
+    Actions
+        -------- =================================== --------
+        -------- =================================== --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (NPC_Horde_AI_Warlock is in Companion_Group.) Not equal to True
+                (Percentage life of NPC_Horde_AI_Warlock) Greater than or equal to (Random real number between 25.00 and 30.00)
+                (Random integer number between 1 and 10) Equal to 1
+                NPC_Horde_AI_WarlockWander Not equal to True
+                NPC_Horde_AI_WarlockBuy Not equal to True
+                NPC_Horde_AI_WarlockSell Not equal to True
+                NPC_Horde_AI_WarlockRetB Not equal to True
+                NPC_Horde_AI_WarlockRetC Not equal to True
+                NPC_Horde_AI_WarlockCamp Not equal to True
+            Then - Actions
+                -------- Not allowed, IF NPC is in group with Player --------
+                -------- Not allowed, IF NPC already on move to attack --------
+                -------- Not allowed, IF NPC Buying --------
+                -------- Not allowed, IF NPC Selling --------
+                -------- Not allowed, IF NPC Retreat Base --------
+                -------- Not allowed, IF NPC Camp --------
+                -------- =================================== --------
+                -------- WANDER AND ATTACK --------
+                Trigger - Run Horde NPC Attack and Wander 1 Warlock <gen> (checking conditions)
+                -------- =================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Current order of NPC_Horde_AI_Warlock) Equal to (Order(none))
+                (Remaining time for NPC_Horde_AI_Warlock_IdleTime) Equal to 0.00
+            Then - Actions
+                -------- =================================== --------
+                -------- NPC IS IDLE --------
+                Set VariableSet NPC_Horde_AI_WarlockWander = False
+                Countdown Timer - Start NPC_Horde_AI_Warlock_IdleTime as a One-shot timer that will expire in (Random real number between 5.00 and 10.00) seconds
+                -------- ================ SET all states that might bug the AI hero --------
+                Set VariableSet NPC_Horde_AI_WarlockBuy = False
+                Set VariableSet NPC_Horde_AI_WarlockSell = False
+                Set VariableSet NPC_Horde_AI_WarlockRetB = False
+                -------- =================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Current order of NPC_Horde_AI_Warlock) Not equal to (Order(spell))
+                (Current order of NPC_Horde_AI_Warlock) Not equal to (Order(cast))
+                (Remaining time for NPC_Horde_AI_Warlock_Casting) Equal to 0.00
+                NPC_Horde_AI_WarlockBuy Not equal to True
+                NPC_Horde_AI_WarlockSell Not equal to True
+                NPC_Horde_AI_WarlockRetB Not equal to True
+            Then - Actions
+                -------- =================================== --------
+                -------- ABILITY and ITEM Usage --------
+                Trigger - Run Horde NPC Ability Item Usage Warlock <gen> (checking conditions)
+                -------- =================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (NPC_Horde_AI_Warlock is in Companion_Group.) Not equal to True
+                (Percentage life of NPC_Horde_AI_Warlock) Less than or equal to (Random real number between 10.00 and 25.00)
+                NPC_Horde_AI_WarlockBuy Not equal to True
+                NPC_Horde_AI_WarlockSell Not equal to True
+                NPC_Horde_AI_WarlockCamp Not equal to True
+                NPC_Horde_AI_WarlockRetB Not equal to True
+                NPC_Horde_AI_WarlockRetC Not equal to True
+            Then - Actions
+                -------- =================================== --------
+                -------- RETREAT COMBAT --------
+                Trigger - Run Horde NPC Retreat Combat Warlock <gen> (checking conditions)
+                -------- =================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (NPC_Horde_AI_Warlock is in Companion_Group.) Not equal to True
+                (Percentage life of NPC_Horde_AI_Warlock) Less than or equal to 10.00
+                NPC_Horde_AI_WarlockBuy Not equal to True
+                NPC_Horde_AI_WarlockSell Not equal to True
+                NPC_Horde_AI_WarlockCamp Not equal to True
+                NPC_Horde_AI_WarlockRetB Not equal to True
+            Then - Actions
+                -------- =================================== --------
+                -------- RETREAT BASE --------
+                Trigger - Run Horde NPC Retreat Base Warlock <gen> (checking conditions)
+                -------- =================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- =================================== --------
+                -------- ASSIST ALLIES --------
+                -------- =================================== --------
+            Else - Actions
