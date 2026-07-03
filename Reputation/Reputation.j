@@ -500,21 +500,39 @@ private function ApplyFactionAllianceState takes player mainPlayer, Faction f, i
     endloop
 endfunction
 
-// Sync companion player's alliance to match Player 0's alliance with a faction
-private function SyncCompanionAlliance takes player factionPlayer, integer allianceState returns nothing
+// Sync companion player's alliance to match Player 0's alliance with a faction.
+private function SyncCompanionAlliance takes Faction f, integer allianceState returns nothing
     local player companionPlayer
+    local integer i
     
     if not ENABLE_COMPANION_ALLIANCE_SYNC then
+        return
+    endif
+
+    if f == 0 then
         return
     endif
     
     set companionPlayer = Player(COMPANION_PLAYER_ID)
     
-    // Apply the same alliance state between companion and faction
-    call ApplyAllianceState(companionPlayer, factionPlayer, allianceState)
-    if RE_DEBUG then
-        call BJDebugMsg("[CompanionSync] Synced " + GetPlayerName(companionPlayer) + " alliance with " + GetPlayerName(factionPlayer) + " to state " + I2S(allianceState))
+    if f.p != null and f.p != companionPlayer then
+        call ApplyAllianceState(companionPlayer, f.p, allianceState)
     endif
+
+    set i = 0
+    loop
+        exitwhen i > 23
+        if PLAYER_FACTION_MAP.has(i) and PLAYER_FACTION_MAP[i] == f and Player(i) != companionPlayer then
+            call ApplyAllianceState(companionPlayer, Player(i), allianceState)
+        endif
+        set i = i + 1
+    endloop
+
+    if RE_DEBUG then
+        call BJDebugMsg("[CompanionSync] Synced " + GetPlayerName(companionPlayer) + " alliance with faction " + f.name + " to state " + I2S(allianceState))
+    endif
+
+    set companionPlayer = null
 endfunction
 
 //===================================================
@@ -551,7 +569,7 @@ struct TemporalHostility
             call ApplyFactionAllianceState(mainPlayer, this.faction, this.originalAllianceState)
             
             // Sync companion player alliance if enabled
-            call SyncCompanionAlliance(this.faction.p, this.originalAllianceState)
+            call SyncCompanionAlliance(this.faction, this.originalAllianceState)
             
             // Clear temporal hostility tracking
             call temporalHostilityActive.remove(factionId)
@@ -607,7 +625,7 @@ struct TemporalHostility
                 call ApplyFactionAllianceState(mainPlayer, f, 2)
                 
                 // Sync companion player alliance if enabled
-                call SyncCompanionAlliance(f.p, 2)
+                call SyncCompanionAlliance(f, 2)
                 
                 // Display message if faction is visible
                 if f.isVisible then
@@ -923,7 +941,7 @@ private function InitializePrevStates takes nothing returns nothing
             call ApplyFactionAllianceState(mainPlayer, f, allianceState)
             
             // Sync companion player alliance if enabled
-            call SyncCompanionAlliance(f.p, allianceState)
+            call SyncCompanionAlliance(f, allianceState)
             
             if RE_DEBUG then
                 call BJDebugMsg("[InitializePrevStates] Set " + f.name + " to " + status + " (Rep: " + I2S(rep) + ", State: " + I2S(allianceState) + ")")
@@ -1041,7 +1059,6 @@ endfunction
 private function UpdateFactionAlliances takes nothing returns nothing
     local integer i = 1
     local player mainPlayer = Player(0) // The main hero player (Player 1 / Red)
-    local player otherPlayer
     local Faction f
     local integer rep
     local string newStatus
@@ -1063,7 +1080,6 @@ private function UpdateFactionAlliances takes nothing returns nothing
         exitwhen i >= Faction.total
         set f = Faction.all[i]
         if f.p != null then
-            set otherPlayer = f.p
             set rep = Reputation.getRep(mainPlayer, f)
 
             // Check if this faction is temporarily hostile
@@ -1106,7 +1122,7 @@ private function UpdateFactionAlliances takes nothing returns nothing
                     call ApplyFactionAllianceState(mainPlayer, f, allianceState)
                     
                     // Sync companion player alliance if enabled
-                    call SyncCompanionAlliance(otherPlayer, allianceState)
+                    call SyncCompanionAlliance(f, allianceState)
                     
                     // Display appropriate message (only if faction is visible)
                     if f.isVisible then
