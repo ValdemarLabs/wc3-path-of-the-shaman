@@ -55,10 +55,15 @@
 - `WeatherSystemV4.j` / `ZonesCore.j`
   Reduced wind durations and wind weather weights, and added an extra wind start gate so wind-only weather pools no longer keep wind active too often.
 
+### Tool Updates
+- `WC3ItemManager`
+  Fixed destructible loot-table export selection so destructibles with a selected named loot table now emit `RegisterDestructibleTable` and `RegisterDestructibleDropEx` even when their loot mode is `Generic`; `Generic` with no named table still falls back to level/tier registration, while `Both` remains additive and `None` stays disabled.
+  Rebuilt the `bin/Debug/net8.0-windows` debug executable after the exporter fix, so launching `WC3ItemManager.exe` now uses the corrected destructible loot-table export logic.
+
 ### Actions Remaining
 - Re-test invited companions with `CinematicMover`, selected-unit mode casts, companion self command-card casts, Kick Companion on non-pet companions, Shadowclaw kick/reinvite, and StatsUI pet rows in-game.
 - Re-test Ranger Missing completion to confirm Valeria waits at Aradion before patrolling, and accept Rifts of Corruption while Valeria is already near Aradion to confirm she is not teleported away.
-- Re-test Shadowclaw intro halt/resume, initial Nazgrek focus without casting Focus Nazgrek, pet fatigue/revive, pet dungeon transfers, Aradion/Valeria reinvite after kick, Ranger Missing Valeria death during negotiation, and wind pacing in affected zones.
+- Re-test Shadowclaw intro halt/resume, initial Nazgrek focus without casting Focus Nazgrek, pet fatigue/revive, pet dungeon transfers, Aradion/Valeria reinvite after kick, Ranger Missing Valeria death during negotiation, wind pacing in affected zones, and in-map destructible drops from the newly exported named loot tables.
 
 ## [2.7.2026]
 
