@@ -127,9 +127,11 @@ globals
 	private boolean ValeriaEncounterActive = false
 	private boolean ValeriaEncounterResolved = false
 	private boolean AradionInitWaitingLogged = false
+	private boolean RangerMissingFailureInProgress = false
 	private integer AradionLastAcceptedQuest = 0
 	private rect RangerMissingEscortDestination = null
 	private trigger RangerMissingValeriaDeathTrigger = null
+	private trigger RangerMissingValeriaGlobalDeathTrigger = null
 	private trigger ValeriaEncounterDeathTrigger = null
 	private trigger ValeriaEncounterProximityTrigger = null
 	private trigger RiftsValeriaFailTrigger = null
@@ -742,34 +744,68 @@ private function ResetRangerMissingQuestProgress takes nothing returns nothing
 endfunction
 
 private function FailRangerMissingForRetry takes string reason returns nothing
+	if RangerMissingFailureInProgress then
+		return
+	endif
+	set RangerMissingFailureInProgress = true
 	call StopRangerMissingEscortInternal()
 	call QuestGiver_FailQuestByNameAndGiver(QUEST_RANGER_MISSING, Aradion, reason)
 	call ResetRangerMissingQuestProgress()
 	call QuestGiver_SetStateByNameAndGiver(QUEST_RANGER_MISSING, Aradion, QUEST_STATE_AVAILABLE)
 	call QuestGiver_RefreshAvailabilityForGiver(Aradion)
+	set RangerMissingFailureInProgress = false
+endfunction
+
+private function ShouldFailRangerMissingForValeriaDeath takes nothing returns boolean
+	local integer state
+	if RangerMissingFailureInProgress or Valeria == null then
+		return false
+	endif
+	if not QuestGiver_QuestExistsByNameAndGiver(QUEST_RANGER_MISSING, Aradion) then
+		return false
+	endif
+	set state = QuestGiver_GetStateByNameAndGiver(QUEST_RANGER_MISSING, Aradion)
+	return state == QUEST_STATE_IN_PROGRESS or state == QUEST_STATE_READY_TURNIN
 endfunction
 
 private function OnRangerMissingValeriaDamaged takes nothing returns nothing
-	local real vx
-	local real vy
-	if not RangerMissingEscortActive or Valeria == null then
+	local real life
+	if Valeria == null or not ShouldFailRangerMissingForValeriaDeath() then
 		return
 	endif
-	if QuestGiver_GetStateByNameAndGiver(QUEST_RANGER_MISSING, Aradion) == QUEST_STATE_READY_TURNIN then
-		call StopRangerMissingEscortInternal()
-		if Aradion != null and QuestGiver_IsUnitAlive(Aradion) and QuestGiver_IsUnitAlive(Valeria) then
-			set vx = GetUnitX(Aradion) + 200.00 * Cos(GetUnitFacing(Aradion) * bj_DEGTORAD)
-			set vy = GetUnitY(Aradion) + 200.00 * Sin(GetUnitFacing(Aradion) * bj_DEGTORAD)
-			call IssuePointOrder(Valeria, "move", vx, vy)
-		endif
+	set life = GetWidgetLife(Valeria)
+	if GetEventDamage() < life - 0.41 then
+		return
+	endif
+	if life > 1.00 then
+		call BlzSetEventDamage(life - 1.00)
+	else
 		call BlzSetEventDamage(0.00)
-		return
 	endif
-	if GetEventDamage() < GetWidgetLife(Valeria) - 0.41 then
-		return
-	endif
-	call BlzSetEventDamage(GetWidgetLife(Valeria) - 1.00)
 	call FailRangerMissingForRetry("Valeria was lost.")
+endfunction
+
+private function OnRangerMissingValeriaDeathGlobal takes nothing returns nothing
+	local unit dying = GetDyingUnit()
+	call SyncUnitReferences()
+	if dying == Valeria and ShouldFailRangerMissingForValeriaDeath() then
+		call FailRangerMissingForRetry("Valeria was lost.")
+	endif
+	set dying = null
+endfunction
+
+private function RegisterRangerMissingValeriaGlobalDeathTrigger takes nothing returns nothing
+	local integer i = 0
+	if RangerMissingValeriaGlobalDeathTrigger != null then
+		return
+	endif
+	set RangerMissingValeriaGlobalDeathTrigger = CreateTrigger()
+	loop
+		exitwhen i >= bj_MAX_PLAYER_SLOTS
+		call TriggerRegisterPlayerUnitEvent(RangerMissingValeriaGlobalDeathTrigger, Player(i), EVENT_PLAYER_UNIT_DEATH, null)
+		set i = i + 1
+	endloop
+	call TriggerAddAction(RangerMissingValeriaGlobalDeathTrigger, function OnRangerMissingValeriaDeathGlobal)
 endfunction
 
 private function EnableRangerMissingDeathTrigger takes nothing returns nothing
@@ -1420,7 +1456,6 @@ private function PlayValeriaNegotiationSuccess takes nothing returns nothing
 	endif
 	call IssueImmediateOrder(Valeria, "stop")
 	call StopValeriaEncounterTimers()
-	call DisableValeriaEncounterDeathTrigger()
 	set ValeriaSuccessTransitionApplied = false
 	if hero != null then
 		set seq = DialogSystem_CreateSequence()
@@ -3974,6 +4009,7 @@ private function InitDelayed takes nothing returns nothing
 	call QuestGiver_Register(Aradion)
 	call QuestGiver_SetGreetOrder(Aradion, QUESTGIVER_GREET_NAZGREK_THEN_NPC)
 	call RegisterLines()
+	call RegisterRangerMissingValeriaGlobalDeathTrigger()
 	call RegisterValeriaEncounterProximityTrigger()
 	call RegisterRiftUnits()
 	call RegisterFadingSparksSpellTriggers()
