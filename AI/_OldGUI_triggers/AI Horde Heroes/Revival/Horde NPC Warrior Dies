@@ -1,0 +1,21 @@
+Horde NPC Warrior Dies
+    Events
+        Unit - A unit Dies
+    Conditions
+        (Triggering unit) Equal to NPC_Horde_AI_Warrior
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (NPC_Horde_AI_Warrior is in Companion_Group.) Equal to True
+                InCinematic Equal to False
+            Then - Actions
+                Game - Display to (All players) the text: (|cffffff00|r + ((Proper name of (Triggering unit)) + ( (|cff808080Warrior|r) +  |cffffffffhas|r |cffff0000died!|r)))
+            Else - Actions
+        -------- Start timer --------
+        Countdown Timer - Start ReviveTimerWarrior as a One-shot timer that will expire in 60.00 seconds
+        -------- Drop items --------
+        -------- ================ SET all states that might bug the AI hero --------
+        Set VariableSet NPC_Horde_AI_WarriorBuy = False
+        Set VariableSet NPC_Horde_AI_WarriorSell = False
+        Set VariableSet NPC_Horde_AI_WarriorRetB = False
+        Trigger - Remove (This trigger) from the trigger queue

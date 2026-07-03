@@ -1,0 +1,33 @@
+Horde NPC Init Locations
+    Events
+        Time - Elapsed game time is 0.00 seconds
+    Conditions
+    Actions
+        -------- Spawn locations --------
+        Set VariableSet NPC_HORDESPAWNLOCATION[1] = HordeWandererSpawningPlace01 <gen>
+        Set VariableSet NPC_HORDESPAWNLOCATION[2] = HordeWandererSpawningPlace02 <gen>
+        Set VariableSet NPC_HORDESPAWNLOCATION[3] = HordeWandererSpawningPlace03 <gen>
+        Set VariableSet NPC_HORDESPAWNLOCATION[4] = HordeWandererSpawningPlace04 <gen>
+        Set VariableSet NPC_HORDESPAWNLOCATION[5] = HordeWandererSpawningPlace05 <gen>
+        Set VariableSet NPC_HORDESPAWNLOCATION[6] = HordeWandererSpawningPlace06 <gen>
+        Set VariableSet NPC_HORDESPAWNLOCATION[7] = HordeWandererSpawningPlace07 <gen>
+        Set VariableSet NPC_HORDESPAWNLOCATION[8] = HordeWandererSpawningPlace08 <gen>
+        -------- Retreat locations --------
+        Set VariableSet NPC_HordeRetreatLocation[1] = LeavedFromArena <gen>
+        Set VariableSet NPC_HordeRetreatLocation[2] = HordeWandererSpawningPlace01 <gen>
+        Set VariableSet NPC_HordeRetreatLocation[3] = CannotGoThere03a <gen>
+        Set VariableSet NPC_HordeRetreatLocation[4] = Forge002 <gen>
+        Set VariableSet NPC_HordeRetreatLocation[5] = HordeFarm <gen>
+        Set VariableSet NPC_HordeRetreatLocation[6] = HordeMountainCamp <gen>
+        Set VariableSet NPC_HordeRetreatLocation[7] = HordeFarm <gen>
+        Set VariableSet NPC_HordeRetreatLocation[8] = ErdukMovingPosition02 <gen>
+        Set VariableSet NPC_HordeRetreatLocation[10] = Test02FelOrcAttackPoint <gen>
+        Set VariableSet NPC_HordeRetreatLocation[11] = Graveyard <gen>
+        Set VariableSet NPC_HordeRetreatLocation[12] = Graveyard02 <gen>
+        Set VariableSet NPC_HordeRetreatLocation[13] = Graveyard03 <gen>
+        -------- Shops --------
+        -------- ==?????????=== Shops has to be thinked through, maybe set them when they are finalized (placed, etc.) --------
+        Set VariableSet AI_Shop_Horde[1] = Marketplace 1491 <gen>
+        Set VariableSet AI_Shop_Horde[2] = Voodoo Lounge 0021 <gen>
+        Set VariableSet AI_Shop_Horde[3] = Throgar (Armor and Weapons) 1931 <gen>
+        Set VariableSet AI_Shop_Horde[4] = Thraknar 1278 <gen>

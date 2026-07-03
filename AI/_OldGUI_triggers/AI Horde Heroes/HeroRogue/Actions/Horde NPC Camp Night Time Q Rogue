@@ -1,0 +1,7 @@
+Horde NPC Camp Night Time Q Rogue
+    Events
+        Time - NPC_Horde_AI_RogueCamp1 expires
+    Conditions
+    Actions
+        Set VariableSet NPC_Horde_AI_RogueCamp = False
+        Countdown Timer - Start NPC_Horde_AI_RogueCamp2 as a One-shot timer that will expire in (Random real number between 240.00 and 400.00) seconds

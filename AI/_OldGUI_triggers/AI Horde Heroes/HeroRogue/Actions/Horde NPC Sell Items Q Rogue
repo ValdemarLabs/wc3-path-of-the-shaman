@@ -1,0 +1,21 @@
+Horde NPC Sell Items Q Rogue
+    Events
+        Time - Every 1.00 seconds of game time
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Item carried by NPC_Horde_AI_Rogue in slot 1) Equal to No item
+                (Item carried by NPC_Horde_AI_Rogue in slot 2) Equal to No item
+                (Item carried by NPC_Horde_AI_Rogue in slot 3) Equal to No item
+                (Item carried by NPC_Horde_AI_Rogue in slot 4) Equal to No item
+                (Item carried by NPC_Horde_AI_Rogue in slot 5) Equal to No item
+                (Item carried by NPC_Horde_AI_Rogue in slot 6) Equal to No item
+        NPC_Horde_AI_RogueSell Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- =================================== --------
+        -------- Check that if any inventory slot is now empty after selling --------
+        -------- =================================== --------
+        -------- ITEM SOLD --------
+        Set VariableSet NPC_Horde_AI_RogueSell = False
+        -------- =================================== --------

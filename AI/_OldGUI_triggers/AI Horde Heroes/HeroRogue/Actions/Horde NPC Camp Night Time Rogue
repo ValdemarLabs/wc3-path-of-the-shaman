@@ -1,0 +1,27 @@
+Horde NPC Camp Night Time Rogue
+    Events
+        Game - DNE_NightStart becomes Greater than or equal to 1.00
+    Conditions
+        (NPC_Horde_AI_Rogue is in Companion_Group.) Not equal to True
+        (Remaining time for NPC_Horde_AI_RogueCamp2) Equal to 0.00
+        NPC_Horde_AI_RogueBuy Not equal to True
+        NPC_Horde_AI_RogueSell Not equal to True
+        NPC_Horde_AI_RogueCamp Not equal to True
+        NPC_Horde_AI_RogueRetB Not equal to True
+        NPC_Horde_AI_RogueRetC Not equal to True
+    Actions
+        -------- Set random change to begin camping --------
+        -------- =================================== --------
+        -------- CAMP --------
+        Countdown Timer - Start NPC_Horde_AI_RogueCamp1 as a One-shot timer that will expire in (Random real number between 60.00 and 240.00) seconds
+        -------- =================================== --------
+        Set VariableSet NPC_Horde_AI_RogueCamp = True
+        -------- =================================== --------
+        Unit - Order NPC_Horde_AI_Rogue to Stop.
+        Hero - Create Camp Fire and give it to NPC_Horde_AI_Rogue
+        Set VariableSet NPC_VarPoint = (Position of NPC_Horde_AI_Rogue)
+        Set VariableSet NPC_VarPoint2 = (NPC_VarPoint2 offset by (Random real number between 500.00 and 800.00) towards (Random angle) degrees.)
+        Hero - Order NPC_Horde_AI_Rogue to use (Item carried by NPC_Horde_AI_Rogue of type Camp Fire) on NPC_VarPoint2
+        Custom script:   call RemoveLocation(udg_NPC_VarPoint)
+        Custom script:   call RemoveLocation(udg_NPC_VarPoint2)
+        -------- =================================== --------

@@ -1,0 +1,7 @@
+Horde NPC Attack animation Warlock
+    Events
+        Unit - A unit Is attacked
+    Conditions
+        (Unit-type of (Attacking unit)) Equal to Warlock (Companion)
+    Actions
+        Animation - Play (Attacking unit)'s Spell throw animation

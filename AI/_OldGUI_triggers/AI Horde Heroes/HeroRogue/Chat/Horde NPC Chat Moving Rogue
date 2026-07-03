@@ -1,0 +1,1003 @@
+Horde NPC Chat Moving Rogue
+    Events
+    Conditions
+        IsUnitAlive[(Custom value of NPC_Horde_AI_Rogue)] Equal to True
+        (NPC_Horde_AI_Rogue is in Companion_Group.) Equal to True
+        And - All (Conditions) are true
+            Conditions
+                InCinematic Equal to False
+                CompanionDialogueActive Equal to False
+    Actions
+        -------- ======================= --------
+        Set VariableSet CompanionDialogueActive = True
+        -------- ======================= --------
+        -------- ------------------ ADJUST chat values --------
+        Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Rogue
+        Set VariableSet CompanionChatRandomInt = (Random integer number between 1 and 7)
+        -------- ======================= --------
+        -------- ======================= --------
+        -------- IF OTHER UNITS IN THE GROUP --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (NPC_Horde_AI_Warlock is in Companion_Group.) Equal to True
+                        (NPC_Horde_AI_Warrior is in Companion_Group.) Equal to True
+                        (NPC_Horde_AI_Shaman is in Companion_Group.) Equal to True
+                        (NPC_Neutral_Engineer is in Companion_Group.) Equal to True
+                        (NPC_Riverbane_Paladin is in Companion_Group.) Equal to True
+            Then - Actions
+                -------- ### DONT MODIFY ### --------
+                Set VariableSet CompanionChatRandomInt2 = (Random integer number between 1 and 2)
+            Else - Actions
+                Set VariableSet CompanionChatRandomInt2 = 1
+        -------- CHAT --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                CompanionChatRandomInt2 Equal to 1
+            Then - Actions
+                -------- CHAT - GENERAL --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        CompanionChatRandomInt Equal to 1
+                    Then - Actions
+                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_Moving1 <gen> and display Hope you know where....  Modify duration: Set to 1.80 seconds and Don't wait
+                        Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                    Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                CompanionChatRandomInt Equal to 2
+                            Then - Actions
+                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_Moving2 <gen> and display I swear, if we hit ....  Modify duration: Set to 2.60 seconds and Don't wait
+                                Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                            Else - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        CompanionChatRandomInt Equal to 3
+                                    Then - Actions
+                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_Moving3 <gen> and display Nice weather here......  Modify duration: Set to 2.30 seconds and Don't wait
+                                        Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                    Else - Actions
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                CompanionChatRandomInt Equal to 4
+                                            Then - Actions
+                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral1 <gen> and display People think I’m ....  Modify duration: Set to 3.40 seconds and Don't wait
+                                                Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                                -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                                Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        CompanionChatReplyChance Equal to 1
+                                                    Then - Actions
+                                                        -------- Add wait time --------
+                                                        Wait CompanionDialogueTime1 game-time seconds
+                                                        -------- --------- --------
+                                                        Set VariableSet CompanionChatRandomInt3 = (Random integer number between 1 and 5)
+                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                            If - Conditions
+                                                                CompanionChatRandomInt3 Equal to 1
+                                                                (NPC_Horde_AI_Warlock is in Companion_Group.) Equal to True
+                                                                IsUnitAlive[(Custom value of NPC_Horde_AI_Warlock)] Equal to True
+                                                            Then - Actions
+                                                                -------- RANDOM CHAT --------
+                                                                -------- WARLOCK --------
+                                                                Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Warlock
+                                                                Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral1Warlock <gen> and display A thief? How origin....  Modify duration: Set to 2.20 seconds and Don't wait
+                                                                Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                            Else - Actions
+                                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                    If - Conditions
+                                                                        CompanionChatRandomInt3 Equal to 2
+                                                                        (NPC_Horde_AI_Warrior is in Companion_Group.) Equal to True
+                                                                        IsUnitAlive[(Custom value of NPC_Horde_AI_Warrior)] Equal to True
+                                                                    Then - Actions
+                                                                        -------- RANDOM CHAT --------
+                                                                        -------- WARRIOR --------
+                                                                        Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Warrior
+                                                                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral1Warrior <gen> and display Thief, huh?.  Modify duration: Set to 1.15 seconds and Don't wait
+                                                                        Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                    Else - Actions
+                                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                            If - Conditions
+                                                                                CompanionChatRandomInt3 Equal to 3
+                                                                                (NPC_Horde_AI_Shaman is in Companion_Group.) Equal to True
+                                                                                IsUnitAlive[(Custom value of NPC_Horde_AI_Shaman)] Equal to True
+                                                                            Then - Actions
+                                                                                -------- RANDOM CHAT --------
+                                                                                -------- SHAMAN --------
+                                                                                Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Shaman
+                                                                                Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral1Shaman <gen> and display Whose bag of coins ....  Modify duration: Set to 3.10 seconds and Don't wait
+                                                                                Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                            Else - Actions
+                                                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                                    If - Conditions
+                                                                                        CompanionChatRandomInt3 Equal to 4
+                                                                                        (NPC_Neutral_Engineer is in Companion_Group.) Equal to True
+                                                                                        IsUnitAlive[(Custom value of NPC_Neutral_Engineer)] Equal to True
+                                                                                    Then - Actions
+                                                                                        -------- RANDOM CHAT --------
+                                                                                        -------- ENGINEER --------
+                                                                                        Set VariableSet CompanionDialogueUnit = NPC_Neutral_Engineer
+                                                                                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral1Engineer <gen> and display Now if you'd only s....  Modify duration: Set to 2.60 seconds and Don't wait
+                                                                                        Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                                    Else - Actions
+                                                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                                            If - Conditions
+                                                                                                CompanionChatRandomInt3 Equal to 5
+                                                                                                (NPC_Riverbane_Paladin is in Companion_Group.) Equal to True
+                                                                                                IsUnitAlive[(Custom value of NPC_Riverbane_Paladin)] Equal to True
+                                                                                            Then - Actions
+                                                                                                -------- RANDOM CHAT --------
+                                                                                                -------- PALADIN --------
+                                                                                                Set VariableSet CompanionDialogueUnit = NPC_Riverbane_Paladin
+                                                                                                Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral1Paladin <gen> and display What makes you any ....  Modify duration: Set to 3.40 seconds and Don't wait
+                                                                                                Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                                            Else - Actions
+                                                    Else - Actions
+                                            Else - Actions
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        CompanionChatRandomInt Equal to 5
+                                                    Then - Actions
+                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral2 <gen> and display I once stole a drag....  Modify duration: Set to 4.00 seconds and Don't wait
+                                                        Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                                        -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                                        Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                            If - Conditions
+                                                                CompanionChatReplyChance Equal to 1
+                                                            Then - Actions
+                                                                -------- Add wait time --------
+                                                                Wait CompanionDialogueTime1 game-time seconds
+                                                                -------- --------- --------
+                                                                Set VariableSet CompanionChatRandomInt3 = (Random integer number between 1 and 5)
+                                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                    If - Conditions
+                                                                        CompanionChatRandomInt3 Equal to 1
+                                                                        (NPC_Horde_AI_Warlock is in Companion_Group.) Equal to True
+                                                                        IsUnitAlive[(Custom value of NPC_Horde_AI_Warlock)] Equal to True
+                                                                    Then - Actions
+                                                                        -------- RANDOM CHAT --------
+                                                                        -------- WARLOCK --------
+                                                                        Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Warlock
+                                                                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral2Warlock <gen> and display Next time, try stea....  Modify duration: Set to 4.20 seconds and Don't wait
+                                                                        Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                    Else - Actions
+                                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                            If - Conditions
+                                                                                CompanionChatRandomInt3 Equal to 2
+                                                                                (NPC_Horde_AI_Warrior is in Companion_Group.) Equal to True
+                                                                                IsUnitAlive[(Custom value of NPC_Horde_AI_Warrior)] Equal to True
+                                                                            Then - Actions
+                                                                                -------- RANDOM CHAT --------
+                                                                                -------- WARRIOR --------
+                                                                                Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Warrior
+                                                                                Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral2Warrior <gen> and display That does not seem ....  Modify duration: Set to 3.30 seconds and Don't wait
+                                                                                Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                            Else - Actions
+                                                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                                    If - Conditions
+                                                                                        CompanionChatRandomInt3 Equal to 3
+                                                                                        (NPC_Horde_AI_Shaman is in Companion_Group.) Equal to True
+                                                                                        IsUnitAlive[(Custom value of NPC_Horde_AI_Shaman)] Equal to True
+                                                                                    Then - Actions
+                                                                                        -------- RANDOM CHAT --------
+                                                                                        -------- SHAMAN --------
+                                                                                        Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Shaman
+                                                                                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral2Shaman <gen> and display Stealing from drago....  Modify duration: Set to 3.70 seconds and Don't wait
+                                                                                        Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                                    Else - Actions
+                                                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                                            If - Conditions
+                                                                                                CompanionChatRandomInt3 Equal to 4
+                                                                                                (NPC_Neutral_Engineer is in Companion_Group.) Equal to True
+                                                                                                IsUnitAlive[(Custom value of NPC_Neutral_Engineer)] Equal to True
+                                                                                            Then - Actions
+                                                                                                -------- RANDOM CHAT --------
+                                                                                                -------- ENGINEER --------
+                                                                                                Set VariableSet CompanionDialogueUnit = NPC_Neutral_Engineer
+                                                                                                Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral2Engineer <gen> and display A dragon’s egg? Y....  Modify duration: Set to 5.40 seconds and Don't wait
+                                                                                                Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                                            Else - Actions
+                                                                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                                                    If - Conditions
+                                                                                                        CompanionChatRandomInt3 Equal to 5
+                                                                                                        (NPC_Riverbane_Paladin is in Companion_Group.) Equal to True
+                                                                                                        IsUnitAlive[(Custom value of NPC_Riverbane_Paladin)] Equal to True
+                                                                                                    Then - Actions
+                                                                                                        -------- RANDOM CHAT --------
+                                                                                                        -------- PALADIN --------
+                                                                                                        Set VariableSet CompanionDialogueUnit = NPC_Riverbane_Paladin
+                                                                                                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral2Paladin <gen> and display Did the dragon teac....  Modify duration: Set to 2.00 seconds and Don't wait
+                                                                                                        Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                                                    Else - Actions
+                                                            Else - Actions
+                                                    Else - Actions
+                                                        -------- note: HeroRogue_ChatGeneral3 missing voice file --------
+                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                            If - Conditions
+                                                                CompanionChatRandomInt Equal to 6
+                                                            Then - Actions
+                                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral4 <gen> and display If the next thing i....  Modify duration: Set to 2.20 seconds and Don't wait
+                                                                Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                                                -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                                                Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                    If - Conditions
+                                                                        CompanionChatReplyChance Equal to 1
+                                                                    Then - Actions
+                                                                        -------- Add wait time --------
+                                                                        Wait CompanionDialogueTime1 game-time seconds
+                                                                        -------- --------- --------
+                                                                        Set VariableSet CompanionChatRandomInt3 = (Random integer number between 1 and 5)
+                                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                            If - Conditions
+                                                                                CompanionChatRandomInt3 Equal to 1
+                                                                                (NPC_Horde_AI_Warlock is in Companion_Group.) Equal to True
+                                                                                IsUnitAlive[(Custom value of NPC_Horde_AI_Warlock)] Equal to True
+                                                                            Then - Actions
+                                                                                -------- RANDOM CHAT --------
+                                                                                -------- WARLOCK --------
+                                                                                Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Warlock
+                                                                                Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral4Warlock <gen> and display Chase your shinies,....  Modify duration: Set to 5.00 seconds and Don't wait
+                                                                                Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                            Else - Actions
+                                                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                                    If - Conditions
+                                                                                        CompanionChatRandomInt3 Equal to 2
+                                                                                        (NPC_Horde_AI_Warrior is in Companion_Group.) Equal to True
+                                                                                        IsUnitAlive[(Custom value of NPC_Horde_AI_Warrior)] Equal to True
+                                                                                    Then - Actions
+                                                                                        -------- RANDOM CHAT --------
+                                                                                        -------- WARRIOR --------
+                                                                                        Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Warrior
+                                                                                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral4Warrior <gen> and display No! We will roll di....  Modify duration: Set to 3.70 seconds and Don't wait
+                                                                                        Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                                    Else - Actions
+                                                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                                            If - Conditions
+                                                                                                CompanionChatRandomInt3 Equal to 3
+                                                                                                (NPC_Horde_AI_Shaman is in Companion_Group.) Equal to True
+                                                                                                IsUnitAlive[(Custom value of NPC_Horde_AI_Shaman)] Equal to True
+                                                                                            Then - Actions
+                                                                                                -------- RANDOM CHAT --------
+                                                                                                -------- SHAMAN --------
+                                                                                                Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Shaman
+                                                                                                Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral4Shaman <gen> and display You should think be....  Modify duration: Set to 2.80 seconds and Don't wait
+                                                                                                Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                                            Else - Actions
+                                                                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                                                    If - Conditions
+                                                                                                        CompanionChatRandomInt3 Equal to 4
+                                                                                                        (NPC_Neutral_Engineer is in Companion_Group.) Equal to True
+                                                                                                        IsUnitAlive[(Custom value of NPC_Neutral_Engineer)] Equal to True
+                                                                                                    Then - Actions
+                                                                                                        -------- RANDOM CHAT --------
+                                                                                                        -------- ENGINEER --------
+                                                                                                        Set VariableSet CompanionDialogueUnit = NPC_Neutral_Engineer
+                                                                                                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral4Engineer <gen> and display I'll take it apart ....  Modify duration: Set to 4.80 seconds and Don't wait
+                                                                                                        Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                                                    Else - Actions
+                                                                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                                                            If - Conditions
+                                                                                                                CompanionChatRandomInt3 Equal to 5
+                                                                                                                (NPC_Riverbane_Paladin is in Companion_Group.) Equal to True
+                                                                                                                IsUnitAlive[(Custom value of NPC_Riverbane_Paladin)] Equal to True
+                                                                                                            Then - Actions
+                                                                                                                -------- RANDOM CHAT --------
+                                                                                                                -------- PALADIN --------
+                                                                                                                Set VariableSet CompanionDialogueUnit = NPC_Riverbane_Paladin
+                                                                                                                Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral4Paladin <gen> and display Now you are just be....  Modify duration: Set to 2.00 seconds and Don't wait
+                                                                                                                Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                                                            Else - Actions
+                                                                    Else - Actions
+                                                            Else - Actions
+                                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                    If - Conditions
+                                                                        CompanionChatRandomInt Equal to 7
+                                                                    Then - Actions
+                                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral5 <gen> and display People call me shad....  Modify duration: Set to 3.70 seconds and Don't wait
+                                                                        Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                                                        -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                                                        Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                            If - Conditions
+                                                                                CompanionChatReplyChance Equal to 1
+                                                                            Then - Actions
+                                                                                -------- Add wait time --------
+                                                                                Wait CompanionDialogueTime1 game-time seconds
+                                                                                -------- --------- --------
+                                                                                Set VariableSet CompanionChatRandomInt3 = (Random integer number between 1 and 5)
+                                                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                                    If - Conditions
+                                                                                        CompanionChatRandomInt3 Equal to 1
+                                                                                        (NPC_Horde_AI_Warlock is in Companion_Group.) Equal to True
+                                                                                        IsUnitAlive[(Custom value of NPC_Horde_AI_Warlock)] Equal to True
+                                                                                    Then - Actions
+                                                                                        -------- RANDOM CHAT --------
+                                                                                        -------- WARLOCK --------
+                                                                                        Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Warlock
+                                                                                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral5Warlock <gen> and display Now you are just be....  Modify duration: Set to 4.00 seconds and Don't wait
+                                                                                        Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                                    Else - Actions
+                                                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                                            If - Conditions
+                                                                                                CompanionChatRandomInt3 Equal to 2
+                                                                                                (NPC_Horde_AI_Warrior is in Companion_Group.) Equal to True
+                                                                                                IsUnitAlive[(Custom value of NPC_Horde_AI_Warrior)] Equal to True
+                                                                                            Then - Actions
+                                                                                                -------- RANDOM CHAT --------
+                                                                                                -------- WARRIOR --------
+                                                                                                Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Warrior
+                                                                                                Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral5Warrior <gen> and display Sounds more like a ....  Modify duration: Set to 2.50 seconds and Don't wait
+                                                                                                Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                                            Else - Actions
+                                                                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                                                    If - Conditions
+                                                                                                        CompanionChatRandomInt3 Equal to 3
+                                                                                                        (NPC_Horde_AI_Shaman is in Companion_Group.) Equal to True
+                                                                                                        IsUnitAlive[(Custom value of NPC_Horde_AI_Shaman)] Equal to True
+                                                                                                    Then - Actions
+                                                                                                        -------- RANDOM CHAT --------
+                                                                                                        -------- SHAMAN --------
+                                                                                                        Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Shaman
+                                                                                                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral5Shaman <gen> and display I prefer the term: ....  Modify duration: Set to 12.40 seconds and Don't wait
+                                                                                                        Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                                                    Else - Actions
+                                                                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                                                            If - Conditions
+                                                                                                                CompanionChatRandomInt3 Equal to 4
+                                                                                                                (NPC_Neutral_Engineer is in Companion_Group.) Equal to True
+                                                                                                                IsUnitAlive[(Custom value of NPC_Neutral_Engineer)] Equal to True
+                                                                                                            Then - Actions
+                                                                                                                -------- RANDOM CHAT --------
+                                                                                                                -------- ENGINEER --------
+                                                                                                                Set VariableSet CompanionDialogueUnit = NPC_Neutral_Engineer
+                                                                                                                Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral5Engineer <gen> and display What does that even....  Modify duration: Set to 1.70 seconds and Don't wait
+                                                                                                                Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                                                            Else - Actions
+                                                                                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                                                                    If - Conditions
+                                                                                                                        CompanionChatRandomInt3 Equal to 5
+                                                                                                                        (NPC_Riverbane_Paladin is in Companion_Group.) Equal to True
+                                                                                                                        IsUnitAlive[(Custom value of NPC_Riverbane_Paladin)] Equal to True
+                                                                                                                    Then - Actions
+                                                                                                                        -------- RANDOM CHAT --------
+                                                                                                                        -------- PALADIN --------
+                                                                                                                        Set VariableSet CompanionDialogueUnit = NPC_Riverbane_Paladin
+                                                                                                                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatGeneral5Paladin <gen> and display I agree with those ....  Modify duration: Set to 1.70 seconds and Don't wait
+                                                                                                                        Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                                                                    Else - Actions
+                                                                            Else - Actions
+                                                                    Else - Actions
+            Else - Actions
+                -------- CHAT - TOWARDS OTHER UNITS --------
+                Set VariableSet CompanionChatRandomInt3 = (Random integer number between 1 and 5)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        CompanionChatRandomInt3 Equal to 1
+                        (NPC_Horde_AI_Warlock is in Companion_Group.) Equal to True
+                    Then - Actions
+                        -------- RANDOM CHAT --------
+                        -------- WARLOCK --------
+                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Warlock over 0.50 seconds
+                        Set VariableSet CompanionChatRandomInt4 = (Random integer number between 1 and 5)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                CompanionChatRandomInt4 Equal to 1
+                            Then - Actions
+                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatWarlock1 <gen> and display Do those demons eve....  Modify duration: Set to 3.20 seconds and Don't wait
+                                Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        CompanionChatReplyChance Equal to 1
+                                        (NPC_Horde_AI_Warlock is in Companion_Group.) Equal to True
+                                        IsUnitAlive[(Custom value of NPC_Horde_AI_Warlock)] Equal to True
+                                    Then - Actions
+                                        -------- Add wait time --------
+                                        Wait CompanionDialogueTime1 game-time seconds
+                                        -------- WARLOCK --------
+                                        Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Warlock
+                                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatWarlock1Warlock <gen> and display They grunt when amu....  Modify duration: Set to 4.50 seconds and Don't wait
+                                        Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                    Else - Actions
+                            Else - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        CompanionChatRandomInt4 Equal to 2
+                                    Then - Actions
+                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatWarlock2 <gen> and display Careful with those ....  Modify duration: Set to 5.25 seconds and Don't wait
+                                        -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                        Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                CompanionChatReplyChance Equal to 1
+                                                (NPC_Horde_AI_Warlock is in Companion_Group.) Equal to True
+                                                IsUnitAlive[(Custom value of NPC_Horde_AI_Warlock)] Equal to True
+                                            Then - Actions
+                                                -------- Add wait time --------
+                                                Wait CompanionDialogueTime1 game-time seconds
+                                                -------- WARLOCK --------
+                                                Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Warlock
+                                                Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatWarlock2Warlock <gen> and display Clever, rogue. But ....  Modify duration: Set to 3.50 seconds and Don't wait
+                                                Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                            Else - Actions
+                                    Else - Actions
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                CompanionChatRandomInt4 Equal to 3
+                                            Then - Actions
+                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatWarlock3 <gen> and display Ah, the warlock, ma....  Modify duration: Set to 3.00 seconds and Don't wait
+                                                Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                                -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                                Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        CompanionChatReplyChance Equal to 1
+                                                        (NPC_Horde_AI_Warlock is in Companion_Group.) Equal to True
+                                                        IsUnitAlive[(Custom value of NPC_Horde_AI_Warlock)] Equal to True
+                                                    Then - Actions
+                                                        -------- Add wait time --------
+                                                        Wait CompanionDialogueTime1 game-time seconds
+                                                        -------- WARLOCK --------
+                                                        Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Warlock
+                                                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatWarlock3Warlock <gen> and display Ah, the rogue, mast....  Modify duration: Set to 5.40 seconds and Don't wait
+                                                        Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                    Else - Actions
+                                            Else - Actions
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        CompanionChatRandomInt4 Equal to 4
+                                                    Then - Actions
+                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatWarlock4 <gen> and display Can you summon a su....  Modify duration: Set to 3.00 seconds and Don't wait
+                                                        Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                                        -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                                        Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                            If - Conditions
+                                                                CompanionChatReplyChance Equal to 1
+                                                                (NPC_Horde_AI_Warlock is in Companion_Group.) Equal to True
+                                                                IsUnitAlive[(Custom value of NPC_Horde_AI_Warlock)] Equal to True
+                                                            Then - Actions
+                                                                -------- Add wait time --------
+                                                                Wait CompanionDialogueTime1 game-time seconds
+                                                                -------- WARLOCK --------
+                                                                Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Warlock
+                                                                Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatWarlock4Warlock <gen> and display Even a demon has st....  Modify duration: Set to 2.70 seconds and Don't wait
+                                                                Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                            Else - Actions
+                                                    Else - Actions
+                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                            If - Conditions
+                                                                CompanionChatRandomInt4 Equal to 5
+                                                            Then - Actions
+                                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatWarlock5 <gen> and display What’s that smell....  Modify duration: Set to 3.00 seconds and Don't wait
+                                                                Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                                                -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                                                Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                    If - Conditions
+                                                                        CompanionChatReplyChance Equal to 1
+                                                                        (NPC_Horde_AI_Warlock is in Companion_Group.) Equal to True
+                                                                        IsUnitAlive[(Custom value of NPC_Horde_AI_Warlock)] Equal to True
+                                                                    Then - Actions
+                                                                        -------- Add wait time --------
+                                                                        Wait CompanionDialogueTime1 game-time seconds
+                                                                        -------- WARLOCK --------
+                                                                        Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Warlock
+                                                                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatWarlock5Warlock <gen> and display That smell? It’s ....  Modify duration: Set to 4.80 seconds and Don't wait
+                                                                        Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                    Else - Actions
+                                                            Else - Actions
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        CompanionChatRandomInt3 Equal to 2
+                        (NPC_Horde_AI_Warrior is in Companion_Group.) Equal to True
+                        IsUnitAlive[(Custom value of NPC_Horde_AI_Warrior)] Equal to True
+                    Then - Actions
+                        -------- RANDOM CHAT --------
+                        -------- WARRIOR --------
+                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Warrior over 0.50 seconds
+                        Set VariableSet CompanionChatRandomInt4 = (Random integer number between 1 and 4)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                CompanionChatRandomInt4 Equal to 1
+                            Then - Actions
+                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatWarrior1 <gen> and display Charging into battl....  Modify duration: Set to 3.85 seconds and Don't wait
+                                Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        CompanionChatReplyChance Equal to 1
+                                    Then - Actions
+                                        -------- Add wait time --------
+                                        Wait CompanionDialogueTime1 game-time seconds
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                (NPC_Horde_AI_Warrior is in Companion_Group.) Equal to True
+                                                IsUnitAlive[(Custom value of NPC_Horde_AI_Warrior)] Equal to True
+                                            Then - Actions
+                                                -------- WARRIOR --------
+                                                Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Warrior
+                                                Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatWarrior1Warrior <gen> and display Well, how does taur....  Modify duration: Set to 4.70 seconds and Don't wait
+                                                Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                            Else - Actions
+                                    Else - Actions
+                            Else - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        CompanionChatRandomInt4 Equal to 2
+                                    Then - Actions
+                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatWarrior2 <gen> and display Big horns, bigger m....  Modify duration: Set to 4.45 seconds and Don't wait
+                                        Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                        -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                        Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                CompanionChatReplyChance Equal to 1
+                                            Then - Actions
+                                                -------- Add wait time --------
+                                                Wait CompanionDialogueTime1 game-time seconds
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        (NPC_Horde_AI_Warrior is in Companion_Group.) Equal to True
+                                                        IsUnitAlive[(Custom value of NPC_Horde_AI_Warrior)] Equal to True
+                                                    Then - Actions
+                                                        -------- WARRIOR --------
+                                                        Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Warrior
+                                                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatWarrior2Warrior <gen> and display If I have to, I’l....  Modify duration: Set to 2.50 seconds and Don't wait
+                                                        Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                    Else - Actions
+                                            Else - Actions
+                                    Else - Actions
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                CompanionChatRandomInt4 Equal to 3
+                                            Then - Actions
+                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatWarrior3 <gen> and display Hey tauren, remembe....  Modify duration: Set to 3.75 seconds and Don't wait
+                                                Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                                -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                                Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        CompanionChatReplyChance Equal to 1
+                                                    Then - Actions
+                                                        -------- Add wait time --------
+                                                        Wait CompanionDialogueTime1 game-time seconds
+                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                            If - Conditions
+                                                                (NPC_Horde_AI_Warrior is in Companion_Group.) Equal to True
+                                                                IsUnitAlive[(Custom value of NPC_Horde_AI_Warrior)] Equal to True
+                                                            Then - Actions
+                                                                -------- WARRIOR --------
+                                                                Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Warrior
+                                                                Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatWarrior3Warrior <gen> and display Keep your distance ....  Modify duration: Set to 3.50 seconds and Don't wait
+                                                                Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                            Else - Actions
+                                                    Else - Actions
+                                            Else - Actions
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        CompanionChatRandomInt4 Equal to 4
+                                                    Then - Actions
+                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatWarrior4 <gen> and display Hey big guy, I foun....  Modify duration: Set to 4.25 seconds and Don't wait
+                                                        Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                                        -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                                        Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                            If - Conditions
+                                                                CompanionChatReplyChance Equal to 1
+                                                            Then - Actions
+                                                                -------- Add wait time --------
+                                                                Wait CompanionDialogueTime1 game-time seconds
+                                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                    If - Conditions
+                                                                        (NPC_Horde_AI_Warrior is in Companion_Group.) Equal to True
+                                                                        IsUnitAlive[(Custom value of NPC_Horde_AI_Warrior)] Equal to True
+                                                                    Then - Actions
+                                                                        -------- WARRIOR --------
+                                                                        Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Warrior
+                                                                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatWarrior4Warrior <gen> and display Hah, nice one!.  Modify duration: Set to 1.70 seconds and Don't wait
+                                                                        Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                    Else - Actions
+                                                            Else - Actions
+                                                    Else - Actions
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        CompanionChatRandomInt3 Equal to 3
+                        (NPC_Horde_AI_Shaman is in Companion_Group.) Equal to True
+                    Then - Actions
+                        -------- RANDOM CHAT --------
+                        -------- SHAMAN --------
+                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Shaman over 0.50 seconds
+                        Set VariableSet CompanionChatRandomInt4 = (Random integer number between 1 and 4)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                CompanionChatRandomInt4 Equal to 1
+                            Then - Actions
+                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatShaman1 <gen> and display Your lightning stri....  Modify duration: Set to 3.70 seconds and Don't wait
+                                Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        CompanionChatReplyChance Equal to 1
+                                    Then - Actions
+                                        -------- Add wait time --------
+                                        Wait CompanionDialogueTime1 game-time seconds
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                (NPC_Horde_AI_Shaman is in Companion_Group.) Equal to True
+                                                IsUnitAlive[(Custom value of NPC_Horde_AI_Shaman)] Equal to True
+                                            Then - Actions
+                                                -------- SHAMAN --------
+                                                Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Shaman
+                                                Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatShaman1Shaman <gen> and display Subtlety has its pl....  Modify duration: Set to 5.85 seconds and Don't wait
+                                                Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                            Else - Actions
+                                    Else - Actions
+                            Else - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        CompanionChatRandomInt4 Equal to 2
+                                    Then - Actions
+                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatShaman2 <gen> and display Spirits and totems....  Modify duration: Set to 4.15 seconds and Don't wait
+                                        Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                        -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                        Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                CompanionChatReplyChance Equal to 1
+                                            Then - Actions
+                                                -------- Add wait time --------
+                                                Wait CompanionDialogueTime1 game-time seconds
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        (NPC_Horde_AI_Shaman is in Companion_Group.) Equal to True
+                                                        IsUnitAlive[(Custom value of NPC_Horde_AI_Shaman)] Equal to True
+                                                    Then - Actions
+                                                        -------- SHAMAN --------
+                                                        Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Shaman
+                                                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatShaman2Shaman <gen> and display It is completely fi....  Modify duration: Set to 3.80 seconds and Don't wait
+                                                        Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                    Else - Actions
+                                            Else - Actions
+                                    Else - Actions
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                CompanionChatRandomInt4 Equal to 3
+                                            Then - Actions
+                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatShaman3 <gen> and display I would prefer wind....  Modify duration: Set to 5.40 seconds and Don't wait
+                                                Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                                -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                                Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        CompanionChatReplyChance Equal to 1
+                                                    Then - Actions
+                                                        -------- Add wait time --------
+                                                        Wait CompanionDialogueTime1 game-time seconds
+                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                            If - Conditions
+                                                                (NPC_Horde_AI_Shaman is in Companion_Group.) Equal to True
+                                                                IsUnitAlive[(Custom value of NPC_Horde_AI_Shaman)] Equal to True
+                                                            Then - Actions
+                                                                -------- SHAMAN --------
+                                                                Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Shaman
+                                                                Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatShaman3Shaman <gen> and display Patience. You will ....  Modify duration: Set to 4.70 seconds and Don't wait
+                                                                Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                            Else - Actions
+                                                    Else - Actions
+                                            Else - Actions
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        CompanionChatRandomInt4 Equal to 4
+                                                    Then - Actions
+                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatShaman4 <gen> and display When you shamans ca....  Modify duration: Set to 5.20 seconds and Don't wait
+                                                        Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                                        -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                                        Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                            If - Conditions
+                                                                CompanionChatReplyChance Equal to 1
+                                                            Then - Actions
+                                                                -------- Add wait time --------
+                                                                Wait CompanionDialogueTime1 game-time seconds
+                                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                    If - Conditions
+                                                                        (NPC_Horde_AI_Shaman is in Companion_Group.) Equal to True
+                                                                        IsUnitAlive[(Custom value of NPC_Horde_AI_Shaman)] Equal to True
+                                                                    Then - Actions
+                                                                        -------- SHAMAN --------
+                                                                        Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Shaman
+                                                                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatShaman4Shaman <gen> and display I see that you are ....  Modify duration: Set to 3.00 seconds and Don't wait
+                                                                        Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                    Else - Actions
+                                                            Else - Actions
+                                                    Else - Actions
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        CompanionChatRandomInt3 Equal to 4
+                        (NPC_Neutral_Engineer is in Companion_Group.) Equal to True
+                    Then - Actions
+                        -------- RANDOM CHAT --------
+                        -------- ENGINEER --------
+                        Unit - Make CompanionDialogueUnit face NPC_Neutral_Engineer over 0.50 seconds
+                        Set VariableSet CompanionChatRandomInt4 = (Random integer number between 1 and 4)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                CompanionChatRandomInt4 Equal to 1
+                            Then - Actions
+                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatEngineer1 <gen> and display Another gadget, gob....  Modify duration: Set to 3.80 seconds and Don't wait
+                                Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        CompanionChatReplyChance Equal to 1
+                                    Then - Actions
+                                        -------- Add wait time --------
+                                        Wait CompanionDialogueTime1 game-time seconds
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                (NPC_Neutral_Engineer is in Companion_Group.) Equal to True
+                                                IsUnitAlive[(Custom value of NPC_Neutral_Engineer)] Equal to True
+                                            Then - Actions
+                                                -------- ENGINEER --------
+                                                Set VariableSet CompanionDialogueUnit = NPC_Neutral_Engineer
+                                                Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatEngineer1Engineer <gen> and display Blow up? Hah! That'....  Modify duration: Set to 3.50 seconds and Don't wait
+                                                Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                            Else - Actions
+                                    Else - Actions
+                            Else - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        CompanionChatRandomInt4 Equal to 2
+                                    Then - Actions
+                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatEngineer2 <gen> and display All those gizmos, a....  Modify duration: Set to 3.60 seconds and Don't wait
+                                        Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                        -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                        Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                CompanionChatReplyChance Equal to 1
+                                            Then - Actions
+                                                -------- Add wait time --------
+                                                Wait CompanionDialogueTime1 game-time seconds
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        (NPC_Neutral_Engineer is in Companion_Group.) Equal to True
+                                                        IsUnitAlive[(Custom value of NPC_Neutral_Engineer)] Equal to True
+                                                    Then - Actions
+                                                        -------- ENGINEER --------
+                                                        Set VariableSet CompanionDialogueUnit = NPC_Neutral_Engineer
+                                                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatEngineer2Engineer <gen> and display Maybe if you stoppe....  Modify duration: Set to 3.80 seconds and Don't wait
+                                                        Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                    Else - Actions
+                                            Else - Actions
+                                    Else - Actions
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                CompanionChatRandomInt4 Equal to 3
+                                            Then - Actions
+                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatEngineer3 <gen> and display Your turrets are cu....  Modify duration: Set to 4.30 seconds and Don't wait
+                                                Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                                -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                                Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        CompanionChatReplyChance Equal to 1
+                                                    Then - Actions
+                                                        -------- Add wait time --------
+                                                        Wait CompanionDialogueTime1 game-time seconds
+                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                            If - Conditions
+                                                                (NPC_Neutral_Engineer is in Companion_Group.) Equal to True
+                                                                IsUnitAlive[(Custom value of NPC_Neutral_Engineer)] Equal to True
+                                                            Then - Actions
+                                                                -------- ENGINEER --------
+                                                                Set VariableSet CompanionDialogueUnit = NPC_Neutral_Engineer
+                                                                Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatEngineer3Engineer <gen> and display Sorry! These are ne....  Modify duration: Set to 4.10 seconds and Don't wait
+                                                                Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                            Else - Actions
+                                                    Else - Actions
+                                            Else - Actions
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        CompanionChatRandomInt4 Equal to 4
+                                                    Then - Actions
+                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatEngineer4 <gen> and display I hope the loud exp....  Modify duration: Set to 4.20 seconds and Don't wait
+                                                        Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                                        -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                                        Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                            If - Conditions
+                                                                CompanionChatReplyChance Equal to 1
+                                                            Then - Actions
+                                                                -------- Add wait time --------
+                                                                Wait CompanionDialogueTime1 game-time seconds
+                                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                    If - Conditions
+                                                                        (NPC_Neutral_Engineer is in Companion_Group.) Equal to True
+                                                                        IsUnitAlive[(Custom value of NPC_Neutral_Engineer)] Equal to True
+                                                                    Then - Actions
+                                                                        -------- ENGINEER --------
+                                                                        Set VariableSet CompanionDialogueUnit = NPC_Neutral_Engineer
+                                                                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatEngineer4Engineer <gen> and display Can’t you just be....  Modify duration: Set to 4.60 seconds and Don't wait
+                                                                        Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                    Else - Actions
+                                                            Else - Actions
+                                                    Else - Actions
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        CompanionChatRandomInt3 Equal to 5
+                        (NPC_Riverbane_Paladin is in Companion_Group.) Equal to True
+                    Then - Actions
+                        -------- RANDOM CHAT --------
+                        -------- PALADIN --------
+                        Unit - Make CompanionDialogueUnit face NPC_Riverbane_Paladin over 0.50 seconds
+                        Set VariableSet CompanionChatRandomInt4 = (Random integer number between 1 and 4)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                CompanionChatRandomInt4 Equal to 1
+                            Then - Actions
+                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatPaladin1 <gen> and display A holy paladin, eh?....  Modify duration: Set to 4.20 seconds and Don't wait
+                                Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        CompanionChatReplyChance Equal to 1
+                                    Then - Actions
+                                        -------- Add wait time --------
+                                        Wait CompanionDialogueTime1 game-time seconds
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                (NPC_Riverbane_Paladin is in Companion_Group.) Equal to True
+                                                IsUnitAlive[(Custom value of NPC_Riverbane_Paladin)] Equal to True
+                                            Then - Actions
+                                                -------- PALADIN --------
+                                                Set VariableSet CompanionDialogueUnit = NPC_Riverbane_Paladin
+                                                Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatPaladin1Paladin <gen> and display What’s wrong with....  Modify duration: Set to 3.50 seconds and Don't wait
+                                                Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                            Else - Actions
+                                    Else - Actions
+                            Else - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        CompanionChatRandomInt4 Equal to 2
+                                    Then - Actions
+                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatPaladin2 <gen> and display All that light, pal....  Modify duration: Set to 4.00 seconds and Don't wait
+                                        Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                        -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                        Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                CompanionChatReplyChance Equal to 1
+                                            Then - Actions
+                                                -------- Add wait time --------
+                                                Wait CompanionDialogueTime1 game-time seconds
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        (NPC_Riverbane_Paladin is in Companion_Group.) Equal to True
+                                                        IsUnitAlive[(Custom value of NPC_Riverbane_Paladin)] Equal to True
+                                                    Then - Actions
+                                                        -------- PALADIN --------
+                                                        Set VariableSet CompanionDialogueUnit = NPC_Riverbane_Paladin
+                                                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatPaladin2Paladin <gen> and display I strongly recommen....  Modify duration: Set to 4.50 seconds and Don't wait
+                                                        Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                    Else - Actions
+                                            Else - Actions
+                                    Else - Actions
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                CompanionChatRandomInt4 Equal to 3
+                                            Then - Actions
+                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatPaladin3 <gen> and display Remember the First ....  Modify duration: Set to 4.20 seconds and Don't wait
+                                                Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                                -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                                Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        CompanionChatReplyChance Equal to 1
+                                                    Then - Actions
+                                                        -------- Add wait time --------
+                                                        Wait CompanionDialogueTime1 game-time seconds
+                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                            If - Conditions
+                                                                (NPC_Riverbane_Paladin is in Companion_Group.) Equal to True
+                                                                IsUnitAlive[(Custom value of NPC_Riverbane_Paladin)] Equal to True
+                                                            Then - Actions
+                                                                -------- PALADIN --------
+                                                                Set VariableSet CompanionDialogueUnit = NPC_Riverbane_Paladin
+                                                                Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatPaladin3Paladin <gen> and display You may have had a ....  Modify duration: Set to 4.00 seconds and Don't wait
+                                                                Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                            Else - Actions
+                                                    Else - Actions
+                                            Else - Actions
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        CompanionChatRandomInt4 Equal to 4
+                                                    Then - Actions
+                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatPaladin5 <gen> and display A truce with humans....  Modify duration: Set to 5.60 seconds and Don't wait
+                                                        Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                                        -------- CHAT - REPLY FROM OTHER UNITS (CHANCE) --------
+                                                        Set VariableSet CompanionChatReplyChance = (Random integer number between 1 and 2)
+                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                            If - Conditions
+                                                                CompanionChatReplyChance Equal to 1
+                                                            Then - Actions
+                                                                -------- Add wait time --------
+                                                                Wait CompanionDialogueTime1 game-time seconds
+                                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                    If - Conditions
+                                                                        (NPC_Riverbane_Paladin is in Companion_Group.) Equal to True
+                                                                        IsUnitAlive[(Custom value of NPC_Riverbane_Paladin)] Equal to True
+                                                                    Then - Actions
+                                                                        -------- PALADIN --------
+                                                                        Set VariableSet CompanionDialogueUnit = NPC_Riverbane_Paladin
+                                                                        Unit - Make CompanionDialogueUnit face NPC_Horde_AI_Rogue over 0.50 seconds
+                                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_ChatPaladin5Paladin <gen> and display I know where my loy....  Modify duration: Set to 4.00 seconds and Don't wait
+                                                                        Set VariableSet CompanionDialogueTime2 = (Length of (Last played sound))
+                                                                    Else - Actions
+                                                            Else - Actions
+                                                    Else - Actions
+                    Else - Actions
+        -------- ======================= --------
+        Set VariableSet CompanionDialogueTimerValue = (CompanionDialogueTime1 + CompanionDialogueTime2)
+        -------- ======================= --------
+        Countdown Timer - Start CompanionDialogueTimer as a One-shot timer that will expire in CompanionDialogueTimerValue seconds
+        -------- ======================= --------
+        -------- Reset values --------
+        Set VariableSet CompanionDialogueTime1 = 0.00
+        Set VariableSet CompanionDialogueTime2 = 0.00
+        Set VariableSet CompanionDialogueTimerValue = 0.00
+        -------- ======================= --------

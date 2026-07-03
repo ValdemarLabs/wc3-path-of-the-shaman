@@ -1,0 +1,21 @@
+Horde NPC Rogue Dies
+    Events
+        Unit - A unit Dies
+    Conditions
+        (Triggering unit) Equal to NPC_Horde_AI_Rogue
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (NPC_Horde_AI_Rogue is in Companion_Group.) Equal to True
+                InCinematic Equal to False
+            Then - Actions
+                Game - Display to (All players) the text: (|cffffff00|r + ((Proper name of (Triggering unit)) + ( (|cffffff00Rogue|r) +  |cffffffffhas|r |cffff0000died!|r)))
+            Else - Actions
+        -------- Start timer --------
+        Countdown Timer - Start ReviveTimerRogue as a One-shot timer that will expire in 60.00 seconds
+        -------- Drop items --------
+        -------- ================ SET all states that might bug the AI hero --------
+        Set VariableSet NPC_Horde_AI_RogueBuy = False
+        Set VariableSet NPC_Horde_AI_RogueSell = False
+        Set VariableSet NPC_Horde_AI_RogueRetB = False
+        Trigger - Remove (This trigger) from the trigger queue

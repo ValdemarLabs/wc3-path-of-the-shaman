@@ -1,0 +1,7 @@
+Horde NPC Ability Remove Rogue
+    Events
+        Time - NPC_Horde_AI_Rogue_RemoveAbi expires
+    Conditions
+    Actions
+        Unit - Remove NPC_Horde_AI_Rogue_Abil from NPC_Horde_AI_Rogue
+        Unit - Add NPC_Horde_AI_Rogue_Abil2 to NPC_Horde_AI_Rogue

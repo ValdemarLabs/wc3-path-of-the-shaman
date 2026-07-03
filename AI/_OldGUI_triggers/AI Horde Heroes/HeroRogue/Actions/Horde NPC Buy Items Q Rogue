@@ -1,0 +1,43 @@
+Horde NPC Buy Items Q Rogue
+    Events
+        Time - Every 1.00 seconds of game time
+    Conditions
+    Actions
+        -------- =================================== --------
+        -------- Distance check for SHOP - Positions --------
+        Set VariableSet NPC_VarPoint = (Position of NPC_Horde_AI_Rogue)
+        Set VariableSet NPC_VarPoint2 = (Position of AI_Shop_Horde[1])
+        Set VariableSet NPC_VarPoint3 = (Position of AI_Shop_Horde[2])
+        Set VariableSet NPC_VarPoint4 = (Position of AI_Shop_Horde[3])
+        Set VariableSet NPC_VarPoint5 = (Position of AI_Shop_Horde[4])
+        -------- =================================== --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (NPC_Horde_AI_Rogue is in Companion_Group.) Not equal to True
+                NPC_Horde_AI_RogueBuy Equal to True
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Distance between NPC_VarPoint and NPC_VarPoint2) Less than or equal to 250.00
+                        (Distance between NPC_VarPoint and NPC_VarPoint3) Less than or equal to 250.00
+                        (Distance between NPC_VarPoint and NPC_VarPoint4) Less than or equal to 250.00
+                        (Distance between NPC_VarPoint and NPC_VarPoint5) Less than or equal to 250.00
+            Then - Actions
+                -------- =================================== --------
+                Trigger - Turn off (This trigger)
+                -------- =================================== --------
+                -------- AT THE SHOP --------
+                -------- ITEM BOUGHT --------
+                Set VariableSet NPC_Horde_AI_RogueBuy = False
+                Set VariableSet NPC_VarPointShop = (Position of NPC_Horde_AI_Rogue)
+                Item - Create NPC_ShopItem[(Random integer number between 1 and 9)] at NPC_VarPointShop
+                Hero - Give (Last created item) to NPC_Horde_AI_Rogue
+                Custom script:   call RemoveLocation(udg_NPC_VarPointShop)
+                -------- =================================== --------
+            Else - Actions
+        -------- =================================== --------
+        -------- Distance check for SHOP OVER - Positions remove --------
+        Custom script:   call RemoveLocation(udg_NPC_VarPoint)
+        Custom script:   call RemoveLocation(udg_NPC_VarPoint2)
+        Custom script:   call RemoveLocation(udg_NPC_VarPoint3)
+        Custom script:   call RemoveLocation(udg_NPC_VarPoint4)
+        Custom script:   call RemoveLocation(udg_NPC_VarPoint5)

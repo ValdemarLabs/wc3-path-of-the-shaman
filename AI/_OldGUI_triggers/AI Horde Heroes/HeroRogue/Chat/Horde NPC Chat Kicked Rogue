@@ -1,0 +1,77 @@
+Horde NPC Chat Kicked Rogue
+    Events
+    Conditions
+        IsUnitAlive[(Custom value of NPC_Horde_AI_Rogue)] Equal to True
+        (NPC_Horde_AI_Rogue is in Companion_Group.) Equal to True
+        And - All (Conditions) are true
+            Conditions
+                InCinematic Equal to False
+                CompanionDialogueActive Equal to False
+    Actions
+        -------- ======================= --------
+        Set VariableSet CompanionDialogueActive = True
+        -------- ------------------ ADJUST chat values --------
+        Set VariableSet CompanionDialogueUnit = NPC_Horde_AI_Rogue
+        Set VariableSet CompanionChatRandomInt = (Random integer number between 1 and 7)
+        -------- ======================= --------
+        -------- ======================= --------
+        -------- CHAT --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                CompanionChatRandomInt Equal to 1
+            Then - Actions
+                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_Kicked1 <gen> and display You don’t need me....  Modify duration: Set to 2.00 seconds and Don't wait
+                Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+            Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        CompanionChatRandomInt Equal to 2
+                    Then - Actions
+                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_Kicked2 <gen> and display Was I too good for ....  Modify duration: Set to 1.50 seconds and Don't wait
+                        Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                    Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                CompanionChatRandomInt Equal to 3
+                            Then - Actions
+                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_Kicked3 <gen> and display Your loss, chief..  Modify duration: Set to 1.25 seconds and Don't wait
+                                Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                            Else - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        CompanionChatRandomInt Equal to 4
+                                    Then - Actions
+                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_Farewell1 <gen> and display Catch ya later, chi....  Modify duration: Set to 1.50 seconds and Don't wait
+                                        Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                    Else - Actions
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                CompanionChatRandomInt Equal to 5
+                                            Then - Actions
+                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_Farewell2 <gen> and display Stay outta trouble.....  Modify duration: Set to 2.30 seconds and Don't wait
+                                                Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                            Else - Actions
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        CompanionChatRandomInt Equal to 6
+                                                    Then - Actions
+                                                        Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_Farewell3 <gen> and display Off to skulk elsewh....  Modify duration: Set to 1.70 seconds and Don't wait
+                                                        Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                                    Else - Actions
+                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                            If - Conditions
+                                                                CompanionChatRandomInt Equal to 7
+                                                            Then - Actions
+                                                                Cinematic - Send transmission to (All players) from CompanionDialogueUnit named (Proper name of CompanionDialogueUnit): Play HeroRogue_Farewell4 <gen> and display Keep your eyes shar....  Modify duration: Set to 1.70 seconds and Don't wait
+                                                                Set VariableSet CompanionDialogueTime1 = (Length of (Last played sound))
+                                                            Else - Actions
+        -------- ======================= --------
+        Set VariableSet CompanionDialogueTimerValue = (CompanionDialogueTime1 + CompanionDialogueTime2)
+        -------- ======================= --------
+        Countdown Timer - Start CompanionDialogueTimer as a One-shot timer that will expire in CompanionDialogueTimerValue seconds
+        -------- ======================= --------
+        -------- Reset values --------
+        Set VariableSet CompanionDialogueTime1 = 0.00
+        Set VariableSet CompanionDialogueTime2 = 0.00
+        Set VariableSet CompanionDialogueTimerValue = 0.00
+        -------- ======================= --------
