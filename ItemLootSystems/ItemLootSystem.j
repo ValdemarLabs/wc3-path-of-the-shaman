@@ -141,10 +141,9 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
         private Table customDropTextItem                  // item_handle_id -> 1 if vanilla drops should use item-name text
         
         // === DELAYED DROP TEXT (for OnItemDrop) ===
-        private item pendingDropItem = null               // Item waiting for position finalization
-        private integer pendingDropRarity = 0             // Rarity of pending item
-        private boolean pendingDropUseCustomText = false  // Use item-name text for DInv-origin vanilla drops
-        private timer pendingDropTimer = null             // Timer for delayed text creation
+        private Table dropTextTimerItem                   // timer_handle_id -> item waiting for position finalization
+        private Table dropTextTimerRarity                 // timer_handle_id -> rarity id
+        private Table dropTextTimerCustom                 // timer_handle_id -> 1 when item-name white text is forced
     endglobals
     
     // =========================================================================
@@ -166,7 +165,7 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
     private function InitFloatingTextConfig takes nothing returns nothing
         // Enable floating text per rarity (1 = enabled, 0 = disabled)
         // By default: Common disabled, all others enabled
-        set floatTextEnabled[ITEM_RARITY_COMMON]    = 0  // Common - no floating text
+        set floatTextEnabled[ITEM_RARITY_COMMON]    = 1  // Common - enabled
         set floatTextEnabled[ITEM_RARITY_UNCOMMON]  = 1  // Uncommon - enabled
         set floatTextEnabled[ITEM_RARITY_RARE]      = 1  // Rare - enabled
         set floatTextEnabled[ITEM_RARITY_EPIC]      = 1  // Epic - enabled
@@ -460,20 +459,45 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
     
     // Timer callback for delayed floating text creation (item position finalized)
     private function OnItemDropDelayed takes nothing returns nothing
-        local item it = pendingDropItem
-        local integer rarityId = pendingDropRarity
-        
-        if it != null then
-            // Now item position is finalized - use actual item coordinates
-            if pendingDropUseCustomText then
+        local timer t = GetExpiredTimer()
+        local integer timerId = GetHandleId(t)
+        local item it = dropTextTimerItem.item[timerId]
+        local integer rarityId = dropTextTimerRarity[timerId]
+        local boolean useCustomText = dropTextTimerCustom[timerId] == 1
+
+        if it != null and GetItemTypeId(it) != 0 then
+            // Now item position is finalized - use actual item coordinates.
+            if useCustomText then
                 call CreateItemFloatingTextCustomInternal(it, GetItemName(it), 255, 255, 255)
+                call customDropTextItem.remove(GetHandleId(it))
             else
                 call CreateItemFloatingTextInternal(it, GetItemName(it), GetItemX(it), GetItemY(it), rarityId)
             endif
         endif
-        
-        set pendingDropItem = null
-        set pendingDropUseCustomText = false
+
+        call dropTextTimerItem.remove(timerId)
+        call dropTextTimerRarity.remove(timerId)
+        call dropTextTimerCustom.remove(timerId)
+        call DestroyTimer(t)
+        set it = null
+        set t = null
+    endfunction
+
+    private function StartItemDropTextTimer takes item it, integer rarityId, boolean useCustomText returns nothing
+        local timer t
+        local integer timerId
+
+        if it == null then
+            return
+        endif
+
+        set t = CreateTimer()
+        set timerId = GetHandleId(t)
+        set dropTextTimerItem.item[timerId] = it
+        set dropTextTimerRarity[timerId] = rarityId
+        set dropTextTimerCustom[timerId] = B2I(useCustomText)
+        call TimerStart(t, 0.0, false, function OnItemDropDelayed)
+        set t = null
     endfunction
     
     // Item drop handler - creates floating text when unit drops item
@@ -487,19 +511,16 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
         endif
         
         set itemTypeId = GetItemTypeId(it)
-        set pendingDropUseCustomText = customDropTextItem.has(GetHandleId(it))
-        
+
         // Look up rarity from registered items, default to Common
         if itemRarity.has(itemTypeId) then
             set rarityId = itemRarity[itemTypeId]
         else
             set rarityId = ITEM_RARITY_COMMON
         endif
-        
-        // Store pending item data and use 0.0 delay to let engine finalize item position
-        set pendingDropItem = it
-        set pendingDropRarity = rarityId
-        call TimerStart(pendingDropTimer, 0.0, false, function OnItemDropDelayed)
+
+        // Store pending item data and use 0.0 delay to let engine finalize item position.
+        call StartItemDropTextTimer(it, rarityId, customDropTextItem.has(GetHandleId(it)))
         
         set it = null
     endfunction
@@ -1148,8 +1169,10 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
         // Create hover animation timer (will be started/paused as needed)
         set hoverTimer = CreateTimer()
         
-        // Create pending drop timer (for delayed floating text on item drop)
-        set pendingDropTimer = CreateTimer()
+        // Per-drop timers wait until the engine finalizes each dropped item position.
+        set dropTextTimerItem = Table.create()
+        set dropTextTimerRarity = Table.create()
+        set dropTextTimerCustom = Table.create()
         
         // Create item-to-hover lookup table
         set itemToHoverIndex = Table.create()
