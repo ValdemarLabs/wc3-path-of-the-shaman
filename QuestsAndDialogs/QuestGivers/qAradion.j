@@ -1,4 +1,4 @@
-library qAradion initializer Init requires QuestGiver, QuestMaster, DialogSystem, ExSound, FollowSystem, PatrolSystem, UnitSpawn, Companions, ItemLootSystem, ZonesCore
+library qAradion initializer Init requires QuestGiver, QuestMaster, DialogSystem, ExSound, FollowSystem, PatrolSystem, UnitSpawn, Companions, IconQuery, ItemLootSystem, ZonesCore
 //===========================================================================
 // qAradion
 // Quest giver dialog + quest flow for Aradion the Farseer.
@@ -48,6 +48,11 @@ globals
 	private constant real VALERIA_ENCOUNTER_SPEED_RESET_DELAY = 3.00
 	private constant real DIALOG_COOLDOWN = 6.00
 	private constant real FOLLOW_MAX_DISTANCE = 2000.00
+	private constant integer LEFT_BEHIND_PING_TICKS = 3
+	private constant integer LEFT_BEHIND_PING_STYLE = bj_MINIMAPPINGSTYLE_SIMPLE
+	private constant integer LEFT_BEHIND_PING_RED = 255
+	private constant integer LEFT_BEHIND_PING_GREEN = 255
+	private constant integer LEFT_BEHIND_PING_BLUE = 0
 	private constant real RANGER_ESCORT_DEST_RADIUS = 500.00
 	private constant boolean REQUIRE_DIALOG_HERO = true
 	private constant integer CINEMATIC_MOVE_MODE = 1  // 1 = All units,
@@ -184,6 +189,10 @@ globals
 	private string RiftsPendingFailReason = ""
 	private unit RiftsFailedUnit = null
 	private unit RiftsFailureSurvivor = null
+	private minimapicon RiftsValeriaLeftBehindIcon = null
+	private minimapicon RiftsAradionLeftBehindIcon = null
+	private integer RiftsValeriaLeftBehindPingCycle = 0
+	private integer RiftsAradionLeftBehindPingCycle = 0
 
 	private constant integer ARADION_QID_RANGER = 1
 	private constant integer ARADION_QID_CRYSTALS = 2
@@ -260,6 +269,18 @@ private function GetFindValeriaFieldText takes nothing returns string
 	return "Find Valeria in " + GetAradionFieldZoneListText()
 endfunction
 
+private function GetRiftsFieldObjectiveText takes nothing returns string
+	return "Find all rifts scattered around " + GetAradionFieldZoneListText()
+endfunction
+
+private function GetRiftsReturnToFieldObjectiveText takes nothing returns string
+	return "Return to " + GetAradionFieldZoneListText() + " to continue escorting Aradion and Valeria"
+endfunction
+
+private function GetRiftsReturnHomeObjectiveText takes nothing returns string
+	return "Escort Aradion and Valeria to Aradion's place"
+endfunction
+
 private function IsAradionFieldZoneActive takes nothing returns boolean
 	local integer zoneId = ZonesCore_GetCurrentZone()
 	if zoneId == VANGUARD_VALE_ZONE_ID then
@@ -275,6 +296,19 @@ private function IsAradionFieldZoneActive takes nothing returns boolean
 		return true
 	endif
 	return ZonesCore_IsChildZoneOf(zoneId, VERDANT_PLAINS_ZONE_ID)
+endfunction
+
+private function GetRiftsTrackingHero takes nothing returns unit
+	if SelectedHero != null and QuestGiver_IsUnitAlive(SelectedHero) then
+		return SelectedHero
+	endif
+	if ALLOW_NAZGREK and Nazgrek != null and QuestGiver_IsUnitAlive(Nazgrek) then
+		return Nazgrek
+	endif
+	if ALLOW_ZULKIS and udg_Zulkis != null and QuestGiver_IsUnitAlive(udg_Zulkis) then
+		return udg_Zulkis
+	endif
+	return null
 endfunction
 
 private function CanOfferRangerMissing takes nothing returns boolean
@@ -365,6 +399,87 @@ private function RestoreAradionFieldOwner takes nothing returns nothing
 		call SetUnitOwner(Aradion, ownerP, true)
 	endif
 	set ownerP = null
+endfunction
+
+private function ClearRiftsLeftBehindUnitIcon takes boolean valeriaIcon returns nothing
+	if valeriaIcon then
+		if RiftsValeriaLeftBehindIcon != null then
+			call IconQuery_UnregisterIcon(RiftsValeriaLeftBehindIcon)
+			set RiftsValeriaLeftBehindIcon = null
+		endif
+		set RiftsValeriaLeftBehindPingCycle = 0
+	else
+		if RiftsAradionLeftBehindIcon != null then
+			call IconQuery_UnregisterIcon(RiftsAradionLeftBehindIcon)
+			set RiftsAradionLeftBehindIcon = null
+		endif
+		set RiftsAradionLeftBehindPingCycle = 0
+	endif
+endfunction
+
+private function ClearRiftsLeftBehindIcons takes nothing returns nothing
+	call ClearRiftsLeftBehindUnitIcon(true)
+	call ClearRiftsLeftBehindUnitIcon(false)
+endfunction
+
+private function EnsureRiftsLeftBehindUnitIcon takes unit leftUnit, boolean valeriaIcon returns nothing
+	if leftUnit == null then
+		return
+	endif
+	if valeriaIcon then
+		if RiftsValeriaLeftBehindIcon == null then
+			set RiftsValeriaLeftBehindIcon = IconQuery_RegisterCompanionFollowerUnitIcon(leftUnit)
+		endif
+	else
+		if RiftsAradionLeftBehindIcon == null then
+			set RiftsAradionLeftBehindIcon = IconQuery_RegisterCompanionFollowerUnitIcon(leftUnit)
+		endif
+	endif
+endfunction
+
+private function PingRiftsLeftBehindUnitIfReady takes unit leftUnit, boolean valeriaIcon returns nothing
+	local integer cycles
+	local location pingLoc
+	if leftUnit == null then
+		return
+	endif
+	if valeriaIcon then
+		set cycles = RiftsValeriaLeftBehindPingCycle + 1
+	else
+		set cycles = RiftsAradionLeftBehindPingCycle + 1
+	endif
+	if cycles >= LEFT_BEHIND_PING_TICKS then
+		set pingLoc = Location(GetUnitX(leftUnit), GetUnitY(leftUnit))
+		call PingMinimapLocForForceEx(GetPlayersAll(), pingLoc, 1.00, LEFT_BEHIND_PING_STYLE, LEFT_BEHIND_PING_RED, LEFT_BEHIND_PING_GREEN, LEFT_BEHIND_PING_BLUE)
+		call RemoveLocation(pingLoc)
+		set pingLoc = null
+		set cycles = 0
+	endif
+	if valeriaIcon then
+		set RiftsValeriaLeftBehindPingCycle = cycles
+	else
+		set RiftsAradionLeftBehindPingCycle = cycles
+	endif
+endfunction
+
+private function UpdateRiftsLeftBehindUnitIcon takes unit leftUnit, unit hero, boolean valeriaIcon returns nothing
+	if leftUnit == null or hero == null or not QuestGiver_IsUnitAlive(leftUnit) or not QuestGiver_IsUnitAlive(hero) then
+		call ClearRiftsLeftBehindUnitIcon(valeriaIcon)
+		return
+	endif
+	if QuestGiver_IsWithinRange(leftUnit, hero, FOLLOW_MAX_DISTANCE) then
+		call ClearRiftsLeftBehindUnitIcon(valeriaIcon)
+		return
+	endif
+	call EnsureRiftsLeftBehindUnitIcon(leftUnit, valeriaIcon)
+	call PingRiftsLeftBehindUnitIfReady(leftUnit, valeriaIcon)
+endfunction
+
+private function UpdateRiftsLeftBehindIcons takes nothing returns nothing
+	local unit hero = GetRiftsTrackingHero()
+	call UpdateRiftsLeftBehindUnitIcon(Valeria, hero, true)
+	call UpdateRiftsLeftBehindUnitIcon(Aradion, hero, false)
+	set hero = null
 endfunction
 
 private function AddValeriaCompanion takes nothing returns nothing
@@ -573,8 +688,9 @@ private function StartFieldCompanions takes unit hero returns nothing
 		return
 	endif
 	if hero == null then
-		set hero = ResolveDialogHero()
+		set hero = GetRiftsTrackingHero()
 	endif
+	call ClearRiftsLeftBehindIcons()
 	set RiftsLeftFieldZoneNotified = false
 	call AddValeriaCompanion()
 	call AddAradionCompanion()
@@ -2393,6 +2509,7 @@ private function StopRiftsFieldMonitor takes nothing returns nothing
 		call DestroyTimer(RiftsFieldTimer)
 		set RiftsFieldTimer = null
 	endif
+	call ClearRiftsLeftBehindIcons()
 endfunction
 
 private function StopRiftsFailResetTimer takes nothing returns nothing
@@ -2406,8 +2523,8 @@ private function ResetRiftsObjectivesForNewRun takes QuestData q returns nothing
 	if q == 0 then
 		return
 	endif
-	call q.setRequirement(1, "Find all rifts scattered around " + GetAradionFieldZoneListText())
-	call q.updateRequirementText(1, "Find all rifts scattered around " + GetAradionFieldZoneListText())
+	call q.setRequirement(1, GetRiftsFieldObjectiveText())
+	call q.updateRequirementText(1, GetRiftsFieldObjectiveText())
 	call q.setRequirement(2, "Rifts closed 0 / 3")
 	call q.updateRequirementText(2, "Rifts closed 0 / 3")
 	call q.setRequirement(3, "Guard Aradion while he closes the rifts")
@@ -2506,6 +2623,7 @@ endfunction
 private function ReturnRiftsCompanionsHomeInternal takes nothing returns nothing
 	local player aradionOwner = AradionHomeOwner
 	call StopFieldCompanions()
+	call ClearRiftsLeftBehindIcons()
 	if aradionOwner == null and Aradion != null then
 		set aradionOwner = GetOwningPlayer(Aradion)
 	endif
@@ -2784,7 +2902,7 @@ private function UpdateQuestRiftsCorruptionInternal takes nothing returns nothin
 		call q.markRequirementCompleted(2, true)
 		call q.markRequirementCompleted(3, true)
 		call q.markRequirementCompleted(4, true)
-		call QuestGiver_AddRequirement(q.id, 5, "Escort Aradion and Valeria to Aradion's place")
+		call QuestGiver_AddRequirement(q.id, 5, GetRiftsReturnHomeObjectiveText())
 		call q.markRequirementCompleted(5, false)
 		call q.refreshQuestLog()
 		set RiftsAwaitingReturnHome = true
@@ -2873,6 +2991,39 @@ public function StartRiftsRuntimeTimersPublic takes nothing returns nothing
 	call StartRiftsRuntimeTimers()
 endfunction
 
+private function UpdateRiftsObjectiveLog takes QuestData q, integer reqIndex, string text returns nothing
+	if q == 0 then
+		return
+	endif
+	call q.updateRequirementText(reqIndex, text)
+	call q.refreshQuestLog()
+endfunction
+
+private function ShowRiftsLeftFieldUpdate takes QuestData q returns nothing
+	local integer reqIndex = 1
+	if q == 0 then
+		return
+	endif
+	if RiftsAwaitingReturnHome then
+		set reqIndex = 5
+	endif
+	call UpdateRiftsObjectiveLog(q, reqIndex, GetRiftsReturnToFieldObjectiveText())
+	call QuestMaster_ShowUpdateMessage(q.id, "|cffffcc00QUEST UPDATED|r\n" + q.title + "\n\n|cff80a0ffObjective updated:|r Return to " + GetAradionFieldZoneListText() + " to continue escorting Aradion and Valeria.")
+endfunction
+
+private function ShowRiftsRejoinedFieldUpdate takes QuestData q returns nothing
+	if q == 0 then
+		return
+	endif
+	if RiftsAwaitingReturnHome then
+		call UpdateRiftsObjectiveLog(q, 5, GetRiftsReturnHomeObjectiveText())
+		call QuestMaster_ShowUpdateMessage(q.id, "|cffffcc00QUEST UPDATED|r\n" + q.title + "\n\n|cff80a0ffObjective updated:|r Aradion and Valeria have rejoined you. Continue escorting them home.")
+	else
+		call UpdateRiftsObjectiveLog(q, 1, GetRiftsFieldObjectiveText())
+		call QuestMaster_ShowUpdateMessage(q.id, "|cffffcc00QUEST UPDATED|r\n" + q.title + "\n\n|cff80a0ffObjective updated:|r Aradion and Valeria have rejoined you. Continue searching for the rifts.")
+	endif
+endfunction
+
 private function OnRiftsFieldTick takes nothing returns nothing
 	local unit hero
 	local QuestData q
@@ -2882,20 +3033,24 @@ private function OnRiftsFieldTick takes nothing returns nothing
 	endif
 	if not IsAradionFieldZoneActive() then
 		call StopFieldCompanions()
+		call UpdateRiftsLeftBehindIcons()
 		if not RiftsLeftFieldZoneNotified then
 			set RiftsLeftFieldZoneNotified = true
 			set q = QuestGiver_GetByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
-			if q != 0 then
-				call QuestMaster_ShowUpdateMessage(q.id, "|cffffcc00QUEST UPDATED|r\n" + q.title + "\n\n|cff80a0ffObjective updated:|r Return to " + GetAradionFieldZoneListText() + " to continue escorting Aradion and Valeria.")
-			endif
+			call ShowRiftsLeftFieldUpdate(q)
 		endif
 		set q = 0
 		return
 	endif
 	if RiftsLeftFieldZoneNotified then
-		set hero = ResolveDialogHero()
+		set q = QuestGiver_GetByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
+		set hero = GetRiftsTrackingHero()
 		call StartFieldCompanions(hero)
+		call ShowRiftsRejoinedFieldUpdate(q)
 		set hero = null
+		set q = 0
+	else
+		call ClearRiftsLeftBehindIcons()
 	endif
 	if RiftsAwaitingReturnHome then
 		set hero = ResolveDialogHero()
@@ -3991,12 +4146,12 @@ private function CreateQuests takes nothing returns nothing
 	call QuestGiver_RegisterItemRequirement(q.id, Aradion, 1, ITEM_WRAITH_ESSENCE, 10)
 
 	set q = QuestGiver_CreateQuest(QUEST_RIFTS_CORRUPTION, Aradion, "normal", 18, null)
-	call QuestGiver_ApplyQuestMetadata(q, "Rifts of Corruption", "ReplaceableTextures\\CommandButtons\\BTNDizzy.blp", "Find all rifts scattered around " + GetAradionFieldZoneListText() + " and escort Valeria and Aradion to them. Guard Aradion while he will close the rifts. Both Aradion and Valeria must stay alive.\n\n", infoText, info2Text, 15, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
+	call QuestGiver_ApplyQuestMetadata(q, "Rifts of Corruption", "ReplaceableTextures\\CommandButtons\\BTNDizzy.blp", GetRiftsFieldObjectiveText() + " and escort Valeria and Aradion to them. Guard Aradion while he will close the rifts. Both Aradion and Valeria must stay alive.\n\n", infoText, info2Text, 15, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
 	call q.setRewardParams(true, 0, true, 0, false, 0, true, 200, false)
 	call q.addRequiredCompletedQuest(QUEST_RANGER_MISSING, Aradion)
 	call q.addRequiredCompletedQuest(QUEST_CRYSTALS_HOPE, Aradion)
 	call q.addRequiredCompletedQuest(QUEST_FADING_SPARKS, Aradion)
-	call QuestGiver_SetRequirements(q.id, "", "Find all rifts scattered around " + GetAradionFieldZoneListText(), "Rifts closed 0 / 3", "Guard Aradion while he closes the rifts", "Both Aradion and Valeria must stay alive", "", "", "", "")
+	call QuestGiver_SetRequirements(q.id, "", GetRiftsFieldObjectiveText(), "Rifts closed 0 / 3", "Guard Aradion while he closes the rifts", "Both Aradion and Valeria must stay alive", "", "", "", "")
 
 	if ENABLE_TEST_QUESTS then
 		// Test Quest 1: Kill
