@@ -27,12 +27,13 @@
     call Companions_UnregisterControlled(unit controlledUnit)
     call Companions_IsControlled(unit controlledUnit) returns boolean
     call Companions_SetEscortBehavior(unit controlledUnit, boolean enabled)
+    call Companions_SetFollowerBehavior(unit controlledUnit, boolean enabled)
     call Companions_GetClassInfoText(unit controlledUnit) returns string
     call Companions_GetTypeInfoText(unit controlledUnit) returns string
     call Companions_GetAbilityInfoText(unit controlledUnit) returns string
 
 **/
-library Companions initializer Init requires QuestGiver, FollowSystem, IconQuery, Table, UnitDeathEvent, Reputation
+library Companions initializer Init requires QuestGiver, FollowSystem, IconQuery, Table, UnitDeathEvent, SpeciFX, Reputation
 
 globals
     constant integer COMPANION_MODE_DEFEND = 1
@@ -64,6 +65,16 @@ globals
     private constant integer COMPANION_PING_BLUE = 0
     private constant integer COMPANION_PROFILE_NORMAL = 0
     private constant integer COMPANION_PROFILE_ESCORT = 1
+    private constant integer COMPANION_PROFILE_FOLLOWER = 2
+    private constant boolean COMPANION_ENABLE_FOLLOWER_EFFECTS = true
+    private constant string COMPANION_EFFECT_STOPPED_PATH = "war3mapImported\\QuestMarking.mdl"
+    private constant string COMPANION_EFFECT_STOPPED_ATTACH = "origin"
+    private constant string COMPANION_EFFECT_FOLLOWING_PATH = "UI\\Feedback\\TargetPreSelected\\TargetPreSelected.mdl"
+    private constant string COMPANION_EFFECT_FOLLOWING_ATTACH = "origin"
+    private constant integer COMPANION_EFFECT_FOLLOWING_VISIBLE_ALPHA = 255
+    private constant integer COMPANION_EFFECT_FOLLOWING_HIDDEN_ALPHA = 0
+    private constant real COMPANION_EFFECT_FOLLOWING_VISIBLE_SCALE = 1.00
+    private constant real COMPANION_EFFECT_FOLLOWING_HIDDEN_SCALE = 0.001
 
     private constant integer ABIL_INVITE = 'A622'
     private constant integer ABIL_KICK = 'A621'
@@ -110,6 +121,8 @@ globals
     private Table CompanionRegistered = 0
     private Table CompanionTracked = 0
     private Table CompanionOrderProfile = 0
+    private Table CompanionStoppedEffect = 0
+    private Table CompanionFollowingEffect = 0
     private Table CompanionMapIconSlot = 0
     private Table CompanionPingCycle = 0
     private minimapicon array CompanionMapIcons
@@ -143,6 +156,8 @@ private function EnsureState takes nothing returns nothing
         set CompanionRegistered = Table.create()
         set CompanionTracked = Table.create()
         set CompanionOrderProfile = Table.create()
+        set CompanionStoppedEffect = Table.create()
+        set CompanionFollowingEffect = Table.create()
         set CompanionMapIconSlot = Table.create()
         set CompanionPingCycle = Table.create()
     endif
@@ -426,6 +441,119 @@ private function GetDistanceBetweenUnits takes unit a, unit b returns real
     return SquareRoot(dx * dx + dy * dy)
 endfunction
 
+private function CreateCompanionIndicatorEffect takes string effectPath, unit controlledUnit, string attachPoint returns effect
+    local effect sfx
+
+    if effectPath == "" or controlledUnit == null then
+        return null
+    endif
+
+    set sfx = AddSpecialEffectTarget(effectPath, controlledUnit, attachPoint)
+    if sfx != null then
+        call SpeciFX_MarkAsExcluded(sfx)
+    endif
+    return sfx
+endfunction
+
+private function DestroyCompanionStoppedEffect takes unit controlledUnit returns nothing
+    local integer unitId
+    local effect sfx
+
+    if controlledUnit == null or CompanionStoppedEffect == 0 then
+        return
+    endif
+
+    set unitId = GetHandleId(controlledUnit)
+    set sfx = CompanionStoppedEffect.effect[unitId]
+    if sfx != null then
+        call DestroyEffect(sfx)
+        call CompanionStoppedEffect.remove(unitId)
+    endif
+    set sfx = null
+endfunction
+
+private function HideCompanionFollowingEffect takes unit controlledUnit returns nothing
+    local integer unitId
+    local effect sfx
+
+    if controlledUnit == null or CompanionFollowingEffect == 0 then
+        return
+    endif
+
+    set unitId = GetHandleId(controlledUnit)
+    set sfx = CompanionFollowingEffect.effect[unitId]
+    if sfx != null then
+        call BlzSetSpecialEffectAlpha(sfx, COMPANION_EFFECT_FOLLOWING_HIDDEN_ALPHA)
+        call BlzSetSpecialEffectScale(sfx, COMPANION_EFFECT_FOLLOWING_HIDDEN_SCALE)
+    endif
+    set sfx = null
+endfunction
+
+private function ShowCompanionFollowingEffect takes unit controlledUnit returns nothing
+    local integer unitId
+    local effect sfx
+
+    if not COMPANION_ENABLE_FOLLOWER_EFFECTS or controlledUnit == null then
+        return
+    endif
+
+    call EnsureState()
+    set unitId = GetHandleId(controlledUnit)
+    set sfx = CompanionFollowingEffect.effect[unitId]
+    if sfx == null then
+        set sfx = CreateCompanionIndicatorEffect(COMPANION_EFFECT_FOLLOWING_PATH, controlledUnit, COMPANION_EFFECT_FOLLOWING_ATTACH)
+        set CompanionFollowingEffect.effect[unitId] = sfx
+    endif
+    if sfx != null then
+        call BlzSetSpecialEffectScale(sfx, COMPANION_EFFECT_FOLLOWING_VISIBLE_SCALE)
+        call BlzSetSpecialEffectAlpha(sfx, COMPANION_EFFECT_FOLLOWING_VISIBLE_ALPHA)
+    endif
+    set sfx = null
+endfunction
+
+private function DestroyCompanionFollowerEffects takes unit controlledUnit returns nothing
+    local integer unitId
+    local effect sfx
+
+    if controlledUnit == null or CompanionFollowingEffect == 0 then
+        return
+    endif
+
+    call DestroyCompanionStoppedEffect(controlledUnit)
+    set unitId = GetHandleId(controlledUnit)
+    set sfx = CompanionFollowingEffect.effect[unitId]
+    if sfx != null then
+        call HideCompanionFollowingEffect(controlledUnit)
+        call DestroyEffect(sfx)
+        call CompanionFollowingEffect.remove(unitId)
+    endif
+    set sfx = null
+endfunction
+
+private function SetCompanionFollowerEffectState takes unit controlledUnit, boolean stopped returns nothing
+    local integer unitId
+    local effect sfx
+
+    if not COMPANION_ENABLE_FOLLOWER_EFFECTS or controlledUnit == null then
+        return
+    endif
+
+    call EnsureState()
+    set unitId = GetHandleId(controlledUnit)
+    if stopped then
+        call HideCompanionFollowingEffect(controlledUnit)
+        set sfx = CompanionStoppedEffect.effect[unitId]
+        if sfx == null then
+            set sfx = CreateCompanionIndicatorEffect(COMPANION_EFFECT_STOPPED_PATH, controlledUnit, COMPANION_EFFECT_STOPPED_ATTACH)
+            set CompanionStoppedEffect.effect[unitId] = sfx
+        endif
+    else
+        call DestroyCompanionStoppedEffect(controlledUnit)
+        call ShowCompanionFollowingEffect(controlledUnit)
+    endif
+    set sfx = null
+endfunction
+
 private function ClearCompanionFarIcon takes unit controlledUnit returns nothing
     local integer unitId
     local integer iconSlot
@@ -483,11 +611,18 @@ private function PingCompanionIfReady takes unit controlledUnit returns nothing
 endfunction
 
 private function UpdateCompanionFarIcon takes unit controlledUnit, unit leader, real distance, integer mode returns nothing
-    if distance > GetModeDistance(mode) then
+    local boolean isFar = distance > GetModeDistance(mode)
+
+    if isFar or IconQuery_GetCategoryMode(ICONQUERY_CATEGORY_COMPANIONS_AND_FOLLOWERS) == ICONQUERY_CATEGORY_MODE_ALWAYS then
         call EnsureCompanionFarIcon(controlledUnit)
-        call PingCompanionIfReady(controlledUnit)
     else
         call ClearCompanionFarIcon(controlledUnit)
+    endif
+
+    if isFar then
+        call PingCompanionIfReady(controlledUnit)
+    else
+        call CompanionPingCycle.remove(GetHandleId(controlledUnit))
     endif
 endfunction
 
@@ -581,6 +716,7 @@ private function UpdateCompanionOrderUnit takes unit controlledUnit returns noth
     call FollowSystem_RemoveUnit(controlledUnit)
     if CompanionSuspended[unitId] == 1 then
         call ClearCompanionFarIcon(controlledUnit)
+        call DestroyCompanionFollowerEffects(controlledUnit)
         return
     endif
 
@@ -596,6 +732,7 @@ private function UpdateCompanionOrderUnit takes unit controlledUnit returns noth
     set customValue = GetUnitUserData(controlledUnit)
     if not IsAliveByCustomValue(controlledUnit, customValue) or not IsAliveUnit(leader) or leader == controlledUnit then
         call ClearCompanionFarIcon(controlledUnit)
+        call DestroyCompanionFollowerEffects(controlledUnit)
         set leader = null
         return
     endif
@@ -604,8 +741,26 @@ private function UpdateCompanionOrderUnit takes unit controlledUnit returns noth
     call UpdateCompanionFarIcon(controlledUnit, leader, distance, mode)
 
     if mode == COMPANION_MODE_HOLD then
+        if CompanionOrderProfile[unitId] == COMPANION_PROFILE_FOLLOWER then
+            call SetCompanionFollowerEffectState(controlledUnit, true)
+        else
+            call DestroyCompanionFollowerEffects(controlledUnit)
+        endif
         set leader = null
         return
+    endif
+
+    if CompanionOrderProfile[unitId] == COMPANION_PROFILE_FOLLOWER then
+        if distance > GetModeDistance(mode) then
+            call ClearOrderIdleState(controlledUnit, customValue)
+            call IssueImmediateOrder(controlledUnit, "stop")
+            call SetCompanionFollowerEffectState(controlledUnit, true)
+            set leader = null
+            return
+        endif
+        call SetCompanionFollowerEffectState(controlledUnit, false)
+    else
+        call DestroyCompanionFollowerEffects(controlledUnit)
     endif
 
     if IsUnitCastingByCustomValue(customValue) then
@@ -664,6 +819,7 @@ private function ApplyOrders takes unit companionUnit returns nothing
     if CompanionSuspended[unitId] == 1 then
         call FollowSystem_RemoveUnit(companionUnit)
         call ClearCompanionFarIcon(companionUnit)
+        call DestroyCompanionFollowerEffects(companionUnit)
         call IssueImmediateOrder(companionUnit, "stop")
         return
     endif
@@ -685,10 +841,16 @@ private function ApplyOrders takes unit companionUnit returns nothing
         else
             call ClearCompanionFarIcon(companionUnit)
         endif
+        if CompanionOrderProfile[unitId] == COMPANION_PROFILE_FOLLOWER then
+            call SetCompanionFollowerEffectState(companionUnit, true)
+        else
+            call DestroyCompanionFollowerEffects(companionUnit)
+        endif
         call IssueImmediateOrder(companionUnit, "holdposition")
     elseif IsAliveUnit(companionUnit) and IsAliveUnit(leader) and leader != companionUnit then
         if CompanionOrderProfile[unitId] == COMPANION_PROFILE_ESCORT then
             call ClearCompanionFarIcon(companionUnit)
+            call DestroyCompanionFollowerEffects(companionUnit)
             call FollowSystem_SetFollow(companionUnit, leader, GetModeDistance(mode), false, 0.00, GetModeFollowStyle(mode), true, true)
         else
             call FollowSystem_RemoveUnit(companionUnit)
@@ -697,6 +859,7 @@ private function ApplyOrders takes unit companionUnit returns nothing
     else
         call FollowSystem_RemoveUnit(companionUnit)
         call ClearCompanionFarIcon(companionUnit)
+        call DestroyCompanionFollowerEffects(companionUnit)
         call IssueImmediateOrder(companionUnit, "stop")
     endif
 
@@ -736,6 +899,7 @@ private function RemoveInternal takes unit companionUnit returns nothing
     set unitId = GetHandleId(companionUnit)
     call FollowSystem_RemoveUnit(companionUnit)
     call ClearCompanionFarIcon(companionUnit)
+    call DestroyCompanionFollowerEffects(companionUnit)
 
     if CompanionRegistered[unitId] == 1 or FindCompanionIndex(companionUnit) > 0 then
         call QuestGiver_RemoveCompanion(companionUnit)
@@ -757,6 +921,8 @@ private function RemoveInternal takes unit companionUnit returns nothing
     call CompanionRegistered.remove(unitId)
     call CompanionTracked.remove(unitId)
     call CompanionOrderProfile.remove(unitId)
+    call CompanionStoppedEffect.remove(unitId)
+    call CompanionFollowingEffect.remove(unitId)
     call DebugMsg("Remove " + GetUnitName(companionUnit))
 endfunction
 
@@ -812,9 +978,35 @@ private function SetEscortBehaviorInternal takes unit controlledUnit, boolean en
     if enabled then
         set CompanionOrderProfile[unitId] = COMPANION_PROFILE_ESCORT
         call ClearCompanionFarIcon(controlledUnit)
+        call DestroyCompanionFollowerEffects(controlledUnit)
     else
         set CompanionOrderProfile[unitId] = COMPANION_PROFILE_NORMAL
         call FollowSystem_RemoveUnit(controlledUnit)
+        call DestroyCompanionFollowerEffects(controlledUnit)
+    endif
+    call ApplyOrders(controlledUnit)
+endfunction
+
+private function SetFollowerBehaviorInternal takes unit controlledUnit, boolean enabled returns nothing
+    local integer unitId
+
+    if controlledUnit == null or GetUnitTypeId(controlledUnit) == 0 then
+        return
+    endif
+
+    call EnsureState()
+    call TrackExistingControlUnit(controlledUnit)
+    set unitId = GetHandleId(controlledUnit)
+    if CompanionTracked[unitId] == 0 then
+        return
+    endif
+
+    call FollowSystem_RemoveUnit(controlledUnit)
+    if enabled then
+        set CompanionOrderProfile[unitId] = COMPANION_PROFILE_FOLLOWER
+    elseif CompanionOrderProfile[unitId] == COMPANION_PROFILE_FOLLOWER then
+        set CompanionOrderProfile[unitId] = COMPANION_PROFILE_NORMAL
+        call DestroyCompanionFollowerEffects(controlledUnit)
     endif
     call ApplyOrders(controlledUnit)
 endfunction
@@ -1819,6 +2011,10 @@ public function SetEscortBehavior takes unit controlledUnit, boolean enabled ret
     call SetEscortBehaviorInternal(controlledUnit, enabled)
 endfunction
 
+public function SetFollowerBehavior takes unit controlledUnit, boolean enabled returns nothing
+    call SetFollowerBehaviorInternal(controlledUnit, enabled)
+endfunction
+
 public function Halt takes unit companionUnit returns nothing
     call SetSuspendedInternal(companionUnit, true)
 endfunction
@@ -1866,6 +2062,7 @@ public function UnregisterControlled takes unit controlledUnit returns nothing
     set unitId = GetHandleId(controlledUnit)
     call FollowSystem_RemoveUnit(controlledUnit)
     call ClearCompanionFarIcon(controlledUnit)
+    call DestroyCompanionFollowerEffects(controlledUnit)
     call CompanionLeader.remove(unitId)
     call CompanionMode.remove(unitId)
     call CompanionSuspended.remove(unitId)
@@ -1873,6 +2070,8 @@ public function UnregisterControlled takes unit controlledUnit returns nothing
     call CompanionRegistered.remove(unitId)
     call CompanionTracked.remove(unitId)
     call CompanionOrderProfile.remove(unitId)
+    call CompanionStoppedEffect.remove(unitId)
+    call CompanionFollowingEffect.remove(unitId)
 endfunction
 
 public function IsControlled takes unit controlledUnit returns boolean
