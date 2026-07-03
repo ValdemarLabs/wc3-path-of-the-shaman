@@ -43,6 +43,7 @@ globals
     private constant integer CONTROL_PLAYER_INDEX = 0
     private constant integer COMPANION_OWNER_INDEX = 18
     private constant integer REJECT_OWNER_INDEX = 1
+    private constant integer ELARINDOR_OWNER_INDEX = 15
     private constant real COMPANION_FOLLOW_DISTANCE = 2500.00
     private constant real COMPANION_AGGRESSIVE_DISTANCE = 3500.00
     private constant real COMPANION_IDLE_CHECK_INTERVAL = 10.00
@@ -82,6 +83,8 @@ globals
     private constant integer UNIT_ENGINEER = 'N64O'
     private constant integer UNIT_ENGINEER_SHREDDER = 'N661'
     private constant integer UNIT_PALADIN = 'H60Y'
+    private constant integer UNIT_ARADION = 'h00A'
+    private constant integer UNIT_VALERIA = 'n01W'
 
     private constant integer UNIT_GRUNT_1 = 'o62Y'
     private constant integer UNIT_GRUNT_5 = 'o634'
@@ -930,7 +933,7 @@ private function OnIdlePeriodic takes nothing returns nothing
 endfunction
 
 private function IsNamedCompanionType takes integer unitTypeId returns boolean
-    return unitTypeId == UNIT_ROGUE or unitTypeId == UNIT_WARLOCK or unitTypeId == UNIT_RIVERBANE_WARLOCK or unitTypeId == UNIT_SHAMAN or unitTypeId == UNIT_WARRIOR or unitTypeId == UNIT_ENGINEER or unitTypeId == UNIT_ENGINEER_SHREDDER or unitTypeId == UNIT_PALADIN
+    return unitTypeId == UNIT_ROGUE or unitTypeId == UNIT_WARLOCK or unitTypeId == UNIT_RIVERBANE_WARLOCK or unitTypeId == UNIT_SHAMAN or unitTypeId == UNIT_WARRIOR or unitTypeId == UNIT_ENGINEER or unitTypeId == UNIT_ENGINEER_SHREDDER or unitTypeId == UNIT_PALADIN or unitTypeId == UNIT_ARADION or unitTypeId == UNIT_VALERIA
 endfunction
 
 private function GetNamedCompanionIcon takes integer unitTypeId returns string
@@ -946,6 +949,10 @@ private function GetNamedCompanionIcon takes integer unitTypeId returns string
         return "ReplaceableTextures\\CommandButtons\\BTNHeroTinker.blp"
     elseif unitTypeId == UNIT_PALADIN then
         return "ReplaceableTextures\\CommandButtons\\BTNHeroPaladin.blp"
+    elseif unitTypeId == UNIT_ARADION then
+        return "ReplaceableTextures\\CommandButtons\\BTNHeroBloodElfPrince.blp"
+    elseif unitTypeId == UNIT_VALERIA then
+        return "ReplaceableTextures\\CommandButtons\\BTNHighElvenArcher.blp"
     endif
     return ""
 endfunction
@@ -957,6 +964,8 @@ private function GetReturnOwner takes integer unitTypeId returns player
         return Player(6)
     elseif unitTypeId == UNIT_PALADIN or unitTypeId == UNIT_RIVERBANE_WARLOCK then
         return Player(14)
+    elseif unitTypeId == UNIT_ARADION or unitTypeId == UNIT_VALERIA then
+        return Player(ELARINDOR_OWNER_INDEX)
     endif
     return null
 endfunction
@@ -1334,6 +1343,10 @@ private function GetUnitTypeInfoName takes integer unitTypeId returns string
         return "Engineer"
     elseif unitTypeId == UNIT_PALADIN then
         return "Paladin"
+    elseif unitTypeId == UNIT_ARADION then
+        return "Farseer"
+    elseif unitTypeId == UNIT_VALERIA then
+        return "Ranger"
     elseif unitTypeId == UNIT_GRUNT_1 or unitTypeId == UNIT_GRUNT_5 or unitTypeId == UNIT_GRUNT_10 or unitTypeId == UNIT_GRUNT_15 or unitTypeId == UNIT_GRUNT_20 or unitTypeId == UNIT_GRUNT_25 then
         return "Grunt"
     elseif unitTypeId == UNIT_MARAUDER_1 or unitTypeId == UNIT_MARAUDER_5 then
@@ -1370,6 +1383,8 @@ private function GetFactionInfoText takes unit target returns string
         return "Tamed Beast"
     elseif target == udg_Shadowclaw then
         return "Shadowclaw"
+    elseif target == udg_Aradion or target == udg_Valeria or unitTypeId == UNIT_ARADION or unitTypeId == UNIT_VALERIA then
+        return "Elarindor"
     elseif unitTypeId == UNIT_ENGINEER or unitTypeId == UNIT_ENGINEER_SHREDDER then
         return "Goblins"
     elseif unitTypeId == UNIT_PALADIN or unitTypeId == UNIT_RIVERBANE_WARLOCK then
@@ -1470,6 +1485,10 @@ private function GetAbilityInfoText takes unit target returns string
         return "Shred, Charge, Slam, Cluster Rockets, Smoke Bomb"
     elseif unitTypeId == UNIT_PALADIN then
         return "Divine Shield, Holy Light, Inner Fire, Judgement Strike, Lay on Hands"
+    elseif unitTypeId == UNIT_ARADION then
+        return "Quest companion abilities, rift closing, support spells"
+    elseif unitTypeId == UNIT_VALERIA then
+        return "Ranger attacks, Cold Arrows, quest companion abilities"
     elseif target == udg_Shadowclaw then
         return "Initial pet rules, scaled stats, pet inventory, fatigue, revive"
     elseif udg_TamedUnits != null and IsUnitInGroup(target, udg_TamedUnits) then
