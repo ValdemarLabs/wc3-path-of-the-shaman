@@ -200,7 +200,10 @@ library ItemLootDestructibles initializer Init requires ItemLootSystem, Destruct
             
             if CanDropAtLocation(dropX, dropY) then
                 set it = CreateItem(itemType, dropX, dropY)
-                set dropIndex = dropIndex + 1
+                if it != null then
+                    call ItemLoot_CreateFloatingText(it, -1)
+                    set dropIndex = dropIndex + 1
+                endif
             endif
             
             set i = i + 1
