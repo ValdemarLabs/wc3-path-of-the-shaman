@@ -454,6 +454,24 @@ private function BuildZoneName takes string zoneName, string zoneColor returns s
     return zoneColor + zoneName + COLOR_END
 endfunction
 
+private function AddUnitsFromGroupToMoveGroup takes group sourceGroup, group targetGroup returns nothing
+    if sourceGroup != null and targetGroup != null then
+        call GroupAddGroup(sourceGroup, targetGroup)
+    endif
+endfunction
+
+private function AddUnitToMoveGroup takes group targetGroup, unit whichUnit returns nothing
+    if targetGroup != null and whichUnit != null and GetUnitTypeId(whichUnit) != 0 then
+        call GroupAddUnit(targetGroup, whichUnit)
+    endif
+endfunction
+
+private function AddControlledUnitsToMoveGroup takes group targetGroup returns nothing
+    call AddUnitsFromGroupToMoveGroup(udg_Companion_Group, targetGroup)
+    call AddUnitsFromGroupToMoveGroup(udg_TamedUnits, targetGroup)
+    call AddUnitToMoveGroup(targetGroup, udg_TamedUnit)
+endfunction
+
 //======================================================
 // Zone - MoveStart Handler
 // Move unit to startRegion and issue move to moveRegion
@@ -506,8 +524,7 @@ private function MoveStart takes ZoneData z, unit enteringUnit returns nothing
 
     // Move all companions and tamed units (IF ALIVE) using ONE tempGroup
     set tempGroup = CreateGroup()
-    call GroupAddGroup(udg_Companion_Group, tempGroup)
-    call GroupAddGroup(udg_TamedUnits, tempGroup)
+    call AddControlledUnitsToMoveGroup(tempGroup)
     // PLACEHOLDER; player other units/heroes
     ///////////////////////////////
 
@@ -641,8 +658,7 @@ private function MoveOut takes nothing returns nothing
 
     // Move all companions and tamed units (IF ALIVE) using ONE tempGroup
     set tempGroup = CreateGroup()
-    call GroupAddGroup(udg_Companion_Group, tempGroup)
-    call GroupAddGroup(udg_TamedUnits, tempGroup)
+    call AddControlledUnitsToMoveGroup(tempGroup)
     // PLACEHOLDER; player other units/heroes
     ///////////////////////////////
 
