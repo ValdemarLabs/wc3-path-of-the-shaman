@@ -189,6 +189,16 @@ library IconQuery initializer Init requires Table
         return u != null and GetUnitTypeId(u) != 0 and not IsUnitType(u, UNIT_TYPE_DEAD)
     endfunction
 
+    private function IQ_IsUnitValidForCategory takes unit u, integer category returns boolean
+        if u == null or GetUnitTypeId(u) == 0 then
+            return false
+        endif
+        if category == ICONQUERY_CATEGORY_COMPANIONS_AND_FOLLOWERS then
+            return true
+        endif
+        return IQ_IsUnitValid(u)
+    endfunction
+
     private function IQ_GetPingRed takes integer style, integer category returns integer
         if style == bj_CAMPPINGSTYLE_BOSS or style == bj_CAMPPINGSTYLE_CONTROL_ENEMY or style == bj_CAMPPINGSTYLE_PRIMARY_RED then
             return 255
@@ -346,7 +356,7 @@ library IconQuery initializer Init requires Table
         if IQ_EntryIcon[entryIndex] == null then
             return false
         endif
-        if IQ_EntryUsesUnit[entryIndex] and not IQ_IsUnitValid(IQ_EntryUnit[entryIndex]) then
+        if IQ_EntryUsesUnit[entryIndex] and not IQ_IsUnitValidForCategory(IQ_EntryUnit[entryIndex], category) then
             return false
         endif
         return true
@@ -785,7 +795,7 @@ library IconQuery initializer Init requires Table
     endfunction
 
     public function RegisterUnitIcon takes unit u, integer category, integer style, boolean enablePing returns minimapicon
-        if not IQ_IsUnitValid(u) then
+        if not IQ_IsUnitValidForCategory(u, category) then
             return null
         endif
         return IQ_AddEntry(IQ_CreateUnitIcon(u, style), u, true, 0.00, 0.00, category, style, enablePing)
