@@ -1,6 +1,6 @@
 # AI Master Plan
 
-Last updated: 2026-07-03
+Last updated: 2026-07-04
 
 This document is the required planning artifact before creating `AI.j` and the
 AI sublibraries. It records how the old GUI AI triggers in
@@ -179,6 +179,12 @@ function AI_GetClassId takes unit whichUnit returns integer
 function AI_SetClassCap takes integer classId, integer cap returns nothing
 function AI_SetProfileCap takes integer profileId, integer cap returns nothing
 function AI_SetUnitTypeCap takes integer unitTypeId, integer cap returns nothing
+function AI_SetProfileAutonomous takes integer profileId, boolean enabled returns nothing
+function AI_SetProfileSpawnOwner takes integer profileId, player owner returns nothing
+function AI_AddRandomSpawnProfile takes integer profileId returns nothing
+function AI_SetRandomSpawnHardCap takes integer cap returns nothing
+function AI_SetRandomSpawnActiveCap takes integer cap returns nothing
+function AI_SpawnRandomHero takes boolean showMessage returns unit
 function AI_StartTravel takes unit whichUnit, real duration, real returnX, real returnY returns nothing
 function AI_ReturnFromTravel takes unit whichUnit returns nothing
 function AI_RequestBark takes unit speaker, integer barkType returns boolean
@@ -216,9 +222,46 @@ Store at minimum:
 - revive deadline or revive timer handle id;
 - spawn/home/retreat/shop point indexes;
 - active cap counters for class/profile/unit type/unique id.
+- random-managed spawn flags and cap-hidden flags for units created by the
+  random AI population manager.
 
 Use a small active-instance array for iteration. Do not enumerate all possible
 handle ids.
+
+## Random Spawn Manager
+
+`AI.j` owns random AI hero spawning instead of recreating the old singleton GUI
+create triggers.
+
+Implemented behavior:
+
+- first-wave Warrior, Rogue, Warlock, Restoshaman, Paladin, and normal Engineer
+  profiles opt into the random spawn pool;
+- random spawn points come from `AI_LegacyLocations.j` profile spawn rects, with
+  a playable-map fallback if a profile has no registered spawn points;
+- random spawns use profile-specific owners matching old GUI intent where known:
+  Horde profiles use Player 2, Riverbane Paladin uses Player 15, and Neutral
+  Engineer uses Player 7;
+- successful random world entries are announced with the profile name;
+- `/debug aispawn` and legacy `aispawn` on Player 1 call the same random spawn
+  path for testing.
+
+Caps are separated from normal AI registration:
+
+- hard random cap limits how many random-managed AI instances can exist at once;
+- active random cap limits how many random-managed AI heroes may be visible and
+  active at once;
+- class/profile/unit-type/unique caps still apply through the normal registry;
+- quest, cinematic, and manually registered unique AI are not counted against
+  random-managed hard/active caps unless they were spawned through this manager.
+
+When the active random cap is full:
+
+- new random spawn attempts stop instead of creating another unit;
+- a returning traveled or revived random-managed unit remains hidden/paused if
+  there is no visible slot;
+- the travel timer periodically tries to unhide one cap-hidden random-managed
+  unit when visible capacity opens.
 
 ## Common AI States
 
@@ -355,6 +398,7 @@ Use a shared chatter helper that:
 Old chat event types to preserve:
 
 - greet;
+- farewell;
 - passive;
 - normal;
 - aggressive;
@@ -369,12 +413,32 @@ Old chat event types to preserve:
 - idle;
 - moving.
 
+Current sound-data handling:
+
+- Profile `RegisterBarks` functions own the standard/event bark variations for
+  commands, combat, item events, idle, moving, death, and similar short
+  reactions. They should not register long `Hero*_Chat...` conversation tables.
+- First-wave Warrior, Rogue, Warlock, Restoshaman, Paladin, and Engineer bark
+  text is migrated from `AI/Voicelines/AI_Voicelines.ods` into
+  `AI_Voicelines.j`.
+- `AI_Voicelines.j` registers long idle/moving chat tables and paired companion
+  reply text through `DialogSystem` / `ExSound` keys, and may refresh standard
+  bark text from ODS-backed data when imported after the profile libraries.
+- Chat rows are only registered when the primary and reply sound keys exist in
+  `ExSound.j`; ODS-only text without an imported sound remains documented data,
+  not live runtime bark data.
+
 Known sound-data issue:
 
+- `HeroRogue_ChatGeneral3` and `HeroRogue_ChatPaladin4` have ODS text but no
+  primary ExSound registration, so they are not registered as live AI chatter.
 - `HeroPaladin_ChatGeneral6Engineer` and
   `HeroPaladin_ChatGeneral7Engineer` were referenced by old chat exports but
-  were not found in `ExSound.j`. Add registrations or remap these lines before
-  enabling the migrated Paladin/Engineer conversation table.
+  were not found in `ExSound.j`. The migrated runtime skips those two Engineer
+  replies until matching ExSound registrations/assets exist.
+- `HeroWarlock_ChatGeneral3Warlock` has ODS reply text for a same-profile
+  Warlock response but no ExSound registration. Same-profile replies remain
+  skipped unless matching sound assets are added.
 
 ## Boss Fight And Boss Casting Behavior
 
@@ -405,21 +469,27 @@ Implementation default:
 - keep the AI instance active for cap purposes;
 - do not auto-travel units currently in `udg_Companion_Group` unless a profile
   explicitly allows it;
-- on return, unhide/unpause, restore state, and issue a sensible home/wander
-  order.
+- on return, unhide/unpause and restore idle state only if the active random cap
+  has room;
+- if the active random cap is full, keep the returning random-managed unit hidden
+  and paused until the travel timer finds capacity.
 
 ## Valeria
 
-Valeria should receive an opt-in `AI_Valeria` profile for smarter combat
-behavior, including retreat-like movement, random repositioning, and defensive
-logic. This profile must not override active `qAradion` encounter control.
+Valeria has an `AI_Valeria` profile for smarter combat behavior, including
+retreat-like movement and defensive logic. This profile must not override active
+`qAradion` encounter control.
 
 Implementation rule:
 
-- `qAradion` or the owning quest/encounter code should explicitly enable or
-  disable Valeria AI behavior when needed;
-- generic AI registration should not silently take over Valeria if the encounter
-  is in a scripted phase.
+- `AI_Valeria` periodically registers `udg_Valeria` when the global unit exists;
+- the Valeria profile is marked non-autonomous through `AI_SetProfileAutonomous`
+  so it can run combat think logic without shared wander/shop/camp/travel;
+- `qAradion` or a future `qValeria` can still call `AI_Valeria_Enable` or
+  `AI_Valeria_Disable` explicitly when a scripted phase needs to refresh control;
+- explicit `AI_Valeria_Disable` suspends the auto-enable timer until
+  `AI_Valeria_Enable` is called again;
+- generic AI registration must not put Valeria into the random spawn pool.
 
 ## Sublibrary Plan
 
@@ -477,9 +547,11 @@ item use, shared retreat, shared death/revival, and shared chatter dispatch.
    before long idle/moving conversation tables.
 7. Add first-wave class sublibraries in this order: Warrior, Rogue, Warlock,
    Restoshaman, Paladin, Engineer, Valeria.
-8. Add boss fight and boss-cast evade API.
-9. Add travel API.
-10. Migrate or disable old GUI AI triggers only after parity tests pass.
+8. Add `AI_CompanionReplies.j` and `AI_Voicelines.j` after the first-wave
+   profiles so ODS text updates existing bark/reply sound-key registrations.
+9. Add boss fight and boss-cast evade API.
+10. Add travel API.
+11. Migrate or disable old GUI AI triggers only after parity tests pass.
 
 ## Test Plan
 
@@ -498,6 +570,10 @@ Instance/cap tests:
   chatter cooldowns;
 - verify class/profile/unit-type caps block only the intended spawns;
 - verify unique-id cap keeps named units unique.
+- verify `/debug aispawn` uses the random profile pool and respects both hard
+  random cap and active random cap.
+- verify traveled or revived random-managed AI stay hidden when the active cap
+  is full and return when capacity opens.
 
 Behavior parity tests:
 
@@ -525,7 +601,8 @@ Special tests:
 - boss fight suppresses normal low-health retreat;
 - boss cast abilities trigger evade;
 - travel hides and returns units without losing state;
-- Valeria AI only runs when explicitly enabled and does not break `qAradion`;
+- Valeria AI can remain registered during patrol without taking over patrol or
+  `qAradion` scripted movement;
 - old AI stutter from many periodic triggers is not reproduced.
 
 ## Open Decisions For Later Implementation
@@ -539,4 +616,3 @@ Special tests:
   treated as unavailable.
 - Decide which boss systems will call `AI_SetBossFightActive` and
   `AI_HandleBossCast`.
-
