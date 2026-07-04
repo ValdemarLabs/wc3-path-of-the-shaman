@@ -1147,17 +1147,10 @@ private function SUI_ReturnAction takes nothing returns nothing
 endfunction
 
 private function SUI_AbilitiesAction takes nothing returns nothing
-    local player p = GetTriggerPlayer()
-
     if SUI_IsTrackedUnit(SUI_SelectedUnit) then
-        if Pet_IsPetUnit(SUI_SelectedUnit) or SUI_IsTrackedCompanion(SUI_SelectedUnit) or Companions_IsControlled(SUI_SelectedUnit) then
-            call DisplayTextToPlayer(p, 0.00, 0.00, "|cFF7EBFF1Abilities:|r " + SUI_GetUnitAbilitiesText(SUI_SelectedUnit))
-        endif
         call Hide()
         call AbilitiesLiteUI_ShowForUnit(SUI_SelectedUnit)
     endif
-
-    set p = null
 endfunction
 
 private function SUI_RowAction takes nothing returns nothing
