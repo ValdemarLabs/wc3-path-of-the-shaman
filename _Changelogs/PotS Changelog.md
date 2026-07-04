@@ -15,6 +15,44 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [4.7.2026]
+
+### Player-Facing Updates
+- `AI heroes`
+  Began the large AI hero migration from old GUI trigger trees into JASS libraries. AI heroes can now be managed as independent instances instead of being limited to one singleton Warrior, Rogue, Warlock, Shaman, Paladin, or Engineer global.
+  Added random AI hero spawning through the new AI registry, including the debug chat command `/debug aispawn`.
+  Added random AI travel support where AI heroes can temporarily leave the map by being hidden/paused and later return without losing their registered unit handle or AI state.
+  Added hard random-spawn and active-visible caps so random AI heroes stop spawning when the population cap is full, and returning/revived random AI heroes stay hidden if the active cap has no open slot.
+  Valeria can now use the `AI_Valeria` combat profile while still allowing patrol and quest scripts such as `qAradion` to own scripted movement.
+
+### Technical Updates
+- `AI.j`
+  Created the master JASS AI registry/state engine for class/profile/unit-type/unique identity, per-instance Table state, caps, spawning, random spawning, travel, revive/death handling, companion-aware behavior gates, consumables, shared ability helpers, boss-cast evade hooks, and ExSound/DialogSystem chatter dispatch.
+  Replaced old singleton-driven AI assumptions such as `udg_NPC_Horde_AI_Warrior` with registry lookups, profile/class/unit-type caps, and optional unique ids for named special units.
+  Added a random-managed population layer separate from normal quest/cinematic AI registrations, so random AI caps do not hide or block manually registered unique AI units.
+- `AI_*` sublibraries
+  Created the first-wave AI class/profile libraries for Warrior, Rogue, Warlock, Restoshaman, Paladin, Engineer, and Valeria.
+  Moved class-specific combat decisions, ability pools, starting abilities, bark registrations, Warlock imp ownership, Shaman totem ownership, Engineer/Shredder behavior, and Valeria retreat-like combat behavior out of GUI patterns and into profile sublibraries.
+  Added `AI_LegacyLocations.j` for old GUI spawn, retreat, and shop location bindings, keeping map-specific generated rect/unit globals out of the class logic.
+  Added `AI_CompanionReplies.j`, `AI_Voicelines.j`, and the ODS-backed voiceline import data for AI barks, long idle/moving chats, companion replies, and ExSound/DialogSystem migration.
+- `Companions.j`
+  Added a companion command-event bridge so AI libraries can react to invite, kick, mode changes, and drop-items commands with profile bark logic instead of relying on old GUI chat triggers.
+- `World Editor trigger cleanup`
+  Disabled the old AI GUI triggers in the `AI Wandering` folder now that the JASS AI libraries own the replacement behavior path.
+  Deleted the obsolete `CAMERA SYSTEMS OLD` folder and its old trigger set.
+  Removed old camera command trigger usage for `trailer1`, `trailer1snow`, and `trailer2`.
+- `AI_MasterPlan.md`
+  Updated the AI migration plan to document the implemented random spawn manager, active/hard random caps, random travel return behavior, Valeria non-autonomous profile mode, and current AI test expectations.
+
+### Known Issues
+- Full in-map JASS compile and runtime validation are still required for the new AI library stack, especially random spawning, multiple same-profile AI instances, companion invite/kick/mode barks, Warlock imp ownership, Shaman totem ownership, Valeria/qAradion control handoff, and old GUI trigger retirement.
+- `TravelShipB Moknatha Enter` may still reference old camera behavior. It should stop using deleted old camera triggers and route ship-enter camera behavior through `CameraControl`.
+
+### Actions Remaining
+- Re-test `/debug aispawn`, timed random AI spawning, active/hard caps, cap-hidden returns, travel returns, death/revival, companion commands, ExSound bark playback, and multi-instance Warrior/Rogue/Warlock/Shaman/Paladin/Engineer behavior in-game.
+- Update `TravelShipB Moknatha Enter` so the camera can target the travel ship when appropriate, but still switch back to Zulkis or Nazgrek when they are not considered inside the ship.
+- Confirm no old `AI Wandering` GUI trigger path remains enabled after the new JASS AI libraries are imported and wired into the map build.
+
 ## [3.7.2026]
 
 ### Player-Facing Updates
