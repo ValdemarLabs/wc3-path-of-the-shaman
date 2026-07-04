@@ -1,4 +1,4 @@
-library UnitExperience initializer Init requires Table, UnitDeathEvent
+library UnitExperience initializer Init requires Table, UnitDeathEvent, PetDefinitions
 /*
     UnitExperience
     Version: 3.0
@@ -30,35 +30,6 @@ globals
     private constant real       RANGE_SQ                = RANGE * RANGE
     private constant integer    XP_BASE                 = 200
     private constant integer    XP_FACTOR               = 150
-
-    // Unit-type constants - MODIFY AS NEEDED
-    private constant integer    SHADOWCLAW              = 'n655' // Special handling for unit-type Shadowclaw
-    // Turtles
-    private constant integer    GIANTSEATURTLE          = 'nrtg'
-    private constant integer    GIANTSEATURTLE_15       = 'n01G'
-    private constant integer    GARGSEATURTLE           = 'ntrt'
-    private constant integer    SEATURTLE               = 'ntrs'
-    private constant integer    SEATURTLE_10            = 'n01F'
-    private constant integer    SEATURTLEHATCH          = 'ntrh'
-
-    // Tigers, panthers
-    private constant integer    TIGER_2                 = 'n61P'
-    private constant integer    TIGER_10                = 'n017'
-    private constant integer    TIGER_15                = 'n018'
-
-
-    // Wolves
-    private constant integer    TIMBERWOLF              = 'nwlt'
-    private constant integer    DIREWOLF                = 'nwld'
-    private constant integer    GIANTWOLF               = 'nwlg'
-
-    // Bears
-    private constant integer    BEARCLUB                = 'ngz1'
-    private constant integer    BEAR                    = 'ngz2'
-    private constant integer    FEROBEAR                = 'ngza'
-
-    // Add more unit-type constants as needed...
-    //private constant integer    XXX                = 'xxxx'
 
     private Table xp
     private Table level
@@ -181,74 +152,17 @@ endstruct
  * @return StatProfile for the unit type
 */
 private function GetStatProfile takes integer unitTypeId returns StatProfile
-    // TANK UNITS - High HP, Armor, Block, Dodge. Low Damage.
-    if unitTypeId == GIANTSEATURTLE then
+    if PetDefinitions_IsTankStatType(unitTypeId) then
         return StatProfile.createTank()
-    elseif unitTypeId == GIANTSEATURTLE_15 then
-        return StatProfile.createTank()
-    elseif unitTypeId == GARGSEATURTLE then
-        return StatProfile.createTank()        
-    elseif unitTypeId == SEATURTLE then
-        return StatProfile.createTank()   
-    elseif unitTypeId == SEATURTLE_10 then
-        return StatProfile.createTank()           
-    elseif unitTypeId == SEATURTLEHATCH then
-        return StatProfile.createTank()  
-
-    // Add more tank units here:
-    // elseif unitTypeId == TURTLE2 then
-    //     return StatProfile.createTank()
-    // elseif unitTypeId == STONEGOLEM the
-    //     return StatProfile.createTank()
-    
-    // DAMAGE UNITS - High Crit, Damage, Hit. Low HP/Armor.
-    elseif unitTypeId == TIGER_2 then
+    elseif PetDefinitions_IsDamageStatType(unitTypeId) then
         return StatProfile.createDamage()
-    elseif unitTypeId == TIGER_10 then
-        return StatProfile.createDamage()
-    elseif unitTypeId == TIGER_15 then
-        return StatProfile.createDamage()
-
-    // Add more damage units here:
-    // elseif unitTypeId == PANTHER then
-    //     return StatProfile.createDamage()
-    // elseif unitTypeId == PANTHER2 then 
-    //     return StatProfile.createDamage()
-    
-    // BALANCED UNITS - Balanced stats, focus on Dodge and Hit
-    elseif unitTypeId == TIMBERWOLF then
+    elseif PetDefinitions_IsBalancedStatType(unitTypeId) then
         return StatProfile.createBalanced()
-    elseif unitTypeId == DIREWOLF then
-        return StatProfile.createBalanced()
-    elseif unitTypeId == GIANTWOLF then
-        return StatProfile.createBalanced()
-
-    // Add more balanced units here:
-    // elseif unitTypeId == WOLF2 then 
-    //     return StatProfile.createBalanced()
-    // elseif unitTypeId == WOLF3 then 
-    //     return StatProfile.createBalanced()
-    
-    // BRUISER UNITS - High HP, Damage, moderate defense
-    elseif unitTypeId == BEAR then
+    elseif PetDefinitions_IsBruiserStatType(unitTypeId) then
         return StatProfile.createBruiser()
-    elseif unitTypeId == BEARCLUB then
-        return StatProfile.createBruiser()
-    elseif unitTypeId == FEROBEAR then
-        return StatProfile.createBruiser()
-
-    // Add more bruiser units here:
-    // elseif unitTypeId == BEAR2 then 
-    //     return StatProfile.createBruiser()
-    // elseif unitTypeId == BEAR3 then
-    //     return StatProfile.createBruiser()
-
-    // Create more profiles as needed...
-    
-    // DEFAULT - Generic balanced profile for unlisted unit types
-    else
-        return StatProfile.createGeneric()
     endif
+
+    return StatProfile.createGeneric()
 endfunction
 
 //===================== INTERNAL UTILS =====================
@@ -509,7 +423,7 @@ private function UnitDeathHandler takes nothing returns nothing
         //endif
 
         // Remove registered unit from system when it dies (except Shadowclaw)
-        if GetUnitTypeId(dying) != SHADOWCLAW then
+        if not PetDefinitions_IsShadowclawType(GetUnitTypeId(dying)) then
             call DeregisterUnit(dying)
         endif
         

@@ -12,7 +12,7 @@
     and Shadowclaw rules.
 
 **/
-library Pet initializer Init requires Table, Companions, UnitExperience, DamageEngine, FloatingTextSimple
+library Pet initializer Init requires Table, Companions, UnitExperience, DamageEngine, FloatingTextSimple, PetDefinitions
 
 globals
     private constant boolean DEBUG = false
@@ -34,53 +34,13 @@ globals
     private constant integer ABIL_INVENTORY_HERO = 'AInv'
     private constant integer ABIL_WANDER_NEUTRAL = 'Awan'
 
-    private constant integer UNIT_SHADOWCLAW = 'n655'
-    private constant integer UNIT_PIG_5 = 'n63C'
-    private constant integer UNIT_PIG_10 = 'n63U'
-    private constant integer UNIT_TIMBER_WOLF = 'nwlt'
-    private constant integer UNIT_GIANT_WOLF = 'nwlg'
-    private constant integer UNIT_DIRE_WOLF = 'nwld'
-    private constant integer UNIT_STAG_1 = 'nder'
-    private constant integer UNIT_STAG_5 = 'n63A'
-    private constant integer UNIT_STAG_10 = 'n63B'
-    private constant integer UNIT_BEAR_CUB = 'ngz1'
-    private constant integer UNIT_BEAR = 'ngz2'
-    private constant integer UNIT_MOTHER_BEAR = 'ngz4'
-    private constant integer UNIT_FEROCIOUS_BEAR = 'ngza'
-    private constant integer UNIT_PANTHER_CUB = 'n61O'
-    private constant integer UNIT_PANTHER_10 = 'n016'
-    private constant integer UNIT_PANTHER_15 = 'n015'
-    private constant integer UNIT_TIGER_2 = 'n61P'
-    private constant integer UNIT_TIGER_10 = 'n017'
-    private constant integer UNIT_TIGER_15 = 'n018'
-    private constant integer UNIT_SEA_TURTLE_10 = 'n01F'
-    private constant integer UNIT_GIANT_SEA_TURTLE_15 = 'n01G'
-    private constant integer UNIT_GIANT_MOTH_12 = 'n00V'
-    private constant integer UNIT_LYNX_5 = 'n63M'
-
-    private constant integer ITEM_RAW_WOLF = 'I61O'
-    private constant integer ITEM_RAW_STAG = 'I61P'
-    private constant integer ITEM_RAW_BEAR = 'I61Q'
-    private constant integer ITEM_RAW_LIZARD = 'I61R'
-    private constant integer ITEM_RAW_HAWK = 'I61S'
-    private constant integer ITEM_RAW_MURLOC = 'I61T'
-    private constant integer ITEM_RAW_TURTLE = 'I61U'
-    private constant integer ITEM_RAW_TIGER = 'I61V'
-    private constant integer ITEM_RAW_PANTHER = 'I61W'
-    private constant integer ITEM_RAW_RAPTOR = 'I61X'
-    private constant integer ITEM_RAW_SNAKE = 'I61Y'
-    private constant integer ITEM_RAW_MAKRURA = 'I61Z'
-    private constant integer ITEM_RAW_BOAR = 'I620'
-    private constant integer ITEM_RAW_CRAWLER = 'I621'
-    private constant integer ITEM_RAW_RABBIT = 'I622'
-    private constant integer ITEM_RAW_COW = 'I623'
-
     private Table TameTarget = 0
     private Table TameTimer = 0
     private Table TameTimerCaster = 0
     private Table TameReady = 0
     private Table TameAbility = 0
     private Table FreezeTimerUnit = 0
+    private Table PetPersistent = 0
 
     private group PetEnumGroup = null
     private unit FoundShadowclaw = null
@@ -105,6 +65,7 @@ private function EnsureState takes nothing returns nothing
         set TameReady = Table.create()
         set TameAbility = Table.create()
         set FreezeTimerUnit = Table.create()
+        set PetPersistent = Table.create()
     endif
     if PetEnumGroup == null then
         set PetEnumGroup = CreateGroup()
@@ -126,6 +87,31 @@ private function EnsurePetGroup takes nothing returns nothing
     if udg_TamedUnits == null then
         set udg_TamedUnits = CreateGroup()
     endif
+endfunction
+
+private function IsPersistentTameAbility takes integer abilityId returns boolean
+    return abilityId == ABIL_TAME_III
+endfunction
+
+private function SetPetPersistent takes unit pet, boolean persistent returns nothing
+    if pet == null or PetPersistent == 0 then
+        return
+    endif
+    if persistent or pet == udg_Shadowclaw then
+        set PetPersistent[GetHandleId(pet)] = 1
+    else
+        call PetPersistent.remove(GetHandleId(pet))
+    endif
+endfunction
+
+private function IsPersistentPet takes unit pet returns boolean
+    if pet == null then
+        return false
+    endif
+    if pet == udg_Shadowclaw then
+        return true
+    endif
+    return PetPersistent != 0 and PetPersistent[GetHandleId(pet)] == 1
 endfunction
 
 private function GetPreferredLeader takes unit caster returns unit
@@ -190,55 +176,11 @@ private function GetTameMaxLevel takes integer abilityId returns integer
 endfunction
 
 private function IsTameableType takes integer unitTypeId returns boolean
-    return unitTypeId == UNIT_PIG_5 or unitTypeId == UNIT_PIG_10 or unitTypeId == UNIT_TIMBER_WOLF or unitTypeId == UNIT_GIANT_WOLF or unitTypeId == UNIT_DIRE_WOLF or unitTypeId == UNIT_STAG_1 or unitTypeId == UNIT_STAG_5 or unitTypeId == UNIT_STAG_10 or unitTypeId == UNIT_BEAR_CUB or unitTypeId == UNIT_BEAR or unitTypeId == UNIT_MOTHER_BEAR or unitTypeId == UNIT_FEROCIOUS_BEAR or unitTypeId == UNIT_PANTHER_CUB or unitTypeId == UNIT_PANTHER_10 or unitTypeId == UNIT_PANTHER_15 or unitTypeId == UNIT_TIGER_2 or unitTypeId == UNIT_TIGER_10 or unitTypeId == UNIT_TIGER_15 or unitTypeId == UNIT_SEA_TURTLE_10 or unitTypeId == UNIT_GIANT_SEA_TURTLE_15 or unitTypeId == UNIT_GIANT_MOTH_12 or unitTypeId == UNIT_LYNX_5
+    return PetDefinitions_IsTameableType(unitTypeId)
 endfunction
 
 private function IsRawMeat takes integer itemTypeId returns boolean
-    return itemTypeId == ITEM_RAW_WOLF or itemTypeId == ITEM_RAW_STAG or itemTypeId == ITEM_RAW_BEAR or itemTypeId == ITEM_RAW_LIZARD or itemTypeId == ITEM_RAW_HAWK or itemTypeId == ITEM_RAW_MURLOC or itemTypeId == ITEM_RAW_TURTLE or itemTypeId == ITEM_RAW_TIGER or itemTypeId == ITEM_RAW_PANTHER or itemTypeId == ITEM_RAW_RAPTOR or itemTypeId == ITEM_RAW_SNAKE or itemTypeId == ITEM_RAW_MAKRURA or itemTypeId == ITEM_RAW_BOAR or itemTypeId == ITEM_RAW_CRAWLER or itemTypeId == ITEM_RAW_RABBIT or itemTypeId == ITEM_RAW_COW
-endfunction
-
-private function IsWolfPetType takes integer unitTypeId returns boolean
-    return unitTypeId == UNIT_SHADOWCLAW or unitTypeId == UNIT_TIMBER_WOLF or unitTypeId == UNIT_GIANT_WOLF or unitTypeId == UNIT_DIRE_WOLF
-endfunction
-
-private function IsBearPetType takes integer unitTypeId returns boolean
-    return unitTypeId == UNIT_BEAR_CUB or unitTypeId == UNIT_BEAR or unitTypeId == UNIT_MOTHER_BEAR or unitTypeId == UNIT_FEROCIOUS_BEAR
-endfunction
-
-private function IsFelinePetType takes integer unitTypeId returns boolean
-    return unitTypeId == UNIT_PANTHER_CUB or unitTypeId == UNIT_PANTHER_10 or unitTypeId == UNIT_PANTHER_15 or unitTypeId == UNIT_TIGER_2 or unitTypeId == UNIT_TIGER_10 or unitTypeId == UNIT_TIGER_15 or unitTypeId == UNIT_LYNX_5
-endfunction
-
-private function IsTurtlePetType takes integer unitTypeId returns boolean
-    return unitTypeId == UNIT_SEA_TURTLE_10 or unitTypeId == UNIT_GIANT_SEA_TURTLE_15
-endfunction
-
-private function IsStagPetType takes integer unitTypeId returns boolean
-    return unitTypeId == UNIT_STAG_1 or unitTypeId == UNIT_STAG_5 or unitTypeId == UNIT_STAG_10
-endfunction
-
-private function GetWolfClassText takes unit pet returns string
-    if pet == udg_Shadowclaw or GetUnitTypeId(pet) == UNIT_SHADOWCLAW then
-        return "Spirit Wolf"
-    endif
-    return "Wolf"
-endfunction
-
-private function GetBearClassText takes nothing returns string
-    return "Bear"
-endfunction
-
-private function GetFelineClassText takes integer unitTypeId returns string
-    if unitTypeId == UNIT_LYNX_5 then
-        return "Lynx"
-    elseif unitTypeId == UNIT_TIGER_2 or unitTypeId == UNIT_TIGER_10 or unitTypeId == UNIT_TIGER_15 then
-        return "Tiger"
-    endif
-    return "Panther"
-endfunction
-
-private function GetTurtleClassText takes nothing returns string
-    return "Turtle"
+    return PetDefinitions_IsRawMeat(itemTypeId)
 endfunction
 
 private function GetPetClassInfoTextInternal takes unit pet returns string
@@ -249,23 +191,7 @@ private function GetPetClassInfoTextInternal takes unit pet returns string
     endif
 
     set unitTypeId = GetUnitTypeId(pet)
-    if IsWolfPetType(unitTypeId) then
-        return GetWolfClassText(pet)
-    elseif IsBearPetType(unitTypeId) then
-        return GetBearClassText()
-    elseif IsFelinePetType(unitTypeId) then
-        return GetFelineClassText(unitTypeId)
-    elseif IsTurtlePetType(unitTypeId) then
-        return GetTurtleClassText()
-    elseif IsStagPetType(unitTypeId) then
-        return "Stag"
-    elseif unitTypeId == UNIT_PIG_5 or unitTypeId == UNIT_PIG_10 then
-        return "Boar"
-    elseif unitTypeId == UNIT_GIANT_MOTH_12 then
-        return "Moth"
-    endif
-
-    return "Tamed Beast"
+    return PetDefinitions_GetClassText(unitTypeId)
 endfunction
 
 private function GetPetTypeInfoTextInternal takes unit pet returns string
@@ -276,19 +202,7 @@ private function GetPetTypeInfoTextInternal takes unit pet returns string
     endif
 
     set unitTypeId = GetUnitTypeId(pet)
-    if IsTurtlePetType(unitTypeId) then
-        return "Tank"
-    elseif IsBearPetType(unitTypeId) then
-        return "Bruiser"
-    elseif IsFelinePetType(unitTypeId) then
-        return "Melee Damage"
-    elseif IsWolfPetType(unitTypeId) then
-        return "Balanced Beast"
-    elseif unitTypeId == UNIT_GIANT_MOTH_12 then
-        return "Support"
-    endif
-
-    return "Utility Beast"
+    return PetDefinitions_GetRoleText(unitTypeId)
 endfunction
 
 private function GetPetAbilityInfoTextInternal takes unit pet returns string
@@ -299,19 +213,7 @@ private function GetPetAbilityInfoTextInternal takes unit pet returns string
     endif
 
     set unitTypeId = GetUnitTypeId(pet)
-    if pet == udg_Shadowclaw or unitTypeId == UNIT_SHADOWCLAW then
-        return "Scaled Shadowclaw stats, pet inventory, fatigue, revive"
-    elseif IsWolfPetType(unitTypeId) then
-        return "Balanced pet scaling, pet inventory, fatigue, revive"
-    elseif IsBearPetType(unitTypeId) then
-        return "Bruiser pet scaling, pet inventory, fatigue, revive"
-    elseif IsFelinePetType(unitTypeId) then
-        return "Damage pet scaling, pet inventory, fatigue, revive"
-    elseif IsTurtlePetType(unitTypeId) then
-        return "Tank pet scaling, pet inventory, fatigue, revive"
-    endif
-
-    return "Tamed beast abilities, pet inventory, fatigue, revive"
+    return PetDefinitions_GetAbilityInfoText(unitTypeId)
 endfunction
 
 private function HealPetByPercent takes unit pet, real percent returns nothing
@@ -498,7 +400,7 @@ endfunction
 private function FatiguePet takes unit pet returns nothing
     local player textPlayer
 
-    if pet == null or udg_Pet_Dead then
+    if pet == null or udg_Pet_Dead or not IsPersistentPet(pet) then
         return
     endif
 
@@ -541,12 +443,14 @@ private function OnPetDamaged takes nothing returns nothing
 
     set life = GetWidgetLife(pet)
     if damage >= life - 0.41 then
-        if life > 1.00 then
-            call BlzSetEventDamage(life - 1.00)
-        else
-            call BlzSetEventDamage(0.00)
+        if IsPersistentPet(pet) then
+            if life > 1.00 then
+                call BlzSetEventDamage(life - 1.00)
+            else
+                call BlzSetEventDamage(0.00)
+            endif
+            call FatiguePet(pet)
         endif
-        call FatiguePet(pet)
     endif
 
     set pet = null
@@ -562,6 +466,31 @@ private function RefreshPetDamageTrigger takes unit pet returns nothing
         call TriggerRegisterUnitEvent(PetDamageTrigger, pet, EVENT_UNIT_DAMAGED)
         call TriggerAddAction(PetDamageTrigger, function OnPetDamaged)
     endif
+endfunction
+
+private function HandlePermanentPetDeath takes unit pet returns nothing
+    if pet == null or udg_TamedUnits == null or not IsUnitInGroup(pet, udg_TamedUnits) or IsPersistentPet(pet) then
+        return
+    endif
+
+    set udg_CompanionUnitKicked = pet
+    call UnitExperience_DisableXP(pet, true)
+    call Companions_UnregisterControlled(pet)
+    call GroupRemoveUnit(udg_TamedUnits, pet)
+    call RemovePetFocus(pet)
+    call RefreshPetDamageTrigger(null)
+    call PetPersistent.remove(GetHandleId(pet))
+
+    if pet == udg_TamedUnit then
+        set udg_TamedUnit = null
+    endif
+    set udg_Pet_Dead = false
+
+    if gg_trg_MultiboardUpdate_Remove_Tamed != null then
+        call TriggerExecute(gg_trg_MultiboardUpdate_Remove_Tamed)
+    endif
+
+    call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(pet) + " has died.")
 endfunction
 
 private function StopShadowclawHomeFallback takes nothing returns nothing
@@ -622,7 +551,7 @@ private function SendShadowclawHome takes unit pet returns nothing
     endif
 endfunction
 
-private function RegisterPetUnit takes unit pet, unit leader, boolean resetCounters, boolean startSuspended returns nothing
+private function RegisterPetUnit takes unit pet, unit leader, boolean resetCounters, boolean startSuspended, boolean persistent returns nothing
     local integer petKey
     local boolean registered
     local unit focusLeader = leader
@@ -646,6 +575,7 @@ private function RegisterPetUnit takes unit pet, unit leader, boolean resetCount
 
     call EnsurePetGroup()
     call GroupAddUnit(udg_TamedUnits, pet)
+    call SetPetPersistent(pet, persistent)
     call RemovePetWander(pet)
     call SetPetFocus(pet, focusLeader)
     call SetUnitPathing(pet, true)
@@ -708,7 +638,7 @@ endfunction
 
 private function FindShadowclawEnum takes nothing returns nothing
     local unit u = GetEnumUnit()
-    if FoundShadowclaw == null and GetUnitTypeId(u) == UNIT_SHADOWCLAW then
+    if FoundShadowclaw == null and PetDefinitions_IsShadowclawType(GetUnitTypeId(u)) then
         set FoundShadowclaw = u
     endif
     set u = null
@@ -743,7 +673,7 @@ private function OnShadowclawInitTimer takes nothing returns nothing
 
     if shadowclaw != null then
         call ScaleShadowclawStats(shadowclaw)
-        call RegisterPetUnit(shadowclaw, udg_Nazgrek, true, udg_InCinematic)
+        call RegisterPetUnit(shadowclaw, udg_Nazgrek, true, udg_InCinematic, true)
     endif
 
     if expired != null then
@@ -753,7 +683,7 @@ private function OnShadowclawInitTimer takes nothing returns nothing
     set expired = null
 endfunction
 
-private function CompleteTame takes unit caster, unit target returns nothing
+private function CompleteTame takes unit caster, unit target, integer abilityId returns nothing
     local unit leader
 
     if caster == null or target == null or GetUnitTypeId(target) == 0 then
@@ -766,7 +696,7 @@ private function CompleteTame takes unit caster, unit target returns nothing
     endif
 
     set leader = GetPreferredLeader(caster)
-    call RegisterPetUnit(target, leader, true, false)
+    call RegisterPetUnit(target, leader, true, false, IsPersistentTameAbility(abilityId))
 
     if gg_snd_Rescue != null then
         call StartSound(gg_snd_Rescue)
@@ -791,7 +721,7 @@ private function FinishTame takes unit caster, integer abilityId returns nothing
 
     set target = TameTarget.unit[casterKey]
     if TameReady[casterKey] == 1 and target != null then
-        call CompleteTame(caster, target)
+        call CompleteTame(caster, target, abilityId)
     endif
 
     call ClearTameState(casterKey, true)
@@ -826,7 +756,7 @@ private function InviteShadowclaw takes unit caster, unit target returns nothing
     endif
 
     call ScaleShadowclawStats(target)
-    call RegisterPetUnit(target, GetPreferredLeader(caster), true, false)
+    call RegisterPetUnit(target, GetPreferredLeader(caster), true, false, true)
     if gg_snd_Rescue != null then
         call StartSound(gg_snd_Rescue)
     endif
@@ -852,6 +782,7 @@ private function KickPet takes unit pet returns nothing
     call PauseUnit(pet, false)
     call SetUnitTimeScale(pet, 1.00)
     call RefreshPetDamageTrigger(null)
+    call PetPersistent.remove(GetHandleId(pet))
 
     set udg_TamedUnit = null
     set udg_Pet_Dead = false
@@ -972,16 +903,24 @@ private function OnDamageModifier takes nothing returns nothing
     if damaged == udg_TamedUnit and not udg_Pet_Dead and udg_DamageEventAmount > 0.00 then
         set life = GetWidgetLife(damaged)
         if udg_DamageEventAmount >= life - 0.41 then
-            if life > 1.00 then
-                set udg_DamageEventAmount = life - 1.00
-            else
-                set udg_DamageEventAmount = 0.00
+            if IsPersistentPet(damaged) then
+                if life > 1.00 then
+                    set udg_DamageEventAmount = life - 1.00
+                else
+                    set udg_DamageEventAmount = 0.00
+                endif
+                call FatiguePet(damaged)
             endif
-            call FatiguePet(damaged)
         endif
     endif
 
     set damaged = null
+endfunction
+
+private function OnUnitDeath takes nothing returns nothing
+    local unit dying = GetDyingUnit()
+    call HandlePermanentPetDeath(dying)
+    set dying = null
 endfunction
 
 private function OnPetPickupItem takes nothing returns nothing
@@ -1114,6 +1053,10 @@ private function Init takes nothing returns nothing
     set t = CreateTrigger()
     call TriggerRegisterVariableEvent(t, "udg_DamageModifierEvent", EQUAL, 1.00)
     call TriggerAddAction(t, function OnDamageModifier)
+
+    set t = CreateTrigger()
+    call RegisterPlayerUnitEventAll(t, EVENT_PLAYER_UNIT_DEATH)
+    call TriggerAddAction(t, function OnUnitDeath)
 
     set t = CreateTrigger()
     call TriggerRegisterPlayerChatEvent(t, Player(0), "/pet rename ", false)
