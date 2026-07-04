@@ -157,6 +157,13 @@ private function DebugMsg takes string msg returns nothing
     endif
 endfunction
 
+private function PlayCommandSound takes sound whichSound returns nothing
+    if whichSound != null then
+        call StopSound(whichSound, false, false)
+        call StartSound(whichSound)
+    endif
+endfunction
+
 private function EnsureCommandEventTrigger takes nothing returns nothing
     if CommandEventTrigger == null then
         set CommandEventTrigger = CreateTrigger()
@@ -688,6 +695,10 @@ private function IsAliveByCustomValue takes unit controlledUnit, integer customV
     return IsAliveUnit(controlledUnit) and udg_IsUnitAlive[customValue]
 endfunction
 
+private function IsFatiguedActivePet takes unit controlledUnit returns boolean
+    return controlledUnit != null and controlledUnit == udg_TamedUnit and udg_Pet_Dead and udg_TamedUnits != null and IsUnitInGroup(controlledUnit, udg_TamedUnits)
+endfunction
+
 private function ClearOrderIdleState takes unit controlledUnit, integer customValue returns nothing
     call RemoveWanderAbility(controlledUnit)
     if customValue > 0 then
@@ -754,7 +765,11 @@ private function UpdateCompanionOrderUnit takes unit controlledUnit returns noth
     endif
     call FollowSystem_RemoveUnit(controlledUnit)
     if CompanionSuspended[unitId] == 1 then
-        call ClearCompanionFarIcon(controlledUnit)
+        if IsFatiguedActivePet(controlledUnit) then
+            call EnsureCompanionFarIcon(controlledUnit)
+        else
+            call ClearCompanionFarIcon(controlledUnit)
+        endif
         call DestroyCompanionFollowerEffects(controlledUnit)
         return
     endif
@@ -857,7 +872,11 @@ private function ApplyOrders takes unit companionUnit returns nothing
 
     if CompanionSuspended[unitId] == 1 then
         call FollowSystem_RemoveUnit(companionUnit)
-        call ClearCompanionFarIcon(companionUnit)
+        if IsFatiguedActivePet(companionUnit) then
+            call EnsureCompanionFarIcon(companionUnit)
+        else
+            call ClearCompanionFarIcon(companionUnit)
+        endif
         call DestroyCompanionFollowerEffects(companionUnit)
         call IssueImmediateOrder(companionUnit, "stop")
         return
@@ -1412,9 +1431,7 @@ private function ApplyModeFromPlayer takes player modePlayer, integer mode retur
     set count = CountUnitsInGroup(ModeTargetGroup)
 
     if count > 0 then
-        if gg_snd_GoodJob != null then
-            call StartSound(gg_snd_GoodJob)
-        endif
+        call PlayCommandSound(gg_snd_GoodJob)
         if ModeSelectionFound then
             call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "Selected companions: " + GetModeName(mode) + " Mode")
         else
@@ -1450,11 +1467,25 @@ private function GetModeFromAbility takes integer abilityId returns integer
     return 0
 endfunction
 
+private function IsQuestCompanionReputationBypass takes unit target returns boolean
+    local integer unitTypeId
+
+    if target == null then
+        return false
+    endif
+
+    set unitTypeId = GetUnitTypeId(target)
+    return target == udg_Aradion or target == udg_Valeria or unitTypeId == UNIT_ARADION or unitTypeId == UNIT_VALERIA
+endfunction
+
 private function CanHireByReputation takes unit target returns boolean
     local Faction f
 
     if target == null then
         return false
+    endif
+    if IsQuestCompanionReputationBypass(target) then
+        return true
     endif
 
     set f = Faction.getByUnit(target)
@@ -1519,6 +1550,7 @@ private function HandleInvite takes unit caster, unit target returns nothing
     call SetUnitOwner(target, Player(COMPANION_OWNER_INDEX), true)
     call AddInternal(target, icon, leader, CurrentGroupMode)
     call FireCommandEvent(target, caster, COMMAND_INVITE, CurrentGroupMode)
+    call PlayCommandSound(gg_snd_Rescue)
 
     set leader = null
 endfunction
@@ -1531,9 +1563,7 @@ private function HandleKick takes unit caster, unit target returns nothing
     endif
 
     set udg_CompanionUnitKicked = target
-    if gg_snd_UpkeepRing != null then
-        call StartSound(gg_snd_UpkeepRing)
-    endif
+    call PlayCommandSound(gg_snd_UpkeepRing)
 
     call FireCommandEvent(target, caster, COMMAND_KICK, 0)
     set returnOwner = GetReturnOwner(GetUnitTypeId(target))
@@ -1555,9 +1585,7 @@ private function HandleFocus takes unit target, unit leader returns nothing
         return
     endif
 
-    if gg_snd_GoodJob != null then
-        call StartSound(gg_snd_GoodJob)
-    endif
+    call PlayCommandSound(gg_snd_GoodJob)
     call TrackExistingControlUnit(target)
     call SetLeaderInternal(target, leader)
     if leader != null then
@@ -1856,9 +1884,7 @@ private function HandleInformation takes unit target returns nothing
         return
     endif
 
-    if gg_snd_GoodJob != null then
-        call StartSound(gg_snd_GoodJob)
-    endif
+    call PlayCommandSound(gg_snd_GoodJob)
 
     if IsControlGroupUnit(target) then
         call TrackExistingControlUnit(target)
@@ -1974,6 +2000,7 @@ private function HandleSoldUnit takes nothing returns nothing
     set leader = GetPreferredLeader(buyer)
     call SetUnitOwner(soldUnit, Player(COMPANION_OWNER_INDEX), true)
     call AddInternal(soldUnit, icon, leader, CurrentGroupMode)
+    call PlayCommandSound(gg_snd_Rescue)
 
     set leader = null
     set soldUnit = null
