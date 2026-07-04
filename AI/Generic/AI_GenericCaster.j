@@ -100,7 +100,7 @@ public function RegisterProfile takes integer unitTypeId, string profileName, in
     set profileId = AI_RegisterProfile(AI_GenericCaster_ClassId, unitTypeId, profileName)
     call AI_SetProfileAutonomous(profileId, autonomous)
     call AI_SetProfileThinkCallback(profileId, function Think)
-    call AI_GenericCaster_Configure(profileId, abilityId, order, cooldown, range)
+    call AIGenericCaster_Configure(profileId, abilityId, order, cooldown, range)
     return profileId
 endfunction
 

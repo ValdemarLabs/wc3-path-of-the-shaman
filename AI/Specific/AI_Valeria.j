@@ -72,7 +72,7 @@ endfunction
 
 private function TryAutoEnable takes nothing returns nothing
     if AutoEnableAllowed and udg_Valeria != null and AI_GetInstance(udg_Valeria) <= 0 then
-        call AI_Valeria_Enable(udg_Valeria)
+        call AIValeria_Enable(udg_Valeria)
     endif
 endfunction
 

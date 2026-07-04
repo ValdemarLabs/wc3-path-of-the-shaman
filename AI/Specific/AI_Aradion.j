@@ -90,7 +90,7 @@ endfunction
 
 private function TryAutoEnable takes nothing returns nothing
     if AutoEnableAllowed and udg_Aradion != null and AI_GetInstance(udg_Aradion) <= 0 then
-        call AI_Aradion_Enable(udg_Aradion)
+        call AIAradion_Enable(udg_Aradion)
     endif
 endfunction
 
