@@ -1,4 +1,4 @@
-library AbilitiesLiteUI initializer AutoInit requires Table, MasterUI
+library AbilitiesLiteUI initializer AutoInit requires Table, MasterUI, PetDefinitions
 /**
     AbilitiesLiteUI
 
@@ -18,7 +18,7 @@ globals
 
     private constant integer AUI_MAX_ROWS = 8
     private constant integer AUI_VISIBLE_ROWS = 6
-    private constant integer AUI_MAX_DEFINITIONS = 128
+    private constant integer AUI_MAX_DEFINITIONS = 192
 
     // =========================================================================
     // Ability definition configuration
@@ -124,6 +124,11 @@ globals
     private constant string AUI_NPC_SHAMAN_HEALING_WAVE_ICON = "ReplaceableTextures\\CommandButtons\\BTNNature_HealingWaveGreater.tga"
     private constant string AUI_NPC_SHAMAN_STORMSTRIKE_ICON = "ReplaceableTextures\\CommandButtons\\BTNShamanMaster.blp"
     private constant string AUI_NPC_SHAMAN_STONESKIN_TOTEM_ICON = "ReplaceableTextures\\CommandButtons\\BTNNature_StoneSkinTotem.tga"
+    private constant string AUI_PET_TRAINING_ICON = "ReplaceableTextures\\CommandButtons\\BTNAnimalWarTraining.blp"
+    private constant string AUI_PET_INVENTORY_ICON = "ReplaceableTextures\\CommandButtons\\BTNBackpack.blp"
+    private constant string AUI_PET_FATIGUE_ICON = "ReplaceableTextures\\CommandButtons\\BTNSleep.blp"
+    private constant string AUI_PET_REVIVE_ICON = "ReplaceableTextures\\CommandButtons\\BTNReincarnation.blp"
+    private constant string AUI_PET_FOOD_ICON = "ReplaceableTextures\\CommandButtons\\BTNHeal.blp"
 
     private constant real AUI_DETAIL_BODY_WIDTH = 0.285
     private constant real AUI_DETAIL_BODY_HEIGHT = 0.224
@@ -491,6 +496,26 @@ private function AUI_RegisterNpcShamanAbilityIfMissing takes string iconPath, st
     call AUI_RegisterNpcClassAbilityIfMissing(AUI_DEF_NPC_SHAMAN, "Shaman", iconPath, titleText, bodyText)
 endfunction
 
+private function AUI_GetPetInfoText takes integer definitionKey returns string
+    return "|cff9fd3ffPet|r |cff808080-|r |cffbfbfbf" + PetDefinitions_GetTrainingTitle(definitionKey) + "|r"
+endfunction
+
+private function AUI_RegisterPetAbilityIfMissing takes integer definitionKey, string iconPath, string titleText, string bodyText returns nothing
+    call AUI_RegisterTemplateManualIfMissing(definitionKey, iconPath, titleText, AUI_GetPetInfoText(definitionKey), bodyText)
+endfunction
+
+private function AUI_RegisterPetTemplates takes integer definitionKey returns nothing
+    if definitionKey == 0 then
+        return
+    endif
+
+    call AUI_RegisterPetAbilityIfMissing(definitionKey, AUI_PET_TRAINING_ICON, PetDefinitions_GetTrainingTitle(definitionKey), PetDefinitions_GetTrainingBody(definitionKey))
+    call AUI_RegisterPetAbilityIfMissing(definitionKey, AUI_PET_INVENTORY_ICON, "Pet Inventory", "Pets can carry items after registration and use the pet inventory handling rules.")
+    call AUI_RegisterPetAbilityIfMissing(definitionKey, AUI_PET_FATIGUE_ICON, "Fatigue", "Shadowclaw and Tame Beast III pets are exhausted by fatal damage instead of dying outright. Lower-rank tames die permanently.")
+    call AUI_RegisterPetAbilityIfMissing(definitionKey, AUI_PET_REVIVE_ICON, "Revive", "Persistent pets return with partial health when the pet revive timer completes.")
+    call AUI_RegisterPetAbilityIfMissing(definitionKey, AUI_PET_FOOD_ICON, "Raw Meat Recovery", "Raw meat items heal the active pet and are consumed on pickup.")
+endfunction
+
 private function AUI_RegisterPlayerShamanTemplates takes nothing returns nothing
     if AUI_DEF_PLAYER_SHAMAN == 0 then
         return
@@ -618,6 +643,9 @@ private function AUI_GetDefinitionKeyForUnit takes unit u returns integer
     endif
 
     set unitTypeId = GetUnitTypeId(u)
+    if PetDefinitions_IsPetType(unitTypeId) then
+        return PetDefinitions_GetAbilityDefinitionKey(unitTypeId)
+    endif
     if unitTypeId == AUI_NPC_SHAMAN_TYPE then
         return AUI_DEF_NPC_SHAMAN
     endif
@@ -626,6 +654,7 @@ endfunction
 
 private function AUI_EnsureTemplatesForUnit takes unit u returns nothing
     local integer definitionKey
+    local integer unitTypeId
 
     if u == null or GetHandleId(u) == 0 then
         return
@@ -636,8 +665,11 @@ private function AUI_EnsureTemplatesForUnit takes unit u returns nothing
         return
     endif
 
+    set unitTypeId = GetUnitTypeId(u)
     if u == udg_Nazgrek or u == udg_Zulkis then
         call AUI_RegisterPlayerShamanTemplates()
+    elseif PetDefinitions_IsPetType(unitTypeId) then
+        call AUI_RegisterPetTemplates(definitionKey)
     elseif definitionKey == AUI_DEF_NPC_SHAMAN then
         call AUI_RegisterNpcShamanTemplates()
     endif
