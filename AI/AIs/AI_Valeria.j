@@ -71,9 +71,8 @@ public function Disable takes unit whichUnit returns nothing
 endfunction
 
 private function TryAutoEnable takes nothing returns nothing
-    local integer instanceId = 0
     if AutoEnableAllowed and udg_Valeria != null and AI_GetInstance(udg_Valeria) <= 0 then
-        set instanceId = AI_Valeria_Enable(udg_Valeria)
+        call AI_Valeria_Enable(udg_Valeria)
     endif
 endfunction
 

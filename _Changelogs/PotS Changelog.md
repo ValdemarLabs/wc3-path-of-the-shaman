@@ -33,6 +33,8 @@
 - `AI_*` sublibraries
   Created the first-wave AI class/profile libraries for Warrior, Rogue, Warlock, Restoshaman, Paladin, Engineer, and Valeria.
   Moved class-specific combat decisions, ability pools, starting abilities, bark registrations, Warlock imp ownership, Shaman totem ownership, Engineer/Shredder behavior, and Valeria retreat-like combat behavior out of GUI patterns and into profile sublibraries.
+  Added reusable generic AI profile factories for generic, aggressive, passive, civilian, guard, scripted, vendor, caster, healer, and boss NPC behavior so future units can register into the AI system without copying a full hero-class sublibrary.
+  Added `AI_Aradion` as a non-autonomous quest-character AI profile similar to `AI_Valeria`, with defensive retreat behavior and opt-in combat orders so quest scripts can keep ownership of scripted movement.
   Added `AI_LegacyLocations.j` for old GUI spawn, retreat, and shop location bindings, keeping map-specific generated rect/unit globals out of the class logic.
   Added `AI_CompanionReplies.j`, `AI_Voicelines.j`, and the ODS-backed voiceline import data for AI barks, long idle/moving chats, companion replies, and ExSound/DialogSystem migration.
 - `Companions.j`

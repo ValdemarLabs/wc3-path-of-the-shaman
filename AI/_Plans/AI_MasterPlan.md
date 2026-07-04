@@ -491,6 +491,25 @@ Implementation rule:
   `AI_Valeria_Enable` is called again;
 - generic AI registration must not put Valeria into the random spawn pool.
 
+## Aradion
+
+Aradion has an `AI_Aradion` profile with the same quest-character ownership
+model as Valeria. It should keep Aradion registered in `AI.j` for shared state,
+defensive reactions, chatter, and future boss-cast evade hooks without taking
+movement or ritual orders away from `qAradion`.
+
+Implementation rule:
+
+- `AI_Aradion` periodically registers `udg_Aradion` when the global unit exists;
+- the Aradion profile is marked non-autonomous through `AI_SetProfileAutonomous`
+  so shared wander/shop/camp/travel never runs for quest-controlled Aradion;
+- low-health defensive movement is allowed, but ordinary attack orders are
+  opt-in through `AI_Aradion_SetCombatOrders`;
+- `qAradion` or a future Aradion-specific quest library can call
+  `AI_Aradion_Enable`, `AI_Aradion_Disable`, and
+  `AI_Aradion_SetCombatOrders` when scripted phases need exact control;
+- generic AI registration must not put Aradion into the random spawn pool.
+
 ## Sublibrary Plan
 
 First wave:
@@ -502,6 +521,26 @@ First wave:
 - `AI_Paladin`
 - `AI_Engineer`
 - `AI_Valeria`
+- `AI_Aradion`
+
+Reusable generic sublibraries:
+
+- `AI_Generic`: light profile factory for units that only need shared `AI.j`
+  state and simple attack behavior.
+- `AI_Aggressive`: hostile profile factory for units that should actively
+  attack and use basic combat barks.
+- `AI_Passive`: non-autonomous profile factory for units that avoid combat.
+- `AI_Civilian`: noncombat profile factory for town, quest, and ambient NPCs
+  that should flee from nearby hostiles.
+- `AI_Guard`: non-autonomous defender profile factory for guards, sentries,
+  and patrol-owned units.
+- `AI_Scripted`: non-autonomous profile factory for quest and cinematic units
+  whose movement and orders are owned by external scripts.
+- `AI_Vendor`: noncombat profile factory for shopkeepers and service NPCs that
+  should register in the AI system without combat behavior.
+- `AI_GenericCaster`: configurable target-spell caster profile factory.
+- `AI_GenericHealer`: configurable healer/support profile factory.
+- `AI_GenericBoss`: reusable boss profile factory and boss-fight API bridge.
 
 Later profiles/classes:
 
@@ -546,12 +585,14 @@ item use, shared retreat, shared death/revival, and shared chatter dispatch.
 6. Add ExSound/DialogSystem chatter infrastructure and migrate short barks
    before long idle/moving conversation tables.
 7. Add first-wave class sublibraries in this order: Warrior, Rogue, Warlock,
-   Restoshaman, Paladin, Engineer, Valeria.
+   Restoshaman, Paladin, Engineer, Valeria, Aradion.
 8. Add `AI_CompanionReplies.j` and `AI_Voicelines.j` after the first-wave
    profiles so ODS text updates existing bark/reply sound-key registrations.
-9. Add boss fight and boss-cast evade API.
-10. Add travel API.
-11. Migrate or disable old GUI AI triggers only after parity tests pass.
+9. Add reusable generic AI sublibraries for generic, aggressive, passive,
+   civilian, guard, scripted, vendor, caster, healer, and boss NPC profiles.
+10. Add boss fight and boss-cast evade API.
+11. Add travel API.
+12. Migrate or disable old GUI AI triggers only after parity tests pass.
 
 ## Test Plan
 
