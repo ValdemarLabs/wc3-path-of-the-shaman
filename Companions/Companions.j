@@ -42,6 +42,15 @@ globals
     constant integer COMPANION_MODE_HOLD = 3
     constant integer COMPANION_MODE_AGGRESSIVE = 4
 
+    public constant integer COMMAND_INVITE = 1
+    public constant integer COMMAND_KICK = 2
+    public constant integer COMMAND_MODE = 3
+    public constant integer COMMAND_DROP_ITEMS = 4
+    public unit EventUnit = null
+    public unit EventSource = null
+    public integer EventCommand = 0
+    public integer EventMode = 0
+
     private constant boolean DEBUG = false
     private constant integer MAX_PLAYER_INDEX = 27
     private constant integer CONTROL_PLAYER_INDEX = 0
@@ -129,6 +138,7 @@ globals
     private integer CompanionMapIconCount = 0
 
     private group ModeTargetGroup = null
+    private trigger CommandEventTrigger = null
     private trigger IdleTrigger = null
     private trigger OrderTrigger = null
     private player ModeSelectionPlayer = null
@@ -145,6 +155,35 @@ private function DebugMsg takes string msg returns nothing
     if DEBUG then
         call BJDebugMsg("[Companions] " + msg)
     endif
+endfunction
+
+private function EnsureCommandEventTrigger takes nothing returns nothing
+    if CommandEventTrigger == null then
+        set CommandEventTrigger = CreateTrigger()
+    endif
+endfunction
+
+private function FireCommandEvent takes unit target, unit source, integer commandId, integer mode returns nothing
+    if target == null then
+        set source = null
+        return
+    endif
+    call EnsureCommandEventTrigger()
+    set EventUnit = target
+    set EventSource = source
+    set EventCommand = commandId
+    set EventMode = mode
+    call TriggerExecute(CommandEventTrigger)
+    set EventUnit = null
+    set EventSource = null
+    set EventCommand = 0
+    set EventMode = 0
+    set source = null
+endfunction
+
+public function RegisterCommandEvent takes code callback returns nothing
+    call EnsureCommandEventTrigger()
+    call TriggerAddAction(CommandEventTrigger, callback)
 endfunction
 
 private function EnsureState takes nothing returns nothing
@@ -1337,6 +1376,7 @@ private function ApplyModeTarget takes nothing returns nothing
     local unit u = GetEnumUnit()
     call TrackExistingControlUnit(u)
     call SetModeInternal(u, ModeActionMode)
+    call FireCommandEvent(u, ModeCommandCaster, COMMAND_MODE, ModeActionMode)
     set u = null
 endfunction
 
@@ -1478,6 +1518,7 @@ private function HandleInvite takes unit caster, unit target returns nothing
     set leader = GetPreferredLeader(caster)
     call SetUnitOwner(target, Player(COMPANION_OWNER_INDEX), true)
     call AddInternal(target, icon, leader, CurrentGroupMode)
+    call FireCommandEvent(target, caster, COMMAND_INVITE, CurrentGroupMode)
 
     set leader = null
 endfunction
@@ -1494,6 +1535,7 @@ private function HandleKick takes unit caster, unit target returns nothing
         call StartSound(gg_snd_UpkeepRing)
     endif
 
+    call FireCommandEvent(target, caster, COMMAND_KICK, 0)
     set returnOwner = GetReturnOwner(GetUnitTypeId(target))
     call RemoveInternal(target)
     call RemoveWanderAbility(target)
@@ -1874,13 +1916,16 @@ private function DropUnitItems takes unit target returns nothing
     set droppedItem = null
 endfunction
 
-private function HandleDropItems takes unit target returns nothing
+private function HandleDropItems takes unit caster, unit target returns nothing
     if target == null or udg_Companion_Group == null or not IsUnitInGroup(target, udg_Companion_Group) then
+        set caster = null
         return
     endif
 
     call DropUnitItems(target)
+    call FireCommandEvent(target, caster, COMMAND_DROP_ITEMS, 0)
     call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(target) + " dropped carried items.")
+    set caster = null
 endfunction
 
 private function HandleSoldUnit takes nothing returns nothing
@@ -1975,7 +2020,7 @@ private function OnSpellEffect takes nothing returns nothing
     elseif abilityId == ABIL_INFORMATION then
         call HandleInformation(target)
     elseif abilityId == ABIL_DROP_ITEMS then
-        call HandleDropItems(target)
+        call HandleDropItems(caster, target)
     endif
 
     set caster = null
