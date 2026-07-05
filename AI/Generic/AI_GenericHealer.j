@@ -15,9 +15,9 @@
     Requires `AI.j` and `Table`.
 
     API:
-    call AI_GenericHealer_RegisterProfile(unitTypeId, profileName, abilityId, order, cooldown, range, threshold, autonomous)
-    call AI_GenericHealer_Configure(profileId, abilityId, order, cooldown, range, threshold)
-    call AI_GenericHealer_RegisterUnit(whichUnit, profileId, uniqueId)
+    call AIGenericHealer_RegisterProfile(unitTypeId, profileName, abilityId, order, cooldown, range, threshold, autonomous)
+    call AIGenericHealer_Configure(profileId, abilityId, order, cooldown, range, threshold)
+    call AIGenericHealer_RegisterUnit(whichUnit, profileId, uniqueId)
 
 **/
 library AIGenericHealer initializer Init requires AI, Table
