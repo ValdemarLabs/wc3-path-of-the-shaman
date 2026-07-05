@@ -18,8 +18,9 @@
     How to install:
     Import this library before AI sublibraries and after the required shared
     systems: Table, Companions, UnitDeathEvent, DamageEngine, DialogSystem, and
-    ExSound. File names may use underscores, but vJASS library identifiers and
-    generated public function prefixes must not.
+    ExSound. AI professions also require GatherNodes, GatherNodeSkills,
+    GatherNodeItems, and GatherNodeUnits. File names may use underscores, but
+    vJASS library identifiers and generated public function prefixes must not.
 
     API:
     call AI_RegisterClass(className)
@@ -33,6 +34,8 @@
     call AI_SetProfileAutonomous(profileId, enabled)
     call AI_SetProfileSpawnOwner(profileId, owner)
     call AI_SetProfileThinkCallback(profileId, callback)
+    call AI_AddProfileProfession(profileId, AI_PROFESSION_MINING)
+    call AI_GetProfessionSkill(whichUnit, professionId)
     call AI_AddProfileSpawnRect(profileId, whichRect)
     call AI_AddProfileRetreatRect(profileId, whichRect)
     call AI_AddProfileShopUnit(profileId, shopUnit)
@@ -57,7 +60,7 @@
     call AI_SetDebugMode(enabled)
 
 **/
-library AI initializer Init requires Table, Companions, UnitDeathEvent, DamageEngine, DialogSystem, ExSound
+library AI initializer Init requires Table, Companions, UnitDeathEvent, DamageEngine, DialogSystem, ExSound, GatherNodes, GatherNodeSkills, GatherNodeItems, GatherNodeUnits
 
 globals
     constant integer AI_STATE_INACTIVE = 0
@@ -73,6 +76,12 @@ globals
     constant integer AI_STATE_DEAD = 10
     constant integer AI_STATE_COMPANION_CONTROLLED = 11
     constant integer AI_STATE_BOSS_EVADE = 12
+    constant integer AI_STATE_SOCIAL = 13
+
+    constant integer AI_PROFESSION_NONE = 0
+    constant integer AI_PROFESSION_MINING = 1
+    constant integer AI_PROFESSION_HERBALISM = 2
+    constant integer AI_PROFESSION_SKINNING = 3
 
     constant integer AI_BARK_GREET = 1
     constant integer AI_BARK_PASSIVE = 2
@@ -128,6 +137,19 @@ globals
     private constant real AI_RANDOM_TRAVEL_MAX = 260.00
     private constant real AI_RANDOM_TRAVEL_DURATION_MIN = 60.00
     private constant real AI_RANDOM_TRAVEL_DURATION_MAX = 180.00
+    private constant real AI_PROFESSION_SCAN_RANGE = 900.00
+    private constant real AI_PROFESSION_ACTION_MIN = 12.00
+    private constant real AI_PROFESSION_ACTION_MAX = 22.00
+    private constant real AI_PROFESSION_IDLE_MIN = 18.00
+    private constant real AI_PROFESSION_IDLE_MAX = 40.00
+    private constant real AI_PROFESSION_TOOL_DURATION = 45.00
+    private constant real AI_SOCIAL_SCAN_RANGE = 1400.00
+    private constant real AI_SOCIAL_MIN_RANGE = 220.00
+    private constant real AI_SOCIAL_FACE_RANGE = 330.00
+    private constant real AI_SOCIAL_DURATION_MIN = 4.00
+    private constant real AI_SOCIAL_DURATION_MAX = 8.00
+    private constant real AI_SOCIAL_COOLDOWN_MIN = 35.00
+    private constant real AI_SOCIAL_COOLDOWN_MAX = 90.00
 
     private constant integer ITEM_MINOR_MANA_POTION = 'I6BS'
     private constant integer ITEM_MANA_POTION = 'pman'
@@ -138,6 +160,8 @@ globals
     private constant integer ITEM_SPRING_WATER = 'I60Z'
     private constant integer ITEM_HEALING_SALVE = 'hslv'
     private constant integer ITEM_GREATER_HEALING_SALVE = 'I6BC'
+    private constant integer ITEM_MINING_PICK = 'I672'
+    private constant integer ITEM_SKINNING_KNIFE = 'I66M'
 
     private Table UnitInstance = 0
     private Table UniqueInstance = 0
@@ -161,6 +185,8 @@ globals
     private Table ProfileThinkTrigger = 0
     private Table ProfileDeathTrigger = 0
     private Table ProfileReviveTrigger = 0
+    private Table ProfileProfession = 0
+    private Table ProfileProfessionCount = 0
 
     private Table UnitTypeCap = 0
     private Table UnitTypeActiveCount = 0
@@ -183,6 +209,9 @@ globals
     private Table InstanceNextItem = 0
     private Table InstanceNextChat = 0
     private Table InstanceNextBark = 0
+    private Table InstanceNextProfession = 0
+    private Table InstanceNextSocial = 0
+    private Table InstanceSocialUntil = 0
     private Table InstanceRetreatUntil = 0
     private Table InstanceTravelReturnAt = 0
     private Table InstanceTravelReturnX = 0
@@ -237,6 +266,11 @@ globals
     private integer RandomSpawnHardCap = 12
     private integer RandomSpawnActiveCap = 4
     private integer RandomSpawnOwnerIndex = AI_RANDOM_DEFAULT_OWNER_INDEX
+    private item array InstanceProfessionToolItem
+    private integer array InstanceProfessionToolType
+    private real array InstanceProfessionToolExpires
+    private unit array InstanceSocialTarget
+    private boolean array InstanceSocialStopped
 
     private timer ClockTimer = null
     private timer ThinkTimer = null
@@ -256,6 +290,9 @@ globals
     private real NextGlobalBark = 0.00
     private real RandomPointX = 0.00
     private real RandomPointY = 0.00
+    private item ProfessionSearchItem = null
+    private unit ProfessionSearchUnit = null
+    private unit SocialSearchTarget = null
 
     private boolean BossFightActive = false
     private integer BossCastCount = 0
@@ -272,6 +309,8 @@ globals
     private boolean AllySearchIncludeSelf = false
     private unit CountSource = null
     private integer CountResult = 0
+    private unit CombatSearchSource = null
+    private boolean CombatSearchFound = false
 endglobals
 
 private function DebugMsg takes string msg returns nothing
@@ -302,6 +341,8 @@ private function EnsureState takes nothing returns nothing
         set ProfileThinkTrigger = Table.create()
         set ProfileDeathTrigger = Table.create()
         set ProfileReviveTrigger = Table.create()
+        set ProfileProfession = Table.create()
+        set ProfileProfessionCount = Table.create()
         set UnitTypeCap = Table.create()
         set UnitTypeActiveCount = Table.create()
         set InstanceUnit = Table.create()
@@ -322,6 +363,9 @@ private function EnsureState takes nothing returns nothing
         set InstanceNextItem = Table.create()
         set InstanceNextChat = Table.create()
         set InstanceNextBark = Table.create()
+        set InstanceNextProfession = Table.create()
+        set InstanceNextSocial = Table.create()
+        set InstanceSocialUntil = Table.create()
         set InstanceRetreatUntil = Table.create()
         set InstanceTravelReturnAt = Table.create()
         set InstanceTravelReturnX = Table.create()
@@ -741,6 +785,14 @@ private function CountEnemyEnum takes nothing returns nothing
     set enumUnit = null
 endfunction
 
+private function CombatEnemyEnum takes nothing returns nothing
+    local unit enumUnit = GetEnumUnit()
+    if CombatSearchSource != null and not CombatSearchFound and IsAliveUnit(enumUnit) and IsUnitEnemy(enumUnit, GetOwningPlayer(CombatSearchSource)) and not GN_IsGatherUnit(enumUnit) then
+        set CombatSearchFound = true
+    endif
+    set enumUnit = null
+endfunction
+
 private function MoveAwayFromPoint takes unit whichUnit, real originX, real originY, real distance returns nothing
     local real dx
     local real dy
@@ -1018,6 +1070,173 @@ private function LearnRandomProfileAbility takes unit whichUnit, integer profile
     endif
 endfunction
 
+private function GetProfileProfessionKey takes integer profileId, integer professionId returns integer
+    return profileId * 10 + professionId
+endfunction
+
+private function HasProfileProfession takes integer profileId, integer professionId returns boolean
+    if profileId <= 0 or professionId <= AI_PROFESSION_NONE then
+        return false
+    endif
+    return ProfileProfession.boolean[GetProfileProfessionKey(profileId, professionId)]
+endfunction
+
+private function GetFreeInventorySlots takes unit whichUnit returns integer
+    local integer slot = 0
+    local integer size
+    local integer free = 0
+    local item slotItem
+    if whichUnit == null then
+        return 0
+    endif
+    set size = UnitInventorySize(whichUnit)
+    loop
+        exitwhen slot >= size
+        set slotItem = UnitItemInSlot(whichUnit, slot)
+        if slotItem == null then
+            set free = free + 1
+        endif
+        set slot = slot + 1
+    endloop
+    set slotItem = null
+    return free
+endfunction
+
+private function UnitHasItemType takes unit whichUnit, integer itemTypeId returns boolean
+    local integer slot = 0
+    local integer size
+    local item slotItem
+    if whichUnit == null or itemTypeId == 0 then
+        return false
+    endif
+    set size = UnitInventorySize(whichUnit)
+    loop
+        exitwhen slot >= size
+        set slotItem = UnitItemInSlot(whichUnit, slot)
+        if slotItem != null and GetItemTypeId(slotItem) == itemTypeId then
+            set slotItem = null
+            return true
+        endif
+        set slot = slot + 1
+    endloop
+    set slotItem = null
+    return false
+endfunction
+
+private function GetProfessionToolId takes integer professionId returns integer
+    if professionId == AI_PROFESSION_MINING then
+        return ITEM_MINING_PICK
+    elseif professionId == AI_PROFESSION_SKINNING then
+        return ITEM_SKINNING_KNIFE
+    endif
+    return 0
+endfunction
+
+private function RemoveTrackedProfessionTool takes integer instanceId returns nothing
+    local item tool
+    if instanceId <= 0 then
+        return
+    endif
+    set tool = InstanceProfessionToolItem[instanceId]
+    if tool != null and GetItemTypeId(tool) != 0 then
+        call RemoveItem(tool)
+    endif
+    set InstanceProfessionToolItem[instanceId] = null
+    set InstanceProfessionToolType[instanceId] = 0
+    set InstanceProfessionToolExpires[instanceId] = 0.00
+    set tool = null
+endfunction
+
+private function CleanupProfessionTool takes integer instanceId, real now returns nothing
+    if instanceId > 0 and InstanceProfessionToolItem[instanceId] != null and now >= InstanceProfessionToolExpires[instanceId] then
+        call RemoveTrackedProfessionTool(instanceId)
+    endif
+endfunction
+
+private function EnsureProfessionTool takes integer instanceId, unit whichUnit, integer itemTypeId, real now returns boolean
+    local item tool
+    if itemTypeId == 0 then
+        return true
+    endif
+    if whichUnit == null or UnitInventorySize(whichUnit) <= 0 then
+        return false
+    endif
+    if UnitHasItemType(whichUnit, itemTypeId) then
+        if InstanceProfessionToolItem[instanceId] != null and InstanceProfessionToolType[instanceId] == itemTypeId then
+            set InstanceProfessionToolExpires[instanceId] = now + AI_PROFESSION_TOOL_DURATION
+        endif
+        return true
+    endif
+    if GetFreeInventorySlots(whichUnit) <= 0 then
+        return false
+    endif
+    set tool = UnitAddItemById(whichUnit, itemTypeId)
+    if tool == null then
+        set tool = null
+        return false
+    endif
+    call RemoveTrackedProfessionTool(instanceId)
+    set InstanceProfessionToolItem[instanceId] = tool
+    set InstanceProfessionToolType[instanceId] = itemTypeId
+    set InstanceProfessionToolExpires[instanceId] = now + AI_PROFESSION_TOOL_DURATION
+    set tool = null
+    return true
+endfunction
+
+private function EstimateProfessionSkill takes unit whichUnit returns integer
+    local integer unitLevel = 1
+    local integer skill
+    if whichUnit == null then
+        return 0
+    endif
+    if IsUnitType(whichUnit, UNIT_TYPE_HERO) then
+        set unitLevel = GetHeroLevel(whichUnit)
+    else
+        set unitLevel = GetUnitLevel(whichUnit)
+    endif
+    if unitLevel < 1 then
+        set unitLevel = 1
+    endif
+    set skill = unitLevel * 5
+    if skill > 100 then
+        set skill = 100
+    endif
+    return skill
+endfunction
+
+private function RefreshInstanceProfessionSkills takes integer instanceId, unit whichUnit returns nothing
+    local integer profileId
+    local integer professionId = AI_PROFESSION_MINING
+    local integer estimatedSkill
+    if instanceId <= 0 or whichUnit == null then
+        return
+    endif
+    set profileId = InstanceProfile[instanceId]
+    if ProfileProfessionCount[profileId] <= 0 then
+        return
+    endif
+    set estimatedSkill = EstimateProfessionSkill(whichUnit)
+    call GNS_RegisterTrackedGatherer(whichUnit)
+    loop
+        exitwhen professionId > AI_PROFESSION_SKINNING
+        if HasProfileProfession(profileId, professionId) and GNS_GetSkill(whichUnit, professionId) < estimatedSkill then
+            call GNS_SetSkill(whichUnit, professionId, estimatedSkill)
+        endif
+        set professionId = professionId + 1
+    endloop
+endfunction
+
+private function ClearInstanceProfessionState takes integer instanceId, unit whichUnit returns nothing
+    if instanceId <= 0 then
+        return
+    endif
+    call RemoveTrackedProfessionTool(instanceId)
+    call InstanceNextProfession.remove(instanceId)
+    if whichUnit != null then
+        call GNS_UnregisterTrackedGatherer(whichUnit)
+    endif
+endfunction
+
 private function ReviveExpired takes nothing returns nothing
     local timer expired = GetExpiredTimer()
     local integer timerId = GetHandleId(expired)
@@ -1061,6 +1280,7 @@ private function ReviveExpired takes nothing returns nothing
             call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, 5.00, "|cffffff00|r" + GetDisplayName(whichUnit) + " |cffffffffis |r|cff00ff00revived.|r")
         endif
         call RunProfileTrigger(ProfileReviveTrigger, instanceId, whichUnit)
+        call RefreshInstanceProfessionSkills(instanceId, whichUnit)
     endif
     call ReviveTimerInstance.remove(timerId)
     call InstanceReviveTimer.timer.remove(instanceId)
@@ -1182,6 +1402,19 @@ endfunction
 public function SetProfileAutonomous takes integer profileId, boolean enabled returns nothing
     call EnsureState()
     set ProfileAutonomousDisabled.boolean[profileId] = not enabled
+endfunction
+
+public function AddProfileProfession takes integer profileId, integer professionId returns nothing
+    local integer key
+    call EnsureState()
+    if profileId <= 0 or professionId <= AI_PROFESSION_NONE or professionId > AI_PROFESSION_SKINNING then
+        return
+    endif
+    set key = GetProfileProfessionKey(profileId, professionId)
+    if not ProfileProfession.boolean[key] then
+        set ProfileProfession.boolean[key] = true
+        set ProfileProfessionCount[profileId] = ProfileProfessionCount[profileId] + 1
+    endif
 endfunction
 
 public function SetProfileSpawnOwner takes integer profileId, player owner returns nothing
@@ -1677,6 +1910,13 @@ public function GetState takes unit whichUnit returns integer
     return InstanceState[instanceId]
 endfunction
 
+public function GetProfessionSkill takes unit whichUnit, integer professionId returns integer
+    if whichUnit == null or professionId <= AI_PROFESSION_NONE then
+        return 0
+    endif
+    return GNS_GetSkill(whichUnit, professionId)
+endfunction
+
 public function BeginBuy takes unit whichUnit returns boolean
     local integer instanceId = AI_GetInstance(whichUnit)
     if instanceId <= 0 then
@@ -1745,6 +1985,8 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
     set InstanceNextThink.real[instanceId] = GetNow() + GetRandomReal(0.00, AI_DEFAULT_THINK_MAX)
     set InstanceNextAbility.real[instanceId] = GetNow() + GetRandomReal(0.00, AI_DEFAULT_ABILITY_GAP)
     set InstanceNextItem.real[instanceId] = GetNow() + GetRandomReal(1.00, 3.00)
+    set InstanceNextProfession.real[instanceId] = GetNow() + GetRandomReal(4.00, 12.00)
+    set InstanceNextSocial.real[instanceId] = GetNow() + GetRandomReal(10.00, 35.00)
     call SetInstanceState(instanceId, AI_STATE_IDLE)
     call AddActiveInstance(instanceId)
     call IncrementCounts(classId, profileId, unitTypeId)
@@ -1752,6 +1994,7 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
         set UniqueInstance[uniqueId] = instanceId
     endif
     call ApplyStartingAbilities(instanceId, whichUnit)
+    call RefreshInstanceProfessionSkills(instanceId, whichUnit)
     set customValue = GetUnitUserData(whichUnit)
     if customValue > 0 then
         set udg_UnitHider_ReferenceUnits[customValue] = whichUnit
@@ -1794,6 +2037,11 @@ public function UnregisterUnit takes unit whichUnit returns nothing
         call UniqueInstance.remove(uniqueId)
     endif
     call UnitInstance.remove(GetHandleId(whichUnit))
+    call ClearInstanceProfessionState(instanceId, whichUnit)
+    call InstanceNextSocial.remove(instanceId)
+    call InstanceSocialUntil.remove(instanceId)
+    set InstanceSocialTarget[instanceId] = null
+    set InstanceSocialStopped[instanceId] = false
     call InstanceUnit.unit.remove(instanceId)
     call InstanceClass.remove(instanceId)
     call InstanceProfile.remove(instanceId)
@@ -1985,6 +2233,7 @@ endfunction
 
 private function ApplyRandomSpawnPresentation takes unit whichUnit returns nothing
     local integer newLevel
+    local integer instanceId
     if whichUnit == null then
         return
     endif
@@ -1992,6 +2241,10 @@ private function ApplyRandomSpawnPresentation takes unit whichUnit returns nothi
     if IsUnitType(whichUnit, UNIT_TYPE_HERO) then
         set newLevel = GetHeroLevel(whichUnit) + GetRandomInt(1, 15)
         call SetHeroLevel(whichUnit, newLevel, false)
+    endif
+    set instanceId = UnitInstance[GetHandleId(whichUnit)]
+    if instanceId > 0 then
+        call RefreshInstanceProfessionSkills(instanceId, whichUnit)
     endif
 endfunction
 
@@ -2352,6 +2605,15 @@ public function IsDebugMode takes nothing returns boolean
     return DebugMode
 endfunction
 
+private function ClearSocialState takes integer instanceId returns nothing
+    if instanceId <= 0 then
+        return
+    endif
+    set InstanceSocialTarget[instanceId] = null
+    set InstanceSocialStopped[instanceId] = false
+    call InstanceSocialUntil.remove(instanceId)
+endfunction
+
 public function SetBossFightActive takes boolean active returns nothing
     set BossFightActive = active
 endfunction
@@ -2401,6 +2663,7 @@ public function HandleBossCast takes unit caster, integer abilityId, real target
                     set dx = GetUnitX(whichUnit) - originX
                     set dy = GetUnitY(whichUnit) - originY
                     if dx * dx + dy * dy <= BossCastRadius[castIndex] * BossCastRadius[castIndex] then
+                        call ClearSocialState(instanceId)
                         call SetInstanceState(instanceId, AI_STATE_BOSS_EVADE)
                         set InstanceRetreatUntil.real[instanceId] = GetNow() + AI_BOSS_EVADE_TIME
                         call MoveAwayFromPoint(whichUnit, originX, originY, BossCastDistance[castIndex])
@@ -2430,6 +2693,8 @@ public function StartTravel takes unit whichUnit, real duration, real returnX, r
     set InstanceTravelReturnAt.real[instanceId] = GetNow() + duration
     set InstanceTravelReturnX.real[instanceId] = returnX
     set InstanceTravelReturnY.real[instanceId] = returnY
+    call RemoveTrackedProfessionTool(instanceId)
+    call ClearSocialState(instanceId)
     call SetInstanceState(instanceId, AI_STATE_TRAVEL)
     call IssueImmediateOrder(whichUnit, "stop")
     call PauseUnit(whichUnit, true)
@@ -2514,6 +2779,347 @@ private function DebugModeAction takes nothing returns nothing
     endif
 endfunction
 
+private function IsSideActionState takes integer state returns boolean
+    return state == AI_STATE_IDLE or state == AI_STATE_WANDER
+endfunction
+
+private function HasNearbyCombatEnemy takes unit source, real range returns boolean
+    local boolean result
+    call EnsureState()
+    if source == null or range <= 0.00 then
+        return false
+    endif
+    call GroupClear(TempGroup)
+    set CombatSearchSource = source
+    set CombatSearchFound = false
+    call GroupEnumUnitsInRange(TempGroup, GetUnitX(source), GetUnitY(source), range, null)
+    call ForGroup(TempGroup, function CombatEnemyEnum)
+    call GroupClear(TempGroup)
+    set result = CombatSearchFound
+    set CombatSearchSource = null
+    set CombatSearchFound = false
+    return result
+endfunction
+
+private function CanGatherProfession takes unit whichUnit, integer profileId, integer professionId, integer requiredSkill returns boolean
+    if whichUnit == null or professionId <= AI_PROFESSION_NONE then
+        return false
+    endif
+    if not HasProfileProfession(profileId, professionId) then
+        return false
+    endif
+    return GNS_GetSkill(whichUnit, professionId) >= requiredSkill
+endfunction
+
+private function CanHoldGatherItem takes integer instanceId, unit whichUnit, integer professionId returns boolean
+    local integer freeSlots
+    local integer toolId
+    if instanceId <= 0 or whichUnit == null then
+        return false
+    endif
+    set freeSlots = GetFreeInventorySlots(whichUnit)
+    if freeSlots <= 0 then
+        return false
+    endif
+    set toolId = GetProfessionToolId(professionId)
+    if toolId != 0 and not UnitHasItemType(whichUnit, toolId) and freeSlots < 2 then
+        return false
+    endif
+    return true
+endfunction
+
+private function FindNearbyProfessionItem takes integer instanceId, unit whichUnit, real range returns item
+    local integer profileId
+    local integer count
+    local integer index = 0
+    local item nodeItem
+    local integer professionId
+    local integer requiredSkill
+    local real dx
+    local real dy
+    local real distance
+    local real bestDistance
+    set ProfessionSearchItem = null
+    if instanceId <= 0 or whichUnit == null then
+        return null
+    endif
+    set profileId = InstanceProfile[instanceId]
+    set count = GN_GetActiveItemCount()
+    set bestDistance = range * range
+    loop
+        exitwhen index >= count
+        set nodeItem = GN_GetActiveItemByIndex(index)
+        if nodeItem != null and GN_IsGatherItem(nodeItem) then
+            set professionId = GN_GetGatherItemProfessionId(nodeItem)
+            set requiredSkill = GN_GetGatherItemSkillRequired(nodeItem)
+            if CanGatherProfession(whichUnit, profileId, professionId, requiredSkill) and CanHoldGatherItem(instanceId, whichUnit, professionId) then
+                set dx = GetItemX(nodeItem) - GetUnitX(whichUnit)
+                set dy = GetItemY(nodeItem) - GetUnitY(whichUnit)
+                set distance = dx * dx + dy * dy
+                if distance <= bestDistance then
+                    set bestDistance = distance
+                    set ProfessionSearchItem = nodeItem
+                endif
+            endif
+        endif
+        set index = index + 1
+    endloop
+    set nodeItem = null
+    return ProfessionSearchItem
+endfunction
+
+private function FindNearbyProfessionUnit takes integer instanceId, unit whichUnit, real range returns unit
+    local integer profileId
+    local integer count
+    local integer index = 0
+    local unit node
+    local integer professionId
+    local integer requiredSkill
+    local real dx
+    local real dy
+    local real distance
+    local real bestDistance
+    set ProfessionSearchUnit = null
+    if instanceId <= 0 or whichUnit == null then
+        return null
+    endif
+    set profileId = InstanceProfile[instanceId]
+    set count = GN_GetActiveUnitCount()
+    set bestDistance = range * range
+    loop
+        exitwhen index >= count
+        set node = GN_GetActiveUnitByIndex(index)
+        if node != null and GN_IsGatherUnit(node) and IsAliveUnit(node) then
+            set professionId = GN_GetGatherUnitProfessionId(node)
+            set requiredSkill = GN_GetGatherUnitSkillRequired(node)
+            if professionId == AI_PROFESSION_MINING and CanGatherProfession(whichUnit, profileId, professionId, requiredSkill) then
+                set dx = GetUnitX(node) - GetUnitX(whichUnit)
+                set dy = GetUnitY(node) - GetUnitY(whichUnit)
+                set distance = dx * dx + dy * dy
+                if distance <= bestDistance then
+                    set bestDistance = distance
+                    set ProfessionSearchUnit = node
+                endif
+            endif
+        endif
+        set index = index + 1
+    endloop
+    set node = null
+    return ProfessionSearchUnit
+endfunction
+
+private function BeginGatherItem takes integer instanceId, unit whichUnit, item nodeItem, real now returns boolean
+    local integer professionId
+    local integer toolId
+    if instanceId <= 0 or whichUnit == null or nodeItem == null then
+        return false
+    endif
+    set professionId = GN_GetGatherItemProfessionId(nodeItem)
+    set toolId = GetProfessionToolId(professionId)
+    if not CanHoldGatherItem(instanceId, whichUnit, professionId) then
+        return false
+    endif
+    if not EnsureProfessionTool(instanceId, whichUnit, toolId, now) then
+        return false
+    endif
+    if IssueTargetOrder(whichUnit, "smart", nodeItem) then
+        set InstanceNextProfession.real[instanceId] = now + GetRandomReal(AI_PROFESSION_ACTION_MIN, AI_PROFESSION_ACTION_MAX)
+        call DebugMsg(GetDisplayName(whichUnit) + " gathers " + GN_GetGatherItemName(nodeItem) + ".")
+        return true
+    endif
+    return false
+endfunction
+
+private function BeginGatherUnit takes integer instanceId, unit whichUnit, unit node, real now returns boolean
+    if instanceId <= 0 or whichUnit == null or node == null then
+        return false
+    endif
+    if GN_GetGatherUnitProfessionId(node) != AI_PROFESSION_MINING then
+        return false
+    endif
+    if not EnsureProfessionTool(instanceId, whichUnit, ITEM_MINING_PICK, now) then
+        return false
+    endif
+    if IssueTargetOrder(whichUnit, "attack", node) then
+        set InstanceNextProfession.real[instanceId] = now + GetRandomReal(AI_PROFESSION_ACTION_MIN, AI_PROFESSION_ACTION_MAX)
+        call DebugMsg(GetDisplayName(whichUnit) + " mines " + GN_GetGatherUnitName(node) + ".")
+        return true
+    endif
+    return false
+endfunction
+
+private function TryStartProfessionAction takes integer instanceId, unit whichUnit, integer state, real now returns boolean
+    local unit node
+    local item nodeItem
+    if instanceId <= 0 or whichUnit == null or ProfileProfessionCount[InstanceProfile[instanceId]] <= 0 then
+        return false
+    endif
+    if not IsSideActionState(state) or now < InstanceNextProfession.real[instanceId] or IsCastingLocked(whichUnit) then
+        return false
+    endif
+    if HasNearbyCombatEnemy(whichUnit, 700.00) then
+        set InstanceNextProfession.real[instanceId] = now + GetRandomReal(5.00, 10.00)
+        return false
+    endif
+    if GetRandomInt(1, 100) > 35 then
+        set InstanceNextProfession.real[instanceId] = now + GetRandomReal(AI_PROFESSION_IDLE_MIN, AI_PROFESSION_IDLE_MAX)
+        return false
+    endif
+    set node = FindNearbyProfessionUnit(instanceId, whichUnit, AI_PROFESSION_SCAN_RANGE)
+    if node != null and BeginGatherUnit(instanceId, whichUnit, node, now) then
+        set node = null
+        set ProfessionSearchUnit = null
+        return true
+    endif
+    set nodeItem = FindNearbyProfessionItem(instanceId, whichUnit, AI_PROFESSION_SCAN_RANGE)
+    if nodeItem != null and BeginGatherItem(instanceId, whichUnit, nodeItem, now) then
+        set node = null
+        set nodeItem = null
+        set ProfessionSearchUnit = null
+        set ProfessionSearchItem = null
+        return true
+    endif
+    set InstanceNextProfession.real[instanceId] = now + GetRandomReal(AI_PROFESSION_IDLE_MIN, AI_PROFESSION_IDLE_MAX)
+    set node = null
+    set nodeItem = null
+    set ProfessionSearchUnit = null
+    set ProfessionSearchItem = null
+    return false
+endfunction
+
+private function FaceSocialPair takes unit speaker, unit target returns nothing
+    local real dx
+    local real dy
+    local real angle
+    if speaker == null or target == null then
+        return
+    endif
+    set dx = GetUnitX(target) - GetUnitX(speaker)
+    set dy = GetUnitY(target) - GetUnitY(speaker)
+    if dx == 0.00 and dy == 0.00 then
+        return
+    endif
+    set angle = Atan2(dy, dx) * bj_RADTODEG
+    call SetUnitFacing(speaker, angle + GetRandomReal(-8.00, 8.00))
+    call SetUnitFacing(target, angle + 180.00 + GetRandomReal(-8.00, 8.00))
+endfunction
+
+private function BeginSocialState takes integer instanceId, unit whichUnit, unit target, real now returns boolean
+    local real angle
+    local real distance
+    local real x
+    local real y
+    if instanceId <= 0 or whichUnit == null or target == null then
+        return false
+    endif
+    set angle = GetRandomReal(0.00, 360.00) * bj_DEGTORAD
+    set distance = GetRandomReal(180.00, 280.00)
+    set x = GetUnitX(target) + distance * Cos(angle)
+    set y = GetUnitY(target) + distance * Sin(angle)
+    set InstanceSocialTarget[instanceId] = target
+    set InstanceSocialStopped[instanceId] = false
+    set InstanceSocialUntil.real[instanceId] = now + GetRandomReal(AI_SOCIAL_DURATION_MIN, AI_SOCIAL_DURATION_MAX)
+    set InstanceNextSocial.real[instanceId] = now + GetRandomReal(AI_SOCIAL_COOLDOWN_MIN, AI_SOCIAL_COOLDOWN_MAX)
+    call SetInstanceState(instanceId, AI_STATE_SOCIAL)
+    call IssuePointOrder(whichUnit, "move", x, y)
+    call DebugMsg(GetDisplayName(whichUnit) + " moves to socialize with " + GetDisplayName(target) + ".")
+    return true
+endfunction
+
+private function ContinueSocialState takes integer instanceId, unit whichUnit, real now returns boolean
+    local unit target
+    local real angle
+    local real distance
+    local real x
+    local real y
+    if instanceId <= 0 or whichUnit == null then
+        return false
+    endif
+    set target = InstanceSocialTarget[instanceId]
+    if target == null or not IsAliveUnit(target) or IsUnitHidden(target) or not IsUnitAlly(target, GetOwningPlayer(whichUnit)) or now >= InstanceSocialUntil.real[instanceId] or HasNearbyCombatEnemy(whichUnit, 700.00) or (not BossFightActive and GetLifePercent(whichUnit) <= 25.00) then
+        call ClearSocialState(instanceId)
+        call SetInstanceState(instanceId, AI_STATE_IDLE)
+        set target = null
+        return false
+    endif
+    if IsUnitInRange(whichUnit, target, AI_SOCIAL_FACE_RANGE) then
+        if not InstanceSocialStopped[instanceId] then
+            call IssueImmediateOrder(whichUnit, "stop")
+            set InstanceSocialStopped[instanceId] = true
+        endif
+        call FaceSocialPair(whichUnit, target)
+    elseif GetUnitCurrentOrder(whichUnit) == 0 then
+        set angle = GetRandomReal(0.00, 360.00) * bj_DEGTORAD
+        set distance = GetRandomReal(180.00, 280.00)
+        set x = GetUnitX(target) + distance * Cos(angle)
+        set y = GetUnitY(target) + distance * Sin(angle)
+        call IssuePointOrder(whichUnit, "move", x, y)
+    endif
+    set target = null
+    return true
+endfunction
+
+private function FindSocialTarget takes integer instanceId, unit whichUnit returns unit
+    local integer index = 1
+    local integer otherInstance
+    local integer otherState
+    local integer seen = 0
+    local unit other
+    local real dx
+    local real dy
+    local real distance
+    set SocialSearchTarget = null
+    if instanceId <= 0 or whichUnit == null then
+        return null
+    endif
+    loop
+        exitwhen index > ActiveCount
+        set otherInstance = ActiveInstances[index]
+        if otherInstance != instanceId and not InstanceTraveling.boolean[otherInstance] and not InstanceHiddenByCap.boolean[otherInstance] then
+            set other = InstanceUnit.unit[otherInstance]
+            set otherState = InstanceState[otherInstance]
+            if other != null and IsAliveUnit(other) and not IsUnitHidden(other) and IsUnitAlly(other, GetOwningPlayer(whichUnit)) and not IsCompanionControlled(other) and (otherState == AI_STATE_IDLE or otherState == AI_STATE_WANDER or otherState == AI_STATE_SOCIAL) then
+                set dx = GetUnitX(other) - GetUnitX(whichUnit)
+                set dy = GetUnitY(other) - GetUnitY(whichUnit)
+                set distance = dx * dx + dy * dy
+                if distance >= AI_SOCIAL_MIN_RANGE * AI_SOCIAL_MIN_RANGE and distance <= AI_SOCIAL_SCAN_RANGE * AI_SOCIAL_SCAN_RANGE then
+                    set seen = seen + 1
+                    if GetRandomInt(1, seen) == 1 then
+                        set SocialSearchTarget = other
+                    endif
+                endif
+            endif
+        endif
+        set index = index + 1
+    endloop
+    set other = null
+    return SocialSearchTarget
+endfunction
+
+private function TryStartSocialAction takes integer instanceId, unit whichUnit, integer state, real now returns boolean
+    local unit target
+    if instanceId <= 0 or whichUnit == null then
+        return false
+    endif
+    if not IsSideActionState(state) or now < InstanceNextSocial.real[instanceId] or GetUnitCurrentOrder(whichUnit) != 0 or HasNearbyCombatEnemy(whichUnit, 700.00) then
+        return false
+    endif
+    if GetRandomInt(1, 100) > 30 then
+        set InstanceNextSocial.real[instanceId] = now + GetRandomReal(AI_SOCIAL_COOLDOWN_MIN, AI_SOCIAL_COOLDOWN_MAX)
+        return false
+    endif
+    set target = FindSocialTarget(instanceId, whichUnit)
+    if target != null and BeginSocialState(instanceId, whichUnit, target, now) then
+        set target = null
+        set SocialSearchTarget = null
+        return true
+    endif
+    set InstanceNextSocial.real[instanceId] = now + GetRandomReal(AI_SOCIAL_COOLDOWN_MIN, AI_SOCIAL_COOLDOWN_MAX)
+    set target = null
+    set SocialSearchTarget = null
+    return false
+endfunction
+
 private function RunProfileThink takes integer instanceId, unit whichUnit returns nothing
     if instanceId <= 0 or whichUnit == null then
         return
@@ -2555,10 +3161,12 @@ private function ProcessInstance takes integer instanceId, real now returns noth
         return
     endif
     set InstanceNextThink.real[instanceId] = now + GetRandomReal(AI_DEFAULT_THINK_MIN, AI_DEFAULT_THINK_MAX)
+    call CleanupProfessionTool(instanceId, now)
     set companionControlled = IsCompanionControlled(whichUnit)
     set InstanceCompanionControlled.boolean[instanceId] = companionControlled
 
     if companionControlled then
+        call ClearSocialState(instanceId)
         call SetInstanceState(instanceId, AI_STATE_COMPANION_CONTROLLED)
         if now >= InstanceNextAbility.real[instanceId] then
             call RunProfileThink(instanceId, whichUnit)
@@ -2590,6 +3198,12 @@ private function ProcessInstance takes integer instanceId, real now returns noth
         endif
         set whichUnit = null
         return
+    elseif state == AI_STATE_SOCIAL then
+        if ContinueSocialState(instanceId, whichUnit, now) then
+            set whichUnit = null
+            return
+        endif
+        set state = InstanceState[instanceId]
     endif
 
     if ProfileAutonomousDisabled.boolean[InstanceProfile[instanceId]] then
@@ -2618,6 +3232,16 @@ private function ProcessInstance takes integer instanceId, real now returns noth
         else
             set InstanceNextItem.real[instanceId] = now + 2.00 + GetRandomReal(0.10, 0.80)
         endif
+    endif
+
+    if TryStartProfessionAction(instanceId, whichUnit, state, now) then
+        set whichUnit = null
+        return
+    endif
+
+    if TryStartSocialAction(instanceId, whichUnit, state, now) then
+        set whichUnit = null
+        return
     endif
 
     if now >= InstanceNextAbility.real[instanceId] then
@@ -2667,6 +3291,9 @@ private function HandleDeath takes nothing returns nothing
     if instanceId > 0 then
         set InstanceAlive.boolean[instanceId] = false
         set InstanceTraveling.boolean[instanceId] = false
+        call RemoveTrackedProfessionTool(instanceId)
+        set InstanceSocialTarget[instanceId] = null
+        set InstanceSocialStopped[instanceId] = false
         call SetInstanceState(instanceId, AI_STATE_DEAD)
         if IsCompanionControlled(victim) and not udg_InCinematic then
             call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, 5.00, "|cffff4040" + GetDisplayName(victim) + " has fallen.|r")
@@ -2730,6 +3357,7 @@ private function HandleLevel takes nothing returns nothing
             call SetUnitState(whichUnit, UNIT_STATE_MANA, GetUnitState(whichUnit, UNIT_STATE_MAX_MANA))
         endif
         call LearnRandomProfileAbility(whichUnit, profileId)
+        call RefreshInstanceProfessionSkills(instanceId, whichUnit)
     endif
     set whichUnit = null
 endfunction
