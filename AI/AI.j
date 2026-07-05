@@ -1561,7 +1561,7 @@ private function PlayBarkReply takes nothing returns nothing
         if duration <= 0.00 then
             set duration = EstimateDialogDuration(text)
         endif
-        set responderInstance = AI_GetInstance(responder)
+        set responderInstance = UnitInstance[GetHandleId(responder)]
         if responderInstance > 0 then
             set InstanceNextChat.real[responderInstance] = now + duration + AI_DIALOG_UNLOCK_PAD
         endif
