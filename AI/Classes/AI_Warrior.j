@@ -15,7 +15,7 @@
     Requires `AI.j`.
 
     API:
-    call AI_Warrior_Register(unit whichUnit)
+    call AIWarrior_Register(unit whichUnit)
 
 **/
 library AIWarrior initializer Init requires AI
