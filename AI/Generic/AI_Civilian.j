@@ -15,8 +15,8 @@
     Requires `AI.j`.
 
     API:
-    call AI_Civilian_RegisterProfile(unitTypeId, profileName)
-    call AI_Civilian_RegisterUnit(whichUnit, profileId, uniqueId)
+    call AICivilian_RegisterProfile(unitTypeId, profileName)
+    call AICivilian_RegisterUnit(whichUnit, profileId, uniqueId)
 
 **/
 library AICivilian initializer Init requires AI
