@@ -15,12 +15,14 @@
     Requires `AI.j`.
 
     API:
-    call AI_Warlock_Register(unit whichUnit)
+    call AIWarlock_Register(unit whichUnit)
 
 **/
 library AIWarlock initializer Init requires AI, Table
 
 globals
+    constant integer AI_WARLOCK_UNIT_UNDEAD = 'O61K'
+    constant integer AI_WARLOCK_UNIT_ORC = 'H60X'
     constant integer AI_WARLOCK_UNIT_HORDE = 'O61K'
     constant integer AI_WARLOCK_UNIT_IMP_1 = 'n61L'
     constant integer AI_WARLOCK_UNIT_IMP_2 = 'n61S'
@@ -35,6 +37,7 @@ globals
     constant integer AI_WARLOCK_ABILITY_CURSE_OF_AGONY = 'A6EH'
     integer AI_Warlock_ClassId = 0
     integer AI_Warlock_ProfileId = 0
+    integer AI_Warlock_OrcProfileId = 0
 
     private constant integer MAX_PLAYER_INDEX = 27
     private constant integer MAX_ACTIVE_IMPS = 128
@@ -73,6 +76,10 @@ endfunction
 
 private function IsImpUnitType takes integer unitTypeId returns boolean
     return unitTypeId == AI_WARLOCK_UNIT_IMP_1 or unitTypeId == AI_WARLOCK_UNIT_IMP_2 or unitTypeId == AI_WARLOCK_UNIT_IMP_3
+endfunction
+
+private function IsWarlockProfile takes integer profileId returns boolean
+    return profileId == AI_Warlock_ProfileId or profileId == AI_Warlock_OrcProfileId
 endfunction
 
 private function RemoveImpAtIndex takes integer index returns nothing
@@ -114,7 +121,7 @@ private function TrackSummonedImp takes unit warlock, unit imp returns nothing
     local integer instanceId = AI_GetInstance(warlock)
     local unit oldImp
     call EnsureImpState()
-    if instanceId <= 0 or imp == null or AI_GetProfileId(warlock) != AI_Warlock_ProfileId then
+    if instanceId <= 0 or imp == null or not IsWarlockProfile(AI_GetProfileId(warlock)) then
         return
     endif
     set oldImp = WarlockImpByInstance.unit[instanceId]
@@ -196,66 +203,66 @@ private function TickImps takes nothing returns nothing
     set target = null
 endfunction
 
-private function RegisterBarks takes nothing returns nothing
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_GREET, "Ah, the shaman graces me with their presence.", "HeroWarlock_Greet1")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_GREET, "Let's see if your 'spirits' can keep up today.", "HeroWarlock_Greet2")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_GREET, "What chaos shall we unleash?", "HeroWarlock_Greet3")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_GREET, "The void stirs. What is your will?", "HeroWarlock_Greet4")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_FAREWELL, "Try not to get lost communing with rocks and wind.", "HeroWarlock_Farewell1")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_FAREWELL, "Until we meet again.", "HeroWarlock_Farewell2")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_PASSIVE, "I will follow, but I will not bow.", "HeroWarlock_Passive1")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_PASSIVE, "Do not mistake my silence for obedience.", "HeroWarlock_Passive2")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_NORMAL, "Chaos awaits your word.", "HeroWarlock_Normal1")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_NORMAL, "As you command, so it shall be.", "HeroWarlock_Normal2")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_NORMAL, "I hunger for action.", "HeroWarlock_Normal3")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_AGGRESSIVE, "Time to unleash the fury of the Twisting Nether!", "HeroWarlock_Aggressive1")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_AGGRESSIVE, "The weak shall perish!", "HeroWarlock_Aggressive2")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_AGGRESSIVE, "Let the world burn!", "HeroWarlock_Aggressive3")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_HOLD, "Are we meditating again? How quaint.", "HeroWarlock_HoldPositions1")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_HOLD, "I'll stay, but do not test my patience.", "HeroWarlock_HoldPositions2")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_DROP_ITEMS, "Here, shaman. Perhaps it will help you commune better with the dirt.", "HeroWarlock_DropItems1")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_DROP_ITEMS, "Take them before I change my mind.", "HeroWarlock_DropItems2")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_DROP_ITEMS, "They are yours, for now.", "HeroWarlock_DropItems3")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_IDLE, "Have you gone into a trance again, shaman?", "HeroWarlock_Idle1")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_IDLE, "Shall we stand here until the end of days?", "HeroWarlock_Idle2")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_MOVING, "Is this where the wind told you to go?", "HeroWarlock_Moving1")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_MOVING, "This path reeks of death... I like it.", "HeroWarlock_Moving2")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_MOVING, "Even the shadows grow weary of this pace.", "HeroWarlock_Moving3")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_CASTING, "Watch and learn, shaman.", "HeroWarlock_Casting1")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_CASTING, "This is how real power feels.", "HeroWarlock_Casting2")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_CASTING, "Pain is the price of power!", "HeroWarlock_Casting3")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_ATTACKING, "Feel the fury of power unchained!", "HeroWarlock_Attacking1")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_ATTACKING, "Your end was written in the shadows.", "HeroWarlock_Attacking2")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_ATTACKING, "You cannot escape your fate!", "HeroWarlock_Attacking3")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_KILLING, "Their screams still linger.", "HeroWarlock_Killing1")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_KILLING, "A fitting sacrifice.", "HeroWarlock_Killing2")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_KILLING, "Weaklings fall before me.", "HeroWarlock_Killing3")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_KICKED, "When you beg for my aid, I will laugh.", "HeroWarlock_Kicked1")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_COMPANION_DIES, "They weren't strong enough...", "HeroWarlock_OtherDies1")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_COMPANION_DIES, "They served their purpose. Barely.", "HeroWarlock_OtherDies2")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_COMPANION_DIES, "Their weakness was their undoing.", "HeroWarlock_OtherDies3")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_ITEM_GIVEN, "A gift from the shaman? How thoughtful.", "HeroWarlock_ItemGiven1")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_ITEM_GIVEN, "A trinket? Useful... perhaps.", "HeroWarlock_ItemGiven2")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_ITEM_GIVEN, "Power, no matter how small, has its uses.", "HeroWarlock_ItemGiven3")
-    call AI_RegisterBarkLine(AI_Warlock_ProfileId, AI_BARK_ITEM_GIVEN, "I accept this offering.", "HeroWarlock_ItemGiven4")
+private function RegisterBarks takes integer profileId returns nothing
+    call AI_RegisterBarkLine(profileId, AI_BARK_GREET, "Ah, the shaman graces me with their presence.", "HeroWarlock_Greet1")
+    call AI_RegisterBarkLine(profileId, AI_BARK_GREET, "Let's see if your 'spirits' can keep up today.", "HeroWarlock_Greet2")
+    call AI_RegisterBarkLine(profileId, AI_BARK_GREET, "What chaos shall we unleash?", "HeroWarlock_Greet3")
+    call AI_RegisterBarkLine(profileId, AI_BARK_GREET, "The void stirs. What is your will?", "HeroWarlock_Greet4")
+    call AI_RegisterBarkLine(profileId, AI_BARK_FAREWELL, "Try not to get lost communing with rocks and wind.", "HeroWarlock_Farewell1")
+    call AI_RegisterBarkLine(profileId, AI_BARK_FAREWELL, "Until we meet again.", "HeroWarlock_Farewell2")
+    call AI_RegisterBarkLine(profileId, AI_BARK_PASSIVE, "I will follow, but I will not bow.", "HeroWarlock_Passive1")
+    call AI_RegisterBarkLine(profileId, AI_BARK_PASSIVE, "Do not mistake my silence for obedience.", "HeroWarlock_Passive2")
+    call AI_RegisterBarkLine(profileId, AI_BARK_NORMAL, "Chaos awaits your word.", "HeroWarlock_Normal1")
+    call AI_RegisterBarkLine(profileId, AI_BARK_NORMAL, "As you command, so it shall be.", "HeroWarlock_Normal2")
+    call AI_RegisterBarkLine(profileId, AI_BARK_NORMAL, "I hunger for action.", "HeroWarlock_Normal3")
+    call AI_RegisterBarkLine(profileId, AI_BARK_AGGRESSIVE, "Time to unleash the fury of the Twisting Nether!", "HeroWarlock_Aggressive1")
+    call AI_RegisterBarkLine(profileId, AI_BARK_AGGRESSIVE, "The weak shall perish!", "HeroWarlock_Aggressive2")
+    call AI_RegisterBarkLine(profileId, AI_BARK_AGGRESSIVE, "Let the world burn!", "HeroWarlock_Aggressive3")
+    call AI_RegisterBarkLine(profileId, AI_BARK_HOLD, "Are we meditating again? How quaint.", "HeroWarlock_HoldPositions1")
+    call AI_RegisterBarkLine(profileId, AI_BARK_HOLD, "I'll stay, but do not test my patience.", "HeroWarlock_HoldPositions2")
+    call AI_RegisterBarkLine(profileId, AI_BARK_DROP_ITEMS, "Here, shaman. Perhaps it will help you commune better with the dirt.", "HeroWarlock_DropItems1")
+    call AI_RegisterBarkLine(profileId, AI_BARK_DROP_ITEMS, "Take them before I change my mind.", "HeroWarlock_DropItems2")
+    call AI_RegisterBarkLine(profileId, AI_BARK_DROP_ITEMS, "They are yours, for now.", "HeroWarlock_DropItems3")
+    call AI_RegisterBarkLine(profileId, AI_BARK_IDLE, "Have you gone into a trance again, shaman?", "HeroWarlock_Idle1")
+    call AI_RegisterBarkLine(profileId, AI_BARK_IDLE, "Shall we stand here until the end of days?", "HeroWarlock_Idle2")
+    call AI_RegisterBarkLine(profileId, AI_BARK_MOVING, "Is this where the wind told you to go?", "HeroWarlock_Moving1")
+    call AI_RegisterBarkLine(profileId, AI_BARK_MOVING, "This path reeks of death... I like it.", "HeroWarlock_Moving2")
+    call AI_RegisterBarkLine(profileId, AI_BARK_MOVING, "Even the shadows grow weary of this pace.", "HeroWarlock_Moving3")
+    call AI_RegisterBarkLine(profileId, AI_BARK_CASTING, "Watch and learn, shaman.", "HeroWarlock_Casting1")
+    call AI_RegisterBarkLine(profileId, AI_BARK_CASTING, "This is how real power feels.", "HeroWarlock_Casting2")
+    call AI_RegisterBarkLine(profileId, AI_BARK_CASTING, "Pain is the price of power!", "HeroWarlock_Casting3")
+    call AI_RegisterBarkLine(profileId, AI_BARK_ATTACKING, "Feel the fury of power unchained!", "HeroWarlock_Attacking1")
+    call AI_RegisterBarkLine(profileId, AI_BARK_ATTACKING, "Your end was written in the shadows.", "HeroWarlock_Attacking2")
+    call AI_RegisterBarkLine(profileId, AI_BARK_ATTACKING, "You cannot escape your fate!", "HeroWarlock_Attacking3")
+    call AI_RegisterBarkLine(profileId, AI_BARK_KILLING, "Their screams still linger.", "HeroWarlock_Killing1")
+    call AI_RegisterBarkLine(profileId, AI_BARK_KILLING, "A fitting sacrifice.", "HeroWarlock_Killing2")
+    call AI_RegisterBarkLine(profileId, AI_BARK_KILLING, "Weaklings fall before me.", "HeroWarlock_Killing3")
+    call AI_RegisterBarkLine(profileId, AI_BARK_KICKED, "When you beg for my aid, I will laugh.", "HeroWarlock_Kicked1")
+    call AI_RegisterBarkLine(profileId, AI_BARK_COMPANION_DIES, "They weren't strong enough...", "HeroWarlock_OtherDies1")
+    call AI_RegisterBarkLine(profileId, AI_BARK_COMPANION_DIES, "They served their purpose. Barely.", "HeroWarlock_OtherDies2")
+    call AI_RegisterBarkLine(profileId, AI_BARK_COMPANION_DIES, "Their weakness was their undoing.", "HeroWarlock_OtherDies3")
+    call AI_RegisterBarkLine(profileId, AI_BARK_ITEM_GIVEN, "A gift from the shaman? How thoughtful.", "HeroWarlock_ItemGiven1")
+    call AI_RegisterBarkLine(profileId, AI_BARK_ITEM_GIVEN, "A trinket? Useful... perhaps.", "HeroWarlock_ItemGiven2")
+    call AI_RegisterBarkLine(profileId, AI_BARK_ITEM_GIVEN, "Power, no matter how small, has its uses.", "HeroWarlock_ItemGiven3")
+    call AI_RegisterBarkLine(profileId, AI_BARK_ITEM_GIVEN, "I accept this offering.", "HeroWarlock_ItemGiven4")
 endfunction
 
-private function RegisterAbilities takes nothing returns nothing
-    call AI_AddProfileStartingAbility(AI_Warlock_ProfileId, AI_WARLOCK_ABILITY_BANISH)
-    call AI_AddProfileStartingAbility(AI_Warlock_ProfileId, AI_WARLOCK_ABILITY_CURSE_OF_AGONY)
-    call AI_AddProfileStartingAbility(AI_Warlock_ProfileId, AI_WARLOCK_ABILITY_FEAR)
-    call AI_AddProfileStartingAbility(AI_Warlock_ProfileId, AI_WARLOCK_ABILITY_LIFE_DRAIN)
-    call AI_AddProfileStartingAbility(AI_Warlock_ProfileId, AI_WARLOCK_ABILITY_RAIN_OF_FIRE)
-    call AI_AddProfileStartingAbility(AI_Warlock_ProfileId, AI_WARLOCK_ABILITY_SHADOW_BOLT)
-    call AI_AddProfileStartingAbility(AI_Warlock_ProfileId, AI_WARLOCK_ABILITY_SUMMON_IMP)
-    call AI_AddProfileAbility(AI_Warlock_ProfileId, AI_WARLOCK_ABILITY_BANISH)
-    call AI_AddProfileAbility(AI_Warlock_ProfileId, AI_WARLOCK_ABILITY_CURSE_OF_AGONY)
-    call AI_AddProfileAbility(AI_Warlock_ProfileId, AI_WARLOCK_ABILITY_FEAR)
-    call AI_AddProfileAbility(AI_Warlock_ProfileId, AI_WARLOCK_ABILITY_LIFE_DRAIN)
-    call AI_AddProfileAbility(AI_Warlock_ProfileId, AI_WARLOCK_ABILITY_RAIN_OF_FIRE)
-    call AI_AddProfileAbility(AI_Warlock_ProfileId, AI_WARLOCK_ABILITY_SHADOW_BOLT)
-    call AI_AddProfileAbility(AI_Warlock_ProfileId, AI_WARLOCK_ABILITY_SUMMON_IMP)
-    call AI_AddProfileAbility(AI_Warlock_ProfileId, AI_WARLOCK_ABILITY_LIFE_TAP)
+private function RegisterAbilities takes integer profileId returns nothing
+    call AI_AddProfileStartingAbility(profileId, AI_WARLOCK_ABILITY_BANISH)
+    call AI_AddProfileStartingAbility(profileId, AI_WARLOCK_ABILITY_CURSE_OF_AGONY)
+    call AI_AddProfileStartingAbility(profileId, AI_WARLOCK_ABILITY_FEAR)
+    call AI_AddProfileStartingAbility(profileId, AI_WARLOCK_ABILITY_LIFE_DRAIN)
+    call AI_AddProfileStartingAbility(profileId, AI_WARLOCK_ABILITY_RAIN_OF_FIRE)
+    call AI_AddProfileStartingAbility(profileId, AI_WARLOCK_ABILITY_SHADOW_BOLT)
+    call AI_AddProfileStartingAbility(profileId, AI_WARLOCK_ABILITY_SUMMON_IMP)
+    call AI_AddProfileAbility(profileId, AI_WARLOCK_ABILITY_BANISH)
+    call AI_AddProfileAbility(profileId, AI_WARLOCK_ABILITY_CURSE_OF_AGONY)
+    call AI_AddProfileAbility(profileId, AI_WARLOCK_ABILITY_FEAR)
+    call AI_AddProfileAbility(profileId, AI_WARLOCK_ABILITY_LIFE_DRAIN)
+    call AI_AddProfileAbility(profileId, AI_WARLOCK_ABILITY_RAIN_OF_FIRE)
+    call AI_AddProfileAbility(profileId, AI_WARLOCK_ABILITY_SHADOW_BOLT)
+    call AI_AddProfileAbility(profileId, AI_WARLOCK_ABILITY_SUMMON_IMP)
+    call AI_AddProfileAbility(profileId, AI_WARLOCK_ABILITY_LIFE_TAP)
 endfunction
 
 private function Think takes nothing returns nothing
@@ -295,19 +302,35 @@ private function Think takes nothing returns nothing
 endfunction
 
 public function Register takes unit whichUnit returns integer
-    return AI_RegisterUnit(whichUnit, AI_Warlock_ProfileId, 0)
+    local integer unitTypeId
+    if whichUnit == null then
+        return 0
+    endif
+    set unitTypeId = GetUnitTypeId(whichUnit)
+    if unitTypeId == AI_WARLOCK_UNIT_ORC then
+        return AI_RegisterUnit(whichUnit, AI_Warlock_OrcProfileId, 0)
+    elseif unitTypeId == AI_WARLOCK_UNIT_UNDEAD or unitTypeId == AI_WARLOCK_UNIT_HORDE then
+        return AI_RegisterUnit(whichUnit, AI_Warlock_ProfileId, 0)
+    endif
+    return 0
 endfunction
 
 private function Init takes nothing returns nothing
     call EnsureImpState()
     set AI_Warlock_ClassId = AI_RegisterClass("Warlock")
     set AI_Warlock_ProfileId = AI_RegisterProfile(AI_Warlock_ClassId, AI_WARLOCK_UNIT_HORDE, "Horde Warlock")
+    set AI_Warlock_OrcProfileId = AI_RegisterProfile(AI_Warlock_ClassId, AI_WARLOCK_UNIT_ORC, "Orc Warlock")
     call AI_SetProfileSpawnOwner(AI_Warlock_ProfileId, Player(1))
+    call AI_SetProfileSpawnOwner(AI_Warlock_OrcProfileId, Player(1))
     call AI_SetProfileThinkCallback(AI_Warlock_ProfileId, function Think)
-    call RegisterAbilities()
+    call AI_SetProfileThinkCallback(AI_Warlock_OrcProfileId, function Think)
+    call RegisterAbilities(AI_Warlock_ProfileId)
+    call RegisterAbilities(AI_Warlock_OrcProfileId)
     call AI_AddDefaultShopItems(AI_Warlock_ProfileId)
+    call AI_AddDefaultShopItems(AI_Warlock_OrcProfileId)
     call AI_AddRandomSpawnProfile(AI_Warlock_ProfileId)
-    call RegisterBarks()
+    call RegisterBarks(AI_Warlock_ProfileId)
+    call RegisterBarks(AI_Warlock_OrcProfileId)
 
     set SummonTrigger = CreateTrigger()
     call RegisterPlayerUnitEventAll(SummonTrigger, EVENT_PLAYER_UNIT_SUMMON)
