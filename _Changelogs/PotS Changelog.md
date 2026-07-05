@@ -24,6 +24,13 @@
   Added random AI travel support where AI heroes can temporarily leave the map by being hidden/paused and later return without losing their registered unit handle or AI state.
   Added hard random-spawn and active-visible caps so random AI heroes stop spawning when the population cap is full, and returning/revived random AI heroes stay hidden if the active cap has no open slot.
   Valeria can now use the `AI_Valeria` combat profile while still allowing patrol and quest scripts such as `qAradion` to own scripted movement.
+- `Companions / pets`
+  Shadowclaw is now treated as a normal Wolf in pet metadata instead of being described as a Spirit Wolf.
+  Pet ability inspection from StatsUI now opens the normal Abilities UI instead of printing the old text-only ability summary to the game message area.
+  Shadowclaw and pets tamed with Tame Beast III now keep their companion/follower minimap icon while fatigued or fake-dead, while lower-rank tames still die permanently and clean up their pet state.
+  Companion command abilities now replay the old GUI feedback sounds for invite, hired-unit add, focus, mode changes, information, and kick flows.
+- `Quest companions`
+  Aradion and Valeria can now be re-invited through quest-related companion paths without being blocked by the normal Elarindor Covenant reputation requirement.
 
 ### Technical Updates
 - `AI.j`
@@ -39,6 +46,21 @@
   Added `AI_CompanionReplies.j`, `AI_Voicelines.j`, and the ODS-backed voiceline import data for AI barks, long idle/moving chats, companion replies, and ExSound/DialogSystem migration.
 - `Companions.j`
   Added a companion command-event bridge so AI libraries can react to invite, kick, mode changes, and drop-items commands with profile bark logic instead of relying on old GUI chat triggers.
+  Added a command sound replay helper so repeated companion command sounds restart reliably, and restored old rescue/upkeep/good-job feedback sounds on the matching JASS command paths.
+  Added an Aradion/Valeria quest-companion reputation bypass for reinvite checks while leaving the normal faction requirement intact for regular companion hiring.
+- `PetDefinitions.j`
+  Added a shared pet definition library for pet and tameable unit rawcodes, raw meat item checks, pet class/role/ability text, stat-profile families, and pet Abilities UI definition keys.
+  Moved Shadowclaw, wolf, bear, feline, turtle, stag, boar, and moth metadata out of duplicated `Pet.j` / `UnitExperience3.j` helper logic so the pet systems read one shared definition source.
+- `Pet.j`
+  Pet registration now records whether a pet is persistent. Shadowclaw and Tame Beast III pets use fatigue/revive behavior, while Tame Beast I/II pets are allowed to die permanently and then clean up companion control, XP, damage hooks, multiboard state, and active pet globals.
+  Pet metadata helpers now delegate to `PetDefinitions.j`, including tameable checks, raw meat checks, class text, role text, and ability summary text.
+- `UnitExperience3.j`
+  Pet stat-profile classification now delegates to `PetDefinitions.j`, removing duplicated pet unit-type tables from the XP/stat system.
+- `StatsUI.j` / `AbilitiesLiteUI.j`
+  StatsUI now routes selected pet ability inspection directly into `AbilitiesLiteUI_ShowForUnit`.
+  AbilitiesLiteUI now registers pet-family ability templates for training, inventory, fatigue, revive, and raw-meat recovery details when a pet unit is selected.
+- `IconQuery.j`
+  Companion/follower icon validation is now category-aware, allowing registered companion/pet unit entries to stay visible while fake-dead without making normal icon categories show dead units.
 - `World Editor trigger cleanup`
   Disabled the old AI GUI triggers in the `AI Wandering` folder now that the JASS AI libraries own the replacement behavior path.
   Deleted the obsolete `CAMERA SYSTEMS OLD` folder and its old trigger set.
@@ -48,10 +70,12 @@
 
 ### Known Issues
 - Full in-map JASS compile and runtime validation are still required for the new AI library stack, especially random spawning, multiple same-profile AI instances, companion invite/kick/mode barks, Warlock imp ownership, Shaman totem ownership, Valeria/qAradion control handoff, and old GUI trigger retirement.
+- Full in-map validation is also still required for the new pet definition split, pet Abilities UI templates, Tame Beast I/II permanent death cleanup, Tame Beast III fake-death icon persistence, and Aradion/Valeria reputation-bypass reinvite path.
 - `TravelShipB Moknatha Enter` may still reference old camera behavior. It should stop using deleted old camera triggers and route ship-enter camera behavior through `CameraControl`.
 
 ### Actions Remaining
 - Re-test `/debug aispawn`, timed random AI spawning, active/hard caps, cap-hidden returns, travel returns, death/revival, companion commands, ExSound bark playback, and multi-instance Warrior/Rogue/Warlock/Shaman/Paladin/Engineer behavior in-game.
+- Re-test StatsUI pet Abilities button behavior, AbilitiesLiteUI pet entries, Shadowclaw metadata text, companion command sounds, Shadowclaw/Tame Beast III fatigue icons, Tame Beast I/II permanent death cleanup, and Aradion/Valeria reinvite after kick.
 - Update `TravelShipB Moknatha Enter` so the camera can target the travel ship when appropriate, but still switch back to Zulkis or Nazgrek when they are not considered inside the ship.
 - Confirm no old `AI Wandering` GUI trigger path remains enabled after the new JASS AI libraries are imported and wired into the map build.
 
