@@ -15,9 +15,9 @@
     Requires `AI.j` and `Table`.
 
     API:
-    call AI_GenericCaster_RegisterProfile(unitTypeId, profileName, abilityId, order, cooldown, range, autonomous)
-    call AI_GenericCaster_Configure(profileId, abilityId, order, cooldown, range)
-    call AI_GenericCaster_RegisterUnit(whichUnit, profileId, uniqueId)
+    call AIGenericCaster_RegisterProfile(unitTypeId, profileName, abilityId, order, cooldown, range, autonomous)
+    call AIGenericCaster_Configure(profileId, abilityId, order, cooldown, range)
+    call AIGenericCaster_RegisterUnit(whichUnit, profileId, uniqueId)
 
 **/
 library AIGenericCaster initializer Init requires AI, Table
