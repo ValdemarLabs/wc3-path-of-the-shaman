@@ -16,7 +16,7 @@
     Requires `AI.j`.
 
     API:
-    call AI_Restoshaman_Register(unit whichUnit)
+    call AIRestoshaman_Register(unit whichUnit)
 
 **/
 library AIRestoshaman initializer Init requires AI, Table
