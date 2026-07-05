@@ -1,6 +1,6 @@
 # AI Master Plan
 
-Last updated: 2026-07-04
+Last updated: 2026-07-05
 
 This document is the required planning artifact before creating `AI.j` and the
 AI sublibraries. It records how the old GUI AI triggers in
@@ -23,6 +23,23 @@ systems.
 - Keep `Companions.j` authoritative for companion party membership, movement,
   modes, focus, and pet/companion command handling.
 - Make future AI types easy to add without copying a full trigger tree.
+
+## JASS Naming Rule
+
+File names may keep underscores, for example `AI_Generic.j` and
+`AI_Valeria.j`. vJASS `library` identifiers cannot use underscores in this
+project import style, so the actual library names and generated public function
+prefixes must use names such as `AIGeneric`, `AIWarlock`, `AIValeria`, and
+`AIAradion`.
+
+Examples:
+
+- file `AI/Generic/AI_Generic.j` contains `library AIGeneric`;
+- file `AI/Specific/AI_Valeria.j` contains `library AIValeria`;
+- public calls use generated names such as `AIValeria_Enable`,
+  `AIAradion_SetCombatOrders`, and `AIGeneric_RegisterProfile`;
+- ordinary globals may keep underscores when that matches project style, such
+  as `AI_Valeria_ProfileId`.
 
 ## Current Source Systems
 
@@ -387,12 +404,19 @@ All AI chat must move into the AI libraries, not into `Companions.j` or `Pet.j`.
 Use a shared chatter helper that:
 
 - checks `udg_CompanionDialogueActive`;
+- blocks opportunistic AI chatter during `udg_InCinematic` or active
+  `DialogSystem` sequences;
 - validates speaker alive/visible/companion state;
+- verifies at least one player hero is close enough to hear the speaker;
+- supports companion-only bark types for invite, mode, drop-items, kicked,
+  item-given, idle, moving, and similar party-context lines;
 - selects a bark by event type and profile;
 - calls `DialogSystem_PlayLine` or `ExSound_PlayAtUnit`;
 - reads `udg_ExSoundDuration`;
 - keeps the old global dialogue lock until the sound/transmission duration
   ends;
+- uses per-instance/per-bark cooldowns plus a short global post-line gap so
+  situational barks are not starved but lines never overlap;
 - supports multi-speaker idle and moving conversations.
 
 Old chat event types to preserve:
@@ -476,71 +500,71 @@ Implementation default:
 
 ## Valeria
 
-Valeria has an `AI_Valeria` profile for smarter combat behavior, including
+Valeria has an `AIValeria` library profile for smarter combat behavior, including
 retreat-like movement and defensive logic. This profile must not override active
 `qAradion` encounter control.
 
 Implementation rule:
 
-- `AI_Valeria` periodically registers `udg_Valeria` when the global unit exists;
+- `AIValeria` periodically registers `udg_Valeria` when the global unit exists;
 - the Valeria profile is marked non-autonomous through `AI_SetProfileAutonomous`
   so it can run combat think logic without shared wander/shop/camp/travel;
-- `qAradion` or a future `qValeria` can still call `AI_Valeria_Enable` or
-  `AI_Valeria_Disable` explicitly when a scripted phase needs to refresh control;
-- explicit `AI_Valeria_Disable` suspends the auto-enable timer until
-  `AI_Valeria_Enable` is called again;
+- `qAradion` or a future `qValeria` can still call `AIValeria_Enable` or
+  `AIValeria_Disable` explicitly when a scripted phase needs to refresh control;
+- explicit `AIValeria_Disable` suspends the auto-enable timer until
+  `AIValeria_Enable` is called again;
 - generic AI registration must not put Valeria into the random spawn pool.
 
 ## Aradion
 
-Aradion has an `AI_Aradion` profile with the same quest-character ownership
+Aradion has an `AIAradion` library profile with the same quest-character ownership
 model as Valeria. It should keep Aradion registered in `AI.j` for shared state,
 defensive reactions, chatter, and future boss-cast evade hooks without taking
 movement or ritual orders away from `qAradion`.
 
 Implementation rule:
 
-- `AI_Aradion` periodically registers `udg_Aradion` when the global unit exists;
+- `AIAradion` periodically registers `udg_Aradion` when the global unit exists;
 - the Aradion profile is marked non-autonomous through `AI_SetProfileAutonomous`
   so shared wander/shop/camp/travel never runs for quest-controlled Aradion;
 - low-health defensive movement is allowed, but ordinary attack orders are
-  opt-in through `AI_Aradion_SetCombatOrders`;
+  opt-in through `AIAradion_SetCombatOrders`;
 - `qAradion` or a future Aradion-specific quest library can call
-  `AI_Aradion_Enable`, `AI_Aradion_Disable`, and
-  `AI_Aradion_SetCombatOrders` when scripted phases need exact control;
+  `AIAradion_Enable`, `AIAradion_Disable`, and
+  `AIAradion_SetCombatOrders` when scripted phases need exact control;
 - generic AI registration must not put Aradion into the random spawn pool.
 
 ## Sublibrary Plan
 
 First wave:
 
-- `AI_Warrior`
-- `AI_Rogue`
-- `AI_Warlock`
-- `AI_Restoshaman`
-- `AI_Paladin`
-- `AI_Engineer`
-- `AI_Valeria`
-- `AI_Aradion`
+- file `AI_Warrior.j`, library `AIWarrior`
+- file `AI_Rogue.j`, library `AIRogue`
+- file `AI_Warlock.j`, library `AIWarlock`
+- file `AI_Restoshaman.j`, library `AIRestoshaman`
+- file `AI_Paladin.j`, library `AIPaladin`
+- file `AI_Engineer.j`, library `AIEngineer`
+- file `AI_Valeria.j`, library `AIValeria`
+- file `AI_Aradion.j`, library `AIAradion`
 
 Reusable generic sublibraries:
 
-- `AI_Generic`: light profile factory for units that only need shared `AI.j`
+- `AI_Generic.j` / `AIGeneric`: light profile factory for units that only need shared `AI.j`
   state and simple attack behavior.
-- `AI_Aggressive`: hostile profile factory for units that should actively
+- `AI_Aggressive.j` / `AIAggressive`: hostile profile factory for units that should actively
   attack and use basic combat barks.
-- `AI_Passive`: non-autonomous profile factory for units that avoid combat.
-- `AI_Civilian`: noncombat profile factory for town, quest, and ambient NPCs
+- `AI_Passive.j` / `AIPassive`: non-autonomous profile factory for units that avoid combat.
+- `AI_Civilian.j` / `AICivilian`: noncombat profile factory for town, quest, and ambient NPCs
   that should flee from nearby hostiles.
-- `AI_Guard`: non-autonomous defender profile factory for guards, sentries,
+- `AI_Guard.j` / `AIGuard`: non-autonomous defender profile factory for guards, sentries,
   and patrol-owned units.
-- `AI_Scripted`: non-autonomous profile factory for quest and cinematic units
+- `AI_Scripted.j` / `AIScripted`: non-autonomous profile factory for quest and cinematic units
   whose movement and orders are owned by external scripts.
-- `AI_Vendor`: noncombat profile factory for shopkeepers and service NPCs that
+- `AI_Vendor.j` / `AIVendor`: noncombat profile factory for shopkeepers and service NPCs that
   should register in the AI system without combat behavior.
-- `AI_GenericCaster`: configurable target-spell caster profile factory.
-- `AI_GenericHealer`: configurable healer/support profile factory.
-- `AI_GenericBoss`: reusable boss profile factory and boss-fight API bridge.
+- `AI_GenericCaster.j` / `AIGenericCaster`: configurable target-spell caster profile factory.
+- `AI_GenericHealer.j` / `AIGenericHealer`: configurable healer/support profile factory.
+- `AI_GenericBoss.j` / `AIGenericBoss`: reusable boss profile factory and boss-fight API bridge.
 
 Later profiles/classes:
 
