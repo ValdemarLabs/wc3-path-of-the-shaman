@@ -15,7 +15,7 @@
     Requires `AI.j`.
 
     API:
-    call AI_Rogue_Register(unit whichUnit)
+    call AIRogue_Register(unit whichUnit)
 
 **/
 library AIRogue initializer Init requires AI
