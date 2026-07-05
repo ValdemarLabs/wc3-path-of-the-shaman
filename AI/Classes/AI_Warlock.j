@@ -23,7 +23,7 @@ library AIWarlock initializer Init requires AI, Table
 globals
     constant integer AI_WARLOCK_UNIT_UNDEAD = 'O61K'
     constant integer AI_WARLOCK_UNIT_ORC = 'H60X'
-    constant integer AI_WARLOCK_UNIT_HORDE = 'O61K'
+    constant integer AI_WARLOCK_UNIT_HORDE = 'H60X'
     constant integer AI_WARLOCK_UNIT_IMP_1 = 'n61L'
     constant integer AI_WARLOCK_UNIT_IMP_2 = 'n61S'
     constant integer AI_WARLOCK_UNIT_IMP_3 = 'n61T'
@@ -38,6 +38,7 @@ globals
     integer AI_Warlock_ClassId = 0
     integer AI_Warlock_ProfileId = 0
     integer AI_Warlock_OrcProfileId = 0
+    integer AI_Warlock_UndeadProfileId = 0
 
     private constant integer MAX_PLAYER_INDEX = 27
     private constant integer MAX_ACTIVE_IMPS = 128
@@ -79,7 +80,7 @@ private function IsImpUnitType takes integer unitTypeId returns boolean
 endfunction
 
 private function IsWarlockProfile takes integer profileId returns boolean
-    return profileId == AI_Warlock_ProfileId or profileId == AI_Warlock_OrcProfileId
+    return profileId == AI_Warlock_ProfileId or profileId == AI_Warlock_OrcProfileId or profileId == AI_Warlock_UndeadProfileId
 endfunction
 
 private function RemoveImpAtIndex takes integer index returns nothing
@@ -309,8 +310,8 @@ public function Register takes unit whichUnit returns integer
     set unitTypeId = GetUnitTypeId(whichUnit)
     if unitTypeId == AI_WARLOCK_UNIT_ORC then
         return AI_RegisterUnit(whichUnit, AI_Warlock_OrcProfileId, 0)
-    elseif unitTypeId == AI_WARLOCK_UNIT_UNDEAD or unitTypeId == AI_WARLOCK_UNIT_HORDE then
-        return AI_RegisterUnit(whichUnit, AI_Warlock_ProfileId, 0)
+    elseif unitTypeId == AI_WARLOCK_UNIT_UNDEAD then
+        return AI_RegisterUnit(whichUnit, AI_Warlock_UndeadProfileId, 0)
     endif
     return 0
 endfunction
@@ -318,19 +319,19 @@ endfunction
 private function Init takes nothing returns nothing
     call EnsureImpState()
     set AI_Warlock_ClassId = AI_RegisterClass("Warlock")
-    set AI_Warlock_ProfileId = AI_RegisterProfile(AI_Warlock_ClassId, AI_WARLOCK_UNIT_HORDE, "Horde Warlock")
-    set AI_Warlock_OrcProfileId = AI_RegisterProfile(AI_Warlock_ClassId, AI_WARLOCK_UNIT_ORC, "Orc Warlock")
+    set AI_Warlock_ProfileId = AI_RegisterProfile(AI_Warlock_ClassId, AI_WARLOCK_UNIT_ORC, "Orc Warlock")
+    set AI_Warlock_OrcProfileId = AI_Warlock_ProfileId
+    set AI_Warlock_UndeadProfileId = AI_RegisterProfile(AI_Warlock_ClassId, AI_WARLOCK_UNIT_UNDEAD, "Undead Warlock")
     call AI_SetProfileSpawnOwner(AI_Warlock_ProfileId, Player(1))
-    call AI_SetProfileSpawnOwner(AI_Warlock_OrcProfileId, Player(1))
+    call AI_SetProfileSpawnOwner(AI_Warlock_UndeadProfileId, Player(1))
     call AI_SetProfileThinkCallback(AI_Warlock_ProfileId, function Think)
-    call AI_SetProfileThinkCallback(AI_Warlock_OrcProfileId, function Think)
+    call AI_SetProfileThinkCallback(AI_Warlock_UndeadProfileId, function Think)
     call RegisterAbilities(AI_Warlock_ProfileId)
-    call RegisterAbilities(AI_Warlock_OrcProfileId)
+    call RegisterAbilities(AI_Warlock_UndeadProfileId)
     call AI_AddDefaultShopItems(AI_Warlock_ProfileId)
-    call AI_AddDefaultShopItems(AI_Warlock_OrcProfileId)
+    call AI_AddDefaultShopItems(AI_Warlock_UndeadProfileId)
     call AI_AddRandomSpawnProfile(AI_Warlock_ProfileId)
     call RegisterBarks(AI_Warlock_ProfileId)
-    call RegisterBarks(AI_Warlock_OrcProfileId)
 
     set SummonTrigger = CreateTrigger()
     call RegisterPlayerUnitEventAll(SummonTrigger, EVENT_PLAYER_UNIT_SUMMON)
