@@ -16,9 +16,9 @@
     Requires `AI.j`.
 
     API:
-    call AI_Aradion_Enable(unit whichUnit)
-    call AI_Aradion_Disable(unit whichUnit)
-    call AI_Aradion_SetCombatOrders(boolean enabled)
+    call AIAradion_Enable(unit whichUnit)
+    call AIAradion_Disable(unit whichUnit)
+    call AIAradion_SetCombatOrders(boolean enabled)
 
 **/
 library AIAradion initializer Init requires AI
@@ -95,7 +95,7 @@ private function TryAutoEnable takes nothing returns nothing
 endfunction
 
 private function Init takes nothing returns nothing
-    set AI_Aradion_ClassId = AI_RegisterClass("Aradion")
+    set AI_Aradion_ClassId = AI_RegisterClass("Magister")
     set AI_Aradion_ProfileId = AI_RegisterProfile(AI_Aradion_ClassId, AI_ARADION_UNIT, "Aradion")
     call AI_SetProfileCap(AI_Aradion_ProfileId, 1)
     call AI_SetUnitTypeCap(AI_ARADION_UNIT, 1)
