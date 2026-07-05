@@ -15,6 +15,26 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [6.7.2026]
+
+### Player-Facing Updates
+- `AI heroes`
+  AI heroes with assigned professions can now autonomously harvest nearby gather nodes while idle or wandering, including ore veins, herbalism item nodes, and skinning item nodes when their profile supports the matching profession.
+  Autonomous AI heroes can now occasionally move near a friendly AI unit and face them briefly, adding a lightweight social ambient behavior without using companion chatter spam.
+
+### Technical Updates
+- `AI.j`
+  Added AI profession constants, `AI_AddProfileProfession`, `AI_GetProfessionSkill`, per-profile profession flags, per-instance profession/social cooldowns, and profession skill initialization based on unit or hero level.
+  Integrated AI profession behavior with `GatherNodes`, `GatherNodeSkills`, `GatherNodeItems`, and `GatherNodeUnits`, including node skill checks, randomized scan timing, temporary Mining Pick/Skinning Knife item handling, and cleanup on death, travel, unregister, and tool expiry.
+  Added a new autonomous social state that selects nearby friendly registered AI units, moves to a randomized nearby point, faces both units toward each other, and yields to companion control, combat, low-health retreat, boss evasion, and travel.
+- `GatherNodeSkills.j`
+  Added a generic tracked-gatherer registry so non-player AI units can use the same profession skill gating and skill gain path as Nazgrek/Zulkis, with unregister cleanup for tracked flags, throttles, and stored profession skills.
+- `AI_*` sublibraries
+  Assigned initial AI profile professions: Warrior and Engineer/Shredder use Mining, Rogue uses Skinning, and Restoshaman uses Herbalism.
+
+### Known Issues
+- Full in-map validation is still required for AI profession harvesting and social movement, especially inventory-full behavior, skinning node coverage, mining orders against all vein owner types, and interactions with companion orders or quest-controlled AI.
+
 ## [5.7.2026]
 
 ### Player-Facing Updates
