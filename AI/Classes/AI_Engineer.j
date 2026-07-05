@@ -16,7 +16,7 @@
     Requires `AI.j`.
 
     API:
-    call AI_Engineer_Register(unit whichUnit)
+    call AIEngineer_Register(unit whichUnit)
 
 **/
 library AIEngineer initializer Init requires AI
