@@ -975,6 +975,20 @@ private function EnableRangerMissingDeathTrigger takes nothing returns nothing
 	call TriggerAddAction(RangerMissingValeriaDeathTrigger, function OnRangerMissingValeriaDamaged)
 endfunction
 
+private function RepairRangerMissingEscortRequirements takes QuestData q returns nothing
+	if q == 0 then
+		return
+	endif
+	call q.updateRequirementText(1, GetFindValeriaFieldText())
+	call q.markRequirementCompleted(1, true)
+	call q.setRequirement(2, "Escort Valeria to Aradion")
+	call q.updateRequirementText(2, "Escort Valeria to Aradion")
+	call q.markRequirementCompleted(2, false)
+	call q.removeReturnRequirement()
+	call q.refreshQuestLog()
+	call QuestMaster_ShowUpdateMessage(q.id, "|cffffcc00QUEST UPDATED|r\n" + q.title + "\n\n|cff80ff80Objective completed:|r " + GetFindValeriaFieldText() + "\n|cff80a0ffObjective updated:|r Escort Valeria to Aradion.")
+endfunction
+
 private function StartRangerMissingEscortInternal takes nothing returns nothing
 	local QuestData q
 	local unit hero
@@ -994,16 +1008,11 @@ private function StartRangerMissingEscortInternal takes nothing returns nothing
 		return
 	endif
 
-	if not RangerMissingReq1Complete then
-		set RangerMissingReq1Complete = true
-		call QuestGiver_SetRequirementCompleted(q.id, 1, true)
-	endif
+	set RangerMissingReq1Complete = true
 
 	call UnitRemoveAbility(Valeria, ABIL_VALERIA_GHOST)
 	call SetUnitCreepGuard(Valeria, false)
-	call QuestGiver_UpdateRequirementText(q.id, 1, "Find Valeria")
-	call QuestGiver_SetRequirement(q.id, 2, "Escort Valeria to Aradion")
-	call q.removeReturnRequirement()
+	call RepairRangerMissingEscortRequirements(q)
 	call QuestGiver_UnregisterEscortRequirement(q.id, 2)
 	call RemoveRangerMissingEscortDestination()
 	set ax = GetUnitX(Aradion)
