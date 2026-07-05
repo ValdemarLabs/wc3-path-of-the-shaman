@@ -313,6 +313,7 @@ private function Init takes nothing returns nothing
     set AI_Restoshaman_ProfileId = AI_RegisterProfile(AI_Restoshaman_ClassId, AI_RESTOSHAMAN_UNIT_HORDE, "Horde Restoshaman")
     call AI_SetProfileSpawnOwner(AI_Restoshaman_ProfileId, Player(1))
     call AI_SetProfileThinkCallback(AI_Restoshaman_ProfileId, function Think)
+    call AI_AddProfileProfession(AI_Restoshaman_ProfileId, AI_PROFESSION_HERBALISM)
     call RegisterAbilities()
     call AI_AddDefaultShopItems(AI_Restoshaman_ProfileId)
     call AI_AddRandomSpawnProfile(AI_Restoshaman_ProfileId)
