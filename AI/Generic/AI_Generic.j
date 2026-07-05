@@ -15,8 +15,8 @@
     Requires `AI.j`.
 
     API:
-    call AI_Generic_RegisterProfile(unitTypeId, profileName, autonomous)
-    call AI_Generic_RegisterUnit(whichUnit, profileId, uniqueId)
+    call AIGeneric_RegisterProfile(unitTypeId, profileName, autonomous)
+    call AIGeneric_RegisterUnit(whichUnit, profileId, uniqueId)
 
 **/
 library AIGeneric initializer Init requires AI
