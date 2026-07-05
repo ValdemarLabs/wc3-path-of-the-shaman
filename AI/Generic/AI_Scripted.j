@@ -16,8 +16,8 @@
     Requires `AI.j`.
 
     API:
-    call AI_Scripted_RegisterProfile(unitTypeId, profileName)
-    call AI_Scripted_RegisterUnit(whichUnit, profileId, uniqueId)
+    call AIScripted_RegisterProfile(unitTypeId, profileName)
+    call AIScripted_RegisterUnit(whichUnit, profileId, uniqueId)
 
 **/
 library AIScripted initializer Init requires AI
