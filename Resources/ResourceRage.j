@@ -74,7 +74,7 @@ globals
 
     private timer RageClockTimer = null
     private timer RageDecayTimer = null
-    private trigger RageEnterTrigger = null
+    // private trigger RageEnterTrigger = null //Usused. Currently using centralized GUI trigger "Init 07 Unit Event Enters"
     private trigger RageItemTrigger = null
     private trigger RageSpellCastTrigger = null
     private trigger RageSpellEffectTrigger = null
@@ -414,10 +414,8 @@ private function HandleDamage takes nothing returns nothing
     set target = null
 endfunction
 
-private function HandleEnter takes nothing returns nothing
-    local unit whichUnit = GetEnteringUnit()
+public function OnUnitEnter takes unit whichUnit returns nothing
     call TryAutoRegisterUnit(whichUnit)
-    set whichUnit = null
 endfunction
 
 private function HandleItemChange takes nothing returns nothing
@@ -542,10 +540,6 @@ private function Init takes nothing returns nothing
 
     set RageDecayTimer = CreateTimer()
     call TimerStart(RageDecayTimer, ResourceRage_DecayPeriod, true, function RageDecayTick)
-
-    set RageEnterTrigger = CreateTrigger()
-    call TriggerRegisterEnterRectSimple(RageEnterTrigger, GetWorldBounds())
-    call TriggerAddAction(RageEnterTrigger, function HandleEnter)
 
     set RageItemTrigger = CreateTrigger()
     call RegisterPlayerUnitEventAll(RageItemTrigger, EVENT_PLAYER_UNIT_PICKUP_ITEM)

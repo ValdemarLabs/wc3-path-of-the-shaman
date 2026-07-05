@@ -57,7 +57,7 @@ globals
     private unit array EnergyUnits
 
     private timer EnergyTickTimer = null
-    private trigger EnergyEnterTrigger = null
+    //private trigger EnergyEnterTrigger = null //Usused. Currently using centralized GUI trigger "Init 07 Unit Event Enters"
     private trigger EnergyItemTrigger = null
     private trigger EnergySpellCastTrigger = null
 endglobals
@@ -329,10 +329,8 @@ private function EnergyTick takes nothing returns nothing
     set lastUnit = null
 endfunction
 
-private function HandleEnter takes nothing returns nothing
-    local unit whichUnit = GetEnteringUnit()
+public function OnUnitEnter takes unit whichUnit returns nothing
     call TryAutoRegisterUnit(whichUnit)
-    set whichUnit = null
 endfunction
 
 private function HandleItemChange takes nothing returns nothing
@@ -450,10 +448,6 @@ private function Init takes nothing returns nothing
 
     set EnergyTickTimer = CreateTimer()
     call TimerStart(EnergyTickTimer, ResourceEnergy_TickPeriod, true, function EnergyTick)
-
-    set EnergyEnterTrigger = CreateTrigger()
-    call TriggerRegisterEnterRectSimple(EnergyEnterTrigger, GetWorldBounds())
-    call TriggerAddAction(EnergyEnterTrigger, function HandleEnter)
 
     set EnergyItemTrigger = CreateTrigger()
     call RegisterPlayerUnitEventAll(EnergyItemTrigger, EVENT_PLAYER_UNIT_PICKUP_ITEM)
