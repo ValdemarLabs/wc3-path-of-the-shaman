@@ -100,6 +100,7 @@ globals
 
     private constant integer UNIT_ROGUE = 'O631'
     private constant integer UNIT_WARLOCK = 'O61K'
+    private constant integer UNIT_ORC_WARLOCK = 'H60X'
     private constant integer UNIT_RIVERBANE_WARLOCK = 'H60X'
     private constant integer UNIT_SHAMAN = 'O61H'
     private constant integer UNIT_WARRIOR = 'O629'
@@ -944,6 +945,18 @@ private function AddInternal takes unit companionUnit, string companionIcon, uni
     call RegisterControlledInternal(companionUnit, leader, mode, true, companionIcon)
     call SyncGuiCompanionEntry(companionUnit, companionIcon)
     call ApplyOrders(companionUnit)
+    set leader = GetFocusedLeader(companionUnit)
+    if IsAliveUnit(leader) and NormalizeMode(mode) != COMPANION_MODE_HOLD and not IsUnitCastingByCustomValue(GetUnitUserData(companionUnit)) then
+        call ClearOrderIdleState(companionUnit, GetUnitUserData(companionUnit))
+        if NormalizeMode(mode) == COMPANION_MODE_PASSIVE then
+            call IssueTargetOrder(companionUnit, "move", leader)
+        else
+            call IssueTargetOrder(companionUnit, "smart", leader)
+        endif
+    endif
+    if IconQuery_GetCategoryMode(ICONQUERY_CATEGORY_COMPANIONS_AND_FOLLOWERS) == ICONQUERY_CATEGORY_MODE_ALWAYS then
+        call EnsureCompanionFarIcon(companionUnit)
+    endif
     call DebugMsg("Add " + GetUnitName(companionUnit))
 endfunction
 
@@ -1214,11 +1227,11 @@ private function GetNamedCompanionIcon takes integer unitTypeId returns string
 endfunction
 
 private function GetReturnOwner takes integer unitTypeId returns player
-    if unitTypeId == UNIT_ROGUE or unitTypeId == UNIT_WARLOCK or unitTypeId == UNIT_SHAMAN or unitTypeId == UNIT_WARRIOR then
+    if unitTypeId == UNIT_ROGUE or unitTypeId == UNIT_WARLOCK or unitTypeId == UNIT_ORC_WARLOCK or unitTypeId == UNIT_SHAMAN or unitTypeId == UNIT_WARRIOR then
         return Player(5)
     elseif unitTypeId == UNIT_ENGINEER or unitTypeId == UNIT_ENGINEER_SHREDDER then
         return Player(6)
-    elseif unitTypeId == UNIT_PALADIN or unitTypeId == UNIT_RIVERBANE_WARLOCK then
+    elseif unitTypeId == UNIT_PALADIN then
         return Player(14)
     elseif unitTypeId == UNIT_ARADION or unitTypeId == UNIT_VALERIA then
         return Player(ELARINDOR_OWNER_INDEX)
