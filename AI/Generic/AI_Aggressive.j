@@ -15,8 +15,8 @@
     Requires `AI.j`.
 
     API:
-    call AI_Aggressive_RegisterProfile(unitTypeId, profileName, autonomous)
-    call AI_Aggressive_RegisterUnit(whichUnit, profileId, uniqueId)
+    call AIAggressive_RegisterProfile(unitTypeId, profileName, autonomous)
+    call AIAggressive_RegisterUnit(whichUnit, profileId, uniqueId)
 
 **/
 library AIAggressive initializer Init requires AI
