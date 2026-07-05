@@ -16,7 +16,7 @@
     Requires `AI.j`.
 
     API:
-    call AI_Paladin_Register(unit whichUnit)
+    call AIPaladin_Register(unit whichUnit)
 
 **/
 library AIPaladin initializer Init requires AI
