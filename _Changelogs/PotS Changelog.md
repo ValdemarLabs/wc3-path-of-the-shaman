@@ -33,6 +33,7 @@
   Assigned initial AI profile professions: Warrior and Engineer/Shredder use Mining, Rogue uses Skinning, and Restoshaman uses Herbalism.
 
 ### Known Issues
+- CRITICAL: Do not add new standalone `Unit - A unit enters (Playable map area)` / `TriggerRegisterEnterRectSimple(GetWorldBounds())` / playable-map enter hooks in individual systems. Route all unit-enter initialization through the existing GUI trigger `Init 07 Unit Event Enters`, which currently dispatches `CreepRespawn_OnUnitEnter(GetTriggerUnit())`, adds the unit-specific Floating Texts spell event, and calls `UnitStats_ProcessUnit(GetTriggerUnit())`. Duplicated map-wide enter hooks are a known cause of severe map stalls/hangups where units stop responding to player/controller movement.
 - Full in-map validation is still required for AI profession harvesting and social movement, especially inventory-full behavior, skinning node coverage, mining orders against all vein owner types, and interactions with companion orders or quest-controlled AI.
 
 ## [5.7.2026]
