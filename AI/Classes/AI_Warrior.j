@@ -143,6 +143,7 @@ private function Init takes nothing returns nothing
     call AI_SetProfileNoManaRestore(AI_Warrior_ProfileId, true)
     call AI_SetProfileSpawnOwner(AI_Warrior_ProfileId, Player(1))
     call AI_SetProfileThinkCallback(AI_Warrior_ProfileId, function Think)
+    call AI_AddProfileProfession(AI_Warrior_ProfileId, AI_PROFESSION_MINING)
     call RegisterAbilities()
     call AI_AddDefaultShopItems(AI_Warrior_ProfileId)
     call AI_AddRandomSpawnProfile(AI_Warrior_ProfileId)
