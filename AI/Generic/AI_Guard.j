@@ -16,8 +16,8 @@
     Requires `AI.j`.
 
     API:
-    call AI_Guard_RegisterProfile(unitTypeId, profileName)
-    call AI_Guard_RegisterUnit(whichUnit, profileId, uniqueId)
+    call AIGuard_RegisterProfile(unitTypeId, profileName)
+    call AIGuard_RegisterUnit(whichUnit, profileId, uniqueId)
 
 **/
 library AIGuard initializer Init requires AI
