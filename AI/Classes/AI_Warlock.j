@@ -274,6 +274,11 @@ private function Think takes nothing returns nothing
         set warlock = null
         return
     endif
+    if AI_IsUnitCastingLocked(warlock) then
+        set warlock = null
+        set target = null
+        return
+    endif
     set enemyCount = AI_CountNearbyEnemies(warlock, 600.00)
     if AI_GetUnitManaPercent(warlock) <= 75.00 and AI_GetUnitLifePercent(warlock) >= 30.00 and GetRandomInt(1, 2) == 1 and AI_TemporaryAbilitySwap(warlock, 0, AI_WARLOCK_ABILITY_LIFE_TAP, 1, 1.20) and AI_TryCastImmediate(warlock, AI_WARLOCK_ABILITY_LIFE_TAP, "berserk", 2.00) then
         call AI_RequestBark(warlock, AI_BARK_CASTING)
