@@ -2010,14 +2010,14 @@ public function SpawnRandomHero takes boolean showMessage returns unit
     call EnsureState()
     if not CanCreateRandomHero() then
         if showMessage then
-            call BJDebugMsg("[AI] Random spawn skipped: hard cap, active cap, or random profile pool is blocking it.")
+            call DebugMsg("Random spawn skipped: hard cap, active cap, or random profile pool is blocking it.")
         endif
         return null
     endif
     set profileId = GetRandomSpawnProfile()
     if profileId <= 0 then
         if showMessage then
-            call BJDebugMsg("[AI] Random spawn skipped: all random profiles are currently capped.")
+            call DebugMsg("Random spawn skipped: all random profiles are currently capped.")
         endif
         return null
     endif
@@ -2027,7 +2027,7 @@ public function SpawnRandomHero takes boolean showMessage returns unit
     endif
     if created == null then
         if showMessage then
-            call BJDebugMsg("[AI] Random spawn failed for profile " + I2S(profileId) + ".")
+            call DebugMsg("Random spawn failed for profile " + I2S(profileId) + ".")
         endif
         set owner = null
         return null
@@ -2040,7 +2040,9 @@ public function SpawnRandomHero takes boolean showMessage returns unit
             call HideRandomManagedByCap(instanceId, created)
         endif
     endif
-    call AnnounceRandomSpawn(created, profileId)
+    if showMessage then
+        call AnnounceRandomSpawn(created, profileId)
+    endif
     set owner = null
     return created
 endfunction
@@ -2073,7 +2075,7 @@ private function TryUnhideRandomManaged takes boolean showMessage returns boolea
         if CanShowRandomManaged(selected) then
             call ShowRandomManagedFromCap(selected, whichUnit)
             if showMessage then
-                call BJDebugMsg("[AI] Random hero returned: " + GetDisplayName(whichUnit))
+                call DebugMsg("Random hero returned: " + GetDisplayName(whichUnit))
             endif
             set whichUnit = null
             return true
@@ -2514,6 +2516,9 @@ endfunction
 
 private function RunProfileThink takes integer instanceId, unit whichUnit returns nothing
     if instanceId <= 0 or whichUnit == null then
+        return
+    endif
+    if IsCastingLocked(whichUnit) then
         return
     endif
     set AI_EventTarget = AI_FindClosestEnemy(whichUnit, 700.00)
