@@ -15,6 +15,34 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [5.7.2026]
+
+### Player-Facing Updates
+- `AI companions`
+  AI companion invite/reinvite handling now immediately refreshes follow orders, companion minimap icon setup, and stale idle state so newly invited AI companions do not remain standing still.
+  AI barks now respect player distance, cinematic/dialogue state, companion-only contexts, and anti-overlap cooldowns so AI heroes should no longer spam or talk over each other.
+- `Rifts of Corruption`
+  Valeria and Aradion companion setup now repairs ownership and creep-guard state before adding them to the companion system, preventing quest companions from remaining Neutral Passive during field phases.
+  Re-inviting Valeria or Aradion during active Aradion quest phases now refreshes the matching quest objectives and companion state.
+  Rifts waves now repeatedly retarget toward Aradion during the ritual, completed rituals kill the active mana-rift handles more reliably, and returning home updates the objective to speak with Aradion.
+
+### Technical Updates
+- `AI.j`
+  Added runtime AI debug toggles through `/debug ai` and `/debug aidebug`, plus public debug mode API helpers for future AI sublibraries.
+  Added shared bark range checks, cinematic/dialogue suppression, companion-only bark gating, per-instance/per-bark cooldowns, and a short global bark gap to replace the old spam-prone GUI chat timing pattern.
+  Added AI cast-order guards using `udg_UnitIsCasting`, plus small randomized ability and consumable timing jitter so AI instances do not all issue periodic orders on the same exact tick.
+- `AI_Warlock.j`
+  Split Warlock registration so Undead Warlock `'O61K'` and Orc Warlock `'H60X'` can both use the Warlock class logic with their own profiles while sharing abilities, barks, shop setup, and imp ownership tracking.
+- `Companions.j`
+  Repaired AI companion add flow by clearing stale idle/order state, issuing an immediate follow/defend order toward the focused leader, refreshing Always-mode companion icons, and returning Orc Warlocks to the AI Horde owner on kick.
+- `qAradion.j`
+  Added a companion-command bridge for Valeria/Aradion reinvite repairs, switched Ranger Missing Valeria control to follower behavior, fixed Rifts intro Valeria placement, and tightened Rifts return-home objective handling.
+- `AI_MasterPlan.md`
+  Documented the no-underscore vJASS library naming rule, generated public API prefix expectations, and the newer AI chatter gating/cooldown rules.
+
+### Known Issues
+- Full in-map compile and runtime validation are still required for the AI follow-up changes, especially AI bark timing, Warlock imp behavior for both unit types, Shaman totem MUI behavior, companion reinvite/order repair, and the Rifts handoff fixes.
+
 ## [4.7.2026]
 
 ### Player-Facing Updates
