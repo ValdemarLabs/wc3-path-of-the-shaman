@@ -9,16 +9,17 @@
     AI units. This library owns AI instance identity, class/profile caps,
     shared state transitions, travel, boss-cast evade, revive handling, common
     helpers, and ExSound/DialogSystem chatter dispatch. Class-specific logic
-    belongs in small `AI_*` sublibraries that register profiles and callbacks.
+    belongs in small sublibraries that register profiles and callbacks.
 
     Credits:
     - Old GUI triggers under `AI/_OldGUI_triggers/`
     - Table v6 by Bribe
 
     How to install:
-    Import this library before `AI_*` sublibraries and after the required shared
+    Import this library before AI sublibraries and after the required shared
     systems: Table, Companions, UnitDeathEvent, DamageEngine, DialogSystem, and
-    ExSound.
+    ExSound. File names may use underscores, but vJASS library identifiers and
+    generated public function prefixes must not.
 
     API:
     call AI_RegisterClass(className)
@@ -53,6 +54,7 @@
     call AI_RegisterBossCastAbility(abilityId, evadeRadius, evadeDistance)
     call AI_HandleBossCast(caster, abilityId, targetX, targetY)
     call AI_RequestBark(speaker, barkType)
+    call AI_SetDebugMode(enabled)
 
 **/
 library AI initializer Init requires Table, Companions, UnitDeathEvent, DamageEngine, DialogSystem, ExSound
@@ -97,7 +99,7 @@ globals
     unit AI_EventTarget = null
     integer AI_EventAbilityId = 0
 
-    private constant boolean DEBUG = false
+    private constant boolean DEBUG_DEFAULT = false
     private constant integer MAX_PLAYER_INDEX = 27
     private constant integer MAX_AI_INSTANCES = 512
     private constant integer MAX_BOSS_CASTS = 64
@@ -112,10 +114,13 @@ globals
     private constant real AI_DEFAULT_THINK_MAX = 1.20
     private constant real AI_DEFAULT_REVIVE_DELAY = 60.00
     private constant real AI_DEFAULT_ABILITY_GAP = 2.00
+    private constant real AI_ABILITY_ORDER_JITTER = 0.35
     private constant real AI_RETREAT_COMBAT_TIME = 5.00
     private constant real AI_RETREAT_BASE_TIME = 30.00
     private constant real AI_BOSS_EVADE_TIME = 2.25
     private constant real AI_DIALOG_UNLOCK_PAD = 0.15
+    private constant real AI_BARK_AUDIBLE_RANGE = 2600.00
+    private constant real AI_BARK_GLOBAL_GAP = 0.75
     private constant real AI_SHIELD_BLOCK_CHANCE = 33.34
     private constant real AI_RANDOM_SPAWN_MIN = 50.00
     private constant real AI_RANDOM_SPAWN_MAX = 150.00
@@ -177,6 +182,7 @@ globals
     private Table InstanceNextAbility = 0
     private Table InstanceNextItem = 0
     private Table InstanceNextChat = 0
+    private Table InstanceNextBark = 0
     private Table InstanceRetreatUntil = 0
     private Table InstanceTravelReturnAt = 0
     private Table InstanceTravelReturnX = 0
@@ -242,9 +248,12 @@ globals
     private trigger LevelTrigger = null
     private trigger ItemTrigger = null
     private trigger DebugSpawnTrigger = null
+    private trigger DebugModeTrigger = null
     private group TempGroup = null
+    private boolean DebugMode = DEBUG_DEFAULT
     private boolean RandomSpawnEnabled = true
     private boolean RandomTravelEnabled = true
+    private real NextGlobalBark = 0.00
     private real RandomPointX = 0.00
     private real RandomPointY = 0.00
 
@@ -266,7 +275,7 @@ globals
 endglobals
 
 private function DebugMsg takes string msg returns nothing
-    if DEBUG then
+    if DebugMode then
         call BJDebugMsg("[AI] " + msg)
     endif
 endfunction
@@ -312,6 +321,7 @@ private function EnsureState takes nothing returns nothing
         set InstanceNextAbility = Table.create()
         set InstanceNextItem = Table.create()
         set InstanceNextChat = Table.create()
+        set InstanceNextBark = Table.create()
         set InstanceRetreatUntil = Table.create()
         set InstanceTravelReturnAt = Table.create()
         set InstanceTravelReturnX = Table.create()
@@ -413,8 +423,77 @@ private function GetBarkLineKey takes integer barkKey, integer index returns int
     return barkKey * 100 + index
 endfunction
 
+private function GetInstanceBarkKey takes integer instanceId, integer barkType returns integer
+    return instanceId * 100 + barkType
+endfunction
+
 private function GetReplyIndexKey takes integer replyKey, integer index returns integer
     return StringHash(I2S(replyKey) + ":" + I2S(index))
+endfunction
+
+private function ClearInstanceBarkCooldowns takes integer instanceId returns nothing
+    local integer barkType = 1
+    loop
+        exitwhen barkType > AI_BARK_FAREWELL
+        call InstanceNextBark.remove(GetInstanceBarkKey(instanceId, barkType))
+        set barkType = barkType + 1
+    endloop
+endfunction
+
+private function IsBarkNearPlayerHero takes unit speaker returns boolean
+    if speaker == null then
+        return false
+    endif
+    if udg_Nazgrek != null and IsAliveUnit(udg_Nazgrek) and IsUnitInRange(speaker, udg_Nazgrek, AI_BARK_AUDIBLE_RANGE) then
+        return true
+    endif
+    if udg_Zulkis != null and IsAliveUnit(udg_Zulkis) and IsUnitInRange(speaker, udg_Zulkis, AI_BARK_AUDIBLE_RANGE) then
+        return true
+    endif
+    return false
+endfunction
+
+private function IsCompanionOnlyBark takes integer barkType returns boolean
+    if barkType == AI_BARK_GREET or barkType == AI_BARK_PASSIVE or barkType == AI_BARK_NORMAL then
+        return true
+    endif
+    if barkType == AI_BARK_AGGRESSIVE or barkType == AI_BARK_HOLD or barkType == AI_BARK_DROP_ITEMS then
+        return true
+    endif
+    if barkType == AI_BARK_KICKED or barkType == AI_BARK_ITEM_GIVEN or barkType == AI_BARK_COMPANION_DIES then
+        return true
+    endif
+    return barkType == AI_BARK_IDLE or barkType == AI_BARK_MOVING or barkType == AI_BARK_FAREWELL
+endfunction
+
+private function IsDialogBlockingBark takes nothing returns boolean
+    return udg_InCinematic or DialogSystem_IsSequenceActive()
+endfunction
+
+private function IsBarkContextAllowed takes unit speaker, integer barkType returns boolean
+    if IsDialogBlockingBark() then
+        return false
+    endif
+    if not IsBarkNearPlayerHero(speaker) then
+        return false
+    endif
+    if IsCompanionOnlyBark(barkType) and not IsCompanionControlled(speaker) then
+        return false
+    endif
+    return true
+endfunction
+
+private function GetBarkCooldown takes integer barkType returns real
+    if barkType == AI_BARK_IDLE or barkType == AI_BARK_MOVING then
+        return GetRandomReal(60.00, 120.00)
+    elseif barkType == AI_BARK_ATTACKING or barkType == AI_BARK_CASTING or barkType == AI_BARK_KILLING then
+        return GetRandomReal(12.00, 28.00)
+    elseif barkType == AI_BARK_COMPANION_DIES then
+        return GetRandomReal(25.00, 60.00)
+    elseif IsCompanionOnlyBark(barkType) then
+        return GetRandomReal(3.00, 8.00)
+    endif
+    return GetRandomReal(10.00, 20.00)
 endfunction
 
 private function IsCapAvailable takes integer cap, integer active returns boolean
@@ -1452,8 +1531,10 @@ private function FindCompanionResponder takes integer profileId, unit speaker re
         exitwhen i > ActiveCount
         set instanceId = ActiveInstances[i]
         set responder = InstanceUnit.unit[instanceId]
-        if responder != null and responder != speaker and InstanceProfile[instanceId] == profileId and IsAliveUnit(responder) and IsCompanionControlled(responder) then
-            return responder
+        if responder != null and responder != speaker and InstanceProfile[instanceId] == profileId then
+            if IsAliveUnit(responder) and IsCompanionControlled(responder) and IsBarkNearPlayerHero(responder) then
+                return responder
+            endif
         endif
         set i = i + 1
     endloop
@@ -1468,8 +1549,10 @@ private function PlayBarkReply takes nothing returns nothing
     local unit responder = ReplyTimerResponder.unit[timerId]
     local string text = ReplyTimerText.string[timerId]
     local string soundKey = ReplyTimerSound.string[timerId]
+    local integer responderInstance
+    local real now = GetNow()
     local real duration
-    if responder != null and IsAliveUnit(responder) and IsCompanionControlled(responder) then
+    if responder != null and IsAliveUnit(responder) and IsCompanionControlled(responder) and IsBarkNearPlayerHero(responder) and not IsDialogBlockingBark() then
         if speaker != null and IsAliveUnit(speaker) then
             call DialogSystem_MakeFaceEachOther(speaker, responder, 0.50)
         endif
@@ -1478,6 +1561,11 @@ private function PlayBarkReply takes nothing returns nothing
         if duration <= 0.00 then
             set duration = EstimateDialogDuration(text)
         endif
+        set responderInstance = AI_GetInstance(responder)
+        if responderInstance > 0 then
+            set InstanceNextChat.real[responderInstance] = now + duration + AI_DIALOG_UNLOCK_PAD
+        endif
+        set NextGlobalBark = now + duration + AI_BARK_GLOBAL_GAP
         call StartDialogUnlock(duration + AI_DIALOG_UNLOCK_PAD)
     else
         call StartDialogUnlock(AI_DIALOG_UNLOCK_PAD)
@@ -1722,6 +1810,7 @@ public function UnregisterUnit takes unit whichUnit returns nothing
     call InstanceNextAbility.remove(instanceId)
     call InstanceNextItem.remove(instanceId)
     call InstanceNextChat.remove(instanceId)
+    call ClearInstanceBarkCooldowns(instanceId)
     call InstanceRetreatUntil.remove(instanceId)
     call InstanceTravelReturnAt.remove(instanceId)
     call InstanceTravelReturnX.remove(instanceId)
@@ -2055,6 +2144,41 @@ public function TryUseConsumable takes unit whichUnit returns boolean
     return false
 endfunction
 
+private function IsCastingLocked takes unit whichUnit returns boolean
+    local integer customValue
+    if whichUnit == null then
+        return false
+    endif
+    set customValue = GetUnitUserData(whichUnit)
+    return customValue > 0 and udg_UnitIsCasting[customValue]
+endfunction
+
+private function CanStartAbilityOrder takes unit caster, integer instanceId returns boolean
+    if instanceId > 0 then
+        if GetNow() < InstanceNextAbility.real[instanceId] then
+            return false
+        endif
+        if IsCastingLocked(caster) then
+            return false
+        endif
+    endif
+    return true
+endfunction
+
+private function SetAbilityOrderCooldown takes integer instanceId, real cooldown returns nothing
+    if instanceId <= 0 then
+        return
+    endif
+    if cooldown <= 0.00 then
+        set cooldown = AI_DEFAULT_ABILITY_GAP
+    endif
+    set InstanceNextAbility.real[instanceId] = GetNow() + cooldown + GetRandomReal(0.00, AI_ABILITY_ORDER_JITTER)
+endfunction
+
+public function IsUnitCastingLocked takes unit whichUnit returns boolean
+    return IsCastingLocked(whichUnit)
+endfunction
+
 public function TryCastTarget takes unit caster, unit target, integer abilityId, string order, real cooldown returns boolean
     local integer instanceId = AI_GetInstance(caster)
     if caster == null or target == null or order == "" then
@@ -2063,16 +2187,11 @@ public function TryCastTarget takes unit caster, unit target, integer abilityId,
     if abilityId != 0 and GetUnitAbilityLevel(caster, abilityId) <= 0 then
         return false
     endif
-    if instanceId > 0 and GetNow() < InstanceNextAbility.real[instanceId] then
+    if not CanStartAbilityOrder(caster, instanceId) then
         return false
     endif
     if IssueTargetOrder(caster, order, target) then
-        if instanceId > 0 then
-            if cooldown <= 0.00 then
-                set cooldown = AI_DEFAULT_ABILITY_GAP
-            endif
-            set InstanceNextAbility.real[instanceId] = GetNow() + cooldown
-        endif
+        call SetAbilityOrderCooldown(instanceId, cooldown)
         return true
     endif
     return false
@@ -2086,16 +2205,11 @@ public function TryCastPoint takes unit caster, real x, real y, integer abilityI
     if abilityId != 0 and GetUnitAbilityLevel(caster, abilityId) <= 0 then
         return false
     endif
-    if instanceId > 0 and GetNow() < InstanceNextAbility.real[instanceId] then
+    if not CanStartAbilityOrder(caster, instanceId) then
         return false
     endif
     if IssuePointOrder(caster, order, x, y) then
-        if instanceId > 0 then
-            if cooldown <= 0.00 then
-                set cooldown = AI_DEFAULT_ABILITY_GAP
-            endif
-            set InstanceNextAbility.real[instanceId] = GetNow() + cooldown
-        endif
+        call SetAbilityOrderCooldown(instanceId, cooldown)
         return true
     endif
     return false
@@ -2109,16 +2223,11 @@ public function TryCastImmediate takes unit caster, integer abilityId, string or
     if abilityId != 0 and GetUnitAbilityLevel(caster, abilityId) <= 0 then
         return false
     endif
-    if instanceId > 0 and GetNow() < InstanceNextAbility.real[instanceId] then
+    if not CanStartAbilityOrder(caster, instanceId) then
         return false
     endif
     if IssueImmediateOrder(caster, order) then
-        if instanceId > 0 then
-            if cooldown <= 0.00 then
-                set cooldown = AI_DEFAULT_ABILITY_GAP
-            endif
-            set InstanceNextAbility.real[instanceId] = GetNow() + cooldown
-        endif
+        call SetAbilityOrderCooldown(instanceId, cooldown)
         return true
     endif
     return false
@@ -2132,16 +2241,11 @@ public function TryCastImmediateById takes unit caster, integer abilityId, integ
     if abilityId != 0 and GetUnitAbilityLevel(caster, abilityId) <= 0 then
         return false
     endif
-    if instanceId > 0 and GetNow() < InstanceNextAbility.real[instanceId] then
+    if not CanStartAbilityOrder(caster, instanceId) then
         return false
     endif
     if IssueImmediateOrderById(caster, orderId) then
-        if instanceId > 0 then
-            if cooldown <= 0.00 then
-                set cooldown = AI_DEFAULT_ABILITY_GAP
-            endif
-            set InstanceNextAbility.real[instanceId] = GetNow() + cooldown
-        endif
+        call SetAbilityOrderCooldown(instanceId, cooldown)
         return true
     endif
     return false
@@ -2190,11 +2294,13 @@ public function RequestBark takes unit speaker, integer barkType returns boolean
     local integer instanceId = AI_GetInstance(speaker)
     local integer profileId
     local integer barkKey
+    local integer cooldownKey
     local integer count
     local integer index
     local integer lineKey
     local string text
     local string soundKey
+    local real now = GetNow()
     local real duration
     local boolean replyScheduled
     if instanceId <= 0 or speaker == null or barkType <= 0 then
@@ -2203,7 +2309,11 @@ public function RequestBark takes unit speaker, integer barkType returns boolean
     if not IsAliveUnit(speaker) or udg_CompanionDialogueActive then
         return false
     endif
-    if GetNow() < InstanceNextChat.real[instanceId] then
+    if IsDialogBlockingBark() or not IsBarkContextAllowed(speaker, barkType) then
+        return false
+    endif
+    set cooldownKey = GetInstanceBarkKey(instanceId, barkType)
+    if now < NextGlobalBark or now < InstanceNextChat.real[instanceId] or now < InstanceNextBark.real[cooldownKey] then
         return false
     endif
     set profileId = InstanceProfile[instanceId]
@@ -2222,12 +2332,22 @@ public function RequestBark takes unit speaker, integer barkType returns boolean
     if duration <= 0.00 then
         set duration = EstimateDialogDuration(text)
     endif
-    set InstanceNextChat.real[instanceId] = GetNow() + duration + AI_DIALOG_UNLOCK_PAD
+    set InstanceNextChat.real[instanceId] = now + duration + AI_DIALOG_UNLOCK_PAD
+    set InstanceNextBark.real[cooldownKey] = now + GetBarkCooldown(barkType)
+    set NextGlobalBark = now + duration + AI_BARK_GLOBAL_GAP
     set replyScheduled = ScheduleBarkReply(speaker, soundKey, duration)
     if not replyScheduled then
         call StartDialogUnlock(duration + AI_DIALOG_UNLOCK_PAD)
     endif
     return true
+endfunction
+
+public function SetDebugMode takes boolean enabled returns nothing
+    set DebugMode = enabled
+endfunction
+
+public function IsDebugMode takes nothing returns boolean
+    return DebugMode
 endfunction
 
 public function SetBossFightActive takes boolean active returns nothing
@@ -2383,6 +2503,15 @@ private function DebugSpawnAction takes nothing returns nothing
     set spawned = null
 endfunction
 
+private function DebugModeAction takes nothing returns nothing
+    set DebugMode = not DebugMode
+    if DebugMode then
+        call BJDebugMsg("[AI] Debug mode enabled.")
+    else
+        call BJDebugMsg("[AI] Debug mode disabled.")
+    endif
+endfunction
+
 private function RunProfileThink takes integer instanceId, unit whichUnit returns nothing
     if instanceId <= 0 or whichUnit == null then
         return
@@ -2480,9 +2609,9 @@ private function ProcessInstance takes integer instanceId, real now returns noth
 
     if now >= InstanceNextItem.real[instanceId] then
         if AI_TryUseConsumable(whichUnit) then
-            set InstanceNextItem.real[instanceId] = now + 5.00
+            set InstanceNextItem.real[instanceId] = now + 5.00 + GetRandomReal(0.50, 1.50)
         else
-            set InstanceNextItem.real[instanceId] = now + 2.00
+            set InstanceNextItem.real[instanceId] = now + 2.00 + GetRandomReal(0.10, 0.80)
         endif
     endif
 
@@ -2670,6 +2799,11 @@ private function Init takes nothing returns nothing
     call TriggerRegisterPlayerChatEvent(DebugSpawnTrigger, Player(0), "/debug aispawn", true)
     call TriggerRegisterPlayerChatEvent(DebugSpawnTrigger, Player(0), "aispawn", true)
     call TriggerAddAction(DebugSpawnTrigger, function DebugSpawnAction)
+
+    set DebugModeTrigger = CreateTrigger()
+    call TriggerRegisterPlayerChatEvent(DebugModeTrigger, Player(0), "/debug ai", true)
+    call TriggerRegisterPlayerChatEvent(DebugModeTrigger, Player(0), "/debug aidebug", true)
+    call TriggerAddAction(DebugModeTrigger, function DebugModeAction)
 
     set AttackTrigger = CreateTrigger()
     call RegisterPlayerUnitEventAll(AttackTrigger, EVENT_PLAYER_UNIT_ATTACKED)
