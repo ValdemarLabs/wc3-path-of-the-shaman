@@ -15,9 +15,9 @@
     Requires `AI.j`.
 
     API:
-    call AI_GenericBoss_RegisterProfile(unitTypeId, profileName, autonomous)
-    call AI_GenericBoss_RegisterUnit(whichUnit, profileId, uniqueId)
-    call AI_GenericBoss_SetBossFightActive(active)
+    call AIGenericBoss_RegisterProfile(unitTypeId, profileName, autonomous)
+    call AIGenericBoss_RegisterUnit(whichUnit, profileId, uniqueId)
+    call AIGenericBoss_SetBossFightActive(active)
 
 **/
 library AIGenericBoss initializer Init requires AI
