@@ -15,8 +15,8 @@
     Requires `AI.j`.
 
     API:
-    call AI_Valeria_Enable(unit whichUnit)
-    call AI_Valeria_Disable(unit whichUnit)
+    call AIValeria_Enable(unit whichUnit)
+    call AIValeria_Disable(unit whichUnit)
 
 **/
 library AIValeria initializer Init requires AI
@@ -77,7 +77,7 @@ private function TryAutoEnable takes nothing returns nothing
 endfunction
 
 private function Init takes nothing returns nothing
-    set AI_Valeria_ClassId = AI_RegisterClass("Mage")
+    set AI_Valeria_ClassId = AI_RegisterClass("Ranger")
     set AI_Valeria_ProfileId = AI_RegisterProfile(AI_Valeria_ClassId, AI_VALERIA_UNIT, "Valeria")
     call AI_SetProfileCap(AI_Valeria_ProfileId, 1)
     call AI_SetUnitTypeCap(AI_VALERIA_UNIT, 1)
