@@ -15,8 +15,8 @@
     Requires `AI.j`.
 
     API:
-    call AI_Vendor_RegisterProfile(unitTypeId, profileName)
-    call AI_Vendor_RegisterUnit(whichUnit, profileId, uniqueId)
+    call AIVendor_RegisterProfile(unitTypeId, profileName)
+    call AIVendor_RegisterUnit(whichUnit, profileId, uniqueId)
 
 **/
 library AIVendor initializer Init requires AI
