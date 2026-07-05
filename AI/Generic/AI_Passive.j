@@ -15,8 +15,8 @@
     Requires `AI.j`.
 
     API:
-    call AI_Passive_RegisterProfile(unitTypeId, profileName)
-    call AI_Passive_RegisterUnit(whichUnit, profileId, uniqueId)
+    call AIPassive_RegisterProfile(unitTypeId, profileName)
+    call AIPassive_RegisterUnit(whichUnit, profileId, uniqueId)
 
 **/
 library AIPassive initializer Init requires AI
