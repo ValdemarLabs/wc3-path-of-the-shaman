@@ -22,6 +22,7 @@ globals
 
     private Table GNS_SkillLevels
     private Table GNS_FailureThrottle
+    private Table GNS_TrackedGatherers
     private string array GNS_ProfessionNames
     private timer GNS_ClockTimer = null
     private real GNS_GlobalFailureUntil = 0.0
@@ -59,8 +60,45 @@ private function GNS_IsZulkis takes unit u returns boolean
     return u == GNS_Zulkis or u == udg_Zulkis
 endfunction
 
+private function GNS_EnsureTrackedGatherers takes nothing returns nothing
+    if GNS_TrackedGatherers == 0 then
+        set GNS_TrackedGatherers = Table.create()
+    endif
+endfunction
+
+function GNS_RegisterTrackedGatherer takes unit u returns nothing
+    if u == null then
+        return
+    endif
+    call GNS_EnsureTrackedGatherers()
+    set GNS_TrackedGatherers.boolean[GetHandleId(u)] = true
+endfunction
+
+function GNS_UnregisterTrackedGatherer takes unit u returns nothing
+    local integer professionId = GNS_PROF_MINING
+    local integer handleId
+    if u == null then
+        return
+    endif
+    set handleId = GetHandleId(u)
+    call GNS_EnsureTrackedGatherers()
+    call GNS_TrackedGatherers.remove(handleId)
+    if GNS_FailureThrottle.has(handleId) then
+        call GNS_FailureThrottle.real.remove(handleId)
+    endif
+    loop
+        exitwhen professionId > GNS_PROF_COOKING
+        call GNS_SkillLevels.remove(GNS_GetSkillKey(u, professionId))
+        set professionId = professionId + 1
+    endloop
+endfunction
+
 function GNS_IsTrackedGatherer takes unit u returns boolean
-    return GNS_IsNazgrek(u) or GNS_IsZulkis(u)
+    if u == null then
+        return false
+    endif
+    call GNS_EnsureTrackedGatherers()
+    return GNS_IsNazgrek(u) or GNS_IsZulkis(u) or GNS_TrackedGatherers.boolean[GetHandleId(u)]
 endfunction
 
 function GNS_GetProfessionName takes integer professionId returns string
@@ -519,6 +557,7 @@ endfunction
 private function Init takes nothing returns nothing
     set GNS_SkillLevels = Table.create()
     set GNS_FailureThrottle = Table.create()
+    set GNS_TrackedGatherers = Table.create()
     set GNS_ClockTimer = CreateTimer()
     call TimerStart(GNS_ClockTimer, 999999.0, false, function GNS_NoOp)
     call GNS_RegisterProfessionNames()
