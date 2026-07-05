@@ -211,6 +211,8 @@ private function Init takes nothing returns nothing
     call AI_SetProfileSpawnOwner(AI_Engineer_ShredderProfileId, Player(6))
     call AI_SetProfileThinkCallback(AI_Engineer_ProfileId, function ThinkEngineer)
     call AI_SetProfileThinkCallback(AI_Engineer_ShredderProfileId, function ThinkShredder)
+    call AI_AddProfileProfession(AI_Engineer_ProfileId, AI_PROFESSION_MINING)
+    call AI_AddProfileProfession(AI_Engineer_ShredderProfileId, AI_PROFESSION_MINING)
     call RegisterAbilities()
     call AI_AddDefaultShopItems(AI_Engineer_ProfileId)
     call AI_AddDefaultShopItems(AI_Engineer_ShredderProfileId)
