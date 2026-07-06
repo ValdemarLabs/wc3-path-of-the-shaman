@@ -1,0 +1,18 @@
+GUI multiboard usage:
+- gg_trg_MultiboardUpdate_Add_Companion
+- gg_trg_MultiboardUpdate_Remove_Companion
+- gg_trg_MultiboardUpdate_Add_Tamed
+- gg_trg_MultiboardUpdate_Remove_Tamed"
+
+those four multiboard add/remove hooks are no longer needed.
+Both UIs read the live state directly:
+StatsUI.j: udg_CompanionUnit[], udg_CompanionCount, udg_TamedUnit
+StatsLiteUI.j: same live companion/pet globals, refreshed by timer
+So the old GUI triggers are not needed to make StatsUI/StatsLiteUI show companions or pets.
+But I would not delete them yet. There are still direct JASS references:
+[QuestGiver.j (line 329)](H:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGiver.j:329) calls MultiboardUpdate_Add_Companion
+[QuestGiver.j (line 435)](H:/Pelit/PotS_JASS/QuestsAndDialogs/QuestGiver.j:435) calls MultiboardUpdate_Remove_Companion
+[Pet.j (line 613)](H:/Pelit/PotS_JASS/Companions/Pet.j:613) calls MultiboardUpdate_Add_Tamed
+[Pet.j (line 490)](H:/Pelit/PotS_JASS/Companions/Pet.j:490) and [Pet.j (line 790)](H:/Pelit/PotS_JASS/Companions/Pet.j:790) call MultiboardUpdate_Remove_Tamed
+You can disable the old multiboard GUI triggers in-map if the goal is to stop using the old visual multiboard. Keep the trigger objects present for now so existing gg_trg_... references still compile. The clean follow-up is to remove those direct TriggerExecute(...) calls from QuestGiver.j and Pet.j, then the four hook triggers can be deleted safely.
+Also note: UnitExperience3.j still calls old multiboard level-update triggers, but StatsUI/StatsLiteUI do not need those either because they refresh level from the units directly.
