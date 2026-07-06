@@ -98,23 +98,33 @@ private function Think takes nothing returns nothing
     local unit target = AI_EventTarget
     local unit ally
     local integer enemyCount
+    local integer roll
+    local real paladinLife
+    local real allyLife
     if paladin == null then
         set paladin = null
         return
     endif
     set ally = AI_FindLowestHealthAlly(paladin, 800.00, true)
     set enemyCount = AI_CountNearbyEnemies(paladin, 600.00)
-    if ally != null and GetRandomInt(1, 3) == 1 and AI_TryCastTarget(paladin, ally, AI_PALADIN_ABILITY_INNER_FIRE, "innerfire", 2.00) then
+    set roll = GetRandomInt(1, 100)
+    set paladinLife = AI_GetUnitLifePercent(paladin)
+    if ally != null then
+        set allyLife = AI_GetUnitLifePercent(ally)
+    else
+        set allyLife = 100.00
+    endif
+    if paladinLife <= 20.00 and AI_TryCastImmediate(paladin, AI_PALADIN_ABILITY_DIVINE_SHIELD, "divineshield", 2.00) then
         call AI_RequestBark(paladin, AI_BARK_CASTING)
-    elseif ally != null and AI_GetUnitLifePercent(ally) <= 75.00 and GetRandomInt(1, 3) == 1 and AI_TryCastTarget(paladin, ally, AI_PALADIN_ABILITY_HOLY_LIGHT, "holybolt", 3.00) then
+    elseif ally != null and allyLife <= 25.00 and AI_TemporaryAbilitySwap(paladin, AI_PALADIN_ABILITY_HOLY_LIGHT, AI_PALADIN_ABILITY_LAY_ON_HANDS, GetUnitAbilityLevel(paladin, AI_PALADIN_ABILITY_HOLY_LIGHT), 3.50) and AI_TryCastTarget(paladin, ally, AI_PALADIN_ABILITY_LAY_ON_HANDS, "holybolt", 2.00) then
         call AI_RequestBark(paladin, AI_BARK_CASTING)
-    elseif target != null and GetRandomInt(1, 2) == 1 and AI_TryCastTarget(paladin, target, AI_PALADIN_ABILITY_JUDGEMENT_STRIKE, "stormbolt", 2.00) then
+    elseif ally != null and allyLife <= 70.00 and roll <= 50 and AI_TryCastTarget(paladin, ally, AI_PALADIN_ABILITY_HOLY_LIGHT, "holybolt", 3.00) then
         call AI_RequestBark(paladin, AI_BARK_CASTING)
-    elseif AI_GetUnitLifePercent(paladin) <= 20.00 and GetRandomInt(1, 2) == 1 and AI_TryCastImmediate(paladin, AI_PALADIN_ABILITY_DIVINE_SHIELD, "divineshield", 2.00) then
+    elseif enemyCount >= 2 and paladinLife >= 25.00 and roll <= 65 and AI_TryCastImmediate(paladin, AI_PALADIN_ABILITY_TAUNT, "taunt", 2.00) then
         call AI_RequestBark(paladin, AI_BARK_CASTING)
-    elseif enemyCount >= 2 and AI_GetUnitLifePercent(paladin) >= 10.00 and GetRandomInt(1, 4) == 1 and AI_TryCastImmediate(paladin, AI_PALADIN_ABILITY_TAUNT, "taunt", 2.00) then
+    elseif ally != null and roll <= 78 and AI_TryCastTarget(paladin, ally, AI_PALADIN_ABILITY_INNER_FIRE, "innerfire", 2.00) then
         call AI_RequestBark(paladin, AI_BARK_CASTING)
-    elseif ally != null and AI_GetUnitLifePercent(ally) <= 30.00 and GetRandomInt(1, 2) == 1 and AI_TemporaryAbilitySwap(paladin, AI_PALADIN_ABILITY_HOLY_LIGHT, AI_PALADIN_ABILITY_LAY_ON_HANDS, GetUnitAbilityLevel(paladin, AI_PALADIN_ABILITY_HOLY_LIGHT), 3.50) and AI_TryCastTarget(paladin, ally, AI_PALADIN_ABILITY_LAY_ON_HANDS, "holybolt", 2.00) then
+    elseif target != null and roll <= 92 and AI_TryCastTarget(paladin, target, AI_PALADIN_ABILITY_JUDGEMENT_STRIKE, "stormbolt", 2.00) then
         call AI_RequestBark(paladin, AI_BARK_CASTING)
     elseif target != null then
         call IssueTargetOrder(paladin, "attack", target)
