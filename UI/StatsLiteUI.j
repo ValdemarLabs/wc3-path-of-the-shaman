@@ -704,12 +704,12 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
     endfunction
 
     private function SLUI_CreateHeaderButton takes string name, string label, real width, framehandle anchor, real x returns framehandle
-        local framehandle button = BlzCreateFrameByType("GLUETEXTBUTTON", name, SLUI_Parent, "ScriptDialogButton", 0)
-        call BlzFrameSetSize(button, width, 0.022)
-        call BlzFrameSetText(button, label)
-        call BlzFrameSetPoint(button, FRAMEPOINT_TOPRIGHT, anchor, FRAMEPOINT_TOPLEFT, x, 0.0)
+        local framehandle buttonFrame = BlzCreateFrameByType("GLUETEXTBUTTON", name, SLUI_Parent, "ScriptDialogButton", 0)
+        call BlzFrameSetSize(buttonFrame, width, 0.022)
+        call BlzFrameSetText(buttonFrame, label)
+        call BlzFrameSetPoint(buttonFrame, FRAMEPOINT_TOPRIGHT, anchor, FRAMEPOINT_TOPLEFT, x, 0.0)
         set anchor = null
-        return button
+        return buttonFrame
     endfunction
 
     private function SLUI_CreateConfigButton takes integer index, string label, integer actionId, real x, real y returns nothing
