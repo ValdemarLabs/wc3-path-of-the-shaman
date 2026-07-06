@@ -31,6 +31,8 @@ private function AddHordeSpawns takes integer profileId returns nothing
     call AI_AddProfileSpawnRect(profileId, gg_rct_HordeWandererSpawningPlace06)
     call AI_AddProfileSpawnRect(profileId, gg_rct_HordeWandererSpawningPlace07)
     call AI_AddProfileSpawnRect(profileId, gg_rct_HordeWandererSpawningPlace08)
+    call AI_AddProfileSpawnRect(profileId, gg_rct_HordeWandererSpawningPlace09)
+    call AI_AddProfileSpawnRect(profileId, gg_rct_HordeWandererSpawningPlace10)
 endfunction
 
 private function AddHordeRetreats takes integer profileId returns nothing
