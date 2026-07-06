@@ -28,10 +28,10 @@ globals
 	private constant integer ABIL_TELANOR_ROD = 'A04W'
 	private constant integer ABIL_RIFT_CLOSE = 'A04Z'
 	private constant integer UNIT_VALERIA = 'n01W'
-	private constant integer UNIT_MANA_WRAITH = 'n002'
+	private constant integer UNIT_MANA_WRAITH = 'n002' // Mana Wraith
 	private constant integer UNIT_MANA_RIFT = 'n023'
-	private constant integer UNIT_FADING_SPARKS_WRAITH_2 = 0
-	private constant integer UNIT_FADING_SPARKS_WRAITH_3 = 0
+	private constant integer UNIT_FADING_SPARKS_WRAITH_2 = 'n028' // Mana Devourer
+	private constant integer UNIT_FADING_SPARKS_WRAITH_3 = 'n027' // Mana Spawn
 	private constant integer UNIT_FADING_SPARKS_WRAITH_4 = 0
 
 	private constant real DIALOG_RANGE = 500.00
