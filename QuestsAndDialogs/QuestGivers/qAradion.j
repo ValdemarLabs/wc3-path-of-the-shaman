@@ -892,11 +892,32 @@ private function ResetRangerMissingQuestProgress takes nothing returns nothing
 	set q = QuestGiver_GetByNameAndGiver(QUEST_RANGER_MISSING, Aradion)
 	if q != 0 then
 		call QuestGiver_SetRequirementCompleted(q.id, 1, false)
-		call q.updateRequirementText(1, "Find Valeria")
+		call q.updateRequirementText(1, GetFindValeriaFieldText())
 		call QuestGiver_SetRequirementCompleted(q.id, 2, false)
 		call q.updateRequirementText(2, "")
 		call q.removeReturnRequirement()
 		call q.refreshQuestLog()
+	endif
+endfunction
+
+private function ResetRangerMissingForValeriaKick takes nothing returns nothing
+	local QuestData q
+
+	set RangerMissingReq1Complete = false
+	call StopRangerMissingEscortInternal()
+	call ClearValeriaEncounterState()
+	set ValeriaEncounterResolved = false
+
+	set q = QuestGiver_GetByNameAndGiver(QUEST_RANGER_MISSING, Aradion)
+	if q != 0 then
+		call q.updateRequirementText(1, GetFindValeriaFieldText())
+		call q.markRequirementCompleted(1, false)
+		call q.updateRequirementText(2, "")
+		call q.markRequirementCompleted(2, false)
+		call q.removeReturnRequirement()
+		call q.refreshQuestLog()
+		call QuestGiver_SetStateByNameAndGiver(QUEST_RANGER_MISSING, Aradion, QUEST_STATE_IN_PROGRESS)
+		call QuestMaster_ShowUpdateMessage(q.id, "|cffffcc00QUEST UPDATED|r\n" + q.title + "\n\n|cff80a0ffObjective updated:|r " + GetFindValeriaFieldText() + ".")
 	endif
 endfunction
 
@@ -1739,12 +1760,24 @@ private function OnCompanionCommand takes nothing returns nothing
 	local unit eventUnit = Companions_EventUnit
 	local integer rangerState
 	local unit hero
-	if Companions_EventCommand != Companions_COMMAND_INVITE or eventUnit == null then
+	if eventUnit == null then
 		set eventUnit = null
 		return
 	endif
 
 	call SyncUnitReferences()
+	if Companions_EventCommand == Companions_COMMAND_KICK and eventUnit == Valeria and IsRangerMissingInProgress() then
+		call ResetRangerMissingForValeriaKick()
+		call QuestGiver_UpdateQuestByNameAndGiver(QUEST_RANGER_MISSING, Aradion)
+		set eventUnit = null
+		return
+	endif
+
+	if Companions_EventCommand != Companions_COMMAND_INVITE then
+		set eventUnit = null
+		return
+	endif
+
 	if eventUnit == Valeria and IsRangerMissingInProgress() then
 		set rangerState = QuestGiver_GetStateByNameAndGiver(QUEST_RANGER_MISSING, Aradion)
 		if rangerState != QUEST_STATE_READY_TURNIN then
