@@ -61,6 +61,7 @@ globals
     private constant real COMPANION_AGGRESSIVE_DISTANCE = 3500.00
     private constant real COMPANION_IDLE_CHECK_INTERVAL = 10.00
     private constant real COMPANION_ORDER_INTERVAL = 2.00
+    private constant real HIRED_UNIT_SHOP_INIT_DELAY = 1.00
     private constant real COMPANION_NORMAL_CATCHUP_DISTANCE = 600.00
     private constant real COMPANION_AGGRESSIVE_CATCHUP_DISTANCE = 1800.00
     private constant real COMPANION_NORMAL_MIN_OFFSET = 100.00
@@ -2013,6 +2014,30 @@ private function HandleDropItems takes unit caster, unit target returns nothing
     set caster = null
 endfunction
 
+private function AddHiredUnitStock takes unit shopUnit, integer unitTypeId returns nothing
+    if shopUnit != null then
+        call RemoveUnitFromStock(shopUnit, unitTypeId)
+        call AddUnitToStock(shopUnit, unitTypeId, 1, 1)
+    endif
+    set shopUnit = null
+endfunction
+
+private function InitHiredUnitShops takes nothing returns nothing
+    local trigger initTrigger = GetTriggeringTrigger()
+
+    // Thornwoods Horde units. Shop: Barracks 0019 <gen> / gg_unit_obar_0019.
+    call AddHiredUnitStock(gg_unit_obar_0019, UNIT_GRUNT_1)
+    call AddHiredUnitStock(gg_unit_obar_0019, UNIT_GRUNT_5)
+    call AddHiredUnitStock(gg_unit_obar_0019, UNIT_GRUNT_10)
+
+    // Sirensong, Ghostridge, and Forward Base had no stock entries in the old GUI trigger.
+
+    if initTrigger != null then
+        call DestroyTrigger(initTrigger)
+    endif
+    set initTrigger = null
+endfunction
+
 private function HandleSoldUnit takes nothing returns nothing
     local unit soldUnit = GetSoldUnit()
     local unit buyer = GetBuyingUnit()
@@ -2228,6 +2253,7 @@ private function Init takes nothing returns nothing
     local integer playerIndex = 0
     local trigger spellTrigger = null
     local trigger sellTrigger = null
+    local trigger shopInitTrigger = null
 
     call EnsureState()
 
@@ -2257,8 +2283,14 @@ private function Init takes nothing returns nothing
     call TriggerAddAction(OrderTrigger, function OnOrderPeriodic)
 
     call UnitDeathEvent_Register(function OnUnitDeath)
+
+    set shopInitTrigger = CreateTrigger()
+    call TriggerRegisterTimerEvent(shopInitTrigger, HIRED_UNIT_SHOP_INIT_DELAY, false)
+    call TriggerAddAction(shopInitTrigger, function InitHiredUnitShops)
+
     set spellTrigger = null
     set sellTrigger = null
+    set shopInitTrigger = null
 endfunction
 
 endlibrary
