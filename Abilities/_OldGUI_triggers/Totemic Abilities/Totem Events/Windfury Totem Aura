@@ -1,0 +1,33 @@
+Windfury Totem Aura
+    Events
+        Game - DamageModifierEvent becomes Equal to 1.00
+    Conditions
+        (DamageEventSource has buff Windfury (Level 1)) Equal to True
+        (DamageEventSource has buff Fire Shield (caster)) Equal to False
+        (DamageEventSource is A melee attacker) Equal to True
+        (DamageEventTarget belongs to an enemy of (Owner of DamageEventSource).) Equal to True
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Random integer number between 1 and 100) Less than or equal to 20
+            Then - Actions
+                -------- Normal --------
+                --------   --------
+                -------- Windfury --------
+                --------   --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        debug Equal to True
+                    Then - Actions
+                        Game - Display to (All players) the text: debug: windfury occ...
+                    Else - Actions
+                Set VariableSet DamageEventAmount = (DamageEventAmount + (DamageEventAmount x 0.20))
+                Sound - Play Windfury <gen> at 100.00% volume, attached to DamageEventSource
+                Unit - Cause DamageEventSource to damage DamageEventTarget, dealing DamageEventAmount damage of attack type Normal and damage type Normal
+                Animation - Play DamageEventSource's attack animation
+                -------- The effect --------
+                Special Effect - Create a special effect attached to the right hand of DamageEventSource using Abilities\Spells\Other\Tornado\Tornado_Target.mdl
+                Special Effect - Set Scale of (Last created special effect) to 0.60
+                Set VariableSet Windfury_Duration = 1.50
+                Trigger - Run Windfury Totem Aura Effect <gen> (ignoring conditions)
+            Else - Actions

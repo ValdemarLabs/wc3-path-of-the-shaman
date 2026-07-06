@@ -1,0 +1,36 @@
+This is not completed gui triggered, maybe just utilize "Windfury Totem Aura" trigger for this.
+
+Windfury Totem Greater Aura wip
+    Events
+        Game - DamageModifierEvent becomes Equal to 1.00
+    Conditions
+        (DamageEventSource has buff Windfury (Level 2)) Equal to True
+    Actions
+        -------- Store attack interval --------
+        Set VariableSet Temp_Integer = (Custom value of DamageEventSource)
+        -------- debug --------
+        Set VariableSet Stats_AttackInterval[Temp_Integer] = (Attack Interval of DamageEventSource for weapon index 1.)
+        -------- debug --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Random integer number between 1 and 100) Less than or equal to 20
+            Then - Actions
+                -------- Normal --------
+                --------   --------
+                -------- Windfury --------
+                --------   --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        debug Equal to True
+                    Then - Actions
+                        Game - Display to (All players) the text: debug: windfury occ...
+                    Else - Actions
+                Set VariableSet DamageEventAmount = (DamageEventAmount + (DamageEventAmount x 0.20))
+                Sound - Play Windfury <gen> at 100.00% volume, attached to DamageEventSource
+                Set VariableSet WindfuryPoint = (Position of DamageEventSource)
+                Unit - Create 1 DummyWindfury for (Owner of DamageEventSource) at WindfuryPoint facing Default building facing degrees
+                Set VariableSet WindfuryDummy = (Last created unit)
+                Unit - Add a 0.50 second Generic expiration timer to WindfuryDummy
+                Unit - Order WindfuryDummy to Orc Shaman - Bloodlust DamageEventSource
+                Custom script:   call RemoveLocation(udg_WindfuryPoint)
+            Else - Actions

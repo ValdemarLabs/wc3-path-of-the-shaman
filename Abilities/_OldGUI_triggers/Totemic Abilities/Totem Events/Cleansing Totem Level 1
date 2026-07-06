@@ -1,0 +1,20 @@
+Note: this was disabled trigger. some issues clearly. and need some limitation that only tries to dispel every 5s etc.
+Note 2: Dispel enemies buffs and friendly units debuffs 
+
+Cleansing Totem Level 1
+    Events
+        Time - Every 1.00 seconds of game time
+    Conditions
+        (Number of units in (Units of type Cleansing Totem)) Greater than 0
+    Actions
+        Set VariableSet CleansingGroup = (Units in (Playable map area) matching (((Matching unit) has buff Dispel Aura (Cleansing Totem - Level 1)) Equal to True))
+        Unit Group - Pick every unit in CleansingGroup and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        Unit - Remove Negative buffs considered Magic or physical from (Picked unit) (Include expiration timers, Exclude auras)
+                        Special Effect - Create a special effect attached to the overhead of (Picked unit) using Abilities\Spells\Human\DispelMagic\DispelMagicTarget.mdl
+                        Special Effect - Destroy (Last created special effect)
+                    Else - Actions
+        Custom script:   call DestroyGroup(udg_CleansingGroup)

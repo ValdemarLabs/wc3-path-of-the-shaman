@@ -1,0 +1,8 @@
+Windfury Totem Aura Effect
+    Events
+    Conditions
+    Actions
+        Custom script:   local effect udg_Windfury_Special = GetLastCreatedEffectBJ()
+        Wait Windfury_Duration seconds
+        Special Effect - Destroy Windfury_Special
+        Custom script:   set udg_Windfury_Special = null

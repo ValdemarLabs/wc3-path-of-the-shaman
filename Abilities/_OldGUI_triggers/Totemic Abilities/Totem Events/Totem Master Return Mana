@@ -1,0 +1,66 @@
+Totem Master Return Mana
+    Events
+        Unit - A unit Finishes casting an ability
+    Conditions
+        (Level of TOTEMIC_TotemMaster (Passive) for (Triggering unit)) Greater than or equal to 1
+        Or - Any (Conditions) are true
+            Conditions
+                (Ability being cast) Equal to TOTEMIC_Channel_TotemEarth 
+                (Ability being cast) Equal to TOTEMIC_Channel_TotemFire 
+                (Ability being cast) Equal to TOTEMIC_Channel_TotemWater 
+                (Ability being cast) Equal to TOTEMIC_Channel_TotemWind 
+                (Ability being cast) Equal to TOTEMIC_Channel_TotemStoneskin 
+                (Ability being cast) Equal to TOTEMIC_Channel_TotemEarthbind 
+                (Ability being cast) Equal to TOTEMIC_Channel_TotemWindfury 
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to TOTEMIC_Channel_TotemEarth 
+            Then - Actions
+                Set VariableSet TotemManaCost = (For (Triggering unit), Mana cost of TOTEMIC_Channel_TotemEarth , Level (Level of TOTEMIC_Channel_TotemEarth  for (Triggering unit)).)
+                Unit - Set mana of (Triggering unit) to ((Mana of (Triggering unit)) + (Real(TotemManaCost)))
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to TOTEMIC_Channel_TotemEarthbind 
+            Then - Actions
+                Set VariableSet TotemManaCost = (For (Triggering unit), Mana cost of TOTEMIC_Channel_TotemEarthbind , Level (Level of TOTEMIC_Channel_TotemEarthbind  for (Triggering unit)).)
+                Unit - Set mana of (Triggering unit) to ((Mana of (Triggering unit)) + (Real(TotemManaCost)))
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to TOTEMIC_Channel_TotemFire 
+            Then - Actions
+                Set VariableSet TotemManaCost = (For (Triggering unit), Mana cost of TOTEMIC_Channel_TotemFire , Level (Level of TOTEMIC_Channel_TotemFire  for (Triggering unit)).)
+                Unit - Set mana of (Triggering unit) to ((Mana of (Triggering unit)) + (Real(TotemManaCost)))
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to TOTEMIC_Channel_TotemStoneskin 
+            Then - Actions
+                Set VariableSet TotemManaCost = (For (Triggering unit), Mana cost of TOTEMIC_Channel_TotemStoneskin , Level (Level of TOTEMIC_Channel_TotemStoneskin  for (Triggering unit)).)
+                Unit - Set mana of (Triggering unit) to ((Mana of (Triggering unit)) + (Real(TotemManaCost)))
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to TOTEMIC_Channel_TotemWater 
+            Then - Actions
+                Set VariableSet TotemManaCost = (For (Triggering unit), Mana cost of TOTEMIC_Channel_TotemWater , Level (Level of TOTEMIC_Channel_TotemWater  for (Triggering unit)).)
+                Unit - Set mana of (Triggering unit) to ((Mana of (Triggering unit)) + (Real(TotemManaCost)))
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to TOTEMIC_Channel_TotemWind 
+            Then - Actions
+                Set VariableSet TotemManaCost = (For (Triggering unit), Mana cost of TOTEMIC_Channel_TotemWind , Level (Level of TOTEMIC_Channel_TotemWind  for (Triggering unit)).)
+                Unit - Set mana of (Triggering unit) to ((Mana of (Triggering unit)) + (Real(TotemManaCost)))
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to TOTEMIC_Channel_TotemWindfury 
+            Then - Actions
+                Set VariableSet TotemManaCost = (For (Triggering unit), Mana cost of TOTEMIC_Channel_TotemWindfury , Level (Level of TOTEMIC_Channel_TotemWindfury  for (Triggering unit)).)
+                Unit - Set mana of (Triggering unit) to ((Mana of (Triggering unit)) + (Real(TotemManaCost)))
+            Else - Actions
+        Special Effect - Create a special effect attached to the origin of (Triggering unit) using Abilities\Spells\Items\AIma\AImaTarget.mdl
+        Special Effect - Destroy (Last created special effect)

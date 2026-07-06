@@ -1,0 +1,70 @@
+Skyfury Aura Loop
+    Events
+        Time - Every 0.25 seconds of game time
+    Conditions
+    Actions
+        -------- Reset the Max Increase of units affected by Aura: --------
+        Unit Group - Pick every unit in SF_TargetGroup and do (Actions)
+            Loop - Actions
+                Set VariableSet SF_Target = (Picked unit)
+                Set VariableSet SF_CV = (Custom value of SF_Target)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ((Picked unit) has buff Skyfury (Level 1)) Equal to False
+                    Then - Actions
+                        -------- - --------
+                        -------- Remove stats --------
+                        Set VariableSet Stats_Crit[SF_CV] = (Stats_Crit[SF_CV] - SF_Setup_Crit)
+                        Set VariableSet Stats_SpellPowerPct[SF_CV] = (Stats_SpellPowerPct[SF_CV] - SF_Setup_Spell)
+                        -------- - --------
+                        Unit Group - Remove SF_Target from SF_TargetGroup.
+                        Set VariableSet SF_IsInTargetGroup[SF_CV] = False
+                    Else - Actions
+        -------- ---------------- --------
+        -------- Loop over all of the unit's with Aura and increase the XXX of allies near them: --------
+        Unit Group - Pick every unit in SF_SourceGroup and do (Actions)
+            Loop - Actions
+                Set VariableSet SF_Source = (Picked unit)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (SF_Source is alive) Equal to True
+                        (Level of SF_Setup_Aura for SF_Source) Greater than 0
+                    Then - Actions
+                        Set VariableSet SF_Point = (Position of SF_Source)
+                        -------- - --------
+                        Custom script:   set bj_wantDestroyGroup = true
+                        Unit Group - Pick every unit in (Units within SF_Setup_AoE of SF_Point.) and do (Actions)
+                            Loop - Actions
+                                Set VariableSet SF_Target = (Picked unit)
+                                Set VariableSet SF_CV = (Custom value of SF_Target)
+                                -------- - --------
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (SF_Target is alive) Equal to True
+                                        (SF_Target belongs to an ally of (Owner of SF_Source).) Equal to True
+                                        (SF_Target is A structure) Equal to False
+                                    Then - Actions
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                SF_IsInTargetGroup[SF_CV] Equal to False
+                                            Then - Actions
+                                                -------- Increase stats --------
+                                                Set VariableSet Stats_Crit[SF_CV] = (Stats_Crit[SF_CV] + SF_Setup_Crit)
+                                                Set VariableSet Stats_SpellPowerPct[SF_CV] = (Stats_SpellPowerPct[SF_CV] + SF_Setup_Spell)
+                                                -------- - --------
+                                                Unit Group - Add SF_Target to SF_TargetGroup
+                                                Set VariableSet SF_IsInTargetGroup[SF_CV] = True
+                                            Else - Actions
+                                    Else - Actions
+                        --------   --------
+                        Custom script:   call RemoveLocation (udg_SF_Point)
+                    Else - Actions
+                        --------  The Aura source is dead or lost the ability so they shouldn't be emitting an Aura anymore:  --------
+                        Unit Group - Remove SF_Source from SF_SourceGroup.
+                        Set VariableSet SF_SourceCount = (SF_SourceCount - 1)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                SF_SourceCount Equal to 0
+                            Then - Actions
+                                Trigger - Turn off Skyfury Aura Loop <gen>
+                            Else - Actions

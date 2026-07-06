@@ -1,0 +1,66 @@
+Totem Dies
+    Events
+        Unit - A unit Dies
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                ((Triggering unit) is in TotemGroupNazgrek.) Equal to True
+                ((Triggering unit) is in TotemGroupZulkis.) Equal to True
+                ((Triggering unit) is in TotemGroupRestoshaman.) Equal to True
+    Actions
+        -------- ============================== --------
+        -------- Floating Text --------
+        Floating Text - Destroy TotemText[(Custom value of (Triggering unit))]
+        -------- ============================== --------
+        -------- Turn OFF Autocast Totems --------
+        -------- ============== FIRE TOTEMS --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Fire Totem AutoCast Fire Shield <gen> is on) Equal to True
+                (Number of living Fire Totem units owned by Player 1 (Red)) Equal to 0
+                (Number of living Fire Totem units owned by Player 2 (Blue)) Equal to 0
+                (Number of living Greater Fire Totem units owned by Player 1 (Red)) Equal to 0
+                (Number of living Greater Fire Totem units owned by Player 2 (Blue)) Equal to 0
+            Then - Actions
+                Trigger - Turn off Fire Totem AutoCast Fire Shield <gen>
+            Else - Actions
+        -------- ============== WIND TOTEMS --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Wind Totem AutoCast Cyclone <gen> is on) Equal to True
+                        (Wind Totem Greater AutoCast Lightning <gen> is on) Equal to True
+                (Number of living Wind Totem units owned by Player 1 (Red)) Equal to 0
+                (Number of living Greater Wind Totem units owned by Player 1 (Red)) Equal to 0
+                (Number of living Wind Totem units owned by Player 2 (Blue)) Equal to 0
+                (Number of living Greater Wind Totem units owned by Player 2 (Blue)) Equal to 0
+            Then - Actions
+                Trigger - Turn off Wind Totem AutoCast Cyclone <gen>
+                Trigger - Turn off Wind Totem Greater AutoCast Lightning <gen>
+            Else - Actions
+        -------- ============== CLEANSING TOTEMS --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Cleansing Totem Level 1 <gen> is on) Equal to True
+                        (Cleansing Totem Level 2 <gen> is on) Equal to True
+                (Number of living Cleansing Totem units owned by Player 1 (Red)) Equal to 0
+                (Number of living Greater Cleansing Totem units owned by Player 1 (Red)) Equal to 0
+                (Number of living Cleansing Totem units owned by Player 2 (Blue)) Equal to 0
+                (Number of living Greater Cleansing Totem units owned by Player 2 (Blue)) Equal to 0
+            Then - Actions
+                Trigger - Turn off Cleansing Totem Level 1 <gen>
+                Trigger - Turn off Cleansing Totem Level 2 <gen>
+            Else - Actions
+        -------- ============================== --------
+        -------- Remove "REAL" totem --------
+        Unit - Remove (Triggering unit) from the game
+        -------- Create and Kill "DUMMY" totem --------
+        Set VariableSet DummyTotemPoint = (Position of (Triggering unit))
+        Unit - Create 1 (Unit-type of (Triggering unit)) for Player 1 (Red) at DummyTotemPoint facing Default building facing degrees
+        Custom script:   call RemoveLocation(udg_DummyTotemPoint)
+        Unit - Kill (Last created unit)
+        -------- ============================== --------
+        Trigger - Remove (This trigger) from the trigger queue

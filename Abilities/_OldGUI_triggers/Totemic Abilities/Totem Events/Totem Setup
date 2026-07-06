@@ -1,0 +1,12 @@
+Totem Setup
+    Events
+        Time - Elapsed game time is 0.30 seconds
+    Conditions
+    Actions
+        -------- ================ --------
+        -------- This is default value: ---------Value of TotemGenericTimer is set for each totem cast, this can be different --------
+        Set VariableSet TotemGenericTimer = 45.00
+        -------- ================ --------
+        Set VariableSet TotemTextFontSize = 5.00
+        Set VariableSet TotemTextOffsetZ = -175.00
+        -------- ================ --------

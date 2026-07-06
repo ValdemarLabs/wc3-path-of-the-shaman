@@ -1,0 +1,23 @@
+Fire Totem AutoCast Fire Shield
+    Events
+        Unit - A unit Is attacked
+        Time - Every 0.30 seconds of game time
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Owner of (Attacked unit)) Equal to Player 1 (Red)
+                (Owner of (Attacked unit)) Equal to Player 2 (Blue)
+        ((Attacked unit) has buff Fire Shield ) Equal to False
+    Actions
+        Unit Group - Pick every unit in TotemGroupNazgrekFire and do (Actions)
+            Loop - Actions
+                Unit - Order (Picked unit) to Orc Shaman - Lightning Shield (Attacked unit)
+                Custom script:   call IssueTargetOrder (GetTriggerUnit(), "lightning shield", GetAttacker())
+        Unit Group - Pick every unit in TotemGroupZulkisFire and do (Actions)
+            Loop - Actions
+                Unit - Order (Picked unit) to Orc Shaman - Lightning Shield (Attacked unit)
+                Custom script:   call IssueTargetOrder (GetTriggerUnit(), "lightning shield", GetAttacker())
+        Unit Group - Pick every unit in TotemGroupRestoshamanFire and do (Actions)
+            Loop - Actions
+                Unit - Order (Picked unit) to Orc Shaman - Lightning Shield (Attacked unit)
+                Custom script:   call IssueTargetOrder (GetTriggerUnit(), "lightning shield", GetAttacker())

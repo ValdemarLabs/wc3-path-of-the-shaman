@@ -1,0 +1,15 @@
+Skyfury Aura Setup
+    Events
+        Map initialization
+    Conditions
+    Actions
+        -------- The ability code for aura --------
+        Set VariableSet SF_Setup_Aura = SkyfuryTotem_Aura (Level 1)
+        -------- ======================= --------
+        -------- The percentage increase for max value (1.0 = 100%): --------
+        Set VariableSet SF_Setup_Crit = 5
+        Set VariableSet SF_Setup_Spell = 5
+        -------- ======================= --------
+        -------- -------- The Area of Effect for the Aura: -------- --------
+        Set VariableSet SF_Setup_AoE = 500.00
+        -------- ======================= --------

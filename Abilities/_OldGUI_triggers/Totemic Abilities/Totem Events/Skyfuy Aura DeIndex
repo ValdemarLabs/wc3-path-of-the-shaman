@@ -1,0 +1,7 @@
+Skyfury Aura DeIndex
+    Events
+        Game - UnitIndexEvent becomes Equal to 2.00
+    Conditions
+    Actions
+        -------- Reset these variables since this custom value may get recycled: --------
+        Set VariableSet SF_IsInTargetGroup[UDex] = False

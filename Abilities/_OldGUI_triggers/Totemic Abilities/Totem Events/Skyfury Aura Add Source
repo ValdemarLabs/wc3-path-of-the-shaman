@@ -1,0 +1,20 @@
+Skyfury Aura Add Source
+    Events
+    Conditions
+    Actions
+        -------- How To: --------
+        -------- Set XX_Source = The unit with the AURA ability and then do the following Action: Trigger - Run XXX Aura Add Source (ignoring conditions) --------
+        -------- ======================= --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (SF_Source is in SF_SourceGroup.) Equal to False
+            Then - Actions
+                Unit Group - Add SF_Source to SF_SourceGroup
+                Set VariableSet SF_SourceCount = (SF_SourceCount + 1)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        SF_SourceCount Equal to 1
+                    Then - Actions
+                        Trigger - Turn on Skyfury Aura Loop <gen>
+                    Else - Actions
+            Else - Actions

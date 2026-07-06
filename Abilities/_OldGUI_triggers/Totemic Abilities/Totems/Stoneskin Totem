@@ -1,0 +1,165 @@
+Stoneskin Totem
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Ability being cast) Equal to TOTEMIC_Channel_TotemStoneskin 
+                (Ability being cast) Equal to HeroShaman_Channel_TotemStoneskin 
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Triggering unit) Equal to Nazgrek
+            Then - Actions
+                -------- Destroy existing totems --------
+                Unit Group - Pick every unit in TotemGroupNazgrekEarth and do (Unit - Kill (Picked unit))
+                -------- Create totem --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of TOTEMIC_Channel_TotemStoneskin  for (Triggering unit)) Equal to 1
+                    Then - Actions
+                        -------- LEVEL 1 --------
+                        Set VariableSet TotemVarPoint = (Target point of ability being cast)
+                        Unit - Create 1 Stoneskin Totem for Player 1 (Red) at TotemVarPoint facing Default building facing degrees
+                        Set VariableSet Totem = (Unit-type of (Last created unit))
+                        Set VariableSet TotemGenericTimer = 45.00
+                        Unit - Add a TotemGenericTimer second Generic expiration timer to (Last created unit)
+                        -------- ============ ADD to Unit Group(s) --------
+                        Unit Group - Add (Last created unit) to TotemGroupNazgrekEarth
+                        Unit Group - Add (Last created unit) to TotemGroupNazgrek
+                        Custom script:   call RemoveLocation(udg_TotemVarPoint)
+                        -------- Text --------
+                        Floating Text - Create floating text that reads <Stonekin Totem> above (Last created unit) with Z offset TotemTextOffsetZ, using font size TotemTextFontSize, color (15.00%, 100.00%, 15.00%), and 0.00% transparency
+                        Set VariableSet TotemText[(Custom value of (Last created unit))] = (Last created floating text)
+                        Unit Group - Add (Last created unit) to TotemTextGroup
+                        Floating Text - Change (Last created floating text): Disable permanence
+                        Floating Text - Change the lifespan of (Last created floating text) to TotemGenericTimer seconds
+                        Floating Text - Change the fading age of (Last created floating text) to (TotemGenericTimer - 1.00) seconds
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of TOTEMIC_Channel_TotemStoneskin  for (Triggering unit)) Equal to 2
+                    Then - Actions
+                        -------- LEVEL 2 --------
+                        Set VariableSet TotemVarPoint = (Target point of ability being cast)
+                        Unit - Create 1 Stoneskin Totem for Player 1 (Red) at TotemVarPoint facing Default building facing degrees
+                        Set VariableSet Totem = (Unit-type of (Last created unit))
+                        Set VariableSet TotemGenericTimer = 45.00
+                        Unit - Add a TotemGenericTimer second Generic expiration timer to (Last created unit)
+                        -------- ============ ADD to Unit Group(s) --------
+                        Unit Group - Add (Last created unit) to TotemGroupNazgrekEarth
+                        Unit Group - Add (Last created unit) to TotemGroupNazgrek
+                        Custom script:   call RemoveLocation(udg_TotemVarPoint)
+                        -------- Text --------
+                        Floating Text - Create floating text that reads <Stonekin Totem> above (Last created unit) with Z offset TotemTextOffsetZ, using font size TotemTextFontSize, color (15.00%, 100.00%, 15.00%), and 0.00% transparency
+                        Set VariableSet TotemText[(Custom value of (Last created unit))] = (Last created floating text)
+                        Unit Group - Add (Last created unit) to TotemTextGroup
+                        Floating Text - Change (Last created floating text): Disable permanence
+                        Floating Text - Change the lifespan of (Last created floating text) to TotemGenericTimer seconds
+                        Floating Text - Change the fading age of (Last created floating text) to (TotemGenericTimer - 1.00) seconds
+                    Else - Actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Triggering unit) Equal to Zulkis
+            Then - Actions
+                -------- Destroy existing totems --------
+                Unit Group - Pick every unit in TotemGroupZulkisEarth and do (Unit - Kill (Picked unit))
+                -------- Create totem --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of TOTEMIC_Channel_TotemStoneskin  for (Triggering unit)) Equal to 1
+                    Then - Actions
+                        -------- LEVEL 1 --------
+                        Set VariableSet TotemVarPoint = (Target point of ability being cast)
+                        Unit - Create 1 Stoneskin Totem for Player 1 (Red) at TotemVarPoint facing Default building facing degrees
+                        Set VariableSet Totem = (Unit-type of (Last created unit))
+                        Set VariableSet TotemGenericTimer = 45.00
+                        Unit - Add a TotemGenericTimer second Generic expiration timer to (Last created unit)
+                        -------- ============ ADD to Unit Group(s) --------
+                        Unit Group - Add (Last created unit) to TotemGroupZulkisEarth
+                        Unit Group - Add (Last created unit) to TotemGroupZulkis
+                        Custom script:   call RemoveLocation(udg_TotemVarPoint)
+                        -------- Text --------
+                        Floating Text - Create floating text that reads <Stonekin Totem> above (Last created unit) with Z offset TotemTextOffsetZ, using font size TotemTextFontSize, color (15.00%, 100.00%, 15.00%), and 0.00% transparency
+                        Set VariableSet TotemText[(Custom value of (Last created unit))] = (Last created floating text)
+                        Unit Group - Add (Last created unit) to TotemTextGroup
+                        Floating Text - Change (Last created floating text): Disable permanence
+                        Floating Text - Change the lifespan of (Last created floating text) to TotemGenericTimer seconds
+                        Floating Text - Change the fading age of (Last created floating text) to (TotemGenericTimer - 1.00) seconds
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of TOTEMIC_Channel_TotemStoneskin  for (Triggering unit)) Equal to 2
+                    Then - Actions
+                        -------- LEVEL 2 --------
+                        Set VariableSet TotemVarPoint = (Target point of ability being cast)
+                        Unit - Create 1 Stoneskin Totem for Player 1 (Red) at TotemVarPoint facing Default building facing degrees
+                        Set VariableSet Totem = (Unit-type of (Last created unit))
+                        Set VariableSet TotemGenericTimer = 45.00
+                        Unit - Add a TotemGenericTimer second Generic expiration timer to (Last created unit)
+                        -------- ============ ADD to Unit Group(s) --------
+                        Unit Group - Add (Last created unit) to TotemGroupZulkisEarth
+                        Unit Group - Add (Last created unit) to TotemGroupZulkis
+                        Custom script:   call RemoveLocation(udg_TotemVarPoint)
+                        -------- Text --------
+                        Floating Text - Create floating text that reads <Stonekin Totem> above (Last created unit) with Z offset TotemTextOffsetZ, using font size TotemTextFontSize, color (15.00%, 100.00%, 15.00%), and 0.00% transparency
+                        Set VariableSet TotemText[(Custom value of (Last created unit))] = (Last created floating text)
+                        Unit Group - Add (Last created unit) to TotemTextGroup
+                        Floating Text - Change (Last created floating text): Disable permanence
+                        Floating Text - Change the lifespan of (Last created floating text) to TotemGenericTimer seconds
+                        Floating Text - Change the fading age of (Last created floating text) to (TotemGenericTimer - 1.00) seconds
+                    Else - Actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Triggering unit) Equal to NPC_Horde_AI_Shaman
+            Then - Actions
+                -------- Destroy existing totems --------
+                Unit Group - Pick every unit in TotemGroupRestoshamanEarth and do (Unit - Kill (Picked unit))
+                -------- Create totem --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of HeroShaman_Channel_TotemStoneskin  for (Triggering unit)) Equal to 1
+                    Then - Actions
+                        -------- LEVEL 1 --------
+                        Set VariableSet TotemVarPoint = (Target point of ability being cast)
+                        Unit - Create 1 Stoneskin Totem for Player 2 (Blue) at TotemVarPoint facing Default building facing degrees
+                        Set VariableSet Totem = (Unit-type of (Last created unit))
+                        Set VariableSet TotemGenericTimer = 45.00
+                        Unit - Add a TotemGenericTimer second Generic expiration timer to (Last created unit)
+                        -------- ============ ADD to Unit Group(s) --------
+                        Unit Group - Add (Last created unit) to TotemGroupRestoshamanEarth
+                        Unit Group - Add (Last created unit) to TotemGroupRestoshaman
+                        Custom script:   call RemoveLocation(udg_TotemVarPoint)
+                        -------- Text --------
+                        Floating Text - Create floating text that reads <Stonekin Totem> above (Last created unit) with Z offset TotemTextOffsetZ, using font size TotemTextFontSize, color (15.00%, 100.00%, 15.00%), and 0.00% transparency
+                        Set VariableSet TotemText[(Custom value of (Last created unit))] = (Last created floating text)
+                        Unit Group - Add (Last created unit) to TotemTextGroup
+                        Floating Text - Change (Last created floating text): Disable permanence
+                        Floating Text - Change the lifespan of (Last created floating text) to TotemGenericTimer seconds
+                        Floating Text - Change the fading age of (Last created floating text) to (TotemGenericTimer - 1.00) seconds
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of HeroShaman_Channel_TotemStoneskin  for (Triggering unit)) Equal to 2
+                    Then - Actions
+                        -------- LEVEL 2 --------
+                        Set VariableSet TotemVarPoint = (Target point of ability being cast)
+                        Unit - Create 1 Stoneskin Totem for Player 2 (Blue) at TotemVarPoint facing Default building facing degrees
+                        Set VariableSet Totem = (Unit-type of (Last created unit))
+                        Set VariableSet TotemGenericTimer = 45.00
+                        Unit - Add a TotemGenericTimer second Generic expiration timer to (Last created unit)
+                        -------- ============ ADD to Unit Group(s) --------
+                        Unit Group - Add (Last created unit) to TotemGroupRestoshamanEarth
+                        Unit Group - Add (Last created unit) to TotemGroupRestoshaman
+                        Custom script:   call RemoveLocation(udg_TotemVarPoint)
+                        -------- Text --------
+                        Floating Text - Create floating text that reads <Stonekin Totem> above (Last created unit) with Z offset TotemTextOffsetZ, using font size TotemTextFontSize, color (15.00%, 100.00%, 15.00%), and 0.00% transparency
+                        Set VariableSet TotemText[(Custom value of (Last created unit))] = (Last created floating text)
+                        Unit Group - Add (Last created unit) to TotemTextGroup
+                        Floating Text - Change (Last created floating text): Disable permanence
+                        Floating Text - Change the lifespan of (Last created floating text) to TotemGenericTimer seconds
+                        Floating Text - Change the fading age of (Last created floating text) to (TotemGenericTimer - 1.00) seconds
+                    Else - Actions
+            Else - Actions

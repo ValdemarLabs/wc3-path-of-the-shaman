@@ -1,0 +1,22 @@
+Wind Totem AutoCast Cyclone
+    Events
+        Unit - A unit Is attacked
+        Time - Every 0.30 seconds of game time
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Owner of (Attacked unit)) Equal to Player 1 (Red)
+                (Owner of (Attacked unit)) Equal to Player 2 (Blue)
+    Actions
+        Unit Group - Pick every unit in TotemGroupNazgrekWind and do (Actions)
+            Loop - Actions
+                Unit - Order (Picked unit) to Night Elf Druid Of The Talon - Cyclone (Attacking unit)
+                Custom script:   call IssueTargetOrder (GetTriggerUnit(), "cyclone", GetAttacker())
+        Unit Group - Pick every unit in TotemGroupZulkisWind and do (Actions)
+            Loop - Actions
+                Unit - Order (Picked unit) to Night Elf Druid Of The Talon - Cyclone (Attacking unit)
+                Custom script:   call IssueTargetOrder (GetTriggerUnit(), "cyclone", GetAttacker())
+        Unit Group - Pick every unit in TotemGroupRestoshamanWind and do (Actions)
+            Loop - Actions
+                Unit - Order (Picked unit) to Night Elf Druid Of The Talon - Cyclone (Attacking unit)
+                Custom script:   call IssueTargetOrder (GetTriggerUnit(), "cyclone", GetAttacker())
