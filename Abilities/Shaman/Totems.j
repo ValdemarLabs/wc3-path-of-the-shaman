@@ -429,7 +429,7 @@ private function CleanupTotem takes unit totem returns nothing
     endif
     set handleId = GetHandleId(totem)
     set caster = TotemCasterByHandle.unit[handleId]
-    set slot = TotemSlotByHandle[handleId]
+    set slot = TotemSlotByHandle.integer[handleId]
     if caster != null and slot > 0 then
         set slotKey = GetTotemSlotKey(caster, slot)
         if TotemByCasterSlot.unit[slotKey] == totem then
@@ -439,7 +439,7 @@ private function CleanupTotem takes unit totem returns nothing
     call DestroyTotemText(totem)
     call RemoveActiveTotem(totem)
     call TotemCasterByHandle.unit.remove(handleId)
-    call TotemSlotByHandle.remove(handleId)
+    call TotemSlotByHandle.integer.remove(handleId)
     set caster = null
 endfunction
 
@@ -474,7 +474,7 @@ private function TrackTotem takes unit caster, unit totem, integer slot returns 
     call EnsureState()
     set TotemByCasterSlot.unit[GetTotemSlotKey(caster, slot)] = totem
     set TotemCasterByHandle.unit[handleId] = caster
-    set TotemSlotByHandle[handleId] = slot
+    set TotemSlotByHandle.integer[handleId] = slot
     call AddActiveTotem(totem)
 endfunction
 
@@ -521,11 +521,11 @@ private function SetSkyfuryBonus takes unit target, integer newBonus returns not
         return
     endif
     set handleId = GetHandleId(target)
-    set oldBonus = SkyfuryBonusByHandle[handleId]
+    set oldBonus = SkyfuryBonusByHandle.integer[handleId]
     set diff = newBonus - oldBonus
     set unitIndex = GetUnitUserData(target)
     if unitIndex <= 0 then
-        set unitIndex = SkyfuryTargetIndexByHandle[handleId]
+        set unitIndex = SkyfuryTargetIndexByHandle.integer[handleId]
     endif
     if unitIndex <= 0 then
         return
@@ -535,11 +535,11 @@ private function SetSkyfuryBonus takes unit target, integer newBonus returns not
         set udg_Stats_SpellPowerPct[unitIndex] = udg_Stats_SpellPowerPct[unitIndex] + diff
     endif
     if newBonus > 0 then
-        set SkyfuryBonusByHandle[handleId] = newBonus
-        set SkyfuryTargetIndexByHandle[handleId] = unitIndex
+        set SkyfuryBonusByHandle.integer[handleId] = newBonus
+        set SkyfuryTargetIndexByHandle.integer[handleId] = unitIndex
     else
-        call SkyfuryBonusByHandle.remove(handleId)
-        call SkyfuryTargetIndexByHandle.remove(handleId)
+        call SkyfuryBonusByHandle.integer.remove(handleId)
+        call SkyfuryTargetIndexByHandle.integer.remove(handleId)
     endif
 endfunction
 
@@ -562,12 +562,12 @@ private function UpdateSkyfuryCandidate takes unit source, unit target, integer 
         return
     endif
     set handleId = GetHandleId(target)
-    if SkyfurySeenPass[handleId] != SkyfuryScanPass then
-        set SkyfurySeenPass[handleId] = SkyfuryScanPass
-        set SkyfuryDesiredByHandle[handleId] = bonus
+    if SkyfurySeenPass.integer[handleId] != SkyfuryScanPass then
+        set SkyfurySeenPass.integer[handleId] = SkyfuryScanPass
+        set SkyfuryDesiredByHandle.integer[handleId] = bonus
         call TrackSkyfuryTarget(target)
-    elseif SkyfuryDesiredByHandle[handleId] < bonus then
-        set SkyfuryDesiredByHandle[handleId] = bonus
+    elseif SkyfuryDesiredByHandle.integer[handleId] < bonus then
+        set SkyfuryDesiredByHandle.integer[handleId] = bonus
     endif
 endfunction
 
@@ -608,8 +608,8 @@ private function TickSkyfury takes nothing returns nothing
         set target = SkyfuryTargets[index]
         set handleId = GetHandleId(target)
         set desired = 0
-        if IsAliveUnit(target) and SkyfurySeenPass[handleId] == SkyfuryScanPass then
-            set desired = SkyfuryDesiredByHandle[handleId]
+        if IsAliveUnit(target) and SkyfurySeenPass.integer[handleId] == SkyfuryScanPass then
+            set desired = SkyfuryDesiredByHandle.integer[handleId]
         endif
         call SetSkyfuryBonus(target, desired)
         if desired > 0 then
@@ -617,8 +617,8 @@ private function TickSkyfury takes nothing returns nothing
             set SkyfuryTargets[writeIndex] = target
         else
             call SkyfuryTracked.boolean.remove(handleId)
-            call SkyfuryDesiredByHandle.remove(handleId)
-            call SkyfurySeenPass.remove(handleId)
+            call SkyfuryDesiredByHandle.integer.remove(handleId)
+            call SkyfurySeenPass.integer.remove(handleId)
         endif
         set index = index + 1
     endloop
