@@ -106,6 +106,7 @@ globals
     private constant integer UNIT_RIVERBANE_WARLOCK = 'H60X'
     private constant integer UNIT_SHAMAN = 'O61H'
     private constant integer UNIT_WARRIOR = 'O629'
+    private constant integer UNIT_AVELINE = 'O009'
     private constant integer UNIT_ENGINEER = 'N64O'
     private constant integer UNIT_ENGINEER_SHREDDER = 'N661'
     private constant integer UNIT_PALADIN = 'H60Y'
@@ -1210,7 +1211,7 @@ private function OnIdlePeriodic takes nothing returns nothing
 endfunction
 
 private function IsNamedCompanionType takes integer unitTypeId returns boolean
-    return unitTypeId == UNIT_ROGUE or unitTypeId == UNIT_WARLOCK or unitTypeId == UNIT_RIVERBANE_WARLOCK or unitTypeId == UNIT_SHAMAN or unitTypeId == UNIT_WARRIOR or unitTypeId == UNIT_ENGINEER or unitTypeId == UNIT_ENGINEER_SHREDDER or unitTypeId == UNIT_PALADIN or unitTypeId == UNIT_ARADION or unitTypeId == UNIT_VALERIA
+    return unitTypeId == UNIT_ROGUE or unitTypeId == UNIT_WARLOCK or unitTypeId == UNIT_RIVERBANE_WARLOCK or unitTypeId == UNIT_SHAMAN or unitTypeId == UNIT_WARRIOR or unitTypeId == UNIT_AVELINE or unitTypeId == UNIT_ENGINEER or unitTypeId == UNIT_ENGINEER_SHREDDER or unitTypeId == UNIT_PALADIN or unitTypeId == UNIT_ARADION or unitTypeId == UNIT_VALERIA
 endfunction
 
 private function GetNamedCompanionIcon takes integer unitTypeId returns string
@@ -1222,6 +1223,8 @@ private function GetNamedCompanionIcon takes integer unitTypeId returns string
         return "ReplaceableTextures\\CommandButtons\\BTNShaman.blp"
     elseif unitTypeId == UNIT_WARRIOR then
         return "ReplaceableTextures\\CommandButtons\\BTNHeroTaurenChieftain.blp"
+    elseif unitTypeId == UNIT_AVELINE then
+        return "ReplaceableTextures\\CommandButtons\\BTNFootman.blp"
     elseif unitTypeId == UNIT_ENGINEER or unitTypeId == UNIT_ENGINEER_SHREDDER then
         return "ReplaceableTextures\\CommandButtons\\BTNHeroTinker.blp"
     elseif unitTypeId == UNIT_PALADIN then
@@ -1239,7 +1242,7 @@ private function GetReturnOwner takes integer unitTypeId returns player
         return Player(5)
     elseif unitTypeId == UNIT_ENGINEER or unitTypeId == UNIT_ENGINEER_SHREDDER then
         return Player(6)
-    elseif unitTypeId == UNIT_PALADIN then
+    elseif unitTypeId == UNIT_PALADIN or unitTypeId == UNIT_AVELINE then
         return Player(14)
     elseif unitTypeId == UNIT_ARADION or unitTypeId == UNIT_VALERIA then
         return Player(ELARINDOR_OWNER_INDEX)
@@ -1695,7 +1698,7 @@ private function GetUnitTypeInfoName takes integer unitTypeId returns string
         return "Warlock"
     elseif unitTypeId == UNIT_SHAMAN then
         return "Restoration Shaman"
-    elseif unitTypeId == UNIT_WARRIOR then
+    elseif unitTypeId == UNIT_WARRIOR or unitTypeId == UNIT_AVELINE then
         return "Warrior"
     elseif unitTypeId == UNIT_ENGINEER or unitTypeId == UNIT_ENGINEER_SHREDDER then
         return "Engineer"
@@ -1743,7 +1746,7 @@ private function GetCompanionClassInfoTextInternal takes unit target returns str
         return "Warlock"
     elseif unitTypeId == UNIT_SHAMAN or unitTypeId == UNIT_HIRED_SHAMAN then
         return "Shaman"
-    elseif unitTypeId == UNIT_WARRIOR then
+    elseif unitTypeId == UNIT_WARRIOR or unitTypeId == UNIT_AVELINE then
         return "Warrior"
     elseif unitTypeId == UNIT_ENGINEER or unitTypeId == UNIT_ENGINEER_SHREDDER then
         return "Engineer"
@@ -1778,7 +1781,7 @@ private function GetCompanionTypeInfoTextInternal takes unit target returns stri
     endif
 
     set unitTypeId = GetUnitTypeId(target)
-    if unitTypeId == UNIT_WARRIOR or unitTypeId == UNIT_GRUNT_1 or unitTypeId == UNIT_GRUNT_5 or unitTypeId == UNIT_GRUNT_10 or unitTypeId == UNIT_GRUNT_15 or unitTypeId == UNIT_GRUNT_20 or unitTypeId == UNIT_GRUNT_25 or unitTypeId == UNIT_STONEGUARD_5 then
+    if unitTypeId == UNIT_WARRIOR or unitTypeId == UNIT_AVELINE or unitTypeId == UNIT_GRUNT_1 or unitTypeId == UNIT_GRUNT_5 or unitTypeId == UNIT_GRUNT_10 or unitTypeId == UNIT_GRUNT_15 or unitTypeId == UNIT_GRUNT_20 or unitTypeId == UNIT_GRUNT_25 or unitTypeId == UNIT_STONEGUARD_5 then
         return "Tank"
     elseif unitTypeId == UNIT_PALADIN or unitTypeId == UNIT_SHAMAN or unitTypeId == UNIT_HIRED_SHAMAN then
         return "Healer"
@@ -1812,7 +1815,7 @@ private function GetFactionInfoText takes unit target returns string
         return "Elarindor"
     elseif unitTypeId == UNIT_ENGINEER or unitTypeId == UNIT_ENGINEER_SHREDDER then
         return "Goblins"
-    elseif unitTypeId == UNIT_PALADIN or unitTypeId == UNIT_RIVERBANE_WARLOCK then
+    elseif unitTypeId == UNIT_PALADIN or unitTypeId == UNIT_RIVERBANE_WARLOCK or unitTypeId == UNIT_AVELINE then
         return "Riverbane Citizen"
     elseif IsNamedCompanionType(unitTypeId) or IsHiredUnitType(unitTypeId) then
         return "Horde"
@@ -1900,7 +1903,7 @@ private function GetCompanionAbilityInfoTextInternal takes unit target returns s
         return "Shadow Bolt, Life Drain, Rain of Fire, Banish, Fear, Curse of Agony, Life Tap, Summon Imp"
     elseif unitTypeId == UNIT_ROGUE then
         return "Evasion, Garrote, Shadowstep, Sinister Strike, Slice and Dice, Surprise Attack, Toxic Venom"
-    elseif unitTypeId == UNIT_WARRIOR then
+    elseif unitTypeId == UNIT_WARRIOR or unitTypeId == UNIT_AVELINE then
         return "Battle Shout, Charge, Heroic Strike, Rend, Sunder Armor, Thunder Clap, Retaliation, Recklessness"
     elseif unitTypeId == UNIT_SHAMAN then
         return "Chain Heal, Chain Lightning, Earth Totem, Earthbind Totem, Fire Totem, Stoneskin Totem, Water Totem, Wind Totem, Windfury Totem, Healing Wave, Hex, Lightning Bolt"
