@@ -55,6 +55,7 @@ globals
 	// Quest update message queue
 	private constant integer QUEST_UPDATE_QUEUE_MAX = 32
 	private constant real QUEST_UPDATE_MESSAGE_GAP = 3.00
+	private constant real QUEST_UPDATE_INITIAL_DELAY = 5.00
 	private constant real QUEST_DISCOVERED_DELAY = 5.00
 	private constant real QUEST_COMPLETED_DELAY = 5.00
 	private constant string QUEST_UPDATE_COLOR_OBJECTIVE_COMPLETE = "|cff80ff80"
@@ -248,23 +249,7 @@ private function EnqueueQuestUpdateMessage takes string msg returns nothing
 		set QuestUpdateQueueTail = 0
 	endif
 	
-	// If queue is not active, show message immediately without delay
-	// This provides instant feedback for item pickups and unit kills
-	if not QuestUpdateQueueActive then
-		call ClearTextMessages()
-		call QuestMessageBJ(bj_FORCE_ALL_PLAYERS, bj_QUESTMESSAGE_UPDATED, msg)
-		call FlashQuestDialogButtonBJ()
-		set QuestUpdateQueueActive = true
-		// Start timer for next message (if any arrive)
-		if QuestUpdateQueueTimer == null then
-			set QuestUpdateQueueTimer = CreateTimer()
-		endif
-		call TimerStart(QuestUpdateQueueTimer, QUEST_UPDATE_MESSAGE_GAP, false, function ShowNextQuestUpdate)
-		return
-	endif
-	
-	// Queue is active - add to queue for delayed display
-	// Advance tail pointer with wraparound
+	// Always queue updates so requirement completion messages do not interrupt the moment of completion.
 	set QuestUpdateQueueTail = QuestUpdateQueueTail + 1
 	if QuestUpdateQueueTail > QUEST_UPDATE_QUEUE_MAX then
 		set QuestUpdateQueueTail = 1
@@ -277,6 +262,14 @@ private function EnqueueQuestUpdateMessage takes string msg returns nothing
 	
 	set QuestUpdateQueue[QuestUpdateQueueTail] = msg
 	set QuestUpdateQueueSize = QuestUpdateQueueSize + 1
+
+	if not QuestUpdateQueueActive then
+		set QuestUpdateQueueActive = true
+		if QuestUpdateQueueTimer == null then
+			set QuestUpdateQueueTimer = CreateTimer()
+		endif
+		call TimerStart(QuestUpdateQueueTimer, QUEST_UPDATE_INITIAL_DELAY, false, function ShowNextQuestUpdate)
+	endif
 endfunction
 
 //===========================================================================
@@ -2438,8 +2431,8 @@ endfunction
 
 public function ShowUpdateMessage takes integer questId, string msg returns nothing
 	local QuestData q = GetById(questId)
-	if q != 0 then
-		call q.showUpdatedMessage(msg)
+	if q != 0 and msg != "" then
+		call EnqueueQuestUpdateMessage(msg)
 	endif
 endfunction
 
