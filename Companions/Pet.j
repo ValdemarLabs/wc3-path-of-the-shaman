@@ -486,10 +486,6 @@ private function HandlePermanentPetDeath takes unit pet returns nothing
     endif
     set udg_Pet_Dead = false
 
-    if gg_trg_MultiboardUpdate_Remove_Tamed != null then
-        call TriggerExecute(gg_trg_MultiboardUpdate_Remove_Tamed)
-    endif
-
     call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(pet) + " has died.")
 endfunction
 
@@ -609,10 +605,6 @@ private function RegisterPetUnit takes unit pet, unit leader, boolean resetCount
         call Companions_Halt(pet)
     endif
     call RefreshPetDamageTrigger(pet)
-
-    if gg_trg_MultiboardUpdate_Add_Tamed != null then
-        call TriggerExecute(gg_trg_MultiboardUpdate_Add_Tamed)
-    endif
 
     set focusLeader = null
 endfunction
@@ -786,10 +778,6 @@ private function KickPet takes unit pet returns nothing
 
     set udg_TamedUnit = null
     set udg_Pet_Dead = false
-
-    if gg_trg_MultiboardUpdate_Remove_Tamed != null then
-        call TriggerExecute(gg_trg_MultiboardUpdate_Remove_Tamed)
-    endif
 
     if pet == udg_Shadowclaw then
         call SendShadowclawHome(pet)
@@ -984,9 +972,6 @@ private function OnRenameChat takes nothing returns nothing
     call BlzSetUnitStringField(pet, UNIT_SF_NAME, newName)
     if petKey > 0 then
         set udg_Pet_Renamed[petKey] = true
-    endif
-    if gg_trg_MultiboardUpdate_Add_Tamed != null then
-        call TriggerExecute(gg_trg_MultiboardUpdate_Add_Tamed)
     endif
     call DisplayTextToPlayer(Player(0), 0.00, 0.00, "Pet renamed to " + newName + ".")
 
