@@ -187,6 +187,7 @@ Expected public API shape:
 function AI_RegisterClass takes string className returns integer
 function AI_RegisterProfile takes integer classId, integer unitTypeId, string profileName returns integer
 function AI_RegisterUnit takes unit whichUnit, integer profileId, integer uniqueId returns integer
+function AI_RegisterUnitByType takes unit whichUnit, integer uniqueId returns integer
 function AI_UnregisterUnit takes unit whichUnit returns nothing
 function AI_GetInstance takes unit whichUnit returns integer
 function AI_GetUnitByInstance takes integer instanceId returns unit
@@ -196,8 +197,11 @@ function AI_GetClassId takes unit whichUnit returns integer
 function AI_SetClassCap takes integer classId, integer cap returns nothing
 function AI_SetProfileCap takes integer profileId, integer cap returns nothing
 function AI_SetUnitTypeCap takes integer unitTypeId, integer cap returns nothing
+function AI_SetProfileRandomUniqueId takes integer profileId, integer uniqueId returns nothing
+function AI_SetUnitTypeDefaultProfile takes integer unitTypeId, integer profileId returns nothing
 function AI_SetProfileAutonomous takes integer profileId, boolean enabled returns nothing
 function AI_SetProfileSpawnOwner takes integer profileId, player owner returns nothing
+function AI_SetProfileRegisterCallback takes integer profileId, code callback returns nothing
 function AI_AddRandomSpawnProfile takes integer profileId returns nothing
 function AI_SetRandomSpawnHardCap takes integer cap returns nothing
 function AI_SetRandomSpawnActiveCap takes integer cap returns nothing
@@ -252,12 +256,12 @@ create triggers.
 
 Implemented behavior:
 
-- first-wave Warrior, Rogue, Warlock, Restoshaman, Paladin, and normal Engineer
-  profiles opt into the random spawn pool;
+- first-wave Warrior, Rogue, Warlock, Restoshaman, Paladin, normal Engineer, and
+  Aveline profiles opt into the random spawn pool;
 - random spawn points come from `AI_LegacyLocations.j` profile spawn rects, with
   a playable-map fallback if a profile has no registered spawn points;
 - random spawns use profile-specific owners matching old GUI intent where known:
-  Horde profiles use Player 2, Riverbane Paladin uses Player 15, and Neutral
+  Horde profiles use Player 2, Riverbane profiles use Player 15, and Neutral
   Engineer uses Player 7;
 - successful random world entries are announced with the profile name;
 - `/debug aispawn` and legacy `aispawn` on Player 1 call the same random spawn
@@ -269,8 +273,16 @@ Caps are separated from normal AI registration:
 - active random cap limits how many random-managed AI heroes may be visible and
   active at once;
 - class/profile/unit-type/unique caps still apply through the normal registry;
+- named unique random profiles can provide a profile random unique id so debug
+  and automatic random spawning respect unique lookup and duplicate prevention;
 - quest, cinematic, and manually registered unique AI are not counted against
   random-managed hard/active caps unless they were spawned through this manager.
+
+Shop-sold or hired units should be initialized through `AI_RegisterUnitByType`
+and `AI_SetUnitTypeDefaultProfile`, using the `EVENT_PLAYER_UNIT_SELL` hook.
+Do not add generic AI setup to playable-map-enter triggers; PotS routes those
+critical enter-time systems through the existing `Init 07 Unit Event Enters`
+trigger only.
 
 When the active random cap is full:
 
@@ -546,6 +558,7 @@ First wave:
 - file `AI_Engineer.j`, library `AIEngineer`
 - file `AI_Valeria.j`, library `AIValeria`
 - file `AI_Aradion.j`, library `AIAradion`
+- file `AI_Aveline.j`, library `AIAveline`
 
 Reusable generic sublibraries:
 
