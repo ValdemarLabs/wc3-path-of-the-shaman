@@ -156,6 +156,9 @@ globals
     private constant real AI_SOCIAL_DURATION_MAX = 8.00
     private constant real AI_SOCIAL_COOLDOWN_MIN = 35.00
     private constant real AI_SOCIAL_COOLDOWN_MAX = 90.00
+    private constant real AI_STUCK_MIN_MOVE = 24.00
+    private constant real AI_STUCK_SECONDS = 4.00
+    private constant real AI_STUCK_RETRY_RADIUS = 360.00
 
     private constant integer ITEM_MINOR_MANA_POTION = 'I6BS'
     private constant integer ITEM_MANA_POTION = 'pman'
@@ -221,6 +224,10 @@ globals
     private Table InstanceNextProfession = 0
     private Table InstanceNextSocial = 0
     private Table InstanceSocialUntil = 0
+    private Table InstanceLastOrder = 0
+    private Table InstanceLastX = 0
+    private Table InstanceLastY = 0
+    private Table InstanceStuckSince = 0
     private Table InstanceRetreatUntil = 0
     private Table InstanceTravelReturnAt = 0
     private Table InstanceTravelReturnX = 0
@@ -317,6 +324,8 @@ globals
     private unit SearchSource = null
     private unit SearchBestUnit = null
     private real SearchBestDistance = 0.00
+    private real SearchRangeDistance = 0.00
+    private real SearchBestScore = 0.00
     private unit AllySearchSource = null
     private unit AllySearchBestUnit = null
     private real AllySearchBestLife = 0.00
@@ -383,6 +392,10 @@ private function EnsureState takes nothing returns nothing
         set InstanceNextProfession = Table.create()
         set InstanceNextSocial = Table.create()
         set InstanceSocialUntil = Table.create()
+        set InstanceLastOrder = Table.create()
+        set InstanceLastX = Table.create()
+        set InstanceLastY = Table.create()
+        set InstanceStuckSince = Table.create()
         set InstanceRetreatUntil = Table.create()
         set InstanceTravelReturnAt = Table.create()
         set InstanceTravelReturnX = Table.create()
@@ -805,13 +818,32 @@ private function ClosestEnemyEnum takes nothing returns nothing
     local real dx
     local real dy
     local real distance
-    if SearchSource != null and IsAliveUnit(enumUnit) and IsUnitEnemy(enumUnit, GetOwningPlayer(SearchSource)) then
+    local real score
+    local real lifePercent
+    if SearchSource != null and IsAliveUnit(enumUnit) and IsUnitEnemy(enumUnit, GetOwningPlayer(SearchSource)) and not IsUnitHidden(enumUnit) and not GN_IsGatherUnit(enumUnit) then
         set dx = GetUnitX(enumUnit) - GetUnitX(SearchSource)
         set dy = GetUnitY(enumUnit) - GetUnitY(SearchSource)
         set distance = dx * dx + dy * dy
-        if SearchBestUnit == null or distance < SearchBestDistance then
-            set SearchBestUnit = enumUnit
-            set SearchBestDistance = distance
+        if distance <= SearchRangeDistance then
+            set lifePercent = GetLifePercent(enumUnit)
+            set score = GetRandomReal(0.00, 25.00) + (100.00 - lifePercent) * 1.50
+            set score = score + (SearchRangeDistance - distance) * 80.00 / SearchRangeDistance
+            if distance <= 250.00 * 250.00 then
+                set score = score + 120.00
+            elseif distance <= 500.00 * 500.00 then
+                set score = score + 55.00
+            endif
+            if IsUnitType(enumUnit, UNIT_TYPE_HERO) then
+                set score = score + 80.00
+            endif
+            if IsUnitType(enumUnit, UNIT_TYPE_STRUCTURE) then
+                set score = score - 300.00
+            endif
+            if SearchBestUnit == null or score > SearchBestScore or (score == SearchBestScore and distance < SearchBestDistance) then
+                set SearchBestUnit = enumUnit
+                set SearchBestDistance = distance
+                set SearchBestScore = score
+            endif
         endif
     endif
     set enumUnit = null
@@ -2143,6 +2175,10 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
     set InstanceNextItem.real[instanceId] = GetNow() + GetRandomReal(1.00, 3.00)
     set InstanceNextProfession.real[instanceId] = GetNow() + GetRandomReal(4.00, 12.00)
     set InstanceNextSocial.real[instanceId] = GetNow() + GetRandomReal(10.00, 35.00)
+    set InstanceLastOrder[instanceId] = 0
+    set InstanceLastX.real[instanceId] = GetUnitX(whichUnit)
+    set InstanceLastY.real[instanceId] = GetUnitY(whichUnit)
+    set InstanceStuckSince.real[instanceId] = 0.00
     call SetInstanceState(instanceId, AI_STATE_IDLE)
     call AddActiveInstance(instanceId)
     call IncrementCounts(classId, profileId, unitTypeId)
@@ -2218,6 +2254,10 @@ public function UnregisterUnit takes unit whichUnit returns nothing
     call ClearInstanceProfessionState(instanceId, whichUnit)
     call InstanceNextSocial.remove(instanceId)
     call InstanceSocialUntil.remove(instanceId)
+    call InstanceLastOrder.remove(instanceId)
+    call InstanceLastX.remove(instanceId)
+    call InstanceLastY.remove(instanceId)
+    call InstanceStuckSince.remove(instanceId)
     set InstanceSocialTarget[instanceId] = null
     set InstanceSocialStopped[instanceId] = false
     set InstanceDebugIcon[instanceId] = null
@@ -2290,10 +2330,13 @@ public function FindClosestEnemy takes unit source, real range returns unit
     set SearchSource = source
     set SearchBestUnit = null
     set SearchBestDistance = range * range
+    set SearchRangeDistance = SearchBestDistance
+    set SearchBestScore = -1000000.00
     call GroupEnumUnitsInRange(TempGroup, GetUnitX(source), GetUnitY(source), range, null)
     call ForGroup(TempGroup, function ClosestEnemyEnum)
     call GroupClear(TempGroup)
     set SearchSource = null
+    set SearchRangeDistance = 0.00
     return SearchBestUnit
 endfunction
 
@@ -3378,6 +3421,65 @@ private function TryStartSocialAction takes integer instanceId, unit whichUnit, 
     return false
 endfunction
 
+private function ResetMovementMemory takes integer instanceId, unit whichUnit, integer orderId, real now returns nothing
+    if instanceId <= 0 or whichUnit == null then
+        return
+    endif
+    set InstanceLastOrder[instanceId] = orderId
+    set InstanceLastX.real[instanceId] = GetUnitX(whichUnit)
+    set InstanceLastY.real[instanceId] = GetUnitY(whichUnit)
+    set InstanceStuckSince.real[instanceId] = now
+endfunction
+
+private function TryRecoverStuck takes integer instanceId, unit whichUnit, integer state, real now returns boolean
+    local integer orderId
+    local real dx
+    local real dy
+    local unit target
+    if instanceId <= 0 or whichUnit == null then
+        return false
+    endif
+    if state != AI_STATE_IDLE and state != AI_STATE_WANDER and state != AI_STATE_BUY then
+        return false
+    endif
+    set orderId = GetUnitCurrentOrder(whichUnit)
+    if orderId == 0 or IsCastingLocked(whichUnit) then
+        call ResetMovementMemory(instanceId, whichUnit, orderId, now)
+        return false
+    endif
+    if state != AI_STATE_BUY and HasNearbyCombatEnemy(whichUnit, 350.00) then
+        call ResetMovementMemory(instanceId, whichUnit, orderId, now)
+        return false
+    endif
+    if InstanceLastOrder[instanceId] != orderId or InstanceStuckSince.real[instanceId] <= 0.00 then
+        call ResetMovementMemory(instanceId, whichUnit, orderId, now)
+        return false
+    endif
+    set dx = GetUnitX(whichUnit) - InstanceLastX.real[instanceId]
+    set dy = GetUnitY(whichUnit) - InstanceLastY.real[instanceId]
+    if dx * dx + dy * dy >= AI_STUCK_MIN_MOVE * AI_STUCK_MIN_MOVE then
+        call ResetMovementMemory(instanceId, whichUnit, orderId, now)
+        return false
+    endif
+    if now - InstanceStuckSince.real[instanceId] < AI_STUCK_SECONDS then
+        return false
+    endif
+    call ResetMovementMemory(instanceId, whichUnit, orderId, now + GetRandomReal(0.00, 1.25))
+    if state == AI_STATE_BUY then
+        call IssuePointOrder(whichUnit, "move", InstanceActionX.real[instanceId] + GetRandomReal(-AI_STUCK_RETRY_RADIUS, AI_STUCK_RETRY_RADIUS), InstanceActionY.real[instanceId] + GetRandomReal(-AI_STUCK_RETRY_RADIUS, AI_STUCK_RETRY_RADIUS))
+    else
+        set target = AI_FindClosestEnemy(whichUnit, 800.00)
+        if target != null then
+            call IssueTargetOrder(whichUnit, "attack", target)
+        else
+            call BeginWander(instanceId, whichUnit)
+        endif
+    endif
+    call DebugMsg(GetDisplayName(whichUnit) + " recovered from a stale order in " + GetStateName(state) + ".")
+    set target = null
+    return true
+endfunction
+
 private function RunProfileThink takes integer instanceId, unit whichUnit returns nothing
     if instanceId <= 0 or whichUnit == null then
         return
@@ -3442,6 +3544,8 @@ private function ProcessInstance takes integer instanceId, real now returns noth
     elseif state == AI_STATE_BUY then
         if IsNearActionPoint(instanceId, whichUnit, 250.00) then
             call FinishBuyState(instanceId, whichUnit)
+        else
+            call TryRecoverStuck(instanceId, whichUnit, state, now)
         endif
         set whichUnit = null
         return
@@ -3490,6 +3594,11 @@ private function ProcessInstance takes integer instanceId, real now returns noth
         else
             set InstanceNextItem.real[instanceId] = now + 2.00 + GetRandomReal(0.10, 0.80)
         endif
+    endif
+
+    if TryRecoverStuck(instanceId, whichUnit, state, now) then
+        set whichUnit = null
+        return
     endif
 
     if TryStartProfessionAction(instanceId, whichUnit, state, now) then
