@@ -2025,10 +2025,10 @@ endfunction
 private function InitHiredUnitShops takes nothing returns nothing
     local trigger initTrigger = GetTriggeringTrigger()
 
-    // Thornwoods Horde units. Shop: Barracks 0019 <gen> / gg_unit_obar_0019.
-    call AddHiredUnitStock(gg_unit_obar_0019, UNIT_GRUNT_1)
-    call AddHiredUnitStock(gg_unit_obar_0019, UNIT_GRUNT_5)
-    call AddHiredUnitStock(gg_unit_obar_0019, UNIT_GRUNT_10)
+    // Thornwoods Horde units. Shop: Barracks 0019 <gen> / gg_unit_o607_0019.
+    call AddHiredUnitStock(gg_unit_o607_0019, UNIT_GRUNT_1)
+    call AddHiredUnitStock(gg_unit_o607_0019, UNIT_GRUNT_5)
+    call AddHiredUnitStock(gg_unit_o607_0019, UNIT_GRUNT_10)
 
     // Sirensong, Ghostridge, and Forward Base had no stock entries in the old GUI trigger.
 
