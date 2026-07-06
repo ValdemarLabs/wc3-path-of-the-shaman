@@ -324,7 +324,6 @@ private function AddXP takes unit u, integer amount returns nothing
         set level.integer[id] = level.integer[id] + 1
 
         call BlzSetUnitIntegerField(u, UNIT_IF_LEVEL, GetUnitLevel(u) + 1)
-        call TriggerExecute(gg_trg_MultiboardUpdateLevelTamed)
 
         call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Levelup\\LevelupCaster.mdl", u, "origin"))
         call StartSound(bj_questCompletedSound)
@@ -618,7 +617,6 @@ public function ForceLevelUp takes unit u, integer levels returns nothing
         
         set level.integer[id] = level.integer[id] + 1
         call BlzSetUnitIntegerField(u, UNIT_IF_LEVEL, GetUnitLevel(u) + 1)
-        call TriggerExecute(gg_trg_MultiboardUpdateLevelTamed)
 
         // Visual and audio effects
         call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Levelup\\LevelupCaster.mdl", u, "origin"))
