@@ -1,4 +1,4 @@
-library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, AbilitiesLiteUI, QuestGiver, Companions, Pet
+library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, AbilitiesLiteUI, StatsLiteUI, QuestGiver, Companions, Pet
 /**
     StatsUI
     
@@ -31,6 +31,7 @@ globals
     private framehandle SUI_CloseButton = null
     private framehandle SUI_ReturnButton = null
     private framehandle SUI_AbilitiesButton = null
+    private framehandle SUI_LiteConfigButton = null
     private framehandle SUI_ListScroll = null
     private framehandle SUI_DetailBackdrop = null
     private framehandle SUI_DetailIcon = null
@@ -85,6 +86,7 @@ globals
     private trigger SUI_CloseTrigger = null
     private trigger SUI_ReturnTrigger = null
     private trigger SUI_AbilitiesTrigger = null
+    private trigger SUI_LiteConfigTrigger = null
     private trigger SUI_RowTrigger = null
     private trigger SUI_ListScrollTrigger = null
     private trigger SUI_ClearFocusTrigger = null
@@ -1153,6 +1155,11 @@ private function SUI_AbilitiesAction takes nothing returns nothing
     endif
 endfunction
 
+private function SUI_LiteConfigAction takes nothing returns nothing
+    call Hide()
+    call StatsLiteUI_ShowConfig()
+endfunction
+
 private function SUI_RowAction takes nothing returns nothing
     local player p = GetTriggerPlayer()
     local integer handleId = GetHandleId(BlzGetTriggerFrame())
@@ -1290,6 +1297,13 @@ private function SUI_CreateFrames takes nothing returns nothing
     call BlzTriggerRegisterFrameEvent(SUI_AbilitiesTrigger, SUI_AbilitiesButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_AbilitiesButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzFrameSetVisible(SUI_AbilitiesButton, false)
+
+    set SUI_LiteConfigButton = BlzCreateFrameByType("GLUETEXTBUTTON", "StatsUILiteConfig", SUI_RightPane, "ScriptDialogButton", 0)
+    call BlzFrameSetSize(SUI_LiteConfigButton, 0.078, 0.022)
+    call BlzFrameSetText(SUI_LiteConfigButton, "Lite Config")
+    call BlzFrameSetPoint(SUI_LiteConfigButton, FRAMEPOINT_TOPRIGHT, SUI_AbilitiesButton, FRAMEPOINT_TOPLEFT, -0.008, 0.0)
+    call BlzTriggerRegisterFrameEvent(SUI_LiteConfigTrigger, SUI_LiteConfigButton, FRAMEEVENT_CONTROL_CLICK)
+    call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_LiteConfigButton, FRAMEEVENT_CONTROL_CLICK)
 
     loop
         exitwhen summaryRow > SUI_SUMMARY_ROWS
@@ -1435,6 +1449,9 @@ public function Init takes nothing returns nothing
 
     set SUI_AbilitiesTrigger = CreateTrigger()
     call TriggerAddAction(SUI_AbilitiesTrigger, function SUI_AbilitiesAction)
+
+    set SUI_LiteConfigTrigger = CreateTrigger()
+    call TriggerAddAction(SUI_LiteConfigTrigger, function SUI_LiteConfigAction)
 
     set SUI_RowTrigger = CreateTrigger()
     call TriggerAddAction(SUI_RowTrigger, function SUI_RowAction)
