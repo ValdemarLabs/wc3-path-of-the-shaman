@@ -42,6 +42,7 @@
     call AI_AddRandomSpawnProfile(profileId)
     call AI_SetRandomSpawnHardCap(cap)
     call AI_SetRandomSpawnActiveCap(cap)
+    call AI_SetRandomSpawnActiveMin(cap)
     call AI_SetRandomSpawnOwner(owner)
     call AI_SpawnRandomHero(showMessage)
     call AI_AddProfileStartingAbility(profileId, abilityId)
@@ -60,7 +61,7 @@
     call AI_SetDebugMode(enabled)
 
 **/
-library AI initializer Init requires Table, Companions, UnitDeathEvent, DamageEngine, DialogSystem, ExSound, GatherNodes, GatherNodeSkills, GatherNodeItems, GatherNodeUnits
+library AI initializer Init requires Table, Companions, UnitDeathEvent, DamageEngine, DialogSystem, ExSound, IconQuery, GatherNodes, GatherNodeSkills, GatherNodeItems, GatherNodeUnits
 
 globals
     constant integer AI_STATE_INACTIVE = 0
@@ -143,6 +144,7 @@ globals
     private constant real AI_PROFESSION_IDLE_MIN = 18.00
     private constant real AI_PROFESSION_IDLE_MAX = 40.00
     private constant real AI_PROFESSION_TOOL_DURATION = 45.00
+    private constant real AI_PROFESSION_TOOL_CLEANUP_DELAY = 10.00
     private constant real AI_SOCIAL_SCAN_RANGE = 1400.00
     private constant real AI_SOCIAL_MIN_RANGE = 220.00
     private constant real AI_SOCIAL_FACE_RANGE = 330.00
@@ -263,14 +265,16 @@ globals
     private integer RandomSpawnProfileCount = 0
     private integer array RandomSpawnProfiles
     private integer RandomSpawnManagedCount = 0
-    private integer RandomSpawnHardCap = 12
-    private integer RandomSpawnActiveCap = 4
+    private integer RandomSpawnHardCap = 24
+    private integer RandomSpawnActiveCap = 8
+    private integer RandomSpawnActiveMin = 4
     private integer RandomSpawnOwnerIndex = AI_RANDOM_DEFAULT_OWNER_INDEX
     private item array InstanceProfessionToolItem
     private integer array InstanceProfessionToolType
     private real array InstanceProfessionToolExpires
     private unit array InstanceSocialTarget
     private boolean array InstanceSocialStopped
+    private minimapicon array InstanceDebugIcon
 
     private timer ClockTimer = null
     private timer ThinkTimer = null
@@ -293,6 +297,8 @@ globals
     private item ProfessionSearchItem = null
     private unit ProfessionSearchUnit = null
     private unit SocialSearchTarget = null
+    private unit SocialSearchSource = null
+    private integer SocialSearchSeen = 0
 
     private boolean BossFightActive = false
     private integer BossCastCount = 0
@@ -484,14 +490,18 @@ private function ClearInstanceBarkCooldowns takes integer instanceId returns not
     endloop
 endfunction
 
+private function IsPlayerOwnedHeroListener takes unit hero returns boolean
+    return hero != null and GetOwningPlayer(hero) == Player(0) and IsAliveUnit(hero)
+endfunction
+
 private function IsBarkNearPlayerHero takes unit speaker returns boolean
     if speaker == null then
         return false
     endif
-    if udg_Nazgrek != null and IsAliveUnit(udg_Nazgrek) and IsUnitInRange(speaker, udg_Nazgrek, AI_BARK_AUDIBLE_RANGE) then
+    if IsPlayerOwnedHeroListener(udg_Nazgrek) and IsUnitInRange(speaker, udg_Nazgrek, AI_BARK_AUDIBLE_RANGE) then
         return true
     endif
-    if udg_Zulkis != null and IsAliveUnit(udg_Zulkis) and IsUnitInRange(speaker, udg_Zulkis, AI_BARK_AUDIBLE_RANGE) then
+    if IsPlayerOwnedHeroListener(udg_Zulkis) and IsUnitInRange(speaker, udg_Zulkis, AI_BARK_AUDIBLE_RANGE) then
         return true
     endif
     return false
@@ -507,7 +517,7 @@ private function IsCompanionOnlyBark takes integer barkType returns boolean
     if barkType == AI_BARK_KICKED or barkType == AI_BARK_ITEM_GIVEN or barkType == AI_BARK_COMPANION_DIES then
         return true
     endif
-    return barkType == AI_BARK_IDLE or barkType == AI_BARK_MOVING or barkType == AI_BARK_FAREWELL
+    return barkType == AI_BARK_FAREWELL
 endfunction
 
 private function IsDialogBlockingBark takes nothing returns boolean
@@ -592,13 +602,47 @@ private function RunProfileTrigger takes Table triggerTable, integer instanceId,
     set profileTrigger = null
 endfunction
 
+private function GetStateName takes integer state returns string
+    if state == AI_STATE_IDLE then
+        return "idle"
+    elseif state == AI_STATE_WANDER then
+        return "wander"
+    elseif state == AI_STATE_COMBAT then
+        return "combat"
+    elseif state == AI_STATE_RETREAT_COMBAT then
+        return "retreat-combat"
+    elseif state == AI_STATE_RETREAT_BASE then
+        return "retreat-base"
+    elseif state == AI_STATE_BUY then
+        return "buy"
+    elseif state == AI_STATE_SELL then
+        return "sell"
+    elseif state == AI_STATE_CAMP then
+        return "camp"
+    elseif state == AI_STATE_TRAVEL then
+        return "travel"
+    elseif state == AI_STATE_DEAD then
+        return "dead"
+    elseif state == AI_STATE_COMPANION_CONTROLLED then
+        return "companion"
+    elseif state == AI_STATE_BOSS_EVADE then
+        return "boss-evade"
+    elseif state == AI_STATE_SOCIAL then
+        return "social"
+    endif
+    return "inactive"
+endfunction
+
 private function SetInstanceState takes integer instanceId, integer newState returns nothing
+    local integer oldState
     if instanceId <= 0 then
         return
     endif
     if InstanceState[instanceId] != newState then
+        set oldState = InstanceState[instanceId]
         set InstancePreviousState[instanceId] = InstanceState[instanceId]
         set InstanceState[instanceId] = newState
+        call DebugMsg("Instance " + I2S(instanceId) + " state " + GetStateName(oldState) + " -> " + GetStateName(newState) + ".")
     endif
 endfunction
 
@@ -977,6 +1021,7 @@ private function HideRandomManagedByCap takes integer instanceId, unit whichUnit
     call IssueImmediateOrder(whichUnit, "stop")
     call PauseUnit(whichUnit, true)
     call ShowUnit(whichUnit, false)
+    call DebugMsg("Instance " + I2S(instanceId) + " hidden by random active cap.")
 endfunction
 
 private function ShowRandomManagedFromCap takes integer instanceId, unit whichUnit returns nothing
@@ -987,6 +1032,7 @@ private function ShowRandomManagedFromCap takes integer instanceId, unit whichUn
     call SetInstanceState(instanceId, AI_STATE_IDLE)
     call ShowUnit(whichUnit, true)
     call PauseUnit(whichUnit, false)
+    call DebugMsg("Instance " + I2S(instanceId) + " shown from random active cap reserve.")
 endfunction
 
 private function BeginBuyState takes integer instanceId, unit whichUnit returns boolean
@@ -1183,6 +1229,50 @@ private function EnsureProfessionTool takes integer instanceId, unit whichUnit, 
     return true
 endfunction
 
+private function SetTrackedProfessionToolCleanup takes integer instanceId, real now returns nothing
+    if instanceId > 0 and InstanceProfessionToolItem[instanceId] != null then
+        set InstanceProfessionToolExpires[instanceId] = now + AI_PROFESSION_TOOL_CLEANUP_DELAY
+    endif
+endfunction
+
+private function ClearDebugIcon takes integer instanceId returns nothing
+    if instanceId <= 0 then
+        return
+    endif
+    if InstanceDebugIcon[instanceId] != null then
+        call IconQuery_UnregisterIcon(InstanceDebugIcon[instanceId])
+        set InstanceDebugIcon[instanceId] = null
+    endif
+endfunction
+
+private function EnsureDebugIcon takes integer instanceId, unit whichUnit returns nothing
+    if instanceId <= 0 or whichUnit == null or GetUnitTypeId(whichUnit) == 0 then
+        return
+    endif
+    if InstanceDebugIcon[instanceId] == null then
+        set InstanceDebugIcon[instanceId] = IconQuery_RegisterCompanionFollowerUnitIcon(whichUnit)
+        call DebugMsg("Debug icon registered for instance " + I2S(instanceId) + ".")
+    endif
+endfunction
+
+private function RefreshDebugIcons takes nothing returns nothing
+    local integer index = 1
+    local integer instanceId
+    local unit whichUnit
+    loop
+        exitwhen index > ActiveCount
+        set instanceId = ActiveInstances[index]
+        set whichUnit = InstanceUnit.unit[instanceId]
+        if DebugMode then
+            call EnsureDebugIcon(instanceId, whichUnit)
+        else
+            call ClearDebugIcon(instanceId)
+        endif
+        set index = index + 1
+    endloop
+    set whichUnit = null
+endfunction
+
 private function EstimateProfessionSkill takes unit whichUnit returns integer
     local integer unitLevel = 1
     local integer skill
@@ -1316,6 +1406,7 @@ private function CompleteTravel takes integer instanceId, unit whichUnit returns
     call SetUnitPosition(whichUnit, InstanceTravelReturnX.real[instanceId], InstanceTravelReturnY.real[instanceId])
     set InstanceTraveling.boolean[instanceId] = false
     call SetInstanceState(instanceId, AI_STATE_IDLE)
+    call DebugMsg("Instance " + I2S(instanceId) + " returned from travel.")
     if CanShowRandomManaged(instanceId) then
         if InstanceRandomManaged.boolean[instanceId] then
             call ShowRandomManagedFromCap(instanceId, whichUnit)
@@ -1436,11 +1527,28 @@ endfunction
 public function SetRandomSpawnHardCap takes integer cap returns nothing
     call EnsureState()
     set RandomSpawnHardCap = cap
+    call DebugMsg("Random spawn hard cap set to " + I2S(cap) + ".")
 endfunction
 
 public function SetRandomSpawnActiveCap takes integer cap returns nothing
     call EnsureState()
     set RandomSpawnActiveCap = cap
+    if cap > 0 and RandomSpawnActiveMin > cap then
+        set RandomSpawnActiveMin = cap
+    endif
+    call DebugMsg("Random spawn active cap set to " + I2S(cap) + ".")
+endfunction
+
+public function SetRandomSpawnActiveMin takes integer cap returns nothing
+    call EnsureState()
+    if cap < 0 then
+        set cap = 0
+    endif
+    if RandomSpawnActiveCap > 0 and cap > RandomSpawnActiveCap then
+        set cap = RandomSpawnActiveCap
+    endif
+    set RandomSpawnActiveMin = cap
+    call DebugMsg("Random spawn active minimum set to " + I2S(cap) + ".")
 endfunction
 
 public function AddRandomSpawnProfile takes integer profileId returns nothing
@@ -1995,6 +2103,10 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
     endif
     call ApplyStartingAbilities(instanceId, whichUnit)
     call RefreshInstanceProfessionSkills(instanceId, whichUnit)
+    if DebugMode then
+        call EnsureDebugIcon(instanceId, whichUnit)
+    endif
+    call DebugMsg("Registered instance " + I2S(instanceId) + " profile=" + I2S(profileId) + " unitType=" + I2S(unitTypeId) + ".")
     set customValue = GetUnitUserData(whichUnit)
     if customValue > 0 then
         set udg_UnitHider_ReferenceUnits[customValue] = whichUnit
@@ -2031,6 +2143,7 @@ public function UnregisterUnit takes unit whichUnit returns nothing
         call DestroyTimer(reviveTimer)
         call InstanceReviveTimer.timer.remove(instanceId)
     endif
+    call ClearDebugIcon(instanceId)
     call RemoveActiveInstance(instanceId)
     call DecrementCounts(classId, profileId, unitTypeId)
     if uniqueId != 0 and UniqueInstance[uniqueId] == instanceId then
@@ -2042,6 +2155,7 @@ public function UnregisterUnit takes unit whichUnit returns nothing
     call InstanceSocialUntil.remove(instanceId)
     set InstanceSocialTarget[instanceId] = null
     set InstanceSocialStopped[instanceId] = false
+    set InstanceDebugIcon[instanceId] = null
     call InstanceUnit.unit.remove(instanceId)
     call InstanceClass.remove(instanceId)
     call InstanceProfile.remove(instanceId)
@@ -2289,6 +2403,7 @@ public function SpawnRandomHero takes boolean showMessage returns unit
     if instanceId > 0 then
         call MarkRandomManaged(instanceId)
         call ApplyRandomSpawnPresentation(created)
+        call DebugMsg("Random spawn created instance " + I2S(instanceId) + " profile=" + I2S(profileId) + " active=" + I2S(CountRandomManagedVisible()) + "/" + I2S(RandomSpawnActiveCap) + " managed=" + I2S(RandomSpawnManagedCount) + "/" + I2S(RandomSpawnHardCap) + ".")
         if RandomSpawnActiveCap > 0 and CountRandomManagedVisible() > RandomSpawnActiveCap then
             call HideRandomManagedByCap(instanceId, created)
         endif
@@ -2599,6 +2714,7 @@ endfunction
 
 public function SetDebugMode takes boolean enabled returns nothing
     set DebugMode = enabled
+    call RefreshDebugIcons()
 endfunction
 
 public function IsDebugMode takes nothing returns boolean
@@ -2699,6 +2815,7 @@ public function StartTravel takes unit whichUnit, real duration, real returnX, r
     call IssueImmediateOrder(whichUnit, "stop")
     call PauseUnit(whichUnit, true)
     call ShowUnit(whichUnit, false)
+    call DebugMsg("Instance " + I2S(instanceId) + " started travel for " + R2S(duration) + " seconds.")
 endfunction
 
 public function ReturnFromTravel takes unit whichUnit returns nothing
@@ -2741,10 +2858,42 @@ private function StartRandomManagedTravel takes integer instanceId returns boole
     return InstanceTraveling.boolean[instanceId]
 endfunction
 
+private function MaintainRandomActiveMinimum takes boolean showDebug returns boolean
+    local integer guard = 0
+    local unit spawned = null
+    local boolean changed = false
+    if not RandomSpawnEnabled or RandomSpawnActiveMin <= 0 then
+        return false
+    endif
+    loop
+        exitwhen CountRandomManagedVisible() >= RandomSpawnActiveMin or guard >= RandomSpawnActiveMin
+        if TryUnhideRandomManaged(showDebug) then
+            set changed = true
+        else
+            set spawned = AI_SpawnRandomHero(showDebug)
+            if spawned == null then
+                set spawned = null
+                return changed
+            endif
+            set changed = true
+        endif
+        set guard = guard + 1
+    endloop
+    if changed then
+        call DebugMsg("Random active minimum maintained: visible=" + I2S(CountRandomManagedVisible()) + " min=" + I2S(RandomSpawnActiveMin) + " cap=" + I2S(RandomSpawnActiveCap) + ".")
+    endif
+    set spawned = null
+    return changed
+endfunction
+
 private function RandomSpawnTimerAction takes nothing returns nothing
     local unit spawned = null
+    local boolean maintained = false
     if RandomSpawnEnabled then
-        set spawned = AI_SpawnRandomHero(false)
+        set maintained = MaintainRandomActiveMinimum(false)
+        if not maintained then
+            set spawned = AI_SpawnRandomHero(false)
+        endif
     endif
     set spawned = null
     call TimerStart(RandomSpawnTimer, GetRandomReal(AI_RANDOM_SPAWN_MIN, AI_RANDOM_SPAWN_MAX), false, function RandomSpawnTimerAction)
@@ -2771,7 +2920,7 @@ private function DebugSpawnAction takes nothing returns nothing
 endfunction
 
 private function DebugModeAction takes nothing returns nothing
-    set DebugMode = not DebugMode
+    call AI_SetDebugMode(not DebugMode)
     if DebugMode then
         call BJDebugMsg("[AI] Debug mode enabled.")
     else
@@ -2924,6 +3073,7 @@ private function BeginGatherItem takes integer instanceId, unit whichUnit, item 
     endif
     if IssueTargetOrder(whichUnit, "smart", nodeItem) then
         set InstanceNextProfession.real[instanceId] = now + GetRandomReal(AI_PROFESSION_ACTION_MIN, AI_PROFESSION_ACTION_MAX)
+        call SetTrackedProfessionToolCleanup(instanceId, now)
         call DebugMsg(GetDisplayName(whichUnit) + " gathers " + GN_GetGatherItemName(nodeItem) + ".")
         return true
     endif
@@ -2942,6 +3092,7 @@ private function BeginGatherUnit takes integer instanceId, unit whichUnit, unit 
     endif
     if IssueTargetOrder(whichUnit, "attack", node) then
         set InstanceNextProfession.real[instanceId] = now + GetRandomReal(AI_PROFESSION_ACTION_MIN, AI_PROFESSION_ACTION_MAX)
+        call SetTrackedProfessionToolCleanup(instanceId, now)
         call DebugMsg(GetDisplayName(whichUnit) + " mines " + GN_GetGatherUnitName(node) + ".")
         return true
     endif
@@ -3046,6 +3197,7 @@ private function ContinueSocialState takes integer instanceId, unit whichUnit, r
         if not InstanceSocialStopped[instanceId] then
             call IssueImmediateOrder(whichUnit, "stop")
             set InstanceSocialStopped[instanceId] = true
+            call AI_RequestBark(whichUnit, AI_BARK_IDLE)
         endif
         call FaceSocialPair(whichUnit, target)
     elseif GetUnitCurrentOrder(whichUnit) == 0 then
@@ -3057,6 +3209,33 @@ private function ContinueSocialState takes integer instanceId, unit whichUnit, r
     endif
     set target = null
     return true
+endfunction
+
+private function FindFriendlyNpcSocialEnum takes nothing returns nothing
+    local unit other = GetEnumUnit()
+    local real dx
+    local real dy
+    local real distance
+    if other == null or SocialSearchSource == null or other == SocialSearchSource then
+        set other = null
+        return
+    endif
+    if UnitInstance[GetHandleId(other)] > 0 or IsCompanionControlled(other) or IsUnitType(other, UNIT_TYPE_HERO) or IsUnitType(other, UNIT_TYPE_STRUCTURE) then
+        set other = null
+        return
+    endif
+    if IsAliveUnit(other) and not IsUnitHidden(other) and IsUnitAlly(other, GetOwningPlayer(SocialSearchSource)) then
+        set dx = GetUnitX(other) - GetUnitX(SocialSearchSource)
+        set dy = GetUnitY(other) - GetUnitY(SocialSearchSource)
+        set distance = dx * dx + dy * dy
+        if distance >= AI_SOCIAL_MIN_RANGE * AI_SOCIAL_MIN_RANGE and distance <= AI_SOCIAL_SCAN_RANGE * AI_SOCIAL_SCAN_RANGE then
+            set SocialSearchSeen = SocialSearchSeen + 1
+            if GetRandomInt(1, SocialSearchSeen) == 1 then
+                set SocialSearchTarget = other
+            endif
+        endif
+    endif
+    set other = null
 endfunction
 
 private function FindSocialTarget takes integer instanceId, unit whichUnit returns unit
@@ -3092,6 +3271,16 @@ private function FindSocialTarget takes integer instanceId, unit whichUnit retur
         endif
         set index = index + 1
     endloop
+    if SocialSearchTarget == null then
+        call GroupClear(TempGroup)
+        set SocialSearchSource = whichUnit
+        set SocialSearchSeen = 0
+        call GroupEnumUnitsInRange(TempGroup, GetUnitX(whichUnit), GetUnitY(whichUnit), AI_SOCIAL_SCAN_RANGE, null)
+        call ForGroup(TempGroup, function FindFriendlyNpcSocialEnum)
+        call GroupClear(TempGroup)
+        set SocialSearchSource = null
+        set SocialSearchSeen = 0
+    endif
     set other = null
     return SocialSearchTarget
 endfunction
@@ -3423,7 +3612,7 @@ private function Init takes nothing returns nothing
     call TimerStart(ThinkTimer, AI_THINK_INTERVAL, true, function Think)
 
     set RandomSpawnTimer = CreateTimer()
-    call TimerStart(RandomSpawnTimer, GetRandomReal(AI_RANDOM_SPAWN_MIN, AI_RANDOM_SPAWN_MAX), false, function RandomSpawnTimerAction)
+    call TimerStart(RandomSpawnTimer, 5.00, false, function RandomSpawnTimerAction)
 
     set RandomTravelTimer = CreateTimer()
     call TimerStart(RandomTravelTimer, GetRandomReal(AI_RANDOM_TRAVEL_MIN, AI_RANDOM_TRAVEL_MAX), false, function RandomTravelTimerAction)
