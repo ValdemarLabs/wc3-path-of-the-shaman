@@ -148,8 +148,6 @@ globals
 	private unit array CompanionUnit                  // Separate tracking (not synced with GUI array)
 	private Table CompanionIndex = 0                  // Separate tracking (by custom value)
 	private Table CompanionIcon = 0                   // Separate tracking (by count index)
-	private trigger MultiboardUpdateAddCompanion = null    // Reference to gg_trg_MultiboardUpdate_Add_Companion
-	private trigger MultiboardUpdateRemoveCompanion = null // Reference to gg_trg_MultiboardUpdate_Remove_Companion
 	private sound RescueSound = null                  // Reference to gg_snd_Rescue
 endglobals
 
@@ -238,11 +236,11 @@ endfunction
 // Companion management
 //
 // Generic functions for adding/removing companion units to player's party.
-// These functions interface with GUI variables and triggers defined in World Editor.
+// These functions interface with shared GUI variables defined in World Editor.
 //
 // IMPORTANT: Uses udg_CompanionCount directly (no local copy) to prevent state mismatch
-//            between GUI triggers and JASS code. This ensures both old GUI-based
-//            companion adds and new JASS-based adds work correctly together.
+//            between old GUI globals and JASS code. This keeps companion adds
+//            visible to current frame UIs and older systems still reading globals.
 //
 // Usage from quest sublibrary (e.g., qValeria.j):
 //   call QuestGiver_AddCompanion(udg_Valeria, "ReplaceableTextures\\CommandButtons\\BTNHighElvenArcher.blp")
@@ -253,9 +251,9 @@ endfunction
 //   - udg_CompanionFocusNazgrek (unit group)
 //   - udg_CompanionFocusZulkis (unit group)
 //   - udg_CompanionCount (integer) - used directly, no local copy
-//   - gg_trg_MultiboardUpdate_Add_Companion (trigger)
-//   - gg_trg_MultiboardUpdate_Remove_Companion (trigger)
 //   - gg_snd_Rescue (sound)
+//
+// StatsUI and StatsLiteUI read the shared companion globals directly.
 //===========================================================================
 public function AddCompanion takes unit companionUnit, string companionIcon returns nothing
 	local integer customValue
@@ -323,11 +321,6 @@ public function AddCompanion takes unit companionUnit, string companionIcon retu
 	endif
 	if companionIcon != "" then
 		set udg_CompanionIcon[udg_CompanionCount] = companionIcon
-	endif
-	
-	// Trigger multiboard update
-	if MultiboardUpdateAddCompanion != null then
-		call TriggerExecute(MultiboardUpdateAddCompanion)
 	endif
 	
 	call DebugMsg("Added companion: " + GetUnitName(companionUnit) + " (count=" + I2S(udg_CompanionCount) + ", icon=" + companionIcon + ")")
@@ -429,11 +422,6 @@ public function RemoveCompanion takes unit companionUnit returns nothing
 		set CompanionIndex.integer[GetUnitUserData(companionUnit)] = 0
 	endif
 	set udg_CompanionIndex[GetUnitUserData(companionUnit)] = 0
-	
-	// Trigger multiboard update
-	if MultiboardUpdateRemoveCompanion != null then
-		call TriggerExecute(MultiboardUpdateRemoveCompanion)
-	endif
 	
 	call DebugMsg("Removed companion: " + GetUnitName(companionUnit))
 endfunction
@@ -2647,14 +2635,12 @@ private function Init takes nothing returns nothing
 	call UnitDeathEvent_Register(function OnUnitDeath)
 	
 	// Map GUI variables to library variables (if they exist in the map)
-	// For reference types (groups, triggers, sounds), we store the reference
+	// For reference types (groups, sounds), we store the reference
 	// For value types (integers), we use udg_ variables directly in the code to avoid state mismatch
 	set Companion_Group = udg_Companion_Group
 	set CompanionFocusNazgrek = udg_CompanionFocusNazgrek
 	set CompanionFocusZulkis = udg_CompanionFocusZulkis
 	// Note: udg_CompanionCount is used directly in functions (no local copy)
-	set MultiboardUpdateAddCompanion = gg_trg_MultiboardUpdate_Add_Companion
-	set MultiboardUpdateRemoveCompanion = gg_trg_MultiboardUpdate_Remove_Companion
 	set RescueSound = gg_snd_Rescue
 	
 	// Note: CompanionUnit[] array is maintained separately from udg_CompanionUnit[]
