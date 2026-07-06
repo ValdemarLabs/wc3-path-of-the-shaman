@@ -84,6 +84,8 @@ globals
     private constant integer COMPANION_EFFECT_FOLLOWING_HIDDEN_ALPHA = 0
     private constant real COMPANION_EFFECT_FOLLOWING_VISIBLE_SCALE = 1.00
     private constant real COMPANION_EFFECT_FOLLOWING_HIDDEN_SCALE = 0.001
+    private constant string QUEST_RANGER_MISSING = "Ranger Missing"
+    private constant string QUEST_RIFTS_CORRUPTION = "Rifts of Corruption"
 
     private constant integer ABIL_INVITE = 'A622'
     private constant integer ABIL_KICK = 'A621'
@@ -300,11 +302,17 @@ private function GetFocusedLeader takes unit u returns unit
         endif
     endif
 
-    if udg_CompanionFocusZulkis != null and IsUnitInGroup(u, udg_CompanionFocusZulkis) and IsAliveUnit(udg_Zulkis) then
-        return udg_Zulkis
+    if udg_CompanionFocusZulkis != null and IsUnitInGroup(u, udg_CompanionFocusZulkis) then
+        if IsAliveUnit(udg_Zulkis) then
+            return udg_Zulkis
+        endif
+        return null
     endif
-    if udg_CompanionFocusNazgrek != null and IsUnitInGroup(u, udg_CompanionFocusNazgrek) and IsAliveUnit(udg_Nazgrek) then
-        return udg_Nazgrek
+    if udg_CompanionFocusNazgrek != null and IsUnitInGroup(u, udg_CompanionFocusNazgrek) then
+        if IsAliveUnit(udg_Nazgrek) then
+            return udg_Nazgrek
+        endif
+        return null
     endif
 
     return GetPreferredLeader(null)
@@ -778,7 +786,7 @@ private function UpdateCompanionOrderUnit takes unit controlledUnit returns noth
     set mode = NormalizeMode(CompanionMode[unitId])
     set CompanionMode[unitId] = mode
     set leader = CompanionLeader.unit[unitId]
-    if not IsAliveUnit(leader) then
+    if leader == null then
         set leader = GetFocusedLeader(controlledUnit)
         if IsAliveUnit(leader) then
             set CompanionLeader.unit[unitId] = leader
@@ -886,7 +894,7 @@ private function ApplyOrders takes unit companionUnit returns nothing
     set mode = NormalizeMode(CompanionMode[unitId])
     set CompanionMode[unitId] = mode
     set leader = CompanionLeader.unit[unitId]
-    if not IsAliveUnit(leader) then
+    if leader == null then
         set leader = GetFocusedLeader(companionUnit)
         if IsAliveUnit(leader) then
             set CompanionLeader.unit[unitId] = leader
@@ -1480,6 +1488,13 @@ private function GetModeFromAbility takes integer abilityId returns integer
     return 0
 endfunction
 
+private function IsQuestOpenForCompanionInvite takes string questName returns boolean
+    if udg_Aradion == null then
+        return false
+    endif
+    return QuestGiver_IsQuestDiscoveredByNameAndGiver(questName, udg_Aradion) and not QuestGiver_IsQuestCompletedByNameAndGiver(questName, udg_Aradion) and not QuestGiver_IsQuestFailedByNameAndGiver(questName, udg_Aradion)
+endfunction
+
 private function IsQuestCompanionReputationBypass takes unit target returns boolean
     local integer unitTypeId
 
@@ -1488,7 +1503,27 @@ private function IsQuestCompanionReputationBypass takes unit target returns bool
     endif
 
     set unitTypeId = GetUnitTypeId(target)
-    return target == udg_Aradion or target == udg_Valeria or unitTypeId == UNIT_ARADION or unitTypeId == UNIT_VALERIA
+    if target == udg_Aradion or unitTypeId == UNIT_ARADION then
+        return IsQuestOpenForCompanionInvite(QUEST_RIFTS_CORRUPTION)
+    endif
+    if target == udg_Valeria or unitTypeId == UNIT_VALERIA then
+        return IsQuestOpenForCompanionInvite(QUEST_RANGER_MISSING) or IsQuestOpenForCompanionInvite(QUEST_RIFTS_CORRUPTION)
+    endif
+    return false
+endfunction
+
+private function IsQuestCompanionType takes integer unitTypeId returns boolean
+    return unitTypeId == UNIT_ARADION or unitTypeId == UNIT_VALERIA
+endfunction
+
+private function GetHireReputationRequirement takes Faction f returns integer
+    if f == 0 then
+        return Reputation_REP_FRIENDLY
+    endif
+    if f.name == "Horde" then
+        return Reputation_REP_NEUTRAL
+    endif
+    return Reputation_REP_FRIENDLY
 endfunction
 
 private function CanHireByReputation takes unit target returns boolean
@@ -1506,7 +1541,7 @@ private function CanHireByReputation takes unit target returns boolean
         return true
     endif
 
-    return Reputation.getRep(Player(CONTROL_PLAYER_INDEX), f) >= Reputation_REP_COVENANT
+    return Reputation.getRep(Player(CONTROL_PLAYER_INDEX), f) >= GetHireReputationRequirement(f)
 endfunction
 
 private function GetHireReputationFailureText takes unit target returns string
@@ -1518,6 +1553,9 @@ private function GetHireReputationFailureText takes unit target returns string
 
     set f = Faction.getByUnit(target)
     if f != 0 then
+        if f.name == "Horde" then
+            return GetUnitName(target) + " requires Friendly reputation with Horde to join."
+        endif
         return GetUnitName(target) + " requires Covenant reputation with " + f.name + " to join."
     endif
     return GetUnitName(target) + " will not join the party."
@@ -1535,6 +1573,11 @@ private function HandleInvite takes unit caster, unit target returns nothing
     set unitTypeId = GetUnitTypeId(target)
     if not IsNamedCompanionType(unitTypeId) then
         call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "This unit cannot join the party.")
+        return
+    endif
+
+    if IsQuestCompanionType(unitTypeId) and not IsQuestCompanionReputationBypass(target) then
+        call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(target) + " cannot join outside the active quest.")
         return
     endif
 
