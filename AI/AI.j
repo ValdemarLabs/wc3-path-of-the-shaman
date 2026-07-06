@@ -26,13 +26,17 @@
     call AI_RegisterClass(className)
     call AI_RegisterProfile(classId, unitTypeId, profileName)
     call AI_RegisterUnit(whichUnit, profileId, uniqueId)
+    call AI_RegisterUnitByType(whichUnit, uniqueId)
     call AI_UnregisterUnit(whichUnit)
     call AI_SpawnProfile(profileId, owner, x, y, facing, uniqueId)
     call AI_SetClassCap(classId, cap)
     call AI_SetProfileCap(profileId, cap)
     call AI_SetUnitTypeCap(unitTypeId, cap)
+    call AI_SetProfileRandomUniqueId(profileId, uniqueId)
+    call AI_SetUnitTypeDefaultProfile(unitTypeId, profileId)
     call AI_SetProfileAutonomous(profileId, enabled)
     call AI_SetProfileSpawnOwner(profileId, owner)
+    call AI_SetProfileRegisterCallback(profileId, callback)
     call AI_SetProfileThinkCallback(profileId, callback)
     call AI_AddProfileProfession(profileId, AI_PROFESSION_MINING)
     call AI_GetProfessionSkill(whichUnit, professionId)
@@ -180,10 +184,12 @@ globals
     private Table ProfileCap = 0
     private Table ProfileActiveCount = 0
     private Table ProfileReviveDelay = 0
+    private Table ProfileRandomUniqueId = 0
     private Table ProfileNoManaRestore = 0
     private Table ProfileAllowCompanionTravel = 0
     private Table ProfileAutonomousDisabled = 0
     private Table ProfileSpawnOwnerSlot = 0
+    private Table ProfileRegisterTrigger = 0
     private Table ProfileThinkTrigger = 0
     private Table ProfileDeathTrigger = 0
     private Table ProfileReviveTrigger = 0
@@ -192,6 +198,7 @@ globals
 
     private Table UnitTypeCap = 0
     private Table UnitTypeActiveCount = 0
+    private Table UnitTypeDefaultProfile = 0
 
     private Table InstanceUnit = 0
     private Table InstanceClass = 0
@@ -285,6 +292,7 @@ globals
     private trigger SpellEffectTrigger = null
     private trigger LevelTrigger = null
     private trigger ItemTrigger = null
+    private trigger SellTrigger = null
     private trigger DebugSpawnTrigger = null
     private trigger DebugModeTrigger = null
     private group TempGroup = null
@@ -340,10 +348,12 @@ private function EnsureState takes nothing returns nothing
         set ProfileCap = Table.create()
         set ProfileActiveCount = Table.create()
         set ProfileReviveDelay = Table.create()
+        set ProfileRandomUniqueId = Table.create()
         set ProfileNoManaRestore = Table.create()
         set ProfileAllowCompanionTravel = Table.create()
         set ProfileAutonomousDisabled = Table.create()
         set ProfileSpawnOwnerSlot = Table.create()
+        set ProfileRegisterTrigger = Table.create()
         set ProfileThinkTrigger = Table.create()
         set ProfileDeathTrigger = Table.create()
         set ProfileReviveTrigger = Table.create()
@@ -351,6 +361,7 @@ private function EnsureState takes nothing returns nothing
         set ProfileProfessionCount = Table.create()
         set UnitTypeCap = Table.create()
         set UnitTypeActiveCount = Table.create()
+        set UnitTypeDefaultProfile = Table.create()
         set InstanceUnit = Table.create()
         set InstanceClass = Table.create()
         set InstanceProfile = Table.create()
@@ -1457,6 +1468,9 @@ public function RegisterProfile takes integer classId, integer unitTypeId, strin
     set ProfileUnitType[profileId] = unitTypeId
     set ProfileName.string[profileId] = profileName
     set ProfileReviveDelay.real[profileId] = AI_DEFAULT_REVIVE_DELAY
+    if UnitTypeDefaultProfile[unitTypeId] == 0 then
+        set UnitTypeDefaultProfile[unitTypeId] = profileId
+    endif
     return profileId
 endfunction
 
@@ -1473,6 +1487,22 @@ endfunction
 public function SetUnitTypeCap takes integer unitTypeId, integer cap returns nothing
     call EnsureState()
     set UnitTypeCap[unitTypeId] = cap
+endfunction
+
+public function SetProfileRandomUniqueId takes integer profileId, integer uniqueId returns nothing
+    call EnsureState()
+    if profileId <= 0 then
+        return
+    endif
+    set ProfileRandomUniqueId[profileId] = uniqueId
+endfunction
+
+public function SetUnitTypeDefaultProfile takes integer unitTypeId, integer profileId returns nothing
+    call EnsureState()
+    if unitTypeId == 0 or profileId <= 0 or ProfileUnitType[profileId] != unitTypeId then
+        return
+    endif
+    set UnitTypeDefaultProfile[unitTypeId] = profileId
 endfunction
 
 public function SetProfileReviveDelay takes integer profileId, real delay returns nothing
@@ -1570,6 +1600,24 @@ public function AddRandomSpawnProfile takes integer profileId returns nothing
     endif
     set RandomSpawnProfileCount = RandomSpawnProfileCount + 1
     set RandomSpawnProfiles[RandomSpawnProfileCount] = profileId
+endfunction
+
+public function SetProfileRegisterCallback takes integer profileId, code callback returns nothing
+    local trigger oldTrigger
+    local trigger newTrigger
+    call EnsureState()
+    if profileId <= 0 then
+        return
+    endif
+    set oldTrigger = ProfileRegisterTrigger.trigger[profileId]
+    if oldTrigger != null then
+        call DestroyTrigger(oldTrigger)
+    endif
+    set newTrigger = CreateTrigger()
+    call TriggerAddAction(newTrigger, callback)
+    set ProfileRegisterTrigger.trigger[profileId] = newTrigger
+    set oldTrigger = null
+    set newTrigger = null
 endfunction
 
 public function SetProfileThinkCallback takes integer profileId, code callback returns nothing
@@ -2103,6 +2151,7 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
     endif
     call ApplyStartingAbilities(instanceId, whichUnit)
     call RefreshInstanceProfessionSkills(instanceId, whichUnit)
+    call RunProfileTrigger(ProfileRegisterTrigger, instanceId, whichUnit)
     if DebugMode then
         call EnsureDebugIcon(instanceId, whichUnit)
     endif
@@ -2112,6 +2161,22 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
         set udg_UnitHider_ReferenceUnits[customValue] = whichUnit
     endif
     return instanceId
+endfunction
+
+public function RegisterUnitByType takes unit whichUnit, integer uniqueId returns integer
+    local integer profileId
+    call EnsureState()
+    if whichUnit == null or GetUnitTypeId(whichUnit) == 0 then
+        return 0
+    endif
+    set profileId = UnitTypeDefaultProfile[GetUnitTypeId(whichUnit)]
+    if profileId <= 0 then
+        return 0
+    endif
+    if uniqueId == 0 then
+        set uniqueId = ProfileRandomUniqueId[profileId]
+    endif
+    return AI_RegisterUnit(whichUnit, profileId, uniqueId)
 endfunction
 
 public function UnregisterUnit takes unit whichUnit returns nothing
@@ -2286,6 +2351,7 @@ private function GetRandomSpawnProfile takes nothing returns integer
     local integer index
     local integer checked = 0
     local integer profileId
+    local integer uniqueId
     if RandomSpawnProfileCount <= 0 then
         return 0
     endif
@@ -2294,7 +2360,8 @@ private function GetRandomSpawnProfile takes nothing returns integer
     loop
         exitwhen checked >= RandomSpawnProfileCount
         set profileId = RandomSpawnProfiles[index]
-        if CanRegister(profileId, 0) then
+        set uniqueId = ProfileRandomUniqueId[profileId]
+        if CanRegister(profileId, uniqueId) then
             return profileId
         endif
         set checked = checked + 1
@@ -2372,6 +2439,7 @@ endfunction
 public function SpawnRandomHero takes boolean showMessage returns unit
     local integer profileId
     local integer instanceId
+    local integer uniqueId
     local player owner
     local unit created = null
     call EnsureState()
@@ -2389,8 +2457,9 @@ public function SpawnRandomHero takes boolean showMessage returns unit
         return null
     endif
     set owner = GetSpawnOwnerForProfile(profileId)
+    set uniqueId = ProfileRandomUniqueId[profileId]
     if PickProfileSpawnPoint(profileId) then
-        set created = AI_SpawnProfile(profileId, owner, RandomPointX, RandomPointY, GetRandomReal(0.00, 360.00), 0)
+        set created = AI_SpawnProfile(profileId, owner, RandomPointX, RandomPointY, GetRandomReal(0.00, 360.00), uniqueId)
     endif
     if created == null then
         if showMessage then
@@ -3566,6 +3635,19 @@ private function HandleItem takes nothing returns nothing
     set manipulatedItem = null
 endfunction
 
+private function HandleSoldUnit takes nothing returns nothing
+    local unit soldUnit = GetSoldUnit()
+    local integer instanceId
+    if soldUnit == null then
+        return
+    endif
+    set instanceId = AI_RegisterUnitByType(soldUnit, 0)
+    if instanceId > 0 then
+        call DebugMsg("Sold unit initialized as AI instance " + I2S(instanceId) + " (" + GetDisplayName(soldUnit) + ").")
+    endif
+    set soldUnit = null
+endfunction
+
 private function HandleCompanionCommand takes nothing returns nothing
     local unit whichUnit = Companions_EventUnit
     local integer commandId = Companions_EventCommand
@@ -3643,6 +3725,10 @@ private function Init takes nothing returns nothing
     call RegisterPlayerUnitEventAll(ItemTrigger, EVENT_PLAYER_UNIT_DROP_ITEM)
     call RegisterPlayerUnitEventAll(ItemTrigger, EVENT_PLAYER_UNIT_PICKUP_ITEM)
     call TriggerAddAction(ItemTrigger, function HandleItem)
+
+    set SellTrigger = CreateTrigger()
+    call RegisterPlayerUnitEventAll(SellTrigger, EVENT_PLAYER_UNIT_SELL)
+    call TriggerAddAction(SellTrigger, function HandleSoldUnit)
 
     call UnitDeathEvent_Register(function HandleDeath)
     call Companions_RegisterCommandEvent(function HandleCompanionCommand)
