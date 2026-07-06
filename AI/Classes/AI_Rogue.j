@@ -116,7 +116,7 @@ private function Think takes nothing returns nothing
         call AI_RequestBark(rogue, AI_BARK_CASTING)
     elseif GetRandomInt(1, 3) == 1 and AI_TryCastImmediate(rogue, AI_ROGUE_ABILITY_SLICE_AND_DICE, "roar", 5.00) then
         call AI_RequestBark(rogue, AI_BARK_CASTING)
-    elseif AI_TemporaryAbilitySwap(rogue, AI_ROGUE_ABILITY_SINISTER_STRIKE, AI_ROGUE_ABILITY_SURPRISE_ATTACK, GetUnitAbilityLevel(rogue, AI_ROGUE_ABILITY_SINISTER_STRIKE), 5.00) and AI_TryCastImmediate(rogue, AI_ROGUE_ABILITY_SURPRISE_ATTACK, "windwalk", 6.00) then
+    elseif GetRandomInt(1, 3) == 1 and AI_TemporaryAbilitySwap(rogue, AI_ROGUE_ABILITY_SINISTER_STRIKE, AI_ROGUE_ABILITY_SURPRISE_ATTACK, GetUnitAbilityLevel(rogue, AI_ROGUE_ABILITY_SINISTER_STRIKE), 5.00) and AI_TryCastImmediate(rogue, AI_ROGUE_ABILITY_SURPRISE_ATTACK, "windwalk", 6.00) then
         call AI_RequestBark(rogue, AI_BARK_CASTING)
         call IssueTargetOrder(rogue, "attack", target)
     elseif enemyCount >= 2 and GetRandomInt(1, 3) == 1 and AI_TryCastTarget(rogue, target, AI_ROGUE_ABILITY_TOXIC_VENOM, "acidbomb", 5.00) then
