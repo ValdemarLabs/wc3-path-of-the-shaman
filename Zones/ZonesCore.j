@@ -592,7 +592,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.fogNight[2] = 66.0
     set z.fogNight[3] = 6.0
     set z.fogNight[4] = 5.0
-    set z.fogWeatherLight[0] = 1000.0      /
+    set z.fogWeatherLight[0] = 1000.0  
     set z.fogWeatherLight[1] = 8000.0
     set z.fogWeatherLight[2] = 85.0
     set z.fogWeatherLight[3] = 5.0
