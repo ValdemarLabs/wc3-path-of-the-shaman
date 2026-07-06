@@ -99,33 +99,37 @@ private function Think takes nothing returns nothing
     local unit warrior = AI_EventUnit
     local unit target = AI_EventTarget
     local integer enemyCount
+    local integer roll
+    local real lifePercent
     if warrior == null or target == null then
         set warrior = null
         set target = null
         return
     endif
     set enemyCount = AI_CountNearbyEnemies(warrior, 600.00)
+    set roll = GetRandomInt(1, 100)
+    set lifePercent = AI_GetUnitLifePercent(warrior)
     if enemyCount <= 0 then
         call IssueTargetOrder(warrior, "attack", target)
-    elseif AI_TryCastImmediate(warrior, AI_WARRIOR_ABILITY_BATTLE_SHOUT, "roar", 1.00) then
+    elseif enemyCount >= 3 and lifePercent >= 25.00 and roll <= 20 and AI_TryCastImmediate(warrior, AI_WARRIOR_ABILITY_CHALLENGING_SHOUT, "taunt", 1.00) then
         call AI_RequestBark(warrior, AI_BARK_CASTING)
-    elseif AI_GetUnitLifePercent(warrior) >= 50.00 and AI_TryCastImmediate(warrior, AI_WARRIOR_ABILITY_BLOODRAGE, "avatar", 1.00) then
+    elseif enemyCount >= 2 and roll <= 42 and AI_TryCastImmediateById(warrior, AI_WARRIOR_ABILITY_THUNDER_CLAP, AI_WARRIOR_ORDER_THUNDER_CLAP, 1.00) then
         call AI_RequestBark(warrior, AI_BARK_CASTING)
-    elseif AI_TryCastTarget(warrior, target, AI_WARRIOR_ABILITY_CHARGE, "absorb", 1.00) then
+    elseif roll <= 55 and AI_TryCastImmediate(warrior, AI_WARRIOR_ABILITY_BATTLE_SHOUT, "roar", 1.00) then
+        call AI_RequestBark(warrior, AI_BARK_CASTING)
+    elseif lifePercent >= 55.00 and roll <= 68 and AI_TryCastImmediate(warrior, AI_WARRIOR_ABILITY_BLOODRAGE, "avatar", 1.00) then
+        call AI_RequestBark(warrior, AI_BARK_CASTING)
+    elseif roll <= 80 and AI_TryCastTarget(warrior, target, AI_WARRIOR_ABILITY_CHARGE, "absorb", 1.00) then
+        call AI_RequestBark(warrior, AI_BARK_CASTING)
+    elseif roll <= 88 and AI_TryCastTarget(warrior, target, AI_WARRIOR_ABILITY_SUNDER_ARMOR, "faeriefire", 1.00) then
+        call AI_RequestBark(warrior, AI_BARK_CASTING)
+    elseif roll <= 94 and AI_TryCastTarget(warrior, target, AI_WARRIOR_ABILITY_REND, "parasite", 1.00) then
+        call AI_RequestBark(warrior, AI_BARK_CASTING)
+    elseif enemyCount >= 2 and lifePercent >= 35.00 and GetRandomInt(1, 2) == 1 and AI_TryCastImmediate(warrior, AI_WARRIOR_ABILITY_RETALIATION, "berserk", 1.00) then
+        call AI_RequestBark(warrior, AI_BARK_CASTING)
+    elseif lifePercent >= 45.00 and GetRandomInt(1, 3) == 1 and AI_TemporaryAbilitySwap(warrior, AI_WARRIOR_ABILITY_RETALIATION, AI_WARRIOR_ABILITY_RECKLESSNESS, GetUnitAbilityLevel(warrior, AI_WARRIOR_ABILITY_RETALIATION), 1.00) and AI_TryCastImmediate(warrior, AI_WARRIOR_ABILITY_RECKLESSNESS, "fanofknives", 1.00) then
         call AI_RequestBark(warrior, AI_BARK_CASTING)
     elseif AI_TryCastTarget(warrior, target, AI_WARRIOR_ABILITY_HEROIC_STRIKE, "stormbolt", 1.00) then
-        call AI_RequestBark(warrior, AI_BARK_CASTING)
-    elseif GetRandomInt(1, 2) == 1 and AI_TryCastTarget(warrior, target, AI_WARRIOR_ABILITY_REND, "parasite", 1.00) then
-        call AI_RequestBark(warrior, AI_BARK_CASTING)
-    elseif GetRandomInt(1, 2) == 1 and AI_TryCastTarget(warrior, target, AI_WARRIOR_ABILITY_SUNDER_ARMOR, "faeriefire", 1.00) then
-        call AI_RequestBark(warrior, AI_BARK_CASTING)
-    elseif GetRandomInt(1, 2) == 1 and AI_TryCastImmediateById(warrior, AI_WARRIOR_ABILITY_THUNDER_CLAP, AI_WARRIOR_ORDER_THUNDER_CLAP, 1.00) then
-        call AI_RequestBark(warrior, AI_BARK_CASTING)
-    elseif enemyCount >= 2 and AI_GetUnitLifePercent(warrior) >= 10.00 and GetRandomInt(1, 4) == 1 and AI_TryCastImmediate(warrior, AI_WARRIOR_ABILITY_CHALLENGING_SHOUT, "taunt", 1.00) then
-        call AI_RequestBark(warrior, AI_BARK_CASTING)
-    elseif enemyCount >= 2 and GetRandomInt(1, 2) == 1 and AI_TryCastImmediate(warrior, AI_WARRIOR_ABILITY_RETALIATION, "berserk", 1.00) then
-        call AI_RequestBark(warrior, AI_BARK_CASTING)
-    elseif GetRandomInt(1, 2) == 1 and AI_TemporaryAbilitySwap(warrior, AI_WARRIOR_ABILITY_RETALIATION, AI_WARRIOR_ABILITY_RECKLESSNESS, GetUnitAbilityLevel(warrior, AI_WARRIOR_ABILITY_RETALIATION), 1.00) and AI_TryCastImmediate(warrior, AI_WARRIOR_ABILITY_RECKLESSNESS, "fanofknives", 1.00) then
         call AI_RequestBark(warrior, AI_BARK_CASTING)
     else
         call IssueTargetOrder(warrior, "attack", target)
