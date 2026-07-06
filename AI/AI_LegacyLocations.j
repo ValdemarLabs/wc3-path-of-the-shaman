@@ -20,7 +20,7 @@
     Automatic initializer only.
 
 **/
-library AILegacyLocations initializer Init requires AI, AIWarrior, AIRogue, AIWarlock, AIRestoshaman, AIPaladin, AIEngineer
+library AILegacyLocations initializer Init requires AI, AIWarrior, AIRogue, AIWarlock, AIRestoshaman, AIPaladin, AIEngineer, AIAveline
 
 private function AddHordeSpawns takes integer profileId returns nothing
     call AI_AddProfileSpawnRect(profileId, gg_rct_HordeWandererSpawningPlace01)
@@ -97,6 +97,7 @@ private function Init takes nothing returns nothing
     call BindHordeProfile(AI_Warlock_ProfileId)
     call BindHordeProfile(AI_Restoshaman_ProfileId)
     call BindRiverbaneProfile(AI_Paladin_ProfileId)
+    call BindRiverbaneProfile(AI_Aveline_ProfileId)
     call BindNeutralProfile(AI_Engineer_ProfileId)
     call BindNeutralProfile(AI_Engineer_ShredderProfileId)
 endfunction
