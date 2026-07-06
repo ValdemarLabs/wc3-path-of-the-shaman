@@ -679,15 +679,19 @@ public function IsWithinRange takes unit a, unit b, real range returns boolean
 	return dx*dx + dy*dy <= range*range
 endfunction
 
+private function IsPlayerOwnedDialogHero takes unit hero returns boolean
+	return hero != null and IsUnitAlive(hero) and GetOwningPlayer(hero) == Player(0)
+endfunction
+
 public function GetAvailableHero takes unit giver, real range returns unit
     local boolean nazgrekOk = false
     local boolean zulkisOk = false
-    if udg_Nazgrek != null and IsUnitAlive(udg_Nazgrek) then
+    if IsPlayerOwnedDialogHero(udg_Nazgrek) then
         if range <= 0.00 or IsWithinRange(giver, udg_Nazgrek, range) then
 			set nazgrekOk = true
 		endif
 	endif
-    if udg_Zulkis != null and IsUnitAlive(udg_Zulkis) then
+    if IsPlayerOwnedDialogHero(udg_Zulkis) then
         if range <= 0.00 or IsWithinRange(giver, udg_Zulkis, range) then
             set zulkisOk = true
         endif
@@ -708,22 +712,22 @@ public function GetAvailableHero takes unit giver, real range returns unit
 endfunction
 
 public function GetAllowedHero takes unit giver, real range, boolean allowNazgrek, boolean allowZulkis returns unit
-    if allowZulkis and udg_Zulkis != null and IsUnitAlive(udg_Zulkis) and IsUnitSelected(udg_Zulkis, Player(0)) then
+    if allowZulkis and IsPlayerOwnedDialogHero(udg_Zulkis) and IsUnitSelected(udg_Zulkis, Player(0)) then
         if range <= 0.00 or IsWithinRange(giver, udg_Zulkis, range) then
             return udg_Zulkis
         endif
     endif
-    if allowNazgrek and udg_Nazgrek != null and IsUnitAlive(udg_Nazgrek) and IsUnitSelected(udg_Nazgrek, Player(0)) then
+    if allowNazgrek and IsPlayerOwnedDialogHero(udg_Nazgrek) and IsUnitSelected(udg_Nazgrek, Player(0)) then
         if range <= 0.00 or IsWithinRange(giver, udg_Nazgrek, range) then
             return udg_Nazgrek
         endif
     endif
-    if allowNazgrek and udg_Nazgrek != null and IsUnitAlive(udg_Nazgrek) then
+    if allowNazgrek and IsPlayerOwnedDialogHero(udg_Nazgrek) then
         if range <= 0.00 or IsWithinRange(giver, udg_Nazgrek, range) then
             return udg_Nazgrek
         endif
     endif
-	if allowZulkis and udg_Zulkis != null and IsUnitAlive(udg_Zulkis) then
+	if allowZulkis and IsPlayerOwnedDialogHero(udg_Zulkis) then
 		if range <= 0.00 or IsWithinRange(giver, udg_Zulkis, range) then
 			return udg_Zulkis
 		endif
@@ -732,7 +736,7 @@ public function GetAllowedHero takes unit giver, real range, boolean allowNazgre
 endfunction
 
 public function ResolveDialogHero takes unit selectedHero, unit giver, real range, boolean allowNazgrek, boolean allowZulkis returns unit
-	if selectedHero != null and IsUnitAlive(selectedHero) then
+	if IsPlayerOwnedDialogHero(selectedHero) then
 		return selectedHero
 	endif
 	return GetAllowedHero(giver, range, allowNazgrek, allowZulkis)
