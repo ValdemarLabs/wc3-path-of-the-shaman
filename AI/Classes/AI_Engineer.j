@@ -120,29 +120,33 @@ private function ThinkEngineer takes nothing returns nothing
     local real distance
     local real x
     local real y
+    local integer roll
+    local real lifePercent
     if engineer == null or target == null then
         set engineer = null
         set target = null
         return
     endif
     set enemyCount = AI_CountNearbyEnemies(engineer, 600.00)
+    set roll = GetRandomInt(1, 100)
+    set lifePercent = AI_GetUnitLifePercent(engineer)
     set angle = GetRandomReal(0.00, 360.00) * bj_DEGTORAD
     set distance = GetRandomReal(100.00, 400.00)
     set x = GetUnitX(engineer) + distance * Cos(angle)
     set y = GetUnitY(engineer) + distance * Sin(angle)
     if enemyCount <= 0 then
         call IssueTargetOrder(engineer, "attack", target)
-    elseif GetRandomInt(1, 3) == 1 and AI_TryCastPoint(engineer, GetUnitX(target), GetUnitY(target), AI_ENGINEER_ABILITY_GRENADE, "clusterrockets", 2.00) then
+    elseif (lifePercent <= 45.00 or enemyCount >= 3) and roll <= 30 and AI_TemporaryAbilitySwap(engineer, AI_ENGINEER_ABILITY_GRENADE, AI_ENGINEER_ABILITY_SMOKE_BOMB, GetUnitAbilityLevel(engineer, AI_ENGINEER_ABILITY_GRENADE), 1.00) and AI_TryCastPoint(engineer, x, y, AI_ENGINEER_ABILITY_SMOKE_BOMB, "clusterrockets", 4.00) then
         call AI_RequestBark(engineer, AI_BARK_CASTING)
-    elseif GetRandomInt(1, 3) == 1 and AI_TryCastImmediate(engineer, AI_ENGINEER_ABILITY_MECHANICAL_CONSTRUCT, "feralspirit", 2.00) then
+    elseif enemyCount >= 2 and roll <= 45 and AI_TryCastImmediate(engineer, AI_ENGINEER_ABILITY_SHREDDER_FORM, "bearform", 5.00) then
         call AI_RequestBark(engineer, AI_BARK_CASTING)
-    elseif GetRandomInt(1, 6) == 1 and AI_TryCastImmediate(engineer, AI_ENGINEER_ABILITY_SHREDDER_FORM, "bearform", 5.00) then
+    elseif enemyCount >= 2 and roll <= 62 and AI_TryCastPoint(engineer, GetUnitX(target), GetUnitY(target), AI_ENGINEER_ABILITY_GRENADE, "clusterrockets", 2.00) then
         call AI_RequestBark(engineer, AI_BARK_CASTING)
-    elseif GetRandomInt(1, 3) == 1 and AI_TryCastImmediate(engineer, AI_ENGINEER_ABILITY_TURRET, "summonquillbeast", 5.00) then
+    elseif roll <= 74 and AI_TryCastImmediate(engineer, AI_ENGINEER_ABILITY_MECHANICAL_CONSTRUCT, "feralspirit", 2.00) then
         call AI_RequestBark(engineer, AI_BARK_CASTING)
-    elseif enemyCount >= 2 and GetRandomInt(1, 3) == 1 and AI_TemporaryAbilitySwap(engineer, AI_ENGINEER_ABILITY_GRENADE, AI_ENGINEER_ABILITY_SMOKE_BOMB, GetUnitAbilityLevel(engineer, AI_ENGINEER_ABILITY_GRENADE), 1.00) and AI_TryCastPoint(engineer, x, y, AI_ENGINEER_ABILITY_SMOKE_BOMB, "clusterrockets", 4.00) then
+    elseif roll <= 86 and AI_TryCastImmediate(engineer, AI_ENGINEER_ABILITY_TURRET, "summonquillbeast", 5.00) then
         call AI_RequestBark(engineer, AI_BARK_CASTING)
-    elseif GetRandomInt(1, 3) == 1 and AI_TryCastImmediate(engineer, AI_ENGINEER_ABILITY_DRONE, "summonhawk", 2.00) then
+    elseif roll <= 96 and AI_TryCastImmediate(engineer, AI_ENGINEER_ABILITY_DRONE, "summonhawk", 2.00) then
         call AI_RequestBark(engineer, AI_BARK_CASTING)
     else
         call IssueTargetOrder(engineer, "attack", target)
@@ -169,22 +173,26 @@ private function ThinkShredder takes nothing returns nothing
     local unit engineer = AI_EventUnit
     local unit target = AI_EventTarget
     local integer enemyCount
+    local integer roll
+    local real lifePercent
     if engineer == null or target == null then
         set engineer = null
         set target = null
         return
     endif
     set enemyCount = AI_CountNearbyEnemies(engineer, 600.00)
+    set roll = GetRandomInt(1, 100)
+    set lifePercent = AI_GetUnitLifePercent(engineer)
     call SyncShredderAbilityLevels(engineer)
     if enemyCount <= 0 then
         call IssueTargetOrder(engineer, "attack", target)
-    elseif GetRandomInt(1, 2) == 1 and AI_TryCastTarget(engineer, target, AI_ENGINEER_ABILITY_SHREDDER_SHRED, "stormbolt", 2.00) then
+    elseif enemyCount >= 2 and roll <= 35 and AI_TryCastImmediateById(engineer, AI_ENGINEER_ABILITY_SHREDDER_SLAM, AI_ENGINEER_ORDER_SHREDDER_SLAM, 2.00) then
         call AI_RequestBark(engineer, AI_BARK_CASTING)
-    elseif AI_TryCastTarget(engineer, target, 0, "absorb", 2.00) then
+    elseif lifePercent >= 35.00 and roll <= 58 and AI_TryCastTarget(engineer, target, 0, "absorb", 2.00) then
         call AI_RequestBark(engineer, AI_BARK_CASTING)
-    elseif AI_TryCastImmediateById(engineer, AI_ENGINEER_ABILITY_SHREDDER_SLAM, AI_ENGINEER_ORDER_SHREDDER_SLAM, 2.00) then
+    elseif roll <= 76 and AI_TryCastTarget(engineer, target, AI_ENGINEER_ABILITY_SHREDDER_SHRED, "stormbolt", 2.00) then
         call AI_RequestBark(engineer, AI_BARK_CASTING)
-    elseif GetRandomInt(1, 3) == 1 and AI_TryCastPoint(engineer, GetUnitX(target), GetUnitY(target), AI_ENGINEER_ABILITY_SHREDDER_CLUSTER, "clusterrockets", 2.00) then
+    elseif enemyCount >= 2 and roll <= 94 and AI_TryCastPoint(engineer, GetUnitX(target), GetUnitY(target), AI_ENGINEER_ABILITY_SHREDDER_CLUSTER, "clusterrockets", 2.00) then
         call AI_RequestBark(engineer, AI_BARK_CASTING)
     else
         call IssueTargetOrder(engineer, "attack", target)
