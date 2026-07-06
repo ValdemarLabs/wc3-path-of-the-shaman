@@ -134,33 +134,45 @@ private function Think takes nothing returns nothing
     local unit target = AI_EventTarget
     local unit ally
     local integer enemyCount
+    local integer roll
+    local real allyLife
+    local real shamanLife
     if shaman == null then
         set shaman = null
         return
     endif
     set ally = AI_FindLowestHealthAlly(shaman, 800.00, true)
     set enemyCount = AI_CountNearbyEnemies(shaman, 600.00)
-    if ally != null and AI_GetUnitLifePercent(ally) <= 50.00 and GetRandomInt(1, 2) == 1 and AI_TryCastTarget(shaman, ally, AI_RESTOSHAMAN_ABILITY_HEALING_WAVE, "holybolt", 2.00) then
+    set roll = GetRandomInt(1, 100)
+    set shamanLife = AI_GetUnitLifePercent(shaman)
+    if ally != null then
+        set allyLife = AI_GetUnitLifePercent(ally)
+    else
+        set allyLife = 100.00
+    endif
+    if ally != null and allyLife <= 35.00 and AI_TryCastTarget(shaman, ally, AI_RESTOSHAMAN_ABILITY_HEALING_WAVE, "holybolt", 2.00) then
         call AI_RequestBark(shaman, AI_BARK_CASTING)
-    elseif ally != null and AI_GetUnitLifePercent(ally) <= 75.00 and enemyCount >= 2 and GetRandomInt(1, 2) == 1 and AI_TryCastTarget(shaman, ally, AI_RESTOSHAMAN_ABILITY_CHAIN_HEAL, "healingwave", 2.00) then
+    elseif ally != null and allyLife <= 65.00 and enemyCount >= 2 and roll <= 55 and AI_TryCastTarget(shaman, ally, AI_RESTOSHAMAN_ABILITY_CHAIN_HEAL, "healingwave", 2.00) then
         call AI_RequestBark(shaman, AI_BARK_CASTING)
-    elseif target != null and enemyCount > 2 and GetRandomInt(1, 2) == 1 and AI_TryCastTarget(shaman, target, AI_RESTOSHAMAN_ABILITY_CHAIN_LIGHTNING, "chainlightning", 2.00) then
+    elseif shamanLife <= 45.00 and enemyCount >= 1 and TryTotem(shaman, AI_RESTOSHAMAN_ABILITY_TOTEM_EARTHBIND, 3.00) then
         call AI_RequestBark(shaman, AI_BARK_CASTING)
-    elseif target != null and enemyCount > 2 and GetRandomInt(1, 4) == 1 and AI_TryCastTarget(shaman, target, AI_RESTOSHAMAN_ABILITY_HEX, "hex", 2.00) then
+    elseif target != null and enemyCount > 2 and roll <= 35 and AI_TryCastTarget(shaman, target, AI_RESTOSHAMAN_ABILITY_CHAIN_LIGHTNING, "chainlightning", 2.00) then
         call AI_RequestBark(shaman, AI_BARK_CASTING)
-    elseif ally != null and AI_GetUnitLifePercent(ally) <= 90.00 and GetRandomInt(1, 3) == 1 and TryTotem(shaman, AI_RESTOSHAMAN_ABILITY_TOTEM_EARTH, 3.00) then
+    elseif target != null and enemyCount > 2 and roll <= 48 and AI_TryCastTarget(shaman, target, AI_RESTOSHAMAN_ABILITY_HEX, "hex", 2.00) then
+        call AI_RequestBark(shaman, AI_BARK_CASTING)
+    elseif ally != null and allyLife <= 85.00 and roll <= 62 and TryTotem(shaman, AI_RESTOSHAMAN_ABILITY_TOTEM_EARTH, 3.00) then
         call AI_RequestBark(shaman, AI_BARK_CASTING)
     elseif AI_GetState(shaman) == AI_STATE_RETREAT_COMBAT and TryTotem(shaman, AI_RESTOSHAMAN_ABILITY_TOTEM_EARTHBIND, 3.00) then
         call AI_RequestBark(shaman, AI_BARK_CASTING)
-    elseif GetRandomInt(1, 3) == 1 and TryTotem(shaman, AI_RESTOSHAMAN_ABILITY_TOTEM_FIRE, 3.00) then
+    elseif enemyCount >= 1 and roll <= 72 and TryTotem(shaman, AI_RESTOSHAMAN_ABILITY_TOTEM_FIRE, 3.00) then
         call AI_RequestBark(shaman, AI_BARK_CASTING)
-    elseif enemyCount > 2 and GetRandomInt(1, 3) == 1 and TryTotem(shaman, AI_RESTOSHAMAN_ABILITY_TOTEM_STONESKIN, 3.00) then
+    elseif enemyCount > 2 and roll <= 82 and TryTotem(shaman, AI_RESTOSHAMAN_ABILITY_TOTEM_STONESKIN, 3.00) then
         call AI_RequestBark(shaman, AI_BARK_CASTING)
-    elseif ally != null and AI_GetUnitManaPercent(ally) <= 75.00 and GetRandomInt(1, 3) == 1 and TryTotem(shaman, AI_RESTOSHAMAN_ABILITY_TOTEM_WATER, 3.00) then
+    elseif ally != null and AI_GetUnitManaPercent(ally) <= 55.00 and roll <= 90 and TryTotem(shaman, AI_RESTOSHAMAN_ABILITY_TOTEM_WATER, 3.00) then
         call AI_RequestBark(shaman, AI_BARK_CASTING)
-    elseif enemyCount > 2 and GetRandomInt(1, 4) == 1 and TryTotem(shaman, AI_RESTOSHAMAN_ABILITY_TOTEM_WIND, 3.00) then
+    elseif enemyCount > 2 and roll <= 96 and TryTotem(shaman, AI_RESTOSHAMAN_ABILITY_TOTEM_WIND, 3.00) then
         call AI_RequestBark(shaman, AI_BARK_CASTING)
-    elseif GetRandomInt(1, 4) == 1 and TryTotem(shaman, AI_RESTOSHAMAN_ABILITY_TOTEM_WINDFURY, 3.00) then
+    elseif roll >= 97 and TryTotem(shaman, AI_RESTOSHAMAN_ABILITY_TOTEM_WINDFURY, 3.00) then
         call AI_RequestBark(shaman, AI_BARK_CASTING)
     elseif target != null and AI_TryCastTarget(shaman, target, AI_RESTOSHAMAN_ABILITY_LIGHTNING_BOLT, "chainlightning", 2.00) then
         call AI_RequestBark(shaman, AI_BARK_CASTING)
