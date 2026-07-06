@@ -22,6 +22,7 @@
   AI heroes with assigned professions can now autonomously harvest nearby gather nodes while idle or wandering, including ore veins, herbalism item nodes, and skinning item nodes when their profile supports the matching profession.
   Autonomous AI heroes can now occasionally move near a friendly AI unit or nearby friendly non-hero NPC and face them briefly, adding a lightweight social ambient behavior without using companion chatter spam.
   Random AI hero population now keeps at least four active random heroes when possible, allows more active random AI heroes at the same time, and keeps a larger hard cap before random spawning stops.
+  Added Aveline as a unique Riverbane Warrior AI hero using unit type `'O009'`, with random spawning/travel support and a one-active-unit cap separate from Horde Warrior instances.
   AI ambient/social chatter is now only audible when a player-owned Nazgrek or Zulkis is nearby, preventing player-controlled swaps or temporarily non-player-owned heroes from incorrectly enabling AI chatter.
   Rogue AI now uses its stealth-style Surprise Attack behavior less aggressively during combat.
 - `Companions / quest companions`
@@ -38,13 +39,21 @@
   Integrated AI profession behavior with `GatherNodes`, `GatherNodeSkills`, `GatherNodeItems`, and `GatherNodeUnits`, including node skill checks, randomized scan timing, temporary Mining Pick/Skinning Knife item handling, and cleanup on death, travel, unregister, and tool expiry.
   Added a new autonomous social state that selects nearby friendly registered AI units or friendly non-hero NPCs, moves to a randomized nearby point, faces both units toward each other, can request a gated idle bark when the player is close enough, and yields to companion control, combat, low-health retreat, boss evasion, and travel.
   Raised default random AI population limits to a 24-unit hard cap, 8 active-visible cap, and 4 active-visible minimum, with a new `AI_SetRandomSpawnActiveMin` API.
+  Added unit-type default profile registration, `AI_RegisterUnitByType`, profile register callbacks, and profile random unique ids so shop-sold/hired AI units and unique random profiles can initialize without map-enter hooks.
   Added AI debug minimap icons through `IconQuery` while AI debug mode is enabled, plus extra debug messages for registration, state changes, random spawns, active-cap hide/show, travel start/return, social behavior, and profession harvesting.
   Tightened bark audibility to require nearby player-owned Nazgrek or Zulkis and shortened temporary profession-tool retention after gather orders so Mining Picks/Skinning Knives are cleaned up shortly after use.
+- `AI_Warrior.j`
+  Exposed shared Warrior profile setup through `AIWarrior_ConfigureProfile`, allowing new Warrior-profile units to reuse the same Warrior ability pool, starting abilities, profession setup, shop items, and combat think callback.
 - `AI_Rogue.j`
   Reduced Surprise Attack / stealth action frequency in the Rogue combat decision chain.
+- `AI_Aveline.j`
+  Added the new `AIAveline` library for the unique Riverbane Warrior Aveline, including profile/unit-type caps of 1, unique id lookup, `udg_Aveline` mapping, Riverbane ownership, random-spawn participation, and Aveline-specific bark keys.
+- `AI_LegacyLocations.j`
+  Bound Aveline to the Riverbane AI spawn, retreat, and shop location set.
 - `Companions.j`
   Preserved focused-leader identity for companions and pets so a dead Nazgrek/Zulkis focus does not automatically fall back to the other hero.
   Changed Horde companion reputation gating to Friendly-or-better and limited Valeria/Aradion invite bypasses to their active Ranger Missing / Rifts of Corruption quest windows.
+  Added Aveline as a named Riverbane Warrior companion type for invite metadata, return ownership, minimap/icon handling, class/type/faction text, and ability information.
 - `QuestGiver.j`
   Dialog hero resolution now ignores Nazgrek/Zulkis unless the hero is currently player-owned, preventing cinematic/dialog movement from selecting a hero temporarily controlled by another owner.
 - `QuestMaster.j`
@@ -55,6 +64,8 @@
   Added a generic tracked-gatherer registry so non-player AI units can use the same profession skill gating and skill gain path as Nazgrek/Zulkis, with unregister cleanup for tracked flags, throttles, and stored profession skills.
 - `AI_*` sublibraries
   Assigned initial AI profile professions: Warrior and Engineer/Shredder use Mining, Rogue uses Skinning, and Restoshaman uses Herbalism.
+- `AI_MasterPlan.md`
+  Documented Aveline, random unique profile ids, unit-type default profile registration, and the safe `EVENT_PLAYER_UNIT_SELL` hired-unit initialization path.
 - `ResourceRage.j` and `ResourceEnergy.j`
   Key points:
   MUI tracking via per-unit arrays/tables, no singleton NPC_Horde_AI_* state.
