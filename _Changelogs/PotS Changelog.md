@@ -20,6 +20,7 @@
 ### Player-Facing Updates
 - `StatsLiteUI`
   Added a compact frame-based party monitor for player heroes, the active pet, and current companions, with maximize/minimize controls, HP/mana bars, level/status display toggles, and a quick button into the full StatsUI.
+  Companion, pet, and tamed-unit status monitoring now uses the new StatsUI/StatsLiteUI frame path instead of relying on the old GUI multiboard update triggers.
 - `AI professions`
   AI heroes with profession behavior should no longer get stuck repeatedly trying to mine or gather nodes they cannot actually use because of missing tools, blocked inventory space, insufficient skill, or rejected gather orders.
   Profession failure chatter is now limited to companion-controlled AI units that are close enough to player-owned Nazgrek or Zulkis, preventing distant autonomous AI units from commenting on failed mining/gather attempts.
@@ -28,6 +29,11 @@
 - `StatsLiteUI.j` / `StatsUI.j`
   Added `StatsLiteUI.j` as the frame replacement path for the old GUI multiboard monitor, consuming the existing hero, pet, companion, revive timer, and status globals while leaving full attributes in `StatsUI.j`.
   Added a `Lite Config` button in `StatsUI.j` that opens the StatsLite display configuration section for choosing shown categories and status fields.
+  Fixed the `StatsLiteUI.j` header-button compile issue by avoiding a local variable named `button`, which conflicts with the JASS `button` type.
+- `QuestGiver.j` / `Pet.j` / `UnitExperience3.j`
+  Removed active calls to the old GUI multiboard hooks for companion add/remove, tamed pet add/remove, and tamed level updates. These systems now continue updating the shared companion, pet, tamed-unit, XP, and revive globals that `StatsUI.j` and `StatsLiteUI.j` read directly.
+- `Companions/companions-to-do.md`
+  Updated the companion migration notes to mark the old multiboard hooks as no longer called by active JASS and to document that the old `UI/MultiboardGUI` map triggers can be disabled once `StatsLiteUI.j` is imported and active.
 - `AI.j`
   Added per-instance profession failure tracking and a temporary profession backoff after repeated failed gather attempts, so impossible mining/gather tasks yield back to normal AI behavior instead of monopolizing the idle/wander task loop.
   Hardened profession order startup by rechecking profile profession access, gather skill requirement, free inventory/tool space, temporary tool creation, and accepted order state before treating a gather action as active.
@@ -38,6 +44,7 @@
 
 ### Known Issues
 - Full in-map/JassHelper validation is still required for the 7.7.2026 AI profession safeguards, especially Paladin near ore veins, Aveline/Warrior Mining Pick creation and cleanup, inventory-full behavior, and under-skilled gather-node backoff.
+- Full in-map validation is still required after importing `StatsLiteUI.j`, especially frame visibility/config behavior, pet/companion revive status text, and confirming the old `UI/MultiboardGUI` triggers stay disabled without breaking companion or pet monitoring.
 
 ## [6.7.2026]
 
