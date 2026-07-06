@@ -16,6 +16,7 @@
 
     API:
     call AIWarrior_Register(unit whichUnit)
+    call AIWarrior_ConfigureProfile(profileId)
 
 **/
 library AIWarrior initializer Init requires AI
@@ -72,26 +73,26 @@ private function RegisterBarks takes nothing returns nothing
     call AI_RegisterBarkLine(AI_Warrior_ProfileId, AI_BARK_ITEM_GIVEN, "Does it have any good stats?", "HeroWarrior_GiveItem3")
 endfunction
 
-private function RegisterAbilities takes nothing returns nothing
-    call AI_AddProfileStartingAbility(AI_Warrior_ProfileId, AI_WARRIOR_ABILITY_BATTLE_SHOUT)
-    call AI_AddProfileStartingAbility(AI_Warrior_ProfileId, AI_WARRIOR_ABILITY_BLOODRAGE)
-    call AI_AddProfileStartingAbility(AI_Warrior_ProfileId, AI_WARRIOR_ABILITY_CHARGE)
-    call AI_AddProfileStartingAbility(AI_Warrior_ProfileId, AI_WARRIOR_ABILITY_HEROIC_STRIKE)
-    call AI_AddProfileStartingAbility(AI_Warrior_ProfileId, AI_WARRIOR_ABILITY_REND)
-    call AI_AddProfileStartingAbility(AI_Warrior_ProfileId, AI_WARRIOR_ABILITY_SUNDER_ARMOR)
-    call AI_AddProfileStartingAbility(AI_Warrior_ProfileId, AI_WARRIOR_ABILITY_THUNDER_CLAP)
-    call AI_AddProfileStartingAbility(AI_Warrior_ProfileId, AI_WARRIOR_ABILITY_CHALLENGING_SHOUT)
-    call AI_AddProfileStartingAbility(AI_Warrior_ProfileId, AI_WARRIOR_ABILITY_RETALIATION)
-    call AI_AddProfileAbility(AI_Warrior_ProfileId, AI_WARRIOR_ABILITY_BATTLE_SHOUT)
-    call AI_AddProfileAbility(AI_Warrior_ProfileId, AI_WARRIOR_ABILITY_BLOODRAGE)
-    call AI_AddProfileAbility(AI_Warrior_ProfileId, AI_WARRIOR_ABILITY_CHARGE)
-    call AI_AddProfileAbility(AI_Warrior_ProfileId, AI_WARRIOR_ABILITY_HEROIC_STRIKE)
-    call AI_AddProfileAbility(AI_Warrior_ProfileId, AI_WARRIOR_ABILITY_REND)
-    call AI_AddProfileAbility(AI_Warrior_ProfileId, AI_WARRIOR_ABILITY_SUNDER_ARMOR)
-    call AI_AddProfileAbility(AI_Warrior_ProfileId, AI_WARRIOR_ABILITY_THUNDER_CLAP)
-    call AI_AddProfileAbility(AI_Warrior_ProfileId, AI_WARRIOR_ABILITY_CHALLENGING_SHOUT)
-    call AI_AddProfileAbility(AI_Warrior_ProfileId, AI_WARRIOR_ABILITY_RETALIATION)
-    call AI_AddProfileAbility(AI_Warrior_ProfileId, AI_WARRIOR_ABILITY_RECKLESSNESS)
+private function RegisterAbilities takes integer profileId returns nothing
+    call AI_AddProfileStartingAbility(profileId, AI_WARRIOR_ABILITY_BATTLE_SHOUT)
+    call AI_AddProfileStartingAbility(profileId, AI_WARRIOR_ABILITY_BLOODRAGE)
+    call AI_AddProfileStartingAbility(profileId, AI_WARRIOR_ABILITY_CHARGE)
+    call AI_AddProfileStartingAbility(profileId, AI_WARRIOR_ABILITY_HEROIC_STRIKE)
+    call AI_AddProfileStartingAbility(profileId, AI_WARRIOR_ABILITY_REND)
+    call AI_AddProfileStartingAbility(profileId, AI_WARRIOR_ABILITY_SUNDER_ARMOR)
+    call AI_AddProfileStartingAbility(profileId, AI_WARRIOR_ABILITY_THUNDER_CLAP)
+    call AI_AddProfileStartingAbility(profileId, AI_WARRIOR_ABILITY_CHALLENGING_SHOUT)
+    call AI_AddProfileStartingAbility(profileId, AI_WARRIOR_ABILITY_RETALIATION)
+    call AI_AddProfileAbility(profileId, AI_WARRIOR_ABILITY_BATTLE_SHOUT)
+    call AI_AddProfileAbility(profileId, AI_WARRIOR_ABILITY_BLOODRAGE)
+    call AI_AddProfileAbility(profileId, AI_WARRIOR_ABILITY_CHARGE)
+    call AI_AddProfileAbility(profileId, AI_WARRIOR_ABILITY_HEROIC_STRIKE)
+    call AI_AddProfileAbility(profileId, AI_WARRIOR_ABILITY_REND)
+    call AI_AddProfileAbility(profileId, AI_WARRIOR_ABILITY_SUNDER_ARMOR)
+    call AI_AddProfileAbility(profileId, AI_WARRIOR_ABILITY_THUNDER_CLAP)
+    call AI_AddProfileAbility(profileId, AI_WARRIOR_ABILITY_CHALLENGING_SHOUT)
+    call AI_AddProfileAbility(profileId, AI_WARRIOR_ABILITY_RETALIATION)
+    call AI_AddProfileAbility(profileId, AI_WARRIOR_ABILITY_RECKLESSNESS)
 endfunction
 
 private function Think takes nothing returns nothing
@@ -137,15 +138,22 @@ public function Register takes unit whichUnit returns integer
     return AI_RegisterUnit(whichUnit, AI_Warrior_ProfileId, 0)
 endfunction
 
+public function ConfigureProfile takes integer profileId returns nothing
+    if profileId <= 0 then
+        return
+    endif
+    call AI_SetProfileNoManaRestore(profileId, true)
+    call AI_SetProfileThinkCallback(profileId, function Think)
+    call AI_AddProfileProfession(profileId, AI_PROFESSION_MINING)
+    call RegisterAbilities(profileId)
+    call AI_AddDefaultShopItems(profileId)
+endfunction
+
 private function Init takes nothing returns nothing
     set AI_Warrior_ClassId = AI_RegisterClass("Warrior")
     set AI_Warrior_ProfileId = AI_RegisterProfile(AI_Warrior_ClassId, AI_WARRIOR_UNIT_HORDE, "Horde Warrior")
-    call AI_SetProfileNoManaRestore(AI_Warrior_ProfileId, true)
     call AI_SetProfileSpawnOwner(AI_Warrior_ProfileId, Player(1))
-    call AI_SetProfileThinkCallback(AI_Warrior_ProfileId, function Think)
-    call AI_AddProfileProfession(AI_Warrior_ProfileId, AI_PROFESSION_MINING)
-    call RegisterAbilities()
-    call AI_AddDefaultShopItems(AI_Warrior_ProfileId)
+    call AIWarrior_ConfigureProfile(AI_Warrior_ProfileId)
     call AI_AddRandomSpawnProfile(AI_Warrior_ProfileId)
     call RegisterBarks()
 endfunction
