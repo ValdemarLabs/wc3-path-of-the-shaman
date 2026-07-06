@@ -72,7 +72,7 @@ Shared map/system state:
 - `gg_snd_Devour`
 - `gg_rct_NazgrekIntroPoint`
 
-Old multiboard hooks still called until `StatsBoardUI.j` replaces them:
+Old multiboard hooks still called until `StatsLiteUI.j` fully replaces them:
 - `gg_trg_MultiboardUpdate_Add_Companion`
 - `gg_trg_MultiboardUpdate_Remove_Companion`
 - `gg_trg_MultiboardUpdate_Add_Tamed`
@@ -135,7 +135,7 @@ Keep these until their owning system is migrated.
 - `MultiboardUpdate Add Tamed`
 - `MultiboardUpdate Remove Tamed`
 - Other old multiboard update triggers under `UI/MultiboardGUI`
-  These stay until the later `StatsBoardUI.j` rewrite replaces the old GUI multiboard. `StatsBoardUI.j` may imitate the old multiboard data layout or move to frames, but that is separate work.
+  These stay until `StatsLiteUI.j` fully replaces the old GUI multiboard in-map and the old trigger calls are retired.
 - `Horde NPC Chat ...` triggers
   These should move with the larger AI library update, not into `Companions.j` or `Pet.j`.
 
@@ -146,10 +146,10 @@ AI and companion chatter:
 - Old trigger-side chat calls were not copied: greet, passive, normal, aggressive, hold position, kick, drop items, idle, and moving barks.
 - Old GUI variables like `Companion_Group_ChatUnit` and `PartyKickVoice` are not used by the new libraries.
 
-Stats board / old multiboard:
-- Replace the old multiboard triggers with `StatsBoardUI.j`.
-- Decide whether `StatsBoardUI.j` consumes the existing `udg_CompanionUnit[]`, `udg_CompanionIcon[]`, `udg_CompanionIndex[]`, `udg_TamedUnit`, and pet kill/death globals, or whether it gets a cleaner JASS API.
-- After `StatsBoardUI.j` is active, remove direct calls to `gg_trg_MultiboardUpdate_Add_Companion`, `gg_trg_MultiboardUpdate_Remove_Companion`, `gg_trg_MultiboardUpdate_Add_Tamed`, and `gg_trg_MultiboardUpdate_Remove_Tamed`.
+Stats lite / old multiboard:
+- `StatsLiteUI.j` now provides the frame-based party monitor for player heroes, the active pet, and current companions.
+- Keep it consuming the existing `udg_CompanionUnit[]`, `udg_TamedUnit`, and shared status globals until companion/pet state gets a cleaner JASS-facing API.
+- After `StatsLiteUI.j` is active in-map, remove direct calls to `gg_trg_MultiboardUpdate_Add_Companion`, `gg_trg_MultiboardUpdate_Remove_Companion`, `gg_trg_MultiboardUpdate_Add_Tamed`, and `gg_trg_MultiboardUpdate_Remove_Tamed`.
 
 Behavior parity checks:
 - Validate that Passive, Normal, Aggressive, and Hold Position feel correct through `Companions.j`. The old GUI active triggers used periodic follow/right-click/attack-move orders; the new implementation keeps those normal companion/pet orders in `Companions.j` and only uses `FollowSystem.j` for explicit escort-profile quest cases.
