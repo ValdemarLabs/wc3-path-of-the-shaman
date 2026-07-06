@@ -1,6 +1,6 @@
 # Companions / Pets JASS Migration To-Do
 
-Last updated: 3.7.2026
+Last updated: 7.7.2026
 
 This note tracks what was moved from the old GUI companion/pet triggers into `Companions.j` and `Pet.j`, what GUI state still remains intentionally shared, and what should wait for later AI and StatsBoard work.
 
@@ -93,6 +93,7 @@ Companion control and follow state:
 - `Companion Focus Set` -Disabled 2.7.2026
 
 Companion add/remove and hired units:
+- `Hired Units Init Shops` -Ported 7.7.2026
 - `Horde AI Companion Invite` -Disabled 2.7.2026
 - `Horde AI Companion Kick` -Disabled 2.7.2026
 - `Party Other Companion Invite` -Disabled 2.7.2026
@@ -129,8 +130,6 @@ Notes:
 
 Keep these until their owning system is migrated.
 
-- `Hired Units Init Shops`
-  Shop stock/setup was not moved into `Companions.j`.
 - `MultiboardUpdate Add Companion`
 - `MultiboardUpdate Remove Companion`
 - `MultiboardUpdate Add Tamed`
