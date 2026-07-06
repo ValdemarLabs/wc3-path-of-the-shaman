@@ -15,6 +15,30 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [7.7.2026]
+
+### Player-Facing Updates
+- `StatsLiteUI`
+  Added a compact frame-based party monitor for player heroes, the active pet, and current companions, with maximize/minimize controls, HP/mana bars, level/status display toggles, and a quick button into the full StatsUI.
+- `AI professions`
+  AI heroes with profession behavior should no longer get stuck repeatedly trying to mine or gather nodes they cannot actually use because of missing tools, blocked inventory space, insufficient skill, or rejected gather orders.
+  Profession failure chatter is now limited to companion-controlled AI units that are close enough to player-owned Nazgrek or Zulkis, preventing distant autonomous AI units from commenting on failed mining/gather attempts.
+
+### Technical Updates
+- `StatsLiteUI.j` / `StatsUI.j`
+  Added `StatsLiteUI.j` as the frame replacement path for the old GUI multiboard monitor, consuming the existing hero, pet, companion, revive timer, and status globals while leaving full attributes in `StatsUI.j`.
+  Added a `Lite Config` button in `StatsUI.j` that opens the StatsLite display configuration section for choosing shown categories and status fields.
+- `AI.j`
+  Added per-instance profession failure tracking and a temporary profession backoff after repeated failed gather attempts, so impossible mining/gather tasks yield back to normal AI behavior instead of monopolizing the idle/wander task loop.
+  Hardened profession order startup by rechecking profile profession access, gather skill requirement, free inventory/tool space, temporary tool creation, and accepted order state before treating a gather action as active.
+  Added inventory/tool-space gating to ore-unit selection so AI units do not choose mining nodes when they cannot hold or create the required Mining Pick.
+  Improved AI debug output to include the unit proper name or unit name plus registered AI class for state changes, registration, random spawn/travel, active-cap hide/show, debug icons, profession actions, social movement, stale-order recovery, and hired-unit initialization.
+- `AI_Paladin.j` / `AI_Aveline.j`
+  Confirmed Aveline already inherits Warrior profession setup through `AIWarrior_ConfigureProfile`, while Paladin remains a non-mining profile unless explicitly configured later.
+
+### Known Issues
+- Full in-map/JassHelper validation is still required for the 7.7.2026 AI profession safeguards, especially Paladin near ore veins, Aveline/Warrior Mining Pick creation and cleanup, inventory-full behavior, and under-skilled gather-node backoff.
+
 ## [6.7.2026]
 
 ### Player-Facing Updates
