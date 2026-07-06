@@ -270,6 +270,9 @@ private function Think takes nothing returns nothing
     local unit warlock = AI_EventUnit
     local unit target = AI_EventTarget
     local integer enemyCount
+    local integer roll
+    local real lifePercent
+    local real manaPercent
     if warlock == null then
         set warlock = null
         return
@@ -280,25 +283,30 @@ private function Think takes nothing returns nothing
         return
     endif
     set enemyCount = AI_CountNearbyEnemies(warlock, 600.00)
-    if AI_GetUnitManaPercent(warlock) <= 75.00 and AI_GetUnitLifePercent(warlock) >= 30.00 and GetRandomInt(1, 2) == 1 and AI_TemporaryAbilitySwap(warlock, 0, AI_WARLOCK_ABILITY_LIFE_TAP, 1, 1.20) and AI_TryCastImmediate(warlock, AI_WARLOCK_ABILITY_LIFE_TAP, "berserk", 2.00) then
+    set roll = GetRandomInt(1, 100)
+    set lifePercent = AI_GetUnitLifePercent(warlock)
+    set manaPercent = AI_GetUnitManaPercent(warlock)
+    if manaPercent <= 70.00 and lifePercent >= 45.00 and enemyCount <= 1 and roll <= 35 and AI_TemporaryAbilitySwap(warlock, 0, AI_WARLOCK_ABILITY_LIFE_TAP, 1, 1.20) and AI_TryCastImmediate(warlock, AI_WARLOCK_ABILITY_LIFE_TAP, "berserk", 2.00) then
         call AI_RequestBark(warlock, AI_BARK_CASTING)
-    elseif GetOwnedImp(warlock) == null and AI_TryCastImmediate(warlock, AI_WARLOCK_ABILITY_SUMMON_IMP, "feralspirit", 3.00) then
+    elseif target != null and lifePercent <= 35.00 and enemyCount >= 1 and AI_TryCastTarget(warlock, target, AI_WARLOCK_ABILITY_FEAR, "sleep", 2.00) then
+        call AI_RequestBark(warlock, AI_BARK_CASTING)
+    elseif target != null and lifePercent <= 65.00 and roll <= 55 and AI_TryCastTarget(warlock, target, AI_WARLOCK_ABILITY_LIFE_DRAIN, "drain", 5.00) then
+        call AI_RequestBark(warlock, AI_BARK_CASTING)
+    elseif GetOwnedImp(warlock) == null and (enemyCount <= 1 or roll <= 25) and AI_TryCastImmediate(warlock, AI_WARLOCK_ABILITY_SUMMON_IMP, "feralspirit", 3.00) then
         call AI_RequestBark(warlock, AI_BARK_CASTING)
     elseif enemyCount <= 0 or target == null then
         if GetOwnedImp(warlock) == null and AI_TryCastImmediate(warlock, AI_WARLOCK_ABILITY_SUMMON_IMP, "feralspirit", 3.00) then
             call AI_RequestBark(warlock, AI_BARK_CASTING)
         endif
-    elseif GetRandomInt(1, 2) == 1 and AI_TryCastTarget(warlock, target, AI_WARLOCK_ABILITY_SHADOW_BOLT, "firebolt", 2.00) then
+    elseif roll <= 45 and AI_TryCastTarget(warlock, target, AI_WARLOCK_ABILITY_SHADOW_BOLT, "firebolt", 2.00) then
         call AI_RequestBark(warlock, AI_BARK_CASTING)
-    elseif GetRandomInt(1, 2) == 1 and AI_TryCastTarget(warlock, target, AI_WARLOCK_ABILITY_CURSE_OF_AGONY, "parasite", 1.00) then
+    elseif roll <= 65 and AI_TryCastTarget(warlock, target, AI_WARLOCK_ABILITY_CURSE_OF_AGONY, "parasite", 1.00) then
         call AI_RequestBark(warlock, AI_BARK_CASTING)
-    elseif AI_GetUnitLifePercent(warlock) <= 75.00 and GetRandomInt(1, 3) == 1 and AI_TryCastTarget(warlock, target, AI_WARLOCK_ABILITY_LIFE_DRAIN, "drain", 5.00) then
+    elseif enemyCount > 2 and roll <= 75 and AI_TryCastTarget(warlock, target, AI_WARLOCK_ABILITY_FEAR, "sleep", 2.00) then
         call AI_RequestBark(warlock, AI_BARK_CASTING)
-    elseif enemyCount > 2 and GetRandomInt(1, 3) == 1 and AI_TryCastTarget(warlock, target, AI_WARLOCK_ABILITY_FEAR, "sleep", 2.00) then
+    elseif enemyCount > 2 and roll <= 88 and AI_TryCastPoint(warlock, GetUnitX(target), GetUnitY(target), AI_WARLOCK_ABILITY_RAIN_OF_FIRE, "rainoffire", 6.00) then
         call AI_RequestBark(warlock, AI_BARK_CASTING)
-    elseif enemyCount > 2 and GetRandomInt(1, 5) == 1 and AI_TryCastPoint(warlock, GetUnitX(target), GetUnitY(target), AI_WARLOCK_ABILITY_RAIN_OF_FIRE, "rainoffire", 6.00) then
-        call AI_RequestBark(warlock, AI_BARK_CASTING)
-    elseif enemyCount > 2 and GetRandomInt(1, 4) == 1 and AI_TryCastTarget(warlock, target, AI_WARLOCK_ABILITY_BANISH, "banish", 3.00) then
+    elseif enemyCount > 2 and roll <= 96 and AI_TryCastTarget(warlock, target, AI_WARLOCK_ABILITY_BANISH, "banish", 3.00) then
         call AI_RequestBark(warlock, AI_BARK_CASTING)
     else
         call IssueTargetOrder(warlock, "attack", target)
