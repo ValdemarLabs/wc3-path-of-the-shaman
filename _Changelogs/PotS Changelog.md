@@ -20,13 +20,37 @@
 ### Player-Facing Updates
 - `AI heroes`
   AI heroes with assigned professions can now autonomously harvest nearby gather nodes while idle or wandering, including ore veins, herbalism item nodes, and skinning item nodes when their profile supports the matching profession.
-  Autonomous AI heroes can now occasionally move near a friendly AI unit and face them briefly, adding a lightweight social ambient behavior without using companion chatter spam.
+  Autonomous AI heroes can now occasionally move near a friendly AI unit or nearby friendly non-hero NPC and face them briefly, adding a lightweight social ambient behavior without using companion chatter spam.
+  Random AI hero population now keeps at least four active random heroes when possible, allows more active random AI heroes at the same time, and keeps a larger hard cap before random spawning stops.
+  AI ambient/social chatter is now only audible when a player-owned Nazgrek or Zulkis is nearby, preventing player-controlled swaps or temporarily non-player-owned heroes from incorrectly enabling AI chatter.
+  Rogue AI now uses its stealth-style Surprise Attack behavior less aggressively during combat.
+- `Companions / quest companions`
+  Pets and companions no longer silently switch to the other hero when their focused Nazgrek/Zulkis leader dies; they stop until their intended focused leader is valid again.
+  Horde-faction AI companions can now be invited at Friendly reputation, while Valeria and Aradion are blocked from normal companion invitation outside their active quest windows.
+- `Ranger Missing`
+  Kicking Valeria from companions during Ranger Missing now returns the quest objective back to finding her in the field zones.
+- `Quests`
+  Quest update messages now appear after a short 5-second delay instead of immediately interrupting the moment a requirement is completed.
 
 ### Technical Updates
 - `AI.j`
   Added AI profession constants, `AI_AddProfileProfession`, `AI_GetProfessionSkill`, per-profile profession flags, per-instance profession/social cooldowns, and profession skill initialization based on unit or hero level.
   Integrated AI profession behavior with `GatherNodes`, `GatherNodeSkills`, `GatherNodeItems`, and `GatherNodeUnits`, including node skill checks, randomized scan timing, temporary Mining Pick/Skinning Knife item handling, and cleanup on death, travel, unregister, and tool expiry.
-  Added a new autonomous social state that selects nearby friendly registered AI units, moves to a randomized nearby point, faces both units toward each other, and yields to companion control, combat, low-health retreat, boss evasion, and travel.
+  Added a new autonomous social state that selects nearby friendly registered AI units or friendly non-hero NPCs, moves to a randomized nearby point, faces both units toward each other, can request a gated idle bark when the player is close enough, and yields to companion control, combat, low-health retreat, boss evasion, and travel.
+  Raised default random AI population limits to a 24-unit hard cap, 8 active-visible cap, and 4 active-visible minimum, with a new `AI_SetRandomSpawnActiveMin` API.
+  Added AI debug minimap icons through `IconQuery` while AI debug mode is enabled, plus extra debug messages for registration, state changes, random spawns, active-cap hide/show, travel start/return, social behavior, and profession harvesting.
+  Tightened bark audibility to require nearby player-owned Nazgrek or Zulkis and shortened temporary profession-tool retention after gather orders so Mining Picks/Skinning Knives are cleaned up shortly after use.
+- `AI_Rogue.j`
+  Reduced Surprise Attack / stealth action frequency in the Rogue combat decision chain.
+- `Companions.j`
+  Preserved focused-leader identity for companions and pets so a dead Nazgrek/Zulkis focus does not automatically fall back to the other hero.
+  Changed Horde companion reputation gating to Friendly-or-better and limited Valeria/Aradion invite bypasses to their active Ranger Missing / Rifts of Corruption quest windows.
+- `QuestGiver.j`
+  Dialog hero resolution now ignores Nazgrek/Zulkis unless the hero is currently player-owned, preventing cinematic/dialog movement from selecting a hero temporarily controlled by another owner.
+- `QuestMaster.j`
+  Quest update messages now use the queued update path with a 5-second initial delay, including direct `QuestMaster_ShowUpdateMessage` calls.
+- `qAradion.j`
+  Added a Valeria kick handler for Ranger Missing that resets the quest back to the field-zone find objective and refreshes the quest log/update message.
 - `GatherNodeSkills.j`
   Added a generic tracked-gatherer registry so non-player AI units can use the same profession skill gating and skill gain path as Nazgrek/Zulkis, with unregister cleanup for tracked flags, throttles, and stored profession skills.
 - `AI_*` sublibraries
