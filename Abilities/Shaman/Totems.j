@@ -36,6 +36,7 @@ globals
     private constant real TOTEM_DURATION_EARTHBIND = 10.00
     private constant real TOTEM_TEXT_SIZE = 5.00
     private constant real TOTEM_TEXT_OFFSET_Z = -175.00
+    private constant real TOTEM_TEXT_VISIBLE_RANGE = 1000.00
     private constant real TOTEM_PERIOD = 0.25
     private constant real TOTEM_CLEANSING_PERIOD = 5.00
     private constant real TOTEM_AURA_RADIUS = 500.00
@@ -375,6 +376,23 @@ private function AddActiveTotem takes unit totem returns nothing
     endif
 endfunction
 
+private function IsTotemTextVisibleAt takes real x, real y returns boolean
+    local real dx = x - GetCameraTargetPositionX()
+    local real dy = y - GetCameraTargetPositionY()
+    return dx * dx + dy * dy <= TOTEM_TEXT_VISIBLE_RANGE * TOTEM_TEXT_VISIBLE_RANGE
+endfunction
+
+private function UpdateTotemTextVisibility takes unit totem returns nothing
+    local texttag tt
+    if totem != null then
+        set tt = TotemTextByHandle.texttag[GetHandleId(totem)]
+        if tt != null and GetLocalPlayer() == Player(0) then
+            call SetTextTagVisibility(tt, IsTotemTextVisibleAt(GetUnitX(totem), GetUnitY(totem)))
+        endif
+    endif
+    set tt = null
+endfunction
+
 private function DestroyTotemText takes unit totem returns nothing
     local integer handleId = GetHandleId(totem)
     local texttag tt = TotemTextByHandle.texttag[handleId]
@@ -395,8 +413,9 @@ private function CreateTotemText takes unit totem, integer abilityId, real durat
     call SetTextTagLifespan(tt, duration)
     call SetTextTagFadepoint(tt, duration - 1.00)
     call SetTextTagVelocity(tt, 0.00, 0.00)
-    call SetTextTagVisibility(tt, true)
+    call SetTextTagVisibility(tt, false)
     set TotemTextByHandle.texttag[handleId] = tt
+    call UpdateTotemTextVisibility(totem)
     set tt = null
 endfunction
 
@@ -659,6 +678,7 @@ private function TickTotems takes nothing returns nothing
         exitwhen index > ActiveTotemCount
         set totem = ActiveTotems[index]
         if IsAliveUnit(totem) then
+            call UpdateTotemTextVisibility(totem)
             set index = index + 1
         else
             call CleanupTotem(totem)
