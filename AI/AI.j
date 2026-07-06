@@ -149,6 +149,9 @@ globals
     private constant real AI_PROFESSION_IDLE_MAX = 40.00
     private constant real AI_PROFESSION_TOOL_DURATION = 45.00
     private constant real AI_PROFESSION_TOOL_CLEANUP_DELAY = 10.00
+    private constant integer AI_PROFESSION_FAIL_LIMIT = 3
+    private constant real AI_PROFESSION_FAIL_BACKOFF_MIN = 35.00
+    private constant real AI_PROFESSION_FAIL_BACKOFF_MAX = 75.00
     private constant real AI_SOCIAL_SCAN_RANGE = 1400.00
     private constant real AI_SOCIAL_MIN_RANGE = 220.00
     private constant real AI_SOCIAL_FACE_RANGE = 330.00
@@ -222,6 +225,8 @@ globals
     private Table InstanceNextChat = 0
     private Table InstanceNextBark = 0
     private Table InstanceNextProfession = 0
+    private Table InstanceProfessionFailCount = 0
+    private Table InstanceProfessionBlockedUntil = 0
     private Table InstanceNextSocial = 0
     private Table InstanceSocialUntil = 0
     private Table InstanceLastOrder = 0
@@ -390,6 +395,8 @@ private function EnsureState takes nothing returns nothing
         set InstanceNextChat = Table.create()
         set InstanceNextBark = Table.create()
         set InstanceNextProfession = Table.create()
+        set InstanceProfessionFailCount = Table.create()
+        set InstanceProfessionBlockedUntil = Table.create()
         set InstanceNextSocial = Table.create()
         set InstanceSocialUntil = Table.create()
         set InstanceLastOrder = Table.create()
@@ -659,6 +666,10 @@ endfunction
 
 private function SetInstanceState takes integer instanceId, integer newState returns nothing
     local integer oldState
+    local integer classId
+    local unit whichUnit
+    local string unitName
+    local string classLabel
     if instanceId <= 0 then
         return
     endif
@@ -666,8 +677,25 @@ private function SetInstanceState takes integer instanceId, integer newState ret
         set oldState = InstanceState[instanceId]
         set InstancePreviousState[instanceId] = InstanceState[instanceId]
         set InstanceState[instanceId] = newState
-        call DebugMsg("Instance " + I2S(instanceId) + " state " + GetStateName(oldState) + " -> " + GetStateName(newState) + ".")
+        if DebugMode then
+            set unitName = "unknown"
+            set classLabel = "unregistered"
+            set whichUnit = InstanceUnit.unit[instanceId]
+            if whichUnit != null then
+                if IsUnitType(whichUnit, UNIT_TYPE_HERO) then
+                    set unitName = GetHeroProperName(whichUnit)
+                else
+                    set unitName = GetUnitName(whichUnit)
+                endif
+            endif
+            set classId = InstanceClass[instanceId]
+            if classId > 0 and ClassName.string[classId] != "" then
+                set classLabel = ClassName.string[classId]
+            endif
+            call DebugMsg(unitName + " [" + classLabel + "] state " + GetStateName(oldState) + " -> " + GetStateName(newState) + ".")
+        endif
     endif
+    set whichUnit = null
 endfunction
 
 private function AddActiveInstance takes integer instanceId returns nothing
@@ -777,6 +805,28 @@ private function GetDisplayName takes unit whichUnit returns string
         return GetHeroProperName(whichUnit)
     endif
     return GetUnitName(whichUnit)
+endfunction
+
+private function GetDebugInstanceName takes integer instanceId, unit whichUnit returns string
+    local integer classId
+    local string classLabel = "unregistered"
+    if whichUnit == null then
+        return "unknown"
+    endif
+    if instanceId > 0 then
+        set classId = InstanceClass[instanceId]
+        if classId > 0 and ClassName.string[classId] != "" then
+            set classLabel = ClassName.string[classId]
+        endif
+    endif
+    return GetDisplayName(whichUnit) + " [" + classLabel + "]"
+endfunction
+
+private function GetDebugUnitName takes unit whichUnit returns string
+    if whichUnit == null then
+        return "unknown"
+    endif
+    return GetDebugInstanceName(UnitInstance[GetHandleId(whichUnit)], whichUnit)
 endfunction
 
 private function EstimateDialogDuration takes string text returns real
@@ -1064,7 +1114,7 @@ private function HideRandomManagedByCap takes integer instanceId, unit whichUnit
     call IssueImmediateOrder(whichUnit, "stop")
     call PauseUnit(whichUnit, true)
     call ShowUnit(whichUnit, false)
-    call DebugMsg("Instance " + I2S(instanceId) + " hidden by random active cap.")
+    call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " hidden by random active cap.")
 endfunction
 
 private function ShowRandomManagedFromCap takes integer instanceId, unit whichUnit returns nothing
@@ -1075,7 +1125,7 @@ private function ShowRandomManagedFromCap takes integer instanceId, unit whichUn
     call SetInstanceState(instanceId, AI_STATE_IDLE)
     call ShowUnit(whichUnit, true)
     call PauseUnit(whichUnit, false)
-    call DebugMsg("Instance " + I2S(instanceId) + " shown from random active cap reserve.")
+    call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " shown from random active cap reserve.")
 endfunction
 
 private function BeginBuyState takes integer instanceId, unit whichUnit returns boolean
@@ -1294,7 +1344,7 @@ private function EnsureDebugIcon takes integer instanceId, unit whichUnit return
     endif
     if InstanceDebugIcon[instanceId] == null then
         set InstanceDebugIcon[instanceId] = IconQuery_RegisterCompanionFollowerUnitIcon(whichUnit)
-        call DebugMsg("Debug icon registered for instance " + I2S(instanceId) + ".")
+        call DebugMsg("Debug icon registered for " + GetDebugInstanceName(instanceId, whichUnit) + ".")
     endif
 endfunction
 
@@ -1365,6 +1415,8 @@ private function ClearInstanceProfessionState takes integer instanceId, unit whi
     endif
     call RemoveTrackedProfessionTool(instanceId)
     call InstanceNextProfession.remove(instanceId)
+    call InstanceProfessionFailCount.remove(instanceId)
+    call InstanceProfessionBlockedUntil.remove(instanceId)
     if whichUnit != null then
         call GNS_UnregisterTrackedGatherer(whichUnit)
     endif
@@ -1449,7 +1501,7 @@ private function CompleteTravel takes integer instanceId, unit whichUnit returns
     call SetUnitPosition(whichUnit, InstanceTravelReturnX.real[instanceId], InstanceTravelReturnY.real[instanceId])
     set InstanceTraveling.boolean[instanceId] = false
     call SetInstanceState(instanceId, AI_STATE_IDLE)
-    call DebugMsg("Instance " + I2S(instanceId) + " returned from travel.")
+    call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " returned from travel.")
     if CanShowRandomManaged(instanceId) then
         if InstanceRandomManaged.boolean[instanceId] then
             call ShowRandomManagedFromCap(instanceId, whichUnit)
@@ -2141,7 +2193,7 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
     endif
     set unitTypeId = GetUnitTypeId(whichUnit)
     if ProfileUnitType[profileId] != unitTypeId then
-        call DebugMsg("Registration rejected because unit type does not match profile " + I2S(profileId))
+        call DebugMsg("Registration rejected for " + GetDebugUnitName(whichUnit) + " because unit type does not match profile " + I2S(profileId))
         return 0
     endif
     set existing = UnitInstance[GetHandleId(whichUnit)]
@@ -2149,7 +2201,7 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
         return existing
     endif
     if not CanRegister(profileId, uniqueId) then
-        call DebugMsg("Cap prevented registration for profile " + I2S(profileId))
+        call DebugMsg("Cap prevented registration for " + GetDebugUnitName(whichUnit) + " profile=" + I2S(profileId))
         return 0
     endif
     if NextInstanceId > MAX_AI_INSTANCES then
@@ -2174,6 +2226,8 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
     set InstanceNextAbility.real[instanceId] = GetNow() + GetRandomReal(0.00, AI_DEFAULT_ABILITY_GAP)
     set InstanceNextItem.real[instanceId] = GetNow() + GetRandomReal(1.00, 3.00)
     set InstanceNextProfession.real[instanceId] = GetNow() + GetRandomReal(4.00, 12.00)
+    set InstanceProfessionFailCount[instanceId] = 0
+    call InstanceProfessionBlockedUntil.remove(instanceId)
     set InstanceNextSocial.real[instanceId] = GetNow() + GetRandomReal(10.00, 35.00)
     set InstanceLastOrder[instanceId] = 0
     set InstanceLastX.real[instanceId] = GetUnitX(whichUnit)
@@ -2191,7 +2245,7 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
     if DebugMode then
         call EnsureDebugIcon(instanceId, whichUnit)
     endif
-    call DebugMsg("Registered instance " + I2S(instanceId) + " profile=" + I2S(profileId) + " unitType=" + I2S(unitTypeId) + ".")
+    call DebugMsg("Registered " + GetDebugInstanceName(instanceId, whichUnit) + " instance=" + I2S(instanceId) + " profile=" + I2S(profileId) + " unitType=" + I2S(unitTypeId) + ".")
     set customValue = GetUnitUserData(whichUnit)
     if customValue > 0 then
         set udg_UnitHider_ReferenceUnits[customValue] = whichUnit
@@ -2515,7 +2569,7 @@ public function SpawnRandomHero takes boolean showMessage returns unit
     if instanceId > 0 then
         call MarkRandomManaged(instanceId)
         call ApplyRandomSpawnPresentation(created)
-        call DebugMsg("Random spawn created instance " + I2S(instanceId) + " profile=" + I2S(profileId) + " active=" + I2S(CountRandomManagedVisible()) + "/" + I2S(RandomSpawnActiveCap) + " managed=" + I2S(RandomSpawnManagedCount) + "/" + I2S(RandomSpawnHardCap) + ".")
+        call DebugMsg("Random spawn created " + GetDebugInstanceName(instanceId, created) + " instance=" + I2S(instanceId) + " profile=" + I2S(profileId) + " active=" + I2S(CountRandomManagedVisible()) + "/" + I2S(RandomSpawnActiveCap) + " managed=" + I2S(RandomSpawnManagedCount) + "/" + I2S(RandomSpawnHardCap) + ".")
         if RandomSpawnActiveCap > 0 and CountRandomManagedVisible() > RandomSpawnActiveCap then
             call HideRandomManagedByCap(instanceId, created)
         endif
@@ -2555,7 +2609,7 @@ private function TryUnhideRandomManaged takes boolean showMessage returns boolea
         if CanShowRandomManaged(selected) then
             call ShowRandomManagedFromCap(selected, whichUnit)
             if showMessage then
-                call DebugMsg("Random hero returned: " + GetDisplayName(whichUnit))
+                call DebugMsg("Random hero returned: " + GetDebugInstanceName(selected, whichUnit))
             endif
             set whichUnit = null
             return true
@@ -2927,7 +2981,7 @@ public function StartTravel takes unit whichUnit, real duration, real returnX, r
     call IssueImmediateOrder(whichUnit, "stop")
     call PauseUnit(whichUnit, true)
     call ShowUnit(whichUnit, false)
-    call DebugMsg("Instance " + I2S(instanceId) + " started travel for " + R2S(duration) + " seconds.")
+    call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " started travel for " + R2S(duration) + " seconds.")
 endfunction
 
 public function ReturnFromTravel takes unit whichUnit returns nothing
@@ -3089,6 +3143,41 @@ private function CanHoldGatherItem takes integer instanceId, unit whichUnit, int
     return true
 endfunction
 
+private function ResetProfessionFailure takes integer instanceId returns nothing
+    if instanceId > 0 then
+        set InstanceProfessionFailCount[instanceId] = 0
+        call InstanceProfessionBlockedUntil.remove(instanceId)
+    endif
+endfunction
+
+private function RequestProfessionFailureBark takes unit whichUnit returns nothing
+    if whichUnit != null and IsCompanionControlled(whichUnit) and IsBarkNearPlayerHero(whichUnit) then
+        call AI_RequestBark(whichUnit, AI_BARK_IDLE)
+    endif
+endfunction
+
+private function RegisterProfessionFailure takes integer instanceId, unit whichUnit, real now, string reason returns nothing
+    local integer failCount
+    local real blockedUntil
+    if instanceId <= 0 or whichUnit == null then
+        return
+    endif
+    set failCount = InstanceProfessionFailCount[instanceId] + 1
+    set InstanceProfessionFailCount[instanceId] = failCount
+    if failCount >= AI_PROFESSION_FAIL_LIMIT then
+        set blockedUntil = now + GetRandomReal(AI_PROFESSION_FAIL_BACKOFF_MIN, AI_PROFESSION_FAIL_BACKOFF_MAX)
+        set InstanceProfessionFailCount[instanceId] = 0
+        set InstanceProfessionBlockedUntil.real[instanceId] = blockedUntil
+        set InstanceNextProfession.real[instanceId] = blockedUntil
+        call IssueImmediateOrder(whichUnit, "stop")
+        call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " pauses profession work: " + reason + ".")
+        call RequestProfessionFailureBark(whichUnit)
+    else
+        set InstanceNextProfession.real[instanceId] = now + GetRandomReal(6.00, 12.00)
+        call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " profession attempt failed (" + reason + "), retry " + I2S(failCount) + "/" + I2S(AI_PROFESSION_FAIL_LIMIT) + ".")
+    endif
+endfunction
+
 private function FindNearbyProfessionItem takes integer instanceId, unit whichUnit, real range returns item
     local integer profileId
     local integer count
@@ -3153,7 +3242,7 @@ private function FindNearbyProfessionUnit takes integer instanceId, unit whichUn
         if node != null and GN_IsGatherUnit(node) and IsAliveUnit(node) then
             set professionId = GN_GetGatherUnitProfessionId(node)
             set requiredSkill = GN_GetGatherUnitSkillRequired(node)
-            if professionId == AI_PROFESSION_MINING and CanGatherProfession(whichUnit, profileId, professionId, requiredSkill) then
+            if professionId == AI_PROFESSION_MINING and CanGatherProfession(whichUnit, profileId, professionId, requiredSkill) and CanHoldGatherItem(instanceId, whichUnit, professionId) then
                 set dx = GetUnitX(node) - GetUnitX(whichUnit)
                 set dy = GetUnitY(node) - GetUnitY(whichUnit)
                 set distance = dx * dx + dy * dy
@@ -3171,43 +3260,68 @@ endfunction
 
 private function BeginGatherItem takes integer instanceId, unit whichUnit, item nodeItem, real now returns boolean
     local integer professionId
+    local integer requiredSkill
     local integer toolId
     if instanceId <= 0 or whichUnit == null or nodeItem == null then
         return false
     endif
     set professionId = GN_GetGatherItemProfessionId(nodeItem)
+    set requiredSkill = GN_GetGatherItemSkillRequired(nodeItem)
     set toolId = GetProfessionToolId(professionId)
+    if not CanGatherProfession(whichUnit, InstanceProfile[instanceId], professionId, requiredSkill) then
+        call RegisterProfessionFailure(instanceId, whichUnit, now, "profession skill too low")
+        return false
+    endif
     if not CanHoldGatherItem(instanceId, whichUnit, professionId) then
+        call RegisterProfessionFailure(instanceId, whichUnit, now, "inventory or tool space blocked")
         return false
     endif
     if not EnsureProfessionTool(instanceId, whichUnit, toolId, now) then
+        call RegisterProfessionFailure(instanceId, whichUnit, now, "profession tool unavailable")
         return false
     endif
     if IssueTargetOrder(whichUnit, "smart", nodeItem) then
         set InstanceNextProfession.real[instanceId] = now + GetRandomReal(AI_PROFESSION_ACTION_MIN, AI_PROFESSION_ACTION_MAX)
+        call ResetProfessionFailure(instanceId)
         call SetTrackedProfessionToolCleanup(instanceId, now)
-        call DebugMsg(GetDisplayName(whichUnit) + " gathers " + GN_GetGatherItemName(nodeItem) + ".")
+        call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " gathers " + GN_GetGatherItemName(nodeItem) + ".")
         return true
     endif
+    call RegisterProfessionFailure(instanceId, whichUnit, now, "gather order rejected")
     return false
 endfunction
 
 private function BeginGatherUnit takes integer instanceId, unit whichUnit, unit node, real now returns boolean
+    local integer professionId
+    local integer requiredSkill
     if instanceId <= 0 or whichUnit == null or node == null then
         return false
     endif
-    if GN_GetGatherUnitProfessionId(node) != AI_PROFESSION_MINING then
+    set professionId = GN_GetGatherUnitProfessionId(node)
+    if professionId != AI_PROFESSION_MINING then
+        return false
+    endif
+    set requiredSkill = GN_GetGatherUnitSkillRequired(node)
+    if not CanGatherProfession(whichUnit, InstanceProfile[instanceId], professionId, requiredSkill) then
+        call RegisterProfessionFailure(instanceId, whichUnit, now, "mining skill too low")
+        return false
+    endif
+    if not CanHoldGatherItem(instanceId, whichUnit, professionId) then
+        call RegisterProfessionFailure(instanceId, whichUnit, now, "inventory or mining pick space blocked")
         return false
     endif
     if not EnsureProfessionTool(instanceId, whichUnit, ITEM_MINING_PICK, now) then
+        call RegisterProfessionFailure(instanceId, whichUnit, now, "mining pick unavailable")
         return false
     endif
     if IssueTargetOrder(whichUnit, "attack", node) then
         set InstanceNextProfession.real[instanceId] = now + GetRandomReal(AI_PROFESSION_ACTION_MIN, AI_PROFESSION_ACTION_MAX)
+        call ResetProfessionFailure(instanceId)
         call SetTrackedProfessionToolCleanup(instanceId, now)
-        call DebugMsg(GetDisplayName(whichUnit) + " mines " + GN_GetGatherUnitName(node) + ".")
+        call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " mines " + GN_GetGatherUnitName(node) + ".")
         return true
     endif
+    call RegisterProfessionFailure(instanceId, whichUnit, now, "mining order rejected")
     return false
 endfunction
 
@@ -3217,7 +3331,7 @@ private function TryStartProfessionAction takes integer instanceId, unit whichUn
     if instanceId <= 0 or whichUnit == null or ProfileProfessionCount[InstanceProfile[instanceId]] <= 0 then
         return false
     endif
-    if not IsSideActionState(state) or now < InstanceNextProfession.real[instanceId] or IsCastingLocked(whichUnit) then
+    if not IsSideActionState(state) or now < InstanceNextProfession.real[instanceId] or now < InstanceProfessionBlockedUntil.real[instanceId] or IsCastingLocked(whichUnit) then
         return false
     endif
     if HasNearbyCombatEnemy(whichUnit, 700.00) then
@@ -3229,20 +3343,37 @@ private function TryStartProfessionAction takes integer instanceId, unit whichUn
         return false
     endif
     set node = FindNearbyProfessionUnit(instanceId, whichUnit, AI_PROFESSION_SCAN_RANGE)
-    if node != null and BeginGatherUnit(instanceId, whichUnit, node, now) then
-        set node = null
-        set ProfessionSearchUnit = null
-        return true
+    if node != null then
+        if BeginGatherUnit(instanceId, whichUnit, node, now) then
+            set node = null
+            set ProfessionSearchUnit = null
+            return true
+        elseif now < InstanceProfessionBlockedUntil.real[instanceId] then
+            set node = null
+            set ProfessionSearchUnit = null
+            set ProfessionSearchItem = null
+            return false
+        endif
     endif
     set nodeItem = FindNearbyProfessionItem(instanceId, whichUnit, AI_PROFESSION_SCAN_RANGE)
-    if nodeItem != null and BeginGatherItem(instanceId, whichUnit, nodeItem, now) then
-        set node = null
-        set nodeItem = null
-        set ProfessionSearchUnit = null
-        set ProfessionSearchItem = null
-        return true
+    if nodeItem != null then
+        if BeginGatherItem(instanceId, whichUnit, nodeItem, now) then
+            set node = null
+            set nodeItem = null
+            set ProfessionSearchUnit = null
+            set ProfessionSearchItem = null
+            return true
+        elseif now < InstanceProfessionBlockedUntil.real[instanceId] then
+            set node = null
+            set nodeItem = null
+            set ProfessionSearchUnit = null
+            set ProfessionSearchItem = null
+            return false
+        endif
     endif
-    set InstanceNextProfession.real[instanceId] = now + GetRandomReal(AI_PROFESSION_IDLE_MIN, AI_PROFESSION_IDLE_MAX)
+    if InstanceProfessionFailCount[instanceId] <= 0 then
+        set InstanceNextProfession.real[instanceId] = now + GetRandomReal(AI_PROFESSION_IDLE_MIN, AI_PROFESSION_IDLE_MAX)
+    endif
     set node = null
     set nodeItem = null
     set ProfessionSearchUnit = null
@@ -3285,7 +3416,7 @@ private function BeginSocialState takes integer instanceId, unit whichUnit, unit
     set InstanceNextSocial.real[instanceId] = now + GetRandomReal(AI_SOCIAL_COOLDOWN_MIN, AI_SOCIAL_COOLDOWN_MAX)
     call SetInstanceState(instanceId, AI_STATE_SOCIAL)
     call IssuePointOrder(whichUnit, "move", x, y)
-    call DebugMsg(GetDisplayName(whichUnit) + " moves to socialize with " + GetDisplayName(target) + ".")
+    call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " moves to socialize with " + GetDebugUnitName(target) + ".")
     return true
 endfunction
 
@@ -3475,7 +3606,7 @@ private function TryRecoverStuck takes integer instanceId, unit whichUnit, integ
             call BeginWander(instanceId, whichUnit)
         endif
     endif
-    call DebugMsg(GetDisplayName(whichUnit) + " recovered from a stale order in " + GetStateName(state) + ".")
+    call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " recovered from a stale order in " + GetStateName(state) + ".")
     set target = null
     return true
 endfunction
@@ -3752,7 +3883,7 @@ private function HandleSoldUnit takes nothing returns nothing
     endif
     set instanceId = AI_RegisterUnitByType(soldUnit, 0)
     if instanceId > 0 then
-        call DebugMsg("Sold unit initialized as AI instance " + I2S(instanceId) + " (" + GetDisplayName(soldUnit) + ").")
+        call DebugMsg("Sold unit initialized as " + GetDebugInstanceName(instanceId, soldUnit) + " instance=" + I2S(instanceId) + ".")
     endif
     set soldUnit = null
 endfunction
