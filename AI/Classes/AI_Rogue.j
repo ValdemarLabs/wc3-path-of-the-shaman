@@ -98,28 +98,36 @@ private function Think takes nothing returns nothing
     local unit rogue = AI_EventUnit
     local unit target = AI_EventTarget
     local integer enemyCount
+    local integer roll
+    local real lifePercent
+    local real targetLife
     if rogue == null or target == null then
         set rogue = null
         set target = null
         return
     endif
     set enemyCount = AI_CountNearbyEnemies(rogue, 600.00)
+    set roll = GetRandomInt(1, 100)
+    set lifePercent = AI_GetUnitLifePercent(rogue)
+    set targetLife = AI_GetUnitLifePercent(target)
     if enemyCount <= 0 then
         call IssueTargetOrder(rogue, "attack", target)
-    elseif GetRandomInt(1, 4) == 1 and AI_TryCastImmediate(rogue, AI_ROGUE_ABILITY_EVASION, "roar", 2.00) then
+    elseif (lifePercent <= 45.00 or enemyCount >= 3) and roll <= 45 and AI_TryCastImmediate(rogue, AI_ROGUE_ABILITY_EVASION, "roar", 2.00) then
         call AI_RequestBark(rogue, AI_BARK_CASTING)
-    elseif GetRandomInt(1, 3) == 1 and AI_TryCastTarget(rogue, target, AI_ROGUE_ABILITY_GARROTE, "parasite", 2.00) then
+    elseif roll <= 25 and AI_TryCastTarget(rogue, target, AI_ROGUE_ABILITY_GARROTE, "parasite", 2.00) then
         call AI_RequestBark(rogue, AI_BARK_CASTING)
-    elseif enemyCount >= 2 and GetRandomInt(1, 3) == 1 and AI_TemporaryAbilitySwap(rogue, AI_ROGUE_ABILITY_SINISTER_STRIKE, AI_ROGUE_ABILITY_SHADOWSTEP, GetUnitAbilityLevel(rogue, AI_ROGUE_ABILITY_SINISTER_STRIKE), 3.00) and AI_TryCastTarget(rogue, target, AI_ROGUE_ABILITY_SHADOWSTEP, "stormbolt", 4.00) then
+    elseif enemyCount >= 2 and roll <= 42 and AI_TemporaryAbilitySwap(rogue, AI_ROGUE_ABILITY_SINISTER_STRIKE, AI_ROGUE_ABILITY_SHADOWSTEP, GetUnitAbilityLevel(rogue, AI_ROGUE_ABILITY_SINISTER_STRIKE), 3.00) and AI_TryCastTarget(rogue, target, AI_ROGUE_ABILITY_SHADOWSTEP, "stormbolt", 4.00) then
         call AI_RequestBark(rogue, AI_BARK_CASTING)
-    elseif GetRandomInt(1, 2) == 1 and AI_TryCastTarget(rogue, target, AI_ROGUE_ABILITY_SINISTER_STRIKE, "stormbolt", 2.00) then
+    elseif targetLife <= 40.00 and AI_TryCastTarget(rogue, target, AI_ROGUE_ABILITY_SINISTER_STRIKE, "stormbolt", 2.00) then
         call AI_RequestBark(rogue, AI_BARK_CASTING)
-    elseif GetRandomInt(1, 3) == 1 and AI_TryCastImmediate(rogue, AI_ROGUE_ABILITY_SLICE_AND_DICE, "roar", 5.00) then
+    elseif roll <= 58 and AI_TryCastTarget(rogue, target, AI_ROGUE_ABILITY_SINISTER_STRIKE, "stormbolt", 2.00) then
         call AI_RequestBark(rogue, AI_BARK_CASTING)
-    elseif GetRandomInt(1, 3) == 1 and AI_TemporaryAbilitySwap(rogue, AI_ROGUE_ABILITY_SINISTER_STRIKE, AI_ROGUE_ABILITY_SURPRISE_ATTACK, GetUnitAbilityLevel(rogue, AI_ROGUE_ABILITY_SINISTER_STRIKE), 5.00) and AI_TryCastImmediate(rogue, AI_ROGUE_ABILITY_SURPRISE_ATTACK, "windwalk", 6.00) then
+    elseif roll <= 70 and AI_TryCastImmediate(rogue, AI_ROGUE_ABILITY_SLICE_AND_DICE, "roar", 5.00) then
+        call AI_RequestBark(rogue, AI_BARK_CASTING)
+    elseif enemyCount <= 2 and lifePercent >= 45.00 and roll <= 80 and AI_TemporaryAbilitySwap(rogue, AI_ROGUE_ABILITY_SINISTER_STRIKE, AI_ROGUE_ABILITY_SURPRISE_ATTACK, GetUnitAbilityLevel(rogue, AI_ROGUE_ABILITY_SINISTER_STRIKE), 5.00) and AI_TryCastImmediate(rogue, AI_ROGUE_ABILITY_SURPRISE_ATTACK, "windwalk", 6.00) then
         call AI_RequestBark(rogue, AI_BARK_CASTING)
         call IssueTargetOrder(rogue, "attack", target)
-    elseif enemyCount >= 2 and GetRandomInt(1, 3) == 1 and AI_TryCastTarget(rogue, target, AI_ROGUE_ABILITY_TOXIC_VENOM, "acidbomb", 5.00) then
+    elseif enemyCount >= 2 and roll <= 92 and AI_TryCastTarget(rogue, target, AI_ROGUE_ABILITY_TOXIC_VENOM, "acidbomb", 5.00) then
         call AI_RequestBark(rogue, AI_BARK_CASTING)
     else
         call IssueTargetOrder(rogue, "attack", target)
