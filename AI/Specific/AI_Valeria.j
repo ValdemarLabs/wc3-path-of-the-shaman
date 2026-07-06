@@ -36,13 +36,23 @@ private function Think takes nothing returns nothing
     local unit target = AI_EventTarget
     local real dx
     local real dy
+    local real distance
     local real angle
+    local real lifePercent
     if valeria != null and target != null then
-        if GetWidgetLife(valeria) <= GetUnitState(valeria, UNIT_STATE_MAX_LIFE) * 0.35 then
-            set dx = GetUnitX(valeria) - GetUnitX(target)
-            set dy = GetUnitY(valeria) - GetUnitY(target)
+        set dx = GetUnitX(valeria) - GetUnitX(target)
+        set dy = GetUnitY(valeria) - GetUnitY(target)
+        set distance = dx * dx + dy * dy
+        set lifePercent = AI_GetUnitLifePercent(valeria)
+        if dx != 0.00 or dy != 0.00 then
             set angle = Atan2(dy, dx)
+        else
+            set angle = GetRandomReal(0.00, 360.00) * bj_DEGTORAD
+        endif
+        if lifePercent <= 35.00 then
             call IssuePointOrder(valeria, "move", GetUnitX(valeria) + 500.00 * Cos(angle), GetUnitY(valeria) + 500.00 * Sin(angle))
+        elseif distance <= 350.00 * 350.00 and GetRandomInt(1, 100) <= 55 then
+            call IssuePointOrder(valeria, "move", GetUnitX(valeria) + 300.00 * Cos(angle), GetUnitY(valeria) + 300.00 * Sin(angle))
         else
             call IssueTargetOrder(valeria, "attack", target)
         endif
