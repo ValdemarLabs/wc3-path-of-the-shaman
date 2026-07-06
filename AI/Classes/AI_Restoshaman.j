@@ -13,13 +13,13 @@
     - Old GUI HeroRestoshaman triggers
 
     How to install:
-    Requires `AI.j`.
+    Requires `AI.j` and `Abilities/Shaman/Totems.j`.
 
     API:
     call AIRestoshaman_Register(unit whichUnit)
 
 **/
-library AIRestoshaman initializer Init requires AI, Table
+library AIRestoshaman initializer Init requires AI, Totems
 
 globals
     constant integer AI_RESTOSHAMAN_UNIT_HORDE = 'O61H'
@@ -55,141 +55,10 @@ globals
     constant integer AI_RESTOSHAMAN_ABILITY_CHAIN_HEAL = 'A00E'
     integer AI_Restoshaman_ClassId = 0
     integer AI_Restoshaman_ProfileId = 0
-
-    private constant integer MAX_PLAYER_INDEX = 27
-    private constant integer TOTEM_SLOT_EARTH = 1
-    private constant integer TOTEM_SLOT_FIRE = 2
-    private constant integer TOTEM_SLOT_WATER = 3
-    private constant integer TOTEM_SLOT_WIND = 4
-    private constant integer TOTEM_SLOT_EARTHBIND = 5
-
-    private Table TotemByInstanceSlot = 0
-    private Table TotemOwnerInstance = 0
-    private Table TotemSlotByHandle = 0
-    private trigger SummonTrigger = null
-    private trigger TotemDeathTrigger = null
 endglobals
 
-private function EnsureTotemState takes nothing returns nothing
-    if TotemByInstanceSlot == 0 then
-        set TotemByInstanceSlot = Table.create()
-        set TotemOwnerInstance = Table.create()
-        set TotemSlotByHandle = Table.create()
-    endif
-endfunction
-
-private function RegisterPlayerUnitEventAll takes trigger whichTrigger, playerunitevent whichEvent returns nothing
-    local integer playerIndex = 0
-    loop
-        call TriggerRegisterPlayerUnitEvent(whichTrigger, Player(playerIndex), whichEvent, null)
-        set playerIndex = playerIndex + 1
-        exitwhen playerIndex > MAX_PLAYER_INDEX
-    endloop
-endfunction
-
-private function IsAliveUnit takes unit whichUnit returns boolean
-    return whichUnit != null and GetUnitTypeId(whichUnit) != 0 and not IsUnitType(whichUnit, UNIT_TYPE_DEAD)
-endfunction
-
-private function GetTotemKey takes integer instanceId, integer slot returns integer
-    return instanceId * 10 + slot
-endfunction
-
-private function GetTotemSlotForAbility takes integer abilityId returns integer
-    if abilityId == AI_RESTOSHAMAN_ABILITY_TOTEM_EARTH or abilityId == AI_RESTOSHAMAN_ABILITY_TOTEM_STONESKIN then
-        return TOTEM_SLOT_EARTH
-    elseif abilityId == AI_RESTOSHAMAN_ABILITY_TOTEM_FIRE then
-        return TOTEM_SLOT_FIRE
-    elseif abilityId == AI_RESTOSHAMAN_ABILITY_TOTEM_WATER then
-        return TOTEM_SLOT_WATER
-    elseif abilityId == AI_RESTOSHAMAN_ABILITY_TOTEM_WIND or abilityId == AI_RESTOSHAMAN_ABILITY_TOTEM_WINDFURY then
-        return TOTEM_SLOT_WIND
-    elseif abilityId == AI_RESTOSHAMAN_ABILITY_TOTEM_EARTHBIND then
-        return TOTEM_SLOT_EARTHBIND
-    endif
-    return 0
-endfunction
-
-private function GetTotemSlotForUnitType takes integer unitTypeId returns integer
-    if unitTypeId == AI_RESTOSHAMAN_UNIT_TOTEM_EARTH_1 or unitTypeId == AI_RESTOSHAMAN_UNIT_TOTEM_EARTH_2 or unitTypeId == AI_RESTOSHAMAN_UNIT_TOTEM_EARTH_3 or unitTypeId == AI_RESTOSHAMAN_UNIT_TOTEM_STONESKIN then
-        return TOTEM_SLOT_EARTH
-    elseif unitTypeId == AI_RESTOSHAMAN_UNIT_TOTEM_FIRE_1 or unitTypeId == AI_RESTOSHAMAN_UNIT_TOTEM_FIRE_2 or unitTypeId == AI_RESTOSHAMAN_UNIT_TOTEM_SKYFURY_1 or unitTypeId == AI_RESTOSHAMAN_UNIT_TOTEM_SKYFURY_2 then
-        return TOTEM_SLOT_FIRE
-    elseif unitTypeId == AI_RESTOSHAMAN_UNIT_TOTEM_WATER_1 or unitTypeId == AI_RESTOSHAMAN_UNIT_TOTEM_WATER_2 or unitTypeId == AI_RESTOSHAMAN_UNIT_TOTEM_CLEANSING_1 or unitTypeId == AI_RESTOSHAMAN_UNIT_TOTEM_CLEANSING_2 then
-        return TOTEM_SLOT_WATER
-    elseif unitTypeId == AI_RESTOSHAMAN_UNIT_TOTEM_WIND_1 or unitTypeId == AI_RESTOSHAMAN_UNIT_TOTEM_WIND_2 or unitTypeId == AI_RESTOSHAMAN_UNIT_TOTEM_WINDFURY_1 or unitTypeId == AI_RESTOSHAMAN_UNIT_TOTEM_WINDFURY_2 then
-        return TOTEM_SLOT_WIND
-    elseif unitTypeId == AI_RESTOSHAMAN_UNIT_TOTEM_EARTHBIND_1 or unitTypeId == AI_RESTOSHAMAN_UNIT_TOTEM_EARTHBIND_2 then
-        return TOTEM_SLOT_EARTHBIND
-    endif
-    return 0
-endfunction
-
-private function GetLiveTotem takes integer instanceId, integer slot returns unit
-    local integer key = GetTotemKey(instanceId, slot)
-    local unit totem
-    call EnsureTotemState()
-    set totem = TotemByInstanceSlot.unit[key]
-    if not IsAliveUnit(totem) then
-        set TotemByInstanceSlot.unit[key] = null
-        set totem = null
-    endif
-    return totem
-endfunction
-
 private function CanCastTotem takes unit shaman, integer abilityId returns boolean
-    local integer instanceId = AI_GetInstance(shaman)
-    local integer slot = GetTotemSlotForAbility(abilityId)
-    if instanceId <= 0 or slot <= 0 then
-        return false
-    endif
-    return GetLiveTotem(instanceId, slot) == null
-endfunction
-
-private function TrackTotem takes unit shaman, unit totem returns nothing
-    local integer instanceId = AI_GetInstance(shaman)
-    local integer slot = GetTotemSlotForUnitType(GetUnitTypeId(totem))
-    local integer key
-    local unit oldTotem
-    call EnsureTotemState()
-    if instanceId <= 0 or slot <= 0 or AI_GetProfileId(shaman) != AI_Restoshaman_ProfileId then
-        return
-    endif
-    set key = GetTotemKey(instanceId, slot)
-    set oldTotem = TotemByInstanceSlot.unit[key]
-    if oldTotem != null and oldTotem != totem and IsAliveUnit(oldTotem) then
-        call KillUnit(oldTotem)
-    endif
-    set TotemByInstanceSlot.unit[key] = totem
-    set TotemOwnerInstance[GetHandleId(totem)] = instanceId
-    set TotemSlotByHandle[GetHandleId(totem)] = slot
-    set oldTotem = null
-endfunction
-
-private function HandleSummon takes nothing returns nothing
-    local unit summoner = GetSummoningUnit()
-    local unit summoned = GetSummonedUnit()
-    if GetTotemSlotForUnitType(GetUnitTypeId(summoned)) > 0 then
-        call TrackTotem(summoner, summoned)
-    endif
-    set summoner = null
-    set summoned = null
-endfunction
-
-private function HandleTotemDeath takes nothing returns nothing
-    local unit dying = GetDyingUnit()
-    local integer handleId = GetHandleId(dying)
-    local integer ownerInstance
-    local integer slot
-    call EnsureTotemState()
-    set ownerInstance = TotemOwnerInstance[handleId]
-    set slot = TotemSlotByHandle[handleId]
-    if ownerInstance > 0 and slot > 0 and TotemByInstanceSlot.unit[GetTotemKey(ownerInstance, slot)] == dying then
-        set TotemByInstanceSlot.unit[GetTotemKey(ownerInstance, slot)] = null
-    endif
-    call TotemOwnerInstance.remove(handleId)
-    call TotemSlotByHandle.remove(handleId)
-    set dying = null
+    return Totems_CanCast(shaman, abilityId)
 endfunction
 
 private function RegisterBarks takes nothing returns nothing
@@ -308,7 +177,6 @@ public function Register takes unit whichUnit returns integer
 endfunction
 
 private function Init takes nothing returns nothing
-    call EnsureTotemState()
     set AI_Restoshaman_ClassId = AI_RegisterClass("Restoshaman")
     set AI_Restoshaman_ProfileId = AI_RegisterProfile(AI_Restoshaman_ClassId, AI_RESTOSHAMAN_UNIT_HORDE, "Horde Restoshaman")
     call AI_SetProfileSpawnOwner(AI_Restoshaman_ProfileId, Player(1))
@@ -318,14 +186,6 @@ private function Init takes nothing returns nothing
     call AI_AddDefaultShopItems(AI_Restoshaman_ProfileId)
     call AI_AddRandomSpawnProfile(AI_Restoshaman_ProfileId)
     call RegisterBarks()
-
-    set SummonTrigger = CreateTrigger()
-    call RegisterPlayerUnitEventAll(SummonTrigger, EVENT_PLAYER_UNIT_SUMMON)
-    call TriggerAddAction(SummonTrigger, function HandleSummon)
-
-    set TotemDeathTrigger = CreateTrigger()
-    call RegisterPlayerUnitEventAll(TotemDeathTrigger, EVENT_PLAYER_UNIT_DEATH)
-    call TriggerAddAction(TotemDeathTrigger, function HandleTotemDeath)
 endfunction
 
 endlibrary
