@@ -419,7 +419,7 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
         call BlzFrameSetVisible(SLUI_RowState[rowIndex], SLUI_ShowState)
 
         if SLUI_ShowLevel then
-            call BlzFrameSetText(SLUI_RowLevel[rowIndex], "L" + SLUI_GetLevelText(u))
+            call BlzFrameSetText(SLUI_RowLevel[rowIndex], "Level " + SLUI_GetLevelText(u))
         endif
         if SLUI_ShowState then
             set stateText = SLUI_GetUnitStateText(u, kind)
