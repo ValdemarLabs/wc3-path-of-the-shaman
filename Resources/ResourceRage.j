@@ -37,6 +37,7 @@ library ResourceRage initializer Init requires Table, SetUnitMaxState, DamageEng
 
 globals
     constant integer RESOURCE_RAGE_UNIT_WARRIOR_HORDE = 'O629'
+    constant integer RESOURCE_RAGE_UNIT_WARRIOR_RIVERBANE = 'O009'
     constant integer RESOURCE_RAGE_ABILITY_BLOODRAGE = 'A00G'
     constant integer RESOURCE_RAGE_ABILITY_BLOODRAGE_ALT = 'A00K'
     constant integer RESOURCE_RAGE_BUFF_BLOODRAGE = 'B01G'
@@ -588,6 +589,7 @@ private function Init takes nothing returns nothing
 
     call RegisterDamageEngine(function HandleDamage, "", 1.00)
     call RegisterUnitType(RESOURCE_RAGE_UNIT_WARRIOR_HORDE)
+    call RegisterUnitType(RESOURCE_RAGE_UNIT_WARRIOR_RIVERBANE)
 endfunction
 
 endlibrary
