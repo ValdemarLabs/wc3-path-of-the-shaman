@@ -144,6 +144,7 @@ private function Init takes nothing returns nothing
     set AI_Rogue_ClassId = AI_RegisterClass("Rogue")
     set AI_Rogue_ProfileId = AI_RegisterProfile(AI_Rogue_ClassId, AI_ROGUE_UNIT_HORDE, "Horde Rogue")
     call AI_SetProfileSpawnOwner(AI_Rogue_ProfileId, Player(1))
+    call AI_SetProfileNoManaRestore(AI_Rogue_ProfileId, true)
     call AI_SetProfileThinkCallback(AI_Rogue_ProfileId, function Think)
     call AI_AddProfileProfession(AI_Rogue_ProfileId, AI_PROFESSION_SKINNING)
     call RegisterAbilities()
