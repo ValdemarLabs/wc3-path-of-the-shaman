@@ -147,6 +147,7 @@ public function ConfigureProfile takes integer profileId returns nothing
         return
     endif
     call AI_SetProfileNoManaRestore(profileId, true)
+    // Warrior keeps autonomous AI.j retreat, but should not kite away while companion-controlled.
     call AI_SetProfileCompanionRetreat(profileId, false)
     call AI_SetProfileThinkCallback(profileId, function Think)
     call AI_AddProfileProfession(profileId, AI_PROFESSION_MINING)
