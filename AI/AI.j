@@ -38,6 +38,7 @@
     call AI_SetProfileSpawnOwner(profileId, owner)
     call AI_SetProfileRegisterCallback(profileId, callback)
     call AI_SetProfileThinkCallback(profileId, callback)
+    call AI_SetProfileCompanionRetreat(profileId, enabled)
     call AI_AddProfileProfession(profileId, AI_PROFESSION_MINING)
     call AI_GetProfessionSkill(whichUnit, professionId)
     call AI_AddProfileSpawnRect(profileId, whichRect)
@@ -162,6 +163,19 @@ globals
     private constant real AI_STUCK_MIN_MOVE = 24.00
     private constant real AI_STUCK_SECONDS = 4.00
     private constant real AI_STUCK_RETRY_RADIUS = 360.00
+    private constant real AI_COMPANION_PICKUP_RANGE = 650.00
+    private constant real AI_COMPANION_PICKUP_MIN_DELAY = 10.00
+    private constant real AI_COMPANION_PICKUP_MAX_DELAY = 24.00
+    private constant real AI_COMPANION_RETREAT_TIME = 2.50
+    private constant real AI_COMPANION_RETREAT_DISTANCE = 420.00
+    private constant real AI_CAMP_NIGHT_MIN = 18.00
+    private constant real AI_CAMP_NIGHT_MAX = 6.00
+    private constant real AI_CAMP_DURATION_MIN = 60.00
+    private constant real AI_CAMP_DURATION_MAX = 240.00
+    private constant real AI_CAMP_COOLDOWN_MIN = 480.00
+    private constant real AI_CAMP_COOLDOWN_MAX = 900.00
+    private constant real AI_CAMP_FIRE_MIN_OFFSET = 500.00
+    private constant real AI_CAMP_FIRE_MAX_OFFSET = 800.00
 
     private constant integer ITEM_MINOR_MANA_POTION = 'I6BS'
     private constant integer ITEM_MANA_POTION = 'pman'
@@ -174,6 +188,7 @@ globals
     private constant integer ITEM_GREATER_HEALING_SALVE = 'I6BC'
     private constant integer ITEM_MINING_PICK = 'I672'
     private constant integer ITEM_SKINNING_KNIFE = 'I66M'
+    private constant integer ITEM_CAMP_FIRE = 'I611'
 
     private Table UnitInstance = 0
     private Table UniqueInstance = 0
@@ -199,6 +214,7 @@ globals
     private Table ProfileThinkTrigger = 0
     private Table ProfileDeathTrigger = 0
     private Table ProfileReviveTrigger = 0
+    private Table ProfileCompanionRetreatDisabled = 0
     private Table ProfileProfession = 0
     private Table ProfileProfessionCount = 0
 
@@ -222,11 +238,13 @@ globals
     private Table InstanceNextThink = 0
     private Table InstanceNextAbility = 0
     private Table InstanceNextItem = 0
+    private Table InstanceNextPickup = 0
     private Table InstanceNextChat = 0
     private Table InstanceNextBark = 0
     private Table InstanceNextProfession = 0
     private Table InstanceProfessionFailCount = 0
     private Table InstanceProfessionBlockedUntil = 0
+    private Table InstanceNextCamp = 0
     private Table InstanceNextSocial = 0
     private Table InstanceSocialUntil = 0
     private Table InstanceLastOrder = 0
@@ -308,6 +326,7 @@ globals
     private trigger DebugSpawnTrigger = null
     private trigger DebugModeTrigger = null
     private group TempGroup = null
+    private rect TempRect = null
     private boolean DebugMode = DEBUG_DEFAULT
     private boolean RandomSpawnEnabled = true
     private boolean RandomTravelEnabled = true
@@ -316,6 +335,10 @@ globals
     private real RandomPointY = 0.00
     private item ProfessionSearchItem = null
     private unit ProfessionSearchUnit = null
+    private unit ItemSearchSource = null
+    private item ItemSearchBest = null
+    private real ItemSearchBestDistance = 0.00
+    private boolean ItemSearchNoMana = false
     private unit SocialSearchTarget = null
     private unit SocialSearchSource = null
     private integer SocialSearchSeen = 0
@@ -371,6 +394,7 @@ private function EnsureState takes nothing returns nothing
         set ProfileThinkTrigger = Table.create()
         set ProfileDeathTrigger = Table.create()
         set ProfileReviveTrigger = Table.create()
+        set ProfileCompanionRetreatDisabled = Table.create()
         set ProfileProfession = Table.create()
         set ProfileProfessionCount = Table.create()
         set UnitTypeCap = Table.create()
@@ -392,11 +416,13 @@ private function EnsureState takes nothing returns nothing
         set InstanceNextThink = Table.create()
         set InstanceNextAbility = Table.create()
         set InstanceNextItem = Table.create()
+        set InstanceNextPickup = Table.create()
         set InstanceNextChat = Table.create()
         set InstanceNextBark = Table.create()
         set InstanceNextProfession = Table.create()
         set InstanceProfessionFailCount = Table.create()
         set InstanceProfessionBlockedUntil = Table.create()
+        set InstanceNextCamp = Table.create()
         set InstanceNextSocial = Table.create()
         set InstanceSocialUntil = Table.create()
         set InstanceLastOrder = Table.create()
@@ -445,6 +471,9 @@ private function EnsureState takes nothing returns nothing
     endif
     if TempGroup == null then
         set TempGroup = CreateGroup()
+    endif
+    if TempRect == null then
+        set TempRect = Rect(0.00, 0.00, 0.00, 0.00)
     endif
     if ClockTimer == null then
         set ClockTimer = CreateTimer()
@@ -1065,6 +1094,18 @@ private function DropInventoryItem takes unit whichUnit returns boolean
     return false
 endfunction
 
+private function IsManaOnlyItemType takes integer itemTypeId returns boolean
+    return itemTypeId == ITEM_MINOR_MANA_POTION or itemTypeId == ITEM_MANA_POTION or itemTypeId == ITEM_MAJOR_MANA_POTION or itemTypeId == ITEM_SPRING_WATER
+endfunction
+
+private function IsHealingConsumableItemType takes integer itemTypeId returns boolean
+    return itemTypeId == ITEM_MINOR_HEALING_POTION or itemTypeId == ITEM_HEALING_POTION or itemTypeId == ITEM_MAJOR_HEALING_POTION or itemTypeId == ITEM_HEALING_SALVE or itemTypeId == ITEM_GREATER_HEALING_SALVE
+endfunction
+
+private function IsAIUtilityItemType takes integer itemTypeId returns boolean
+    return itemTypeId == ITEM_MINING_PICK or itemTypeId == ITEM_SKINNING_KNIFE or itemTypeId == ITEM_CAMP_FIRE
+endfunction
+
 private function IsRandomManagedVisible takes integer instanceId returns boolean
     local unit whichUnit
     local boolean result = false
@@ -1599,6 +1640,11 @@ public function SetProfileNoManaRestore takes integer profileId, boolean noMana 
     set ProfileNoManaRestore.boolean[profileId] = noMana
 endfunction
 
+public function SetProfileCompanionRetreat takes integer profileId, boolean enabled returns nothing
+    call EnsureState()
+    set ProfileCompanionRetreatDisabled.boolean[profileId] = not enabled
+endfunction
+
 public function SetProfileAllowCompanionTravel takes integer profileId, boolean allowed returns nothing
     call EnsureState()
     set ProfileAllowCompanionTravel.boolean[profileId] = allowed
@@ -1851,13 +1897,15 @@ public function AddProfileShopItem takes integer profileId, integer itemTypeId r
 endfunction
 
 public function AddDefaultShopItems takes integer profileId returns nothing
-    call AI_AddProfileShopItem(profileId, ITEM_MINOR_MANA_POTION)
-    call AI_AddProfileShopItem(profileId, ITEM_MANA_POTION)
-    call AI_AddProfileShopItem(profileId, ITEM_MAJOR_MANA_POTION)
+    if not ProfileNoManaRestore.boolean[profileId] then
+        call AI_AddProfileShopItem(profileId, ITEM_MINOR_MANA_POTION)
+        call AI_AddProfileShopItem(profileId, ITEM_MANA_POTION)
+        call AI_AddProfileShopItem(profileId, ITEM_MAJOR_MANA_POTION)
+        call AI_AddProfileShopItem(profileId, ITEM_SPRING_WATER)
+    endif
     call AI_AddProfileShopItem(profileId, ITEM_MINOR_HEALING_POTION)
     call AI_AddProfileShopItem(profileId, ITEM_HEALING_POTION)
     call AI_AddProfileShopItem(profileId, ITEM_MAJOR_HEALING_POTION)
-    call AI_AddProfileShopItem(profileId, ITEM_SPRING_WATER)
     call AI_AddProfileShopItem(profileId, ITEM_HEALING_SALVE)
     call AI_AddProfileShopItem(profileId, ITEM_GREATER_HEALING_SALVE)
 endfunction
@@ -2225,9 +2273,11 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
     set InstanceNextThink.real[instanceId] = GetNow() + GetRandomReal(0.00, AI_DEFAULT_THINK_MAX)
     set InstanceNextAbility.real[instanceId] = GetNow() + GetRandomReal(0.00, AI_DEFAULT_ABILITY_GAP)
     set InstanceNextItem.real[instanceId] = GetNow() + GetRandomReal(1.00, 3.00)
+    set InstanceNextPickup.real[instanceId] = GetNow() + GetRandomReal(AI_COMPANION_PICKUP_MIN_DELAY, AI_COMPANION_PICKUP_MAX_DELAY)
     set InstanceNextProfession.real[instanceId] = GetNow() + GetRandomReal(4.00, 12.00)
     set InstanceProfessionFailCount[instanceId] = 0
     call InstanceProfessionBlockedUntil.remove(instanceId)
+    set InstanceNextCamp.real[instanceId] = GetNow() + GetRandomReal(30.00, 120.00)
     set InstanceNextSocial.real[instanceId] = GetNow() + GetRandomReal(10.00, 35.00)
     set InstanceLastOrder[instanceId] = 0
     set InstanceLastX.real[instanceId] = GetUnitX(whichUnit)
@@ -2330,8 +2380,10 @@ public function UnregisterUnit takes unit whichUnit returns nothing
     call InstanceNextThink.remove(instanceId)
     call InstanceNextAbility.remove(instanceId)
     call InstanceNextItem.remove(instanceId)
+    call InstanceNextPickup.remove(instanceId)
     call InstanceNextChat.remove(instanceId)
     call ClearInstanceBarkCooldowns(instanceId)
+    call InstanceNextCamp.remove(instanceId)
     call InstanceRetreatUntil.remove(instanceId)
     call InstanceTravelReturnAt.remove(instanceId)
     call InstanceTravelReturnX.remove(instanceId)
@@ -2345,6 +2397,7 @@ endfunction
 
 public function SpawnProfile takes integer profileId, player owner, real x, real y, real facing, integer uniqueId returns unit
     local unit created
+    local integer instanceId
     local integer unitTypeId
     call EnsureState()
     if profileId <= 0 or owner == null or not CanRegister(profileId, uniqueId) then
@@ -2356,7 +2409,12 @@ public function SpawnProfile takes integer profileId, player owner, real x, real
     endif
     set created = CreateUnit(owner, unitTypeId, x, y, facing)
     if created != null then
-        call AI_RegisterUnit(created, profileId, uniqueId)
+        set instanceId = AI_RegisterUnit(created, profileId, uniqueId)
+        if instanceId <= 0 then
+            call DebugMsg("SpawnProfile removed unregistered " + GetDisplayName(created) + " profile=" + I2S(profileId) + ".")
+            call RemoveUnit(created)
+            set created = null
+        endif
     endif
     return created
 endfunction
@@ -2660,23 +2718,110 @@ endfunction
 public function TryUseConsumable takes unit whichUnit returns boolean
     local integer slot = 0
     local item slotItem
+    local integer itemTypeId
+    local integer instanceId
+    local integer profileId
+    local boolean noMana = false
+    local boolean needsLife
+    local boolean needsMana
     if whichUnit == null then
         return false
     endif
-    if GetLifePercent(whichUnit) > 50.00 and GetManaPercent(whichUnit) > 50.00 then
+    set instanceId = AI_GetInstance(whichUnit)
+    if instanceId > 0 then
+        set profileId = InstanceProfile[instanceId]
+        set noMana = ProfileNoManaRestore.boolean[profileId]
+    endif
+    set needsLife = GetLifePercent(whichUnit) <= 50.00
+    set needsMana = (not noMana) and GetManaPercent(whichUnit) <= 50.00
+    if not needsLife and not needsMana and not noMana then
         return false
     endif
     loop
         exitwhen slot >= bj_MAX_INVENTORY
         set slotItem = UnitItemInSlot(whichUnit, slot)
-        if slotItem != null and GetItemType(slotItem) == ITEM_TYPE_CHARGED then
-            call UnitUseItem(whichUnit, slotItem)
-            set slotItem = null
-            return true
+        if slotItem != null then
+            set itemTypeId = GetItemTypeId(slotItem)
+            if noMana and IsManaOnlyItemType(itemTypeId) then
+                call UnitDropItemPoint(whichUnit, slotItem, GetUnitX(whichUnit), GetUnitY(whichUnit))
+                call DebugMsg(GetDebugUnitName(whichUnit) + " dropped mana-only item " + GetObjectName(itemTypeId) + ".")
+                set slotItem = null
+                return true
+            elseif needsLife and IsHealingConsumableItemType(itemTypeId) then
+                call UnitUseItem(whichUnit, slotItem)
+                set slotItem = null
+                return true
+            elseif needsMana and IsManaOnlyItemType(itemTypeId) then
+                call UnitUseItem(whichUnit, slotItem)
+                set slotItem = null
+                return true
+            endif
         endif
         set slot = slot + 1
     endloop
     set slotItem = null
+    return false
+endfunction
+
+private function PickupItemEnum takes nothing returns nothing
+    local item enumItem = GetEnumItem()
+    local integer itemTypeId
+    local real dx
+    local real dy
+    local real distance
+    if enumItem == null or ItemSearchSource == null then
+        set enumItem = null
+        return
+    endif
+    set itemTypeId = GetItemTypeId(enumItem)
+    if itemTypeId == 0 or GetWidgetLife(enumItem) <= 0.00 or IsItemOwned(enumItem) or IsItemPowerup(enumItem) or IsAIUtilityItemType(itemTypeId) or (ItemSearchNoMana and IsManaOnlyItemType(itemTypeId)) then
+        set enumItem = null
+        return
+    endif
+    set dx = GetItemX(enumItem) - GetUnitX(ItemSearchSource)
+    set dy = GetItemY(enumItem) - GetUnitY(ItemSearchSource)
+    set distance = dx * dx + dy * dy
+    if distance <= ItemSearchBestDistance then
+        set ItemSearchBestDistance = distance
+        set ItemSearchBest = enumItem
+    endif
+    set enumItem = null
+endfunction
+
+private function FindNearbyPickupItem takes integer instanceId, unit whichUnit, real range returns item
+    if instanceId <= 0 or whichUnit == null or range <= 0.00 then
+        return null
+    endif
+    set ItemSearchSource = whichUnit
+    set ItemSearchBest = null
+    set ItemSearchBestDistance = range * range
+    set ItemSearchNoMana = ProfileNoManaRestore.boolean[InstanceProfile[instanceId]]
+    call SetRect(TempRect, GetUnitX(whichUnit) - range, GetUnitY(whichUnit) - range, GetUnitX(whichUnit) + range, GetUnitY(whichUnit) + range)
+    call EnumItemsInRect(TempRect, null, function PickupItemEnum)
+    set ItemSearchSource = null
+    set ItemSearchNoMana = false
+    return ItemSearchBest
+endfunction
+
+private function TryStartCompanionPickupAction takes integer instanceId, unit whichUnit, real now returns boolean
+    local item targetItem
+    if instanceId <= 0 or whichUnit == null then
+        return false
+    endif
+    if now < InstanceNextPickup.real[instanceId] or GetFreeInventorySlots(whichUnit) <= 0 then
+        return false
+    endif
+    set targetItem = FindNearbyPickupItem(instanceId, whichUnit, AI_COMPANION_PICKUP_RANGE)
+    if targetItem != null and IssueTargetOrder(whichUnit, "smart", targetItem) then
+        set InstanceNextPickup.real[instanceId] = now + GetRandomReal(AI_COMPANION_PICKUP_MIN_DELAY, AI_COMPANION_PICKUP_MAX_DELAY)
+        call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " delayed-pickup targets " + GetItemName(targetItem) + ".")
+        set targetItem = null
+        set ItemSearchBest = null
+        return true
+    endif
+    set InstanceNextPickup.real[instanceId] = now + GetRandomReal(AI_COMPANION_PICKUP_MIN_DELAY, AI_COMPANION_PICKUP_MAX_DELAY)
+    set targetItem = null
+    set ItemSearchBest = null
     return false
 endfunction
 
@@ -3552,6 +3697,76 @@ private function TryStartSocialAction takes integer instanceId, unit whichUnit, 
     return false
 endfunction
 
+private function IsNightTime takes nothing returns boolean
+    local real timeOfDay = GetFloatGameState(GAME_STATE_TIME_OF_DAY)
+    return timeOfDay >= AI_CAMP_NIGHT_MIN or timeOfDay < AI_CAMP_NIGHT_MAX
+endfunction
+
+private function TryStartNightCampAction takes integer instanceId, unit whichUnit, integer state, real now returns boolean
+    local real angle
+    local real distance
+    local real x
+    local real y
+    local item campItem
+    if instanceId <= 0 or whichUnit == null then
+        return false
+    endif
+    if not IsSideActionState(state) or IsCompanionControlled(whichUnit) or now < InstanceNextCamp.real[instanceId] or not IsNightTime() or GetUnitCurrentOrder(whichUnit) != 0 or HasNearbyCombatEnemy(whichUnit, 900.00) or GetFreeInventorySlots(whichUnit) <= 0 then
+        return false
+    endif
+    if GetRandomInt(1, 100) > 12 then
+        set InstanceNextCamp.real[instanceId] = now + GetRandomReal(120.00, 300.00)
+        return false
+    endif
+    set angle = GetRandomReal(0.00, 360.00) * bj_DEGTORAD
+    set distance = GetRandomReal(AI_CAMP_FIRE_MIN_OFFSET, AI_CAMP_FIRE_MAX_OFFSET)
+    set x = GetUnitX(whichUnit) + distance * Cos(angle)
+    set y = GetUnitY(whichUnit) + distance * Sin(angle)
+    set campItem = UnitAddItemById(whichUnit, ITEM_CAMP_FIRE)
+    if campItem != null and UnitUseItemPoint(whichUnit, campItem, x, y) then
+        call SetInstanceState(instanceId, AI_STATE_CAMP)
+        set InstanceRetreatUntil.real[instanceId] = now + GetRandomReal(AI_CAMP_DURATION_MIN, AI_CAMP_DURATION_MAX)
+        set InstanceNextCamp.real[instanceId] = now + GetRandomReal(AI_CAMP_COOLDOWN_MIN, AI_CAMP_COOLDOWN_MAX)
+        call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " starts night camp.")
+        set campItem = null
+        return true
+    endif
+    if campItem != null then
+        call UnitDropItemPoint(whichUnit, campItem, GetUnitX(whichUnit), GetUnitY(whichUnit))
+    endif
+    set InstanceNextCamp.real[instanceId] = now + GetRandomReal(120.00, 240.00)
+    set campItem = null
+    return false
+endfunction
+
+private function CanCompanionCombatRetreat takes integer instanceId returns boolean
+    if instanceId <= 0 then
+        return false
+    endif
+    return not ProfileCompanionRetreatDisabled.boolean[InstanceProfile[instanceId]]
+endfunction
+
+private function TryCompanionCombatRetreat takes integer instanceId, unit whichUnit, real now returns boolean
+    local unit enemy
+    if instanceId <= 0 or whichUnit == null or BossFightActive or not CanCompanionCombatRetreat(instanceId) or now < InstanceRetreatUntil.real[instanceId] then
+        return false
+    endif
+    if GetLifePercent(whichUnit) > GetRandomReal(18.00, 30.00) then
+        return false
+    endif
+    set enemy = AI_FindClosestEnemy(whichUnit, 700.00)
+    if enemy == null then
+        set enemy = null
+        return false
+    endif
+    call MoveAwayFromPoint(whichUnit, GetUnitX(enemy), GetUnitY(enemy), AI_COMPANION_RETREAT_DISTANCE)
+    set InstanceRetreatUntil.real[instanceId] = now + AI_COMPANION_RETREAT_TIME
+    set InstanceNextAbility.real[instanceId] = now + AI_COMPANION_RETREAT_TIME
+    call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " repositions as companion at low health.")
+    set enemy = null
+    return true
+endfunction
+
 private function ResetMovementMemory takes integer instanceId, unit whichUnit, integer orderId, real now returns nothing
     if instanceId <= 0 or whichUnit == null then
         return
@@ -3611,6 +3826,45 @@ private function TryRecoverStuck takes integer instanceId, unit whichUnit, integ
     return true
 endfunction
 
+private function TryRefreshCompanionStuckOrder takes integer instanceId, unit whichUnit, real now returns boolean
+    local integer orderId
+    local real dx
+    local real dy
+    local unit enemy
+    if instanceId <= 0 or whichUnit == null or IsCastingLocked(whichUnit) then
+        return false
+    endif
+    set enemy = AI_FindClosestEnemy(whichUnit, 650.00)
+    if enemy != null then
+        call ResetMovementMemory(instanceId, whichUnit, GetUnitCurrentOrder(whichUnit), now)
+        set enemy = null
+        return false
+    endif
+    set enemy = null
+    set orderId = GetUnitCurrentOrder(whichUnit)
+    if orderId == 0 then
+        call ResetMovementMemory(instanceId, whichUnit, orderId, now)
+        return false
+    endif
+    if InstanceLastOrder[instanceId] != orderId or InstanceStuckSince.real[instanceId] <= 0.00 then
+        call ResetMovementMemory(instanceId, whichUnit, orderId, now)
+        return false
+    endif
+    set dx = GetUnitX(whichUnit) - InstanceLastX.real[instanceId]
+    set dy = GetUnitY(whichUnit) - InstanceLastY.real[instanceId]
+    if dx * dx + dy * dy >= AI_STUCK_MIN_MOVE * AI_STUCK_MIN_MOVE then
+        call ResetMovementMemory(instanceId, whichUnit, orderId, now)
+        return false
+    endif
+    if now - InstanceStuckSince.real[instanceId] < AI_STUCK_SECONDS then
+        return false
+    endif
+    call Companions_RefreshOrders(whichUnit)
+    call ResetMovementMemory(instanceId, whichUnit, orderId, now + GetRandomReal(0.00, 1.25))
+    call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " refreshed stale companion order.")
+    return true
+endfunction
+
 private function RunProfileThink takes integer instanceId, unit whichUnit returns nothing
     if instanceId <= 0 or whichUnit == null then
         return
@@ -3659,8 +3913,41 @@ private function ProcessInstance takes integer instanceId, real now returns noth
     if companionControlled then
         call ClearSocialState(instanceId)
         call SetInstanceState(instanceId, AI_STATE_COMPANION_CONTROLLED)
+        if now >= InstanceNextItem.real[instanceId] then
+            if AI_TryUseConsumable(whichUnit) then
+                set InstanceNextItem.real[instanceId] = now + 5.00 + GetRandomReal(0.50, 1.50)
+            else
+                set InstanceNextItem.real[instanceId] = now + 2.00 + GetRandomReal(0.10, 0.80)
+            endif
+        endif
+        if Companions_GetMode(whichUnit) == COMPANION_MODE_PASSIVE then
+            if TryRefreshCompanionStuckOrder(instanceId, whichUnit, now) then
+                set whichUnit = null
+                return
+            endif
+            if GetUnitCurrentOrder(whichUnit) == 0 and not IsCastingLocked(whichUnit) then
+                call Companions_RefreshOrders(whichUnit)
+            endif
+            set whichUnit = null
+            return
+        endif
+        if TryCompanionCombatRetreat(instanceId, whichUnit, now) then
+            set whichUnit = null
+            return
+        endif
+        if now >= InstanceNextPickup.real[instanceId] and not IsCastingLocked(whichUnit) and AI_FindClosestEnemy(whichUnit, 800.00) == null and TryStartCompanionPickupAction(instanceId, whichUnit, now) then
+            set whichUnit = null
+            return
+        endif
         if now >= InstanceNextAbility.real[instanceId] then
             call RunProfileThink(instanceId, whichUnit)
+        endif
+        if TryRefreshCompanionStuckOrder(instanceId, whichUnit, now) then
+            set whichUnit = null
+            return
+        endif
+        if GetUnitCurrentOrder(whichUnit) == 0 and not IsCastingLocked(whichUnit) then
+            call Companions_RefreshOrders(whichUnit)
         endif
         set whichUnit = null
         return
@@ -3738,6 +4025,11 @@ private function ProcessInstance takes integer instanceId, real now returns noth
     endif
 
     if TryStartSocialAction(instanceId, whichUnit, state, now) then
+        set whichUnit = null
+        return
+    endif
+
+    if TryStartNightCampAction(instanceId, whichUnit, state, now) then
         set whichUnit = null
         return
     endif
@@ -3864,12 +4156,22 @@ private function HandleItem takes nothing returns nothing
     local unit whichUnit = GetTriggerUnit()
     local item manipulatedItem = GetManipulatedItem()
     local integer instanceId = UnitInstance[GetHandleId(whichUnit)]
+    local integer itemTypeId
     if GetTriggerEventId() == EVENT_PLAYER_UNIT_DROP_ITEM then
         if GetOwningPlayer(whichUnit) == Player(0) then
             set udg_LastDroppedItem = manipulatedItem
         endif
-    elseif instanceId > 0 and manipulatedItem == udg_LastDroppedItem then
-        call AI_RequestBark(whichUnit, AI_BARK_ITEM_GIVEN)
+    elseif instanceId > 0 and manipulatedItem != null then
+        set itemTypeId = GetItemTypeId(manipulatedItem)
+        if ProfileNoManaRestore.boolean[InstanceProfile[instanceId]] and IsManaOnlyItemType(itemTypeId) then
+            call UnitDropItemPoint(whichUnit, manipulatedItem, GetUnitX(whichUnit), GetUnitY(whichUnit))
+            call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " rejected mana-only item " + GetObjectName(itemTypeId) + ".")
+        elseif manipulatedItem == udg_LastDroppedItem then
+            call AI_RequestBark(whichUnit, AI_BARK_ITEM_GIVEN)
+        endif
+        if IsCompanionControlled(whichUnit) then
+            call Companions_RefreshOrders(whichUnit)
+        endif
     endif
     set whichUnit = null
     set manipulatedItem = null
