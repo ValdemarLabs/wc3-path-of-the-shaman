@@ -68,6 +68,7 @@ globals
     private Table RageHadAncientType = 0
     private Table RageLastGainTime = 0
     private Table RefreshTimerUnit = 0
+    private Table RefreshQueued = 0
 
     private integer RageUnitCount = 0
     private unit array RageUnits
@@ -88,7 +89,9 @@ private function EnsureState takes nothing returns nothing
         set RageHadAncientType = Table.create()
         set RageLastGainTime = Table.create()
         set RefreshTimerUnit = Table.create()
+        set RefreshQueued = Table.create()
     endif
+    
     if RageClockTimer == null then
         set RageClockTimer = CreateTimer()
         call TimerStart(RageClockTimer, 1000000.00, false, null)
@@ -338,21 +341,38 @@ private function OnRefreshTimer takes nothing returns nothing
     local timer expiredTimer = GetExpiredTimer()
     local integer timerId = GetHandleId(expiredTimer)
     local unit whichUnit = RefreshTimerUnit.unit[timerId]
+
     call RefreshTimerUnit.unit.remove(timerId)
     call DestroyTimer(expiredTimer)
-    if TryAutoRegisterUnit(whichUnit) then
-        call RefreshRageUnit(whichUnit)
+
+    if whichUnit != null then
+        if TryAutoRegisterUnit(whichUnit) then
+            call RefreshRageUnit(whichUnit)
+        endif
+
+        call RefreshQueued.boolean.remove(GetHandleId(whichUnit))
     endif
+
     set whichUnit = null
     set expiredTimer = null
 endfunction
 
 private function QueueRefresh takes unit whichUnit returns nothing
     local timer refreshTimer
+    local integer handleId
+
     if whichUnit == null then
         return
     endif
+
     call EnsureState()
+    set handleId = GetHandleId(whichUnit)
+
+    if RefreshQueued.boolean[handleId] then
+        return
+    endif
+
+    set RefreshQueued.boolean[handleId] = true
     set refreshTimer = CreateTimer()
     set RefreshTimerUnit.unit[GetHandleId(refreshTimer)] = whichUnit
     call TimerStart(refreshTimer, ITEM_REFRESH_DELAY, false, function OnRefreshTimer)
