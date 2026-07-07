@@ -142,6 +142,7 @@ private function Init takes nothing returns nothing
     set AI_Paladin_ClassId = AI_RegisterClass("Paladin")
     set AI_Paladin_ProfileId = AI_RegisterProfile(AI_Paladin_ClassId, AI_PALADIN_UNIT_RIVERBANE, "Riverbane Paladin")
     call AI_SetProfileSpawnOwner(AI_Paladin_ProfileId, Player(14))
+    call AI_SetProfileCompanionRetreat(AI_Paladin_ProfileId, false)
     call AI_SetProfileThinkCallback(AI_Paladin_ProfileId, function Think)
     call RegisterAbilities()
     call AI_AddDefaultShopItems(AI_Paladin_ProfileId)
