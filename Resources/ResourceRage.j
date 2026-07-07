@@ -378,7 +378,18 @@ private function RageDecayTick takes nothing returns nothing
             set RageUnits[RageUnitCount] = null
             set RageUnitCount = RageUnitCount - 1
         elseif GetUnitTypeId(whichUnit) == 0 then
-            call UnregisterRageUnit(whichUnit)
+            if not UnregisterRageUnit(whichUnit) then
+                call BJDebugMsg("[ResourceRage] Failed to unregister invalid unit at slot " + I2S(index))
+                set lastUnit = RageUnits[RageUnitCount]
+                set RageUnits[index] = lastUnit
+
+                if lastUnit != null and index != RageUnitCount then
+                    set RageUnitSlot.integer[GetHandleId(lastUnit)] = index
+                endif
+
+                set RageUnits[RageUnitCount] = null
+                set RageUnitCount = RageUnitCount - 1
+            endif
         elseif IsAliveUnit(whichUnit) then
             set handleId = GetHandleId(whichUnit)
             call ApplyRageUnitSetup(whichUnit)
