@@ -14,15 +14,15 @@
     - PotS AI JASS migration
 
     How to install:
-    Requires `AI.j` and `AI_Warrior.j`. The generated map globals must include
-    `udg_Aveline`.
+    Requires `AI.j`, `AI_Warrior.j`, and `ResourceRage.j`. The generated map
+    globals must include `udg_Aveline`.
 
     API:
     call AIAveline_Register(unit whichUnit)
     call AIAveline_SpawnAt(x, y, facing)
 
 **/
-library AIAveline initializer Init requires AI, AIWarrior
+library AIAveline initializer Init requires AI, AIWarrior, ResourceRage
 
 globals
     constant integer AI_AVELINE_UNIT_RIVERBANE = 'O009'
@@ -51,12 +51,14 @@ endfunction
 
 private function OnRegister takes nothing returns nothing
     set udg_Aveline = AI_EventUnit
+    call ResourceRage_Register(AI_EventUnit)
 endfunction
 
 public function Register takes unit whichUnit returns integer
     local integer instanceId = AI_RegisterUnit(whichUnit, AI_Aveline_ProfileId, AI_AVELINE_UNIQUE_ID)
     if instanceId > 0 then
         set udg_Aveline = whichUnit
+        call ResourceRage_Register(whichUnit)
     endif
     return instanceId
 endfunction
