@@ -15,6 +15,33 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [8.7.2026]
+
+### Player-Facing Updates
+- `AI` and `Companions`
+  Improved AI logic e.g., item pickup
+
+### Technical Updates
+- `AI.j`
+  No-mana profiles now reject/drop mana-only items instead of trying to use them.
+  Companion AI can delayed-pick nearby items, giving the player time first.
+  Autonomous AI can randomly use a Camp Fire at night and camp for a while.
+  Added companion stale-order recovery to reduce Warrior/Engineer/etc. “stuck after combat/item” cases.
+- `AI_Warrior.j`
+  Warrior profiles, including Aveline, no longer do low-health companion retreat.
+- `AI_Rogue.j`
+  Rogue is now marked no-mana-restoration.
+- `AI_Paladin.j`
+  Paladin no longer does low-health companion retreat.
+- `AI_Shaman.j`
+  Companion Shaman now prioritizes healing and avoids support totems unless allies are pressured.
+- `AI_Aveline.j`
+  Aveline explicitly registers with ResourceRage.
+- `AI_Companions.j`
+  Added public mode/order refresh APIs for AI integration.
+- `qAradion.j`
+  Fading Sparks now removes existing TelAnor Rods from player units/heroes and gives a fresh rod to a player-owned hero.
+
 ## [7.7.2026]
 
 ### Player-Facing Updates
