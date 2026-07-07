@@ -3806,6 +3806,59 @@ private function OnCompleteQuest2 takes nothing returns nothing
 	call DialogSystem_PlaySequence(seq, Player(0), Aradion)
 endfunction
 
+private function RemoveTelanorRodInventory takes unit whichUnit returns nothing
+	local integer slot = 0
+	local item slotItem
+	if whichUnit == null then
+		return
+	endif
+	loop
+		exitwhen slot >= bj_MAX_INVENTORY
+		set slotItem = UnitItemInSlot(whichUnit, slot)
+		if slotItem != null and GetItemTypeId(slotItem) == ITEM_TELANOR_ROD then
+			call RemoveItem(slotItem)
+		else
+			set slot = slot + 1
+		endif
+	endloop
+	set slotItem = null
+endfunction
+
+private function RemoveTelanorRodFromEnumUnit takes nothing returns nothing
+	call RemoveTelanorRodInventory(GetEnumUnit())
+endfunction
+
+private function RemoveExistingTelanorRods takes nothing returns nothing
+	local group playerUnits = CreateGroup()
+	local integer guard = 0
+	loop
+		exitwhen guard >= 64 or not HeroItemCheckBothAndRemove(ITEM_TELANOR_ROD, 1)
+		set guard = guard + 1
+	endloop
+	call GroupEnumUnitsOfPlayer(playerUnits, Player(0), null)
+	call ForGroup(playerUnits, function RemoveTelanorRodFromEnumUnit)
+	call DestroyGroup(playerUnits)
+	set playerUnits = null
+endfunction
+
+private function GetFadingSparksRodHero takes nothing returns unit
+	local unit hero = ResolveDialogHero()
+	if hero != null then
+		return hero
+	endif
+	set hero = null
+	if SelectedHero != null and QuestGiver_IsUnitAlive(SelectedHero) and GetOwningPlayer(SelectedHero) == Player(0) then
+		return SelectedHero
+	endif
+	if ALLOW_NAZGREK and Nazgrek != null and QuestGiver_IsUnitAlive(Nazgrek) and GetOwningPlayer(Nazgrek) == Player(0) then
+		return Nazgrek
+	endif
+	if ALLOW_ZULKIS and udg_Zulkis != null and QuestGiver_IsUnitAlive(udg_Zulkis) and GetOwningPlayer(udg_Zulkis) == Player(0) then
+		return udg_Zulkis
+	endif
+	return null
+endfunction
+
 private function OnAcceptQuest3End takes nothing returns nothing
 	local unit hero
 	local QuestData q
@@ -3815,11 +3868,13 @@ private function OnAcceptQuest3End takes nothing returns nothing
 	if q != 0 then
 		call QuestGiver_RefreshItemRequirementsForQuest(q.id)
 	endif
-	set hero = ResolveDialogHero()
+	call RemoveExistingTelanorRods()
+	set hero = GetFadingSparksRodHero()
 	if hero != null then
 		call UnitAddItemByIdSwapped(ITEM_TELANOR_ROD, hero)
 	endif
 	call StartExitFadeOut()
+	set hero = null
 endfunction
 
 private function OnAcceptQuest3 takes nothing returns nothing
