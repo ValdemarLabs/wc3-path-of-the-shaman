@@ -45,6 +45,7 @@
   Previously every item pickup, item drop, item use, and spell cast creates a new timer. Usually fine. But if an AI loop or item logic causes repeated item/spell events, this can create a large timer burst. Update to prevents 50 refresh timers for the same unit during one event burst.
   If UnregisterRageUnit(whichUnit) ever returns false, then index is not incremented and RageUnitCount is not reduced. That would create an infinite loop inside RageDecayTick.
   Normally this should not happen, because any unit inside RageUnits[index] should also have a valid RageUnitSlot. But if the table state ever becomes inconsistent, this becomes a hard freeze candidate. Updated to preserve the intended behavior but ensures the loop always progresses.
+  Added `AI_Aveline` unit-type `O009` register.
 - `ResourceEnergy.j`
   Note: Similar issue as in `ResourceRage` may be within `ResourceEnergy` system. To be checked and possibly updated later. 
 - `ExSound.j` 
