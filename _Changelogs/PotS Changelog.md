@@ -47,6 +47,8 @@
   Normally this should not happen, because any unit inside RageUnits[index] should also have a valid RageUnitSlot. But if the table state ever becomes inconsistent, this becomes a hard freeze candidate. Updated to preserve the intended behavior but ensures the loop always progresses.
 - `ResourceEnergy.j`
   Note: Similar issue as in `ResourceRage` may be within `ResourceEnergy` system. To be checked and possibly updated later. 
+- `ExSound.j` 
+  Fix incorrect file path for `AI_Restoshaman` (HeroRestoshaman) voicelines
 
 ### Known Issues
 - Full in-map/JassHelper validation is still required for the 7.7.2026 AI profession safeguards, especially Paladin near ore veins, Aveline/Warrior Mining Pick creation and cleanup, inventory-full behavior, and under-skilled gather-node backoff.
