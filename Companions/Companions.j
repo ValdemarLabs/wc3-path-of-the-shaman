@@ -28,6 +28,8 @@
     call Companions_IsControlled(unit controlledUnit) returns boolean
     call Companions_SetEscortBehavior(unit controlledUnit, boolean enabled)
     call Companions_SetFollowerBehavior(unit controlledUnit, boolean enabled)
+    call Companions_GetMode(unit controlledUnit) returns integer
+    call Companions_RefreshOrders(unit controlledUnit)
     call Companions_GetClassInfoText(unit controlledUnit) returns string
     call Companions_GetTypeInfoText(unit controlledUnit) returns string
     call Companions_GetAbilityInfoText(unit controlledUnit) returns string
@@ -2169,6 +2171,23 @@ endfunction
 
 public function SetFollowerBehavior takes unit controlledUnit, boolean enabled returns nothing
     call SetFollowerBehaviorInternal(controlledUnit, enabled)
+endfunction
+
+public function GetMode takes unit companionUnit returns integer
+    local integer unitId
+    call EnsureState()
+    if companionUnit == null or GetUnitTypeId(companionUnit) == 0 then
+        return COMPANION_MODE_DEFEND
+    endif
+    set unitId = GetHandleId(companionUnit)
+    if CompanionTracked[unitId] == 0 then
+        return COMPANION_MODE_DEFEND
+    endif
+    return NormalizeMode(CompanionMode[unitId])
+endfunction
+
+public function RefreshOrders takes unit companionUnit returns nothing
+    call ApplyOrders(companionUnit)
 endfunction
 
 public function Halt takes unit companionUnit returns nothing
