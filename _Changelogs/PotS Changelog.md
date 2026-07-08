@@ -67,6 +67,9 @@
   Moved the party monitor to the upper-right multiboard-style screen area, made the main monitor background transparent, replaced the `Cfg` text button with the engineering icon, and added companion cap info access.
   Changed the row container to a non-rendering frame and shifted the monitor closer to the right screen edge to remove the green backdrop panel.
   Removed initializer autoInit from library header and now to be initialized externally with call `StatsLiteUI_Init()` and to show it use first time use `call StatsLiteUI_Show()`
+  Updated StatsLiteUI initialization and frame layout so the monitor remains hidden after external init and only appears when explicitly shown through the API.
+  Adjusted the main panel to use an invisible right-anchored parent frame with child backdrop/content layering to reduce preload flicker and improve UI stacking.
+  Note: Later clean comments like `CHANGE` in the library!
 - `qAradion.j`
   Fading Sparks now removes existing TelAnor Rods from player units/heroes and gives a fresh rod to a player-owned hero.
 
