@@ -1,0 +1,86 @@
+NPC Valeria Revival
+    Events
+        Time - ReviveTimerValeria expires
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Valeria is in Companion_Group.) Equal to True
+            Then - Actions
+                -------- Set GY Player selected GY --------
+                Set VariableSet GraveyardSelectNPC = GraveyardSelect
+            Else - Actions
+                -------- Set random GY if the hero is not in Companion Group --------
+                Set VariableSet GraveyardSelectNPC = (Random integer number between 1 and 9)
+        -------- ============================================ --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                GraveyardSelectNPC Equal to 1
+            Then - Actions
+                Set VariableSet GraveyardPoint = (Center of Graveyard <gen>)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                GraveyardSelectNPC Equal to 2
+            Then - Actions
+                Set VariableSet GraveyardPoint = (Center of Graveyard02 <gen>)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                GraveyardSelectNPC Equal to 3
+            Then - Actions
+                Set VariableSet GraveyardPoint = (Center of Graveyard03 <gen>)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                GraveyardSelectNPC Equal to 4
+            Then - Actions
+                Set VariableSet GraveyardPoint = (Center of Graveyard04 <gen>)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                GraveyardSelectNPC Equal to 5
+            Then - Actions
+                Set VariableSet GraveyardPoint = (Center of Graveyard05 <gen>)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                GraveyardSelectNPC Equal to 6
+            Then - Actions
+                Set VariableSet GraveyardPoint = (Center of Graveyard06 <gen>)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                GraveyardSelectNPC Equal to 7
+            Then - Actions
+                Set VariableSet GraveyardPoint = (Center of Graveyard07 <gen>)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                GraveyardSelectNPC Equal to 8
+            Then - Actions
+                Set VariableSet GraveyardPoint = (Center of Graveyard08 <gen>)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                GraveyardSelectNPC Equal to 9
+            Then - Actions
+                Set VariableSet GraveyardPoint = (Center of Graveyard09 <gen>)
+            Else - Actions
+        -------- ============================================ --------
+        Unit - Create 1 Valeria for Player 19 (Mint) at GraveyardPoint facing (Random angle) degrees
+        Set VariableSet Valeria = (Last created unit)
+        Unit Group - Add Valeria to Companion_Group
+        Unit Group - Add Valeria to CompanionFocusNazgrek
+        Cinematic - Ping minimap for (All players) at GraveyardPoint for 1.00 seconds, using a Flashy ping of color (100.00%, 0.00%, 0.00%)
+        Custom script:   call RemoveLocation(udg_GraveyardPoint)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                InCinematic Equal to False
+            Then - Actions
+                Game - Display to (All players) the text: (|cffffff00|r + ((Name of Valeria) + (<Empty String> +  |cffffffffis |r|cff00ff00revived.|r)))
+            Else - Actions
+        Unit - Set life of Valeria to 50.00%
+        Unit - Set mana of Valeria to 50.00%
+        -------- ============================================ --------
+        Trigger - Remove (This trigger) from the trigger queue

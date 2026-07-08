@@ -1,0 +1,18 @@
+NPC Valeria Dies
+    Events
+        Unit - A unit Dies
+    Conditions
+        (Triggering unit) Equal to Valeria
+        (Valeria is in Companion_Group.) Equal to True
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                InCinematic Equal to False
+            Then - Actions
+                Game - Display to (All players) the text: (|cffffff00|r + ((Name of (Triggering unit)) + ( (|cff808080Ranger|r) +  |cffffffffhas|r |cffff0000died!|r)))
+            Else - Actions
+        -------- If not in Companion Group - Handled by CreepRespawn --------
+        -------- Start timer --------
+        Countdown Timer - Start ReviveTimerValeria as a One-shot timer that will expire in 60.00 seconds
+        -------- Drop items --------
+        -------- ================ SET all states that might bug the AI hero --------
