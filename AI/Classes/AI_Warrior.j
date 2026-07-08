@@ -12,14 +12,15 @@
     - Old GUI HeroWarrior triggers
 
     How to install:
-    Requires `AI.j`.
+    Requires `AI.j` and `AbilitiesLiteUI.j`.
 
     API:
     call AIWarrior_Register(unit whichUnit)
     call AIWarrior_ConfigureProfile(profileId)
+    call AIWarrior_RegisterAbilityTemplatesForUnitType(unitTypeId)
 
 **/
-library AIWarrior initializer Init requires AI
+library AIWarrior initializer Init requires AI, AbilitiesLiteUI
 
 globals
     constant integer AI_WARRIOR_UNIT_HORDE = 'O629'
@@ -95,6 +96,22 @@ private function RegisterAbilities takes integer profileId returns nothing
     call AI_AddProfileAbility(profileId, AI_WARRIOR_ABILITY_RECKLESSNESS)
 endfunction
 
+public function RegisterAbilityTemplatesForUnitType takes integer unitTypeId returns nothing
+    if unitTypeId == 0 then
+        return
+    endif
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(unitTypeId, AI_WARRIOR_ABILITY_BATTLE_SHOUT, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(unitTypeId, AI_WARRIOR_ABILITY_BLOODRAGE, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(unitTypeId, AI_WARRIOR_ABILITY_CHARGE, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(unitTypeId, AI_WARRIOR_ABILITY_HEROIC_STRIKE, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(unitTypeId, AI_WARRIOR_ABILITY_REND, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(unitTypeId, AI_WARRIOR_ABILITY_SUNDER_ARMOR, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(unitTypeId, AI_WARRIOR_ABILITY_THUNDER_CLAP, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(unitTypeId, AI_WARRIOR_ABILITY_CHALLENGING_SHOUT, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(unitTypeId, AI_WARRIOR_ABILITY_RETALIATION, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(unitTypeId, AI_WARRIOR_ABILITY_RECKLESSNESS, "", "")
+endfunction
+
 private function Think takes nothing returns nothing
     local unit warrior = AI_EventUnit
     local unit target = AI_EventTarget
@@ -160,6 +177,7 @@ private function Init takes nothing returns nothing
     set AI_Warrior_ProfileId = AI_RegisterProfile(AI_Warrior_ClassId, AI_WARRIOR_UNIT_HORDE, "Horde Warrior")
     call AI_SetProfileSpawnOwner(AI_Warrior_ProfileId, Player(1))
     call AIWarrior_ConfigureProfile(AI_Warrior_ProfileId)
+    call AIWarrior_RegisterAbilityTemplatesForUnitType(AI_WARRIOR_UNIT_HORDE)
     call AI_AddRandomSpawnProfile(AI_Warrior_ProfileId)
     call RegisterBarks()
 endfunction
