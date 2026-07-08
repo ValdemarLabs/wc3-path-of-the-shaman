@@ -51,10 +51,12 @@ private function AddHordeRetreats takes integer profileId returns nothing
 endfunction
 
 private function AddHordeShops takes integer profileId returns nothing
+    /* Disabled for now, better to have these tied to variables / global variables. It seems the editor gg_unit_xxx_xxxx can change when adding or removing units in the map in WE.
     call AI_AddProfileShopUnit(profileId, gg_unit_nmrk_1491)
     call AI_AddProfileShopUnit(profileId, gg_unit_o609_0021)
     call AI_AddProfileShopUnit(profileId, gg_unit_o62J_1931)
     call AI_AddProfileShopUnit(profileId, gg_unit_o61U_1278)
+    */
 endfunction
 
 private function AddRiverbaneSpawns takes integer profileId returns nothing
