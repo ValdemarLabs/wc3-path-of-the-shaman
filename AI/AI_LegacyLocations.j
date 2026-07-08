@@ -52,11 +52,17 @@ endfunction
 
 private function AddHordeShops takes integer profileId returns nothing
     /* Disabled for now, better to have these tied to variables / global variables. It seems the editor gg_unit_xxx_xxxx can change when adding or removing units in the map in WE.
+       We probably should assign / create shops in JASS library? Or not need to assign any units as "shops" but unit-types rather.
     call AI_AddProfileShopUnit(profileId, gg_unit_nmrk_1491)
     call AI_AddProfileShopUnit(profileId, gg_unit_o609_0021)
     call AI_AddProfileShopUnit(profileId, gg_unit_o62J_1931)
     call AI_AddProfileShopUnit(profileId, gg_unit_o61U_1278)
     */
+
+    call AI_AddProfileShopUnit(profileId, udg_Shop[0])
+    call AI_AddProfileShopUnit(profileId, udg_Shop[1])
+    call AI_AddProfileShopUnit(profileId, udg_Shop[2])
+
 endfunction
 
 private function AddRiverbaneSpawns takes integer profileId returns nothing
