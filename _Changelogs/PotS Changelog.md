@@ -66,11 +66,98 @@
   Added cinematic hide/show-last-state APIs for GUI Cinematic ON/OFF trigger use.
   Moved the party monitor to the upper-right multiboard-style screen area, made the main monitor background transparent, replaced the `Cfg` text button with the engineering icon, and added companion cap info access.
   Changed the row container to a non-rendering frame and shifted the monitor closer to the right screen edge to remove the green backdrop panel.
+  Removed initializer autoInit from library header and now to be initialized externally with call `StatsLiteUI_Init()` and to show it use first time use `call StatsLiteUI_Show()`
 - `qAradion.j`
   Fading Sparks now removes existing TelAnor Rods from player units/heroes and gives a fresh rod to a player-owned hero.
 
+- GUI Triggers `Cinematic ON` and `Cinematic OFF`
+  added call hide/show `StatsLiteUI` in Cinematic ON and Cinematic OFF triggers
+- GUI Trigger `Preload`
+  Added call `StatsLiteUI_Init()` but not show the frame at this point
+- GUI Trigger `Intro Orc Cleanup`
+  Added call `StatsLiteUI_Show()`
+
+- `StatsDummy` and `RepDummy` hero-type units
+  Removed these units on the map and from these from triggers `Init 01a Units`, `DummyUnitFollow`
+  Note 1: that there may be several places where these units are referred (eg., mostly as unit != StatsDummy). Should affect gameplay, but for future references.
+  Note 2: `CompDummy` left as its still in use as `Companions controller `
+
+- Removed old GUI triggers to clean map triggers
+- These are replaced by `ResourceEnergy.j` and `ResourceRage.j` libraries:
+  Folder `RAGE ENERGY System OLD`
+  `RageEnergy Limit Mana Max From Items`
+  `RageEnergy Limit Mana Regen From Items`
+  `RageEnergy Remove Aura`
+  `RageEnergy Energy Add`
+  `RageEnergy Energy Tick`
+  `RageEnergy Rage Init`
+  `RageEnergy Rage Generation`
+  `HeroWarrior Rage Decay`
+
+- These are replaced by `Totems.j` library
+  Folder `TOTEMIC abilities OLD`
+  `Totem Setup`
+  `Totem Dies`
+  `Fire Totem AutoCast Fire Shield`
+  `Wind Totem AutoCast Cyclone`
+  `Wind Totem Greater AutoCast Lightning`
+  `Cleansing Totem Level 1`
+  `Cleansing Totem Level 2`
+  `Windfury Totem Aura`
+  `Windfury Totem Aura Effect`
+  `Windfury Totem Greater Aura wip`
+  `Totem Master Return Mana`
+  `Skyfury Aura Setup`
+  `Skyfury Aura Add Source`
+  `Skyfury Aura Loop`
+  `Skyfury Aura DeIndex`
+  `Earth Totem`
+  `Fire Totem`
+  `Water Totem`
+  `Wind Totem`
+  `Stoneskin Totem`
+  `Earthbind Totem`
+  `Windfury Totem`
+  `Cleansing Totem`
+  `Skyfury Totem`
+
+- These are replaced by `AI.j` library and `AI_xxx` sublibraries
+  Only shown removed trigger folders because too many GUI triggers to list here. These can be found in project AI folder under `_OldGUI_triggers`
+  Folder `AI COMMON`
+  Folder `AI HORDE HEROES`
+  Folder `AI RIVERBANE HEROES`
+  Folder `AI NEUTRAL HEROES`
+
+- These are replaced by `Pet.j` and `Companions.j` libraries
+  Folder `Tame System OLD`
+  Note: `Variables` folder moved to upper portion where Pet.j and Companions.j are
+
+  `debug Tame Beast cleartamed`
+  `Tamed Unit Heal Event and items`
+  `Tame Beast I Start`
+  `Tame Beast ExtraDmg`
+  `Tame Beast I Start Copy`
+  `Tame Beast I Timer`
+  `Tame Beast I Stop`
+  `Tame Beast I Finish`
+  `Tame Beast Rename`
+  `Tame Beast PreventTameDmg`
+  `Tamed Unit Dies Permanent`
+  `Tamed Unit Dies`
+  `Tamed Unit Revival`
+  `Tame Beast I Finish 2`
+  `Tame Beast II`
+  `Tame Beast III`
+
+- These are replaced by `AI.j`
+  Folder `Hired Units OLD`
+  `Hired Units Init Shops`
+
 ### Known Issues
 - Full in-map/JassHelper validation is still required for the updated StatsUI/StatsLiteUI frame layout, cached hero XP requirement display, companion profession gathering behavior, and AbilitiesLiteUI registrations for AI class unit types.
+
+### Actions Remaining
+- Still more folders and old GUI triggers to be removed, but its important to check whether global variables defined there are in use by the new JASS library. Removing the global variables can break the library and would need modification/fix updates.
 
 ## [7.7.2026]
 
