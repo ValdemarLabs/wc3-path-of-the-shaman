@@ -454,7 +454,7 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
 
     private function SLUI_UpdateTitle takes nothing returns nothing
         if SLUI_ConfigVisible then
-            call BlzFrameSetText(SLUI_Title, "|cffffe4a3Stats Lite|r")
+            call BlzFrameSetText(SLUI_Title, "|cffffe4a3Monitor|r")
         elseif SLUI_Minimized then
             call BlzFrameSetText(SLUI_Title, "|cffffe4a3Party|r |cffbfbfbf" + I2S(udg_CompanionCount) + "/" + I2S(Companions_GetCompanionLimit()) + "|r")
         else
