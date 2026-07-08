@@ -1,4 +1,4 @@
-library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, AbilitiesLiteUI, StatsLiteUI, QuestGiver, Companions, Pet
+library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, AbilitiesLiteUI, StatsLiteUI, QuestGiver, Companions, Pet, UnitExperience
 /**
     StatsUI
     
@@ -9,6 +9,14 @@ library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, Abili
 
     Credits: Tasyen (TasQuestBox as inspiration)
 
+    API:
+    call StatsUI_Show()
+    call StatsUI_ShowFromStatsLite()
+    call StatsUI_Hide()
+    call StatsUI_Toggle()
+    call StatsUI_GetRequiredXPForUnit(unit whichUnit) returns integer
+    call StatsUI_IsVisible() returns boolean
+
 **/
 
 globals
@@ -18,10 +26,15 @@ globals
     private constant integer SUI_SUMMARY_ROWS = 6
     private constant integer SUI_DETAIL_STAT_COLUMNS = 3
     private constant integer SUI_DETAIL_STAT_ROWS = 13
+    // Must match Game Constants: NeedHeroXPFormulaA/B/C.
+    private constant integer SUI_HERO_XP_FORMULA_A = 1
+    private constant integer SUI_HERO_XP_FORMULA_B = 150
+    private constant integer SUI_HERO_XP_FORMULA_C = 0
 
     private boolean SUI_Initialized = false
     private boolean SUI_IsVisible = false
     private boolean SUI_SyncingListScroll = false
+    private boolean SUI_ReturnToStatsLite = false
     private integer SUI_SelectedRow = 0
 
     private framehandle SUI_Parent = null
@@ -31,7 +44,9 @@ globals
     private framehandle SUI_CloseButton = null
     private framehandle SUI_ReturnButton = null
     private framehandle SUI_AbilitiesButton = null
-    private framehandle SUI_LiteConfigButton = null
+    private framehandle SUI_MonitorButton = null
+    private framehandle SUI_InfoButton = null
+    private framehandle SUI_PartyText = null
     private framehandle SUI_ListScroll = null
     private framehandle SUI_DetailBackdrop = null
     private framehandle SUI_DetailIcon = null
@@ -55,6 +70,7 @@ globals
     private integer array SUI_RowStatusHP
     private integer array SUI_RowStatusMP
     private integer array SUI_RowStatusDead
+    private integer array SUI_RowXPLevel
     private real array SUI_DetailStatCache
     private unit SUI_SelectedUnit = null
     private unit array SUI_RowUnit
@@ -77,16 +93,22 @@ globals
     private integer SUI_DetailSummaryDeaths = -1
     private integer SUI_DetailSummaryMinDamage = -1
     private integer SUI_DetailSummaryMaxDamage = -1
+    private integer SUI_DetailSummaryXPCurrent = -1
+    private integer SUI_DetailSummaryXPRequired = -1
     private integer SUI_DetailSummaryAttackSpeedHash = 0
     private integer SUI_DetailSummaryClassHash = 0
     private integer SUI_DetailSummaryRoleHash = 0
+    private integer SUI_DetailSummaryFactionHash = 0
 
     private Table SUI_ButtonRow = 0
+    private Table SUI_XPRequiredLevel = 0
+    private Table SUI_XPRequiredValue = 0
 
     private trigger SUI_CloseTrigger = null
     private trigger SUI_ReturnTrigger = null
     private trigger SUI_AbilitiesTrigger = null
-    private trigger SUI_LiteConfigTrigger = null
+    private trigger SUI_MonitorTrigger = null
+    private trigger SUI_InfoTrigger = null
     private trigger SUI_RowTrigger = null
     private trigger SUI_ListScrollTrigger = null
     private trigger SUI_ClearFocusTrigger = null
@@ -266,6 +288,129 @@ private function SUI_GetLevelText takes unit u returns string
     return I2S(GetUnitLevel(u))
 endfunction
 
+private function SUI_GetUnitLevelForXP takes unit u returns integer
+    if u == null or GetHandleId(u) == 0 then
+        return 0
+    endif
+    if IsUnitType(u, UNIT_TYPE_HERO) then
+        return GetHeroLevel(u)
+    endif
+    return GetUnitLevel(u)
+endfunction
+
+private function SUI_EnsureXPRequiredCache takes nothing returns nothing
+    if SUI_XPRequiredLevel == 0 then
+        set SUI_XPRequiredLevel = Table.create()
+    endif
+    if SUI_XPRequiredValue == 0 then
+        set SUI_XPRequiredValue = Table.create()
+    endif
+endfunction
+
+private function SUI_GetHeroXPRequiredForLevel takes integer targetLevel returns integer
+    local integer level = 2
+    local integer required
+
+    // JASS cannot read Gameplay Constants directly; keep this recurrence in sync with NeedHeroXPFormulaA/B/C.
+    if targetLevel <= 1 then
+        return 0
+    endif
+
+    set required = 0
+    loop
+        exitwhen level > targetLevel
+        set required = SUI_HERO_XP_FORMULA_A * required + SUI_HERO_XP_FORMULA_B * level + SUI_HERO_XP_FORMULA_C
+        set level = level + 1
+    endloop
+
+    return required
+endfunction
+
+private function SUI_CalculateXPRequiredForUnit takes unit u returns integer
+    local integer level
+    local integer current
+    local integer toNext
+
+    if u == null or GetHandleId(u) == 0 then
+        return -1
+    endif
+    if UnitExperience_IsUnitRegistered(u) then
+        set current = UnitExperience_GetUnitXP(u)
+        set toNext = UnitExperience_GetUnitXPToNextLevel(u)
+        if toNext <= 0 then
+            return 0
+        endif
+        return current + toNext
+    endif
+    if IsUnitType(u, UNIT_TYPE_HERO) then
+        set level = GetHeroLevel(u)
+        return SUI_GetHeroXPRequiredForLevel(level + 1)
+    endif
+    return -1
+endfunction
+
+private function SUI_GetCachedXPRequiredForUnit takes unit u returns integer
+    local integer handleId
+    local integer level
+    local integer required
+
+    if u == null or GetHandleId(u) == 0 then
+        return -1
+    endif
+
+    call SUI_EnsureXPRequiredCache()
+    set handleId = GetHandleId(u)
+    set level = SUI_GetUnitLevelForXP(u)
+
+    if SUI_XPRequiredLevel.has(handleId) and SUI_XPRequiredLevel.integer[handleId] == level then
+        return SUI_XPRequiredValue.integer[handleId]
+    endif
+
+    set required = SUI_CalculateXPRequiredForUnit(u)
+    set SUI_XPRequiredLevel.integer[handleId] = level
+    set SUI_XPRequiredValue.integer[handleId] = required
+    return required
+endfunction
+
+private function SUI_GetXPText takes unit u returns string
+    local integer current
+    local integer required
+
+    if u == null or GetHandleId(u) == 0 then
+        return "-"
+    endif
+    if UnitExperience_IsUnitRegistered(u) then
+        set current = UnitExperience_GetUnitXP(u)
+    elseif IsUnitType(u, UNIT_TYPE_HERO) then
+        set current = GetHeroXP(u)
+    else
+        return "-"
+    endif
+
+    set required = SUI_GetCachedXPRequiredForUnit(u)
+    if required <= 0 then
+        return I2S(current) + " / Max"
+    endif
+    return I2S(current) + " / " + I2S(required)
+endfunction
+
+private function SUI_GetXPCurrentForCache takes unit u returns integer
+    if u == null or GetHandleId(u) == 0 then
+        return -1
+    endif
+    if UnitExperience_IsUnitRegistered(u) then
+        return UnitExperience_GetUnitXP(u)
+    endif
+    if IsUnitType(u, UNIT_TYPE_HERO) then
+        return GetHeroXP(u)
+    endif
+    return -1
+endfunction
+
+private function SUI_GetXPRequiredForCache takes unit u returns integer
+    return SUI_GetCachedXPRequiredForUnit(u)
+endfunction
+
 private function SUI_GetUnitPoints takes unit u returns integer
     if u == udg_Nazgrek then
         return udg_AbilityPointsNazgrek
@@ -273,6 +418,16 @@ private function SUI_GetUnitPoints takes unit u returns integer
         return udg_AbilityPointsZulkis
     endif
     return 0
+endfunction
+
+private function SUI_GetUnitFactionText takes unit u returns string
+    if u == null or GetHandleId(u) == 0 then
+        return "-"
+    endif
+    if u == udg_Nazgrek or u == udg_Zulkis then
+        return "Horde"
+    endif
+    return Companions_GetFactionInfoText(u)
 endfunction
 
 private function SUI_GetUnitKills takes unit u returns integer
@@ -473,9 +628,12 @@ private function SUI_InvalidateDetailSummaryCache takes nothing returns nothing
     set SUI_DetailSummaryDeaths = -1
     set SUI_DetailSummaryMinDamage = -1
     set SUI_DetailSummaryMaxDamage = -1
+    set SUI_DetailSummaryXPCurrent = -1
+    set SUI_DetailSummaryXPRequired = -1
     set SUI_DetailSummaryAttackSpeedHash = 0
     set SUI_DetailSummaryClassHash = 0
     set SUI_DetailSummaryRoleHash = 0
+    set SUI_DetailSummaryFactionHash = 0
 endfunction
 
 private function SUI_InvalidateDetailStatsCache takes nothing returns nothing
@@ -495,6 +653,8 @@ private function SUI_UpdateRowFrame takes player whichPlayer, integer rowIndex, 
     local integer mp = 0
     local integer dead = 0
     local integer selected = 0
+    local integer level = SUI_GetUnitLevelForXP(u)
+    local integer required = 0
 
     if GetLocalPlayer() != whichPlayer then
         return
@@ -505,8 +665,14 @@ private function SUI_UpdateRowFrame takes player whichPlayer, integer rowIndex, 
         set SUI_RowStatusHP[rowIndex] = -1
         set SUI_RowStatusMP[rowIndex] = -1
         set SUI_RowStatusDead[rowIndex] = -1
+        set SUI_RowXPLevel[rowIndex] = -1
         call BlzFrameSetTexture(SUI_RowIcon[rowIndex], SUI_GetUnitIconPath(u), 0, true)
         call BlzFrameSetText(SUI_RowText[rowIndex], SUI_GetKindLabel(kind) + " " + SUI_GetDisplayName(u))
+    endif
+
+    if SUI_RowXPLevel[rowIndex] != level then
+        set SUI_RowXPLevel[rowIndex] = level
+        set required = SUI_GetCachedXPRequiredForUnit(u)
     endif
 
     if SUI_IsDeadForDisplay(u) then
@@ -926,6 +1092,7 @@ private function SUI_UpdateRows takes player whichPlayer returns nothing
             set SUI_RowStatusHP[rowIndex] = -1
             set SUI_RowStatusMP[rowIndex] = -1
             set SUI_RowStatusDead[rowIndex] = -1
+            set SUI_RowXPLevel[rowIndex] = -1
             call BlzFrameSetVisible(SUI_RowButton[rowIndex], false)
             call BlzFrameSetVisible(SUI_RowHighlight[rowIndex], false)
         endif
@@ -944,6 +1111,16 @@ private function SUI_UpdateRows takes player whichPlayer returns nothing
     set u = null
 endfunction
 
+private function SUI_UpdatePartyHeader takes player whichPlayer returns nothing
+    if GetLocalPlayer() != whichPlayer or SUI_PartyText == null then
+        set whichPlayer = null
+        return
+    endif
+
+    call BlzFrameSetText(SUI_PartyText, "|cffffcc00Party|r |cffbfbfbf" + Companions_GetCompanionStatusText() + "|r")
+    set whichPlayer = null
+endfunction
+
 private function SUI_UpdateDetailSummary takes player whichPlayer, unit u returns nothing
     local integer handleId
     local integer dead = 0
@@ -959,12 +1136,16 @@ private function SUI_UpdateDetailSummary takes player whichPlayer, unit u return
     local integer deaths = 0
     local integer minDamage = 0
     local integer maxDamage = 0
+    local integer xpCurrent = -1
+    local integer xpRequired = -1
     local string attackSpeedText = ""
     local string classText = ""
     local string roleText = ""
+    local string factionText = ""
     local integer attackSpeedHash
     local integer classHash
     local integer roleHash
+    local integer factionHash
 
     if GetLocalPlayer() != whichPlayer then
         return
@@ -1000,14 +1181,18 @@ private function SUI_UpdateDetailSummary takes player whichPlayer, unit u return
     set deaths = SUI_GetUnitDeaths(u)
     set minDamage = SUI_GetUnitDamageMin(u)
     set maxDamage = SUI_GetUnitDamageMax(u)
+    set xpCurrent = SUI_GetXPCurrentForCache(u)
+    set xpRequired = SUI_GetXPRequiredForCache(u)
     set attackSpeedText = SUI_GetUnitAttackSpeedText(u)
     set classText = SUI_GetUnitClassText(u)
     set roleText = SUI_GetUnitRoleText(u)
+    set factionText = SUI_GetUnitFactionText(u)
     set attackSpeedHash = StringHash(attackSpeedText)
     set classHash = StringHash(classText)
     set roleHash = StringHash(roleText)
+    set factionHash = StringHash(factionText)
 
-    if SUI_DetailSummaryUnitHandle == handleId and SUI_DetailSummaryDead == dead and SUI_DetailSummaryHP == hp and SUI_DetailSummaryMP == mp and SUI_DetailSummaryLevel == level and SUI_DetailSummaryPoints == points and SUI_DetailSummaryLife == life and SUI_DetailSummaryMaxLife == maxLife and SUI_DetailSummaryMana == mana and SUI_DetailSummaryMaxMana == maxMana and SUI_DetailSummaryKills == kills and SUI_DetailSummaryDeaths == deaths and SUI_DetailSummaryMinDamage == minDamage and SUI_DetailSummaryMaxDamage == maxDamage and SUI_DetailSummaryAttackSpeedHash == attackSpeedHash and SUI_DetailSummaryClassHash == classHash and SUI_DetailSummaryRoleHash == roleHash then
+    if SUI_DetailSummaryUnitHandle == handleId and SUI_DetailSummaryDead == dead and SUI_DetailSummaryHP == hp and SUI_DetailSummaryMP == mp and SUI_DetailSummaryLevel == level and SUI_DetailSummaryPoints == points and SUI_DetailSummaryLife == life and SUI_DetailSummaryMaxLife == maxLife and SUI_DetailSummaryMana == mana and SUI_DetailSummaryMaxMana == maxMana and SUI_DetailSummaryKills == kills and SUI_DetailSummaryDeaths == deaths and SUI_DetailSummaryMinDamage == minDamage and SUI_DetailSummaryMaxDamage == maxDamage and SUI_DetailSummaryXPCurrent == xpCurrent and SUI_DetailSummaryXPRequired == xpRequired and SUI_DetailSummaryAttackSpeedHash == attackSpeedHash and SUI_DetailSummaryClassHash == classHash and SUI_DetailSummaryRoleHash == roleHash and SUI_DetailSummaryFactionHash == factionHash then
         return
     endif
 
@@ -1025,19 +1210,18 @@ private function SUI_UpdateDetailSummary takes player whichPlayer, unit u return
     set SUI_DetailSummaryDeaths = deaths
     set SUI_DetailSummaryMinDamage = minDamage
     set SUI_DetailSummaryMaxDamage = maxDamage
+    set SUI_DetailSummaryXPCurrent = xpCurrent
+    set SUI_DetailSummaryXPRequired = xpRequired
     set SUI_DetailSummaryAttackSpeedHash = attackSpeedHash
     set SUI_DetailSummaryClassHash = classHash
     set SUI_DetailSummaryRoleHash = roleHash
+    set SUI_DetailSummaryFactionHash = factionHash
     call SUI_SetDetailSummaryRow(1, "|cffffcc00Status|r", SUI_GetStatusText(u), "|cffffcc00Level|r", "|cffffffff" + SUI_GetLevelText(u) + "|r")
     call SUI_SetDetailSummaryRow(2, "|cffffcc00Hitpoints|r", "|cffffffff" + I2S(life) + " / " + I2S(maxLife) + "|r", "|cffffcc00Mana|r", "|cffffffff" + I2S(mana) + " / " + I2S(maxMana) + "|r")
     call SUI_SetDetailSummaryRow(3, "|cffffcc00Kills|r", "|cffffffff" + I2S(kills) + "|r", "|cffffcc00Deaths|r", "|cffffffff" + I2S(deaths) + "|r")
     call SUI_SetDetailSummaryRow(4, "|cffffcc00Damage|r", "|cffffffff" + I2S(minDamage) + " - " + I2S(maxDamage) + "|r", "|cffffcc00Atk Speed|r", "|cffffffff" + attackSpeedText + "|r")
     call SUI_SetDetailSummaryRow(5, "|cffffcc00Class|r", SUI_ColorizeClassText(classText), "|cffffcc00Type|r", SUI_ColorizeRoleText(roleText))
-    if points > 0 then
-        call SUI_SetDetailSummaryRow(6, "|cffffcc00Points|r", "|cffffffff" + I2S(points) + "|r", "", "")
-    else
-        call SUI_SetDetailSummaryRow(6, "", "", "", "")
-    endif
+    call SUI_SetDetailSummaryRow(6, "|cffffcc00Faction|r", "|cffffffff" + factionText + "|r", "|cffffcc00Ability Pts|r", "|cffffffff" + I2S(points) + "|r")
 endfunction
 
 private function SUI_UpdateDetail takes player whichPlayer, boolean refreshStats returns nothing
@@ -1078,8 +1262,8 @@ private function SUI_UpdateDetail takes player whichPlayer, boolean refreshStats
             set headerText = SUI_GetKindLabel(kind) + " " + SUI_GetDisplayName(u)
             call BlzFrameSetTexture(SUI_DetailIcon, SUI_GetUnitIconPath(u), 0, true)
             call BlzFrameSetText(SUI_DetailTitle, headerText)
-            call BlzFrameSetText(SUI_DetailValue, "Level " + I2S(level))
         endif
+        call BlzFrameSetText(SUI_DetailValue, "Level " + I2S(level) + " | XP " + SUI_GetXPText(u))
         call BlzFrameSetVisible(SUI_AbilitiesButton, true)
     endif
     call SUI_UpdateDetailSummary(whichPlayer, u)
@@ -1100,6 +1284,7 @@ private function SUI_Update takes player whichPlayer, boolean refreshStats retur
     endif
 
     call SUI_UpdateRows(whichPlayer)
+    call SUI_UpdatePartyHeader(whichPlayer)
     call SUI_UpdateDetail(whichPlayer, refreshStats)
 endfunction
 
@@ -1140,12 +1325,19 @@ public function Hide takes nothing returns nothing
 endfunction
 
 private function SUI_CloseAction takes nothing returns nothing
+    set SUI_ReturnToStatsLite = false
     call Hide()
 endfunction
 
 private function SUI_ReturnAction takes nothing returns nothing
+    local boolean returnToStatsLite = SUI_ReturnToStatsLite
+    set SUI_ReturnToStatsLite = false
     call Hide()
-    call MasterUI_Show()
+    if returnToStatsLite then
+        call StatsLiteUI_ShowLastState()
+    else
+        call MasterUI_Show()
+    endif
 endfunction
 
 private function SUI_AbilitiesAction takes nothing returns nothing
@@ -1155,9 +1347,14 @@ private function SUI_AbilitiesAction takes nothing returns nothing
     endif
 endfunction
 
-private function SUI_LiteConfigAction takes nothing returns nothing
+private function SUI_MonitorAction takes nothing returns nothing
+    set SUI_ReturnToStatsLite = true
     call Hide()
-    call StatsLiteUI_ShowConfig()
+    call StatsLiteUI_ShowLastState()
+endfunction
+
+private function SUI_InfoAction takes nothing returns nothing
+    call Companions_ShowCompanionLimitInfo()
 endfunction
 
 private function SUI_RowAction takes nothing returns nothing
@@ -1205,7 +1402,7 @@ endfunction
 
 private function SUI_CreateFrames takes nothing returns nothing
     local integer rowIndex = 1
-    local real rowTopOffset = -0.012
+    local real rowTopOffset = -0.052
     local real rowHeight = 0.033
     local real rowGap = 0.003
     local integer summaryRow = 1
@@ -1260,6 +1457,27 @@ private function SUI_CreateFrames takes nothing returns nothing
     call BlzTriggerRegisterFrameEvent(SUI_WheelTrigger, SUI_ListScroll, FRAMEEVENT_MOUSE_WHEEL)
     call BlzTriggerRegisterFrameEvent(SUI_WheelTrigger, SUI_LeftPane, FRAMEEVENT_MOUSE_WHEEL)
 
+    set SUI_MonitorButton = BlzCreateFrameByType("GLUETEXTBUTTON", "StatsUIMonitor", SUI_LeftPane, "ScriptDialogButton", 0)
+    call BlzFrameSetSize(SUI_MonitorButton, 0.066, 0.022)
+    call BlzFrameSetText(SUI_MonitorButton, "Monitor")
+    call BlzFrameSetPoint(SUI_MonitorButton, FRAMEPOINT_TOPLEFT, SUI_LeftPane, FRAMEPOINT_TOPLEFT, 0.006, -0.006)
+    call BlzTriggerRegisterFrameEvent(SUI_MonitorTrigger, SUI_MonitorButton, FRAMEEVENT_CONTROL_CLICK)
+    call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_MonitorButton, FRAMEEVENT_CONTROL_CLICK)
+
+    set SUI_InfoButton = BlzCreateFrameByType("GLUETEXTBUTTON", "StatsUICompanionInfo", SUI_LeftPane, "ScriptDialogButton", 0)
+    call BlzFrameSetSize(SUI_InfoButton, 0.024, 0.022)
+    call BlzFrameSetText(SUI_InfoButton, "?")
+    call BlzFrameSetPoint(SUI_InfoButton, FRAMEPOINT_TOPRIGHT, SUI_LeftPane, FRAMEPOINT_TOPRIGHT, -0.006, -0.006)
+    call BlzTriggerRegisterFrameEvent(SUI_InfoTrigger, SUI_InfoButton, FRAMEEVENT_CONTROL_CLICK)
+    call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_InfoButton, FRAMEEVENT_CONTROL_CLICK)
+
+    set SUI_PartyText = BlzCreateFrameByType("TEXT", "StatsUIPartyText", SUI_LeftPane, "", 0)
+    call BlzFrameSetPoint(SUI_PartyText, FRAMEPOINT_TOPLEFT, SUI_LeftPane, FRAMEPOINT_TOPLEFT, 0.006, -0.032)
+    call BlzFrameSetSize(SUI_PartyText, 0.150, 0.014)
+    call BlzFrameSetTextAlignment(SUI_PartyText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
+    call BlzFrameSetScale(SUI_PartyText, 0.70)
+    call BlzFrameSetEnable(SUI_PartyText, false)
+
     set SUI_RightPane = BlzCreateFrameByType("BACKDROP", "StatsUIRightPane", SUI_Parent, "", 0)
     call BlzFrameSetTexture(SUI_RightPane, SUI_PanelTexture, 0, true)
     call BlzFrameSetPoint(SUI_RightPane, FRAMEPOINT_TOPLEFT, SUI_LeftPane, FRAMEPOINT_TOPRIGHT, 0.012, 0.0)
@@ -1297,13 +1515,6 @@ private function SUI_CreateFrames takes nothing returns nothing
     call BlzTriggerRegisterFrameEvent(SUI_AbilitiesTrigger, SUI_AbilitiesButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_AbilitiesButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzFrameSetVisible(SUI_AbilitiesButton, false)
-
-    set SUI_LiteConfigButton = BlzCreateFrameByType("GLUETEXTBUTTON", "StatsUILiteConfig", SUI_RightPane, "ScriptDialogButton", 0)
-    call BlzFrameSetSize(SUI_LiteConfigButton, 0.078, 0.022)
-    call BlzFrameSetText(SUI_LiteConfigButton, "Lite Config")
-    call BlzFrameSetPoint(SUI_LiteConfigButton, FRAMEPOINT_TOPRIGHT, SUI_AbilitiesButton, FRAMEPOINT_TOPLEFT, -0.008, 0.0)
-    call BlzTriggerRegisterFrameEvent(SUI_LiteConfigTrigger, SUI_LiteConfigButton, FRAMEEVENT_CONTROL_CLICK)
-    call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_LiteConfigButton, FRAMEEVENT_CONTROL_CLICK)
 
     loop
         exitwhen summaryRow > SUI_SUMMARY_ROWS
@@ -1409,7 +1620,7 @@ private function SUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetVisible(SUI_Parent, false)
 endfunction
 
-public function Show takes nothing returns nothing
+private function SUI_ShowInternal takes nothing returns nothing
     local player p = GetLocalPlayer()
     call SUI_InvalidateDetailSummaryCache()
     call SUI_InvalidateDetailStatsCache()
@@ -1419,6 +1630,16 @@ public function Show takes nothing returns nothing
     call SUI_SetRefreshActive(true)
     call BlzFrameSetVisible(SUI_Parent, true)
     set p = null
+endfunction
+
+public function Show takes nothing returns nothing
+    set SUI_ReturnToStatsLite = false
+    call SUI_ShowInternal()
+endfunction
+
+public function ShowFromStatsLite takes nothing returns nothing
+    set SUI_ReturnToStatsLite = true
+    call SUI_ShowInternal()
 endfunction
 
 public function Toggle takes nothing returns nothing
@@ -1433,6 +1654,10 @@ public function IsVisible takes nothing returns boolean
     return SUI_Parent != null and BlzFrameIsVisible(SUI_Parent)
 endfunction
 
+public function GetRequiredXPForUnit takes unit whichUnit returns integer
+    return SUI_GetCachedXPRequiredForUnit(whichUnit)
+endfunction
+
 public function Init takes nothing returns nothing
     if SUI_Initialized then
         return
@@ -1440,6 +1665,7 @@ public function Init takes nothing returns nothing
     set SUI_Initialized = true
 
     set SUI_ButtonRow = Table.create()
+    call SUI_EnsureXPRequiredCache()
 
     set SUI_CloseTrigger = CreateTrigger()
     call TriggerAddAction(SUI_CloseTrigger, function SUI_CloseAction)
@@ -1450,8 +1676,11 @@ public function Init takes nothing returns nothing
     set SUI_AbilitiesTrigger = CreateTrigger()
     call TriggerAddAction(SUI_AbilitiesTrigger, function SUI_AbilitiesAction)
 
-    set SUI_LiteConfigTrigger = CreateTrigger()
-    call TriggerAddAction(SUI_LiteConfigTrigger, function SUI_LiteConfigAction)
+    set SUI_MonitorTrigger = CreateTrigger()
+    call TriggerAddAction(SUI_MonitorTrigger, function SUI_MonitorAction)
+
+    set SUI_InfoTrigger = CreateTrigger()
+    call TriggerAddAction(SUI_InfoTrigger, function SUI_InfoAction)
 
     set SUI_RowTrigger = CreateTrigger()
     call TriggerAddAction(SUI_RowTrigger, function SUI_RowAction)
