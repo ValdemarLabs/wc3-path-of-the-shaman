@@ -37,12 +37,15 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         private constant real SLUI_REFRESH_INTERVAL = 0.35
         private constant integer SLUI_MAX_ROWS = 10
 
-        private constant real SLUI_PANEL_LEFT = 0.555
+        // CHANGE: The monitor is now anchored from the right edge and sized by width.
+        // This keeps the panel fixed to the right side even when minimized/maximized,
+        // instead of depending on separate left/right absolute coordinates.
         private constant real SLUI_PANEL_RIGHT = 0.798
+        private constant real SLUI_PANEL_WIDTH = 0.243
         private constant real SLUI_PANEL_TOP = 0.565
         private constant real SLUI_PANEL_BOTTOM = 0.325
-        private constant real SLUI_MIN_LEFT = 0.555
         private constant real SLUI_MIN_RIGHT = 0.798
+        private constant real SLUI_MIN_WIDTH = 0.243
         private constant real SLUI_MIN_BOTTOM = 0.522
         private constant real SLUI_BAR_WIDTH = 0.086
 
@@ -65,6 +68,8 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         private constant integer SLUI_UNIT_SHADOWCLAW = 'n655'
 
         private boolean SLUI_Initialized = false
+        // CHANGE: Keep default false. Init creates the hidden frame tree only;
+        // visibility is controlled by explicit API calls such as StatsLiteUI_Show().
         private boolean SLUI_DefaultVisible = false
         private boolean SLUI_Minimized = false
         private boolean SLUI_ConfigVisible = false
@@ -114,6 +119,8 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
 
         private trigger SLUI_ButtonTrigger = null
         private trigger SLUI_ClearFocusTrigger = null
+        // CHANGE: Kept for compatibility/readability, but Init no longer schedules
+        // a delayed default show trigger. This prevents preload/init-time display.
         private trigger SLUI_InitTrigger = null
         private timer SLUI_RefreshTimer = null
 
@@ -540,20 +547,27 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         set whichPlayer = null
     endfunction
 
+    // CHANGE: Layout helper anchors the panel by its right edge.
+    // The left edge is derived from right - width, so the monitor remains fixed
+    // against the right-side UI position without maintaining duplicate left constants.
+    private function SLUI_SetPanelAbsRect takes real right, real width, real top, real bottom returns nothing
+        call BlzFrameClearAllPoints(SLUI_Parent)
+        call BlzFrameSetAbsPoint(SLUI_Parent, FRAMEPOINT_TOPRIGHT, right, top)
+        call BlzFrameSetAbsPoint(SLUI_Parent, FRAMEPOINT_BOTTOMLEFT, right - width, bottom)
+    endfunction
+
     private function SLUI_ApplyLayout takes player whichPlayer returns nothing
         if GetLocalPlayer() != whichPlayer or SLUI_Parent == null then
             set whichPlayer = null
             return
         endif
 
-        call BlzFrameClearAllPoints(SLUI_Parent)
+        // CHANGE: Use right-anchored layout in both minimized and maximized states.
         if SLUI_Minimized then
-            call BlzFrameSetAbsPoint(SLUI_Parent, FRAMEPOINT_TOPLEFT, SLUI_MIN_LEFT, SLUI_PANEL_TOP)
-            call BlzFrameSetAbsPoint(SLUI_Parent, FRAMEPOINT_BOTTOMRIGHT, SLUI_MIN_RIGHT, SLUI_MIN_BOTTOM)
+            call SLUI_SetPanelAbsRect(SLUI_MIN_RIGHT, SLUI_MIN_WIDTH, SLUI_PANEL_TOP, SLUI_MIN_BOTTOM)
             call BlzFrameSetText(SLUI_MinimizeButton, "+")
         else
-            call BlzFrameSetAbsPoint(SLUI_Parent, FRAMEPOINT_TOPLEFT, SLUI_PANEL_LEFT, SLUI_PANEL_TOP)
-            call BlzFrameSetAbsPoint(SLUI_Parent, FRAMEPOINT_BOTTOMRIGHT, SLUI_PANEL_RIGHT, SLUI_PANEL_BOTTOM)
+            call SLUI_SetPanelAbsRect(SLUI_PANEL_RIGHT, SLUI_PANEL_WIDTH, SLUI_PANEL_TOP, SLUI_PANEL_BOTTOM)
             call BlzFrameSetText(SLUI_MinimizeButton, "-")
         endif
 
@@ -737,6 +751,8 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         call BlzFrameSetSize(buttonFrame, width, 0.022)
         call BlzFrameSetText(buttonFrame, label)
         call BlzFrameSetPoint(buttonFrame, FRAMEPOINT_TOPRIGHT, anchor, FRAMEPOINT_TOPLEFT, x, 0.0)
+        // CHANGE: Header buttons must render above the background frame.
+        call BlzFrameSetLevel(buttonFrame, 2)
         set anchor = null
         return buttonFrame
     endfunction
@@ -746,6 +762,8 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         call BlzFrameSetSize(SLUI_ConfigToggleButton[index], 0.100, 0.028)
         call BlzFrameSetPoint(SLUI_ConfigToggleButton[index], FRAMEPOINT_TOPLEFT, SLUI_ConfigPane, FRAMEPOINT_TOPLEFT, x, y)
         call BlzFrameSetText(SLUI_ConfigToggleButton[index], label)
+        // CHANGE: Config buttons render above config pane background.
+        call BlzFrameSetLevel(SLUI_ConfigToggleButton[index], 2)
         call SLUI_RegisterButton(SLUI_ConfigToggleButton[index], actionId)
     endfunction
 
@@ -758,6 +776,8 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         call BlzFrameSetSize(SLUI_RowButton[rowIndex], 0.230, 0.026)
         call BlzFrameSetAlpha(SLUI_RowButton[rowIndex], 0)
         call BlzFrameSetVertexColor(SLUI_RowButton[rowIndex], BlzConvertColor(0, 10, 10, 10))
+        // CHANGE: Row container stays above the main backdrop; row children are created under it.
+        call BlzFrameSetLevel(SLUI_RowButton[rowIndex], 1)
 
         set SLUI_RowIcon[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRowIcon" + I2S(rowIndex), SLUI_RowButton[rowIndex], "IconButtonTemplate", 0)
         call BlzFrameSetPoint(SLUI_RowIcon[rowIndex], FRAMEPOINT_LEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_LEFT, 0.006, 0.0)
@@ -830,17 +850,26 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         local integer rowIndex = 1
         local real rowY = -0.006
 
-        set SLUI_Parent = BlzCreateFrameByType("BACKDROP", "StatsLiteUIPanel", BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "EscMenuBackdrop", 0)
-        call BlzFrameSetAbsPoint(SLUI_Parent, FRAMEPOINT_TOPLEFT, SLUI_PANEL_LEFT, SLUI_PANEL_TOP)
-        call BlzFrameSetAbsPoint(SLUI_Parent, FRAMEPOINT_BOTTOMRIGHT, SLUI_PANEL_RIGHT, SLUI_PANEL_BOTTOM)
+        // CHANGE: The root is now a plain FRAME, not a visual BACKDROP.
+        // This makes SLUI_Parent an invisible container. The actual panel surface is
+        // SLUI_Backdrop below, so the backdrop stays behind title/buttons/rows.
+        set SLUI_Parent = BlzCreateFrameByType("FRAME", "StatsLiteUIPanel", BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "", 0)
+        call SLUI_SetPanelAbsRect(SLUI_PANEL_RIGHT, SLUI_PANEL_WIDTH, SLUI_PANEL_TOP, SLUI_PANEL_BOTTOM)
 
+        // CHANGE: Hide immediately after creation to prevent preload/init flicker.
+        call BlzFrameSetVisible(SLUI_Parent, false)
+        call BlzFrameSetLevel(SLUI_Parent, 0)
+
+        // CHANGE: Visual background is a child of the invisible parent.
+        // It is explicitly kept at level 0 while interactive/text children are
+        // created after it, so heroes/pet/companion row content renders above it.
         set SLUI_Backdrop = BlzCreateFrameByType("BACKDROP", "StatsLiteUIBackdrop", SLUI_Parent, "", 0)
         call BlzFrameSetTexture(SLUI_Backdrop, SLUI_PanelTexture, 0, false)
         call BlzFrameSetPoint(SLUI_Backdrop, FRAMEPOINT_TOPLEFT, SLUI_Parent, FRAMEPOINT_TOPLEFT, 0.006, -0.006)
         call BlzFrameSetPoint(SLUI_Backdrop, FRAMEPOINT_BOTTOMRIGHT, SLUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.006, 0.006)
-        call BlzFrameSetAlpha(SLUI_Backdrop, 0)
-        call BlzFrameSetVertexColor(SLUI_Backdrop, BlzConvertColor(0, 0, 0, 0))
+        call BlzFrameSetVertexColor(SLUI_Backdrop, BlzConvertColor(145, 0, 0, 0))
         call BlzFrameSetEnable(SLUI_Backdrop, false)
+        call BlzFrameSetLevel(SLUI_Backdrop, 0)
 
         set SLUI_Title = BlzCreateFrameByType("TEXT", "StatsLiteUITitle", SLUI_Parent, "", 0)
         call BlzFrameSetPoint(SLUI_Title, FRAMEPOINT_TOPLEFT, SLUI_Parent, FRAMEPOINT_TOPLEFT, 0.014, -0.012)
@@ -848,11 +877,15 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         call BlzFrameSetTextAlignment(SLUI_Title, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(SLUI_Title, 0.95)
         call BlzFrameSetEnable(SLUI_Title, false)
+        // CHANGE: Header text is above the panel backdrop.
+        call BlzFrameSetLevel(SLUI_Title, 2)
 
         set SLUI_CloseButton = BlzCreateFrameByType("GLUETEXTBUTTON", "StatsLiteUIClose", SLUI_Parent, "ScriptDialogButton", 0)
         call BlzFrameSetSize(SLUI_CloseButton, 0.022, 0.022)
         call BlzFrameSetText(SLUI_CloseButton, "X")
         call BlzFrameSetPoint(SLUI_CloseButton, FRAMEPOINT_TOPRIGHT, SLUI_Parent, FRAMEPOINT_TOPRIGHT, -0.010, -0.010)
+        // CHANGE: Close button must render above the background frame.
+        call BlzFrameSetLevel(SLUI_CloseButton, 2)
         call SLUI_RegisterButton(SLUI_CloseButton, SLUI_ACTION_CLOSE)
 
         set SLUI_MinimizeButton = SLUI_CreateHeaderButton("StatsLiteUIMinimize", "-", 0.022, SLUI_CloseButton, -0.004)
@@ -863,6 +896,8 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         call BlzFrameSetTexture(SLUI_ConfigIcon, SLUI_ConfigIconPath, 0, true)
         call BlzFrameSetAllPoints(SLUI_ConfigIcon, SLUI_ConfigButton)
         call BlzFrameSetEnable(SLUI_ConfigIcon, false)
+        // CHANGE: Config icon is visual content above its button/backdrop.
+        call BlzFrameSetLevel(SLUI_ConfigIcon, 3)
         call SLUI_RegisterButton(SLUI_ConfigButton, SLUI_ACTION_CONFIG)
 
         set SLUI_InfoButton = SLUI_CreateHeaderButton("StatsLiteUIInfo", "?", 0.022, SLUI_ConfigButton, -0.004)
@@ -875,6 +910,8 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         call BlzFrameSetPoint(SLUI_RowPane, FRAMEPOINT_TOPLEFT, SLUI_Parent, FRAMEPOINT_TOPLEFT, 0.008, -0.040)
         call BlzFrameSetPoint(SLUI_RowPane, FRAMEPOINT_BOTTOMRIGHT, SLUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.008, 0.024)
         call BlzFrameSetEnable(SLUI_RowPane, false)
+        // CHANGE: Rows render above the panel backdrop.
+        call BlzFrameSetLevel(SLUI_RowPane, 1)
 
         loop
             exitwhen rowIndex > SLUI_MAX_ROWS
@@ -889,12 +926,16 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         call BlzFrameSetTextAlignment(SLUI_FooterText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(SLUI_FooterText, 0.65)
         call BlzFrameSetEnable(SLUI_FooterText, false)
+        // CHANGE: Footer text is above the panel backdrop.
+        call BlzFrameSetLevel(SLUI_FooterText, 2)
 
         set SLUI_ConfigPane = BlzCreateFrameByType("BACKDROP", "StatsLiteUIConfigPane", SLUI_Parent, "", 0)
         call BlzFrameSetTexture(SLUI_ConfigPane, SLUI_PanelTexture, 0, false)
         call BlzFrameSetPoint(SLUI_ConfigPane, FRAMEPOINT_TOPLEFT, SLUI_Parent, FRAMEPOINT_TOPLEFT, 0.014, -0.044)
         call BlzFrameSetPoint(SLUI_ConfigPane, FRAMEPOINT_BOTTOMRIGHT, SLUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.014, 0.016)
         call BlzFrameSetVertexColor(SLUI_ConfigPane, BlzConvertColor(220, 6, 6, 6))
+        // CHANGE: Config pane is above the main backdrop and below its own controls.
+        call BlzFrameSetLevel(SLUI_ConfigPane, 1)
 
         set SLUI_ConfigTitle = BlzCreateFrameByType("TEXT", "StatsLiteUIConfigTitle", SLUI_ConfigPane, "", 0)
         call BlzFrameSetPoint(SLUI_ConfigTitle, FRAMEPOINT_TOPLEFT, SLUI_ConfigPane, FRAMEPOINT_TOPLEFT, 0.010, -0.010)
@@ -903,6 +944,8 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         call BlzFrameSetScale(SLUI_ConfigTitle, 0.82)
         call BlzFrameSetText(SLUI_ConfigTitle, "|cffffcc00Display|r")
         call BlzFrameSetEnable(SLUI_ConfigTitle, false)
+        // CHANGE: Config title is above config pane background.
+        call BlzFrameSetLevel(SLUI_ConfigTitle, 2)
 
         call SLUI_CreateConfigButton(1, "Heroes", SLUI_ACTION_SHOW_HEROES, 0.012, -0.036)
         call SLUI_CreateConfigButton(2, "Pet", SLUI_ACTION_SHOW_PET, 0.122, -0.036)
@@ -915,12 +958,18 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         call BlzFrameSetSize(SLUI_ConfigMonitorButton, 0.210, 0.030)
         call BlzFrameSetPoint(SLUI_ConfigMonitorButton, FRAMEPOINT_BOTTOM, SLUI_ConfigPane, FRAMEPOINT_BOTTOM, 0.0, 0.014)
         call BlzFrameSetText(SLUI_ConfigMonitorButton, "Show Monitor")
+        // CHANGE: Config monitor button renders above config pane background.
+        call BlzFrameSetLevel(SLUI_ConfigMonitorButton, 2)
         call SLUI_RegisterButton(SLUI_ConfigMonitorButton, SLUI_ACTION_MONITOR)
 
         call BlzFrameSetVisible(SLUI_ConfigPane, false)
         call BlzFrameSetVisible(SLUI_Parent, false)
     endfunction
 
+    // CHANGE: This function is intentionally left unused.
+    // Older versions scheduled it from Init, which could make the monitor appear
+    // during preload/startup if SLUI_DefaultVisible was true or stale code existed.
+    // The current Init does not call this; external API controls visibility.
     private function SLUI_DelayedShow takes nothing returns nothing
         if SLUI_DefaultVisible then
             call Show()
@@ -945,9 +994,12 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
 
         set SLUI_RefreshTimer = CreateTimer()
 
-        set SLUI_InitTrigger = CreateTrigger()
-        call TriggerRegisterTimerEvent(SLUI_InitTrigger, 1.00, false)
-        call TriggerAddAction(SLUI_InitTrigger, function SLUI_DelayedShow)
+        // CHANGE: Do not schedule SLUI_DelayedShow here.
+        // Init now only creates the hidden frame tree and refresh timer.
+        // Showing the monitor must happen through explicit API calls:
+        //   call StatsLiteUI_Show()
+        //   call StatsLiteUI_ShowConfig()
+        //   call StatsLiteUI_Toggle()
     endfunction
 
     public function AutoInit takes nothing returns nothing
