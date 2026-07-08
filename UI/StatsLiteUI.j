@@ -15,15 +15,19 @@
 
     How to install:
     Import after MasterUI, QuestGiver, Companions, and Pet. StatsUI can require
-    this library to open the Lite configuration section.
+    this library for the party monitor handoff and return flow.
 
     API:
     call StatsLiteUI_Show()
     call StatsLiteUI_ShowConfig()
     call StatsLiteUI_Hide()
+    call StatsLiteUI_HideForCinematic()
+    call StatsLiteUI_ShowAfterCinematic()
+    call StatsLiteUI_ShowLastState()
     call StatsLiteUI_Toggle()
     call StatsLiteUI_Minimize()
     call StatsLiteUI_Maximize()
+    call StatsLiteUI_IsMinimized() returns boolean
     call StatsLiteUI_Refresh()
 
 **/
@@ -33,18 +37,21 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
         private constant real SLUI_REFRESH_INTERVAL = 0.35
         private constant integer SLUI_MAX_ROWS = 10
 
-        private constant real SLUI_PANEL_LEFT = 0.014
-        private constant real SLUI_PANEL_RIGHT = 0.268
-        private constant real SLUI_PANEL_TOP = 0.562
-        private constant real SLUI_PANEL_BOTTOM = 0.252
-        private constant real SLUI_MIN_RIGHT = 0.220
-        private constant real SLUI_MIN_BOTTOM = 0.520
+        private constant real SLUI_PANEL_LEFT = 0.540
+        private constant real SLUI_PANEL_RIGHT = 0.790
+        private constant real SLUI_PANEL_TOP = 0.565
+        private constant real SLUI_PANEL_BOTTOM = 0.325
+        private constant real SLUI_MIN_LEFT = 0.540
+        private constant real SLUI_MIN_RIGHT = 0.790
+        private constant real SLUI_MIN_BOTTOM = 0.522
+        private constant real SLUI_BAR_WIDTH = 0.086
 
         private constant integer SLUI_ACTION_MINIMIZE = 1
         private constant integer SLUI_ACTION_STATS = 2
         private constant integer SLUI_ACTION_CONFIG = 3
         private constant integer SLUI_ACTION_CLOSE = 4
         private constant integer SLUI_ACTION_MONITOR = 5
+        private constant integer SLUI_ACTION_INFO = 6
         private constant integer SLUI_ACTION_SHOW_HEROES = 10
         private constant integer SLUI_ACTION_SHOW_PET = 11
         private constant integer SLUI_ACTION_SHOW_COMPANIONS = 12
@@ -74,6 +81,8 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
         private framehandle SLUI_MinimizeButton = null
         private framehandle SLUI_StatsButton = null
         private framehandle SLUI_ConfigButton = null
+        private framehandle SLUI_ConfigIcon = null
+        private framehandle SLUI_InfoButton = null
         private framehandle SLUI_CloseButton = null
         private framehandle SLUI_RowPane = null
         private framehandle SLUI_ConfigPane = null
@@ -111,6 +120,7 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
         private string SLUI_PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
         private string SLUI_DefaultUnitIcon = "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp"
         private string SLUI_DefaultPetIcon = "ReplaceableTextures\\CommandButtons\\BTNAnimalWarTraining.blp"
+        private string SLUI_ConfigIconPath = "ReplaceableTextures\\CommandButtons\\BTNengineering.blp"
     endglobals
 
     private function SLUI_OnOff takes boolean flag returns string
@@ -408,8 +418,8 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
             set SLUI_RowDeadState[rowIndex] = dead
             set SLUI_RowHPValue[rowIndex] = hp
             set SLUI_RowMPValue[rowIndex] = mp
-            call SLUI_SetBar(SLUI_RowHPFill[rowIndex], SLUI_RowHPText[rowIndex], 0.144, 0.008, hp, SLUI_GetHealthColor(hp), "HP")
-            call SLUI_SetBar(SLUI_RowMPFill[rowIndex], SLUI_RowMPText[rowIndex], 0.144, 0.006, mp, BlzConvertColor(215, 48, 116, 255), "MP")
+            call SLUI_SetBar(SLUI_RowHPFill[rowIndex], SLUI_RowHPText[rowIndex], SLUI_BAR_WIDTH, 0.008, hp, SLUI_GetHealthColor(hp), "HP")
+            call SLUI_SetBar(SLUI_RowMPFill[rowIndex], SLUI_RowMPText[rowIndex], SLUI_BAR_WIDTH, 0.006, mp, BlzConvertColor(215, 48, 116, 255), "MP")
         endif
 
         call BlzFrameSetVisible(SLUI_RowMPBack[rowIndex], SLUI_ShowMana)
@@ -443,17 +453,17 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
     endfunction
 
     private function SLUI_UpdateTitle takes nothing returns nothing
-        local integer total = SLUI_GetTrackedUnitCount()
         if SLUI_ConfigVisible then
             call BlzFrameSetText(SLUI_Title, "|cffffe4a3Stats Lite|r")
         elseif SLUI_Minimized then
-            call BlzFrameSetText(SLUI_Title, "|cffffe4a3Party|r |cffbfbfbf(" + I2S(total) + ")|r")
+            call BlzFrameSetText(SLUI_Title, "|cffffe4a3Party|r |cffbfbfbf" + I2S(udg_CompanionCount) + "/" + I2S(Companions_GetCompanionLimit()) + "|r")
         else
-            call BlzFrameSetText(SLUI_Title, "|cffffe4a3Party|r")
+            call BlzFrameSetText(SLUI_Title, "|cffffe4a3Party|r |cffbfbfbf" + I2S(udg_CompanionCount) + "/" + I2S(Companions_GetCompanionLimit()) + "|r")
         endif
     endfunction
 
     private function SLUI_UpdateFooter takes integer total returns nothing
+        local string statusText
         if SLUI_FooterText == null then
             return
         endif
@@ -461,9 +471,10 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
         if SLUI_ConfigVisible or SLUI_Minimized then
             call BlzFrameSetText(SLUI_FooterText, "")
         elseif total > SLUI_MAX_ROWS then
-            call BlzFrameSetText(SLUI_FooterText, "|cffbfbfbf+" + I2S(total - SLUI_MAX_ROWS) + " more|r")
+            call BlzFrameSetText(SLUI_FooterText, "|cffbfbfbf" + Companions_GetCompanionStatusText() + " | +" + I2S(total - SLUI_MAX_ROWS) + " more|r")
         else
-            call BlzFrameSetText(SLUI_FooterText, "|cffbfbfbf" + I2S(total) + " tracked|r")
+            set statusText = Companions_GetCompanionStatusText()
+            call BlzFrameSetText(SLUI_FooterText, "|cffbfbfbf" + statusText + " | " + I2S(total) + " tracked|r")
         endif
     endfunction
 
@@ -537,7 +548,7 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
 
         call BlzFrameClearAllPoints(SLUI_Parent)
         if SLUI_Minimized then
-            call BlzFrameSetAbsPoint(SLUI_Parent, FRAMEPOINT_TOPLEFT, SLUI_PANEL_LEFT, SLUI_PANEL_TOP)
+            call BlzFrameSetAbsPoint(SLUI_Parent, FRAMEPOINT_TOPLEFT, SLUI_MIN_LEFT, SLUI_PANEL_TOP)
             call BlzFrameSetAbsPoint(SLUI_Parent, FRAMEPOINT_BOTTOMRIGHT, SLUI_MIN_RIGHT, SLUI_MIN_BOTTOM)
             call BlzFrameSetText(SLUI_MinimizeButton, "+")
         else
@@ -601,6 +612,10 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
         endif
     endfunction
 
+    public function HideForCinematic takes nothing returns nothing
+        call Hide()
+    endfunction
+
     public function Maximize takes nothing returns nothing
         set SLUI_Minimized = false
         call SLUI_ApplyLayout(GetLocalPlayer())
@@ -621,7 +636,7 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
         endif
     endfunction
 
-    public function Show takes nothing returns nothing
+    public function ShowLastState takes nothing returns nothing
         set SLUI_ConfigVisible = false
         call SLUI_SetRefreshActive(true)
         call SLUI_ApplyLayout(GetLocalPlayer())
@@ -629,6 +644,18 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
         if SLUI_Parent != null then
             call BlzFrameSetVisible(SLUI_Parent, true)
         endif
+    endfunction
+
+    public function ShowAfterCinematic takes nothing returns nothing
+        call ShowLastState()
+    endfunction
+
+    public function Show takes nothing returns nothing
+        call ShowLastState()
+    endfunction
+
+    public function IsMinimized takes nothing returns boolean
+        return SLUI_Minimized
     endfunction
 
     public function ShowConfig takes nothing returns nothing
@@ -655,8 +682,8 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
     endfunction
 
     private function SLUI_OpenStats takes nothing returns nothing
-        call Minimize()
-        call ExecuteFunc("StatsUI_Show")
+        call Hide()
+        call ExecuteFunc("StatsUI_ShowFromStatsLite")
     endfunction
 
     private function SLUI_ButtonClickAction takes nothing returns nothing
@@ -677,6 +704,8 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
             elseif actionId == SLUI_ACTION_MONITOR then
                 call Show()
                 call Maximize()
+            elseif actionId == SLUI_ACTION_INFO then
+                call Companions_ShowCompanionLimitInfo()
             elseif actionId == SLUI_ACTION_SHOW_HEROES then
                 set SLUI_ShowHeroes = not SLUI_ShowHeroes
             elseif actionId == SLUI_ACTION_SHOW_PET then
@@ -721,22 +750,22 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
     endfunction
 
     private function SLUI_CreateRow takes integer rowIndex, real y returns nothing
-        local real barLeft = 0.088
+        local real barLeft = 0.126
 
         set SLUI_RowButton[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRow" + I2S(rowIndex), SLUI_RowPane, "", 0)
         call BlzFrameSetTexture(SLUI_RowButton[rowIndex], SLUI_PanelTexture, 0, true)
         call BlzFrameSetPoint(SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowPane, FRAMEPOINT_TOPLEFT, 0.006, y)
         call BlzFrameSetSize(SLUI_RowButton[rowIndex], 0.230, 0.026)
-        call BlzFrameSetAlpha(SLUI_RowButton[rowIndex], 205)
-        call BlzFrameSetVertexColor(SLUI_RowButton[rowIndex], BlzConvertColor(205, 10, 10, 10))
+        call BlzFrameSetAlpha(SLUI_RowButton[rowIndex], 0)
+        call BlzFrameSetVertexColor(SLUI_RowButton[rowIndex], BlzConvertColor(0, 10, 10, 10))
 
         set SLUI_RowIcon[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRowIcon" + I2S(rowIndex), SLUI_RowButton[rowIndex], "IconButtonTemplate", 0)
-        call BlzFrameSetPoint(SLUI_RowIcon[rowIndex], FRAMEPOINT_LEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_LEFT, 0.004, 0.0)
+        call BlzFrameSetPoint(SLUI_RowIcon[rowIndex], FRAMEPOINT_LEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_LEFT, 0.006, 0.0)
         call BlzFrameSetSize(SLUI_RowIcon[rowIndex], 0.020, 0.020)
 
         set SLUI_RowName[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowName" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(SLUI_RowName[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.030, -0.002)
-        call BlzFrameSetSize(SLUI_RowName[rowIndex], 0.080, 0.012)
+        call BlzFrameSetPoint(SLUI_RowName[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.040, -0.002)
+        call BlzFrameSetSize(SLUI_RowName[rowIndex], 0.084, 0.012)
         call BlzFrameSetTextAlignment(SLUI_RowName[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(SLUI_RowName[rowIndex], 0.74)
         call BlzFrameSetEnable(SLUI_RowName[rowIndex], false)
@@ -749,8 +778,8 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
         call BlzFrameSetEnable(SLUI_RowLevel[rowIndex], false)
 
         set SLUI_RowState[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowState" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(SLUI_RowState[rowIndex], FRAMEPOINT_BOTTOMLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_BOTTOMLEFT, 0.030, 0.002)
-        call BlzFrameSetSize(SLUI_RowState[rowIndex], 0.052, 0.010)
+        call BlzFrameSetPoint(SLUI_RowState[rowIndex], FRAMEPOINT_BOTTOMLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_BOTTOMLEFT, 0.040, 0.002)
+        call BlzFrameSetSize(SLUI_RowState[rowIndex], 0.074, 0.010)
         call BlzFrameSetTextAlignment(SLUI_RowState[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(SLUI_RowState[rowIndex], 0.65)
         call BlzFrameSetEnable(SLUI_RowState[rowIndex], false)
@@ -758,7 +787,7 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
         set SLUI_RowHPBack[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRowHPBack" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
         call BlzFrameSetTexture(SLUI_RowHPBack[rowIndex], SLUI_PanelTexture, 0, false)
         call BlzFrameSetPoint(SLUI_RowHPBack[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, barLeft, -0.006)
-        call BlzFrameSetSize(SLUI_RowHPBack[rowIndex], 0.144, 0.008)
+        call BlzFrameSetSize(SLUI_RowHPBack[rowIndex], SLUI_BAR_WIDTH, 0.008)
         call BlzFrameSetVertexColor(SLUI_RowHPBack[rowIndex], BlzConvertColor(190, 36, 36, 36))
         call BlzFrameSetEnable(SLUI_RowHPBack[rowIndex], false)
 
@@ -777,7 +806,7 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
         set SLUI_RowMPBack[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRowMPBack" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
         call BlzFrameSetTexture(SLUI_RowMPBack[rowIndex], SLUI_PanelTexture, 0, false)
         call BlzFrameSetPoint(SLUI_RowMPBack[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowHPBack[rowIndex], FRAMEPOINT_BOTTOMLEFT, 0.0, -0.002)
-        call BlzFrameSetSize(SLUI_RowMPBack[rowIndex], 0.144, 0.006)
+        call BlzFrameSetSize(SLUI_RowMPBack[rowIndex], SLUI_BAR_WIDTH, 0.006)
         call BlzFrameSetVertexColor(SLUI_RowMPBack[rowIndex], BlzConvertColor(185, 26, 30, 52))
         call BlzFrameSetEnable(SLUI_RowMPBack[rowIndex], false)
 
@@ -809,8 +838,8 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
         call BlzFrameSetTexture(SLUI_Backdrop, SLUI_PanelTexture, 0, false)
         call BlzFrameSetPoint(SLUI_Backdrop, FRAMEPOINT_TOPLEFT, SLUI_Parent, FRAMEPOINT_TOPLEFT, 0.006, -0.006)
         call BlzFrameSetPoint(SLUI_Backdrop, FRAMEPOINT_BOTTOMRIGHT, SLUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.006, 0.006)
-        call BlzFrameSetAlpha(SLUI_Backdrop, 230)
-        call BlzFrameSetVertexColor(SLUI_Backdrop, BlzConvertColor(230, 0, 0, 0))
+        call BlzFrameSetAlpha(SLUI_Backdrop, 0)
+        call BlzFrameSetVertexColor(SLUI_Backdrop, BlzConvertColor(0, 0, 0, 0))
         call BlzFrameSetEnable(SLUI_Backdrop, false)
 
         set SLUI_Title = BlzCreateFrameByType("TEXT", "StatsLiteUITitle", SLUI_Parent, "", 0)
@@ -829,10 +858,17 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
         set SLUI_MinimizeButton = SLUI_CreateHeaderButton("StatsLiteUIMinimize", "-", 0.022, SLUI_CloseButton, -0.004)
         call SLUI_RegisterButton(SLUI_MinimizeButton, SLUI_ACTION_MINIMIZE)
 
-        set SLUI_ConfigButton = SLUI_CreateHeaderButton("StatsLiteUIConfig", "Cfg", 0.036, SLUI_MinimizeButton, -0.004)
+        set SLUI_ConfigButton = SLUI_CreateHeaderButton("StatsLiteUIConfig", "", 0.026, SLUI_MinimizeButton, -0.004)
+        set SLUI_ConfigIcon = BlzCreateFrameByType("BACKDROP", "StatsLiteUIConfigIcon", SLUI_ConfigButton, "", 0)
+        call BlzFrameSetTexture(SLUI_ConfigIcon, SLUI_ConfigIconPath, 0, true)
+        call BlzFrameSetAllPoints(SLUI_ConfigIcon, SLUI_ConfigButton)
+        call BlzFrameSetEnable(SLUI_ConfigIcon, false)
         call SLUI_RegisterButton(SLUI_ConfigButton, SLUI_ACTION_CONFIG)
 
-        set SLUI_StatsButton = SLUI_CreateHeaderButton("StatsLiteUIStats", "Stats", 0.046, SLUI_ConfigButton, -0.004)
+        set SLUI_InfoButton = SLUI_CreateHeaderButton("StatsLiteUIInfo", "?", 0.022, SLUI_ConfigButton, -0.004)
+        call SLUI_RegisterButton(SLUI_InfoButton, SLUI_ACTION_INFO)
+
+        set SLUI_StatsButton = SLUI_CreateHeaderButton("StatsLiteUIStats", "Stats", 0.046, SLUI_InfoButton, -0.004)
         call SLUI_RegisterButton(SLUI_StatsButton, SLUI_ACTION_STATS)
 
         set SLUI_RowPane = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRows", SLUI_Parent, "", 0)
