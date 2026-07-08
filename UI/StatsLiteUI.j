@@ -40,11 +40,11 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         // CHANGE: The monitor is now anchored from the right edge and sized by width.
         // This keeps the panel fixed to the right side even when minimized/maximized,
         // instead of depending on separate left/right absolute coordinates.
-        private constant real SLUI_PANEL_RIGHT = 0.798
+        private constant real SLUI_PANEL_RIGHT = 0.800 // CHANGE: pushed to the UI right edge
         private constant real SLUI_PANEL_WIDTH = 0.243
         private constant real SLUI_PANEL_TOP = 0.565
         private constant real SLUI_PANEL_BOTTOM = 0.325
-        private constant real SLUI_MIN_RIGHT = 0.798
+        private constant real SLUI_MIN_RIGHT = 0.800 // CHANGE: pushed minimized state to the UI right edge
         private constant real SLUI_MIN_WIDTH = 0.243
         private constant real SLUI_MIN_BOTTOM = 0.522
         private constant real SLUI_BAR_WIDTH = 0.086
@@ -82,6 +82,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
 
         private framehandle SLUI_Parent = null
         private framehandle SLUI_Backdrop = null
+        private framehandle SLUI_BackdropTint = null // CHANGE: inner translucent grey surface, separate from native border
         private framehandle SLUI_Title = null
         private framehandle SLUI_MinimizeButton = null
         private framehandle SLUI_StatsButton = null
@@ -752,7 +753,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         call BlzFrameSetText(buttonFrame, label)
         call BlzFrameSetPoint(buttonFrame, FRAMEPOINT_TOPRIGHT, anchor, FRAMEPOINT_TOPLEFT, x, 0.0)
         // CHANGE: Header buttons must render above the background frame.
-        call BlzFrameSetLevel(buttonFrame, 2)
+        call BlzFrameSetLevel(buttonFrame, 3)
         set anchor = null
         return buttonFrame
     endfunction
@@ -763,7 +764,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         call BlzFrameSetPoint(SLUI_ConfigToggleButton[index], FRAMEPOINT_TOPLEFT, SLUI_ConfigPane, FRAMEPOINT_TOPLEFT, x, y)
         call BlzFrameSetText(SLUI_ConfigToggleButton[index], label)
         // CHANGE: Config buttons render above config pane background.
-        call BlzFrameSetLevel(SLUI_ConfigToggleButton[index], 2)
+        call BlzFrameSetLevel(SLUI_ConfigToggleButton[index], 4)
         call SLUI_RegisterButton(SLUI_ConfigToggleButton[index], actionId)
     endfunction
 
@@ -777,7 +778,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         call BlzFrameSetAlpha(SLUI_RowButton[rowIndex], 0)
         call BlzFrameSetVertexColor(SLUI_RowButton[rowIndex], BlzConvertColor(0, 10, 10, 10))
         // CHANGE: Row container stays above the main backdrop; row children are created under it.
-        call BlzFrameSetLevel(SLUI_RowButton[rowIndex], 1)
+        call BlzFrameSetLevel(SLUI_RowButton[rowIndex], 3)
 
         set SLUI_RowIcon[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRowIcon" + I2S(rowIndex), SLUI_RowButton[rowIndex], "IconButtonTemplate", 0)
         call BlzFrameSetPoint(SLUI_RowIcon[rowIndex], FRAMEPOINT_LEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_LEFT, 0.006, 0.0)
@@ -791,10 +792,11 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         call BlzFrameSetEnable(SLUI_RowName[rowIndex], false)
 
         set SLUI_RowLevel[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowLevel" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(SLUI_RowLevel[rowIndex], FRAMEPOINT_TOPRIGHT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPRIGHT, -0.006, -0.002)
-        call BlzFrameSetSize(SLUI_RowLevel[rowIndex], 0.028, 0.012)
+        call BlzFrameSetPoint(SLUI_RowLevel[rowIndex], FRAMEPOINT_TOPRIGHT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPRIGHT, -0.012, -0.002)
+        // CHANGE: Give the level label more width and a bit more right padding so "Level X" stays inside the frame.
+        call BlzFrameSetSize(SLUI_RowLevel[rowIndex], 0.046, 0.012)
         call BlzFrameSetTextAlignment(SLUI_RowLevel[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_RIGHT)
-        call BlzFrameSetScale(SLUI_RowLevel[rowIndex], 0.72)
+        call BlzFrameSetScale(SLUI_RowLevel[rowIndex], 0.62)
         call BlzFrameSetEnable(SLUI_RowLevel[rowIndex], false)
 
         set SLUI_RowState[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowState" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
@@ -806,7 +808,8 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
 
         set SLUI_RowHPBack[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRowHPBack" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
         call BlzFrameSetTexture(SLUI_RowHPBack[rowIndex], SLUI_PanelTexture, 0, false)
-        call BlzFrameSetPoint(SLUI_RowHPBack[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, barLeft, -0.006)
+        call BlzFrameSetPoint(SLUI_RowHPBack[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.120, -0.006)
+        // CHANGE: Shift HP/MP bars slightly left to leave cleaner space for the level text on the right.
         call BlzFrameSetSize(SLUI_RowHPBack[rowIndex], SLUI_BAR_WIDTH, 0.008)
         call BlzFrameSetVertexColor(SLUI_RowHPBack[rowIndex], BlzConvertColor(190, 36, 36, 36))
         call BlzFrameSetEnable(SLUI_RowHPBack[rowIndex], false)
@@ -860,32 +863,39 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         call BlzFrameSetVisible(SLUI_Parent, false)
         call BlzFrameSetLevel(SLUI_Parent, 0)
 
-        // CHANGE: Visual background is a child of the invisible parent.
-        // It is explicitly kept at level 0 while interactive/text children are
-        // created after it, so heroes/pet/companion row content renders above it.
-        set SLUI_Backdrop = BlzCreateFrameByType("BACKDROP", "StatsLiteUIBackdrop", SLUI_Parent, "", 0)
-        call BlzFrameSetTexture(SLUI_Backdrop, SLUI_PanelTexture, 0, false)
-        call BlzFrameSetPoint(SLUI_Backdrop, FRAMEPOINT_TOPLEFT, SLUI_Parent, FRAMEPOINT_TOPLEFT, 0.006, -0.006)
-        call BlzFrameSetPoint(SLUI_Backdrop, FRAMEPOINT_BOTTOMRIGHT, SLUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.006, 0.006)
-        call BlzFrameSetVertexColor(SLUI_Backdrop, BlzConvertColor(145, 0, 0, 0))
+        // CHANGE: Native border/background frame. This keeps the Warcraft III EscMenu-style frame.
+        set SLUI_Backdrop = BlzCreateFrame("EscMenuBackdrop", SLUI_Parent, 0, 0)
+        call BlzFrameSetAllPoints(SLUI_Backdrop, SLUI_Parent)
         call BlzFrameSetEnable(SLUI_Backdrop, false)
         call BlzFrameSetLevel(SLUI_Backdrop, 0)
 
+        // CHANGE: Separate inner translucent grey surface, similar to the reference UI.
+        // It is inset so it does not cover the native border pieces.
+        // Tune the first BlzConvertColor value if needed:
+        // 70 = lighter/more transparent, 115 = darker/more readable.
+        set SLUI_BackdropTint = BlzCreateFrameByType("BACKDROP", "StatsLiteUIBackdropTint", SLUI_Parent, "", 0)
+        call BlzFrameSetTexture(SLUI_BackdropTint, SLUI_PanelTexture, 0, true)
+        call BlzFrameSetPoint(SLUI_BackdropTint, FRAMEPOINT_TOPLEFT, SLUI_Parent, FRAMEPOINT_TOPLEFT, 0.018, -0.034)
+        call BlzFrameSetPoint(SLUI_BackdropTint, FRAMEPOINT_BOTTOMRIGHT, SLUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.018, 0.034)
+        call BlzFrameSetVertexColor(SLUI_BackdropTint, BlzConvertColor(90, 70, 70, 70))
+        call BlzFrameSetEnable(SLUI_BackdropTint, false)
+        call BlzFrameSetLevel(SLUI_BackdropTint, 1)
+
         set SLUI_Title = BlzCreateFrameByType("TEXT", "StatsLiteUITitle", SLUI_Parent, "", 0)
         call BlzFrameSetPoint(SLUI_Title, FRAMEPOINT_TOPLEFT, SLUI_Parent, FRAMEPOINT_TOPLEFT, 0.014, -0.012)
-        call BlzFrameSetSize(SLUI_Title, 0.088, 0.016)
+        call BlzFrameSetSize(SLUI_Title, 0.110, 0.016) // CHANGE: slightly wider title area for Party 0/1 or similar text
         call BlzFrameSetTextAlignment(SLUI_Title, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(SLUI_Title, 0.95)
         call BlzFrameSetEnable(SLUI_Title, false)
         // CHANGE: Header text is above the panel backdrop.
-        call BlzFrameSetLevel(SLUI_Title, 2)
+        call BlzFrameSetLevel(SLUI_Title, 3)
 
         set SLUI_CloseButton = BlzCreateFrameByType("GLUETEXTBUTTON", "StatsLiteUIClose", SLUI_Parent, "ScriptDialogButton", 0)
         call BlzFrameSetSize(SLUI_CloseButton, 0.022, 0.022)
         call BlzFrameSetText(SLUI_CloseButton, "X")
         call BlzFrameSetPoint(SLUI_CloseButton, FRAMEPOINT_TOPRIGHT, SLUI_Parent, FRAMEPOINT_TOPRIGHT, -0.010, -0.010)
         // CHANGE: Close button must render above the background frame.
-        call BlzFrameSetLevel(SLUI_CloseButton, 2)
+        call BlzFrameSetLevel(SLUI_CloseButton, 3)
         call SLUI_RegisterButton(SLUI_CloseButton, SLUI_ACTION_CLOSE)
 
         set SLUI_MinimizeButton = SLUI_CreateHeaderButton("StatsLiteUIMinimize", "-", 0.022, SLUI_CloseButton, -0.004)
@@ -897,7 +907,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         call BlzFrameSetAllPoints(SLUI_ConfigIcon, SLUI_ConfigButton)
         call BlzFrameSetEnable(SLUI_ConfigIcon, false)
         // CHANGE: Config icon is visual content above its button/backdrop.
-        call BlzFrameSetLevel(SLUI_ConfigIcon, 3)
+        call BlzFrameSetLevel(SLUI_ConfigIcon, 4)
         call SLUI_RegisterButton(SLUI_ConfigButton, SLUI_ACTION_CONFIG)
 
         set SLUI_InfoButton = SLUI_CreateHeaderButton("StatsLiteUIInfo", "?", 0.022, SLUI_ConfigButton, -0.004)
@@ -908,10 +918,10 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
 
         set SLUI_RowPane = BlzCreateFrameByType("FRAME", "StatsLiteUIRows", SLUI_Parent, "", 0)
         call BlzFrameSetPoint(SLUI_RowPane, FRAMEPOINT_TOPLEFT, SLUI_Parent, FRAMEPOINT_TOPLEFT, 0.008, -0.040)
-        call BlzFrameSetPoint(SLUI_RowPane, FRAMEPOINT_BOTTOMRIGHT, SLUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.008, 0.024)
+        call BlzFrameSetPoint(SLUI_RowPane, FRAMEPOINT_BOTTOMRIGHT, SLUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.014, 0.024) // CHANGE: a touch more right inner padding inside the native border
         call BlzFrameSetEnable(SLUI_RowPane, false)
         // CHANGE: Rows render above the panel backdrop.
-        call BlzFrameSetLevel(SLUI_RowPane, 1)
+        call BlzFrameSetLevel(SLUI_RowPane, 3)
 
         loop
             exitwhen rowIndex > SLUI_MAX_ROWS
@@ -935,7 +945,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         call BlzFrameSetPoint(SLUI_ConfigPane, FRAMEPOINT_BOTTOMRIGHT, SLUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.014, 0.016)
         call BlzFrameSetVertexColor(SLUI_ConfigPane, BlzConvertColor(220, 6, 6, 6))
         // CHANGE: Config pane is above the main backdrop and below its own controls.
-        call BlzFrameSetLevel(SLUI_ConfigPane, 1)
+        call BlzFrameSetLevel(SLUI_ConfigPane, 3)
 
         set SLUI_ConfigTitle = BlzCreateFrameByType("TEXT", "StatsLiteUIConfigTitle", SLUI_ConfigPane, "", 0)
         call BlzFrameSetPoint(SLUI_ConfigTitle, FRAMEPOINT_TOPLEFT, SLUI_ConfigPane, FRAMEPOINT_TOPLEFT, 0.010, -0.010)
@@ -959,7 +969,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         call BlzFrameSetPoint(SLUI_ConfigMonitorButton, FRAMEPOINT_BOTTOM, SLUI_ConfigPane, FRAMEPOINT_BOTTOM, 0.0, 0.014)
         call BlzFrameSetText(SLUI_ConfigMonitorButton, "Show Monitor")
         // CHANGE: Config monitor button renders above config pane background.
-        call BlzFrameSetLevel(SLUI_ConfigMonitorButton, 2)
+        call BlzFrameSetLevel(SLUI_ConfigMonitorButton, 4)
         call SLUI_RegisterButton(SLUI_ConfigMonitorButton, SLUI_ACTION_MONITOR)
 
         call BlzFrameSetVisible(SLUI_ConfigPane, false)
