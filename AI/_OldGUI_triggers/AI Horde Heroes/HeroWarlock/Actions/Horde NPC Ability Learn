@@ -1,0 +1,100 @@
+Note this was in wip state already in old gui trigger phase...
+
+Horde NPC Ability Learn Warlock
+    Events
+        Unit - A unit Gains a level
+    Conditions
+        (Unit-type of (Triggering unit)) Equal to Warlock (Companion - Orc)
+    Actions
+        Set VariableSet RandNumberAbility = (Random integer number between 1 and 7)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                RandNumberAbility Equal to 1
+            Then - Actions
+                -------- BANISH --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of HeroWarlock_Banish  for (Triggering unit)) Equal to 0
+                    Then - Actions
+                        Unit - Add HeroWarlock_Banish  to (Triggering unit)
+                    Else - Actions
+                        Unit - Set level of HeroWarlock_Banish  for (Triggering unit) to ((Level of HeroWarlock_Banish  for (Triggering unit)) + 1)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                RandNumberAbility Equal to 2
+            Then - Actions
+                -------- CURSE OF AGONY --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of HeroWarlock_CurseOfAgony  for (Triggering unit)) Equal to 0
+                    Then - Actions
+                        Unit - Add HeroWarlock_CurseOfAgony  to (Triggering unit)
+                    Else - Actions
+                        Unit - Set level of HeroWarlock_CurseOfAgony  for (Triggering unit) to ((Level of HeroWarlock_CurseOfAgony  for (Triggering unit)) + 1)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                RandNumberAbility Equal to 3
+            Then - Actions
+                -------- FEAR --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of HeroWarlock_Fear  for (Triggering unit)) Equal to 0
+                    Then - Actions
+                        Unit - Add HeroWarlock_Fear  to (Triggering unit)
+                    Else - Actions
+                        Unit - Set level of HeroWarlock_Fear  for (Triggering unit) to ((Level of HeroWarlock_Fear  for (Triggering unit)) + 1)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                RandNumberAbility Equal to 4
+            Then - Actions
+                -------- LIFE DRAIN --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of HeroWarlock_LifeDrain  for (Triggering unit)) Equal to 0
+                    Then - Actions
+                        Unit - Add HeroWarlock_LifeDrain  to (Triggering unit)
+                    Else - Actions
+                        Unit - Set level of HeroWarlock_LifeDrain  for (Triggering unit) to ((Level of HeroWarlock_LifeDrain  for (Triggering unit)) + 1)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                RandNumberAbility Equal to 5
+            Then - Actions
+                -------- RAIN OF FIRE --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of HeroWarlock_RainOfFire  for (Triggering unit)) Equal to 0
+                    Then - Actions
+                        Unit - Add HeroWarlock_RainOfFire  to (Triggering unit)
+                    Else - Actions
+                        Unit - Set level of HeroWarlock_RainOfFire  for (Triggering unit) to ((Level of HeroWarlock_RainOfFire  for (Triggering unit)) + 1)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                RandNumberAbility Equal to 6
+            Then - Actions
+                -------- SHADOWBOLT --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of HeroWarlock_ShadowBolt  for (Triggering unit)) Equal to 0
+                    Then - Actions
+                        Unit - Add HeroWarlock_ShadowBolt  to (Triggering unit)
+                    Else - Actions
+                        Unit - Set level of HeroWarlock_ShadowBolt  for (Triggering unit) to ((Level of HeroWarlock_ShadowBolt  for (Triggering unit)) + 1)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                RandNumberAbility Equal to 7
+            Then - Actions
+                -------- SUMMON IMP --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of HeroWarlock_SummonImp  for (Triggering unit)) Equal to 0
+                    Then - Actions
+                        Unit - Add HeroWarlock_SummonImp  to (Triggering unit)
+                    Else - Actions
+                        Unit - Set level of HeroWarlock_SummonImp  for (Triggering unit) to ((Level of HeroWarlock_SummonImp  for (Triggering unit)) + 1)
+            Else - Actions
