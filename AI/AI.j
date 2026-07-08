@@ -163,9 +163,10 @@ globals
     private constant real AI_STUCK_MIN_MOVE = 24.00
     private constant real AI_STUCK_SECONDS = 4.00
     private constant real AI_STUCK_RETRY_RADIUS = 360.00
-    private constant real AI_COMPANION_PICKUP_RANGE = 650.00
-    private constant real AI_COMPANION_PICKUP_MIN_DELAY = 10.00
-    private constant real AI_COMPANION_PICKUP_MAX_DELAY = 24.00
+    private constant real AI_COMPANION_PICKUP_RANGE = 420.00
+    private constant real AI_COMPANION_PICKUP_MIN_DELAY = 24.00
+    private constant real AI_COMPANION_PICKUP_MAX_DELAY = 55.00
+    private constant integer AI_SIDE_SCAN_MAX_PER_TICK = 2
     private constant real AI_COMPANION_RETREAT_TIME = 2.50
     private constant real AI_COMPANION_RETREAT_DISTANCE = 420.00
     private constant real AI_CAMP_NIGHT_MIN = 18.00
@@ -339,6 +340,8 @@ globals
     private item ItemSearchBest = null
     private real ItemSearchBestDistance = 0.00
     private boolean ItemSearchNoMana = false
+    private real SideScanBudgetTime = -1.00
+    private integer SideScanBudgetCount = 0
     private unit SocialSearchTarget = null
     private unit SocialSearchSource = null
     private integer SocialSearchSeen = 0
@@ -2803,23 +2806,48 @@ private function FindNearbyPickupItem takes integer instanceId, unit whichUnit, 
     return ItemSearchBest
 endfunction
 
+private function TryUseSideScanBudget takes real now returns boolean
+    if SideScanBudgetTime != now then
+        set SideScanBudgetTime = now
+        set SideScanBudgetCount = 0
+    endif
+    if SideScanBudgetCount >= AI_SIDE_SCAN_MAX_PER_TICK then
+        return false
+    endif
+    set SideScanBudgetCount = SideScanBudgetCount + 1
+    return true
+endfunction
+
 private function TryStartCompanionPickupAction takes integer instanceId, unit whichUnit, real now returns boolean
     local item targetItem
+    local unit enemy
     if instanceId <= 0 or whichUnit == null then
         return false
     endif
     if now < InstanceNextPickup.real[instanceId] or GetFreeInventorySlots(whichUnit) <= 0 then
         return false
     endif
+    if not TryUseSideScanBudget(now) then
+        set InstanceNextPickup.real[instanceId] = now + GetRandomReal(3.00, 8.00)
+        return false
+    endif
+    set enemy = AI_FindClosestEnemy(whichUnit, 800.00)
+    if enemy != null then
+        set InstanceNextPickup.real[instanceId] = now + GetRandomReal(5.00, 10.00)
+        set enemy = null
+        return false
+    endif
     set targetItem = FindNearbyPickupItem(instanceId, whichUnit, AI_COMPANION_PICKUP_RANGE)
     if targetItem != null and IssueTargetOrder(whichUnit, "smart", targetItem) then
         set InstanceNextPickup.real[instanceId] = now + GetRandomReal(AI_COMPANION_PICKUP_MIN_DELAY, AI_COMPANION_PICKUP_MAX_DELAY)
         call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " delayed-pickup targets " + GetItemName(targetItem) + ".")
+        set enemy = null
         set targetItem = null
         set ItemSearchBest = null
         return true
     endif
     set InstanceNextPickup.real[instanceId] = now + GetRandomReal(AI_COMPANION_PICKUP_MIN_DELAY, AI_COMPANION_PICKUP_MAX_DELAY)
+    set enemy = null
     set targetItem = null
     set ItemSearchBest = null
     return false
@@ -3487,6 +3515,10 @@ private function TryStartProfessionAction takes integer instanceId, unit whichUn
         set InstanceNextProfession.real[instanceId] = now + GetRandomReal(AI_PROFESSION_IDLE_MIN, AI_PROFESSION_IDLE_MAX)
         return false
     endif
+    if not TryUseSideScanBudget(now) then
+        set InstanceNextProfession.real[instanceId] = now + GetRandomReal(3.00, 8.00)
+        return false
+    endif
     set node = FindNearbyProfessionUnit(instanceId, whichUnit, AI_PROFESSION_SCAN_RANGE)
     if node != null then
         if BeginGatherUnit(instanceId, whichUnit, node, now) then
@@ -3937,11 +3969,11 @@ private function ProcessInstance takes integer instanceId, real now returns noth
             set whichUnit = null
             return
         endif
-        if companionMode != COMPANION_MODE_HOLD and now >= InstanceNextProfession.real[instanceId] and not IsCastingLocked(whichUnit) and AI_FindClosestEnemy(whichUnit, 800.00) == null and TryStartProfessionAction(instanceId, whichUnit, AI_STATE_IDLE, now, false) then
+        if companionMode != COMPANION_MODE_HOLD and TryStartProfessionAction(instanceId, whichUnit, AI_STATE_IDLE, now, false) then
             set whichUnit = null
             return
         endif
-        if now >= InstanceNextPickup.real[instanceId] and not IsCastingLocked(whichUnit) and AI_FindClosestEnemy(whichUnit, 800.00) == null and TryStartCompanionPickupAction(instanceId, whichUnit, now) then
+        if now >= InstanceNextPickup.real[instanceId] and not IsCastingLocked(whichUnit) and TryStartCompanionPickupAction(instanceId, whichUnit, now) then
             set whichUnit = null
             return
         endif
