@@ -3470,7 +3470,7 @@ private function BeginGatherUnit takes integer instanceId, unit whichUnit, unit 
     return false
 endfunction
 
-private function TryStartProfessionAction takes integer instanceId, unit whichUnit, integer state, real now returns boolean
+private function TryStartProfessionAction takes integer instanceId, unit whichUnit, integer state, real now, boolean useIdleRoll returns boolean
     local unit node
     local item nodeItem
     if instanceId <= 0 or whichUnit == null or ProfileProfessionCount[InstanceProfile[instanceId]] <= 0 then
@@ -3483,7 +3483,7 @@ private function TryStartProfessionAction takes integer instanceId, unit whichUn
         set InstanceNextProfession.real[instanceId] = now + GetRandomReal(5.00, 10.00)
         return false
     endif
-    if GetRandomInt(1, 100) > 35 then
+    if useIdleRoll and GetRandomInt(1, 100) > 35 then
         set InstanceNextProfession.real[instanceId] = now + GetRandomReal(AI_PROFESSION_IDLE_MIN, AI_PROFESSION_IDLE_MAX)
         return false
     endif
@@ -3880,6 +3880,7 @@ endfunction
 private function ProcessInstance takes integer instanceId, real now returns nothing
     local unit whichUnit = InstanceUnit.unit[instanceId]
     local boolean companionControlled
+    local integer companionMode
     local integer state
     if instanceId <= 0 or whichUnit == null or GetUnitTypeId(whichUnit) == 0 then
         set whichUnit = null
@@ -3913,6 +3914,7 @@ private function ProcessInstance takes integer instanceId, real now returns noth
     if companionControlled then
         call ClearSocialState(instanceId)
         call SetInstanceState(instanceId, AI_STATE_COMPANION_CONTROLLED)
+        set companionMode = Companions_GetMode(whichUnit)
         if now >= InstanceNextItem.real[instanceId] then
             if AI_TryUseConsumable(whichUnit) then
                 set InstanceNextItem.real[instanceId] = now + 5.00 + GetRandomReal(0.50, 1.50)
@@ -3920,7 +3922,7 @@ private function ProcessInstance takes integer instanceId, real now returns noth
                 set InstanceNextItem.real[instanceId] = now + 2.00 + GetRandomReal(0.10, 0.80)
             endif
         endif
-        if Companions_GetMode(whichUnit) == COMPANION_MODE_PASSIVE then
+        if companionMode == COMPANION_MODE_PASSIVE then
             if TryRefreshCompanionStuckOrder(instanceId, whichUnit, now) then
                 set whichUnit = null
                 return
@@ -3932,6 +3934,10 @@ private function ProcessInstance takes integer instanceId, real now returns noth
             return
         endif
         if TryCompanionCombatRetreat(instanceId, whichUnit, now) then
+            set whichUnit = null
+            return
+        endif
+        if companionMode != COMPANION_MODE_HOLD and now >= InstanceNextProfession.real[instanceId] and not IsCastingLocked(whichUnit) and AI_FindClosestEnemy(whichUnit, 800.00) == null and TryStartProfessionAction(instanceId, whichUnit, AI_STATE_IDLE, now, false) then
             set whichUnit = null
             return
         endif
@@ -4019,7 +4025,7 @@ private function ProcessInstance takes integer instanceId, real now returns noth
         return
     endif
 
-    if TryStartProfessionAction(instanceId, whichUnit, state, now) then
+    if TryStartProfessionAction(instanceId, whichUnit, state, now, true) then
         set whichUnit = null
         return
     endif
