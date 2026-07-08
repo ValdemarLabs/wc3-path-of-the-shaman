@@ -13,13 +13,13 @@
     - Old GUI Riverbane Paladin triggers
 
     How to install:
-    Requires `AI.j`.
+    Requires `AI.j` and `AbilitiesLiteUI.j`.
 
     API:
     call AIPaladin_Register(unit whichUnit)
 
 **/
-library AIPaladin initializer Init requires AI
+library AIPaladin initializer Init requires AI, AbilitiesLiteUI
 
 globals
     constant integer AI_PALADIN_UNIT_RIVERBANE = 'H60Y'
@@ -93,6 +93,16 @@ private function RegisterAbilities takes nothing returns nothing
     call AI_AddProfileAbility(AI_Paladin_ProfileId, AI_PALADIN_ABILITY_TAUNT)
 endfunction
 
+private function RegisterAbilityTemplates takes nothing returns nothing
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_PALADIN_UNIT_RIVERBANE, AI_PALADIN_ABILITY_BLESSING_OF_LIGHT, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_PALADIN_UNIT_RIVERBANE, AI_PALADIN_ABILITY_DIVINE_SHIELD, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_PALADIN_UNIT_RIVERBANE, AI_PALADIN_ABILITY_HOLY_LIGHT, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_PALADIN_UNIT_RIVERBANE, AI_PALADIN_ABILITY_INNER_FIRE, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_PALADIN_UNIT_RIVERBANE, AI_PALADIN_ABILITY_JUDGEMENT_STRIKE, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_PALADIN_UNIT_RIVERBANE, AI_PALADIN_ABILITY_LAY_ON_HANDS, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_PALADIN_UNIT_RIVERBANE, AI_PALADIN_ABILITY_TAUNT, "", "")
+endfunction
+
 private function Think takes nothing returns nothing
     local unit paladin = AI_EventUnit
     local unit target = AI_EventTarget
@@ -145,6 +155,7 @@ private function Init takes nothing returns nothing
     call AI_SetProfileCompanionRetreat(AI_Paladin_ProfileId, false)
     call AI_SetProfileThinkCallback(AI_Paladin_ProfileId, function Think)
     call RegisterAbilities()
+    call RegisterAbilityTemplates()
     call AI_AddDefaultShopItems(AI_Paladin_ProfileId)
     call AI_AddRandomSpawnProfile(AI_Paladin_ProfileId)
     call RegisterBarks()
