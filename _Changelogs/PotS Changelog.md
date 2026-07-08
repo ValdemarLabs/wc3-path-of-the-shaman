@@ -20,27 +20,55 @@
 ### Player-Facing Updates
 - `AI` and `Companions`
   Improved AI logic e.g., item pickup
+- `StatsUI` / `StatsLiteUI`
+  StatsUI and StatsLiteUI now show companion party status as current/max companions, with an info button explaining the level ranges used for the companion cap.
+  StatsLiteUI now behaves more like an upper-right party monitor: transparent background, improved icon/name spacing, engineering-icon configuration button, and state-preserving maximize/minimize behavior when opening StatsUI and returning.
+  StatsUI now shows unit faction, always-visible ability points, and XP as current/required for pets, companions, and heroes.
+- `Companions`
+  Companion-controlled AI units with matching profession profiles can try nearby mining veins or herb nodes when they are not in combat, Passive mode, or Hold Position mode.
 
 ### Technical Updates
 - `AI.j`
   No-mana profiles now reject/drop mana-only items instead of trying to use them.
   Companion AI can delayed-pick nearby items, giving the player time first.
   Autonomous AI can randomly use a Camp Fire at night and camp for a while.
+  Companion-controlled AI now reuses the existing profession scanner for nearby gather nodes, while bypassing the autonomous idle-roll so close valid nodes can be acted on when companion mode allows it.
   Added companion stale-order recovery to reduce Warrior/Engineer/etc. “stuck after combat/item” cases.
 - `AI_Warrior.j`
   Warrior profiles, including Aveline, no longer do low-health companion retreat.
+  Warrior ability templates now register with AbilitiesLiteUI, including the shared helper used by Aveline.
 - `AI_Rogue.j`
   Rogue is now marked no-mana-restoration.
+  Rogue ability templates now register with AbilitiesLiteUI from the Rogue sublibrary.
 - `AI_Paladin.j`
   Paladin no longer does low-health companion retreat.
+  Paladin ability templates now register with AbilitiesLiteUI from the Paladin sublibrary.
 - `AI_Shaman.j`
   Companion Shaman now prioritizes healing and avoids support totems unless allies are pressured.
+  Restoshaman ability templates now register with AbilitiesLiteUI from the Restoshaman sublibrary.
 - `AI_Aveline.j`
   Aveline explicitly registers with ResourceRage.
+  Aveline now registers her Riverbane Warrior unit type with the shared Warrior AbilitiesLiteUI templates.
+- `AI_Warlock.j`
+  Orc and Undead Warlock ability templates now register with AbilitiesLiteUI from the Warlock sublibrary.
+- `AI_Engineer.j`
+  Engineer and Shredder-form ability templates now register with AbilitiesLiteUI from the Engineer sublibrary.
 - `AI_Companions.j`
   Added public mode/order refresh APIs for AI integration.
+- `Companions.j`
+  Added companion limit/status APIs for StatsUI and StatsLiteUI, including level-based companion cap info and public faction text lookup.
+- `StatsUI.j`
+  Removed the old Lite Config button and replaced it with a left-pane Monitor button that opens StatsLiteUI.
+  Added a StatsLiteUI return path so opening StatsUI from StatsLiteUI returns to the previous StatsLiteUI minimized/maximized state.
+  Added cached required-XP helpers for StatsUI XP display. Hero XP requirements use the `NeedHeroXPFormulaA=1`, `NeedHeroXPFormulaB=150`, `NeedHeroXPFormulaC=0` recurrence and must stay synchronized with Game Constants if those values change.
+- `StatsLiteUI.j`
+  Added cinematic hide/show-last-state APIs for GUI Cinematic ON/OFF trigger use.
+  Moved the party monitor to the upper-right multiboard-style screen area, made the main monitor background transparent, replaced the `Cfg` text button with the engineering icon, and added companion cap info access.
 - `qAradion.j`
   Fading Sparks now removes existing TelAnor Rods from player units/heroes and gives a fresh rod to a player-owned hero.
+
+### Known Issues
+- Full in-map/JassHelper validation is still required for the updated StatsUI/StatsLiteUI frame layout, cached hero XP requirement display, companion profession gathering behavior, and AbilitiesLiteUI registrations for AI class unit types.
 
 ## [7.7.2026]
 
