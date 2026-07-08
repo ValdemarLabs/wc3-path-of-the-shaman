@@ -12,13 +12,13 @@
     - Old GUI HeroRogue triggers
 
     How to install:
-    Requires `AI.j`.
+    Requires `AI.j` and `AbilitiesLiteUI.j`.
 
     API:
     call AIRogue_Register(unit whichUnit)
 
 **/
-library AIRogue initializer Init requires AI
+library AIRogue initializer Init requires AI, AbilitiesLiteUI
 
 globals
     constant integer AI_ROGUE_UNIT_HORDE = 'O631'
@@ -94,6 +94,16 @@ private function RegisterAbilities takes nothing returns nothing
     call AI_AddProfileAbility(AI_Rogue_ProfileId, AI_ROGUE_ABILITY_TOXIC_VENOM)
 endfunction
 
+private function RegisterAbilityTemplates takes nothing returns nothing
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_ROGUE_UNIT_HORDE, AI_ROGUE_ABILITY_EVASION, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_ROGUE_UNIT_HORDE, AI_ROGUE_ABILITY_GARROTE, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_ROGUE_UNIT_HORDE, AI_ROGUE_ABILITY_SHADOWSTEP, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_ROGUE_UNIT_HORDE, AI_ROGUE_ABILITY_SINISTER_STRIKE, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_ROGUE_UNIT_HORDE, AI_ROGUE_ABILITY_SLICE_AND_DICE, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_ROGUE_UNIT_HORDE, AI_ROGUE_ABILITY_SURPRISE_ATTACK, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_ROGUE_UNIT_HORDE, AI_ROGUE_ABILITY_TOXIC_VENOM, "", "")
+endfunction
+
 private function Think takes nothing returns nothing
     local unit rogue = AI_EventUnit
     local unit target = AI_EventTarget
@@ -148,6 +158,7 @@ private function Init takes nothing returns nothing
     call AI_SetProfileThinkCallback(AI_Rogue_ProfileId, function Think)
     call AI_AddProfileProfession(AI_Rogue_ProfileId, AI_PROFESSION_SKINNING)
     call RegisterAbilities()
+    call RegisterAbilityTemplates()
     call AI_AddDefaultShopItems(AI_Rogue_ProfileId)
     call AI_AddRandomSpawnProfile(AI_Rogue_ProfileId)
     call RegisterBarks()
