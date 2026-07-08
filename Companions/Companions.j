@@ -30,8 +30,12 @@
     call Companions_SetFollowerBehavior(unit controlledUnit, boolean enabled)
     call Companions_GetMode(unit controlledUnit) returns integer
     call Companions_RefreshOrders(unit controlledUnit)
+    call Companions_GetCompanionLimit() returns integer
+    call Companions_GetCompanionStatusText() returns string
+    call Companions_ShowCompanionLimitInfo()
     call Companions_GetClassInfoText(unit controlledUnit) returns string
     call Companions_GetTypeInfoText(unit controlledUnit) returns string
+    call Companions_GetFactionInfoText(unit controlledUnit) returns string
     call Companions_GetAbilityInfoText(unit controlledUnit) returns string
 
 **/
@@ -1253,17 +1257,6 @@ private function GetReturnOwner takes integer unitTypeId returns player
     return null
 endfunction
 
-private function GetCompanionLimit takes nothing returns integer
-    if udg_Companion_GroupSize > 0 then
-        return udg_Companion_GroupSize
-    endif
-    return 6
-endfunction
-
-private function IsCompanionPartyFull takes nothing returns boolean
-    return udg_CompanionCount >= GetCompanionLimit()
-endfunction
-
 private function GetMaxPartyHeroLevel takes nothing returns integer
     local integer level = 1
 
@@ -1275,6 +1268,36 @@ private function GetMaxPartyHeroLevel takes nothing returns integer
     endif
 
     return level
+endfunction
+
+private function GetCompanionLimitForLevel takes integer heroLevel returns integer
+    if heroLevel >= 25 then
+        return 6
+    elseif heroLevel >= 20 then
+        return 5
+    elseif heroLevel >= 15 then
+        return 4
+    elseif heroLevel >= 10 then
+        return 3
+    elseif heroLevel >= 5 then
+        return 2
+    endif
+    return 1
+endfunction
+
+private function GetCompanionLimitInternal takes nothing returns integer
+    if udg_Companion_GroupSize > 0 then
+        return udg_Companion_GroupSize
+    endif
+    return GetCompanionLimitForLevel(GetMaxPartyHeroLevel())
+endfunction
+
+private function GetCompanionLimitInfoTextInternal takes nothing returns string
+    return "|cffffcc00Companion slots:|r " + I2S(udg_CompanionCount) + " / " + I2S(GetCompanionLimitInternal()) + "|n|cffbfbfbfLevel ranges:|r 1-4: 1, 5-9: 2, 10-14: 3, 15-19: 4, 20-24: 5, 25+: 6.|n|cff808080The current cap can still be overridden by the map variable Companion_GroupSize.|r"
+endfunction
+
+private function IsCompanionPartyFull takes nothing returns boolean
+    return udg_CompanionCount >= GetCompanionLimitInternal()
 endfunction
 
 private function GetHiredUnitLevel takes unit hiredUnit returns integer
@@ -1802,7 +1825,7 @@ private function GetCompanionTypeInfoTextInternal takes unit target returns stri
     return "Melee Damage"
 endfunction
 
-private function GetFactionInfoText takes unit target returns string
+private function GetFactionInfoTextInternal takes unit target returns string
     local integer unitTypeId
 
     if target == null then
@@ -1963,7 +1986,7 @@ private function HandleInformation takes unit target returns nothing
     call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Name:|r " + GetDisplayName(target))
     call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Unit type: |r" + GetUnitTypeInfoName(unitTypeId))
     call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Attack type: |r" + GetAttackTypeInfoText(target))
-    call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Faction: |r" + GetFactionInfoText(target))
+    call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Faction: |r" + GetFactionInfoTextInternal(target))
     call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Level: |r" + GetLevelInfoText(target) + " | |cFFFFCC00Life: |r" + I2S(R2I(GetUnitState(target, UNIT_STATE_LIFE))) + " / " + I2S(R2I(GetUnitState(target, UNIT_STATE_MAX_LIFE))))
 
     set maxMana = GetUnitState(target, UNIT_STATE_MAX_MANA)
@@ -2256,12 +2279,32 @@ public function IsControlled takes unit controlledUnit returns boolean
     return CompanionTracked[GetHandleId(controlledUnit)] == 1
 endfunction
 
+public function GetCompanionLimit takes nothing returns integer
+    return GetCompanionLimitInternal()
+endfunction
+
+public function GetCompanionStatusText takes nothing returns string
+    return I2S(udg_CompanionCount) + "/" + I2S(GetCompanionLimitInternal()) + " companions"
+endfunction
+
+public function GetCompanionLimitInfoText takes nothing returns string
+    return GetCompanionLimitInfoTextInternal()
+endfunction
+
+public function ShowCompanionLimitInfo takes nothing returns nothing
+    call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetCompanionLimitInfoTextInternal())
+endfunction
+
 public function GetClassInfoText takes unit controlledUnit returns string
     return GetCompanionClassInfoTextInternal(controlledUnit)
 endfunction
 
 public function GetTypeInfoText takes unit controlledUnit returns string
     return GetCompanionTypeInfoTextInternal(controlledUnit)
+endfunction
+
+public function GetFactionInfoText takes unit controlledUnit returns string
+    return GetFactionInfoTextInternal(controlledUnit)
 endfunction
 
 public function GetAbilityInfoText takes unit controlledUnit returns string
