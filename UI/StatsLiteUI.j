@@ -31,7 +31,7 @@
     call StatsLiteUI_Refresh()
 
 **/
-library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, Companions, Pet
+library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
     globals
         // Monitor sizing and refresh cadence.
         private constant real SLUI_REFRESH_INTERVAL = 0.35
@@ -65,7 +65,7 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
         private constant integer SLUI_UNIT_SHADOWCLAW = 'n655'
 
         private boolean SLUI_Initialized = false
-        private boolean SLUI_DefaultVisible = true
+        private boolean SLUI_DefaultVisible = false
         private boolean SLUI_Minimized = false
         private boolean SLUI_ConfigVisible = false
         private boolean SLUI_ShowHeroes = true
