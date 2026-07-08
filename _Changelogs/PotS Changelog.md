@@ -33,6 +33,7 @@
   Companion AI can delayed-pick nearby items, giving the player time first.
   Autonomous AI can randomly use a Camp Fire at night and camp for a while.
   Companion-controlled AI now reuses the existing profession scanner for nearby gather nodes, while bypassing the autonomous idle-roll so close valid nodes can be acted on when companion mode allows it.
+  Throttled companion pickup/profession side scans with a shared per-tick budget, smaller pickup radius, and longer pickup retry delay to reduce FPS impact around nearby items.
   Added companion stale-order recovery to reduce Warrior/Engineer/etc. “stuck after combat/item” cases.
 - `AI_Warrior.j`
   Warrior profiles, including Aveline, no longer do low-health companion retreat.
@@ -64,6 +65,7 @@
 - `StatsLiteUI.j`
   Added cinematic hide/show-last-state APIs for GUI Cinematic ON/OFF trigger use.
   Moved the party monitor to the upper-right multiboard-style screen area, made the main monitor background transparent, replaced the `Cfg` text button with the engineering icon, and added companion cap info access.
+  Changed the row container to a non-rendering frame and shifted the monitor closer to the right screen edge to remove the green backdrop panel.
 - `qAradion.j`
   Fading Sparks now removes existing TelAnor Rods from player units/heroes and gives a fresh rod to a player-owned hero.
 
