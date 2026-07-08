@@ -15,6 +15,14 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [9.7.2026]
+
+### Technical Updates
+- `StatsLiteUI.j`
+  Updated StatsLiteUI panel styling to combine the native Warcraft III border frame with a separate translucent grey inner backdrop.
+  Raised StatsLiteUI content frame levels so title, buttons, rows, and config controls render above the transparent background layer.
+  Kept the right-anchored layout and row-level text padding adjustments from the previous StatsLiteUI update.
+
 ## [8.7.2026]
 
 ### Player-Facing Updates
