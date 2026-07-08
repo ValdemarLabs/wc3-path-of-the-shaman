@@ -13,13 +13,13 @@
     - Old GUI HeroRestoshaman triggers
 
     How to install:
-    Requires `AI.j` and `Abilities/Shaman/Totems.j`.
+    Requires `AI.j`, `AbilitiesLiteUI.j`, and `Abilities/Shaman/Totems.j`.
 
     API:
     call AIRestoshaman_Register(unit whichUnit)
 
 **/
-library AIRestoshaman initializer Init requires AI, Totems
+library AIRestoshaman initializer Init requires AI, AbilitiesLiteUI, Totems
 
 globals
     constant integer AI_RESTOSHAMAN_UNIT_HORDE = 'O61H'
@@ -115,6 +115,21 @@ private function RegisterAbilities takes nothing returns nothing
     call AI_AddProfileAbility(AI_Restoshaman_ProfileId, AI_RESTOSHAMAN_ABILITY_LIGHTNING_BOLT)
 endfunction
 
+private function RegisterAbilityTemplates takes nothing returns nothing
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_RESTOSHAMAN_UNIT_HORDE, AI_RESTOSHAMAN_ABILITY_LIGHTNING_BOLT, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_RESTOSHAMAN_UNIT_HORDE, AI_RESTOSHAMAN_ABILITY_CHAIN_LIGHTNING, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_RESTOSHAMAN_UNIT_HORDE, AI_RESTOSHAMAN_ABILITY_HEX, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_RESTOSHAMAN_UNIT_HORDE, AI_RESTOSHAMAN_ABILITY_TOTEM_WINDFURY, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_RESTOSHAMAN_UNIT_HORDE, AI_RESTOSHAMAN_ABILITY_TOTEM_WATER, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_RESTOSHAMAN_UNIT_HORDE, AI_RESTOSHAMAN_ABILITY_TOTEM_EARTH, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_RESTOSHAMAN_UNIT_HORDE, AI_RESTOSHAMAN_ABILITY_TOTEM_EARTHBIND, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_RESTOSHAMAN_UNIT_HORDE, AI_RESTOSHAMAN_ABILITY_TOTEM_FIRE, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_RESTOSHAMAN_UNIT_HORDE, AI_RESTOSHAMAN_ABILITY_TOTEM_STONESKIN, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_RESTOSHAMAN_UNIT_HORDE, AI_RESTOSHAMAN_ABILITY_TOTEM_WIND, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_RESTOSHAMAN_UNIT_HORDE, AI_RESTOSHAMAN_ABILITY_HEALING_WAVE, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_RESTOSHAMAN_UNIT_HORDE, AI_RESTOSHAMAN_ABILITY_CHAIN_HEAL, "", "")
+endfunction
+
 private function TryTotem takes unit shaman, integer abilityId, real cooldown returns boolean
     local real angle = GetRandomReal(0.00, 360.00) * bj_DEGTORAD
     local real distance = GetRandomReal(300.00, 600.00)
@@ -203,6 +218,7 @@ private function Init takes nothing returns nothing
     call AI_SetProfileThinkCallback(AI_Restoshaman_ProfileId, function Think)
     call AI_AddProfileProfession(AI_Restoshaman_ProfileId, AI_PROFESSION_HERBALISM)
     call RegisterAbilities()
+    call RegisterAbilityTemplates()
     call AI_AddDefaultShopItems(AI_Restoshaman_ProfileId)
     call AI_AddRandomSpawnProfile(AI_Restoshaman_ProfileId)
     call RegisterBarks()
