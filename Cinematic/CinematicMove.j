@@ -326,7 +326,9 @@ library CinematicMover initializer Init requires Table
 
             if IsUnitInGroup(u, udg_TamedUnits) then
                 call BJDebugMsg("[CinematicMover] Reviving tamed unit via Tamed Unit Revival trigger: " + GetUnitName(u))
+                /* This trigger doesnt exist anymore. TODO to check corresponding function from Pet.j library if needed.
                 call TriggerExecute(gg_trg_Tamed_Unit_Revival)
+                */
                 call MarkRevived(u)
             else
                 call MarkRevived(u)
@@ -378,7 +380,9 @@ library CinematicMover initializer Init requires Table
             // Tamed units are returned to "dead" state if they were dead
             if IsUnitInGroup(u, udg_TamedUnits) then
                 call BJDebugMsg("[CinematicMover] Returning tamed unit to dead-state via Tamed Unit Kill: " + GetUnitName(u))
+                /* This trigger doesnt exist anymore. TODO to check corresponding function from Pet.j library if needed.
                 call TriggerExecute(gg_trg_Tamed_Unit_Dies)
+                */
             else
                 call KillUnit(u)
             endif
