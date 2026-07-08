@@ -12,13 +12,13 @@
     - Old GUI HeroWarlock triggers
 
     How to install:
-    Requires `AI.j`.
+    Requires `AI.j` and `AbilitiesLiteUI.j`.
 
     API:
     call AIWarlock_Register(unit whichUnit)
 
 **/
-library AIWarlock initializer Init requires AI, Table
+library AIWarlock initializer Init requires AI, AbilitiesLiteUI, Table
 
 globals
     constant integer AI_WARLOCK_UNIT_UNDEAD = 'O61K'
@@ -266,6 +266,22 @@ private function RegisterAbilities takes integer profileId returns nothing
     call AI_AddProfileAbility(profileId, AI_WARLOCK_ABILITY_LIFE_TAP)
 endfunction
 
+private function RegisterAbilityTemplatesForUnitType takes integer unitTypeId returns nothing
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(unitTypeId, AI_WARLOCK_ABILITY_BANISH, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(unitTypeId, AI_WARLOCK_ABILITY_CURSE_OF_AGONY, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(unitTypeId, AI_WARLOCK_ABILITY_FEAR, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(unitTypeId, AI_WARLOCK_ABILITY_LIFE_DRAIN, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(unitTypeId, AI_WARLOCK_ABILITY_RAIN_OF_FIRE, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(unitTypeId, AI_WARLOCK_ABILITY_SHADOW_BOLT, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(unitTypeId, AI_WARLOCK_ABILITY_SUMMON_IMP, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(unitTypeId, AI_WARLOCK_ABILITY_LIFE_TAP, "", "")
+endfunction
+
+private function RegisterAbilityTemplates takes nothing returns nothing
+    call RegisterAbilityTemplatesForUnitType(AI_WARLOCK_UNIT_ORC)
+    call RegisterAbilityTemplatesForUnitType(AI_WARLOCK_UNIT_UNDEAD)
+endfunction
+
 private function Think takes nothing returns nothing
     local unit warlock = AI_EventUnit
     local unit target = AI_EventTarget
@@ -341,6 +357,7 @@ private function Init takes nothing returns nothing
     call AI_SetProfileThinkCallback(AI_Warlock_UndeadProfileId, function Think)
     call RegisterAbilities(AI_Warlock_ProfileId)
     call RegisterAbilities(AI_Warlock_UndeadProfileId)
+    call RegisterAbilityTemplates()
     call AI_AddDefaultShopItems(AI_Warlock_ProfileId)
     call AI_AddDefaultShopItems(AI_Warlock_UndeadProfileId)
     call AI_AddRandomSpawnProfile(AI_Warlock_ProfileId)
