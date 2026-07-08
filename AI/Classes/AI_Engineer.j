@@ -13,13 +13,13 @@
     - Old GUI Neutral Engineer triggers
 
     How to install:
-    Requires `AI.j`.
+    Requires `AI.j` and `AbilitiesLiteUI.j`.
 
     API:
     call AIEngineer_Register(unit whichUnit)
 
 **/
-library AIEngineer initializer Init requires AI
+library AIEngineer initializer Init requires AI, AbilitiesLiteUI
 
 globals
     constant integer AI_ENGINEER_UNIT_NEUTRAL = 'N64O'
@@ -110,6 +110,19 @@ private function RegisterAbilities takes nothing returns nothing
     call AI_AddProfileAbility(AI_Engineer_ShredderProfileId, AI_ENGINEER_ABILITY_SHREDDER_CLUSTER)
     call AI_AddProfileAbility(AI_Engineer_ShredderProfileId, AI_ENGINEER_ABILITY_SHREDDER_SHRED)
     call AI_AddProfileAbility(AI_Engineer_ShredderProfileId, AI_ENGINEER_ABILITY_SHREDDER_SLAM)
+endfunction
+
+private function RegisterAbilityTemplates takes nothing returns nothing
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_ENGINEER_UNIT_NEUTRAL, AI_ENGINEER_ABILITY_GRENADE, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_ENGINEER_UNIT_NEUTRAL, AI_ENGINEER_ABILITY_MECHANICAL_CONSTRUCT, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_ENGINEER_UNIT_NEUTRAL, AI_ENGINEER_ABILITY_DRONE, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_ENGINEER_UNIT_NEUTRAL, AI_ENGINEER_ABILITY_TURRET, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_ENGINEER_UNIT_NEUTRAL, AI_ENGINEER_ABILITY_REPAIR, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_ENGINEER_UNIT_NEUTRAL, AI_ENGINEER_ABILITY_SHREDDER_FORM, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_ENGINEER_UNIT_NEUTRAL, AI_ENGINEER_ABILITY_SMOKE_BOMB, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_ENGINEER_UNIT_SHREDDER, AI_ENGINEER_ABILITY_SHREDDER_CLUSTER, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_ENGINEER_UNIT_SHREDDER, AI_ENGINEER_ABILITY_SHREDDER_SHRED, "", "")
+    call AbilitiesLiteUI_RegisterAbilityForUnitTypeAuto(AI_ENGINEER_UNIT_SHREDDER, AI_ENGINEER_ABILITY_SHREDDER_SLAM, "", "")
 endfunction
 
 private function ThinkEngineer takes nothing returns nothing
@@ -222,6 +235,7 @@ private function Init takes nothing returns nothing
     call AI_AddProfileProfession(AI_Engineer_ProfileId, AI_PROFESSION_MINING)
     call AI_AddProfileProfession(AI_Engineer_ShredderProfileId, AI_PROFESSION_MINING)
     call RegisterAbilities()
+    call RegisterAbilityTemplates()
     call AI_AddDefaultShopItems(AI_Engineer_ProfileId)
     call AI_AddDefaultShopItems(AI_Engineer_ShredderProfileId)
     call AI_AddRandomSpawnProfile(AI_Engineer_ProfileId)
