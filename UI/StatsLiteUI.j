@@ -37,12 +37,12 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
         private constant real SLUI_REFRESH_INTERVAL = 0.35
         private constant integer SLUI_MAX_ROWS = 10
 
-        private constant real SLUI_PANEL_LEFT = 0.540
-        private constant real SLUI_PANEL_RIGHT = 0.790
+        private constant real SLUI_PANEL_LEFT = 0.555
+        private constant real SLUI_PANEL_RIGHT = 0.798
         private constant real SLUI_PANEL_TOP = 0.565
         private constant real SLUI_PANEL_BOTTOM = 0.325
-        private constant real SLUI_MIN_LEFT = 0.540
-        private constant real SLUI_MIN_RIGHT = 0.790
+        private constant real SLUI_MIN_LEFT = 0.555
+        private constant real SLUI_MIN_RIGHT = 0.798
         private constant real SLUI_MIN_BOTTOM = 0.522
         private constant real SLUI_BAR_WIDTH = 0.086
 
@@ -871,7 +871,7 @@ library StatsLiteUI initializer AutoInit requires Table, MasterUI, QuestGiver, C
         set SLUI_StatsButton = SLUI_CreateHeaderButton("StatsLiteUIStats", "Stats", 0.046, SLUI_InfoButton, -0.004)
         call SLUI_RegisterButton(SLUI_StatsButton, SLUI_ACTION_STATS)
 
-        set SLUI_RowPane = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRows", SLUI_Parent, "", 0)
+        set SLUI_RowPane = BlzCreateFrameByType("FRAME", "StatsLiteUIRows", SLUI_Parent, "", 0)
         call BlzFrameSetPoint(SLUI_RowPane, FRAMEPOINT_TOPLEFT, SLUI_Parent, FRAMEPOINT_TOPLEFT, 0.008, -0.040)
         call BlzFrameSetPoint(SLUI_RowPane, FRAMEPOINT_BOTTOMRIGHT, SLUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.008, 0.024)
         call BlzFrameSetEnable(SLUI_RowPane, false)
