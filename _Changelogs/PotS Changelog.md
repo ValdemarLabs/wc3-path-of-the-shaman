@@ -44,6 +44,7 @@
   - Added configurable row alerts for low HP, low resource, and far-away party members.
   - Added flashing row alert frames around party member icons, with alert priority ordered as low/dead HP, low resource, then far-away companion state.
   - Added config toggles for `Low HP`, `Low MP`, `Far`, and `HP Color`.
+  - Utilize `AI.j` API for AI companion revive timer
 
 - `AI_Warrior.j`
   - Registered the Warrior AI class with StatsLiteUI as a rage-style resource class so Warrior resource bars display red in the party monitor.
@@ -52,6 +53,9 @@
 - `AI_Rogue.j`
   - Registered the Rogue AI class with StatsLiteUI as an energy-style resource class so Rogue resource bars display yellow in the party monitor.
   - Added `StatsLiteUI` as a dependency for the Rogue AI class registration integration.
+
+- `AI.j`
+  - Expose API for AI revive status and revive timer.
 
 ## [8.7.2026]
 
