@@ -34,6 +34,8 @@
     call AI_SetUnitTypeCap(unitTypeId, cap)
     call AI_SetProfileRandomUniqueId(profileId, uniqueId)
     call AI_SetUnitTypeDefaultProfile(unitTypeId, profileId)
+    call AI_SetProfileFixedHeroLevel(profileId, level)
+    call AI_SetProfileXpLockedUntilInvite(profileId, enabled)
     call AI_SetProfileAutonomous(profileId, enabled)
     call AI_SetProfileSpawnOwner(profileId, owner)
     call AI_SetProfileRegisterCallback(profileId, callback)
@@ -43,10 +45,13 @@
     call AI_GetProfessionSkill(whichUnit, professionId)
     call AI_AddProfileSpawnRect(profileId, whichRect)
     call AI_AddProfileRetreatRect(profileId, whichRect)
+    call AI_AddProfileAllowedZoneRect(profileId, whichRect)
     call AI_AddProfileShopUnit(profileId, shopUnit)
     call AI_AddRandomSpawnProfile(profileId)
+    call AI_SetRandomSpawnFirstProfile(profileId)
     call AI_SetRandomSpawnHardCap(cap)
     call AI_SetRandomSpawnActiveCap(cap)
+    call AI_GetRandomSpawnActiveCap()
     call AI_SetRandomSpawnActiveMin(cap)
     call AI_SetRandomSpawnOwner(owner)
     call AI_SpawnRandomHero(showMessage)
@@ -180,6 +185,13 @@ globals
     private constant real AI_CAMP_COOLDOWN_MAX = 900.00
     private constant real AI_CAMP_FIRE_MIN_OFFSET = 500.00
     private constant real AI_CAMP_FIRE_MAX_OFFSET = 800.00
+    private constant integer AI_RANDOM_ACTIVE_CAP_MAX = 32
+    private constant integer AI_PARTY_MAX_SIZE = 3
+    private constant real AI_PARTY_ORGANIZE_MIN = 45.00
+    private constant real AI_PARTY_ORGANIZE_MAX = 120.00
+    private constant real AI_PARTY_SCAN_RANGE = 1300.00
+    private constant real AI_PARTY_FOLLOW_RANGE = 700.00
+    private constant real AI_PARTY_CLOSE_RANGE = 300.00
 
     private constant integer ITEM_MINOR_MANA_POTION = 'I6BS'
     private constant integer ITEM_MANA_POTION = 'pman'
@@ -210,6 +222,8 @@ globals
     private Table ProfileActiveCount = 0
     private Table ProfileReviveDelay = 0
     private Table ProfileRandomUniqueId = 0
+    private Table ProfileFixedHeroLevel = 0
+    private Table ProfileLockXpUntilInvite = 0
     private Table ProfileNoManaRestore = 0
     private Table ProfileAllowCompanionTravel = 0
     private Table ProfileAutonomousDisabled = 0
@@ -239,6 +253,9 @@ globals
     private Table InstanceRandomManaged = 0
     private Table InstanceHiddenByCap = 0
     private Table InstanceCompanionControlled = 0
+    private Table InstanceInviteUnlocked = 0
+    private Table InstanceAiPartyLeader = 0
+    private Table InstanceAiPartyFollowerCount = 0
     private Table InstanceNextThink = 0
     private Table InstanceNextAbility = 0
     private Table InstanceNextItem = 0
@@ -277,6 +294,11 @@ globals
     private Table ProfileShopY = 0
     private Table ProfileShopItemCount = 0
     private Table ProfileShopItemType = 0
+    private Table ProfileAllowedZoneCount = 0
+    private Table ProfileAllowedZoneMinX = 0
+    private Table ProfileAllowedZoneMinY = 0
+    private Table ProfileAllowedZoneMaxX = 0
+    private Table ProfileAllowedZoneMaxY = 0
     private Table ProfileStartingAbilityCount = 0
     private Table ProfileStartingAbilityId = 0
     private Table ProfileAbilityCount = 0
@@ -306,10 +328,11 @@ globals
     private integer RandomSpawnProfileCount = 0
     private integer array RandomSpawnProfiles
     private integer RandomSpawnManagedCount = 0
-    private integer RandomSpawnHardCap = 24
-    private integer RandomSpawnActiveCap = 8
+    private integer RandomSpawnHardCap = 32
+    private integer RandomSpawnActiveCap = 4
     private integer RandomSpawnActiveMin = 4
     private integer RandomSpawnOwnerIndex = AI_RANDOM_DEFAULT_OWNER_INDEX
+    private integer RandomSpawnFirstProfile = 0
     private item array InstanceProfessionToolItem
     private integer array InstanceProfessionToolType
     private real array InstanceProfessionToolExpires
@@ -333,8 +356,10 @@ globals
     private rect TempRect = null
     private boolean DebugMode = DEBUG_DEFAULT
     private boolean RandomSpawnEnabled = true
+    private boolean RandomSpawnFirstProfileDone = false
     private boolean RandomTravelEnabled = true
     private real NextGlobalBark = 0.00
+    private real NextAiPartyOrganize = 0.00
     private real RandomPointX = 0.00
     private real RandomPointY = 0.00
     private item ProfessionSearchItem = null
@@ -392,6 +417,8 @@ private function EnsureState takes nothing returns nothing
         set ProfileActiveCount = Table.create()
         set ProfileReviveDelay = Table.create()
         set ProfileRandomUniqueId = Table.create()
+        set ProfileFixedHeroLevel = Table.create()
+        set ProfileLockXpUntilInvite = Table.create()
         set ProfileNoManaRestore = Table.create()
         set ProfileAllowCompanionTravel = Table.create()
         set ProfileAutonomousDisabled = Table.create()
@@ -419,6 +446,9 @@ private function EnsureState takes nothing returns nothing
         set InstanceRandomManaged = Table.create()
         set InstanceHiddenByCap = Table.create()
         set InstanceCompanionControlled = Table.create()
+        set InstanceInviteUnlocked = Table.create()
+        set InstanceAiPartyLeader = Table.create()
+        set InstanceAiPartyFollowerCount = Table.create()
         set InstanceNextThink = Table.create()
         set InstanceNextAbility = Table.create()
         set InstanceNextItem = Table.create()
@@ -456,6 +486,11 @@ private function EnsureState takes nothing returns nothing
         set ProfileShopY = Table.create()
         set ProfileShopItemCount = Table.create()
         set ProfileShopItemType = Table.create()
+        set ProfileAllowedZoneCount = Table.create()
+        set ProfileAllowedZoneMinX = Table.create()
+        set ProfileAllowedZoneMinY = Table.create()
+        set ProfileAllowedZoneMaxX = Table.create()
+        set ProfileAllowedZoneMaxY = Table.create()
         set ProfileStartingAbilityCount = Table.create()
         set ProfileStartingAbilityId = Table.create()
         set ProfileAbilityCount = Table.create()
@@ -529,6 +564,45 @@ endfunction
 
 private function GetPointKey takes integer profileId, integer index returns integer
     return profileId * 100 + index
+endfunction
+
+private function IsPointInProfileAllowedZone takes integer profileId, real x, real y returns boolean
+    local integer count = ProfileAllowedZoneCount[profileId]
+    local integer index = 1
+    local integer key
+    if count <= 0 then
+        return true
+    endif
+    loop
+        exitwhen index > count
+        set key = GetPointKey(profileId, index)
+        if x >= ProfileAllowedZoneMinX.real[key] and x <= ProfileAllowedZoneMaxX.real[key] and y >= ProfileAllowedZoneMinY.real[key] and y <= ProfileAllowedZoneMaxY.real[key] then
+            return true
+        endif
+        set index = index + 1
+    endloop
+    return false
+endfunction
+
+private function IsProfileZoneRestricted takes integer instanceId returns boolean
+    if instanceId <= 0 or InstanceInviteUnlocked.boolean[instanceId] then
+        return false
+    endif
+    return ProfileAllowedZoneCount[InstanceProfile[instanceId]] > 0
+endfunction
+
+private function PickProfileAllowedZonePoint takes integer profileId returns boolean
+    local integer count = ProfileAllowedZoneCount[profileId]
+    local integer index
+    local integer key
+    if count <= 0 then
+        return false
+    endif
+    set index = GetRandomInt(1, count)
+    set key = GetPointKey(profileId, index)
+    set RandomPointX = GetRandomReal(ProfileAllowedZoneMinX.real[key], ProfileAllowedZoneMaxX.real[key])
+    set RandomPointY = GetRandomReal(ProfileAllowedZoneMinY.real[key], ProfileAllowedZoneMaxY.real[key])
+    return true
 endfunction
 
 private function GetBarkKey takes integer profileId, integer barkType returns integer
@@ -989,11 +1063,18 @@ endfunction
 private function BeginWander takes integer instanceId, unit whichUnit returns nothing
     local real x
     local real y
+    local integer profileId
     if instanceId <= 0 or whichUnit == null then
         return
     endif
-    set x = GetRandomReal(GetRectMinX(bj_mapInitialPlayableArea), GetRectMaxX(bj_mapInitialPlayableArea))
-    set y = GetRandomReal(GetRectMinY(bj_mapInitialPlayableArea), GetRectMaxY(bj_mapInitialPlayableArea))
+    set profileId = InstanceProfile[instanceId]
+    if IsProfileZoneRestricted(instanceId) and PickProfileAllowedZonePoint(profileId) then
+        set x = RandomPointX
+        set y = RandomPointY
+    else
+        set x = GetRandomReal(GetRectMinX(bj_mapInitialPlayableArea), GetRectMaxX(bj_mapInitialPlayableArea))
+        set y = GetRandomReal(GetRectMinY(bj_mapInitialPlayableArea), GetRectMaxY(bj_mapInitialPlayableArea))
+    endif
     call SetInstanceState(instanceId, AI_STATE_WANDER)
     call IssuePointOrder(whichUnit, "attack", x, y)
 endfunction
@@ -1010,6 +1091,10 @@ private function BeginCombatRetreat takes integer instanceId, unit whichUnit ret
     set distance = GetRandomReal(400.00, 1000.00)
     set x = GetUnitX(whichUnit) + distance * Cos(angle)
     set y = GetUnitY(whichUnit) + distance * Sin(angle)
+    if IsProfileZoneRestricted(instanceId) and not IsPointInProfileAllowedZone(InstanceProfile[instanceId], x, y) and PickProfileAllowedZonePoint(InstanceProfile[instanceId]) then
+        set x = RandomPointX
+        set y = RandomPointY
+    endif
     call SetInstanceState(instanceId, AI_STATE_RETREAT_COMBAT)
     set InstanceRetreatUntil.real[instanceId] = GetNow() + AI_RETREAT_COMBAT_TIME
     call IssuePointOrder(whichUnit, "move", x, y)
@@ -1036,9 +1121,31 @@ private function BeginBaseRetreat takes integer instanceId, unit whichUnit retur
         set x = InstanceHomeX.real[instanceId]
         set y = InstanceHomeY.real[instanceId]
     endif
+    if IsProfileZoneRestricted(instanceId) and not IsPointInProfileAllowedZone(profileId, x, y) and PickProfileAllowedZonePoint(profileId) then
+        set x = RandomPointX
+        set y = RandomPointY
+    endif
     call SetInstanceState(instanceId, AI_STATE_RETREAT_BASE)
     set InstanceRetreatUntil.real[instanceId] = GetNow() + AI_RETREAT_BASE_TIME
     call IssuePointOrder(whichUnit, "move", x, y)
+endfunction
+
+private function TryReturnToProfileAllowedZone takes integer instanceId, unit whichUnit returns boolean
+    local integer profileId
+    if instanceId <= 0 or whichUnit == null or not IsProfileZoneRestricted(instanceId) then
+        return false
+    endif
+    set profileId = InstanceProfile[instanceId]
+    if IsPointInProfileAllowedZone(profileId, GetUnitX(whichUnit), GetUnitY(whichUnit)) then
+        return false
+    endif
+    if PickProfileAllowedZonePoint(profileId) then
+        call SetInstanceState(instanceId, AI_STATE_WANDER)
+        call IssuePointOrder(whichUnit, "attack", RandomPointX, RandomPointY)
+        call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " returns to its allowed initial zones.")
+        return true
+    endif
+    return false
 endfunction
 
 private function IsNearActionPoint takes integer instanceId, unit whichUnit, real range returns boolean
@@ -1119,7 +1226,7 @@ private function IsRandomManagedVisible takes integer instanceId returns boolean
         return false
     endif
     set whichUnit = InstanceUnit.unit[instanceId]
-    set result = whichUnit != null and IsAliveUnit(whichUnit) and not IsUnitHidden(whichUnit)
+    set result = whichUnit != null and IsAliveUnit(whichUnit) and not IsUnitHidden(whichUnit) and not IsCompanionControlled(whichUnit)
     set whichUnit = null
     return result
 endfunction
@@ -1561,6 +1668,121 @@ private function CompleteTravel takes integer instanceId, unit whichUnit returns
     endif
 endfunction
 
+private function IsAiPartyMember takes integer instanceId returns boolean
+    return instanceId > 0 and InstanceAiPartyLeader[instanceId] > 0
+endfunction
+
+private function RemoveInstanceFromAiParty takes integer instanceId returns nothing
+    local integer leaderId
+    local integer memberId
+    local integer index = 1
+    local integer count
+    if instanceId <= 0 or InstanceAiPartyLeader == 0 then
+        return
+    endif
+    set leaderId = InstanceAiPartyLeader[instanceId]
+    if leaderId <= 0 then
+        return
+    endif
+    if leaderId == instanceId then
+        loop
+            exitwhen index > ActiveCount
+            set memberId = ActiveInstances[index]
+            if InstanceAiPartyLeader[memberId] == instanceId then
+                call InstanceAiPartyLeader.remove(memberId)
+                if memberId != instanceId and InstanceState[memberId] == AI_STATE_SOCIAL then
+                    call SetInstanceState(memberId, AI_STATE_IDLE)
+                endif
+            endif
+            set index = index + 1
+        endloop
+        call InstanceAiPartyFollowerCount.remove(instanceId)
+    else
+        call InstanceAiPartyLeader.remove(instanceId)
+        set count = InstanceAiPartyFollowerCount[leaderId]
+        if count > 0 then
+            set InstanceAiPartyFollowerCount[leaderId] = count - 1
+        endif
+    endif
+endfunction
+
+private function PickRandomManagedTravelReturnPoint takes integer instanceId returns nothing
+    local integer profileId = InstanceProfile[instanceId]
+    local integer count = ProfileSpawnCount[profileId]
+    local integer index
+    local integer key
+    if count > 0 then
+        set index = GetRandomInt(1, count)
+        set key = GetPointKey(profileId, index)
+        set RandomPointX = ProfileSpawnX.real[key]
+        set RandomPointY = ProfileSpawnY.real[key]
+    else
+        set RandomPointX = InstanceHomeX.real[instanceId]
+        set RandomPointY = InstanceHomeY.real[instanceId]
+    endif
+endfunction
+
+private function StartRandomManagedCapTravel takes integer instanceId returns boolean
+    local unit whichUnit
+    if instanceId <= 0 or InstanceTraveling.boolean[instanceId] or InstanceHiddenByCap.boolean[instanceId] or not InstanceRandomManaged.boolean[instanceId] then
+        return false
+    endif
+    set whichUnit = InstanceUnit.unit[instanceId]
+    if whichUnit == null or not IsAliveUnit(whichUnit) or IsCompanionControlled(whichUnit) then
+        set whichUnit = null
+        return false
+    endif
+    call RemoveInstanceFromAiParty(instanceId)
+    call PickRandomManagedTravelReturnPoint(instanceId)
+    set InstanceTraveling.boolean[instanceId] = true
+    set InstanceTravelReturnAt.real[instanceId] = GetNow() + GetRandomReal(AI_RANDOM_TRAVEL_DURATION_MIN, AI_RANDOM_TRAVEL_DURATION_MAX)
+    set InstanceTravelReturnX.real[instanceId] = RandomPointX
+    set InstanceTravelReturnY.real[instanceId] = RandomPointY
+    call RemoveTrackedProfessionTool(instanceId)
+    set InstanceSocialTarget[instanceId] = null
+    set InstanceSocialStopped[instanceId] = false
+    call InstanceSocialUntil.remove(instanceId)
+    call SetInstanceState(instanceId, AI_STATE_TRAVEL)
+    call IssueImmediateOrder(whichUnit, "stop")
+    call PauseUnit(whichUnit, true)
+    call ShowUnit(whichUnit, false)
+    call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " went traveling after the active AI cap was lowered.")
+    set whichUnit = null
+    return true
+endfunction
+
+private function EnforceRandomSpawnActiveCap takes nothing returns nothing
+    local integer guard = 0
+    local integer index
+    local integer instanceId
+    local integer selected
+    local integer seen
+    if RandomSpawnActiveCap <= 0 then
+        return
+    endif
+    loop
+        exitwhen CountRandomManagedVisible() <= RandomSpawnActiveCap or guard >= ActiveCount
+        set index = 1
+        set selected = 0
+        set seen = 0
+        loop
+            exitwhen index > ActiveCount
+            set instanceId = ActiveInstances[index]
+            if IsRandomManagedVisible(instanceId) then
+                set seen = seen + 1
+                if GetRandomInt(1, seen) == 1 then
+                    set selected = instanceId
+                endif
+            endif
+            set index = index + 1
+        endloop
+        if selected <= 0 or not StartRandomManagedCapTravel(selected) then
+            return
+        endif
+        set guard = guard + 1
+    endloop
+endfunction
+
 public function RegisterClass takes string className returns integer
     local integer key
     local integer classId
@@ -1626,6 +1848,26 @@ public function SetProfileRandomUniqueId takes integer profileId, integer unique
         return
     endif
     set ProfileRandomUniqueId[profileId] = uniqueId
+endfunction
+
+public function SetProfileFixedHeroLevel takes integer profileId, integer level returns nothing
+    call EnsureState()
+    if profileId <= 0 then
+        return
+    endif
+    if level <= 0 then
+        call ProfileFixedHeroLevel.remove(profileId)
+    else
+        set ProfileFixedHeroLevel[profileId] = level
+    endif
+endfunction
+
+public function SetProfileXpLockedUntilInvite takes integer profileId, boolean enabled returns nothing
+    call EnsureState()
+    if profileId <= 0 then
+        return
+    endif
+    set ProfileLockXpUntilInvite.boolean[profileId] = enabled
 endfunction
 
 public function SetUnitTypeDefaultProfile takes integer unitTypeId, integer profileId returns nothing
@@ -1725,25 +1967,40 @@ endfunction
 
 public function SetRandomSpawnHardCap takes integer cap returns nothing
     call EnsureState()
+    if cap < 1 then
+        set cap = 1
+    elseif cap > AI_RANDOM_ACTIVE_CAP_MAX then
+        set cap = AI_RANDOM_ACTIVE_CAP_MAX
+    endif
     set RandomSpawnHardCap = cap
     call DebugMsg("Random spawn hard cap set to " + I2S(cap) + ".")
 endfunction
 
 public function SetRandomSpawnActiveCap takes integer cap returns nothing
     call EnsureState()
+    if cap < 1 then
+        set cap = 1
+    elseif cap > AI_RANDOM_ACTIVE_CAP_MAX then
+        set cap = AI_RANDOM_ACTIVE_CAP_MAX
+    endif
     set RandomSpawnActiveCap = cap
     if cap > 0 and RandomSpawnActiveMin > cap then
         set RandomSpawnActiveMin = cap
     endif
+    call EnforceRandomSpawnActiveCap()
     call DebugMsg("Random spawn active cap set to " + I2S(cap) + ".")
+endfunction
+
+public function GetRandomSpawnActiveCap takes nothing returns integer
+    call EnsureState()
+    return RandomSpawnActiveCap
 endfunction
 
 public function SetRandomSpawnActiveMin takes integer cap returns nothing
     call EnsureState()
-    if cap < 0 then
-        set cap = 0
-    endif
-    if RandomSpawnActiveCap > 0 and cap > RandomSpawnActiveCap then
+    if cap < 1 then
+        set cap = 1
+    elseif RandomSpawnActiveCap > 0 and cap > RandomSpawnActiveCap then
         set cap = RandomSpawnActiveCap
     endif
     set RandomSpawnActiveMin = cap
@@ -1769,6 +2026,15 @@ public function AddRandomSpawnProfile takes integer profileId returns nothing
     endif
     set RandomSpawnProfileCount = RandomSpawnProfileCount + 1
     set RandomSpawnProfiles[RandomSpawnProfileCount] = profileId
+endfunction
+
+public function SetRandomSpawnFirstProfile takes integer profileId returns nothing
+    call EnsureState()
+    if profileId <= 0 or ProfileUnitType[profileId] == 0 then
+        return
+    endif
+    set RandomSpawnFirstProfile = profileId
+    set RandomSpawnFirstProfileDone = false
 endfunction
 
 public function SetProfileRegisterCallback takes integer profileId, code callback returns nothing
@@ -1891,6 +2157,37 @@ public function AddProfileRetreatRect takes integer profileId, rect whichRect re
         return
     endif
     call AI_AddProfileRetreatPoint(profileId, GetRectCenterX(whichRect), GetRectCenterY(whichRect))
+endfunction
+
+public function AddProfileAllowedZoneRect takes integer profileId, rect whichRect returns nothing
+    local integer count
+    local integer key
+    local real minX
+    local real minY
+    local real maxX
+    local real maxY
+    call EnsureState()
+    if profileId <= 0 or whichRect == null then
+        return
+    endif
+    set count = ProfileAllowedZoneCount[profileId]
+    if count >= MAX_PROFILE_POINTS then
+        return
+    endif
+    set minX = GetRectMinX(whichRect)
+    set minY = GetRectMinY(whichRect)
+    set maxX = GetRectMaxX(whichRect)
+    set maxY = GetRectMaxY(whichRect)
+    if maxX < minX or maxY < minY then
+        return
+    endif
+    set count = count + 1
+    set ProfileAllowedZoneCount[profileId] = count
+    set key = GetPointKey(profileId, count)
+    set ProfileAllowedZoneMinX.real[key] = minX
+    set ProfileAllowedZoneMinY.real[key] = minY
+    set ProfileAllowedZoneMaxX.real[key] = maxX
+    set ProfileAllowedZoneMaxY.real[key] = maxY
 endfunction
 
 public function AddProfileShopPoint takes integer profileId, real x, real y returns nothing
@@ -2268,6 +2565,22 @@ public function BeginCamp takes unit whichUnit, real duration returns boolean
     return BeginCampState(instanceId, whichUnit, duration)
 endfunction
 
+private function ApplyProfileHeroRules takes integer instanceId, unit whichUnit returns nothing
+    local integer profileId
+    local integer fixedLevel
+    if instanceId <= 0 or whichUnit == null or not IsUnitType(whichUnit, UNIT_TYPE_HERO) then
+        return
+    endif
+    set profileId = InstanceProfile[instanceId]
+    set fixedLevel = ProfileFixedHeroLevel[profileId]
+    if fixedLevel > 0 and not InstanceInviteUnlocked.boolean[instanceId] and GetHeroLevel(whichUnit) != fixedLevel then
+        call SetHeroLevel(whichUnit, fixedLevel, false)
+    endif
+    if ProfileLockXpUntilInvite.boolean[profileId] and not InstanceInviteUnlocked.boolean[instanceId] then
+        call SuspendHeroXP(whichUnit, true)
+    endif
+endfunction
+
 public function RegisterUnit takes unit whichUnit, integer profileId, integer uniqueId returns integer
     local integer existing
     local integer instanceId
@@ -2329,6 +2642,7 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
         set UniqueInstance[uniqueId] = instanceId
     endif
     call ApplyStartingAbilities(instanceId, whichUnit)
+    call ApplyProfileHeroRules(instanceId, whichUnit)
     call RefreshInstanceProfessionSkills(instanceId, whichUnit)
     call RunProfileTrigger(ProfileRegisterTrigger, instanceId, whichUnit)
     if DebugMode then
@@ -2387,6 +2701,7 @@ public function UnregisterUnit takes unit whichUnit returns nothing
         call DestroyTimer(reviveTimer)
         call InstanceReviveTimer.timer.remove(instanceId)
     endif
+    call RemoveInstanceFromAiParty(instanceId)
     call ClearDebugIcon(instanceId)
     call RemoveActiveInstance(instanceId)
     call DecrementCounts(classId, profileId, unitTypeId)
@@ -2416,6 +2731,9 @@ public function UnregisterUnit takes unit whichUnit returns nothing
     call InstanceRandomManaged.remove(instanceId)
     call InstanceHiddenByCap.remove(instanceId)
     call InstanceCompanionControlled.remove(instanceId)
+    call InstanceInviteUnlocked.remove(instanceId)
+    call InstanceAiPartyLeader.remove(instanceId)
+    call InstanceAiPartyFollowerCount.remove(instanceId)
     call InstanceNextThink.remove(instanceId)
     call InstanceNextAbility.remove(instanceId)
     call InstanceNextItem.remove(instanceId)
@@ -2549,6 +2867,14 @@ private function GetRandomSpawnProfile takes nothing returns integer
     if RandomSpawnProfileCount <= 0 then
         return 0
     endif
+    if not RandomSpawnFirstProfileDone and RandomSpawnFirstProfile > 0 then
+        set profileId = RandomSpawnFirstProfile
+        set uniqueId = ProfileRandomUniqueId[profileId]
+        if CanRegister(profileId, uniqueId) then
+            return profileId
+        endif
+        set RandomSpawnFirstProfileDone = true
+    endif
     set start = GetRandomInt(1, RandomSpawnProfileCount)
     set index = start
     loop
@@ -2609,15 +2935,30 @@ endfunction
 private function ApplyRandomSpawnPresentation takes unit whichUnit returns nothing
     local integer newLevel
     local integer instanceId
+    local integer profileId = 0
+    local integer fixedLevel = 0
     if whichUnit == null then
         return
     endif
     call SetUnitColor(whichUnit, ConvertPlayerColor(GetRandomInt(0, MAX_PLAYER_COLOR_INDEX)))
-    if IsUnitType(whichUnit, UNIT_TYPE_HERO) then
-        set newLevel = GetHeroLevel(whichUnit) + GetRandomInt(1, 15)
-        call SetHeroLevel(whichUnit, newLevel, false)
-    endif
     set instanceId = UnitInstance[GetHandleId(whichUnit)]
+    if instanceId > 0 then
+        set profileId = InstanceProfile[instanceId]
+        set fixedLevel = ProfileFixedHeroLevel[profileId]
+    endif
+    if IsUnitType(whichUnit, UNIT_TYPE_HERO) then
+        if fixedLevel > 0 and not InstanceInviteUnlocked.boolean[instanceId] then
+            if GetHeroLevel(whichUnit) != fixedLevel then
+                call SetHeroLevel(whichUnit, fixedLevel, false)
+            endif
+            if ProfileLockXpUntilInvite.boolean[profileId] then
+                call SuspendHeroXP(whichUnit, true)
+            endif
+        else
+            set newLevel = GetHeroLevel(whichUnit) + GetRandomInt(1, 15)
+            call SetHeroLevel(whichUnit, newLevel, false)
+        endif
+    endif
     if instanceId > 0 then
         call RefreshInstanceProfessionSkills(instanceId, whichUnit)
     endif
@@ -2666,6 +3007,9 @@ public function SpawnRandomHero takes boolean showMessage returns unit
     if instanceId > 0 then
         call MarkRandomManaged(instanceId)
         call ApplyRandomSpawnPresentation(created)
+        if profileId == RandomSpawnFirstProfile then
+            set RandomSpawnFirstProfileDone = true
+        endif
         call DebugMsg("Random spawn created " + GetDebugInstanceName(instanceId, created) + " instance=" + I2S(instanceId) + " profile=" + I2S(profileId) + " active=" + I2S(CountRandomManagedVisible()) + "/" + I2S(RandomSpawnActiveCap) + " managed=" + I2S(RandomSpawnManagedCount) + "/" + I2S(RandomSpawnHardCap) + ".")
         if RandomSpawnActiveCap > 0 and CountRandomManagedVisible() > RandomSpawnActiveCap then
             call HideRandomManagedByCap(instanceId, created)
@@ -4027,6 +4371,11 @@ private function ProcessInstance takes integer instanceId, real now returns noth
         return
     endif
 
+    if TryReturnToProfileAllowedZone(instanceId, whichUnit) then
+        set whichUnit = null
+        return
+    endif
+
     if state == AI_STATE_RETREAT_COMBAT or state == AI_STATE_RETREAT_BASE or state == AI_STATE_BOSS_EVADE then
         if now < InstanceRetreatUntil.real[instanceId] then
             set whichUnit = null
@@ -4212,8 +4561,16 @@ private function HandleLevel takes nothing returns nothing
     local unit whichUnit = GetLevelingUnit()
     local integer instanceId = UnitInstance[GetHandleId(whichUnit)]
     local integer profileId
+    local integer fixedLevel
     if instanceId > 0 then
         set profileId = InstanceProfile[instanceId]
+        set fixedLevel = ProfileFixedHeroLevel[profileId]
+        if fixedLevel > 0 and not InstanceInviteUnlocked.boolean[instanceId] and GetHeroLevel(whichUnit) > fixedLevel then
+            call SetHeroLevel(whichUnit, fixedLevel, false)
+        endif
+        if ProfileLockXpUntilInvite.boolean[profileId] and not InstanceInviteUnlocked.boolean[instanceId] then
+            call SuspendHeroXP(whichUnit, true)
+        endif
         call SetWidgetLife(whichUnit, GetUnitState(whichUnit, UNIT_STATE_MAX_LIFE))
         if ProfileNoManaRestore.boolean[profileId] then
             call SetUnitState(whichUnit, UNIT_STATE_MANA, 0.00)
@@ -4264,18 +4621,40 @@ private function HandleSoldUnit takes nothing returns nothing
     set soldUnit = null
 endfunction
 
+private function UnlockInviteGatedProfileState takes integer instanceId, unit whichUnit returns nothing
+    local integer profileId
+    if instanceId <= 0 or InstanceInviteUnlocked.boolean[instanceId] then
+        return
+    endif
+    set profileId = InstanceProfile[instanceId]
+    set InstanceInviteUnlocked.boolean[instanceId] = true
+    if whichUnit != null and IsUnitType(whichUnit, UNIT_TYPE_HERO) and ProfileLockXpUntilInvite.boolean[profileId] then
+        call SuspendHeroXP(whichUnit, false)
+    endif
+    if ProfileLockXpUntilInvite.boolean[profileId] or ProfileAllowedZoneCount[profileId] > 0 then
+        call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " unlocked invite-gated AI restrictions.")
+    endif
+endfunction
+
 private function HandleCompanionCommand takes nothing returns nothing
     local unit whichUnit = Companions_EventUnit
     local integer commandId = Companions_EventCommand
     local integer mode = Companions_EventMode
     local integer barkType = 0
+    local integer instanceId
 
-    if whichUnit == null or UnitInstance[GetHandleId(whichUnit)] <= 0 then
+    if whichUnit == null then
+        set whichUnit = null
+        return
+    endif
+    set instanceId = UnitInstance[GetHandleId(whichUnit)]
+    if instanceId <= 0 then
         set whichUnit = null
         return
     endif
 
     if commandId == Companions_COMMAND_INVITE then
+        call UnlockInviteGatedProfileState(instanceId, whichUnit)
         set barkType = AI_BARK_GREET
     elseif commandId == Companions_COMMAND_KICK then
         if GetRandomInt(1, 2) == 1 then
