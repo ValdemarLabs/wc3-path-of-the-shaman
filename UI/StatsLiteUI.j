@@ -31,7 +31,7 @@
     call StatsLiteUI_Refresh()
 
 **/
-library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
+library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI // CHANGE: use AI registry instead of legacy udg_NPC_Horde_AI_xxx globals
     globals
         // Monitor sizing and refresh cadence.
         private constant real SLUI_REFRESH_INTERVAL = 0.35
@@ -66,6 +66,9 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         private constant integer SLUI_KIND_PET = 2
         private constant integer SLUI_KIND_COMPANION = 3
         private constant integer SLUI_UNIT_SHADOWCLAW = 'n655'
+        private constant integer SLUI_RESOURCE_MANA = 0 // CHANGE: default caster mana/resource bar
+        private constant integer SLUI_RESOURCE_RAGE = 1 // CHANGE: warrior-style red resource bar
+        private constant integer SLUI_RESOURCE_ENERGY = 2 // CHANGE: rogue-style yellow resource bar
 
         private boolean SLUI_Initialized = false
         // CHANGE: Keep default false. Init creates the hidden frame tree only;
@@ -117,6 +120,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         private string array SLUI_RowStateCache
 
         private Table SLUI_ButtonAction = 0
+        private Table SLUI_ClassResourceMode = 0 // CHANGE: AI classId -> resource display mode
 
         private trigger SLUI_ButtonTrigger = null
         private trigger SLUI_ClearFocusTrigger = null
@@ -126,7 +130,11 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         private timer SLUI_RefreshTimer = null
 
         private string SLUI_PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
-        private string SLUI_BarTexture = "UI\\Feedback\\XPBar\\human-bigbar-fill.blp" // CHANGE: tintable bar texture; avoids black blank-background bars
+        private string SLUI_BarEmptyTexture = "ReplaceableTextures\\TeamColor\\TeamColor08.blp" // CHANGE: grey empty bar texture
+        private string SLUI_BarHPGreenTexture = "ReplaceableTextures\\TeamColor\\TeamColor06.blp" // CHANGE: green HP fill
+        private string SLUI_BarHPYellowTexture = "ReplaceableTextures\\TeamColor\\TeamColor04.blp" // CHANGE: yellow HP fill
+        private string SLUI_BarHPRedTexture = "ReplaceableTextures\\TeamColor\\TeamColor00.blp" // CHANGE: red HP / warrior resource fill
+        private string SLUI_BarMPLightBlueTexture = "ReplaceableTextures\\TeamColor\\TeamColor09.blp" // CHANGE: light-blue mana fill
         private string SLUI_DefaultUnitIcon = "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp"
         private string SLUI_DefaultPetIcon = "ReplaceableTextures\\CommandButtons\\BTNAnimalWarTraining.blp"
         private string SLUI_ConfigIconPath = "ReplaceableTextures\\CommandButtons\\BTNengineering.blp"
@@ -137,6 +145,41 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
             return "|cff80ff80On|r"
         endif
         return "|cffff8080Off|r"
+    endfunction
+
+    // CHANGE: Resource-mode registry is separate from UI frame init so AI
+    // sublibraries can register class resource colors during their own Init.
+    private function SLUI_EnsureResourceRegistry takes nothing returns nothing
+        if SLUI_ClassResourceMode == 0 then
+            set SLUI_ClassResourceMode = Table.create()
+        endif
+    endfunction
+
+    // CHANGE: Public API for AI class libraries.
+    public function RegisterManaResourceClass takes integer classId returns nothing
+        if classId <= 0 then
+            return
+        endif
+        call SLUI_EnsureResourceRegistry()
+        set SLUI_ClassResourceMode.integer[classId] = SLUI_RESOURCE_MANA
+    endfunction
+
+    // CHANGE: Public API for warrior/rage classes.
+    public function RegisterRageResourceClass takes integer classId returns nothing
+        if classId <= 0 then
+            return
+        endif
+        call SLUI_EnsureResourceRegistry()
+        set SLUI_ClassResourceMode.integer[classId] = SLUI_RESOURCE_RAGE
+    endfunction
+
+    // CHANGE: Public API for rogue/energy classes.
+    public function RegisterEnergyResourceClass takes integer classId returns nothing
+        if classId <= 0 then
+            return
+        endif
+        call SLUI_EnsureResourceRegistry()
+        set SLUI_ClassResourceMode.integer[classId] = SLUI_RESOURCE_ENERGY
     endfunction
 
     private function SLUI_IsValidUnit takes unit u returns boolean
@@ -265,19 +308,12 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
             return udg_ReviveTimerZulkis
         elseif kind == SLUI_KIND_PET or u == udg_TamedUnit then
             return udg_ReviveTimerPet
-        elseif u == udg_NPC_Horde_AI_Rogue then
-            return udg_ReviveTimerRogue
-        elseif u == udg_NPC_Horde_AI_Warlock then
-            return udg_ReviveTimerWarlock
-        elseif u == udg_NPC_Horde_AI_Shaman then
-            return udg_ReviveTimerRestoshaman
-        elseif u == udg_NPC_Horde_AI_Warrior then
-            return udg_ReviveTimerWarrior
-        elseif u == udg_NPC_Neutral_Engineer then
-            return udg_ReviveTimerEngineer
-        elseif u == udg_Valeria then
-            return udg_ReviveTimerValeria
         endif
+
+        // CHANGE: Legacy AI companion revive timers were removed here.
+        // Current AI.j owns AI instance revive timers privately. Without a public
+        // AI_GetReviveRemaining/AI_GetReviveTimer API, StatsLiteUI should not
+        // reference old class-specific GUI revive timer variables.
         return null
     endfunction
 
@@ -359,45 +395,45 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         return count
     endfunction
 
-    // CHANGE: HP fill color is interpolated by current percent.
-    // Warcraft III BACKDROP bars do not provide a true shader gradient, but this
-    // gives the intended red -> yellow -> green health feedback.
-    private function SLUI_GetHealthColor takes integer percent returns integer
-        local real t
-        local integer red
-        local integer green
-        local integer blue = 36
+    // CHANGE: HP fill uses real colored textures instead of vertex-coloring.
+    // This avoids the observed white/black XP-bar rendering on some WC3 builds.
+    private function SLUI_GetHealthBarTexture takes integer percent returns string
+        if percent >= 67 then
+            return SLUI_BarHPGreenTexture
+        elseif percent >= 34 then
+            return SLUI_BarHPYellowTexture
+        endif
+        return SLUI_BarHPRedTexture
+    endfunction
 
-        if percent < 0 then
-            set percent = 0
-        elseif percent > 100 then
-            set percent = 100
+    // CHANGE: Resource bar texture is resolved from the AI class registry.
+    // This replaces legacy udg_NPC_Horde_AI_xxx unit globals and works for
+    // units registered by AI sublibraries such as AIWarrior/AIRogue.
+    private function SLUI_GetResourceBarTexture takes unit u returns string
+        local integer classId = 0
+        local integer mode = SLUI_RESOURCE_MANA
+
+        if SLUI_IsValidUnit(u) then
+            set classId = AI_GetClassId(u)
         endif
 
-        if percent <= 50 then
-            set t = I2R(percent) / 50.0
-            set red = 220
-            set green = R2I(36.0 + 190.0 * t)
-        else
-            set t = I2R(percent - 50) / 50.0
-            set red = R2I(220.0 - 188.0 * t)
-            set green = 226
+        if classId > 0 then
+            call SLUI_EnsureResourceRegistry()
+            if SLUI_ClassResourceMode.has(classId) then
+                set mode = SLUI_ClassResourceMode.integer[classId]
+            endif
         endif
 
-        return BlzConvertColor(235, red, green, blue)
+        if mode == SLUI_RESOURCE_RAGE then
+            return SLUI_BarHPRedTexture
+        elseif mode == SLUI_RESOURCE_ENERGY then
+            return SLUI_BarHPYellowTexture
+        endif
+        return SLUI_BarMPLightBlueTexture
     endfunction
 
-    // CHANGE: MP fill stays light blue.
-    private function SLUI_GetManaColor takes nothing returns integer
-        return BlzConvertColor(230, 105, 195, 255)
-    endfunction
 
-    // CHANGE: Empty bar space uses semi-transparent light grey instead of black.
-    private function SLUI_GetEmptyBarColor takes nothing returns integer
-        return BlzConvertColor(105, 165, 165, 165)
-    endfunction
-
-    private function SLUI_SetBar takes framehandle fillFrame, framehandle textFrame, real maxWidth, real height, integer percent, integer color, string label returns nothing
+    private function SLUI_SetBar takes framehandle fillFrame, framehandle textFrame, real maxWidth, real height, integer percent, string fillTexture, string label returns nothing
         local real width
 
         // CHANGE: Clamp first, then resize the fill frame.
@@ -422,8 +458,8 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
             endif
         endif
 
+        call BlzFrameSetTexture(fillFrame, fillTexture, 0, false)
         call BlzFrameSetSize(fillFrame, width, height)
-        call BlzFrameSetVertexColor(fillFrame, color)
         call BlzFrameSetText(textFrame, label + " " + I2S(percent) + "%")
 
         set fillFrame = null
@@ -470,8 +506,8 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
             set SLUI_RowDeadState[rowIndex] = dead
             set SLUI_RowHPValue[rowIndex] = hp
             set SLUI_RowMPValue[rowIndex] = mp
-            call SLUI_SetBar(SLUI_RowHPFill[rowIndex], SLUI_RowHPText[rowIndex], SLUI_BAR_WIDTH, 0.008, hp, SLUI_GetHealthColor(hp), "HP")
-            call SLUI_SetBar(SLUI_RowMPFill[rowIndex], SLUI_RowMPText[rowIndex], SLUI_BAR_WIDTH, 0.006, mp, SLUI_GetManaColor(), "MP") // CHANGE: stable light-blue MP fill
+            call SLUI_SetBar(SLUI_RowHPFill[rowIndex], SLUI_RowHPText[rowIndex], SLUI_BAR_WIDTH, 0.007, hp, SLUI_GetHealthBarTexture(hp), "HP") // CHANGE: HP fill texture changes by health percent
+            call SLUI_SetBar(SLUI_RowMPFill[rowIndex], SLUI_RowMPText[rowIndex], SLUI_BAR_WIDTH, 0.006, mp, SLUI_GetResourceBarTexture(u), "MP") // CHANGE: mana/resource fill texture changes by unit class
         endif
 
         call BlzFrameSetVisible(SLUI_RowMPBack[rowIndex], SLUI_ShowMana)
@@ -813,7 +849,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
     endfunction
 
     private function SLUI_CreateRow takes integer rowIndex, real y returns nothing
-        local real barLeft = 0.132 // CHANGE: right-side bar column; left column is reserved for icon/name/status
+        local real barLeft = 0.134 // CHANGE: right-side bar column; left text column starts after the icon
 
         set SLUI_RowButton[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRow" + I2S(rowIndex), SLUI_RowPane, "", 0)
         call BlzFrameSetTexture(SLUI_RowButton[rowIndex], SLUI_PanelTexture, 0, true)
@@ -830,39 +866,39 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         call BlzFrameSetLevel(SLUI_RowIcon[rowIndex], 4) // CHANGE: icon above translucent panel
 
         set SLUI_RowName[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowName" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(SLUI_RowName[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.034, -0.001) // CHANGE: text starts after icon; no overlap
-        call BlzFrameSetSize(SLUI_RowName[rowIndex], 0.094, 0.010)
+        call BlzFrameSetPoint(SLUI_RowName[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.052, -0.001) // CHANGE: text column moved right so it no longer overlaps the icon
+        call BlzFrameSetSize(SLUI_RowName[rowIndex], 0.074, 0.010)
         call BlzFrameSetTextAlignment(SLUI_RowName[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
-        call BlzFrameSetScale(SLUI_RowName[rowIndex], 0.66)
+        call BlzFrameSetScale(SLUI_RowName[rowIndex], 0.60)
         call BlzFrameSetEnable(SLUI_RowName[rowIndex], false)
         call BlzFrameSetLevel(SLUI_RowName[rowIndex], 4) // CHANGE: name above translucent panel
 
         set SLUI_RowLevel[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowLevel" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(SLUI_RowLevel[rowIndex], FRAMEPOINT_BOTTOMLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_BOTTOMLEFT, 0.034, 0.002) // CHANGE: level is below the name, not at the right border
-        call BlzFrameSetSize(SLUI_RowLevel[rowIndex], 0.038, 0.009)
+        call BlzFrameSetPoint(SLUI_RowLevel[rowIndex], FRAMEPOINT_BOTTOMLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_BOTTOMLEFT, 0.052, 0.002) // CHANGE: level aligned under name inside text column
+        call BlzFrameSetSize(SLUI_RowLevel[rowIndex], 0.034, 0.009)
         call BlzFrameSetTextAlignment(SLUI_RowLevel[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
-        call BlzFrameSetScale(SLUI_RowLevel[rowIndex], 0.53)
+        call BlzFrameSetScale(SLUI_RowLevel[rowIndex], 0.50)
         call BlzFrameSetEnable(SLUI_RowLevel[rowIndex], false)
         call BlzFrameSetLevel(SLUI_RowLevel[rowIndex], 4) // CHANGE: level above translucent panel
 
         set SLUI_RowState[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowState" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(SLUI_RowState[rowIndex], FRAMEPOINT_BOTTOMLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_BOTTOMLEFT, 0.074, 0.002) // CHANGE: status aligned on same compact subline as level
-        call BlzFrameSetSize(SLUI_RowState[rowIndex], 0.052, 0.009)
+        call BlzFrameSetPoint(SLUI_RowState[rowIndex], FRAMEPOINT_BOTTOMLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_BOTTOMLEFT, 0.086, 0.002) // CHANGE: status aligned after level, still inside text column
+        call BlzFrameSetSize(SLUI_RowState[rowIndex], 0.040, 0.009)
         call BlzFrameSetTextAlignment(SLUI_RowState[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
-        call BlzFrameSetScale(SLUI_RowState[rowIndex], 0.53)
+        call BlzFrameSetScale(SLUI_RowState[rowIndex], 0.50)
         call BlzFrameSetEnable(SLUI_RowState[rowIndex], false)
         call BlzFrameSetLevel(SLUI_RowState[rowIndex], 4) // CHANGE: status above translucent panel
 
         set SLUI_RowHPBack[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRowHPBack" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetTexture(SLUI_RowHPBack[rowIndex], SLUI_BarTexture, 0, true) // CHANGE: use tintable XP bar texture, not blank black panel texture
+        call BlzFrameSetTexture(SLUI_RowHPBack[rowIndex], SLUI_BarEmptyTexture, 0, false) // CHANGE: grey empty HP space
         call BlzFrameSetPoint(SLUI_RowHPBack[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, barLeft, -0.005)
         call BlzFrameSetSize(SLUI_RowHPBack[rowIndex], SLUI_BAR_WIDTH, 0.007)
-        call BlzFrameSetVertexColor(SLUI_RowHPBack[rowIndex], SLUI_GetEmptyBarColor()) // CHANGE: grey unused bar space
+        call BlzFrameSetAlpha(SLUI_RowHPBack[rowIndex], 125) // CHANGE: semi-transparent empty HP space
         call BlzFrameSetEnable(SLUI_RowHPBack[rowIndex], false)
         call BlzFrameSetLevel(SLUI_RowHPBack[rowIndex], 4) // CHANGE: empty bar background above row panel
 
         set SLUI_RowHPFill[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRowHPFill" + I2S(rowIndex), SLUI_RowHPBack[rowIndex], "", 0)
-        call BlzFrameSetTexture(SLUI_RowHPFill[rowIndex], SLUI_BarTexture, 0, true) // CHANGE: colored fill uses tintable bar texture
+        call BlzFrameSetTexture(SLUI_RowHPFill[rowIndex], SLUI_BarHPGreenTexture, 0, false) // CHANGE: initial HP fill texture; updated dynamically
         call BlzFrameSetPoint(SLUI_RowHPFill[rowIndex], FRAMEPOINT_LEFT, SLUI_RowHPBack[rowIndex], FRAMEPOINT_LEFT, 0.0, 0.0)
         call BlzFrameSetSize(SLUI_RowHPFill[rowIndex], 0.001, 0.007)
         call BlzFrameSetEnable(SLUI_RowHPFill[rowIndex], false)
@@ -876,15 +912,15 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         call BlzFrameSetLevel(SLUI_RowHPText[rowIndex], 6) // CHANGE: label above fill
 
         set SLUI_RowMPBack[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRowMPBack" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetTexture(SLUI_RowMPBack[rowIndex], SLUI_BarTexture, 0, true) // CHANGE: use tintable XP bar texture
+        call BlzFrameSetTexture(SLUI_RowMPBack[rowIndex], SLUI_BarEmptyTexture, 0, false) // CHANGE: grey empty MP/resource space
         call BlzFrameSetPoint(SLUI_RowMPBack[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowHPBack[rowIndex], FRAMEPOINT_BOTTOMLEFT, 0.0, -0.002)
         call BlzFrameSetSize(SLUI_RowMPBack[rowIndex], SLUI_BAR_WIDTH, 0.006)
-        call BlzFrameSetVertexColor(SLUI_RowMPBack[rowIndex], SLUI_GetEmptyBarColor()) // CHANGE: grey unused MP space
+        call BlzFrameSetAlpha(SLUI_RowMPBack[rowIndex], 125) // CHANGE: semi-transparent empty MP/resource space
         call BlzFrameSetEnable(SLUI_RowMPBack[rowIndex], false)
         call BlzFrameSetLevel(SLUI_RowMPBack[rowIndex], 4) // CHANGE: empty bar background above row panel
 
         set SLUI_RowMPFill[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRowMPFill" + I2S(rowIndex), SLUI_RowMPBack[rowIndex], "", 0)
-        call BlzFrameSetTexture(SLUI_RowMPFill[rowIndex], SLUI_BarTexture, 0, true) // CHANGE: light-blue MP fill uses tintable texture
+        call BlzFrameSetTexture(SLUI_RowMPFill[rowIndex], SLUI_BarMPLightBlueTexture, 0, false) // CHANGE: initial MP fill texture; updated dynamically
         call BlzFrameSetPoint(SLUI_RowMPFill[rowIndex], FRAMEPOINT_LEFT, SLUI_RowMPBack[rowIndex], FRAMEPOINT_LEFT, 0.0, 0.0)
         call BlzFrameSetSize(SLUI_RowMPFill[rowIndex], 0.001, 0.006)
         call BlzFrameSetEnable(SLUI_RowMPFill[rowIndex], false)
@@ -903,7 +939,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
 
     private function SLUI_CreateFrames takes nothing returns nothing
         local integer rowIndex = 1
-        local real rowY = -0.006
+        local real rowY = -0.002 // CHANGE: move first monitored unit upward to fit full party better
 
         // CHANGE: The root is now a plain FRAME, not a visual BACKDROP.
         // This makes SLUI_Parent an invisible container. The actual panel surface is
@@ -957,7 +993,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         set SLUI_ConfigIcon = BlzCreateFrameByType("BACKDROP", "StatsLiteUIConfigIcon", SLUI_ConfigButton, "", 0)
         call BlzFrameSetTexture(SLUI_ConfigIcon, SLUI_ConfigIconPath, 0, true)
         call BlzFrameSetPoint(SLUI_ConfigIcon, FRAMEPOINT_CENTER, SLUI_ConfigButton, FRAMEPOINT_CENTER, 0.0, 0.0)
-        call BlzFrameSetSize(SLUI_ConfigIcon, 0.018, 0.018) // CHANGE: inset icon so BTN art no longer looks larger than other buttons
+        call BlzFrameSetSize(SLUI_ConfigIcon, 0.014, 0.014) // CHANGE: smaller inset icon so it visually matches ? / - / X
         call BlzFrameSetEnable(SLUI_ConfigIcon, false)
         // CHANGE: Config icon is visual content above its button/backdrop.
         call BlzFrameSetLevel(SLUI_ConfigIcon, 4)
@@ -970,8 +1006,8 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         call SLUI_RegisterButton(SLUI_StatsButton, SLUI_ACTION_STATS)
 
         set SLUI_RowPane = BlzCreateFrameByType("FRAME", "StatsLiteUIRows", SLUI_Parent, "", 0)
-        call BlzFrameSetPoint(SLUI_RowPane, FRAMEPOINT_TOPLEFT, SLUI_Parent, FRAMEPOINT_TOPLEFT, 0.008, -0.040)
-        call BlzFrameSetPoint(SLUI_RowPane, FRAMEPOINT_BOTTOMRIGHT, SLUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.014, 0.024) // CHANGE: a touch more right inner padding inside the native border
+        call BlzFrameSetPoint(SLUI_RowPane, FRAMEPOINT_TOPLEFT, SLUI_Parent, FRAMEPOINT_TOPLEFT, 0.008, -0.032) // CHANGE: move unit rows upward
+        call BlzFrameSetPoint(SLUI_RowPane, FRAMEPOINT_BOTTOMRIGHT, SLUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.014, 0.026) // CHANGE: keep rows clear of footer/bottom border
         call BlzFrameSetEnable(SLUI_RowPane, false)
         // CHANGE: Rows render above the panel backdrop.
         call BlzFrameSetLevel(SLUI_RowPane, 3)
@@ -979,7 +1015,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         loop
             exitwhen rowIndex > SLUI_MAX_ROWS
             call SLUI_CreateRow(rowIndex, rowY)
-            set rowY = rowY - 0.027
+            set rowY = rowY - 0.024 // CHANGE: compact spacing restored so 2 heroes + pet + 4 companions fit
             set rowIndex = rowIndex + 1
         endloop
 
@@ -1046,6 +1082,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         set SLUI_Initialized = true
 
         set SLUI_ButtonAction = Table.create()
+        call SLUI_EnsureResourceRegistry() // CHANGE: initialize AI class resource registry
 
         set SLUI_ButtonTrigger = CreateTrigger()
         call TriggerAddAction(SLUI_ButtonTrigger, function SLUI_ButtonClickAction)
