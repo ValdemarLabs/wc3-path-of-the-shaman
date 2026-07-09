@@ -22,6 +22,10 @@
   Updated StatsLiteUI panel styling to combine the native Warcraft III border frame with a separate translucent grey inner backdrop.
   Raised StatsLiteUI content frame levels so title, buttons, rows, and config controls render above the transparent background layer.
   Kept the right-anchored layout and row-level text padding adjustments from the previous StatsLiteUI update.
+  Updated StatsLiteUI row layout so unit level text appears under the unit name instead of near the panel edge.
+  Improved HP and MP bar rendering: HP now uses dynamic red/yellow/green health coloring, MP uses a light-blue fill, and empty bar space uses a semi-transparent grey background.
+  Increased row spacing and adjusted frame levels so row text, icons, and bar fills render cleanly above the transparent panel backdrop.
+  Resized the StatsLiteUI configuration icon button to match the other header buttons.
 
 ## [8.7.2026]
 
