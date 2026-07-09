@@ -47,7 +47,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         private constant real SLUI_MIN_RIGHT = 0.800 // CHANGE: pushed minimized state to the UI right edge
         private constant real SLUI_MIN_WIDTH = 0.243
         private constant real SLUI_MIN_BOTTOM = 0.522
-        private constant real SLUI_BAR_WIDTH = 0.080 // CHANGE: slightly shorter bars leave cleaner padding inside the row
+        private constant real SLUI_BAR_WIDTH = 0.076 // CHANGE: tighter bar width so bars stay inside the native border
 
         private constant integer SLUI_ACTION_MINIMIZE = 1
         private constant integer SLUI_ACTION_STATS = 2
@@ -126,6 +126,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         private timer SLUI_RefreshTimer = null
 
         private string SLUI_PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
+        private string SLUI_BarTexture = "UI\\Feedback\\XPBar\\human-bigbar-fill.blp" // CHANGE: tintable bar texture; avoids black blank-background bars
         private string SLUI_DefaultUnitIcon = "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp"
         private string SLUI_DefaultPetIcon = "ReplaceableTextures\\CommandButtons\\BTNAnimalWarTraining.blp"
         private string SLUI_ConfigIconPath = "ReplaceableTextures\\CommandButtons\\BTNengineering.blp"
@@ -358,9 +359,9 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         return count
     endfunction
 
-    // CHANGE: Dynamic HP color. Warcraft III backdrops cannot make a true
-    // multi-stop gradient inside one frame, so the fill color is interpolated:
-    // 0% = red, 50% = yellow, 100% = green.
+    // CHANGE: HP fill color is interpolated by current percent.
+    // Warcraft III BACKDROP bars do not provide a true shader gradient, but this
+    // gives the intended red -> yellow -> green health feedback.
     private function SLUI_GetHealthColor takes integer percent returns integer
         local real t
         local integer red
@@ -376,30 +377,30 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         if percent <= 50 then
             set t = I2R(percent) / 50.0
             set red = 220
-            set green = R2I(36.0 + (190.0 * t))
+            set green = R2I(36.0 + 190.0 * t)
         else
             set t = I2R(percent - 50) / 50.0
-            set red = R2I(220.0 - (188.0 * t))
+            set red = R2I(220.0 - 188.0 * t)
             set green = 226
         endif
 
         return BlzConvertColor(235, red, green, blue)
     endfunction
 
-    // CHANGE: MP always uses a light-blue fill.
+    // CHANGE: MP fill stays light blue.
     private function SLUI_GetManaColor takes nothing returns integer
-        return BlzConvertColor(225, 105, 195, 255)
+        return BlzConvertColor(230, 105, 195, 255)
     endfunction
 
-    // CHANGE: Shared semi-transparent grey empty-bar background.
+    // CHANGE: Empty bar space uses semi-transparent light grey instead of black.
     private function SLUI_GetEmptyBarColor takes nothing returns integer
-        return BlzConvertColor(95, 165, 165, 165)
+        return BlzConvertColor(105, 165, 165, 165)
     endfunction
 
     private function SLUI_SetBar takes framehandle fillFrame, framehandle textFrame, real maxWidth, real height, integer percent, integer color, string label returns nothing
         local real width
 
-        // CHANGE: Clamp percentage before using it for frame size.
+        // CHANGE: Clamp first, then resize the fill frame.
         if percent < 0 then
             set percent = 0
         elseif percent > 100 then
@@ -409,7 +410,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         set width = maxWidth * I2R(percent) * 0.01
 
         if percent <= 0 then
-            // CHANGE: Hide the fill at 0% so the grey empty bar is visible.
+            // CHANGE: At 0%, hide only the fill. The grey empty background remains visible.
             call BlzFrameSetVisible(fillFrame, false)
             set width = 0.001
         else
@@ -470,7 +471,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
             set SLUI_RowHPValue[rowIndex] = hp
             set SLUI_RowMPValue[rowIndex] = mp
             call SLUI_SetBar(SLUI_RowHPFill[rowIndex], SLUI_RowHPText[rowIndex], SLUI_BAR_WIDTH, 0.008, hp, SLUI_GetHealthColor(hp), "HP")
-            call SLUI_SetBar(SLUI_RowMPFill[rowIndex], SLUI_RowMPText[rowIndex], SLUI_BAR_WIDTH, 0.006, mp, SLUI_GetManaColor(), "MP") // CHANGE: MP uses a stable light-blue fill
+            call SLUI_SetBar(SLUI_RowMPFill[rowIndex], SLUI_RowMPText[rowIndex], SLUI_BAR_WIDTH, 0.006, mp, SLUI_GetManaColor(), "MP") // CHANGE: stable light-blue MP fill
         endif
 
         call BlzFrameSetVisible(SLUI_RowMPBack[rowIndex], SLUI_ShowMana)
@@ -812,91 +813,89 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
     endfunction
 
     private function SLUI_CreateRow takes integer rowIndex, real y returns nothing
-        local real barLeft = 0.126
+        local real barLeft = 0.132 // CHANGE: right-side bar column; left column is reserved for icon/name/status
 
         set SLUI_RowButton[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRow" + I2S(rowIndex), SLUI_RowPane, "", 0)
         call BlzFrameSetTexture(SLUI_RowButton[rowIndex], SLUI_PanelTexture, 0, true)
         call BlzFrameSetPoint(SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowPane, FRAMEPOINT_TOPLEFT, 0.006, y)
-        call BlzFrameSetSize(SLUI_RowButton[rowIndex], 0.222, 0.040) // CHANGE: taller row; slightly narrower to stay inside native border
+        call BlzFrameSetSize(SLUI_RowButton[rowIndex], 0.222, 0.026) // CHANGE: compact row spacing restored; slightly narrower to stay inside border
         call BlzFrameSetAlpha(SLUI_RowButton[rowIndex], 0)
         call BlzFrameSetVertexColor(SLUI_RowButton[rowIndex], BlzConvertColor(0, 10, 10, 10))
         // CHANGE: Row container stays above the main backdrop; row children are created under it.
         call BlzFrameSetLevel(SLUI_RowButton[rowIndex], 3)
 
         set SLUI_RowIcon[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRowIcon" + I2S(rowIndex), SLUI_RowButton[rowIndex], "IconButtonTemplate", 0)
-        call BlzFrameSetPoint(SLUI_RowIcon[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.006, -0.006) // CHANGE: icon aligned with taller row
-        call BlzFrameSetSize(SLUI_RowIcon[rowIndex], 0.026, 0.026) // CHANGE: icon scaled for taller row
-        call BlzFrameSetLevel(SLUI_RowIcon[rowIndex], 4) // CHANGE: row icon above translucent panel
+        call BlzFrameSetPoint(SLUI_RowIcon[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.006, -0.003) // CHANGE: compact top-left icon position
+        call BlzFrameSetSize(SLUI_RowIcon[rowIndex], 0.020, 0.020)
+        call BlzFrameSetLevel(SLUI_RowIcon[rowIndex], 4) // CHANGE: icon above translucent panel
 
         set SLUI_RowName[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowName" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(SLUI_RowName[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.038, -0.003)
-        call BlzFrameSetSize(SLUI_RowName[rowIndex], 0.090, 0.012)
+        call BlzFrameSetPoint(SLUI_RowName[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.034, -0.001) // CHANGE: text starts after icon; no overlap
+        call BlzFrameSetSize(SLUI_RowName[rowIndex], 0.094, 0.010)
         call BlzFrameSetTextAlignment(SLUI_RowName[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
-        call BlzFrameSetScale(SLUI_RowName[rowIndex], 0.70) // CHANGE: name column now shares vertical space with level/state
+        call BlzFrameSetScale(SLUI_RowName[rowIndex], 0.66)
         call BlzFrameSetEnable(SLUI_RowName[rowIndex], false)
-        call BlzFrameSetLevel(SLUI_RowName[rowIndex], 4) // CHANGE: row text above translucent panel
+        call BlzFrameSetLevel(SLUI_RowName[rowIndex], 4) // CHANGE: name above translucent panel
 
         set SLUI_RowLevel[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowLevel" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(SLUI_RowLevel[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.038, -0.015)
-        // CHANGE: Level is now under the unit name instead of at the far right edge.
-        call BlzFrameSetSize(SLUI_RowLevel[rowIndex], 0.080, 0.010)
+        call BlzFrameSetPoint(SLUI_RowLevel[rowIndex], FRAMEPOINT_BOTTOMLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_BOTTOMLEFT, 0.034, 0.002) // CHANGE: level is below the name, not at the right border
+        call BlzFrameSetSize(SLUI_RowLevel[rowIndex], 0.038, 0.009)
         call BlzFrameSetTextAlignment(SLUI_RowLevel[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
-        call BlzFrameSetScale(SLUI_RowLevel[rowIndex], 0.58)
+        call BlzFrameSetScale(SLUI_RowLevel[rowIndex], 0.53)
         call BlzFrameSetEnable(SLUI_RowLevel[rowIndex], false)
-        call BlzFrameSetLevel(SLUI_RowLevel[rowIndex], 4) // CHANGE: level text above translucent panel
+        call BlzFrameSetLevel(SLUI_RowLevel[rowIndex], 4) // CHANGE: level above translucent panel
 
         set SLUI_RowState[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowState" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(SLUI_RowState[rowIndex], FRAMEPOINT_BOTTOMLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_BOTTOMLEFT, 0.038, 0.003)
-        call BlzFrameSetSize(SLUI_RowState[rowIndex], 0.080, 0.010)
+        call BlzFrameSetPoint(SLUI_RowState[rowIndex], FRAMEPOINT_BOTTOMLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_BOTTOMLEFT, 0.074, 0.002) // CHANGE: status aligned on same compact subline as level
+        call BlzFrameSetSize(SLUI_RowState[rowIndex], 0.052, 0.009)
         call BlzFrameSetTextAlignment(SLUI_RowState[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
-        call BlzFrameSetScale(SLUI_RowState[rowIndex], 0.58) // CHANGE: state sits under level inside the left text column
+        call BlzFrameSetScale(SLUI_RowState[rowIndex], 0.53)
         call BlzFrameSetEnable(SLUI_RowState[rowIndex], false)
-        call BlzFrameSetLevel(SLUI_RowState[rowIndex], 4) // CHANGE: state text above translucent panel
+        call BlzFrameSetLevel(SLUI_RowState[rowIndex], 4) // CHANGE: status above translucent panel
 
         set SLUI_RowHPBack[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRowHPBack" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetTexture(SLUI_RowHPBack[rowIndex], SLUI_PanelTexture, 0, false)
-        call BlzFrameSetPoint(SLUI_RowHPBack[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.132, -0.010)
-        // CHANGE: Bars now occupy the right column; level text moved to the left column.
-        call BlzFrameSetSize(SLUI_RowHPBack[rowIndex], SLUI_BAR_WIDTH, 0.008)
-        call BlzFrameSetVertexColor(SLUI_RowHPBack[rowIndex], SLUI_GetEmptyBarColor()) // CHANGE: transparent light-grey empty bar background
+        call BlzFrameSetTexture(SLUI_RowHPBack[rowIndex], SLUI_BarTexture, 0, true) // CHANGE: use tintable XP bar texture, not blank black panel texture
+        call BlzFrameSetPoint(SLUI_RowHPBack[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, barLeft, -0.005)
+        call BlzFrameSetSize(SLUI_RowHPBack[rowIndex], SLUI_BAR_WIDTH, 0.007)
+        call BlzFrameSetVertexColor(SLUI_RowHPBack[rowIndex], SLUI_GetEmptyBarColor()) // CHANGE: grey unused bar space
         call BlzFrameSetEnable(SLUI_RowHPBack[rowIndex], false)
-        call BlzFrameSetLevel(SLUI_RowHPBack[rowIndex], 4) // CHANGE: empty HP bar background below fill
+        call BlzFrameSetLevel(SLUI_RowHPBack[rowIndex], 4) // CHANGE: empty bar background above row panel
 
         set SLUI_RowHPFill[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRowHPFill" + I2S(rowIndex), SLUI_RowHPBack[rowIndex], "", 0)
-        call BlzFrameSetTexture(SLUI_RowHPFill[rowIndex], SLUI_PanelTexture, 0, false)
+        call BlzFrameSetTexture(SLUI_RowHPFill[rowIndex], SLUI_BarTexture, 0, true) // CHANGE: colored fill uses tintable bar texture
         call BlzFrameSetPoint(SLUI_RowHPFill[rowIndex], FRAMEPOINT_LEFT, SLUI_RowHPBack[rowIndex], FRAMEPOINT_LEFT, 0.0, 0.0)
-        call BlzFrameSetSize(SLUI_RowHPFill[rowIndex], 0.001, 0.008)
+        call BlzFrameSetSize(SLUI_RowHPFill[rowIndex], 0.001, 0.007)
         call BlzFrameSetEnable(SLUI_RowHPFill[rowIndex], false)
-        call BlzFrameSetLevel(SLUI_RowHPFill[rowIndex], 5) // CHANGE: HP fill above empty bar background
+        call BlzFrameSetLevel(SLUI_RowHPFill[rowIndex], 5) // CHANGE: fill above empty bar background
 
         set SLUI_RowHPText[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowHPText" + I2S(rowIndex), SLUI_RowHPBack[rowIndex], "", 0)
         call BlzFrameSetAllPoints(SLUI_RowHPText[rowIndex], SLUI_RowHPBack[rowIndex])
         call BlzFrameSetTextAlignment(SLUI_RowHPText[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
-        call BlzFrameSetScale(SLUI_RowHPText[rowIndex], 0.55)
+        call BlzFrameSetScale(SLUI_RowHPText[rowIndex], 0.50)
         call BlzFrameSetEnable(SLUI_RowHPText[rowIndex], false)
-        call BlzFrameSetLevel(SLUI_RowHPText[rowIndex], 6) // CHANGE: HP text above fill
+        call BlzFrameSetLevel(SLUI_RowHPText[rowIndex], 6) // CHANGE: label above fill
 
         set SLUI_RowMPBack[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRowMPBack" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetTexture(SLUI_RowMPBack[rowIndex], SLUI_PanelTexture, 0, false)
+        call BlzFrameSetTexture(SLUI_RowMPBack[rowIndex], SLUI_BarTexture, 0, true) // CHANGE: use tintable XP bar texture
         call BlzFrameSetPoint(SLUI_RowMPBack[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowHPBack[rowIndex], FRAMEPOINT_BOTTOMLEFT, 0.0, -0.002)
         call BlzFrameSetSize(SLUI_RowMPBack[rowIndex], SLUI_BAR_WIDTH, 0.006)
-        call BlzFrameSetVertexColor(SLUI_RowMPBack[rowIndex], SLUI_GetEmptyBarColor()) // CHANGE: transparent light-grey empty bar background
+        call BlzFrameSetVertexColor(SLUI_RowMPBack[rowIndex], SLUI_GetEmptyBarColor()) // CHANGE: grey unused MP space
         call BlzFrameSetEnable(SLUI_RowMPBack[rowIndex], false)
-        call BlzFrameSetLevel(SLUI_RowMPBack[rowIndex], 4) // CHANGE: empty MP bar background below fill
+        call BlzFrameSetLevel(SLUI_RowMPBack[rowIndex], 4) // CHANGE: empty bar background above row panel
 
         set SLUI_RowMPFill[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRowMPFill" + I2S(rowIndex), SLUI_RowMPBack[rowIndex], "", 0)
-        call BlzFrameSetTexture(SLUI_RowMPFill[rowIndex], SLUI_PanelTexture, 0, false)
+        call BlzFrameSetTexture(SLUI_RowMPFill[rowIndex], SLUI_BarTexture, 0, true) // CHANGE: light-blue MP fill uses tintable texture
         call BlzFrameSetPoint(SLUI_RowMPFill[rowIndex], FRAMEPOINT_LEFT, SLUI_RowMPBack[rowIndex], FRAMEPOINT_LEFT, 0.0, 0.0)
         call BlzFrameSetSize(SLUI_RowMPFill[rowIndex], 0.001, 0.006)
         call BlzFrameSetEnable(SLUI_RowMPFill[rowIndex], false)
-        call BlzFrameSetLevel(SLUI_RowMPFill[rowIndex], 5) // CHANGE: MP fill above empty bar background
+        call BlzFrameSetLevel(SLUI_RowMPFill[rowIndex], 5) // CHANGE: fill above empty bar background
 
         set SLUI_RowMPText[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowMPText" + I2S(rowIndex), SLUI_RowMPBack[rowIndex], "", 0)
         call BlzFrameSetAllPoints(SLUI_RowMPText[rowIndex], SLUI_RowMPBack[rowIndex])
         call BlzFrameSetTextAlignment(SLUI_RowMPText[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
-        call BlzFrameSetScale(SLUI_RowMPText[rowIndex], 0.50)
+        call BlzFrameSetScale(SLUI_RowMPText[rowIndex], 0.48)
         call BlzFrameSetEnable(SLUI_RowMPText[rowIndex], false)
-        call BlzFrameSetLevel(SLUI_RowMPText[rowIndex], 6) // CHANGE: MP text above fill
+        call BlzFrameSetLevel(SLUI_RowMPText[rowIndex], 6) // CHANGE: label above fill
 
         set SLUI_RowVisibleState[rowIndex] = -1
         call BlzFrameSetVisible(SLUI_RowButton[rowIndex], false)
@@ -904,7 +903,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
 
     private function SLUI_CreateFrames takes nothing returns nothing
         local integer rowIndex = 1
-        local real rowY = -0.008 // CHANGE: rows are taller because level is now placed under the unit name
+        local real rowY = -0.006
 
         // CHANGE: The root is now a plain FRAME, not a visual BACKDROP.
         // This makes SLUI_Parent an invisible container. The actual panel surface is
@@ -954,10 +953,11 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         set SLUI_MinimizeButton = SLUI_CreateHeaderButton("StatsLiteUIMinimize", "-", 0.022, SLUI_CloseButton, -0.004)
         call SLUI_RegisterButton(SLUI_MinimizeButton, SLUI_ACTION_MINIMIZE)
 
-        set SLUI_ConfigButton = SLUI_CreateHeaderButton("StatsLiteUIConfig", "", 0.022, SLUI_MinimizeButton, -0.004) // CHANGE: match ? / - / X button size
+        set SLUI_ConfigButton = SLUI_CreateHeaderButton("StatsLiteUIConfig", "", 0.022, SLUI_MinimizeButton, -0.004) // CHANGE: config button footprint matches ? / - / X
         set SLUI_ConfigIcon = BlzCreateFrameByType("BACKDROP", "StatsLiteUIConfigIcon", SLUI_ConfigButton, "", 0)
         call BlzFrameSetTexture(SLUI_ConfigIcon, SLUI_ConfigIconPath, 0, true)
-        call BlzFrameSetAllPoints(SLUI_ConfigIcon, SLUI_ConfigButton)
+        call BlzFrameSetPoint(SLUI_ConfigIcon, FRAMEPOINT_CENTER, SLUI_ConfigButton, FRAMEPOINT_CENTER, 0.0, 0.0)
+        call BlzFrameSetSize(SLUI_ConfigIcon, 0.018, 0.018) // CHANGE: inset icon so BTN art no longer looks larger than other buttons
         call BlzFrameSetEnable(SLUI_ConfigIcon, false)
         // CHANGE: Config icon is visual content above its button/backdrop.
         call BlzFrameSetLevel(SLUI_ConfigIcon, 4)
@@ -979,7 +979,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet
         loop
             exitwhen rowIndex > SLUI_MAX_ROWS
             call SLUI_CreateRow(rowIndex, rowY)
-            set rowY = rowY - 0.043 // CHANGE: taller row spacing for name, level, and state text
+            set rowY = rowY - 0.027
             set rowIndex = rowIndex + 1
         endloop
 
