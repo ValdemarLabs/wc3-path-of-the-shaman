@@ -36,6 +36,22 @@
   Empty bar space is semi-transparent grey.
   Config icon button now has the same button footprint as ?, -, and X, with the icon inset to reduce the oversized visual effect.
 
+  Refactored StatsLiteUI resource-bar class detection to use the current `AI.j` class registry instead of legacy `udg_NPC_Horde_AI_xxx` unit globals.
+  Added resource display registration APIs for AI classes:
+  `StatsLiteUI_RegisterManaResourceClass(classId)`,
+  `StatsLiteUI_RegisterRageResourceClass(classId)`, and
+  `StatsLiteUI_RegisterEnergyResourceClass(classId)`.
+  Updated MP/resource bar selection so default caster classes use light blue, Warrior-style classes use red, and Rogue-style classes use yellow.
+  Removed legacy class-specific companion revive timer references from StatsLiteUI; only current player/pet revive timers remain directly handled.
+
+- `AI_Warrior.j`
+  Registered the Warrior AI class with StatsLiteUI as a rage-style resource class so Warrior resource bars display red in the party monitor.
+  Added `StatsLiteUI` as a dependency for the Warrior AI class registration integration.
+
+- `AI_Rogue.j`
+  Registered the Rogue AI class with StatsLiteUI as an energy-style resource class so Rogue resource bars display yellow in the party monitor.
+  Added `StatsLiteUI` as a dependency for the Rogue AI class registration integration.
+
 ## [8.7.2026]
 
 ### Player-Facing Updates
