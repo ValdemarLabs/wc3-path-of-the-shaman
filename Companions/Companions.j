@@ -1270,6 +1270,16 @@ private function GetMaxPartyHeroLevel takes nothing returns integer
     return level
 endfunction
 
+private function GetCompanionCandidateLevel takes unit target returns integer
+    if target == null then
+        return 0
+    endif
+    if IsUnitType(target, UNIT_TYPE_HERO) then
+        return GetHeroLevel(target)
+    endif
+    return GetUnitLevel(target)
+endfunction
+
 private function GetCompanionLimitForLevel takes integer heroLevel returns integer
     if heroLevel >= 25 then
         return 6
@@ -1592,6 +1602,8 @@ endfunction
 
 private function HandleInvite takes unit caster, unit target returns nothing
     local integer unitTypeId
+    local integer requiredLevel
+    local integer candidateLevel
     local string icon
     local unit leader
 
@@ -1625,7 +1637,14 @@ private function HandleInvite takes unit caster, unit target returns nothing
         return
     endif
 
-    if GetUnitLevel(target) > GetMaxPartyHeroLevel() + 5 then
+    set requiredLevel = GetMaxPartyHeroLevel()
+    set candidateLevel = GetCompanionCandidateLevel(target)
+    if candidateLevel < requiredLevel then
+        call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(target) + " must be at least level " + I2S(requiredLevel) + " to join this party.")
+        return
+    endif
+
+    if candidateLevel > requiredLevel + 5 then
         call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(target) + " is too experienced to join this party.")
         return
     endif
@@ -1987,6 +2006,9 @@ private function HandleInformation takes unit target returns nothing
     call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Unit type: |r" + GetUnitTypeInfoName(unitTypeId))
     call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Attack type: |r" + GetAttackTypeInfoText(target))
     call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Faction: |r" + GetFactionInfoTextInternal(target))
+    if unitTypeId == UNIT_AVELINE then
+        call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Info: |rAveline is a Riverbane human who protects her people from bandits and orc raiders.")
+    endif
     call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cFFFFCC00Level: |r" + GetLevelInfoText(target) + " | |cFFFFCC00Life: |r" + I2S(R2I(GetUnitState(target, UNIT_STATE_LIFE))) + " / " + I2S(R2I(GetUnitState(target, UNIT_STATE_MAX_LIFE))))
 
     set maxMana = GetUnitState(target, UNIT_STATE_MAX_MANA)
@@ -2210,6 +2232,10 @@ public function GetMode takes unit companionUnit returns integer
 endfunction
 
 public function RefreshOrders takes unit companionUnit returns nothing
+    if companionUnit == null then
+        return
+    endif
+    call ClearOrderIdleState(companionUnit, GetUnitUserData(companionUnit))
     call ApplyOrders(companionUnit)
 endfunction
 
