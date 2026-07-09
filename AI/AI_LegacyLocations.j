@@ -101,6 +101,11 @@ private function BindRiverbaneProfile takes integer profileId returns nothing
     call AddHordeShops(profileId)
 endfunction
 
+private function BindAvelineInitialZones takes integer profileId returns nothing
+    call AI_AddProfileAllowedZoneRect(profileId, gg_rct_02SereneGlade)
+    call AI_AddProfileAllowedZoneRect(profileId, gg_rct_010RiverBane)
+endfunction
+
 private function Init takes nothing returns nothing
     call BindHordeProfile(AI_Warrior_ProfileId)
     call BindHordeProfile(AI_Rogue_ProfileId)
@@ -108,6 +113,7 @@ private function Init takes nothing returns nothing
     call BindHordeProfile(AI_Restoshaman_ProfileId)
     call BindRiverbaneProfile(AI_Paladin_ProfileId)
     call BindRiverbaneProfile(AI_Aveline_ProfileId)
+    call BindAvelineInitialZones(AI_Aveline_ProfileId)
     call BindNeutralProfile(AI_Engineer_ProfileId)
     call BindNeutralProfile(AI_Engineer_ShredderProfileId)
 endfunction
