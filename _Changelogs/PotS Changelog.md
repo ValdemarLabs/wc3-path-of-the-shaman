@@ -19,38 +19,39 @@
 
 ### Technical Updates
 - `StatsLiteUI.j`
-  Updated StatsLiteUI panel styling to combine the native Warcraft III border frame with a separate translucent grey inner backdrop.
-  Raised StatsLiteUI content frame levels so title, buttons, rows, and config controls render above the transparent background layer.
-  Kept the right-anchored layout and row-level text padding adjustments from the previous StatsLiteUI update.
-  Updated StatsLiteUI row layout so unit level text appears under the unit name instead of near the panel edge.
-  Improved HP and MP bar rendering: HP now uses dynamic red/yellow/green health coloring, MP uses a light-blue fill, and empty bar space uses a semi-transparent grey background.
-  Increased row spacing and adjusted frame levels so row text, icons, and bar fills render cleanly above the transparent panel backdrop.
-  Resized the StatsLiteUI configuration icon button to match the other header buttons.
-  Restored compact row spacing so the panel can still fit more tracked units.
-  Moved Level X under the unit name, but kept it on the same compact subline as status.
-  Re-aligned icon/name/level/status so text starts after the icon and should no longer overlap it.
-  Changed HP/MP bars away from the old black blank-background.blp texture.
-  Bars now use UI\\Feedback\\XPBar\\human-bigbar-fill.blp, which should tint properly with BlzFrameSetVertexColor.
-  HP fill color is dynamic: red at low HP, yellow around mid HP, green at high HP.
-  MP fill is stable light blue.
-  Empty bar space is semi-transparent grey.
-  Config icon button now has the same button footprint as ?, -, and X, with the icon inset to reduce the oversized visual effect.
-
-  Refactored StatsLiteUI resource-bar class detection to use the current `AI.j` class registry instead of legacy `udg_NPC_Horde_AI_xxx` unit globals.
-  Added resource display registration APIs for AI classes:
-  `StatsLiteUI_RegisterManaResourceClass(classId)`,
-  `StatsLiteUI_RegisterRageResourceClass(classId)`, and
-  `StatsLiteUI_RegisterEnergyResourceClass(classId)`.
-  Updated MP/resource bar selection so default caster classes use light blue, Warrior-style classes use red, and Rogue-style classes use yellow.
-  Removed legacy class-specific companion revive timer references from StatsLiteUI; only current player/pet revive timers remain directly handled.
+  - Updated StatsLiteUI panel styling to combine the native Warcraft III border frame with a separate translucent grey inner backdrop.
+  - Raised StatsLiteUI content frame levels so title, buttons, rows, config controls, row icons, alert frames, and bar layers render cleanly above the transparent background layer.
+  - Kept the monitor right-anchored and hidden until explicitly shown through the StatsLiteUI API.
+  - Restored compact row spacing so the panel can fit the full party monitor set more reliably.
+  - Reworked row layout so icon, unit kind/name, level, status, HP bar, and resource bar use fixed aligned columns with reduced overlap risk.
+  - Moved `Level X` under the unit name and aligned status on the same compact subline.
+  - Resized and inset the configuration icon button so it visually matches the other header buttons.
+  - Reworked HP/resource bars away from the old black `blank-background.blp` rendering issue.
+  - Updated HP bars to use green by default.
+  - Added configurable HP percentage coloring:
+    - `HP Color: Off` keeps HP bars always green.
+    - `HP Color: On` changes HP bars by percentage: green above 50%, yellow from 26–50%, and red from 0–25%.
+  - Updated resource bar labels and colors:
+    - default mana classes show `MP` with a light-blue bar;
+    - Warrior/rage classes show `Rage` with a red bar;
+    - Rogue/energy classes show `Energy` with a yellow bar and black label text for readability.
+  - Refactored resource-bar class detection to use the current `AI.j` class registry instead of legacy `udg_NPC_Horde_AI_xxx` unit globals.
+  - Added resource display registration APIs for AI classes:
+    - `StatsLiteUI_RegisterManaResourceClass(classId)`
+    - `StatsLiteUI_RegisterRageResourceClass(classId)`
+    - `StatsLiteUI_RegisterEnergyResourceClass(classId)`
+  - Removed legacy class-specific companion revive timer references from StatsLiteUI; only current player/pet revive timers remain directly handled.
+  - Added configurable row alerts for low HP, low resource, and far-away party members.
+  - Added flashing row alert frames around party member icons, with alert priority ordered as low/dead HP, low resource, then far-away companion state.
+  - Added config toggles for `Low HP`, `Low MP`, `Far`, and `HP Color`.
 
 - `AI_Warrior.j`
-  Registered the Warrior AI class with StatsLiteUI as a rage-style resource class so Warrior resource bars display red in the party monitor.
-  Added `StatsLiteUI` as a dependency for the Warrior AI class registration integration.
+  - Registered the Warrior AI class with StatsLiteUI as a rage-style resource class so Warrior resource bars display red in the party monitor.
+  - Added `StatsLiteUI` as a dependency for the Warrior AI class registration integration.
 
 - `AI_Rogue.j`
-  Registered the Rogue AI class with StatsLiteUI as an energy-style resource class so Rogue resource bars display yellow in the party monitor.
-  Added `StatsLiteUI` as a dependency for the Rogue AI class registration integration.
+  - Registered the Rogue AI class with StatsLiteUI as an energy-style resource class so Rogue resource bars display yellow in the party monitor.
+  - Added `StatsLiteUI` as a dependency for the Rogue AI class registration integration.
 
 ## [8.7.2026]
 
