@@ -63,6 +63,9 @@
     call AI_RegisterBossCastAbility(abilityId, evadeRadius, evadeDistance)
     call AI_HandleBossCast(caster, abilityId, targetX, targetY)
     call AI_RequestBark(speaker, barkType)
+    call AI_GetReviveTimer(whichUnit) returns timer
+    call AI_GetReviveRemaining(whichUnit) returns real
+    call AI_IsReviving(whichUnit) returns boolean
     call AI_SetDebugMode(enabled)
 
 **/
@@ -1631,6 +1634,39 @@ public function SetUnitTypeDefaultProfile takes integer unitTypeId, integer prof
         return
     endif
     set UnitTypeDefaultProfile[unitTypeId] = profileId
+endfunction
+
+public function GetReviveTimer takes unit whichUnit returns timer
+    local integer instanceId
+
+    if whichUnit == null or GetUnitTypeId(whichUnit) == 0 then
+        return null
+    endif
+
+    call EnsureState()
+
+    set instanceId = UnitInstance[GetHandleId(whichUnit)]
+    if instanceId <= 0 then
+        return null
+    endif
+
+    return InstanceReviveTimer.timer[instanceId]
+endfunction
+
+public function GetReviveRemaining takes unit whichUnit returns real
+    local timer reviveTimer = GetReviveTimer(whichUnit)
+    local real remaining = 0.0
+
+    if reviveTimer != null then
+        set remaining = TimerGetRemaining(reviveTimer)
+    endif
+
+    set reviveTimer = null
+    return remaining
+endfunction
+
+public function IsReviving takes unit whichUnit returns boolean
+    return GetReviveTimer(whichUnit) != null
 endfunction
 
 public function SetProfileReviveDelay takes integer profileId, real delay returns nothing
