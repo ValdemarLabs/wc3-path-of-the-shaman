@@ -316,9 +316,12 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
     endfunction
 
     private function SLUI_GetReviveTimer takes unit u, integer kind returns timer
+        local timer aiReviveTimer
+
         if not SLUI_IsValidUnit(u) then
             return null
         endif
+
         if u == udg_Nazgrek then
             return udg_ReviveTimerNazgrek
         elseif u == udg_Zulkis then
@@ -327,11 +330,9 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
             return udg_ReviveTimerPet
         endif
 
-        // CHANGE: Legacy AI companion revive timers were removed here.
-        // Current AI.j owns AI instance revive timers privately. Without a public
-        // AI_GetReviveRemaining/AI_GetReviveTimer API, StatsLiteUI should not
-        // reference old class-specific GUI revive timer variables.
-        return null
+        // CHANGE: AI companion revive timers are owned by AI.j.
+        set aiReviveTimer = AI_GetReviveTimer(u)
+        return aiReviveTimer
     endfunction
 
     private function SLUI_GetDeadStatusText takes unit u, integer kind returns string
@@ -340,12 +341,16 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
 
         if reviveTimer != null then
             set remaining = TimerGetRemaining(reviveTimer)
+        elseif kind == SLUI_KIND_COMPANION then
+            set remaining = AI_GetReviveRemaining(u)
         endif
 
         set reviveTimer = null
+
         if remaining > 0.0 then
             return "|cffff4040Dead|r |cffbfbfbf(" + I2S(R2I(remaining + 0.5)) + "s)|r"
         endif
+
         return "|cffff4040Dead|r"
     endfunction
 
