@@ -1,4 +1,4 @@
-library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, AbilitiesLiteUI, StatsLiteUI, QuestGiver, Companions, Pet, UnitExperience
+library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, AbilitiesLiteUI, StatsLiteUI, QuestGiver, Companions, Pet, UnitExperience, AI
 /**
     StatsUI
     
@@ -16,6 +16,9 @@ library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, Abili
     call StatsUI_Toggle()
     call StatsUI_GetRequiredXPForUnit(unit whichUnit) returns integer
     call StatsUI_IsVisible() returns boolean
+    call StatsUI_RegisterManaResourceClass(integer classId)
+    call StatsUI_RegisterRageResourceClass(integer classId)
+    call StatsUI_RegisterEnergyResourceClass(integer classId)
 
 **/
 
@@ -99,6 +102,7 @@ globals
     private integer SUI_DetailSummaryClassHash = 0
     private integer SUI_DetailSummaryRoleHash = 0
     private integer SUI_DetailSummaryFactionHash = 0
+    private integer SUI_DetailSummaryResourceHash = 0
 
     private Table SUI_ButtonRow = 0
     private Table SUI_XPRequiredLevel = 0
@@ -121,7 +125,11 @@ globals
     private integer SUI_KIND_HERO = 1
     private integer SUI_KIND_PET = 2
     private integer SUI_KIND_COMPANION = 3
+    private integer SUI_RESOURCE_MANA = 0
+    private integer SUI_RESOURCE_RAGE = 1
+    private integer SUI_RESOURCE_ENERGY = 2
     private integer SUI_UNIT_SHADOWCLAW = 'n655'
+    private Table SUI_ClassResourceMode = 0
 endglobals
 
 private function SUI_Abs takes real value returns real
@@ -131,11 +139,101 @@ private function SUI_Abs takes real value returns real
     return value
 endfunction
 
+private function SUI_IsValidUnit takes unit u returns boolean
+    return u != null and GetHandleId(u) != 0 and GetUnitTypeId(u) != 0
+endfunction
+
+private function SUI_EnsureResourceRegistry takes nothing returns nothing
+    if SUI_ClassResourceMode == 0 then
+        set SUI_ClassResourceMode = Table.create()
+    endif
+endfunction
+
+public function RegisterManaResourceClass takes integer classId returns nothing
+    if classId <= 0 then
+        return
+    endif
+    call SUI_EnsureResourceRegistry()
+    set SUI_ClassResourceMode.integer[classId] = SUI_RESOURCE_MANA
+endfunction
+
+public function RegisterRageResourceClass takes integer classId returns nothing
+    if classId <= 0 then
+        return
+    endif
+    call SUI_EnsureResourceRegistry()
+    set SUI_ClassResourceMode.integer[classId] = SUI_RESOURCE_RAGE
+endfunction
+
+public function RegisterEnergyResourceClass takes integer classId returns nothing
+    if classId <= 0 then
+        return
+    endif
+    call SUI_EnsureResourceRegistry()
+    set SUI_ClassResourceMode.integer[classId] = SUI_RESOURCE_ENERGY
+endfunction
+
+private function SUI_GetFallbackResourceMode takes unit u returns integer
+    local integer unitTypeId
+
+    if not SUI_IsValidUnit(u) then
+        return SUI_RESOURCE_MANA
+    endif
+
+    set unitTypeId = GetUnitTypeId(u)
+    if unitTypeId == 'O629' then
+        return SUI_RESOURCE_RAGE
+    elseif unitTypeId == 'O631' then
+        return SUI_RESOURCE_ENERGY
+    endif
+
+    return SUI_RESOURCE_MANA
+endfunction
+
+private function SUI_GetResourceMode takes unit u returns integer
+    local integer classId = 0
+
+    if SUI_IsValidUnit(u) then
+        set classId = AI_GetClassId(u)
+    endif
+
+    if classId > 0 then
+        call SUI_EnsureResourceRegistry()
+        if SUI_ClassResourceMode.has(classId) then
+            return SUI_ClassResourceMode.integer[classId]
+        endif
+    endif
+
+    return SUI_GetFallbackResourceMode(u)
+endfunction
+
+private function SUI_GetResourceLabel takes unit u returns string
+    local integer mode = SUI_GetResourceMode(u)
+
+    if mode == SUI_RESOURCE_RAGE then
+        return "Rage"
+    elseif mode == SUI_RESOURCE_ENERGY then
+        return "Energy"
+    endif
+    return "Mana"
+endfunction
+
+private function SUI_GetResourceColor takes unit u returns string
+    local integer mode = SUI_GetResourceMode(u)
+
+    if mode == SUI_RESOURCE_RAGE then
+        return "|cffff4040"
+    elseif mode == SUI_RESOURCE_ENERGY then
+        return "|cfffff569"
+    endif
+    return "|cff7ebff1"
+endfunction
+
 private function SUI_GetDisplayName takes unit u returns string
     local string displayName
     local integer unitTypeId
 
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return "Unavailable"
     endif
     if IsUnitType(u, UNIT_TYPE_HERO) then
@@ -170,12 +268,12 @@ private function SUI_GetKindLabel takes integer kind returns string
 endfunction
 
 private function SUI_IsPlayerOwnedMainHero takes unit u returns boolean
-    return u != null and GetHandleId(u) != 0 and GetOwningPlayer(u) == Player(0)
+    return SUI_IsValidUnit(u) and GetOwningPlayer(u) == Player(0)
 endfunction
 
 private function SUI_IsTrackedCompanion takes unit u returns boolean
     local integer i = 1
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return false
     endif
     loop
@@ -189,7 +287,7 @@ private function SUI_IsTrackedCompanion takes unit u returns boolean
 endfunction
 
 private function SUI_GetTrackedPetUnit takes nothing returns unit
-    if udg_TamedUnit != null and GetHandleId(udg_TamedUnit) != 0 then
+    if SUI_IsValidUnit(udg_TamedUnit) then
         return udg_TamedUnit
     endif
     return null
@@ -199,7 +297,7 @@ private function SUI_GetUnitIconPath takes unit u returns string
     local string iconPath
     local integer unitTypeId
 
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return SUI_DefaultUnitIcon
     endif
 
@@ -230,7 +328,7 @@ endfunction
 
 private function SUI_GetHealthPercent takes unit u returns integer
     local real maxLife
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return 0
     endif
     set maxLife = GetUnitState(u, UNIT_STATE_MAX_LIFE)
@@ -242,7 +340,7 @@ endfunction
 
 private function SUI_GetManaPercent takes unit u returns integer
     local real maxMana
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return 0
     endif
     set maxMana = GetUnitState(u, UNIT_STATE_MAX_MANA)
@@ -253,7 +351,7 @@ private function SUI_GetManaPercent takes unit u returns integer
 endfunction
 
 private function SUI_IsDeadForDisplay takes unit u returns boolean
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return false
     endif
     if Pet_IsDead(u) then
@@ -266,7 +364,7 @@ private function SUI_GetStatusText takes unit u returns string
     local integer hp
     local integer mp
 
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return "|cff7f7f7fUnavailable|r"
     endif
     if SUI_IsDeadForDisplay(u) then
@@ -275,11 +373,11 @@ private function SUI_GetStatusText takes unit u returns string
 
     set hp = SUI_GetHealthPercent(u)
     set mp = SUI_GetManaPercent(u)
-    return SUI_GetHealthColor(hp) + I2S(hp) + "|r / |cff7ebff1" + I2S(mp) + "|r"
+    return SUI_GetHealthColor(hp) + I2S(hp) + "|r / " + SUI_GetResourceColor(u) + I2S(mp) + "|r"
 endfunction
 
 private function SUI_GetLevelText takes unit u returns string
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return "-"
     endif
     if IsUnitType(u, UNIT_TYPE_HERO) then
@@ -289,7 +387,7 @@ private function SUI_GetLevelText takes unit u returns string
 endfunction
 
 private function SUI_GetUnitLevelForXP takes unit u returns integer
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return 0
     endif
     if IsUnitType(u, UNIT_TYPE_HERO) then
@@ -309,14 +407,14 @@ endfunction
 
 private function SUI_GetHeroXPRequiredForLevel takes integer targetLevel returns integer
     local integer level = 2
-    local integer required
+    local integer required = 0
 
-    // JASS cannot read Gameplay Constants directly; keep this recurrence in sync with NeedHeroXPFormulaA/B/C.
+    // JASS cannot read Gameplay Constants directly. This mirrors the cumulative
+    // NeedHeroXP table with level 1 as f(1)=0.
     if targetLevel <= 1 then
         return 0
     endif
 
-    set required = 0
     loop
         exitwhen level > targetLevel
         set required = SUI_HERO_XP_FORMULA_A * required + SUI_HERO_XP_FORMULA_B * level + SUI_HERO_XP_FORMULA_C
@@ -331,7 +429,7 @@ private function SUI_CalculateXPRequiredForUnit takes unit u returns integer
     local integer current
     local integer toNext
 
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return -1
     endif
     if UnitExperience_IsUnitRegistered(u) then
@@ -354,7 +452,7 @@ private function SUI_GetCachedXPRequiredForUnit takes unit u returns integer
     local integer level
     local integer required
 
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return -1
     endif
 
@@ -376,7 +474,7 @@ private function SUI_GetXPText takes unit u returns string
     local integer current
     local integer required
 
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return "-"
     endif
     if UnitExperience_IsUnitRegistered(u) then
@@ -395,7 +493,7 @@ private function SUI_GetXPText takes unit u returns string
 endfunction
 
 private function SUI_GetXPCurrentForCache takes unit u returns integer
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return -1
     endif
     if UnitExperience_IsUnitRegistered(u) then
@@ -421,7 +519,7 @@ private function SUI_GetUnitPoints takes unit u returns integer
 endfunction
 
 private function SUI_GetUnitFactionText takes unit u returns string
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return "-"
     endif
     if u == udg_Nazgrek or u == udg_Zulkis then
@@ -432,7 +530,7 @@ endfunction
 
 private function SUI_GetUnitKills takes unit u returns integer
     local integer id
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return 0
     endif
     if u == udg_Nazgrek then
@@ -448,7 +546,7 @@ endfunction
 
 private function SUI_GetUnitDeaths takes unit u returns integer
     local integer id
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return 0
     endif
     if u == udg_Nazgrek then
@@ -478,7 +576,7 @@ endfunction
 private function SUI_GetStatValue takes unit u, integer statId returns real
     local integer id
 
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return 0.0
     endif
 
@@ -512,15 +610,15 @@ private function SUI_FormatStatValue takes integer statId, real value returns st
     return SUI_FormatNumber(value)
 endfunction
 
-private function SUI_GetCompactStatLabel takes integer statId returns string
+private function SUI_GetCompactStatLabel takes integer statId, unit u returns string
     if statId == 5 then
         return "HP Regen"
     elseif statId == 6 then
         return "HP %/Sec"
     elseif statId == 8 then
-        return "Mana Regen"
+        return SUI_GetResourceLabel(u) + " Regen"
     elseif statId == 9 then
-        return "Mana %/Sec"
+        return SUI_GetResourceLabel(u) + " %/Sec"
     elseif statId == 10 then
         return "Crit"
     elseif statId == 11 then
@@ -578,7 +676,7 @@ private function SUI_GetCompactStatLabel takes integer statId returns string
 endfunction
 
 private function SUI_GetKindByUnit takes unit u returns integer
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return 0
     endif
     if u == udg_Nazgrek or u == udg_Zulkis then
@@ -592,7 +690,7 @@ endfunction
 private function SUI_IsTrackedUnit takes unit u returns boolean
     local integer i = 1
 
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return false
     endif
     if u == udg_Nazgrek or u == udg_Zulkis then
@@ -634,6 +732,7 @@ private function SUI_InvalidateDetailSummaryCache takes nothing returns nothing
     set SUI_DetailSummaryClassHash = 0
     set SUI_DetailSummaryRoleHash = 0
     set SUI_DetailSummaryFactionHash = 0
+    set SUI_DetailSummaryResourceHash = 0
 endfunction
 
 private function SUI_InvalidateDetailStatsCache takes nothing returns nothing
@@ -648,17 +747,23 @@ private function SUI_InvalidateDetailStatsCache takes nothing returns nothing
 endfunction
 
 private function SUI_UpdateRowFrame takes player whichPlayer, integer rowIndex, unit u, integer kind returns nothing
-    local integer handleId = GetHandleId(u)
+    local integer handleId = 0
     local integer hp = 0
     local integer mp = 0
     local integer dead = 0
     local integer selected = 0
-    local integer level = SUI_GetUnitLevelForXP(u)
+    local integer level = 0
     local integer required = 0
 
     if GetLocalPlayer() != whichPlayer then
         return
     endif
+    if not SUI_IsValidUnit(u) then
+        return
+    endif
+
+    set handleId = GetHandleId(u)
+    set level = SUI_GetUnitLevelForXP(u)
 
     if SUI_RowDisplayHandle[rowIndex] != handleId then
         set SUI_RowDisplayHandle[rowIndex] = handleId
@@ -706,7 +811,7 @@ private function SUI_GetUnitDamageMin takes unit u returns integer
     local integer baseDamage
     local integer diceCount
 
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return 0
     endif
     set baseDamage = BlzGetUnitBaseDamage(u, 0)
@@ -722,7 +827,7 @@ private function SUI_GetUnitDamageMax takes unit u returns integer
     local integer diceCount
     local integer diceSides
 
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return 0
     endif
     set baseDamage = BlzGetUnitBaseDamage(u, 0)
@@ -740,7 +845,7 @@ endfunction
 private function SUI_GetUnitAttackSpeedText takes unit u returns string
     local real cooldown
 
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return "-"
     endif
     set cooldown = BlzGetUnitAttackCooldown(u, 0)
@@ -795,22 +900,22 @@ endfunction
 private function SUI_GetFallbackUnitClassText takes unit u returns string
     local integer unitTypeId
 
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return "-"
     endif
 
     set unitTypeId = GetUnitTypeId(u)
 
     // Future companion metadata should override these hardcoded defaults.
-    if udg_Nazgrek != null and GetHandleId(udg_Nazgrek) != 0 and unitTypeId == GetUnitTypeId(udg_Nazgrek) then
+    if SUI_IsValidUnit(udg_Nazgrek) and unitTypeId == GetUnitTypeId(udg_Nazgrek) then
         return "Shaman"
     elseif unitTypeId == 'H60Y' then
         return "Paladin"
     elseif unitTypeId == '061H' then
         return "Shaman"
-    elseif unitTypeId == '0631' then
+    elseif unitTypeId == 'O631' then
         return "Rogue"
-    elseif unitTypeId == '0629' then
+    elseif unitTypeId == 'O629' then
         return "Warrior"
     elseif unitTypeId == 'H60X' then
         return "Warlock"
@@ -824,14 +929,14 @@ endfunction
 private function SUI_GetFallbackUnitRoleText takes unit u returns string
     local integer unitTypeId
 
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return "-"
     endif
 
     set unitTypeId = GetUnitTypeId(u)
 
     // Future companion metadata should override these hardcoded defaults.
-    if udg_Nazgrek != null and GetHandleId(udg_Nazgrek) != 0 and unitTypeId == GetUnitTypeId(udg_Nazgrek) then
+    if SUI_IsValidUnit(udg_Nazgrek) and unitTypeId == GetUnitTypeId(udg_Nazgrek) then
         return "Melee Damage"
     endif
 
@@ -839,7 +944,7 @@ private function SUI_GetFallbackUnitRoleText takes unit u returns string
 endfunction
 
 private function SUI_GetUnitClassText takes unit u returns string
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return "-"
     endif
     if Pet_IsPetUnit(u) then
@@ -852,7 +957,7 @@ private function SUI_GetUnitClassText takes unit u returns string
 endfunction
 
 private function SUI_GetUnitRoleText takes unit u returns string
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return "-"
     endif
     if Pet_IsPetUnit(u) then
@@ -865,7 +970,7 @@ private function SUI_GetUnitRoleText takes unit u returns string
 endfunction
 
 private function SUI_GetUnitAbilitiesText takes unit u returns string
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         return "-"
     endif
     if Pet_IsPetUnit(u) then
@@ -922,7 +1027,7 @@ private function SUI_UpdateDetailStats takes player whichPlayer, unit u returns 
         return
     endif
 
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         call SUI_InvalidateDetailStatsCache()
         call SUI_ClearDetailStats()
         return
@@ -943,7 +1048,7 @@ private function SUI_UpdateDetailStats takes player whichPlayer, unit u returns 
         exitwhen statId > DEqStatsCounter or rowIndex > SUI_DETAIL_STAT_COLUMNS * SUI_DETAIL_STAT_ROWS
         if DEqStatNames[statId] != null then
             if SUI_DetailStatCache[rowIndex] <= -999998.0 then
-                call BlzFrameSetText(SUI_DetailStatLabel[rowIndex], "|cffffcc00" + SUI_GetCompactStatLabel(statId) + "|r")
+                call BlzFrameSetText(SUI_DetailStatLabel[rowIndex], "|cffffcc00" + SUI_GetCompactStatLabel(statId, u) + "|r")
             endif
             set statValue = SUI_GetStatValue(u, statId)
             if SUI_Abs(SUI_DetailStatCache[rowIndex] - statValue) > 0.01 then
@@ -974,13 +1079,13 @@ private function SUI_GetRowCount takes nothing returns integer
     if SUI_IsPlayerOwnedMainHero(udg_Zulkis) then
         set count = count + 1
     endif
-    if petUnit != null and GetHandleId(petUnit) != 0 then
+    if SUI_IsValidUnit(petUnit) then
         set count = count + 1
     endif
 
     loop
         exitwhen i > udg_CompanionCount
-        if udg_CompanionUnit[i] != null and GetHandleId(udg_CompanionUnit[i]) != 0 then
+        if SUI_IsValidUnit(udg_CompanionUnit[i]) then
             set count = count + 1
         endif
         set i = i + 1
@@ -999,7 +1104,7 @@ private function SUI_GetSelectedUnit takes player whichPlayer returns unit
 
     loop
         exitwhen rowIndex > SUI_MAX_ROWS
-        if SUI_RowUnit[rowIndex] != null and GetHandleId(SUI_RowUnit[rowIndex]) != 0 then
+        if SUI_IsTrackedUnit(SUI_RowUnit[rowIndex]) then
             set SUI_SelectedRow = rowIndex
             set SUI_SelectedUnit = SUI_RowUnit[rowIndex]
             return SUI_SelectedUnit
@@ -1054,7 +1159,7 @@ private function SUI_UpdateRows takes player whichPlayer returns nothing
         endif
     endif
 
-    if petUnit != null and GetHandleId(petUnit) != 0 then
+    if SUI_IsValidUnit(petUnit) then
         if skipped < listStart then
             set skipped = skipped + 1
         elseif rowIndex <= SUI_VISIBLE_ROWS then
@@ -1068,7 +1173,7 @@ private function SUI_UpdateRows takes player whichPlayer returns nothing
     loop
         exitwhen i > udg_CompanionCount
         set u = udg_CompanionUnit[i]
-        if u != null and GetHandleId(u) != 0 then
+        if SUI_IsValidUnit(u) then
             if skipped < listStart then
                 set skipped = skipped + 1
             elseif rowIndex <= SUI_VISIBLE_ROWS then
@@ -1142,16 +1247,18 @@ private function SUI_UpdateDetailSummary takes player whichPlayer, unit u return
     local string classText = ""
     local string roleText = ""
     local string factionText = ""
+    local string resourceLabel = ""
     local integer attackSpeedHash
     local integer classHash
     local integer roleHash
     local integer factionHash
+    local integer resourceHash
 
     if GetLocalPlayer() != whichPlayer then
         return
     endif
 
-    if u == null or GetHandleId(u) == 0 then
+    if not SUI_IsValidUnit(u) then
         call SUI_InvalidateDetailSummaryCache()
         call SUI_ClearDetailSummaryRows()
         return
@@ -1187,12 +1294,14 @@ private function SUI_UpdateDetailSummary takes player whichPlayer, unit u return
     set classText = SUI_GetUnitClassText(u)
     set roleText = SUI_GetUnitRoleText(u)
     set factionText = SUI_GetUnitFactionText(u)
+    set resourceLabel = SUI_GetResourceLabel(u)
     set attackSpeedHash = StringHash(attackSpeedText)
     set classHash = StringHash(classText)
     set roleHash = StringHash(roleText)
     set factionHash = StringHash(factionText)
+    set resourceHash = StringHash(resourceLabel)
 
-    if SUI_DetailSummaryUnitHandle == handleId and SUI_DetailSummaryDead == dead and SUI_DetailSummaryHP == hp and SUI_DetailSummaryMP == mp and SUI_DetailSummaryLevel == level and SUI_DetailSummaryPoints == points and SUI_DetailSummaryLife == life and SUI_DetailSummaryMaxLife == maxLife and SUI_DetailSummaryMana == mana and SUI_DetailSummaryMaxMana == maxMana and SUI_DetailSummaryKills == kills and SUI_DetailSummaryDeaths == deaths and SUI_DetailSummaryMinDamage == minDamage and SUI_DetailSummaryMaxDamage == maxDamage and SUI_DetailSummaryXPCurrent == xpCurrent and SUI_DetailSummaryXPRequired == xpRequired and SUI_DetailSummaryAttackSpeedHash == attackSpeedHash and SUI_DetailSummaryClassHash == classHash and SUI_DetailSummaryRoleHash == roleHash and SUI_DetailSummaryFactionHash == factionHash then
+    if SUI_DetailSummaryUnitHandle == handleId and SUI_DetailSummaryDead == dead and SUI_DetailSummaryHP == hp and SUI_DetailSummaryMP == mp and SUI_DetailSummaryLevel == level and SUI_DetailSummaryPoints == points and SUI_DetailSummaryLife == life and SUI_DetailSummaryMaxLife == maxLife and SUI_DetailSummaryMana == mana and SUI_DetailSummaryMaxMana == maxMana and SUI_DetailSummaryKills == kills and SUI_DetailSummaryDeaths == deaths and SUI_DetailSummaryMinDamage == minDamage and SUI_DetailSummaryMaxDamage == maxDamage and SUI_DetailSummaryXPCurrent == xpCurrent and SUI_DetailSummaryXPRequired == xpRequired and SUI_DetailSummaryAttackSpeedHash == attackSpeedHash and SUI_DetailSummaryClassHash == classHash and SUI_DetailSummaryRoleHash == roleHash and SUI_DetailSummaryFactionHash == factionHash and SUI_DetailSummaryResourceHash == resourceHash then
         return
     endif
 
@@ -1216,8 +1325,9 @@ private function SUI_UpdateDetailSummary takes player whichPlayer, unit u return
     set SUI_DetailSummaryClassHash = classHash
     set SUI_DetailSummaryRoleHash = roleHash
     set SUI_DetailSummaryFactionHash = factionHash
+    set SUI_DetailSummaryResourceHash = resourceHash
     call SUI_SetDetailSummaryRow(1, "|cffffcc00Status|r", SUI_GetStatusText(u), "|cffffcc00Level|r", "|cffffffff" + SUI_GetLevelText(u) + "|r")
-    call SUI_SetDetailSummaryRow(2, "|cffffcc00Hitpoints|r", "|cffffffff" + I2S(life) + " / " + I2S(maxLife) + "|r", "|cffffcc00Mana|r", "|cffffffff" + I2S(mana) + " / " + I2S(maxMana) + "|r")
+    call SUI_SetDetailSummaryRow(2, "|cffffcc00Hitpoints|r", "|cffffffff" + I2S(life) + " / " + I2S(maxLife) + "|r", "|cffffcc00" + resourceLabel + "|r", "|cffffffff" + I2S(mana) + " / " + I2S(maxMana) + "|r")
     call SUI_SetDetailSummaryRow(3, "|cffffcc00Kills|r", "|cffffffff" + I2S(kills) + "|r", "|cffffcc00Deaths|r", "|cffffffff" + I2S(deaths) + "|r")
     call SUI_SetDetailSummaryRow(4, "|cffffcc00Damage|r", "|cffffffff" + I2S(minDamage) + " - " + I2S(maxDamage) + "|r", "|cffffcc00Atk Speed|r", "|cffffffff" + attackSpeedText + "|r")
     call SUI_SetDetailSummaryRow(5, "|cffffcc00Class|r", SUI_ColorizeClassText(classText), "|cffffcc00Type|r", SUI_ColorizeRoleText(roleText))
@@ -1279,8 +1389,13 @@ private function SUI_Update takes player whichPlayer, boolean refreshStats retur
         return
     endif
 
-    if not SUI_IsTrackedUnit(SUI_SelectedUnit) and SUI_GetRowCount() > 0 then
-        set SUI_SelectedRow = 1
+    if not SUI_IsTrackedUnit(SUI_SelectedUnit) then
+        set SUI_SelectedRow = 0
+        set SUI_SelectedUnit = null
+        call SUI_InvalidateDetailSummaryCache()
+        call SUI_InvalidateDetailStatsCache()
+        set SUI_DetailHeaderUnitHandle = 0
+        set SUI_DetailHeaderLevel = -1
     endif
 
     call SUI_UpdateRows(whichPlayer)
@@ -1363,7 +1478,12 @@ private function SUI_RowAction takes nothing returns nothing
 
     if SUI_ButtonRow.has(handleId) then
         set SUI_SelectedRow = SUI_ButtonRow.integer[handleId]
-        set SUI_SelectedUnit = SUI_RowUnit[SUI_SelectedRow]
+        if SUI_IsTrackedUnit(SUI_RowUnit[SUI_SelectedRow]) then
+            set SUI_SelectedUnit = SUI_RowUnit[SUI_SelectedRow]
+        else
+            set SUI_SelectedRow = 0
+            set SUI_SelectedUnit = null
+        endif
         call SUI_InvalidateDetailSummaryCache()
         call SUI_InvalidateDetailStatsCache()
         set SUI_DetailHeaderUnitHandle = 0
@@ -1566,7 +1686,7 @@ private function SUI_CreateFrames takes nothing returns nothing
         call BlzFrameSetEnable(SUI_DetailStatLabel[statIndex], false)
         call BlzFrameSetVisible(SUI_DetailStatLabel[statIndex], false)
         if statIndex <= DEqStatsCounter and DEqStatNames[statIndex] != null then
-            call BlzFrameSetText(SUI_DetailStatLabel[statIndex], "|cffffcc00" + SUI_GetCompactStatLabel(statIndex) + "|r")
+            call BlzFrameSetText(SUI_DetailStatLabel[statIndex], "|cffffcc00" + SUI_GetCompactStatLabel(statIndex, null) + "|r")
         endif
 
         set SUI_DetailStatValue[statIndex] = BlzCreateFrameByType("TEXT", "StatsUIDetailStatValue" + I2S(statIndex), SUI_RightPane, "", 0)
@@ -1666,6 +1786,7 @@ public function Init takes nothing returns nothing
 
     set SUI_ButtonRow = Table.create()
     call SUI_EnsureXPRequiredCache()
+    call SUI_EnsureResourceRegistry()
 
     set SUI_CloseTrigger = CreateTrigger()
     call TriggerAddAction(SUI_CloseTrigger, function SUI_CloseAction)
