@@ -26,6 +26,15 @@
   Improved HP and MP bar rendering: HP now uses dynamic red/yellow/green health coloring, MP uses a light-blue fill, and empty bar space uses a semi-transparent grey background.
   Increased row spacing and adjusted frame levels so row text, icons, and bar fills render cleanly above the transparent panel backdrop.
   Resized the StatsLiteUI configuration icon button to match the other header buttons.
+  Restored compact row spacing so the panel can still fit more tracked units.
+  Moved Level X under the unit name, but kept it on the same compact subline as status.
+  Re-aligned icon/name/level/status so text starts after the icon and should no longer overlap it.
+  Changed HP/MP bars away from the old black blank-background.blp texture.
+  Bars now use UI\\Feedback\\XPBar\\human-bigbar-fill.blp, which should tint properly with BlzFrameSetVertexColor.
+  HP fill color is dynamic: red at low HP, yellow around mid HP, green at high HP.
+  MP fill is stable light blue.
+  Empty bar space is semi-transparent grey.
+  Config icon button now has the same button footprint as ?, -, and X, with the icon inset to reduce the oversized visual effect.
 
 ## [8.7.2026]
 
