@@ -6,13 +6,14 @@
 
     Description:
     In-game settings panel for icon query timing, minimap marker categories,
-    pings/display mode, secondary marker scan frequency, and map difficulty.
+    pings/display mode, secondary marker scan frequency, map difficulty, and
+    the active AI unit cap.
 
     Credits:
     Tasyen (TasQuestBox as inspiration)
 
     How to install:
-    Import after IconQuery and MasterUI. Open from the MasterUI Settings button.
+    Import after AI, IconQuery, and MasterUI. Open from the MasterUI Settings button.
 
     API:
     call SettingsUI_Show()
@@ -20,7 +21,7 @@
     call SettingsUI_GetMapDifficulty()
 
 **/
-library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Difficulty
+library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Difficulty, AI
     globals
         // UI-limited settings ranges. IconQuery also clamps internally.
         private constant string SETUI_TOC_PATH = "war3mapimported\\templates.toc"
@@ -28,6 +29,8 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
         private constant real SETUI_QUERY_TIME_MAX = 15.00
         private constant real SETUI_QUERY_REST_MIN = 5.00
         private constant real SETUI_QUERY_REST_MAX = 120.00
+        private constant real SETUI_AI_ACTIVE_CAP_MIN = 1.00
+        private constant real SETUI_AI_ACTIVE_CAP_MAX = 32.00
 
         private constant integer SETUI_ACTION_ALL = 1
         private constant integer SETUI_ACTION_QUEST_GIVERS = 2
@@ -42,6 +45,8 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
 
         private constant integer SETUI_SLIDER_QUERY_TIME = 1
         private constant integer SETUI_SLIDER_REST_TIME = 2
+        private constant integer SETUI_SLIDER_AI_ACTIVE_CAP = 3
+        private constant integer SETUI_SLIDER_COUNT = 3
 
         constant integer SETTINGSUI_MAP_DIFFICULTY_STORY = 1
         constant integer SETTINGSUI_MAP_DIFFICULTY_NORMAL = 2
@@ -56,6 +61,8 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
         private framehandle SETUI_Title = null
         private framehandle SETUI_LeftPane = null
         private framehandle SETUI_RightPane = null
+        private framehandle SETUI_AISectionLabel = null
+        private framehandle SETUI_AIDisclaimer = null
         private framehandle SETUI_CloseButton = null
         private framehandle SETUI_ReturnButton = null
         private framehandle array SETUI_Button
@@ -125,8 +132,10 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
     private function SETUI_GetSliderValue takes integer index returns real
         if index == 1 then
             return IconQuery_GetQueryTime()
+        elseif index == 2 then
+            return IconQuery_GetQueryRestTime()
         endif
-        return IconQuery_GetQueryRestTime()
+        return I2R(AI_GetRandomSpawnActiveCap())
     endfunction
 
     private function SETUI_SyncSliderValue takes integer index, real value returns nothing
@@ -142,6 +151,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
     private function SETUI_Refresh takes player whichPlayer returns nothing
         local real queryTime
         local real restTime
+        local integer aiActiveCap
 
         if SETUI_Parent == null then
             return
@@ -152,6 +162,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
             set SETUI_MapDifficulty = Difficulty_GetDifficulty()
             set queryTime = IconQuery_GetQueryTime()
             set restTime = IconQuery_GetQueryRestTime()
+            set aiActiveCap = AI_GetRandomSpawnActiveCap()
 
             call BlzFrameSetText(SETUI_Button[1], "All Icons: " + SETUI_OnOff(IconQuery_GetAllEnabled()))
             call BlzFrameSetText(SETUI_Button[2], "Quest Givers: " + IconQuery_GetCategoryModeName(ICONQUERY_CATEGORY_QUEST_GIVERS))
@@ -166,8 +177,10 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
 
             call BlzFrameSetText(SETUI_SliderLabel[1], "Query: " + I2S(R2I(queryTime + 0.5)) + "s")
             call BlzFrameSetText(SETUI_SliderLabel[2], "Rest: " + I2S(R2I(restTime + 0.5)) + "s")
+            call BlzFrameSetText(SETUI_SliderLabel[3], "AI cap: " + I2S(aiActiveCap))
             call SETUI_SyncSliderValue(1, queryTime)
             call SETUI_SyncSliderValue(2, restTime)
+            call SETUI_SyncSliderValue(3, I2R(aiActiveCap))
         endif
         set SETUI_Syncing = false
     endfunction
@@ -176,7 +189,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
         local integer i = 1
         call SETUI_SetFrameVisible(SETUI_Parent, false)
         loop
-            exitwhen i > 2
+            exitwhen i > SETUI_SLIDER_COUNT
             call SETUI_SetFrameVisible(SETUI_Slider[i], false)
             set i = i + 1
         endloop
@@ -270,6 +283,9 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
             elseif sliderKind == SETUI_SLIDER_REST_TIME then
                 call IconQuery_SetQueryRestTime(SETUI_Clamp(value, SETUI_QUERY_REST_MIN, SETUI_QUERY_REST_MAX))
                 set SETUI_SliderValueCache[2] = IconQuery_GetQueryRestTime()
+            elseif sliderKind == SETUI_SLIDER_AI_ACTIVE_CAP then
+                call AI_SetRandomSpawnActiveCap(R2I(SETUI_Clamp(value, SETUI_AI_ACTIVE_CAP_MIN, SETUI_AI_ACTIVE_CAP_MAX) + 0.5))
+                set SETUI_SliderValueCache[3] = I2R(AI_GetRandomSpawnActiveCap())
             endif
             call SETUI_Refresh(p)
             set SETUI_HandlingSliderAction = false
@@ -324,7 +340,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
     private function SETUI_CreateFrames takes nothing returns nothing
         set SETUI_Parent = BlzCreateFrameByType("BACKDROP", "SettingsUIPanel", BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "EscMenuBackdrop", 0)
         call BlzFrameSetAbsPoint(SETUI_Parent, FRAMEPOINT_TOPLEFT, 0.11, 0.55)
-        call BlzFrameSetAbsPoint(SETUI_Parent, FRAMEPOINT_BOTTOMRIGHT, 0.61, 0.18)
+        call BlzFrameSetAbsPoint(SETUI_Parent, FRAMEPOINT_BOTTOMRIGHT, 0.61, 0.08)
 
         set SETUI_Title = BlzCreateFrameByType("TEXT", "SettingsUITitle", SETUI_Parent, "", 0)
         call BlzFrameSetPoint(SETUI_Title, FRAMEPOINT_TOPLEFT, SETUI_Parent, FRAMEPOINT_TOPLEFT, 0.018, -0.018)
@@ -371,6 +387,23 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
         call SETUI_CreateRightButton(8, "Travel/Boss/Place", SETUI_ACTION_SECONDARY_FREQUENCY, -0.160)
         call SETUI_CreateRightButton(9, "Pings", SETUI_ACTION_PINGS, -0.200)
         call SETUI_CreateRightButton(10, "Icon Mode", SETUI_ACTION_ICON_MODE, -0.240)
+
+        set SETUI_AISectionLabel = BlzCreateFrameByType("TEXT", "SettingsUIAISection", SETUI_RightPane, "", 0)
+        call BlzFrameSetPoint(SETUI_AISectionLabel, FRAMEPOINT_TOPLEFT, SETUI_RightPane, FRAMEPOINT_TOPLEFT, 0.022, -0.282)
+        call BlzFrameSetSize(SETUI_AISectionLabel, 0.220, 0.014)
+        call BlzFrameSetTextAlignment(SETUI_AISectionLabel, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
+        call BlzFrameSetEnable(SETUI_AISectionLabel, false)
+        call BlzFrameSetText(SETUI_AISectionLabel, "|cffffcc00AI Units|r")
+
+        call SETUI_CreateSliderRow(3, "AI cap", SETUI_SLIDER_AI_ACTIVE_CAP, -0.314, SETUI_AI_ACTIVE_CAP_MIN, SETUI_AI_ACTIVE_CAP_MAX, 1.0)
+
+        set SETUI_AIDisclaimer = BlzCreateFrameByType("TEXT", "SettingsUIAIDisclaimer", SETUI_RightPane, "", 0)
+        call BlzFrameSetPoint(SETUI_AIDisclaimer, FRAMEPOINT_TOPLEFT, SETUI_RightPane, FRAMEPOINT_TOPLEFT, 0.022, -0.345)
+        call BlzFrameSetSize(SETUI_AIDisclaimer, 0.226, 0.060)
+        call BlzFrameSetTextAlignment(SETUI_AIDisclaimer, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
+        call BlzFrameSetScale(SETUI_AIDisclaimer, 0.82)
+        call BlzFrameSetEnable(SETUI_AIDisclaimer, false)
+        call BlzFrameSetText(SETUI_AIDisclaimer, "|cffffcc00More than 8 active AI units can cause lag, unit order issues, and input lag.|r|n|cffbfbfbfFor best performance, keep this between 4-8 or lower.|r")
 
         call BlzFrameSetVisible(SETUI_Parent, false)
     endfunction
@@ -424,7 +457,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
             call BlzFrameSetVisible(SETUI_Parent, true)
         endif
         loop
-            exitwhen i > 2
+            exitwhen i > SETUI_SLIDER_COUNT
             call SETUI_SetFrameVisible(SETUI_Slider[i], true)
             set i = i + 1
         endloop
