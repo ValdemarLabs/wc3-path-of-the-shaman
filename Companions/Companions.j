@@ -1840,6 +1840,7 @@ endfunction
 
 private function GetFactionInfoTextInternal takes unit target returns string
     local integer unitTypeId
+    local string factionName
 
     if target == null then
         return "Unknown"
@@ -1850,7 +1851,14 @@ private function GetFactionInfoTextInternal takes unit target returns string
         return "Tamed Beast"
     elseif target == udg_Shadowclaw then
         return "Shadowclaw"
-    elseif target == udg_Aradion or target == udg_Valeria or unitTypeId == UNIT_ARADION or unitTypeId == UNIT_VALERIA then
+    endif
+
+    set factionName = Reputation_GetUnitFactionName(target)
+    if factionName != "" then
+        return factionName
+    endif
+
+    if target == udg_Aradion or target == udg_Valeria or unitTypeId == UNIT_ARADION or unitTypeId == UNIT_VALERIA then
         return "Elarindor"
     elseif unitTypeId == UNIT_ENGINEER or unitTypeId == UNIT_ENGINEER_SHREDDER then
         return "Goblins"
