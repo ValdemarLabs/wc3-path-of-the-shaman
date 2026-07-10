@@ -51,7 +51,7 @@
     call AI_SetRandomSpawnFirstProfile(profileId)
     call AI_SetRandomSpawnHardCap(cap)
     call AI_SetRandomSpawnActiveCap(cap)
-    call AI_GetRandomSpawnActiveCap()
+    call AI_GetRandomSpawnActiveCap() returns integer
     call AI_SetRandomSpawnActiveMin(cap)
     call AI_SetRandomSpawnOwner(owner)
     call AI_SpawnRandomHero(showMessage)
@@ -1246,9 +1246,16 @@ endfunction
 
 private function CanShowRandomManaged takes integer instanceId returns boolean
     local integer visible
+    local unit whichUnit
     if instanceId <= 0 or not InstanceRandomManaged.boolean[instanceId] then
         return true
     endif
+    set whichUnit = InstanceUnit.unit[instanceId]
+    if IsCompanionControlled(whichUnit) then
+        set whichUnit = null
+        return true
+    endif
+    set whichUnit = null
     if RandomSpawnActiveCap <= 0 then
         return true
     endif
@@ -1260,7 +1267,7 @@ private function CanShowRandomManaged takes integer instanceId returns boolean
 endfunction
 
 private function HideRandomManagedByCap takes integer instanceId, unit whichUnit returns nothing
-    if instanceId <= 0 or whichUnit == null or not InstanceRandomManaged.boolean[instanceId] then
+    if instanceId <= 0 or whichUnit == null or not InstanceRandomManaged.boolean[instanceId] or IsCompanionControlled(whichUnit) then
         return
     endif
     set InstanceHiddenByCap.boolean[instanceId] = true
@@ -1700,8 +1707,11 @@ private function RemoveInstanceFromAiParty takes integer instanceId returns noth
     else
         call InstanceAiPartyLeader.remove(instanceId)
         set count = InstanceAiPartyFollowerCount[leaderId]
-        if count > 0 then
+        if count > 1 then
             set InstanceAiPartyFollowerCount[leaderId] = count - 1
+        elseif count == 1 then
+            call InstanceAiPartyFollowerCount.remove(leaderId)
+            call InstanceAiPartyLeader.remove(leaderId)
         endif
     endif
 endfunction
@@ -3524,6 +3534,7 @@ public function StartTravel takes unit whichUnit, real duration, real returnX, r
     if IsCompanionControlled(whichUnit) and not ProfileAllowCompanionTravel.boolean[profileId] then
         return
     endif
+    call RemoveInstanceFromAiParty(instanceId)
     set InstanceTraveling.boolean[instanceId] = true
     set InstanceTravelReturnAt.real[instanceId] = GetNow() + duration
     set InstanceTravelReturnX.real[instanceId] = returnX
@@ -3667,6 +3678,114 @@ private function HasNearbyCombatEnemy takes unit source, real range returns bool
     set CombatSearchSource = null
     set CombatSearchFound = false
     return result
+endfunction
+
+private function IsAiPartyOrganizeState takes integer state returns boolean
+    return state == AI_STATE_IDLE or state == AI_STATE_WANDER or state == AI_STATE_SOCIAL
+endfunction
+
+private function IsAiPartyCandidate takes integer instanceId, unit whichUnit returns boolean
+    if instanceId <= 0 or whichUnit == null then
+        return false
+    endif
+    if IsAiPartyMember(instanceId) or not IsRandomManagedVisible(instanceId) or not IsUnitType(whichUnit, UNIT_TYPE_HERO) then
+        return false
+    endif
+    if not IsAiPartyOrganizeState(InstanceState[instanceId]) or ProfileAutonomousDisabled.boolean[InstanceProfile[instanceId]] then
+        return false
+    endif
+    return not HasNearbyCombatEnemy(whichUnit, 700.00)
+endfunction
+
+private function AddAiPartyMember takes integer leaderId, integer memberId returns nothing
+    local integer count
+    if leaderId <= 0 or memberId <= 0 or InstanceAiPartyLeader[memberId] > 0 then
+        return
+    endif
+    if InstanceAiPartyLeader[leaderId] <= 0 then
+        set InstanceAiPartyLeader[leaderId] = leaderId
+        set InstanceAiPartyFollowerCount[leaderId] = 0
+    endif
+    set InstanceAiPartyLeader[memberId] = leaderId
+    if memberId != leaderId then
+        set count = InstanceAiPartyFollowerCount[leaderId] + 1
+        set InstanceAiPartyFollowerCount[leaderId] = count
+        call ClearSocialState(memberId)
+        call SetInstanceState(memberId, AI_STATE_IDLE)
+    endif
+endfunction
+
+private function TryCreateAiPartyForLeader takes integer leaderId returns boolean
+    local integer index = 1
+    local integer memberId
+    local integer added = 1
+    local unit leader = InstanceUnit.unit[leaderId]
+    local unit member
+    local real dx
+    local real dy
+    if not IsAiPartyCandidate(leaderId, leader) then
+        set leader = null
+        set member = null
+        return false
+    endif
+    call AddAiPartyMember(leaderId, leaderId)
+    loop
+        exitwhen index > ActiveCount or added >= AI_PARTY_MAX_SIZE
+        set memberId = ActiveInstances[index]
+        if memberId != leaderId then
+            set member = InstanceUnit.unit[memberId]
+            if IsAiPartyCandidate(memberId, member) and IsUnitAlly(member, GetOwningPlayer(leader)) then
+                set dx = GetUnitX(member) - GetUnitX(leader)
+                set dy = GetUnitY(member) - GetUnitY(leader)
+                if dx * dx + dy * dy <= AI_PARTY_SCAN_RANGE * AI_PARTY_SCAN_RANGE and GetRandomInt(1, 100) <= 50 then
+                    call AddAiPartyMember(leaderId, memberId)
+                    set added = added + 1
+                endif
+            endif
+        endif
+        set index = index + 1
+    endloop
+    if added <= 1 then
+        call RemoveInstanceFromAiParty(leaderId)
+        set leader = null
+        set member = null
+        return false
+    endif
+    call DebugMsg(GetDebugInstanceName(leaderId, leader) + " organized an AI companion party of " + I2S(added) + ".")
+    set leader = null
+    set member = null
+    return true
+endfunction
+
+private function TryOrganizeAiParty takes real now returns nothing
+    local integer index = 1
+    local integer instanceId
+    local integer selected = 0
+    local integer seen = 0
+    local unit whichUnit
+    if now < NextAiPartyOrganize then
+        return
+    endif
+    set NextAiPartyOrganize = now + GetRandomReal(AI_PARTY_ORGANIZE_MIN, AI_PARTY_ORGANIZE_MAX)
+    if GetRandomInt(1, 100) > 45 then
+        return
+    endif
+    loop
+        exitwhen index > ActiveCount
+        set instanceId = ActiveInstances[index]
+        set whichUnit = InstanceUnit.unit[instanceId]
+        if IsAiPartyCandidate(instanceId, whichUnit) then
+            set seen = seen + 1
+            if GetRandomInt(1, seen) == 1 then
+                set selected = instanceId
+            endif
+        endif
+        set index = index + 1
+    endloop
+    if selected > 0 then
+        call TryCreateAiPartyForLeader(selected)
+    endif
+    set whichUnit = null
 endfunction
 
 private function CanGatherProfession takes unit whichUnit, integer profileId, integer professionId, integer requiredSkill returns boolean
@@ -4289,6 +4408,84 @@ private function RunProfileThink takes integer instanceId, unit whichUnit return
     set AI_EventTarget = null
 endfunction
 
+private function ResetCompanionCommandState takes integer instanceId, unit whichUnit, boolean keepCompanionOrders returns nothing
+    local real now
+    if instanceId <= 0 or whichUnit == null then
+        return
+    endif
+    set now = GetNow()
+    call ClearSocialState(instanceId)
+    call RemoveTrackedProfessionTool(instanceId)
+    call InstanceRetreatUntil.remove(instanceId)
+    set InstanceCompanionControlled.boolean[instanceId] = keepCompanionOrders
+    set InstanceNextThink.real[instanceId] = 0.00
+    set InstanceNextAbility.real[instanceId] = 0.00
+    set InstanceNextPickup.real[instanceId] = now + 1.00
+    call SetInstanceState(instanceId, AI_STATE_IDLE)
+    call ResetMovementMemory(instanceId, whichUnit, 0, now)
+    if keepCompanionOrders then
+        call Companions_RefreshOrders(whichUnit)
+    elseif not IsCastingLocked(whichUnit) then
+        call IssueImmediateOrder(whichUnit, "stop")
+    endif
+endfunction
+
+private function TryProcessAiPartyFollower takes integer instanceId, unit whichUnit, integer state, real now returns boolean
+    local integer leaderId = InstanceAiPartyLeader[instanceId]
+    local unit leader
+    local unit target
+    local real dx
+    local real dy
+    local integer orderId
+    if leaderId <= 0 or leaderId == instanceId then
+        return false
+    endif
+    set leader = InstanceUnit.unit[leaderId]
+    if leader == null or not IsAliveUnit(leader) or IsUnitHidden(leader) or InstanceTraveling.boolean[leaderId] or InstanceHiddenByCap.boolean[leaderId] or IsCompanionControlled(leader) then
+        call RemoveInstanceFromAiParty(instanceId)
+        set target = null
+        set leader = null
+        return false
+    endif
+    if state == AI_STATE_RETREAT_COMBAT or state == AI_STATE_RETREAT_BASE or state == AI_STATE_BOSS_EVADE then
+        set target = null
+        set leader = null
+        return false
+    endif
+    if IsCastingLocked(whichUnit) then
+        set target = null
+        set leader = null
+        return true
+    endif
+    set dx = GetUnitX(whichUnit) - GetUnitX(leader)
+    set dy = GetUnitY(whichUnit) - GetUnitY(leader)
+    if dx * dx + dy * dy > AI_PARTY_FOLLOW_RANGE * AI_PARTY_FOLLOW_RANGE then
+        call IssueTargetOrder(whichUnit, "smart", leader)
+        call ResetMovementMemory(instanceId, whichUnit, GetUnitCurrentOrder(whichUnit), now)
+        set target = null
+        set leader = null
+        return true
+    endif
+    set target = AI_FindClosestEnemy(leader, 850.00)
+    if target != null then
+        call IssueTargetOrder(whichUnit, "attack", target)
+        if now >= InstanceNextAbility.real[instanceId] then
+            call RunProfileThink(instanceId, whichUnit)
+        endif
+        set target = null
+        set leader = null
+        return true
+    endif
+    set orderId = GetUnitCurrentOrder(whichUnit)
+    if dx * dx + dy * dy > AI_PARTY_CLOSE_RANGE * AI_PARTY_CLOSE_RANGE and orderId != OrderId("smart") then
+        call IssueTargetOrder(whichUnit, "smart", leader)
+        call ResetMovementMemory(instanceId, whichUnit, GetUnitCurrentOrder(whichUnit), now)
+    endif
+    set target = null
+    set leader = null
+    return true
+endfunction
+
 private function ProcessInstance takes integer instanceId, real now returns nothing
     local unit whichUnit = InstanceUnit.unit[instanceId]
     local boolean companionControlled
@@ -4437,6 +4634,11 @@ private function ProcessInstance takes integer instanceId, real now returns noth
         endif
     endif
 
+    if TryProcessAiPartyFollower(instanceId, whichUnit, state, now) then
+        set whichUnit = null
+        return
+    endif
+
     if TryRecoverStuck(instanceId, whichUnit, state, now) then
         set whichUnit = null
         return
@@ -4475,6 +4677,7 @@ private function Think takes nothing returns nothing
         call ProcessInstance(ActiveInstances[i], now)
         set i = i + 1
     endloop
+    call TryOrganizeAiParty(now)
 endfunction
 
 private function RequestCompanionDeathBark takes unit victim returns nothing
@@ -4654,9 +4857,12 @@ private function HandleCompanionCommand takes nothing returns nothing
     endif
 
     if commandId == Companions_COMMAND_INVITE then
+        call RemoveInstanceFromAiParty(instanceId)
         call UnlockInviteGatedProfileState(instanceId, whichUnit)
+        call ResetCompanionCommandState(instanceId, whichUnit, true)
         set barkType = AI_BARK_GREET
     elseif commandId == Companions_COMMAND_KICK then
+        call ResetCompanionCommandState(instanceId, whichUnit, false)
         if GetRandomInt(1, 2) == 1 then
             set barkType = AI_BARK_KICKED
         else
@@ -4674,6 +4880,7 @@ private function HandleCompanionCommand takes nothing returns nothing
         else
             set barkType = AI_BARK_NORMAL
         endif
+        call ResetCompanionCommandState(instanceId, whichUnit, true)
     endif
 
     if barkType > 0 then
