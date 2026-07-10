@@ -39,6 +39,9 @@ _Roadmap/
 /cache/
 /logs/
 
+# tools folder
+/tools/temp/
+
 # Warcraft 3 generated files
 #*.w3x.autosave
 
