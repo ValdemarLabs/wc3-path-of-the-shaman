@@ -350,6 +350,8 @@ private function Init takes nothing returns nothing
     set AI_Warlock_ProfileId = AI_RegisterProfile(AI_Warlock_ClassId, AI_WARLOCK_UNIT_ORC, "Orc Warlock")
     set AI_Warlock_OrcProfileId = AI_Warlock_ProfileId
     set AI_Warlock_UndeadProfileId = AI_RegisterProfile(AI_Warlock_ClassId, AI_WARLOCK_UNIT_UNDEAD, "Undead Warlock")
+    call AI_SetProfileFaction(AI_Warlock_ProfileId, "Horde")
+    call AI_SetProfileFaction(AI_Warlock_UndeadProfileId, "Undead")
     call AI_SetProfileSpawnOwner(AI_Warlock_ProfileId, Player(1))
     call AI_SetProfileSpawnOwner(AI_Warlock_UndeadProfileId, Player(1))
     call AI_SetProfileThinkCallback(AI_Warlock_ProfileId, function Think)

@@ -177,6 +177,7 @@ private function Init takes nothing returns nothing
     set AI_Warrior_ProfileId = AI_RegisterProfile(AI_Warrior_ClassId, AI_WARRIOR_UNIT_HORDE, "Horde Warrior")
     call StatsLiteUI_RegisterRageResourceClass(AI_Warrior_ClassId)
     call StatsUI_RegisterRageResourceClass(AI_Warrior_ClassId)
+    call AI_SetProfileFaction(AI_Warrior_ProfileId, "Horde")
     call AI_SetProfileSpawnOwner(AI_Warrior_ProfileId, Player(1))
     call AIWarrior_ConfigureProfile(AI_Warrior_ProfileId)
     call AIWarrior_RegisterAbilityTemplatesForUnitType(AI_WARRIOR_UNIT_HORDE)

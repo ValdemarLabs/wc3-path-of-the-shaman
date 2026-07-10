@@ -155,6 +155,7 @@ private function Init takes nothing returns nothing
     set AI_Rogue_ProfileId = AI_RegisterProfile(AI_Rogue_ClassId, AI_ROGUE_UNIT_HORDE, "Horde Rogue")
     call StatsLiteUI_RegisterEnergyResourceClass(AI_Rogue_ClassId)
     call StatsUI_RegisterEnergyResourceClass(AI_Rogue_ClassId)
+    call AI_SetProfileFaction(AI_Rogue_ProfileId, "Horde")
     call AI_SetProfileSpawnOwner(AI_Rogue_ProfileId, Player(1))
     call AI_SetProfileNoManaRestore(AI_Rogue_ProfileId, true)
     call AI_SetProfileThinkCallback(AI_Rogue_ProfileId, function Think)

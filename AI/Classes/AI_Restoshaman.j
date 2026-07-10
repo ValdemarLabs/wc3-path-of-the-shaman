@@ -214,6 +214,7 @@ endfunction
 private function Init takes nothing returns nothing
     set AI_Restoshaman_ClassId = AI_RegisterClass("Restoshaman")
     set AI_Restoshaman_ProfileId = AI_RegisterProfile(AI_Restoshaman_ClassId, AI_RESTOSHAMAN_UNIT_HORDE, "Horde Restoshaman")
+    call AI_SetProfileFaction(AI_Restoshaman_ProfileId, "Horde")
     call AI_SetProfileSpawnOwner(AI_Restoshaman_ProfileId, Player(1))
     call AI_SetProfileThinkCallback(AI_Restoshaman_ProfileId, function Think)
     call AI_AddProfileProfession(AI_Restoshaman_ProfileId, AI_PROFESSION_HERBALISM)

@@ -228,6 +228,8 @@ private function Init takes nothing returns nothing
     set AI_Engineer_ClassId = AI_RegisterClass("Engineer")
     set AI_Engineer_ProfileId = AI_RegisterProfile(AI_Engineer_ClassId, AI_ENGINEER_UNIT_NEUTRAL, "Neutral Engineer")
     set AI_Engineer_ShredderProfileId = AI_RegisterProfile(AI_Engineer_ClassId, AI_ENGINEER_UNIT_SHREDDER, "Engineer Shredder")
+    call AI_SetProfileFaction(AI_Engineer_ProfileId, "Goblins")
+    call AI_SetProfileFaction(AI_Engineer_ShredderProfileId, "Goblins")
     call AI_SetProfileSpawnOwner(AI_Engineer_ProfileId, Player(6))
     call AI_SetProfileSpawnOwner(AI_Engineer_ShredderProfileId, Player(6))
     call AI_SetProfileThinkCallback(AI_Engineer_ProfileId, function ThinkEngineer)
