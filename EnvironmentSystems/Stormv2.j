@@ -280,7 +280,7 @@ library Storm initializer Init requires DNC, ZoneEvent
             // --------------------
             call .toCamera()
             call DestroyEffect(.Effect)
-            call KillUnit(.Unit)
+            call RemoveUnit(.Unit)
             set .Effect = null
             set .Unit = null
             // --------------------
@@ -401,6 +401,8 @@ library Storm initializer Init requires DNC, ZoneEvent
             set .Time = 0
             set .Mode = false
             set .Unit = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), DUMMY_ID, 0, 0, azimuth)
+            call SetUnitPathing(.Unit, false)
+            call UnitAddAbility(.Unit, 'Aloc')
             call SetUnitAnimationByIndex(.Unit, zenith + 90)
             // --------------------
             call this.add()
