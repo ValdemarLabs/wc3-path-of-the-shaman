@@ -44,12 +44,12 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         private constant real SLUI_PANEL_RIGHT_OFFSET = -0.008
         private constant real SLUI_PANEL_TOP_OFFSET = -0.034
         private constant real SLUI_PANEL_WIDTH = 0.284
-        private constant real SLUI_PANEL_MIN_HEIGHT = 0.116
-        private constant real SLUI_PANEL_MAX_HEIGHT = 0.392
+        private constant real SLUI_PANEL_MIN_HEIGHT = 0.126
+        private constant real SLUI_PANEL_MAX_HEIGHT = 0.520
         private constant real SLUI_PANEL_CONFIG_HEIGHT = 0.280
         private constant real SLUI_PANEL_MINIMIZED_HEIGHT = 0.044
         private constant real SLUI_PANEL_BASE_HEIGHT = 0.069
-        private constant real SLUI_ROW_HEIGHT = 0.030
+        private constant real SLUI_ROW_HEIGHT = 0.040
         private constant real SLUI_ROW_GAP = 0.003
         private constant real SLUI_BAR_WIDTH = 0.082 // CHANGE: bar column remains fixed while the left text area grows
 
@@ -728,7 +728,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
             set SLUI_RowStateCache[rowIndex] = ""
             set SLUI_RowClassCache[rowIndex] = ""
             call BlzFrameSetTexture(SLUI_RowIcon[rowIndex], SLUI_GetUnitIconPath(u, kind), 0, true)
-            call BlzFrameSetText(SLUI_RowName[rowIndex], SLUI_GetKindLabel(kind) + " " + SLUI_TrimText(SLUI_GetDisplayName(u), 17))
+            call BlzFrameSetText(SLUI_RowName[rowIndex], SLUI_GetKindLabel(kind) + " " + SLUI_TrimText(SLUI_GetDisplayName(u), 16))
         endif
 
         if SLUI_IsDeadForDisplay(u) then
@@ -742,8 +742,8 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
             set SLUI_RowDeadState[rowIndex] = dead
             set SLUI_RowHPValue[rowIndex] = hp
             set SLUI_RowMPValue[rowIndex] = mp
-            call SLUI_SetBar(SLUI_RowHPFill[rowIndex], SLUI_RowHPText[rowIndex], SLUI_BAR_WIDTH, 0.008, hp, SLUI_GetHealthBarTexture(hp), "HP") // CHANGE: HP fill texture changes by health percent
-            call SLUI_SetBar(SLUI_RowMPFill[rowIndex], SLUI_RowMPText[rowIndex], SLUI_BAR_WIDTH, 0.007, mp, SLUI_GetResourceBarTexture(u), SLUI_GetResourceBarLabel(u)) // CHANGE: label and fill follow mana/rage/energy class mode
+            call SLUI_SetBar(SLUI_RowHPFill[rowIndex], SLUI_RowHPText[rowIndex], SLUI_BAR_WIDTH, 0.010, hp, SLUI_GetHealthBarTexture(hp), "HP") // CHANGE: HP fill texture changes by health percent
+            call SLUI_SetBar(SLUI_RowMPFill[rowIndex], SLUI_RowMPText[rowIndex], SLUI_BAR_WIDTH, 0.010, mp, SLUI_GetResourceBarTexture(u), SLUI_GetResourceBarLabel(u)) // CHANGE: label and fill follow mana/rage/energy class mode
         endif
 
         call BlzFrameSetVisible(SLUI_RowMPBack[rowIndex], SLUI_ShowMana)
@@ -1179,67 +1179,69 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
     endfunction
 
     private function SLUI_CreateRow takes integer rowIndex, real y returns nothing
+        local real textLeft = 0.044
+        local real stateLeft = 0.102
         local real barLeft = 0.174 // CHANGE: right-side bar column; left text column is aligned after icon
 
         set SLUI_RowButton[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRow" + I2S(rowIndex), SLUI_RowPane, "", 0)
         call BlzFrameSetTexture(SLUI_RowButton[rowIndex], SLUI_PanelTexture, 0, true)
         call BlzFrameSetPoint(SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowPane, FRAMEPOINT_TOPLEFT, 0.006, y)
-        call BlzFrameSetSize(SLUI_RowButton[rowIndex], 0.256, SLUI_ROW_HEIGHT) // CHANGE: row height gives name/meta text separate baselines
+        call BlzFrameSetSize(SLUI_RowButton[rowIndex], 0.256, SLUI_ROW_HEIGHT) // CHANGE: row height gives name/class/state/level separate aligned baselines
         call BlzFrameSetAlpha(SLUI_RowButton[rowIndex], 0)
         call BlzFrameSetVertexColor(SLUI_RowButton[rowIndex], BlzConvertColor(0, 10, 10, 10))
         // CHANGE: Row container stays above the main backdrop; row children are created under it.
         call BlzFrameSetLevel(SLUI_RowButton[rowIndex], 3)
 
-        // CHANGE: Small flashing alert frame behind/around the unit icon.
+        // CHANGE: Row-wide flashing alert frame behind the row contents.
         set SLUI_RowAlert[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRowAlert" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
         call BlzFrameSetTexture(SLUI_RowAlert[rowIndex], SLUI_PanelTexture, 0, true)
         call BlzFrameSetPoint(SLUI_RowAlert[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.002, -0.001)
-        call BlzFrameSetSize(SLUI_RowAlert[rowIndex], 0.252, 0.028)
+        call BlzFrameSetSize(SLUI_RowAlert[rowIndex], 0.252, 0.038)
         call BlzFrameSetLevel(SLUI_RowAlert[rowIndex], 3)
         call BlzFrameSetEnable(SLUI_RowAlert[rowIndex], false)
         call BlzFrameSetVisible(SLUI_RowAlert[rowIndex], false)
 
         set SLUI_RowIcon[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRowIcon" + I2S(rowIndex), SLUI_RowButton[rowIndex], "IconButtonTemplate", 0)
-        call BlzFrameSetPoint(SLUI_RowIcon[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.006, -0.004) // CHANGE: compact top-left icon position
-        call BlzFrameSetSize(SLUI_RowIcon[rowIndex], 0.022, 0.022) // CHANGE: icon stays clear of the text columns
+        call BlzFrameSetPoint(SLUI_RowIcon[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.006, -0.005) // CHANGE: compact top-left icon position
+        call BlzFrameSetSize(SLUI_RowIcon[rowIndex], 0.032, 0.032) // CHANGE: icon stays clear of the text columns
         call BlzFrameSetLevel(SLUI_RowIcon[rowIndex], 4) // CHANGE: icon above translucent panel
 
         set SLUI_RowName[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowName" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(SLUI_RowName[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.034, -0.003) // CHANGE: kind/name starts after icon with no overlap
-        call BlzFrameSetSize(SLUI_RowName[rowIndex], 0.134, 0.010)
+        call BlzFrameSetPoint(SLUI_RowName[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, textLeft, -0.004) // CHANGE: all row text starts from a fixed column after the icon
+        call BlzFrameSetSize(SLUI_RowName[rowIndex], 0.124, 0.010)
         call BlzFrameSetTextAlignment(SLUI_RowName[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
-        call BlzFrameSetScale(SLUI_RowName[rowIndex], 0.50)
+        call BlzFrameSetScale(SLUI_RowName[rowIndex], 0.48)
         call BlzFrameSetEnable(SLUI_RowName[rowIndex], false)
         call BlzFrameSetLevel(SLUI_RowName[rowIndex], 4) // CHANGE: name above translucent panel
 
         set SLUI_RowLevel[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowLevel" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(SLUI_RowLevel[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.034, -0.016) // CHANGE: level aligned below kind/name in the same column
-        call BlzFrameSetSize(SLUI_RowLevel[rowIndex], 0.041, 0.008)
+        call BlzFrameSetPoint(SLUI_RowLevel[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, textLeft, -0.028) // CHANGE: level uses the same left column as name/class
+        call BlzFrameSetSize(SLUI_RowLevel[rowIndex], 0.046, 0.008)
         call BlzFrameSetTextAlignment(SLUI_RowLevel[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
-        call BlzFrameSetScale(SLUI_RowLevel[rowIndex], 0.43)
+        call BlzFrameSetScale(SLUI_RowLevel[rowIndex], 0.42)
         call BlzFrameSetEnable(SLUI_RowLevel[rowIndex], false)
         call BlzFrameSetLevel(SLUI_RowLevel[rowIndex], 4) // CHANGE: level above translucent panel
 
         set SLUI_RowClass[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowClass" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(SLUI_RowClass[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.077, -0.016)
-        call BlzFrameSetSize(SLUI_RowClass[rowIndex], 0.050, 0.008)
+        call BlzFrameSetPoint(SLUI_RowClass[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, textLeft, -0.016)
+        call BlzFrameSetSize(SLUI_RowClass[rowIndex], 0.052, 0.008)
         call BlzFrameSetTextAlignment(SLUI_RowClass[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
-        call BlzFrameSetScale(SLUI_RowClass[rowIndex], 0.43)
+        call BlzFrameSetScale(SLUI_RowClass[rowIndex], 0.42)
         call BlzFrameSetEnable(SLUI_RowClass[rowIndex], false)
         call BlzFrameSetLevel(SLUI_RowClass[rowIndex], 4)
 
         set SLUI_RowState[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowState" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(SLUI_RowState[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.128, -0.016) // CHANGE: status aligned after level/class with no icon overlap
-        call BlzFrameSetSize(SLUI_RowState[rowIndex], 0.044, 0.008)
+        call BlzFrameSetPoint(SLUI_RowState[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, stateLeft, -0.016) // CHANGE: status uses one fixed column on every row
+        call BlzFrameSetSize(SLUI_RowState[rowIndex], 0.066, 0.008)
         call BlzFrameSetTextAlignment(SLUI_RowState[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
-        call BlzFrameSetScale(SLUI_RowState[rowIndex], 0.43)
+        call BlzFrameSetScale(SLUI_RowState[rowIndex], 0.42)
         call BlzFrameSetEnable(SLUI_RowState[rowIndex], false)
         call BlzFrameSetLevel(SLUI_RowState[rowIndex], 4) // CHANGE: status above translucent panel
 
         set SLUI_RowHPBack[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRowHPBack" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
         call BlzFrameSetTexture(SLUI_RowHPBack[rowIndex], SLUI_PanelTexture, 0, false) // CHANGE: darker translucent empty HP space; avoids white unused bar area
-        call BlzFrameSetPoint(SLUI_RowHPBack[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, barLeft, -0.006)
-        call BlzFrameSetSize(SLUI_RowHPBack[rowIndex], SLUI_BAR_WIDTH, 0.008)
+        call BlzFrameSetPoint(SLUI_RowHPBack[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, barLeft, -0.009)
+        call BlzFrameSetSize(SLUI_RowHPBack[rowIndex], SLUI_BAR_WIDTH, 0.010)
         call BlzFrameSetVertexColor(SLUI_RowHPBack[rowIndex], BlzConvertColor(95, 80, 80, 80))
         call BlzFrameSetEnable(SLUI_RowHPBack[rowIndex], false)
         call BlzFrameSetLevel(SLUI_RowHPBack[rowIndex], 4) // CHANGE: empty bar background above row panel
@@ -1247,7 +1249,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         set SLUI_RowHPFill[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRowHPFill" + I2S(rowIndex), SLUI_RowHPBack[rowIndex], "", 0)
         call BlzFrameSetTexture(SLUI_RowHPFill[rowIndex], SLUI_BarHPGreenTexture, 0, false) // CHANGE: initial HP fill texture; updated dynamically
         call BlzFrameSetPoint(SLUI_RowHPFill[rowIndex], FRAMEPOINT_LEFT, SLUI_RowHPBack[rowIndex], FRAMEPOINT_LEFT, 0.0, 0.0)
-        call BlzFrameSetSize(SLUI_RowHPFill[rowIndex], 0.001, 0.008)
+        call BlzFrameSetSize(SLUI_RowHPFill[rowIndex], 0.001, 0.010)
         call BlzFrameSetEnable(SLUI_RowHPFill[rowIndex], false)
         call BlzFrameSetLevel(SLUI_RowHPFill[rowIndex], 5) // CHANGE: fill above empty bar background
 
@@ -1260,8 +1262,8 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
 
         set SLUI_RowMPBack[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRowMPBack" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
         call BlzFrameSetTexture(SLUI_RowMPBack[rowIndex], SLUI_PanelTexture, 0, false) // CHANGE: darker translucent empty MP/resource space; avoids white unused bar area
-        call BlzFrameSetPoint(SLUI_RowMPBack[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowHPBack[rowIndex], FRAMEPOINT_BOTTOMLEFT, 0.0, -0.002)
-        call BlzFrameSetSize(SLUI_RowMPBack[rowIndex], SLUI_BAR_WIDTH, 0.007)
+        call BlzFrameSetPoint(SLUI_RowMPBack[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowHPBack[rowIndex], FRAMEPOINT_BOTTOMLEFT, 0.0, -0.004)
+        call BlzFrameSetSize(SLUI_RowMPBack[rowIndex], SLUI_BAR_WIDTH, 0.010)
         call BlzFrameSetVertexColor(SLUI_RowMPBack[rowIndex], BlzConvertColor(95, 80, 80, 80))
         call BlzFrameSetEnable(SLUI_RowMPBack[rowIndex], false)
         call BlzFrameSetLevel(SLUI_RowMPBack[rowIndex], 4) // CHANGE: empty bar background above row panel
@@ -1269,7 +1271,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         set SLUI_RowMPFill[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRowMPFill" + I2S(rowIndex), SLUI_RowMPBack[rowIndex], "", 0)
         call BlzFrameSetTexture(SLUI_RowMPFill[rowIndex], SLUI_BarMPLightBlueTexture, 0, false) // CHANGE: initial MP fill texture; updated dynamically
         call BlzFrameSetPoint(SLUI_RowMPFill[rowIndex], FRAMEPOINT_LEFT, SLUI_RowMPBack[rowIndex], FRAMEPOINT_LEFT, 0.0, 0.0)
-        call BlzFrameSetSize(SLUI_RowMPFill[rowIndex], 0.001, 0.007)
+        call BlzFrameSetSize(SLUI_RowMPFill[rowIndex], 0.001, 0.010)
         call BlzFrameSetEnable(SLUI_RowMPFill[rowIndex], false)
         call BlzFrameSetLevel(SLUI_RowMPFill[rowIndex], 5) // CHANGE: fill above empty bar background
 
@@ -1297,11 +1299,13 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
 
         set SLUI_ScreenAnchor = BlzCreateFrameByType("FRAME", "StatsLiteUIScreenAnchor", SLUI_ScreenParent, "", 0)
         call SLUI_UpdateScreenAnchor()
+        call BlzFrameSetEnable(SLUI_ScreenAnchor, false)
+        call BlzFrameSetVisible(SLUI_ScreenAnchor, false)
 
         // CHANGE: The root is now a plain FRAME, not a visual BACKDROP.
         // This makes SLUI_Parent an invisible container. The actual panel surface is
         // SLUI_Backdrop below, so the backdrop stays behind title/buttons/rows.
-        set SLUI_Parent = BlzCreateFrameByType("FRAME", "StatsLiteUIPanel", SLUI_ScreenAnchor, "", 0)
+        set SLUI_Parent = BlzCreateFrameByType("FRAME", "StatsLiteUIPanel", SLUI_ScreenParent, "", 0)
         call SLUI_SetPanelFrame(SLUI_PANEL_WIDTH, SLUI_GetPanelHeight())
 
         // CHANGE: Hide immediately after creation to prevent preload/init flicker.
