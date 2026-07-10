@@ -47,9 +47,10 @@
 
 - `AI_Aveline.j`
   - Aveline now opts into level 10, XP locked until invite, first random spawn, cap 1, expanded barks, chat lines, and companion replies.
+  - Add more chat lines, Aveline can now reply to every existing AI hero starter line from `AI_Voicelines.j`
 
 - `AI_LegacyLocations.j`
-  - Aveline’s initial autonomous zone restriction is bound to Sereneglade and Riverbane rects from ZonesCore.j.
+  - Aveline’s initial autonomous zone restriction is bound to Sereneglade and Riverbane rects from `ZonesCore.j`.
 
 `AI.j`
   - now defaults active random AI cap to 4, clamps cap APIs to max 32, and forces excess non-companion random AI into TRAVEL when the active cap is lowered.
@@ -63,6 +64,36 @@
 
 `SettingsUI.j`
   - now has an AI cap slider plus the requested lag/order/input-lag warning.
+
+- `AIRoutines.j`
+  - Flexible routine families with ordered steps: wait, work/animation, point orders, rect orders, unit/destructable target orders, immediate orders, sleep, and custom callbacks.
+  - Easy assignment by single unit, all units in a rect, unit type in a rect, or all current/future units of a unit type.
+  - Sleep handling with rawcode A0F1: routine-sleeping units are paused, get the sleep ability, and wake/unpause when attacked.
+  - Built-in helper factories for blacksmith work and peon lumber-to-sleep routines.
+  - Optional AI.j profile registration via AIRoutines_SetRoutineAIRegistration, defaulted off to avoid unwanted AI.j revive behavior on ambient NPCs.
+  - A commented Guide section with patterns for village walkers, fishers, guard patrols, day workers/sleepers, shopkeepers, quest NPC callbacks, prop interactions, and other RPG ambient routines.
+  - Readability helpers:AIRoutines_AddWanderStep
+  - AIRoutines_AddStandStep
+  - AIRoutines_AddEffectWorkStep
+  - Generic factory helpers:
+    - AIRoutines_CreateVillageWanderRoutine
+    - AIRoutines_CreateFishingRoutine
+  - API docs now include AIRoutines_RegisterUnitTypeInRect.
+
+    example usage:
+    set r = AIRoutines_CreateBlacksmithRoutine("Town Blacksmiths", gg_rct_BlacksmithWork)
+    call AIRoutines_RegisterUnitsInRect(gg_rct_BlacksmithNPCs, r)
+
+- `ExSound.j`
+  - Registered:
+    - All current Aveline_* bark/chat keys under Pots\\Sound\\Voicelines\\Aveline\\
+    - All Aveline companion reply keys under Pots\\Sound\\Voicelines\\Aveline\\ChatOther\\
+
+- `StormV2.j`
+  - Replaced KillUnit(.Unit) with RemoveUnit(.Unit) so the dummy is removed immediately instead of dying/decaying.
+  - Added SetUnitPathing(.Unit, false) right after dummy creation.
+  - Added Locust via UnitAddAbility(.Unit, 'Aloc') so other systems treat it as a dummy/non-interactive unit.
+
 
 ## [9.7.2026]
 
