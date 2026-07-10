@@ -17,8 +17,8 @@
 
     How to install:
     Import this library before AI sublibraries and after the required shared
-    systems: Table, Companions, UnitDeathEvent, DamageEngine, DialogSystem, and
-    ExSound. AI professions also require GatherNodes, GatherNodeSkills,
+    systems: Table, Companions, UnitDeathEvent, DamageEngine, DialogSystem,
+    ExSound, and Reputation. AI professions also require GatherNodes, GatherNodeSkills,
     GatherNodeItems, and GatherNodeUnits. File names may use underscores, but
     vJASS library identifiers and generated public function prefixes must not.
 
@@ -60,6 +60,7 @@
     call AI_AddProfileAbility(profileId, abilityId)
     call AI_AddDefaultShopItems(profileId)
     call AI_RegisterBarkSequence(profileId, barkType, text, soundPrefix, first, last)
+    call AI_RegisterBarkLineForReputation(profileId, barkType, text, soundKey, factionName, minRep, maxRep)
     call AI_RegisterBarkReply(primarySoundKey, responderProfileId, text, replySoundKey)
     call AI_RegisterBarkReplySequenceSuffix(primarySoundPrefix, first, last, responderProfileId, text, replySoundPrefix, replySoundSuffix)
     call AI_BeginBuy(whichUnit)
@@ -75,7 +76,7 @@
     call AI_SetDebugMode(enabled)
 
 **/
-library AI initializer Init requires Table, Companions, UnitDeathEvent, DamageEngine, DialogSystem, ExSound, IconQuery, GatherNodes, GatherNodeSkills, GatherNodeItems, GatherNodeUnits
+library AI initializer Init requires Table, Companions, UnitDeathEvent, DamageEngine, DialogSystem, ExSound, IconQuery, Reputation, GatherNodes, GatherNodeSkills, GatherNodeItems, GatherNodeUnits
 
 globals
     constant integer AI_STATE_INACTIVE = 0
@@ -113,6 +114,9 @@ globals
     constant integer AI_BARK_IDLE = 13
     constant integer AI_BARK_MOVING = 14
     constant integer AI_BARK_FAREWELL = 15
+
+    constant integer AI_REP_NO_MIN = -999999
+    constant integer AI_REP_NO_MAX = 999999
 
     integer AI_EventInstance = 0
     unit AI_EventUnit = null
@@ -313,6 +317,9 @@ globals
     private Table BarkLineCount = 0
     private Table BarkLineText = 0
     private Table BarkLineSound = 0
+    private Table BarkLineFaction = 0
+    private Table BarkLineMinRep = 0
+    private Table BarkLineMaxRep = 0
     private Table ReplyLineCount = 0
     private Table ReplyLineResponderProfile = 0
     private Table ReplyLineText = 0
@@ -509,6 +516,9 @@ private function EnsureState takes nothing returns nothing
         set BarkLineCount = Table.create()
         set BarkLineText = Table.create()
         set BarkLineSound = Table.create()
+        set BarkLineFaction = Table.create()
+        set BarkLineMinRep = Table.create()
+        set BarkLineMaxRep = Table.create()
         set ReplyLineCount = Table.create()
         set ReplyLineResponderProfile = Table.create()
         set ReplyLineText = Table.create()
@@ -2321,7 +2331,7 @@ public function AddProfileAbility takes integer profileId, integer abilityId ret
     set ProfileAbilityId[key] = abilityId
 endfunction
 
-public function RegisterBarkLine takes integer profileId, integer barkType, string text, string soundKey returns nothing
+private function RegisterBarkLineInternal takes integer profileId, integer barkType, string text, string soundKey, string factionName, integer minRep, integer maxRep returns nothing
     local integer barkKey
     local integer count
     local integer index
@@ -2338,6 +2348,9 @@ public function RegisterBarkLine takes integer profileId, integer barkType, stri
         set lineKey = GetBarkLineKey(barkKey, index)
         if soundKey != "" and BarkLineSound.string[lineKey] == soundKey then
             set BarkLineText.string[lineKey] = text
+            set BarkLineFaction.string[lineKey] = factionName
+            set BarkLineMinRep[lineKey] = minRep
+            set BarkLineMaxRep[lineKey] = maxRep
             return
         endif
         set index = index + 1
@@ -2350,6 +2363,21 @@ public function RegisterBarkLine takes integer profileId, integer barkType, stri
     set lineKey = GetBarkLineKey(barkKey, count)
     set BarkLineText.string[lineKey] = text
     set BarkLineSound.string[lineKey] = soundKey
+    set BarkLineFaction.string[lineKey] = factionName
+    set BarkLineMinRep[lineKey] = minRep
+    set BarkLineMaxRep[lineKey] = maxRep
+endfunction
+
+public function RegisterBarkLine takes integer profileId, integer barkType, string text, string soundKey returns nothing
+    call RegisterBarkLineInternal(profileId, barkType, text, soundKey, "", AI_REP_NO_MIN, AI_REP_NO_MAX)
+endfunction
+
+public function RegisterBarkLineForReputation takes integer profileId, integer barkType, string text, string soundKey, string factionName, integer minRep, integer maxRep returns nothing
+    if factionName == "" then
+        call RegisterBarkLineInternal(profileId, barkType, text, soundKey, "", AI_REP_NO_MIN, AI_REP_NO_MAX)
+    else
+        call RegisterBarkLineInternal(profileId, barkType, text, soundKey, factionName, minRep, maxRep)
+    endif
 endfunction
 
 public function RegisterBarkSequence takes integer profileId, integer barkType, string text, string soundPrefix, integer first, integer last returns nothing
@@ -3426,6 +3454,27 @@ public function TemporaryAbilitySwap takes unit whichUnit, integer removeAbility
     return true
 endfunction
 
+private function IsBarkLineReputationAllowed takes integer lineKey returns boolean
+    local string factionName = BarkLineFaction.string[lineKey]
+    local Faction faction
+    local integer rep
+    if factionName == "" then
+        return true
+    endif
+    set faction = Faction.getFaction(factionName)
+    if faction == 0 then
+        return false
+    endif
+    set rep = Reputation.getRep(Player(0), faction)
+    if rep < BarkLineMinRep[lineKey] then
+        return false
+    endif
+    if rep > BarkLineMaxRep[lineKey] then
+        return false
+    endif
+    return true
+endfunction
+
 public function RequestBark takes unit speaker, integer barkType returns boolean
     local integer instanceId = AI_GetInstance(speaker)
     local integer profileId
@@ -3434,6 +3483,8 @@ public function RequestBark takes unit speaker, integer barkType returns boolean
     local integer count
     local integer index
     local integer lineKey
+    local integer selectedLineKey = 0
+    local integer eligibleCount = 0
     local string text
     local string soundKey
     local real now = GetNow()
@@ -3458,8 +3509,22 @@ public function RequestBark takes unit speaker, integer barkType returns boolean
     if count <= 0 then
         return false
     endif
-    set index = GetRandomInt(1, count)
-    set lineKey = GetBarkLineKey(barkKey, index)
+    set index = 1
+    loop
+        exitwhen index > count
+        set lineKey = GetBarkLineKey(barkKey, index)
+        if IsBarkLineReputationAllowed(lineKey) then
+            set eligibleCount = eligibleCount + 1
+            if GetRandomInt(1, eligibleCount) == 1 then
+                set selectedLineKey = lineKey
+            endif
+        endif
+        set index = index + 1
+    endloop
+    if selectedLineKey <= 0 then
+        return false
+    endif
+    set lineKey = selectedLineKey
     set text = BarkLineText.string[lineKey]
     set soundKey = BarkLineSound.string[lineKey]
     set udg_CompanionDialogueActive = true
