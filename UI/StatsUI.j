@@ -73,6 +73,7 @@ globals
     private integer array SUI_RowStatusHP
     private integer array SUI_RowStatusMP
     private integer array SUI_RowStatusDead
+    private integer array SUI_RowReviveRemaining
     private integer array SUI_RowXPLevel
     private real array SUI_DetailStatCache
     private unit SUI_SelectedUnit = null
@@ -85,6 +86,7 @@ globals
     private boolean SUI_DetailStatsHasResource = false
     private integer SUI_DetailSummaryUnitHandle = 0
     private integer SUI_DetailSummaryDead = -1
+    private integer SUI_DetailSummaryReviveRemaining = -1
     private integer SUI_DetailSummaryHP = -1
     private integer SUI_DetailSummaryMP = -1
     private integer SUI_DetailSummaryLevel = -1
@@ -368,6 +370,48 @@ private function SUI_IsDeadForDisplay takes unit u returns boolean
     return GetWidgetLife(u) <= 0.405
 endfunction
 
+private function SUI_GetReviveTimer takes unit u returns timer
+    if not SUI_IsValidUnit(u) then
+        return null
+    endif
+
+    if u == udg_Nazgrek then
+        return udg_ReviveTimerNazgrek
+    elseif u == udg_Zulkis then
+        return udg_ReviveTimerZulkis
+    elseif Pet_IsPetUnit(u) or u == udg_TamedUnit then
+        return udg_ReviveTimerPet
+    endif
+
+    return AI_GetReviveTimer(u)
+endfunction
+
+private function SUI_GetReviveRemainingSeconds takes unit u returns integer
+    local timer reviveTimer = SUI_GetReviveTimer(u)
+    local real remaining = 0.0
+
+    if reviveTimer != null then
+        set remaining = TimerGetRemaining(reviveTimer)
+    else
+        set remaining = AI_GetReviveRemaining(u)
+    endif
+
+    set reviveTimer = null
+    if remaining > 0.0 then
+        return R2I(remaining + 0.5)
+    endif
+    return 0
+endfunction
+
+private function SUI_GetDeadStatusText takes unit u returns string
+    local integer remaining = SUI_GetReviveRemainingSeconds(u)
+
+    if remaining > 0 then
+        return "|cffff0000Dead|r |cffbfbfbf(" + I2S(remaining) + "s)|r"
+    endif
+    return "|cffff0000Dead|r"
+endfunction
+
 private function SUI_GetStatusText takes unit u returns string
     local integer hp
     local integer mp
@@ -376,7 +420,7 @@ private function SUI_GetStatusText takes unit u returns string
         return "|cff7f7f7fUnavailable|r"
     endif
     if SUI_IsDeadForDisplay(u) then
-        return "|cffff0000Dead|r"
+        return SUI_GetDeadStatusText(u)
     endif
 
     set hp = SUI_GetHealthPercent(u)
@@ -530,11 +574,17 @@ private function SUI_GetUnitPoints takes unit u returns integer
 endfunction
 
 private function SUI_GetUnitFactionText takes unit u returns string
+    local string factionText
+
     if not SUI_IsValidUnit(u) then
         return "-"
     endif
     if u == udg_Nazgrek or u == udg_Zulkis then
         return "Horde"
+    endif
+    set factionText = AI_GetFactionInfoText(u)
+    if factionText != "" then
+        return factionText
     endif
     return Companions_GetFactionInfoText(u)
 endfunction
@@ -732,6 +782,7 @@ endfunction
 private function SUI_InvalidateDetailSummaryCache takes nothing returns nothing
     set SUI_DetailSummaryUnitHandle = 0
     set SUI_DetailSummaryDead = -1
+    set SUI_DetailSummaryReviveRemaining = -1
     set SUI_DetailSummaryHP = -1
     set SUI_DetailSummaryMP = -1
     set SUI_DetailSummaryLevel = -1
@@ -770,6 +821,7 @@ private function SUI_UpdateRowFrame takes player whichPlayer, integer rowIndex, 
     local integer hp = 0
     local integer mp = 0
     local integer dead = 0
+    local integer reviveRemaining = 0
     local integer selected = 0
     local integer level = 0
     local integer required = 0
@@ -789,6 +841,7 @@ private function SUI_UpdateRowFrame takes player whichPlayer, integer rowIndex, 
         set SUI_RowStatusHP[rowIndex] = -1
         set SUI_RowStatusMP[rowIndex] = -1
         set SUI_RowStatusDead[rowIndex] = -1
+        set SUI_RowReviveRemaining[rowIndex] = -1
         set SUI_RowXPLevel[rowIndex] = -1
         call BlzFrameSetTexture(SUI_RowIcon[rowIndex], SUI_GetUnitIconPath(u), 0, true)
         call BlzFrameSetText(SUI_RowText[rowIndex], SUI_GetKindLabel(kind) + " " + SUI_GetDisplayName(u))
@@ -801,15 +854,17 @@ private function SUI_UpdateRowFrame takes player whichPlayer, integer rowIndex, 
 
     if SUI_IsDeadForDisplay(u) then
         set dead = 1
+        set reviveRemaining = SUI_GetReviveRemainingSeconds(u)
     else
         set hp = SUI_GetHealthPercent(u)
         set mp = SUI_GetManaPercent(u)
     endif
 
-    if SUI_RowStatusDead[rowIndex] != dead or SUI_RowStatusHP[rowIndex] != hp or SUI_RowStatusMP[rowIndex] != mp then
+    if SUI_RowStatusDead[rowIndex] != dead or SUI_RowStatusHP[rowIndex] != hp or SUI_RowStatusMP[rowIndex] != mp or SUI_RowReviveRemaining[rowIndex] != reviveRemaining then
         set SUI_RowStatusDead[rowIndex] = dead
         set SUI_RowStatusHP[rowIndex] = hp
         set SUI_RowStatusMP[rowIndex] = mp
+        set SUI_RowReviveRemaining[rowIndex] = reviveRemaining
         call BlzFrameSetText(SUI_RowLevel[rowIndex], SUI_GetStatusText(u))
     endif
 
@@ -1220,6 +1275,7 @@ private function SUI_UpdateRows takes player whichPlayer returns nothing
             set SUI_RowStatusHP[rowIndex] = -1
             set SUI_RowStatusMP[rowIndex] = -1
             set SUI_RowStatusDead[rowIndex] = -1
+            set SUI_RowReviveRemaining[rowIndex] = -1
             set SUI_RowXPLevel[rowIndex] = -1
             call BlzFrameSetVisible(SUI_RowButton[rowIndex], false)
             call BlzFrameSetVisible(SUI_RowHighlight[rowIndex], false)
@@ -1255,6 +1311,7 @@ private function SUI_UpdateDetailSummary takes player whichPlayer, unit u return
     local integer hp = 0
     local integer mp = 0
     local integer level = 0
+    local integer reviveRemaining = 0
     local integer points = 0
     local integer life = 0
     local integer maxLife = 0
@@ -1291,6 +1348,7 @@ private function SUI_UpdateDetailSummary takes player whichPlayer, unit u return
     set handleId = GetHandleId(u)
     if SUI_IsDeadForDisplay(u) then
         set dead = 1
+        set reviveRemaining = SUI_GetReviveRemainingSeconds(u)
     else
         set hp = SUI_GetHealthPercent(u)
         set mp = SUI_GetManaPercent(u)
@@ -1328,12 +1386,13 @@ private function SUI_UpdateDetailSummary takes player whichPlayer, unit u return
     set factionHash = StringHash(factionText)
     set resourceHash = StringHash(resourceLabel)
 
-    if SUI_DetailSummaryUnitHandle == handleId and SUI_DetailSummaryDead == dead and SUI_DetailSummaryHP == hp and SUI_DetailSummaryMP == mp and SUI_DetailSummaryLevel == level and SUI_DetailSummaryPoints == points and SUI_DetailSummaryLife == life and SUI_DetailSummaryMaxLife == maxLife and SUI_DetailSummaryMana == mana and SUI_DetailSummaryMaxMana == maxMana and SUI_DetailSummaryKills == kills and SUI_DetailSummaryDeaths == deaths and SUI_DetailSummaryMinDamage == minDamage and SUI_DetailSummaryMaxDamage == maxDamage and SUI_DetailSummaryXPCurrent == xpCurrent and SUI_DetailSummaryXPRequired == xpRequired and SUI_DetailSummaryAttackSpeedHash == attackSpeedHash and SUI_DetailSummaryClassHash == classHash and SUI_DetailSummaryRoleHash == roleHash and SUI_DetailSummaryFactionHash == factionHash and SUI_DetailSummaryResourceHash == resourceHash then
+    if SUI_DetailSummaryUnitHandle == handleId and SUI_DetailSummaryDead == dead and SUI_DetailSummaryReviveRemaining == reviveRemaining and SUI_DetailSummaryHP == hp and SUI_DetailSummaryMP == mp and SUI_DetailSummaryLevel == level and SUI_DetailSummaryPoints == points and SUI_DetailSummaryLife == life and SUI_DetailSummaryMaxLife == maxLife and SUI_DetailSummaryMana == mana and SUI_DetailSummaryMaxMana == maxMana and SUI_DetailSummaryKills == kills and SUI_DetailSummaryDeaths == deaths and SUI_DetailSummaryMinDamage == minDamage and SUI_DetailSummaryMaxDamage == maxDamage and SUI_DetailSummaryXPCurrent == xpCurrent and SUI_DetailSummaryXPRequired == xpRequired and SUI_DetailSummaryAttackSpeedHash == attackSpeedHash and SUI_DetailSummaryClassHash == classHash and SUI_DetailSummaryRoleHash == roleHash and SUI_DetailSummaryFactionHash == factionHash and SUI_DetailSummaryResourceHash == resourceHash then
         return
     endif
 
     set SUI_DetailSummaryUnitHandle = handleId
     set SUI_DetailSummaryDead = dead
+    set SUI_DetailSummaryReviveRemaining = reviveRemaining
     set SUI_DetailSummaryHP = hp
     set SUI_DetailSummaryMP = mp
     set SUI_DetailSummaryLevel = level
