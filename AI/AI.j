@@ -38,6 +38,8 @@
     call AI_SetProfileXpLockedUntilInvite(profileId, enabled)
     call AI_SetProfileAutonomous(profileId, enabled)
     call AI_SetProfileSpawnOwner(profileId, owner)
+    call AI_SetProfileFaction(profileId, factionName)
+    call AI_GetProfileFaction(profileId) returns string
     call AI_SetProfileRegisterCallback(profileId, callback)
     call AI_SetProfileThinkCallback(profileId, callback)
     call AI_SetProfileCompanionRetreat(profileId, enabled)
@@ -73,6 +75,7 @@
     call AI_GetReviveTimer(whichUnit) returns timer
     call AI_GetReviveRemaining(whichUnit) returns real
     call AI_IsReviving(whichUnit) returns boolean
+    call AI_GetFactionInfoText(whichUnit) returns string
     call AI_SetDebugMode(enabled)
 
 **/
@@ -236,6 +239,7 @@ globals
     private Table ProfileNoManaRestore = 0
     private Table ProfileAllowCompanionTravel = 0
     private Table ProfileAutonomousDisabled = 0
+    private Table ProfileFaction = 0
     private Table ProfileSpawnOwnerSlot = 0
     private Table ProfileRegisterTrigger = 0
     private Table ProfileThinkTrigger = 0
@@ -439,6 +443,7 @@ private function EnsureState takes nothing returns nothing
         set ProfileNoManaRestore = Table.create()
         set ProfileAllowCompanionTravel = Table.create()
         set ProfileAutonomousDisabled = Table.create()
+        set ProfileFaction = Table.create()
         set ProfileSpawnOwnerSlot = Table.create()
         set ProfileRegisterTrigger = Table.create()
         set ProfileThinkTrigger = Table.create()
@@ -1914,6 +1919,25 @@ public function SetUnitTypeDefaultProfile takes integer unitTypeId, integer prof
     set UnitTypeDefaultProfile[unitTypeId] = profileId
 endfunction
 
+public function SetProfileFaction takes integer profileId, string factionName returns nothing
+    local integer unitTypeId
+
+    call EnsureState()
+    if profileId <= 0 then
+        return
+    endif
+    if factionName == "" then
+        call ProfileFaction.remove(profileId)
+        return
+    endif
+
+    set ProfileFaction.string[profileId] = factionName
+    set unitTypeId = ProfileUnitType[profileId]
+    if unitTypeId != 0 then
+        call Reputation_RegisterUnitTypeFaction(unitTypeId, factionName)
+    endif
+endfunction
+
 public function GetReviveTimer takes unit whichUnit returns timer
     local integer instanceId
 
@@ -2590,6 +2614,41 @@ public function GetProfileId takes unit whichUnit returns integer
         return 0
     endif
     return InstanceProfile[instanceId]
+endfunction
+
+public function GetProfileFaction takes integer profileId returns string
+    call EnsureState()
+    if profileId <= 0 then
+        return ""
+    endif
+    return ProfileFaction.string[profileId]
+endfunction
+
+public function GetFactionInfoText takes unit whichUnit returns string
+    local integer instanceId
+    local integer profileId
+    local string factionName
+
+    if whichUnit == null or GetUnitTypeId(whichUnit) == 0 then
+        return ""
+    endif
+
+    call EnsureState()
+    set instanceId = UnitInstance[GetHandleId(whichUnit)]
+    if instanceId > 0 then
+        set profileId = InstanceProfile[instanceId]
+        set factionName = ProfileFaction.string[profileId]
+        if factionName != "" then
+            return factionName
+        endif
+    endif
+
+    set factionName = Reputation_GetUnitFactionName(whichUnit)
+    if factionName != "" then
+        return factionName
+    endif
+
+    return ""
 endfunction
 
 public function GetClassId takes unit whichUnit returns integer
@@ -5083,6 +5142,9 @@ private function HandleCompanionCommand takes nothing returns nothing
         return
     endif
     set instanceId = UnitInstance[GetHandleId(whichUnit)]
+    if instanceId <= 0 and commandId == Companions_COMMAND_INVITE then
+        set instanceId = AI_RegisterUnitByType(whichUnit, 0)
+    endif
     if instanceId <= 0 then
         set whichUnit = null
         return
