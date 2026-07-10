@@ -11,7 +11,8 @@
     tied to any one profession; blacksmiths, fishers, guards, villagers,
     shopkeepers, workers, tavern patrons, and quest NPCs should all be built by
     combining the same small step types. Units can be assigned individually, by
-    rect, or by unit type across the map.
+    rect, by unit type across the map, or created and respawned by managed
+    unit groups owned by AIRoutines.
 
     Credits:
     - PotS AI JASS migration
@@ -45,6 +46,10 @@
     call AIRoutines_RegisterUnitType(unitTypeId, routineId)
     call AIRoutines_UnregisterUnit(whichUnit)
     call AIRoutines_WakeUnit(whichUnit)
+    call AIRoutines_CreateManagedUnitGroup(owner, unitTypeId, spawnRect, routineId, count, respawnDelay, facing)
+    call AIRoutines_SetManagedUnitGroupRoutine(spawnGroupId, routineId)
+    call AIRoutines_SetManagedUnitGroupEnabled(spawnGroupId, enabled)
+    call AIRoutines_RefillManagedUnitGroup(spawnGroupId)
     call AIRoutines_CreateVillageWanderRoutine(familyName, villageRect, moveMin, moveMax, idleMin, idleMax)
     call AIRoutines_CreateFishingRoutine(familyName, fishingRect, fishMin, fishMax, idleMin, idleMax)
     call AIRoutines_CreateBlacksmithRoutine(familyName, workRect)
@@ -112,6 +117,10 @@
       call AIRoutines_AddStandStep(r, "stand", 10.00, 20.00)
       call AIRoutines_AddCallbackStep(r, 2.00, 4.00, function MyNpcRoutineCallback)
 
+    Managed unit group:
+      set r = AIRoutines_CreateVillageWanderRoutine("Created Villagers", gg_rct_Village, 8.00, 16.00, 3.00, 8.00)
+      call AIRoutines_CreateManagedUnitGroup(Player(PLAYER_NEUTRAL_PASSIVE), 'nvlk', gg_rct_VillageSpawn, r, 6, 60.00, -1.00)
+
 **/
 library AIRoutines initializer Init requires AI, Table
 
@@ -140,6 +149,7 @@ globals
     private constant integer AIR_MAX_STEPS = 4096
     private constant integer AIR_MAX_ROUTINE_STEPS = 128
     private constant integer AIR_MAX_ACTIVE_UNITS = 2048
+    private constant integer AIR_MAX_SPAWN_GROUPS = 512
     private constant integer AIR_MAX_PLAYER_INDEX = 27
     private constant integer AIR_ROUTINE_STEP_KEY = 1000
     private constant real AIR_TICK_INTERVAL = 0.50
@@ -148,11 +158,13 @@ globals
     // Routine families and lookup.
     private integer AIR_NextRoutineId = 1
     private integer AIR_NextStepId = 1
+    private integer AIR_NextSpawnGroupId = 1
     private integer AIR_ActiveCount = 0
     private integer AIR_AIClassId = 0
     private timer AIR_ClockTimer = null
     private timer AIR_TickTimer = null
     private trigger AIR_AttackTrigger = null
+    private trigger AIR_DeathTrigger = null
     private trigger AIR_EnterTrigger = null
     private region AIR_EnterRegion = null
 
@@ -177,6 +189,16 @@ globals
     private trigger array AIR_StepCallback
     private boolean array AIR_StepSleepHide
 
+    private integer array AIR_SpawnGroupUnitType
+    private integer array AIR_SpawnGroupRoutine
+    private integer array AIR_SpawnGroupTargetCount
+    private integer array AIR_SpawnGroupAliveCount
+    private real array AIR_SpawnGroupRespawnDelay
+    private real array AIR_SpawnGroupFacing
+    private boolean array AIR_SpawnGroupEnabled
+    private player array AIR_SpawnGroupOwner
+    private rect array AIR_SpawnGroupRect
+
     private Table AIR_RoutineByName = 0
     private Table AIR_RoutineStepId = 0
     private Table AIR_UnitRoutine = 0
@@ -191,6 +213,8 @@ globals
     private Table AIR_UnitHadSleepAbility = 0
     private Table AIR_UnitAIRegistered = 0
     private Table AIR_UnitTypeRoutine = 0
+    private Table AIR_UnitSpawnGroup = 0
+    private Table AIR_RespawnTimerGroup = 0
     private Table AIR_AIProfileByRoutineType = 0
 endglobals
 
@@ -469,6 +493,166 @@ private function AIR_RegisterUnitInternal takes unit whichUnit, integer routineI
     return true
 endfunction
 
+private function AIR_SpawnGroupExists takes integer spawnGroupId returns boolean
+    return spawnGroupId > 0 and spawnGroupId < AIR_NextSpawnGroupId
+endfunction
+
+private function AIR_GetRectRandomX takes rect whichRect returns real
+    return GetRandomReal(GetRectMinX(whichRect), GetRectMaxX(whichRect))
+endfunction
+
+private function AIR_GetRectRandomY takes rect whichRect returns real
+    return GetRandomReal(GetRectMinY(whichRect), GetRectMaxY(whichRect))
+endfunction
+
+private function AIR_GetSpawnFacing takes integer spawnGroupId returns real
+    if AIR_SpawnGroupFacing[spawnGroupId] < 0.00 then
+        return GetRandomReal(0.00, 360.00)
+    endif
+    return AIR_SpawnGroupFacing[spawnGroupId]
+endfunction
+
+private function AIR_SpawnManagedUnit takes integer spawnGroupId returns unit
+    local rect spawnRect
+    local player owner
+    local unit created
+    if not AIR_SpawnGroupExists(spawnGroupId) or not AIR_SpawnGroupEnabled[spawnGroupId] then
+        return null
+    endif
+    if AIR_SpawnGroupUnitType[spawnGroupId] == 0 or not AIR_RoutineExists(AIR_SpawnGroupRoutine[spawnGroupId]) then
+        return null
+    endif
+
+    set spawnRect = AIR_SpawnGroupRect[spawnGroupId]
+    set owner = AIR_SpawnGroupOwner[spawnGroupId]
+    if spawnRect == null or owner == null then
+        set spawnRect = null
+        set owner = null
+        return null
+    endif
+
+    set created = CreateUnit(owner, AIR_SpawnGroupUnitType[spawnGroupId], AIR_GetRectRandomX(spawnRect), AIR_GetRectRandomY(spawnRect), AIR_GetSpawnFacing(spawnGroupId))
+    if created != null then
+        if AIR_RegisterUnitInternal(created, AIR_SpawnGroupRoutine[spawnGroupId]) then
+            set AIR_SpawnGroupAliveCount[spawnGroupId] = AIR_SpawnGroupAliveCount[spawnGroupId] + 1
+            set AIR_UnitSpawnGroup[GetHandleId(created)] = spawnGroupId
+        else
+            call RemoveUnit(created)
+            set created = null
+        endif
+    endif
+
+    set spawnRect = null
+    set owner = null
+    return created
+endfunction
+
+private function AIR_SwitchRegisteredUnitRoutine takes unit whichUnit, integer routineId returns nothing
+    local integer unitKey
+    if whichUnit == null or not AIR_RoutineExists(routineId) then
+        return
+    endif
+    set unitKey = GetHandleId(whichUnit)
+    if AIR_UnitRoutine[unitKey] <= 0 then
+        call AIR_RegisterUnitInternal(whichUnit, routineId)
+        return
+    endif
+    if AIR_UnitRoutine[unitKey] == routineId then
+        return
+    endif
+
+    call AIR_WakeUnitByKey(whichUnit, unitKey)
+    call AIR_TryUnregisterAI(whichUnit, unitKey)
+    set AIR_UnitRoutine[unitKey] = routineId
+    set AIR_UnitStep[unitKey] = 0
+    set AIR_UnitNextTime.real[unitKey] = AIR_GetNow()
+    call AIR_UnitPaused.boolean.remove(unitKey)
+    call AIR_TryRegisterAI(whichUnit, routineId, unitKey)
+endfunction
+
+private function AIR_RefillSpawnGroup takes integer spawnGroupId returns nothing
+    local integer guard = 0
+    local unit created
+    if not AIR_SpawnGroupExists(spawnGroupId) or not AIR_SpawnGroupEnabled[spawnGroupId] then
+        return
+    endif
+    loop
+        exitwhen AIR_SpawnGroupAliveCount[spawnGroupId] >= AIR_SpawnGroupTargetCount[spawnGroupId]
+        exitwhen guard >= AIR_SpawnGroupTargetCount[spawnGroupId]
+        set created = AIR_SpawnManagedUnit(spawnGroupId)
+        exitwhen created == null
+        set guard = guard + 1
+    endloop
+    set created = null
+endfunction
+
+private function AIR_ReassignSpawnGroupUnits takes integer spawnGroupId, integer routineId returns nothing
+    local integer index = 1
+    local unit whichUnit
+    if not AIR_SpawnGroupExists(spawnGroupId) or not AIR_RoutineExists(routineId) then
+        return
+    endif
+    loop
+        exitwhen index > AIR_ActiveCount
+        set whichUnit = AIR_ActiveUnit[index]
+        if whichUnit != null and AIR_UnitSpawnGroup[GetHandleId(whichUnit)] == spawnGroupId then
+            call AIR_SwitchRegisteredUnitRoutine(whichUnit, routineId)
+        endif
+        set index = index + 1
+    endloop
+    set whichUnit = null
+endfunction
+
+private function AIR_OnManagedRespawnTimer takes nothing returns nothing
+    local timer expiredTimer = GetExpiredTimer()
+    local integer timerKey = GetHandleId(expiredTimer)
+    local integer spawnGroupId = AIR_RespawnTimerGroup[timerKey]
+    call AIR_RespawnTimerGroup.remove(timerKey)
+    call DestroyTimer(expiredTimer)
+    if AIR_SpawnGroupExists(spawnGroupId) and AIR_SpawnGroupEnabled[spawnGroupId] and AIR_SpawnGroupAliveCount[spawnGroupId] < AIR_SpawnGroupTargetCount[spawnGroupId] then
+        call AIR_SpawnManagedUnit(spawnGroupId)
+    endif
+    set expiredTimer = null
+endfunction
+
+private function AIR_ScheduleManagedRespawn takes integer spawnGroupId returns nothing
+    local timer respawnTimer
+    if not AIR_SpawnGroupExists(spawnGroupId) or not AIR_SpawnGroupEnabled[spawnGroupId] then
+        return
+    endif
+    if AIR_SpawnGroupRespawnDelay[spawnGroupId] <= 0.00 then
+        call AIR_SpawnManagedUnit(spawnGroupId)
+        return
+    endif
+    set respawnTimer = CreateTimer()
+    set AIR_RespawnTimerGroup[GetHandleId(respawnTimer)] = spawnGroupId
+    call TimerStart(respawnTimer, AIR_SpawnGroupRespawnDelay[spawnGroupId], false, function AIR_OnManagedRespawnTimer)
+    set respawnTimer = null
+endfunction
+
+private function AIR_HandleManagedUnitGone takes unit whichUnit returns nothing
+    local integer unitKey
+    local integer spawnGroupId
+    if whichUnit == null then
+        return
+    endif
+    set unitKey = GetHandleId(whichUnit)
+    set spawnGroupId = AIR_UnitSpawnGroup[unitKey]
+    if spawnGroupId <= 0 then
+        return
+    endif
+
+    call AIR_UnitSpawnGroup.remove(unitKey)
+    if AIR_SpawnGroupAliveCount[spawnGroupId] > 0 then
+        set AIR_SpawnGroupAliveCount[spawnGroupId] = AIR_SpawnGroupAliveCount[spawnGroupId] - 1
+    endif
+    call AIR_ClearUnitRegistration(whichUnit, false)
+
+    if AIR_SpawnGroupEnabled[spawnGroupId] and AIR_SpawnGroupAliveCount[spawnGroupId] < AIR_SpawnGroupTargetCount[spawnGroupId] then
+        call AIR_ScheduleManagedRespawn(spawnGroupId)
+    endif
+endfunction
+
 function AIRoutines_CreateRoutine takes string familyName returns integer
     local integer key
     local integer routineId
@@ -714,6 +898,53 @@ function AIRoutines_RegisterUnitType takes integer unitTypeId, integer routineId
     call AIRoutines_RegisterUnitTypeInRect(unitTypeId, GetWorldBounds(), routineId)
 endfunction
 
+function AIRoutines_CreateManagedUnitGroup takes player owner, integer unitTypeId, rect spawnRect, integer routineId, integer count, real respawnDelay, real facing returns integer
+    local integer spawnGroupId
+    if owner == null or unitTypeId == 0 or spawnRect == null or not AIR_RoutineExists(routineId) or count <= 0 then
+        return 0
+    endif
+    if AIR_NextSpawnGroupId > AIR_MAX_SPAWN_GROUPS then
+        call BJDebugMsg("[AIRoutines] ERROR: AIR_MAX_SPAWN_GROUPS reached.")
+        return 0
+    endif
+
+    set spawnGroupId = AIR_NextSpawnGroupId
+    set AIR_NextSpawnGroupId = AIR_NextSpawnGroupId + 1
+    set AIR_SpawnGroupOwner[spawnGroupId] = owner
+    set AIR_SpawnGroupUnitType[spawnGroupId] = unitTypeId
+    set AIR_SpawnGroupRect[spawnGroupId] = spawnRect
+    set AIR_SpawnGroupRoutine[spawnGroupId] = routineId
+    set AIR_SpawnGroupTargetCount[spawnGroupId] = count
+    set AIR_SpawnGroupAliveCount[spawnGroupId] = 0
+    set AIR_SpawnGroupRespawnDelay[spawnGroupId] = respawnDelay
+    set AIR_SpawnGroupFacing[spawnGroupId] = facing
+    set AIR_SpawnGroupEnabled[spawnGroupId] = true
+    call AIR_RefillSpawnGroup(spawnGroupId)
+    return spawnGroupId
+endfunction
+
+function AIRoutines_SetManagedUnitGroupRoutine takes integer spawnGroupId, integer routineId returns nothing
+    if not AIR_SpawnGroupExists(spawnGroupId) or not AIR_RoutineExists(routineId) then
+        return
+    endif
+    set AIR_SpawnGroupRoutine[spawnGroupId] = routineId
+    call AIR_ReassignSpawnGroupUnits(spawnGroupId, routineId)
+endfunction
+
+function AIRoutines_SetManagedUnitGroupEnabled takes integer spawnGroupId, boolean enabled returns nothing
+    if not AIR_SpawnGroupExists(spawnGroupId) then
+        return
+    endif
+    set AIR_SpawnGroupEnabled[spawnGroupId] = enabled
+    if enabled then
+        call AIR_RefillSpawnGroup(spawnGroupId)
+    endif
+endfunction
+
+function AIRoutines_RefillManagedUnitGroup takes integer spawnGroupId returns nothing
+    call AIR_RefillSpawnGroup(spawnGroupId)
+endfunction
+
 function AIRoutines_CreateVillageWanderRoutine takes string familyName, rect villageRect, real moveMin, real moveMax, real idleMin, real idleMax returns integer
     local integer routineId = AIRoutines_CreateRoutine(familyName)
     if routineId <= 0 then
@@ -885,6 +1116,7 @@ private function AIR_ProcessUnit takes unit whichUnit, real now returns nothing
     endif
     set unitKey = GetHandleId(whichUnit)
     if GetUnitTypeId(whichUnit) == 0 then
+        call AIR_HandleManagedUnitGone(whichUnit)
         call AIR_ClearUnitRegistration(whichUnit, false)
         return
     endif
@@ -939,6 +1171,12 @@ private function AIR_OnUnitAttacked takes nothing returns nothing
     set attacked = null
 endfunction
 
+private function AIR_OnUnitDeath takes nothing returns nothing
+    local unit dying = GetDyingUnit()
+    call AIR_HandleManagedUnitGone(dying)
+    set dying = null
+endfunction
+
 private function AIR_OnEnterWorld takes nothing returns nothing
     local unit entering = GetEnteringUnit()
     local integer routineId
@@ -976,6 +1214,8 @@ private function Init takes nothing returns nothing
     set AIR_UnitHadSleepAbility = Table.create()
     set AIR_UnitAIRegistered = Table.create()
     set AIR_UnitTypeRoutine = Table.create()
+    set AIR_UnitSpawnGroup = Table.create()
+    set AIR_RespawnTimerGroup = Table.create()
     set AIR_AIProfileByRoutineType = Table.create()
 
     set AIR_AIClassId = AI_RegisterClass("Routine")
@@ -989,6 +1229,10 @@ private function Init takes nothing returns nothing
     set AIR_AttackTrigger = CreateTrigger()
     call AIR_RegisterPlayerUnitEventAll(AIR_AttackTrigger, EVENT_PLAYER_UNIT_ATTACKED)
     call TriggerAddAction(AIR_AttackTrigger, function AIR_OnUnitAttacked)
+
+    set AIR_DeathTrigger = CreateTrigger()
+    call AIR_RegisterPlayerUnitEventAll(AIR_DeathTrigger, EVENT_PLAYER_UNIT_DEATH)
+    call TriggerAddAction(AIR_DeathTrigger, function AIR_OnUnitDeath)
 
     set AIR_EnterRegion = CreateRegion()
     call RegionAddRect(AIR_EnterRegion, GetWorldBounds())
