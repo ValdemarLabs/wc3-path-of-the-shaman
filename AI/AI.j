@@ -3457,21 +3457,31 @@ endfunction
 private function IsBarkLineReputationAllowed takes integer lineKey returns boolean
     local string factionName = BarkLineFaction.string[lineKey]
     local Faction faction
-    local integer rep
+    local integer currentRep
+    local integer minRep
+    local integer maxRep
+
     if factionName == "" then
         return true
     endif
+
     set faction = Faction.getFaction(factionName)
     if faction == 0 then
         return false
     endif
-    set rep = Reputation.getRep(Player(0), faction)
-    if rep < BarkLineMinRep[lineKey] then
+
+    set currentRep = Reputation.getRep(Player(0), faction)
+    set minRep = BarkLineMinRep[lineKey]
+    set maxRep = BarkLineMaxRep[lineKey]
+
+    if currentRep < minRep then
         return false
     endif
-    if rep > BarkLineMaxRep[lineKey] then
+
+    if currentRep > maxRep then
         return false
     endif
+
     return true
 endfunction
 
