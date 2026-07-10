@@ -135,6 +135,32 @@ endfunction
 //=================================================================
 // Initialization – add sound path registrations here
 //=================================================================
+private function ExSound_RegisterAvelineChatOther takes string key returns nothing
+    call ExSound_Register(key, "Pots\\Sound\\Voicelines\\Aveline\\ChatOther\\" + key + ".mp3")
+endfunction
+
+private function ExSound_RegisterAvelineReply takes string key returns nothing
+    call ExSound_Register(key, "Pots\\Sound\\Voicelines\\Aveline\\ReplyLines\\" + key + ".mp3")
+endfunction
+
+private function ExSound_RegisterAvelineChatOtherSequence takes string base, integer first, integer last returns nothing
+    local integer index = first
+    loop
+        exitwhen index > last
+        call ExSound_RegisterAvelineChatOther(base + I2S(index))
+        set index = index + 1
+    endloop
+endfunction
+
+private function ExSound_RegisterAvelineReplySequence takes string base, integer first, integer last returns nothing
+    local integer index = first
+    loop
+        exitwhen index > last
+        call ExSound_RegisterAvelineReply(base + I2S(index) + "Aveline")
+        set index = index + 1
+    endloop
+endfunction
+
 private function Init takes nothing returns nothing
     // Example: single manual registration
     // call ExSound_Register("Nazgrek_0001", "Pots\\Sound\\Voicelines\\Nazgrek\\Nazgrek_0001.mp3")
@@ -1074,6 +1100,115 @@ private function Init takes nothing returns nothing
     call ExSound_Register("HeroWarlock_ChatWarrior2Warrior", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarriorReplyLines\\HeroWarlock_ChatWarrior2Warrior.mp3")
     call ExSound_Register("HeroWarlock_ChatWarrior3Warrior", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarriorReplyLines\\HeroWarlock_ChatWarrior3Warrior.mp3")
     call ExSound_Register("HeroWarlock_ChatWarrior4Warrior", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarriorReplyLines\\HeroWarlock_ChatWarrior4Warrior.mp3")
+
+    //=================================================================
+    // Aveline Lines
+
+    call ExSound_Register("Aveline_Greet1", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Greet1.mp3")
+    call ExSound_Register("Aveline_Greet2", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Greet2.mp3")
+    call ExSound_Register("Aveline_Greet3", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Greet3.mp3")
+    call ExSound_Register("Aveline_Greet4", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Greet4.mp3")
+    call ExSound_Register("Aveline_Farewell1", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Farewell1.mp3")
+    call ExSound_Register("Aveline_Farewell2", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Farewell2.mp3")
+    call ExSound_Register("Aveline_Farewell3", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Farewell3.mp3")
+    call ExSound_Register("Aveline_Passive1", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Passive1.mp3")
+    call ExSound_Register("Aveline_Passive2", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Passive2.mp3")
+    call ExSound_Register("Aveline_Passive3", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Passive3.mp3")
+    call ExSound_Register("Aveline_Normal1", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Normal1.mp3")
+    call ExSound_Register("Aveline_Normal2", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Normal2.mp3")
+    call ExSound_Register("Aveline_Normal3", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Normal3.mp3")
+    call ExSound_Register("Aveline_Aggressive1", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Aggressive1.mp3")
+    call ExSound_Register("Aveline_Aggressive2", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Aggressive2.mp3")
+    call ExSound_Register("Aveline_Aggressive3", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Aggressive3.mp3")
+    call ExSound_Register("Aveline_HoldPositions1", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_HoldPositions1.mp3")
+    call ExSound_Register("Aveline_HoldPositions2", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_HoldPositions2.mp3")
+    call ExSound_Register("Aveline_HoldPositions3", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_HoldPositions3.mp3")
+    call ExSound_Register("Aveline_DropItems1", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_DropItems1.mp3")
+    call ExSound_Register("Aveline_DropItems2", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_DropItems2.mp3")
+    call ExSound_Register("Aveline_DropItems3", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_DropItems3.mp3")
+    call ExSound_Register("Aveline_Idle1", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Idle1.mp3")
+    call ExSound_Register("Aveline_Idle2", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Idle2.mp3")
+    call ExSound_Register("Aveline_Idle3", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Idle3.mp3")
+    call ExSound_Register("Aveline_Idle4", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Idle4.mp3")
+    call ExSound_Register("Aveline_Moving1", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Moving1.mp3")
+    call ExSound_Register("Aveline_Moving2", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Moving2.mp3")
+    call ExSound_Register("Aveline_Moving3", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Moving3.mp3")
+    call ExSound_Register("Aveline_Moving4", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Moving4.mp3")
+    call ExSound_Register("Aveline_Casting1", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Casting1.mp3")
+    call ExSound_Register("Aveline_Casting2", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Casting2.mp3")
+    call ExSound_Register("Aveline_Casting3", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Casting3.mp3")
+    call ExSound_Register("Aveline_Attack1", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Attack1.mp3")
+    call ExSound_Register("Aveline_Attack2", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Attack2.mp3")
+    call ExSound_Register("Aveline_Attack3", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Attack3.mp3")
+    call ExSound_Register("Aveline_UnitDies1", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_UnitDies1.mp3")
+    call ExSound_Register("Aveline_UnitDies2", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_UnitDies2.mp3")
+    call ExSound_Register("Aveline_UnitDies3", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_UnitDies3.mp3")
+    call ExSound_Register("Aveline_Kicked1", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Kicked1.mp3")
+    call ExSound_Register("Aveline_Kicked2", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Kicked2.mp3")
+    call ExSound_Register("Aveline_Kicked3", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_Kicked3.mp3")
+    call ExSound_Register("Aveline_CompanionDies1", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_CompanionDies1.mp3")
+    call ExSound_Register("Aveline_CompanionDies2", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_CompanionDies2.mp3")
+    call ExSound_Register("Aveline_CompanionDies3", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_CompanionDies3.mp3")
+    call ExSound_Register("Aveline_GiveItem1", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_GiveItem1.mp3")
+    call ExSound_Register("Aveline_GiveItem2", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_GiveItem2.mp3")
+    call ExSound_Register("Aveline_GiveItem3", "Pots\\Sound\\Voicelines\\Aveline\\Aveline_GiveItem3.mp3")
+    call ExSound_RegisterAvelineChatOtherSequence("Aveline_ChatGeneral", 1, 6)
+    call ExSound_RegisterAvelineChatOtherSequence("Aveline_ChatEngineer", 1, 3)
+    call ExSound_RegisterAvelineChatOtherSequence("Aveline_ChatPaladin", 1, 3)
+    call ExSound_RegisterAvelineChatOtherSequence("Aveline_ChatRogue", 1, 3)
+    call ExSound_RegisterAvelineChatOtherSequence("Aveline_ChatShaman", 1, 3)
+    call ExSound_RegisterAvelineChatOtherSequence("Aveline_ChatWarlock", 1, 3)
+    call ExSound_RegisterAvelineChatOtherSequence("Aveline_ChatUndeadWarlock", 1, 3)
+    call ExSound_RegisterAvelineChatOtherSequence("Aveline_ChatWarrior", 1, 3)
+
+    //=================================================================
+    // Aveline Reply Lines
+
+    call ExSound_RegisterAvelineReplySequence("HeroRogue_ChatGeneral", 1, 2)
+    call ExSound_RegisterAvelineReply("HeroRogue_ChatGeneral4Aveline")
+    call ExSound_RegisterAvelineReply("HeroRogue_ChatGeneral5Aveline")
+    call ExSound_RegisterAvelineReplySequence("HeroRogue_ChatWarlock", 1, 5)
+    call ExSound_RegisterAvelineReplySequence("HeroRogue_ChatWarrior", 1, 4)
+    call ExSound_RegisterAvelineReplySequence("HeroRogue_ChatShaman", 1, 4)
+    call ExSound_RegisterAvelineReplySequence("HeroRogue_ChatEngineer", 1, 4)
+    call ExSound_RegisterAvelineReplySequence("HeroRogue_ChatPaladin", 1, 3)
+    call ExSound_RegisterAvelineReply("HeroRogue_ChatPaladin5Aveline")
+    call ExSound_RegisterAvelineReplySequence("HeroWarlock_ChatGeneral", 1, 7)
+    call ExSound_RegisterAvelineReplySequence("HeroWarlock_ChatRogue", 1, 4)
+    call ExSound_RegisterAvelineReplySequence("HeroWarlock_ChatWarrior", 1, 4)
+    call ExSound_RegisterAvelineReplySequence("HeroWarlock_ChatShaman", 1, 4)
+    call ExSound_RegisterAvelineReplySequence("HeroWarlock_ChatEngineer", 1, 4)
+    call ExSound_RegisterAvelineReplySequence("HeroWarlock_ChatPaladin", 1, 6)
+    call ExSound_RegisterAvelineReplySequence("HeroUndeadWarlock_ChatGeneral", 1, 7)
+    call ExSound_RegisterAvelineReplySequence("HeroUndeadWarlock_ChatRogue", 1, 4)
+    call ExSound_RegisterAvelineReplySequence("HeroUndeadWarlock_ChatWarrior", 1, 4)
+    call ExSound_RegisterAvelineReplySequence("HeroUndeadWarlock_ChatShaman", 1, 4)
+    call ExSound_RegisterAvelineReplySequence("HeroUndeadWarlock_ChatEngineer", 1, 4)
+    call ExSound_RegisterAvelineReplySequence("HeroUndeadWarlock_ChatPaladin", 1, 5)
+    call ExSound_RegisterAvelineReplySequence("HeroShaman_ChatGeneral", 1, 6)
+    call ExSound_RegisterAvelineReplySequence("HeroShaman_ChatRogue", 1, 5)
+    call ExSound_RegisterAvelineReplySequence("HeroShaman_ChatWarrior", 1, 4)
+    call ExSound_RegisterAvelineReplySequence("HeroShaman_ChatWarlock", 1, 4)
+    call ExSound_RegisterAvelineReplySequence("HeroShaman_ChatEngineer", 1, 4)
+    call ExSound_RegisterAvelineReplySequence("HeroShaman_ChatPaladin", 1, 4)
+    call ExSound_RegisterAvelineReplySequence("HeroWarrior_ChatGeneral", 1, 6)
+    call ExSound_RegisterAvelineReplySequence("HeroWarrior_ChatRogue", 1, 4)
+    call ExSound_RegisterAvelineReplySequence("HeroWarrior_ChatWarlock", 1, 4)
+    call ExSound_RegisterAvelineReplySequence("HeroWarrior_ChatShaman", 1, 4)
+    call ExSound_RegisterAvelineReplySequence("HeroWarrior_ChatEngineer", 1, 4)
+    call ExSound_RegisterAvelineReplySequence("HeroWarrior_ChatPaladin", 1, 4)
+    call ExSound_RegisterAvelineReplySequence("HeroEngineer_ChatGeneral", 1, 7)
+    call ExSound_RegisterAvelineReplySequence("HeroEngineer_ChatRogue", 1, 5)
+    call ExSound_RegisterAvelineReplySequence("HeroEngineer_ChatWarrior", 1, 5)
+    call ExSound_RegisterAvelineReplySequence("HeroEngineer_ChatShaman", 1, 4)
+    call ExSound_RegisterAvelineReplySequence("HeroEngineer_ChatWarlock", 1, 5)
+    call ExSound_RegisterAvelineReplySequence("HeroEngineer_ChatPaladin", 1, 4)
+    call ExSound_RegisterAvelineReplySequence("HeroPaladin_ChatGeneral", 1, 7)
+    call ExSound_RegisterAvelineReplySequence("HeroPaladin_ChatRogue", 1, 5)
+    call ExSound_RegisterAvelineReplySequence("HeroPaladin_ChatWarrior", 1, 5)
+    call ExSound_RegisterAvelineReplySequence("HeroPaladin_ChatShaman", 1, 5)
+    call ExSound_RegisterAvelineReplySequence("HeroPaladin_ChatEngineer", 1, 5)
+    call ExSound_RegisterAvelineReplySequence("HeroPaladin_ChatWarlock", 1, 5)
 
     //=================================================================
     // Batch registration
