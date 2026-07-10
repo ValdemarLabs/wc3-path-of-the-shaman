@@ -42,6 +42,15 @@
   - Low HP alert also starts at <= 25%.
   - It goes away once HP is above 25%.
 
+  - Text alignment is now column-based:
+    - Icon column fixed.
+    - Name starts from one fixed text column.
+    - Class starts from the same text column.
+    - Level starts from the same text column.
+    - State uses one fixed status column on every row.
+  - also increased row height so those three text lines are not crammed together.
+  - Previous fullscreen anchor could plausibly block mouse input even when the monitor panel was hidden. It was a full-screen FRAME and the monitor was parented under it. Changed it so the fullscreen anchor is disabled, hidden, and no longer the parent of the actual monitor panel. It is now only used as an invisible positioning reference.
+
 - `AI_Warrior` and `AI_Rogue`
   - register their resource mode with StatsUI.
 
@@ -83,6 +92,27 @@
     example usage:
     set r = AIRoutines_CreateBlacksmithRoutine("Town Blacksmiths", gg_rct_BlacksmithWork)
     call AIRoutines_RegisterUnitsInRect(gg_rct_BlacksmithNPCs, r)
+
+  - AIRoutines can create units itself from a spawn rect.
+  - Created units are registered to the routine automatically.
+  - On death, AIRoutines unregisters the dead unit and respawns a replacement after respawnDelay.
+  - facing < 0.00 means random facing.
+  - Managed groups can switch routine, which MountainPeons uses for day/night.
+
+- `MountainPeons.j`
+  - Defines library MountainPeons initializer Init requires AIRoutines.
+  - Picks managed peons from gg_rct_MountainPeons.
+  - Day routine: harvests lumber from gg_rct_MountainPeons, wanders/idles around gg_rct_HordeMountainCamp, and runs random camp actions.
+  - Night routine: moves peons to gg_rct_HordeMountainCamp and uses AIRoutines_AddSleepStep.
+  - Switches on dawn/dusk using GAME_STATE_TIME_OF_DAY, with a 15s sync timer as backup.
+  - Exposes MountainPeons_Refresh() to add current units from the pickup rect and reapply day/night mode.
+  - every registration path goes through AddPeon, which rejects anything where GetUnitTypeId(whichUnit) != MP_PEON_UNIT_TYPE_ID.
+  - That applies to:
+    - initial units inside gg_rct_MountainPeons
+    - recreated peons found by the 15s sync scan
+    - units entering gg_rct_MountainPeons
+    - manual MountainPeons_RegisterPeon(whichUnit) calls
+  - the library no longer picks placed peons. It now creates MP_PEON_COUNT = 5 'opeo' units at gg_rct_MountainPeons, owned by PLAYER_NEUTRAL_PASSIVE, and respawns them after 60.00 seconds.
 
 - `ExSound.j`
   - Registered:
