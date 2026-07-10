@@ -100,6 +100,8 @@ library Reputation initializer InitReputations requires Table, UnitDeathEvent
     Getting faction (no other use)
         local Faction f = Faction.getFaction("Horde")
         call Reputation.addRaw(Player(0), f, 100)
+        call Reputation_RegisterUnitTypeFaction('O629', "Horde")
+        call Reputation_GetUnitFactionName(whichUnit) returns string
     
     Master Alliance System Configuration:
         Set ENABLE_INTER_FACTION_ALLIANCES = true to enable inter-faction alliance control
@@ -1333,6 +1335,39 @@ private function AddUnitTypesToFaction takes Faction f, integer count returns no
         set UNIT_TYPE_FACTIONS[BlzS2FourCC(tmpCodes[i])] = f
         set i = i + 1
     endloop
+endfunction
+
+public function RegisterUnitTypeFaction takes integer unitTypeId, string factionName returns nothing
+    local Faction f
+
+    if unitTypeId == 0 or factionName == "" then
+        return
+    endif
+
+    set f = Faction.getFaction(factionName)
+    if f == 0 then
+        return
+    endif
+
+    if UNIT_TYPE_FACTIONS == 0 then
+        set UNIT_TYPE_FACTIONS = Table.create()
+    endif
+    set UNIT_TYPE_FACTIONS[unitTypeId] = f
+endfunction
+
+public function GetUnitFactionName takes unit whichUnit returns string
+    local Faction f
+
+    if whichUnit == null then
+        return ""
+    endif
+
+    set f = Faction.getByUnit(whichUnit)
+    if f != 0 then
+        return f.name
+    endif
+
+    return ""
 endfunction
 
 //===================================================
