@@ -42,6 +42,7 @@
     call AI_SetProfileThinkCallback(profileId, callback)
     call AI_SetProfileCompanionRetreat(profileId, enabled)
     call AI_AddProfileProfession(profileId, AI_PROFESSION_MINING)
+    call AI_RemoveProfileProfession(profileId, AI_PROFESSION_MINING)
     call AI_GetProfessionSkill(whichUnit, professionId)
     call AI_AddProfileSpawnRect(profileId, whichRect)
     call AI_AddProfileRetreatRect(profileId, whichRect)
@@ -144,6 +145,7 @@ globals
     private constant real AI_DIALOG_UNLOCK_PAD = 0.15
     private constant real AI_BARK_AUDIBLE_RANGE = 2600.00
     private constant real AI_BARK_GLOBAL_GAP = 0.75
+    private constant real AI_COMMAND_BARK_DELAY = 0.01
     private constant real AI_SHIELD_BLOCK_CHANCE = 33.34
     private constant real AI_RANDOM_SPAWN_MIN = 50.00
     private constant real AI_RANDOM_SPAWN_MAX = 150.00
@@ -168,6 +170,9 @@ globals
     private constant real AI_SOCIAL_DURATION_MAX = 8.00
     private constant real AI_SOCIAL_COOLDOWN_MIN = 35.00
     private constant real AI_SOCIAL_COOLDOWN_MAX = 90.00
+    private constant real AI_COMPANION_CHAT_RANGE = 900.00
+    private constant real AI_COMPANION_CHAT_COOLDOWN_MIN = 45.00
+    private constant real AI_COMPANION_CHAT_COOLDOWN_MAX = 100.00
     private constant real AI_STUCK_MIN_MOVE = 24.00
     private constant real AI_STUCK_SECONDS = 4.00
     private constant real AI_STUCK_RETRY_RADIUS = 360.00
@@ -253,6 +258,7 @@ globals
     private Table InstanceRandomManaged = 0
     private Table InstanceHiddenByCap = 0
     private Table InstanceCompanionControlled = 0
+    private Table InstanceCinematicParked = 0
     private Table InstanceInviteUnlocked = 0
     private Table InstanceAiPartyLeader = 0
     private Table InstanceAiPartyFollowerCount = 0
@@ -345,6 +351,7 @@ globals
     private timer RandomSpawnTimer = null
     private timer RandomTravelTimer = null
     private timer DialogUnlockTimer = null
+    private timer PendingCommandBarkTimer = null
     private trigger AttackTrigger = null
     private trigger SpellEffectTrigger = null
     private trigger LevelTrigger = null
@@ -359,6 +366,9 @@ globals
     private boolean RandomSpawnFirstProfileDone = false
     private boolean RandomTravelEnabled = true
     private real NextGlobalBark = 0.00
+    private unit PendingCommandBarkSpeaker = null
+    private integer PendingCommandBarkType = 0
+    private integer PendingCommandBarkSeen = 0
     private real NextAiPartyOrganize = 0.00
     private real RandomPointX = 0.00
     private real RandomPointY = 0.00
@@ -446,6 +456,7 @@ private function EnsureState takes nothing returns nothing
         set InstanceRandomManaged = Table.create()
         set InstanceHiddenByCap = Table.create()
         set InstanceCompanionControlled = Table.create()
+        set InstanceCinematicParked = Table.create()
         set InstanceInviteUnlocked = Table.create()
         set InstanceAiPartyLeader = Table.create()
         set InstanceAiPartyFollowerCount = Table.create()
@@ -1475,6 +1486,11 @@ private function EnsureProfessionTool takes integer instanceId, unit whichUnit, 
         set tool = null
         return false
     endif
+    if not UnitHasItemType(whichUnit, itemTypeId) then
+        call RemoveItem(tool)
+        set tool = null
+        return false
+    endif
     call RemoveTrackedProfessionTool(instanceId)
     set InstanceProfessionToolItem[instanceId] = tool
     set InstanceProfessionToolType[instanceId] = itemTypeId
@@ -1959,6 +1975,21 @@ public function AddProfileProfession takes integer profileId, integer profession
     endif
 endfunction
 
+public function RemoveProfileProfession takes integer profileId, integer professionId returns nothing
+    local integer key
+    call EnsureState()
+    if profileId <= 0 or professionId <= AI_PROFESSION_NONE or professionId > AI_PROFESSION_SKINNING then
+        return
+    endif
+    set key = GetProfileProfessionKey(profileId, professionId)
+    if ProfileProfession.boolean[key] then
+        call ProfileProfession.remove(key)
+        if ProfileProfessionCount[profileId] > 0 then
+            set ProfileProfessionCount[profileId] = ProfileProfessionCount[profileId] - 1
+        endif
+    endif
+endfunction
+
 public function SetProfileSpawnOwner takes integer profileId, player owner returns nothing
     call EnsureState()
     if profileId <= 0 or owner == null then
@@ -2393,20 +2424,25 @@ endfunction
 private function FindCompanionResponder takes integer profileId, unit speaker returns unit
     local integer i = 1
     local integer instanceId
-    local unit responder
+    local unit candidate
+    local unit responder = null
+    local integer seen = 0
     loop
         exitwhen i > ActiveCount
         set instanceId = ActiveInstances[i]
-        set responder = InstanceUnit.unit[instanceId]
-        if responder != null and responder != speaker and InstanceProfile[instanceId] == profileId then
-            if IsAliveUnit(responder) and IsCompanionControlled(responder) and IsBarkNearPlayerHero(responder) then
-                return responder
+        set candidate = InstanceUnit.unit[instanceId]
+        if candidate != null and candidate != speaker and InstanceProfile[instanceId] == profileId then
+            if IsAliveUnit(candidate) and IsCompanionControlled(candidate) and IsBarkNearPlayerHero(candidate) then
+                set seen = seen + 1
+                if GetRandomInt(1, seen) == 1 then
+                    set responder = candidate
+                endif
             endif
         endif
         set i = i + 1
     endloop
-    set responder = null
-    return null
+    set candidate = null
+    return responder
 endfunction
 
 private function PlayBarkReply takes nothing returns nothing
@@ -2741,6 +2777,7 @@ public function UnregisterUnit takes unit whichUnit returns nothing
     call InstanceRandomManaged.remove(instanceId)
     call InstanceHiddenByCap.remove(instanceId)
     call InstanceCompanionControlled.remove(instanceId)
+    call InstanceCinematicParked.remove(instanceId)
     call InstanceInviteUnlocked.remove(instanceId)
     call InstanceAiPartyLeader.remove(instanceId)
     call InstanceAiPartyFollowerCount.remove(instanceId)
@@ -3211,7 +3248,7 @@ endfunction
 private function TryStartCompanionPickupAction takes integer instanceId, unit whichUnit, real now returns boolean
     local item targetItem
     local unit enemy
-    if instanceId <= 0 or whichUnit == null then
+    if instanceId <= 0 or whichUnit == null or udg_InCinematic then
         return false
     endif
     if now < InstanceNextPickup.real[instanceId] or GetFreeInventorySlots(whichUnit) <= 0 then
@@ -4000,7 +4037,7 @@ endfunction
 private function TryStartProfessionAction takes integer instanceId, unit whichUnit, integer state, real now, boolean useIdleRoll returns boolean
     local unit node
     local item nodeItem
-    if instanceId <= 0 or whichUnit == null or ProfileProfessionCount[InstanceProfile[instanceId]] <= 0 then
+    if instanceId <= 0 or whichUnit == null or udg_InCinematic or ProfileProfessionCount[InstanceProfile[instanceId]] <= 0 then
         return false
     endif
     if not IsSideActionState(state) or now < InstanceNextProfession.real[instanceId] or now < InstanceProfessionBlockedUntil.real[instanceId] or IsCastingLocked(whichUnit) then
@@ -4204,9 +4241,52 @@ private function FindSocialTarget takes integer instanceId, unit whichUnit retur
     return SocialSearchTarget
 endfunction
 
+private function HasNearbyCompanionChatPartner takes integer instanceId, unit whichUnit returns boolean
+    local integer index = 1
+    local integer otherId
+    local unit other
+    local boolean found = false
+    if instanceId <= 0 or whichUnit == null or not IsBarkNearPlayerHero(whichUnit) then
+        return false
+    endif
+    loop
+        exitwhen index > ActiveCount or found
+        set otherId = ActiveInstances[index]
+        if otherId != instanceId then
+            set other = InstanceUnit.unit[otherId]
+            if other != null and IsAliveUnit(other) and not IsUnitHidden(other) and IsCompanionControlled(other) and IsBarkNearPlayerHero(other) and IsUnitInRange(whichUnit, other, AI_COMPANION_CHAT_RANGE) then
+                set found = true
+            endif
+        endif
+        set index = index + 1
+    endloop
+    set other = null
+    return found
+endfunction
+
+private function TryStartCompanionChatAction takes integer instanceId, unit whichUnit, real now returns boolean
+    local integer orderId
+    local integer barkType = AI_BARK_IDLE
+    if instanceId <= 0 or whichUnit == null or udg_InCinematic then
+        return false
+    endif
+    if now < InstanceNextSocial.real[instanceId] or now < InstanceNextChat.real[instanceId] or HasNearbyCombatEnemy(whichUnit, 700.00) then
+        return false
+    endif
+    set InstanceNextSocial.real[instanceId] = now + GetRandomReal(AI_COMPANION_CHAT_COOLDOWN_MIN, AI_COMPANION_CHAT_COOLDOWN_MAX)
+    if GetRandomInt(1, 100) > 30 or not HasNearbyCompanionChatPartner(instanceId, whichUnit) then
+        return false
+    endif
+    set orderId = GetUnitCurrentOrder(whichUnit)
+    if orderId == OrderId("move") or orderId == OrderId("smart") or orderId == OrderId("attack") then
+        set barkType = AI_BARK_MOVING
+    endif
+    return AI_RequestBark(whichUnit, barkType)
+endfunction
+
 private function TryStartSocialAction takes integer instanceId, unit whichUnit, integer state, real now returns boolean
     local unit target
-    if instanceId <= 0 or whichUnit == null then
+    if instanceId <= 0 or whichUnit == null or udg_InCinematic then
         return false
     endif
     if not IsSideActionState(state) or now < InstanceNextSocial.real[instanceId] or GetUnitCurrentOrder(whichUnit) != 0 or HasNearbyCombatEnemy(whichUnit, 700.00) then
@@ -4239,7 +4319,7 @@ private function TryStartNightCampAction takes integer instanceId, unit whichUni
     local real x
     local real y
     local item campItem
-    if instanceId <= 0 or whichUnit == null then
+    if instanceId <= 0 or whichUnit == null or udg_InCinematic then
         return false
     endif
     if not IsSideActionState(state) or IsCompanionControlled(whichUnit) or now < InstanceNextCamp.real[instanceId] or not IsNightTime() or GetUnitCurrentOrder(whichUnit) != 0 or HasNearbyCombatEnemy(whichUnit, 900.00) or GetFreeInventorySlots(whichUnit) <= 0 then
@@ -4362,7 +4442,7 @@ private function TryRefreshCompanionStuckOrder takes integer instanceId, unit wh
     local real dx
     local real dy
     local unit enemy
-    if instanceId <= 0 or whichUnit == null or IsCastingLocked(whichUnit) then
+    if instanceId <= 0 or whichUnit == null or udg_InCinematic or IsCastingLocked(whichUnit) then
         return false
     endif
     set enemy = AI_FindClosestEnemy(whichUnit, 650.00)
@@ -4400,6 +4480,9 @@ private function RunProfileThink takes integer instanceId, unit whichUnit return
     if instanceId <= 0 or whichUnit == null then
         return
     endif
+    if udg_InCinematic and IsCompanionControlled(whichUnit) then
+        return
+    endif
     if IsCastingLocked(whichUnit) then
         return
     endif
@@ -4423,7 +4506,7 @@ private function ResetCompanionCommandState takes integer instanceId, unit which
     set InstanceNextPickup.real[instanceId] = now + 1.00
     call SetInstanceState(instanceId, AI_STATE_IDLE)
     call ResetMovementMemory(instanceId, whichUnit, 0, now)
-    if keepCompanionOrders then
+    if keepCompanionOrders and not udg_InCinematic then
         call Companions_RefreshOrders(whichUnit)
     elseif not IsCastingLocked(whichUnit) then
         call IssueImmediateOrder(whichUnit, "stop")
@@ -4486,6 +4569,28 @@ private function TryProcessAiPartyFollower takes integer instanceId, unit whichU
     return true
 endfunction
 
+private function ParkCompanionForCinematic takes integer instanceId, unit whichUnit, real now returns nothing
+    local integer orderId
+    if instanceId <= 0 or whichUnit == null then
+        return
+    endif
+    call ClearSocialState(instanceId)
+    call SetInstanceState(instanceId, AI_STATE_COMPANION_CONTROLLED)
+    call RemoveTrackedProfessionTool(instanceId)
+    set InstanceNextProfession.real[instanceId] = now + GetRandomReal(AI_PROFESSION_IDLE_MIN, AI_PROFESSION_IDLE_MAX)
+    set InstanceNextPickup.real[instanceId] = now + GetRandomReal(AI_COMPANION_PICKUP_MIN_DELAY, AI_COMPANION_PICKUP_MAX_DELAY)
+    set InstanceNextSocial.real[instanceId] = now + GetRandomReal(AI_COMPANION_CHAT_COOLDOWN_MIN, AI_COMPANION_CHAT_COOLDOWN_MAX)
+    if not InstanceCinematicParked.boolean[instanceId] then
+        set orderId = GetUnitCurrentOrder(whichUnit)
+        if orderId != 0 and not IsCastingLocked(whichUnit) then
+            call IssueImmediateOrder(whichUnit, "stop")
+            set orderId = 0
+        endif
+        call ResetMovementMemory(instanceId, whichUnit, orderId, now)
+        set InstanceCinematicParked.boolean[instanceId] = true
+    endif
+endfunction
+
 private function ProcessInstance takes integer instanceId, real now returns nothing
     local unit whichUnit = InstanceUnit.unit[instanceId]
     local boolean companionControlled
@@ -4519,6 +4624,14 @@ private function ProcessInstance takes integer instanceId, real now returns noth
     call CleanupProfessionTool(instanceId, now)
     set companionControlled = IsCompanionControlled(whichUnit)
     set InstanceCompanionControlled.boolean[instanceId] = companionControlled
+    if companionControlled and udg_InCinematic then
+        call ParkCompanionForCinematic(instanceId, whichUnit, now)
+        set whichUnit = null
+        return
+    endif
+    if not udg_InCinematic then
+        call InstanceCinematicParked.remove(instanceId)
+    endif
 
     if companionControlled then
         call ClearSocialState(instanceId)
@@ -4530,6 +4643,10 @@ private function ProcessInstance takes integer instanceId, real now returns noth
             else
                 set InstanceNextItem.real[instanceId] = now + 2.00 + GetRandomReal(0.10, 0.80)
             endif
+        endif
+        if TryStartCompanionChatAction(instanceId, whichUnit, now) then
+            set whichUnit = null
+            return
         endif
         if companionMode == COMPANION_MODE_PASSIVE then
             if TryRefreshCompanionStuckOrder(instanceId, whichUnit, now) then
@@ -4803,7 +4920,7 @@ private function HandleItem takes nothing returns nothing
         elseif manipulatedItem == udg_LastDroppedItem then
             call AI_RequestBark(whichUnit, AI_BARK_ITEM_GIVEN)
         endif
-        if IsCompanionControlled(whichUnit) then
+        if IsCompanionControlled(whichUnit) and not udg_InCinematic then
             call Companions_RefreshOrders(whichUnit)
         endif
     endif
@@ -4837,6 +4954,46 @@ private function UnlockInviteGatedProfileState takes integer instanceId, unit wh
     if ProfileLockXpUntilInvite.boolean[profileId] or ProfileAllowedZoneCount[profileId] > 0 then
         call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " unlocked invite-gated AI restrictions.")
     endif
+endfunction
+
+private function FlushPendingCommandBark takes nothing returns nothing
+    local unit speaker = PendingCommandBarkSpeaker
+    local integer barkType = PendingCommandBarkType
+    set PendingCommandBarkSpeaker = null
+    set PendingCommandBarkType = 0
+    set PendingCommandBarkSeen = 0
+    if speaker != null and barkType > 0 then
+        call AI_RequestBark(speaker, barkType)
+    endif
+    set speaker = null
+endfunction
+
+private function QueueCommandBark takes unit speaker, integer barkType returns nothing
+    local integer instanceId
+    local integer barkKey
+    if speaker == null or barkType <= 0 then
+        return
+    endif
+    set instanceId = UnitInstance[GetHandleId(speaker)]
+    if instanceId <= 0 then
+        return
+    endif
+    set barkKey = GetBarkKey(InstanceProfile[instanceId], barkType)
+    if BarkLineCount[barkKey] <= 0 then
+        return
+    endif
+    if PendingCommandBarkSpeaker != null and PendingCommandBarkType != barkType then
+        call FlushPendingCommandBark()
+    endif
+    if PendingCommandBarkTimer == null then
+        set PendingCommandBarkTimer = CreateTimer()
+    endif
+    set PendingCommandBarkType = barkType
+    set PendingCommandBarkSeen = PendingCommandBarkSeen + 1
+    if PendingCommandBarkSpeaker == null or GetRandomInt(1, PendingCommandBarkSeen) == 1 then
+        set PendingCommandBarkSpeaker = speaker
+    endif
+    call TimerStart(PendingCommandBarkTimer, AI_COMMAND_BARK_DELAY, false, function FlushPendingCommandBark)
 endfunction
 
 private function HandleCompanionCommand takes nothing returns nothing
@@ -4883,7 +5040,9 @@ private function HandleCompanionCommand takes nothing returns nothing
         call ResetCompanionCommandState(instanceId, whichUnit, true)
     endif
 
-    if barkType > 0 then
+    if commandId == Companions_COMMAND_MODE then
+        call QueueCommandBark(whichUnit, barkType)
+    elseif barkType > 0 then
         call AI_RequestBark(whichUnit, barkType)
     endif
 
