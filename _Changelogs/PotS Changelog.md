@@ -15,6 +15,45 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [11.7.2026]
+
+### Technical Updates
+- `AI_Valeria.j` and `AI_Aradion.j`
+  - Edited and added more voicelines
+  - Reputation-specific bark types: greet, farewell, passive, normal, aggressive, hold, kicked, idle, moving
+    - Each of those has 3 lines per status: Neutral-or-worse, Friendly, Covenant, Exalted
+    - Common all-status barks: drop_items, item_given, attacking, casting, killing, companion_dies
+
+- `ExSound.j`
+  - Extended both Valeria and Aradion ExSound_RegisterSequence ranges from 300 to 312.
+
+- `AI.j`
+  - Added explicit AI profile faction metadata in AI.j: AI_SetProfileFaction, AI_GetProfileFaction, and AI_GetFactionInfoText.
+  - Invited unregistered companions now register through AI_RegisterUnitByType on invite, which should fix Warrior/Aveline timers in both UIs:
+
+- AI `\Classes` and AI `\Specific`
+  - Registered factions on Warrior, Rogue, Restoshaman, Warlock, Engineer, Paladin, Aveline, Aradion, and Valeria profiles.
+
+- `AI_LegacyLocations.j`
+  - Aveline now uses only gg_rct_RiverbaneHeroSpawn1
+
+- `Reputation.j`
+  - Added reputation unit-type faction registration, so faction lookup is not derived from profile name or current owner.
+
+- `StatsUI.j`
+  - StatsUI now shows dead revive countdowns via Nazgrek/Zulkis/Pet timers or AI_GetReviveTimer, with cache invalidation so the seconds update
+
+- `StatsLiteUI.j`
+  - Row text is now anchored from the unit icon’s right edge, so name/class/level/state use fixed columns instead of drifting over the icon.
+  - Companion label in the compact monitor is shortened from Companion to Comp to leave more name space.
+  - Alerts now use a visible autocast sprite border on the unit icon.
+  - Low HP alert pulses red and also pulses the HP bar background.
+  - Far-away alert stays continuously yellow on the icon.
+  - Low resource alert pulses blue and also pulses the resource bar background.
+  - Low Res was renamed to Low Power.
+
+- `Companions.j`
+  - Add FactionName fetch
 
 ## [10.7.2026]
 
@@ -69,6 +108,15 @@ Lots of troubleshooting and trying to adjust the UI. So, therefore quite many ch
   - State has its own fixed column beside class.
   - Text scale reduced and vertical alignment changed to TEXT_JUSTIFY_TOP.
   - HP/Mana bars reduced and moved into the compact row layout.
+
+ - Row text is now anchored from the unit icon’s right edge, so name/class/level/state use fixed columns instead of drifting over the icon.
+ - Companion label in the compact monitor is shortened from Companion to Comp to leave more name space.
+ - Alerts now use a visible autocast sprite border on the unit icon.
+ - Low HP alert pulses red and also pulses the HP bar background.
+ - Far-away alert stays continuously yellow on the icon.
+ - Low resource alert pulses blue and also pulses the resource bar background.
+ - Low Res was renamed to Low Power.
+   - Low Res meant “low resource”: mana/rage/energy below 20%. It is now labeled Low Power so it is less cryptic.
 
   - StatsLiteUI now hides the mana/resource bar entirely when UNIT_STATE_MAX_MANA <= 0.
 
