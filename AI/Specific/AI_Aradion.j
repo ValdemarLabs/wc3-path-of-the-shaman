@@ -13,7 +13,7 @@
     - qAradion / Aradion quest flow
 
     How to install:
-    Requires `AI.j`.
+    Requires `AI.j` and `Reputation.j`.
 
     API:
     call AIAradion_Enable(unit whichUnit)
@@ -21,7 +21,7 @@
     call AIAradion_SetCombatOrders(boolean enabled)
 
 **/
-library AIAradion initializer Init requires AI
+library AIAradion initializer Init requires AI, Reputation
 
 globals
     constant integer AI_ARADION_UNIT = 'h00A'
@@ -94,37 +94,87 @@ private function TryAutoEnable takes nothing returns nothing
     endif
 endfunction
 
-private function RegisterChat takes string soundKey, string text returns nothing
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_IDLE, text, soundKey)
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_MOVING, text, soundKey)
+private function RegisterElarindorBark takes integer barkType, string text, string soundKey, integer minRep, integer maxRep returns nothing
+    call AI_RegisterBarkLineForReputation(AI_Aradion_ProfileId, barkType, text, soundKey, "Elarindor", minRep, maxRep)
+endfunction
+
+private function RegisterNeutralBark takes integer barkType, string text, string soundKey returns nothing
+    call RegisterElarindorBark(barkType, text, soundKey, AI_REP_NO_MIN, Reputation_REP_NEUTRAL - 1)
+endfunction
+
+private function RegisterFriendlyBark takes integer barkType, string text, string soundKey returns nothing
+    call RegisterElarindorBark(barkType, text, soundKey, Reputation_REP_NEUTRAL, Reputation_REP_FRIENDLY - 1)
+endfunction
+
+private function RegisterCovenantBark takes integer barkType, string text, string soundKey returns nothing
+    call RegisterElarindorBark(barkType, text, soundKey, Reputation_REP_FRIENDLY, Reputation_REP_COVENANT - 1)
+endfunction
+
+private function RegisterExaltedBark takes integer barkType, string text, string soundKey returns nothing
+    call RegisterElarindorBark(barkType, text, soundKey, Reputation_REP_COVENANT, AI_REP_NO_MAX)
 endfunction
 
 private function RegisterBarks takes nothing returns nothing
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_GREET, "Aradion. Once a magister, now a man counting what remains.", "Aradion_0201")
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_GREET, "Speak softly. The ruins have learned to listen.", "Aradion_0202")
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_FAREWELL, "May your path find kinder answers than mine.", "Aradion_0203")
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_FAREWELL, "Go carefully. Hope is fragile here.", "Aradion_0204")
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_PASSIVE, "I will conserve what strength I have left.", "Aradion_0205")
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_NORMAL, "There is still work before despair earns its rest.", "Aradion_0206")
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_AGGRESSIVE, "If battle is forced on us, then let it be brief.", "Aradion_0207")
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_HOLD, "I can hold this warded ground.", "Aradion_0208")
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_DROP_ITEMS, "Take this. It may serve you better than my shelves.", "Aradion_0209")
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_KICKED, "Then I return to my studies, and to Valeria.", "Aradion_0210")
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_ITEM_GIVEN, "Curious. I will examine it carefully.", "Aradion_0211")
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_ATTACKING, "Back, shade.", "Aradion_0212")
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_ATTACKING, "I remember enough magic for this.", "Aradion_0213")
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_CASTING, "By the old currents, answer me.", "Aradion_0214")
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_CASTING, "Steady... do not break now.", "Aradion_0215")
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_KILLING, "Another echo put to rest.", "Aradion_0216")
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_COMPANION_DIES, "No. I will not lose another soul to this ruin.", "Aradion_0217")
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_IDLE, "Wisdom came too late to save Elarindor. I keep it anyway.", "Aradion_0218")
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_IDLE, "The arcane still hums beneath the stones, wounded but not silent.", "Aradion_0219")
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_MOVING, "The old paths twist where memory refuses to fade.", "Aradion_0220")
-    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_MOVING, "Careful. Disturbed magic does not sleep deeply.", "Aradion_0221")
-    call RegisterChat("Aradion_0222", "A failed magister can still read the shape of a disaster.")
-    call RegisterChat("Aradion_0223", "I mistook caution for cowardice once. The cost taught me otherwise.")
-    call RegisterChat("Aradion_0224", "Valeria kept her aim steady when my faith broke.")
-    call RegisterChat("Aradion_0225", "If the Vale heals, it will be because someone kinder than me refused to abandon it.")
+    call RegisterNeutralBark(AI_BARK_GREET, "Once a magister, now a man asking caution from strangers.", "Aradion_0201")
+    call RegisterFriendlyBark(AI_BARK_GREET, "It is good to see a familiar face in Elarindor.", "Aradion_0202")
+    call RegisterCovenantBark(AI_BARK_GREET, "Friend, your presence steadies more than my wards.", "Aradion_0203")
+    call RegisterExaltedBark(AI_BARK_GREET, "My friend, Elarindor still stands because you refused to abandon it.", "Aradion_0204")
+    call RegisterNeutralBark(AI_BARK_FAREWELL, "Go carefully. I would not lose another possible ally.", "Aradion_0205")
+    call RegisterFriendlyBark(AI_BARK_FAREWELL, "May your path find kinder answers than mine.", "Aradion_0206")
+    call RegisterCovenantBark(AI_BARK_FAREWELL, "Elarindor is safer for every step you take.", "Aradion_0207")
+    call RegisterExaltedBark(AI_BARK_FAREWELL, "Return safely. Valeria and I will keep a light for you.", "Aradion_0208")
+    call RegisterNeutralBark(AI_BARK_PASSIVE, "I will conserve what strength remains to me.", "Aradion_0209")
+    call RegisterFriendlyBark(AI_BARK_PASSIVE, "Peace gives old wounds a moment to close.", "Aradion_0210")
+    call RegisterCovenantBark(AI_BARK_PASSIVE, "Let restraint be our proof that we are not lost.", "Aradion_0211")
+    call RegisterExaltedBark(AI_BARK_PASSIVE, "Peace suits the Vale better than fear.", "Aradion_0212")
+    call RegisterNeutralBark(AI_BARK_NORMAL, "Let us proceed carefully. These ruins punish certainty.", "Aradion_0213")
+    call RegisterFriendlyBark(AI_BARK_NORMAL, "There is still work before despair earns its rest.", "Aradion_0214")
+    call RegisterCovenantBark(AI_BARK_NORMAL, "Together, perhaps we can make these ruins teach instead of mourn.", "Aradion_0215")
+    call RegisterExaltedBark(AI_BARK_NORMAL, "Lead on. My counsel and my magic are yours.", "Aradion_0216")
+    call RegisterNeutralBark(AI_BARK_AGGRESSIVE, "If battle is forced on us, let it be brief.", "Aradion_0217")
+    call RegisterFriendlyBark(AI_BARK_AGGRESSIVE, "Stand with me!", "Aradion_0218")
+    call RegisterCovenantBark(AI_BARK_AGGRESSIVE, "For the Vale, and for the lives I failed to protect.", "Aradion_0219")
+    call RegisterExaltedBark(AI_BARK_AGGRESSIVE, "Let Elarindor remember courage today.", "Aradion_0220")
+    call RegisterNeutralBark(AI_BARK_HOLD, "I can hold this warded ground.", "Aradion_0221")
+    call RegisterFriendlyBark(AI_BARK_HOLD, "This circle should hold if I do not miscalculate.", "Aradion_0222")
+    call RegisterCovenantBark(AI_BARK_HOLD, "I will anchor the ward. Trust the line.", "Aradion_0223")
+    call RegisterExaltedBark(AI_BARK_HOLD, "I will hold this ground as if it were the heart of the Vale.", "Aradion_0224")
+    call RegisterNeutralBark(AI_BARK_DROP_ITEMS, "Take this. It may serve you better than my shelves.", "Aradion_0225")
+    call RegisterFriendlyBark(AI_BARK_DROP_ITEMS, "Please, take it. I have carried enough regrets.", "Aradion_0226")
+    call RegisterCovenantBark(AI_BARK_DROP_ITEMS, "This belongs in capable hands. Yours.", "Aradion_0227")
+    call RegisterExaltedBark(AI_BARK_DROP_ITEMS, "Take it with my gratitude, not my sorrow.", "Aradion_0228")
+    call RegisterNeutralBark(AI_BARK_KICKED, "Then I return to my studies, and to Valeria.", "Aradion_0229")
+    call RegisterFriendlyBark(AI_BARK_KICKED, "I will wait with Valeria. She worries better than I do.", "Aradion_0230")
+    call RegisterCovenantBark(AI_BARK_KICKED, "Go on. I will keep the research alive.", "Aradion_0231")
+    call RegisterExaltedBark(AI_BARK_KICKED, "I understand. Our bond does not need orders.", "Aradion_0232")
+    call RegisterNeutralBark(AI_BARK_ITEM_GIVEN, "Curious. I will examine it carefully.", "Aradion_0233")
+    call RegisterFriendlyBark(AI_BARK_ITEM_GIVEN, "Thank you. I will put it to careful use.", "Aradion_0234")
+    call RegisterCovenantBark(AI_BARK_ITEM_GIVEN, "You remembered what my work requires. That means much.", "Aradion_0235")
+    call RegisterExaltedBark(AI_BARK_ITEM_GIVEN, "A gift from a trusted friend. I will treasure it.", "Aradion_0236")
+    call RegisterNeutralBark(AI_BARK_ATTACKING, "Back, shade.", "Aradion_0237")
+    call RegisterFriendlyBark(AI_BARK_ATTACKING, "I remember enough magic for this.", "Aradion_0238")
+    call RegisterCovenantBark(AI_BARK_ATTACKING, "Old power, new purpose.", "Aradion_0239")
+    call RegisterExaltedBark(AI_BARK_ATTACKING, "No more stolen futures.", "Aradion_0240")
+    call RegisterNeutralBark(AI_BARK_CASTING, "Begone you spawn of void!", "Aradion_0241")
+    call RegisterFriendlyBark(AI_BARK_CASTING, "Anar’ethil, selama arcanum!", "Aradion_0242")
+    call RegisterCovenantBark(AI_BARK_CASTING, "Felo’melorn, ash’al diel!", "Aradion_0243")
+    call RegisterExaltedBark(AI_BARK_CASTING, "Belore, shael en’theran!", "Aradion_0244")
+    call RegisterNeutralBark(AI_BARK_KILLING, "Another echo put to rest.", "Aradion_0245")
+    call RegisterFriendlyBark(AI_BARK_KILLING, "A small mercy for Elarindor.", "Aradion_0246")
+    call RegisterCovenantBark(AI_BARK_KILLING, "May that be the last shadow here.", "Aradion_0247")
+    call RegisterExaltedBark(AI_BARK_KILLING, "Rest now.", "Aradion_0248")
+    call RegisterNeutralBark(AI_BARK_COMPANION_DIES, "No. I will not lose another soul to this ruin.", "Aradion_0249")
+    call RegisterFriendlyBark(AI_BARK_COMPANION_DIES, "No. Stay with us.", "Aradion_0250")
+    call RegisterCovenantBark(AI_BARK_COMPANION_DIES, "No. Not you. Not after all this.", "Aradion_0251")
+    call RegisterExaltedBark(AI_BARK_COMPANION_DIES, "No! I was meant to protect you.", "Aradion_0252")
+    call RegisterNeutralBark(AI_BARK_IDLE, "A failed magister can still read the shape of a disaster.", "Aradion_0253")
+    call RegisterFriendlyBark(AI_BARK_IDLE, "Perhaps it's not too late to save the Elarindor.", "Aradion_0254")
+    call RegisterCovenantBark(AI_BARK_IDLE, "You have good heart.", "Aradion_0255")
+    call RegisterExaltedBark(AI_BARK_IDLE, "For the first time in years, I can imagine tomorrow.", "Aradion_0256")
+    call RegisterNeutralBark(AI_BARK_MOVING, "Careful. Unstable arcane energies are flowing everywhere here.", "Aradion_0257")
+    call RegisterFriendlyBark(AI_BARK_MOVING, "The old paths twist where memory refuses to fade.", "Aradion_0258")
+    call RegisterCovenantBark(AI_BARK_MOVING, "I've walked this path many times. It doesn't have the same beauty as it used to have.", "Aradion_0259")
+    call RegisterExaltedBark(AI_BARK_MOVING, "Valeria says I should smile more. Despite the circumstances... she may be right.", "Aradion_0260")
 endfunction
 
 private function Init takes nothing returns nothing

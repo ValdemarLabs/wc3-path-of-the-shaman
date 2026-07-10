@@ -12,14 +12,14 @@
     - qAradion / Valeria encounter flow
 
     How to install:
-    Requires `AI.j`.
+    Requires `AI.j` and `Reputation.j`.
 
     API:
     call AIValeria_Enable(unit whichUnit)
     call AIValeria_Disable(unit whichUnit)
 
 **/
-library AIValeria initializer Init requires AI
+library AIValeria initializer Init requires AI, Reputation
 
 globals
     constant integer AI_VALERIA_UNIT = 'n01W'
@@ -86,37 +86,87 @@ private function TryAutoEnable takes nothing returns nothing
     endif
 endfunction
 
-private function RegisterChat takes string soundKey, string text returns nothing
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_IDLE, text, soundKey)
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_MOVING, text, soundKey)
+private function RegisterElarindorBark takes integer barkType, string text, string soundKey, integer minRep, integer maxRep returns nothing
+    call AI_RegisterBarkLineForReputation(AI_Valeria_ProfileId, barkType, text, soundKey, "Elarindor", minRep, maxRep)
+endfunction
+
+private function RegisterNeutralBark takes integer barkType, string text, string soundKey returns nothing
+    call RegisterElarindorBark(barkType, text, soundKey, AI_REP_NO_MIN, Reputation_REP_NEUTRAL - 1)
+endfunction
+
+private function RegisterFriendlyBark takes integer barkType, string text, string soundKey returns nothing
+    call RegisterElarindorBark(barkType, text, soundKey, Reputation_REP_NEUTRAL, Reputation_REP_FRIENDLY - 1)
+endfunction
+
+private function RegisterCovenantBark takes integer barkType, string text, string soundKey returns nothing
+    call RegisterElarindorBark(barkType, text, soundKey, Reputation_REP_FRIENDLY, Reputation_REP_COVENANT - 1)
+endfunction
+
+private function RegisterExaltedBark takes integer barkType, string text, string soundKey returns nothing
+    call RegisterElarindorBark(barkType, text, soundKey, Reputation_REP_COVENANT, AI_REP_NO_MAX)
 endfunction
 
 private function RegisterBarks takes nothing returns nothing
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_GREET, "Valeria. Keep your hands where I can see them.", "Valeria_0201")
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_GREET, "If Aradion trusts you, I will listen. Once.", "Valeria_0202")
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_FAREWELL, "Stay clear of the old paths after dark.", "Valeria_0203")
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_FAREWELL, "I will keep watch from the trees.", "Valeria_0204")
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_PASSIVE, "I will hold my shot until it matters.", "Valeria_0205")
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_NORMAL, "Eyes forward. The Vale hides teeth.", "Valeria_0206")
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_AGGRESSIVE, "Good. Let them learn why rangers keep distance.", "Valeria_0207")
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_HOLD, "This ground gives me a clean line.", "Valeria_0208")
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_DROP_ITEMS, "Take it. I travel lighter with a bow in hand.", "Valeria_0209")
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_KICKED, "Then I return to Aradion.", "Valeria_0210")
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_ITEM_GIVEN, "Useful. I will not waste it.", "Valeria_0211")
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_ATTACKING, "You stepped into my range.", "Valeria_0212")
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_ATTACKING, "I have the shot.", "Valeria_0213")
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_CASTING, "Hold still.", "Valeria_0214")
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_CASTING, "This arrow finds its mark.", "Valeria_0215")
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_KILLING, "Threat ended.", "Valeria_0216")
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_COMPANION_DIES, "No. We do not fall here.", "Valeria_0217")
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_IDLE, "The trees remember where the wraiths passed.", "Valeria_0218")
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_IDLE, "Aradion sees patterns. I see tracks.", "Valeria_0219")
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_MOVING, "Quiet steps. Loose grip. Breathe.", "Valeria_0220")
-    call AI_RegisterBarkLine(AI_Valeria_ProfileId, AI_BARK_MOVING, "Stay behind my line of fire.", "Valeria_0221")
-    call RegisterChat("Valeria_0222", "Every path through Elarindor carries a memory I would rather forget.")
-    call RegisterChat("Valeria_0223", "I was a ranger before the Vale broke. I remain one after.")
-    call RegisterChat("Valeria_0224", "Aradion blames himself for too much. That does not make him wrong.")
-    call RegisterChat("Valeria_0225", "I have watched him chase hope through ruins. Someone has to guard his back.")
+    call RegisterNeutralBark(AI_BARK_GREET, "Keep your hands where I can see them.", "Valeria_0201")
+    call RegisterFriendlyBark(AI_BARK_GREET, "You came back. That counts for something.", "Valeria_0202")
+    call RegisterCovenantBark(AI_BARK_GREET, "I'm glad that you could make it back here.", "Valeria_0203")
+    call RegisterExaltedBark(AI_BARK_GREET, "My bow is yours, friend of the Vale.", "Valeria_0204")
+    call RegisterNeutralBark(AI_BARK_FAREWELL, "Leave before the trees decide you lingered too long.", "Valeria_0205")
+    call RegisterFriendlyBark(AI_BARK_FAREWELL, "Safe travels.", "Valeria_0206")
+    call RegisterCovenantBark(AI_BARK_FAREWELL, "Go with my watch over you.", "Valeria_0207")
+    call RegisterExaltedBark(AI_BARK_FAREWELL, "Return safely. Elarindor still needs its champions.", "Valeria_0208")
+    call RegisterNeutralBark(AI_BARK_PASSIVE, "I will lower my bow when I have reason.", "Valeria_0209")
+    call RegisterFriendlyBark(AI_BARK_PASSIVE, "I can hold my shot if you keep your word.", "Valeria_0210")
+    call RegisterCovenantBark(AI_BARK_PASSIVE, "No needless blood. We guard what remains.", "Valeria_0211")
+    call RegisterExaltedBark(AI_BARK_PASSIVE, "Peace, then. Your judgment has earned that.", "Valeria_0212")
+    call RegisterNeutralBark(AI_BARK_NORMAL, "Walk where I can see you.", "Valeria_0213")
+    call RegisterFriendlyBark(AI_BARK_NORMAL, "Eyes forward. I will cover the flank.", "Valeria_0214")
+    call RegisterCovenantBark(AI_BARK_NORMAL, "Move as one with the trees and they may spare us.", "Valeria_0215")
+    call RegisterExaltedBark(AI_BARK_NORMAL, "Lead on. My arrows will clear the path.", "Valeria_0216")
+    call RegisterNeutralBark(AI_BARK_AGGRESSIVE, "Finally. Something I am allowed to shoot.", "Valeria_0217")
+    call RegisterFriendlyBark(AI_BARK_AGGRESSIVE, "If they threaten the Vale, they fall.", "Valeria_0218")
+    call RegisterCovenantBark(AI_BARK_AGGRESSIVE, "No mercy for those who hunt Elarindor.", "Valeria_0219")
+    call RegisterExaltedBark(AI_BARK_AGGRESSIVE, "Together, we strike before fear takes root.", "Valeria_0220")
+    call RegisterNeutralBark(AI_BARK_HOLD, "I will hold this line, not your hand.", "Valeria_0221")
+    call RegisterFriendlyBark(AI_BARK_HOLD, "This ground gives me a clean line.", "Valeria_0222")
+    call RegisterCovenantBark(AI_BARK_HOLD, "I will keep this pass sealed.", "Valeria_0223")
+    call RegisterExaltedBark(AI_BARK_HOLD, "Nothing crosses while I breathe.", "Valeria_0224")
+    call RegisterNeutralBark(AI_BARK_DROP_ITEMS, "Take it. I would rather keep my hands free.", "Valeria_0225")
+    call RegisterFriendlyBark(AI_BARK_DROP_ITEMS, "Take this. It should serve you better.", "Valeria_0226")
+    call RegisterCovenantBark(AI_BARK_DROP_ITEMS, "Use it well. Elarindor has few gifts left.", "Valeria_0227")
+    call RegisterExaltedBark(AI_BARK_DROP_ITEMS, "A ranger shares what keeps an ally alive.", "Valeria_0228")
+    call RegisterNeutralBark(AI_BARK_KICKED, "Good. I prefer my own company.", "Valeria_0229")
+    call RegisterFriendlyBark(AI_BARK_KICKED, "Then I will watch from the trees.", "Valeria_0230")
+    call RegisterCovenantBark(AI_BARK_KICKED, "Call when the Vale needs my bow again.", "Valeria_0231")
+    call RegisterExaltedBark(AI_BARK_KICKED, "I will be near if you need me.", "Valeria_0232")
+    call RegisterNeutralBark(AI_BARK_ITEM_GIVEN, "I will use it if it serves the Vale.", "Valeria_0233")
+    call RegisterFriendlyBark(AI_BARK_ITEM_GIVEN, "Useful. I will not waste it.", "Valeria_0234")
+    call RegisterCovenantBark(AI_BARK_ITEM_GIVEN, "You know a ranger's needs. Thank you.", "Valeria_0235")
+    call RegisterExaltedBark(AI_BARK_ITEM_GIVEN, "A thoughtful gift from a trusted hand. I accept.", "Valeria_0236")
+    call RegisterNeutralBark(AI_BARK_ATTACKING, "Wrong step.", "Valeria_0237")
+    call RegisterFriendlyBark(AI_BARK_ATTACKING, "I have the shot.", "Valeria_0238")
+    call RegisterCovenantBark(AI_BARK_ATTACKING, "For Elarindor.", "Valeria_0239")
+    call RegisterExaltedBark(AI_BARK_ATTACKING, "Bal’a dash, malanore!", "Valeria_0240")
+    call RegisterNeutralBark(AI_BARK_CASTING, "Hold still.", "Valeria_0241")
+    call RegisterFriendlyBark(AI_BARK_CASTING, "This arrow finds its mark.", "Valeria_0242")
+    call RegisterCovenantBark(AI_BARK_CASTING, "Let the old shadows bleed.", "Valeria_0243")
+    call RegisterExaltedBark(AI_BARK_CASTING, "By leaf and oath, fall.", "Valeria_0244")
+    call RegisterNeutralBark(AI_BARK_KILLING, "Stay down.", "Valeria_0245")
+    call RegisterFriendlyBark(AI_BARK_KILLING, "Threat ended.", "Valeria_0246")
+    call RegisterCovenantBark(AI_BARK_KILLING, "One less scar on the Vale.", "Valeria_0247")
+    call RegisterExaltedBark(AI_BARK_KILLING, "Anar’alah belore!", "Valeria_0248")
+    call RegisterNeutralBark(AI_BARK_COMPANION_DIES, "No. Do not make this worse.", "Valeria_0249")
+    call RegisterFriendlyBark(AI_BARK_COMPANION_DIES, "No. We do not fall here.", "Valeria_0250")
+    call RegisterCovenantBark(AI_BARK_COMPANION_DIES, "Hold! I will not lose another ally.", "Valeria_0251")
+    call RegisterExaltedBark(AI_BARK_COMPANION_DIES, "No! I swore you would leave this place alive.", "Valeria_0252")
+    call RegisterNeutralBark(AI_BARK_IDLE, "Do not mistake silence for trust.", "Valeria_0253")
+    call RegisterFriendlyBark(AI_BARK_IDLE, "Atleast the mighty red trees have retained their beauty in this place.", "Valeria_0254")
+    call RegisterCovenantBark(AI_BARK_IDLE, "Aradion sees patterns. I see tracks.", "Valeria_0255")
+    call RegisterExaltedBark(AI_BARK_IDLE, "For once, the Vale feels almost willing to heal.", "Valeria_0256")
+    call RegisterNeutralBark(AI_BARK_MOVING, "Stay ahead of my arrow, not behind it.", "Valeria_0257")
+    call RegisterFriendlyBark(AI_BARK_MOVING, "Quiet steps. Loose grip. Breathe.", "Valeria_0258")
+    call RegisterCovenantBark(AI_BARK_MOVING, "I know a safer path. Follow close.", "Valeria_0259")
+    call RegisterExaltedBark(AI_BARK_MOVING, "With you, even these old paths feel less cursed.", "Valeria_0260")
 endfunction
 
 private function Init takes nothing returns nothing
