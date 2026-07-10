@@ -80,11 +80,20 @@ Lots of troubleshooting and trying to adjust the UI. So, therefore quite many ch
 - `AI_LegacyLocations.j`
   - Aveline’s initial autonomous zone restriction is bound to Sereneglade and Riverbane rects from `ZonesCore.j`.
 
+- `AI_Valeria.j` and `AI_Aradion.j`
+  - RegisterChat + RegisterBarks, keys Valeria_0201 through Valeria_0225 and keys Aradion_0201 through Aradion_0225
+
 `AI.j`
   - now defaults active random AI cap to 4, clamps cap APIs to max 32, and forces excess non-companion random AI into TRAVEL when the active cap is lowered.
   - added profile support for fixed hero level, XP lock until first invite, first random spawn priority, and initial allowed-zone rectangles.
   - now lets random-managed AI heroes form private AI parties using internal tables, with followers assisting/following the AI leader and no new udg_ party group.
   - Companion command handling now removes invited AI from private AI parties and resets stale companion AI state on invite/kick/mode changes.
+
+  - Mode command barks are now batched and choose one random valid companion, instead of the first processed companion always consuming the global bark cooldown.
+  - Companion-controlled units now have lightweight party chatter, so idle/moving bark lines can trigger existing companion reply lines.
+  - During udg_InCinematic, companion AI side-actions are suppressed and companions are parked once: no pickup/profession/social/stuck refresh/order refresh/ability think loop.
+  - Added AI_RemoveProfileProfession, and Aveline now opts out of inherited warrior mining.
+  - Hardened temporary profession tool creation: if the AI-created tool is not actually retained by the unit, it is removed immediately and treated as unavailable.
 
 `Companions.j`
   - added Aveline’s short info/background line to the companion information output.
