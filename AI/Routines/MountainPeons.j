@@ -30,7 +30,7 @@ globals
     private constant real MP_SYNC_INTERVAL = 15.00
     private constant real MP_RESPAWN_DELAY = 60.00
     private constant real MP_RANDOM_FACING = -1.00
-    private constant integer MP_OWNER_PLAYER_ID = PLAYER_NEUTRAL_PASSIVE
+    private constant integer MP_OWNER_PLAYER_ID = 1
     private constant integer MP_PEON_UNIT_TYPE_ID = 'opeo'
     private constant integer MP_PEON_COUNT = 5
 
