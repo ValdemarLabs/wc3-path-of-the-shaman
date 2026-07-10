@@ -87,6 +87,8 @@ Lots of troubleshooting and trying to adjust the UI. So, therefore quite many ch
 
 - `AI_Valeria.j` and `AI_Aradion.j`
   - RegisterChat + RegisterBarks, keys Valeria_0201 through Valeria_0225 and keys Aradion_0201 through Aradion_0225
+  - Valeria now has Elarindor-tiered lines, hostile/wary at neutral-or-worse and warmer up to Exalted.
+  - Aradion uses the same reputation tiers, but stays more friendly/cautious even at neutral.
 
 `AI.j`
   - now defaults active random AI cap to 4, clamps cap APIs to max 32, and forces excess non-companion random AI into TRAVEL when the active cap is lowered.
@@ -99,6 +101,9 @@ Lots of troubleshooting and trying to adjust the UI. So, therefore quite many ch
   - During udg_InCinematic, companion AI side-actions are suppressed and companions are parked once: no pickup/profession/social/stuck refresh/order refresh/ability think loop.
   - Added AI_RemoveProfileProfession, and Aveline now opts out of inherited warrior mining.
   - Hardened temporary profession tool creation: if the AI-created tool is not actually retained by the unit, it is removed immediately and treated as unavailable.
+
+  - added reusable AI_RegisterBarkLineForReputation(...) while keeping old AI_RegisterBarkLine(...) working.
+  - bark selection now filters by faction reputation before randomly picking a line.
 
 `Companions.j`
   - added Aveline’s short info/background line to the companion information output.
