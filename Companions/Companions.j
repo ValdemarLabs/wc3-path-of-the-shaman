@@ -1639,13 +1639,8 @@ private function HandleInvite takes unit caster, unit target returns nothing
 
     set requiredLevel = GetMaxPartyHeroLevel()
     set candidateLevel = GetCompanionCandidateLevel(target)
-    if candidateLevel < requiredLevel then
-        call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(target) + " must be at least level " + I2S(requiredLevel) + " to join this party.")
-        return
-    endif
-
-    if candidateLevel > requiredLevel + 5 then
-        call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(target) + " is too experienced to join this party.")
+    if candidateLevel > requiredLevel then
+        call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(target) + " is higher level than this party.")
         return
     endif
 
