@@ -25,6 +25,7 @@
   - added valid-unit checks and selection clearing so StatsUI stops reading stale/removed unit handles during refreshes, which should address the random crash when the open panel races a Nazgrek/unit change.
 
 - `StatsLiteUI.j`
+Lots of troubleshooting and trying to adjust the UI. So, therefore quite many changelog notes...
   - fixed the same fallback rawcode typo from 0631/0629 to O631/O629.
   - Reworked monitor anchoring with a fullscreen relative frame under ConsoleUIBackdrop, using BlzGetLocalClientWidth/Height, so it can sit at the real right edge instead of the 4:3 edge.
   - Monitor height now shrinks/grows based on tracked unit count.
@@ -57,6 +58,14 @@
   - Kept state on one fixed column beside class.
   - Moved HP/Mana bars farther right.
   - Re-applied text frame points after scale so scaling cannot pull the text back over the icon.
+
+  - Row icons reduced to 0.020 x 0.020, about half the previous size.
+  - Row height reduced from 0.040 to 0.026.
+  - Panel max height reduced so full party does not grow oversized.
+  - Name, class, level all start from the same fixed column to the right of the icon.
+  - State has its own fixed column beside class.
+  - Text scale reduced and vertical alignment changed to TEXT_JUSTIFY_TOP.
+  - HP/Mana bars reduced and moved into the compact row layout.
 
 - `AI_Warrior` and `AI_Rogue`
   - register their resource mode with StatsUI.
