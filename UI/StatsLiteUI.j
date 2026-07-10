@@ -719,6 +719,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         local string stateText = ""
         local string classText = ""
         local integer alertLevel = SLUI_ALERT_NONE
+        local boolean hasResource = SLUI_HasResourceBar(u)
 
         if SLUI_RowDisplayHandle[rowIndex] != handleId then
             set SLUI_RowDisplayHandle[rowIndex] = handleId
@@ -735,7 +736,9 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
             set dead = 1
         else
             set hp = SLUI_GetHealthPercent(u)
-            set mp = SLUI_GetManaPercent(u)
+            if hasResource then
+                set mp = SLUI_GetManaPercent(u)
+            endif
         endif
 
         if SLUI_RowDeadState[rowIndex] != dead or SLUI_RowHPValue[rowIndex] != hp or SLUI_RowMPValue[rowIndex] != mp then
@@ -743,12 +746,14 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
             set SLUI_RowHPValue[rowIndex] = hp
             set SLUI_RowMPValue[rowIndex] = mp
             call SLUI_SetBar(SLUI_RowHPFill[rowIndex], SLUI_RowHPText[rowIndex], SLUI_BAR_WIDTH, 0.007, hp, SLUI_GetHealthBarTexture(hp), "HP") // CHANGE: HP fill texture changes by health percent
-            call SLUI_SetBar(SLUI_RowMPFill[rowIndex], SLUI_RowMPText[rowIndex], SLUI_BAR_WIDTH, 0.007, mp, SLUI_GetResourceBarTexture(u), SLUI_GetResourceBarLabel(u)) // CHANGE: label and fill follow mana/rage/energy class mode
+            if hasResource then
+                call SLUI_SetBar(SLUI_RowMPFill[rowIndex], SLUI_RowMPText[rowIndex], SLUI_BAR_WIDTH, 0.007, mp, SLUI_GetResourceBarTexture(u), SLUI_GetResourceBarLabel(u)) // CHANGE: label and fill follow mana/rage/energy class mode
+            endif
         endif
 
-        call BlzFrameSetVisible(SLUI_RowMPBack[rowIndex], SLUI_ShowMana)
-        call BlzFrameSetVisible(SLUI_RowMPFill[rowIndex], SLUI_ShowMana)
-        call BlzFrameSetVisible(SLUI_RowMPText[rowIndex], SLUI_ShowMana)
+        call BlzFrameSetVisible(SLUI_RowMPBack[rowIndex], SLUI_ShowMana and hasResource)
+        call BlzFrameSetVisible(SLUI_RowMPFill[rowIndex], SLUI_ShowMana and hasResource)
+        call BlzFrameSetVisible(SLUI_RowMPText[rowIndex], SLUI_ShowMana and hasResource)
         call BlzFrameSetVisible(SLUI_RowLevel[rowIndex], SLUI_ShowLevel)
         call BlzFrameSetVisible(SLUI_RowClass[rowIndex], SLUI_ShowClass)
         call BlzFrameSetVisible(SLUI_RowState[rowIndex], SLUI_ShowState)
