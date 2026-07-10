@@ -5,10 +5,13 @@
     Version:
 
     Description:
-    Flexible routine scheduler for ambient NPC behavior. A routine family is a
-    reusable ordered list of steps that can move, work, animate, sleep, or run a
-    custom callback. Units can be assigned individually, by rect, or by unit
-    type across the map.
+    Flexible routine scheduler for ambient RPG NPC behavior. A routine family
+    is a reusable ordered list of steps that can move, wander, work, animate,
+    sleep, interact with targets, or run a custom callback. The system is not
+    tied to any one profession; blacksmiths, fishers, guards, villagers,
+    shopkeepers, workers, tavern patrons, and quest NPCs should all be built by
+    combining the same small step types. Units can be assigned individually, by
+    rect, or by unit type across the map.
 
     Credits:
     - PotS AI JASS migration
@@ -33,11 +36,17 @@
     call AIRoutines_AddCallbackStep(routineId, minDuration, maxDuration, callback)
     call AIRoutines_SetStepAnimation(stepId, animationName)
     call AIRoutines_SetStepEffect(stepId, effectPath, attachPoint)
+    call AIRoutines_AddWanderStep(routineId, wanderRect, minDuration, maxDuration)
+    call AIRoutines_AddStandStep(routineId, animationName, minDuration, maxDuration)
+    call AIRoutines_AddEffectWorkStep(routineId, animationName, effectPath, attachPoint, minDuration, maxDuration)
     call AIRoutines_RegisterUnit(whichUnit, routineId)
     call AIRoutines_RegisterUnitsInRect(whichRect, routineId)
+    call AIRoutines_RegisterUnitTypeInRect(unitTypeId, whichRect, routineId)
     call AIRoutines_RegisterUnitType(unitTypeId, routineId)
     call AIRoutines_UnregisterUnit(whichUnit)
     call AIRoutines_WakeUnit(whichUnit)
+    call AIRoutines_CreateVillageWanderRoutine(familyName, villageRect, moveMin, moveMax, idleMin, idleMax)
+    call AIRoutines_CreateFishingRoutine(familyName, fishingRect, fishMin, fishMax, idleMin, idleMax)
     call AIRoutines_CreateBlacksmithRoutine(familyName, workRect)
     call AIRoutines_CreatePeonLumberSleepRoutine(familyName, lumberRect, sleepRect, harvestDuration, sleepDuration, hideDuringSleep)
 
@@ -46,6 +55,62 @@
     AIRoutines_EventRoutineId
     AIRoutines_EventStepId
     AIRoutines_EventStepType
+
+    Guide:
+    - Think in routine families, not individual NPCs. Create one family such as
+      "Village Fishers", add its ordered steps, then register many units to it.
+    - Durations use min/max ranges. Equal values make fixed timing; different
+      values desync NPCs so a village does not move in lockstep.
+    - Rect steps choose a random point inside the rect each time, which makes
+      wandering, fishing spots, market browsing, field work, and guard pacing
+      reusable without creating many fixed points.
+    - Work/stand steps are animation steps. Use model animation names like
+      "stand", "stand work", "attack", "spell", "walk", or a model-specific
+      sequence. Missing animations safely fall back to normal model behavior.
+    - Callback steps are the escape hatch for anything custom: quest flags,
+      dialog barks, spawning props, changing facing, buying/selling, or calling
+      another local system. Read AIRoutines_EventUnit and AIRoutines_EventStepId
+      inside the callback.
+    - Target steps are for props and actors: face/use a forge, anvil, fishing
+      node, bed, chair, shop counter, door, training dummy, or another NPC.
+    - Other routine ideas use the same blocks: tavern patrons sit/wander/talk,
+      priests walk altar aisles and cast, dockworkers carry crates, stablehands
+      tend animals, children run between play spots, miners work veins, farmers
+      work fields, bards perform, vendors stand at counters, and quest NPCs run
+      callback-driven ambient barks between idle poses.
+
+    Common patterns:
+    Village walker:
+      set r = AIRoutines_CreateRoutine("Village Walkers")
+      call AIRoutines_AddWanderStep(r, gg_rct_VillageStreets, 8.00, 16.00)
+      call AIRoutines_AddWaitStep(r, 3.00, 8.00)
+      call AIRoutines_RegisterUnitsInRect(gg_rct_Villagers, r)
+
+    Fisher:
+      set r = AIRoutines_CreateRoutine("Fishers")
+      call AIRoutines_AddWanderStep(r, gg_rct_Dock, 4.00, 8.00)
+      call AIRoutines_AddStandStep(r, "stand work", 20.00, 45.00)
+      call AIRoutines_AddWaitStep(r, 4.00, 10.00)
+      call AIRoutines_RegisterUnitsInRect(gg_rct_FisherNPCs, r)
+
+    Guard patrol:
+      set r = AIRoutines_CreateRoutine("Village Guards")
+      call AIRoutines_AddRectOrderStep(r, "move", gg_rct_GuardPostA, 8.00, 12.00)
+      call AIRoutines_AddStandStep(r, "stand", 5.00, 12.00)
+      call AIRoutines_AddRectOrderStep(r, "move", gg_rct_GuardPostB, 8.00, 12.00)
+      call AIRoutines_AddStandStep(r, "stand", 5.00, 12.00)
+
+    Day worker, then sleep:
+      set r = AIRoutines_CreateRoutine("Field Workers")
+      call AIRoutines_AddRectOrderStep(r, "move", gg_rct_Field, 8.00, 12.00)
+      call AIRoutines_AddStandStep(r, "stand work", 45.00, 90.00)
+      call AIRoutines_AddRectOrderStep(r, "move", gg_rct_WorkerHuts, 8.00, 12.00)
+      call AIRoutines_AddSleepStep(r, 60.00, 160.00, true)
+
+    Shopkeeper or quest NPC with custom logic:
+      set r = AIRoutines_CreateRoutine("Shopkeepers")
+      call AIRoutines_AddStandStep(r, "stand", 10.00, 20.00)
+      call AIRoutines_AddCallbackStep(r, 2.00, 4.00, function MyNpcRoutineCallback)
 
 **/
 library AIRoutines initializer Init requires AI, Table
@@ -540,6 +605,18 @@ function AIRoutines_SetStepEffect takes integer stepId, string effectPath, strin
     endif
 endfunction
 
+function AIRoutines_AddWanderStep takes integer routineId, rect wanderRect, real minDuration, real maxDuration returns integer
+    return AIRoutines_AddRectOrderStep(routineId, "move", wanderRect, minDuration, maxDuration)
+endfunction
+
+function AIRoutines_AddStandStep takes integer routineId, string animationName, real minDuration, real maxDuration returns integer
+    return AIRoutines_AddWorkStep(routineId, animationName, "", "", minDuration, maxDuration)
+endfunction
+
+function AIRoutines_AddEffectWorkStep takes integer routineId, string animationName, string effectPath, string attachPoint, real minDuration, real maxDuration returns integer
+    return AIRoutines_AddWorkStep(routineId, animationName, effectPath, attachPoint, minDuration, maxDuration)
+endfunction
+
 function AIRoutines_RegisterUnit takes unit whichUnit, integer routineId returns boolean
     return AIR_RegisterUnitInternal(whichUnit, routineId)
 endfunction
@@ -635,6 +712,51 @@ function AIRoutines_RegisterUnitType takes integer unitTypeId, integer routineId
     endif
     set AIR_UnitTypeRoutine[unitTypeId] = routineId
     call AIRoutines_RegisterUnitTypeInRect(unitTypeId, GetWorldBounds(), routineId)
+endfunction
+
+function AIRoutines_CreateVillageWanderRoutine takes string familyName, rect villageRect, real moveMin, real moveMax, real idleMin, real idleMax returns integer
+    local integer routineId = AIRoutines_CreateRoutine(familyName)
+    if routineId <= 0 then
+        return 0
+    endif
+    if moveMin <= 0.00 then
+        set moveMin = 8.00
+    endif
+    if moveMax < moveMin then
+        set moveMax = moveMin + 8.00
+    endif
+    if idleMin <= 0.00 then
+        set idleMin = 3.00
+    endif
+    if idleMax < idleMin then
+        set idleMax = idleMin + 5.00
+    endif
+    call AIRoutines_AddWanderStep(routineId, villageRect, moveMin, moveMax)
+    call AIRoutines_AddStandStep(routineId, "stand", idleMin, idleMax)
+    return routineId
+endfunction
+
+function AIRoutines_CreateFishingRoutine takes string familyName, rect fishingRect, real fishMin, real fishMax, real idleMin, real idleMax returns integer
+    local integer routineId = AIRoutines_CreateRoutine(familyName)
+    if routineId <= 0 then
+        return 0
+    endif
+    if fishMin <= 0.00 then
+        set fishMin = 20.00
+    endif
+    if fishMax < fishMin then
+        set fishMax = fishMin + 25.00
+    endif
+    if idleMin <= 0.00 then
+        set idleMin = 4.00
+    endif
+    if idleMax < idleMin then
+        set idleMax = idleMin + 6.00
+    endif
+    call AIRoutines_AddWanderStep(routineId, fishingRect, 4.00, 8.00)
+    call AIRoutines_AddStandStep(routineId, "stand work", fishMin, fishMax)
+    call AIRoutines_AddWaitStep(routineId, idleMin, idleMax)
+    return routineId
 endfunction
 
 function AIRoutines_CreateBlacksmithRoutine takes string familyName, rect workRect returns integer
