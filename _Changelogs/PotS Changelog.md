@@ -51,8 +51,18 @@
   - also increased row height so those three text lines are not crammed together.
   - Previous fullscreen anchor could plausibly block mouse input even when the monitor panel was hidden. It was a full-screen FRAME and the monitor was parented under it. Changed it so the fullscreen anchor is disabled, hidden, and no longer the parent of the actual monitor panel. It is now only used as an invisible positioning reference.
 
+  - Widened the monitor panel and row width.
+  - Moved the text block much farther right from the icon.
+  - Kept name, class, and level on the same fixed left column.
+  - Kept state on one fixed column beside class.
+  - Moved HP/Mana bars farther right.
+  - Re-applied text frame points after scale so scaling cannot pull the text back over the icon.
+
 - `AI_Warrior` and `AI_Rogue`
   - register their resource mode with StatsUI.
+
+- `AI_Warlock.j`
+  - removed the redundant AI_WARLOCK_UNIT_HORDE = 'H60X'. More importantly, AI_Warlock.j now adds AI_Warlock_UndeadProfileId to the random spawn pool, so undead warlock 'O61K' can actually spawn.
 
 - `AI_Aveline.j`
   - Aveline now opts into level 10, XP locked until invite, first random spawn, cap 1, expanded barks, chat lines, and companion replies.
@@ -70,6 +80,7 @@
 `Companions.j`
   - added Aveline’s short info/background line to the companion information output.
   - invite level floor logic: candidate level must be at least the max of Nazgrek/Zulkis
+  - Invite now allows companion levels <= highest player hero level and rejects only higher levels.
 
 `SettingsUI.j`
   - now has an AI cap slider plus the requested lag/order/input-lag warning.
@@ -99,6 +110,14 @@
   - facing < 0.00 means random facing.
   - Managed groups can switch routine, which MountainPeons uses for day/night.
 
+  - now resolves "harvest" rect steps by picking a live destructable inside the rect and issuing IssueTargetOrder(..., "harvest", targetDest). It only falls back to point-order if no destructable is found.
+  - Sleep now:
+    - stores whether the unit already had 'Asla'
+    - adds 'Asla' when routine sleep begins
+    - plays "sleep" animation and pauses the unit
+    - removes 'Asla' on wake only if AIRoutines added it
+    - There are no UnitAddSleep, UnitCanSleep, UnitAddSleepPerm, or UnitCanSleepPerm calls left in
+
 - `MountainPeons.j`
   - Defines library MountainPeons initializer Init requires AIRoutines.
   - Picks managed peons from gg_rct_MountainPeons.
@@ -113,6 +132,7 @@
     - units entering gg_rct_MountainPeons
     - manual MountainPeons_RegisterPeon(whichUnit) calls
   - the library no longer picks placed peons. It now creates MP_PEON_COUNT = 5 'opeo' units at gg_rct_MountainPeons, owned by PLAYER_NEUTRAL_PASSIVE, and respawns them after 60.00 seconds.
+  - now creates peons for Player(1) instead of neutral passive.
 
 - `ExSound.j`
   - Registered:
@@ -123,6 +143,9 @@
   - Replaced KillUnit(.Unit) with RemoveUnit(.Unit) so the dummy is removed immediately instead of dying/decaying.
   - Added SetUnitPathing(.Unit, false) right after dummy creation.
   - Added Locust via UnitAddAbility(.Unit, 'Aloc') so other systems treat it as a dummy/non-interactive unit.
+
+- `Aveline voicelines`
+  - Created most Aveline audio files manually with FishAudio and the rest with FishAudio API and python script. Note these could have issues or something that requires editing voiceline text itself or/and the audio file, but this is not huge priority.
 
 
 ## [9.7.2026]
