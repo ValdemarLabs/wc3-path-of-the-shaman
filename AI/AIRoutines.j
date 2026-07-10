@@ -144,7 +144,7 @@ globals
     private constant boolean AIR_DEBUG = false
     private constant boolean AIR_DEFAULT_LOOP = true
     private constant boolean AIR_DEFAULT_USE_AI_REGISTRY = false
-    private constant integer AIR_SLEEP_ABILITY_ID = 'A0F1'
+    private constant integer AIR_SLEEP_ABILITY_ID = 'Asla'
     private constant integer AIR_MAX_ROUTINES = 512
     private constant integer AIR_MAX_STEPS = 4096
     private constant integer AIR_MAX_ROUTINE_STEPS = 128
@@ -167,6 +167,8 @@ globals
     private trigger AIR_DeathTrigger = null
     private trigger AIR_EnterTrigger = null
     private region AIR_EnterRegion = null
+    private destructable AIR_EnumDestructablePick = null
+    private integer AIR_EnumDestructableCount = 0
 
     private string array AIR_RoutineName
     private integer array AIR_RoutineStepCount
@@ -1019,6 +1021,27 @@ function AIRoutines_CreatePeonLumberSleepRoutine takes string familyName, rect l
     return routineId
 endfunction
 
+private function AIR_PickRandomDestructableEnum takes nothing returns nothing
+    local destructable enumDest = GetEnumDestructable()
+    if enumDest != null and GetDestructableLife(enumDest) > 0.405 then
+        set AIR_EnumDestructableCount = AIR_EnumDestructableCount + 1
+        if GetRandomInt(1, AIR_EnumDestructableCount) == 1 then
+            set AIR_EnumDestructablePick = enumDest
+        endif
+    endif
+    set enumDest = null
+endfunction
+
+private function AIR_GetRandomDestructableInRect takes rect whichRect returns destructable
+    if whichRect == null then
+        return null
+    endif
+    set AIR_EnumDestructablePick = null
+    set AIR_EnumDestructableCount = 0
+    call EnumDestructablesInRect(whichRect, null, function AIR_PickRandomDestructableEnum)
+    return AIR_EnumDestructablePick
+endfunction
+
 private function AIR_StartStep takes unit whichUnit, integer unitKey, integer routineId, integer stepIndex, integer stepId, real now returns nothing
     local string order = AIR_StepOrder[stepId]
     local rect whichRect = AIR_StepRect[stepId]
@@ -1039,9 +1062,20 @@ private function AIR_StartStep takes unit whichUnit, integer unitKey, integer ro
         call IssuePointOrder(whichUnit, order, AIR_StepX[stepId], AIR_StepY[stepId])
     elseif AIR_StepType[stepId] == AIR_STEP_RECT_ORDER then
         if whichRect != null then
-            set x = GetRandomReal(GetRectMinX(whichRect), GetRectMaxX(whichRect))
-            set y = GetRandomReal(GetRectMinY(whichRect), GetRectMaxY(whichRect))
-            call IssuePointOrder(whichUnit, order, x, y)
+            if order == "harvest" then
+                set targetDest = AIR_GetRandomDestructableInRect(whichRect)
+                if targetDest != null then
+                    call IssueTargetOrder(whichUnit, order, targetDest)
+                else
+                    set x = GetRandomReal(GetRectMinX(whichRect), GetRectMaxX(whichRect))
+                    set y = GetRandomReal(GetRectMinY(whichRect), GetRectMaxY(whichRect))
+                    call IssuePointOrder(whichUnit, order, x, y)
+                endif
+            else
+                set x = GetRandomReal(GetRectMinX(whichRect), GetRectMaxX(whichRect))
+                set y = GetRandomReal(GetRectMinY(whichRect), GetRectMaxY(whichRect))
+                call IssuePointOrder(whichUnit, order, x, y)
+            endif
         endif
     elseif AIR_StepType[stepId] == AIR_STEP_TARGET_UNIT_ORDER then
         if targetUnit != null then
