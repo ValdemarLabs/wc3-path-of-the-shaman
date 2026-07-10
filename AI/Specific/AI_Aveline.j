@@ -99,7 +99,7 @@ private function RegisterCompanionChats takes nothing returns nothing
     call RegisterChat("Aveline_ChatGeneral6", "Sooner or later, we shall have revenge.")
     call RegisterChat("Aveline_ChatEngineer1", "Engineer, if you build anything for Riverbane, make sure it lasts longer than one fight.")
     call RegisterChat("Aveline_ChatEngineer2", "A quiet warning bell would help more than another smoking contraption.")
-    call RegisterChat("Aveline_ChatEngineer3", "If your machines can hold a bridge, I have three bridges that need holding.")
+    call RegisterChat("Aveline_ChatEngineer3", "Build me something that warns Riverbane before the first torch is thrown.")
     call RegisterChat("Aveline_ChatPaladin1", "Paladin, your Light is welcome on the roads, but keep your shield where villagers can see it.")
     call RegisterChat("Aveline_ChatPaladin2", "When fear spreads through Riverbane, a bright banner can steady more than soldiers.")
     call RegisterChat("Aveline_ChatPaladin3", "Pray if you must, paladin, but keep your sword ready when the smoke rises.")
