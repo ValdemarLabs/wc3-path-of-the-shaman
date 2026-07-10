@@ -23,6 +23,9 @@
 - `StatsUI.j`
   - added the same AI class resource registry pattern as StatsLiteUI, so Warrior shows Rage and Rogue shows Energy in the detail resource label and regen stat labels. 
   - added valid-unit checks and selection clearing so StatsUI stops reading stale/removed unit handles during refreshes, which should address the random crash when the open panel races a Nazgrek/unit change.
+  - now hides mana from the row status text and detail summary for no-mana units.
+StatsUI 
+  - also skips detailed stat rows for Mana, Mana Regen, and Mana %/Sec when the unit has no resource pool.
 
 - `StatsLiteUI.j`
 Lots of troubleshooting and trying to adjust the UI. So, therefore quite many changelog notes...
@@ -66,6 +69,8 @@ Lots of troubleshooting and trying to adjust the UI. So, therefore quite many ch
   - State has its own fixed column beside class.
   - Text scale reduced and vertical alignment changed to TEXT_JUSTIFY_TOP.
   - HP/Mana bars reduced and moved into the compact row layout.
+
+  - StatsLiteUI now hides the mana/resource bar entirely when UNIT_STATE_MAX_MANA <= 0.
 
 - `AI_Warrior` and `AI_Rogue`
   - register their resource mode with StatsUI.
