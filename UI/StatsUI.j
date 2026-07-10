@@ -82,6 +82,7 @@ globals
     private integer SUI_DetailHeaderUnitHandle = 0
     private integer SUI_DetailHeaderLevel = -1
     private integer SUI_DetailStatsUnitHandle = 0
+    private boolean SUI_DetailStatsHasResource = false
     private integer SUI_DetailSummaryUnitHandle = 0
     private integer SUI_DetailSummaryDead = -1
     private integer SUI_DetailSummaryHP = -1
@@ -350,6 +351,13 @@ private function SUI_GetManaPercent takes unit u returns integer
     return R2I((GetUnitState(u, UNIT_STATE_MANA) / maxMana) * 100.0)
 endfunction
 
+private function SUI_HasResourceBar takes unit u returns boolean
+    if not SUI_IsValidUnit(u) then
+        return false
+    endif
+    return GetUnitState(u, UNIT_STATE_MAX_MANA) > 0.0
+endfunction
+
 private function SUI_IsDeadForDisplay takes unit u returns boolean
     if not SUI_IsValidUnit(u) then
         return false
@@ -372,6 +380,9 @@ private function SUI_GetStatusText takes unit u returns string
     endif
 
     set hp = SUI_GetHealthPercent(u)
+    if not SUI_HasResourceBar(u) then
+        return SUI_GetHealthColor(hp) + I2S(hp) + "|r"
+    endif
     set mp = SUI_GetManaPercent(u)
     return SUI_GetHealthColor(hp) + I2S(hp) + "|r / " + SUI_GetResourceColor(u) + I2S(mp) + "|r"
 endfunction
@@ -597,6 +608,13 @@ private function SUI_GetStatValue takes unit u, integer statId returns real
     return DEqGetUnitStatById(u, statId)
 endfunction
 
+private function SUI_ShouldShowStatForUnit takes integer statId, unit u returns boolean
+    if (statId == 7 or statId == 8 or statId == 9) and not SUI_HasResourceBar(u) then
+        return false
+    endif
+    return true
+endfunction
+
 private function SUI_FormatStatValue takes integer statId, real value returns string
     if SUI_UsesFlatDisplay(statId) then
         return SUI_FormatNumber(value)
@@ -739,6 +757,7 @@ private function SUI_InvalidateDetailStatsCache takes nothing returns nothing
     local integer i = 1
 
     set SUI_DetailStatsUnitHandle = 0
+    set SUI_DetailStatsHasResource = false
     loop
         exitwhen i > SUI_DETAIL_STAT_COLUMNS * SUI_DETAIL_STAT_ROWS
         set SUI_DetailStatCache[i] = -999999.0
@@ -1022,6 +1041,7 @@ private function SUI_UpdateDetailStats takes player whichPlayer, unit u returns 
     local integer rowIndex = 1
     local integer handleId = 0
     local real statValue
+    local boolean hasResource = false
 
     if GetLocalPlayer() != whichPlayer then
         return
@@ -1034,10 +1054,13 @@ private function SUI_UpdateDetailStats takes player whichPlayer, unit u returns 
     endif
 
     set handleId = GetHandleId(u)
-    if SUI_DetailStatsUnitHandle != handleId then
+    set hasResource = SUI_HasResourceBar(u)
+    if SUI_DetailStatsUnitHandle != handleId or SUI_DetailStatsHasResource != hasResource then
         set SUI_DetailStatsUnitHandle = handleId
+        set SUI_DetailStatsHasResource = hasResource
         call SUI_InvalidateDetailStatsCache()
         set SUI_DetailStatsUnitHandle = handleId
+        set SUI_DetailStatsHasResource = hasResource
     endif
 
     if DEqStatsCounter <= 0 then
@@ -1046,7 +1069,7 @@ private function SUI_UpdateDetailStats takes player whichPlayer, unit u returns 
 
     loop
         exitwhen statId > DEqStatsCounter or rowIndex > SUI_DETAIL_STAT_COLUMNS * SUI_DETAIL_STAT_ROWS
-        if DEqStatNames[statId] != null then
+        if DEqStatNames[statId] != null and SUI_ShouldShowStatForUnit(statId, u) then
             if SUI_DetailStatCache[rowIndex] <= -999998.0 then
                 call BlzFrameSetText(SUI_DetailStatLabel[rowIndex], "|cffffcc00" + SUI_GetCompactStatLabel(statId, u) + "|r")
             endif
@@ -1248,6 +1271,7 @@ private function SUI_UpdateDetailSummary takes player whichPlayer, unit u return
     local string roleText = ""
     local string factionText = ""
     local string resourceLabel = ""
+    local boolean hasResource = false
     local integer attackSpeedHash
     local integer classHash
     local integer roleHash
@@ -1284,6 +1308,7 @@ private function SUI_UpdateDetailSummary takes player whichPlayer, unit u return
     endif
     set mana = R2I(GetUnitState(u, UNIT_STATE_MANA))
     set maxMana = R2I(GetUnitState(u, UNIT_STATE_MAX_MANA))
+    set hasResource = maxMana > 0
     set kills = SUI_GetUnitKills(u)
     set deaths = SUI_GetUnitDeaths(u)
     set minDamage = SUI_GetUnitDamageMin(u)
@@ -1294,7 +1319,9 @@ private function SUI_UpdateDetailSummary takes player whichPlayer, unit u return
     set classText = SUI_GetUnitClassText(u)
     set roleText = SUI_GetUnitRoleText(u)
     set factionText = SUI_GetUnitFactionText(u)
-    set resourceLabel = SUI_GetResourceLabel(u)
+    if hasResource then
+        set resourceLabel = SUI_GetResourceLabel(u)
+    endif
     set attackSpeedHash = StringHash(attackSpeedText)
     set classHash = StringHash(classText)
     set roleHash = StringHash(roleText)
@@ -1327,7 +1354,11 @@ private function SUI_UpdateDetailSummary takes player whichPlayer, unit u return
     set SUI_DetailSummaryFactionHash = factionHash
     set SUI_DetailSummaryResourceHash = resourceHash
     call SUI_SetDetailSummaryRow(1, "|cffffcc00Status|r", SUI_GetStatusText(u), "|cffffcc00Level|r", "|cffffffff" + SUI_GetLevelText(u) + "|r")
-    call SUI_SetDetailSummaryRow(2, "|cffffcc00Hitpoints|r", "|cffffffff" + I2S(life) + " / " + I2S(maxLife) + "|r", "|cffffcc00" + resourceLabel + "|r", "|cffffffff" + I2S(mana) + " / " + I2S(maxMana) + "|r")
+    if hasResource then
+        call SUI_SetDetailSummaryRow(2, "|cffffcc00Hitpoints|r", "|cffffffff" + I2S(life) + " / " + I2S(maxLife) + "|r", "|cffffcc00" + resourceLabel + "|r", "|cffffffff" + I2S(mana) + " / " + I2S(maxMana) + "|r")
+    else
+        call SUI_SetDetailSummaryRow(2, "|cffffcc00Hitpoints|r", "|cffffffff" + I2S(life) + " / " + I2S(maxLife) + "|r", "", "")
+    endif
     call SUI_SetDetailSummaryRow(3, "|cffffcc00Kills|r", "|cffffffff" + I2S(kills) + "|r", "|cffffcc00Deaths|r", "|cffffffff" + I2S(deaths) + "|r")
     call SUI_SetDetailSummaryRow(4, "|cffffcc00Damage|r", "|cffffffff" + I2S(minDamage) + " - " + I2S(maxDamage) + "|r", "|cffffcc00Atk Speed|r", "|cffffffff" + attackSpeedText + "|r")
     call SUI_SetDetailSummaryRow(5, "|cffffcc00Class|r", SUI_ColorizeClassText(classText), "|cffffcc00Type|r", SUI_ColorizeRoleText(roleText))
