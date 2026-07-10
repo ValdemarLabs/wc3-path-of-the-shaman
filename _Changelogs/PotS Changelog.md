@@ -15,6 +15,55 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+
+## [10.7.2026]
+
+### Technical Updates
+
+- `StatsUI.j`
+  - added the same AI class resource registry pattern as StatsLiteUI, so Warrior shows Rage and Rogue shows Energy in the detail resource label and regen stat labels. 
+  - added valid-unit checks and selection clearing so StatsUI stops reading stale/removed unit handles during refreshes, which should address the random crash when the open panel races a Nazgrek/unit change.
+
+- `StatsLiteUI.j`
+  - fixed the same fallback rawcode typo from 0631/0629 to O631/O629.
+  - Reworked monitor anchoring with a fullscreen relative frame under ConsoleUIBackdrop, using BlzGetLocalClientWidth/Height, so it can sit at the real right edge instead of the 4:3 edge.
+  - Monitor height now shrinks/grows based on tracked unit count.
+  - Fixed row layout: wider name area, shortened long names, compact Lvl X, aligned level/class/status text, and added class display.
+  - Added config toggle for Class.
+  - Cleaned config layout with smaller buttons and no overlap with the Monitor button.
+  - Changed default resource label from MP to Mana.
+  - Improved alerts: row-wide colored flash, resource alert now works at 0%, and blinking uses a refresh tick instead of timer elapsed.
+  - Changed rogue Energy text from black to yellow so it stays visible on dark/empty bars.
+  - Energy text now works like this:
+    - Energy > 50%: black text, because the center of the bar should still be yellow.
+    - Energy <= 50%: yellow text, because the center is likely on the dark/empty part of the bar.
+  - Low HP alert now matches the red HP threshold:
+  - HP bar turns red at <= 25%.
+  - Low HP alert also starts at <= 25%.
+  - It goes away once HP is above 25%.
+
+- `AI_Warrior` and `AI_Rogue`
+  - register their resource mode with StatsUI.
+
+- `AI_Aveline.j`
+  - Aveline now opts into level 10, XP locked until invite, first random spawn, cap 1, expanded barks, chat lines, and companion replies.
+
+- `AI_LegacyLocations.j`
+  - Aveline’s initial autonomous zone restriction is bound to Sereneglade and Riverbane rects from ZonesCore.j.
+
+`AI.j`
+  - now defaults active random AI cap to 4, clamps cap APIs to max 32, and forces excess non-companion random AI into TRAVEL when the active cap is lowered.
+  - added profile support for fixed hero level, XP lock until first invite, first random spawn priority, and initial allowed-zone rectangles.
+  - now lets random-managed AI heroes form private AI parties using internal tables, with followers assisting/following the AI leader and no new udg_ party group.
+  - Companion command handling now removes invited AI from private AI parties and resets stale companion AI state on invite/kick/mode changes.
+
+`Companions.j`
+  - added Aveline’s short info/background line to the companion information output.
+  - invite level floor logic: candidate level must be at least the max of Nazgrek/Zulkis
+
+`SettingsUI.j`
+  - now has an AI cap slider plus the requested lag/order/input-lag warning.
+
 ## [9.7.2026]
 
 ### Technical Updates
