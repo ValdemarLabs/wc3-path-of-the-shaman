@@ -94,6 +94,39 @@ private function TryAutoEnable takes nothing returns nothing
     endif
 endfunction
 
+private function RegisterChat takes string soundKey, string text returns nothing
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_IDLE, text, soundKey)
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_MOVING, text, soundKey)
+endfunction
+
+private function RegisterBarks takes nothing returns nothing
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_GREET, "Aradion. Once a magister, now a man counting what remains.", "Aradion_0201")
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_GREET, "Speak softly. The ruins have learned to listen.", "Aradion_0202")
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_FAREWELL, "May your path find kinder answers than mine.", "Aradion_0203")
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_FAREWELL, "Go carefully. Hope is fragile here.", "Aradion_0204")
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_PASSIVE, "I will conserve what strength I have left.", "Aradion_0205")
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_NORMAL, "There is still work before despair earns its rest.", "Aradion_0206")
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_AGGRESSIVE, "If battle is forced on us, then let it be brief.", "Aradion_0207")
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_HOLD, "I can hold this warded ground.", "Aradion_0208")
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_DROP_ITEMS, "Take this. It may serve you better than my shelves.", "Aradion_0209")
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_KICKED, "Then I return to my studies, and to Valeria.", "Aradion_0210")
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_ITEM_GIVEN, "Curious. I will examine it carefully.", "Aradion_0211")
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_ATTACKING, "Back, shade.", "Aradion_0212")
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_ATTACKING, "I remember enough magic for this.", "Aradion_0213")
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_CASTING, "By the old currents, answer me.", "Aradion_0214")
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_CASTING, "Steady... do not break now.", "Aradion_0215")
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_KILLING, "Another echo put to rest.", "Aradion_0216")
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_COMPANION_DIES, "No. I will not lose another soul to this ruin.", "Aradion_0217")
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_IDLE, "Wisdom came too late to save Elarindor. I keep it anyway.", "Aradion_0218")
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_IDLE, "The arcane still hums beneath the stones, wounded but not silent.", "Aradion_0219")
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_MOVING, "The old paths twist where memory refuses to fade.", "Aradion_0220")
+    call AI_RegisterBarkLine(AI_Aradion_ProfileId, AI_BARK_MOVING, "Careful. Disturbed magic does not sleep deeply.", "Aradion_0221")
+    call RegisterChat("Aradion_0222", "A failed magister can still read the shape of a disaster.")
+    call RegisterChat("Aradion_0223", "I mistook caution for cowardice once. The cost taught me otherwise.")
+    call RegisterChat("Aradion_0224", "Valeria kept her aim steady when my faith broke.")
+    call RegisterChat("Aradion_0225", "If the Vale heals, it will be because someone kinder than me refused to abandon it.")
+endfunction
+
 private function Init takes nothing returns nothing
     set AI_Aradion_ClassId = AI_RegisterClass("Magister")
     set AI_Aradion_ProfileId = AI_RegisterProfile(AI_Aradion_ClassId, AI_ARADION_UNIT, "Aradion")
@@ -101,6 +134,7 @@ private function Init takes nothing returns nothing
     call AI_SetUnitTypeCap(AI_ARADION_UNIT, 1)
     call AI_SetProfileAutonomous(AI_Aradion_ProfileId, false)
     call AI_SetProfileThinkCallback(AI_Aradion_ProfileId, function Think)
+    call RegisterBarks()
 
     set AutoEnableTimer = CreateTimer()
     call TimerStart(AutoEnableTimer, AUTO_ENABLE_INTERVAL, true, function TryAutoEnable)
