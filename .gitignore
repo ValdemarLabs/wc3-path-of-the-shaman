@@ -41,6 +41,9 @@ _Roadmap/
 
 # tools folder
 /tools/temp/
+/tools/AradionTMP/
+/tools/AradionTMP_firstpass/
+/tools/ValeriaTMP/
 
 # Warcraft 3 generated files
 #*.w3x.autosave
