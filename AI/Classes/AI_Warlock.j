@@ -23,7 +23,6 @@ library AIWarlock initializer Init requires AI, AbilitiesLiteUI, Table
 globals
     constant integer AI_WARLOCK_UNIT_UNDEAD = 'O61K'
     constant integer AI_WARLOCK_UNIT_ORC = 'H60X'
-    constant integer AI_WARLOCK_UNIT_HORDE = 'H60X'
     constant integer AI_WARLOCK_UNIT_IMP_1 = 'n61L'
     constant integer AI_WARLOCK_UNIT_IMP_2 = 'n61S'
     constant integer AI_WARLOCK_UNIT_IMP_3 = 'n61T'
@@ -361,6 +360,7 @@ private function Init takes nothing returns nothing
     call AI_AddDefaultShopItems(AI_Warlock_ProfileId)
     call AI_AddDefaultShopItems(AI_Warlock_UndeadProfileId)
     call AI_AddRandomSpawnProfile(AI_Warlock_ProfileId)
+    call AI_AddRandomSpawnProfile(AI_Warlock_UndeadProfileId)
     call RegisterBarks(AI_Warlock_ProfileId)
 
     set SummonTrigger = CreateTrigger()
