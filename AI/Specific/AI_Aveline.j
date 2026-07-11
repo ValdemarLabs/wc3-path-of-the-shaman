@@ -369,7 +369,6 @@ endfunction
 private function Init takes nothing returns nothing
     set AI_Aveline_ProfileId = AI_RegisterProfile(AI_Warrior_ClassId, AI_AVELINE_UNIT_RIVERBANE, "Aveline")
     call AIWarrior_ConfigureProfile(AI_Aveline_ProfileId)
-    call AI_RemoveProfileProfession(AI_Aveline_ProfileId, AI_PROFESSION_MINING)
     call AIWarrior_RegisterAbilityTemplatesForUnitType(AI_AVELINE_UNIT_RIVERBANE)
     call AI_SetProfileFaction(AI_Aveline_ProfileId, "Riverbane")
     call AI_SetProfileSpawnOwner(AI_Aveline_ProfileId, Player(14))
