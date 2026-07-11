@@ -9,6 +9,12 @@ library ProfessionsUI initializer AutoInit requires GatherNodeSkills, GatherNode
 
     Credits: Tasyen (TasQuestBox as inspiration)
 
+    API:
+    call ProfessionsUI_Show()
+    call ProfessionsUI_ShowForUnit(unit whichUnit)
+    call ProfessionsUI_Hide()
+    call ProfessionsUI_Toggle()
+
 **/
 
 globals
@@ -31,6 +37,7 @@ globals
     private boolean array PUI_PendingUpdate
     private boolean array PUI_UpdateQueued
     private boolean PUI_DeferredUpdateRunning = false
+    private boolean PUI_ReturnToStatsUI = false
 
     public string TitleText = "|cffffe4a3Professions|r"
     public string ButtonTitleText = "|cffffffffProfessions|r"
@@ -129,6 +136,7 @@ globals
     private trigger PUI_WheelTrigger = null
     private timer PUI_RefreshTimer = null
     private timer PUI_DeferredUpdateTimer = null
+    private unit PUI_ExplicitViewerUnit = null
 endglobals
 
 private function PUI_ProfessionCount takes nothing returns integer
@@ -144,6 +152,10 @@ private function PUI_GetMilestoneKey takes integer professionId, integer index r
 endfunction
 
 private function PUI_GetViewerUnit takes nothing returns unit
+    if PUI_ExplicitViewerUnit != null and GetUnitTypeId(PUI_ExplicitViewerUnit) != 0 then
+        return PUI_ExplicitViewerUnit
+    endif
+    set PUI_ExplicitViewerUnit = null
     return GNS_GetUITargetUnit()
 endfunction
 
@@ -1018,6 +1030,9 @@ private function PUI_OpenAction takes nothing returns nothing
     local player p = GetTriggerPlayer()
     local integer pid = GetPlayerId(p)
 
+    set PUI_ReturnToStatsUI = false
+    set PUI_ExplicitViewerUnit = null
+
     if not PUI_IsProfessionValid(PUI_SelectedProfession[pid]) then
         set PUI_SelectedProfession[pid] = GNS_PROF_MINING
     endif
@@ -1048,8 +1063,14 @@ private function PUI_CloseAction takes nothing returns nothing
 endfunction
 
 private function PUI_ReturnAction takes nothing returns nothing
+    local boolean returnToStatsUI = PUI_ReturnToStatsUI
+    set PUI_ReturnToStatsUI = false
     call Hide()
-    call MasterUI_Show()
+    if returnToStatsUI then
+        call ExecuteFunc("StatsUI_Show")
+    else
+        call MasterUI_Show()
+    endif
 endfunction
 
 private function PUI_RowAction takes nothing returns nothing
@@ -1142,6 +1163,19 @@ public function Refresh takes nothing returns nothing
 endfunction
 
 public function Show takes nothing returns nothing
+    set PUI_ReturnToStatsUI = false
+    set PUI_ExplicitViewerUnit = null
+    call PUI_RefreshOpenButtonPosition()
+    call PUI_SetRefreshActive(true)
+    call BlzFrameSetVisible(PUI_ListScroll, false)
+    call BlzFrameSetVisible(PUI_DetailScroll, false)
+    call BlzFrameSetVisible(PUI_Parent, true)
+    call PUI_RequestUpdate(GetLocalPlayer())
+endfunction
+
+public function ShowForUnit takes unit whichUnit returns nothing
+    set PUI_ReturnToStatsUI = true
+    set PUI_ExplicitViewerUnit = whichUnit
     call PUI_RefreshOpenButtonPosition()
     call PUI_SetRefreshActive(true)
     call BlzFrameSetVisible(PUI_ListScroll, false)
