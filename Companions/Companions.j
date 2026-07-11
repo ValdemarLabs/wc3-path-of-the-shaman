@@ -74,6 +74,10 @@ globals
     private constant real COMPANION_NORMAL_MAX_OFFSET = 300.00
     private constant real COMPANION_AGGRESSIVE_MIN_OFFSET = 400.00
     private constant real COMPANION_AGGRESSIVE_MAX_OFFSET = 1800.00
+    private constant real COMPANION_RANDOM_MOVE_MIN_DELAY = 3.00
+    private constant real COMPANION_RANDOM_MOVE_MAX_DELAY = 7.00
+    private constant real COMPANION_IDLE_LEADER_RANDOM_MOVE_MIN_DELAY = 5.00
+    private constant real COMPANION_IDLE_LEADER_RANDOM_MOVE_MAX_DELAY = 15.00
     private constant integer COMPANION_PING_TICKS = 3
     private constant integer COMPANION_PING_STYLE = bj_MINIMAPPINGSTYLE_SIMPLE
     private constant integer COMPANION_PING_RED = 255
@@ -140,6 +144,7 @@ globals
     private Table CompanionRegistered = 0
     private Table CompanionTracked = 0
     private Table CompanionOrderProfile = 0
+    private Table CompanionNextRandomMove = 0
     private Table CompanionStoppedEffect = 0
     private Table CompanionFollowingEffect = 0
     private Table CompanionMapIconSlot = 0
@@ -148,6 +153,7 @@ globals
     private integer CompanionMapIconCount = 0
 
     private group ModeTargetGroup = null
+    private timer CompanionClock = null
     private trigger CommandEventTrigger = null
     private trigger IdleTrigger = null
     private trigger OrderTrigger = null
@@ -212,6 +218,7 @@ private function EnsureState takes nothing returns nothing
         set CompanionRegistered = Table.create()
         set CompanionTracked = Table.create()
         set CompanionOrderProfile = Table.create()
+        set CompanionNextRandomMove = Table.create()
         set CompanionStoppedEffect = Table.create()
         set CompanionFollowingEffect = Table.create()
         set CompanionMapIconSlot = Table.create()
@@ -220,6 +227,15 @@ private function EnsureState takes nothing returns nothing
     if ModeTargetGroup == null then
         set ModeTargetGroup = CreateGroup()
     endif
+    if CompanionClock == null then
+        set CompanionClock = CreateTimer()
+        call TimerStart(CompanionClock, 1000000.00, false, null)
+    endif
+endfunction
+
+private function GetNow takes nothing returns real
+    call EnsureState()
+    return TimerGetElapsed(CompanionClock)
 endfunction
 
 private function IsAliveUnit takes unit u returns boolean
@@ -452,6 +468,50 @@ private function RepairGuiCompanionState takes nothing returns nothing
     set companionUnit = null
 endfunction
 
+private function IsLeaderIdleForRandomMovement takes unit leader returns boolean
+    local integer customValue
+
+    if leader == null or GetUnitTypeId(leader) == 0 then
+        return false
+    endif
+
+    set customValue = GetUnitUserData(leader)
+    if customValue > 0 then
+        return not udg_UnitMoving[customValue] and not udg_GCSM_UnitInCombat[customValue] and not udg_UnitIsCasting[customValue]
+    endif
+    return GetUnitCurrentOrder(leader) == 0
+endfunction
+
+private function ScheduleNextRandomMove takes unit controlledUnit, unit leader returns nothing
+    local integer unitId
+
+    if controlledUnit == null or CompanionNextRandomMove == 0 then
+        return
+    endif
+
+    set unitId = GetHandleId(controlledUnit)
+    if IsLeaderIdleForRandomMovement(leader) then
+        set CompanionNextRandomMove.real[unitId] = GetNow() + GetRandomReal(COMPANION_IDLE_LEADER_RANDOM_MOVE_MIN_DELAY, COMPANION_IDLE_LEADER_RANDOM_MOVE_MAX_DELAY)
+    else
+        set CompanionNextRandomMove.real[unitId] = GetNow() + GetRandomReal(COMPANION_RANDOM_MOVE_MIN_DELAY, COMPANION_RANDOM_MOVE_MAX_DELAY)
+    endif
+endfunction
+
+private function IsRandomMoveReady takes unit controlledUnit, unit leader returns boolean
+    local integer unitId
+
+    if controlledUnit == null or CompanionNextRandomMove == 0 then
+        return false
+    endif
+
+    set unitId = GetHandleId(controlledUnit)
+    if CompanionNextRandomMove.real[unitId] <= 0.00 then
+        call ScheduleNextRandomMove(controlledUnit, leader)
+        return false
+    endif
+    return GetNow() >= CompanionNextRandomMove.real[unitId]
+endfunction
+
 private function RegisterControlledInternal takes unit controlledUnit, unit leader, integer mode, boolean registered, string icon returns nothing
     local integer unitId
 
@@ -476,6 +536,7 @@ private function RegisterControlledInternal takes unit controlledUnit, unit lead
     if not CompanionOrderProfile.has(unitId) then
         set CompanionOrderProfile[unitId] = COMPANION_PROFILE_NORMAL
     endif
+    call ScheduleNextRandomMove(controlledUnit, leader)
 endfunction
 
 private function TrackExistingControlUnit takes unit controlledUnit returns nothing
@@ -736,9 +797,10 @@ private function IssueCompanionPassiveOrder takes unit controlledUnit, unit lead
 endfunction
 
 private function IssueCompanionNormalOrder takes unit controlledUnit, unit leader, real distance, integer customValue, integer currentOrder returns nothing
-    if not IsUnitInCombatByCustomValue(customValue) and not IsUnitMovingByCustomValue(customValue) and not IsUnitIdleByCustomValue(customValue) and not udg_CompanionDialogueActive then
+    if not IsUnitInCombatByCustomValue(customValue) and not IsUnitMovingByCustomValue(customValue) and not IsUnitIdleByCustomValue(customValue) and not udg_CompanionDialogueActive and IsRandomMoveReady(controlledUnit, leader) then
         call ClearOrderIdleState(controlledUnit, customValue)
         call IssueRandomAttackMoveNearLeader(controlledUnit, leader, COMPANION_NORMAL_MIN_OFFSET, COMPANION_NORMAL_MAX_OFFSET)
+        call ScheduleNextRandomMove(controlledUnit, leader)
     elseif distance >= COMPANION_NORMAL_CATCHUP_DISTANCE or IsUnitInCombatByCustomValue(GetUnitUserData(leader)) then
         if currentOrder != OrderId("smart") or distance > GetModeDistance(COMPANION_MODE_DEFEND) then
             call ClearOrderIdleState(controlledUnit, customValue)
@@ -748,9 +810,10 @@ private function IssueCompanionNormalOrder takes unit controlledUnit, unit leade
 endfunction
 
 private function IssueCompanionAggressiveOrder takes unit controlledUnit, unit leader, real distance, integer customValue, integer currentOrder returns nothing
-    if not IsUnitInCombatByCustomValue(customValue) and currentOrder != OrderId("attack") then
+    if not IsUnitInCombatByCustomValue(customValue) and currentOrder != OrderId("attack") and IsRandomMoveReady(controlledUnit, leader) then
         call ClearOrderIdleState(controlledUnit, customValue)
         call IssueRandomAttackMoveNearLeader(controlledUnit, leader, COMPANION_AGGRESSIVE_MIN_OFFSET, COMPANION_AGGRESSIVE_MAX_OFFSET)
+        call ScheduleNextRandomMove(controlledUnit, leader)
     elseif distance >= COMPANION_AGGRESSIVE_CATCHUP_DISTANCE or IsUnitInCombatByCustomValue(GetUnitUserData(leader)) then
         if currentOrder != OrderId("smart") or distance > GetModeDistance(COMPANION_MODE_AGGRESSIVE) then
             call ClearOrderIdleState(controlledUnit, customValue)
@@ -1007,6 +1070,7 @@ private function RemoveInternal takes unit companionUnit returns nothing
     call CompanionRegistered.remove(unitId)
     call CompanionTracked.remove(unitId)
     call CompanionOrderProfile.remove(unitId)
+    call CompanionNextRandomMove.remove(unitId)
     call CompanionStoppedEffect.remove(unitId)
     call CompanionFollowingEffect.remove(unitId)
     call DebugMsg("Remove " + GetUnitName(companionUnit))
@@ -1559,13 +1623,7 @@ private function IsQuestCompanionType takes integer unitTypeId returns boolean
 endfunction
 
 private function GetHireReputationRequirement takes Faction f returns integer
-    if f == 0 then
-        return Reputation_REP_FRIENDLY
-    endif
-    if f.name == "Horde" then
-        return Reputation_REP_NEUTRAL
-    endif
-    return Reputation_REP_FRIENDLY
+    return Reputation_REP_NEUTRAL
 endfunction
 
 private function CanHireByReputation takes unit target returns boolean
@@ -1595,10 +1653,7 @@ private function GetHireReputationFailureText takes unit target returns string
 
     set f = Faction.getByUnit(target)
     if f != 0 then
-        if f.name == "Horde" then
-            return GetUnitName(target) + " requires Friendly reputation with Horde to join."
-        endif
-        return GetUnitName(target) + " requires Covenant reputation with " + f.name + " to join."
+        return GetUnitName(target) + " requires Neutral reputation with " + f.name + " to join."
     endif
     return GetUnitName(target) + " will not join the party."
 endfunction
@@ -2300,6 +2355,7 @@ public function UnregisterControlled takes unit controlledUnit returns nothing
     call CompanionRegistered.remove(unitId)
     call CompanionTracked.remove(unitId)
     call CompanionOrderProfile.remove(unitId)
+    call CompanionNextRandomMove.remove(unitId)
     call CompanionStoppedEffect.remove(unitId)
     call CompanionFollowingEffect.remove(unitId)
 endfunction

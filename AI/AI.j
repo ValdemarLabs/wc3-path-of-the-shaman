@@ -177,7 +177,6 @@ globals
     private constant real AI_SOCIAL_DURATION_MAX = 8.00
     private constant real AI_SOCIAL_COOLDOWN_MIN = 35.00
     private constant real AI_SOCIAL_COOLDOWN_MAX = 90.00
-    private constant real AI_COMPANION_CHAT_RANGE = 900.00
     private constant real AI_COMPANION_CHAT_COOLDOWN_MIN = 45.00
     private constant real AI_COMPANION_CHAT_COOLDOWN_MAX = 100.00
     private constant real AI_STUCK_MIN_MOVE = 24.00
@@ -706,8 +705,10 @@ endfunction
 private function GetBarkCooldown takes integer barkType returns real
     if barkType == AI_BARK_IDLE or barkType == AI_BARK_MOVING then
         return GetRandomReal(60.00, 120.00)
-    elseif barkType == AI_BARK_ATTACKING or barkType == AI_BARK_CASTING or barkType == AI_BARK_KILLING then
-        return GetRandomReal(12.00, 28.00)
+    elseif barkType == AI_BARK_ATTACKING or barkType == AI_BARK_CASTING then
+        return GetRandomReal(22.00, 40.00)
+    elseif barkType == AI_BARK_KILLING then
+        return GetRandomReal(18.00, 36.00)
     elseif barkType == AI_BARK_COMPANION_DIES then
         return GetRandomReal(25.00, 60.00)
     elseif IsCompanionOnlyBark(barkType) then
@@ -4375,29 +4376,6 @@ private function FindSocialTarget takes integer instanceId, unit whichUnit retur
     return SocialSearchTarget
 endfunction
 
-private function HasNearbyCompanionChatPartner takes integer instanceId, unit whichUnit returns boolean
-    local integer index = 1
-    local integer otherId
-    local unit other
-    local boolean found = false
-    if instanceId <= 0 or whichUnit == null or not IsBarkNearPlayerHero(whichUnit) then
-        return false
-    endif
-    loop
-        exitwhen index > ActiveCount or found
-        set otherId = ActiveInstances[index]
-        if otherId != instanceId then
-            set other = InstanceUnit.unit[otherId]
-            if other != null and IsAliveUnit(other) and not IsUnitHidden(other) and IsCompanionControlled(other) and IsBarkNearPlayerHero(other) and IsUnitInRange(whichUnit, other, AI_COMPANION_CHAT_RANGE) then
-                set found = true
-            endif
-        endif
-        set index = index + 1
-    endloop
-    set other = null
-    return found
-endfunction
-
 private function TryStartCompanionChatAction takes integer instanceId, unit whichUnit, real now returns boolean
     local integer orderId
     local integer barkType = AI_BARK_IDLE
@@ -4408,7 +4386,7 @@ private function TryStartCompanionChatAction takes integer instanceId, unit whic
         return false
     endif
     set InstanceNextSocial.real[instanceId] = now + GetRandomReal(AI_COMPANION_CHAT_COOLDOWN_MIN, AI_COMPANION_CHAT_COOLDOWN_MAX)
-    if GetRandomInt(1, 100) > 30 or not HasNearbyCompanionChatPartner(instanceId, whichUnit) then
+    if GetRandomInt(1, 100) > 30 then
         return false
     endif
     set orderId = GetUnitCurrentOrder(whichUnit)
@@ -4955,6 +4933,9 @@ private function HandleDeath takes nothing returns nothing
     local unit victim = GetDyingUnit()
     local unit killer = GetKillingUnit()
     local integer instanceId = UnitInstance[GetHandleId(victim)]
+    if instanceId <= 0 and IsCompanionControlled(victim) then
+        set instanceId = AI_RegisterUnitByType(victim, 0)
+    endif
     if instanceId > 0 then
         set InstanceAlive.boolean[instanceId] = false
         set InstanceTraveling.boolean[instanceId] = false
@@ -4985,7 +4966,7 @@ private function HandleAttack takes nothing returns nothing
     local unit attacker = GetAttacker()
     local unit attacked = GetTriggerUnit()
     local integer instanceId = UnitInstance[GetHandleId(attacker)]
-    if instanceId > 0 and IsCompanionControlled(attacker) and GetRandomInt(1, 10) == 1 then
+    if instanceId > 0 and IsCompanionControlled(attacker) and GetRandomInt(1, 16) == 1 then
         set AI_EventTarget = attacked
         call AI_RequestBark(attacker, AI_BARK_ATTACKING)
         set AI_EventTarget = null
@@ -5002,7 +4983,7 @@ private function HandleSpellEffect takes nothing returns nothing
     local unit caster = GetTriggerUnit()
     local integer abilityId = GetSpellAbilityId()
     local integer instanceId = UnitInstance[GetHandleId(caster)]
-    if instanceId > 0 and IsCompanionControlled(caster) and GetRandomInt(1, 5) == 1 then
+    if instanceId > 0 and IsCompanionControlled(caster) and GetRandomInt(1, 8) == 1 then
         set AI_EventAbilityId = abilityId
         call AI_RequestBark(caster, AI_BARK_CASTING)
         set AI_EventAbilityId = 0
@@ -5130,8 +5111,40 @@ private function QueueCommandBark takes unit speaker, integer barkType returns n
     call TimerStart(PendingCommandBarkTimer, AI_COMMAND_BARK_DELAY, false, function FlushPendingCommandBark)
 endfunction
 
+private function PickCommandBarkSpeaker takes unit fallback, integer barkType returns unit
+    local integer index = 1
+    local integer instanceId
+    local integer barkKey
+    local integer seen = 0
+    local unit candidate
+    local unit selected = null
+
+    loop
+        exitwhen index > ActiveCount
+        set instanceId = ActiveInstances[index]
+        set candidate = InstanceUnit.unit[instanceId]
+        if candidate != null and IsAliveUnit(candidate) and IsCompanionControlled(candidate) and IsBarkContextAllowed(candidate, barkType) then
+            set barkKey = GetBarkKey(InstanceProfile[instanceId], barkType)
+            if BarkLineCount[barkKey] > 0 then
+                set seen = seen + 1
+                if GetRandomInt(1, seen) == 1 then
+                    set selected = candidate
+                endif
+            endif
+        endif
+        set index = index + 1
+    endloop
+
+    if selected == null then
+        set selected = fallback
+    endif
+    set candidate = null
+    return selected
+endfunction
+
 private function HandleCompanionCommand takes nothing returns nothing
     local unit whichUnit = Companions_EventUnit
+    local unit barkSpeaker = null
     local integer commandId = Companions_EventCommand
     local integer mode = Companions_EventMode
     local integer barkType = 0
@@ -5178,11 +5191,13 @@ private function HandleCompanionCommand takes nothing returns nothing
     endif
 
     if commandId == Companions_COMMAND_MODE then
-        call QueueCommandBark(whichUnit, barkType)
+        set barkSpeaker = PickCommandBarkSpeaker(whichUnit, barkType)
+        call QueueCommandBark(barkSpeaker, barkType)
     elseif barkType > 0 then
         call AI_RequestBark(whichUnit, barkType)
     endif
 
+    set barkSpeaker = null
     set whichUnit = null
 endfunction
 
