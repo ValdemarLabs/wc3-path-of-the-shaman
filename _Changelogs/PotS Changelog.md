@@ -15,6 +15,72 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [11.7.2026] Part II
+#### Note: Because of the vast updates and to make it more simpler to update the changelog, the updates have only been written under `### Technical Updates`.
+
+### Technical Updates
+
+- `QuestGiver.j` and `DialogSystem.j`
+  - Added shared recovery-button support:
+    - DialogSystem_AddButtonQuestItemRecovery
+    - QuestGiver_IsQuestActiveByNameAndGiver
+    - QuestGiver_AddQuestItemRecoveryButton
+
+- `qAradion.j`
+  - changed Tel’anor Rod to use the lowercase rawcode 'i013' to match the item definition export, and I now preserve the accepting hero through the dialog callback before granting the rod.
+  - Aradion now uses that helper shared item recovery-button support. The “Get new Tel'anor Rod” button appears only while Fading Sparks is discovered, not completed/failed, and the party does not currently have the rod. Clicking it plays a short Aradion line and grants a new rod to the resolved hero.
+
+
+- `AI.j` and `Companions.j`
+  - added a quest-NPC level bypass for Aradion/Valeria. It only applies during the same active quest windows already used for their quest invite/reputation bypass, so normal companions still keep the higher-level block.
+  - AI companions now late-register on death if they somehow missed AI registration, so StatsUI/StatsLiteUI can show the AI revive timer without legacy timer globals.
+  - Current companion hire reputation requirement is now Neutral for faction units.
+  - Companion random movement is throttled: 3-7s normally, 5-15s when the focused hero is idle.
+  - Idle/moving barks no longer require another nearby companion.
+  - Mode-change barks now pick a random eligible AI companion speaker instead of sticking to the command target/first companion.
+  - Attack/cast bark spam reduced: lower trigger chance and longer cooldowns.
+  - Removed the now-dead nearby-companion chat helper.
+
+  - Temporary AI mining picks now track the active ore-vein unit.
+  - The pick is kept while that ore unit still exists as a live gather node, then cleanup starts after the vein is gone.
+  - AI units now stop immediately if they attack a gather unit without the required profile profession/skill or without a mining pick.
+  - Aveline is no longer removed from the companion list on death, matching Valeria/Aradion behavior. This keeps her row in StatsUI/StatsLiteUI so the existing AI_GetReviveTimer display can show her revive countdown.
+
+- `AI.j` and `AI_Aveline.j`
+  - Aveline now keeps the Warrior mining profession so AI.j will assign her rough mining skill from level. With her fixed level 10, that gives mining skill 50, so she can mine nodes up to requirement 50 and should skip higher nodes like Thorium.
+  - if some non-profession order path still makes her attack an ineligible ore node, she stops and gets a profession backoff instead of immediately retrying in a loop.
+
+
+- `StatsLiteUI.j`
+  - Increased monitor row text sizes:
+    - name 0.56
+    - class / level / state 0.50
+    - HP/Mana bar labels 0.50
+  - Shifted row text slightly right and moved the state column farther right to match the reference spacing better.
+  - Centered the alert sprite on the unit icon using a centered frame point and explicit size.
+  - Low HP icon alert now flashes on/off with the refresh pulse instead of staying continuously visible.
+  - Far-away alert remains continuously visible.
+  - Low Power was renamed to Low Mana.
+  - Low Mana alert now only applies when the unit resource mode is normal mana. Rage/Energy units are ignored.
+
+  - Low HP alert now uses a 1.50s cycle: 1.00s visible, 0.50s hidden.
+  - Monitor refresh cadence changed from 0.35s to 0.25s so the pulse timing lands cleanly.
+  - Alert sprite was reduced and offset left/down over the icon:size 0.022
+    - scale 0.56
+    - center offset -0.004, -0.001
+
+- `ZoneEvent.j` and `AIRoutines.j` and `MountainPeons.j`
+  - AIRoutines.j now requires ZoneEvent, subscribes to player hero zone enter/leave events, and only runs zone-bound NPCs while at least one player hero is in that zone.
+  - Added zone APIs: RegisterUnitInZone, RegisterUnitsInRectInZone, RegisterUnitTypeInRectInZone, CreateManagedUnitGroupInZone, SetZoneActive, IsZoneActive.
+  - The AIRoutines periodic timer now starts only when at least one routine unit is active and pauses when none are active.
+  - ZoneEvent.j now exposes lightweight enter/leave listener hooks with ZoneEvent_EventZoneId and ZoneEvent_EventUnit.
+  - MountainPeons.j now orders peons to harvest a real nearby destructible within 1024 range using IssueTargetOrder(peon, "harvest", pickedDestructible).
+  - Mountain peons are registered through AIRoutines_CreateManagedUnitGroupInZone(..., 3). If that camp belongs to a different ZonesCore zone, change MP_ROUTINE_ZONE_ID.
+
+- `Cinematic ON trigger`
+  - added calls to DInv and DEqui to close up inventory and equipment frames when cinematic starts (with call CloseDInventory(0) and call CloseDEqUI(0) functions)
+
+
 ## [11.7.2026]
 
 ### Technical Updates
