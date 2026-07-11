@@ -1,4 +1,4 @@
-library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, AbilitiesLiteUI, StatsLiteUI, QuestGiver, Companions, Pet, UnitExperience, AI
+library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, AbilitiesLiteUI, ProfessionsUI, StatsLiteUI, QuestGiver, Companions, Pet, UnitExperience, AI
 /**
     StatsUI
     
@@ -16,6 +16,7 @@ library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, Abili
     call StatsUI_Toggle()
     call StatsUI_GetRequiredXPForUnit(unit whichUnit) returns integer
     call StatsUI_IsVisible() returns boolean
+    Selected unit action buttons open AbilitiesLiteUI and ProfessionsUI.
     call StatsUI_RegisterManaResourceClass(integer classId)
     call StatsUI_RegisterRageResourceClass(integer classId)
     call StatsUI_RegisterEnergyResourceClass(integer classId)
@@ -47,6 +48,7 @@ globals
     private framehandle SUI_CloseButton = null
     private framehandle SUI_ReturnButton = null
     private framehandle SUI_AbilitiesButton = null
+    private framehandle SUI_ProfessionsButton = null
     private framehandle SUI_MonitorButton = null
     private framehandle SUI_InfoButton = null
     private framehandle SUI_PartyText = null
@@ -114,6 +116,7 @@ globals
     private trigger SUI_CloseTrigger = null
     private trigger SUI_ReturnTrigger = null
     private trigger SUI_AbilitiesTrigger = null
+    private trigger SUI_ProfessionsTrigger = null
     private trigger SUI_MonitorTrigger = null
     private trigger SUI_InfoTrigger = null
     private trigger SUI_RowTrigger = null
@@ -1439,6 +1442,7 @@ private function SUI_UpdateDetail takes player whichPlayer, boolean refreshStats
             call BlzFrameSetText(SUI_DetailTitle, "No unit")
             call BlzFrameSetText(SUI_DetailValue, "No tracked units are currently available.")
             call BlzFrameSetVisible(SUI_AbilitiesButton, false)
+            call BlzFrameSetVisible(SUI_ProfessionsButton, false)
         endif
         call SUI_UpdateDetailSummary(whichPlayer, null)
         if refreshStats then
@@ -1465,6 +1469,7 @@ private function SUI_UpdateDetail takes player whichPlayer, boolean refreshStats
         endif
         call BlzFrameSetText(SUI_DetailValue, "Level " + I2S(level) + " | XP " + SUI_GetXPText(u))
         call BlzFrameSetVisible(SUI_AbilitiesButton, true)
+        call BlzFrameSetVisible(SUI_ProfessionsButton, true)
     endif
     call SUI_UpdateDetailSummary(whichPlayer, u)
     if refreshStats then
@@ -1549,6 +1554,13 @@ private function SUI_AbilitiesAction takes nothing returns nothing
     if SUI_IsTrackedUnit(SUI_SelectedUnit) then
         call Hide()
         call AbilitiesLiteUI_ShowForUnit(SUI_SelectedUnit)
+    endif
+endfunction
+
+private function SUI_ProfessionsAction takes nothing returns nothing
+    if SUI_IsTrackedUnit(SUI_SelectedUnit) then
+        call Hide()
+        call ProfessionsUI_ShowForUnit(SUI_SelectedUnit)
     endif
 endfunction
 
@@ -1721,10 +1733,18 @@ private function SUI_CreateFrames takes nothing returns nothing
     set SUI_AbilitiesButton = BlzCreateFrameByType("GLUETEXTBUTTON", "StatsUIAbilities", SUI_RightPane, "ScriptDialogButton", 0)
     call BlzFrameSetSize(SUI_AbilitiesButton, 0.060, 0.022)
     call BlzFrameSetText(SUI_AbilitiesButton, "Abilities")
-    call BlzFrameSetPoint(SUI_AbilitiesButton, FRAMEPOINT_TOPRIGHT, SUI_RightPane, FRAMEPOINT_TOPRIGHT, -0.018, -0.022)
+    call BlzFrameSetPoint(SUI_AbilitiesButton, FRAMEPOINT_TOPRIGHT, SUI_RightPane, FRAMEPOINT_TOPRIGHT, -0.018, -0.065)
     call BlzTriggerRegisterFrameEvent(SUI_AbilitiesTrigger, SUI_AbilitiesButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_AbilitiesButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzFrameSetVisible(SUI_AbilitiesButton, false)
+
+    set SUI_ProfessionsButton = BlzCreateFrameByType("GLUETEXTBUTTON", "StatsUIProfessions", SUI_RightPane, "ScriptDialogButton", 0)
+    call BlzFrameSetSize(SUI_ProfessionsButton, 0.076, 0.022)
+    call BlzFrameSetText(SUI_ProfessionsButton, "Professions")
+    call BlzFrameSetPoint(SUI_ProfessionsButton, FRAMEPOINT_TOPRIGHT, SUI_AbilitiesButton, FRAMEPOINT_TOPLEFT, -0.006, 0.0)
+    call BlzTriggerRegisterFrameEvent(SUI_ProfessionsTrigger, SUI_ProfessionsButton, FRAMEEVENT_CONTROL_CLICK)
+    call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_ProfessionsButton, FRAMEEVENT_CONTROL_CLICK)
+    call BlzFrameSetVisible(SUI_ProfessionsButton, false)
 
     loop
         exitwhen summaryRow > SUI_SUMMARY_ROWS
@@ -1886,6 +1906,9 @@ public function Init takes nothing returns nothing
 
     set SUI_AbilitiesTrigger = CreateTrigger()
     call TriggerAddAction(SUI_AbilitiesTrigger, function SUI_AbilitiesAction)
+
+    set SUI_ProfessionsTrigger = CreateTrigger()
+    call TriggerAddAction(SUI_ProfessionsTrigger, function SUI_ProfessionsAction)
 
     set SUI_MonitorTrigger = CreateTrigger()
     call TriggerAddAction(SUI_MonitorTrigger, function SUI_MonitorAction)
