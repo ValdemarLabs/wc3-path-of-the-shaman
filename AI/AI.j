@@ -352,6 +352,7 @@ globals
     private item array InstanceProfessionToolItem
     private integer array InstanceProfessionToolType
     private real array InstanceProfessionToolExpires
+    private unit array InstanceProfessionTargetUnit
     private unit array InstanceSocialTarget
     private boolean array InstanceSocialStopped
     private minimapicon array InstanceDebugIcon
@@ -1471,13 +1472,32 @@ private function RemoveTrackedProfessionTool takes integer instanceId returns no
     set InstanceProfessionToolItem[instanceId] = null
     set InstanceProfessionToolType[instanceId] = 0
     set InstanceProfessionToolExpires[instanceId] = 0.00
+    set InstanceProfessionTargetUnit[instanceId] = null
     set tool = null
 endfunction
 
 private function CleanupProfessionTool takes integer instanceId, real now returns nothing
-    if instanceId > 0 and InstanceProfessionToolItem[instanceId] != null and now >= InstanceProfessionToolExpires[instanceId] then
+    local unit target
+    if instanceId <= 0 or InstanceProfessionToolItem[instanceId] == null then
+        set target = null
+        return
+    endif
+
+    set target = InstanceProfessionTargetUnit[instanceId]
+    if target != null then
+        if GetUnitTypeId(target) != 0 and GN_IsGatherUnit(target) and IsAliveUnit(target) then
+            set InstanceProfessionToolExpires[instanceId] = now + AI_PROFESSION_TOOL_CLEANUP_DELAY
+            set target = null
+            return
+        endif
+        set InstanceProfessionTargetUnit[instanceId] = null
+        set InstanceProfessionToolExpires[instanceId] = now + AI_PROFESSION_TOOL_CLEANUP_DELAY
+    endif
+
+    if now >= InstanceProfessionToolExpires[instanceId] then
         call RemoveTrackedProfessionTool(instanceId)
     endif
+    set target = null
 endfunction
 
 private function EnsureProfessionTool takes integer instanceId, unit whichUnit, integer itemTypeId, real now returns boolean
@@ -1517,6 +1537,14 @@ endfunction
 
 private function SetTrackedProfessionToolCleanup takes integer instanceId, real now returns nothing
     if instanceId > 0 and InstanceProfessionToolItem[instanceId] != null then
+        set InstanceProfessionTargetUnit[instanceId] = null
+        set InstanceProfessionToolExpires[instanceId] = now + AI_PROFESSION_TOOL_CLEANUP_DELAY
+    endif
+endfunction
+
+private function SetTrackedProfessionToolTargetUnit takes integer instanceId, unit target, real now returns nothing
+    if instanceId > 0 and InstanceProfessionToolItem[instanceId] != null then
+        set InstanceProfessionTargetUnit[instanceId] = target
         set InstanceProfessionToolExpires[instanceId] = now + AI_PROFESSION_TOOL_CLEANUP_DELAY
     endif
 endfunction
@@ -1610,6 +1638,7 @@ private function ClearInstanceProfessionState takes integer instanceId, unit whi
     call InstanceNextProfession.remove(instanceId)
     call InstanceProfessionFailCount.remove(instanceId)
     call InstanceProfessionBlockedUntil.remove(instanceId)
+    set InstanceProfessionTargetUnit[instanceId] = null
     if whichUnit != null then
         call GNS_UnregisterTrackedGatherer(whichUnit)
     endif
@@ -4161,7 +4190,7 @@ private function BeginGatherUnit takes integer instanceId, unit whichUnit, unit 
     if IssueTargetOrder(whichUnit, "attack", node) then
         set InstanceNextProfession.real[instanceId] = now + GetRandomReal(AI_PROFESSION_ACTION_MIN, AI_PROFESSION_ACTION_MAX)
         call ResetProfessionFailure(instanceId)
-        call SetTrackedProfessionToolCleanup(instanceId, now)
+        call SetTrackedProfessionToolTargetUnit(instanceId, node, now)
         call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " mines " + GN_GetGatherUnitName(node) + ".")
         return true
     endif
@@ -4226,6 +4255,23 @@ private function TryStartProfessionAction takes integer instanceId, unit whichUn
     set nodeItem = null
     set ProfessionSearchUnit = null
     set ProfessionSearchItem = null
+    return false
+endfunction
+
+private function ShouldBlockAiGatherUnitAttack takes integer instanceId, unit attacker, unit node returns boolean
+    local integer professionId
+    local integer requiredSkill
+    if instanceId <= 0 or attacker == null or node == null or not GN_IsGatherUnit(node) then
+        return false
+    endif
+    set professionId = GN_GetGatherUnitProfessionId(node)
+    set requiredSkill = GN_GetGatherUnitSkillRequired(node)
+    if not CanGatherProfession(attacker, InstanceProfile[instanceId], professionId, requiredSkill) then
+        return true
+    endif
+    if professionId == AI_PROFESSION_MINING and not UnitHasItemType(attacker, ITEM_MINING_PICK) then
+        return true
+    endif
     return false
 endfunction
 
@@ -4966,6 +5012,12 @@ private function HandleAttack takes nothing returns nothing
     local unit attacker = GetAttacker()
     local unit attacked = GetTriggerUnit()
     local integer instanceId = UnitInstance[GetHandleId(attacker)]
+    if ShouldBlockAiGatherUnitAttack(instanceId, attacker, attacked) then
+        call IssueImmediateOrder(attacker, "stop")
+        set attacker = null
+        set attacked = null
+        return
+    endif
     if instanceId > 0 and IsCompanionControlled(attacker) and GetRandomInt(1, 16) == 1 then
         set AI_EventTarget = attacked
         call AI_RequestBark(attacker, AI_BARK_ATTACKING)
