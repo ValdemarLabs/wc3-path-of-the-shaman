@@ -164,6 +164,14 @@ private function GNS_GetDisplayName takes unit u returns string
     return GetUnitName(u)
 endfunction
 
+private function GNS_ShouldAnnounceSkillGain takes unit u returns boolean
+    if GNS_IsNazgrek(u) or GNS_IsZulkis(u) then
+        return true
+    endif
+
+    return udg_Companion_Group != null and IsUnitInGroup(u, udg_Companion_Group)
+endfunction
+
 private function GNS_GetSkillGainChance takes integer currentSkill, integer requiredSkill returns integer
     if currentSkill <= requiredSkill then
         return 100
@@ -199,7 +207,7 @@ function GNS_AwardGatherSkillForNode takes unit u, integer professionId, integer
     call GNS_SetSkill(u, professionId, newValue)
     set newValue = GNS_GetSkill(u, professionId)
 
-    if newValue > oldValue then
+    if newValue > oldValue and GNS_ShouldAnnounceSkillGain(u) then
         call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cff66ccff" + GNS_GetDisplayName(u) + " skill in " + GNS_GetProfessionName(professionId) + " has increased to " + I2S(newValue) + "|r")
     endif
 endfunction
