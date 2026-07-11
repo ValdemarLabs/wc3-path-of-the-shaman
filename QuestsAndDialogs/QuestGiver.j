@@ -1225,6 +1225,14 @@ public function IsQuestFailedByNameAndGiver takes string questName, unit questGi
 	return q.failed
 endfunction
 
+public function IsQuestActiveByNameAndGiver takes string questName, unit questGiver returns boolean
+	local QuestData q = QuestMaster_GetByNameAndGiver(questName, questGiver)
+	if q == 0 then
+		return false
+	endif
+	return q.discovered and not q.completed and not q.failed and q.state != QUEST_STATE_COMPLETE
+endfunction
+
 public function GetStateByNameAndGiver takes string questName, unit questGiver returns integer
 	return QuestMaster_GetStateByNameAndGiver(questName, questGiver)
 endfunction
@@ -1842,6 +1850,32 @@ public function AddReadyQuestCompleteButton takes dialog d, string questName, un
 		return false
 	endif
 	set b = DialogSystem_AddButtonQuestComplete(d, questName, actionId)
+	if b == null then
+		return false
+	endif
+	call DialogSystem_BindButtonCode(b, actionFunc)
+	set b = null
+	return true
+endfunction
+
+public function AddQuestItemRecoveryButton takes dialog d, string questName, unit questGiver, integer actionId, integer itemTypeId, integer itemAmount, string itemName, code actionFunc returns boolean
+	local button b = null
+	if itemTypeId == 0 then
+		return false
+	endif
+	if not IsQuestActiveByNameAndGiver(questName, questGiver) then
+		return false
+	endif
+	if itemAmount <= 0 then
+		set itemAmount = 1
+	endif
+	if HeroItemCheckBoth(itemTypeId, itemAmount) then
+		return false
+	endif
+	if itemName == "" then
+		set itemName = GetObjectName(itemTypeId)
+	endif
+	set b = DialogSystem_AddButtonQuestItemRecovery(d, itemName, actionId)
 	if b == null then
 		return false
 	endif

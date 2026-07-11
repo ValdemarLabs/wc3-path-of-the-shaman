@@ -754,6 +754,13 @@ public function AddButtonQuestSubComplete takes dialog d, string questName, inte
 	return AddButton(d, questName + " (Sub-Complete)", actionId)
 endfunction
 
+public function AddButtonQuestItemRecovery takes dialog d, string itemName, integer actionId returns button
+	if itemName == "" then
+		set itemName = "quest item"
+	endif
+	return AddButton(d, "Get new " + itemName, actionId)
+endfunction
+
 public function AddButtonDecline takes dialog d, integer actionId returns button
 	local button b = AddButton(d, "Decline", actionId)
 	if b != null then
