@@ -2202,7 +2202,7 @@ endfunction
 private function OnUnitDeath takes nothing returns nothing
     local unit dying = GetDyingUnit()
 
-    if dying != null and udg_Companion_Group != null and IsUnitInGroup(dying, udg_Companion_Group) and not IsUnitType(dying, UNIT_TYPE_HERO) and dying != udg_Valeria and dying != udg_Aradion then
+    if dying != null and udg_Companion_Group != null and IsUnitInGroup(dying, udg_Companion_Group) and not IsUnitType(dying, UNIT_TYPE_HERO) and dying != udg_Valeria and dying != udg_Aradion and dying != udg_Aveline then
         set udg_CompanionUnitKicked = dying
         call SyncGuiCompanionEntry(dying, "")
         call RemoveInternal(dying)
