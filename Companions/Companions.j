@@ -165,6 +165,10 @@ globals
     private integer CommandSelectionCount = 0
     private integer ModeActionMode = COMPANION_MODE_DEFEND
     private integer CurrentGroupMode = COMPANION_MODE_DEFEND
+    private group HostilityDropGroup = null
+    private integer HostilityDropFactionId = 0
+    private unit HostilityDropBarkUnit = null
+    private integer HostilityDropSeen = 0
 endglobals
 
 private function DebugMsg takes string msg returns nothing
@@ -226,6 +230,9 @@ private function EnsureState takes nothing returns nothing
     endif
     if ModeTargetGroup == null then
         set ModeTargetGroup = CreateGroup()
+    endif
+    if HostilityDropGroup == null then
+        set HostilityDropGroup = CreateGroup()
     endif
     if CompanionClock == null then
         set CompanionClock = CreateTimer()
@@ -1431,6 +1438,133 @@ private function RejectTemporaryCompanion takes unit companionUnit, string messa
     call IssuePointOrder(companionUnit, "attack", GetUnitX(companionUnit) + GetRandomReal(-600.00, 600.00), GetUnitY(companionUnit) + GetRandomReal(-600.00, 600.00))
 endfunction
 
+private function GetUnitFactionForHostility takes unit target returns Faction
+    local Faction f
+    local integer unitTypeId
+
+    if target == null then
+        return 0
+    endif
+
+    set f = Faction.getByUnit(target)
+    if f != 0 then
+        return f
+    endif
+
+    set unitTypeId = GetUnitTypeId(target)
+    if target == udg_Aradion or target == udg_Valeria or unitTypeId == UNIT_ARADION or unitTypeId == UNIT_VALERIA then
+        return Faction.getFaction("Elarindor")
+    elseif unitTypeId == UNIT_ENGINEER or unitTypeId == UNIT_ENGINEER_SHREDDER then
+        return Faction.getFaction("Goblins")
+    elseif unitTypeId == UNIT_PALADIN or unitTypeId == UNIT_AVELINE then
+        return Faction.getFaction("Riverbane")
+    elseif IsNamedCompanionType(unitTypeId) or unitTypeId == UNIT_GRUNT_1 or unitTypeId == UNIT_GRUNT_5 or unitTypeId == UNIT_GRUNT_10 or unitTypeId == UNIT_GRUNT_15 or unitTypeId == UNIT_GRUNT_20 or unitTypeId == UNIT_GRUNT_25 or unitTypeId == UNIT_MARAUDER_1 or unitTypeId == UNIT_MARAUDER_5 or unitTypeId == UNIT_STONEGUARD_5 or unitTypeId == UNIT_RAIDER or unitTypeId == UNIT_HEADHUNTER or unitTypeId == UNIT_WITCH_DOCTOR or unitTypeId == UNIT_HIRED_SHAMAN then
+        return Faction.getFaction("Horde")
+    endif
+
+    return 0
+endfunction
+
+private function IsHostilitySource takes unit source returns boolean
+    if source == null then
+        return false
+    endif
+    if GetOwningPlayer(source) == Player(CONTROL_PLAYER_INDEX) then
+        return true
+    endif
+    if udg_Companion_Group != null and IsUnitInGroup(source, udg_Companion_Group) then
+        return true
+    endif
+    if udg_TamedUnits != null and IsUnitInGroup(source, udg_TamedUnits) then
+        return true
+    endif
+    return false
+endfunction
+
+private function DropCompanionForFactionHostility takes unit companionUnit returns nothing
+    local player returnOwner
+
+    if companionUnit == null or udg_Companion_Group == null or not IsUnitInGroup(companionUnit, udg_Companion_Group) then
+        return
+    endif
+
+    set udg_CompanionUnitKicked = companionUnit
+    call FireCommandEvent(companionUnit, null, COMMAND_KICK, 0)
+    set returnOwner = GetReturnOwner(GetUnitTypeId(companionUnit))
+    call RemoveInternal(companionUnit)
+    call RemoveWanderAbility(companionUnit)
+
+    if returnOwner != null then
+        call SetUnitOwner(companionUnit, returnOwner, true)
+    else
+        call RejectTemporaryCompanion(companionUnit, "")
+    endif
+
+    call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(companionUnit) + " has left the party.")
+    set returnOwner = null
+endfunction
+
+private function CollectHostilityDropCompanion takes nothing returns nothing
+    local unit companionUnit = GetEnumUnit()
+    local Faction f = GetUnitFactionForHostility(companionUnit)
+
+    if f != 0 and f.id == HostilityDropFactionId and IsAliveUnit(companionUnit) then
+        call GroupAddUnit(HostilityDropGroup, companionUnit)
+        set HostilityDropSeen = HostilityDropSeen + 1
+        if HostilityDropBarkUnit == null or GetRandomInt(1, HostilityDropSeen) == 1 then
+            set HostilityDropBarkUnit = companionUnit
+        endif
+    endif
+
+    set companionUnit = null
+endfunction
+
+private function DropOtherHostilityDropCompanion takes nothing returns nothing
+    local unit companionUnit = GetEnumUnit()
+
+    if companionUnit != HostilityDropBarkUnit then
+        call DropCompanionForFactionHostility(companionUnit)
+    endif
+
+    set companionUnit = null
+endfunction
+
+private function DropCompanionsForHostileFaction takes Faction targetFaction returns nothing
+    if targetFaction == 0 or udg_Companion_Group == null then
+        return
+    endif
+
+    call EnsureState()
+    call GroupClear(HostilityDropGroup)
+    set HostilityDropFactionId = targetFaction.id
+    set HostilityDropBarkUnit = null
+    set HostilityDropSeen = 0
+
+    call ForGroup(udg_Companion_Group, function CollectHostilityDropCompanion)
+    if HostilityDropBarkUnit != null then
+        call DropCompanionForFactionHostility(HostilityDropBarkUnit)
+        call ForGroup(HostilityDropGroup, function DropOtherHostilityDropCompanion)
+    endif
+
+    call GroupClear(HostilityDropGroup)
+    set HostilityDropFactionId = 0
+    set HostilityDropBarkUnit = null
+    set HostilityDropSeen = 0
+endfunction
+
+private function HandleHostilityAgainstFactionUnit takes unit source, unit target returns nothing
+    local Faction targetFaction
+
+    if not IsHostilitySource(source) then
+        return
+    endif
+
+    set targetFaction = GetUnitFactionForHostility(target)
+    if targetFaction != 0 then
+        call DropCompanionsForHostileFaction(targetFaction)
+    endif
+endfunction
+
 private function GetCommandPlayer takes unit caster returns player
     if caster == null then
         return Player(CONTROL_PLAYER_INDEX)
@@ -2201,6 +2335,9 @@ endfunction
 
 private function OnUnitDeath takes nothing returns nothing
     local unit dying = GetDyingUnit()
+    local unit killer = GetKillingUnit()
+
+    call HandleHostilityAgainstFactionUnit(killer, dying)
 
     if dying != null and udg_Companion_Group != null and IsUnitInGroup(dying, udg_Companion_Group) and not IsUnitType(dying, UNIT_TYPE_HERO) and dying != udg_Valeria and dying != udg_Aradion and dying != udg_Aveline then
         set udg_CompanionUnitKicked = dying
@@ -2209,6 +2346,17 @@ private function OnUnitDeath takes nothing returns nothing
     endif
 
     set dying = null
+    set killer = null
+endfunction
+
+private function OnUnitAttacked takes nothing returns nothing
+    local unit attacker = GetAttacker()
+    local unit target = GetTriggerUnit()
+
+    call HandleHostilityAgainstFactionUnit(attacker, target)
+
+    set attacker = null
+    set target = null
 endfunction
 
 private function OnSpellEffect takes nothing returns nothing
@@ -2404,6 +2552,7 @@ private function Init takes nothing returns nothing
     local trigger spellTrigger = null
     local trigger sellTrigger = null
     local trigger shopInitTrigger = null
+    local trigger hostilityTrigger = null
 
     call EnsureState()
 
@@ -2424,6 +2573,15 @@ private function Init takes nothing returns nothing
     endloop
     call TriggerAddAction(sellTrigger, function HandleSoldUnit)
 
+    set hostilityTrigger = CreateTrigger()
+    set playerIndex = 0
+    loop
+        call TriggerRegisterPlayerUnitEvent(hostilityTrigger, Player(playerIndex), EVENT_PLAYER_UNIT_ATTACKED, null)
+        set playerIndex = playerIndex + 1
+        exitwhen playerIndex > MAX_PLAYER_INDEX
+    endloop
+    call TriggerAddAction(hostilityTrigger, function OnUnitAttacked)
+
     set IdleTrigger = CreateTrigger()
     call TriggerRegisterTimerEvent(IdleTrigger, COMPANION_IDLE_CHECK_INTERVAL, true)
     call TriggerAddAction(IdleTrigger, function OnIdlePeriodic)
@@ -2441,6 +2599,7 @@ private function Init takes nothing returns nothing
     set spellTrigger = null
     set sellTrigger = null
     set shopInitTrigger = null
+    set hostilityTrigger = null
 endfunction
 
 endlibrary
