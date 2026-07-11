@@ -24,7 +24,7 @@ globals
 
 	private constant integer ITEM_MANA_CRYSTAL = 'I00Y'
 	private constant integer ITEM_WRAITH_ESSENCE = 'I011'
-	private constant integer ITEM_TELANOR_ROD = 'I013'
+	private constant integer ITEM_TELANOR_ROD = 'i013'
 	private constant integer ABIL_TELANOR_ROD = 'A04W'
 	private constant integer ABIL_RIFT_CLOSE = 'A04Z'
 	private constant integer UNIT_VALERIA = 'n01W'
@@ -171,6 +171,7 @@ globals
 	private trigger FadingSparksSpellFinishTrigger = null
 	private trigger FadingSparksSpellEndCastTrigger = null
 	private unit RiftsCurrentRift = null
+	private unit FadingSparksRodHero = null
 	private unit FadingSparksCaster = null
 	private unit FadingSparksTarget = null
 	private unit array PlacedManaRifts
@@ -3847,6 +3848,9 @@ private function GetFadingSparksRodHero takes nothing returns unit
 		return hero
 	endif
 	set hero = null
+	if FadingSparksRodHero != null and QuestGiver_IsUnitAlive(FadingSparksRodHero) and GetOwningPlayer(FadingSparksRodHero) == Player(0) then
+		return FadingSparksRodHero
+	endif
 	if SelectedHero != null and QuestGiver_IsUnitAlive(SelectedHero) and GetOwningPlayer(SelectedHero) == Player(0) then
 		return SelectedHero
 	endif
@@ -3873,6 +3877,7 @@ private function OnAcceptQuest3End takes nothing returns nothing
 	if hero != null then
 		call UnitAddItemByIdSwapped(ITEM_TELANOR_ROD, hero)
 	endif
+	set FadingSparksRodHero = null
 	call StartExitFadeOut()
 	set hero = null
 endfunction
@@ -3886,6 +3891,7 @@ private function OnAcceptQuest3 takes nothing returns nothing
 	
 	// Make Aradion and hero face each other
 	set hero = ResolveDialogHero()
+	set FadingSparksRodHero = hero
 	if hero != null then
 		call DialogSystem_MakeFaceEachOther(Aradion, hero, 0.50)
 	endif
