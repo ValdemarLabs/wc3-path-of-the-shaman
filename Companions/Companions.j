@@ -1550,6 +1550,10 @@ private function IsQuestCompanionReputationBypass takes unit target returns bool
     return false
 endfunction
 
+private function IsQuestCompanionLevelBypass takes unit target returns boolean
+    return IsQuestCompanionReputationBypass(target)
+endfunction
+
 private function IsQuestCompanionType takes integer unitTypeId returns boolean
     return unitTypeId == UNIT_ARADION or unitTypeId == UNIT_VALERIA
 endfunction
@@ -1638,7 +1642,7 @@ private function HandleInvite takes unit caster, unit target returns nothing
 
     set requiredLevel = GetMaxPartyHeroLevel()
     set candidateLevel = GetCompanionCandidateLevel(target)
-    if candidateLevel > requiredLevel then
+    if candidateLevel > requiredLevel and not IsQuestCompanionLevelBypass(target) then
         call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(target) + " is higher level than this party.")
         return
     endif
