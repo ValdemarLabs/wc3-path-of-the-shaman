@@ -24,7 +24,7 @@ globals
 
 	private constant integer ITEM_MANA_CRYSTAL = 'I00Y'
 	private constant integer ITEM_WRAITH_ESSENCE = 'I011'
-	private constant integer ITEM_TELANOR_ROD = 'i013'
+	private constant integer ITEM_TELANOR_ROD = 'I013'
 	private constant integer ABIL_TELANOR_ROD = 'A04W'
 	private constant integer ABIL_RIFT_CLOSE = 'A04Z'
 	private constant integer UNIT_VALERIA = 'n01W'
