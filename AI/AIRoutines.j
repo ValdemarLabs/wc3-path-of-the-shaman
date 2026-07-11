@@ -18,9 +18,9 @@
     - PotS AI JASS migration
 
     How to install:
-    Import after `AI.j` and `Table`. Optional AI profile registration is
-    available per routine family; keep it disabled for pure ambient NPCs if the
-    shared AI revive behavior is not wanted.
+    Import after `AI.j`, `Table`, and `ZoneEvent`. Optional AI profile
+    registration is available per routine family; keep it disabled for pure
+    ambient NPCs if the shared AI revive behavior is not wanted.
 
     API:
     call AIRoutines_CreateRoutine(familyName)
@@ -41,12 +41,18 @@
     call AIRoutines_AddStandStep(routineId, animationName, minDuration, maxDuration)
     call AIRoutines_AddEffectWorkStep(routineId, animationName, effectPath, attachPoint, minDuration, maxDuration)
     call AIRoutines_RegisterUnit(whichUnit, routineId)
+    call AIRoutines_RegisterUnitInZone(whichUnit, routineId, zoneId)
     call AIRoutines_RegisterUnitsInRect(whichRect, routineId)
+    call AIRoutines_RegisterUnitsInRectInZone(whichRect, routineId, zoneId)
     call AIRoutines_RegisterUnitTypeInRect(unitTypeId, whichRect, routineId)
+    call AIRoutines_RegisterUnitTypeInRectInZone(unitTypeId, whichRect, routineId, zoneId)
     call AIRoutines_RegisterUnitType(unitTypeId, routineId)
     call AIRoutines_UnregisterUnit(whichUnit)
     call AIRoutines_WakeUnit(whichUnit)
+    call AIRoutines_SetZoneActive(zoneId, active)
+    set isActive = AIRoutines_IsZoneActive(zoneId)
     call AIRoutines_CreateManagedUnitGroup(owner, unitTypeId, spawnRect, routineId, count, respawnDelay, facing)
+    call AIRoutines_CreateManagedUnitGroupInZone(owner, unitTypeId, spawnRect, routineId, count, respawnDelay, facing, zoneId)
     call AIRoutines_SetManagedUnitGroupRoutine(spawnGroupId, routineId)
     call AIRoutines_SetManagedUnitGroupEnabled(spawnGroupId, enabled)
     call AIRoutines_RefillManagedUnitGroup(spawnGroupId)
@@ -121,8 +127,14 @@
       set r = AIRoutines_CreateVillageWanderRoutine("Created Villagers", gg_rct_Village, 8.00, 16.00, 3.00, 8.00)
       call AIRoutines_CreateManagedUnitGroup(Player(PLAYER_NEUTRAL_PASSIVE), 'nvlk', gg_rct_VillageSpawn, r, 6, 60.00, -1.00)
 
+    Zone-gated NPCs:
+      set r = AIRoutines_CreateVillageWanderRoutine("Sereneglade Villagers", gg_rct_02SereneGlade, 8.00, 16.00, 3.00, 8.00)
+      call AIRoutines_RegisterUnitsInRectInZone(gg_rct_Villagers, r, 2)
+      // The units above are only in AIRoutines' active loop while ZoneEvent
+      // reports at least one player hero in zone 2.
+
 **/
-library AIRoutines initializer Init requires AI, Table
+library AIRoutines initializer Init requires AI, Table, ZoneEvent
 
 globals
     constant integer AIR_STEP_WAIT = 1
@@ -149,9 +161,11 @@ globals
     private constant integer AIR_MAX_STEPS = 4096
     private constant integer AIR_MAX_ROUTINE_STEPS = 128
     private constant integer AIR_MAX_ACTIVE_UNITS = 2048
+    private constant integer AIR_MAX_ZONE_UNITS = 999
     private constant integer AIR_MAX_SPAWN_GROUPS = 512
     private constant integer AIR_MAX_PLAYER_INDEX = 27
     private constant integer AIR_ROUTINE_STEP_KEY = 1000
+    private constant integer AIR_ZONE_UNIT_KEY = 1000
     private constant real AIR_TICK_INTERVAL = 0.50
     private constant real AIR_ATTACK_WAKE_DELAY = 12.00
 
@@ -161,8 +175,10 @@ globals
     private integer AIR_NextSpawnGroupId = 1
     private integer AIR_ActiveCount = 0
     private integer AIR_AIClassId = 0
+    private boolean AIR_TickRunning = false
     private timer AIR_ClockTimer = null
     private timer AIR_TickTimer = null
+    private trigger AIR_TickTrigger = null
     private trigger AIR_AttackTrigger = null
     private trigger AIR_DeathTrigger = null
     private trigger AIR_EnterTrigger = null
@@ -193,6 +209,7 @@ globals
 
     private integer array AIR_SpawnGroupUnitType
     private integer array AIR_SpawnGroupRoutine
+    private integer array AIR_SpawnGroupZone
     private integer array AIR_SpawnGroupTargetCount
     private integer array AIR_SpawnGroupAliveCount
     private real array AIR_SpawnGroupRespawnDelay
@@ -207,6 +224,8 @@ globals
     private Table AIR_UnitStep = 0
     private Table AIR_UnitNextTime = 0
     private Table AIR_UnitActiveSlot = 0
+    private Table AIR_UnitZone = 0
+    private Table AIR_UnitZoneSlot = 0
     private Table AIR_UnitPaused = 0
     private Table AIR_UnitSleeping = 0
     private Table AIR_UnitSleepHidden = 0
@@ -218,6 +237,10 @@ globals
     private Table AIR_UnitSpawnGroup = 0
     private Table AIR_RespawnTimerGroup = 0
     private Table AIR_AIProfileByRoutineType = 0
+    private Table AIR_ZoneActive = 0
+    private Table AIR_ZoneHeroCount = 0
+    private Table AIR_ZoneUnit = 0
+    private Table AIR_ZoneUnitCount = 0
 endglobals
 
 private function AIR_DebugMsg takes string msg returns nothing
@@ -268,6 +291,26 @@ private function AIR_GetStepDuration takes integer stepId returns real
     return minDuration
 endfunction
 
+private function AIR_RunTickTrigger takes nothing returns nothing
+    if AIR_TickTrigger != null then
+        call TriggerExecute(AIR_TickTrigger)
+    endif
+endfunction
+
+private function AIR_StartTickTimer takes nothing returns nothing
+    if AIR_TickTimer != null and not AIR_TickRunning then
+        set AIR_TickRunning = true
+        call TimerStart(AIR_TickTimer, AIR_TICK_INTERVAL, true, function AIR_RunTickTrigger)
+    endif
+endfunction
+
+private function AIR_StopTickTimer takes nothing returns nothing
+    if AIR_TickTimer != null and AIR_TickRunning and AIR_ActiveCount <= 0 then
+        set AIR_TickRunning = false
+        call PauseTimer(AIR_TickTimer)
+    endif
+endfunction
+
 private function AIR_SetEventContext takes unit whichUnit, integer routineId, integer stepId returns nothing
     set AIRoutines_EventUnit = whichUnit
     set AIRoutines_EventRoutineId = routineId
@@ -293,6 +336,7 @@ private function AIR_AddActiveUnit takes unit whichUnit, integer unitKey returns
     set AIR_ActiveCount = AIR_ActiveCount + 1
     set AIR_ActiveUnit[AIR_ActiveCount] = whichUnit
     set AIR_UnitActiveSlot[unitKey] = AIR_ActiveCount
+    call AIR_StartTickTimer()
     return true
 endfunction
 
@@ -312,7 +356,145 @@ private function AIR_RemoveActiveUnit takes integer unitKey returns nothing
     set AIR_ActiveUnit[AIR_ActiveCount] = null
     set AIR_ActiveCount = AIR_ActiveCount - 1
     call AIR_UnitActiveSlot.remove(unitKey)
+    call AIR_StopTickTimer()
     set moved = null
+endfunction
+
+private function AIR_GetZoneUnitKey takes integer zoneId, integer slot returns integer
+    return zoneId * AIR_ZONE_UNIT_KEY + slot
+endfunction
+
+private function AIR_RemoveZoneUnit takes integer unitKey returns nothing
+    local integer zoneId = AIR_UnitZone[unitKey]
+    local integer slot = AIR_UnitZoneSlot[unitKey]
+    local integer count
+    local integer storeKey
+    local unit moved
+    local integer movedKey
+
+    if zoneId <= 0 or slot <= 0 then
+        return
+    endif
+
+    set count = AIR_ZoneUnitCount[zoneId]
+    if slot > count then
+        call AIR_UnitZone.remove(unitKey)
+        call AIR_UnitZoneSlot.remove(unitKey)
+        return
+    endif
+
+    if slot < count then
+        set moved = AIR_ZoneUnit.unit[AIR_GetZoneUnitKey(zoneId, count)]
+        set storeKey = AIR_GetZoneUnitKey(zoneId, slot)
+        if moved != null then
+            set AIR_ZoneUnit.unit[storeKey] = moved
+            set movedKey = GetHandleId(moved)
+            set AIR_UnitZoneSlot[movedKey] = slot
+        else
+            call AIR_ZoneUnit.unit.remove(storeKey)
+        endif
+    endif
+
+    call AIR_ZoneUnit.unit.remove(AIR_GetZoneUnitKey(zoneId, count))
+    if count <= 1 then
+        call AIR_ZoneUnitCount.remove(zoneId)
+    else
+        set AIR_ZoneUnitCount[zoneId] = count - 1
+    endif
+    call AIR_UnitZone.remove(unitKey)
+    call AIR_UnitZoneSlot.remove(unitKey)
+    set moved = null
+endfunction
+
+private function AIR_AddZoneUnit takes unit whichUnit, integer unitKey, integer zoneId returns boolean
+    local integer count
+    local integer slot
+    if whichUnit == null or zoneId <= 0 then
+        return false
+    endif
+    if AIR_UnitZone[unitKey] == zoneId then
+        return true
+    endif
+    if AIR_UnitZone[unitKey] > 0 then
+        call AIR_RemoveZoneUnit(unitKey)
+    endif
+
+    set count = AIR_ZoneUnitCount[zoneId]
+    if count >= AIR_MAX_ZONE_UNITS then
+        call BJDebugMsg("[AIRoutines] ERROR: AIR_MAX_ZONE_UNITS reached for zone " + I2S(zoneId) + ".")
+        return false
+    endif
+
+    set slot = count + 1
+    set AIR_ZoneUnitCount[zoneId] = slot
+    set AIR_ZoneUnit.unit[AIR_GetZoneUnitKey(zoneId, slot)] = whichUnit
+    set AIR_UnitZone[unitKey] = zoneId
+    set AIR_UnitZoneSlot[unitKey] = slot
+    return true
+endfunction
+
+private function AIR_SetUnitZoneAssignment takes unit whichUnit, integer unitKey, integer zoneId returns boolean
+    call AIR_RemoveActiveUnit(unitKey)
+    if AIR_UnitZone[unitKey] > 0 then
+        call AIR_RemoveZoneUnit(unitKey)
+    endif
+
+    if zoneId > 0 then
+        if not AIR_AddZoneUnit(whichUnit, unitKey, zoneId) then
+            return false
+        endif
+        if AIR_ZoneActive.boolean[zoneId] then
+            return AIR_AddActiveUnit(whichUnit, unitKey)
+        endif
+        return true
+    endif
+
+    return AIR_AddActiveUnit(whichUnit, unitKey)
+endfunction
+
+private function AIR_SetZoneActiveInternal takes integer zoneId, boolean active returns nothing
+    local integer index = 1
+    local integer count
+    local integer unitKey
+    local real now
+    local unit whichUnit
+
+    if zoneId <= 0 then
+        return
+    endif
+    if AIR_ZoneActive.boolean[zoneId] == active then
+        return
+    endif
+
+    set AIR_ZoneActive.boolean[zoneId] = active
+    if not active then
+        call AIR_ZoneActive.boolean.remove(zoneId)
+    endif
+
+    set count = AIR_ZoneUnitCount[zoneId]
+    set now = AIR_GetNow()
+    loop
+        exitwhen index > count
+        set whichUnit = AIR_ZoneUnit.unit[AIR_GetZoneUnitKey(zoneId, index)]
+        if whichUnit != null then
+            set unitKey = GetHandleId(whichUnit)
+            if active then
+                if AIR_UnitRoutine[unitKey] > 0 and AIR_IsAliveUnit(whichUnit) then
+                    if AIR_AddActiveUnit(whichUnit, unitKey) and not AIR_UnitSleeping.boolean[unitKey] then
+                        set AIR_UnitNextTime.real[unitKey] = now
+                    endif
+                endif
+            else
+                call AIR_RemoveActiveUnit(unitKey)
+                if AIR_UnitRoutine[unitKey] > 0 and not AIR_UnitSleeping.boolean[unitKey] then
+                    call IssueImmediateOrder(whichUnit, "stop")
+                    call SetUnitAnimation(whichUnit, "stand")
+                endif
+            endif
+        endif
+        set index = index + 1
+    endloop
+    set whichUnit = null
 endfunction
 
 private function AIR_PlayStepEffect takes unit whichUnit, integer stepId returns nothing
@@ -460,6 +642,7 @@ private function AIR_ClearUnitRegistration takes unit whichUnit, boolean wakeFir
     endif
     call AIR_TryUnregisterAI(whichUnit, unitKey)
     call AIR_RemoveActiveUnit(unitKey)
+    call AIR_RemoveZoneUnit(unitKey)
     call AIR_UnitRoutine.remove(unitKey)
     call AIR_UnitStep.remove(unitKey)
     call AIR_UnitNextTime.real.remove(unitKey)
@@ -471,19 +654,19 @@ private function AIR_ClearUnitRegistration takes unit whichUnit, boolean wakeFir
     call AIR_UnitHadSleepAbility.boolean.remove(unitKey)
 endfunction
 
-private function AIR_RegisterUnitInternal takes unit whichUnit, integer routineId returns boolean
+private function AIR_RegisterUnitInternalEx takes unit whichUnit, integer routineId, integer zoneId returns boolean
     local integer unitKey
     if whichUnit == null or GetUnitTypeId(whichUnit) == 0 or not AIR_RoutineExists(routineId) then
         return false
     endif
     set unitKey = GetHandleId(whichUnit)
     if AIR_UnitRoutine[unitKey] == routineId then
-        return true
+        return AIR_SetUnitZoneAssignment(whichUnit, unitKey, zoneId)
     endif
     if AIR_UnitRoutine[unitKey] > 0 then
         call AIR_ClearUnitRegistration(whichUnit, true)
     endif
-    if not AIR_AddActiveUnit(whichUnit, unitKey) then
+    if not AIR_SetUnitZoneAssignment(whichUnit, unitKey, zoneId) then
         return false
     endif
     set AIR_UnitRoutine[unitKey] = routineId
@@ -493,6 +676,10 @@ private function AIR_RegisterUnitInternal takes unit whichUnit, integer routineI
     call AIR_TryRegisterAI(whichUnit, routineId, unitKey)
     call AIR_DebugMsg("Registered " + GetUnitName(whichUnit) + " to " + AIR_RoutineName[routineId] + ".")
     return true
+endfunction
+
+private function AIR_RegisterUnitInternal takes unit whichUnit, integer routineId returns boolean
+    return AIR_RegisterUnitInternalEx(whichUnit, routineId, 0)
 endfunction
 
 private function AIR_SpawnGroupExists takes integer spawnGroupId returns boolean
@@ -535,7 +722,7 @@ private function AIR_SpawnManagedUnit takes integer spawnGroupId returns unit
 
     set created = CreateUnit(owner, AIR_SpawnGroupUnitType[spawnGroupId], AIR_GetRectRandomX(spawnRect), AIR_GetRectRandomY(spawnRect), AIR_GetSpawnFacing(spawnGroupId))
     if created != null then
-        if AIR_RegisterUnitInternal(created, AIR_SpawnGroupRoutine[spawnGroupId]) then
+        if AIR_RegisterUnitInternalEx(created, AIR_SpawnGroupRoutine[spawnGroupId], AIR_SpawnGroupZone[spawnGroupId]) then
             set AIR_SpawnGroupAliveCount[spawnGroupId] = AIR_SpawnGroupAliveCount[spawnGroupId] + 1
             set AIR_UnitSpawnGroup[GetHandleId(created)] = spawnGroupId
         else
@@ -590,18 +777,34 @@ endfunction
 
 private function AIR_ReassignSpawnGroupUnits takes integer spawnGroupId, integer routineId returns nothing
     local integer index = 1
+    local integer zoneId
+    local integer count
     local unit whichUnit
     if not AIR_SpawnGroupExists(spawnGroupId) or not AIR_RoutineExists(routineId) then
         return
     endif
-    loop
-        exitwhen index > AIR_ActiveCount
-        set whichUnit = AIR_ActiveUnit[index]
-        if whichUnit != null and AIR_UnitSpawnGroup[GetHandleId(whichUnit)] == spawnGroupId then
-            call AIR_SwitchRegisteredUnitRoutine(whichUnit, routineId)
-        endif
-        set index = index + 1
-    endloop
+
+    set zoneId = AIR_SpawnGroupZone[spawnGroupId]
+    if zoneId > 0 then
+        set count = AIR_ZoneUnitCount[zoneId]
+        loop
+            exitwhen index > count
+            set whichUnit = AIR_ZoneUnit.unit[AIR_GetZoneUnitKey(zoneId, index)]
+            if whichUnit != null and AIR_UnitSpawnGroup[GetHandleId(whichUnit)] == spawnGroupId then
+                call AIR_SwitchRegisteredUnitRoutine(whichUnit, routineId)
+            endif
+            set index = index + 1
+        endloop
+    else
+        loop
+            exitwhen index > AIR_ActiveCount
+            set whichUnit = AIR_ActiveUnit[index]
+            if whichUnit != null and AIR_UnitSpawnGroup[GetHandleId(whichUnit)] == spawnGroupId then
+                call AIR_SwitchRegisteredUnitRoutine(whichUnit, routineId)
+            endif
+            set index = index + 1
+        endloop
+    endif
     set whichUnit = null
 endfunction
 
@@ -807,6 +1010,10 @@ function AIRoutines_RegisterUnit takes unit whichUnit, integer routineId returns
     return AIR_RegisterUnitInternal(whichUnit, routineId)
 endfunction
 
+function AIRoutines_RegisterUnitInZone takes unit whichUnit, integer routineId, integer zoneId returns boolean
+    return AIR_RegisterUnitInternalEx(whichUnit, routineId, zoneId)
+endfunction
+
 function AIRoutines_UnregisterUnit takes unit whichUnit returns nothing
     call AIR_ClearUnitRegistration(whichUnit, true)
 endfunction
@@ -852,6 +1059,21 @@ function AIRoutines_GetUnitRoutine takes unit whichUnit returns integer
     return AIR_UnitRoutine[GetHandleId(whichUnit)]
 endfunction
 
+function AIRoutines_GetUnitZone takes unit whichUnit returns integer
+    if whichUnit == null then
+        return 0
+    endif
+    return AIR_UnitZone[GetHandleId(whichUnit)]
+endfunction
+
+function AIRoutines_SetZoneActive takes integer zoneId, boolean active returns nothing
+    call AIR_SetZoneActiveInternal(zoneId, active)
+endfunction
+
+function AIRoutines_IsZoneActive takes integer zoneId returns boolean
+    return zoneId > 0 and AIR_ZoneActive.boolean[zoneId]
+endfunction
+
 function AIRoutines_RegisterUnitsInRect takes rect whichRect, integer routineId returns nothing
     local group enumGroup
     local unit enumUnit
@@ -865,6 +1087,25 @@ function AIRoutines_RegisterUnitsInRect takes rect whichRect, integer routineId 
         exitwhen enumUnit == null
         call GroupRemoveUnit(enumGroup, enumUnit)
         call AIR_RegisterUnitInternal(enumUnit, routineId)
+    endloop
+    call DestroyGroup(enumGroup)
+    set enumUnit = null
+    set enumGroup = null
+endfunction
+
+function AIRoutines_RegisterUnitsInRectInZone takes rect whichRect, integer routineId, integer zoneId returns nothing
+    local group enumGroup
+    local unit enumUnit
+    if whichRect == null or not AIR_RoutineExists(routineId) or zoneId <= 0 then
+        return
+    endif
+    set enumGroup = CreateGroup()
+    call GroupEnumUnitsInRect(enumGroup, whichRect, null)
+    loop
+        set enumUnit = FirstOfGroup(enumGroup)
+        exitwhen enumUnit == null
+        call GroupRemoveUnit(enumGroup, enumUnit)
+        call AIR_RegisterUnitInternalEx(enumUnit, routineId, zoneId)
     endloop
     call DestroyGroup(enumGroup)
     set enumUnit = null
@@ -892,6 +1133,27 @@ function AIRoutines_RegisterUnitTypeInRect takes integer unitTypeId, rect whichR
     set enumGroup = null
 endfunction
 
+function AIRoutines_RegisterUnitTypeInRectInZone takes integer unitTypeId, rect whichRect, integer routineId, integer zoneId returns nothing
+    local group enumGroup
+    local unit enumUnit
+    if unitTypeId == 0 or whichRect == null or not AIR_RoutineExists(routineId) or zoneId <= 0 then
+        return
+    endif
+    set enumGroup = CreateGroup()
+    call GroupEnumUnitsInRect(enumGroup, whichRect, null)
+    loop
+        set enumUnit = FirstOfGroup(enumGroup)
+        exitwhen enumUnit == null
+        call GroupRemoveUnit(enumGroup, enumUnit)
+        if GetUnitTypeId(enumUnit) == unitTypeId then
+            call AIR_RegisterUnitInternalEx(enumUnit, routineId, zoneId)
+        endif
+    endloop
+    call DestroyGroup(enumGroup)
+    set enumUnit = null
+    set enumGroup = null
+endfunction
+
 function AIRoutines_RegisterUnitType takes integer unitTypeId, integer routineId returns nothing
     if unitTypeId == 0 or not AIR_RoutineExists(routineId) then
         return
@@ -900,7 +1162,7 @@ function AIRoutines_RegisterUnitType takes integer unitTypeId, integer routineId
     call AIRoutines_RegisterUnitTypeInRect(unitTypeId, GetWorldBounds(), routineId)
 endfunction
 
-function AIRoutines_CreateManagedUnitGroup takes player owner, integer unitTypeId, rect spawnRect, integer routineId, integer count, real respawnDelay, real facing returns integer
+private function AIR_CreateManagedUnitGroupInternal takes player owner, integer unitTypeId, rect spawnRect, integer routineId, integer count, real respawnDelay, real facing, integer zoneId returns integer
     local integer spawnGroupId
     if owner == null or unitTypeId == 0 or spawnRect == null or not AIR_RoutineExists(routineId) or count <= 0 then
         return 0
@@ -916,6 +1178,7 @@ function AIRoutines_CreateManagedUnitGroup takes player owner, integer unitTypeI
     set AIR_SpawnGroupUnitType[spawnGroupId] = unitTypeId
     set AIR_SpawnGroupRect[spawnGroupId] = spawnRect
     set AIR_SpawnGroupRoutine[spawnGroupId] = routineId
+    set AIR_SpawnGroupZone[spawnGroupId] = zoneId
     set AIR_SpawnGroupTargetCount[spawnGroupId] = count
     set AIR_SpawnGroupAliveCount[spawnGroupId] = 0
     set AIR_SpawnGroupRespawnDelay[spawnGroupId] = respawnDelay
@@ -923,6 +1186,14 @@ function AIRoutines_CreateManagedUnitGroup takes player owner, integer unitTypeI
     set AIR_SpawnGroupEnabled[spawnGroupId] = true
     call AIR_RefillSpawnGroup(spawnGroupId)
     return spawnGroupId
+endfunction
+
+function AIRoutines_CreateManagedUnitGroup takes player owner, integer unitTypeId, rect spawnRect, integer routineId, integer count, real respawnDelay, real facing returns integer
+    return AIR_CreateManagedUnitGroupInternal(owner, unitTypeId, spawnRect, routineId, count, respawnDelay, facing, 0)
+endfunction
+
+function AIRoutines_CreateManagedUnitGroupInZone takes player owner, integer unitTypeId, rect spawnRect, integer routineId, integer count, real respawnDelay, real facing, integer zoneId returns integer
+    return AIR_CreateManagedUnitGroupInternal(owner, unitTypeId, spawnRect, routineId, count, respawnDelay, facing, zoneId)
 endfunction
 
 function AIRoutines_SetManagedUnitGroupRoutine takes integer spawnGroupId, integer routineId returns nothing
@@ -1233,6 +1504,36 @@ private function AIR_RegisterPlayerUnitEventAll takes trigger whichTrigger, play
     endloop
 endfunction
 
+private function AIR_OnZoneHeroEnter takes nothing returns nothing
+    local integer zoneId = ZoneEvent_EventZoneId
+    local integer heroCount
+    if zoneId <= 0 then
+        return
+    endif
+
+    set heroCount = AIR_ZoneHeroCount[zoneId] + 1
+    set AIR_ZoneHeroCount[zoneId] = heroCount
+    if heroCount == 1 then
+        call AIR_SetZoneActiveInternal(zoneId, true)
+    endif
+endfunction
+
+private function AIR_OnZoneHeroLeave takes nothing returns nothing
+    local integer zoneId = ZoneEvent_EventZoneId
+    local integer heroCount
+    if zoneId <= 0 then
+        return
+    endif
+
+    set heroCount = AIR_ZoneHeroCount[zoneId]
+    if heroCount <= 1 then
+        call AIR_ZoneHeroCount.remove(zoneId)
+        call AIR_SetZoneActiveInternal(zoneId, false)
+    else
+        set AIR_ZoneHeroCount[zoneId] = heroCount - 1
+    endif
+endfunction
+
 private function Init takes nothing returns nothing
     set AIR_RoutineByName = Table.create()
     set AIR_RoutineStepId = Table.create()
@@ -1240,6 +1541,8 @@ private function Init takes nothing returns nothing
     set AIR_UnitStep = Table.create()
     set AIR_UnitNextTime = Table.create()
     set AIR_UnitActiveSlot = Table.create()
+    set AIR_UnitZone = Table.create()
+    set AIR_UnitZoneSlot = Table.create()
     set AIR_UnitPaused = Table.create()
     set AIR_UnitSleeping = Table.create()
     set AIR_UnitSleepHidden = Table.create()
@@ -1251,14 +1554,21 @@ private function Init takes nothing returns nothing
     set AIR_UnitSpawnGroup = Table.create()
     set AIR_RespawnTimerGroup = Table.create()
     set AIR_AIProfileByRoutineType = Table.create()
+    set AIR_ZoneActive = Table.create()
+    set AIR_ZoneHeroCount = Table.create()
+    set AIR_ZoneUnit = Table.create()
+    set AIR_ZoneUnitCount = Table.create()
 
     set AIR_AIClassId = AI_RegisterClass("Routine")
 
     set AIR_ClockTimer = CreateTimer()
     call TimerStart(AIR_ClockTimer, 1000000.00, false, function AIR_NoOp)
 
+    set AIR_TickTrigger = CreateTrigger()
+    call TriggerAddAction(AIR_TickTrigger, function AIR_Periodic)
     set AIR_TickTimer = CreateTimer()
-    call TimerStart(AIR_TickTimer, AIR_TICK_INTERVAL, true, function AIR_Periodic)
+    call ZoneEvent_RegisterEnterAction(function AIR_OnZoneHeroEnter)
+    call ZoneEvent_RegisterLeaveAction(function AIR_OnZoneHeroLeave)
 
     set AIR_AttackTrigger = CreateTrigger()
     call AIR_RegisterPlayerUnitEventAll(AIR_AttackTrigger, EVENT_PLAYER_UNIT_ATTACKED)

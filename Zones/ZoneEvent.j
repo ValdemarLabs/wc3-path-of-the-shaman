@@ -62,6 +62,13 @@ library ZoneEvent initializer Init requires ZonesCore, Table, DNC, ExMusic, TasQ
         - ZoneEvent_EnableLeaveHandler(integer zoneId, boolean enable) returns nothing
             Enable or disable the leave handler trigger for a specific zone.
 
+        - ZoneEvent_RegisterEnterAction(code callback) returns nothing
+        - ZoneEvent_RegisterLeaveAction(code callback) returns nothing
+            Register lightweight listeners for player hero zone transitions.
+            Read ZoneEvent_EventZoneId and ZoneEvent_EventUnit inside the
+            callback. These are intended for systems that should activate
+            only while a player hero is nearby, such as AIRoutines.
+
     Example usage:
         // Disable Zone 11 (Deadwoods) entry events
         call ZoneEvent_EnableZone(11, false)
@@ -127,6 +134,9 @@ globals
     private trigger array zoneTriggers                  // Trigger handles for each zone
     private trigger array zoneLeaveTriggers             // Trigger handles for zone leave events
     private Table triggerToZoneId                       // Table mapping triggers to zoneIds
+    private Table unitCurrentZone                       // Per-hero zone state for listener events
+    private trigger zoneEnterListeners = null
+    private trigger zoneLeaveListeners = null
     private trigger dayNightEventTrigger = null         // Trigger for day/night transitions
     private timer dayNightUpdateTimer = null            // Timer for periodic day/night updates
     private timer dayNightResetTimer  = null            // Timer to reset day/night event flag
@@ -156,6 +166,10 @@ globals
     
     // Zone data storage (declared here, populated after struct definition)
     private integer array zoneDatabase
+
+    // Listener callback context
+    integer ZoneEvent_EventZoneId = 0
+    unit ZoneEvent_EventUnit = null
 
     // External variables (GUI) and systems
     /* ===  DNEEvent
@@ -727,6 +741,40 @@ private function Zones_HandleZoneMusic takes ZoneData z returns nothing
     
 endfunction
 
+private function FireZoneListener takes trigger listener, integer zoneId, unit triggeringUnit returns nothing
+    if listener == null or zoneId <= 0 or triggeringUnit == null then
+        return
+    endif
+
+    set ZoneEvent_EventZoneId = zoneId
+    set ZoneEvent_EventUnit = triggeringUnit
+    call TriggerExecute(listener)
+    set ZoneEvent_EventZoneId = 0
+    set ZoneEvent_EventUnit = null
+endfunction
+
+private function NotifyUnitZoneEnter takes integer zoneId, unit triggeringUnit returns nothing
+    local integer unitKey
+    local integer previousZone
+
+    if zoneId <= 0 or triggeringUnit == null then
+        return
+    endif
+
+    set unitKey = GetHandleId(triggeringUnit)
+    set previousZone = unitCurrentZone[unitKey]
+    if previousZone == zoneId then
+        return
+    endif
+
+    if previousZone > 0 then
+        call FireZoneListener(zoneLeaveListeners, previousZone, triggeringUnit)
+    endif
+
+    set unitCurrentZone[unitKey] = zoneId
+    call FireZoneListener(zoneEnterListeners, zoneId, triggeringUnit)
+endfunction
+
 //===========================================================================
 // Zone Transition Handler
 //===========================================================================
@@ -756,6 +804,7 @@ private function HandleZoneEnter takes integer newZoneId, unit triggeringUnit re
         endif
         return  // Zone disabled
     endif
+    call NotifyUnitZoneEnter(newZoneId, triggeringUnit)
     if newZoneId == currentZone then
         if DEBUG then
             call Debug("Already in this zone - " + I2S(newZoneId) + " (return)")
@@ -1016,6 +1065,20 @@ public function EnableLeaveHandler takes integer zoneId, boolean enable returns 
     endif
 endfunction
 
+public function RegisterEnterAction takes code callback returns nothing
+    if zoneEnterListeners == null then
+        set zoneEnterListeners = CreateTrigger()
+    endif
+    call TriggerAddAction(zoneEnterListeners, callback)
+endfunction
+
+public function RegisterLeaveAction takes code callback returns nothing
+    if zoneLeaveListeners == null then
+        set zoneLeaveListeners = CreateTrigger()
+    endif
+    call TriggerAddAction(zoneLeaveListeners, callback)
+endfunction
+
 //===========================================================================
 // Day/Night Event System
 //===========================================================================
@@ -1156,6 +1219,7 @@ private function Init takes nothing returns nothing
     */ 
     
     set triggerToZoneId = Table.create()
+    set unitCurrentZone = Table.create()
 
     // Register zone enter triggers
     call RegisterZoneRegions() 
