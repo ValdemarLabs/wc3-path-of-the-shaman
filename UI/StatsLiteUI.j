@@ -66,7 +66,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         private constant integer SLUI_ACTION_SHOW_LEVEL = 14
         private constant integer SLUI_ACTION_SHOW_STATE = 15
         private constant integer SLUI_ACTION_ALERT_LOW_HP = 16 // CHANGE: config toggle for low-health row alerts
-        private constant integer SLUI_ACTION_ALERT_LOW_RESOURCE = 17 // CHANGE: config toggle for low mana/rage/energy alerts
+        private constant integer SLUI_ACTION_ALERT_LOW_RESOURCE = 17 // CHANGE: config toggle for low mana alerts
         private constant integer SLUI_ACTION_ALERT_FAR = 18 // CHANGE: config toggle for out-of-range companion alerts
         private constant integer SLUI_ACTION_DYNAMIC_HP_COLOR = 19 // CHANGE: config toggle for percentage-based HP bar colors
         private constant integer SLUI_ACTION_SHOW_CLASS = 20 // CHANGE: config toggle for row class text
@@ -80,10 +80,10 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         private constant integer SLUI_RESOURCE_ENERGY = 2 // CHANGE: rogue-style yellow resource bar
         private constant integer SLUI_ALERT_NONE = 0 // CHANGE: no row alert
         private constant integer SLUI_ALERT_FAR = 1 // CHANGE: companion is far from current leader
-        private constant integer SLUI_ALERT_LOW_RESOURCE = 2 // CHANGE: low mana/rage/energy
+        private constant integer SLUI_ALERT_LOW_RESOURCE = 2 // CHANGE: low mana
         private constant integer SLUI_ALERT_LOW_HP = 3 // CHANGE: low health/dead alert has highest priority
         private constant real SLUI_LOW_HP_ALERT_PERCENT = 25.0 // CHANGE: matches the red HP bar threshold
-        private constant real SLUI_LOW_RESOURCE_ALERT_PERCENT = 20.0 // CHANGE: low resource alert threshold
+        private constant real SLUI_LOW_RESOURCE_ALERT_PERCENT = 20.0 // CHANGE: low mana alert threshold
         private constant real SLUI_FAR_DISTANCE_NORMAL = 2500.0 // CHANGE: mirrors Companions normal follow distance
         private constant real SLUI_FAR_DISTANCE_AGGRESSIVE = 3500.0 // CHANGE: mirrors Companions aggressive follow distance
 
@@ -101,7 +101,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         private boolean SLUI_ShowState = true
         private boolean SLUI_ShowClass = true
         private boolean SLUI_AlertLowHP = true // CHANGE: configurable low-health flash alert
-        private boolean SLUI_AlertLowResource = true // CHANGE: configurable low mana/rage/energy flash alert
+        private boolean SLUI_AlertLowResource = true // CHANGE: configurable low mana flash alert
         private boolean SLUI_AlertFar = true // CHANGE: configurable far-away party member flash alert
         private boolean SLUI_DynamicHPColor = false // CHANGE: default false; HP bars stay green unless enabled in config
 
@@ -676,7 +676,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         if SLUI_AlertLowHP and hp >= 0 and I2R(hp) <= SLUI_LOW_HP_ALERT_PERCENT then
             return SLUI_ALERT_LOW_HP
         endif
-        if SLUI_AlertLowResource and SLUI_HasResourceBar(u) and I2R(mp) <= SLUI_LOW_RESOURCE_ALERT_PERCENT then
+        if SLUI_AlertLowResource and SLUI_HasResourceBar(u) and SLUI_GetResourceMode(u) == SLUI_RESOURCE_MANA and I2R(mp) <= SLUI_LOW_RESOURCE_ALERT_PERCENT then
             return SLUI_ALERT_LOW_RESOURCE
         endif
         if SLUI_IsFarFromLeader(u, kind) then
@@ -685,11 +685,15 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         return SLUI_ALERT_NONE
     endfunction
 
+    private function SLUI_IsAlertPulseVisible takes nothing returns boolean
+        return ModuloInteger(SLUI_RefreshTick, 3) == 0
+    endfunction
+
     private function SLUI_GetAlertPulseAlpha takes nothing returns integer
-        if ModuloInteger(SLUI_RefreshTick, 3) == 0 then
+        if SLUI_IsAlertPulseVisible() then
             return 255
         endif
-        return 70
+        return 95
     endfunction
 
     private function SLUI_ApplyRowAlert takes integer rowIndex, integer alertLevel returns nothing
@@ -703,7 +707,10 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
             return
         endif
 
-        if alertLevel == SLUI_ALERT_FAR then
+        if alertLevel == SLUI_ALERT_LOW_HP and not SLUI_IsAlertPulseVisible() then
+            call BlzFrameSetVisible(SLUI_RowAlert[rowIndex], false)
+            return
+        elseif alertLevel == SLUI_ALERT_FAR then
             set alpha = 230
         else
             set alpha = SLUI_GetAlertPulseAlpha()
@@ -893,7 +900,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         call BlzFrameSetText(SLUI_ConfigToggleButton[6], "Class: " + SLUI_OnOff(SLUI_ShowClass))
         call BlzFrameSetText(SLUI_ConfigToggleButton[7], "State: " + SLUI_OnOff(SLUI_ShowState))
         call BlzFrameSetText(SLUI_ConfigToggleButton[8], "Low HP: " + SLUI_OnOff(SLUI_AlertLowHP))
-        call BlzFrameSetText(SLUI_ConfigToggleButton[9], "Low Power: " + SLUI_OnOff(SLUI_AlertLowResource))
+        call BlzFrameSetText(SLUI_ConfigToggleButton[9], "Low Mana: " + SLUI_OnOff(SLUI_AlertLowResource))
         call BlzFrameSetText(SLUI_ConfigToggleButton[10], "Far: " + SLUI_OnOff(SLUI_AlertFar))
         call BlzFrameSetText(SLUI_ConfigToggleButton[11], "HP Color: " + SLUI_OnOff(SLUI_DynamicHPColor)) // CHANGE: dynamic HP color toggle
         set whichPlayer = null
@@ -1195,8 +1202,8 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
     endfunction
 
     private function SLUI_CreateRow takes integer rowIndex, real y returns nothing
-        local real textGap = 0.007
-        local real stateOffset = 0.058
+        local real textGap = 0.010
+        local real stateOffset = 0.072
         local real barLeft = 0.156 // CHANGE: compact right-side bar column
 
         set SLUI_RowButton[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRow" + I2S(rowIndex), SLUI_RowPane, "", 0)
@@ -1214,42 +1221,43 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         call BlzFrameSetLevel(SLUI_RowIcon[rowIndex], 4) // CHANGE: icon above translucent panel
 
         set SLUI_RowAlert[rowIndex] = BlzCreateFrameByType("SPRITE", "StatsLiteUIRowAlert" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetAllPoints(SLUI_RowAlert[rowIndex], SLUI_RowIcon[rowIndex])
+        call BlzFrameSetPoint(SLUI_RowAlert[rowIndex], FRAMEPOINT_CENTER, SLUI_RowIcon[rowIndex], FRAMEPOINT_CENTER, 0.0, 0.0)
+        call BlzFrameSetSize(SLUI_RowAlert[rowIndex], 0.026, 0.026)
         call BlzFrameSetModel(SLUI_RowAlert[rowIndex], SLUI_RowAlertModel, 0)
-        call BlzFrameSetScale(SLUI_RowAlert[rowIndex], 0.66)
+        call BlzFrameSetScale(SLUI_RowAlert[rowIndex], 0.62)
         call BlzFrameSetLevel(SLUI_RowAlert[rowIndex], 7)
         call BlzFrameSetEnable(SLUI_RowAlert[rowIndex], false)
         call BlzFrameSetVisible(SLUI_RowAlert[rowIndex], false)
 
         set SLUI_RowName[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowName" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(SLUI_RowName[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowIcon[rowIndex], FRAMEPOINT_TOPRIGHT, textGap, 0.001)
-        call BlzFrameSetSize(SLUI_RowName[rowIndex], 0.120, 0.008)
+        call BlzFrameSetPoint(SLUI_RowName[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowIcon[rowIndex], FRAMEPOINT_TOPRIGHT, textGap, 0.000)
+        call BlzFrameSetSize(SLUI_RowName[rowIndex], 0.108, 0.010)
         call BlzFrameSetTextAlignment(SLUI_RowName[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
-        call BlzFrameSetScale(SLUI_RowName[rowIndex], 0.38)
+        call BlzFrameSetScale(SLUI_RowName[rowIndex], 0.56)
         call BlzFrameSetEnable(SLUI_RowName[rowIndex], false)
         call BlzFrameSetLevel(SLUI_RowName[rowIndex], 4) // CHANGE: name above translucent panel
 
         set SLUI_RowLevel[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowLevel" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(SLUI_RowLevel[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowIcon[rowIndex], FRAMEPOINT_TOPRIGHT, textGap, -0.017)
-        call BlzFrameSetSize(SLUI_RowLevel[rowIndex], 0.052, 0.007)
+        call BlzFrameSetPoint(SLUI_RowLevel[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowIcon[rowIndex], FRAMEPOINT_TOPRIGHT, textGap, -0.018)
+        call BlzFrameSetSize(SLUI_RowLevel[rowIndex], 0.060, 0.009)
         call BlzFrameSetTextAlignment(SLUI_RowLevel[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
-        call BlzFrameSetScale(SLUI_RowLevel[rowIndex], 0.34)
+        call BlzFrameSetScale(SLUI_RowLevel[rowIndex], 0.50)
         call BlzFrameSetEnable(SLUI_RowLevel[rowIndex], false)
         call BlzFrameSetLevel(SLUI_RowLevel[rowIndex], 4) // CHANGE: level above translucent panel
 
         set SLUI_RowClass[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowClass" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(SLUI_RowClass[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowIcon[rowIndex], FRAMEPOINT_TOPRIGHT, textGap, -0.008)
-        call BlzFrameSetSize(SLUI_RowClass[rowIndex], 0.054, 0.007)
+        call BlzFrameSetPoint(SLUI_RowClass[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowIcon[rowIndex], FRAMEPOINT_TOPRIGHT, textGap, -0.009)
+        call BlzFrameSetSize(SLUI_RowClass[rowIndex], 0.066, 0.009)
         call BlzFrameSetTextAlignment(SLUI_RowClass[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
-        call BlzFrameSetScale(SLUI_RowClass[rowIndex], 0.34)
+        call BlzFrameSetScale(SLUI_RowClass[rowIndex], 0.50)
         call BlzFrameSetEnable(SLUI_RowClass[rowIndex], false)
         call BlzFrameSetLevel(SLUI_RowClass[rowIndex], 4)
 
         set SLUI_RowState[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowState" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(SLUI_RowState[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowIcon[rowIndex], FRAMEPOINT_TOPRIGHT, textGap + stateOffset, -0.008)
-        call BlzFrameSetSize(SLUI_RowState[rowIndex], 0.062, 0.007)
+        call BlzFrameSetPoint(SLUI_RowState[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowIcon[rowIndex], FRAMEPOINT_TOPRIGHT, textGap + stateOffset, -0.009)
+        call BlzFrameSetSize(SLUI_RowState[rowIndex], 0.052, 0.009)
         call BlzFrameSetTextAlignment(SLUI_RowState[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
-        call BlzFrameSetScale(SLUI_RowState[rowIndex], 0.34)
+        call BlzFrameSetScale(SLUI_RowState[rowIndex], 0.50)
         call BlzFrameSetEnable(SLUI_RowState[rowIndex], false)
         call BlzFrameSetLevel(SLUI_RowState[rowIndex], 4) // CHANGE: status above translucent panel
 
@@ -1271,7 +1279,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         set SLUI_RowHPText[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowHPText" + I2S(rowIndex), SLUI_RowHPBack[rowIndex], "", 0)
         call BlzFrameSetAllPoints(SLUI_RowHPText[rowIndex], SLUI_RowHPBack[rowIndex])
         call BlzFrameSetTextAlignment(SLUI_RowHPText[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
-        call BlzFrameSetScale(SLUI_RowHPText[rowIndex], 0.40)
+        call BlzFrameSetScale(SLUI_RowHPText[rowIndex], 0.50)
         call BlzFrameSetEnable(SLUI_RowHPText[rowIndex], false)
         call BlzFrameSetLevel(SLUI_RowHPText[rowIndex], 6) // CHANGE: label above fill
 
@@ -1293,7 +1301,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         set SLUI_RowMPText[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowMPText" + I2S(rowIndex), SLUI_RowMPBack[rowIndex], "", 0)
         call BlzFrameSetAllPoints(SLUI_RowMPText[rowIndex], SLUI_RowMPBack[rowIndex])
         call BlzFrameSetTextAlignment(SLUI_RowMPText[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
-        call BlzFrameSetScale(SLUI_RowMPText[rowIndex], 0.40)
+        call BlzFrameSetScale(SLUI_RowMPText[rowIndex], 0.50)
         call BlzFrameSetEnable(SLUI_RowMPText[rowIndex], false)
         call BlzFrameSetLevel(SLUI_RowMPText[rowIndex], 6) // CHANGE: label above fill
 
@@ -1430,7 +1438,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         call SLUI_CreateConfigButton(6, "Class", SLUI_ACTION_SHOW_CLASS, 0.130, -0.082)
         call SLUI_CreateConfigButton(7, "State", SLUI_ACTION_SHOW_STATE, 0.010, -0.107)
         call SLUI_CreateConfigButton(8, "Low HP", SLUI_ACTION_ALERT_LOW_HP, 0.130, -0.107) // CHANGE: alert config toggle
-        call SLUI_CreateConfigButton(9, "Low Power", SLUI_ACTION_ALERT_LOW_RESOURCE, 0.010, -0.132) // CHANGE: low mana/rage/energy alert toggle
+        call SLUI_CreateConfigButton(9, "Low Mana", SLUI_ACTION_ALERT_LOW_RESOURCE, 0.010, -0.132) // CHANGE: low mana alert toggle
         call SLUI_CreateConfigButton(10, "Far", SLUI_ACTION_ALERT_FAR, 0.130, -0.132) // CHANGE: alert config toggle
         call SLUI_CreateConfigButton(11, "HP Color", SLUI_ACTION_DYNAMIC_HP_COLOR, 0.010, -0.157) // CHANGE: toggle percentage-based HP bar coloring
 
