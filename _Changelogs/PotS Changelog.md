@@ -15,8 +15,36 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+
+## [12.7.2026]
+
+### Technical Updates
+
+- `Reputation.j`
+  - Added Reputation_ClearFactionTemporalHostility.
+
+- `qAradion.j`
+  - Clears Elarindor temporal hostility when Valeria is added for Ranger Missing escort.
+  - Aradion/Valeria now play the nearby survivor death reaction even when not in the companion group.
+  
+- `Companions.j`
+  - Attacking or killing a reputation faction unit now drops matching faction companions from the party, with a randomized kicked/farewell bark speaker.
+
+- `StatsUI.j`
+  - Added a Professions button beside Abilities, wired to the currently selected StatsUI unit.
+
+- `ProfessionsUI.j`
+  - Added ProfessionsUI_ShowForUnit(unit) and return-to-StatsUI behavior.
+
+- `AI.j`
+  - Fixed companion chatter gating and reply selection.
+  - Also fixed the Aveline/remote warlock issue more broadly: target-class chat lines like ChatWarlock are only eligible when that class is actually nearby, and replies must come from a companion within 900 range of the speaker.
+
+- `GatherNodeSkills.j`
+  - AI profession skill-up messages now only announce for Nazgrek/Zulkis or units in udg_Companion_Group.
+
 ## [11.7.2026] Part II
-#### Note: Because of the vast updates and to make it more simpler to update the changelog, the updates have only been written under `### Technical Updates`.
+#### Note: Because of the vast updates and to make it more simpler to update the changelog, the updates have only been written under `### Technical Updates` for now.
 
 ### Technical Updates
 
