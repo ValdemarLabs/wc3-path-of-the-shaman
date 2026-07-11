@@ -1,4 +1,4 @@
-library qAradion initializer Init requires QuestGiver, QuestMaster, DialogSystem, ExSound, FollowSystem, PatrolSystem, UnitSpawn, Companions, IconQuery, ItemLootSystem, ZonesCore
+library qAradion initializer Init requires QuestGiver, QuestMaster, DialogSystem, ExSound, FollowSystem, PatrolSystem, UnitSpawn, Companions, IconQuery, ItemLootSystem, ZonesCore, Reputation
 //===========================================================================
 // qAradion
 // Quest giver dialog + quest flow for Aradion the Farseer.
@@ -964,9 +964,38 @@ private function OnRangerMissingValeriaDamaged takes nothing returns nothing
 	call FailRangerMissingForRetry("Valeria was lost.")
 endfunction
 
+private function PlayAradionValeriaCompanionDiesLine takes unit dying returns nothing
+	local unit survivor = null
+	local string text = ""
+	local string soundName = ""
+
+	if RiftsQuestActive or RiftsFailureInProgress then
+		return
+	endif
+
+	if dying == Valeria then
+		set survivor = Aradion
+		set text = "Valeria!"
+		set soundName = "Aradion_0079"
+	elseif dying == Aradion then
+		set survivor = Valeria
+		set text = "Aradion...? No!!!"
+		set soundName = "Valeria_0063"
+	else
+		return
+	endif
+
+	if survivor != null and QuestGiver_IsUnitAlive(survivor) and QuestGiver_IsWithinRange(survivor, dying, VALERIA_RANGE) then
+		call DialogSystem_PlayLine(survivor, QuestGiver_GetUnitDisplayName(survivor), text, soundName, true)
+	endif
+
+	set survivor = null
+endfunction
+
 private function OnRangerMissingValeriaDeathGlobal takes nothing returns nothing
 	local unit dying = GetDyingUnit()
 	call SyncUnitReferences()
+	call PlayAradionValeriaCompanionDiesLine(dying)
 	if dying == Valeria and ShouldFailRangerMissingForValeriaDeath() then
 		call FailRangerMissingForRetry("Valeria was lost.")
 	endif
@@ -1045,6 +1074,7 @@ private function StartRangerMissingEscortInternal takes nothing returns nothing
 
 	set hero = ResolveDialogHero()
 	call AddValeriaCompanion()
+	call Reputation_ClearFactionTemporalHostility("Elarindor")
 	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
 		call Companions_SetFollowerBehavior(Valeria, true)
 		call Companions_SetMode(Valeria, COMPANION_MODE_DEFEND)
