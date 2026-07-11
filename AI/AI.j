@@ -151,6 +151,7 @@ globals
     private constant real AI_BOSS_EVADE_TIME = 2.25
     private constant real AI_DIALOG_UNLOCK_PAD = 0.15
     private constant real AI_BARK_AUDIBLE_RANGE = 2600.00
+    private constant real AI_BARK_REPLY_RANGE = 900.00
     private constant real AI_BARK_GLOBAL_GAP = 0.75
     private constant real AI_COMMAND_BARK_DELAY = 0.01
     private constant real AI_SHIELD_BLOCK_CHANCE = 33.34
@@ -179,6 +180,9 @@ globals
     private constant real AI_SOCIAL_COOLDOWN_MAX = 90.00
     private constant real AI_COMPANION_CHAT_COOLDOWN_MIN = 45.00
     private constant real AI_COMPANION_CHAT_COOLDOWN_MAX = 100.00
+    private constant real AI_COMPANION_CHAT_RETRY_MIN = 8.00
+    private constant real AI_COMPANION_CHAT_RETRY_MAX = 18.00
+    private constant integer AI_COMPANION_CHAT_CHANCE = 35
     private constant real AI_STUCK_MIN_MOVE = 24.00
     private constant real AI_STUCK_SECONDS = 4.00
     private constant real AI_STUCK_RETRY_RADIUS = 360.00
@@ -2503,6 +2507,72 @@ private function StartDialogUnlock takes real delay returns nothing
     call TimerStart(DialogUnlockTimer, delay, false, function UnlockDialog)
 endfunction
 
+private function FindPattern takes string source, string pattern returns integer
+    local integer sourceLength = StringLength(source)
+    local integer patternLength = StringLength(pattern)
+    local integer index = 0
+
+    if patternLength <= 0 or sourceLength < patternLength then
+        return -1
+    endif
+
+    loop
+        exitwhen index > sourceLength - patternLength
+        if SubString(source, index, index + patternLength) == pattern then
+            return index
+        endif
+        set index = index + 1
+    endloop
+
+    return -1
+endfunction
+
+private function GetChatTargetClassName takes string soundKey returns string
+    if FindPattern(soundKey, "_ChatEngineer") >= 0 then
+        return "Engineer"
+    elseif FindPattern(soundKey, "_ChatPaladin") >= 0 then
+        return "Paladin"
+    elseif FindPattern(soundKey, "_ChatRogue") >= 0 then
+        return "Rogue"
+    elseif FindPattern(soundKey, "_ChatShaman") >= 0 then
+        return "Restoshaman"
+    elseif FindPattern(soundKey, "_ChatWarlock") >= 0 then
+        return "Warlock"
+    elseif FindPattern(soundKey, "_ChatWarrior") >= 0 then
+        return "Warrior"
+    endif
+    return ""
+endfunction
+
+private function HasNearbyChatTargetClass takes unit speaker, string className returns boolean
+    local integer index = 1
+    local integer instanceId
+    local unit candidate
+    if speaker == null or className == "" then
+        return true
+    endif
+    loop
+        exitwhen index > ActiveCount
+        set instanceId = ActiveInstances[index]
+        set candidate = InstanceUnit.unit[instanceId]
+        if candidate != null and candidate != speaker and IsAliveUnit(candidate) and not IsUnitHidden(candidate) and IsUnitAlly(candidate, GetOwningPlayer(speaker)) and ClassName.string[InstanceClass[instanceId]] == className and IsUnitInRange(candidate, speaker, AI_SOCIAL_SCAN_RANGE) then
+            set candidate = null
+            return true
+        endif
+        set index = index + 1
+    endloop
+    set candidate = null
+    return false
+endfunction
+
+private function IsBarkTargetContextAllowed takes unit speaker, string soundKey returns boolean
+    local string className = GetChatTargetClassName(soundKey)
+    if className == "" then
+        return true
+    endif
+    return HasNearbyChatTargetClass(speaker, className)
+endfunction
+
 private function FindCompanionResponder takes integer profileId, unit speaker returns unit
     local integer i = 1
     local integer instanceId
@@ -2514,7 +2584,7 @@ private function FindCompanionResponder takes integer profileId, unit speaker re
         set instanceId = ActiveInstances[i]
         set candidate = InstanceUnit.unit[instanceId]
         if candidate != null and candidate != speaker and InstanceProfile[instanceId] == profileId then
-            if IsAliveUnit(candidate) and IsCompanionControlled(candidate) and IsBarkNearPlayerHero(candidate) then
+            if IsAliveUnit(candidate) and IsCompanionControlled(candidate) and IsBarkNearPlayerHero(candidate) and (speaker == null or IsUnitInRange(candidate, speaker, AI_BARK_REPLY_RANGE)) then
                 set seen = seen + 1
                 if GetRandomInt(1, seen) == 1 then
                     set responder = candidate
@@ -2537,7 +2607,7 @@ private function PlayBarkReply takes nothing returns nothing
     local integer responderInstance
     local real now = GetNow()
     local real duration
-    if responder != null and IsAliveUnit(responder) and IsCompanionControlled(responder) and IsBarkNearPlayerHero(responder) and not IsDialogBlockingBark() then
+    if responder != null and IsAliveUnit(responder) and IsCompanionControlled(responder) and IsBarkNearPlayerHero(responder) and (speaker == null or IsUnitInRange(responder, speaker, AI_BARK_REPLY_RANGE)) and not IsDialogBlockingBark() then
         if speaker != null and IsAliveUnit(speaker) then
             call DialogSystem_MakeFaceEachOther(speaker, responder, 0.50)
         endif
@@ -2581,6 +2651,9 @@ private function ScheduleBarkReply takes unit speaker, string primarySoundKey, r
     set replyKey = StringHash(primarySoundKey)
     set count = ReplyLineCount[replyKey]
     if count <= 0 then
+        return false
+    endif
+    if not IsBarkTargetContextAllowed(speaker, primarySoundKey) then
         return false
     endif
     set attempts = count
@@ -3612,7 +3685,7 @@ public function RequestBark takes unit speaker, integer barkType returns boolean
     loop
         exitwhen index > count
         set lineKey = GetBarkLineKey(barkKey, index)
-        if IsBarkLineReputationAllowed(lineKey) then
+        if IsBarkLineReputationAllowed(lineKey) and IsBarkTargetContextAllowed(speaker, BarkLineSound.string[lineKey]) then
             set eligibleCount = eligibleCount + 1
             if GetRandomInt(1, eligibleCount) == 1 then
                 set selectedLineKey = lineKey
@@ -4443,21 +4516,27 @@ endfunction
 private function TryStartCompanionChatAction takes integer instanceId, unit whichUnit, real now returns boolean
     local integer orderId
     local integer barkType = AI_BARK_IDLE
+    local boolean barked
     if instanceId <= 0 or whichUnit == null or udg_InCinematic then
         return false
     endif
     if now < InstanceNextSocial.real[instanceId] or now < InstanceNextChat.real[instanceId] or HasNearbyCombatEnemy(whichUnit, 700.00) then
         return false
     endif
-    set InstanceNextSocial.real[instanceId] = now + GetRandomReal(AI_COMPANION_CHAT_COOLDOWN_MIN, AI_COMPANION_CHAT_COOLDOWN_MAX)
-    if GetRandomInt(1, 100) > 30 then
+    if GetRandomInt(1, 100) > AI_COMPANION_CHAT_CHANCE then
+        set InstanceNextSocial.real[instanceId] = now + GetRandomReal(AI_COMPANION_CHAT_RETRY_MIN, AI_COMPANION_CHAT_RETRY_MAX)
         return false
     endif
+    set InstanceNextSocial.real[instanceId] = now + GetRandomReal(AI_COMPANION_CHAT_COOLDOWN_MIN, AI_COMPANION_CHAT_COOLDOWN_MAX)
     set orderId = GetUnitCurrentOrder(whichUnit)
     if orderId == OrderId("move") or orderId == OrderId("smart") or orderId == OrderId("attack") then
         set barkType = AI_BARK_MOVING
     endif
-    return AI_RequestBark(whichUnit, barkType)
+    set barked = AI_RequestBark(whichUnit, barkType)
+    if not barked then
+        set InstanceNextSocial.real[instanceId] = now + GetRandomReal(AI_COMPANION_CHAT_RETRY_MIN, AI_COMPANION_CHAT_RETRY_MAX)
+    endif
+    return barked
 endfunction
 
 private function TryStartSocialAction takes integer instanceId, unit whichUnit, integer state, real now returns boolean
