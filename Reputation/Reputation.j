@@ -675,6 +675,51 @@ struct TemporalHostility
     endmethod
 endstruct
 
+// Clear temporary hostility early and restore the faction to its stored state.
+public function ClearFactionTemporalHostility takes string factionName returns nothing
+    local Faction f = Faction.getFaction(factionName)
+    local integer factionId
+    local integer originalState = 0
+    local timer t
+    local integer timerId
+    local TemporalHostility data = 0
+
+    if f == 0 or not ENABLE_TEMPORAL_HOSTILITY or temporalHostilityActive == 0 then
+        return
+    endif
+
+    set factionId = f.id
+    if not temporalHostilityActive.has(factionId) then
+        return
+    endif
+
+    set t = LoadTimerHandle(temporalHostilityHash, factionId, 0)
+    if t != null then
+        set timerId = GetHandleId(t)
+        set data = LoadInteger(temporalHostilityHash, timerId, 0)
+        call FlushChildHashtable(temporalHostilityHash, timerId)
+        call PauseTimer(t)
+        call DestroyTimer(t)
+    endif
+
+    if data != 0 then
+        call data.restore()
+    else
+        if temporalHostilityOriginalStatus.has(factionId) then
+            set originalState = temporalHostilityOriginalStatus[factionId]
+        else
+            set originalState = GetAllianceStateFromRep(Reputation.getRep(Player(0), f))
+        endif
+        call ApplyFactionAllianceState(Player(0), f, originalState)
+        call SyncCompanionAlliance(f, originalState)
+        call temporalHostilityActive.remove(factionId)
+        call temporalHostilityOriginalStatus.remove(factionId)
+        call FlushChildHashtable(temporalHostilityHash, factionId)
+    endif
+
+    set t = null
+endfunction
+
 //===================================================
 // MULTIBOARD SYSTEM
 //===================================================
