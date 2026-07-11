@@ -3882,6 +3882,32 @@ private function OnAcceptQuest3End takes nothing returns nothing
 	set hero = null
 endfunction
 
+private function OnRecoverTelanorRodEnd takes nothing returns nothing
+	local unit hero
+	call RemoveExistingTelanorRods()
+	set hero = GetFadingSparksRodHero()
+	if hero != null then
+		call UnitAddItemByIdSwapped(ITEM_TELANOR_ROD, hero)
+	endif
+	set FadingSparksRodHero = null
+	call StartExitFadeOut()
+	set hero = null
+endfunction
+
+private function OnRecoverTelanorRod takes nothing returns nothing
+	local integer seq
+	local unit hero
+	call BeginQuestDialogSequence()
+	set seq = QuestGiver_CreateBaseSequence(Aradion, "Aradion the Farseer")
+	call DialogSystem_SetSequenceCallbacks(seq, null, function OnRecoverTelanorRodEnd)
+	set hero = ResolveDialogHero()
+	set FadingSparksRodHero = hero
+	call DialogSystem_AddMakeFaceEachOther(seq, Aradion, hero, 0.50, 0.0)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Take another rod of Tel'anor. Without it, the wraith essences will slip away before you can preserve them.", "", true)
+	call DialogSystem_PlaySequence(seq, Player(0), Aradion)
+	set hero = null
+endfunction
+
 private function OnAcceptQuest3 takes nothing returns nothing
 	local integer seq
 	local unit hero
@@ -4128,6 +4154,7 @@ private function BuildDialog takes nothing returns nothing
 
 	call QuestGiver_AddAvailableQuestAcceptButton(AradionDialog, QUEST_FADING_SPARKS, Aradion, 7, function OnAcceptQuest3, true, false)
 	call QuestGiver_AddReadyQuestCompleteButton(AradionDialog, QUEST_FADING_SPARKS, Aradion, 8, function OnCompleteQuest3, true)
+	call QuestGiver_AddQuestItemRecoveryButton(AradionDialog, QUEST_FADING_SPARKS, Aradion, 23, ITEM_TELANOR_ROD, 1, "Tel'anor Rod", function OnRecoverTelanorRod)
 
 	call QuestGiver_AddAvailableQuestAcceptButton(AradionDialog, QUEST_RIFTS_CORRUPTION, Aradion, 9, function OnAcceptQuest4, true, true)
 	if RiftsReturnedHome and QuestGiver_IsUnitAlive(Aradion) and QuestGiver_IsUnitAlive(Valeria) then
