@@ -34,7 +34,7 @@
 library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI // CHANGE: use AI registry instead of legacy udg_NPC_Horde_AI_xxx globals
     globals
         // Monitor sizing and refresh cadence.
-        private constant real SLUI_REFRESH_INTERVAL = 0.35
+        private constant real SLUI_REFRESH_INTERVAL = 0.25
         private constant integer SLUI_MAX_ROWS = 10
 
         // CHANGE: The monitor is positioned against a fullscreen relative frame.
@@ -84,6 +84,8 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         private constant integer SLUI_ALERT_LOW_HP = 3 // CHANGE: low health/dead alert has highest priority
         private constant real SLUI_LOW_HP_ALERT_PERCENT = 25.0 // CHANGE: matches the red HP bar threshold
         private constant real SLUI_LOW_RESOURCE_ALERT_PERCENT = 20.0 // CHANGE: low mana alert threshold
+        private constant real SLUI_LOW_HP_ALERT_ON_SECONDS = 1.00
+        private constant real SLUI_LOW_HP_ALERT_CYCLE_SECONDS = 1.50
         private constant real SLUI_FAR_DISTANCE_NORMAL = 2500.0 // CHANGE: mirrors Companions normal follow distance
         private constant real SLUI_FAR_DISTANCE_AGGRESSIVE = 3500.0 // CHANGE: mirrors Companions aggressive follow distance
 
@@ -156,6 +158,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         private trigger SLUI_InitTrigger = null
         private timer SLUI_RefreshTimer = null
         private integer SLUI_RefreshTick = 0
+        private real SLUI_AlertPulseClock = 0.0
 
         private string SLUI_PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
         private string SLUI_BarEmptyTexture = "ReplaceableTextures\\TeamColor\\TeamColor08.blp" // CHANGE: grey empty bar texture
@@ -685,12 +688,12 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         return SLUI_ALERT_NONE
     endfunction
 
-    private function SLUI_IsAlertPulseVisible takes nothing returns boolean
-        return ModuloInteger(SLUI_RefreshTick, 3) == 0
+    private function SLUI_IsLowHPAlertVisible takes nothing returns boolean
+        return ModuloReal(SLUI_AlertPulseClock, SLUI_LOW_HP_ALERT_CYCLE_SECONDS) < SLUI_LOW_HP_ALERT_ON_SECONDS
     endfunction
 
     private function SLUI_GetAlertPulseAlpha takes nothing returns integer
-        if SLUI_IsAlertPulseVisible() then
+        if SLUI_IsLowHPAlertVisible() then
             return 255
         endif
         return 95
@@ -707,7 +710,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
             return
         endif
 
-        if alertLevel == SLUI_ALERT_LOW_HP and not SLUI_IsAlertPulseVisible() then
+        if alertLevel == SLUI_ALERT_LOW_HP and not SLUI_IsLowHPAlertVisible() then
             call BlzFrameSetVisible(SLUI_RowAlert[rowIndex], false)
             return
         elseif alertLevel == SLUI_ALERT_FAR then
@@ -1009,6 +1012,10 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
     private function SLUI_PeriodicRefresh takes nothing returns nothing
         if SLUI_Parent != null and BlzFrameIsVisible(SLUI_Parent) then
             set SLUI_RefreshTick = SLUI_RefreshTick + 1
+            set SLUI_AlertPulseClock = SLUI_AlertPulseClock + SLUI_REFRESH_INTERVAL
+            if SLUI_AlertPulseClock >= 30.0 then
+                set SLUI_AlertPulseClock = ModuloReal(SLUI_AlertPulseClock, SLUI_LOW_HP_ALERT_CYCLE_SECONDS)
+            endif
             call SLUI_Update(GetLocalPlayer())
         endif
     endfunction
@@ -1221,10 +1228,10 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         call BlzFrameSetLevel(SLUI_RowIcon[rowIndex], 4) // CHANGE: icon above translucent panel
 
         set SLUI_RowAlert[rowIndex] = BlzCreateFrameByType("SPRITE", "StatsLiteUIRowAlert" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(SLUI_RowAlert[rowIndex], FRAMEPOINT_CENTER, SLUI_RowIcon[rowIndex], FRAMEPOINT_CENTER, 0.0, 0.0)
-        call BlzFrameSetSize(SLUI_RowAlert[rowIndex], 0.026, 0.026)
+        call BlzFrameSetPoint(SLUI_RowAlert[rowIndex], FRAMEPOINT_CENTER, SLUI_RowIcon[rowIndex], FRAMEPOINT_CENTER, -0.004, -0.001)
+        call BlzFrameSetSize(SLUI_RowAlert[rowIndex], 0.022, 0.022)
         call BlzFrameSetModel(SLUI_RowAlert[rowIndex], SLUI_RowAlertModel, 0)
-        call BlzFrameSetScale(SLUI_RowAlert[rowIndex], 0.62)
+        call BlzFrameSetScale(SLUI_RowAlert[rowIndex], 0.56)
         call BlzFrameSetLevel(SLUI_RowAlert[rowIndex], 7)
         call BlzFrameSetEnable(SLUI_RowAlert[rowIndex], false)
         call BlzFrameSetVisible(SLUI_RowAlert[rowIndex], false)
