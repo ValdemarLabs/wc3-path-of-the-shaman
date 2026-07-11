@@ -4275,6 +4275,24 @@ private function ShouldBlockAiGatherUnitAttack takes integer instanceId, unit at
     return false
 endfunction
 
+private function BackoffBlockedGatherUnitAttack takes integer instanceId, unit attacker, unit node returns nothing
+    local real blockedUntil
+    if attacker != null then
+        call IssueImmediateOrder(attacker, "stop")
+    endif
+    if instanceId <= 0 then
+        return
+    endif
+    set blockedUntil = GetNow() + GetRandomReal(AI_PROFESSION_FAIL_BACKOFF_MIN, AI_PROFESSION_FAIL_BACKOFF_MAX)
+    set InstanceProfessionFailCount[instanceId] = 0
+    set InstanceProfessionBlockedUntil.real[instanceId] = blockedUntil
+    set InstanceNextProfession.real[instanceId] = blockedUntil
+    call RemoveTrackedProfessionTool(instanceId)
+    if node != null and GN_IsGatherUnit(node) then
+        call DebugMsg(GetDebugInstanceName(instanceId, attacker) + " skips " + GN_GetGatherUnitName(node) + ": mining requirements not met.")
+    endif
+endfunction
+
 private function FaceSocialPair takes unit speaker, unit target returns nothing
     local real dx
     local real dy
@@ -5013,7 +5031,7 @@ private function HandleAttack takes nothing returns nothing
     local unit attacked = GetTriggerUnit()
     local integer instanceId = UnitInstance[GetHandleId(attacker)]
     if ShouldBlockAiGatherUnitAttack(instanceId, attacker, attacked) then
-        call IssueImmediateOrder(attacker, "stop")
+        call BackoffBlockedGatherUnitAttack(instanceId, attacker, attacked)
         set attacker = null
         set attacked = null
         return
