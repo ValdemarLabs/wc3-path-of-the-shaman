@@ -69,6 +69,7 @@ globals
     private constant real COMPANION_ORDER_INTERVAL = 2.00
     private constant real HIRED_UNIT_SHOP_INIT_DELAY = 1.00
     private constant real COMPANION_NORMAL_CATCHUP_DISTANCE = 600.00
+    private constant real COMPANION_POST_COMBAT_RETURN_DISTANCE = 350.00
     private constant real COMPANION_AGGRESSIVE_CATCHUP_DISTANCE = 1800.00
     private constant real COMPANION_NORMAL_MIN_OFFSET = 100.00
     private constant real COMPANION_NORMAL_MAX_OFFSET = 300.00
@@ -808,6 +809,9 @@ private function IssueCompanionNormalOrder takes unit controlledUnit, unit leade
         call ClearOrderIdleState(controlledUnit, customValue)
         call IssueRandomAttackMoveNearLeader(controlledUnit, leader, COMPANION_NORMAL_MIN_OFFSET, COMPANION_NORMAL_MAX_OFFSET)
         call ScheduleNextRandomMove(controlledUnit, leader)
+    elseif currentOrder == OrderId("attack") and not IsUnitInCombatByCustomValue(GetUnitUserData(leader)) and distance >= COMPANION_POST_COMBAT_RETURN_DISTANCE then
+        call ClearOrderIdleState(controlledUnit, customValue)
+        call IssueTargetOrder(controlledUnit, "smart", leader)
     elseif distance >= COMPANION_NORMAL_CATCHUP_DISTANCE or IsUnitInCombatByCustomValue(GetUnitUserData(leader)) then
         if currentOrder != OrderId("smart") or distance > GetModeDistance(COMPANION_MODE_DEFEND) then
             call ClearOrderIdleState(controlledUnit, customValue)
@@ -1373,7 +1377,7 @@ private function GetCompanionLimitInternal takes nothing returns integer
 endfunction
 
 private function GetCompanionLimitInfoTextInternal takes nothing returns string
-    return "|cffffcc00Companion slots:|r " + I2S(udg_CompanionCount) + " / " + I2S(GetCompanionLimitInternal()) + "|n|cffbfbfbfLevel ranges:|r 1-4: 1, 5-9: 2, 10-14: 3, 15-19: 4, 20-24: 5, 25+: 6.|n|cff808080The current cap can still be overridden by the map variable Companion_GroupSize.|r"
+    return "|cffffcc00Companion Party Size|r\n" + "|cffbfbfbfActive companions:|r |cffffffff" + I2S(udg_CompanionCount) + " / " + I2S(GetCompanionLimitInternal()) + "|r\n" + "|cffbfbfbfSize is based on the highest level hero in the party.|r\n" + "|cffbfbfbfLevel brackets:|r 1-4 = 1, 5-9 = 2, 10-14 = 3, 15-19 = 4, 20-24 = 5, 25+ = 6\n" + "|cff808080Map override: Companion_GroupSize can replace the level-based size.|r"
 endfunction
 
 private function IsCompanionPartyFull takes nothing returns boolean
@@ -2520,7 +2524,7 @@ public function GetCompanionLimit takes nothing returns integer
 endfunction
 
 public function GetCompanionStatusText takes nothing returns string
-    return I2S(udg_CompanionCount) + "/" + I2S(GetCompanionLimitInternal()) + " companions"
+    return I2S(udg_CompanionCount) + " / " + I2S(GetCompanionLimitInternal()) + " companions"
 endfunction
 
 public function GetCompanionLimitInfoText takes nothing returns string
