@@ -15,6 +15,20 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [13.7.2026] Part III
+
+### Technical Updates
+
+- `AI.j`
+  - now blocks all AI barks while a cinematic, dialog sequence, visible dialog menu, or queued field line is active.
+
+- `DialogSystem.j`
+  - now exposes active field-line queue state and visible dialog-menu state.
+
+- `qAradion.j`
+  - now defers the Ranger Missing Valeria random barks and retries after 5s if dialog/field dialogue is active.
+
+
 ## [12.7.2026] Part III
 
 ### Technical Updates
