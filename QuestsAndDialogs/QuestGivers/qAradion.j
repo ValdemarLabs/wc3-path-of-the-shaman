@@ -1,4 +1,4 @@
-library qAradion initializer Init requires QuestGiver, QuestMaster, DialogSystem, ExSound, FollowSystem, PatrolSystem, UnitSpawn, Companions, IconQuery, ItemLootSystem, ZonesCore, Reputation
+library qAradion initializer Init requires QuestGiver, QuestMaster, DialogSystem, ExSound, FollowSystem, PatrolSystem, UnitSpawn, Companions, IconQuery, ItemLootSystem, ZonesCore, Reputation, CreepRespawn
 //===========================================================================
 // qAradion
 // Quest giver dialog + quest flow for Aradion the Farseer.
@@ -89,6 +89,8 @@ globals
 	private constant real RIFTS_ARADION_OFFSET = 500.00
 	private constant real RIFTS_VALERIA_OFFSET = 200.00
 	private constant real RIFTS_INTRO_VALERIA_OFFSET = 2200.00
+	private constant real RANGER_VALERIA_BARK_MIN_DELAY = 18.00
+	private constant real RANGER_VALERIA_BARK_MAX_DELAY = 34.00
 	private constant real FADING_SPARKS_CHANNEL_TIME = 2.00
 	private constant real FADING_SPARKS_HEALTH_THRESHOLD = 50.00
 	private constant real FADING_SPARKS_DAMAGE = 6000.00
@@ -154,6 +156,7 @@ globals
 	private timer RiftsCombatTimer = null
 	private timer RiftsCountdownTimer = null
 	private timer RiftsFailResetTimer = null
+	private timer RangerMissingValeriaBarkTimer = null
 	private timer FadingSparksTimer = null
 	private dialog ValeriaNegotiationDialog = null
 	private button array ValeriaNegotiationButtons
@@ -741,6 +744,43 @@ private function StopFieldCompanions takes nothing returns nothing
 	call RemoveAradionCompanion()
 endfunction
 
+private function StopRangerMissingValeriaBarkTimer takes nothing returns nothing
+	if RangerMissingValeriaBarkTimer != null then
+		call DestroyTimer(RangerMissingValeriaBarkTimer)
+		set RangerMissingValeriaBarkTimer = null
+	endif
+endfunction
+
+private function IsRangerMissingValeriaBarkStateActive takes nothing returns boolean
+	return RangerMissingEscortActive and ValeriaCompanionActive and Valeria != null and QuestGiver_IsUnitAlive(Valeria) and QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_RANGER_MISSING, Aradion) and not QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_RANGER_MISSING, Aradion) and not QuestGiver_IsQuestFailedByNameAndGiver(QUEST_RANGER_MISSING, Aradion)
+endfunction
+
+private function PlayRangerMissingValeriaBark takes nothing returns nothing
+	if GetRandomInt(1, 2) == 1 then
+		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0021", "Where is Aradion?")
+	else
+		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0022", "I'm watching you carefully...")
+	endif
+endfunction
+
+private function OnRangerMissingValeriaBarkTimer takes nothing returns nothing
+	if not IsRangerMissingValeriaBarkStateActive() then
+		call StopRangerMissingValeriaBarkTimer()
+		return
+	endif
+	call PlayRangerMissingValeriaBark()
+	call TimerStart(RangerMissingValeriaBarkTimer, GetRandomReal(RANGER_VALERIA_BARK_MIN_DELAY, RANGER_VALERIA_BARK_MAX_DELAY), false, function OnRangerMissingValeriaBarkTimer)
+endfunction
+
+private function StartRangerMissingValeriaBarkTimer takes nothing returns nothing
+	if not IsRangerMissingValeriaBarkStateActive() then
+		return
+	endif
+	call StopRangerMissingValeriaBarkTimer()
+	set RangerMissingValeriaBarkTimer = CreateTimer()
+	call TimerStart(RangerMissingValeriaBarkTimer, GetRandomReal(RANGER_VALERIA_BARK_MIN_DELAY, RANGER_VALERIA_BARK_MAX_DELAY), false, function OnRangerMissingValeriaBarkTimer)
+endfunction
+
 private function StopRangerMissingZoneMonitor takes nothing returns nothing
 	if RangerMissingZoneTimer != null then
 		call DestroyTimer(RangerMissingZoneTimer)
@@ -751,6 +791,7 @@ endfunction
 private function StopRangerMissingEscortInternal takes nothing returns nothing
 	local QuestData q = QuestGiver_GetByNameAndGiver(QUEST_RANGER_MISSING, Aradion)
 	call StopRangerMissingZoneMonitor()
+	call StopRangerMissingValeriaBarkTimer()
 	if q != 0 then
 		call QuestGiver_UnregisterEscortRequirement(q.id, 2)
 	endif
@@ -1103,6 +1144,7 @@ private function StartRangerMissingEscortInternal takes nothing returns nothing
 	endif
 	call EnableRangerMissingDeathTrigger()
 	set RangerMissingEscortActive = true
+	call StartRangerMissingValeriaBarkTimer()
 	call StartRangerMissingZoneMonitor()
 endfunction
 
@@ -2179,22 +2221,34 @@ private function GetRiftRect takes integer index returns rect
 	return null
 endfunction
 
+private function CreateRiftUnitAtSlot takes integer index returns unit
+	local rect r = GetRiftRect(index)
+	local unit result = null
+	if r != null then
+		set result = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_MANA_RIFT, GetRectCenterX(r), GetRectCenterY(r), bj_UNIT_FACING)
+		if result != null then
+			call SetUnitCreepGuard(result, false)
+			call CreepRespawn_DiscardUnit(result)
+		endif
+	endif
+	set r = null
+	return result
+endfunction
+
 private function BindRiftUnitSlot takes integer index returns nothing
 	local unit u = RiftsUnits[index]
-	local rect r = GetRiftRect(index)
-	if u != null and QuestGiver_IsUnitAlive(u) and (RiftsUnitTypeIds[index] == 0 or GetUnitTypeId(u) == RiftsUnitTypeIds[index]) then
-		set RiftsUnitTypeIds[index] = GetUnitTypeId(u)
+	if u != null and QuestGiver_IsUnitAlive(u) and GetUnitTypeId(u) == UNIT_MANA_RIFT then
+		set RiftsUnitTypeIds[index] = UNIT_MANA_RIFT
+		call CreepRespawn_DiscardUnit(u)
 		set u = null
-		set r = null
 		return
 	endif
-	set u = QuestGiver_FindPreferredUnitInRect(r, RiftsUnitTypeIds[index], Player(PLAYER_NEUTRAL_PASSIVE), Nazgrek, udg_Zulkis, Aradion, Valeria, true)
-	if u != null then
-		set RiftsUnits[index] = u
-		set RiftsUnitTypeIds[index] = GetUnitTypeId(u)
+	if u != null and GetUnitTypeId(u) != 0 then
+		call RemoveUnit(u)
 	endif
+	set RiftsUnitTypeIds[index] = UNIT_MANA_RIFT
+	set RiftsUnits[index] = CreateRiftUnitAtSlot(index)
 	set u = null
-	set r = null
 endfunction
 
 private function ResetRiftsClosedState takes nothing returns nothing
@@ -2207,12 +2261,12 @@ private function ResetRiftsClosedState takes nothing returns nothing
 endfunction
 
 private function EnsureRiftUnit takes integer index returns unit
-	local rect r = GetRiftRect(index)
 	local unit u = RiftsUnits[index]
 	if index <= 0 or index > RIFTS_MAX or RiftsClosed[index] then
 		return null
 	endif
 	if u != null and QuestGiver_IsUnitAlive(u) then
+		call CreepRespawn_DiscardUnit(u)
 		return u
 	endif
 	set RiftsUnits[index] = null
@@ -2221,18 +2275,9 @@ private function EnsureRiftUnit takes integer index returns unit
 	if u != null and QuestGiver_IsUnitAlive(u) then
 		return u
 	endif
-	set u = QuestGiver_FindPreferredUnitInRect(r, RiftsUnitTypeIds[index], Player(PLAYER_NEUTRAL_PASSIVE), Nazgrek, udg_Zulkis, Aradion, Valeria, true)
-	if u != null then
-		set RiftsUnits[index] = u
-		set RiftsUnitTypeIds[index] = GetUnitTypeId(u)
-		return u
-	endif
-	if r != null and RiftsUnitTypeIds[index] != 0 then
-		set u = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), RiftsUnitTypeIds[index], GetRectCenterX(r), GetRectCenterY(r), bj_UNIT_FACING)
-		set RiftsUnits[index] = u
-		return u
-	endif
-	return null
+	set u = CreateRiftUnitAtSlot(index)
+	set RiftsUnits[index] = u
+	return u
 endfunction
 
 private function RegisterRiftUnits takes nothing returns nothing
@@ -2249,23 +2294,45 @@ private function RegisterRiftUnits takes nothing returns nothing
 	call ExecuteFunc("qAradion_RegisterRiftsProximity")
 endfunction
 
+private function CreateInitialRiftUnits takes nothing returns nothing
+	local integer i = 1
+	loop
+		exitwhen i > RIFTS_MAX
+		if RiftsUnits[i] != null and GetUnitTypeId(RiftsUnits[i]) != 0 then
+			call RemoveUnit(RiftsUnits[i])
+		endif
+		set RiftsUnitTypeIds[i] = UNIT_MANA_RIFT
+		set RiftsClosed[i] = false
+		set RiftsUnits[i] = CreateRiftUnitAtSlot(i)
+		set i = i + 1
+	endloop
+endfunction
+
 private function PrepareValeriaForRiftsIntro takes unit hero returns nothing
 	local real targetX
 	local real targetY
 	local real startX
 	local real startY
 	local real angle
+	local real sideAngle
 	if Aradion == null or Valeria == null or not QuestGiver_IsUnitAlive(Aradion) or not QuestGiver_IsUnitAlive(Valeria) then
 		set hero = null
 		return
 	endif
 	call StopFollow(Valeria)
 	call StopValeriaPatrolInternal()
-	set targetX = GetRectCenterX(gg_rct_ValeriaNewPos)
-	set targetY = GetRectCenterY(gg_rct_ValeriaNewPos)
-	set angle = 192.00 * bj_DEGTORAD
-	set startX = targetX + RIFTS_INTRO_VALERIA_OFFSET * Cos(angle)
-	set startY = targetY + RIFTS_INTRO_VALERIA_OFFSET * Sin(angle)
+	set sideAngle = (GetUnitFacing(Aradion) + 90.00) * bj_DEGTORAD
+	set targetX = GetUnitX(Aradion) + RIFTS_VALERIA_OFFSET * Cos(sideAngle)
+	set targetY = GetUnitY(Aradion) + RIFTS_VALERIA_OFFSET * Sin(sideAngle)
+	if hero != null and QuestGiver_IsUnitAlive(hero) then
+		set angle = (GetUnitFacing(hero) + 180.00) * bj_DEGTORAD
+		set startX = GetUnitX(hero) + RIFTS_INTRO_VALERIA_OFFSET * Cos(angle)
+		set startY = GetUnitY(hero) + RIFTS_INTRO_VALERIA_OFFSET * Sin(angle)
+	else
+		set angle = (GetUnitFacing(Aradion) + 180.00) * bj_DEGTORAD
+		set startX = GetUnitX(Aradion) + RIFTS_INTRO_VALERIA_OFFSET * Cos(angle)
+		set startY = GetUnitY(Aradion) + RIFTS_INTRO_VALERIA_OFFSET * Sin(angle)
+	endif
 	call SetUnitPosition(Valeria, startX, startY)
 	call SetUnitFacing(Valeria, bj_RADTODEG * Atan2(targetY - startY, targetX - startX))
 	call IssuePointOrder(Valeria, "move", targetX, targetY)
@@ -3973,6 +4040,30 @@ private function GetFadingSparksRodHero takes nothing returns unit
 	return null
 endfunction
 
+private function DropVisibleTelanorRodAtHero takes unit hero, item rod returns nothing
+	local real x
+	local real y
+	if hero == null then
+		set rod = null
+		return
+	endif
+	set x = GetUnitX(hero)
+	set y = GetUnitY(hero)
+	if rod == null then
+		set rod = CreateItem(ITEM_TELANOR_ROD, x, y)
+	endif
+	if rod != null then
+		call SetItemVisible(rod, true)
+		call SetItemPosition(rod, x, y)
+		call ItemLoot_CreateFloatingTextCustom(rod, GetItemName(rod), 255, 255, 255)
+		call BJDebugMsg("[qAradion] Tel'anor Rod inventory grant failed; created a visible ground item at the hero.")
+	else
+		call BJDebugMsg("[qAradion] ERROR: Tel'anor Rod fallback failed because CreateItem(I013) returned null.")
+	endif
+	set rod = null
+	set hero = null
+endfunction
+
 private function GiveTelanorRodToHero takes unit hero returns nothing
 	local item rod
 	local real x
@@ -3985,12 +4076,14 @@ private function GiveTelanorRodToHero takes unit hero returns nothing
 	set y = GetUnitY(hero)
 	set rod = CreateItem(ITEM_TELANOR_ROD, x, y)
 	if rod == null then
-		call DebugMsg("Tel'anor Rod grant failed: CreateItem returned null")
+		call BJDebugMsg("[qAradion] ERROR: Tel'anor Rod grant failed because CreateItem(I013) returned null.")
 		return
 	endif
-	if not UnitAddItem(hero, rod) then
-		call SetItemPosition(rod, x, y)
+	if UnitAddItem(hero, rod) then
+		set rod = null
+		return
 	endif
+	call DropVisibleTelanorRodAtHero(hero, rod)
 	set rod = null
 endfunction
 
@@ -4149,6 +4242,10 @@ private function OnAcceptQuest4 takes nothing returns nothing
 	local integer seq
 	local unit hero
 	
+	if Valeria == null or not UnitAlive(Valeria) then
+		call RecreateValeriaAtHome()
+	endif
+
 	// SAFETY CHECK: Verify Valeria exists for this quest dialogue
 	// DialogSystem will skip null unit actions, but log warning for debugging
 	if Valeria == null or not UnitAlive(Valeria) then
@@ -4506,9 +4603,7 @@ private function InitDelayed takes nothing returns nothing
 	set Nazgrek = udg_Nazgrek
 	set Valeria = udg_Valeria
 	set AradionHomeOwner = GetOwningPlayer(Aradion)
-	set RiftsUnitTypeIds[1] = UNIT_MANA_RIFT
-	set RiftsUnitTypeIds[2] = UNIT_MANA_RIFT
-	set RiftsUnitTypeIds[3] = UNIT_MANA_RIFT
+	call CreateInitialRiftUnits()
 	call DebugMsg("Init Aradion giver id=" + I2S(GetHandleId(Aradion)))
 	call QuestGiver_Register(Aradion)
 	call QuestGiver_SetGreetOrder(Aradion, QUESTGIVER_GREET_NAZGREK_THEN_NPC)
