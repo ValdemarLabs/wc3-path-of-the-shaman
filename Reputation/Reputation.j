@@ -119,7 +119,7 @@ library Reputation initializer InitReputations requires Table, UnitDeathEvent
 //===================================================
 
 globals
-    private constant integer MAX_FACTIONS           = 11
+    private constant integer MAX_FACTIONS           = 64
     private constant integer REP_MIN                = -20000
     private constant integer REP_MAX                =  20000
     
@@ -1460,6 +1460,7 @@ private function InitFactions takes nothing returns nothing
     local Faction satyr        = Faction.createFaction("Satyr", Player(12))
     local Faction riverbane    = Faction.createFaction("Riverbane", Player(14))
     local Faction alliance     = Faction.createFaction("Alliance", Player(8))
+    local Faction stormhaven   = Faction.createFaction("Stormhaven", Player(8))
     local Faction felorcs      = Faction.createFaction("Fel Orcs", Player(3))
     local Faction undead       = Faction.createFaction("Undead", Player(20))
     local Faction goblins      = Faction.createFaction("Goblins", Player(13))
@@ -1478,6 +1479,7 @@ private function InitFactions takes nothing returns nothing
 
     // Map additional players to factions (multiple players can share the same faction)
     call Faction.mapPlayerToFaction(Player(1), horde)  // Player 2 is also Horde
+    call Faction.mapPlayerToFaction(Player(8), stormhaven)  // Player 9 is Stormhaven
     // Example: call Faction.mapPlayerToFaction(Player(9), horde)  // Player 10 is also Horde
 
     if RE_DEBUG then
@@ -1492,11 +1494,13 @@ private function InitFactions takes nothing returns nothing
     call horde.linkFaction(gnolls, -1.0)
     call horde.linkFaction(humancitizen, -1.0)
     call horde.linkFaction(riverbane, -1.0)
+    call horde.linkFaction(stormhaven, -1.0)
     
     call satyr.linkFaction(horde, -1.0)     // Kill satyr = +horde rep
     call gnolls.linkFaction(horde, -1.0)    // Kill gnolls = +horde rep
     call riverbane.linkFaction(horde, -1.0) // Kill riverbane = +horde rep
     call alliance.linkFaction(horde, -1.0)  // Kill alliance = +horde rep
+    call stormhaven.linkFaction(horde, -1.0) // Kill stormhaven citizens = +horde rep
     call humancitizen.linkFaction(horde, -1.0) // Kill citizens = +horde rep
     call felorcs.linkFaction(horde, -1.0)   // Kill fel orcs = +horde rep
 
@@ -1512,6 +1516,7 @@ private function InitFactions takes nothing returns nothing
     set REP_KILL_DELTA.real[satyr.id] = -50
     set REP_KILL_DELTA.real[riverbane.id] = -50
     set REP_KILL_DELTA.real[alliance.id] = -50
+    set REP_KILL_DELTA.real[stormhaven.id] = -50
     set REP_KILL_DELTA.real[felorcs.id] = -50
     set REP_KILL_DELTA.real[undead.id] = -50
     set REP_KILL_DELTA.real[goblins.id] = -50
@@ -1534,6 +1539,7 @@ private function InitFactions takes nothing returns nothing
     call Reputation.setRep(p, satyr, -2000)
     call Reputation.setRep(p, riverbane, -2000)
     call Reputation.setRep(p, alliance, -7000)
+    call Reputation.setRep(p, stormhaven, -7000)
     call Reputation.setRep(p, felorcs, -20000)
     call Reputation.setRep(p, undead, -20000)
     call Reputation.setRep(p, goblins, 0)
@@ -1555,6 +1561,7 @@ private function InitFactions takes nothing returns nothing
     set horde.iconPath        = "ReplaceableTextures\\PassiveButtons\\PASFactionHorde.blp"
     set realhorde.iconPath    = "ReplaceableTextures\\PassiveButtons\\PASFactionTrueHorde.blp"
     set alliance.iconPath     = "ReplaceableTextures\\PassiveButtons\\PASFactionHumanAlliance.blp"
+    set stormhaven.iconPath   = "zones\\zone013_stormhaven.blp"
     set felorcs.iconPath      = "ReplaceableTextures\\CommandButtons\\BTNChaosGrunt.blp"
     set satyr.iconPath        = "ReplaceableTextures\\PassiveButtons\\PASFactionOther1.blp"
     set gnolls.iconPath       = "ReplaceableTextures\\CommandButtons\\BTNGnoll.blp"
