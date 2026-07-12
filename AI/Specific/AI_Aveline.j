@@ -366,6 +366,25 @@ public function SpawnAt takes real x, real y, real facing returns unit
     return AI_SpawnProfile(AI_Aveline_ProfileId, Player(14), x, y, facing, AI_AVELINE_UNIQUE_ID)
 endfunction
 
+private function RegisterExistingAvelineEnum takes nothing returns nothing
+    local unit whichUnit = GetEnumUnit()
+    if whichUnit != null and GetUnitTypeId(whichUnit) == AI_AVELINE_UNIT_RIVERBANE and AI_GetInstance(whichUnit) <= 0 then
+        call AIAveline_Register(whichUnit)
+    endif
+    set whichUnit = null
+endfunction
+
+private function RegisterExistingAvelines takes nothing returns nothing
+    local group scanGroup = CreateGroup()
+    if udg_Aveline != null and GetUnitTypeId(udg_Aveline) == AI_AVELINE_UNIT_RIVERBANE and AI_GetInstance(udg_Aveline) <= 0 then
+        call AIAveline_Register(udg_Aveline)
+    endif
+    call GroupEnumUnitsInRect(scanGroup, bj_mapInitialPlayableArea, null)
+    call ForGroup(scanGroup, function RegisterExistingAvelineEnum)
+    call DestroyGroup(scanGroup)
+    set scanGroup = null
+endfunction
+
 private function Init takes nothing returns nothing
     set AI_Aveline_ProfileId = AI_RegisterProfile(AI_Warrior_ClassId, AI_AVELINE_UNIT_RIVERBANE, "Aveline")
     call AIWarrior_ConfigureProfile(AI_Aveline_ProfileId)
@@ -380,6 +399,7 @@ private function Init takes nothing returns nothing
     call AI_SetRandomSpawnFirstProfile(AI_Aveline_ProfileId)
     call AI_SetUnitTypeDefaultProfile(AI_AVELINE_UNIT_RIVERBANE, AI_Aveline_ProfileId)
     call AI_SetProfileRegisterCallback(AI_Aveline_ProfileId, function OnRegister)
+    call RegisterExistingAvelines()
     call AI_AddRandomSpawnProfile(AI_Aveline_ProfileId)
     call RegisterBarks()
     call RegisterCompanionChats()
