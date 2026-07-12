@@ -91,6 +91,7 @@ globals
 	private constant real RIFTS_INTRO_VALERIA_OFFSET = 2200.00
 	private constant real RANGER_VALERIA_BARK_MIN_DELAY = 18.00
 	private constant real RANGER_VALERIA_BARK_MAX_DELAY = 34.00
+	private constant real RANGER_VALERIA_BARK_BLOCKED_RETRY_DELAY = 5.00
 	private constant real FADING_SPARKS_CHANNEL_TIME = 2.00
 	private constant real FADING_SPARKS_HEALTH_THRESHOLD = 50.00
 	private constant real FADING_SPARKS_DAMAGE = 6000.00
@@ -755,6 +756,10 @@ private function IsRangerMissingValeriaBarkStateActive takes nothing returns boo
 	return RangerMissingEscortActive and ValeriaCompanionActive and Valeria != null and QuestGiver_IsUnitAlive(Valeria) and QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_RANGER_MISSING, Aradion) and not QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_RANGER_MISSING, Aradion) and not QuestGiver_IsQuestFailedByNameAndGiver(QUEST_RANGER_MISSING, Aradion)
 endfunction
 
+private function IsRangerMissingValeriaBarkBlocked takes nothing returns boolean
+	return udg_InCinematic or DialogSystem_IsSequenceActive() or DialogSystem_IsDialogVisible() or DialogSystem_IsFieldLineQueueActive()
+endfunction
+
 private function PlayRangerMissingValeriaBark takes nothing returns nothing
 	if GetRandomInt(1, 2) == 1 then
 		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0021", "Where is Aradion?")
@@ -766,6 +771,10 @@ endfunction
 private function OnRangerMissingValeriaBarkTimer takes nothing returns nothing
 	if not IsRangerMissingValeriaBarkStateActive() then
 		call StopRangerMissingValeriaBarkTimer()
+		return
+	endif
+	if IsRangerMissingValeriaBarkBlocked() then
+		call TimerStart(RangerMissingValeriaBarkTimer, RANGER_VALERIA_BARK_BLOCKED_RETRY_DELAY, false, function OnRangerMissingValeriaBarkTimer)
 		return
 	endif
 	call PlayRangerMissingValeriaBark()
