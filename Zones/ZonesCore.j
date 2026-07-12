@@ -1048,7 +1048,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientRegion = ""
     set z.questDescription = "A human town, where the human denizens thrive amidst the comforting embrace of their quaint town, shielded from the chaos that lurks beyond its borders."
     set z.questLevelReq = "12-18"
-    set z.factions = "Alliance XXX"
+    set z.factions = "Stormhaven"
     set z.notableEntities = "Human"
     set z.notableCharacters = "XXX"
     set z.iconPath = "zones\\zone013_stormhaven.blp"    
