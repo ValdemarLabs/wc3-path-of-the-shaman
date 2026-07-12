@@ -116,6 +116,7 @@ private function Init takes nothing returns nothing
     call BindHordeProfile(AI_Warrior_ProfileId)
     call BindHordeProfile(AI_Rogue_ProfileId)
     call BindHordeProfile(AI_Warlock_ProfileId)
+    call BindHordeProfile(AI_Warlock_UndeadProfileId)
     call BindHordeProfile(AI_Restoshaman_ProfileId)
     call BindRiverbaneProfile(AI_Paladin_ProfileId)
     call BindAvelineProfile(AI_Aveline_ProfileId)
