@@ -1733,7 +1733,7 @@ private function SUI_CreateFrames takes nothing returns nothing
     set SUI_AbilitiesButton = BlzCreateFrameByType("GLUETEXTBUTTON", "StatsUIAbilities", SUI_RightPane, "ScriptDialogButton", 0)
     call BlzFrameSetSize(SUI_AbilitiesButton, 0.090, 0.030)
     call BlzFrameSetText(SUI_AbilitiesButton, "Abilities")
-    call BlzFrameSetPoint(SUI_AbilitiesButton, FRAMEPOINT_TOPLEFT, SUI_RightPane, FRAMEPOINT_TOPLEFT, 0.018, -0.080)
+    call BlzFrameSetPoint(SUI_AbilitiesButton, FRAMEPOINT_TOPLEFT, SUI_RightPane, FRAMEPOINT_TOPLEFT, 0.018, -0.066)
     call BlzTriggerRegisterFrameEvent(SUI_AbilitiesTrigger, SUI_AbilitiesButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_AbilitiesButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzFrameSetVisible(SUI_AbilitiesButton, false)
@@ -1741,14 +1741,14 @@ private function SUI_CreateFrames takes nothing returns nothing
     set SUI_ProfessionsButton = BlzCreateFrameByType("GLUETEXTBUTTON", "StatsUIProfessions", SUI_RightPane, "ScriptDialogButton", 0)
     call BlzFrameSetSize(SUI_ProfessionsButton, 0.090, 0.030)
     call BlzFrameSetText(SUI_ProfessionsButton, "Professions")
-    call BlzFrameSetPoint(SUI_ProfessionsButton, FRAMEPOINT_TOPLEFT, SUI_AbilitiesButton, FRAMEPOINT_TOPRIGHT, 0.012, 0.0)
+    call BlzFrameSetPoint(SUI_ProfessionsButton, FRAMEPOINT_TOPLEFT, SUI_AbilitiesButton, FRAMEPOINT_TOPRIGHT, 0.006, 0.0)
     call BlzTriggerRegisterFrameEvent(SUI_ProfessionsTrigger, SUI_ProfessionsButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_ProfessionsButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzFrameSetVisible(SUI_ProfessionsButton, false)
 
     loop
         exitwhen summaryRow > SUI_SUMMARY_ROWS
-        set summaryTopOffset = -0.138 - (I2R(summaryRow - 1) * 0.015)
+        set summaryTopOffset = -0.132 - (I2R(summaryRow - 1) * 0.015)
 
         set SUI_DetailSummaryLabelLeft[summaryRow] = BlzCreateFrameByType("TEXT", "StatsUISummaryLabelLeft" + I2S(summaryRow), SUI_RightPane, "", 0)
         call BlzFrameSetPoint(SUI_DetailSummaryLabelLeft[summaryRow], FRAMEPOINT_TOPLEFT, SUI_RightPane, FRAMEPOINT_TOPLEFT, summaryLeftColumn, summaryTopOffset)
