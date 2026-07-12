@@ -15,6 +15,7 @@ globals
     private constant real RUI_REFRESH_INTERVAL = 5.00
     private constant integer RUI_MAX_ROWS = 10
     private constant integer RUI_VISIBLE_ROWS = 6
+    private constant integer RUI_INFO_ROW_ID = -1
 
     private boolean RUI_Initialized = false
     private boolean RUI_IsVisible = false
@@ -66,6 +67,7 @@ globals
     private timer RUI_RefreshTimer = null
 
     private string RUI_DefaultFactionIcon = "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp"
+    private string RUI_InfoIcon = "ReplaceableTextures\\CommandButtons\\BTNScrollOfTownPortal.blp"
     private string RUI_PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
     private string RUI_RowHighlightModel = "UI\\Feedback\\Autocast\\UI-ModalButtonOn.mdx"
 endglobals
@@ -104,6 +106,35 @@ private function RUI_GetFactionDescription takes string factionName returns stri
     return "A regional faction whose standing changes according to your actions, quests, and combat choices."
 endfunction
 
+private function RUI_GetStatusInfoText takes nothing returns string
+    local string text = "Reputation tiers use these value ranges. Neutral starts at |cffffffff" + I2S(Reputation_REP_NEUTRAL) + "|r, so any Neutral value satisfies a Neutral requirement.|n|n"
+    set text = text + "|cff8b0000Enemy|r: " + I2S(Reputation_REP_ENEMY) + " to " + I2S(Reputation_REP_HOSTILE - 1) + " - attacked on sight; no services.|n"
+    set text = text + "|cffff4040Hostile|r: " + I2S(Reputation_REP_HOSTILE) + " to " + I2S(Reputation_REP_UNFRIENDLY - 1) + " - attacked on sight; no vendors, quests, or companions.|n"
+    set text = text + "|cffff8040Unfriendly|r: " + I2S(Reputation_REP_UNFRIENDLY) + " to " + I2S(Reputation_REP_NEUTRAL - 1) + " - tolerated, but faction services are closed.|n"
+    set text = text + "|cffffffffNeutral|r: " + I2S(Reputation_REP_NEUTRAL) + " to " + I2S(Reputation_REP_FRIENDLY - 1) + " - basic vendors, quest talk, and Neutral gates are available.|n"
+    set text = text + "|cff40ff40Friendly|r: " + I2S(Reputation_REP_FRIENDLY) + " to " + I2S(Reputation_REP_COVENANT - 1) + " - improved faction access and support.|n"
+    set text = text + "|cff00ff00Covenant|r: " + I2S(Reputation_REP_COVENANT) + " to " + I2S(Reputation_REP_EXALTED - 1) + " - regular services and companion access.|n"
+    set text = text + "|cffffd700Exalted|r: " + I2S(Reputation_REP_EXALTED) + " to 20000 - best standing and exclusive rewards where configured."
+    return text
+endfunction
+
+private function RUI_GetFactionConsequence takes integer rep returns string
+    if rep < Reputation_REP_HOSTILE then
+        return "Current consequence: attacked on sight; vendors, quest talk, and companion hiring are unavailable."
+    elseif rep < Reputation_REP_UNFRIENDLY then
+        return "Current consequence: hostile on sight; faction services and companion hiring are unavailable."
+    elseif rep < Reputation_REP_NEUTRAL then
+        return "Current consequence: not attacked by reputation alone, but vendors, quest talk, and companion hiring are unavailable."
+    elseif rep < Reputation_REP_FRIENDLY then
+        return "Current consequence: basic vendors, quest talk, and checks requiring Neutral reputation are available."
+    elseif rep < Reputation_REP_COVENANT then
+        return "Current consequence: improved faction access is available, including any checks requiring Friendly reputation."
+    elseif rep < Reputation_REP_EXALTED then
+        return "Current consequence: regular faction services and companion hiring are available where the faction supports them."
+    endif
+    return "Current consequence: best standing; exclusive rewards and titles may be granted where configured."
+endfunction
+
 private function RUI_GetFactionCount takes nothing returns integer
     local integer i = 1
     local integer count = 0
@@ -116,7 +147,7 @@ private function RUI_GetFactionCount takes nothing returns integer
         set i = i + 1
     endloop
 
-    return count
+    return count + 1
 endfunction
 
 private function RUI_GetFirstFactionId takes nothing returns integer
@@ -136,6 +167,9 @@ endfunction
 private function RUI_GetSelectedFaction takes player whichPlayer returns Faction
     local integer factionId = RUI_SelectedFactionId
 
+    if factionId == RUI_INFO_ROW_ID then
+        return 0
+    endif
     if factionId > 0 and RUI_IsFactionVisible(Faction.all[factionId]) then
         return Faction.all[factionId]
     endif
@@ -145,6 +179,7 @@ private function RUI_GetSelectedFaction takes player whichPlayer returns Faction
     if factionId > 0 then
         return Faction.all[factionId]
     endif
+    set RUI_SelectedFactionId = RUI_INFO_ROW_ID
     return 0
 endfunction
 
@@ -176,6 +211,7 @@ private function RUI_UpdateRows takes player whichPlayer returns nothing
     local integer i = 1
     local integer rowIndex = 1
     local integer skipped = 0
+    local integer playerId = GetPlayerId(whichPlayer)
     local integer maxStart = RUI_GetFactionCount() - RUI_VISIBLE_ROWS
     local Faction f
     local string iconPath
@@ -185,17 +221,43 @@ private function RUI_UpdateRows takes player whichPlayer returns nothing
     if maxStart < 0 then
         set maxStart = 0
     endif
-    if RUI_ListScrollValue[GetPlayerId(whichPlayer)] < 0 then
-        set RUI_ListScrollValue[GetPlayerId(whichPlayer)] = 0
-    elseif RUI_ListScrollValue[GetPlayerId(whichPlayer)] > maxStart then
-        set RUI_ListScrollValue[GetPlayerId(whichPlayer)] = maxStart
+    if RUI_ListScrollValue[playerId] < 0 then
+        set RUI_ListScrollValue[playerId] = 0
+    elseif RUI_ListScrollValue[playerId] > maxStart then
+        set RUI_ListScrollValue[playerId] = maxStart
+    endif
+
+    if skipped < RUI_ListScrollValue[playerId] then
+        set skipped = skipped + 1
+    elseif rowIndex <= RUI_VISIBLE_ROWS then
+        set RUI_RowFactionId[rowIndex] = RUI_INFO_ROW_ID
+        if GetLocalPlayer() == whichPlayer then
+            set iconPath = RUI_InfoIcon
+            set rowText = "|cffffe4a3Info|r"
+            set rowLevel = "|cff808080Guide|r"
+            if RUI_RowIconCache[rowIndex] != iconPath then
+                set RUI_RowIconCache[rowIndex] = iconPath
+                call BlzFrameSetTexture(RUI_RowIcon[rowIndex], iconPath, 0, true)
+            endif
+            if RUI_RowTextCache[rowIndex] != rowText then
+                set RUI_RowTextCache[rowIndex] = rowText
+                call BlzFrameSetText(RUI_RowText[rowIndex], rowText)
+            endif
+            if RUI_RowLevelCache[rowIndex] != rowLevel then
+                set RUI_RowLevelCache[rowIndex] = rowLevel
+                call BlzFrameSetText(RUI_RowLevel[rowIndex], rowLevel)
+            endif
+            call RUI_SetRowHighlight(rowIndex, RUI_SelectedFactionId == RUI_INFO_ROW_ID)
+            call RUI_SetRowVisible(rowIndex, true)
+        endif
+        set rowIndex = rowIndex + 1
     endif
 
     loop
         exitwhen i >= Faction.total
         set f = Faction.all[i]
         if RUI_IsFactionVisible(f) then
-            if skipped < RUI_ListScrollValue[GetPlayerId(whichPlayer)] then
+            if skipped < RUI_ListScrollValue[playerId] then
                 set skipped = skipped + 1
             elseif rowIndex <= RUI_VISIBLE_ROWS then
                 set RUI_RowFactionId[rowIndex] = f.id
@@ -243,8 +305,8 @@ private function RUI_UpdateRows takes player whichPlayer returns nothing
             set RUI_ListScrollMaxCache = maxStart
             call BlzFrameSetMinMaxValue(RUI_ListScroll, 0.0, I2R(maxStart))
         endif
-        if RUI_ListScrollValueCache != maxStart - RUI_ListScrollValue[GetPlayerId(whichPlayer)] then
-            set RUI_ListScrollValueCache = maxStart - RUI_ListScrollValue[GetPlayerId(whichPlayer)]
+        if RUI_ListScrollValueCache != maxStart - RUI_ListScrollValue[playerId] then
+            set RUI_ListScrollValueCache = maxStart - RUI_ListScrollValue[playerId]
             call BlzFrameSetValue(RUI_ListScroll, I2R(RUI_ListScrollValueCache))
         endif
         set RUI_SyncingListScroll = false
@@ -252,41 +314,7 @@ private function RUI_UpdateRows takes player whichPlayer returns nothing
     endif
 endfunction
 
-private function RUI_UpdateDetail takes player whichPlayer returns nothing
-    local Faction f = RUI_GetSelectedFaction(whichPlayer)
-    local integer rep
-    local string detailText
-    local string iconPath
-    local string titleText
-    local string valueText
-
-    if f == 0 then
-        if GetLocalPlayer() == whichPlayer then
-            if RUI_DetailIconCache != RUI_DefaultFactionIcon then
-                set RUI_DetailIconCache = RUI_DefaultFactionIcon
-                call BlzFrameSetTexture(RUI_DetailIcon, RUI_DefaultFactionIcon, 0, true)
-            endif
-            if RUI_DetailTitleCache != "No faction" then
-                set RUI_DetailTitleCache = "No faction"
-                call BlzFrameSetText(RUI_DetailTitle, "No faction")
-            endif
-            if RUI_DetailValueCache != "" then
-                set RUI_DetailValueCache = ""
-                call BlzFrameSetText(RUI_DetailValue, "")
-            endif
-            if RUI_DetailDescriptionCache != "No visible factions configured." then
-                set RUI_DetailDescriptionCache = "No visible factions configured."
-                call BlzFrameSetText(RUI_DetailDescription, "No visible factions configured.")
-            endif
-        endif
-        return
-    endif
-
-    set rep = Reputation.getRep(Player(0), f)
-    set iconPath = RUI_GetFactionIcon(f)
-    set titleText = "|cff80a0ff" + f.name + "|r"
-    set valueText = Reputation.getStatus(Player(0), f)
-    set detailText = RUI_GetFactionDescription(f.name) + "|n|nCurrent status: " + valueText + "|nReputation value: |cffffffff" + I2S(rep) + "|r"
+private function RUI_SetDetail takes player whichPlayer, string iconPath, string titleText, string valueText, string detailText returns nothing
     if GetLocalPlayer() == whichPlayer then
         if RUI_DetailIconCache != iconPath then
             set RUI_DetailIconCache = iconPath
@@ -305,6 +333,42 @@ private function RUI_UpdateDetail takes player whichPlayer returns nothing
             call BlzFrameSetText(RUI_DetailDescription, detailText)
         endif
     endif
+endfunction
+
+private function RUI_UpdateDetail takes player whichPlayer returns nothing
+    local Faction f
+    local integer rep
+    local string detailText
+    local string iconPath
+    local string titleText
+    local string valueText
+
+    if RUI_SelectedFactionId == 0 then
+        set RUI_SelectedFactionId = RUI_INFO_ROW_ID
+    endif
+
+    if RUI_SelectedFactionId == RUI_INFO_ROW_ID then
+        call RUI_SetDetail(whichPlayer, RUI_InfoIcon, "|cffffe4a3Info|r", "|cff808080Thresholds|r", RUI_GetStatusInfoText())
+        return
+    endif
+
+    set f = RUI_GetSelectedFaction(whichPlayer)
+    if RUI_SelectedFactionId == RUI_INFO_ROW_ID then
+        call RUI_SetDetail(whichPlayer, RUI_InfoIcon, "|cffffe4a3Info|r", "|cff808080Thresholds|r", RUI_GetStatusInfoText())
+        return
+    endif
+
+    if f == 0 then
+        call RUI_SetDetail(whichPlayer, RUI_DefaultFactionIcon, "No faction", "", "No visible factions configured.")
+        return
+    endif
+
+    set rep = Reputation.getRep(Player(0), f)
+    set iconPath = RUI_GetFactionIcon(f)
+    set titleText = "|cff80a0ff" + f.name + "|r"
+    set valueText = Reputation.getStatus(Player(0), f)
+    set detailText = RUI_GetFactionDescription(f.name) + "|n|nCurrent status: " + valueText + "|nReputation value: |cffffffff" + I2S(rep) + "|r|n" + RUI_GetFactionConsequence(rep)
+    call RUI_SetDetail(whichPlayer, iconPath, titleText, valueText, detailText)
 endfunction
 
 private function RUI_RefreshVisibleData takes player whichPlayer returns nothing
@@ -343,8 +407,8 @@ private function RUI_Update takes player whichPlayer returns nothing
         return
     endif
 
-    if RUI_SelectedFactionId <= 0 and RUI_GetFactionCount() > 0 then
-        set RUI_SelectedFactionId = RUI_GetFirstFactionId()
+    if RUI_SelectedFactionId == 0 then
+        set RUI_SelectedFactionId = RUI_INFO_ROW_ID
     endif
 
     call RUI_UpdateRows(whichPlayer)
@@ -399,7 +463,7 @@ private function RUI_RowAction takes nothing returns nothing
 
     if RUI_ButtonRow.has(handleId) then
         set rowIndex = RUI_ButtonRow.integer[handleId]
-        if RUI_RowFactionId[rowIndex] > 0 then
+        if RUI_RowFactionId[rowIndex] != 0 then
             set RUI_SelectedFactionId = RUI_RowFactionId[rowIndex]
             call RUI_Update(p)
         endif
