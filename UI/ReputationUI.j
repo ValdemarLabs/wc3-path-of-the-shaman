@@ -107,8 +107,7 @@ private function RUI_GetFactionDescription takes string factionName returns stri
 endfunction
 
 private function RUI_GetStatusInfoText takes nothing returns string
-    local string text = "Reputation tiers use these value ranges. Neutral starts at |cffffffff" + I2S(Reputation_REP_NEUTRAL) + "|r, so any Neutral value satisfies a Neutral requirement.|n|n"
-    set text = text + "|cff8b0000Enemy|r: " + I2S(Reputation_REP_ENEMY) + " to " + I2S(Reputation_REP_HOSTILE - 1) + " - attacked on sight; no services.|n"
+    local string text = "|cff8b0000Enemy|r: " + I2S(Reputation_REP_ENEMY) + " to " + I2S(Reputation_REP_HOSTILE - 1) + " - attacked on sight; no services.|n"
     set text = text + "|cffff4040Hostile|r: " + I2S(Reputation_REP_HOSTILE) + " to " + I2S(Reputation_REP_UNFRIENDLY - 1) + " - attacked on sight; no vendors, quests, or companions.|n"
     set text = text + "|cffff8040Unfriendly|r: " + I2S(Reputation_REP_UNFRIENDLY) + " to " + I2S(Reputation_REP_NEUTRAL - 1) + " - tolerated, but faction services are closed.|n"
     set text = text + "|cffffffffNeutral|r: " + I2S(Reputation_REP_NEUTRAL) + " to " + I2S(Reputation_REP_FRIENDLY - 1) + " - basic vendors, quest talk, and Neutral gates are available.|n"
