@@ -174,7 +174,6 @@ globals
 	private unit FadingSparksRodHero = null
 	private unit FadingSparksCaster = null
 	private unit FadingSparksTarget = null
-	private unit array PlacedManaRifts
 	private unit array RiftsUnits
 	private integer array RiftsUnitTypeIds
 	private Wave array RiftsWaveHandles
@@ -315,6 +314,17 @@ endfunction
 
 private function CanOfferRangerMissing takes nothing returns boolean
 	return AradionBackstorySeen
+endfunction
+
+private function IsElarindorHostileForRifts takes nothing returns boolean
+	local Faction f = Faction.getFaction("Elarindor")
+	if Reputation_IsFactionTemporarilyHostile("Elarindor") then
+		return true
+	endif
+	if f == 0 then
+		return false
+	endif
+	return Reputation.getRep(Player(0), f) < Reputation_REP_UNFRIENDLY
 endfunction
 
 private function RemoveRangerMissingEscortDestination takes nothing returns nothing
@@ -669,6 +679,16 @@ private function RemoveAradionCompanion takes nothing returns nothing
 		call RestoreAradionFieldOwner()
 	endif
 	set AradionCompanionActive = false
+endfunction
+
+private function IsRiftsFieldCompanionStateBroken takes nothing returns boolean
+	if ValeriaCompanionActive and (Valeria == null or not QuestGiver_IsUnitAlive(Valeria) or not Companions_IsControlled(Valeria)) then
+		return true
+	endif
+	if AradionCompanionActive and (Aradion == null or not QuestGiver_IsUnitAlive(Aradion) or not Companions_IsControlled(Aradion)) then
+		return true
+	endif
+	return false
 endfunction
 
 private function DisableRangerMissingDeathTrigger takes nothing returns nothing
@@ -2159,12 +2179,13 @@ private function GetRiftRect takes integer index returns rect
 	return null
 endfunction
 
-private function BindPlacedRiftUnitSlot takes integer index returns nothing
-	local unit u = PlacedManaRifts[index]
+private function BindRiftUnitSlot takes integer index returns nothing
+	local unit u = RiftsUnits[index]
 	local rect r = GetRiftRect(index)
 	if u != null and QuestGiver_IsUnitAlive(u) and (RiftsUnitTypeIds[index] == 0 or GetUnitTypeId(u) == RiftsUnitTypeIds[index]) then
-		set RiftsUnits[index] = u
 		set RiftsUnitTypeIds[index] = GetUnitTypeId(u)
+		set u = null
+		set r = null
 		return
 	endif
 	set u = QuestGiver_FindPreferredUnitInRect(r, RiftsUnitTypeIds[index], Player(PLAYER_NEUTRAL_PASSIVE), Nazgrek, udg_Zulkis, Aradion, Valeria, true)
@@ -2172,6 +2193,8 @@ private function BindPlacedRiftUnitSlot takes integer index returns nothing
 		set RiftsUnits[index] = u
 		set RiftsUnitTypeIds[index] = GetUnitTypeId(u)
 	endif
+	set u = null
+	set r = null
 endfunction
 
 private function ResetRiftsClosedState takes nothing returns nothing
@@ -2193,7 +2216,7 @@ private function EnsureRiftUnit takes integer index returns unit
 		return u
 	endif
 	set RiftsUnits[index] = null
-	call BindPlacedRiftUnitSlot(index)
+	call BindRiftUnitSlot(index)
 	set u = RiftsUnits[index]
 	if u != null and QuestGiver_IsUnitAlive(u) then
 		return u
@@ -2227,15 +2250,25 @@ private function RegisterRiftUnits takes nothing returns nothing
 endfunction
 
 private function PrepareValeriaForRiftsIntro takes unit hero returns nothing
+	local real targetX
+	local real targetY
+	local real startX
+	local real startY
+	local real angle
 	if Aradion == null or Valeria == null or not QuestGiver_IsUnitAlive(Aradion) or not QuestGiver_IsUnitAlive(Valeria) then
 		set hero = null
 		return
 	endif
 	call StopFollow(Valeria)
 	call StopValeriaPatrolInternal()
-	call SetUnitPosition(Valeria, GetRectCenterX(gg_rct_ValeriaNewPos), GetRectCenterY(gg_rct_ValeriaNewPos))
-	call SetUnitFacing(Valeria, 192.00)
-	call IssueImmediateOrder(Valeria, "stop")
+	set targetX = GetRectCenterX(gg_rct_ValeriaNewPos)
+	set targetY = GetRectCenterY(gg_rct_ValeriaNewPos)
+	set angle = 192.00 * bj_DEGTORAD
+	set startX = targetX + RIFTS_INTRO_VALERIA_OFFSET * Cos(angle)
+	set startY = targetY + RIFTS_INTRO_VALERIA_OFFSET * Sin(angle)
+	call SetUnitPosition(Valeria, startX, startY)
+	call SetUnitFacing(Valeria, bj_RADTODEG * Atan2(targetY - startY, targetX - startX))
+	call IssuePointOrder(Valeria, "move", targetX, targetY)
 	set hero = null
 endfunction
 
@@ -2275,7 +2308,7 @@ private function GetRiftIndexForUnit takes unit riftUnit returns integer
 		exitwhen i > RIFTS_MAX
 		if not RiftsClosed[i] then
 			set slotUnit = EnsureRiftUnit(i)
-			if slotUnit == riftUnit or PlacedManaRifts[i] == riftUnit then
+			if slotUnit == riftUnit then
 				set slotUnit = null
 				set r = null
 				return i
@@ -2394,22 +2427,23 @@ private function GetTriggeredRiftIndex takes unit hero returns integer
 	return result
 endfunction
 
-private function KillManaRiftUnit takes unit riftUnit returns nothing
+private function CloseManaRiftUnit takes unit riftUnit returns nothing
 	if riftUnit != null and GetUnitTypeId(riftUnit) == UNIT_MANA_RIFT then
 		if GetWidgetLife(riftUnit) > 0.405 then
 			call KillUnit(riftUnit)
 		endif
+		call RemoveUnit(riftUnit)
 	endif
 	set riftUnit = null
 endfunction
 
-private function GetRiftEffectX takes unit closedRift, unit placedRift, integer riftIndex returns real
+private function GetRiftEffectX takes unit closedRift, unit slotRift, integer riftIndex returns real
 	local rect r
 	local real result
 	if closedRift != null and GetUnitTypeId(closedRift) != 0 then
 		set result = GetUnitX(closedRift)
-	elseif placedRift != null and GetUnitTypeId(placedRift) != 0 then
-		set result = GetUnitX(placedRift)
+	elseif slotRift != null and GetUnitTypeId(slotRift) != 0 then
+		set result = GetUnitX(slotRift)
 	else
 		set r = GetRiftRect(riftIndex)
 		if r != null then
@@ -2419,18 +2453,18 @@ private function GetRiftEffectX takes unit closedRift, unit placedRift, integer 
 		endif
 	endif
 	set closedRift = null
-	set placedRift = null
+	set slotRift = null
 	set r = null
 	return result
 endfunction
 
-private function GetRiftEffectY takes unit closedRift, unit placedRift, integer riftIndex returns real
+private function GetRiftEffectY takes unit closedRift, unit slotRift, integer riftIndex returns real
 	local rect r
 	local real result
 	if closedRift != null and GetUnitTypeId(closedRift) != 0 then
 		set result = GetUnitY(closedRift)
-	elseif placedRift != null and GetUnitTypeId(placedRift) != 0 then
-		set result = GetUnitY(placedRift)
+	elseif slotRift != null and GetUnitTypeId(slotRift) != 0 then
+		set result = GetUnitY(slotRift)
 	else
 		set r = GetRiftRect(riftIndex)
 		if r != null then
@@ -2440,7 +2474,7 @@ private function GetRiftEffectY takes unit closedRift, unit placedRift, integer 
 		endif
 	endif
 	set closedRift = null
-	set placedRift = null
+	set slotRift = null
 	set r = null
 	return result
 endfunction
@@ -2465,6 +2499,10 @@ private function StartRiftsRitualInternal takes unit riftUnit, integer riftIndex
 		return
 	endif
 	if not IsAradionFieldZoneActive() then
+		return
+	endif
+	if IsElarindorHostileForRifts() then
+		call DebugMsg("Rift ritual blocked: Elarindor is hostile")
 		return
 	endif
 	if riftIndex <= 0 or riftIndex > RIFTS_MAX or RiftsClosed[riftIndex] then
@@ -2503,6 +2541,9 @@ private function TryStartRiftsRitualForHero takes unit hero returns boolean
 		return false
 	endif
 	if not IsAradionFieldZoneActive() then
+		return false
+	endif
+	if IsElarindorHostileForRifts() then
 		return false
 	endif
 	set riftIndex = GetTriggeredRiftIndex(hero)
@@ -2612,6 +2653,18 @@ private function StopRiftsFailResetTimer takes nothing returns nothing
 	if RiftsFailResetTimer != null then
 		call DestroyTimer(RiftsFailResetTimer)
 		set RiftsFailResetTimer = null
+	endif
+endfunction
+
+private function RequestRiftsElarindorHostilityFailure takes nothing returns nothing
+	if RiftsRitualActive and not RiftsFailureInProgress then
+		call ExecuteFunc("qAradion_FailRiftsForElarindorHostilityPublic")
+	endif
+endfunction
+
+private function RequestRiftsCompanionStateFailure takes nothing returns nothing
+	if RiftsQuestActive and not RiftsFailureInProgress then
+		call ExecuteFunc("qAradion_FailRiftsForCompanionStatePublic")
 	endif
 endfunction
 
@@ -2979,6 +3032,10 @@ private function OnRiftsCountdownTick takes nothing returns nothing
 	if not RiftsRitualActive or Aradion == null or not QuestGiver_IsUnitAlive(Aradion) then
 		return
 	endif
+	if IsElarindorHostileForRifts() then
+		call RequestRiftsElarindorHostilityFailure()
+		return
+	endif
 	if RiftsCurrentRift != null and QuestGiver_IsUnitAlive(RiftsCurrentRift) and GetUnitCurrentOrder(Aradion) != OrderId("blizzard") then
 		call OrderAradionToChannelCurrentRift()
 	endif
@@ -3030,33 +3087,32 @@ endfunction
 private function FinishRiftsCurrentRitual takes nothing returns nothing
 	local unit hero
 	local unit closedRift = RiftsCurrentRift
-	local unit placedRift = null
+	local unit slotRift = null
 	local integer closedIndex = RiftsCurrentIndex
 	local real closedRiftX = 0.00
 	local real closedRiftY = 0.00
 	call SyncUnitReferences()
 	if not RiftsQuestActive then
 		set closedRift = null
-		set placedRift = null
+		set slotRift = null
 		return
 	endif
 	call StopRiftsRuntimeTimers()
 	call ClearRiftsWaveHandles()
 	call DialogSystem_ClearFieldLineQueue()
 	if closedIndex > 0 and closedIndex <= RIFTS_MAX then
-		set placedRift = PlacedManaRifts[closedIndex]
+		set slotRift = RiftsUnits[closedIndex]
 		set RiftsClosed[closedIndex] = true
 		set RiftsUnits[closedIndex] = null
-		set PlacedManaRifts[closedIndex] = null
 	endif
-	set closedRiftX = GetRiftEffectX(closedRift, placedRift, closedIndex)
-	set closedRiftY = GetRiftEffectY(closedRift, placedRift, closedIndex)
+	set closedRiftX = GetRiftEffectX(closedRift, slotRift, closedIndex)
+	set closedRiftY = GetRiftEffectY(closedRift, slotRift, closedIndex)
 	if closedRiftX != 0.00 or closedRiftY != 0.00 then
 		call DestroyEffect(AddSpecialEffect("Objects\\Spawnmodels\\NightElf\\NECancelDeath\\NECancelDeath.mdl", closedRiftX, closedRiftY))
 	endif
-	call KillManaRiftUnit(placedRift)
-	if closedRift != placedRift then
-		call KillManaRiftUnit(closedRift)
+	call CloseManaRiftUnit(slotRift)
+	if closedRift != slotRift then
+		call CloseManaRiftUnit(closedRift)
 	endif
 	set RiftsRitualActive = false
 	set RiftsCurrentRift = null
@@ -3079,7 +3135,7 @@ private function FinishRiftsCurrentRitual takes nothing returns nothing
 	endif
 	set hero = null
 	set closedRift = null
-	set placedRift = null
+	set slotRift = null
 endfunction
 
 private function OnRiftsRitualExpire takes nothing returns nothing
@@ -3141,6 +3197,16 @@ private function OnRiftsFieldTick takes nothing returns nothing
 	local QuestData q
 	call SyncUnitReferences()
 	if not RiftsQuestActive or RiftsFailureInProgress then
+		return
+	endif
+	if IsRiftsFieldCompanionStateBroken() then
+		call RequestRiftsCompanionStateFailure()
+		return
+	endif
+	if IsElarindorHostileForRifts() then
+		if RiftsRitualActive then
+			call RequestRiftsElarindorHostilityFailure()
+		endif
 		return
 	endif
 	if not IsAradionFieldZoneActive() then
@@ -3335,6 +3401,20 @@ private function HandleRiftsFailure takes string reason returns nothing
 	set t = CreateTimer()
 	call TimerStart(t, delay, false, function PlayRiftsFailureSurvivorLine)
 	set t = null
+endfunction
+
+public function FailRiftsForElarindorHostilityPublic takes nothing returns nothing
+	call SyncUnitReferences()
+	if RiftsRitualActive and not RiftsFailureInProgress then
+		call HandleRiftsFailure("Elarindor turned hostile during the ritual.")
+	endif
+endfunction
+
+public function FailRiftsForCompanionStatePublic takes nothing returns nothing
+	call SyncUnitReferences()
+	if RiftsQuestActive and not RiftsFailureInProgress then
+		call HandleRiftsFailure("Aradion or Valeria left the party.")
+	endif
 endfunction
 
 private function StopFadingSparksTimer takes nothing returns nothing
@@ -3893,6 +3973,27 @@ private function GetFadingSparksRodHero takes nothing returns unit
 	return null
 endfunction
 
+private function GiveTelanorRodToHero takes unit hero returns nothing
+	local item rod
+	local real x
+	local real y
+	if hero == null or not QuestGiver_IsUnitAlive(hero) then
+		call DebugMsg("Tel'anor Rod grant skipped: no valid hero")
+		return
+	endif
+	set x = GetUnitX(hero)
+	set y = GetUnitY(hero)
+	set rod = CreateItem(ITEM_TELANOR_ROD, x, y)
+	if rod == null then
+		call DebugMsg("Tel'anor Rod grant failed: CreateItem returned null")
+		return
+	endif
+	if not UnitAddItem(hero, rod) then
+		call SetItemPosition(rod, x, y)
+	endif
+	set rod = null
+endfunction
+
 private function OnAcceptQuest3End takes nothing returns nothing
 	local unit hero
 	local QuestData q
@@ -3905,7 +4006,7 @@ private function OnAcceptQuest3End takes nothing returns nothing
 	call RemoveExistingTelanorRods()
 	set hero = GetFadingSparksRodHero()
 	if hero != null then
-		call UnitAddItemByIdSwapped(ITEM_TELANOR_ROD, hero)
+		call GiveTelanorRodToHero(hero)
 	endif
 	set FadingSparksRodHero = null
 	call StartExitFadeOut()
@@ -3917,7 +4018,7 @@ private function OnRecoverTelanorRodEnd takes nothing returns nothing
 	call RemoveExistingTelanorRods()
 	set hero = GetFadingSparksRodHero()
 	if hero != null then
-		call UnitAddItemByIdSwapped(ITEM_TELANOR_ROD, hero)
+		call GiveTelanorRodToHero(hero)
 	endif
 	set FadingSparksRodHero = null
 	call StartExitFadeOut()
@@ -4404,9 +4505,6 @@ private function InitDelayed takes nothing returns nothing
 	set Nazgrek = udg_Nazgrek
 	set Valeria = udg_Valeria
 	set AradionHomeOwner = GetOwningPlayer(Aradion)
-	set PlacedManaRifts[1] = gg_unit_n023_0971
-	set PlacedManaRifts[2] = gg_unit_n023_1093
-	set PlacedManaRifts[3] = gg_unit_n023_1092
 	set RiftsUnitTypeIds[1] = UNIT_MANA_RIFT
 	set RiftsUnitTypeIds[2] = UNIT_MANA_RIFT
 	set RiftsUnitTypeIds[3] = UNIT_MANA_RIFT
@@ -4514,6 +4612,10 @@ public function BeginRiftsRitual takes unit riftUnit returns nothing
 		set riftUnit = null
 		return
 	endif
+	if IsElarindorHostileForRifts() then
+		set riftUnit = null
+		return
+	endif
 	set hero = GetAllowedRiftHeroInRange(riftUnit)
 	if hero == null then
 		set hero = ResolveDialogHero()
@@ -4544,7 +4646,7 @@ endfunction
 
 public function CompleteRiftsCurrentRitual takes nothing returns nothing
 	call SyncUnitReferences()
-	if not RiftsQuestActive then
+	if not RiftsQuestActive or not RiftsRitualActive then
 		return
 	endif
 	call FinishRiftsCurrentRitual()
