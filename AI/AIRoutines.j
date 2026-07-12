@@ -563,8 +563,6 @@ private function AIR_WakeUnitByKey takes unit whichUnit, integer unitKey returns
     call AIR_UnitWasPaused.boolean.remove(unitKey)
     call AIR_UnitWasHidden.boolean.remove(unitKey)
     call AIR_UnitHadSleepAbility.boolean.remove(unitKey)
-    call AIR_UnitTurnoverTime.real.remove(unitKey)
-    call AIR_UnitLeaving.boolean.remove(unitKey)
 endfunction
 
 private function AIR_BeginSleep takes unit whichUnit, integer unitKey, boolean hideDuringSleep returns nothing
@@ -682,6 +680,8 @@ private function AIR_ClearUnitRegistration takes unit whichUnit, boolean wakeFir
     call AIR_UnitWasPaused.boolean.remove(unitKey)
     call AIR_UnitWasHidden.boolean.remove(unitKey)
     call AIR_UnitHadSleepAbility.boolean.remove(unitKey)
+    call AIR_UnitTurnoverTime.real.remove(unitKey)
+    call AIR_UnitLeaving.boolean.remove(unitKey)
 endfunction
 
 private function AIR_RegisterUnitInternalEx takes unit whichUnit, integer routineId, integer zoneId returns boolean
