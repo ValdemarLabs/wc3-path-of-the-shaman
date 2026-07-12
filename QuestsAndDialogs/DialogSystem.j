@@ -113,6 +113,7 @@ globals
 	dialog DialogSystem_LastDialog = null
 	unit DialogSystem_ActiveNPC = null
 	player DialogSystem_ActivePlayer = null
+	boolean DialogSystem_DialogVisible = false
 endglobals
 
 //===========================================================================
@@ -531,6 +532,10 @@ public function ClearFieldLineQueue takes nothing returns nothing
 	set DialogSystem_FieldLineQueueBusy = false
 endfunction
 
+public function IsFieldLineQueueActive takes nothing returns boolean
+	return DialogSystem_FieldLineQueueBusy or DialogSystem_FieldLineQueueCount > 0
+endfunction
+
 private function PlayNextFieldLine takes nothing returns nothing
 	local real delay
 	local integer i
@@ -835,7 +840,9 @@ public function ShowDialog takes dialog d, player p returns nothing
 		return
 	endif
 	call EnableUserControl(true)
+	set DialogSystem_LastDialog = d
 	set DialogSystem_ActivePlayer = p
+	set DialogSystem_DialogVisible = true
 	call DialogDisplay(p, d, true)
 endfunction
 
@@ -844,6 +851,11 @@ public function HideDialog takes dialog d, player p returns nothing
 		return
 	endif
 	call DialogDisplay(p, d, false)
+	set DialogSystem_DialogVisible = false
+endfunction
+
+public function IsDialogVisible takes nothing returns boolean
+	return DialogSystem_DialogVisible
 endfunction
 
 //===========================================================================
@@ -1583,6 +1595,7 @@ public function OnClicked takes nothing returns nothing
 	set DialogSystem_LastButton = b
 	set DialogSystem_LastAction = DialogButtonAction.integer[id]
 	set DialogSystem_LastDialog = DialogButtonDialog.dialog[id]
+	set DialogSystem_DialogVisible = false
 	set lineAction = DialogButtonLineAction.integer[id]
 	if lineAction != DIALOG_LINE_ACTION_NONE then
 		if lineAction == DIALOG_LINE_ACTION_TRADE then
