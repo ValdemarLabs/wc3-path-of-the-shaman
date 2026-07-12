@@ -33,8 +33,8 @@ globals
     private constant real MP_HARVEST_RANGE = 1024.00
     private constant real MP_HARVEST_RANGE_SQ = 1048576.00
     private constant integer MP_OWNER_PLAYER_ID = 1
-    // Emberpeak Highlands parent zone for the mountain camp.
-    private constant integer MP_ROUTINE_ZONE_ID = 3
+    // Sereneglade parent zone for the mountain camp.
+    private constant integer MP_ROUTINE_ZONE_ID = 2
     private constant integer MP_PEON_UNIT_TYPE_ID = 'opeo'
     private constant integer MP_PEON_COUNT = 5
 
