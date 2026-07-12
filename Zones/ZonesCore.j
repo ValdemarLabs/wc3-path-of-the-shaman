@@ -1508,6 +1508,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.notableCharacters = "-"
     set z.iconPath = "zones\\zone06_thornwoods.blp"  
     call z.addEnterRegion(gg_rct_HordeScoutBase)
+    call z.setParentZone(6)
     call RegisterZone(z)
     
     //=======================================================================
