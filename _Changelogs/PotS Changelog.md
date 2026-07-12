@@ -37,6 +37,12 @@
   - added an Info row with tier thresholds, and each faction detail now shows the consequence of the current status.
   - Added Stormhaven UI description
 
+- `AI.j`
+  - Aveline now uses graveyard id 5 only when she is not companion-controlled. If she is a companion, she still uses udg_GraveyardSelect when available; other non-companion AI still keeps the random 1..9 graveyard fallback.
+  - Camp fire AI now stops first, retries nearby random placement points, and removes the temporary camp item on failure instead of dropping it.
+  - Generic companion pickup now ignores gather-node items, so profession nodes only go through profession logic.
+  - Low-skill profession attempts now immediately stop, clear tracked tools, reset wander to idle, and back off instead of short-loop retrying.
+
 - `AI_LegacyLocations.j`
   - AI_Warlock_UndeadProfileId now gets the same Horde spawn, retreat, and shop bindings as AI_Warlock_ProfileId, so undead warlock random spawning should use the Horde spawn rect list instead of falling back to random playable-map coordinates.
 
@@ -46,17 +52,33 @@
 
 - `StormhavenCity.j`
   - Creates 30 Player(8) Stormhaven citizens across street, market, and social city routines, with weighted random unit types and periodic turnover/replacement.
+  - Random two-villager overhead chats during street/market/social routine callbacks.
+  - Player proximity gate: chat only starts when a visible Player(0) unit is within 500 range.
+  - Global chat lock so conversations do not overlap.
+  - 90 paired lines split by speaker/listener class: male, female, child.
+  - Unit-type chat classes through AddCitizenTypeEx, so future villagers can be added with the right line category.
+  - Note: these chats use TexTags to display the chats. `ExSound.j` is not utilized and thus there are no audio files for the chat voicelines at the moment.
 
 - `qAradion.j`
   - Mana Rift not killed issue: The Mana Rift issue was not that the unit variable was lost. RiftsCurrentRift and RiftsUnits[] existed, but the finish path also used a redundant PlacedManaRifts[] copy seeded from placed unit globals. I removed that extra array entirely. Rift lookup and completion now use RiftsUnits[] plus RiftsCurrentRift, and closing calls KillUnit then RemoveUnit through CloseManaRiftUnit. Completion also now refuses to run unless a ritual is actually active.
   - Other fixes:
-    - Tel’anor Rod is now explicitly created in GiveTelanorRodToHero with CreateItem(ITEM_TELANOR_ROD, heroX, heroY) and added to the hero inventory    
     - Valeria now starts offset and moves to her Rifts intro position instead of teleporting directly.
     - Rifts ritual start is blocked when Elarindor rep is hostile, and active rituals fail if it turns hostile mid-ritual.
     - Rifts now treats temporary Elarindor hostility as hostile.
     - detects stale Aradion/Valeria companion control if the generic companion system removed them.
     - fails/stops Rifts instead of letting timers/orders continue with stale companion state.
     - Ranger Missing had faction = "Elarindor", and QuestMaster treats any quest faction as a reputation requirement. Since requiredReputation defaults to 0, the quest silently required neutral Elarindor rep before it could become QUEST_STATE_AVAILABLE. Changed "call q.setRequiredReputation(Reputation_REP_ENEMY)" so it still rewards Elarindor reputation, but negative Elarindor rep no longer hides the start button after Aradion’s intro.
+    - Valeria now randomly plays Valeria_0021 / Valeria_0022 at her unit while Ranger Missing escort is active and she is in qAradion’s companion state.
+    - Removed the direct DInvUnitAddItem path for Tel’anor Rod.
+    - Rod grant now does the normal flow only: CreateItem(I013) -> UnitAddItem(hero, rod).
+    - If UnitAddItem returns false, it forces the same rod visible at the hero position and adds floating item text, plus a debug message.
+    - Rifts acceptance now recreates Valeria if missing/dead, places her behind the hero, and orders her to move to a side position next to Aradion.
+    - Mana Rifts are now created by qAradion during InitDelayed at gg_rct_ManaRift1/2/3, stored in RiftsUnits[], owned by Neutral Passive, and explicitly discarded from CreepRespawn.
+
+  - `Companions controller unit` abilities
+    - Passive Mode, Normal Mode, Aggressive Mode, Hold Position can now be targeted on single unit or on point (ground)
+       - Cast on single target unit the command only affects that unit
+       - Cast on point affect the whole companion party
 
 - `ZonesCore.j`
   - Added parentzone for Horde Scout Base (id 8810)
@@ -64,6 +86,15 @@
 
 - `HordeMainBasePeons.j`
   - Draft AI Routines for Horde Main base peons
+
+- `Companions.j`
+   - Mode abilities now:
+     - Unit-target cast: applies only to that targeted companion/tamed unit.
+     - Point/no-unit cast: applies to the full controlled companion group.
+
+- `CreepRespawn.j`
+   - Added CreepRespawn_DiscardUnit so quest-managed units can be excluded from saved positions and respawn scheduling.
+
 
 ## [12.7.2026] Part II
 
