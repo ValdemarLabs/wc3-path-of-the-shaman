@@ -2483,7 +2483,7 @@ private function PlayRiftsStartBarks takes nothing returns nothing
 	local integer roll
 	set roll = GetRandomInt(1, 2)
 	if roll == 1 then
-		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0074", "Stand ready. Once I begin, this place can start to crawl with wraiths.")
+		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0074", "Stand ready Nazgrek. Once I begin, this place can start to crawl with wraiths.")
 	else
 		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0075", "I will attempt to close this rift. But I cannot fight and focus at once... you must protect me!")
 	endif
