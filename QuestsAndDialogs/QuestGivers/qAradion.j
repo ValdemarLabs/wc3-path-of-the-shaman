@@ -4425,6 +4425,7 @@ private function CreateQuests takes nothing returns nothing
 
 	set q = QuestGiver_CreateQuest(QUEST_RANGER_MISSING, Aradion, "normal", 18, null)
 	call QuestGiver_ApplyQuestMetadata(q, "Ranger Missing", "ReplaceableTextures\\CommandButtons\\BTNHighElvenArcher.blp", "Find Valeria somewhere in " + GetAradionFieldZoneListText() + ".\n\n", infoText, info2Text, 15, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
+	call q.setRequiredReputation(Reputation_REP_ENEMY)
 	call q.setRewardParams(true, 0, true, 0, false, 0, true, 200, false)
 	set availabilityCondition = CreateTrigger()
 	call TriggerAddCondition(availabilityCondition, Condition(function CanOfferRangerMissing))
