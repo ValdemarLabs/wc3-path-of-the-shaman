@@ -53,6 +53,10 @@
     set isActive = AIRoutines_IsZoneActive(zoneId)
     call AIRoutines_CreateManagedUnitGroup(owner, unitTypeId, spawnRect, routineId, count, respawnDelay, facing)
     call AIRoutines_CreateManagedUnitGroupInZone(owner, unitTypeId, spawnRect, routineId, count, respawnDelay, facing, zoneId)
+    call AIRoutines_CreateManagedRandomUnitGroup(owner, spawnRect, routineId, count, respawnDelay, facing)
+    call AIRoutines_CreateManagedRandomUnitGroupInZone(owner, spawnRect, routineId, count, respawnDelay, facing, zoneId)
+    call AIRoutines_AddManagedUnitGroupType(spawnGroupId, unitTypeId, weight)
+    call AIRoutines_SetManagedUnitGroupTurnover(spawnGroupId, minInterval, maxInterval, exitRect, removeDelay)
     call AIRoutines_SetManagedUnitGroupRoutine(spawnGroupId, routineId)
     call AIRoutines_SetManagedUnitGroupEnabled(spawnGroupId, enabled)
     call AIRoutines_RefillManagedUnitGroup(spawnGroupId)
@@ -127,6 +131,14 @@
       set r = AIRoutines_CreateVillageWanderRoutine("Created Villagers", gg_rct_Village, 8.00, 16.00, 3.00, 8.00)
       call AIRoutines_CreateManagedUnitGroup(Player(PLAYER_NEUTRAL_PASSIVE), 'nvlk', gg_rct_VillageSpawn, r, 6, 60.00, -1.00)
 
+    Managed random village group:
+      set g = AIRoutines_CreateManagedRandomUnitGroup(Player(PLAYER_NEUTRAL_PASSIVE), gg_rct_VillageSpawn, r, 8, 45.00, -1.00)
+      call AIRoutines_AddManagedUnitGroupType(g, 'nvlk', 6)
+      call AIRoutines_AddManagedUnitGroupType(g, 'nvil', 3)
+      call AIRoutines_AddManagedUnitGroupType(g, 'nwgs', 1)
+      call AIRoutines_SetManagedUnitGroupTurnover(g, 180.00, 420.00, gg_rct_VillageExits, 10.00)
+      call AIRoutines_RefillManagedUnitGroup(g)
+
     Zone-gated NPCs:
       set r = AIRoutines_CreateVillageWanderRoutine("Sereneglade Villagers", gg_rct_02SereneGlade, 8.00, 16.00, 3.00, 8.00)
       call AIRoutines_RegisterUnitsInRectInZone(gg_rct_Villagers, r, 2)
@@ -163,11 +175,14 @@ globals
     private constant integer AIR_MAX_ACTIVE_UNITS = 2048
     private constant integer AIR_MAX_ZONE_UNITS = 999
     private constant integer AIR_MAX_SPAWN_GROUPS = 512
+    private constant integer AIR_MAX_SPAWN_GROUP_UNIT_TYPES = 32
     private constant integer AIR_MAX_PLAYER_INDEX = 27
     private constant integer AIR_ROUTINE_STEP_KEY = 1000
     private constant integer AIR_ZONE_UNIT_KEY = 1000
+    private constant integer AIR_SPAWN_GROUP_TYPE_KEY = 100
     private constant real AIR_TICK_INTERVAL = 0.50
     private constant real AIR_ATTACK_WAKE_DELAY = 12.00
+    private constant real AIR_DEFAULT_TURNOVER_REMOVE_DELAY = 8.00
 
     // Routine families and lookup.
     private integer AIR_NextRoutineId = 1
@@ -208,15 +223,23 @@ globals
     private boolean array AIR_StepSleepHide
 
     private integer array AIR_SpawnGroupUnitType
+    private integer array AIR_SpawnGroupTypeCount
+    private integer array AIR_SpawnGroupTypeWeightTotal
     private integer array AIR_SpawnGroupRoutine
     private integer array AIR_SpawnGroupZone
     private integer array AIR_SpawnGroupTargetCount
     private integer array AIR_SpawnGroupAliveCount
     private real array AIR_SpawnGroupRespawnDelay
     private real array AIR_SpawnGroupFacing
+    private real array AIR_SpawnGroupTurnoverMin
+    private real array AIR_SpawnGroupTurnoverMax
+    private real array AIR_SpawnGroupTurnoverRemoveDelay
     private boolean array AIR_SpawnGroupEnabled
+    private boolean array AIR_SpawnGroupRandomTypes
+    private boolean array AIR_SpawnGroupTurnoverEnabled
     private player array AIR_SpawnGroupOwner
     private rect array AIR_SpawnGroupRect
+    private rect array AIR_SpawnGroupExitRect
 
     private Table AIR_RoutineByName = 0
     private Table AIR_RoutineStepId = 0
@@ -235,7 +258,12 @@ globals
     private Table AIR_UnitAIRegistered = 0
     private Table AIR_UnitTypeRoutine = 0
     private Table AIR_UnitSpawnGroup = 0
+    private Table AIR_UnitTurnoverTime = 0
+    private Table AIR_UnitLeaving = 0
+    private Table AIR_SpawnGroupUnitTypeChoice = 0
+    private Table AIR_SpawnGroupUnitTypeWeight = 0
     private Table AIR_RespawnTimerGroup = 0
+    private Table AIR_TurnoverTimerUnit = 0
     private Table AIR_AIProfileByRoutineType = 0
     private Table AIR_ZoneActive = 0
     private Table AIR_ZoneHeroCount = 0
@@ -535,6 +563,8 @@ private function AIR_WakeUnitByKey takes unit whichUnit, integer unitKey returns
     call AIR_UnitWasPaused.boolean.remove(unitKey)
     call AIR_UnitWasHidden.boolean.remove(unitKey)
     call AIR_UnitHadSleepAbility.boolean.remove(unitKey)
+    call AIR_UnitTurnoverTime.real.remove(unitKey)
+    call AIR_UnitLeaving.boolean.remove(unitKey)
 endfunction
 
 private function AIR_BeginSleep takes unit whichUnit, integer unitKey, boolean hideDuringSleep returns nothing
@@ -701,14 +731,88 @@ private function AIR_GetSpawnFacing takes integer spawnGroupId returns real
     return AIR_SpawnGroupFacing[spawnGroupId]
 endfunction
 
+private function AIR_GetSpawnGroupTypeKey takes integer spawnGroupId, integer index returns integer
+    return spawnGroupId * AIR_SPAWN_GROUP_TYPE_KEY + index
+endfunction
+
+private function AIR_GetRandomSpawnGroupUnitType takes integer spawnGroupId returns integer
+    local integer typeCount = AIR_SpawnGroupTypeCount[spawnGroupId]
+    local integer totalWeight = AIR_SpawnGroupTypeWeightTotal[spawnGroupId]
+    local integer index = 1
+    local integer key
+    local integer weight
+    local integer roll
+    if typeCount <= 0 then
+        return 0
+    endif
+    if totalWeight <= 0 then
+        return AIR_SpawnGroupUnitTypeChoice[AIR_GetSpawnGroupTypeKey(spawnGroupId, GetRandomInt(1, typeCount))]
+    endif
+
+    set roll = GetRandomInt(1, totalWeight)
+    loop
+        exitwhen index > typeCount
+        set key = AIR_GetSpawnGroupTypeKey(spawnGroupId, index)
+        set weight = AIR_SpawnGroupUnitTypeWeight[key]
+        if roll <= weight then
+            return AIR_SpawnGroupUnitTypeChoice[key]
+        endif
+        set roll = roll - weight
+        set index = index + 1
+    endloop
+    return AIR_SpawnGroupUnitTypeChoice[AIR_GetSpawnGroupTypeKey(spawnGroupId, typeCount)]
+endfunction
+
+private function AIR_GetSpawnGroupUnitType takes integer spawnGroupId returns integer
+    if AIR_SpawnGroupRandomTypes[spawnGroupId] or AIR_SpawnGroupTypeCount[spawnGroupId] > 0 then
+        return AIR_GetRandomSpawnGroupUnitType(spawnGroupId)
+    endif
+    return AIR_SpawnGroupUnitType[spawnGroupId]
+endfunction
+
+private function AIR_GetTurnoverDelay takes integer spawnGroupId returns real
+    local real minDelay = AIR_SpawnGroupTurnoverMin[spawnGroupId]
+    local real maxDelay = AIR_SpawnGroupTurnoverMax[spawnGroupId]
+    if minDelay < 0.00 then
+        set minDelay = 0.00
+    endif
+    if maxDelay < minDelay then
+        set maxDelay = minDelay
+    endif
+    if maxDelay > minDelay then
+        return GetRandomReal(minDelay, maxDelay)
+    endif
+    return minDelay
+endfunction
+
+private function AIR_ResetUnitTurnover takes unit whichUnit, integer spawnGroupId returns nothing
+    local integer unitKey
+    local real delay
+    if whichUnit == null then
+        return
+    endif
+    set unitKey = GetHandleId(whichUnit)
+    set delay = AIR_GetTurnoverDelay(spawnGroupId)
+    if AIR_SpawnGroupTurnoverEnabled[spawnGroupId] and delay > 0.00 then
+        set AIR_UnitTurnoverTime.real[unitKey] = AIR_GetNow() + delay
+    else
+        call AIR_UnitTurnoverTime.real.remove(unitKey)
+    endif
+endfunction
+
 private function AIR_SpawnManagedUnit takes integer spawnGroupId returns unit
     local rect spawnRect
     local player owner
     local unit created
+    local integer unitTypeId
     if not AIR_SpawnGroupExists(spawnGroupId) or not AIR_SpawnGroupEnabled[spawnGroupId] then
         return null
     endif
-    if AIR_SpawnGroupUnitType[spawnGroupId] == 0 or not AIR_RoutineExists(AIR_SpawnGroupRoutine[spawnGroupId]) then
+    if not AIR_RoutineExists(AIR_SpawnGroupRoutine[spawnGroupId]) then
+        return null
+    endif
+    set unitTypeId = AIR_GetSpawnGroupUnitType(spawnGroupId)
+    if unitTypeId == 0 then
         return null
     endif
 
@@ -720,11 +824,12 @@ private function AIR_SpawnManagedUnit takes integer spawnGroupId returns unit
         return null
     endif
 
-    set created = CreateUnit(owner, AIR_SpawnGroupUnitType[spawnGroupId], AIR_GetRectRandomX(spawnRect), AIR_GetRectRandomY(spawnRect), AIR_GetSpawnFacing(spawnGroupId))
+    set created = CreateUnit(owner, unitTypeId, AIR_GetRectRandomX(spawnRect), AIR_GetRectRandomY(spawnRect), AIR_GetSpawnFacing(spawnGroupId))
     if created != null then
         if AIR_RegisterUnitInternalEx(created, AIR_SpawnGroupRoutine[spawnGroupId], AIR_SpawnGroupZone[spawnGroupId]) then
             set AIR_SpawnGroupAliveCount[spawnGroupId] = AIR_SpawnGroupAliveCount[spawnGroupId] + 1
             set AIR_UnitSpawnGroup[GetHandleId(created)] = spawnGroupId
+            call AIR_ResetUnitTurnover(created, spawnGroupId)
         else
             call RemoveUnit(created)
             set created = null
@@ -742,6 +847,9 @@ private function AIR_SwitchRegisteredUnitRoutine takes unit whichUnit, integer r
         return
     endif
     set unitKey = GetHandleId(whichUnit)
+    if AIR_UnitLeaving.boolean[unitKey] then
+        return
+    endif
     if AIR_UnitRoutine[unitKey] <= 0 then
         call AIR_RegisterUnitInternal(whichUnit, routineId)
         return
@@ -808,6 +916,39 @@ private function AIR_ReassignSpawnGroupUnits takes integer spawnGroupId, integer
     set whichUnit = null
 endfunction
 
+private function AIR_ResetSpawnGroupTurnoverUnits takes integer spawnGroupId returns nothing
+    local integer index = 1
+    local integer zoneId
+    local integer count
+    local unit whichUnit
+    if not AIR_SpawnGroupExists(spawnGroupId) then
+        return
+    endif
+
+    set zoneId = AIR_SpawnGroupZone[spawnGroupId]
+    if zoneId > 0 then
+        set count = AIR_ZoneUnitCount[zoneId]
+        loop
+            exitwhen index > count
+            set whichUnit = AIR_ZoneUnit.unit[AIR_GetZoneUnitKey(zoneId, index)]
+            if whichUnit != null and AIR_UnitSpawnGroup[GetHandleId(whichUnit)] == spawnGroupId then
+                call AIR_ResetUnitTurnover(whichUnit, spawnGroupId)
+            endif
+            set index = index + 1
+        endloop
+    else
+        loop
+            exitwhen index > AIR_ActiveCount
+            set whichUnit = AIR_ActiveUnit[index]
+            if whichUnit != null and AIR_UnitSpawnGroup[GetHandleId(whichUnit)] == spawnGroupId then
+                call AIR_ResetUnitTurnover(whichUnit, spawnGroupId)
+            endif
+            set index = index + 1
+        endloop
+    endif
+    set whichUnit = null
+endfunction
+
 private function AIR_OnManagedRespawnTimer takes nothing returns nothing
     local timer expiredTimer = GetExpiredTimer()
     local integer timerKey = GetHandleId(expiredTimer)
@@ -856,6 +997,69 @@ private function AIR_HandleManagedUnitGone takes unit whichUnit returns nothing
     if AIR_SpawnGroupEnabled[spawnGroupId] and AIR_SpawnGroupAliveCount[spawnGroupId] < AIR_SpawnGroupTargetCount[spawnGroupId] then
         call AIR_ScheduleManagedRespawn(spawnGroupId)
     endif
+endfunction
+
+private function AIR_OnManagedTurnoverTimer takes nothing returns nothing
+    local timer expiredTimer = GetExpiredTimer()
+    local integer timerKey = GetHandleId(expiredTimer)
+    local unit leaving = AIR_TurnoverTimerUnit.unit[timerKey]
+    local integer unitKey
+    call AIR_TurnoverTimerUnit.unit.remove(timerKey)
+    call DestroyTimer(expiredTimer)
+
+    if leaving != null then
+        set unitKey = GetHandleId(leaving)
+        if AIR_UnitLeaving.boolean[unitKey] and AIR_UnitSpawnGroup[unitKey] > 0 then
+            call AIR_HandleManagedUnitGone(leaving)
+            call RemoveUnit(leaving)
+        endif
+    endif
+
+    set leaving = null
+    set expiredTimer = null
+endfunction
+
+private function AIR_StartManagedUnitTurnover takes unit whichUnit, integer unitKey, real now returns nothing
+    local integer spawnGroupId = AIR_UnitSpawnGroup[unitKey]
+    local rect exitRect
+    local timer removeTimer
+    local real removeDelay
+    local real x
+    local real y
+    if spawnGroupId <= 0 or not AIR_SpawnGroupTurnoverEnabled[spawnGroupId] then
+        call AIR_UnitTurnoverTime.real.remove(unitKey)
+        return
+    endif
+    if whichUnit == null or AIR_UnitLeaving.boolean[unitKey] or not AIR_IsAliveUnit(whichUnit) then
+        return
+    endif
+
+    set removeDelay = AIR_SpawnGroupTurnoverRemoveDelay[spawnGroupId]
+    if removeDelay <= 0.00 then
+        set removeDelay = AIR_DEFAULT_TURNOVER_REMOVE_DELAY
+    endif
+
+    set AIR_UnitLeaving.boolean[unitKey] = true
+    call AIR_UnitTurnoverTime.real.remove(unitKey)
+    call AIR_WakeUnitByKey(whichUnit, unitKey)
+    set AIR_UnitPaused.boolean[unitKey] = true
+    set AIR_UnitNextTime.real[unitKey] = now + removeDelay
+
+    set exitRect = AIR_SpawnGroupExitRect[spawnGroupId]
+    if exitRect != null then
+        set x = AIR_GetRectRandomX(exitRect)
+        set y = AIR_GetRectRandomY(exitRect)
+        call IssuePointOrder(whichUnit, "move", x, y)
+    else
+        call IssueImmediateOrder(whichUnit, "stop")
+    endif
+
+    set removeTimer = CreateTimer()
+    set AIR_TurnoverTimerUnit.unit[GetHandleId(removeTimer)] = whichUnit
+    call TimerStart(removeTimer, removeDelay, false, function AIR_OnManagedTurnoverTimer)
+
+    set exitRect = null
+    set removeTimer = null
 endfunction
 
 function AIRoutines_CreateRoutine takes string familyName returns integer
@@ -1162,9 +1366,12 @@ function AIRoutines_RegisterUnitType takes integer unitTypeId, integer routineId
     call AIRoutines_RegisterUnitTypeInRect(unitTypeId, GetWorldBounds(), routineId)
 endfunction
 
-private function AIR_CreateManagedUnitGroupInternal takes player owner, integer unitTypeId, rect spawnRect, integer routineId, integer count, real respawnDelay, real facing, integer zoneId returns integer
+private function AIR_CreateManagedUnitGroupInternal takes player owner, integer unitTypeId, rect spawnRect, integer routineId, integer count, real respawnDelay, real facing, integer zoneId, boolean randomTypes returns integer
     local integer spawnGroupId
-    if owner == null or unitTypeId == 0 or spawnRect == null or not AIR_RoutineExists(routineId) or count <= 0 then
+    if owner == null or spawnRect == null or not AIR_RoutineExists(routineId) or count <= 0 then
+        return 0
+    endif
+    if unitTypeId == 0 and not randomTypes then
         return 0
     endif
     if AIR_NextSpawnGroupId > AIR_MAX_SPAWN_GROUPS then
@@ -1184,16 +1391,80 @@ private function AIR_CreateManagedUnitGroupInternal takes player owner, integer 
     set AIR_SpawnGroupRespawnDelay[spawnGroupId] = respawnDelay
     set AIR_SpawnGroupFacing[spawnGroupId] = facing
     set AIR_SpawnGroupEnabled[spawnGroupId] = true
+    set AIR_SpawnGroupRandomTypes[spawnGroupId] = randomTypes
+    set AIR_SpawnGroupTurnoverRemoveDelay[spawnGroupId] = AIR_DEFAULT_TURNOVER_REMOVE_DELAY
     call AIR_RefillSpawnGroup(spawnGroupId)
     return spawnGroupId
 endfunction
 
 function AIRoutines_CreateManagedUnitGroup takes player owner, integer unitTypeId, rect spawnRect, integer routineId, integer count, real respawnDelay, real facing returns integer
-    return AIR_CreateManagedUnitGroupInternal(owner, unitTypeId, spawnRect, routineId, count, respawnDelay, facing, 0)
+    return AIR_CreateManagedUnitGroupInternal(owner, unitTypeId, spawnRect, routineId, count, respawnDelay, facing, 0, false)
 endfunction
 
 function AIRoutines_CreateManagedUnitGroupInZone takes player owner, integer unitTypeId, rect spawnRect, integer routineId, integer count, real respawnDelay, real facing, integer zoneId returns integer
-    return AIR_CreateManagedUnitGroupInternal(owner, unitTypeId, spawnRect, routineId, count, respawnDelay, facing, zoneId)
+    return AIR_CreateManagedUnitGroupInternal(owner, unitTypeId, spawnRect, routineId, count, respawnDelay, facing, zoneId, false)
+endfunction
+
+function AIRoutines_CreateManagedRandomUnitGroup takes player owner, rect spawnRect, integer routineId, integer count, real respawnDelay, real facing returns integer
+    return AIR_CreateManagedUnitGroupInternal(owner, 0, spawnRect, routineId, count, respawnDelay, facing, 0, true)
+endfunction
+
+function AIRoutines_CreateManagedRandomUnitGroupInZone takes player owner, rect spawnRect, integer routineId, integer count, real respawnDelay, real facing, integer zoneId returns integer
+    return AIR_CreateManagedUnitGroupInternal(owner, 0, spawnRect, routineId, count, respawnDelay, facing, zoneId, true)
+endfunction
+
+function AIRoutines_AddManagedUnitGroupType takes integer spawnGroupId, integer unitTypeId, integer weight returns boolean
+    local integer typeCount
+    local integer key
+    if not AIR_SpawnGroupExists(spawnGroupId) or unitTypeId == 0 then
+        return false
+    endif
+    if AIR_SpawnGroupTypeCount[spawnGroupId] >= AIR_MAX_SPAWN_GROUP_UNIT_TYPES then
+        call BJDebugMsg("[AIRoutines] ERROR: AIR_MAX_SPAWN_GROUP_UNIT_TYPES reached.")
+        return false
+    endif
+    if weight <= 0 then
+        set weight = 1
+    endif
+
+    set typeCount = AIR_SpawnGroupTypeCount[spawnGroupId] + 1
+    set AIR_SpawnGroupTypeCount[spawnGroupId] = typeCount
+    set AIR_SpawnGroupTypeWeightTotal[spawnGroupId] = AIR_SpawnGroupTypeWeightTotal[spawnGroupId] + weight
+    set AIR_SpawnGroupRandomTypes[spawnGroupId] = true
+    set key = AIR_GetSpawnGroupTypeKey(spawnGroupId, typeCount)
+    set AIR_SpawnGroupUnitTypeChoice[key] = unitTypeId
+    set AIR_SpawnGroupUnitTypeWeight[key] = weight
+    return true
+endfunction
+
+function AIRoutines_SetManagedUnitGroupTurnover takes integer spawnGroupId, real minInterval, real maxInterval, rect exitRect, real removeDelay returns nothing
+    if not AIR_SpawnGroupExists(spawnGroupId) then
+        return
+    endif
+    if minInterval <= 0.00 and maxInterval <= 0.00 then
+        set AIR_SpawnGroupTurnoverEnabled[spawnGroupId] = false
+        set AIR_SpawnGroupTurnoverMin[spawnGroupId] = 0.00
+        set AIR_SpawnGroupTurnoverMax[spawnGroupId] = 0.00
+        set AIR_SpawnGroupExitRect[spawnGroupId] = null
+        call AIR_ResetSpawnGroupTurnoverUnits(spawnGroupId)
+        return
+    endif
+    if minInterval <= 0.00 then
+        set minInterval = maxInterval
+    endif
+    if maxInterval < minInterval then
+        set maxInterval = minInterval
+    endif
+    if removeDelay <= 0.00 then
+        set removeDelay = AIR_DEFAULT_TURNOVER_REMOVE_DELAY
+    endif
+
+    set AIR_SpawnGroupTurnoverEnabled[spawnGroupId] = true
+    set AIR_SpawnGroupTurnoverMin[spawnGroupId] = minInterval
+    set AIR_SpawnGroupTurnoverMax[spawnGroupId] = maxInterval
+    set AIR_SpawnGroupTurnoverRemoveDelay[spawnGroupId] = removeDelay
+    set AIR_SpawnGroupExitRect[spawnGroupId] = exitRect
+    call AIR_ResetSpawnGroupTurnoverUnits(spawnGroupId)
 endfunction
 
 function AIRoutines_SetManagedUnitGroupRoutine takes integer spawnGroupId, integer routineId returns nothing
@@ -1434,6 +1705,13 @@ private function AIR_ProcessUnit takes unit whichUnit, real now returns nothing
         endif
         return
     endif
+    if AIR_UnitLeaving.boolean[unitKey] then
+        return
+    endif
+    if AIR_UnitTurnoverTime.real[unitKey] > 0.00 and now >= AIR_UnitTurnoverTime.real[unitKey] then
+        call AIR_StartManagedUnitTurnover(whichUnit, unitKey, now)
+        return
+    endif
     if AIR_UnitPaused.boolean[unitKey] then
         return
     endif
@@ -1552,7 +1830,12 @@ private function Init takes nothing returns nothing
     set AIR_UnitAIRegistered = Table.create()
     set AIR_UnitTypeRoutine = Table.create()
     set AIR_UnitSpawnGroup = Table.create()
+    set AIR_UnitTurnoverTime = Table.create()
+    set AIR_UnitLeaving = Table.create()
+    set AIR_SpawnGroupUnitTypeChoice = Table.create()
+    set AIR_SpawnGroupUnitTypeWeight = Table.create()
     set AIR_RespawnTimerGroup = Table.create()
+    set AIR_TurnoverTimerUnit = Table.create()
     set AIR_AIProfileByRoutineType = Table.create()
     set AIR_ZoneActive = Table.create()
     set AIR_ZoneHeroCount = Table.create()
