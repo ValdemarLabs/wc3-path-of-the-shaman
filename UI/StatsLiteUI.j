@@ -167,8 +167,8 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         private string SLUI_BarHPRedTexture = "ReplaceableTextures\\TeamColor\\TeamColor00.blp" // CHANGE: red HP / warrior resource fill
         private string SLUI_BarMPLightBlueTexture = "ReplaceableTextures\\TeamColor\\TeamColor09.blp" // CHANGE: light-blue mana fill
         private string SLUI_RowAlertModel = "UI\\Feedback\\Autocast\\UI-ModalButtonOn.mdx"
-        private real SLUI_RowAlertOffsetX = 0.004
-        private real SLUI_RowAlertOffsetY = 0.001
+        private real SLUI_RowAlertOffsetX = -0.002
+        private real SLUI_RowAlertOffsetY = -0.004
         private real SLUI_RowAlertSize = 0.022
         private real SLUI_RowAlertScale = 0.56
         private string SLUI_DefaultUnitIcon = "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp"
