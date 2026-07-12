@@ -49,6 +49,8 @@ globals
     public string AllKnownUnlocksText = "All known unlocks learned"
     public string NextUnlockPrefixText = "Next unlock: "
     public string NextUnlockAtText = " at "
+    public string MiningCanMineText = "Can mine now:"
+    public string MiningNoMineableNodesText = "No mining nodes available at this skill"
     public string FallbackNodeSuffixText = " node"
     public string DefaultProfessionIcon = "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp"
     public string PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
@@ -95,6 +97,7 @@ globals
     private integer array PUI_DetailBodySourceHash
     private integer array PUI_DetailBodyHash
     private integer array PUI_DetailBodyLineCount
+    private integer array PUI_DetailBodyViewerCache
     private integer array PUI_DetailBodyProfessionCache
     private integer array PUI_DetailBodySkillCache
     private integer array PUI_DetailBodyRevisionCache
@@ -564,8 +567,46 @@ private function PUI_GetBodyVisibleText takes string text, integer startLine, in
     return result
 endfunction
 
-private function PUI_GetBodyText takes integer professionId, integer currentSkill returns string
-    return PUI_GetProfessionDescriptionText(professionId) + "|n|n" + PUI_GetNextMilestoneText(professionId, currentSkill)
+private function PUI_GetMiningMineableText takes unit viewer, integer currentSkill returns string
+    local integer requiredSkill = 0
+    local integer defId
+    local integer definitionCount = GNU_GetDefinitionCount()
+    local integer mineableCount = 0
+    local string result = MiningCanMineText
+
+    if viewer == null then
+        return MiningCanMineText + "|n|cffbfbfbf" + NoTrackedHeroText + "|r"
+    endif
+
+    loop
+        exitwhen requiredSkill > currentSkill or requiredSkill > PUI_SKILL_MAX
+        set defId = 0
+        loop
+            exitwhen defId >= definitionCount
+            if GNU_IsDefinitionEnabled(defId) and GNU_GetDefinitionProfessionId(defId) == GNS_PROF_MINING and GNU_GetDefinitionSkillRequired(defId) == requiredSkill then
+                set result = result + "|n|cff80ff80" + GNU_GetDefinitionName(defId) + "|r |cffbfbfbf(" + I2S(requiredSkill) + ")|r"
+                set mineableCount = mineableCount + 1
+            endif
+            set defId = defId + 1
+        endloop
+        set requiredSkill = requiredSkill + 1
+    endloop
+
+    if mineableCount <= 0 then
+        return MiningCanMineText + "|n|cffbfbfbf" + MiningNoMineableNodesText + "|r"
+    endif
+
+    return result
+endfunction
+
+private function PUI_GetBodyText takes unit viewer, integer professionId, integer currentSkill returns string
+    local string bodyText = PUI_GetProfessionDescriptionText(professionId) + "|n|n" + PUI_GetNextMilestoneText(professionId, currentSkill)
+
+    if professionId == GNS_PROF_MINING then
+        set bodyText = bodyText + "|n|n" + PUI_GetMiningMineableText(viewer, currentSkill)
+    endif
+
+    return bodyText
 endfunction
 
 private function PUI_RefreshDetailBodyFromCache takes player whichPlayer returns nothing
@@ -629,6 +670,7 @@ private function PUI_UpdateForPlayer takes player whichPlayer returns nothing
     local integer rowIndex
     local integer currentSkill
     local unit viewer
+    local integer viewerHandleId
     local integer maxListStart
     local integer frameValue
     local string viewingText
@@ -665,6 +707,10 @@ private function PUI_UpdateForPlayer takes player whichPlayer returns nothing
 
     call PUI_EnsureMilestones()
     set viewer = PUI_GetViewerUnit()
+    set viewerHandleId = 0
+    if viewer != null then
+        set viewerHandleId = GetHandleId(viewer)
+    endif
     set professionId = PUI_SelectedProfession[pid]
     set currentSkill = GNS_GetSkill(viewer, professionId)
 
@@ -750,8 +796,9 @@ private function PUI_UpdateForPlayer takes player whichPlayer returns nothing
         endif
     endif
 
-    if PUI_DetailBodyProfessionCache[pid] != professionId or PUI_DetailBodySkillCache[pid] != currentSkill or PUI_DetailBodyRevisionCache[pid] != PUI_MilestoneRevision then
-        call PUI_SetDetailBody(whichPlayer, PUI_GetBodyText(professionId, currentSkill))
+    if PUI_DetailBodyViewerCache[pid] != viewerHandleId or PUI_DetailBodyProfessionCache[pid] != professionId or PUI_DetailBodySkillCache[pid] != currentSkill or PUI_DetailBodyRevisionCache[pid] != PUI_MilestoneRevision then
+        call PUI_SetDetailBody(whichPlayer, PUI_GetBodyText(viewer, professionId, currentSkill))
+        set PUI_DetailBodyViewerCache[pid] = viewerHandleId
         set PUI_DetailBodyProfessionCache[pid] = professionId
         set PUI_DetailBodySkillCache[pid] = currentSkill
         set PUI_DetailBodyRevisionCache[pid] = PUI_MilestoneRevision
@@ -1234,6 +1281,7 @@ public function Init takes nothing returns nothing
         exitwhen i >= bj_MAX_PLAYERS
         call TriggerRegisterPlayerUnitEvent(PUI_SelectTrigger, Player(i), EVENT_PLAYER_UNIT_SELECTED, null)
         set PUI_SelectedProfession[i] = GNS_PROF_MINING
+        set PUI_DetailBodyViewerCache[i] = -1
         set PUI_DetailBodyProfessionCache[i] = 0
         set PUI_DetailBodySkillCache[i] = -1
         set PUI_DetailBodyRevisionCache[i] = -1
