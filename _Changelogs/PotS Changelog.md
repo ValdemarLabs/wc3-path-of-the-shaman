@@ -16,7 +16,40 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
-## [12.7.2026]
+## [12.7.2026] Part II
+
+### Technical Updates
+
+- `StatsUI.j`
+  - Professions is stacked above Abilities, and both buttons use the same 0.030 height as Return for matching button text sizing. I also moved the stats summary block down to avoid overlap.
+
+- `StatsLiteUI.j`
+  - The sprite (Alert LowHP / Far) now uses offset values in its center anchor. If it is still slightly off in-game, these four globals are the intended tuning points. A fully reliable alternative would be replacing the sprite model with a frame/backdrop border, because backdrops center predictably while sprite models depend on the model’s internal origin.
+
+- `Companions.j` and `StatsUI.j` and `StatsLiteUI.j`
+  - Improved the companion party text in Companions.j, StatsUI.j, and StatsLiteUI.j. The ? info now uses \n instead of visible |n markers and reads as clearer companion party size information.
+
+- `ProfessionsUI.j`
+  - Mining details now show a Can mine now: list built from enabled GNU_* unit-node definitions and the current viewing unit’s Mining skill. I also added the viewer handle to the detail-body cache so opening Professions UI for a different active unit forces the mining list/body text to refresh.
+
+- `Companions.j`
+  - Normal-mode companions now break out of stale post-combat attack orders and smart-follow the leader once they drift 350+ range and the leader is not in combat.
+
+- `AI.j`
+  - Existing/preplaced O009 Avelines are now scanned and registered during AI_Aveline init before random spawn can create another.
+  - Newly indexed default-profile units now try AI_RegisterUnitByType, so direct-created O009 Avelines are caught too.
+  - If Aveline’s unique id AVLN is already active, later duplicates are removed instead of staying as level 1 no-AI units.
+
+- `AI_Aveline.j`
+  - That line is a starter RegisterChat, not a reply.
+  - The bug was that _ChatUndeadWarlock was not recognized by the target filter, so it was treated like a general line. It now requires a nearby allied Undead Warlock 
+>### Issue reference: 
+>Aveline say the line "undead or not, you still choose where your shadowfalls." isnt that the reply line to some other AI unit speaking towards undead warlock and after that Aveline should say it? Aveline said this without anyone targeting undead warlock bark and without undead warlock being in companions party or even close.
+
+### Known Issues
+- `[12.7.2026] Part I` seems to have introduced some accumilating lag (stuck-loop / periodic timers etc.), to be checked whether this is fixed with the latest updates or do we need to go deeper investigating.
+
+## [12.7.2026] Part I
 
 ### Technical Updates
 
