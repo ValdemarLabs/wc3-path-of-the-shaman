@@ -167,6 +167,10 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         private string SLUI_BarHPRedTexture = "ReplaceableTextures\\TeamColor\\TeamColor00.blp" // CHANGE: red HP / warrior resource fill
         private string SLUI_BarMPLightBlueTexture = "ReplaceableTextures\\TeamColor\\TeamColor09.blp" // CHANGE: light-blue mana fill
         private string SLUI_RowAlertModel = "UI\\Feedback\\Autocast\\UI-ModalButtonOn.mdx"
+        private real SLUI_RowAlertOffsetX = 0.004
+        private real SLUI_RowAlertOffsetY = 0.001
+        private real SLUI_RowAlertSize = 0.022
+        private real SLUI_RowAlertScale = 0.56
         private string SLUI_DefaultUnitIcon = "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp"
         private string SLUI_DefaultPetIcon = "ReplaceableTextures\\CommandButtons\\BTNAnimalWarTraining.blp"
         private string SLUI_ConfigIconPath = "ReplaceableTextures\\CommandButtons\\BTNengineering.blp"
@@ -819,9 +823,9 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         if SLUI_ConfigVisible then
             call BlzFrameSetText(SLUI_Title, "|cffffe4a3Monitor|r")
         elseif SLUI_Minimized then
-            call BlzFrameSetText(SLUI_Title, "|cffffe4a3Party|r |cffbfbfbf" + I2S(udg_CompanionCount) + "/" + I2S(Companions_GetCompanionLimit()) + "|r")
+            call BlzFrameSetText(SLUI_Title, "|cffffe4a3Party Size|r |cffbfbfbf" + I2S(udg_CompanionCount) + " / " + I2S(Companions_GetCompanionLimit()) + "|r")
         else
-            call BlzFrameSetText(SLUI_Title, "|cffffe4a3Party|r |cffbfbfbf" + I2S(udg_CompanionCount) + "/" + I2S(Companions_GetCompanionLimit()) + "|r")
+            call BlzFrameSetText(SLUI_Title, "|cffffe4a3Party Size|r |cffbfbfbf" + I2S(udg_CompanionCount) + " / " + I2S(Companions_GetCompanionLimit()) + "|r")
         endif
     endfunction
 
@@ -834,10 +838,10 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         if SLUI_ConfigVisible or SLUI_Minimized then
             call BlzFrameSetText(SLUI_FooterText, "")
         elseif total > SLUI_MAX_ROWS then
-            call BlzFrameSetText(SLUI_FooterText, "|cffbfbfbf" + Companions_GetCompanionStatusText() + " | +" + I2S(total - SLUI_MAX_ROWS) + " more|r")
+            call BlzFrameSetText(SLUI_FooterText, "|cffbfbfbfCompanion party: " + I2S(udg_CompanionCount) + " / " + I2S(Companions_GetCompanionLimit()) + " | +" + I2S(total - SLUI_MAX_ROWS) + " more|r")
         else
             set statusText = Companions_GetCompanionStatusText()
-            call BlzFrameSetText(SLUI_FooterText, "|cffbfbfbf" + statusText + " | " + I2S(total) + " tracked|r")
+            call BlzFrameSetText(SLUI_FooterText, "|cffbfbfbfCompanion party: " + statusText + " | " + I2S(total) + " tracked|r")
         endif
     endfunction
 
@@ -1228,10 +1232,10 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         call BlzFrameSetLevel(SLUI_RowIcon[rowIndex], 4) // CHANGE: icon above translucent panel
 
         set SLUI_RowAlert[rowIndex] = BlzCreateFrameByType("SPRITE", "StatsLiteUIRowAlert" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(SLUI_RowAlert[rowIndex], FRAMEPOINT_CENTER, SLUI_RowIcon[rowIndex], FRAMEPOINT_CENTER, -0.004, -0.001)
-        call BlzFrameSetSize(SLUI_RowAlert[rowIndex], 0.022, 0.022)
+        call BlzFrameSetPoint(SLUI_RowAlert[rowIndex], FRAMEPOINT_CENTER, SLUI_RowIcon[rowIndex], FRAMEPOINT_CENTER, SLUI_RowAlertOffsetX, SLUI_RowAlertOffsetY)
+        call BlzFrameSetSize(SLUI_RowAlert[rowIndex], SLUI_RowAlertSize, SLUI_RowAlertSize)
         call BlzFrameSetModel(SLUI_RowAlert[rowIndex], SLUI_RowAlertModel, 0)
-        call BlzFrameSetScale(SLUI_RowAlert[rowIndex], 0.56)
+        call BlzFrameSetScale(SLUI_RowAlert[rowIndex], SLUI_RowAlertScale)
         call BlzFrameSetLevel(SLUI_RowAlert[rowIndex], 7)
         call BlzFrameSetEnable(SLUI_RowAlert[rowIndex], false)
         call BlzFrameSetVisible(SLUI_RowAlert[rowIndex], false)
@@ -1362,7 +1366,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
 
         set SLUI_Title = BlzCreateFrameByType("TEXT", "StatsLiteUITitle", SLUI_Parent, "", 0)
         call BlzFrameSetPoint(SLUI_Title, FRAMEPOINT_TOPLEFT, SLUI_Parent, FRAMEPOINT_TOPLEFT, 0.014, -0.012)
-        call BlzFrameSetSize(SLUI_Title, 0.110, 0.016) // CHANGE: slightly wider title area for Party 0/1 or similar text
+        call BlzFrameSetSize(SLUI_Title, 0.150, 0.016) // CHANGE: wider title area for companion party size text
         call BlzFrameSetTextAlignment(SLUI_Title, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(SLUI_Title, 0.95)
         call BlzFrameSetEnable(SLUI_Title, false)
@@ -1412,7 +1416,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
 
         set SLUI_FooterText = BlzCreateFrameByType("TEXT", "StatsLiteUIFooter", SLUI_Parent, "", 0)
         call BlzFrameSetPoint(SLUI_FooterText, FRAMEPOINT_BOTTOMLEFT, SLUI_Parent, FRAMEPOINT_BOTTOMLEFT, 0.014, 0.012)
-        call BlzFrameSetSize(SLUI_FooterText, 0.200, 0.012)
+        call BlzFrameSetSize(SLUI_FooterText, 0.252, 0.012)
         call BlzFrameSetTextAlignment(SLUI_FooterText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(SLUI_FooterText, 0.65)
         call BlzFrameSetEnable(SLUI_FooterText, false)

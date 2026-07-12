@@ -1304,7 +1304,7 @@ private function SUI_UpdatePartyHeader takes player whichPlayer returns nothing
         return
     endif
 
-    call BlzFrameSetText(SUI_PartyText, "|cffffcc00Party|r |cffbfbfbf" + Companions_GetCompanionStatusText() + "|r")
+    call BlzFrameSetText(SUI_PartyText, "|cffffcc00Party Size:|r |cffbfbfbf" + I2S(udg_CompanionCount) + " / " + I2S(Companions_GetCompanionLimit()) + "|r")
     set whichPlayer = null
 endfunction
 
@@ -1695,7 +1695,7 @@ private function SUI_CreateFrames takes nothing returns nothing
 
     set SUI_PartyText = BlzCreateFrameByType("TEXT", "StatsUIPartyText", SUI_LeftPane, "", 0)
     call BlzFrameSetPoint(SUI_PartyText, FRAMEPOINT_TOPLEFT, SUI_LeftPane, FRAMEPOINT_TOPLEFT, 0.006, -0.032)
-    call BlzFrameSetSize(SUI_PartyText, 0.150, 0.014)
+    call BlzFrameSetSize(SUI_PartyText, 0.156, 0.014)
     call BlzFrameSetTextAlignment(SUI_PartyText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetScale(SUI_PartyText, 0.70)
     call BlzFrameSetEnable(SUI_PartyText, false)
@@ -1730,25 +1730,25 @@ private function SUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetScale(SUI_DetailValue, 0.98)
     call BlzFrameSetEnable(SUI_DetailValue, false)
 
-    set SUI_AbilitiesButton = BlzCreateFrameByType("GLUETEXTBUTTON", "StatsUIAbilities", SUI_RightPane, "ScriptDialogButton", 0)
-    call BlzFrameSetSize(SUI_AbilitiesButton, 0.060, 0.022)
-    call BlzFrameSetText(SUI_AbilitiesButton, "Abilities")
-    call BlzFrameSetPoint(SUI_AbilitiesButton, FRAMEPOINT_TOPRIGHT, SUI_RightPane, FRAMEPOINT_TOPRIGHT, -0.018, -0.065)
-    call BlzTriggerRegisterFrameEvent(SUI_AbilitiesTrigger, SUI_AbilitiesButton, FRAMEEVENT_CONTROL_CLICK)
-    call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_AbilitiesButton, FRAMEEVENT_CONTROL_CLICK)
-    call BlzFrameSetVisible(SUI_AbilitiesButton, false)
-
     set SUI_ProfessionsButton = BlzCreateFrameByType("GLUETEXTBUTTON", "StatsUIProfessions", SUI_RightPane, "ScriptDialogButton", 0)
-    call BlzFrameSetSize(SUI_ProfessionsButton, 0.076, 0.022)
+    call BlzFrameSetSize(SUI_ProfessionsButton, 0.090, 0.030)
     call BlzFrameSetText(SUI_ProfessionsButton, "Professions")
-    call BlzFrameSetPoint(SUI_ProfessionsButton, FRAMEPOINT_TOPRIGHT, SUI_AbilitiesButton, FRAMEPOINT_TOPLEFT, -0.006, 0.0)
+    call BlzFrameSetPoint(SUI_ProfessionsButton, FRAMEPOINT_TOPRIGHT, SUI_RightPane, FRAMEPOINT_TOPRIGHT, -0.018, -0.060)
     call BlzTriggerRegisterFrameEvent(SUI_ProfessionsTrigger, SUI_ProfessionsButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_ProfessionsButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzFrameSetVisible(SUI_ProfessionsButton, false)
 
+    set SUI_AbilitiesButton = BlzCreateFrameByType("GLUETEXTBUTTON", "StatsUIAbilities", SUI_RightPane, "ScriptDialogButton", 0)
+    call BlzFrameSetSize(SUI_AbilitiesButton, 0.090, 0.030)
+    call BlzFrameSetText(SUI_AbilitiesButton, "Abilities")
+    call BlzFrameSetPoint(SUI_AbilitiesButton, FRAMEPOINT_TOPRIGHT, SUI_ProfessionsButton, FRAMEPOINT_BOTTOMRIGHT, 0.0, -0.004)
+    call BlzTriggerRegisterFrameEvent(SUI_AbilitiesTrigger, SUI_AbilitiesButton, FRAMEEVENT_CONTROL_CLICK)
+    call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_AbilitiesButton, FRAMEEVENT_CONTROL_CLICK)
+    call BlzFrameSetVisible(SUI_AbilitiesButton, false)
+
     loop
         exitwhen summaryRow > SUI_SUMMARY_ROWS
-        set summaryTopOffset = -0.108 - (I2R(summaryRow - 1) * 0.015)
+        set summaryTopOffset = -0.138 - (I2R(summaryRow - 1) * 0.015)
 
         set SUI_DetailSummaryLabelLeft[summaryRow] = BlzCreateFrameByType("TEXT", "StatsUISummaryLabelLeft" + I2S(summaryRow), SUI_RightPane, "", 0)
         call BlzFrameSetPoint(SUI_DetailSummaryLabelLeft[summaryRow], FRAMEPOINT_TOPLEFT, SUI_RightPane, FRAMEPOINT_TOPLEFT, summaryLeftColumn, summaryTopOffset)
