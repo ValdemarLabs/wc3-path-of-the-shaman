@@ -372,6 +372,7 @@ globals
     private trigger LevelTrigger = null
     private trigger ItemTrigger = null
     private trigger SellTrigger = null
+    private trigger UnitIndexTrigger = null
     private trigger DebugSpawnTrigger = null
     private trigger DebugModeTrigger = null
     private group TempGroup = null
@@ -2544,20 +2545,34 @@ private function GetChatTargetClassName takes string soundKey returns string
     return ""
 endfunction
 
-private function HasNearbyChatTargetClass takes unit speaker, string className returns boolean
+private function GetChatTargetProfileName takes string soundKey returns string
+    if FindPattern(soundKey, "_ChatUndeadWarlock") >= 0 then
+        return "Undead Warlock"
+    endif
+    return ""
+endfunction
+
+private function HasNearbyChatTarget takes unit speaker, string className, string profileName returns boolean
     local integer index = 1
     local integer instanceId
     local unit candidate
-    if speaker == null or className == "" then
+    if speaker == null or (className == "" and profileName == "") then
         return true
     endif
     loop
         exitwhen index > ActiveCount
         set instanceId = ActiveInstances[index]
         set candidate = InstanceUnit.unit[instanceId]
-        if candidate != null and candidate != speaker and IsAliveUnit(candidate) and not IsUnitHidden(candidate) and IsUnitAlly(candidate, GetOwningPlayer(speaker)) and ClassName.string[InstanceClass[instanceId]] == className and IsUnitInRange(candidate, speaker, AI_SOCIAL_SCAN_RANGE) then
-            set candidate = null
-            return true
+        if candidate != null and candidate != speaker and IsAliveUnit(candidate) and not IsUnitHidden(candidate) and IsUnitAlly(candidate, GetOwningPlayer(speaker)) and IsUnitInRange(candidate, speaker, AI_SOCIAL_SCAN_RANGE) then
+            if profileName != "" then
+                if ProfileName.string[InstanceProfile[instanceId]] == profileName then
+                    set candidate = null
+                    return true
+                endif
+            elseif ClassName.string[InstanceClass[instanceId]] == className then
+                set candidate = null
+                return true
+            endif
         endif
         set index = index + 1
     endloop
@@ -2567,10 +2582,11 @@ endfunction
 
 private function IsBarkTargetContextAllowed takes unit speaker, string soundKey returns boolean
     local string className = GetChatTargetClassName(soundKey)
-    if className == "" then
+    local string profileName = GetChatTargetProfileName(soundKey)
+    if className == "" and profileName == "" then
         return true
     endif
-    return HasNearbyChatTargetClass(speaker, className)
+    return HasNearbyChatTarget(speaker, className, profileName)
 endfunction
 
 private function FindCompanionResponder takes integer profileId, unit speaker returns unit
@@ -2837,7 +2853,15 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
         return existing
     endif
     if not CanRegister(profileId, uniqueId) then
-        call DebugMsg("Cap prevented registration for " + GetDebugUnitName(whichUnit) + " profile=" + I2S(profileId))
+        if uniqueId != 0 and UniqueInstance[uniqueId] != 0 then
+            call DebugMsg("Removed duplicate unique unit " + GetDebugUnitName(whichUnit) + " profile=" + I2S(profileId) + " existingInstance=" + I2S(UniqueInstance[uniqueId]) + ".")
+            if IsCompanionControlled(whichUnit) then
+                call Companions_Remove(whichUnit)
+            endif
+            call RemoveUnit(whichUnit)
+        else
+            call DebugMsg("Cap prevented registration for " + GetDebugUnitName(whichUnit) + " profile=" + I2S(profileId))
+        endif
         return 0
     endif
     if NextInstanceId > MAX_AI_INSTANCES then
@@ -5205,6 +5229,14 @@ private function HandleSoldUnit takes nothing returns nothing
     set soldUnit = null
 endfunction
 
+private function HandleIndexedUnit takes nothing returns nothing
+    local unit indexedUnit = udg_UDexUnits[udg_UDex]
+    if indexedUnit != null and GetUnitTypeId(indexedUnit) != 0 then
+        call AI_RegisterUnitByType(indexedUnit, 0)
+    endif
+    set indexedUnit = null
+endfunction
+
 private function UnlockInviteGatedProfileState takes integer instanceId, unit whichUnit returns nothing
     local integer profileId
     if instanceId <= 0 or InstanceInviteUnlocked.boolean[instanceId] then
@@ -5391,6 +5423,10 @@ private function Init takes nothing returns nothing
     set SellTrigger = CreateTrigger()
     call RegisterPlayerUnitEventAll(SellTrigger, EVENT_PLAYER_UNIT_SELL)
     call TriggerAddAction(SellTrigger, function HandleSoldUnit)
+
+    set UnitIndexTrigger = CreateTrigger()
+    call TriggerRegisterVariableEvent(UnitIndexTrigger, "udg_UnitIndexEvent", EQUAL, 1.50)
+    call TriggerAddAction(UnitIndexTrigger, function HandleIndexedUnit)
 
     call UnitDeathEvent_Register(function HandleDeath)
     call Companions_RegisterCommandEvent(function HandleCompanionCommand)
