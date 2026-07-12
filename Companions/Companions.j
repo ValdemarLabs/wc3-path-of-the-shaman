@@ -158,9 +158,7 @@ globals
     private trigger CommandEventTrigger = null
     private trigger IdleTrigger = null
     private trigger OrderTrigger = null
-    private player ModeSelectionPlayer = null
     private unit ModeCommandCaster = null
-    private boolean ModeSelectionFound = false
     private player CommandSelectionPlayer = null
     private unit CommandSelectionTarget = null
     private integer CommandSelectionCount = 0
@@ -1579,17 +1577,6 @@ private function GetCommandPlayer takes unit caster returns player
     return GetOwningPlayer(caster)
 endfunction
 
-private function AddSelectedModeTarget takes nothing returns nothing
-    local unit u = GetEnumUnit()
-
-    if IsValidControlTarget(u) and (IsUnitSelected(u, ModeSelectionPlayer) or u == ModeCommandCaster) then
-        call GroupAddUnit(ModeTargetGroup, u)
-        set ModeSelectionFound = true
-    endif
-
-    set u = null
-endfunction
-
 private function FindSelectedCommandTarget takes nothing returns nothing
     local unit u = GetEnumUnit()
 
@@ -1660,32 +1647,35 @@ private function ApplyModeTarget takes nothing returns nothing
     set u = null
 endfunction
 
-private function ApplyModeFromPlayer takes player modePlayer, integer mode returns nothing
+private function ApplyModeToSingleTarget takes unit target, integer mode returns nothing
+    if not IsValidControlTarget(target) then
+        set target = null
+        return
+    endif
+
+    set mode = NormalizeMode(mode)
+    call TrackExistingControlUnit(target)
+    call SetModeInternal(target, mode)
+    call FireCommandEvent(target, ModeCommandCaster, COMMAND_MODE, mode)
+    call PlayCommandSound(gg_snd_GoodJob)
+    call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(target) + ": " + GetModeName(mode) + " Mode")
+    set target = null
+endfunction
+
+private function ApplyModeToAllTargets takes integer mode returns nothing
     local integer count
 
     call EnsureState()
     call RepairGuiCompanionState()
     set mode = NormalizeMode(mode)
-    set ModeSelectionPlayer = modePlayer
-    set ModeSelectionFound = false
     call GroupClear(ModeTargetGroup)
-
     if udg_Companion_Group != null then
-        call ForGroup(udg_Companion_Group, function AddSelectedModeTarget)
+        call ForGroup(udg_Companion_Group, function AddAllModeTarget)
     endif
     if udg_TamedUnits != null then
-        call ForGroup(udg_TamedUnits, function AddSelectedModeTarget)
+        call ForGroup(udg_TamedUnits, function AddAllModeTarget)
     endif
-
-    if not ModeSelectionFound then
-        if udg_Companion_Group != null then
-            call ForGroup(udg_Companion_Group, function AddAllModeTarget)
-        endif
-        if udg_TamedUnits != null then
-            call ForGroup(udg_TamedUnits, function AddAllModeTarget)
-        endif
-        set CurrentGroupMode = mode
-    endif
+    set CurrentGroupMode = mode
 
     set ModeActionMode = mode
     call ForGroup(ModeTargetGroup, function ApplyModeTarget)
@@ -1693,26 +1683,27 @@ private function ApplyModeFromPlayer takes player modePlayer, integer mode retur
 
     if count > 0 then
         call PlayCommandSound(gg_snd_GoodJob)
-        if ModeSelectionFound then
-            call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "Selected companions: " + GetModeName(mode) + " Mode")
-        else
-            call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "Companions: " + GetModeName(mode) + " Mode")
-        endif
+        call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "Companions: " + GetModeName(mode) + " Mode")
     endif
 
     call GroupClear(ModeTargetGroup)
-    set ModeSelectionPlayer = null
     set ModeCommandCaster = null
 endfunction
 
-private function ApplyModeFromCommand takes unit caster, player modePlayer, integer mode returns nothing
+private function ApplyModeFromCommand takes unit caster, unit target, integer mode returns nothing
     call RepairGuiCompanionState()
     if IsValidControlTarget(caster) then
         set ModeCommandCaster = caster
     else
         set ModeCommandCaster = null
     endif
-    call ApplyModeFromPlayer(modePlayer, mode)
+    if target != null then
+        call ApplyModeToSingleTarget(target, mode)
+    else
+        call ApplyModeToAllTargets(mode)
+    endif
+    set ModeCommandCaster = null
+    set target = null
 endfunction
 
 private function GetModeFromAbility takes integer abilityId returns integer
@@ -2375,7 +2366,7 @@ private function OnSpellEffect takes nothing returns nothing
     endif
 
     if mode != 0 then
-        call ApplyModeFromCommand(caster, commandPlayer, mode)
+        call ApplyModeFromCommand(caster, target, mode)
     elseif abilityId == ABIL_INVITE then
         if target != udg_Shadowclaw then
             call HandleInvite(caster, target)
