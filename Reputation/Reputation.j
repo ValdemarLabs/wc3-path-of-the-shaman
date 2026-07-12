@@ -36,37 +36,37 @@ library Reputation initializer InitReputations requires Table, UnitDeathEvent
 
     Seven-Tier Reputation System:
     
-    1. ENEMY (-20000 to -12000) |cff8b0000Dark Red|r
+    1. ENEMY (-20000 to -12001) |cff8b0000Dark Red|r
        - Some factions will actively hunt you
        - Always attacked on sight
        - Cannot interact with faction NPCs
        - Unallied with vision (they can see you)
     
-    2. HOSTILE (-12000 to -6000) |cffff4040Red|r
+    2. HOSTILE (-12000 to -3001) |cffff4040Red|r
        - Always attacked on sight
        - Cannot buy items or hire companions
        - Cannot talk to quest givers or NPCs
        - Unallied state
     
-    3. UNFRIENDLY (-3000 to 0) |cffff8040Orange|r
+    3. UNFRIENDLY (-3000 to -1) |cffff8040Orange|r
        - Not attacked on sight but wary
        - Cannot buy items or hire companions
        - Cannot talk to quest givers or NPCs
        - Neutral alliance state
     
-    4. NEUTRAL (0 to 3000) |cffffffffWhite|r
+    4. NEUTRAL (0 to 2999) |cffffffffWhite|r
        - Can buy basic items from vendors
        - Can talk to NPCs and quest givers
-       - Cannot hire companion units
+       - Can hire companion units that require Neutral standing
        - Neutral with vision
     
-    5. FRIENDLY (3000 to 6000) |cff40ff40Green|r
+    5. FRIENDLY (3000 to 5999) |cff40ff40Green|r
        - Can buy more items from vendors
        - Can talk to NPCs and quest givers
-       - Limited companion hiring may be available
+       - Improved companion and faction access may be available
        - Allied state
     
-    6. COVENANT (6000 to 12000) |cff00ff00Bright Green|r
+    6. COVENANT (6000 to 11999) |cff00ff00Bright Green|r
        - Can buy all regular items
        - Can hire companion units
        - Full access to faction services
@@ -126,13 +126,13 @@ globals
     // Seven-tier reputation system
     // These are MINIMUM thresholds - the value needed to reach each tier
     // Made public for use in quest systems (accessible as Reputation_REP_ENEMY, etc.)
-    public constant integer REP_ENEMY              = -12000      // Enemy: -20000 to -12000, some factions will hunt you
-    public constant integer REP_HOSTILE            = -3000     // Hostile: -12000 to -3000, always attacked on sight
-    public constant integer REP_UNFRIENDLY         = 0      // Unfriendly: -3000 to 0, cannot buy items/companions, no quest talk
-    public constant integer REP_NEUTRAL            = 3000      // Neutral: 0 to 3000, can buy basic items, can talk
-    public constant integer REP_FRIENDLY           = 6000     // Friendly: 3000 to 6000, can buy more items, can talk
-    public constant integer REP_COVENANT           = 12000    // Covenant: 6000 to 12000, can buy more items, hire companions, can talk
-    public constant integer REP_EXALTED            = 18000     // Exalted: 18000 to 20000, same as Covenant + special reward & title
+    public constant integer REP_ENEMY              = -20000    // Enemy: -20000 to -12001, some factions will hunt you
+    public constant integer REP_HOSTILE            = -12000    // Hostile: -12000 to -3001, always attacked on sight
+    public constant integer REP_UNFRIENDLY         = -3000     // Unfriendly: -3000 to -1, cannot buy items/companions, no quest talk
+    public constant integer REP_NEUTRAL            = 0         // Neutral: 0 to 2999, can buy basic items, talk, and hire Neutral-gated companions
+    public constant integer REP_FRIENDLY           = 3000      // Friendly: 3000 to 5999, can buy more items, can talk
+    public constant integer REP_COVENANT           = 6000      // Covenant: 6000 to 11999, can buy more items, hire companions, can talk
+    public constant integer REP_EXALTED            = 12000     // Exalted: 12000 to 20000, same as Covenant + special reward & title
 
     private constant real BOARD_UPDATE_INTERVAL     = 1.50
     private constant real RELATION_UPDATE_INTERVAL  = 5.00
@@ -359,17 +359,17 @@ struct Reputation
 
     static method getStatus takes player p, Faction f returns string
         local integer val = .getRep(p, f)
-        if val < REP_ENEMY then
+        if val < REP_HOSTILE then
             return "|cff8b0000Enemy|r"        // Dark red
-        elseif val < REP_HOSTILE then
-            return "|cffff4040Hostile|r"      // Red
         elseif val < REP_UNFRIENDLY then
-            return "|cffff8040Unfriendly|r"   // Orange
+            return "|cffff4040Hostile|r"      // Red
         elseif val < REP_NEUTRAL then
-            return "|cffffffffNeutral|r"      // White
+            return "|cffff8040Unfriendly|r"   // Orange
         elseif val < REP_FRIENDLY then
-            return "|cff40ff40Friendly|r"     // Green
+            return "|cffffffffNeutral|r"      // White
         elseif val < REP_COVENANT then
+            return "|cff40ff40Friendly|r"     // Green
+        elseif val < REP_EXALTED then
             return "|cff00ff00Covenant|r"     // Bright green
         else
             return "|cffffd700Exalted|r"      // Gold
@@ -427,17 +427,17 @@ endstruct
 
 // Get alliance state from reputation value
 private function GetAllianceStateFromRep takes integer rep returns integer
-    if rep < REP_ENEMY then
+    if rep < REP_HOSTILE then
         return 1 // Enemy (Unallied with vision)
-    elseif rep < REP_HOSTILE then
-        return 2 // Hostile (Unallied)
     elseif rep < REP_UNFRIENDLY then
-        return 3 // Unfriendly (Neutral)
+        return 2 // Hostile (Unallied)
     elseif rep < REP_NEUTRAL then
-        return 4 // Neutral (Neutral with vision)
+        return 3 // Unfriendly (Neutral)
     elseif rep < REP_FRIENDLY then
-        return 5 // Friendly (Allied)
+        return 4 // Neutral (Neutral with vision)
     elseif rep < REP_COVENANT then
+        return 5 // Friendly (Allied)
+    elseif rep < REP_EXALTED then
         return 6 // Covenant (Allied with vision)
     else
         return 7 // Exalted (Allied with vision)
@@ -675,6 +675,18 @@ struct TemporalHostility
     endmethod
 endstruct
 
+public function IsFactionTemporarilyHostile takes string factionName returns boolean
+    local Faction f = Faction.getFaction(factionName)
+    local boolean result = false
+
+    if f != 0 and ENABLE_TEMPORAL_HOSTILITY and temporalHostilityActive != 0 then
+        set result = temporalHostilityActive.has(f.id)
+    endif
+
+    set f = 0
+    return result
+endfunction
+
 // Clear temporary hostility early and restore the faction to its stored state.
 public function ClearFactionTemporalHostility takes string factionName returns nothing
     local Faction f = Faction.getFaction(factionName)
@@ -795,30 +807,30 @@ struct ReputationBoard
                 
                 // Reputation status cell
                 set repVal = Reputation.getRep(p, f)
-                if repVal < REP_ENEMY then
+                if repVal < REP_HOSTILE then
                     set iconPath = ICON_ENEMY
                     set textColor = "|cff8b0000"
-                    set value = textColor + Reputation.getStatus(p, f) + " |cff808080(" + I2S(repVal) + " / " + I2S(REP_ENEMY) + ")|r"
-                elseif repVal < REP_HOSTILE then
-                    set iconPath = ICON_HOSTILE
-                    set textColor = "|cffff4040"
                     set value = textColor + Reputation.getStatus(p, f) + " |cff808080(" + I2S(repVal) + " / " + I2S(REP_HOSTILE) + ")|r"
                 elseif repVal < REP_UNFRIENDLY then
-                    set iconPath = ICON_UNFRIENDLY
-                    set textColor = "|cffff8040"
+                    set iconPath = ICON_HOSTILE
+                    set textColor = "|cffff4040"
                     set value = textColor + Reputation.getStatus(p, f) + " |cff808080(" + I2S(repVal) + " / " + I2S(REP_UNFRIENDLY) + ")|r"
                 elseif repVal < REP_NEUTRAL then
-                    set iconPath = ICON_NEUTRAL
-                    set textColor = "|cffffffff"
+                    set iconPath = ICON_UNFRIENDLY
+                    set textColor = "|cffff8040"
                     set value = textColor + Reputation.getStatus(p, f) + " |cff808080(" + I2S(repVal) + " / " + I2S(REP_NEUTRAL) + ")|r"
                 elseif repVal < REP_FRIENDLY then
-                    set iconPath = ICON_FRIENDLY
-                    set textColor = "|cff40ff40"
+                    set iconPath = ICON_NEUTRAL
+                    set textColor = "|cffffffff"
                     set value = textColor + Reputation.getStatus(p, f) + " |cff808080(" + I2S(repVal) + " / " + I2S(REP_FRIENDLY) + ")|r"
                 elseif repVal < REP_COVENANT then
+                    set iconPath = ICON_FRIENDLY
+                    set textColor = "|cff40ff40"
+                    set value = textColor + Reputation.getStatus(p, f) + " |cff808080(" + I2S(repVal) + " / " + I2S(REP_COVENANT) + ")|r"
+                elseif repVal < REP_EXALTED then
                     set iconPath = ICON_COVENANT
                     set textColor = "|cff00ff00"
-                    set value = textColor + Reputation.getStatus(p, f) + " |cff808080(" + I2S(repVal) + " / " + I2S(REP_COVENANT) + ")|r"
+                    set value = textColor + Reputation.getStatus(p, f) + " |cff808080(" + I2S(repVal) + " / " + I2S(REP_EXALTED) + ")|r"
                 else
                     set iconPath = ICON_EXALTED
                     set textColor = "|cffffd700"
@@ -885,30 +897,30 @@ struct ReputationBoard
                     set value = textColor + "|cffff4040Hostile|r |cff808080(" + I2S(R2I(GetTemporalHostilityRemaining(f.id))) + ")|r"
                 else
                     // Determine icon and text color based on actual reputation
-                    if repVal < REP_ENEMY then
+                    if repVal < REP_HOSTILE then
                         set iconPath = ICON_ENEMY
                         set textColor = "|cff8b0000"
-                        set value = textColor + Reputation.getStatus(p, f) + " |cff808080(" + I2S(repVal) + " / " + I2S(REP_ENEMY) + ")|r"
-                    elseif repVal < REP_HOSTILE then
-                        set iconPath = ICON_HOSTILE
-                        set textColor = "|cffff4040"
                         set value = textColor + Reputation.getStatus(p, f) + " |cff808080(" + I2S(repVal) + " / " + I2S(REP_HOSTILE) + ")|r"
                     elseif repVal < REP_UNFRIENDLY then
-                        set iconPath = ICON_UNFRIENDLY
-                        set textColor = "|cffff8040"
+                        set iconPath = ICON_HOSTILE
+                        set textColor = "|cffff4040"
                         set value = textColor + Reputation.getStatus(p, f) + " |cff808080(" + I2S(repVal) + " / " + I2S(REP_UNFRIENDLY) + ")|r"
                     elseif repVal < REP_NEUTRAL then
-                        set iconPath = ICON_NEUTRAL
-                        set textColor = "|cffffffff"
+                        set iconPath = ICON_UNFRIENDLY
+                        set textColor = "|cffff8040"
                         set value = textColor + Reputation.getStatus(p, f) + " |cff808080(" + I2S(repVal) + " / " + I2S(REP_NEUTRAL) + ")|r"
                     elseif repVal < REP_FRIENDLY then
-                        set iconPath = ICON_FRIENDLY
-                        set textColor = "|cff40ff40"
+                        set iconPath = ICON_NEUTRAL
+                        set textColor = "|cffffffff"
                         set value = textColor + Reputation.getStatus(p, f) + " |cff808080(" + I2S(repVal) + " / " + I2S(REP_FRIENDLY) + ")|r"
                     elseif repVal < REP_COVENANT then
+                        set iconPath = ICON_FRIENDLY
+                        set textColor = "|cff40ff40"
+                        set value = textColor + Reputation.getStatus(p, f) + " |cff808080(" + I2S(repVal) + " / " + I2S(REP_COVENANT) + ")|r"
+                    elseif repVal < REP_EXALTED then
                         set iconPath = ICON_COVENANT
                         set textColor = "|cff00ff00"
-                        set value = textColor + Reputation.getStatus(p, f) + " |cff808080(" + I2S(repVal) + " / " + I2S(REP_COVENANT) + ")|r"
+                        set value = textColor + Reputation.getStatus(p, f) + " |cff808080(" + I2S(repVal) + " / " + I2S(REP_EXALTED) + ")|r"
                     else
                         set iconPath = ICON_EXALTED
                         set textColor = "|cffffd700"
