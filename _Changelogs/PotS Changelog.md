@@ -15,6 +15,44 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [12.7.2026] Part III
+
+### Technical Updates
+
+- `StatsLiteUI.j`
+  - Changed sprite compensation from upper-right to down-left. Size and scale stayed unchanged.
+
+- `StatsUI.j`
+  - changed the label to Party: X / Y, moved it left and slightly down, and shifted the Professions / Abilities button column left by anchoring it to the right pane’s detail-column area. Abilities remains directly under Professions.
+
+- `AI_Aradion.j` and `AI_Valeria.j`
+  - adjusted bark reputation ranges so behavior stays the same after the constants became tier-start values.
+
+- `Reputation.j`
+  - Reputation_REP_NEUTRAL is now the start of Neutral (0), not the upper edge of Neutral. A rep value like 2000 now satisfies Neutral requirements, including the companion gate that already uses Reputation_REP_NEUTRAL.
+  - added Reputation_IsFactionTemporarilyHostile.
+
+- `ReputationUI.j`
+  - added an Info row with tier thresholds, and each faction detail now shows the consequence of the current status.
+
+- `AI_LegacyLocations.j`
+  - AI_Warlock_UndeadProfileId now gets the same Horde spawn, retreat, and shop bindings as AI_Warlock_ProfileId, so undead warlock random spawning should use the Horde spawn rect list instead of falling back to random playable-map coordinates.
+
+- `qAradion.j`
+  - Mana Rift not killed issue: The Mana Rift issue was not that the unit variable was lost. RiftsCurrentRift and RiftsUnits[] existed, but the finish path also used a redundant PlacedManaRifts[] copy seeded from placed unit globals. I removed that extra array entirely. Rift lookup and completion now use RiftsUnits[] plus RiftsCurrentRift, and closing calls KillUnit then RemoveUnit through CloseManaRiftUnit. Completion also now refuses to run unless a ritual is actually active.
+  - Other fixes:
+    - Tel’anor Rod is now explicitly created in GiveTelanorRodToHero with CreateItem(ITEM_TELANOR_ROD, heroX, heroY) and added to the hero inventory    
+    - Valeria now starts offset and moves to her Rifts intro position instead of teleporting directly.
+    - Rifts ritual start is blocked when Elarindor rep is hostile, and active rituals fail if it turns hostile mid-ritual.
+    - Rifts now treats temporary Elarindor hostility as hostile.
+    - detects stale Aradion/Valeria companion control if the generic companion system removed them.
+    - fails/stops Rifts instead of letting timers/orders continue with stale companion state.
+
+- `ZonesCore.j`
+  - Added parentzone for Horde Scout Base (id 8810)
+
+- `HordeMainBasePeons.j`
+  - Draft AI Routines for Horde Main base peons
 
 ## [12.7.2026] Part II
 
