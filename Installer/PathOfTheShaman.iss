@@ -117,7 +117,7 @@ begin
     Result := AddBackslash(CleanPath) + '_retail_';
 end;
 
-function TryRegistryRetailPath(RootKey: HKEY; Subkey: string; ValueName: string; var RetailPath: string): Boolean;
+function TryRegistryRetailPath(RootKey: Integer; Subkey: string; ValueName: string; var RetailPath: string): Boolean;
 var
   Candidate: string;
 begin
