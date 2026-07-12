@@ -2,19 +2,20 @@
   "installerVersion": "0.1.0",
   "map": {
     "enabled": true,
-    "version": "0.1.0",
-    "source": "payload/map/Path of the Shaman.w3x",
-    "targetFileName": "Path of the Shaman.w3x"
+    "version": "202607130202",
+    "source": "payload/map/Path of the Shaman-202607130202.zip"
   },
   "localFiles": {
     "enabled": true,
     "version": "0.1.0",
-    "source": "payload/local-files"
+    "source": "payload/local-files/Pots"
   },
   "rebirthMod": {
     "enabled": true,
-    "version": "0.1.0",
-    "source": "payload/rebirth-mod"
+    "version": "9thRelease+FixesLast2023",
+    "archives": [
+      "payload/rebirth-mod/9thRelease.rar",
+      "payload/rebirth-mod/FixesLast2023.rar"
+    ]
   }
 }
-

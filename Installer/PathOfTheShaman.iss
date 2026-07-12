@@ -15,6 +15,7 @@ OutputDir=output
 OutputBaseFilename=PathOfTheShamanSetup-{#InstallerVersion}
 Compression=lzma2/ultra64
 SolidCompression=yes
+ArchiveExtraction=full
 WizardStyle=modern
 PrivilegesRequired=admin
 UninstallDisplayName={#AppName}
@@ -54,20 +55,31 @@ Name: "{code:GetRetailInstallDir}"; Components: rebirth
 
 [Files]
 #if IncludeMap
-Source: "{#MapSource}"; DestDir: "{code:GetMapInstallDir}"; DestName: "{#MapTargetFileName}"; Flags: ignoreversion; Components: map
+Source: "{#MapArchiveSource}"; DestName: "{#MapArchiveFileName}"; Flags: dontcopy nocompression; Components: map
 #endif
 #if IncludeLocalFiles
 Source: "{#LocalFilesSource}\*"; DestDir: "{code:GetLocalFilesInstallDir}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: ".gitkeep,Thumbs.db,.DS_Store"; Components: localfiles
 #endif
 #if IncludeRebirthMod
-Source: "{#RebirthModSource}\*"; DestDir: "{code:GetRetailInstallDir}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: ".gitkeep,Thumbs.db,.DS_Store"; Components: rebirth
+#if IncludeRebirthArchive1
+Source: "{#RebirthArchive1Source}"; DestName: "{#RebirthArchive1FileName}"; Flags: dontcopy nocompression; Components: rebirth
+#endif
+#if IncludeRebirthArchive2
+Source: "{#RebirthArchive2Source}"; DestName: "{#RebirthArchive2FileName}"; Flags: dontcopy nocompression; Components: rebirth
+#endif
+#if IncludeRebirthArchive3
+Source: "{#RebirthArchive3Source}"; DestName: "{#RebirthArchive3FileName}"; Flags: dontcopy nocompression; Components: rebirth
+#endif
+#if IncludeRebirthArchive4
+Source: "{#RebirthArchive4Source}"; DestName: "{#RebirthArchive4FileName}"; Flags: dontcopy nocompression; Components: rebirth
+#endif
 #endif
 
 [Registry]
 Root: HKLM; Subkey: "{#AppRegistryKey}"; ValueType: string; ValueName: "InstallerVersion"; ValueData: "{#InstallerVersion}"; Flags: uninsdeletevalue
 #if IncludeMap
 Root: HKLM; Subkey: "{#AppRegistryKey}"; ValueType: string; ValueName: "MapVersion"; ValueData: "{#MapVersion}"; Components: map; Flags: uninsdeletevalue
-Root: HKLM; Subkey: "{#AppRegistryKey}"; ValueType: string; ValueName: "MapPath"; ValueData: "{code:GetMapInstallDir}\{#MapTargetFileName}"; Components: map; Flags: uninsdeletevalue
+Root: HKLM; Subkey: "{#AppRegistryKey}"; ValueType: string; ValueName: "MapPath"; ValueData: "{code:GetMapInstallDir}\{#MapInstalledFileName}"; Components: map; Flags: uninsdeletevalue
 #endif
 #if IncludeLocalFiles
 Root: HKLM; Subkey: "{#AppRegistryKey}"; ValueType: string; ValueName: "LocalFilesVersion"; ValueData: "{#LocalFilesVersion}"; Components: localfiles; Flags: uninsdeletevalue
@@ -235,6 +247,21 @@ begin
 #endif
 end;
 
+procedure ExtractBundledArchive(ArchiveFileName: string; DestDir: string; DisplayName: string; FullPaths: Boolean);
+var
+  ArchivePath: string;
+begin
+  if not ForceDirectories(DestDir) then
+    RaiseException('Could not create target folder: ' + DestDir);
+
+  WizardForm.StatusLabel.Caption := 'Extracting ' + DisplayName + '...';
+  Log('Extracting ' + DisplayName + ' to ' + DestDir);
+
+  ExtractTemporaryFile(ArchiveFileName);
+  ArchivePath := AddBackslash(ExpandConstant('{tmp}')) + ArchiveFileName;
+  ExtractArchive(ArchivePath, DestDir, '', FullPaths, nil);
+end;
+
 procedure InitializeWizard;
 var
   NextTop: Integer;
@@ -294,6 +321,35 @@ procedure CurPageChanged(CurPageID: Integer);
 begin
   if CurPageID = VersionPage.ID then
     RefreshVersionPage;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssInstall then
+  begin
+#if IncludeMap
+    if WizardIsComponentSelected('map') then
+      ExtractBundledArchive('{#MapArchiveFileName}', GetMapInstallDir(''), 'map archive', False);
+#endif
+
+#if IncludeRebirthMod
+    if WizardIsComponentSelected('rebirth') then
+    begin
+#if IncludeRebirthArchive1
+      ExtractBundledArchive('{#RebirthArchive1FileName}', GetRetailInstallDir(''), '{#RebirthArchive1FileName}', True);
+#endif
+#if IncludeRebirthArchive2
+      ExtractBundledArchive('{#RebirthArchive2FileName}', GetRetailInstallDir(''), '{#RebirthArchive2FileName}', True);
+#endif
+#if IncludeRebirthArchive3
+      ExtractBundledArchive('{#RebirthArchive3FileName}', GetRetailInstallDir(''), '{#RebirthArchive3FileName}', True);
+#endif
+#if IncludeRebirthArchive4
+      ExtractBundledArchive('{#RebirthArchive4FileName}', GetRetailInstallDir(''), '{#RebirthArchive4FileName}', True);
+#endif
+    end;
+#endif
+  end;
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;

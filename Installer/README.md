@@ -9,13 +9,14 @@ The installer source is kept in git. The actual release payload is not kept in g
 Put the latest files here before building:
 
 - `Installer/payload/map/`
-  - Put the latest `.w3x` map file here.
+  - Put the latest map `.zip` here.
+  - The zip must contain one `.w3x` map file.
 - `Installer/payload/local-files/`
-  - Put the contents that must be installed to `Warcraft III\_retail_\Pots` here.
-  - Do not include an extra top-level `Pots` folder unless that is intentionally part of the final path.
+  - Put the latest `Pots` folder here, for example `Installer/payload/local-files/Pots`.
+  - The contents of that folder are copied to `Warcraft III\_retail_\Pots`.
 - `Installer/payload/rebirth-mod/`
-  - Put the unpacked Warcraft III Rebirth mod files here.
-  - These files are copied directly into `Warcraft III\_retail_`.
+  - Put `9thRelease.rar` and `FixesLast2023.rar` here.
+  - These archives are unpacked directly into `Warcraft III\_retail_`.
 
 `Installer/payload/` and `Installer/output/` are ignored by git. Only the folder placeholders are tracked.
 
@@ -39,10 +40,13 @@ The installer has three sections:
 
 - Map
   - Default target: `%USERPROFILE%\Documents\Warcraft III\Maps`
+  - Source package: `Installer/payload/map/Path of the Shaman-202607130202.zip`
 - PotS local files
   - Target: selected `Warcraft III\_retail_` folder plus `\Pots`
+  - Source folder: `Installer/payload/local-files/Pots`
 - Warcraft III Rebirth mod
   - Target: selected `Warcraft III\_retail_` folder
+  - Source archives: `Installer/payload/rebirth-mod/9thRelease.rar`, then `Installer/payload/rebirth-mod/FixesLast2023.rar`
 
 The installer records installed versions in:
 
@@ -64,7 +68,9 @@ Repair/update both copy the package files again. Existing extra files in target 
 Build machine:
 
 - Windows
-- Inno Setup 6 installed
+- Inno Setup 6.7 or newer installed
+  - Inno Setup 6.7.3 is the recommended stable version.
+  - Inno Setup 7 also works in principle, but the current public Inno 7 release is beta.
 
 Player machine:
 
