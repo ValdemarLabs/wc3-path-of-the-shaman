@@ -192,6 +192,7 @@ globals
     private constant integer AI_SIDE_SCAN_MAX_PER_TICK = 2
     private constant real AI_COMPANION_RETREAT_TIME = 2.50
     private constant real AI_COMPANION_RETREAT_DISTANCE = 420.00
+    private constant integer AI_RIVERBANE_GRAVEYARD_ID = 5
     private constant real AI_CAMP_NIGHT_MIN = 18.00
     private constant real AI_CAMP_NIGHT_MAX = 6.00
     private constant real AI_CAMP_DURATION_MIN = 60.00
@@ -220,6 +221,7 @@ globals
     private constant integer ITEM_MINING_PICK = 'I672'
     private constant integer ITEM_SKINNING_KNIFE = 'I66M'
     private constant integer ITEM_CAMP_FIRE = 'I611'
+    private constant integer UNIT_AVELINE_RIVERBANE = 'O009'
 
     private Table UnitInstance = 0
     private Table UniqueInstance = 0
@@ -933,8 +935,15 @@ private function GetGraveyardRect takes integer graveyardId returns rect
 endfunction
 
 private function GetReviveGraveyardId takes unit whichUnit returns integer
-    if whichUnit != null and IsCompanionControlled(whichUnit) and udg_GraveyardSelect > 0 then
-        return udg_GraveyardSelect
+    local boolean companionControlled
+    if whichUnit != null then
+        set companionControlled = IsCompanionControlled(whichUnit)
+        if companionControlled and udg_GraveyardSelect > 0 then
+            return udg_GraveyardSelect
+        endif
+        if not companionControlled and GetUnitTypeId(whichUnit) == UNIT_AVELINE_RIVERBANE then
+            return AI_RIVERBANE_GRAVEYARD_ID
+        endif
     endif
     return GetRandomInt(1, 9)
 endfunction
