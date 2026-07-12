@@ -92,6 +92,8 @@ private function RUI_GetFactionDescription takes string factionName returns stri
         return "A hardened human frontier faction controlling key roads and settlements near the eastern reaches."
     elseif factionName == "Alliance" then
         return "The broader human alliance presence. Their opinion determines how safely you can move through their holdings."
+    elseif factionName == "Stormhaven" then
+        return "A fortified human city with guarded streets and suspicious citizens. Your standing determines whether its people treat you as a threat or a tolerated visitor."
     elseif factionName == "Goblins" then
         return "Mercantile opportunists who value profit over loyalty. Reputation here affects trade and tolerance."
     elseif factionName == "Elarindor" then
