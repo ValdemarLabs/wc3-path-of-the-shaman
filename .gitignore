@@ -60,6 +60,20 @@ _Roadmap/
 #*.mov
 #*.iso
 
+# PotS player installer payload/output
+/Installer/payload/**
+!/Installer/payload/
+!/Installer/payload/.gitkeep
+!/Installer/payload/map/
+!/Installer/payload/map/.gitkeep
+!/Installer/payload/local-files/
+!/Installer/payload/local-files/.gitkeep
+!/Installer/payload/rebirth-mod/
+!/Installer/payload/rebirth-mod/.gitkeep
+/Installer/output/
+/Installer/release-version.generated.iss
+/Installer/*.sha256
+
 # Pictures
 *.png
 *.dds
