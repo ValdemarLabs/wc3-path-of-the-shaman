@@ -1,0 +1,20 @@
+{
+  "installerVersion": "0.1.0",
+  "map": {
+    "enabled": true,
+    "version": "0.1.0",
+    "source": "payload/map/Path of the Shaman.w3x",
+    "targetFileName": "Path of the Shaman.w3x"
+  },
+  "localFiles": {
+    "enabled": true,
+    "version": "0.1.0",
+    "source": "payload/local-files"
+  },
+  "rebirthMod": {
+    "enabled": true,
+    "version": "0.1.0",
+    "source": "payload/rebirth-mod"
+  }
+}
+
