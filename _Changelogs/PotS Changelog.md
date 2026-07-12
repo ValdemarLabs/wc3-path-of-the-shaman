@@ -28,6 +28,9 @@
 - `qAradion.j`
   - now defers the Ranger Missing Valeria random barks and retries after 5s if dialog/field dialogue is active.
 
+- `Installer`
+  - Started creating `Path of the Shaman` installer setup to make it more easier to manage all the local files and mods required by the map.
+
 
 ## [12.7.2026] Part III
 
