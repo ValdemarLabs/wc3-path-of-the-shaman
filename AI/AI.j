@@ -3427,7 +3427,7 @@ private function PickupItemEnum takes nothing returns nothing
         return
     endif
     set itemTypeId = GetItemTypeId(enumItem)
-    if itemTypeId == 0 or GetWidgetLife(enumItem) <= 0.00 or IsItemOwned(enumItem) or IsItemPowerup(enumItem) or IsAIUtilityItemType(itemTypeId) or (ItemSearchNoMana and IsManaOnlyItemType(itemTypeId)) then
+    if itemTypeId == 0 or GetWidgetLife(enumItem) <= 0.00 or IsItemOwned(enumItem) or IsItemPowerup(enumItem) or GN_IsGatherItem(enumItem) or IsAIUtilityItemType(itemTypeId) or (ItemSearchNoMana and IsManaOnlyItemType(itemTypeId)) then
         set enumItem = null
         return
     endif
@@ -4129,28 +4129,50 @@ private function ResetProfessionFailure takes integer instanceId returns nothing
     endif
 endfunction
 
+private function StopProfessionOrder takes unit whichUnit returns nothing
+    if whichUnit == null then
+        return
+    endif
+    call PauseUnit(whichUnit, true)
+    call PauseUnit(whichUnit, false)
+    call IssueImmediateOrder(whichUnit, "stop")
+endfunction
+
 private function RequestProfessionFailureBark takes unit whichUnit returns nothing
     if whichUnit != null and IsCompanionControlled(whichUnit) and IsBarkNearPlayerHero(whichUnit) then
         call AI_RequestBark(whichUnit, AI_BARK_IDLE)
     endif
 endfunction
 
+private function BackoffProfessionWork takes integer instanceId, unit whichUnit, real now, string reason returns nothing
+    local real blockedUntil
+    call StopProfessionOrder(whichUnit)
+    if instanceId <= 0 then
+        return
+    endif
+    set blockedUntil = now + GetRandomReal(AI_PROFESSION_FAIL_BACKOFF_MIN, AI_PROFESSION_FAIL_BACKOFF_MAX)
+    set InstanceProfessionFailCount[instanceId] = 0
+    set InstanceProfessionBlockedUntil.real[instanceId] = blockedUntil
+    set InstanceNextProfession.real[instanceId] = blockedUntil
+    if InstanceState[instanceId] == AI_STATE_WANDER then
+        call SetInstanceState(instanceId, AI_STATE_IDLE)
+    endif
+    call RemoveTrackedProfessionTool(instanceId)
+    if whichUnit != null then
+        call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " pauses profession work: " + reason + ".")
+        call RequestProfessionFailureBark(whichUnit)
+    endif
+endfunction
+
 private function RegisterProfessionFailure takes integer instanceId, unit whichUnit, real now, string reason returns nothing
     local integer failCount
-    local real blockedUntil
     if instanceId <= 0 or whichUnit == null then
         return
     endif
     set failCount = InstanceProfessionFailCount[instanceId] + 1
     set InstanceProfessionFailCount[instanceId] = failCount
     if failCount >= AI_PROFESSION_FAIL_LIMIT then
-        set blockedUntil = now + GetRandomReal(AI_PROFESSION_FAIL_BACKOFF_MIN, AI_PROFESSION_FAIL_BACKOFF_MAX)
-        set InstanceProfessionFailCount[instanceId] = 0
-        set InstanceProfessionBlockedUntil.real[instanceId] = blockedUntil
-        set InstanceNextProfession.real[instanceId] = blockedUntil
-        call IssueImmediateOrder(whichUnit, "stop")
-        call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " pauses profession work: " + reason + ".")
-        call RequestProfessionFailureBark(whichUnit)
+        call BackoffProfessionWork(instanceId, whichUnit, now, reason)
     else
         set InstanceNextProfession.real[instanceId] = now + GetRandomReal(6.00, 12.00)
         call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " profession attempt failed (" + reason + "), retry " + I2S(failCount) + "/" + I2S(AI_PROFESSION_FAIL_LIMIT) + ".")
@@ -4248,7 +4270,7 @@ private function BeginGatherItem takes integer instanceId, unit whichUnit, item 
     set requiredSkill = GN_GetGatherItemSkillRequired(nodeItem)
     set toolId = GetProfessionToolId(professionId)
     if not CanGatherProfession(whichUnit, InstanceProfile[instanceId], professionId, requiredSkill) then
-        call RegisterProfessionFailure(instanceId, whichUnit, now, "profession skill too low")
+        call BackoffProfessionWork(instanceId, whichUnit, now, "profession skill too low")
         return false
     endif
     if not CanHoldGatherItem(instanceId, whichUnit, professionId) then
@@ -4282,7 +4304,7 @@ private function BeginGatherUnit takes integer instanceId, unit whichUnit, unit 
     endif
     set requiredSkill = GN_GetGatherUnitSkillRequired(node)
     if not CanGatherProfession(whichUnit, InstanceProfile[instanceId], professionId, requiredSkill) then
-        call RegisterProfessionFailure(instanceId, whichUnit, now, "mining skill too low")
+        call BackoffProfessionWork(instanceId, whichUnit, now, "mining skill too low")
         return false
     endif
     if not CanHoldGatherItem(instanceId, whichUnit, professionId) then
@@ -4382,20 +4404,10 @@ private function ShouldBlockAiGatherUnitAttack takes integer instanceId, unit at
 endfunction
 
 private function BackoffBlockedGatherUnitAttack takes integer instanceId, unit attacker, unit node returns nothing
-    local real blockedUntil
-    if attacker != null then
-        call IssueImmediateOrder(attacker, "stop")
-    endif
-    if instanceId <= 0 then
-        return
-    endif
-    set blockedUntil = GetNow() + GetRandomReal(AI_PROFESSION_FAIL_BACKOFF_MIN, AI_PROFESSION_FAIL_BACKOFF_MAX)
-    set InstanceProfessionFailCount[instanceId] = 0
-    set InstanceProfessionBlockedUntil.real[instanceId] = blockedUntil
-    set InstanceNextProfession.real[instanceId] = blockedUntil
-    call RemoveTrackedProfessionTool(instanceId)
     if node != null and GN_IsGatherUnit(node) then
-        call DebugMsg(GetDebugInstanceName(instanceId, attacker) + " skips " + GN_GetGatherUnitName(node) + ": mining requirements not met.")
+        call BackoffProfessionWork(instanceId, attacker, GetNow(), "requirements not met for " + GN_GetGatherUnitName(node))
+    else
+        call BackoffProfessionWork(instanceId, attacker, GetNow(), "gather requirements not met")
     endif
 endfunction
 
@@ -4607,6 +4619,7 @@ private function TryStartNightCampAction takes integer instanceId, unit whichUni
     local real x
     local real y
     local item campItem
+    local integer attempt = 0
     if instanceId <= 0 or whichUnit == null or udg_InCinematic then
         return false
     endif
@@ -4617,21 +4630,27 @@ private function TryStartNightCampAction takes integer instanceId, unit whichUni
         set InstanceNextCamp.real[instanceId] = now + GetRandomReal(120.00, 300.00)
         return false
     endif
-    set angle = GetRandomReal(0.00, 360.00) * bj_DEGTORAD
-    set distance = GetRandomReal(AI_CAMP_FIRE_MIN_OFFSET, AI_CAMP_FIRE_MAX_OFFSET)
-    set x = GetUnitX(whichUnit) + distance * Cos(angle)
-    set y = GetUnitY(whichUnit) + distance * Sin(angle)
+    call IssueImmediateOrder(whichUnit, "stop")
     set campItem = UnitAddItemById(whichUnit, ITEM_CAMP_FIRE)
-    if campItem != null and UnitUseItemPoint(whichUnit, campItem, x, y) then
-        call SetInstanceState(instanceId, AI_STATE_CAMP)
-        set InstanceRetreatUntil.real[instanceId] = now + GetRandomReal(AI_CAMP_DURATION_MIN, AI_CAMP_DURATION_MAX)
-        set InstanceNextCamp.real[instanceId] = now + GetRandomReal(AI_CAMP_COOLDOWN_MIN, AI_CAMP_COOLDOWN_MAX)
-        call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " starts night camp.")
-        set campItem = null
-        return true
-    endif
+    loop
+        exitwhen campItem == null or attempt >= 5
+        set angle = GetRandomReal(0.00, 360.00) * bj_DEGTORAD
+        set distance = GetRandomReal(AI_CAMP_FIRE_MIN_OFFSET, AI_CAMP_FIRE_MAX_OFFSET)
+        set x = GetUnitX(whichUnit) + distance * Cos(angle)
+        set y = GetUnitY(whichUnit) + distance * Sin(angle)
+        if UnitUseItemPoint(whichUnit, campItem, x, y) then
+            call SetInstanceState(instanceId, AI_STATE_CAMP)
+            set InstanceRetreatUntil.real[instanceId] = now + GetRandomReal(AI_CAMP_DURATION_MIN, AI_CAMP_DURATION_MAX)
+            set InstanceNextCamp.real[instanceId] = now + GetRandomReal(AI_CAMP_COOLDOWN_MIN, AI_CAMP_COOLDOWN_MAX)
+            call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " starts night camp.")
+            set campItem = null
+            return true
+        endif
+        set attempt = attempt + 1
+    endloop
     if campItem != null then
-        call UnitDropItemPoint(whichUnit, campItem, GetUnitX(whichUnit), GetUnitY(whichUnit))
+        call RemoveItem(campItem)
+        call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " could not place camp fire.")
     endif
     set InstanceNextCamp.real[instanceId] = now + GetRandomReal(120.00, 240.00)
     set campItem = null
