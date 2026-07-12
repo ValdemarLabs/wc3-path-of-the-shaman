@@ -6,16 +6,16 @@
 
     Description:
     Ambient AIRoutines setup for the Horde Main base peons. AIRoutines creates
-    and manages Orc Peon units (`'opeo'`) at `gg_rct_XXX peons`; they
-    harvest lumber by day, wander and idle around `gg_rct_XXX base `,
+    and manages Orc Peon units (`'opeo'`) at `gg_rct_HordeMainBasePeons`; they
+    harvest lumber by day, wander and idle around `gg_rct_HordeScoutBase`,
     and move to the camp to sleep at night.
 
     Credits:
     - PotS AI JASS migration
 
     How to install:
-    Import after `AIRoutines.j`. The map must provide `gg_rct_XXX peons`
-    and `gg_rct_XXX base`.
+    Import after `AIRoutines.j`. The map must provide `gg_rct_HordeMainBasePeons`
+    and `gg_rct_HordeScoutBase`.
 
     API:
     call HordeMainBasePeons_Refresh()
@@ -107,8 +107,8 @@ private function CampAction takes nothing returns nothing
         call IssueImmediateOrder(whichUnit, "stop")
         call SetUnitAnimation(whichUnit, "attack")
     elseif action == 4 then
-        set x = GetRandomReal(GetRectMinX(gg_rct_XXX base), GetRectMaxX(gg_rct_XXX base))
-        set y = GetRandomReal(GetRectMinY(gg_rct_XXX base), GetRectMaxY(gg_rct_XXX base))
+        set x = GetRandomReal(GetRectMinX(gg_rct_HordeScoutBase), GetRectMaxX(gg_rct_HordeScoutBase))
+        set y = GetRandomReal(GetRectMinY(gg_rct_HordeScoutBase), GetRectMaxY(gg_rct_HordeScoutBase))
         call IssuePointOrder(whichUnit, "move", x, y)
     else
         call IssueImmediateOrder(whichUnit, "stop")
@@ -186,7 +186,7 @@ private function CreateNightRoutine takes nothing returns integer
         return 0
     endif
 
-    call AIRoutines_AddRectOrderStep(routineId, "move", gg_rct_XXX base, 6.00, 12.00)
+    call AIRoutines_AddRectOrderStep(routineId, "move", gg_rct_HordeScoutBase, 6.00, 12.00)
     call AIRoutines_AddSleepStep(routineId, 300.00, 300.00, false)
     return routineId
 endfunction
@@ -195,7 +195,7 @@ private function Init takes nothing returns nothing
     set MP_HarvestRect = Rect(0.00, 0.00, 0.00, 0.00)
     set MP_DayRoutineId = CreateDayRoutine()
     set MP_NightRoutineId = CreateNightRoutine()
-    set MP_SpawnGroupId = AIRoutines_CreateManagedUnitGroupInZone(Player(MP_OWNER_PLAYER_ID), MP_PEON_UNIT_TYPE_ID, gg_rct_XXX peons, GetActiveRoutineId(), MP_PEON_COUNT, MP_RESPAWN_DELAY, MP_RANDOM_FACING, MP_ROUTINE_ZONE_ID)
+    set MP_SpawnGroupId = AIRoutines_CreateManagedUnitGroupInZone(Player(MP_OWNER_PLAYER_ID), MP_PEON_UNIT_TYPE_ID, gg_rct_HordeMainBasePeons, GetActiveRoutineId(), MP_PEON_COUNT, MP_RESPAWN_DELAY, MP_RANDOM_FACING, MP_ROUTINE_ZONE_ID)
     set MP_NightActive = IsNight()
 
     set MP_DawnTrigger = CreateTrigger()
