@@ -91,19 +91,19 @@ private function RegisterElarindorBark takes integer barkType, string text, stri
 endfunction
 
 private function RegisterNeutralBark takes integer barkType, string text, string soundKey returns nothing
-    call RegisterElarindorBark(barkType, text, soundKey, AI_REP_NO_MIN, Reputation_REP_NEUTRAL - 1)
+    call RegisterElarindorBark(barkType, text, soundKey, AI_REP_NO_MIN, Reputation_REP_FRIENDLY - 1)
 endfunction
 
 private function RegisterFriendlyBark takes integer barkType, string text, string soundKey returns nothing
-    call RegisterElarindorBark(barkType, text, soundKey, Reputation_REP_NEUTRAL, Reputation_REP_FRIENDLY - 1)
-endfunction
-
-private function RegisterCovenantBark takes integer barkType, string text, string soundKey returns nothing
     call RegisterElarindorBark(barkType, text, soundKey, Reputation_REP_FRIENDLY, Reputation_REP_COVENANT - 1)
 endfunction
 
+private function RegisterCovenantBark takes integer barkType, string text, string soundKey returns nothing
+    call RegisterElarindorBark(barkType, text, soundKey, Reputation_REP_COVENANT, Reputation_REP_EXALTED - 1)
+endfunction
+
 private function RegisterExaltedBark takes integer barkType, string text, string soundKey returns nothing
-    call RegisterElarindorBark(barkType, text, soundKey, Reputation_REP_COVENANT, AI_REP_NO_MAX)
+    call RegisterElarindorBark(barkType, text, soundKey, Reputation_REP_EXALTED, AI_REP_NO_MAX)
 endfunction
 
 private function RegisterCommonBark takes integer barkType, string text, string soundKey returns nothing
