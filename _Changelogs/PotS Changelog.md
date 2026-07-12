@@ -23,7 +23,7 @@
   - Changed sprite compensation from upper-right to down-left. Size and scale stayed unchanged.
 
 - `StatsUI.j`
-  - changed the label to Party: X / Y, moved it left and slightly down, and shifted the Professions / Abilities button column left by anchoring it to the right pane’s detail-column area. Abilities remains directly under Professions.
+  - The Party: X / Y label is now moved inward and slightly lower under Monitor. The Abilities and Professions buttons are now side by side below the selected unit icon, with Abilities on the left and Professions on the right, matching the second screenshot direction.
 
 - `AI_Aradion.j` and `AI_Valeria.j`
   - adjusted bark reputation ranges so behavior stays the same after the constants became tier-start values.
@@ -31,12 +31,21 @@
 - `Reputation.j`
   - Reputation_REP_NEUTRAL is now the start of Neutral (0), not the upper edge of Neutral. A rep value like 2000 now satisfies Neutral requirements, including the companion gate that already uses Reputation_REP_NEUTRAL.
   - added Reputation_IsFactionTemporarilyHostile.
+  - Added Stormhaven faction, Player(8) mapping, hostile Player(0) starting rep, kill rep handling, and icon
 
 - `ReputationUI.j`
   - added an Info row with tier thresholds, and each faction detail now shows the consequence of the current status.
+  - Added Stormhaven UI description
 
 - `AI_LegacyLocations.j`
   - AI_Warlock_UndeadProfileId now gets the same Horde spawn, retreat, and shop bindings as AI_Warlock_ProfileId, so undead warlock random spawning should use the Horde spawn rect list instead of falling back to random playable-map coordinates.
+
+- `AIRoutines.j`
+  - Random managed groups now spawn from weighted unit-type pools. Turnover lets a managed unit walk toward an exit rect, get removed after a delay, then respawn later from the same random pool, so villages/cities can naturally swap citizen types over time.
+  - Fixed AIRoutines turnover cleanup so “leaving” units keep their turnover state until actual unregister/removal
+
+- `StormhavenCity.j`
+  - Creates 30 Player(8) Stormhaven citizens across street, market, and social city routines, with weighted random unit types and periodic turnover/replacement.
 
 - `qAradion.j`
   - Mana Rift not killed issue: The Mana Rift issue was not that the unit variable was lost. RiftsCurrentRift and RiftsUnits[] existed, but the finish path also used a redundant PlacedManaRifts[] copy seeded from placed unit globals. I removed that extra array entirely. Rift lookup and completion now use RiftsUnits[] plus RiftsCurrentRift, and closing calls KillUnit then RemoveUnit through CloseManaRiftUnit. Completion also now refuses to run unless a ritual is actually active.
@@ -47,9 +56,11 @@
     - Rifts now treats temporary Elarindor hostility as hostile.
     - detects stale Aradion/Valeria companion control if the generic companion system removed them.
     - fails/stops Rifts instead of letting timers/orders continue with stale companion state.
+    - Ranger Missing had faction = "Elarindor", and QuestMaster treats any quest faction as a reputation requirement. Since requiredReputation defaults to 0, the quest silently required neutral Elarindor rep before it could become QUEST_STATE_AVAILABLE. Changed "call q.setRequiredReputation(Reputation_REP_ENEMY)" so it still rewards Elarindor reputation, but negative Elarindor rep no longer hides the start button after Aradion’s intro.
 
 - `ZonesCore.j`
   - Added parentzone for Horde Scout Base (id 8810)
+  - Updated Zone 13 faction text to Stormhaven
 
 - `HordeMainBasePeons.j`
   - Draft AI Routines for Horde Main base peons
