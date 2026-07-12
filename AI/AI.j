@@ -694,7 +694,7 @@ private function IsCompanionOnlyBark takes integer barkType returns boolean
 endfunction
 
 private function IsDialogBlockingBark takes nothing returns boolean
-    return udg_InCinematic or DialogSystem_IsSequenceActive()
+    return udg_InCinematic or DialogSystem_IsSequenceActive() or DialogSystem_IsDialogVisible() or DialogSystem_IsFieldLineQueueActive()
 endfunction
 
 private function IsBarkContextAllowed takes unit speaker, integer barkType returns boolean
