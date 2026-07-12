@@ -25,6 +25,7 @@ library CreepRespawn initializer Init requires Table, TimerUtils, UnitDeathEvent
 globals
     private Table rhash
     private Table respawnData
+    private Table ignoredUnits
     private group RespawnGroup
     private integer nextRespawnId = 0
     
@@ -94,12 +95,13 @@ endfunction
 private function GetRespawnOwner takes unit u returns player
     local integer id
     local integer savedOwnerId
-    local player owner = GetOwningPlayer(u)
+    local player owner = null
 
     if u == null then
         return null
     endif
 
+    set owner = GetOwningPlayer(u)
     set id = GetHandleId(u)
     if rhash != 0 and rhash.has(id * 4 + 3) then
         set savedOwnerId = rhash[id * 4 + 3]
@@ -131,8 +133,19 @@ private function IsRespawnableUnit takes unit u returns boolean
     return IsRespawnableOwner(GetRespawnOwner(u))
 endfunction
 
+private function IsIgnoredUnit takes unit u returns boolean
+    if u == null or ignoredUnits == 0 then
+        return false
+    endif
+    return ignoredUnits.has(GetHandleId(u))
+endfunction
+
 private function SaveUnitPosition takes unit u returns nothing
-    local integer id = GetHandleId(u)
+    local integer id
+    if u == null or IsIgnoredUnit(u) then
+        return
+    endif
+    set id = GetHandleId(u)
     set rhash.real[id * 4 + 0] = GetUnitX(u)
     set rhash.real[id * 4 + 1] = GetUnitY(u)
     set rhash.real[id * 4 + 2] = GetUnitFacing(u)
@@ -151,12 +164,43 @@ endfunction
 // Call this function when a unit enters the map to track it for respawning
 // Usage from GUI: Custom script:   call CreepRespawn_OnUnitEnter(GetTriggerUnit())
 function CreepRespawn_OnUnitEnter takes unit u returns nothing
+    if u == null then
+        return
+    endif
+    if IsIgnoredUnit(u) then
+        set u = null
+        return
+    endif
     if IsRespawnableUnit(u) then
         call SaveUnitPosition(u)
         if DEBUG_MODE then
             call BJDebugMsg("[CreepRespawn] OnUnitEnter: Tracking unit " + GetUnitName(u) + " for respawn")
         endif
     endif
+    set u = null
+endfunction
+
+// Mark quest-managed units that must never be saved or scheduled for respawn.
+function CreepRespawn_DiscardUnit takes unit u returns nothing
+    local integer id
+    if u == null then
+        return
+    endif
+    if ignoredUnits == 0 then
+        set ignoredUnits = Table.create()
+    endif
+    set id = GetHandleId(u)
+    set ignoredUnits[id] = 1
+    if RespawnGroup != null then
+        call GroupRemoveUnit(RespawnGroup, u)
+    endif
+    if rhash != 0 then
+        call rhash.remove(id * 4 + 0)
+        call rhash.remove(id * 4 + 1)
+        call rhash.remove(id * 4 + 2)
+        call rhash.remove(id * 4 + 3)
+    endif
+    set u = null
 endfunction
 
 //===========================================================================
@@ -346,6 +390,15 @@ private function OnUnitDeath takes nothing returns nothing
             call BJDebugMsg("[CreepRespawn] Saved position: (" + R2S(savedX) + ", " + R2S(savedY) + ") | Has saved data: false")
         endif
     endif
+
+    if IsIgnoredUnit(dying) then
+        if DEBUG_MODE then
+            call BJDebugMsg("[CreepRespawn] Unit was explicitly discarded - SKIPPED")
+        endif
+        set dying = null
+        set owner = null
+        return
+    endif
     
     // Check if unit is not summoned
     if IsUnitType(dying, UNIT_TYPE_SUMMONED) then
@@ -431,6 +484,9 @@ private function Init takes nothing returns nothing
     
     // Initialize respawn group
     set RespawnGroup = CreateGroup()
+    if ignoredUnits == 0 then
+        set ignoredUnits = Table.create()
+    endif
     
     // Respawn System Init (runs at map start)
     call TriggerRegisterTimerEvent(initTrigger, 0.00, false)
