@@ -2537,6 +2537,37 @@ private function FindPattern takes string source, string pattern returns integer
     return -1
 endfunction
 
+private function IsAvelineCompatibleWarriorChat takes string soundKey returns boolean
+    if soundKey == "HeroWarlock_ChatWarrior4" then
+        return true
+    elseif soundKey == "HeroUndeadWarlock_ChatWarrior1" then
+        return true
+    elseif soundKey == "HeroUndeadWarlock_ChatWarrior2" then
+        return true
+    elseif soundKey == "HeroUndeadWarlock_ChatWarrior3" then
+        return true
+    elseif soundKey == "HeroUndeadWarlock_ChatWarrior4" then
+        return true
+    elseif soundKey == "HeroShaman_ChatWarrior1" then
+        return true
+    elseif soundKey == "HeroShaman_ChatWarrior2" then
+        return true
+    elseif soundKey == "HeroShaman_ChatWarrior3" then
+        return true
+    elseif soundKey == "HeroShaman_ChatWarrior4" then
+        return true
+    elseif soundKey == "HeroEngineer_ChatWarrior1" then
+        return true
+    elseif soundKey == "HeroEngineer_ChatWarrior4" then
+        return true
+    elseif soundKey == "HeroPaladin_ChatWarrior2" then
+        return true
+    elseif soundKey == "HeroPaladin_ChatWarrior4" then
+        return true
+    endif
+    return false
+endfunction
+
 private function GetChatTargetClassName takes string soundKey returns string
     if FindPattern(soundKey, "_ChatEngineer") >= 0 then
         return "Engineer"
@@ -2548,8 +2579,6 @@ private function GetChatTargetClassName takes string soundKey returns string
         return "Restoshaman"
     elseif FindPattern(soundKey, "_ChatWarlock") >= 0 then
         return "Warlock"
-    elseif FindPattern(soundKey, "_ChatWarrior") >= 0 then
-        return "Warrior"
     endif
     return ""
 endfunction
@@ -2589,9 +2618,22 @@ private function HasNearbyChatTarget takes unit speaker, string className, strin
     return false
 endfunction
 
+private function HasNearbyWarriorChatTarget takes unit speaker, string soundKey returns boolean
+    if HasNearbyChatTarget(speaker, "", "Horde Warrior") then
+        return true
+    endif
+    if IsAvelineCompatibleWarriorChat(soundKey) then
+        return HasNearbyChatTarget(speaker, "", "Aveline")
+    endif
+    return false
+endfunction
+
 private function IsBarkTargetContextAllowed takes unit speaker, string soundKey returns boolean
     local string className = GetChatTargetClassName(soundKey)
     local string profileName = GetChatTargetProfileName(soundKey)
+    if FindPattern(soundKey, "_ChatWarrior") >= 0 then
+        return HasNearbyWarriorChatTarget(speaker, soundKey)
+    endif
     if className == "" and profileName == "" then
         return true
     endif
@@ -3468,7 +3510,7 @@ private function TryUseSideScanBudget takes real now returns boolean
     return true
 endfunction
 
-private function TryStartCompanionPickupAction takes integer instanceId, unit whichUnit, real now returns boolean
+private function TryStartPickupAction takes integer instanceId, unit whichUnit, real now returns boolean
     local item targetItem
     local unit enemy
     if instanceId <= 0 or whichUnit == null or udg_InCinematic then
@@ -3490,7 +3532,7 @@ private function TryStartCompanionPickupAction takes integer instanceId, unit wh
     set targetItem = FindNearbyPickupItem(instanceId, whichUnit, AI_COMPANION_PICKUP_RANGE)
     if targetItem != null and IssueTargetOrder(whichUnit, "smart", targetItem) then
         set InstanceNextPickup.real[instanceId] = now + GetRandomReal(AI_COMPANION_PICKUP_MIN_DELAY, AI_COMPANION_PICKUP_MAX_DELAY)
-        call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " delayed-pickup targets " + GetItemName(targetItem) + ".")
+        call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " pickup targets " + GetItemName(targetItem) + ".")
         set enemy = null
         set targetItem = null
         set ItemSearchBest = null
@@ -4974,7 +5016,7 @@ private function ProcessInstance takes integer instanceId, real now returns noth
             set whichUnit = null
             return
         endif
-        if now >= InstanceNextPickup.real[instanceId] and not IsCastingLocked(whichUnit) and TryStartCompanionPickupAction(instanceId, whichUnit, now) then
+        if now >= InstanceNextPickup.real[instanceId] and not IsCastingLocked(whichUnit) and TryStartPickupAction(instanceId, whichUnit, now) then
             set whichUnit = null
             return
         endif
@@ -5056,6 +5098,11 @@ private function ProcessInstance takes integer instanceId, real now returns noth
         else
             set InstanceNextItem.real[instanceId] = now + 2.00 + GetRandomReal(0.10, 0.80)
         endif
+    endif
+
+    if now >= InstanceNextPickup.real[instanceId] and not IsCastingLocked(whichUnit) and TryStartPickupAction(instanceId, whichUnit, now) then
+        set whichUnit = null
+        return
     endif
 
     if TryProcessAiPartyFollower(instanceId, whichUnit, state, now) then
@@ -5320,40 +5367,8 @@ private function QueueCommandBark takes unit speaker, integer barkType returns n
     call TimerStart(PendingCommandBarkTimer, AI_COMMAND_BARK_DELAY, false, function FlushPendingCommandBark)
 endfunction
 
-private function PickCommandBarkSpeaker takes unit fallback, integer barkType returns unit
-    local integer index = 1
-    local integer instanceId
-    local integer barkKey
-    local integer seen = 0
-    local unit candidate
-    local unit selected = null
-
-    loop
-        exitwhen index > ActiveCount
-        set instanceId = ActiveInstances[index]
-        set candidate = InstanceUnit.unit[instanceId]
-        if candidate != null and IsAliveUnit(candidate) and IsCompanionControlled(candidate) and IsBarkContextAllowed(candidate, barkType) then
-            set barkKey = GetBarkKey(InstanceProfile[instanceId], barkType)
-            if BarkLineCount[barkKey] > 0 then
-                set seen = seen + 1
-                if GetRandomInt(1, seen) == 1 then
-                    set selected = candidate
-                endif
-            endif
-        endif
-        set index = index + 1
-    endloop
-
-    if selected == null then
-        set selected = fallback
-    endif
-    set candidate = null
-    return selected
-endfunction
-
 private function HandleCompanionCommand takes nothing returns nothing
     local unit whichUnit = Companions_EventUnit
-    local unit barkSpeaker = null
     local integer commandId = Companions_EventCommand
     local integer mode = Companions_EventMode
     local integer barkType = 0
@@ -5400,13 +5415,11 @@ private function HandleCompanionCommand takes nothing returns nothing
     endif
 
     if commandId == Companions_COMMAND_MODE then
-        set barkSpeaker = PickCommandBarkSpeaker(whichUnit, barkType)
-        call QueueCommandBark(barkSpeaker, barkType)
+        call QueueCommandBark(whichUnit, barkType)
     elseif barkType > 0 then
         call AI_RequestBark(whichUnit, barkType)
     endif
 
-    set barkSpeaker = null
     set whichUnit = null
 endfunction
 
