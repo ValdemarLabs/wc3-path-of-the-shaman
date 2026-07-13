@@ -466,7 +466,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
     private function SLUI_GetCompanionModeText takes unit u, integer kind returns string
         local integer mode
 
-        if kind != SLUI_KIND_COMPANION or not SLUI_IsValidUnit(u) then
+        if (kind != SLUI_KIND_PET and kind != SLUI_KIND_COMPANION) or not SLUI_IsValidUnit(u) or not Companions_IsControlled(u) then
             return ""
         endif
 
@@ -806,7 +806,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         call BlzFrameSetVisible(SLUI_RowLevel[rowIndex], SLUI_ShowLevel)
         call BlzFrameSetVisible(SLUI_RowClass[rowIndex], SLUI_ShowClass)
         call BlzFrameSetVisible(SLUI_RowState[rowIndex], SLUI_ShowState)
-        call BlzFrameSetVisible(SLUI_RowMode[rowIndex], SLUI_ShowMode and kind == SLUI_KIND_COMPANION)
+        call BlzFrameSetVisible(SLUI_RowMode[rowIndex], SLUI_ShowMode and (kind == SLUI_KIND_PET or kind == SLUI_KIND_COMPANION) and Companions_IsControlled(u))
 
         // CHANGE: Alert flash is evaluated every refresh because far-away and
         // blinking state can change even when HP/MP values do not.
@@ -830,7 +830,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
                 call BlzFrameSetText(SLUI_RowState[rowIndex], stateText)
             endif
         endif
-        if SLUI_ShowMode and kind == SLUI_KIND_COMPANION then
+        if SLUI_ShowMode and (kind == SLUI_KIND_PET or kind == SLUI_KIND_COMPANION) and Companions_IsControlled(u) then
             set modeText = SLUI_GetCompanionModeText(u, kind)
             if SLUI_RowModeCache[rowIndex] != modeText then
                 set SLUI_RowModeCache[rowIndex] = modeText
@@ -1309,7 +1309,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         call BlzFrameSetLevel(SLUI_RowState[rowIndex], 4) // CHANGE: status above translucent panel
 
         set SLUI_RowMode[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowMode" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(SLUI_RowMode[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowIcon[rowIndex], FRAMEPOINT_TOPRIGHT, textGap + stateOffset - 0.006, -0.018)
+        call BlzFrameSetPoint(SLUI_RowMode[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowIcon[rowIndex], FRAMEPOINT_TOPRIGHT, textGap + stateOffset, -0.018)
         call BlzFrameSetSize(SLUI_RowMode[rowIndex], 0.082, 0.009)
         call BlzFrameSetTextAlignment(SLUI_RowMode[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(SLUI_RowMode[rowIndex], 0.46)
