@@ -1,4 +1,4 @@
-library DialogSystem initializer Init requires Table, ExSound, DialogCamera
+library DialogSystem initializer Init requires Table, ExSound, DialogCamera, Interface
 //===========================================================================
 // DialogSystem
 // Lightweight dialog creation + button routing for quest givers.
@@ -11,6 +11,7 @@ globals
 	private Table DialogButtonTrigger = 0
 	private Table DialogButtonDialog = 0
 	private Table DialogButtonLineAction = 0
+	private Table DialogButtonInterfaceEvent = 0
 	private trigger DialogSystem_ClickTrigger = null
 	private trigger DialogSystem_SkipTrigger = null
 	private trigger DialogSystem_EscapeActionTrigger = null
@@ -712,6 +713,13 @@ public function SetTitle takes dialog d, string title returns nothing
 	call DialogSetMessage(d, title)
 endfunction
 
+private function SetButtonInterfaceEventInternal takes button b, integer interfaceEvent returns nothing
+	if b == null then
+		return
+	endif
+	set DialogButtonInterfaceEvent.integer[GetHandleId(b)] = interfaceEvent
+endfunction
+
 public function AddButton takes dialog d, string label, integer actionId returns button
 	local button b
 	if d == null then
@@ -720,11 +728,18 @@ public function AddButton takes dialog d, string label, integer actionId returns
 	set b = DialogAddButton(d, label, 0)
 	set DialogButtonAction.integer[GetHandleId(b)] = actionId
 	set DialogButtonDialog.dialog[GetHandleId(b)] = d
+	call SetButtonInterfaceEventInternal(b, Interface_EVENT_DIALOG_BUTTON_NORMAL)
 	return b
 endfunction
 
+public function SetButtonInterfaceEvent takes button b, integer interfaceEvent returns nothing
+	call SetButtonInterfaceEventInternal(b, interfaceEvent)
+endfunction
+
 public function AddFarewellButton takes dialog d returns button
-	return AddButton(d, "- Farewell", 0)
+	local button b = AddButton(d, "- Farewell", 0)
+	call SetButtonInterfaceEventInternal(b, Interface_EVENT_DIALOG_BUTTON_CLOSE)
+	return b
 endfunction
 
 public function AddButtonNext takes dialog d, integer actionId returns button
@@ -732,7 +747,9 @@ public function AddButtonNext takes dialog d, integer actionId returns button
 endfunction
 
 public function AddButtonPrevious takes dialog d, integer actionId returns button
-	return AddButton(d, "- Previous", actionId)
+	local button b = AddButton(d, "- Previous", actionId)
+	call SetButtonInterfaceEventInternal(b, Interface_EVENT_DIALOG_BUTTON_CLOSE)
+	return b
 endfunction
 
 public function AddButtonQuestAccept takes dialog d, string questName, integer actionId returns button
@@ -770,6 +787,7 @@ public function AddButtonDecline takes dialog d, integer actionId returns button
 	local button b = AddButton(d, "Decline", actionId)
 	if b != null then
 		set DialogButtonLineAction.integer[GetHandleId(b)] = DIALOG_LINE_ACTION_DECLINE
+		call SetButtonInterfaceEventInternal(b, Interface_EVENT_DIALOG_BUTTON_CLOSE)
 	endif
 	return b
 endfunction
@@ -778,6 +796,7 @@ public function AddButtonExit takes dialog d, integer actionId returns button
 	local button b = AddButton(d, "Exit", actionId)
 	if b != null then
 		set DialogButtonLineAction.integer[GetHandleId(b)] = DIALOG_LINE_ACTION_EXIT
+		call SetButtonInterfaceEventInternal(b, Interface_EVENT_DIALOG_BUTTON_CLOSE)
 	endif
 	return b
 endfunction
@@ -790,6 +809,7 @@ public function AddButtonTrade takes dialog d, integer actionId returns button
 	local button b = AddButton(d, "Trade", actionId)
 	if b != null then
 		set DialogButtonLineAction.integer[GetHandleId(b)] = DIALOG_LINE_ACTION_TRADE
+		call SetButtonInterfaceEventInternal(b, Interface_EVENT_DIALOG_BUTTON_TRADE)
 	endif
 	return b
 endfunction
@@ -1591,11 +1611,16 @@ public function OnClicked takes nothing returns nothing
 	local integer id = GetHandleId(b)
 	local trigger t
 	local integer lineAction
+	local integer interfaceEvent
 
 	set DialogSystem_LastButton = b
 	set DialogSystem_LastAction = DialogButtonAction.integer[id]
 	set DialogSystem_LastDialog = DialogButtonDialog.dialog[id]
 	set DialogSystem_DialogVisible = false
+	set interfaceEvent = DialogButtonInterfaceEvent.integer[id]
+	if interfaceEvent != 0 then
+		call Interface_PlayEventSoundForPlayer(interfaceEvent, GetTriggerPlayer())
+	endif
 	set lineAction = DialogButtonLineAction.integer[id]
 	if lineAction != DIALOG_LINE_ACTION_NONE then
 		if lineAction == DIALOG_LINE_ACTION_TRADE then
@@ -1617,6 +1642,8 @@ public function OnClicked takes nothing returns nothing
 	if t != null then
 		call TriggerExecute(t)
 	endif
+	set t = null
+	set b = null
 endfunction
 
 // Creates a dialog with the specified title. Buttons can be added with DialogSystem_AddButton.
@@ -1639,6 +1666,7 @@ private function Init takes nothing returns nothing
 	set DialogButtonTrigger = Table.create()
 	set DialogButtonDialog = Table.create()
 	set DialogButtonLineAction = Table.create()
+	set DialogButtonInterfaceEvent = Table.create()
 	set DialogSequenceStore = Table.create()
 	set DialogSystem_GreetLines = Table.create()
 	set DialogSystem_FarewellLines = Table.create()
