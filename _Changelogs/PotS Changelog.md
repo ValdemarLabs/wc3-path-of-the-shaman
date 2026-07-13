@@ -24,6 +24,7 @@
   - Generalized the companion pickup helper and now also runs it for autonomous AI.
   - _ChatWarrior target checks now distinguish Horde Warrior from Aveline, with only neutral Warrior-targeted lines allowed for Aveline.
   - Targeted companion mode commands now queue the bark from the affected unit only. Multi-target/no-target mode commands still randomize through the existing queued candidate behavior.
+  - companion-controlled Aveline now clears a stale udg_UnitIsCasting[CV] lock only if she is Aveline, has no real order or only stop, is not moving, and stays that way past the existing stuck timeout. Then it refreshes her companion orders.
 
 - `AI_Aveline.j`
   - Removed Aveline reply registrations for Tauren-only Warrior target lines.
@@ -46,11 +47,24 @@
   - Mana Rift creation now runs in its own delayed timer pass via InitRiftsDelayed.
   - Rift proximity registration runs after that delayed creation pass.
   - Each Mana Rift slot now logs explicit errors if gg_rct_ManaRift1/2/3 is null or CreateUnit('n023') fails.
+  - now only passes Tel’anor-specific data: primary rawcode i013, fallback legacy rawcode I013, item name, and selected hero.
+  - qAradion no longer has its own Tel’anor CreateItem, ground fallback, inventory scan, or recovery-button condition logic.
+  - Tel’anor grant uses normal UnitAddItem; no DInvUnitAddItem.
+  - The existing one-rawcode QuestGiver_AddQuestItemRecoveryButton still works and delegates to the new fallback-aware API.
+  - No SetUnitPathing, no fallback spawn at ManaRift1, no SetUnitX/Y.
 
 - `StormhavenCity.j`
   - Moved the StreetAction chat chance into globals as SHC_STREET_CHAT_CHANCE and raised it from 12 to 18 to match the market chance. StreetAction now calls TryStartChat(whichUnit, SHC_STREET_CHAT_CHANCE).
   - Increase the citizen unit amount
   - Fix unit-type 'N65R' to lowercase 'n65R'
+
+- `QuestGiver.j`
+  - now has reusable quest-item helpers:
+    - HasHeroItemEither
+    - RemoveHeroItemsEither
+    - CreateQuestItem
+    - GiveQuestItemToHero
+    - AddQuestItemRecoveryButtonEither
 
 ## [13.7.2026] Part I
 #### Note: Because of the vast updates and to make it more simpler to update the changelog, the updates have only been written under `### Technical Updates` for now.
