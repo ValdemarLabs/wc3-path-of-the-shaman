@@ -28,12 +28,15 @@
     call Interface_NotifyPlayerLevelUp()
     call Interface_NotifyUIOpened()
     call Interface_NotifyUIClosed()
+    call Interface_NotifyInventoryOpened()
+    call Interface_NotifyInventoryClosed()
     call Interface_NotifyMapOpened()
     call Interface_NotifyMapClosed()
     call Interface_NotifyMapModeChanged()
     call Interface_NotifyDialogButtonClicked()
     call Interface_NotifyDialogTradeButtonClicked()
     call Interface_NotifyDialogCloseButtonClicked()
+    call Interface_NotifyMiningHitOnUnit(GetTriggerUnit())
 
 **/
 library Interface initializer AutoInit
@@ -55,8 +58,15 @@ library Interface initializer AutoInit
         public constant integer EVENT_SELECT_TARGET = 15
         public constant integer EVENT_PLAYER_LEVELUP = 16
         public constant integer EVENT_MAP_MODE = 17
+        public constant integer EVENT_TRADESKILL_MINING_HIT_A = 18
+        public constant integer EVENT_TRADESKILL_MINING_HIT_B = 19
+        public constant integer EVENT_TRADESKILL_MINING_HIT_C = 20
+        public constant integer EVENT_TRADESKILL_MINING_HIT_D = 21
+        public constant integer EVENT_TRADESKILL_MINING_HIT_E = 22
+        public constant integer EVENT_INVENTORY_OPEN = 23
+        public constant integer EVENT_INVENTORY_CLOSE = 24
 
-        private constant integer IUI_EVENT_MAX = 17
+        private constant integer IUI_EVENT_MAX = 24
 
         private boolean IUI_Initialized = false
         private boolean IUI_SoundsEnabled = true
@@ -79,9 +89,24 @@ library Interface initializer AutoInit
         endif
     endfunction
 
+    private function IUI_PlaySoundOnUnit takes sound whichSound, unit whichUnit returns nothing
+        if IUI_SoundsEnabled and whichSound != null and whichUnit != null then
+            call StopSound(whichSound, false, false)
+            call AttachSoundToUnit(whichSound, whichUnit)
+            call SetSoundVolume(whichSound, 127)
+            call StartSound(whichSound)
+        endif
+    endfunction
+
     private function IUI_PlayEvent takes integer eventId returns nothing
         if IUI_IsValidEvent(eventId) then
             call IUI_PlaySound(IUI_EventSound[eventId])
+        endif
+    endfunction
+
+    private function IUI_PlayEventOnUnit takes integer eventId, unit whichUnit returns nothing
+        if IUI_IsValidEvent(eventId) then
+            call IUI_PlaySoundOnUnit(IUI_EventSound[eventId], whichUnit)
         endif
     endfunction
 
@@ -130,24 +155,31 @@ library Interface initializer AutoInit
     endfunction
 
     private function IUI_InitDefaultSounds takes nothing returns nothing
-        // Replace any remaining null entries with final World Editor sound globals when they exist.
-        set IUI_EventSound[EVENT_UNIT_SELECT] = null // gg_snd_Interface_UnitSelect
-        set IUI_EventSound[EVENT_UI_OPEN] = null     // gg_snd_Interface_UIOpen
-        set IUI_EventSound[EVENT_UI_CLOSE] = null    // gg_snd_Interface_UIClose
-        set IUI_EventSound[EVENT_MAP_OPEN] = gg_snd_Interface_TurnPage                         // gg_snd_Interface_TurnPage
-        set IUI_EventSound[EVENT_MAP_CLOSE] = gg_snd_Interface_MinimapClose                    // gg_snd_Interface_MinimapClose
-        set IUI_EventSound[EVENT_MENU_CLICK] = null  // gg_snd_Interface_MenuClick
-        set IUI_EventSound[EVENT_BUTTON_CLICK] = null // gg_snd_Interface_ButtonClick
-        set IUI_EventSound[EVENT_TAB_CHANGE] = null  // gg_snd_Interface_TabChange
-        set IUI_EventSound[EVENT_CONFIRM] = null     // gg_snd_Interface_Confirm
-        set IUI_EventSound[EVENT_CANCEL] = null      // gg_snd_Interface_Cancel
-        set IUI_EventSound[EVENT_ERROR] = null       // gg_snd_Interface_Error
+        // Replace any remaining null entries with final World Editor sound globals when they exist. Commented ones are fyi.
+        set IUI_EventSound[EVENT_UNIT_SELECT] = gg_snd_Interface_SelectTarget                   // gg_snd_Interface_SelectTarget
+        set IUI_EventSound[EVENT_UI_OPEN] = gg_snd_Interface_LeftGlueScreenPopUp                // gg_snd_Interface_MenuClick
+        set IUI_EventSound[EVENT_UI_CLOSE] = gg_snd_Interface_LeftGlueScreenPopDown             // gg_snd_Interface_MenuClose
+        set IUI_EventSound[EVENT_MAP_OPEN] = gg_snd_Interface_TurnPage                          // gg_snd_Interface_TurnPage
+        set IUI_EventSound[EVENT_MAP_CLOSE] = gg_snd_Interface_MinimapClose                     // gg_snd_Interface_MinimapClose
+        set IUI_EventSound[EVENT_MENU_CLICK] = gg_snd_Interface_MenuClick                       // gg_snd_Interface_MenuClick
+        set IUI_EventSound[EVENT_BUTTON_CLICK] = gg_snd_Interface_IconDrop                      // gg_snd_Interface_ButtonClick
+        set IUI_EventSound[EVENT_TAB_CHANGE] = gg_snd_Interface_TurnPage                        // gg_snd_Interface_TurnPage
+        set IUI_EventSound[EVENT_CONFIRM] = gg_snd_Interface_BigButtonClick                     // gg_snd_Interface_ReadyCheck
+        set IUI_EventSound[EVENT_CANCEL] = gg_snd_Interface_SelectTarget                        // gg_snd_Interface_MenuClose
+        set IUI_EventSound[EVENT_ERROR] = gg_snd_Error                                          // gg_snd_Interface_HardWarning
         set IUI_EventSound[EVENT_DIALOG_BUTTON_NORMAL] = gg_snd_Interface_MenuClick2            // gg_snd_Interface_MenuClick2
         set IUI_EventSound[EVENT_DIALOG_BUTTON_TRADE] = gg_snd_Interface_CharacterSheetOpen     // gg_snd_Interface_CharacterSheetOpen
         set IUI_EventSound[EVENT_DIALOG_BUTTON_CLOSE] = gg_snd_Interface_MenuClose              // gg_snd_Interface_MenuClose
         set IUI_EventSound[EVENT_SELECT_TARGET] = gg_snd_Interface_SelectTarget                 // gg_snd_Interface_SelectTarget
         set IUI_EventSound[EVENT_PLAYER_LEVELUP] = gg_snd_Interface_Levelup                     // gg_snd_Interface_Levelup
         set IUI_EventSound[EVENT_MAP_MODE] = gg_snd_Interface_MenuClick2                        // gg_snd_Interface_MenuClick2
+        set IUI_EventSound[EVENT_TRADESKILL_MINING_HIT_A] = gg_snd_Tradeskill_MiningHitA        // gg_snd_Tradeskill_MiningHitA
+        set IUI_EventSound[EVENT_TRADESKILL_MINING_HIT_B] = gg_snd_Tradeskill_MiningHitB        // gg_snd_Tradeskill_MiningHitB
+        set IUI_EventSound[EVENT_TRADESKILL_MINING_HIT_C] = gg_snd_Tradeskill_MiningHitC        // gg_snd_Tradeskill_MiningHitC
+        set IUI_EventSound[EVENT_TRADESKILL_MINING_HIT_D] = gg_snd_Tradeskill_MiningHitD        // gg_snd_Tradeskill_MiningHitD
+        set IUI_EventSound[EVENT_TRADESKILL_MINING_HIT_E] = gg_snd_Tradeskill_MiningHitE        // gg_snd_Tradeskill_MiningHitE
+        set IUI_EventSound[EVENT_INVENTORY_OPEN] = gg_snd_Interface_InventoryOpen               // gg_snd_Interface_InventoryOpen
+        set IUI_EventSound[EVENT_INVENTORY_CLOSE] = gg_snd_Interface_InventoryClose             // gg_snd_Interface_InventoryClose
     endfunction
 
     public function SetSoundsEnabled takes boolean enabled returns nothing
@@ -188,6 +220,10 @@ library Interface initializer AutoInit
         endif
     endfunction
 
+    public function PlayEventSoundOnUnit takes integer eventId, unit whichUnit returns nothing
+        call IUI_PlayEventOnUnit(eventId, whichUnit)
+    endfunction
+
     public function NotifyUnitSelected takes nothing returns nothing
         call IUI_PlayEvent(EVENT_UNIT_SELECT)
     endfunction
@@ -206,6 +242,14 @@ library Interface initializer AutoInit
 
     public function NotifyUIClosed takes nothing returns nothing
         call IUI_PlayEvent(EVENT_UI_CLOSE)
+    endfunction
+
+    public function NotifyInventoryOpened takes nothing returns nothing
+        call IUI_PlayEvent(EVENT_INVENTORY_OPEN)
+    endfunction
+
+    public function NotifyInventoryClosed takes nothing returns nothing
+        call IUI_PlayEvent(EVENT_INVENTORY_CLOSE)
     endfunction
 
     public function NotifyMapOpened takes nothing returns nothing
@@ -254,6 +298,10 @@ library Interface initializer AutoInit
 
     public function NotifyDialogCloseButtonClicked takes nothing returns nothing
         call IUI_PlayEvent(EVENT_DIALOG_BUTTON_CLOSE)
+    endfunction
+
+    public function NotifyMiningHitOnUnit takes unit whichUnit returns nothing
+        call IUI_PlayEventOnUnit(EVENT_TRADESKILL_MINING_HIT_A + GetRandomInt(0, 4), whichUnit)
     endfunction
 
     public function Init takes nothing returns nothing
