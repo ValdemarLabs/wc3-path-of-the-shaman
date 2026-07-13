@@ -28,14 +28,19 @@
   - event constants for unit select, UI open/close, map open/close, menu/button/tab/confirm/cancel/error
   - null placeholder bindings for future gg_snd_Interface_* sounds
   - automatic unit-selection event registration, currently silent until EVENT_UNIT_SELECT gets a sound
-  - Added dialog-button sound events:
+  - Added dialog-button sound events, eg:
     - Interface_EVENT_DIALOG_BUTTON_NORMAL
     - Interface_EVENT_DIALOG_BUTTON_TRADE
     - Interface_EVENT_DIALOG_BUTTON_CLOSE
-  - Added notify helpers:
+  - Added notify helpers, eg:
     - Interface_NotifyDialogButtonClicked
     - Interface_NotifyDialogTradeButtonClicked
     - Interface_NotifyDialogCloseButtonClicked
+  - now owns the minimap sound mapping:
+    - Interface_EVENT_MAP_OPEN -> gg_snd_Interface_TurnPage
+    - Interface_EVENT_MAP_CLOSE -> gg_snd_Interface_MinimapClose
+    - new Interface_EVENT_MAP_MODE -> gg_snd_Interface_MenuClick2
+    - new helper: Interface_NotifyMapModeChanged()
 
 - `DialogSystem.j`
   - Wired DialogSystem.j to requires Interface and added per-button interface sound classification:
@@ -46,6 +51,20 @@
 
 - `MasterUI.j`
   - Updated MasterUI to requires Interface and notify the new library when the Game menu opens/closes and when a menu panel is opened.
+
+- `DynamicMinimap_lastWorking.j`
+  - now requires Interface, removed its local MINIMAP_OPEN/CLOSE/MODE sound globals, and calls:
+    - InInterface_NotifyMapOpened() when enlarged
+    - InInterface_NotifyMapClosed() when restored
+    - InInterface_NotifyMapModeChanged() when toggling full/chunked map mode
+  - Note about this library: Tens of issues in Valdemar MS-ToDO app to be taken care of (like minimap drift / camerabounds issues etc.). Also need to clean/reorganize `DynamicMinimap` -folder at some point.
+
+- `Terraining`
+  - Lots of terraining has been done over the past several days. The changes are minor, but important (e.g., Lots of pathing blocker placements). Most notable zones terraining:
+    - Vanguard Vale
+    - Havenwoods
+    - Thornwoods
+    - Redwind Pass
 
 ## [13.7.2026] Part II
 #### Note: Because of the vast updates and to make it more simpler to update the changelog, the updates have only been written under `### Technical Updates` for now.
