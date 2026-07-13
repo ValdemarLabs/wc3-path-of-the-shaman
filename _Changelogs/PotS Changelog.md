@@ -15,6 +15,38 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [14.7.2026] 
+#### Note: Because of the vast updates and to make it more simpler to update the changelog, the updates have only been written under `### Technical Updates` for now.
+
+### Technical Updates
+
+- `Interface.j`
+  - First version created
+  - Interface_SetEventSound, Interface_ClearEventSound
+  - Interface_PlayEventSound, Interface_PlayEventSoundForPlayer
+  - clear notify helpers like Interface_NotifyUIOpened, Interface_NotifyUIClosed, Interface_NotifyMapOpened, Interface_NotifyMapClosed
+  - event constants for unit select, UI open/close, map open/close, menu/button/tab/confirm/cancel/error
+  - null placeholder bindings for future gg_snd_Interface_* sounds
+  - automatic unit-selection event registration, currently silent until EVENT_UNIT_SELECT gets a sound
+  - Added dialog-button sound events:
+    - Interface_EVENT_DIALOG_BUTTON_NORMAL
+    - Interface_EVENT_DIALOG_BUTTON_TRADE
+    - Interface_EVENT_DIALOG_BUTTON_CLOSE
+  - Added notify helpers:
+    - Interface_NotifyDialogButtonClicked
+    - Interface_NotifyDialogTradeButtonClicked
+    - Interface_NotifyDialogCloseButtonClicked
+
+- `DialogSystem.j`
+  - Wired DialogSystem.j to requires Interface and added per-button interface sound classification:
+  - default DialogSystem_AddButton -> normal dialog click
+  - AddButtonTrade -> trade sound
+  - AddFarewellButton, AddButtonPrevious, AddButtonDecline, AddButtonExit -> close sound
+  - click playback is centralized in DialogSystem_OnClicked
+
+- `MasterUI.j`
+  - Updated MasterUI to requires Interface and notify the new library when the Game menu opens/closes and when a menu panel is opened.
+
 ## [13.7.2026] Part II
 #### Note: Because of the vast updates and to make it more simpler to update the changelog, the updates have only been written under `### Technical Updates` for now.
 
