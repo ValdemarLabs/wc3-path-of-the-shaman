@@ -56,6 +56,8 @@ globals
 	private unit array ItemReqGiver
 	private trigger ItemPickupTrigger = null
 	private integer ItemDropCheckType = 0  // Item type to check after drop delay
+	private integer QuestGiver_RemoveItemTypeId = 0
+	private integer QuestGiver_RemoveFallbackItemTypeId = 0
 	private constant real ITEM_REQUIREMENT_SCAN_INTERVAL = 0.50
 	private timer ItemRequirementScanTimer = null
 
@@ -1858,9 +1860,138 @@ public function AddReadyQuestCompleteButton takes dialog d, string questName, un
 	return true
 endfunction
 
-public function AddQuestItemRecoveryButton takes dialog d, string questName, unit questGiver, integer actionId, integer itemTypeId, integer itemAmount, string itemName, code actionFunc returns boolean
-	local button b = null
+private function IsQuestItemTypeEither takes integer itemTypeId, integer primaryItemTypeId, integer fallbackItemTypeId returns boolean
 	if itemTypeId == 0 then
+		return false
+	endif
+	if itemTypeId == primaryItemTypeId then
+		return true
+	endif
+	return fallbackItemTypeId != 0 and fallbackItemTypeId != primaryItemTypeId and itemTypeId == fallbackItemTypeId
+endfunction
+
+public function HasHeroItemEither takes integer itemTypeId, integer fallbackItemTypeId, integer itemAmount returns boolean
+	if itemAmount <= 0 then
+		set itemAmount = 1
+	endif
+	if itemTypeId != 0 and HeroItemCheckBoth(itemTypeId, itemAmount) then
+		return true
+	endif
+	if fallbackItemTypeId != 0 and fallbackItemTypeId != itemTypeId and HeroItemCheckBoth(fallbackItemTypeId, itemAmount) then
+		return true
+	endif
+	return false
+endfunction
+
+private function RemoveQuestItemTypeInventory takes unit whichUnit, integer itemTypeId, integer fallbackItemTypeId returns nothing
+	local integer slot = 0
+	local item slotItem
+	if whichUnit == null then
+		return
+	endif
+	loop
+		exitwhen slot >= bj_MAX_INVENTORY
+		set slotItem = UnitItemInSlot(whichUnit, slot)
+		if slotItem != null and IsQuestItemTypeEither(GetItemTypeId(slotItem), itemTypeId, fallbackItemTypeId) then
+			call RemoveItem(slotItem)
+		else
+			set slot = slot + 1
+		endif
+	endloop
+	set slotItem = null
+	set whichUnit = null
+endfunction
+
+private function RemoveQuestItemTypeFromEnumUnit takes nothing returns nothing
+	call RemoveQuestItemTypeInventory(GetEnumUnit(), QuestGiver_RemoveItemTypeId, QuestGiver_RemoveFallbackItemTypeId)
+endfunction
+
+public function RemoveHeroItemsEither takes integer itemTypeId, integer fallbackItemTypeId, integer maxToRemove returns nothing
+	local group playerUnits = null
+	local integer guard = 0
+	if itemTypeId == 0 and fallbackItemTypeId == 0 then
+		return
+	endif
+	if maxToRemove <= 0 then
+		set maxToRemove = 64
+	endif
+	if itemTypeId != 0 then
+		loop
+			exitwhen guard >= maxToRemove or not HeroItemCheckBothAndRemove(itemTypeId, 1)
+			set guard = guard + 1
+		endloop
+	endif
+	if fallbackItemTypeId != 0 and fallbackItemTypeId != itemTypeId then
+		set guard = 0
+		loop
+			exitwhen guard >= maxToRemove or not HeroItemCheckBothAndRemove(fallbackItemTypeId, 1)
+			set guard = guard + 1
+		endloop
+	endif
+	set QuestGiver_RemoveItemTypeId = itemTypeId
+	set QuestGiver_RemoveFallbackItemTypeId = fallbackItemTypeId
+	set playerUnits = CreateGroup()
+	call GroupEnumUnitsOfPlayer(playerUnits, Player(0), null)
+	call ForGroup(playerUnits, function RemoveQuestItemTypeFromEnumUnit)
+	call DestroyGroup(playerUnits)
+	set QuestGiver_RemoveItemTypeId = 0
+	set QuestGiver_RemoveFallbackItemTypeId = 0
+	set playerUnits = null
+endfunction
+
+public function CreateQuestItem takes integer itemTypeId, integer fallbackItemTypeId, real x, real y returns item
+	local item questItem = null
+	if itemTypeId != 0 then
+		set questItem = CreateItem(itemTypeId, x, y)
+	endif
+	if questItem == null and fallbackItemTypeId != 0 and fallbackItemTypeId != itemTypeId then
+		set questItem = CreateItem(fallbackItemTypeId, x, y)
+	endif
+	return questItem
+endfunction
+
+public function GiveQuestItemToHero takes unit hero, integer itemTypeId, integer fallbackItemTypeId, string itemName returns boolean
+	local item questItem
+	local real x
+	local real y
+	if hero == null or not IsUnitAlive(hero) then
+		call BJDebugMsg("[QuestGiver] ERROR: Quest item grant skipped because no valid player hero was resolved.")
+		set hero = null
+		return false
+	endif
+	if itemTypeId == 0 and fallbackItemTypeId == 0 then
+		call BJDebugMsg("[QuestGiver] ERROR: Quest item grant skipped because no item rawcode was provided.")
+		set hero = null
+		return false
+	endif
+	set x = GetUnitX(hero)
+	set y = GetUnitY(hero)
+	set questItem = CreateQuestItem(itemTypeId, fallbackItemTypeId, x, y)
+	if questItem == null then
+		call BJDebugMsg("[QuestGiver] ERROR: Quest item grant failed because CreateItem returned null.")
+		set hero = null
+		return false
+	endif
+	if itemName == "" then
+		set itemName = GetItemName(questItem)
+	endif
+	if UnitAddItem(hero, questItem) then
+		set questItem = null
+		set hero = null
+		return true
+	endif
+	call SetItemVisible(questItem, true)
+	call SetItemPosition(questItem, x, y)
+	call BJDebugMsg("[QuestGiver] " + itemName + " inventory grant failed; left a visible ground item at the hero.")
+	set questItem = null
+	set hero = null
+	return false
+endfunction
+
+public function AddQuestItemRecoveryButtonEither takes dialog d, string questName, unit questGiver, integer actionId, integer itemTypeId, integer fallbackItemTypeId, integer itemAmount, string itemName, code actionFunc returns boolean
+	local button b = null
+	local integer displayItemTypeId = itemTypeId
+	if itemTypeId == 0 and fallbackItemTypeId == 0 then
 		return false
 	endif
 	if not IsQuestActiveByNameAndGiver(questName, questGiver) then
@@ -1869,11 +2000,14 @@ public function AddQuestItemRecoveryButton takes dialog d, string questName, uni
 	if itemAmount <= 0 then
 		set itemAmount = 1
 	endif
-	if HeroItemCheckBoth(itemTypeId, itemAmount) then
+	if HasHeroItemEither(itemTypeId, fallbackItemTypeId, itemAmount) then
 		return false
 	endif
 	if itemName == "" then
-		set itemName = GetObjectName(itemTypeId)
+		if displayItemTypeId == 0 then
+			set displayItemTypeId = fallbackItemTypeId
+		endif
+		set itemName = GetObjectName(displayItemTypeId)
 	endif
 	set b = DialogSystem_AddButtonQuestItemRecovery(d, itemName, actionId)
 	if b == null then
@@ -1882,6 +2016,10 @@ public function AddQuestItemRecoveryButton takes dialog d, string questName, uni
 	call DialogSystem_BindButtonCode(b, actionFunc)
 	set b = null
 	return true
+endfunction
+
+public function AddQuestItemRecoveryButton takes dialog d, string questName, unit questGiver, integer actionId, integer itemTypeId, integer itemAmount, string itemName, code actionFunc returns boolean
+	return AddQuestItemRecoveryButtonEither(d, questName, questGiver, actionId, itemTypeId, 0, itemAmount, itemName, actionFunc)
 endfunction
 
 public function CompleteItemRequirements takes integer questId returns nothing
