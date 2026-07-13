@@ -28,6 +28,9 @@
     call Interface_NotifyUIClosed()
     call Interface_NotifyMapOpened()
     call Interface_NotifyMapClosed()
+    call Interface_NotifyDialogButtonClicked()
+    call Interface_NotifyDialogTradeButtonClicked()
+    call Interface_NotifyDialogCloseButtonClicked()
 
 **/
 library Interface initializer AutoInit
@@ -43,8 +46,11 @@ library Interface initializer AutoInit
         public constant integer EVENT_CONFIRM = 9
         public constant integer EVENT_CANCEL = 10
         public constant integer EVENT_ERROR = 11
+        public constant integer EVENT_DIALOG_BUTTON_NORMAL = 12
+        public constant integer EVENT_DIALOG_BUTTON_TRADE = 13
+        public constant integer EVENT_DIALOG_BUTTON_CLOSE = 14
 
-        private constant integer IUI_EVENT_MAX = 11
+        private constant integer IUI_EVENT_MAX = 14
 
         private boolean IUI_Initialized = false
         private boolean IUI_SoundsEnabled = true
@@ -103,6 +109,9 @@ library Interface initializer AutoInit
         set IUI_EventSound[EVENT_CONFIRM] = null     // gg_snd_Interface_Confirm
         set IUI_EventSound[EVENT_CANCEL] = null      // gg_snd_Interface_Cancel
         set IUI_EventSound[EVENT_ERROR] = null       // gg_snd_Interface_Error
+        set IUI_EventSound[EVENT_DIALOG_BUTTON_NORMAL] = null // gg_snd_Interface_MenuClick2
+        set IUI_EventSound[EVENT_DIALOG_BUTTON_TRADE] = null  // gg_snd_Interface_CharacterSheetOpen
+        set IUI_EventSound[EVENT_DIALOG_BUTTON_CLOSE] = null  // gg_snd_Interface_MenuClose
     endfunction
 
     public function SetSoundsEnabled takes boolean enabled returns nothing
@@ -185,6 +194,18 @@ library Interface initializer AutoInit
 
     public function NotifyError takes nothing returns nothing
         call IUI_PlayEvent(EVENT_ERROR)
+    endfunction
+
+    public function NotifyDialogButtonClicked takes nothing returns nothing
+        call IUI_PlayEvent(EVENT_DIALOG_BUTTON_NORMAL)
+    endfunction
+
+    public function NotifyDialogTradeButtonClicked takes nothing returns nothing
+        call IUI_PlayEvent(EVENT_DIALOG_BUTTON_TRADE)
+    endfunction
+
+    public function NotifyDialogCloseButtonClicked takes nothing returns nothing
+        call IUI_PlayEvent(EVENT_DIALOG_BUTTON_CLOSE)
     endfunction
 
     public function Init takes nothing returns nothing
