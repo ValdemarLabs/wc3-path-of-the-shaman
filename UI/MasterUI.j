@@ -1,4 +1,4 @@
-library MasterUI initializer AutoInit requires Table
+library MasterUI initializer AutoInit requires Table, Interface
 /**
     MasterUI
     
@@ -227,13 +227,24 @@ private function MUI_RunAction takes integer actionId returns nothing
 endfunction
 
 private function MUI_OpenAction takes nothing returns nothing
+    local boolean showPanel
+
     if GetLocalPlayer() == GetTriggerPlayer() then
-        call BlzFrameSetVisible(MUI_Parent, not BlzFrameIsVisible(MUI_Parent))
+        set showPanel = not BlzFrameIsVisible(MUI_Parent)
+        call BlzFrameSetVisible(MUI_Parent, showPanel)
+        if showPanel then
+            call Interface_NotifyUIOpened()
+        else
+            call Interface_NotifyUIClosed()
+        endif
     endif
 endfunction
 
 private function MUI_CloseAction takes nothing returns nothing
     if GetLocalPlayer() == GetTriggerPlayer() then
+        if BlzFrameIsVisible(MUI_Parent) then
+            call Interface_NotifyUIClosed()
+        endif
         call BlzFrameSetVisible(MUI_Parent, false)
     endif
 endfunction
@@ -243,6 +254,7 @@ private function MUI_MenuAction takes nothing returns nothing
 
     if MUI_ButtonAction.has(handleId) then
         call MUI_RunAction(MUI_ButtonAction.integer[handleId])
+        call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, GetTriggerPlayer())
         call MUI_HideMaster()
     endif
 endfunction
