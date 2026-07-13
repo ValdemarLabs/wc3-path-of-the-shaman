@@ -73,7 +73,6 @@ _Roadmap/
 /Installer/output/
 /Installer/release-version.generated.iss
 /Installer/*.sha256
-/Installer/assets/install-random/
 
 # Pictures
 *.png
@@ -82,10 +81,7 @@ _Roadmap/
 !/Installer/assets/.gitkeep
 !/Installer/assets/*.png
 !/Installer/assets/*.bmp
-!/Installer/assets/install-random/
 !/Installer/assets/install-random/.gitkeep
-!/Installer/assets/install-random/*.png
-!/Installer/assets/install-random/*.bmp
 
 # OS junk
 Thumbs.db
