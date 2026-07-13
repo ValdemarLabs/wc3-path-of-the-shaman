@@ -41,22 +41,24 @@
   - Added config toggle:
     - Mode: On/Off
   - Mode text is shown only for SLUI_KIND_COMPANION rows and defaults to enabled.
+  - Pet rows now use the same companion-control mode text path as companion rows, gated by Companions_IsControlled(u). 
+  - The mode text anchor was also moved to the same X alignment as the status text, so Normal/Passive/etc. lines up directly under Ready/Moving.
 
 - `qAradion.j`
   - Aradion quest/dialog registration now completes before rift spawning.
   - Mana Rift creation now runs in its own delayed timer pass via InitRiftsDelayed.
   - Rift proximity registration runs after that delayed creation pass.
-  - Each Mana Rift slot now logs explicit errors if gg_rct_ManaRift1/2/3 is null or CreateUnit('n023') fails.
-  - now only passes Tel’anor-specific data: primary rawcode i013, fallback legacy rawcode I013, item name, and selected hero.
   - qAradion no longer has its own Tel’anor CreateItem, ground fallback, inventory scan, or recovery-button condition logic.
-  - Tel’anor grant uses normal UnitAddItem; no DInvUnitAddItem.
   - The existing one-rawcode QuestGiver_AddQuestItemRecoveryButton still works and delegates to the new fallback-aware API.
-  - No SetUnitPathing, no fallback spawn at ManaRift1, no SetUnitX/Y.
+  - Tel’anor Rod hero resolution now uses GetPlayerQuestHero, which syncs unit refs and falls back through cached hero, Nazgrek, udg_Nazgrek, then udg_Zulkis. Accept/recovery also preserves SelectedHero before the dialog callback runs.
+  - Rifts companions now join even if accepting the quest outside a field zone. The old StartFieldCompanions zone gate was blocking this.
+  - Simplified ManaRift units creation
 
 - `StormhavenCity.j`
   - Moved the StreetAction chat chance into globals as SHC_STREET_CHAT_CHANCE and raised it from 12 to 18 to match the market chance. StreetAction now calls TryStartChat(whichUnit, SHC_STREET_CHAT_CHANCE).
   - Increase the citizen unit amount
   - Fix unit-type 'N65R' to lowercase 'n65R'
+  - Temporary player chat range increase for debug purposes (from 500 to 3000)
 
 - `QuestGiver.j`
   - now has reusable quest-item helpers:
