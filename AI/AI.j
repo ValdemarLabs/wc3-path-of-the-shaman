@@ -4737,6 +4737,39 @@ private function ResetMovementMemory takes integer instanceId, unit whichUnit, i
     set InstanceStuckSince.real[instanceId] = now
 endfunction
 
+private function TryClearStaleAvelineCompanionCastLock takes integer instanceId, unit whichUnit, real now returns boolean
+    local integer customValue
+    local integer orderId
+    local real dx
+    local real dy
+    if instanceId <= 0 or whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_AVELINE_RIVERBANE or not IsCastingLocked(whichUnit) then
+        return false
+    endif
+    set customValue = GetUnitUserData(whichUnit)
+    set orderId = GetUnitCurrentOrder(whichUnit)
+    if customValue <= 0 or udg_UnitMoving[customValue] or (orderId != 0 and orderId != OrderId("stop")) then
+        call ResetMovementMemory(instanceId, whichUnit, orderId, now)
+        return false
+    endif
+    if InstanceLastOrder[instanceId] != 0 or InstanceStuckSince.real[instanceId] <= 0.00 then
+        call ResetMovementMemory(instanceId, whichUnit, 0, now)
+        return false
+    endif
+    set dx = GetUnitX(whichUnit) - InstanceLastX.real[instanceId]
+    set dy = GetUnitY(whichUnit) - InstanceLastY.real[instanceId]
+    if dx * dx + dy * dy >= AI_STUCK_MIN_MOVE * AI_STUCK_MIN_MOVE then
+        call ResetMovementMemory(instanceId, whichUnit, 0, now)
+        return false
+    endif
+    if now - InstanceStuckSince.real[instanceId] < AI_STUCK_SECONDS then
+        return false
+    endif
+    set udg_UnitIsCasting[customValue] = false
+    call ResetMovementMemory(instanceId, whichUnit, 0, now)
+    call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " cleared a stale companion cast lock.")
+    return true
+endfunction
+
 private function TryRecoverStuck takes integer instanceId, unit whichUnit, integer state, real now returns boolean
     local integer orderId
     local real dx
@@ -4986,6 +5019,9 @@ private function ProcessInstance takes integer instanceId, real now returns noth
         call ClearSocialState(instanceId)
         call SetInstanceState(instanceId, AI_STATE_COMPANION_CONTROLLED)
         set companionMode = Companions_GetMode(whichUnit)
+        if TryClearStaleAvelineCompanionCastLock(instanceId, whichUnit, now) then
+            call Companions_RefreshOrders(whichUnit)
+        endif
         if now >= InstanceNextItem.real[instanceId] then
             if AI_TryUseConsumable(whichUnit) then
                 set InstanceNextItem.real[instanceId] = now + 5.00 + GetRandomReal(0.50, 1.50)
