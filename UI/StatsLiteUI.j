@@ -52,6 +52,17 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         private constant real SLUI_ROW_HEIGHT = 0.026
         private constant real SLUI_ROW_GAP = 0.003
         private constant real SLUI_BAR_WIDTH = 0.090 // CHANGE: compact bar column for scaled-down monitor rows
+        private constant real SLUI_ROW_WIDTH = 0.260
+        private constant real SLUI_ROW_BAR_LEFT = 0.156
+        private constant real SLUI_ROW_NAME_WIDTH = 0.120
+        private constant integer SLUI_ROW_NAME_LONG_LENGTH = 20
+        private constant integer SLUI_ROW_NAME_EXTRA_LONG_LENGTH = 26
+        private constant integer SLUI_ROW_NAME_MAX_LENGTH = 23
+        private constant integer SLUI_ROW_COMPANION_LABEL_EXTRA_LENGTH = 5
+        private constant integer SLUI_ROW_COMPANION_NAME_MAX_LENGTH = 18
+        private constant real SLUI_ROW_NAME_SCALE = 0.56
+        private constant real SLUI_ROW_NAME_LONG_SCALE = 0.50
+        private constant real SLUI_ROW_NAME_EXTRA_LONG_SCALE = 0.46
 
         private constant integer SLUI_ACTION_MINIMIZE = 1
         private constant integer SLUI_ACTION_STATS = 2
@@ -278,7 +289,33 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         elseif kind == SLUI_KIND_PET then
             return "|cff9fd3ffPet|r"
         endif
-        return "|cffffffccComp|r"
+        return "|cffffffccCompanion|r"
+    endfunction
+
+    private function SLUI_SetRowNameText takes integer rowIndex, integer kind, string displayName returns nothing
+        local integer textLength = 0
+        local integer fitLength = 0
+        local integer maxLength = SLUI_ROW_NAME_MAX_LENGTH
+        local real scale = SLUI_ROW_NAME_SCALE
+
+        if displayName == null then
+            set displayName = ""
+        endif
+        set textLength = StringLength(displayName)
+        set fitLength = textLength
+        if kind == SLUI_KIND_COMPANION then
+            set fitLength = fitLength + SLUI_ROW_COMPANION_LABEL_EXTRA_LENGTH
+            set maxLength = SLUI_ROW_COMPANION_NAME_MAX_LENGTH
+        endif
+
+        if fitLength > SLUI_ROW_NAME_EXTRA_LONG_LENGTH then
+            set scale = SLUI_ROW_NAME_EXTRA_LONG_SCALE
+        elseif fitLength > SLUI_ROW_NAME_LONG_LENGTH then
+            set scale = SLUI_ROW_NAME_LONG_SCALE
+        endif
+
+        call BlzFrameSetScale(SLUI_RowName[rowIndex], scale)
+        call BlzFrameSetText(SLUI_RowName[rowIndex], SLUI_GetKindLabel(kind) + " " + SLUI_TrimText(displayName, maxLength))
     endfunction
 
     private function SLUI_GetUnitIconPath takes unit u, integer kind returns string
@@ -778,7 +815,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
             set SLUI_RowClassCache[rowIndex] = ""
             set SLUI_RowModeCache[rowIndex] = ""
             call BlzFrameSetTexture(SLUI_RowIcon[rowIndex], SLUI_GetUnitIconPath(u, kind), 0, true)
-            call BlzFrameSetText(SLUI_RowName[rowIndex], SLUI_GetKindLabel(kind) + " " + SLUI_TrimText(SLUI_GetDisplayName(u), 16))
+            call SLUI_SetRowNameText(rowIndex, kind, SLUI_GetDisplayName(u))
         endif
 
         if SLUI_IsDeadForDisplay(u) then
@@ -1251,12 +1288,12 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
     private function SLUI_CreateRow takes integer rowIndex, real y returns nothing
         local real textGap = 0.010
         local real stateOffset = 0.072
-        local real barLeft = 0.156 // CHANGE: compact right-side bar column
+        local real barLeft = SLUI_ROW_BAR_LEFT // CHANGE: compact right-side bar column
 
         set SLUI_RowButton[rowIndex] = BlzCreateFrameByType("BACKDROP", "StatsLiteUIRow" + I2S(rowIndex), SLUI_RowPane, "", 0)
         call BlzFrameSetTexture(SLUI_RowButton[rowIndex], SLUI_PanelTexture, 0, true)
         call BlzFrameSetPoint(SLUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowPane, FRAMEPOINT_TOPLEFT, 0.006, y)
-        call BlzFrameSetSize(SLUI_RowButton[rowIndex], 0.260, SLUI_ROW_HEIGHT) // CHANGE: compact row keeps full party height reasonable
+        call BlzFrameSetSize(SLUI_RowButton[rowIndex], SLUI_ROW_WIDTH, SLUI_ROW_HEIGHT) // CHANGE: compact row keeps full party height reasonable
         call BlzFrameSetAlpha(SLUI_RowButton[rowIndex], 0)
         call BlzFrameSetVertexColor(SLUI_RowButton[rowIndex], BlzConvertColor(0, 10, 10, 10))
         // CHANGE: Row container stays above the main backdrop; row children are created under it.
@@ -1278,9 +1315,9 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
 
         set SLUI_RowName[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowName" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
         call BlzFrameSetPoint(SLUI_RowName[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowIcon[rowIndex], FRAMEPOINT_TOPRIGHT, textGap, 0.000)
-        call BlzFrameSetSize(SLUI_RowName[rowIndex], 0.108, 0.010)
+        call BlzFrameSetSize(SLUI_RowName[rowIndex], SLUI_ROW_NAME_WIDTH, 0.010)
         call BlzFrameSetTextAlignment(SLUI_RowName[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
-        call BlzFrameSetScale(SLUI_RowName[rowIndex], 0.56)
+        call BlzFrameSetScale(SLUI_RowName[rowIndex], SLUI_ROW_NAME_SCALE)
         call BlzFrameSetEnable(SLUI_RowName[rowIndex], false)
         call BlzFrameSetLevel(SLUI_RowName[rowIndex], 4) // CHANGE: name above translucent panel
 
