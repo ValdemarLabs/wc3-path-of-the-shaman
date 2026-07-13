@@ -13,8 +13,8 @@
     Credits:
 
     How to install:
-    Import this library before any UI library that calls it. Replace the null
-    placeholders in IUI_InitDefaultSounds with the final gg_snd_* globals, or
+    Import this library before any UI library that calls it. Update the sound
+    assignments in IUI_InitDefaultSounds with the final gg_snd_* globals, or
     configure them during map init with Interface_SetEventSound.
 
     API:
@@ -25,10 +25,12 @@
     call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, GetTriggerPlayer())
     call Interface_NotifyUnitSelected()
     call Interface_NotifyTargetSelected()
+    call Interface_NotifyPlayerLevelUp()
     call Interface_NotifyUIOpened()
     call Interface_NotifyUIClosed()
     call Interface_NotifyMapOpened()
     call Interface_NotifyMapClosed()
+    call Interface_NotifyMapModeChanged()
     call Interface_NotifyDialogButtonClicked()
     call Interface_NotifyDialogTradeButtonClicked()
     call Interface_NotifyDialogCloseButtonClicked()
@@ -51,16 +53,19 @@ library Interface initializer AutoInit
         public constant integer EVENT_DIALOG_BUTTON_TRADE = 13
         public constant integer EVENT_DIALOG_BUTTON_CLOSE = 14
         public constant integer EVENT_SELECT_TARGET = 15
+        public constant integer EVENT_PLAYER_LEVELUP = 16
+        public constant integer EVENT_MAP_MODE = 17
 
-        private constant integer IUI_EVENT_MAX = 15
+        private constant integer IUI_EVENT_MAX = 17
 
         private boolean IUI_Initialized = false
         private boolean IUI_SoundsEnabled = true
         private boolean IUI_UnitSelectSoundEnabled = true
 
-        // Event sounds are intentionally null until the final gg_snd_* globals are assigned.
+        // Event sounds are assigned during init and can be overridden through SetEventSound.
         private sound array IUI_EventSound
         private trigger IUI_UnitSelectTrigger = null
+        private trigger IUI_PlayerLevelUpTrigger = null
     endglobals
 
     private function IUI_IsValidEvent takes integer eventId returns boolean
@@ -96,6 +101,16 @@ library Interface initializer AutoInit
         set triggerPlayer = null
     endfunction
 
+    private function IUI_PlayerLevelUpAction takes nothing returns nothing
+        local unit levelingUnit = GetTriggerUnit()
+
+        if levelingUnit != null and GetOwningPlayer(levelingUnit) == Player(0) and GetLocalPlayer() == Player(0) then
+            call IUI_PlayEvent(EVENT_PLAYER_LEVELUP)
+        endif
+
+        set levelingUnit = null
+    endfunction
+
     private function IUI_RegisterUnitSelectEvents takes nothing returns nothing
         local integer playerIndex = 0
 
@@ -108,13 +123,19 @@ library Interface initializer AutoInit
         call TriggerAddAction(IUI_UnitSelectTrigger, function IUI_UnitSelectAction)
     endfunction
 
+    private function IUI_RegisterPlayerLevelUpEvent takes nothing returns nothing
+        set IUI_PlayerLevelUpTrigger = CreateTrigger()
+        call TriggerRegisterPlayerUnitEvent(IUI_PlayerLevelUpTrigger, Player(0), EVENT_PLAYER_HERO_LEVEL, null)
+        call TriggerAddAction(IUI_PlayerLevelUpTrigger, function IUI_PlayerLevelUpAction)
+    endfunction
+
     private function IUI_InitDefaultSounds takes nothing returns nothing
-        // Replace null with the final World Editor sound globals when they exist.
+        // Replace any remaining null entries with final World Editor sound globals when they exist.
         set IUI_EventSound[EVENT_UNIT_SELECT] = null // gg_snd_Interface_UnitSelect
         set IUI_EventSound[EVENT_UI_OPEN] = null     // gg_snd_Interface_UIOpen
         set IUI_EventSound[EVENT_UI_CLOSE] = null    // gg_snd_Interface_UIClose
-        set IUI_EventSound[EVENT_MAP_OPEN] = null    // gg_snd_Interface_MapOpen
-        set IUI_EventSound[EVENT_MAP_CLOSE] = null   // gg_snd_Interface_MapClose
+        set IUI_EventSound[EVENT_MAP_OPEN] = gg_snd_Interface_TurnPage                         // gg_snd_Interface_TurnPage
+        set IUI_EventSound[EVENT_MAP_CLOSE] = gg_snd_Interface_MinimapClose                    // gg_snd_Interface_MinimapClose
         set IUI_EventSound[EVENT_MENU_CLICK] = null  // gg_snd_Interface_MenuClick
         set IUI_EventSound[EVENT_BUTTON_CLICK] = null // gg_snd_Interface_ButtonClick
         set IUI_EventSound[EVENT_TAB_CHANGE] = null  // gg_snd_Interface_TabChange
@@ -125,6 +146,8 @@ library Interface initializer AutoInit
         set IUI_EventSound[EVENT_DIALOG_BUTTON_TRADE] = gg_snd_Interface_CharacterSheetOpen     // gg_snd_Interface_CharacterSheetOpen
         set IUI_EventSound[EVENT_DIALOG_BUTTON_CLOSE] = gg_snd_Interface_MenuClose              // gg_snd_Interface_MenuClose
         set IUI_EventSound[EVENT_SELECT_TARGET] = gg_snd_Interface_SelectTarget                 // gg_snd_Interface_SelectTarget
+        set IUI_EventSound[EVENT_PLAYER_LEVELUP] = gg_snd_Interface_Levelup                     // gg_snd_Interface_Levelup
+        set IUI_EventSound[EVENT_MAP_MODE] = gg_snd_Interface_MenuClick2                        // gg_snd_Interface_MenuClick2
     endfunction
 
     public function SetSoundsEnabled takes boolean enabled returns nothing
@@ -173,6 +196,10 @@ library Interface initializer AutoInit
         call IUI_PlayEvent(EVENT_SELECT_TARGET)
     endfunction
 
+    public function NotifyPlayerLevelUp takes nothing returns nothing
+        call IUI_PlayEvent(EVENT_PLAYER_LEVELUP)
+    endfunction
+
     public function NotifyUIOpened takes nothing returns nothing
         call IUI_PlayEvent(EVENT_UI_OPEN)
     endfunction
@@ -187,6 +214,10 @@ library Interface initializer AutoInit
 
     public function NotifyMapClosed takes nothing returns nothing
         call IUI_PlayEvent(EVENT_MAP_CLOSE)
+    endfunction
+
+    public function NotifyMapModeChanged takes nothing returns nothing
+        call IUI_PlayEvent(EVENT_MAP_MODE)
     endfunction
 
     public function NotifyMenuClicked takes nothing returns nothing
@@ -233,6 +264,7 @@ library Interface initializer AutoInit
 
         call IUI_InitDefaultSounds()
         call IUI_RegisterUnitSelectEvents()
+        call IUI_RegisterPlayerLevelUpEvent()
     endfunction
 
     public function AutoInit takes nothing returns nothing
