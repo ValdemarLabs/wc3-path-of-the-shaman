@@ -16,7 +16,8 @@ Put the latest files here before building:
   - The contents of that folder are copied to `Warcraft III\_retail_\Pots`.
 - `Installer/payload/rebirth-mod/`
   - Put `9thRelease.rar` and `FixesLast2023.rar` here.
-  - These archives are unpacked directly into `Warcraft III\_retail_`.
+  - `9thRelease.rar` is unpacked to temp, then only the contents of its `9thRelease` folder are copied into `Warcraft III\_retail_`.
+  - `FixesLast2023.rar` is unpacked to temp, then only the contents of `FixesLast2023\FixesLast2023\FixHighElfBarracksCentaurKhanWarlock` are copied into `Warcraft III\_retail_`.
 
 `Installer/payload/` and `Installer/output/` are ignored by git. Only the folder placeholders are tracked.
 
@@ -29,6 +30,7 @@ Put the latest files here before building:
 5. Run:
 
 ```powershell
+cd H:\Pelit\PotS_JASS
 powershell -ExecutionPolicy Bypass -File .\Installer\build-installer.ps1
 ```
 

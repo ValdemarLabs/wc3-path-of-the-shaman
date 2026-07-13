@@ -262,6 +262,74 @@ begin
   ExtractArchive(ArchivePath, DestDir, '', FullPaths, nil);
 end;
 
+procedure CopyDirectoryContents(SourceDir: string; DestDir: string);
+var
+  FindRec: TFindRec;
+  SourcePath: string;
+  DestPath: string;
+begin
+  if not DirExists(SourceDir) then
+    RaiseException('Required extracted folder was not found: ' + SourceDir);
+
+  if not ForceDirectories(DestDir) then
+    RaiseException('Could not create target folder: ' + DestDir);
+
+  if FindFirst(AddBackslash(SourceDir) + '*', FindRec) then
+  begin
+    try
+      repeat
+        if (FindRec.Name <> '.') and (FindRec.Name <> '..') then
+        begin
+          SourcePath := AddBackslash(SourceDir) + FindRec.Name;
+          DestPath := AddBackslash(DestDir) + FindRec.Name;
+
+          if DirExists(SourcePath) then
+          begin
+            CopyDirectoryContents(SourcePath, DestPath);
+          end
+          else
+          begin
+            if not ForceDirectories(ExtractFileDir(DestPath)) then
+              RaiseException('Could not create target folder: ' + ExtractFileDir(DestPath));
+
+            if not FileCopy(SourcePath, DestPath, False) then
+              RaiseException('Could not copy file: ' + SourcePath + ' to ' + DestPath);
+          end;
+        end;
+      until not FindNext(FindRec);
+    finally
+      FindClose(FindRec);
+    end;
+  end;
+end;
+
+procedure ExtractArchiveSubdirToRetail(ArchiveFileName: string; ArchiveSubdir: string; DisplayName: string);
+var
+  ArchivePath: string;
+  ExtractRoot: string;
+  SourceRoot: string;
+begin
+  ExtractRoot := AddBackslash(ExpandConstant('{tmp}')) + ArchiveFileName + '-extract';
+
+  if not ForceDirectories(ExtractRoot) then
+    RaiseException('Could not create temp extraction folder: ' + ExtractRoot);
+
+  WizardForm.StatusLabel.Caption := 'Extracting ' + DisplayName + '...';
+  Log('Extracting ' + DisplayName + ' to temp folder ' + ExtractRoot);
+
+  ExtractTemporaryFile(ArchiveFileName);
+  ArchivePath := AddBackslash(ExpandConstant('{tmp}')) + ArchiveFileName;
+  ExtractArchive(ArchivePath, ExtractRoot, '', True, nil);
+
+  SourceRoot := ExtractRoot;
+  if ArchiveSubdir <> '' then
+    SourceRoot := AddBackslash(ExtractRoot) + ArchiveSubdir;
+
+  WizardForm.StatusLabel.Caption := 'Installing ' + DisplayName + '...';
+  Log('Copying ' + SourceRoot + ' to ' + GetRetailInstallDir(''));
+  CopyDirectoryContents(SourceRoot, GetRetailInstallDir(''));
+end;
+
 procedure InitializeWizard;
 var
   NextTop: Integer;
@@ -336,16 +404,16 @@ begin
     if WizardIsComponentSelected('rebirth') then
     begin
 #if IncludeRebirthArchive1
-      ExtractBundledArchive('{#RebirthArchive1FileName}', GetRetailInstallDir(''), '{#RebirthArchive1FileName}', True);
+      ExtractArchiveSubdirToRetail('{#RebirthArchive1FileName}', '{#RebirthArchive1ExtractSubdir}', '{#RebirthArchive1FileName}');
 #endif
 #if IncludeRebirthArchive2
-      ExtractBundledArchive('{#RebirthArchive2FileName}', GetRetailInstallDir(''), '{#RebirthArchive2FileName}', True);
+      ExtractArchiveSubdirToRetail('{#RebirthArchive2FileName}', '{#RebirthArchive2ExtractSubdir}', '{#RebirthArchive2FileName}');
 #endif
 #if IncludeRebirthArchive3
-      ExtractBundledArchive('{#RebirthArchive3FileName}', GetRetailInstallDir(''), '{#RebirthArchive3FileName}', True);
+      ExtractArchiveSubdirToRetail('{#RebirthArchive3FileName}', '{#RebirthArchive3ExtractSubdir}', '{#RebirthArchive3FileName}');
 #endif
 #if IncludeRebirthArchive4
-      ExtractBundledArchive('{#RebirthArchive4FileName}', GetRetailInstallDir(''), '{#RebirthArchive4FileName}', True);
+      ExtractArchiveSubdirToRetail('{#RebirthArchive4FileName}', '{#RebirthArchive4ExtractSubdir}', '{#RebirthArchive4FileName}');
 #endif
     end;
 #endif

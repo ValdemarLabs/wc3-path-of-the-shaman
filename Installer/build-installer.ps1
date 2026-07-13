@@ -152,7 +152,7 @@ function Get-ZipW3xFileName {
     return $w3xEntries[0]
 }
 
-function Get-ManifestStringArray {
+function Get-ManifestArchiveList {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Name,
@@ -170,12 +170,35 @@ function Get-ManifestStringArray {
     }
 
     foreach ($item in $items) {
-        if ($null -eq $item -or [string]::IsNullOrWhiteSpace([string]$item)) {
+        if ($null -eq $item) {
             throw "Empty value in: $Name"
         }
-    }
 
-    return $items | ForEach-Object { [string]$_ }
+        if ($item -is [string]) {
+            if ([string]::IsNullOrWhiteSpace($item)) {
+                throw "Empty value in: $Name"
+            }
+
+            [PSCustomObject]@{
+                Source = [string]$item
+                ExtractSubdir = ''
+            }
+            continue
+        }
+
+        $sourceProperty = $item.PSObject.Properties['source']
+        if ($null -eq $sourceProperty -or [string]::IsNullOrWhiteSpace([string]$sourceProperty.Value)) {
+            throw "Missing required value: $Name.source"
+        }
+
+        $extractSubdirProperty = $item.PSObject.Properties['extractSubdir']
+        $extractSubdir = if ($null -ne $extractSubdirProperty) { [string]$extractSubdirProperty.Value } else { '' }
+
+        [PSCustomObject]@{
+            Source = [string]$sourceProperty.Value
+            ExtractSubdir = $extractSubdir
+        }
+    }
 }
 
 function Find-InnoSetupCompiler {
@@ -259,14 +282,14 @@ if ($includeLocalFiles) {
 
 if ($includeRebirthMod) {
     Require-Text -Name 'rebirthMod.version' -Value $manifest.rebirthMod.version
-    $rebirthArchiveList = @(Get-ManifestStringArray -Name 'rebirthMod.archives' -Value $manifest.rebirthMod.archives)
+    $rebirthArchiveList = @(Get-ManifestArchiveList -Name 'rebirthMod.archives' -Value $manifest.rebirthMod.archives)
 
     if ($rebirthArchiveList.Count -gt 4) {
         throw 'The installer currently supports up to 4 Rebirth mod archives.'
     }
 
     foreach ($rebirthArchive in $rebirthArchiveList) {
-        $rebirthArchivePath = Resolve-RelativePath -Path $rebirthArchive
+        $rebirthArchivePath = Resolve-RelativePath -Path $rebirthArchive.Source
         if (-not $SkipPayloadValidation -and -not (Test-Path -LiteralPath $rebirthArchivePath -PathType Leaf)) {
             throw "Rebirth mod archive not found: $rebirthArchivePath"
         }
@@ -292,7 +315,7 @@ $localFilesSource = if ($includeLocalFiles) { ConvertTo-InnoRelativePath -Value 
 
 $rebirthModVersion = if ($includeRebirthMod) { [string]$manifest.rebirthMod.version } else { 'Not included' }
 $rebirthArchiveList = if ($includeRebirthMod) {
-    @(Get-ManifestStringArray -Name 'rebirthMod.archives' -Value $manifest.rebirthMod.archives)
+    @(Get-ManifestArchiveList -Name 'rebirthMod.archives' -Value $manifest.rebirthMod.archives)
 } else {
     @()
 }
@@ -313,15 +336,18 @@ $includeLines.Add('#define RebirthModVersion ' + (ConvertTo-InnoStringLiteral -V
 for ($i = 0; $i -lt 4; $i++) {
     $archiveNumber = $i + 1
     if ($i -lt $rebirthArchiveList.Count) {
-        $archiveSource = ConvertTo-InnoRelativePath -Value $rebirthArchiveList[$i]
-        $archiveFileName = [System.IO.Path]::GetFileName($rebirthArchiveList[$i])
+        $archiveSource = ConvertTo-InnoRelativePath -Value $rebirthArchiveList[$i].Source
+        $archiveFileName = [System.IO.Path]::GetFileName($rebirthArchiveList[$i].Source)
+        $archiveExtractSubdir = ConvertTo-InnoRelativePath -Value $rebirthArchiveList[$i].ExtractSubdir
         $includeLines.Add("#define IncludeRebirthArchive$archiveNumber 1")
         $includeLines.Add("#define RebirthArchive$archiveNumber" + 'Source ' + (ConvertTo-InnoStringLiteral -Value $archiveSource))
         $includeLines.Add("#define RebirthArchive$archiveNumber" + 'FileName ' + (ConvertTo-InnoStringLiteral -Value $archiveFileName))
+        $includeLines.Add("#define RebirthArchive$archiveNumber" + 'ExtractSubdir ' + (ConvertTo-InnoStringLiteral -Value $archiveExtractSubdir))
     } else {
         $includeLines.Add("#define IncludeRebirthArchive$archiveNumber 0")
         $includeLines.Add("#define RebirthArchive$archiveNumber" + 'Source "not-included.rar"')
         $includeLines.Add("#define RebirthArchive$archiveNumber" + 'FileName "not-included.rar"')
+        $includeLines.Add("#define RebirthArchive$archiveNumber" + 'ExtractSubdir ""')
     }
 }
 

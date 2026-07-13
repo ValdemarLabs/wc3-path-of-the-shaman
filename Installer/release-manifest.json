@@ -14,8 +14,14 @@
     "enabled": true,
     "version": "9thRelease+FixesLast2023",
     "archives": [
-      "payload/rebirth-mod/9thRelease.rar",
-      "payload/rebirth-mod/FixesLast2023.rar"
+      {
+        "source": "payload/rebirth-mod/9thRelease.rar",
+        "extractSubdir": "9thRelease"
+      },
+      {
+        "source": "payload/rebirth-mod/FixesLast2023.rar",
+        "extractSubdir": "FixesLast2023/FixesLast2023/FixHighElfBarracksCentaurKhanWarlock"
+      }
     ]
   }
 }
