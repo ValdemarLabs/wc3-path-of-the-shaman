@@ -41,7 +41,7 @@ globals
     private constant integer SHC_CLASS_CHILD = 3
     private constant integer SHC_CHAT_VARIATION_COUNT = 10
     private constant integer SHC_STREET_CHAT_CHANCE = 18
-    private constant real SHC_CHAT_PLAYER_RANGE = 500.00
+    private constant real SHC_CHAT_PLAYER_RANGE = 3000.00
     private constant real SHC_CHAT_PARTNER_RANGE = 420.00
     private constant real SHC_CHAT_REPLY_DELAY = 2.70
     private constant real SHC_CHAT_LOCK_DURATION = 9.00
