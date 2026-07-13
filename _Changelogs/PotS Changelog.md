@@ -15,7 +15,7 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
-## [13.7.2026] Part III
+## [13.7.2026] 
 
 ### Technical Updates
 
@@ -31,6 +31,9 @@
 - `Installer`
   - Started creating `Path of the Shaman` installer setup to make it more easier to manage all the local files and mods required by the map.
 
+#### Debug notes
+- use command `/debug setfactionrep riverbane` to set Riverbane rep
+- use command `/debug setfactionrep horde` to set Horde rep
 
 ## [12.7.2026] Part III
 
