@@ -43,6 +43,7 @@
   - Mode text is shown only for SLUI_KIND_COMPANION rows and defaults to enabled.
   - Pet rows now use the same companion-control mode text path as companion rows, gated by Companions_IsControlled(u). 
   - The mode text anchor was also moved to the same X alignment as the status text, so Normal/Passive/etc. lines up directly under Ready/Moving.
+  - Adjust party unit name allowed text length; full Companion label, slightly wider name frame, and label-aware scaling/trimming so it does not overlap the unchanged bar column.
 
 - `qAradion.j`
   - Aradion quest/dialog registration now completes before rift spawning.
