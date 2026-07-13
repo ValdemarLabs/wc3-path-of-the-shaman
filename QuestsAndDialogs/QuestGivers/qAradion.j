@@ -2233,12 +2233,16 @@ endfunction
 private function CreateRiftUnitAtSlot takes integer index returns unit
 	local rect r = GetRiftRect(index)
 	local unit result = null
-	if r != null then
-		set result = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_MANA_RIFT, GetRectCenterX(r), GetRectCenterY(r), bj_UNIT_FACING)
-		if result != null then
-			call SetUnitCreepGuard(result, false)
-			call CreepRespawn_DiscardUnit(result)
-		endif
+	if r == null then
+		call BJDebugMsg("[qAradion] ERROR: gg_rct_ManaRift" + I2S(index) + " is null; Mana Rift was not created.")
+		return null
+	endif
+	set result = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_MANA_RIFT, GetRectCenterX(r), GetRectCenterY(r), bj_UNIT_FACING)
+	if result != null then
+		call SetUnitCreepGuard(result, false)
+		call CreepRespawn_DiscardUnit(result)
+	else
+		call BJDebugMsg("[qAradion] ERROR: CreateUnit('n023') failed for Mana Rift slot " + I2S(index) + ".")
 	endif
 	set r = null
 	return result
@@ -2313,6 +2317,9 @@ private function CreateInitialRiftUnits takes nothing returns nothing
 		set RiftsUnitTypeIds[i] = UNIT_MANA_RIFT
 		set RiftsClosed[i] = false
 		set RiftsUnits[i] = CreateRiftUnitAtSlot(i)
+		if RiftsUnits[i] == null then
+			call BJDebugMsg("[qAradion] ERROR: Mana Rift slot " + I2S(i) + " is still null after init creation.")
+		endif
 		set i = i + 1
 	endloop
 endfunction
@@ -4599,7 +4606,18 @@ endfunction
 //===========================================================================
 // Init
 //===========================================================================
+private function InitRiftsDelayed takes nothing returns nothing
+	local timer t = GetExpiredTimer()
+	if t != null then
+		call DestroyTimer(t)
+	endif
+	call CreateInitialRiftUnits()
+	call RegisterRiftUnits()
+	set t = null
+endfunction
+
 private function InitDelayed takes nothing returns nothing
+	local timer riftTimer
 	if udg_Aradion == null then
 		if not AradionInitWaitingLogged then
 			call DebugMsg("Waiting for udg_Aradion")
@@ -4612,19 +4630,20 @@ private function InitDelayed takes nothing returns nothing
 	set Nazgrek = udg_Nazgrek
 	set Valeria = udg_Valeria
 	set AradionHomeOwner = GetOwningPlayer(Aradion)
-	call CreateInitialRiftUnits()
 	call DebugMsg("Init Aradion giver id=" + I2S(GetHandleId(Aradion)))
 	call QuestGiver_Register(Aradion)
 	call QuestGiver_SetGreetOrder(Aradion, QUESTGIVER_GREET_NAZGREK_THEN_NPC)
 	call RegisterLines()
 	call RegisterRangerMissingValeriaGlobalDeathTrigger()
 	call RegisterValeriaEncounterProximityTrigger()
-	call RegisterRiftUnits()
 	call RegisterFadingSparksSpellTriggers()
 	call CreateQuests()
 	call QuestGiver_RefreshAvailabilityForGiver(Aradion)
 	call QuestGiver_RegisterSelectionHandler(Aradion, function OnSelected)
 	call RegisterCompanionCommandBridge()
+	set riftTimer = CreateTimer()
+	call TimerStart(riftTimer, 5.00, false, function InitRiftsDelayed)
+	set riftTimer = null
 endfunction
 
 private function Init takes nothing returns nothing
