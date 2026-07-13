@@ -21,7 +21,7 @@
 //
 // ============================================================
 
-library GatherNodeUnits initializer Init requires GatherNodes, GatherNodeSkills, DamageEngine, ZonesCore, TimerUtils, Table
+library GatherNodeUnits initializer Init requires GatherNodes, GatherNodeSkills, DamageEngine, ZonesCore, TimerUtils, Table, Interface
 
 // ============================================================
 // CONFIGURATION
@@ -1190,6 +1190,10 @@ private function GNU_OnHarvestDamage takes nothing returns nothing
     if remainingPool <= 0 then
         call KillUnit(node)
         return
+    endif
+
+    if GNU_DefProfessionId[defId] == GNS_PROF_MINING then
+        call Interface_NotifyMiningHitOnUnit(node)
     endif
 
     if GetRandomInt(1, 100) > GNU_DefGatherChancePct[defId] then
