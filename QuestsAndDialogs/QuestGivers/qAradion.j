@@ -24,7 +24,8 @@ globals
 
 	private constant integer ITEM_MANA_CRYSTAL = 'I00Y'
 	private constant integer ITEM_WRAITH_ESSENCE = 'I011'
-	private constant integer ITEM_TELANOR_ROD = 'I013'
+	private constant integer ITEM_TELANOR_ROD = 'i013'
+	private constant integer ITEM_TELANOR_ROD_LEGACY = 'I013'
 	private constant integer ABIL_TELANOR_ROD = 'A04W'
 	private constant integer ABIL_RIFT_CLOSE = 'A04Z'
 	private constant integer UNIT_VALERIA = 'n01W'
@@ -2242,7 +2243,7 @@ private function CreateRiftUnitAtSlot takes integer index returns unit
 		call SetUnitCreepGuard(result, false)
 		call CreepRespawn_DiscardUnit(result)
 	else
-		call BJDebugMsg("[qAradion] ERROR: CreateUnit('n023') failed for Mana Rift slot " + I2S(index) + ".")
+		call BJDebugMsg("[qAradion] ERROR: CreateUnit('n023') failed for Mana Rift slot " + I2S(index) + " at gg_rct_ManaRift" + I2S(index) + ".")
 	endif
 	set r = null
 	return result
@@ -2337,9 +2338,14 @@ private function PrepareValeriaForRiftsIntro takes unit hero returns nothing
 	endif
 	call StopFollow(Valeria)
 	call StopValeriaPatrolInternal()
-	set sideAngle = (GetUnitFacing(Aradion) + 90.00) * bj_DEGTORAD
-	set targetX = GetUnitX(Aradion) + RIFTS_VALERIA_OFFSET * Cos(sideAngle)
-	set targetY = GetUnitY(Aradion) + RIFTS_VALERIA_OFFSET * Sin(sideAngle)
+	if gg_rct_ValeriaNewPos != null then
+		set targetX = GetRectCenterX(gg_rct_ValeriaNewPos)
+		set targetY = GetRectCenterY(gg_rct_ValeriaNewPos)
+	else
+		set sideAngle = (GetUnitFacing(Aradion) + 90.00) * bj_DEGTORAD
+		set targetX = GetUnitX(Aradion) + RIFTS_VALERIA_OFFSET * Cos(sideAngle)
+		set targetY = GetUnitY(Aradion) + RIFTS_VALERIA_OFFSET * Sin(sideAngle)
+	endif
 	if hero != null and QuestGiver_IsUnitAlive(hero) then
 		set angle = (GetUnitFacing(hero) + 180.00) * bj_DEGTORAD
 		set startX = GetUnitX(hero) + RIFTS_INTRO_VALERIA_OFFSET * Cos(angle)
@@ -4000,41 +4006,6 @@ private function OnCompleteQuest2 takes nothing returns nothing
 	call DialogSystem_PlaySequence(seq, Player(0), Aradion)
 endfunction
 
-private function RemoveTelanorRodInventory takes unit whichUnit returns nothing
-	local integer slot = 0
-	local item slotItem
-	if whichUnit == null then
-		return
-	endif
-	loop
-		exitwhen slot >= bj_MAX_INVENTORY
-		set slotItem = UnitItemInSlot(whichUnit, slot)
-		if slotItem != null and GetItemTypeId(slotItem) == ITEM_TELANOR_ROD then
-			call RemoveItem(slotItem)
-		else
-			set slot = slot + 1
-		endif
-	endloop
-	set slotItem = null
-endfunction
-
-private function RemoveTelanorRodFromEnumUnit takes nothing returns nothing
-	call RemoveTelanorRodInventory(GetEnumUnit())
-endfunction
-
-private function RemoveExistingTelanorRods takes nothing returns nothing
-	local group playerUnits = CreateGroup()
-	local integer guard = 0
-	loop
-		exitwhen guard >= 64 or not HeroItemCheckBothAndRemove(ITEM_TELANOR_ROD, 1)
-		set guard = guard + 1
-	endloop
-	call GroupEnumUnitsOfPlayer(playerUnits, Player(0), null)
-	call ForGroup(playerUnits, function RemoveTelanorRodFromEnumUnit)
-	call DestroyGroup(playerUnits)
-	set playerUnits = null
-endfunction
-
 private function GetFadingSparksRodHero takes nothing returns unit
 	local unit hero = ResolveDialogHero()
 	if hero != null then
@@ -4056,53 +4027,6 @@ private function GetFadingSparksRodHero takes nothing returns unit
 	return null
 endfunction
 
-private function DropVisibleTelanorRodAtHero takes unit hero, item rod returns nothing
-	local real x
-	local real y
-	if hero == null then
-		set rod = null
-		return
-	endif
-	set x = GetUnitX(hero)
-	set y = GetUnitY(hero)
-	if rod == null then
-		set rod = CreateItem(ITEM_TELANOR_ROD, x, y)
-	endif
-	if rod != null then
-		call SetItemVisible(rod, true)
-		call SetItemPosition(rod, x, y)
-		call ItemLoot_CreateFloatingTextCustom(rod, GetItemName(rod), 255, 255, 255)
-		call BJDebugMsg("[qAradion] Tel'anor Rod inventory grant failed; created a visible ground item at the hero.")
-	else
-		call BJDebugMsg("[qAradion] ERROR: Tel'anor Rod fallback failed because CreateItem(I013) returned null.")
-	endif
-	set rod = null
-	set hero = null
-endfunction
-
-private function GiveTelanorRodToHero takes unit hero returns nothing
-	local item rod
-	local real x
-	local real y
-	if hero == null or not QuestGiver_IsUnitAlive(hero) then
-		call DebugMsg("Tel'anor Rod grant skipped: no valid hero")
-		return
-	endif
-	set x = GetUnitX(hero)
-	set y = GetUnitY(hero)
-	set rod = CreateItem(ITEM_TELANOR_ROD, x, y)
-	if rod == null then
-		call BJDebugMsg("[qAradion] ERROR: Tel'anor Rod grant failed because CreateItem(I013) returned null.")
-		return
-	endif
-	if UnitAddItem(hero, rod) then
-		set rod = null
-		return
-	endif
-	call DropVisibleTelanorRodAtHero(hero, rod)
-	set rod = null
-endfunction
-
 private function OnAcceptQuest3End takes nothing returns nothing
 	local unit hero
 	local QuestData q
@@ -4112,11 +4036,9 @@ private function OnAcceptQuest3End takes nothing returns nothing
 	if q != 0 then
 		call QuestGiver_RefreshItemRequirementsForQuest(q.id)
 	endif
-	call RemoveExistingTelanorRods()
+	call QuestGiver_RemoveHeroItemsEither(ITEM_TELANOR_ROD, ITEM_TELANOR_ROD_LEGACY, 64)
 	set hero = GetFadingSparksRodHero()
-	if hero != null then
-		call GiveTelanorRodToHero(hero)
-	endif
+	call QuestGiver_GiveQuestItemToHero(hero, ITEM_TELANOR_ROD, ITEM_TELANOR_ROD_LEGACY, "Tel'anor Rod")
 	set FadingSparksRodHero = null
 	call StartExitFadeOut()
 	set hero = null
@@ -4124,11 +4046,9 @@ endfunction
 
 private function OnRecoverTelanorRodEnd takes nothing returns nothing
 	local unit hero
-	call RemoveExistingTelanorRods()
+	call QuestGiver_RemoveHeroItemsEither(ITEM_TELANOR_ROD, ITEM_TELANOR_ROD_LEGACY, 64)
 	set hero = GetFadingSparksRodHero()
-	if hero != null then
-		call GiveTelanorRodToHero(hero)
-	endif
+	call QuestGiver_GiveQuestItemToHero(hero, ITEM_TELANOR_ROD, ITEM_TELANOR_ROD_LEGACY, "Tel'anor Rod")
 	set FadingSparksRodHero = null
 	call StartExitFadeOut()
 	set hero = null
@@ -4175,7 +4095,7 @@ endfunction
 private function OnCompleteQuest3End takes nothing returns nothing
 	local QuestData q
 	if HeroItemCheckBothAndRemove(ITEM_WRAITH_ESSENCE, 10) then
-		call HeroItemCheckBothAndRemove(ITEM_TELANOR_ROD, 1)
+		call QuestGiver_RemoveHeroItemsEither(ITEM_TELANOR_ROD, ITEM_TELANOR_ROD_LEGACY, 64)
 		set q = QuestGiver_GetByNameAndGiver(QUEST_FADING_SPARKS, Aradion)
 		if q != 0 then
 			call QuestGiver_CompleteItemRequirements(q.id)
@@ -4239,6 +4159,7 @@ private function OnAcceptQuest4End takes nothing returns nothing
 	call StopRiftsFieldMonitor()
 	call ClearRiftsWaveHandles()
 	call DialogSystem_ClearFieldLineQueue()
+	call StartExitFadeOut()
 	call ResetRiftsClosedState()
 	call RegisterRiftUnits()
 	if Aradion != null then
@@ -4251,7 +4172,7 @@ private function OnAcceptQuest4End takes nothing returns nothing
 	call StopValeriaPatrolInternal()
 	call StartFieldCompanions(hero)
 	call StartRiftsFieldMonitor()
-	call StartExitFadeOut()
+	set hero = null
 endfunction
 
 private function OnAcceptQuest4 takes nothing returns nothing
@@ -4398,7 +4319,7 @@ private function BuildDialog takes nothing returns nothing
 
 	call QuestGiver_AddAvailableQuestAcceptButton(AradionDialog, QUEST_FADING_SPARKS, Aradion, 7, function OnAcceptQuest3, true, false)
 	call QuestGiver_AddReadyQuestCompleteButton(AradionDialog, QUEST_FADING_SPARKS, Aradion, 8, function OnCompleteQuest3, true)
-	call QuestGiver_AddQuestItemRecoveryButton(AradionDialog, QUEST_FADING_SPARKS, Aradion, 23, ITEM_TELANOR_ROD, 1, "Tel'anor Rod", function OnRecoverTelanorRod)
+	call QuestGiver_AddQuestItemRecoveryButtonEither(AradionDialog, QUEST_FADING_SPARKS, Aradion, 23, ITEM_TELANOR_ROD, ITEM_TELANOR_ROD_LEGACY, 1, "Tel'anor Rod", function OnRecoverTelanorRod)
 
 	call QuestGiver_AddAvailableQuestAcceptButton(AradionDialog, QUEST_RIFTS_CORRUPTION, Aradion, 9, function OnAcceptQuest4, true, true)
 	if RiftsReturnedHome and QuestGiver_IsUnitAlive(Aradion) and QuestGiver_IsUnitAlive(Valeria) then
