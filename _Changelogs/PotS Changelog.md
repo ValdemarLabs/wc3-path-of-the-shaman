@@ -49,6 +49,8 @@
 
 - `StormhavenCity.j`
   - Moved the StreetAction chat chance into globals as SHC_STREET_CHAT_CHANCE and raised it from 12 to 18 to match the market chance. StreetAction now calls TryStartChat(whichUnit, SHC_STREET_CHAT_CHANCE).
+  - Increase the citizen unit amount
+  - Fix unit-type 'N65R' to lowercase 'n65R'
 
 ## [13.7.2026] Part I
 #### Note: Because of the vast updates and to make it more simpler to update the changelog, the updates have only been written under `### Technical Updates` for now.
