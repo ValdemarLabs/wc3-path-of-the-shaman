@@ -30,8 +30,8 @@
 
 - `StatsLiteUI.j`
   - Nudged alert sprite compensation slightly farther down-left:
-    - SLUI_RowAlertOffsetX = -0.003
-    - SLUI_RowAlertOffsetY = -0.005
+    - SLUI_RowAlertOffsetX = -0.006
+    - SLUI_RowAlertOffsetY = -0.006
   - Added companion mode text for companion rows:
     - Passive
     - Normal
