@@ -1,4 +1,4 @@
-library DynamicMinimap initializer Init
+library DynamicMinimap initializer Init requires Interface
 //===========================================================================
 /*
     DynamicMinimap - Texture Chunks & Camera Bounds with Toggle
@@ -140,11 +140,6 @@ globals
     
     // Map mode toggle functionality
     private trigger modeToggleTrigger = null  // Trigger for mode toggle
-
-    // Sounds
-    private sound MINIMAP_OPEN = null       // sound for enlarging the minimap
-    private sound MINIMAP_CLOSE = null      // sound for shrinking the minimap to chunked mode
-    private sound MINIMAP_MODE = null       // sound for toggling between full map and chunked mode
 
 endglobals
 
@@ -446,10 +441,7 @@ private function ToggleMinimapSize takes nothing returns nothing
         call BlzFrameSetScale(minimapFrame, normalScale)
         set minimapEnlarged = false
 
-        // Play minimap close sound
-        if MINIMAP_CLOSE != null then
-            call StartSound(MINIMAP_CLOSE)
-        endif
+        call Interface_NotifyMapClosed()
 
         // Ensure minimap is visible (fixes visibility bug)
         call BlzFrameSetVisible(minimapFrame, true)
@@ -481,10 +473,7 @@ private function ToggleMinimapSize takes nothing returns nothing
 
         set minimapEnlarged = true
 
-        // Play minimap open sound
-        if MINIMAP_OPEN != null then
-            call StartSound(MINIMAP_OPEN)
-        endif
+        call Interface_NotifyMapOpened()
 
         // Ensure minimap is visible (fixes visibility bug)
         call BlzFrameSetVisible(minimapFrame, true)
@@ -539,18 +528,14 @@ endfunction
 private function ToggleMapMode takes nothing returns nothing
     if fullMapMode then
         // Switch to chunked mode
-        if MINIMAP_MODE != null then
-            call StartSound(MINIMAP_MODE)
-        endif
+        call Interface_NotifyMapModeChanged()
         call DynamicMinimap_SetFullMapMode(false)
         if DEBUG then
             call BJDebugMsg("|cff00ff00Map Mode: Chunked (dynamic)|r")
         endif
     else
         // Switch to full map mode
-        if MINIMAP_MODE != null then
-            call StartSound(MINIMAP_MODE)
-        endif
+        call Interface_NotifyMapModeChanged()
         call DynamicMinimap_SetFullMapMode(true)
         if DEBUG then
             call BJDebugMsg("|cff00ff00Map Mode: Full map|r")
@@ -715,14 +700,6 @@ private function InitFrames takes nothing returns nothing
     endif
 endfunction
 
-private function InitVariables takes nothing returns nothing
-    // Initialize sound variables to null
-    set MINIMAP_OPEN = gg_snd_Interface_TurnPage
-    set MINIMAP_CLOSE = gg_snd_Interface_MinimapClose
-    set MINIMAP_MODE = gg_snd_Interface_MenuClick2
-
-endfunction
-
 private function Init takes nothing returns nothing
     local real startX
     local real startY
@@ -834,9 +811,6 @@ private function Init takes nothing returns nothing
     // Set initial minimap texture and camera bounds
     call UpdateMinimapAndBounds(startTileX, startTileY)
 
-    // Init other variables
-    call InitVariables()
-    
     if DEBUG then
         call BJDebugMsg("|cff00ff00DynamicMinimap: Initialized|r")
         call BJDebugMsg("|cffAAAAFFChunk size: " + I2S(currentChunkSize) + "x" + I2S(currentChunkSize) + " tiles|r")
