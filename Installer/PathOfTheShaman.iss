@@ -444,7 +444,7 @@ function GetRandomInstallImageFileName: string;
 var
   ImageIndex: Integer;
 begin
-  ImageIndex := Random(InstallRandomImageCount);
+  ImageIndex := Random({#InstallRandomImageCount});
 
   case ImageIndex of
 #if IncludeInstallRandomImage1
