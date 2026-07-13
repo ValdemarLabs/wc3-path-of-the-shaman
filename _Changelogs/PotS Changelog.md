@@ -15,7 +15,43 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
-## [13.7.2026] 
+## [13.7.2026] Part II
+#### Note: Because of the vast updates and to make it more simpler to update the changelog, the updates have only been written under `### Technical Updates` for now.
+
+### Technical Updates
+
+- `AI.j`
+  - Generalized the companion pickup helper and now also runs it for autonomous AI.
+  - _ChatWarrior target checks now distinguish Horde Warrior from Aveline, with only neutral Warrior-targeted lines allowed for Aveline.
+  - Targeted companion mode commands now queue the bark from the affected unit only. Multi-target/no-target mode commands still randomize through the existing queued candidate behavior.
+
+- `AI_Aveline.j`
+  - Removed Aveline reply registrations for Tauren-only Warrior target lines.
+
+- `StatsLiteUI.j`
+  - Nudged alert sprite compensation slightly farther down-left:
+    - SLUI_RowAlertOffsetX = -0.003
+    - SLUI_RowAlertOffsetY = -0.005
+  - Added companion mode text for companion rows:
+    - Passive
+    - Normal
+    - Aggressive
+    - Hold Position
+  - Added config toggle:
+    - Mode: On/Off
+  - Mode text is shown only for SLUI_KIND_COMPANION rows and defaults to enabled.
+
+- `qAradion.j`
+  - Aradion quest/dialog registration now completes before rift spawning.
+  - Mana Rift creation now runs in its own delayed timer pass via InitRiftsDelayed.
+  - Rift proximity registration runs after that delayed creation pass.
+  - Each Mana Rift slot now logs explicit errors if gg_rct_ManaRift1/2/3 is null or CreateUnit('n023') fails.
+
+- `StormhavenCity.j`
+  - Moved the StreetAction chat chance into globals as SHC_STREET_CHAT_CHANCE and raised it from 12 to 18 to match the market chance. StreetAction now calls TryStartChat(whichUnit, SHC_STREET_CHAT_CHANCE).
+
+## [13.7.2026] Part I
+#### Note: Because of the vast updates and to make it more simpler to update the changelog, the updates have only been written under `### Technical Updates` for now.
 
 ### Technical Updates
 
@@ -31,11 +67,15 @@
 - `Installer`
   - Started creating `Path of the Shaman` installer setup to make it more easier to manage all the local files and mods required by the map.
 
+### Known Issues
+- Aradion `qAradion.j` dialogs and quest now don't work. The library itself seem to break silently.
+
 #### Debug notes
 - use command `/debug setfactionrep riverbane` to set Riverbane rep
 - use command `/debug setfactionrep horde` to set Horde rep
 
 ## [12.7.2026] Part III
+#### Note: Because of the vast updates and to make it more simpler to update the changelog, the updates have only been written under `### Technical Updates` for now.
 
 ### Technical Updates
 
@@ -119,6 +159,7 @@
 ## [12.7.2026] Part II
 
 ### Technical Updates
+#### Note: Because of the vast updates and to make it more simpler to update the changelog, the updates have only been written under `### Technical Updates` for now.
 
 - `StatsUI.j`
   - Professions is stacked above Abilities, and both buttons use the same 0.030 height as Return for matching button text sizing. I also moved the stats summary block down to avoid overlap.
@@ -147,6 +188,7 @@
 >Aveline say the line "undead or not, you still choose where your shadowfalls." isnt that the reply line to some other AI unit speaking towards undead warlock and after that Aveline should say it? Aveline said this without anyone targeting undead warlock bark and without undead warlock being in companions party or even close.
 
 ### Known Issues
+#### Note: Because of the vast updates and to make it more simpler to update the changelog, the updates have only been written under `### Technical Updates` for now.
 - `[12.7.2026] Part I` seems to have introduced some accumilating lag (stuck-loop / periodic timers etc.), to be checked whether this is fixed with the latest updates or do we need to go deeper investigating.
 
 ## [12.7.2026] Part I
