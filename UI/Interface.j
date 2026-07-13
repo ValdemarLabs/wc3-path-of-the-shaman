@@ -24,6 +24,7 @@
     call Interface_PlayEventSound(Interface_EVENT_BUTTON_CLICK)
     call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, GetTriggerPlayer())
     call Interface_NotifyUnitSelected()
+    call Interface_NotifyTargetSelected()
     call Interface_NotifyUIOpened()
     call Interface_NotifyUIClosed()
     call Interface_NotifyMapOpened()
@@ -49,8 +50,9 @@ library Interface initializer AutoInit
         public constant integer EVENT_DIALOG_BUTTON_NORMAL = 12
         public constant integer EVENT_DIALOG_BUTTON_TRADE = 13
         public constant integer EVENT_DIALOG_BUTTON_CLOSE = 14
+        public constant integer EVENT_SELECT_TARGET = 15
 
-        private constant integer IUI_EVENT_MAX = 14
+        private constant integer IUI_EVENT_MAX = 15
 
         private boolean IUI_Initialized = false
         private boolean IUI_SoundsEnabled = true
@@ -79,9 +81,19 @@ library Interface initializer AutoInit
     endfunction
 
     private function IUI_UnitSelectAction takes nothing returns nothing
-        if IUI_UnitSelectSoundEnabled and GetTriggerPlayer() == GetLocalPlayer() then
-            call IUI_PlayEvent(EVENT_UNIT_SELECT)
+        local player triggerPlayer = GetTriggerPlayer()
+        local unit selectedUnit = GetTriggerUnit()
+
+        if IUI_UnitSelectSoundEnabled and triggerPlayer == GetLocalPlayer() then
+            if selectedUnit != null and GetOwningPlayer(selectedUnit) != triggerPlayer then
+                call IUI_PlayEvent(EVENT_SELECT_TARGET)
+            else
+                call IUI_PlayEvent(EVENT_UNIT_SELECT)
+            endif
         endif
+
+        set selectedUnit = null
+        set triggerPlayer = null
     endfunction
 
     private function IUI_RegisterUnitSelectEvents takes nothing returns nothing
@@ -109,9 +121,10 @@ library Interface initializer AutoInit
         set IUI_EventSound[EVENT_CONFIRM] = null     // gg_snd_Interface_Confirm
         set IUI_EventSound[EVENT_CANCEL] = null      // gg_snd_Interface_Cancel
         set IUI_EventSound[EVENT_ERROR] = null       // gg_snd_Interface_Error
-        set IUI_EventSound[EVENT_DIALOG_BUTTON_NORMAL] = null // gg_snd_Interface_MenuClick2
-        set IUI_EventSound[EVENT_DIALOG_BUTTON_TRADE] = null  // gg_snd_Interface_CharacterSheetOpen
-        set IUI_EventSound[EVENT_DIALOG_BUTTON_CLOSE] = null  // gg_snd_Interface_MenuClose
+        set IUI_EventSound[EVENT_DIALOG_BUTTON_NORMAL] = gg_snd_Interface_MenuClick2            // gg_snd_Interface_MenuClick2
+        set IUI_EventSound[EVENT_DIALOG_BUTTON_TRADE] = gg_snd_Interface_CharacterSheetOpen     // gg_snd_Interface_CharacterSheetOpen
+        set IUI_EventSound[EVENT_DIALOG_BUTTON_CLOSE] = gg_snd_Interface_MenuClose              // gg_snd_Interface_MenuClose
+        set IUI_EventSound[EVENT_SELECT_TARGET] = gg_snd_Interface_SelectTarget                 // gg_snd_Interface_SelectTarget
     endfunction
 
     public function SetSoundsEnabled takes boolean enabled returns nothing
@@ -154,6 +167,10 @@ library Interface initializer AutoInit
 
     public function NotifyUnitSelected takes nothing returns nothing
         call IUI_PlayEvent(EVENT_UNIT_SELECT)
+    endfunction
+
+    public function NotifyTargetSelected takes nothing returns nothing
+        call IUI_PlayEvent(EVENT_SELECT_TARGET)
     endfunction
 
     public function NotifyUIOpened takes nothing returns nothing
