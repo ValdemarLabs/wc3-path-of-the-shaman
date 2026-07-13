@@ -27,9 +27,9 @@ globals
     // Configuration
     private constant integer SHC_OWNER_PLAYER_ID = 8
     private constant integer SHC_ROUTINE_ZONE_ID = 13
-    private constant integer SHC_STREET_COUNT = 12
-    private constant integer SHC_MARKET_COUNT = 10
-    private constant integer SHC_SOCIAL_COUNT = 8
+    private constant integer SHC_STREET_COUNT = 25
+    private constant integer SHC_MARKET_COUNT = 15
+    private constant integer SHC_SOCIAL_COUNT = 12
     private constant real SHC_RESPAWN_DELAY = 45.00
     private constant real SHC_RANDOM_FACING = -1.00
     private constant real SHC_TURNOVER_MIN = 240.00
@@ -793,7 +793,7 @@ private function RegisterCitizenTypes takes nothing returns nothing
     call AddCitizenType('n65O', 4)
     call AddCitizenType('n65P', 4)
     call AddCitizenType('n65Q', 4)
-    call AddCitizenType('N65R', 3)
+    call AddCitizenType('n65R', 3)
     call AddCitizenTypeEx('nvlw', 4, SHC_CLASS_FEMALE)
     call AddCitizenTypeEx('nvlk', 2, SHC_CLASS_CHILD)
     call AddCitizenTypeEx('nvk2', 2, SHC_CLASS_CHILD)
