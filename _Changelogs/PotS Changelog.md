@@ -41,6 +41,7 @@
     - Interface_EVENT_MAP_CLOSE -> gg_snd_Interface_MinimapClose
     - new Interface_EVENT_MAP_MODE -> gg_snd_Interface_MenuClick2
     - new helper: Interface_NotifyMapModeChanged()
+  - now maps the WE sounds variables for Interface events
 
 - `DialogSystem.j`
   - Wired DialogSystem.j to requires Interface and added per-button interface sound classification:
@@ -58,6 +59,15 @@
     - InInterface_NotifyMapClosed() when restored
     - InInterface_NotifyMapModeChanged() when toggling full/chunked map mode
   - Note about this library: Tens of issues in Valdemar MS-ToDO app to be taken care of (like minimap drift / camerabounds issues etc.). Also need to clean/reorganize `DynamicMinimap` -folder at some point.
+
+- `GatherNodeUnits.j`
+  - Mining is wired to:
+    - Interface_EVENT_TRADESKILL_MINING_HIT_A through E
+    - Interface_NotifyMiningHitOnUnit(unit)
+  - GatherNodedUnits calls it for valid mining-profession unit nodes before the gather success roll. The sound is attached to the mined unit with AttachSoundToUnit, so nearby players can hear it spatially.
+
+- `DInventory.j`
+  - now requires Interface and calls those inventory sounds on real open/close, with visibility checks to avoid spam.
 
 - `Terraining`
   - Lots of terraining has been done over the past several days. The changes are minor, but important (e.g., Lots of pathing blocker placements). Most notable zones terraining:
