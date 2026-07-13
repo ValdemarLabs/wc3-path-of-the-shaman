@@ -1,6 +1,8 @@
 #define AppName "Path of the Shaman"
 #define AppPublisher "Path of the Shaman"
 #define AppRegistryKey "Software\Path of the Shaman"
+#define PotsLogoSmallFile "assets\pots-logo-small.png"
+#define PotsLogoWizardFile "assets\pots-logo-wizard.png"
 #include "release-version.generated.iss"
 
 [Setup]
@@ -17,6 +19,15 @@ Compression=lzma2/ultra64
 SolidCompression=yes
 ArchiveExtraction=full
 WizardStyle=modern
+#if IncludeInstallRandomImages
+WizardBackColor=white
+#endif
+#ifexist "assets\pots-logo-small.png"
+WizardSmallImageFile={#PotsLogoSmallFile}
+#endif
+#ifexist "assets\pots-logo-wizard.png"
+WizardImageFile={#PotsLogoWizardFile}
+#endif
 PrivilegesRequired=admin
 UninstallDisplayName={#AppName}
 SetupLogging=yes
@@ -72,6 +83,104 @@ Source: "{#RebirthArchive3Source}"; DestName: "{#RebirthArchive3FileName}"; Flag
 #endif
 #if IncludeRebirthArchive4
 Source: "{#RebirthArchive4Source}"; DestName: "{#RebirthArchive4FileName}"; Flags: dontcopy nocompression; Components: rebirth
+#endif
+#endif
+#if IncludeInstallRandomImages
+#if IncludeInstallRandomImage1
+Source: "{#InstallRandomImage1Source}"; DestName: "{#InstallRandomImage1FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage2
+Source: "{#InstallRandomImage2Source}"; DestName: "{#InstallRandomImage2FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage3
+Source: "{#InstallRandomImage3Source}"; DestName: "{#InstallRandomImage3FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage4
+Source: "{#InstallRandomImage4Source}"; DestName: "{#InstallRandomImage4FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage5
+Source: "{#InstallRandomImage5Source}"; DestName: "{#InstallRandomImage5FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage6
+Source: "{#InstallRandomImage6Source}"; DestName: "{#InstallRandomImage6FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage7
+Source: "{#InstallRandomImage7Source}"; DestName: "{#InstallRandomImage7FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage8
+Source: "{#InstallRandomImage8Source}"; DestName: "{#InstallRandomImage8FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage9
+Source: "{#InstallRandomImage9Source}"; DestName: "{#InstallRandomImage9FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage10
+Source: "{#InstallRandomImage10Source}"; DestName: "{#InstallRandomImage10FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage11
+Source: "{#InstallRandomImage11Source}"; DestName: "{#InstallRandomImage11FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage12
+Source: "{#InstallRandomImage12Source}"; DestName: "{#InstallRandomImage12FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage13
+Source: "{#InstallRandomImage13Source}"; DestName: "{#InstallRandomImage13FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage14
+Source: "{#InstallRandomImage14Source}"; DestName: "{#InstallRandomImage14FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage15
+Source: "{#InstallRandomImage15Source}"; DestName: "{#InstallRandomImage15FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage16
+Source: "{#InstallRandomImage16Source}"; DestName: "{#InstallRandomImage16FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage17
+Source: "{#InstallRandomImage17Source}"; DestName: "{#InstallRandomImage17FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage18
+Source: "{#InstallRandomImage18Source}"; DestName: "{#InstallRandomImage18FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage19
+Source: "{#InstallRandomImage19Source}"; DestName: "{#InstallRandomImage19FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage20
+Source: "{#InstallRandomImage20Source}"; DestName: "{#InstallRandomImage20FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage21
+Source: "{#InstallRandomImage21Source}"; DestName: "{#InstallRandomImage21FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage22
+Source: "{#InstallRandomImage22Source}"; DestName: "{#InstallRandomImage22FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage23
+Source: "{#InstallRandomImage23Source}"; DestName: "{#InstallRandomImage23FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage24
+Source: "{#InstallRandomImage24Source}"; DestName: "{#InstallRandomImage24FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage25
+Source: "{#InstallRandomImage25Source}"; DestName: "{#InstallRandomImage25FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage26
+Source: "{#InstallRandomImage26Source}"; DestName: "{#InstallRandomImage26FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage27
+Source: "{#InstallRandomImage27Source}"; DestName: "{#InstallRandomImage27FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage28
+Source: "{#InstallRandomImage28Source}"; DestName: "{#InstallRandomImage28FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage29
+Source: "{#InstallRandomImage29Source}"; DestName: "{#InstallRandomImage29FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage30
+Source: "{#InstallRandomImage30Source}"; DestName: "{#InstallRandomImage30FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage31
+Source: "{#InstallRandomImage31Source}"; DestName: "{#InstallRandomImage31FileName}"; Flags: dontcopy nocompression
+#endif
+#if IncludeInstallRandomImage32
+Source: "{#InstallRandomImage32Source}"; DestName: "{#InstallRandomImage32FileName}"; Flags: dontcopy nocompression
 #endif
 #endif
 
@@ -330,6 +439,154 @@ begin
   CopyDirectoryContents(SourceRoot, GetRetailInstallDir(''));
 end;
 
+#if IncludeInstallRandomImages
+function GetRandomInstallImageFileName: string;
+var
+  ImageIndex: Integer;
+begin
+  ImageIndex := Random(InstallRandomImageCount);
+
+  case ImageIndex of
+#if IncludeInstallRandomImage1
+    0: Result := '{#InstallRandomImage1FileName}';
+#endif
+#if IncludeInstallRandomImage2
+    1: Result := '{#InstallRandomImage2FileName}';
+#endif
+#if IncludeInstallRandomImage3
+    2: Result := '{#InstallRandomImage3FileName}';
+#endif
+#if IncludeInstallRandomImage4
+    3: Result := '{#InstallRandomImage4FileName}';
+#endif
+#if IncludeInstallRandomImage5
+    4: Result := '{#InstallRandomImage5FileName}';
+#endif
+#if IncludeInstallRandomImage6
+    5: Result := '{#InstallRandomImage6FileName}';
+#endif
+#if IncludeInstallRandomImage7
+    6: Result := '{#InstallRandomImage7FileName}';
+#endif
+#if IncludeInstallRandomImage8
+    7: Result := '{#InstallRandomImage8FileName}';
+#endif
+#if IncludeInstallRandomImage9
+    8: Result := '{#InstallRandomImage9FileName}';
+#endif
+#if IncludeInstallRandomImage10
+    9: Result := '{#InstallRandomImage10FileName}';
+#endif
+#if IncludeInstallRandomImage11
+    10: Result := '{#InstallRandomImage11FileName}';
+#endif
+#if IncludeInstallRandomImage12
+    11: Result := '{#InstallRandomImage12FileName}';
+#endif
+#if IncludeInstallRandomImage13
+    12: Result := '{#InstallRandomImage13FileName}';
+#endif
+#if IncludeInstallRandomImage14
+    13: Result := '{#InstallRandomImage14FileName}';
+#endif
+#if IncludeInstallRandomImage15
+    14: Result := '{#InstallRandomImage15FileName}';
+#endif
+#if IncludeInstallRandomImage16
+    15: Result := '{#InstallRandomImage16FileName}';
+#endif
+#if IncludeInstallRandomImage17
+    16: Result := '{#InstallRandomImage17FileName}';
+#endif
+#if IncludeInstallRandomImage18
+    17: Result := '{#InstallRandomImage18FileName}';
+#endif
+#if IncludeInstallRandomImage19
+    18: Result := '{#InstallRandomImage19FileName}';
+#endif
+#if IncludeInstallRandomImage20
+    19: Result := '{#InstallRandomImage20FileName}';
+#endif
+#if IncludeInstallRandomImage21
+    20: Result := '{#InstallRandomImage21FileName}';
+#endif
+#if IncludeInstallRandomImage22
+    21: Result := '{#InstallRandomImage22FileName}';
+#endif
+#if IncludeInstallRandomImage23
+    22: Result := '{#InstallRandomImage23FileName}';
+#endif
+#if IncludeInstallRandomImage24
+    23: Result := '{#InstallRandomImage24FileName}';
+#endif
+#if IncludeInstallRandomImage25
+    24: Result := '{#InstallRandomImage25FileName}';
+#endif
+#if IncludeInstallRandomImage26
+    25: Result := '{#InstallRandomImage26FileName}';
+#endif
+#if IncludeInstallRandomImage27
+    26: Result := '{#InstallRandomImage27FileName}';
+#endif
+#if IncludeInstallRandomImage28
+    27: Result := '{#InstallRandomImage28FileName}';
+#endif
+#if IncludeInstallRandomImage29
+    28: Result := '{#InstallRandomImage29FileName}';
+#endif
+#if IncludeInstallRandomImage30
+    29: Result := '{#InstallRandomImage30FileName}';
+#endif
+#if IncludeInstallRandomImage31
+    30: Result := '{#InstallRandomImage31FileName}';
+#endif
+#if IncludeInstallRandomImage32
+    31: Result := '{#InstallRandomImage32FileName}';
+#endif
+  else
+    Result := '{#InstallRandomImage1FileName}';
+  end;
+end;
+
+procedure SetRandomInstallBackImage;
+var
+  BackImages: TArrayOfGraphic;
+  ImageFileName: string;
+  ImagePath: string;
+begin
+  try
+    ImageFileName := GetRandomInstallImageFileName;
+    ExtractTemporaryFile(ImageFileName);
+    ImagePath := AddBackslash(ExpandConstant('{tmp}')) + ImageFileName;
+
+    SetLength(BackImages, 1);
+    if CompareText(ExtractFileExt(ImageFileName), '.bmp') = 0 then
+      BackImages[0] := TBitmap.Create
+    else
+      BackImages[0] := TPngImage.Create;
+
+    try
+      BackImages[0].LoadFromFile(ImagePath);
+      WizardSetBackImage(BackImages, True, True, 90);
+      Log('Random install background image: ' + ImageFileName);
+    finally
+      BackImages[0].Free;
+    end;
+  except
+    Log('Could not set random install background image: ' + GetExceptionMessage);
+  end;
+end;
+
+procedure ClearInstallBackImage;
+begin
+  try
+    WizardSetBackImage([], True, True, 90);
+  except
+    Log('Could not clear install background image: ' + GetExceptionMessage);
+  end;
+end;
+#endif
+
 procedure InitializeWizard;
 var
   NextTop: Integer;
@@ -395,6 +652,10 @@ procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssInstall then
   begin
+#if IncludeInstallRandomImages
+    SetRandomInstallBackImage;
+#endif
+
 #if IncludeMap
     if WizardIsComponentSelected('map') then
       ExtractBundledArchive('{#MapArchiveFileName}', GetMapInstallDir(''), 'map archive', False);
@@ -418,6 +679,10 @@ begin
     end;
 #endif
   end;
+#if IncludeInstallRandomImages
+  if CurStep = ssPostInstall then
+    ClearInstallBackImage;
+#endif
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;

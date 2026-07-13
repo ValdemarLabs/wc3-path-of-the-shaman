@@ -201,6 +201,44 @@ function Get-ManifestArchiveList {
     }
 }
 
+function Get-InstallerRelativePath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$FullPath
+    )
+
+    $normalizedRoot = [System.IO.Path]::GetFullPath($ScriptRoot).TrimEnd('\', '/')
+    $normalizedPath = [System.IO.Path]::GetFullPath($FullPath)
+
+    if (-not $normalizedPath.StartsWith($normalizedRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Path is outside installer folder: $FullPath"
+    }
+
+    return $normalizedPath.Substring($normalizedRoot.Length).TrimStart('\', '/')
+}
+
+function Get-InstallRandomImages {
+    $imageRoot = Join-Path $ScriptRoot 'assets\install-random'
+
+    if (-not (Test-Path -LiteralPath $imageRoot -PathType Container)) {
+        return @()
+    }
+
+    return @(
+        Get-ChildItem -LiteralPath $imageRoot -File |
+            Where-Object {
+                $_.Extension -in @('.png', '.bmp')
+            } |
+            Sort-Object Name |
+            ForEach-Object {
+                [PSCustomObject]@{
+                    Source = Get-InstallerRelativePath -FullPath $_.FullName
+                    FileName = $_.Name
+                }
+            }
+    )
+}
+
 function Find-InnoSetupCompiler {
     param([string]$ExplicitPath)
 
@@ -319,6 +357,10 @@ $rebirthArchiveList = if ($includeRebirthMod) {
 } else {
     @()
 }
+$installRandomImages = @(Get-InstallRandomImages)
+if ($installRandomImages.Count -gt 32) {
+    throw 'The installer currently supports up to 32 random install images.'
+}
 
 $includeLines = New-Object System.Collections.Generic.List[string]
 $includeLines.Add('#define InstallerVersion ' + (ConvertTo-InnoStringLiteral -Value ([string]$manifest.installerVersion)))
@@ -348,6 +390,22 @@ for ($i = 0; $i -lt 4; $i++) {
         $includeLines.Add("#define RebirthArchive$archiveNumber" + 'Source "not-included.rar"')
         $includeLines.Add("#define RebirthArchive$archiveNumber" + 'FileName "not-included.rar"')
         $includeLines.Add("#define RebirthArchive$archiveNumber" + 'ExtractSubdir ""')
+    }
+}
+$includeLines.Add('#define IncludeInstallRandomImages ' + $(if ($installRandomImages.Count -gt 0) { '1' } else { '0' }))
+$includeLines.Add('#define InstallRandomImageCount ' + $installRandomImages.Count)
+for ($i = 0; $i -lt 32; $i++) {
+    $imageNumber = $i + 1
+    if ($i -lt $installRandomImages.Count) {
+        $imageSource = ConvertTo-InnoRelativePath -Value $installRandomImages[$i].Source
+        $imageFileName = $installRandomImages[$i].FileName
+        $includeLines.Add("#define IncludeInstallRandomImage$imageNumber 1")
+        $includeLines.Add("#define InstallRandomImage$imageNumber" + 'Source ' + (ConvertTo-InnoStringLiteral -Value $imageSource))
+        $includeLines.Add("#define InstallRandomImage$imageNumber" + 'FileName ' + (ConvertTo-InnoStringLiteral -Value $imageFileName))
+    } else {
+        $includeLines.Add("#define IncludeInstallRandomImage$imageNumber 0")
+        $includeLines.Add("#define InstallRandomImage$imageNumber" + 'Source "not-included.png"')
+        $includeLines.Add("#define InstallRandomImage$imageNumber" + 'FileName "not-included.png"')
     }
 }
 

@@ -8,6 +8,15 @@ The installer source is kept in git. The actual release payload is not kept in g
 
 Put the latest files here before building:
 
+- `Installer/assets/`
+  - Optional PotS logo files used by the installer UI.
+  - `pots-logo-small.png`: square logo for the top-right wizard logo area. Recommended at least `147x147`.
+  - `pots-logo-wizard.png`: tall welcome/finished-page image. Recommended ratio `164:314`; use at least `240x459`.
+  - Use both files if you want the logo visible across the normal pages and the welcome/finished pages.
+- `Installer/assets/install-random/`
+  - Optional `.png` or `.bmp` files used as random low-opacity backgrounds during the Installing page.
+  - Recommended ratio is about `497:360`; use at least `596x432`.
+  - The build supports up to 32 files in this folder.
 - `Installer/payload/map/`
   - Put the latest map `.zip` here.
   - The zip must contain one `.w3x` map file.
