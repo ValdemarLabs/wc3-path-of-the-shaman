@@ -15,7 +15,7 @@ Special thanks to Tasyen's truly heroic efforts to educate us about the wonders 
 https://www.hiveworkshop.com/threads/the-big-ui-frame-tutorial.335296/
 */
 
-library DInventory initializer Init requires Table, SharedDInvLib, optional UnitStats
+library DInventory initializer Init requires Table, SharedDInvLib, Interface, optional UnitStats
 
 globals
 trigger trg_OpenDInvAbilityUsed = CreateTrigger()
@@ -743,6 +743,9 @@ local integer localplyr = GetPlayerId(GetLocalPlayer())
 ////call BJDebugMsg("CloseDInventory started")
 if pid == localplyr then
 // do whatever you need to do with the inventory item DB
+if InventoryMainFrame[pid] != null and BlzFrameIsVisible(InventoryMainFrame[pid]) then
+call Interface_NotifyInventoryClosed()
+endif
 call BlzFrameSetVisible(InventoryLowestFrame[pid], FALSE)
 call BlzFrameSetVisible(InventoryMainFrame[pid], FALSE)
 call BlzFrameSetVisible(InventoryXButtonFrame[pid], FALSE)
@@ -931,6 +934,9 @@ if pid == localplyr then
     // do not open inventory for unauthorized units
     else
 ////call BJDebugMsg("hid in opendinventory = "+I2S(hid))            
+    if InventoryMainFrame[pid] != null and not BlzFrameIsVisible(InventoryMainFrame[pid]) then
+    call Interface_NotifyInventoryOpened()
+    endif
     call BlzFrameSetVisible(InventoryLowestFrame[pid], TRUE)
     call BlzFrameSetVisible(InventoryMainFrame[pid], TRUE)
     call BlzFrameSetVisible(InventoryXButtonFrame[pid], TRUE)
