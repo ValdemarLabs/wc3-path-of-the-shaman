@@ -170,6 +170,7 @@ globals
 	private boolean ValeriaSuccessTransitionApplied = false
 	private boolean RiftsQuestActive = false
 	private boolean RiftsLeftFieldZoneNotified = false
+	private boolean RiftsHasEnteredFieldZone = false
 	private boolean RiftsRitualActive = false
 	private trigger RiftsProximityTrigger = null
 	private trigger FadingSparksSpellEffectTrigger = null
@@ -263,8 +264,32 @@ private function SyncUnitReferences takes nothing returns nothing
 	endif
 endfunction
 
+private function GetPlayerQuestHero takes unit preferredHero returns unit
+	call SyncUnitReferences()
+	if preferredHero != null and QuestGiver_IsUnitAlive(preferredHero) and GetOwningPlayer(preferredHero) == Player(0) then
+		return preferredHero
+	endif
+	if SelectedHero != null and QuestGiver_IsUnitAlive(SelectedHero) and GetOwningPlayer(SelectedHero) == Player(0) then
+		return SelectedHero
+	endif
+	if ALLOW_NAZGREK and Nazgrek != null and QuestGiver_IsUnitAlive(Nazgrek) and GetOwningPlayer(Nazgrek) == Player(0) then
+		return Nazgrek
+	endif
+	if ALLOW_NAZGREK and udg_Nazgrek != null and QuestGiver_IsUnitAlive(udg_Nazgrek) and GetOwningPlayer(udg_Nazgrek) == Player(0) then
+		return udg_Nazgrek
+	endif
+	if ALLOW_ZULKIS and udg_Zulkis != null and QuestGiver_IsUnitAlive(udg_Zulkis) and GetOwningPlayer(udg_Zulkis) == Player(0) then
+		return udg_Zulkis
+	endif
+	return null
+endfunction
+
 private function ResolveDialogHero takes nothing returns unit
-	return QuestGiver_ResolveDialogHero(SelectedHero, Aradion, DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
+	local unit hero = QuestGiver_ResolveDialogHero(SelectedHero, Aradion, DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
+	if hero == null then
+		set hero = GetPlayerQuestHero(null)
+	endif
+	return hero
 endfunction
 
 private function GetAradionFieldZoneListText takes nothing returns string
@@ -305,16 +330,7 @@ private function IsAradionFieldZoneActive takes nothing returns boolean
 endfunction
 
 private function GetRiftsTrackingHero takes nothing returns unit
-	if SelectedHero != null and QuestGiver_IsUnitAlive(SelectedHero) then
-		return SelectedHero
-	endif
-	if ALLOW_NAZGREK and Nazgrek != null and QuestGiver_IsUnitAlive(Nazgrek) then
-		return Nazgrek
-	endif
-	if ALLOW_ZULKIS and udg_Zulkis != null and QuestGiver_IsUnitAlive(udg_Zulkis) then
-		return udg_Zulkis
-	endif
-	return null
+	return GetPlayerQuestHero(null)
 endfunction
 
 private function CanOfferRangerMissing takes nothing returns boolean
@@ -715,11 +731,12 @@ private function DisableRiftsFailTriggers takes nothing returns nothing
 endfunction
 
 private function StartFieldCompanions takes unit hero returns nothing
-	if not IsAradionFieldZoneActive() then
-		return
-	endif
 	if hero == null then
 		set hero = GetRiftsTrackingHero()
+	endif
+	if hero == null then
+		call BJDebugMsg("[qAradion] ERROR: Rifts companions could not join because no valid player hero was resolved.")
+		return
 	endif
 	call ClearRiftsLeftBehindIcons()
 	set RiftsLeftFieldZoneNotified = false
@@ -2233,36 +2250,38 @@ endfunction
 
 private function CreateRiftUnitAtSlot takes integer index returns unit
 	local rect r = GetRiftRect(index)
+	local rect fallbackRect = null
 	local unit result = null
+	local real x
+	local real y
 	if r == null then
 		call BJDebugMsg("[qAradion] ERROR: gg_rct_ManaRift" + I2S(index) + " is null; Mana Rift was not created.")
 		return null
 	endif
-	set result = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_MANA_RIFT, GetRectCenterX(r), GetRectCenterY(r), bj_UNIT_FACING)
+	set x = GetRectCenterX(r)
+	set y = GetRectCenterY(r)
+	set result = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_MANA_RIFT, x, y, bj_UNIT_FACING)
+	if result == null and index != 1 then
+		set fallbackRect = GetRiftRect(1)
+		if fallbackRect != null then
+			set result = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_MANA_RIFT, GetRectCenterX(fallbackRect), GetRectCenterY(fallbackRect), bj_UNIT_FACING)
+			if result != null then
+				call SetUnitX(result, x)
+				call SetUnitY(result, y)
+			endif
+		endif
+	endif
 	if result != null then
+		call SetUnitX(result, x)
+		call SetUnitY(result, y)
 		call SetUnitCreepGuard(result, false)
 		call CreepRespawn_DiscardUnit(result)
 	else
-		call BJDebugMsg("[qAradion] ERROR: CreateUnit('n023') failed for Mana Rift slot " + I2S(index) + " at gg_rct_ManaRift" + I2S(index) + ".")
+		call BJDebugMsg("[qAradion] ERROR: CreateUnit('n023') failed for Mana Rift slot " + I2S(index) + " at gg_rct_ManaRift" + I2S(index) + " (" + R2S(x) + ", " + R2S(y) + ").")
 	endif
+	set fallbackRect = null
 	set r = null
 	return result
-endfunction
-
-private function BindRiftUnitSlot takes integer index returns nothing
-	local unit u = RiftsUnits[index]
-	if u != null and QuestGiver_IsUnitAlive(u) and GetUnitTypeId(u) == UNIT_MANA_RIFT then
-		set RiftsUnitTypeIds[index] = UNIT_MANA_RIFT
-		call CreepRespawn_DiscardUnit(u)
-		set u = null
-		return
-	endif
-	if u != null and GetUnitTypeId(u) != 0 then
-		call RemoveUnit(u)
-	endif
-	set RiftsUnitTypeIds[index] = UNIT_MANA_RIFT
-	set RiftsUnits[index] = CreateRiftUnitAtSlot(index)
-	set u = null
 endfunction
 
 private function ResetRiftsClosedState takes nothing returns nothing
@@ -2279,16 +2298,14 @@ private function EnsureRiftUnit takes integer index returns unit
 	if index <= 0 or index > RIFTS_MAX or RiftsClosed[index] then
 		return null
 	endif
-	if u != null and QuestGiver_IsUnitAlive(u) then
+	if u != null and QuestGiver_IsUnitAlive(u) and GetUnitTypeId(u) == UNIT_MANA_RIFT then
 		call CreepRespawn_DiscardUnit(u)
 		return u
 	endif
-	set RiftsUnits[index] = null
-	call BindRiftUnitSlot(index)
-	set u = RiftsUnits[index]
-	if u != null and QuestGiver_IsUnitAlive(u) then
-		return u
+	if u != null and GetUnitTypeId(u) != 0 then
+		call RemoveUnit(u)
 	endif
+	set RiftsUnitTypeIds[index] = UNIT_MANA_RIFT
 	set u = CreateRiftUnitAtSlot(index)
 	set RiftsUnits[index] = u
 	return u
@@ -2299,7 +2316,9 @@ private function RegisterRiftUnits takes nothing returns nothing
 	loop
 		exitwhen i > RIFTS_MAX
 		if not RiftsClosed[i] then
-			call EnsureRiftUnit(i)
+			if EnsureRiftUnit(i) == null then
+				call BJDebugMsg("[qAradion] ERROR: Mana Rift slot " + I2S(i) + " is missing after register.")
+			endif
 		else
 			set RiftsUnits[i] = null
 		endif
@@ -2315,9 +2334,10 @@ private function CreateInitialRiftUnits takes nothing returns nothing
 		if RiftsUnits[i] != null and GetUnitTypeId(RiftsUnits[i]) != 0 then
 			call RemoveUnit(RiftsUnits[i])
 		endif
+		set RiftsUnits[i] = null
 		set RiftsUnitTypeIds[i] = UNIT_MANA_RIFT
 		set RiftsClosed[i] = false
-		set RiftsUnits[i] = CreateRiftUnitAtSlot(i)
+		set RiftsUnits[i] = EnsureRiftUnit(i)
 		if RiftsUnits[i] == null then
 			call BJDebugMsg("[qAradion] ERROR: Mana Rift slot " + I2S(i) + " is still null after init creation.")
 		endif
@@ -3299,6 +3319,9 @@ private function OnRiftsFieldTick takes nothing returns nothing
 		return
 	endif
 	if not IsAradionFieldZoneActive() then
+		if not RiftsHasEnteredFieldZone then
+			return
+		endif
 		call StopFieldCompanions()
 		call UpdateRiftsLeftBehindIcons()
 		if not RiftsLeftFieldZoneNotified then
@@ -3309,6 +3332,7 @@ private function OnRiftsFieldTick takes nothing returns nothing
 		set q = 0
 		return
 	endif
+	set RiftsHasEnteredFieldZone = true
 	if RiftsLeftFieldZoneNotified then
 		set q = QuestGiver_GetByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
 		set hero = GetRiftsTrackingHero()
@@ -3382,6 +3406,7 @@ private function FinalizeRiftsFailureReset takes nothing returns nothing
 	call SyncUnitReferences()
 	set RiftsQuestActive = false
 	set RiftsLeftFieldZoneNotified = false
+	set RiftsHasEnteredFieldZone = false
 	set RiftsRitualActive = false
 	set RiftsCurrentRift = null
 	set RiftsCurrentIndex = 0
@@ -4007,24 +4032,7 @@ private function OnCompleteQuest2 takes nothing returns nothing
 endfunction
 
 private function GetFadingSparksRodHero takes nothing returns unit
-	local unit hero = ResolveDialogHero()
-	if hero != null then
-		return hero
-	endif
-	set hero = null
-	if FadingSparksRodHero != null and QuestGiver_IsUnitAlive(FadingSparksRodHero) and GetOwningPlayer(FadingSparksRodHero) == Player(0) then
-		return FadingSparksRodHero
-	endif
-	if SelectedHero != null and QuestGiver_IsUnitAlive(SelectedHero) and GetOwningPlayer(SelectedHero) == Player(0) then
-		return SelectedHero
-	endif
-	if ALLOW_NAZGREK and Nazgrek != null and QuestGiver_IsUnitAlive(Nazgrek) and GetOwningPlayer(Nazgrek) == Player(0) then
-		return Nazgrek
-	endif
-	if ALLOW_ZULKIS and udg_Zulkis != null and QuestGiver_IsUnitAlive(udg_Zulkis) and GetOwningPlayer(udg_Zulkis) == Player(0) then
-		return udg_Zulkis
-	endif
-	return null
+	return GetPlayerQuestHero(FadingSparksRodHero)
 endfunction
 
 private function OnAcceptQuest3End takes nothing returns nothing
@@ -4038,6 +4046,7 @@ private function OnAcceptQuest3End takes nothing returns nothing
 	endif
 	call QuestGiver_RemoveHeroItemsEither(ITEM_TELANOR_ROD, ITEM_TELANOR_ROD_LEGACY, 64)
 	set hero = GetFadingSparksRodHero()
+	set SelectedHero = hero
 	call QuestGiver_GiveQuestItemToHero(hero, ITEM_TELANOR_ROD, ITEM_TELANOR_ROD_LEGACY, "Tel'anor Rod")
 	set FadingSparksRodHero = null
 	call StartExitFadeOut()
@@ -4048,6 +4057,7 @@ private function OnRecoverTelanorRodEnd takes nothing returns nothing
 	local unit hero
 	call QuestGiver_RemoveHeroItemsEither(ITEM_TELANOR_ROD, ITEM_TELANOR_ROD_LEGACY, 64)
 	set hero = GetFadingSparksRodHero()
+	set SelectedHero = hero
 	call QuestGiver_GiveQuestItemToHero(hero, ITEM_TELANOR_ROD, ITEM_TELANOR_ROD_LEGACY, "Tel'anor Rod")
 	set FadingSparksRodHero = null
 	call StartExitFadeOut()
@@ -4061,6 +4071,7 @@ private function OnRecoverTelanorRod takes nothing returns nothing
 	set seq = QuestGiver_CreateBaseSequence(Aradion, "Aradion the Farseer")
 	call DialogSystem_SetSequenceCallbacks(seq, null, function OnRecoverTelanorRodEnd)
 	set hero = ResolveDialogHero()
+	set SelectedHero = hero
 	set FadingSparksRodHero = hero
 	call DialogSystem_AddMakeFaceEachOther(seq, Aradion, hero, 0.50, 0.0)
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Take another rod of Tel'anor. Without it, the wraith essences will slip away before you can preserve them.", "", true)
@@ -4077,6 +4088,7 @@ private function OnAcceptQuest3 takes nothing returns nothing
 	
 	// Make Aradion and hero face each other
 	set hero = ResolveDialogHero()
+	set SelectedHero = hero
 	set FadingSparksRodHero = hero
 	if hero != null then
 		call DialogSystem_MakeFaceEachOther(Aradion, hero, 0.50)
@@ -4135,9 +4147,10 @@ private function OnAcceptQuest4End takes nothing returns nothing
 		call ResetRiftsObjectivesForNewRun(q)
 	endif
 	call QuestGiver_AcceptQuestByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
-	set hero = ResolveDialogHero()
+	set hero = GetPlayerQuestHero(SelectedHero)
 	set RiftsQuestActive = true
 	set RiftsLeftFieldZoneNotified = false
+	set RiftsHasEnteredFieldZone = false
 	set RiftsRitualActive = false
 	set RiftsCurrentRift = null
 	set RiftsCurrentIndex = 0
@@ -4195,6 +4208,7 @@ private function OnAcceptQuest4 takes nothing returns nothing
 	
 	// Get hero for facing actions
 	set hero = ResolveDialogHero()
+	set SelectedHero = hero
 	call PrepareValeriaForRiftsIntro(hero)
 	
 	// Add quest-specific lines with inline facing
@@ -4213,6 +4227,7 @@ endfunction
 private function OnCompleteQuest4End takes nothing returns nothing
 	set RiftsQuestActive = false
 	set RiftsLeftFieldZoneNotified = false
+	set RiftsHasEnteredFieldZone = false
 	set RiftsRitualActive = false
 	set RiftsCurrentRift = null
 	set RiftsCurrentIndex = 0
@@ -4704,6 +4719,7 @@ endfunction
 public function ReturnRiftsCompanionsHome takes nothing returns nothing
 	set RiftsQuestActive = false
 	set RiftsLeftFieldZoneNotified = false
+	set RiftsHasEnteredFieldZone = false
 	set RiftsRitualActive = false
 	set RiftsCurrentRift = null
 	set RiftsCurrentIndex = 0
