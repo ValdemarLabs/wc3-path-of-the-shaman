@@ -2174,27 +2174,14 @@ private function CreateRiftUnitAtSlot takes integer index returns unit
 	local unit result = null
 	local real x
 	local real y
-	local real createX
-	local real createY
 	if r == null then
 		call BJDebugMsg("[qAradion] ERROR: gg_rct_ManaRift" + I2S(index) + " is null; Mana Rift was not created.")
 		return null
 	endif
 	set x = GetRectCenterX(r)
 	set y = GetRectCenterY(r)
-	set createX = x
-	set createY = y
-	if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
-		set createX = GetUnitX(Aradion)
-		set createY = GetUnitY(Aradion)
-	endif
-	set result = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_MANA_RIFT, createX, createY, bj_UNIT_FACING)
-	if result == null and (createX != x or createY != y) then
-		set result = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_MANA_RIFT, x, y, bj_UNIT_FACING)
-	endif
+	set result = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_MANA_RIFT, x, y, bj_UNIT_FACING)
 	if result != null then
-		call SetUnitX(result, x)
-		call SetUnitY(result, y)
 		call ShowUnit(result, true)
 		call SetUnitCreepGuard(result, false)
 		call CreepRespawn_DiscardUnit(result)
@@ -2259,6 +2246,17 @@ private function CreateInitialRiftUnits takes nothing returns nothing
 		endif
 		set i = i + 1
 	endloop
+endfunction
+
+private function PrepareRiftsForQuestDiscovery takes nothing returns nothing
+	local integer i = 1
+	call ResetRiftsClosedState()
+	loop
+		exitwhen i > RIFTS_MAX
+		set RiftsUnitTypeIds[i] = UNIT_MANA_RIFT
+		set i = i + 1
+	endloop
+	call RegisterRiftUnits()
 endfunction
 
 private function PrepareValeriaForRiftsIntro takes unit hero returns nothing
@@ -3348,9 +3346,7 @@ private function FinalizeRiftsFailureReset takes nothing returns nothing
 	set RiftsUnitTypeIds[1] = UNIT_MANA_RIFT
 	set RiftsUnitTypeIds[2] = UNIT_MANA_RIFT
 	set RiftsUnitTypeIds[3] = UNIT_MANA_RIFT
-	call ResetRiftsClosedState()
 	call ReturnRiftsCompanionsHomeInternal()
-	call RegisterRiftUnits()
 	set q = QuestGiver_GetByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
 	if q != 0 then
 		call ResetRiftsObjectivesForNewRun(q)
@@ -4077,6 +4073,8 @@ private function OnAcceptQuest4End takes nothing returns nothing
 	call QuestGiver_AcceptQuestByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
 	set hero = GetPlayerQuestHero(SelectedHero)
 	set RiftsQuestActive = true
+	call StopValeriaPatrolInternal()
+	call StartFieldCompanions(hero)
 	set RiftsLeftFieldZoneNotified = false
 	set RiftsHasEnteredFieldZone = false
 	set RiftsRitualActive = false
@@ -4100,8 +4098,7 @@ private function OnAcceptQuest4End takes nothing returns nothing
 	call StopRiftsFieldMonitor()
 	call ClearRiftsWaveHandles()
 	call DialogSystem_ClearFieldLineQueue()
-	call ResetRiftsClosedState()
-	call RegisterRiftUnits()
+	call PrepareRiftsForQuestDiscovery()
 	if Aradion != null then
 		call SetUnitInvulnerable(Aradion, false)
 	endif
@@ -4109,8 +4106,6 @@ private function OnAcceptQuest4End takes nothing returns nothing
 		call SetUnitInvulnerable(Valeria, false)
 	endif
 	call EnableRiftsFailTriggers()
-	call StopValeriaPatrolInternal()
-	call StartFieldCompanions(hero)
 	call StartExitFadeOut()
 	call StartRiftsFieldMonitor()
 	set hero = null
