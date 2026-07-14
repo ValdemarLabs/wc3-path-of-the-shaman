@@ -191,7 +191,7 @@ endfunction
 
 public function Hide takes nothing returns nothing
     if Parent != null and BlzFrameIsVisible(Parent) then
-        call Interface_NotifyQuestLogClosed()
+        call Interface_NotifyUIClosed()
     endif
     call BlzFrameSetVisible(Parent, false)
     call BlzFrameSetVisible(Open, false)
@@ -204,7 +204,7 @@ endfunction
 public function Show takes nothing returns nothing
     set SliderValueCache = -1
     if Parent != null and not BlzFrameIsVisible(Parent) then
-        call Interface_NotifyQuestActivated()
+        call Interface_NotifyUIOpened()
     endif
     call BlzFrameSetVisible(Parent, true)
     call UpdateUI()
@@ -212,10 +212,10 @@ endfunction
 
 public function Toggle takes nothing returns nothing
     if BlzFrameIsVisible(Parent) then
-        call Interface_NotifyQuestLogClosed()
+        call Interface_NotifyUIClosed()
         call BlzFrameSetVisible(Parent, false)
     else
-        call Interface_NotifyQuestActivated()
+        call Interface_NotifyUIOpened()
         call BlzFrameSetVisible(Parent, true)
     endif
     call UpdateUI()
@@ -303,9 +303,9 @@ private function OpenAction takes nothing returns nothing
         set SliderValueCache = -1
         set showPanel = not BlzFrameIsVisible(Parent)
         if showPanel then
-            call Interface_NotifyQuestActivated()
+            call Interface_NotifyUIOpened()
         else
-            call Interface_NotifyQuestLogClosed()
+            call Interface_NotifyUIClosed()
         endif
         call BlzFrameSetVisible(Parent, showPanel)
         call UpdateUI()     
