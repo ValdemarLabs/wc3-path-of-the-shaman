@@ -32,6 +32,8 @@
   - Rifts delayed-discovery handling now starts the Rifts field phase: it resets/re-registers all three Mana Rift slots, adds Aradion and Valeria to the companion group, enables Rifts failure triggers, and starts the Rifts field monitor only when QuestMaster fires the delayed quest-discovered event.
   - Rifts failure reset no longer recreates Mana Rifts immediately; retrying/discovering `Rifts of Corruption` now recreates/registers the rifts from the delayed discovery event.
   - Rechecked qAradion as the qXXX foundation and removed remaining local wrappers around shared dialog-sequence and quest-event boilerplate where QuestGiver now provides the reusable API.
+  - Added `qAradion_TestSpawnManaRifts()` as a direct Mana Rift spawn diagnostic. It checks slots 1-3, reports each rect center / existing handle / CreateUnit result, stores successful Neutral Passive rifts into `RiftsUnits[]`, discards them from CreepRespawn, and refreshes the proximity trigger.
+    - Type in chat: `/debug manarift` to debug
 
 - `QuestGiver.j`
   - Replaced the dialog hero validity helper's Player(0)-ownership requirement with a live-unit check. `GetAvailableHero`, `GetAllowedHero`, and `ResolveDialogHero` now treat known Nazgrek/Zulkis unit refs as valid even while cinematic ownership is temporarily changed.
@@ -39,6 +41,10 @@
   - Added reusable quest-giver session helpers for selection gating with optional casting/combat checks, per-giver/default dialog transition config, greet/info sequence scaffolding, delayed dialog reopen, and quest metadata/reward/prerequisite setup wrappers.
   - Fixed `OnGreetSequenceEnd` compiler errors by restoring the missing pending `npc`/`dialog`/`player` locals and nulling those handle locals after the pending dialog is shown.
   - Added shared helpers for matching the current quest event by quest name/giver and for starting the default configured dialog-exit transition without repeating fade/camera/cinematic constants in qXXX libraries.
+  - Fixed cinematic greet-to-dialog handoff so `OnGreetSequenceEnd` / `OnFirstGreetSequenceEnd` no longer call cinematic OFF immediately before showing the dialog window. Cinematic shutdown is left to the dialog-exit transition, and first-greet completion now clears its pending sequence handle like normal greet completion.
+
+- `DialogSystem.j`
+  - Changed sequence finish cleanup so active sequence state is cleared before running the finish callback, preventing follow-up dialog/exit logic from seeing the completed sequence as still active.
 
 - `qxxx-generator.html`
   - Updated generated qXXX scaffolds to use the new `QuestGiver` selection gate, configured transition starter, info-sequence reopen flow, and quest creation/reward wrappers.
