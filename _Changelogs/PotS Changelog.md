@@ -31,15 +31,18 @@
   - Rifts intro Valeria movement now uses a configured range around Aradion instead of `gg_rct_ValeriaNewPos`; if Valeria is already near Aradion she is only ordered to move to her relative spot instead of being repositioned.
   - Rifts delayed-discovery handling now starts the Rifts field phase: it resets/re-registers all three Mana Rift slots, adds Aradion and Valeria to the companion group, enables Rifts failure triggers, and starts the Rifts field monitor only when QuestMaster fires the delayed quest-discovered event.
   - Rifts failure reset no longer recreates Mana Rifts immediately; retrying/discovering `Rifts of Corruption` now recreates/registers the rifts from the delayed discovery event.
+  - Rechecked qAradion as the qXXX foundation and removed remaining local wrappers around shared dialog-sequence and quest-event boilerplate where QuestGiver now provides the reusable API.
 
 - `QuestGiver.j`
   - Replaced the dialog hero validity helper's Player(0)-ownership requirement with a live-unit check. `GetAvailableHero`, `GetAllowedHero`, and `ResolveDialogHero` now treat known Nazgrek/Zulkis unit refs as valid even while cinematic ownership is temporarily changed.
   - Confirmed quest-item grant logic itself already uses the generic `UnitAddItem` path and does not require a DInventory-specific grant. The Tel'anor Rod failure was caused by hero resolution returning null before the grant call.
   - Added reusable quest-giver session helpers for selection gating with optional casting/combat checks, per-giver/default dialog transition config, greet/info sequence scaffolding, delayed dialog reopen, and quest metadata/reward/prerequisite setup wrappers.
   - Fixed `OnGreetSequenceEnd` compiler errors by restoring the missing pending `npc`/`dialog`/`player` locals and nulling those handle locals after the pending dialog is shown.
+  - Added shared helpers for matching the current quest event by quest name/giver and for starting the default configured dialog-exit transition without repeating fade/camera/cinematic constants in qXXX libraries.
 
 - `qxxx-generator.html`
   - Updated generated qXXX scaffolds to use the new `QuestGiver` selection gate, configured transition starter, info-sequence reopen flow, and quest creation/reward wrappers.
+  - Updated generated qXXX scaffolds to use the configured dialog-exit wrapper, register a delayed quest-discovered callback stub, and use `QuestGiver_IsEventQuestByNameAndGiver` for post-discovery quest matching.
 
 - `QuestMaster.j`
   - Updated generic highest-hero-level availability checks to include `udg_Nazgrek` and `udg_Zulkis` directly after the Player(0) group scan, so quest availability level gates do not silently fail while cinematic ownership is temporarily changed.
@@ -75,6 +78,19 @@
     - Interface_NotifyQuestActivated()
     - Interface_NotifyQuestLogClosed()
 
+- `StormhavenCity.j`
+  - Stormhaven citizen turnover now uses SHC_TURNOVER_PLAYER_GUARD_RANGE = 1250.00.
+  - Removed random-looking spell, attack, stand ready, and holdposition ambient choices.
+  - Street/social callbacks now use purposeful movement or plain standing.
+  - Market callbacks use stand work for adults and plain stand for children.
+  - Moved market/social chat chances into globals.
+  - Added StormhavenCity_DebugForceChat() for testing citizen chat at 100% chance.
+  - Best chat test path now: bind/call StormhavenCity_DebugForceChat() from a temporary test trigger or debug command while near citizens. It skips routine timing/random chance, but still uses the real chat rules: player nearby, valid Stormhaven citizen, nearby partner within SHC_CHAT_PARTNER_RANGE, and no active chat lock.
+
+- `AIRoutines.j`
+  - Added AIRoutines_SetManagedUnitGroupRemovalPlayerGuardRange(spawnGroupId, range).
+  - Managed turnover removal now checks for a nearby Player(0) unit before removing a leaving unit.
+  - If a player unit is nearby, removal is deferred and retried later instead of making the citizen vanish.
 
 ## [14.7.2026] Part I
 #### Note: Because of the vast updates and to make it more simpler to update the changelog, the updates have only been written under `### Technical Updates` for now.
