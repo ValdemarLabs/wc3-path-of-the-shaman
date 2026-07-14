@@ -220,25 +220,6 @@ private function DebugMsg takes string msg returns nothing
 endfunction
 
 //===========================================================================
-// Cinematic mode helpers
-// Note: Uses GUI triggers "Cinematic ON" and "Cinematic OFF"
-// which handle unit movement, pausing, UI hiding, etc.
-//===========================================================================
-private function EnterCinematicMode takes nothing returns nothing
-	if CINEMATIC then
-		call ExecuteFunc("MasterUI_HideGameButton")
-		call CinematicModeBJ(true, GetPlayersAll())
-	endif
-endfunction
-
-private function ExitCinematicMode takes nothing returns nothing
-	if CINEMATIC then
-		call CinematicModeBJ(false, GetPlayersAll())
-		call ExecuteFunc("MasterUI_ShowGameButton")
-	endif
-endfunction
-
-//===========================================================================
 // External state helpers
 //===========================================================================
 public function SetBackstorySeen takes boolean flag returns nothing
@@ -1430,10 +1411,9 @@ private function OnValeriaSequenceStart takes nothing returns nothing
 	set ValeriaNegotiationSequenceBusy = true
 	set ValeriaNegotiationPromptPending = false
 	call DialogSystem_ClearEscapeAction()
-	call EnableUserControl(false)
+	call QuestGiver_BeginCinematicSequence(CINEMATIC)
 	call QuestGiver_CloseActiveDialog()
 	call ExecuteFunc("TasQuestBox_Hide")
-	call EnterCinematicMode()
 endfunction
 
 private function BeginValeriaNegotiationSequence takes nothing returns nothing
@@ -1617,8 +1597,7 @@ endfunction
 private function OnValeriaSuccessEnd takes nothing returns nothing
 	set ValeriaNegotiationSequenceBusy = false
 	call DialogSystem_StopDialogCamera(Player(0), 2.0, USE_DIALOG_CAMERA)
-	call ExitCinematicMode()
-	call EnableUserControl(true)
+	call QuestGiver_EndCinematicSequence(CINEMATIC)
 	call ClearValeriaEncounterState()
 	set ValeriaEncounterResolved = true
 	call RunUpdateQuestRangerMissing()
@@ -1685,8 +1664,7 @@ endfunction
 private function StartValeriaSuccessTransitionDelayed takes nothing returns nothing
 	local timer t = GetExpiredTimer()
 	local timer nextTimer = CreateTimer()
-	call EnableUserControl(false)
-	call EnterCinematicMode()
+	call QuestGiver_BeginCinematicSequence(CINEMATIC)
 	call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUT, 1.0, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
 	if t != null then
 		call DestroyTimer(t)
@@ -1707,8 +1685,7 @@ endfunction
 private function OnValeriaIntroEnd takes nothing returns nothing
 	local unit hero = GetValeriaEncounterHero()
 	call DialogSystem_StopDialogCamera(Player(0), 2.0, USE_DIALOG_CAMERA)
-	call ExitCinematicMode()
-	call EnableUserControl(true)
+	call QuestGiver_EndCinematicSequence(CINEMATIC)
 	set ValeriaNegotiationSequenceBusy = false
 	if not ValeriaEncounterActive or ValeriaEncounterResolved or Valeria == null or not QuestGiver_IsUnitAlive(Valeria) then
 		set hero = null
@@ -2014,73 +1991,23 @@ endfunction
 //===========================================================================
 // Backstory sequence
 //===========================================================================
-private function OnSequenceStart takes nothing returns nothing
-	call EnableUserControl(false)
-	// Enter cinematic mode to enable ESC skip via EVENT_PLAYER_END_CINEMATIC
-	call EnterCinematicMode()
-endfunction
-
-private function OnSequenceEnd takes nothing returns nothing
-	// Exit cinematic mode after greet sequence
-	call ExitCinematicMode()
-	// Re-enable user control (dialog system will show dialog after this)
-	call EnableUserControl(true)
-endfunction
-
 private function PlayGreetFirstSequence takes unit hero returns nothing
 	local integer seq
-	local string heroName
-	set seq = DialogSystem_CreateSequence()
-	call DialogSystem_SetSequenceDefaultSpeaker(seq, Aradion, "Aradion the Farseer")
-	call DialogSystem_SetSequenceCallbacks(seq, function OnSequenceStart, function OnSequenceEnd)
-	set heroName = QuestGiver_GetHeroName(hero)
+	set seq = QuestGiver_CreateGreetSequenceBase(Aradion, "Aradion the Farseer", hero, 1.00, 1.00, true)
 	
-	// Make units face each other before dialog starts
-	if hero != null then
-		call DialogSystem_MakeFaceEachOther(Aradion, hero, 0.00)
-	endif
-	
-	// Brief pause after cinematic mode starts (1 second)
-	call DialogSystem_AddDelay(seq, 1.0)
-	
-	if hero != null then
-		call DialogSystem_PickGreetLine(hero, heroName)
-		call DialogSystem_AddLine(seq, hero, heroName, DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
-		// Pause before Aradion speaks (1 second)
-		call DialogSystem_AddDelay(seq, 1.0)
-	endif
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "An… orc? Here? If you came for blood, take mine swiftly. I will not flee…", "Aradion_0001", true)
 	call QuestGiver_AddHeroLine(seq, hero, "Your blood is not what I seek, elf. I walk the spirit path, not the path of slaughter.", "Nazgrek_0331")
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "…No. Orcs do not speak so. You… are different.", "Aradion_0002", true)
-	call QuestGiver_PlayFirstGreetSequence(Aradion, Player(0), AradionDialog, seq)
+	call QuestGiver_PlayFirstGreetSequenceEx(Aradion, Player(0), AradionDialog, seq, CINEMATIC)
 endfunction
 
 private function PlayGreetNormalSequence takes unit hero returns nothing
 	local integer seq
 	local integer roll
-	local string heroName
 	local boolean handled
 	call DebugMsg("PlayGreetNormalSequence: Starting")
-	set seq = DialogSystem_CreateSequence()
+	set seq = QuestGiver_CreateGreetSequenceBase(Aradion, "Aradion the Farseer", hero, 1.00, 1.00, true)
 	call DebugMsg("PlayGreetNormalSequence: Created sequence, seq=" + I2S(seq))
-	call DialogSystem_SetSequenceDefaultSpeaker(seq, Aradion, "Aradion the Farseer")
-	call DialogSystem_SetSequenceCallbacks(seq, function OnSequenceStart, function OnSequenceEnd)
-	set heroName = QuestGiver_GetHeroName(hero)
-	
-	// Make units face each other before dialog starts
-	if hero != null then
-		call DialogSystem_MakeFaceEachOther(Aradion, hero, 0.00)
-	endif
-	
-	// Brief pause after cinematic mode starts (1 second)
-	call DialogSystem_AddDelay(seq, 1.0)
-	
-	if hero != null then
-		call DialogSystem_PickGreetLine(hero, heroName)
-		call DialogSystem_AddLine(seq, hero, heroName, DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
-		// Pause before Aradion speaks (1 second)
-		call DialogSystem_AddDelay(seq, 1.0)
-	endif
 	set handled = AddInProgressGreet(seq, hero)
 	if not handled then
 		set roll = GetRandomInt(1, 4)
@@ -2101,7 +2028,7 @@ private function PlayGreetNormalSequence takes unit hero returns nothing
 		endif
 	endif
 	call DebugMsg("PlayGreetNormalSequence: About to call QuestGiver_PlayGreetSequence")
-	call QuestGiver_PlayGreetSequence(seq, Aradion, Player(0), AradionDialog)
+	call QuestGiver_PlayGreetSequenceEx(seq, Aradion, Player(0), AradionDialog, CINEMATIC)
 	call DebugMsg("PlayGreetNormalSequence: Completed QuestGiver_PlayGreetSequence call")
 endfunction
 
@@ -2111,7 +2038,7 @@ private function ShowDialog takes player p, unit hero returns nothing
 	call DebugMsg("ShowDialog: Starting")
 	set wasActive = DialogSystem_IsSequenceActive()
 	call DebugMsg("ShowDialog: wasActive=" + I2S(B2I(wasActive)))
-	call DialogSystem_StartDialogCamera(Player(0), Aradion, CAMERA_DIST, CAMERA_Z_OFFSET, CAMERA_ANGLE, CAMERA_ROT_OFFSET, CAMERA_FAR_Z, CAMERA_FOV, CAMERA_BLOCK_RADIUS, CAMERA_BLOCK_CHECK, USE_DIALOG_CAMERA)
+	call QuestGiver_StartConfiguredDialogCamera(p, Aradion, USE_DIALOG_CAMERA)
 	call DebugMsg("ShowDialog: About to play greet sequence")
 	call PlayGreetNormalSequence(hero)
 	set isActiveAfter = DialogSystem_IsSequenceActive()
@@ -2131,34 +2058,23 @@ endfunction
 //===========================================================================
 // Info sequence callbacks
 //===========================================================================
-private function ReopenDialogAfterInfo takes nothing returns nothing
-	local timer t = GetExpiredTimer()
-	// Use ExecuteFunc with public wrapper to avoid forward reference
-	call DebugMsg("ReopenDialogAfterInfo: Reopening dialog after info sequence") 
-	call ExecuteFunc("qAradion_RebuildAndShowDialog")
-	call DestroyTimer(t)
-endfunction
-
 private function OnInfoStart takes nothing returns nothing
-	call EnableUserControl(false)
 	set AradionBackstorySeen = true
 	call QuestGiver_CloseActiveDialog()
 	set AradionDialogCooldown = QuestGiver_StartCooldown(AradionDialogCooldown, DIALOG_COOLDOWN)
-	// Enter cinematic mode for ESC skip
-	call EnterCinematicMode()
+	call QuestGiver_BeginCinematicSequence(CINEMATIC)
 endfunction
 
 private function OnInfoEnd takes nothing returns nothing
-	local timer t
 	call SyncUnitReferences()
+	call QuestGiver_EndCinematicSequence(CINEMATIC)
 	// Refresh quest state before rebuilding the dialog so Ranger Missing appears immediately.
 	if QuestGiver_QuestExistsByNameAndGiver(QUEST_RANGER_MISSING, Aradion) then
 		call QuestGiver_RefreshAvailabilityForGiver(Aradion)
 	endif
 
 	// Reopen the dialog on the next tick; a long delay here caused the stale-info flow.
-	set t = CreateTimer()
-	call TimerStart(t, 0.05, false, function ReopenDialogAfterInfo)
+	call QuestGiver_QueueDialogReopen("qAradion_RebuildAndShowDialog", 0.05)
 endfunction
 
 private function BuildInfoSequence takes nothing returns integer
@@ -2167,9 +2083,7 @@ private function BuildInfoSequence takes nothing returns integer
 	local real facing
 	local real x
 	local real y
-	set seq = DialogSystem_CreateSequence()
-	call DialogSystem_SetSequenceDefaultSpeaker(seq, Aradion, "Aradion the Farseer")
-	call DialogSystem_SetSequenceCallbacks(seq, function OnInfoStart, function OnInfoEnd)
+	set seq = QuestGiver_CreateInfoSequenceBase(Aradion, "Aradion the Farseer", function OnInfoStart, function OnInfoEnd)
 
 	// Get hero for look-at actions
 	set hero = ResolveDialogHero()
@@ -2213,6 +2127,7 @@ private function BuildInfoSequence takes nothing returns integer
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "I have searched, shaman... searched for a cure, an answer, any salvation. But all I have found is despair.", "Aradion_0015", true)
 	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Yet perhaps the spirits you serve have sent you here, to answer the question I cannot solve alone.", "Aradion_0016", true)
 
+	set hero = null
 	return seq
 endfunction
 
@@ -4400,46 +4315,22 @@ endfunction
 private function OnSelected takes nothing returns nothing
 	local unit hero
 	local boolean gateOk
-	local boolean selectedOk
-	local boolean heroOk
-	local boolean rangeOk
-	local real remaining
-	local integer customValue
 	call SyncUnitReferences()
 
 	if IsElarindorTemporarilyHostile() then
 		call DebugMsg("Select gate blocked: Elarindor temporarily hostile")
 		return
 	endif
-	if DialogSystem_IsSequenceActive() then
-		call DebugMsg("Select gate blocked: dialog sequence active")
-		return
-	endif
 	if RiftsRitualActive then
 		call DebugMsg("Select gate blocked: rift ritual active")
 		return
 	endif
-	
-	// Check if unit is casting or in combat
-	set customValue = GetUnitUserData(Aradion)
-	if udg_UnitIsCasting[customValue] or udg_GCSM_UnitInCombat[customValue] then
-		call DebugMsg("Select gate blocked: unit is casting or in combat")
-		return
-	endif
-	
-	set hero = QuestGiver_GetAllowedHero(Aradion, DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
-	if REQUIRE_DIALOG_HERO and hero == null then
-		call DebugMsg("Select gate blocked: missing allowed hero in range")
-		return
-	endif
-	set gateOk = QuestGiver_PassSelectionGate(Aradion, hero, DIALOG_RANGE, AradionDialogCooldown)
+	set hero = QuestGiver_GetDialogSelectionHero(Aradion, DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
+	set gateOk = QuestGiver_PassDialogSelectionGate(Aradion, hero, DIALOG_RANGE, AradionDialogCooldown, REQUIRE_DIALOG_HERO, true, true, true, false, false)
 	call DebugMsg("OnSelected: gateOk=" + I2S(B2I(gateOk)))
 	if not gateOk then
-		set selectedOk = QuestGiver_GetSelectedUnit() == Aradion
-		set heroOk = hero != null
-		set rangeOk = heroOk
-		set remaining = QuestGiver_GetCooldownRemaining(AradionDialogCooldown)
-		call DebugMsg("Select gate blocked: selectedOk=" + I2S(B2I(selectedOk)) + ", heroOk=" + I2S(B2I(heroOk)) + ", rangeOk=" + I2S(B2I(rangeOk)) + ", cooldown=" + R2S(remaining))
+		call DebugMsg("Select gate blocked: " + QuestGiver_GetLastSelectionBlockReason())
+		set hero = null
 		return
 	endif
 	call DebugMsg("OnSelected: Passed gate check")
@@ -4447,7 +4338,8 @@ private function OnSelected takes nothing returns nothing
 	// Store hero for fade sequence
 	set SelectedHero = hero
 	call SyncRangerMissingReadyTurnIn()
-	call QuestGiver_StartDialogEntryTransition(Aradion, hero, CINEMATIC_MOVE_MODE, CINEMATIC_MOVE_OFFSET, CINEMATIC_MOVE_ANGLE, true, USE_DIALOG_CAMERA, CAMERA_DIST, CAMERA_Z_OFFSET, CAMERA_ANGLE, CAMERA_ROT_OFFSET, CAMERA_FAR_Z, CAMERA_FOV, CAMERA_BLOCK_RADIUS, CAMERA_BLOCK_CHECK, CINEMATIC, "qAradion_ContinueToDialogAfterSelection")
+	call QuestGiver_StartConfiguredDialogEntryTransition(Aradion, hero, true, USE_DIALOG_CAMERA, CINEMATIC, "qAradion_ContinueToDialogAfterSelection")
+	set hero = null
 endfunction
 
 //===========================================================================
@@ -4466,35 +4358,31 @@ private function CreateQuests takes nothing returns nothing
 	set infoText = "|cffffcc00Quest giver:|r " + giverName + "\n"
 	set info2Text = "|cffffcc00Recommended level:|r 18\n\n"
 
-	set q = QuestGiver_CreateQuest(QUEST_RANGER_MISSING, Aradion, "normal", 18, null)
-	call QuestGiver_ApplyQuestMetadata(q, "Ranger Missing", "ReplaceableTextures\\CommandButtons\\BTNHighElvenArcher.blp", "Find Valeria somewhere in " + GetAradionFieldZoneListText() + ".\n\n", infoText, info2Text, 15, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
-	call q.setRequiredReputation(Reputation_REP_ENEMY)
-	call q.setRewardParams(true, 0, true, 0, false, 0, true, 200, false)
+	set q = QuestGiver_CreateConfiguredQuest(QUEST_RANGER_MISSING, Aradion, "normal", 18, null, "Ranger Missing", "ReplaceableTextures\\CommandButtons\\BTNHighElvenArcher.blp", "Find Valeria somewhere in " + GetAradionFieldZoneListText() + ".\n\n", infoText, info2Text, 15, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
+	call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_ENEMY)
+	call QuestGiver_SetQuestRewards(q, true, 0, true, 0, false, 0, true, 200, false)
 	set availabilityCondition = CreateTrigger()
 	call TriggerAddCondition(availabilityCondition, Condition(function CanOfferRangerMissing))
-	call q.setCustomCondition(availabilityCondition)
+	call QuestGiver_SetQuestCustomCondition(q, availabilityCondition)
 	call QuestGiver_SetRequirements(q.id, "", "Find Valeria", "", "", "", "", "", "", "")
 
-	set q = QuestGiver_CreateQuest(QUEST_CRYSTALS_HOPE, Aradion, "normal", 18, null)
-	call QuestGiver_ApplyQuestMetadata(q, "Crystals of Hope", "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Gem_Crystal_01.blp", "Aradion wants to study the mana crystals that can be found anywhere in Vanguard Vale.\n\n", infoText, info2Text, 15, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
-	call q.setRewardParams(true, 0, true, 0, false, 0, true, 200, false)
-	call q.addRequiredCompletedQuest(QUEST_RANGER_MISSING, Aradion)
+	set q = QuestGiver_CreateConfiguredQuest(QUEST_CRYSTALS_HOPE, Aradion, "normal", 18, null, "Crystals of Hope", "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Gem_Crystal_01.blp", "Aradion wants to study the mana crystals that can be found anywhere in Vanguard Vale.\n\n", infoText, info2Text, 15, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
+	call QuestGiver_SetQuestRewards(q, true, 0, true, 0, false, 0, true, 200, false)
+	call QuestGiver_AddQuestPrerequisite(q, QUEST_RANGER_MISSING, Aradion)
 	// Register automatic item tracking for Mana Crystals
 	call QuestGiver_RegisterItemRequirement(q.id, Aradion, 1, ITEM_MANA_CRYSTAL, 6)
 
-	set q = QuestGiver_CreateQuest(QUEST_FADING_SPARKS, Aradion, "normal", 18, null)
-	call QuestGiver_ApplyQuestMetadata(q, "Fading Sparks", "ReplaceableTextures\\CommandButtons\\BTNHeartOfAszune.blp", "Aradion wants you to gather essences from the wraiths wandering around the Vanguard Vale. Use provided |cffffff00Tel'anor Rod|r when the wraith is at half health.\n\n", infoText, info2Text, 15, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
-	call q.setRewardParams(true, 0, true, 0, false, 0, true, 200, false)
-	call q.addRequiredCompletedQuest(QUEST_RANGER_MISSING, Aradion)
+	set q = QuestGiver_CreateConfiguredQuest(QUEST_FADING_SPARKS, Aradion, "normal", 18, null, "Fading Sparks", "ReplaceableTextures\\CommandButtons\\BTNHeartOfAszune.blp", "Aradion wants you to gather essences from the wraiths wandering around the Vanguard Vale. Use provided |cffffff00Tel'anor Rod|r when the wraith is at half health.\n\n", infoText, info2Text, 15, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
+	call QuestGiver_SetQuestRewards(q, true, 0, true, 0, false, 0, true, 200, false)
+	call QuestGiver_AddQuestPrerequisite(q, QUEST_RANGER_MISSING, Aradion)
 	// Register automatic item tracking for Wraith Essences
 	call QuestGiver_RegisterItemRequirement(q.id, Aradion, 1, ITEM_WRAITH_ESSENCE, 10)
 
-	set q = QuestGiver_CreateQuest(QUEST_RIFTS_CORRUPTION, Aradion, "normal", 18, null)
-	call QuestGiver_ApplyQuestMetadata(q, "Rifts of Corruption", "ReplaceableTextures\\CommandButtons\\BTNDizzy.blp", GetRiftsFieldObjectiveText() + " and escort Valeria and Aradion to them. Guard Aradion while he will close the rifts. Both Aradion and Valeria must stay alive.\n\n", infoText, info2Text, 15, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
-	call q.setRewardParams(true, 0, true, 0, false, 0, true, 200, false)
-	call q.addRequiredCompletedQuest(QUEST_RANGER_MISSING, Aradion)
-	call q.addRequiredCompletedQuest(QUEST_CRYSTALS_HOPE, Aradion)
-	call q.addRequiredCompletedQuest(QUEST_FADING_SPARKS, Aradion)
+	set q = QuestGiver_CreateConfiguredQuest(QUEST_RIFTS_CORRUPTION, Aradion, "normal", 18, null, "Rifts of Corruption", "ReplaceableTextures\\CommandButtons\\BTNDizzy.blp", GetRiftsFieldObjectiveText() + " and escort Valeria and Aradion to them. Guard Aradion while he will close the rifts. Both Aradion and Valeria must stay alive.\n\n", infoText, info2Text, 15, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
+	call QuestGiver_SetQuestRewards(q, true, 0, true, 0, false, 0, true, 200, false)
+	call QuestGiver_AddQuestPrerequisite(q, QUEST_RANGER_MISSING, Aradion)
+	call QuestGiver_AddQuestPrerequisite(q, QUEST_CRYSTALS_HOPE, Aradion)
+	call QuestGiver_AddQuestPrerequisite(q, QUEST_FADING_SPARKS, Aradion)
 	call QuestGiver_SetRequirements(q.id, "", GetRiftsFieldObjectiveText(), "Rifts closed 0 / 3", "Guard Aradion while he closes the rifts", "Both Aradion and Valeria must stay alive", "", "", "", "")
 
 	if ENABLE_TEST_QUESTS then
@@ -4502,32 +4390,32 @@ private function CreateQuests takes nothing returns nothing
 		set q = QuestMaster_TemplateKill(QUEST_TEST_KILL, Aradion, "normal", 1, 'ngno', 3)
 		call QuestGiver_RegisterUnitKillRequirement(q.id, Aradion, 1, 'ngno', 3)
 		call QuestGiver_ApplyQuestMetadata(q, "Test: Kill Quest", "ReplaceableTextures\\CommandButtons\\BTNFootman.blp", "Test quest for killing units.\n\n", infoText, "|cffffcc00Recommended level:|r 1\n\n", 1, false, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
-		call q.setRewardParams(true, 0, true, 50, false, 0, true, 100, false)
+		call QuestGiver_SetQuestRewards(q, true, 0, true, 50, false, 0, true, 100, false)
 		
 		// Test Quest 2: Talk To
 		set q = QuestMaster_TemplateTalkTo(QUEST_TEST_TALKTO, Aradion, "normal", 1, "Valeria")
 		call QuestGiver_ApplyQuestMetadata(q, "Test: Talk To Quest", "ReplaceableTextures\\CommandButtons\\BTNHighElvenArcher.blp", "Test quest for talking to NPC.\n\n", infoText, "|cffffcc00Recommended level:|r 1\n\n", 1, false, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
-		call q.setRewardParams(true, 0, true, 50, false, 0, true, 100, false)
+		call QuestGiver_SetQuestRewards(q, true, 0, true, 50, false, 0, true, 100, false)
 		
 		// Test Quest 3: Find NPC
 		set q = QuestMaster_TemplateFindNPC(QUEST_TEST_FINDNPC, Aradion, "normal", 1, "Valeria")
 		call QuestGiver_ApplyQuestMetadata(q, "Test: Find NPC Quest", "ReplaceableTextures\\CommandButtons\\BTNHeroTaurenChieftain.blp", "Test quest for finding an NPC.\n\n", infoText, "|cffffcc00Recommended level:|r 1\n\n", 1, false, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
-		call q.setRewardParams(true, 0, true, 50, false, 0, true, 100, false)
+		call QuestGiver_SetQuestRewards(q, true, 0, true, 50, false, 0, true, 100, false)
 		
 		// Test Quest 4: Go To Place
 		set q = QuestMaster_TemplateGoToPlace(QUEST_TEST_GOTO, Aradion, "normal", 1, "Verdant Plains")
 		call QuestGiver_ApplyQuestMetadata(q, "Test: Go To Place Quest", "ReplaceableTextures\\CommandButtons\\BTNWaypoint.blp", "Test quest for going to a location.\n\n", infoText, "|cffffcc00Recommended level:|r 1\n\n", 1, false, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
-		call q.setRewardParams(true, 0, true, 50, false, 0, true, 100, false)
+		call QuestGiver_SetQuestRewards(q, true, 0, true, 50, false, 0, true, 100, false)
 		
 		// Test Quest 5: Reputation
 		set q = QuestMaster_TemplateReputation(QUEST_TEST_REPUTATION, Aradion, "normal", 1, "Elarindor", "Friendly")
 		call QuestGiver_ApplyQuestMetadata(q, "Test: Reputation Quest", "ReplaceableTextures\\CommandButtons\\BTNTome.blp", "Test quest for reputation gain.\n\n", infoText, "|cffffcc00Recommended level:|r 1\n\n", 1, false, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
-		call q.setRewardParams(true, 0, true, 50, false, 0, true, 500, false)
+		call QuestGiver_SetQuestRewards(q, true, 0, true, 50, false, 0, true, 500, false)
 		
 		// Test Quest 6: Investigate
 		set q = QuestMaster_TemplateInvestigate(QUEST_TEST_INVESTIGATE, Aradion, "normal", 1, "the strange ruins near the Vale")
 		call QuestGiver_ApplyQuestMetadata(q, "Test: Investigate Quest", "ReplaceableTextures\\CommandButtons\\BTNAncientRelic.blp", "Test quest for investigating.\n\n", infoText, "|cffffcc00Recommended level:|r 1\n\n", 1, false, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
-		call q.setRewardParams(true, 0, true, 50, false, 0, true, 100, false)
+		call QuestGiver_SetQuestRewards(q, true, 0, true, 50, false, 0, true, 100, false)
 	endif
 
 	set availabilityCondition = null
@@ -4562,6 +4450,7 @@ private function InitDelayed takes nothing returns nothing
 	set AradionHomeOwner = GetOwningPlayer(Aradion)
 	call DebugMsg("Init Aradion giver id=" + I2S(GetHandleId(Aradion)))
 	call QuestGiver_Register(Aradion)
+	call QuestGiver_ConfigureDialogTransition(Aradion, CINEMATIC_MOVE_MODE, CINEMATIC_MOVE_OFFSET, CINEMATIC_MOVE_ANGLE, CAMERA_DIST, CAMERA_Z_OFFSET, CAMERA_ANGLE, CAMERA_ROT_OFFSET, CAMERA_FAR_Z, CAMERA_FOV, CAMERA_BLOCK_RADIUS, CAMERA_BLOCK_CHECK)
 	call QuestGiver_SetGreetOrder(Aradion, QUESTGIVER_GREET_NAZGREK_THEN_NPC)
 	call RegisterLines()
 	call RegisterRangerMissingValeriaGlobalDeathTrigger()
