@@ -726,6 +726,9 @@ endfunction`
       const handlerBlocks = buildHandlerBlocks(spec);
       const dialogLogic = buildDialogLogic(spec);
       const publicHooks = buildPublicHooks(publicHookSpecs);
+      const delayedDiscoveryExampleCondition = spec.quests.length > 0
+        ? `QuestGiver_IsEventQuestByNameAndGiver(${questConstName(spec.quests[0], 0)}, ${npcVar})`
+        : "false";
 
       return `${generatedHeader}library ${libraryName} initializer Init requires QuestGiver, QuestMaster, DialogSystem
 
@@ -771,7 +774,7 @@ private function ResolveDialogHero takes nothing returns unit
 endfunction
 
 private function FinishDialogSequence takes nothing returns nothing
-\tcall QuestGiver_StartDialogExitTransition(${npcVar}, SelectedHero, ${npcVar}DialogCooldown, DIALOG_COOLDOWN, true, 2.00, USE_DIALOG_CAMERA, CINEMATIC, CINEMATIC)
+\tcall QuestGiver_StartConfiguredDialogExitTransition(${npcVar}, SelectedHero, ${npcVar}DialogCooldown, DIALOG_COOLDOWN, USE_DIALOG_CAMERA, CINEMATIC)
 endfunction
 
 private function OnBackstoryStart takes nothing returns nothing
@@ -856,7 +859,7 @@ private function OnSelected takes nothing returns nothing
 \tendif
 \tset SelectedHero = hero
 \tif USE_DIALOG_CAMERA or CINEMATIC then
-\t\tcall QuestGiver_StartConfiguredDialogEntryTransition(${npcVar}, hero, CINEMATIC, USE_DIALOG_CAMERA, CINEMATIC, "${libraryName}_ContinueToDialogAfterSelection")
+\t\tcall QuestGiver_StartConfiguredDialogEntryTransition(${npcVar}, hero, true, USE_DIALOG_CAMERA, CINEMATIC, "${libraryName}_ContinueToDialogAfterSelection")
 \telse
 \t\tcall ContinueToDialogInternal()
 \tendif
@@ -865,6 +868,13 @@ endfunction
 
 private function RegisterLines takes nothing returns nothing
 \tcall DialogSystem_RegisterFarewellLineForUnit(${npcVar}, "Safe travels.", "", true)
+endfunction
+
+private function OnDelayedQuestDiscovered takes nothing returns nothing
+\t// QuestMaster fires this after the delayed quest-discovered message and icon update.
+\tif ${delayedDiscoveryExampleCondition} then
+\t\t// TODO QUEST-SPECIFIC: start post-discovery behavior for this quest.
+\tendif
 endfunction
 
 private function InitDelayed takes nothing returns nothing
@@ -878,6 +888,7 @@ private function InitDelayed takes nothing returns nothing
 \tcall RegisterLines()
 \tcall CreateQuests()
 \tcall QuestGiver_RegisterSelectionHandler(${npcVar}, function OnSelected)
+\tcall QuestGiver_AddDelayedDiscoveredAction(function OnDelayedQuestDiscovered)
 endfunction
 
 private function Init takes nothing returns nothing
