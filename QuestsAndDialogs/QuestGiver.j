@@ -880,9 +880,15 @@ public function QueueDialogReopen takes string rebuildFuncName, real delay retur
 endfunction
 
 private function OnGreetSequenceEnd takes nothing returns nothing
+	local unit npc = QuestGiver_PendingNPC
+	local dialog d = QuestGiver_PendingDialog
+	local player p = QuestGiver_PendingPlayer
 	call EndPendingGreetSequenceControl()
-	if QuestGiver_PendingDialog != null and QuestGiver_PendingPlayer != null then
-		call DialogSystem_ShowDialog(QuestGiver_PendingDialog, QuestGiver_PendingPlayer)
+	if d != null and p != null then
+		if npc != null then
+			call DialogSystem_SetContext(npc, p)
+		endif
+		call DialogSystem_ShowDialog(d, p)
 	endif
 	if QuestGiver_PendingSeq != 0 then
 		call DialogSystem_ClearSequence(QuestGiver_PendingSeq)
@@ -953,19 +959,21 @@ public function ShowDialog takes unit npc, player p, dialog d returns nothing
 			call DialogSystem_AddLine(seq, hero, heroName, DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
 		endif
 	endif
-	 if seq != 0 then
+	if seq != 0 then
 		set QuestGiver_PendingDialog = d
 		set QuestGiver_PendingPlayer = p
 		set QuestGiver_PendingNPC = npc
 		set QuestGiver_PendingSeq = seq
 		call DialogSystem_SetSequenceCallbacks(seq, null, function OnGreetSequenceEnd)
 		call DialogSystem_PlaySequence(seq, p, npc)
+		set hero = null
 		return
 	endif
 	call DialogSystem_ShowDialog(d, p)
+	set hero = null
 endfunction
 
-	private function OnFirstGreetSequenceEnd takes nothing returns nothing
+private function OnFirstGreetSequenceEnd takes nothing returns nothing
 	local unit npc = QuestGiver_PendingNPC
 	local dialog d = QuestGiver_PendingDialog
 	local player p = QuestGiver_PendingPlayer
@@ -986,6 +994,9 @@ endfunction
 	set QuestGiver_PendingDialog = null
 	set QuestGiver_PendingPlayer = null
 	set QuestGiver_PendingNPC = null
+	set npc = null
+	set d = null
+	set p = null
 endfunction
 
 
@@ -1253,6 +1264,18 @@ endfunction
 public function AbandonQuest takes integer questId returns nothing
 	call DebugMsg("Abandon quest id=" + I2S(questId))
 	call QuestMaster_Abandon(questId)
+endfunction
+
+public function AddDelayedDiscoveredAction takes code actionFunc returns nothing
+	call QuestMaster_AddDelayedDiscoveredAction(actionFunc)
+endfunction
+
+public function GetEventQuestId takes nothing returns integer
+	return QuestMaster_EventQuestId
+endfunction
+
+public function GetEventQuestState takes nothing returns integer
+	return QuestMaster_EventState
 endfunction
 
 public function AcceptQuestByNameAndGiver takes string questName, unit questGiver returns nothing
