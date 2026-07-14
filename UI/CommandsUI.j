@@ -1,4 +1,4 @@
-library CommandsUI initializer AutoInit requires Table, MasterUI
+library CommandsUI initializer AutoInit requires Table, MasterUI, Interface
 /**
     CommandsUI
 
@@ -172,19 +172,25 @@ endfunction
 
 public function Hide takes nothing returns nothing
     if CUI_Parent != null then
+        if BlzFrameIsVisible(CUI_Parent) then
+            call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, Player(0))
+        endif
         call BlzFrameSetVisible(CUI_Parent, false)
     endif
 endfunction
 
 public function Show takes nothing returns nothing
     set CUI_SliderValueCache = -1
+    if CUI_Parent != null and not BlzFrameIsVisible(CUI_Parent) then
+        call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
+    endif
     call BlzFrameSetVisible(CUI_Parent, true)
     call CUI_UpdateUI()
 endfunction
 
 private function CUI_CloseAction takes nothing returns nothing
     if GetLocalPlayer() == GetTriggerPlayer() then
-        call BlzFrameSetVisible(CUI_Parent, false)
+        call Hide()
     endif
 endfunction
 

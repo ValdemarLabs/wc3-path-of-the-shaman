@@ -1,4 +1,4 @@
-library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, AbilitiesLiteUI, ProfessionsUI, StatsLiteUI, QuestGiver, Companions, Pet, UnitExperience, AI
+library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, AbilitiesLiteUI, ProfessionsUI, StatsLiteUI, QuestGiver, Companions, Pet, UnitExperience, AI, Interface
 /**
     StatsUI
     
@@ -1530,6 +1530,9 @@ public function Hide takes nothing returns nothing
     set SUI_DetailHeaderUnitHandle = 0
     set SUI_DetailHeaderLevel = -1
     if SUI_Parent != null then
+        if BlzFrameIsVisible(SUI_Parent) then
+            call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, Player(0))
+        endif
         call BlzFrameSetVisible(SUI_Parent, false)
     endif
 endfunction
@@ -1858,6 +1861,9 @@ private function SUI_ShowInternal takes nothing returns nothing
     set SUI_DetailHeaderLevel = -1
     call SUI_Update(p, true)
     call SUI_SetRefreshActive(true)
+    if SUI_Parent != null and not BlzFrameIsVisible(SUI_Parent) then
+        call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
+    endif
     call BlzFrameSetVisible(SUI_Parent, true)
     set p = null
 endfunction

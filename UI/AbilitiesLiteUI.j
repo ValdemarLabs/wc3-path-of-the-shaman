@@ -1,4 +1,4 @@
-library AbilitiesLiteUI initializer AutoInit requires Table, MasterUI, PetDefinitions
+library AbilitiesLiteUI initializer AutoInit requires Table, MasterUI, PetDefinitions, Interface
 /**
     AbilitiesLiteUI
 
@@ -1557,6 +1557,9 @@ endfunction
 
 public function Hide takes nothing returns nothing
     if AUI_Parent != null then
+        if BlzFrameIsVisible(AUI_Parent) then
+            call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, Player(0))
+        endif
         call BlzFrameSetVisible(AUI_Parent, false)
     endif
 endfunction
@@ -1809,6 +1812,9 @@ public function ShowForUnit takes unit u returns nothing
     call AUI_EnsureTemplatesForUnit(u)
     call AUI_ResetViewState()
     call AUI_SyncListScrollFrame(AUI_GetVisibleDefinitionCountForUnitType(AUI_GetActiveDefinitionKey()) - AUI_VISIBLE_ROWS)
+    if AUI_Parent != null and not BlzFrameIsVisible(AUI_Parent) then
+        call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
+    endif
     call BlzFrameSetVisible(AUI_Parent, true)
     call AUI_Update()
 endfunction
@@ -1818,6 +1824,9 @@ public function Show takes nothing returns nothing
     call AUI_EnsureTemplatesForUnit(AUI_SelectedUnit)
     call AUI_ResetViewState()
     call AUI_SyncListScrollFrame(AUI_GetVisibleDefinitionCountForUnitType(AUI_GetActiveDefinitionKey()) - AUI_VISIBLE_ROWS)
+    if AUI_Parent != null and not BlzFrameIsVisible(AUI_Parent) then
+        call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
+    endif
     call BlzFrameSetVisible(AUI_Parent, true)
     call AUI_Update()
 endfunction

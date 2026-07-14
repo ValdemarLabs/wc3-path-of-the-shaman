@@ -1,4 +1,4 @@
-library ProfessionsUI initializer AutoInit requires GatherNodeSkills, GatherNodeItems, GatherNodeUnits, Table, MasterUI
+library ProfessionsUI initializer AutoInit requires GatherNodeSkills, GatherNodeItems, GatherNodeUnits, Table, MasterUI, Interface
 /**
     ProfessionUI
     
@@ -1076,6 +1076,7 @@ endfunction
 private function PUI_OpenAction takes nothing returns nothing
     local player p = GetTriggerPlayer()
     local integer pid = GetPlayerId(p)
+    local boolean showPanel
 
     set PUI_ReturnToStatsUI = false
     set PUI_ExplicitViewerUnit = null
@@ -1086,7 +1087,13 @@ private function PUI_OpenAction takes nothing returns nothing
 
     call PUI_RefreshOpenButtonPosition()
     if GetLocalPlayer() == p then
-        call BlzFrameSetVisible(PUI_Parent, not BlzFrameIsVisible(PUI_Parent))
+        set showPanel = not BlzFrameIsVisible(PUI_Parent)
+        if showPanel then
+            call Interface_NotifyUIOpened()
+        else
+            call Interface_NotifyUIClosed()
+        endif
+        call BlzFrameSetVisible(PUI_Parent, showPanel)
     endif
     if PUI_Parent != null and BlzFrameIsVisible(PUI_Parent) then
         call PUI_SetRefreshActive(true)
@@ -1101,6 +1108,9 @@ endfunction
 public function Hide takes nothing returns nothing
     call PUI_SetRefreshActive(false)
     if PUI_Parent != null then
+        if BlzFrameIsVisible(PUI_Parent) then
+            call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, Player(0))
+        endif
         call BlzFrameSetVisible(PUI_Parent, false)
     endif
 endfunction
@@ -1216,6 +1226,9 @@ public function Show takes nothing returns nothing
     call PUI_SetRefreshActive(true)
     call BlzFrameSetVisible(PUI_ListScroll, false)
     call BlzFrameSetVisible(PUI_DetailScroll, false)
+    if PUI_Parent != null and not BlzFrameIsVisible(PUI_Parent) then
+        call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
+    endif
     call BlzFrameSetVisible(PUI_Parent, true)
     call PUI_RequestUpdate(GetLocalPlayer())
 endfunction
@@ -1227,6 +1240,9 @@ public function ShowForUnit takes unit whichUnit returns nothing
     call PUI_SetRefreshActive(true)
     call BlzFrameSetVisible(PUI_ListScroll, false)
     call BlzFrameSetVisible(PUI_DetailScroll, false)
+    if PUI_Parent != null and not BlzFrameIsVisible(PUI_Parent) then
+        call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
+    endif
     call BlzFrameSetVisible(PUI_Parent, true)
     call PUI_RequestUpdate(GetLocalPlayer())
 endfunction

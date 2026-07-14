@@ -1,4 +1,4 @@
-library CameraUI initializer AutoInit requires Table, MasterUI, CameraControl
+library CameraUI initializer AutoInit requires Table, MasterUI, CameraControl, Interface
 /**
     MasterUI
     
@@ -156,6 +156,9 @@ endfunction
 private function CUI_HideInternal takes nothing returns nothing
     local integer i = 1
     if CUI_Parent != null then
+        if BlzFrameIsVisible(CUI_Parent) then
+            call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, Player(0))
+        endif
         call BlzFrameSetVisible(CUI_Parent, false)
     endif
     loop
@@ -408,6 +411,9 @@ public function Show takes nothing returns nothing
         call Init()
     endif
     if CUI_Parent != null then
+        if not BlzFrameIsVisible(CUI_Parent) then
+            call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
+        endif
         call BlzFrameSetVisible(CUI_Parent, true)
     endif
     loop

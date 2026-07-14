@@ -254,7 +254,6 @@ private function MUI_MenuAction takes nothing returns nothing
 
     if MUI_ButtonAction.has(handleId) then
         call MUI_RunAction(MUI_ButtonAction.integer[handleId])
-        call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, GetTriggerPlayer())
         call MUI_HideMaster()
     endif
 endfunction
@@ -371,12 +370,18 @@ public function Show takes nothing returns nothing
         call Init()
     endif
     if MUI_Parent != null then
+        if not BlzFrameIsVisible(MUI_Parent) then
+            call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
+        endif
         call BlzFrameSetVisible(MUI_Parent, true)
     endif
 endfunction
 
 public function Hide takes nothing returns nothing
     if MUI_Parent != null then
+        if BlzFrameIsVisible(MUI_Parent) then
+            call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, Player(0))
+        endif
         call BlzFrameSetVisible(MUI_Parent, false)
     endif
 endfunction
@@ -402,7 +407,11 @@ public function Toggle takes nothing returns nothing
         call Init()
     endif
     if MUI_Parent != null then
-        call BlzFrameSetVisible(MUI_Parent, not BlzFrameIsVisible(MUI_Parent))
+        if BlzFrameIsVisible(MUI_Parent) then
+            call Hide()
+        else
+            call Show()
+        endif
     endif
 endfunction
 

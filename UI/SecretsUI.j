@@ -217,19 +217,25 @@ endfunction
 
 public function Hide takes nothing returns nothing
     if SUI_Parent != null then
+        if BlzFrameIsVisible(SUI_Parent) then
+            call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, Player(0))
+        endif
         call BlzFrameSetVisible(SUI_Parent, false)
     endif
 endfunction
 
 public function Show takes nothing returns nothing
     set SUI_SliderValueCache = -1
+    if SUI_Parent != null and not BlzFrameIsVisible(SUI_Parent) then
+        call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
+    endif
     call BlzFrameSetVisible(SUI_Parent, true)
     call SUI_UpdateUI()
 endfunction
 
 private function SUI_CloseAction takes nothing returns nothing
     if GetLocalPlayer() == GetTriggerPlayer() then
-        call BlzFrameSetVisible(SUI_Parent, false)
+        call Hide()
     endif
 endfunction
 

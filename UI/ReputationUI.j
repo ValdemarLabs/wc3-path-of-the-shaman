@@ -1,4 +1,4 @@
-library ReputationUI initializer AutoInit requires Table, Reputation, MasterUI
+library ReputationUI initializer AutoInit requires Table, Reputation, MasterUI, Interface
 /**
     ReputationUI
     
@@ -444,6 +444,9 @@ endfunction
 public function Hide takes nothing returns nothing
     call RUI_SetRefreshActive(false)
     if RUI_Parent != null then
+        if BlzFrameIsVisible(RUI_Parent) then
+            call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, Player(0))
+        endif
         call BlzFrameSetVisible(RUI_Parent, false)
     endif
 endfunction
@@ -661,6 +664,9 @@ endfunction
 public function Show takes nothing returns nothing
     local player p = GetLocalPlayer()
     call BlzFrameSetVisible(RUI_ListScroll, false)
+    if RUI_Parent != null and not BlzFrameIsVisible(RUI_Parent) then
+        call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
+    endif
     call BlzFrameSetVisible(RUI_Parent, true)
     set RUI_ListScrollValue[GetPlayerId(p)] = 0
     set RUI_ListScrollValueCache = -1

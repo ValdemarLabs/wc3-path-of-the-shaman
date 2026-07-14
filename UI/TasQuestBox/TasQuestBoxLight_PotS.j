@@ -190,6 +190,9 @@ public function ForceUpdate takes nothing returns nothing
 endfunction
 
 public function Hide takes nothing returns nothing
+    if Parent != null and BlzFrameIsVisible(Parent) then
+        call Interface_NotifyQuestLogClosed()
+    endif
     call BlzFrameSetVisible(Parent, false)
     call BlzFrameSetVisible(Open, false)
 endfunction
@@ -200,12 +203,21 @@ endfunction
 
 public function Show takes nothing returns nothing
     set SliderValueCache = -1
+    if Parent != null and not BlzFrameIsVisible(Parent) then
+        call Interface_NotifyQuestActivated()
+    endif
     call BlzFrameSetVisible(Parent, true)
     call UpdateUI()
 endfunction
 
 public function Toggle takes nothing returns nothing
-    call BlzFrameSetVisible(Parent, not BlzFrameIsVisible(Parent))
+    if BlzFrameIsVisible(Parent) then
+        call Interface_NotifyQuestLogClosed()
+        call BlzFrameSetVisible(Parent, false)
+    else
+        call Interface_NotifyQuestActivated()
+        call BlzFrameSetVisible(Parent, true)
+    endif
     call UpdateUI()
 endfunction
 
@@ -222,7 +234,7 @@ endfunction
 
 private function ESCAction takes nothing returns nothing
     if GetLocalPlayer() == GetTriggerPlayer() then
-        call BlzFrameSetVisible(Parent, false)
+        call Hide()
     endif
 endfunction
 

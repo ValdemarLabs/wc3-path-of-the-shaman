@@ -31,7 +31,7 @@
     call StatsLiteUI_Refresh()
 
 **/
-library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI // CHANGE: use AI registry instead of legacy udg_NPC_Horde_AI_xxx globals
+library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, Interface // CHANGE: use AI registry instead of legacy udg_NPC_Horde_AI_xxx globals
     globals
         // Monitor sizing and refresh cadence.
         private constant real SLUI_REFRESH_INTERVAL = 0.25
@@ -1114,15 +1114,22 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         endif
     endfunction
 
-    public function Hide takes nothing returns nothing
+    private function SLUI_HideInternal takes boolean playSound returns nothing
         call SLUI_SetRefreshActive(false)
         if SLUI_Parent != null then
+            if playSound and BlzFrameIsVisible(SLUI_Parent) then
+                call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, Player(0))
+            endif
             call BlzFrameSetVisible(SLUI_Parent, false)
         endif
     endfunction
 
+    public function Hide takes nothing returns nothing
+        call SLUI_HideInternal(true)
+    endfunction
+
     public function HideForCinematic takes nothing returns nothing
-        call Hide()
+        call SLUI_HideInternal(false)
     endfunction
 
     public function Maximize takes nothing returns nothing
@@ -1145,18 +1152,25 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         endif
     endfunction
 
-    public function ShowLastState takes nothing returns nothing
+    private function SLUI_ShowLastStateInternal takes boolean playSound returns nothing
         set SLUI_ConfigVisible = false
         call SLUI_SetRefreshActive(true)
         call SLUI_ApplyLayout(GetLocalPlayer())
         call SLUI_Update(GetLocalPlayer())
         if SLUI_Parent != null then
+            if playSound and not BlzFrameIsVisible(SLUI_Parent) then
+                call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
+            endif
             call BlzFrameSetVisible(SLUI_Parent, true)
         endif
     endfunction
 
+    public function ShowLastState takes nothing returns nothing
+        call SLUI_ShowLastStateInternal(true)
+    endfunction
+
     public function ShowAfterCinematic takes nothing returns nothing
-        call ShowLastState()
+        call SLUI_ShowLastStateInternal(false)
     endfunction
 
     public function Show takes nothing returns nothing
@@ -1174,6 +1188,9 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI //
         call SLUI_ApplyLayout(GetLocalPlayer())
         call SLUI_Update(GetLocalPlayer())
         if SLUI_Parent != null then
+            if not BlzFrameIsVisible(SLUI_Parent) then
+                call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
+            endif
             call BlzFrameSetVisible(SLUI_Parent, true)
         endif
     endfunction

@@ -1,4 +1,4 @@
-library CheatsUI initializer AutoInit requires Table, MasterUI
+library CheatsUI initializer AutoInit requires Table, MasterUI, Interface
 /**
     CheatsUI
 
@@ -213,6 +213,9 @@ endfunction
 
 public function Hide takes nothing returns nothing
     if XUI_Parent != null then
+        if BlzFrameIsVisible(XUI_Parent) then
+            call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, Player(0))
+        endif
         call BlzFrameSetVisible(XUI_Parent, false)
     endif
 endfunction
@@ -220,13 +223,16 @@ endfunction
 public function Show takes nothing returns nothing
     set XUI_SliderValueCache = -1
     call XUI_SyncSliderVisual(GetLocalPlayer())
+    if XUI_Parent != null and not BlzFrameIsVisible(XUI_Parent) then
+        call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
+    endif
     call BlzFrameSetVisible(XUI_Parent, true)
     call XUI_UpdateUI()
 endfunction
 
 private function XUI_CloseAction takes nothing returns nothing
     if GetLocalPlayer() == GetTriggerPlayer() then
-        call BlzFrameSetVisible(XUI_Parent, false)
+        call Hide()
     endif
 endfunction
 
