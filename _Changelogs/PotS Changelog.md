@@ -27,10 +27,15 @@
   - Hardened `Rifts of Corruption` accept setup: field companions now sync unit refs before resolving the leader, and Valeria is unpaused / made vulnerable before being placed behind the hero and ordered toward `gg_rct_ValeriaNewPos`.
   - Simplified Mana Rift creation so slots 1, 2, and 3 all use the same direct creation path from their own `gg_rct_ManaRift1/2/3` rect centers. qAradion stores each created unit in `RiftsUnits[]`, owns them by Neutral Passive, and discards them from CreepRespawn.
   - Made initial Mana Rift setup non-destructive: `CreateInitialRiftUnits` no longer removes existing stored rift units before ensuring the three slots exist.
+  - Refactored dialog selection, greeting, info-sequence reopen, transition startup, and quest setup calls to use shared `QuestGiver` APIs instead of local qAradion boilerplate.
 
 - `QuestGiver.j`
   - Replaced the dialog hero validity helper's Player(0)-ownership requirement with a live-unit check. `GetAvailableHero`, `GetAllowedHero`, and `ResolveDialogHero` now treat known Nazgrek/Zulkis unit refs as valid even while cinematic ownership is temporarily changed.
   - Confirmed quest-item grant logic itself already uses the generic `UnitAddItem` path and does not require a DInventory-specific grant. The Tel'anor Rod failure was caused by hero resolution returning null before the grant call.
+  - Added reusable quest-giver session helpers for selection gating with optional casting/combat checks, per-giver/default dialog transition config, greet/info sequence scaffolding, delayed dialog reopen, and quest metadata/reward/prerequisite setup wrappers.
+
+- `qxxx-generator.html`
+  - Updated generated qXXX scaffolds to use the new `QuestGiver` selection gate, configured transition starter, info-sequence reopen flow, and quest creation/reward wrappers.
 
 - `QuestMaster.j`
   - Updated generic highest-hero-level availability checks to include `udg_Nazgrek` and `udg_Zulkis` directly after the Player(0) group scan, so quest availability level gates do not silently fail while cinematic ownership is temporarily changed.
@@ -48,11 +53,13 @@
 
 - `AbilitiesLiteUI.j`, ``AchievementsUI.j`, `CameraUI.j`, `CheatsUI.j`, `CommandsUI.j`, `HintsUI.j`, `MasterUI.j`, `ProfessionsUI.j`, `ReputationUI.j`, `SecretsUI.j`, `SettingsUI.j`, `StatsLiteUI.j`, and `StatsUI.j` and `TasQuestBoxLight_PotS.j`
   - Wired active UIs directly to Interface.j
-  - SettingsUI:
-    - Displays UI Sounds: On/Off
+
+- `SettingsUIj`
+  - Displays UI Sounds: On/Off
     - Toggles Interface_SetSoundsEnabled(not Interface_AreSoundsEnabled())
     - Uses the existing master sound gate in Interface.j, so all sounds routed through Interface stop playing when disabled
-
+  - Removed the standalone AI Units text frame.
+  - Changed the slider label from AI cap to AI Units Cap, including the refreshed value text: AI Units Cap: 4.
 
 
 ## [14.7.2026] Part I
