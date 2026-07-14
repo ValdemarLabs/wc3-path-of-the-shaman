@@ -2192,6 +2192,55 @@ private function CreateRiftUnitAtSlot takes integer index returns unit
 	return result
 endfunction
 
+private function TestSpawnManaRiftSlot takes integer index returns nothing
+	local rect r = null
+	local unit existing = null
+	local unit spawned = null
+	local real x = 0.00
+	local real y = 0.00
+	if index <= 0 or index > RIFTS_MAX then
+		call BJDebugMsg("[qAradion] TEST ManaRift" + I2S(index) + ": invalid slot.")
+		return
+	endif
+	set existing = RiftsUnits[index]
+	if existing != null and QuestGiver_IsUnitAlive(existing) and GetUnitTypeId(existing) == UNIT_MANA_RIFT then
+		set RiftsUnitTypeIds[index] = UNIT_MANA_RIFT
+		set RiftsClosed[index] = false
+		call ShowUnit(existing, true)
+		call CreepRespawn_DiscardUnit(existing)
+		call BJDebugMsg("[qAradion] TEST ManaRift" + I2S(index) + ": already alive, handle=" + I2S(GetHandleId(existing)) + ", owner=" + I2S(GetPlayerId(GetOwningPlayer(existing))) + ", pos=(" + R2S(GetUnitX(existing)) + ", " + R2S(GetUnitY(existing)) + ").")
+		set existing = null
+		return
+	endif
+	if existing != null then
+		call BJDebugMsg("[qAradion] TEST ManaRift" + I2S(index) + ": stored unit is not a live Mana Rift, oldType=" + I2S(GetUnitTypeId(existing)) + ". Trying direct CreateUnit.")
+	endif
+	set r = GetRiftRect(index)
+	if r == null then
+		call BJDebugMsg("[qAradion] TEST ManaRift" + I2S(index) + ": gg_rct_ManaRift" + I2S(index) + " is null.")
+		set existing = null
+		return
+	endif
+	set x = GetRectCenterX(r)
+	set y = GetRectCenterY(r)
+	call BJDebugMsg("[qAradion] TEST ManaRift" + I2S(index) + ": CreateUnit Neutral Passive 'n023' at gg_rct_ManaRift" + I2S(index) + " center (" + R2S(x) + ", " + R2S(y) + ").")
+	set spawned = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_MANA_RIFT, x, y, bj_UNIT_FACING)
+	if spawned == null then
+		call BJDebugMsg("[qAradion] TEST ManaRift" + I2S(index) + ": CreateUnit returned null.")
+	else
+		set RiftsUnits[index] = spawned
+		set RiftsUnitTypeIds[index] = UNIT_MANA_RIFT
+		set RiftsClosed[index] = false
+		call ShowUnit(spawned, true)
+		call SetUnitCreepGuard(spawned, false)
+		call CreepRespawn_DiscardUnit(spawned)
+		call BJDebugMsg("[qAradion] TEST ManaRift" + I2S(index) + ": spawned, handle=" + I2S(GetHandleId(spawned)) + ", owner=" + I2S(GetPlayerId(GetOwningPlayer(spawned))) + ", type=" + I2S(GetUnitTypeId(spawned)) + ", pos=(" + R2S(GetUnitX(spawned)) + ", " + R2S(GetUnitY(spawned)) + ").")
+	endif
+	set r = null
+	set existing = null
+	set spawned = null
+endfunction
+
 private function ResetRiftsClosedState takes nothing returns nothing
 	local integer i = 1
 	loop
@@ -4518,6 +4567,18 @@ endfunction
 
 public function RegisterRiftsProximity takes nothing returns nothing
 	call RegisterRiftsProximityTrigger()
+endfunction
+
+public function TestSpawnManaRifts takes nothing returns nothing
+	local integer i = 1
+	call BJDebugMsg("[qAradion] TEST ManaRifts: direct spawn check begin.")
+	loop
+		exitwhen i > RIFTS_MAX
+		call TestSpawnManaRiftSlot(i)
+		set i = i + 1
+	endloop
+	call RegisterRiftsProximityTrigger()
+	call BJDebugMsg("[qAradion] TEST ManaRifts: direct spawn check end; proximity trigger refreshed.")
 endfunction
 
 public function RefreshRespawnedUnitHooks takes nothing returns nothing
