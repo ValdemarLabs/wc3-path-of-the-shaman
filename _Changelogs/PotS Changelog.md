@@ -86,6 +86,7 @@
   - Moved market/social chat chances into globals.
   - Added StormhavenCity_DebugForceChat() for testing citizen chat at 100% chance.
   - Best chat test path now: bind/call StormhavenCity_DebugForceChat() from a temporary test trigger or debug command while near citizens. It skips routine timing/random chance, but still uses the real chat rules: player nearby, valid Stormhaven citizen, nearby partner within SHC_CHAT_PARTNER_RANGE, and no active chat lock.
+  - debug: in chat "/debug StormhavenCity" to testing citizen chat at 100% chance.
 
 - `AIRoutines.j`
   - Added AIRoutines_SetManagedUnitGroupRemovalPlayerGuardRange(spawnGroupId, range).
