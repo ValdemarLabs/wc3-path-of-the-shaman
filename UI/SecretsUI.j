@@ -1,4 +1,4 @@
-library SecretsUI initializer AutoInit requires Table, MasterUI
+library SecretsUI initializer AutoInit requires Table, MasterUI, Interface
 /**
     SecretsUI
 
@@ -39,7 +39,6 @@ globals
     private string SUI_TocPath = "war3mapImported/TasQuestBox.toc"
     private string SUI_Title = "Secrets"
     private string SUI_ReturnButtonText = "Return"
-    private string SUI_UnlockSoundPath = "Sound\\Interface\\SecretFound.wav"
     private string SUI_UndiscoveredText = "|cff9f9f9fUndiscovered|r"
     private string SUI_LockedDetailText = "|cff9f9f9fThis secret has not been found yet.|r"
     private string SUI_LockedTag = "|cff9f9f9fUnknown|r"
@@ -83,13 +82,7 @@ private function SUI_GetDisplayPlayer takes nothing returns player
 endfunction
 
 private function SUI_PlayUnlockSound takes nothing returns nothing
-    local sound s
-    if GetLocalPlayer() == SUI_GetDisplayPlayer() then
-        set s = CreateSound(SUI_UnlockSoundPath, false, false, false, 10, 10, "")
-        call StartSound(s)
-        call KillSoundWhenDone(s)
-        set s = null
-    endif
+    call Interface_PlayEventSoundForPlayer(Interface_EVENT_LOOT_COIN, SUI_GetDisplayPlayer())
 endfunction
 
 private function SUI_GetSecretIcon takes integer secretId returns string

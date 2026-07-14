@@ -1,5 +1,5 @@
 
-library TasQuestBox initializer AutoInit requires MasterUI
+library TasQuestBox initializer AutoInit requires MasterUI, Interface
 /**
  TasQuestBox V1.3 by Tasyen
 A UI to display Text to players, can use quests and search in the content. suited more for slower pace.
@@ -22,8 +22,6 @@ globals
     public boolean AutoRun = true //(true) will create Itself at 0s, (false) you need to TasQuestBox_Init()
     public boolean ReplaceQuestButton = false // hide default questbutton and place a custom one to open this
     public boolean ReplaceAlliesButton = true // hide default Allies button and place a custom one to open this
-    public string SoundFile = "Sound/Interface/QuestActivateWhat1.wav" // is played when the open button is clicked make it nil to have no sound
-    public sound Sound = null 
     public string Title = "Zones"
     public string ButtonTitle = "|cffffffffZones|r"
     public integer ButtonCount = 8 //amout of buttons in one Row
@@ -287,10 +285,17 @@ endfunction
 
 
 private function OpenAction takes nothing returns nothing
+    local boolean showPanel
+
     if GetLocalPlayer() == GetTriggerPlayer() then
         set SliderValueCache = -1
-        call StartSound(Sound)
-        call BlzFrameSetVisible(Parent, not BlzFrameIsVisible(Parent))   
+        set showPanel = not BlzFrameIsVisible(Parent)
+        if showPanel then
+            call Interface_NotifyQuestActivated()
+        else
+            call Interface_NotifyQuestLogClosed()
+        endif
+        call BlzFrameSetVisible(Parent, showPanel)
         call UpdateUI()     
     endif
 endfunction
@@ -380,7 +385,6 @@ endfunction
     public function Init takes nothing returns nothing
         local trigger trig
         local integer i
-        set Sound = CreateSound(SoundFile, false, false, false, 10000, 10000, "")
         
         set trig = CreateTrigger()
         call TriggerAddAction(trig, function ESCAction)

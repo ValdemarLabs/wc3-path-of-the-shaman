@@ -1,4 +1,4 @@
-library AchievementsUI initializer AutoInit requires Table, MasterUI
+library AchievementsUI initializer AutoInit requires Table, MasterUI, Interface
 /**
     AchievementsUI
 
@@ -41,7 +41,6 @@ globals
     private string AUI_TocPath = "war3mapImported/TasQuestBox.toc"
     private string AUI_Title = "Achievements"
     private string AUI_ReturnButtonText = "Return"
-    private string AUI_UnlockSoundPath = "Sound\\Inferface\\GoodJob.wav"
     private string AUI_LockedDetailText = "|cff9f9f9fThis achievement has not been unlocked yet.|r"
     private string AUI_LockedTag = "|cff9f9f9fLocked|r"
     private string AUI_UnlockedTag = "|cff80ff80Unlocked|r"
@@ -84,13 +83,7 @@ private function AUI_GetDisplayPlayer takes nothing returns player
 endfunction
 
 private function AUI_PlayUnlockSound takes nothing returns nothing
-    local sound s
-    if GetLocalPlayer() == AUI_GetDisplayPlayer() then
-        set s = CreateSound(AUI_UnlockSoundPath, false, false, false, 10, 10, "")
-        call StartSound(s)
-        call KillSoundWhenDone(s)
-        set s = null
-    endif
+    call Interface_PlayEventSoundForPlayer(Interface_EVENT_QUEST_COMPLETE, AUI_GetDisplayPlayer())
 endfunction
 
 private function AUI_GetAchievementIcon takes integer achievementId returns string

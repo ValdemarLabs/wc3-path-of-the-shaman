@@ -1,4 +1,4 @@
-library HintsUI initializer AutoInit requires Table, MasterUI
+library HintsUI initializer AutoInit requires Table, MasterUI, Interface
 /**
     HintsUI
 
@@ -64,8 +64,6 @@ globals
     private string HUI_NoHintsText = "No hints unlocked yet."
     private string HUI_NoHintsTitle = "Hints - No entries"
     private string HUI_ReturnButtonText = "Return"
-    private string HUI_PopupSoundPath = "Sound\\Interface\\Hint.wav"
-
     private integer array HUI_ViewOffset
     private integer array HUI_SelectedHintId
 
@@ -103,13 +101,11 @@ private function HUI_GetDisplayPlayer takes nothing returns player
     return Player(0)
 endfunction
 
-private function HUI_PlayHintSound takes nothing returns nothing
-    local sound s
-    if GetLocalPlayer() == HUI_GetDisplayPlayer() then
-        set s = CreateSound(HUI_PopupSoundPath, false, false, false, 10, 10, "")
-        call StartSound(s)
-        call KillSoundWhenDone(s)
-        set s = null
+private function HUI_PlayHintSound takes integer hintId returns nothing
+    if HUI_IsHintIdValid(hintId) and HUI_IsWarning[hintId] then
+        call Interface_PlayEventSoundForPlayer(Interface_EVENT_HARD_WARNING, HUI_GetDisplayPlayer())
+    else
+        call Interface_PlayEventSoundForPlayer(Interface_EVENT_QUEST_WRITE, HUI_GetDisplayPlayer())
     endif
 endfunction
 
@@ -271,7 +267,7 @@ private function HUI_DisplayMessage takes string messageText returns nothing
 endfunction
 
 private function HUI_DisplayHintMessages takes integer hintId, unit whichUnit returns nothing
-    call HUI_PlayHintSound()
+    call HUI_PlayHintSound(hintId)
     call HUI_DisplayMessage(HUI_GetFormattedMessage(hintId, whichUnit))
 endfunction
 
