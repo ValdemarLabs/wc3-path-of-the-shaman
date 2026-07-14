@@ -6,8 +6,8 @@
 
     Description:
     In-game settings panel for icon query timing, minimap marker categories,
-    pings/display mode, secondary marker scan frequency, map difficulty, and
-    the active AI unit cap.
+    pings/display mode, secondary marker scan frequency, UI sounds, map
+    difficulty, and the active AI unit cap.
 
     Credits:
     Tasyen (TasQuestBox as inspiration)
@@ -21,7 +21,7 @@
     call SettingsUI_GetMapDifficulty()
 
 **/
-library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Difficulty, AI
+library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Difficulty, AI, Interface
     globals
         // UI-limited settings ranges. IconQuery also clamps internally.
         private constant string SETUI_TOC_PATH = "war3mapimported\\templates.toc"
@@ -42,6 +42,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
         private constant integer SETUI_ACTION_SECONDARY_FREQUENCY = 8
         private constant integer SETUI_ACTION_PINGS = 9
         private constant integer SETUI_ACTION_ICON_MODE = 10
+        private constant integer SETUI_ACTION_UI_SOUNDS = 11
 
         private constant integer SETUI_SLIDER_QUERY_TIME = 1
         private constant integer SETUI_SLIDER_REST_TIME = 2
@@ -174,6 +175,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
             call BlzFrameSetText(SETUI_Button[8], "Travel/Boss/Place: " + SETUI_GetSecondaryFrequencyText())
             call BlzFrameSetText(SETUI_Button[9], "Pings: " + SETUI_OnOff(IconQuery_GetPingsEnabled()))
             call BlzFrameSetText(SETUI_Button[10], "Mode: " + IconQuery_GetDisplayModeName())
+            call BlzFrameSetText(SETUI_Button[11], "UI Sounds: " + SETUI_OnOff(Interface_AreSoundsEnabled()))
 
             call BlzFrameSetText(SETUI_SliderLabel[1], "Query: " + I2S(R2I(queryTime + 0.5)) + "s")
             call BlzFrameSetText(SETUI_SliderLabel[2], "Rest: " + I2S(R2I(restTime + 0.5)) + "s")
@@ -187,6 +189,9 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
 
     private function SETUI_HideInternal takes nothing returns nothing
         local integer i = 1
+        if SETUI_Parent != null and BlzFrameIsVisible(SETUI_Parent) then
+            call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, Player(0))
+        endif
         call SETUI_SetFrameVisible(SETUI_Parent, false)
         loop
             exitwhen i > SETUI_SLIDER_COUNT
@@ -255,6 +260,8 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
                 call IconQuery_SetPingsEnabled(not IconQuery_GetPingsEnabled())
             elseif actionId == SETUI_ACTION_ICON_MODE then
                 call IconQuery_CycleDisplayMode()
+            elseif actionId == SETUI_ACTION_UI_SOUNDS then
+                call Interface_SetSoundsEnabled(not Interface_AreSoundsEnabled())
             endif
             call SETUI_Refresh(p)
         endif
@@ -380,6 +387,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
         call SETUI_CreateButton(4, "Bosses", SETUI_ACTION_BOSSES, 0.010, -0.124)
         call SETUI_CreateButton(5, "Places", SETUI_ACTION_POI, 0.010, -0.160)
         call SETUI_CreateButton(6, "Companions", SETUI_ACTION_COMPANIONS, 0.010, -0.196)
+        call SETUI_CreateButton(11, "UI Sounds", SETUI_ACTION_UI_SOUNDS, 0.010, -0.232)
 
         call SETUI_CreateSliderRow(1, "Query", SETUI_SLIDER_QUERY_TIME, -0.030, SETUI_QUERY_TIME_MIN, SETUI_QUERY_TIME_MAX, 1.0)
         call SETUI_CreateSliderRow(2, "Rest", SETUI_SLIDER_REST_TIME, -0.070, SETUI_QUERY_REST_MIN, SETUI_QUERY_REST_MAX, 5.0)
@@ -454,6 +462,9 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
             call Init()
         endif
         if SETUI_Parent != null then
+            if not BlzFrameIsVisible(SETUI_Parent) then
+                call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
+            endif
             call BlzFrameSetVisible(SETUI_Parent, true)
         endif
         loop
