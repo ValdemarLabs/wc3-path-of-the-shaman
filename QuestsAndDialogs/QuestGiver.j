@@ -1278,6 +1278,14 @@ public function GetEventQuestState takes nothing returns integer
 	return QuestMaster_EventState
 endfunction
 
+public function IsEventQuestByNameAndGiver takes string questName, unit questGiver returns boolean
+	local QuestData q = QuestMaster_GetByNameAndGiver(questName, questGiver)
+	if q == 0 then
+		return false
+	endif
+	return QuestMaster_EventQuestId == q.id
+endfunction
+
 public function AcceptQuestByNameAndGiver takes string questName, unit questGiver returns nothing
 	local QuestData q = QuestMaster_GetByNameAndGiver(questName, questGiver)
 	if q != 0 then
@@ -1605,6 +1613,10 @@ public function StartDialogExitTransition takes unit giver, unit restoreHero, ti
 	call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUT, 1.0, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
 	call TimerStart(t, 1.0, false, function ContinueDialogExitTransition)
 	set t = null
+endfunction
+
+public function StartConfiguredDialogExitTransition takes unit giver, unit restoreHero, timer cooldownTimer, real cooldownDuration, boolean useCamera, boolean useCinematicMode returns nothing
+	call StartDialogExitTransition(giver, restoreHero, cooldownTimer, cooldownDuration, true, 2.00, useCamera, true, useCinematicMode)
 endfunction
 
 private function ExecuteDialogEntryContinue takes nothing returns nothing
