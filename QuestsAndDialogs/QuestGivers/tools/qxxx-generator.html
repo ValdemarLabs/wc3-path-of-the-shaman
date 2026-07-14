@@ -593,9 +593,8 @@ ${apiLines}
 
       return [
         `\tset info2Text = "|cffffcc00Recommended level:|r ${requiredLevel}\\n\\n"`,
-        `\tset q = QuestGiver_CreateQuest(${constName}, ${npcVar}, "${escapeJassString(quest.questType)}", ${requiredLevel}, null)`,
-        `\tcall QuestGiver_ApplyQuestMetadata(q, "${escapeJassString(quest.title)}", "${escapeJassString(quest.iconPath)}", "${escapeJassString(quest.description)}", infoText, info2Text, ${requiredLevel}, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "", ${receiverDisplayName})`,
-        `\tcall q.setRewardParams(${xpReward > 0 ? "true" : "false"}, ${xpReward}, ${goldReward > 0 ? "true" : "false"}, ${goldReward}, false, 0, ${repReward > 0 ? "true" : "false"}, ${repReward}, false)`,
+        `\tset q = QuestGiver_CreateConfiguredQuest(${constName}, ${npcVar}, "${escapeJassString(quest.questType)}", ${requiredLevel}, null, "${escapeJassString(quest.title)}", "${escapeJassString(quest.iconPath)}", "${escapeJassString(quest.description)}", infoText, info2Text, ${requiredLevel}, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "", ${receiverDisplayName})`,
+        `\tcall QuestGiver_SetQuestRewards(q, ${xpReward > 0 ? "true" : "false"}, ${xpReward}, ${goldReward > 0 ? "true" : "false"}, ${goldReward}, false, 0, ${repReward > 0 ? "true" : "false"}, ${repReward}, false)`,
         `\tcall QuestGiver_SetRequirements(q.id, "", ${reqs})`,
         "",
       ].join("\n");
@@ -775,26 +774,21 @@ private function FinishDialogSequence takes nothing returns nothing
 \tcall QuestGiver_StartDialogExitTransition(${npcVar}, SelectedHero, ${npcVar}DialogCooldown, DIALOG_COOLDOWN, true, 2.00, USE_DIALOG_CAMERA, CINEMATIC, CINEMATIC)
 endfunction
 
-private function RebuildAndShowDialogTimer takes nothing returns nothing
-\tlocal timer t = GetExpiredTimer()
-\tcall ExecuteFunc("${libraryName}_RebuildAndShowDialog")
-\tcall DestroyTimer(t)
-\tset t = null
+private function OnBackstoryStart takes nothing returns nothing
+\tset BackstorySeen = true
+\tcall QuestGiver_CloseActiveDialog()
+\tset ${npcVar}DialogCooldown = QuestGiver_StartCooldown(${npcVar}DialogCooldown, DIALOG_COOLDOWN)
+\tcall QuestGiver_BeginCinematicSequence(CINEMATIC)
 endfunction
 
 private function OnBackstoryEnd takes nothing returns nothing
-\tlocal timer t = CreateTimer()
-\tset BackstorySeen = true
-\tcall EnableUserControl(true)
-\tcall TimerStart(t, 0.05, false, function RebuildAndShowDialogTimer)
-\tset t = null
+\tcall QuestGiver_EndCinematicSequence(CINEMATIC)
+\tcall QuestGiver_QueueDialogReopen("${libraryName}_RebuildAndShowDialog", 0.05)
 endfunction
 
 private function OnBackstory takes nothing returns nothing
 \tlocal integer seq
-\tcall QuestGiver_BeginDialogSequence()
-\tset seq = QuestGiver_CreateBaseSequence(${npcVar}, "${displayName}")
-\tcall DialogSystem_SetSequenceCallbacks(seq, null, function OnBackstoryEnd)
+\tset seq = QuestGiver_CreateInfoSequenceBase(${npcVar}, "${displayName}", function OnBackstoryStart, function OnBackstoryEnd)
 \tcall DialogSystem_AddLine(seq, ${npcVar}, "${displayName}", "TODO QUEST-SPECIFIC: replace with the final backstory sequence.", "", true)
 \tcall DialogSystem_PlaySequence(seq, Player(0), ${npcVar})
 endfunction
@@ -855,23 +849,14 @@ public function ContinueToDialogAfterSelection takes nothing returns nothing
 endfunction
 
 private function OnSelected takes nothing returns nothing
-\tlocal unit hero = null
-\tif DialogSystem_IsSequenceActive() then
-\t\tset hero = null
-\t\treturn
-\tendif
-\tset hero = QuestGiver_GetAllowedHero(${npcVar}, DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
-\tif REQUIRE_DIALOG_HERO and hero == null then
-\t\tset hero = null
-\t\treturn
-\tendif
-\tif not QuestGiver_PassSelectionGate(${npcVar}, hero, DIALOG_RANGE, ${npcVar}DialogCooldown) then
+\tlocal unit hero = QuestGiver_GetDialogSelectionHero(${npcVar}, DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
+\tif not QuestGiver_PassDialogSelectionGate(${npcVar}, hero, DIALOG_RANGE, ${npcVar}DialogCooldown, REQUIRE_DIALOG_HERO, true, true, true, false, false) then
 \t\tset hero = null
 \t\treturn
 \tendif
 \tset SelectedHero = hero
 \tif USE_DIALOG_CAMERA or CINEMATIC then
-\t\tcall QuestGiver_StartDialogEntryTransition(${npcVar}, hero, CINEMATIC_MOVE_MODE, CINEMATIC_MOVE_OFFSET, CINEMATIC_MOVE_ANGLE, CINEMATIC, USE_DIALOG_CAMERA, CAMERA_DIST, CAMERA_Z_OFFSET, CAMERA_ANGLE, CAMERA_ROT_OFFSET, CAMERA_FAR_Z, CAMERA_FOV, CAMERA_BLOCK_RADIUS, CAMERA_BLOCK_CHECK, CINEMATIC, "${libraryName}_ContinueToDialogAfterSelection")
+\t\tcall QuestGiver_StartConfiguredDialogEntryTransition(${npcVar}, hero, CINEMATIC, USE_DIALOG_CAMERA, CINEMATIC, "${libraryName}_ContinueToDialogAfterSelection")
 \telse
 \t\tcall ContinueToDialogInternal()
 \tendif
@@ -889,6 +874,7 @@ private function InitDelayed takes nothing returns nothing
 \tendif
 \tset ${npcVar} = udg_${npcVar}
 \tcall QuestGiver_Register(${npcVar})
+\tcall QuestGiver_ConfigureDialogTransition(${npcVar}, CINEMATIC_MOVE_MODE, CINEMATIC_MOVE_OFFSET, CINEMATIC_MOVE_ANGLE, CAMERA_DIST, CAMERA_Z_OFFSET, CAMERA_ANGLE, CAMERA_ROT_OFFSET, CAMERA_FAR_Z, CAMERA_FOV, CAMERA_BLOCK_RADIUS, CAMERA_BLOCK_CHECK)
 \tcall RegisterLines()
 \tcall CreateQuests()
 \tcall QuestGiver_RegisterSelectionHandler(${npcVar}, function OnSelected)
