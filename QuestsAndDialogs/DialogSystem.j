@@ -309,21 +309,22 @@ endfunction
 
 private function EndSequence takes boolean callFinish returns nothing
 	local Table seqTable
-	local trigger onFinish
+	local trigger onFinish = null
 	if DialogSequenceActiveId == 0 then
 		return
 	endif
 	set seqTable = DialogSequenceStore[DialogSequenceActiveId]
 	if callFinish and seqTable != 0 then
 		set onFinish = seqTable.trigger[DIALOG_SEQ_ONFINISH_KEY]
-		if onFinish != null then
-			call TriggerExecute(onFinish)
-		endif
 	endif
 	set DialogSequenceActiveId = 0
 	set DialogSequenceActiveIndex = 0
 	set DialogSequenceFastForward = false
 	set DialogSequenceSkipping = false
+	if callFinish and onFinish != null then
+		call TriggerExecute(onFinish)
+	endif
+	set onFinish = null
 endfunction
 
 private function PlayNextLine takes nothing returns nothing
