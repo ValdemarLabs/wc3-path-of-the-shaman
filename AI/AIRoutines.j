@@ -57,6 +57,7 @@
     call AIRoutines_CreateManagedRandomUnitGroupInZone(owner, spawnRect, routineId, count, respawnDelay, facing, zoneId)
     call AIRoutines_AddManagedUnitGroupType(spawnGroupId, unitTypeId, weight)
     call AIRoutines_SetManagedUnitGroupTurnover(spawnGroupId, minInterval, maxInterval, exitRect, removeDelay)
+    call AIRoutines_SetManagedUnitGroupRemovalPlayerGuardRange(spawnGroupId, range)
     call AIRoutines_SetManagedUnitGroupRoutine(spawnGroupId, routineId)
     call AIRoutines_SetManagedUnitGroupEnabled(spawnGroupId, enabled)
     call AIRoutines_RefillManagedUnitGroup(spawnGroupId)
@@ -198,6 +199,7 @@ globals
     private trigger AIR_DeathTrigger = null
     private trigger AIR_EnterTrigger = null
     private region AIR_EnterRegion = null
+    private group AIR_RemovalGuardEnumGroup = null
     private destructable AIR_EnumDestructablePick = null
     private integer AIR_EnumDestructableCount = 0
 
@@ -234,6 +236,7 @@ globals
     private real array AIR_SpawnGroupTurnoverMin
     private real array AIR_SpawnGroupTurnoverMax
     private real array AIR_SpawnGroupTurnoverRemoveDelay
+    private real array AIR_SpawnGroupRemovalPlayerGuardRange
     private boolean array AIR_SpawnGroupEnabled
     private boolean array AIR_SpawnGroupRandomTypes
     private boolean array AIR_SpawnGroupTurnoverEnabled
@@ -290,6 +293,28 @@ endfunction
 
 private function AIR_IsAliveUnit takes unit whichUnit returns boolean
     return whichUnit != null and GetUnitTypeId(whichUnit) != 0 and GetWidgetLife(whichUnit) > 0.405 and not IsUnitType(whichUnit, UNIT_TYPE_DEAD)
+endfunction
+
+private function AIR_IsPlayerUnitNear takes unit whichUnit, real range returns boolean
+    local unit enumUnit
+    local boolean found = false
+    if whichUnit == null or range <= 0.00 or AIR_RemovalGuardEnumGroup == null then
+        return false
+    endif
+
+    call GroupEnumUnitsInRange(AIR_RemovalGuardEnumGroup, GetUnitX(whichUnit), GetUnitY(whichUnit), range, null)
+    loop
+        set enumUnit = FirstOfGroup(AIR_RemovalGuardEnumGroup)
+        exitwhen enumUnit == null or found
+        call GroupRemoveUnit(AIR_RemovalGuardEnumGroup, enumUnit)
+        if GetOwningPlayer(enumUnit) == Player(0) and AIR_IsAliveUnit(enumUnit) and not IsUnitHidden(enumUnit) then
+            set found = true
+        endif
+    endloop
+    call GroupClear(AIR_RemovalGuardEnumGroup)
+
+    set enumUnit = null
+    return found
 endfunction
 
 private function AIR_RoutineExists takes integer routineId returns boolean
@@ -785,6 +810,14 @@ private function AIR_GetTurnoverDelay takes integer spawnGroupId returns real
     return minDelay
 endfunction
 
+private function AIR_GetTurnoverRemoveDelay takes integer spawnGroupId returns real
+    local real removeDelay = AIR_SpawnGroupTurnoverRemoveDelay[spawnGroupId]
+    if removeDelay <= 0.00 then
+        return AIR_DEFAULT_TURNOVER_REMOVE_DELAY
+    endif
+    return removeDelay
+endfunction
+
 private function AIR_ResetUnitTurnover takes unit whichUnit, integer spawnGroupId returns nothing
     local integer unitKey
     local real delay
@@ -1004,14 +1037,24 @@ private function AIR_OnManagedTurnoverTimer takes nothing returns nothing
     local integer timerKey = GetHandleId(expiredTimer)
     local unit leaving = AIR_TurnoverTimerUnit.unit[timerKey]
     local integer unitKey
+    local integer spawnGroupId
+    local real removeDelay
     call AIR_TurnoverTimerUnit.unit.remove(timerKey)
     call DestroyTimer(expiredTimer)
 
     if leaving != null then
         set unitKey = GetHandleId(leaving)
-        if AIR_UnitLeaving.boolean[unitKey] and AIR_UnitSpawnGroup[unitKey] > 0 then
-            call AIR_HandleManagedUnitGone(leaving)
-            call RemoveUnit(leaving)
+        set spawnGroupId = AIR_UnitSpawnGroup[unitKey]
+        if AIR_UnitLeaving.boolean[unitKey] and spawnGroupId > 0 then
+            if AIR_IsPlayerUnitNear(leaving, AIR_SpawnGroupRemovalPlayerGuardRange[spawnGroupId]) then
+                set removeDelay = AIR_GetTurnoverRemoveDelay(spawnGroupId)
+                set expiredTimer = CreateTimer()
+                set AIR_TurnoverTimerUnit.unit[GetHandleId(expiredTimer)] = leaving
+                call TimerStart(expiredTimer, removeDelay, false, function AIR_OnManagedTurnoverTimer)
+            else
+                call AIR_HandleManagedUnitGone(leaving)
+                call RemoveUnit(leaving)
+            endif
         endif
     endif
 
@@ -1034,10 +1077,7 @@ private function AIR_StartManagedUnitTurnover takes unit whichUnit, integer unit
         return
     endif
 
-    set removeDelay = AIR_SpawnGroupTurnoverRemoveDelay[spawnGroupId]
-    if removeDelay <= 0.00 then
-        set removeDelay = AIR_DEFAULT_TURNOVER_REMOVE_DELAY
-    endif
+    set removeDelay = AIR_GetTurnoverRemoveDelay(spawnGroupId)
 
     set AIR_UnitLeaving.boolean[unitKey] = true
     call AIR_UnitTurnoverTime.real.remove(unitKey)
@@ -1467,6 +1507,16 @@ function AIRoutines_SetManagedUnitGroupTurnover takes integer spawnGroupId, real
     call AIR_ResetSpawnGroupTurnoverUnits(spawnGroupId)
 endfunction
 
+function AIRoutines_SetManagedUnitGroupRemovalPlayerGuardRange takes integer spawnGroupId, real range returns nothing
+    if not AIR_SpawnGroupExists(spawnGroupId) then
+        return
+    endif
+    if range < 0.00 then
+        set range = 0.00
+    endif
+    set AIR_SpawnGroupRemovalPlayerGuardRange[spawnGroupId] = range
+endfunction
+
 function AIRoutines_SetManagedUnitGroupRoutine takes integer spawnGroupId, integer routineId returns nothing
     if not AIR_SpawnGroupExists(spawnGroupId) or not AIR_RoutineExists(routineId) then
         return
@@ -1841,6 +1891,7 @@ private function Init takes nothing returns nothing
     set AIR_ZoneHeroCount = Table.create()
     set AIR_ZoneUnit = Table.create()
     set AIR_ZoneUnitCount = Table.create()
+    set AIR_RemovalGuardEnumGroup = CreateGroup()
 
     set AIR_AIClassId = AI_RegisterClass("Routine")
 
