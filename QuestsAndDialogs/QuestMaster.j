@@ -2683,7 +2683,23 @@ private function GetHighestHeroLevel takes nothing returns integer
 		endif
 	endloop
 
+	if udg_Nazgrek != null and IsUnitType(udg_Nazgrek, UNIT_TYPE_HERO) then
+		set level = GetHeroLevel(udg_Nazgrek)
+		if level > bestLevel then
+			set bestLevel = level
+		endif
+	endif
+
+	if udg_Zulkis != null and IsUnitType(udg_Zulkis, UNIT_TYPE_HERO) then
+		set level = GetHeroLevel(udg_Zulkis)
+		if level > bestLevel then
+			set bestLevel = level
+		endif
+	endif
+
 	call DestroyGroup(g)
+	set u = null
+	set g = null
 	return bestLevel
 endfunction
 
