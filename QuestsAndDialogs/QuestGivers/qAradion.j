@@ -87,8 +87,7 @@ globals
 	private constant real RIFTS_WAVE_END_BUFFER = 10.00
 	private constant real RIFTS_OVERWHELMED_WAVE_AGE = 25.00
 	private constant real RIFTS_FAIL_RESET_DELAY = 30.00
-	private constant real RIFTS_ARADION_OFFSET = 500.00
-	private constant real RIFTS_VALERIA_OFFSET = 200.00
+	private constant real RIFTS_DIALOG_UNIT_RANGE = 500.00
 	private constant real RIFTS_INTRO_VALERIA_OFFSET = 2200.00
 	private constant real RANGER_VALERIA_BARK_MIN_DELAY = 18.00
 	private constant real RANGER_VALERIA_BARK_MAX_DELAY = 34.00
@@ -504,6 +503,7 @@ private function AddValeriaCompanion takes nothing returns nothing
 	if Valeria != null and QuestGiver_IsUnitAlive(Valeria) then
 		call SetUnitOwner(Valeria, Player(VALERIA_FRIENDLY_OWNER), true)
 		call SetUnitCreepGuard(Valeria, false)
+		call QuestGiver_AddCompanion(Valeria, VALERIA_COMPANION_ICON)
 		call Companions_Add(Valeria, VALERIA_COMPANION_ICON, null, COMPANION_MODE_DEFEND)
 		set ValeriaCompanionActive = true
 	endif
@@ -673,6 +673,7 @@ private function AddAradionCompanion takes nothing returns nothing
 	if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
 		call SetUnitOwner(Aradion, Player(VALERIA_FRIENDLY_OWNER), true)
 		call SetUnitCreepGuard(Aradion, false)
+		call QuestGiver_AddCompanion(Aradion, ARADION_COMPANION_ICON)
 		call Companions_Add(Aradion, ARADION_COMPANION_ICON, null, COMPANION_MODE_DEFEND)
 		set AradionCompanionActive = true
 	endif
@@ -2173,16 +2174,28 @@ private function CreateRiftUnitAtSlot takes integer index returns unit
 	local unit result = null
 	local real x
 	local real y
+	local real createX
+	local real createY
 	if r == null then
 		call BJDebugMsg("[qAradion] ERROR: gg_rct_ManaRift" + I2S(index) + " is null; Mana Rift was not created.")
 		return null
 	endif
 	set x = GetRectCenterX(r)
 	set y = GetRectCenterY(r)
-	set result = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_MANA_RIFT, x, y, bj_UNIT_FACING)
+	set createX = x
+	set createY = y
+	if Aradion != null and QuestGiver_IsUnitAlive(Aradion) then
+		set createX = GetUnitX(Aradion)
+		set createY = GetUnitY(Aradion)
+	endif
+	set result = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_MANA_RIFT, createX, createY, bj_UNIT_FACING)
+	if result == null and (createX != x or createY != y) then
+		set result = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_MANA_RIFT, x, y, bj_UNIT_FACING)
+	endif
 	if result != null then
 		call SetUnitX(result, x)
 		call SetUnitY(result, y)
+		call ShowUnit(result, true)
 		call SetUnitCreepGuard(result, false)
 		call CreepRespawn_DiscardUnit(result)
 	else
@@ -2255,6 +2268,7 @@ private function PrepareValeriaForRiftsIntro takes unit hero returns nothing
 	local real startY
 	local real angle
 	local real sideAngle
+	local boolean valeriaAlreadyClose
 	if Aradion == null or Valeria == null or not QuestGiver_IsUnitAlive(Aradion) or not QuestGiver_IsUnitAlive(Valeria) then
 		set hero = null
 		return
@@ -2263,13 +2277,14 @@ private function PrepareValeriaForRiftsIntro takes unit hero returns nothing
 	call SetUnitInvulnerable(Valeria, false)
 	call StopFollow(Valeria)
 	call StopValeriaPatrolInternal()
-	if gg_rct_ValeriaNewPos != null then
-		set targetX = GetRectCenterX(gg_rct_ValeriaNewPos)
-		set targetY = GetRectCenterY(gg_rct_ValeriaNewPos)
-	else
-		set sideAngle = (GetUnitFacing(Aradion) + 90.00) * bj_DEGTORAD
-		set targetX = GetUnitX(Aradion) + RIFTS_VALERIA_OFFSET * Cos(sideAngle)
-		set targetY = GetUnitY(Aradion) + RIFTS_VALERIA_OFFSET * Sin(sideAngle)
+	set sideAngle = (GetUnitFacing(Aradion) + 90.00) * bj_DEGTORAD
+	set targetX = GetUnitX(Aradion) + RIFTS_DIALOG_UNIT_RANGE * Cos(sideAngle)
+	set targetY = GetUnitY(Aradion) + RIFTS_DIALOG_UNIT_RANGE * Sin(sideAngle)
+	set valeriaAlreadyClose = QuestGiver_IsWithinRange(Aradion, Valeria, RIFTS_DIALOG_UNIT_RANGE)
+	if valeriaAlreadyClose then
+		call IssuePointOrder(Valeria, "move", targetX, targetY)
+		set hero = null
+		return
 	endif
 	if hero != null and QuestGiver_IsUnitAlive(hero) then
 		set angle = (GetUnitFacing(hero) + 180.00) * bj_DEGTORAD
@@ -3067,6 +3082,7 @@ endfunction
 
 private function UpdateQuestRiftsCorruptionInternal takes nothing returns nothing
 	local QuestData q
+	local unit hero
 	call SyncUnitReferences()
 	if not QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion) then
 		return
@@ -3074,10 +3090,16 @@ private function UpdateQuestRiftsCorruptionInternal takes nothing returns nothin
 	if not IsRiftsCorruptionInProgress() then
 		return
 	endif
+	if not RiftsAwaitingReturnHome and not RiftsReturnedHome and (not ValeriaCompanionActive or not AradionCompanionActive or IsRiftsFieldCompanionStateBroken()) then
+		set RiftsQuestActive = true
+		set hero = GetRiftsTrackingHero()
+		call StartFieldCompanions(hero)
+	endif
 	set RiftsCorruptionCounter = RiftsCorruptionCounter + 1
 	call DebugMsg("Updating Quest: Rifts of Corruption - Counter=" + I2S(RiftsCorruptionCounter))
 	set q = QuestGiver_GetByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
 	if q == 0 then
+		set hero = null
 		return
 	endif
 	call QuestGiver_SetRequirement(q.id, 2, "Rifts closed " + I2S(RiftsCorruptionCounter) + " / 3")
@@ -3096,6 +3118,7 @@ private function UpdateQuestRiftsCorruptionInternal takes nothing returns nothin
 		call QuestMaster_SetStateByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion, QUEST_STATE_IN_PROGRESS)
 	endif
 	call QuestGiver_UpdateQuestByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
+	set hero = null
 endfunction
 
 private function FinishRiftsCurrentRitual takes nothing returns nothing
@@ -4077,7 +4100,6 @@ private function OnAcceptQuest4End takes nothing returns nothing
 	call StopRiftsFieldMonitor()
 	call ClearRiftsWaveHandles()
 	call DialogSystem_ClearFieldLineQueue()
-	call StartExitFadeOut()
 	call ResetRiftsClosedState()
 	call RegisterRiftUnits()
 	if Aradion != null then
@@ -4089,6 +4111,7 @@ private function OnAcceptQuest4End takes nothing returns nothing
 	call EnableRiftsFailTriggers()
 	call StopValeriaPatrolInternal()
 	call StartFieldCompanions(hero)
+	call StartExitFadeOut()
 	call StartRiftsFieldMonitor()
 	set hero = null
 endfunction
