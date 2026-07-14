@@ -163,6 +163,7 @@ globals
     private unit CommandSelectionTarget = null
     private integer CommandSelectionCount = 0
     private integer ModeActionMode = COMPANION_MODE_DEFEND
+    private unit FocusActionLeader = null
     private integer CurrentGroupMode = COMPANION_MODE_DEFEND
     private group HostilityDropGroup = null
     private integer HostilityDropFactionId = 0
@@ -1867,7 +1868,7 @@ private function HandleKick takes unit caster, unit target returns nothing
 endfunction
 
 private function HandleFocus takes unit target, unit leader returns nothing
-    if target == null or not IsControlGroupUnit(target) then
+    if target == null or not IsValidControlTarget(target) then
         return
     endif
 
@@ -1877,6 +1878,50 @@ private function HandleFocus takes unit target, unit leader returns nothing
     if leader != null then
         call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(target) + " now follows " + GetUnitName(leader) + ".")
     endif
+endfunction
+
+private function ApplyFocusTarget takes nothing returns nothing
+    local unit u = GetEnumUnit()
+    call TrackExistingControlUnit(u)
+    call SetLeaderInternal(u, FocusActionLeader)
+    set u = null
+endfunction
+
+private function ApplyFocusToAllTargets takes unit leader returns nothing
+    local integer count
+
+    call EnsureState()
+    call RepairGuiCompanionState()
+    call GroupClear(ModeTargetGroup)
+    if udg_Companion_Group != null then
+        call ForGroup(udg_Companion_Group, function AddAllModeTarget)
+    endif
+    if udg_TamedUnits != null then
+        call ForGroup(udg_TamedUnits, function AddAllModeTarget)
+    endif
+
+    set FocusActionLeader = leader
+    call ForGroup(ModeTargetGroup, function ApplyFocusTarget)
+    set count = CountUnitsInGroup(ModeTargetGroup)
+
+    if count > 0 and leader != null then
+        call PlayCommandSound(gg_snd_GoodJob)
+        call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "Companions now follow " + GetUnitName(leader) + ".")
+    endif
+
+    call GroupClear(ModeTargetGroup)
+    set FocusActionLeader = null
+    set leader = null
+endfunction
+
+private function ApplyFocusFromCommand takes unit target, unit leader returns nothing
+    if target != null then
+        call HandleFocus(target, leader)
+    else
+        call ApplyFocusToAllTargets(leader)
+    endif
+    set target = null
+    set leader = null
 endfunction
 
 private function IsHiredUnitType takes integer unitTypeId returns boolean
@@ -2361,7 +2406,7 @@ private function OnSpellEffect takes nothing returns nothing
     local unit target = GetSpellTargetUnit()
     local player commandPlayer = GetCommandPlayer(caster)
 
-    if target == null and (abilityId == ABIL_KICK or abilityId == ABIL_FOCUS_NAZGREK or abilityId == ABIL_FOCUS_ZULKIS or abilityId == ABIL_INFORMATION or abilityId == ABIL_DROP_ITEMS) then
+    if target == null and (abilityId == ABIL_KICK or abilityId == ABIL_INFORMATION or abilityId == ABIL_DROP_ITEMS) then
         set target = ResolveCommandTarget(caster, target, commandPlayer)
     endif
 
@@ -2376,9 +2421,9 @@ private function OnSpellEffect takes nothing returns nothing
             call HandleKick(caster, target)
         endif
     elseif abilityId == ABIL_FOCUS_NAZGREK then
-        call HandleFocus(target, udg_Nazgrek)
+        call ApplyFocusFromCommand(target, udg_Nazgrek)
     elseif abilityId == ABIL_FOCUS_ZULKIS then
-        call HandleFocus(target, udg_Zulkis)
+        call ApplyFocusFromCommand(target, udg_Zulkis)
     elseif abilityId == ABIL_INFORMATION then
         call HandleInformation(target)
     elseif abilityId == ABIL_DROP_ITEMS then
