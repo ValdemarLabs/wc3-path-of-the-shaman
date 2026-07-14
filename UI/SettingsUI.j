@@ -62,7 +62,6 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
         private framehandle SETUI_Title = null
         private framehandle SETUI_LeftPane = null
         private framehandle SETUI_RightPane = null
-        private framehandle SETUI_AISectionLabel = null
         private framehandle SETUI_AIDisclaimer = null
         private framehandle SETUI_CloseButton = null
         private framehandle SETUI_ReturnButton = null
@@ -179,7 +178,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
 
             call BlzFrameSetText(SETUI_SliderLabel[1], "Query: " + I2S(R2I(queryTime + 0.5)) + "s")
             call BlzFrameSetText(SETUI_SliderLabel[2], "Rest: " + I2S(R2I(restTime + 0.5)) + "s")
-            call BlzFrameSetText(SETUI_SliderLabel[3], "AI cap: " + I2S(aiActiveCap))
+            call BlzFrameSetText(SETUI_SliderLabel[3], "AI Units Cap: " + I2S(aiActiveCap))
             call SETUI_SyncSliderValue(1, queryTime)
             call SETUI_SyncSliderValue(2, restTime)
             call SETUI_SyncSliderValue(3, I2R(aiActiveCap))
@@ -396,14 +395,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
         call SETUI_CreateRightButton(9, "Pings", SETUI_ACTION_PINGS, -0.200)
         call SETUI_CreateRightButton(10, "Icon Mode", SETUI_ACTION_ICON_MODE, -0.240)
 
-        set SETUI_AISectionLabel = BlzCreateFrameByType("TEXT", "SettingsUIAISection", SETUI_RightPane, "", 0)
-        call BlzFrameSetPoint(SETUI_AISectionLabel, FRAMEPOINT_TOPLEFT, SETUI_RightPane, FRAMEPOINT_TOPLEFT, 0.022, -0.282)
-        call BlzFrameSetSize(SETUI_AISectionLabel, 0.220, 0.014)
-        call BlzFrameSetTextAlignment(SETUI_AISectionLabel, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
-        call BlzFrameSetEnable(SETUI_AISectionLabel, false)
-        call BlzFrameSetText(SETUI_AISectionLabel, "|cffffcc00AI Units|r")
-
-        call SETUI_CreateSliderRow(3, "AI cap", SETUI_SLIDER_AI_ACTIVE_CAP, -0.314, SETUI_AI_ACTIVE_CAP_MIN, SETUI_AI_ACTIVE_CAP_MAX, 1.0)
+        call SETUI_CreateSliderRow(3, "AI Units Cap", SETUI_SLIDER_AI_ACTIVE_CAP, -0.314, SETUI_AI_ACTIVE_CAP_MIN, SETUI_AI_ACTIVE_CAP_MAX, 1.0)
 
         set SETUI_AIDisclaimer = BlzCreateFrameByType("TEXT", "SettingsUIAIDisclaimer", SETUI_RightPane, "", 0)
         call BlzFrameSetPoint(SETUI_AIDisclaimer, FRAMEPOINT_TOPLEFT, SETUI_RightPane, FRAMEPOINT_TOPLEFT, 0.022, -0.345)
