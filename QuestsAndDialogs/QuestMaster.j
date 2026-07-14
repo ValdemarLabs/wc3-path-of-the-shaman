@@ -113,6 +113,7 @@ globals
 
 	// State change event bridge
 	trigger QuestMaster_OnStateChanged = null
+	trigger QuestMaster_OnDelayedDiscovered = null
 	integer QuestMaster_EventQuestId = 0
 	integer QuestMaster_EventState = 0
 endglobals
@@ -144,6 +145,15 @@ endfunction
 //===========================================================================
 // Quest update message queue
 //===========================================================================
+private function FireDelayedQuestDiscovered takes integer questId, integer questState returns nothing
+	if QuestMaster_OnDelayedDiscovered == null then
+		return
+	endif
+	set QuestMaster_EventQuestId = questId
+	set QuestMaster_EventState = questState
+	call TriggerExecute(QuestMaster_OnDelayedDiscovered)
+endfunction
+
 private function ShowDelayedQuestDiscovered takes nothing returns nothing
 	local timer t = GetExpiredTimer()
 	local integer tId = GetHandleId(t)
@@ -164,6 +174,7 @@ private function ShowDelayedQuestDiscovered takes nothing returns nothing
 		call ClearTextMessages()
 		call QuestMessageBJ(bj_FORCE_ALL_PLAYERS, bj_QUESTMESSAGE_DISCOVERED, msg)
 		call FlashQuestDialogButtonBJ()
+		call FireDelayedQuestDiscovered(q.id, q.state)
 	endif
 	
 	// Clean up timer data
@@ -737,6 +748,13 @@ public function AddStateChangedAction takes code actionFunc returns nothing
 		return
 	endif
 	call TriggerAddAction(QuestMaster_OnStateChanged, actionFunc)
+endfunction
+
+public function AddDelayedDiscoveredAction takes code actionFunc returns nothing
+	if QuestMaster_OnDelayedDiscovered == null then
+		return
+	endif
+	call TriggerAddAction(QuestMaster_OnDelayedDiscovered, actionFunc)
 endfunction
 
 //===========================================================================
@@ -2867,6 +2885,7 @@ private function Init takes nothing returns nothing
 	set QuestDiscoveredTimerData = Table.create()
 	set QuestCompletedTimerData = Table.create()
 	set QuestMaster_OnStateChanged = CreateTrigger()
+	set QuestMaster_OnDelayedDiscovered = CreateTrigger()
 	set QuestEvalTimer = CreateTimer()
 	call TimerStart(QuestEvalTimer, QUEST_EVAL_INTERVAL, true, function EvalTimerTick)
 endfunction
