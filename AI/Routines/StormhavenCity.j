@@ -19,6 +19,7 @@
 
     API:
     call StormhavenCity_Refresh()
+    set started = StormhavenCity_DebugForceChat()
 
 **/
 library StormhavenCity initializer Init requires AIRoutines, Reputation, Table
@@ -35,12 +36,16 @@ globals
     private constant real SHC_TURNOVER_MIN = 240.00
     private constant real SHC_TURNOVER_MAX = 620.00
     private constant real SHC_TURNOVER_REMOVE_DELAY = 12.00
+    private constant real SHC_TURNOVER_PLAYER_GUARD_RANGE = 1250.00
     private constant string SHC_FACTION_NAME = "Stormhaven"
     private constant integer SHC_CLASS_MALE = 1
     private constant integer SHC_CLASS_FEMALE = 2
     private constant integer SHC_CLASS_CHILD = 3
     private constant integer SHC_CHAT_VARIATION_COUNT = 10
     private constant integer SHC_STREET_CHAT_CHANCE = 18
+    private constant integer SHC_MARKET_CHAT_CHANCE = 18
+    private constant integer SHC_SOCIAL_CHAT_CHANCE = 28
+    private constant integer SHC_DEBUG_CHAT_CHANCE = 100
     private constant real SHC_CHAT_PLAYER_RANGE = 3000.00
     private constant real SHC_CHAT_PARTNER_RANGE = 420.00
     private constant real SHC_CHAT_REPLY_DELAY = 2.70
@@ -625,24 +630,23 @@ private function RandomCityPointOrder takes unit whichUnit, string order returns
     call IssuePointOrder(whichUnit, order, x, y)
 endfunction
 
-private function PlayCityIdle takes unit whichUnit, integer action returns nothing
+private function PlayCityIdle takes unit whichUnit, string animationName returns nothing
     if whichUnit == null then
         return
     endif
+    if animationName == null or animationName == "" then
+        set animationName = "stand"
+    endif
 
     call IssueImmediateOrder(whichUnit, "stop")
-    if action == 1 then
-        call SetUnitAnimation(whichUnit, "stand")
-    elseif action == 2 then
-        call SetUnitAnimation(whichUnit, "stand work")
-    elseif action == 3 then
-        call SetUnitAnimation(whichUnit, "stand ready")
-    elseif action == 4 then
-        call SetUnitAnimation(whichUnit, "spell")
-    elseif action == 5 then
-        call SetUnitAnimation(whichUnit, "stand victory")
+    call SetUnitAnimation(whichUnit, animationName)
+endfunction
+
+private function PlayMarketIdle takes unit whichUnit returns nothing
+    if GetCitizenClass(GetUnitTypeId(whichUnit)) == SHC_CLASS_CHILD then
+        call PlayCityIdle(whichUnit, "stand")
     else
-        call SetUnitAnimation(whichUnit, "attack")
+        call PlayCityIdle(whichUnit, "stand work")
     endif
 endfunction
 
@@ -658,16 +662,11 @@ private function StreetAction takes nothing returns nothing
         return
     endif
 
-    set action = GetRandomInt(1, 7)
-    if action <= 4 then
-        call PlayCityIdle(whichUnit, action)
-    elseif action == 5 then
+    set action = GetRandomInt(1, 5)
+    if action <= 2 then
         call RandomCityPointOrder(whichUnit, "move")
-    elseif action == 6 then
-        call IssueImmediateOrder(whichUnit, "holdposition")
-        call SetUnitAnimation(whichUnit, "stand")
     else
-        call PlayCityIdle(whichUnit, 6)
+        call PlayCityIdle(whichUnit, "stand")
     endif
 
     set whichUnit = null
@@ -680,20 +679,18 @@ private function MarketAction takes nothing returns nothing
         return
     endif
 
-    if TryStartChat(whichUnit, 18) then
+    if TryStartChat(whichUnit, SHC_MARKET_CHAT_CHANCE) then
         set whichUnit = null
         return
     endif
 
-    set action = GetRandomInt(1, 6)
+    set action = GetRandomInt(1, 5)
     if action <= 3 then
-        call PlayCityIdle(whichUnit, 2)
+        call PlayMarketIdle(whichUnit)
     elseif action == 4 then
-        call PlayCityIdle(whichUnit, 4)
-    elseif action == 5 then
         call RandomCityPointOrder(whichUnit, "move")
     else
-        call PlayCityIdle(whichUnit, 1)
+        call PlayCityIdle(whichUnit, "stand")
     endif
 
     set whichUnit = null
@@ -706,22 +703,16 @@ private function SocialAction takes nothing returns nothing
         return
     endif
 
-    if TryStartChat(whichUnit, 28) then
+    if TryStartChat(whichUnit, SHC_SOCIAL_CHAT_CHANCE) then
         set whichUnit = null
         return
     endif
 
-    set action = GetRandomInt(1, 6)
-    if action == 1 then
-        call PlayCityIdle(whichUnit, 5)
-    elseif action == 2 then
-        call PlayCityIdle(whichUnit, 3)
-    elseif action == 3 then
-        call PlayCityIdle(whichUnit, 4)
-    elseif action == 4 then
+    set action = GetRandomInt(1, 5)
+    if action <= 2 then
         call RandomCityPointOrder(whichUnit, "move")
     else
-        call PlayCityIdle(whichUnit, 1)
+        call PlayCityIdle(whichUnit, "stand")
     endif
 
     set whichUnit = null
@@ -808,6 +799,7 @@ private function CreateCitizenGroup takes integer routineId, integer count retur
     set spawnGroupId = AIRoutines_CreateManagedRandomUnitGroupInZone(Player(SHC_OWNER_PLAYER_ID), gg_rct_013Stormhaven, routineId, count, SHC_RESPAWN_DELAY, SHC_RANDOM_FACING, SHC_ROUTINE_ZONE_ID)
     if spawnGroupId > 0 then
         call AIRoutines_SetManagedUnitGroupTurnover(spawnGroupId, SHC_TURNOVER_MIN, SHC_TURNOVER_MAX, gg_rct_013Stormhaven, SHC_TURNOVER_REMOVE_DELAY)
+        call AIRoutines_SetManagedUnitGroupRemovalPlayerGuardRange(spawnGroupId, SHC_TURNOVER_PLAYER_GUARD_RANGE)
     endif
     return spawnGroupId
 endfunction
@@ -816,6 +808,26 @@ public function Refresh takes nothing returns nothing
     call AIRoutines_RefillManagedUnitGroup(SHC_StreetGroupId)
     call AIRoutines_RefillManagedUnitGroup(SHC_MarketGroupId)
     call AIRoutines_RefillManagedUnitGroup(SHC_SocialGroupId)
+endfunction
+
+public function DebugForceChat takes nothing returns boolean
+    local group enumGroup = CreateGroup()
+    local unit enumUnit
+    local boolean started = false
+    call GroupEnumUnitsInRect(enumGroup, gg_rct_013Stormhaven, null)
+    loop
+        set enumUnit = FirstOfGroup(enumGroup)
+        exitwhen enumUnit == null or started
+        call GroupRemoveUnit(enumGroup, enumUnit)
+        if IsStormhavenCitizen(enumUnit) and IsPlayerNearUnit(enumUnit) then
+            set started = TryStartChat(enumUnit, SHC_DEBUG_CHAT_CHANCE)
+        endif
+    endloop
+
+    call DestroyGroup(enumGroup)
+    set enumUnit = null
+    set enumGroup = null
+    return started
 endfunction
 
 private function Init takes nothing returns nothing
