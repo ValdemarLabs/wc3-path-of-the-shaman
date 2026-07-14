@@ -827,6 +827,10 @@ private function EndPendingGreetSequenceControl takes nothing returns nothing
 	set QuestGiver_PendingSequenceCinematic = false
 endfunction
 
+private function ReleasePendingGreetSequenceToDialog takes nothing returns nothing
+	set QuestGiver_PendingSequenceCinematic = false
+endfunction
+
 public function CreateGreetSequenceBase takes unit giver, string giverName, unit hero, real startDelay, real heroReplyDelay, boolean faceEachOther returns integer
 	local integer seq = DialogSystem_CreateSequence()
 	local string heroName = GetHeroName(hero)
@@ -883,12 +887,14 @@ private function OnGreetSequenceEnd takes nothing returns nothing
 	local unit npc = QuestGiver_PendingNPC
 	local dialog d = QuestGiver_PendingDialog
 	local player p = QuestGiver_PendingPlayer
-	call EndPendingGreetSequenceControl()
 	if d != null and p != null then
+		call ReleasePendingGreetSequenceToDialog()
 		if npc != null then
 			call DialogSystem_SetContext(npc, p)
 		endif
 		call DialogSystem_ShowDialog(d, p)
+	else
+		call EndPendingGreetSequenceControl()
 	endif
 	if QuestGiver_PendingSeq != 0 then
 		call DialogSystem_ClearSequence(QuestGiver_PendingSeq)
@@ -978,18 +984,23 @@ private function OnFirstGreetSequenceEnd takes nothing returns nothing
 	local dialog d = QuestGiver_PendingDialog
 	local player p = QuestGiver_PendingPlayer
 	call DebugMsg("OnFirstGreetSequenceEnd: callback fired, npc=" + I2S(B2I(npc != null)) + ", dialog=" + I2S(B2I(d != null)))
-	call EndPendingGreetSequenceControl()
 	if npc != null then
 		call SetFirstGreetDone(npc, true)
 		call SuppressNextGreet(npc)
 		call DebugMsg("OnFirstGreetSequenceEnd: marked as greeted")
 	endif
 	if npc != null and d != null and p != null then
+		call ReleasePendingGreetSequenceToDialog()
 		call DebugMsg("OnFirstGreetSequenceEnd: showing dialog")
 		call DialogSystem_SetContext(npc, p)
 		call DialogSystem_ShowDialog(d, p)
 	else
+		call EndPendingGreetSequenceControl()
 		call DebugMsg("OnFirstGreetSequenceEnd: skipping dialog show")
+	endif
+	if QuestGiver_PendingSeq != 0 then
+		call DialogSystem_ClearSequence(QuestGiver_PendingSeq)
+		set QuestGiver_PendingSeq = 0
 	endif
 	set QuestGiver_PendingDialog = null
 	set QuestGiver_PendingPlayer = null
