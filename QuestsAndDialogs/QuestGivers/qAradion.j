@@ -3634,11 +3634,7 @@ public function UpdateQuestRiftsCorruption takes nothing returns nothing
 endfunction
 
 private function StartExitFadeOut takes nothing returns nothing
-	call QuestGiver_StartDialogExitTransition(Aradion, SelectedHero, AradionDialogCooldown, DIALOG_COOLDOWN, true, 2.00, USE_DIALOG_CAMERA, true, CINEMATIC)
-endfunction
-
-private function BeginQuestDialogSequence takes nothing returns nothing
-	call QuestGiver_BeginDialogSequence()
+	call QuestGiver_StartConfiguredDialogExitTransition(Aradion, SelectedHero, AradionDialogCooldown, DIALOG_COOLDOWN, USE_DIALOG_CAMERA, CINEMATIC)
 endfunction
 
 private function SyncRangerMissingReadyTurnIn takes nothing returns nothing
@@ -3670,73 +3666,73 @@ endfunction
 // Test quest handlers (simple accept/complete)
 //===========================================================================
 private function OnAcceptTestKill takes nothing returns nothing
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	call QuestGiver_AcceptQuestByNameAndGiver(QUEST_TEST_KILL, Aradion)
 	call StartExitFadeOut()
 endfunction
 
 private function OnCompleteTestKill takes nothing returns nothing
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	call QuestGiver_CompleteQuestByNameAndGiver(QUEST_TEST_KILL, Aradion)
 	call StartExitFadeOut()
 endfunction
 
 private function OnAcceptTestTalkTo takes nothing returns nothing
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	call QuestGiver_AcceptQuestByNameAndGiver(QUEST_TEST_TALKTO, Aradion)
 	call StartExitFadeOut()
 endfunction
 
 private function OnCompleteTestTalkTo takes nothing returns nothing
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	call QuestGiver_CompleteQuestByNameAndGiver(QUEST_TEST_TALKTO, Aradion)
 	call StartExitFadeOut()
 endfunction
 
 private function OnAcceptTestFindNPC takes nothing returns nothing
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	call QuestGiver_AcceptQuestByNameAndGiver(QUEST_TEST_FINDNPC, Aradion)
 	call StartExitFadeOut()
 endfunction
 
 private function OnCompleteTestFindNPC takes nothing returns nothing
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	call QuestGiver_CompleteQuestByNameAndGiver(QUEST_TEST_FINDNPC, Aradion)
 	call StartExitFadeOut()
 endfunction
 
 private function OnAcceptTestGoTo takes nothing returns nothing
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	call QuestGiver_AcceptQuestByNameAndGiver(QUEST_TEST_GOTO, Aradion)
 	call StartExitFadeOut()
 endfunction
 
 private function OnCompleteTestGoTo takes nothing returns nothing
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	call QuestGiver_CompleteQuestByNameAndGiver(QUEST_TEST_GOTO, Aradion)
 	call StartExitFadeOut()
 endfunction
 
 private function OnAcceptTestReputation takes nothing returns nothing
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	call QuestGiver_AcceptQuestByNameAndGiver(QUEST_TEST_REPUTATION, Aradion)
 	call StartExitFadeOut()
 endfunction
 
 private function OnCompleteTestReputation takes nothing returns nothing
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	call QuestGiver_CompleteQuestByNameAndGiver(QUEST_TEST_REPUTATION, Aradion)
 	call StartExitFadeOut()
 endfunction
 
 private function OnAcceptTestInvestigate takes nothing returns nothing
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	call QuestGiver_AcceptQuestByNameAndGiver(QUEST_TEST_INVESTIGATE, Aradion)
 	call StartExitFadeOut()
 endfunction
 
 private function OnCompleteTestInvestigate takes nothing returns nothing
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	call QuestGiver_CompleteQuestByNameAndGiver(QUEST_TEST_INVESTIGATE, Aradion)
 	call StartExitFadeOut()
 endfunction
@@ -3762,7 +3758,7 @@ endfunction
 private function OnAcceptQuest1 takes nothing returns nothing
 	local integer seq
 	local unit hero
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	set seq = QuestGiver_CreateBaseSequence(Aradion, "Aradion the Farseer")
 	call DialogSystem_SetSequenceCallbacks(seq, null, function OnAcceptQuest1End)
 	
@@ -3779,7 +3775,7 @@ private function OnAcceptQuest1 takes nothing returns nothing
 endfunction
 
 private function OnFailQuest1 takes nothing returns nothing
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	call FailRangerMissingForRetry("Valeria was lost.")
 	call StartExitFadeOut()
 endfunction
@@ -3815,7 +3811,7 @@ private function OnCompleteQuest1 takes nothing returns nothing
 		return
 	endif
 	
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	
 	set q = QuestGiver_GetByNameAndGiver(QUEST_RANGER_MISSING, Aradion)
 	if q != 0 then
@@ -3906,7 +3902,7 @@ endfunction
 private function OnAcceptQuest2 takes nothing returns nothing
 	local integer seq
 	local unit hero
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	set seq = QuestGiver_CreateBaseSequence(Aradion, "Aradion the Farseer")
 	call DialogSystem_SetSequenceCallbacks(seq, null, function OnAcceptQuest2End)
 	
@@ -3938,7 +3934,7 @@ endfunction
 private function OnCompleteQuest2 takes nothing returns nothing
 	local integer seq
 	local unit hero
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	set seq = QuestGiver_CreateBaseSequence(Aradion, "Aradion the Farseer")
 	call DialogSystem_SetSequenceCallbacks(seq, null, function OnCompleteQuest2End)
 	
@@ -3991,7 +3987,7 @@ endfunction
 private function OnRecoverTelanorRod takes nothing returns nothing
 	local integer seq
 	local unit hero
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	set seq = QuestGiver_CreateBaseSequence(Aradion, "Aradion the Farseer")
 	call DialogSystem_SetSequenceCallbacks(seq, null, function OnRecoverTelanorRodEnd)
 	set hero = ResolveDialogHero()
@@ -4006,7 +4002,7 @@ endfunction
 private function OnAcceptQuest3 takes nothing returns nothing
 	local integer seq
 	local unit hero
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	set seq = QuestGiver_CreateBaseSequence(Aradion, "Aradion the Farseer")
 	call DialogSystem_SetSequenceCallbacks(seq, null, function OnAcceptQuest3End)
 	
@@ -4044,7 +4040,7 @@ endfunction
 private function OnCompleteQuest3 takes nothing returns nothing
 	local integer seq
 	local unit hero
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	set seq = QuestGiver_CreateBaseSequence(Aradion, "Aradion the Farseer")
 	call DialogSystem_SetSequenceCallbacks(seq, null, function OnCompleteQuest3End)
 	
@@ -4118,7 +4114,7 @@ private function OnAcceptQuest4 takes nothing returns nothing
 		call BJDebugMsg("[qAradion] WARNING: Valeria is null/dead in OnAcceptQuest4 - some dialogue actions will be skipped")
 	endif
 	
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	set seq = QuestGiver_CreateBaseSequence(Aradion, "Aradion the Farseer")
 	call DialogSystem_SetSequenceCallbacks(seq, null, function OnAcceptQuest4End)
 	
@@ -4181,7 +4177,7 @@ private function OnCompleteQuest4 takes nothing returns nothing
 		call BJDebugMsg("[qAradion] WARNING: Valeria is null/dead in OnCompleteQuest4 - some dialogue actions will be skipped")
 	endif
 	
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	set seq = QuestGiver_CreateBaseSequence(Aradion, "Aradion the Farseer")
 	call DialogSystem_SetSequenceCallbacks(seq, null, function OnCompleteQuest4End)
 	
@@ -4205,7 +4201,7 @@ endfunction
 
 private function OnFarewell takes nothing returns nothing
 	local integer seq
-	call BeginQuestDialogSequence()
+	call QuestGiver_BeginDialogSequence()
 	
 	// Use QuestGiver helper to build farewell sequence
 	set seq = QuestGiver_CreateFarewellSequence(Aradion, "Aradion the Farseer", null, "", DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
@@ -4446,22 +4442,17 @@ private function InitRiftsDelayed takes nothing returns nothing
 endfunction
 
 private function OnDelayedQuestDiscovered takes nothing returns nothing
-	local QuestData q
 	local unit hero
 	call SyncUnitReferences()
-	set q = QuestGiver_GetByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
-	if q == 0 or QuestGiver_GetEventQuestId() != q.id then
-		set q = 0
+	if not QuestGiver_IsEventQuestByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion) then
 		return
 	endif
 	if not RiftsQuestActive or RiftsFailureInProgress or RiftsAwaitingReturnHome or RiftsReturnedHome then
-		set q = 0
 		return
 	endif
 	set hero = GetRiftsTrackingHero()
 	if hero == null then
 		call BJDebugMsg("[qAradion] ERROR: Rifts delayed discovery setup skipped because no valid player hero was resolved.")
-		set q = 0
 		set hero = null
 		return
 	endif
@@ -4470,7 +4461,6 @@ private function OnDelayedQuestDiscovered takes nothing returns nothing
 	call StartFieldCompanions(hero)
 	call EnableRiftsFailTriggers()
 	call StartRiftsFieldMonitor()
-	set q = 0
 	set hero = null
 endfunction
 
