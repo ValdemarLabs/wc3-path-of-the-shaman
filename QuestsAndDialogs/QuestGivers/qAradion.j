@@ -266,19 +266,19 @@ endfunction
 
 private function GetPlayerQuestHero takes unit preferredHero returns unit
 	call SyncUnitReferences()
-	if preferredHero != null and QuestGiver_IsUnitAlive(preferredHero) and GetOwningPlayer(preferredHero) == Player(0) then
+	if preferredHero != null and QuestGiver_IsUnitAlive(preferredHero) then
 		return preferredHero
 	endif
-	if SelectedHero != null and QuestGiver_IsUnitAlive(SelectedHero) and GetOwningPlayer(SelectedHero) == Player(0) then
+	if SelectedHero != null and QuestGiver_IsUnitAlive(SelectedHero) then
 		return SelectedHero
 	endif
-	if ALLOW_NAZGREK and Nazgrek != null and QuestGiver_IsUnitAlive(Nazgrek) and GetOwningPlayer(Nazgrek) == Player(0) then
+	if ALLOW_NAZGREK and Nazgrek != null and QuestGiver_IsUnitAlive(Nazgrek) then
 		return Nazgrek
 	endif
-	if ALLOW_NAZGREK and udg_Nazgrek != null and QuestGiver_IsUnitAlive(udg_Nazgrek) and GetOwningPlayer(udg_Nazgrek) == Player(0) then
+	if ALLOW_NAZGREK and udg_Nazgrek != null and QuestGiver_IsUnitAlive(udg_Nazgrek) then
 		return udg_Nazgrek
 	endif
-	if ALLOW_ZULKIS and udg_Zulkis != null and QuestGiver_IsUnitAlive(udg_Zulkis) and GetOwningPlayer(udg_Zulkis) == Player(0) then
+	if ALLOW_ZULKIS and udg_Zulkis != null and QuestGiver_IsUnitAlive(udg_Zulkis) then
 		return udg_Zulkis
 	endif
 	return null
@@ -346,6 +346,10 @@ private function IsElarindorHostileForRifts takes nothing returns boolean
 		return false
 	endif
 	return Reputation.getRep(Player(0), f) < Reputation_REP_UNFRIENDLY
+endfunction
+
+private function IsElarindorTemporarilyHostile takes nothing returns boolean
+	return Reputation_IsFactionTemporarilyHostile("Elarindor")
 endfunction
 
 private function RemoveRangerMissingEscortDestination takes nothing returns nothing
@@ -731,6 +735,7 @@ private function DisableRiftsFailTriggers takes nothing returns nothing
 endfunction
 
 private function StartFieldCompanions takes unit hero returns nothing
+	call SyncUnitReferences()
 	if hero == null then
 		set hero = GetRiftsTrackingHero()
 	endif
@@ -2250,7 +2255,6 @@ endfunction
 
 private function CreateRiftUnitAtSlot takes integer index returns unit
 	local rect r = GetRiftRect(index)
-	local rect fallbackRect = null
 	local unit result = null
 	local real x
 	local real y
@@ -2261,16 +2265,6 @@ private function CreateRiftUnitAtSlot takes integer index returns unit
 	set x = GetRectCenterX(r)
 	set y = GetRectCenterY(r)
 	set result = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_MANA_RIFT, x, y, bj_UNIT_FACING)
-	if result == null and index != 1 then
-		set fallbackRect = GetRiftRect(1)
-		if fallbackRect != null then
-			set result = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_MANA_RIFT, GetRectCenterX(fallbackRect), GetRectCenterY(fallbackRect), bj_UNIT_FACING)
-			if result != null then
-				call SetUnitX(result, x)
-				call SetUnitY(result, y)
-			endif
-		endif
-	endif
 	if result != null then
 		call SetUnitX(result, x)
 		call SetUnitY(result, y)
@@ -2279,7 +2273,6 @@ private function CreateRiftUnitAtSlot takes integer index returns unit
 	else
 		call BJDebugMsg("[qAradion] ERROR: CreateUnit('n023') failed for Mana Rift slot " + I2S(index) + " at gg_rct_ManaRift" + I2S(index) + " (" + R2S(x) + ", " + R2S(y) + ").")
 	endif
-	set fallbackRect = null
 	set r = null
 	return result
 endfunction
@@ -2331,14 +2324,9 @@ private function CreateInitialRiftUnits takes nothing returns nothing
 	local integer i = 1
 	loop
 		exitwhen i > RIFTS_MAX
-		if RiftsUnits[i] != null and GetUnitTypeId(RiftsUnits[i]) != 0 then
-			call RemoveUnit(RiftsUnits[i])
-		endif
-		set RiftsUnits[i] = null
 		set RiftsUnitTypeIds[i] = UNIT_MANA_RIFT
 		set RiftsClosed[i] = false
-		set RiftsUnits[i] = EnsureRiftUnit(i)
-		if RiftsUnits[i] == null then
+		if EnsureRiftUnit(i) == null then
 			call BJDebugMsg("[qAradion] ERROR: Mana Rift slot " + I2S(i) + " is still null after init creation.")
 		endif
 		set i = i + 1
@@ -2356,6 +2344,8 @@ private function PrepareValeriaForRiftsIntro takes unit hero returns nothing
 		set hero = null
 		return
 	endif
+	call PauseUnit(Valeria, false)
+	call SetUnitInvulnerable(Valeria, false)
 	call StopFollow(Valeria)
 	call StopValeriaPatrolInternal()
 	if gg_rct_ValeriaNewPos != null then
@@ -4417,6 +4407,10 @@ private function OnSelected takes nothing returns nothing
 	local integer customValue
 	call SyncUnitReferences()
 
+	if IsElarindorTemporarilyHostile() then
+		call DebugMsg("Select gate blocked: Elarindor temporarily hostile")
+		return
+	endif
 	if DialogSystem_IsSequenceActive() then
 		call DebugMsg("Select gate blocked: dialog sequence active")
 		return
