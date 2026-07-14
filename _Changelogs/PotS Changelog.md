@@ -15,7 +15,47 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
-## [14.7.2026] 
+## [14.7.2026] Part II
+#### Note: Because of the vast updates and to make it more simpler to update the changelog, the updates have only been written under `### Technical Updates` for now.
+
+### Technical Updates
+
+- `qAradion.j`
+  - Removed Player(0) ownership checks from qAradion's player-hero resolver. Nazgrek/Zulkis being temporarily owned by the cinematic player during `Cinematic ON` no longer makes qAradion lose the active hero for Tel'anor Rod grants, Rifts companion setup, or dialog fallback resolution.
+  - Kept hero ownership restoration out of qAradion. Ownership restore remains handled by the existing GUI `Cinematic OFF` trigger, preserving the intended cinematic trigger order.
+  - Added a temporary Elarindor hostility gate to Aradion selection so Aradion dialog cannot be opened while the player is temporarily hostile with Elarindor.
+  - Hardened `Rifts of Corruption` accept setup: field companions now sync unit refs before resolving the leader, and Valeria is unpaused / made vulnerable before being placed behind the hero and ordered toward `gg_rct_ValeriaNewPos`.
+  - Simplified Mana Rift creation so slots 1, 2, and 3 all use the same direct creation path from their own `gg_rct_ManaRift1/2/3` rect centers. qAradion stores each created unit in `RiftsUnits[]`, owns them by Neutral Passive, and discards them from CreepRespawn.
+  - Made initial Mana Rift setup non-destructive: `CreateInitialRiftUnits` no longer removes existing stored rift units before ensuring the three slots exist.
+
+- `QuestGiver.j`
+  - Replaced the dialog hero validity helper's Player(0)-ownership requirement with a live-unit check. `GetAvailableHero`, `GetAllowedHero`, and `ResolveDialogHero` now treat known Nazgrek/Zulkis unit refs as valid even while cinematic ownership is temporarily changed.
+  - Confirmed quest-item grant logic itself already uses the generic `UnitAddItem` path and does not require a DInventory-specific grant. The Tel'anor Rod failure was caused by hero resolution returning null before the grant call.
+
+- `QuestMaster.j`
+  - Updated generic highest-hero-level availability checks to include `udg_Nazgrek` and `udg_Zulkis` directly after the Player(0) group scan, so quest availability level gates do not silently fail while cinematic ownership is temporarily changed.
+
+- `Companions.j`
+  - Focus Nazgrek/Zulkis now matches the mode ability behavior:
+    - Unit-targeted Focus affects only that companion/pet.
+    - Ground-cast Focus applies to all valid companions and tamed units.
+
+- `Interface.j`
+  - now plays Interface_SelectTarget only when Player(0) selects a unit not owned by Player(0).
+  - EVENT_UNIT_SELECT no longer points at gg_snd_Interface_SelectTarget.
+  - EVENT_CANCEL now uses gg_snd_Interface_MenuClose.
+  - Added Interface events for quest activate/complete/log close/write, loot coin, and hard warning.
+
+- `AbilitiesLiteUI.j`, ``AchievementsUI.j`, `CameraUI.j`, `CheatsUI.j`, `CommandsUI.j`, `HintsUI.j`, `MasterUI.j`, `ProfessionsUI.j`, `ReputationUI.j`, `SecretsUI.j`, `SettingsUI.j`, `StatsLiteUI.j`, and `StatsUI.j` and `TasQuestBoxLight_PotS.j`
+  - Wired active UIs directly to Interface.j
+  - SettingsUI:
+    - Displays UI Sounds: On/Off
+    - Toggles Interface_SetSoundsEnabled(not Interface_AreSoundsEnabled())
+    - Uses the existing master sound gate in Interface.j, so all sounds routed through Interface stop playing when disabled
+
+
+
+## [14.7.2026] Part I
 #### Note: Because of the vast updates and to make it more simpler to update the changelog, the updates have only been written under `### Technical Updates` for now.
 
 ### Technical Updates
