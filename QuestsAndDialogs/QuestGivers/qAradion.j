@@ -4063,7 +4063,6 @@ private function OnCompleteQuest3 takes nothing returns nothing
 endfunction
 
 private function OnAcceptQuest4End takes nothing returns nothing
-	local unit hero
 	local QuestData q
 	set AradionLastAcceptedQuest = ARADION_QID_RIFTS
 	set q = QuestGiver_GetByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
@@ -4071,10 +4070,8 @@ private function OnAcceptQuest4End takes nothing returns nothing
 		call ResetRiftsObjectivesForNewRun(q)
 	endif
 	call QuestGiver_AcceptQuestByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
-	set hero = GetPlayerQuestHero(SelectedHero)
 	set RiftsQuestActive = true
 	call StopValeriaPatrolInternal()
-	call StartFieldCompanions(hero)
 	set RiftsLeftFieldZoneNotified = false
 	set RiftsHasEnteredFieldZone = false
 	set RiftsRitualActive = false
@@ -4098,17 +4095,13 @@ private function OnAcceptQuest4End takes nothing returns nothing
 	call StopRiftsFieldMonitor()
 	call ClearRiftsWaveHandles()
 	call DialogSystem_ClearFieldLineQueue()
-	call PrepareRiftsForQuestDiscovery()
 	if Aradion != null then
 		call SetUnitInvulnerable(Aradion, false)
 	endif
 	if Valeria != null then
 		call SetUnitInvulnerable(Valeria, false)
 	endif
-	call EnableRiftsFailTriggers()
 	call StartExitFadeOut()
-	call StartRiftsFieldMonitor()
-	set hero = null
 endfunction
 
 private function OnAcceptQuest4 takes nothing returns nothing
@@ -4452,6 +4445,35 @@ private function InitRiftsDelayed takes nothing returns nothing
 	set t = null
 endfunction
 
+private function OnDelayedQuestDiscovered takes nothing returns nothing
+	local QuestData q
+	local unit hero
+	call SyncUnitReferences()
+	set q = QuestGiver_GetByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion)
+	if q == 0 or QuestGiver_GetEventQuestId() != q.id then
+		set q = 0
+		return
+	endif
+	if not RiftsQuestActive or RiftsFailureInProgress or RiftsAwaitingReturnHome or RiftsReturnedHome then
+		set q = 0
+		return
+	endif
+	set hero = GetRiftsTrackingHero()
+	if hero == null then
+		call BJDebugMsg("[qAradion] ERROR: Rifts delayed discovery setup skipped because no valid player hero was resolved.")
+		set q = 0
+		set hero = null
+		return
+	endif
+	call PrepareRiftsForQuestDiscovery()
+	call StopValeriaPatrolInternal()
+	call StartFieldCompanions(hero)
+	call EnableRiftsFailTriggers()
+	call StartRiftsFieldMonitor()
+	set q = 0
+	set hero = null
+endfunction
+
 private function InitDelayed takes nothing returns nothing
 	local timer riftTimer
 	if udg_Aradion == null then
@@ -4477,6 +4499,7 @@ private function InitDelayed takes nothing returns nothing
 	call CreateQuests()
 	call QuestGiver_RefreshAvailabilityForGiver(Aradion)
 	call QuestGiver_RegisterSelectionHandler(Aradion, function OnSelected)
+	call QuestGiver_AddDelayedDiscoveredAction(function OnDelayedQuestDiscovered)
 	call RegisterCompanionCommandBridge()
 	set riftTimer = CreateTimer()
 	call TimerStart(riftTimer, 5.00, false, function InitRiftsDelayed)
