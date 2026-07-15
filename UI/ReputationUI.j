@@ -83,6 +83,21 @@ private function RUI_GetFactionIcon takes Faction f returns string
     return f.iconPath
 endfunction
 
+private function RUI_GetFactionStatusText takes Faction f returns string
+    local string statusText
+
+    if f == 0 then
+        return ""
+    endif
+
+    set statusText = Reputation.getStatus(Player(0), f)
+    if Reputation_IsFactionTemporarilyHostile(f.name) then
+        set statusText = statusText + " |cff808080(|r|cffff8040Aggressive|r|cff808080)|r"
+    endif
+
+    return statusText
+endfunction
+
 private function RUI_GetFactionDescription takes string factionName returns string
     if factionName == "Horde" then
         return "The main orcish power in the region. Your political standing here shapes access to allied camps and support."
@@ -265,7 +280,7 @@ private function RUI_UpdateRows takes player whichPlayer returns nothing
                 if GetLocalPlayer() == whichPlayer then
                     set iconPath = RUI_GetFactionIcon(f)
                     set rowText = "|cff80a0ff" + f.name + "|r"
-                    set rowLevel = Reputation.getStatus(Player(0), f)
+                    set rowLevel = RUI_GetFactionStatusText(f)
                     if RUI_RowIconCache[rowIndex] != iconPath then
                         set RUI_RowIconCache[rowIndex] = iconPath
                         call BlzFrameSetTexture(RUI_RowIcon[rowIndex], iconPath, 0, true)
@@ -367,8 +382,11 @@ private function RUI_UpdateDetail takes player whichPlayer returns nothing
     set rep = Reputation.getRep(Player(0), f)
     set iconPath = RUI_GetFactionIcon(f)
     set titleText = "|cff80a0ff" + f.name + "|r"
-    set valueText = Reputation.getStatus(Player(0), f)
+    set valueText = RUI_GetFactionStatusText(f)
     set detailText = RUI_GetFactionDescription(f.name) + "|n|nCurrent status: " + valueText + "|nReputation value: |cffffffff" + I2S(rep) + "|r|n" + RUI_GetFactionConsequence(rep)
+    if Reputation_IsFactionTemporarilyHostile(f.name) then
+        set detailText = detailText + "|nTemporary status: |cffff8040Aggressive|r - faction units currently treat you as hostile."
+    endif
     call RUI_SetDetail(whichPlayer, iconPath, titleText, valueText, detailText)
 endfunction
 
@@ -389,7 +407,7 @@ private function RUI_RefreshVisibleData takes player whichPlayer returns nothing
             if factionId > 0 then
                 set f = Faction.all[factionId]
                 if f != 0 then
-                    set rowLevel = Reputation.getStatus(Player(0), f)
+                    set rowLevel = RUI_GetFactionStatusText(f)
                     if RUI_RowLevelCache[rowIndex] != rowLevel then
                         set RUI_RowLevelCache[rowIndex] = rowLevel
                         call BlzFrameSetText(RUI_RowLevel[rowIndex], rowLevel)
