@@ -22,7 +22,7 @@
 ### Technical Updates
 
 - `StatsLiteUI.j`
-  - Moved mode text 0.004 left from the status text column.
+  - The mode text now uses textGap + stateOffset + 0.004, moving it right from the previous - 0.004 position. That is an 0.008 rightward correction from the screenshot state, aimed at visually aligning it under the status text.
   - Increased allowed displayed name length for normal rows and companion rows.
   - Adjusted long-name scaling so names like Companion Aradin the Farseer can fit without changing HP/resource bar settings.
 
@@ -31,6 +31,15 @@
 
 - `Interface.j`
   - Now plays mining hit sounds as fresh 3D sound instances attached to the node unit, with cutoff/distance set to 1000.00. `GatherNodeUnits.j` already passes the node via Interface_NotifyMiningHitOnUnit(node), so no change was needed there.
+
+- `MasterUI.j`
+  - MasterUI_HideGameButton() now closes the MasterUI-routed panels via the existing MUI_HideAllPanels() path, hides the MasterUI panel itself, and also calls StatsLiteUI_HideForCinematic() so the monitor is covered without changing callers like QuestGiver.
+
+- `qAradion.j`
+  - Strengthened `qAradion_TestSpawnManaRifts()` so it now prints slot begin/end markers for ManaRift1/2/3, reports when `CreateUnit` returns non-null, and delays runtime cleanup until after all rift slots and proximity registrations are processed.
+  - Fixed the Aradion `Info` dialog path so ending or ESC-skipping the info sequence no longer calls cinematic OFF before returning to dialog choices.
+  - Added Rifts delayed-discovery diagnostics for companion setup, including state-skip reasons and whether Valeria/Aradion are controlled after setup.
+  - Added a proximity registration count warning if fewer than all three Mana Rift units are registered for ritual range detection.
 
 ## [14.7.2026] Part II
 #### Note: Because of the vast updates and to make it more simpler to update the changelog, the updates have only been written under `### Technical Updates` for now.
