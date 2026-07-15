@@ -79,6 +79,7 @@ library Interface initializer AutoInit
         public constant integer EVENT_HARD_WARNING = 30
 
         private constant integer IUI_EVENT_MAX = 30
+        private constant real IUI_MINING_SOUND_CUTOFF = 1000.00
 
         private boolean IUI_Initialized = false
         private boolean IUI_SoundsEnabled = true
@@ -92,6 +93,26 @@ library Interface initializer AutoInit
 
     private function IUI_IsValidEvent takes integer eventId returns boolean
         return eventId >= EVENT_UNIT_SELECT and eventId <= IUI_EVENT_MAX
+    endfunction
+
+    private function IUI_IsMiningHitEvent takes integer eventId returns boolean
+        return eventId >= EVENT_TRADESKILL_MINING_HIT_A and eventId <= EVENT_TRADESKILL_MINING_HIT_E
+    endfunction
+
+    private function IUI_GetMiningHitSoundLabel takes integer eventId returns string
+        if eventId == EVENT_TRADESKILL_MINING_HIT_A then
+            return "Tradeskill_MiningHitA"
+        elseif eventId == EVENT_TRADESKILL_MINING_HIT_B then
+            return "Tradeskill_MiningHitB"
+        elseif eventId == EVENT_TRADESKILL_MINING_HIT_C then
+            return "Tradeskill_MiningHitC"
+        elseif eventId == EVENT_TRADESKILL_MINING_HIT_D then
+            return "Tradeskill_MiningHitD"
+        elseif eventId == EVENT_TRADESKILL_MINING_HIT_E then
+            return "Tradeskill_MiningHitE"
+        endif
+
+        return ""
     endfunction
 
     private function IUI_PlaySound takes sound whichSound returns nothing
@@ -110,6 +131,36 @@ library Interface initializer AutoInit
         endif
     endfunction
 
+    private function IUI_PlayMiningHitSoundOnUnit takes integer eventId, unit whichUnit returns nothing
+        local string soundLabel
+        local sound miningSound
+
+        if not IUI_SoundsEnabled or whichUnit == null then
+            return
+        endif
+
+        set soundLabel = IUI_GetMiningHitSoundLabel(eventId)
+        if soundLabel == "" then
+            call IUI_PlaySoundOnUnit(IUI_EventSound[eventId], whichUnit)
+            return
+        endif
+
+        set miningSound = CreateSoundFromLabel(soundLabel, false, true, true, 12700, 12700)
+        if miningSound == null then
+            call IUI_PlaySoundOnUnit(IUI_EventSound[eventId], whichUnit)
+            return
+        endif
+
+        call SetSoundDistances(miningSound, 0.0, IUI_MINING_SOUND_CUTOFF)
+        call SetSoundDistanceCutoff(miningSound, IUI_MINING_SOUND_CUTOFF)
+        call AttachSoundToUnit(miningSound, whichUnit)
+        call SetSoundVolume(miningSound, 127)
+        call StartSound(miningSound)
+        call KillSoundWhenDone(miningSound)
+
+        set miningSound = null
+    endfunction
+
     private function IUI_PlayEvent takes integer eventId returns nothing
         if IUI_IsValidEvent(eventId) then
             call IUI_PlaySound(IUI_EventSound[eventId])
@@ -117,7 +168,9 @@ library Interface initializer AutoInit
     endfunction
 
     private function IUI_PlayEventOnUnit takes integer eventId, unit whichUnit returns nothing
-        if IUI_IsValidEvent(eventId) then
+        if IUI_IsMiningHitEvent(eventId) then
+            call IUI_PlayMiningHitSoundOnUnit(eventId, whichUnit)
+        elseif IUI_IsValidEvent(eventId) then
             call IUI_PlaySoundOnUnit(IUI_EventSound[eventId], whichUnit)
         endif
     endfunction
