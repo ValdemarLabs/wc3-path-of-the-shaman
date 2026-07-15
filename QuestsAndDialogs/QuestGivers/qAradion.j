@@ -4,7 +4,7 @@ library qAradion initializer Init requires QuestGiver, QuestMaster, DialogSystem
 // Quest giver dialog + quest flow for Aradion the Farseer.
 //===========================================================================
 globals
-	private constant boolean DEBUG = false
+	private constant boolean DEBUG = true
 	private constant boolean ENABLE_TEST_QUESTS = false
 
 	//===========================================================================
@@ -310,7 +310,11 @@ private function IsAradionFieldZoneActive takes nothing returns boolean
 endfunction
 
 private function GetRiftsTrackingHero takes nothing returns unit
-	return GetPlayerQuestHero(null)
+	local unit hero = GetPlayerQuestHero(null)
+	if hero == null then
+		set hero = ResolveDialogHero()
+	endif
+	return hero
 endfunction
 
 private function CanOfferRangerMissing takes nothing returns boolean
@@ -2068,7 +2072,6 @@ endfunction
 
 private function OnInfoEnd takes nothing returns nothing
 	call SyncUnitReferences()
-	call QuestGiver_EndCinematicSequence(CINEMATIC)
 	// Refresh quest state before rebuilding the dialog so Ranger Missing appears immediately.
 	if QuestGiver_QuestExistsByNameAndGiver(QUEST_RANGER_MISSING, Aradion) then
 		call QuestGiver_RefreshAvailabilityForGiver(Aradion)
@@ -2169,6 +2172,27 @@ private function GetRiftRect takes integer index returns rect
 	return null
 endfunction
 
+private function PrepareRiftUnitRuntimeState takes unit riftUnit returns nothing
+	if riftUnit == null then
+		return
+	endif
+	call ShowUnit(riftUnit, true)
+	call SetUnitCreepGuard(riftUnit, false)
+	call CreepRespawn_DiscardUnit(riftUnit)
+	set riftUnit = null
+endfunction
+
+private function PrepareRiftUnitsRuntimeState takes nothing returns nothing
+	local integer i = 1
+	loop
+		exitwhen i > RIFTS_MAX
+		if RiftsUnits[i] != null and QuestGiver_IsUnitAlive(RiftsUnits[i]) then
+			call PrepareRiftUnitRuntimeState(RiftsUnits[i])
+		endif
+		set i = i + 1
+	endloop
+endfunction
+
 private function CreateRiftUnitAtSlot takes integer index returns unit
 	local rect r = GetRiftRect(index)
 	local unit result = null
@@ -2181,11 +2205,7 @@ private function CreateRiftUnitAtSlot takes integer index returns unit
 	set x = GetRectCenterX(r)
 	set y = GetRectCenterY(r)
 	set result = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_MANA_RIFT, x, y, bj_UNIT_FACING)
-	if result != null then
-		call ShowUnit(result, true)
-		call SetUnitCreepGuard(result, false)
-		call CreepRespawn_DiscardUnit(result)
-	else
+	if result == null then
 		call BJDebugMsg("[qAradion] ERROR: CreateUnit('n023') failed for Mana Rift slot " + I2S(index) + " at gg_rct_ManaRift" + I2S(index) + " (" + R2S(x) + ", " + R2S(y) + ").")
 	endif
 	set r = null
@@ -2206,8 +2226,6 @@ private function TestSpawnManaRiftSlot takes integer index returns nothing
 	if existing != null and QuestGiver_IsUnitAlive(existing) and GetUnitTypeId(existing) == UNIT_MANA_RIFT then
 		set RiftsUnitTypeIds[index] = UNIT_MANA_RIFT
 		set RiftsClosed[index] = false
-		call ShowUnit(existing, true)
-		call CreepRespawn_DiscardUnit(existing)
 		call BJDebugMsg("[qAradion] TEST ManaRift" + I2S(index) + ": already alive, handle=" + I2S(GetHandleId(existing)) + ", owner=" + I2S(GetPlayerId(GetOwningPlayer(existing))) + ", pos=(" + R2S(GetUnitX(existing)) + ", " + R2S(GetUnitY(existing)) + ").")
 		set existing = null
 		return
@@ -2228,12 +2246,10 @@ private function TestSpawnManaRiftSlot takes integer index returns nothing
 	if spawned == null then
 		call BJDebugMsg("[qAradion] TEST ManaRift" + I2S(index) + ": CreateUnit returned null.")
 	else
+		call BJDebugMsg("[qAradion] TEST ManaRift" + I2S(index) + ": CreateUnit returned non-null, handle=" + I2S(GetHandleId(spawned)) + ".")
 		set RiftsUnits[index] = spawned
 		set RiftsUnitTypeIds[index] = UNIT_MANA_RIFT
 		set RiftsClosed[index] = false
-		call ShowUnit(spawned, true)
-		call SetUnitCreepGuard(spawned, false)
-		call CreepRespawn_DiscardUnit(spawned)
 		call BJDebugMsg("[qAradion] TEST ManaRift" + I2S(index) + ": spawned, handle=" + I2S(GetHandleId(spawned)) + ", owner=" + I2S(GetPlayerId(GetOwningPlayer(spawned))) + ", type=" + I2S(GetUnitTypeId(spawned)) + ", pos=(" + R2S(GetUnitX(spawned)) + ", " + R2S(GetUnitY(spawned)) + ").")
 	endif
 	set r = null
@@ -2256,7 +2272,6 @@ private function EnsureRiftUnit takes integer index returns unit
 		return null
 	endif
 	if u != null and QuestGiver_IsUnitAlive(u) and GetUnitTypeId(u) == UNIT_MANA_RIFT then
-		call CreepRespawn_DiscardUnit(u)
 		return u
 	endif
 	if u != null and GetUnitTypeId(u) != 0 then
@@ -2664,6 +2679,7 @@ endfunction
 
 private function RegisterRiftsProximityTrigger takes nothing returns nothing
 	local integer i = 1
+	local integer registeredCount = 0
 	local unit riftUnit
 	call DestroyRiftsProximityTrigger()
 	set RiftsProximityTrigger = CreateTrigger()
@@ -2676,11 +2692,16 @@ private function RegisterRiftsProximityTrigger takes nothing returns nothing
 		endif
 		if riftUnit != null and QuestGiver_IsUnitAlive(riftUnit) then
 			call TriggerRegisterUnitInRange(RiftsProximityTrigger, riftUnit, RIFTS_TRIGGER_RANGE, null)
+			set registeredCount = registeredCount + 1
 		endif
 		set riftUnit = null
 		set i = i + 1
 	endloop
 	call TriggerAddAction(RiftsProximityTrigger, function OnRiftsProximity)
+	call PrepareRiftUnitsRuntimeState()
+	if registeredCount < RIFTS_MAX then
+		call BJDebugMsg("[qAradion] WARNING: Rifts proximity registered " + I2S(registeredCount) + " / " + I2S(RIFTS_MAX) + " Mana Rift units.")
+	endif
 endfunction
 
 private function ClearRiftsWaveHandles takes nothing returns nothing
@@ -4496,7 +4517,9 @@ private function OnDelayedQuestDiscovered takes nothing returns nothing
 	if not QuestGiver_IsEventQuestByNameAndGiver(QUEST_RIFTS_CORRUPTION, Aradion) then
 		return
 	endif
+	call BJDebugMsg("[qAradion] Rifts delayed discovery event received.")
 	if not RiftsQuestActive or RiftsFailureInProgress or RiftsAwaitingReturnHome or RiftsReturnedHome then
+		call BJDebugMsg("[qAradion] Rifts delayed discovery setup skipped: active=" + I2S(B2I(RiftsQuestActive)) + ", failing=" + I2S(B2I(RiftsFailureInProgress)) + ", returning=" + I2S(B2I(RiftsAwaitingReturnHome)) + ", returned=" + I2S(B2I(RiftsReturnedHome)) + ".")
 		return
 	endif
 	set hero = GetRiftsTrackingHero()
@@ -4510,6 +4533,7 @@ private function OnDelayedQuestDiscovered takes nothing returns nothing
 	call StartFieldCompanions(hero)
 	call EnableRiftsFailTriggers()
 	call StartRiftsFieldMonitor()
+	call BJDebugMsg("[qAradion] Rifts delayed discovery setup complete: ValeriaControlled=" + I2S(B2I(Valeria != null and Companions_IsControlled(Valeria))) + ", AradionControlled=" + I2S(B2I(Aradion != null and Companions_IsControlled(Aradion))) + ".")
 	set hero = null
 endfunction
 
@@ -4574,7 +4598,9 @@ public function TestSpawnManaRifts takes nothing returns nothing
 	call BJDebugMsg("[qAradion] TEST ManaRifts: direct spawn check begin.")
 	loop
 		exitwhen i > RIFTS_MAX
+		call BJDebugMsg("[qAradion] TEST ManaRifts: slot " + I2S(i) + " begin.")
 		call TestSpawnManaRiftSlot(i)
+		call BJDebugMsg("[qAradion] TEST ManaRifts: slot " + I2S(i) + " end.")
 		set i = i + 1
 	endloop
 	call RegisterRiftsProximityTrigger()
