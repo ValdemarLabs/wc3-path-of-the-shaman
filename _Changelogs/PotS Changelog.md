@@ -15,6 +15,23 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+
+
+## [15.7.2026] 
+
+### Technical Updates
+
+- `StatsLiteUI.j`
+  - Moved mode text 0.004 left from the status text column.
+  - Increased allowed displayed name length for normal rows and companion rows.
+  - Adjusted long-name scaling so names like Companion Aradin the Farseer can fit without changing HP/resource bar settings.
+
+- `ReputationUI.j`
+  - Now formats faction status through a wrapper, appending Aggressive during temporary hostility, e.g. Neutral (Aggressive).
+
+- `Interface.j`
+  - Now plays mining hit sounds as fresh 3D sound instances attached to the node unit, with cutoff/distance set to 1000.00. `GatherNodeUnits.j` already passes the node via Interface_NotifyMiningHitOnUnit(node), so no change was needed there.
+
 ## [14.7.2026] Part II
 #### Note: Because of the vast updates and to make it more simpler to update the changelog, the updates have only been written under `### Technical Updates` for now.
 
