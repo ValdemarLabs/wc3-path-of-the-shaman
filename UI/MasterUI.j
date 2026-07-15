@@ -133,6 +133,12 @@ private function MUI_HideAllPanels takes nothing returns nothing
     call ExecuteFunc("SettingsUI_Hide")
 endfunction
 
+private function MUI_HideAllPanelsForCinematic takes nothing returns nothing
+    call MUI_HideMaster()
+    call MUI_HideAllPanels()
+    call ExecuteFunc("StatsLiteUI_HideForCinematic")
+endfunction
+
 private function MUI_ShowPlaceholder takes string featureName returns nothing
     call MUI_HideAllPanels()
     call DisplayTextToPlayer(Player(0), 0, 0, "|cffffcc00" + featureName + "|r is not implemented yet.")
@@ -398,6 +404,7 @@ public function HideGameButton takes nothing returns nothing
     if not MUI_Initialized then
         call Init()
     endif
+    call MUI_HideAllPanelsForCinematic()
     set MUI_OpenButtonVisible = false
     call MUI_ApplyOpenButtonVisibility()
 endfunction
