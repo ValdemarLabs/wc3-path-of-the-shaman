@@ -1363,7 +1363,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         call BlzFrameSetLevel(SLUI_RowState[rowIndex], 4) // CHANGE: status above translucent panel
 
         set SLUI_RowMode[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowMode" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(SLUI_RowMode[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowIcon[rowIndex], FRAMEPOINT_TOPRIGHT, textGap + stateOffset - 0.004, -0.018)
+        call BlzFrameSetPoint(SLUI_RowMode[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowIcon[rowIndex], FRAMEPOINT_TOPRIGHT, textGap + stateOffset + 0.004, -0.018)
         call BlzFrameSetSize(SLUI_RowMode[rowIndex], 0.082, 0.009)
         call BlzFrameSetTextAlignment(SLUI_RowMode[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(SLUI_RowMode[rowIndex], 0.46)
