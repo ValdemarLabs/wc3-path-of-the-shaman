@@ -57,12 +57,12 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         private constant real SLUI_ROW_NAME_WIDTH = 0.120
         private constant integer SLUI_ROW_NAME_LONG_LENGTH = 20
         private constant integer SLUI_ROW_NAME_EXTRA_LONG_LENGTH = 26
-        private constant integer SLUI_ROW_NAME_MAX_LENGTH = 23
-        private constant integer SLUI_ROW_COMPANION_LABEL_EXTRA_LENGTH = 5
-        private constant integer SLUI_ROW_COMPANION_NAME_MAX_LENGTH = 18
+        private constant integer SLUI_ROW_NAME_MAX_LENGTH = 30
+        private constant integer SLUI_ROW_COMPANION_LABEL_EXTRA_LENGTH = 10
+        private constant integer SLUI_ROW_COMPANION_NAME_MAX_LENGTH = 28
         private constant real SLUI_ROW_NAME_SCALE = 0.56
         private constant real SLUI_ROW_NAME_LONG_SCALE = 0.50
-        private constant real SLUI_ROW_NAME_EXTRA_LONG_SCALE = 0.46
+        private constant real SLUI_ROW_NAME_EXTRA_LONG_SCALE = 0.40
 
         private constant integer SLUI_ACTION_MINIMIZE = 1
         private constant integer SLUI_ACTION_STATS = 2
@@ -1363,7 +1363,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         call BlzFrameSetLevel(SLUI_RowState[rowIndex], 4) // CHANGE: status above translucent panel
 
         set SLUI_RowMode[rowIndex] = BlzCreateFrameByType("TEXT", "StatsLiteUIRowMode" + I2S(rowIndex), SLUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(SLUI_RowMode[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowIcon[rowIndex], FRAMEPOINT_TOPRIGHT, textGap + stateOffset, -0.018)
+        call BlzFrameSetPoint(SLUI_RowMode[rowIndex], FRAMEPOINT_TOPLEFT, SLUI_RowIcon[rowIndex], FRAMEPOINT_TOPRIGHT, textGap + stateOffset - 0.004, -0.018)
         call BlzFrameSetSize(SLUI_RowMode[rowIndex], 0.082, 0.009)
         call BlzFrameSetTextAlignment(SLUI_RowMode[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(SLUI_RowMode[rowIndex], 0.46)
