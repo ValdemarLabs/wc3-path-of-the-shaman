@@ -4,7 +4,7 @@ library qAradion initializer Init requires QuestGiver, QuestMaster, DialogSystem
 // Quest giver dialog + quest flow for Aradion the Farseer.
 //===========================================================================
 globals
-	private constant boolean DEBUG = true
+	private constant boolean DEBUG = false
 	private constant boolean ENABLE_TEST_QUESTS = false
 
 	//===========================================================================
@@ -4034,10 +4034,9 @@ private function OnAcceptQuest3End takes nothing returns nothing
 	if q != 0 then
 		call QuestGiver_RefreshItemRequirementsForQuest(q.id)
 	endif
-	call QuestGiver_RemoveHeroItemsEither(ITEM_TELANOR_ROD, ITEM_TELANOR_ROD_LEGACY, 64)
 	set hero = GetFadingSparksRodHero()
 	set SelectedHero = hero
-	call QuestGiver_GiveQuestItemToHero(hero, ITEM_TELANOR_ROD, ITEM_TELANOR_ROD_LEGACY, "Tel'anor Rod")
+	call QuestGiver_GiveUniqueQuestItemToHero(hero, ITEM_TELANOR_ROD, ITEM_TELANOR_ROD_LEGACY, "Tel'anor Rod")
 	set FadingSparksRodHero = null
 	call StartExitFadeOut()
 	set hero = null
@@ -4045,10 +4044,9 @@ endfunction
 
 private function OnRecoverTelanorRodEnd takes nothing returns nothing
 	local unit hero
-	call QuestGiver_RemoveHeroItemsEither(ITEM_TELANOR_ROD, ITEM_TELANOR_ROD_LEGACY, 64)
 	set hero = GetFadingSparksRodHero()
 	set SelectedHero = hero
-	call QuestGiver_GiveQuestItemToHero(hero, ITEM_TELANOR_ROD, ITEM_TELANOR_ROD_LEGACY, "Tel'anor Rod")
+	call QuestGiver_GiveUniqueQuestItemToHero(hero, ITEM_TELANOR_ROD, ITEM_TELANOR_ROD_LEGACY, "Tel'anor Rod")
 	set FadingSparksRodHero = null
 	call StartExitFadeOut()
 	set hero = null
@@ -4097,7 +4095,7 @@ endfunction
 private function OnCompleteQuest3End takes nothing returns nothing
 	local QuestData q
 	if HeroItemCheckBothAndRemove(ITEM_WRAITH_ESSENCE, 10) then
-		call QuestGiver_RemoveHeroItemsEither(ITEM_TELANOR_ROD, ITEM_TELANOR_ROD_LEGACY, 64)
+		call QuestGiver_RemoveQuestItemsEverywhereEither(ITEM_TELANOR_ROD, ITEM_TELANOR_ROD_LEGACY)
 		set q = QuestGiver_GetByNameAndGiver(QUEST_FADING_SPARKS, Aradion)
 		if q != 0 then
 			call QuestGiver_CompleteItemRequirements(q.id)
