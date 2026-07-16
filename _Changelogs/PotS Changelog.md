@@ -56,6 +56,14 @@
 - `AI_LegacyLocations.j`
   - Horde/neutral/Riverbane AI profile shop bindings now scan shop unit types (`nmrk`, `o609`, `o62J`, `o61U`) instead of using `udg_Shop[]` or disabled `gg_unit_*` shop globals.
 
+### Tool Updates
+
+- `Installer`
+  - Expanded the `Path of the Shaman` Inno Setup installer to package the map zip, required `Pots` local files, and Warcraft III Rebirth mod archives from ignored `Installer/payload` folders.
+  - Added manifest-driven installed/to-install version display per installer section, supporting clearer install, update, and repair decisions for map, local files, and Rebirth mod payloads.
+  - Corrected Rebirth mod unpacking so only the required inner archive contents are copied into `Warcraft III\_retail_`, without keeping the wrapper folders from `9thRelease.rar` or `FixesLast2023.rar`.
+  - Added installer wizard branding support with PotS logo assets, a non-stretched final ready/finished image, and progress-page image rotation from `Installer/assets/install-random`.
+
 ### Known Issues
 
 - AI buy/sell states still only run when `AI_BeginBuy` or `AI_BeginSell` is called. The autonomous inventory-full/empty decision that starts those states still needs to be added or wired back in.
