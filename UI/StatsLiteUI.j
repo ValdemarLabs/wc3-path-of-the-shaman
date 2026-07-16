@@ -54,16 +54,16 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         private constant real SLUI_BAR_WIDTH = 0.090 // CHANGE: compact bar column for scaled-down monitor rows
         private constant real SLUI_ROW_WIDTH = 0.260
         private constant real SLUI_ROW_BAR_LEFT = 0.156
-        private constant real SLUI_ROW_NAME_WIDTH = 0.120
+        private constant real SLUI_ROW_NAME_WIDTH = 0.145
         private constant real SLUI_ROW_MODE_OFFSET_X = 0.008
         private constant integer SLUI_ROW_NAME_LONG_LENGTH = 20
         private constant integer SLUI_ROW_NAME_EXTRA_LONG_LENGTH = 26
-        private constant integer SLUI_ROW_NAME_MAX_LENGTH = 30
+        private constant integer SLUI_ROW_NAME_MAX_LENGTH = 40
         private constant integer SLUI_ROW_COMPANION_LABEL_EXTRA_LENGTH = 10
-        private constant integer SLUI_ROW_COMPANION_NAME_MAX_LENGTH = 28
+        private constant integer SLUI_ROW_COMPANION_NAME_MAX_LENGTH = 40
         private constant real SLUI_ROW_NAME_SCALE = 0.56
         private constant real SLUI_ROW_NAME_LONG_SCALE = 0.50
-        private constant real SLUI_ROW_NAME_EXTRA_LONG_SCALE = 0.40
+        private constant real SLUI_ROW_NAME_EXTRA_LONG_SCALE = 0.34
 
         private constant integer SLUI_ACTION_MINIMIZE = 1
         private constant integer SLUI_ACTION_STATS = 2
