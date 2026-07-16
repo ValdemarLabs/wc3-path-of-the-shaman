@@ -398,6 +398,7 @@ public function ShowGameButton takes nothing returns nothing
     endif
     set MUI_OpenButtonVisible = true
     call MUI_ApplyOpenButtonVisibility()
+    call ExecuteFunc("StatsLiteUI_ShowAfterCinematic")
 endfunction
 
 public function HideGameButton takes nothing returns nothing

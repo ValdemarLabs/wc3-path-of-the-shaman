@@ -108,6 +108,8 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         private boolean SLUI_DefaultVisible = false
         private boolean SLUI_Minimized = false
         private boolean SLUI_ConfigVisible = false
+        private boolean SLUI_RestoreAfterCinematic = false
+        private boolean SLUI_RestoreConfigAfterCinematic = false
         private boolean SLUI_ShowHeroes = true
         private boolean SLUI_ShowPet = true
         private boolean SLUI_ShowCompanions = true
@@ -1126,10 +1128,16 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
     endfunction
 
     public function Hide takes nothing returns nothing
+        set SLUI_RestoreAfterCinematic = false
+        set SLUI_RestoreConfigAfterCinematic = false
         call SLUI_HideInternal(true)
     endfunction
 
     public function HideForCinematic takes nothing returns nothing
+        if SLUI_Parent != null and BlzFrameIsVisible(SLUI_Parent) then
+            set SLUI_RestoreAfterCinematic = true
+            set SLUI_RestoreConfigAfterCinematic = SLUI_ConfigVisible
+        endif
         call SLUI_HideInternal(false)
     endfunction
 
@@ -1166,12 +1174,34 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         endif
     endfunction
 
+    private function SLUI_ShowConfigInternal takes boolean playSound returns nothing
+        set SLUI_ConfigVisible = true
+        set SLUI_Minimized = false
+        call SLUI_SetRefreshActive(true)
+        call SLUI_ApplyLayout(GetLocalPlayer())
+        call SLUI_Update(GetLocalPlayer())
+        if SLUI_Parent != null then
+            if playSound and not BlzFrameIsVisible(SLUI_Parent) then
+                call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
+            endif
+            call BlzFrameSetVisible(SLUI_Parent, true)
+        endif
+    endfunction
+
     public function ShowLastState takes nothing returns nothing
         call SLUI_ShowLastStateInternal(true)
     endfunction
 
     public function ShowAfterCinematic takes nothing returns nothing
-        call SLUI_ShowLastStateInternal(false)
+        if SLUI_RestoreAfterCinematic then
+            set SLUI_RestoreAfterCinematic = false
+            if SLUI_RestoreConfigAfterCinematic then
+                set SLUI_RestoreConfigAfterCinematic = false
+                call SLUI_ShowConfigInternal(false)
+            else
+                call SLUI_ShowLastStateInternal(false)
+            endif
+        endif
     endfunction
 
     public function Show takes nothing returns nothing
@@ -1183,17 +1213,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
     endfunction
 
     public function ShowConfig takes nothing returns nothing
-        set SLUI_ConfigVisible = true
-        set SLUI_Minimized = false
-        call SLUI_SetRefreshActive(true)
-        call SLUI_ApplyLayout(GetLocalPlayer())
-        call SLUI_Update(GetLocalPlayer())
-        if SLUI_Parent != null then
-            if not BlzFrameIsVisible(SLUI_Parent) then
-                call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
-            endif
-            call BlzFrameSetVisible(SLUI_Parent, true)
-        endif
+        call SLUI_ShowConfigInternal(true)
     endfunction
 
     public function Refresh takes nothing returns nothing
