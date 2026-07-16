@@ -34,9 +34,6 @@ WizardBackColor=white
 #ifexist "assets\pots-logo-small.png"
 WizardSmallImageFile={#PotsLogoSmallFile}
 #endif
-#ifexist "assets\pots-logo-wizard.png"
-WizardImageFile={#PotsLogoWizardFile}
-#endif
 PrivilegesRequired=admin
 UninstallDisplayName={#AppName}
 SetupLogging=yes
@@ -228,6 +225,15 @@ var
 #if IncludeInstallRandomImages
   InstallSlideActive: Boolean;
   CurrentInstallImageIndex: Integer;
+  InstallSlideTimerID: Integer;
+  InstallSlideTimerCallback: Integer;
+#endif
+
+#if IncludeInstallRandomImages
+function SetTimer(hWnd: Integer; nIDEvent: Integer; uElapse: Integer; lpTimerFunc: Integer): Integer;
+  external 'SetTimer@user32.dll stdcall';
+function KillTimer(hWnd: Integer; uIDEvent: Integer): Integer;
+  external 'KillTimer@user32.dll stdcall';
 #endif
 
 function NormalizeRetailDir(Path: string): string;
@@ -589,6 +595,52 @@ begin
     Log('Could not set random install background image: ' + GetExceptionMessage);
   end;
 end;
+
+function GetNextInstallImageIndex: Integer;
+var
+  NextImageIndex: Integer;
+begin
+#if InstallRandomImageCount > 1
+  NextImageIndex := Random({#InstallRandomImageCount});
+  if NextImageIndex = CurrentInstallImageIndex then
+    NextImageIndex := (NextImageIndex + 1) mod {#InstallRandomImageCount};
+  Result := NextImageIndex;
+#else
+  Result := 0;
+#endif
+end;
+
+procedure ShowNextInstallBackImage;
+begin
+  if InstallSlideActive then
+    SetInstallBackImageByIndex(GetNextInstallImageIndex);
+end;
+
+procedure InstallSlideTimerProc(hWnd: Integer; Msg: Integer; TimerID: Integer; SysTime: Integer);
+begin
+  ShowNextInstallBackImage;
+end;
+
+procedure StartInstallSlideShow;
+begin
+  InstallSlideActive := True;
+  CurrentInstallImageIndex := -1;
+  ShowNextInstallBackImage;
+
+  if ({#InstallRandomImageCount} > 1) and (InstallSlideTimerID = 0) and (InstallSlideTimerCallback <> 0) then
+    InstallSlideTimerID := SetTimer(0, 0, 5000, InstallSlideTimerCallback);
+end;
+
+procedure StopInstallSlideShow;
+begin
+  InstallSlideActive := False;
+
+  if InstallSlideTimerID <> 0 then
+  begin
+    KillTimer(0, InstallSlideTimerID);
+    InstallSlideTimerID := 0;
+  end;
+end;
 #endif
 
 #if IncludeFinishedBackImage
@@ -684,6 +736,8 @@ begin
 #if IncludeInstallRandomImages
   InstallSlideActive := False;
   CurrentInstallImageIndex := -1;
+  InstallSlideTimerID := 0;
+  InstallSlideTimerCallback := CreateCallback(@InstallSlideTimerProc);
 #endif
 end;
 
@@ -691,6 +745,9 @@ procedure CurPageChanged(CurPageID: Integer);
 begin
   if CurPageID = VersionPage.ID then
     RefreshVersionPage;
+
+  if CurPageID = wpFinished then
+    WizardForm.WizardBitmapImage.Visible := False;
 
 #if IncludeFinishedBackImage
   if CurPageID = wpFinished then
@@ -703,9 +760,7 @@ begin
   if CurStep = ssInstall then
   begin
 #if IncludeInstallRandomImages
-    InstallSlideActive := True;
-    CurrentInstallImageIndex := -1;
-    SetInstallBackImageByIndex(0);
+    StartInstallSlideShow;
 #endif
 
 #if IncludeMap
@@ -734,7 +789,7 @@ begin
 #if IncludeInstallRandomImages
   if CurStep = ssPostInstall then
   begin
-    InstallSlideActive := False;
+    StopInstallSlideShow;
 #if IncludeFinishedBackImage
     SetFinishedBackImage;
 #else
@@ -743,20 +798,6 @@ begin
   end;
 #endif
 end;
-
-#if IncludeInstallRandomImages
-procedure CurInstallProgressChanged(CurProgress: Integer; MaxProgress: Integer);
-var
-  NextImageIndex: Integer;
-begin
-  if InstallSlideActive and (MaxProgress > 0) then
-  begin
-    NextImageIndex := ((CurProgress * {#InstallRandomImageCount} * 2) div MaxProgress) mod {#InstallRandomImageCount};
-    if NextImageIndex <> CurrentInstallImageIndex then
-      SetInstallBackImageByIndex(NextImageIndex);
-  end;
-end;
-#endif
 
 function NextButtonClick(CurPageID: Integer): Boolean;
 begin
