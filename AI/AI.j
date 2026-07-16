@@ -50,6 +50,7 @@
     call AI_AddProfileRetreatRect(profileId, whichRect)
     call AI_AddProfileAllowedZoneRect(profileId, whichRect)
     call AI_AddProfileShopUnit(profileId, shopUnit)
+    call AI_AddProfileShopUnitType(profileId, unitTypeId)
     call AI_AddRandomSpawnProfile(profileId)
     call AI_SetRandomSpawnFirstProfile(profileId)
     call AI_SetRandomSpawnHardCap(cap)
@@ -68,6 +69,7 @@
     call AI_BeginBuy(whichUnit)
     call AI_BeginSell(whichUnit)
     call AI_BeginCamp(whichUnit, duration)
+    call AI_DebugForceNightCamp() returns integer
     call AI_StartTravel(whichUnit, duration, returnX, returnY)
     call AI_RegisterBossCastAbility(abilityId, evadeRadius, evadeDistance)
     call AI_HandleBossCast(caster, abilityId, targetX, targetY)
@@ -199,8 +201,9 @@ globals
     private constant real AI_CAMP_DURATION_MAX = 240.00
     private constant real AI_CAMP_COOLDOWN_MIN = 480.00
     private constant real AI_CAMP_COOLDOWN_MAX = 900.00
-    private constant real AI_CAMP_FIRE_MIN_OFFSET = 500.00
-    private constant real AI_CAMP_FIRE_MAX_OFFSET = 800.00
+    private constant integer AI_CAMP_FIRE_PLACEMENT_ATTEMPTS = 10
+    private constant real AI_CAMP_FIRE_MIN_OFFSET = 160.00
+    private constant real AI_CAMP_FIRE_MAX_OFFSET = 260.00
     private constant integer AI_RANDOM_ACTIVE_CAP_MAX = 32
     private constant integer AI_PARTY_MAX_SIZE = 3
     private constant real AI_PARTY_ORGANIZE_MIN = 45.00
@@ -299,6 +302,7 @@ globals
     private Table InstanceHomeY = 0
     private Table InstanceActionX = 0
     private Table InstanceActionY = 0
+    private Table InstanceActionShopUnit = 0
     private Table InstanceReviveTimer = 0
     private Table ReviveTimerInstance = 0
 
@@ -311,6 +315,7 @@ globals
     private Table ProfileShopCount = 0
     private Table ProfileShopX = 0
     private Table ProfileShopY = 0
+    private Table ProfileShopUnit = 0
     private Table ProfileShopItemCount = 0
     private Table ProfileShopItemType = 0
     private Table ProfileAllowedZoneCount = 0
@@ -377,6 +382,7 @@ globals
     private trigger UnitIndexTrigger = null
     private trigger DebugSpawnTrigger = null
     private trigger DebugModeTrigger = null
+    private trigger DebugCampTrigger = null
     private group TempGroup = null
     private rect TempRect = null
     private boolean DebugMode = DEBUG_DEFAULT
@@ -421,6 +427,9 @@ globals
     private integer CountResult = 0
     private unit CombatSearchSource = null
     private boolean CombatSearchFound = false
+    private integer ShopScanProfileId = 0
+    private integer ShopScanUnitTypeId = 0
+    private integer ShopScanAdded = 0
 endglobals
 
 private function DebugMsg takes string msg returns nothing
@@ -503,6 +512,7 @@ private function EnsureState takes nothing returns nothing
         set InstanceHomeY = Table.create()
         set InstanceActionX = Table.create()
         set InstanceActionY = Table.create()
+        set InstanceActionShopUnit = Table.create()
         set InstanceReviveTimer = Table.create()
         set ReviveTimerInstance = Table.create()
         set ProfileSpawnCount = Table.create()
@@ -514,6 +524,7 @@ private function EnsureState takes nothing returns nothing
         set ProfileShopCount = Table.create()
         set ProfileShopX = Table.create()
         set ProfileShopY = Table.create()
+        set ProfileShopUnit = Table.create()
         set ProfileShopItemCount = Table.create()
         set ProfileShopItemType = Table.create()
         set ProfileAllowedZoneCount = Table.create()
@@ -1224,19 +1235,72 @@ private function FinishBuyState takes integer instanceId, unit whichUnit returns
     set boughtItem = null
 endfunction
 
-private function DropInventoryItem takes unit whichUnit returns boolean
+private function SelectProfileShop takes integer instanceId, unit whichUnit returns boolean
+    local integer profileId
+    local integer count
+    local integer index
+    local integer checked = 0
+    local integer key
+    local unit shopUnit
+    if instanceId <= 0 or whichUnit == null then
+        return false
+    endif
+    set profileId = InstanceProfile[instanceId]
+    set count = ProfileShopCount[profileId]
+    if count <= 0 then
+        return false
+    endif
+    set index = GetRandomInt(1, count)
+    loop
+        exitwhen checked >= count
+        set key = GetPointKey(profileId, index)
+        set shopUnit = ProfileShopUnit.unit[key]
+        if shopUnit == null or IsAliveUnit(shopUnit) then
+            if shopUnit != null then
+                set InstanceActionX.real[instanceId] = GetUnitX(shopUnit)
+                set InstanceActionY.real[instanceId] = GetUnitY(shopUnit)
+            else
+                set InstanceActionX.real[instanceId] = ProfileShopX.real[key]
+                set InstanceActionY.real[instanceId] = ProfileShopY.real[key]
+            endif
+            set InstanceActionShopUnit.unit[instanceId] = shopUnit
+            set shopUnit = null
+            return true
+        endif
+        set index = index + 1
+        if index > count then
+            set index = 1
+        endif
+        set checked = checked + 1
+    endloop
+    call InstanceActionShopUnit.unit.remove(instanceId)
+    set shopUnit = null
+    return false
+endfunction
+
+private function SellInventoryItem takes integer instanceId, unit whichUnit returns boolean
     local integer slot = GetRandomInt(0, bj_MAX_INVENTORY - 1)
     local integer checked = 0
     local item slotItem
-    if whichUnit == null then
+    local unit shopUnit
+    if instanceId <= 0 or whichUnit == null then
         return false
     endif
+    set shopUnit = InstanceActionShopUnit.unit[instanceId]
     loop
         exitwhen checked >= bj_MAX_INVENTORY
         set slotItem = UnitItemInSlot(whichUnit, slot)
         if slotItem != null then
+            if shopUnit != null and IsAliveUnit(shopUnit) and UnitDropItemTarget(whichUnit, slotItem, shopUnit) then
+                call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " sells an item to a shop.")
+                set slotItem = null
+                set shopUnit = null
+                return true
+            endif
             call UnitDropItemPoint(whichUnit, slotItem, GetUnitX(whichUnit), GetUnitY(whichUnit))
+            call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " drops an item because no live shop target is available.")
             set slotItem = null
+            set shopUnit = null
             return true
         endif
         set slot = slot + 1
@@ -1246,6 +1310,7 @@ private function DropInventoryItem takes unit whichUnit returns boolean
         set checked = checked + 1
     endloop
     set slotItem = null
+    set shopUnit = null
     return false
 endfunction
 
@@ -1332,22 +1397,12 @@ private function ShowRandomManagedFromCap takes integer instanceId, unit whichUn
 endfunction
 
 private function BeginBuyState takes integer instanceId, unit whichUnit returns boolean
-    local integer profileId
-    local integer count
-    local integer index
-    local integer key
     if instanceId <= 0 or whichUnit == null or IsCompanionControlled(whichUnit) then
         return false
     endif
-    set profileId = InstanceProfile[instanceId]
-    set count = ProfileShopCount[profileId]
-    if count <= 0 then
+    if not SelectProfileShop(instanceId, whichUnit) then
         return false
     endif
-    set index = GetRandomInt(1, count)
-    set key = GetPointKey(profileId, index)
-    set InstanceActionX.real[instanceId] = ProfileShopX.real[key]
-    set InstanceActionY.real[instanceId] = ProfileShopY.real[key]
     call SetInstanceState(instanceId, AI_STATE_BUY)
     call IssuePointOrder(whichUnit, "move", InstanceActionX.real[instanceId], InstanceActionY.real[instanceId])
     return true
@@ -1357,6 +1412,14 @@ private function BeginSellState takes integer instanceId, unit whichUnit returns
     if instanceId <= 0 or whichUnit == null or IsCompanionControlled(whichUnit) then
         return false
     endif
+    if SelectProfileShop(instanceId, whichUnit) then
+        call SetInstanceState(instanceId, AI_STATE_SELL)
+        call IssuePointOrder(whichUnit, "move", InstanceActionX.real[instanceId], InstanceActionY.real[instanceId])
+        return true
+    endif
+    set InstanceActionX.real[instanceId] = GetUnitX(whichUnit)
+    set InstanceActionY.real[instanceId] = GetUnitY(whichUnit)
+    call InstanceActionShopUnit.unit.remove(instanceId)
     call SetInstanceState(instanceId, AI_STATE_SELL)
     return true
 endfunction
@@ -2309,29 +2372,68 @@ public function AddProfileAllowedZoneRect takes integer profileId, rect whichRec
     set ProfileAllowedZoneMaxY.real[key] = maxY
 endfunction
 
-public function AddProfileShopPoint takes integer profileId, real x, real y returns nothing
+private function AddProfileShopPointInternal takes integer profileId, real x, real y, unit shopUnit returns boolean
     local integer count
     local integer key
-    call EnsureState()
     if profileId <= 0 then
-        return
+        return false
     endif
     set count = ProfileShopCount[profileId]
     if count >= MAX_PROFILE_POINTS then
-        return
+        return false
     endif
     set count = count + 1
     set ProfileShopCount[profileId] = count
     set key = GetPointKey(profileId, count)
     set ProfileShopX.real[key] = x
     set ProfileShopY.real[key] = y
+    if shopUnit != null then
+        set ProfileShopUnit.unit[key] = shopUnit
+    else
+        call ProfileShopUnit.unit.remove(key)
+    endif
+    return true
+endfunction
+
+private function AddProfileShopUnitTypeEnum takes nothing returns nothing
+    local unit shopUnit = GetEnumUnit()
+    if shopUnit != null and GetUnitTypeId(shopUnit) == ShopScanUnitTypeId and IsAliveUnit(shopUnit) then
+        if AddProfileShopPointInternal(ShopScanProfileId, GetUnitX(shopUnit), GetUnitY(shopUnit), shopUnit) then
+            set ShopScanAdded = ShopScanAdded + 1
+        endif
+    endif
+    set shopUnit = null
+endfunction
+
+public function AddProfileShopPoint takes integer profileId, real x, real y returns nothing
+    call EnsureState()
+    call AddProfileShopPointInternal(profileId, x, y, null)
 endfunction
 
 public function AddProfileShopUnit takes integer profileId, unit shopUnit returns nothing
+    call EnsureState()
     if shopUnit == null then
         return
     endif
-    call AI_AddProfileShopPoint(profileId, GetUnitX(shopUnit), GetUnitY(shopUnit))
+    call AddProfileShopPointInternal(profileId, GetUnitX(shopUnit), GetUnitY(shopUnit), shopUnit)
+endfunction
+
+public function AddProfileShopUnitType takes integer profileId, integer unitTypeId returns nothing
+    call EnsureState()
+    if profileId <= 0 or unitTypeId == 0 then
+        return
+    endif
+    set ShopScanProfileId = profileId
+    set ShopScanUnitTypeId = unitTypeId
+    set ShopScanAdded = 0
+    call GroupClear(TempGroup)
+    call GroupEnumUnitsInRect(TempGroup, bj_mapInitialPlayableArea, null)
+    call ForGroup(TempGroup, function AddProfileShopUnitTypeEnum)
+    call GroupClear(TempGroup)
+    call DebugMsg("Registered " + I2S(ShopScanAdded) + " shop units of type " + I2S(unitTypeId) + " for profile " + I2S(profileId) + ".")
+    set ShopScanProfileId = 0
+    set ShopScanUnitTypeId = 0
+    set ShopScanAdded = 0
 endfunction
 
 public function AddProfileShopItem takes integer profileId, integer itemTypeId returns nothing
@@ -3061,6 +3163,7 @@ public function UnregisterUnit takes unit whichUnit returns nothing
     call InstanceHomeY.remove(instanceId)
     call InstanceActionX.remove(instanceId)
     call InstanceActionY.remove(instanceId)
+    call InstanceActionShopUnit.unit.remove(instanceId)
     set reviveTimer = null
 endfunction
 
@@ -4655,27 +4758,28 @@ private function IsNightTime takes nothing returns boolean
     return timeOfDay >= AI_CAMP_NIGHT_MIN or timeOfDay < AI_CAMP_NIGHT_MAX
 endfunction
 
-private function TryStartNightCampAction takes integer instanceId, unit whichUnit, integer state, real now returns boolean
+private function TryPlaceCampFireForCamp takes integer instanceId, unit whichUnit, real now, boolean forced returns boolean
     local real angle
     local real distance
     local real x
     local real y
     local item campItem
     local integer attempt = 0
-    if instanceId <= 0 or whichUnit == null or udg_InCinematic then
+    if instanceId <= 0 or whichUnit == null then
         return false
     endif
-    if not IsSideActionState(state) or IsCompanionControlled(whichUnit) or now < InstanceNextCamp.real[instanceId] or not IsNightTime() or GetUnitCurrentOrder(whichUnit) != 0 or HasNearbyCombatEnemy(whichUnit, 900.00) or GetFreeInventorySlots(whichUnit) <= 0 then
-        return false
-    endif
-    if GetRandomInt(1, 100) > 12 then
-        set InstanceNextCamp.real[instanceId] = now + GetRandomReal(120.00, 300.00)
+    if GetFreeInventorySlots(whichUnit) <= 0 then
+        call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " cannot place camp fire: no free inventory slot.")
         return false
     endif
     call IssueImmediateOrder(whichUnit, "stop")
     set campItem = UnitAddItemById(whichUnit, ITEM_CAMP_FIRE)
+    if campItem == null then
+        call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " cannot place camp fire: item creation failed.")
+        return false
+    endif
     loop
-        exitwhen campItem == null or attempt >= 5
+        exitwhen attempt >= AI_CAMP_FIRE_PLACEMENT_ATTEMPTS
         set angle = GetRandomReal(0.00, 360.00) * bj_DEGTORAD
         set distance = GetRandomReal(AI_CAMP_FIRE_MIN_OFFSET, AI_CAMP_FIRE_MAX_OFFSET)
         set x = GetUnitX(whichUnit) + distance * Cos(angle)
@@ -4684,19 +4788,72 @@ private function TryStartNightCampAction takes integer instanceId, unit whichUni
             call SetInstanceState(instanceId, AI_STATE_CAMP)
             set InstanceRetreatUntil.real[instanceId] = now + GetRandomReal(AI_CAMP_DURATION_MIN, AI_CAMP_DURATION_MAX)
             set InstanceNextCamp.real[instanceId] = now + GetRandomReal(AI_CAMP_COOLDOWN_MIN, AI_CAMP_COOLDOWN_MAX)
-            call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " starts night camp.")
+            if forced then
+                call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " starts forced night camp.")
+            else
+                call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " starts night camp.")
+            endif
             set campItem = null
             return true
         endif
         set attempt = attempt + 1
     endloop
-    if campItem != null then
-        call RemoveItem(campItem)
-        call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " could not place camp fire.")
-    endif
-    set InstanceNextCamp.real[instanceId] = now + GetRandomReal(120.00, 240.00)
+    call RemoveItem(campItem)
+    call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " could not place camp fire.")
     set campItem = null
     return false
+endfunction
+
+private function TryStartNightCampAction takes integer instanceId, unit whichUnit, integer state, real now returns boolean
+    if instanceId <= 0 or whichUnit == null or udg_InCinematic then
+        return false
+    endif
+    if not IsSideActionState(state) or IsCompanionControlled(whichUnit) or now < InstanceNextCamp.real[instanceId] or not IsNightTime() or GetUnitCurrentOrder(whichUnit) != 0 or HasNearbyCombatEnemy(whichUnit, 900.00) then
+        return false
+    endif
+    if GetRandomInt(1, 100) > 12 then
+        set InstanceNextCamp.real[instanceId] = now + GetRandomReal(120.00, 300.00)
+        return false
+    endif
+    if TryPlaceCampFireForCamp(instanceId, whichUnit, now, false) then
+        return true
+    endif
+    set InstanceNextCamp.real[instanceId] = now + GetRandomReal(120.00, 240.00)
+    return false
+endfunction
+
+public function DebugForceNightCamp takes nothing returns integer
+    local integer index = 1
+    local integer instanceId
+    local integer state
+    local integer started = 0
+    local real now = GetNow()
+    local unit whichUnit
+    if not IsNightTime() then
+        call BJDebugMsg("[AI] Debug camp skipped: it is not night.")
+        return 0
+    endif
+    loop
+        exitwhen index > ActiveCount
+        set instanceId = ActiveInstances[index]
+        set whichUnit = InstanceUnit.unit[instanceId]
+        set state = InstanceState[instanceId]
+        if whichUnit != null and IsAliveUnit(whichUnit) and not IsUnitHidden(whichUnit) and not IsCompanionControlled(whichUnit) and not udg_InCinematic and IsSideActionState(state) and not HasNearbyCombatEnemy(whichUnit, 900.00) then
+            set InstanceNextCamp.real[instanceId] = now
+            if TryPlaceCampFireForCamp(instanceId, whichUnit, now, true) then
+                set started = started + 1
+            endif
+        endif
+        set whichUnit = null
+        set index = index + 1
+    endloop
+    call BJDebugMsg("[AI] Forced night camp for " + I2S(started) + " AI units.")
+    return started
+endfunction
+
+private function DebugCampAction takes nothing returns nothing
+    local integer started = AI_DebugForceNightCamp()
+    set started = 0
 endfunction
 
 private function CanCompanionCombatRetreat takes integer instanceId returns boolean
@@ -5090,8 +5247,12 @@ private function ProcessInstance takes integer instanceId, real now returns noth
         set whichUnit = null
         return
     elseif state == AI_STATE_SELL then
-        call DropInventoryItem(whichUnit)
-        call SetInstanceState(instanceId, AI_STATE_IDLE)
+        if IsNearActionPoint(instanceId, whichUnit, 250.00) then
+            call SellInventoryItem(instanceId, whichUnit)
+            call SetInstanceState(instanceId, AI_STATE_IDLE)
+        else
+            call TryRecoverStuck(instanceId, whichUnit, state, now)
+        endif
         set whichUnit = null
         return
     elseif state == AI_STATE_CAMP then
@@ -5479,6 +5640,11 @@ private function Init takes nothing returns nothing
     call TriggerRegisterPlayerChatEvent(DebugModeTrigger, Player(0), "/debug ai", true)
     call TriggerRegisterPlayerChatEvent(DebugModeTrigger, Player(0), "/debug aidebug", true)
     call TriggerAddAction(DebugModeTrigger, function DebugModeAction)
+
+    set DebugCampTrigger = CreateTrigger()
+    call TriggerRegisterPlayerChatEvent(DebugCampTrigger, Player(0), "/debug aicamp", true)
+    call TriggerRegisterPlayerChatEvent(DebugCampTrigger, Player(0), "aicamp", true)
+    call TriggerAddAction(DebugCampTrigger, function DebugCampAction)
 
     set AttackTrigger = CreateTrigger()
     call RegisterPlayerUnitEventAll(AttackTrigger, EVENT_PLAYER_UNIT_ATTACKED)
