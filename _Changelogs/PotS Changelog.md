@@ -15,7 +15,43 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [16.7.2026]
 
+### Technical Updates
+
+- `StatsLiteUI.j`
+  - Mode text anchor now uses that constant instead of the hard-coded 0.004
+    - SLUI_ROW_MODE_OFFSET_X = 0.008 (value increased)
+  - Now remembers whether the monitor was visible before a cinematic/dialogue UI hide and restores it afterward without playing UI sounds.
+  - Restores the config view after cinematic/dialogue if that was the active StatsLite view before hiding.
+  - increased only the name-display settings:
+    - SLUI_ROW_NAME_WIDTH from 0.120 to 0.145
+    - name trim caps from 30/28 to 40
+    - extra-long name scale from 0.40 to 0.34
+
+- `MasterUI.j`
+  - MasterUI_ShowGameButton() now asks StatsLiteUI to restore its pre-cinematic state, keeping the hide/restore flow centralized around MasterUI.
+
+- `AI.j`
+  - Night camping now uses closer random camp-fire placement around the AI unit and retries more placement points before giving up.
+  - Added `AI_DebugForceNightCamp()` plus chat commands for forcing eligible AI units to camp at night:
+    - `/debug aicamp`
+    - `aicamp`
+  - AI shop state now keeps an optional shop-unit handle, so invoked sell behavior can move to a selected shop and target the shop unit when dropping/selling an item.
+  - Added `AI_AddProfileShopUnitType(profileId, unitTypeId)` so profiles can register shop locations from preplaced shop unit types instead of relying on unstable generated unit globals.
+  - Existing AI debug commands to remember:
+    - `/debug ai`
+    - `/debug aidebug`
+    - `/debug aispawn`
+    - `aispawn`
+
+- `AI_LegacyLocations.j`
+  - Horde/neutral/Riverbane AI profile shop bindings now scan shop unit types (`nmrk`, `o609`, `o62J`, `o61U`) instead of using `udg_Shop[]` or disabled `gg_unit_*` shop globals.
+
+### Known Issues
+
+- AI buy/sell states still only run when `AI_BeginBuy` or `AI_BeginSell` is called. The autonomous inventory-full/empty decision that starts those states still needs to be added or wired back in.
+- Full in-map/JassHelper validation is still required for the new AI camp-fire placement, forced camp debug command, unit-type shop scan, and shop-targeted sell behavior.
 
 ## [15.7.2026] 
 
