@@ -1,4 +1,4 @@
-library QuestGiver initializer Init requires QuestMaster, DialogSystem, HeroItemCheck, CameraControl, Table
+library QuestGiver initializer Init requires QuestMaster, DialogSystem, HeroItemCheck, SharedDInvLib, CameraControl, Table
 //===========================================================================
 // QuestGiver
 // Base utilities for quest givers and dialog entry helpers.
@@ -87,6 +87,7 @@ globals
 	private integer ItemDropCheckType = 0  // Item type to check after drop delay
 	private integer QuestGiver_RemoveItemTypeId = 0
 	private integer QuestGiver_RemoveFallbackItemTypeId = 0
+	private integer QuestGiver_RemovedQuestItemCount = 0
 	private constant real ITEM_REQUIREMENT_SCAN_INTERVAL = 0.50
 	private timer ItemRequirementScanTimer = null
 
@@ -2254,25 +2255,102 @@ endfunction
 
 private function RemoveQuestItemTypeInventory takes unit whichUnit, integer itemTypeId, integer fallbackItemTypeId returns nothing
 	local integer slot = 0
+	local integer inventorySize
 	local item slotItem
 	if whichUnit == null then
 		return
 	endif
+	set inventorySize = UnitInventorySize(whichUnit)
 	loop
-		exitwhen slot >= bj_MAX_INVENTORY
+		exitwhen slot >= inventorySize
 		set slotItem = UnitItemInSlot(whichUnit, slot)
 		if slotItem != null and IsQuestItemTypeEither(GetItemTypeId(slotItem), itemTypeId, fallbackItemTypeId) then
 			call RemoveItem(slotItem)
-		else
-			set slot = slot + 1
+			set QuestGiver_RemovedQuestItemCount = QuestGiver_RemovedQuestItemCount + 1
 		endif
+		set slot = slot + 1
 	endloop
 	set slotItem = null
 	set whichUnit = null
 endfunction
 
+private function RemoveQuestItemTypeDInventory takes unit whichUnit, integer itemTypeId, integer fallbackItemTypeId returns nothing
+	local integer pid
+	local integer bid
+	local integer slot = 0
+	local integer maxCapacity
+	local boolean removedAny = false
+	local item slotItem
+	if whichUnit == null then
+		return
+	endif
+	set bid = BIDOfUnit(whichUnit)
+	if bid < 1 then
+		set whichUnit = null
+		return
+	endif
+	set maxCapacity = MaxDInvCapacityOfUnit(whichUnit)
+	loop
+		exitwhen slot >= maxCapacity
+		set slotItem = DInventoryDB[bid].item[slot]
+		if slotItem != null and IsQuestItemTypeEither(GetItemTypeId(slotItem), itemTypeId, fallbackItemTypeId) then
+			call DeleteBIDSlotIdItemFromDInventory(bid, slot)
+			call RemoveItem(slotItem)
+			set QuestGiver_RemovedQuestItemCount = QuestGiver_RemovedQuestItemCount + 1
+			set removedAny = true
+		endif
+		set slot = slot + 1
+	endloop
+	if removedAny then
+		set pid = GetPlayerId(GetOwningPlayer(whichUnit))
+		if pid >= 0 and pid < 24 then
+			call UnitDInventoryDBIntoDInventoryFrames(pid, bid)
+		endif
+	endif
+	set slotItem = null
+	set whichUnit = null
+endfunction
+
 private function RemoveQuestItemTypeFromEnumUnit takes nothing returns nothing
-	call RemoveQuestItemTypeInventory(GetEnumUnit(), QuestGiver_RemoveItemTypeId, QuestGiver_RemoveFallbackItemTypeId)
+	local unit enumUnit = GetEnumUnit()
+	call RemoveQuestItemTypeInventory(enumUnit, QuestGiver_RemoveItemTypeId, QuestGiver_RemoveFallbackItemTypeId)
+	call RemoveQuestItemTypeDInventory(enumUnit, QuestGiver_RemoveItemTypeId, QuestGiver_RemoveFallbackItemTypeId)
+	set enumUnit = null
+endfunction
+
+private function RemoveQuestItemTypeFromEnumItem takes nothing returns nothing
+	local item enumItem = GetEnumItem()
+	if enumItem != null and IsQuestItemTypeEither(GetItemTypeId(enumItem), QuestGiver_RemoveItemTypeId, QuestGiver_RemoveFallbackItemTypeId) then
+		call RemoveItem(enumItem)
+		set QuestGiver_RemovedQuestItemCount = QuestGiver_RemovedQuestItemCount + 1
+	endif
+	set enumItem = null
+endfunction
+
+public function RemoveQuestItemsEverywhereEither takes integer itemTypeId, integer fallbackItemTypeId returns integer
+	local group worldUnits
+	local rect worldBounds
+	local integer removedCount
+	if itemTypeId == 0 and fallbackItemTypeId == 0 then
+		return 0
+	endif
+	set QuestGiver_RemoveItemTypeId = itemTypeId
+	set QuestGiver_RemoveFallbackItemTypeId = fallbackItemTypeId
+	set QuestGiver_RemovedQuestItemCount = 0
+	set worldUnits = CreateGroup()
+	set worldBounds = GetWorldBounds()
+	call GroupEnumUnitsInRect(worldUnits, worldBounds, null)
+	call ForGroup(worldUnits, function RemoveQuestItemTypeFromEnumUnit)
+	call EnumItemsInRect(worldBounds, null, function RemoveQuestItemTypeFromEnumItem)
+	set removedCount = QuestGiver_RemovedQuestItemCount
+	call DestroyGroup(worldUnits)
+	call RemoveRect(worldBounds)
+	set QuestGiver_RemoveItemTypeId = 0
+	set QuestGiver_RemoveFallbackItemTypeId = 0
+	set QuestGiver_RemovedQuestItemCount = 0
+	set worldUnits = null
+	set worldBounds = null
+	return removedCount
 endfunction
 
 public function RemoveHeroItemsEither takes integer itemTypeId, integer fallbackItemTypeId, integer maxToRemove returns nothing
@@ -2355,6 +2433,11 @@ public function GiveQuestItemToHero takes unit hero, integer itemTypeId, integer
 	set questItem = null
 	set hero = null
 	return false
+endfunction
+
+public function GiveUniqueQuestItemToHero takes unit hero, integer itemTypeId, integer fallbackItemTypeId, string itemName returns boolean
+	call RemoveQuestItemsEverywhereEither(itemTypeId, fallbackItemTypeId)
+	return GiveQuestItemToHero(hero, itemTypeId, fallbackItemTypeId, itemName)
 endfunction
 
 public function AddQuestItemRecoveryButtonEither takes dialog d, string questName, unit questGiver, integer actionId, integer itemTypeId, integer fallbackItemTypeId, integer itemAmount, string itemName, code actionFunc returns boolean
