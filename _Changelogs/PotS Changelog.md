@@ -19,6 +19,14 @@
 
 ### Technical Updates
 
+- `QuestGiver.j`
+  - Added reusable unique quest-item cleanup that removes matching item rawcodes from loose map items, unit inventories, and DInventory slots before granting a replacement quest item.
+  - DInventory cleanup now deletes the matching DInventory slot, removes the hidden item handle, and refreshes the owning player's DInventory frames.
+
+- `qAradion.j`
+  - Tel'anor Rod accept/recovery now uses the QuestGiver unique quest-item grant helper.
+  - Fading Sparks completion now removes all Tel'anor Rod copies globally instead of only checking the player hero.
+
 - `StatsLiteUI.j`
   - Mode text anchor now uses that constant instead of the hard-coded 0.004
     - SLUI_ROW_MODE_OFFSET_X = 0.008 (value increased)
