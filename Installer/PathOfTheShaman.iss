@@ -417,7 +417,7 @@ begin
             if not ForceDirectories(ExtractFileDir(DestPath)) then
               RaiseException('Could not create target folder: ' + ExtractFileDir(DestPath));
 
-            if not FileCopy(SourcePath, DestPath, False) then
+            if not CopyFile(SourcePath, DestPath, False) then
               RaiseException('Could not copy file: ' + SourcePath + ' to ' + DestPath);
           end;
         end;
