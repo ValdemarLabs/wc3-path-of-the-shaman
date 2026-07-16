@@ -14,9 +14,10 @@ Put the latest files here before building:
   - `pots-logo-wizard.png`: tall welcome/finished-page image. Recommended ratio `164:314`; use at least `240x459`.
   - Use both files if you want the logo visible across the normal pages and the welcome/finished pages.
 - `Installer/assets/install-random/`
-  - Optional `.png` or `.bmp` files used as random low-opacity backgrounds during the Installing page.
+  - Optional `.png` or `.bmp` files looped as low-opacity backgrounds during the Installing page.
   - Recommended ratio is about `497:360`; use at least `596x432`.
   - The build supports up to 32 files in this folder.
+  - Images are shown centered without stretching.
 - `Installer/payload/map/`
   - Put the latest map `.zip` here.
   - The zip must contain one `.w3x` map file.

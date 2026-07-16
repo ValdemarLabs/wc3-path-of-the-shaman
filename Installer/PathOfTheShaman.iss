@@ -3,6 +3,11 @@
 #define AppRegistryKey "Software\Path of the Shaman"
 #define PotsLogoSmallFile "assets\pots-logo-small.png"
 #define PotsLogoWizardFile "assets\pots-logo-wizard.png"
+#ifexist "assets\pots-logo-wizard.png"
+#define IncludeFinishedBackImage 1
+#else
+#define IncludeFinishedBackImage 0
+#endif
 #include "release-version.generated.iss"
 
 [Setup]
@@ -21,6 +26,10 @@ ArchiveExtraction=full
 WizardStyle=modern
 #if IncludeInstallRandomImages
 WizardBackColor=white
+#else
+#if IncludeFinishedBackImage
+WizardBackColor=white
+#endif
 #endif
 #ifexist "assets\pots-logo-small.png"
 WizardSmallImageFile={#PotsLogoSmallFile}
@@ -183,6 +192,9 @@ Source: "{#InstallRandomImage31Source}"; DestName: "{#InstallRandomImage31FileNa
 Source: "{#InstallRandomImage32Source}"; DestName: "{#InstallRandomImage32FileName}"; Flags: dontcopy nocompression
 #endif
 #endif
+#if IncludeFinishedBackImage
+Source: "{#PotsLogoWizardFile}"; DestName: "pots-logo-wizard.png"; Flags: dontcopy nocompression
+#endif
 
 [Registry]
 Root: HKLM; Subkey: "{#AppRegistryKey}"; ValueType: string; ValueName: "InstallerVersion"; ValueData: "{#InstallerVersion}"; Flags: uninsdeletevalue
@@ -212,6 +224,10 @@ var
 #endif
 #if IncludeRebirthMod
   RebirthModVersionLabel: TNewStaticText;
+#endif
+#if IncludeInstallRandomImages
+  InstallSlideActive: Boolean;
+  CurrentInstallImageIndex: Integer;
 #endif
 
 function NormalizeRetailDir(Path: string): string;
@@ -440,12 +456,8 @@ begin
 end;
 
 #if IncludeInstallRandomImages
-function GetRandomInstallImageFileName: string;
-var
-  ImageIndex: Integer;
+function GetInstallImageFileName(ImageIndex: Integer): string;
 begin
-  ImageIndex := Random({#InstallRandomImageCount});
-
   case ImageIndex of
 #if IncludeInstallRandomImage1
     0: Result := '{#InstallRandomImage1FileName}';
@@ -548,14 +560,14 @@ begin
   end;
 end;
 
-procedure SetRandomInstallBackImage;
+procedure SetInstallBackImageByIndex(ImageIndex: Integer);
 var
   BackImages: TArrayOfGraphic;
   ImageFileName: string;
   ImagePath: string;
 begin
   try
-    ImageFileName := GetRandomInstallImageFileName;
+    ImageFileName := GetInstallImageFileName(ImageIndex);
     ExtractTemporaryFile(ImageFileName);
     ImagePath := AddBackslash(ExpandConstant('{tmp}')) + ImageFileName;
 
@@ -567,8 +579,9 @@ begin
 
     try
       BackImages[0].LoadFromFile(ImagePath);
-      WizardSetBackImage(BackImages, True, True, 90);
-      Log('Random install background image: ' + ImageFileName);
+      WizardSetBackImage(BackImages, False, True, 110);
+      CurrentInstallImageIndex := ImageIndex;
+      Log('Install progress background image: ' + ImageFileName);
     finally
       BackImages[0].Free;
     end;
@@ -576,11 +589,38 @@ begin
     Log('Could not set random install background image: ' + GetExceptionMessage);
   end;
 end;
+#endif
 
+#if IncludeFinishedBackImage
+procedure SetFinishedBackImage;
+var
+  BackImages: TArrayOfGraphic;
+  ImagePath: string;
+begin
+  try
+    ExtractTemporaryFile('pots-logo-wizard.png');
+    ImagePath := AddBackslash(ExpandConstant('{tmp}')) + 'pots-logo-wizard.png';
+
+    SetLength(BackImages, 1);
+    BackImages[0] := TPngImage.Create;
+    try
+      BackImages[0].LoadFromFile(ImagePath);
+      WizardSetBackImage(BackImages, False, True, 255);
+      Log('Finished page background image: pots-logo-wizard.png');
+    finally
+      BackImages[0].Free;
+    end;
+  except
+    Log('Could not set finished page background image: ' + GetExceptionMessage);
+  end;
+end;
+#endif
+
+#if IncludeInstallRandomImages
 procedure ClearInstallBackImage;
 begin
   try
-    WizardSetBackImage([], True, True, 90);
+    WizardSetBackImage([], False, True, 0);
   except
     Log('Could not clear install background image: ' + GetExceptionMessage);
   end;
@@ -640,12 +680,22 @@ begin
   RebirthModVersionLabel.Parent := VersionPage.Surface;
   ConfigureLabel(RebirthModVersionLabel, NextTop, 76);
 #endif
+
+#if IncludeInstallRandomImages
+  InstallSlideActive := False;
+  CurrentInstallImageIndex := -1;
+#endif
 end;
 
 procedure CurPageChanged(CurPageID: Integer);
 begin
   if CurPageID = VersionPage.ID then
     RefreshVersionPage;
+
+#if IncludeFinishedBackImage
+  if CurPageID = wpFinished then
+    SetFinishedBackImage;
+#endif
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
@@ -653,7 +703,9 @@ begin
   if CurStep = ssInstall then
   begin
 #if IncludeInstallRandomImages
-    SetRandomInstallBackImage;
+    InstallSlideActive := True;
+    CurrentInstallImageIndex := -1;
+    SetInstallBackImageByIndex(0);
 #endif
 
 #if IncludeMap
@@ -681,9 +733,30 @@ begin
   end;
 #if IncludeInstallRandomImages
   if CurStep = ssPostInstall then
+  begin
+    InstallSlideActive := False;
+#if IncludeFinishedBackImage
+    SetFinishedBackImage;
+#else
     ClearInstallBackImage;
 #endif
+  end;
+#endif
 end;
+
+#if IncludeInstallRandomImages
+procedure CurInstallProgressChanged(CurProgress: Integer; MaxProgress: Integer);
+var
+  NextImageIndex: Integer;
+begin
+  if InstallSlideActive and (MaxProgress > 0) then
+  begin
+    NextImageIndex := ((CurProgress * {#InstallRandomImageCount} * 2) div MaxProgress) mod {#InstallRandomImageCount};
+    if NextImageIndex <> CurrentInstallImageIndex then
+      SetInstallBackImageByIndex(NextImageIndex);
+  end;
+end;
+#endif
 
 function NextButtonClick(CurPageID: Integer): Boolean;
 begin
