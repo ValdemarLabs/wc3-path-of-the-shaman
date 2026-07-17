@@ -1,7 +1,6 @@
 #define AppName "Path of the Shaman"
 #define AppPublisher "Path of the Shaman"
 #define AppRegistryKey "Software\Path of the Shaman"
-#define PotsLogoSmallFile "assets\pots-logo-small.png"
 #define PotsLogoWizardFile "assets\pots-logo-wizard.png"
 #ifexist "assets\pots-logo-wizard.png"
 #define IncludeFinishedBackImage 1
@@ -30,9 +29,6 @@ WizardBackColor=white
 #if IncludeFinishedBackImage
 WizardBackColor=white
 #endif
-#endif
-#ifexist "assets\pots-logo-small.png"
-WizardSmallImageFile={#PotsLogoSmallFile}
 #endif
 PrivilegesRequired=admin
 UninstallDisplayName={#AppName}
@@ -657,7 +653,7 @@ begin
     BackImages[0] := TPngImage.Create;
     try
       BackImages[0].LoadFromFile(ImagePath);
-      WizardSetBackImage(BackImages, False, True, 255);
+      WizardSetBackImage(BackImages, False, True, 165);
       Log('Finished page background image: pots-logo-wizard.png');
     finally
       BackImages[0].Free;
@@ -667,6 +663,24 @@ begin
   end;
 end;
 #endif
+
+procedure ConfigureFinishedPageLayout;
+var
+  ContentLeft: Integer;
+  ContentWidth: Integer;
+begin
+  ContentLeft := ScaleX(36);
+  ContentWidth := WizardForm.FinishedLabel.Parent.Width - (ContentLeft * 2);
+
+  WizardForm.WizardBitmapImage.Visible := False;
+  WizardForm.WizardBitmapImage2.Visible := False;
+  WizardForm.WizardBitmapImage2.Width := 0;
+
+  WizardForm.FinishedHeadingLabel.Left := ContentLeft;
+  WizardForm.FinishedHeadingLabel.Width := ContentWidth;
+  WizardForm.FinishedLabel.Left := ContentLeft;
+  WizardForm.FinishedLabel.Width := ContentWidth;
+end;
 
 #if IncludeInstallRandomImages
 procedure ClearInstallBackImage;
@@ -739,6 +753,8 @@ begin
   InstallSlideTimerID := 0;
   InstallSlideTimerCallback := CreateCallback(@InstallSlideTimerProc);
 #endif
+
+  WizardForm.WizardSmallBitmapImage.Visible := False;
 end;
 
 procedure CurPageChanged(CurPageID: Integer);
@@ -747,7 +763,7 @@ begin
     RefreshVersionPage;
 
   if CurPageID = wpFinished then
-    WizardForm.WizardBitmapImage.Visible := False;
+    ConfigureFinishedPageLayout;
 
 #if IncludeFinishedBackImage
   if CurPageID = wpFinished then
