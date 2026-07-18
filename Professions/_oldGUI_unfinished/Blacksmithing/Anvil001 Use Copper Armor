@@ -1,0 +1,169 @@
+Anvil001 Use Copper Armor
+    Events
+        Unit - A unit Begins channeling an ability
+    Conditions
+        (Unit-type of (Casting unit)) Equal to Anvil
+    Actions
+        -------- Set current Anvil "in use" --------
+        Set VariableSet AnvilCurrent = (Casting unit)
+        -------- --------------------- --------
+        -------- Copper Chain Belt --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to BS_1Apprentice_CopperArmor_CopperChainBelt 
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        Trigger - Turn off (This trigger)
+                        Sound - Play Blacksmithing <gen> at 100.00% volume, attached to AnvilCurrent
+                        Wait 5.00 seconds
+                        Set VariableSet AnvilUnitPos = (Position of Nazgrek)
+                        Item - Create |cFF90EE90Copper Chain Belt|r at AnvilUnitPos
+                        Custom script:   call RemoveLocation(udg_AnvilUnitPos)
+                        -------- Remote materials --------
+                        Game - Display to (All players) the text: |cFFFFCC00Created:|...
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+            Else - Actions
+        -------- Copper Chain Boots --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to BS_1Apprentice_CopperArmor_CopperChainBoots 
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        Trigger - Turn off (This trigger)
+                        Sound - Play Blacksmithing <gen> at 100.00% volume, attached to AnvilCurrent
+                        Wait 5.00 seconds
+                        Set VariableSet AnvilUnitPos = (Position of Nazgrek)
+                        Item - Create |cFF1EFF00Copper Chain Boots|r at AnvilUnitPos
+                        Custom script:   call RemoveLocation(udg_AnvilUnitPos)
+                        -------- Remote materials --------
+                        Game - Display to (All players) the text: |cFFFFCC00Created:|...
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+            Else - Actions
+        -------- Copper Chain Bracers --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to BS_1Apprentice_CopperArmor_CopperChainBracers 
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        Trigger - Turn off (This trigger)
+                        Sound - Play Blacksmithing <gen> at 100.00% volume, attached to AnvilCurrent
+                        Wait 5.00 seconds
+                        Set VariableSet AnvilUnitPos = (Position of Nazgrek)
+                        Item - Create |cFF90EE90Copper Chain Bracers|r at AnvilUnitPos
+                        Custom script:   call RemoveLocation(udg_AnvilUnitPos)
+                        -------- Remote materials --------
+                        Game - Display to (All players) the text: |cFFFFCC00Created:|...
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+            Else - Actions
+        -------- Copper Chain Gauntlets --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to BS_1Apprentice_CopperArmor_CopperChainGauntlets 
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        Trigger - Turn off (This trigger)
+                        Sound - Play Blacksmithing <gen> at 100.00% volume, attached to AnvilCurrent
+                        Wait 5.00 seconds
+                        Set VariableSet AnvilUnitPos = (Position of Nazgrek)
+                        Item - Create |cFF90EE90Copper Chain Gauntlets|r at AnvilUnitPos
+                        Custom script:   call RemoveLocation(udg_AnvilUnitPos)
+                        -------- Remote materials --------
+                        Game - Display to (All players) the text: |cFFFFCC00Created:|...
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+            Else - Actions
+        -------- Copper Chain Helmet --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to BS_1Apprentice_CopperArmor_CopperChainHelmet 
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        Trigger - Turn off (This trigger)
+                        Sound - Play Blacksmithing <gen> at 100.00% volume, attached to AnvilCurrent
+                        Wait 5.00 seconds
+                        Set VariableSet AnvilUnitPos = (Position of Nazgrek)
+                        Item - Create |cFF90EE90Copper Chain Helmet|r at AnvilUnitPos
+                        Custom script:   call RemoveLocation(udg_AnvilUnitPos)
+                        -------- Remote materials --------
+                        Game - Display to (All players) the text: |cFFFFCC00Created:|...
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+            Else - Actions
+        -------- Copper Chain Shoulders --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to BS_1Apprentice_CopperArmor_CopperChainShoulders 
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        Trigger - Turn off (This trigger)
+                        Sound - Play Blacksmithing <gen> at 100.00% volume, attached to AnvilCurrent
+                        Wait 5.00 seconds
+                        Set VariableSet AnvilUnitPos = (Position of Nazgrek)
+                        Item - Create |cFF1EFF00Copper Chain Shoulders|r at AnvilUnitPos
+                        Custom script:   call RemoveLocation(udg_AnvilUnitPos)
+                        -------- Remote materials --------
+                        Game - Display to (All players) the text: |cFFFFCC00Created:|...
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+            Else - Actions
+        -------- Copper Chain Leggings --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to BS_1Apprentice_CopperArmor_CopperChainLeggings 
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        Trigger - Turn off (This trigger)
+                        Sound - Play Blacksmithing <gen> at 100.00% volume, attached to AnvilCurrent
+                        Wait 5.00 seconds
+                        Set VariableSet AnvilUnitPos = (Position of Nazgrek)
+                        Item - Create |cFF90EE90Copper Chain Leggings|r at AnvilUnitPos
+                        Custom script:   call RemoveLocation(udg_AnvilUnitPos)
+                        -------- Remote materials --------
+                        Game - Display to (All players) the text: |cFFFFCC00Created:|...
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+            Else - Actions
+        -------- Copper Chain Vest --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to BS_1Apprentice_CopperArmor_CopperChainVest 
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        Trigger - Turn off (This trigger)
+                        Sound - Play Blacksmithing <gen> at 100.00% volume, attached to AnvilCurrent
+                        Wait 5.00 seconds
+                        Set VariableSet AnvilUnitPos = (Position of Nazgrek)
+                        Item - Create |cFF90EE90Copper Chain Vest|r at AnvilUnitPos
+                        Custom script:   call RemoveLocation(udg_AnvilUnitPos)
+                        -------- Remote materials --------
+                        Game - Display to (All players) the text: |cFFFFCC00Created:|...
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+            Else - Actions

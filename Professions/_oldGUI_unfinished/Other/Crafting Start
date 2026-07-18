@@ -1,0 +1,8 @@
+Crafting Start
+    Events
+    Conditions
+    Actions
+        -------- Adding and forcing the caster unit to cast Craft (Fake) --------
+        Unit - Add Craft (Fake cast) to PlayerHomeCaster
+        Unit - Order PlayerHomeCaster to Human Priest - Inner Fire PlayerHomeCaster
+        Unit - For PlayerHomeCaster, Ability Craft (Fake cast), Hide ability: True

@@ -1,0 +1,240 @@
+Cauldron 001 Use
+    Events
+        Unit - A unit Begins channeling an ability
+    Conditions
+        (Unit-type of (Casting unit)) Equal to Cauldron
+    Actions
+        -------- Set current Cauldron "in use" --------
+        Set VariableSet CauldronCurrent = (Casting unit)
+        -------- ================================== --------
+        -------- ========= BASIC ALCHEMY =================== --------
+        -------- ================================== --------
+        -------- Spring Water --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to A_SpringWater 
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Charges remaining in (Item carried by Nazgrek of type Agave)) Greater than or equal to 1
+                    Then - Actions
+                        Trigger - Turn off (This trigger)
+                        Trigger - Run Cauldron Effects Start <gen> (checking conditions)
+                        Set VariableSet CraftingUnit[(Custom value of (Casting unit))] = (Casting unit)
+                        Trigger - Run Crafting Start <gen> (checking conditions)
+                        Wait 5.00 seconds
+                        Set VariableSet CauldronUnitPos = (Position of Nazgrek)
+                        Item - Create Spring Water at CauldronUnitPos
+                        Custom script:   call RemoveLocation(udg_CauldronUnitPos)
+                        -------- Remote materials --------
+                        Item - Set charges remaining in (Item carried by Nazgrek of type Agave) to ((Charges remaining in (Item carried by Nazgrek of type Agave)) - 1)
+                        -------- Remove Charged items that have 0 charges --------
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Charges remaining in (Item carried by Nazgrek in slot 1)) Equal to 0
+                                (Item-class of (Item carried by Nazgrek in slot 1)) Equal to Charged
+                            Then - Actions
+                                Item - Remove (Item carried by Nazgrek in slot 1)
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Charges remaining in (Item carried by Nazgrek in slot 2)) Equal to 0
+                                (Item-class of (Item carried by Nazgrek in slot 2)) Equal to Charged
+                            Then - Actions
+                                Item - Remove (Item carried by Nazgrek in slot 2)
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Charges remaining in (Item carried by Nazgrek in slot 3)) Equal to 0
+                                (Item-class of (Item carried by Nazgrek in slot 3)) Equal to Charged
+                            Then - Actions
+                                Item - Remove (Item carried by Nazgrek in slot 3)
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Charges remaining in (Item carried by Nazgrek in slot 4)) Equal to 0
+                                (Item-class of (Item carried by Nazgrek in slot 4)) Equal to Charged
+                            Then - Actions
+                                Item - Remove (Item carried by Nazgrek in slot 4)
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Charges remaining in (Item carried by Nazgrek in slot 5)) Equal to 0
+                                (Item-class of (Item carried by Nazgrek in slot 5)) Equal to Charged
+                            Then - Actions
+                                Item - Remove (Item carried by Nazgrek in slot 5)
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Charges remaining in (Item carried by Nazgrek in slot 6)) Equal to 0
+                                (Item-class of (Item carried by Nazgrek in slot 6)) Equal to Charged
+                            Then - Actions
+                                Item - Remove (Item carried by Nazgrek in slot 6)
+                            Else - Actions
+                        Game - Display to (All players) the text: |cFFFFCC00Created:|...
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0017 <gen> and display I don't have all th....  Modify duration: Set to 2.00 seconds and Wait
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+            Else - Actions
+        -------- ================================== --------
+        -------- ========= BASIC POTIONS=================== --------
+        -------- ================================== --------
+        -------- xxx --------
+        -------- ================================== --------
+        -------- ========= UTILITY POTIONS=================== --------
+        -------- ================================== --------
+        -------- xxx --------
+        -------- ================================== --------
+        -------- ========= FLASKS=================== --------
+        -------- ================================== --------
+        -------- Nazgrek's Flask --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to A_NazgreksFlask 
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        And - All (Conditions) are true
+                            Conditions
+                                (Charges remaining in (Item carried by Nazgrek of type Forest Flower)) Greater than or equal to 6
+                                (Charges remaining in (Item carried by Nazgrek of type Agave)) Greater than or equal to 3
+                                (Charges remaining in (Item carried by Nazgrek of type Earth Roots)) Greater than or equal to 2
+                                (Charges remaining in (Item carried by Nazgrek of type Stag Hair)) Greater than or equal to 6
+                                (Charges remaining in (Item carried by Nazgrek of type Frog Slime)) Greater than or equal to 2
+                                (Charges remaining in (Item carried by Nazgrek of type Empty Flask)) Greater than or equal to 1
+                    Then - Actions
+                        Trigger - Turn off (This trigger)
+                        Trigger - Run Cauldron Effects Start <gen> (checking conditions)
+                        Wait 5.00 seconds
+                        Set VariableSet CauldronUnitPos = (Position of Nazgrek)
+                        Item - Create Nazgrek's Flask at CauldronUnitPos
+                        Custom script:   call RemoveLocation(udg_CauldronUnitPos)
+                        -------- Remote materials --------
+                        Item - Set charges remaining in (Item carried by Nazgrek of type Forest Flower) to ((Charges remaining in (Item carried by Nazgrek of type Forest Flower)) - 6)
+                        Item - Set charges remaining in (Item carried by Nazgrek of type Agave) to ((Charges remaining in (Item carried by Nazgrek of type Agave)) - 3)
+                        Item - Set charges remaining in (Item carried by Nazgrek of type Earth Roots) to ((Charges remaining in (Item carried by Nazgrek of type Earth Roots)) - 2)
+                        Item - Set charges remaining in (Item carried by Nazgrek of type Stag Hair) to ((Charges remaining in (Item carried by Nazgrek of type Stag Hair)) - 6)
+                        Item - Set charges remaining in (Item carried by Nazgrek of type Frog Slime) to ((Charges remaining in (Item carried by Nazgrek of type Frog Slime)) - 2)
+                        Item - Set charges remaining in (Item carried by Nazgrek of type Empty Flask) to ((Charges remaining in (Item carried by Nazgrek of type Empty Flask)) - 1)
+                        -------- if charges  go to 0 --------
+                        -------- Remove Charged items that have 0 charges --------
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Charges remaining in (Item carried by Nazgrek in slot 1)) Equal to 0
+                                (Item-class of (Item carried by Nazgrek in slot 1)) Equal to Charged
+                            Then - Actions
+                                Item - Remove (Item carried by Nazgrek in slot 1)
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Charges remaining in (Item carried by Nazgrek in slot 2)) Equal to 0
+                                (Item-class of (Item carried by Nazgrek in slot 2)) Equal to Charged
+                            Then - Actions
+                                Item - Remove (Item carried by Nazgrek in slot 2)
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Charges remaining in (Item carried by Nazgrek in slot 3)) Equal to 0
+                                (Item-class of (Item carried by Nazgrek in slot 3)) Equal to Charged
+                            Then - Actions
+                                Item - Remove (Item carried by Nazgrek in slot 3)
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Charges remaining in (Item carried by Nazgrek in slot 4)) Equal to 0
+                                (Item-class of (Item carried by Nazgrek in slot 4)) Equal to Charged
+                            Then - Actions
+                                Item - Remove (Item carried by Nazgrek in slot 4)
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Charges remaining in (Item carried by Nazgrek in slot 5)) Equal to 0
+                                (Item-class of (Item carried by Nazgrek in slot 5)) Equal to Charged
+                            Then - Actions
+                                Item - Remove (Item carried by Nazgrek in slot 5)
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Charges remaining in (Item carried by Nazgrek in slot 6)) Equal to 0
+                                (Item-class of (Item carried by Nazgrek in slot 6)) Equal to Charged
+                            Then - Actions
+                                Item - Remove (Item carried by Nazgrek in slot 6)
+                            Else - Actions
+                        Game - Display to (All players) the text: |cFFFFCC00Created:|...
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0017 <gen> and display I don't have all th....  Modify duration: Set to 2.00 seconds and Wait
+                        Game - Display to (All players) the text: Debug - conditions ...
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+            Else - Actions
+        -------- Venomweave Flask --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to A_VenomweaveFlask 
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        Trigger - Turn off (This trigger)
+                        Trigger - Run Cauldron Effects Start <gen> (checking conditions)
+                        Wait 5.00 seconds
+                        Set VariableSet CauldronUnitPos = (Position of Nazgrek)
+                        Item - Create Venomweave Flask at CauldronUnitPos
+                        Custom script:   call RemoveLocation(udg_CauldronUnitPos)
+                        -------- Remote materials --------
+                        -------- Remove Charged items that have 0 charges --------
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Charges remaining in (Item carried by Nazgrek in slot 1)) Equal to 0
+                                (Item-class of (Item carried by Nazgrek in slot 1)) Equal to Charged
+                            Then - Actions
+                                Item - Remove (Item carried by Nazgrek in slot 1)
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Charges remaining in (Item carried by Nazgrek in slot 2)) Equal to 0
+                                (Item-class of (Item carried by Nazgrek in slot 2)) Equal to Charged
+                            Then - Actions
+                                Item - Remove (Item carried by Nazgrek in slot 2)
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Charges remaining in (Item carried by Nazgrek in slot 3)) Equal to 0
+                                (Item-class of (Item carried by Nazgrek in slot 3)) Equal to Charged
+                            Then - Actions
+                                Item - Remove (Item carried by Nazgrek in slot 3)
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Charges remaining in (Item carried by Nazgrek in slot 4)) Equal to 0
+                                (Item-class of (Item carried by Nazgrek in slot 4)) Equal to Charged
+                            Then - Actions
+                                Item - Remove (Item carried by Nazgrek in slot 4)
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Charges remaining in (Item carried by Nazgrek in slot 5)) Equal to 0
+                                (Item-class of (Item carried by Nazgrek in slot 5)) Equal to Charged
+                            Then - Actions
+                                Item - Remove (Item carried by Nazgrek in slot 5)
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Charges remaining in (Item carried by Nazgrek in slot 6)) Equal to 0
+                                (Item-class of (Item carried by Nazgrek in slot 6)) Equal to Charged
+                            Then - Actions
+                                Item - Remove (Item carried by Nazgrek in slot 6)
+                            Else - Actions
+                        Game - Display to (All players) the text: |cFFFFCC00Created:|...
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0017 <gen> and display I don't have all th....  Modify duration: Set to 2.00 seconds and Wait
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+            Else - Actions

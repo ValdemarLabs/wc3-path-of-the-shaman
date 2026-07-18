@@ -1,0 +1,10 @@
+Tannery 001 Select
+    Events
+        Unit - A unit enters Tannery001 <gen>
+    Conditions
+        And - All (Conditions) are true
+            Conditions
+                (Entering unit) Equal to Nazgrek
+    Actions
+        Unit - Change ownership of Tannery01 to Player 1 (Red) and Retain color
+        Trigger - Remove (This trigger) from the trigger queue

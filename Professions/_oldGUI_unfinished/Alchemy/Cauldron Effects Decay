@@ -1,0 +1,6 @@
+Cauldron Effects Decay
+    Events
+        Time - CauldronDecayTimer expires
+    Conditions
+    Actions
+        Animation - Play CauldronCurrent's decay animation

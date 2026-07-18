@@ -1,0 +1,10 @@
+Tannery 001 Deselect
+    Events
+        Unit - A unit leaves Tannery001 <gen>
+    Conditions
+        And - All (Conditions) are true
+            Conditions
+                (Leaving unit) Equal to Nazgrek
+    Actions
+        Unit - Change ownership of Tannery01 to Neutral Passive and Retain color
+        Trigger - Remove (This trigger) from the trigger queue

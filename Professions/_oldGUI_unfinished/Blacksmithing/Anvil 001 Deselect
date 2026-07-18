@@ -1,0 +1,10 @@
+Anvil 001 Deselect
+    Events
+        Unit - A unit leaves Anvil001 <gen>
+    Conditions
+        And - All (Conditions) are true
+            Conditions
+                (Leaving unit) Equal to Nazgrek
+    Actions
+        Unit - Change ownership of Anvils[1] to Neutral Passive and Retain color
+        Trigger - Remove (This trigger) from the trigger queue

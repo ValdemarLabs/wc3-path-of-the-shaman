@@ -1,0 +1,129 @@
+Tannery 001 Use
+    Events
+        Unit - A unit Begins channeling an ability
+    Conditions
+        (Unit-type of (Casting unit)) Equal to Tannery
+    Actions
+        -------- Set current Cauldron "in use" --------
+        Set VariableSet TanneryCurrent = (Casting unit)
+        -------- --------------------- --------
+        -------- Reinforced Leather Belt --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to LW_ReinforcedLeatherBelt 
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        Trigger - Turn off (This trigger)
+                        Sound - Play Tannery <gen> at 100.00% volume, attached to TanneryCurrent
+                        Wait 5.00 seconds
+                        Set VariableSet TanneryUnitPos = (Position of Nazgrek)
+                        Item - Create |cFF90EE90Reinforced Leather Belt|r at TanneryUnitPos
+                        Custom script:   call RemoveLocation(udg_TanneryUnitPos)
+                        -------- Remote materials --------
+                        Game - Display to (All players) the text: |cFFFFCC00Created:|...
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+            Else - Actions
+        -------- Reinforced Leather Boots --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to LW_ReinforcedLeatherBoots 
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        Trigger - Turn off (This trigger)
+                        Sound - Play Tannery <gen> at 100.00% volume, attached to TanneryCurrent
+                        Wait 5.00 seconds
+                        Set VariableSet TanneryUnitPos = (Position of Nazgrek)
+                        Item - Create |cFF90EE90Reinforced Leather Boots|r at TanneryUnitPos
+                        Custom script:   call RemoveLocation(udg_TanneryUnitPos)
+                        -------- Remote materials --------
+                        Game - Display to (All players) the text: |cFFFFCC00Created:|...
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+            Else - Actions
+        -------- Reinforced Leather Chestpiece --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to LW_ReinforcedLeatherChestpiece 
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        Trigger - Turn off (This trigger)
+                        Sound - Play Tannery <gen> at 100.00% volume, attached to TanneryCurrent
+                        Wait 5.00 seconds
+                        Set VariableSet TanneryUnitPos = (Position of Nazgrek)
+                        Item - Create |cFF90EE90Reinforced Leather Chestpiece|r at TanneryUnitPos
+                        Custom script:   call RemoveLocation(udg_TanneryUnitPos)
+                        -------- Remote materials --------
+                        Game - Display to (All players) the text: |cFFFFCC00Created:|...
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+            Else - Actions
+        -------- Reinforced Leather Gloves --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to LW_ReinforcedLeatherGloves 
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        Trigger - Turn off (This trigger)
+                        Sound - Play Tannery <gen> at 100.00% volume, attached to TanneryCurrent
+                        Wait 5.00 seconds
+                        Set VariableSet TanneryUnitPos = (Position of Nazgrek)
+                        Item - Create |cFF90EE90Reinforced Leather Gloves|r at TanneryUnitPos
+                        Custom script:   call RemoveLocation(udg_TanneryUnitPos)
+                        -------- Remote materials --------
+                        Game - Display to (All players) the text: |cFFFFCC00Created:|...
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+            Else - Actions
+        -------- Reinforced Leather Helmet --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to LW_ReinforcedLeatherHelmet 
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        Trigger - Turn off (This trigger)
+                        Sound - Play Tannery <gen> at 100.00% volume, attached to TanneryCurrent
+                        Wait 5.00 seconds
+                        Set VariableSet TanneryUnitPos = (Position of Nazgrek)
+                        Item - Create |cFF90EE90Reinforced Leather Helmet|r at TanneryUnitPos
+                        Custom script:   call RemoveLocation(udg_TanneryUnitPos)
+                        -------- Remote materials --------
+                        Game - Display to (All players) the text: |cFFFFCC00Created:|...
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+            Else - Actions
+        -------- Reinforced Leather Shoulderpads --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to LW_ReinforcedLeatherShoulderpads 
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        Trigger - Turn off (This trigger)
+                        Sound - Play Tannery <gen> at 100.00% volume, attached to TanneryCurrent
+                        Wait 5.00 seconds
+                        Set VariableSet TanneryUnitPos = (Position of Nazgrek)
+                        Item - Create |cFF90EE90Reinforced Leather Shoulderpads|r at TanneryUnitPos
+                        Custom script:   call RemoveLocation(udg_TanneryUnitPos)
+                        -------- Remote materials --------
+                        Game - Display to (All players) the text: |cFFFFCC00Created:|...
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+            Else - Actions

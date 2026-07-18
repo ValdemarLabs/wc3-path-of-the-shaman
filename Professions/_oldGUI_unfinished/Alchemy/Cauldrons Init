@@ -1,0 +1,29 @@
+Cauldrons init
+    Events
+        Time - Elapsed game time is 0.00 seconds
+    Conditions
+    Actions
+        -------- Cauldrons --------
+        -------- -------Nazgrek starting area --------
+        Set VariableSet Cauldron001 = Cauldron 1289 <gen>
+        Unit Group - Add Cauldron001 to Cauldrons
+        -------- -------Horde Outpost --------
+        Set VariableSet Cauldron002 = Cauldron 1083 <gen>
+        Unit Group - Add Cauldron002 to Cauldrons
+        -------- -------Horde Lumber Mill --------
+        Set VariableSet Cauldron003 = Cauldron 1084 <gen>
+        Unit Group - Add Cauldron003 to Cauldrons
+        -------- -------Westfall - Erduk's area --------
+        Set VariableSet Cauldron004 = Cauldron 1298 <gen>
+        Unit Group - Add Cauldron004 to Cauldrons
+        -------- Jinzun --------
+        Set VariableSet Cauldron005 = Cauldron 0851 <gen>
+        Unit Group - Add Cauldron005 to Cauldrons
+        -------- -------STV --------
+        -------- ======================= --------
+        -------- FLASKS --------
+        -------- Disable "Venonweave Flask" to cauldrons --------
+        Unit Group - Pick every unit in Cauldrons and do (Actions)
+            Loop - Actions
+                Unit - For (Picked unit), Ability A_VenomweaveFlask , Disable ability: True, Hide UI: True
+        -------- ======================= --------

@@ -1,0 +1,19 @@
+Tannery init
+    Events
+        Time - Elapsed game time is 0.00 seconds
+    Conditions
+    Actions
+        -------- Tanneries --------
+        -------- -------Nazgrek starting area --------
+        Set VariableSet Tannery01 = Tannery 1682 <gen>
+        Unit Group - Add Tannery01 to Tanneries
+        -------- -------Horde Outpost --------
+        -------- -------Horde Lumber Mill --------
+        -------- -------Westfall - Erduk's area --------
+        -------- -------STV --------
+        -------- ======================= --------
+        -------- LW --------
+        -------- Disable XXX --------
+        Unit Group - Pick every unit in Tanneries and do (Actions)
+            Loop - Actions
+        -------- ======================= --------

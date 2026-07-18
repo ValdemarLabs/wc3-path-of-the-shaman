@@ -1,0 +1,15 @@
+Cauldron Effects Start
+    Events
+    Conditions
+    Actions
+        -------- "mixture boiling" --------
+        -------- Play "Cauldron" noise at the location of the specific cauldron where item is "created" --------
+        Sound - Play CauldronSound <gen> at 100.00% volume, attached to CauldronCurrent
+        Animation - Play CauldronCurrent's stand animation
+        Unit - Add Light Effect (origin) to CauldronCurrent
+        Wait 15.00 seconds
+        -------- "mixing over" --------
+        Unit - Remove Light Effect (origin) from CauldronCurrent
+        Animation - Play CauldronCurrent's death animation
+        -------- "fully over" --------
+        Countdown Timer - Start CauldronDecayTimer as a One-shot timer that will expire in 10.00 seconds

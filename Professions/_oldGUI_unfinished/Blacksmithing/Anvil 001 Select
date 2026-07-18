@@ -1,0 +1,10 @@
+Anvil 001 Select
+    Events
+        Unit - A unit enters Anvil001 <gen>
+    Conditions
+        And - All (Conditions) are true
+            Conditions
+                (Entering unit) Equal to Nazgrek
+    Actions
+        Unit - Change ownership of Anvils[1] to Player 1 (Red) and Retain color
+        Trigger - Remove (This trigger) from the trigger queue
