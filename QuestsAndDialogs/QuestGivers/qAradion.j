@@ -1,4 +1,4 @@
-library qAradion initializer Init requires QuestGiver, QuestMaster, DialogSystem, ExSound, FollowSystem, PatrolSystem, UnitSpawn, Companions, IconQuery, ItemLootSystem, ZonesCore, Reputation, CreepRespawn
+library qAradion initializer Init requires QuestGiver, QuestMaster, DialogSystem, FollowSystem, PatrolSystem, UnitSpawn, Companions, IconQuery, ItemLootSystem, ZonesCore, Reputation, CreepRespawn, VoicelinesAradion, VoicelinesValeria, VoicelinesNazgrek
 //===========================================================================
 // qAradion
 // Quest giver dialog + quest flow for Aradion the Farseer.
@@ -771,9 +771,9 @@ endfunction
 
 private function PlayRangerMissingValeriaBark takes nothing returns nothing
 	if GetRandomInt(1, 2) == 1 then
-		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0021", "Where is Aradion?")
+		call DialogSystem_QueueFieldLine(Valeria, "Valeria", VL_VALERIA_0021_KEY, VL_VALERIA_0021_TEXT)
 	else
-		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0022", "I'm watching you carefully...")
+		call DialogSystem_QueueFieldLine(Valeria, "Valeria", VL_VALERIA_0022_KEY, VL_VALERIA_0022_TEXT)
 	endif
 endfunction
 
@@ -1054,12 +1054,12 @@ private function PlayAradionValeriaCompanionDiesLine takes unit dying returns no
 
 	if dying == Valeria then
 		set survivor = Aradion
-		set text = "Valeria!"
-		set soundName = "Aradion_0079"
+		set text = VL_ARADION_0079_TEXT
+		set soundName = VL_ARADION_0079_KEY
 	elseif dying == Aradion then
 		set survivor = Valeria
-		set text = "Aradion...? No!!!"
-		set soundName = "Valeria_0063"
+		set text = VL_VALERIA_0063_TEXT
+		set soundName = VL_VALERIA_0063_KEY
 	else
 		return
 	endif
@@ -1303,94 +1303,94 @@ endfunction
 
 private function GetValeriaNegotiationPrompt takes integer lineId returns string
 	if lineId == 1 then
-		return "You are outmatched. Stand aside, or fall."
+		return VL_NAZGREK_0344_TEXT
 	elseif lineId == 2 then
-		return "You have no right to stand in my way."
+		return VL_NAZGREK_0345_TEXT
 	elseif lineId == 3 then
-		return "Enough! I'll make you listen by force."
+		return VL_NAZGREK_0346_TEXT
 	elseif lineId == 4 then
-		return "I'm not like the other orcs."
+		return VL_NAZGREK_0347_TEXT
 	elseif lineId == 5 then
-		return "You're wasting both our time. Stand down."
+		return VL_NAZGREK_0348_TEXT
 	elseif lineId == 6 then
-		return "I'm just passing by."
+		return VL_NAZGREK_0349_TEXT
 	elseif lineId == 7 then
-		return "I'll show you the power of the Earth Mother!"
+		return VL_NAZGREK_0350_TEXT
 	elseif lineId == 8 then
-		return "I am not your enemy!"
+		return VL_NAZGREK_0351_TEXT
 	elseif lineId == 9 then
-		return "I will not harm you."
+		return VL_NAZGREK_0352_TEXT
 	endif
-	return "I've spoken with Aradion. He told me to find you."
+	return VL_NAZGREK_0353_TEXT
 endfunction
 
 private function GetValeriaNegotiationHeroSound takes integer lineId returns string
 	if lineId == 1 then
-		return "Nazgrek_0344"
+		return VL_NAZGREK_0344_KEY
 	elseif lineId == 2 then
-		return "Nazgrek_0345"
+		return VL_NAZGREK_0345_KEY
 	elseif lineId == 3 then
-		return "Nazgrek_0346"
+		return VL_NAZGREK_0346_KEY
 	elseif lineId == 4 then
-		return "Nazgrek_0347"
+		return VL_NAZGREK_0347_KEY
 	elseif lineId == 5 then
-		return "Nazgrek_0348"
+		return VL_NAZGREK_0348_KEY
 	elseif lineId == 6 then
-		return "Nazgrek_0349"
+		return VL_NAZGREK_0349_KEY
 	elseif lineId == 7 then
-		return "Nazgrek_0350"
+		return VL_NAZGREK_0350_KEY
 	elseif lineId == 8 then
-		return "Nazgrek_0351"
+		return VL_NAZGREK_0351_KEY
 	elseif lineId == 9 then
-		return "Nazgrek_0352"
+		return VL_NAZGREK_0352_KEY
 	endif
-	return "Nazgrek_0353"
+	return VL_NAZGREK_0353_KEY
 endfunction
 
 private function GetValeriaNegotiationResponse takes integer lineId returns string
 	if lineId == 1 then
-		return "Then I shall fall, but so will you!"
+		return VL_VALERIA_0005_TEXT
 	elseif lineId == 2 then
-		return "This is my land - not yours!"
+		return VL_VALERIA_0006_TEXT
 	elseif lineId == 3 then
-		return "Try it, beast! My bow will show you force!"
+		return VL_VALERIA_0007_TEXT
 	elseif lineId == 4 then
-		return "Orc tongues are venom - I won't be deceived!"
+		return VL_VALERIA_0008_TEXT
 	elseif lineId == 5 then
-		return "Never! Not while I still draw breath!"
+		return VL_VALERIA_0009_TEXT
 	elseif lineId == 6 then
-		return "Then allow me to pass you to the Shadowlands!"
+		return VL_VALERIA_0010_TEXT
 	elseif lineId == 7 then
-		return "Warmonger!"
+		return VL_VALERIA_0011_TEXT
 	elseif lineId == 8 then
-		return "Silence, you bloodthirsty beast!"
+		return VL_VALERIA_0012_TEXT
 	elseif lineId == 9 then
-		return "Lies! All lies!"
+		return VL_VALERIA_0013_TEXT
 	endif
-	return "...Aradion? He... lives?"
+	return VL_VALERIA_0014_TEXT
 endfunction
 
 private function GetValeriaNegotiationResponseSound takes integer lineId returns string
 	if lineId == 1 then
-		return "Valeria_0005"
+		return VL_VALERIA_0005_KEY
 	elseif lineId == 2 then
-		return "Valeria_0006"
+		return VL_VALERIA_0006_KEY
 	elseif lineId == 3 then
-		return "Valeria_0007"
+		return VL_VALERIA_0007_KEY
 	elseif lineId == 4 then
-		return "Valeria_0008"
+		return VL_VALERIA_0008_KEY
 	elseif lineId == 5 then
-		return "Valeria_0009"
+		return VL_VALERIA_0009_KEY
 	elseif lineId == 6 then
-		return "Valeria_0010"
+		return VL_VALERIA_0010_KEY
 	elseif lineId == 7 then
-		return "Valeria_0011"
+		return VL_VALERIA_0011_KEY
 	elseif lineId == 8 then
-		return "Valeria_0012"
+		return VL_VALERIA_0012_KEY
 	elseif lineId == 9 then
-		return "Valeria_0013"
+		return VL_VALERIA_0013_KEY
 	endif
-	return "Valeria_0014"
+	return VL_VALERIA_0014_KEY
 endfunction
 
 private function RunValeriaNegotiationEscAction takes nothing returns nothing
@@ -1619,13 +1619,13 @@ private function BeginValeriaSuccessDialog takes nothing returns nothing
 	set seq = DialogSystem_CreateSequence()
 	call DialogSystem_SetSequenceDefaultSpeaker(seq, Valeria, "Valeria")
 	call DialogSystem_SetSequenceCallbacks(seq, null, function OnValeriaSuccessEnd)
-	call DialogSystem_AddLine(seq, Valeria, "Valeria", "...Aradion? He... lives?", "Valeria_0014", true)
-	call DialogSystem_AddLine(seq, Valeria, "Valeria", "If he trusts you, then perhaps I must as well. For his word has never failed me.", "Valeria_0015", true)
-	call DialogSystem_AddLine(seq, Valeria, "Valeria", "If you speak the truth, then take me to him. Now.", "Valeria_0019", true)
+	call DialogSystem_AddLine(seq, Valeria, "Valeria", VL_VALERIA_0014_TEXT, VL_VALERIA_0014_KEY, true)
+	call DialogSystem_AddLine(seq, Valeria, "Valeria", VL_VALERIA_0015_TEXT, VL_VALERIA_0015_KEY, true)
+	call DialogSystem_AddLine(seq, Valeria, "Valeria", VL_VALERIA_0019_TEXT, VL_VALERIA_0019_KEY, true)
 	if hero != null then
 		call DialogSystem_AddMakeUnitFaceUnit(seq, Valeria, hero, 0.75, 0.0)
 	endif
-	call DialogSystem_AddLine(seq, Valeria, "Valeria", "But know this, orc - I'll be watching you.", "Valeria_0020", true)
+	call DialogSystem_AddLine(seq, Valeria, "Valeria", VL_VALERIA_0020_TEXT, VL_VALERIA_0020_KEY, true)
 	call DialogSystem_PlaySequence(seq, Player(0), Valeria)
 	set hero = null
 endfunction
@@ -1753,7 +1753,7 @@ private function PlayValeriaNegotiationSuccess takes nothing returns nothing
 		set seq = DialogSystem_CreateSequence()
 		call DialogSystem_SetSequenceDefaultSpeaker(seq, Valeria, "Valeria")
 		call DialogSystem_SetSequenceCallbacks(seq, function BeginValeriaNegotiationSequence, function OnValeriaSuccessLeadInEnd)
-		call QuestGiver_AddHeroLine(seq, hero, "I've spoken with Aradion. He told me to find you.", "Nazgrek_0353")
+		call QuestGiver_AddHeroLine(seq, hero, VL_NAZGREK_0353_TEXT, VL_NAZGREK_0353_KEY)
 		call DialogSystem_PlaySequence(seq, Player(0), Valeria)
 	else
 		call BeginValeriaNegotiationSequence()
@@ -1829,12 +1829,12 @@ private function StartValeriaEncounterInternal takes unit hero returns nothing
 	call DialogSystem_SetSequenceDefaultSpeaker(seq, Valeria, "Valeria")
 	call DialogSystem_SetSequenceCallbacks(seq, function OnValeriaSequenceStart, function OnValeriaIntroEnd)
 	call SetUnitAnimation(Valeria, "stand ready")
-	call DialogSystem_AddLine(seq, Valeria, "Valeria", "Hold, intruder! Another step and you bleed where you stand!", "Valeria_0001", true)
-	call QuestGiver_AddHeroLine(seq, hero, "You must be Valeria.", "Nazgrek_0340")
-	call QuestGiver_AddHeroLine(seq, hero, "I am not your enemy...", "Nazgrek_0341")
+	call DialogSystem_AddLine(seq, Valeria, "Valeria", VL_VALERIA_0001_TEXT, VL_VALERIA_0001_KEY, true)
+	call QuestGiver_AddHeroLine(seq, hero, VL_NAZGREK_0340_TEXT, VL_NAZGREK_0340_KEY)
+	call QuestGiver_AddHeroLine(seq, hero, VL_NAZGREK_0341_TEXT, VL_NAZGREK_0341_KEY)
 	call DialogSystem_AddDelay(seq, 1.50)
 	call DialogSystem_AddDelay(seq, 1.00)
-	call DialogSystem_AddLine(seq, Valeria, "Valeria", "Filthy orc lies! I'll drop you where you stand!", "Valeria_0002", true)
+	call DialogSystem_AddLine(seq, Valeria, "Valeria", VL_VALERIA_0002_TEXT, VL_VALERIA_0002_KEY, true)
 	call DialogSystem_BindLineAction(seq, 1, function ForceValeriaNegotiationFacing)
 	call DialogSystem_BindLineAction(seq, 2, function ForceValeriaNegotiationFacing)
 	call DialogSystem_BindLineAction(seq, 3, function ForceValeriaNegotiationFacing)
@@ -1949,44 +1949,44 @@ private function AddInProgressGreet takes integer seq, unit hero returns boolean
 	set roll = GetRandomInt(1, 2)
 	if questId == ARADION_QID_RANGER then
 		if roll == 1 then
-			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Valeria is still missing... Tell me you have found her?", "Aradion_0037", true)
+			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0037_TEXT, VL_ARADION_0037_KEY, true)
 		else
-			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "More and more wraiths are circling around Elarindor... please, do not let her be lost to them.", "Aradion_0038", true)
+			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0038_TEXT, VL_ARADION_0038_KEY, true)
 		endif
 		if GetRandomInt(1, 2) == 1 then
-			call QuestGiver_AddHeroLine(seq, hero, "I'll see if I come across her.", "Nazgrek_0337")
+			call QuestGiver_AddHeroLine(seq, hero, VL_NAZGREK_0337_TEXT, VL_NAZGREK_0337_KEY)
 		endif
 		return true
 	endif
 	if questId == ARADION_QID_CRYSTALS then
 		if roll == 1 then
-			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Have you managed to obtain any crystal shards?", "Aradion_0045", true)
+			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0045_TEXT, VL_ARADION_0045_KEY, true)
 		else
-			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Without those shards, the hope slips further from our grasp.", "Aradion_0046", true)
+			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0046_TEXT, VL_ARADION_0046_KEY, true)
 		endif
 		return true
 	endif
 	if questId == ARADION_QID_FADING then
 		if roll == 1 then
-			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Our people's shades still drift through the Vale. You must claim their sparks...", "Aradion_0057", true)
+			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0057_TEXT, VL_ARADION_0057_KEY, true)
 		else
-			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Do not let their torment go to waste. Bring me what little endures.", "Aradion_0058", true)
+			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0058_TEXT, VL_ARADION_0058_KEY, true)
 		endif
 		return true
 	endif
 	if questId == ARADION_QID_RIFTS then
 		if RiftsAwaitingReturnHome or RiftsReturnedHome then
 			if roll == 1 then
-				call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "We should return to our place before we speak further.", "Aradion_0085", true)
+				call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0085_TEXT, VL_ARADION_0085_KEY, true)
 			else
-				call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "The last rift is sealed. Escort us back to our place.", "Aradion_0084", true)
+				call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0084_TEXT, VL_ARADION_0084_KEY, true)
 			endif
 			return true
 		endif
 		if roll == 1 then
-			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "The rifts are still open. If they are not sealed, the Vale will never heal.", "Aradion_0069", true)
+			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0069_TEXT, VL_ARADION_0069_KEY, true)
 		else
-			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Hold the line! Protect Valeria -- protect us both, shaman!", "Aradion_0070", true)
+			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0070_TEXT, VL_ARADION_0070_KEY, true)
 		endif
 		return true
 	endif
@@ -2000,9 +2000,9 @@ private function PlayGreetFirstSequence takes unit hero returns nothing
 	local integer seq
 	set seq = QuestGiver_CreateGreetSequenceBase(Aradion, "Aradion the Farseer", hero, 1.00, 1.00, true)
 	
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "An… orc? Here? If you came for blood, take mine swiftly. I will not flee…", "Aradion_0001", true)
-	call QuestGiver_AddHeroLine(seq, hero, "Your blood is not what I seek, elf. I walk the spirit path, not the path of slaughter.", "Nazgrek_0331")
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "…No. Orcs do not speak so. You… are different.", "Aradion_0002", true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0001_TEXT, VL_ARADION_0001_KEY, true)
+	call QuestGiver_AddHeroLine(seq, hero, VL_NAZGREK_0331_TEXT, VL_NAZGREK_0331_KEY)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0002_TEXT, VL_ARADION_0002_KEY, true)
 	call QuestGiver_PlayFirstGreetSequenceEx(Aradion, Player(0), AradionDialog, seq, CINEMATIC)
 endfunction
 
@@ -2017,18 +2017,18 @@ private function PlayGreetNormalSequence takes unit hero returns nothing
 	if not handled then
 		set roll = GetRandomInt(1, 4)
 		if roll == 1 then
-			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "I did not expect company in these ruins.", "Aradion_0020", true)
+			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0020_TEXT, VL_ARADION_0020_KEY, true)
 		elseif roll == 2 then
-			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Yes, shaman?", "Aradion_0021", true)
+			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0021_TEXT, VL_ARADION_0021_KEY, true)
 		elseif roll == 3 then
-			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Hm? Ah, it's you.", "Aradion_0022", true)
+			call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0022_TEXT, VL_ARADION_0022_KEY, true)
 		else
 			// Only ask about Valeria if she is in range
 			if QuestGiver_IsWithinRange(Aradion, Valeria, VALERIA_RANGE) then
-				call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Have you seen Valeria?", "Aradion_0023", true)
-				call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "She is always on the run...", "Aradion_0024", true)
+				call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0023_TEXT, VL_ARADION_0023_KEY, true)
+				call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0024_TEXT, VL_ARADION_0024_KEY, true)
 			else
-				call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Yes, shaman?", "Aradion_0021", true)
+				call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0021_TEXT, VL_ARADION_0021_KEY, true)
 			endif
 		endif
 	endif
@@ -2100,36 +2100,36 @@ private function BuildInfoSequence takes nothing returns integer
 	endif
 
 	call DialogSystem_AddLookAtUnit(seq, Aradion, hero, 0.5)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "I see the truth in your eyes. You do not come as foe, but as seeker. Then hear me, shaman, and know the ruin of my people.", "Aradion_0003", true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0003_TEXT, VL_ARADION_0003_KEY, true)
 	call DialogSystem_AddMakeUnitFacePoint(seq, Aradion, x, y, 0.25, 0.0)
 	call DialogSystem_AddLookAtPoint(seq, Aradion, x, y, 0.5)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "This was once our home - Elarindor. Jewel of Vanguard Vale. A city that shone like a beacon from the light of the arcane energies.", "Aradion_0004", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Then she came... A magister called Lady Serenthia. Cloaked in grace and wisdom, she whispered promises of eternal prosperity. Many of my people heeded her call...", "Aradion_0005", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "But all she was - was a lie. Her beauty and voice, the elven form were mere illusion. In truth, she was the witch Zerathis.", "Aradion_0006", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "My beloved Valeria and I begged our kin to turn away... but what are two voices against the choir of greed?", "Aradion_0007", true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0004_TEXT, VL_ARADION_0004_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0005_TEXT, VL_ARADION_0005_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0006_TEXT, VL_ARADION_0006_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0007_TEXT, VL_ARADION_0007_KEY, true)
 	if hero != null then
 		call DialogSystem_AddLookAtUnit(seq, hero, Aradion, 0.5)
-		call QuestGiver_AddHeroLine(seq, hero, "You said... a witch deceived you?", "Nazgrek_0332")
+		call QuestGiver_AddHeroLine(seq, hero, VL_NAZGREK_0332_TEXT, VL_NAZGREK_0332_KEY)
 		call DialogSystem_AddLookAtUnit(seq, hero, Aradion, 0.5)
-		call QuestGiver_AddHeroLine(seq, hero, "Why did your kin trust this witch?", "Nazgrek_0333")
+		call QuestGiver_AddHeroLine(seq, hero, VL_NAZGREK_0333_TEXT, VL_NAZGREK_0333_KEY)
 	endif
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Her words promised glory - strength to rival Quel'Thalas itself. Her lies were sweet... and my people were starving for more.", "Aradion_0008", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "But every promise was poison. Each draught of her 'gift' deepened the hunger, until the hunger itself consumed them.", "Aradion_0009", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Now my people are twisted, their flesh withering, their souls bleeding into wraiths. Soon... nothing of them will remain.", "Aradion_0010", true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0008_TEXT, VL_ARADION_0008_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0009_TEXT, VL_ARADION_0009_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0010_TEXT, VL_ARADION_0010_KEY, true)
 	if hero != null then
 		call DialogSystem_AddLookAtUnit(seq, hero, Aradion, 0.5)
-		call QuestGiver_AddHeroLine(seq, hero, "The wraiths I see... they were once elves?", "Nazgrek_0334")
+		call QuestGiver_AddHeroLine(seq, hero, VL_NAZGREK_0334_TEXT, VL_NAZGREK_0334_KEY)
 	endif
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Yes. Once mothers, fathers, children. Now only hollow echoes bound to the Void by the magic that devoured them.", "Aradion_0011", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "The wretched who remain will share the same fate - it is only a matter of time before they too dissolve into wraiths.", "Aradion_0012", true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0011_TEXT, VL_ARADION_0011_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0012_TEXT, VL_ARADION_0012_KEY, true)
 	if hero != null then
 		call DialogSystem_AddLookAtUnit(seq, hero, Aradion, 0.5)
-		call QuestGiver_AddHeroLine(seq, hero, "And you? How did you resist where others fell?", "Nazgrek_0336")
+		call QuestGiver_AddHeroLine(seq, hero, VL_NAZGREK_0336_TEXT, VL_NAZGREK_0336_KEY)
 	endif
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "I resisted... because I feared. And because Valeria feared with me. Together we begged them to turn away. None listened.", "Aradion_0013", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "The witch saw no worth in those who refused her. So she left us alive - to watch the slow death of our kin.", "Aradion_0014", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "I have searched, shaman... searched for a cure, an answer, any salvation. But all I have found is despair.", "Aradion_0015", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Yet perhaps the spirits you serve have sent you here, to answer the question I cannot solve alone.", "Aradion_0016", true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0013_TEXT, VL_ARADION_0013_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0014_TEXT, VL_ARADION_0014_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0015_TEXT, VL_ARADION_0015_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0016_TEXT, VL_ARADION_0016_KEY, true)
 
 	set hero = null
 	return seq
@@ -2574,14 +2574,14 @@ private function PlayRiftsStartBarks takes nothing returns nothing
 	local integer roll
 	set roll = GetRandomInt(1, 2)
 	if roll == 1 then
-		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0074", "Stand ready Nazgrek. Once I begin, this place can start to crawl with wraiths.")
+		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", VL_ARADION_0074_KEY, VL_ARADION_0074_TEXT)
 	else
-		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0075", "I will attempt to close this rift. But I cannot fight and focus at once... you must protect me!")
+		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", VL_ARADION_0075_KEY, VL_ARADION_0075_TEXT)
 	endif
 	if GetRandomInt(1, 2) == 1 then
-		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0072", "We will handle them, just keep your focus on the rift!")
+		call DialogSystem_QueueFieldLine(Valeria, "Valeria", VL_VALERIA_0072_KEY, VL_VALERIA_0072_TEXT)
 	else
-		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0073", "We stand ready to defend you!")
+		call DialogSystem_QueueFieldLine(Valeria, "Valeria", VL_VALERIA_0073_KEY, VL_VALERIA_0073_TEXT)
 	endif
 endfunction
 
@@ -2789,36 +2789,36 @@ endfunction
 
 private function GetRiftsFailurePrimaryText takes unit failedUnit returns string
 	if failedUnit == Valeria then
-		return "Forgive me... my love... I... have failed..."
+		return VL_VALERIA_0064_TEXT
 	elseif failedUnit == Aradion then
-		return "The current was... too strong... I..."
+		return VL_ARADION_0086_TEXT
 	endif
 	return ""
 endfunction
 
 private function GetRiftsFailurePrimarySound takes unit failedUnit returns string
 	if failedUnit == Valeria then
-		return "Valeria_0064"
+		return VL_VALERIA_0064_KEY
 	elseif failedUnit == Aradion then
-		return "Aradion_0086"
+		return VL_ARADION_0086_KEY
 	endif
 	return ""
 endfunction
 
 private function GetRiftsFailureReplyText takes unit failedUnit returns string
 	if failedUnit == Valeria then
-		return "Valeria!"
+		return VL_ARADION_0079_TEXT
 	elseif failedUnit == Aradion then
-		return "Aradion...? No!!!"
+		return VL_VALERIA_0063_TEXT
 	endif
 	return ""
 endfunction
 
 private function GetRiftsFailureReplySound takes unit failedUnit returns string
 	if failedUnit == Valeria then
-		return "Aradion_0079"
+		return VL_ARADION_0079_KEY
 	elseif failedUnit == Aradion then
-		return "Valeria_0063"
+		return VL_VALERIA_0063_KEY
 	endif
 	return ""
 endfunction
@@ -3010,46 +3010,46 @@ private function PlayRiftsIncomingWaveBark takes nothing returns nothing
 	local integer roll
 	set roll = GetRandomInt(1, 2)
 	if roll == 1 then
-		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0061", "Hold your ground! Don't let them reach Aradion!")
+		call DialogSystem_QueueFieldLine(Valeria, "Valeria", VL_VALERIA_0061_KEY, VL_VALERIA_0061_TEXT)
 	else
-		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0062", "The rift is pulling every wrath towards it - brace yourself!")
+		call DialogSystem_QueueFieldLine(Valeria, "Valeria", VL_VALERIA_0062_KEY, VL_VALERIA_0062_TEXT)
 	endif
 endfunction
 
 private function PlayRiftsCombatBark takes nothing returns nothing
 	local integer roll
 	if ShouldPlayRiftsOverwhelmedLine() then
-		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0065", "They are too many! Drive them back!")
+		call DialogSystem_QueueFieldLine(Valeria, "Valeria", VL_VALERIA_0065_KEY, VL_VALERIA_0065_TEXT)
 		return
 	endif
 	set roll = GetRandomInt(1, 3)
 	if roll == 1 then
-		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0076", "Hold them back! Just a little longer!")
+		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", VL_ARADION_0076_KEY, VL_ARADION_0076_TEXT)
 	elseif roll == 2 then
-		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0077", "The rift is still open - I need more time!")
+		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", VL_ARADION_0077_KEY, VL_ARADION_0077_TEXT)
 	else
-		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0078", "Try to keep them away from me!")
+		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", VL_ARADION_0078_KEY, VL_ARADION_0078_TEXT)
 	endif
 endfunction
 
 private function PlayRiftsFinishBarks takes nothing returns nothing
 	if GetRandomInt(1, 2) == 1 then
-		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0080", "It is done. This rift is sealed.")
+		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", VL_ARADION_0080_KEY, VL_ARADION_0080_TEXT)
 	else
-		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0082", "I managed to close this rift.")
+		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", VL_ARADION_0082_KEY, VL_ARADION_0082_TEXT)
 	endif
 	if GetRandomInt(1, 2) == 1 then
-		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0066", "Great job, my love!")
+		call DialogSystem_QueueFieldLine(Valeria, "Valeria", VL_VALERIA_0066_KEY, VL_VALERIA_0066_TEXT)
 	else
-		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0068", "You never cease to amaze me, my love.")
+		call DialogSystem_QueueFieldLine(Valeria, "Valeria", VL_VALERIA_0068_KEY, VL_VALERIA_0068_TEXT)
 	endif
 endfunction
 
 private function PlayRiftsAllClosedBarks takes nothing returns nothing
-	call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0084", "I think this was the last of them. All rifts should now be closed.")
-	call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0070", "So, is it... over now? Is this the answer to our people's curse?")
-	call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0085", "In time, we will see... It's time to head back to our place.")
-	call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0071", "Gladly.")
+	call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", VL_ARADION_0084_KEY, VL_ARADION_0084_TEXT_ALT1)
+	call DialogSystem_QueueFieldLine(Valeria, "Valeria", VL_VALERIA_0070_KEY, VL_VALERIA_0070_TEXT)
+	call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", VL_ARADION_0085_KEY, VL_ARADION_0085_TEXT_ALT1)
+	call DialogSystem_QueueFieldLine(Valeria, "Valeria", VL_VALERIA_0071_KEY, VL_VALERIA_0071_TEXT)
 endfunction
 
 private function SpawnRiftsWave takes nothing returns nothing
@@ -3235,8 +3235,8 @@ private function FinishRiftsCurrentRitual takes nothing returns nothing
 	if RiftsCorruptionCounter >= 3 then
 		call PlayRiftsAllClosedBarks()
 	else
-		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", "Aradion_0083", "Let's head to the next one. Be on your guard.")
-		call DialogSystem_QueueFieldLine(Valeria, "Valeria", "Valeria_0069", "Don't worry my love, we will be.")
+		call DialogSystem_QueueFieldLine(Aradion, "Aradion the Farseer", VL_ARADION_0083_KEY, VL_ARADION_0083_TEXT)
+		call DialogSystem_QueueFieldLine(Valeria, "Valeria", VL_VALERIA_0069_KEY, VL_VALERIA_0069_TEXT)
 	endif
 	set hero = null
 	set closedRift = null
@@ -3838,9 +3838,9 @@ private function OnAcceptQuest1 takes nothing returns nothing
 	call DialogSystem_AddMakeFaceEachOther(seq, Aradion, hero, 0.50, 1.0)
 	
 	// Add quest-specific lines
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "In the chaos, when the wraiths struck, my beloved Valeria was torn from my side.", "Aradion_0035", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "I have searched, but the shadows grow thick. If she still lives and you find her, bring her to me, shaman… before they claim her as well.", "Aradion_0036", true)
-	call QuestGiver_AddHeroLine(seq, hero, "I'll see if I come across her.", "Nazgrek_0337")
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0035_TEXT, VL_ARADION_0035_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0036_TEXT, VL_ARADION_0036_KEY, true)
+	call QuestGiver_AddHeroLine(seq, hero, VL_NAZGREK_0337_TEXT, VL_NAZGREK_0337_KEY)
 	call DialogSystem_PlaySequence(seq, Player(0), Aradion)
 endfunction
 
@@ -3908,19 +3908,19 @@ private function OnCompleteQuest1 takes nothing returns nothing
 		call DialogSystem_AddMakeUnitFaceUnit(seq, hero, Valeria, 0.75, 0.0)
 	endif
 	call DialogSystem_AddMakeUnitFaceUnit(seq, Aradion, Valeria, 0.75, 0.0)
-	call DialogSystem_AddLine(seq, Valeria, "Valeria", "Aradion… It is you! I thought I'd never see you again.", "Valeria_0023", true)
+	call DialogSystem_AddLine(seq, Valeria, "Valeria", VL_VALERIA_0023_TEXT, VL_VALERIA_0023_KEY, true)
 	if hero != null and Aradion != null then
 		call DialogSystem_AddMakeUnitFaceUnit(seq, hero, Aradion, 0.75, 0.0)
 	endif
 	call DialogSystem_AddMakeUnitFaceUnit(seq, Valeria, Aradion, 0.75, 0.0)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Valeria? By the stars… you yet live!", "Aradion_0031", true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0031_TEXT, VL_ARADION_0031_KEY, true)
 	call DialogSystem_AddMakeUnitFaceUnit(seq, Valeria, Aradion, 0.75, 0.0)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "I feared that I had lost you… forgive me for losing hope.", "Aradion_0032", true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0032_TEXT, VL_ARADION_0032_KEY, true)
 	if hero == Nazgrek then
 		call DialogSystem_AddMakeUnitFaceUnit(seq, hero, Valeria, 0.75, 0.0)
 		call DialogSystem_AddMakeUnitFaceUnit(seq, Valeria, hero, 0.75, 0.0)
 		call DialogSystem_AddDelay(seq, 1.00)
-		call DialogSystem_AddLine(seq, Valeria, "Valeria", "This orc… he spoke your name, my love. It is the only reason I followed him.", "Valeria_0024", true)
+		call DialogSystem_AddLine(seq, Valeria, "Valeria", VL_VALERIA_0024_TEXT, VL_VALERIA_0024_KEY, true)
 	else
 		if hero != null then
 			call DialogSystem_AddMakeUnitFaceUnit(seq, hero, Valeria, 0.75, 0.0)
@@ -3935,14 +3935,14 @@ private function OnCompleteQuest1 takes nothing returns nothing
 		call DialogSystem_AddMakeUnitFaceUnit(seq, hero, Aradion, 0.75, 0.0)
 		call DialogSystem_AddDelay(seq, 2.00)
 	endif
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Then I was right. You are no foe, but a seeker.", "Aradion_0033", true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0033_TEXT, VL_ARADION_0033_KEY, true)
 	call DialogSystem_AddMakeUnitFaceUnit(seq, Aradion, Valeria, 0.75, 0.0)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "You have given me back my heart, shaman. For this… I owe you more than I can say.", "Aradion_0034", true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0034_TEXT, VL_ARADION_0034_KEY, true)
 	if hero == Nazgrek then
 		call DialogSystem_AddMakeUnitFaceUnit(seq, hero, Valeria, 0.75, 0.0)
 		call DialogSystem_AddMakeUnitFaceUnit(seq, Valeria, hero, 0.75, 0.0)
 		call DialogSystem_AddMakeUnitFaceUnit(seq, Aradion, hero, 0.75, 0.0)
-		call DialogSystem_AddLine(seq, Valeria, "Valeria", "…Do not think this earns my trust fully, orc. But… for Aradion's sake, I'm giving you a chance.", "Valeria_0025", true)
+		call DialogSystem_AddLine(seq, Valeria, "Valeria", VL_VALERIA_0025_TEXT, VL_VALERIA_0025_KEY, true)
 	else
 		if hero != null then
 			call DialogSystem_AddMakeUnitFaceUnit(seq, hero, Valeria, 0.75, 0.0)
@@ -3981,11 +3981,11 @@ private function OnAcceptQuest2 takes nothing returns nothing
 	
 	// Add quest-specific lines with inline facing
 	call DialogSystem_AddMakeFaceEachOther(seq, Aradion, hero, 0.50, 0.0)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "In the ruins of Elarindor, there are crystals… pulsing, alive with energy.", "Aradion_0041", true)
-	call QuestGiver_AddHeroLookAtLine(seq, hero, Aradion, "I have walked near them. Their song is some what… twisted, yet beautiful.", "Nazgrek_0366")
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "I believe they are remnants of our ancient magical pools, fractured when our people consumed too much magical energies.", "Aradion_0042", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "If their power can be harnessed, perhaps… perhaps they may quiet the hunger, even if only for a time.", "Aradion_0043", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Bring me shards of these crystals, shaman. Let us not forsake even the faintest hope.", "Aradion_0044", true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0041_TEXT, VL_ARADION_0041_KEY, true)
+	call QuestGiver_AddHeroLookAtLine(seq, hero, Aradion, VL_NAZGREK_0366_TEXT, VL_NAZGREK_0366_KEY)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0042_TEXT, VL_ARADION_0042_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0043_TEXT, VL_ARADION_0043_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0044_TEXT, VL_ARADION_0044_KEY, true)
 	call DialogSystem_PlaySequence(seq, Player(0), Aradion)
 endfunction
 
@@ -4013,11 +4013,11 @@ private function OnCompleteQuest2 takes nothing returns nothing
 	
 	// Add quest-specific completion dialog with inline facing
 	call DialogSystem_AddMakeFaceEachOther(seq, Aradion, hero, 0.50, 0.0)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Yes… these shards still resonate with power, I can feel it... It is almost... mesmerizing.", "Aradion_0047", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "If we can bend the crystals energy to our control, it might reverse the damage of the wretched elves decay… Or only soothe for a fleeting moment.…", "Aradion_0048", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Yet the pulse of these crystals seems odd... As if the crystals themselves cry out in pain.", "Aradion_0049", true)
-	call QuestGiver_AddHeroLookAtLine(seq, hero, Aradion, "I can hear the spirits whisper caution. These crystals may feed hunger, not heal it.", "Nazgrek_0367")
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "I must study these shards you brought me… very carefully", "Aradion_0050", true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0047_TEXT, VL_ARADION_0047_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0048_TEXT, VL_ARADION_0048_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0049_TEXT, VL_ARADION_0049_KEY, true)
+	call QuestGiver_AddHeroLookAtLine(seq, hero, Aradion, VL_NAZGREK_0367_TEXT, VL_NAZGREK_0367_KEY)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0050_TEXT, VL_ARADION_0050_KEY, true)
 	call DialogSystem_PlaySequence(seq, Player(0), Aradion)
 endfunction
 
@@ -4083,12 +4083,12 @@ private function OnAcceptQuest3 takes nothing returns nothing
 	endif
 	
 	// Add quest-specific lines
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "The mana wraiths are what remain when the hunger wins.", "Aradion_0053", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Yet even in their twisted forms, I sense a faint light — echoes of the elves they once were.", "Aradion_0054", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "If we can gather those sparks, perhaps they hold some secret… some key we have overlooked.", "Aradion_0055", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Bring me their essences, shaman. Let us see if even wraiths may whisper truth.", "Aradion_0056", true)
-	call QuestGiver_AddHeroLine(seq, hero, "I will do this Aradion, but I see little hope in the shadows.", "Nazgrek_0371")
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "I'll give you the rod of Tel'anor which can be used to safely extract the essence of mana wraith when it is weakened enough.", "Aradion_0063", true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0053_TEXT, VL_ARADION_0053_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0054_TEXT, VL_ARADION_0054_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0055_TEXT, VL_ARADION_0055_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0056_TEXT, VL_ARADION_0056_KEY, true)
+	call QuestGiver_AddHeroLine(seq, hero, VL_NAZGREK_0371_TEXT, VL_NAZGREK_0371_KEY)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0063_TEXT, VL_ARADION_0063_KEY, true)
 	call DialogSystem_PlaySequence(seq, Player(0), Aradion)
 endfunction
 
@@ -4119,10 +4119,10 @@ private function OnCompleteQuest3 takes nothing returns nothing
 	endif
 	
 	// Add quest-specific completion dialog
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "So fragile… yet for a moment, I can feel all the memories.... everything they once were…", "Aradion_0060", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "But it all slips away, fading faster than breath. They are too far gone.", "Aradion_0061", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "…If even wraiths leave behind only ashes of the soul, then perhaps our people's fate is truly sealed... ", "Aradion_0062", true)
-	call QuestGiver_AddHeroLine(seq, hero, "Do not surrender to despair, Aradion. There may yet be an answer to all of it.", "Nazgrek_0372")
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0060_TEXT, VL_ARADION_0060_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0061_TEXT, VL_ARADION_0061_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0062_TEXT, VL_ARADION_0062_KEY, true)
+	call QuestGiver_AddHeroLine(seq, hero, VL_NAZGREK_0372_TEXT, VL_NAZGREK_0372_KEY)
 	call DialogSystem_PlaySequence(seq, Player(0), Aradion)
 endfunction
 
@@ -4193,14 +4193,14 @@ private function OnAcceptQuest4 takes nothing returns nothing
 	
 	// Add quest-specific lines with inline facing
 	call DialogSystem_AddMakeFaceEachOther(seq, Aradion, hero, 0.50, 0.0)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "The ancient pools of magic around the Vanguard Vale and Elarindor once flowed pure, binding our people to life and light.", "Aradion_0065", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Now they are transformed.... distorted by implosion of the mana hunger.... And in those rift-like pools, the wraiths are born anew.", "Aradion_0066", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Valeria and I will attempt to seal these rifts. It is perilous work, and we don't truly know what we are dealing with. I've begin to think that I should do this alone…", "Aradion_0067", true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0065_TEXT, VL_ARADION_0065_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0066_TEXT, VL_ARADION_0066_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0067_TEXT, VL_ARADION_0067_KEY, true)
 	// NOTE: Valeria null check in DialogSystem - this will be skipped if Valeria is invalid
 	call DialogSystem_AddLookAtUnit(seq, Valeria, Aradion, 0.5)
-	call DialogSystem_AddLine(seq, Valeria, "Valeria", "We have planned this forever… I can handle it, my love. ", "Valeria_0060", true)
-	call QuestGiver_AddHeroLine(seq, hero, "The spirits whisper of broken currents here. I will see Valeria through this.", "Nazgrek_0377")
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Stand with us, shaman. Guard me while I close the rifts — and strike down whatever nightmares the rifts unleash.", "Aradion_0068", true)
+	call DialogSystem_AddLine(seq, Valeria, "Valeria", VL_VALERIA_0060_TEXT, VL_VALERIA_0060_KEY, true)
+	call QuestGiver_AddHeroLine(seq, hero, VL_NAZGREK_0377_TEXT, VL_NAZGREK_0377_KEY)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0068_TEXT, VL_ARADION_0068_KEY, true)
 	call DialogSystem_PlaySequence(seq, Player(0), Aradion)
 endfunction
 
@@ -4256,10 +4256,10 @@ private function OnCompleteQuest4 takes nothing returns nothing
 	call DialogSystem_AddMakeFaceEachOther(seq, Aradion, hero, 0.50, 0.0)
 	// NOTE: Valeria null check in DialogSystem - this will be skipped if Valeria is invalid
 	call DialogSystem_AddMakeFaceEachOther(seq, Valeria, Aradion, 0.50, 0.0)
-	call QuestGiver_AddHeroLine(seq, hero, "The wound in the land is remedied… for now.", "Nazgrek_0378")
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "The rifts… are sealed. For the first time in years, the air feels lighter in the Vale.", "Aradion_0071", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "You stood unbroken, my dear friend. Hope stirs again — faint, but alive.", "Aradion_0072", true)
-	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", "Thank you, shaman. You have given us more than victory — you have given us belief.", "Aradion_0073", true)
+	call QuestGiver_AddHeroLine(seq, hero, VL_NAZGREK_0378_TEXT, VL_NAZGREK_0378_KEY)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0071_TEXT, VL_ARADION_0071_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0072_TEXT, VL_ARADION_0072_KEY, true)
+	call DialogSystem_AddLine(seq, Aradion, "Aradion the Farseer", VL_ARADION_0073_TEXT, VL_ARADION_0073_KEY, true)
 	call DialogSystem_PlaySequence(seq, Player(0), Aradion)
 endfunction
 
@@ -4281,9 +4281,9 @@ endfunction
 // Line registration
 //===========================================================================
 private function RegisterLines takes nothing returns nothing
-	call DialogSystem_RegisterFarewellLineForUnit(Aradion, "Go then, shaman. May the spirits shield you.", "Aradion_0017", true)
-	call DialogSystem_RegisterFarewellLineForUnit(Aradion, "May your path carry more hope than mine.", "Aradion_0018", true)
-	call DialogSystem_RegisterFarewellLineForUnit(Aradion, "I hope our paths cross again.", "Aradion_0019", true)
+	call DialogSystem_RegisterFarewellLineForUnit(Aradion, VL_ARADION_0017_TEXT, VL_ARADION_0017_KEY, true)
+	call DialogSystem_RegisterFarewellLineForUnit(Aradion, VL_ARADION_0018_TEXT, VL_ARADION_0018_KEY, true)
+	call DialogSystem_RegisterFarewellLineForUnit(Aradion, VL_ARADION_0019_TEXT, VL_ARADION_0019_KEY, true)
 endfunction
 
 //===========================================================================

@@ -81,7 +81,7 @@
     call AI_SetDebugMode(enabled)
 
 **/
-library AI initializer Init requires Table, Companions, UnitDeathEvent, DamageEngine, DialogSystem, ExSound, IconQuery, Reputation, GatherNodes, GatherNodeSkills, GatherNodeItems, GatherNodeUnits
+library AI initializer Init requires Table, Companions, UnitDeathEvent, DamageEngine, DialogSystem, ExSound, IconQuery, Reputation, GatherNodes, GatherNodeSkills, GatherNodeItems, GatherNodeUnits, VoicelinesWarlock, VoicelinesUndeadWarlock, VoicelinesRestoShaman, VoicelinesEngineer, VoicelinesPaladin
 
 globals
     constant integer AI_STATE_INACTIVE = 0
@@ -2640,31 +2640,31 @@ private function FindPattern takes string source, string pattern returns integer
 endfunction
 
 private function IsAvelineCompatibleWarriorChat takes string soundKey returns boolean
-    if soundKey == "HeroWarlock_ChatWarrior4" then
+    if soundKey == VL_WARLOCK_HEROWARLOCK_CHATWARRIOR4_KEY then
         return true
-    elseif soundKey == "HeroUndeadWarlock_ChatWarrior1" then
+    elseif soundKey == VL_UNDEADWARLOCK_HEROUNDEADWARLOCK_CHATWARRIOR1_KEY then
         return true
-    elseif soundKey == "HeroUndeadWarlock_ChatWarrior2" then
+    elseif soundKey == VL_UNDEADWARLOCK_HEROUNDEADWARLOCK_CHATWARRIOR2_KEY then
         return true
-    elseif soundKey == "HeroUndeadWarlock_ChatWarrior3" then
+    elseif soundKey == VL_UNDEADWARLOCK_HEROUNDEADWARLOCK_CHATWARRIOR3_KEY then
         return true
-    elseif soundKey == "HeroUndeadWarlock_ChatWarrior4" then
+    elseif soundKey == VL_UNDEADWARLOCK_HEROUNDEADWARLOCK_CHATWARRIOR4_KEY then
         return true
-    elseif soundKey == "HeroShaman_ChatWarrior1" then
+    elseif soundKey == VL_RESTOSHAMAN_HEROSHAMAN_CHATWARRIOR1_KEY then
         return true
-    elseif soundKey == "HeroShaman_ChatWarrior2" then
+    elseif soundKey == VL_RESTOSHAMAN_HEROSHAMAN_CHATWARRIOR2_KEY then
         return true
-    elseif soundKey == "HeroShaman_ChatWarrior3" then
+    elseif soundKey == VL_RESTOSHAMAN_HEROSHAMAN_CHATWARRIOR3_KEY then
         return true
-    elseif soundKey == "HeroShaman_ChatWarrior4" then
+    elseif soundKey == VL_RESTOSHAMAN_HEROSHAMAN_CHATWARRIOR4_KEY then
         return true
-    elseif soundKey == "HeroEngineer_ChatWarrior1" then
+    elseif soundKey == VL_ENGINEER_HEROENGINEER_CHATWARRIOR1_KEY then
         return true
-    elseif soundKey == "HeroEngineer_ChatWarrior4" then
+    elseif soundKey == VL_ENGINEER_HEROENGINEER_CHATWARRIOR4_KEY then
         return true
-    elseif soundKey == "HeroPaladin_ChatWarrior2" then
+    elseif soundKey == VL_PALADIN_HEROPALADIN_CHATWARRIOR2_KEY then
         return true
-    elseif soundKey == "HeroPaladin_ChatWarrior4" then
+    elseif soundKey == VL_PALADIN_HEROPALADIN_CHATWARRIOR4_KEY then
         return true
     endif
     return false

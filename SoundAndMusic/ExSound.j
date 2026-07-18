@@ -22,7 +22,9 @@ library ExSound initializer Init
     API:
     Init / preload sound functions:
         call ExSound_Register(key, path)
+        call ExSound_RegisterKeyInFolder(key, "Pots\\Sound\\Voicelines\\Nazgrek\\")
         call ExSound_RegisterSequence("Nazgrek_", 1, 50, "Pots\\Sound\\Dialogs\\")
+        call ExSound_RegisterUnpaddedSequence("HeroWarrior_ChatGeneral", 1, 6, "Pots\\Sound\\Voicelines\\HeroWarrior\\ChatLines\\")
 
     Playback functions:
         call ExSound_Play("Nazgrek_0001", "Hello there!")                                   // with dialog text for duration estimation
@@ -66,14 +68,26 @@ endglobals
 // Register single sound by key
 //=================================================================
 function ExSound_Register takes string key, string path returns nothing
-    call SaveStr(es_Table, StringHash(key), 0, path)
+    local integer hash = StringHash(key)
+    local boolean alreadyRegistered = HaveSavedString(es_Table, hash, 0)
+
+    call SaveStr(es_Table, hash, 0, path)
 
     // store key for preload
-    set es_KeyList[es_KeyCount] = key
-    set es_KeyCount = es_KeyCount + 1
+    if not alreadyRegistered then
+        set es_KeyList[es_KeyCount] = key
+        set es_KeyCount = es_KeyCount + 1
+    endif
 
     //call BJDebugMsg("Registered sound: " + key + " -> " + path)
 
+endfunction
+
+//=================================================================
+// Register single sound by key in a folder.
+//=================================================================
+function ExSound_RegisterKeyInFolder takes string key, string folder returns nothing
+    call ExSound_Register(key, folder + key + ".mp3")
 endfunction
 
 //=================================================================
@@ -103,6 +117,20 @@ function ExSound_RegisterSequence takes string base, integer first, integer last
 
     //call BJDebugMsg("Registered sequence: " + base + I2S(first) + " -> " + I2S(last))
     
+endfunction
+
+//=================================================================
+// Register sequence: baseName + unpadded numbers.
+// Example: ExSound_RegisterUnpaddedSequence("HeroWarrior_ChatGeneral", 1, 6, "Pots\\Sound\\Voicelines\\HeroWarrior\\ChatLines\\")
+//   -> "HeroWarrior_ChatGeneral1", ..., "HeroWarrior_ChatGeneral6"
+//=================================================================
+function ExSound_RegisterUnpaddedSequence takes string base, integer first, integer last, string folder returns nothing
+    local integer i = first
+    loop
+        exitwhen i > last
+        call ExSound_RegisterKeyInFolder(base + I2S(i), folder)
+        set i = i + 1
+    endloop
 endfunction
 
 //=================================================================
@@ -1039,6 +1067,24 @@ private function Init takes nothing returns nothing
     call ExSound_Register("HeroWarrior_ChatWarlock2Warlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\HeroWarrior_ChatWarlock2Warlock.mp3")
     call ExSound_Register("HeroWarrior_ChatWarlock3Warlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\HeroWarrior_ChatWarlock3Warlock.mp3")
     call ExSound_Register("HeroWarrior_ChatWarlock4Warlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\HeroWarrior_ChatWarlock4Warlock.mp3")
+
+    //=================================================================
+    // Hero Reply Lines - Undead Warlock
+    call ExSound_RegisterKeyInFolder("HeroRogue_ChatGeneral1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroRogue_ChatWarlock1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroRogue_ChatShaman3UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroShaman_ChatGeneral1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroShaman_ChatWarlock1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroShaman_ChatWarlock4UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroWarrior_ChatGeneral1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroWarrior_ChatWarlock1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroWarrior_ChatWarlock3UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroEngineer_ChatGeneral1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroEngineer_ChatWarlock2UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroEngineer_ChatWarlock5UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroPaladin_ChatGeneral1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroPaladin_ChatWarlock1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroPaladin_ChatWarlock3UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
     
     //=================================================================
     // Hero Reply Lines - Warrior    

@@ -19,7 +19,7 @@
     call AIRestoshaman_Register(unit whichUnit)
 
 **/
-library AIRestoshaman initializer Init requires AI, AbilitiesLiteUI, Totems
+library AIRestoshaman initializer Init requires AI, AbilitiesLiteUI, Totems, VoicelinesRestoShaman
 
 globals
     constant integer AI_RESTOSHAMAN_UNIT_HORDE = 'O61H'
@@ -62,37 +62,37 @@ private function CanCastTotem takes unit shaman, integer abilityId returns boole
 endfunction
 
 private function RegisterBarks takes nothing returns nothing
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_GREET, "The spirits walk with us.", "HeroRestoshaman_Greet1")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_GREET, "May the winds guide us, my friend.", "HeroRestoshaman_Greet2")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_GREET, "What aid do you require?", "HeroRestoshaman_Greet3")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_FAREWELL, "The spirits will watch over you.", "HeroRestoshaman_Farewell1")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_FAREWELL, "I will await the call of the elements.", "HeroRestoshaman_Farewell2")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_PASSIVE, "I shall remain at your side.", "HeroRestoshaman_Passive1")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_PASSIVE, "I will follow you.", "HeroRestoshaman_Passive2")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_NORMAL, "I will assist you in this endeavor.", "HeroRestoshaman_Normal1")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_NORMAL, "Your will aligns with the elements.", "HeroRestoshaman_Normal2")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_NORMAL, "Let us bring balance to the chaos.", "HeroRestoshaman_Normal3")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_AGGRESSIVE, "The storm will cleanse our enemies!", "HeroRestoshaman_Aggressive1")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_AGGRESSIVE, "They will feel the wrath of the elements!", "HeroRestoshaman_Aggressive2")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_HOLD, "I will remain here, as steady as a mountain.", "HeroRestoshaman_HoldPositions1")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_HOLD, "I will stand firm, as the earth beneath us.", "HeroRestoshaman_HoldPositions2")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_DROP_ITEMS, "Take them, they may serve you well.", "HeroRestoshaman_DropItems1")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_DROP_ITEMS, "Sure, I don't need any worldly possessions.", "HeroRestoshaman_DropItems2")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_IDLE, "Even the elements rest... occasionally.", "HeroRestoshaman_Idle1")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_IDLE, "The calm before the storm has its purpose.", "HeroRestoshaman_Idle2")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_MOVING, "The journey is as important as the destination.", "HeroRestoshaman_Moving1")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_MOVING, "Keep moving; the spirits are restless.", "HeroRestoshaman_Moving2")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_CASTING, "The earth lends its strength to us.", "HeroRestoshaman_Casting1")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_CASTING, "I call upon the ancestral spirits!", "HeroRestoshaman_Casting2")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_ATTACKING, "The earth will not yield to you!", "HeroRestoshaman_Attacking1")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_ATTACKING, "Your reign ends here!", "HeroRestoshaman_Attacking2")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_KILLING, "Their path has ended, as all must.", "HeroRestoshaman_UnitDies1")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_KILLING, "They are one with the elements now.", "HeroRestoshaman_UnitDies2")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_KICKED, "If this is your will, so be it.", "HeroRestoshaman_Kicked1")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_KICKED, "I will not question the path you walk.", "HeroRestoshaman_Kicked2")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_COMPANION_DIES, "We must honor their sacrifice.", "HeroRestoshaman_CompanionDies1")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_ITEM_GIVEN, "This will serve us in restoring balance.", "HeroRestoshaman_GiveItem1")
-    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_ITEM_GIVEN, "I will use this wisely.", "HeroRestoshaman_GiveItem2")
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_GREET, VL_RESTOSHAMAN_HERORESTOSHAMAN_GREET1_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_GREET1_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_GREET, VL_RESTOSHAMAN_HERORESTOSHAMAN_GREET2_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_GREET2_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_GREET, VL_RESTOSHAMAN_HERORESTOSHAMAN_GREET3_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_GREET3_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_FAREWELL, VL_RESTOSHAMAN_HERORESTOSHAMAN_FAREWELL1_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_FAREWELL1_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_FAREWELL, VL_RESTOSHAMAN_HERORESTOSHAMAN_FAREWELL2_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_FAREWELL2_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_PASSIVE, VL_RESTOSHAMAN_HERORESTOSHAMAN_PASSIVE1_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_PASSIVE1_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_PASSIVE, VL_RESTOSHAMAN_HERORESTOSHAMAN_PASSIVE2_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_PASSIVE2_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_NORMAL, VL_RESTOSHAMAN_HERORESTOSHAMAN_NORMAL1_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_NORMAL1_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_NORMAL, VL_RESTOSHAMAN_HERORESTOSHAMAN_NORMAL2_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_NORMAL2_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_NORMAL, VL_RESTOSHAMAN_HERORESTOSHAMAN_NORMAL3_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_NORMAL3_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_AGGRESSIVE, VL_RESTOSHAMAN_HERORESTOSHAMAN_AGGRESSIVE1_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_AGGRESSIVE1_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_AGGRESSIVE, VL_RESTOSHAMAN_HERORESTOSHAMAN_AGGRESSIVE2_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_AGGRESSIVE2_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_HOLD, VL_RESTOSHAMAN_HERORESTOSHAMAN_HOLDPOSITIONS1_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_HOLDPOSITIONS1_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_HOLD, VL_RESTOSHAMAN_HERORESTOSHAMAN_HOLDPOSITIONS2_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_HOLDPOSITIONS2_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_DROP_ITEMS, VL_RESTOSHAMAN_HERORESTOSHAMAN_DROPITEMS1_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_DROPITEMS1_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_DROP_ITEMS, VL_RESTOSHAMAN_HERORESTOSHAMAN_DROPITEMS2_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_DROPITEMS2_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_IDLE, VL_RESTOSHAMAN_HERORESTOSHAMAN_IDLE1_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_IDLE1_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_IDLE, VL_RESTOSHAMAN_HERORESTOSHAMAN_IDLE2_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_IDLE2_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_MOVING, VL_RESTOSHAMAN_HERORESTOSHAMAN_MOVING1_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_MOVING1_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_MOVING, VL_RESTOSHAMAN_HERORESTOSHAMAN_MOVING2_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_MOVING2_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_CASTING, VL_RESTOSHAMAN_HERORESTOSHAMAN_CASTING1_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_CASTING1_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_CASTING, VL_RESTOSHAMAN_HERORESTOSHAMAN_CASTING2_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_CASTING2_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_ATTACKING, VL_RESTOSHAMAN_HERORESTOSHAMAN_ATTACKING1_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_ATTACKING1_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_ATTACKING, VL_RESTOSHAMAN_HERORESTOSHAMAN_ATTACKING2_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_ATTACKING2_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_KILLING, VL_RESTOSHAMAN_HERORESTOSHAMAN_UNITDIES1_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_UNITDIES1_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_KILLING, VL_RESTOSHAMAN_HERORESTOSHAMAN_UNITDIES2_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_UNITDIES2_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_KICKED, VL_RESTOSHAMAN_HERORESTOSHAMAN_KICKED1_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_KICKED1_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_KICKED, VL_RESTOSHAMAN_HERORESTOSHAMAN_KICKED2_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_KICKED2_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_COMPANION_DIES, VL_RESTOSHAMAN_HERORESTOSHAMAN_COMPANIONDIES1_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_COMPANIONDIES1_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_ITEM_GIVEN, VL_RESTOSHAMAN_HERORESTOSHAMAN_GIVEITEM1_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_GIVEITEM1_KEY)
+    call AI_RegisterBarkLine(AI_Restoshaman_ProfileId, AI_BARK_ITEM_GIVEN, VL_RESTOSHAMAN_HERORESTOSHAMAN_GIVEITEM2_TEXT, VL_RESTOSHAMAN_HERORESTOSHAMAN_GIVEITEM2_KEY)
 endfunction
 
 private function RegisterAbilities takes nothing returns nothing
