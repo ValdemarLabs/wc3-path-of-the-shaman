@@ -25,64 +25,6 @@ library VoicelinesNazgrek initializer Init requires Voicelines
 globals
     constant string VL_NAZGREK_FOLDER = "Nazgrek"
 
-    // qAradion first greet and lore questions.
-    constant string VL_NAZGREK_0331_KEY = "Nazgrek_0331"
-    constant string VL_NAZGREK_0331_TEXT = "Your blood is not what I seek, elf. I walk the spirit path, not the path of slaughter."
-    constant string VL_NAZGREK_0332_KEY = "Nazgrek_0332"
-    constant string VL_NAZGREK_0332_TEXT = "You said... a witch deceived you?"
-    constant string VL_NAZGREK_0333_KEY = "Nazgrek_0333"
-    constant string VL_NAZGREK_0333_TEXT = "Why did your kin trust this witch?"
-    constant string VL_NAZGREK_0334_KEY = "Nazgrek_0334"
-    constant string VL_NAZGREK_0334_TEXT = "The wraiths I see... they were once elves?"
-    constant string VL_NAZGREK_0336_KEY = "Nazgrek_0336"
-    constant string VL_NAZGREK_0336_TEXT = "And you? How did you resist where others fell?"
-    constant string VL_NAZGREK_0337_KEY = "Nazgrek_0337"
-    constant string VL_NAZGREK_0337_TEXT = "I'll see if I come across her."
-
-    // Quest 1: Valeria encounter and negotiation.
-    constant string VL_NAZGREK_0340_KEY = "Nazgrek_0340"
-    constant string VL_NAZGREK_0340_TEXT = "You must be Valeria."
-    constant string VL_NAZGREK_0341_KEY = "Nazgrek_0341"
-    constant string VL_NAZGREK_0341_TEXT = "I am not your enemy..."
-    constant string VL_NAZGREK_0344_KEY = "Nazgrek_0344"
-    constant string VL_NAZGREK_0344_TEXT = "You are outmatched. Stand aside, or fall."
-    constant string VL_NAZGREK_0345_KEY = "Nazgrek_0345"
-    constant string VL_NAZGREK_0345_TEXT = "You have no right to stand in my way."
-    constant string VL_NAZGREK_0346_KEY = "Nazgrek_0346"
-    constant string VL_NAZGREK_0346_TEXT = "Enough! I'll make you listen by force."
-    constant string VL_NAZGREK_0347_KEY = "Nazgrek_0347"
-    constant string VL_NAZGREK_0347_TEXT = "I'm not like the other orcs."
-    constant string VL_NAZGREK_0348_KEY = "Nazgrek_0348"
-    constant string VL_NAZGREK_0348_TEXT = "You're wasting both our time. Stand down."
-    constant string VL_NAZGREK_0349_KEY = "Nazgrek_0349"
-    constant string VL_NAZGREK_0349_TEXT = "I'm just passing by."
-    constant string VL_NAZGREK_0350_KEY = "Nazgrek_0350"
-    constant string VL_NAZGREK_0350_TEXT = "I'll show you the power of the Earth Mother!"
-    constant string VL_NAZGREK_0351_KEY = "Nazgrek_0351"
-    constant string VL_NAZGREK_0351_TEXT = "I am not your enemy!"
-    constant string VL_NAZGREK_0352_KEY = "Nazgrek_0352"
-    constant string VL_NAZGREK_0352_TEXT = "I will not harm you."
-    constant string VL_NAZGREK_0353_KEY = "Nazgrek_0353"
-    constant string VL_NAZGREK_0353_TEXT = "I've spoken with Aradion. He told me to find you."
-
-    // Quest 2: crystal shards.
-    constant string VL_NAZGREK_0366_KEY = "Nazgrek_0366"
-    constant string VL_NAZGREK_0366_TEXT = "I have walked near them. Their song is some what… twisted, yet beautiful."
-    constant string VL_NAZGREK_0367_KEY = "Nazgrek_0367"
-    constant string VL_NAZGREK_0367_TEXT = "I can hear the spirits whisper caution. These crystals may feed hunger, not heal it."
-
-    // Quest 3: fading sparks.
-    constant string VL_NAZGREK_0371_KEY = "Nazgrek_0371"
-    constant string VL_NAZGREK_0371_TEXT = "I will do this Aradion, but I see little hope in the shadows."
-    constant string VL_NAZGREK_0372_KEY = "Nazgrek_0372"
-    constant string VL_NAZGREK_0372_TEXT = "Do not surrender to despair, Aradion. There may yet be an answer to all of it."
-
-    // Quest 4: rift sealing.
-    constant string VL_NAZGREK_0377_KEY = "Nazgrek_0377"
-    constant string VL_NAZGREK_0377_TEXT = "The spirits whisper of broken currents here. I will see Valeria through this."
-    constant string VL_NAZGREK_0378_KEY = "Nazgrek_0378"
-    constant string VL_NAZGREK_0378_TEXT = "The wound in the land is remedied… for now."
-
     // Legacy Excel draft/reference rows not yet wired to active code.
 
     // Excel draft: Nazgrek Lines | Quest: Nazgrek's Flask | Done: x
@@ -601,9 +543,51 @@ globals
     constant string VL_NAZGREK_0327_KEY = "Nazgrek_0327"
     constant string VL_NAZGREK_0327_TEXT = "Here is the scale of mighty Mordrax."
 
+    // qAradion first greet and lore questions.
+    constant string VL_NAZGREK_0331_KEY = "Nazgrek_0331"
+    constant string VL_NAZGREK_0331_TEXT = "Your blood is not what I seek, elf. I walk the spirit path, not the path of slaughter."
+    constant string VL_NAZGREK_0332_KEY = "Nazgrek_0332"
+    constant string VL_NAZGREK_0332_TEXT = "You said... a witch deceived you?"
+    constant string VL_NAZGREK_0333_KEY = "Nazgrek_0333"
+    constant string VL_NAZGREK_0333_TEXT = "Why did your kin trust this witch?"
+    constant string VL_NAZGREK_0334_KEY = "Nazgrek_0334"
+    constant string VL_NAZGREK_0334_TEXT = "The wraiths I see... they were once elves?"
+
     // Excel draft: Nazgrek Lines | Quest: First time greet | Event: Aradion The Farseer | Done: x
     constant string VL_NAZGREK_0335_KEY = "Nazgrek_0335"
     constant string VL_NAZGREK_0335_TEXT = "What binds them still to this world?"
+
+    // qAradion first greet and lore follow-up.
+    constant string VL_NAZGREK_0336_KEY = "Nazgrek_0336"
+    constant string VL_NAZGREK_0336_TEXT = "And you? How did you resist where others fell?"
+    constant string VL_NAZGREK_0337_KEY = "Nazgrek_0337"
+    constant string VL_NAZGREK_0337_TEXT = "I'll see if I come across her."
+
+    // qAradion Quest 1: Valeria encounter and negotiation.
+    constant string VL_NAZGREK_0340_KEY = "Nazgrek_0340"
+    constant string VL_NAZGREK_0340_TEXT = "You must be Valeria."
+    constant string VL_NAZGREK_0341_KEY = "Nazgrek_0341"
+    constant string VL_NAZGREK_0341_TEXT = "I am not your enemy..."
+    constant string VL_NAZGREK_0344_KEY = "Nazgrek_0344"
+    constant string VL_NAZGREK_0344_TEXT = "You are outmatched. Stand aside, or fall."
+    constant string VL_NAZGREK_0345_KEY = "Nazgrek_0345"
+    constant string VL_NAZGREK_0345_TEXT = "You have no right to stand in my way."
+    constant string VL_NAZGREK_0346_KEY = "Nazgrek_0346"
+    constant string VL_NAZGREK_0346_TEXT = "Enough! I'll make you listen by force."
+    constant string VL_NAZGREK_0347_KEY = "Nazgrek_0347"
+    constant string VL_NAZGREK_0347_TEXT = "I'm not like the other orcs."
+    constant string VL_NAZGREK_0348_KEY = "Nazgrek_0348"
+    constant string VL_NAZGREK_0348_TEXT = "You're wasting both our time. Stand down."
+    constant string VL_NAZGREK_0349_KEY = "Nazgrek_0349"
+    constant string VL_NAZGREK_0349_TEXT = "I'm just passing by."
+    constant string VL_NAZGREK_0350_KEY = "Nazgrek_0350"
+    constant string VL_NAZGREK_0350_TEXT = "I'll show you the power of the Earth Mother!"
+    constant string VL_NAZGREK_0351_KEY = "Nazgrek_0351"
+    constant string VL_NAZGREK_0351_TEXT = "I am not your enemy!"
+    constant string VL_NAZGREK_0352_KEY = "Nazgrek_0352"
+    constant string VL_NAZGREK_0352_TEXT = "I will not harm you."
+    constant string VL_NAZGREK_0353_KEY = "Nazgrek_0353"
+    constant string VL_NAZGREK_0353_TEXT = "I've spoken with Aradion. He told me to find you."
 
     // Excel draft: Nazgrek Lines | Quest: A Token of Love | Event: Intro | Done: x
     constant string VL_NAZGREK_0355_KEY = "Nazgrek_0355"
@@ -617,13 +601,31 @@ globals
     constant string VL_NAZGREK_0361_KEY = "Nazgrek_0361"
     constant string VL_NAZGREK_0361_TEXT = "I've found your necklace."
 
+    // qAradion Quest 2: crystal shards.
+    constant string VL_NAZGREK_0366_KEY = "Nazgrek_0366"
+    constant string VL_NAZGREK_0366_TEXT = "I have walked near them. Their song is some what… twisted, yet beautiful."
+    constant string VL_NAZGREK_0367_KEY = "Nazgrek_0367"
+    constant string VL_NAZGREK_0367_TEXT = "I can hear the spirits whisper caution. These crystals may feed hunger, not heal it."
+
     // Excel draft: Nazgrek Lines | Quest: Fading Sparks | Event: Intro | Done: x
     constant string VL_NAZGREK_0370_KEY = "Nazgrek_0370"
     constant string VL_NAZGREK_0370_TEXT = "I'm not so sure about this..."
 
+    // qAradion Quest 3: fading sparks.
+    constant string VL_NAZGREK_0371_KEY = "Nazgrek_0371"
+    constant string VL_NAZGREK_0371_TEXT = "I will do this Aradion, but I see little hope in the shadows."
+    constant string VL_NAZGREK_0372_KEY = "Nazgrek_0372"
+    constant string VL_NAZGREK_0372_TEXT = "Do not surrender to despair, Aradion. There may yet be an answer to all of it."
+
     // Excel draft: Nazgrek Lines | Quest: Lost Supplies | Event: Intro | Done: x
     constant string VL_NAZGREK_0375_KEY = "Nazgrek_0375"
     constant string VL_NAZGREK_0375_TEXT = "I will try to see what I can find from the ruins."
+
+    // qAradion Quest 4: rift sealing.
+    constant string VL_NAZGREK_0377_KEY = "Nazgrek_0377"
+    constant string VL_NAZGREK_0377_TEXT = "The spirits whisper of broken currents here. I will see Valeria through this."
+    constant string VL_NAZGREK_0378_KEY = "Nazgrek_0378"
+    constant string VL_NAZGREK_0378_TEXT = "The wound in the land is remedied… for now."
 
     // Excel draft: Nazgrek Lines | Quest: Concerned Observations / Remarks | Done: x
     constant string VL_NAZGREK_0381_KEY = "Nazgrek_0381"
