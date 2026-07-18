@@ -15,6 +15,249 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [18.7.2026]
+
+### Technical Updates
+
+- `Voicelines/Voicelines.j`
+  - Added the new base voiceline helper library.
+  - `Voicelines.j` now requires `ExSound` and exposes the shared game path root:
+    - `VOICELINES_GAME_ROOT = "Pots\\Sound\\Voicelines\\"`
+  - Added helper APIs for speaker libraries and future consumers:
+    - `Voicelines_RegisterKey`
+    - `Voicelines_RegisterKeyInSubfolder`
+    - `Voicelines_RegisterPaddedSequence`
+    - `Voicelines_RegisterUnpaddedSequence`
+  - The base library intentionally does not require every speaker library. Speaker and consumer libraries require only the voiceline libraries they actually use.
+  - This keeps import dependencies simpler and avoids making one huge master library responsible for every possible speaker.
+
+- `Voicelines/Voicelines_*.j`
+  - Created/expanded speaker-owned JASS voiceline constant libraries as the runtime source of truth for voiceline keys and text.
+  - Each speaker file owns its own `VL_<SPEAKER>_*_KEY` and `VL_<SPEAKER>_*_TEXT` constants.
+  - Added folder constants such as `VL_ARADION_FOLDER`, `VL_VALERIA_FOLDER`, and similar speaker-specific folder mappings so tooling and runtime code can keep disk/game folder names explicit.
+  - Existing active Aradion, Valeria, and Nazgrek dialog constants were preserved and expanded with missing legacy Excel draft/reference rows.
+  - Aradion and Valeria AI profile bark ranges are now also represented in their speaker libraries:
+    - `Aradion_0181` through `Aradion_0312`
+    - `Valeria_0181` through `Valeria_0312`
+  - New or expanded speaker libraries now include:
+    - `Voicelines_Aradion.j`
+    - `Voicelines_AtexBlix.j`
+    - `Voicelines_Aveline.j`
+    - `Voicelines_BoomBrothers.j`
+    - `Voicelines_CompanionReplies.j`
+    - `Voicelines_DarkShaman.j`
+    - `Voicelines_Demoness.j`
+    - `Voicelines_Engineer.j`
+    - `Voicelines_Garthork.j`
+    - `Voicelines_Granis.j`
+    - `Voicelines_GrumBloodfang.j`
+    - `Voicelines_GrumBloodfangOld.j`
+    - `Voicelines_HumanFemale1.j`
+    - `Voicelines_Jinzun.j`
+    - `Voicelines_Kaelthir.j`
+    - `Voicelines_Krezgrel.j`
+    - `Voicelines_Kribugs.j`
+    - `Voicelines_Mordrax.j`
+    - `Voicelines_Narrator.j`
+    - `Voicelines_Nazgrek.j`
+    - `Voicelines_OrcGrunt.j`
+    - `Voicelines_OrcPeon.j`
+    - `Voicelines_OrcQGiver.j`
+    - `Voicelines_Paladin.j`
+    - `Voicelines_RestoShaman.j`
+    - `Voicelines_Rogue.j`
+    - `Voicelines_Satyr.j`
+    - `Voicelines_Serenthia.j`
+    - `Voicelines_Shipmaster.j`
+    - `Voicelines_Thork.j`
+    - `Voicelines_UndeadWarlock.j`
+    - `Voicelines_Valeria.j`
+    - `Voicelines_VoidEntity.j`
+    - `Voicelines_Warlock.j`
+    - `Voicelines_Warrior.j`
+    - `Voicelines_Zulkis.j`
+  - `HeroReplyLines` is intentionally not a standalone speaker library. Reply text is split by responder libraries and shared companion reply glue, because the runtime speaker is the responder, not the primary line starter.
+  - `GrumBloodfangOld` exists as a constants-only placeholder library because there is an external master audio folder for the old files, but no matching Excel draft text was mapped to it yet.
+  - `Kribugs` was added as a draft JASS speaker library from Excel even though no current external master audio folder exists for it. It is now visible to scan/generation as missing audio.
+  - Existing active speaker libraries with initializers still register only the active keys they already used. Newly imported draft/reference constants are mostly constants-only until runtime consumers intentionally wire them in.
+
+- AI voiceline migration
+  - Moved AI class bark, companion chat, companion reply, and Aveline-specific voiceline text out of active AI behavior files and into `Voicelines_*.j` helper libraries.
+  - Updated active AI files to require the voiceline libraries they use instead of carrying raw key/text literals:
+    - `AI/AI.j`
+    - `AI/AI_CompanionReplies.j`
+    - `AI/AI_Voicelines.j`
+    - `AI/Classes/AI_Engineer.j`
+    - `AI/Classes/AI_Paladin.j`
+    - `AI/Classes/AI_Restoshaman.j`
+    - `AI/Classes/AI_Rogue.j`
+    - `AI/Classes/AI_Warlock.j`
+    - `AI/Classes/AI_Warrior.j`
+    - `AI/Specific/AI_Aradion.j`
+    - `AI/Specific/AI_Aveline.j`
+    - `AI/Specific/AI_Valeria.j`
+  - AI behavior logic remains in the existing AI files. Only text/key ownership moved into the voiceline libraries.
+  - `AI_Aradion.j` and `AI_Valeria.j` now require their speaker libraries and register profile barks through `VL_ARADION_*` and `VL_VALERIA_*` constants instead of duplicated raw strings.
+  - `AI/AI_Voicelines.j` now requires the relevant speaker voiceline libraries for the active bark/chat pools.
+  - `AI/AI.j` now requires the voiceline libraries needed by special AI dialogue checks that previously used raw string constants.
+  - `Voicelines_CompanionReplies.j` now owns shared primary-key, responder-name, prefix, and fallback constants used by `AI_CompanionReplies.j`.
+  - `Voicelines_UndeadWarlock.j` owns the Undead Warlock responder reply constants that target the `HeroReplyLines\HeroWarlockReplyLines` audio folder.
+
+- `QuestsAndDialogs/QuestGivers/qAradion.j`
+  - Replaced duplicated raw Aradion, Valeria, and Nazgrek voiceline key/text literals with constants from:
+    - `VoicelinesAradion`
+    - `VoicelinesValeria`
+    - `VoicelinesNazgrek`
+  - `qAradion` now requires only the speaker voiceline libraries it uses.
+  - This reduces the chance of typo drift between quest dialogue text, generated audio filenames, and ExSound playback keys.
+  - This is a high-risk change for the Aradion quest chain because it touches dialogue sequence text/key references without changing the quest logic itself. All Aradion dialog paths must be retested in-game.
+
+- `SoundAndMusic/ExSound.j`
+  - Added duplicate-safe registration behavior so registering the same sound key more than once no longer duplicates preload keys.
+  - Added folder-based registration helpers used by the new voiceline base library and scanner:
+    - `ExSound_RegisterKeyInFolder`
+    - `ExSound_RegisterUnpaddedSequence`
+  - Added explicit registrations for Undead Warlock reply-line keys that live under `Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\`.
+  - Existing sound playback APIs remain unchanged.
+
+- `Voicelines/VoicelinesInfo.md`
+  - Filled out the voiceline workflow documentation.
+  - Documented that JASS `Voicelines_*.j` libraries are the runtime source of truth.
+  - Documented that `Voicelines/_oldExcel/VoicelinesMaster.xlsx` is legacy draft/reference data only.
+  - Documented that repo-side `Voicelines/<SpeakerFolder>/` directories are reference-only and must not be treated as scanner input, generation output, or canonical audio storage.
+  - Documented the external master audio root:
+    - `H:\Pelit\WC3_PotS_Files\001 OFFICIAL FILES\Pots\Sound\Voicelines`
+  - Documented that FishAudio generation must write only into:
+    - `tools/temp/fishaudio-review`
+  - Documented scanner, import, and generation commands.
+  - Documented the split between real `excel_only` draft text and blank Excel filename placeholders.
+
+### Tool Updates
+
+- `tools/voicelines.ps1`
+  - Added the main voiceline scan/generation tool.
+  - Defaults:
+    - `-MasterRoot "H:\Pelit\WC3_PotS_Files\001 OFFICIAL FILES\Pots\Sound\Voicelines"`
+    - `-TempRoot "tools/temp/fishaudio-review"`
+    - `-ExcelPath "Voicelines/_oldExcel/VoicelinesMaster.xlsx"`
+    - `-Manifest "tools/temp/voicelines/voicelines-scan.csv"`
+  - `-Mode Scan` compares:
+    - JASS voiceline constants/registrations
+    - Excel draft/reference rows
+    - external master audio files
+    - temp FishAudio review files
+  - The scan report is disposable generated output under ignored `tools/temp/`. It is not source of truth and should not be manually edited.
+  - Scan report flags now include:
+    - `present_in_master`
+    - `pending_review`
+    - `missing_audio`
+    - `excel_only`
+    - `excel_only_blank_text`
+    - `jass_only`
+    - `duplicate_key`
+    - `duplicate_text_variants`
+    - `orphan_audio`
+    - `folder_mismatch`
+  - `excel_only` now means an Excel row with real draft text that has no matching JASS constant.
+  - `excel_only_blank_text` means an old workbook filename placeholder with no text.
+  - Added explicit folder/prefix handling for cases where disk folders and JASS keys differ:
+    - `Aradion` -> `AradionFarseer`
+    - `Boomers` -> `BoomBrothers`
+    - `HeroShaman` -> `HeroRestoshaman`
+    - `HeroUndeadWarlock` -> `HeroWarlock`
+    - `OrcGrunt` -> `Orc Grunt`
+    - `OrcPeon` -> `Orc Peon`
+    - `Peon_####` Excel drafts -> `OrcPeon_####`
+    - `XXX_####` -> `OrcQGiver`
+  - Added special folder inference for AI hero chat/reply lines:
+    - primary AI chat folders such as `HeroWarrior\ChatLines`
+    - reply folders such as `HeroReplyLines\HeroWarlockReplyLines`
+  - `-Mode Generate` sends only missing JASS-backed lines to FishAudio.
+  - FishAudio output always goes to `tools/temp/fishaudio-review/<SpeakerFolder>/<FileName>.mp3`.
+  - The tool intentionally does not copy files into the external master folder. Review/listening and master copying remain manual.
+  - Generation skips rows already present in the external master folder.
+  - Generation skips pending review files unless `-Force` is used.
+  - Generation skips rows with duplicate text variants until the text ambiguity is resolved.
+  - Optimized scan construction by indexing JASS and Excel rows by key before building the final report. Scan time dropped from roughly two minutes to roughly five seconds on the current dataset.
+
+- `tools/voicelines-import-excel.ps1`
+  - Added a repeatable importer for migrating remaining text-backed workbook draft rows into JASS constants.
+  - Dry run reports how many rows would be imported, skipped because they already exist in JASS, skipped because they have no text, or skipped because no speaker mapping exists.
+  - `-Apply` creates missing speaker libraries and appends only missing Excel-backed rows to existing speaker libraries.
+  - Existing JASS constants are preserved and never overwritten by older Excel text.
+  - Old Excel `Peon_####` names are canonicalized to `OrcPeon_####` because the master audio files already use `OrcPeon_####`.
+  - Original Excel filenames are kept in generated comments when canonicalized, so the old workbook can still be traced.
+  - Imported rows are grouped with compact comments containing workbook sheet, quest, event, done, and comment metadata where available.
+  - After applying the import, a dry run reports:
+    - `imported_rows: 0`
+    - `skipped_existing_jass: 1007`
+    - `skipped_no_text: 1313`
+    - `skipped_no_speaker_mapping: 0`
+  - This confirms every mapped Excel row with real draft text is now represented in JASS.
+
+### Imports
+
+- External master voice audio handling
+  - The authoritative generated-audio scan root is now the external master folder:
+    - `H:\Pelit\WC3_PotS_Files\001 OFFICIAL FILES\Pots\Sound\Voicelines`
+  - Current scan sees `2605` `.mp3`/`.wav` files in the external master root.
+  - The scanner currently reports:
+    - `total_rows: 3729`
+    - `present_in_master: 2181`
+    - `pending_review: 0`
+    - `missing_audio: 283`
+    - `excel_only: 0`
+    - `excel_only_blank_text: 1271`
+    - `jass_only: 1368`
+    - `duplicate_text_variants: 14`
+    - `orphan_audio: 120`
+    - `folder_mismatch: 455`
+  - Repo-side `Voicelines/<SpeakerFolder>/` directories are kept only as reference folders. They are not used as canonical generated-audio folders and are not generation output targets.
+
+### Known Issues
+
+- This is a large voiceline source-of-truth migration and can break runtime behavior if the new libraries are not imported in the right order or if any consumer is missing a required speaker library.
+- A full JassHelper/WC3 compile was not completed during this changelog update. All changed JASS import dependencies must be validated in the normal map build workflow.
+- `qAradion.j` must be retested carefully because many dialogue text/key literals were replaced by external constants:
+  - first greet
+  - normal greet/farewell
+  - Valeria encounter and negotiation
+  - Ranger Missing paths
+  - crystal shard dialogue
+  - Fading Sparks dialogue
+  - Rifts of Corruption intro, ritual barks, failure, and completion paths
+- AI bark/chat/reply playback must be retested because text/key ownership moved out of AI behavior files:
+  - standard bark categories
+  - companion chat starters
+  - companion replies
+  - Aveline reply handling
+  - Aradion and Valeria reputation-gated AI profile barks
+  - Undead Warlock reply folder mapping
+  - AI bark suppression during cinematics/dialogues
+- The scan currently reports `14` duplicate text-variant keys. Most are already present in the master folder, but `Thork_0012` is missing audio and has two text variants. It must be manually resolved before FishAudio generation can safely generate that line.
+- The scanner reports `455` folder mismatches and `120` orphan audio rows. These are report-only and were not auto-renamed or auto-moved. They need manual review before changing any master audio folder/file names.
+- `Kribugs` exists in JASS from Excel draft text but does not currently have a matching external master audio folder. Generation will treat those lines as missing until a master/review folder decision is made.
+- Some Excel workbook rows are still represented as `excel_only_blank_text`; these are old filename placeholders without draft text and are intentionally not migrated into JASS constants.
+
+### Actions Remaining
+
+- Run the full WC3/JassHelper compile/import workflow with all new `Voicelines_*.j` libraries included.
+- Confirm the import order:
+  - `ExSound.j`
+  - `Voicelines.j`
+  - required `Voicelines_*.j` speaker libraries
+  - consumers such as `qAradion.j`, `AI.j`, `AI_Voicelines.j`, and `AI_CompanionReplies.j`
+- Run:
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File tools/voicelines.ps1 -Mode Scan`
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File tools/voicelines.ps1 -Mode Generate -DryRun -MaxCount 3`
+- Resolve duplicate text variants before real FishAudio generation, especially missing `Thork_0012`.
+- When FishAudio credentials are available, generate only a very small batch first:
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File tools/voicelines.ps1 -Mode Generate -MaxCount 1`
+- Confirm generated files appear only under `tools/temp/fishaudio-review`.
+- Listen/check review files manually before copying accepted audio into the external master folder.
+- Retest qAradion in-game and verify no raw migrated text/key literal was accidentally left behind in active Aradion dialog paths.
+- Retest AI bark playback for Warrior, Rogue, Warlock, Undead Warlock, Restoshaman, Paladin, Engineer, Aveline, Aradion, and Valeria.
+
 ## [16.7.2026]
 
 ### Technical Updates
