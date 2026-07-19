@@ -54,19 +54,20 @@ globals
     private constant real P_CRAFT_AI_READY_RANGE = 145.00
     private constant real P_CRAFT_AI_MOVE_POLL = 0.25
     private constant real P_CRAFT_AI_MOVE_TIMEOUT = 8.00
+    private constant real P_CRAFT_ANIMATION_LOOP_PERIOD = 1.50
     private constant real P_SOUND_CUTOFF = 3000.00
     private constant integer P_ALCHEMY_STAGE_DEATH = 1
     private constant integer P_ALCHEMY_STAGE_DECAY = 2
     private constant real P_ALCHEMY_STAND_ANIMATION_DELAY = 60.00
     private constant real P_ALCHEMY_DEATH_ANIMATION_DELAY = 120.00
-    private constant real P_CRAFT_CAMERA_DISTANCE = 750.00
-    private constant real P_CRAFT_CAMERA_ZOFFSET = 50.00
-    private constant real P_CRAFT_CAMERA_ANGLE = 355.00
+    private constant real P_CRAFT_CAMERA_DISTANCE = 800.00
+    private constant real P_CRAFT_CAMERA_ZOFFSET = 40.00
+    private constant real P_CRAFT_CAMERA_ANGLE = 15.00
     private constant real P_CRAFT_CAMERA_ROTATION = 180.00
     private constant real P_CRAFT_CAMERA_FARZ = 10000.00
-    private constant real P_CRAFT_CAMERA_FOV = 60.00
+    private constant real P_CRAFT_CAMERA_FOV = 65.00
     private constant real P_CRAFT_CAMERA_BLOCK_RADIUS = 0.00
-    private constant boolean P_CRAFT_CAMERA_BLOCK_CHECK = false
+    private constant boolean P_CRAFT_CAMERA_BLOCK_CHECK = true
     private constant real P_CRAFT_CAMERA_RESET_TIME = 0.75
 
     // Registry/runtime state.
@@ -110,6 +111,7 @@ globals
     private boolean array P_JobFakeCastAdded
     private boolean array P_JobStartedCrafting
     private real array P_JobPrepareElapsed
+    private timer array P_JobAnimationTimer
 
     // Per-profession sound labels: start once, loop during craft, finish once.
     private string array P_ProfessionStartSoundLabel
@@ -501,12 +503,20 @@ private function P_IsNearStation takes unit crafter, unit station returns boolea
     return P_GetDistanceSqBetweenUnits(crafter, station) <= P_STATION_USE_RANGE * P_STATION_USE_RANGE
 endfunction
 
-private function P_PlaySoundLabelOnUnit takes string soundLabel, unit whichUnit, boolean looping returns sound
-    return Interface_PlayProfessionSoundOnUnit(null, soundLabel, whichUnit, looping, P_SOUND_CUTOFF)
+private function P_PlaySoundLabelForJob takes integer jobId, string soundLabel, unit station, boolean looping returns sound
+    if P_JobAiControlled[jobId] then
+        return Interface_PlayProfessionSoundOnUnit(null, soundLabel, station, looping, P_SOUND_CUTOFF)
+    endif
+
+    return Interface_PlayProfessionSound(null, soundLabel, looping)
 endfunction
 
-private function P_PlaySoundHandleOnUnit takes sound whichSound, unit whichUnit returns sound
-    return Interface_PlayProfessionSoundOnUnit(whichSound, "", whichUnit, false, P_SOUND_CUTOFF)
+private function P_PlaySoundHandleForJob takes integer jobId, sound whichSound, unit station, boolean looping returns sound
+    if P_JobAiControlled[jobId] then
+        return Interface_PlayProfessionSoundOnUnit(whichSound, "", station, looping, P_SOUND_CUTOFF)
+    endif
+
+    return Interface_PlayProfessionSound(whichSound, "", looping)
 endfunction
 
 private function P_StartLoopSound takes integer jobId, integer professionId, unit station returns sound
@@ -516,16 +526,22 @@ private function P_StartLoopSound takes integer jobId, integer professionId, uni
     if not P_IsProfessionValid(professionId) then
         return null
     endif
+
+    if P_ProfessionLoopSound[professionId] != null then
+        set loopSound = P_PlaySoundHandleForJob(jobId, P_ProfessionLoopSound[professionId], station, true)
+        if loopSound != null then
+            return loopSound
+        endif
+    endif
+
     if P_ProfessionLoopSoundLabel[professionId] != null and P_ProfessionLoopSoundLabel[professionId] != "" then
-        set loopSound = P_PlaySoundLabelOnUnit(P_ProfessionLoopSoundLabel[professionId], station, true)
+        set loopSound = P_PlaySoundLabelForJob(jobId, P_ProfessionLoopSoundLabel[professionId], station, true)
         if loopSound != null then
             set P_JobLoopSoundTransient[jobId] = true
             return loopSound
         endif
     endif
-    if P_ProfessionLoopSound[professionId] != null then
-        return P_PlaySoundHandleOnUnit(P_ProfessionLoopSound[professionId], station)
-    endif
+
     return null
 endfunction
 
@@ -545,38 +561,46 @@ private function P_StopLoopSound takes integer jobId returns nothing
     set whichSound = null
 endfunction
 
-private function P_PlayStartSound takes integer professionId, unit station returns nothing
+private function P_PlayStartSound takes integer jobId, integer professionId, unit station returns nothing
     local sound playedSound
 
     if P_IsProfessionValid(professionId) then
-        if P_ProfessionStartSoundLabel[professionId] != null and P_ProfessionStartSoundLabel[professionId] != "" then
-            set playedSound = P_PlaySoundLabelOnUnit(P_ProfessionStartSoundLabel[professionId], station, false)
+        if P_ProfessionStartSound[professionId] != null then
+            set playedSound = P_PlaySoundHandleForJob(jobId, P_ProfessionStartSound[professionId], station, false)
             if playedSound != null then
                 set playedSound = null
                 return
             endif
         endif
-        if P_ProfessionStartSound[professionId] != null then
-            call P_PlaySoundHandleOnUnit(P_ProfessionStartSound[professionId], station)
+        if P_ProfessionStartSoundLabel[professionId] != null and P_ProfessionStartSoundLabel[professionId] != "" then
+            set playedSound = P_PlaySoundLabelForJob(jobId, P_ProfessionStartSoundLabel[professionId], station, false)
+            if playedSound != null then
+                set playedSound = null
+                return
+            endif
         endif
     endif
 
     set playedSound = null
 endfunction
 
-private function P_PlayFinishSound takes integer professionId, unit station returns nothing
+private function P_PlayFinishSound takes integer jobId, integer professionId, unit station returns nothing
     local sound playedSound
 
     if P_IsProfessionValid(professionId) then
-        if P_ProfessionFinishSoundLabel[professionId] != null and P_ProfessionFinishSoundLabel[professionId] != "" then
-            set playedSound = P_PlaySoundLabelOnUnit(P_ProfessionFinishSoundLabel[professionId], station, false)
+        if P_ProfessionFinishSound[professionId] != null then
+            set playedSound = P_PlaySoundHandleForJob(jobId, P_ProfessionFinishSound[professionId], station, false)
             if playedSound != null then
                 set playedSound = null
                 return
             endif
         endif
-        if P_ProfessionFinishSound[professionId] != null then
-            call P_PlaySoundHandleOnUnit(P_ProfessionFinishSound[professionId], station)
+        if P_ProfessionFinishSoundLabel[professionId] != null and P_ProfessionFinishSoundLabel[professionId] != "" then
+            set playedSound = P_PlaySoundLabelForJob(jobId, P_ProfessionFinishSoundLabel[professionId], station, false)
+            if playedSound != null then
+                set playedSound = null
+                return
+            endif
         endif
     endif
 
@@ -701,6 +725,8 @@ private function P_StartStationFeedback takes integer professionId, unit station
         call SetUnitAnimation(station, "attack")
     elseif professionId == GNS_PROF_MINING then
         call SetUnitAnimation(station, "stand work")
+    elseif professionId == GNS_PROF_LEATHERWORKING then
+        call SetUnitAnimation(station, "stand work")
     else
         call SetUnitAnimation(station, "stand")
     endif
@@ -754,6 +780,66 @@ private function P_FinishCrafterFeedback takes unit crafter returns nothing
     endif
 endfunction
 
+private function P_RestartStationCraftAnimation takes integer professionId, unit station returns nothing
+    if station == null then
+        return
+    endif
+
+    if professionId == GNS_PROF_ALCHEMY then
+        call UnitAddAbility(station, P_ALCHEMY_LIGHT_ABILITY)
+    elseif professionId == GNS_PROF_BLACKSMITHING then
+        call SetUnitAnimation(station, "attack")
+    elseif professionId == GNS_PROF_MINING then
+        call SetUnitAnimation(station, "stand work")
+    elseif professionId == GNS_PROF_LEATHERWORKING then
+        call SetUnitAnimation(station, "stand work")
+    else
+        call SetUnitAnimation(station, "stand")
+    endif
+endfunction
+
+private function P_StopCrafterAnimationLoop takes integer jobId returns nothing
+    local timer t = P_JobAnimationTimer[jobId]
+
+    if t != null then
+        call PauseTimer(t)
+        call ReleaseTimer(t)
+        set P_JobAnimationTimer[jobId] = null
+    endif
+
+    set t = null
+endfunction
+
+private function P_CrafterAnimationLoopAction takes nothing returns nothing
+    local timer t = GetExpiredTimer()
+    local integer jobId = GetTimerData(t)
+    local integer recipeId = P_JobRecipe[jobId]
+    local integer professionId
+    local unit crafter = P_JobCrafter[jobId]
+    local unit station = P_JobStation[jobId]
+
+    if P_JobStartedCrafting[jobId] and P_IsRecipeValid(recipeId) and P_IsUnitAlive(crafter) and station != null and GetUnitTypeId(station) != 0 then
+        set professionId = P_RecipeProfessionId[recipeId]
+        call P_StartCrafterFeedback(professionId, crafter, station)
+        call P_RestartStationCraftAnimation(professionId, station)
+    endif
+
+    set crafter = null
+    set station = null
+    set t = null
+endfunction
+
+private function P_StartCrafterAnimationLoop takes integer jobId returns nothing
+    local timer t
+
+    call P_StopCrafterAnimationLoop(jobId)
+    set t = NewTimerEx(jobId)
+    set P_JobAnimationTimer[jobId] = t
+    call TimerStart(t, P_CRAFT_ANIMATION_LOOP_PERIOD, true, function P_CrafterAnimationLoopAction)
+
+    set t = null
+endfunction
+
 private function P_StartFakeCast takes integer jobId, unit crafter returns nothing
     if crafter == null then
         return
@@ -790,7 +876,6 @@ private function P_StartCraftCinematic takes integer jobId, unit crafter, unit s
     endif
     set P_CinematicDepth = P_CinematicDepth + 1
 
-    call DialogCameraStart(owner, station, P_CRAFT_CAMERA_DISTANCE, P_CRAFT_CAMERA_ZOFFSET, P_CRAFT_CAMERA_ANGLE, P_CRAFT_CAMERA_ROTATION, P_CRAFT_CAMERA_FARZ, P_CRAFT_CAMERA_FOV, P_CRAFT_CAMERA_BLOCK_RADIUS, P_CRAFT_CAMERA_BLOCK_CHECK)
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUT, P_CRAFT_FADE_TIME, P_CRAFT_FADE_TEXTURE, 0.00, 0.00, 0.00, 0.00)
 
     set owner = null
@@ -977,11 +1062,13 @@ private function P_FinishJob takes integer jobId returns nothing
     local item createdItem
     local player owner
 
+    call P_StopLoopSound(jobId)
+    call P_StopCrafterAnimationLoop(jobId)
+    call P_FinishFakeCast(jobId, crafter)
+
     if P_IsRecipeValid(recipeId) then
         set professionId = P_RecipeProfessionId[recipeId]
-        call P_StopLoopSound(jobId)
-        call P_FinishFakeCast(jobId, crafter)
-        call P_PlayFinishSound(professionId, station)
+        call P_PlayFinishSound(jobId, professionId, station)
         call P_FinishCrafterFeedback(crafter)
         call P_FinishStationFeedback(professionId, station)
         set createdItem = P_CreateCraftedItem(crafter, station, P_RecipeOutputItemCode[recipeId], P_RecipeOutputCount[recipeId])
@@ -1015,6 +1102,7 @@ private function P_FinishJob takes integer jobId returns nothing
     set P_JobFakeCastAdded[jobId] = false
     set P_JobStartedCrafting[jobId] = false
     set P_JobPrepareElapsed[jobId] = 0.00
+    set P_JobAnimationTimer[jobId] = null
 
     set createdItem = null
     set owner = null
@@ -1045,6 +1133,7 @@ private function P_ClearJob takes integer jobId returns nothing
     set P_JobFakeCastAdded[jobId] = false
     set P_JobStartedCrafting[jobId] = false
     set P_JobPrepareElapsed[jobId] = 0.00
+    set P_JobAnimationTimer[jobId] = null
 endfunction
 
 private function P_CancelJob takes integer jobId returns nothing
@@ -1052,6 +1141,7 @@ private function P_CancelJob takes integer jobId returns nothing
     local unit station = P_JobStation[jobId]
 
     call P_StopLoopSound(jobId)
+    call P_StopCrafterAnimationLoop(jobId)
     call P_FinishFakeCast(jobId, crafter)
     call P_FinishCrafterFeedback(crafter)
     if crafter != null then
@@ -1120,9 +1210,10 @@ private function P_BeginActualCraft takes integer jobId returns boolean
     set P_JobStartedCrafting[jobId] = true
 
     call P_StartFakeCast(jobId, crafter)
-    call P_PlayStartSound(professionId, station)
+    call P_PlayStartSound(jobId, professionId, station)
     set P_JobLoopSound[jobId] = P_StartLoopSound(jobId, professionId, station)
     call P_StartCrafterFeedback(professionId, crafter, station)
+    call P_StartCrafterAnimationLoop(jobId)
     call P_StartStationFeedback(professionId, station)
 
     if not P_JobAiControlled[jobId] then
@@ -1157,6 +1248,7 @@ private function P_PlayerFadeOutDoneAction takes nothing returns nothing
     local integer jobId = GetTimerData(t)
     local unit crafter = P_JobCrafter[jobId]
     local unit station = P_JobStation[jobId]
+    local player owner = P_JobOwner[jobId]
     local real x
     local real y
 
@@ -1165,6 +1257,9 @@ private function P_PlayerFadeOutDoneAction takes nothing returns nothing
         set y = P_GetCraftPointY(crafter, station)
         call CinematicMover_MoveSingleUnitToPoint(crafter, x, y)
         call P_FaceStation(crafter, station)
+        if owner != null then
+            call DialogCameraStart(owner, station, P_CRAFT_CAMERA_DISTANCE, P_CRAFT_CAMERA_ZOFFSET, P_CRAFT_CAMERA_ANGLE, P_CRAFT_CAMERA_ROTATION, P_CRAFT_CAMERA_FARZ, P_CRAFT_CAMERA_FOV, P_CRAFT_CAMERA_BLOCK_RADIUS, P_CRAFT_CAMERA_BLOCK_CHECK)
+        endif
         call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, P_CRAFT_FADE_TIME, P_CRAFT_FADE_TEXTURE, 0.00, 0.00, 0.00, 0.00)
         call TimerStart(t, P_CRAFT_FADE_TIME, false, function P_PlayerFadeInDoneAction)
     else
@@ -1174,6 +1269,7 @@ private function P_PlayerFadeOutDoneAction takes nothing returns nothing
 
     set crafter = null
     set station = null
+    set owner = null
     set t = null
 endfunction
 
@@ -1258,6 +1354,7 @@ private function P_CreateReservedJob takes unit crafter, unit station, integer r
     set P_JobRecipe[jobId] = recipeId
     set P_JobAiControlled[jobId] = aiControlled
     set P_JobIgnoreMaterials[jobId] = ignoreMaterials
+    set P_JobAnimationTimer[jobId] = null
     set P_CrafterActiveJob.integer[GetHandleId(crafter)] = jobId
     set P_StationActiveJob.integer[GetHandleId(station)] = jobId
 
