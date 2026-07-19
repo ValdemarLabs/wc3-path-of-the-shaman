@@ -1,4 +1,4 @@
-library UnitExperience initializer Init requires Table, UnitDeathEvent, PetDefinitions
+library UnitExperience initializer Init requires Table, UnitDeathEvent, PetDefinitions, optional Experience
 /*
     UnitExperience
     Version: 3.0
@@ -308,6 +308,14 @@ private function AddXP takes unit u, integer amount returns nothing
     local string f = null
 
     if id == 0 or xpDisabled.boolean[id] or level.integer[id] >= MAX_LEVEL then
+        return
+    endif
+
+    static if LIBRARY_Experience then
+        set amount = Experience_ApplyMultiplier(u, amount)
+    endif
+
+    if amount <= 0 then
         return
     endif
 
