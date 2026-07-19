@@ -29,15 +29,13 @@
 - Starting a craft now enters cinematic mode, moves only the nearest tracked hero into the workstation scene, uses a DialogCamera closeup, and reopens the related CraftingUI after completion.
 - Profession crafting start/loop/finish sounds now play as 3D workstation sounds where configured, including Tannery, Forge smelting, Anvil, and Cauldron flows.
 - Alchemy cauldrons now keep the passive Light Effect ability (`A6DJ`) through the delayed post-craft phase, remove it after 60 seconds, keep the Death animation for 120 seconds, and then switch to Decay.
-- Alchemy now has first-pass craftable recipes based on the concrete old workbook / GUI data:
-  - Spring Water
-  - Crystal Water
-  - Healing Salve
-  - Greater Healing Salve
-  - Minor Healing Potion
-  - Nazgrek's Flask
-- Blacksmithing now has first-pass Copper Chain armor recipes from the old workbook / GUI draft, using Copper Bars as material costs.
-- Leatherworking now has first-pass Reinforced Leather recipes from the old Tannery GUI draft:
+- Alchemy recipes are now grouped in the custom CraftingUI by the workbook categories:
+  - Basic Alchemy: Spring Water, Crystal Water, Healing Salve, Greater Healing Salve, Minor Replenishment Potion, Replenishment Potion, and Greater Replenishment Potion.
+  - Basic Potions: Minor Healing Potion, Healing Potion, Greater Healing Potion, Major Healing Potion, Minor Mana Potion, Mana Potion, Greater Mana Potion, Major Mana Potion, Restoration Potion, and Greater Restoration Potion.
+  - Utility Potions: Potion of Invisibility, Potion of Speed, Potion of Lesser Invulnerability, Potion of Divinity, and Anti-Magic Potion.
+  - Flasks: Nazgrek's Flask.
+- Blacksmithing now has first-pass Copper Chain armor recipes from the old workbook / GUI draft, using Copper Bars as material costs and the Apprentice Blacksmithing -> Copper Armor category path.
+- Leatherworking now has first-pass Reinforced Leather recipes from the old Tannery GUI draft under the Apprentice Leatherworking -> Reinforced Leather category path:
   - Reinforced Leather Belt
   - Reinforced Leather Boots
   - Reinforced Leather Chestpiece
@@ -52,6 +50,7 @@
 - `Professions/Professions.j`
   - Added the central profession crafting registry and executor.
   - Added APIs for workstation registration, recipe registration, material registration, recipe lookup, station lookup, crafting start checks, material counting, and profession summary text.
+  - Added recipe category and subcategory metadata APIs so profession sublibraries can expose workstation recipe paths such as Alchemy category lists or later Blacksmithing tier -> group lists.
   - Crafting jobs now consume materials up front, run through a timed job, create the output item on completion, and award profession skill through `GatherNodeSkills`.
   - Material checks support the custom DInv inventory helpers when `SharedDInvLib` is present, with vanilla inventory fallback.
   - Crafted item creation uses `ItemHook_CreateItem` when `ItemHook` is present, with normal `CreateItem` fallback.
@@ -73,11 +72,14 @@
     - `Alchemy start`
     - `Alchemy loop`
     - `Alchemy loop`
-  - Registered only the recipes with concrete old workbook / GUI material data for this first pass.
-  - Left later placeholder potion/flask ideas unregistered until their material requirements are intentionally defined.
+  - Expanded Alchemy from the first-pass six recipes into the concrete `ALCHEMY` / `alchemy_help` workbook recipe set.
+  - Corrected the workbook material requirements for Crystal Water, Healing Salve, Greater Healing Salve, and Minor Healing Potion.
+  - Assigned every registered Alchemy recipe to Basic Alchemy, Basic Potions, Utility Potions, or Flasks.
+  - Left later placeholder or material-less potion/flask ideas unregistered until their item rawcodes and material requirements are intentionally defined.
 
 - `Professions/ProfessionsBlacksmithing.j`
   - Registered the Anvil workstation and first-pass Copper Chain armor recipes.
+  - Assigned Copper Chain recipes to the Apprentice Blacksmithing -> Copper Armor category path.
   - Preserved the old GUI crafting time pattern of 5 seconds.
   - Added first-pass Copper Bar costs so the recipes are usable through the new material system instead of free spellbook casts.
 
@@ -88,6 +90,7 @@
 
 - `Professions/ProfessionsLeatherworking.j`
   - Registered the Tannery workstation and first-pass Reinforced Leather recipes from the old GUI trigger.
+  - Assigned Reinforced Leather recipes to the Apprentice Leatherworking -> Reinforced Leather category path.
   - Preserved the old GUI crafting time pattern of 5 seconds.
   - Registered the old Tannery sound label for start/loop/finish playback.
   - Material requirements are intentionally still empty because the old GUI trigger did not define material checks.
@@ -99,6 +102,7 @@
 - `UI/CraftingUI.j`
   - Added the shared custom-frame crafting UI.
   - The UI opens from workstation selection, pulls recipe data through `Professions.j`, and uses the nearest tracked hero to the station as the active crafter.
+  - Added category/subcategory browsing using the shared recipe metadata, with category state preserved when the panel reopens after a craft.
   - Added recipe rows, selected recipe detail view, material readiness display, Prev/Next paging, Craft, Return, and Close controls.
   - Crafting success hides the panel during the cinematic craft, refreshes `ProfessionsUI` summary data, and reopens the station panel when the job finishes.
   - Moved the Craft button slightly upward in the panel layout.
@@ -121,7 +125,7 @@
 - The bundled `pjass` only validates plain JASS and is not a useful validator for these vJASS libraries by themselves.
 - Blacksmithing Copper Bar material costs are first-pass design values because the old workbook / GUI draft lists the Copper Chain outputs but not final material requirements.
 - Leatherworking Reinforced Leather recipes currently match the old Tannery GUI trigger and therefore have no material requirements yet.
-- The Alchemy workbook contains many placeholder potion/flask ideas without complete material data. Those recipes are intentionally not registered yet.
+- The Alchemy workbook still contains material-less or unresolved rows such as Purified Water, Vampiric Potion, Elixir of Might, Elixir of Shadows, and the non-Nazgrek flask ideas. Those recipes are intentionally not registered until their live item rawcodes and material requirements are confirmed.
 - Fel Iron Vein exists in the current gather-node exports, but `Fel Iron Ore` and `Fel Iron Bar` item rawcodes are not present in the visible item/WTS exports yet, so Fel Iron smelting is still pending item data.
 
 ### Actions Remaining
