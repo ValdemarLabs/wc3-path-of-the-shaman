@@ -1,0 +1,56 @@
+Reset Abilities
+    Events
+        Unit - A unit Acquires an item
+    Conditions
+        (Item-type of (Item being manipulated)) Equal to Reset Abilities
+    Actions
+        -------- Reset all abilities from the unit (=remove abilities) --------
+        Set VariableSet DInv_SourceUnit = (Triggering unit)
+        Custom script:   call DItemTransfer_StoreSourceUnit()
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Triggering unit) Equal to Nazgrek
+            Then - Actions
+                -------- NAZGREK --------
+                Unit - Replace Nazgrek with a Nazgrek using The old unit's relative life and mana
+                Set VariableSet AbilityPointsNazgrek = ((Hero level of (Triggering unit)) + 3)
+                Trigger - Run MultiboardUpdateAbilityPoints <gen> (checking conditions)
+                Set VariableSet Nazgrek = (Last replaced unit)
+                Set VariableSet DInv_TargetUnit = (Last replaced unit)
+                -------- Inventory & Equipment System --------
+                Custom script:   call InitializeDInventoryForUnit(udg_Nazgrek)
+                Custom script:   call InitializeDEquipmentForUnit(udg_Nazgrek)
+                Custom script:   call DItemTransfer_TransferDItemsGUI()
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Triggering unit) Equal to Zulkis
+                (Unit-type of (Triggering unit)) Equal to Zul'kis (ranged)
+            Then - Actions
+                -------- ZULKIS RANGED --------
+                Unit - Replace Zulkis with a Zul'kis (ranged) using The old unit's relative life and mana
+                Set VariableSet AbilityPointsZulkis = ((Hero level of (Triggering unit)) + 3)
+                Trigger - Run MultiboardUpdateAbilityPoints <gen> (checking conditions)
+                Set VariableSet Zulkis = (Last replaced unit)
+                Set VariableSet DInv_TargetUnit = (Last replaced unit)
+                -------- Inventory & Equipment System --------
+                Custom script:   call InitializeDInventoryForUnit(udg_Zulkis)
+                Custom script:   call InitializeDEquipmentForUnit(udg_Zulkis)
+                Custom script:   call DItemTransfer_TransferDItemsGUI()
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Triggering unit) Equal to Zulkis
+                (Unit-type of (Triggering unit)) Equal to Zul'kis (melee)
+            Then - Actions
+                -------- ZULKIS MELEE --------
+                Unit - Replace Zulkis with a Zul'kis (melee) using The old unit's relative life and mana
+                Set VariableSet AbilityPointsZulkis = ((Hero level of (Triggering unit)) + 3)
+                Trigger - Run MultiboardUpdateAbilityPoints <gen> (checking conditions)
+                Set VariableSet Zulkis = (Last replaced unit)
+                Set VariableSet DInv_TargetUnit = (Last replaced unit)
+                -------- Inventory & Equipment System --------
+                Custom script:   call InitializeDInventoryForUnit(udg_Zulkis)
+                Custom script:   call InitializeDEquipmentForUnit(udg_Zulkis)
+                Custom script:   call DItemTransfer_TransferDItemsGUI()
+            Else - Actions
