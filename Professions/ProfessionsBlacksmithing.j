@@ -31,6 +31,10 @@ globals
     private constant string PB_SOUND_LOOP = "Blacksmithing"
     private constant string PB_SOUND_FINISH = "Blacksmithing"
 
+    // Recipe category path for the current first-pass copper armor set.
+    private constant string PB_CATEGORY_APPRENTICE = "Apprentice Blacksmithing"
+    private constant string PB_SUBCATEGORY_COPPER_ARMOR = "Copper Armor"
+
     // Crafted output raw codes.
     private constant integer PB_ITEM_COPPER_CHAIN_HELMET = 'I68F'
     private constant integer PB_ITEM_COPPER_CHAIN_LEGGINGS = 'I68G'
@@ -50,6 +54,7 @@ private function PB_RegisterCopperArmor takes string recipeName, string descript
     local integer recipeId = Professions_RegisterRecipe(GNS_PROF_BLACKSMITHING, PB_STATION_ANVIL, recipeName, description, iconPath, outputItemCode, 1, requiredSkill, 5.00, 0.00)
 
     call Professions_AddRecipeMaterial(recipeId, PB_ITEM_COPPER_BAR, copperBars, "Copper Bar")
+    call Professions_SetRecipeCategoryPath(recipeId, PB_CATEGORY_APPRENTICE, PB_SUBCATEGORY_COPPER_ARMOR)
     call Professions_SetRecipeSkillGain(recipeId, 1)
 endfunction
 
