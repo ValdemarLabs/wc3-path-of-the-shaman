@@ -30,6 +30,10 @@ globals
     private constant string PL_SOUND_LOOP = "Tannery"
     private constant string PL_SOUND_FINISH = "Tannery"
 
+    // Recipe category path for the current first-pass reinforced leather set.
+    private constant string PL_CATEGORY_APPRENTICE = "Apprentice Leatherworking"
+    private constant string PL_SUBCATEGORY_REINFORCED = "Reinforced Leather"
+
     // Crafted output raw codes.
     private constant integer PL_ITEM_REINFORCED_LEATHER_GLOVES = 'I65X'
     private constant integer PL_ITEM_REINFORCED_LEATHER_BOOTS = 'I65Y'
@@ -45,6 +49,7 @@ endglobals
 private function PL_RegisterReinforcedLeather takes string recipeName, string description, integer outputItemCode returns nothing
     local integer recipeId = Professions_RegisterRecipe(GNS_PROF_LEATHERWORKING, PL_STATION_TANNERY, recipeName, description, PL_ICON_LEATHER, outputItemCode, 1, 0, 5.00, 0.00)
 
+    call Professions_SetRecipeCategoryPath(recipeId, PL_CATEGORY_APPRENTICE, PL_SUBCATEGORY_REINFORCED)
     call Professions_SetRecipeSkillGain(recipeId, 1)
 endfunction
 
