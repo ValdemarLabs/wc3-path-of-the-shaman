@@ -23,7 +23,8 @@
   - Alchemy opens from nearby Cauldron units (`n61D`).
   - Blacksmithing opens from Anvil units (`n62R`).
   - Mining smelting opens from Forge units (`n62S`).
-  - Leatherworking and Cooking workstation hooks are registered for Tannery (`n625`) and Camp Fire (`n61C`) so recipes can be added later.
+  - Leatherworking opens from Tannery units (`n625`).
+  - Cooking workstation hooks are registered for Camp Fire (`n61C`) so recipes can be added later.
 - The new crafting panel lists workstation recipes, required skill, material readiness, crafting time, and current availability state.
 - Alchemy now has first-pass craftable recipes based on the concrete old workbook / GUI data:
   - Spring Water
@@ -33,6 +34,13 @@
   - Minor Healing Potion
   - Nazgrek's Flask
 - Blacksmithing now has first-pass Copper Chain armor recipes from the old workbook / GUI draft, using Copper Bars as material costs.
+- Leatherworking now has first-pass Reinforced Leather recipes from the old Tannery GUI draft:
+  - Reinforced Leather Belt
+  - Reinforced Leather Boots
+  - Reinforced Leather Chestpiece
+  - Reinforced Leather Gloves
+  - Reinforced Leather Helmet
+  - Reinforced Leather Shoulderpads
 - Mining now supports basic smelting recipes:
   - Copper, Tin, Silver, Iron, Gold, Mithril, and Thorium Ore into their Bar versions.
 
@@ -65,7 +73,13 @@
   - Registered the Forge workstation for smelting only.
   - Added Ore -> Bar recipes without changing the existing gather-node Mining systems.
 
-- `Professions/ProfessionsCooking.j`, `Professions/ProfessionsLeatherworking.j`, `Professions/ProfessionsSkinning.j`, `Professions/ProfessionsEnchanting.j`, and `Professions/ProfessionsFishing.j`
+- `Professions/ProfessionsLeatherworking.j`
+  - Registered the Tannery workstation and first-pass Reinforced Leather recipes from the old GUI trigger.
+  - Preserved the old GUI crafting time pattern of 5 seconds.
+  - Registered the old Tannery sound label for start/loop/finish playback.
+  - Material requirements are intentionally still empty because the old GUI trigger did not define material checks.
+
+- `Professions/ProfessionsCooking.j`, `Professions/ProfessionsSkinning.j`, `Professions/ProfessionsEnchanting.j`, and `Professions/ProfessionsFishing.j`
   - Added profession sublibrary placeholders / workstation hooks where the profession start event is already known.
   - These files are intentionally light until each profession's actual crafting rules are defined.
 
@@ -89,6 +103,7 @@
 - Full in-map JassHelper / Warcraft III compile validation was not completed in this pass because the repo snapshot does not expose a combined `war3map.j` or normal map build entry point.
 - The bundled `pjass` only validates plain JASS and is not a useful validator for these vJASS libraries by themselves.
 - Blacksmithing Copper Bar material costs are first-pass design values because the old workbook / GUI draft lists the Copper Chain outputs but not final material requirements.
+- Leatherworking Reinforced Leather recipes currently match the old Tannery GUI trigger and therefore have no material requirements yet.
 - The Alchemy workbook contains many placeholder potion/flask ideas without complete material data. Those recipes are intentionally not registered yet.
 
 ### Actions Remaining
