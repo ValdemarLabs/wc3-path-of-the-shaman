@@ -15,6 +15,71 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [20.7.2026]
+
+### Technical Updates
+
+- `Leveling/AbilityPoints.j`
+  - Added the new centralized AbilityPoints library for Nazgrek and Zul'kis.
+  - Ability points are now tracked through the JASS API while keeping the legacy GUI globals synchronized:
+    - `AbilityPoints_Get`
+    - `AbilityPoints_Set`
+    - `AbilityPoints_Add`
+    - `AbilityPoints_Reduce`
+    - `AbilityPoints_Spend`
+    - `AbilityPoints_SyncHero`
+  - Moved the old "Hero Levels Up" behavior into JASS for player hero AP gain, level-up text, HP/mana refill, and companion group-size synchronization.
+  - Added a temporary enable/disable API for the JASS "Hero Levels Up" handling:
+    - `AbilityPoints_SetHeroLevelUpEnabled`
+    - `AbilityPoints_DisableHeroLevelUp`
+    - `AbilityPoints_EnableHeroLevelUp`
+    - `AbilityPoints_IsHeroLevelUpEnabled`
+  - Added Reset Abilities item handling for `I6A1`, replacing the hero, preserving inventory/equipment through the DInventory/DItemTransfer hooks when available, and resetting AP to hero level + 3.
+  - Added Player 1 debug chat command `/debug ap add`, which adds 1 AP to both Nazgrek and Zul'kis and updates the legacy globals.
+
+- `Leveling/Experience.j`
+  - Added the new centralized Experience library for rested XP, bonus XP, and XP multiplier application.
+  - Rested state remains backed by the existing `B611` Rested buff so older systems that check the buff can keep working.
+  - Added MUI resting-progress tracking so camp fires and tents can grant rested progress without singleton GUI timers.
+  - Added bonus XP multiplier APIs:
+    - `Experience_GetBonusMultiplier`
+    - `Experience_GetTotalMultiplier`
+    - `Experience_SetBonusMultiplier`
+    - `Experience_AddBonusMultiplier`
+    - `Experience_RegisterBonusItem`
+    - `Experience_ApplyMultiplier`
+  - Added hero XP delta handling through `UnitDeathEvent`, replacing the old GUI rested/bonus XP death trigger pattern for Nazgrek and Zul'kis.
+  - Added a first-pass registered bonus XP item hook for the Crown of Kings rawcode (`ckng`) as a configurable item-multiplier example.
+
+- `Leveling/BaseCamp.j`
+  - Added the new BaseCamp library for tent/base-camp behavior.
+  - Added MUI tent tracking, one-tent-per-player checks, loaded-hero resting, time-of-day fast-forward while resting, tent dismantle handling, and tent death cleanup.
+  - Tent resting now delegates rested progress and buff application to `Experience.j`.
+  - One-tent-limit hints use `HintsUI` when available and fall back to player text otherwise.
+
+- `Leveling/CampFire.j`
+  - Reworked CampFire into a proper JASS library instead of the old singleton timer/index implementation.
+  - Camp fires now register on construction, receive Warmth/Warmth HP/Warmth Mana abilities, get timed life, create their light helper, and clean up nearby light helpers on death.
+  - Nearby heroes with Warmth now gain rested progress through `Experience_AddRestingProgress`.
+  - Camp fire/tent build channeling is blocked while the builder is in combat, using `HintsUI` when available.
+  - Kept legacy wrappers `AddCampfire`, `RemoveCampfire`, and `InitCampFireBuffSystem` for compatibility with older calls.
+
+- `UnitSystems/UnitExperience3.j`
+  - Added optional `Experience` support so registered custom unit XP can apply the centralized XP multiplier through `Experience_ApplyMultiplier`.
+
+### Known Issues
+
+- Full in-map JassHelper / Warcraft III compile validation was not completed in this pass because the repo snapshot does not expose a combined `war3map.j` or normal map build entry point.
+- The old GUI triggers under `Leveling/_oldGUI` must be disabled after these libraries are imported, otherwise AP/rested/base-camp/camp-fire behavior can double-run or conflict.
+- The tent death animation still uses a configurable first-pass death-animation unit rawcode and should be verified in-game against the intended tent death visuals.
+
+### Actions Remaining
+
+- Import/include `Leveling/AbilityPoints.j`, `Leveling/Experience.j`, `Leveling/BaseCamp.j`, and the updated `Leveling/CampFire.j` in the active map build order.
+- In-game test normal hero leveling, Reset Abilities (`I6A1`), camp fire rested progress, tent loaded-hero resting, tent dismantle, tent death cleanup, and bonus XP item pickup/drop.
+- Debug-testing reminder: use `/debug ap add` to verify both Nazgrek and Zul'kis gain AP and that the AP UI/legacy globals update correctly.
+- Test `AbilityPoints_DisableHeroLevelUp()` and `AbilityPoints_EnableHeroLevelUp()` around scripted level changes to confirm temporary level-up suppression works as intended.
+
 ## [19.7.2026]
 
 ### Player-Facing Updates
