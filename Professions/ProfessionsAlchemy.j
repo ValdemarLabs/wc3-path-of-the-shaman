@@ -126,6 +126,7 @@ public function Init takes nothing returns nothing
 
     call Professions_RegisterStationType(GNS_PROF_ALCHEMY, PA_STATION_CAULDRON, "Cauldron")
     call Professions_SetProfessionSoundLabels(GNS_PROF_ALCHEMY, PA_SOUND_START, PA_SOUND_LOOP, PA_SOUND_FINISH)
+    call Professions_SetProfessionSoundHandles(GNS_PROF_ALCHEMY, gg_snd_CauldronSound, gg_snd_CauldronSound, gg_snd_CauldronSound)
     call PA_RegisterRecipes()
 endfunction
 
