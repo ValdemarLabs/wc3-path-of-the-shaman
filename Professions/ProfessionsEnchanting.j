@@ -21,6 +21,9 @@ library ProfessionsEnchanting initializer AutoInit requires Professions, GatherN
 globals
     // Runtime guard.
     private boolean PE_Initialized = false
+    private constant boolean PE_AI_CHEAT_CRAFTING = true
+    private constant string PE_CRAFTER_ANIMATION_PRIMARY = "spell"
+    private constant string PE_CRAFTER_ANIMATION_FALLBACK = "stand"
 
     // Sound labels. Empty labels intentionally mean no sound until Enchanting assets are chosen.
     private constant string PE_SOUND_START = ""
@@ -35,6 +38,8 @@ public function Init takes nothing returns nothing
     set PE_Initialized = true
 
     call Professions_SetProfessionSoundLabels(GNS_PROF_ENCHANTING, PE_SOUND_START, PE_SOUND_LOOP, PE_SOUND_FINISH)
+    call Professions_SetProfessionAiCheatCrafting(GNS_PROF_ENCHANTING, PE_AI_CHEAT_CRAFTING)
+    call Professions_SetProfessionCrafterAnimations(GNS_PROF_ENCHANTING, PE_CRAFTER_ANIMATION_PRIMARY, PE_CRAFTER_ANIMATION_FALLBACK)
 endfunction
 
 public function AutoInit takes nothing returns nothing
