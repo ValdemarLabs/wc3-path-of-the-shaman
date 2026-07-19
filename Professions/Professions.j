@@ -60,12 +60,12 @@ globals
     private constant integer P_ALCHEMY_STAGE_DECAY = 2
     private constant real P_ALCHEMY_STAND_ANIMATION_DELAY = 60.00
     private constant real P_ALCHEMY_DEATH_ANIMATION_DELAY = 120.00
-    private constant real P_CRAFT_CAMERA_DISTANCE = 800.00
-    private constant real P_CRAFT_CAMERA_ZOFFSET = 40.00
-    private constant real P_CRAFT_CAMERA_ANGLE = 15.00
+    private constant real P_CRAFT_CAMERA_DISTANCE = 750.00
+    private constant real P_CRAFT_CAMERA_ZOFFSET = 90.00
+    private constant real P_CRAFT_CAMERA_ANGLE = 355.00
     private constant real P_CRAFT_CAMERA_ROTATION = 180.00
     private constant real P_CRAFT_CAMERA_FARZ = 10000.00
-    private constant real P_CRAFT_CAMERA_FOV = 65.00
+    private constant real P_CRAFT_CAMERA_FOV = 60.00
     private constant real P_CRAFT_CAMERA_BLOCK_RADIUS = 0.00
     private constant boolean P_CRAFT_CAMERA_BLOCK_CHECK = true
     private constant real P_CRAFT_CAMERA_RESET_TIME = 0.75
@@ -265,6 +265,23 @@ private function P_GetCraftPointY takes unit crafter, unit station returns real
         set angle = Atan2(dy, dx)
     endif
     return GetUnitY(station) + P_CRAFT_STATION_OFFSET * Sin(angle)
+endfunction
+
+private function P_GetCraftCameraRotationOffset takes unit crafter, unit station returns real
+    local real dx
+    local real dy
+
+    if crafter == null or station == null then
+        return P_CRAFT_CAMERA_ROTATION
+    endif
+
+    set dx = GetUnitX(crafter) - GetUnitX(station)
+    set dy = GetUnitY(crafter) - GetUnitY(station)
+    if dx * dx + dy * dy < 1.00 then
+        return P_CRAFT_CAMERA_ROTATION
+    endif
+
+    return (Atan2(dy, dx) * bj_RADTODEG + 180.00) - GetUnitFacing(station)
 endfunction
 
 private function P_GetNow takes nothing returns real
@@ -1251,6 +1268,7 @@ private function P_PlayerFadeOutDoneAction takes nothing returns nothing
     local player owner = P_JobOwner[jobId]
     local real x
     local real y
+    local real rotationOffset
 
     if P_IsUnitAlive(crafter) and station != null and GetUnitTypeId(station) != 0 then
         set x = P_GetCraftPointX(crafter, station)
@@ -1258,7 +1276,8 @@ private function P_PlayerFadeOutDoneAction takes nothing returns nothing
         call CinematicMover_MoveSingleUnitToPoint(crafter, x, y)
         call P_FaceStation(crafter, station)
         if owner != null then
-            call DialogCameraStart(owner, station, P_CRAFT_CAMERA_DISTANCE, P_CRAFT_CAMERA_ZOFFSET, P_CRAFT_CAMERA_ANGLE, P_CRAFT_CAMERA_ROTATION, P_CRAFT_CAMERA_FARZ, P_CRAFT_CAMERA_FOV, P_CRAFT_CAMERA_BLOCK_RADIUS, P_CRAFT_CAMERA_BLOCK_CHECK)
+            set rotationOffset = P_GetCraftCameraRotationOffset(crafter, station)
+            call DialogCameraStart(owner, station, P_CRAFT_CAMERA_DISTANCE, P_CRAFT_CAMERA_ZOFFSET, P_CRAFT_CAMERA_ANGLE, rotationOffset, P_CRAFT_CAMERA_FARZ, P_CRAFT_CAMERA_FOV, P_CRAFT_CAMERA_BLOCK_RADIUS, P_CRAFT_CAMERA_BLOCK_CHECK)
         endif
         call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, P_CRAFT_FADE_TIME, P_CRAFT_FADE_TEXTURE, 0.00, 0.00, 0.00, 0.00)
         call TimerStart(t, P_CRAFT_FADE_TIME, false, function P_PlayerFadeInDoneAction)
