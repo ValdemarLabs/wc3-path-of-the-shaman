@@ -17,12 +17,13 @@
     call Professions_AddRecipeMaterial(recipeId, 'I60W', 1, "Agave")
     call Professions_SetRecipeSkillGain(recipeId, 1)
     call Professions_SetProfessionSoundLabels(GNS_PROF_ALCHEMY, "Alchemy start", "Alchemy loop", "Alchemy loop")
+    call Professions_SetProfessionSoundHandles(GNS_PROF_ALCHEMY, gg_snd_CauldronSound, gg_snd_CauldronSound, gg_snd_CauldronSound)
     call Professions_StartRecipe(whichCrafter, whichStation, recipeId)
     call Professions_GetProfessionSummary(whichCrafter, GNS_PROF_ALCHEMY)
 
 **/
 
-library Professions initializer AutoInit requires GatherNodeSkills, TimerUtils, Table, optional SharedDInvLib, optional ItemHook
+library Professions initializer AutoInit requires GatherNodeSkills, TimerUtils, Table, DialogCamera, CinematicMover, optional SharedDInvLib, optional ItemHook
 
 globals
     // Public result codes for callers that need richer failure handling later.
@@ -38,8 +39,19 @@ globals
     private constant integer P_MAX_PROFESSION_ID = GNS_PROF_COOKING
     private constant integer P_ALCHEMY_LIGHT_ABILITY = 'A6DJ'
     private constant real P_STATION_USE_RANGE = 375.00
-    private constant real P_SOUND_CUTOFF = 1300.00
-    private constant real P_ALCHEMY_DECAY_DELAY = 10.00
+    private constant real P_SOUND_CUTOFF = 3000.00
+    private constant integer P_ALCHEMY_STAGE_LIGHT_END = 1
+    private constant integer P_ALCHEMY_STAGE_DECAY = 2
+    private constant real P_ALCHEMY_LIGHT_END_DELAY = 60.00
+    private constant real P_ALCHEMY_DEATH_ANIMATION_DELAY = 120.00
+    private constant real P_CRAFT_CAMERA_DISTANCE = 700.00
+    private constant real P_CRAFT_CAMERA_ZOFFSET = 260.00
+    private constant real P_CRAFT_CAMERA_ANGLE = 340.00
+    private constant real P_CRAFT_CAMERA_ROTATION = 20.00
+    private constant real P_CRAFT_CAMERA_FARZ = 1800.00
+    private constant real P_CRAFT_CAMERA_FOV = 70.00
+    private constant real P_CRAFT_CAMERA_BLOCK_RADIUS = 350.00
+    private constant real P_CRAFT_CAMERA_RESET_TIME = 0.75
 
     // Registry/runtime state.
     private boolean P_Initialized = false
@@ -70,13 +82,21 @@ globals
     // Active crafting jobs.
     private unit array P_JobCrafter
     private unit array P_JobStation
+    private player array P_JobOwner
     private integer array P_JobRecipe
     private sound array P_JobLoopSound
+    private boolean array P_JobCinematicActive
 
     // Per-profession sound labels: start once, loop during craft, finish once.
     private string array P_ProfessionStartSoundLabel
     private string array P_ProfessionLoopSoundLabel
     private string array P_ProfessionFinishSoundLabel
+    private sound array P_ProfessionStartSound
+    private sound array P_ProfessionLoopSound
+    private sound array P_ProfessionFinishSound
+
+    // Cinematic mode is global, so overlapping profession jobs keep it enabled until the last job finishes.
+    private integer P_CinematicDepth = 0
 
     // Lookup/state tables keyed by unit type, handle id, recipe id, or cooldown key.
     private Table P_StationProfession = 0
@@ -85,6 +105,11 @@ globals
     private Table P_StationActiveJob = 0
     private Table P_CooldownUntil = 0
     private Table P_StationByHandle = 0
+    private Table P_AlchemyGeneration = 0
+    private Table P_AlchemyPostCraft = 0
+    private Table P_AlchemyTimerStation = 0
+    private Table P_AlchemyTimerStage = 0
+    private Table P_AlchemyTimerGeneration = 0
     private timer P_ClockTimer = null
 endglobals
 
@@ -292,6 +317,7 @@ private function P_PlaySoundLabelOnUnit takes string soundLabel, unit whichUnit,
 
     call SetSoundDistances(s, 0.00, P_SOUND_CUTOFF)
     call SetSoundDistanceCutoff(s, P_SOUND_CUTOFF)
+    call SetSoundPosition(s, GetUnitX(whichUnit), GetUnitY(whichUnit), 0.00)
     call AttachSoundToUnit(s, whichUnit)
     call SetSoundVolume(s, 127)
     call StartSound(s)
@@ -302,9 +328,28 @@ private function P_PlaySoundLabelOnUnit takes string soundLabel, unit whichUnit,
     return s
 endfunction
 
+private function P_PlaySoundHandleOnUnit takes sound whichSound, unit whichUnit returns sound
+    if whichSound == null or whichUnit == null then
+        return null
+    endif
+
+    call StopSound(whichSound, false, false)
+    call SetSoundDistances(whichSound, 0.00, P_SOUND_CUTOFF)
+    call SetSoundDistanceCutoff(whichSound, P_SOUND_CUTOFF)
+    call SetSoundPosition(whichSound, GetUnitX(whichUnit), GetUnitY(whichUnit), 0.00)
+    call AttachSoundToUnit(whichSound, whichUnit)
+    call SetSoundVolume(whichSound, 127)
+    call StartSound(whichSound)
+
+    return whichSound
+endfunction
+
 private function P_StartLoopSound takes integer professionId, unit station returns sound
     if not P_IsProfessionValid(professionId) then
         return null
+    endif
+    if P_ProfessionLoopSound[professionId] != null then
+        return P_PlaySoundHandleOnUnit(P_ProfessionLoopSound[professionId], station)
     endif
     return P_PlaySoundLabelOnUnit(P_ProfessionLoopSoundLabel[professionId], station, true)
 endfunction
@@ -317,34 +362,78 @@ endfunction
 
 private function P_PlayStartSound takes integer professionId, unit station returns nothing
     if P_IsProfessionValid(professionId) then
-        call P_PlaySoundLabelOnUnit(P_ProfessionStartSoundLabel[professionId], station, false)
+        if P_ProfessionStartSound[professionId] != null then
+            call P_PlaySoundHandleOnUnit(P_ProfessionStartSound[professionId], station)
+        else
+            call P_PlaySoundLabelOnUnit(P_ProfessionStartSoundLabel[professionId], station, false)
+        endif
     endif
 endfunction
 
 private function P_PlayFinishSound takes integer professionId, unit station returns nothing
     if P_IsProfessionValid(professionId) then
-        call P_PlaySoundLabelOnUnit(P_ProfessionFinishSoundLabel[professionId], station, false)
+        if P_ProfessionFinishSound[professionId] != null then
+            call P_PlaySoundHandleOnUnit(P_ProfessionFinishSound[professionId], station)
+        else
+            call P_PlaySoundLabelOnUnit(P_ProfessionFinishSoundLabel[professionId], station, false)
+        endif
     endif
 endfunction
 
-private function P_AlchemyDecayAction takes nothing returns nothing
-    local timer t = GetExpiredTimer()
-    local integer stationId = GetTimerData(t)
-    local unit station = P_StationByHandle.unit[stationId]
+private function P_ClearAlchemyTimerData takes timer t returns nothing
+    local integer timerId
 
-    if station != null and GetUnitTypeId(station) != 0 then
-        call SetUnitAnimation(station, "decay")
+    if t == null then
+        return
     endif
 
-    call P_StationByHandle.unit.remove(stationId)
+    set timerId = GetHandleId(t)
+    call P_AlchemyTimerStation.integer.remove(timerId)
+    call P_AlchemyTimerStage.integer.remove(timerId)
+    call P_AlchemyTimerGeneration.integer.remove(timerId)
+endfunction
+
+private function P_BumpAlchemyGeneration takes unit station returns nothing
+    local integer stationId
+
+    if station == null then
+        return
+    endif
+
+    set stationId = GetHandleId(station)
+    set P_AlchemyGeneration.integer[stationId] = P_AlchemyGeneration.integer[stationId] + 1
+    set P_StationByHandle.unit[stationId] = station
+endfunction
+
+private function P_AlchemyDelayAction takes nothing returns nothing
+    local timer t = GetExpiredTimer()
+    local integer timerId = GetHandleId(t)
+    local integer stationId = P_AlchemyTimerStation.integer[timerId]
+    local integer stage = P_AlchemyTimerStage.integer[timerId]
+    local integer generation = P_AlchemyTimerGeneration.integer[timerId]
+    local unit station = P_StationByHandle.unit[stationId]
+
+    if station != null and GetUnitTypeId(station) != 0 and P_AlchemyGeneration.integer[stationId] == generation then
+        if stage == P_ALCHEMY_STAGE_LIGHT_END then
+            call UnitRemoveAbility(station, P_ALCHEMY_LIGHT_ABILITY)
+        elseif stage == P_ALCHEMY_STAGE_DECAY then
+            call UnitRemoveAbility(station, P_ALCHEMY_LIGHT_ABILITY)
+            call SetUnitAnimation(station, "decay")
+            call P_AlchemyPostCraft.boolean.remove(stationId)
+            call P_StationByHandle.unit.remove(stationId)
+        endif
+    endif
+
+    call P_ClearAlchemyTimerData(t)
     call ReleaseTimer(t)
 
     set station = null
     set t = null
 endfunction
 
-private function P_ScheduleAlchemyDecay takes unit station returns nothing
+private function P_ScheduleAlchemyStage takes unit station, integer stage, real delay returns nothing
     local timer t
+    local integer timerId
     local integer stationId
 
     if station == null or GetUnitTypeId(station) == 0 then
@@ -353,10 +442,48 @@ private function P_ScheduleAlchemyDecay takes unit station returns nothing
 
     set stationId = GetHandleId(station)
     set P_StationByHandle.unit[stationId] = station
-    set t = NewTimerEx(stationId)
-    call TimerStart(t, P_ALCHEMY_DECAY_DELAY, false, function P_AlchemyDecayAction)
+    set t = NewTimer()
+    set timerId = GetHandleId(t)
+    set P_AlchemyTimerStation.integer[timerId] = stationId
+    set P_AlchemyTimerStage.integer[timerId] = stage
+    set P_AlchemyTimerGeneration.integer[timerId] = P_AlchemyGeneration.integer[stationId]
+    call TimerStart(t, delay, false, function P_AlchemyDelayAction)
 
     set t = null
+endfunction
+
+private function P_StartAlchemyStationFeedback takes unit station returns nothing
+    local integer stationId
+    local boolean keepAnimation
+
+    if station == null then
+        return
+    endif
+
+    set stationId = GetHandleId(station)
+    set keepAnimation = P_AlchemyPostCraft.boolean[stationId]
+    call P_BumpAlchemyGeneration(station)
+    call P_AlchemyPostCraft.boolean.remove(stationId)
+    call UnitAddAbility(station, P_ALCHEMY_LIGHT_ABILITY)
+    if not keepAnimation then
+        call SetUnitAnimation(station, "stand")
+    endif
+endfunction
+
+private function P_FinishAlchemyStationFeedback takes unit station returns nothing
+    local integer stationId
+
+    if station == null then
+        return
+    endif
+
+    set stationId = GetHandleId(station)
+    call P_BumpAlchemyGeneration(station)
+    set P_AlchemyPostCraft.boolean[stationId] = true
+    call UnitAddAbility(station, P_ALCHEMY_LIGHT_ABILITY)
+    call SetUnitAnimation(station, "death")
+    call P_ScheduleAlchemyStage(station, P_ALCHEMY_STAGE_LIGHT_END, P_ALCHEMY_LIGHT_END_DELAY)
+    call P_ScheduleAlchemyStage(station, P_ALCHEMY_STAGE_DECAY, P_ALCHEMY_DEATH_ANIMATION_DELAY)
 endfunction
 
 private function P_StartStationFeedback takes integer professionId, unit station returns nothing
@@ -365,8 +492,7 @@ private function P_StartStationFeedback takes integer professionId, unit station
     endif
 
     if professionId == GNS_PROF_ALCHEMY then
-        call SetUnitAnimation(station, "stand")
-        call UnitAddAbility(station, P_ALCHEMY_LIGHT_ABILITY)
+        call P_StartAlchemyStationFeedback(station)
     elseif professionId == GNS_PROF_BLACKSMITHING then
         call SetUnitAnimation(station, "attack")
     elseif professionId == GNS_PROF_MINING then
@@ -382,12 +508,61 @@ private function P_FinishStationFeedback takes integer professionId, unit statio
     endif
 
     if professionId == GNS_PROF_ALCHEMY then
-        call UnitRemoveAbility(station, P_ALCHEMY_LIGHT_ABILITY)
-        call SetUnitAnimation(station, "death")
-        call P_ScheduleAlchemyDecay(station)
+        call P_FinishAlchemyStationFeedback(station)
     else
         call SetUnitAnimation(station, "stand")
     endif
+endfunction
+
+private function P_StartCraftCinematic takes integer jobId, unit crafter, unit station returns nothing
+    local player owner
+
+    if crafter == null or station == null then
+        return
+    endif
+
+    set owner = GetOwningPlayer(crafter)
+    if owner == null then
+        set owner = Player(0)
+    endif
+
+    set P_JobOwner[jobId] = owner
+    set P_JobCinematicActive[jobId] = true
+    if P_CinematicDepth <= 0 then
+        call CinematicModeBJ(true, GetPlayersAll())
+        set P_CinematicDepth = 0
+    endif
+    set P_CinematicDepth = P_CinematicDepth + 1
+
+    call CinematicMover_MoveSingleUnitToCinematic(station, crafter)
+    call DialogCameraStart(owner, station, P_CRAFT_CAMERA_DISTANCE, P_CRAFT_CAMERA_ZOFFSET, P_CRAFT_CAMERA_ANGLE, P_CRAFT_CAMERA_ROTATION, P_CRAFT_CAMERA_FARZ, P_CRAFT_CAMERA_FOV, P_CRAFT_CAMERA_BLOCK_RADIUS, true)
+
+    set owner = null
+endfunction
+
+private function P_FinishCraftCinematic takes integer jobId, unit crafter returns nothing
+    local player owner = P_JobOwner[jobId]
+
+    if not P_JobCinematicActive[jobId] then
+        set owner = null
+        return
+    endif
+
+    if owner != null then
+        call DialogCameraReset(owner, P_CRAFT_CAMERA_RESET_TIME)
+    endif
+    call CinematicMover_ReturnSingleUnitFromCinematic(crafter)
+
+    set P_CinematicDepth = P_CinematicDepth - 1
+    if P_CinematicDepth <= 0 then
+        set P_CinematicDepth = 0
+        call CinematicModeBJ(false, GetPlayersAll())
+    endif
+    call ExecuteFunc("CraftingUI_ReopenAfterCraft")
+
+    set P_JobCinematicActive[jobId] = false
+    set P_JobOwner[jobId] = null
+    set owner = null
 endfunction
 
 private function P_CreateCraftedItem takes unit crafter, unit station, integer itemCode, integer amount returns item
@@ -542,10 +717,14 @@ private function P_FinishJob takes integer jobId returns nothing
         call P_StationActiveJob.remove(GetHandleId(station))
     endif
 
+    call P_FinishCraftCinematic(jobId, crafter)
+
     set P_JobCrafter[jobId] = null
     set P_JobStation[jobId] = null
+    set P_JobOwner[jobId] = null
     set P_JobRecipe[jobId] = 0
     set P_JobLoopSound[jobId] = null
+    set P_JobCinematicActive[jobId] = false
 
     set createdItem = null
     set owner = null
@@ -581,6 +760,16 @@ public function SetProfessionSoundLabels takes integer professionId, string star
     set P_ProfessionStartSoundLabel[professionId] = startLabel
     set P_ProfessionLoopSoundLabel[professionId] = loopLabel
     set P_ProfessionFinishSoundLabel[professionId] = finishLabel
+endfunction
+
+public function SetProfessionSoundHandles takes integer professionId, sound startSound, sound loopSound, sound finishSound returns nothing
+    if not P_IsProfessionValid(professionId) then
+        return
+    endif
+
+    set P_ProfessionStartSound[professionId] = startSound
+    set P_ProfessionLoopSound[professionId] = loopSound
+    set P_ProfessionFinishSound[professionId] = finishSound
 endfunction
 
 public function RegisterRecipe takes integer professionId, integer stationTypeId, string recipeName, string description, string iconPath, integer outputItemCode, integer outputCount, integer requiredSkill, real craftTime, real cooldown returns integer
@@ -923,6 +1112,7 @@ public function StartRecipe takes unit crafter, unit station, integer recipeId r
     set P_CrafterActiveJob.integer[GetHandleId(crafter)] = jobId
     set P_StationActiveJob.integer[GetHandleId(station)] = jobId
 
+    call P_StartCraftCinematic(jobId, crafter, station)
     call P_PlayStartSound(professionId, station)
     set P_JobLoopSound[jobId] = P_StartLoopSound(professionId, station)
     call P_StartStationFeedback(professionId, station)
@@ -998,6 +1188,11 @@ public function Init takes nothing returns nothing
     set P_StationActiveJob = Table.create()
     set P_CooldownUntil = Table.create()
     set P_StationByHandle = Table.create()
+    set P_AlchemyGeneration = Table.create()
+    set P_AlchemyPostCraft = Table.create()
+    set P_AlchemyTimerStation = Table.create()
+    set P_AlchemyTimerStage = Table.create()
+    set P_AlchemyTimerGeneration = Table.create()
     set P_ClockTimer = CreateTimer()
     call TimerStart(P_ClockTimer, 999999.00, false, function P_NoOp)
 endfunction
