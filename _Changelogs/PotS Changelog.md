@@ -26,6 +26,9 @@
   - Leatherworking opens from Tannery units (`n625`).
   - Cooking workstation hooks are registered for Camp Fire (`n61C`) so recipes can be added later.
 - The new crafting panel lists workstation recipes, required skill, material readiness, crafting time, and current availability state.
+- Starting a craft now enters cinematic mode, moves only the nearest tracked hero into the workstation scene, uses a DialogCamera closeup, and reopens the related CraftingUI after completion.
+- Profession crafting start/loop/finish sounds now play as 3D workstation sounds where configured, including Tannery, Forge smelting, Anvil, and Cauldron flows.
+- Alchemy cauldrons now keep the passive Light Effect ability (`A6DJ`) through the delayed post-craft phase, remove it after 60 seconds, keep the Death animation for 120 seconds, and then switch to Decay.
 - Alchemy now has first-pass craftable recipes based on the concrete old workbook / GUI data:
   - Spring Water
   - Crystal Water
@@ -42,7 +45,7 @@
   - Reinforced Leather Helmet
   - Reinforced Leather Shoulderpads
 - Mining now supports basic smelting recipes:
-  - Copper, Tin, Silver, Iron, Gold, Mithril, and Thorium Ore into their Bar versions.
+  - Copper, Tin, Silver, Iron, Gold, Mithril, Arcanite, and Thorium Ore into their Bar versions.
 
 ### Technical Updates
 
@@ -53,12 +56,15 @@
   - Material checks support the custom DInv inventory helpers when `SharedDInvLib` is present, with vanilla inventory fallback.
   - Crafted item creation uses `ItemHook_CreateItem` when `ItemHook` is present, with normal `CreateItem` fallback.
   - Added workstation busy/crafter busy guards so the same station or crafter cannot run overlapping jobs.
-  - Added profession sound label support using 3D sound instances attached to the workstation.
+  - Added profession sound label and sound-handle support using 3D sound playback attached to the workstation.
+  - Added timed-craft cinematic handling using `DialogCamera`, `CinematicMover`, and cinematic mode depth tracking.
   - Added Alchemy cauldron feedback using the existing `A6DJ` Light Effect ability, station animation changes, and delayed decay animation.
+  - Alchemy cauldron delayed timers are generation-guarded so starting a new craft prevents older light-removal or decay timers from affecting the active cauldron.
   - Added short globals-section comments for registry state, recipe data, material data, active jobs, sound labels, and lookup tables.
 
 - `Professions/Professions*.j`
   - Moved per-profession Start / Loop / Finish sound labels into configurable globals constants.
+  - Registered GUI-generated sound handles for Alchemy, Blacksmithing, Leatherworking, and Mining where existing sound variables are available.
   - Added short globals-section comments for runtime guards, workstation raw codes, sound label config, recipe raw codes, and icon paths.
   - WIP profession modules use empty sound label constants until their actual sound assets and crafting flows are defined.
 
@@ -78,6 +84,7 @@
 - `Professions/ProfessionsMining.j`
   - Registered the Forge workstation for smelting only.
   - Added Ore -> Bar recipes without changing the existing gather-node Mining systems.
+  - Added Arcanite Ore -> Arcanite Bar smelting from the exported item rawcodes.
 
 - `Professions/ProfessionsLeatherworking.j`
   - Registered the Tannery workstation and first-pass Reinforced Leather recipes from the old GUI trigger.
@@ -91,9 +98,13 @@
 
 - `UI/CraftingUI.j`
   - Added the shared custom-frame crafting UI.
-  - The UI opens from workstation selection, pulls recipe data through `Professions.j`, and uses `GNS_GetUITargetUnit()` as the active tracked crafter.
+  - The UI opens from workstation selection, pulls recipe data through `Professions.j`, and uses the nearest tracked hero to the station as the active crafter.
   - Added recipe rows, selected recipe detail view, material readiness display, Prev/Next paging, Craft, Return, and Close controls.
-  - Crafting success refreshes `ProfessionsUI` summary data.
+  - Crafting success hides the panel during the cinematic craft, refreshes `ProfessionsUI` summary data, and reopens the station panel when the job finishes.
+  - Moved the Craft button slightly upward in the panel layout.
+
+- `Cinematic/CinematicMove.j`
+  - Added single-unit cinematic move/return helpers so profession crafting can use CinematicMover without moving companions, pets, or other tracked units.
 
 - `UI/ProfessionsUI.j`
   - Now requires `Professions`.
@@ -111,6 +122,7 @@
 - Blacksmithing Copper Bar material costs are first-pass design values because the old workbook / GUI draft lists the Copper Chain outputs but not final material requirements.
 - Leatherworking Reinforced Leather recipes currently match the old Tannery GUI trigger and therefore have no material requirements yet.
 - The Alchemy workbook contains many placeholder potion/flask ideas without complete material data. Those recipes are intentionally not registered yet.
+- Fel Iron Vein exists in the current gather-node exports, but `Fel Iron Ore` and `Fel Iron Bar` item rawcodes are not present in the visible item/WTS exports yet, so Fel Iron smelting is still pending item data.
 
 ### Actions Remaining
 
