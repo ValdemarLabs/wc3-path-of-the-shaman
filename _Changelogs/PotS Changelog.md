@@ -28,9 +28,11 @@
 - The new crafting panel lists workstation recipes, required skill, material readiness, crafting time, and current availability state.
 - Starting a player craft now reserves the workstation, enters cinematic mode, uses a 0.5 second fade-out/fade-in reposition to place only the nearest tracked hero close to the workstation, starts the craft only after the setup sequence completes, and reopens the related CraftingUI after completion.
 - AI units with matching profession profiles can now occasionally use nearby profession stations as cheat-crafting jobs, with per-profession toggles for whether AI ignores recipe materials.
-- Profession crafting start/loop/finish sounds now play as 3D workstation sounds where configured, including Tannery, Forge smelting, Anvil, and Cauldron flows.
+- Profession crafting start/loop/finish sounds now use direct playback for player crafts and 3D workstation playback for AI station crafts, including Tannery, Forge smelting, Anvil, and Cauldron flows.
+- Mining gather ore-node hits now play the imported MiningHit sound handles as 3D feedback at the mined node when struck with a Mining Pick.
 - Profession station sound handles are now centralized in `UI/Interface.j` as `Interface_Profession_*_Start`, `Interface_Profession_*_Loop`, and `Interface_Profession_*_End` globals.
-- Crafting camera settings now use a closer `qAradion`-style DialogCamera setup with full farZ.
+- Crafting camera settings now use a closer `qAradion`-style DialogCamera setup with full farZ, and the camera switch happens during the black fade after CinematicMover places/faces the crafter.
+- Crafting work animations are refreshed during the craft and reset to Stand when the craft ends or is cancelled.
 - Crafted output now tries to enter DInventory first, then vanilla inventory, before falling back to a ground drop at the workstation.
 - Alchemy cauldrons now get the passive Light Effect ability (`A6DJ`) during crafting, keep the light/Stand phase for 60 seconds after crafting, play Death for 120 seconds, and then switch to Decay.
 - Alchemy recipes are now grouped in the custom CraftingUI by the workbook categories:
@@ -61,8 +63,9 @@
   - Material checks support the custom DInv inventory helpers when `SharedDInvLib` is present, with vanilla inventory fallback.
   - Crafted item creation uses `ItemHook_CreateItem` when `ItemHook` is present, with normal `CreateItem` fallback.
   - Added workstation busy/crafter busy guards so the same station or crafter cannot run overlapping jobs.
-  - Added profession sound label and sound-handle support using 3D sound playback attached to the workstation, preferring fresh label-based instances with `Interface_Profession_*` sound handles as fallback.
-  - Added timed-craft cinematic handling using `DialogCamera`, `CinematicMover`, quick black fades, and cinematic mode depth tracking.
+  - Added profession sound label and sound-handle support, now preferring `Interface_Profession_*` sound handles and routing player crafts through direct playback while AI crafts attach 3D playback to the station.
+  - Added timed-craft cinematic handling using `DialogCamera`, `CinematicMover`, quick black fades, and cinematic mode depth tracking; the DialogCamera now starts after fade-out and mover placement.
+  - Added a per-job work-animation loop timer so crafter/station work animations keep playing during timed crafts and are cleaned up on finish/cancel.
   - Added profession-configured crafter animation strings, unit-type-specific crafter animation overrides, per-profession AI cheat-crafting toggles, and AI craft recipe lookup helpers.
   - Added `A6DY` Craft (Fake Cast) handling: the ability is added to the crafter, self-cast with the Inner Fire order, and removed when the craft ends or is cancelled.
   - Added Alchemy cauldron feedback using the existing `A6DJ` Light Effect ability, station animation changes, and delayed decay animation.
@@ -125,6 +128,12 @@
   - Extended AI profession IDs to match `GatherNodeSkills` through Cooking.
   - AI side profession work can now find nearby reserved-free profession stations and start a random eligible recipe through `Professions_StartRecipeForAi`.
   - Added Blacksmithing to Engineer/Warrior profiles, Alchemy to Restoshaman, and Leatherworking to Rogue.
+  - Added `/debug aicraft` / `aicraft` to force eligible active AI units to start a nearby station craft, randomizing among the professions available to each unit.
+
+- `UI/Interface.j`
+  - Mining hit and profession feedback sounds now prefer imported `gg_snd_*` handles over `CreateSoundFromLabel` fallback paths.
+  - Added a direct profession sound playback helper for player crafting and kept station-attached 3D playback for AI/station feedback.
+  - Added central feedback sound channel/volume configuration for mining and profession sounds.
 
 - `InitRelated/PreloadAbilities.j`
   - Added `A6DY` to ability preloading for the shared Craft (Fake Cast) behavior.
