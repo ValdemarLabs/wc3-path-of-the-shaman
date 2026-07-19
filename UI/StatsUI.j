@@ -1,7 +1,7 @@
-library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, AbilitiesLiteUI, ProfessionsUI, StatsLiteUI, QuestGiver, Companions, Pet, UnitExperience, AI, Interface
+library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, AbilitiesLiteUI, ProfessionsUI, StatsLiteUI, QuestGiver, Companions, Pet, UnitExperience, AI, Interface, AbilityPoints
 /**
     StatsUI
-    
+
     Author: [Valdemar]
     Version: 1.0
 
@@ -568,12 +568,7 @@ private function SUI_GetXPRequiredForCache takes unit u returns integer
 endfunction
 
 private function SUI_GetUnitPoints takes unit u returns integer
-    if u == udg_Nazgrek then
-        return udg_AbilityPointsNazgrek
-    elseif u == udg_Zulkis then
-        return udg_AbilityPointsZulkis
-    endif
-    return 0
+    return AbilityPoints_Get(u)
 endfunction
 
 private function SUI_GetUnitFactionText takes unit u returns string
