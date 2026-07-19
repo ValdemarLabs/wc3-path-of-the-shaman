@@ -81,7 +81,7 @@
     call AI_SetDebugMode(enabled)
 
 **/
-library AI initializer Init requires Table, Companions, UnitDeathEvent, DamageEngine, DialogSystem, ExSound, IconQuery, Reputation, GatherNodes, GatherNodeSkills, GatherNodeItems, GatherNodeUnits, VoicelinesWarlock, VoicelinesUndeadWarlock, VoicelinesRestoShaman, VoicelinesEngineer, VoicelinesPaladin
+library AI initializer Init requires Table, Companions, UnitDeathEvent, DamageEngine, DialogSystem, ExSound, IconQuery, Reputation, GatherNodes, GatherNodeSkills, GatherNodeItems, GatherNodeUnits, Professions, VoicelinesWarlock, VoicelinesUndeadWarlock, VoicelinesRestoShaman, VoicelinesEngineer, VoicelinesPaladin
 
 globals
     constant integer AI_STATE_INACTIVE = 0
@@ -103,6 +103,13 @@ globals
     constant integer AI_PROFESSION_MINING = 1
     constant integer AI_PROFESSION_HERBALISM = 2
     constant integer AI_PROFESSION_SKINNING = 3
+    constant integer AI_PROFESSION_FISHING = 4
+    constant integer AI_PROFESSION_ALCHEMY = 5
+    constant integer AI_PROFESSION_BLACKSMITHING = 6
+    constant integer AI_PROFESSION_LEATHERWORKING = 7
+    constant integer AI_PROFESSION_ENCHANTING = 8
+    constant integer AI_PROFESSION_COOKING = 9
+    constant integer AI_PROFESSION_MAX = AI_PROFESSION_COOKING
 
     constant integer AI_BARK_GREET = 1
     constant integer AI_BARK_PASSIVE = 2
@@ -168,6 +175,7 @@ globals
     private constant real AI_PROFESSION_ACTION_MAX = 22.00
     private constant real AI_PROFESSION_IDLE_MIN = 18.00
     private constant real AI_PROFESSION_IDLE_MAX = 40.00
+    private constant integer AI_PROFESSION_CRAFT_CHANCE = 25
     private constant real AI_PROFESSION_TOOL_DURATION = 45.00
     private constant real AI_PROFESSION_TOOL_CLEANUP_DELAY = 10.00
     private constant integer AI_PROFESSION_FAIL_LIMIT = 3
@@ -398,6 +406,10 @@ globals
     private real RandomPointY = 0.00
     private item ProfessionSearchItem = null
     private unit ProfessionSearchUnit = null
+    private unit ProfessionSearchStation = null
+    private unit ProfessionSearchSource = null
+    private integer ProfessionSearchProfileId = 0
+    private real ProfessionSearchBestDistance = 0.00
     private unit ItemSearchSource = null
     private item ItemSearchBest = null
     private real ItemSearchBestDistance = 0.00
@@ -1699,7 +1711,7 @@ private function RefreshInstanceProfessionSkills takes integer instanceId, unit 
     set estimatedSkill = EstimateProfessionSkill(whichUnit)
     call GNS_RegisterTrackedGatherer(whichUnit)
     loop
-        exitwhen professionId > AI_PROFESSION_SKINNING
+        exitwhen professionId > AI_PROFESSION_MAX
         if HasProfileProfession(profileId, professionId) and GNS_GetSkill(whichUnit, professionId) < estimatedSkill then
             call GNS_SetSkill(whichUnit, professionId, estimatedSkill)
         endif
@@ -2106,7 +2118,7 @@ endfunction
 public function AddProfileProfession takes integer profileId, integer professionId returns nothing
     local integer key
     call EnsureState()
-    if profileId <= 0 or professionId <= AI_PROFESSION_NONE or professionId > AI_PROFESSION_SKINNING then
+    if profileId <= 0 or professionId <= AI_PROFESSION_NONE or professionId > AI_PROFESSION_MAX then
         return
     endif
     set key = GetProfileProfessionKey(profileId, professionId)
@@ -2119,7 +2131,7 @@ endfunction
 public function RemoveProfileProfession takes integer profileId, integer professionId returns nothing
     local integer key
     call EnsureState()
-    if profileId <= 0 or professionId <= AI_PROFESSION_NONE or professionId > AI_PROFESSION_SKINNING then
+    if profileId <= 0 or professionId <= AI_PROFESSION_NONE or professionId > AI_PROFESSION_MAX then
         return
     endif
     set key = GetProfileProfessionKey(profileId, professionId)
@@ -4404,6 +4416,53 @@ private function FindNearbyProfessionUnit takes integer instanceId, unit whichUn
     return ProfessionSearchUnit
 endfunction
 
+private function FindNearbyCraftStationEnum takes nothing returns nothing
+    local unit station = GetEnumUnit()
+    local integer professionId
+    local integer recipeId
+    local real dx
+    local real dy
+    local real distance
+
+    if station != null and station != ProfessionSearchSource and IsAliveUnit(station) and Professions_IsStationUnit(station) and not Professions_IsStationReserved(station) then
+        set professionId = Professions_GetStationProfession(station)
+        if HasProfileProfession(ProfessionSearchProfileId, professionId) then
+            set recipeId = Professions_GetAiRecipeForStation(ProfessionSearchSource, station)
+            if recipeId > 0 then
+                set dx = GetUnitX(station) - GetUnitX(ProfessionSearchSource)
+                set dy = GetUnitY(station) - GetUnitY(ProfessionSearchSource)
+                set distance = dx * dx + dy * dy
+                if distance <= ProfessionSearchBestDistance then
+                    set ProfessionSearchBestDistance = distance
+                    set ProfessionSearchStation = station
+                endif
+            endif
+        endif
+    endif
+
+    set station = null
+endfunction
+
+private function FindNearbyCraftStation takes integer instanceId, unit whichUnit, real range returns unit
+    if instanceId <= 0 or whichUnit == null or Professions_IsUnitReserved(whichUnit) then
+        return null
+    endif
+
+    set ProfessionSearchStation = null
+    set ProfessionSearchSource = whichUnit
+    set ProfessionSearchProfileId = InstanceProfile[instanceId]
+    set ProfessionSearchBestDistance = range * range
+
+    call GroupClear(TempGroup)
+    call GroupEnumUnitsInRange(TempGroup, GetUnitX(whichUnit), GetUnitY(whichUnit), range, null)
+    call ForGroup(TempGroup, function FindNearbyCraftStationEnum)
+    call GroupClear(TempGroup)
+
+    set ProfessionSearchSource = null
+    set ProfessionSearchProfileId = 0
+    return ProfessionSearchStation
+endfunction
+
 private function BeginGatherItem takes integer instanceId, unit whichUnit, item nodeItem, real now returns boolean
     local integer professionId
     local integer requiredSkill
@@ -4471,13 +4530,41 @@ private function BeginGatherUnit takes integer instanceId, unit whichUnit, unit 
     return false
 endfunction
 
+private function BeginCraftStation takes integer instanceId, unit whichUnit, unit station, real now returns boolean
+    local integer recipeId
+
+    if instanceId <= 0 or whichUnit == null or station == null then
+        return false
+    endif
+
+    set recipeId = Professions_GetAiRecipeForStation(whichUnit, station)
+    if recipeId <= 0 then
+        call RegisterProfessionFailure(instanceId, whichUnit, now, "no craftable recipe")
+        return false
+    endif
+
+    if Professions_StartRecipeForAi(whichUnit, station, recipeId) then
+        set InstanceNextProfession.real[instanceId] = now + GetRandomReal(AI_PROFESSION_ACTION_MIN, AI_PROFESSION_ACTION_MAX)
+        call ResetProfessionFailure(instanceId)
+        call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " crafts " + Professions_GetRecipeName(recipeId) + ".")
+        return true
+    endif
+
+    call RegisterProfessionFailure(instanceId, whichUnit, now, "craft order rejected")
+    return false
+endfunction
+
 private function TryStartProfessionAction takes integer instanceId, unit whichUnit, integer state, real now, boolean useIdleRoll returns boolean
     local unit node
+    local unit station
     local item nodeItem
     if instanceId <= 0 or whichUnit == null or udg_InCinematic or ProfileProfessionCount[InstanceProfile[instanceId]] <= 0 then
         return false
     endif
     if not IsSideActionState(state) or now < InstanceNextProfession.real[instanceId] or now < InstanceProfessionBlockedUntil.real[instanceId] or IsCastingLocked(whichUnit) then
+        return false
+    endif
+    if Professions_IsUnitReserved(whichUnit) then
         return false
     endif
     if HasNearbyCombatEnemy(whichUnit, 700.00) then
@@ -4496,12 +4583,16 @@ private function TryStartProfessionAction takes integer instanceId, unit whichUn
     if node != null then
         if BeginGatherUnit(instanceId, whichUnit, node, now) then
             set node = null
+            set station = null
             set ProfessionSearchUnit = null
+            set ProfessionSearchStation = null
             return true
         elseif now < InstanceProfessionBlockedUntil.real[instanceId] then
             set node = null
+            set station = null
             set ProfessionSearchUnit = null
             set ProfessionSearchItem = null
+            set ProfessionSearchStation = null
             return false
         endif
     endif
@@ -4510,15 +4601,41 @@ private function TryStartProfessionAction takes integer instanceId, unit whichUn
         if BeginGatherItem(instanceId, whichUnit, nodeItem, now) then
             set node = null
             set nodeItem = null
+            set station = null
             set ProfessionSearchUnit = null
             set ProfessionSearchItem = null
+            set ProfessionSearchStation = null
             return true
         elseif now < InstanceProfessionBlockedUntil.real[instanceId] then
             set node = null
             set nodeItem = null
+            set station = null
             set ProfessionSearchUnit = null
             set ProfessionSearchItem = null
+            set ProfessionSearchStation = null
             return false
+        endif
+    endif
+    if GetRandomInt(1, 100) <= AI_PROFESSION_CRAFT_CHANCE then
+        set station = FindNearbyCraftStation(instanceId, whichUnit, AI_PROFESSION_SCAN_RANGE)
+        if station != null then
+            if BeginCraftStation(instanceId, whichUnit, station, now) then
+                set node = null
+                set nodeItem = null
+                set station = null
+                set ProfessionSearchUnit = null
+                set ProfessionSearchItem = null
+                set ProfessionSearchStation = null
+                return true
+            elseif now < InstanceProfessionBlockedUntil.real[instanceId] then
+                set node = null
+                set nodeItem = null
+                set station = null
+                set ProfessionSearchUnit = null
+                set ProfessionSearchItem = null
+                set ProfessionSearchStation = null
+                return false
+            endif
         endif
     endif
     if InstanceProfessionFailCount[instanceId] <= 0 then
@@ -4526,8 +4643,10 @@ private function TryStartProfessionAction takes integer instanceId, unit whichUn
     endif
     set node = null
     set nodeItem = null
+    set station = null
     set ProfessionSearchUnit = null
     set ProfessionSearchItem = null
+    set ProfessionSearchStation = null
     return false
 endfunction
 
