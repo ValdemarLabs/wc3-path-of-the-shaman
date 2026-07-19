@@ -173,6 +173,7 @@ globals
     private constant real AI_RANDOM_TRAVEL_DURATION_MIN = 60.00
     private constant real AI_RANDOM_TRAVEL_DURATION_MAX = 180.00
     private constant real AI_PROFESSION_SCAN_RANGE = 900.00
+    private constant real AI_PROFESSION_DEBUG_STATION_RANGE = 99999.00
     private constant real AI_PROFESSION_ACTION_MIN = 12.00
     private constant real AI_PROFESSION_ACTION_MAX = 22.00
     private constant real AI_PROFESSION_IDLE_MIN = 18.00
@@ -4638,14 +4639,31 @@ private function TryStartProfessionAction takes integer instanceId, unit whichUn
     return false
 endfunction
 
+private function IsDebugCraftCandidate takes integer instanceId, unit whichUnit returns boolean
+    if instanceId <= 0 or whichUnit == null then
+        return false
+    endif
+    if not IsAliveUnit(whichUnit) or IsUnitHidden(whichUnit) then
+        return false
+    endif
+    if ProfileProfessionCount[InstanceProfile[instanceId]] <= 0 then
+        return false
+    endif
+    if Professions_IsUnitReserved(whichUnit) or IsCastingLocked(whichUnit) then
+        return false
+    endif
+    return true
+endfunction
+
 public function DebugForceProfessionCraft takes nothing returns integer
     local integer index = 1
     local integer instanceId
-    local integer state
     local integer profileId
     local integer professionId
     local integer seen
     local integer started = 0
+    local integer candidates = 0
+    local integer stations = 0
     local real now = GetNow()
     local unit whichUnit
     local unit station
@@ -4657,18 +4675,19 @@ public function DebugForceProfessionCraft takes nothing returns integer
         exitwhen index > ActiveCount
         set instanceId = ActiveInstances[index]
         set whichUnit = InstanceUnit.unit[instanceId]
-        set state = InstanceState[instanceId]
         set profileId = InstanceProfile[instanceId]
         set selectedStation = null
         set seen = 0
 
-        if whichUnit != null and IsAliveUnit(whichUnit) and not IsUnitHidden(whichUnit) and not udg_InCinematic and ProfileProfessionCount[profileId] > 0 and not Professions_IsUnitReserved(whichUnit) and not IsCastingLocked(whichUnit) and (IsSideActionState(state) or state == AI_STATE_COMPANION_CONTROLLED) and not HasNearbyCombatEnemy(whichUnit, 900.00) then
+        if IsDebugCraftCandidate(instanceId, whichUnit) then
+            set candidates = candidates + 1
             set professionId = AI_PROFESSION_MINING
             loop
                 exitwhen professionId > AI_PROFESSION_MAX
                 if HasProfileProfession(profileId, professionId) then
-                    set station = FindNearbyCraftStationForProfession(instanceId, whichUnit, AI_PROFESSION_SCAN_RANGE, professionId)
+                    set station = FindNearbyCraftStationForProfession(instanceId, whichUnit, AI_PROFESSION_DEBUG_STATION_RANGE, professionId)
                     if station != null then
+                        set stations = stations + 1
                         set seen = seen + 1
                         if GetRandomInt(1, seen) == 1 then
                             set selectedStation = station
@@ -4680,6 +4699,7 @@ public function DebugForceProfessionCraft takes nothing returns integer
 
             if selectedStation != null then
                 call ClearSocialState(instanceId)
+                call StopProfessionOrder(whichUnit)
                 set InstanceNextProfession.real[instanceId] = now
                 if BeginCraftStation(instanceId, whichUnit, selectedStation, now) then
                     set started = started + 1
@@ -4693,7 +4713,7 @@ public function DebugForceProfessionCraft takes nothing returns integer
         set index = index + 1
     endloop
 
-    call BJDebugMsg("[AI] Forced profession craft for " + I2S(started) + " AI units.")
+    call BJDebugMsg("[AI] Forced profession craft for " + I2S(started) + " AI units. Candidates=" + I2S(candidates) + ", stations=" + I2S(stations) + ".")
     return started
 endfunction
 
