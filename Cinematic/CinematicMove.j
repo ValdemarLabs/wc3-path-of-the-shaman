@@ -367,6 +367,24 @@ library CinematicMover initializer Init requires Table
         call HandleUnitMove(movingUnit, cx, cy)
     endfunction
 
+    // Moves one unit only to an explicit point while still storing its return location.
+    function CinematicMover_MoveSingleUnitToPoint takes unit movingUnit, real x, real y returns nothing
+        local integer id
+
+        if movingUnit == null then
+            return
+        endif
+
+        set id = GetHandleId(movingUnit)
+        set data.real[id * 2] = GetUnitX(movingUnit)
+        set data.real[id * 2 + 1] = GetUnitY(movingUnit)
+        call StoreDistanceToTrigger(movingUnit, x, y)
+        if IsUnitAliveBJ(movingUnit) then
+            call SetUnitX(movingUnit, RMaxBJ(RMinBJ(x, GetRectMaxX(bj_mapInitialPlayableArea)), GetRectMinX(bj_mapInitialPlayableArea)))
+            call SetUnitY(movingUnit, RMaxBJ(RMinBJ(y, GetRectMaxY(bj_mapInitialPlayableArea)), GetRectMinY(bj_mapInitialPlayableArea)))
+        endif
+    endfunction
+
     //===========================================================================
     // Handle unit return after cinematic
     //===========================================================================
