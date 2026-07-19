@@ -37,6 +37,7 @@ globals
     private constant integer PM_ITEM_IRON_ORE = 'I67H'
     private constant integer PM_ITEM_GOLD_ORE = 'I67I'
     private constant integer PM_ITEM_MITHRIL_ORE = 'I67J'
+    private constant integer PM_ITEM_ARCANITE_ORE = 'I67K'
     private constant integer PM_ITEM_THORIUM_ORE = 'I67L'
 
     // Smelting output bar raw codes.
@@ -46,6 +47,7 @@ globals
     private constant integer PM_ITEM_IRON_BAR = 'I67Q'
     private constant integer PM_ITEM_GOLD_BAR = 'I67S'
     private constant integer PM_ITEM_MITHRIL_BAR = 'I67T'
+    private constant integer PM_ITEM_ARCANITE_BAR = 'I67U'
     private constant integer PM_ITEM_THORIUM_BAR = 'I67V'
 
     // Recipe icon paths.
@@ -55,6 +57,7 @@ globals
     private constant string PM_ICON_IRON = "ReplaceableTextures\\CommandButtons\\BTNINV_Ingot_Iron.TGA"
     private constant string PM_ICON_GOLD = "ReplaceableTextures\\CommandButtons\\BTNINV_Ingot_03.TGA"
     private constant string PM_ICON_MITHRIL = "ReplaceableTextures\\CommandButtons\\BTNINV_Ingot_Mithril.TGA"
+    private constant string PM_ICON_ARCANITE = "ReplaceableTextures\\CommandButtons\\BTNINV_Ingot_03.TGA"
     private constant string PM_ICON_THORIUM = "ReplaceableTextures\\CommandButtons\\BTNINV_Ingot_Thorium.TGA"
 endglobals
 
@@ -72,6 +75,7 @@ private function PM_RegisterRecipes takes nothing returns nothing
     call PM_RegisterSmelt("Iron Bar", PM_ITEM_IRON_ORE, "Iron Ore", PM_ITEM_IRON_BAR, PM_ICON_IRON, 20)
     call PM_RegisterSmelt("Gold Bar", PM_ITEM_GOLD_ORE, "Gold Ore", PM_ITEM_GOLD_BAR, PM_ICON_GOLD, 30)
     call PM_RegisterSmelt("Mithril Bar", PM_ITEM_MITHRIL_ORE, "Mithril Ore", PM_ITEM_MITHRIL_BAR, PM_ICON_MITHRIL, 50)
+    call PM_RegisterSmelt("Arcanite Bar", PM_ITEM_ARCANITE_ORE, "Arcanite Ore", PM_ITEM_ARCANITE_BAR, PM_ICON_ARCANITE, 65)
     call PM_RegisterSmelt("Thorium Bar", PM_ITEM_THORIUM_ORE, "Thorium Ore", PM_ITEM_THORIUM_BAR, PM_ICON_THORIUM, 70)
 endfunction
 
@@ -83,6 +87,7 @@ public function Init takes nothing returns nothing
 
     call Professions_RegisterStationType(GNS_PROF_MINING, PM_STATION_FORGE, "Forge")
     call Professions_SetProfessionSoundLabels(GNS_PROF_MINING, PM_SOUND_START, PM_SOUND_LOOP, PM_SOUND_FINISH)
+    call Professions_SetProfessionSoundHandles(GNS_PROF_MINING, gg_snd_Tradeskill_MiningHitA, gg_snd_Tradeskill_MiningHitB, gg_snd_Tradeskill_MiningHitC)
     call PM_RegisterRecipes()
 endfunction
 
