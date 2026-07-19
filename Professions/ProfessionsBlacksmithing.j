@@ -16,7 +16,7 @@
 
 **/
 
-library ProfessionsBlacksmithing initializer AutoInit requires Professions, GatherNodeSkills
+library ProfessionsBlacksmithing initializer AutoInit requires Professions, GatherNodeSkills, Interface
 
 globals
     // Runtime guard.
@@ -80,7 +80,7 @@ public function Init takes nothing returns nothing
 
     call Professions_RegisterStationType(GNS_PROF_BLACKSMITHING, PB_STATION_ANVIL, "Anvil")
     call Professions_SetProfessionSoundLabels(GNS_PROF_BLACKSMITHING, PB_SOUND_START, PB_SOUND_LOOP, PB_SOUND_FINISH)
-    call Professions_SetProfessionSoundHandles(GNS_PROF_BLACKSMITHING, gg_snd_Blacksmithing, gg_snd_Blacksmithing, gg_snd_Blacksmithing)
+    call Professions_SetProfessionSoundHandles(GNS_PROF_BLACKSMITHING, Interface_Profession_Blacksmithing_Start, Interface_Profession_Blacksmithing_Loop, Interface_Profession_Blacksmithing_End)
     call Professions_SetProfessionAiCheatCrafting(GNS_PROF_BLACKSMITHING, PB_AI_CHEAT_CRAFTING)
     call Professions_SetProfessionCrafterAnimations(GNS_PROF_BLACKSMITHING, PB_CRAFTER_ANIMATION_PRIMARY, PB_CRAFTER_ANIMATION_FALLBACK)
     call PB_RegisterRecipes()

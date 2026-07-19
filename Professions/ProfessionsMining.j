@@ -16,7 +16,7 @@
 
 **/
 
-library ProfessionsMining initializer AutoInit requires Professions, GatherNodeSkills
+library ProfessionsMining initializer AutoInit requires Professions, GatherNodeSkills, Interface
 
 globals
     // Runtime guard.
@@ -105,7 +105,7 @@ public function Init takes nothing returns nothing
 
     call Professions_RegisterStationType(GNS_PROF_MINING, PM_STATION_FORGE, "Forge")
     call Professions_SetProfessionSoundLabels(GNS_PROF_MINING, PM_SOUND_START, PM_SOUND_LOOP, PM_SOUND_FINISH)
-    call Professions_SetProfessionSoundHandles(GNS_PROF_MINING, gg_snd_Tradeskill_MiningHitA, gg_snd_Tradeskill_MiningHitB, gg_snd_Tradeskill_MiningHitC)
+    call Professions_SetProfessionSoundHandles(GNS_PROF_MINING, Interface_Profession_Mining_Start, Interface_Profession_Mining_Loop, Interface_Profession_Mining_End)
     call Professions_SetProfessionAiCheatCrafting(GNS_PROF_MINING, PM_AI_CHEAT_CRAFTING)
     call Professions_SetProfessionCrafterAnimations(GNS_PROF_MINING, PM_CRAFTER_ANIMATION_PRIMARY, PM_CRAFTER_ANIMATION_FALLBACK)
     call PM_RegisterRecipes()

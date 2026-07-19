@@ -16,7 +16,7 @@
 
 **/
 
-library ProfessionsAlchemy initializer AutoInit requires Professions, GatherNodeSkills
+library ProfessionsAlchemy initializer AutoInit requires Professions, GatherNodeSkills, Interface
 
 globals
     // Runtime guard.
@@ -215,7 +215,7 @@ public function Init takes nothing returns nothing
 
     call Professions_RegisterStationType(GNS_PROF_ALCHEMY, PA_STATION_CAULDRON, "Cauldron")
     call Professions_SetProfessionSoundLabels(GNS_PROF_ALCHEMY, PA_SOUND_START, PA_SOUND_LOOP, PA_SOUND_FINISH)
-    call Professions_SetProfessionSoundHandles(GNS_PROF_ALCHEMY, gg_snd_CauldronSound, gg_snd_CauldronSound, gg_snd_CauldronSound)
+    call Professions_SetProfessionSoundHandles(GNS_PROF_ALCHEMY, Interface_Profession_Alchemy_Start, Interface_Profession_Alchemy_Loop, Interface_Profession_Alchemy_End)
     call Professions_SetProfessionAiCheatCrafting(GNS_PROF_ALCHEMY, PA_AI_CHEAT_CRAFTING)
     call Professions_SetProfessionCrafterAnimations(GNS_PROF_ALCHEMY, PA_CRAFTER_ANIMATION_PRIMARY, PA_CRAFTER_ANIMATION_FALLBACK)
     call PA_RegisterRecipes()

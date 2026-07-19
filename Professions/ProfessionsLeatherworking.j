@@ -16,7 +16,7 @@
 
 **/
 
-library ProfessionsLeatherworking initializer AutoInit requires Professions, GatherNodeSkills
+library ProfessionsLeatherworking initializer AutoInit requires Professions, GatherNodeSkills, Interface
 
 globals
     // Runtime guard.
@@ -73,7 +73,7 @@ public function Init takes nothing returns nothing
 
     call Professions_RegisterStationType(GNS_PROF_LEATHERWORKING, PL_STATION_TANNERY, "Tannery")
     call Professions_SetProfessionSoundLabels(GNS_PROF_LEATHERWORKING, PL_SOUND_START, PL_SOUND_LOOP, PL_SOUND_FINISH)
-    call Professions_SetProfessionSoundHandles(GNS_PROF_LEATHERWORKING, gg_snd_Tannery, gg_snd_Tannery, gg_snd_Tannery)
+    call Professions_SetProfessionSoundHandles(GNS_PROF_LEATHERWORKING, Interface_Profession_Leatherworking_Start, Interface_Profession_Leatherworking_Loop, Interface_Profession_Leatherworking_End)
     call Professions_SetProfessionAiCheatCrafting(GNS_PROF_LEATHERWORKING, PL_AI_CHEAT_CRAFTING)
     call Professions_SetProfessionCrafterAnimations(GNS_PROF_LEATHERWORKING, PL_CRAFTER_ANIMATION_PRIMARY, PL_CRAFTER_ANIMATION_FALLBACK)
     call PL_RegisterRecipes()
