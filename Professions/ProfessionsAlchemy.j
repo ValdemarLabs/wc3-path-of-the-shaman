@@ -24,6 +24,9 @@ globals
 
     // Workstation configuration.
     private constant integer PA_STATION_CAULDRON = 'n61D'
+    private constant boolean PA_AI_CHEAT_CRAFTING = true
+    private constant string PA_CRAFTER_ANIMATION_PRIMARY = "stand work"
+    private constant string PA_CRAFTER_ANIMATION_FALLBACK = "spell"
 
     // Sound labels. Professions plays Start once, Loop until done, and Finish once.
     private constant string PA_SOUND_START = "Alchemy start"
@@ -102,9 +105,8 @@ endfunction
 private function PA_RegisterRecipes takes nothing returns nothing
     local integer recipeId
 
-    /* material-less/unresolved workbook rows unregistered for now: 
-    /Purified Water, Vampiric Potion, Elixir of Might, Elixir of Shadows, and non-Nazgrek flask ideas.
-    */
+    // Material-less or unresolved workbook rows are unregistered for now:
+    // Purified Water, Vampiric Potion, Elixir of Might, Elixir of Shadows, and non-Nazgrek flask ideas.
 
     set recipeId = PA_Register(PA_CATEGORY_BASIC_ALCHEMY, "Spring Water", "Boils Agave into a simple restorative water.", PA_ICON_WATER, PA_ITEM_SPRING_WATER, 0, 5.00)
     call PA_Add(recipeId, PA_ITEM_AGAVE, 1, "Agave")
@@ -214,6 +216,8 @@ public function Init takes nothing returns nothing
     call Professions_RegisterStationType(GNS_PROF_ALCHEMY, PA_STATION_CAULDRON, "Cauldron")
     call Professions_SetProfessionSoundLabels(GNS_PROF_ALCHEMY, PA_SOUND_START, PA_SOUND_LOOP, PA_SOUND_FINISH)
     call Professions_SetProfessionSoundHandles(GNS_PROF_ALCHEMY, gg_snd_CauldronSound, gg_snd_CauldronSound, gg_snd_CauldronSound)
+    call Professions_SetProfessionAiCheatCrafting(GNS_PROF_ALCHEMY, PA_AI_CHEAT_CRAFTING)
+    call Professions_SetProfessionCrafterAnimations(GNS_PROF_ALCHEMY, PA_CRAFTER_ANIMATION_PRIMARY, PA_CRAFTER_ANIMATION_FALLBACK)
     call PA_RegisterRecipes()
 endfunction
 
