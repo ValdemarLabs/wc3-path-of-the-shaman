@@ -6,8 +6,7 @@
 
     Description:
     Centralizes player hero ability points for Nazgrek and Zul'kis. The
-    library keeps the legacy GUI globals synchronized so existing UI systems
-    can continue to read them while new code uses this API.
+    library owns the AP state directly so UI and gameplay systems use one API.
 
     Credits:
 
@@ -36,6 +35,8 @@ library AbilityPoints initializer Init requires optional RegionTitles, optional 
 
         private constant integer AP_RESET_ITEM_ID = 'I6A1'
         private constant integer AP_RESET_BONUS_POINTS = 3
+        private constant integer AP_INITIAL_POINTS_NAZGREK = 0
+        private constant integer AP_INITIAL_POINTS_ZULKIS = 0
         private constant integer AP_DEBUG_ADD_AMOUNT = 1
         private constant integer AP_MAX_PLAYER_INDEX = 27
 
@@ -54,14 +55,6 @@ library AbilityPoints initializer Init requires optional RegionTitles, optional 
         endif
 
         return 0
-    endfunction
-
-    private function AP_SyncLegacy takes integer heroSlot returns nothing
-        if heroSlot == HERO_NAZGREK then
-            set udg_AbilityPointsNazgrek = AP_Points[HERO_NAZGREK]
-        elseif heroSlot == HERO_ZULKIS then
-            set udg_AbilityPointsZulkis = AP_Points[HERO_ZULKIS]
-        endif
     endfunction
 
     private function AP_GetCompanionGroupSizeForLevel takes integer level returns integer
@@ -122,7 +115,6 @@ library AbilityPoints initializer Init requires optional RegionTitles, optional 
         endif
 
         set AP_Points[heroSlot] = amount
-        call AP_SyncLegacy(heroSlot)
     endfunction
 
     public function Get takes unit whichHero returns integer
@@ -162,10 +154,6 @@ library AbilityPoints initializer Init requires optional RegionTitles, optional 
 
         call Reduce(whichHero, amount)
         return true
-    endfunction
-
-    public function SyncHero takes unit whichHero returns nothing
-        call AP_SyncLegacy(AP_GetHeroSlot(whichHero))
     endfunction
 
     public function SetHeroLevelUpEnabled takes boolean enabled returns nothing
@@ -294,8 +282,8 @@ library AbilityPoints initializer Init requires optional RegionTitles, optional 
     endfunction
 
     private function Init takes nothing returns nothing
-        set AP_Points[HERO_NAZGREK] = udg_AbilityPointsNazgrek
-        set AP_Points[HERO_ZULKIS] = udg_AbilityPointsZulkis
+        set AP_Points[HERO_NAZGREK] = AP_INITIAL_POINTS_NAZGREK
+        set AP_Points[HERO_ZULKIS] = AP_INITIAL_POINTS_ZULKIS
 
         call AP_SyncCompanionGroupSize()
         call AP_RegisterLevelEvent()
