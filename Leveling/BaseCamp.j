@@ -5,9 +5,9 @@
     Version:
 
     Description:
-    Handles tent/base-camp limits, resting progress for loaded heroes, tent
-    dismantling, and tent death cleanup. Rested state is delegated to the
-    Experience library.
+    Handles tent/base-camp limits, Sleep-started resting progress for loaded
+    player heroes, tent dismantling, and tent death cleanup. Rested state is
+    delegated to the Experience library.
 
     Credits:
 
@@ -19,6 +19,8 @@
     - call BaseCamp_RegisterTent(tent)
     - call BaseCamp_UnregisterTent(tent)
     - set hasTent = BaseCamp_PlayerHasTent(player)
+    - Cast the tent's Sleep ability (`A0F2`) with Nazgrek or Zulkis loaded to
+      start time skipping and rested progress.
 
 **/
 library BaseCamp initializer Init requires Experience, optional HintsUI
@@ -29,14 +31,27 @@ library BaseCamp initializer Init requires Experience, optional HintsUI
 
         private constant integer BC_BUILD_TENT_ABILITY_ID = 'A6CH'
         private constant integer BC_DISMANTLE_ABILITY_ID = 'A02X'
+        private constant integer BC_SLEEP_ABILITY_ID = 'A0F2'
         private constant integer BC_DEATH_ANIMATION_UNIT_ID = 'otrb'
         private constant integer BC_MAX_TENTS = 64
         private constant integer BC_MAX_REST_RECORDS = 128
         private constant integer BC_MAX_PLAYER_INDEX = 27
 
+        private constant integer BC_KEY_SLEEP_HIDDEN = 1
+        private constant integer BC_KEY_SLEEP_WAS_PAUSED = 2
+        private constant integer BC_KEY_SLEEP_WAS_HIDDEN = 3
+        private constant integer BC_KEY_DISMANTLE_PENDING = 4
+        private constant integer BC_KEY_DISMANTLE_X = 5
+        private constant integer BC_KEY_DISMANTLE_Y = 6
+        private constant integer BC_KEY_DISMANTLE_TENT_KEY = 7
+        private constant integer BC_KEY_DISMANTLE_TENT_UNIT = 8
+
         private constant real BC_REST_TICK = 1.00
         private constant real BC_REST_REQUIRED = 8.00
         private constant real BC_TIME_OF_DAY_ADVANCE = 1.00
+        private constant real BC_DISMANTLE_ITEM_CHECK_DELAY = 0.25
+        private constant real BC_DISMANTLE_ITEM_CHECK_RADIUS = 96.00
+        private constant real BC_DISMANTLE_ITEM_CHECK_RADIUS_SQ = 9216.00
 
         private unit array BC_Tent
         private integer BC_TentCount = 0
@@ -51,6 +66,11 @@ library BaseCamp initializer Init requires Experience, optional HintsUI
         private trigger BC_SpellEffectTrigger = null
         private trigger BC_ConstructTrigger = null
         private trigger BC_DeathTrigger = null
+        private hashtable BC_Hash = null
+        private rect BC_ItemSearchRect = null
+        private real BC_ItemSearchX = 0.00
+        private real BC_ItemSearchY = 0.00
+        private boolean BC_ItemSearchFound = false
     endglobals
 
     private function BC_IsAlive takes unit whichUnit returns boolean
@@ -59,6 +79,86 @@ library BaseCamp initializer Init requires Experience, optional HintsUI
 
     private function BC_IsTrackedHero takes unit whichUnit returns boolean
         return whichUnit != null and IsUnitType(whichUnit, UNIT_TYPE_HERO)
+    endfunction
+
+    private function BC_IsPlayerHeroForTent takes unit whichHero, unit tent returns boolean
+        return whichHero != null and tent != null and BC_IsTrackedHero(whichHero) and BC_IsAlive(whichHero) and GetOwningPlayer(whichHero) == GetOwningPlayer(tent) and (whichHero == udg_Nazgrek or whichHero == udg_Zulkis)
+    endfunction
+
+    private function BC_TentHasPlayerHeroInside takes unit tent returns boolean
+        if tent == null or GetUnitTypeId(tent) != TENT_UNIT_ID then
+            return false
+        endif
+
+        if BC_IsPlayerHeroForTent(udg_Nazgrek, tent) and IsUnitInTransport(udg_Nazgrek, tent) then
+            return true
+        endif
+
+        if BC_IsPlayerHeroForTent(udg_Zulkis, tent) and IsUnitInTransport(udg_Zulkis, tent) then
+            return true
+        endif
+
+        return false
+    endfunction
+
+    private function BC_RestoreHeroFromSleep takes unit whichHero returns nothing
+        local integer heroKey
+
+        if whichHero == null then
+            return
+        endif
+
+        set heroKey = GetHandleId(whichHero)
+        if not HaveSavedBoolean(BC_Hash, heroKey, BC_KEY_SLEEP_HIDDEN) then
+            return
+        endif
+
+        if not LoadBoolean(BC_Hash, heroKey, BC_KEY_SLEEP_WAS_HIDDEN) then
+            call ShowUnit(whichHero, true)
+        endif
+        if not LoadBoolean(BC_Hash, heroKey, BC_KEY_SLEEP_WAS_PAUSED) then
+            call PauseUnit(whichHero, false)
+        endif
+
+        call RemoveSavedBoolean(BC_Hash, heroKey, BC_KEY_SLEEP_HIDDEN)
+        call RemoveSavedBoolean(BC_Hash, heroKey, BC_KEY_SLEEP_WAS_HIDDEN)
+        call RemoveSavedBoolean(BC_Hash, heroKey, BC_KEY_SLEEP_WAS_PAUSED)
+    endfunction
+
+    private function BC_RestoreSleepHiddenHeroes takes nothing returns nothing
+        call BC_RestoreHeroFromSleep(udg_Nazgrek)
+        call BC_RestoreHeroFromSleep(udg_Zulkis)
+    endfunction
+
+    private function BC_HideHeroForSleep takes unit whichHero returns nothing
+        local integer heroKey
+
+        if whichHero == null then
+            return
+        endif
+
+        set heroKey = GetHandleId(whichHero)
+        if HaveSavedBoolean(BC_Hash, heroKey, BC_KEY_SLEEP_HIDDEN) then
+            return
+        endif
+
+        call SaveBoolean(BC_Hash, heroKey, BC_KEY_SLEEP_HIDDEN, true)
+        call SaveBoolean(BC_Hash, heroKey, BC_KEY_SLEEP_WAS_PAUSED, IsUnitPaused(whichHero))
+        call SaveBoolean(BC_Hash, heroKey, BC_KEY_SLEEP_WAS_HIDDEN, IsUnitHidden(whichHero))
+        call IssueImmediateOrder(whichHero, "stop")
+        call PauseUnit(whichHero, true)
+        call ShowUnit(whichHero, false)
+    endfunction
+
+    private function BC_HideOutsidePlayerHeroForSleep takes unit whichHero, unit tent returns nothing
+        if BC_IsPlayerHeroForTent(whichHero, tent) and not IsUnitInTransport(whichHero, tent) then
+            call BC_HideHeroForSleep(whichHero)
+        endif
+    endfunction
+
+    private function BC_HideOutsidePlayerHeroesForSleep takes unit tent returns nothing
+        call BC_HideOutsidePlayerHeroForSleep(udg_Nazgrek, tent)
+        call BC_HideOutsidePlayerHeroForSleep(udg_Zulkis, tent)
     endfunction
 
     private function BC_PublishTentLimitHint takes unit whichUnit returns nothing
@@ -134,8 +234,23 @@ library BaseCamp initializer Init requires Experience, optional HintsUI
         return -1
     endfunction
 
+    private function BC_TentHasRestRecord takes unit tent returns boolean
+        local integer i = 0
+
+        loop
+            exitwhen i >= BC_RestCount
+            if BC_RestTent[i] == tent then
+                return true
+            endif
+            set i = i + 1
+        endloop
+
+        return false
+    endfunction
+
     private function BC_StopRestTimerIfIdle takes nothing returns nothing
         if BC_RestCount <= 0 then
+            call BC_RestoreSleepHiddenHeroes()
             call PauseTimer(BC_RestTimer)
         endif
     endfunction
@@ -183,8 +298,10 @@ library BaseCamp initializer Init requires Experience, optional HintsUI
                 set anyResting = true
                 set granted = Experience_AddRestingProgress(hero, BC_REST_TICK, BC_REST_REQUIRED)
                 if granted then
-                    call IssueImmediateOrder(tent, "standdown")
                     call BC_RemoveRestRecordAt(i)
+                    if not BC_TentHasRestRecord(tent) then
+                        call IssueImmediateOrder(tent, "standdown")
+                    endif
                     set i = i - 1
                 endif
             endif
@@ -202,9 +319,9 @@ library BaseCamp initializer Init requires Experience, optional HintsUI
         set hero = null
     endfunction
 
-    private function BC_AddRestRecord takes unit hero, unit tent returns nothing
+    private function BC_AddRestRecord takes unit hero, unit tent returns boolean
         if BC_FindRestRecord(hero, tent) != -1 then
-            return
+            return true
         endif
 
         if BC_RestCount < BC_MAX_REST_RECORDS then
@@ -212,6 +329,32 @@ library BaseCamp initializer Init requires Experience, optional HintsUI
             set BC_RestTent[BC_RestCount] = tent
             set BC_RestCount = BC_RestCount + 1
             call TimerStart(BC_RestTimer, BC_REST_TICK, true, function BC_RestingLoop)
+            return true
+        endif
+
+        return false
+    endfunction
+
+    private function BC_TryAddSleepHero takes unit hero, unit tent returns boolean
+        if BC_IsPlayerHeroForTent(hero, tent) and IsUnitInTransport(hero, tent) and not Experience_IsRested(hero) then
+            return BC_AddRestRecord(hero, tent)
+        endif
+
+        return false
+    endfunction
+
+    private function BC_BeginSleepFromTent takes unit tent returns nothing
+        local boolean started = false
+
+        if tent == null or GetUnitTypeId(tent) != TENT_UNIT_ID or not BC_TentHasPlayerHeroInside(tent) then
+            return
+        endif
+
+        set started = BC_TryAddSleepHero(udg_Nazgrek, tent) or started
+        set started = BC_TryAddSleepHero(udg_Zulkis, tent) or started
+
+        if started then
+            call BC_HideOutsidePlayerHeroesForSleep(tent)
         endif
     endfunction
 
@@ -221,7 +364,6 @@ library BaseCamp initializer Init requires Experience, optional HintsUI
 
         if BC_IsTrackedHero(hero) and tent != null and GetUnitTypeId(tent) == TENT_UNIT_ID then
             call RegisterTent(tent)
-            call BC_AddRestRecord(hero, tent)
         endif
 
         set tent = null
@@ -238,11 +380,91 @@ library BaseCamp initializer Init requires Experience, optional HintsUI
         set tent = null
     endfunction
 
+    private function BC_RemoveRestRecordsForTent takes unit tent returns nothing
+        local integer i = 0
+
+        loop
+            exitwhen i >= BC_RestCount
+            if BC_RestTent[i] == tent then
+                call BC_RemoveRestRecordAt(i)
+                set i = i - 1
+            endif
+            set i = i + 1
+        endloop
+
+        call BC_StopRestTimerIfIdle()
+    endfunction
+
+    private function BC_FindNearbyTentItem takes nothing returns nothing
+        local item picked = GetEnumItem()
+        local real dx
+        local real dy
+
+        if picked != null and GetItemTypeId(picked) == TENT_ITEM_ID and IsItemVisible(picked) then
+            set dx = GetItemX(picked) - BC_ItemSearchX
+            set dy = GetItemY(picked) - BC_ItemSearchY
+            if dx * dx + dy * dy <= BC_DISMANTLE_ITEM_CHECK_RADIUS_SQ then
+                set BC_ItemSearchFound = true
+            endif
+        endif
+
+        set picked = null
+    endfunction
+
+    private function BC_HasNearbyTentItem takes real x, real y returns boolean
+        set BC_ItemSearchX = x
+        set BC_ItemSearchY = y
+        set BC_ItemSearchFound = false
+        call SetRect(BC_ItemSearchRect, x - BC_DISMANTLE_ITEM_CHECK_RADIUS, y - BC_DISMANTLE_ITEM_CHECK_RADIUS, x + BC_DISMANTLE_ITEM_CHECK_RADIUS, y + BC_DISMANTLE_ITEM_CHECK_RADIUS)
+        call EnumItemsInRect(BC_ItemSearchRect, null, function BC_FindNearbyTentItem)
+        return BC_ItemSearchFound
+    endfunction
+
+    private function BC_CreateDismantleItemDelayed takes nothing returns nothing
+        local timer expired = GetExpiredTimer()
+        local integer timerKey = GetHandleId(expired)
+        local integer tentKey = LoadInteger(BC_Hash, timerKey, BC_KEY_DISMANTLE_TENT_KEY)
+        local unit tent = LoadUnitHandle(BC_Hash, timerKey, BC_KEY_DISMANTLE_TENT_UNIT)
+        local real x = LoadReal(BC_Hash, timerKey, BC_KEY_DISMANTLE_X)
+        local real y = LoadReal(BC_Hash, timerKey, BC_KEY_DISMANTLE_Y)
+        local item created = null
+
+        if not BC_HasNearbyTentItem(x, y) then
+            set created = CreateItem(TENT_ITEM_ID, x, y)
+        endif
+        if tent != null and GetUnitTypeId(tent) == TENT_UNIT_ID then
+            call RemoveUnit(tent)
+        endif
+
+        call RemoveSavedBoolean(BC_Hash, tentKey, BC_KEY_DISMANTLE_PENDING)
+        call FlushChildHashtable(BC_Hash, timerKey)
+        call PauseTimer(expired)
+        call DestroyTimer(expired)
+
+        set created = null
+        set tent = null
+        set expired = null
+    endfunction
+
+    private function BC_QueueDismantleItem takes unit tent, real x, real y returns nothing
+        local timer delay = CreateTimer()
+        local integer timerKey = GetHandleId(delay)
+
+        call SaveInteger(BC_Hash, timerKey, BC_KEY_DISMANTLE_TENT_KEY, GetHandleId(tent))
+        call SaveUnitHandle(BC_Hash, timerKey, BC_KEY_DISMANTLE_TENT_UNIT, tent)
+        call SaveReal(BC_Hash, timerKey, BC_KEY_DISMANTLE_X, x)
+        call SaveReal(BC_Hash, timerKey, BC_KEY_DISMANTLE_Y, y)
+        call TimerStart(delay, BC_DISMANTLE_ITEM_CHECK_DELAY, false, function BC_CreateDismantleItemDelayed)
+
+        set delay = null
+    endfunction
+
     private function BC_OnDeath takes nothing returns nothing
         local unit tent = GetTriggerUnit()
         local unit deathUnit = null
 
         if tent != null and GetUnitTypeId(tent) == TENT_UNIT_ID then
+            call BC_RemoveRestRecordsForTent(tent)
             call UnregisterTent(tent)
             set deathUnit = CreateUnit(GetOwningPlayer(tent), BC_DEATH_ANIMATION_UNIT_ID, GetUnitX(tent), GetUnitY(tent), GetUnitFacing(tent))
             call KillUnit(deathUnit)
@@ -255,12 +477,15 @@ library BaseCamp initializer Init requires Experience, optional HintsUI
 
     private function BC_OnSpellChannel takes nothing returns nothing
         local unit caster = GetTriggerUnit()
+        local integer abilityId = GetSpellAbilityId()
 
-        if GetSpellAbilityId() == BC_BUILD_TENT_ABILITY_ID and caster != null then
+        if abilityId == BC_BUILD_TENT_ABILITY_ID and caster != null then
             if PlayerHasTent(GetOwningPlayer(caster)) then
                 call IssueImmediateOrder(caster, "stop")
                 call BC_PublishTentLimitHint(caster)
             endif
+        elseif abilityId == BC_SLEEP_ABILITY_ID and caster != null and GetUnitTypeId(caster) == TENT_UNIT_ID and not BC_TentHasPlayerHeroInside(caster) then
+            call IssueImmediateOrder(caster, "stop")
         endif
 
         set caster = null
@@ -268,15 +493,25 @@ library BaseCamp initializer Init requires Experience, optional HintsUI
 
     private function BC_OnSpellEffect takes nothing returns nothing
         local unit tent = GetTriggerUnit()
+        local integer abilityId = GetSpellAbilityId()
+        local integer tentKey
         local real x
         local real y
 
-        if GetSpellAbilityId() == BC_DISMANTLE_ABILITY_ID and tent != null and GetUnitTypeId(tent) == TENT_UNIT_ID then
+        if abilityId == BC_SLEEP_ABILITY_ID and tent != null and GetUnitTypeId(tent) == TENT_UNIT_ID then
+            call BC_BeginSleepFromTent(tent)
+        elseif abilityId == BC_DISMANTLE_ABILITY_ID and tent != null and GetUnitTypeId(tent) == TENT_UNIT_ID then
+            set tentKey = GetHandleId(tent)
+            if HaveSavedBoolean(BC_Hash, tentKey, BC_KEY_DISMANTLE_PENDING) then
+                set tent = null
+                return
+            endif
             set x = GetUnitX(tent)
             set y = GetUnitY(tent)
+            call SaveBoolean(BC_Hash, tentKey, BC_KEY_DISMANTLE_PENDING, true)
+            call BC_RemoveRestRecordsForTent(tent)
             call UnregisterTent(tent)
-            call CreateItem(TENT_ITEM_ID, x, y)
-            call RemoveUnit(tent)
+            call BC_QueueDismantleItem(tent, x, y)
         endif
 
         set tent = null
@@ -293,7 +528,9 @@ library BaseCamp initializer Init requires Experience, optional HintsUI
     endfunction
 
     private function Init takes nothing returns nothing
+        set BC_Hash = InitHashtable()
         set BC_RestTimer = CreateTimer()
+        set BC_ItemSearchRect = Rect(0.00, 0.00, 0.00, 0.00)
 
         set BC_LoadTrigger = CreateTrigger()
         call BC_RegisterPlayerUnitEvents(BC_LoadTrigger, EVENT_PLAYER_UNIT_LOADED)
