@@ -21,6 +21,9 @@ library ProfessionsFishing initializer AutoInit requires Professions, GatherNode
 globals
     // Runtime guard.
     private boolean PF_Initialized = false
+    private constant boolean PF_AI_CHEAT_CRAFTING = true
+    private constant string PF_CRAFTER_ANIMATION_PRIMARY = "stand"
+    private constant string PF_CRAFTER_ANIMATION_FALLBACK = "spell"
 
     // Sound labels. Empty labels intentionally mean no sound until a Fishing craft flow exists.
     private constant string PF_SOUND_START = ""
@@ -35,6 +38,8 @@ public function Init takes nothing returns nothing
     set PF_Initialized = true
 
     call Professions_SetProfessionSoundLabels(GNS_PROF_FISHING, PF_SOUND_START, PF_SOUND_LOOP, PF_SOUND_FINISH)
+    call Professions_SetProfessionAiCheatCrafting(GNS_PROF_FISHING, PF_AI_CHEAT_CRAFTING)
+    call Professions_SetProfessionCrafterAnimations(GNS_PROF_FISHING, PF_CRAFTER_ANIMATION_PRIMARY, PF_CRAFTER_ANIMATION_FALLBACK)
 endfunction
 
 public function AutoInit takes nothing returns nothing
