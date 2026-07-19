@@ -24,6 +24,9 @@ globals
 
     // Workstation configuration.
     private constant integer PL_STATION_TANNERY = 'n625'
+    private constant boolean PL_AI_CHEAT_CRAFTING = true
+    private constant string PL_CRAFTER_ANIMATION_PRIMARY = "stand work"
+    private constant string PL_CRAFTER_ANIMATION_FALLBACK = "attack"
 
     // Sound labels. Professions plays Start once, Loop until done, and Finish once.
     private constant string PL_SOUND_START = "Tannery"
@@ -71,6 +74,8 @@ public function Init takes nothing returns nothing
     call Professions_RegisterStationType(GNS_PROF_LEATHERWORKING, PL_STATION_TANNERY, "Tannery")
     call Professions_SetProfessionSoundLabels(GNS_PROF_LEATHERWORKING, PL_SOUND_START, PL_SOUND_LOOP, PL_SOUND_FINISH)
     call Professions_SetProfessionSoundHandles(GNS_PROF_LEATHERWORKING, gg_snd_Tannery, gg_snd_Tannery, gg_snd_Tannery)
+    call Professions_SetProfessionAiCheatCrafting(GNS_PROF_LEATHERWORKING, PL_AI_CHEAT_CRAFTING)
+    call Professions_SetProfessionCrafterAnimations(GNS_PROF_LEATHERWORKING, PL_CRAFTER_ANIMATION_PRIMARY, PL_CRAFTER_ANIMATION_FALLBACK)
     call PL_RegisterRecipes()
 endfunction
 
