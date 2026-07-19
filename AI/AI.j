@@ -70,6 +70,9 @@
     call AI_BeginBuy(whichUnit)
     call AI_BeginSell(whichUnit)
     call AI_BeginCamp(whichUnit, duration)
+    call AI_DebugForceShopBuy() returns integer
+    call AI_DebugForceShopSell() returns integer
+    call AI_DebugForceShopByInventory() returns integer
     call AI_DebugForceNightCamp() returns integer
     call AI_DebugForceProfessionCraft() returns integer
     call AI_StartTravel(whichUnit, duration, returnX, returnY)
@@ -172,6 +175,11 @@ globals
     private constant real AI_RANDOM_TRAVEL_MAX = 260.00
     private constant real AI_RANDOM_TRAVEL_DURATION_MIN = 60.00
     private constant real AI_RANDOM_TRAVEL_DURATION_MAX = 180.00
+    private constant real AI_SHOP_CHECK_MIN = 18.00
+    private constant real AI_SHOP_CHECK_MAX = 45.00
+    private constant real AI_SHOP_COOLDOWN_MIN = 120.00
+    private constant real AI_SHOP_COOLDOWN_MAX = 240.00
+    private constant integer AI_SHOP_EMPTY_BUY_CHANCE = 20
     private constant real AI_PROFESSION_SCAN_RANGE = 900.00
     private constant real AI_PROFESSION_DEBUG_STATION_RANGE = 99999.00
     private constant real AI_PROFESSION_ACTION_MIN = 12.00
@@ -297,6 +305,7 @@ globals
     private Table InstanceNextPickup = 0
     private Table InstanceNextChat = 0
     private Table InstanceNextBark = 0
+    private Table InstanceNextShop = 0
     private Table InstanceNextProfession = 0
     private Table InstanceProfessionFailCount = 0
     private Table InstanceProfessionBlockedUntil = 0
@@ -398,6 +407,7 @@ globals
     private trigger DebugModeTrigger = null
     private trigger DebugCampTrigger = null
     private trigger DebugCraftTrigger = null
+    private trigger DebugShopTrigger = null
     private trigger TargetOrderTrigger = null
     private group TempGroup = null
     private rect TempRect = null
@@ -515,6 +525,7 @@ private function EnsureState takes nothing returns nothing
         set InstanceNextPickup = Table.create()
         set InstanceNextChat = Table.create()
         set InstanceNextBark = Table.create()
+        set InstanceNextShop = Table.create()
         set InstanceNextProfession = Table.create()
         set InstanceProfessionFailCount = Table.create()
         set InstanceProfessionBlockedUntil = Table.create()
@@ -1431,13 +1442,18 @@ private function BeginBuyState takes integer instanceId, unit whichUnit returns 
 endfunction
 
 private function BeginSellState takes integer instanceId, unit whichUnit returns boolean
+    local integer profileId
     if instanceId <= 0 or whichUnit == null or IsCompanionControlled(whichUnit) then
         return false
     endif
+    set profileId = InstanceProfile[instanceId]
     if SelectProfileShop(instanceId, whichUnit) then
         call SetInstanceState(instanceId, AI_STATE_SELL)
         call IssuePointOrder(whichUnit, "move", InstanceActionX.real[instanceId], InstanceActionY.real[instanceId])
         return true
+    endif
+    if ProfileShopCount[profileId] > 0 then
+        return false
     endif
     set InstanceActionX.real[instanceId] = GetUnitX(whichUnit)
     set InstanceActionY.real[instanceId] = GetUnitY(whichUnit)
@@ -1527,6 +1543,20 @@ private function GetFreeInventorySlots takes unit whichUnit returns integer
     endloop
     set slotItem = null
     return free
+endfunction
+
+private function IsInventoryEmpty takes unit whichUnit returns boolean
+    if whichUnit == null or UnitInventorySize(whichUnit) <= 0 then
+        return false
+    endif
+    return GetFreeInventorySlots(whichUnit) == UnitInventorySize(whichUnit)
+endfunction
+
+private function IsInventoryFull takes unit whichUnit returns boolean
+    if whichUnit == null or UnitInventorySize(whichUnit) <= 0 then
+        return false
+    endif
+    return GetFreeInventorySlots(whichUnit) <= 0
 endfunction
 
 private function UnitHasItemType takes unit whichUnit, integer itemTypeId returns boolean
@@ -3030,6 +3060,7 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
     set InstanceNextAbility.real[instanceId] = GetNow() + GetRandomReal(0.00, AI_DEFAULT_ABILITY_GAP)
     set InstanceNextItem.real[instanceId] = GetNow() + GetRandomReal(1.00, 3.00)
     set InstanceNextPickup.real[instanceId] = GetNow() + GetRandomReal(AI_COMPANION_PICKUP_MIN_DELAY, AI_COMPANION_PICKUP_MAX_DELAY)
+    set InstanceNextShop.real[instanceId] = GetNow() + GetRandomReal(AI_SHOP_CHECK_MIN, AI_SHOP_CHECK_MAX)
     set InstanceNextProfession.real[instanceId] = GetNow() + GetRandomReal(4.00, 12.00)
     set InstanceProfessionFailCount[instanceId] = 0
     call InstanceProfessionBlockedUntil.remove(instanceId)
@@ -3144,6 +3175,7 @@ public function UnregisterUnit takes unit whichUnit returns nothing
     call InstanceNextItem.remove(instanceId)
     call InstanceNextPickup.remove(instanceId)
     call InstanceNextChat.remove(instanceId)
+    call InstanceNextShop.remove(instanceId)
     call ClearInstanceBarkCooldowns(instanceId)
     call InstanceNextCamp.remove(instanceId)
     call InstanceRetreatUntil.remove(instanceId)
@@ -4121,6 +4153,153 @@ private function HasNearbyCombatEnemy takes unit source, real range returns bool
     set CombatSearchSource = null
     set CombatSearchFound = false
     return result
+endfunction
+
+private function IsShopActionCandidate takes integer instanceId, unit whichUnit, integer state, boolean requireNoOrder returns boolean
+    if instanceId <= 0 or whichUnit == null or udg_InCinematic then
+        return false
+    endif
+    if not IsSideActionState(state) or IsCompanionControlled(whichUnit) or ProfileAutonomousDisabled.boolean[InstanceProfile[instanceId]] then
+        return false
+    endif
+    if ProfileShopCount[InstanceProfile[instanceId]] <= 0 or IsCastingLocked(whichUnit) or HasNearbyCombatEnemy(whichUnit, 900.00) then
+        return false
+    endif
+    if requireNoOrder and GetUnitCurrentOrder(whichUnit) != 0 then
+        return false
+    endif
+    return true
+endfunction
+
+private function TryBeginShopBuy takes integer instanceId, unit whichUnit, real now returns boolean
+    local integer profileId
+    if instanceId <= 0 or whichUnit == null then
+        return false
+    endif
+    set profileId = InstanceProfile[instanceId]
+    if ProfileShopItemCount[profileId] <= 0 or GetFreeInventorySlots(whichUnit) <= 0 then
+        return false
+    endif
+    if BeginBuyState(instanceId, whichUnit) then
+        set InstanceNextShop.real[instanceId] = now + GetRandomReal(AI_SHOP_COOLDOWN_MIN, AI_SHOP_COOLDOWN_MAX)
+        call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " starts shop buy.")
+        return true
+    endif
+    return false
+endfunction
+
+private function TryBeginShopSell takes integer instanceId, unit whichUnit, real now returns boolean
+    if instanceId <= 0 or whichUnit == null or UnitInventorySize(whichUnit) <= 0 or IsInventoryEmpty(whichUnit) then
+        return false
+    endif
+    if BeginSellState(instanceId, whichUnit) then
+        set InstanceNextShop.real[instanceId] = now + GetRandomReal(AI_SHOP_COOLDOWN_MIN, AI_SHOP_COOLDOWN_MAX)
+        call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " starts shop sell.")
+        return true
+    endif
+    return false
+endfunction
+
+private function TryStartShopAction takes integer instanceId, unit whichUnit, integer state, real now returns boolean
+    if not IsShopActionCandidate(instanceId, whichUnit, state, true) or now < InstanceNextShop.real[instanceId] then
+        return false
+    endif
+    set InstanceNextShop.real[instanceId] = now + GetRandomReal(AI_SHOP_CHECK_MIN, AI_SHOP_CHECK_MAX)
+    if IsInventoryFull(whichUnit) then
+        return TryBeginShopSell(instanceId, whichUnit, now)
+    endif
+    if IsInventoryEmpty(whichUnit) and GetRandomInt(1, 100) <= AI_SHOP_EMPTY_BUY_CHANCE then
+        return TryBeginShopBuy(instanceId, whichUnit, now)
+    endif
+    return false
+endfunction
+
+public function DebugForceShopBuy takes nothing returns integer
+    local integer index = 1
+    local integer instanceId
+    local integer started = 0
+    local real now = GetNow()
+    local unit whichUnit
+    call EnsureState()
+    loop
+        exitwhen index > ActiveCount
+        set instanceId = ActiveInstances[index]
+        set whichUnit = InstanceUnit.unit[instanceId]
+        if IsShopActionCandidate(instanceId, whichUnit, InstanceState[instanceId], false) then
+            if TryBeginShopBuy(instanceId, whichUnit, now) then
+                set started = started + 1
+            endif
+        endif
+        set whichUnit = null
+        set index = index + 1
+    endloop
+    call BJDebugMsg("[AI] Forced shop buy for " + I2S(started) + " AI units.")
+    return started
+endfunction
+
+public function DebugForceShopSell takes nothing returns integer
+    local integer index = 1
+    local integer instanceId
+    local integer started = 0
+    local real now = GetNow()
+    local unit whichUnit
+    call EnsureState()
+    loop
+        exitwhen index > ActiveCount
+        set instanceId = ActiveInstances[index]
+        set whichUnit = InstanceUnit.unit[instanceId]
+        if IsShopActionCandidate(instanceId, whichUnit, InstanceState[instanceId], false) then
+            if TryBeginShopSell(instanceId, whichUnit, now) then
+                set started = started + 1
+            endif
+        endif
+        set whichUnit = null
+        set index = index + 1
+    endloop
+    call BJDebugMsg("[AI] Forced shop sell for " + I2S(started) + " AI units.")
+    return started
+endfunction
+
+public function DebugForceShopByInventory takes nothing returns integer
+    local integer index = 1
+    local integer instanceId
+    local integer started = 0
+    local real now = GetNow()
+    local unit whichUnit
+    call EnsureState()
+    loop
+        exitwhen index > ActiveCount
+        set instanceId = ActiveInstances[index]
+        set whichUnit = InstanceUnit.unit[instanceId]
+        if IsShopActionCandidate(instanceId, whichUnit, InstanceState[instanceId], false) then
+            if IsInventoryFull(whichUnit) then
+                if TryBeginShopSell(instanceId, whichUnit, now) then
+                    set started = started + 1
+                endif
+            elseif IsInventoryEmpty(whichUnit) then
+                if TryBeginShopBuy(instanceId, whichUnit, now) then
+                    set started = started + 1
+                endif
+            endif
+        endif
+        set whichUnit = null
+        set index = index + 1
+    endloop
+    call BJDebugMsg("[AI] Forced shop inventory check for " + I2S(started) + " AI units.")
+    return started
+endfunction
+
+private function DebugShopAction takes nothing returns nothing
+    local string msg = StringCase(GetEventPlayerChatString(), false)
+    local integer started = 0
+    if msg == "/debug aibuy" or msg == "aibuy" then
+        set started = AI_DebugForceShopBuy()
+    elseif msg == "/debug aisell" or msg == "aisell" then
+        set started = AI_DebugForceShopSell()
+    else
+        set started = AI_DebugForceShopByInventory()
+    endif
+    set started = 0
 endfunction
 
 private function IsAiPartyOrganizeState takes integer state returns boolean
@@ -5568,6 +5747,11 @@ private function ProcessInstance takes integer instanceId, real now returns noth
         return
     endif
 
+    if TryStartShopAction(instanceId, whichUnit, state, now) then
+        set whichUnit = null
+        return
+    endif
+
     if TryRecoverStuck(instanceId, whichUnit, state, now) then
         set whichUnit = null
         return
@@ -5926,6 +6110,15 @@ private function Init takes nothing returns nothing
     call TriggerRegisterPlayerChatEvent(DebugCraftTrigger, Player(0), "/debug aicraft", true)
     call TriggerRegisterPlayerChatEvent(DebugCraftTrigger, Player(0), "aicraft", true)
     call TriggerAddAction(DebugCraftTrigger, function DebugCraftAction)
+
+    set DebugShopTrigger = CreateTrigger()
+    call TriggerRegisterPlayerChatEvent(DebugShopTrigger, Player(0), "/debug aibuy", true)
+    call TriggerRegisterPlayerChatEvent(DebugShopTrigger, Player(0), "aibuy", true)
+    call TriggerRegisterPlayerChatEvent(DebugShopTrigger, Player(0), "/debug aisell", true)
+    call TriggerRegisterPlayerChatEvent(DebugShopTrigger, Player(0), "aisell", true)
+    call TriggerRegisterPlayerChatEvent(DebugShopTrigger, Player(0), "/debug aishop", true)
+    call TriggerRegisterPlayerChatEvent(DebugShopTrigger, Player(0), "aishop", true)
+    call TriggerAddAction(DebugShopTrigger, function DebugShopAction)
 
     set TargetOrderTrigger = CreateTrigger()
     call RegisterPlayerUnitEventAll(TargetOrderTrigger, EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER)
