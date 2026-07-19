@@ -24,6 +24,9 @@ globals
 
     // Workstation configuration.
     private constant integer PC_STATION_CAMP_FIRE = 'n61C'
+    private constant boolean PC_AI_CHEAT_CRAFTING = true
+    private constant string PC_CRAFTER_ANIMATION_PRIMARY = "stand"
+    private constant string PC_CRAFTER_ANIMATION_FALLBACK = "spell"
 
     // Sound labels. Empty labels intentionally mean no sound until Cooking assets are chosen.
     private constant string PC_SOUND_START = ""
@@ -39,6 +42,8 @@ public function Init takes nothing returns nothing
 
     call Professions_RegisterStationType(GNS_PROF_COOKING, PC_STATION_CAMP_FIRE, "Camp Fire")
     call Professions_SetProfessionSoundLabels(GNS_PROF_COOKING, PC_SOUND_START, PC_SOUND_LOOP, PC_SOUND_FINISH)
+    call Professions_SetProfessionAiCheatCrafting(GNS_PROF_COOKING, PC_AI_CHEAT_CRAFTING)
+    call Professions_SetProfessionCrafterAnimations(GNS_PROF_COOKING, PC_CRAFTER_ANIMATION_PRIMARY, PC_CRAFTER_ANIMATION_FALLBACK)
 endfunction
 
 public function AutoInit takes nothing returns nothing
