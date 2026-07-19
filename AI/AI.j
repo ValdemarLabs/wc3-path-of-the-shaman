@@ -17,10 +17,11 @@
 
     How to install:
     Import this library before AI sublibraries and after the required shared
-    systems: Table, Companions, UnitDeathEvent, DamageEngine, DialogSystem,
-    ExSound, and Reputation. AI professions also require GatherNodes, GatherNodeSkills,
-    GatherNodeItems, and GatherNodeUnits. File names may use underscores, but
-    vJASS library identifiers and generated public function prefixes must not.
+    systems: Table, CampFire, Companions, UnitDeathEvent, DamageEngine,
+    DialogSystem, ExSound, and Reputation. AI professions also require
+    GatherNodes, GatherNodeSkills, GatherNodeItems, and GatherNodeUnits. File
+    names may use underscores, but vJASS library identifiers and generated
+    public function prefixes must not.
 
     API:
     call AI_RegisterClass(className)
@@ -70,6 +71,7 @@
     call AI_BeginSell(whichUnit)
     call AI_BeginCamp(whichUnit, duration)
     call AI_DebugForceNightCamp() returns integer
+    call AI_DebugForceProfessionCraft() returns integer
     call AI_StartTravel(whichUnit, duration, returnX, returnY)
     call AI_RegisterBossCastAbility(abilityId, evadeRadius, evadeDistance)
     call AI_HandleBossCast(caster, abilityId, targetX, targetY)
@@ -81,7 +83,7 @@
     call AI_SetDebugMode(enabled)
 
 **/
-library AI initializer Init requires Table, Companions, UnitDeathEvent, DamageEngine, DialogSystem, ExSound, IconQuery, Reputation, GatherNodes, GatherNodeSkills, GatherNodeItems, GatherNodeUnits, Professions, VoicelinesWarlock, VoicelinesUndeadWarlock, VoicelinesRestoShaman, VoicelinesEngineer, VoicelinesPaladin
+library AI initializer Init requires Table, CampFire, Companions, UnitDeathEvent, DamageEngine, DialogSystem, ExSound, IconQuery, Reputation, GatherNodes, GatherNodeSkills, GatherNodeItems, GatherNodeUnits, Professions, VoicelinesWarlock, VoicelinesUndeadWarlock, VoicelinesRestoShaman, VoicelinesEngineer, VoicelinesPaladin
 
 globals
     constant integer AI_STATE_INACTIVE = 0
@@ -212,6 +214,7 @@ globals
     private constant integer AI_CAMP_FIRE_PLACEMENT_ATTEMPTS = 10
     private constant real AI_CAMP_FIRE_MIN_OFFSET = 160.00
     private constant real AI_CAMP_FIRE_MAX_OFFSET = 260.00
+    private constant real AI_CAMP_FIRE_UNIT_LIFETIME = 60.00
     private constant integer AI_RANDOM_ACTIVE_CAP_MAX = 32
     private constant integer AI_PARTY_MAX_SIZE = 3
     private constant real AI_PARTY_ORGANIZE_MIN = 45.00
@@ -233,6 +236,11 @@ globals
     private constant integer ITEM_SKINNING_KNIFE = 'I66M'
     private constant integer ITEM_CAMP_FIRE = 'I611'
     private constant integer UNIT_AVELINE_RIVERBANE = 'O009'
+    private constant integer UNIT_CAMP_FIRE = 'n61C'
+    private constant integer UNIT_CAMP_LIGHT = 'n619'
+    private constant integer ABILITY_CAMP_WARMTH = 'S600'
+    private constant integer ABILITY_CAMP_WARMTH_HP = 'A02W'
+    private constant integer ABILITY_CAMP_WARMTH_MANA = 'A02Y'
 
     private Table UnitInstance = 0
     private Table UniqueInstance = 0
@@ -350,6 +358,7 @@ globals
     private Table ReplyTimerResponder = 0
     private Table ReplyTimerText = 0
     private Table ReplyTimerSound = 0
+    private Table AiCampFireCleanupUnit = 0
 
     private Table TempAbilityUnit = 0
     private Table TempAbilityRemove = 0
@@ -391,6 +400,8 @@ globals
     private trigger DebugSpawnTrigger = null
     private trigger DebugModeTrigger = null
     private trigger DebugCampTrigger = null
+    private trigger DebugCraftTrigger = null
+    private trigger TargetOrderTrigger = null
     private group TempGroup = null
     private rect TempRect = null
     private boolean DebugMode = DEBUG_DEFAULT
@@ -409,6 +420,7 @@ globals
     private unit ProfessionSearchStation = null
     private unit ProfessionSearchSource = null
     private integer ProfessionSearchProfileId = 0
+    private integer ProfessionSearchWantedProfession = 0
     private real ProfessionSearchBestDistance = 0.00
     private unit ItemSearchSource = null
     private item ItemSearchBest = null
@@ -562,6 +574,7 @@ private function EnsureState takes nothing returns nothing
         set ReplyTimerResponder = Table.create()
         set ReplyTimerText = Table.create()
         set ReplyTimerSound = Table.create()
+        set AiCampFireCleanupUnit = Table.create()
         set TempAbilityUnit = Table.create()
         set TempAbilityRemove = Table.create()
         set TempAbilityRestore = Table.create()
@@ -1676,31 +1689,8 @@ private function RefreshDebugIcons takes nothing returns nothing
     set whichUnit = null
 endfunction
 
-private function EstimateProfessionSkill takes unit whichUnit returns integer
-    local integer unitLevel = 1
-    local integer skill
-    if whichUnit == null then
-        return 0
-    endif
-    if IsUnitType(whichUnit, UNIT_TYPE_HERO) then
-        set unitLevel = GetHeroLevel(whichUnit)
-    else
-        set unitLevel = GetUnitLevel(whichUnit)
-    endif
-    if unitLevel < 1 then
-        set unitLevel = 1
-    endif
-    set skill = unitLevel * 5
-    if skill > 100 then
-        set skill = 100
-    endif
-    return skill
-endfunction
-
 private function RefreshInstanceProfessionSkills takes integer instanceId, unit whichUnit returns nothing
     local integer profileId
-    local integer professionId = AI_PROFESSION_MINING
-    local integer estimatedSkill
     if instanceId <= 0 or whichUnit == null then
         return
     endif
@@ -1708,15 +1698,7 @@ private function RefreshInstanceProfessionSkills takes integer instanceId, unit 
     if ProfileProfessionCount[profileId] <= 0 then
         return
     endif
-    set estimatedSkill = EstimateProfessionSkill(whichUnit)
     call GNS_RegisterTrackedGatherer(whichUnit)
-    loop
-        exitwhen professionId > AI_PROFESSION_MAX
-        if HasProfileProfession(profileId, professionId) and GNS_GetSkill(whichUnit, professionId) < estimatedSkill then
-            call GNS_SetSkill(whichUnit, professionId, estimatedSkill)
-        endif
-        set professionId = professionId + 1
-    endloop
 endfunction
 
 private function ClearInstanceProfessionState takes integer instanceId, unit whichUnit returns nothing
@@ -4426,7 +4408,7 @@ private function FindNearbyCraftStationEnum takes nothing returns nothing
 
     if station != null and station != ProfessionSearchSource and IsAliveUnit(station) and Professions_IsStationUnit(station) and not Professions_IsStationReserved(station) then
         set professionId = Professions_GetStationProfession(station)
-        if HasProfileProfession(ProfessionSearchProfileId, professionId) then
+        if HasProfileProfession(ProfessionSearchProfileId, professionId) and (ProfessionSearchWantedProfession <= AI_PROFESSION_NONE or professionId == ProfessionSearchWantedProfession) then
             set recipeId = Professions_GetAiRecipeForStation(ProfessionSearchSource, station)
             if recipeId > 0 then
                 set dx = GetUnitX(station) - GetUnitX(ProfessionSearchSource)
@@ -4443,7 +4425,7 @@ private function FindNearbyCraftStationEnum takes nothing returns nothing
     set station = null
 endfunction
 
-private function FindNearbyCraftStation takes integer instanceId, unit whichUnit, real range returns unit
+private function FindNearbyCraftStationForProfession takes integer instanceId, unit whichUnit, real range, integer wantedProfession returns unit
     if instanceId <= 0 or whichUnit == null or Professions_IsUnitReserved(whichUnit) then
         return null
     endif
@@ -4451,6 +4433,7 @@ private function FindNearbyCraftStation takes integer instanceId, unit whichUnit
     set ProfessionSearchStation = null
     set ProfessionSearchSource = whichUnit
     set ProfessionSearchProfileId = InstanceProfile[instanceId]
+    set ProfessionSearchWantedProfession = wantedProfession
     set ProfessionSearchBestDistance = range * range
 
     call GroupClear(TempGroup)
@@ -4460,7 +4443,12 @@ private function FindNearbyCraftStation takes integer instanceId, unit whichUnit
 
     set ProfessionSearchSource = null
     set ProfessionSearchProfileId = 0
+    set ProfessionSearchWantedProfession = 0
     return ProfessionSearchStation
+endfunction
+
+private function FindNearbyCraftStation takes integer instanceId, unit whichUnit, real range returns unit
+    return FindNearbyCraftStationForProfession(instanceId, whichUnit, range, AI_PROFESSION_NONE)
 endfunction
 
 private function BeginGatherItem takes integer instanceId, unit whichUnit, item nodeItem, real now returns boolean
@@ -4650,6 +4638,70 @@ private function TryStartProfessionAction takes integer instanceId, unit whichUn
     return false
 endfunction
 
+public function DebugForceProfessionCraft takes nothing returns integer
+    local integer index = 1
+    local integer instanceId
+    local integer state
+    local integer profileId
+    local integer professionId
+    local integer seen
+    local integer started = 0
+    local real now = GetNow()
+    local unit whichUnit
+    local unit station
+    local unit selectedStation
+
+    call EnsureState()
+
+    loop
+        exitwhen index > ActiveCount
+        set instanceId = ActiveInstances[index]
+        set whichUnit = InstanceUnit.unit[instanceId]
+        set state = InstanceState[instanceId]
+        set profileId = InstanceProfile[instanceId]
+        set selectedStation = null
+        set seen = 0
+
+        if whichUnit != null and IsAliveUnit(whichUnit) and not IsUnitHidden(whichUnit) and not udg_InCinematic and ProfileProfessionCount[profileId] > 0 and not Professions_IsUnitReserved(whichUnit) and not IsCastingLocked(whichUnit) and (IsSideActionState(state) or state == AI_STATE_COMPANION_CONTROLLED) and not HasNearbyCombatEnemy(whichUnit, 900.00) then
+            set professionId = AI_PROFESSION_MINING
+            loop
+                exitwhen professionId > AI_PROFESSION_MAX
+                if HasProfileProfession(profileId, professionId) then
+                    set station = FindNearbyCraftStationForProfession(instanceId, whichUnit, AI_PROFESSION_SCAN_RANGE, professionId)
+                    if station != null then
+                        set seen = seen + 1
+                        if GetRandomInt(1, seen) == 1 then
+                            set selectedStation = station
+                        endif
+                    endif
+                endif
+                set professionId = professionId + 1
+            endloop
+
+            if selectedStation != null then
+                call ClearSocialState(instanceId)
+                set InstanceNextProfession.real[instanceId] = now
+                if BeginCraftStation(instanceId, whichUnit, selectedStation, now) then
+                    set started = started + 1
+                endif
+            endif
+        endif
+
+        set whichUnit = null
+        set station = null
+        set selectedStation = null
+        set index = index + 1
+    endloop
+
+    call BJDebugMsg("[AI] Forced profession craft for " + I2S(started) + " AI units.")
+    return started
+endfunction
+
+private function DebugCraftAction takes nothing returns nothing
+    local integer started = AI_DebugForceProfessionCraft()
+    set started = 0
+endfunction
+
 private function ShouldBlockAiGatherUnitAttack takes integer instanceId, unit attacker, unit node returns boolean
     local integer professionId
     local integer requiredSkill
@@ -4661,7 +4713,32 @@ private function ShouldBlockAiGatherUnitAttack takes integer instanceId, unit at
     if not CanGatherProfession(attacker, InstanceProfile[instanceId], professionId, requiredSkill) then
         return true
     endif
+    if not CanHoldGatherItem(instanceId, attacker, professionId) then
+        return true
+    endif
     if professionId == AI_PROFESSION_MINING and not UnitHasItemType(attacker, ITEM_MINING_PICK) then
+        return true
+    endif
+    return false
+endfunction
+
+private function ShouldBlockAiGatherItemOrder takes integer instanceId, unit ordered, item nodeItem returns boolean
+    local integer professionId
+    local integer requiredSkill
+    local integer toolId
+    if instanceId <= 0 or ordered == null or nodeItem == null or not GN_IsGatherItem(nodeItem) then
+        return false
+    endif
+    set professionId = GN_GetGatherItemProfessionId(nodeItem)
+    set requiredSkill = GN_GetGatherItemSkillRequired(nodeItem)
+    if not CanGatherProfession(ordered, InstanceProfile[instanceId], professionId, requiredSkill) then
+        return true
+    endif
+    if not CanHoldGatherItem(instanceId, ordered, professionId) then
+        return true
+    endif
+    set toolId = GetProfessionToolId(professionId)
+    if toolId != 0 and not UnitHasItemType(ordered, toolId) then
         return true
     endif
     return false
@@ -4672,6 +4749,14 @@ private function BackoffBlockedGatherUnitAttack takes integer instanceId, unit a
         call BackoffProfessionWork(instanceId, attacker, GetNow(), "requirements not met for " + GN_GetGatherUnitName(node))
     else
         call BackoffProfessionWork(instanceId, attacker, GetNow(), "gather requirements not met")
+    endif
+endfunction
+
+private function BackoffBlockedGatherItemOrder takes integer instanceId, unit ordered, item nodeItem returns nothing
+    if nodeItem != null and GN_IsGatherItem(nodeItem) then
+        call BackoffProfessionWork(instanceId, ordered, GetNow(), "requirements not met for " + GN_GetGatherItemName(nodeItem))
+    else
+        call BackoffProfessionWork(instanceId, ordered, GetNow(), "gather requirements not met")
     endif
 endfunction
 
@@ -4877,33 +4962,89 @@ private function IsNightTime takes nothing returns boolean
     return timeOfDay >= AI_CAMP_NIGHT_MIN or timeOfDay < AI_CAMP_NIGHT_MAX
 endfunction
 
+private function CanPlaceAiCampFireAt takes real x, real y returns boolean
+    return not IsTerrainPathable(x, y, PATHING_TYPE_WALKABILITY)
+endfunction
+
+private function CleanupAiCampFire takes nothing returns nothing
+    local timer expired = GetExpiredTimer()
+    local integer timerId = GetHandleId(expired)
+    local unit fire = AiCampFireCleanupUnit.unit[timerId]
+
+    call AiCampFireCleanupUnit.unit.remove(timerId)
+    if fire != null then
+        call RemoveCampfire(fire)
+        if GetUnitTypeId(fire) != 0 then
+            call RemoveUnit(fire)
+        endif
+    endif
+
+    call DestroyTimer(expired)
+    set fire = null
+    set expired = null
+endfunction
+
+private function QueueAiCampFireCleanup takes unit fire returns nothing
+    local timer cleanup
+    if fire == null then
+        return
+    endif
+    set cleanup = CreateTimer()
+    set AiCampFireCleanupUnit.unit[GetHandleId(cleanup)] = fire
+    call TimerStart(cleanup, AI_CAMP_FIRE_UNIT_LIFETIME + 1.00, false, function CleanupAiCampFire)
+    set cleanup = null
+endfunction
+
+private function CreateAiCampFire takes real x, real y returns unit
+    local unit fire = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_CAMP_FIRE, x, y, GetRandomReal(0.00, 360.00))
+    local unit light
+    if fire == null then
+        set light = null
+        return null
+    endif
+    if GetUnitTypeId(fire) == 0 then
+        set light = null
+        return null
+    endif
+
+    call UnitAddAbility(fire, ABILITY_CAMP_WARMTH)
+    call UnitAddAbility(fire, ABILITY_CAMP_WARMTH_HP)
+    call UnitAddAbility(fire, ABILITY_CAMP_WARMTH_MANA)
+    call UnitApplyTimedLife(fire, 'BTLF', AI_CAMP_FIRE_UNIT_LIFETIME)
+    call AddCampfire(fire)
+    call QueueAiCampFireCleanup(fire)
+
+    set light = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_CAMP_LIGHT, x, y, bj_UNIT_FACING)
+    if light != null then
+        if GetUnitTypeId(light) != 0 then
+            call UnitApplyTimedLife(light, 'BTLF', AI_CAMP_FIRE_UNIT_LIFETIME + 1.00)
+        endif
+    endif
+    set light = null
+    return fire
+endfunction
+
 private function TryPlaceCampFireForCamp takes integer instanceId, unit whichUnit, real now, boolean forced returns boolean
     local real angle
     local real distance
     local real x
     local real y
-    local item campItem
+    local unit fire
     local integer attempt = 0
     if instanceId <= 0 or whichUnit == null then
         return false
     endif
-    if GetFreeInventorySlots(whichUnit) <= 0 then
-        call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " cannot place camp fire: no free inventory slot.")
-        return false
-    endif
     call IssueImmediateOrder(whichUnit, "stop")
-    set campItem = UnitAddItemById(whichUnit, ITEM_CAMP_FIRE)
-    if campItem == null then
-        call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " cannot place camp fire: item creation failed.")
-        return false
-    endif
     loop
         exitwhen attempt >= AI_CAMP_FIRE_PLACEMENT_ATTEMPTS
         set angle = GetRandomReal(0.00, 360.00) * bj_DEGTORAD
         set distance = GetRandomReal(AI_CAMP_FIRE_MIN_OFFSET, AI_CAMP_FIRE_MAX_OFFSET)
         set x = GetUnitX(whichUnit) + distance * Cos(angle)
         set y = GetUnitY(whichUnit) + distance * Sin(angle)
-        if UnitUseItemPoint(whichUnit, campItem, x, y) then
+        if CanPlaceAiCampFireAt(x, y) then
+            set fire = CreateAiCampFire(x, y)
+        endif
+        if fire != null then
             call SetInstanceState(instanceId, AI_STATE_CAMP)
             set InstanceRetreatUntil.real[instanceId] = now + GetRandomReal(AI_CAMP_DURATION_MIN, AI_CAMP_DURATION_MAX)
             set InstanceNextCamp.real[instanceId] = now + GetRandomReal(AI_CAMP_COOLDOWN_MIN, AI_CAMP_COOLDOWN_MAX)
@@ -4912,14 +5053,13 @@ private function TryPlaceCampFireForCamp takes integer instanceId, unit whichUni
             else
                 call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " starts night camp.")
             endif
-            set campItem = null
+            set fire = null
             return true
         endif
         set attempt = attempt + 1
     endloop
-    call RemoveItem(campItem)
     call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " could not place camp fire.")
-    set campItem = null
+    set fire = null
     return false
 endfunction
 
@@ -5520,6 +5660,21 @@ private function HandleDeath takes nothing returns nothing
     set killer = null
 endfunction
 
+private function HandleTargetOrder takes nothing returns nothing
+    local unit ordered = GetTriggerUnit()
+    local unit targetUnit = GetOrderTargetUnit()
+    local item targetItem = GetOrderTargetItem()
+    local integer instanceId = UnitInstance[GetHandleId(ordered)]
+    if targetItem != null and ShouldBlockAiGatherItemOrder(instanceId, ordered, targetItem) then
+        call BackoffBlockedGatherItemOrder(instanceId, ordered, targetItem)
+    elseif targetUnit != null and ShouldBlockAiGatherUnitAttack(instanceId, ordered, targetUnit) then
+        call BackoffBlockedGatherUnitAttack(instanceId, ordered, targetUnit)
+    endif
+    set ordered = null
+    set targetUnit = null
+    set targetItem = null
+endfunction
+
 private function HandleAttack takes nothing returns nothing
     local unit attacker = GetAttacker()
     local unit attacked = GetTriggerUnit()
@@ -5764,6 +5919,15 @@ private function Init takes nothing returns nothing
     call TriggerRegisterPlayerChatEvent(DebugCampTrigger, Player(0), "/debug aicamp", true)
     call TriggerRegisterPlayerChatEvent(DebugCampTrigger, Player(0), "aicamp", true)
     call TriggerAddAction(DebugCampTrigger, function DebugCampAction)
+
+    set DebugCraftTrigger = CreateTrigger()
+    call TriggerRegisterPlayerChatEvent(DebugCraftTrigger, Player(0), "/debug aicraft", true)
+    call TriggerRegisterPlayerChatEvent(DebugCraftTrigger, Player(0), "aicraft", true)
+    call TriggerAddAction(DebugCraftTrigger, function DebugCraftAction)
+
+    set TargetOrderTrigger = CreateTrigger()
+    call RegisterPlayerUnitEventAll(TargetOrderTrigger, EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER)
+    call TriggerAddAction(TargetOrderTrigger, function HandleTargetOrder)
 
     set AttackTrigger = CreateTrigger()
     call RegisterPlayerUnitEventAll(AttackTrigger, EVENT_PLAYER_UNIT_ATTACKED)
