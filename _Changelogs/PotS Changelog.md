@@ -15,6 +15,89 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [19.7.2026]
+
+### Player-Facing Updates
+
+- Profession workstations can now open a custom frame crafting panel instead of relying on unit spellbook command cards.
+  - Alchemy opens from nearby Cauldron units (`n61D`).
+  - Blacksmithing opens from Anvil units (`n62R`).
+  - Mining smelting opens from Forge units (`n62S`).
+  - Leatherworking and Cooking workstation hooks are registered for Tannery (`n625`) and Camp Fire (`n61C`) so recipes can be added later.
+- The new crafting panel lists workstation recipes, required skill, material readiness, crafting time, and current availability state.
+- Alchemy now has first-pass craftable recipes based on the concrete old workbook / GUI data:
+  - Spring Water
+  - Crystal Water
+  - Healing Salve
+  - Greater Healing Salve
+  - Minor Healing Potion
+  - Nazgrek's Flask
+- Blacksmithing now has first-pass Copper Chain armor recipes from the old workbook / GUI draft, using Copper Bars as material costs.
+- Mining now supports basic smelting recipes:
+  - Copper, Tin, Silver, Iron, Gold, Mithril, and Thorium Ore into their Bar versions.
+
+### Technical Updates
+
+- `Professions/Professions.j`
+  - Added the central profession crafting registry and executor.
+  - Added APIs for workstation registration, recipe registration, material registration, recipe lookup, station lookup, crafting start checks, material counting, and profession summary text.
+  - Crafting jobs now consume materials up front, run through a timed job, create the output item on completion, and award profession skill through `GatherNodeSkills`.
+  - Material checks support the custom DInv inventory helpers when `SharedDInvLib` is present, with vanilla inventory fallback.
+  - Crafted item creation uses `ItemHook_CreateItem` when `ItemHook` is present, with normal `CreateItem` fallback.
+  - Added workstation busy/crafter busy guards so the same station or crafter cannot run overlapping jobs.
+  - Added profession sound label support using 3D sound instances attached to the workstation.
+  - Added Alchemy cauldron feedback using the existing `A6DJ` Light Effect ability, station animation changes, and delayed decay animation.
+
+- `Professions/ProfessionsAlchemy.j`
+  - Registered the Cauldron workstation and Alchemy start/loop/finish sound labels:
+    - `Alchemy start`
+    - `Alchemy loop`
+    - `Alchemy loop`
+  - Registered only the recipes with concrete old workbook / GUI material data for this first pass.
+  - Left later placeholder potion/flask ideas unregistered until their material requirements are intentionally defined.
+
+- `Professions/ProfessionsBlacksmithing.j`
+  - Registered the Anvil workstation and first-pass Copper Chain armor recipes.
+  - Preserved the old GUI crafting time pattern of 5 seconds.
+  - Added first-pass Copper Bar costs so the recipes are usable through the new material system instead of free spellbook casts.
+
+- `Professions/ProfessionsMining.j`
+  - Registered the Forge workstation for smelting only.
+  - Added Ore -> Bar recipes without changing the existing gather-node Mining systems.
+
+- `Professions/ProfessionsCooking.j`, `Professions/ProfessionsLeatherworking.j`, `Professions/ProfessionsSkinning.j`, `Professions/ProfessionsEnchanting.j`, and `Professions/ProfessionsFishing.j`
+  - Added profession sublibrary placeholders / workstation hooks where the profession start event is already known.
+  - These files are intentionally light until each profession's actual crafting rules are defined.
+
+- `UI/CraftingUI.j`
+  - Added the shared custom-frame crafting UI.
+  - The UI opens from workstation selection, pulls recipe data through `Professions.j`, and uses `GNS_GetUITargetUnit()` as the active tracked crafter.
+  - Added recipe rows, selected recipe detail view, material readiness display, Prev/Next paging, Craft, Return, and Close controls.
+  - Crafting success refreshes `ProfessionsUI` summary data.
+
+- `UI/ProfessionsUI.j`
+  - Now requires `Professions`.
+  - Profession detail text now appends crafting summary data from `Professions_GetProfessionSummary`.
+  - Detail body cache invalidation now includes the `Professions` recipe revision.
+  - `ProfessionsUI` still reads profession crafting data only through the central `Professions.j` API, not direct `ProfessionsXXX.j` sublibrary calls.
+
+- `UI/MasterUI.j`
+  - `MUI_HideAllPanels` now also hides `CraftingUI`.
+
+### Known Issues
+
+- Full in-map JassHelper / Warcraft III compile validation was not completed in this pass because the repo snapshot does not expose a combined `war3map.j` or normal map build entry point.
+- The bundled `pjass` only validates plain JASS and is not a useful validator for these vJASS libraries by themselves.
+- Blacksmithing Copper Bar material costs are first-pass design values because the old workbook / GUI draft lists the Copper Chain outputs but not final material requirements.
+- The Alchemy workbook contains many placeholder potion/flask ideas without complete material data. Those recipes are intentionally not registered yet.
+
+### Actions Remaining
+
+- Import/include the new `UI/CraftingUI.j` and `Professions/Professions*.j` files in the actual map build order.
+- Run the full map compile after the new libraries are added to the active import/build pipeline.
+- In-game test workstation selection, range checks, material consumption, crafting completion, skill gain, and Alchemy cauldron light/sound/animation timing.
+- Define final material requirements and skill thresholds for the remaining Alchemy, Blacksmithing, Leatherworking, Cooking, Enchanting, Fishing, and Skinning crafting flows.
+
 ## [18.7.2026]
 
 ### Technical Updates
