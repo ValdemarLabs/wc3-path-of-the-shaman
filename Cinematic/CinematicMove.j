@@ -348,6 +348,25 @@ library CinematicMover initializer Init requires Table
 
     endfunction
 
+    // Moves one unit only. Profession crafting uses this to avoid pulling companions and pets into short workstation scenes.
+    function CinematicMover_MoveSingleUnitToCinematic takes unit cineTriggerUnit, unit movingUnit returns nothing
+        local integer id
+        local real cx
+        local real cy
+
+        if cineTriggerUnit == null or movingUnit == null then
+            return
+        endif
+
+        set id = GetHandleId(movingUnit)
+        set cx = GetUnitX(cineTriggerUnit)
+        set cy = GetUnitY(cineTriggerUnit)
+        set data.real[id * 2] = GetUnitX(movingUnit)
+        set data.real[id * 2 + 1] = GetUnitY(movingUnit)
+        call StoreDistanceToTrigger(movingUnit, cx, cy)
+        call HandleUnitMove(movingUnit, cx, cy)
+    endfunction
+
     //===========================================================================
     // Handle unit return after cinematic
     //===========================================================================
@@ -404,6 +423,21 @@ library CinematicMover initializer Init requires Table
             call BJDebugMsg("[CinematicMover] No stored position found for: " + GetUnitName(u))
         endif
         // Fallback: nothing to restore
+    endfunction
+
+    // Returns a unit moved through CinematicMover_MoveSingleUnitToCinematic, ignoring the broad mover's nearby-unit return skip.
+    function CinematicMover_ReturnSingleUnitFromCinematic takes unit movingUnit returns nothing
+        local integer id
+
+        if movingUnit == null then
+            return
+        endif
+
+        set id = GetHandleId(movingUnit)
+        call data.real.remove(id * 2 + 100)
+        call HandleUnitReturn(movingUnit, GetUnitX(movingUnit), GetUnitY(movingUnit))
+        call data.real.remove(id * 2)
+        call data.real.remove(id * 2 + 1)
     endfunction
 
     private function MoveCompanionCallback takes nothing returns nothing
