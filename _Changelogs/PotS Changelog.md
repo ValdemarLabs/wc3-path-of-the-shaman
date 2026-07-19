@@ -55,6 +55,12 @@
   - Added workstation busy/crafter busy guards so the same station or crafter cannot run overlapping jobs.
   - Added profession sound label support using 3D sound instances attached to the workstation.
   - Added Alchemy cauldron feedback using the existing `A6DJ` Light Effect ability, station animation changes, and delayed decay animation.
+  - Added short globals-section comments for registry state, recipe data, material data, active jobs, sound labels, and lookup tables.
+
+- `Professions/Professions*.j`
+  - Moved per-profession Start / Loop / Finish sound labels into configurable globals constants.
+  - Added short globals-section comments for runtime guards, workstation raw codes, sound label config, recipe raw codes, and icon paths.
+  - WIP profession modules use empty sound label constants until their actual sound assets and crafting flows are defined.
 
 - `Professions/ProfessionsAlchemy.j`
   - Registered the Cauldron workstation and Alchemy start/loop/finish sound labels:
