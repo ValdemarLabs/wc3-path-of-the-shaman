@@ -21,13 +21,12 @@
 
 - `Leveling/AbilityPoints.j`
   - Added the new centralized AbilityPoints library for Nazgrek and Zul'kis.
-  - Ability points are now tracked through the JASS API while keeping the legacy GUI globals synchronized:
+  - Ability points are now tracked through the JASS API instead of the legacy GUI globals:
     - `AbilityPoints_Get`
     - `AbilityPoints_Set`
     - `AbilityPoints_Add`
     - `AbilityPoints_Reduce`
     - `AbilityPoints_Spend`
-    - `AbilityPoints_SyncHero`
   - Moved the old "Hero Levels Up" behavior into JASS for player hero AP gain, level-up text, HP/mana refill, and companion group-size synchronization.
   - Added a temporary enable/disable API for the JASS "Hero Levels Up" handling:
     - `AbilityPoints_SetHeroLevelUpEnabled`
@@ -35,7 +34,8 @@
     - `AbilityPoints_EnableHeroLevelUp`
     - `AbilityPoints_IsHeroLevelUpEnabled`
   - Added Reset Abilities item handling for `I6A1`, replacing the hero, preserving inventory/equipment through the DInventory/DItemTransfer hooks when available, and resetting AP to hero level + 3.
-  - Added Player 1 debug chat command `/debug ap add`, which adds 1 AP to both Nazgrek and Zul'kis and updates the legacy globals.
+  - Added Player 1 debug chat command `/debug ap add`, which adds 1 AP to both Nazgrek and Zul'kis through the new AbilityPoints state.
+  - Updated `StatsUI.j` to read AP through `AbilityPoints_Get` instead of `udg_AbilityPointsNazgrek` / `udg_AbilityPointsZulkis`.
 
 - `Leveling/Experience.j`
   - Added the new centralized Experience library for rested XP, bonus XP, and XP multiplier application.
