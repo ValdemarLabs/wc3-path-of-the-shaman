@@ -130,6 +130,7 @@ function Preload_Abilities takes unit u returns nothing
     call UnitAddAbility(udg_AbilityPreloader, 'A62I')
     call UnitAddAbility(udg_AbilityPreloader, 'A6DI')
     call UnitAddAbility(udg_AbilityPreloader, 'A6DJ')
+    call UnitAddAbility(udg_AbilityPreloader, 'A6DY')
     call UnitAddAbility(udg_AbilityPreloader, 'A6DK')
     call UnitAddAbility(udg_AbilityPreloader, 'A6DN')
     call UnitAddAbility(udg_AbilityPreloader, 'A6DO')
