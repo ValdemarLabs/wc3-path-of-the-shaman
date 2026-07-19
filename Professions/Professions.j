@@ -18,6 +18,8 @@
     call Professions_SetRecipeSkillGain(recipeId, 1)
     call Professions_SetProfessionSoundLabels(GNS_PROF_ALCHEMY, "Alchemy start", "Alchemy loop", "Alchemy loop")
     call Professions_SetProfessionSoundHandles(GNS_PROF_ALCHEMY, gg_snd_CauldronSound, gg_snd_CauldronSound, gg_snd_CauldronSound)
+    call Professions_SetRecipeCategory(recipeId, "Basic Alchemy")
+    call Professions_SetRecipeCategoryPath(recipeId, "Apprentice Blacksmithing", "Copper Armor")
     call Professions_StartRecipe(whichCrafter, whichStation, recipeId)
     call Professions_GetProfessionSummary(whichCrafter, GNS_PROF_ALCHEMY)
 
@@ -37,6 +39,7 @@ globals
 
     private constant integer P_MAX_RECIPES = 256
     private constant integer P_MAX_PROFESSION_ID = GNS_PROF_COOKING
+    private constant string P_DEFAULT_CATEGORY = "Recipes"
     private constant integer P_ALCHEMY_LIGHT_ABILITY = 'A6DJ'
     private constant real P_STATION_USE_RANGE = 375.00
     private constant real P_SOUND_CUTOFF = 3000.00
@@ -73,6 +76,8 @@ globals
     private string array P_RecipeName
     private string array P_RecipeDescription
     private string array P_RecipeIcon
+    private string array P_RecipeCategory
+    private string array P_RecipeSubcategory
 
     // Material slots are stored by recipeId * MAX_MATERIALS + slot.
     private integer array P_MaterialItemCode
@@ -159,6 +164,34 @@ private function P_GetRecipeDisplayName takes integer recipeId returns string
     return P_RecipeName[recipeId]
 endfunction
 
+private function P_GetNormalizedCategory takes string categoryName returns string
+    if categoryName == null or categoryName == "" then
+        return P_DEFAULT_CATEGORY
+    endif
+    return categoryName
+endfunction
+
+private function P_GetNormalizedSubcategory takes string subcategoryName returns string
+    if subcategoryName == null then
+        return ""
+    endif
+    return subcategoryName
+endfunction
+
+private function P_GetRecipeCategoryDisplay takes integer recipeId returns string
+    if not P_IsRecipeValid(recipeId) then
+        return P_DEFAULT_CATEGORY
+    endif
+    return P_GetNormalizedCategory(P_RecipeCategory[recipeId])
+endfunction
+
+private function P_GetRecipeSubcategoryDisplay takes integer recipeId returns string
+    if not P_IsRecipeValid(recipeId) then
+        return ""
+    endif
+    return P_GetNormalizedSubcategory(P_RecipeSubcategory[recipeId])
+endfunction
+
 private function P_GetStationDisplayName takes integer unitTypeId returns string
     if unitTypeId != 0 and P_StationName.has(unitTypeId) then
         return P_StationName.string[unitTypeId]
@@ -167,6 +200,52 @@ private function P_GetStationDisplayName takes integer unitTypeId returns string
         return GetObjectName(unitTypeId)
     endif
     return "Workstation"
+endfunction
+
+private function P_RecipeMatchesStation takes integer recipeId, integer professionId, integer stationTypeId returns boolean
+    return P_RecipeProfessionId[recipeId] == professionId and (stationTypeId == 0 or P_RecipeStationTypeId[recipeId] == stationTypeId)
+endfunction
+
+private function P_RecipeMatchesCategory takes integer recipeId, string categoryName returns boolean
+    return P_GetRecipeCategoryDisplay(recipeId) == P_GetNormalizedCategory(categoryName) and P_GetRecipeSubcategoryDisplay(recipeId) == ""
+endfunction
+
+private function P_RecipeMatchesSubcategory takes integer recipeId, string categoryName, string subcategoryName returns boolean
+    return P_GetRecipeCategoryDisplay(recipeId) == P_GetNormalizedCategory(categoryName) and P_GetRecipeSubcategoryDisplay(recipeId) == P_GetNormalizedSubcategory(subcategoryName)
+endfunction
+
+private function P_IsFirstStationCategory takes integer recipeId, integer professionId, integer stationTypeId returns boolean
+    local integer previousId = 1
+    local string categoryName = P_GetRecipeCategoryDisplay(recipeId)
+
+    loop
+        exitwhen previousId >= recipeId
+        if P_RecipeMatchesStation(previousId, professionId, stationTypeId) and P_GetRecipeCategoryDisplay(previousId) == categoryName then
+            return false
+        endif
+        set previousId = previousId + 1
+    endloop
+
+    return true
+endfunction
+
+private function P_IsFirstStationSubcategory takes integer recipeId, integer professionId, integer stationTypeId, string categoryName returns boolean
+    local integer previousId = 1
+    local string subcategoryName = P_GetRecipeSubcategoryDisplay(recipeId)
+
+    if subcategoryName == "" then
+        return false
+    endif
+
+    loop
+        exitwhen previousId >= recipeId
+        if P_RecipeMatchesStation(previousId, professionId, stationTypeId) and P_RecipeMatchesSubcategory(previousId, categoryName, subcategoryName) then
+            return false
+        endif
+        set previousId = previousId + 1
+    endloop
+
+    return true
 endfunction
 
 private function P_CountVanillaItems takes unit u, integer itemCode returns integer
@@ -793,6 +872,8 @@ public function RegisterRecipe takes integer professionId, integer stationTypeId
     set P_RecipeName[P_RecipeCount] = recipeName
     set P_RecipeDescription[P_RecipeCount] = description
     set P_RecipeIcon[P_RecipeCount] = iconPath
+    set P_RecipeCategory[P_RecipeCount] = P_DEFAULT_CATEGORY
+    set P_RecipeSubcategory[P_RecipeCount] = ""
     set P_RecipeOutputItemCode[P_RecipeCount] = outputItemCode
     set P_RecipeOutputCount[P_RecipeCount] = outputCount
     set P_RecipeRequiredSkill[P_RecipeCount] = requiredSkill
@@ -832,6 +913,20 @@ public function SetRecipeSkillGain takes integer recipeId, integer amount return
         set amount = 0
     endif
     set P_RecipeSkillGain[recipeId] = amount
+endfunction
+
+public function SetRecipeCategoryPath takes integer recipeId, string categoryName, string subcategoryName returns nothing
+    if not P_IsRecipeValid(recipeId) then
+        return
+    endif
+
+    set P_RecipeCategory[recipeId] = P_GetNormalizedCategory(categoryName)
+    set P_RecipeSubcategory[recipeId] = P_GetNormalizedSubcategory(subcategoryName)
+    set P_RecipeRevision = P_RecipeRevision + 1
+endfunction
+
+public function SetRecipeCategory takes integer recipeId, string categoryName returns nothing
+    call SetRecipeCategoryPath(recipeId, categoryName, "")
 endfunction
 
 public function GetRecipeRevision takes nothing returns integer
@@ -879,6 +974,20 @@ public function GetRecipeIcon takes integer recipeId returns string
         return "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp"
     endif
     return P_RecipeIcon[recipeId]
+endfunction
+
+public function GetRecipeCategory takes integer recipeId returns string
+    if not P_IsRecipeValid(recipeId) then
+        return ""
+    endif
+    return P_GetRecipeCategoryDisplay(recipeId)
+endfunction
+
+public function GetRecipeSubcategory takes integer recipeId returns string
+    if not P_IsRecipeValid(recipeId) then
+        return ""
+    endif
+    return P_GetRecipeSubcategoryDisplay(recipeId)
 endfunction
 
 public function GetRecipeRequiredSkill takes integer recipeId returns integer
@@ -1000,13 +1109,101 @@ public function GetMissingRecipeText takes unit crafter, integer recipeId return
     return result
 endfunction
 
+public function GetRecipeCategoryCountForStation takes integer professionId, integer stationTypeId returns integer
+    local integer recipeId = 1
+    local integer count = 0
+
+    if not P_IsProfessionValid(professionId) then
+        return 0
+    endif
+
+    loop
+        exitwhen recipeId > P_RecipeCount
+        if P_RecipeMatchesStation(recipeId, professionId, stationTypeId) and P_IsFirstStationCategory(recipeId, professionId, stationTypeId) then
+            set count = count + 1
+        endif
+        set recipeId = recipeId + 1
+    endloop
+
+    return count
+endfunction
+
+public function GetRecipeCategoryForStationIndex takes integer professionId, integer stationTypeId, integer categoryIndex returns string
+    local integer recipeId = 1
+    local integer count = 0
+
+    if categoryIndex <= 0 or not P_IsProfessionValid(professionId) then
+        return ""
+    endif
+
+    loop
+        exitwhen recipeId > P_RecipeCount
+        if P_RecipeMatchesStation(recipeId, professionId, stationTypeId) and P_IsFirstStationCategory(recipeId, professionId, stationTypeId) then
+            set count = count + 1
+            if count == categoryIndex then
+                return P_GetRecipeCategoryDisplay(recipeId)
+            endif
+        endif
+        set recipeId = recipeId + 1
+    endloop
+
+    return ""
+endfunction
+
+public function GetRecipeSubcategoryCountForStationCategory takes integer professionId, integer stationTypeId, string categoryName returns integer
+    local integer recipeId = 1
+    local integer count = 0
+    local string category = P_GetNormalizedCategory(categoryName)
+
+    if not P_IsProfessionValid(professionId) then
+        return 0
+    endif
+
+    loop
+        exitwhen recipeId > P_RecipeCount
+        if P_RecipeMatchesStation(recipeId, professionId, stationTypeId) and P_GetRecipeCategoryDisplay(recipeId) == category and P_IsFirstStationSubcategory(recipeId, professionId, stationTypeId, category) then
+            set count = count + 1
+        endif
+        set recipeId = recipeId + 1
+    endloop
+
+    return count
+endfunction
+
+public function GetRecipeSubcategoryForStationCategoryIndex takes integer professionId, integer stationTypeId, string categoryName, integer subcategoryIndex returns string
+    local integer recipeId = 1
+    local integer count = 0
+    local string category = P_GetNormalizedCategory(categoryName)
+
+    if subcategoryIndex <= 0 or not P_IsProfessionValid(professionId) then
+        return ""
+    endif
+
+    loop
+        exitwhen recipeId > P_RecipeCount
+        if P_RecipeMatchesStation(recipeId, professionId, stationTypeId) and P_GetRecipeCategoryDisplay(recipeId) == category and P_IsFirstStationSubcategory(recipeId, professionId, stationTypeId, category) then
+            set count = count + 1
+            if count == subcategoryIndex then
+                return P_GetRecipeSubcategoryDisplay(recipeId)
+            endif
+        endif
+        set recipeId = recipeId + 1
+    endloop
+
+    return ""
+endfunction
+
 public function GetRecipeCountForStation takes integer professionId, integer stationTypeId returns integer
     local integer recipeId = 1
     local integer count = 0
 
+    if not P_IsProfessionValid(professionId) then
+        return 0
+    endif
+
     loop
         exitwhen recipeId > P_RecipeCount
-        if P_RecipeProfessionId[recipeId] == professionId and (stationTypeId == 0 or P_RecipeStationTypeId[recipeId] == stationTypeId) then
+        if P_RecipeMatchesStation(recipeId, professionId, stationTypeId) then
             set count = count + 1
         endif
         set recipeId = recipeId + 1
@@ -1019,13 +1216,95 @@ public function GetRecipeIdForStationIndex takes integer professionId, integer s
     local integer recipeId = 1
     local integer count = 0
 
-    if listIndex <= 0 then
+    if listIndex <= 0 or not P_IsProfessionValid(professionId) then
         return 0
     endif
 
     loop
         exitwhen recipeId > P_RecipeCount
-        if P_RecipeProfessionId[recipeId] == professionId and (stationTypeId == 0 or P_RecipeStationTypeId[recipeId] == stationTypeId) then
+        if P_RecipeMatchesStation(recipeId, professionId, stationTypeId) then
+            set count = count + 1
+            if count == listIndex then
+                return recipeId
+            endif
+        endif
+        set recipeId = recipeId + 1
+    endloop
+
+    return 0
+endfunction
+
+public function GetRecipeCountForStationCategory takes integer professionId, integer stationTypeId, string categoryName returns integer
+    local integer recipeId = 1
+    local integer count = 0
+
+    if not P_IsProfessionValid(professionId) then
+        return 0
+    endif
+
+    loop
+        exitwhen recipeId > P_RecipeCount
+        if P_RecipeMatchesStation(recipeId, professionId, stationTypeId) and P_RecipeMatchesCategory(recipeId, categoryName) then
+            set count = count + 1
+        endif
+        set recipeId = recipeId + 1
+    endloop
+
+    return count
+endfunction
+
+public function GetRecipeIdForStationCategoryIndex takes integer professionId, integer stationTypeId, string categoryName, integer listIndex returns integer
+    local integer recipeId = 1
+    local integer count = 0
+
+    if listIndex <= 0 or not P_IsProfessionValid(professionId) then
+        return 0
+    endif
+
+    loop
+        exitwhen recipeId > P_RecipeCount
+        if P_RecipeMatchesStation(recipeId, professionId, stationTypeId) and P_RecipeMatchesCategory(recipeId, categoryName) then
+            set count = count + 1
+            if count == listIndex then
+                return recipeId
+            endif
+        endif
+        set recipeId = recipeId + 1
+    endloop
+
+    return 0
+endfunction
+
+public function GetRecipeCountForStationSubcategory takes integer professionId, integer stationTypeId, string categoryName, string subcategoryName returns integer
+    local integer recipeId = 1
+    local integer count = 0
+
+    if not P_IsProfessionValid(professionId) then
+        return 0
+    endif
+
+    loop
+        exitwhen recipeId > P_RecipeCount
+        if P_RecipeMatchesStation(recipeId, professionId, stationTypeId) and P_RecipeMatchesSubcategory(recipeId, categoryName, subcategoryName) then
+            set count = count + 1
+        endif
+        set recipeId = recipeId + 1
+    endloop
+
+    return count
+endfunction
+
+public function GetRecipeIdForStationSubcategoryIndex takes integer professionId, integer stationTypeId, string categoryName, string subcategoryName, integer listIndex returns integer
+    local integer recipeId = 1
+    local integer count = 0
+
+    if listIndex <= 0 or not P_IsProfessionValid(professionId) then
+        return 0
+    endif
+
+    loop
+        exitwhen recipeId > P_RecipeCount
+        if P_RecipeMatchesStation(recipeId, professionId, stationTypeId) and P_RecipeMatchesSubcategory(recipeId, categoryName, subcategoryName) then
             set count = count + 1
             if count == listIndex then
                 return recipeId
