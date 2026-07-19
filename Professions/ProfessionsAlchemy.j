@@ -102,6 +102,10 @@ endfunction
 private function PA_RegisterRecipes takes nothing returns nothing
     local integer recipeId
 
+    /* material-less/unresolved workbook rows unregistered for now: 
+    /Purified Water, Vampiric Potion, Elixir of Might, Elixir of Shadows, and non-Nazgrek flask ideas.
+    */
+
     set recipeId = PA_Register(PA_CATEGORY_BASIC_ALCHEMY, "Spring Water", "Boils Agave into a simple restorative water.", PA_ICON_WATER, PA_ITEM_SPRING_WATER, 0, 5.00)
     call PA_Add(recipeId, PA_ITEM_AGAVE, 1, "Agave")
 
