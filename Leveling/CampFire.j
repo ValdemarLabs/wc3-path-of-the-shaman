@@ -6,8 +6,8 @@
 
     Description:
     Tracks constructed camp fires, applies their warmth abilities, creates
-    light helpers, and grants rested progress to nearby heroes through the
-    Experience library.
+    light helpers, and grants rested progress to heroes inside registered
+    camp-fire radius through the Experience library.
 
     Credits:
 
@@ -50,6 +50,7 @@ library CampFire initializer Init requires Experience, optional HintsUI
         private trigger CF_ConstructTrigger = null
         private trigger CF_DeathTrigger = null
         private trigger CF_SpellChannelTrigger = null
+        private boolean CF_LightSearchFound = false
     endglobals
 
     private function CF_IsAlive takes unit whichUnit returns boolean
@@ -58,7 +59,7 @@ library CampFire initializer Init requires Experience, optional HintsUI
 
     private function CF_FilterRestingHero takes nothing returns boolean
         local unit hero = GetFilterUnit()
-        local boolean result = hero != null and IsUnitType(hero, UNIT_TYPE_HERO) and GetWidgetLife(hero) > 0.405 and GetUnitAbilityLevel(hero, Experience_BUFF_WARMTH) > 0 and not Experience_IsRested(hero)
+        local boolean result = hero != null and IsUnitType(hero, UNIT_TYPE_HERO) and GetWidgetLife(hero) > 0.405 and not Experience_IsRested(hero)
 
         set hero = null
         return result
@@ -111,6 +112,56 @@ library CampFire initializer Init requires Experience, optional HintsUI
         endif
     endfunction
 
+    private function CF_FindNearbyLight takes nothing returns nothing
+        local unit picked = GetEnumUnit()
+
+        if picked != null and GetUnitTypeId(picked) == CF_LIGHT_UNIT_ID then
+            set CF_LightSearchFound = true
+        endif
+
+        set picked = null
+    endfunction
+
+    private function CF_HasNearbyLight takes real x, real y returns boolean
+        set CF_LightSearchFound = false
+        call GroupEnumUnitsInRange(CF_EnumGroup, x, y, CF_LIGHT_CLEANUP_RADIUS, null)
+        call ForGroup(CF_EnumGroup, function CF_FindNearbyLight)
+        call GroupClear(CF_EnumGroup)
+        return CF_LightSearchFound
+    endfunction
+
+    private function CF_PrepareFire takes unit fire returns nothing
+        local real x
+        local real y
+        local unit light = null
+
+        if fire == null or GetUnitTypeId(fire) != UNIT_ID then
+            return
+        endif
+
+        set x = GetUnitX(fire)
+        set y = GetUnitY(fire)
+        if GetUnitAbilityLevel(fire, CF_WARMTH_ABILITY_ID) <= 0 then
+            call UnitAddAbility(fire, CF_WARMTH_ABILITY_ID)
+        endif
+        if GetUnitAbilityLevel(fire, CF_WARMTH_HP_ABILITY_ID) <= 0 then
+            call UnitAddAbility(fire, CF_WARMTH_HP_ABILITY_ID)
+        endif
+        if GetUnitAbilityLevel(fire, CF_WARMTH_MANA_ABILITY_ID) <= 0 then
+            call UnitAddAbility(fire, CF_WARMTH_MANA_ABILITY_ID)
+        endif
+        call UnitApplyTimedLife(fire, 'BTLF', CF_LIFETIME)
+
+        if not CF_HasNearbyLight(x, y) then
+            set light = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), CF_LIGHT_UNIT_ID, x, y, 0.00)
+            if light != null then
+                call UnitApplyTimedLife(light, 'BTLF', CF_LIFETIME + 1.00)
+            endif
+        endif
+
+        set light = null
+    endfunction
+
     private function CF_Scan takes nothing returns nothing
         local integer i = 0
         local unit fire
@@ -144,6 +195,7 @@ library CampFire initializer Init requires Experience, optional HintsUI
         endif
 
         if CF_FireCount < CF_MAX_FIRES then
+            call CF_PrepareFire(fire)
             set CF_Fire[CF_FireCount] = fire
             set CF_FireCount = CF_FireCount + 1
             call TimerStart(CF_ScanTimer, CF_SCAN_INTERVAL, true, function CF_Scan)
@@ -156,17 +208,8 @@ library CampFire initializer Init requires Experience, optional HintsUI
 
     private function CF_OnConstructFinish takes nothing returns nothing
         local unit fire = GetConstructedStructure()
-        local real x
-        local real y
 
         if fire != null and GetUnitTypeId(fire) == UNIT_ID then
-            set x = GetUnitX(fire)
-            set y = GetUnitY(fire)
-            call UnitAddAbility(fire, CF_WARMTH_ABILITY_ID)
-            call UnitAddAbility(fire, CF_WARMTH_HP_ABILITY_ID)
-            call UnitAddAbility(fire, CF_WARMTH_MANA_ABILITY_ID)
-            call UnitApplyTimedLife(fire, 'BTLF', CF_LIFETIME)
-            call CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), CF_LIGHT_UNIT_ID, x, y, 0.00)
             call Register(fire)
         endif
 
