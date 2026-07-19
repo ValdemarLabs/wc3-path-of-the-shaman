@@ -9,7 +9,7 @@
     Credits: Tasyen (TasQuestBox as inspiration)
 
     How to install:
-    Import this library after Professions, MasterUI, and Interface. Profession sublibraries register workstation unit types; selecting a registered workstation opens this panel for the last selected tracked hero.
+    Import this library after Professions, MasterUI, and Interface. Profession sublibraries register workstation unit types; selecting a registered workstation opens this panel for the nearest owned tracked hero.
 
     API:
     call CraftingUI_OpenForStation(whichStation, whichCrafter)
@@ -95,8 +95,14 @@ private function CUI_GetStationType takes integer pid returns integer
     return GetUnitTypeId(CUI_Station[pid])
 endfunction
 
-private function CUI_IsValidCrafterCandidate takes unit whichUnit returns boolean
-    return whichUnit != null and GetUnitTypeId(whichUnit) != 0 and IsUnitType(whichUnit, UNIT_TYPE_HERO) and GNS_IsTrackedGatherer(whichUnit)
+private function CUI_IsValidCrafterCandidateForPlayer takes player whichPlayer, unit whichUnit returns boolean
+    if whichPlayer == null or whichUnit == null then
+        return false
+    endif
+    if GetUnitTypeId(whichUnit) == 0 then
+        return false
+    endif
+    return GetOwningPlayer(whichUnit) == whichPlayer and IsUnitType(whichUnit, UNIT_TYPE_HERO) and GNS_IsTrackedGatherer(whichUnit)
 endfunction
 
 private function CUI_GetDistanceSq takes unit a, unit b returns real
@@ -105,8 +111,8 @@ private function CUI_GetDistanceSq takes unit a, unit b returns real
     return dx * dx + dy * dy
 endfunction
 
-private function CUI_GetCloserCrafter takes unit station, unit current, unit candidate returns unit
-    if station == null or not CUI_IsValidCrafterCandidate(candidate) then
+private function CUI_GetCloserCrafter takes player whichPlayer, unit station, unit current, unit candidate returns unit
+    if station == null or not CUI_IsValidCrafterCandidateForPlayer(whichPlayer, candidate) then
         return current
     endif
     if current == null or CUI_GetDistanceSq(candidate, station) < CUI_GetDistanceSq(current, station) then
@@ -115,12 +121,12 @@ private function CUI_GetCloserCrafter takes unit station, unit current, unit can
     return current
 endfunction
 
-private function CUI_GetNearestTrackedHero takes unit station returns unit
+private function CUI_GetNearestTrackedHero takes player whichPlayer, unit station returns unit
     local unit best = null
 
-    set best = CUI_GetCloserCrafter(station, best, udg_Nazgrek)
-    set best = CUI_GetCloserCrafter(station, best, udg_Zulkis)
-    set best = CUI_GetCloserCrafter(station, best, GNS_GetUITargetUnit())
+    set best = CUI_GetCloserCrafter(whichPlayer, station, best, udg_Nazgrek)
+    set best = CUI_GetCloserCrafter(whichPlayer, station, best, udg_Zulkis)
+    set best = CUI_GetCloserCrafter(whichPlayer, station, best, GNS_GetUITargetUnit())
 
     return best
 endfunction
@@ -707,7 +713,7 @@ private function CUI_SelectAction takes nothing returns nothing
         return
     endif
 
-    set crafter = CUI_GetNearestTrackedHero(station)
+    set crafter = CUI_GetNearestTrackedHero(p, station)
     if crafter == null or not GNS_IsTrackedGatherer(crafter) then
         call DisplayTextToPlayer(p, 0.00, 0.00, "|cffff8080" + NoCrafterText + "|r")
     elseif not Professions_IsCrafterNearStation(crafter, station) then
@@ -885,6 +891,9 @@ endfunction
 
 public function OpenForStation takes unit station, unit crafter returns nothing
     if crafter == null then
+        return
+    endif
+    if not CUI_IsValidCrafterCandidateForPlayer(GetOwningPlayer(crafter), crafter) then
         return
     endif
     call CUI_OpenForPlayer(GetOwningPlayer(crafter), station, crafter)
