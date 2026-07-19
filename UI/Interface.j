@@ -43,6 +43,7 @@
     call Interface_NotifyLootCoin()
     call Interface_NotifyHardWarning()
     call Interface_NotifyMiningHitOnUnit(GetTriggerUnit())
+    call Interface_PlayProfessionSoundOnUnit(Interface_Profession_Blacksmithing_Start, "Blacksmithing", GetTriggerUnit(), false, 3000.00)
 
 **/
 library Interface initializer AutoInit
@@ -80,6 +81,7 @@ library Interface initializer AutoInit
 
         private constant integer IUI_EVENT_MAX = 30
         private constant real IUI_MINING_SOUND_CUTOFF = 1000.00
+        private constant real IUI_PROFESSION_SOUND_CUTOFF = 3000.00
 
         private boolean IUI_Initialized = false
         private boolean IUI_SoundsEnabled = true
@@ -87,6 +89,33 @@ library Interface initializer AutoInit
 
         // Event sounds are assigned during init and can be overridden through SetEventSound.
         private sound array IUI_EventSound
+
+        // Profession station sounds are shared by Professions.j and its sublibraries.
+        public sound Profession_Alchemy_Start = null
+        public sound Profession_Alchemy_Loop = null
+        public sound Profession_Alchemy_End = null
+        public sound Profession_Blacksmithing_Start = null
+        public sound Profession_Blacksmithing_Loop = null
+        public sound Profession_Blacksmithing_End = null
+        public sound Profession_Mining_Start = null
+        public sound Profession_Mining_Loop = null
+        public sound Profession_Mining_End = null
+        public sound Profession_Leatherworking_Start = null
+        public sound Profession_Leatherworking_Loop = null
+        public sound Profession_Leatherworking_End = null
+        public sound Profession_Cooking_Start = null
+        public sound Profession_Cooking_Loop = null
+        public sound Profession_Cooking_End = null
+        public sound Profession_Enchanting_Start = null
+        public sound Profession_Enchanting_Loop = null
+        public sound Profession_Enchanting_End = null
+        public sound Profession_Fishing_Start = null
+        public sound Profession_Fishing_Loop = null
+        public sound Profession_Fishing_End = null
+        public sound Profession_Skinning_Start = null
+        public sound Profession_Skinning_Loop = null
+        public sound Profession_Skinning_End = null
+
         private trigger IUI_UnitSelectTrigger = null
         private trigger IUI_PlayerLevelUpTrigger = null
     endglobals
@@ -159,6 +188,44 @@ library Interface initializer AutoInit
         call KillSoundWhenDone(miningSound)
 
         set miningSound = null
+    endfunction
+
+    public function PlayProfessionSoundOnUnit takes sound whichSound, string soundLabel, unit whichUnit, boolean looping, real cutoff returns sound
+        local sound professionSound = null
+
+        if not IUI_SoundsEnabled or whichUnit == null then
+            return null
+        endif
+        if cutoff <= 0.00 then
+            set cutoff = IUI_PROFESSION_SOUND_CUTOFF
+        endif
+
+        if soundLabel != null and soundLabel != "" then
+            set professionSound = CreateSoundFromLabel(soundLabel, looping, true, true, 12700, 12700)
+            if professionSound != null then
+                call SetSoundDistances(professionSound, 0.00, cutoff)
+                call SetSoundDistanceCutoff(professionSound, cutoff)
+                call AttachSoundToUnit(professionSound, whichUnit)
+                call SetSoundVolume(professionSound, 127)
+                call StartSound(professionSound)
+                if not looping then
+                    call KillSoundWhenDone(professionSound)
+                endif
+                return professionSound
+            endif
+        endif
+
+        if whichSound != null then
+            call StopSound(whichSound, false, false)
+            call SetSoundDistances(whichSound, 0.00, cutoff)
+            call SetSoundDistanceCutoff(whichSound, cutoff)
+            call AttachSoundToUnit(whichSound, whichUnit)
+            call SetSoundVolume(whichSound, 127)
+            call StartSound(whichSound)
+            return whichSound
+        endif
+
+        return null
     endfunction
 
     private function IUI_PlayEvent takes integer eventId returns nothing
@@ -254,6 +321,31 @@ library Interface initializer AutoInit
         set IUI_EventSound[EVENT_QUEST_WRITE] = gg_snd_Interface_QuestWrite                     // gg_snd_Interface_QuestWrite
         set IUI_EventSound[EVENT_LOOT_COIN] = gg_snd_Interface_LootCoin                         // gg_snd_Interface_LootCoin
         set IUI_EventSound[EVENT_HARD_WARNING] = gg_snd_Interface_HardWarning                   // gg_snd_Interface_HardWarning
+
+        set Profession_Alchemy_Start = gg_snd_CauldronSound
+        set Profession_Alchemy_Loop = gg_snd_CauldronSound
+        set Profession_Alchemy_End = gg_snd_CauldronSound
+        set Profession_Blacksmithing_Start = gg_snd_Blacksmithing
+        set Profession_Blacksmithing_Loop = gg_snd_Blacksmithing
+        set Profession_Blacksmithing_End = gg_snd_Blacksmithing
+        set Profession_Mining_Start = gg_snd_Tradeskill_MiningHitA
+        set Profession_Mining_Loop = gg_snd_Tradeskill_MiningHitB
+        set Profession_Mining_End = gg_snd_Tradeskill_MiningHitC
+        set Profession_Leatherworking_Start = gg_snd_Tannery
+        set Profession_Leatherworking_Loop = gg_snd_Tannery
+        set Profession_Leatherworking_End = gg_snd_Tannery
+        set Profession_Cooking_Start = null
+        set Profession_Cooking_Loop = null
+        set Profession_Cooking_End = null
+        set Profession_Enchanting_Start = null
+        set Profession_Enchanting_Loop = null
+        set Profession_Enchanting_End = null
+        set Profession_Fishing_Start = null
+        set Profession_Fishing_Loop = null
+        set Profession_Fishing_End = null
+        set Profession_Skinning_Start = null
+        set Profession_Skinning_Loop = null
+        set Profession_Skinning_End = null
     endfunction
 
     public function SetSoundsEnabled takes boolean enabled returns nothing
