@@ -25,11 +25,13 @@
 library Professions initializer AutoInit requires GatherNodeSkills, TimerUtils, Table, optional SharedDInvLib, optional ItemHook
 
 globals
+    // Public result codes for callers that need richer failure handling later.
     public constant integer RESULT_OK = 0
     public constant integer RESULT_INVALID = 1
     public constant integer RESULT_NOT_READY = 2
     public constant integer RESULT_MISSING_MATERIALS = 3
 
+    // Recipe/material limits and shared workstation feedback settings.
     public constant integer MAX_MATERIALS = 6
 
     private constant integer P_MAX_RECIPES = 256
@@ -39,12 +41,14 @@ globals
     private constant real P_SOUND_CUTOFF = 1300.00
     private constant real P_ALCHEMY_DECAY_DELAY = 10.00
 
+    // Registry/runtime state.
     private boolean P_Initialized = false
     private integer P_RecipeCount = 0
     private integer P_RecipeRevision = 0
     private integer P_JobCount = 0
     private string P_LastErrorText = ""
 
+    // Recipe definitions registered by ProfessionsXXX sublibraries.
     private integer array P_RecipeProfessionId
     private integer array P_RecipeStationTypeId
     private integer array P_RecipeOutputItemCode
@@ -58,19 +62,23 @@ globals
     private string array P_RecipeDescription
     private string array P_RecipeIcon
 
+    // Material slots are stored by recipeId * MAX_MATERIALS + slot.
     private integer array P_MaterialItemCode
     private integer array P_MaterialAmount
     private string array P_MaterialName
 
+    // Active crafting jobs.
     private unit array P_JobCrafter
     private unit array P_JobStation
     private integer array P_JobRecipe
     private sound array P_JobLoopSound
 
+    // Per-profession sound labels: start once, loop during craft, finish once.
     private string array P_ProfessionStartSoundLabel
     private string array P_ProfessionLoopSoundLabel
     private string array P_ProfessionFinishSoundLabel
 
+    // Lookup/state tables keyed by unit type, handle id, recipe id, or cooldown key.
     private Table P_StationProfession = 0
     private Table P_StationName = 0
     private Table P_CrafterActiveJob = 0

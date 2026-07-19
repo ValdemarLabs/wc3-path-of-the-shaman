@@ -19,10 +19,18 @@
 library ProfessionsMining initializer AutoInit requires Professions, GatherNodeSkills
 
 globals
+    // Runtime guard.
     private boolean PM_Initialized = false
 
+    // Workstation configuration. Mining gather nodes remain owned by GatherNodeUnits.
     private constant integer PM_STATION_FORGE = 'n62S'
 
+    // Sound labels. Professions plays Start once, Loop until done, and Finish once.
+    private constant string PM_SOUND_START = "Tradeskill_MiningHitA"
+    private constant string PM_SOUND_LOOP = "Tradeskill_MiningHitB"
+    private constant string PM_SOUND_FINISH = "Tradeskill_MiningHitC"
+
+    // Smelting input ore raw codes.
     private constant integer PM_ITEM_COPPER_ORE = 'I67E'
     private constant integer PM_ITEM_TIN_ORE = 'I67F'
     private constant integer PM_ITEM_SILVER_ORE = 'I67G'
@@ -31,6 +39,7 @@ globals
     private constant integer PM_ITEM_MITHRIL_ORE = 'I67J'
     private constant integer PM_ITEM_THORIUM_ORE = 'I67L'
 
+    // Smelting output bar raw codes.
     private constant integer PM_ITEM_COPPER_BAR = 'I67M'
     private constant integer PM_ITEM_TIN_BAR = 'I67N'
     private constant integer PM_ITEM_SILVER_BAR = 'I67O'
@@ -39,6 +48,7 @@ globals
     private constant integer PM_ITEM_MITHRIL_BAR = 'I67T'
     private constant integer PM_ITEM_THORIUM_BAR = 'I67V'
 
+    // Recipe icon paths.
     private constant string PM_ICON_COPPER = "ReplaceableTextures\\CommandButtons\\BTNINV_Ingot_02.TGA"
     private constant string PM_ICON_TIN = "ReplaceableTextures\\CommandButtons\\BTNINV_Ingot_02.TGA"
     private constant string PM_ICON_SILVER = "ReplaceableTextures\\CommandButtons\\BTNINV_Ingot_03.TGA"
@@ -72,7 +82,7 @@ public function Init takes nothing returns nothing
     set PM_Initialized = true
 
     call Professions_RegisterStationType(GNS_PROF_MINING, PM_STATION_FORGE, "Forge")
-    call Professions_SetProfessionSoundLabels(GNS_PROF_MINING, "Tradeskill_MiningHitA", "Tradeskill_MiningHitB", "Tradeskill_MiningHitC")
+    call Professions_SetProfessionSoundLabels(GNS_PROF_MINING, PM_SOUND_START, PM_SOUND_LOOP, PM_SOUND_FINISH)
     call PM_RegisterRecipes()
 endfunction
 

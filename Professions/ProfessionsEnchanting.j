@@ -19,7 +19,13 @@
 library ProfessionsEnchanting initializer AutoInit requires Professions, GatherNodeSkills
 
 globals
+    // Runtime guard.
     private boolean PE_Initialized = false
+
+    // Sound labels. Empty labels intentionally mean no sound until Enchanting assets are chosen.
+    private constant string PE_SOUND_START = ""
+    private constant string PE_SOUND_LOOP = ""
+    private constant string PE_SOUND_FINISH = ""
 endglobals
 
 public function Init takes nothing returns nothing
@@ -27,6 +33,8 @@ public function Init takes nothing returns nothing
         return
     endif
     set PE_Initialized = true
+
+    call Professions_SetProfessionSoundLabels(GNS_PROF_ENCHANTING, PE_SOUND_START, PE_SOUND_LOOP, PE_SOUND_FINISH)
 endfunction
 
 public function AutoInit takes nothing returns nothing

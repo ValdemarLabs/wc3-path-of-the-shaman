@@ -19,10 +19,18 @@
 library ProfessionsLeatherworking initializer AutoInit requires Professions, GatherNodeSkills
 
 globals
+    // Runtime guard.
     private boolean PL_Initialized = false
 
+    // Workstation configuration.
     private constant integer PL_STATION_TANNERY = 'n625'
 
+    // Sound labels. Professions plays Start once, Loop until done, and Finish once.
+    private constant string PL_SOUND_START = "Tannery"
+    private constant string PL_SOUND_LOOP = "Tannery"
+    private constant string PL_SOUND_FINISH = "Tannery"
+
+    // Crafted output raw codes.
     private constant integer PL_ITEM_REINFORCED_LEATHER_GLOVES = 'I65X'
     private constant integer PL_ITEM_REINFORCED_LEATHER_BOOTS = 'I65Y'
     private constant integer PL_ITEM_REINFORCED_LEATHER_HELMET = 'I65Z'
@@ -30,6 +38,7 @@ globals
     private constant integer PL_ITEM_REINFORCED_LEATHER_BELT = 'I661'
     private constant integer PL_ITEM_REINFORCED_LEATHER_SHOULDERPADS = 'I662'
 
+    // Recipe icon paths.
     private constant string PL_ICON_LEATHER = "ReplaceableTextures\\CommandButtons\\BTNLeatherUpgradeOne.blp"
 endglobals
 
@@ -55,7 +64,7 @@ public function Init takes nothing returns nothing
     set PL_Initialized = true
 
     call Professions_RegisterStationType(GNS_PROF_LEATHERWORKING, PL_STATION_TANNERY, "Tannery")
-    call Professions_SetProfessionSoundLabels(GNS_PROF_LEATHERWORKING, "Tannery", "Tannery", "Tannery")
+    call Professions_SetProfessionSoundLabels(GNS_PROF_LEATHERWORKING, PL_SOUND_START, PL_SOUND_LOOP, PL_SOUND_FINISH)
     call PL_RegisterRecipes()
 endfunction
 

@@ -19,11 +19,19 @@
 library ProfessionsBlacksmithing initializer AutoInit requires Professions, GatherNodeSkills
 
 globals
+    // Runtime guard.
     private boolean PB_Initialized = false
 
+    // Workstation and material configuration.
     private constant integer PB_STATION_ANVIL = 'n62R'
     private constant integer PB_ITEM_COPPER_BAR = 'I67M'
 
+    // Sound labels. Professions plays Start once, Loop until done, and Finish once.
+    private constant string PB_SOUND_START = "Blacksmithing"
+    private constant string PB_SOUND_LOOP = "Blacksmithing"
+    private constant string PB_SOUND_FINISH = "Blacksmithing"
+
+    // Crafted output raw codes.
     private constant integer PB_ITEM_COPPER_CHAIN_HELMET = 'I68F'
     private constant integer PB_ITEM_COPPER_CHAIN_LEGGINGS = 'I68G'
     private constant integer PB_ITEM_COPPER_CHAIN_VEST = 'I68H'
@@ -33,6 +41,7 @@ globals
     private constant integer PB_ITEM_COPPER_CHAIN_SHOULDERS = 'I68L'
     private constant integer PB_ITEM_COPPER_CHAIN_BOOTS = 'I68M'
 
+    // Recipe icon paths.
     private constant string PB_ICON_ARMOR = "ReplaceableTextures\\CommandButtons\\BTNThoriumArmor.blp"
     private constant string PB_ICON_CHEST = "war3campImported\\BTNINV_Chest_Chain_10.blp"
 endglobals
@@ -62,7 +71,7 @@ public function Init takes nothing returns nothing
     set PB_Initialized = true
 
     call Professions_RegisterStationType(GNS_PROF_BLACKSMITHING, PB_STATION_ANVIL, "Anvil")
-    call Professions_SetProfessionSoundLabels(GNS_PROF_BLACKSMITHING, "Blacksmithing", "Blacksmithing", "Blacksmithing")
+    call Professions_SetProfessionSoundLabels(GNS_PROF_BLACKSMITHING, PB_SOUND_START, PB_SOUND_LOOP, PB_SOUND_FINISH)
     call PB_RegisterRecipes()
 endfunction
 

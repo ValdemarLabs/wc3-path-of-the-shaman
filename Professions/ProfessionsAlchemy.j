@@ -19,10 +19,18 @@
 library ProfessionsAlchemy initializer AutoInit requires Professions, GatherNodeSkills
 
 globals
+    // Runtime guard.
     private boolean PA_Initialized = false
 
+    // Workstation configuration.
     private constant integer PA_STATION_CAULDRON = 'n61D'
 
+    // Sound labels. Professions plays Start once, Loop until done, and Finish once.
+    private constant string PA_SOUND_START = "Alchemy start"
+    private constant string PA_SOUND_LOOP = "Alchemy loop"
+    private constant string PA_SOUND_FINISH = "Alchemy loop"
+
+    // Reagent item raw codes used by current and future Alchemy recipes.
     private constant integer PA_ITEM_AGAVE = 'I60W'
     private constant integer PA_ITEM_EARTH_ROOTS = 'I60X'
     private constant integer PA_ITEM_FOREST_FLOWER = 'I60Y'
@@ -39,6 +47,7 @@ globals
     private constant integer PA_ITEM_GROMSBLOOD = 'I66U'
     private constant integer PA_ITEM_PLAGUEBLOOM = 'I66Y'
 
+    // Crafted output raw codes.
     private constant integer PA_ITEM_CRYSTAL_WATER = 'I6BA'
     private constant integer PA_ITEM_HEALING_SALVE = 'hslv'
     private constant integer PA_ITEM_GREATER_HEALING_SALVE = 'I6BC'
@@ -61,6 +70,7 @@ globals
     private constant integer PA_ITEM_DIVINITY = 'pdiv'
     private constant integer PA_ITEM_ANTI_MAGIC = 'pams'
 
+    // Recipe icon paths.
     private constant string PA_ICON_WATER = "ReplaceableTextures\\CommandButtons\\BTNINV_SpringWater.blp"
     private constant string PA_ICON_SALVE = "ReplaceableTextures\\CommandButtons\\BTNHealingSalve.blp"
     private constant string PA_ICON_HEALING = "ReplaceableTextures\\CommandButtons\\BTNPotionGreenSmall.blp"
@@ -115,7 +125,7 @@ public function Init takes nothing returns nothing
     set PA_Initialized = true
 
     call Professions_RegisterStationType(GNS_PROF_ALCHEMY, PA_STATION_CAULDRON, "Cauldron")
-    call Professions_SetProfessionSoundLabels(GNS_PROF_ALCHEMY, "Alchemy start", "Alchemy loop", "Alchemy loop")
+    call Professions_SetProfessionSoundLabels(GNS_PROF_ALCHEMY, PA_SOUND_START, PA_SOUND_LOOP, PA_SOUND_FINISH)
     call PA_RegisterRecipes()
 endfunction
 

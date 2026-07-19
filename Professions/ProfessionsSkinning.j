@@ -19,7 +19,13 @@
 library ProfessionsSkinning initializer AutoInit requires Professions, GatherNodeSkills
 
 globals
+    // Runtime guard.
     private boolean PS_Initialized = false
+
+    // Sound labels. Empty labels intentionally mean no sound until a Skinning craft flow exists.
+    private constant string PS_SOUND_START = ""
+    private constant string PS_SOUND_LOOP = ""
+    private constant string PS_SOUND_FINISH = ""
 endglobals
 
 public function Init takes nothing returns nothing
@@ -27,6 +33,8 @@ public function Init takes nothing returns nothing
         return
     endif
     set PS_Initialized = true
+
+    call Professions_SetProfessionSoundLabels(GNS_PROF_SKINNING, PS_SOUND_START, PS_SOUND_LOOP, PS_SOUND_FINISH)
 endfunction
 
 public function AutoInit takes nothing returns nothing
