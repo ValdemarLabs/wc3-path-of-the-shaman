@@ -58,6 +58,7 @@ globals
 
     private unit array CUI_Station
     private unit array CUI_Crafter
+    private boolean array CUI_ReopenAfterCraft
     private integer array CUI_ListStart
     private integer array CUI_SelectedRecipe
 
@@ -88,6 +89,36 @@ private function CUI_GetStationType takes integer pid returns integer
         return 0
     endif
     return GetUnitTypeId(CUI_Station[pid])
+endfunction
+
+private function CUI_IsValidCrafterCandidate takes unit whichUnit returns boolean
+    return whichUnit != null and GetUnitTypeId(whichUnit) != 0 and IsUnitType(whichUnit, UNIT_TYPE_HERO) and GNS_IsTrackedGatherer(whichUnit)
+endfunction
+
+private function CUI_GetDistanceSq takes unit a, unit b returns real
+    local real dx = GetUnitX(a) - GetUnitX(b)
+    local real dy = GetUnitY(a) - GetUnitY(b)
+    return dx * dx + dy * dy
+endfunction
+
+private function CUI_GetCloserCrafter takes unit station, unit current, unit candidate returns unit
+    if station == null or not CUI_IsValidCrafterCandidate(candidate) then
+        return current
+    endif
+    if current == null or CUI_GetDistanceSq(candidate, station) < CUI_GetDistanceSq(current, station) then
+        return candidate
+    endif
+    return current
+endfunction
+
+private function CUI_GetNearestTrackedHero takes unit station returns unit
+    local unit best = null
+
+    set best = CUI_GetCloserCrafter(station, best, udg_Nazgrek)
+    set best = CUI_GetCloserCrafter(station, best, udg_Zulkis)
+    set best = CUI_GetCloserCrafter(station, best, GNS_GetUITargetUnit())
+
+    return best
 endfunction
 
 private function CUI_GetProfession takes integer pid returns integer
@@ -439,12 +470,14 @@ private function CUI_CraftAction takes nothing returns nothing
 
     if CUI_SelectedRecipe[pid] != 0 then
         if Professions_StartRecipe(CUI_Crafter[pid], CUI_Station[pid], CUI_SelectedRecipe[pid]) then
+            set CUI_ReopenAfterCraft[pid] = true
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_CONFIRM, p)
+            call CUI_HideForPlayer(p)
             call ExecuteFunc("ProfessionsUI_Refresh")
         else
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, p)
+            call CUI_UpdateForPlayer(p)
         endif
-        call CUI_UpdateForPlayer(p)
     endif
 
     set p = null
@@ -461,7 +494,7 @@ private function CUI_SelectAction takes nothing returns nothing
         return
     endif
 
-    set crafter = GNS_GetUITargetUnit()
+    set crafter = CUI_GetNearestTrackedHero(station)
     if crafter == null or not GNS_IsTrackedGatherer(crafter) then
         call DisplayTextToPlayer(p, 0.00, 0.00, "|cffff8080" + NoCrafterText + "|r")
     elseif not Professions_IsCrafterNearStation(crafter, station) then
@@ -598,7 +631,7 @@ private function CUI_CreateFrames takes nothing returns nothing
     set CUI_CraftButton = BlzCreateFrameByType("GLUETEXTBUTTON", "CraftingUICraft", CUI_Parent, "ScriptDialogButton", 0)
     call BlzFrameSetSize(CUI_CraftButton, 0.100, 0.032)
     call BlzFrameSetText(CUI_CraftButton, "Craft")
-    call BlzFrameSetPoint(CUI_CraftButton, FRAMEPOINT_BOTTOMRIGHT, CUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.024, 0.016)
+    call BlzFrameSetPoint(CUI_CraftButton, FRAMEPOINT_BOTTOMRIGHT, CUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.024, 0.030)
 
     call BlzTriggerRegisterFrameEvent(CUI_CloseTrigger, CUI_CloseButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(CUI_ClearFocusTrigger, CUI_CloseButton, FRAMEEVENT_CONTROL_CLICK)
@@ -618,6 +651,19 @@ public function Hide takes nothing returns nothing
     if CUI_Parent != null then
         call BlzFrameSetVisible(CUI_Parent, false)
     endif
+endfunction
+
+public function ReopenAfterCraft takes nothing returns nothing
+    local integer playerIndex = 0
+
+    loop
+        exitwhen playerIndex >= bj_MAX_PLAYERS
+        if CUI_ReopenAfterCraft[playerIndex] and CUI_Station[playerIndex] != null and CUI_Crafter[playerIndex] != null then
+            set CUI_ReopenAfterCraft[playerIndex] = false
+            call CUI_OpenForPlayer(Player(playerIndex), CUI_Station[playerIndex], CUI_Crafter[playerIndex])
+        endif
+        set playerIndex = playerIndex + 1
+    endloop
 endfunction
 
 public function Refresh takes nothing returns nothing
