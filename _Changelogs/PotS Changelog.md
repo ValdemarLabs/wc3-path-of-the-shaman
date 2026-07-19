@@ -28,6 +28,8 @@
 - The new crafting panel lists workstation recipes, required skill, material readiness, crafting time, and current availability state.
 - Starting a player craft now reserves the workstation, enters cinematic mode, uses a 0.5 second fade-out/fade-in reposition to place only the nearest tracked hero close to the workstation, starts the craft only after the setup sequence completes, and reopens the related CraftingUI after completion.
 - AI units with matching profession profiles can now occasionally use nearby profession stations as cheat-crafting jobs, with per-profession toggles for whether AI ignores recipe materials.
+- AI night camping now creates a finished camp fire directly on nearby walkable terrain instead of relying on a temporary Camp Fire item-use order, so eligible AI units can actually start camp when night camping is forced or rolled.
+- AI gather-node orders are now blocked before movement or attack starts when the AI lacks the profile profession, current skill, required tool, or inventory room for that node, preventing repeated low-skill attempts such as Paladin attacking Tin Veins.
 - Profession crafting start/loop/finish sounds now use direct playback for player crafts and 3D workstation playback for AI station crafts, including Tannery, Forge smelting, Anvil, and Cauldron flows.
 - Mining gather ore-node hits now play the imported MiningHit sound handles as 3D feedback at the mined node when struck with a Mining Pick.
 - Profession station sound handles are now centralized in `UI/Interface.j` as `Interface_Profession_*_Start`, `Interface_Profession_*_Loop`, and `Interface_Profession_*_End` globals.
@@ -129,6 +131,9 @@
   - AI side profession work can now find nearby reserved-free profession stations and start a random eligible recipe through `Professions_StartRecipeForAi`.
   - Added Blacksmithing to Engineer/Warrior profiles, Alchemy to Restoshaman, and Leatherworking to Rogue.
   - Added `/debug aicraft` / `aicraft` to force eligible active AI units to start a nearby station craft, randomizing among the professions available to each unit.
+  - Night camp placement now requires `CampFire` and creates/registers the finished `n61C` camp-fire unit directly, adding Warmth abilities (`S600`, `A02W`, `A02Y`), `n619` light, timed life, `AddCampfire`, and cleanup instead of using `I611` through `UnitUseItemPoint`.
+  - AI profession refresh now only registers matching profession-profile units with `GatherNodeSkills`; it no longer derives or raises profession skill from hero/unit level.
+  - Added an AI target-order guard for active gather items and gather units so invalid profile, skill, tool, or inventory requirements stop the order and apply profession backoff before the unit reaches or attacks the node.
 
 - `UI/Interface.j`
   - Mining hit and profession feedback sounds now prefer imported `gg_snd_*` handles over `CreateSoundFromLabel` fallback paths.
@@ -155,12 +160,16 @@
 - Leatherworking Reinforced Leather recipes currently match the old Tannery GUI trigger and therefore have no material requirements yet.
 - The Alchemy workbook still contains material-less or unresolved rows such as Purified Water, Vampiric Potion, Elixir of Might, Elixir of Shadows, and the non-Nazgrek flask ideas. Those recipes are intentionally not registered until their live item rawcodes and material requirements are confirmed.
 - Fel Iron Vein exists in the current gather-node exports, but `Fel Iron Ore` and `Fel Iron Bar` item rawcodes are not present in the visible item/WTS exports yet, so Fel Iron smelting is still pending item data.
+- Direct AI-created camp fires still need in-game validation for `/debug aicamp`, Warmth/rested registration, light cleanup, and normal autonomous night-camp timing.
+- Low-skill/wrong-profession AI gather-node blocking still needs in-game retesting around Tin Vein and gather-item nodes, especially with companion/player-issued target orders.
 
 ### Actions Remaining
 
 - Import/include the new `UI/CraftingUI.j` and `Professions/Professions*.j` files in the actual map build order.
 - Run the full map compile after the new libraries are added to the active import/build pipeline.
 - In-game test workstation selection, range checks, material consumption, crafting completion, skill gain, and Alchemy cauldron light/sound/animation timing.
+- Re-test `/debug aicamp` at night and normal AI night-camp rolls across common terrain.
+- Re-test Paladin and other low-skill/wrong-profession AI near Tin Vein and gather-item nodes to confirm blocked orders no longer short-loop.
 - Define final material requirements and skill thresholds for the remaining Alchemy, Blacksmithing, Leatherworking, Cooking, Enchanting, Fishing, and Skinning crafting flows.
 
 ## [18.7.2026]
