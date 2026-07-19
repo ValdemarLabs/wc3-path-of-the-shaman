@@ -65,6 +65,7 @@ public function Init takes nothing returns nothing
 
     call Professions_RegisterStationType(GNS_PROF_LEATHERWORKING, PL_STATION_TANNERY, "Tannery")
     call Professions_SetProfessionSoundLabels(GNS_PROF_LEATHERWORKING, PL_SOUND_START, PL_SOUND_LOOP, PL_SOUND_FINISH)
+    call Professions_SetProfessionSoundHandles(GNS_PROF_LEATHERWORKING, gg_snd_Tannery, gg_snd_Tannery, gg_snd_Tannery)
     call PL_RegisterRecipes()
 endfunction
 
