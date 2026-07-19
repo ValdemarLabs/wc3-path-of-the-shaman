@@ -1,213 +1,249 @@
-library CampFire initializer InitCampFireBuffSystem
-//===========================================================================
-/*
-    CampFire Buff System 1.0
+/**
+    CampFire
 
-    Author: [Valdemar]
+    Author: Valdemar
+    Version:
 
     Description:
-    This system adds a "Rested" buff to hero units that remain near a campfire for 15 seconds.
-    It requires a unit indexer (uses GetUnitUserData for indexing) and a dummy unit with an ability to apply the rested buff via Acid Bomb (or similar).    
-    The system tracks campfires, applies buffs, and manages timers for heroes.
+    Tracks constructed camp fires, applies their warmth abilities, creates
+    light helpers, and grants rested progress to nearby heroes through the
+    Experience library.
 
-    Adds a "Rested" buff to hero units that remain near a campfire for 15 seconds
-    Requires:
-    - Unit indexer (uses GetUnitUserData for indexing)
-    - Dummy unit with ability to apply rested buff via Acid Bomb (or similar)
+    Credits:
+
+    How to install:
+    Import after Experience. Disable the old GUI triggers under
+    Leveling/_oldGUI/Camp Fire after importing.
 
     API:
-    -   call AddCampfire(unit u) - Adds a new campfire to the system    
-    -   call RemoveCampfire(unit u) - Removes a campfire from the system
-    -   call InitCampFireBuffSystem() - Initializes the system and sets up the main loop
-    -   call CampFireBuffLoop() - Main loop that checks for heroes near campfires and applies buffs 
-    -   call ApplyRestedBuff() - Callback function that applies the rested buff when the timer expires
-    -   call FilterRestedHeroes() - Filters for nearby hero units that can receive the rested buff
-*/ 
-//===========================================================================
-//////////////////////////////////////////////////
-//===========================================================================
-globals
-    // === CONSTANTS ===
-    constant integer ABIL_ID_WARMTH     = 'B607'  // Buff indicating hero is near campfire
-    constant integer ABIL_ID_RESTED     = 'B611'  // Buff to be applied after 15 seconds
-    constant integer DUMMY_RESTED_ID    = 'n63H'  // Dummy caster unit type for buff application
-    constant integer CAMPFIRE_UNIT_ID   = 'n61C'  // Campfire unit ID (if needed for validation)
-    constant real CAMPFIRE_RADIUS       = 300.00  // Detection radius around campfires
-    constant real RESTED_DELAY          = 15.00   // Time to stay near fire for rested buff
-    constant integer MAX_CAMPFIRES      = 128         // Max number of active campfires
-    constant integer CAMPFIRES_PER_TICK = 4           // Number of campfires to process per tick
+    - call CampFire_Register(fire)
+    - call CampFire_Unregister(fire)
+    - Legacy wrappers: AddCampfire(fire), RemoveCampfire(fire)
 
-    // Arrays to track buff timers and states
-    unit array RestedUnitByIndex                  // Hero waiting to receive rested buff
-    timer array RestedTimerByIndex                // Timer for delayed rested buff
-    boolean array NeedsRestedByIndex              // Prevents duplicate timers per hero
+**/
+library CampFire initializer Init requires Experience, optional HintsUI
+    globals
+        // Object data configuration.
+        public constant integer UNIT_ID = 'n61C'
 
-    // Working group and timer
-    group gTemp = null                            // Temporary group used for hero scans
-    timer tMain = null                            // Repeating timer for the main loop
+        private constant integer CF_LIGHT_UNIT_ID = 'n619'
+        private constant integer CF_BUILD_FIRE_ABILITY_ID = 'A61P'
+        private constant integer CF_BUILD_TENT_ABILITY_ID = 'A6CH'
+        private constant integer CF_WARMTH_ABILITY_ID = 'S600'
+        private constant integer CF_WARMTH_HP_ABILITY_ID = 'A02W'
+        private constant integer CF_WARMTH_MANA_ABILITY_ID = 'A02Y'
+        private constant integer CF_MAX_FIRES = 128
+        private constant integer CF_MAX_PLAYER_INDEX = 27
 
-    // Campfire tracking
-    unit array gCampfireList                      // Stores active campfire units
-    integer campfireCount = 0                     // Current number of campfires
-    integer campfireScanIndex = 0                 // Current index of campfire being scanned
-endglobals
+        private constant real CF_SCAN_INTERVAL = 1.00
+        private constant real CF_RADIUS = 300.00
+        private constant real CF_REST_REQUIRED = 15.00
+        private constant real CF_LIFETIME = 60.00
+        private constant real CF_LIGHT_CLEANUP_RADIUS = 80.00
 
-//===========================================================================
-// FilterRestedHeroes
-// Filters for nearby units (heroes only, alive)
-//===========================================================================
-function FilterRestedHeroes takes nothing returns boolean
-    local unit u = GetFilterUnit()
-    return IsUnitType(u, UNIT_TYPE_HERO) and GetUnitState(u, UNIT_STATE_LIFE) > 0.405
-endfunction
+        private unit array CF_Fire
+        private integer CF_FireCount = 0
 
-//===========================================================================
-// ApplyRestedBuff
-// Called when a unit has waited long enough near a fire to receive the buff
-// Callback when 15-second timer expires — applies rested buff
-//===========================================================================
-function ApplyRestedBuff takes nothing returns nothing
-    local timer t = GetExpiredTimer()
-    local integer i = 0
-    local unit hero
-    local unit dummy
+        private timer CF_ScanTimer = null
+        private group CF_EnumGroup = null
+        private boolexpr CF_HeroFilter = null
+        private trigger CF_ConstructTrigger = null
+        private trigger CF_DeathTrigger = null
+        private trigger CF_SpellChannelTrigger = null
+    endglobals
 
-     // Find which hero this timer was for
-    loop
-        exitwhen i >= bj_MAX_PLAYERS * 12
-        if RestedTimerByIndex[i] == t then
-            set hero = RestedUnitByIndex[i]
-            set RestedTimerByIndex[i] = null
-            set RestedUnitByIndex[i] = null
-            set NeedsRestedByIndex[i] = false
-            exitwhen true
+    private function CF_IsAlive takes unit whichUnit returns boolean
+        return whichUnit != null and GetWidgetLife(whichUnit) > 0.405
+    endfunction
+
+    private function CF_FilterRestingHero takes nothing returns boolean
+        local unit hero = GetFilterUnit()
+        local boolean result = hero != null and IsUnitType(hero, UNIT_TYPE_HERO) and GetWidgetLife(hero) > 0.405 and GetUnitAbilityLevel(hero, Experience_BUFF_WARMTH) > 0 and not Experience_IsRested(hero)
+
+        set hero = null
+        return result
+    endfunction
+
+    private function CF_IsInCombat takes unit whichUnit returns boolean
+        local integer customValue = 0
+
+        if whichUnit == null then
+            return false
         endif
-        set i = i + 1
-    endloop
 
-    // Apply the rested buff using dummy caster
-    if hero != null and GetUnitAbilityLevel(hero, ABIL_ID_WARMTH) > 0 and GetUnitAbilityLevel(hero, ABIL_ID_RESTED) == 0 then
-        set dummy = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), DUMMY_RESTED_ID, GetUnitX(hero), GetUnitY(hero), 0)
-        call UnitApplyTimedLife(dummy, 'BTLF', 1.0)
-        call IssueTargetOrder(dummy, "acidbomb", hero)
-        call DisplayTextToPlayer(GetOwningPlayer(hero), 0, 0, "|cFFFFCC00" + GetHeroProperName(hero) + " is now Rested!|r")
-    endif
+        set customValue = GetUnitUserData(whichUnit)
+        return customValue > 0 and udg_GCSM_UnitInCombat[customValue]
+    endfunction
 
-    call DestroyTimer(t)
-endfunction
+    private function CF_PublishCombatLimitHint takes unit whichUnit returns nothing
+        static if LIBRARY_HintsUI then
+            call HintsUI_PublishForUnit(HintsUI_HINT_CAMP_FIRE_OR_TENT, whichUnit)
+        else
+            call DisplayTextToPlayer(GetOwningPlayer(whichUnit), 0.00, 0.00, "|cffffcc00Hint:|r You must be out of combat to build a camp fire or tent.")
+        endif
+    endfunction
 
-//===========================================================================
-// CampFireBuffLoop
-// Runs periodically while campfires exist
-// Checks nearby units and starts timers for resting
-// Main looping function — processes a few campfires per tick
-//===========================================================================
-function CampFireBuffLoop takes nothing returns nothing
-    local integer i = 0
-    local unit fire
-    local unit hero
-    local real x
-    local real y
-    local integer index
-    local timer newTimer
-    local integer endIndex
-
-    // Stop if no campfires
-    if campfireCount == 0 then
-        call PauseTimer(tMain)
-        return
-    endif
-
-    // Set range of campfires to process this tick
-    set endIndex = campfireScanIndex + CAMPFIRES_PER_TICK
-    if endIndex > campfireCount then
-        set endIndex = campfireCount
-    endif
-
-    // Process each campfire in range
-    loop
-        exitwhen campfireScanIndex >= endIndex
-        set fire = gCampfireList[campfireScanIndex]
-        set x = GetUnitX(fire)
-        set y = GetUnitY(fire)
-
-        // Pick nearby valid heroes
-        call GroupEnumUnitsInRange(gTemp, x, y, CAMPFIRE_RADIUS, Condition(function FilterRestedHeroes))
+    private function CF_FindFireIndex takes unit fire returns integer
+        local integer i = 0
 
         loop
-            set hero = FirstOfGroup(gTemp)
-            exitwhen hero == null
-            call GroupRemoveUnit(gTemp, hero)
-
-            // If hero has Warmth and not yet Rested, start delay timer
-            if GetUnitAbilityLevel(hero, ABIL_ID_WARMTH) > 0 and GetUnitAbilityLevel(hero, ABIL_ID_RESTED) == 0 then
-                set index = GetUnitUserData(hero)
-                if not NeedsRestedByIndex[index] then
-                    set NeedsRestedByIndex[index] = true
-                    set RestedUnitByIndex[index] = hero
-                    set newTimer = CreateTimer()
-                    set RestedTimerByIndex[index] = newTimer
-                    call TimerStart(newTimer, RESTED_DELAY, false, function ApplyRestedBuff)
-                endif
+            exitwhen i >= CF_FireCount
+            if CF_Fire[i] == fire then
+                return i
             endif
+            set i = i + 1
         endloop
 
-        set campfireScanIndex = campfireScanIndex + 1
-    endloop
+        return -1
+    endfunction
 
-    // Reset index if end reached
-    if campfireScanIndex >= campfireCount then
-        set campfireScanIndex = 0
-    endif
-endfunction
-
-//===========================================================================
-// AddCampfire
-// Adds a new campfire to the system and starts the loop if it's the first one
-// Adds a campfire unit to the scan list
-//===========================================================================
-function AddCampfire takes unit u returns nothing
-    if campfireCount < MAX_CAMPFIRES then
-        set gCampfireList[campfireCount] = u
-        set campfireCount = campfireCount + 1
-        if campfireCount == 1 then
-            call TimerStart(tMain, 1.0, true, function CampFireBuffLoop)
-        endif
-    endif
-endfunction
-
-//===========================================================================
-// RemoveCampfire
-// Removes a campfire and stops the loop if none remain
-// Removes a campfire unit from the scan list
-//===========================================================================
-function RemoveCampfire takes unit u returns nothing
-    local integer i = 0
-    loop
-        exitwhen i >= campfireCount
-        if gCampfireList[i] == u then
-            set gCampfireList[i] = gCampfireList[campfireCount - 1]
-            set gCampfireList[campfireCount - 1] = null
-            set campfireCount = campfireCount - 1
-
-             // Stop timer if none left
-            if campfireCount <= 0 then
-                call PauseTimer(tMain)
-                set campfireCount = 0
-            endif
+    private function CF_RemoveFireAt takes integer fireIndex returns nothing
+        if fireIndex < 0 or fireIndex >= CF_FireCount then
             return
         endif
-        set i = i + 1
-    endloop
-endfunction
 
-//===========================================================================
-// InitCampFireBuffSystem
-// Initialization of globals and timer
-//===========================================================================
-function InitCampFireBuffSystem takes nothing returns nothing
-    set gTemp = CreateGroup()
-    set tMain = CreateTimer()
-endfunction
+        set CF_FireCount = CF_FireCount - 1
+        set CF_Fire[fireIndex] = CF_Fire[CF_FireCount]
+        set CF_Fire[CF_FireCount] = null
 
+        if CF_FireCount <= 0 then
+            call PauseTimer(CF_ScanTimer)
+        endif
+    endfunction
+
+    private function CF_Scan takes nothing returns nothing
+        local integer i = 0
+        local unit fire
+        local unit hero
+
+        loop
+            exitwhen i >= CF_FireCount
+            set fire = CF_Fire[i]
+            if not CF_IsAlive(fire) then
+                call CF_RemoveFireAt(i)
+                set i = i - 1
+            else
+                call GroupEnumUnitsInRange(CF_EnumGroup, GetUnitX(fire), GetUnitY(fire), CF_RADIUS, CF_HeroFilter)
+                loop
+                    set hero = FirstOfGroup(CF_EnumGroup)
+                    exitwhen hero == null
+                    call GroupRemoveUnit(CF_EnumGroup, hero)
+                    call Experience_AddRestingProgress(hero, CF_SCAN_INTERVAL, CF_REST_REQUIRED)
+                endloop
+            endif
+            set i = i + 1
+        endloop
+
+        set hero = null
+        set fire = null
+    endfunction
+
+    public function Register takes unit fire returns nothing
+        if fire == null or GetUnitTypeId(fire) != UNIT_ID or CF_FindFireIndex(fire) != -1 then
+            return
+        endif
+
+        if CF_FireCount < CF_MAX_FIRES then
+            set CF_Fire[CF_FireCount] = fire
+            set CF_FireCount = CF_FireCount + 1
+            call TimerStart(CF_ScanTimer, CF_SCAN_INTERVAL, true, function CF_Scan)
+        endif
+    endfunction
+
+    public function Unregister takes unit fire returns nothing
+        call CF_RemoveFireAt(CF_FindFireIndex(fire))
+    endfunction
+
+    private function CF_OnConstructFinish takes nothing returns nothing
+        local unit fire = GetConstructedStructure()
+        local real x
+        local real y
+
+        if fire != null and GetUnitTypeId(fire) == UNIT_ID then
+            set x = GetUnitX(fire)
+            set y = GetUnitY(fire)
+            call UnitAddAbility(fire, CF_WARMTH_ABILITY_ID)
+            call UnitAddAbility(fire, CF_WARMTH_HP_ABILITY_ID)
+            call UnitAddAbility(fire, CF_WARMTH_MANA_ABILITY_ID)
+            call UnitApplyTimedLife(fire, 'BTLF', CF_LIFETIME)
+            call CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), CF_LIGHT_UNIT_ID, x, y, 0.00)
+            call Register(fire)
+        endif
+
+        set fire = null
+    endfunction
+
+    private function CF_RemoveNearbyLight takes nothing returns nothing
+        local unit picked = GetEnumUnit()
+
+        if picked != null and GetUnitTypeId(picked) == CF_LIGHT_UNIT_ID then
+            call RemoveUnit(picked)
+        endif
+
+        set picked = null
+    endfunction
+
+    private function CF_OnDeath takes nothing returns nothing
+        local unit fire = GetTriggerUnit()
+
+        if fire != null and GetUnitTypeId(fire) == UNIT_ID then
+            call Unregister(fire)
+            call GroupEnumUnitsInRange(CF_EnumGroup, GetUnitX(fire), GetUnitY(fire), CF_LIGHT_CLEANUP_RADIUS, null)
+            call ForGroup(CF_EnumGroup, function CF_RemoveNearbyLight)
+            call GroupClear(CF_EnumGroup)
+        endif
+
+        set fire = null
+    endfunction
+
+    private function CF_OnSpellChannel takes nothing returns nothing
+        local unit caster = GetTriggerUnit()
+        local integer abilityId = GetSpellAbilityId()
+
+        if caster != null and (abilityId == CF_BUILD_FIRE_ABILITY_ID or abilityId == CF_BUILD_TENT_ABILITY_ID) and CF_IsInCombat(caster) then
+            call IssueImmediateOrder(caster, "stop")
+            call CF_PublishCombatLimitHint(caster)
+        endif
+
+        set caster = null
+    endfunction
+
+    private function CF_RegisterPlayerUnitEvents takes trigger whichTrigger, playerunitevent whichEvent returns nothing
+        local integer playerIndex = 0
+
+        loop
+            exitwhen playerIndex > CF_MAX_PLAYER_INDEX
+            call TriggerRegisterPlayerUnitEvent(whichTrigger, Player(playerIndex), whichEvent, null)
+            set playerIndex = playerIndex + 1
+        endloop
+    endfunction
+
+    function AddCampfire takes unit fire returns nothing
+        call Register(fire)
+    endfunction
+
+    function RemoveCampfire takes unit fire returns nothing
+        call Unregister(fire)
+    endfunction
+
+    function InitCampFireBuffSystem takes nothing returns nothing
+    endfunction
+
+    private function Init takes nothing returns nothing
+        set CF_ScanTimer = CreateTimer()
+        set CF_EnumGroup = CreateGroup()
+        set CF_HeroFilter = Filter(function CF_FilterRestingHero)
+
+        set CF_ConstructTrigger = CreateTrigger()
+        call CF_RegisterPlayerUnitEvents(CF_ConstructTrigger, EVENT_PLAYER_UNIT_CONSTRUCT_FINISH)
+        call TriggerAddAction(CF_ConstructTrigger, function CF_OnConstructFinish)
+
+        set CF_DeathTrigger = CreateTrigger()
+        call CF_RegisterPlayerUnitEvents(CF_DeathTrigger, EVENT_PLAYER_UNIT_DEATH)
+        call TriggerAddAction(CF_DeathTrigger, function CF_OnDeath)
+
+        set CF_SpellChannelTrigger = CreateTrigger()
+        call CF_RegisterPlayerUnitEvents(CF_SpellChannelTrigger, EVENT_PLAYER_UNIT_SPELL_CHANNEL)
+        call TriggerAddAction(CF_SpellChannelTrigger, function CF_OnSpellChannel)
+    endfunction
 endlibrary
