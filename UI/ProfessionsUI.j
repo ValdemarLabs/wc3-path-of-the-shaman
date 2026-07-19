@@ -1,4 +1,4 @@
-library ProfessionsUI initializer AutoInit requires GatherNodeSkills, GatherNodeItems, GatherNodeUnits, Table, MasterUI, Interface
+library ProfessionsUI initializer AutoInit requires GatherNodeSkills, GatherNodeItems, GatherNodeUnits, Professions, Table, MasterUI, Interface
 /**
     ProfessionUI
     
@@ -601,9 +601,13 @@ endfunction
 
 private function PUI_GetBodyText takes unit viewer, integer professionId, integer currentSkill returns string
     local string bodyText = PUI_GetProfessionDescriptionText(professionId) + "|n|n" + PUI_GetNextMilestoneText(professionId, currentSkill)
+    local string craftingText = Professions_GetProfessionSummary(viewer, professionId)
 
     if professionId == GNS_PROF_MINING then
         set bodyText = bodyText + "|n|n" + PUI_GetMiningMineableText(viewer, currentSkill)
+    endif
+    if craftingText != null and craftingText != "" then
+        set bodyText = bodyText + "|n|n" + craftingText
     endif
 
     return bodyText
@@ -680,6 +684,7 @@ private function PUI_UpdateForPlayer takes player whichPlayer returns nothing
     local string detailIcon
     local string detailTitle
     local string detailBarLabel
+    local integer detailRevision
 
     if PUI_Parent == null then
         return
@@ -796,12 +801,13 @@ private function PUI_UpdateForPlayer takes player whichPlayer returns nothing
         endif
     endif
 
-    if PUI_DetailBodyViewerCache[pid] != viewerHandleId or PUI_DetailBodyProfessionCache[pid] != professionId or PUI_DetailBodySkillCache[pid] != currentSkill or PUI_DetailBodyRevisionCache[pid] != PUI_MilestoneRevision then
+    set detailRevision = PUI_MilestoneRevision + Professions_GetRecipeRevision()
+    if PUI_DetailBodyViewerCache[pid] != viewerHandleId or PUI_DetailBodyProfessionCache[pid] != professionId or PUI_DetailBodySkillCache[pid] != currentSkill or PUI_DetailBodyRevisionCache[pid] != detailRevision then
         call PUI_SetDetailBody(whichPlayer, PUI_GetBodyText(viewer, professionId, currentSkill))
         set PUI_DetailBodyViewerCache[pid] = viewerHandleId
         set PUI_DetailBodyProfessionCache[pid] = professionId
         set PUI_DetailBodySkillCache[pid] = currentSkill
-        set PUI_DetailBodyRevisionCache[pid] = PUI_MilestoneRevision
+        set PUI_DetailBodyRevisionCache[pid] = detailRevision
     endif
 
     set PUI_Updating[pid] = false

@@ -121,6 +121,7 @@ endfunction
 private function MUI_HideAllPanels takes nothing returns nothing
     call ExecuteFunc("TasQuestBox_Hide")
     call ExecuteFunc("ProfessionsUI_Hide")
+    call ExecuteFunc("CraftingUI_Hide")
     call ExecuteFunc("ReputationUI_Hide")
     call ExecuteFunc("StatsUI_Hide")
     call ExecuteFunc("AbilitiesLiteUI_Hide")
