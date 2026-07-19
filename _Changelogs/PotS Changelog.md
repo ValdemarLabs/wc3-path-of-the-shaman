@@ -92,12 +92,28 @@
     - fov 60
   - Also changed rotation so the camera is placed from the crafter’s side of the workstation after the cinematic mover has snapped the unit near the station, instead of using a fixed station-facing offset.
 
+- `AI.j`
+  - Added autonomous shop-state initiation for idle/wandering autonomous AI:
+    - full inventory now tries to start shop sell
+    - empty inventory can randomly start shop buy
+    - shop checks run on a per-instance cooldown so AI units do not all start shopping at once
+  - Added AI shop debug chat commands:
+    - `/debug aibuy` or `aibuy` to force eligible AI units into buy state
+    - `/debug aisell` or `aisell` to force eligible AI units into sell state
+    - `/debug aishop` or `aishop` to force inventory-based buy/sell selection
+  - Added public debug APIs:
+    - `AI_DebugForceShopBuy()`
+    - `AI_DebugForceShopSell()`
+    - `AI_DebugForceShopByInventory()`
+  - Tightened shop sell fallback so profiles with configured shops no longer sell/drop at the current position just because no live shop target was selected.
+
 ### Known Issues
 
 - Full in-map JassHelper / Warcraft III compile validation was not completed in this pass because the repo snapshot does not expose a combined `war3map.j` or normal map build entry point.
 - The old GUI triggers under `Leveling/_oldGUI` must be disabled after these libraries are imported, otherwise AP/rested/base-camp/camp-fire behavior can double-run or conflict.
 - The tent death animation still uses a configurable first-pass death-animation unit rawcode and should be verified in-game against the intended tent death visuals.
 - Tent Sleep and the delayed dismantle-item fallback still need in-game validation with both legacy GUI handlers enabled and disabled.
+- AI shop buy/sell initiation and the `/debug aibuy`, `/debug aisell`, and `/debug aishop` commands still need in-map validation with real registered shop units and full/empty AI inventories.
 
 ### Actions Remaining
 
