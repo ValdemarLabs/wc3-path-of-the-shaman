@@ -238,10 +238,6 @@ globals
     private constant integer ITEM_CAMP_FIRE = 'I611'
     private constant integer UNIT_AVELINE_RIVERBANE = 'O009'
     private constant integer UNIT_CAMP_FIRE = 'n61C'
-    private constant integer UNIT_CAMP_LIGHT = 'n619'
-    private constant integer ABILITY_CAMP_WARMTH = 'S600'
-    private constant integer ABILITY_CAMP_WARMTH_HP = 'A02W'
-    private constant integer ABILITY_CAMP_WARMTH_MANA = 'A02Y'
 
     private Table UnitInstance = 0
     private Table UniqueInstance = 0
@@ -5017,30 +5013,16 @@ endfunction
 
 private function CreateAiCampFire takes real x, real y returns unit
     local unit fire = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_CAMP_FIRE, x, y, GetRandomReal(0.00, 360.00))
-    local unit light
     if fire == null then
-        set light = null
         return null
     endif
     if GetUnitTypeId(fire) == 0 then
-        set light = null
         return null
     endif
 
-    call UnitAddAbility(fire, ABILITY_CAMP_WARMTH)
-    call UnitAddAbility(fire, ABILITY_CAMP_WARMTH_HP)
-    call UnitAddAbility(fire, ABILITY_CAMP_WARMTH_MANA)
-    call UnitApplyTimedLife(fire, 'BTLF', AI_CAMP_FIRE_UNIT_LIFETIME)
     call AddCampfire(fire)
     call QueueAiCampFireCleanup(fire)
 
-    set light = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_CAMP_LIGHT, x, y, bj_UNIT_FACING)
-    if light != null then
-        if GetUnitTypeId(light) != 0 then
-            call UnitApplyTimedLife(light, 'BTLF', AI_CAMP_FIRE_UNIT_LIFETIME + 1.00)
-        endif
-    endif
-    set light = null
     return fire
 endfunction
 
