@@ -160,6 +160,7 @@ private function Init takes nothing returns nothing
     call AI_SetProfileNoManaRestore(AI_Rogue_ProfileId, true)
     call AI_SetProfileThinkCallback(AI_Rogue_ProfileId, function Think)
     call AI_AddProfileProfession(AI_Rogue_ProfileId, AI_PROFESSION_SKINNING)
+    call AI_AddProfileProfession(AI_Rogue_ProfileId, AI_PROFESSION_LEATHERWORKING)
     call RegisterAbilities()
     call RegisterAbilityTemplates()
     call AI_AddDefaultShopItems(AI_Rogue_ProfileId)

@@ -218,6 +218,7 @@ private function Init takes nothing returns nothing
     call AI_SetProfileSpawnOwner(AI_Restoshaman_ProfileId, Player(1))
     call AI_SetProfileThinkCallback(AI_Restoshaman_ProfileId, function Think)
     call AI_AddProfileProfession(AI_Restoshaman_ProfileId, AI_PROFESSION_HERBALISM)
+    call AI_AddProfileProfession(AI_Restoshaman_ProfileId, AI_PROFESSION_ALCHEMY)
     call RegisterAbilities()
     call RegisterAbilityTemplates()
     call AI_AddDefaultShopItems(AI_Restoshaman_ProfileId)

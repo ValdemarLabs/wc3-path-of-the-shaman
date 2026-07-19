@@ -168,6 +168,7 @@ public function ConfigureProfile takes integer profileId returns nothing
     call AI_SetProfileCompanionRetreat(profileId, false)
     call AI_SetProfileThinkCallback(profileId, function Think)
     call AI_AddProfileProfession(profileId, AI_PROFESSION_MINING)
+    call AI_AddProfileProfession(profileId, AI_PROFESSION_BLACKSMITHING)
     call RegisterAbilities(profileId)
     call AI_AddDefaultShopItems(profileId)
 endfunction
