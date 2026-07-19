@@ -1,0 +1,24 @@
+Camp Fire Dies
+    Events
+        Unit - A unit Dies
+    Conditions
+        (Unit-type of (Triggering unit)) Equal to Camp Fire
+    Actions
+        Unit Group - Remove (Triggering unit) from CampFireGroup.
+        Custom script:   call RemoveCampfire(GetTriggerUnit())
+        -------- Remove Light unit related to the dying camp fire --------
+        Unit Group - Pick every unit in (Units within 50.00 of CampFirePoint.) and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Unit-type of (Picked unit)) Equal to Light
+                    Then - Actions
+                        Unit - Remove (Picked unit) from the game
+                    Else - Actions
+        -------- If all camp fires ended --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in CampFireGroup) Equal to 0
+            Then - Actions
+                -------- Turn OffTriggers --------
+            Else - Actions

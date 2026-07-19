@@ -1,0 +1,11 @@
+old method / testing... Add custom XP increasing items or abilities etc. here
+
+Increase Exp Item
+    Events
+        Unit - A unit Acquires an item
+    Conditions
+        (Item-type of (Item being manipulated)) Equal to Crown of Kings +5
+    Actions
+        Set VariableSet CV = (Custom value of (Triggering unit))
+        Set VariableSet XP_ExpMultiplier[CV] = (XP_ExpMultiplier[CV] + 0.25)
+        Game - Display to (All players) for 30.00 seconds the text: (String(XP_ExpMultiplier[CV]))

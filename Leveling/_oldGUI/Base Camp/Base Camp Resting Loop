@@ -1,0 +1,58 @@
+not ready, made badly...
+
+Base Camp Resting Loop
+    Events
+        Time - Every 1.00 seconds of game time
+    Conditions
+    Actions
+        -------- ====================================== --------
+        -------- ====================================== --------
+        Game - Set the time of day to ((In-game time of day) + 1.00)
+        Set VariableSet BaseCamp_Resting[BaseCamp_Index] = (BaseCamp_Resting[BaseCamp_Index] + 1)
+        -------- ====================================== --------
+        -------- ====================================== --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                ((Transporting unit) is dead) Equal to True
+            Then - Actions
+                Trigger - Turn off (This trigger)
+                Skip remaining actions
+            Else - Actions
+        -------- ====================================== --------
+        -------- ====================================== --------
+        For each (Integer BaseCamp_Loop) from 1 to BaseCamp_Index, do (Actions)
+            Loop - Actions
+                Set VariableSet BaseCamp_Counter[BaseCamp_Loop] = (BaseCamp_Counter[BaseCamp_Loop] + 1)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BaseCamp_Counter[BaseCamp_Loop] Greater than or equal to 8
+                    Then - Actions
+                        -------- ====================================== --------
+                        -------- ====================================== --------
+                        Unit - Order BaseCamp_Unit[BaseCamp_Loop] to Orc Burrow - Stand Down.
+                        -------- Add Rested --------
+                        -------- ########## ADD WAY TO DETECT WHICH UNITS WHERE UNLOADED --------
+                        Set VariableSet RestedTarget = Nazgrek
+                        Set VariableSet RestedPoint = (Position of RestedTarget)
+                        Unit - Create 1 DummyRested for (Owner of RestedTarget) at RestedPoint facing Default building facing degrees
+                        Set VariableSet RestedDummy = (Last created unit)
+                        -------- I'm adding expiration time to make it disappear after 0.5 second, and give it an ability. --------
+                        Unit - Add a 1.00 second Generic expiration timer to RestedDummy
+                        Unit - Order RestedDummy to Neutral Alchemist - Acid Bomb RestedTarget
+                        Game - Display to (All players) the text: |cFFFFCC00Nazgrek |...
+                        -------- Time to remove leaks in order to prevent ingame lags. --------
+                        Custom script:   call RemoveLocation(udg_RestedPoint)
+                        -------- ====================================== --------
+                        -------- ====================================== --------
+                        -------- Loop related variables --------
+                        Set VariableSet BaseCamp_Unit[BaseCamp_Loop] = BaseCamp_Unit[BaseCamp_Index]
+                        Set VariableSet BaseCamp_Counter[BaseCamp_Loop] = BaseCamp_Counter[BaseCamp_Index]
+                        Set VariableSet BaseCamp_Index = (BaseCamp_Index - 1)
+                        Set VariableSet BaseCamp_Loop = (BaseCamp_Loop - 1)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BaseCamp_Index Equal to 0
+                            Then - Actions
+                                Trigger - Turn off (This trigger)
+                            Else - Actions
+                    Else - Actions

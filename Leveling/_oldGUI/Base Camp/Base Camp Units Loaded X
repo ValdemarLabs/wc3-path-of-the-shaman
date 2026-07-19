@@ -1,0 +1,30 @@
+not ready, made badly...
+
+Base Camp Units Loaded X
+    Events
+        Unit - A unit Is loaded into a transport
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Triggering unit) Equal to Nazgrek
+                (Triggering unit) Equal to Zulkis
+        (Unit-type of (Transporting unit)) Equal to Tent (Resting)
+    Actions
+        Wait 3.00 seconds
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                ((Transporting unit) is dead) Equal to True
+            Then - Actions
+                Skip remaining actions
+            Else - Actions
+        -------- Turn on Resting Loop --------
+        Set VariableSet BaseCamp_Index = (BaseCamp_Index + 1)
+        -------- ########## ADD TRANSPORTING UNIT WITH CUSTOM VALUE OF UNIT --------
+        Set VariableSet BaseCamp_Unit[BaseCamp_Index] = (Transporting unit)
+        Set VariableSet BaseCamp_Counter[BaseCamp_Index] = 0
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BaseCamp_Index Equal to 1
+            Then - Actions
+                Trigger - Turn on Base Camp Resting Loop <gen>
+            Else - Actions

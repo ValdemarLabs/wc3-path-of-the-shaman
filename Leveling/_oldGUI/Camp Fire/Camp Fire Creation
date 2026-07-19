@@ -1,0 +1,18 @@
+Camp Fire Creation
+    Events
+        Unit - A unit Finishes construction
+    Conditions
+        (Unit-type of (Triggering unit)) Equal to Camp Fire
+    Actions
+        Set VariableSet CampFirePoint = (Position of (Triggering unit))
+        Unit Group - Add (Triggering unit) to CampFireGroup
+        -------- First ability for visua buff --------
+        Unit - Add Warmth  to (Triggering unit)
+        -------- Second is used as HP / MANA increasing --------
+        Unit - Add Warmth (HP) to (Triggering unit)
+        Unit - Add Warmth (Mana) to (Triggering unit)
+        Unit - Add a 60.00 second Generic expiration timer to (Triggering unit)
+        Unit - Create 1 Light for Neutral Passive at CampFirePoint facing Default building facing degrees
+        Custom script:   call RemoveLocation(udg_CampFirePoint)
+        -------- Turn on Triggers to get Rested XP --------
+        Custom script:   call AddCampfire(GetTriggerUnit())

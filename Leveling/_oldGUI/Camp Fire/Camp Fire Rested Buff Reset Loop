@@ -1,0 +1,8 @@
+Camp Fire Rested Buff Reset Loop
+    Events
+        Time - Every 1.00 seconds of game time
+    Conditions
+        (Nazgrek has buff Warmth ) Equal to False
+    Actions
+        Countdown Timer - Pause RestedTimerNazgrek
+        Trigger - Turn on Camp Fire Rested Buff Start Loop <gen>

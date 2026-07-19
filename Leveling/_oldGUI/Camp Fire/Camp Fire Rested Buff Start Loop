@@ -1,0 +1,18 @@
+Camp Fire Rested Buff Start Loop
+    Events
+        Time - Every 1.00 seconds of game time
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                And - All (Conditions) are true
+                    Conditions
+                        (Nazgrek has buff Warmth ) Equal to True
+                        (Nazgrek has buff |cFF00FF00Rested|r ) Equal to False
+                And - All (Conditions) are true
+                    Conditions
+                        (Zulkis has buff Warmth ) Equal to True
+                        (Zulkis has buff |cFF00FF00Rested|r ) Equal to False
+    Actions
+        Trigger - Turn off (This trigger)
+        Trigger - Turn on Camp Fire Rested Buff Reset Loop <gen>
+        Countdown Timer - Start RestedTimerNazgrek as a One-shot timer that will expire in 15.00 seconds

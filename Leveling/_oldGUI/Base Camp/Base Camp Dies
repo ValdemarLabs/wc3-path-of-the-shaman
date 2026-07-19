@@ -1,0 +1,11 @@
+Because the Tent model does not have Death - animation, this is necessary
+If other model - not necessary!
+
+Base Camp Dies
+    Events
+        Unit - A unit Dies
+    Conditions
+        (Unit-type of (Triggering unit)) Equal to Tent (Resting)
+    Actions
+        Unit - Replace (Triggering unit) with a Burrow using The old unit's relative life and mana
+        Unit - Kill (Last replaced unit)

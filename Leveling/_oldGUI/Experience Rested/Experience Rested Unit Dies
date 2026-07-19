@@ -1,0 +1,37 @@
+Experience Rested Unit Dies
+    Events
+        Unit - A unit Dies
+    Conditions
+        InCinematic Equal to False
+    Actions
+        Custom script:   set bj_wantDestroyGroup = true
+        Unit Group - Pick every unit in (Units in (Playable map area)) and do (Actions)
+            Loop - Actions
+                Set VariableSet CV = (Custom value of (Picked unit))
+                Set VariableSet XP_KillingPlayer = (Player group((Owner of (Triggering unit))))
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ((Picked unit) is A Hero) Equal to True
+                        ((Picked unit) is alive) Equal to True
+                        XP_OldExperience[CV] Less than (Hero experience of (Picked unit))
+                    Then - Actions
+                        Set VariableSet XP_Difference = ((Real((Hero experience of (Picked unit)))) - (Real(XP_OldExperience[CV])))
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                ((Picked unit) has buff |cFF00FF00Rested|r ) Equal to True
+                            Then - Actions
+                                -------- Rested XP bonus (50 % more XP) --------
+                                Set VariableSet XP_Difference = (XP_Difference x 1.50)
+                            Else - Actions
+                        Game - Display to XP_KillingPlayer for 30.00 seconds the text: (Exp Gained:  + (String(XP_Difference)))
+                        Set VariableSet XP_Difference = (XP_Difference x XP_ExpMultiplier[CV])
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                XP_Difference Greater than 0.00
+                                ((Picked unit) is A Hero) Equal to True
+                            Then - Actions
+                                Hero - Add (Integer(XP_Difference)) experience to (Picked unit), Show level-up graphics
+                                Game - Display to XP_KillingPlayer for 30.00 seconds the text: (Exp Gained After Multiplier:  + (String(XP_Difference)))
+                            Else - Actions
+                    Else - Actions
+                Set VariableSet XP_OldExperience[CV] = (Hero experience of (Picked unit))

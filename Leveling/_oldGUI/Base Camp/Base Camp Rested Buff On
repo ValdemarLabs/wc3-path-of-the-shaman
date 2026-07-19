@@ -1,0 +1,18 @@
+not ready, made badly...
+
+Base Camp Rested Buff On
+    Events
+    Conditions
+    Actions
+        Set VariableSet RestedTarget = Nazgrek
+        Set VariableSet RestedPoint = (Position of RestedTarget)
+        Unit - Create 1 DummyRested for (Owner of RestedTarget) at RestedPoint facing Default building facing degrees
+        Set VariableSet RestedDummy = (Last created unit)
+        -------- I'm adding expiration time to make it disappear after 0.5 second, and give it an ability. --------
+        Unit - Add a 1.00 second Generic expiration timer to RestedDummy
+        Unit - Order RestedDummy to Neutral Alchemist - Acid Bomb RestedTarget
+        Game - Display to (All players) the text: |cFFFFCC00Nazgrek |...
+        -------- Time to remove leaks in order to prevent ingame lags. --------
+        Custom script:   call RemoveLocation(udg_RestedPoint)
+        Trigger - Turn on Camp Fire Rested Buff Start Loop <gen>
+        Trigger - Turn off Camp Fire Rested Buff Reset Loop <gen>

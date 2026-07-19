@@ -1,0 +1,24 @@
+Rested Experience
+    Events
+        Unit - A unit Dies
+    Conditions
+        ((Triggering unit) belongs to an enemy of (Owner of (Killing unit)).) Equal to True
+        ((Killing unit) has buff |cFF00FF00Rested|r ) Equal to True
+    Actions
+        Custom script:   set bj_wantDestroyGroup = true
+        Set VariableSet VarPoint = (Position of (Triggering unit))
+        Unit Group - Pick every unit in (Units within 1000.00 of VarPoint.) and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        And - All (Conditions) are true
+                            Conditions
+                                (Owner of (Picked unit)) Equal to Player 1 (Red)
+                                (Owner of (Picked unit)) Equal to Player 2 (Blue)
+                        ((Picked unit) is A Hero) Equal to True
+                        ((Picked unit) has buff |cFF00FF00Rested|r ) Equal to True
+                    Then - Actions
+                        Hero - Add ((Level of (Triggering unit)) + ((Level of (Triggering unit)) x (Integer(0.50)))) experience to (Picked unit), Show level-up graphics
+                        Game - Display to (All players) the text: (Rested XP:  + (String(((Level of (Triggering unit)) + (Integer(0.50))))))
+                    Else - Actions
+        Custom script:   call RemoveLocation(udg_VarPoint)

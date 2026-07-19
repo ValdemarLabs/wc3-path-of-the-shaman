@@ -1,0 +1,10 @@
+Base Camp Dismantle
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to Dismantle (Tent)
+    Actions
+        Unit - Remove (Triggering unit) from the game
+        Set VariableSet VarPoint = (Position of (Triggering unit))
+        Item - Create Tent at VarPoint
+        Sound - Play TentDismantle <gen> at 100.00% volume, located at VarPoint with Z offset 0.00

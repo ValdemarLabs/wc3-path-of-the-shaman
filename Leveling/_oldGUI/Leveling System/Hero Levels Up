@@ -1,0 +1,66 @@
+Hero Levels Up
+    Events
+        Unit - A unit owned by Player 1 (Red) Gains a level
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Leveling Hero) Equal to Zulkis
+                (Leveling Hero) Equal to Nazgrek
+    Actions
+        Custom script:   local string a
+        Custom script:   local string b
+        Custom script:   local string c
+        Custom script:   local string d
+        Custom script:   local string e
+        Custom script:   local string f
+        -------- ======================= --------
+        Custom script:   set a = "|cffffcc00"
+        Custom script:   set b = GetHeroProperName(GetLevelingUnit())
+        Custom script:   set c = "|r has reached Level |cffffcc00"
+        Custom script:   set d = I2S(GetHeroLevel(GetLevelingUnit()))
+        Custom script:   set e = "|r"
+        Custom script:   set f = a + b + c + d + e
+        -------- ======================= --------
+        Custom script:   call ShowSingleLineText(f, 0.5, 3, 1.5, 1.5)
+        Unit - Set life of (Leveling Hero) to 100.00%
+        Unit - Set mana of (Leveling Hero) to 100.00%
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Leveling Hero) Equal to Nazgrek
+            Then - Actions
+                Set VariableSet AbilityPointsNazgrek = (AbilityPointsNazgrek + 1)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Hero level of Nazgrek) Greater than or equal to 5
+                        (Hero level of Nazgrek) Less than 10
+                    Then - Actions
+                        Set VariableSet Companion_GroupSize = 2
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Hero level of Nazgrek) Greater than or equal to 10
+                        (Hero level of Nazgrek) Less than 20
+                    Then - Actions
+                        Set VariableSet Companion_GroupSize = 3
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Hero level of Nazgrek) Greater than or equal to 15
+                        (Hero level of Nazgrek) Less than 20
+                    Then - Actions
+                        Set VariableSet Companion_GroupSize = 4
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Hero level of Nazgrek) Greater than or equal to 20
+                    Then - Actions
+                        Set VariableSet Companion_GroupSize = 5
+                    Else - Actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Leveling Hero) Equal to Zulkis
+            Then - Actions
+                Set VariableSet AbilityPointsZulkis = (AbilityPointsZulkis + 1)
+            Else - Actions
+        Trigger - Remove (This trigger) from the trigger queue

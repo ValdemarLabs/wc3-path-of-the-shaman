@@ -1,0 +1,17 @@
+Camp Fire and Tent Limitation InCombat
+    Events
+        Unit - A unit Begins channeling an ability
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Ability being cast) Equal to Build Tent 
+                (Ability being cast) Equal to Build Camp Fire 
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                GCSM_UnitInCombat[CV] Equal to True
+            Then - Actions
+                -------- If the unit is in combat --> Issue the building unit to Stop --------
+                Unit - Order (Triggering unit) to Stop.
+                Trigger - Run Hint 9 Camp Fire or Tent Limitations <gen> (checking conditions)
+            Else - Actions

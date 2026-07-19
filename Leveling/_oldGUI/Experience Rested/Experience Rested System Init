@@ -1,0 +1,7 @@
+Experience Rested System Init
+    Events
+        Time - Elapsed game time is 5.00 seconds
+    Conditions
+    Actions
+        -------- // This system is turned on after small game time delay, to prevent excess "unit dies" events triggering the system at start (Cinematic units) --------
+        Trigger - Turn on Experience Rested Unit Dies Test <gen>

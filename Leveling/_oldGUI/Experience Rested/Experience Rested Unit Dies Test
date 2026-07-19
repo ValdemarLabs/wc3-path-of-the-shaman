@@ -1,0 +1,33 @@
+Experience Rested Unit Dies Test
+    Events
+        Unit - A unit Dies
+    Conditions
+        ((Killing unit) has buff |cFF00FF00Rested|r ) Equal to True
+        ((Killing unit) is A Hero) Equal to True
+        InCinematic Equal to False
+    Actions
+        -------- - --------
+        Set VariableSet XP_KillingPlayer = (Player group((Owner of (Killing unit))))
+        Set VariableSet XP_KillingUnit = (Killing unit)
+        Set VariableSet CV = (Custom value of (Killing unit))
+        -------- - --------
+        -------- // Disable automatic XP gain --------
+        Hero - Disable experience gain for XP_KillingUnit.
+        -------- - --------
+        -------- Calculate XP gain --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                IsUnitAlive[CV] Equal to True
+                XP_OldExperience[CV] Less than (Hero experience of XP_KillingUnit)
+            Then - Actions
+                Set VariableSet XP_Difference = ((Real((Hero experience of XP_KillingUnit))) - (Real(XP_OldExperience[CV])))
+                -------- Rested XP bonus (50 % more XP) --------
+                Set VariableSet XP_Difference = (XP_Difference x 1.50)
+                Hero - Add (Integer(XP_Difference)) experience to XP_KillingUnit, Show level-up graphics
+                Game - Display to XP_KillingPlayer for 2.00 seconds the text: (Exp Gained After Rested Buff:  + (String(XP_Difference)))
+            Else - Actions
+        Set VariableSet XP_OldExperience[CV] = (Hero experience of XP_KillingUnit)
+        -------- - --------
+        -------- Re-enable XP gain afterwards --------
+        Hero - Enable experience gain for XP_KillingUnit.
+        -------- - --------

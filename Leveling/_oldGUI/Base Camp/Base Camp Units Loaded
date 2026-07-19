@@ -1,0 +1,8 @@
+not ready, made badly...
+
+Base Camp Units Loaded
+    Events
+        Time - Every 2.00 seconds of game time
+    Conditions
+    Actions
+        -------- Turn on Resting Loop --------

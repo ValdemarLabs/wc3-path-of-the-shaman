@@ -1,0 +1,17 @@
+Base Camp Limitation
+    Events
+        Unit - A unit Begins channeling an ability
+    Conditions
+        (Ability being cast) Equal to Build Tent 
+    Actions
+        Custom script:   set bj_wantDestroyGroup = true
+        Unit Group - Pick every unit in (Units owned by (Owner of (Triggering unit)).) and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Unit-type of (Picked unit)) Equal to Tent (Resting)
+                    Then - Actions
+                        -------- If the Player already has Tent (base camp) --> Issue the building unit to Stop --------
+                        Unit - Order (Triggering unit) to Stop.
+                        Trigger - Run Hint 10 Tent Limitation <gen> (checking conditions)
+                    Else - Actions

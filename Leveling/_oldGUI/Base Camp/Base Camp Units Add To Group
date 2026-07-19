@@ -1,0 +1,19 @@
+not ready, made badly...
+
+Base Camp Units Add To Group
+    Events
+        Unit - A unit Is loaded into a transport
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Triggering unit) Equal to Nazgrek
+                (Triggering unit) Equal to Zulkis
+        (Unit-type of (Transporting unit)) Equal to Tent (Resting)
+    Actions
+        For each (Integer BaseCampGrp_Loop) from 0 to BaseCampGrp_Int, do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        Set VariableSet BaseCampGrp_Int = (BaseCampGrp_Int + 1)
+                    Else - Actions
