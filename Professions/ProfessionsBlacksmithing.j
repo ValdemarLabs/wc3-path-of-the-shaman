@@ -25,6 +25,9 @@ globals
     // Workstation and material configuration.
     private constant integer PB_STATION_ANVIL = 'n62R'
     private constant integer PB_ITEM_COPPER_BAR = 'I67M'
+    private constant boolean PB_AI_CHEAT_CRAFTING = true
+    private constant string PB_CRAFTER_ANIMATION_PRIMARY = "stand work"
+    private constant string PB_CRAFTER_ANIMATION_FALLBACK = "attack"
 
     // Sound labels. Professions plays Start once, Loop until done, and Finish once.
     private constant string PB_SOUND_START = "Blacksmithing"
@@ -78,6 +81,8 @@ public function Init takes nothing returns nothing
     call Professions_RegisterStationType(GNS_PROF_BLACKSMITHING, PB_STATION_ANVIL, "Anvil")
     call Professions_SetProfessionSoundLabels(GNS_PROF_BLACKSMITHING, PB_SOUND_START, PB_SOUND_LOOP, PB_SOUND_FINISH)
     call Professions_SetProfessionSoundHandles(GNS_PROF_BLACKSMITHING, gg_snd_Blacksmithing, gg_snd_Blacksmithing, gg_snd_Blacksmithing)
+    call Professions_SetProfessionAiCheatCrafting(GNS_PROF_BLACKSMITHING, PB_AI_CHEAT_CRAFTING)
+    call Professions_SetProfessionCrafterAnimations(GNS_PROF_BLACKSMITHING, PB_CRAFTER_ANIMATION_PRIMARY, PB_CRAFTER_ANIMATION_FALLBACK)
     call PB_RegisterRecipes()
 endfunction
 
