@@ -26,7 +26,8 @@
   - Leatherworking opens from Tannery units (`n625`).
   - Cooking workstation hooks are registered for Camp Fire (`n61C`) so recipes can be added later.
 - The new crafting panel lists workstation recipes, required skill, material readiness, crafting time, and current availability state.
-- Starting a craft now enters cinematic mode, moves only the nearest tracked hero into the workstation scene, uses a DialogCamera closeup, and reopens the related CraftingUI after completion.
+- Starting a player craft now reserves the workstation, enters cinematic mode, uses a 0.5 second fade-out/fade-in reposition to place only the nearest tracked hero close to the workstation, starts the craft only after the setup sequence completes, and reopens the related CraftingUI after completion.
+- AI units with matching profession profiles can now occasionally use nearby profession stations as cheat-crafting jobs, with per-profession toggles for whether AI ignores recipe materials.
 - Profession crafting start/loop/finish sounds now play as 3D workstation sounds where configured, including Tannery, Forge smelting, Anvil, and Cauldron flows.
 - Alchemy cauldrons now keep the passive Light Effect ability (`A6DJ`) through the delayed post-craft phase, remove it after 60 seconds, keep the Death animation for 120 seconds, and then switch to Decay.
 - Alchemy recipes are now grouped in the custom CraftingUI by the workbook categories:
@@ -44,6 +45,8 @@
   - Reinforced Leather Shoulderpads
 - Mining now supports basic smelting recipes:
   - Copper, Tin, Silver, Iron, Gold, Mithril, Arcanite, and Thorium Ore into their Bar versions.
+  - Bronze Bar from Copper Bar + Tin Bar.
+  - Steel Bar from Iron Bar + Coal.
 
 ### Technical Updates
 
@@ -51,12 +54,14 @@
   - Added the central profession crafting registry and executor.
   - Added APIs for workstation registration, recipe registration, material registration, recipe lookup, station lookup, crafting start checks, material counting, and profession summary text.
   - Added recipe category and subcategory metadata APIs so profession sublibraries can expose workstation recipe paths such as Alchemy category lists or later Blacksmithing tier -> group lists.
-  - Crafting jobs now consume materials up front, run through a timed job, create the output item on completion, and award profession skill through `GatherNodeSkills`.
+  - Crafting jobs now reserve crafter and station immediately, run player or AI preparation first, consume materials only when the actual craft begins, create the output item on completion, and award profession skill through `GatherNodeSkills`.
   - Material checks support the custom DInv inventory helpers when `SharedDInvLib` is present, with vanilla inventory fallback.
   - Crafted item creation uses `ItemHook_CreateItem` when `ItemHook` is present, with normal `CreateItem` fallback.
   - Added workstation busy/crafter busy guards so the same station or crafter cannot run overlapping jobs.
-  - Added profession sound label and sound-handle support using 3D sound playback attached to the workstation.
-  - Added timed-craft cinematic handling using `DialogCamera`, `CinematicMover`, and cinematic mode depth tracking.
+  - Added profession sound label and sound-handle support using 3D sound playback attached to the workstation, preferring fresh label-based instances with `gg_snd_*` handles as fallback.
+  - Added timed-craft cinematic handling using `DialogCamera`, `CinematicMover`, quick black fades, and cinematic mode depth tracking.
+  - Added profession-configured crafter animation strings, per-profession AI cheat-crafting toggles, and AI craft recipe lookup helpers.
+  - Added `A6DY` Craft (Fake Cast) handling: the ability is added to the crafter, self-cast with the Inner Fire order, and removed when the craft ends or is cancelled.
   - Added Alchemy cauldron feedback using the existing `A6DJ` Light Effect ability, station animation changes, and delayed decay animation.
   - Alchemy cauldron delayed timers are generation-guarded so starting a new craft prevents older light-removal or decay timers from affecting the active cauldron.
   - Added short globals-section comments for registry state, recipe data, material data, active jobs, sound labels, and lookup tables.
@@ -64,6 +69,7 @@
 - `Professions/Professions*.j`
   - Moved per-profession Start / Loop / Finish sound labels into configurable globals constants.
   - Registered GUI-generated sound handles for Alchemy, Blacksmithing, Leatherworking, and Mining where existing sound variables are available.
+  - Registered per-profession AI cheat-crafting toggles and crafter animation defaults.
   - Added short globals-section comments for runtime guards, workstation raw codes, sound label config, recipe raw codes, and icon paths.
   - WIP profession modules use empty sound label constants until their actual sound assets and crafting flows are defined.
 
@@ -87,6 +93,7 @@
   - Registered the Forge workstation for smelting only.
   - Added Ore -> Bar recipes without changing the existing gather-node Mining systems.
   - Added Arcanite Ore -> Arcanite Bar smelting from the exported item rawcodes.
+  - Added confirmed Bronze Bar and Steel Bar alloy smelts from the current item rawcodes.
 
 - `Professions/ProfessionsLeatherworking.j`
   - Registered the Tannery workstation and first-pass Reinforced Leather recipes from the old GUI trigger.
@@ -109,6 +116,15 @@
 
 - `Cinematic/CinematicMove.j`
   - Added single-unit cinematic move/return helpers so profession crafting can use CinematicMover without moving companions, pets, or other tracked units.
+  - Added an explicit point-targeted single-unit move helper for workstation close-up crafting sequences.
+
+- `AI/AI.j` and selected `AI/Classes/AI_*.j`
+  - Extended AI profession IDs to match `GatherNodeSkills` through Cooking.
+  - AI side profession work can now find nearby reserved-free profession stations and start a random eligible recipe through `Professions_StartRecipeForAi`.
+  - Added Blacksmithing to Engineer/Warrior profiles, Alchemy to Restoshaman, and Leatherworking to Rogue.
+
+- `InitRelated/PreloadAbilities.j`
+  - Added `A6DY` to ability preloading for the shared Craft (Fake Cast) behavior.
 
 - `UI/ProfessionsUI.j`
   - Now requires `Professions`.
