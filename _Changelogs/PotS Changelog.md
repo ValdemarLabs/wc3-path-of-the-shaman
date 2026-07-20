@@ -84,12 +84,7 @@
   - Added optional `Experience` support so registered custom unit XP can apply the centralized XP multiplier through `Experience_ApplyMultiplier`.
 
 - `Professions.j`
-  - Changed crafting camera to:
-    - distance 750
-    - zOffset 90
-    - angle 355
-    - farZ 10000
-    - fov 60
+  - Changed crafting camera parameters
   - Also changed rotation so the camera is placed from the crafter’s side of the workstation after the cinematic mover has snapped the unit near the station, instead of using a fixed station-facing offset.
 
 - `AI.j`
