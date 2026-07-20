@@ -60,9 +60,9 @@ globals
     private constant integer P_ALCHEMY_STAGE_DECAY = 2
     private constant real P_ALCHEMY_STAND_ANIMATION_DELAY = 60.00
     private constant real P_ALCHEMY_DEATH_ANIMATION_DELAY = 120.00
-    private constant real P_CRAFT_CAMERA_DISTANCE = 750.00
-    private constant real P_CRAFT_CAMERA_ZOFFSET = 90.00
-    private constant real P_CRAFT_CAMERA_ANGLE = 355.00
+    private constant real P_CRAFT_CAMERA_DISTANCE = 950.00
+    private constant real P_CRAFT_CAMERA_ZOFFSET = 40.00
+    private constant real P_CRAFT_CAMERA_ANGLE = 328.00
     private constant real P_CRAFT_CAMERA_ROTATION = 180.00
     private constant real P_CRAFT_CAMERA_FARZ = 10000.00
     private constant real P_CRAFT_CAMERA_FOV = 60.00
