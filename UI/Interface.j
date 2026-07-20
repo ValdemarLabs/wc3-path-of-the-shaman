@@ -377,28 +377,28 @@ library Interface initializer AutoInit
 
         set Profession_Alchemy_Start = gg_snd_CauldronSound
         set Profession_Alchemy_Loop = gg_snd_CauldronSound
-        set Profession_Alchemy_End = gg_snd_CauldronSound
-        set Profession_Blacksmithing_Start = gg_snd_Blacksmithing
+        set Profession_Alchemy_End = gg_snd_Tradeskill_AlchemyEnd
+        set Profession_Blacksmithing_Start = gg_snd_Tradeskill_BlacksmithStart
         set Profession_Blacksmithing_Loop = gg_snd_Blacksmithing
         set Profession_Blacksmithing_End = gg_snd_Blacksmithing
-        set Profession_Mining_Start = gg_snd_Tradeskill_MiningHitA
-        set Profession_Mining_Loop = gg_snd_Tradeskill_MiningHitB
-        set Profession_Mining_End = gg_snd_Tradeskill_MiningHitC
+        set Profession_Mining_Start = gg_snd_Smelting                                           // Use of forge for smelting ores
+        set Profession_Mining_Loop = gg_snd_Smelting
+        set Profession_Mining_End = gg_snd_Smelting
         set Profession_Leatherworking_Start = gg_snd_Tannery
         set Profession_Leatherworking_Loop = gg_snd_Tannery
         set Profession_Leatherworking_End = gg_snd_Tannery
-        set Profession_Cooking_Start = null
-        set Profession_Cooking_Loop = null
-        set Profession_Cooking_End = null
+        set Profession_Cooking_Start = gg_snd_CookingPrepareA
+        set Profession_Cooking_Loop = gg_snd_CookingPrepareA
+        set Profession_Cooking_End = gg_snd_CookingPrepareA
         set Profession_Enchanting_Start = null
         set Profession_Enchanting_Loop = null
         set Profession_Enchanting_End = null
         set Profession_Fishing_Start = null
         set Profession_Fishing_Loop = null
-        set Profession_Fishing_End = null
-        set Profession_Skinning_Start = null
-        set Profession_Skinning_Loop = null
-        set Profession_Skinning_End = null
+        set Profession_Fishing_End = gg_snd_Tradeskill_Fishing
+        set Profession_Skinning_Start = gg_snd_Tradeskill_LeatherworkingPick
+        set Profession_Skinning_Loop = gg_snd_Tradeskill_LeatherworkingPick
+        set Profession_Skinning_End = gg_snd_Tradeskill_LeatherworkingPick
     endfunction
 
     public function SetSoundsEnabled takes boolean enabled returns nothing
