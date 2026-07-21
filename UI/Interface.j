@@ -43,6 +43,7 @@
     call Interface_NotifyLootCoin()
     call Interface_NotifyHardWarning()
     call Interface_NotifyMiningHitOnUnit(GetTriggerUnit())
+    call Interface_RefreshDefaultSounds()
     call Interface_PlayProfessionSound(Interface_Profession_Blacksmithing_Start, "Blacksmithing", false)
     call Interface_PlayProfessionSoundOnUnit(Interface_Profession_Blacksmithing_Start, "Blacksmithing", GetTriggerUnit(), false, 3000.00)
 
@@ -401,6 +402,10 @@ library Interface initializer AutoInit
         set Profession_Skinning_End = gg_snd_Tradeskill_LeatherworkingPick
     endfunction
 
+    public function RefreshDefaultSounds takes nothing returns nothing
+        call IUI_InitDefaultSounds()
+    endfunction
+
     public function SetSoundsEnabled takes boolean enabled returns nothing
         set IUI_SoundsEnabled = enabled
     endfunction
@@ -430,16 +435,19 @@ library Interface initializer AutoInit
     endfunction
 
     public function PlayEventSound takes integer eventId returns nothing
+        call RefreshDefaultSounds()
         call IUI_PlayEvent(eventId)
     endfunction
 
     public function PlayEventSoundForPlayer takes integer eventId, player whichPlayer returns nothing
         if whichPlayer != null and GetLocalPlayer() == whichPlayer then
+            call RefreshDefaultSounds()
             call IUI_PlayEvent(eventId)
         endif
     endfunction
 
     public function PlayEventSoundOnUnit takes integer eventId, unit whichUnit returns nothing
+        call RefreshDefaultSounds()
         call IUI_PlayEventOnUnit(eventId, whichUnit)
     endfunction
 
@@ -546,10 +554,12 @@ library Interface initializer AutoInit
     endfunction
 
     public function NotifyMiningHitOnUnit takes unit whichUnit returns nothing
+        call RefreshDefaultSounds()
         call IUI_PlayEventOnUnit(EVENT_TRADESKILL_MINING_HIT_A + GetRandomInt(0, 4), whichUnit)
     endfunction
 
     public function NotifyHerbPickOnUnit takes unit whichUnit returns nothing
+        call RefreshDefaultSounds()
         call IUI_PlayEventOnUnit(EVENT_TRADESKILL_HERB_PICK, whichUnit)
     endfunction
 
