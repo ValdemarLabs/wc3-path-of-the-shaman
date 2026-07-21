@@ -103,6 +103,99 @@
 - `IconQuery` startup freeze is fixed, but IconQuery timing/category parameters still need adjustment and in-game validation with quest-giver minimap icons enabled.
 - `PatrolFollowSystems`: `ValeriaMovementStart` no longer depends on `udg_TempUnit`, but similar patrol-start functions such as `Mordrax` and other older patrol helpers still need the same cleanup pass.
 
+## Historical / Informal Changelog Issues Needing Triage
+
+These are issue-like notes found in the pre-26.5.2026 changelog format. They are kept here when no later changelog entry clearly proves they are fixed or intentionally retired.
+
+### Gather Nodes, Professions, and ItemManager
+- `ProfessionsUI.j` still needs stress testing for rapid switching, scrolling, and long open-panel sessions. Older notes say the worst startup FPS drop / rapid crash was fixed, but follow-up stress testing remained.
+- Gather-node runtime still needs validation independent of UI performance work: natural despawn/respawn timing, glow cleanup, harvest flow, refresh commands, and random spawning after `ZonesCore` integration.
+- Gather-node placement data still needs authoring/polish, especially herb definitions, herb spawn-rect coverage, mixed spawn-group zone/rect assignments, and zones where the preferred random spawn area should not be the first enter rect.
+- Low-skill gather edge cases still need validation so gatherers cannot continue into pickup, attack, or harvest after failing skill/tool/inventory checks.
+- Excel-style drag fill for spawn-point rows in the ItemManager tooling is still not implemented.
+- ItemManager base item IDs were noted as not all correct, with `sor6` reading as Scroll of Mana while actually being Shadow Orb +6. Recheck before using base-item copying for item creation.
+- Ore/bar item support still needs data and spawning logic for ore/bar item versions beyond currently confirmed item rawcodes.
+
+### Quests, Quest Systems, and Dialogues
+- Historical quest-system migration notes say the old quest folders/triggers are disabled or broken and should be converted one by one into `qQuestGiverName` / qSublibrary scripts. This overlaps with current qAradion work but also affects non-Aradion quest givers.
+- Old notes say all quest givers except Aradion and ancient-style NPCs were disabled during the QuestSystems migration. Reconfirm which quest givers are active in the current main map.
+- qSublibrary / qQuestGiver patterns still had manual boilerplate and missing generic helpers in older notes, including sequence-close flow, accept sequences, selection/greet flow, quest creation/reward wrappers, and generic hero action-line calls.
+- Quest rewards were repeatedly marked as incomplete or needing a template/parity pass, including missing rewards and separate reward text for discovery vs quest description.
+- Boom Brothers / AtexBlix quest chain remains historical-triage work: older notes mention all quests appearing at once, camera/dialog continuation getting stuck until ESC, completion at the wrong NPC, missing normal greets, wrong quest discovery, follow/move stuck states, respawn/follow handling if Boom Brothers or miners die, and several quest-marker state problems.
+- Quest icon/state logic needs historical retest around ready-to-turn-in states, grey/yellow mark priority, not using `QuestIcon_RemoveQuest` for status refreshes, QuestGiverUnit storage by quest ID, and updating important NPC unit variables after respawn.
+- Some older events still need cleanup or conversion: attacking-unit events could fire many times and need cooldown/removal guards, and some global DialogButton variables were meant to replace unit-specific dialog button variables across other NPCs.
+- Some old quests/dialogues were still unfinished or WIP, including Kribugs/BoomBrother edits, Token of Love / Lost Supplies, Aradion / Valeria continuation work, and The Witch's Smile preparation.
+
+### Zones, Weather, Storm, Dynamic Minimap, and Region Titles
+- Weather/zone integration had a critical old issue where `ApplyCurrentZoneEffects` returned Heavy weather when weather should already be none, likely due to weather state/indexing or `ZoneEvent` fog logic.
+- Storm still had unresolved black-fog restoration issues and old `udg_ZoneCurrent` dependencies needing heavy modification for the newer zone system.
+- `WeatherSystem`, `Zones`, and `Storm` were noted as not fully tested. Ambient sounds, enter/discover sounds, zone-specific sounds, and zone icons still need current-state verification.
+- `DayNightEvent` day/night events were noted as not always firing, especially when using cheat-code toggles.
+- RegionTitles FDF/TOC files were noted as not imported to the main map and not clearly modifying native Blizzard text.
+- DynamicMinimap / chunked minimap work remains historical triage: older notes mention camera-bounds drift, unit-position mismatch, minimap background visible while minimap is invisible, main-map crashes from camera bounds / rotation interaction, and the system being test-map-only or disabled in the main map.
+- Water ripples/clouds/weather visuals were noted as temporary or unfinished and needing proper implementation; water ripples should only spawn on water.
+- Firelands/minizone locations and visual blockers still need in-game checks, including hiding out-of-bounds views and draft room/cave visibility.
+
+### Camera, Cinematics, Travel, and Death Flow
+- Old camera systems and disabled GUI camera trigger folders were meant to be removed only after the newer JASS camera flow is fully validated.
+- Camera lock was reported broken after Warcraft III patch 2.03; lock-to-unit did not work in that note. Reconfirm whether current `CameraControl` fully replaces/fixes this path.
+- Cinematics can still need retesting around arrow-key rotation during camera transitions; an older note says arrow-key input during cinematic transition could leave the camera stuck moving until `/camera normal` or similar reset.
+- Death camera flow still needs historical verification: camera distance/angle, locking player camera during death time, restoring normal camera settings on revive, and keeping camera near the dead unit.
+- Travel-ship camera behavior still needs current validation around free rotation during travel, possible ESC skip, and correctly switching between dungeon/inside/outside camera modes when only one Player 1 hero is inside.
+- DialogCamera / quest camera pan notes from Boom Brothers and other quest scenes should be retested where those old GUI quest scenes remain active.
+
+### Inventory, Items, Loot, and Item Abilities
+- Custom inventory/DInventory remained under testing in older notes, with issues around items not inserting into custom inventory and old bag triggers disabled/replaced by newer DInv-slot logic.
+- Any DInventory/DEquipment paths that silence inventories after revive/reincarnation, unpause, disabled-abilities channeling, or Doom-like debuffs may need to re-add inventories/items afterward; otherwise only the main inventory may be usable.
+- EasyItemStacking was disabled because it interfered with DestroyerInventory; check whether stacking is handled by gameplay constants, DInventory, or newer item-stack logic before re-enabling anything.
+- Item abilities may need to be temporarily set as non-item abilities to edit the Description tooltip shown in-game.
+- Dropped-item effect ability / loot effect removal on pickup and `ItemHook` were noted as ideas or VS Code-only work, not transferred into the map.
+- Crates/barrels/destructible item spawning and item reward creation had old implementation notes; recheck before reviving old GUI reward/drop paths.
+
+### AI, UnitHider, Performance, and Legacy GUI Systems
+- Historical lag notes repeatedly point at AI hero logic, UnitHider, or both. Later AI work reduced some causes, but old notes still mention AI main-state triggers, warrior buy loops, UnitHider severe lag, Frostbite/newer periodic systems, Fog Fade, Heal Engine, SteamBreath, PDMS, and lingering lag spikes as suspects.
+- UnitHider V3 was noted as working but disabled because it introduced severe lag. Reconfirm current UnitHider status before relying on it.
+- HeroDeathRessurect AI Hero Reviver + Loop triggers were disabled because they were not working and were possible lag causes.
+- Wandering Hostile NPC triggers were disabled and marked for re-editing/finer conditions/leak checks.
+- Game start and init related triggers were noted as messy and needing reorganization.
+- Old GUI triggers/folders should be removed cautiously because some globals may still be used by newer JASS libraries.
+
+### Pets, Taming, Companions, and Unit Experience
+- Pet death/revive animation handling still needs a clear design for playing the death animation and keeping the pet paused in death pose.
+- Tamed-pet stat scaling and UnitExperience integration need current validation: older notes questioned whether only Shadowclaw gets stats, whether other pets should scale, and whether high-level pets become too strong.
+- More tameable units were added unfinished, and tame registration/stuck animation/death animation fixes were marked for testing.
+- UnitExperience reset/XP-gain filters had older error-state and validation notes; recheck any legacy UnitExperience paths not covered by newer pet/companion systems.
+- Companion or faction-owned units returning to original owners after kick, follower behavior, and Valeria/Aradion control handoff overlap with newer companion validation and should remain in the qAradion/Ranger Missing test pass.
+
+### Patrols, Bridges, Units, and Terrain
+- `PatrolSystem` / bridge logic still needs editor setup validation for rect placement, pathing blockers, invisible platforms, lane triggers, and C/D or A/B recovery paths.
+- Older PatrolSystem notes mention waypoint bugs where NPCs walked toward map center `0,0`; test multiple patrol NPCs/settings before trusting old patrol configs.
+- Bridge movement around Boom Mine and other areas needs target/order checks near bridge pathing blockers, especially for moved quest units.
+- Important respawning quest givers/NPCs need current verification that CreepRespawn reassigns their unit variables correctly.
+- Some old units/models remain issue-like: Valkier is airborne and needs on-foot/stand-animation fixing or removal; Mad Blix temporary unit pathing/collision had mine entrance issues; some goblins should return to initial areas after ownership changes.
+- Riverbane bridge end/start invisible platforms were noted as needing lowering.
+
+### Assets, Models, Textures, and Terrain
+- Several imported models/textures were marked as problematic: STV_root01 crash, black/glitchy Orc zeppelin textures, duplicate imported textures under `war3mapImported` / `war3campImported`, and some skybox models/textures needing re-import or validation.
+- Crypt / Northrend WMO models were linked to GPU/WE/in-game lag, huge bounding boxes/extents, missing ceilings/walls, and clickable collision far from the model. These need asset cleanup before relying on them.
+- Some dungeon/dragon/Onyxia/Crypt assets were noted as missing textures or still needing separation/editing.
+- Nazgrek model path/texture/cape material notes remain historical asset cleanup: recheck wrong import path, cape blend/transparent material, and selection-circle visibility.
+- Firelands, Stormhaven, Sirensong, and other draft terrain areas still need in-game visual checks where older notes called them draft or unfinished.
+
+### Abilities, Combat, Floating Text, and Sounds
+- Floating spell-name text needs current validation for dummy/internal spell filtering, item-cast tooltip fallback, ability level display, and color handling. Older notes say the level was off by one and item casts could show missing tooltip.
+- Ability tooltip/text data had old mismatches, such as Healing Wave text not matching actual healing and wrong Revive Hero / Spirit Shard / Resurrect tooltip showing Storm Bolt.
+- Parasite-based abilities such as Curse of Agony / Garrote may not work when the target is close to death.
+- Corrosive Venom / Chimairo damage-trigger work needed testing and ability filtering so the dummy effect only responds to the intended ability.
+- Spell-power flat amount and healing bonus systems were drafted or not implemented.
+- Scorchion / Dark Shaman encounter notes still need triage: dark shaman voiceline should require player proximity, the last dark shaman should stay for a line then die before Scorchion starts, and engage reset voiceline behavior needs cleanup.
+- Ambient/zone sound cleanup still needs a way to remove ambient sound when the player leaves or switches zones.
+- Aveline generated audio was noted as possibly needing text/audio edits, though low priority.
+
+### Multiplayer / Player Ownership
+- 2-player playable-map support was discarded, but old Player 2 / `GetLocalPlayer` related triggers/configurations were marked for removal or editing so Zul'kis remains the second Player 1 hero.
+- Player/faction alliance init triggers need rechecking where the Reputation system is now the master for Player 1 alliances.
+
 ## Resolved or Superseded Issues
 
 - ~~AI buy/sell states still only run when `AI_BeginBuy` or `AI_BeginSell` is called; the autonomous inventory-full/empty decision still needs to be added or wired back in.~~ Comment: Fixed/narrowed by the 20.7.2026 `AI.j` update that added autonomous shop-state initiation for idle/wandering AI. Current remaining issue is in-map validation with real shops and full/empty inventories.
@@ -111,3 +204,10 @@
 - ~~Settings UI / post-loadscreen startup freeze.~~ Comment: Fixed in the 30.6.2026 in-game test after `SettingsUI.j` slider re-entry hardening. `IconQuery` tuning remains open separately.
 - ~~AbilitiesLiteUI / ReputationUI left-list slider drag/click instability and known slider crashes.~~ Comment: Fixed by the 3.6.2026 custom scrollbar pass; the changelog says no slider crashes are currently known after those fixes. Current remaining UI items are validation and specific follow-up such as the AbilitiesLiteUI gray overlay.
 - ~~TerrainDamage was suspected as the main source of recurring periodic FPS drops.~~ Comment: Closed as main suspect by the 9.6.2026 isolation test; disabling TerrainDamage did not meaningfully improve the lag spikes. Current performance suspicion shifted to `CameraControl.j` normal-mode safe/no-clipping correction.
+- ~~Severe startup FPS drop / rapid crash was caused by `ProfessionsUI.j`.~~ Comment: Later pre-26.5.2026 notes say the catastrophic startup FPS issue was corrected. Current remaining item is stress-testing `ProfessionsUI` rapid switching / scrolling and longer open-panel sessions.
+- ~~Gather-node loadscreen/unit-glow crash path.~~ Comment: Later historical notes say gather nodes were spawning again and the previous gather glow crash path was working after the point-based implementation. Current remaining item is validation of runtime behavior, refresh commands, random spawning, and placement data.
+- ~~DInventory / DEquipment random item loss, stacking, and charge-removal bugs from October 2025.~~ Comment: Later 22-24.10.2025 notes document fixes for `RemoveDInvItemChargesByType`, item stackability charge display, 0-charge item checks, item swap, equipment transfer, missing slot-id storage, and wrong-item deletion safety. Keep current DInv paths under validation, but these specific historical bugs are marked fixed by the changelog.
+- ~~`UnitDeathEvent` not working.~~ Comment: Later systems use `UnitDeathEvent` heavily and 22.7.2026 migrated additional direct death listeners to `UnitDeathEvent_Register`. Remaining work is regression testing death callbacks after the event refactor.
+- ~~FloatingTextTag / Heal Engine `CheckLoop` severe lag spike from 100 FPS to 2 FPS.~~ Comment: 24.10.2025 notes identify and fix the critical `CheckLoop` bug and say it was the primary cause of unpredictable lag spikes in that path. Broader performance monitoring remains open.
+- ~~Quest More Hazard Training wrong quest discovery.~~ Comment: 31.7.2025 notes say it "Should be NOW fixed"; keep Boom Brothers / AtexBlix quest chain as broader historical triage.
+- ~~Aveline / remote Undead Warlock reply line playing without an Undead Warlock nearby.~~ Comment: 12.7.2026 Part I/II notes fixed `_ChatUndeadWarlock` target filtering and the broader target-class chat eligibility range.
