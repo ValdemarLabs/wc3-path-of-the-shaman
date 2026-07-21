@@ -538,6 +538,82 @@ private function P_PlaySoundHandleForJob takes integer jobId, sound whichSound, 
     return Interface_PlayProfessionSound(whichSound, "", looping)
 endfunction
 
+private function P_RefreshProfessionSoundHandles takes integer professionId returns nothing
+    call Interface_RefreshDefaultSounds()
+
+    if professionId == GNS_PROF_ALCHEMY then
+        if P_ProfessionStartSound[professionId] == null then
+            set P_ProfessionStartSound[professionId] = Interface_Profession_Alchemy_Start
+        endif
+        if P_ProfessionLoopSound[professionId] == null then
+            set P_ProfessionLoopSound[professionId] = Interface_Profession_Alchemy_Loop
+        endif
+        if P_ProfessionFinishSound[professionId] == null then
+            set P_ProfessionFinishSound[professionId] = Interface_Profession_Alchemy_End
+        endif
+    elseif professionId == GNS_PROF_BLACKSMITHING then
+        if P_ProfessionStartSound[professionId] == null then
+            set P_ProfessionStartSound[professionId] = Interface_Profession_Blacksmithing_Start
+        endif
+        if P_ProfessionLoopSound[professionId] == null then
+            set P_ProfessionLoopSound[professionId] = Interface_Profession_Blacksmithing_Loop
+        endif
+        if P_ProfessionFinishSound[professionId] == null then
+            set P_ProfessionFinishSound[professionId] = Interface_Profession_Blacksmithing_End
+        endif
+    elseif professionId == GNS_PROF_MINING then
+        if P_ProfessionStartSound[professionId] == null then
+            set P_ProfessionStartSound[professionId] = Interface_Profession_Mining_Start
+        endif
+        if P_ProfessionLoopSound[professionId] == null then
+            set P_ProfessionLoopSound[professionId] = Interface_Profession_Mining_Loop
+        endif
+        if P_ProfessionFinishSound[professionId] == null then
+            set P_ProfessionFinishSound[professionId] = Interface_Profession_Mining_End
+        endif
+    elseif professionId == GNS_PROF_LEATHERWORKING then
+        if P_ProfessionStartSound[professionId] == null then
+            set P_ProfessionStartSound[professionId] = Interface_Profession_Leatherworking_Start
+        endif
+        if P_ProfessionLoopSound[professionId] == null then
+            set P_ProfessionLoopSound[professionId] = Interface_Profession_Leatherworking_Loop
+        endif
+        if P_ProfessionFinishSound[professionId] == null then
+            set P_ProfessionFinishSound[professionId] = Interface_Profession_Leatherworking_End
+        endif
+    elseif professionId == GNS_PROF_COOKING then
+        if P_ProfessionStartSound[professionId] == null then
+            set P_ProfessionStartSound[professionId] = Interface_Profession_Cooking_Start
+        endif
+        if P_ProfessionLoopSound[professionId] == null then
+            set P_ProfessionLoopSound[professionId] = Interface_Profession_Cooking_Loop
+        endif
+        if P_ProfessionFinishSound[professionId] == null then
+            set P_ProfessionFinishSound[professionId] = Interface_Profession_Cooking_End
+        endif
+    elseif professionId == GNS_PROF_FISHING then
+        if P_ProfessionStartSound[professionId] == null then
+            set P_ProfessionStartSound[professionId] = Interface_Profession_Fishing_Start
+        endif
+        if P_ProfessionLoopSound[professionId] == null then
+            set P_ProfessionLoopSound[professionId] = Interface_Profession_Fishing_Loop
+        endif
+        if P_ProfessionFinishSound[professionId] == null then
+            set P_ProfessionFinishSound[professionId] = Interface_Profession_Fishing_End
+        endif
+    elseif professionId == GNS_PROF_SKINNING then
+        if P_ProfessionStartSound[professionId] == null then
+            set P_ProfessionStartSound[professionId] = Interface_Profession_Skinning_Start
+        endif
+        if P_ProfessionLoopSound[professionId] == null then
+            set P_ProfessionLoopSound[professionId] = Interface_Profession_Skinning_Loop
+        endif
+        if P_ProfessionFinishSound[professionId] == null then
+            set P_ProfessionFinishSound[professionId] = Interface_Profession_Skinning_End
+        endif
+    endif
+endfunction
+
 private function P_StartLoopSound takes integer jobId, integer professionId, unit station returns sound
     local sound loopSound
 
@@ -545,6 +621,7 @@ private function P_StartLoopSound takes integer jobId, integer professionId, uni
     if not P_IsProfessionValid(professionId) then
         return null
     endif
+    call P_RefreshProfessionSoundHandles(professionId)
 
     if P_JobAiControlled[jobId] and P_ProfessionLoopSoundLabel[professionId] != null and P_ProfessionLoopSoundLabel[professionId] != "" then
         set loopSound = P_PlaySoundLabelForJob(jobId, P_ProfessionLoopSoundLabel[professionId], station, true)
@@ -592,6 +669,7 @@ private function P_PlayStartSound takes integer jobId, integer professionId, uni
     local sound playedSound
 
     if P_IsProfessionValid(professionId) then
+        call P_RefreshProfessionSoundHandles(professionId)
         if P_JobAiControlled[jobId] and P_ProfessionStartSoundLabel[professionId] != null and P_ProfessionStartSoundLabel[professionId] != "" then
             set playedSound = P_PlaySoundLabelForJob(jobId, P_ProfessionStartSoundLabel[professionId], station, false)
             if playedSound != null then
@@ -622,6 +700,7 @@ private function P_PlayFinishSound takes integer jobId, integer professionId, un
     local sound playedSound
 
     if P_IsProfessionValid(professionId) then
+        call P_RefreshProfessionSoundHandles(professionId)
         if P_JobAiControlled[jobId] and P_ProfessionFinishSoundLabel[professionId] != null and P_ProfessionFinishSoundLabel[professionId] != "" then
             set playedSound = P_PlaySoundLabelForJob(jobId, P_ProfessionFinishSoundLabel[professionId], station, false)
             if playedSound != null then
