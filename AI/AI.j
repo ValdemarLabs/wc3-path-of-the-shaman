@@ -5570,6 +5570,26 @@ private function ParkCompanionForCinematic takes integer instanceId, unit whichU
     endif
 endfunction
 
+private function ShouldHoldReservedProfessionJob takes integer instanceId, unit whichUnit, real now returns boolean
+    if instanceId <= 0 or whichUnit == null then
+        return false
+    endif
+    if not Professions_IsUnitReserved(whichUnit) then
+        return false
+    endif
+
+    if Professions_IsUnitAiCrafting(whichUnit) and HasNearbyCombatEnemy(whichUnit, 700.00) then
+        if Professions_CancelUnitCraft(whichUnit) then
+            call BackoffProfessionWork(instanceId, whichUnit, now, "craft interrupted by combat")
+        endif
+        return false
+    endif
+
+    call ClearSocialState(instanceId)
+    call ResetMovementMemory(instanceId, whichUnit, GetUnitCurrentOrder(whichUnit), now)
+    return true
+endfunction
+
 private function ProcessInstance takes integer instanceId, real now returns nothing
     local unit whichUnit = InstanceUnit.unit[instanceId]
     local boolean companionControlled
@@ -5610,6 +5630,10 @@ private function ProcessInstance takes integer instanceId, real now returns noth
     endif
     if not udg_InCinematic then
         call InstanceCinematicParked.remove(instanceId)
+    endif
+    if ShouldHoldReservedProfessionJob(instanceId, whichUnit, now) then
+        set whichUnit = null
+        return
     endif
 
     if companionControlled then
