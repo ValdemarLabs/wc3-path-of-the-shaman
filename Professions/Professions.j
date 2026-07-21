@@ -25,6 +25,8 @@
     call Professions_SetRecipeCategoryPath(recipeId, "Apprentice Blacksmithing", "Copper Armor")
     call Professions_StartRecipe(whichCrafter, whichStation, recipeId)
     call Professions_StartRecipeForAi(whichCrafter, whichStation, recipeId)
+    set wasCancelled = Professions_CancelUnitCraft(whichCrafter)
+    set isAiCrafting = Professions_IsUnitAiCrafting(whichCrafter)
     call Professions_GetProfessionSummary(whichCrafter, GNS_PROF_ALCHEMY)
 
 **/
@@ -53,7 +55,7 @@ globals
     private constant real P_CRAFT_STATION_OFFSET = 96.00
     private constant real P_CRAFT_AI_READY_RANGE = 145.00
     private constant real P_CRAFT_AI_MOVE_POLL = 0.25
-    private constant real P_CRAFT_AI_MOVE_TIMEOUT = 8.00
+    private constant real P_CRAFT_AI_MOVE_TIMEOUT = 60.00
     private constant real P_CRAFT_ANIMATION_LOOP_PERIOD = 1.50
     private constant real P_SOUND_CUTOFF = 3000.00
     private constant integer P_ALCHEMY_STAGE_DEATH = 1
@@ -544,6 +546,14 @@ private function P_StartLoopSound takes integer jobId, integer professionId, uni
         return null
     endif
 
+    if P_JobAiControlled[jobId] and P_ProfessionLoopSoundLabel[professionId] != null and P_ProfessionLoopSoundLabel[professionId] != "" then
+        set loopSound = P_PlaySoundLabelForJob(jobId, P_ProfessionLoopSoundLabel[professionId], station, true)
+        if loopSound != null then
+            set P_JobLoopSoundTransient[jobId] = true
+            return loopSound
+        endif
+    endif
+
     if P_ProfessionLoopSound[professionId] != null then
         set loopSound = P_PlaySoundHandleForJob(jobId, P_ProfessionLoopSound[professionId], station, true)
         if loopSound != null then
@@ -551,7 +561,7 @@ private function P_StartLoopSound takes integer jobId, integer professionId, uni
         endif
     endif
 
-    if P_ProfessionLoopSoundLabel[professionId] != null and P_ProfessionLoopSoundLabel[professionId] != "" then
+    if not P_JobAiControlled[jobId] and P_ProfessionLoopSoundLabel[professionId] != null and P_ProfessionLoopSoundLabel[professionId] != "" then
         set loopSound = P_PlaySoundLabelForJob(jobId, P_ProfessionLoopSoundLabel[professionId], station, true)
         if loopSound != null then
             set P_JobLoopSoundTransient[jobId] = true
@@ -582,6 +592,13 @@ private function P_PlayStartSound takes integer jobId, integer professionId, uni
     local sound playedSound
 
     if P_IsProfessionValid(professionId) then
+        if P_JobAiControlled[jobId] and P_ProfessionStartSoundLabel[professionId] != null and P_ProfessionStartSoundLabel[professionId] != "" then
+            set playedSound = P_PlaySoundLabelForJob(jobId, P_ProfessionStartSoundLabel[professionId], station, false)
+            if playedSound != null then
+                set playedSound = null
+                return
+            endif
+        endif
         if P_ProfessionStartSound[professionId] != null then
             set playedSound = P_PlaySoundHandleForJob(jobId, P_ProfessionStartSound[professionId], station, false)
             if playedSound != null then
@@ -589,7 +606,7 @@ private function P_PlayStartSound takes integer jobId, integer professionId, uni
                 return
             endif
         endif
-        if P_ProfessionStartSoundLabel[professionId] != null and P_ProfessionStartSoundLabel[professionId] != "" then
+        if not P_JobAiControlled[jobId] and P_ProfessionStartSoundLabel[professionId] != null and P_ProfessionStartSoundLabel[professionId] != "" then
             set playedSound = P_PlaySoundLabelForJob(jobId, P_ProfessionStartSoundLabel[professionId], station, false)
             if playedSound != null then
                 set playedSound = null
@@ -605,6 +622,13 @@ private function P_PlayFinishSound takes integer jobId, integer professionId, un
     local sound playedSound
 
     if P_IsProfessionValid(professionId) then
+        if P_JobAiControlled[jobId] and P_ProfessionFinishSoundLabel[professionId] != null and P_ProfessionFinishSoundLabel[professionId] != "" then
+            set playedSound = P_PlaySoundLabelForJob(jobId, P_ProfessionFinishSoundLabel[professionId], station, false)
+            if playedSound != null then
+                set playedSound = null
+                return
+            endif
+        endif
         if P_ProfessionFinishSound[professionId] != null then
             set playedSound = P_PlaySoundHandleForJob(jobId, P_ProfessionFinishSound[professionId], station, false)
             if playedSound != null then
@@ -612,7 +636,7 @@ private function P_PlayFinishSound takes integer jobId, integer professionId, un
                 return
             endif
         endif
-        if P_ProfessionFinishSoundLabel[professionId] != null and P_ProfessionFinishSoundLabel[professionId] != "" then
+        if not P_JobAiControlled[jobId] and P_ProfessionFinishSoundLabel[professionId] != null and P_ProfessionFinishSoundLabel[professionId] != "" then
             set playedSound = P_PlaySoundLabelForJob(jobId, P_ProfessionFinishSoundLabel[professionId], station, false)
             if playedSound != null then
                 set playedSound = null
@@ -1316,6 +1340,7 @@ private function P_AiPrepareAction takes nothing returns nothing
     local integer jobId = GetTimerData(t)
     local unit crafter = P_JobCrafter[jobId]
     local unit station = P_JobStation[jobId]
+    local integer orderId
 
     if not P_IsUnitAlive(crafter) or station == null or GetUnitTypeId(station) == 0 then
         call P_CancelJob(jobId)
@@ -1340,8 +1365,11 @@ private function P_AiPrepareAction takes nothing returns nothing
     if P_JobPrepareElapsed[jobId] >= P_CRAFT_AI_MOVE_TIMEOUT then
         call P_CancelJob(jobId)
         call ReleaseTimer(t)
-    elseif GetUnitCurrentOrder(crafter) == 0 then
-        call P_IssueAiMoveToStation(crafter, station)
+    else
+        set orderId = GetUnitCurrentOrder(crafter)
+        if orderId != OrderId("move") then
+            call P_IssueAiMoveToStation(crafter, station)
+        endif
     endif
 
     set crafter = null
@@ -1948,6 +1976,35 @@ endfunction
 
 public function IsStationReserved takes unit station returns boolean
     return station != null and P_StationActiveJob.has(GetHandleId(station))
+endfunction
+
+public function IsUnitAiCrafting takes unit crafter returns boolean
+    local integer jobId
+
+    if crafter == null then
+        return false
+    endif
+    if not P_CrafterActiveJob.has(GetHandleId(crafter)) then
+        return false
+    endif
+
+    set jobId = P_CrafterActiveJob.integer[GetHandleId(crafter)]
+    return P_JobAiControlled[jobId]
+endfunction
+
+public function CancelUnitCraft takes unit crafter returns boolean
+    local integer jobId
+
+    if crafter == null then
+        return false
+    endif
+    if not P_CrafterActiveJob.has(GetHandleId(crafter)) then
+        return false
+    endif
+
+    set jobId = P_CrafterActiveJob.integer[GetHandleId(crafter)]
+    call P_CancelJob(jobId)
+    return true
 endfunction
 
 public function CanStartRecipe takes unit crafter, unit station, integer recipeId returns boolean
