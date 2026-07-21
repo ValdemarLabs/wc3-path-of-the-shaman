@@ -16,7 +16,7 @@
     - SetUnitMaxState by Earth-Fury and Blade.dk
 
     How to install:
-    Requires `Table`, `SetUnitMaxState`, and `DamageEngine`. Import before
+    Requires `Table`, `SetUnitMaxState`, `DamageEngine`, and `Events`. Import before
     systems that call the ResourceRage API. The Horde Warrior unit type is
     registered by default.
 
@@ -33,7 +33,7 @@
     call ResourceRage_Refresh(unit whichUnit)
 
 **/
-library ResourceRage initializer Init requires Table, SetUnitMaxState, DamageEngine
+library ResourceRage initializer Init requires Table, SetUnitMaxState, DamageEngine, Events
 
 globals
     constant integer RESOURCE_RAGE_UNIT_WARRIOR_HORDE = 'O629'
@@ -42,7 +42,6 @@ globals
     constant integer RESOURCE_RAGE_ABILITY_BLOODRAGE_ALT = 'A00K'
     constant integer RESOURCE_RAGE_BUFF_BLOODRAGE = 'B01G'
 
-    private constant integer MAX_PLAYER_INDEX = 27
     private constant real RAGE_MIN = 0.00
     private constant real RAGE_MAX = 100.00
     private constant real ITEM_REFRESH_DELAY = 0.10
@@ -76,10 +75,6 @@ globals
 
     private timer RageClockTimer = null
     private timer RageDecayTimer = null
-    // private trigger RageEnterTrigger = null //Usused. Currently using centralized GUI trigger "Init 07 Unit Event Enters"
-    private trigger RageItemTrigger = null
-    private trigger RageSpellCastTrigger = null
-    private trigger RageSpellEffectTrigger = null
 endglobals
 
 private function EnsureState takes nothing returns nothing
@@ -450,6 +445,10 @@ public function OnUnitEnter takes unit whichUnit returns nothing
     call TryAutoRegisterUnit(whichUnit)
 endfunction
 
+private function HandleUnitEnter takes nothing returns nothing
+    call TryAutoRegisterUnit(GetTriggerUnit())
+endfunction
+
 private function HandleItemChange takes nothing returns nothing
     local unit whichUnit = GetTriggerUnit()
     if TryAutoRegisterUnit(whichUnit) then
@@ -477,15 +476,6 @@ private function HandleSpellEffect takes nothing returns nothing
         call AddRageGain(whichUnit, ResourceRage_BloodrageCastGain)
     endif
     set whichUnit = null
-endfunction
-
-private function RegisterPlayerUnitEventAll takes trigger whichTrigger, playerunitevent whichEvent returns nothing
-    local integer playerIndex = 0
-    loop
-        call TriggerRegisterPlayerUnitEvent(whichTrigger, Player(playerIndex), whichEvent, null)
-        set playerIndex = playerIndex + 1
-        exitwhen playerIndex > MAX_PLAYER_INDEX
-    endloop
 endfunction
 
 public function Register takes unit whichUnit returns boolean
@@ -573,19 +563,12 @@ private function Init takes nothing returns nothing
     set RageDecayTimer = CreateTimer()
     call TimerStart(RageDecayTimer, ResourceRage_DecayPeriod, true, function RageDecayTick)
 
-    set RageItemTrigger = CreateTrigger()
-    call RegisterPlayerUnitEventAll(RageItemTrigger, EVENT_PLAYER_UNIT_PICKUP_ITEM)
-    call RegisterPlayerUnitEventAll(RageItemTrigger, EVENT_PLAYER_UNIT_DROP_ITEM)
-    call RegisterPlayerUnitEventAll(RageItemTrigger, EVENT_PLAYER_UNIT_USE_ITEM)
-    call TriggerAddAction(RageItemTrigger, function HandleItemChange)
-
-    set RageSpellCastTrigger = CreateTrigger()
-    call RegisterPlayerUnitEventAll(RageSpellCastTrigger, EVENT_PLAYER_UNIT_SPELL_CAST)
-    call TriggerAddAction(RageSpellCastTrigger, function HandleSpellCast)
-
-    set RageSpellEffectTrigger = CreateTrigger()
-    call RegisterPlayerUnitEventAll(RageSpellEffectTrigger, EVENT_PLAYER_UNIT_SPELL_EFFECT)
-    call TriggerAddAction(RageSpellEffectTrigger, function HandleSpellEffect)
+    call Events_RegisterUnitEnter(function HandleUnitEnter)
+    call Events_RegisterPlayerUnitEvent(function HandleItemChange, EVENT_PLAYER_UNIT_PICKUP_ITEM)
+    call Events_RegisterPlayerUnitEvent(function HandleItemChange, EVENT_PLAYER_UNIT_DROP_ITEM)
+    call Events_RegisterPlayerUnitEvent(function HandleItemChange, EVENT_PLAYER_UNIT_USE_ITEM)
+    call Events_RegisterPlayerUnitEvent(function HandleSpellCast, EVENT_PLAYER_UNIT_SPELL_CAST)
+    call Events_RegisterPlayerUnitEvent(function HandleSpellEffect, EVENT_PLAYER_UNIT_SPELL_EFFECT)
 
     call RegisterDamageEngine(function HandleDamage, "", 1.00)
     call RegisterUnitType(RESOURCE_RAGE_UNIT_WARRIOR_HORDE)
