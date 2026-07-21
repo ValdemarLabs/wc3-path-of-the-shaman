@@ -86,7 +86,7 @@
     call AI_SetDebugMode(enabled)
 
 **/
-library AI initializer Init requires Table, CampFire, Companions, UnitDeathEvent, DamageEngine, DialogSystem, ExSound, IconQuery, Reputation, GatherNodes, GatherNodeSkills, GatherNodeItems, GatherNodeUnits, Professions, VoicelinesWarlock, VoicelinesUndeadWarlock, VoicelinesRestoShaman, VoicelinesEngineer, VoicelinesPaladin
+library AI initializer Init requires Table, CampFire, Companions, Events, UnitDeathEvent, DamageEngine, DialogSystem, ExSound, IconQuery, Reputation, GatherNodes, GatherNodeSkills, GatherNodeItems, GatherNodeUnits, Professions, VoicelinesWarlock, VoicelinesUndeadWarlock, VoicelinesRestoShaman, VoicelinesEngineer, VoicelinesPaladin
 
 globals
     constant integer AI_STATE_INACTIVE = 0
@@ -145,7 +145,6 @@ globals
     integer AI_EventAbilityId = 0
 
     private constant boolean DEBUG_DEFAULT = false
-    private constant integer MAX_PLAYER_INDEX = 27
     private constant integer MAX_AI_INSTANCES = 512
     private constant integer MAX_BOSS_CASTS = 64
     private constant integer MAX_PROFILE_POINTS = 64
@@ -397,18 +396,12 @@ globals
     private timer RandomTravelTimer = null
     private timer DialogUnlockTimer = null
     private timer PendingCommandBarkTimer = null
-    private trigger AttackTrigger = null
-    private trigger SpellEffectTrigger = null
-    private trigger LevelTrigger = null
-    private trigger ItemTrigger = null
-    private trigger SellTrigger = null
     private trigger UnitIndexTrigger = null
     private trigger DebugSpawnTrigger = null
     private trigger DebugModeTrigger = null
     private trigger DebugCampTrigger = null
     private trigger DebugCraftTrigger = null
     private trigger DebugShopTrigger = null
-    private trigger TargetOrderTrigger = null
     private group TempGroup = null
     private rect TempRect = null
     private boolean DebugMode = DEBUG_DEFAULT
@@ -774,15 +767,6 @@ private function IsCapAvailable takes integer cap, integer active returns boolea
         return true
     endif
     return active < cap
-endfunction
-
-private function RegisterPlayerUnitEventAll takes trigger whichTrigger, playerunitevent whichEvent returns nothing
-    local integer playerIndex = 0
-    loop
-        call TriggerRegisterPlayerUnitEvent(whichTrigger, Player(playerIndex), whichEvent, null)
-        set playerIndex = playerIndex + 1
-        exitwhen playerIndex > MAX_PLAYER_INDEX
-    endloop
 endfunction
 
 private function ClearEventContext takes nothing returns nothing
@@ -5947,16 +5931,25 @@ private function HandleLevel takes nothing returns nothing
     set whichUnit = null
 endfunction
 
-private function HandleItem takes nothing returns nothing
+private function HandleItemDrop takes nothing returns nothing
+    local unit whichUnit = GetTriggerUnit()
+    local item manipulatedItem = GetManipulatedItem()
+
+    if GetOwningPlayer(whichUnit) == Player(0) then
+        set udg_LastDroppedItem = manipulatedItem
+    endif
+
+    set whichUnit = null
+    set manipulatedItem = null
+endfunction
+
+private function HandleItemPickup takes nothing returns nothing
     local unit whichUnit = GetTriggerUnit()
     local item manipulatedItem = GetManipulatedItem()
     local integer instanceId = UnitInstance[GetHandleId(whichUnit)]
     local integer itemTypeId
-    if GetTriggerEventId() == EVENT_PLAYER_UNIT_DROP_ITEM then
-        if GetOwningPlayer(whichUnit) == Player(0) then
-            set udg_LastDroppedItem = manipulatedItem
-        endif
-    elseif instanceId > 0 and manipulatedItem != null then
+
+    if instanceId > 0 and manipulatedItem != null then
         set itemTypeId = GetItemTypeId(manipulatedItem)
         if ProfileNoManaRestore.boolean[InstanceProfile[instanceId]] and IsManaOnlyItemType(itemTypeId) then
             call UnitDropItemPoint(whichUnit, manipulatedItem, GetUnitX(whichUnit), GetUnitY(whichUnit))
@@ -5968,6 +5961,7 @@ private function HandleItem takes nothing returns nothing
             call Companions_RefreshOrders(whichUnit)
         endif
     endif
+
     set whichUnit = null
     set manipulatedItem = null
 endfunction
@@ -6144,30 +6138,13 @@ private function Init takes nothing returns nothing
     call TriggerRegisterPlayerChatEvent(DebugShopTrigger, Player(0), "aishop", true)
     call TriggerAddAction(DebugShopTrigger, function DebugShopAction)
 
-    set TargetOrderTrigger = CreateTrigger()
-    call RegisterPlayerUnitEventAll(TargetOrderTrigger, EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER)
-    call TriggerAddAction(TargetOrderTrigger, function HandleTargetOrder)
-
-    set AttackTrigger = CreateTrigger()
-    call RegisterPlayerUnitEventAll(AttackTrigger, EVENT_PLAYER_UNIT_ATTACKED)
-    call TriggerAddAction(AttackTrigger, function HandleAttack)
-
-    set SpellEffectTrigger = CreateTrigger()
-    call RegisterPlayerUnitEventAll(SpellEffectTrigger, EVENT_PLAYER_UNIT_SPELL_EFFECT)
-    call TriggerAddAction(SpellEffectTrigger, function HandleSpellEffect)
-
-    set LevelTrigger = CreateTrigger()
-    call RegisterPlayerUnitEventAll(LevelTrigger, EVENT_PLAYER_HERO_LEVEL)
-    call TriggerAddAction(LevelTrigger, function HandleLevel)
-
-    set ItemTrigger = CreateTrigger()
-    call RegisterPlayerUnitEventAll(ItemTrigger, EVENT_PLAYER_UNIT_DROP_ITEM)
-    call RegisterPlayerUnitEventAll(ItemTrigger, EVENT_PLAYER_UNIT_PICKUP_ITEM)
-    call TriggerAddAction(ItemTrigger, function HandleItem)
-
-    set SellTrigger = CreateTrigger()
-    call RegisterPlayerUnitEventAll(SellTrigger, EVENT_PLAYER_UNIT_SELL)
-    call TriggerAddAction(SellTrigger, function HandleSoldUnit)
+    call Events_RegisterPlayerUnitEvent(function HandleTargetOrder, EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER)
+    call Events_RegisterPlayerUnitEvent(function HandleAttack, EVENT_PLAYER_UNIT_ATTACKED)
+    call Events_RegisterPlayerUnitEvent(function HandleSpellEffect, EVENT_PLAYER_UNIT_SPELL_EFFECT)
+    call Events_RegisterPlayerUnitEvent(function HandleLevel, EVENT_PLAYER_HERO_LEVEL)
+    call Events_RegisterPlayerUnitEvent(function HandleItemDrop, EVENT_PLAYER_UNIT_DROP_ITEM)
+    call Events_RegisterPlayerUnitEvent(function HandleItemPickup, EVENT_PLAYER_UNIT_PICKUP_ITEM)
+    call Events_RegisterPlayerUnitEvent(function HandleSoldUnit, EVENT_PLAYER_UNIT_SELL)
 
     set UnitIndexTrigger = CreateTrigger()
     call TriggerRegisterVariableEvent(UnitIndexTrigger, "udg_UnitIndexEvent", EQUAL, 1.50)
