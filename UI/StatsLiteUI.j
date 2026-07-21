@@ -162,6 +162,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         private integer array SLUI_RowHPValue
         private integer array SLUI_RowMPValue
         private integer array SLUI_RowDeadState
+        private integer array SLUI_RowReviveRemaining
         private string array SLUI_RowStateCache
         private string array SLUI_RowClassCache
         private string array SLUI_RowModeCache
@@ -379,13 +380,21 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
     endfunction
 
     private function SLUI_IsDeadForDisplay takes unit u returns boolean
+        local integer unitId
+
         if not SLUI_IsValidUnit(u) then
             return false
         endif
         if Pet_IsDead(u) then
             return true
         endif
-        return GetWidgetLife(u) <= 0.405
+
+        set unitId = GetUnitUserData(u)
+        if unitId > 0 and not udg_IsUnitAlive[unitId] then
+            return true
+        endif
+
+        return IsUnitType(u, UNIT_TYPE_DEAD) or GetWidgetLife(u) <= 0.405
     endfunction
 
     private function SLUI_GetLevelText takes unit u returns string
@@ -458,22 +467,30 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         return aiReviveTimer
     endfunction
 
-    private function SLUI_GetDeadStatusText takes unit u, integer kind returns string
+    private function SLUI_GetReviveRemainingSeconds takes unit u, integer kind returns integer
         local timer reviveTimer = SLUI_GetReviveTimer(u, kind)
         local real remaining = 0.0
 
         if reviveTimer != null then
             set remaining = TimerGetRemaining(reviveTimer)
-        elseif kind == SLUI_KIND_COMPANION then
+        else
             set remaining = AI_GetReviveRemaining(u)
         endif
 
         set reviveTimer = null
 
         if remaining > 0.0 then
-            return "|cffff4040Dead|r |cffbfbfbf(" + I2S(R2I(remaining + 0.5)) + "s)|r"
+            return R2I(remaining + 0.5)
         endif
+        return 0
+    endfunction
 
+    private function SLUI_GetDeadStatusText takes unit u, integer kind returns string
+        local integer remaining = SLUI_GetReviveRemainingSeconds(u, kind)
+
+        if remaining > 0 then
+            return "|cffff4040Dead|r |cffbfbfbf(" + I2S(remaining) + "s)|r"
+        endif
         return "|cffff4040Dead|r"
     endfunction
 
@@ -803,6 +820,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         local integer hp = 0
         local integer mp = 0
         local integer dead = 0
+        local integer reviveRemaining = 0
         local string stateText = ""
         local string classText = ""
         local string modeText = ""
@@ -814,6 +832,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
             set SLUI_RowHPValue[rowIndex] = -1
             set SLUI_RowMPValue[rowIndex] = -1
             set SLUI_RowDeadState[rowIndex] = -1
+            set SLUI_RowReviveRemaining[rowIndex] = -1
             set SLUI_RowStateCache[rowIndex] = ""
             set SLUI_RowClassCache[rowIndex] = ""
             set SLUI_RowModeCache[rowIndex] = ""
@@ -823,6 +842,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
 
         if SLUI_IsDeadForDisplay(u) then
             set dead = 1
+            set reviveRemaining = SLUI_GetReviveRemainingSeconds(u, kind)
         else
             set hp = SLUI_GetHealthPercent(u)
             if hasResource then
@@ -830,10 +850,11 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
             endif
         endif
 
-        if SLUI_RowDeadState[rowIndex] != dead or SLUI_RowHPValue[rowIndex] != hp or SLUI_RowMPValue[rowIndex] != mp then
+        if SLUI_RowDeadState[rowIndex] != dead or SLUI_RowHPValue[rowIndex] != hp or SLUI_RowMPValue[rowIndex] != mp or SLUI_RowReviveRemaining[rowIndex] != reviveRemaining then
             set SLUI_RowDeadState[rowIndex] = dead
             set SLUI_RowHPValue[rowIndex] = hp
             set SLUI_RowMPValue[rowIndex] = mp
+            set SLUI_RowReviveRemaining[rowIndex] = reviveRemaining
             call SLUI_SetBar(SLUI_RowHPFill[rowIndex], SLUI_RowHPText[rowIndex], SLUI_BAR_WIDTH, 0.007, hp, SLUI_GetHealthBarTexture(hp), "HP") // CHANGE: HP fill texture changes by health percent
             if hasResource then
                 call SLUI_SetBar(SLUI_RowMPFill[rowIndex], SLUI_RowMPText[rowIndex], SLUI_BAR_WIDTH, 0.007, mp, SLUI_GetResourceBarTexture(u), SLUI_GetResourceBarLabel(u)) // CHANGE: label and fill follow mana/rage/energy class mode
@@ -957,6 +978,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
             set SLUI_RowStateCache[rowIndex] = ""
             set SLUI_RowClassCache[rowIndex] = ""
             set SLUI_RowModeCache[rowIndex] = ""
+            set SLUI_RowReviveRemaining[rowIndex] = -1
             call SLUI_SetRowVisible(rowIndex, false)
             set rowIndex = rowIndex + 1
         endloop
