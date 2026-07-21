@@ -25,7 +25,7 @@
  */
 //============================================================================
 
-library CastingBarSystem initializer Init requires Table
+library CastingBarSystem initializer Init requires Table, Events
 
 //============================================================================
 // CONFIGURATION
@@ -501,8 +501,6 @@ endfunction
 //============================================================================
 
 private function Init takes nothing returns nothing
-    local trigger beginTrigger = CreateTrigger()
-    local trigger endTrigger = CreateTrigger()
     local integer i = 0
     
     // Initialize runtime enable states from constants
@@ -528,20 +526,9 @@ private function Init takes nothing returns nothing
         set i = i + 1
     endloop
     
-    // Register events for all players
-    set i = 0
-    loop
-        exitwhen i >= bj_MAX_PLAYER_SLOTS
-        // Begins channeling = when unit starts channeling an ability
-        call TriggerRegisterPlayerUnitEvent(beginTrigger, Player(i), EVENT_PLAYER_UNIT_SPELL_CHANNEL, null)
-        // Stops casting = when unit stops/finishes casting (includes interruption)
-        call TriggerRegisterPlayerUnitEvent(endTrigger, Player(i), EVENT_PLAYER_UNIT_SPELL_ENDCAST, null)
-        set i = i + 1
-    endloop
-    
-    // Set trigger actions
-    call TriggerAddAction(beginTrigger, function OnBeginCast)
-    call TriggerAddAction(endTrigger, function OnEndCast)
+    // Shared spell events.
+    call Events_RegisterPlayerUnitEvent(function OnBeginCast, EVENT_PLAYER_UNIT_SPELL_CHANNEL)
+    call Events_RegisterPlayerUnitEvent(function OnEndCast, EVENT_PLAYER_UNIT_SPELL_ENDCAST)
     
     // Create periodic trigger (disabled by default)
     set PeriodicTrigger = CreateTrigger()
