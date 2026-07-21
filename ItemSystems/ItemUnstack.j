@@ -11,7 +11,7 @@
 
 */
 //==================================================================================
-library ItemUnstack initializer onInit
+library ItemUnstack initializer onInit requires Events
 
     //==================================================
     private function UnitInventoryFull takes unit u returns boolean
@@ -107,13 +107,9 @@ library ItemUnstack initializer onInit
     //==================================================
     private function onInit takes nothing returns nothing
         local trigger t = CreateTrigger()
-        local integer i = 0
-        loop
-            exitwhen i >= bj_MAX_PLAYER_SLOTS
-            call TriggerRegisterPlayerUnitEvent(t, Player(i), EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER, null)
-            set i = i + 1
-        endloop
         call TriggerAddCondition(t, function OnIssuedOrder)
+        call Events_RegisterPlayerUnitTrigger(t, EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER)
+        set t = null
         //call BJDebugMsg("ItemUnstack initialized")
     endfunction
 
