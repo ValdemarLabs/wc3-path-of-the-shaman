@@ -1,5 +1,5 @@
 
-library CreepRespawn initializer Init requires Table, TimerUtils, UnitDeathEvent, CreepUnitAssignmentSystem
+library CreepRespawn initializer Init requires Table, TimerUtils, Events, UnitDeathEvent, CreepUnitAssignmentSystem
 
 /*
     Creep Respawn System
@@ -161,8 +161,8 @@ endfunction
 // PUBLIC API
 //===========================================================================
 
-// Call this function when a unit enters the map to track it for respawning
-// Usage from GUI: Custom script:   call CreepRespawn_OnUnitEnter(GetTriggerUnit())
+// Call this function when a unit enters the map to track it for respawning.
+// The normal map-wide enter hook is registered through Events in Init.
 function CreepRespawn_OnUnitEnter takes unit u returns nothing
     if u == null then
         return
@@ -178,6 +178,10 @@ function CreepRespawn_OnUnitEnter takes unit u returns nothing
         endif
     endif
     set u = null
+endfunction
+
+private function OnUnitEnterEvent takes nothing returns nothing
+    call CreepRespawn_OnUnitEnter(GetTriggerUnit())
 endfunction
 
 // Mark quest-managed units that must never be saved or scheduled for respawn.
@@ -494,8 +498,10 @@ private function Init takes nothing returns nothing
     
     // Register with centralized death event system
     call UnitDeathEvent_Register(function OnUnitDeath)
+    call Events_RegisterUnitEnter(function OnUnitEnterEvent)
     if DEBUG_MODE then
         call BJDebugMsg("[CreepRespawn] Registered with centralized death event system")
+        call BJDebugMsg("[CreepRespawn] Registered with centralized unit-enter event system")
     endif
     
     set initTrigger = null
