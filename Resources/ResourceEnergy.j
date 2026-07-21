@@ -15,8 +15,8 @@
     - SetUnitMaxState by Earth-Fury and Blade.dk
 
     How to install:
-    Requires `Table` and `SetUnitMaxState`. Import before systems that call the
-    ResourceEnergy API. The Horde Rogue unit type is registered by default.
+    Requires `Table`, `SetUnitMaxState`, and `Events`. Import before systems
+    that call the ResourceEnergy API. The Horde Rogue unit type is registered by default.
 
     API:
     call ResourceEnergy_Register(unit whichUnit)
@@ -31,12 +31,11 @@
     call ResourceEnergy_Refresh(unit whichUnit)
 
 **/
-library ResourceEnergy initializer Init requires Table, SetUnitMaxState
+library ResourceEnergy initializer Init requires Table, SetUnitMaxState, Events
 
 globals
     constant integer RESOURCE_ENERGY_UNIT_ROGUE_HORDE = 'O631'
 
-    private constant integer MAX_PLAYER_INDEX = 27
     private constant real ENERGY_MIN = 0.00
     private constant real ENERGY_MAX = 100.00
     private constant real ITEM_REFRESH_DELAY = 0.10
@@ -57,9 +56,6 @@ globals
     private unit array EnergyUnits
 
     private timer EnergyTickTimer = null
-    //private trigger EnergyEnterTrigger = null //Usused. Currently using centralized GUI trigger "Init 07 Unit Event Enters"
-    private trigger EnergyItemTrigger = null
-    private trigger EnergySpellCastTrigger = null
 endglobals
 
 private function EnsureState takes nothing returns nothing
@@ -333,6 +329,10 @@ public function OnUnitEnter takes unit whichUnit returns nothing
     call TryAutoRegisterUnit(whichUnit)
 endfunction
 
+private function HandleUnitEnter takes nothing returns nothing
+    call TryAutoRegisterUnit(GetTriggerUnit())
+endfunction
+
 private function HandleItemChange takes nothing returns nothing
     local unit whichUnit = GetTriggerUnit()
     if TryAutoRegisterUnit(whichUnit) then
@@ -351,15 +351,6 @@ private function HandleSpellCast takes nothing returns nothing
         call QueueRefresh(whichUnit)
     endif
     set whichUnit = null
-endfunction
-
-private function RegisterPlayerUnitEventAll takes trigger whichTrigger, playerunitevent whichEvent returns nothing
-    local integer playerIndex = 0
-    loop
-        call TriggerRegisterPlayerUnitEvent(whichTrigger, Player(playerIndex), whichEvent, null)
-        set playerIndex = playerIndex + 1
-        exitwhen playerIndex > MAX_PLAYER_INDEX
-    endloop
 endfunction
 
 public function Register takes unit whichUnit returns boolean
@@ -449,15 +440,11 @@ private function Init takes nothing returns nothing
     set EnergyTickTimer = CreateTimer()
     call TimerStart(EnergyTickTimer, ResourceEnergy_TickPeriod, true, function EnergyTick)
 
-    set EnergyItemTrigger = CreateTrigger()
-    call RegisterPlayerUnitEventAll(EnergyItemTrigger, EVENT_PLAYER_UNIT_PICKUP_ITEM)
-    call RegisterPlayerUnitEventAll(EnergyItemTrigger, EVENT_PLAYER_UNIT_DROP_ITEM)
-    call RegisterPlayerUnitEventAll(EnergyItemTrigger, EVENT_PLAYER_UNIT_USE_ITEM)
-    call TriggerAddAction(EnergyItemTrigger, function HandleItemChange)
-
-    set EnergySpellCastTrigger = CreateTrigger()
-    call RegisterPlayerUnitEventAll(EnergySpellCastTrigger, EVENT_PLAYER_UNIT_SPELL_CAST)
-    call TriggerAddAction(EnergySpellCastTrigger, function HandleSpellCast)
+    call Events_RegisterUnitEnter(function HandleUnitEnter)
+    call Events_RegisterPlayerUnitEvent(function HandleItemChange, EVENT_PLAYER_UNIT_PICKUP_ITEM)
+    call Events_RegisterPlayerUnitEvent(function HandleItemChange, EVENT_PLAYER_UNIT_DROP_ITEM)
+    call Events_RegisterPlayerUnitEvent(function HandleItemChange, EVENT_PLAYER_UNIT_USE_ITEM)
+    call Events_RegisterPlayerUnitEvent(function HandleSpellCast, EVENT_PLAYER_UNIT_SPELL_CAST)
 
     call RegisterUnitType(RESOURCE_ENERGY_UNIT_ROGUE_HORDE)
 endfunction
