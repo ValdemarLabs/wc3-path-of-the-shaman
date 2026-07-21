@@ -39,7 +39,7 @@
     call Companions_GetAbilityInfoText(unit controlledUnit) returns string
 
 **/
-library Companions initializer Init requires QuestGiver, FollowSystem, IconQuery, Table, UnitDeathEvent, SpeciFX, Reputation
+library Companions initializer Init requires QuestGiver, FollowSystem, IconQuery, Table, Events, UnitDeathEvent, SpeciFX, Reputation
 
 globals
     constant integer COMPANION_MODE_DEFEND = 1
@@ -58,7 +58,6 @@ globals
     public integer EventMode = 0
 
     private constant boolean DEBUG = false
-    private constant integer MAX_PLAYER_INDEX = 27
     private constant integer CONTROL_PLAYER_INDEX = 0
     private constant integer COMPANION_OWNER_INDEX = 18
     private constant integer REJECT_OWNER_INDEX = 1
@@ -2588,39 +2587,13 @@ public function GetAbilityInfoText takes unit controlledUnit returns string
 endfunction
 
 private function Init takes nothing returns nothing
-    local integer playerIndex = 0
-    local trigger spellTrigger = null
-    local trigger sellTrigger = null
     local trigger shopInitTrigger = null
-    local trigger hostilityTrigger = null
 
     call EnsureState()
 
-    set spellTrigger = CreateTrigger()
-    loop
-        call TriggerRegisterPlayerUnitEvent(spellTrigger, Player(playerIndex), EVENT_PLAYER_UNIT_SPELL_EFFECT, null)
-        set playerIndex = playerIndex + 1
-        exitwhen playerIndex > MAX_PLAYER_INDEX
-    endloop
-    call TriggerAddAction(spellTrigger, function OnSpellEffect)
-
-    set sellTrigger = CreateTrigger()
-    set playerIndex = 0
-    loop
-        call TriggerRegisterPlayerUnitEvent(sellTrigger, Player(playerIndex), EVENT_PLAYER_UNIT_SELL, null)
-        set playerIndex = playerIndex + 1
-        exitwhen playerIndex > MAX_PLAYER_INDEX
-    endloop
-    call TriggerAddAction(sellTrigger, function HandleSoldUnit)
-
-    set hostilityTrigger = CreateTrigger()
-    set playerIndex = 0
-    loop
-        call TriggerRegisterPlayerUnitEvent(hostilityTrigger, Player(playerIndex), EVENT_PLAYER_UNIT_ATTACKED, null)
-        set playerIndex = playerIndex + 1
-        exitwhen playerIndex > MAX_PLAYER_INDEX
-    endloop
-    call TriggerAddAction(hostilityTrigger, function OnUnitAttacked)
+    call Events_RegisterPlayerUnitEvent(function OnSpellEffect, EVENT_PLAYER_UNIT_SPELL_EFFECT)
+    call Events_RegisterPlayerUnitEvent(function HandleSoldUnit, EVENT_PLAYER_UNIT_SELL)
+    call Events_RegisterPlayerUnitEvent(function OnUnitAttacked, EVENT_PLAYER_UNIT_ATTACKED)
 
     set IdleTrigger = CreateTrigger()
     call TriggerRegisterTimerEvent(IdleTrigger, COMPANION_IDLE_CHECK_INTERVAL, true)
@@ -2636,10 +2609,7 @@ private function Init takes nothing returns nothing
     call TriggerRegisterTimerEvent(shopInitTrigger, HIRED_UNIT_SHOP_INIT_DELAY, false)
     call TriggerAddAction(shopInitTrigger, function InitHiredUnitShops)
 
-    set spellTrigger = null
-    set sellTrigger = null
     set shopInitTrigger = null
-    set hostilityTrigger = null
 endfunction
 
 endlibrary
