@@ -1,4 +1,4 @@
-library Reputation initializer InitReputations requires Table, UnitDeathEvent
+library Reputation initializer InitReputations requires Table, Events, UnitDeathEvent
 
 /*
     Reputation system
@@ -1299,10 +1299,7 @@ endfunction
 
 // Register all units for attack detection
 private function RegisterUnitForAttackDetection takes nothing returns nothing
-    local trigger t = CreateTrigger()
-    call TriggerRegisterAnyUnitEventBJ(t, EVENT_PLAYER_UNIT_ATTACKED)
-    call TriggerAddAction(t, function OnUnitAttacked)
-    set t = null
+    call Events_RegisterPlayerUnitEvent(function OnUnitAttacked, EVENT_PLAYER_UNIT_ATTACKED)
 endfunction
 
 //===================================================
