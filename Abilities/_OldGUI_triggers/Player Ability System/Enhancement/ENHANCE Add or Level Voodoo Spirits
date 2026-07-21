@@ -1,0 +1,58 @@
+ENHANCE Add or Level Voodoo Spirits
+    Events
+        Unit - A unit Acquires an item
+    Conditions
+        (Item-type of (Item being manipulated)) Equal to Voodoo Spirits
+    Actions
+        -------- This is like the slow one, but it would increase the level of shockwave when you already have it --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Level of ENHANCEMENT_VoodooSpirits  for (Triggering unit)) Equal to 0
+            Then - Actions
+                Game - Display to (All players) the text: (New ability learned:  + (Name of (Item being manipulated)))
+                Unit - Add ENHANCEMENT_VoodooSpiritsDummy  to (Triggering unit)
+                -------- Make ability permanent --------
+                Custom script:   call UnitMakeAbilityPermanent(GetTriggerUnit(), true, 'A677')
+                Custom script:   call UnitMakeAbilityPermanent(GetTriggerUnit(), true, 'A678')
+                Sound - Play NewAbility <gen>
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Triggering unit) Equal to Nazgrek
+                    Then - Actions
+                        Set VariableSet AbilityPointsNazgrek = (AbilityPointsNazgrek - 1)
+                        Trigger - Run MultiboardUpdateAbilityPoints <gen> (checking conditions)
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Triggering unit) Equal to Zulkis
+                    Then - Actions
+                        Set VariableSet AbilityPointsZulkis = (AbilityPointsZulkis - 1)
+                        Trigger - Run MultiboardUpdateAbilityPoints <gen> (checking conditions)
+                    Else - Actions
+            Else - Actions
+                -------- Not using Increase level of ability --------
+                -------- Because it seems to be able to go beyond the limit --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of ENHANCEMENT_VoodooSpirits  for (Triggering unit)) Less than 5
+                    Then - Actions
+                        Game - Display to (All players) the text: (Learned:  + ((Name of (Item being manipulated)) +  (Level X)))
+                        Unit - Set level of ENHANCEMENT_VoodooSpirits  for (Triggering unit) to ((Level of ENHANCEMENT_VoodooSpirits  for (Triggering unit)) + 1)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Triggering unit) Equal to Nazgrek
+                            Then - Actions
+                                Set VariableSet AbilityPointsNazgrek = (AbilityPointsNazgrek - 1)
+                                Trigger - Run MultiboardUpdateAbilityPoints <gen> (checking conditions)
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Triggering unit) Equal to Zulkis
+                            Then - Actions
+                                Set VariableSet AbilityPointsZulkis = (AbilityPointsZulkis - 1)
+                                Trigger - Run MultiboardUpdateAbilityPoints <gen> (checking conditions)
+                            Else - Actions
+                    Else - Actions
+                        -------- If unit already has ability maxed out, no ability points are reduced --------
+                        Game - Display to (All players) the text: ((Name of (Item being manipulated)) +  |cFFFFCC00 Max level reached|r)
+                        Sound - Play Error <gen>

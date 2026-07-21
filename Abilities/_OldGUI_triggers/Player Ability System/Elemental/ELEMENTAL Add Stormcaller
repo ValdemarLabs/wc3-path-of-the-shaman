@@ -1,0 +1,22 @@
+ELEMENTAL Add Stormcaller
+    Events
+        Unit - A unit Acquires an item
+    Conditions
+        (Item-type of (Item being manipulated)) Equal to |cFFFFFFFFStormcaller|r
+    Actions
+        -------- This is like the slow one, but it would increase the level of shockwave when you already have it --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Level of ELEMENTAL_Stormcaller (Specialization) for (Triggering unit)) Less than 1
+                (Level of ENHANCEMENT_Earthwarden (Specialization) for (Triggering unit)) Less than 1
+                (Level of RESTORATION_Spiritmender (Specialization) for (Triggering unit)) Less than 1
+                (Level of TOTEMIC_Totemist (Specialization) for (Triggering unit)) Less than 1
+            Then - Actions
+                Game - Display to (All players) the text: (New specialization learned:  + (Name of (Item being manipulated)))
+                Unit - Add ELEMENTAL_Stormcaller (Specialization) to (Triggering unit)
+                -------- Make ability permanent --------
+                Custom script:   call UnitMakeAbilityPermanent(GetTriggerUnit(), true, 'A6A3')
+                Sound - Play NewAbility <gen>
+            Else - Actions
+                Game - Display to (All players) the text: ((Proper name of (Triggering unit)) +  already has specialization!)
+                Sound - Play Error <gen>

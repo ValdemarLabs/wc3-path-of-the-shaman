@@ -1,0 +1,194 @@
+Init Abilities
+    Events
+        Map initialization
+    Conditions
+    Actions
+        -------- Init BASE VALUES for Abilities --------
+        -------- ================================================= --------
+        -------- >>>>>>>>> PLAYER SHAMAN / AI SHAMAN ABILITIES --------
+        -------- LIGHTNING BOLT --------
+        Set VariableSet Ability_LightningBolt_Base[1] = 75.00
+        Set VariableSet Ability_LightningBolt_Base[2] = 125.00
+        Set VariableSet Ability_LightningBolt_Base[3] = 175.00
+        Set VariableSet Ability_LightningBolt_Base[4] = 225.00
+        Set VariableSet Ability_LightningBolt_Base[5] = 300.00
+        -------- LIGHTNING STRIKE --------
+        Set VariableSet Ability_LightningStrike_Base[1] = 75.00
+        Set VariableSet Ability_LightningStrike_Base[2] = 150.00
+        Set VariableSet Ability_LightningStrike_Base[3] = 225.00
+        Set VariableSet Ability_LightningStrike_Base[4] = 300.00
+        Set VariableSet Ability_LightningStrike_Base[5] = 375.00
+        -------- CHAIN LIGHTNING --------
+        Set VariableSet Ability_ChainLightning_Base[1] = 85.00
+        Set VariableSet Ability_ChainLightning_Base[2] = 125.00
+        Set VariableSet Ability_ChainLightning_Base[3] = 180.00
+        Set VariableSet Ability_ChainLightning_Base[4] = 220.00
+        Set VariableSet Ability_ChainLightning_Base[5] = 250.00
+        -------- FIRE SHOCK --------
+        Set VariableSet Ability_FireShock_Base[1] = 60.00
+        Set VariableSet Ability_FireShock_Base[2] = 90.00
+        Set VariableSet Ability_FireShock_Base[3] = 140.00
+        Set VariableSet Ability_FireShock_Base[4] = 160.00
+        Set VariableSet Ability_FireShock_Base[5] = 190.00
+        Set VariableSet Ability_FireShockAoE_Base[1] = 35.00
+        Set VariableSet Ability_FireShockAoE_Base[2] = 50.00
+        Set VariableSet Ability_FireShockAoE_Base[1] = 80.00
+        Set VariableSet Ability_FireShockAoE_Base[1] = 100.00
+        Set VariableSet Ability_FireShockAoE_Base[1] = 120.00
+        -------- FROST SHOCK --------
+        -------- NATURE SHOCK --------
+        -------- STORMSTRIKE --------
+        Set VariableSet Ability_Stormstrike_Base[1] = 25.00
+        Set VariableSet Ability_Stormstrike_Base[2] = 40.00
+        Set VariableSet Ability_Stormstrike_Base[3] = 70.00
+        Set VariableSet Ability_Stormstrike_Base[4] = 100.00
+        Set VariableSet Ability_Stormstrike_Base[5] = 125.00
+        -------- WHIRLWIND --------
+        Set VariableSet Ability_Whirlwind_Base[1] = 15.00
+        Set VariableSet Ability_Whirlwind_Base[2] = 25.00
+        Set VariableSet Ability_Whirlwind_Base[3] = 35.00
+        Set VariableSet Ability_Whirlwind_Base[4] = 45.00
+        Set VariableSet Ability_Whirlwind_Base[5] = 55.00
+        Set VariableSet Ability_Whirlwind_ManaCost[1] = 50.00
+        Set VariableSet Ability_Whirlwind_ManaCost[2] = 60.00
+        Set VariableSet Ability_Whirlwind_ManaCost[3] = 70.00
+        Set VariableSet Ability_Whirlwind_ManaCost[4] = 80.00
+        Set VariableSet Ability_Whirlwind_ManaCost[5] = 90.00
+        -------- GHOST WOLF BITE --------
+        Set VariableSet Ability_GhostWolfBite_Base[1] = 25.00
+        Set VariableSet Ability_GhostWolfBite_Base[2] = 40.00
+        Set VariableSet Ability_GhostWolfBite_Base[3] = 70.00
+        Set VariableSet Ability_GhostWolfBite_Base[4] = 100.00
+        Set VariableSet Ability_GhostWolfBite_Base[5] = 125.00
+        -------- HEALING WAVE --------
+        Set VariableSet Ability_HealingWave_Base[1] = 200.00
+        Set VariableSet Ability_HealingWave_Base[2] = 300.00
+        Set VariableSet Ability_HealingWave_Base[3] = 400.00
+        Set VariableSet Ability_HealingWave_Base[4] = 500.00
+        Set VariableSet Ability_HealingWave_Base[5] = 650.00
+        -------- CHAIN HEAL --------
+        Set VariableSet Ability_ChainHeal_Base[1] = 120.00
+        Set VariableSet Ability_ChainHeal_Base[2] = 200.00
+        Set VariableSet Ability_ChainHeal_Base[3] = 280.00
+        Set VariableSet Ability_ChainHeal_Base[4] = 360.00
+        Set VariableSet Ability_ChainHeal_Base[5] = 450.00
+        -------- REJUVENATION --------
+        Set VariableSet Ability_Rejuvenation_Base[1] = 200.00
+        Set VariableSet Ability_Rejuvenation_Base[2] = 300.00
+        Set VariableSet Ability_Rejuvenation_Base[3] = 400.00
+        Set VariableSet Ability_Rejuvenation_Base[4] = 500.00
+        Set VariableSet Ability_Rejuvenation_Base[5] = 600.00
+        -------- HEALING RAIN --------
+        Set VariableSet Ability_HealingRain_Base[1] = 10.00
+        Set VariableSet Ability_HealingRain_Base[2] = 20.00
+        Set VariableSet Ability_HealingRain_Base[3] = 30.00
+        Set VariableSet Ability_HealingRain_Base[4] = 40.00
+        Set VariableSet Ability_HealingRain_Base[5] = 50.00
+        -------- ANCESTRAL WARD --------
+        -------- WATER SHIELD --------
+        -------- VOODOO CURSE --------
+        -------- VOODOO SPIRITS --------
+        -------- ================================================= --------
+        -------- >>>>>>>>> AI SHAMAN only ABILITIES --------
+        -------- ================================================= --------
+        -------- >>>>>>>>> AI WARRIOR ABILITIES --------
+        -------- HEROIC STRIKE --------
+        Set VariableSet Ability_HeroicStrike_Base[1] = 20.00
+        Set VariableSet Ability_HeroicStrike_Base[2] = 40.00
+        Set VariableSet Ability_HeroicStrike_Base[3] = 60.00
+        Set VariableSet Ability_HeroicStrike_Base[4] = 80.00
+        Set VariableSet Ability_HeroicStrike_Base[5] = 100.00
+        -------- REND --------
+        Set VariableSet Ability_Rend_Base[1] = 8.00
+        Set VariableSet Ability_Rend_Base[2] = 16.00
+        Set VariableSet Ability_Rend_Base[3] = 28.00
+        Set VariableSet Ability_Rend_Base[4] = 40.00
+        Set VariableSet Ability_Rend_Base[5] = 55.00
+        -------- THUNDER CLAP --------
+        -------- ================================================= --------
+        -------- >>>>>>>>> AI ROGUE ABILITIES --------
+        -------- GARROTE --------
+        Set VariableSet Ability_Garrote_Base[1] = 10.00
+        Set VariableSet Ability_Garrote_Base[2] = 18.00
+        Set VariableSet Ability_Garrote_Base[3] = 32.00
+        Set VariableSet Ability_Garrote_Base[4] = 49.00
+        Set VariableSet Ability_Garrote_Base[5] = 60.00
+        -------- SINISTER STRIKE --------
+        Set VariableSet Ability_SinisterStrike_Base[1] = 20.00
+        Set VariableSet Ability_SinisterStrike_Base[2] = 40.00
+        Set VariableSet Ability_SinisterStrike_Base[3] = 60.00
+        Set VariableSet Ability_SinisterStrike_Base[4] = 80.00
+        Set VariableSet Ability_SinisterStrike_Base[5] = 100.00
+        -------- TOXIC VENOM --------
+        Set VariableSet Ability_ToxicVenom_Base[1] = 5.00
+        Set VariableSet Ability_ToxicVenom_Base[2] = 10.00
+        Set VariableSet Ability_ToxicVenom_Base[3] = 15.00
+        Set VariableSet Ability_ToxicVenom_Base[4] = 16.00
+        Set VariableSet Ability_ToxicVenom_Base[5] = 17.00
+        -------- ================================================= --------
+        -------- >>>>>>>>> AI WARLOCK ABILITIES --------
+        -------- IMP FIREBOLT --------
+        Set VariableSet Ability_ImpFireBolt_Base[1] = 30.00
+        Set VariableSet Ability_ImpFireBolt_Base[2] = 60.00
+        Set VariableSet Ability_ImpFireBolt_Base[3] = 90.00
+        -------- CURSE OF AGONY --------
+        Set VariableSet Ability_CurseOfAgony_Base[1] = 9.00
+        Set VariableSet Ability_CurseOfAgony_Base[2] = 16.00
+        Set VariableSet Ability_CurseOfAgony_Base[3] = 32.00
+        Set VariableSet Ability_CurseOfAgony_Base[4] = 50.00
+        Set VariableSet Ability_CurseOfAgony_Base[5] = 90.00
+        -------- LIFE DRAIN --------
+        Set VariableSet Ability_LifeDrain_Base[1] = 50.00
+        Set VariableSet Ability_LifeDrain_Base[2] = 100.00
+        Set VariableSet Ability_LifeDrain_Base[3] = 150.00
+        Set VariableSet Ability_LifeDrain_Base[4] = 200.00
+        Set VariableSet Ability_LifeDrain_Base[5] = 250.00
+        -------- RAIN OF FIRE --------
+        Set VariableSet Ability_RainOfFire_Base[1] = 25.00
+        Set VariableSet Ability_RainOfFire_Base[2] = 30.00
+        Set VariableSet Ability_RainOfFire_Base[3] = 35.00
+        Set VariableSet Ability_RainOfFire_Base[4] = 40.00
+        Set VariableSet Ability_RainOfFire_Base[5] = 45.00
+        -------- SHADOW BOLT --------
+        Set VariableSet Ability_ShadowBolt_Base[1] = 75.00
+        Set VariableSet Ability_ShadowBolt_Base[2] = 125.00
+        Set VariableSet Ability_ShadowBolt_Base[3] = 175.00
+        Set VariableSet Ability_ShadowBolt_Base[4] = 225.00
+        Set VariableSet Ability_ShadowBolt_Base[5] = 300.00
+        -------- ================================================= --------
+        -------- >>>>>>>>> AI ENGINEER ABILITIES --------
+        -------- SHREDDER CLUSTER ROCKETS --------
+        Set VariableSet Ability_ClusterRockets_Base[1] = 8.75
+        Set VariableSet Ability_ClusterRockets_Base[2] = 16.25
+        Set VariableSet Ability_ClusterRockets_Base[3] = 25.00
+        Set VariableSet Ability_ClusterRockets_Base[4] = 30.00
+        Set VariableSet Ability_ClusterRockets_Base[5] = 38.00
+        -------- SHREDDER SHRED --------
+        Set VariableSet Ability_Shred_Base[1] = 25.00
+        Set VariableSet Ability_Shred_Base[2] = 45.00
+        Set VariableSet Ability_Shred_Base[3] = 65.00
+        Set VariableSet Ability_Shred_Base[4] = 90.00
+        Set VariableSet Ability_Shred_Base[5] = 120.00
+        -------- SHREDDER SLAM --------
+        -------- DRONE --------
+        -------- GRENADE --------
+        -------- MECHANICAL CONSTRUCT --------
+        -------- TURRET --------
+        -------- ================================================= --------
+        -------- >>>>>>>>> AI PALADIN ABILITIES --------
+        -------- HOLY LIGHT --------
+        Set VariableSet Ability_HolyLight_Base[1] = 200.00
+        Set VariableSet Ability_HolyLight_Base[2] = 300.00
+        Set VariableSet Ability_HolyLight_Base[3] = 400.00
+        Set VariableSet Ability_HolyLight_Base[4] = 500.00
+        Set VariableSet Ability_HolyLight_Base[5] = 600.00
+        -------- JUDGEMENT STRIKE --------
+        Set VariableSet Ability_JudgementStrike_Base[1] = 22.00
+        Set VariableSet Ability_JudgementStrike_Base[2] = 44.00
+        Set VariableSet Ability_JudgementStrike_Base[3] = 58.00
+        Set VariableSet Ability_JudgementStrike_Base[4] = 81.00
+        Set VariableSet Ability_JudgementStrike_Base[5] = 102.00
+        -------- LAY ON HANDS --------
+        -------- ================================================= --------
+        -------- >>>>>>>>> OTHER ABILITIES --------
+        -------- ================================================= --------
