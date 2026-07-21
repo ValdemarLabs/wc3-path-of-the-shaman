@@ -18,7 +18,7 @@
 //
 // ============================================================
 
-library GatherNodeItems initializer Init requires GatherNodes, GatherNodeSkills, ZonesCore, TimerUtils, Table, optional SharedDInvLib
+library GatherNodeItems initializer Init requires GatherNodes, GatherNodeSkills, ZonesCore, TimerUtils, Table, Interface, optional SharedDInvLib
 
 
 // ============================================================
@@ -852,6 +852,9 @@ private function GNI_HandleItemPickup takes item it, unit picker returns nothing
         return
     endif
 
+    if GNI_DefProfessionId[defId] == GNS_PROF_HERBALISM then
+        call Interface_NotifyHerbPickOnUnit(picker)
+    endif
     call GNS_OnSuccessfulItemGather(picker, it)
 
     call CancelLifetimeTimer(it)
