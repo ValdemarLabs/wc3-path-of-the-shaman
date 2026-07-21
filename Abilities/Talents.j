@@ -7,12 +7,16 @@
     Description:
     Stores and learns player shaman talent ranks independently from Warcraft
     ability rawcodes. Talents provide reusable rank and effect bonus APIs for
-    ability scripts and the talent tree UI.
+    ability scripts and the talent tree UI. Talent points are primarily awarded
+    from player hero level-up events; bonus points are reserved for secondary
+    rewards such as quests or items.
 
     Credits:
 
     How to install:
-    Import after AbilitiesPlayer. Ability scripts can query the public effect
+    Import after AbilitiesPlayer. Import Events before this library to use the
+    central player-unit event dispatcher; otherwise Talents registers its own
+    player hero level trigger. Ability scripts can query the public effect
     helpers when applying damage, healing, cooldown, mana, or special behavior.
 
     API:
@@ -24,6 +28,7 @@
     - set ok = Talents_ResetHeroTalents(hero)
     - set rank = Talents_GetTalentRank(hero, talentIndex)
     - set rank = Talents_GetTalentPreviewRank(hero, talentIndex)
+    - set gained = Talents_SyncLevelPoints(hero)
     - set points = Talents_GetAvailablePoints(hero)
     - set points = Talents_GetPreviewAvailablePoints(hero)
     - set bonus = Talents_GetDamageBonusPercent(hero, abilityId)
@@ -33,7 +38,7 @@
     - set rank = Talents_GetRankById(hero, talentId)
 
 **/
-library Talents initializer Init requires AbilitiesPlayer
+library Talents initializer Init requires AbilitiesPlayer, optional AbilityPoints, optional Events
     globals
         public constant integer RESULT_OK = 1
         public constant integer RESULT_INVALID = 2
@@ -73,7 +78,7 @@ library Talents initializer Init requires AbilitiesPlayer
 
         private constant integer TLT_MAX_TALENTS = 96
         private constant integer TLT_RANK_KEY_STRIDE = 128
-        private constant integer TLT_FIRST_TALENT_LEVEL = 10
+        private constant integer TLT_FIRST_TALENT_LEVEL = 5
         private constant integer TLT_POINTS_PER_LEVEL = 1
         private constant integer TLT_HERO_NAZGREK = 1
         private constant integer TLT_HERO_ZULKIS = 2
@@ -100,9 +105,12 @@ library Talents initializer Init requires AbilitiesPlayer
         private integer array TLT_TreeRows
         private integer array TLT_TreeColumns
 
+        private integer array TLT_HeroLevelPoints
         private integer array TLT_HeroBonusPoints
         private integer array TLT_HeroTalentRank
         private integer array TLT_HeroPendingRank
+
+        private trigger TLT_LevelTrigger = null
     endglobals
 
     private function TLT_GetRankKey takes integer heroSlot, integer talentIndex returns integer
@@ -550,18 +558,53 @@ library Talents initializer Init requires AbilitiesPlayer
         return GetPreviewSpentPoints(hero) - GetSpentPoints(hero)
     endfunction
 
-    public function GetBasePoints takes unit hero returns integer
-        local integer heroLevel
-
-        if not TLT_IsPlayerShamanHero(hero) then
-            return 0
-        endif
-
-        set heroLevel = GetHeroLevel(hero)
+    private function TLT_GetLevelPointTotalForHeroLevel takes integer heroLevel returns integer
         if heroLevel < TLT_FIRST_TALENT_LEVEL then
             return 0
         endif
+
         return (heroLevel - TLT_FIRST_TALENT_LEVEL + 1) * TLT_POINTS_PER_LEVEL
+    endfunction
+
+    private function TLT_AwardLevelPoints takes unit hero, integer amount, boolean showFeedback returns nothing
+        local integer heroSlot = TLT_GetHeroSlot(hero)
+
+        if heroSlot == 0 or not TLT_IsPlayerShamanHero(hero) or amount <= 0 then
+            return
+        endif
+
+        set TLT_HeroLevelPoints[heroSlot] = TLT_HeroLevelPoints[heroSlot] + amount
+        if showFeedback then
+            if amount == 1 then
+                call TLT_DisplayToHeroOwner(hero, "|cff80ff80Talent point gained.|r")
+            else
+                call TLT_DisplayToHeroOwner(hero, "|cff80ff80Talent points gained:|r " + I2S(amount))
+            endif
+        endif
+    endfunction
+
+    public function SyncLevelPoints takes unit hero returns integer
+        local integer heroSlot = TLT_GetHeroSlot(hero)
+        local integer targetPoints
+        local integer gainedPoints
+
+        if heroSlot == 0 or not TLT_IsPlayerShamanHero(hero) then
+            return 0
+        endif
+
+        set targetPoints = TLT_GetLevelPointTotalForHeroLevel(GetHeroLevel(hero))
+        if targetPoints <= TLT_HeroLevelPoints[heroSlot] then
+            return 0
+        endif
+
+        set gainedPoints = targetPoints - TLT_HeroLevelPoints[heroSlot]
+        set TLT_HeroLevelPoints[heroSlot] = targetPoints
+
+        return gainedPoints
+    endfunction
+
+    public function GetBasePoints takes unit hero returns integer
+        return TLT_HeroLevelPoints[TLT_GetHeroSlot(hero)]
     endfunction
 
     public function GetBonusPoints takes unit hero returns integer
@@ -1148,7 +1191,52 @@ library Talents initializer Init requires AbilitiesPlayer
         return amount * (1.00 + I2R(GetHealBonusPercent(hero, abilityId)) / 100.00)
     endfunction
 
+    private function TLT_OnHeroLevel takes nothing returns nothing
+        local unit hero
+
+        static if LIBRARY_Events then
+            set hero = Events_GetTriggerUnit()
+        else
+            set hero = GetLevelingUnit()
+        endif
+
+        if not TLT_IsPlayerShamanHero(hero) then
+            set hero = null
+            return
+        endif
+
+        static if LIBRARY_AbilityPoints then
+            if not AbilityPoints_IsHeroLevelUpEnabled() then
+                set hero = null
+                return
+            endif
+        endif
+
+        if GetHeroLevel(hero) >= TLT_FIRST_TALENT_LEVEL then
+            call TLT_AwardLevelPoints(hero, TLT_POINTS_PER_LEVEL, true)
+        endif
+
+        set hero = null
+    endfunction
+
+    private function TLT_RegisterLevelEvent takes nothing returns nothing
+        static if LIBRARY_Events then
+            call Events_RegisterPlayerUnitEvent(function TLT_OnHeroLevel, EVENT_PLAYER_HERO_LEVEL)
+        else
+            set TLT_LevelTrigger = CreateTrigger()
+            call TriggerRegisterPlayerUnitEvent(TLT_LevelTrigger, Player(0), EVENT_PLAYER_HERO_LEVEL, null)
+            call TriggerAddAction(TLT_LevelTrigger, function TLT_OnHeroLevel)
+        endif
+    endfunction
+
+    private function TLT_SyncInitialLevelPoints takes nothing returns nothing
+        call SyncLevelPoints(udg_Nazgrek)
+        call SyncLevelPoints(udg_Zulkis)
+    endfunction
+
     private function Init takes nothing returns nothing
         call EnsureInitialized()
+        call TLT_SyncInitialLevelPoints()
+        call TLT_RegisterLevelEvent()
     endfunction
 endlibrary
