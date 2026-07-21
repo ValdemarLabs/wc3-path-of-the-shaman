@@ -34,7 +34,7 @@
 //
 // ============================================================
 
-library ItemCleanup initializer Init requires Table, optional GatherNodes, optional SharedDInvLib
+library ItemCleanup initializer Init requires Table, Events, optional GatherNodes, optional SharedDInvLib
 
 globals
     // ============ CONFIGURATION
@@ -71,7 +71,6 @@ globals
     private boolean IC_DeadRemovePending = false
 
     private trigger IC_AgeTrigger = null
-    private trigger IC_PickupTrigger = null
     private trigger IC_DeadScanTrigger = null
     private timer IC_DeadRemoveTimer = null
 endglobals
@@ -284,7 +283,7 @@ private function IC_OnPickup takes nothing returns boolean
 endfunction
 
 private function Init takes nothing returns nothing
-    local integer playerIndex = 0
+    local trigger pickupTrigger = CreateTrigger()
 
     set IC_ItemAge = Table.create()
     set IC_ProtectedItems = Table.create()
@@ -300,13 +299,9 @@ private function Init takes nothing returns nothing
 
     set IC_DeadRemoveTimer = CreateTimer()
 
-    set IC_PickupTrigger = CreateTrigger()
-    loop
-        exitwhen playerIndex >= 24
-        call TriggerRegisterPlayerUnitEvent(IC_PickupTrigger, Player(playerIndex), EVENT_PLAYER_UNIT_PICKUP_ITEM, null)
-        set playerIndex = playerIndex + 1
-    endloop
-    call TriggerAddCondition(IC_PickupTrigger, Condition(function IC_OnPickup))
+    call TriggerAddCondition(pickupTrigger, Condition(function IC_OnPickup))
+    call Events_RegisterPlayerUnitTrigger(pickupTrigger, EVENT_PLAYER_UNIT_PICKUP_ITEM)
+    set pickupTrigger = null
 endfunction
 
 endlibrary
