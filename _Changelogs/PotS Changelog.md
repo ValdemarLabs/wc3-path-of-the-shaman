@@ -15,6 +15,76 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [22.7.2026]
+
+### Technical Updates
+
+- Added `Events/Events.j`
+  - New centralized non-death event dispatcher for common map-wide unit events.
+  - Registers each supported player-unit event once for player slots `0..27`, then dispatches callbacks to registered systems.
+  - Added APIs for code callbacks and trigger callbacks:
+    - `Events_RegisterUnitEnter`
+    - `Events_RegisterUnitEnterTrigger`
+    - `Events_RegisterPlayerUnitEvent`
+    - `Events_RegisterPlayerUnitTrigger`
+  - Added current-event helper APIs:
+    - `Events_GetTriggerUnit`
+    - `Events_GetCurrentEventId`
+    - `Events_GetCurrentPlayerUnitEvent`
+  - Explicitly rejects `EVENT_PLAYER_UNIT_DEATH`; death remains handled by `_CoreSystems/UnitDeathEvent.j`.
+  - Trigger callbacks now respect disabled triggers and run conditions before actions, matching normal trigger callback behavior more closely.
+
+- Replaced the old centralized GUI map-enter pattern:
+  - `Events/_OldGUI/Init 07 Unit Event Enters` is now documented as migrated/deprecated.
+  - The old per-unit `Floating Texts Spell Event` add-event pattern should be replaced with one map-init registration:
+    - `call Events_RegisterPlayerUnitTrigger(gg_trg_Floating_Texts_Spell_Event, EVENT_PLAYER_UNIT_SPELL_EFFECT)`
+  - `CreepRespawn`, `UnitStats`, `ResourceRage`, and `ResourceEnergy` now register their unit-enter handling through `Events.j`.
+
+- Migrated many active systems away from standalone all-player event registrations:
+  - `AI/AI.j`
+  - `Abilities/Shaman/Totems.j`
+  - `CastingBar/CastingBarSystem.j`
+  - `Companions/Companions.j`
+  - `Companions/Pet.j`
+  - `CreepRespawn/CreepRespawn.j`
+  - `ItemLootSystems/ItemLootSystem.j`
+  - `ItemSystems/ItemCleanup.j`
+  - `ItemSystems/ItemUnstack.j`
+  - `Leveling/BaseCamp.j`
+  - `Leveling/CampFire.j`
+  - `Leveling/Experience.j`
+  - `PatrolFollowSystems/PatrolSystem.j`
+  - `Reputation/Reputation.j`
+  - `Resources/ResourceEnergy.j`
+  - `Resources/ResourceRage.j`
+  - `Stealth/Stealth.j`
+  - `UnitSystems/UnitStats.j`
+
+- Migrated additional direct death listeners to `UnitDeathEvent_Register` instead of local `EVENT_PLAYER_UNIT_DEATH` registrations:
+  - `Abilities/Shaman/Totems.j`
+  - `Companions/Pet.j`
+  - `Leveling/BaseCamp.j`
+  - `Leveling/CampFire.j`
+
+- Split handlers that previously depended on `GetTriggerEventId()` before moving them to `Events.j`:
+  - `AI/AI.j` now has separate item pickup/drop callbacks.
+  - `Leveling/Experience.j` now has separate bonus-item pickup/drop callbacks.
+
+### Known Issues
+
+- This is a high-risk structural event refactor. Any system that relied on direct trigger registration order, disabled trigger state, or event response timing should be retested in-game.
+- Full map compile validation was not completed because the repo snapshot still does not expose a combined `war3map.j` or normal map build entry point. `git diff --check` passed for the edited files.
+- GUI `Floating Texts Spell Event` must be manually registered once through `Events_RegisterPlayerUnitTrigger`; leaving the old per-unit add-event behavior enabled can keep recreating the original event-bloat risk.
+- Remaining direct event registrations still exist in separate quest/gather/UI/imported/old systems. They were not all migrated in this pass to avoid changing unrelated behavior without focused testing.
+
+### Actions Remaining
+
+- Import/include `Events/Events.j` before every library that now requires `Events`.
+- In World Editor, remove/disable the old `Init 07 Unit Event Enters` GUI trigger after confirming all listed unit-enter callbacks are handled by `Events.j`.
+- Add the one-time map-init registration for `gg_trg_Floating_Texts_Spell_Event` if that GUI trigger is still used.
+- Stress-test 10-60 minute sessions with heavy ability casting, unit spawning, item pickup/drop/use, AI orders, totems, pets, patrols, camp fires, tents, and reputation hostility.
+- Watch especially for missing event callbacks, duplicate callbacks, floating text not firing, rested/base-camp/camp-fire behavior regressions, and death cleanup regressions.
+
 ## [21.7.2026]
 
 ### Player-Facing Updates
