@@ -12,11 +12,10 @@
     and Shadowclaw rules.
 
 **/
-library Pet initializer Init requires Table, Companions, UnitExperience, DamageEngine, FloatingTextSimple, PetDefinitions
+library Pet initializer Init requires Table, Companions, UnitExperience, DamageEngine, FloatingTextSimple, PetDefinitions, Events, UnitDeathEvent
 
 globals
     private constant boolean DEBUG = false
-    private constant integer MAX_PLAYER_INDEX = 27
     private constant integer CONTROL_PLAYER_INDEX = 0
     private constant integer PET_OWNER_INDEX = 18
     private constant real TAME_DURATION = 10.00
@@ -978,15 +977,6 @@ private function OnRenameChat takes nothing returns nothing
     set pet = null
 endfunction
 
-private function RegisterPlayerUnitEventAll takes trigger whichTrigger, playerunitevent whichEvent returns nothing
-    local integer playerIndex = 0
-    loop
-        call TriggerRegisterPlayerUnitEvent(whichTrigger, Player(playerIndex), whichEvent, null)
-        set playerIndex = playerIndex + 1
-        exitwhen playerIndex > MAX_PLAYER_INDEX
-    endloop
-endfunction
-
 public function IsPetUnit takes unit pet returns boolean
     if pet == null then
         return false
@@ -1019,29 +1009,16 @@ private function Init takes nothing returns nothing
 
     call EnsureState()
 
-    set t = CreateTrigger()
-    call RegisterPlayerUnitEventAll(t, EVENT_PLAYER_UNIT_SPELL_EFFECT)
-    call TriggerAddAction(t, function OnSpellEffect)
-
-    set t = CreateTrigger()
-    call RegisterPlayerUnitEventAll(t, EVENT_PLAYER_UNIT_SPELL_FINISH)
-    call TriggerAddAction(t, function OnSpellFinish)
-
-    set t = CreateTrigger()
-    call RegisterPlayerUnitEventAll(t, EVENT_PLAYER_UNIT_SPELL_ENDCAST)
-    call TriggerAddAction(t, function OnSpellEndcast)
-
-    set t = CreateTrigger()
-    call RegisterPlayerUnitEventAll(t, EVENT_PLAYER_UNIT_PICKUP_ITEM)
-    call TriggerAddAction(t, function OnPetPickupItem)
+    call Events_RegisterPlayerUnitEvent(function OnSpellEffect, EVENT_PLAYER_UNIT_SPELL_EFFECT)
+    call Events_RegisterPlayerUnitEvent(function OnSpellFinish, EVENT_PLAYER_UNIT_SPELL_FINISH)
+    call Events_RegisterPlayerUnitEvent(function OnSpellEndcast, EVENT_PLAYER_UNIT_SPELL_ENDCAST)
+    call Events_RegisterPlayerUnitEvent(function OnPetPickupItem, EVENT_PLAYER_UNIT_PICKUP_ITEM)
 
     set t = CreateTrigger()
     call TriggerRegisterVariableEvent(t, "udg_DamageModifierEvent", EQUAL, 1.00)
     call TriggerAddAction(t, function OnDamageModifier)
 
-    set t = CreateTrigger()
-    call RegisterPlayerUnitEventAll(t, EVENT_PLAYER_UNIT_DEATH)
-    call TriggerAddAction(t, function OnUnitDeath)
+    call UnitDeathEvent_Register(function OnUnitDeath)
 
     set t = CreateTrigger()
     call TriggerRegisterPlayerChatEvent(t, Player(0), "/pet rename ", false)
