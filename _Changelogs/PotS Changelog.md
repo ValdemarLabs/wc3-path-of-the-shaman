@@ -17,7 +17,86 @@
 
 ## [22.7.2026]
 
+### Player-Facing Updates
+
+- Added a new player shaman ability learning flow for Nazgrek and Zul'kis:
+  - Enhancement, Elemental, Restoration, and Totemic trainers can open a focused ability training UI.
+  - Learning is now driven by the new `AbilityPoints.j` ability-point state instead of the old GUI `AbilityPoints` integers.
+  - Successful ability learning plays `gg_snd_NewAbility`.
+  - Failed learning attempts, such as missing AP or requirements, play `gg_snd_Error`.
+  - Learned abilities are made permanent in the same style as the old GUI learning triggers.
+
+- Added the new shaman talent tree UI:
+  - `AbilitiesLiteUI` now exposes a Talents entry for player shaman heroes.
+  - Elemental, Enhancement, Restoration, and Totemic talents are available as separate tree tabs.
+  - Talent buttons show ranks, locked overlays, selected highlights, hover tooltips, and dependency links between prerequisite talents.
+  - Talent details now show preview rank text, missing requirement text, tree points, available points, and pending point status.
+  - Players can add pending ranks, remove pending ranks, confirm pending talents, cancel pending changes, and reset talents.
+  - Talent effects only apply after Confirm; ability scripts still read confirmed talent ranks.
+
 ### Technical Updates
+
+- Added `Abilities/AbilitiesPlayer.j`
+  - New player shaman ability registry for JASS learning and UI display.
+  - Stores ability tree, kind, learn/raw ability ids, permanent ability ids, AP cost, max level, and optional requirements.
+  - Centralizes player shaman ability definitions for Elemental, Enhancement, Restoration, and Totemic trees.
+  - Provides trainer-unit tree lookup for:
+    - Enhancement Master (`o628`)
+    - Elemental Master (`o627`)
+    - Restoration Master (`o626`)
+    - Totem Master (`o625`)
+  - Reuses object-data tooltip/icon data where possible and supports authored fallback text.
+
+- Added `Abilities/Abilities.j`
+  - New JASS backend for ability learning, specialization reset, ability reset, and talent reset delegation.
+  - Uses `AbilityPoints.j` for all AP checks/spending instead of the old GUI ability-point globals.
+  - Preserves the old GUI learning behavior of adding the permanent learned ability and hiding it when needed.
+  - Added public learn/reset APIs for use by trainer UI and future scripted reward/learning hooks.
+  - Delegates talent reset to `Talents_ResetHeroTalents` when the optional `Talents` library exists.
+
+- Added `UI/AbilitiesUI.j`
+  - New trainer-facing ability learning UI based on the `AbilitiesLiteUI` frame style.
+  - Shows only the ability tree that matches the trainer unit being talked to.
+  - Displays ability name, icon, current level, cost, requirement state, and detailed text.
+  - Includes controls for learning abilities, resetting abilities, resetting specialization, and resetting talents.
+  - Hides other major custom UI panels when opened and integrates with `MasterUI` / `AbilitiesLiteUI` panel behavior.
+
+- Added `Abilities/Talents.j`
+  - New shaman talent backend for Nazgrek and Zul'kis.
+  - Stores Elemental, Enhancement, Restoration, and Totemic talent definitions separately from Warcraft ability rawcodes.
+  - Added confirmed-rank, pending-rank, and preview-rank handling.
+  - Added pending allocation APIs:
+    - `Talents_Allocate`
+    - `Talents_Deallocate`
+    - `Talents_ConfirmPending`
+    - `Talents_CancelPending`
+  - Kept `Talents_GetTalentRank` confirmed-only so ability scripts never read unconfirmed UI preview ranks.
+  - Added preview APIs for UI point totals, tree-spent totals, rank text, info text, and body text.
+  - Added requirement/failure text APIs so UI and click feedback use the same backend requirement messages.
+  - Added reusable effect helper APIs for ability scripts:
+    - `Talents_GetDamageBonusPercent`
+    - `Talents_ApplyDamageBonus`
+    - `Talents_GetHealBonusPercent`
+    - `Talents_ApplyHealBonus`
+    - `Talents_GetCooldownBonusPercent`
+    - `Talents_HasTalentById`
+  - Talent reset now clears both confirmed and pending talent ranks.
+
+- Added `UI/TalentsUI.j`
+  - New custom frame talent tree UI for player shaman heroes.
+  - Inspired by The_Spellweaver's STK talent tree ideas, but implemented directly in the lighter PotS globals-based UI style instead of importing the full external framework.
+  - Adds four tree tabs, a fixed grid, rank labels, locked overlays, selection highlight, detail pane, Add Rank, Remove, Confirm, Cancel, Reset Talents, Return, and Close controls.
+  - Adds STK-style hover tooltips using `BlzFrameSetTooltip`.
+  - Adds STK-style dependency link frames between prerequisite talents with active/inactive textures.
+  - Uses preview ranks and preview point totals while pending changes exist.
+  - Confirms pending ranks through `Talents_ConfirmPending`, which then plays `gg_snd_NewAbility`.
+
+- Updated `UI/AbilitiesLiteUI.j`
+  - Added a Talents button for player shaman heroes.
+  - Opens `TalentsUI_ShowForUnit` for Nazgrek/Zul'kis when the optional `TalentsUI` library exists.
+
+- Updated `UI/MasterUI.j` and related panel hiding behavior:
+  - Added `TalentsUI_Hide` calls so the talent panel closes consistently when other major UI panels open.
 
 - Added `Events/Events.j`
   - New centralized non-death event dispatcher for common map-wide unit events.
@@ -72,6 +151,12 @@
 
 ### Known Issues
 
+- Full in-map JassHelper / Warcraft III compile validation was not completed for the abilities/talents work because no local `jasshelper`, `pjass`, or `wurst` command is available in this shell and the repo snapshot still does not expose a normal combined map build entry point.
+- The new ability/talent libraries still need in-game validation with the actual trainer units (`o625`, `o626`, `o627`, `o628`), Nazgrek, Zul'kis, and the current object-data rawcodes.
+- Old GUI player ability add/level triggers should be disabled after the JASS learner is imported, otherwise ability learning/reset behavior can double-run or conflict.
+- Talent helper APIs are present, but individual ability scripts still need to be wired to the relevant talent effect helpers before every talent has visible gameplay impact.
+- Talent save/load persistence is not implemented yet; current talent ranks live in runtime JASS state.
+- `TalentsUI` tooltip placement and dependency link textures need in-game visual validation on the Warcraft III frame layer.
 - This is a high-risk structural event refactor. Any system that relied on direct trigger registration order, disabled trigger state, or event response timing should be retested in-game.
 - Full map compile validation was not completed because the repo snapshot still does not expose a combined `war3map.j` or normal map build entry point. `git diff --check` passed for the edited files.
 - GUI `Floating Texts Spell Event` must be manually registered once through `Events_RegisterPlayerUnitTrigger`; leaving the old per-unit add-event behavior enabled can keep recreating the original event-bloat risk.
@@ -79,6 +164,21 @@
 
 ### Actions Remaining
 
+- Import/include the new ability/talent libraries in the active map build order:
+  - `Abilities/AbilitiesPlayer.j`
+  - `Abilities/Abilities.j`
+  - `Abilities/Talents.j`
+  - `UI/AbilitiesUI.j`
+  - `UI/TalentsUI.j`
+- Confirm the old GUI player ability add/level/reset triggers are disabled after the JASS replacements are active.
+- In-game test each trainer unit opening the correct tree:
+  - `o628` Enhancement
+  - `o627` Elemental
+  - `o626` Restoration
+  - `o625` Totemic
+- In-game test AP spending, missing-AP errors, requirement errors, permanent learned abilities, ability reset, specialization reset, talent reset, pending talent allocation, Confirm, Cancel, Remove, and hover tooltip/link visuals.
+- Wire live ability scripts to the relevant `Talents.j` effect helpers where the talents should modify damage, healing, cooldowns, mana, or special behavior.
+- Add talent save/load serialization after the current PotS save/load direction is confirmed.
 - Import/include `Events/Events.j` before every library that now requires `Events`.
 - In World Editor, remove/disable the old `Init 07 Unit Event Enters` GUI trigger after confirming all listed unit-enter callbacks are handled by `Events.j`.
 - Add the one-time map-init registration for `gg_trg_Floating_Texts_Spell_Event` if that GUI trigger is still used.
