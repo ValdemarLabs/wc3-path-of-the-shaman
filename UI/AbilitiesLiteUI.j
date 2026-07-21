@@ -1,4 +1,4 @@
-library AbilitiesLiteUI initializer AutoInit requires Table, MasterUI, PetDefinitions, Interface
+library AbilitiesLiteUI initializer AutoInit requires Table, MasterUI, PetDefinitions, Interface, optional TalentsUI
 /**
     AbilitiesLiteUI
 
@@ -154,6 +154,7 @@ globals
     private framehandle AUI_ListWheelArea = null
     private framehandle AUI_CloseButton = null
     private framehandle AUI_ReturnButton = null
+    private framehandle AUI_TalentsButton = null
     private framehandle AUI_DetailIcon = null
     private framehandle AUI_DetailUnavailableOverlay = null
     private framehandle AUI_DetailTitle = null
@@ -202,6 +203,7 @@ globals
 
     private trigger AUI_CloseTrigger = null
     private trigger AUI_ReturnTrigger = null
+    private trigger AUI_TalentsTrigger = null
     private trigger AUI_RowTrigger = null
     private trigger AUI_ClearFocusTrigger = null
     private trigger AUI_ListScrollTrigger = null
@@ -1581,6 +1583,22 @@ private function AUI_ReturnAction takes nothing returns nothing
     call ExecuteFunc("StatsUI_Show")
 endfunction
 
+private function AUI_TalentsAction takes nothing returns nothing
+    if not AUI_IsPlayerOwnedMainHero(AUI_SelectedUnit) or (AUI_SelectedUnit != udg_Nazgrek and AUI_SelectedUnit != udg_Zulkis) then
+        call DisplayTextToPlayer(Player(0), 0.00, 0.00, "|cffff8080Talents are only available for Nazgrek and Zul'kis.|r")
+        call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, Player(0))
+        return
+    endif
+
+    static if LIBRARY_TalentsUI then
+        call Hide()
+        call TalentsUI_ShowForUnit(AUI_SelectedUnit)
+    else
+        call DisplayTextToPlayer(Player(0), 0.00, 0.00, "|cffff8080Talents UI is not imported.|r")
+        call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, Player(0))
+    endif
+endfunction
+
 private function AUI_RowAction takes nothing returns nothing
     local integer handleId = GetHandleId(BlzGetTriggerFrame())
     local integer rowIndex
@@ -1678,6 +1696,11 @@ private function AUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetSize(AUI_ReturnButton, 0.065, 0.03)
     call BlzFrameSetText(AUI_ReturnButton, "Return")
     call BlzFrameSetPoint(AUI_ReturnButton, FRAMEPOINT_TOPRIGHT, AUI_CloseButton, FRAMEPOINT_TOPLEFT, -0.008, 0.0)
+
+    set AUI_TalentsButton = BlzCreateFrameByType("GLUETEXTBUTTON", "AbilitiesLiteUITalents", AUI_Parent, "ScriptDialogButton", 0)
+    call BlzFrameSetSize(AUI_TalentsButton, 0.065, 0.03)
+    call BlzFrameSetText(AUI_TalentsButton, "Talents")
+    call BlzFrameSetPoint(AUI_TalentsButton, FRAMEPOINT_TOPRIGHT, AUI_ReturnButton, FRAMEPOINT_TOPLEFT, -0.008, 0.0)
 
     set AUI_LeftPane = BlzCreateFrameByType("BACKDROP", "AbilitiesLiteUILeftPane", AUI_Parent, "", 0)
     call BlzFrameSetTexture(AUI_LeftPane, AUI_PanelTexture, 0, true)
@@ -1803,6 +1826,8 @@ private function AUI_CreateFrames takes nothing returns nothing
     call BlzTriggerRegisterFrameEvent(AUI_ClearFocusTrigger, AUI_CloseButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(AUI_ReturnTrigger, AUI_ReturnButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(AUI_ClearFocusTrigger, AUI_ReturnButton, FRAMEEVENT_CONTROL_CLICK)
+    call BlzTriggerRegisterFrameEvent(AUI_TalentsTrigger, AUI_TalentsButton, FRAMEEVENT_CONTROL_CLICK)
+    call BlzTriggerRegisterFrameEvent(AUI_ClearFocusTrigger, AUI_TalentsButton, FRAMEEVENT_CONTROL_CLICK)
 
     call BlzFrameSetVisible(AUI_Parent, false)
 endfunction
@@ -1844,6 +1869,9 @@ public function Init takes nothing returns nothing
 
     set AUI_ReturnTrigger = CreateTrigger()
     call TriggerAddAction(AUI_ReturnTrigger, function AUI_ReturnAction)
+
+    set AUI_TalentsTrigger = CreateTrigger()
+    call TriggerAddAction(AUI_TalentsTrigger, function AUI_TalentsAction)
 
     set AUI_RowTrigger = CreateTrigger()
     call TriggerAddAction(AUI_RowTrigger, function AUI_RowAction)
