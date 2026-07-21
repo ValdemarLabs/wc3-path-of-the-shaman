@@ -1,0 +1,10 @@
+Reset TalentTree
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to ResetTalentTree 
+    Actions
+        Custom script:   call STK_ResetUnitTalentTree(1, GetTriggerUnit())
+        Custom script:   call STK_ResetUnitTalentTree(2, GetTriggerUnit())
+        Custom script:   call STK_ResetUnitTalentTree(3, GetTriggerUnit())
+        Game - Display to (All players) the text: Talent tree has bee...

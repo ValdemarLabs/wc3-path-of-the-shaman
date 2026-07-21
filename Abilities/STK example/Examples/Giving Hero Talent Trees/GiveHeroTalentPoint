@@ -1,0 +1,8 @@
+GiveHeroTalentPoint
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to GetTalentPoint 
+    Actions
+        Custom script:   call STK_UpdateUnitTalentPoints(1, GetTriggerUnit(), 5)
+        Game - Display to (All players) the text: Gave hero a talent ...

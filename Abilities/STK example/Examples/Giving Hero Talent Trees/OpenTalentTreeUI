@@ -1,0 +1,8 @@
+OpenTalentTreeUI
+    Events
+        Player - Player 1 (Red) types a chat message containing -tt as An exact match
+        Player - Player 2 (Blue) types a chat message containing -tt as An exact match
+    Conditions
+    Actions
+        Game - Display to (All players) the text: Opening talent UI
+        Custom script:   call STK_OpenTalentScreen(GetTriggerPlayer())
