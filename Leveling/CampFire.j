@@ -12,7 +12,7 @@
     Credits:
 
     How to install:
-    Import after Experience. Disable the old GUI triggers under
+    Import after Experience, Events, and UnitDeathEvent. Disable the old GUI triggers under
     Leveling/_oldGUI/Camp Fire after importing.
 
     API:
@@ -21,7 +21,7 @@
     - Legacy wrappers: AddCampfire(fire), RemoveCampfire(fire)
 
 **/
-library CampFire initializer Init requires Experience, optional HintsUI
+library CampFire initializer Init requires Experience, Events, UnitDeathEvent, optional HintsUI
     globals
         // Object data configuration.
         public constant integer UNIT_ID = 'n61C'
@@ -33,8 +33,6 @@ library CampFire initializer Init requires Experience, optional HintsUI
         private constant integer CF_WARMTH_HP_ABILITY_ID = 'A02W'
         private constant integer CF_WARMTH_MANA_ABILITY_ID = 'A02Y'
         private constant integer CF_MAX_FIRES = 128
-        private constant integer CF_MAX_PLAYER_INDEX = 27
-
         private constant real CF_SCAN_INTERVAL = 1.00
         private constant real CF_RADIUS = 300.00
         private constant real CF_REST_REQUIRED = 15.00
@@ -47,9 +45,6 @@ library CampFire initializer Init requires Experience, optional HintsUI
         private timer CF_ScanTimer = null
         private group CF_EnumGroup = null
         private boolexpr CF_HeroFilter = null
-        private trigger CF_ConstructTrigger = null
-        private trigger CF_DeathTrigger = null
-        private trigger CF_SpellChannelTrigger = null
         private boolean CF_LightSearchFound = false
     endglobals
 
@@ -251,16 +246,6 @@ library CampFire initializer Init requires Experience, optional HintsUI
         set caster = null
     endfunction
 
-    private function CF_RegisterPlayerUnitEvents takes trigger whichTrigger, playerunitevent whichEvent returns nothing
-        local integer playerIndex = 0
-
-        loop
-            exitwhen playerIndex > CF_MAX_PLAYER_INDEX
-            call TriggerRegisterPlayerUnitEvent(whichTrigger, Player(playerIndex), whichEvent, null)
-            set playerIndex = playerIndex + 1
-        endloop
-    endfunction
-
     function AddCampfire takes unit fire returns nothing
         call Register(fire)
     endfunction
@@ -277,16 +262,8 @@ library CampFire initializer Init requires Experience, optional HintsUI
         set CF_EnumGroup = CreateGroup()
         set CF_HeroFilter = Filter(function CF_FilterRestingHero)
 
-        set CF_ConstructTrigger = CreateTrigger()
-        call CF_RegisterPlayerUnitEvents(CF_ConstructTrigger, EVENT_PLAYER_UNIT_CONSTRUCT_FINISH)
-        call TriggerAddAction(CF_ConstructTrigger, function CF_OnConstructFinish)
-
-        set CF_DeathTrigger = CreateTrigger()
-        call CF_RegisterPlayerUnitEvents(CF_DeathTrigger, EVENT_PLAYER_UNIT_DEATH)
-        call TriggerAddAction(CF_DeathTrigger, function CF_OnDeath)
-
-        set CF_SpellChannelTrigger = CreateTrigger()
-        call CF_RegisterPlayerUnitEvents(CF_SpellChannelTrigger, EVENT_PLAYER_UNIT_SPELL_CHANNEL)
-        call TriggerAddAction(CF_SpellChannelTrigger, function CF_OnSpellChannel)
+        call Events_RegisterPlayerUnitEvent(function CF_OnConstructFinish, EVENT_PLAYER_UNIT_CONSTRUCT_FINISH)
+        call UnitDeathEvent_Register(function CF_OnDeath)
+        call Events_RegisterPlayerUnitEvent(function CF_OnSpellChannel, EVENT_PLAYER_UNIT_SPELL_CHANNEL)
     endfunction
 endlibrary
