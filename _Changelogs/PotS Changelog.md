@@ -15,12 +15,45 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [21.7.2026]
+
+### Player-Facing Updates
+- Profession crafting sounds should now be audible again:
+  - Player-started crafting uses normal sound playback.
+  - AI-started crafting uses 3D sounds on the crafting station unit.
+- AI profession crafting is less likely to be interrupted by normal AI side behavior while walking to the workstation; combat can still interrupt AI-started crafting.
+- Picking herbalism item nodes now plays `Tradeskill_HerbPick` as a 3D sound on the picking unit.
+
+### Technical Updates
+- `StatsLiteUI.j`
+  - Dead detection now also respects udg_IsUnitAlive[unitId] and UNIT_TYPE_DEAD, not just widget life.
+  - Revive remaining seconds are centralized through SLUI_GetReviveRemainingSeconds, including Zul'kis’ udg_ReviveTimerZulkis.
+  - Row cache now tracks revive countdown changes, so Dead (Xs) refreshes while the timer ticks.
+
+- `UI/Interface.j`
+  - Added `EVENT_TRADESKILL_HERB_PICK` and `Interface_NotifyHerbPickOnUnit`.
+  - Profession and gather feedback sounds no longer force the old feedback sound channel before playback, avoiding muted/quiet playback under cinematic volume handling.
+
+- `GatherSystems/GatherNodeItems.j`
+  - Added explicit `Interface` dependency and herbalism-success pickup sound playback.
+
+- `Professions/Professions.j`
+  - AI profession jobs now prefer label-created 3D station sounds before falling back to shared sound handles, while player jobs keep direct playback.
+  - AI station travel timeout increased from 8 seconds to 60 seconds.
+  - AI craft preparation now reissues the station move if another order interrupts the walk.
+  - Added `Professions_IsUnitAiCrafting` and `Professions_CancelUnitCraft` for AI reservation handling.
+
+- `AI/AI.j`
+  - Reserved profession jobs now hold normal AI side actions until the craft starts/finishes.
+  - AI-started crafting is cancelled and backed off when nearby combat appears, so combat behavior can take over cleanly.
+
+
 ## [20.7.2026]
 
 ### Player-Facing Updates
 
 - Camp fires now grant rested XP progress to nearby heroes based on the registered camp-fire radius, even if the Warmth aura buff/status is not visible on the hero.
-- Rested messages now wait for the `B611` Rested buff verification path instead of printing immediately when the dummy cast is issued.
+- Rested now uses the hidden `S000` ability instead of Acid Bomb, so it no longer creates 0-damage combat events.
 - Tent time skipping and rested progress now start from the tent's Sleep ability (`A0F2`) instead of starting automatically when a hero is loaded.
 - Tent Sleep now requires Nazgrek or Zul'kis to be inside the tent before it does anything, and the other player-owned hero is paused/hidden during the sleep if they are outside the tent.
 - Dismantling a tent now returns only one Tent item when the JASS BaseCamp system runs alongside a still-enabled legacy GUI dismantle handler.
@@ -47,9 +80,11 @@
 
 - `Leveling/Experience.j`
   - Added the new centralized Experience library for rested XP, bonus XP, and XP multiplier application.
-  - Rested state remains backed by the existing `B611` Rested buff so older systems that check the buff can keep working.
+  - Rested state is now backed by the hidden Rested ability rawcode `S000` instead of the old Acid Bomb buff.
   - Added MUI resting-progress tracking so camp fires and tents can grant rested progress without singleton GUI timers.
-  - Rested buff granting now uses a verified/retried dummy-cast flow: it casts `A6AI`, waits for `B611`, retries through allied and neutral-aggressive dummy ownership for transport/target-filter edge cases, and only prints the normal rested message after the buff is detected.
+  - Rested no longer uses `A6AI` / Acid Bomb, avoiding 0-damage periodic Acid Bomb events and AI combat-state side effects.
+  - Rested duration is now tracked in JASS; the system hides `S000` from the unit command UI, removes it when its timer expires, and exposes `Experience_ClearRested`, `Experience_GetRestedRemaining`, and `Experience_GrantRestedTimed`.
+  - Bonus XP now adds the extra hero XP without vanilla eye candy and displays its own offset `+X Bonus XP` texttag so it does not overlap the normal Warcraft XP popup.
   - Added bonus XP multiplier APIs:
     - `Experience_GetBonusMultiplier`
     - `Experience_GetTotalMultiplier`
@@ -78,7 +113,7 @@
   - Kept legacy wrappers `AddCampfire`, `RemoveCampfire`, and `InitCampFireBuffSystem` for compatibility with older calls.
 
 - `InitRelated/PreloadAbilities.j` and `Preload/PreloadAbilities.j`
-  - Added preloading for Sleep (`A0F2`), Build Camp Fire (`A61P`), Rested (`A6AI`), and Warmth abilities (`S600`, `A02W`, `A02Y`) alongside tent build/dismantle abilities.
+  - Added preloading for Sleep (`A0F2`), Build Camp Fire (`A61P`), Rested (`S000`), and Warmth abilities (`S600`, `A02W`, `A02Y`) alongside tent build/dismantle abilities.
 
 - `UnitSystems/UnitExperience3.j`
   - Added optional `Experience` support so registered custom unit XP can apply the centralized XP multiplier through `Experience_ApplyMultiplier`.
