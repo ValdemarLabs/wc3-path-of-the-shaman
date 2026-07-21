@@ -3,7 +3,7 @@
 // Main library for item drops from units
 // Provides generic level-based drops and specific boss drops
 //
-// Dependencies: Table (TableV6), UnitDeathEvent
+// Dependencies: Table (TableV6), Events, UnitDeathEvent
 //
 // Usage:
 //   1. Include this library
@@ -13,7 +13,7 @@
 //
 //===========================================================================
 
-library ItemLootSystem initializer Init requires Table, UnitDeathEvent
+library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent
 
     // =========================================================================
     // CONFIGURATION
@@ -1186,30 +1186,16 @@ library ItemLootSystem initializer Init requires Table, UnitDeathEvent
     endfunction
     
     private function Init takes nothing returns nothing
-        local trigger pickupTrig
-        local trigger dropTrig
-        local trigger useTrig
-        
         call InitTables()
         call InitFloatingTextConfig()
         
         // Register with centralized death event system
         call UnitDeathEvent_Register(function OnUnitDeathHandler)
         
-        // Register item pickup trigger (to remove floating text when item picked up)
-        set pickupTrig = CreateTrigger()
-        call TriggerRegisterAnyUnitEventBJ(pickupTrig, EVENT_PLAYER_UNIT_PICKUP_ITEM)
-        call TriggerAddAction(pickupTrig, function OnItemPickup)
-
-        // Register item use trigger (powerups can be consumed immediately on pickup)
-        set useTrig = CreateTrigger()
-        call TriggerRegisterAnyUnitEventBJ(useTrig, EVENT_PLAYER_UNIT_USE_ITEM)
-        call TriggerAddAction(useTrig, function OnItemUse)
-        
-        // Register item drop trigger (to create floating text when unit drops item)
-        set dropTrig = CreateTrigger()
-        call TriggerRegisterAnyUnitEventBJ(dropTrig, EVENT_PLAYER_UNIT_DROP_ITEM)
-        call TriggerAddAction(dropTrig, function OnItemDrop)
+        // Register item events through the centralized dispatcher.
+        call Events_RegisterPlayerUnitEvent(function OnItemPickup, EVENT_PLAYER_UNIT_PICKUP_ITEM)
+        call Events_RegisterPlayerUnitEvent(function OnItemUse, EVENT_PLAYER_UNIT_USE_ITEM)
+        call Events_RegisterPlayerUnitEvent(function OnItemDrop, EVENT_PLAYER_UNIT_DROP_ITEM)
         
         if DEBUG_MODE then
             call BJDebugMsg("ItemLootSystem initialized")
