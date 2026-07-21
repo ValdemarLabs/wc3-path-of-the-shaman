@@ -6,8 +6,8 @@
 
     Description:
     Centralizes player-hero experience modifiers, rested XP state, and
-    item-based bonus XP. Rested remains backed by the existing Rested buff so
-    older systems that check the buff continue to work.
+    item-based bonus XP. Rested is represented by a hidden unit ability so it
+    does not trigger combat through Acid Bomb damage events.
 
     Credits:
 
@@ -18,6 +18,9 @@
 
     API:
     - call Experience_GrantRested(hero)
+    - call Experience_GrantRestedTimed(hero, duration)
+    - call Experience_ClearRested(hero)
+    - set seconds = Experience_GetRestedRemaining(hero)
     - call Experience_AddRestingProgress(hero, seconds, requiredSeconds)
     - call Experience_ResetRestingProgress(hero)
     - call Experience_AddBonusMultiplier(hero, bonus)
@@ -30,12 +33,10 @@
 **/
 library Experience initializer Init requires UnitDeathEvent
     globals
-        // Object ids used by the existing rested/warmth object data.
-        public constant integer BUFF_RESTED = 'B611'
+        // Object ids used by the rested/warmth object data.
+        public constant integer BUFF_RESTED = 'S000'
         public constant integer BUFF_WARMTH = 'B607'
 
-        private constant integer EXP_RESTED_ABILITY_ID = 'A6AI'
-        private constant integer EXP_RESTED_DUMMY_ID = 'n63H'
         private constant integer EXP_BONUS_ITEM_CROWN_OF_KINGS = 'ckng'
         private constant integer EXP_MAX_BONUS_ITEMS = 32
         private constant integer EXP_MAX_PLAYER_INDEX = 27
@@ -45,16 +46,19 @@ library Experience initializer Init requires UnitDeathEvent
         private constant integer EXP_KEY_LAST_PROGRESS = 3
         private constant integer EXP_KEY_OLD_HERO_XP = 4
         private constant integer EXP_KEY_SEEN_HERO_XP = 5
-        private constant integer EXP_KEY_RESTED_PENDING = 6
-        private constant integer EXP_KEY_RESTED_VERIFY_HERO = 7
-        private constant integer EXP_KEY_RESTED_VERIFY_ATTEMPT = 8
+        private constant integer EXP_KEY_RESTED_EXPIRES = 6
+        private constant integer EXP_KEY_RESTED_TIMER = 7
+        private constant integer EXP_KEY_RESTED_TIMER_HERO = 8
 
         private constant real EXP_RESTED_BONUS = 0.50
+        private constant real EXP_RESTED_DURATION = 300.00
         private constant real EXP_DUPLICATE_PROGRESS_WINDOW = 0.75
         private constant real EXP_PROGRESS_BREAK_GRACE = 0.75
-        private constant real EXP_RESTED_DUMMY_LIFETIME = 3.00
-        private constant real EXP_RESTED_VERIFY_DELAY = 0.50
-        private constant integer EXP_RESTED_MAX_ATTEMPTS = 5
+        private constant real EXP_BONUS_TEXT_Y_OFFSET = 64.00
+        private constant real EXP_BONUS_TEXT_Z_OFFSET = 96.00
+        private constant real EXP_BONUS_TEXT_SIZE = 0.021
+        private constant real EXP_BONUS_TEXT_LIFESPAN = 1.30
+        private constant real EXP_BONUS_TEXT_FADEPOINT = 0.90
 
         private hashtable EXP_Hash = null
         private timer EXP_GameTimer = null
@@ -80,7 +84,7 @@ library Experience initializer Init requires UnitDeathEvent
         return TimerGetElapsed(EXP_GameTimer)
     endfunction
 
-    private function EXP_HasRestedBuff takes unit whichUnit returns boolean
+    private function EXP_HasRestedAbility takes unit whichUnit returns boolean
         return whichUnit != null and GetUnitAbilityLevel(whichUnit, BUFF_RESTED) > 0
     endfunction
 
@@ -99,7 +103,7 @@ library Experience initializer Init requires UnitDeathEvent
     endfunction
 
     public function IsRested takes unit whichUnit returns boolean
-        return EXP_HasRestedBuff(whichUnit)
+        return EXP_HasRestedAbility(whichUnit)
     endfunction
 
     public function GetBonusMultiplier takes unit whichUnit returns real
@@ -200,90 +204,122 @@ library Experience initializer Init requires UnitDeathEvent
             return
         endif
 
-        call RemoveSavedBoolean(EXP_Hash, key, EXP_KEY_RESTED_PENDING)
         call ResetRestingProgress(whichUnit)
         call EXP_SyncLegacyMultiplier(whichUnit)
     endfunction
 
-    private function EXP_ClearPendingRested takes unit whichUnit returns nothing
+    public function ClearRested takes unit whichUnit returns nothing
         local integer key = EXP_GetUnitKey(whichUnit)
+        local timer restedTimer = null
 
-        if key != 0 then
-            call RemoveSavedBoolean(EXP_Hash, key, EXP_KEY_RESTED_PENDING)
-        endif
-    endfunction
-
-    private function EXP_CastRestedFromOwner takes player whichPlayer, unit whichUnit returns nothing
-        local unit dummy = null
-
-        if whichPlayer == null or not EXP_IsAliveHero(whichUnit) then
+        if key == 0 then
             return
         endif
 
-        set dummy = CreateUnit(whichPlayer, EXP_RESTED_DUMMY_ID, GetUnitX(whichUnit), GetUnitY(whichUnit), 0.00)
-        if dummy != null then
-            call UnitAddAbility(dummy, EXP_RESTED_ABILITY_ID)
-            call UnitApplyTimedLife(dummy, 'BTLF', EXP_RESTED_DUMMY_LIFETIME)
-            call IssueTargetOrder(dummy, "acidbomb", whichUnit)
+        set restedTimer = LoadTimerHandle(EXP_Hash, key, EXP_KEY_RESTED_TIMER)
+        if restedTimer != null then
+            call FlushChildHashtable(EXP_Hash, GetHandleId(restedTimer))
+            call PauseTimer(restedTimer)
+            call DestroyTimer(restedTimer)
+            call RemoveSavedHandle(EXP_Hash, key, EXP_KEY_RESTED_TIMER)
         endif
 
-        set dummy = null
+        if EXP_HasRestedAbility(whichUnit) then
+            call UnitRemoveAbility(whichUnit, BUFF_RESTED)
+        endif
+
+        call RemoveSavedReal(EXP_Hash, key, EXP_KEY_RESTED_EXPIRES)
+        call EXP_SyncLegacyMultiplier(whichUnit)
+
+        set restedTimer = null
     endfunction
 
-    private function EXP_CastRested takes unit whichUnit returns nothing
-        call EXP_CastRestedFromOwner(GetOwningPlayer(whichUnit), whichUnit)
-        call EXP_CastRestedFromOwner(Player(PLAYER_NEUTRAL_AGGRESSIVE), whichUnit)
+    public function GetRestedRemaining takes unit whichUnit returns real
+        local integer key = EXP_GetUnitKey(whichUnit)
+        local real remaining
+
+        if key == 0 or not EXP_HasRestedAbility(whichUnit) or not HaveSavedReal(EXP_Hash, key, EXP_KEY_RESTED_EXPIRES) then
+            return 0.00
+        endif
+
+        set remaining = LoadReal(EXP_Hash, key, EXP_KEY_RESTED_EXPIRES) - EXP_GetNow()
+        if remaining < 0.00 then
+            return 0.00
+        endif
+
+        return remaining
     endfunction
 
-    private function EXP_VerifyRested takes nothing returns nothing
+    private function EXP_OnRestedExpired takes nothing returns nothing
         local timer expired = GetExpiredTimer()
         local integer timerKey = GetHandleId(expired)
-        local unit hero = LoadUnitHandle(EXP_Hash, timerKey, EXP_KEY_RESTED_VERIFY_HERO)
-        local integer attempt = LoadInteger(EXP_Hash, timerKey, EXP_KEY_RESTED_VERIFY_ATTEMPT)
+        local unit hero = LoadUnitHandle(EXP_Hash, timerKey, EXP_KEY_RESTED_TIMER_HERO)
         local integer heroKey = EXP_GetUnitKey(hero)
-        local timer retry = null
+        local timer savedTimer = null
 
-        call FlushChildHashtable(EXP_Hash, timerKey)
-        call PauseTimer(expired)
-        call DestroyTimer(expired)
-
-        if heroKey == 0 or not EXP_IsAliveHero(hero) then
-            call EXP_ClearPendingRested(hero)
-        elseif EXP_HasRestedBuff(hero) then
-            call EXP_MarkRested(hero)
-            call DisplayTextToPlayer(GetOwningPlayer(hero), 0.00, 0.00, "|cffffcc00" + GetHeroProperName(hero) + "|r is now |cff00ff00Rested|r.")
-        elseif attempt < EXP_RESTED_MAX_ATTEMPTS then
-            call EXP_CastRested(hero)
-            set retry = CreateTimer()
-            call SaveUnitHandle(EXP_Hash, GetHandleId(retry), EXP_KEY_RESTED_VERIFY_HERO, hero)
-            call SaveInteger(EXP_Hash, GetHandleId(retry), EXP_KEY_RESTED_VERIFY_ATTEMPT, attempt + 1)
-            call TimerStart(retry, EXP_RESTED_VERIFY_DELAY, false, function EXP_VerifyRested)
+        if heroKey != 0 and HaveSavedReal(EXP_Hash, heroKey, EXP_KEY_RESTED_EXPIRES) and EXP_GetNow() >= LoadReal(EXP_Hash, heroKey, EXP_KEY_RESTED_EXPIRES) - 0.05 then
+            call ClearRested(hero)
         else
-            call EXP_ClearPendingRested(hero)
-            call DisplayTextToPlayer(GetOwningPlayer(hero), 0.00, 0.00, "|cffffcc00Rested buff failed to apply to " + GetHeroProperName(hero) + ".|r")
+            if heroKey != 0 then
+                set savedTimer = LoadTimerHandle(EXP_Hash, heroKey, EXP_KEY_RESTED_TIMER)
+                if savedTimer == expired then
+                    call RemoveSavedHandle(EXP_Hash, heroKey, EXP_KEY_RESTED_TIMER)
+                endif
+            endif
+            call FlushChildHashtable(EXP_Hash, timerKey)
+            call PauseTimer(expired)
+            call DestroyTimer(expired)
         endif
 
-        set retry = null
+        set savedTimer = null
         set hero = null
         set expired = null
     endfunction
 
-    public function GrantRested takes unit whichUnit returns nothing
+    public function GrantRestedTimed takes unit whichUnit, real duration returns nothing
         local integer key = EXP_GetUnitKey(whichUnit)
-        local timer verify = null
+        local timer restedTimer = null
+        local boolean alreadyRested
+        local real now
+        local real expires
 
-        if key == 0 or not EXP_IsAliveHero(whichUnit) or IsRested(whichUnit) or LoadBoolean(EXP_Hash, key, EXP_KEY_RESTED_PENDING) then
+        if key == 0 or not EXP_IsAliveHero(whichUnit) or duration <= 0.00 then
             return
         endif
 
-        call SaveBoolean(EXP_Hash, key, EXP_KEY_RESTED_PENDING, true)
-        call EXP_CastRested(whichUnit)
-        set verify = CreateTimer()
-        call SaveUnitHandle(EXP_Hash, GetHandleId(verify), EXP_KEY_RESTED_VERIFY_HERO, whichUnit)
-        call SaveInteger(EXP_Hash, GetHandleId(verify), EXP_KEY_RESTED_VERIFY_ATTEMPT, 1)
-        call TimerStart(verify, EXP_RESTED_VERIFY_DELAY, false, function EXP_VerifyRested)
+        set now = EXP_GetNow()
+        set expires = now + duration
+        set alreadyRested = EXP_HasRestedAbility(whichUnit)
+        if not alreadyRested and not UnitAddAbility(whichUnit, BUFF_RESTED) then
+            return
+        endif
 
-        set verify = null
+        if alreadyRested and HaveSavedReal(EXP_Hash, key, EXP_KEY_RESTED_EXPIRES) and LoadReal(EXP_Hash, key, EXP_KEY_RESTED_EXPIRES) > expires then
+            set expires = LoadReal(EXP_Hash, key, EXP_KEY_RESTED_EXPIRES)
+            set duration = expires - now
+        endif
+
+        call BlzUnitHideAbility(whichUnit, BUFF_RESTED, true)
+        call SaveReal(EXP_Hash, key, EXP_KEY_RESTED_EXPIRES, expires)
+        call EXP_MarkRested(whichUnit)
+
+        set restedTimer = LoadTimerHandle(EXP_Hash, key, EXP_KEY_RESTED_TIMER)
+        if restedTimer == null then
+            set restedTimer = CreateTimer()
+            call SaveTimerHandle(EXP_Hash, key, EXP_KEY_RESTED_TIMER, restedTimer)
+        endif
+        call SaveUnitHandle(EXP_Hash, GetHandleId(restedTimer), EXP_KEY_RESTED_TIMER_HERO, whichUnit)
+        call TimerStart(restedTimer, duration, false, function EXP_OnRestedExpired)
+
+        if not alreadyRested then
+            call DisplayTextToPlayer(GetOwningPlayer(whichUnit), 0.00, 0.00, "|cffffcc00" + GetHeroProperName(whichUnit) + "|r is now |cff00ff00Rested|r.")
+        endif
+
+        set restedTimer = null
+    endfunction
+
+    public function GrantRested takes unit whichUnit returns nothing
+        call GrantRestedTimed(whichUnit, EXP_RESTED_DURATION)
     endfunction
 
     public function AddRestingProgress takes unit whichUnit, real seconds, real requiredSeconds returns boolean
@@ -292,7 +328,7 @@ library Experience initializer Init requires UnitDeathEvent
         local real last
         local real progress
 
-        if key == 0 or not EXP_IsAliveHero(whichUnit) or IsRested(whichUnit) or LoadBoolean(EXP_Hash, key, EXP_KEY_RESTED_PENDING) then
+        if key == 0 or not EXP_IsAliveHero(whichUnit) or IsRested(whichUnit) then
             return false
         endif
 
@@ -334,6 +370,34 @@ library Experience initializer Init requires UnitDeathEvent
         call SaveInteger(EXP_Hash, key, EXP_KEY_SEEN_HERO_XP, 1)
     endfunction
 
+    private function EXP_ShowBonusXPText takes unit whichHero, integer amount returns nothing
+        local texttag tag = null
+        local player owner = null
+
+        if whichHero == null or amount <= 0 then
+            return
+        endif
+
+        set owner = GetOwningPlayer(whichHero)
+        set tag = CreateTextTag()
+        call SetTextTagPermanent(tag, false)
+        call SetTextTagLifespan(tag, EXP_BONUS_TEXT_LIFESPAN)
+        call SetTextTagFadepoint(tag, EXP_BONUS_TEXT_FADEPOINT)
+        call SetTextTagText(tag, "|cff7ebff1+" + I2S(amount) + " Bonus XP|r", EXP_BONUS_TEXT_SIZE)
+        call SetTextTagPos(tag, GetUnitX(whichHero), GetUnitY(whichHero) + EXP_BONUS_TEXT_Y_OFFSET, EXP_BONUS_TEXT_Z_OFFSET)
+        call SetTextTagColor(tag, 126, 191, 241, 255)
+        call SetTextTagVelocity(tag, 0.00, 0.035)
+
+        if GetLocalPlayer() == owner then
+            call SetTextTagVisibility(tag, true)
+        else
+            call SetTextTagVisibility(tag, false)
+        endif
+
+        set owner = null
+        set tag = null
+    endfunction
+
     private function EXP_ApplyHeroBonusFromCurrentXP takes unit whichHero returns nothing
         local integer key = EXP_GetUnitKey(whichHero)
         local integer oldXp
@@ -359,8 +423,8 @@ library Experience initializer Init requires UnitDeathEvent
             if extraMultiplier > 0.00 then
                 set extraGain = R2I(I2R(baseGain) * extraMultiplier + 0.50)
                 if extraGain > 0 then
-                    call AddHeroXP(whichHero, extraGain, true)
-                    call DisplayTextToPlayer(GetOwningPlayer(whichHero), 0.00, 0.00, "|cff7ebff1Bonus XP:|r " + I2S(extraGain))
+                    call AddHeroXP(whichHero, extraGain, false)
+                    call EXP_ShowBonusXPText(whichHero, extraGain)
                     set currentXp = GetHeroXP(whichHero)
                 endif
             endif
