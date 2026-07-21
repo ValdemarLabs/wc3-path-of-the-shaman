@@ -12,7 +12,7 @@
     Credits:
 
     How to install:
-    Import after Experience. Disable the old GUI triggers under
+    Import after Experience, Events, and UnitDeathEvent. Disable the old GUI triggers under
     Leveling/_oldGUI/Base Camp after importing.
 
     API:
@@ -23,7 +23,7 @@
       start time skipping and rested progress.
 
 **/
-library BaseCamp initializer Init requires Experience, optional HintsUI
+library BaseCamp initializer Init requires Experience, Events, UnitDeathEvent, optional HintsUI
     globals
         // Object data configuration.
         public constant integer TENT_UNIT_ID = 'n643'
@@ -35,8 +35,6 @@ library BaseCamp initializer Init requires Experience, optional HintsUI
         private constant integer BC_DEATH_ANIMATION_UNIT_ID = 'otrb'
         private constant integer BC_MAX_TENTS = 64
         private constant integer BC_MAX_REST_RECORDS = 128
-        private constant integer BC_MAX_PLAYER_INDEX = 27
-
         private constant integer BC_KEY_SLEEP_HIDDEN = 1
         private constant integer BC_KEY_SLEEP_WAS_PAUSED = 2
         private constant integer BC_KEY_SLEEP_WAS_HIDDEN = 3
@@ -61,11 +59,6 @@ library BaseCamp initializer Init requires Experience, optional HintsUI
         private integer BC_RestCount = 0
 
         private timer BC_RestTimer = null
-        private trigger BC_LoadTrigger = null
-        private trigger BC_SpellChannelTrigger = null
-        private trigger BC_SpellEffectTrigger = null
-        private trigger BC_ConstructTrigger = null
-        private trigger BC_DeathTrigger = null
         private hashtable BC_Hash = null
         private rect BC_ItemSearchRect = null
         private real BC_ItemSearchX = 0.00
@@ -517,39 +510,15 @@ library BaseCamp initializer Init requires Experience, optional HintsUI
         set tent = null
     endfunction
 
-    private function BC_RegisterPlayerUnitEvents takes trigger whichTrigger, playerunitevent whichEvent returns nothing
-        local integer playerIndex = 0
-
-        loop
-            exitwhen playerIndex > BC_MAX_PLAYER_INDEX
-            call TriggerRegisterPlayerUnitEvent(whichTrigger, Player(playerIndex), whichEvent, null)
-            set playerIndex = playerIndex + 1
-        endloop
-    endfunction
-
     private function Init takes nothing returns nothing
         set BC_Hash = InitHashtable()
         set BC_RestTimer = CreateTimer()
         set BC_ItemSearchRect = Rect(0.00, 0.00, 0.00, 0.00)
 
-        set BC_LoadTrigger = CreateTrigger()
-        call BC_RegisterPlayerUnitEvents(BC_LoadTrigger, EVENT_PLAYER_UNIT_LOADED)
-        call TriggerAddAction(BC_LoadTrigger, function BC_OnLoaded)
-
-        set BC_ConstructTrigger = CreateTrigger()
-        call BC_RegisterPlayerUnitEvents(BC_ConstructTrigger, EVENT_PLAYER_UNIT_CONSTRUCT_FINISH)
-        call TriggerAddAction(BC_ConstructTrigger, function BC_OnConstructFinish)
-
-        set BC_DeathTrigger = CreateTrigger()
-        call BC_RegisterPlayerUnitEvents(BC_DeathTrigger, EVENT_PLAYER_UNIT_DEATH)
-        call TriggerAddAction(BC_DeathTrigger, function BC_OnDeath)
-
-        set BC_SpellChannelTrigger = CreateTrigger()
-        call BC_RegisterPlayerUnitEvents(BC_SpellChannelTrigger, EVENT_PLAYER_UNIT_SPELL_CHANNEL)
-        call TriggerAddAction(BC_SpellChannelTrigger, function BC_OnSpellChannel)
-
-        set BC_SpellEffectTrigger = CreateTrigger()
-        call BC_RegisterPlayerUnitEvents(BC_SpellEffectTrigger, EVENT_PLAYER_UNIT_SPELL_EFFECT)
-        call TriggerAddAction(BC_SpellEffectTrigger, function BC_OnSpellEffect)
+        call Events_RegisterPlayerUnitEvent(function BC_OnLoaded, EVENT_PLAYER_UNIT_LOADED)
+        call Events_RegisterPlayerUnitEvent(function BC_OnConstructFinish, EVENT_PLAYER_UNIT_CONSTRUCT_FINISH)
+        call UnitDeathEvent_Register(function BC_OnDeath)
+        call Events_RegisterPlayerUnitEvent(function BC_OnSpellChannel, EVENT_PLAYER_UNIT_SPELL_CHANNEL)
+        call Events_RegisterPlayerUnitEvent(function BC_OnSpellEffect, EVENT_PLAYER_UNIT_SPELL_EFFECT)
     endfunction
 endlibrary
