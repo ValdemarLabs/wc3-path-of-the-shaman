@@ -1,4 +1,4 @@
-library UnitStats initializer Init requires Table, TimerUtils, optional UnitIndexer
+library UnitStats initializer Init requires Table, TimerUtils, Events, optional UnitIndexer
 
 /*
     UnitStats 1.0 - Optimized Event-Driven Version
@@ -23,13 +23,12 @@ library UnitStats initializer Init requires Table, TimerUtils, optional UnitInde
     
     How it works:
     - Pre-placed units scanned once at map start (2 second delay)
-    - For spawned units, call UnitStats_ProcessUnit(unit) from your spawn trigger
+    - For spawned units, the centralized Events unit-enter hook calls UnitStats_ProcessUnit(unit)
     - Uses Table for O(1) lookup performance
     - One-time stat application per ability
     
     Integration:
-    Add this to your "Unit Enters Playable Map Area" trigger:
-        Custom script: call UnitStats_ProcessUnit(GetTriggerUnit())
+    Registered automatically through the centralized Events unit-enter hook.
     
     API Functions:
     - UnitStats_ProcessUnit(unit)     - Process a unit's stats (safe to call multiple times)
@@ -774,6 +773,10 @@ function UnitStats_ProcessUnit takes unit u returns nothing
     call ProcessUnitStatsOnce(u)
 endfunction
 
+private function OnUnitEnter takes nothing returns nothing
+    call UnitStats_ProcessUnit(GetTriggerUnit())
+endfunction
+
 //===================== HERO ITEM STAT PROCESSING =====================
 
 /**
@@ -1120,9 +1123,6 @@ endfunction
  * To process units, call UnitStats_ProcessUnit from your spawn trigger
  */
 private function Init takes nothing returns nothing
-    local trigger pickupTrig
-    local trigger dropTrig
-    
     // Create tables
     set dodgeApplied = Table.create()
     set critApplied  = Table.create()
@@ -1133,13 +1133,10 @@ private function Init takes nothing returns nothing
     set processedUnits = Table.create()
     set timerHeroData = Table.create()
     
-    // Register hero item pickup/drop events
-    set pickupTrig = CreateTrigger()
-    set dropTrig = CreateTrigger()
-    call TriggerRegisterAnyUnitEventBJ(pickupTrig, EVENT_PLAYER_UNIT_PICKUP_ITEM)
-    call TriggerRegisterAnyUnitEventBJ(dropTrig, EVENT_PLAYER_UNIT_DROP_ITEM)
-    call TriggerAddAction(pickupTrig, function OnHeroPickupItem)
-    call TriggerAddAction(dropTrig, function OnHeroDropItem)
+    // Register shared events through the centralized dispatcher.
+    call Events_RegisterUnitEnter(function OnUnitEnter)
+    call Events_RegisterPlayerUnitEvent(function OnHeroPickupItem, EVENT_PLAYER_UNIT_PICKUP_ITEM)
+    call Events_RegisterPlayerUnitEvent(function OnHeroDropItem, EVENT_PLAYER_UNIT_DROP_ITEM)
     
     // Perform ONE-TIME initial scan for pre-placed units after short delay
     call TimerStart(CreateTimer(), INITIAL_SCAN_DELAY, false, function UnitStats_InitialScan)
