@@ -1,0 +1,18 @@
+Init 07 Unit Event Enters
+    Events
+        Unit - A unit enters (Playable map area)
+    Conditions
+    Actions
+        -------- === CRITICAL!!! === --------
+        -------- Absolutely only use this trigger to Run this event related triggers! --------
+        -------- === EVENTS --------
+        -------- ------------------  Creep Respawn System --------
+        Custom script:   call CreepRespawn_OnUnitEnter(GetTriggerUnit())
+        -------- ------------------ Floating Texts Spell Events --------
+        Trigger - Add to Floating Texts Spell Event <gen> the event (Unit - (Triggering unit) Starts the effect of an ability)
+        -------- ------------------ UnitStats -system --------
+        Custom script:   call UnitStats_ProcessUnit(GetTriggerUnit())
+        -------- ------------------ Resource Rage System --------
+        Custom script:   call ResourceRage_OnUnitEnter(GetTriggerUnit())
+        -------- ------------------ Resource Energy System --------
+        Custom script:   call ResourceEnergy_OnUnitEnter(GetTriggerUnit())
