@@ -125,6 +125,8 @@ private function MUI_HideAllPanels takes nothing returns nothing
     call ExecuteFunc("ReputationUI_Hide")
     call ExecuteFunc("StatsUI_Hide")
     call ExecuteFunc("AbilitiesLiteUI_Hide")
+    call ExecuteFunc("AbilitiesUI_Hide")
+    call ExecuteFunc("TalentsUI_Hide")
     call ExecuteFunc("CameraUI_Hide")
     call ExecuteFunc("HintsUI_Hide")
     call ExecuteFunc("AchievementsUI_Hide")
