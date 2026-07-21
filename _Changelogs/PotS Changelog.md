@@ -47,6 +47,10 @@
   - Reserved profession jobs now hold normal AI side actions until the craft starts/finishes.
   - AI-started crafting is cancelled and backed off when nearby combat appears, so combat behavior can take over cleanly.
 
+- `Preload/PreloadAbilities.j`
+  - Consolidated the duplicate ability preloader into the `Preload` folder and removed the stale `InitRelated/PreloadAbilities.j` copy.
+  - Kept the missing Craft (Fake Cast) preload rawcode `A6DY` while consolidating.
+
 
 ## [20.7.2026]
 
@@ -112,7 +116,7 @@
   - Camp fire/tent build channeling is blocked while the builder is in combat, using `HintsUI` when available.
   - Kept legacy wrappers `AddCampfire`, `RemoveCampfire`, and `InitCampFireBuffSystem` for compatibility with older calls.
 
-- `InitRelated/PreloadAbilities.j` and `Preload/PreloadAbilities.j`
+- `Preload/PreloadAbilities.j`
   - Added preloading for Sleep (`A0F2`), Build Camp Fire (`A61P`), Rested (`S000`), and Warmth abilities (`S600`, `A02W`, `A02Y`) alongside tent build/dismantle abilities.
 
 - `UnitSystems/UnitExperience3.j`
@@ -278,7 +282,7 @@
   - Added a direct profession sound playback helper for player crafting and kept station-attached 3D playback for AI/station feedback.
   - Added central feedback sound channel/volume configuration for mining and profession sounds.
 
-- `InitRelated/PreloadAbilities.j`
+- `Preload/PreloadAbilities.j`
   - Added `A6DY` to ability preloading for the shared Craft (Fake Cast) behavior.
 
 - `UI/ProfessionsUI.j`
