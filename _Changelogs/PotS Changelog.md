@@ -33,6 +33,7 @@
   - Talent details now show preview rank text, missing requirement text, tree points, available points, and pending point status.
   - Players can add pending ranks, remove pending ranks, confirm pending talents, cancel pending changes, and reset talents.
   - Talent effects only apply after Confirm; ability scripts still read confirmed talent ranks.
+  - Talent points are primarily earned from hero level-ups: 1 talent point per qualifying player hero level from level 10 onward.
 
 ### Technical Updates
 
@@ -73,6 +74,8 @@
   - Kept `Talents_GetTalentRank` confirmed-only so ability scripts never read unconfirmed UI preview ranks.
   - Added preview APIs for UI point totals, tree-spent totals, rank text, info text, and body text.
   - Added requirement/failure text APIs so UI and click feedback use the same backend requirement messages.
+  - Added a stored level-earned talent point pool, level-up awarding, and `Talents_SyncLevelPoints` for load/import catch-up.
+  - Talent level-up awarding uses `Events.j` when available, falls back to its own player hero level trigger otherwise, and respects `AbilityPoints_IsHeroLevelUpEnabled` when `AbilityPoints.j` is imported.
   - Added reusable effect helper APIs for ability scripts:
     - `Talents_GetDamageBonusPercent`
     - `Talents_ApplyDamageBonus`
