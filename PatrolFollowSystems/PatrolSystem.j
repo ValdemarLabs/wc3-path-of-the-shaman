@@ -1,4 +1,4 @@
-library PatrolSystem initializer Init requires UnitDeathEvent
+library PatrolSystem initializer Init requires Events, UnitDeathEvent
 //===========================================================================
 /*
     PatrolSystem
@@ -106,7 +106,6 @@ globals
     constant integer PATROL_STYLE_LOOP = 0
     constant integer PATROL_STYLE_PINGPONG = 1
 
-    private trigger orderTrig
     private trigger damageTrig
     
     // Group patrol tracking
@@ -1689,11 +1688,9 @@ endfunction
 
 private function Init takes nothing returns nothing
     // Orders (any type)
-    set orderTrig = CreateTrigger()
-    call TriggerRegisterAnyUnitEventBJ(orderTrig, EVENT_PLAYER_UNIT_ISSUED_ORDER)
-    call TriggerRegisterAnyUnitEventBJ(orderTrig, EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER)
-    call TriggerRegisterAnyUnitEventBJ(orderTrig, EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER)
-    call TriggerAddAction(orderTrig, function OnIssuedOrder)
+    call Events_RegisterPlayerUnitEvent(function OnIssuedOrder, EVENT_PLAYER_UNIT_ISSUED_ORDER)
+    call Events_RegisterPlayerUnitEvent(function OnIssuedOrder, EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER)
+    call Events_RegisterPlayerUnitEvent(function OnIssuedOrder, EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER)
 
     // Register with centralized death event system
     call UnitDeathEvent_Register(function OnDeath)
