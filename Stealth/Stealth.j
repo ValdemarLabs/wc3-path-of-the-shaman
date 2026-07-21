@@ -1,6 +1,6 @@
 //TESH.scrollpos=0
 //TESH.alwaysfold=0
-library Stealth initializer Init
+library Stealth initializer Init requires Events
 // A useful expansion to the existing "windwalk" ability:
 //  The caster can only stealth when enemies aren't near
 //  Enemies can detect the unit when they come close enough
@@ -179,14 +179,10 @@ endfunction
 
 private function Init takes nothing returns nothing
     local trigger t = CreateTrigger()
-    local integer i = 0
     set bool = Condition( function EnemiesOnly)
     call TriggerAddCondition(t,Condition(function data.Cast))
-    loop
-        call TriggerRegisterPlayerUnitEvent(t, Player(i), EVENT_PLAYER_UNIT_SPELL_EFFECT, null)
-        set i = i + 1
-        exitwhen i == bj_MAX_PLAYER_SLOTS
-    endloop
+    call Events_RegisterPlayerUnitTrigger(t, EVENT_PLAYER_UNIT_SPELL_EFFECT)
+    set t = null
 endfunction
 
 endlibrary
