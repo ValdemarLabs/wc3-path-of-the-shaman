@@ -13,17 +13,16 @@
     - Old GUI Totemic Abilities triggers
 
     How to install:
-    Requires `Table` and `DamageEngine`.
+    Requires `Table`, `DamageEngine`, `Events`, and `UnitDeathEvent`.
 
     API:
     call Totems_CanCast(unit caster, integer abilityId)
     call Totems_GetLiveTotem(unit caster, integer abilityId)
 
 **/
-library Totems initializer Init requires Table, DamageEngine
+library Totems initializer Init requires Table, DamageEngine, Events, UnitDeathEvent
 
 globals
-    private constant integer MAX_PLAYER_INDEX = 27
     private constant integer MAX_ACTIVE_TOTEMS = 512
     private constant integer MAX_SKYFURY_TARGETS = 512
 
@@ -105,10 +104,6 @@ globals
     private Table SkyfuryTracked = 0
     private Table SkyfuryTargetIndexByHandle = 0
 
-    private trigger SpellEffectTrigger = null
-    private trigger SpellFinishTrigger = null
-    private trigger AttackTrigger = null
-    private trigger DeathTrigger = null
     private timer PeriodicTimer = null
     private group EnumGroup = null
 
@@ -136,15 +131,6 @@ private function EnsureState takes nothing returns nothing
         set SkyfuryTargetIndexByHandle = Table.create()
         set EnumGroup = CreateGroup()
     endif
-endfunction
-
-private function RegisterPlayerUnitEventAll takes trigger whichTrigger, playerunitevent whichEvent returns nothing
-    local integer playerIndex = 0
-    loop
-        call TriggerRegisterPlayerUnitEvent(whichTrigger, Player(playerIndex), whichEvent, null)
-        set playerIndex = playerIndex + 1
-        exitwhen playerIndex > MAX_PLAYER_INDEX
-    endloop
 endfunction
 
 private function IsAliveUnit takes unit whichUnit returns boolean
@@ -840,21 +826,10 @@ endfunction
 private function Init takes nothing returns nothing
     call EnsureState()
 
-    set SpellEffectTrigger = CreateTrigger()
-    call RegisterPlayerUnitEventAll(SpellEffectTrigger, EVENT_PLAYER_UNIT_SPELL_EFFECT)
-    call TriggerAddAction(SpellEffectTrigger, function HandleSpellEffect)
-
-    set SpellFinishTrigger = CreateTrigger()
-    call RegisterPlayerUnitEventAll(SpellFinishTrigger, EVENT_PLAYER_UNIT_SPELL_FINISH)
-    call TriggerAddAction(SpellFinishTrigger, function HandleSpellFinish)
-
-    set AttackTrigger = CreateTrigger()
-    call RegisterPlayerUnitEventAll(AttackTrigger, EVENT_PLAYER_UNIT_ATTACKED)
-    call TriggerAddAction(AttackTrigger, function HandleAttack)
-
-    set DeathTrigger = CreateTrigger()
-    call RegisterPlayerUnitEventAll(DeathTrigger, EVENT_PLAYER_UNIT_DEATH)
-    call TriggerAddAction(DeathTrigger, function HandleDeath)
+    call Events_RegisterPlayerUnitEvent(function HandleSpellEffect, EVENT_PLAYER_UNIT_SPELL_EFFECT)
+    call Events_RegisterPlayerUnitEvent(function HandleSpellFinish, EVENT_PLAYER_UNIT_SPELL_FINISH)
+    call Events_RegisterPlayerUnitEvent(function HandleAttack, EVENT_PLAYER_UNIT_ATTACKED)
+    call UnitDeathEvent_Register(function HandleDeath)
 
     set PeriodicTimer = CreateTimer()
     call TimerStart(PeriodicTimer, TOTEM_PERIOD, true, function TickTotems)
