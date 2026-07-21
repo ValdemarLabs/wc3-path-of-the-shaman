@@ -79,9 +79,9 @@ library Interface initializer AutoInit
         public constant integer EVENT_QUEST_WRITE = 28
         public constant integer EVENT_LOOT_COIN = 29
         public constant integer EVENT_HARD_WARNING = 30
+        public constant integer EVENT_TRADESKILL_HERB_PICK = 31
 
-        private constant integer IUI_EVENT_MAX = 30
-        private constant integer IUI_FEEDBACK_SOUND_CHANNEL = 5
+        private constant integer IUI_EVENT_MAX = 31
         private constant integer IUI_FEEDBACK_SOUND_VOLUME = 127
         private constant real IUI_SOUND_UNIT_Z = 64.00
         private constant real IUI_MINING_SOUND_CUTOFF = 1000.00
@@ -166,7 +166,6 @@ library Interface initializer AutoInit
 
     private function IUI_ApplyFeedbackSound takes sound whichSound returns nothing
         if whichSound != null then
-            call SetSoundChannel(whichSound, IUI_FEEDBACK_SOUND_CHANNEL)
             call SetSoundVolume(whichSound, IUI_FEEDBACK_SOUND_VOLUME)
         endif
     endfunction
@@ -374,6 +373,7 @@ library Interface initializer AutoInit
         set IUI_EventSound[EVENT_QUEST_WRITE] = gg_snd_Interface_QuestWrite                     // gg_snd_Interface_QuestWrite
         set IUI_EventSound[EVENT_LOOT_COIN] = gg_snd_Interface_LootCoin                         // gg_snd_Interface_LootCoin
         set IUI_EventSound[EVENT_HARD_WARNING] = gg_snd_Interface_HardWarning                   // gg_snd_Interface_HardWarning
+        set IUI_EventSound[EVENT_TRADESKILL_HERB_PICK] = gg_snd_Tradeskill_HerbPick             // gg_snd_Tradeskill_HerbPick
 
         set Profession_Alchemy_Start = gg_snd_CauldronSound
         set Profession_Alchemy_Loop = gg_snd_CauldronSound
@@ -547,6 +547,10 @@ library Interface initializer AutoInit
 
     public function NotifyMiningHitOnUnit takes unit whichUnit returns nothing
         call IUI_PlayEventOnUnit(EVENT_TRADESKILL_MINING_HIT_A + GetRandomInt(0, 4), whichUnit)
+    endfunction
+
+    public function NotifyHerbPickOnUnit takes unit whichUnit returns nothing
+        call IUI_PlayEventOnUnit(EVENT_TRADESKILL_HERB_PICK, whichUnit)
     endfunction
 
     public function Init takes nothing returns nothing
