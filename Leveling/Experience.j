@@ -12,7 +12,7 @@
     Credits:
 
     How to install:
-    Import after UnitDeathEvent and before systems that call the public API.
+    Import after Events and UnitDeathEvent, before systems that call the public API.
     Disable the old GUI triggers under Leveling/_oldGUI/Experience Rested and
     Leveling/_oldGUI/Leveling System/Rested Experience after importing.
 
@@ -31,7 +31,7 @@
     - if Experience_IsRested(hero) then
 
 **/
-library Experience initializer Init requires UnitDeathEvent
+library Experience initializer Init requires Events, UnitDeathEvent
     globals
         // Object ids used by the rested/warmth object data.
         public constant integer BUFF_RESTED = 'S000'
@@ -39,8 +39,6 @@ library Experience initializer Init requires UnitDeathEvent
 
         private constant integer EXP_BONUS_ITEM_CROWN_OF_KINGS = 'ckng'
         private constant integer EXP_MAX_BONUS_ITEMS = 32
-        private constant integer EXP_MAX_PLAYER_INDEX = 27
-
         private constant integer EXP_KEY_BONUS = 1
         private constant integer EXP_KEY_PROGRESS = 2
         private constant integer EXP_KEY_LAST_PROGRESS = 3
@@ -62,8 +60,6 @@ library Experience initializer Init requires UnitDeathEvent
 
         private hashtable EXP_Hash = null
         private timer EXP_GameTimer = null
-        private trigger EXP_ItemTrigger = null
-
         private integer array EXP_BonusItemId
         private real array EXP_BonusItemAmount
         private integer EXP_BonusItemCount = 0
@@ -442,7 +438,7 @@ library Experience initializer Init requires UnitDeathEvent
         call EXP_ApplyHeroBonusFromCurrentXP(udg_Zulkis)
     endfunction
 
-    private function EXP_OnItemEvent takes nothing returns nothing
+    private function EXP_ApplyItemBonus takes real multiplier returns nothing
         local unit hero = GetTriggerUnit()
         local item manipulatedItem = GetManipulatedItem()
         local real bonus = 0.00
@@ -450,16 +446,20 @@ library Experience initializer Init requires UnitDeathEvent
         if hero != null and manipulatedItem != null then
             set bonus = EXP_GetRegisteredItemBonus(GetItemTypeId(manipulatedItem))
             if bonus != 0.00 then
-                if GetTriggerEventId() == EVENT_PLAYER_UNIT_PICKUP_ITEM then
-                    call AddBonusMultiplier(hero, bonus)
-                elseif GetTriggerEventId() == EVENT_PLAYER_UNIT_DROP_ITEM then
-                    call AddBonusMultiplier(hero, -bonus)
-                endif
+                call AddBonusMultiplier(hero, bonus * multiplier)
             endif
         endif
 
         set manipulatedItem = null
         set hero = null
+    endfunction
+
+    private function EXP_OnItemPickup takes nothing returns nothing
+        call EXP_ApplyItemBonus(1.00)
+    endfunction
+
+    private function EXP_OnItemDrop takes nothing returns nothing
+        call EXP_ApplyItemBonus(-1.00)
     endfunction
 
     private function EXP_DelayedStart takes nothing returns nothing
@@ -475,16 +475,8 @@ library Experience initializer Init requires UnitDeathEvent
     endfunction
 
     private function EXP_RegisterItemEvents takes nothing returns nothing
-        local integer playerIndex = 0
-
-        set EXP_ItemTrigger = CreateTrigger()
-        loop
-            exitwhen playerIndex > EXP_MAX_PLAYER_INDEX
-            call TriggerRegisterPlayerUnitEvent(EXP_ItemTrigger, Player(playerIndex), EVENT_PLAYER_UNIT_PICKUP_ITEM, null)
-            call TriggerRegisterPlayerUnitEvent(EXP_ItemTrigger, Player(playerIndex), EVENT_PLAYER_UNIT_DROP_ITEM, null)
-            set playerIndex = playerIndex + 1
-        endloop
-        call TriggerAddAction(EXP_ItemTrigger, function EXP_OnItemEvent)
+        call Events_RegisterPlayerUnitEvent(function EXP_OnItemPickup, EVENT_PLAYER_UNIT_PICKUP_ITEM)
+        call Events_RegisterPlayerUnitEvent(function EXP_OnItemDrop, EVENT_PLAYER_UNIT_DROP_ITEM)
     endfunction
 
     private function Init takes nothing returns nothing
