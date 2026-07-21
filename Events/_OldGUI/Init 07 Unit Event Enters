@@ -1,15 +1,19 @@
 Init 07 Unit Event Enters
+    Migrated
+        Use JASS library Events (Events/Events.j) instead.
+        Do not recreate this GUI playable-map enter trigger.
     Events
         Unit - A unit enters (Playable map area)
     Conditions
     Actions
         -------- === CRITICAL!!! === --------
-        -------- Absolutely only use this trigger to Run this event related triggers! --------
+        -------- Deprecated: Events.j is now the only central dispatcher for this map-enter event. --------
         -------- === EVENTS --------
         -------- ------------------  Creep Respawn System --------
         Custom script:   call CreepRespawn_OnUnitEnter(GetTriggerUnit())
         -------- ------------------ Floating Texts Spell Events --------
-        Trigger - Add to Floating Texts Spell Event <gen> the event (Unit - (Triggering unit) Starts the effect of an ability)
+        -------- If this GUI trigger is still used, register it once at map init instead: --------
+        Custom script:   call Events_RegisterPlayerUnitTrigger(gg_trg_Floating_Texts_Spell_Event, EVENT_PLAYER_UNIT_SPELL_EFFECT)
         -------- ------------------ UnitStats -system --------
         Custom script:   call UnitStats_ProcessUnit(GetTriggerUnit())
         -------- ------------------ Resource Rage System --------
