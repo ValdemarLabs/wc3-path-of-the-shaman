@@ -36,14 +36,15 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
         private constant integer ATD_CINEMATIC_MOVE_MODE = 1
         private constant real ATD_CINEMATIC_MOVE_OFFSET = 256.00
         private constant real ATD_CINEMATIC_MOVE_ANGLE = 210.00
-        private constant real ATD_CAMERA_DIST = 1050.00
-        private constant real ATD_CAMERA_Z_OFFSET = 20.00
-        private constant real ATD_CAMERA_ANGLE = 350.00
+        private constant real ATD_CAMERA_DIST = 950.00
+        private constant real ATD_CAMERA_Z_OFFSET = 40.00
+        private constant real ATD_CAMERA_ANGLE = 328.00
         private constant real ATD_CAMERA_ROT_OFFSET = 180.00
         private constant real ATD_CAMERA_FAR_Z = 10000.00
         private constant real ATD_CAMERA_FOV = 60.00
         private constant real ATD_CAMERA_BLOCK_RADIUS = 0.00
         private constant boolean ATD_CAMERA_BLOCK_CHECK = true
+        private constant real ATD_CAMERA_RESET_TIME = 0.75
 
         private constant integer ATD_ACTION_LEARN = 1
         private constant integer ATD_ACTION_FAREWELL = 2
@@ -161,17 +162,35 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
         return seq
     endfunction
 
+    private function ATD_EndTrainerDialog takes boolean startCooldown returns nothing
+        local unit hero = ATD_SelectedHero
+
+        call DialogSystem_ClearEscapeAction()
+        call DialogSystem_HideDialog(ATD_Dialog, Player(0))
+        call DialogSystem_StopDialogCamera(Player(0), ATD_CAMERA_RESET_TIME, ATD_USE_DIALOG_CAMERA)
+        call QuestGiver_EndCinematicSequence(ATD_CINEMATIC)
+
+        if startCooldown then
+            set ATD_DialogCooldown = QuestGiver_StartCooldown(ATD_DialogCooldown, ATD_DIALOG_COOLDOWN)
+        endif
+        if hero != null and QuestGiver_IsUnitAlive(hero) then
+            call ShowUnit(hero, true)
+            call PauseUnit(hero, false)
+            call SelectUnitForPlayerSingle(hero, Player(0))
+        endif
+
+        set hero = null
+    endfunction
+
     private function ATD_OnLearn takes nothing returns nothing
         local unit trainer = ATD_SelectedTrainer
         local unit hero = ATD_SelectedHero
 
         call DialogSystem_ClearEscapeAction()
         call DialogSystem_HideDialog(ATD_Dialog, Player(0))
-        call DialogSystem_StopDialogCamera(Player(0), 1.00, ATD_USE_DIALOG_CAMERA)
-        call QuestGiver_EndCinematicSequence(ATD_CINEMATIC)
-        set ATD_DialogCooldown = QuestGiver_StartCooldown(ATD_DialogCooldown, ATD_DIALOG_COOLDOWN)
 
         if trainer != null and hero != null then
+            call ShowUnit(hero, true)
             call AbilitiesUI_ShowForTrainer(trainer, hero)
         endif
 
@@ -180,16 +199,14 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
     endfunction
 
     private function ATD_OnFarewellEnd takes nothing returns nothing
-        call QuestGiver_StartConfiguredDialogExitTransition(ATD_SelectedTrainer, ATD_SelectedHero, ATD_DialogCooldown, ATD_DIALOG_COOLDOWN, ATD_USE_DIALOG_CAMERA, ATD_CINEMATIC)
+        call ATD_EndTrainerDialog(true)
     endfunction
 
     private function ATD_OnFarewell takes nothing returns nothing
         local integer seq
 
         if not ATD_IsSelectedContextValid() then
-            call DialogSystem_HideDialog(ATD_Dialog, Player(0))
-            call DialogSystem_StopDialogCamera(Player(0), 1.00, ATD_USE_DIALOG_CAMERA)
-            call QuestGiver_EndCinematicSequence(ATD_CINEMATIC)
+            call ATD_EndTrainerDialog(true)
             return
         endif
 
@@ -228,12 +245,24 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
         set b = null
     endfunction
 
+    public function ReopenFromAbilitiesUI takes nothing returns nothing
+        if not ATD_IsSelectedContextValid() then
+            call ATD_EndTrainerDialog(false)
+            return
+        endif
+
+        call ATD_BuildDialog()
+        call QuestGiver_BeginCinematicSequence(ATD_CINEMATIC)
+        call QuestGiver_StartConfiguredDialogCamera(Player(0), ATD_SelectedTrainer, ATD_USE_DIALOG_CAMERA)
+        call DialogSystem_SetContext(ATD_SelectedTrainer, Player(0))
+        call DialogSystem_ShowDialog(ATD_Dialog, Player(0))
+    endfunction
+
     private function ATD_ShowDialogForSelection takes nothing returns nothing
         local integer seq
 
         if not ATD_IsSelectedContextValid() then
-            call DialogSystem_StopDialogCamera(Player(0), 1.00, ATD_USE_DIALOG_CAMERA)
-            call QuestGiver_EndCinematicSequence(ATD_CINEMATIC)
+            call ATD_EndTrainerDialog(false)
             return
         endif
 
@@ -268,7 +297,7 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
 
         set ATD_SelectedTrainer = trainer
         set ATD_SelectedHero = hero
-        call QuestGiver_StartConfiguredDialogEntryTransition(trainer, hero, true, ATD_USE_DIALOG_CAMERA, ATD_CINEMATIC, "AbilityTrainerDialogs_ContinueToDialogAfterSelection")
+        call QuestGiver_StartConfiguredDialogEntryTransition(trainer, hero, false, ATD_USE_DIALOG_CAMERA, ATD_CINEMATIC, "AbilityTrainerDialogs_ContinueToDialogAfterSelection")
 
         set trainer = null
         set hero = null
