@@ -16,6 +16,8 @@
 
     API:
     - set ok = Abilities_Learn(hero, entryIndex)
+    - set ok = Abilities_GrantQuestEntry(hero, entryIndex)
+    - set ok = Abilities_GrantQuestAbility(hero, abilityId)
     - set canLearn = Abilities_CanLearn(hero, entryIndex)
     - set level = Abilities_GetEntryLevel(hero, entryIndex)
     - set text = Abilities_GetEntryStateText(hero, entryIndex)
@@ -32,6 +34,7 @@ library Abilities initializer Init requires AbilitiesPlayer, AbilityPoints, opti
         public constant integer RESULT_MAX_LEVEL = 4
         public constant integer RESULT_REQUIREMENT = 5
         public constant integer RESULT_HAS_SPECIALIZATION = 6
+        public constant integer RESULT_QUEST_LOCKED = 7
 
         private integer AB_LastResult = RESULT_OK
     endglobals
@@ -152,8 +155,40 @@ library Abilities initializer Init requires AbilitiesPlayer, AbilityPoints, opti
         if not AB_HasEntryRequirement(hero, entryIndex) then
             return RESULT_REQUIREMENT
         endif
+        if currentLevel <= 0 and AbilitiesPlayer_IsEntryInitialQuestLocked(entryIndex) then
+            return RESULT_QUEST_LOCKED
+        endif
         if AbilityPoints_Get(hero) < AbilitiesPlayer_GetEntryCost(entryIndex) then
             return RESULT_NOT_ENOUGH_AP
+        endif
+
+        return RESULT_OK
+    endfunction
+
+    private function AB_GetQuestGrantFailureResult takes unit hero, integer entryIndex returns integer
+        local integer currentLevel
+        local integer maxLevel
+
+        if not AB_IsPlayerShamanHero(hero) or not AbilitiesPlayer_IsValidEntry(entryIndex) then
+            return RESULT_INVALID
+        endif
+
+        set currentLevel = AB_GetEntryLevelRaw(hero, entryIndex)
+        set maxLevel = AbilitiesPlayer_GetEntryMaxLevel(entryIndex)
+        if maxLevel <= 0 then
+            return RESULT_INVALID
+        endif
+        if currentLevel > 0 then
+            return RESULT_OK
+        endif
+        if currentLevel >= maxLevel then
+            return RESULT_MAX_LEVEL
+        endif
+        if AbilitiesPlayer_GetEntryKind(entryIndex) == AbilitiesPlayer_ENTRY_SPECIALIZATION and AB_HasOtherSpecialization(hero, entryIndex) then
+            return RESULT_HAS_SPECIALIZATION
+        endif
+        if not AB_HasEntryRequirement(hero, entryIndex) then
+            return RESULT_REQUIREMENT
         endif
 
         return RESULT_OK
@@ -168,6 +203,8 @@ library Abilities initializer Init requires AbilitiesPlayer, AbilityPoints, opti
             return "|cffff8080Requires " + AB_GetRequiredEntryTitle(entryIndex) + ".|r"
         elseif resultCode == RESULT_HAS_SPECIALIZATION then
             return "|cffff8080" + AB_GetHeroDisplayName(hero) + " already has a specialization!|r"
+        elseif resultCode == RESULT_QUEST_LOCKED then
+            return "|cffff8080" + AbilitiesPlayer_GetEntryInitialQuestLockedText(entryIndex) + "|r"
         endif
         return "|cffff8080Unable to learn " + AbilitiesPlayer_GetEntryTitle(entryIndex) + ".|r"
     endfunction
@@ -318,6 +355,8 @@ library Abilities initializer Init requires AbilitiesPlayer, AbilityPoints, opti
             return "|cffff8080Req|r"
         elseif resultCode == RESULT_HAS_SPECIALIZATION then
             return "|cffff8080Locked|r"
+        elseif resultCode == RESULT_QUEST_LOCKED then
+            return "|cffff8080Quest|r"
         endif
 
         if currentLevel > 0 and maxLevel > 1 then
@@ -365,6 +404,8 @@ library Abilities initializer Init requires AbilitiesPlayer, AbilityPoints, opti
             set text = text + " |cff808080-|r |cffff8080Requires " + AB_GetRequiredEntryTitle(entryIndex) + "|r"
         elseif resultCode == RESULT_HAS_SPECIALIZATION then
             set text = text + " |cff808080-|r |cffff8080Specialization already chosen|r"
+        elseif resultCode == RESULT_QUEST_LOCKED then
+            set text = text + " |cff808080-|r |cffff8080" + AbilitiesPlayer_GetEntryInitialQuestLockedText(entryIndex) + "|r"
         endif
 
         return text
@@ -397,6 +438,34 @@ library Abilities initializer Init requires AbilitiesPlayer, AbilityPoints, opti
         endif
 
         return AB_Success(hero, entryIndex, oldLevel)
+    endfunction
+
+    public function GrantQuestEntry takes unit hero, integer entryIndex returns boolean
+        local integer resultCode = AB_GetQuestGrantFailureResult(hero, entryIndex)
+        local integer oldLevel
+
+        if resultCode != RESULT_OK then
+            return AB_Fail(hero, entryIndex, resultCode)
+        endif
+
+        set oldLevel = GetEntryLevel(hero, entryIndex)
+        if oldLevel > 0 then
+            set AB_LastResult = RESULT_OK
+            return true
+        endif
+
+        call AB_AddEntryAbility(hero, entryIndex)
+        return AB_Success(hero, entryIndex, oldLevel)
+    endfunction
+
+    public function GrantQuestAbility takes unit hero, integer abilityId returns boolean
+        local integer entryIndex = AbilitiesPlayer_GetEntryByAbilityId(abilityId)
+
+        if entryIndex == 0 then
+            return AB_Fail(hero, 0, RESULT_INVALID)
+        endif
+
+        return GrantQuestEntry(hero, entryIndex)
     endfunction
 
     public function ResetAbilities takes unit hero returns unit
