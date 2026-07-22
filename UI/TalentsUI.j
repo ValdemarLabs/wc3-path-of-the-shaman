@@ -27,17 +27,15 @@
 library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, AbilitiesPlayer, Interface
     globals
         private constant integer TUI_TREE_BUTTON_COUNT = 4
-        private constant integer TUI_GRID_ROWS = 6
-        private constant integer TUI_GRID_COLUMNS = 5
-        private constant integer TUI_GRID_SLOTS = 30
-        private constant real TUI_TALENT_SIZE = 0.030
-        private constant real TUI_TALENT_GAP_X = 0.024
-        private constant real TUI_TALENT_GAP_Y = 0.014
-        private constant real TUI_TALENT_START_X = 0.032
-        private constant real TUI_TALENT_START_Y = -0.018
+        private constant integer TUI_GRID_ROWS = 8
+        private constant integer TUI_GRID_COLUMNS = 6
+        private constant integer TUI_GRID_SLOTS = 48
+        private constant real TUI_TALENT_SIZE = 0.024
+        private constant real TUI_TALENT_GAP_X = 0.019
+        private constant real TUI_TALENT_GAP_Y = 0.010
+        private constant real TUI_TALENT_START_X = 0.024
+        private constant real TUI_TALENT_START_Y = -0.014
         private constant real TUI_LINK_THICKNESS = 0.005
-        private constant real TUI_HIGHLIGHT_PAD = 0.003
-        private constant real TUI_HIGHLIGHT_THICKNESS = 0.0025
         private constant real TUI_TOOLTIP_WIDTH = 0.235
         private constant real TUI_TOOLTIP_HEIGHT = 0.130
         private constant integer TUI_LINK_LEFT = 1
@@ -69,10 +67,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
         private framehandle array TUI_TalentIcon
         private framehandle array TUI_TalentOverlay
         private framehandle array TUI_TalentRankText
-        private framehandle array TUI_TalentHighlightTop
-        private framehandle array TUI_TalentHighlightBottom
-        private framehandle array TUI_TalentHighlightLeft
-        private framehandle array TUI_TalentHighlightRight
+        private framehandle array TUI_TalentHighlight
         private framehandle array TUI_TalentLinkLeft
         private framehandle array TUI_TalentLinkUp
         private framehandle array TUI_TalentLinkRight
@@ -106,6 +101,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
 
         private string TUI_PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
         private string TUI_DefaultIcon = "ReplaceableTextures\\CommandButtons\\BTNBook_07.blp"
+        private string TUI_TalentHighlightModel = "UI\\Feedback\\Autocast\\UI-ModalButtonOn.mdx"
         private string TUI_LinkActiveTexture = "Textures\\Water00.blp"
         private string TUI_LinkInactiveTexture = "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp"
     endglobals
@@ -182,19 +178,93 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
         return "|cffbfbfbf" + treeName + "|r"
     endfunction
 
+    private function TUI_StripTooltipLevelSuffix takes string titleText returns string
+        local integer index = 0
+        local integer length = StringLength(titleText)
+
+        loop
+            exitwhen index + 3 > length
+            if SubString(titleText, index, index + 3) == " - " then
+                return SubString(titleText, 0, index)
+            endif
+            set index = index + 1
+        endloop
+        return titleText
+    endfunction
+
+    private function TUI_GetRequiredAbilityTitle takes integer abilityId returns string
+        local integer entryIndex = AbilitiesPlayer_GetEntryByAbilityId(abilityId)
+        local string titleText
+
+        if entryIndex != 0 then
+            return AbilitiesPlayer_GetEntryTitle(entryIndex)
+        endif
+        if abilityId != 0 then
+            set titleText = BlzGetAbilityTooltip(abilityId, 0)
+            if titleText != null and titleText != "" then
+                return TUI_StripTooltipLevelSuffix(titleText)
+            endif
+            set titleText = GetObjectName(abilityId)
+            if titleText != null and titleText != "" then
+                return titleText
+            endif
+        endif
+        return "required ability"
+    endfunction
+
+    private function TUI_AppendRequirement takes string requirementText, string nextRequirement returns string
+        if nextRequirement == "" then
+            return requirementText
+        endif
+        if requirementText == "" then
+            return nextRequirement
+        endif
+        return requirementText + "|n" + nextRequirement
+    endfunction
+
+    private function TUI_FormatTalentInfoText takes integer talentIndex returns string
+        local integer treeId = Talents_GetTalentTree(talentIndex)
+        local integer rank = Talents_GetTalentPreviewRank(TUI_SelectedHero, talentIndex)
+        local integer maxRank = Talents_GetTalentMaxRank(talentIndex)
+        local integer requiredTalentId = Talents_GetTalentRequiredTalentId(talentIndex)
+        local integer requiredTalentIndex = 0
+        local string requirements = ""
+
+        if requiredTalentId != 0 then
+            set requiredTalentIndex = Talents_GetTalentIndexById(requiredTalentId)
+            if requiredTalentIndex != 0 then
+                set requirements = TUI_AppendRequirement(requirements, Talents_GetTalentTitle(requiredTalentIndex) + " " + I2S(Talents_GetTalentRequiredTalentRank(talentIndex)) + "/" + I2S(Talents_GetTalentMaxRank(requiredTalentIndex)))
+            endif
+        endif
+        if Talents_GetTalentRequiredTreePoints(talentIndex) > 0 then
+            set requirements = TUI_AppendRequirement(requirements, I2S(Talents_GetTalentRequiredTreePoints(talentIndex)) + " tree pts")
+        endif
+        if Talents_GetTalentRequiredAbilityId(talentIndex) != 0 then
+            set requirements = TUI_AppendRequirement(requirements, TUI_GetRequiredAbilityTitle(Talents_GetTalentRequiredAbilityId(talentIndex)))
+        endif
+
+        if requirements != "" then
+            return AbilitiesPlayer_GetTreeColor(treeId) + AbilitiesPlayer_GetTreeName(treeId) + "|r |cff808080-|r Rank " + I2S(rank) + "/" + I2S(maxRank) + "|n|cffbfbfbfReq " + requirements + "|r"
+        endif
+        return AbilitiesPlayer_GetTreeColor(treeId) + AbilitiesPlayer_GetTreeName(treeId) + "|r |cff808080-|r Rank " + I2S(rank) + "/" + I2S(maxRank)
+    endfunction
+
     private function TUI_FormatRankText takes integer talentIndex returns string
         local integer rank = Talents_GetTalentPreviewRank(TUI_SelectedHero, talentIndex)
         local integer pending = Talents_GetTalentPendingRank(TUI_SelectedHero, talentIndex)
         local integer maxRank = Talents_GetTalentMaxRank(talentIndex)
 
-        if rank >= maxRank then
-            return "|cffffcc00" + I2S(rank) + "|r"
-        elseif pending > 0 then
-            return "|cff80ff80" + I2S(rank) + "|r"
-        elseif rank > 0 then
-            return "|cffffffff" + I2S(rank) + "|r"
+        if maxRank <= 0 then
+            return ""
         endif
-        return ""
+        if rank >= maxRank then
+            return "|cffffcc00" + I2S(rank) + "/" + I2S(maxRank) + "|r"
+        elseif pending > 0 then
+            return "|cff80ff80" + I2S(rank) + "/" + I2S(maxRank) + "|r"
+        elseif rank > 0 then
+            return "|cffffffff" + I2S(rank) + "/" + I2S(maxRank) + "|r"
+        endif
+        return "|cffbfbfbf0/" + I2S(maxRank) + "|r"
     endfunction
 
     private function TUI_GetDetailTalent takes nothing returns integer
@@ -277,7 +347,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
 
         set failureText = Talents_GetAllocateFailureText(TUI_SelectedHero, talentIndex)
         set rankText = "Rank " + I2S(Talents_GetTalentPreviewRank(TUI_SelectedHero, talentIndex)) + "/" + I2S(Talents_GetTalentMaxRank(talentIndex))
-        set tooltipText = "|cffffe4a3" + Talents_GetTalentTitle(talentIndex) + "|r|n" + Talents_GetTalentPreviewInfoText(TUI_SelectedHero, talentIndex)
+        set tooltipText = "|cffffe4a3" + Talents_GetTalentTitle(talentIndex) + "|r|n" + TUI_FormatTalentInfoText(talentIndex)
         if failureText != "" and not Talents_IsTalentPreviewMaxed(TUI_SelectedHero, talentIndex) then
             set tooltipText = tooltipText + "|n|n" + failureText
         endif
@@ -361,10 +431,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
     endfunction
 
     private function TUI_SetTalentHighlightVisible takes integer slotIndex, boolean visible returns nothing
-        call BlzFrameSetVisible(TUI_TalentHighlightTop[slotIndex], visible)
-        call BlzFrameSetVisible(TUI_TalentHighlightBottom[slotIndex], visible)
-        call BlzFrameSetVisible(TUI_TalentHighlightLeft[slotIndex], visible)
-        call BlzFrameSetVisible(TUI_TalentHighlightRight[slotIndex], visible)
+        call BlzFrameSetVisible(TUI_TalentHighlight[slotIndex], visible)
     endfunction
 
     private function TUI_UpdateGrid takes nothing returns nothing
@@ -400,7 +467,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
                     set unavailable = not Talents_CanAllocate(TUI_SelectedHero, talentIndex) and Talents_GetTalentPreviewRank(TUI_SelectedHero, talentIndex) <= 0
                     call BlzFrameSetVisible(TUI_TalentOverlay[slotIndex], unavailable)
 
-                    if talentIndex == TUI_SelectedTalent or Talents_CanAllocate(TUI_SelectedHero, talentIndex) then
+                    if talentIndex == TUI_SelectedTalent then
                         set selected = 1
                     else
                         set selected = 0
@@ -464,7 +531,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
 
         call BlzFrameSetTexture(TUI_DetailIcon, Talents_GetTalentIcon(talentIndex), 0, true)
         call BlzFrameSetText(TUI_DetailTitle, "|cffffe4a3" + Talents_GetTalentTitle(talentIndex) + "|r")
-        call BlzFrameSetText(TUI_DetailInfo, Talents_GetTalentPreviewInfoText(TUI_SelectedHero, talentIndex))
+        call BlzFrameSetText(TUI_DetailInfo, TUI_FormatTalentInfoText(talentIndex))
         call BlzFrameSetText(TUI_DetailBody, Talents_GetTalentPreviewBodyText(TUI_SelectedHero, talentIndex))
         call BlzFrameSetText(TUI_DetailFooter, footerText)
         call BlzFrameSetText(TUI_LearnButton, buttonText)
@@ -671,28 +738,6 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
         endif
     endfunction
 
-    private function TUI_SetupHighlightFrame takes framehandle highlightFrame, framehandle buttonFrame, integer direction returns nothing
-        call BlzFrameSetTexture(highlightFrame, TUI_PanelTexture, 0, false)
-        call BlzFrameSetVertexColor(highlightFrame, BlzConvertColor(230, 32, 255, 88))
-        call BlzFrameSetLevel(highlightFrame, 2)
-        call BlzFrameSetVisible(highlightFrame, false)
-        call BlzFrameSetEnable(highlightFrame, false)
-
-        if direction == TUI_LINK_UP then
-            call BlzFrameSetSize(highlightFrame, TUI_TALENT_SIZE + 2.00 * TUI_HIGHLIGHT_PAD, TUI_HIGHLIGHT_THICKNESS)
-            call BlzFrameSetPoint(highlightFrame, FRAMEPOINT_BOTTOMLEFT, buttonFrame, FRAMEPOINT_TOPLEFT, -TUI_HIGHLIGHT_PAD, TUI_HIGHLIGHT_PAD)
-        elseif direction == TUI_LINK_DOWN then
-            call BlzFrameSetSize(highlightFrame, TUI_TALENT_SIZE + 2.00 * TUI_HIGHLIGHT_PAD, TUI_HIGHLIGHT_THICKNESS)
-            call BlzFrameSetPoint(highlightFrame, FRAMEPOINT_TOPLEFT, buttonFrame, FRAMEPOINT_BOTTOMLEFT, -TUI_HIGHLIGHT_PAD, -TUI_HIGHLIGHT_PAD)
-        elseif direction == TUI_LINK_LEFT then
-            call BlzFrameSetSize(highlightFrame, TUI_HIGHLIGHT_THICKNESS, TUI_TALENT_SIZE + 2.00 * TUI_HIGHLIGHT_PAD)
-            call BlzFrameSetPoint(highlightFrame, FRAMEPOINT_RIGHT, buttonFrame, FRAMEPOINT_LEFT, -TUI_HIGHLIGHT_PAD, 0.00)
-        else
-            call BlzFrameSetSize(highlightFrame, TUI_HIGHLIGHT_THICKNESS, TUI_TALENT_SIZE + 2.00 * TUI_HIGHLIGHT_PAD)
-            call BlzFrameSetPoint(highlightFrame, FRAMEPOINT_LEFT, buttonFrame, FRAMEPOINT_RIGHT, TUI_HIGHLIGHT_PAD, 0.00)
-        endif
-    endfunction
-
     private function TUI_CreateFrames takes nothing returns nothing
         local integer row = 1
         local integer column
@@ -735,12 +780,12 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
         set TUI_TreePane = BlzCreateFrameByType("BACKDROP", "TalentsUITreePane", TUI_Parent, "", 0)
         call BlzFrameSetTexture(TUI_TreePane, TUI_PanelTexture, 0, true)
         call BlzFrameSetPoint(TUI_TreePane, FRAMEPOINT_TOPLEFT, TUI_Parent, FRAMEPOINT_TOPLEFT, 0.014, -0.088)
-        call BlzFrameSetPoint(TUI_TreePane, FRAMEPOINT_BOTTOMRIGHT, TUI_Parent, FRAMEPOINT_BOTTOMLEFT, 0.338, 0.050)
+        call BlzFrameSetPoint(TUI_TreePane, FRAMEPOINT_BOTTOMRIGHT, TUI_Parent, FRAMEPOINT_BOTTOMLEFT, 0.318, 0.050)
 
         set TUI_DetailPane = BlzCreateFrameByType("BACKDROP", "TalentsUIDetailPane", TUI_Parent, "", 0)
         call BlzFrameSetTexture(TUI_DetailPane, TUI_PanelTexture, 0, true)
-        call BlzFrameSetPoint(TUI_DetailPane, FRAMEPOINT_TOPLEFT, TUI_TreePane, FRAMEPOINT_TOPRIGHT, 0.014, 0.0)
-        call BlzFrameSetPoint(TUI_DetailPane, FRAMEPOINT_BOTTOMRIGHT, TUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.014, 0.050)
+        call BlzFrameSetPoint(TUI_DetailPane, FRAMEPOINT_TOPLEFT, TUI_TreePane, FRAMEPOINT_TOPRIGHT, 0.010, 0.0)
+        call BlzFrameSetPoint(TUI_DetailPane, FRAMEPOINT_BOTTOMRIGHT, TUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.012, 0.050)
 
         loop
             exitwhen row > TUI_GRID_ROWS
@@ -754,7 +799,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
                 set TUI_TalentButton[slotIndex] = BlzCreateFrameByType("GLUEBUTTON", "TalentsUITalentButton" + I2S(slotIndex), TUI_TreePane, "ScoreScreenTabButtonTemplate", 0)
                 call BlzFrameSetPoint(TUI_TalentButton[slotIndex], FRAMEPOINT_TOPLEFT, TUI_TreePane, FRAMEPOINT_TOPLEFT, xOffset, yOffset)
                 call BlzFrameSetSize(TUI_TalentButton[slotIndex], TUI_TALENT_SIZE, TUI_TALENT_SIZE)
-                call BlzFrameSetLevel(TUI_TalentButton[slotIndex], 2)
+                call BlzFrameSetLevel(TUI_TalentButton[slotIndex], 4)
                 call BlzFrameSetVisible(TUI_TalentButton[slotIndex], false)
                 call BlzTriggerRegisterFrameEvent(TUI_TalentTrigger, TUI_TalentButton[slotIndex], FRAMEEVENT_CONTROL_CLICK)
                 call BlzTriggerRegisterFrameEvent(TUI_TalentEnterTrigger, TUI_TalentButton[slotIndex], FRAMEEVENT_MOUSE_ENTER)
@@ -773,6 +818,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
 
                 set TUI_TalentIcon[slotIndex] = BlzCreateFrameByType("BACKDROP", "TalentsUITalentIcon" + I2S(slotIndex), TUI_TalentButton[slotIndex], "IconButtonTemplate", 0)
                 call BlzFrameSetAllPoints(TUI_TalentIcon[slotIndex], TUI_TalentButton[slotIndex])
+                call BlzFrameSetLevel(TUI_TalentIcon[slotIndex], 5)
 
                 set TUI_TalentOverlay[slotIndex] = BlzCreateFrameByType("BACKDROP", "TalentsUITalentOverlay" + I2S(slotIndex), TUI_TalentButton[slotIndex], "", 0)
                 call BlzFrameSetTexture(TUI_TalentOverlay[slotIndex], TUI_PanelTexture, 0, false)
@@ -780,27 +826,29 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
                 call BlzFrameSetAlpha(TUI_TalentOverlay[slotIndex], 128)
                 call BlzFrameSetVertexColor(TUI_TalentOverlay[slotIndex], BlzConvertColor(128, 0, 0, 0))
                 call BlzFrameSetEnable(TUI_TalentOverlay[slotIndex], false)
+                call BlzFrameSetLevel(TUI_TalentOverlay[slotIndex], 6)
 
                 set TUI_TalentRankText[slotIndex] = BlzCreateFrameByType("TEXT", "TalentsUITalentRank" + I2S(slotIndex), TUI_TalentButton[slotIndex], "", 0)
-                call BlzFrameSetPoint(TUI_TalentRankText[slotIndex], FRAMEPOINT_BOTTOMRIGHT, TUI_TalentButton[slotIndex], FRAMEPOINT_BOTTOMRIGHT, -0.001, 0.001)
-                call BlzFrameSetSize(TUI_TalentRankText[slotIndex], 0.018, 0.010)
+                call BlzFrameSetPoint(TUI_TalentRankText[slotIndex], FRAMEPOINT_BOTTOMRIGHT, TUI_TalentButton[slotIndex], FRAMEPOINT_BOTTOMRIGHT, -0.0005, 0.0005)
+                call BlzFrameSetSize(TUI_TalentRankText[slotIndex], 0.026, 0.008)
                 call BlzFrameSetTextAlignment(TUI_TalentRankText[slotIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_RIGHT)
-                call BlzFrameSetScale(TUI_TalentRankText[slotIndex], 0.74)
+                call BlzFrameSetScale(TUI_TalentRankText[slotIndex], 0.50)
                 call BlzFrameSetEnable(TUI_TalentRankText[slotIndex], false)
+                call BlzFrameSetLevel(TUI_TalentRankText[slotIndex], 8)
 
-                set TUI_TalentHighlightTop[slotIndex] = BlzCreateFrameByType("BACKDROP", "TalentsUITalentHighlightTop" + I2S(slotIndex), TUI_TreePane, "", 0)
-                set TUI_TalentHighlightBottom[slotIndex] = BlzCreateFrameByType("BACKDROP", "TalentsUITalentHighlightBottom" + I2S(slotIndex), TUI_TreePane, "", 0)
-                set TUI_TalentHighlightLeft[slotIndex] = BlzCreateFrameByType("BACKDROP", "TalentsUITalentHighlightLeft" + I2S(slotIndex), TUI_TreePane, "", 0)
-                set TUI_TalentHighlightRight[slotIndex] = BlzCreateFrameByType("BACKDROP", "TalentsUITalentHighlightRight" + I2S(slotIndex), TUI_TreePane, "", 0)
-                call TUI_SetupHighlightFrame(TUI_TalentHighlightTop[slotIndex], TUI_TalentButton[slotIndex], TUI_LINK_UP)
-                call TUI_SetupHighlightFrame(TUI_TalentHighlightBottom[slotIndex], TUI_TalentButton[slotIndex], TUI_LINK_DOWN)
-                call TUI_SetupHighlightFrame(TUI_TalentHighlightLeft[slotIndex], TUI_TalentButton[slotIndex], TUI_LINK_LEFT)
-                call TUI_SetupHighlightFrame(TUI_TalentHighlightRight[slotIndex], TUI_TalentButton[slotIndex], TUI_LINK_RIGHT)
+                set TUI_TalentHighlight[slotIndex] = BlzCreateFrameByType("SPRITE", "TalentsUITalentHighlight" + I2S(slotIndex), TUI_TalentButton[slotIndex], "", 0)
+                call BlzFrameSetAllPoints(TUI_TalentHighlight[slotIndex], TUI_TalentButton[slotIndex])
+                call BlzFrameSetModel(TUI_TalentHighlight[slotIndex], TUI_TalentHighlightModel, 0)
+                call BlzFrameSetScale(TUI_TalentHighlight[slotIndex], 0.58)
+                call BlzFrameSetLevel(TUI_TalentHighlight[slotIndex], 7)
+                call BlzFrameSetEnable(TUI_TalentHighlight[slotIndex], false)
+                call BlzFrameSetVisible(TUI_TalentHighlight[slotIndex], false)
 
-                set TUI_TalentTooltipBox[slotIndex] = BlzCreateFrame("ListBoxWar3", TUI_TalentButton[slotIndex], 0, slotIndex)
+                set TUI_TalentTooltipBox[slotIndex] = BlzCreateFrame("ListBoxWar3", TUI_Parent, 0, slotIndex)
                 call BlzFrameSetPoint(TUI_TalentTooltipBox[slotIndex], FRAMEPOINT_TOPLEFT, TUI_TalentButton[slotIndex], FRAMEPOINT_TOPRIGHT, 0.008, 0.006)
                 call BlzFrameSetSize(TUI_TalentTooltipBox[slotIndex], TUI_TOOLTIP_WIDTH, TUI_TOOLTIP_HEIGHT)
                 call BlzFrameSetEnable(TUI_TalentTooltipBox[slotIndex], false)
+                call BlzFrameSetLevel(TUI_TalentTooltipBox[slotIndex], 30)
                 call BlzFrameSetVisible(TUI_TalentTooltipBox[slotIndex], false)
 
                 set TUI_TalentTooltipText[slotIndex] = BlzCreateFrameByType("TEXT", "TalentsUITalentTooltipText" + I2S(slotIndex), TUI_TalentTooltipBox[slotIndex], "", 0)
@@ -809,6 +857,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
                 call BlzFrameSetTextAlignment(TUI_TalentTooltipText[slotIndex], TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
                 call BlzFrameSetScale(TUI_TalentTooltipText[slotIndex], 0.82)
                 call BlzFrameSetEnable(TUI_TalentTooltipText[slotIndex], false)
+                call BlzFrameSetLevel(TUI_TalentTooltipText[slotIndex], 31)
 
                 set TUI_TalentTooltipRank[slotIndex] = BlzCreateFrameByType("TEXT", "TalentsUITalentTooltipRank" + I2S(slotIndex), TUI_TalentTooltipBox[slotIndex], "", 0)
                 call BlzFrameSetPoint(TUI_TalentTooltipRank[slotIndex], FRAMEPOINT_TOPRIGHT, TUI_TalentTooltipBox[slotIndex], FRAMEPOINT_TOPRIGHT, -0.010, -0.006)
@@ -816,6 +865,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
                 call BlzFrameSetTextAlignment(TUI_TalentTooltipRank[slotIndex], TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_RIGHT)
                 call BlzFrameSetScale(TUI_TalentTooltipRank[slotIndex], 0.78)
                 call BlzFrameSetEnable(TUI_TalentTooltipRank[slotIndex], false)
+                call BlzFrameSetLevel(TUI_TalentTooltipRank[slotIndex], 31)
 
                 set column = column + 1
             endloop
@@ -823,33 +873,33 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
         endloop
 
         set TUI_DetailIcon = BlzCreateFrameByType("BACKDROP", "TalentsUIDetailIcon", TUI_DetailPane, "IconButtonTemplate", 0)
-        call BlzFrameSetPoint(TUI_DetailIcon, FRAMEPOINT_TOPLEFT, TUI_DetailPane, FRAMEPOINT_TOPLEFT, 0.018, -0.018)
-        call BlzFrameSetSize(TUI_DetailIcon, 0.044, 0.044)
+        call BlzFrameSetPoint(TUI_DetailIcon, FRAMEPOINT_TOPLEFT, TUI_DetailPane, FRAMEPOINT_TOPLEFT, 0.012, -0.016)
+        call BlzFrameSetSize(TUI_DetailIcon, 0.038, 0.038)
 
         set TUI_DetailTitle = BlzCreateFrameByType("TEXT", "TalentsUIDetailTitle", TUI_DetailPane, "", 0)
-        call BlzFrameSetPoint(TUI_DetailTitle, FRAMEPOINT_TOPLEFT, TUI_DetailIcon, FRAMEPOINT_TOPRIGHT, 0.014, -0.002)
-        call BlzFrameSetSize(TUI_DetailTitle, 0.190, 0.018)
+        call BlzFrameSetPoint(TUI_DetailTitle, FRAMEPOINT_TOPLEFT, TUI_DetailIcon, FRAMEPOINT_TOPRIGHT, 0.010, -0.002)
+        call BlzFrameSetSize(TUI_DetailTitle, 0.220, 0.018)
         call BlzFrameSetTextAlignment(TUI_DetailTitle, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(TUI_DetailTitle, 1.05)
         call BlzFrameSetEnable(TUI_DetailTitle, false)
 
         set TUI_DetailInfo = BlzCreateFrameByType("TEXT", "TalentsUIDetailInfo", TUI_DetailPane, "", 0)
         call BlzFrameSetPoint(TUI_DetailInfo, FRAMEPOINT_TOPLEFT, TUI_DetailTitle, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.006)
-        call BlzFrameSetSize(TUI_DetailInfo, 0.190, 0.034)
+        call BlzFrameSetSize(TUI_DetailInfo, 0.220, 0.048)
         call BlzFrameSetTextAlignment(TUI_DetailInfo, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
-        call BlzFrameSetScale(TUI_DetailInfo, 0.86)
+        call BlzFrameSetScale(TUI_DetailInfo, 0.80)
         call BlzFrameSetEnable(TUI_DetailInfo, false)
 
         set TUI_DetailBody = BlzCreateFrameByType("TEXT", "TalentsUIDetailBody", TUI_DetailPane, "", 0)
-        call BlzFrameSetPoint(TUI_DetailBody, FRAMEPOINT_TOPLEFT, TUI_DetailPane, FRAMEPOINT_TOPLEFT, 0.018, -0.098)
-        call BlzFrameSetPoint(TUI_DetailBody, FRAMEPOINT_BOTTOMRIGHT, TUI_DetailPane, FRAMEPOINT_BOTTOMRIGHT, -0.018, 0.060)
+        call BlzFrameSetPoint(TUI_DetailBody, FRAMEPOINT_TOPLEFT, TUI_DetailPane, FRAMEPOINT_TOPLEFT, 0.012, -0.090)
+        call BlzFrameSetPoint(TUI_DetailBody, FRAMEPOINT_BOTTOMRIGHT, TUI_DetailPane, FRAMEPOINT_BOTTOMRIGHT, -0.012, 0.060)
         call BlzFrameSetTextAlignment(TUI_DetailBody, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(TUI_DetailBody, 0.90)
         call BlzFrameSetEnable(TUI_DetailBody, false)
 
         set TUI_DetailFooter = BlzCreateFrameByType("TEXT", "TalentsUIDetailFooter", TUI_DetailPane, "", 0)
-        call BlzFrameSetPoint(TUI_DetailFooter, FRAMEPOINT_BOTTOMLEFT, TUI_DetailPane, FRAMEPOINT_BOTTOMLEFT, 0.018, 0.010)
-        call BlzFrameSetSize(TUI_DetailFooter, 0.240, 0.040)
+        call BlzFrameSetPoint(TUI_DetailFooter, FRAMEPOINT_BOTTOMLEFT, TUI_DetailPane, FRAMEPOINT_BOTTOMLEFT, 0.012, 0.010)
+        call BlzFrameSetSize(TUI_DetailFooter, 0.260, 0.040)
         call BlzFrameSetTextAlignment(TUI_DetailFooter, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(TUI_DetailFooter, 0.82)
         call BlzFrameSetEnable(TUI_DetailFooter, false)
