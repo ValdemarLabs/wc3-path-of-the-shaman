@@ -39,11 +39,11 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
         private constant real PRL_TITLE_SCALE = 1.35
 
         // Imported BLPs can be replaced without touching ImagesUI.j.
-        private constant string PRL_IMAGE_START = "war3mapImported\\PreloadStart.blp"
-        private constant string PRL_IMAGE_SOUNDS = "war3mapImported\\PreloadSounds.blp"
-        private constant string PRL_IMAGE_MUSIC = "war3mapImported\\PreloadMusic.blp"
-        private constant string PRL_IMAGE_ABILITIES = "war3mapImported\\PreloadAbilities.blp"
-        private constant string PRL_IMAGE_DONE = "war3mapImported\\PreloadDone.blp"
+        private constant string PRL_IMAGE_START = "Art\\Pots_EmberpeakHighlands.blp"
+        private constant string PRL_IMAGE_SOUNDS = "Art\\Pots_EmberpeakHighlands.blp"
+        private constant string PRL_IMAGE_MUSIC = "Art\\Pots_Riverbane1.blp"
+        private constant string PRL_IMAGE_ABILITIES = "Art\\Pots_Riverbane1.blp"
+        private constant string PRL_IMAGE_DONE = "Art\\Pots_Logo.blp"
 
         private trigger PRL_StartTrigger = null
         private trigger PRL_LoadedGameTrigger = null
