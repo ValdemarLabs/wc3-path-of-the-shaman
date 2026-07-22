@@ -28,6 +28,8 @@ globals
 
 	private Table DialogSystem_GreetLines = 0
 	private Table DialogSystem_FarewellLines = 0
+	private Table DialogSystem_GreetTrainerLines = 0
+	private Table DialogSystem_FarewellTrainerLines = 0
 	private Table DialogSystem_TradeLines = 0
 	private Table DialogSystem_ExitLines = 0
 	private Table DialogSystem_FollowLines = 0
@@ -1285,6 +1287,36 @@ public function PickFarewellLine takes unit speaker, string speakerName returns 
 	return true
 endfunction
 
+public function PickGreetTrainerLine takes unit speaker, string speakerName returns boolean
+	local string lookupName
+	set DialogSystem_PickedText = ""
+	set DialogSystem_PickedSound = ""
+	set DialogSystem_PickedSoundAtUnit = true
+	set lookupName = speakerName
+	if lookupName == "" and speaker != null then
+		set lookupName = GetUnitDisplayName(speaker)
+	endif
+	if lookupName != "" and PickRegisteredLineData(DialogSystem_GreetTrainerLines, lookupName) then
+		return true
+	endif
+	return PickGreetLine(speaker, speakerName)
+endfunction
+
+public function PickFarewellTrainerLine takes unit speaker, string speakerName returns boolean
+	local string lookupName
+	set DialogSystem_PickedText = ""
+	set DialogSystem_PickedSound = ""
+	set DialogSystem_PickedSoundAtUnit = true
+	set lookupName = speakerName
+	if lookupName == "" and speaker != null then
+		set lookupName = GetUnitDisplayName(speaker)
+	endif
+	if lookupName != "" and PickRegisteredLineData(DialogSystem_FarewellTrainerLines, lookupName) then
+		return true
+	endif
+	return PickFarewellLine(speaker, speakerName)
+endfunction
+
 public function PlayFarewell takes unit speaker, string speakerName, string overrideText, string overrideSoundKey returns nothing
 	local integer roll
 	local string text
@@ -1325,6 +1357,14 @@ endfunction
 
 public function RegisterFarewellLine takes string speakerName, string text, string soundKey, boolean soundAtUnit returns nothing
 	call RegisterLineInternal(DialogSystem_FarewellLines, speakerName, text, soundKey, soundAtUnit)
+endfunction
+
+public function RegisterGreetTrainerLine takes string speakerName, string text, string soundKey, boolean soundAtUnit returns nothing
+	call RegisterLineInternal(DialogSystem_GreetTrainerLines, speakerName, text, soundKey, soundAtUnit)
+endfunction
+
+public function RegisterFarewellTrainerLine takes string speakerName, string text, string soundKey, boolean soundAtUnit returns nothing
+	call RegisterLineInternal(DialogSystem_FarewellTrainerLines, speakerName, text, soundKey, soundAtUnit)
 endfunction
 
 public function RegisterFarewellLineForUnit takes unit u, string text, string soundKey, boolean soundAtUnit returns nothing
@@ -1671,12 +1711,15 @@ private function Init takes nothing returns nothing
 	set DialogSequenceStore = Table.create()
 	set DialogSystem_GreetLines = Table.create()
 	set DialogSystem_FarewellLines = Table.create()
+	set DialogSystem_GreetTrainerLines = Table.create()
+	set DialogSystem_FarewellTrainerLines = Table.create()
 	set DialogSystem_TradeLines = Table.create()
 	set DialogSystem_ExitLines = Table.create()
 	set DialogSystem_FollowLines = Table.create()
 	set DialogSystem_StopLines = Table.create()
 	set DialogSystem_DeclineLines = Table.create()
 	set DialogSystem_AcceptLines = Table.create()
+	set DialogSystem_InfoLines = Table.create()
 	set DialogSystem_LookAtTimerUnit = Table.create()
 	set DialogSystem_SkipTrigger = CreateTrigger()
 	// Register ESC key for normal mode
