@@ -14,6 +14,15 @@ private function LinesZulkis takes nothing returns nothing
 	call DialogSystem_RegisterFarewellLine("Zulkis", "Stay sharp, mon!", "Zulkis_Farewell3", true)
 	call DialogSystem_RegisterFarewellLine("Zulkis", "Be seeing ya.", "Zulkis_Farewell4", true)
 
+	call DialogSystem_RegisterGreetTrainerLine("Zulkis", "What lessons ya got for me, mon?", "", true)
+	call DialogSystem_RegisterGreetTrainerLine("Zulkis", "Da spirits send me for training.", "", true)
+	call DialogSystem_RegisterGreetTrainerLine("Zulkis", "Teach me what ya know, mon.", "", true)
+	call DialogSystem_RegisterGreetTrainerLine("Zulkis", "I be ready ta learn.", "", true)
+
+	call DialogSystem_RegisterFarewellTrainerLine("Zulkis", "I be back when da spirits call, mon.", "", true)
+	call DialogSystem_RegisterFarewellTrainerLine("Zulkis", "Thanks for da lesson.", "", true)
+	call DialogSystem_RegisterFarewellTrainerLine("Zulkis", "May da spirits keep ya, mon.", "", true)
+
 	call DialogSystem_RegisterInfoLine("Zulkis", "What happened here, mon?", "", true)
 	call DialogSystem_RegisterInfoLine("Zulkis", "Tell me about this place.", "", true)
 	call DialogSystem_RegisterInfoLine("Zulkis", "What be your knowledge of this?", "", true)
@@ -54,6 +63,15 @@ private function LinesNazgrek takes nothing returns nothing
 	call DialogSystem_RegisterFarewellLine("Nazgrek", "I have to go now.", "Nazgrek_Farewell8", true)
 	call DialogSystem_RegisterFarewellLine("Nazgrek", "We will meet again.", "Nazgrek_Farewell9", true)
 	call DialogSystem_RegisterFarewellLine("Nazgrek", "Goodbye.", "Nazgrek_Farewell10", true)
+
+	call DialogSystem_RegisterGreetTrainerLine("Nazgrek", "I seek training.", "", true)
+	call DialogSystem_RegisterGreetTrainerLine("Nazgrek", "Show me the shaman's path.", "", true)
+	call DialogSystem_RegisterGreetTrainerLine("Nazgrek", "What wisdom do you offer?", "", true)
+	call DialogSystem_RegisterGreetTrainerLine("Nazgrek", "I am ready to learn.", "", true)
+
+	call DialogSystem_RegisterFarewellTrainerLine("Nazgrek", "I will return for more training.", "", true)
+	call DialogSystem_RegisterFarewellTrainerLine("Nazgrek", "The lesson is learned.", "", true)
+	call DialogSystem_RegisterFarewellTrainerLine("Nazgrek", "May the spirits guide your steps.", "", true)
 
 	call DialogSystem_RegisterInfoLine("Nazgrek", "What do you know of this place?", "", true)
 	call DialogSystem_RegisterInfoLine("Nazgrek", "Tell me what happened here.", "", true)
