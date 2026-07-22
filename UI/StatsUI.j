@@ -1,4 +1,4 @@
-library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, AbilitiesLiteUI, ProfessionsUI, StatsLiteUI, QuestGiver, Companions, Pet, UnitExperience, AI, Interface, AbilityPoints
+library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, AbilitiesLiteUI, ProfessionsUI, StatsLiteUI, QuestGiver, Companions, Pet, UnitExperience, AI, Interface, AbilityPoints, Experience
 /**
     StatsUI
 
@@ -57,6 +57,7 @@ globals
     private framehandle SUI_DetailIcon = null
     private framehandle SUI_DetailTitle = null
     private framehandle SUI_DetailValue = null
+    private framehandle SUI_DetailRested = null
     private framehandle array SUI_DetailSummaryLabelLeft
     private framehandle array SUI_DetailSummaryValueLeft
     private framehandle array SUI_DetailSummaryLabelRight
@@ -84,6 +85,7 @@ globals
     private integer array SUI_ListScrollValue
     private integer SUI_DetailHeaderUnitHandle = 0
     private integer SUI_DetailHeaderLevel = -1
+    private integer SUI_DetailHeaderRested = -1
     private integer SUI_DetailStatsUnitHandle = 0
     private boolean SUI_DetailStatsHasResource = false
     private integer SUI_DetailSummaryUnitHandle = 0
@@ -371,6 +373,10 @@ private function SUI_IsDeadForDisplay takes unit u returns boolean
         return true
     endif
     return GetWidgetLife(u) <= 0.405
+endfunction
+
+private function SUI_IsRestedForDisplay takes unit u returns boolean
+    return SUI_IsValidUnit(u) and not SUI_IsDeadForDisplay(u) and Experience_IsRested(u)
 endfunction
 
 private function SUI_GetReviveTimer takes unit u returns timer
@@ -1428,14 +1434,17 @@ private function SUI_UpdateDetail takes player whichPlayer, boolean refreshStats
     local string headerText
     local integer handleId
     local integer level
+    local integer rested = 0
 
     if u == null then
         if GetLocalPlayer() == whichPlayer then
             set SUI_DetailHeaderUnitHandle = 0
             set SUI_DetailHeaderLevel = -1
+            set SUI_DetailHeaderRested = -1
             call BlzFrameSetTexture(SUI_DetailIcon, SUI_DefaultUnitIcon, 0, true)
             call BlzFrameSetText(SUI_DetailTitle, "No unit")
             call BlzFrameSetText(SUI_DetailValue, "No tracked units are currently available.")
+            call BlzFrameSetText(SUI_DetailRested, "")
             call BlzFrameSetVisible(SUI_AbilitiesButton, false)
             call BlzFrameSetVisible(SUI_ProfessionsButton, false)
         endif
@@ -1443,6 +1452,7 @@ private function SUI_UpdateDetail takes player whichPlayer, boolean refreshStats
         if refreshStats then
             call SUI_UpdateDetailStats(whichPlayer, null)
         endif
+        set u = null
         return
     endif
 
@@ -1453,6 +1463,9 @@ private function SUI_UpdateDetail takes player whichPlayer, boolean refreshStats
     else
         set level = GetUnitLevel(u)
     endif
+    if SUI_IsRestedForDisplay(u) then
+        set rested = 1
+    endif
 
     if GetLocalPlayer() == whichPlayer then
         if SUI_DetailHeaderUnitHandle != handleId or SUI_DetailHeaderLevel != level then
@@ -1461,6 +1474,14 @@ private function SUI_UpdateDetail takes player whichPlayer, boolean refreshStats
             set headerText = SUI_GetKindLabel(kind) + " " + SUI_GetDisplayName(u)
             call BlzFrameSetTexture(SUI_DetailIcon, SUI_GetUnitIconPath(u), 0, true)
             call BlzFrameSetText(SUI_DetailTitle, headerText)
+        endif
+        if SUI_DetailHeaderRested != rested then
+            set SUI_DetailHeaderRested = rested
+            if rested == 1 then
+                call BlzFrameSetText(SUI_DetailRested, "|cff00ff00Rested|r")
+            else
+                call BlzFrameSetText(SUI_DetailRested, "")
+            endif
         endif
         call BlzFrameSetText(SUI_DetailValue, "Level " + I2S(level) + " | XP " + SUI_GetXPText(u))
         call BlzFrameSetVisible(SUI_AbilitiesButton, true)
@@ -1486,6 +1507,7 @@ private function SUI_Update takes player whichPlayer, boolean refreshStats retur
         call SUI_InvalidateDetailStatsCache()
         set SUI_DetailHeaderUnitHandle = 0
         set SUI_DetailHeaderLevel = -1
+        set SUI_DetailHeaderRested = -1
     endif
 
     call SUI_UpdateRows(whichPlayer)
@@ -1524,6 +1546,7 @@ public function Hide takes nothing returns nothing
     call SUI_InvalidateDetailStatsCache()
     set SUI_DetailHeaderUnitHandle = 0
     set SUI_DetailHeaderLevel = -1
+    set SUI_DetailHeaderRested = -1
     if SUI_Parent != null then
         if BlzFrameIsVisible(SUI_Parent) then
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, Player(0))
@@ -1588,6 +1611,7 @@ private function SUI_RowAction takes nothing returns nothing
         call SUI_InvalidateDetailStatsCache()
         set SUI_DetailHeaderUnitHandle = 0
         set SUI_DetailHeaderLevel = -1
+        set SUI_DetailHeaderRested = -1
         call SUI_Update(p, true)
     endif
 
@@ -1728,6 +1752,14 @@ private function SUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetScale(SUI_DetailValue, 0.98)
     call BlzFrameSetEnable(SUI_DetailValue, false)
 
+    set SUI_DetailRested = BlzCreateFrameByType("TEXT", "StatsUIDetailRested", SUI_RightPane, "", 0)
+    call BlzFrameSetPoint(SUI_DetailRested, FRAMEPOINT_TOPRIGHT, SUI_RightPane, FRAMEPOINT_TOPRIGHT, -0.028, -0.055)
+    call BlzFrameSetSize(SUI_DetailRested, 0.080, 0.018)
+    call BlzFrameSetTextAlignment(SUI_DetailRested, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_RIGHT)
+    call BlzFrameSetScale(SUI_DetailRested, 0.98)
+    call BlzFrameSetEnable(SUI_DetailRested, false)
+    call BlzFrameSetText(SUI_DetailRested, "")
+
     set SUI_AbilitiesButton = BlzCreateFrameByType("GLUETEXTBUTTON", "StatsUIAbilities", SUI_RightPane, "ScriptDialogButton", 0)
     call BlzFrameSetSize(SUI_AbilitiesButton, 0.090, 0.030)
     call BlzFrameSetText(SUI_AbilitiesButton, "Abilities")
@@ -1854,6 +1886,7 @@ private function SUI_ShowInternal takes nothing returns nothing
     call SUI_InvalidateDetailStatsCache()
     set SUI_DetailHeaderUnitHandle = 0
     set SUI_DetailHeaderLevel = -1
+    set SUI_DetailHeaderRested = -1
     call SUI_Update(p, true)
     call SUI_SetRefreshActive(true)
     if SUI_Parent != null and not BlzFrameIsVisible(SUI_Parent) then
