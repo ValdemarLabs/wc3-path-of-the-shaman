@@ -60,6 +60,7 @@ library AbilitiesUI initializer AutoInit requires Table, MasterUI, Abilities, Ab
 
         private unit ABUI_SelectedHero = null
         private unit ABUI_SelectedTrainer = null
+        private boolean ABUI_ReturnToTrainerDialog = false
         private integer ABUI_SelectedTree = AbilitiesPlayer_TREE_NONE
         private integer ABUI_SelectedEntry = 0
         private integer ABUI_ListScrollValue = 0
@@ -391,6 +392,7 @@ library AbilitiesUI initializer AutoInit requires Table, MasterUI, Abilities, Ab
             endif
             call BlzFrameSetVisible(ABUI_Parent, false)
         endif
+        set ABUI_ReturnToTrainerDialog = false
     endfunction
 
     public function Refresh takes nothing returns nothing
@@ -407,7 +409,17 @@ library AbilitiesUI initializer AutoInit requires Table, MasterUI, Abilities, Ab
         if not ABUI_IsPlayerShamanHero(hero) then
             return
         endif
+        set ABUI_ReturnToTrainerDialog = true
         call ABUI_OpenForPlayer(GetOwningPlayer(hero), trainer, hero)
+    endfunction
+
+    private function ABUI_CloseToTrainerDialog takes nothing returns nothing
+        local boolean reopenTrainerDialog = ABUI_ReturnToTrainerDialog
+
+        call Hide()
+        if reopenTrainerDialog then
+            call ExecuteFunc("AbilityTrainerDialogs_ReopenFromAbilitiesUI")
+        endif
     endfunction
 
     private function ABUI_ClearFocusAction takes nothing returns nothing
@@ -419,11 +431,11 @@ library AbilitiesUI initializer AutoInit requires Table, MasterUI, Abilities, Ab
     endfunction
 
     private function ABUI_CloseAction takes nothing returns nothing
-        call Hide()
+        call ABUI_CloseToTrainerDialog()
     endfunction
 
     private function ABUI_ReturnAction takes nothing returns nothing
-        call Hide()
+        call ABUI_CloseToTrainerDialog()
     endfunction
 
     private function ABUI_RowAction takes nothing returns nothing
