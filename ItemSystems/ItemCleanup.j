@@ -277,14 +277,11 @@ private function IC_DeadScanTick takes nothing returns nothing
     endif
 endfunction
 
-private function IC_OnPickup takes nothing returns boolean
+private function IC_OnPickup takes nothing returns nothing
     call IC_ResetItemAge(GetManipulatedItem())
-    return false
 endfunction
 
 private function Init takes nothing returns nothing
-    local trigger pickupTrigger = CreateTrigger()
-
     set IC_ItemAge = Table.create()
     set IC_ProtectedItems = Table.create()
     set IC_ProtectedItemTypes = Table.create()
@@ -299,9 +296,7 @@ private function Init takes nothing returns nothing
 
     set IC_DeadRemoveTimer = CreateTimer()
 
-    call TriggerAddCondition(pickupTrigger, Condition(function IC_OnPickup))
-    call Events_RegisterPlayerUnitTrigger(pickupTrigger, EVENT_PLAYER_UNIT_PICKUP_ITEM)
-    set pickupTrigger = null
+    call Events_RegisterPlayerUnitEvent(function IC_OnPickup, EVENT_PLAYER_UNIT_PICKUP_ITEM)
 endfunction
 
 endlibrary
