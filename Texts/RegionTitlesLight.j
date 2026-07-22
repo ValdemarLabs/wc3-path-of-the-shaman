@@ -14,6 +14,7 @@ globals
     private constant real MAINTITLE_FADE_IN_TIME = 1.2
     private constant real MAINTITLE_DURATION = 4.0
     private constant real MAINTITLE_FADE_OUT_TIME = 3.0
+    private constant integer TITLE_FRAME_LEVEL = 20
 
     private framehandle titleFrame1 = null
     private framehandle Text02 = null
@@ -173,6 +174,7 @@ private function InitRegionTitles takes nothing returns nothing
     call BlzFrameSetAbsPoint(titleFrame1, FRAMEPOINT_BOTTOMRIGHT, 0.712120, 0.330110)
     call BlzFrameSetEnable(titleFrame1, false)
     call BlzFrameSetScale(titleFrame1, textScale)
+    call BlzFrameSetLevel(titleFrame1, TITLE_FRAME_LEVEL)
     call BlzFrameSetTextAlignment(titleFrame1, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE)
     call BlzFrameSetVisible(titleFrame1, false)
     call BlzFrameSetAlpha(titleFrame1, 0)
@@ -183,6 +185,7 @@ private function InitRegionTitles takes nothing returns nothing
     call BlzFrameSetAbsPoint(Text02, FRAMEPOINT_BOTTOMRIGHT, 0.506650, 0.426020)
     call BlzFrameSetEnable(Text02, false)
     call BlzFrameSetScale(Text02, textSmallScale)
+    call BlzFrameSetLevel(Text02, TITLE_FRAME_LEVEL)
     call BlzFrameSetTextAlignment(Text02, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE)
     call BlzFrameSetVisible(Text02, false)
     call BlzFrameSetAlpha(Text02, 0)
@@ -192,6 +195,7 @@ private function InitRegionTitles takes nothing returns nothing
     call BlzFrameSetPoint(SingleLineTextFrame, FRAMEPOINT_CENTER, ParentFunc(), FRAMEPOINT_CENTER, 0.0, 0.05)
     call BlzFrameSetEnable(SingleLineTextFrame, false)
     call BlzFrameSetScale(SingleLineTextFrame, textSmallScale2)
+    call BlzFrameSetLevel(SingleLineTextFrame, TITLE_FRAME_LEVEL)
     call BlzFrameSetTextAlignment(SingleLineTextFrame, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE)
     call BlzFrameSetVisible(SingleLineTextFrame, false)
     call BlzFrameSetAlpha(SingleLineTextFrame, 0)
