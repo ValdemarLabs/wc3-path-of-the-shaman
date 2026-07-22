@@ -12,26 +12,31 @@
     Credits:
 
     How to install:
-    Import after PreloadAbilities.j, ImagesUI.j, ExSound.j, ExMusic.j, and
-    StatsLiteUI.j. Disable the old GUI preload triggers so this library owns
-    the elapsed-time 0.00 preload flow. Game Start should not also fire from
-    its own elapsed-time event; this library executes gg_trg_Game_Start when
-    preloading is done. The placed AbilityLoader unit is expected to be
-    AbilityLoader 1870 <gen>, generated as gg_unit_h60N_1870. Saved-game
-    loading runs sound/music preload only and does not execute Game Start.
+    Import after PreloadAbilities.j, ImagesUI.j, RegionTitlesLight.j,
+    ExSound.j, ExMusic.j, and StatsLiteUI.j. Disable the old GUI preload
+    triggers so this library owns the elapsed-time 0.00 preload flow. Game
+    Start should not also fire from its own elapsed-time event; this library
+    executes gg_trg_Game_Start when preloading is done. The placed
+    AbilityLoader unit is expected to be AbilityLoader 1870 <gen>, generated
+    as gg_unit_h60N_1870. Saved-game loading runs sound/music preload only and
+    does not execute Game Start.
 
     API:
     call Preloader_Start()
     call Preloader_StartLoadedGame()
 
 **/
-library Preloader initializer AutoInit requires ImagesUI, ExSound, ExMusic, PreloadAbilities, StatsLiteUI
+library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound, ExMusic, PreloadAbilities, StatsLiteUI
     globals
         // Timing between visible preload stages. Actual preload calls still run synchronously.
         private constant real PRL_START_MESSAGE_DELAY = 0.50
         private constant real PRL_STAGE_DELAY = 0.50
         private constant real PRL_SOUND_STAGE_DELAY = 1.00
         private constant real PRL_DONE_DELAY = 0.50
+        private constant real PRL_TITLE_FADE_IN = 0.10
+        private constant real PRL_TITLE_DURATION = 0.70
+        private constant real PRL_TITLE_FADE_OUT = 0.25
+        private constant real PRL_TITLE_SCALE = 1.35
 
         // Imported BLPs can be replaced without touching ImagesUI.j.
         private constant string PRL_IMAGE_START = "war3mapImported\\PreloadStart.blp"
@@ -52,8 +57,8 @@ library Preloader initializer AutoInit requires ImagesUI, ExSound, ExMusic, Prel
     endglobals
 
     private function PRL_ShowStatus takes string texturePath, string message returns nothing
-        call ImagesUI_ShowPreload(texturePath, message)
-        call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, message)
+        call ImagesUI_ShowPreload(texturePath, "")
+        call ShowSingleLineText(message, PRL_TITLE_FADE_IN, PRL_TITLE_DURATION, PRL_TITLE_FADE_OUT, PRL_TITLE_SCALE)
     endfunction
 
     private function PRL_GetAbilityLoader takes nothing returns unit
@@ -109,16 +114,16 @@ library Preloader initializer AutoInit requires ImagesUI, ExSound, ExMusic, Prel
         endif
 
         if PRL_Step == 0 then
-            call PRL_ShowStatus(PRL_IMAGE_START, "Preloading files . ...")
+            call PRL_ShowStatus(PRL_IMAGE_START, "Preloading files...")
             set PRL_Step = 1
             call TimerStart(PRL_Timer, PRL_STAGE_DELAY, false, function PRL_RunStep)
         elseif PRL_Step == 1 then
-            call PRL_ShowStatus(PRL_IMAGE_SOUNDS, "==== Sounds")
+            call PRL_ShowStatus(PRL_IMAGE_SOUNDS, "Preloading sounds...")
             call ExSound_PreloadAll()
             set PRL_Step = 2
             call TimerStart(PRL_Timer, PRL_SOUND_STAGE_DELAY, false, function PRL_RunStep)
         elseif PRL_Step == 2 then
-            call PRL_ShowStatus(PRL_IMAGE_MUSIC, "==== Music")
+            call PRL_ShowStatus(PRL_IMAGE_MUSIC, "Preloading music...")
             call ExMusic_PreloadAll()
             if PRL_RunAbilityStage then
                 set PRL_Step = 3
@@ -128,7 +133,7 @@ library Preloader initializer AutoInit requires ImagesUI, ExSound, ExMusic, Prel
                 call TimerStart(PRL_Timer, PRL_STAGE_DELAY, false, function PRL_RunStep)
             endif
         elseif PRL_Step == 3 then
-            call PRL_ShowStatus(PRL_IMAGE_ABILITIES, "==== Abilities")
+            call PRL_ShowStatus(PRL_IMAGE_ABILITIES, "Preloading abilities...")
             call PRL_PreloadAbilities()
             set PRL_Step = 4
             call TimerStart(PRL_Timer, PRL_STAGE_DELAY, false, function PRL_RunStep)
