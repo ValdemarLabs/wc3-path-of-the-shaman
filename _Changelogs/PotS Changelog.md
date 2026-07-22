@@ -21,7 +21,8 @@
 
 - Added a startup preload presentation before the intro/game-start flow:
   - Player control is disabled while the preload sequence runs.
-  - Preload progress can now show custom 16:9 frame UI images and RegionTitles-style phase text for sound, music, ability, and completion stages.
+  - Preload now runs in cinematic mode, displays full-screen frame UI images, and shows RegionTitles-style phase text for sound, music, ability, and completion stages.
+  - Preload music track 43 now starts before sound/music file preloading begins.
   - The intro/game start trigger is executed only after the preload sequence completes.
   - Loading a saved game reruns sound/music preload without restarting the game-start flow.
 
@@ -44,11 +45,11 @@
   - Elemental, Enhancement, Restoration, and Totemic talents are available as separate tree tabs.
   - Talent buttons show ranks, locked overlays, selected highlights, hover tooltips, and dependency links between prerequisite talents.
   - Talent details now show preview rank text, missing requirement text, tree points, available points, and pending point status.
-  - Players can add pending ranks, remove pending ranks, confirm pending talents, cancel pending changes, and reset talents.
+  - Players can add pending ranks, remove pending ranks, confirm pending talents, and cancel pending changes from `TalentsUI`.
   - Talent effects only apply after Confirm; ability scripts still read confirmed talent ranks.
-  - Talent points are primarily earned from hero level-ups: 1 talent point per qualifying player hero level from level 10 onward.
+  - Talent points are primarily earned from hero level-ups, matching ability points: 1 talent point per qualifying player hero level starting at level 2.
   - Talent tree buttons now use a denser WoW-style icon layout with compact rank numbers and stable hover tooltips.
-  - Talent reset from `TalentsUI` is now only enabled while the hero is near an ability trainer.
+  - Talent reset is now trainer-only through `AbilitiesUI`; the standalone talent panel no longer shows a reset button.
 
 - Refined profession crafting sound playback:
   - Player-started cinematic crafting now uses plain profession sound playback that remains audible during cinematic mode.
@@ -61,18 +62,23 @@
 ### Technical Updates
 
 - Added `UI/ImagesUI.j`
-  - New lightweight 16:9 image frame helper for preload and similar scripted presentation flows.
+  - New lightweight full-screen image frame helper for preload and similar scripted presentation flows.
   - Provides public APIs for showing, updating, and hiding the preload image surface.
   - Keeps image paths caller-controlled so imported preload BLPs can be swapped without changing the UI helper.
-  - Covers the screen with a backing frame while preserving the preload image's 16:9 ratio.
+  - Preloads texture paths before frame texture swaps to make staged preload image changes more reliable.
 
 - Added `Preload/Preloader.j`
   - New timer-driven startup preload runner that replaces the old GUI wait chain.
-  - Runs at elapsed game time `0.00`, disables user control, updates preload UI/status text through `RegionTitles`, and preloads sounds, music, and abilities in staged steps.
+  - Runs at elapsed game time `0.00`, enables cinematic mode, updates preload UI/status text through `RegionTitles`, and preloads sounds, music, and abilities in staged steps.
+  - Splits each preload phase into a visible UI/title tick and a later preload-work tick so image changes can render before synchronous preload work begins.
   - Calls `ExSound_PreloadAll()`, `ExMusic_PreloadAll()`, and `Preload_Abilities(...)`.
+  - Starts `ExMusic_PlayTrack(43)` before the sound/music preload stages.
   - Removes the placed `AbilityLoader 1870 <gen>` unit after ability preloading.
   - Executes `gg_trg_Game_Start` and initializes `StatsLiteUI` after preload completion.
   - Added a saved-game load path using `EVENT_GAME_LOADED` that preloads sound/music again but does not execute `gg_trg_Game_Start`.
+
+- Updated `Texts/RegionTitlesLight.j`
+  - Raised region-title frame levels so preload phase text renders above the full-screen preload image.
 
 - Updated `Preload/PreloadAbilities.j`
   - Wrapped the existing rawcode preload function in a `PreloadAbilities` library so other libraries can declare a proper dependency.
@@ -119,9 +125,11 @@
 - Added `Abilities/AbilityTrainerDialogs.j`
   - New QuestGiver-backed dialog/cinematic layer for all shaman trainer unit-types.
   - Scans placed trainer units on map init and registers trainers created later through `Events_RegisterUnitEnter` when `Events.j` is available.
-  - Uses `QuestGiver_RegisterSelectionHandler` and configured dialog entry/exit transitions, matching the existing qAradion-style cinematic flow.
+  - Uses `QuestGiver_RegisterSelectionHandler` and configured dialog entry/camera handling, matching the existing qAradion-style cinematic flow.
   - Builds `Learn` / `Farewell` trainer dialogs and opens `AbilitiesUI_ShowForTrainer` only from the `Learn` button.
   - Added a dialog-builder hook so future trainer quest libraries can add quest buttons to the same trainer dialog.
+  - Follow-up fix: trainer dialog camera settings now match the profession crafting camera profile.
+  - Follow-up fix: trainer selection now skips the old broad `gg_trg_Cinematic_ON` movement trigger and explicitly restores/selects the hero on dialog end, preventing the player unit from remaining hidden after the trainer flow.
 
 - Added `UI/AbilitiesUI.j`
   - New trainer-facing ability learning UI based on the `AbilitiesLiteUI` frame style.
@@ -130,6 +138,7 @@
   - Includes controls for learning abilities, resetting abilities, resetting specialization, and resetting talents.
   - Hides other major custom UI panels when opened and integrates with `MasterUI` / `AbilitiesLiteUI` panel behavior.
   - Trainer selection is no longer handled directly here; `AbilityTrainerDialogs` owns selection and opens this frame from the dialog `Learn` button.
+  - Follow-up fix: closing or returning from a trainer-opened `AbilitiesUI` now reopens the trainer dialog selection with cinematic mode still active.
 
 - Added `Abilities/Talents.j`
   - New shaman talent backend for Nazgrek and Zul'kis.
@@ -145,6 +154,7 @@
   - Added requirement/failure text APIs so UI and click feedback use the same backend requirement messages.
   - Added a stored level-earned talent point pool, level-up awarding, and `Talents_SyncLevelPoints` for load/import catch-up.
   - Talent level-up awarding uses `Events.j` when available, falls back to its own player hero level trigger otherwise, and respects `AbilityPoints_IsHeroLevelUpEnabled` when `AbilityPoints.j` is imported.
+  - Follow-up fix: level-up talent awards now read `GetLevelingUnit()` directly and award from hero level 2 onward, so talent points increase with the same level-up rhythm as ability points.
   - Added reusable effect helper APIs for ability scripts:
     - `Talents_GetDamageBonusPercent`
     - `Talents_ApplyDamageBonus`
@@ -157,13 +167,13 @@
 - Added `UI/TalentsUI.j`
   - New custom frame talent tree UI for player shaman heroes.
   - Inspired by The_Spellweaver's STK talent tree ideas, but implemented directly in the lighter PotS globals-based UI style instead of importing the full external framework.
-  - Adds four tree tabs, a fixed grid, rank labels, locked overlays, selection highlight, detail pane, Add Rank, Remove, Confirm, Cancel, Reset Talents, Return, and Close controls.
+  - Adds four tree tabs, a fixed grid, rank labels, locked overlays, selection highlight, detail pane, Add Rank, Remove, Confirm, Cancel, Return, and Close controls.
   - Adds STK-style hover tooltip panels.
   - Adds STK-style dependency link frames between prerequisite talents with active/inactive textures.
   - Uses preview ranks and preview point totals while pending changes exist.
   - Confirms pending ranks through `Talents_ConfirmPending`, which then plays `gg_snd_NewAbility`.
   - Replaced native `BlzFrameSetTooltip` ownership with disabled manual tooltip frames to avoid hover flicker.
-  - Replaced the talent selection sprite model with a fixed-size active-button backdrop so highlights match the compact talent icon size.
+  - Replaced the filled active-button talent highlight with thin edge strips so selected/available highlights do not cover the icon art.
   - Expanded the talent grid capacity to 5 columns by 6 rows and matched the backend tree dimensions.
 
 - Updated `UI/AbilitiesLiteUI.j`
