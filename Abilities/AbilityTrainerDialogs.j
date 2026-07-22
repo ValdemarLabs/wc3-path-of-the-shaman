@@ -14,7 +14,7 @@
 
     How to install:
     Import after QuestGiver, DialogSystem, DialogSystemPlayer, AbilitiesUI,
-    AbilitiesPlayer, AbilityTrainerLines, Interface, and Events.
+    AbilitiesPlayer, AbilityTrainerLines, Interface, FixedCameraLock, and Events.
 
     API:
     - call AbilityTrainerDialogs_RegisterDialogBuilder(function MyBuilder)
@@ -24,7 +24,7 @@
     - set treeId = AbilityTrainerDialogs_GetSelectedTree()
 
 **/
-library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, DialogSystem, DialogSystemPlayer, AbilitiesPlayer, AbilitiesUI, AbilityTrainerLines, Interface, optional Events
+library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, DialogSystem, DialogSystemPlayer, AbilitiesPlayer, AbilitiesUI, AbilityTrainerLines, Interface, FixedCameraLock, optional Events
     globals
         private constant real ATD_DIALOG_RANGE = 900.00
         private constant real ATD_DIALOG_COOLDOWN = 3.00
@@ -43,7 +43,7 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
         private constant real ATD_CAMERA_FAR_Z = 10000.00
         private constant real ATD_CAMERA_FOV = 60.00
         private constant real ATD_CAMERA_BLOCK_RADIUS = 0.00
-        private constant boolean ATD_CAMERA_BLOCK_CHECK = true
+        private constant boolean ATD_CAMERA_BLOCK_CHECK = false
         private constant real ATD_CAMERA_RESET_TIME = 0.75
 
         private constant integer ATD_ACTION_LEARN = 1
@@ -162,11 +162,52 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
         return seq
     endfunction
 
+    private function ATD_GetHeroCameraRotationOffset takes unit trainer, unit hero returns real
+        local real dx
+        local real dy
+
+        if trainer == null or hero == null then
+            return ATD_CAMERA_ROT_OFFSET
+        endif
+
+        set dx = GetUnitX(hero) - GetUnitX(trainer)
+        set dy = GetUnitY(hero) - GetUnitY(trainer)
+        if dx * dx + dy * dy < 1.00 then
+            return ATD_CAMERA_ROT_OFFSET
+        endif
+
+        return (Atan2(dy, dx) * bj_RADTODEG + 180.00) - GetUnitFacing(trainer)
+    endfunction
+
+    private function ATD_ConfigureTrainerCamera takes unit trainer, unit hero returns nothing
+        if trainer == null then
+            return
+        endif
+
+        call QuestGiver_ConfigureDialogTransition(trainer, ATD_CINEMATIC_MOVE_MODE, ATD_CINEMATIC_MOVE_OFFSET, ATD_CINEMATIC_MOVE_ANGLE, ATD_CAMERA_DIST, ATD_CAMERA_Z_OFFSET, ATD_CAMERA_ANGLE, ATD_GetHeroCameraRotationOffset(trainer, hero), ATD_CAMERA_FAR_Z, ATD_CAMERA_FOV, ATD_CAMERA_BLOCK_RADIUS, ATD_CAMERA_BLOCK_CHECK)
+    endfunction
+
+    private function ATD_LockTrainerCamera takes unit trainer returns nothing
+        if ATD_USE_DIALOG_CAMERA and trainer != null then
+            call FCL_Lock(trainer, Player(0))
+        endif
+    endfunction
+
+    private function ATD_StartTrainerCamera takes unit trainer, unit hero returns nothing
+        if trainer == null then
+            return
+        endif
+
+        call DialogSystem_StartDialogCamera(Player(0), trainer, ATD_CAMERA_DIST, ATD_CAMERA_Z_OFFSET, ATD_CAMERA_ANGLE, ATD_GetHeroCameraRotationOffset(trainer, hero), ATD_CAMERA_FAR_Z, ATD_CAMERA_FOV, ATD_CAMERA_BLOCK_RADIUS, ATD_CAMERA_BLOCK_CHECK, ATD_USE_DIALOG_CAMERA)
+        call ATD_LockTrainerCamera(trainer)
+    endfunction
+
     private function ATD_EndTrainerDialog takes boolean startCooldown returns nothing
         local unit hero = ATD_SelectedHero
 
         call DialogSystem_ClearEscapeAction()
         call DialogSystem_HideDialog(ATD_Dialog, Player(0))
+        call FCL_Release(Player(0))
         call DialogSystem_StopDialogCamera(Player(0), ATD_CAMERA_RESET_TIME, ATD_USE_DIALOG_CAMERA)
         call QuestGiver_EndCinematicSequence(ATD_CINEMATIC)
 
@@ -191,6 +232,7 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
 
         if trainer != null and hero != null then
             call ShowUnit(hero, true)
+            call ATD_LockTrainerCamera(trainer)
             call AbilitiesUI_ShowForTrainer(trainer, hero)
         endif
 
@@ -253,7 +295,7 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
 
         call ATD_BuildDialog()
         call QuestGiver_BeginCinematicSequence(ATD_CINEMATIC)
-        call QuestGiver_StartConfiguredDialogCamera(Player(0), ATD_SelectedTrainer, ATD_USE_DIALOG_CAMERA)
+        call ATD_StartTrainerCamera(ATD_SelectedTrainer, ATD_SelectedHero)
         call DialogSystem_SetContext(ATD_SelectedTrainer, Player(0))
         call DialogSystem_ShowDialog(ATD_Dialog, Player(0))
     endfunction
@@ -267,6 +309,7 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
         endif
 
         call ATD_BuildDialog()
+        call ATD_LockTrainerCamera(ATD_SelectedTrainer)
         set seq = ATD_CreateGreetSequence(ATD_SelectedTrainer, ATD_SelectedHero)
         call QuestGiver_PlayGreetSequenceEx(seq, ATD_SelectedTrainer, Player(0), ATD_Dialog, ATD_CINEMATIC)
     endfunction
@@ -297,6 +340,7 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
 
         set ATD_SelectedTrainer = trainer
         set ATD_SelectedHero = hero
+        call ATD_ConfigureTrainerCamera(trainer, hero)
         call QuestGiver_StartConfiguredDialogEntryTransition(trainer, hero, false, ATD_USE_DIALOG_CAMERA, ATD_CINEMATIC, "AbilityTrainerDialogs_ContinueToDialogAfterSelection")
 
         set trainer = null
@@ -320,7 +364,7 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
 
         set ATD_RegisteredTrainer.boolean[handleId] = true
         call QuestGiver_Register(trainer)
-        call QuestGiver_ConfigureDialogTransition(trainer, ATD_CINEMATIC_MOVE_MODE, ATD_CINEMATIC_MOVE_OFFSET, ATD_CINEMATIC_MOVE_ANGLE, ATD_CAMERA_DIST, ATD_CAMERA_Z_OFFSET, ATD_CAMERA_ANGLE, ATD_CAMERA_ROT_OFFSET, ATD_CAMERA_FAR_Z, ATD_CAMERA_FOV, ATD_CAMERA_BLOCK_RADIUS, ATD_CAMERA_BLOCK_CHECK)
+        call ATD_ConfigureTrainerCamera(trainer, null)
         call QuestGiver_SetGreetOrder(trainer, QUESTGIVER_GREET_NONE)
         call QuestGiver_RegisterSelectionHandler(trainer, function ATD_OnSelected)
     endfunction
