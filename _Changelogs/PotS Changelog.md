@@ -21,7 +21,7 @@
 
 - Added a startup preload presentation before the intro/game-start flow:
   - Player control is disabled while the preload sequence runs.
-  - Preload now runs in cinematic mode, keeps cinematic panels visible, displays 16:9 frame UI images over a full-screen backing frame, and shows colored RegionTitles-style phase text for sound, music, ability, and completion stages.
+  - Preload now runs in cinematic mode, hides the default cinematic panels only during preload, displays 16:9 frame UI images over a full-screen backing frame, and shows colored RegionTitles-style phase text for sound, music, ability, and completion stages.
   - The intro/game start trigger is executed only after the preload sequence completes.
   - Loading a saved game reruns sound/music preload without restarting the game-start flow.
 
@@ -57,6 +57,7 @@
 
 - Stats UI now shows `Rested` for the selected unit when the centralized Experience system reports that the unit is rested.
 - Rested status is now lost when the rested unit dies.
+- Tent Sleep can now be used by already Rested Nazgrek/Zul'kis heroes; completing the tent rest renews the Rested state instead of blocking the sleep.
 
 ### Technical Updates
 
@@ -70,7 +71,7 @@
 - Added `Preload/Preloader.j`
   - New timer-driven startup preload runner that replaces the old GUI wait chain.
   - Runs at elapsed game time `0.00`, enables cinematic mode, updates preload UI/status text through `RegionTitles`, and preloads sounds, music, and abilities in staged steps.
-  - Calls `BlzHideCinematicPanels(false)` before enabling cinematic mode so cinematic panels remain visible during preload.
+  - Calls `BlzHideCinematicPanels(true)` only for the preload presentation and restores it to `false` when preload cinematic mode ends, preventing later dialog cinematics such as ability trainers from inheriting hidden cinematic panels.
   - Splits each preload phase into a visible UI/title tick and a later preload-work tick so image changes can render before synchronous preload work begins.
   - Calls `ExSound_PreloadAll()`, `ExMusic_PreloadAll()`, and `Preload_Abilities(...)`.
   - Removes the placed `AbilityLoader 1870 <gen>` unit after ability preloading.
@@ -94,6 +95,11 @@
   - Renamed the misleading Rested rawcode constant from `BUFF_RESTED` to `RESTED_ABILITY_ID`.
   - Added comments clarifying that Rested uses hidden aura ability rawcode `S000` through `UnitAddAbility` / `UnitRemoveAbility`, not a buff rawcode.
   - Rested death cleanup now clears the dying unit's hidden Rested ability, expiry timer, and multiplier state before cinematic XP guards can skip XP processing.
+
+- Updated `Leveling/BaseCamp.j`
+  - Removed the Rested-state gate from Tent Sleep hero registration.
+  - Added BaseCamp-local elapsed tracking so already Rested heroes can complete the normal 8-second tent rest and renew Rested through `Experience_GrantRested`.
+  - Non-rested Tent Sleep still uses the shared `Experience_AddRestingProgress` path.
 
 - Added `Abilities/AbilitiesPlayer.j`
   - New player shaman ability registry for JASS learning and UI display.
@@ -179,6 +185,7 @@
   - Replaced the filled active-button talent highlight with a selected-talent autocast sprite highlight based on the `StatsLiteUI` sprite pattern.
   - Expanded the talent grid capacity to 6 columns by 8 rows and matched the backend tree dimensions.
   - Raised tooltip frame levels above talent icons and wrapped detail requirement text so descriptions stay inside the talent panel.
+  - Follow-up fix: unavailable talent icons now use a darkened icon tint instead of an opaque black overlay, keeping the artwork visible while still reading as locked.
 
 - Updated `UI/AbilitiesLiteUI.j`
   - Added a Talents button for player shaman heroes.
@@ -250,8 +257,8 @@
   - `Abilities/Talents.j`
 
 - Updated profession crafting sound routing:
-  - `UI/Interface.j` now routes plain profession craft playback through an audible cinematic SFX channel because `CinematicModeBJ` mutes UI and unit-sound volume groups.
-  - `Professions/Professions.j` now prefers label-created sounds for cinematic player jobs and keeps workstation-attached 3D playback for AI or non-cinematic craft jobs.
+  - `UI/Interface.j` now exposes a profession cinematic volume restore helper because `CinematicModeBJ` mutes UI and unit-sound volume groups.
+  - `Professions/Professions.j` now restores those volume groups for player craft cinematics, uses imported sound handles before labels for player jobs, and keeps workstation-attached 3D playback for AI or non-cinematic craft jobs.
   - `Professions/ProfessionsMining.j` now registers `Smelting` as the Forge start/loop/end sound label.
 
 ### Known Issues
