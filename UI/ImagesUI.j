@@ -5,9 +5,9 @@
     Version:
 
     Description:
-    Small frame UI helper for showing a centered image with an optional status
-    line. It is currently used by the preload flow before the intro/game start
-    trigger is executed.
+    Small frame UI helper for showing a centered 16:9 preload image. It is
+    currently used by the preload flow before the intro/game start trigger is
+    executed.
 
     Credits:
 
@@ -16,7 +16,7 @@
     callers to match imported BLP files or valid game texture paths.
 
     API:
-    call ImagesUI_ShowPreload("war3mapImported\\PreloadStart.blp", "Preloading files . ...")
+    call ImagesUI_ShowPreload("war3mapImported\\PreloadStart.blp", "")
     call ImagesUI_SetPreloadImage("war3mapImported\\PreloadSounds.blp")
     call ImagesUI_SetPreloadText("==== Sounds")
     call ImagesUI_HidePreload()
@@ -24,11 +24,13 @@
 **/
 library ImagesUI
     globals
-        // Preload overlay configuration.
+        // Preload overlay configuration. 0.800 x 0.450 keeps a 16:9 image ratio.
+        private constant real IMUI_SCREEN_WIDTH = 0.800
+        private constant real IMUI_SCREEN_HEIGHT = 0.600
         private constant real IMUI_IMAGE_CENTER_X = 0.400
-        private constant real IMUI_IMAGE_CENTER_Y = 0.335
-        private constant real IMUI_IMAGE_WIDTH = 0.420
-        private constant real IMUI_IMAGE_HEIGHT = 0.236
+        private constant real IMUI_IMAGE_CENTER_Y = 0.300
+        private constant real IMUI_IMAGE_WIDTH = 0.800
+        private constant real IMUI_IMAGE_HEIGHT = 0.450
         private constant real IMUI_TEXT_CENTER_Y = 0.190
         private constant real IMUI_TEXT_WIDTH = 0.520
         private constant real IMUI_TEXT_HEIGHT = 0.032
@@ -38,6 +40,7 @@ library ImagesUI
 
         private boolean IMUI_Initialized = false
         private framehandle IMUI_Root = null
+        private framehandle IMUI_Background = null
         private framehandle IMUI_Image = null
         private framehandle IMUI_Text = null
     endglobals
@@ -53,8 +56,13 @@ library ImagesUI
 
         set IMUI_Root = BlzCreateFrameByType("FRAME", "ImagesUIPreloadRoot", gameUI, "", 0)
         call BlzFrameSetAbsPoint(IMUI_Root, FRAMEPOINT_CENTER, IMUI_IMAGE_CENTER_X, IMUI_IMAGE_CENTER_Y)
-        call BlzFrameSetSize(IMUI_Root, IMUI_TEXT_WIDTH, IMUI_IMAGE_HEIGHT + 0.080)
+        call BlzFrameSetSize(IMUI_Root, IMUI_SCREEN_WIDTH, IMUI_SCREEN_HEIGHT)
         call BlzFrameSetLevel(IMUI_Root, IMUI_FRAME_LEVEL)
+
+        set IMUI_Background = BlzCreateFrameByType("BACKDROP", "ImagesUIPreloadBackground", IMUI_Root, "", 0)
+        call BlzFrameSetAbsPoint(IMUI_Background, FRAMEPOINT_CENTER, IMUI_IMAGE_CENTER_X, IMUI_IMAGE_CENTER_Y)
+        call BlzFrameSetSize(IMUI_Background, IMUI_SCREEN_WIDTH, IMUI_SCREEN_HEIGHT)
+        call BlzFrameSetTexture(IMUI_Background, IMUI_DEFAULT_IMAGE, 0, true)
 
         set IMUI_Image = BlzCreateFrameByType("BACKDROP", "ImagesUIPreloadImage", IMUI_Root, "", 0)
         call BlzFrameSetAbsPoint(IMUI_Image, FRAMEPOINT_CENTER, IMUI_IMAGE_CENTER_X, IMUI_IMAGE_CENTER_Y)
