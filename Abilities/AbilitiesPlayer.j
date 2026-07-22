@@ -22,6 +22,8 @@
     - set treeId = AbilitiesPlayer_GetTrainerTreeByUnitType(unitTypeId)
     - set title = AbilitiesPlayer_GetEntryTitle(entry)
     - set body = AbilitiesPlayer_GetEntryBodyForLevel(entry, level)
+    - set locked = AbilitiesPlayer_IsEntryInitialQuestLocked(entry)
+    - set text = AbilitiesPlayer_GetEntryInitialQuestLockedText(entry)
 
 **/
 library AbilitiesPlayer initializer Init
@@ -61,6 +63,8 @@ library AbilitiesPlayer initializer Init
         private integer array ABP_EntryRequiredAbilityId
         private integer array ABP_EntryMaxLevel
         private integer array ABP_EntryCost
+        private boolean array ABP_EntryInitialQuestLocked
+        private string array ABP_EntryInitialQuestLockedText
         private string array ABP_EntryTitleOverride
         private string array ABP_EntryBodyOverride
     endglobals
@@ -135,6 +139,8 @@ library AbilitiesPlayer initializer Init
         set ABP_EntryMaxLevel[ABP_EntryCount] = maxLevel
         set ABP_EntryCost[ABP_EntryCount] = cost
         set ABP_EntryRequiredAbilityId[ABP_EntryCount] = requiredAbilityId
+        set ABP_EntryInitialQuestLocked[ABP_EntryCount] = false
+        set ABP_EntryInitialQuestLockedText[ABP_EntryCount] = ""
         set ABP_EntryTitleOverride[ABP_EntryCount] = titleText
         set ABP_EntryBodyOverride[ABP_EntryCount] = bodyText
 
@@ -147,6 +153,15 @@ library AbilitiesPlayer initializer Init
 
     private function ABP_RegisterSpecialization takes integer treeId, integer abilityId, integer permanentAbilityId returns integer
         return ABP_RegisterEntry(treeId, ENTRY_SPECIALIZATION, abilityId, abilityId, permanentAbilityId, 1, ABP_SPECIALIZATION_COST, 0, "", "")
+    endfunction
+
+    private function ABP_SetEntryInitialQuestLocked takes integer entryIndex, string lockedText returns nothing
+        if entryIndex <= 0 or entryIndex > ABP_MAX_ENTRIES then
+            return
+        endif
+
+        set ABP_EntryInitialQuestLocked[entryIndex] = true
+        set ABP_EntryInitialQuestLockedText[entryIndex] = lockedText
     endfunction
 
     private function ABP_RegisterElemental takes nothing returns nothing
@@ -162,12 +177,15 @@ library AbilitiesPlayer initializer Init
     endfunction
 
     private function ABP_RegisterEnhancement takes nothing returns nothing
+        local integer entryIndex
+
         call ABP_RegisterAbility(TREE_ENHANCEMENT, 'A685', 'A681', 5, 0)   // Stormstrike
         call ABP_RegisterAbility(TREE_ENHANCEMENT, 'A6DP', 'A6DQ', 5, 0)   // Whirlwind
         call ABP_RegisterAbility(TREE_ENHANCEMENT, 'A026', 'A027', 1, 0)   // Wind Shear
         call ABP_RegisterAbility(TREE_ENHANCEMENT, 'A022', 'A023', 5, 0)   // Primal Force
         call ABP_RegisterAbility(TREE_ENHANCEMENT, 'A67N', 'A67O', 5, 0)   // Bloodlust
-        call ABP_RegisterAbility(TREE_ENHANCEMENT, 'A68Y', 'A680', 5, 0)   // Ghost Wolf
+        set entryIndex = ABP_RegisterAbility(TREE_ENHANCEMENT, 'A68Y', 'A680', 5, 0) // Ghost Wolf / Spirit Wolf
+        call ABP_SetEntryInitialQuestLocked(entryIndex, "Requires Spirit Wolf quest training.")
         call ABP_RegisterAbility(TREE_ENHANCEMENT, 'A679', 'A67D', 5, 0)   // Feral Spirits
         call ABP_RegisterAbility(TREE_ENHANCEMENT, 'A673', 'A674', 5, 0)   // Hex
         call ABP_RegisterAbility(TREE_ENHANCEMENT, 'A675', 'A676', 5, 0)   // Voodoo Curse
@@ -297,6 +315,23 @@ library AbilitiesPlayer initializer Init
             return 0
         endif
         return ABP_EntryCost[entryIndex]
+    endfunction
+
+    public function IsEntryInitialQuestLocked takes integer entryIndex returns boolean
+        if not IsValidEntry(entryIndex) then
+            return false
+        endif
+        return ABP_EntryInitialQuestLocked[entryIndex]
+    endfunction
+
+    public function GetEntryInitialQuestLockedText takes integer entryIndex returns string
+        if not IsValidEntry(entryIndex) then
+            return ""
+        endif
+        if ABP_EntryInitialQuestLockedText[entryIndex] == "" then
+            return "Requires quest training."
+        endif
+        return ABP_EntryInitialQuestLockedText[entryIndex]
     endfunction
 
     public function GetEntryByAbilityId takes integer abilityId returns integer
