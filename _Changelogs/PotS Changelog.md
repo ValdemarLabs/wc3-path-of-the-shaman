@@ -42,6 +42,11 @@
   - Talent tree buttons now use a denser WoW-style icon layout with compact rank numbers and stable hover tooltips.
   - Talent reset from `TalentsUI` is now only enabled while the hero is near an ability trainer.
 
+- Refined profession crafting sound playback:
+  - Player-started cinematic crafting now uses plain profession sound playback that remains audible during cinematic mode.
+  - AI crafting and any non-cinematic craft actions continue to use 3D sound playback on the workstation unit.
+  - Forge smelting now uses the `Smelting` craft sound label instead of mining-hit labels; mining ore harvesting and herb picking sounds were left unchanged.
+
 ### Technical Updates
 
 - Added `UI/ImagesUI.j`
@@ -145,8 +150,7 @@
 
 - Replaced the old centralized GUI map-enter pattern:
   - `Events/_OldGUI/Init 07 Unit Event Enters` is now documented as migrated/deprecated.
-  - The old per-unit `Floating Texts Spell Event` add-event pattern should be replaced with one map-init registration:
-    - `call Events_RegisterPlayerUnitTrigger(gg_trg_Floating_Texts_Spell_Event, EVENT_PLAYER_UNIT_SPELL_EFFECT)`
+  - The old per-unit `Floating Texts Spell Event` add-event pattern should not be replaced with `Events_RegisterPlayerUnitTrigger` if the GUI trigger depends on native event responses. Convert it to a JASS code callback with `Events_RegisterPlayerUnitEvent`, or keep one direct all-player spell-effect registration until it is converted.
   - `CreepRespawn`, `UnitStats`, `ResourceRage`, and `ResourceEnergy` now register their unit-enter handling through `Events.j`.
 
 - Migrated many active systems away from standalone all-player event registrations:
@@ -183,6 +187,12 @@
   - `Stealth/Stealth.j`
   - `ItemSystems/ItemCleanup.j`
   - `ItemSystems/ItemUnstack.j`
+  - `Abilities/Talents.j`
+
+- Updated profession crafting sound routing:
+  - `UI/Interface.j` now routes plain profession craft playback through an audible cinematic SFX channel because `CinematicModeBJ` mutes UI and unit-sound volume groups.
+  - `Professions/Professions.j` now prefers label-created sounds for cinematic player jobs and keeps workstation-attached 3D playback for AI or non-cinematic craft jobs.
+  - `Professions/ProfessionsMining.j` now registers `Smelting` as the Forge start/loop/end sound label.
 
 ### Known Issues
 
@@ -194,7 +204,7 @@
 - `TalentsUI` tooltip placement and dependency link textures need in-game visual validation on the Warcraft III frame layer.
 - This is a high-risk structural event refactor. Any system that relied on direct trigger registration order, disabled trigger state, or event response timing should be retested in-game.
 - Full map compile validation was not completed because the repo snapshot still does not expose a combined `war3map.j` or normal map build entry point. `git diff --check` passed for the edited files.
-- GUI `Floating Texts Spell Event` must be manually registered once through `Events_RegisterPlayerUnitTrigger`; leaving the old per-unit add-event behavior enabled can keep recreating the original event-bloat risk.
+- GUI `Floating Texts Spell Event` must not keep the old per-unit add-event behavior. Convert it to a JASS code callback registered through `Events_RegisterPlayerUnitEvent`, or keep one direct all-player spell-effect event on the GUI trigger until it is converted.
 - Remaining direct event registrations still exist in separate quest/gather/UI/imported/old systems. They were not all migrated in this pass to avoid changing unrelated behavior without focused testing.
 
 ### Actions Remaining
