@@ -15,6 +15,13 @@ globals
     private constant real MAINTITLE_DURATION = 4.0
     private constant real MAINTITLE_FADE_OUT_TIME = 3.0
     private constant integer TITLE_FRAME_LEVEL = 20
+    private constant real PRELOAD_SMALL_TEXT_Y = 0.360
+    private constant real PRELOAD_TITLE_Y = 0.315
+    private constant real PRELOAD_SMALL_TEXT_WIDTH = 0.520
+    private constant real PRELOAD_TITLE_WIDTH = 0.620
+    private constant real PRELOAD_TEXT_HEIGHT = 0.040
+    private constant real PRELOAD_SMALL_TEXT_SCALE = 1.20
+    private constant real PRELOAD_TITLE_SCALE = 1.75
 
     private framehandle titleFrame1 = null
     private framehandle Text02 = null
@@ -42,6 +49,14 @@ globals
     private real SingleLineTextDuration = 2.0
     private real SingleLineTextFadeOut = 1.0
     private boolean SingleLineTextActive = false
+
+    private framehandle PreloadSmallTextFrame = null
+    private framehandle PreloadTitleFrame = null
+    private real PreloadTitleTime = 0.0
+    private real PreloadTitleFadeIn = 0.10
+    private real PreloadTitleDuration = 0.70
+    private real PreloadTitleFadeOut = 0.25
+    private boolean PreloadTitleActive = false
 endglobals
 
 // Public function to show a region title with fade
@@ -81,6 +96,27 @@ function ShowSingleLineText takes string text, real fadeIn, real duration, real 
     call BlzFrameSetScale(SingleLineTextFrame, scale)
     call BlzFrameSetAlpha(SingleLineTextFrame, 0)
     call BlzFrameSetVisible(SingleLineTextFrame, true)
+endfunction
+
+function ShowPreloadTitle takes string smallText, string mainTitle, real fadeIn, real duration, real fadeOut returns nothing
+    set PreloadTitleFadeIn = fadeIn
+    set PreloadTitleDuration = duration
+    set PreloadTitleFadeOut = fadeOut
+    set PreloadTitleTime = 0.0
+    set PreloadTitleActive = true
+
+    call BlzFrameSetText(PreloadSmallTextFrame, smallText)
+    call BlzFrameSetText(PreloadTitleFrame, mainTitle)
+    call BlzFrameSetAlpha(PreloadSmallTextFrame, 0)
+    call BlzFrameSetAlpha(PreloadTitleFrame, 0)
+    call BlzFrameSetVisible(PreloadSmallTextFrame, true)
+    call BlzFrameSetVisible(PreloadTitleFrame, true)
+endfunction
+
+function HidePreloadTitle takes nothing returns nothing
+    call BlzFrameSetVisible(PreloadSmallTextFrame, false)
+    call BlzFrameSetVisible(PreloadTitleFrame, false)
+    set PreloadTitleActive = false
 endfunction
 
 private function HideTitle takes nothing returns nothing
@@ -154,9 +190,33 @@ private function FadeSingleLineText takes nothing returns nothing
     endif
 endfunction
 
+private function FadePreloadTitle takes nothing returns nothing
+    local integer alpha
+
+    if not PreloadTitleActive then
+        return
+    endif
+
+    set PreloadTitleTime = PreloadTitleTime + 0.03
+    if PreloadTitleTime < PreloadTitleFadeIn then
+        set alpha = R2I(255 * (PreloadTitleTime / PreloadTitleFadeIn))
+    elseif PreloadTitleTime < PreloadTitleFadeIn + PreloadTitleDuration then
+        set alpha = 255
+    elseif PreloadTitleTime < PreloadTitleFadeIn + PreloadTitleDuration + PreloadTitleFadeOut then
+        set alpha = R2I(255 * (1 - (PreloadTitleTime - PreloadTitleFadeIn - PreloadTitleDuration) / PreloadTitleFadeOut))
+    else
+        call HidePreloadTitle()
+        return
+    endif
+
+    call BlzFrameSetAlpha(PreloadSmallTextFrame, alpha)
+    call BlzFrameSetAlpha(PreloadTitleFrame, alpha)
+endfunction
+
 private function Periodic takes nothing returns nothing
     call FadeTitle()
     call FadeSingleLineText()
+    call FadePreloadTitle()
 endfunction
 
 // ParentFunc who you want as parent, this runs at InitBlizzard, if you need more control you need to modify the part that calls local function Init()
@@ -199,6 +259,26 @@ private function InitRegionTitles takes nothing returns nothing
     call BlzFrameSetTextAlignment(SingleLineTextFrame, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE)
     call BlzFrameSetVisible(SingleLineTextFrame, false)
     call BlzFrameSetAlpha(SingleLineTextFrame, 0)
+
+    set PreloadSmallTextFrame = BlzCreateFrameByType("TEXT", "RegionTitlePreloadSmallText", ParentFunc(), "", 0)
+    call BlzFrameSetAbsPoint(PreloadSmallTextFrame, FRAMEPOINT_CENTER, 0.400, PRELOAD_SMALL_TEXT_Y)
+    call BlzFrameSetSize(PreloadSmallTextFrame, PRELOAD_SMALL_TEXT_WIDTH, PRELOAD_TEXT_HEIGHT)
+    call BlzFrameSetEnable(PreloadSmallTextFrame, false)
+    call BlzFrameSetScale(PreloadSmallTextFrame, PRELOAD_SMALL_TEXT_SCALE)
+    call BlzFrameSetLevel(PreloadSmallTextFrame, TITLE_FRAME_LEVEL)
+    call BlzFrameSetTextAlignment(PreloadSmallTextFrame, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE)
+    call BlzFrameSetVisible(PreloadSmallTextFrame, false)
+    call BlzFrameSetAlpha(PreloadSmallTextFrame, 0)
+
+    set PreloadTitleFrame = BlzCreateFrameByType("TEXT", "RegionTitlePreloadTitle", ParentFunc(), "", 0)
+    call BlzFrameSetAbsPoint(PreloadTitleFrame, FRAMEPOINT_CENTER, 0.400, PRELOAD_TITLE_Y)
+    call BlzFrameSetSize(PreloadTitleFrame, PRELOAD_TITLE_WIDTH, PRELOAD_TEXT_HEIGHT)
+    call BlzFrameSetEnable(PreloadTitleFrame, false)
+    call BlzFrameSetScale(PreloadTitleFrame, PRELOAD_TITLE_SCALE)
+    call BlzFrameSetLevel(PreloadTitleFrame, TITLE_FRAME_LEVEL)
+    call BlzFrameSetTextAlignment(PreloadTitleFrame, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE)
+    call BlzFrameSetVisible(PreloadTitleFrame, false)
+    call BlzFrameSetAlpha(PreloadTitleFrame, 0)
 
     // Periodic for fade
     call TimerStart(CreateTimer(), 0.03, true, function Periodic)
