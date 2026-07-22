@@ -6,8 +6,8 @@
 
     Description:
     Handles tent/base-camp limits, Sleep-started resting progress for loaded
-    player heroes, tent dismantling, and tent death cleanup. Rested state is
-    delegated to the Experience library.
+    player heroes, tent dismantling, and tent death cleanup. Rested progress
+    and renewal are delegated to the Experience library.
 
     Credits:
 
@@ -20,7 +20,7 @@
     - call BaseCamp_UnregisterTent(tent)
     - set hasTent = BaseCamp_PlayerHasTent(player)
     - Cast the tent's Sleep ability (`A0F2`) with Nazgrek or Zulkis loaded to
-      start time skipping and rested progress.
+      start time skipping and rested progress or renewal.
 
 **/
 library BaseCamp initializer Init requires Experience, Events, UnitDeathEvent, optional HintsUI
@@ -56,6 +56,7 @@ library BaseCamp initializer Init requires Experience, Events, UnitDeathEvent, o
 
         private unit array BC_RestHero
         private unit array BC_RestTent
+        private real array BC_RestElapsed
         private integer BC_RestCount = 0
 
         private timer BC_RestTimer = null
@@ -268,8 +269,10 @@ library BaseCamp initializer Init requires Experience, Events, UnitDeathEvent, o
         set BC_RestCount = BC_RestCount - 1
         set BC_RestHero[index] = BC_RestHero[BC_RestCount]
         set BC_RestTent[index] = BC_RestTent[BC_RestCount]
+        set BC_RestElapsed[index] = BC_RestElapsed[BC_RestCount]
         set BC_RestHero[BC_RestCount] = null
         set BC_RestTent[BC_RestCount] = null
+        set BC_RestElapsed[BC_RestCount] = 0.00
     endfunction
 
     private function BC_RestingLoop takes nothing returns nothing
@@ -289,7 +292,15 @@ library BaseCamp initializer Init requires Experience, Events, UnitDeathEvent, o
                 set i = i - 1
             else
                 set anyResting = true
-                set granted = Experience_AddRestingProgress(hero, BC_REST_TICK, BC_REST_REQUIRED)
+                set BC_RestElapsed[i] = BC_RestElapsed[i] + BC_REST_TICK
+                if Experience_IsRested(hero) then
+                    set granted = BC_RestElapsed[i] >= BC_REST_REQUIRED
+                    if granted then
+                        call Experience_GrantRested(hero)
+                    endif
+                else
+                    set granted = Experience_AddRestingProgress(hero, BC_REST_TICK, BC_REST_REQUIRED)
+                endif
                 if granted then
                     call BC_RemoveRestRecordAt(i)
                     if not BC_TentHasRestRecord(tent) then
@@ -320,6 +331,7 @@ library BaseCamp initializer Init requires Experience, Events, UnitDeathEvent, o
         if BC_RestCount < BC_MAX_REST_RECORDS then
             set BC_RestHero[BC_RestCount] = hero
             set BC_RestTent[BC_RestCount] = tent
+            set BC_RestElapsed[BC_RestCount] = 0.00
             set BC_RestCount = BC_RestCount + 1
             call TimerStart(BC_RestTimer, BC_REST_TICK, true, function BC_RestingLoop)
             return true
@@ -329,7 +341,7 @@ library BaseCamp initializer Init requires Experience, Events, UnitDeathEvent, o
     endfunction
 
     private function BC_TryAddSleepHero takes unit hero, unit tent returns boolean
-        if BC_IsPlayerHeroForTent(hero, tent) and IsUnitInTransport(hero, tent) and not Experience_IsRested(hero) then
+        if BC_IsPlayerHeroForTent(hero, tent) and IsUnitInTransport(hero, tent) then
             return BC_AddRestRecord(hero, tent)
         endif
 
