@@ -1,5 +1,30 @@
+/**
+    PreloadAbilities
+
+    Author: Valdemar
+    Version:
+
+    Description:
+    Adds all custom abilities to a preload unit so Warcraft III loads ability
+    data before gameplay begins.
+
+    Credits:
+
+    How to install:
+    Import before Preloader.j. Pass the placed AbilityLoader unit, or set
+    udg_AbilityPreloader before calling this API.
+
+    API:
+    call Preload_Abilities(udg_AbilityPreloader)
+
+**/
+library PreloadAbilities
 //===========================================================================
 function Preload_Abilities takes unit u returns nothing
+
+    if u != null then
+        set udg_AbilityPreloader = u
+    endif
 
     // Add all custom abilities here to preload them
 
@@ -147,5 +172,6 @@ endfunction
 
 
 //===========================================================================
+endlibrary
 
 

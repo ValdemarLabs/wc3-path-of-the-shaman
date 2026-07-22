@@ -19,6 +19,11 @@
 
 ### Player-Facing Updates
 
+- Added a startup preload presentation before the intro/game-start flow:
+  - Player control is disabled while the preload sequence runs.
+  - Preload progress can now show custom frame UI images and status text for sound, music, ability, and completion stages.
+  - The intro/game start trigger is executed only after the preload sequence completes.
+
 - Added a new player shaman ability learning flow for Nazgrek and Zul'kis:
   - Enhancement, Elemental, Restoration, and Totemic trainers can open a focused ability training UI.
   - Learning is now driven by the new `AbilityPoints.j` ability-point state instead of the old GUI `AbilityPoints` integers.
@@ -38,6 +43,22 @@
   - Talent reset from `TalentsUI` is now only enabled while the hero is near an ability trainer.
 
 ### Technical Updates
+
+- Added `UI/ImagesUI.j`
+  - New lightweight image/status frame helper for preload and similar scripted presentation flows.
+  - Provides public APIs for showing, updating, and hiding the preload image surface.
+  - Keeps image paths caller-controlled so imported preload BLPs can be swapped without changing the UI helper.
+
+- Added `Preload/Preloader.j`
+  - New timer-driven startup preload runner that replaces the old GUI wait chain.
+  - Runs at elapsed game time `0.00`, disables user control, updates preload UI/status text, and preloads sounds, music, and abilities in staged steps.
+  - Calls `ExSound_PreloadAll()`, `ExMusic_PreloadAll()`, and `Preload_Abilities(...)`.
+  - Removes the placed `AbilityLoader 1870 <gen>` unit after ability preloading.
+  - Executes `gg_trg_Game_Start` and initializes `StatsLiteUI` after preload completion.
+
+- Updated `Preload/PreloadAbilities.j`
+  - Wrapped the existing rawcode preload function in a `PreloadAbilities` library so other libraries can declare a proper dependency.
+  - Made the function's `unit u` parameter populate `udg_AbilityPreloader` before the existing ability-add list runs.
 
 - Added `Abilities/AbilitiesPlayer.j`
   - New player shaman ability registry for JASS learning and UI display.
@@ -120,6 +141,7 @@
     - `Events_GetCurrentPlayerUnitEvent`
   - Explicitly rejects `EVENT_PLAYER_UNIT_DEATH`; death remains handled by `_CoreSystems/UnitDeathEvent.j`.
   - Trigger callbacks now respect disabled triggers and run conditions before actions, matching normal trigger callback behavior more closely.
+  - Follow-up fix: `Events_RegisterUnitEnter` and `Events_RegisterPlayerUnitEvent` now attach code callbacks directly to the central event trigger instead of executing them through secondary triggers, so normal event responses such as `GetTriggerUnit()`, `GetSpellAbilityId()`, and `GetManipulatedItem()` remain valid.
 
 - Replaced the old centralized GUI map-enter pattern:
   - `Events/_OldGUI/Init 07 Unit Event Enters` is now documented as migrated/deprecated.
@@ -156,6 +178,11 @@
 - Split handlers that previously depended on `GetTriggerEventId()` before moving them to `Events.j`:
   - `AI/AI.j` now has separate item pickup/drop callbacks.
   - `Leveling/Experience.j` now has separate bonus-item pickup/drop callbacks.
+
+- Converted migrated condition-trigger callbacks back to direct code callbacks after the event-response issue was found:
+  - `Stealth/Stealth.j`
+  - `ItemSystems/ItemCleanup.j`
+  - `ItemSystems/ItemUnstack.j`
 
 ### Known Issues
 
