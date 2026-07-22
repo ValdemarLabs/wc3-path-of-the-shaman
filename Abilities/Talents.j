@@ -78,7 +78,7 @@ library Talents initializer Init requires AbilitiesPlayer, optional AbilityPoint
 
         private constant integer TLT_MAX_TALENTS = 96
         private constant integer TLT_RANK_KEY_STRIDE = 128
-        private constant integer TLT_FIRST_TALENT_LEVEL = 5
+        private constant integer TLT_FIRST_TALENT_LEVEL = 2
         private constant integer TLT_POINTS_PER_LEVEL = 1
         private constant integer TLT_HERO_NAZGREK = 1
         private constant integer TLT_HERO_ZULKIS = 2
@@ -1194,11 +1194,7 @@ library Talents initializer Init requires AbilitiesPlayer, optional AbilityPoint
     private function TLT_OnHeroLevel takes nothing returns nothing
         local unit hero
 
-        static if LIBRARY_Events then
-            set hero = GetTriggerUnit()
-        else
-            set hero = GetLevelingUnit()
-        endif
+        set hero = GetLevelingUnit()
 
         if not TLT_IsPlayerShamanHero(hero) then
             set hero = null
