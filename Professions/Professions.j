@@ -18,6 +18,7 @@
     call Professions_SetRecipeSkillGain(recipeId, 1)
     call Professions_SetProfessionSoundLabels(GNS_PROF_ALCHEMY, "Alchemy start", "Alchemy loop", "Alchemy loop")
     call Professions_SetProfessionSoundHandles(GNS_PROF_ALCHEMY, Interface_Profession_Alchemy_Start, Interface_Profession_Alchemy_Loop, Interface_Profession_Alchemy_End)
+    call Professions_SetProfessionSoundPaths(GNS_PROF_ALCHEMY, Interface_Profession_Alchemy_StartPath, Interface_Profession_Alchemy_LoopPath, Interface_Profession_Alchemy_EndPath)
     call Professions_SetProfessionAiCheatCrafting(GNS_PROF_ALCHEMY, true)
     call Professions_SetProfessionCrafterAnimations(GNS_PROF_ALCHEMY, "stand work", "spell")
     call Professions_SetProfessionCrafterAnimationsForUnitType(GNS_PROF_ALCHEMY, 'H000', "spell", "stand")
@@ -31,7 +32,7 @@
 
 **/
 
-library Professions initializer AutoInit requires GatherNodeSkills, TimerUtils, Table, DialogCamera, CinematicMover, Interface, optional SharedDInvLib, optional ItemHook
+library Professions initializer AutoInit requires GatherNodeSkills, TimerUtils, Table, DialogCamera, CinematicMover, Interface, optional SharedDInvLib, optional ItemHook, optional MasterUI
 
 globals
     // Public result codes for callers that need richer failure handling later.
@@ -122,6 +123,9 @@ globals
     private sound array P_ProfessionStartSound
     private sound array P_ProfessionLoopSound
     private sound array P_ProfessionFinishSound
+    private string array P_ProfessionStartSoundPath
+    private string array P_ProfessionLoopSoundPath
+    private string array P_ProfessionFinishSoundPath
 
     // Per-profession crafter behavior registered by ProfessionsXXX sublibraries.
     private boolean array P_ProfessionAiCheatCrafting
@@ -522,6 +526,22 @@ private function P_IsNearStation takes unit crafter, unit station returns boolea
     return P_GetDistanceSqBetweenUnits(crafter, station) <= P_STATION_USE_RANGE * P_STATION_USE_RANGE
 endfunction
 
+private function P_PlaySoundPathForJob takes integer jobId, string soundPath, unit station, boolean looping returns sound
+    if soundPath == null or soundPath == "" then
+        return null
+    endif
+
+    if P_JobCinematicActive[jobId] and not P_JobAiControlled[jobId] then
+        return Interface_PlayProfessionSoundPath(soundPath, looping)
+    endif
+
+    if station != null then
+        return Interface_PlayProfessionSoundPathOnUnit(soundPath, station, looping, P_SOUND_CUTOFF)
+    endif
+
+    return null
+endfunction
+
 private function P_PlaySoundLabelForJob takes integer jobId, string soundLabel, unit station, boolean looping returns sound
     if P_JobCinematicActive[jobId] and not P_JobAiControlled[jobId] then
         return Interface_PlayProfessionSound(null, soundLabel, looping)
@@ -550,6 +570,14 @@ private function P_ShouldPreferSoundLabel takes integer jobId returns boolean
     return P_JobAiControlled[jobId]
 endfunction
 
+private function P_ShouldPreferSoundPath takes integer jobId returns boolean
+    return P_JobCinematicActive[jobId] and not P_JobAiControlled[jobId]
+endfunction
+
+private function P_IsBlankString takes string value returns boolean
+    return value == null or value == ""
+endfunction
+
 private function P_RefreshProfessionSoundHandles takes integer professionId returns nothing
     call Interface_RefreshDefaultSounds()
 
@@ -563,6 +591,15 @@ private function P_RefreshProfessionSoundHandles takes integer professionId retu
         if P_ProfessionFinishSound[professionId] == null then
             set P_ProfessionFinishSound[professionId] = Interface_Profession_Alchemy_End
         endif
+        if P_IsBlankString(P_ProfessionStartSoundPath[professionId]) then
+            set P_ProfessionStartSoundPath[professionId] = Interface_Profession_Alchemy_StartPath
+        endif
+        if P_IsBlankString(P_ProfessionLoopSoundPath[professionId]) then
+            set P_ProfessionLoopSoundPath[professionId] = Interface_Profession_Alchemy_LoopPath
+        endif
+        if P_IsBlankString(P_ProfessionFinishSoundPath[professionId]) then
+            set P_ProfessionFinishSoundPath[professionId] = Interface_Profession_Alchemy_EndPath
+        endif
     elseif professionId == GNS_PROF_BLACKSMITHING then
         if P_ProfessionStartSound[professionId] == null then
             set P_ProfessionStartSound[professionId] = Interface_Profession_Blacksmithing_Start
@@ -572,6 +609,15 @@ private function P_RefreshProfessionSoundHandles takes integer professionId retu
         endif
         if P_ProfessionFinishSound[professionId] == null then
             set P_ProfessionFinishSound[professionId] = Interface_Profession_Blacksmithing_End
+        endif
+        if P_IsBlankString(P_ProfessionStartSoundPath[professionId]) then
+            set P_ProfessionStartSoundPath[professionId] = Interface_Profession_Blacksmithing_StartPath
+        endif
+        if P_IsBlankString(P_ProfessionLoopSoundPath[professionId]) then
+            set P_ProfessionLoopSoundPath[professionId] = Interface_Profession_Blacksmithing_LoopPath
+        endif
+        if P_IsBlankString(P_ProfessionFinishSoundPath[professionId]) then
+            set P_ProfessionFinishSoundPath[professionId] = Interface_Profession_Blacksmithing_EndPath
         endif
     elseif professionId == GNS_PROF_MINING then
         if P_ProfessionStartSound[professionId] == null then
@@ -583,6 +629,15 @@ private function P_RefreshProfessionSoundHandles takes integer professionId retu
         if P_ProfessionFinishSound[professionId] == null then
             set P_ProfessionFinishSound[professionId] = Interface_Profession_Mining_End
         endif
+        if P_IsBlankString(P_ProfessionStartSoundPath[professionId]) then
+            set P_ProfessionStartSoundPath[professionId] = Interface_Profession_Mining_StartPath
+        endif
+        if P_IsBlankString(P_ProfessionLoopSoundPath[professionId]) then
+            set P_ProfessionLoopSoundPath[professionId] = Interface_Profession_Mining_LoopPath
+        endif
+        if P_IsBlankString(P_ProfessionFinishSoundPath[professionId]) then
+            set P_ProfessionFinishSoundPath[professionId] = Interface_Profession_Mining_EndPath
+        endif
     elseif professionId == GNS_PROF_LEATHERWORKING then
         if P_ProfessionStartSound[professionId] == null then
             set P_ProfessionStartSound[professionId] = Interface_Profession_Leatherworking_Start
@@ -592,6 +647,15 @@ private function P_RefreshProfessionSoundHandles takes integer professionId retu
         endif
         if P_ProfessionFinishSound[professionId] == null then
             set P_ProfessionFinishSound[professionId] = Interface_Profession_Leatherworking_End
+        endif
+        if P_IsBlankString(P_ProfessionStartSoundPath[professionId]) then
+            set P_ProfessionStartSoundPath[professionId] = Interface_Profession_Leatherworking_StartPath
+        endif
+        if P_IsBlankString(P_ProfessionLoopSoundPath[professionId]) then
+            set P_ProfessionLoopSoundPath[professionId] = Interface_Profession_Leatherworking_LoopPath
+        endif
+        if P_IsBlankString(P_ProfessionFinishSoundPath[professionId]) then
+            set P_ProfessionFinishSoundPath[professionId] = Interface_Profession_Leatherworking_EndPath
         endif
     elseif professionId == GNS_PROF_COOKING then
         if P_ProfessionStartSound[professionId] == null then
@@ -603,6 +667,15 @@ private function P_RefreshProfessionSoundHandles takes integer professionId retu
         if P_ProfessionFinishSound[professionId] == null then
             set P_ProfessionFinishSound[professionId] = Interface_Profession_Cooking_End
         endif
+        if P_IsBlankString(P_ProfessionStartSoundPath[professionId]) then
+            set P_ProfessionStartSoundPath[professionId] = Interface_Profession_Cooking_StartPath
+        endif
+        if P_IsBlankString(P_ProfessionLoopSoundPath[professionId]) then
+            set P_ProfessionLoopSoundPath[professionId] = Interface_Profession_Cooking_LoopPath
+        endif
+        if P_IsBlankString(P_ProfessionFinishSoundPath[professionId]) then
+            set P_ProfessionFinishSoundPath[professionId] = Interface_Profession_Cooking_EndPath
+        endif
     elseif professionId == GNS_PROF_FISHING then
         if P_ProfessionStartSound[professionId] == null then
             set P_ProfessionStartSound[professionId] = Interface_Profession_Fishing_Start
@@ -613,6 +686,15 @@ private function P_RefreshProfessionSoundHandles takes integer professionId retu
         if P_ProfessionFinishSound[professionId] == null then
             set P_ProfessionFinishSound[professionId] = Interface_Profession_Fishing_End
         endif
+        if P_IsBlankString(P_ProfessionStartSoundPath[professionId]) then
+            set P_ProfessionStartSoundPath[professionId] = Interface_Profession_Fishing_StartPath
+        endif
+        if P_IsBlankString(P_ProfessionLoopSoundPath[professionId]) then
+            set P_ProfessionLoopSoundPath[professionId] = Interface_Profession_Fishing_LoopPath
+        endif
+        if P_IsBlankString(P_ProfessionFinishSoundPath[professionId]) then
+            set P_ProfessionFinishSoundPath[professionId] = Interface_Profession_Fishing_EndPath
+        endif
     elseif professionId == GNS_PROF_SKINNING then
         if P_ProfessionStartSound[professionId] == null then
             set P_ProfessionStartSound[professionId] = Interface_Profession_Skinning_Start
@@ -622,6 +704,15 @@ private function P_RefreshProfessionSoundHandles takes integer professionId retu
         endif
         if P_ProfessionFinishSound[professionId] == null then
             set P_ProfessionFinishSound[professionId] = Interface_Profession_Skinning_End
+        endif
+        if P_IsBlankString(P_ProfessionStartSoundPath[professionId]) then
+            set P_ProfessionStartSoundPath[professionId] = Interface_Profession_Skinning_StartPath
+        endif
+        if P_IsBlankString(P_ProfessionLoopSoundPath[professionId]) then
+            set P_ProfessionLoopSoundPath[professionId] = Interface_Profession_Skinning_LoopPath
+        endif
+        if P_IsBlankString(P_ProfessionFinishSoundPath[professionId]) then
+            set P_ProfessionFinishSoundPath[professionId] = Interface_Profession_Skinning_EndPath
         endif
     endif
 endfunction
@@ -634,6 +725,14 @@ private function P_StartLoopSound takes integer jobId, integer professionId, uni
         return null
     endif
     call P_RefreshProfessionSoundHandles(professionId)
+
+    if P_ShouldPreferSoundPath(jobId) and not P_IsBlankString(P_ProfessionLoopSoundPath[professionId]) then
+        set loopSound = P_PlaySoundPathForJob(jobId, P_ProfessionLoopSoundPath[professionId], station, true)
+        if loopSound != null then
+            set P_JobLoopSoundTransient[jobId] = true
+            return loopSound
+        endif
+    endif
 
     if P_ShouldPreferSoundLabel(jobId) and P_ProfessionLoopSoundLabel[professionId] != null and P_ProfessionLoopSoundLabel[professionId] != "" then
         set loopSound = P_PlaySoundLabelForJob(jobId, P_ProfessionLoopSoundLabel[professionId], station, true)
@@ -652,6 +751,14 @@ private function P_StartLoopSound takes integer jobId, integer professionId, uni
 
     if not P_ShouldPreferSoundLabel(jobId) and P_ProfessionLoopSoundLabel[professionId] != null and P_ProfessionLoopSoundLabel[professionId] != "" then
         set loopSound = P_PlaySoundLabelForJob(jobId, P_ProfessionLoopSoundLabel[professionId], station, true)
+        if loopSound != null then
+            set P_JobLoopSoundTransient[jobId] = true
+            return loopSound
+        endif
+    endif
+
+    if not P_ShouldPreferSoundPath(jobId) and not P_IsBlankString(P_ProfessionLoopSoundPath[professionId]) then
+        set loopSound = P_PlaySoundPathForJob(jobId, P_ProfessionLoopSoundPath[professionId], station, true)
         if loopSound != null then
             set P_JobLoopSoundTransient[jobId] = true
             return loopSound
@@ -682,6 +789,13 @@ private function P_PlayStartSound takes integer jobId, integer professionId, uni
 
     if P_IsProfessionValid(professionId) then
         call P_RefreshProfessionSoundHandles(professionId)
+        if P_ShouldPreferSoundPath(jobId) and not P_IsBlankString(P_ProfessionStartSoundPath[professionId]) then
+            set playedSound = P_PlaySoundPathForJob(jobId, P_ProfessionStartSoundPath[professionId], station, false)
+            if playedSound != null then
+                set playedSound = null
+                return
+            endif
+        endif
         if P_ShouldPreferSoundLabel(jobId) and P_ProfessionStartSoundLabel[professionId] != null and P_ProfessionStartSoundLabel[professionId] != "" then
             set playedSound = P_PlaySoundLabelForJob(jobId, P_ProfessionStartSoundLabel[professionId], station, false)
             if playedSound != null then
@@ -703,6 +817,13 @@ private function P_PlayStartSound takes integer jobId, integer professionId, uni
                 return
             endif
         endif
+        if not P_ShouldPreferSoundPath(jobId) and not P_IsBlankString(P_ProfessionStartSoundPath[professionId]) then
+            set playedSound = P_PlaySoundPathForJob(jobId, P_ProfessionStartSoundPath[professionId], station, false)
+            if playedSound != null then
+                set playedSound = null
+                return
+            endif
+        endif
     endif
 
     set playedSound = null
@@ -713,6 +834,13 @@ private function P_PlayFinishSound takes integer jobId, integer professionId, un
 
     if P_IsProfessionValid(professionId) then
         call P_RefreshProfessionSoundHandles(professionId)
+        if P_ShouldPreferSoundPath(jobId) and not P_IsBlankString(P_ProfessionFinishSoundPath[professionId]) then
+            set playedSound = P_PlaySoundPathForJob(jobId, P_ProfessionFinishSoundPath[professionId], station, false)
+            if playedSound != null then
+                set playedSound = null
+                return
+            endif
+        endif
         if P_ShouldPreferSoundLabel(jobId) and P_ProfessionFinishSoundLabel[professionId] != null and P_ProfessionFinishSoundLabel[professionId] != "" then
             set playedSound = P_PlaySoundLabelForJob(jobId, P_ProfessionFinishSoundLabel[professionId], station, false)
             if playedSound != null then
@@ -729,6 +857,13 @@ private function P_PlayFinishSound takes integer jobId, integer professionId, un
         endif
         if not P_ShouldPreferSoundLabel(jobId) and P_ProfessionFinishSoundLabel[professionId] != null and P_ProfessionFinishSoundLabel[professionId] != "" then
             set playedSound = P_PlaySoundLabelForJob(jobId, P_ProfessionFinishSoundLabel[professionId], station, false)
+            if playedSound != null then
+                set playedSound = null
+                return
+            endif
+        endif
+        if not P_ShouldPreferSoundPath(jobId) and not P_IsBlankString(P_ProfessionFinishSoundPath[professionId]) then
+            set playedSound = P_PlaySoundPathForJob(jobId, P_ProfessionFinishSoundPath[professionId], station, false)
             if playedSound != null then
                 set playedSound = null
                 return
@@ -1004,6 +1139,9 @@ private function P_StartCraftCinematic takes integer jobId, unit crafter, unit s
     set P_JobCinematicActive[jobId] = true
     if P_CinematicDepth <= 0 then
         call CinematicModeBJ(true, GetPlayersAll())
+        static if LIBRARY_MasterUI then
+            call MasterUI_HideGameButton()
+        endif
         set P_CinematicDepth = 0
     endif
     set P_CinematicDepth = P_CinematicDepth + 1
@@ -1031,6 +1169,9 @@ private function P_FinishCraftCinematic takes integer jobId, unit crafter return
     if P_CinematicDepth <= 0 then
         set P_CinematicDepth = 0
         call CinematicModeBJ(false, GetPlayersAll())
+        static if LIBRARY_MasterUI then
+            call MasterUI_ShowGameButton()
+        endif
     endif
     call ExecuteFunc("CraftingUI_ReopenAfterCraft")
 
@@ -1528,6 +1669,16 @@ public function SetProfessionSoundHandles takes integer professionId, sound star
     set P_ProfessionStartSound[professionId] = startSound
     set P_ProfessionLoopSound[professionId] = loopSound
     set P_ProfessionFinishSound[professionId] = finishSound
+endfunction
+
+public function SetProfessionSoundPaths takes integer professionId, string startPath, string loopPath, string finishPath returns nothing
+    if not P_IsProfessionValid(professionId) then
+        return
+    endif
+
+    set P_ProfessionStartSoundPath[professionId] = startPath
+    set P_ProfessionLoopSoundPath[professionId] = loopPath
+    set P_ProfessionFinishSoundPath[professionId] = finishPath
 endfunction
 
 public function SetProfessionAiCheatCrafting takes integer professionId, boolean enabled returns nothing
