@@ -547,7 +547,7 @@ private function P_PlaySoundHandleForJob takes integer jobId, sound whichSound, 
 endfunction
 
 private function P_ShouldPreferSoundLabel takes integer jobId returns boolean
-    return P_JobAiControlled[jobId] or P_JobCinematicActive[jobId]
+    return P_JobAiControlled[jobId]
 endfunction
 
 private function P_RefreshProfessionSoundHandles takes integer professionId returns nothing
@@ -1007,6 +1007,7 @@ private function P_StartCraftCinematic takes integer jobId, unit crafter, unit s
         set P_CinematicDepth = 0
     endif
     set P_CinematicDepth = P_CinematicDepth + 1
+    call Interface_ApplyProfessionCinematicVolumes(owner)
 
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUT, P_CRAFT_FADE_TIME, P_CRAFT_FADE_TEXTURE, 0.00, 0.00, 0.00, 0.00)
 
