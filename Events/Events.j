@@ -6,8 +6,9 @@
 
     Description:
     Centralized non-death event dispatcher for common map-wide unit events.
-    Registers each shared event once and dispatches it to registered callbacks,
-    reducing duplicate all-player event registrations in gameplay systems.
+    Registers each shared event once. Code callbacks are attached directly to
+    the central event trigger so normal event responses remain valid, while
+    trigger callbacks are dispatched through the trigger-callback API.
 
     Credits:
     - UnitDeathEvent central dispatcher pattern
@@ -21,11 +22,16 @@
     call Events_RegisterUnitEnterTrigger(yourTrigger)
     call Events_RegisterPlayerUnitEvent(function YourCallback, EVENT_PLAYER_UNIT_SPELL_EFFECT)
     call Events_RegisterPlayerUnitTrigger(yourTrigger, EVENT_PLAYER_UNIT_SPELL_EFFECT)
-    call Events_RegisterPlayerUnitTrigger(gg_trg_Floating_Texts_Spell_Event, EVENT_PLAYER_UNIT_SPELL_EFFECT)
     call Events_SetDebugEnabled(true)
     call Events_GetTriggerUnit()
     call Events_GetCurrentEventId()
     call Events_GetCurrentPlayerUnitEvent()
+
+    Prefer code callbacks for event-response-heavy logic. Code callbacks run
+    directly on the central event trigger and should use normal native event
+    responses like GetTriggerUnit(), GetSpellAbilityId(), and GetManipulatedItem().
+    Trigger callbacks are compatibility helpers; use Events_GetTriggerUnit()
+    instead of native event responses inside those callback triggers.
 
 **/
 library Events initializer Init
@@ -246,12 +252,13 @@ function Events_RegisterUnitEnterTrigger takes trigger callbackTrigger returns n
 endfunction
 
 function Events_RegisterUnitEnter takes code callback returns nothing
-    local trigger callbackTrigger = CreateTrigger()
+    if Events_UnitEnterTrigger == null then
+        call Events_Error("Unit-enter event trigger is not initialized.")
+        return
+    endif
 
-    call TriggerAddAction(callbackTrigger, callback)
-    call Events_RegisterUnitEnterTrigger(callbackTrigger)
-
-    set callbackTrigger = null
+    call TriggerAddAction(Events_UnitEnterTrigger, callback)
+    call Events_DebugMsg("Registered direct unit-enter code callback.")
 endfunction
 
 function Events_RegisterPlayerUnitTrigger takes trigger callbackTrigger, playerunitevent whichEvent returns nothing
@@ -284,12 +291,17 @@ function Events_RegisterPlayerUnitTrigger takes trigger callbackTrigger, playeru
 endfunction
 
 function Events_RegisterPlayerUnitEvent takes code callback, playerunitevent whichEvent returns nothing
-    local trigger callbackTrigger = CreateTrigger()
+    local integer eventSlot = Events_GetPlayerUnitEventSlot(whichEvent)
 
-    call TriggerAddAction(callbackTrigger, callback)
-    call Events_RegisterPlayerUnitTrigger(callbackTrigger, whichEvent)
+    if eventSlot < 0 then
+        set eventSlot = Events_CreatePlayerUnitEventSlot(whichEvent)
+        if eventSlot < 0 then
+            return
+        endif
+    endif
 
-    set callbackTrigger = null
+    call TriggerAddAction(Events_PlayerUnitEventTriggers[eventSlot], callback)
+    call Events_DebugMsg("Registered direct player-unit code callback for event slot " + I2S(eventSlot) + ".")
 endfunction
 
 private function Init takes nothing returns nothing
