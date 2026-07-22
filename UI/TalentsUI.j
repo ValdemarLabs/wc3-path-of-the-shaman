@@ -7,7 +7,9 @@
     Description:
     Custom frame talent tree UI for player shaman heroes. Displays Elemental,
     Enhancement, Restoration, and Totemic talent trees in a grid with pending
-    allocation, confirm/cancel controls, hover tooltips, and dependency links.
+    allocation, confirm/cancel controls, stable hover tooltips, and dependency
+    links. Talent reset is only enabled while the hero is near a configured
+    ability trainer.
 
     Credits:
     Tasyen (TasQuestBox as inspiration)
@@ -26,15 +28,18 @@
 library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, AbilitiesPlayer, Interface
     globals
         private constant integer TUI_TREE_BUTTON_COUNT = 4
-        private constant integer TUI_GRID_ROWS = 5
-        private constant integer TUI_GRID_COLUMNS = 4
-        private constant integer TUI_GRID_SLOTS = 20
-        private constant real TUI_TALENT_SIZE = 0.044
-        private constant real TUI_TALENT_GAP_X = 0.018
+        private constant integer TUI_GRID_ROWS = 6
+        private constant integer TUI_GRID_COLUMNS = 5
+        private constant integer TUI_GRID_SLOTS = 30
+        private constant real TUI_TALENT_SIZE = 0.030
+        private constant real TUI_TALENT_GAP_X = 0.024
         private constant real TUI_TALENT_GAP_Y = 0.014
-        private constant real TUI_LINK_THICKNESS = 0.006
-        private constant real TUI_TOOLTIP_WIDTH = 0.260
-        private constant real TUI_TOOLTIP_HEIGHT = 0.150
+        private constant real TUI_TALENT_START_X = 0.032
+        private constant real TUI_TALENT_START_Y = -0.018
+        private constant real TUI_LINK_THICKNESS = 0.005
+        private constant real TUI_TOOLTIP_WIDTH = 0.235
+        private constant real TUI_TOOLTIP_HEIGHT = 0.130
+        private constant real TUI_TRAINER_RESET_RANGE = 900.00
         private constant integer TUI_LINK_LEFT = 1
         private constant integer TUI_LINK_UP = 2
         private constant integer TUI_LINK_RIGHT = 3
@@ -84,6 +89,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
 
         private Table TUI_ButtonTree = 0
         private Table TUI_ButtonTalent = 0
+        private group TUI_TrainerScanGroup = null
 
         private trigger TUI_CloseTrigger = null
         private trigger TUI_ReturnTrigger = null
@@ -100,7 +106,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
 
         private string TUI_PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
         private string TUI_DefaultIcon = "ReplaceableTextures\\CommandButtons\\BTNBook_07.blp"
-        private string TUI_RowHighlightModel = "UI\\Feedback\\Autocast\\UI-ModalButtonOn.mdx"
+        private string TUI_TalentHighlightTexture = "UI\\Widgets\\Console\\Human\\CommandButton\\human-activebutton.blp"
         private string TUI_LinkActiveTexture = "Textures\\Water00.blp"
         private string TUI_LinkInactiveTexture = "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp"
     endglobals
@@ -123,6 +129,33 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
             return false
         endif
         return GetOwningPlayer(whichUnit) == Player(0)
+    endfunction
+
+    private function TUI_IsHeroNearTrainer takes unit hero returns boolean
+        local unit enumUnit
+        local boolean foundTrainer = false
+
+        if hero == null or TUI_TrainerScanGroup == null then
+            set enumUnit = null
+            return false
+        endif
+
+        call GroupEnumUnitsInRange(TUI_TrainerScanGroup, GetUnitX(hero), GetUnitY(hero), TUI_TRAINER_RESET_RANGE, null)
+        loop
+            set enumUnit = FirstOfGroup(TUI_TrainerScanGroup)
+            exitwhen enumUnit == null
+            call GroupRemoveUnit(TUI_TrainerScanGroup, enumUnit)
+            if AbilitiesPlayer_IsTrainerUnitType(GetUnitTypeId(enumUnit)) then
+                set foundTrainer = true
+            endif
+        endloop
+
+        set enumUnit = null
+        return foundTrainer
+    endfunction
+
+    private function TUI_CanResetTalents takes nothing returns boolean
+        return TUI_IsPlayerShamanHero(TUI_SelectedHero) and TUI_IsHeroNearTrainer(TUI_SelectedHero)
     endfunction
 
     private function TUI_GetDefaultHero takes nothing returns unit
@@ -183,13 +216,13 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
         local integer maxRank = Talents_GetTalentMaxRank(talentIndex)
 
         if rank >= maxRank then
-            return "|cffffcc00" + I2S(rank) + "/" + I2S(maxRank) + "|r"
+            return "|cffffcc00" + I2S(rank) + "|r"
         elseif pending > 0 then
-            return "|cff80ff80" + I2S(rank) + "/" + I2S(maxRank) + "|r"
+            return "|cff80ff80" + I2S(rank) + "|r"
         elseif rank > 0 then
-            return "|cffffffff" + I2S(rank) + "/" + I2S(maxRank) + "|r"
+            return "|cffffffff" + I2S(rank) + "|r"
         endif
-        return "|cff8080800/" + I2S(maxRank) + "|r"
+        return ""
     endfunction
 
     private function TUI_GetDetailTalent takes nothing returns integer
@@ -285,6 +318,54 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
         call BlzFrameSetText(TUI_TalentTooltipRank[slotIndex], rankText)
     endfunction
 
+    private function TUI_HideTalentTooltips takes nothing returns nothing
+        local integer slotIndex = 1
+
+        loop
+            exitwhen slotIndex > TUI_GRID_SLOTS
+            if TUI_TalentTooltipBox[slotIndex] != null then
+                call BlzFrameSetVisible(TUI_TalentTooltipBox[slotIndex], false)
+            endif
+            set slotIndex = slotIndex + 1
+        endloop
+    endfunction
+
+    private function TUI_PositionTalentTooltip takes integer slotIndex returns nothing
+        local integer row = R2I(I2R(slotIndex - 1) / I2R(TUI_GRID_COLUMNS)) + 1
+        local integer column = ModuloInteger(slotIndex - 1, TUI_GRID_COLUMNS) + 1
+
+        call BlzFrameClearAllPoints(TUI_TalentTooltipBox[slotIndex])
+        if column >= TUI_GRID_COLUMNS - 1 then
+            if row >= TUI_GRID_ROWS - 1 then
+                call BlzFrameSetPoint(TUI_TalentTooltipBox[slotIndex], FRAMEPOINT_BOTTOMRIGHT, TUI_TalentButton[slotIndex], FRAMEPOINT_TOPLEFT, -0.008, 0.006)
+            else
+                call BlzFrameSetPoint(TUI_TalentTooltipBox[slotIndex], FRAMEPOINT_TOPRIGHT, TUI_TalentButton[slotIndex], FRAMEPOINT_TOPLEFT, -0.008, 0.006)
+            endif
+        elseif row >= TUI_GRID_ROWS - 1 then
+            call BlzFrameSetPoint(TUI_TalentTooltipBox[slotIndex], FRAMEPOINT_BOTTOMLEFT, TUI_TalentButton[slotIndex], FRAMEPOINT_TOPRIGHT, 0.008, 0.006)
+        else
+            call BlzFrameSetPoint(TUI_TalentTooltipBox[slotIndex], FRAMEPOINT_TOPLEFT, TUI_TalentButton[slotIndex], FRAMEPOINT_TOPRIGHT, 0.008, 0.006)
+        endif
+    endfunction
+
+    private function TUI_ShowTalentTooltip takes integer slotIndex returns nothing
+        local integer talentIndex
+
+        if slotIndex < 1 or slotIndex > TUI_GRID_SLOTS then
+            return
+        endif
+
+        set talentIndex = TUI_TalentSlotIndex[slotIndex]
+        if talentIndex == 0 then
+            return
+        endif
+
+        call TUI_HideTalentTooltips()
+        call TUI_UpdateTalentTooltip(slotIndex, talentIndex)
+        call TUI_PositionTalentTooltip(slotIndex)
+        call BlzFrameSetVisible(TUI_TalentTooltipBox[slotIndex], true)
+    endfunction
+
     private function TUI_UpdateTabs takes nothing returns nothing
         local integer index = 1
 
@@ -340,7 +421,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
                     set unavailable = not Talents_CanAllocate(TUI_SelectedHero, talentIndex) and Talents_GetTalentPreviewRank(TUI_SelectedHero, talentIndex) <= 0
                     call BlzFrameSetVisible(TUI_TalentOverlay[slotIndex], unavailable)
 
-                    if talentIndex == TUI_SelectedTalent then
+                    if talentIndex == TUI_SelectedTalent or Talents_CanAllocate(TUI_SelectedHero, talentIndex) then
                         set selected = 1
                     else
                         set selected = 0
@@ -354,6 +435,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
                     set TUI_TalentHighlightVisible[slotIndex] = 0
                     call BlzFrameSetVisible(TUI_TalentButton[slotIndex], false)
                     call BlzFrameSetVisible(TUI_TalentHighlight[slotIndex], false)
+                    call BlzFrameSetVisible(TUI_TalentTooltipBox[slotIndex], false)
                     call TUI_ClearSlotLinks(slotIndex)
                 endif
 
@@ -363,6 +445,12 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
         endloop
     endfunction
 
+    private function TUI_UpdateResetButton takes nothing returns nothing
+        local boolean canReset = TUI_CanResetTalents()
+
+        call BlzFrameSetEnable(TUI_ResetButton, canReset)
+    endfunction
+
     private function TUI_UpdateDetail takes nothing returns nothing
         local integer talentIndex = TUI_GetDetailTalent()
         local integer pending = Talents_GetPendingSpentPoints(TUI_SelectedHero)
@@ -370,6 +458,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
         local string footerText
         local string failureText
 
+        call TUI_UpdateResetButton()
         if talentIndex == 0 then
             call BlzFrameSetTexture(TUI_DetailIcon, TUI_DefaultIcon, 0, true)
             call BlzFrameSetText(TUI_DetailTitle, "No talents")
@@ -442,6 +531,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
         endif
         set TUI_SelectedTalent = TUI_GetFirstTalentForTree(TUI_SelectedTree)
         set TUI_HoverTalent = 0
+        call TUI_HideTalentTooltips()
 
         call TUI_HideOtherPanels()
         if TUI_Parent != null and not BlzFrameIsVisible(TUI_Parent) then
@@ -457,6 +547,8 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
             if BlzFrameIsVisible(TUI_Parent) then
                 call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, Player(0))
             endif
+            set TUI_HoverTalent = 0
+            call TUI_HideTalentTooltips()
             call BlzFrameSetVisible(TUI_Parent, false)
         endif
     endfunction
@@ -501,6 +593,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
             set TUI_SelectedTree = TUI_ButtonTree.integer[handleId]
             set TUI_SelectedTalent = TUI_GetFirstTalentForTree(TUI_SelectedTree)
             set TUI_HoverTalent = 0
+            call TUI_HideTalentTooltips()
             call TUI_Update()
         endif
     endfunction
@@ -526,6 +619,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
             set slotIndex = TUI_ButtonTalent.integer[handleId]
             if TUI_TalentSlotIndex[slotIndex] != 0 then
                 set TUI_HoverTalent = TUI_TalentSlotIndex[slotIndex]
+                call TUI_ShowTalentTooltip(slotIndex)
                 call TUI_UpdateDetail()
             endif
         endif
@@ -539,6 +633,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
             set slotIndex = TUI_ButtonTalent.integer[handleId]
             if TUI_HoverTalent == TUI_TalentSlotIndex[slotIndex] then
                 set TUI_HoverTalent = 0
+                call BlzFrameSetVisible(TUI_TalentTooltipBox[slotIndex], false)
                 call TUI_UpdateDetail()
             endif
         endif
@@ -574,8 +669,14 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
 
     private function TUI_ResetAction takes nothing returns nothing
         if TUI_SelectedHero != null then
+            if not TUI_CanResetTalents() then
+                call DisplayTextToPlayer(Player(0), 0.00, 0.00, "|cffff8080Talent reset requires an ability trainer.|r")
+                call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, Player(0))
+                return
+            endif
             call Talents_ResetHeroTalents(TUI_SelectedHero)
             set TUI_HoverTalent = 0
+            call TUI_HideTalentTooltips()
             call TUI_Update()
         endif
     endfunction
@@ -653,13 +754,13 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
 
         set TUI_TreePane = BlzCreateFrameByType("BACKDROP", "TalentsUITreePane", TUI_Parent, "", 0)
         call BlzFrameSetTexture(TUI_TreePane, TUI_PanelTexture, 0, true)
-        call BlzFrameSetPoint(TUI_TreePane, FRAMEPOINT_TOPLEFT, TUI_Parent, FRAMEPOINT_TOPLEFT, 0.014, -0.094)
-        call BlzFrameSetPoint(TUI_TreePane, FRAMEPOINT_BOTTOMRIGHT, TUI_Parent, FRAMEPOINT_BOTTOMLEFT, 0.338, 0.062)
+        call BlzFrameSetPoint(TUI_TreePane, FRAMEPOINT_TOPLEFT, TUI_Parent, FRAMEPOINT_TOPLEFT, 0.014, -0.088)
+        call BlzFrameSetPoint(TUI_TreePane, FRAMEPOINT_BOTTOMRIGHT, TUI_Parent, FRAMEPOINT_BOTTOMLEFT, 0.338, 0.050)
 
         set TUI_DetailPane = BlzCreateFrameByType("BACKDROP", "TalentsUIDetailPane", TUI_Parent, "", 0)
         call BlzFrameSetTexture(TUI_DetailPane, TUI_PanelTexture, 0, true)
         call BlzFrameSetPoint(TUI_DetailPane, FRAMEPOINT_TOPLEFT, TUI_TreePane, FRAMEPOINT_TOPRIGHT, 0.014, 0.0)
-        call BlzFrameSetPoint(TUI_DetailPane, FRAMEPOINT_BOTTOMRIGHT, TUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.014, 0.062)
+        call BlzFrameSetPoint(TUI_DetailPane, FRAMEPOINT_BOTTOMRIGHT, TUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.014, 0.050)
 
         loop
             exitwhen row > TUI_GRID_ROWS
@@ -667,8 +768,8 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
             loop
                 exitwhen column > TUI_GRID_COLUMNS
                 set slotIndex = TUI_GetSlotIndex(row, column)
-                set xOffset = 0.026 + (TUI_TALENT_SIZE + TUI_TALENT_GAP_X) * I2R(column - 1)
-                set yOffset = -0.020 - (TUI_TALENT_SIZE + TUI_TALENT_GAP_Y) * I2R(row - 1)
+                set xOffset = TUI_TALENT_START_X + (TUI_TALENT_SIZE + TUI_TALENT_GAP_X) * I2R(column - 1)
+                set yOffset = TUI_TALENT_START_Y - (TUI_TALENT_SIZE + TUI_TALENT_GAP_Y) * I2R(row - 1)
 
                 set TUI_TalentButton[slotIndex] = BlzCreateFrameByType("GLUEBUTTON", "TalentsUITalentButton" + I2S(slotIndex), TUI_TreePane, "ScoreScreenTabButtonTemplate", 0)
                 call BlzFrameSetPoint(TUI_TalentButton[slotIndex], FRAMEPOINT_TOPLEFT, TUI_TreePane, FRAMEPOINT_TOPLEFT, xOffset, yOffset)
@@ -701,22 +802,25 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
                 call BlzFrameSetEnable(TUI_TalentOverlay[slotIndex], false)
 
                 set TUI_TalentRankText[slotIndex] = BlzCreateFrameByType("TEXT", "TalentsUITalentRank" + I2S(slotIndex), TUI_TalentButton[slotIndex], "", 0)
-                call BlzFrameSetPoint(TUI_TalentRankText[slotIndex], FRAMEPOINT_BOTTOMRIGHT, TUI_TalentButton[slotIndex], FRAMEPOINT_BOTTOMRIGHT, -0.002, 0.002)
-                call BlzFrameSetSize(TUI_TalentRankText[slotIndex], 0.036, 0.010)
+                call BlzFrameSetPoint(TUI_TalentRankText[slotIndex], FRAMEPOINT_BOTTOMRIGHT, TUI_TalentButton[slotIndex], FRAMEPOINT_BOTTOMRIGHT, -0.001, 0.001)
+                call BlzFrameSetSize(TUI_TalentRankText[slotIndex], 0.018, 0.010)
                 call BlzFrameSetTextAlignment(TUI_TalentRankText[slotIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_RIGHT)
-                call BlzFrameSetScale(TUI_TalentRankText[slotIndex], 0.82)
+                call BlzFrameSetScale(TUI_TalentRankText[slotIndex], 0.74)
                 call BlzFrameSetEnable(TUI_TalentRankText[slotIndex], false)
 
-                set TUI_TalentHighlight[slotIndex] = BlzCreateFrameByType("SPRITE", "TalentsUITalentHighlight" + I2S(slotIndex), TUI_TalentButton[slotIndex], "", 0)
-                call BlzFrameSetAllPoints(TUI_TalentHighlight[slotIndex], TUI_TalentButton[slotIndex])
-                call BlzFrameSetModel(TUI_TalentHighlight[slotIndex], TUI_RowHighlightModel, 0)
-                call BlzFrameSetScale(TUI_TalentHighlight[slotIndex], 0.88)
+                set TUI_TalentHighlight[slotIndex] = BlzCreateFrameByType("BACKDROP", "TalentsUITalentHighlight" + I2S(slotIndex), TUI_TalentButton[slotIndex], "", 0)
+                call BlzFrameSetPoint(TUI_TalentHighlight[slotIndex], FRAMEPOINT_CENTER, TUI_TalentButton[slotIndex], FRAMEPOINT_CENTER, 0.0, 0.0)
+                call BlzFrameSetSize(TUI_TalentHighlight[slotIndex], TUI_TALENT_SIZE + 0.006, TUI_TALENT_SIZE + 0.006)
+                call BlzFrameSetTexture(TUI_TalentHighlight[slotIndex], TUI_TalentHighlightTexture, 0, true)
+                call BlzFrameSetLevel(TUI_TalentHighlight[slotIndex], 4)
                 call BlzFrameSetVisible(TUI_TalentHighlight[slotIndex], false)
                 call BlzFrameSetEnable(TUI_TalentHighlight[slotIndex], false)
 
                 set TUI_TalentTooltipBox[slotIndex] = BlzCreateFrame("ListBoxWar3", TUI_TalentButton[slotIndex], 0, slotIndex)
                 call BlzFrameSetPoint(TUI_TalentTooltipBox[slotIndex], FRAMEPOINT_TOPLEFT, TUI_TalentButton[slotIndex], FRAMEPOINT_TOPRIGHT, 0.008, 0.006)
                 call BlzFrameSetSize(TUI_TalentTooltipBox[slotIndex], TUI_TOOLTIP_WIDTH, TUI_TOOLTIP_HEIGHT)
+                call BlzFrameSetEnable(TUI_TalentTooltipBox[slotIndex], false)
+                call BlzFrameSetVisible(TUI_TalentTooltipBox[slotIndex], false)
 
                 set TUI_TalentTooltipText[slotIndex] = BlzCreateFrameByType("TEXT", "TalentsUITalentTooltipText" + I2S(slotIndex), TUI_TalentTooltipBox[slotIndex], "", 0)
                 call BlzFrameSetPoint(TUI_TalentTooltipText[slotIndex], FRAMEPOINT_TOPLEFT, TUI_TalentTooltipBox[slotIndex], FRAMEPOINT_TOPLEFT, 0.010, -0.020)
@@ -731,7 +835,6 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
                 call BlzFrameSetTextAlignment(TUI_TalentTooltipRank[slotIndex], TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_RIGHT)
                 call BlzFrameSetScale(TUI_TalentTooltipRank[slotIndex], 0.78)
                 call BlzFrameSetEnable(TUI_TalentTooltipRank[slotIndex], false)
-                call BlzFrameSetTooltip(TUI_TalentButton[slotIndex], TUI_TalentTooltipBox[slotIndex])
 
                 set column = column + 1
             endloop
@@ -821,6 +924,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
 
         set TUI_ButtonTree = Table.create()
         set TUI_ButtonTalent = Table.create()
+        set TUI_TrainerScanGroup = CreateGroup()
 
         set TUI_CloseTrigger = CreateTrigger()
         call TriggerAddAction(TUI_CloseTrigger, function TUI_CloseAction)
