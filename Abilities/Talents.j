@@ -223,14 +223,14 @@ library Talents initializer Init requires AbilitiesPlayer, optional AbilityPoint
 
         set TLT_Initialized = true
         set TLT_TalentCount = 0
-        set TLT_TreeRows[AbilitiesPlayer_TREE_ELEMENTAL] = 5
-        set TLT_TreeRows[AbilitiesPlayer_TREE_ENHANCEMENT] = 5
-        set TLT_TreeRows[AbilitiesPlayer_TREE_RESTORATION] = 5
-        set TLT_TreeRows[AbilitiesPlayer_TREE_TOTEMIC] = 5
-        set TLT_TreeColumns[AbilitiesPlayer_TREE_ELEMENTAL] = 4
-        set TLT_TreeColumns[AbilitiesPlayer_TREE_ENHANCEMENT] = 4
-        set TLT_TreeColumns[AbilitiesPlayer_TREE_RESTORATION] = 4
-        set TLT_TreeColumns[AbilitiesPlayer_TREE_TOTEMIC] = 4
+        set TLT_TreeRows[AbilitiesPlayer_TREE_ELEMENTAL] = 6
+        set TLT_TreeRows[AbilitiesPlayer_TREE_ENHANCEMENT] = 6
+        set TLT_TreeRows[AbilitiesPlayer_TREE_RESTORATION] = 6
+        set TLT_TreeRows[AbilitiesPlayer_TREE_TOTEMIC] = 6
+        set TLT_TreeColumns[AbilitiesPlayer_TREE_ELEMENTAL] = 5
+        set TLT_TreeColumns[AbilitiesPlayer_TREE_ENHANCEMENT] = 5
+        set TLT_TreeColumns[AbilitiesPlayer_TREE_RESTORATION] = 5
+        set TLT_TreeColumns[AbilitiesPlayer_TREE_TOTEMIC] = 5
 
         call TLT_RegisterElemental()
         call TLT_RegisterEnhancement()
