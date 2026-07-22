@@ -82,7 +82,7 @@ library ItemUnstack initializer onInit requires Events
     //==================================================
     // Trigger callback: detect self-drop or double right-click
     //==================================================
-    private function OnIssuedOrder takes nothing returns boolean
+    private function OnIssuedOrder takes nothing returns nothing
         local unit u = GetTriggerUnit()
         local integer orderId = GetIssuedOrderId()
         local item itm
@@ -101,15 +101,11 @@ library ItemUnstack initializer onInit requires Events
 
         set u = null
         set itm = null
-        return false
     endfunction
 
     //==================================================
     private function onInit takes nothing returns nothing
-        local trigger t = CreateTrigger()
-        call TriggerAddCondition(t, function OnIssuedOrder)
-        call Events_RegisterPlayerUnitTrigger(t, EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER)
-        set t = null
+        call Events_RegisterPlayerUnitEvent(function OnIssuedOrder, EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER)
         //call BJDebugMsg("ItemUnstack initialized")
     endfunction
 
