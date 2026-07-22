@@ -29,9 +29,9 @@ globals
     private constant string PM_CRAFTER_ANIMATION_FALLBACK = "attack"
 
     // Sound labels. Professions plays Start once, Loop until done, and Finish once.
-    private constant string PM_SOUND_START = "Tradeskill_MiningHitA"
-    private constant string PM_SOUND_LOOP = "Tradeskill_MiningHitB"
-    private constant string PM_SOUND_FINISH = "Tradeskill_MiningHitC"
+    private constant string PM_SOUND_START = "Smelting"
+    private constant string PM_SOUND_LOOP = "Smelting"
+    private constant string PM_SOUND_FINISH = "Smelting"
 
     // Smelting input ore raw codes.
     private constant integer PM_ITEM_COPPER_ORE = 'I67E'
