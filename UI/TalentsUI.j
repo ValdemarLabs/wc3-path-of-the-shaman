@@ -39,7 +39,8 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
         private constant real TUI_TOOLTIP_WIDTH = 0.235
         private constant real TUI_TOOLTIP_HEIGHT = 0.130
         private constant integer TUI_ICON_AVAILABLE_COLOR = 255
-        private constant integer TUI_ICON_UNAVAILABLE_COLOR = 95
+        private constant integer TUI_ICON_UNAVAILABLE_COLOR = 170
+        private constant integer TUI_ICON_UNAVAILABLE_OVERLAY_ALPHA = 82
         private constant integer TUI_LINK_LEFT = 1
         private constant integer TUI_LINK_UP = 2
         private constant integer TUI_LINK_RIGHT = 3
@@ -439,11 +440,15 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
     private function TUI_SetTalentUnavailableVisual takes integer slotIndex, boolean unavailable returns nothing
         if unavailable then
             call BlzFrameSetVertexColor(TUI_TalentIcon[slotIndex], BlzConvertColor(255, TUI_ICON_UNAVAILABLE_COLOR, TUI_ICON_UNAVAILABLE_COLOR, TUI_ICON_UNAVAILABLE_COLOR))
+            call BlzFrameSetAlpha(TUI_TalentOverlay[slotIndex], TUI_ICON_UNAVAILABLE_OVERLAY_ALPHA)
+            call BlzFrameSetVertexColor(TUI_TalentOverlay[slotIndex], BlzConvertColor(TUI_ICON_UNAVAILABLE_OVERLAY_ALPHA, 0, 0, 0))
+            call BlzFrameSetVisible(TUI_TalentOverlay[slotIndex], true)
         else
             call BlzFrameSetVertexColor(TUI_TalentIcon[slotIndex], BlzConvertColor(255, TUI_ICON_AVAILABLE_COLOR, TUI_ICON_AVAILABLE_COLOR, TUI_ICON_AVAILABLE_COLOR))
+            call BlzFrameSetAlpha(TUI_TalentOverlay[slotIndex], 0)
+            call BlzFrameSetVertexColor(TUI_TalentOverlay[slotIndex], BlzConvertColor(0, 0, 0, 0))
+            call BlzFrameSetVisible(TUI_TalentOverlay[slotIndex], false)
         endif
-
-        call BlzFrameSetVisible(TUI_TalentOverlay[slotIndex], false)
     endfunction
 
     private function TUI_UpdateGrid takes nothing returns nothing
