@@ -87,6 +87,8 @@ library Interface initializer AutoInit
         private constant real IUI_SOUND_UNIT_Z = 64.00
         private constant real IUI_MINING_SOUND_CUTOFF = 1000.00
         private constant real IUI_PROFESSION_SOUND_CUTOFF = 3000.00
+        // CinematicModeBJ mutes UI and unit-sound volume groups; channel 12 is cinematic sound effects 1.
+        private constant integer IUI_PROFESSION_CINEMATIC_SOUND_CHANNEL = 12
 
         private boolean IUI_Initialized = false
         private boolean IUI_SoundsEnabled = true
@@ -167,6 +169,13 @@ library Interface initializer AutoInit
 
     private function IUI_ApplyFeedbackSound takes sound whichSound returns nothing
         if whichSound != null then
+            call SetSoundVolume(whichSound, IUI_FEEDBACK_SOUND_VOLUME)
+        endif
+    endfunction
+
+    private function IUI_ApplyProfessionCinematicSound takes sound whichSound returns nothing
+        if whichSound != null then
+            call SetSoundChannel(whichSound, IUI_PROFESSION_CINEMATIC_SOUND_CHANNEL)
             call SetSoundVolume(whichSound, IUI_FEEDBACK_SOUND_VOLUME)
         endif
     endfunction
@@ -261,7 +270,7 @@ library Interface initializer AutoInit
 
         if whichSound != null then
             call StopSound(whichSound, false, false)
-            call IUI_ApplyFeedbackSound(whichSound)
+            call IUI_ApplyProfessionCinematicSound(whichSound)
             call StartSound(whichSound)
             return whichSound
         endif
@@ -269,7 +278,7 @@ library Interface initializer AutoInit
         if soundLabel != null and soundLabel != "" then
             set professionSound = CreateSoundFromLabel(soundLabel, looping, false, false, 12700, 12700)
             if professionSound != null then
-                call IUI_ApplyFeedbackSound(professionSound)
+                call IUI_ApplyProfessionCinematicSound(professionSound)
                 call StartSound(professionSound)
                 if not looping then
                     call KillSoundWhenDone(professionSound)
