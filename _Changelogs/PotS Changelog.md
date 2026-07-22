@@ -21,8 +21,7 @@
 
 - Added a startup preload presentation before the intro/game-start flow:
   - Player control is disabled while the preload sequence runs.
-  - Preload now runs in cinematic mode, displays full-screen frame UI images, and shows RegionTitles-style phase text for sound, music, ability, and completion stages.
-  - Preload music track 43 now starts before sound/music file preloading begins.
+  - Preload now runs in cinematic mode, keeps cinematic panels visible, displays 16:9 frame UI images over a full-screen backing frame, and shows colored RegionTitles-style phase text for sound, music, ability, and completion stages.
   - The intro/game start trigger is executed only after the preload sequence completes.
   - Loading a saved game reruns sound/music preload without restarting the game-start flow.
 
@@ -62,17 +61,18 @@
 ### Technical Updates
 
 - Added `UI/ImagesUI.j`
-  - New lightweight full-screen image frame helper for preload and similar scripted presentation flows.
+  - New lightweight 16:9 image frame helper for preload and similar scripted presentation flows.
   - Provides public APIs for showing, updating, and hiding the preload image surface.
   - Keeps image paths caller-controlled so imported preload BLPs can be swapped without changing the UI helper.
+  - Uses a full-screen backing frame while preserving the image surface at `0.800 x 0.450`.
   - Preloads texture paths before frame texture swaps to make staged preload image changes more reliable.
 
 - Added `Preload/Preloader.j`
   - New timer-driven startup preload runner that replaces the old GUI wait chain.
   - Runs at elapsed game time `0.00`, enables cinematic mode, updates preload UI/status text through `RegionTitles`, and preloads sounds, music, and abilities in staged steps.
+  - Calls `BlzHideCinematicPanels(false)` before enabling cinematic mode so cinematic panels remain visible during preload.
   - Splits each preload phase into a visible UI/title tick and a later preload-work tick so image changes can render before synchronous preload work begins.
   - Calls `ExSound_PreloadAll()`, `ExMusic_PreloadAll()`, and `Preload_Abilities(...)`.
-  - Starts `ExMusic_PlayTrack(43)` before the sound/music preload stages.
   - Removes the placed `AbilityLoader 1870 <gen>` unit after ability preloading.
   - Executes `gg_trg_Game_Start` and initializes `StatsLiteUI` after preload completion.
   - Added a saved-game load path using `EVENT_GAME_LOADED` that preloads sound/music again but does not execute `gg_trg_Game_Start`.
