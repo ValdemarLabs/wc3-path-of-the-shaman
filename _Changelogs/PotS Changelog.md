@@ -23,6 +23,7 @@
   - Player control is disabled while the preload sequence runs.
   - Preload progress can now show custom frame UI images and status text for sound, music, ability, and completion stages.
   - The intro/game start trigger is executed only after the preload sequence completes.
+  - Loading a saved game reruns sound/music preload without restarting the game-start flow.
 
 - Added a new player shaman ability learning flow for Nazgrek and Zul'kis:
   - Enhancement, Elemental, Restoration, and Totemic trainers can open a focused ability training UI.
@@ -47,6 +48,9 @@
   - AI crafting and any non-cinematic craft actions continue to use 3D sound playback on the workstation unit.
   - Forge smelting now uses the `Smelting` craft sound label instead of mining-hit labels; mining ore harvesting and herb picking sounds were left unchanged.
 
+- Stats UI now shows `Rested` for the selected unit when the centralized Experience system reports that the unit is rested.
+- Rested status is now lost when the rested unit dies.
+
 ### Technical Updates
 
 - Added `UI/ImagesUI.j`
@@ -60,10 +64,22 @@
   - Calls `ExSound_PreloadAll()`, `ExMusic_PreloadAll()`, and `Preload_Abilities(...)`.
   - Removes the placed `AbilityLoader 1870 <gen>` unit after ability preloading.
   - Executes `gg_trg_Game_Start` and initializes `StatsLiteUI` after preload completion.
+  - Added a saved-game load path using `EVENT_GAME_LOADED` that preloads sound/music again but does not execute `gg_trg_Game_Start`.
 
 - Updated `Preload/PreloadAbilities.j`
   - Wrapped the existing rawcode preload function in a `PreloadAbilities` library so other libraries can declare a proper dependency.
   - Made the function's `unit u` parameter populate `udg_AbilityPreloader` before the existing ability-add list runs.
+  - Consolidated the duplicate ability preloader into this single `Preload/PreloadAbilities.j` file and removed the stale `InitRelated/PreloadAbilities.j` copy.
+  - Preserved the missing Craft (Fake Cast) preload rawcode `A6DY` while consolidating.
+
+- Updated `UI/StatsUI.j`
+  - Added `Experience` as an explicit dependency.
+  - Added a detail-header `Rested` text indicator that reads `Experience_IsRested(unit)` and clears when the selected unit changes, dies, loses Rested, or the panel is hidden.
+
+- Updated `Leveling/Experience.j`
+  - Renamed the misleading Rested rawcode constant from `BUFF_RESTED` to `RESTED_ABILITY_ID`.
+  - Added comments clarifying that Rested uses hidden aura ability rawcode `S000` through `UnitAddAbility` / `UnitRemoveAbility`, not a buff rawcode.
+  - Rested death cleanup now clears the dying unit's hidden Rested ability, expiry timer, and multiplier state before cinematic XP guards can skip XP processing.
 
 - Added `Abilities/AbilitiesPlayer.j`
   - New player shaman ability registry for JASS learning and UI display.
@@ -206,6 +222,7 @@
 - Full map compile validation was not completed because the repo snapshot still does not expose a combined `war3map.j` or normal map build entry point. `git diff --check` passed for the edited files.
 - GUI `Floating Texts Spell Event` must not keep the old per-unit add-event behavior. Convert it to a JASS code callback registered through `Events_RegisterPlayerUnitEvent`, or keep one direct all-player spell-effect event on the GUI trigger until it is converted.
 - Remaining direct event registrations still exist in separate quest/gather/UI/imported/old systems. They were not all migrated in this pass to avoid changing unrelated behavior without focused testing.
+- Rested UI display and death-removal behavior still need in-game validation with the actual `S000` object-data aura setup.
 
 ### Actions Remaining
 
