@@ -33,8 +33,10 @@
 **/
 library Experience initializer Init requires Events, UnitDeathEvent
     globals
-        // Object ids used by the rested/warmth object data.
-        public constant integer BUFF_RESTED = 'S000'
+        // Rested is a hidden aura ability added directly to the hero.
+        // UnitAddAbility/UnitRemoveAbility need this ability rawcode, not the generated buff rawcode.
+        public constant integer RESTED_ABILITY_ID = 'S000'
+        // Warmth remains a buff rawcode because camp-fire systems only check aura status.
         public constant integer BUFF_WARMTH = 'B607'
 
         private constant integer EXP_BONUS_ITEM_CROWN_OF_KINGS = 'ckng'
@@ -81,7 +83,7 @@ library Experience initializer Init requires Events, UnitDeathEvent
     endfunction
 
     private function EXP_HasRestedAbility takes unit whichUnit returns boolean
-        return whichUnit != null and GetUnitAbilityLevel(whichUnit, BUFF_RESTED) > 0
+        return whichUnit != null and GetUnitAbilityLevel(whichUnit, RESTED_ABILITY_ID) > 0
     endfunction
 
     private function EXP_GetRegisteredItemBonus takes integer itemTypeId returns real
@@ -221,7 +223,7 @@ library Experience initializer Init requires Events, UnitDeathEvent
         endif
 
         if EXP_HasRestedAbility(whichUnit) then
-            call UnitRemoveAbility(whichUnit, BUFF_RESTED)
+            call UnitRemoveAbility(whichUnit, RESTED_ABILITY_ID)
         endif
 
         call RemoveSavedReal(EXP_Hash, key, EXP_KEY_RESTED_EXPIRES)
@@ -286,7 +288,7 @@ library Experience initializer Init requires Events, UnitDeathEvent
         set now = EXP_GetNow()
         set expires = now + duration
         set alreadyRested = EXP_HasRestedAbility(whichUnit)
-        if not alreadyRested and not UnitAddAbility(whichUnit, BUFF_RESTED) then
+        if not alreadyRested and not UnitAddAbility(whichUnit, RESTED_ABILITY_ID) then
             return
         endif
 
@@ -295,7 +297,7 @@ library Experience initializer Init requires Events, UnitDeathEvent
             set duration = expires - now
         endif
 
-        call BlzUnitHideAbility(whichUnit, BUFF_RESTED, true)
+        call BlzUnitHideAbility(whichUnit, RESTED_ABILITY_ID, true)
         call SaveReal(EXP_Hash, key, EXP_KEY_RESTED_EXPIRES, expires)
         call EXP_MarkRested(whichUnit)
 
@@ -430,12 +432,18 @@ library Experience initializer Init requires Events, UnitDeathEvent
     endfunction
 
     private function EXP_OnDeath takes nothing returns nothing
-        if udg_InCinematic then
-            return
+        local unit dying = GetDyingUnit()
+
+        if IsRested(dying) then
+            call ClearRested(dying)
         endif
 
-        call EXP_ApplyHeroBonusFromCurrentXP(udg_Nazgrek)
-        call EXP_ApplyHeroBonusFromCurrentXP(udg_Zulkis)
+        if not udg_InCinematic then
+            call EXP_ApplyHeroBonusFromCurrentXP(udg_Nazgrek)
+            call EXP_ApplyHeroBonusFromCurrentXP(udg_Zulkis)
+        endif
+
+        set dying = null
     endfunction
 
     private function EXP_ApplyItemBonus takes real multiplier returns nothing
