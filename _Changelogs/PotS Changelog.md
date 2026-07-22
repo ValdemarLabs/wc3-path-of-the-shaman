@@ -21,16 +21,23 @@
 
 - Added a startup preload presentation before the intro/game-start flow:
   - Player control is disabled while the preload sequence runs.
-  - Preload progress can now show custom frame UI images and status text for sound, music, ability, and completion stages.
+  - Preload progress can now show custom 16:9 frame UI images and RegionTitles-style phase text for sound, music, ability, and completion stages.
   - The intro/game start trigger is executed only after the preload sequence completes.
   - Loading a saved game reruns sound/music preload without restarting the game-start flow.
 
 - Added a new player shaman ability learning flow for Nazgrek and Zul'kis:
-  - Enhancement, Elemental, Restoration, and Totemic trainers can open a focused ability training UI.
+  - Enhancement, Elemental, Restoration, and Totemic trainers now start a short cinematic greeting dialog instead of opening the learning UI immediately on selection.
+  - Trainer dialogs have basic `Learn` and `Farewell` buttons; `Learn` opens the focused ability training UI and `Farewell` exits the dialog flow.
+  - Each trainer type now has its own generic personality lines:
+    - Totemic / Totem Master: calm tauren spiritwalker, astral and totem-focused.
+    - Restoration Master: troll witchdoctor healer voice.
+    - Elemental Master: storm, fire, frost, and elemental shaman voice.
+    - Enhancement Master: combat-shaman weapon/spirit voice.
   - Learning is now driven by the new `AbilityPoints.j` ability-point state instead of the old GUI `AbilityPoints` integers.
   - Successful ability learning plays `gg_snd_NewAbility`.
   - Failed learning attempts, such as missing AP or requirements, play `gg_snd_Error`.
   - Learned abilities are made permanent in the same style as the old GUI learning triggers.
+  - Ghost Wolf / Spirit Wolf is now marked as quest-trained for the initial rank, so trainers cannot teach rank 1 directly.
 
 - Added the new shaman talent tree UI:
   - `AbilitiesLiteUI` now exposes a Talents entry for player shaman heroes.
@@ -54,13 +61,14 @@
 ### Technical Updates
 
 - Added `UI/ImagesUI.j`
-  - New lightweight image/status frame helper for preload and similar scripted presentation flows.
+  - New lightweight 16:9 image frame helper for preload and similar scripted presentation flows.
   - Provides public APIs for showing, updating, and hiding the preload image surface.
   - Keeps image paths caller-controlled so imported preload BLPs can be swapped without changing the UI helper.
+  - Covers the screen with a backing frame while preserving the preload image's 16:9 ratio.
 
 - Added `Preload/Preloader.j`
   - New timer-driven startup preload runner that replaces the old GUI wait chain.
-  - Runs at elapsed game time `0.00`, disables user control, updates preload UI/status text, and preloads sounds, music, and abilities in staged steps.
+  - Runs at elapsed game time `0.00`, disables user control, updates preload UI/status text through `RegionTitles`, and preloads sounds, music, and abilities in staged steps.
   - Calls `ExSound_PreloadAll()`, `ExMusic_PreloadAll()`, and `Preload_Abilities(...)`.
   - Removes the placed `AbilityLoader 1870 <gen>` unit after ability preloading.
   - Executes `gg_trg_Game_Start` and initializes `StatsLiteUI` after preload completion.
@@ -84,6 +92,8 @@
 - Added `Abilities/AbilitiesPlayer.j`
   - New player shaman ability registry for JASS learning and UI display.
   - Stores ability tree, kind, learn/raw ability ids, permanent ability ids, AP cost, max level, and optional requirements.
+  - Added per-entry initial quest-lock metadata for abilities that must be awarded by quests before normal trainer rank-ups.
+  - Marked Ghost Wolf / Spirit Wolf as requiring Spirit Wolf quest training for rank 1.
   - Centralizes player shaman ability definitions for Elemental, Enhancement, Restoration, and Totemic trees.
   - Provides trainer-unit tree lookup for:
     - Enhancement Master (`o628`)
@@ -97,7 +107,21 @@
   - Uses `AbilityPoints.j` for all AP checks/spending instead of the old GUI ability-point globals.
   - Preserves the old GUI learning behavior of adding the permanent learned ability and hiding it when needed.
   - Added public learn/reset APIs for use by trainer UI and future scripted reward/learning hooks.
+  - Added quest reward grant APIs:
+    - `Abilities_GrantQuestEntry`
+    - `Abilities_GrantQuestAbility`
+  - Trainer learning now reports quest-locked initial ranks with a dedicated `RESULT_QUEST_LOCKED` result.
   - Delegates talent reset to `Talents_ResetHeroTalents` when the optional `Talents` library exists.
+
+- Added `Abilities/AbilityTrainerLines.j`
+  - Registers stable trainer display names and generic greet/farewell lines for Totem, Restoration, Elemental, and Enhancement Masters.
+
+- Added `Abilities/AbilityTrainerDialogs.j`
+  - New QuestGiver-backed dialog/cinematic layer for all shaman trainer unit-types.
+  - Scans placed trainer units on map init and registers trainers created later through `Events_RegisterUnitEnter` when `Events.j` is available.
+  - Uses `QuestGiver_RegisterSelectionHandler` and configured dialog entry/exit transitions, matching the existing qAradion-style cinematic flow.
+  - Builds `Learn` / `Farewell` trainer dialogs and opens `AbilitiesUI_ShowForTrainer` only from the `Learn` button.
+  - Added a dialog-builder hook so future trainer quest libraries can add quest buttons to the same trainer dialog.
 
 - Added `UI/AbilitiesUI.j`
   - New trainer-facing ability learning UI based on the `AbilitiesLiteUI` frame style.
@@ -105,6 +129,7 @@
   - Displays ability name, icon, current level, cost, requirement state, and detailed text.
   - Includes controls for learning abilities, resetting abilities, resetting specialization, and resetting talents.
   - Hides other major custom UI panels when opened and integrates with `MasterUI` / `AbilitiesLiteUI` panel behavior.
+  - Trainer selection is no longer handled directly here; `AbilityTrainerDialogs` owns selection and opens this frame from the dialog `Learn` button.
 
 - Added `Abilities/Talents.j`
   - New shaman talent backend for Nazgrek and Zul'kis.
@@ -144,6 +169,11 @@
 - Updated `UI/AbilitiesLiteUI.j`
   - Added a Talents button for player shaman heroes.
   - Opens `TalentsUI_ShowForUnit` for Nazgrek/Zul'kis when the optional `TalentsUI` library exists.
+
+- Updated `QuestsAndDialogs/DialogSystem.j` and `DialogSystemPlayer.j`
+  - Added trainer-specific hero greet/farewell line pools for Nazgrek and Zul'kis.
+  - Added `DialogSystem_PickGreetTrainerLine`, `DialogSystem_PickFarewellTrainerLine`, `DialogSystem_RegisterGreetTrainerLine`, and `DialogSystem_RegisterFarewellTrainerLine`.
+  - Initialized the existing info-line table during DialogSystem init so registered info lines are stored consistently.
 
 - Updated `UI/MasterUI.j` and related panel hiding behavior:
   - Added `TalentsUI_Hide` calls so the talent panel closes consistently when other major UI panels open.
@@ -214,6 +244,8 @@
 
 - Full in-map JassHelper / Warcraft III compile validation was not completed for the abilities/talents work because no local `jasshelper`, `pjass`, or `wurst` command is available in this shell and the repo snapshot still does not expose a normal combined map build entry point.
 - The new ability/talent libraries still need in-game validation with the actual trainer units (`o625`, `o626`, `o627`, `o628`), Nazgrek, Zul'kis, and the current object-data rawcodes.
+- The new trainer dialog/cinematic handoff still needs in-game validation for selection gating, greeting sequences, `Learn` handoff, `Farewell` exit transition, and trainer quest-button builder hooks.
+- Ghost Wolf / Spirit Wolf quest-lock behavior still needs a real quest-chain reward script that calls `Abilities_GrantQuestAbility` for the initial rank.
 - Old GUI player ability add/level triggers should be disabled after the JASS learner is imported, otherwise ability learning/reset behavior can double-run or conflict.
 - Talent helper APIs are present, but individual ability scripts still need to be wired to the relevant talent effect helpers before every talent has visible gameplay impact.
 - Talent save/load persistence is not implemented yet; current talent ranks live in runtime JASS state.
@@ -229,15 +261,18 @@
 - Import/include the new ability/talent libraries in the active map build order:
   - `Abilities/AbilitiesPlayer.j`
   - `Abilities/Abilities.j`
+  - `Abilities/AbilityTrainerLines.j`
+  - `Abilities/AbilityTrainerDialogs.j`
   - `Abilities/Talents.j`
   - `UI/AbilitiesUI.j`
   - `UI/TalentsUI.j`
 - Confirm the old GUI player ability add/level/reset triggers are disabled after the JASS replacements are active.
-- In-game test each trainer unit opening the correct tree:
+- In-game test each trainer dialog opening the correct tree through `Learn`:
   - `o628` Enhancement
   - `o627` Elemental
   - `o626` Restoration
   - `o625` Totemic
+- Add the Spirit Wolf quest/quest-chain reward and call `Abilities_GrantQuestAbility(hero, 'A68Y')` when the initial rank should be awarded.
 - In-game test AP spending, missing-AP errors, requirement errors, permanent learned abilities, ability reset, specialization reset, talent reset, pending talent allocation, Confirm, Cancel, Remove, and hover tooltip/link visuals.
 - Wire live ability scripts to the relevant `Talents.j` effect helpers where the talents should modify damage, healing, cooldowns, mana, or special behavior.
 - Add talent save/load serialization after the current PotS save/load direction is confirmed.
