@@ -21,7 +21,7 @@
 
 - Added a startup preload presentation before the intro/game-start flow:
   - Player control is disabled while the preload sequence runs.
-  - Preload now runs in cinematic mode, hides the default cinematic panels only during preload, displays 16:9 frame UI images over a full-screen backing frame, and shows colored RegionTitles-style phase text for sound, music, ability, and completion stages.
+  - Preload now enters a UI-hidden state, displays 16:9 frame UI images over a full-screen backing frame, and shows two-line colored RegionTitles-style phase text for ability, sound, music, and completion stages.
   - The intro/game start trigger is executed only after the preload sequence completes.
   - Loading a saved game reruns sound/music preload without restarting the game-start flow.
 
@@ -51,8 +51,9 @@
   - Talent allocation can be done from the talent tree anywhere; talent reset is trainer-only through `AbilitiesUI`.
 
 - Refined profession crafting sound playback:
-  - Player-started cinematic crafting now uses plain profession sound playback that remains audible during cinematic mode.
+  - Player-started cinematic crafting now creates fresh non-3D profession sounds from configured file paths so playback is not locked to Sound Editor 3D settings.
   - AI crafting and any non-cinematic craft actions continue to use 3D sound playback on the workstation unit.
+  - Crafting cinematics now hide the MasterUI `Game` button until the craft cinematic ends.
   - Forge smelting now uses the `Smelting` craft sound label instead of mining-hit labels; mining ore harvesting and herb picking sounds were left unchanged.
 
 - Stats UI now shows `Rested` for the selected unit when the centralized Experience system reports that the unit is rested.
@@ -70,8 +71,9 @@
 
 - Added `Preload/Preloader.j`
   - New timer-driven startup preload runner that replaces the old GUI wait chain.
-  - Runs at elapsed game time `0.00`, enables cinematic mode, updates preload UI/status text through `RegionTitles`, and preloads sounds, music, and abilities in staged steps.
-  - Calls `BlzHideCinematicPanels(true)` only for the preload presentation and restores it to `false` when preload cinematic mode ends, preventing later dialog cinematics such as ability trainers from inheriting hidden cinematic panels.
+  - Runs at elapsed game time `0.00`, hides the normal game UI, updates preload UI/status text through `RegionTitles`, and preloads abilities, sounds, and music in staged steps.
+  - Enters the UI-hidden state with `ShowInterface(false, 0.00)` followed by `BlzHideCinematicPanels(true)`.
+  - Restores the UI in reverse order with `BlzHideCinematicPanels(false)` followed by `ShowInterface(true, 0.00)`.
   - Splits each preload phase into a visible UI/title tick and a later preload-work tick so image changes can render before synchronous preload work begins.
   - Calls `ExSound_PreloadAll()`, `ExMusic_PreloadAll()`, and `Preload_Abilities(...)`.
   - Removes the placed `AbilityLoader 1870 <gen>` unit after ability preloading.
@@ -80,6 +82,10 @@
 
 - Updated `Texts/RegionTitlesLight.j`
   - Raised region-title frame levels so preload phase text renders above the full-screen preload image.
+  - Added a preload-specific two-row title API with smaller `Preloading...` text above a larger colored phase title.
+
+- Updated `UI/MasterUI.j`
+  - The `Game` button is now hidden by default and still appears normally when `MasterUI_ShowGameButton()` is called.
 
 - Updated `Preload/PreloadAbilities.j`
   - Wrapped the existing rawcode preload function in a `PreloadAbilities` library so other libraries can declare a proper dependency.
@@ -138,6 +144,7 @@
   - Follow-up fix: trainer selection now skips the old broad `gg_trg_Cinematic_ON` movement trigger and explicitly restores/selects the hero on dialog end, preventing the player unit from remaining hidden after the trainer flow.
   - Follow-up fix: trainer cameras now compute rotation from the active player hero's side of the trainer instead of using one static offset.
   - Follow-up fix: trainer dialog camera is fixed while `AbilitiesUI` is open, preventing camera movement while keeping frame buttons usable.
+  - Follow-up fix: trainer selection now applies the configured dialog camera immediately and disables the delayed QuestGiver camera application for that entry transition.
 
 - Added `UI/AbilitiesUI.j`
   - New trainer-facing ability learning UI based on the `AbilitiesLiteUI` frame style.
@@ -186,6 +193,7 @@
   - Expanded the talent grid capacity to 6 columns by 8 rows and matched the backend tree dimensions.
   - Raised tooltip frame levels above talent icons and wrapped detail requirement text so descriptions stay inside the talent panel.
   - Follow-up fix: unavailable talent icons now use a darkened icon tint instead of an opaque black overlay, keeping the artwork visible while still reading as locked.
+  - Follow-up fix: unavailable talent icons now add a controlled low-alpha black overlay above the icon but below rank text, making locked talents read as unavailable without becoming solid black.
 
 - Updated `UI/AbilitiesLiteUI.j`
   - Added a Talents button for player shaman heroes.
@@ -257,8 +265,9 @@
   - `Abilities/Talents.j`
 
 - Updated profession crafting sound routing:
-  - `UI/Interface.j` now exposes a profession cinematic volume restore helper because `CinematicModeBJ` mutes UI and unit-sound volume groups.
-  - `Professions/Professions.j` now restores those volume groups for player craft cinematics, uses imported sound handles before labels for player jobs, and keeps workstation-attached 3D playback for AI or non-cinematic craft jobs.
+  - `UI/Interface.j` now exposes configurable `Interface_Profession_*Path` globals and fresh path-created profession playback helpers for normal or 3D playback.
+  - `Professions/Professions.j` now restores muted volume groups for player craft cinematics, tries configured file paths before `gg_snd_*` handles for player-cinematic craft sounds, and keeps workstation-attached 3D playback for AI or non-cinematic craft jobs.
+  - `Professions/Professions.j` now optionally calls `MasterUI_HideGameButton` / `MasterUI_ShowGameButton` around player craft cinematics.
   - `Professions/ProfessionsMining.j` now registers `Smelting` as the Forge start/loop/end sound label.
 
 ### Known Issues
