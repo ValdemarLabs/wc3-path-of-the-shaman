@@ -1195,7 +1195,7 @@ library Talents initializer Init requires AbilitiesPlayer, optional AbilityPoint
         local unit hero
 
         static if LIBRARY_Events then
-            set hero = Events_GetTriggerUnit()
+            set hero = GetTriggerUnit()
         else
             set hero = GetLevelingUnit()
         endif
