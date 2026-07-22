@@ -5,9 +5,9 @@
     Version:
 
     Description:
-    Small frame UI helper for showing a full-screen preload image. It is
-    currently used by the preload flow before the intro/game start trigger is
-    executed.
+    Small frame UI helper for showing a centered 16:9 preload image over a
+    full-screen backing frame. It is currently used by the preload flow before
+    the intro/game start trigger is executed.
 
     Credits:
 
@@ -24,13 +24,13 @@
 **/
 library ImagesUI
     globals
-        // Preload overlay configuration.
+        // Preload overlay configuration. 0.800 x 0.450 keeps a 16:9 image ratio.
         private constant real IMUI_SCREEN_WIDTH = 0.800
         private constant real IMUI_SCREEN_HEIGHT = 0.600
         private constant real IMUI_IMAGE_CENTER_X = 0.400
         private constant real IMUI_IMAGE_CENTER_Y = 0.300
         private constant real IMUI_IMAGE_WIDTH = 0.800
-        private constant real IMUI_IMAGE_HEIGHT = 0.600
+        private constant real IMUI_IMAGE_HEIGHT = 0.450
         private constant real IMUI_TEXT_CENTER_Y = 0.190
         private constant real IMUI_TEXT_WIDTH = 0.520
         private constant real IMUI_TEXT_HEIGHT = 0.032
