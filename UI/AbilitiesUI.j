@@ -14,8 +14,7 @@
 
     How to install:
     Import after Abilities, AbilitiesPlayer, MasterUI, Table, and Interface.
-    Selecting one of the configured trainer units opens this UI for the nearest
-    tracked player shaman hero.
+    AbilityTrainerDialogs opens this UI from the trainer dialog Learn button.
 
     API:
     - call AbilitiesUI_ShowForTrainer(trainer, hero)
@@ -71,7 +70,6 @@ library AbilitiesUI initializer AutoInit requires Table, MasterUI, Abilities, Ab
 
         private Table ABUI_ButtonRow = 0
 
-        private trigger ABUI_SelectTrigger = null
         private trigger ABUI_CloseTrigger = null
         private trigger ABUI_ReturnTrigger = null
         private trigger ABUI_RowTrigger = null
@@ -706,10 +704,6 @@ library AbilitiesUI initializer AutoInit requires Table, MasterUI, Abilities, Ab
         set ABUI_Initialized = true
 
         set ABUI_ButtonRow = Table.create()
-
-        set ABUI_SelectTrigger = CreateTrigger()
-        call TriggerRegisterPlayerUnitEvent(ABUI_SelectTrigger, Player(0), EVENT_PLAYER_UNIT_SELECTED, null)
-        call TriggerAddAction(ABUI_SelectTrigger, function ABUI_SelectAction)
 
         set ABUI_CloseTrigger = CreateTrigger()
         call TriggerAddAction(ABUI_CloseTrigger, function ABUI_CloseAction)
