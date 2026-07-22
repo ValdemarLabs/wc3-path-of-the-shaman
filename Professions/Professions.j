@@ -523,7 +523,7 @@ private function P_IsNearStation takes unit crafter, unit station returns boolea
 endfunction
 
 private function P_PlaySoundLabelForJob takes integer jobId, string soundLabel, unit station, boolean looping returns sound
-    if P_JobAiControlled[jobId] then
+    if station != null then
         return Interface_PlayProfessionSoundOnUnit(null, soundLabel, station, looping, P_SOUND_CUTOFF)
     endif
 
@@ -531,7 +531,7 @@ private function P_PlaySoundLabelForJob takes integer jobId, string soundLabel, 
 endfunction
 
 private function P_PlaySoundHandleForJob takes integer jobId, sound whichSound, unit station, boolean looping returns sound
-    if P_JobAiControlled[jobId] then
+    if station != null then
         return Interface_PlayProfessionSoundOnUnit(whichSound, "", station, looping, P_SOUND_CUTOFF)
     endif
 
