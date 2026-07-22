@@ -29,7 +29,8 @@
 library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound, ExMusic, PreloadAbilities, StatsLiteUI
     globals
         // Timing between visible preload stages. Actual preload calls still run synchronously.
-        private constant real PRL_START_MESSAGE_DELAY = 0.50
+        private constant real PRL_START_MESSAGE_DELAY = 2.20
+        private constant real PRL_RENDER_DELAY = 0.10
         private constant real PRL_STAGE_DELAY = 0.50
         private constant real PRL_SOUND_STAGE_DELAY = 1.00
         private constant real PRL_DONE_DELAY = 0.50
@@ -44,6 +45,7 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
         private constant string PRL_IMAGE_MUSIC = "Art\\Pots_Riverbane1.blp"
         private constant string PRL_IMAGE_ABILITIES = "Art\\Pots_Riverbane1.blp"
         private constant string PRL_IMAGE_DONE = "Art\\Pots_Logo.blp"
+        private constant integer PRL_PRELOAD_MUSIC_TRACK = 43
 
         private trigger PRL_StartTrigger = null
         private trigger PRL_LoadedGameTrigger = null
@@ -53,12 +55,17 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
         private boolean PRL_Finished = false
         private boolean PRL_RunGameStartOnFinish = true
         private boolean PRL_RunAbilityStage = true
-        private boolean PRL_DisableUserControl = true
+        private boolean PRL_CinematicModeActive = false
     endglobals
 
     private function PRL_ShowStatus takes string texturePath, string message returns nothing
         call ImagesUI_ShowPreload(texturePath, "")
         call ShowSingleLineText(message, PRL_TITLE_FADE_IN, PRL_TITLE_DURATION, PRL_TITLE_FADE_OUT, PRL_TITLE_SCALE)
+    endfunction
+
+    private function PRL_SetCinematicMode takes boolean enabled returns nothing
+        call CinematicModeBJ(enabled, bj_FORCE_ALL_PLAYERS)
+        set PRL_CinematicModeActive = enabled
     endfunction
 
     private function PRL_GetAbilityLoader takes nothing returns unit
@@ -90,6 +97,9 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
             call PauseTimer(PRL_Timer)
         endif
 
+        if PRL_CinematicModeActive then
+            call PRL_SetCinematicMode(false)
+        endif
         call ImagesUI_HidePreload()
 
         if PRL_RunGameStartOnFinish then
@@ -114,39 +124,44 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
         endif
 
         if PRL_Step == 0 then
-            call PRL_ShowStatus(PRL_IMAGE_START, "Preloading files...")
-            set PRL_Step = 1
-            call TimerStart(PRL_Timer, PRL_STAGE_DELAY, false, function PRL_RunStep)
-        elseif PRL_Step == 1 then
             call PRL_ShowStatus(PRL_IMAGE_SOUNDS, "Preloading sounds...")
+            set PRL_Step = 1
+            call TimerStart(PRL_Timer, PRL_RENDER_DELAY, false, function PRL_RunStep)
+        elseif PRL_Step == 1 then
             call ExSound_PreloadAll()
             set PRL_Step = 2
             call TimerStart(PRL_Timer, PRL_SOUND_STAGE_DELAY, false, function PRL_RunStep)
         elseif PRL_Step == 2 then
             call PRL_ShowStatus(PRL_IMAGE_MUSIC, "Preloading music...")
+            set PRL_Step = 3
+            call TimerStart(PRL_Timer, PRL_RENDER_DELAY, false, function PRL_RunStep)
+        elseif PRL_Step == 3 then
             call ExMusic_PreloadAll()
             if PRL_RunAbilityStage then
-                set PRL_Step = 3
-                call TimerStart(PRL_Timer, PRL_STAGE_DELAY, false, function PRL_RunStep)
-            else
                 set PRL_Step = 4
                 call TimerStart(PRL_Timer, PRL_STAGE_DELAY, false, function PRL_RunStep)
+            else
+                set PRL_Step = 6
+                call TimerStart(PRL_Timer, PRL_STAGE_DELAY, false, function PRL_RunStep)
             endif
-        elseif PRL_Step == 3 then
-            call PRL_ShowStatus(PRL_IMAGE_ABILITIES, "Preloading abilities...")
-            call PRL_PreloadAbilities()
-            set PRL_Step = 4
-            call TimerStart(PRL_Timer, PRL_STAGE_DELAY, false, function PRL_RunStep)
         elseif PRL_Step == 4 then
-            call PRL_ShowStatus(PRL_IMAGE_DONE, "Preload successful.")
+            call PRL_ShowStatus(PRL_IMAGE_ABILITIES, "Preloading abilities...")
             set PRL_Step = 5
+            call TimerStart(PRL_Timer, PRL_RENDER_DELAY, false, function PRL_RunStep)
+        elseif PRL_Step == 5 then
+            call PRL_PreloadAbilities()
+            set PRL_Step = 6
+            call TimerStart(PRL_Timer, PRL_STAGE_DELAY, false, function PRL_RunStep)
+        elseif PRL_Step == 6 then
+            call PRL_ShowStatus(PRL_IMAGE_DONE, "Preload successful.")
+            set PRL_Step = 7
             call TimerStart(PRL_Timer, PRL_DONE_DELAY, false, function PRL_RunStep)
         else
             call PRL_Finish()
         endif
     endfunction
 
-    private function PRL_StartMode takes boolean runGameStartOnFinish, boolean runAbilityStage, boolean disableUserControl returns nothing
+    private function PRL_StartMode takes boolean runGameStartOnFinish, boolean runAbilityStage returns nothing
         if PRL_Started and not PRL_Finished then
             if runGameStartOnFinish then
                 return
@@ -161,25 +176,23 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
         set PRL_Step = 0
         set PRL_RunGameStartOnFinish = runGameStartOnFinish
         set PRL_RunAbilityStage = runAbilityStage
-        set PRL_DisableUserControl = disableUserControl
 
         if PRL_Timer == null then
             set PRL_Timer = CreateTimer()
         endif
 
-        if PRL_DisableUserControl then
-            call EnableUserControl(false)
-        endif
-        call ImagesUI_ShowPreload(PRL_IMAGE_START, "")
+        call PRL_SetCinematicMode(true)
+        call PRL_ShowStatus(PRL_IMAGE_START, "Preloading files...")
+        call ExMusic_PlayTrack(PRL_PRELOAD_MUSIC_TRACK)
         call TimerStart(PRL_Timer, PRL_START_MESSAGE_DELAY, false, function PRL_RunStep)
     endfunction
 
     public function Start takes nothing returns nothing
-        call PRL_StartMode(true, true, true)
+        call PRL_StartMode(true, true)
     endfunction
 
     public function StartLoadedGame takes nothing returns nothing
-        call PRL_StartMode(false, false, false)
+        call PRL_StartMode(false, false)
     endfunction
 
     private function PRL_AutoStart takes nothing returns nothing
