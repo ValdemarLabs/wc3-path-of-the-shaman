@@ -44,6 +44,7 @@
     call Interface_NotifyHardWarning()
     call Interface_NotifyMiningHitOnUnit(GetTriggerUnit())
     call Interface_RefreshDefaultSounds()
+    call Interface_ApplyProfessionCinematicVolumes(Player(0))
     call Interface_PlayProfessionSound(Interface_Profession_Blacksmithing_Start, "Blacksmithing", false)
     call Interface_PlayProfessionSoundOnUnit(Interface_Profession_Blacksmithing_Start, "Blacksmithing", GetTriggerUnit(), false, 3000.00)
 
@@ -87,8 +88,6 @@ library Interface initializer AutoInit
         private constant real IUI_SOUND_UNIT_Z = 64.00
         private constant real IUI_MINING_SOUND_CUTOFF = 1000.00
         private constant real IUI_PROFESSION_SOUND_CUTOFF = 3000.00
-        // CinematicModeBJ mutes UI and unit-sound volume groups; channel 12 is cinematic sound effects 1.
-        private constant integer IUI_PROFESSION_CINEMATIC_SOUND_CHANNEL = 12
 
         private boolean IUI_Initialized = false
         private boolean IUI_SoundsEnabled = true
@@ -169,13 +168,6 @@ library Interface initializer AutoInit
 
     private function IUI_ApplyFeedbackSound takes sound whichSound returns nothing
         if whichSound != null then
-            call SetSoundVolume(whichSound, IUI_FEEDBACK_SOUND_VOLUME)
-        endif
-    endfunction
-
-    private function IUI_ApplyProfessionCinematicSound takes sound whichSound returns nothing
-        if whichSound != null then
-            call SetSoundChannel(whichSound, IUI_PROFESSION_CINEMATIC_SOUND_CHANNEL)
             call SetSoundVolume(whichSound, IUI_FEEDBACK_SOUND_VOLUME)
         endif
     endfunction
@@ -270,7 +262,7 @@ library Interface initializer AutoInit
 
         if whichSound != null then
             call StopSound(whichSound, false, false)
-            call IUI_ApplyProfessionCinematicSound(whichSound)
+            call IUI_ApplyFeedbackSound(whichSound)
             call StartSound(whichSound)
             return whichSound
         endif
@@ -278,7 +270,7 @@ library Interface initializer AutoInit
         if soundLabel != null and soundLabel != "" then
             set professionSound = CreateSoundFromLabel(soundLabel, looping, false, false, 12700, 12700)
             if professionSound != null then
-                call IUI_ApplyProfessionCinematicSound(professionSound)
+                call IUI_ApplyFeedbackSound(professionSound)
                 call StartSound(professionSound)
                 if not looping then
                     call KillSoundWhenDone(professionSound)
@@ -288,6 +280,23 @@ library Interface initializer AutoInit
         endif
 
         return null
+    endfunction
+
+    public function ApplyProfessionCinematicVolumes takes player whichPlayer returns nothing
+        if whichPlayer == null then
+            return
+        endif
+
+        // Profession craft feedback must stay audible after CinematicModeBJ mutes UI/unit groups.
+        call VolumeGroupSetVolumeForPlayerBJ(whichPlayer, SOUND_VOLUMEGROUP_UNITSOUNDS, 1.00)
+        call VolumeGroupSetVolumeForPlayerBJ(whichPlayer, SOUND_VOLUMEGROUP_UI, 1.00)
+        call VolumeGroupSetVolumeForPlayerBJ(whichPlayer, SOUND_VOLUMEGROUP_COMBAT, 1.00)
+        call VolumeGroupSetVolumeForPlayerBJ(whichPlayer, SOUND_VOLUMEGROUP_SPELLS, 1.00)
+        call VolumeGroupSetVolumeForPlayerBJ(whichPlayer, SOUND_VOLUMEGROUP_FIRE, 1.00)
+        call VolumeGroupSetVolumeForPlayerBJ(whichPlayer, SOUND_VOLUMEGROUP_CINEMATIC_GENERAL, 1.00)
+        call VolumeGroupSetVolumeForPlayerBJ(whichPlayer, SOUND_VOLUMEGROUP_CINEMATIC_SOUND_EFFECTS_1, 1.00)
+        call VolumeGroupSetVolumeForPlayerBJ(whichPlayer, SOUND_VOLUMEGROUP_CINEMATIC_SOUND_EFFECTS_2, 1.00)
+        call VolumeGroupSetVolumeForPlayerBJ(whichPlayer, SOUND_VOLUMEGROUP_CINEMATIC_SOUND_EFFECTS_3, 1.00)
     endfunction
 
     private function IUI_PlayEvent takes integer eventId returns nothing
