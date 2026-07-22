@@ -47,8 +47,8 @@
   - Players can add pending ranks, remove pending ranks, confirm pending talents, and cancel pending changes from `TalentsUI`.
   - Talent effects only apply after Confirm; ability scripts still read confirmed talent ranks.
   - Talent points are primarily earned from hero level-ups, matching ability points: 1 talent point per qualifying player hero level starting at level 2.
-  - Talent tree buttons now use a denser WoW-style icon layout with compact rank numbers and stable hover tooltips.
-  - Talent reset is now trainer-only through `AbilitiesUI`; the standalone talent panel no longer shows a reset button.
+  - Talent tree buttons now use a denser WoW-style icon layout with compact `0/5` style rank numbers and stable hover tooltips.
+  - Talent allocation can be done from the talent tree anywhere; talent reset is trainer-only through `AbilitiesUI`.
 
 - Refined profession crafting sound playback:
   - Player-started cinematic crafting now uses plain profession sound playback that remains audible during cinematic mode.
@@ -130,6 +130,8 @@
   - Added a dialog-builder hook so future trainer quest libraries can add quest buttons to the same trainer dialog.
   - Follow-up fix: trainer dialog camera settings now match the profession crafting camera profile.
   - Follow-up fix: trainer selection now skips the old broad `gg_trg_Cinematic_ON` movement trigger and explicitly restores/selects the hero on dialog end, preventing the player unit from remaining hidden after the trainer flow.
+  - Follow-up fix: trainer cameras now compute rotation from the active player hero's side of the trainer instead of using one static offset.
+  - Follow-up fix: trainer dialog camera is fixed while `AbilitiesUI` is open, preventing camera movement while keeping frame buttons usable.
 
 - Added `UI/AbilitiesUI.j`
   - New trainer-facing ability learning UI based on the `AbilitiesLiteUI` frame style.
@@ -153,6 +155,7 @@
   - Added preview APIs for UI point totals, tree-spent totals, rank text, info text, and body text.
   - Added requirement/failure text APIs so UI and click feedback use the same backend requirement messages.
   - Added a stored level-earned talent point pool, level-up awarding, and `Talents_SyncLevelPoints` for load/import catch-up.
+  - Expanded each backend talent tree viewport from 5 columns by 6 rows to 6 columns by 8 rows for larger future trees.
   - Talent level-up awarding uses `Events.j` when available, falls back to its own player hero level trigger otherwise, and respects `AbilityPoints_IsHeroLevelUpEnabled` when `AbilityPoints.j` is imported.
   - Follow-up fix: level-up talent awards now read `GetLevelingUnit()` directly and award from hero level 2 onward, so talent points increase with the same level-up rhythm as ability points.
   - Added reusable effect helper APIs for ability scripts:
@@ -173,8 +176,9 @@
   - Uses preview ranks and preview point totals while pending changes exist.
   - Confirms pending ranks through `Talents_ConfirmPending`, which then plays `gg_snd_NewAbility`.
   - Replaced native `BlzFrameSetTooltip` ownership with disabled manual tooltip frames to avoid hover flicker.
-  - Replaced the filled active-button talent highlight with thin edge strips so selected/available highlights do not cover the icon art.
-  - Expanded the talent grid capacity to 5 columns by 6 rows and matched the backend tree dimensions.
+  - Replaced the filled active-button talent highlight with a selected-talent autocast sprite highlight based on the `StatsLiteUI` sprite pattern.
+  - Expanded the talent grid capacity to 6 columns by 8 rows and matched the backend tree dimensions.
+  - Raised tooltip frame levels above talent icons and wrapped detail requirement text so descriptions stay inside the talent panel.
 
 - Updated `UI/AbilitiesLiteUI.j`
   - Added a Talents button for player shaman heroes.
