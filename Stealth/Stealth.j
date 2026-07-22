@@ -177,12 +177,13 @@ private function EnemiesOnly takes nothing returns boolean
     return b
 endfunction
 
+private function OnSpellEffect takes nothing returns nothing
+    call data.Cast()
+endfunction
+
 private function Init takes nothing returns nothing
-    local trigger t = CreateTrigger()
     set bool = Condition( function EnemiesOnly)
-    call TriggerAddCondition(t,Condition(function data.Cast))
-    call Events_RegisterPlayerUnitTrigger(t, EVENT_PLAYER_UNIT_SPELL_EFFECT)
-    set t = null
+    call Events_RegisterPlayerUnitEvent(function OnSpellEffect, EVENT_PLAYER_UNIT_SPELL_EFFECT)
 endfunction
 
 endlibrary
