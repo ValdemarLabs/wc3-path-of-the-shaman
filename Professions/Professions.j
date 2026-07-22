@@ -523,19 +523,31 @@ private function P_IsNearStation takes unit crafter, unit station returns boolea
 endfunction
 
 private function P_PlaySoundLabelForJob takes integer jobId, string soundLabel, unit station, boolean looping returns sound
+    if P_JobCinematicActive[jobId] and not P_JobAiControlled[jobId] then
+        return Interface_PlayProfessionSound(null, soundLabel, looping)
+    endif
+
     if station != null then
         return Interface_PlayProfessionSoundOnUnit(null, soundLabel, station, looping, P_SOUND_CUTOFF)
     endif
 
-    return Interface_PlayProfessionSound(null, soundLabel, looping)
+    return null
 endfunction
 
 private function P_PlaySoundHandleForJob takes integer jobId, sound whichSound, unit station, boolean looping returns sound
+    if P_JobCinematicActive[jobId] and not P_JobAiControlled[jobId] then
+        return Interface_PlayProfessionSound(whichSound, "", looping)
+    endif
+
     if station != null then
         return Interface_PlayProfessionSoundOnUnit(whichSound, "", station, looping, P_SOUND_CUTOFF)
     endif
 
-    return Interface_PlayProfessionSound(whichSound, "", looping)
+    return null
+endfunction
+
+private function P_ShouldPreferSoundLabel takes integer jobId returns boolean
+    return P_JobAiControlled[jobId] or P_JobCinematicActive[jobId]
 endfunction
 
 private function P_RefreshProfessionSoundHandles takes integer professionId returns nothing
@@ -623,7 +635,7 @@ private function P_StartLoopSound takes integer jobId, integer professionId, uni
     endif
     call P_RefreshProfessionSoundHandles(professionId)
 
-    if P_JobAiControlled[jobId] and P_ProfessionLoopSoundLabel[professionId] != null and P_ProfessionLoopSoundLabel[professionId] != "" then
+    if P_ShouldPreferSoundLabel(jobId) and P_ProfessionLoopSoundLabel[professionId] != null and P_ProfessionLoopSoundLabel[professionId] != "" then
         set loopSound = P_PlaySoundLabelForJob(jobId, P_ProfessionLoopSoundLabel[professionId], station, true)
         if loopSound != null then
             set P_JobLoopSoundTransient[jobId] = true
@@ -638,7 +650,7 @@ private function P_StartLoopSound takes integer jobId, integer professionId, uni
         endif
     endif
 
-    if not P_JobAiControlled[jobId] and P_ProfessionLoopSoundLabel[professionId] != null and P_ProfessionLoopSoundLabel[professionId] != "" then
+    if not P_ShouldPreferSoundLabel(jobId) and P_ProfessionLoopSoundLabel[professionId] != null and P_ProfessionLoopSoundLabel[professionId] != "" then
         set loopSound = P_PlaySoundLabelForJob(jobId, P_ProfessionLoopSoundLabel[professionId], station, true)
         if loopSound != null then
             set P_JobLoopSoundTransient[jobId] = true
@@ -670,7 +682,7 @@ private function P_PlayStartSound takes integer jobId, integer professionId, uni
 
     if P_IsProfessionValid(professionId) then
         call P_RefreshProfessionSoundHandles(professionId)
-        if P_JobAiControlled[jobId] and P_ProfessionStartSoundLabel[professionId] != null and P_ProfessionStartSoundLabel[professionId] != "" then
+        if P_ShouldPreferSoundLabel(jobId) and P_ProfessionStartSoundLabel[professionId] != null and P_ProfessionStartSoundLabel[professionId] != "" then
             set playedSound = P_PlaySoundLabelForJob(jobId, P_ProfessionStartSoundLabel[professionId], station, false)
             if playedSound != null then
                 set playedSound = null
@@ -684,7 +696,7 @@ private function P_PlayStartSound takes integer jobId, integer professionId, uni
                 return
             endif
         endif
-        if not P_JobAiControlled[jobId] and P_ProfessionStartSoundLabel[professionId] != null and P_ProfessionStartSoundLabel[professionId] != "" then
+        if not P_ShouldPreferSoundLabel(jobId) and P_ProfessionStartSoundLabel[professionId] != null and P_ProfessionStartSoundLabel[professionId] != "" then
             set playedSound = P_PlaySoundLabelForJob(jobId, P_ProfessionStartSoundLabel[professionId], station, false)
             if playedSound != null then
                 set playedSound = null
@@ -701,7 +713,7 @@ private function P_PlayFinishSound takes integer jobId, integer professionId, un
 
     if P_IsProfessionValid(professionId) then
         call P_RefreshProfessionSoundHandles(professionId)
-        if P_JobAiControlled[jobId] and P_ProfessionFinishSoundLabel[professionId] != null and P_ProfessionFinishSoundLabel[professionId] != "" then
+        if P_ShouldPreferSoundLabel(jobId) and P_ProfessionFinishSoundLabel[professionId] != null and P_ProfessionFinishSoundLabel[professionId] != "" then
             set playedSound = P_PlaySoundLabelForJob(jobId, P_ProfessionFinishSoundLabel[professionId], station, false)
             if playedSound != null then
                 set playedSound = null
@@ -715,7 +727,7 @@ private function P_PlayFinishSound takes integer jobId, integer professionId, un
                 return
             endif
         endif
-        if not P_JobAiControlled[jobId] and P_ProfessionFinishSoundLabel[professionId] != null and P_ProfessionFinishSoundLabel[professionId] != "" then
+        if not P_ShouldPreferSoundLabel(jobId) and P_ProfessionFinishSoundLabel[professionId] != null and P_ProfessionFinishSoundLabel[professionId] != "" then
             set playedSound = P_PlaySoundLabelForJob(jobId, P_ProfessionFinishSoundLabel[professionId], station, false)
             if playedSound != null then
                 set playedSound = null
