@@ -47,6 +47,8 @@
     call Interface_ApplyProfessionCinematicVolumes(Player(0))
     call Interface_PlayProfessionSound(Interface_Profession_Blacksmithing_Start, "Blacksmithing", false)
     call Interface_PlayProfessionSoundOnUnit(Interface_Profession_Blacksmithing_Start, "Blacksmithing", GetTriggerUnit(), false, 3000.00)
+    call Interface_PlayProfessionSoundPath(Interface_Profession_Blacksmithing_LoopPath, false)
+    call Interface_PlayProfessionSoundPathOnUnit(Interface_Profession_Blacksmithing_LoopPath, GetTriggerUnit(), false, 3000.00)
 
 **/
 library Interface initializer AutoInit
@@ -122,6 +124,32 @@ library Interface initializer AutoInit
         public sound Profession_Skinning_Loop = null
         public sound Profession_Skinning_End = null
 
+        // Profession sound paths create fresh handles when code must choose 3D or normal playback.
+        public string Profession_Alchemy_StartPath = ""
+        public string Profession_Alchemy_LoopPath = ""
+        public string Profession_Alchemy_EndPath = ""
+        public string Profession_Blacksmithing_StartPath = ""
+        public string Profession_Blacksmithing_LoopPath = ""
+        public string Profession_Blacksmithing_EndPath = ""
+        public string Profession_Mining_StartPath = ""
+        public string Profession_Mining_LoopPath = ""
+        public string Profession_Mining_EndPath = ""
+        public string Profession_Leatherworking_StartPath = ""
+        public string Profession_Leatherworking_LoopPath = ""
+        public string Profession_Leatherworking_EndPath = ""
+        public string Profession_Cooking_StartPath = ""
+        public string Profession_Cooking_LoopPath = ""
+        public string Profession_Cooking_EndPath = ""
+        public string Profession_Enchanting_StartPath = ""
+        public string Profession_Enchanting_LoopPath = ""
+        public string Profession_Enchanting_EndPath = ""
+        public string Profession_Fishing_StartPath = ""
+        public string Profession_Fishing_LoopPath = ""
+        public string Profession_Fishing_EndPath = ""
+        public string Profession_Skinning_StartPath = ""
+        public string Profession_Skinning_LoopPath = ""
+        public string Profession_Skinning_EndPath = ""
+
         private trigger IUI_UnitSelectTrigger = null
         private trigger IUI_PlayerLevelUpTrigger = null
     endglobals
@@ -148,6 +176,10 @@ library Interface initializer AutoInit
         endif
 
         return ""
+    endfunction
+
+    private function IUI_IsBlankString takes string value returns boolean
+        return value == null or value == ""
     endfunction
 
     private function IUI_PlaySound takes sound whichSound returns nothing
@@ -219,6 +251,55 @@ library Interface initializer AutoInit
         call KillSoundWhenDone(miningSound)
 
         set miningSound = null
+    endfunction
+
+    public function PlayProfessionSoundPathOnUnit takes string soundPath, unit whichUnit, boolean looping, real cutoff returns sound
+        local sound professionSound = null
+
+        if not IUI_SoundsEnabled or whichUnit == null or soundPath == null or soundPath == "" then
+            return null
+        endif
+        if cutoff <= 0.00 then
+            set cutoff = IUI_PROFESSION_SOUND_CUTOFF
+        endif
+
+        set professionSound = CreateSound(soundPath, looping, true, true, 12700, 12700, "")
+        if professionSound != null and GetSoundDuration(professionSound) > 0 then
+            call IUI_ApplyFeedbackSoundOnUnit(professionSound, whichUnit, cutoff)
+            call StartSound(professionSound)
+            if not looping then
+                call KillSoundWhenDone(professionSound)
+            endif
+            return professionSound
+        endif
+        if professionSound != null then
+            call KillSoundWhenDone(professionSound)
+        endif
+
+        return null
+    endfunction
+
+    public function PlayProfessionSoundPath takes string soundPath, boolean looping returns sound
+        local sound professionSound = null
+
+        if not IUI_SoundsEnabled or soundPath == null or soundPath == "" then
+            return null
+        endif
+
+        set professionSound = CreateSound(soundPath, looping, false, false, 12700, 12700, "")
+        if professionSound != null and GetSoundDuration(professionSound) > 0 then
+            call IUI_ApplyFeedbackSound(professionSound)
+            call StartSound(professionSound)
+            if not looping then
+                call KillSoundWhenDone(professionSound)
+            endif
+            return professionSound
+        endif
+        if professionSound != null then
+            call KillSoundWhenDone(professionSound)
+        endif
+
+        return null
     endfunction
 
     public function PlayProfessionSoundOnUnit takes sound whichSound, string soundLabel, unit whichUnit, boolean looping, real cutoff returns sound
@@ -418,6 +499,64 @@ library Interface initializer AutoInit
         set Profession_Skinning_Start = gg_snd_Tradeskill_LeatherworkingPick
         set Profession_Skinning_Loop = gg_snd_Tradeskill_LeatherworkingPick
         set Profession_Skinning_End = gg_snd_Tradeskill_LeatherworkingPick
+
+        if IUI_IsBlankString(Profession_Alchemy_StartPath) then
+            set Profession_Alchemy_StartPath = "war3mapImported\\CauldronSound.wav"
+        endif
+        if IUI_IsBlankString(Profession_Alchemy_LoopPath) then
+            set Profession_Alchemy_LoopPath = "war3mapImported\\CauldronSound.wav"
+        endif
+        if IUI_IsBlankString(Profession_Alchemy_EndPath) then
+            set Profession_Alchemy_EndPath = "war3mapImported\\Tradeskill_AlchemyEnd.wav"
+        endif
+        if IUI_IsBlankString(Profession_Blacksmithing_StartPath) then
+            set Profession_Blacksmithing_StartPath = "war3mapImported\\Tradeskill_BlacksmithStart.wav"
+        endif
+        if IUI_IsBlankString(Profession_Blacksmithing_LoopPath) then
+            set Profession_Blacksmithing_LoopPath = "war3mapImported\\Blacksmithing.wav"
+        endif
+        if IUI_IsBlankString(Profession_Blacksmithing_EndPath) then
+            set Profession_Blacksmithing_EndPath = "war3mapImported\\Blacksmithing.wav"
+        endif
+        if IUI_IsBlankString(Profession_Mining_StartPath) then
+            set Profession_Mining_StartPath = "war3mapImported\\Smelting.wav"                    // Use of forge for smelting ores
+        endif
+        if IUI_IsBlankString(Profession_Mining_LoopPath) then
+            set Profession_Mining_LoopPath = "war3mapImported\\Smelting.wav"
+        endif
+        if IUI_IsBlankString(Profession_Mining_EndPath) then
+            set Profession_Mining_EndPath = "war3mapImported\\Smelting.wav"
+        endif
+        if IUI_IsBlankString(Profession_Leatherworking_StartPath) then
+            set Profession_Leatherworking_StartPath = "war3mapImported\\Tannery.wav"
+        endif
+        if IUI_IsBlankString(Profession_Leatherworking_LoopPath) then
+            set Profession_Leatherworking_LoopPath = "war3mapImported\\Tannery.wav"
+        endif
+        if IUI_IsBlankString(Profession_Leatherworking_EndPath) then
+            set Profession_Leatherworking_EndPath = "war3mapImported\\Tannery.wav"
+        endif
+        if IUI_IsBlankString(Profession_Cooking_StartPath) then
+            set Profession_Cooking_StartPath = "war3mapImported\\CookingPrepareA.wav"
+        endif
+        if IUI_IsBlankString(Profession_Cooking_LoopPath) then
+            set Profession_Cooking_LoopPath = "war3mapImported\\CookingPrepareA.wav"
+        endif
+        if IUI_IsBlankString(Profession_Cooking_EndPath) then
+            set Profession_Cooking_EndPath = "war3mapImported\\CookingPrepareA.wav"
+        endif
+        if IUI_IsBlankString(Profession_Fishing_EndPath) then
+            set Profession_Fishing_EndPath = "war3mapImported\\Tradeskill_Fishing.wav"
+        endif
+        if IUI_IsBlankString(Profession_Skinning_StartPath) then
+            set Profession_Skinning_StartPath = "war3mapImported\\Tradeskill_LeatherworkingPick.wav"
+        endif
+        if IUI_IsBlankString(Profession_Skinning_LoopPath) then
+            set Profession_Skinning_LoopPath = "war3mapImported\\Tradeskill_LeatherworkingPick.wav"
+        endif
+        if IUI_IsBlankString(Profession_Skinning_EndPath) then
+            set Profession_Skinning_EndPath = "war3mapImported\\Tradeskill_LeatherworkingPick.wav"
+        endif
     endfunction
 
     public function RefreshDefaultSounds takes nothing returns nothing
