@@ -73,8 +73,12 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
     private function PRL_SetCinematicMode takes boolean enabled returns nothing
         if enabled then
             call BlzHideCinematicPanels(true)
+            call CinematicModeBJ(true, bj_FORCE_ALL_PLAYERS)
+        else
+            call CinematicModeBJ(false, bj_FORCE_ALL_PLAYERS)
+            // This native is sticky across later CinematicModeBJ calls; preload is the only flow that should hide these panels.
+            call BlzHideCinematicPanels(false)
         endif
-        call CinematicModeBJ(enabled, bj_FORCE_ALL_PLAYERS)
         set PRL_CinematicModeActive = enabled
     endfunction
 
