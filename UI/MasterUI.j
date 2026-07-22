@@ -13,7 +13,7 @@ library MasterUI initializer AutoInit requires Table, Interface
 
 globals
     private boolean MUI_Initialized = false
-    private boolean MUI_OpenButtonVisible = true
+    private boolean MUI_OpenButtonVisible = false
 
     private framehandle MUI_Parent = null
     private framehandle MUI_OpenButton = null
