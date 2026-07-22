@@ -38,6 +38,8 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
         private constant real TUI_LINK_THICKNESS = 0.005
         private constant real TUI_TOOLTIP_WIDTH = 0.235
         private constant real TUI_TOOLTIP_HEIGHT = 0.130
+        private constant integer TUI_ICON_AVAILABLE_COLOR = 255
+        private constant integer TUI_ICON_UNAVAILABLE_COLOR = 95
         private constant integer TUI_LINK_LEFT = 1
         private constant integer TUI_LINK_UP = 2
         private constant integer TUI_LINK_RIGHT = 3
@@ -434,6 +436,16 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
         call BlzFrameSetVisible(TUI_TalentHighlight[slotIndex], visible)
     endfunction
 
+    private function TUI_SetTalentUnavailableVisual takes integer slotIndex, boolean unavailable returns nothing
+        if unavailable then
+            call BlzFrameSetVertexColor(TUI_TalentIcon[slotIndex], BlzConvertColor(255, TUI_ICON_UNAVAILABLE_COLOR, TUI_ICON_UNAVAILABLE_COLOR, TUI_ICON_UNAVAILABLE_COLOR))
+        else
+            call BlzFrameSetVertexColor(TUI_TalentIcon[slotIndex], BlzConvertColor(255, TUI_ICON_AVAILABLE_COLOR, TUI_ICON_AVAILABLE_COLOR, TUI_ICON_AVAILABLE_COLOR))
+        endif
+
+        call BlzFrameSetVisible(TUI_TalentOverlay[slotIndex], false)
+    endfunction
+
     private function TUI_UpdateGrid takes nothing returns nothing
         local integer row = 1
         local integer column
@@ -465,7 +477,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
                     call BlzFrameSetVisible(TUI_TalentButton[slotIndex], true)
 
                     set unavailable = not Talents_CanAllocate(TUI_SelectedHero, talentIndex) and Talents_GetTalentPreviewRank(TUI_SelectedHero, talentIndex) <= 0
-                    call BlzFrameSetVisible(TUI_TalentOverlay[slotIndex], unavailable)
+                    call TUI_SetTalentUnavailableVisual(slotIndex, unavailable)
 
                     if talentIndex == TUI_SelectedTalent then
                         set selected = 1
@@ -480,6 +492,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
                     set TUI_TalentSlotIndex[slotIndex] = 0
                     set TUI_TalentHighlightVisible[slotIndex] = 0
                     call BlzFrameSetVisible(TUI_TalentButton[slotIndex], false)
+                    call TUI_SetTalentUnavailableVisual(slotIndex, false)
                     call TUI_SetTalentHighlightVisible(slotIndex, false)
                     call BlzFrameSetVisible(TUI_TalentTooltipBox[slotIndex], false)
                     call TUI_ClearSlotLinks(slotIndex)
@@ -823,8 +836,8 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
                 set TUI_TalentOverlay[slotIndex] = BlzCreateFrameByType("BACKDROP", "TalentsUITalentOverlay" + I2S(slotIndex), TUI_TalentButton[slotIndex], "", 0)
                 call BlzFrameSetTexture(TUI_TalentOverlay[slotIndex], TUI_PanelTexture, 0, false)
                 call BlzFrameSetAllPoints(TUI_TalentOverlay[slotIndex], TUI_TalentButton[slotIndex])
-                call BlzFrameSetAlpha(TUI_TalentOverlay[slotIndex], 128)
-                call BlzFrameSetVertexColor(TUI_TalentOverlay[slotIndex], BlzConvertColor(128, 0, 0, 0))
+                call BlzFrameSetAlpha(TUI_TalentOverlay[slotIndex], 0)
+                call BlzFrameSetVertexColor(TUI_TalentOverlay[slotIndex], BlzConvertColor(0, 0, 0, 0))
                 call BlzFrameSetEnable(TUI_TalentOverlay[slotIndex], false)
                 call BlzFrameSetLevel(TUI_TalentOverlay[slotIndex], 6)
 
