@@ -34,6 +34,8 @@
   - Players can add pending ranks, remove pending ranks, confirm pending talents, cancel pending changes, and reset talents.
   - Talent effects only apply after Confirm; ability scripts still read confirmed talent ranks.
   - Talent points are primarily earned from hero level-ups: 1 talent point per qualifying player hero level from level 10 onward.
+  - Talent tree buttons now use a denser WoW-style icon layout with compact rank numbers and stable hover tooltips.
+  - Talent reset from `TalentsUI` is now only enabled while the hero is near an ability trainer.
 
 ### Technical Updates
 
@@ -89,10 +91,13 @@
   - New custom frame talent tree UI for player shaman heroes.
   - Inspired by The_Spellweaver's STK talent tree ideas, but implemented directly in the lighter PotS globals-based UI style instead of importing the full external framework.
   - Adds four tree tabs, a fixed grid, rank labels, locked overlays, selection highlight, detail pane, Add Rank, Remove, Confirm, Cancel, Reset Talents, Return, and Close controls.
-  - Adds STK-style hover tooltips using `BlzFrameSetTooltip`.
+  - Adds STK-style hover tooltip panels.
   - Adds STK-style dependency link frames between prerequisite talents with active/inactive textures.
   - Uses preview ranks and preview point totals while pending changes exist.
   - Confirms pending ranks through `Talents_ConfirmPending`, which then plays `gg_snd_NewAbility`.
+  - Replaced native `BlzFrameSetTooltip` ownership with disabled manual tooltip frames to avoid hover flicker.
+  - Replaced the talent selection sprite model with a fixed-size active-button backdrop so highlights match the compact talent icon size.
+  - Expanded the talent grid capacity to 5 columns by 6 rows and matched the backend tree dimensions.
 
 - Updated `UI/AbilitiesLiteUI.j`
   - Added a Talents button for player shaman heroes.
