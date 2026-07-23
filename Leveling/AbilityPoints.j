@@ -105,6 +105,18 @@ library AbilityPoints initializer Init requires optional RegionTitles, optional 
         endif
     endfunction
 
+    private function AP_ShowPointGainText takes unit whichHero, integer amount returns nothing
+        if whichHero == null or amount <= 0 then
+            return
+        endif
+
+        if amount == 1 then
+            call DisplayTextToPlayer(GetOwningPlayer(whichHero), 0.00, 0.00, "|cff80ff80Ability point gained.|r")
+        else
+            call DisplayTextToPlayer(GetOwningPlayer(whichHero), 0.00, 0.00, "|cff80ff80Ability points gained:|r " + I2S(amount))
+        endif
+    endfunction
+
     private function AP_SetBySlot takes integer heroSlot, integer amount returns nothing
         if heroSlot == 0 then
             return
@@ -133,6 +145,9 @@ library AbilityPoints initializer Init requires optional RegionTitles, optional 
         endif
 
         call AP_SetBySlot(heroSlot, AP_Points[heroSlot] + amount)
+        if amount > 0 then
+            call AP_ShowPointGainText(whichHero, amount)
+        endif
     endfunction
 
     public function Reduce takes unit whichHero, integer amount returns nothing
@@ -232,6 +247,7 @@ library AbilityPoints initializer Init requires optional RegionTitles, optional 
             call SetUnitState(levelingHero, UNIT_STATE_LIFE, GetUnitState(levelingHero, UNIT_STATE_MAX_LIFE))
             call SetUnitState(levelingHero, UNIT_STATE_MANA, GetUnitState(levelingHero, UNIT_STATE_MAX_MANA))
             call AP_SetBySlot(heroSlot, AP_Points[heroSlot] + 1)
+            call AP_ShowPointGainText(levelingHero, 1)
             call AP_SyncCompanionGroupSize()
         endif
 
