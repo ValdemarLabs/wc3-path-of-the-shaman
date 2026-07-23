@@ -16,10 +16,10 @@
     ExSound.j, ExMusic.j, and StatsLiteUI.j. Disable the old GUI preload
     triggers so this library owns the elapsed-time 0.00 preload flow. Game
     Start should not also fire from its own elapsed-time event; this library
-    executes gg_trg_Game_Start when preloading is done. The placed
-    AbilityLoader unit is expected to be AbilityLoader 1870 <gen>, generated
-    as gg_unit_h60N_1870. Saved-game loading runs sound/music preload only and
-    does not execute Game Start.
+    executes gg_trg_Game_Start when preloading is done. Ability preloading
+    creates a temporary AbilityLoader unit from rawcode 'h60N' and removes it
+    immediately after ability data is loaded. Saved-game loading runs
+    sound/music preload only and does not execute Game Start.
 
     API:
     call Preloader_Start()
@@ -48,6 +48,8 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
         private constant string PRL_TEXT_HIGHLIGHT = "|cffffcc00"
         private constant string PRL_TEXT_SUCCESS = "|cff32cd32"
         private constant string PRL_TEXT_END = "|r"
+        private constant integer PRL_ABILITY_LOADER_UNIT_ID = 'h60N'
+        private constant real PRL_ABILITY_LOADER_FACING = 270.00
 
         private trigger PRL_StartTrigger = null
         private trigger PRL_LoadedGameTrigger = null
@@ -86,19 +88,22 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
         set PRL_GameUIHidden = false
     endfunction
 
-    private function PRL_GetAbilityLoader takes nothing returns unit
-        if udg_AbilityPreloader != null and GetUnitTypeId(udg_AbilityPreloader) != 0 then
-            return udg_AbilityPreloader
+    private function PRL_CreateAbilityLoader takes nothing returns unit
+        local unit abilityLoader = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), PRL_ABILITY_LOADER_UNIT_ID, GetRectCenterX(bj_mapInitialPlayableArea), GetRectCenterY(bj_mapInitialPlayableArea), PRL_ABILITY_LOADER_FACING)
+
+        if abilityLoader != null then
+            call PauseUnit(abilityLoader, true)
+            call ShowUnit(abilityLoader, false)
         endif
 
-        return gg_unit_h60N_1870
+        return abilityLoader
     endfunction
 
     private function PRL_PreloadAbilities takes nothing returns nothing
-        local unit abilityLoader = PRL_GetAbilityLoader()
+        local unit abilityLoader = PRL_CreateAbilityLoader()
 
         if abilityLoader == null or GetUnitTypeId(abilityLoader) == 0 then
-            call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cffff8080Preloader: AbilityLoader 1870 <gen> is missing.|r")
+            call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cffff8080Preloader: Could not create AbilityLoader unit 'h60N'.|r")
         else
             set udg_AbilityPreloader = abilityLoader
             call Preload_Abilities(abilityLoader)
