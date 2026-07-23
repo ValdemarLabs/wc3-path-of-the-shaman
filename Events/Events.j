@@ -22,15 +22,32 @@
     call Events_RegisterUnitEnterTrigger(yourTrigger)
     call Events_RegisterPlayerUnitEvent(function YourCallback, EVENT_PLAYER_UNIT_SPELL_EFFECT)
     call Events_RegisterPlayerUnitTrigger(yourTrigger, EVENT_PLAYER_UNIT_SPELL_EFFECT)
+    call Events_RegisterSpellEffect(function YourCallback)
+    call Events_RegisterSpellChannel(function YourCallback)
+    call Events_RegisterSpellFinish(function YourCallback)
+    call Events_RegisterSpellEndcast(function YourCallback)
+    call Events_RegisterUnitSummon(function YourCallback)
+    call Events_RegisterUnitPickupItem(function YourCallback)
+    call Events_RegisterUnitDropItem(function YourCallback)
+    call Events_RegisterUnitAttacked(function YourCallback)
+    call Events_RegisterHeroLevel(function YourCallback)
     call Events_SetDebugEnabled(true)
     call Events_GetTriggerUnit()
     call Events_GetCurrentEventId()
     call Events_GetCurrentPlayerUnitEvent()
+    call Events_GetSpellAbilityId()
+    call Events_GetSpellTargetUnit()
+    call Events_GetSpellTargetX()
+    call Events_GetSpellTargetY()
+    call Events_GetSummoningUnit()
+    call Events_GetSummonedUnit()
+    call Events_GetManipulatingUnit()
+    call Events_GetManipulatedItem()
 
     Prefer code callbacks for event-response-heavy logic. Code callbacks run
     directly on the central event trigger and should use normal native event
     responses like GetTriggerUnit(), GetSpellAbilityId(), and GetManipulatedItem().
-    Trigger callbacks are compatibility helpers; use Events_GetTriggerUnit()
+    Trigger callbacks are compatibility helpers; use Events_Get* accessors
     instead of native event responses inside those callback triggers.
 
 **/
@@ -56,6 +73,14 @@ globals
     private unit Events_CurrentTriggerUnit = null
     private eventid Events_CurrentEventId = null
     private playerunitevent Events_CurrentPlayerUnitEvent = null
+    private integer Events_CurrentSpellAbilityId = 0
+    private unit Events_CurrentSpellTargetUnit = null
+    private real Events_CurrentSpellTargetX = 0.00
+    private real Events_CurrentSpellTargetY = 0.00
+    private unit Events_CurrentSummoningUnit = null
+    private unit Events_CurrentSummonedUnit = null
+    private unit Events_CurrentManipulatingUnit = null
+    private item Events_CurrentManipulatedItem = null
 endglobals
 
 private function Events_DebugMsg takes string message returns nothing
@@ -124,10 +149,26 @@ private function Events_DispatchUnitEnter takes nothing returns nothing
     local unit previousTriggerUnit = Events_CurrentTriggerUnit
     local eventid previousEventId = Events_CurrentEventId
     local playerunitevent previousPlayerUnitEvent = Events_CurrentPlayerUnitEvent
+    local integer previousSpellAbilityId = Events_CurrentSpellAbilityId
+    local unit previousSpellTargetUnit = Events_CurrentSpellTargetUnit
+    local real previousSpellTargetX = Events_CurrentSpellTargetX
+    local real previousSpellTargetY = Events_CurrentSpellTargetY
+    local unit previousSummoningUnit = Events_CurrentSummoningUnit
+    local unit previousSummonedUnit = Events_CurrentSummonedUnit
+    local unit previousManipulatingUnit = Events_CurrentManipulatingUnit
+    local item previousManipulatedItem = Events_CurrentManipulatedItem
 
     set Events_CurrentTriggerUnit = GetTriggerUnit()
     set Events_CurrentEventId = GetTriggerEventId()
     set Events_CurrentPlayerUnitEvent = null
+    set Events_CurrentSpellAbilityId = 0
+    set Events_CurrentSpellTargetUnit = null
+    set Events_CurrentSpellTargetX = 0.00
+    set Events_CurrentSpellTargetY = 0.00
+    set Events_CurrentSummoningUnit = null
+    set Events_CurrentSummonedUnit = null
+    set Events_CurrentManipulatingUnit = null
+    set Events_CurrentManipulatedItem = null
 
     loop
         exitwhen callbackIndex >= callbackCount
@@ -138,10 +179,23 @@ private function Events_DispatchUnitEnter takes nothing returns nothing
     set Events_CurrentTriggerUnit = previousTriggerUnit
     set Events_CurrentEventId = previousEventId
     set Events_CurrentPlayerUnitEvent = previousPlayerUnitEvent
+    set Events_CurrentSpellAbilityId = previousSpellAbilityId
+    set Events_CurrentSpellTargetUnit = previousSpellTargetUnit
+    set Events_CurrentSpellTargetX = previousSpellTargetX
+    set Events_CurrentSpellTargetY = previousSpellTargetY
+    set Events_CurrentSummoningUnit = previousSummoningUnit
+    set Events_CurrentSummonedUnit = previousSummonedUnit
+    set Events_CurrentManipulatingUnit = previousManipulatingUnit
+    set Events_CurrentManipulatedItem = previousManipulatedItem
 
     set previousTriggerUnit = null
     set previousEventId = null
     set previousPlayerUnitEvent = null
+    set previousSpellTargetUnit = null
+    set previousSummoningUnit = null
+    set previousSummonedUnit = null
+    set previousManipulatingUnit = null
+    set previousManipulatedItem = null
 endfunction
 
 private function Events_DispatchPlayerUnitEvent takes nothing returns nothing
@@ -153,6 +207,14 @@ private function Events_DispatchPlayerUnitEvent takes nothing returns nothing
     local unit previousTriggerUnit = Events_CurrentTriggerUnit
     local eventid previousEventId = Events_CurrentEventId
     local playerunitevent previousPlayerUnitEvent = Events_CurrentPlayerUnitEvent
+    local integer previousSpellAbilityId = Events_CurrentSpellAbilityId
+    local unit previousSpellTargetUnit = Events_CurrentSpellTargetUnit
+    local real previousSpellTargetX = Events_CurrentSpellTargetX
+    local real previousSpellTargetY = Events_CurrentSpellTargetY
+    local unit previousSummoningUnit = Events_CurrentSummoningUnit
+    local unit previousSummonedUnit = Events_CurrentSummonedUnit
+    local unit previousManipulatingUnit = Events_CurrentManipulatingUnit
+    local item previousManipulatedItem = Events_CurrentManipulatedItem
 
     if eventSlot < 0 then
         call Events_Error("Dispatch called from an unknown player-unit event trigger.")
@@ -160,6 +222,11 @@ private function Events_DispatchPlayerUnitEvent takes nothing returns nothing
         set previousTriggerUnit = null
         set previousEventId = null
         set previousPlayerUnitEvent = null
+        set previousSpellTargetUnit = null
+        set previousSummoningUnit = null
+        set previousSummonedUnit = null
+        set previousManipulatingUnit = null
+        set previousManipulatedItem = null
         return
     endif
 
@@ -168,6 +235,14 @@ private function Events_DispatchPlayerUnitEvent takes nothing returns nothing
     set Events_CurrentTriggerUnit = GetTriggerUnit()
     set Events_CurrentEventId = GetTriggerEventId()
     set Events_CurrentPlayerUnitEvent = Events_PlayerUnitEventTypes[eventSlot]
+    set Events_CurrentSpellAbilityId = GetSpellAbilityId()
+    set Events_CurrentSpellTargetUnit = GetSpellTargetUnit()
+    set Events_CurrentSpellTargetX = GetSpellTargetX()
+    set Events_CurrentSpellTargetY = GetSpellTargetY()
+    set Events_CurrentSummoningUnit = GetSummoningUnit()
+    set Events_CurrentSummonedUnit = GetSummonedUnit()
+    set Events_CurrentManipulatingUnit = GetManipulatingUnit()
+    set Events_CurrentManipulatedItem = GetManipulatedItem()
 
     loop
         exitwhen callbackIndex >= callbackCount
@@ -178,11 +253,24 @@ private function Events_DispatchPlayerUnitEvent takes nothing returns nothing
     set Events_CurrentTriggerUnit = previousTriggerUnit
     set Events_CurrentEventId = previousEventId
     set Events_CurrentPlayerUnitEvent = previousPlayerUnitEvent
+    set Events_CurrentSpellAbilityId = previousSpellAbilityId
+    set Events_CurrentSpellTargetUnit = previousSpellTargetUnit
+    set Events_CurrentSpellTargetX = previousSpellTargetX
+    set Events_CurrentSpellTargetY = previousSpellTargetY
+    set Events_CurrentSummoningUnit = previousSummoningUnit
+    set Events_CurrentSummonedUnit = previousSummonedUnit
+    set Events_CurrentManipulatingUnit = previousManipulatingUnit
+    set Events_CurrentManipulatedItem = previousManipulatedItem
 
     set sourceTrigger = null
     set previousTriggerUnit = null
     set previousEventId = null
     set previousPlayerUnitEvent = null
+    set previousSpellTargetUnit = null
+    set previousSummoningUnit = null
+    set previousSummonedUnit = null
+    set previousManipulatingUnit = null
+    set previousManipulatedItem = null
 endfunction
 
 private function Events_CreatePlayerUnitEventSlot takes playerunitevent whichEvent returns integer
@@ -233,6 +321,38 @@ endfunction
 
 function Events_GetCurrentPlayerUnitEvent takes nothing returns playerunitevent
     return Events_CurrentPlayerUnitEvent
+endfunction
+
+function Events_GetSpellAbilityId takes nothing returns integer
+    return Events_CurrentSpellAbilityId
+endfunction
+
+function Events_GetSpellTargetUnit takes nothing returns unit
+    return Events_CurrentSpellTargetUnit
+endfunction
+
+function Events_GetSpellTargetX takes nothing returns real
+    return Events_CurrentSpellTargetX
+endfunction
+
+function Events_GetSpellTargetY takes nothing returns real
+    return Events_CurrentSpellTargetY
+endfunction
+
+function Events_GetSummoningUnit takes nothing returns unit
+    return Events_CurrentSummoningUnit
+endfunction
+
+function Events_GetSummonedUnit takes nothing returns unit
+    return Events_CurrentSummonedUnit
+endfunction
+
+function Events_GetManipulatingUnit takes nothing returns unit
+    return Events_CurrentManipulatingUnit
+endfunction
+
+function Events_GetManipulatedItem takes nothing returns item
+    return Events_CurrentManipulatedItem
 endfunction
 
 function Events_RegisterUnitEnterTrigger takes trigger callbackTrigger returns nothing
@@ -302,6 +422,42 @@ function Events_RegisterPlayerUnitEvent takes code callback, playerunitevent whi
 
     call TriggerAddAction(Events_PlayerUnitEventTriggers[eventSlot], callback)
     call Events_DebugMsg("Registered direct player-unit code callback for event slot " + I2S(eventSlot) + ".")
+endfunction
+
+function Events_RegisterSpellEffect takes code callback returns nothing
+    call Events_RegisterPlayerUnitEvent(callback, EVENT_PLAYER_UNIT_SPELL_EFFECT)
+endfunction
+
+function Events_RegisterSpellChannel takes code callback returns nothing
+    call Events_RegisterPlayerUnitEvent(callback, EVENT_PLAYER_UNIT_SPELL_CHANNEL)
+endfunction
+
+function Events_RegisterSpellFinish takes code callback returns nothing
+    call Events_RegisterPlayerUnitEvent(callback, EVENT_PLAYER_UNIT_SPELL_FINISH)
+endfunction
+
+function Events_RegisterSpellEndcast takes code callback returns nothing
+    call Events_RegisterPlayerUnitEvent(callback, EVENT_PLAYER_UNIT_SPELL_ENDCAST)
+endfunction
+
+function Events_RegisterUnitSummon takes code callback returns nothing
+    call Events_RegisterPlayerUnitEvent(callback, EVENT_PLAYER_UNIT_SUMMON)
+endfunction
+
+function Events_RegisterUnitPickupItem takes code callback returns nothing
+    call Events_RegisterPlayerUnitEvent(callback, EVENT_PLAYER_UNIT_PICKUP_ITEM)
+endfunction
+
+function Events_RegisterUnitDropItem takes code callback returns nothing
+    call Events_RegisterPlayerUnitEvent(callback, EVENT_PLAYER_UNIT_DROP_ITEM)
+endfunction
+
+function Events_RegisterUnitAttacked takes code callback returns nothing
+    call Events_RegisterPlayerUnitEvent(callback, EVENT_PLAYER_UNIT_ATTACKED)
+endfunction
+
+function Events_RegisterHeroLevel takes code callback returns nothing
+    call Events_RegisterPlayerUnitEvent(callback, EVENT_PLAYER_HERO_LEVEL)
 endfunction
 
 private function Init takes nothing returns nothing
