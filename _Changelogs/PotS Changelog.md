@@ -15,6 +15,38 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [23.7.2026]
+
+### Player-Facing Updates
+
+- Ability point and talent point gains now show immediate player feedback when points are earned.
+- TalentUI now swaps the talent-tree pane background texture per selected shaman tree: Elemental, Enhancement, Restoration, and Totemic.
+
+### Technical Updates
+
+- Added `Abilities/AbilitiesPlayerInit.j`
+  - New JASS library that stores player shaman ability base values from the old `Init Abilities` trigger in Bribe's Table v6 instead of `udg_Ability_*` globals.
+  - Added query helpers for raw base values, unit-rank base values, talent-aware damage values, and talent-aware healing values.
+  - Damage and healing value helpers run through `Talents_ApplyDamageBonus` / `Talents_ApplyHealBonus` when `Talents.j` is present, so converted cast scripts can combine old base tuning with talent modifiers at cast time.
+  - Corrects the obvious old Fire Shock AoE rank-index export typo by storing the intended ranks 3-5 values.
+
+- Updated `Abilities/Abilities.j`
+  - Added `AbilitiesPlayerInit` as an explicit dependency so player shaman ability base values are initialized with the JASS ability system.
+
+- Updated `Leveling/AbilityPoints.j`
+  - Added positive-gain feedback for manual AP grants and hero level-up AP awards.
+
+- Updated `Abilities/Talents.j`
+  - Added a public talent tree registration API for tree dimensions and talent definitions.
+  - Moved default Elemental, Enhancement, Restoration, and Totemic talent definitions out of the runtime talent state library.
+  - Added positive-gain feedback for talent level syncs, level-up awards, and bonus talent point grants.
+
+- Added `Abilities/TalentsElemental.j`, `Abilities/TalentsEnhancement.j`, `Abilities/TalentsRestoration.j`, and `Abilities/TalentsTotemic.j`
+  - Each shaman tree now owns its talent definitions in a separate library for easier tree tuning and expansion.
+
+- Updated `UI/TalentsUI.j`
+  - Added per-tree background texture selection for the TalentUI tree pane.
+
 ## [22.7.2026]
 
 ### Player-Facing Updates
@@ -76,7 +108,7 @@
   - Restores the UI in reverse order with `BlzHideCinematicPanels(false)` followed by `ShowInterface(true, 0.00)`.
   - Splits each preload phase into a visible UI/title tick and a later preload-work tick so image changes can render before synchronous preload work begins.
   - Calls `ExSound_PreloadAll()`, `ExMusic_PreloadAll()`, and `Preload_Abilities(...)`.
-  - Removes the placed `AbilityLoader 1870 <gen>` unit after ability preloading.
+  - Creates a temporary hidden AbilityLoader unit from rawcode `h60N` for ability preloading and removes it immediately after use.
   - Executes `gg_trg_Game_Start` and initializes `StatsLiteUI` after preload completion.
   - Added a saved-game load path using `EVENT_GAME_LOADED` that preloads sound/music again but does not execute `gg_trg_Game_Start`.
 
@@ -90,6 +122,7 @@
 - Updated `Preload/PreloadAbilities.j`
   - Wrapped the existing rawcode preload function in a `PreloadAbilities` library so other libraries can declare a proper dependency.
   - Made the function's `unit u` parameter populate `udg_AbilityPreloader` before the existing ability-add list runs.
+  - Documented that the startup preloader now creates the temporary `h60N` loader unit itself instead of relying on a placed World Editor unit.
   - Consolidated the duplicate ability preloader into this single `Preload/PreloadAbilities.j` file and removed the stale `InitRelated/PreloadAbilities.j` copy.
   - Preserved the missing Craft (Fake Cast) preload rawcode `A6DY` while consolidating.
 
