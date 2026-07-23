@@ -21,6 +21,10 @@
 
 - Ability point and talent point gains now show immediate player feedback when points are earned.
 - TalentUI now swaps the talent-tree pane background texture per selected shaman tree: Elemental, Enhancement, Restoration, and Totemic.
+- Converted the non-totem player shaman ability runtime from old GUI triggers into JASS libraries for Elemental, Enhancement, and Restoration abilities.
+- Summon Elemental and Feral Spirits now register their summons as controlled companions, so they can follow/defend the player without consuming normal companion party slots.
+- Ghost Wolf now has a JASS-backed morph/unmorph flow that preserves hero state, inventory ownership, XP, learned ability ranks, life/mana, and item pickup handoff.
+- Ancestral Ward and Water Shield now use a shared absorb-shield backend. Water Shield restores mana from absorbed shield damage.
 
 ### Technical Updates
 
@@ -28,7 +32,32 @@
   - New JASS library that stores player shaman ability base values from the old `Init Abilities` trigger in Bribe's Table v6 instead of `udg_Ability_*` globals.
   - Added query helpers for raw base values, unit-rank base values, talent-aware damage values, and talent-aware healing values.
   - Damage and healing value helpers run through `Talents_ApplyDamageBonus` / `Talents_ApplyHealBonus` when `Talents.j` is present, so converted cast scripts can combine old base tuning with talent modifiers at cast time.
+  - Added base values for Frost Shock, Nature Shock, Lightning Shield, Primal Force, Water Shield, and Ancestral Ward for the new runtime libraries.
   - Corrects the obvious old Fire Shock AoE rank-index export typo by storing the intended ranks 3-5 values.
+
+- Added `Abilities/Shaman/ShamanCommon.j`
+  - Shared player shaman rawcodes, caster-stat scaling helpers, dummy cast helpers, hero-state transfer helpers, companion registration helpers, and talent-aware cooldown reduction helpers.
+
+- Added Elemental shaman runtime libraries under `Abilities/Shaman/`
+  - `ShamanLightningBolt.j`, `ShamanChainLightning.j`, `ShamanFireShock.j`, `ShamanFrostShock.j`, `ShamanNatureShock.j`, `ShamanLightningStrike.j`, `ShamanLightningShield.j`, and `ShamanSummonElemental.j`.
+  - Converted old GUI damage setup, dummy casting, AoE damage, shock effects, Lightning Shield periodic damage, and Summon Elemental channel/summon behavior into JASS.
+  - Converted damage calculations now combine `AbilitiesPlayerInit.j` base values, hero Int scaling, and `Talents.j` damage modifiers at cast time.
+  - Summon Elemental now registers air, water, fire, and earth elementals as player-controlled companions in defend mode without limiting the normal companion party.
+
+- Added Enhancement shaman runtime libraries under `Abilities/Shaman/`
+  - `ShamanStormstrike.j`, `ShamanWhirlwind.j`, `ShamanWindShear.j`, `ShamanPrimalForce.j`, `ShamanBloodlust.j`, `ShamanFeralSpirits.j`, `ShamanGhostWolf.j`, `ShamanHex.j`, `ShamanVoodooCurse.j`, and `ShamanVoodooSpirits.j`.
+  - Converted old GUI direct damage, dummy burst casts, totem interaction hooks, silence/stop control, Bloodlust group casting, rank-based crit bonus cleanup, and Feral Spirits summon behavior into JASS.
+  - Feral Spirits now registers wolves as controlled companions and applies the Feral Bond special talent to wolf health and damage.
+  - Ghost Wolf was rebuilt carefully around the old hidden-original/active-wolf model so Nazgrek and Zul'kis keep inventory, XP, hero stats, learned ranks, and item pickup behavior when shifting.
+  - Hex now preserves the old target restrictions for bosses and high-level targets without carrying over GUI debug spam.
+
+- Added Restoration shaman runtime libraries under `Abilities/Shaman/`
+  - `ShamanTotemicResurgence.j`, `ShamanBoneArmor.j`, `ShamanAncestralWard.j`, `ShamanWaterShield.j`, `ShamanHealingWave.j`, `ShamanChainHeal.j`, `ShamanHealingRain.j`, `ShamanRejuvenation.j`, `ShamanSpiritualHealing.j`, `ShamanSpiritLink.j`, and `ShamanReincarnation.j`.
+  - `ShamanBoneArmor.j` provides the shared BAmr-style absorb shield core used by Ancestral Ward and Water Shield.
+  - Ancestral Ward and Water Shield now use base values from `AbilitiesPlayerInit.j`, Int scaling, healing talent modifiers, and 90 second shield durations.
+  - Water Shield returns mana based on shield damage absorbed.
+  - Healing Wave, Chain Heal, Healing Rain, and Rejuvenation now apply base values, Int scaling, healing talents, and Totemic Resurgence where appropriate.
+  - Spiritual Healing now has a JASS hook for delayed mana refunds based on caster Int and spell mana cost.
 
 - Updated `Abilities/Abilities.j`
   - Added `AbilitiesPlayerInit` as an explicit dependency so player shaman ability base values are initialized with the JASS ability system.
@@ -59,6 +88,16 @@
 
 - `Preload/Preloader.j`
   - Creates a temporary hidden AbilityLoader unit from rawcode `h60N` for ability preloading and removes it immediately after use.
+
+### Known Issues
+
+- Full in-map JassHelper compile and runtime validation are still required before retiring the old Elemental, Enhancement, and Restoration shaman GUI runtime triggers.
+- Old `Init Abilities` and old GUI ability learning triggers should only be disabled after confirming no remaining non-converted systems still depend on them.
+
+### Actions Remaining
+
+- Import/include the new `Abilities/Shaman/Shaman*.j` libraries in the active map build order and run a full JassHelper compile.
+- After successful compile and gameplay testing, disable the old runtime GUI trigger folders under `SHAMAN ABILITIES/Elemental abilities`, `SHAMAN ABILITIES/Enhancement abilities`, and `SHAMAN ABILITIES/Restoration abilities`.
 
 ## [22.7.2026]
 
