@@ -43,13 +43,19 @@ globals
     private constant integer API_ABILITY_LIGHTNING_STRIKE = 'A67H'
     private constant integer API_ABILITY_CHAIN_LIGHTNING = 'A67L'
     private constant integer API_ABILITY_FIRE_SHOCK = 'A67J'
+    private constant integer API_ABILITY_FROST_SHOCK = 'A69L'
+    private constant integer API_ABILITY_NATURE_SHOCK = 'A69N'
+    private constant integer API_ABILITY_LIGHTNING_SHIELD = 'A68H'
     private constant integer API_ABILITY_STORMSTRIKE = 'A685'
     private constant integer API_ABILITY_WHIRLWIND = 'A6DP'
+    private constant integer API_ABILITY_PRIMAL_FORCE = 'A022'
     private constant integer API_ABILITY_GHOST_WOLF_BITE = 'A68K'
     private constant integer API_ABILITY_HEALING_WAVE = 'A66Y'
     private constant integer API_ABILITY_CHAIN_HEAL = 'A672'
     private constant integer API_ABILITY_HEALING_RAIN = 'A66W'
     private constant integer API_ABILITY_REJUVENATION = 'A69W'
+    private constant integer API_ABILITY_WATER_SHIELD = 'A62Z'
+    private constant integer API_ABILITY_ANCESTRAL_WARD = 'A6AL'
 
     private Table API_ValueByAbility = 0
     private boolean API_Applied = false
@@ -132,6 +138,24 @@ public function Apply takes nothing returns nothing
     call RegisterBaseValue(API_ABILITY_FIRE_SHOCK, VALUE_AREA_BASE, 4, 100.00)
     call RegisterBaseValue(API_ABILITY_FIRE_SHOCK, VALUE_AREA_BASE, 5, 120.00)
 
+    call RegisterBaseValue(API_ABILITY_FROST_SHOCK, VALUE_BASE, 1, 50.00)
+    call RegisterBaseValue(API_ABILITY_FROST_SHOCK, VALUE_BASE, 2, 100.00)
+    call RegisterBaseValue(API_ABILITY_FROST_SHOCK, VALUE_BASE, 3, 150.00)
+    call RegisterBaseValue(API_ABILITY_FROST_SHOCK, VALUE_BASE, 4, 200.00)
+    call RegisterBaseValue(API_ABILITY_FROST_SHOCK, VALUE_BASE, 5, 250.00)
+
+    call RegisterBaseValue(API_ABILITY_NATURE_SHOCK, VALUE_BASE, 1, 80.00)
+    call RegisterBaseValue(API_ABILITY_NATURE_SHOCK, VALUE_BASE, 2, 160.00)
+    call RegisterBaseValue(API_ABILITY_NATURE_SHOCK, VALUE_BASE, 3, 240.00)
+    call RegisterBaseValue(API_ABILITY_NATURE_SHOCK, VALUE_BASE, 4, 320.00)
+    call RegisterBaseValue(API_ABILITY_NATURE_SHOCK, VALUE_BASE, 5, 400.00)
+
+    call RegisterBaseValue(API_ABILITY_LIGHTNING_SHIELD, VALUE_BASE, 1, 10.00)
+    call RegisterBaseValue(API_ABILITY_LIGHTNING_SHIELD, VALUE_BASE, 2, 25.00)
+    call RegisterBaseValue(API_ABILITY_LIGHTNING_SHIELD, VALUE_BASE, 3, 40.00)
+    call RegisterBaseValue(API_ABILITY_LIGHTNING_SHIELD, VALUE_BASE, 4, 55.00)
+    call RegisterBaseValue(API_ABILITY_LIGHTNING_SHIELD, VALUE_BASE, 5, 70.00)
+
     call RegisterBaseValue(API_ABILITY_STORMSTRIKE, VALUE_BASE, 1, 25.00)
     call RegisterBaseValue(API_ABILITY_STORMSTRIKE, VALUE_BASE, 2, 40.00)
     call RegisterBaseValue(API_ABILITY_STORMSTRIKE, VALUE_BASE, 3, 70.00)
@@ -148,6 +172,12 @@ public function Apply takes nothing returns nothing
     call RegisterBaseValue(API_ABILITY_WHIRLWIND, VALUE_MANA_COST, 3, 70.00)
     call RegisterBaseValue(API_ABILITY_WHIRLWIND, VALUE_MANA_COST, 4, 80.00)
     call RegisterBaseValue(API_ABILITY_WHIRLWIND, VALUE_MANA_COST, 5, 90.00)
+
+    call RegisterBaseValue(API_ABILITY_PRIMAL_FORCE, VALUE_BASE, 1, 20.00)
+    call RegisterBaseValue(API_ABILITY_PRIMAL_FORCE, VALUE_BASE, 2, 40.00)
+    call RegisterBaseValue(API_ABILITY_PRIMAL_FORCE, VALUE_BASE, 3, 60.00)
+    call RegisterBaseValue(API_ABILITY_PRIMAL_FORCE, VALUE_BASE, 4, 80.00)
+    call RegisterBaseValue(API_ABILITY_PRIMAL_FORCE, VALUE_BASE, 5, 120.00)
 
     call RegisterBaseValue(API_ABILITY_GHOST_WOLF_BITE, VALUE_BASE, 1, 25.00)
     call RegisterBaseValue(API_ABILITY_GHOST_WOLF_BITE, VALUE_BASE, 2, 40.00)
@@ -178,6 +208,18 @@ public function Apply takes nothing returns nothing
     call RegisterBaseValue(API_ABILITY_HEALING_RAIN, VALUE_BASE, 3, 30.00)
     call RegisterBaseValue(API_ABILITY_HEALING_RAIN, VALUE_BASE, 4, 40.00)
     call RegisterBaseValue(API_ABILITY_HEALING_RAIN, VALUE_BASE, 5, 50.00)
+
+    call RegisterBaseValue(API_ABILITY_WATER_SHIELD, VALUE_BASE, 1, 100.00)
+    call RegisterBaseValue(API_ABILITY_WATER_SHIELD, VALUE_BASE, 2, 200.00)
+    call RegisterBaseValue(API_ABILITY_WATER_SHIELD, VALUE_BASE, 3, 250.00)
+    call RegisterBaseValue(API_ABILITY_WATER_SHIELD, VALUE_BASE, 4, 300.00)
+    call RegisterBaseValue(API_ABILITY_WATER_SHIELD, VALUE_BASE, 5, 350.00)
+
+    call RegisterBaseValue(API_ABILITY_ANCESTRAL_WARD, VALUE_BASE, 1, 100.00)
+    call RegisterBaseValue(API_ABILITY_ANCESTRAL_WARD, VALUE_BASE, 2, 150.00)
+    call RegisterBaseValue(API_ABILITY_ANCESTRAL_WARD, VALUE_BASE, 3, 200.00)
+    call RegisterBaseValue(API_ABILITY_ANCESTRAL_WARD, VALUE_BASE, 4, 250.00)
+    call RegisterBaseValue(API_ABILITY_ANCESTRAL_WARD, VALUE_BASE, 5, 300.00)
 endfunction
 
 public function HasBaseValue takes integer abilityId, integer valueType, integer rank returns boolean
