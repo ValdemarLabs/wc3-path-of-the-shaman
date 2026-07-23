@@ -35,8 +35,8 @@ library AbilityPoints initializer Init requires optional RegionTitles, optional 
 
         private constant integer AP_RESET_ITEM_ID = 'I6A1'
         private constant integer AP_RESET_BONUS_POINTS = 3
-        private constant integer AP_INITIAL_POINTS_NAZGREK = 0
-        private constant integer AP_INITIAL_POINTS_ZULKIS = 0
+        private constant integer AP_INITIAL_POINTS_NAZGREK = 1
+        private constant integer AP_INITIAL_POINTS_ZULKIS = 1
         private constant integer AP_DEBUG_ADD_AMOUNT = 1
         private constant integer AP_MAX_PLAYER_INDEX = 27
 
