@@ -28,12 +28,29 @@
 
 ### Technical Updates
 
+- Updated `Events.j`
+  - Added centralized helper registrations:Events_RegisterSpellEffect
+    - Events_RegisterSpellChannel
+    - Events_RegisterSpellFinish
+    - Events_RegisterSpellEndcast
+    - Events_RegisterUnitSummon
+    - Events_RegisterUnitPickupItem
+    - Events_RegisterUnitDropItem
+    - Events_RegisterUnitAttacked
+    - Events_RegisterHeroLevel
+  - Added cached Events_Get* accessors for trigger-dispatched callbacks: spell ability/target, summoning/summoned unit, manipulating unit, manipulated item.
+  - Preserved the important rule: direct code callbacks still run on the central trigger and should use normal natives like GetTriggerUnit() / GetSpellAbilityId().
+
 - Added `Abilities/AbilitiesPlayerInit.j`
   - New JASS library that stores player shaman ability base values from the old `Init Abilities` trigger in Bribe's Table v6 instead of `udg_Ability_*` globals.
   - Added query helpers for raw base values, unit-rank base values, talent-aware damage values, and talent-aware healing values.
   - Damage and healing value helpers run through `Talents_ApplyDamageBonus` / `Talents_ApplyHealBonus` when `Talents.j` is present, so converted cast scripts can combine old base tuning with talent modifiers at cast time.
   - Added base values for Frost Shock, Nature Shock, Lightning Shield, Primal Force, Water Shield, and Ancestral Ward for the new runtime libraries.
   - Corrects the obvious old Fire Shock AoE rank-index export typo by storing the intended ranks 3-5 values.
+
+- Updated `Abilities/Shaman/*.j` and `Totems.j`:
+  - Replaced all generic Events_RegisterPlayerUnitEvent(..., EVENT_...) calls with the new event-specific helpers.
+  - Confirmed there are no direct TriggerRegisterPlayerUnitEvent calls and no remaining generic Events_RegisterPlayerUnitEvent calls inside Abilities/Shaman.
 
 - Added `Abilities/Shaman/ShamanCommon.j`
   - Shared player shaman rawcodes, caster-stat scaling helpers, dummy cast helpers, hero-state transfer helpers, companion registration helpers, and talent-aware cooldown reduction helpers.
