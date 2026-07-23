@@ -260,6 +260,12 @@ library BaseCamp initializer Init requires Experience, Events, UnitDeathEvent, o
         call SetFloatGameState(GAME_STATE_TIME_OF_DAY, timeOfDay)
     endfunction
 
+    private function BC_ShowRestedMessage takes unit whichHero returns nothing
+        if whichHero != null then
+            call DisplayTextToPlayer(GetOwningPlayer(whichHero), 0.00, 0.00, "|cffffcc00" + GetHeroProperName(whichHero) + "|r is now |cff00ff00Rested|r.")
+        endif
+    endfunction
+
     private function BC_RemoveRestRecordAt takes integer index returns nothing
         if index < 0 or index >= BC_RestCount then
             return
@@ -297,6 +303,7 @@ library BaseCamp initializer Init requires Experience, Events, UnitDeathEvent, o
                     set granted = BC_RestElapsed[i] >= BC_REST_REQUIRED
                     if granted then
                         call Experience_GrantRested(hero)
+                        call BC_ShowRestedMessage(hero)
                     endif
                 else
                     set granted = Experience_AddRestingProgress(hero, BC_REST_TICK, BC_REST_REQUIRED)

@@ -6,8 +6,9 @@
 
     Description:
     Tracks constructed camp fires, applies their warmth abilities, creates
-    light helpers, and grants rested progress to heroes inside registered
-    camp-fire radius through the Experience library.
+    light helpers, and grants rested progress to non-rested heroes inside
+    registered camp-fire radius through the Experience library. Camp fires do
+    not renew an existing Rested state.
 
     Credits:
 
