@@ -826,9 +826,9 @@ endfunction
 private function Init takes nothing returns nothing
     call EnsureState()
 
-    call Events_RegisterPlayerUnitEvent(function HandleSpellEffect, EVENT_PLAYER_UNIT_SPELL_EFFECT)
-    call Events_RegisterPlayerUnitEvent(function HandleSpellFinish, EVENT_PLAYER_UNIT_SPELL_FINISH)
-    call Events_RegisterPlayerUnitEvent(function HandleAttack, EVENT_PLAYER_UNIT_ATTACKED)
+    call Events_RegisterSpellEffect(function HandleSpellEffect)
+    call Events_RegisterSpellFinish(function HandleSpellFinish)
+    call Events_RegisterUnitAttacked(function HandleAttack)
     call UnitDeathEvent_Register(function HandleDeath)
 
     set PeriodicTimer = CreateTimer()

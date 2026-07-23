@@ -94,7 +94,7 @@ endfunction
 
 private function Init takes nothing returns nothing
     call EnsureState()
-    call Events_RegisterPlayerUnitEvent(function HandleSpellEffect, EVENT_PLAYER_UNIT_SPELL_EFFECT)
+    call Events_RegisterSpellEffect(function HandleSpellEffect)
 endfunction
 
 endlibrary

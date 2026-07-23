@@ -67,7 +67,7 @@ endfunction
 
 private function Init takes nothing returns nothing
     call EnsureState()
-    call Events_RegisterPlayerUnitEvent(function HandleSummon, EVENT_PLAYER_UNIT_SUMMON)
+    call Events_RegisterUnitSummon(function HandleSummon)
     call UnitDeathEvent_Register(function HandleDeath)
 endfunction
 

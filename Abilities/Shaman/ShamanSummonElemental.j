@@ -168,7 +168,7 @@ endfunction
 
 private function Init takes nothing returns nothing
     call EnsureState()
-    call Events_RegisterPlayerUnitEvent(function HandleSpellChannel, EVENT_PLAYER_UNIT_SPELL_CHANNEL)
+    call Events_RegisterSpellChannel(function HandleSpellChannel)
     call UnitDeathEvent_Register(function HandleDeath)
 endfunction
 

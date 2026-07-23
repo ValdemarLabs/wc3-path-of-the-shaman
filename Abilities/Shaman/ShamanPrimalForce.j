@@ -106,7 +106,7 @@ endfunction
 
 private function Init takes nothing returns nothing
     set EnumGroup = CreateGroup()
-    call Events_RegisterPlayerUnitEvent(function HandleSpellEffect, EVENT_PLAYER_UNIT_SPELL_EFFECT)
+    call Events_RegisterSpellEffect(function HandleSpellEffect)
 endfunction
 
 endlibrary

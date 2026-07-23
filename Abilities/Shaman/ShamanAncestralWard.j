@@ -61,7 +61,7 @@ private function HandleSpellEffect takes nothing returns nothing
 endfunction
 
 private function Init takes nothing returns nothing
-    call Events_RegisterPlayerUnitEvent(function HandleSpellEffect, EVENT_PLAYER_UNIT_SPELL_EFFECT)
+    call Events_RegisterSpellEffect(function HandleSpellEffect)
 endfunction
 
 endlibrary
