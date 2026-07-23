@@ -6,13 +6,15 @@
 
     Description:
     Central learner and reset API for player shaman abilities. Uses
-    AbilityPoints.j for AP spending and AbilitiesPlayer.j for all ability data.
+    AbilityPoints.j for AP spending, AbilitiesPlayer.j for ability data, and
+    AbilitiesPlayerInit.j for Table-backed player shaman base values.
 
     Credits:
 
     How to install:
-    Import after AbilitiesPlayer and AbilityPoints. Disable the old GUI player
-    ability item-learn triggers so AP is not spent twice.
+    Import after AbilitiesPlayer, AbilitiesPlayerInit, and AbilityPoints.
+    Disable the old GUI player ability item-learn triggers so AP is not spent
+    twice.
 
     API:
     - set ok = Abilities_Learn(hero, entryIndex)
@@ -26,7 +28,7 @@
     - set ok = Abilities_ResetTalents(hero)
 
 **/
-library Abilities initializer Init requires AbilitiesPlayer, AbilityPoints, optional Talents
+library Abilities initializer Init requires AbilitiesPlayer, AbilitiesPlayerInit, AbilityPoints, optional Talents
     globals
         public constant integer RESULT_OK = 1
         public constant integer RESULT_INVALID = 2
