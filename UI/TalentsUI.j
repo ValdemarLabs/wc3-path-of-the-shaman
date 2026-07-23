@@ -41,6 +41,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
         private constant integer TUI_ICON_AVAILABLE_COLOR = 255
         private constant integer TUI_ICON_UNAVAILABLE_COLOR = 170
         private constant integer TUI_ICON_UNAVAILABLE_OVERLAY_ALPHA = 82
+        private constant integer TUI_TREE_BACKGROUND_ALPHA = 170
         private constant integer TUI_LINK_LEFT = 1
         private constant integer TUI_LINK_UP = 2
         private constant integer TUI_LINK_RIGHT = 3
@@ -104,6 +105,10 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
 
         private string TUI_PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
         private string TUI_DefaultIcon = "ReplaceableTextures\\CommandButtons\\BTNBook_07.blp"
+        private string TUI_ElementalBackgroundTexture = "ReplaceableTextures\\CommandButtons\\BTNMonsoon.blp"
+        private string TUI_EnhancementBackgroundTexture = "ReplaceableTextures\\CommandButtons\\BTNShamanMaster.blp"
+        private string TUI_RestorationBackgroundTexture = "ReplaceableTextures\\CommandButtons\\BTNHealingWave.blp"
+        private string TUI_TotemicBackgroundTexture = "ReplaceableTextures\\CommandButtons\\BTNTaurenTotem.blp"
         private string TUI_TalentHighlightModel = "UI\\Feedback\\Autocast\\UI-ModalButtonOn.mdx"
         private string TUI_LinkActiveTexture = "Textures\\Water00.blp"
         private string TUI_LinkInactiveTexture = "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp"
@@ -179,6 +184,29 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
             return AbilitiesPlayer_GetTreeColor(treeId) + treeName + "|r"
         endif
         return "|cffbfbfbf" + treeName + "|r"
+    endfunction
+
+    private function TUI_GetTreeBackgroundTexture takes integer treeId returns string
+        if treeId == AbilitiesPlayer_TREE_ELEMENTAL then
+            return TUI_ElementalBackgroundTexture
+        elseif treeId == AbilitiesPlayer_TREE_ENHANCEMENT then
+            return TUI_EnhancementBackgroundTexture
+        elseif treeId == AbilitiesPlayer_TREE_RESTORATION then
+            return TUI_RestorationBackgroundTexture
+        elseif treeId == AbilitiesPlayer_TREE_TOTEMIC then
+            return TUI_TotemicBackgroundTexture
+        endif
+
+        return TUI_PanelTexture
+    endfunction
+
+    private function TUI_UpdateTreeBackground takes nothing returns nothing
+        if TUI_TreePane == null then
+            return
+        endif
+
+        call BlzFrameSetTexture(TUI_TreePane, TUI_GetTreeBackgroundTexture(TUI_SelectedTree), 0, true)
+        call BlzFrameSetVertexColor(TUI_TreePane, BlzConvertColor(TUI_TREE_BACKGROUND_ALPHA, 255, 255, 255))
     endfunction
 
     private function TUI_StripTooltipLevelSuffix takes string titleText returns string
@@ -569,6 +597,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
         endif
 
         call TUI_ClampSelection()
+        call TUI_UpdateTreeBackground()
         call TUI_UpdateHeader()
         call TUI_UpdateTabs()
         call TUI_UpdateGrid()
@@ -797,6 +826,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
 
         set TUI_TreePane = BlzCreateFrameByType("BACKDROP", "TalentsUITreePane", TUI_Parent, "", 0)
         call BlzFrameSetTexture(TUI_TreePane, TUI_PanelTexture, 0, true)
+        call BlzFrameSetVertexColor(TUI_TreePane, BlzConvertColor(TUI_TREE_BACKGROUND_ALPHA, 255, 255, 255))
         call BlzFrameSetPoint(TUI_TreePane, FRAMEPOINT_TOPLEFT, TUI_Parent, FRAMEPOINT_TOPLEFT, 0.014, -0.088)
         call BlzFrameSetPoint(TUI_TreePane, FRAMEPOINT_BOTTOMRIGHT, TUI_Parent, FRAMEPOINT_BOTTOMLEFT, 0.318, 0.050)
 
