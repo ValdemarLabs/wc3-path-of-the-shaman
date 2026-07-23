@@ -1,0 +1,43 @@
+Nature Shock
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to ELEMENTAL_NatureShock 
+    Actions
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        -------- Don't change anything here --------
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        Set VariableSet NS_Caster = (Triggering unit)
+        Set VariableSet NS_Target = (Target unit of ability being cast)
+        Set VariableSet NS_Target_Point = (Position of NS_Target)
+        Set VariableSet NS_Level = (Level of ELEMENTAL_NatureShock  for NS_Caster)
+        Set VariableSet NS_Roll = (Random integer number between 1 and 100)
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        -------- Here you can change the damage --------
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        Set VariableSet NS_Damage = (80.00 x (Real(NS_Level)))
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        -------- Here you can change the chance to root --------
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        Set VariableSet NS_Rooting_Chance = 50
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        -------- Here you can change the special Effect --------
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        Set VariableSet NS_Special_Effect = Abilities\Spells\Undead\ReplenishHealth\ReplenishHealthCaster.mdl
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        -------- The spell starts to do something --------
+        -------- Don't change anyting from here --------
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                NS_Roll Less than or equal to NS_Rooting_Chance
+            Then - Actions
+                Unit - Create 1 ShockDummy for (Owner of NS_Caster) at NS_Target_Point facing Default building facing degrees
+                Unit - Add NatureShockRoot (dummy) to (Last created unit)
+                Unit - Order (Last created unit) to Night Elf Keeper Of The Grove - Entangling Roots NS_Target
+                Unit - Add a 1.00 second Generic expiration timer to (Last created unit)
+            Else - Actions
+        Special Effect - Create a special effect at NS_Target_Point using NS_Special_Effect
+        Special Effect - Destroy (Last created special effect)
+        Unit - Cause NS_Caster to damage NS_Target, dealing NS_Damage damage of attack type Spells and damage type Normal
+        Custom script:   call RemoveLocation(udg_NS_Target_Point)

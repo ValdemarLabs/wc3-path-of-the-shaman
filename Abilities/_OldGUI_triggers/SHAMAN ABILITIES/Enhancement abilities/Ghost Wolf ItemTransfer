@@ -1,0 +1,22 @@
+Ghost Wolf ItemTransfer
+    Events
+        Unit - A unit owned by Player 1 (Red) Acquires an item
+    Conditions
+        And - All (Conditions) are true
+            Conditions
+                (Unit-type of (Triggering unit)) Equal to Nazgrek (Ghost Wolf - Level 1)
+                (Unit-type of (Triggering unit)) Equal to Zul'kis (melee Ghost Wolf - Level 1)
+                (Unit-type of (Triggering unit)) Equal to Zul'kis (ranged Ghost Wolf - Level 1)
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Triggering unit) Equal to Nazgrek
+            Then - Actions
+                Hero - Give (Item being manipulated) to NazgrekMorph
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Triggering unit) Equal to Zulkis
+            Then - Actions
+                Hero - Give (Item being manipulated) to ZulkisMorph
+            Else - Actions

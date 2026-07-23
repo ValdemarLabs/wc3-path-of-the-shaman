@@ -1,0 +1,13 @@
+Hex Limitation
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Ability being cast) Equal to ENHANCEMENT_Hex 
+                (Ability being cast) Equal to HeroShaman_Hex 
+    Actions
+        Set VariableSet CVHexUnit = (Custom value of (Target unit of ability being cast))
+        Set VariableSet TargetHextUnit[CVHexUnit] = (Target unit of ability being cast)
+        Game - Display to (All players) the text: (CVHexUnit =  + (String(CVHexUnit)))
+        Game - Display to (All players) the text: (TargetHexUnit =  + (Name of TargetHextUnit[CVHexUnit]))

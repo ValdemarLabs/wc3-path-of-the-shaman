@@ -1,0 +1,83 @@
+Shield Check visual
+    Events
+        Time - Every 0.03 seconds of game time
+    Conditions
+    Actions
+        Unit Group - Pick every unit in BAmr_Debug_UGroup and do (Actions)
+            Loop - Actions
+                Set VariableSet BAmr_Debug_Akey = (Custom value of (Picked unit))
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ((Picked unit) has buff BAmr_BUFF) Equal to True
+                    Then - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BAmr_Segment_Missile_Type[BAmr_Debug_Akey] Equal to Default
+                            Then - Actions
+                                For each (Integer BAmr_Debug_Loop) from 1 to BAmr_Segment_Count[BAmr_Debug_Akey], do (Actions)
+                                    Loop - Actions
+                                        Set VariableSet BAmr_Debug_CValue = ((BAmr_Segment_Count[BAmr_Debug_Akey] x BAmr_Debug_Akey) + (BAmr_Debug_Loop - 1))
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                BAmr_Segment_Missile_State[BAmr_Debug_CValue] Equal to Alive
+                                            Then - Actions
+                                                Set VariableSet BAmr_Real[42] = (BAmr_Health[BAmr_Debug_Akey] - ((BAmr_Max[BAmr_Debug_Akey] / (Real(BAmr_Segment_Count[BAmr_Debug_Akey]))) x (Real((BAmr_Debug_Loop - 1)))))
+                                                Set VariableSet BAmr_Point[43] = (Point((Position - X of BAmr_SegmentMissile[BAmr_Debug_CValue].), (Position - Y of BAmr_SegmentMissile[BAmr_Debug_CValue].)))
+                                                Floating Text - Change the position of BAmr_Debug_Text[BAmr_Debug_CValue] to BAmr_Point[43] with Z offset 0.00
+                                                Floating Text - Change text of BAmr_Debug_Text[BAmr_Debug_CValue] to (String((Abs((Integer(BAmr_Real[42])))))) using font size 7.00
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        (BAmr_Health[BAmr_Debug_Akey] - ((BAmr_Max[BAmr_Debug_Akey] / (Real(BAmr_Segment_Count[BAmr_Debug_Akey]))) x (Real((BAmr_Debug_Loop - 1))))) Less than (BAmr_Max[BAmr_Debug_Akey] / (Real(BAmr_Segment_Count[BAmr_Debug_Akey])))
+                                                    Then - Actions
+                                                        Floating Text - Change text of BAmr_Debug_Text[BAmr_Debug_CValue] to (String((Abs((Integer(BAmr_Real[42])))))) using font size 7.00
+                                                    Else - Actions
+                                                        Floating Text - Change text of BAmr_Debug_Text[BAmr_Debug_CValue] to (String((Abs((Integer((BAmr_Max[BAmr_Debug_Akey] / 3.00))))))) using font size 7.00
+                                            Else - Actions
+                                                Set VariableSet BAmr_Debug_CValue = ((BAmr_Segment_Count[BAmr_Debug_Akey] x BAmr_Debug_Akey) + (BAmr_Debug_Loop - 1))
+                                                Floating Text - Set the velocity of BAmr_Debug_Text[BAmr_Debug_CValue] to 64.00 towards 90.00 degrees
+                                                Floating Text - Change BAmr_Debug_Text[BAmr_Debug_CValue]: Disable permanence
+                                                Floating Text - Change the lifespan of BAmr_Debug_Text[BAmr_Debug_CValue] to 1.50 seconds
+                                                Floating Text - Change the fading age of BAmr_Debug_Text[BAmr_Debug_CValue] to 1.00 seconds
+                                                Set VariableSet BAmr_Debug_State[BAmr_Debug_CValue] = Dead
+                                        --------   --------
+                                        Custom script:   call RemoveLocation(udg_BAmr_Point[43])
+                            Else - Actions
+                                Set VariableSet BAmr_Debug_CValue = BAmr_Debug_Akey
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        BAmr_Segment_Missile_State[BAmr_Debug_CValue] Equal to Alive
+                                    Then - Actions
+                                        Set VariableSet BAmr_Real[42] = BAmr_Health[BAmr_Debug_Akey]
+                                        Set VariableSet BAmr_Point[43] = (Point((Position - X of BAmr_SegmentMissile[BAmr_Debug_CValue].), (Position - Y of BAmr_SegmentMissile[BAmr_Debug_CValue].)))
+                                        Floating Text - Change the position of BAmr_Debug_Text[BAmr_Debug_CValue] to BAmr_Point[43] with Z offset 0.00
+                                        Floating Text - Change text of BAmr_Debug_Text[BAmr_Debug_CValue] to (String((Abs((Integer(BAmr_Real[42])))))) using font size 7.00
+                                    Else - Actions
+                                Custom script:   call RemoveLocation(udg_BAmr_Point[43])
+                    Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BAmr_Segment_Missile_Type[BAmr_Debug_Akey] Equal to Default
+                            Then - Actions
+                                For each (Integer BAmr_Debug_Loop) from 1 to BAmr_Segment_Count[BAmr_Debug_Akey], do (Actions)
+                                    Loop - Actions
+                                        Set VariableSet BAmr_Debug_CValue = ((BAmr_Segment_Count[BAmr_Debug_Akey] x BAmr_Debug_Akey) + (BAmr_Debug_Loop - 1))
+                                        Floating Text - Set the velocity of BAmr_Debug_Text[BAmr_Debug_CValue] to 64.00 towards 90.00 degrees
+                                        Floating Text - Change BAmr_Debug_Text[BAmr_Debug_CValue]: Disable permanence
+                                        Floating Text - Change the lifespan of BAmr_Debug_Text[BAmr_Debug_CValue] to 1.50 seconds
+                                        Floating Text - Change the fading age of BAmr_Debug_Text[BAmr_Debug_CValue] to 1.00 seconds
+                                        Set VariableSet BAmr_Debug_State[BAmr_Debug_CValue] = Dead
+                            Else - Actions
+                                Set VariableSet BAmr_Debug_CValue = BAmr_Debug_Akey
+                                Floating Text - Set the velocity of BAmr_Debug_Text[BAmr_Debug_CValue] to 64.00 towards 90.00 degrees
+                                Floating Text - Change BAmr_Debug_Text[BAmr_Debug_CValue]: Disable permanence
+                                Floating Text - Change the lifespan of BAmr_Debug_Text[BAmr_Debug_CValue] to 1.50 seconds
+                                Floating Text - Change the fading age of BAmr_Debug_Text[BAmr_Debug_CValue] to 1.00 seconds
+                                Set VariableSet BAmr_Debug_State[BAmr_Debug_Akey] = Dead
+                        Unit Group - Remove (Picked unit) from BAmr_Debug_UGroup.
+                        Set VariableSet BAmr_Debug_Intances = (BAmr_Debug_Intances - 1)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BAmr_Debug_Intances Less than 1
+                            Then - Actions
+                                Trigger - Turn off (This trigger)
+                            Else - Actions

@@ -1,0 +1,46 @@
+Spiritual Healing Return Mana
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Level of RESTORATION_SpiritualHealing  for (Triggering unit)) Greater than or equal to 1
+        Or - Any (Conditions) are true
+            Conditions
+                (Ability being cast) Equal to RESTORATION_ChainHeal 
+                (Ability being cast) Equal to RESTORATION_HealingRain 
+                (Ability being cast) Equal to RESTORATION_HealingWave 
+                (Ability being cast) Equal to RESTORATION_Rejuvenation 
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to RESTORATION_ChainHeal 
+            Then - Actions
+                Set VariableSet HealManaCost = (For (Triggering unit), Mana cost of RESTORATION_ChainHeal , Level (Level of RESTORATION_ChainHeal  for (Triggering unit)).)
+                Wait 0.05 seconds
+                Unit - Set mana of (Triggering unit) to ((Mana of (Triggering unit)) + ((Real((Intelligence of (Triggering unit) (Include bonuses)))) x ((Real(HealManaCost)) / 100.00)))
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to RESTORATION_HealingRain 
+            Then - Actions
+                Set VariableSet HealManaCost = (For (Triggering unit), Mana cost of RESTORATION_HealingRain , Level (Level of RESTORATION_HealingRain  for (Triggering unit)).)
+                Wait 0.05 seconds
+                Unit - Set mana of (Triggering unit) to ((Mana of (Triggering unit)) + ((Real((Intelligence of (Triggering unit) (Include bonuses)))) x ((Real(HealManaCost)) / 100.00)))
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to RESTORATION_HealingWave 
+            Then - Actions
+                Set VariableSet HealManaCost = (For (Triggering unit), Mana cost of RESTORATION_HealingWave , Level (Level of RESTORATION_HealingWave  for (Triggering unit)).)
+                Wait 0.05 seconds
+                Unit - Set mana of (Triggering unit) to ((Mana of (Triggering unit)) + ((Real((Intelligence of (Triggering unit) (Include bonuses)))) x ((Real(HealManaCost)) / 100.00)))
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to RESTORATION_Rejuvenation 
+            Then - Actions
+                Set VariableSet HealManaCost = (For (Triggering unit), Mana cost of RESTORATION_Rejuvenation , Level (Level of RESTORATION_Rejuvenation  for (Triggering unit)).)
+                Wait 0.05 seconds
+                Unit - Set mana of (Triggering unit) to ((Mana of (Triggering unit)) + ((Real((Intelligence of (Triggering unit) (Include bonuses)))) x ((Real(HealManaCost)) / 100.00)))
+            Else - Actions
+        Special Effect - Create a special effect attached to the origin of (Triggering unit) using Abilities\Spells\Items\AIma\AImaTarget.mdl
+        Special Effect - Destroy (Last created special effect)

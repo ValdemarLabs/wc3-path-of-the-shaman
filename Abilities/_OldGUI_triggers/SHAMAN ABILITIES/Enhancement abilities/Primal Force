@@ -1,0 +1,111 @@
+Primal Force
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to ENHANCEMENT_PrimalForce 
+    Actions
+        -------- ================================================ --------
+        Set VariableSet PF_Caster = (Triggering unit)
+        Set VariableSet PF_Target = (Target unit of ability being cast)
+        Set VariableSet PF_Point = (Position of (Triggering unit))
+        Set VariableSet PF_AbilityLevel = (Level of (Ability being cast) for PF_Caster)
+        Set VariableSet PF_HealthPercent = (1 + (PF_AbilityLevel - 1))
+        Set VariableSet PF_ManaPercent = (1 + (PF_AbilityLevel - 1))
+        Set VariableSet PF_AttackSpeedPercent = (5 + (PF_AbilityLevel x 1))
+        Set VariableSet PF_FireDamagePercent = (30 + (PF_AbilityLevel x 5))
+        -------- Set damage --------
+        -------- == ABILITY MODIFIER == --------
+        Set VariableSet Ability_TempLevel = (Level of (Ability being cast) for (Triggering unit))
+        Set VariableSet Ability_TempAmount = (Ability_PrimalForce_Base[Ability_TempLevel] + (1.50 x (Real((Intelligence of (Triggering unit) (Include bonuses))))))
+        -------- ==   == --------
+        Ability - Set Ability: (Unit: (Triggering unit)'s Ability with Ability Code: ENHANCEMENT_PrimalForce )'s Real Level Field: Damage ('Htb1') of Level: ((Level of ENHANCEMENT_PrimalForce  for (Triggering unit)) - 1) to Ability_TempAmount
+        Animation - Queue PF_Caster's stand animation
+        -------- ================================================ --------
+        -------- Detect Totems within range --------
+        Set VariableSet PF_GroupTotems = (Units within 600.00 of PF_Point matching ((Unit-type of (Matching unit)) Equal to Totem).)
+        -------- If no totems found, stop --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in PF_GroupTotems) Equal to 0
+            Then - Actions
+                Custom script:   call RemoveLocation(udg_PF_Point)
+                Custom script:   call DestroyGroup(udg_PF_GroupTotems)
+                Skip remaining actions
+            Else - Actions
+                -------- ================================================ --------
+        -------- ================================================ --------
+        -------- ACTIONS --------
+        -------- * Apply effects based on the nearby totems --------
+        Unit Group - Pick every unit in PF_GroupTotems and do (Actions)
+            Loop - Actions
+                Set VariableSet PF_TempUnit = (Picked unit)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Or - Any (Conditions) are true
+                            Conditions
+                                (Unit-type of (Picked unit)) Equal to Earth Totem
+                                (Unit-type of (Picked unit)) Equal to Greater Earth Totem
+                                (Unit-type of (Picked unit)) Equal to Earthbind Totem
+                                (Unit-type of (Picked unit)) Equal to Greater Earthbind Totem
+                                (Unit-type of (Picked unit)) Equal to Stoneskin Totem
+                                (Unit-type of (Picked unit)) Equal to Stoneskin Totem
+                    Then - Actions
+                        -------- EARTH --------
+                        Set VariableSet PF_HealthAdd = ((Max life of PF_Caster) x ((Real(PF_HealthPercent)) / (100.00 + (1.00 + ((Real((Intelligence of PF_Caster (Include bonuses)))) / 2500.00)))))
+                        Unit - Set life of PF_Caster to ((Life of PF_Caster) + PF_HealthAdd)
+                        Special Effect - Create a special effect attached to the chest of PF_Caster using Abilities\Spells\Human\Heal\HealTarget.mdl
+                        Special Effect - Destroy (Last created special effect)
+                        -------- debug --------
+                        Game - Display to (All players) the text: (PrimalForce heal amount:  + (String(PF_HealthAdd)))
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Or - Any (Conditions) are true
+                            Conditions
+                                (Unit-type of (Picked unit)) Equal to Cleansing Totem
+                                (Unit-type of (Picked unit)) Equal to Greater Cleansing Totem
+                                (Unit-type of (Picked unit)) Equal to Water Totem
+                                (Unit-type of (Picked unit)) Equal to Greater Water Totem
+                    Then - Actions
+                        -------- WATER --------
+                        Set VariableSet PF_ManaAdd = ((Max mana of PF_Caster) x ((Real(PF_ManaPercent)) / (100.00 + (1.00 + ((Real((Intelligence of PF_Caster (Include bonuses)))) / 2500.00)))))
+                        Unit - Set mana of PF_Caster to ((Mana of PF_Caster) + PF_ManaAdd)
+                        Special Effect - Create a special effect attached to the chest of PF_Caster using Abilities\Spells\Items\AIma\AImaTarget.mdl
+                        Special Effect - Destroy (Last created special effect)
+                        -------- debug --------
+                        Game - Display to (All players) the text: (PrimalForce mana amount:  + (String(PF_ManaAdd)))
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Or - Any (Conditions) are true
+                            Conditions
+                                (Unit-type of (Picked unit)) Equal to Wind Totem
+                                (Unit-type of (Picked unit)) Equal to Greater Wind Totem
+                                (Unit-type of (Picked unit)) Equal to Windfury Totem
+                                (Unit-type of (Picked unit)) Equal to Greater Windfury Totem
+                    Then - Actions
+                        -------- WIND --------
+                        Unit - Create 1 DummyPrimalForceWind for (Owner of PF_Caster) at PF_Point facing Default building facing degrees
+                        Unit - Add a 3.00 second Generic expiration timer to (Last created unit)
+                        Unit - Order (Last created unit) to Orc Shaman - Bloodlust PF_Caster
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Or - Any (Conditions) are true
+                            Conditions
+                                (Unit-type of (Picked unit)) Equal to Fire Totem
+                                (Unit-type of (Picked unit)) Equal to Greater Fire Totem
+                                (Unit-type of (Picked unit)) Equal to Skyfury Totem
+                                (Unit-type of (Picked unit)) Equal to Greater Skyfury Totem
+                    Then - Actions
+                        -------- FIRE --------
+                        Set VariableSet PF_FireDamageAdd = ((Real((Base Damage of PF_Caster for weapon index 0))) x ((Real(PF_FireDamagePercent)) / 100.00))
+                        Unit - Cause PF_Caster to damage PF_Target, dealing PF_FireDamageAdd damage of attack type Spells and damage type Fire
+                        Special Effect - Create a special effect attached to the chest of PF_Target using Abilities\Weapons\FireBallMissile\FireBallMissile.mdl
+                        Special Effect - Destroy (Last created special effect)
+                    Else - Actions
+        -------- ================================================ --------
+        -------- ================================================ --------
+        -------- Clean leaks --------
+        Custom script:   call RemoveLocation(udg_PF_Point)
+        Custom script:   call DestroyGroup(udg_PF_GroupTotems)

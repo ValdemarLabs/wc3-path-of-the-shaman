@@ -1,0 +1,51 @@
+Water Elemental
+    Events
+        Unit - A unit Begins channeling an ability
+    Conditions
+        (Ability being cast) Equal to ELEMENTAL_Channel_WaterElemental 
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Triggering unit) Equal to Nazgrek
+            Then - Actions
+                Unit Group - Pick every unit in ElementalGroupNazgrek and do (Unit - Kill (Picked unit))
+                Wait 3.00 seconds
+                Set VariableSet VarPoint = (Position of Nazgrek)
+                Unit - Create 1 Water Elemental for Player 1 (Red) at VarPoint facing Default building facing degrees
+                Set VariableSet SummonElemental_UnitType = (Unit-type of (Last created unit))
+                Set VariableSet SummonElemental_NazgrekUnit = (Last created unit)
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Unit Group - Add (Last created unit) to ElementalGroupNazgrek
+                -------- -------------------------------- --------
+                Unit - Change ownership of (Last created unit) to Player 19 (Mint) and Retain color
+                -------- Enable Follow Loop --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Summon Elemental Follow <gen> is on) Equal to False
+                    Then - Actions
+                        Trigger - Turn on Summon Elemental Follow <gen>
+                    Else - Actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Triggering unit) Equal to Zulkis
+            Then - Actions
+                Unit Group - Pick every unit in ElementalGroupZulkis and do (Unit - Kill (Picked unit))
+                Wait 3.00 seconds
+                Set VariableSet VarPoint = (Position of Zulkis)
+                Unit - Create 1 Water Elemental for Player 1 (Red) at VarPoint facing Default building facing degrees
+                Set VariableSet SummonElemental_UnitType = (Unit-type of (Last created unit))
+                Set VariableSet SummonElemental_ZulkisUnit = (Last created unit)
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Unit Group - Add (Last created unit) to ElementalGroupZulkis
+                -------- -------------------------------- --------
+                Unit - Change ownership of (Last created unit) to Player 19 (Mint) and Retain color
+                -------- Enable Follow Loop --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Summon Elemental Follow <gen> is on) Equal to False
+                    Then - Actions
+                        Trigger - Turn on Summon Elemental Follow <gen>
+                    Else - Actions
+            Else - Actions
+        Trigger - Remove (This trigger) from the trigger queue

@@ -1,0 +1,28 @@
+Bloodlust Crit Loop
+    Events
+        Time - Every 1.00 seconds of game time
+    Conditions
+    Actions
+        Unit Group - Pick every unit in BL_CritGroup and do (Actions)
+            Loop - Actions
+                Set VariableSet Temp_Integer = (Custom value of (Picked unit))
+                -------- ======================================== --------
+                -------- If the unit no longer has Bloodlust at the stored level, remove the stored Crit bonus --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ((Picked unit) has buff Bloodlust (Level 3)) Equal to False
+                        ((Picked unit) has buff Bloodlust (Level 4)) Equal to False
+                        ((Picked unit) has buff Bloodlust (Level 5)) Equal to False
+                    Then - Actions
+                        Set VariableSet Stats_Crit[Temp_Integer] = (Stats_Crit[Temp_Integer] - BL_Crit[Temp_Integer])
+                        Set VariableSet BL_AppliedLevel[Temp_Integer] = 0
+                        Set VariableSet BL_Crit[Temp_Integer] = 0
+                        Unit Group - Remove (Picked unit) from BL_CritGroup.
+                    Else - Actions
+        -------- ======================================== --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in BL_CritGroup) Equal to 0
+            Then - Actions
+                Trigger - Turn off (This trigger)
+            Else - Actions

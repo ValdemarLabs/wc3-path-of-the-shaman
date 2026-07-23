@@ -1,0 +1,89 @@
+Ghost Wolf Normal
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to ENHANCEMENT_GhostWolfNormal 
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Triggering unit) Equal to Nazgrek
+            Then - Actions
+                Animation - Queue Nazgrek's Attack Slam animation
+                Wait 1.00 seconds
+                Set VariableSet VarPoint = (Position of Nazgrek)
+                Unit - Move NazgrekMorph instantly to VarPoint, facing (Facing of Nazgrek) degrees
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                -------- Transfer Str / Agi / Int --------
+                -------- Transfer health --------
+                Unit - Set life of NazgrekMorph to (Life of Nazgrek)
+                -------- Transfer mana --------
+                Unit - Set mana of NazgrekMorph to (Mana of Nazgrek)
+                -------- Transfer level --------
+                Hero - Set NazgrekMorph Hero-level to (Hero level of Nazgrek), Hide level-up graphics
+                -------- Transfer xp --------
+                Hero - Set NazgrekMorph experience to (Hero experience of Nazgrek), Hide level-up graphics
+                -------- Transfer Items --------
+                For each (Integer MorphInteger) from 1 to 6, do (Actions)
+                    Loop - Actions
+                        Hero - Drop the item from slot MorphInteger of Nazgrek.
+                        Hero - Give (Last dropped item) to NazgrekMorph
+                -------- MORPH from Ghost Wolf --------
+                Unit - Remove Nazgrek from the game
+                Unit - Unhide NazgrekMorph
+                Unit - Unpause NazgrekMorph
+                Set VariableSet Nazgrek = NazgrekMorph
+                Unit - Remove Ghost (Visible) from Nazgrek
+                Unit - Turn collision for Nazgrek On.
+                Player - Enable Shield Block (50) for Player 1 (Red)
+                Player - Enable Shield Block (75) for Player 1 (Red)
+                Player - Enable Shield Block (100) for Player 1 (Red)
+                Animation - Queue Nazgrek's Spell Slam animation
+                Animation - Queue Nazgrek's stand animation
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                -------- tmp --------
+                -------- Increase Crit and Dodge --------
+                -------- sound --------
+                Sound - Play GhostWolfMorph <gen> at 100.00% volume, attached to (Triggering unit)
+                Selection - Clear selection for Player 1 (Red).
+                Selection - Select Nazgrek
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Triggering unit) Equal to Zulkis
+            Then - Actions
+                Animation - Queue Zulkis's Attack Slam animation
+                Wait 1.00 seconds
+                Set VariableSet VarPoint = (Position of Zulkis)
+                Unit - Move ZulkisMorph instantly to VarPoint, facing (Facing of Zulkis) degrees
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                -------- Transfer Str / Agi / Int --------
+                -------- Transfer health --------
+                Unit - Set life of ZulkisMorph to (Life of Zulkis)
+                -------- Transfer mana --------
+                Unit - Set mana of ZulkisMorph to (Mana of Zulkis)
+                -------- Transfer level --------
+                Hero - Set ZulkisMorph Hero-level to (Hero level of Zulkis), Hide level-up graphics
+                -------- Transfer xp --------
+                Hero - Set ZulkisMorph experience to (Hero experience of Zulkis), Hide level-up graphics
+                -------- Transfer Items --------
+                For each (Integer MorphInteger) from 1 to 6, do (Actions)
+                    Loop - Actions
+                        Hero - Drop the item from slot MorphInteger of Zulkis.
+                        Hero - Give (Last dropped item) to ZulkisMorph
+                -------- MORPH from Ghost Wolf --------
+                Unit - Remove Zulkis from the game
+                Unit - Unhide ZulkisMorph
+                Unit - Unpause ZulkisMorph
+                Set VariableSet Zulkis = ZulkisMorph
+                Unit - Remove Ghost (Visible) from Zulkis
+                Unit - Turn collision for Zulkis On.
+                Animation - Queue Zulkis's Spell Slam animation
+                Animation - Queue Zulkis's stand animation
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                -------- tmp --------
+                -------- Increase Crit and Dodge --------
+                -------- sound --------
+                Sound - Play GhostWolfMorph <gen> at 100.00% volume, attached to (Triggering unit)
+                Selection - Clear selection for Player 1 (Red).
+                Selection - Select Zulkis
+            Else - Actions

@@ -1,0 +1,54 @@
+Frost Shock
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to ELEMENTAL_FrostShock 
+    Actions
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        -------- Don't change anything here --------
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        Set VariableSet FR_Caster = (Triggering unit)
+        Set VariableSet FR_Target = (Target unit of ability being cast)
+        Set VariableSet FR_Target_Point = (Position of FR_Target)
+        Set VariableSet FR_Level = (Level of (Ability being cast) for FR_Caster)
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        -------- Here you can change the Damage --------
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        Set VariableSet FR_Damage = (50.00 x (Real(FR_Level)))
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        -------- Yes/No Option --------
+        -------- If you keep it this, it will create a Frost explosion, projecting frost missiles --------
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        Set VariableSet FR_Frost_Explosion = True
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        -------- Number of frost missiles projected (If : FR_Frost_Explosion = True) --------
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        Set VariableSet FR_Missile_Count = 4
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        -------- Here you can change the special effect --------
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        Set VariableSet FR_Special_Effect = Abilities\Spells\Undead\FrostNova\FrostNovaTarget.mdl
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        -------- Spell execution is starting here --------
+        -------- Don't change anything from here --------
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        Unit - Cause FR_Caster to damage FR_Target, dealing FR_Damage damage of attack type Spells and damage type Normal
+        Special Effect - Create a special effect at FR_Target_Point using FR_Special_Effect
+        Special Effect - Destroy (Last created special effect)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                FR_Frost_Explosion Equal to True
+            Then - Actions
+                For each (Integer FR) from 1 to FR_Missile_Count, do (Actions)
+                    Loop - Actions
+                        Set VariableSet FR_Dummy_Point = (FR_Target_Point offset by 50.00 towards ((Facing of FR_Target) + ((360.00 / (Real(FR_Missile_Count))) x (Real(FR)))) degrees.)
+                        Set VariableSet FR_Order_Point = (FR_Target_Point offset by 100.00 towards ((Facing of FR_Target) + ((360.00 / (Real(FR_Missile_Count))) x (Real(FR)))) degrees.)
+                        Unit - Create 1 ShockDummy for (Owner of FR_Caster) at FR_Dummy_Point facing Default building facing degrees
+                        Unit - Add FrostShockBolts (dummy) to (Last created unit)
+                        Unit - Set level of FrostShockBolts (dummy) for (Last created unit) to FR_Level
+                        Unit - Order (Last created unit) to Undead Dreadlord - Carrion Swarm FR_Order_Point
+                        Unit - Add a 1.50 second Generic expiration timer to (Last created unit)
+                        Custom script:   call RemoveLocation(udg_FR_Dummy_Point)
+                        Custom script:   call RemoveLocation(udg_FR_Order_Point)
+            Else - Actions
+        Custom script:   call RemoveLocation(udg_FR_Target_Point)

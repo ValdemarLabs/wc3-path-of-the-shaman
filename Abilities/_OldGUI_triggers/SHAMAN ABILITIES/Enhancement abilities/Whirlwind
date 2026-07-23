@@ -1,0 +1,36 @@
+Whirlwind
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to ENHANCEMENT_Whirlwind 
+    Actions
+        -------- == ABILITY MODIFIER == --------
+        Set VariableSet Ability_TempLevel = (Level of (Ability being cast) for (Triggering unit))
+        -------- =============================== --------
+        Sound - Play Whirlwind <gen> at 100.00% volume, attached to (Triggering unit)
+        -------- =============================== --------
+        -------- Store hero stats and location --------
+        Set VariableSet Whirlwind_Strength = (Real((Strength of (Triggering unit) (Include bonuses))))
+        Set VariableSet Whirlwind_Agility = (Real((Agility of (Triggering unit) (Include bonuses))))
+        -------- =============================== --------
+        -------- Calculate mana cost reduction --------
+        Set VariableSet Whirlwind_ManaReduction = (Whirlwind_Strength x 0.50)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Whirlwind_ManaReduction Greater than or equal to 75.00
+            Then - Actions
+                Set VariableSet Whirlwind_ManaReduction = 75.00
+            Else - Actions
+        Set VariableSet Whirlwind_ManaCost = (Ability_Whirlwind_ManaCost[Ability_TempLevel] x (1.00 - (Whirlwind_ManaReduction / 100.00)))
+        -------- Apply mana reduction --------
+        Ability - Set Ability: (Unit: (Triggering unit)'s Ability with Ability Code: ENHANCEMENT_Whirlwind )'s Integer Level Field: Mana Cost ('amcs') of Level: ((Level of ENHANCEMENT_Whirlwind  for (Triggering unit)) - 1) to (Integer(Whirlwind_ManaCost))
+        -------- =============================== --------
+        -------- Calculate bonus damage --------
+        Set VariableSet Whirlwind_DamageBonus = (Whirlwind_Agility x 0.50)
+        -------- Calculate total damage --------
+        Set VariableSet Ability_TempAmount = (Ability_Whirlwind_Base[Ability_TempLevel] + Whirlwind_DamageBonus)
+        -------- =============================== --------
+        -------- Set bonus damage to Whirlwind --------
+        Ability - Set Ability: (Unit: (Triggering unit)'s Ability with Ability Code: ENHANCEMENT_Whirlwind )'s Real Level Field: Damage Per Second ('Oww1') of Level: ((Level of ENHANCEMENT_Whirlwind  for (Triggering unit)) - 1) to Ability_TempAmount
+        Unit - Increase level of ENHANCEMENT_Whirlwind  for (Triggering unit)
+        Unit - Decrease level of ENHANCEMENT_Whirlwind  for (Triggering unit)

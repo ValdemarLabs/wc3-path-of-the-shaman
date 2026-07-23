@@ -1,0 +1,30 @@
+Summon Elemental Dies
+    Events
+        Unit - A unit Dies
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Triggering unit) Equal to SummonElemental_NazgrekUnit
+                (Triggering unit) Equal to SummonElemental_ZulkisUnit
+    Actions
+        -------- Remove Dead Elemental from Group --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                ((Triggering unit) is in ElementalGroupNazgrek.) Equal to True
+            Then - Actions
+                Unit Group - Remove (Triggering unit) from ElementalGroupNazgrek.
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                ((Triggering unit) is in ElementalGroupZulkis.) Equal to True
+            Then - Actions
+                Unit Group - Remove (Triggering unit) from ElementalGroupZulkis.
+            Else - Actions
+        -------- Disable Follow Trigger if No Elementals Exist --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in ElementalGroupNazgrek) Equal to 0
+                (Number of units in ElementalGroupZulkis) Equal to 0
+            Then - Actions
+                Trigger - Turn off Summon Elemental Follow <gen>
+            Else - Actions

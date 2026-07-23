@@ -1,0 +1,44 @@
+Lightning Strike
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to ELEMENTAL_LightningStrike 
+    Actions
+        Sound - Play LightningStrike <gen> at 100.00% volume, attached to (Triggering unit)
+        Set VariableSet LS_TempPoint[1] = (Position of (Triggering unit))
+        Set VariableSet LS_TempPoint[2] = (Target point of ability being cast)
+        Set VariableSet LS_TempPoint[3] = (LS_TempPoint[2] offset by 400.00 towards (Angle from LS_TempPoint[2] to LS_TempPoint[1]) degrees.)
+        Unit - Create 1 LightningDummyDown (LS) for (Owner of (Triggering unit)) at LS_TempPoint[2] facing Default building facing degrees
+        Unit - Add a 0.50 second Generic expiration timer to (Last created unit)
+        Unit - Make (Last created unit) Explode on death
+        Set VariableSet LS_Dummy = (Last created unit)
+        For each (Integer LS_GeneralInteger) from 1 to 3, do (Actions)
+            Loop - Actions
+                Unit - Create 1 LightningDummy (LS) for (Owner of (Triggering unit)) at LS_TempPoint[3] facing Default building facing degrees
+                Unit - Order (Last created unit) to Special Archimonde - Finger Of Death LS_Dummy
+                Unit - Add a 0.50 second Generic expiration timer to (Last created unit)
+                Unit - Make (Last created unit) Explode on death
+        Special Effect - Create a special effect at LS_TempPoint[2] using Abilities\Spells\Human\ThunderClap\ThunderClapCaster.mdl
+        Special Effect - Destroy (Last created special effect)
+        Special Effect - Create a special effect at LS_TempPoint[2] using Abilities\Weapons\FarseerMissile\FarseerMissile.mdl
+        Special Effect - Destroy (Last created special effect)
+        Set VariableSet LS_Groups[1] = (Units within 250.00 of LS_TempPoint[2] matching ((((Matching unit) is A structure) Equal to False) and ((((Matching unit) is Magic Immune) Equal to False) and ((((Matching unit) is alive) Equal to True) and (((Matching unit) belongs to an enemy of (Owner of 
+        Unit Group - Pick every unit in LS_Groups[1] and do (Actions)
+            Loop - Actions
+                Unit - Cause (Triggering unit) to damage (Picked unit), dealing (75.00 x (Real((Level of ELEMENTAL_LightningStrike  for (Triggering unit))))) damage of attack type Spells and damage type Normal
+                -------- Knockback System --------
+                Set VariableSet KBA_Caster = (Triggering unit)
+                Set VariableSet KBA_TargetUnit = (Picked unit)
+                Set VariableSet KBA_StartingPosition = (Target point of ability being cast)
+                Set VariableSet KBA_Level = (Level of (Ability being cast) for (Triggering unit))
+                Set VariableSet KBA_Speed = 9.00
+                Set VariableSet KBA_DistancePerLevel = 100.00
+                Set VariableSet KBA_SpecialEffects[1] = Abilities\Spells\Human\FlakCannons\FlakTarget.mdl
+                Set VariableSet KBA_SpecialEffects[2] = Abilities\Weapons\FarseerMissile\FarseerMissile.mdl
+                Set VariableSet KBA_DestroyTrees = True
+                Trigger - Run Cast A Knockback <gen> (checking conditions)
+                -------- End System --------
+        Custom script:   call RemoveLocation (udg_LS_TempPoint[1])
+        Custom script:   call RemoveLocation (udg_LS_TempPoint[2])
+        Custom script:   call RemoveLocation (udg_LS_TempPoint[3])
+        Custom script:   call DestroyGroup (udg_LS_Groups[1])

@@ -1,0 +1,33 @@
+Feral Spirits Summoned
+    Events
+        Unit - A unit Spawns a summoned unit
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Unit-type of (Summoned unit)) Equal to Spirit Wolf (Level 1)
+                (Unit-type of (Summoned unit)) Equal to Dire Wolf (Level 2)
+                (Unit-type of (Summoned unit)) Equal to Shadow Wolf (Level 3)
+        Or - Any (Conditions) are true
+            Conditions
+                (Owner of (Summoning unit)) Equal to Player 1 (Red)
+                (Owner of (Summoning unit)) Equal to Player 20 (Lavender)
+    Actions
+        -------- Store Summoner and Wolf Information Using Custom Value --------
+        Set VariableSet FeralSpirits_TempSummoner = (Summoning unit)
+        Set VariableSet FeralSpirits_TempWolf = (Summoned unit)
+        -------- Assign Summoner's Index to the Wolf --------
+        Set VariableSet FeralSpirits_WolfCV = (Custom value of FeralSpirits_TempWolf)
+        Set VariableSet FeralSpirits_SummonerCV = (Custom value of FeralSpirits_TempSummoner)
+        -------- Store Summoner Data for This Wolf --------
+        Set VariableSet FeralSpirits_Summoner[FeralSpirits_WolfCV] = FeralSpirits_TempSummoner
+        -------- Add Wolf to Group for Tracking --------
+        Unit Group - Add FeralSpirits_TempWolf to FeralSpirits_WolfGroup
+        -------- --------------- --------
+        Unit - Change ownership of FeralSpirits_TempWolf to Player 19 (Mint) and Retain color
+        -------- Enable Follow Loop --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Feral Spirits Follow <gen> is on) Equal to False
+            Then - Actions
+                Trigger - Turn on Feral Spirits Follow <gen>
+            Else - Actions

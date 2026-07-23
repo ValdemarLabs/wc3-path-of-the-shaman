@@ -1,0 +1,56 @@
+Summon Elemental Follow
+    Events
+        Time - Every 2.00 seconds of game time
+    Conditions
+    Actions
+        -------- ===================================== --------
+        -------- NAZGREK GROUP --------
+        Set VariableSet SummonElemental_NTempPoint = (Position of Nazgrek)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (SummonElemental_NazgrekUnit is alive) Equal to True
+                (Distance between (Position of SummonElemental_NazgrekUnit) and SummonElemental_NTempPoint) Greater than 600.00
+            Then - Actions
+                Unit - Order SummonElemental_NazgrekUnit to Right-Click Nazgrek
+            Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Current order of Nazgrek) Equal to (Order(attack))
+                        (Current order of SummonElemental_NazgrekUnit) Not equal to (Order(smart))
+                    Then - Actions
+                        Unit - Order SummonElemental_NazgrekUnit to Right-Click Nazgrek
+                    Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Current order of SummonElemental_NazgrekUnit) Not equal to (Order(smart))
+                            Then - Actions
+                                Unit - Order SummonElemental_NazgrekUnit to Right-Click Nazgrek
+                            Else - Actions
+        -------- ===================================== --------
+        -------- ZULKIS GROUP --------
+        Set VariableSet SummonElemental_ZTempPoint = (Position of Zulkis)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (SummonElemental_ZulkisUnit is alive) Equal to True
+                (Distance between (Position of SummonElemental_ZulkisUnit) and SummonElemental_ZTempPoint) Greater than 600.00
+            Then - Actions
+                Unit - Order SummonElemental_ZulkisUnit to Right-Click Zulkis
+            Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Current order of Zulkis) Equal to (Order(attack))
+                        (Current order of SummonElemental_ZulkisUnit) Not equal to (Order(smart))
+                    Then - Actions
+                        Unit - Order SummonElemental_ZulkisUnit to Right-Click Zulkis
+                    Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Current order of SummonElemental_ZulkisUnit) Not equal to (Order(smart))
+                            Then - Actions
+                                Unit - Order SummonElemental_ZulkisUnit to Right-Click Zulkis
+                            Else - Actions
+        -------- ===================================== --------
+        -------- Remove LEAKS --------
+        Custom script:   call RemoveLocation(udg_SummonElemental_NTempPoint)
+        Custom script:   call RemoveLocation(udg_SummonElemental_ZTempPoint)
+        -------- ===================================== --------

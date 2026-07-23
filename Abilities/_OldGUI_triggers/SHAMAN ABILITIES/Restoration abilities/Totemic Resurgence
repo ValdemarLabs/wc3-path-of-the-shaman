@@ -1,0 +1,48 @@
+Totemic Resurgence
+    Events
+    Conditions
+        (Level of RESTORATION_TotemicResurgence  for (Triggering unit)) Greater than 0
+    Actions
+        Unit Group - Pick every unit in (Units within 500.00 of (Position of (Triggering unit)).) and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Owner of (Picked unit)) Equal to Player 1 (Red)
+                        Or - Any (Conditions) are true
+                            Conditions
+                                ((Picked unit) is in TotemGroupNazgrek.) Equal to True
+                                ((Picked unit) is in TotemGroupZulkis.) Equal to True
+                    Then - Actions
+                        Set VariableSet TotemicResurgence_Count = (TotemicResurgence_Count + 1)
+                    Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                TotemicResurgence_Count Less than or equal to 0
+            Then - Actions
+                Set VariableSet TotemicResurgence_Real = 0.00
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                TotemicResurgence_Count Equal to 1
+            Then - Actions
+                Set VariableSet TotemicResurgence_Real = 1.15
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                TotemicResurgence_Count Equal to 2
+            Then - Actions
+                Set VariableSet TotemicResurgence_Real = 1.30
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                TotemicResurgence_Count Equal to 3
+            Then - Actions
+                Set VariableSet TotemicResurgence_Real = 1.45
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                TotemicResurgence_Count Greater than or equal to 4
+            Then - Actions
+                Set VariableSet TotemicResurgence_Real = 1.60
+            Else - Actions
+        Set VariableSet TotemicResurgence_Count = 0

@@ -1,0 +1,141 @@
+BAmr Block 2
+    Events
+        Game - DamageModifierEvent becomes Equal to 4.00
+    Conditions
+        (DamageEventTarget has buff BAmr2_BUFF) Equal to True
+    Actions
+        Set VariableSet BAmr2_Akey = (Custom value of DamageEventTarget)
+        Set VariableSet BAmr2_DMG_Event = BAmr2_Health[BAmr2_Akey]
+        --------   --------
+        -------- Damage "Flare" effect --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                Set VariableSet BAmr2_Point[1] = (Position of DamageEventTarget)
+                Set VariableSet BAmr2_Point[2] = (Position of DamageEventSource)
+                Special Effect - Create a special effect at (BAmr2_Point[1] offset by BAmr2_SPEF_VALUE[1] towards (Angle from BAmr2_Point[1] to BAmr2_Point[2]) degrees.) using BAmr2_EFFECTPATH[3]
+                Set VariableSet BAmr2_SPEF = (Last created special effect)
+                Custom script:   set udg_BAmr2_Spef_Current_Height[udg_BAmr2_Akey] = GetLocationZ(udg_BAmr2_Point[1])
+                Special Effect - Set Position - Z of BAmr2_SPEF to ((BAmr2_Spef_Current_Height[BAmr2_Akey] + BAmr2_SPEF_VALUE[2]) + (Current flying height of DamageEventTarget))
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BAmr2_Boolean[1] Equal to True
+                    Then - Actions
+                        Special Effect - Set Color of BAmr2_SPEF to color of (Owner of DamageEventTarget)
+                    Else - Actions
+                        Special Effect - Set Color of BAmr2_SPEF to color of (Player((Integer(BAmr2_SPEF_VALUE[0]))))
+                Special Effect - Set Color of BAmr2_SPEF to r: (Integer(BAmr2_SPEF_VALUE[5])), g: (Integer(BAmr2_SPEF_VALUE[6])), b: (Integer(BAmr2_SPEF_VALUE[7]))
+                Special Effect - Set Scale of BAmr2_SPEF to BAmr2_SPEF_VALUE[3]
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BAmr2_Boolean[2] Equal to True
+                    Then - Actions
+                        Set VariableSet BAmr2_Real[1] = (BAmr2_Health[BAmr2_Akey] / (BAmr2_Max[BAmr2_Akey] / 255.00))
+                        If (BAmr2_Real[1] Less than BAmr2_SPEF_VALUE[11]) then do (Set VariableSet BAmr2_Real[1] = BAmr2_SPEF_VALUE[11]) else do (Do nothing)
+                        Special Effect - Set Alpha of BAmr2_SPEF to (Integer(BAmr2_Real[1]))
+                    Else - Actions
+                Special Effect - Set Time Scale of BAmr2_SPEF to BAmr2_SPEF_VALUE[4]
+                Special Effect - Set Orientation of BAmr2_SPEF to yaw: BAmr2_SPEF_VALUE[8], pitch: BAmr2_SPEF_VALUE[9], roll: ((((Angle from BAmr2_Point[1] to BAmr2_Point[2]) x 3.14) / 180.00) + BAmr2_SPEF_VALUE[10])
+                Special Effect - Destroy BAmr2_SPEF
+                Custom script:   call RemoveLocation(udg_BAmr2_Point[1])
+                Custom script:   call RemoveLocation(udg_BAmr2_Point[2])
+            Else - Actions
+        --------   --------
+        -------- This sets the damage of spells and physical attacks, it will ignore rates below zero allowing you to set strictly spell shields or physical sheilds! --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                IsDamageSpell Equal to True
+            Then - Actions
+                If (BAmr2_RESIST_SPELL Equal to 0.00) then do (Skip remaining actions) else do (Set VariableSet DamageEventAmount = (DamageEventAmount x BAmr2_RESIST_SPELL))
+            Else - Actions
+                If (BAmr2_RESIST_PHYSICAL Equal to 0.00) then do (Skip remaining actions) else do (Set VariableSet DamageEventAmount = (DamageEventAmount x BAmr2_RESIST_PHYSICAL))
+        --------   --------
+        -------- This sets the damage to the percentage that the spell will absorb --------
+        Set VariableSet DamageEventAmount = (DamageEventAmount x BAmr2_ABSORBTION_PERCENTAGE)
+        --------   --------
+        Set VariableSet BAmr2_Total[BAmr2_Akey] = (BAmr2_Total[BAmr2_Akey] + DamageEventAmount)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                DamageEventAmount Less than (BAmr2_DMG_Event - 0.01)
+            Then - Actions
+                Set VariableSet BAmr2_DMG_Event = (BAmr2_DMG_Event - DamageEventAmount)
+                Set VariableSet DamageEventPrevAmt = DamageEventAmount
+                -------- MODIFIED: --------
+                -------- original: DamageEventAmount = (DamageEventAmount - (DamageEventAmount x BAmr2_ABORBTION_PERCENTAGE) --------
+                Set VariableSet DamageEventAmount = BAmr2_DMG_Event
+                If (DamageEventAmount Less than 0.00) then do (Set VariableSet DamageEventAmount = 0.00) else do (Do nothing)
+                If (DamageEventAmount Greater than 0.00) then do (Set VariableSet DamageEventType = DamageEventType) else do (Set VariableSet DamageEventType = DamageEventType)
+                Set VariableSet BAmr2_Health[BAmr2_Akey] = BAmr2_DMG_Event
+                Unit - Set mana of DamageEventTarget to ((Mana of DamageEventTarget) + BAmr2_DMG_Event)
+            Else - Actions
+                Unit - Remove BAmr2_BUFF buff from DamageEventTarget
+                Set VariableSet DamageEventAmount = (DamageEventAmount - BAmr2_DMG_Event)
+                Set VariableSet DamageEventType = DamageTypeReduced
+                Set VariableSet BAmr2_Health[BAmr2_Akey] = 0.00
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BAmr2_Segment_Missile_Type[BAmr2_Akey] Equal to Default
+            Then - Actions
+                For each (Integer BAmr2_Loop) from 1 to BAmr2_Segment_Count[BAmr2_Akey], do (Actions)
+                    Loop - Actions
+                        Set VariableSet BAmr2_Seg_CValue = ((BAmr2_Segment_Count[BAmr2_Akey] x BAmr2_Akey) + (BAmr2_Loop - 1))
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BAmr2_Total[BAmr2_Akey] Greater than (BAmr2_Max[BAmr2_Akey] - ((BAmr2_Max[BAmr2_Akey] / (Real(BAmr2_Segment_Count[BAmr2_Akey]))) x (Real((BAmr2_Loop - 1)))))
+                            Then - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        BAmr2_Segment_Missile_State[BAmr2_Seg_CValue] Equal to Alive
+                                    Then - Actions
+                                        Set VariableSet BAmr2_Point[3] = (Point((Position - X of BAmr2_SegmentMissile[BAmr2_Seg_CValue].), (Position - Y of BAmr2_SegmentMissile[BAmr2_Seg_CValue].)))
+                                        Set VariableSet BAmr2_Segment_Missile_State[BAmr2_Seg_CValue] = Dead
+                                        Special Effect - Destroy BAmr2_SegmentMissile[BAmr2_Seg_CValue]
+                                        Special Effect - Create a special effect at BAmr2_Point[3] using BAmr2_EFFECTPATH[2]
+                                        Special Effect - Destroy (Last created special effect)
+                                        Custom script:   call RemoveLocation(udg_BAmr2_Point[3])
+                                    Else - Actions
+                            Else - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (BAmr2_Health[BAmr2_Akey] - ((BAmr2_Max[BAmr2_Akey] / (Real(BAmr2_Segment_Count[BAmr2_Akey]))) x (Real((BAmr2_Loop - 1))))) Less than or equal to (BAmr2_Max[BAmr2_Akey] / (Real(BAmr2_Segment_Count[BAmr2_Akey])))
+                                        BAmr2_Segment_Missile_State[BAmr2_Seg_CValue] Equal to Alive
+                                        Or - Any (Conditions) are true
+                                            Conditions
+                                                BAmr2_Boolean[3] Equal to True
+                                                BAmr2_Boolean[4] Equal to True
+                                    Then - Actions
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                BAmr2_Boolean[3] Equal to True
+                                            Then - Actions
+                                                Set VariableSet BAmr2_Real[2] = ((BAmr2_Health[BAmr2_Akey] - ((BAmr2_Max[BAmr2_Akey] / (Real(BAmr2_Segment_Count[BAmr2_Akey]))) x (Real((BAmr2_Loop - 1))))) / ((BAmr2_Max[BAmr2_Akey] / (Real(BAmr2_Segment_Count[BAmr2_Akey]))) / BAmr2_SEG_VALUE[7]))
+                                                If (BAmr2_Real[2] Less than BAmr2_SEG_VALUE[8]) then do (Set VariableSet BAmr2_Real[2] = BAmr2_SEG_VALUE[8]) else do (Do nothing)
+                                                Special Effect - Set Scale of BAmr2_SegmentMissile[BAmr2_Seg_CValue] to BAmr2_Real[2]
+                                            Else - Actions
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                BAmr2_Boolean[4] Equal to True
+                                            Then - Actions
+                                                Set VariableSet BAmr2_Real[3] = ((BAmr2_Health[BAmr2_Akey] - ((BAmr2_Max[BAmr2_Akey] / (Real(BAmr2_Segment_Count[BAmr2_Akey]))) x (Real((BAmr2_Loop - 1))))) / ((BAmr2_Max[BAmr2_Akey] / (Real(BAmr2_Segment_Count[BAmr2_Akey]))) / BAmr2_SEG_VALUE[10]))
+                                                If (BAmr2_Real[3] Less than BAmr2_SEG_VALUE[9]) then do (Set VariableSet BAmr2_Real[3] = BAmr2_SEG_VALUE[9]) else do (Do nothing)
+                                                Special Effect - Set Alpha of BAmr2_SegmentMissile[BAmr2_Seg_CValue] to (Integer(BAmr2_Real[3]))
+                                            Else - Actions
+                                    Else - Actions
+            Else - Actions
+                Set VariableSet BAmr2_Seg_CValue = BAmr2_Akey
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BAmr2_Boolean[3] Equal to True
+                    Then - Actions
+                        Set VariableSet BAmr2_Real[2] = (BAmr2_Health[BAmr2_Seg_CValue] / (BAmr2_Max[BAmr2_Seg_CValue] / BAmr2_SEG_VALUE[22]))
+                        If (BAmr2_Real[2] Less than BAmr2_SEG_VALUE[8]) then do (Set VariableSet BAmr2_Real[2] = BAmr2_SEG_VALUE[8]) else do (Do nothing)
+                        Special Effect - Set Scale of BAmr2_SegmentMissile[BAmr2_Seg_CValue] to BAmr2_Real[2]
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BAmr2_Boolean[4] Equal to True
+                    Then - Actions
+                        Set VariableSet BAmr2_Real[3] = (BAmr2_Health[BAmr2_Seg_CValue] / (BAmr2_Max[BAmr2_Seg_CValue] / BAmr2_SEG_VALUE[10]))
+                        If (BAmr2_Real[3] Less than BAmr2_SEG_VALUE[9]) then do (Set VariableSet BAmr2_Real[3] = BAmr2_SEG_VALUE[9]) else do (Do nothing)
+                        Special Effect - Set Alpha of BAmr2_SegmentMissile[BAmr2_Seg_CValue] to (Integer(BAmr2_Real[3]))
+                    Else - Actions

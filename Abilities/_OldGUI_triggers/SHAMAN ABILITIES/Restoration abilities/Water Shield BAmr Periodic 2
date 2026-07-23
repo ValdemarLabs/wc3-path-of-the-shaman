@@ -1,0 +1,100 @@
+BAmr Periodic 2
+    Events
+    Conditions
+    Actions
+        Unit Group - Pick every unit in BAmr2_GROUP and do (Actions)
+            Loop - Actions
+                Set VariableSet BAmr2_Picked_Unit = (Picked unit)
+                Set VariableSet BAmr2_Akey = (Custom value of BAmr2_Picked_Unit)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (BAmr2_Picked_Unit is alive) Equal to True
+                        (BAmr2_Picked_Unit has buff BAmr2_BUFF) Equal to True
+                    Then - Actions
+                        Set VariableSet BAmr2_Point[1] = (Position of BAmr2_Picked_Unit)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BAmr2_Segment_Missile_Type[BAmr2_Akey] Equal to Default
+                            Then - Actions
+                                For each (Integer BAmr2_Loop) from 1 to BAmr2_Segment_Count[BAmr2_Akey], do (Actions)
+                                    Loop - Actions
+                                        Set VariableSet BAmr2_Seg_CValue = ((BAmr2_Segment_Count[BAmr2_Akey] x BAmr2_Akey) + (BAmr2_Loop - 1))
+                                        Set VariableSet BAmr2_Point[3] = (Point((Position - X of BAmr2_SegmentMissile[BAmr2_Seg_CValue].), (Position - Y of BAmr2_SegmentMissile[BAmr2_Seg_CValue].)))
+                                        Custom script:   set udg_BAmr2_Spef_Current_Height[udg_BAmr2_Seg_CValue] = GetLocationZ(udg_BAmr2_Point[1])
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                (Distance between BAmr2_Point[1] and BAmr2_Point[3]) Less than (BAmr2_SEG_VALUE[1] + 15.00)
+                                            Then - Actions
+                                                -------- ORBITING --------
+                                                Set VariableSet BAmr2_Current_Rot_Speed[BAmr2_Akey] = (BAmr2_Current_Rot_Speed[BAmr2_Akey] + BAmr2_SEG_VALUE[5])
+                                                Set VariableSet BAmr2_Point[2] = (BAmr2_Point[1] offset by BAmr2_SEG_VALUE[1] towards (((360.00 / (Real(BAmr2_SEGMENT_SPAWNED))) x (Real(BAmr2_Loop))) + BAmr2_Current_Rot_Speed[BAmr2_Akey]) degrees.)
+                                                Special Effect - Set Position of BAmr2_SegmentMissile[BAmr2_Seg_CValue] to x: (X of BAmr2_Point[2]), y: (Y of BAmr2_Point[2]), z: ((BAmr2_Spef_Current_Height[BAmr2_Seg_CValue] + BAmr2_SEG_VALUE[3]) + (Current flying height of BAmr2_Picked_Unit))
+                                                Special Effect - Set Orientation of BAmr2_SegmentMissile[BAmr2_Seg_CValue] to yaw: BAmr2_SEG_VALUE[14], pitch: BAmr2_SEG_VALUE[15], roll: ((((Angle from BAmr2_Point[1] to BAmr2_Point[2]) x 3.14) / 180.00) - BAmr2_SEG_VALUE[16])
+                                            Else - Actions
+                                                -------- TRAVELING --------
+                                                Set VariableSet BAmr2_Point[2] = (BAmr2_Point[3] offset by BAmr2_SEG_VALUE[6] towards (Angle from BAmr2_Point[3] to BAmr2_Point[1]) degrees.)
+                                                Special Effect - Set Position of BAmr2_SegmentMissile[BAmr2_Seg_CValue] to x: (X of BAmr2_Point[2]), y: (Y of BAmr2_Point[2]), z: ((BAmr2_Spef_Current_Height[BAmr2_Seg_CValue] + BAmr2_SEG_VALUE[3]) + (Current flying height of BAmr2_Picked_Unit))
+                                                Special Effect - Set Orientation of BAmr2_SegmentMissile[BAmr2_Seg_CValue] to yaw: BAmr2_SEG_VALUE[17], pitch: BAmr2_SEG_VALUE[18], roll: ((((Angle from BAmr2_Point[3] to BAmr2_Point[2]) x 3.14) / 180.00) + BAmr2_SEG_VALUE[19])
+                                        --------   --------
+                                        Custom script:   call RemoveLocation(udg_BAmr2_Point[2])
+                                        Custom script:   call RemoveLocation(udg_BAmr2_Point[3])
+                            Else - Actions
+                                Set VariableSet BAmr2_Point[3] = (Point((Position - X of BAmr2_SegmentMissile[BAmr2_Akey].), (Position - Y of BAmr2_SegmentMissile[BAmr2_Akey].)))
+                                Custom script:   set udg_BAmr2_Spef_Current_Height[udg_BAmr2_Akey] = GetLocationZ(udg_BAmr2_Point[1])
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (Distance between BAmr2_Point[1] and BAmr2_Point[3]) Less than (BAmr2_SEG_VALUE[1] + 15.00)
+                                    Then - Actions
+                                        -------- ON UNIT --------
+                                        Set VariableSet BAmr2_Current_Rot_Speed[BAmr2_Akey] = (BAmr2_Current_Rot_Speed[BAmr2_Akey] + BAmr2_SEG_VALUE[5])
+                                        Special Effect - Set Position of BAmr2_SegmentMissile[BAmr2_Akey] to x: (X of BAmr2_Point[1]), y: (Y of BAmr2_Point[1]), z: ((BAmr2_Spef_Current_Height[BAmr2_Akey] + BAmr2_SEG_VALUE[20]) + (Current flying height of BAmr2_Picked_Unit))
+                                        Special Effect - Set Orientation of BAmr2_SegmentMissile[BAmr2_Akey] to yaw: BAmr2_SEG_VALUE[14], pitch: BAmr2_SEG_VALUE[15], roll: ((((Facing of BAmr2_Picked_Unit) x 3.14) / 180.00) - BAmr2_SEG_VALUE[21])
+                                    Else - Actions
+                                        -------- TRAVELING --------
+                                        Set VariableSet BAmr2_Point[2] = (BAmr2_Point[3] offset by BAmr2_SEG_VALUE[6] towards (Angle from BAmr2_Point[3] to BAmr2_Point[1]) degrees.)
+                                        Special Effect - Set Position of BAmr2_SegmentMissile[BAmr2_Akey] to x: (X of BAmr2_Point[2]), y: (Y of BAmr2_Point[2]), z: ((BAmr2_Spef_Current_Height[BAmr2_Akey] + BAmr2_SEG_VALUE[20]) + (Current flying height of BAmr2_Picked_Unit))
+                                        Special Effect - Set Orientation of BAmr2_SegmentMissile[BAmr2_Akey] to yaw: BAmr2_SEG_VALUE[17], pitch: BAmr2_SEG_VALUE[18], roll: ((((Angle from BAmr2_Point[3] to BAmr2_Point[2]) x 3.14) / 180.00) + BAmr2_SEG_VALUE[19])
+                                Custom script:   call RemoveLocation(udg_BAmr2_Point[2])
+                                Custom script:   call RemoveLocation(udg_BAmr2_Point[3])
+                                --------   --------
+                        Custom script:   call RemoveLocation(udg_BAmr_Point[1])
+                    Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BAmr2_Segment_Missile_Type[BAmr2_Akey] Equal to Default
+                            Then - Actions
+                                For each (Integer BAmr2_Loop) from 1 to BAmr2_Segment_Count[BAmr2_Akey], do (Actions)
+                                    Loop - Actions
+                                        Set VariableSet BAmr2_Seg_CValue = ((BAmr2_Segment_Count[BAmr2_Akey] x BAmr2_Akey) + (BAmr2_Loop - 1))
+                                        Set VariableSet BAmr2_Health[BAmr2_Akey] = 0.00
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                BAmr2_Segment_Missile_State[BAmr2_Seg_CValue] Equal to Alive
+                                            Then - Actions
+                                                Set VariableSet BAmr2_Point[3] = (Point((Position - X of BAmr2_SegmentMissile[BAmr2_Seg_CValue].), (Position - Y of BAmr2_SegmentMissile[BAmr2_Seg_CValue].)))
+                                                Set VariableSet BAmr2_Segment_Missile_State[BAmr2_Seg_CValue] = Dead
+                                                Special Effect - Destroy BAmr2_SegmentMissile[BAmr2_Seg_CValue]
+                                                Special Effect - Create a special effect at BAmr2_Point[3] using BAmr2_EFFECTPATH[2]
+                                                Special Effect - Destroy (Last created special effect)
+                                                Custom script:   call RemoveLocation(udg_BAmr2_Point[3])
+                                            Else - Actions
+                            Else - Actions
+                                Set VariableSet BAmr2_Seg_CValue = BAmr2_Akey
+                                Set VariableSet BAmr2_Point[3] = (Point((Position - X of BAmr2_SegmentMissile[BAmr2_Seg_CValue].), (Position - Y of BAmr2_SegmentMissile[BAmr2_Seg_CValue].)))
+                                Set VariableSet BAmr2_Segment_Missile_State[BAmr2_Seg_CValue] = Dead
+                                Set VariableSet BAmr2_Health[BAmr2_Seg_CValue] = 0.00
+                                Special Effect - Destroy BAmr2_SegmentMissile[BAmr2_Seg_CValue]
+                                Special Effect - Create a special effect at BAmr2_Point[3] using BAmr2_EFFECTPATH[1]
+                                Special Effect - Set Position of (Last created special effect) to x: (Position - X of BAmr2_SegmentMissile[BAmr2_Seg_CValue].), y: (Position - Y of BAmr2_SegmentMissile[BAmr2_Seg_CValue].), z: (Position - Z of BAmr2_SegmentMissile[BAmr2_Seg_CValue].)
+                                Special Effect - Destroy (Last created special effect)
+                                Custom script:   call RemoveLocation(udg_BAmr2_Point[3])
+                        Unit Group - Remove BAmr2_Picked_Unit from BAmr2_GROUP.
+                        Set VariableSet BAmr2_Instances = (BAmr2_Instances - 1)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BAmr2_Instances Less than 1
+                            Then - Actions
+                                Trigger - Turn off BAmr Periodic 2 <gen>
+                                Trigger - Turn off BAmr Block 2 <gen>
+                            Else - Actions
+                        --------   --------

@@ -1,0 +1,8 @@
+BAmr Cast normally cooldown
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to BAmr_SPELL
+        (Unit-type of (Triggering unit)) Not equal to DummyChainHeal
+    Actions
+        Unit - For Unit (Triggering unit), Set cooldown of ability RESTORATION_AncestralWard , Level: (Level of RESTORATION_AncestralWard  for (Triggering unit)) to 10.00

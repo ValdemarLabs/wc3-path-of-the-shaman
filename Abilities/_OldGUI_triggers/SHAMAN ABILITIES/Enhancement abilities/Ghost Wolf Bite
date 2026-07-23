@@ -1,0 +1,64 @@
+Ghost Wolf Bite
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to ENHANCEMENT_Bite (Ghost Wolf)
+    Actions
+        -------- == ABILITY MODIFIER == --------
+        Set VariableSet Ability_TempLevel = (Level of (Ability being cast) for (Triggering unit))
+        Set VariableSet Ability_TempAmount = (Ability_GhostWolfBite_Base[Ability_TempLevel] + (1.50 x (Real((Strength of (Triggering unit) (Include bonuses))))))
+        -------- ==   == --------
+        Sound - Play Bite <gen> at 100.00% volume, attached to (Triggering unit)
+        -------- I'll create some variables at first to make things easier. --------
+        Set VariableSet BiteCaster = (Triggering unit)
+        Set VariableSet BitePoints[1] = (Position of BiteCaster)
+        Set VariableSet BitePoints[2] = (BitePoints[1] offset by 50.00 towards (Facing of BiteCaster) degrees.)
+        -------- Now let's create a dummy to cast the damage that we has just created. --------
+        Unit - Create 1 DummyBite for (Owner of BiteCaster) at BitePoints[2] facing Default building facing degrees
+        Set VariableSet BiteDummy = (Last created unit)
+        -------- I'm adding expiration time to make it disappear after 0.5 second, and give it an ability. --------
+        Unit - Add a 0.50 second Generic expiration timer to BiteDummy
+        -------- check for Bite Level (1-5) --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Level of ENHANCEMENT_Bite (Ghost Wolf) for BiteCaster) Equal to 1
+            Then - Actions
+                Unit - Add ENHANCEMENT_BiteLevel1  to BiteDummy
+                Ability - Set Ability: (Unit: BiteDummy's Ability with Ability Code: ENHANCEMENT_BiteLevel1 )'s Real Level Field: Damage Per Target ('Efk1') of Level: ((Level of ENHANCEMENT_BiteLevel1  for BiteDummy) - 1) to Ability_TempAmount
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Level of ENHANCEMENT_Bite (Ghost Wolf) for BiteCaster) Equal to 2
+            Then - Actions
+                Unit - Add ENHANCEMENT_BiteLevel2  to BiteDummy
+                Ability - Set Ability: (Unit: BiteDummy's Ability with Ability Code: ENHANCEMENT_BiteLevel2 )'s Real Level Field: Damage Per Target ('Efk1') of Level: ((Level of ENHANCEMENT_BiteLevel2  for BiteDummy) - 1) to Ability_TempAmount
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Level of ENHANCEMENT_Bite (Ghost Wolf) for BiteCaster) Equal to 3
+            Then - Actions
+                Unit - Add ENHANCEMENT_BiteLevel3  to BiteDummy
+                Ability - Set Ability: (Unit: BiteDummy's Ability with Ability Code: ENHANCEMENT_BiteLevel3 )'s Real Level Field: Damage Per Target ('Efk1') of Level: ((Level of ENHANCEMENT_BiteLevel3  for BiteDummy) - 1) to Ability_TempAmount
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Level of ENHANCEMENT_Bite (Ghost Wolf) for BiteCaster) Equal to 4
+            Then - Actions
+                Unit - Add ENHANCEMENT_BiteLevel4  to BiteDummy
+                Ability - Set Ability: (Unit: BiteDummy's Ability with Ability Code: ENHANCEMENT_BiteLevel4 )'s Real Level Field: Damage Per Target ('Efk1') of Level: ((Level of ENHANCEMENT_BiteLevel4  for BiteDummy) - 1) to Ability_TempAmount
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Level of ENHANCEMENT_Bite (Ghost Wolf) for BiteCaster) Equal to 5
+            Then - Actions
+                Unit - Add ENHANCEMENT_BiteLevel5  to BiteDummy
+                Ability - Set Ability: (Unit: BiteDummy's Ability with Ability Code: ENHANCEMENT_BiteLevel5 )'s Real Level Field: Damage Per Target ('Efk1') of Level: ((Level of ENHANCEMENT_BiteLevel5  for BiteDummy) - 1) to Ability_TempAmount
+            Else - Actions
+        -------- It's time to cast them! So let's add this action. --------
+        Unit - Order BiteDummy to Night Elf Warden - Fan Of Knives.
+        -------- Time to remove leaks in order to prevent ingame lags. --------
+        Custom script:   call RemoveLocation(udg_BitePoints[1])
+        Custom script:   call RemoveLocation(udg_BitePoints[2])
+        -------- You're done! --------
+        -------- Q: Why do you use Warden - Fan of Knives ability to order dummy cast spells? --------
+        -------- A: Because we the melee damage spell was based from Fan of Knives. --------

@@ -1,0 +1,45 @@
+Lightning Shield Cast
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to LS0_Ability
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                LS1_Index_Size Equal to 0
+            Then - Actions
+                Trigger - Turn on Lightning Shield Loop <gen>
+            Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        LS0_Damage_Stackable Equal to False
+                    Then - Actions
+                        Set VariableSet lstmp_filter = (Target unit of ability being cast)
+                        For each (Integer lstmp_int) from 1 to LS1_Index_Size, do (Actions)
+                            Loop - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        LS1_Target[LS1_Index_Array[lstmp_int]] Equal to lstmp_filter
+                                    Then - Actions
+                                        Set VariableSet LS1_Duration[LS1_Index_Array[lstmp_int]] = 0.00
+                                        Custom script:   exitwhen true
+                                    Else - Actions
+                    Else - Actions
+        Set VariableSet LS1_Index_Size = (LS1_Index_Size + 1)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                LS1_Index_Size Greater than LS1_Index_Max
+            Then - Actions
+                Set VariableSet LS1_Index_Array[LS1_Index_Size] = LS1_Index_Size
+                Set VariableSet LS1_Index_Max = LS1_Index_Size
+            Else - Actions
+        Set VariableSet LS1_Current = LS1_Index_Array[LS1_Index_Size]
+        Set VariableSet LS1_Caster[LS1_Current] = (Triggering unit)
+        Set VariableSet LS1_Target[LS1_Current] = (Target unit of ability being cast)
+        Set VariableSet lstmp_int = (Level of LS0_Ability for LS1_Caster[LS1_Current])
+        Set VariableSet LS1_AoE[LS1_Current] = ((LS0_AoE_Increment x (Real(lstmp_int))) + LS0_AoE_Base)
+        Set VariableSet LS1_Damage[LS1_Current] = (((LS0_Damage_Increment x (Real(lstmp_int))) + LS0_Damage_Base) x LS0_PeriodicTimer)
+        Set VariableSet LS1_Duration[LS1_Current] = ((LS0_Duration_Increment x (Real(lstmp_int))) + LS0_Duration_Base)
+        Set VariableSet LS1_DamageDelay[LS1_Current] = LS0_Damage_Delay
+        Special Effect - Create a special effect attached to the LS0_Attach_Target of LS1_Target[LS1_Current] using LS0_SFX_Shield
+        Set VariableSet LS1_SFX[LS1_Current] = (Last created special effect)

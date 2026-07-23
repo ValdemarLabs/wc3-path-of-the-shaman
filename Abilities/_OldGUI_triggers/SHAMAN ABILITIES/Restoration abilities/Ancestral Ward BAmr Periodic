@@ -1,0 +1,100 @@
+BAmr Periodic
+    Events
+    Conditions
+    Actions
+        Unit Group - Pick every unit in BAmr_GROUP and do (Actions)
+            Loop - Actions
+                Set VariableSet BAmr_Picked_Unit = (Picked unit)
+                Set VariableSet BAmr_Akey = (Custom value of BAmr_Picked_Unit)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (BAmr_Picked_Unit is alive) Equal to True
+                        (BAmr_Picked_Unit has buff BAmr_BUFF) Equal to True
+                    Then - Actions
+                        Set VariableSet BAmr_Point[1] = (Position of BAmr_Picked_Unit)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BAmr_Segment_Missile_Type[BAmr_Akey] Equal to Default
+                            Then - Actions
+                                For each (Integer BAmr_Loop) from 1 to BAmr_Segment_Count[BAmr_Akey], do (Actions)
+                                    Loop - Actions
+                                        Set VariableSet BAmr_Seg_CValue = ((BAmr_Segment_Count[BAmr_Akey] x BAmr_Akey) + (BAmr_Loop - 1))
+                                        Set VariableSet BAmr_Point[3] = (Point((Position - X of BAmr_SegmentMissile[BAmr_Seg_CValue].), (Position - Y of BAmr_SegmentMissile[BAmr_Seg_CValue].)))
+                                        Custom script:   set udg_BAmr_Spef_Current_Height[udg_BAmr_Seg_CValue] = GetLocationZ(udg_BAmr_Point[1])
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                (Distance between BAmr_Point[1] and BAmr_Point[3]) Less than (BAmr_SEG_VALUE[1] + 15.00)
+                                            Then - Actions
+                                                -------- ORBITING --------
+                                                Set VariableSet BAmr_Current_Rot_Speed[BAmr_Akey] = (BAmr_Current_Rot_Speed[BAmr_Akey] + BAmr_SEG_VALUE[5])
+                                                Set VariableSet BAmr_Point[2] = (BAmr_Point[1] offset by BAmr_SEG_VALUE[1] towards (((360.00 / (Real(BAmr_SEGMENT_SPAWNED))) x (Real(BAmr_Loop))) + BAmr_Current_Rot_Speed[BAmr_Akey]) degrees.)
+                                                Special Effect - Set Position of BAmr_SegmentMissile[BAmr_Seg_CValue] to x: (X of BAmr_Point[2]), y: (Y of BAmr_Point[2]), z: ((BAmr_Spef_Current_Height[BAmr_Seg_CValue] + BAmr_SEG_VALUE[3]) + (Current flying height of BAmr_Picked_Unit))
+                                                Special Effect - Set Orientation of BAmr_SegmentMissile[BAmr_Seg_CValue] to yaw: BAmr_SEG_VALUE[14], pitch: BAmr_SEG_VALUE[15], roll: ((((Angle from BAmr_Point[1] to BAmr_Point[2]) x 3.14) / 180.00) - BAmr_SEG_VALUE[16])
+                                            Else - Actions
+                                                -------- TRAVELING --------
+                                                Set VariableSet BAmr_Point[2] = (BAmr_Point[3] offset by BAmr_SEG_VALUE[6] towards (Angle from BAmr_Point[3] to BAmr_Point[1]) degrees.)
+                                                Special Effect - Set Position of BAmr_SegmentMissile[BAmr_Seg_CValue] to x: (X of BAmr_Point[2]), y: (Y of BAmr_Point[2]), z: ((BAmr_Spef_Current_Height[BAmr_Seg_CValue] + BAmr_SEG_VALUE[3]) + (Current flying height of BAmr_Picked_Unit))
+                                                Special Effect - Set Orientation of BAmr_SegmentMissile[BAmr_Seg_CValue] to yaw: BAmr_SEG_VALUE[17], pitch: BAmr_SEG_VALUE[18], roll: ((((Angle from BAmr_Point[3] to BAmr_Point[2]) x 3.14) / 180.00) + BAmr_SEG_VALUE[19])
+                                        --------   --------
+                                        Custom script:   call RemoveLocation(udg_BAmr_Point[2])
+                                        Custom script:   call RemoveLocation(udg_BAmr_Point[3])
+                            Else - Actions
+                                Set VariableSet BAmr_Point[3] = (Point((Position - X of BAmr_SegmentMissile[BAmr_Akey].), (Position - Y of BAmr_SegmentMissile[BAmr_Akey].)))
+                                Custom script:   set udg_BAmr_Spef_Current_Height[udg_BAmr_Akey] = GetLocationZ(udg_BAmr_Point[1])
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (Distance between BAmr_Point[1] and BAmr_Point[3]) Less than (BAmr_SEG_VALUE[1] + 15.00)
+                                    Then - Actions
+                                        -------- ON UNIT --------
+                                        Set VariableSet BAmr_Current_Rot_Speed[BAmr_Akey] = (BAmr_Current_Rot_Speed[BAmr_Akey] + BAmr_SEG_VALUE[5])
+                                        Special Effect - Set Position of BAmr_SegmentMissile[BAmr_Akey] to x: (X of BAmr_Point[1]), y: (Y of BAmr_Point[1]), z: ((BAmr_Spef_Current_Height[BAmr_Akey] + BAmr_SEG_VALUE[20]) + (Current flying height of BAmr_Picked_Unit))
+                                        Special Effect - Set Orientation of BAmr_SegmentMissile[BAmr_Akey] to yaw: BAmr_SEG_VALUE[14], pitch: BAmr_SEG_VALUE[15], roll: ((((Facing of BAmr_Picked_Unit) x 3.14) / 180.00) - BAmr_SEG_VALUE[21])
+                                    Else - Actions
+                                        -------- TRAVELING --------
+                                        Set VariableSet BAmr_Point[2] = (BAmr_Point[3] offset by BAmr_SEG_VALUE[6] towards (Angle from BAmr_Point[3] to BAmr_Point[1]) degrees.)
+                                        Special Effect - Set Position of BAmr_SegmentMissile[BAmr_Akey] to x: (X of BAmr_Point[2]), y: (Y of BAmr_Point[2]), z: ((BAmr_Spef_Current_Height[BAmr_Akey] + BAmr_SEG_VALUE[20]) + (Current flying height of BAmr_Picked_Unit))
+                                        Special Effect - Set Orientation of BAmr_SegmentMissile[BAmr_Akey] to yaw: BAmr_SEG_VALUE[17], pitch: BAmr_SEG_VALUE[18], roll: ((((Angle from BAmr_Point[3] to BAmr_Point[2]) x 3.14) / 180.00) + BAmr_SEG_VALUE[19])
+                                Custom script:   call RemoveLocation(udg_BAmr_Point[2])
+                                Custom script:   call RemoveLocation(udg_BAmr_Point[3])
+                                --------   --------
+                        Custom script:   call RemoveLocation(udg_BAmr_Point[1])
+                    Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BAmr_Segment_Missile_Type[BAmr_Akey] Equal to Default
+                            Then - Actions
+                                For each (Integer BAmr_Loop) from 1 to BAmr_Segment_Count[BAmr_Akey], do (Actions)
+                                    Loop - Actions
+                                        Set VariableSet BAmr_Seg_CValue = ((BAmr_Segment_Count[BAmr_Akey] x BAmr_Akey) + (BAmr_Loop - 1))
+                                        Set VariableSet BAmr_Health[BAmr_Akey] = 0.00
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                BAmr_Segment_Missile_State[BAmr_Seg_CValue] Equal to Alive
+                                            Then - Actions
+                                                Set VariableSet BAmr_Point[3] = (Point((Position - X of BAmr_SegmentMissile[BAmr_Seg_CValue].), (Position - Y of BAmr_SegmentMissile[BAmr_Seg_CValue].)))
+                                                Set VariableSet BAmr_Segment_Missile_State[BAmr_Seg_CValue] = Dead
+                                                Special Effect - Destroy BAmr_SegmentMissile[BAmr_Seg_CValue]
+                                                Special Effect - Create a special effect at BAmr_Point[3] using BAmr_EFFECTPATH[2]
+                                                Special Effect - Destroy (Last created special effect)
+                                                Custom script:   call RemoveLocation(udg_BAmr_Point[3])
+                                            Else - Actions
+                            Else - Actions
+                                Set VariableSet BAmr_Seg_CValue = BAmr_Akey
+                                Set VariableSet BAmr_Point[3] = (Point((Position - X of BAmr_SegmentMissile[BAmr_Seg_CValue].), (Position - Y of BAmr_SegmentMissile[BAmr_Seg_CValue].)))
+                                Set VariableSet BAmr_Segment_Missile_State[BAmr_Seg_CValue] = Dead
+                                Set VariableSet BAmr_Health[BAmr_Seg_CValue] = 0.00
+                                Special Effect - Destroy BAmr_SegmentMissile[BAmr_Seg_CValue]
+                                Special Effect - Create a special effect at BAmr_Point[3] using BAmr_EFFECTPATH[1]
+                                Special Effect - Set Position of (Last created special effect) to x: (Position - X of BAmr_SegmentMissile[BAmr_Seg_CValue].), y: (Position - Y of BAmr_SegmentMissile[BAmr_Seg_CValue].), z: (Position - Z of BAmr_SegmentMissile[BAmr_Seg_CValue].)
+                                Special Effect - Destroy (Last created special effect)
+                                Custom script:   call RemoveLocation(udg_BAmr_Point[3])
+                        Unit Group - Remove BAmr_Picked_Unit from BAmr_GROUP.
+                        Set VariableSet BAmr_Instances = (BAmr_Instances - 1)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BAmr_Instances Less than 1
+                            Then - Actions
+                                Trigger - Turn off BAmr Periodic <gen>
+                                Trigger - Turn off BAmr Block <gen>
+                            Else - Actions
+                        --------   --------

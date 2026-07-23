@@ -1,0 +1,11 @@
+Lightning Bolt
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to ELEMENTAL_LightningBolt 
+    Actions
+        -------- == ABILITY MODIFIER == --------
+        Set VariableSet Ability_TempLevel = (Level of (Ability being cast) for (Triggering unit))
+        Set VariableSet Ability_TempAmount = (Ability_LightningBolt_Base[Ability_TempLevel] + (1.50 x (Real((Intelligence of (Triggering unit) (Include bonuses))))))
+        -------- ==   == --------
+        Ability - Set Ability: (Unit: (Triggering unit)'s Ability with Ability Code: ELEMENTAL_LightningBolt )'s Real Level Field: Damage ('Htb1') of Level: ((Level of ELEMENTAL_LightningBolt  for (Triggering unit)) - 1) to Ability_TempAmount

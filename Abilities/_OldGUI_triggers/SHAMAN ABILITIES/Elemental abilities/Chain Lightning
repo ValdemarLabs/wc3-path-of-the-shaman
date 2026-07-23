@@ -1,0 +1,11 @@
+Chain Lightning
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to ELEMENTAL_ChainLightning 
+    Actions
+        -------- == ABILITY MODIFIER == --------
+        Set VariableSet Ability_TempLevel = (Level of (Ability being cast) for (Triggering unit))
+        Set VariableSet Ability_TempAmount = (Ability_ChainLightning_Base[Ability_TempLevel] + (1.75 x (Real((Intelligence of (Triggering unit) (Include bonuses))))))
+        -------- ==   == --------
+        Ability - Set Ability: (Unit: (Triggering unit)'s Ability with Ability Code: ELEMENTAL_ChainLightning )'s Real Level Field: Damage per Target ('Ocl1') of Level: ((Level of ELEMENTAL_ChainLightning  for (Triggering unit)) - 1) to Ability_TempAmount

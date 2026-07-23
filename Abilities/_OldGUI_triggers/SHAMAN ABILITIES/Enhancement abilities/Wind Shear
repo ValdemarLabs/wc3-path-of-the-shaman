@@ -1,0 +1,18 @@
+Wind Shear
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to ENHANCEMENT_WindShear 
+    Actions
+        -------- ================================== --------
+        Set VariableSet WindShear_Caster = (Triggering unit)
+        Set VariableSet WindShear_Target = (Target unit of ability being cast)
+        Set VariableSet WindShear_DummyPoint = (Position of WindShear_Target)
+        -------- ================================== --------
+        Unit - Order WindShear_Target to Stop.
+        -------- Create Dummy Silencer --------
+        Unit - Create 1 DummyWindShear for (Owner of WindShear_Caster) at BL_Point facing Default building facing degrees
+        Set VariableSet WindShear_Dummy = (Last created unit)
+        Unit - Add a 2.00 second Generic expiration timer to (Last created unit)
+        Unit - Order WindShear_Dummy to Neutral Dark Ranger - Silence WindShear_DummyPoint
+        -------- ================================== --------

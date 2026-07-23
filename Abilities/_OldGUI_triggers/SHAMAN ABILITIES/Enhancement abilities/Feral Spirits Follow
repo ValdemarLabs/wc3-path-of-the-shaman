@@ -1,0 +1,35 @@
+Feral Spirits Follow
+    Events
+        Time - Every 2.00 seconds of game time
+    Conditions
+    Actions
+        Unit Group - Pick every unit in FeralSpirits_WolfGroup and do (Actions)
+            Loop - Actions
+                Set VariableSet FeralSpirits_TempWolf = (Picked unit)
+                Set VariableSet FeralSpirits_WolfCV = (Custom value of FeralSpirits_TempWolf)
+                Set VariableSet FeralSpirits_TempSummoner = FeralSpirits_Summoner[FeralSpirits_WolfCV]
+                Set VariableSet FeralSpirits_TempPoint = (Position of FeralSpirits_TempSummoner)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (FeralSpirits_TempSummoner is alive) Equal to True
+                        (FeralSpirits_TempWolf is alive) Equal to True
+                        (Distance between (Position of FeralSpirits_TempWolf) and FeralSpirits_TempPoint) Greater than 600.00
+                    Then - Actions
+                        Unit - Order FeralSpirits_TempWolf to Right-Click FeralSpirits_TempSummoner
+                    Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Current order of FeralSpirits_TempSummoner) Equal to (Order(attack))
+                                (Current order of FeralSpirits_TempWolf) Not equal to (Order(smart))
+                            Then - Actions
+                                Unit - Order FeralSpirits_TempWolf to Right-Click FeralSpirits_TempSummoner
+                            Else - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (Current order of FeralSpirits_TempWolf) Not equal to (Order(smart))
+                                    Then - Actions
+                                        Unit - Order FeralSpirits_TempWolf to Right-Click FeralSpirits_TempSummoner
+                                    Else - Actions
+                -------- Remove LEAKS --------
+                Custom script:   call RemoveLocation(udg_FeralSpirits_TempPoint)
+        -------- ===================================== --------

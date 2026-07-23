@@ -1,0 +1,142 @@
+BAmr Cast
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to BAmr_SPELL
+    Actions
+        Set VariableSet BAmr_Caster = (Triggering unit)
+        Set VariableSet BAmr_Target = (Target unit of ability being cast)
+        Set VariableSet BAmr_Point[1] = (Position of BAmr_Caster)
+        Set VariableSet BAmr_Point[2] = (Position of BAmr_Target)
+        Set VariableSet BAmr_Akey = (Custom value of BAmr_Target)
+        Set VariableSet BAmr_ATTRIBUTE[1] = ((Real((Strength of BAmr_Caster (Include bonuses)))) x BAmr_ATT_BONUS[1])
+        Set VariableSet BAmr_ATTRIBUTE[2] = ((Real((Agility of BAmr_Caster (Include bonuses)))) x BAmr_ATT_BONUS[2])
+        -------- MODIFICATION: --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of BAmr_Caster) Equal to DummyChainHeal
+            Then - Actions
+                -------- if dummy unit is casting --------
+                Set VariableSet BAmr_ATTRIBUTE[3] = ((Real(chainheal_intelligence[ancestralward_temp])) x BAmr_ATT_BONUS[3])
+            Else - Actions
+                -------- if normal casting (DEFAULT) --------
+                Set VariableSet BAmr_ATTRIBUTE[3] = ((Real((Intelligence of BAmr_Caster (Include bonuses)))) x BAmr_ATT_BONUS[3])
+        Set VariableSet BAmr_Real[0] = ((BAmr_BASE_HP + BAmr_LVL_HP_BONUS[(Level of BAmr_SPELL for BAmr_Caster)]) + (BAmr_ATTRIBUTE[1] + (BAmr_ATTRIBUTE[2] + BAmr_ATTRIBUTE[3])))
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BAmr_Boolean[0] Equal to False
+            Then - Actions
+                Set VariableSet BAmr_Health[BAmr_Akey] = BAmr_Real[0]
+            Else - Actions
+                Set VariableSet BAmr_Health[BAmr_Akey] = (BAmr_Health[BAmr_Akey] + BAmr_Real[0])
+        Set VariableSet BAmr_Max[BAmr_Akey] = BAmr_Health[BAmr_Akey]
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BAmr_Boolean[5] Equal to False
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BAmr_Segment_Missile_Type[BAmr_Akey] Not equal to Default
+                    Then - Actions
+                        Set VariableSet BAmr_Seg_CValue = BAmr_Akey
+                        Set VariableSet BAmr_Point[3] = (Point((Position - X of BAmr_SegmentMissile[BAmr_Seg_CValue].), (Position - Y of BAmr_SegmentMissile[BAmr_Seg_CValue].)))
+                        Set VariableSet BAmr_Segment_Missile_State[BAmr_Seg_CValue] = Dead
+                        Special Effect - Destroy BAmr_SegmentMissile[BAmr_Seg_CValue]
+                        Special Effect - Create a special effect at BAmr_Point[3] using BAmr_EFFECTPATH[1]
+                        Special Effect - Set Position of (Last created special effect) to x: (Position - X of BAmr_SegmentMissile[BAmr_Seg_CValue].), y: (Position - Y of BAmr_SegmentMissile[BAmr_Seg_CValue].), z: (Position - Z of BAmr_SegmentMissile[BAmr_Seg_CValue].)
+                        Special Effect - Destroy (Last created special effect)
+                        Custom script:   call RemoveLocation(udg_BAmr_Point[3])
+                    Else - Actions
+                Set VariableSet BAmr_Segment_Missile_Type[BAmr_Akey] = Default
+                Set VariableSet BAmr_Segment_Count[BAmr_Akey] = BAmr_SEGMENT_SPAWNED
+                Set VariableSet BAmr_Total[BAmr_Akey] = 0.00
+                For each (Integer BAmr_Loop) from 1 to BAmr_Segment_Count[BAmr_Akey], do (Actions)
+                    Loop - Actions
+                        Set VariableSet BAmr_Seg_CValue = ((BAmr_Segment_Count[BAmr_Akey] x BAmr_Akey) + (BAmr_Loop - 1))
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BAmr_Segment_Missile_State[BAmr_Seg_CValue] Not equal to Alive
+                            Then - Actions
+                                Set VariableSet BAmr_Point[3] = (BAmr_Point[BAmr_SEGMENT_SPAWN] offset by BAmr_SEG_VALUE[2] towards ((BAmr_SEG_VALUE[4] / (Real(BAmr_Segment_Count[BAmr_Akey]))) x (Real(BAmr_Loop))) degrees.)
+                                Special Effect - Create a special effect at BAmr_Point[3] using BAmr_EFFECTPATH[0]
+                                Set VariableSet BAmr_SegmentMissile[BAmr_Seg_CValue] = (Last created special effect)
+                                Special Effect - Set Scale of BAmr_SegmentMissile[BAmr_Seg_CValue] to BAmr_SEG_VALUE[7]
+                                Special Effect - Set Color of BAmr_SegmentMissile[BAmr_Seg_CValue] to r: (Integer(BAmr_SEG_VALUE[11])), g: (Integer(BAmr_SEG_VALUE[12])), b: (Integer(BAmr_SEG_VALUE[13]))
+                                Set VariableSet BAmr_Segment_Missile_State[BAmr_Seg_CValue] = Alive
+                            Else - Actions
+                                Set VariableSet BAmr_Point[3] = (Point((Position - X of BAmr_SegmentMissile[BAmr_Seg_CValue].), (Position - Y of BAmr_SegmentMissile[BAmr_Seg_CValue].)))
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BAmr_Boolean[3] Equal to True
+                            Then - Actions
+                                Special Effect - Set Scale of BAmr_SegmentMissile[BAmr_Seg_CValue] to BAmr_SEG_VALUE[7]
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BAmr_Boolean[4] Equal to True
+                            Then - Actions
+                                Special Effect - Set Alpha of BAmr_SegmentMissile[BAmr_Seg_CValue] to (Integer(BAmr_SEG_VALUE[10]))
+                            Else - Actions
+                        Special Effect - Create a special effect at BAmr_Point[3] using BAmr_EFFECTPATH[1]
+                        Special Effect - Destroy (Last created special effect)
+                        Custom script:   call RemoveLocation(udg_BAmr_Point[3])
+            Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BAmr_Segment_Missile_Type[BAmr_Akey] Equal to Default
+                    Then - Actions
+                        For each (Integer BAmr_Loop) from 1 to BAmr_Segment_Count[BAmr_Akey], do (Actions)
+                            Loop - Actions
+                                Set VariableSet BAmr_Seg_CValue = ((BAmr_Segment_Count[BAmr_Akey] x BAmr_Akey) + (BAmr_Loop - 1))
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        BAmr_Segment_Missile_State[BAmr_Seg_CValue] Equal to Alive
+                                    Then - Actions
+                                        Set VariableSet BAmr_Point[3] = (Point((Position - X of BAmr_SegmentMissile[BAmr_Seg_CValue].), (Position - Y of BAmr_SegmentMissile[BAmr_Seg_CValue].)))
+                                        Set VariableSet BAmr_Segment_Missile_State[BAmr_Seg_CValue] = Dead
+                                        Special Effect - Destroy BAmr_SegmentMissile[BAmr_Seg_CValue]
+                                        Special Effect - Create a special effect at BAmr_Point[3] using BAmr_EFFECTPATH[2]
+                                        Special Effect - Destroy (Last created special effect)
+                                        Custom script:   call RemoveLocation(udg_BAmr_Point[3])
+                                    Else - Actions
+                    Else - Actions
+                Set VariableSet BAmr_Seg_CValue = BAmr_Akey
+                Set VariableSet BAmr_Segment_Missile_Type[BAmr_Seg_CValue] = SEM
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BAmr_Segment_Missile_State[BAmr_Seg_CValue] Not equal to Alive
+                    Then - Actions
+                        Set VariableSet BAmr_Point[3] = BAmr_Point[1]
+                        Special Effect - Create a special effect at BAmr_Point[3] using BAmr_EFFECTPATH[4]
+                        Set VariableSet BAmr_SegmentMissile[BAmr_Seg_CValue] = (Last created special effect)
+                        Special Effect - Set Scale of BAmr_SegmentMissile[BAmr_Seg_CValue] to BAmr_SEG_VALUE[22]
+                        Special Effect - Set Color of BAmr_SegmentMissile[BAmr_Seg_CValue] to r: (Integer(BAmr_SEG_VALUE[11])), g: (Integer(BAmr_SEG_VALUE[12])), b: (Integer(BAmr_SEG_VALUE[13]))
+                        Set VariableSet BAmr_Segment_Missile_State[BAmr_Seg_CValue] = Alive
+                    Else - Actions
+                        Set VariableSet BAmr_Point[3] = (Point((Position - X of BAmr_SegmentMissile[BAmr_Seg_CValue].), (Position - Y of BAmr_SegmentMissile[BAmr_Seg_CValue].)))
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BAmr_Boolean[3] Equal to True
+                    Then - Actions
+                        Special Effect - Set Scale of BAmr_SegmentMissile[BAmr_Seg_CValue] to BAmr_SEG_VALUE[22]
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BAmr_Boolean[4] Equal to True
+                    Then - Actions
+                        Special Effect - Set Alpha of BAmr_SegmentMissile[BAmr_Seg_CValue] to (Integer(BAmr_SEG_VALUE[10]))
+                    Else - Actions
+                Special Effect - Create a special effect at BAmr_Point[3] using BAmr_EFFECTPATH[1]
+                Special Effect - Destroy (Last created special effect)
+                Custom script:   call RemoveLocation(udg_BAmr_Point[3])
+        Custom script:   call RemoveLocation(udg_BAmr_Point[1])
+        Custom script:   call RemoveLocation(udg_BAmr_Point[2])
+        Unit Group - Add BAmr_Target to BAmr_GROUP
+        Set VariableSet BAmr_Instances = (BAmr_Instances + 1)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BAmr_Instances Equal to 1
+            Then - Actions
+                Trigger - Turn on BAmr Periodic <gen>
+                Trigger - Turn on BAmr Block <gen>
+            Else - Actions

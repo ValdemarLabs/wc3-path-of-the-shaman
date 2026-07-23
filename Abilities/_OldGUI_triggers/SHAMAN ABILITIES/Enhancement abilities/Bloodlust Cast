@@ -1,0 +1,157 @@
+Bloodlust Cast
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to ENHANCEMENT_Bloodlust 
+    Actions
+        -------- ================================================ --------
+        Set VariableSet BL_Caster = (Triggering unit)
+        Set VariableSet BL_Point = (Position of (Triggering unit))
+        Set VariableSet BL_AbilityLevel = (Level of (Ability being cast) for BL_Caster)
+        -------- ================================================ --------
+        Animation - Play BL_Caster's spell animation
+        Animation - Queue BL_Caster's stand animation
+        -------- ================================================ --------
+        -------- Detect units within range --------
+        Set VariableSet BL_TempGroup = (Units within 600.00 of BL_Point matching (((Matching unit) belongs to an ally of (Owner of BL_Caster).) Equal to True).)
+        -------- Add also the caster to group --------
+        Unit Group - Add BL_Caster to BL_TempGroup
+        -------- ================================================ --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BL_AbilityLevel Equal to 1
+            Then - Actions
+                -------- == LEVEL 1 == --------
+                Unit Group - Pick every unit in BL_TempGroup and do (Actions)
+                    Loop - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                ((Picked unit) has buff Bloodlust (Level 1)) Equal to False
+                            Then - Actions
+                                -------- Create dummy caster unit --------
+                                Unit - Create 1 DummyBloodlust for (Owner of BL_Caster) at BL_Point facing Default building facing degrees
+                                Set VariableSet BL_DummyUnit = (Last created unit)
+                                Unit - Add a 3.00 second Generic expiration timer to (Last created unit)
+                                Unit - Set level of ENHANCEMENT_BloodlustDummyCast  for BL_DummyUnit to BL_AbilityLevel
+                                Unit - Order BL_DummyUnit to Orc Shaman - Bloodlust (Picked unit)
+                            Else - Actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BL_AbilityLevel Equal to 2
+            Then - Actions
+                -------- == LEVEL 2 == --------
+                Unit Group - Pick every unit in BL_TempGroup and do (Actions)
+                    Loop - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                ((Picked unit) has buff Bloodlust (Level 2)) Equal to False
+                            Then - Actions
+                                -------- Create dummy caster unit --------
+                                Unit - Create 1 DummyBloodlust for (Owner of BL_Caster) at BL_Point facing Default building facing degrees
+                                Set VariableSet BL_DummyUnit = (Last created unit)
+                                Unit - Add a 3.00 second Generic expiration timer to (Last created unit)
+                                Unit - Set level of ENHANCEMENT_BloodlustDummyCast  for BL_DummyUnit to BL_AbilityLevel
+                                Unit - Order BL_DummyUnit to Orc Shaman - Bloodlust (Picked unit)
+                            Else - Actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BL_AbilityLevel Equal to 3
+            Then - Actions
+                -------- == LEVEL 3 == --------
+                Unit Group - Pick every unit in BL_TempGroup and do (Actions)
+                    Loop - Actions
+                        Set VariableSet Temp_Integer = (Custom value of (Picked unit))
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                ((Picked unit) has buff Bloodlust (Level 3)) Equal to False
+                            Then - Actions
+                                -------- Create dummy caster unit --------
+                                Unit - Create 1 DummyBloodlust for (Owner of BL_Caster) at BL_Point facing Default building facing degrees
+                                Set VariableSet BL_DummyUnit = (Last created unit)
+                                Unit - Add a 3.00 second Generic expiration timer to (Last created unit)
+                                Unit - Set level of ENHANCEMENT_BloodlustDummyCast  for BL_DummyUnit to BL_AbilityLevel
+                                Unit - Order BL_DummyUnit to Orc Shaman - Bloodlust (Picked unit)
+                                -------- CRIT --------
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        BL_AppliedLevel[Temp_Integer] Not equal to 3
+                                    Then - Actions
+                                        Unit Group - Add (Picked unit) to BL_CritGroup
+                                        Set VariableSet BL_Crit[Temp_Integer] = 5
+                                        Set VariableSet BL_AppliedLevel[Temp_Integer] = BL_AbilityLevel
+                                        Set VariableSet Stats_Crit[Temp_Integer] = (Stats_Crit[Temp_Integer] + BL_Crit[Temp_Integer])
+                                        -------- TURN ON Bloodlust Crit Loop --------
+                                        Trigger - Turn on Bloodlust Crit Loop <gen>
+                                    Else - Actions
+                            Else - Actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BL_AbilityLevel Equal to 4
+            Then - Actions
+                -------- == LEVEL 4 == --------
+                Unit Group - Pick every unit in BL_TempGroup and do (Actions)
+                    Loop - Actions
+                        Set VariableSet Temp_Integer = (Custom value of (Picked unit))
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                ((Picked unit) has buff Bloodlust (Level 4)) Equal to False
+                            Then - Actions
+                                -------- Create dummy caster unit --------
+                                Unit - Create 1 DummyBloodlust for (Owner of BL_Caster) at BL_Point facing Default building facing degrees
+                                Set VariableSet BL_DummyUnit = (Last created unit)
+                                Unit - Add a 3.00 second Generic expiration timer to (Last created unit)
+                                Unit - Set level of ENHANCEMENT_BloodlustDummyCast  for BL_DummyUnit to BL_AbilityLevel
+                                Unit - Order BL_DummyUnit to Orc Shaman - Bloodlust (Picked unit)
+                                -------- CRIT --------
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        BL_AppliedLevel[Temp_Integer] Not equal to 4
+                                    Then - Actions
+                                        Unit Group - Add (Picked unit) to BL_CritGroup
+                                        Set VariableSet BL_Crit[Temp_Integer] = 10
+                                        Set VariableSet BL_AppliedLevel[Temp_Integer] = BL_AbilityLevel
+                                        Set VariableSet Stats_Crit[Temp_Integer] = (Stats_Crit[Temp_Integer] + BL_Crit[Temp_Integer])
+                                        -------- TURN ON Bloodlust Crit Loop --------
+                                        Trigger - Turn on Bloodlust Crit Loop <gen>
+                                    Else - Actions
+                            Else - Actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BL_AbilityLevel Equal to 5
+            Then - Actions
+                -------- == LEVEL 5 == --------
+                Unit Group - Pick every unit in BL_TempGroup and do (Actions)
+                    Loop - Actions
+                        Set VariableSet Temp_Integer = (Custom value of (Picked unit))
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                ((Picked unit) has buff Bloodlust (Level 5)) Equal to False
+                            Then - Actions
+                                -------- Create dummy caster unit --------
+                                Unit - Create 1 DummyBloodlust for (Owner of BL_Caster) at BL_Point facing Default building facing degrees
+                                Set VariableSet BL_DummyUnit = (Last created unit)
+                                Unit - Add a 3.00 second Generic expiration timer to (Last created unit)
+                                Unit - Set level of ENHANCEMENT_BloodlustDummyCast  for BL_DummyUnit to BL_AbilityLevel
+                                Unit - Order BL_DummyUnit to Orc Shaman - Bloodlust (Picked unit)
+                                -------- CRIT --------
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        BL_AppliedLevel[Temp_Integer] Not equal to 5
+                                    Then - Actions
+                                        Unit Group - Add (Picked unit) to BL_CritGroup
+                                        Set VariableSet BL_Crit[Temp_Integer] = 15
+                                        Set VariableSet BL_AppliedLevel[Temp_Integer] = BL_AbilityLevel
+                                        Set VariableSet Stats_Crit[Temp_Integer] = (Stats_Crit[Temp_Integer] + BL_Crit[Temp_Integer])
+                                        -------- TURN ON Bloodlust Crit Loop --------
+                                        Trigger - Turn on Bloodlust Crit Loop <gen>
+                                    Else - Actions
+                            Else - Actions
+            Else - Actions
+        -------- ================================================ --------
+        -------- Clean leaks --------
+        Custom script:   call RemoveLocation(udg_BL_Point)
+        Custom script:   call DestroyGroup(udg_BL_TempGroup)

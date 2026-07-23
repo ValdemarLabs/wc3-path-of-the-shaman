@@ -1,0 +1,50 @@
+Lightning Shield Setup
+    Events
+        Map initialization
+    Conditions
+    Actions
+        -------- You can remove all these comments if you want to. --------
+        -------- ---------------------------------------------------------- --------
+        -------- IDs --------
+        -------- The spell itself, the one a caster will have on their command card. --------
+        Set VariableSet LS0_Ability = ELEMENTAL_LightningShield 
+        -------- AbilityBuff is actually another ability based on Slow Tornado ability. It's just there in order to force a buff to be shown. --------
+        -------- The actual buff --------
+        Set VariableSet LS0_Buff = Lightning Shield (Enhancement)
+        -------- Here's the basic formula which I used in order to calculate every data which belongs to this spell. --------
+        -------- DATA_INC * LEVEL + DATA_BASE --------
+        -------- So, be careful, because the base does NOT represent the level 1 data. --------
+        -------- For example, currently the damage for level 1 is 10 = [ 15 * 1 +(- 5) ] --------
+        -------- AoE: --------
+        Set VariableSet LS0_AoE_Base = 160.00
+        Set VariableSet LS0_AoE_Increment = 0.00
+        -------- Damage and Attack Type --------
+        Set VariableSet LS0_AttackType = Spells
+        Set VariableSet LS0_DamageType = Magic
+        -------- Damage Amount --------
+        Set VariableSet LS0_Damage_Base = -5.00
+        Set VariableSet LS0_Damage_Increment = 15.00
+        -------- The variable below determines how much time this spell should wait so that i can start damaging units nearby. --------
+        -------- The default value is 0.6 which is the time that it takes to finish the birth animation for the LightningShieldTarget model --------
+        Set VariableSet LS0_Damage_Delay = 0.60
+        -------- Duration --------
+        Set VariableSet LS0_Duration_Base = 20.00
+        Set VariableSet LS0_Duration_Increment = 0.00
+        -------- Should its effect stack with other instances? --------
+        Set VariableSet LS0_Damage_Stackable = False
+        -------- Damage SFX --------
+        Set VariableSet LS0_SFX_DamagedUnits = Abilities\Spells\Orc\LightningShield\LightningShieldBuff.mdl
+        -------- Target SFX --------
+        Set VariableSet LS0_SFX_Shield = Abilities\Spells\Orc\LightningShield\LightningShieldTarget.mdl
+        -------- Attachment points for both Target and Damaged units, respectively. --------
+        Set VariableSet LS0_Attach_Target = origin
+        Set VariableSet LS0_Attach_DamagedUnits = origin
+        -------- Since 0.1 timeout is a very small interval for repeating special effects. I've added the variables below where you can stablish a chance for special effects to be shown on damaged units. --------
+        -------- In a random number between 1 and 5. What's the chance to show the Damage SFX? In this case 2 and 1 (LS0_Chance less than or equal to 2). --------
+        Set VariableSet LS0_Chance = 2
+        Set VariableSet LS0_Chance_Minimum = 1
+        Set VariableSet LS0_Chance_Maximum = 5
+        -------- This is the Timer Interval. Whenever you modify this value, you should change the interval in the Loop trigger as well. --------
+        Set VariableSet LS0_PeriodicTimer = 0.10
+        -------- ---------------------------------------------------------- --------
+        -------- You can change the Targets allowed in the Lightning Shield Loop trigger inside the group block. --------

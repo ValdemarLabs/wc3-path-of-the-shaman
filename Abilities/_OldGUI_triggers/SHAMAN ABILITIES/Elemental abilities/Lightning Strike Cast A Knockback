@@ -1,0 +1,68 @@
+Cast A Knockback
+    Events
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (KBA_TargetUnit is in KB_KnockbackedUnits.) Equal to True
+            Then - Actions
+                Unit Group - Remove KBA_TargetUnit from KB_KnockbackedUnits.
+                Set VariableSet KB_CountBuffs = (KB_CountBuffs - 1)
+                For each (Integer KB_GeneralIntegers[2]) from 1 to KB_TotalKnockUnits, do (Actions)
+                    Loop - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                KB_Units[KB_GeneralIntegers[1]] Equal to KBA_TargetUnit
+                            Then - Actions
+                                Set VariableSet KB_GeneralIntegers[1] = KB_GeneralIntegers[2]
+                                Set VariableSet KB_GeneralIntegers[2] = KB_TotalKnockUnits
+                            Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        KB_TotalKnockUnits Greater than KB_GeneralIntegers[1]
+                    Then - Actions
+                        Set VariableSet KB_Levels[KB_GeneralIntegers[1]] = KB_Levels[KB_TotalKnockUnits]
+                        Set VariableSet KB_Units[KB_GeneralIntegers[1]] = KB_Units[KB_TotalKnockUnits]
+                        Set VariableSet KB_Angle[KB_GeneralIntegers[1]] = KB_Angle[KB_TotalKnockUnits]
+                        Set VariableSet KB_MaxDistance[KB_GeneralIntegers[1]] = KB_MaxDistance[KB_TotalKnockUnits]
+                        Set VariableSet KB_ReachedDistance[KB_GeneralIntegers[1]] = KB_ReachedDistance[KB_TotalKnockUnits]
+                        Set VariableSet KB_ReduceSpeedReal[KB_GeneralIntegers[1]] = KB_ReduceSpeedReal[KB_TotalKnockUnits]
+                        Set VariableSet KB_SpecificSpeed[KB_GeneralIntegers[1]] = KB_SpecificSpeed[KB_TotalKnockUnits]
+                        Set VariableSet KB_Effects_1[KB_GeneralIntegers[1]] = KB_Effects_1[KB_TotalKnockUnits]
+                        Set VariableSet KB_Effects_2[KB_GeneralIntegers[1]] = KB_Effects_2[KB_TotalKnockUnits]
+                        Set VariableSet KB_GeneralIntegers[1] = (KB_GeneralIntegers[1] - 1)
+                    Else - Actions
+                Set VariableSet KB_Units[KB_TotalKnockUnits] = No unit
+                Set VariableSet KB_TotalKnockUnits = (KB_TotalKnockUnits - 1)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        KB_CountBuffs Equal to 0
+                    Then - Actions
+                        Set VariableSet KB_TotalKnockUnits = 0
+                        Trigger - Turn off GetKnockback <gen>
+                    Else - Actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                KB_CountBuffs Equal to 0
+            Then - Actions
+                Trigger - Turn on GetKnockback <gen>
+            Else - Actions
+        Set VariableSet KB_CountBuffs = (KB_CountBuffs + 1)
+        Set VariableSet KB_TotalKnockUnits = (KB_TotalKnockUnits + 1)
+        Set VariableSet KB_Casters[KB_TotalKnockUnits] = KBA_Caster
+        Set VariableSet KB_Levels[KB_TotalKnockUnits] = KBA_Level
+        Set VariableSet KB_Units[KB_TotalKnockUnits] = KBA_TargetUnit
+        Set VariableSet KB_StartPositions[KB_TotalKnockUnits] = KBA_StartingPosition
+        Set VariableSet KB_TempPoint[KB_TotalKnockUnits] = (Position of KBA_TargetUnit)
+        Set VariableSet KB_Angle[KB_TotalKnockUnits] = (Angle from KB_StartPositions[KB_TotalKnockUnits] to KB_TempPoint[KB_TotalKnockUnits])
+        Set VariableSet KB_MaxDistance[KB_TotalKnockUnits] = (KBA_DistancePerLevel x (Real(KBA_Level)))
+        Set VariableSet KB_ReachedDistance[KB_TotalKnockUnits] = 0.00
+        Set VariableSet KB_ReduceSpeedReal[KB_GeneralIntegers[1]] = 0.00
+        Set VariableSet KB_SpecificSpeed[KB_TotalKnockUnits] = KBA_Speed
+        Set VariableSet KB_Effects_1[KB_TotalKnockUnits] = KBA_SpecialEffects[1]
+        Set VariableSet KB_Effects_2[KB_TotalKnockUnits] = KBA_SpecialEffects[2]
+        Unit Group - Add KBA_TargetUnit to KB_KnockbackedUnits
+        Custom script:   call RemoveLocation (udg_KBA_StartingPosition)
+        Custom script:   call RemoveLocation (udg_KB_TempPoint [udg_KB_TotalKnockUnits] )
+        Custom script:   call RemoveLocation (udg_KB_StartPositions [udg_KB_TotalKnockUnits] )

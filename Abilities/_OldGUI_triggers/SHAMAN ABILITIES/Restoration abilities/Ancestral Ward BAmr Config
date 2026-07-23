@@ -1,0 +1,417 @@
+BAmr Config
+    Events
+        Map initialization
+    Conditions
+    Actions
+        -------- This value represents how often the BAmr Peridic will run. --------
+        Set VariableSet BAmr_PERIODIC = 0.03
+        Trigger - Add to BAmr Periodic <gen> the event (Time - Every BAmr_PERIODIC seconds of game time)
+        --------   --------
+        -------- This value indicates what spell is being used by the caster --------
+        Set VariableSet BAmr_SPELL = RESTORATION_AncestralWard 
+        --------   --------
+        -------- This value indicates which buff will be detected when the enchanted unit is struck, and which buff the enchanted unit needs to keep the effect going. --------
+        Set VariableSet BAmr_BUFF = Ancestral Ward (BAmr)
+        --------   --------
+        -------- Spell stat values --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- Stacking --------
+                -------- Set to true to allow for "Stacking" of shield values when cast on the same unit consecutively --------
+                Set VariableSet BAmr_Boolean[0] = False
+                --------   --------
+                -------- This indicates the base value for the shield --------
+                Set VariableSet BAmr_BASE_HP = 50.00
+                -------- This indicates the base value for the shield --------
+                --------   --------
+                -------- This value will determine the increase in shield health if the hero invests skill points into the Ability --------
+                Set VariableSet BAmr_LVL_HP_BONUS[1] = 50.00
+                Set VariableSet BAmr_LVL_HP_BONUS[2] = 100.00
+                Set VariableSet BAmr_LVL_HP_BONUS[3] = 150.00
+                Set VariableSet BAmr_LVL_HP_BONUS[4] = 200.00
+                Set VariableSet BAmr_LVL_HP_BONUS[5] = 250.00
+                -------- This value will determine the increase in shield health if the hero invests skill points into the Ability --------
+                --------   --------
+                -------- This value decides what percentage of the caster's Strength will be used to boost Bone Armor's Health (Default: 0.00) --------
+                Set VariableSet BAmr_ATT_BONUS[1] = 0.00
+                -------- This value decides what percentage of the caster's Agility will be used to boost Bone Armor's Health (Default: 0.00) --------
+                Set VariableSet BAmr_ATT_BONUS[2] = 0.00
+                -------- This value decides what percentage of the caster's Intelligence will be used to boost Bone Armor's Health (Default: 0.00) --------
+                Set VariableSet BAmr_ATT_BONUS[3] = 2.25
+                --------   --------
+                -------- This value denotes of what percentage of the damage will be taken by the shield. Default:1.00 (100%) --------
+                -------- Example: 0.5 means only 50% of incoming damage will be taken by the shield and will be dealt to the unit --------
+                Set VariableSet BAmr_ABSORBTION_PERCENTAGE = 1.00
+                --------   --------
+                -------- These two values determine what percentage of physical or Spell damage it will resist. Default: 1.00 (100%) --------
+                -------- Not to be confused with the previous value --------
+                -------- Example: Spell Resist at 2.00 means that spell damage will deal 200% more damage --------
+                -------- Setting either of these values to 0.00 will ignore that type of damage --------
+                Set VariableSet BAmr_RESIST_SPELL = 1.00
+                Set VariableSet BAmr_RESIST_PHYSICAL = 1.00
+                --------   --------
+            Else - Actions
+        -------- Spell stat values --------
+        --------   --------
+        -------- This value determines the "Flavour" of the Shield, the number corresponds with the options below, match it to get the intended effect --------
+        Set VariableSet BAmr_Flavor = 5
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- Flavors --------
+                --------   --------
+                -------- 23 --------
+                -------- Lime / Necro --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BAmr_Flavor Equal to 23
+                    Then - Actions
+                        Set VariableSet BAmr_Flavor_Path[0] = Abilities\Weapons\NecromancerMissile\NecromancerMissile.mdl
+                        Set VariableSet BAmr_Flavor_Path[1] = Abilities\Spells\Undead\RaiseSkeletonWarrior\RaiseSkeleton.mdl
+                        Set VariableSet BAmr_Flavor_Path[2] = Abilities\Spells\Undead\RaiseSkeletonWarrior\RaiseSkeleton.mdl
+                        Set VariableSet BAmr_Flavor_Path[3] = BoneArmorCasterTC.mdx
+                    Else - Actions
+                -------- 23 --------
+                --------   --------
+                -------- 1 --------
+                -------- Red / Fire --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BAmr_Flavor Equal to 1
+                    Then - Actions
+                        Set VariableSet BAmr_Flavor_Path[0] = Abilities\Weapons\FireBallMissile\FireBallMissile.mdl
+                        Set VariableSet BAmr_Flavor_Path[1] = Abilities\Spells\Items\AIfb\AIfbSpecialArt.mdl
+                        Set VariableSet BAmr_Flavor_Path[2] = Abilities\Spells\Items\AIfb\AIfbSpecialArt.mdl
+                        Set VariableSet BAmr_Flavor_Path[3] = BoneArmorCasterTC.mdx
+                    Else - Actions
+                -------- 1 --------
+                --------   --------
+                -------- 2 --------
+                -------- Blue / Frost --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BAmr_Flavor Equal to 2
+                    Then - Actions
+                        Set VariableSet BAmr_Flavor_Path[0] = Abilities\Spells\Other\FrostBolt\FrostBoltMissile.mdl
+                        Set VariableSet BAmr_Flavor_Path[1] = Abilities\Spells\Undead\FrostNova\FrostNovaTarget.mdl
+                        Set VariableSet BAmr_Flavor_Path[2] = Abilities\Spells\Undead\FrostNova\FrostNovaTarget.mdl
+                        Set VariableSet BAmr_Flavor_Path[3] = BoneArmorCasterTC.mdx
+                    Else - Actions
+                -------- 2 --------
+                --------   --------
+                -------- 3 --------
+                -------- Teal / Ocean --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BAmr_Flavor Equal to 3
+                    Then - Actions
+                        Set VariableSet BAmr_Flavor_Path[0] = Abilities\Weapons\SeaElementalMissile\SeaElementalMissile.mdl
+                        Set VariableSet BAmr_Flavor_Path[1] = Abilities\Spells\Other\CrushingWave\CrushingWaveDamage.mdl
+                        Set VariableSet BAmr_Flavor_Path[2] = Abilities\Spells\Other\CrushingWave\CrushingWaveDamage.mdl
+                        Set VariableSet BAmr_Flavor_Path[3] = BoneArmorCasterTC.mdx
+                    Else - Actions
+                -------- 3 --------
+                --------   --------
+                -------- 4 --------
+                -------- Purple / Ooze? --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BAmr_Flavor Equal to 4
+                    Then - Actions
+                        Set VariableSet BAmr_Flavor_Path[0] = Abilities\Weapons\SludgeMissile\SludgeMissile.mdl
+                        Set VariableSet BAmr_Flavor_Path[1] = Abilities\Spells\Undead\DarkRitual\DarkRitualTarget.mdl
+                        Set VariableSet BAmr_Flavor_Path[2] = Abilities\Spells\Items\AIil\AIilTarget.mdl
+                        Set VariableSet BAmr_Flavor_Path[3] = BoneArmorCasterTC.mdx
+                    Else - Actions
+                -------- 4 --------
+                --------   --------
+                -------- 5 --------
+                -------- Yellow / Holy --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BAmr_Flavor Equal to 5
+                    Then - Actions
+                        Set VariableSet BAmr_Flavor_Path[0] = Abilities\Weapons\FaerieDragonMissile\FaerieDragonMissile.mdl
+                        Set VariableSet BAmr_Flavor_Path[1] = Abilities\Spells\Orc\AncestralSpirit\AncestralSpiritCaster.mdl
+                        Set VariableSet BAmr_Flavor_Path[2] = Abilities\Spells\Other\HealingSpray\HealBottleMissile.mdl
+                        Set VariableSet BAmr_Flavor_Path[3] = BoneArmorCasterTC.mdx
+                    Else - Actions
+                -------- 5 --------
+                --------   --------
+                -------- 6 --------
+                -------- Orange / Drunk --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BAmr_Flavor Equal to 6
+                    Then - Actions
+                        Set VariableSet BAmr_Flavor_Path[0] = Abilities\Spells\Other\StrongDrink\BrewmasterMissile.mdl
+                        Set VariableSet BAmr_Flavor_Path[1] = Abilities\Spells\Orc\SpiritLink\SpiritLinkZapTarget.mdl
+                        Set VariableSet BAmr_Flavor_Path[2] = Abilities\Spells\Human\Feedback\SpellBreakerAttack.mdl
+                        Set VariableSet BAmr_Flavor_Path[3] = BoneArmorCasterTC.mdx
+                    Else - Actions
+                -------- 6 --------
+                --------   --------
+                -------- 7 --------
+                -------- Green / Nature --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BAmr_Flavor Equal to 7
+                    Then - Actions
+                        Set VariableSet BAmr_Flavor_Path[0] = Abilities\Weapons\KeeperGroveMissile\KeeperGroveMissile.mdl
+                        Set VariableSet BAmr_Flavor_Path[1] = Objects\Spawnmodels\NightElf\EntBirthTarget\EntBirthTarget.mdl
+                        Set VariableSet BAmr_Flavor_Path[2] = Objects\Spawnmodels\NightElf\EntBirthTarget\EntBirthTarget.mdl
+                        Set VariableSet BAmr_Flavor_Path[3] = BoneArmorCasterTC.mdx
+                    Else - Actions
+                -------- 7 --------
+                --------   --------
+                -------- 8 --------
+                -------- Pink / Darkness --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BAmr_Flavor Equal to 8
+                    Then - Actions
+                        Set VariableSet BAmr_Flavor_Path[0] = Abilities\Weapons\VoidWalkerMissile\VoidWalkerMissile.mdl
+                        Set VariableSet BAmr_Flavor_Path[1] = Abilities\Spells\Undead\OrbOfDeath\AnnihilationMissile.mdl
+                        Set VariableSet BAmr_Flavor_Path[2] = Abilities\Spells\Undead\OrbOfDeath\AnnihilationMissile.mdl
+                        Set VariableSet BAmr_Flavor_Path[3] = BoneArmorCasterTC.mdx
+                    Else - Actions
+                -------- 8 --------
+                --------   --------
+                -------- Flavors --------
+            Else - Actions
+        -------- This value determines the "Flavour" of the Shield, the number corresponds with the options below, match it to get the intended effect --------
+        --------   --------
+        --------   --------
+        -------- Special effects & related values --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                --------   --------
+                -------- This path denotes what form the orbiting segments will take. --------
+                Set VariableSet BAmr_EFFECTPATH[0] = BAmr_Flavor_Path[0]
+                -------- This path denotes what form the orbiting segments will take. --------
+                --------   --------
+                -------- This value indicates what effect will occur when the segments are first spawned --------
+                -------- see the "Flavor Section" to customize numerous effect loadouts --------
+                Set VariableSet BAmr_EFFECTPATH[1] = BAmr_Flavor_Path[1]
+                -------- This value indicates what effect will occur when the segments are first spawned --------
+                --------   --------
+                -------- This value indicates what effect will occur when the segments are destroyed --------
+                -------- see the "Flavor Section" to customize numerous effect loadouts --------
+                Set VariableSet BAmr_EFFECTPATH[2] = BAmr_Flavor_Path[2]
+                -------- This value indicates what effect will occur when the segments are destroyed --------
+                --------   --------
+                -------- This value indicates what effect will occur when the enchanted unit is struck --------
+                -------- see the "Flavor Section" to customize numerous effect loadouts --------
+                Set VariableSet BAmr_EFFECTPATH[3] = BoneArmorCasterTC.mdx
+                -------- This value indicates what effect will occur when the enchanted unit is struck --------
+                --------   --------
+                -------- Values contained within directly influence the "shield flare" effect governed by BAmr_EFFECTPATH[3] --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        --------   --------
+                        -------- This Value determines whether or not  you want the "Shield Flare Effect" to match the player's colour or to a specific colour --------
+                        Set VariableSet BAmr_Boolean[1] = False
+                        --------   --------
+                        -------- Offset will determine how far away the Special effect will be created from the enchanted target --------
+                        -------- PLAYER COLOUR --------
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BAmr_Boolean[1] Equal to False
+                            Then - Actions
+                                Set VariableSet BAmr_SPEF_VALUE[0] = (Real(BAmr_Flavor))
+                            Else - Actions
+                        --------   --------
+                        -------- Offset will determine how far away the Special effect will be created from the enchanted target --------
+                        -------- OFFSET --------
+                        Set VariableSet BAmr_SPEF_VALUE[1] = 85.00
+                        -------- Offset will determine how far away the Special effect will be created from the enchanted target --------
+                        --------   --------
+                        -------- Height will determine at what height the Special effect will be created, starting from the enchanted target's current height & Z Height. --------
+                        -------- HEIGHT --------
+                        Set VariableSet BAmr_SPEF_VALUE[2] = 65.00
+                        -------- Height will determine at what height the Special effect will be created, starting from the enchanted target's current height --------
+                        --------   --------
+                        -------- Scale will determine the percentage of scale the Special effect will have --------
+                        -------- SCALE --------
+                        Set VariableSet BAmr_SPEF_VALUE[3] = 0.90
+                        -------- Scale will determine the percentage of scale the Special effect will have --------
+                        --------   --------
+                        -------- Timescale will determine the speed of the special effect's animation --------
+                        -------- TIMESCALE --------
+                        Set VariableSet BAmr_SPEF_VALUE[4] = 7.50
+                        -------- Timescale will determine the speed of the special effect's animation --------
+                        --------   --------
+                        -------- RGB value from 0 - 255 will determine what colors will be present in the special effect (note this requires a lot of experimentation) --------
+                        -------- from 1 - 3 is RED, GREEN, BLUE --------
+                        Set VariableSet BAmr_SPEF_VALUE[5] = 255.00
+                        Set VariableSet BAmr_SPEF_VALUE[6] = 255.00
+                        Set VariableSet BAmr_SPEF_VALUE[7] = 255.00
+                        -------- from 1 - 3 is RED, GREEN, BLUE --------
+                        -------- RGB value from 0 - 255 will determine what colors will be present in the special effect (note this requires a lot of experimentation) --------
+                        --------   --------
+                        -------- YPR will determine in order of apperance, Yaw, Pitch, & Roll. --------
+                        -------- Thanks to Hermit, the model provided already has an orienation to  90 degrees we need not add it, but I will leave these all the same for interesting effects! --------
+                        -------- The Values are calculated as (( X * 3.14 ) / 180 ), 1.57 = 90 degrees, 3.14 = 180 degrees, etc --------
+                        -------- To flip normally horizontal models like the default spirit touch, all  values below must be set to 1.57 or ((90 x 3.14 /) 180) --------
+                        -------- from 8 - 10 is YAW, PITCH, ROLL --------
+                        --------   --------
+                        Set VariableSet BAmr_SPEF_VALUE[8] = 0.00
+                        -------- YAW --------
+                        --------   --------
+                        Set VariableSet BAmr_SPEF_VALUE[9] = 0.00
+                        -------- PITCH --------
+                        --------   --------
+                        Set VariableSet BAmr_SPEF_VALUE[10] = 0.00
+                        -------- ROLL --------
+                        --------   --------
+                        -------- YPR will determine in order of apperance, Yaw, Pitch, & Roll. --------
+                        --------   --------
+                        -------- This Value checks whether or not the Shield flare intensity will match the shield's current health --------
+                        Set VariableSet BAmr_Boolean[2] = True
+                        -------- If Above Boolean is true, this handles the minimum the shield will fade to. --------
+                        --------   --------
+                        Set VariableSet BAmr_SPEF_VALUE[12] = 25.00
+                        --------   --------
+                    Else - Actions
+                -------- Values contained within directly influence the "shield flare" effect governed by BAmr_EFFECTPATH[3] --------
+                --------   --------
+            Else - Actions
+        -------- Special effects & related values --------
+        --------   --------
+        -------- Segement Configuration --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                --------   --------
+                -------- This value indicates how "segments" will orbit around the enchanted Target. --------
+                Set VariableSet BAmr_SEGMENT_SPAWNED = 3
+                --------   --------
+                -------- This value indicates how far away the "segments" orbit away from the enchanted Target. --------
+                -------- SEGMENT ORBIT OFFSET --------
+                Set VariableSet BAmr_SEG_VALUE[1] = 60.00
+                -------- This value indicates how far away the segments spawn from the their target --------
+                -------- SEGMENT SPAWN OFFSET --------
+                Set VariableSet BAmr_SEG_VALUE[2] = 120.00
+                --------   --------
+                -------- This value indicates at what height the segment will be at in addition the the unit's flying height  --------
+                -------- SEGMENT HEIGHT --------
+                Set VariableSet BAmr_SEG_VALUE[3] = 65.00
+                --------   --------
+                -------- This value indicates how far apart the segements will spawn from, this is default to a 360 --------
+                -------- SEGMENT RADIUS TOTAL (I.e. don't change unless you are sure) --------
+                Set VariableSet BAmr_SEG_VALUE[4] = 360.00
+                --------   --------
+                -------- This value indicates where the segments will be offset from --------
+                Set VariableSet BAmr_SEGMENT_SPAWN = 1
+                -------- 1 (DEFAULT) Caster's Position --------
+                -------- 2 Target's Position --------
+                --------   --------
+                -------- This value indicates how fast the "segments" orbit around the enchanted Target. --------
+                -------- SEGMENT ORBIT SPEED --------
+                Set VariableSet BAmr_SEG_VALUE[5] = 1.00
+                --------   --------
+                -------- This value indicates how fast the "segments" intially move towards the enchanted Target. --------
+                -------- SEGMENT MISSILE SPEED --------
+                Set VariableSet BAmr_SEG_VALUE[6] = 18.00
+                --------   --------
+                -------- This value Indicates the size of the individual segments --------
+                -------- SEGMENT SIZE --------
+                Set VariableSet BAmr_SEG_VALUE[7] = 1.00
+                --------   --------
+                -------- Sets the segments lowest size from damage, the  boolean below needs to be set to true for this to take any affect --------
+                -------- the value below is how small the segment will shrink to as to avoid making it dissapear all together before the segment threshold damage is reached. --------
+                -------- SEGMENT "SHRINK" EFFECT MINIMUM --------
+                Set VariableSet BAmr_SEG_VALUE[8] = 0.05
+                --------   --------
+                Set VariableSet BAmr_Boolean[3] = False
+                -------- The value above directly is dependent on the boolean above being set to true --------
+                --------   --------
+                -------- the value below is how small the segment will shrink to as to avoid making it dissapear all together before the segment threshold damage is reached. --------
+                Set VariableSet BAmr_SEG_VALUE[9] = 5.00
+                -------- SEGMENT "DIM" EFFECT MINIMUM --------
+                --------   --------
+                Set VariableSet BAmr_Boolean[4] = False
+                -------- If Above Boolean is true, then segments will dim based on how much damage they have taken --------
+                --------   --------
+                -------- This value corresponds to the segment's "Alpha" i,e. sorta like transparency, do experiment as ribbons and particles will not be affected on the missile... --------
+                -------- SEGMENT ALPHA (TEXTURE TRANSPARENCY) --------
+                Set VariableSet BAmr_SEG_VALUE[10] = 255.00
+                --------   --------
+                -------- RGB value from 0 - 255 will determine what colors will be present in the special effect (note this requires a lot of experimentation) --------
+                -------- from 11 -13 is RED, GREEN, BLUE --------
+                Set VariableSet BAmr_SEG_VALUE[11] = 255.00
+                Set VariableSet BAmr_SEG_VALUE[12] = 255.00
+                Set VariableSet BAmr_SEG_VALUE[13] = 255.00
+                -------- from 1 - 3 is RED, GREEN, BLUE --------
+                -------- RGB value from 0 - 255 will determine what colors will be present in the special effect (note this requires a lot of experimentation) --------
+                --------   --------
+                -------- YPR will determine in order of apperance, Yaw, Pitch, & Roll WHEN ORBITING --------
+                -------- The Values are calculated as (( X * 3.14 ) / 180 ), 1.57 = 90 degrees, 3.14 = 180 degrees, etc --------
+                -------- from 14, 15, & 16 is YAW, PITCH, ROLL --------
+                --------   --------
+                Set VariableSet BAmr_SEG_VALUE[14] = 0.00
+                -------- YAW --------
+                --------   --------
+                Set VariableSet BAmr_SEG_VALUE[15] = 0.00
+                -------- PITCH --------
+                --------   --------
+                Set VariableSet BAmr_SEG_VALUE[16] = 4.71
+                -------- ROLL --------
+                --------   --------
+                -------- YPR will determine in order of apperance, Yaw, Pitch, & Roll. --------
+                --------   --------
+                -------- YPR will determine in order of apperance, Yaw, Pitch, & Roll ON INITIAL CAST AND CLOSING DISTANCE --------
+                -------- The Values are calculated as (( X * 3.14 ) / 180 ), 1.57 = 90 degrees, 3.14 = 180 degrees, etc --------
+                -------- from 17, 18, & 19 is YAW, PITCH, ROLL --------
+                --------   --------
+                Set VariableSet BAmr_SEG_VALUE[17] = 0.00
+                -------- YAW --------
+                --------   --------
+                Set VariableSet BAmr_SEG_VALUE[18] = 0.00
+                -------- PITCH --------
+                --------   --------
+                Set VariableSet BAmr_SEG_VALUE[19] = 0.00
+                -------- ROLL --------
+                --------   --------
+                -------- YPR will determine in order of apperance, Yaw, Pitch, & Roll. --------
+                --------   --------
+                -------- The value BAmr_EFFECTPATH[4] refers to what buff will be placed overhead of the unit  in place of segments --------
+                Set VariableSet BAmr_EFFECTPATH[4] = Abilities\Spells\Undead\AntiMagicShell\AntiMagicShell.mdl
+                -------- SIMPLE EFFECT MODE --------
+                --------   --------
+                Set VariableSet BAmr_Boolean[5] = False
+                -------- The value above directly is dependent on the boolean above being set to true --------
+                -------- This alternative mode will be subject to "Dimming" & "Shrinking" if the options are set to true. --------
+                -------- (i.e. 4x basic value (Default 65), effect will appear roughly over head, blizzard please add Unit model height! --------
+                -------- If BAmr_Boolean[5] is set to true, segments will not spawn and instead be an overhead buff --------
+                --------   --------
+                -------- Any changes made while SEM (Simple Effect Mode) is active must be below the basic default variables above to make intented changes ) --------
+                --------   --------
+                -------- SEMode Height of Effect --------
+                Set VariableSet BAmr_SEG_VALUE[20] = 180.00
+                --------   --------
+                -------- SEMode Roll of Stationary/Orbiting Effect --------
+                -------- (i.e.4.71 radian's less than Default 4.71 radians, making the effect appear to follow facing of enchanted unit --------
+                Set VariableSet BAmr_SEG_VALUE[21] = 0.00
+                --------   --------
+                -------- This value Indicates the size of the individual segments --------
+                -------- SEGMENT SIZE --------
+                Set VariableSet BAmr_SEG_VALUE[22] = 1.50
+            Else - Actions
+        -------- Segement orbit values --------
+        --------   --------
+        -------- Preload --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                Set VariableSet BAmr_Point[1] = (Center of (Playable map area))
+                Unit - Create 1 Albatross for Neutral Passive at BAmr_Point[1] facing Default building facing degrees
+                Set VariableSet BAmr_Target = (Last created unit)
+                Unit - Add BAmr_SPELL to BAmr_Target
+                Unit - Add a 0.03 second Generic expiration timer to BAmr_Target
+                Custom script:   call RemoveLocation(udg_BAmr_Point[1])
+            Else - Actions
+        -------- Preload --------

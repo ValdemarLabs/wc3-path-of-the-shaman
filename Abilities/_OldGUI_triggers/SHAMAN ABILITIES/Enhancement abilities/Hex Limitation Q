@@ -1,0 +1,26 @@
+Hex Limitation Q
+    Events
+        Unit - A unit Finishes casting an ability
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Ability being cast) Equal to ENHANCEMENT_Hex 
+                (Ability being cast) Equal to HeroShaman_Hex 
+    Actions
+        Game - Display to (All players) the text: Hex: finished casti...
+        -------- If the target unit being HEX is BOSS --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (TargetHextUnit[CVHexUnit] is in BOSS.) Equal to True
+            Then - Actions
+                Unit - Remove Hex buff from TargetHextUnit[CVHexUnit]
+                Game - Display to (All players) the text: Hex: boss detected
+            Else - Actions
+        -------- if the level of the target unit for the ability being cast is greater than or equal the level of the triggering unit plus 5 --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Level of TargetHextUnit[CVHexUnit]) Greater than or equal to ((Level of (Triggering unit)) + 5)
+            Then - Actions
+                Unit - Remove Hex buff from TargetHextUnit[CVHexUnit]
+                Game - Display to (All players) the text: Hex: 5 or higher lv...
+            Else - Actions

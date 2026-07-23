@@ -1,0 +1,60 @@
+Chain Heal Bonus
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to RESTORATION_ChainHeal 
+    Actions
+        -------- == ABILITY MODIFIER == --------
+        Set VariableSet Ability_TempLevel = (Level of (Ability being cast) for (Triggering unit))
+        Set VariableSet Ability_TempAmount = (Ability_ChainHeal_Base[Ability_TempLevel] + (1.50 x (Real((Intelligence of (Triggering unit) (Include bonuses))))))
+        -------- ------------- --------
+        Ability - Set Ability: (Unit: (Triggering unit)'s Ability with Ability Code: RESTORATION_ChainHeal )'s Real Level Field: Damage per Target ('Ocl1') of Level: ((Level of RESTORATION_ChainHeal  for (Triggering unit)) - 1) to Ability_TempAmount
+        -------- If unit has Totemic Resurgence --------
+        Trigger - Run Totemic Resurgence <gen> (checking conditions)
+        Set VariableSet Temp_Integer = (Custom value of (Target unit of ability being cast))
+        Set VariableSet chainheal_target[Temp_Integer] = (Target unit of ability being cast)
+        Set VariableSet chainheal_point = (Position of chainheal_target[Temp_Integer])
+        Set VariableSet ancestralward_temp = (Custom value of (Triggering unit))
+        Set VariableSet chainheal_intelligence[ancestralward_temp] = (Intelligence of (Triggering unit) (Include bonuses))
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                TotemicResurgence_Real Greater than 0.00
+            Then - Actions
+                Unit - Create 1 DummyChainHeal for (Owner of chainheal_target[Temp_Integer]) at chainheal_point facing Default building facing degrees
+                Set VariableSet chainheal_dummy = (Last created unit)
+                Unit - Add a 0.50 second Generic expiration timer to chainheal_dummy
+                -------- Check for bonus spell level --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        TotemicResurgence_Real Equal to 1.15
+                    Then - Actions
+                        Unit - Set level of RESTORATION_AncestralWard  for chainheal_dummy to 1
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        TotemicResurgence_Real Equal to 1.30
+                    Then - Actions
+                        Unit - Set level of RESTORATION_AncestralWard  for chainheal_dummy to 2
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        TotemicResurgence_Real Equal to 1.45
+                    Then - Actions
+                        Unit - Set level of RESTORATION_AncestralWard  for chainheal_dummy to 3
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        TotemicResurgence_Real Equal to 1.60
+                    Then - Actions
+                        Unit - Set level of RESTORATION_AncestralWard  for chainheal_dummy to 4
+                    Else - Actions
+                -------- Cast the bonus spell --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        TotemicResurgence_Real Greater than 0.00
+                    Then - Actions
+                        Game - Display to (All players) the text: (debug chain heal - TotemicResurgence_Real =   + (String(TotemicResurgence_Real)))
+                        Unit - Order chainheal_dummy to Human Priest - Inner Fire chainheal_target[Temp_Integer]
+                    Else - Actions
+            Else - Actions
+        Custom script:   call RemoveLocation(udg_chainheal_point)

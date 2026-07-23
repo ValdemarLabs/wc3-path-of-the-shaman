@@ -1,0 +1,69 @@
+Lightning Shield Loop
+    Events
+        Time - Every 0.10 seconds of game time
+    Conditions
+    Actions
+        For each (Integer LS1_Loop) from 1 to LS1_Index_Size, do (Actions)
+            Loop - Actions
+                Set VariableSet LS1_Current = LS1_Index_Array[LS1_Loop]
+                -------- Wait for the damage delay variable to get to 0, so we can start damaging units. --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        LS1_DamageDelay[LS1_Current] Greater than or equal to LS0_PeriodicTimer
+                    Then - Actions
+                        Set VariableSet LS1_DamageDelay[LS1_Current] = (LS1_DamageDelay[LS1_Current] - LS0_PeriodicTimer)
+                    Else - Actions
+                        -------- Check the duration --------
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                LS1_Duration[LS1_Current] Greater than or equal to LS0_PeriodicTimer
+                            Then - Actions
+                                Set VariableSet LS1_Duration[LS1_Current] = (LS1_Duration[LS1_Current] - LS0_PeriodicTimer)
+                                Set VariableSet lstmp_point = (Position of LS1_Target[LS1_Current])
+                                Custom script:   set bj_wantDestroyGroup = true
+                                Unit Group - Pick every unit in (Units within LS1_AoE[LS1_Current] of lstmp_point.) and do (Actions)
+                                    Loop - Actions
+                                        Set VariableSet lstmp_filter = (Picked unit)
+                                        -------- It is time to filter out units from the Unit Group. --------
+                                        -------- TARGETS ALLOWED: --------
+                                        -------- not Structure, not Magic Immune, not Dead, Ground, Enemy, not Self. --------
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                And - All (Conditions) are true
+                                                    Conditions
+                                                        (lstmp_filter is A structure) Equal to False
+                                                        (lstmp_filter is Magic Immune) Equal to False
+                                                        (lstmp_filter is Mechanical) Equal to False
+                                                        (lstmp_filter is dead) Equal to False
+                                                        (lstmp_filter is A ground unit) Equal to True
+                                                        (lstmp_filter belongs to an enemy of (Owner of LS1_Caster[LS1_Current]).) Equal to True
+                                                        LS1_Target[LS1_Current] Not equal to lstmp_filter
+                                            Then - Actions
+                                                Custom script:   call UnitDamageTarget( udg_LS1_Caster[udg_LS1_Current], udg_lstmp_filter, udg_LS1_Damage[udg_LS1_Current], true, true, udg_LS0_AttackType, udg_LS0_DamageType, null )
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        (Random integer number between LS0_Chance_Minimum and LS0_Chance_Maximum) Less than or equal to LS0_Chance
+                                                    Then - Actions
+                                                        Special Effect - Create a special effect attached to the LS0_Attach_DamagedUnits of lstmp_filter using LS0_SFX_DamagedUnits
+                                                        Special Effect - Destroy (Last created special effect)
+                                                    Else - Actions
+                                            Else - Actions
+                                Custom script:   call RemoveLocation(udg_lstmp_point)
+                                -------- If target is dead, then we should stop this instance immediately. --------
+                                Custom script:   if IsUnitType(udg_LS1_Target[udg_LS1_Current], UNIT_TYPE_DEAD) or GetUnitTypeId(udg_LS1_Target[udg_LS1_Current]) == 0 or GetUnitAbilityLevel(udg_LS1_Target[udg_LS1_Current], udg_LS0_Buff) == 0 then
+                                Set VariableSet LS1_Duration[LS1_Current] = 0.00
+                                Custom script:   endif
+                            Else - Actions
+                                -------- The duration has just expired; this is the end of this instance. --------
+                                Special Effect - Destroy LS1_SFX[LS1_Current]
+                                Set VariableSet LS1_Index_Array[LS1_Loop] = LS1_Index_Array[LS1_Index_Size]
+                                Set VariableSet LS1_Index_Array[LS1_Index_Size] = LS1_Current
+                                Set VariableSet LS1_Index_Size = (LS1_Index_Size - 1)
+                                Set VariableSet LS1_Loop = (LS1_Loop - 1)
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        LS1_Index_Size Equal to 0
+                                    Then - Actions
+                                        Trigger - Turn off Lightning Shield Loop <gen>
+                                        Skip remaining actions
+                                    Else - Actions

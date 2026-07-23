@@ -1,0 +1,11 @@
+Healing Rain
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to RESTORATION_HealingRain 
+    Actions
+        -------- == ABILITY MODIFIER == --------
+        Set VariableSet Ability_TempLevel = (Level of (Ability being cast) for (Triggering unit))
+        Set VariableSet Ability_TempAmount = (Ability_HealingRain_Base[Ability_TempLevel] + (1.25 x (Real((Intelligence of (Triggering unit) (Include bonuses))))))
+        -------- ==   == --------
+        Ability - Set Ability: (Unit: (Triggering unit)'s Ability with Ability Code: RESTORATION_HealingRain )'s Real Level Field: Life Healed ('Etq1') of Level: ((Level of RESTORATION_HealingRain  for (Triggering unit)) - 1) to Ability_TempAmount

@@ -1,0 +1,20 @@
+Rejuvenation Cast
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to RESTORATION_Rejuvenation 
+    Actions
+        -------- == ABILITY MODIFIER == --------
+        Set VariableSet Ability_TempLevel = (Level of (Ability being cast) for (Triggering unit))
+        Set VariableSet Ability_TempAmount = (Ability_Rejuvenation_Base[Ability_TempLevel] + (1.25 x (Real((Intelligence of (Triggering unit) (Include bonuses))))))
+        -------- If unit has Totemic Resurgence --------
+        Trigger - Run Totemic Resurgence <gen> (checking conditions)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                Set VariableSet Ability_TempAmount = (Ability_TempAmount x TotemicResurgence_Real)
+            Else - Actions
+        -------- ==   == --------
+        Ability - Set Ability: (Unit: (Triggering unit)'s Ability with Ability Code: RESTORATION_Rejuvenation )'s Real Level Field: Hit Points Gained ('Rej1') of Level: ((Level of RESTORATION_Rejuvenation  for (Triggering unit)) - 1) to Ability_TempAmount
+        Unit - Increase level of RESTORATION_Rejuvenation  for (Triggering unit)
+        Unit - Decrease level of RESTORATION_Rejuvenation  for (Triggering unit)

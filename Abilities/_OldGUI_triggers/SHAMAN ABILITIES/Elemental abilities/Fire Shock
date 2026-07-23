@@ -1,0 +1,78 @@
+Fire Shock
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to ELEMENTAL_FireShock 
+    Actions
+        -------- == ABILITY MODIFIER == --------
+        Set VariableSet Ability_TempLevel = (Level of (Ability being cast) for (Triggering unit))
+        Set VariableSet Ability_TempAmount = (Ability_FireShock_Base[Ability_TempLevel] + (1.50 x (Real((Intelligence of (Triggering unit) (Include bonuses))))))
+        Set VariableSet Ability_TempAmount2 = (Ability_FireShockAoE_Base[Ability_TempLevel] + (1.50 x (Real((Intelligence of (Triggering unit) (Include bonuses))))))
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        -------- Don't change anything here --------
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        Set VariableSet FS_Caster = (Triggering unit)
+        Set VariableSet FS_Target = (Target unit of ability being cast)
+        Set VariableSet FS_Target_Point = (Position of FS_Target)
+        Set VariableSet FS_Level = (Level of Fire Shock  for FS_Caster)
+        Set VariableSet FS_Roll = (Random integer number between 1 and 100)
+        -------- ==   == --------
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        -------- Yes/No option.. Change it if you dont want to make it has a chance to make AOE Explosion Damage --------
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        Set VariableSet FS_Explosion = True
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        -------- This is the Chance in pourcentage to make an explosion --------
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        Set VariableSet FS_Explosion_Chance = 50
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        -------- The AOE range of the explosion --------
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        Set VariableSet FS_AOE = 250.00
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        -------- Here you can change the damage --------
+        -------- FS_damage = normal damage, FS_AOE_Damage = AOE Explosion bonus damage, FS_Nature_Bonus_Damage = TOTAL damage made when the unit is affected by the Nature Shock roots --------
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        Set VariableSet FS_Damage = Ability_TempAmount
+        Set VariableSet FS_AOE_Damage = Ability_TempAmount2
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        -------- here you can change the Special Effects --------
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        Set VariableSet FS_Special_Effect = Abilities\Spells\Other\Incinerate\FireLordDeathExplode.mdl
+        Set VariableSet FS_Explosion_Special_Effect = Abilities\Spells\Other\Doom\DoomDeath.mdl
+        Set VariableSet FS_Explosion_Special_Effect_2 = Abilities\Spells\Orc\WarStomp\WarStompCaster.mdl
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        -------- The Spell is now starting to do something --------
+        -------- Don't change anything from here --------
+        -------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------
+        Set VariableSet FS_Group = (Units within FS_AOE of FS_Target_Point matching ((((Matching unit) is A structure) Equal to False) and ((((Matching unit) is alive) Equal to True) and (((Owner of (Matching unit)) is an enemy of (Owner of FS_Caster).) Equal to True))).)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        FS_Explosion Equal to True
+                    Then - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                FS_Roll Less than or equal to FS_Explosion_Chance
+                            Then - Actions
+                                Unit Group - Pick every unit in FS_Group and do (Actions)
+                                    Loop - Actions
+                                        Unit - Cause FS_Caster to damage (Picked unit), dealing FS_AOE_Damage damage of attack type Spells and damage type Normal
+                                Special Effect - Create a special effect at FS_Target_Point using FS_Explosion_Special_Effect
+                                Special Effect - Destroy (Last created special effect)
+                                Special Effect - Create a special effect at FS_Target_Point using FS_Explosion_Special_Effect_2
+                                Special Effect - Destroy (Last created special effect)
+                            Else - Actions
+                    Else - Actions
+                Special Effect - Create a special effect at FS_Target_Point using FS_Special_Effect
+                Special Effect - Destroy (Last created special effect)
+                Floating Text - Change (Last created floating text): Disable permanence
+                Floating Text - Set the velocity of (Last created floating text) to 40.00 towards 90.00 degrees
+                Floating Text - Change the fading age of (Last created floating text) to 2.50 seconds
+                Floating Text - Change the lifespan of (Last created floating text) to 3.00 seconds
+            Else - Actions
+                Unit - Order FS_Caster to Stop.
+        Custom script:   call RemoveLocation(udg_FS_Target_Point)
+        Custom script:   call DestroyGroup(udg_FS_Group)

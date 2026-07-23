@@ -1,0 +1,64 @@
+Stormstrike
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to ENHANCEMENT_Stormstrike 
+    Actions
+        -------- == ABILITY MODIFIER == --------
+        Set VariableSet Ability_TempLevel = (Level of (Ability being cast) for (Triggering unit))
+        Set VariableSet Ability_TempAmount = (Ability_Stormstrike_Base[Ability_TempLevel] + (1.50 x (Real((Strength of (Triggering unit) (Include bonuses))))))
+        -------- ==   == --------
+        Sound - Play Stormstrike <gen> at 100.00% volume, attached to (Triggering unit)
+        -------- I'll create some variables at first to make things easier. --------
+        Set VariableSet StormstrikeCaster = (Triggering unit)
+        Set VariableSet StormstrikePoints[1] = (Position of StormstrikeCaster)
+        Set VariableSet StormstrikePoints[2] = (StormstrikePoints[1] offset by 50.00 towards (Facing of StormstrikeCaster) degrees.)
+        -------- Now let's create a dummy to cast the damage that we has just created. --------
+        Unit - Create 1 DummyStormstrike for (Owner of StormstrikeCaster) at StormstrikePoints[2] facing Default building facing degrees
+        Set VariableSet StormstrikeDummy = (Last created unit)
+        -------- I'm adding expiration time to make it disappear after 0.5 second, and give it an ability. --------
+        Unit - Add a 0.50 second Generic expiration timer to StormstrikeDummy
+        -------- check for Stormstrike Level (1-5) --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Level of ENHANCEMENT_Stormstrike  for StormstrikeCaster) Equal to 1
+            Then - Actions
+                Unit - Add ENHANCEMENT_StormstrikeDamageLevel1  to StormstrikeDummy
+                Ability - Set Ability: (Unit: StormstrikeDummy's Ability with Ability Code: ENHANCEMENT_StormstrikeDamageLevel1 )'s Real Level Field: Damage Per Target ('Efk1') of Level: ((Level of ENHANCEMENT_StormstrikeDamageLevel1  for StormstrikeDummy) - 1) to Ability_TempAmount
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Level of ENHANCEMENT_Stormstrike  for StormstrikeCaster) Equal to 2
+            Then - Actions
+                Unit - Add ENHANCEMENT_StormstrikeDamageLevel2  to StormstrikeDummy
+                Ability - Set Ability: (Unit: StormstrikeDummy's Ability with Ability Code: ENHANCEMENT_StormstrikeDamageLevel2 )'s Real Level Field: Damage Per Target ('Efk1') of Level: ((Level of ENHANCEMENT_StormstrikeDamageLevel2  for StormstrikeDummy) - 1) to Ability_TempAmount
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Level of ENHANCEMENT_Stormstrike  for StormstrikeCaster) Equal to 3
+            Then - Actions
+                Unit - Add ENHANCEMENT_StormstrikeDamageLevel3  to StormstrikeDummy
+                Ability - Set Ability: (Unit: StormstrikeDummy's Ability with Ability Code: ENHANCEMENT_StormstrikeDamageLevel3 )'s Real Level Field: Damage Per Target ('Efk1') of Level: ((Level of ENHANCEMENT_StormstrikeDamageLevel3  for StormstrikeDummy) - 1) to Ability_TempAmount
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Level of ENHANCEMENT_Stormstrike  for StormstrikeCaster) Equal to 4
+            Then - Actions
+                Unit - Add ENHANCEMENT_StormstrikeDamageLevel4  to StormstrikeDummy
+                Ability - Set Ability: (Unit: StormstrikeDummy's Ability with Ability Code: ENHANCEMENT_StormstrikeDamageLevel4 )'s Real Level Field: Damage Per Target ('Efk1') of Level: ((Level of ENHANCEMENT_StormstrikeDamageLevel4  for StormstrikeDummy) - 1) to Ability_TempAmount
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Level of ENHANCEMENT_Stormstrike  for StormstrikeCaster) Equal to 5
+            Then - Actions
+                Unit - Add ENHANCEMENT_StormstrikeDamageLevel5  to StormstrikeDummy
+                Ability - Set Ability: (Unit: StormstrikeDummy's Ability with Ability Code: ENHANCEMENT_StormstrikeDamageLevel5 )'s Real Level Field: Damage Per Target ('Efk1') of Level: ((Level of ENHANCEMENT_StormstrikeDamageLevel5  for StormstrikeDummy) - 1) to Ability_TempAmount
+            Else - Actions
+        -------- It's time to cast them! So let's add this action. --------
+        Unit - Order StormstrikeDummy to Night Elf Warden - Fan Of Knives.
+        -------- Time to remove leaks in order to prevent ingame lags. --------
+        Custom script:   call RemoveLocation(udg_StormstrikePoints[1])
+        Custom script:   call RemoveLocation(udg_StormstrikePoints[2])
+        -------- You're done! --------
+        -------- Q: Why do you use Warden - Fan of Knives ability to order dummy cast spells? --------
+        -------- A: Because we the melee damage spell was based from Fan of Knives. --------

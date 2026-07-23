@@ -1,0 +1,263 @@
+Ghost Wolf Morph
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to ENHANCEMENT_GhostWolfMorph 
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Triggering unit) Equal to Nazgrek
+            Then - Actions
+                -------- MORPH into Ghost Wolf --------
+                If ((Nazgrek is dead) Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Animation - Queue Nazgrek's Spell Slam animation
+                Wait 1.00 seconds
+                Unit - Remove All buffs from Nazgrek
+                Unit - Add Ghost (Visible) to Nazgrek
+                Unit - Turn collision for Nazgrek Off.
+                If ((Nazgrek is dead) Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Set VariableSet NazgrekMorph = Nazgrek
+                Set VariableSet NazgrekMorphing = True
+                Set VariableSet VarPoint = (Position of NazgrekMorph)
+                Unit - Create 1 Nazgrek (Ghost Wolf - Level 1) for Player 1 (Red) at VarPoint facing (Facing of NazgrekMorph) degrees
+                Set VariableSet Nazgrek = (Last created unit)
+                Animation - Queue Nazgrek's attack animation
+                Animation - Queue Nazgrek's stand animation
+                Player - Disable Shield Block (50) for Player 1 (Red)
+                Player - Disable Shield Block (75) for Player 1 (Red)
+                Player - Disable Shield Block (100) for Player 1 (Red)
+                -------- Transfer level --------
+                Custom script:   call AbilityPoints_DisableHeroLevelUp()
+                Hero - Set Nazgrek Hero-level to (Hero level of NazgrekMorph), Hide level-up graphics
+                -------- Transfer xp --------
+                Hero - Set Nazgrek experience to (Hero experience of NazgrekMorph), Hide level-up graphics
+                Custom script:   call AbilityPoints_EnableHeroLevelUp()
+                -------- Transfer Str / Agi / Int --------
+                Hero - Modify Strength of Nazgrek: Set to (Strength of NazgrekMorph (Include bonuses)).
+                Hero - Modify Agility of Nazgrek: Set to (Agility of NazgrekMorph (Include bonuses)).
+                Hero - Modify Intelligence of Nazgrek: Set to (Intelligence of NazgrekMorph (Include bonuses)).
+                -------- Transfer health --------
+                Unit - Set life of Nazgrek to (Life of NazgrekMorph)
+                -------- Transfer mana --------
+                Unit - Set mana of Nazgrek to (Mana of NazgrekMorph)
+                -------- Transfer Items --------
+                For each (Integer MorphInteger) from 1 to 6, do (Actions)
+                    Loop - Actions
+                        Hero - Drop the item from slot MorphInteger of NazgrekMorph.
+                        Hero - Give (Last dropped item) to Nazgrek
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Unit - Hide NazgrekMorph
+                Unit - Pause NazgrekMorph
+                -------- tmp --------
+                Set VariableSet Temp_Integer = (Custom value of Nazgrek)
+                -------- LEVEL 1 --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of ENHANCEMENT_GhostWolfMorph  for (Triggering unit)) Equal to 1
+                    Then - Actions
+                        -------- Increase Crit and Dodge --------
+                        Set VariableSet Stats_Dodge[Temp_Integer] = (Stats_Dodge[Temp_Integer] + 5)
+                        -------- Set armor --------
+                        Unit - Set Armor of Nazgrek to ((Armor of NazgrekMorph) + ((Armor of NazgrekMorph) x 0.50))
+                        -------- Set dmg --------
+                        Unit - Set Base Damage of Nazgrek to ((Base Damage of NazgrekMorph for weapon index 1) + ((Base Damage of NazgrekMorph for weapon index 1) x (Integer(0.20)))) for weapon index: 1
+                    Else - Actions
+                -------- LEVEL 2 --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of ENHANCEMENT_GhostWolfMorph  for (Triggering unit)) Equal to 2
+                    Then - Actions
+                        -------- Increase Crit and Dodge --------
+                        Set VariableSet Stats_Crit[Temp_Integer] = (Stats_Crit[Temp_Integer] + 5)
+                        Set VariableSet Stats_Dodge[Temp_Integer] = (Stats_Dodge[Temp_Integer] + 10)
+                        Unit - Set level of ENHANCEMENT_Bite (Ghost Wolf) for Nazgrek to 2
+                        Unit - Set level of ENHANCEMENT_FuriousHowl (Ghost Wolf) for Nazgrek to 2
+                        Unit - Set level of Ghost Wolf (Passive) for Nazgrek to 2
+                        -------- Set armor --------
+                        Unit - Set Armor of Nazgrek to ((Armor of NazgrekMorph) + ((Armor of NazgrekMorph) x 0.60))
+                        -------- Set dmg --------
+                        Unit - Set Base Damage of Nazgrek to ((Base Damage of NazgrekMorph for weapon index 1) + ((Base Damage of NazgrekMorph for weapon index 1) x (Integer(0.40)))) for weapon index: 1
+                    Else - Actions
+                -------- LEVEL 3 --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of ENHANCEMENT_GhostWolfMorph  for (Triggering unit)) Equal to 3
+                    Then - Actions
+                        -------- Increase Crit and Dodge --------
+                        Set VariableSet Stats_Crit[Temp_Integer] = (Stats_Crit[Temp_Integer] + 10)
+                        Set VariableSet Stats_Dodge[Temp_Integer] = (Stats_Dodge[Temp_Integer] + 15)
+                        Unit - Set level of ENHANCEMENT_Bite (Ghost Wolf) for Nazgrek to 3
+                        Unit - Set level of ENHANCEMENT_FuriousHowl (Ghost Wolf) for Nazgrek to 3
+                        Unit - Set level of Ghost Wolf (Passive) for Nazgrek to 3
+                        -------- Set armor --------
+                        Unit - Set Armor of Nazgrek to ((Armor of NazgrekMorph) + ((Armor of NazgrekMorph) x 0.70))
+                        -------- Set dmg --------
+                        Unit - Set Base Damage of Nazgrek to ((Base Damage of NazgrekMorph for weapon index 1) + ((Base Damage of NazgrekMorph for weapon index 1) x (Integer(0.60)))) for weapon index: 1
+                    Else - Actions
+                -------- LEVEL 4 --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of ENHANCEMENT_GhostWolfMorph  for (Triggering unit)) Equal to 4
+                    Then - Actions
+                        -------- Increase Crit and Dodge --------
+                        Set VariableSet Stats_Crit[Temp_Integer] = (Stats_Crit[Temp_Integer] + 15)
+                        Set VariableSet Stats_Dodge[Temp_Integer] = (Stats_Dodge[Temp_Integer] + 20)
+                        Unit - Set level of ENHANCEMENT_Bite (Ghost Wolf) for Nazgrek to 4
+                        Unit - Set level of ENHANCEMENT_FuriousHowl (Ghost Wolf) for Nazgrek to 4
+                        Unit - Set level of Ghost Wolf (Passive) for Nazgrek to 4
+                        -------- Set armor --------
+                        Unit - Set Armor of Nazgrek to ((Armor of NazgrekMorph) + ((Armor of NazgrekMorph) x 0.80))
+                        -------- Set dmg --------
+                        Unit - Set Base Damage of Nazgrek to ((Base Damage of NazgrekMorph for weapon index 1) + ((Base Damage of NazgrekMorph for weapon index 1) x (Integer(0.80)))) for weapon index: 1
+                    Else - Actions
+                -------- LEVEL 5 --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of ENHANCEMENT_GhostWolfMorph  for (Triggering unit)) Equal to 5
+                    Then - Actions
+                        -------- Increase Crit and Dodge --------
+                        Set VariableSet Stats_Crit[Temp_Integer] = (Stats_Crit[Temp_Integer] + 20)
+                        Set VariableSet Stats_Dodge[Temp_Integer] = (Stats_Dodge[Temp_Integer] + 25)
+                        Unit - Set level of ENHANCEMENT_Bite (Ghost Wolf) for Nazgrek to 5
+                        Unit - Set level of ENHANCEMENT_FuriousHowl (Ghost Wolf) for Nazgrek to 5
+                        Unit - Set level of Ghost Wolf (Passive) for Nazgrek to 5
+                        -------- Set armor --------
+                        Unit - Set Armor of Nazgrek to ((Armor of NazgrekMorph) + ((Armor of NazgrekMorph) x 0.90))
+                        -------- Set dmg --------
+                        Unit - Set Base Damage of Nazgrek to ((Base Damage of NazgrekMorph for weapon index 1) + ((Base Damage of NazgrekMorph for weapon index 1) x (Integer(1.00)))) for weapon index: 1
+                    Else - Actions
+                -------- sound --------
+                Sound - Play GhostWolfBegin <gen> at 100.00% volume, attached to (Triggering unit)
+                Selection - Clear selection for Player 1 (Red).
+                Selection - Select Nazgrek
+                Unit - Remove ENHANCEMENT  from Nazgrek
+                Wait 0.10 seconds
+                Set VariableSet NazgrekMorphing = False
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Triggering unit) Equal to Zulkis
+            Then - Actions
+                -------- MORPH into Ghost Wolf --------
+                If ((Zulkis is dead) Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Animation - Queue Zulkis's Spell Slam animation
+                Wait 1.00 seconds
+                Unit - Remove All buffs from Zulkis
+                Unit - Add Ghost (Visible) to Zulkis
+                Unit - Turn collision for Zulkis Off.
+                If ((Zulkis is dead) Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Set VariableSet ZulkisMorph = Zulkis
+                Unit - Hide ZulkisMorph
+                Unit - Pause ZulkisMorph
+                Set VariableSet ZulkisMorphing = True
+                Set VariableSet VarPoint = (Position of ZulkisMorph)
+                Unit - Create 1 Zul'kis (melee Ghost Wolf - Level 1) for Player 1 (Red) at VarPoint facing (Facing of ZulkisMorph) degrees
+                Set VariableSet Zulkis = (Last created unit)
+                Animation - Queue Zulkis's attack animation
+                Animation - Queue Zulkis's stand animation
+                -------- Transfer level --------
+                Custom script:   call AbilityPoints_DisableHeroLevelUp()
+                Hero - Set Zulkis Hero-level to (Hero level of ZulkisMorph), Hide level-up graphics
+                -------- Transfer xp --------
+                Hero - Set Zulkis experience to (Hero experience of ZulkisMorph), Hide level-up graphics
+                Custom script:   call AbilityPoints_EnableHeroLevelUp()
+                -------- Transfer Str / Agi / Int --------
+                Hero - Modify Strength of Zulkis: Set to (Strength of ZulkisMorph (Include bonuses)).
+                Hero - Modify Agility of Zulkis: Set to (Agility of ZulkisMorph (Include bonuses)).
+                Hero - Modify Intelligence of Zulkis: Set to (Intelligence of ZulkisMorph (Include bonuses)).
+                -------- Transfer health --------
+                Unit - Set life of Zulkis to (Life of ZulkisMorph)
+                -------- Transfer mana --------
+                Unit - Set mana of Zulkis to (Mana of ZulkisMorph)
+                -------- Transfer Items --------
+                For each (Integer MorphInteger) from 1 to 6, do (Actions)
+                    Loop - Actions
+                        Hero - Drop the item from slot MorphInteger of ZulkisMorph.
+                        Hero - Give (Last dropped item) to Zulkis
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                -------- tmp --------
+                Set VariableSet Temp_Integer = (Custom value of Zulkis)
+                -------- LEVEL 1 --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of ENHANCEMENT_GhostWolfMorph  for (Triggering unit)) Equal to 1
+                    Then - Actions
+                        -------- Increase Crit and Dodge --------
+                        Set VariableSet Stats_Dodge[Temp_Integer] = (Stats_Dodge[Temp_Integer] + 5)
+                        -------- Set armor --------
+                        Unit - Set Armor of Zulkis to ((Armor of ZulkisMorph) + ((Armor of ZulkisMorph) x 0.50))
+                        -------- Set dmg --------
+                        Unit - Set Base Damage of Zulkis to ((Base Damage of ZulkisMorph for weapon index 1) + ((Base Damage of ZulkisMorph for weapon index 1) x (Integer(0.20)))) for weapon index: 1
+                    Else - Actions
+                -------- LEVEL 2 --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of ENHANCEMENT_GhostWolfMorph  for (Triggering unit)) Equal to 2
+                    Then - Actions
+                        -------- Increase Crit and Dodge --------
+                        Set VariableSet Stats_Crit[Temp_Integer] = (Stats_Crit[Temp_Integer] + 5)
+                        Set VariableSet Stats_Dodge[Temp_Integer] = (Stats_Dodge[Temp_Integer] + 10)
+                        Unit - Set level of ENHANCEMENT_Bite (Ghost Wolf) for Zulkis to 2
+                        Unit - Set level of ENHANCEMENT_FuriousHowl (Ghost Wolf) for Zulkis to 2
+                        Unit - Set level of Ghost Wolf (Passive) for Zulkis to 2
+                        -------- Set armor --------
+                        Unit - Set Armor of Zulkis to ((Armor of ZulkisMorph) + ((Armor of ZulkisMorph) x 0.60))
+                        -------- Set dmg --------
+                        Unit - Set Base Damage of Zulkis to ((Base Damage of ZulkisMorph for weapon index 1) + ((Base Damage of ZulkisMorph for weapon index 1) x (Integer(0.40)))) for weapon index: 1
+                    Else - Actions
+                -------- LEVEL 3 --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of ENHANCEMENT_GhostWolfMorph  for (Triggering unit)) Equal to 3
+                    Then - Actions
+                        -------- Increase Crit and Dodge --------
+                        Set VariableSet Stats_Crit[Temp_Integer] = (Stats_Crit[Temp_Integer] + 10)
+                        Set VariableSet Stats_Dodge[Temp_Integer] = (Stats_Dodge[Temp_Integer] + 15)
+                        Unit - Set level of ENHANCEMENT_Bite (Ghost Wolf) for Zulkis to 3
+                        Unit - Set level of ENHANCEMENT_FuriousHowl (Ghost Wolf) for Zulkis to 3
+                        Unit - Set level of Ghost Wolf (Passive) for Zulkis to 3
+                        -------- Set armor --------
+                        Unit - Set Armor of Zulkis to ((Armor of ZulkisMorph) + ((Armor of ZulkisMorph) x 0.70))
+                        -------- Set dmg --------
+                        Unit - Set Base Damage of Zulkis to ((Base Damage of ZulkisMorph for weapon index 1) + ((Base Damage of ZulkisMorph for weapon index 1) x (Integer(0.60)))) for weapon index: 1
+                    Else - Actions
+                -------- LEVEL 4 --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of ENHANCEMENT_GhostWolfMorph  for (Triggering unit)) Equal to 4
+                    Then - Actions
+                        -------- Increase Crit and Dodge --------
+                        Set VariableSet Stats_Crit[Temp_Integer] = (Stats_Crit[Temp_Integer] + 15)
+                        Set VariableSet Stats_Dodge[Temp_Integer] = (Stats_Dodge[Temp_Integer] + 20)
+                        Unit - Set level of ENHANCEMENT_Bite (Ghost Wolf) for Zulkis to 4
+                        Unit - Set level of ENHANCEMENT_FuriousHowl (Ghost Wolf) for Zulkis to 4
+                        Unit - Set level of Ghost Wolf (Passive) for Zulkis to 4
+                        -------- Set armor --------
+                        Unit - Set Armor of Zulkis to ((Armor of ZulkisMorph) + ((Armor of ZulkisMorph) x 0.80))
+                        -------- Set dmg --------
+                        Unit - Set Base Damage of Zulkis to ((Base Damage of ZulkisMorph for weapon index 1) + ((Base Damage of ZulkisMorph for weapon index 1) x (Integer(0.80)))) for weapon index: 1
+                    Else - Actions
+                -------- LEVEL 5 --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Level of ENHANCEMENT_GhostWolfMorph  for (Triggering unit)) Equal to 5
+                    Then - Actions
+                        -------- Increase Crit and Dodge --------
+                        Set VariableSet Stats_Crit[Temp_Integer] = (Stats_Crit[Temp_Integer] + 20)
+                        Set VariableSet Stats_Dodge[Temp_Integer] = (Stats_Dodge[Temp_Integer] + 25)
+                        Unit - Set level of ENHANCEMENT_Bite (Ghost Wolf) for Zulkis to 5
+                        Unit - Set level of ENHANCEMENT_FuriousHowl (Ghost Wolf) for Zulkis to 5
+                        Unit - Set level of Ghost Wolf (Passive) for Zulkis to 5
+                        -------- Set armor --------
+                        Unit - Set Armor of Zulkis to ((Armor of ZulkisMorph) + ((Armor of ZulkisMorph) x 0.90))
+                        -------- Set dmg --------
+                        Unit - Set Base Damage of Zulkis to ((Base Damage of ZulkisMorph for weapon index 1) + ((Base Damage of ZulkisMorph for weapon index 1) x (Integer(1.00)))) for weapon index: 1
+                    Else - Actions
+                -------- sound --------
+                Sound - Play GhostWolfBegin <gen> at 100.00% volume, attached to (Triggering unit)
+                Selection - Clear selection for Player 1 (Red).
+                Selection - Select Zulkis
+                Unit - Remove ENHANCEMENT  from Zulkis
+                Wait 0.10 seconds
+                Set VariableSet ZulkisMorphing = False
+            Else - Actions

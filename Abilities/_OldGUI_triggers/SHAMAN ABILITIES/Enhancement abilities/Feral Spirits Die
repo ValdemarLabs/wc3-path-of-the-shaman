@@ -1,0 +1,21 @@
+Feral Spirits Die
+    Events
+        Unit - A unit Dies
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Unit-type of (Triggering unit)) Equal to Spirit Wolf (Level 1)
+                (Unit-type of (Triggering unit)) Equal to Dire Wolf (Level 2)
+                (Unit-type of (Triggering unit)) Equal to Shadow Wolf (Level 3)
+    Actions
+        -------- Remove Dead Wolf from Group --------
+        Set VariableSet FeralSpirits_WolfCV = (Custom value of (Triggering unit))
+        Set VariableSet FeralSpirits_Summoner[FeralSpirits_WolfCV] = No unit
+        Unit Group - Remove (Triggering unit) from FeralSpirits_WolfGroup.
+        -------- Disable Follow Trigger if No Wolves Exist --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in FeralSpirits_WolfGroup) Equal to 0
+            Then - Actions
+                Trigger - Turn off Feral Spirits Follow <gen>
+            Else - Actions
