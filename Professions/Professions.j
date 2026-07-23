@@ -150,6 +150,7 @@ globals
     private Table P_CrafterAnimPrimaryByType = 0
     private Table P_CrafterAnimFallbackByType = 0
     private timer P_ClockTimer = null
+    private trigger P_AttackedTrigger = null
 endglobals
 
 private function P_GetMaterialKey takes integer recipeId, integer slot returns integer
@@ -1011,6 +1012,25 @@ private function P_FinishStationFeedback takes integer professionId, unit statio
     endif
 endfunction
 
+private function P_CancelStationFeedback takes integer professionId, unit station returns nothing
+    local integer stationId
+
+    if station == null then
+        return
+    endif
+
+    if professionId == GNS_PROF_ALCHEMY then
+        set stationId = GetHandleId(station)
+        call P_BumpAlchemyGeneration(station)
+        call P_AlchemyPostCraft.boolean.remove(stationId)
+        call P_StationByHandle.unit.remove(stationId)
+        call UnitRemoveAbility(station, P_ALCHEMY_LIGHT_ABILITY)
+        call SetUnitAnimation(station, "decay")
+    else
+        call SetUnitAnimation(station, "stand")
+    endif
+endfunction
+
 private function P_StartCrafterFeedback takes integer professionId, unit crafter, unit station returns nothing
     local string primaryAnim
     local string fallbackAnim
@@ -1413,11 +1433,15 @@ endfunction
 private function P_CancelJob takes integer jobId returns nothing
     local unit crafter = P_JobCrafter[jobId]
     local unit station = P_JobStation[jobId]
+    local integer recipeId = P_JobRecipe[jobId]
 
     call P_StopLoopSound(jobId)
     call P_StopCrafterAnimationLoop(jobId)
     call P_FinishFakeCast(jobId, crafter)
     call P_FinishCrafterFeedback(crafter)
+    if P_JobStartedCrafting[jobId] and P_IsRecipeValid(recipeId) then
+        call P_CancelStationFeedback(P_RecipeProfessionId[recipeId], station)
+    endif
     if crafter != null then
         call IssueImmediateOrder(crafter, "stop")
     endif
@@ -1434,6 +1458,26 @@ private function P_CancelJob takes integer jobId returns nothing
 
     set crafter = null
     set station = null
+endfunction
+
+private function P_CrafterAttackedAction takes nothing returns nothing
+    local unit crafter = GetTriggerUnit()
+    local integer jobId
+    local player owner
+
+    if crafter != null and P_CrafterActiveJob.has(GetHandleId(crafter)) then
+        set jobId = P_CrafterActiveJob.integer[GetHandleId(crafter)]
+        if not P_JobAiControlled[jobId] then
+            set owner = GetOwningPlayer(crafter)
+            if owner != null then
+                call DisplayTextToPlayer(owner, 0.00, 0.00, "|cffff8080Crafting interrupted.|r")
+            endif
+        endif
+        call P_CancelJob(jobId)
+    endif
+
+    set owner = null
+    set crafter = null
 endfunction
 
 private function P_BeginActualCraft takes integer jobId returns boolean
@@ -2412,6 +2456,9 @@ public function Init takes nothing returns nothing
     set P_CrafterAnimPrimaryByType = Table.create()
     set P_CrafterAnimFallbackByType = Table.create()
     set P_ClockTimer = CreateTimer()
+    set P_AttackedTrigger = CreateTrigger()
+    call TriggerRegisterAnyUnitEventBJ(P_AttackedTrigger, EVENT_PLAYER_UNIT_ATTACKED)
+    call TriggerAddAction(P_AttackedTrigger, function P_CrafterAttackedAction)
     call TimerStart(P_ClockTimer, 999999.00, false, function P_NoOp)
 endfunction
 
