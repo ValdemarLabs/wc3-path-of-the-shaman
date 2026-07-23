@@ -18,6 +18,8 @@
     central player-unit event dispatcher; otherwise Talents registers its own
     player hero level trigger. Ability scripts can query the public effect
     helpers when applying damage, healing, cooldown, mana, or special behavior.
+    Import TalentsElemental, TalentsEnhancement, TalentsRestoration, and
+    TalentsTotemic after this library to load the default shaman trees.
 
     API:
     - set ok = Talents_Learn(hero, talentIndex)
@@ -36,6 +38,8 @@
     - set bonus = Talents_GetHealBonusPercent(hero, abilityId)
     - set healing = Talents_ApplyHealBonus(hero, abilityId, healing)
     - set rank = Talents_GetRankById(hero, talentId)
+    - call Talents_RegisterTreeDimensions(treeId, rows, columns)
+    - set talent = Talents_RegisterTalent(...)
 
 **/
 library Talents initializer Init requires AbilitiesPlayer, optional AbilityPoints, optional Events
@@ -163,8 +167,52 @@ library Talents initializer Init requires AbilitiesPlayer, optional AbilityPoint
         set feedbackPlayer = null
     endfunction
 
-    private function TLT_RegisterTalent takes integer talentId, integer treeId, integer row, integer column, integer maxRank, integer requiredTreePoints, integer requiredTalentId, integer requiredTalentRank, integer requiredAbilityId, integer effectType, integer effectAbilityId, integer valuePerRank, string iconPath, string titleText, string bodyText returns integer
-        if TLT_TalentCount >= TLT_MAX_TALENTS or talentId == 0 then
+    private function TLT_ShowPointGainText takes unit hero, integer amount returns nothing
+        if amount <= 0 then
+            return
+        endif
+
+        if amount == 1 then
+            call TLT_DisplayToHeroOwner(hero, "|cff80ff80Talent point gained.|r")
+        else
+            call TLT_DisplayToHeroOwner(hero, "|cff80ff80Talent points gained:|r " + I2S(amount))
+        endif
+    endfunction
+
+    private function TLT_GetTalentIndexByIdRaw takes integer talentId returns integer
+        local integer talentIndex = 1
+
+        if talentId == 0 then
+            return 0
+        endif
+
+        loop
+            exitwhen talentIndex > TLT_TalentCount
+            if TLT_TalentId[talentIndex] == talentId then
+                return talentIndex
+            endif
+            set talentIndex = talentIndex + 1
+        endloop
+
+        return 0
+    endfunction
+
+    public function RegisterTreeDimensions takes integer treeId, integer rows, integer columns returns nothing
+        if treeId <= AbilitiesPlayer_TREE_NONE or rows <= 0 or columns <= 0 then
+            return
+        endif
+
+        set TLT_TreeRows[treeId] = rows
+        set TLT_TreeColumns[treeId] = columns
+    endfunction
+
+    public function RegisterTalent takes integer talentId, integer treeId, integer row, integer column, integer maxRank, integer requiredTreePoints, integer requiredTalentId, integer requiredTalentRank, integer requiredAbilityId, integer effectType, integer effectAbilityId, integer valuePerRank, string iconPath, string titleText, string bodyText returns integer
+        local integer existingIndex = TLT_GetTalentIndexByIdRaw(talentId)
+
+        if existingIndex != 0 then
+            return existingIndex
+        endif
+        if TLT_TalentCount >= TLT_MAX_TALENTS or talentId == 0 or treeId <= AbilitiesPlayer_TREE_NONE or row <= 0 or column <= 0 or maxRank <= 0 then
             return 0
         endif
 
@@ -188,32 +236,19 @@ library Talents initializer Init requires AbilitiesPlayer, optional AbilityPoint
         return TLT_TalentCount
     endfunction
 
-    private function TLT_RegisterElemental takes nothing returns nothing
-        call TLT_RegisterTalent(TALENT_ELEMENTAL_CONVECTION, AbilitiesPlayer_TREE_ELEMENTAL, 1, 1, 5, 0, 0, 0, 'A6A0', EFFECT_DAMAGE_PERCENT, 'A6A0', 4, "", "Convection", "Increases Lightning Bolt damage.")
-        call TLT_RegisterTalent(TALENT_ELEMENTAL_SHOCK_MASTERY, AbilitiesPlayer_TREE_ELEMENTAL, 1, 3, 5, 0, 0, 0, 'A67J', EFFECT_DAMAGE_PERCENT, 'A67J', 3, "", "Shock Mastery", "Increases Fire Shock damage.")
-        call TLT_RegisterTalent(TALENT_ELEMENTAL_STORM_FOCUS, AbilitiesPlayer_TREE_ELEMENTAL, 2, 1, 3, 5, TALENT_ELEMENTAL_CONVECTION, 3, 'A67H', EFFECT_COOLDOWN_PERCENT, 'A67H', 4, "", "Storm Focus", "Reduces Lightning Strike cooldown when scripts query this bonus.")
-        call TLT_RegisterTalent(TALENT_ELEMENTAL_ELEMENTAL_PRECISION, AbilitiesPlayer_TREE_ELEMENTAL, 3, 1, 1, 10, TALENT_ELEMENTAL_STORM_FOCUS, 3, 'A6A3', EFFECT_SPECIAL, 'A67Q', 1, "", "Elemental Precision", "Unlock hook talent for stronger elemental follow-up effects.")
-    endfunction
-
-    private function TLT_RegisterEnhancement takes nothing returns nothing
-        call TLT_RegisterTalent(TALENT_ENHANCEMENT_WEAPON_MASTERY, AbilitiesPlayer_TREE_ENHANCEMENT, 1, 1, 5, 0, 0, 0, 'A685', EFFECT_DAMAGE_PERCENT, 'A685', 4, "", "Weapon Mastery", "Increases Stormstrike damage.")
-        call TLT_RegisterTalent(TALENT_ENHANCEMENT_PRIMAL_MOMENTUM, AbilitiesPlayer_TREE_ENHANCEMENT, 1, 3, 5, 0, 0, 0, 'A6DP', EFFECT_DAMAGE_PERCENT, 'A6DP', 3, "", "Primal Momentum", "Increases Whirlwind damage.")
-        call TLT_RegisterTalent(TALENT_ENHANCEMENT_FERAL_BOND, AbilitiesPlayer_TREE_ENHANCEMENT, 2, 1, 3, 5, TALENT_ENHANCEMENT_WEAPON_MASTERY, 3, 'A679', EFFECT_SPECIAL, 'A679', 1, "", "Feral Bond", "Enables Feral Spirits scripts to scale companion effects by rank.")
-        call TLT_RegisterTalent(TALENT_ENHANCEMENT_SPIRIT_FURY, AbilitiesPlayer_TREE_ENHANCEMENT, 3, 1, 1, 10, TALENT_ENHANCEMENT_FERAL_BOND, 3, 'A6A4', EFFECT_SPECIAL, 'A677', 1, "", "Spirit Fury", "Unlock hook talent for stronger spirit and voodoo effects.")
-    endfunction
-
-    private function TLT_RegisterRestoration takes nothing returns nothing
-        call TLT_RegisterTalent(TALENT_RESTORATION_TIDAL_FOCUS, AbilitiesPlayer_TREE_RESTORATION, 1, 1, 5, 0, 0, 0, 'A66Y', EFFECT_HEAL_PERCENT, 'A66Y', 4, "", "Tidal Focus", "Increases Healing Wave healing.")
-        call TLT_RegisterTalent(TALENT_RESTORATION_MENDING_RAIN, AbilitiesPlayer_TREE_RESTORATION, 1, 3, 5, 0, 0, 0, 'A66W', EFFECT_HEAL_PERCENT, 'A66W', 3, "", "Mending Rain", "Increases Healing Rain healing.")
-        call TLT_RegisterTalent(TALENT_RESTORATION_ANCESTRAL_GRACE, AbilitiesPlayer_TREE_RESTORATION, 2, 1, 3, 5, TALENT_RESTORATION_TIDAL_FOCUS, 3, 'A6AL', EFFECT_SPECIAL, 'A6AL', 1, "", "Ancestral Grace", "Enables Ancestral Ward scripts to add stronger protective effects.")
-        call TLT_RegisterTalent(TALENT_RESTORATION_SPIRIT_FLOW, AbilitiesPlayer_TREE_RESTORATION, 3, 1, 1, 10, TALENT_RESTORATION_ANCESTRAL_GRACE, 3, 'A6A2', EFFECT_SPECIAL, 'A01Z', 1, "", "Spirit Flow", "Unlock hook talent for Spirit Link and Spiritmender synergy.")
-    endfunction
-
-    private function TLT_RegisterTotemic takes nothing returns nothing
-        call TLT_RegisterTalent(TALENT_TOTEMIC_EARTHEN_RESONANCE, AbilitiesPlayer_TREE_TOTEMIC, 1, 1, 5, 0, 0, 0, 'A63F', EFFECT_SPECIAL, 'A63F', 1, "", "Earthen Resonance", "Enables earth totem scripts to scale their defensive effects by rank.")
-        call TLT_RegisterTalent(TALENT_TOTEMIC_TOTEMIC_MIGHT, AbilitiesPlayer_TREE_TOTEMIC, 1, 3, 5, 0, 0, 0, 'A636', EFFECT_SPECIAL, 'A636', 1, "", "Totemic Might", "Enables general totem scripts to scale their bonuses by rank.")
-        call TLT_RegisterTalent(TALENT_TOTEMIC_SKYFURY_FOCUS, AbilitiesPlayer_TREE_TOTEMIC, 2, 3, 3, 5, TALENT_TOTEMIC_TOTEMIC_MIGHT, 3, 'A01U', EFFECT_DAMAGE_PERCENT, 'A01U', 4, "", "Skyfury Focus", "Increases Skyfury Totem damage when scripts query this bonus.")
-        call TLT_RegisterTalent(TALENT_TOTEMIC_TOTEMIC_HARMONY, AbilitiesPlayer_TREE_TOTEMIC, 3, 3, 1, 10, TALENT_TOTEMIC_SKYFURY_FOCUS, 3, 'A6A5', EFFECT_SPECIAL, 'A636', 1, "", "Totemic Harmony", "Unlock hook talent for Totemist capstone behavior.")
+    private function TLT_RegisterTalentLibraries takes nothing returns nothing
+        static if LIBRARY_TalentsElemental then
+            call ExecuteFunc("TalentsElemental_Register")
+        endif
+        static if LIBRARY_TalentsEnhancement then
+            call ExecuteFunc("TalentsEnhancement_Register")
+        endif
+        static if LIBRARY_TalentsRestoration then
+            call ExecuteFunc("TalentsRestoration_Register")
+        endif
+        static if LIBRARY_TalentsTotemic then
+            call ExecuteFunc("TalentsTotemic_Register")
+        endif
     endfunction
 
     public function EnsureInitialized takes nothing returns nothing
@@ -223,19 +258,11 @@ library Talents initializer Init requires AbilitiesPlayer, optional AbilityPoint
 
         set TLT_Initialized = true
         set TLT_TalentCount = 0
-        set TLT_TreeRows[AbilitiesPlayer_TREE_ELEMENTAL] = 8
-        set TLT_TreeRows[AbilitiesPlayer_TREE_ENHANCEMENT] = 8
-        set TLT_TreeRows[AbilitiesPlayer_TREE_RESTORATION] = 8
-        set TLT_TreeRows[AbilitiesPlayer_TREE_TOTEMIC] = 8
-        set TLT_TreeColumns[AbilitiesPlayer_TREE_ELEMENTAL] = 6
-        set TLT_TreeColumns[AbilitiesPlayer_TREE_ENHANCEMENT] = 6
-        set TLT_TreeColumns[AbilitiesPlayer_TREE_RESTORATION] = 6
-        set TLT_TreeColumns[AbilitiesPlayer_TREE_TOTEMIC] = 6
-
-        call TLT_RegisterElemental()
-        call TLT_RegisterEnhancement()
-        call TLT_RegisterRestoration()
-        call TLT_RegisterTotemic()
+        call RegisterTreeDimensions(AbilitiesPlayer_TREE_ELEMENTAL, 8, 6)
+        call RegisterTreeDimensions(AbilitiesPlayer_TREE_ENHANCEMENT, 8, 6)
+        call RegisterTreeDimensions(AbilitiesPlayer_TREE_RESTORATION, 8, 6)
+        call RegisterTreeDimensions(AbilitiesPlayer_TREE_TOTEMIC, 8, 6)
+        call TLT_RegisterTalentLibraries()
     endfunction
 
     public function IsValidTalent takes integer talentIndex returns boolean
@@ -575,15 +602,11 @@ library Talents initializer Init requires AbilitiesPlayer, optional AbilityPoint
 
         set TLT_HeroLevelPoints[heroSlot] = TLT_HeroLevelPoints[heroSlot] + amount
         if showFeedback then
-            if amount == 1 then
-                call TLT_DisplayToHeroOwner(hero, "|cff80ff80Talent point gained.|r")
-            else
-                call TLT_DisplayToHeroOwner(hero, "|cff80ff80Talent points gained:|r " + I2S(amount))
-            endif
+            call TLT_ShowPointGainText(hero, amount)
         endif
     endfunction
 
-    public function SyncLevelPoints takes unit hero returns integer
+    private function TLT_SyncLevelPointsForHero takes unit hero, boolean showFeedback returns integer
         local integer heroSlot = TLT_GetHeroSlot(hero)
         local integer targetPoints
         local integer gainedPoints
@@ -599,8 +622,15 @@ library Talents initializer Init requires AbilitiesPlayer, optional AbilityPoint
 
         set gainedPoints = targetPoints - TLT_HeroLevelPoints[heroSlot]
         set TLT_HeroLevelPoints[heroSlot] = targetPoints
+        if showFeedback then
+            call TLT_ShowPointGainText(hero, gainedPoints)
+        endif
 
         return gainedPoints
+    endfunction
+
+    public function SyncLevelPoints takes unit hero returns integer
+        return TLT_SyncLevelPointsForHero(hero, true)
     endfunction
 
     public function GetBasePoints takes unit hero returns integer
@@ -647,6 +677,9 @@ library Talents initializer Init requires AbilitiesPlayer, optional AbilityPoint
         set TLT_HeroBonusPoints[heroSlot] = TLT_HeroBonusPoints[heroSlot] + amount
         if TLT_HeroBonusPoints[heroSlot] < 0 then
             set TLT_HeroBonusPoints[heroSlot] = 0
+        endif
+        if amount > 0 then
+            call TLT_ShowPointGainText(hero, amount)
         endif
     endfunction
 
@@ -1226,8 +1259,8 @@ library Talents initializer Init requires AbilitiesPlayer, optional AbilityPoint
     endfunction
 
     private function TLT_SyncInitialLevelPoints takes nothing returns nothing
-        call SyncLevelPoints(udg_Nazgrek)
-        call SyncLevelPoints(udg_Zulkis)
+        call TLT_SyncLevelPointsForHero(udg_Nazgrek, false)
+        call TLT_SyncLevelPointsForHero(udg_Zulkis, false)
     endfunction
 
     private function Init takes nothing returns nothing
