@@ -47,6 +47,19 @@
 - Updated `UI/TalentsUI.j`
   - Added per-tree background texture selection for the TalentUI tree pane.
 
+- Updated `Professions.j`
+  - Crafting now cancels when the crafting unit is attacked:
+    - Registers EVENT_PLAYER_UNIT_ATTACKED during Professions_Init.
+    - Checks whether the attacked unit has an active profession job.
+    - Calls the existing cancel path so the craft fails, loop sound/fake cast/animations/reservations/cinematic state are cleaned up.
+    - Player-owned interrupted crafting shows Crafting interrupted.
+    - If the station feedback had already started, it is reset; alchemy also removes the cauldron light ability and cancels pending delayed alchemy animation stages.
+- Updated `CampFire.j` and `BaseCamp.j`
+  - BaseCamp now shows the normal is now Rested message when a Tent rest renews an already Rested hero. CampFire behavior remains non-renewing; it still filters out already Rested heroes before applying resting progress, documented that in the library header.
+
+- `Preload/Preloader.j`
+  - Creates a temporary hidden AbilityLoader unit from rawcode `h60N` for ability preloading and removes it immediately after use.
+
 ## [22.7.2026]
 
 ### Player-Facing Updates
@@ -108,7 +121,6 @@
   - Restores the UI in reverse order with `BlzHideCinematicPanels(false)` followed by `ShowInterface(true, 0.00)`.
   - Splits each preload phase into a visible UI/title tick and a later preload-work tick so image changes can render before synchronous preload work begins.
   - Calls `ExSound_PreloadAll()`, `ExMusic_PreloadAll()`, and `Preload_Abilities(...)`.
-  - Creates a temporary hidden AbilityLoader unit from rawcode `h60N` for ability preloading and removes it immediately after use.
   - Executes `gg_trg_Game_Start` and initializes `StatsLiteUI` after preload completion.
   - Added a saved-game load path using `EVENT_GAME_LOADED` that preloads sound/music again but does not execute `gg_trg_Game_Start`.
 
