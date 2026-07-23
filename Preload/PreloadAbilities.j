@@ -11,8 +11,9 @@
     Credits:
 
     How to install:
-    Import before Preloader.j. Pass the placed AbilityLoader unit, or set
-    udg_AbilityPreloader before calling this API.
+    Import before Preloader.j. Pass an AbilityLoader unit, or set
+    udg_AbilityPreloader before calling this API. Preloader.j creates its own
+    temporary 'h60N' loader unit for the normal startup flow.
 
     API:
     call Preload_Abilities(udg_AbilityPreloader)
