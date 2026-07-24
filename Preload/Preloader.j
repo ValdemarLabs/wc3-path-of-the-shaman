@@ -26,7 +26,7 @@
     call Preloader_StartLoadedGame()
 
 **/
-library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound, ExMusic, PreloadAbilities, StatsLiteUI
+library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound, ExMusic, PreloadAbilities, StatsLiteUI, FullscreenUI
     globals
         // Timing between visible preload stages. Actual preload calls still run synchronously.
         private constant real PRL_START_MESSAGE_DELAY = 0.50
@@ -77,14 +77,12 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
     endfunction
 
     private function PRL_HideGameUI takes nothing returns nothing
-        call ShowInterface(false, 0.00)
-        call BlzHideCinematicPanels(true)
+        call FullscreenUI_SetEnabled(true)
         set PRL_GameUIHidden = true
     endfunction
 
     private function PRL_RestoreGameUI takes nothing returns nothing
-        call BlzHideCinematicPanels(false)
-        call ShowInterface(true, 0.00)
+        call FullscreenUI_SetEnabled(false)
         set PRL_GameUIHidden = false
     endfunction
 
