@@ -15,6 +15,17 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+
+## [25.7.2026]
+
+### Technical Updates
+
+- Added `UI/FullscreenUI.j`
+  - Created simple library to modify the UI to true fullscreen mode when called.
+
+- Updated `Preload/Preloader.j`
+  - Uses now the newly created FullscreenUI to hide UI elements during preload.
+
 ## [23.7.2026]
 
 ### Player-Facing Updates
