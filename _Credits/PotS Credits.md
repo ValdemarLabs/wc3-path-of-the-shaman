@@ -19,14 +19,20 @@
 - `Arcing Text Tag` - by Maker, Bribe
 - `FixedCameraLock` - by Antar
 - `Hero Wound Sounds` - by Antares
-- `Stealth` by The_Witcher
 - `Storm` - by OVOgenez
 - `WithinRange` - by Tasyen
 - `ShowUnitLevel` - by Tasyen
 - `Combat State Manager` - by Guhun
 - `Inventory and equipment systems` - by emperor_d3st (Modified by Valdemar to suit PotS and its internal systems)
+- `RegionTitlesLight` (Credits Antares, converted to JASS by Valdemar with some modifications)
+- `Spellweaver's Talent Kitchen` (Credits The_Spellweaver of talent tree as inpiration for PotS talent tree system)
+
+### Abilities
 - `Stealth` by The_Witcher
-- `RegionTitlesLight` (Credits to Antares, converted to JASS with some modifications)
+- `Lightning Strike` (Credits Paladon, converted to JASS by Valdemar with some modifications)
+- `Fire Shock` (Credits kola, converted to JASS by Valdemar with some modifications)
+- `Frost Shock` (Credits kola, converted to JASS by Valdemar with some modifications)
+- `Nature Shock` (Credits kola, converted to JASS by Valdemar with some modifications)
 
 ### [Models, skins & textures]
 (incomplete list)
@@ -86,7 +92,7 @@ The following systems have been developed by Valdemar:
     - `ItemLootDestructibles`
 - `Item Systems`
     - `ItemCleanup`
-    - `ItemHook` (Credits Tasyen, greatly based on Tasyen's Lua ItemHook and made in JASS)
+    - `ItemHook` (Credits Tasyen, greatly based on Tasyen's Lua ItemHook and converter to JASS by Valdemar)
     - `ItemUnstack`
 - `Levelling`
     - `AbilityPoints`
