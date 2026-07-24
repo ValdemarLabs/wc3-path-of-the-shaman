@@ -30,10 +30,10 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
     globals
         // Timing between visible preload stages. Actual preload calls still run synchronously.
         private constant real PRL_START_MESSAGE_DELAY = 0.50
-        private constant real PRL_RENDER_DELAY = 0.10
-        private constant real PRL_STAGE_DELAY = 0.50
+        private constant real PRL_RENDER_DELAY = 1.00
+        private constant real PRL_STAGE_DELAY = 1.00
         private constant real PRL_SOUND_STAGE_DELAY = 1.00
-        private constant real PRL_DONE_DELAY = 0.50
+        private constant real PRL_DONE_DELAY = 1.00
         private constant real PRL_TITLE_FADE_IN = 0.10
         private constant real PRL_TITLE_DURATION = 0.70
         private constant real PRL_TITLE_FADE_OUT = 0.25
