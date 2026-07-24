@@ -1,6 +1,6 @@
 # WC3 - Path of the Shaman
 ## CREDITS
-*Last updated: 2026-07-21*
+*Last updated: 2026-07-25*
 
 > ### Credits template / usage notes:
 > This list shall be considered as the master credits list and shall be keep up-to-date. Send me message if your name is missing for the used resource. 
