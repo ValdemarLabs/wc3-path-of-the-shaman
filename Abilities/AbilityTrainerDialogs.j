@@ -14,7 +14,7 @@
 
     How to install:
     Import after QuestGiver, DialogSystem, DialogSystemPlayer, AbilitiesUI,
-    AbilitiesPlayer, AbilityTrainerLines, Interface, FixedCameraLock, and Events.
+    AbilitiesPlayer, AbilityTrainerLines, Interface, and Events.
 
     API:
     - call AbilityTrainerDialogs_RegisterDialogBuilder(function MyBuilder)
@@ -24,7 +24,7 @@
     - set treeId = AbilityTrainerDialogs_GetSelectedTree()
 
 **/
-library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, DialogSystem, DialogSystemPlayer, AbilitiesPlayer, AbilitiesUI, AbilityTrainerLines, Interface, FixedCameraLock, optional Events
+library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, DialogSystem, DialogSystemPlayer, AbilitiesPlayer, AbilitiesUI, AbilityTrainerLines, Interface, optional Events
     globals
         private constant real ATD_DIALOG_RANGE = 900.00
         private constant real ATD_DIALOG_COOLDOWN = 3.00
@@ -187,19 +187,12 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
         call QuestGiver_ConfigureDialogTransition(trainer, ATD_CINEMATIC_MOVE_MODE, ATD_CINEMATIC_MOVE_OFFSET, ATD_CINEMATIC_MOVE_ANGLE, ATD_CAMERA_DIST, ATD_CAMERA_Z_OFFSET, ATD_CAMERA_ANGLE, ATD_GetHeroCameraRotationOffset(trainer, hero), ATD_CAMERA_FAR_Z, ATD_CAMERA_FOV, ATD_CAMERA_BLOCK_RADIUS, ATD_CAMERA_BLOCK_CHECK)
     endfunction
 
-    private function ATD_LockTrainerCamera takes unit trainer returns nothing
-        if ATD_USE_DIALOG_CAMERA and trainer != null then
-            call FCL_Lock(trainer, Player(0))
-        endif
-    endfunction
-
     private function ATD_StartTrainerCamera takes unit trainer, unit hero returns nothing
         if trainer == null then
             return
         endif
 
         call DialogSystem_StartDialogCamera(Player(0), trainer, ATD_CAMERA_DIST, ATD_CAMERA_Z_OFFSET, ATD_CAMERA_ANGLE, ATD_GetHeroCameraRotationOffset(trainer, hero), ATD_CAMERA_FAR_Z, ATD_CAMERA_FOV, ATD_CAMERA_BLOCK_RADIUS, ATD_CAMERA_BLOCK_CHECK, ATD_USE_DIALOG_CAMERA)
-        call ATD_LockTrainerCamera(trainer)
     endfunction
 
     private function ATD_EndTrainerDialog takes boolean startCooldown returns nothing
@@ -207,7 +200,6 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
 
         call DialogSystem_ClearEscapeAction()
         call DialogSystem_HideDialog(ATD_Dialog, Player(0))
-        call FCL_Release(Player(0))
         call DialogSystem_StopDialogCamera(Player(0), ATD_CAMERA_RESET_TIME, ATD_USE_DIALOG_CAMERA)
         call QuestGiver_EndCinematicSequence(ATD_CINEMATIC)
 
@@ -232,7 +224,6 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
 
         if trainer != null and hero != null then
             call ShowUnit(hero, true)
-            call ATD_LockTrainerCamera(trainer)
             call AbilitiesUI_ShowForTrainer(trainer, hero)
         endif
 
@@ -309,7 +300,6 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
         endif
 
         call ATD_BuildDialog()
-        call ATD_LockTrainerCamera(ATD_SelectedTrainer)
         set seq = ATD_CreateGreetSequence(ATD_SelectedTrainer, ATD_SelectedHero)
         call QuestGiver_PlayGreetSequenceEx(seq, ATD_SelectedTrainer, Player(0), ATD_Dialog, ATD_CINEMATIC)
     endfunction
