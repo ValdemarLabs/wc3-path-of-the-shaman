@@ -931,6 +931,15 @@ set DEqStatNames[38] = "Spell Power"
 set DisplayAsPercent[38] = TRUE
 set DEqStatNames[39] = "Healing Power"
 set DisplayAsPercent[39] = TRUE
+set DEqStatNames[40] = "Mining"
+set DEqStatNames[41] = "Herbalism"
+set DEqStatNames[42] = "Skinning"
+set DEqStatNames[43] = "Fishing"
+set DEqStatNames[44] = "Alchemy"
+set DEqStatNames[45] = "Blacksmithing"
+set DEqStatNames[46] = "Leatherworking"
+set DEqStatNames[47] = "Enchanting"
+set DEqStatNames[48] = "Cooking"
 
 //call BJDebugMsg("before DEqStatsCounter")
 
