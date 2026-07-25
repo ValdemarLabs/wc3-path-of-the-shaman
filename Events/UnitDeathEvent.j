@@ -8,11 +8,12 @@ library UnitDeathEvent initializer Init
     Description:
     Centralized unit death event system that prevents event limit issues.
     Instead of having multiple systems register EVENT_PLAYER_UNIT_DEATH,
-    this library registers it once and dispatches to all registered callbacks.
+    this library registers it once and attaches all code callbacks directly to
+    that central trigger. This preserves native event responses.
     
     Usage:
     1. Register your callback function:
-       call UnitDeathEvent.register(function YourCallback)
+       call UnitDeathEvent_Register(function YourCallback)
        
     2. Your callback should have this signature:
        function YourCallback takes nothing returns nothing
@@ -23,6 +24,7 @@ library UnitDeathEvent initializer Init
        
     Benefits:
     - Only ONE death event registration for all 24 players
+    - Preserves GetDyingUnit() and GetKillingUnit() in registered callbacks
     - Prevents hitting Warcraft 3's event registration limits
     - Ensures all death events are captured reliably
     - Easy to add/remove death callbacks
@@ -30,51 +32,23 @@ library UnitDeathEvent initializer Init
     
     Note:
     This should be one of the first libraries to initialize (minimal dependencies).
+    Registration also lazily creates the central trigger if an older library calls
+    UnitDeathEvent_Register before declaring an explicit dependency.
 */
 
 globals
     private trigger deathTrigger = null
-    private trigger array callbacks
     private integer callbackCount = 0
     private constant integer MAX_CALLBACKS = 50
     private constant integer UNIT_DEATH_EVENT_MAX_PLAYER_INDEX = 27
 endglobals
 
-// Register a callback function to be called on unit death
-// The callback should use GetKillingUnit() and GetDyingUnit()
-function UnitDeathEvent_Register takes code callback returns nothing
-    if callbackCount >= MAX_CALLBACKS then
-        call BJDebugMsg("[UnitDeathEvent] ERROR: Maximum callbacks reached (" + I2S(MAX_CALLBACKS) + ")")
+private function UnitDeathEvent_EnsureTrigger takes nothing returns nothing
+    local integer playerIndex = 0
+
+    if deathTrigger != null then
         return
     endif
-    
-    set callbacks[callbackCount] = CreateTrigger()
-    call TriggerAddAction(callbacks[callbackCount], callback)
-    set callbackCount = callbackCount + 1
-    
-    call BJDebugMsg("[UnitDeathEvent] Registered callback #" + I2S(callbackCount) + " for unit death events")
-endfunction
-
-// Internal dispatcher that calls all registered callbacks
-private function DispatchDeathEvent takes nothing returns nothing
-    local integer i = 0
-    local unit victim = GetDyingUnit()
-    local unit killer = GetKillingUnit()
-    
-    // Debug output (can be commented out for production)
-    // call BJDebugMsg("[UnitDeathEvent] Death detected: " + GetUnitName(victim) + " killed by " + GetUnitName(killer))
-    
-    // Call all registered callbacks
-    loop
-        exitwhen i >= callbackCount
-        call TriggerExecute(callbacks[i])
-        set i = i + 1
-    endloop
-endfunction
-
-// Initialize the death event system
-private function Init takes nothing returns nothing
-    local integer playerIndex = 0
 
     set deathTrigger = CreateTrigger()
     loop
@@ -82,8 +56,27 @@ private function Init takes nothing returns nothing
         set playerIndex = playerIndex + 1
         exitwhen playerIndex > UNIT_DEATH_EVENT_MAX_PLAYER_INDEX
     endloop
-    call TriggerAddAction(deathTrigger, function DispatchDeathEvent)
     call BJDebugMsg("[UnitDeathEvent] Centralized death event system initialized")
+endfunction
+
+// Register a callback function to be called on unit death
+// The callback should use GetKillingUnit() and GetDyingUnit()
+function UnitDeathEvent_Register takes code callback returns nothing
+    call UnitDeathEvent_EnsureTrigger()
+    if callbackCount >= MAX_CALLBACKS then
+        call BJDebugMsg("[UnitDeathEvent] ERROR: Maximum callbacks reached (" + I2S(MAX_CALLBACKS) + ")")
+        return
+    endif
+
+    call TriggerAddAction(deathTrigger, callback)
+    set callbackCount = callbackCount + 1
+
+    call BJDebugMsg("[UnitDeathEvent] Registered callback #" + I2S(callbackCount) + " for unit death events")
+endfunction
+
+// Initialize the death event system
+private function Init takes nothing returns nothing
+    call UnitDeathEvent_EnsureTrigger()
 endfunction
 
 endlibrary
