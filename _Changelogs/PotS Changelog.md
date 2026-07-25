@@ -130,6 +130,12 @@
 - Updated `DialogSystemPlayer.j`
   - Updated Nazgrek lines and added soundkeys, Zulkis lines and soundkeys remains in wip state to be worked on later.
 
+- Updated `SoundAndMusic/ExSound.j`
+  - Registered ability trainer voice sequences for Elemental, Enhancement, Restoration, and Totemic trainers.
+  - Added grouped registrations for newly keyed Nazgrek player dialog lines used by `DialogSystemPlayer.j`, including trainer greeting/farewell, info, trade, exit, follow, stop, decline, and accept lines.
+  - Added a compatibility registration for the current `Nazgrek_Accep4` dialog key so it resolves to the intended `Nazgrek_Accept4.mp3` asset.
+  - Kept Zulkis trainer/info-style player lines as text-only for now because those lines currently use empty sound keys.
+
 - Updated `Professions/ProfessionsFishing.j`
   - Implemented the first Fishing profession minigame around selectable fish pool unit nodes.
   - Registered Jin'Zun's Fishing Pole `'I6CJ'` as the first fishing pole and auto-equips it from DInventory when possible.
@@ -159,7 +165,7 @@
 ### Known Issues
 
 - Full in-map JassHelper / Warcraft III compile validation was not completed in this repo snapshot because no combined `war3map.j` or normal map build entry point is exposed.
-- The updated shaman scaling, Ancestral Ward orbiting effects, trainer camera timing, Ghost Wolf companion retargeting, trainer feedback lines, ability prerequisites, and temporary summon Stats UI rows still need in-game validation with the active object data/import set.
+- The updated shaman scaling, Ancestral Ward orbiting effects, trainer camera timing, Ghost Wolf companion retargeting, trainer feedback lines, ability prerequisites, trainer/player ExSound registrations, and temporary summon Stats UI rows still need in-game validation with the active object data/import set.
 - The new FishingUI minigame, fish-pool shallow-water placement, preplaced fish-pool zone detection, and zone-aware fish rewards still need in-game validation with the active map object data.
 
 ## [23.7.2026]
