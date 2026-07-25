@@ -30,6 +30,9 @@ globals
 	private Table DialogSystem_FarewellLines = 0
 	private Table DialogSystem_GreetTrainerLines = 0
 	private Table DialogSystem_FarewellTrainerLines = 0
+	private Table DialogSystem_LearnTrainerLines = 0
+	private Table DialogSystem_ResetTrainerLines = 0
+	private Table DialogSystem_UnableTrainerLines = 0
 	private Table DialogSystem_TradeLines = 0
 	private Table DialogSystem_ExitLines = 0
 	private Table DialogSystem_FollowLines = 0
@@ -1317,6 +1320,39 @@ public function PickFarewellTrainerLine takes unit speaker, string speakerName r
 	return PickFarewellLine(speaker, speakerName)
 endfunction
 
+public function PlayLearnTrainerLine takes unit speaker, string speakerName returns nothing
+	local string lookupName = speakerName
+	if lookupName == "" and speaker != null then
+		set lookupName = GetUnitDisplayName(speaker)
+	endif
+	if lookupName != "" and PlayRegisteredLine(DialogSystem_LearnTrainerLines, speaker, lookupName) then
+		return
+	endif
+	call PlayLine(speaker, speakerName, "The lesson is yours now.", "", true)
+endfunction
+
+public function PlayResetTrainerLine takes unit speaker, string speakerName returns nothing
+	local string lookupName = speakerName
+	if lookupName == "" and speaker != null then
+		set lookupName = GetUnitDisplayName(speaker)
+	endif
+	if lookupName != "" and PlayRegisteredLine(DialogSystem_ResetTrainerLines, speaker, lookupName) then
+		return
+	endif
+	call PlayLine(speaker, speakerName, "Your path is cleared. Choose again.", "", true)
+endfunction
+
+public function PlayUnableTrainerLine takes unit speaker, string speakerName returns nothing
+	local string lookupName = speakerName
+	if lookupName == "" and speaker != null then
+		set lookupName = GetUnitDisplayName(speaker)
+	endif
+	if lookupName != "" and PlayRegisteredLine(DialogSystem_UnableTrainerLines, speaker, lookupName) then
+		return
+	endif
+	call PlayLine(speaker, speakerName, "You are not ready for that lesson.", "", true)
+endfunction
+
 public function PlayFarewell takes unit speaker, string speakerName, string overrideText, string overrideSoundKey returns nothing
 	local integer roll
 	local string text
@@ -1365,6 +1401,18 @@ endfunction
 
 public function RegisterFarewellTrainerLine takes string speakerName, string text, string soundKey, boolean soundAtUnit returns nothing
 	call RegisterLineInternal(DialogSystem_FarewellTrainerLines, speakerName, text, soundKey, soundAtUnit)
+endfunction
+
+public function RegisterLearnTrainerLine takes string speakerName, string text, string soundKey, boolean soundAtUnit returns nothing
+	call RegisterLineInternal(DialogSystem_LearnTrainerLines, speakerName, text, soundKey, soundAtUnit)
+endfunction
+
+public function RegisterResetTrainerLine takes string speakerName, string text, string soundKey, boolean soundAtUnit returns nothing
+	call RegisterLineInternal(DialogSystem_ResetTrainerLines, speakerName, text, soundKey, soundAtUnit)
+endfunction
+
+public function RegisterUnableTrainerLine takes string speakerName, string text, string soundKey, boolean soundAtUnit returns nothing
+	call RegisterLineInternal(DialogSystem_UnableTrainerLines, speakerName, text, soundKey, soundAtUnit)
 endfunction
 
 public function RegisterFarewellLineForUnit takes unit u, string text, string soundKey, boolean soundAtUnit returns nothing
@@ -1713,6 +1761,9 @@ private function Init takes nothing returns nothing
 	set DialogSystem_FarewellLines = Table.create()
 	set DialogSystem_GreetTrainerLines = Table.create()
 	set DialogSystem_FarewellTrainerLines = Table.create()
+	set DialogSystem_LearnTrainerLines = Table.create()
+	set DialogSystem_ResetTrainerLines = Table.create()
+	set DialogSystem_UnableTrainerLines = Table.create()
 	set DialogSystem_TradeLines = Table.create()
 	set DialogSystem_ExitLines = Table.create()
 	set DialogSystem_FollowLines = Table.create()
