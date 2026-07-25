@@ -176,6 +176,13 @@
 - Updated `Professions/Professions.j`
   - Exposed `Professions_ConsumeItem` so profession extension UIs such as Fishing can consume bait items from vanilla inventory or DInventory.
 
+### Tool Updates
+
+- Updated `WC3_Database/export_dequipment_cli.py`
+  - Fixed DEquipment slot export for classes such as `Main Hand Weapon`; the exporter no longer matches the `HAND` substring before weapon hand checks.
+  - DEquipment export now considers explicit `items.equipment_slot` and `item_classes.slot_type` metadata instead of relying only on class-name text guessing.
+  - Verified that Skinning Knife `'i66m'` exports as `MainHand` instead of `Gloves`.
+
 ### Known Issues
 
 - Full in-map JassHelper / Warcraft III compile validation was not completed in this repo snapshot because no combined `war3map.j` or normal map build entry point is exposed.
