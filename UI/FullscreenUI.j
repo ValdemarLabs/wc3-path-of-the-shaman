@@ -21,6 +21,9 @@
 
         call FullscreenUI_SetEnabled(false)
 
+    Visibility:
+    Enabling or disabling this library also disables fog of war and black mask.
+
     Important:
     Do not combine this library with:
 
@@ -109,6 +112,11 @@ private function RestoreDecorations takes nothing returns nothing
     endloop
 endfunction
 
+private function ApplyVisibility takes nothing returns nothing
+    call FogEnable(false)
+    call FogMaskEnable(false)
+endfunction
+
 private function Init takes nothing returns nothing
     if FullscreenUI_Initialized then
         return
@@ -149,6 +157,8 @@ public function Enable takes nothing returns nothing
         call Init()
     endif
 
+    call ApplyVisibility()
+
     if FullscreenUI_Enabled then
         return
     endif
@@ -183,8 +193,8 @@ public function Enable takes nothing returns nothing
 
     /*
      * This activates the same interface layout used by native cinematic
-     * mode without changing fog, game speed, audio, random seed, or other
-     * global cinematic settings.
+     * mode without changing game speed, audio, random seed, or other global
+     * cinematic settings.
      */
     call ClearTextMessages()
     call ShowInterface(false, 0.00)
@@ -211,6 +221,8 @@ endfunction
 
 public function Disable takes nothing returns nothing
     local integer index
+
+    call ApplyVisibility()
 
     if not FullscreenUI_Enabled then
         return
