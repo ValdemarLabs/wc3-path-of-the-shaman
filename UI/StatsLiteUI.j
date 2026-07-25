@@ -538,9 +538,20 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         return null
     endfunction
 
+    private function SLUI_IsControlledDisplayCompanion takes unit u returns boolean
+        if not SLUI_IsValidUnit(u) then
+            return false
+        endif
+        if Pet_IsPetUnit(u) then
+            return false
+        endif
+        return Companions_IsControlledDisplayUnit(u)
+    endfunction
+
     private function SLUI_GetTrackedUnitCount takes nothing returns integer
         local integer count = 0
         local integer i = 1
+        local unit u = null
 
         if SLUI_ShowHeroes then
             if SLUI_IsPlayerOwnedMainHero(udg_Nazgrek) then
@@ -566,13 +577,15 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
             set i = 1
             loop
                 exitwhen i > Companions_GetControlledDisplayCount()
-                if SLUI_IsValidUnit(Companions_GetControlledDisplayUnit(i)) then
+                set u = Companions_GetControlledDisplayUnit(i)
+                if SLUI_IsControlledDisplayCompanion(u) then
                     set count = count + 1
                 endif
                 set i = i + 1
             endloop
         endif
 
+        set u = null
         return count
     endfunction
 
@@ -944,6 +957,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         local integer i = 1
         local integer total = SLUI_GetTrackedUnitCount()
         local unit petUnit = null
+        local unit u = null
 
         if GetLocalPlayer() != whichPlayer or SLUI_RowPane == null then
             set petUnit = null
@@ -974,7 +988,10 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
             set i = 1
             loop
                 exitwhen i > Companions_GetControlledDisplayCount()
-                set rowIndex = SLUI_AddUnitRow(rowIndex, Companions_GetControlledDisplayUnit(i), SLUI_KIND_COMPANION)
+                set u = Companions_GetControlledDisplayUnit(i)
+                if SLUI_IsControlledDisplayCompanion(u) then
+                    set rowIndex = SLUI_AddUnitRow(rowIndex, u, SLUI_KIND_COMPANION)
+                endif
                 set i = i + 1
             endloop
         endif
@@ -991,6 +1008,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         endloop
 
         call SLUI_UpdateFooter(total)
+        set u = null
         set petUnit = null
         set whichPlayer = null
     endfunction
