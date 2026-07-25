@@ -5,19 +5,21 @@
     Version:
 
     Description:
-    Runs the player start flow after Preloader finishes. This replaces the old
+    Runs the player start flow after GameMode finishes. This replaces the old
     Game Start GUI trigger with explicit startup phases.
 
     Credits:
     - Old GUI "Game Start" trigger
 
     How to install:
-    Import with Preloader.j and the required systems below. Preloader.j calls
-    Start_Start() when preload is complete. Disable the old Game Start GUI
-    trigger's startup event so this library owns player start setup.
+    Import with GameMode.j and the required systems below. GameMode.j calls
+    Start_Start() after mode and difficulty are selected. Disable the old Game
+    Start GUI trigger's startup event so this library owns player start setup.
 
     API:
     call Start_Start()
+    call Start_SetRunIntroCinematic(boolean enabled)
+    call Start_SetStartingGoldBonus(integer amount)
 
 **/
 library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, TerrainDamage, BridgeSystem
@@ -30,10 +32,11 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
 
         private constant integer ST_UNIT_NAZGREK = 'H600'
 
+        // These (except Specialization ability) must be the dummy ability, not the "real one"
         private constant integer ST_ABILITY_EARTHWARDEN = 'A6A4'
-        private constant integer ST_ABILITY_STORMSTRIKE = 'A685'
-        private constant integer ST_ABILITY_WHIRLWIND = 'A6DP'
-        private constant integer ST_ABILITY_PRIMAL_FORCE = 'A022'
+        private constant integer ST_ABILITY_STORMSTRIKE = 'A681'        
+        private constant integer ST_ABILITY_WHIRLWIND = 'A6DQ'
+        private constant integer ST_ABILITY_PRIMAL_FORCE = 'A023'
 
         private constant integer ST_ITEM_NAZGREKS_AXE = 'I68A'
         private constant integer ST_ITEM_HEALING_SALVE = 'hslv'
@@ -42,6 +45,8 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
         // Runtime state
         private timer ST_Timer = null
         private boolean ST_Started = false
+        private boolean ST_RunIntroCinematic = true
+        private integer ST_StartingGoldBonus = 0
     endglobals
 
     private function ST_StopTimer takes nothing returns nothing
@@ -118,14 +123,22 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
     endfunction
 
     private function ST_SetStartingResources takes nothing returns nothing
-        call SetPlayerState(Player(ST_PLAYER_ID), PLAYER_STATE_RESOURCE_GOLD, ST_START_GOLD)
+        local integer gold = ST_START_GOLD + ST_StartingGoldBonus
+
+        if gold < 0 then
+            set gold = 0
+        endif
+
+        call SetPlayerState(Player(ST_PLAYER_ID), PLAYER_STATE_RESOURCE_GOLD, gold)
     endfunction
 
     // Phase 3: start intro cinematic, then enable world systems that need player units.
     private function ST_PhaseIntroAndWorldSystems takes nothing returns nothing
         call ST_StopTimer()
 
-        if gg_trg_Intro_Cinematic_Orc_Q != null then
+        if not ST_RunIntroCinematic then
+            call EnableUserControl(true)
+        elseif gg_trg_Intro_Cinematic_Orc_Q != null then
             call ConditionalTriggerExecute(gg_trg_Intro_Cinematic_Orc_Q)
         else
             call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cffff8080Start: gg_trg_Intro_Cinematic_Orc_Q is missing.|r")
@@ -163,5 +176,13 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
 
         call ST_PhaseInitialState()
         call TimerStart(ST_Timer, ST_HERO_SETUP_DELAY, false, function ST_PhaseHeroSetup)
+    endfunction
+
+    public function SetRunIntroCinematic takes boolean enabled returns nothing
+        set ST_RunIntroCinematic = enabled
+    endfunction
+
+    public function SetStartingGoldBonus takes integer amount returns nothing
+        set ST_StartingGoldBonus = amount
     endfunction
 endlibrary
