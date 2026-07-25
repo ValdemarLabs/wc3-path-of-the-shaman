@@ -13,7 +13,9 @@
 
     API:
     call ProfessionsFishing_RegisterPoleItem('I6CJ')
+    call ProfessionsFishing_RegisterPoleItemWithBonus(itemCode, skillBonus)
     call ProfessionsFishing_RegisterBaitItem(itemCode, skillBonus, duration, displayName)
+    call ProfessionsFishing_RegisterBaitItemEx(itemCode, skillBonus, duration, displayName, requiredFishingSkill)
     set started = ProfessionsFishing_Start(whichPlayer, fisher, pool)
     set stopped = ProfessionsFishing_StopForUnit(fisher)
     call ProfessionsFishing_Init()
@@ -26,6 +28,14 @@ globals
     private constant integer PF_MAX_POLE_ITEMS = 16
     private constant integer PF_MAX_BAIT_TYPES = 16
     private constant integer PF_ITEM_JINZUN_FISHING_POLE = 'I6CJ'
+    private constant integer PF_ITEM_BASIC_FISHING_POLE = 'I6CQ'
+    private constant integer PF_ITEM_STRONG_FISHING_POLE = 'I6CR'
+    private constant integer PF_ITEM_BIG_IRON_FISHING_POLE = 'I6CS'
+    private constant integer PF_ITEM_PROMASTER_FISHING_POLE = 'I6CT'
+    private constant integer PF_ITEM_SHINY_BAUBLE = 'I6CM'
+    private constant integer PF_ITEM_NIGHTCRAWLERS = 'I6CN'
+    private constant integer PF_ITEM_BRIGHT_BAUBLES = 'I6CO'
+    private constant integer PF_ITEM_AQUADYNAMIC_FISH = 'I6CP'
     private constant integer PF_UNIT_DEFAULT_FISH_POOL = 'n02N'
     private constant integer PF_CATEGORY_FISH_POOLS = 9
     private constant integer PF_DEFAULT_FISH_POOL_ZONE = 0
@@ -40,6 +50,7 @@ globals
     private constant real PF_TICK_INTERVAL = 0.05
     private constant real PF_REEL_WINDOW_DURATION = 1.15
     private constant real PF_REEL_WINDOW_MIN_START = 2.00
+    private constant real PF_DEFAULT_BAIT_DURATION = 600.00
     private constant real PF_ANIMATION_LOOP_PERIOD = 1.35
     private constant real PF_SOUND_CUTOFF = 1800.00
 
@@ -84,10 +95,12 @@ globals
 
     private integer PF_PoleItemCount = 0
     private integer array PF_PoleItemType
+    private integer array PF_PoleBonus
 
     private integer PF_BaitTypeCount = 0
     private integer array PF_BaitItemType
     private integer array PF_BaitBonus
+    private integer array PF_BaitRequiredSkill
     private real array PF_BaitDuration
     private string array PF_BaitName
 
@@ -316,6 +329,20 @@ private function PF_IsRegisteredPoleItem takes integer itemCode returns boolean
     return false
 endfunction
 
+private function PF_GetRegisteredPoleBonus takes integer itemCode returns integer
+    local integer index = 1
+
+    loop
+        exitwhen index > PF_PoleItemCount
+        if PF_PoleItemType[index] == itemCode then
+            return PF_PoleBonus[index]
+        endif
+        set index = index + 1
+    endloop
+
+    return 0
+endfunction
+
 private function PF_CountEquippedItem takes unit fisher, integer itemCode returns integer
     local integer count = 0
     local integer eqId = 0
@@ -350,7 +377,7 @@ private function PF_CountEquippedItem takes unit fisher, integer itemCode return
     return count
 endfunction
 
-private function PF_RegisterPoleInternal takes integer itemCode returns boolean
+private function PF_RegisterPoleInternal takes integer itemCode, integer skillBonus returns boolean
     local integer index = 1
 
     if itemCode == 0 then
@@ -360,6 +387,7 @@ private function PF_RegisterPoleInternal takes integer itemCode returns boolean
     loop
         exitwhen index > PF_PoleItemCount
         if PF_PoleItemType[index] == itemCode then
+            set PF_PoleBonus[index] = skillBonus
             return true
         endif
         set index = index + 1
@@ -371,24 +399,34 @@ private function PF_RegisterPoleInternal takes integer itemCode returns boolean
 
     set PF_PoleItemCount = PF_PoleItemCount + 1
     set PF_PoleItemType[PF_PoleItemCount] = itemCode
+    set PF_PoleBonus[PF_PoleItemCount] = skillBonus
     return true
 endfunction
 
 public function RegisterPoleItem takes integer itemCode returns boolean
-    return PF_RegisterPoleInternal(itemCode)
+    return PF_RegisterPoleInternal(itemCode, 0)
 endfunction
 
-public function RegisterBaitItem takes integer itemCode, integer skillBonus, real duration, string displayName returns boolean
+public function RegisterPoleItemWithBonus takes integer itemCode, integer skillBonus returns boolean
+    return PF_RegisterPoleInternal(itemCode, skillBonus)
+endfunction
+
+public function RegisterBaitItemEx takes integer itemCode, integer skillBonus, real duration, string displayName, integer requiredFishingSkill returns boolean
     local integer index = 1
 
     if itemCode == 0 or skillBonus <= 0 then
         return false
     endif
 
+    if requiredFishingSkill < 0 then
+        set requiredFishingSkill = 0
+    endif
+
     loop
         exitwhen index > PF_BaitTypeCount
         if PF_BaitItemType[index] == itemCode then
             set PF_BaitBonus[index] = skillBonus
+            set PF_BaitRequiredSkill[index] = requiredFishingSkill
             set PF_BaitDuration[index] = duration
             set PF_BaitName[index] = displayName
             return true
@@ -403,9 +441,14 @@ public function RegisterBaitItem takes integer itemCode, integer skillBonus, rea
     set PF_BaitTypeCount = PF_BaitTypeCount + 1
     set PF_BaitItemType[PF_BaitTypeCount] = itemCode
     set PF_BaitBonus[PF_BaitTypeCount] = skillBonus
+    set PF_BaitRequiredSkill[PF_BaitTypeCount] = requiredFishingSkill
     set PF_BaitDuration[PF_BaitTypeCount] = duration
     set PF_BaitName[PF_BaitTypeCount] = displayName
     return true
+endfunction
+
+public function RegisterBaitItem takes integer itemCode, integer skillBonus, real duration, string displayName returns boolean
+    return RegisterBaitItemEx(itemCode, skillBonus, duration, displayName, 0)
 endfunction
 
 private function PF_HasEquippedFishingPole takes unit fisher returns boolean
@@ -422,6 +465,21 @@ private function PF_HasEquippedFishingPole takes unit fisher returns boolean
     return false
 endfunction
 
+private function PF_GetEquippedPoleBonus takes unit fisher returns integer
+    local integer index = 1
+    local integer bestBonus = 0
+
+    loop
+        exitwhen index > PF_PoleItemCount
+        if PF_CountEquippedItem(fisher, PF_PoleItemType[index]) > 0 and PF_PoleBonus[index] > bestBonus then
+            set bestBonus = PF_PoleBonus[index]
+        endif
+        set index = index + 1
+    endloop
+
+    return bestBonus
+endfunction
+
 private function PF_HasVanillaFishingPole takes unit fisher returns boolean
     local integer slot = 0
     local item whichItem = null
@@ -433,9 +491,18 @@ private function PF_HasVanillaFishingPole takes unit fisher returns boolean
     loop
         exitwhen slot >= UnitInventorySize(fisher)
         set whichItem = UnitItemInSlot(fisher, slot)
-        if whichItem != null and PF_IsRegisteredPoleItem(GetItemTypeId(whichItem)) then
-            set whichItem = null
-            return true
+        if whichItem != null then
+            static if LIBRARY_SharedDInvLib then
+                if not IsItemStoredInDInv(whichItem) and PF_IsRegisteredPoleItem(GetItemTypeId(whichItem)) then
+                    set whichItem = null
+                    return true
+                endif
+            else
+                if PF_IsRegisteredPoleItem(GetItemTypeId(whichItem)) then
+                    set whichItem = null
+                    return true
+                endif
+            endif
         endif
         set slot = slot + 1
     endloop
@@ -444,10 +511,50 @@ private function PF_HasVanillaFishingPole takes unit fisher returns boolean
     return false
 endfunction
 
+private function PF_GetBestVanillaPoleBonus takes unit fisher returns integer
+    local integer slot = 0
+    local integer bestBonus = 0
+    local integer itemBonus
+    local item whichItem = null
+
+    if fisher == null then
+        return 0
+    endif
+
+    loop
+        exitwhen slot >= UnitInventorySize(fisher)
+        set whichItem = UnitItemInSlot(fisher, slot)
+        if whichItem != null then
+            static if LIBRARY_SharedDInvLib then
+                if not IsItemStoredInDInv(whichItem) and PF_IsRegisteredPoleItem(GetItemTypeId(whichItem)) then
+                    set itemBonus = PF_GetRegisteredPoleBonus(GetItemTypeId(whichItem))
+                    if itemBonus > bestBonus then
+                        set bestBonus = itemBonus
+                    endif
+                endif
+            else
+                if PF_IsRegisteredPoleItem(GetItemTypeId(whichItem)) then
+                    set itemBonus = PF_GetRegisteredPoleBonus(GetItemTypeId(whichItem))
+                    if itemBonus > bestBonus then
+                        set bestBonus = itemBonus
+                    endif
+                endif
+            endif
+        endif
+        set slot = slot + 1
+    endloop
+
+    set whichItem = null
+    return bestBonus
+endfunction
+
 private function PF_GetDInventoryPoleSlot takes unit fisher returns integer
     local integer bid = -1
     local integer maxCapacity = 0
     local integer slot = 0
+    local integer bestSlot = -1
+    local integer bestBonus = 0
+    local integer itemBonus
     local item whichItem = null
 
     if fisher == null then
@@ -462,8 +569,11 @@ private function PF_GetDInventoryPoleSlot takes unit fisher returns integer
                 exitwhen slot >= maxCapacity
                 set whichItem = DInventoryDB[bid].item[slot]
                 if whichItem != null and PF_IsRegisteredPoleItem(GetItemTypeId(whichItem)) then
-                    set whichItem = null
-                    return slot
+                    set itemBonus = PF_GetRegisteredPoleBonus(GetItemTypeId(whichItem))
+                    if bestSlot < 0 or itemBonus > bestBonus then
+                        set bestSlot = slot
+                        set bestBonus = itemBonus
+                    endif
                 endif
                 set slot = slot + 1
             endloop
@@ -471,7 +581,7 @@ private function PF_GetDInventoryPoleSlot takes unit fisher returns integer
     endif
 
     set whichItem = null
-    return -1
+    return bestSlot
 endfunction
 
 private function PF_TryEquipFishingPole takes unit fisher returns boolean
@@ -487,28 +597,34 @@ private function PF_TryEquipFishingPole takes unit fisher returns boolean
         return false
     endif
 
-    if PF_HasEquippedFishingPole(fisher) then
-        return true
-    endif
-
     static if LIBRARY_SharedDInvLib then
         set bid = BIDOfUnit(fisher)
         set eqId = EQIDOfUnit(fisher)
         set poleSlot = PF_GetDInventoryPoleSlot(fisher)
-        if bid != -1 and eqId > 0 and poleSlot >= 0 then
-            set poleItem = DInventoryDB[bid].item[poleSlot]
+        if bid != -1 and eqId > 0 then
+            set currentItem = EQIDDB[eqId][4].item[PF_FISHING_POLE_EQUIPMENT_SLOT]
+            if poleSlot >= 0 then
+                set poleItem = DInventoryDB[bid].item[poleSlot]
+            endif
+
+            if currentItem != null and PF_IsRegisteredPoleItem(GetItemTypeId(currentItem)) then
+                if poleItem == null or PF_GetRegisteredPoleBonus(GetItemTypeId(currentItem)) >= PF_GetRegisteredPoleBonus(GetItemTypeId(poleItem)) then
+                    set poleItem = null
+                    set currentItem = null
+                    return true
+                endif
+            endif
+
             if poleItem != null and DEqCanUnitEquipItemInSlot(fisher, poleItem, PF_FISHING_POLE_EQUIPMENT_SLOT) then
                 set pid = GetPlayerId(GetOwningPlayer(fisher))
-                set currentItem = EQIDDB[eqId][4].item[PF_FISHING_POLE_EQUIPMENT_SLOT]
                 if currentItem != null then
-                    if PF_IsRegisteredPoleItem(GetItemTypeId(currentItem)) then
-                        set poleItem = null
-                        set currentItem = null
-                        return true
-                    endif
-
                     set freeSlot = FirstFreeDInvSlotOfBID(pid, bid)
                     if freeSlot == -1 then
+                        if PF_IsRegisteredPoleItem(GetItemTypeId(currentItem)) then
+                            set poleItem = null
+                            set currentItem = null
+                            return true
+                        endif
                         set poleItem = null
                         set currentItem = null
                         return false
@@ -527,6 +643,10 @@ private function PF_TryEquipFishingPole takes unit fisher returns boolean
                 endif
             endif
         endif
+    endif
+
+    if PF_HasEquippedFishingPole(fisher) then
+        return true
     endif
 
     set poleItem = null
@@ -581,6 +701,18 @@ private function PF_GetActiveBaitName takes unit fisher returns string
     return NoActiveBaitText
 endfunction
 
+private function PF_GetBaitNameByIndex takes integer baitIndex returns string
+    if baitIndex <= 0 or baitIndex > PF_BaitTypeCount then
+        return ""
+    endif
+
+    if PF_BaitName[baitIndex] == null or PF_BaitName[baitIndex] == "" then
+        return GetObjectName(PF_BaitItemType[baitIndex])
+    endif
+
+    return PF_BaitName[baitIndex]
+endfunction
+
 private function PF_GetBaitRemaining takes unit fisher returns integer
     local integer handleId
     local real remaining
@@ -603,26 +735,69 @@ private function PF_GetBaitRemaining takes unit fisher returns integer
     return R2I(remaining + 0.99)
 endfunction
 
-private function PF_GetEffectiveFishingSkill takes unit fisher returns integer
-    return GNS_GetSkill(fisher, GNS_PROF_FISHING) + PF_GetActiveBaitBonus(fisher)
+private function PF_GetFishingSkillBeforeBait takes unit fisher returns integer
+    local integer skill
+
+    if fisher == null then
+        return 0
+    endif
+
+    set skill = Professions_GetEffectiveSkill(fisher, GNS_PROF_FISHING)
+    if Professions_GetProfessionItemBonus(fisher, GNS_PROF_FISHING) <= 0 then
+        set skill = skill + PF_GetEquippedPoleBonus(fisher)
+    endif
+
+    return skill + PF_GetBestVanillaPoleBonus(fisher)
 endfunction
 
-private function PF_FindFirstAvailableBait takes unit fisher returns integer
+private function PF_GetEffectiveFishingSkill takes unit fisher returns integer
+    return PF_GetFishingSkillBeforeBait(fisher) + PF_GetActiveBaitBonus(fisher)
+endfunction
+
+private function PF_FindBestAvailableBait takes unit fisher returns integer
     local integer index = 1
+    local integer bestIndex = 0
+    local integer bestBonus = 0
+    local integer skill = PF_GetFishingSkillBeforeBait(fisher)
 
     loop
         exitwhen index > PF_BaitTypeCount
-        if PF_CountAvailableItem(fisher, PF_BaitItemType[index]) > 0 then
-            return index
+        if PF_CountAvailableItem(fisher, PF_BaitItemType[index]) > 0 and skill >= PF_BaitRequiredSkill[index] then
+            if bestIndex <= 0 or PF_BaitBonus[index] > bestBonus then
+                set bestIndex = index
+                set bestBonus = PF_BaitBonus[index]
+            endif
         endif
         set index = index + 1
     endloop
 
-    return 0
+    return bestIndex
+endfunction
+
+private function PF_GetUnavailableBaitRequirement takes unit fisher returns integer
+    local integer index = 1
+    local integer skill = PF_GetFishingSkillBeforeBait(fisher)
+    local integer requiredSkill = 100000
+
+    loop
+        exitwhen index > PF_BaitTypeCount
+        if PF_CountAvailableItem(fisher, PF_BaitItemType[index]) > 0 and skill < PF_BaitRequiredSkill[index] and PF_BaitRequiredSkill[index] < requiredSkill then
+            set requiredSkill = PF_BaitRequiredSkill[index]
+        endif
+        set index = index + 1
+    endloop
+
+    if requiredSkill == 100000 then
+        return 0
+    endif
+
+    return requiredSkill
 endfunction
 
 private function PF_GetBaitDisplayText takes unit fisher returns string
     local integer remaining = PF_GetBaitRemaining(fisher)
+    local integer baitIndex
+    local integer requiredSkill
 
     if remaining > 0 then
         return "Bait: " + PF_GetActiveBaitName(fisher) + " +" + I2S(PF_GetActiveBaitBonus(fisher)) + " (" + I2S(remaining) + "s)"
@@ -632,8 +807,14 @@ private function PF_GetBaitDisplayText takes unit fisher returns string
         return "Bait: " + NoBaitConfiguredText
     endif
 
-    if PF_FindFirstAvailableBait(fisher) > 0 then
-        return "Bait: available"
+    set baitIndex = PF_FindBestAvailableBait(fisher)
+    if baitIndex > 0 then
+        return "Bait: " + PF_GetBaitNameByIndex(baitIndex) + " available"
+    endif
+
+    set requiredSkill = PF_GetUnavailableBaitRequirement(fisher)
+    if requiredSkill > 0 then
+        return "Bait: Requires Fishing " + I2S(requiredSkill)
     endif
 
     return "Bait: " + NoBaitText
@@ -782,7 +963,7 @@ private function PF_UI_UpdateForPlayer takes player whichPlayer returns nothing
     set failChance = PF_GetSkillFailChance(effectiveSkill, requiredSkill)
     set poolText = PF_GetPoolName(pool)
     set baitText = PF_GetBaitDisplayText(fisher)
-    set hasBait = PF_BaitTypeCount > 0 and PF_FindFirstAvailableBait(fisher) > 0
+    set hasBait = PF_BaitTypeCount > 0 and PF_FindBestAvailableBait(fisher) > 0
 
     if GetLocalPlayer() == whichPlayer then
         call BlzFrameSetText(PF_UITitle, TitleText)
@@ -1151,6 +1332,7 @@ private function PF_BaitAction takes nothing returns nothing
     local integer baitIndex
     local integer handleId
     local real duration
+    local integer requiredSkill
     local string baitName
 
     if not PF_JobActive[pid] or fisher == null then
@@ -1160,9 +1342,14 @@ private function PF_BaitAction takes nothing returns nothing
         return
     endif
 
-    set baitIndex = PF_FindFirstAvailableBait(fisher)
+    set baitIndex = PF_FindBestAvailableBait(fisher)
     if baitIndex <= 0 then
-        call PF_DisplayError(whichPlayer, NoBaitText)
+        set requiredSkill = PF_GetUnavailableBaitRequirement(fisher)
+        if requiredSkill > 0 then
+            call PF_DisplayError(whichPlayer, "Requires Fishing " + I2S(requiredSkill) + ".")
+        else
+            call PF_DisplayError(whichPlayer, NoBaitText)
+        endif
         set fisher = null
         set whichPlayer = null
         return
@@ -1172,11 +1359,7 @@ private function PF_BaitAction takes nothing returns nothing
     if duration <= 0.00 then
         set duration = 60.00
     endif
-    if PF_BaitName[baitIndex] == null or PF_BaitName[baitIndex] == "" then
-        set baitName = GetObjectName(PF_BaitItemType[baitIndex])
-    else
-        set baitName = PF_BaitName[baitIndex]
-    endif
+    set baitName = PF_GetBaitNameByIndex(baitIndex)
 
     call PF_ConsumeAvailableItem(fisher, PF_BaitItemType[baitIndex], 1)
     set handleId = GetHandleId(fisher)
@@ -1355,7 +1538,15 @@ public function Init takes nothing returns nothing
     call TimerStart(PF_ClockTimer, 999999.00, false, function PF_NoOp)
     call PF_CreateFrames()
 
-    call RegisterPoleItem(PF_ITEM_JINZUN_FISHING_POLE)
+    call RegisterPoleItemWithBonus(PF_ITEM_JINZUN_FISHING_POLE, 0)
+    call RegisterPoleItemWithBonus(PF_ITEM_BASIC_FISHING_POLE, 0)
+    call RegisterPoleItemWithBonus(PF_ITEM_STRONG_FISHING_POLE, 5)
+    call RegisterPoleItemWithBonus(PF_ITEM_BIG_IRON_FISHING_POLE, 20)
+    call RegisterPoleItemWithBonus(PF_ITEM_PROMASTER_FISHING_POLE, 100)
+    call RegisterBaitItemEx(PF_ITEM_SHINY_BAUBLE, 25, PF_DEFAULT_BAIT_DURATION, "Shiny Bauble", 0)
+    call RegisterBaitItemEx(PF_ITEM_NIGHTCRAWLERS, 50, PF_DEFAULT_BAIT_DURATION, "Nightcrawlers", 50)
+    call RegisterBaitItemEx(PF_ITEM_BRIGHT_BAUBLES, 75, PF_DEFAULT_BAIT_DURATION, "Bright Baubles", 100)
+    call RegisterBaitItemEx(PF_ITEM_AQUADYNAMIC_FISH, 100, PF_DEFAULT_BAIT_DURATION, "Aquadynamic Fish", 125)
     call PF_RegisterDefaultFishPoolUnit()
     call Professions_SetProfessionSoundLabels(GNS_PROF_FISHING, PF_SOUND_START, PF_SOUND_LOOP, PF_SOUND_FINISH)
     call Professions_SetProfessionSoundHandles(GNS_PROF_FISHING, Interface_Profession_Fishing_Start, Interface_Profession_Fishing_Loop, Interface_Profession_Fishing_End)
