@@ -5,7 +5,7 @@
 // - Ore Veins (copper, iron, gold, etc.)
 // - Crystal Veins (gems, crystals)
 // - Rich Veins (high-yield nodes)
-// - Fish Pools
+// - Fish Pools (shallow-water placement, zone-aware rewards)
 // - Treasure Chests
 // - Rare Spawns
 //
@@ -50,6 +50,7 @@ globals
 
     private constant integer GNU_SPECIAL_BEHAVIOR_NONE = 0
     private constant integer GNU_SPECIAL_BEHAVIOR_MANA_CRYSTAL_EXPLOSION = 1
+    private constant integer GNU_CATEGORY_FISH_POOLS = 9
     private constant integer GNU_MINING_PICK_ITEM_CODE = 'I672'
     private constant real GNU_MANA_CRYSTAL_EXPLOSION_RADIUS = 300.0
     private constant real GNU_MANA_CRYSTAL_EXPLOSION_DAMAGE = 400.0
@@ -166,6 +167,7 @@ globals
 
     // Reward rows
     private integer array GNU_DropDefId
+    private integer array GNU_DropZoneId
     private integer array GNU_DropGroupKey
     private integer array GNU_DropItemCode
     private integer array GNU_DropChancePct
@@ -266,7 +268,7 @@ function GNU_GetDefinitionIdByUnitCode takes integer unitCode returns integer
     return -1
 endfunction
 
-function GNU_RegisterDrop takes integer defId, string groupName, integer itemCode, integer dropChancePct, integer weight, integer minQty, integer maxQty, boolean enabled returns integer
+private function GNU_RegisterDropForZone takes integer defId, integer zoneId, string groupName, integer itemCode, integer dropChancePct, integer weight, integer minQty, integer maxQty, boolean enabled returns integer
     local integer dropId = GNU_DropCount
 
     if defId < 0 or defId >= GNU_DefinitionCount then
@@ -278,6 +280,7 @@ function GNU_RegisterDrop takes integer defId, string groupName, integer itemCod
     endif
 
     set GNU_DropDefId[dropId] = defId
+    set GNU_DropZoneId[dropId] = zoneId
     set GNU_DropGroupKey[dropId] = StringHash(groupName)
     set GNU_DropItemCode[dropId] = itemCode
     set GNU_DropChancePct[dropId] = dropChancePct
@@ -288,6 +291,18 @@ function GNU_RegisterDrop takes integer defId, string groupName, integer itemCod
     set GNU_DropCount = GNU_DropCount + 1
 
     return dropId
+endfunction
+
+function GNU_RegisterDrop takes integer defId, string groupName, integer itemCode, integer dropChancePct, integer weight, integer minQty, integer maxQty, boolean enabled returns integer
+    return GNU_RegisterDropForZone(defId, 0, groupName, itemCode, dropChancePct, weight, minQty, maxQty, enabled)
+endfunction
+
+function GNU_RegisterZoneDrop takes integer defId, integer zoneId, string groupName, integer itemCode, integer dropChancePct, integer weight, integer minQty, integer maxQty, boolean enabled returns integer
+    if zoneId < 0 then
+        set zoneId = 0
+    endif
+
+    return GNU_RegisterDropForZone(defId, zoneId, groupName, itemCode, dropChancePct, weight, minQty, maxQty, enabled)
 endfunction
 
 private function GNU_EnsureSharedPool takes integer defId, integer zoneId, integer groupId, integer sharedMax returns integer
@@ -513,7 +528,32 @@ private function GNU_CreateRewardItems takes unit gatherer, integer itemCode, in
     return amount
 endfunction
 
-private function GNU_RollHarvestRewardGroup takes unit gatherer, integer defId, integer groupKey, integer groupChancePct, integer maxAvailable, boolean capToAvailable returns integer
+private function GNU_GetRewardDropZoneFilter takes integer defId, integer groupKey, integer zoneId returns integer
+    local integer j = 0
+    local integer parentZoneId = ZonesCore_GetParentZoneId(zoneId)
+    local boolean hasParentZoneDrops = false
+
+    loop
+        exitwhen j >= GNU_DropCount
+        if GNU_DropEnabled[j] and GNU_DropDefId[j] == defId and GNU_DropGroupKey[j] == groupKey then
+            if zoneId > 0 and GNU_DropZoneId[j] == zoneId then
+                return zoneId
+            endif
+            if parentZoneId > 0 and GNU_DropZoneId[j] == parentZoneId then
+                set hasParentZoneDrops = true
+            endif
+        endif
+        set j = j + 1
+    endloop
+
+    if hasParentZoneDrops then
+        return parentZoneId
+    endif
+
+    return 0
+endfunction
+
+private function GNU_RollHarvestRewardGroup takes unit gatherer, integer defId, integer zoneId, integer groupKey, integer groupChancePct, integer maxAvailable, boolean capToAvailable returns integer
     local integer array candidateDropIds
     local integer array candidateWeights
     local integer candidateCount = 0
@@ -522,6 +562,7 @@ private function GNU_RollHarvestRewardGroup takes unit gatherer, integer defId, 
     local integer totalWeight
     local integer roll
     local integer selectedDropId
+    local integer zoneFilter
 
     set j = 0
     set totalWeight = 0
@@ -530,9 +571,11 @@ private function GNU_RollHarvestRewardGroup takes unit gatherer, integer defId, 
         return 0
     endif
 
+    set zoneFilter = GNU_GetRewardDropZoneFilter(defId, groupKey, zoneId)
+
     loop
         exitwhen j >= GNU_DropCount
-        if GNU_DropEnabled[j] and GNU_DropDefId[j] == defId and GNU_DropGroupKey[j] == groupKey then
+        if GNU_DropEnabled[j] and GNU_DropDefId[j] == defId and GNU_DropGroupKey[j] == groupKey and GNU_DropZoneId[j] == zoneFilter then
             set weight = GNU_DropWeight[j]
             if weight <= 0 then
                 set weight = 1
@@ -572,16 +615,91 @@ private function GNU_RollHarvestRewardGroup takes unit gatherer, integer defId, 
     return 0
 endfunction
 
-private function GNU_RollHarvestRewards takes unit gatherer, integer defId, integer remainingPool returns integer
+private function GNU_RollHarvestRewards takes unit gatherer, integer defId, integer zoneId, integer remainingPool returns integer
     local integer mainAwarded
 
-    set mainAwarded = GNU_RollHarvestRewardGroup(gatherer, defId, StringHash("Main"), GNU_DefMainDropGroupChancePct[defId], remainingPool, true)
+    set mainAwarded = GNU_RollHarvestRewardGroup(gatherer, defId, zoneId, StringHash("Main"), GNU_DefMainDropGroupChancePct[defId], remainingPool, true)
 
     if mainAwarded > 0 and remainingPool - mainAwarded > 0 then
-        call GNU_RollHarvestRewardGroup(gatherer, defId, StringHash("Secondary"), GNU_DefSecondaryDropGroupChancePct[defId], -1, false)
+        call GNU_RollHarvestRewardGroup(gatherer, defId, zoneId, StringHash("Secondary"), GNU_DefSecondaryDropGroupChancePct[defId], -1, false)
     endif
 
     return mainAwarded
+endfunction
+
+function GNU_RollGatherUnitRewards takes unit gatherer, unit node returns integer
+    local integer handleId
+    local integer defId
+    local integer zoneId
+    local integer gatheredCount
+    local integer totalYield
+    local integer remainingPool
+    local integer mainAwarded
+
+    if gatherer == null or node == null or not GN_IsGatherUnit(node) then
+        return 0
+    endif
+
+    set handleId = GetHandleId(node)
+    if not GNU_UnitToDefId.has(handleId) then
+        return 0
+    endif
+
+    set defId = GNU_UnitToDefId.integer[handleId]
+    set zoneId = GNU_UnitToZoneId.integer[handleId]
+    call GNU_EnsureHarvestState(node, defId)
+    set gatheredCount = GNU_UnitHarvestCount.integer[handleId]
+    set totalYield = GNU_UnitHarvestTotal.integer[handleId]
+    if totalYield <= 0 then
+        set totalYield = 1
+        set GNU_UnitHarvestTotal.integer[handleId] = totalYield
+    endif
+
+    set remainingPool = totalYield - gatheredCount
+    if remainingPool <= 0 then
+        call KillUnit(node)
+        return 0
+    endif
+
+    set mainAwarded = GNU_RollHarvestRewards(gatherer, defId, zoneId, remainingPool)
+    if mainAwarded <= 0 then
+        return 0
+    endif
+
+    set gatheredCount = gatheredCount + mainAwarded
+    set GNU_UnitHarvestCount.integer[handleId] = gatheredCount
+    if gatheredCount >= totalYield then
+        call KillUnit(node)
+    endif
+
+    return mainAwarded
+endfunction
+
+function GNU_RegisterExistingUnitNode takes unit node, integer defId, integer zoneId returns boolean
+    local integer handleId
+
+    if node == null or defId < 0 or defId >= GNU_DefinitionCount then
+        return false
+    endif
+    if GetUnitTypeId(node) != GNU_DefUnitCode[defId] then
+        return false
+    endif
+
+    set handleId = GetHandleId(node)
+    if not GN_IsGatherUnit(node) then
+        call GN_RegisterActiveUnit(node, defId, zoneId, GNU_DefProfessionId[defId], GNU_DefSkillRequired[defId], GNU_DefNodeName[defId])
+    endif
+
+    set GNU_UnitToDefId.integer[handleId] = defId
+    set GNU_UnitToZoneId.integer[handleId] = zoneId
+    if GNU_UnitToAssignId.has(handleId) then
+        call GNU_UnitToAssignId.remove(handleId)
+    endif
+    set GNU_UnitToSpawnPoint.integer[handleId] = -1
+    call GNU_ClearHarvestState(node)
+    call ApplyGlowEffect(node, defId)
+
+    return true
 endfunction
 
 private function GNU_TriggerManaCrystalExplosion takes unit node returns nothing
@@ -882,6 +1000,22 @@ private function GNU_StartLifetimeTimer takes unit u, integer defId returns noth
     endif
 endfunction
 
+private function GNU_IsFishPoolDefinition takes integer defId returns boolean
+    if defId < 0 or defId >= GNU_DefinitionCount then
+        return false
+    endif
+
+    return GNU_DefCategoryId[defId] == GNU_CATEGORY_FISH_POOLS
+endfunction
+
+private function GNU_IsFishPoolTerrainAllowed takes integer zoneId, real x, real y returns boolean
+    if not GN_IsTerrainAllowedForNode(zoneId, x, y, false, false) then
+        return false
+    endif
+
+    return GN_IsShallowWaterUnwalkable(x, y)
+endfunction
+
 // Spawn a unit at specific coordinates
 function GNU_SpawnUnitAt takes integer defId, real x, real y, real facing, integer zoneId, integer spawnPointId, integer assignId returns unit
     local unit u
@@ -900,12 +1034,22 @@ function GNU_SpawnUnitAt takes integer defId, real x, real y, real facing, integ
     set unitCode = GNU_DefUnitCode[defId]
     set owner = Player(GNU_DefOwnerPlayer[defId])
     
-    if not GN_IsTerrainAllowedForNode(zoneId, x, y, GNU_DefPreventWaterSpawn[defId], spawnPointId >= 0) then
+    if GNU_IsFishPoolDefinition(defId) then
+        if not GNU_IsFishPoolTerrainAllowed(zoneId, x, y) then
+            set owner = null
+            return null
+        endif
+    elseif not GN_IsTerrainAllowedForNode(zoneId, x, y, GNU_DefPreventWaterSpawn[defId], spawnPointId >= 0) then
         set owner = null
         return null
     endif
 
     set u = CreateUnit(owner, unitCode, x, y, facing)
+
+    if u != null and GNU_IsFishPoolDefinition(defId) and not GNU_IsFishPoolTerrainAllowed(zoneId, GetUnitX(u), GetUnitY(u)) then
+        call RemoveUnit(u)
+        set u = null
+    endif
     
     if u != null then
         set handleId = GetHandleId(u)
@@ -978,8 +1122,14 @@ function GNU_SpawnUnitInZone takes integer defId, integer zoneId, integer assign
         set x = GetRandomReal(GetRectMinX(r), GetRectMaxX(r))
         set y = GetRandomReal(GetRectMinY(r), GetRectMaxY(r))
         
-        if not GN_IsPointInRestrictedRect(zoneId, x, y, true) and GN_IsPointPathable(x, y) and GN_IsUnitSpawnAreaClear(x, y) then
-            set u = GNU_SpawnUnitAt(defId, x, y, GetRandomReal(0, 360), zoneId, -1, assignId)
+        if not GN_IsPointInRestrictedRect(zoneId, x, y, true) and GN_IsUnitSpawnAreaClear(x, y) then
+            if GNU_IsFishPoolDefinition(defId) then
+                if GNU_IsFishPoolTerrainAllowed(zoneId, x, y) then
+                    set u = GNU_SpawnUnitAt(defId, x, y, GetRandomReal(0, 360), zoneId, -1, assignId)
+                endif
+            elseif GN_IsPointPathable(x, y) then
+                set u = GNU_SpawnUnitAt(defId, x, y, GetRandomReal(0, 360), zoneId, -1, assignId)
+            endif
         endif
         
         set attempts = attempts + 1
@@ -1150,6 +1300,7 @@ private function GNU_OnHarvestDamage takes nothing returns nothing
     local unit node = udg_DamageEventTarget
     local integer handleId
     local integer defId
+    local integer zoneId
     local integer gatheredCount
     local integer totalYield
     local integer remainingPool
@@ -1178,6 +1329,7 @@ private function GNU_OnHarvestDamage takes nothing returns nothing
 
     set udg_DamageEventAmount = 0.0
     set defId = GNU_UnitToDefId.integer[handleId]
+    set zoneId = GNU_UnitToZoneId.integer[handleId]
 
     call GNU_EnsureHarvestState(node, defId)
     set gatheredCount = GNU_UnitHarvestCount.integer[handleId]
@@ -1200,7 +1352,7 @@ private function GNU_OnHarvestDamage takes nothing returns nothing
         return
     endif
 
-    set mainAwarded = GNU_RollHarvestRewards(gatherer, defId, remainingPool)
+    set mainAwarded = GNU_RollHarvestRewards(gatherer, defId, zoneId, remainingPool)
     if mainAwarded <= 0 then
         return
     endif
@@ -1430,6 +1582,13 @@ function GNU_GetDefinitionUnitCode takes integer defId returns integer
     return GNU_DefUnitCode[defId]
 endfunction
 
+function GNU_GetDefinitionCategoryId takes integer defId returns integer
+    if defId < 0 or defId >= GNU_DefinitionCount then
+        return 0
+    endif
+    return GNU_DefCategoryId[defId]
+endfunction
+
 function GNU_GetDefinitionSkillRequired takes integer defId returns integer
     if defId < 0 or defId >= GNU_DefinitionCount then
         return 0
@@ -1442,6 +1601,36 @@ function GNU_GetDefinitionProfessionId takes integer defId returns integer
         return 0
     endif
     return GNU_DefProfessionId[defId]
+endfunction
+
+function GNU_GetUnitNodeDefinitionId takes unit node returns integer
+    local integer handleId
+
+    if node == null then
+        return -1
+    endif
+
+    set handleId = GetHandleId(node)
+    if GNU_UnitToDefId.has(handleId) then
+        return GNU_UnitToDefId.integer[handleId]
+    endif
+
+    return -1
+endfunction
+
+function GNU_GetUnitNodeZoneId takes unit node returns integer
+    local integer handleId
+
+    if node == null then
+        return 0
+    endif
+
+    set handleId = GetHandleId(node)
+    if GNU_UnitToZoneId.has(handleId) then
+        return GNU_UnitToZoneId.integer[handleId]
+    endif
+
+    return 0
 endfunction
 
 function GNU_IsDefinitionRare takes integer defId returns boolean
