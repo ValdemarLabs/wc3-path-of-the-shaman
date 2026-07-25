@@ -121,7 +121,7 @@ private function ApplyShield takes unit caster, unit target returns nothing
     endif
     call RemoveShieldForTarget(target)
     set rank = ShamanCommon_GetAbilityRank(caster, ShamanCommon_ABILITY_LIGHTNING_SHIELD)
-    set damagePerSecond = ShamanCommon_GetDamageAmount(caster, ShamanCommon_ABILITY_LIGHTNING_SHIELD, AbilitiesPlayerInit_VALUE_BASE, ShamanCommon_STAT_NONE, 0.00)
+    set damagePerSecond = ShamanCommon_GetDamageAmount(caster, ShamanCommon_ABILITY_LIGHTNING_SHIELD, AbilitiesPlayerInit_VALUE_BASE, ShamanCommon_STAT_INTELLIGENCE, 0.65)
     set ShieldCount = ShieldCount + 1
     set ShieldCaster[ShieldCount] = caster
     set ShieldTarget[ShieldCount] = target
