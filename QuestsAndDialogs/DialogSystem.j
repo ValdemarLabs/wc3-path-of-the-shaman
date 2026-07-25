@@ -68,6 +68,8 @@ globals
 	private constant integer DIALOG_LIST_TEXT_KEY = 1
 	private constant integer DIALOG_LIST_SOUND_KEY = 2
 	private constant integer DIALOG_LIST_SOUND_AT_UNIT_KEY = 3
+	private constant integer DIALOG_LIST_LAST_PICK_KEY = 4
+	private constant integer DIALOG_LIST_PICK_SERIAL_KEY = 5
 
 	private constant real DIALOGSYSTEM_TEXT_CPS = 13.0
 	private constant real DIALOGSYSTEM_MIN_DURATION = 1.25
@@ -113,6 +115,7 @@ globals
 	private string array DialogSystem_FieldLineQueueTexts
 	private integer DialogSystem_FieldLineQueueCount = 0
 	private boolean DialogSystem_FieldLineQueueBusy = false
+	private integer DialogSystem_LinePickSerial = 0
 
 	integer DialogSystem_LastAction = 0
 	button DialogSystem_LastButton = null
@@ -617,6 +620,33 @@ private function RegisterLineInternal takes Table linesTable, string speakerName
 	set listTable.boolean[base + DIALOG_LIST_SOUND_AT_UNIT_KEY] = soundAtUnit
 endfunction
 
+private function PickRegisteredLineIndex takes Table listTable, integer count returns integer
+	local integer last
+	local integer pick
+	local integer offset
+
+	if count <= 1 then
+		set listTable.integer[DIALOG_LIST_LAST_PICK_KEY] = 1
+		return 1
+	endif
+
+	set DialogSystem_LinePickSerial = DialogSystem_LinePickSerial + 1
+	set last = listTable.integer[DIALOG_LIST_LAST_PICK_KEY]
+	if last <= 0 or last > count then
+		set pick = 1 + ModuloInteger(DialogSystem_LinePickSerial + GetRandomInt(0, count - 1), count)
+	else
+		set offset = 1 + ModuloInteger(DialogSystem_LinePickSerial + GetRandomInt(0, count - 2), count - 1)
+		set pick = last + offset
+		loop
+			exitwhen pick <= count
+			set pick = pick - count
+		endloop
+	endif
+	set listTable.integer[DIALOG_LIST_LAST_PICK_KEY] = pick
+	set listTable.integer[DIALOG_LIST_PICK_SERIAL_KEY] = DialogSystem_LinePickSerial
+	return pick
+endfunction
+
 private function PlayRegisteredLine takes Table linesTable, unit speaker, string speakerName returns boolean
 	local Table listTable
 	local integer count
@@ -636,7 +666,7 @@ private function PlayRegisteredLine takes Table linesTable, unit speaker, string
 	if count <= 0 then
 		return false
 	endif
-	set pick = GetRandomInt(1, count)
+	set pick = PickRegisteredLineIndex(listTable, count)
 	set base = pick * 10
 	set text = listTable.string[base + DIALOG_LIST_TEXT_KEY]
 	set soundKey = listTable.string[base + DIALOG_LIST_SOUND_KEY]
@@ -664,7 +694,7 @@ private function PickRegisteredLineData takes Table linesTable, string speakerNa
 	if count <= 0 then
 		return false
 	endif
-	set pick = GetRandomInt(1, count)
+	set pick = PickRegisteredLineIndex(listTable, count)
 	set base = pick * 10
 	set DialogSystem_PickedText = listTable.string[base + DIALOG_LIST_TEXT_KEY]
 	set DialogSystem_PickedSound = listTable.string[base + DIALOG_LIST_SOUND_KEY]
@@ -1809,7 +1839,7 @@ private function GetRegisteredLine takes Table linesTable, string speakerName re
 		set DialogSystem_PickedSoundAtUnit = false
 		return false
 	endif
-	set pick = GetRandomInt(1, count)
+	set pick = PickRegisteredLineIndex(listTable, count)
 	set base = pick * 10
 	set DialogSystem_PickedText = listTable.string[base + DIALOG_LIST_TEXT_KEY]
 	set DialogSystem_PickedSound = listTable.string[base + DIALOG_LIST_SOUND_KEY]
