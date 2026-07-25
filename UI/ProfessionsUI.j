@@ -340,6 +340,20 @@ private function PUI_GetNextMilestoneText takes integer professionId, integer cu
     return AllKnownUnlocksText
 endfunction
 
+private function PUI_GetCurrentSkill takes unit viewer, integer professionId returns integer
+    return GNS_GetEffectiveSkill(viewer, professionId)
+endfunction
+
+private function PUI_GetBarSkill takes integer currentSkill returns integer
+    if currentSkill < 0 then
+        return 0
+    endif
+    if currentSkill > PUI_SKILL_MAX then
+        return PUI_SKILL_MAX
+    endif
+    return currentSkill
+endfunction
+
 private function PUI_WrapBodyText takes string text returns string
     local integer i = 0
     local integer length = StringLength(text)
@@ -684,6 +698,7 @@ private function PUI_UpdateForPlayer takes player whichPlayer returns nothing
     local string detailIcon
     local string detailTitle
     local string detailBarLabel
+    local integer detailBarSkill
     local integer detailRevision
 
     if PUI_Parent == null then
@@ -717,7 +732,7 @@ private function PUI_UpdateForPlayer takes player whichPlayer returns nothing
         set viewerHandleId = GetHandleId(viewer)
     endif
     set professionId = PUI_SelectedProfession[pid]
-    set currentSkill = GNS_GetSkill(viewer, professionId)
+    set currentSkill = PUI_GetCurrentSkill(viewer, professionId)
 
     if GetLocalPlayer() == whichPlayer then
         set viewingText = ViewingPrefixText + PUI_GetViewerName(viewer)
@@ -731,7 +746,7 @@ private function PUI_UpdateForPlayer takes player whichPlayer returns nothing
         loop
             exitwhen rowIndex >= PUI_VISIBLE_LIST_ROWS or professionId > PUI_LAST_PROFESSION
             set rowIndex = rowIndex + 1
-            set currentSkill = GNS_GetSkill(viewer, professionId)
+            set currentSkill = PUI_GetCurrentSkill(viewer, professionId)
             set rowIcon = PUI_GetProfessionIcon(professionId)
             set rowText = PUI_GetProfessionColoredName(professionId)
             set rowLevel = I2S(currentSkill) + "/" + I2S(PUI_SKILL_MAX)
@@ -778,7 +793,8 @@ private function PUI_UpdateForPlayer takes player whichPlayer returns nothing
         call BlzFrameSetVisible(PUI_ListScroll, maxListStart > 0)
 
         set professionId = PUI_SelectedProfession[pid]
-        set currentSkill = GNS_GetSkill(viewer, professionId)
+        set currentSkill = PUI_GetCurrentSkill(viewer, professionId)
+        set detailBarSkill = PUI_GetBarSkill(currentSkill)
         set detailIcon = PUI_GetProfessionIcon(professionId)
         set detailTitle = PUI_GetProfessionColoredName(professionId)
         set detailBarLabel = I2S(currentSkill) + " / " + I2S(PUI_SKILL_MAX)
@@ -791,9 +807,9 @@ private function PUI_UpdateForPlayer takes player whichPlayer returns nothing
             set PUI_DetailTitleCache = detailTitle
             call BlzFrameSetText(PUI_DetailTitle, detailTitle)
         endif
-        if PUI_DetailBarValueCache != currentSkill then
-            set PUI_DetailBarValueCache = currentSkill
-            call BlzFrameSetValue(PUI_DetailBar, I2R(currentSkill))
+        if PUI_DetailBarValueCache != detailBarSkill then
+            set PUI_DetailBarValueCache = detailBarSkill
+            call BlzFrameSetValue(PUI_DetailBar, I2R(detailBarSkill))
         endif
         if PUI_DetailBarLabelCache != detailBarLabel then
             set PUI_DetailBarLabelCache = detailBarLabel
