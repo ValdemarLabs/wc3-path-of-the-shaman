@@ -380,8 +380,6 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
     endfunction
 
     private function SLUI_IsDeadForDisplay takes unit u returns boolean
-        local integer unitId
-
         if not SLUI_IsValidUnit(u) then
             return false
         endif
@@ -389,12 +387,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
             return true
         endif
 
-        set unitId = GetUnitUserData(u)
-        if unitId > 0 and not udg_IsUnitAlive[unitId] then
-            return true
-        endif
-
-        return IsUnitType(u, UNIT_TYPE_DEAD) or GetWidgetLife(u) <= 0.405
+        return GetWidgetLife(u) <= 0.405
     endfunction
 
     private function SLUI_GetLevelText takes unit u returns string
@@ -566,6 +559,14 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
             loop
                 exitwhen i > udg_CompanionCount
                 if SLUI_IsValidUnit(udg_CompanionUnit[i]) then
+                    set count = count + 1
+                endif
+                set i = i + 1
+            endloop
+            set i = 1
+            loop
+                exitwhen i > Companions_GetControlledDisplayCount()
+                if SLUI_IsValidUnit(Companions_GetControlledDisplayUnit(i)) then
                     set count = count + 1
                 endif
                 set i = i + 1
@@ -968,6 +969,12 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
             loop
                 exitwhen i > udg_CompanionCount
                 set rowIndex = SLUI_AddUnitRow(rowIndex, udg_CompanionUnit[i], SLUI_KIND_COMPANION)
+                set i = i + 1
+            endloop
+            set i = 1
+            loop
+                exitwhen i > Companions_GetControlledDisplayCount()
+                set rowIndex = SLUI_AddUnitRow(rowIndex, Companions_GetControlledDisplayUnit(i), SLUI_KIND_COMPANION)
                 set i = i + 1
             endloop
         endif
