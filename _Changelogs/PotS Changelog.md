@@ -128,7 +128,6 @@
   - Created first "fish" unit 'n02N' for Fishing profession.
   - Created Fish aura ability 'S001' for fish units with buff 'B02E'
   - Todo: 
-    - need create the fishing ability to start fishing targeted unit that has the "Fish ability"
     - Need to create the logic in fishing jass library (see MS todo)
 
 ### Known Issues
