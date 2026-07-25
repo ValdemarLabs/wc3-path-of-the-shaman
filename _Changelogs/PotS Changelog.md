@@ -65,6 +65,11 @@
   - Skinning takes 1.5 seconds and is interrupted by new orders, attacks, death, moving away, losing the knife, or corpse invalidation.
   - Successful skinning marks the corpse as skinned until respawn and creates the configured skin item at the corpse location.
 
+- ItemManager-authored equipment should now equip in the configured DEquipment slots more reliably:
+  - `Stave` items are treated as two-handed main-hand weapons.
+  - Trinkets now have two visible DEquipment slots.
+  - Rawcode casing mismatches such as Skinning Knife `'i66m'` / `'I66M'` are handled in the current DEquipment export.
+
 ### Technical Updates
 
 - Added `UI/FullscreenUI.j`
@@ -188,12 +193,37 @@
 - Updated `Professions/Professions.j`
   - Exposed `Professions_ConsumeItem` so profession extension UIs such as Fishing can consume bait items from vanilla inventory or DInventory.
 
+- Updated `DestroyerInventoryAndEquipmentSystem/PoTs/DEquipment.j` and `DestroyerInventoryAndEquipmentSystem/PoTs/SharedDInvLib.j`
+  - Enabled symmetrical `Trinket1` / `Trinket2` slots using DEquipment slot IDs `17` and `18`.
+  - Lowered the main-hand/off-hand row and equipment backdrop to make room for the new trinket row.
+  - Increased the per-player equipment-frame stride so enabling slots `17` and `18` does not collide with the next player's frame indexes.
+  - Made slot-name lookup case-insensitive enough for definitions such as `Mainhand` / `MainHand`, and made generic `Ring` / `Trinket` definitions expand to both corresponding slots.
+  - Renamed DEquipment stat ID `19` from `Cleave Damage` to `Cleave Area`, matching the runtime code that already changes cleave area.
+
+- Updated `DestroyerInventoryAndEquipmentSystem/PoTs/DEquipmentDefinitionHELP.j`
+  - Documented the new `Trinket1` and `Trinket2` slots.
+
 ### Tool Updates
 
 - Updated `WC3_Database/export_dequipment_cli.py`
   - Fixed DEquipment slot export for classes such as `Main Hand Weapon`; the exporter no longer matches the `HAND` substring before weapon hand checks.
   - DEquipment export now considers explicit `items.equipment_slot` and `item_classes.slot_type` metadata instead of relying only on class-name text guessing.
   - Verified that Skinning Knife `'i66m'` exports as `MainHand` instead of `Gloves`.
+  - Preserves rawcode case instead of forcing lowercase, and emits aliases from `WC3_Database/config/item_table_mapping.json` so generated DEquipment definitions can cover both imported uppercase rawcodes and lowercase database codes.
+  - Exports `Ring` items to slots `8` and `9`, `Trinket` items to slots `17` and `18`, and `Stave` items to slot `19` with the two-handed flag.
+  - Normalizes current ItemManager stat names to registered DEquipment stat names such as `Hitpoints`, `Hitpoint regeneration`, `Mana regeneration`, `MoveSPD Pct`, `Spell Damage Taken Pct`, and `Cleave Area`.
+  - Converts whole-percent ItemManager values to DEquipment fractional values for stats whose Warcraft ability fields expect fractions, such as attack speed, lifesteal, armor percent, movement speed percent, and damage-taken percent.
+
+- Updated `WC3_Database/WC3ItemManager` database bootstrap paths
+  - Ensures `Stave` is seeded as `TWOHAND_STAFF` and `Trinket` is seeded as `TRINKET` for older or freshly initialized ItemManager databases.
+
+- Updated `WC3_Database/core/wc3_deq_exporter.py`
+  - Aligned the older level-range DEquipment exporter path with the current two ring slots and two trinket slots.
+
+- Updated `WC3_Export/DEquipmentItemDefinitions/DEquipmentItemDefinitions_20260725-1730.j`
+  - Patched the current generated DEquipment definitions so `Stave`, `Ring`, and `Trinket` items have the corrected slot definitions immediately.
+  - Added uppercase rawcode aliases for Skinning Knife `'I66M'` and Copper Chain Boots `'I68M'`, matching other profession, AI, and loot-system references.
+  - Replaced invalid exported stat labels such as `Health`, `HPS`, `Mana Regen Per Sec`, `Lifesteal`, `Movement Speed %`, and damage-taken names with DEquipment-registered stat names.
 
 ### Known Issues
 
@@ -202,6 +232,7 @@
 - The updated shaman scaling, Ancestral Ward orbiting effects, trainer camera timing, Ghost Wolf companion retargeting, trainer feedback lines/randomized registered-line picker, ability prerequisites, trainer/player ExSound registrations, and temporary summon Stats UI rows still need in-game validation with the active object data/import set.
 - The new FishingUI minigame, fish-pool shallow-water placement, preplaced fish-pool zone detection, and zone-aware fish rewards still need in-game validation with the active map object data.
 - The new Skinning flow and default beast rawcode list still need in-game validation with the active object data; Vizier Skin has no confirmed unit rawcode registered yet.
+- The corrected DEquipment trinket row, slot-name fallback behavior, and regenerated ItemManager equipment definitions still need in-map validation with the active object data/import set.
 
 ## [23.7.2026]
 
