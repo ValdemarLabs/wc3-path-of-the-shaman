@@ -1437,13 +1437,6 @@ private function PF_CreateFrames takes nothing returns nothing
     call BlzFrameSetScale(PF_UIBaitText, 0.90)
     call BlzFrameSetEnable(PF_UIBaitText, false)
 
-    set PF_UIStatusText = BlzCreateFrameByType("TEXT", "FishingUIStatusText", PF_UIParent, "", 0)
-    call BlzFrameSetPoint(PF_UIStatusText, FRAMEPOINT_TOPRIGHT, PF_UIParent, FRAMEPOINT_TOPRIGHT, -0.010, -0.008)
-    call BlzFrameSetSize(PF_UIStatusText, 0.150, 0.014)
-    call BlzFrameSetTextAlignment(PF_UIStatusText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_RIGHT)
-    call BlzFrameSetScale(PF_UIStatusText, 0.92)
-    call BlzFrameSetEnable(PF_UIStatusText, false)
-
     set PF_UIBarBackdrop = BlzCreateFrameByType("BACKDROP", "FishingUIBarBackdrop", PF_UIParent, "", 0)
     call BlzFrameSetPoint(PF_UIBarBackdrop, FRAMEPOINT_TOPLEFT, PF_UIBaitText, FRAMEPOINT_BOTTOMLEFT, 0.000, -0.010)
     call BlzFrameSetSize(PF_UIBarBackdrop, 0.240, 0.018)
@@ -1470,6 +1463,13 @@ private function PF_CreateFrames takes nothing returns nothing
     call BlzFrameSetTextAlignment(PF_UIBarLabel, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
     call BlzFrameSetScale(PF_UIBarLabel, 0.90)
     call BlzFrameSetEnable(PF_UIBarLabel, false)
+
+    set PF_UIStatusText = BlzCreateFrameByType("TEXT", "FishingUIStatusText", PF_UIParent, "", 0)
+    call BlzFrameSetPoint(PF_UIStatusText, FRAMEPOINT_TOP, PF_UIBarBackdrop, FRAMEPOINT_BOTTOM, 0.000, -0.004)
+    call BlzFrameSetSize(PF_UIStatusText, 0.240, 0.014)
+    call BlzFrameSetTextAlignment(PF_UIStatusText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
+    call BlzFrameSetScale(PF_UIStatusText, 0.90)
+    call BlzFrameSetEnable(PF_UIStatusText, false)
 
     set PF_UIReelButton = BlzCreateFrameByType("GLUETEXTBUTTON", "FishingUIReelButton", PF_UIParent, "ScriptDialogButton", 0)
     call BlzFrameSetPoint(PF_UIReelButton, FRAMEPOINT_LEFT, PF_UIBarBackdrop, FRAMEPOINT_RIGHT, 0.010, 0.000)
