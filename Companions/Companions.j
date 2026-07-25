@@ -26,6 +26,9 @@
     call Companions_RegisterControlled(unit controlledUnit, unit leader, integer mode)
     call Companions_UnregisterControlled(unit controlledUnit)
     call Companions_IsControlled(unit controlledUnit) returns boolean
+    call Companions_IsControlledDisplayUnit(unit controlledUnit) returns boolean
+    call Companions_GetControlledDisplayCount() returns integer
+    call Companions_GetControlledDisplayUnit(integer index) returns unit
     call Companions_SetEscortBehavior(unit controlledUnit, boolean enabled)
     call Companions_SetFollowerBehavior(unit controlledUnit, boolean enabled)
     call Companions_GetMode(unit controlledUnit) returns integer
@@ -86,6 +89,7 @@ globals
     private constant integer COMPANION_PROFILE_NORMAL = 0
     private constant integer COMPANION_PROFILE_ESCORT = 1
     private constant integer COMPANION_PROFILE_FOLLOWER = 2
+    private constant integer CONTROLLED_DISPLAY_MAX = 128
     private constant boolean COMPANION_ENABLE_FOLLOWER_EFFECTS = true
     private constant string COMPANION_EFFECT_STOPPED_PATH = "war3mapImported\\QuestMarking.mdl"
     private constant string COMPANION_EFFECT_STOPPED_ATTACH = "origin"
@@ -136,6 +140,18 @@ globals
     private constant integer UNIT_HEADHUNTER = 'ohun'
     private constant integer UNIT_WITCH_DOCTOR = 'odoc'
     private constant integer UNIT_HIRED_SHAMAN = 'oshm'
+    private constant integer UNIT_AIR_ELEMENTAL = 'h60D'
+    private constant integer UNIT_WATER_ELEMENTAL = 'n00O'
+    private constant integer UNIT_FIRE_ELEMENTAL = 'n616'
+    private constant integer UNIT_EARTH_ELEMENTAL = 'n615'
+    private constant integer UNIT_SPIRIT_WOLF_1 = 'npig'
+    private constant integer UNIT_SPIRIT_WOLF_2 = 'nwlt'
+    private constant integer UNIT_SPIRIT_WOLF_3 = 'n61T'
+    private constant integer UNIT_SPIRIT_WOLF_4 = 'nwlg'
+    private constant integer UNIT_SPIRIT_WOLF_5 = 'nwld'
+    private constant integer UNIT_SPIRIT_WOLF_OSW1 = 'osw1'
+    private constant integer UNIT_SPIRIT_WOLF_OSW2 = 'osw2'
+    private constant integer UNIT_SPIRIT_WOLF_OSW3 = 'osw3'
 
     private Table CompanionLeader = 0
     private Table CompanionMode = 0
@@ -149,10 +165,14 @@ globals
     private Table CompanionFollowingEffect = 0
     private Table CompanionMapIconSlot = 0
     private Table CompanionPingCycle = 0
+    private Table ControlledDisplayIndex = 0
     private minimapicon array CompanionMapIcons
+    private unit array ControlledDisplayUnits
     private integer CompanionMapIconCount = 0
+    private integer ControlledDisplayCount = 0
 
     private group ModeTargetGroup = null
+    private group ControlledDisplayGroup = null
     private timer CompanionClock = null
     private trigger CommandEventTrigger = null
     private trigger IdleTrigger = null
@@ -226,9 +246,13 @@ private function EnsureState takes nothing returns nothing
         set CompanionFollowingEffect = Table.create()
         set CompanionMapIconSlot = Table.create()
         set CompanionPingCycle = Table.create()
+        set ControlledDisplayIndex = Table.create()
     endif
     if ModeTargetGroup == null then
         set ModeTargetGroup = CreateGroup()
+    endif
+    if ControlledDisplayGroup == null then
+        set ControlledDisplayGroup = CreateGroup()
     endif
     if HostilityDropGroup == null then
         set HostilityDropGroup = CreateGroup()
@@ -256,6 +280,9 @@ private function IsControlGroupUnit takes unit u returns boolean
         return true
     endif
     if udg_TamedUnits != null and IsUnitInGroup(u, udg_TamedUnits) then
+        return true
+    endif
+    if ControlledDisplayGroup != null and IsUnitInGroup(u, ControlledDisplayGroup) then
         return true
     endif
     return false
@@ -392,6 +419,77 @@ private function FindCompanionIndex takes unit companionUnit returns integer
         set i = i + 1
     endloop
     return 0
+endfunction
+
+private function IsSummonedElementalType takes integer unitTypeId returns boolean
+    return unitTypeId == UNIT_AIR_ELEMENTAL or unitTypeId == UNIT_WATER_ELEMENTAL or unitTypeId == UNIT_FIRE_ELEMENTAL or unitTypeId == UNIT_EARTH_ELEMENTAL
+endfunction
+
+private function IsSummonedSpiritWolfType takes integer unitTypeId returns boolean
+    return unitTypeId == UNIT_SPIRIT_WOLF_1 /*
+        */ or unitTypeId == UNIT_SPIRIT_WOLF_2 /*
+        */ or unitTypeId == UNIT_SPIRIT_WOLF_3 /*
+        */ or unitTypeId == UNIT_SPIRIT_WOLF_4 /*
+        */ or unitTypeId == UNIT_SPIRIT_WOLF_5 /*
+        */ or unitTypeId == UNIT_SPIRIT_WOLF_OSW1 /*
+        */ or unitTypeId == UNIT_SPIRIT_WOLF_OSW2 /*
+        */ or unitTypeId == UNIT_SPIRIT_WOLF_OSW3
+endfunction
+
+private function AddControlledDisplayUnit takes unit controlledUnit returns nothing
+    local integer unitId
+    if controlledUnit == null or GetUnitTypeId(controlledUnit) == 0 then
+        return
+    endif
+
+    call EnsureState()
+    set unitId = GetHandleId(controlledUnit)
+    if ControlledDisplayIndex.integer[unitId] > 0 then
+        return
+    endif
+    call GroupAddUnit(ControlledDisplayGroup, controlledUnit)
+    if ControlledDisplayCount >= CONTROLLED_DISPLAY_MAX then
+        set ControlledDisplayIndex.integer[unitId] = -1
+        return
+    endif
+
+    set ControlledDisplayCount = ControlledDisplayCount + 1
+    set ControlledDisplayUnits[ControlledDisplayCount] = controlledUnit
+    set ControlledDisplayIndex.integer[unitId] = ControlledDisplayCount
+endfunction
+
+private function RemoveControlledDisplayUnit takes unit controlledUnit returns nothing
+    local integer unitId
+    local integer index
+    local unit moved
+    if controlledUnit == null or ControlledDisplayIndex == 0 then
+        return
+    endif
+
+    set unitId = GetHandleId(controlledUnit)
+    set index = ControlledDisplayIndex.integer[unitId]
+    if index <= 0 then
+        if index < 0 then
+            call ControlledDisplayIndex.integer.remove(unitId)
+        endif
+        if ControlledDisplayGroup != null then
+            call GroupRemoveUnit(ControlledDisplayGroup, controlledUnit)
+        endif
+        return
+    endif
+
+    set moved = ControlledDisplayUnits[ControlledDisplayCount]
+    set ControlledDisplayUnits[index] = moved
+    set ControlledDisplayUnits[ControlledDisplayCount] = null
+    set ControlledDisplayCount = ControlledDisplayCount - 1
+    if moved != null and moved != controlledUnit then
+        set ControlledDisplayIndex.integer[GetHandleId(moved)] = index
+    endif
+    call ControlledDisplayIndex.integer.remove(unitId)
+    if ControlledDisplayGroup != null then
+        call GroupRemoveUnit(ControlledDisplayGroup, controlledUnit)
+    endif
+    set moved = null
 endfunction
 
 private function GetUnitTypeIconPath takes integer unitTypeId returns string
@@ -537,6 +635,11 @@ private function RegisterControlledInternal takes unit controlledUnit, unit lead
     set CompanionSuspended[unitId] = 0
     set CompanionIcon.string[unitId] = icon
 
+    if registered then
+        call RemoveControlledDisplayUnit(controlledUnit)
+    else
+        call AddControlledDisplayUnit(controlledUnit)
+    endif
     call RemoveWanderAbility(controlledUnit)
     call SetFocusUnit(controlledUnit, leader)
     if not CompanionOrderProfile.has(unitId) then
@@ -939,6 +1042,9 @@ private function OnOrderPeriodic takes nothing returns nothing
     if udg_TamedUnits != null then
         call ForGroup(udg_TamedUnits, function UpdateCompanionOrderEnum)
     endif
+    if ControlledDisplayGroup != null then
+        call ForGroup(ControlledDisplayGroup, function UpdateCompanionOrderEnum)
+    endif
 endfunction
 
 private function ApplyOrders takes unit companionUnit returns nothing
@@ -1055,6 +1161,7 @@ private function RemoveInternal takes unit companionUnit returns nothing
     endif
 
     set unitId = GetHandleId(companionUnit)
+    call RemoveControlledDisplayUnit(companionUnit)
     call FollowSystem_RemoveUnit(companionUnit)
     call ClearCompanionFarIcon(companionUnit)
     call DestroyCompanionFollowerEffects(companionUnit)
@@ -1287,6 +1394,9 @@ private function OnIdlePeriodic takes nothing returns nothing
     if udg_TamedUnits != null then
         call ForGroup(udg_TamedUnits, function UpdatePetIdleEnum)
     endif
+    if ControlledDisplayGroup != null then
+        call ForGroup(ControlledDisplayGroup, function UpdateCompanionIdleEnum)
+    endif
 endfunction
 
 private function IsNamedCompanionType takes integer unitTypeId returns boolean
@@ -1478,6 +1588,9 @@ private function IsHostilitySource takes unit source returns boolean
         return true
     endif
     if udg_TamedUnits != null and IsUnitInGroup(source, udg_TamedUnits) then
+        return true
+    endif
+    if ControlledDisplayGroup != null and IsUnitInGroup(source, ControlledDisplayGroup) then
         return true
     endif
     return false
@@ -1993,6 +2106,16 @@ private function GetUnitTypeInfoName takes integer unitTypeId returns string
         return "Witch Doctor"
     elseif unitTypeId == UNIT_HIRED_SHAMAN then
         return "Shaman"
+    elseif unitTypeId == UNIT_AIR_ELEMENTAL then
+        return "Air Elemental"
+    elseif unitTypeId == UNIT_WATER_ELEMENTAL then
+        return "Water Elemental"
+    elseif unitTypeId == UNIT_FIRE_ELEMENTAL then
+        return "Fire Elemental"
+    elseif unitTypeId == UNIT_EARTH_ELEMENTAL then
+        return "Earth Elemental"
+    elseif IsSummonedSpiritWolfType(unitTypeId) then
+        return "Spirit Wolf"
     endif
 
     set objectName = GetObjectName(unitTypeId)
@@ -2039,6 +2162,10 @@ private function GetCompanionClassInfoTextInternal takes unit target returns str
         return "Headhunter"
     elseif unitTypeId == UNIT_WITCH_DOCTOR then
         return "Witch Doctor"
+    elseif IsSummonedElementalType(unitTypeId) then
+        return "Elemental"
+    elseif IsSummonedSpiritWolfType(unitTypeId) then
+        return "Spirit Wolf"
     endif
 
     return GetUnitTypeInfoName(unitTypeId)
@@ -2062,6 +2189,12 @@ private function GetCompanionTypeInfoTextInternal takes unit target returns stri
         return "Ranged Damage"
     elseif unitTypeId == UNIT_ENGINEER or unitTypeId == UNIT_ARADION or unitTypeId == UNIT_WITCH_DOCTOR then
         return "Support"
+    elseif unitTypeId == UNIT_EARTH_ELEMENTAL then
+        return "Tank"
+    elseif IsSummonedElementalType(unitTypeId) then
+        return "Ranged Damage"
+    elseif IsSummonedSpiritWolfType(unitTypeId) then
+        return "Melee Damage"
     endif
 
     if IsUnitType(target, UNIT_TYPE_RANGED_ATTACKER) then
@@ -2098,6 +2231,8 @@ private function GetFactionInfoTextInternal takes unit target returns string
         return "Riverbane Citizen"
     elseif IsNamedCompanionType(unitTypeId) or IsHiredUnitType(unitTypeId) then
         return "Horde"
+    elseif IsSummonedElementalType(unitTypeId) or IsSummonedSpiritWolfType(unitTypeId) then
+        return "Summoned Spirit"
     endif
 
     return "Unknown"
@@ -2188,6 +2323,10 @@ private function GetCompanionAbilityInfoTextInternal takes unit target returns s
         return "Chain Heal, Chain Lightning, Earth Totem, Earthbind Totem, Fire Totem, Stoneskin Totem, Water Totem, Wind Totem, Windfury Totem, Healing Wave, Hex, Lightning Bolt"
     elseif unitTypeId == UNIT_ENGINEER then
         return "Repair, Mechanical Construct, Grenade, Turret, Shredder, Drone, Smoke Bomb"
+    elseif IsSummonedElementalType(unitTypeId) then
+        return "Elemental attacks and shaman-bound companion control"
+    elseif IsSummonedSpiritWolfType(unitTypeId) then
+        return "Spirit bites and shaman-bound companion control"
     elseif unitTypeId == UNIT_ENGINEER_SHREDDER then
         return "Shred, Charge, Slam, Cluster Rockets, Smoke Bomb"
     elseif unitTypeId == UNIT_PALADIN then
@@ -2499,6 +2638,9 @@ public function HaltAll takes nothing returns nothing
     if udg_TamedUnits != null then
         call ForGroup(udg_TamedUnits, function HaltControlledEnum)
     endif
+    if ControlledDisplayGroup != null then
+        call ForGroup(ControlledDisplayGroup, function HaltControlledEnum)
+    endif
 endfunction
 
 public function Suspend takes unit companionUnit returns nothing
@@ -2517,6 +2659,9 @@ public function ResumeAll takes nothing returns nothing
     if udg_TamedUnits != null then
         call ForGroup(udg_TamedUnits, function ResumeControlledEnum)
     endif
+    if ControlledDisplayGroup != null then
+        call ForGroup(ControlledDisplayGroup, function ResumeControlledEnum)
+    endif
 endfunction
 
 public function RegisterControlled takes unit controlledUnit, unit leader, integer mode returns nothing
@@ -2532,9 +2677,16 @@ public function UnregisterControlled takes unit controlledUnit returns nothing
     endif
 
     set unitId = GetHandleId(controlledUnit)
+    call RemoveControlledDisplayUnit(controlledUnit)
     call FollowSystem_RemoveUnit(controlledUnit)
     call ClearCompanionFarIcon(controlledUnit)
     call DestroyCompanionFollowerEffects(controlledUnit)
+    if udg_CompanionFocusNazgrek != null then
+        call GroupRemoveUnit(udg_CompanionFocusNazgrek, controlledUnit)
+    endif
+    if udg_CompanionFocusZulkis != null then
+        call GroupRemoveUnit(udg_CompanionFocusZulkis, controlledUnit)
+    endif
     call CompanionLeader.remove(unitId)
     call CompanionMode.remove(unitId)
     call CompanionSuspended.remove(unitId)
@@ -2552,6 +2704,26 @@ public function IsControlled takes unit controlledUnit returns boolean
         return false
     endif
     return CompanionTracked[GetHandleId(controlledUnit)] == 1
+endfunction
+
+public function IsControlledDisplayUnit takes unit controlledUnit returns boolean
+    if controlledUnit == null or ControlledDisplayIndex == 0 then
+        return false
+    endif
+    return ControlledDisplayIndex.integer[GetHandleId(controlledUnit)] > 0
+endfunction
+
+public function GetControlledDisplayCount takes nothing returns integer
+    call EnsureState()
+    return ControlledDisplayCount
+endfunction
+
+public function GetControlledDisplayUnit takes integer index returns unit
+    call EnsureState()
+    if index < 1 or index > ControlledDisplayCount then
+        return null
+    endif
+    return ControlledDisplayUnits[index]
 endfunction
 
 public function GetCompanionLimit takes nothing returns integer
