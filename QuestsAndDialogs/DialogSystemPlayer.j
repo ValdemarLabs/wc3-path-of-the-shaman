@@ -114,7 +114,7 @@ private function LinesNazgrek takes nothing returns nothing
 	call DialogSystem_RegisterAcceptLine("Nazgrek", "Yes.", "Nazgrek_Accept1", true)
 	call DialogSystem_RegisterAcceptLine("Nazgrek", "I accept.", "Nazgrek_Accept2", true)
 	call DialogSystem_RegisterAcceptLine("Nazgrek", "Consider it done.", "Nazgrek_Accept3", true)
-	call DialogSystem_RegisterAcceptLine("Nazgrek", "Very well.", "Nazgrek_Accep4", true)
+	call DialogSystem_RegisterAcceptLine("Nazgrek", "Very well.", "Nazgrek_Accept4", true)
 	call DialogSystem_RegisterAcceptLine("Nazgrek", "Agreed.", "Nazgrek_Accept5", true)
 
 endfunction
