@@ -75,57 +75,73 @@ def convert_item_code(code):
     return f"'{code}'"
 
 
-def get_item_slot(class_name):
-    """Determine equipment slot from item class"""
-    if not class_name:
+def normalize_slot_value(slot_value):
+    """Map database slot/class labels to DEquipment slot names or IDs."""
+    if not slot_value:
         return None
-    
-    class_name = class_name.upper()
-    
-    # Check TWO-HAND weapons FIRST before checking HAND
-    if '2H' in class_name or 'TWO-HAND' in class_name or 'TWO HAND' in class_name or 'TWOHANDED' in class_name:
+
+    slot_text = str(slot_value).strip().upper().replace('_', ' ').replace('-', ' ')
+    slot_text = ' '.join(slot_text.split())
+    compact_slot = slot_text.replace(' ', '')
+
+    # Check weapon hand labels before hand armor. "Main Hand Weapon" contains HAND.
+    if compact_slot in ('2H', '2HWEAPON', 'TWOHAND', 'TWOHANDED', 'TWOHANDWEAPON', 'TWOHANDEDWEAPON') or 'TWO HAND' in slot_text:
         return 19  # 2-handed weapon slot ID
-    
-    # Check shields and off-hands before other weapons
-    if 'SHIELD' in class_name or 'OFF-HAND' in class_name or 'OFFHAND' in class_name:
+    if compact_slot in ('OFFHAND', 'OFFHANDWEAPON') or 'OFF HAND' in slot_text or 'SHIELD' in slot_text:
         return 'OffHand'
-    
-    # Check specific armor types FIRST before generic "ARMOR" pattern
-    if 'HEAD' in class_name or 'HELMET' in class_name or 'HELM' in class_name:
-        return 'Head'
-    elif 'NECK' in class_name or 'AMULET' in class_name or 'PENDANT' in class_name or 'NECKLACE' in class_name:
-        return 'Neck'
-    elif 'SHOULDER' in class_name or 'PAULDRON' in class_name:
-        return 'Shoulder'
-    elif 'HAND' in class_name or 'GAUNTLET' in class_name or 'GLOVE' in class_name:
-        return 'Gloves'
-    elif 'LEG' in class_name or 'PANT' in class_name or 'GREAVES' in class_name:
-        return 'Legs'
-    elif 'FEET' in class_name or 'FOOT' in class_name or 'BOOT' in class_name or 'SHOE' in class_name:
-        return 'Boots'
-    elif 'CHEST' in class_name or 'ARMOR' in class_name or 'BREASTPLATE' in class_name:
-        return 'Chest'
-    elif 'BACK' in class_name or 'CLOAK' in class_name or 'CAPE' in class_name:
-        return 'Back'
-    elif 'BRACER' in class_name or 'WRIST' in class_name:
-        return 'Bracers'
-    elif 'RING' in class_name:
-        return 'Ring'
-    elif 'BELT' in class_name or 'WAIST' in class_name or 'GIRDLE' in class_name:
-        return 'Belt'
-    elif 'WEAPON' in class_name or 'SWORD' in class_name or 'AXE' in class_name or 'MACE' in class_name or 'DAGGER' in class_name or '1H' in class_name:
+    if compact_slot in ('MAINHAND', 'MAINHANDWEAPON', '1H', '1HWEAPON', 'ONEHAND', 'ONEHANDED', 'ONEHANDWEAPON', 'WEAPON') or 'MAIN HAND' in slot_text:
         return 'MainHand'
-    
+
+    # Check specific armor types before generic "ARMOR" pattern.
+    if compact_slot in ('HEAD', 'HEADARMOR') or 'HELMET' in slot_text or 'HELM' in slot_text:
+        return 'Head'
+    elif compact_slot in ('NECK', 'AMULET') or 'PENDANT' in slot_text or 'NECKLACE' in slot_text:
+        return 'Neck'
+    elif compact_slot in ('SHOULDER', 'SHOULDERS', 'SHOULDERARMOR') or 'PAULDRON' in slot_text:
+        return 'Shoulder'
+    elif compact_slot in ('HAND', 'HANDS', 'HANDARMOR', 'GLOVE', 'GLOVES', 'GAUNTLET', 'GAUNTLETS') or 'HAND ARMOR' in slot_text or 'GAUNTLET' in slot_text or 'GLOVE' in slot_text:
+        return 'Gloves'
+    elif compact_slot in ('LEG', 'LEGS', 'LEGARMOR') or 'PANT' in slot_text or 'GREAVES' in slot_text:
+        return 'Legs'
+    elif compact_slot in ('FEET', 'FOOT', 'FOOTARMOR') or 'BOOT' in slot_text or 'SHOE' in slot_text:
+        return 'Boots'
+    elif compact_slot in ('CHEST', 'CHESTARMOR') or 'BREASTPLATE' in slot_text or 'ARMOR' in slot_text:
+        return 'Chest'
+    elif compact_slot == 'BACK' or 'CLOAK' in slot_text or 'CAPE' in slot_text:
+        return 'Back'
+    elif compact_slot in ('BRACER', 'BRACERS') or 'WRIST' in slot_text:
+        return 'Bracers'
+    elif compact_slot == 'RING' or 'RING' in slot_text:
+        return 'Ring'
+    elif compact_slot == 'BELT' or 'WAIST' in slot_text or 'GIRDLE' in slot_text:
+        return 'Belt'
+
+    if 'WEAPON' in slot_text or 'SWORD' in slot_text or 'AXE' in slot_text or 'MACE' in slot_text or 'DAGGER' in slot_text:
+        return 'MainHand'
+
     return None
 
 
-def is_two_handed_weapon(class_name):
+def get_item_slot(class_name, slot_type=None, equipment_slot=None):
+    """Determine equipment slot from explicit slot data, then class metadata."""
+    slot = normalize_slot_value(equipment_slot)
+    if slot:
+        return slot
+
+    slot = normalize_slot_value(class_name)
+    if slot:
+        return slot
+
+    return normalize_slot_value(slot_type)
+
+
+def is_two_handed_weapon(class_name, slot_type=None, equipment_slot=None):
     """Check if item is a two-handed weapon"""
-    if not class_name:
-        return False
-    
-    class_name = class_name.upper()
-    return '2H' in class_name or 'TWO-HANDED' in class_name or 'TWO HANDED' in class_name
+    for slot_value in (equipment_slot, class_name, slot_type):
+        if normalize_slot_value(slot_value) == 19:
+            return True
+
+    return False
 
 
 def export_dequipment_definitions(output_path, library_name='DEquipmentItemDefinitions'):
@@ -146,6 +162,8 @@ def export_dequipment_definitions(output_path, library_name='DEquipmentItemDefin
                 i.base_id,
                 i.gold_cost,
                 i.wc3_abilities,
+                i.equipment_slot,
+                c.slot_type,
                 COALESCE(c.class_name, 'MISC') as class_name,
                 COALESCE(r.rarity_name, 'Common') as rarity
             FROM items i
@@ -182,7 +200,7 @@ def export_dequipment_definitions(output_path, library_name='DEquipmentItemDefin
         exported_count = 0
         
         for item in items:
-            item_id, code, name, base_id, gold_cost, abilities, class_name, rarity = item
+            item_id, code, name, base_id, gold_cost, abilities, equipment_slot, slot_type, class_name, rarity = item
             
             # Skip items without proper code
             if not code or len(code) != 4:
@@ -195,7 +213,7 @@ def export_dequipment_definitions(output_path, library_name='DEquipmentItemDefin
             lines.append(f"    // Base: {base_id}, Class: {class_name}")
             
             # Define equipment slot
-            slot = get_item_slot(class_name)
+            slot = get_item_slot(class_name, slot_type, equipment_slot)
             if slot:
                 if isinstance(slot, int):
                     lines.append(f"    call DEqItemTypeDefineAllowedSlotId({code_str}, {slot})")
@@ -203,7 +221,7 @@ def export_dequipment_definitions(output_path, library_name='DEquipmentItemDefin
                     lines.append(f"    call DEqItemTypeDefineAllowedSlotByName({code_str}, \"{slot}\")")
             
             # Check if two-handed
-            if is_two_handed_weapon(class_name):
+            if is_two_handed_weapon(class_name, slot_type, equipment_slot):
                 lines.append(f"    call DEqItemTypeDefineAs2Handed({code_str})")
             
             # Get item stats from database
