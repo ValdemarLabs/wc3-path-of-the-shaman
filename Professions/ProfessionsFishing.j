@@ -1212,8 +1212,8 @@ endfunction
 
 private function PF_CreateFrames takes nothing returns nothing
     set PF_UIParent = BlzCreateFrameByType("BACKDROP", "FishingUIParent", BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "", 0)
-    call BlzFrameSetAbsPoint(PF_UIParent, FRAMEPOINT_TOPLEFT, 0.245, 0.180)
-    call BlzFrameSetAbsPoint(PF_UIParent, FRAMEPOINT_BOTTOMRIGHT, 0.555, 0.060)
+    call BlzFrameSetAbsPoint(PF_UIParent, FRAMEPOINT_TOPLEFT, 0.245, 0.320)
+    call BlzFrameSetAbsPoint(PF_UIParent, FRAMEPOINT_BOTTOMRIGHT, 0.555, 0.200)
     call BlzFrameSetTexture(PF_UIParent, PanelTexture, 0, true)
     call BlzFrameSetAlpha(PF_UIParent, 235)
     call BlzFrameSetVertexColor(PF_UIParent, BlzConvertColor(235, 12, 12, 12))
