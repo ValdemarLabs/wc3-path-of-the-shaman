@@ -51,6 +51,12 @@
   - Restored positioned hit flare behavior for absorbed damage.
   - Added safer target fallback for direct casts.
 
+- Added the first Fishing profession gameplay flow:
+  - Fish pools can be selected and fished by a tracked hero carrying a registered fishing pole.
+  - Fishing now uses a compact WoW-style FishingUI cast bar with a random bite window and Reel button.
+  - Missing the reel window fails the attempt with "Fish went away".
+  - Fishing skill and temporary bait bonuses can affect success against the selected pool's required fishing level.
+
 ### Technical Updates
 
 - Added `UI/FullscreenUI.j`
@@ -124,16 +130,37 @@
 - Updated `DialogSystemPlayer.j`
   - Updated Nazgrek lines and added soundkeys, Zulkis lines and soundkeys remains in wip state to be worked on later.
 
-- Fishing profession
-  - Created first "fish" unit 'n02N' for Fishing profession.
-  - Created Fish aura ability 'S001' for fish units with buff 'B02E'
-  - Todo: 
-    - Need to create the logic in fishing jass library (see MS todo)
+- Updated `Professions/ProfessionsFishing.j`
+  - Implemented the first Fishing profession minigame around selectable fish pool unit nodes.
+  - Registered Jin'Zun's Fishing Pole `'I6CJ'` as the first fishing pole and auto-equips it from DInventory when possible.
+  - Registered the first fish pool unit rawcode `'n02N'` as the default fish pool gather node.
+  - Added bait registration and bait consumption hooks for temporary fishing skill bonuses.
+  - Stops fishing when the unit is attacked, the pool becomes invalid, the unit moves out of range, the reel window is missed, or the player cancels.
+
+- Updated `GatherSystems/GatherNodes.j`
+  - Added reusable water-depth and water-type helpers using the invisible platform probe.
+  - Added a shallow-water, non-walkable terrain predicate for gather nodes that must spawn in water.
+
+- Updated `GatherSystems/GatherNodeUnits.j`
+  - Added fish-pool category handling so unit node category `9` spawns only in shallow, non-walkable water.
+  - Added zone-aware unit-node drops through `GNU_RegisterZoneDrop`, with exact zone, parent zone, then generic drop fallback.
+  - Added public unit-node query helpers for definition id, category id, and stored zone id.
+  - Added `GNU_RegisterExistingUnitNode` and `GNU_RollGatherUnitRewards` support for preplaced or UI-driven unit-node harvesting.
+
+- Updated `Zones/ZonesCore.j`
+  - Added numeric `levelMin` and `levelMax` fields to `ZoneData`.
+  - Converted configured zone quest level strings to derive from `setLevelRange`.
+  - Added effective zone-level helpers for systems such as fishing rewards.
+  - Added point-to-zone lookup so preplaced fish pools can register with their actual zone.
+
+- Updated `Professions/Professions.j`
+  - Exposed `Professions_ConsumeItem` so profession extension UIs such as Fishing can consume bait items from vanilla inventory or DInventory.
 
 ### Known Issues
 
 - Full in-map JassHelper / Warcraft III compile validation was not completed in this repo snapshot because no combined `war3map.j` or normal map build entry point is exposed.
 - The updated shaman scaling, Ancestral Ward orbiting effects, trainer camera timing, Ghost Wolf companion retargeting, trainer feedback lines, ability prerequisites, and temporary summon Stats UI rows still need in-game validation with the active object data/import set.
+- The new FishingUI minigame, fish-pool shallow-water placement, preplaced fish-pool zone detection, and zone-aware fish rewards still need in-game validation with the active map object data.
 
 ## [23.7.2026]
 
