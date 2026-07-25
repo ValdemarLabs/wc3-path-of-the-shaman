@@ -2,7 +2,7 @@
 // GatherNodeSkills - Profession Skill Tracking & Enforcement
 // ============================================================
 
-library GatherNodeSkills initializer Init requires GatherNodes, DamageEngine, ExSound, Table
+library GatherNodeSkills initializer Init requires GatherNodes, DamageEngine, ExSound, Table, optional SharedDInvLib
 
 globals
     private constant integer skillMin = 0
@@ -123,6 +123,64 @@ function GNS_GetSkill takes unit u, integer professionId returns integer
     return skillMin
 endfunction
 
+private function GNS_GetProfessionStatName takes integer professionId returns string
+    if professionId == GNS_PROF_MINING then
+        return "Mining"
+    elseif professionId == GNS_PROF_HERBALISM then
+        return "Herbalism"
+    elseif professionId == GNS_PROF_SKINNING then
+        return "Skinning"
+    elseif professionId == GNS_PROF_FISHING then
+        return "Fishing"
+    elseif professionId == GNS_PROF_ALCHEMY then
+        return "Alchemy"
+    elseif professionId == GNS_PROF_BLACKSMITHING then
+        return "Blacksmithing"
+    elseif professionId == GNS_PROF_LEATHERWORKING then
+        return "Leatherworking"
+    elseif professionId == GNS_PROF_ENCHANTING then
+        return "Enchanting"
+    elseif professionId == GNS_PROF_COOKING then
+        return "Cooking"
+    endif
+
+    return ""
+endfunction
+
+function GNS_GetItemSkillBonus takes unit u, integer professionId returns integer
+    local real bonus = 0.00
+    local string statName = ""
+
+    if u == null or professionId <= GNS_PROF_NONE or professionId > GNS_PROF_COOKING then
+        return 0
+    endif
+
+    static if LIBRARY_SharedDInvLib then
+        set statName = GNS_GetProfessionStatName(professionId)
+        if statName != "" then
+            set bonus = DEqGetUnitStatByName(u, statName)
+        endif
+    endif
+
+    if bonus > 0.00 then
+        return R2I(bonus + 0.50)
+    elseif bonus < 0.00 then
+        return R2I(bonus - 0.50)
+    endif
+
+    return 0
+endfunction
+
+function GNS_GetEffectiveSkill takes unit u, integer professionId returns integer
+    local integer value = GNS_GetSkill(u, professionId) + GNS_GetItemSkillBonus(u, professionId)
+
+    if value < skillMin then
+        return skillMin
+    endif
+
+    return value
+endfunction
+
 function GNS_SetSkill takes unit u, integer professionId, integer value returns nothing
     local integer key
 
@@ -149,7 +207,7 @@ function GNS_CanGatherNode takes unit u, integer professionId, integer requiredS
         return true
     endif
 
-    return GNS_GetSkill(u, professionId) >= requiredSkill
+    return GNS_GetEffectiveSkill(u, professionId) >= requiredSkill
 endfunction
 
 private function GNS_GetDisplayName takes unit u returns string
@@ -389,6 +447,26 @@ function GNS_OnSuccessfulMining takes unit gatherer, unit node returns nothing
     endif
 endfunction
 
+private function GNS_GetSignedSkillBonusText takes integer value returns string
+    if value >= 0 then
+        return "+" + I2S(value)
+    endif
+
+    return I2S(value)
+endfunction
+
+private function GNS_PrintSkillLine takes unit u, integer professionId returns nothing
+    local integer baseSkill = GNS_GetSkill(u, professionId)
+    local integer effectiveSkill = GNS_GetEffectiveSkill(u, professionId)
+    local integer itemBonus = effectiveSkill - baseSkill
+
+    if itemBonus != 0 then
+        call BJDebugMsg("  " + GNS_GetProfessionName(professionId) + ": " + I2S(baseSkill) + " " + GNS_GetSignedSkillBonusText(itemBonus) + " = " + I2S(effectiveSkill) + "/" + I2S(skillMax))
+    else
+        call BJDebugMsg("  " + GNS_GetProfessionName(professionId) + ": " + I2S(baseSkill) + "/" + I2S(skillMax))
+    endif
+endfunction
+
 function GNS_PrintSkills takes unit u returns nothing
     if u == null then
         call BJDebugMsg("|cffff8800[GatherNodeSkills]|r Missing tracked unit")
@@ -396,15 +474,15 @@ function GNS_PrintSkills takes unit u returns nothing
     endif
 
     call BJDebugMsg("|cff00ff00[GatherNodeSkills]|r " + GNS_GetDisplayName(u))
-    call BJDebugMsg("  Mining: " + I2S(GNS_GetSkill(u, GNS_PROF_MINING)) + "/" + I2S(skillMax))
-    call BJDebugMsg("  Herbalism: " + I2S(GNS_GetSkill(u, GNS_PROF_HERBALISM)) + "/" + I2S(skillMax))
-    call BJDebugMsg("  Skinning: " + I2S(GNS_GetSkill(u, GNS_PROF_SKINNING)) + "/" + I2S(skillMax))
-    call BJDebugMsg("  Fishing: " + I2S(GNS_GetSkill(u, GNS_PROF_FISHING)) + "/" + I2S(skillMax))
-    call BJDebugMsg("  Alchemy: " + I2S(GNS_GetSkill(u, GNS_PROF_ALCHEMY)) + "/" + I2S(skillMax))
-    call BJDebugMsg("  Blacksmithing: " + I2S(GNS_GetSkill(u, GNS_PROF_BLACKSMITHING)) + "/" + I2S(skillMax))
-    call BJDebugMsg("  Leatherworking: " + I2S(GNS_GetSkill(u, GNS_PROF_LEATHERWORKING)) + "/" + I2S(skillMax))
-    call BJDebugMsg("  Enchanting: " + I2S(GNS_GetSkill(u, GNS_PROF_ENCHANTING)) + "/" + I2S(skillMax))
-    call BJDebugMsg("  Cooking: " + I2S(GNS_GetSkill(u, GNS_PROF_COOKING)) + "/" + I2S(skillMax))
+    call GNS_PrintSkillLine(u, GNS_PROF_MINING)
+    call GNS_PrintSkillLine(u, GNS_PROF_HERBALISM)
+    call GNS_PrintSkillLine(u, GNS_PROF_SKINNING)
+    call GNS_PrintSkillLine(u, GNS_PROF_FISHING)
+    call GNS_PrintSkillLine(u, GNS_PROF_ALCHEMY)
+    call GNS_PrintSkillLine(u, GNS_PROF_BLACKSMITHING)
+    call GNS_PrintSkillLine(u, GNS_PROF_LEATHERWORKING)
+    call GNS_PrintSkillLine(u, GNS_PROF_ENCHANTING)
+    call GNS_PrintSkillLine(u, GNS_PROF_COOKING)
 endfunction
 
 private function GNS_GetSkillsTargetUnit takes nothing returns unit
