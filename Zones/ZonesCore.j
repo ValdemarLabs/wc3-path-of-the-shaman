@@ -21,6 +21,7 @@ globals
 
 // Constants
     private constant boolean DEBUG = false               // Enable/disable debug messages
+    private constant integer ZC_MAX_ZONE_LOOKUP_ID = 13000
     private string array DEFAULT_WEATHER_TYPES
 
 // Internal variables
@@ -71,6 +72,8 @@ struct ZoneData
     // Quest log
     string questTitle
     string questDescription
+    integer levelMin
+    integer levelMax
     string questLevelReq
     string factions
     string notableEntities
@@ -149,6 +152,32 @@ struct ZoneData
 
     method hasParentZone takes nothing returns boolean
         return this.parentZoneId > 0
+    endmethod
+
+    method setLevelRange takes integer minLevel, integer maxLevel returns nothing
+        if minLevel < 0 then
+            set minLevel = 0
+        endif
+        if maxLevel < minLevel then
+            set maxLevel = minLevel
+        endif
+
+        set this.levelMin = minLevel
+        set this.levelMax = maxLevel
+
+        if minLevel <= 0 and maxLevel <= 0 then
+            set this.questLevelReq = "-"
+        elseif minLevel == maxLevel then
+            set this.questLevelReq = I2S(minLevel)
+        else
+            set this.questLevelReq = I2S(minLevel) + "-" + I2S(maxLevel)
+        endif
+    endmethod
+
+    method setUnknownLevelRange takes string displayText returns nothing
+        set this.levelMin = 0
+        set this.levelMax = 0
+        set this.questLevelReq = displayText
     endmethod
 
     // Add a weather rect and increment count automatically
@@ -345,6 +374,8 @@ struct ZoneData
         set this.hasLeaveHandler = false        // Default false
         set this.questTitle = "Zone: " + zoneName
         set this.questDescription = ""
+        set this.levelMin = 0
+        set this.levelMax = 0
         set this.questLevelReq = "|cFFFFCC00Level:|r |cFFFFFFFF??|r" // Placeholder, set per zone
         set this.factions = "Unknown"
         set this.notableEntities = "Unknown"
@@ -480,7 +511,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = "gg_snd_Ambient_ForestNight"
     set z.ambientRegion = "001TwilightGroveFull"
     set z.questDescription = "This eerie forest is dominated by a colossal dead tree, its twisted branches reaching out like skeletal fingers to the sky. Shadows dance among the gnarled roots, hinting at ancient secrets buried deep within the forest's heart."
-    set z.questLevelReq = "3-8"
+    call z.setLevelRange(3, 8)
     set z.factions = "-"
     set z.notableEntities = "Wolf, Bear, Salamander"
     set z.notableCharacters = "-"
@@ -523,7 +554,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = "gg_snd_Ambient_ForestNight"
     set z.ambientRegion = "02SereneGlade"
     set z.questDescription = "A tranquil forest expanse with a pristine lake at its heart, where nature thrives in harmony and the air is filled with a sense of peace and tranquility."
-    set z.questLevelReq = "1-9"
+    call z.setLevelRange(1, 9)
     set z.factions = "Horde, Satyr, Gnolls"
     set z.notableEntities = "Kobold, Gnoll, Salamander, Wolf, Spider, Stag, Crab, Frenzy"
     set z.notableCharacters = "Outcast Jin'Zun, Ragno, Prince Zaekolaerr, Velaria"
@@ -568,7 +599,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "Towering crags of ashen stone pierce the heavens, home to enigmatic stone golems and the fiery guardians of earth, their presence casting an ominous shadow over the desolate landscape."
-    set z.questLevelReq = "10-15"
+    call z.setLevelRange(10, 15)
     set z.factions = "-"
     set z.notableEntities = "Dragon, Salamander, Golem, Fire Elemental"
     set z.notableCharacters = "Grum Bloodfang, Colossus, Mordrax the Desolator"
@@ -611,7 +642,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "A treacherous mountainous terrain where fierce dragons reign supreme, their fiery breaths lighting up the sky as they clash with fire and earth elementals amidst the rocky crags."
-    set z.questLevelReq = "20-30"
+    call z.setLevelRange(20, 30)
     set z.factions = "Horde, Dark Horde, Bonecrusher Clan, Dwarf Mining Consortium"
     set z.notableEntities = "Dragon, Salamander, Basilisk, Fire Elemental, Earth Elemental, Ogre, Dwarf"
     set z.notableCharacters = "Morgrok, Scorchion"
@@ -639,7 +670,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "Orcish outpost in Dragonfire Peaks."
-    set z.questLevelReq = "20-30"
+    call z.setLevelRange(20, 30)
     set z.factions = "Horde"
     set z.notableEntities = "Orc"
     set z.notableCharacters = "Morgrok the Shadowbinder"
@@ -668,7 +699,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "Ancient dragon graveyard in Dragonfire Peaks."
-    set z.questLevelReq = "20-30"
+    call z.setLevelRange(20, 30)
     set z.factions = "-"
     set z.notableEntities = "Dragon, Fire Elemental, Earth Elemental"
     set z.notableCharacters = "-"
@@ -697,7 +728,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "Dwarven mine claim in Dragonfire Peaks."
-    set z.questLevelReq = "20-30"
+    call z.setLevelRange(20, 30)
     set z.factions = "Dwarf Mining Consortium"
     set z.notableEntities = "Dwarf"
     set z.notableCharacters = "Morgrim"
@@ -726,7 +757,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "Entry to mysterious caverns and an ancient altar high atop the fiery peaks."
-    set z.questLevelReq = "20-30"
+    call z.setLevelRange(20, 30)
     set z.factions = "Dark Horde"
     set z.notableEntities = "Orc, Basilisk, Dragon"
     set z.notableCharacters = "-"
@@ -755,7 +786,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "A violent cascade of molten lava pouring from the fractured cliffs of an ancient volcanic ridge. The air around Ashfang Falls burns with ash and sulfur. Fire elementals and their leader Scorchion — a colossal elemental born from the heart of the mountain itself, dwell here."
-    set z.questLevelReq = "20-30"
+    call z.setLevelRange(20, 30)
     set z.factions = "-"
     set z.notableEntities = "Fire Elemental"
     set z.notableCharacters = "Scorchion"
@@ -783,7 +814,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "A peaceful forest teeming with life, yet fraught with danger as forest trolls, gnolls, and murlocs lurk among the verdant foliage, each vying for dominance over their domain."
-    set z.questLevelReq = "1-10"
+    call z.setLevelRange(1, 10)
     set z.factions = "Horde, Gnolls, Bloodtusk Tribe, Murlocs"
     set z.notableEntities = "Wolf, Gnoll, Forest Troll, Murloc, Bear, Stag, Pig"
     set z.notableCharacters = "Chieftain Thork, Granis, Garthork, Krezgrel, Drek'thor, Rol'jin, Murgal, Grim, Goblin XXX"
@@ -809,7 +840,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "A gnoll encampment in the Thornwoods."
-    set z.questLevelReq = "1-10"
+    call z.setLevelRange(1, 10)
     set z.factions = "Gnolls"
     set z.notableEntities = "Gnoll"
     set z.notableCharacters = "-"
@@ -836,7 +867,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "The village of the Bloodtusk Tribe trolls."
-    set z.questLevelReq = "1-10"
+    call z.setLevelRange(1, 10)
     set z.factions = "Bloodtusk Tribe"
     set z.notableEntities = "Forest Troll"
     set z.notableCharacters = "Rol'jin"
@@ -863,7 +894,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "A tranquil forest retreat where humans and murlocs coexist in surprising harmony, their simple settlements nestled amidst the towering trees, a beacon of peace in a troubled world."
-    set z.questLevelReq = "5-15"
+    call z.setLevelRange(5, 15)
     set z.factions = "Alliance, Bonecrusher Clan, Murlocs"
     set z.notableEntities = "Forest Troll, Murloc, Ogre, Bear, Stag, Pig, Human"
     set z.notableCharacters = "Ogre Lord Mag'thok, Human XXX"
@@ -889,7 +920,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "A formidable fortress carved into the rugged mountainside, where ogres reign supreme. Massive gates loom ominously over the surrounding landscape, daring any who would challenge the might of the ogre warlords to enter their domain."
-    set z.questLevelReq = "10-15"
+    call z.setLevelRange(10, 15)
     set z.factions = "Bonecrusher Clan"
     set z.notableEntities = "Ogre"
     set z.notableCharacters = "Ogre Lord Mag'thok"
@@ -915,7 +946,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "In this once elven-dominated territory, the air hums with the presence of wraiths and arcane magic, ever vigilant against the encroaching dangers that lurk beyond the borders of their domain."
-    set z.questLevelReq = "10-20"
+    call z.setLevelRange(10, 20)
     set z.factions = "Elarindor"
     set z.notableEntities = "Elf, Wretched Elf, Mana Wraith, Lynx, Moth, Basilisk, Human"
     set z.notableCharacters = "Aradion The Farseer, Valeria, Lady Serenthia, Elf Mage XXX, Void Entity "
@@ -941,7 +972,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "Along the winding river, scattered settlements offer respite to weary travelers, but danger lurks in the shadows as bandits prowl the dense undergrowth."
-    set z.questLevelReq = "8-12"
+    call z.setLevelRange(8, 12)
     set z.factions = "Riverbane Citizen, Bandits, Horde"
     set z.notableEntities = "Vulture, Crocolisk, Bandit, Human, Stag, Snake, Basilisk"
     set z.notableCharacters = "Bandit Leader XXX, Mysterious Wizard, Sarlacc, Turtles"
@@ -968,7 +999,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "A haunting forest where ethereal specters roam amidst the twisted trees, their mournful wails echoing through the mist-shrouded glades, alongside the resilient spirit of a small human settlement."
-    set z.questLevelReq = "8-14"
+    call z.setLevelRange(8, 14)
     set z.factions = "-"
     set z.notableEntities = "Undead, Flesh Beast, Fel Boar, Diseased Stag"
     set z.notableCharacters = "Seralyth, Gar"
@@ -994,7 +1025,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "A dark forest tainted by the presence of fel orcs, their savage war cries echoing through the trees as they lay siege to any who dare to oppose them. At the heart of the stronghold, a towering fortress rises ominously against the blood-red sky, a beacon of despair in a land consumed by darkness."
-    set z.questLevelReq = "12-15"
+    call z.setLevelRange(12, 15)
     set z.factions = "Dark Horde"
     set z.notableEntities = "Fel Orc, Fel Boar"
     set z.notableCharacters = "XXX"
@@ -1021,7 +1052,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "The heart of fel corruption."
-    set z.questLevelReq = "12-15"
+    call z.setLevelRange(12, 15)
     set z.factions = "-"
     set z.notableEntities = "Fel Orc"
     set z.notableCharacters = "XXX"
@@ -1047,7 +1078,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "A human town, where the human denizens thrive amidst the comforting embrace of their quaint town, shielded from the chaos that lurks beyond its borders."
-    set z.questLevelReq = "12-18"
+    call z.setLevelRange(12, 18)
     set z.factions = "Stormhaven"
     set z.notableEntities = "Human"
     set z.notableCharacters = "XXX"
@@ -1073,7 +1104,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "Enveloped by the lush foliage of the jungle and the vast expanse of the ocean's embrace, this zone invites contemplation and exploration. Among the foliage, trolls and ogres carve out their territories with blood."
-    set z.questLevelReq = "10-15"
+    call z.setLevelRange(10, 15)
     set z.factions = "Horde, Goblins"
     set z.notableEntities = "Tiger, Panther, Raptor, Turtle, Crab, Naga, Troll, Ogre, Crocolisk, Frenzy"
     set z.notableCharacters = "Boom Brothers, Blix, Golgar, Vorkatha"
@@ -1099,7 +1130,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "Near the mighty ocean shoreline lies orc settlement of Mok'natha."
-    set z.questLevelReq = "-"
+    call z.setUnknownLevelRange("-")
     set z.factions = "Horde"
     set z.notableEntities = "-"
     set z.notableCharacters = "-"
@@ -1126,7 +1157,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "Zul'Garok was a small temple settlement of the Sirensong trolls, destroyed by the mighty hydra demigod Jinvorrak, whom the trolls worship. The settlement is still occupied by the trolls to this day, as they desperately try to summon the hydra again."
-    set z.questLevelReq = "10-15"
+    call z.setLevelRange(10, 15)
     set z.factions = "-"
     set z.notableEntities = "Jungle Trolls"
     set z.notableCharacters = "-"
@@ -1153,7 +1184,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "Ogre settlement by the river in Sirensong."
-    set z.questLevelReq = "10-15"
+    call z.setLevelRange(10, 15)
     set z.factions = "-"
     set z.notableEntities = "Ogres"
     set z.notableCharacters = "-"
@@ -1180,7 +1211,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "Naga serpent worshippers by the Sirensong sea shore."
-    set z.questLevelReq = "10-15"
+    call z.setLevelRange(10, 15)
     set z.factions = "-"
     set z.notableEntities = "Naga"
     set z.notableCharacters = "Kelziss"
@@ -1207,7 +1238,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "Amidst the dense jungle foliage, ancient Gurak'jin Tribe trolls gather in worship of their primal gods, their rituals echoing through the verdant canopy as they pay homage to powers older than time itself."
-    set z.questLevelReq = "15-20"
+    call z.setLevelRange(15, 20)
     set z.factions = "-"
     set z.notableEntities = "Jungle Troll"
     set z.notableCharacters = "Jinnvorrak"
@@ -1236,7 +1267,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "XXX An expansive landscape of open fields and lush forests, dotted with small human settlements that thrive amidst the natural beauty of their surroundings."
-    set z.questLevelReq = "15-20"
+    call z.setLevelRange(15, 20)
     set z.factions = "Satyr"
     set z.notableEntities = "Chimaera, Bog Beast, Faerie Dragon, Satyr"
     set z.notableCharacters = "Chimairo, Morthun"
@@ -1262,7 +1293,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "Roost of the mighty chimera."
-    set z.questLevelReq = "15-20"
+    call z.setLevelRange(15, 20)
     set z.factions = "-"
     set z.notableEntities = "Chimaera"
     set z.notableCharacters = "Chimairo"
@@ -1289,7 +1320,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "Satyr encampment deep in the swamp of the Verdant Plains.Named after the constant dripping and crying of lost spirits or tormented flora."
-    set z.questLevelReq = "15-20"
+    call z.setLevelRange(15, 20)
     set z.factions = "Satyr"
     set z.notableEntities = "Satyr"
     set z.notableCharacters = "-"
@@ -1316,7 +1347,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "Mysterious, but beautiful high mountain pass to travel between the Verdan Plains and the Havenwoods."
-    set z.questLevelReq = "15-20"
+    call z.setLevelRange(15, 20)
     set z.factions = "-"
     set z.notableEntities = "Bandit, Basilisk"
     set z.notableCharacters = "Zephyros the Tempest, Mountain Giant"
@@ -1343,7 +1374,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "A mysterious settlement."
-    set z.questLevelReq = "10-20"
+    call z.setLevelRange(10, 20)
     set z.factions = "-"
     set z.notableEntities = "Wretched Elf, Mana Wraith"
     set z.notableCharacters = "-"
@@ -1370,7 +1401,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "A quiet elven refuge populated by the elven remnants of Elarindor."
-    set z.questLevelReq = "10-20"
+    call z.setLevelRange(10, 20)
     set z.factions = "Elarindor"
     set z.notableEntities = "Elf"
     set z.notableCharacters = "Elf Mage XXX"
@@ -1397,7 +1428,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "Within the crumbling ruins of this ancient arena, warriors clash in epic battles for glory and honor, their deeds echoing through the annals of history."
-    set z.questLevelReq = "-"
+    call z.setUnknownLevelRange("-")
     set z.factions = "-"
     set z.notableEntities = "-"
     set z.notableCharacters = "-"
@@ -1423,7 +1454,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "Along the borderlands of the haunted Deadwoods, this treacherous realm harbors a coveted gold mine, where orcs maintain a tenuous outpost amidst the lingering spectres of the past."
-    set z.questLevelReq = "5-10"
+    call z.setLevelRange(5, 10)
     set z.factions = "-"
     set z.notableEntities = "Diseased Stag, Undead, Spider"
     set z.notableCharacters = "Watcher XXX, Watcher YYY"
@@ -1449,7 +1480,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "A fortified orcish outpost in hostile territory."
-    set z.questLevelReq = "-"
+    call z.setUnknownLevelRange("-")
     set z.factions = "Horde"
     set z.notableEntities = "-"
     set z.notableCharacters = "-"
@@ -1476,7 +1507,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "Dawnhold, once mighty city of humans, destroyed by the fel orcs and left in ruins. Only a small harbour was left intact. Eerie sounds echo within the city's walls; is it desolace after all?"
-    set z.questLevelReq = "15-18"
+    call z.setLevelRange(15, 18)
     set z.factions = "-"
     set z.notableEntities = "Undead"
     set z.notableCharacters = "Skeleton Mage XXX, Watcher XXX"
@@ -1502,7 +1533,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = ""
     set z.ambientRegion = ""
     set z.questDescription = "XXX"
-    set z.questLevelReq = "-"
+    call z.setUnknownLevelRange("-")
     set z.factions = "-"
     set z.notableEntities = "-"
     set z.notableCharacters = "-"
@@ -1536,7 +1567,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = "gg_snd_Ambient_DungeonNormal"
     set z.ambientRegion = "Dungeon01Area"
     set z.questDescription = "A dark hideout infested with gnolls and other... beings."
-    set z.questLevelReq = "5-12"
+    call z.setLevelRange(5, 12)
     set z.factions = "-"
     set z.notableEntities = "Gnoll, Undead"
     set z.notableCharacters = "Impaler, Deathlord Fel'Dok"
@@ -1566,7 +1597,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = "gg_snd_Ambient_DungeonCrypt3"
     set z.ambientRegion = "DungeonCrypt"
     set z.questDescription = "An ancient crypt filled with undead."
-    set z.questLevelReq = "8-20"
+    call z.setLevelRange(8, 20)
     set z.factions = "-"
     set z.notableEntities = "Undead, Rat, Cockroach"
     set z.notableCharacters = "Skullreaver, Rotspine, Bone Golem, Darkmaw the Soul Devourer, Marduk the Endbringer"
@@ -1597,7 +1628,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = "gg_snd_Ambient_DungeonDragon"
     set z.ambientRegion = "05WyrmholdSanctum"
     set z.questDescription = "Deep within this cavern, the dragon mother slumbers..."
-    set z.questLevelReq = "20-25"
+    call z.setLevelRange(20, 25)
     set z.factions = "-"
     set z.notableEntities = "Dragon"
     set z.notableCharacters = "Dragon Mother Seretha"
@@ -1627,7 +1658,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = "gg_snd_Ambient_DungeonNormal"
     set z.ambientRegion = "BoomBrothersMine"
     set z.questDescription = "XXX"
-    set z.questLevelReq = "10-15"
+    call z.setLevelRange(10, 15)
     set z.factions = "Goblins"
     set z.notableEntities = "Goblin"
     set z.notableCharacters = "Mad Blix"
@@ -1657,7 +1688,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.ambientNightSound = "gg_snd_Ambient_VolcanicDay"
     set z.ambientRegion = "016Firelands"
     set z.questDescription = "One of the areas of elemental fire, eternally burning."
-    set z.questLevelReq = "20-30"
+    call z.setLevelRange(20, 30)
     set z.factions = "-"
     set z.notableEntities = "Fire Elemental, Earth Elemental"
     set z.notableCharacters = "Ragnaros, Core Hound"
@@ -1684,7 +1715,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.fogNight[3] = 30.0
     set z.fogNight[4] = 10.0
     set z.questDescription = "XXX"
-    set z.questLevelReq = "XX-XX"
+    call z.setUnknownLevelRange("XX-XX")
     set z.factions = "-"
     set z.notableEntities = "Demon, Fel Orc"
     set z.notableCharacters = "Demon XXX"
@@ -1720,7 +1751,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.fogNight[3] = 50.0
     set z.fogNight[4] = 50.0
     set z.questDescription = "XXX"
-    set z.questLevelReq = "XX-XX"
+    call z.setUnknownLevelRange("XX-XX")
     set z.factions = "Riverbane Citizen, Bandits"
     set z.notableEntities = "XXX"
     set z.notableCharacters = "XXX"
@@ -1755,7 +1786,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.fogNight[3] = 50.0
     set z.fogNight[4] = 50.0
     set z.questDescription = "XXX"
-    set z.questLevelReq = "XX-XX"
+    call z.setUnknownLevelRange("XX-XX")
     set z.factions = "Riverbane Citizen, Bandits"
     set z.notableEntities = "XXX"
     set z.notableCharacters = "XXX"
@@ -1789,7 +1820,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.fogNight[3] = 50.0
     set z.fogNight[4] = 50.0
     set z.questDescription = "XXX"
-    set z.questLevelReq = "XX-XX"
+    call z.setUnknownLevelRange("XX-XX")
     set z.factions = "XXX"
     set z.notableEntities = "XXX"
     set z.notableCharacters = "XXX"
@@ -1824,7 +1855,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.fogNight[3] = 50.0
     set z.fogNight[4] = 50.0
     set z.questDescription = "XXX"
-    set z.questLevelReq = "XX-XX"
+    call z.setUnknownLevelRange("XX-XX")
     set z.factions = "XXX"
     set z.notableEntities = "XXX"
     set z.notableCharacters = "XXX"
@@ -1851,7 +1882,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.fogNight[3] = 50.0
     set z.fogNight[4] = 50.0
     set z.questDescription = "XXX"
-    set z.questLevelReq = "XX-XX"
+    call z.setUnknownLevelRange("XX-XX")
     set z.factions = "XXX"
     set z.notableEntities = "XXX"
     set z.notableCharacters = "XXX"
@@ -1886,7 +1917,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.fogNight[3] = 50.0
     set z.fogNight[4] = 50.0
     set z.questDescription = "XXX"
-    set z.questLevelReq = "XX-XX"
+    call z.setUnknownLevelRange("XX-XX")
     set z.factions = "XXX"
     set z.notableEntities = "XXX"
     set z.notableCharacters = "XXX"
@@ -1914,7 +1945,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.fogNight[3] = 10.0
     set z.fogNight[4] = 30.0
     set z.questDescription = "XXX"
-    set z.questLevelReq = "XX-XX"
+    call z.setUnknownLevelRange("XX-XX")
     set z.factions = "XXX"
     set z.notableEntities = "XXX"
     set z.notableCharacters = "XXX"
@@ -1947,7 +1978,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.fogNight[3] = 10.0
     set z.fogNight[4] = 30.0
     set z.questDescription = "XXX"
-    set z.questLevelReq = "XX-XX"
+    call z.setUnknownLevelRange("XX-XX")
     set z.factions = "XXX"
     set z.notableEntities = "XXX"
     set z.notableCharacters = "XXX"
@@ -1980,7 +2011,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.fogNight[3] = 10.0
     set z.fogNight[4] = 30.0
     set z.questDescription = "XXX"
-    set z.questLevelReq = "XX-XX"
+    call z.setUnknownLevelRange("XX-XX")
     set z.factions = "XXX"
     set z.notableEntities = "XXX"
     set z.notableCharacters = "XXX"
@@ -2013,7 +2044,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.fogNight[3] = 10.0
     set z.fogNight[4] = 30.0
     set z.questDescription = "XXX"
-    set z.questLevelReq = "XX-XX"
+    call z.setUnknownLevelRange("XX-XX")
     set z.factions = "XXX"
     set z.notableEntities = "XXX"
     set z.notableCharacters = "XXX"
@@ -2046,7 +2077,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.fogNight[3] = 10.0
     set z.fogNight[4] = 30.0
     set z.questDescription = "XXX"
-    set z.questLevelReq = "XX-XX"
+    call z.setUnknownLevelRange("XX-XX")
     set z.factions = "XXX"
     set z.notableEntities = "XXX"
     set z.notableCharacters = "XXX"
@@ -2067,6 +2098,26 @@ endfunction
 //=======================================================================
 public function GetZoneData takes integer zoneId returns ZoneData
     return zoneDatabase[zoneId]
+endfunction
+
+public function GetZoneLevelMin takes integer zoneId returns integer
+    local ZoneData z = GetZoneData(zoneId)
+
+    if z != 0 then
+        return z.levelMin
+    endif
+
+    return 0
+endfunction
+
+public function GetZoneLevelMax takes integer zoneId returns integer
+    local ZoneData z = GetZoneData(zoneId)
+
+    if z != 0 then
+        return z.levelMax
+    endif
+
+    return 0
 endfunction
 
 public function GetParentZoneId takes integer zoneId returns integer
@@ -2091,6 +2142,91 @@ public function IsChildZoneOf takes integer zoneId, integer parentZoneId returns
     return GetParentZoneId(zoneId) == parentZoneId
 endfunction
 
+public function GetEffectiveZoneLevelMin takes integer zoneId returns integer
+    local ZoneData z = GetZoneData(zoneId)
+    local ZoneData parent
+
+    if z == 0 then
+        return 0
+    endif
+    if z.levelMin > 0 then
+        return z.levelMin
+    endif
+
+    set parent = GetParentZoneData(zoneId)
+    if parent != 0 then
+        return parent.levelMin
+    endif
+
+    return 0
+endfunction
+
+public function GetEffectiveZoneLevelMax takes integer zoneId returns integer
+    local ZoneData z = GetZoneData(zoneId)
+    local ZoneData parent
+
+    if z == 0 then
+        return 0
+    endif
+    if z.levelMax > 0 then
+        return z.levelMax
+    endif
+
+    set parent = GetParentZoneData(zoneId)
+    if parent != 0 then
+        return parent.levelMax
+    endif
+
+    return 0
+endfunction
+
+public function GetEffectiveZoneRewardLevel takes integer zoneId returns integer
+    local integer minLevel = GetEffectiveZoneLevelMin(zoneId)
+    local integer maxLevel = GetEffectiveZoneLevelMax(zoneId)
+
+    if minLevel <= 0 then
+        return maxLevel
+    endif
+    if maxLevel <= 0 then
+        return minLevel
+    endif
+
+    return (minLevel + maxLevel) / 2
+endfunction
+
+public function GetZoneIdAtPoint takes real x, real y returns integer
+    local integer i = 0
+    local integer rectIndex
+    local integer bestZoneId = 0
+    local boolean bestIsChild = false
+    local ZoneData z
+    local rect r
+
+    loop
+        exitwhen i > ZC_MAX_ZONE_LOOKUP_ID
+        set z = zoneDatabase[i]
+        if z != 0 then
+            set rectIndex = 0
+            loop
+                exitwhen rectIndex >= z.enterRegionCount
+                set r = z.enterRegions[rectIndex]
+                if r != null and RectContainsCoords(r, x, y) then
+                    if not bestIsChild or z.parentZoneId > 0 then
+                        set bestZoneId = z.zoneId
+                        set bestIsChild = z.parentZoneId > 0
+                    endif
+                    set rectIndex = z.enterRegionCount
+                endif
+                set rectIndex = rectIndex + 1
+            endloop
+        endif
+        set i = i + 1
+    endloop
+
+    set r = null
+    return bestZoneId
+endfunction
+
 // Returns the zone id for a given zone name, or 0 if not found
 public function GetZoneIdByName takes string zoneName returns integer
     local integer i = 0
@@ -2099,7 +2235,7 @@ public function GetZoneIdByName takes string zoneName returns integer
     // Zone IDs can be sparse (1,2,6,601, ...). Don't stop at first null.
     // Iterate up to a reasonable upper bound and check non-null entries.
     loop
-        exitwhen i > 9000
+        exitwhen i > ZC_MAX_ZONE_LOOKUP_ID
         set z = zoneDatabase[i]
         if z != 0 then
             call BJDebugMsg("[ZonesCore] GetZoneIdByName: index=" + I2S(i) + ", z.name='" + z.name + "'")
@@ -2227,6 +2363,7 @@ public function DebugPrintZone1Data takes nothing returns nothing
     endif
     call BJDebugMsg("questTitle: " + z.questTitle)
     call BJDebugMsg("questDescription: " + z.questDescription)
+    call BJDebugMsg("levelRange: " + I2S(z.levelMin) + "-" + I2S(z.levelMax))
     call BJDebugMsg("questLevelReq: " + z.questLevelReq)
     call BJDebugMsg("factions: " + z.factions)
     call BJDebugMsg("notableEntities: " + z.notableEntities)
