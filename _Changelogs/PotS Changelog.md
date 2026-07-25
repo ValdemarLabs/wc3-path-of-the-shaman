@@ -57,6 +57,12 @@
   - Missing the reel window fails the attempt with "Fish went away".
   - Fishing skill and temporary bait bonuses can affect success against the selected pool's required fishing level.
 
+- Added the first Skinning profession gameplay flow:
+  - The Skinning Knife's Skin ability can now skin nearby dead beast corpses while the corpse still exists.
+  - Skinning requires a Skinning Knife in normal inventory, DInventory, or equipped in DEquipment main hand.
+  - Skinning takes 1.5 seconds and is interrupted by new orders, attacks, death, moving away, losing the knife, or corpse invalidation.
+  - Successful skinning marks the corpse as skinned until respawn and creates the configured skin item at the corpse location.
+
 ### Technical Updates
 
 - Added `UI/FullscreenUI.j`
@@ -143,6 +149,14 @@
   - Added bait registration and bait consumption hooks for temporary fishing skill bonuses.
   - Stops fishing when the unit is attacked, the pool becomes invalid, the unit moves out of range, the reel window is missed, or the player cancels.
 
+- Updated `Professions/ProfessionsSkinning.j`
+  - Replaced the Skinning stub with the active Skin ability runtime.
+  - Added a table-backed skinnable corpse registry with `ProfessionsSkinning_RegisterSkinningUnit` for future unit-type additions.
+  - Added default mappings for boars, bears, frogs, turtles, wolves, and thunder lizards/salamanders to their skin item drops.
+  - Supports Skinning Knife rawcodes `'I66M'` and `'i66m'` for inventory, DInventory, and DEquipment main-hand checks.
+  - Integrated successful skinning with `GatherNodeSkills` skill gain and `UnitDeathEvent` state reset.
+  - Uses Boar Skin rawcode `'I61C'`, matching the item export data where `'I61B'` is Bear Skin.
+
 - Updated `GatherSystems/GatherNodes.j`
   - Added reusable water-depth and water-type helpers using the invisible platform probe.
   - Added a shallow-water, non-walkable terrain predicate for gather nodes that must spawn in water.
@@ -167,6 +181,7 @@
 - Full in-map JassHelper / Warcraft III compile validation was not completed in this repo snapshot because no combined `war3map.j` or normal map build entry point is exposed.
 - The updated shaman scaling, Ancestral Ward orbiting effects, trainer camera timing, Ghost Wolf companion retargeting, trainer feedback lines, ability prerequisites, trainer/player ExSound registrations, and temporary summon Stats UI rows still need in-game validation with the active object data/import set.
 - The new FishingUI minigame, fish-pool shallow-water placement, preplaced fish-pool zone detection, and zone-aware fish rewards still need in-game validation with the active map object data.
+- The new Skinning flow and default beast rawcode list still need in-game validation with the active object data; Vizier Skin has no confirmed unit rawcode registered yet.
 
 ## [23.7.2026]
 
