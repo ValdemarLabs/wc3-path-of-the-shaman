@@ -13,7 +13,8 @@
     Tasyen (TasQuestBox as inspiration)
 
     How to install:
-    Import after Abilities, AbilitiesPlayer, MasterUI, Table, and Interface.
+    Import after Abilities, AbilitiesPlayer, AbilityTrainerLines, MasterUI,
+    Table, and Interface.
     AbilityTrainerDialogs opens this UI from the trainer dialog Learn button.
 
     API:
@@ -22,7 +23,7 @@
     - call AbilitiesUI_Refresh()
 
 **/
-library AbilitiesUI initializer AutoInit requires Table, MasterUI, Abilities, AbilitiesPlayer, AbilityPoints, Interface
+library AbilitiesUI initializer AutoInit requires Table, MasterUI, Abilities, AbilitiesPlayer, AbilityTrainerLines, AbilityPoints, Interface
     globals
         private constant integer ABUI_VISIBLE_ROWS = 8
         private constant real ABUI_ROW_HEIGHT = 0.030
@@ -453,7 +454,11 @@ library AbilitiesUI initializer AutoInit requires Table, MasterUI, Abilities, Ab
 
     private function ABUI_LearnAction takes nothing returns nothing
         if ABUI_SelectedHero != null and ABUI_SelectedEntry != 0 then
-            call Abilities_Learn(ABUI_SelectedHero, ABUI_SelectedEntry)
+            if Abilities_Learn(ABUI_SelectedHero, ABUI_SelectedEntry) then
+                call AbilityTrainerLines_PlayLearnedLine(ABUI_SelectedTrainer)
+            else
+                call AbilityTrainerLines_PlayUnableLine(ABUI_SelectedTrainer)
+            endif
             call ABUI_Update()
         endif
     endfunction
@@ -461,20 +466,33 @@ library AbilitiesUI initializer AutoInit requires Table, MasterUI, Abilities, Ab
     private function ABUI_ResetAbilitiesAction takes nothing returns nothing
         if ABUI_SelectedHero != null then
             set ABUI_SelectedHero = Abilities_ResetAbilities(ABUI_SelectedHero)
+            if Abilities_GetLastResult() == Abilities_RESULT_OK then
+                call AbilityTrainerLines_PlayResetLine(ABUI_SelectedTrainer)
+            else
+                call AbilityTrainerLines_PlayUnableLine(ABUI_SelectedTrainer)
+            endif
             call ABUI_Update()
         endif
     endfunction
 
     private function ABUI_ResetSpecializationAction takes nothing returns nothing
         if ABUI_SelectedHero != null then
-            call Abilities_ResetSpecialization(ABUI_SelectedHero)
+            if Abilities_ResetSpecialization(ABUI_SelectedHero) then
+                call AbilityTrainerLines_PlayResetLine(ABUI_SelectedTrainer)
+            else
+                call AbilityTrainerLines_PlayUnableLine(ABUI_SelectedTrainer)
+            endif
             call ABUI_Update()
         endif
     endfunction
 
     private function ABUI_ResetTalentsAction takes nothing returns nothing
         if ABUI_SelectedHero != null then
-            call Abilities_ResetTalents(ABUI_SelectedHero)
+            if Abilities_ResetTalents(ABUI_SelectedHero) then
+                call AbilityTrainerLines_PlayResetLine(ABUI_SelectedTrainer)
+            else
+                call AbilityTrainerLines_PlayUnableLine(ABUI_SelectedTrainer)
+            endif
             call ABUI_Update()
         endif
     endfunction
