@@ -1,4 +1,4 @@
-library QuestMaster initializer Init requires Table, SpeciFX, Reputation, IconQuery
+library QuestMaster initializer Init requires Table, SpeciFX, Reputation, IconQuery, optional GameMode
 //===========================================================================
 // QuestMaster
 // Core quest data and API scaffolding. Implementation will be expanded.
@@ -2758,18 +2758,78 @@ private function HasCompletedRequiredQuest takes string questName, unit questGiv
 	return q.completed
 endfunction
 
+private function AreModeQuestRequirementsEnabled takes nothing returns boolean
+	static if LIBRARY_GameMode then
+		return GameMode_AreQuestRequirementsEnabled()
+	else
+		return true
+	endif
+endfunction
+
+private function AreModeQuestLevelRequirementsEnabled takes nothing returns boolean
+	static if LIBRARY_GameMode then
+		return GameMode_AreQuestLevelRequirementsEnabled()
+	else
+		return true
+	endif
+endfunction
+
+private function AreModeQuestReputationRequirementsEnabled takes nothing returns boolean
+	static if LIBRARY_GameMode then
+		return GameMode_AreQuestReputationRequirementsEnabled()
+	else
+		return true
+	endif
+endfunction
+
+private function AreModeQuestEventRequirementsEnabled takes nothing returns boolean
+	static if LIBRARY_GameMode then
+		return GameMode_AreQuestEventRequirementsEnabled()
+	else
+		return true
+	endif
+endfunction
+
+private function AreModeQuestPrerequisiteRequirementsEnabled takes nothing returns boolean
+	static if LIBRARY_GameMode then
+		return GameMode_AreQuestPrerequisiteRequirementsEnabled()
+	else
+		return true
+	endif
+endfunction
+
+private function AreModeQuestCustomConditionsEnabled takes nothing returns boolean
+	static if LIBRARY_GameMode then
+		return GameMode_AreQuestCustomConditionsEnabled()
+	else
+		return true
+	endif
+endfunction
+
+private function AreModeAllQuestsAvailableOnStart takes nothing returns boolean
+	static if LIBRARY_GameMode then
+		return GameMode_AreAllQuestsAvailableOnStart()
+	else
+		return false
+	endif
+endfunction
+
 private function PassesRequirements takes QuestData q returns boolean
 	local integer heroLevel
 	local Faction f
 
-	if q.requiredLevel > 0 then
+	if AreModeAllQuestsAvailableOnStart() or not AreModeQuestRequirementsEnabled() then
+		return true
+	endif
+
+	if q.requiredLevel > 0 and AreModeQuestLevelRequirementsEnabled() then
 		set heroLevel = GetHighestAllowedHeroLevel(q)
 		if heroLevel < q.requiredLevel then
 			return false
 		endif
 	endif
 
-	if q.faction != "" then
+	if q.faction != "" and AreModeQuestReputationRequirementsEnabled() then
 		set f = Faction.getFaction(q.faction)
 		if f == 0 then
 			return false
@@ -2779,34 +2839,34 @@ private function PassesRequirements takes QuestData q returns boolean
 		endif
 	endif
 
-	if q.eventFlagIndex > 0 then
+	if q.eventFlagIndex > 0 and AreModeQuestEventRequirementsEnabled() then
 		if not QuestEventFlags[q.eventFlagIndex] then
 			return false
 		endif
 	endif
 
-	if q.requiredCompletedQuestCount >= 1 then
+	if q.requiredCompletedQuestCount >= 1 and AreModeQuestPrerequisiteRequirementsEnabled() then
 		if not HasCompletedRequiredQuest(q.requiredCompletedQuest1, q.requiredCompletedQuestGiver1) then
 			return false
 		endif
 	endif
-	if q.requiredCompletedQuestCount >= 2 then
+	if q.requiredCompletedQuestCount >= 2 and AreModeQuestPrerequisiteRequirementsEnabled() then
 		if not HasCompletedRequiredQuest(q.requiredCompletedQuest2, q.requiredCompletedQuestGiver2) then
 			return false
 		endif
 	endif
-	if q.requiredCompletedQuestCount >= 3 then
+	if q.requiredCompletedQuestCount >= 3 and AreModeQuestPrerequisiteRequirementsEnabled() then
 		if not HasCompletedRequiredQuest(q.requiredCompletedQuest3, q.requiredCompletedQuestGiver3) then
 			return false
 		endif
 	endif
-	if q.requiredCompletedQuestCount >= 4 then
+	if q.requiredCompletedQuestCount >= 4 and AreModeQuestPrerequisiteRequirementsEnabled() then
 		if not HasCompletedRequiredQuest(q.requiredCompletedQuest4, q.requiredCompletedQuestGiver4) then
 			return false
 		endif
 	endif
 
-	if q.customCondition != null then
+	if q.customCondition != null and AreModeQuestCustomConditionsEnabled() then
 		if not TriggerEvaluate(q.customCondition) then
 			return false
 		endif
