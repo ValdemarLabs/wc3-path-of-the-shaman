@@ -2,7 +2,7 @@ library DEquipmentItemDefinitions initializer Init requires DEquipment
 
 function DEqPreDefineItemsHere takes nothing returns nothing
     // Auto-generated from WC3 Item Database
-    // Generated: 2026-07-25 17:30:57
+    // Generated: 2026-07-25 21:35:58
     // Total items: 750
 
     // |c000080FFAncient Janggo of Endurance|r (Rare)
@@ -109,7 +109,7 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // Spirit Shard (Common)
     // Base: woms, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i00c', 'A02F', 1)
+    call DEqItemTypeDefineAbilityGranted('I00C', 'A02F', 1)
 
     // Frost Protection Potion (Common)
     // Base: pgma, Class: MISC
@@ -131,14 +131,14 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // The One Ring (Common)
     // Base: rde4, Class: MISC
-    call DEqItemTypeDefineGoldValue('i00j', 5000)
-    call DEqItemTypeDefineAbilityGranted('i00j', 'A035', 1)
-    call DEqItemTypeDefineAbilityGranted('i00j', 'AIi6', 1)
+    call DEqItemTypeDefineGoldValue('I00J', 5000)
+    call DEqItemTypeDefineAbilityGranted('I00J', 'A035', 1)
+    call DEqItemTypeDefineAbilityGranted('I00J', 'AIi6', 1)
 
     // |c0090EE90Medal of Honor|r (Uncommon)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i00k', 'AIi6', 1)
-    call DEqItemTypeDefineAbilityGranted('i00k', 'AIs6', 1)
+    call DEqItemTypeDefineAbilityGranted('I00K', 'AIi6', 1)
+    call DEqItemTypeDefineAbilityGranted('I00K', 'AIs6', 1)
 
     // Old Sandwich (Common)
     // Base: bzbe, Class: MISC
@@ -151,46 +151,46 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // Shovel (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i00o', 'A038', 1)
-    call DEqItemTypeDefineAbilityGranted('i00o', 'A02M', 1)
+    call DEqItemTypeDefineAbilityGranted('I00O', 'A038', 1)
+    call DEqItemTypeDefineAbilityGranted('I00O', 'A02M', 1)
 
     // Dragon Egg (Common)
     // Base: bzbe, Class: MISC
-    call DEqItemTypeDefineGoldValue('i00p', 300)
+    call DEqItemTypeDefineGoldValue('I00P', 300)
 
     // Raptor Egg (Common)
     // Base: bzbe, Class: MISC
-    call DEqItemTypeDefineGoldValue('i00q', 300)
+    call DEqItemTypeDefineGoldValue('I00Q', 300)
 
     // Chimaera Egg (Common)
     // Base: bzbe, Class: MISC
-    call DEqItemTypeDefineGoldValue('i00r', 300)
+    call DEqItemTypeDefineGoldValue('I00R', 300)
 
     // Whelp Scale (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i00s', 200)
+    call DEqItemTypeDefineGoldValue('I00S', 200)
 
     // |cff0000ffScale of Mordrax|r (Common)
     // Base: phea, Class: MISC
 
     // |cff6f2583Dragonslayer's Sword|r (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineGoldValue('i00u', 5000)
-    call DEqItemTypeDefineAbilityGranted('i00u', 'A65B', 1)
-    call DEqItemTypeDefineAbilityGranted('i00u', 'AItf', 1)
-    call DEqItemTypeDefineAbilityGranted('i00u', 'A64V', 1)
-    call DEqItemTypeDefineAbilityGranted('i00u', 'A669', 1)
+    call DEqItemTypeDefineGoldValue('I00U', 5000)
+    call DEqItemTypeDefineAbilityGranted('I00U', 'A65B', 1)
+    call DEqItemTypeDefineAbilityGranted('I00U', 'AItf', 1)
+    call DEqItemTypeDefineAbilityGranted('I00U', 'A64V', 1)
+    call DEqItemTypeDefineAbilityGranted('I00U', 'A669', 1)
 
     // Small Flame Sac (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineGoldValue('i00v', 200)
+    call DEqItemTypeDefineGoldValue('I00V', 200)
 
     // Ruined Dragonhide (Common)
     // Base: rst1, Class: MISC
 
     // Sharp Claw (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineGoldValue('i00x', 50)
+    call DEqItemTypeDefineGoldValue('I00X', 50)
 
     // Mana Crystal (Common)
     // Base: phea, Class: MISC
@@ -207,9 +207,9 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     // Safety Instructions (Common)
     // Base: jpnt, Class: MISC
 
-    // |c001EFF00TelÃ¢â‚¬â„¢anor Rod|r (Uncommon)
+    // |c001EFF00Tel’anor Rod|r (Uncommon)
     // Base: crys, Class: Quest
-    call DEqItemTypeDefineAbilityGranted('i013', 'A04W', 1)
+    call DEqItemTypeDefineAbilityGranted('I013', 'A04W', 1)
 
     // Small Bag (Common)
     // Base: tdex, Class: MISC
@@ -222,39 +222,39 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // item_objectcomponents_shield_buckler_damaged_a_01 (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i017', 'A05N', 1)
+    call DEqItemTypeDefineAbilityGranted('I017', 'A05N', 1)
 
     // item_objectcomponents_shield_buckler_damaged_a_02 (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i018', 'A05O', 1)
+    call DEqItemTypeDefineAbilityGranted('I018', 'A05O', 1)
 
     // item_objectcomponents_shield_buckler_oval_a_01 (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i019', 'A05P', 1)
+    call DEqItemTypeDefineAbilityGranted('I019', 'A05P', 1)
 
     // item_objectcomponents_shield_buckler_round_a_01 (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i01a', 'A05Q', 1)
+    call DEqItemTypeDefineAbilityGranted('I01A', 'A05Q', 1)
 
     // item_objectcomponents_shield_shield_ahnqiraj_d_01 (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i01b', 'A05R', 1)
+    call DEqItemTypeDefineAbilityGranted('I01B', 'A05R', 1)
 
     // item_objectcomponents_shield_buckler_damaged_a_01_test (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i01c', 'A06J', 1)
+    call DEqItemTypeDefineAbilityGranted('I01C', 'A06J', 1)
 
     // item_objectcomponents_shield_buckler_damaged_a_01a (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i01d', 'A05N', 1)
+    call DEqItemTypeDefineAbilityGranted('I01D', 'A05N', 1)
 
     // item_objectcomponents_shield_buckler_damaged_a_01b (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i01e', 'A06K', 1)
+    call DEqItemTypeDefineAbilityGranted('I01E', 'A06K', 1)
 
     // item_objectcomponents_shield_buckler_damaged_a_01c (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i01f', 'A06L', 1)
+    call DEqItemTypeDefineAbilityGranted('I01F', 'A06L', 1)
 
     // |c00FFFFFFReliable Belt|r (Common)
     // Base: sor4, Class: Belt
@@ -747,7 +747,7 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     // |c00FF8000TEST_stat_thornsPct|r (Legendary)
     // Base: bspd, Class: Belt
     call DEqItemTypeDefineAllowedSlotByName('i0f3', "Belt")
-    call DEqItemTypeDefineStatGrantedByName('i0f3', "Thorns Pct", 0.5)
+    // Unsupported DEquipment stat skipped: Thorns % = 50
     call DEqItemTypeDefineGoldValue('i0f3', 2020)
     call DEqItemTypeDefineAbilityGranted('i0f3', 'A0BZ', 1)
 
@@ -1291,122 +1291,122 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // Light Boots (Common)
     // Base: belv, Class: MISC
-    call DEqItemTypeDefineGoldValue('i602', 3000)
-    call DEqItemTypeDefineAbilityGranted('i602', 'AIx2', 1)
+    call DEqItemTypeDefineGoldValue('I602', 3000)
+    call DEqItemTypeDefineAbilityGranted('I602', 'AIx2', 1)
 
     // |c0090EE90Heavy Boots|r (Uncommon)
     // Base: belv, Class: MISC
-    call DEqItemTypeDefineGoldValue('i603', 6500)
-    call DEqItemTypeDefineAbilityGranted('i603', 'AIs6', 1)
-    call DEqItemTypeDefineAbilityGranted('i603', 'AId1', 1)
+    call DEqItemTypeDefineGoldValue('I603', 6500)
+    call DEqItemTypeDefineAbilityGranted('I603', 'AIs6', 1)
+    call DEqItemTypeDefineAbilityGranted('I603', 'AId1', 1)
 
     // |c0090EE90Voodoo Mask|r (Uncommon)
     // Base: ckng, Class: MISC
-    call DEqItemTypeDefineGoldValue('i604', 4000)
-    call DEqItemTypeDefineAbilityGranted('i604', 'AImz', 1)
-    call DEqItemTypeDefineAbilityGranted('i604', 'AIi6', 1)
+    call DEqItemTypeDefineGoldValue('I604', 4000)
+    call DEqItemTypeDefineAbilityGranted('I604', 'AImz', 1)
+    call DEqItemTypeDefineAbilityGranted('I604', 'AIi6', 1)
 
     // Hammer of Blood (Common)
     // Base: mlst, Class: MISC
-    call DEqItemTypeDefineGoldValue('i605', 8500)
-    call DEqItemTypeDefineAbilityGranted('i605', 'AIav', 1)
-    call DEqItemTypeDefineAbilityGranted('i605', 'AIa6', 1)
+    call DEqItemTypeDefineGoldValue('I605', 8500)
+    call DEqItemTypeDefineAbilityGranted('I605', 'AIav', 1)
+    call DEqItemTypeDefineAbilityGranted('I605', 'AIa6', 1)
 
     // Helm of Fel'Dok (Common)
     // Base: crdt, Class: MISC
-    call DEqItemTypeDefineGoldValue('i606', 10000)
-    call DEqItemTypeDefineAbilityGranted('i606', 'AId0', 1)
-    call DEqItemTypeDefineAbilityGranted('i606', 'AI2m', 1)
+    call DEqItemTypeDefineGoldValue('I606', 10000)
+    call DEqItemTypeDefineAbilityGranted('I606', 'AId0', 1)
+    call DEqItemTypeDefineAbilityGranted('I606', 'AI2m', 1)
 
     // |c00FF8000Weapon of Fel'Dok|r (Common)
     // Base: crdt, Class: MISC
-    call DEqItemTypeDefineGoldValue('i607', 10000)
-    call DEqItemTypeDefineAbilityGranted('i607', 'AItx', 1)
-    call DEqItemTypeDefineAbilityGranted('i607', 'AItx', 1)
+    call DEqItemTypeDefineGoldValue('I607', 10000)
+    call DEqItemTypeDefineAbilityGranted('I607', 'AItx', 1)
+    call DEqItemTypeDefineAbilityGranted('I607', 'AItx', 1)
 
     // Tome of God (Common)
     // Base: tpow, Class: MISC
-    call DEqItemTypeDefineGoldValue('i608', 4800)
-    call DEqItemTypeDefineAbilityGranted('i608', 'AIxm', 1)
-    call DEqItemTypeDefineAbilityGranted('i608', 'AIxm', 1)
-    call DEqItemTypeDefineAbilityGranted('i608', 'AIxm', 1)
-    call DEqItemTypeDefineAbilityGranted('i608', 'AIxm', 1)
+    call DEqItemTypeDefineGoldValue('I608', 4800)
+    call DEqItemTypeDefineAbilityGranted('I608', 'AIxm', 1)
+    call DEqItemTypeDefineAbilityGranted('I608', 'AIxm', 1)
+    call DEqItemTypeDefineAbilityGranted('I608', 'AIxm', 1)
+    call DEqItemTypeDefineAbilityGranted('I608', 'AIxm', 1)
 
     // Manual of Eternal (Common)
     // Base: manh, Class: MISC
-    call DEqItemTypeDefineGoldValue('i609', 1000)
-    call DEqItemTypeDefineAbilityGranted('i609', 'AImh', 1)
-    call DEqItemTypeDefineAbilityGranted('i609', 'AImh', 1)
-    call DEqItemTypeDefineAbilityGranted('i609', 'AImh', 1)
-    call DEqItemTypeDefineAbilityGranted('i609', 'AImh', 1)
+    call DEqItemTypeDefineGoldValue('I609', 1000)
+    call DEqItemTypeDefineAbilityGranted('I609', 'AImh', 1)
+    call DEqItemTypeDefineAbilityGranted('I609', 'AImh', 1)
+    call DEqItemTypeDefineAbilityGranted('I609', 'AImh', 1)
+    call DEqItemTypeDefineAbilityGranted('I609', 'AImh', 1)
 
     // Tome of Eternal Agility (Common)
     // Base: tdex, Class: MISC
-    call DEqItemTypeDefineGoldValue('i60a', 1200)
-    call DEqItemTypeDefineAbilityGranted('i60a', 'AIgm', 1)
-    call DEqItemTypeDefineAbilityGranted('i60a', 'AIgm', 1)
-    call DEqItemTypeDefineAbilityGranted('i60a', 'AIgm', 1)
-    call DEqItemTypeDefineAbilityGranted('i60a', 'AIgm', 1)
+    call DEqItemTypeDefineGoldValue('I60A', 1200)
+    call DEqItemTypeDefineAbilityGranted('I60A', 'AIgm', 1)
+    call DEqItemTypeDefineAbilityGranted('I60A', 'AIgm', 1)
+    call DEqItemTypeDefineAbilityGranted('I60A', 'AIgm', 1)
+    call DEqItemTypeDefineAbilityGranted('I60A', 'AIgm', 1)
 
     // Tome of Eternal Intelligence (Common)
     // Base: tint, Class: MISC
-    call DEqItemTypeDefineGoldValue('i60b', 1200)
-    call DEqItemTypeDefineAbilityGranted('i60b', 'AItm', 1)
-    call DEqItemTypeDefineAbilityGranted('i60b', 'AItm', 1)
-    call DEqItemTypeDefineAbilityGranted('i60b', 'AItm', 1)
-    call DEqItemTypeDefineAbilityGranted('i60b', 'AItm', 1)
+    call DEqItemTypeDefineGoldValue('I60B', 1200)
+    call DEqItemTypeDefineAbilityGranted('I60B', 'AItm', 1)
+    call DEqItemTypeDefineAbilityGranted('I60B', 'AItm', 1)
+    call DEqItemTypeDefineAbilityGranted('I60B', 'AItm', 1)
+    call DEqItemTypeDefineAbilityGranted('I60B', 'AItm', 1)
 
     // Tome of Eternal Strength (Common)
     // Base: tstr, Class: MISC
-    call DEqItemTypeDefineGoldValue('i60c', 1200)
-    call DEqItemTypeDefineAbilityGranted('i60c', 'AInm', 1)
-    call DEqItemTypeDefineAbilityGranted('i60c', 'AInm', 1)
-    call DEqItemTypeDefineAbilityGranted('i60c', 'AInm', 1)
-    call DEqItemTypeDefineAbilityGranted('i60c', 'AInm', 1)
+    call DEqItemTypeDefineGoldValue('I60C', 1200)
+    call DEqItemTypeDefineAbilityGranted('I60C', 'AInm', 1)
+    call DEqItemTypeDefineAbilityGranted('I60C', 'AInm', 1)
+    call DEqItemTypeDefineAbilityGranted('I60C', 'AInm', 1)
+    call DEqItemTypeDefineAbilityGranted('I60C', 'AInm', 1)
 
     // Unknown Item (I60D) (Common)
     // Base: tkno, Class: MISC
 
     // Bottle of Beer (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i60e', 5)
+    call DEqItemTypeDefineGoldValue('I60E', 5)
 
     // Keg of Beer (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i60f', 50)
+    call DEqItemTypeDefineGoldValue('I60F', 50)
 
     // Unknown Item (I60G) (Common)
     // Base: gold, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i60g', 'A60G', 1)
+    call DEqItemTypeDefineAbilityGranted('I60G', 'A60G', 1)
 
     // Unknown Item (I60H) (Common)
     // Base: gold, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i60h', 'A60H', 1)
+    call DEqItemTypeDefineAbilityGranted('I60H', 'A60H', 1)
 
     // |c0090EE90Steel Blade|r (Uncommon)
     // Base: ratc, Class: MISC
-    call DEqItemTypeDefineGoldValue('i60i', 1250)
-    call DEqItemTypeDefineAbilityGranted('i60i', 'AItf', 1)
+    call DEqItemTypeDefineGoldValue('I60I', 1250)
+    call DEqItemTypeDefineAbilityGranted('I60I', 'AItf', 1)
 
     // Margul's Claw (Common)
     // Base: rat3, Class: MISC
-    call DEqItemTypeDefineGoldValue('i60j', 1000)
-    call DEqItemTypeDefineAbilityGranted('i60j', 'AItx', 1)
+    call DEqItemTypeDefineGoldValue('I60J', 1000)
+    call DEqItemTypeDefineAbilityGranted('I60J', 'AItx', 1)
 
     // Pile Of Wood (Common)
     // Base: lmbr, Class: MISC
 
     // Useless Cloak (Common)
     // Base: lmbr, Class: MISC
-    call DEqItemTypeDefineGoldValue('i60l', 60)
+    call DEqItemTypeDefineGoldValue('I60L', 60)
 
     // Rusty Kitchen Knive (Common)
     // Base: lmbr, Class: MISC
-    call DEqItemTypeDefineGoldValue('i60m', 45)
+    call DEqItemTypeDefineGoldValue('I60M', 45)
 
     // Old Copper Ring (Common)
     // Base: lmbr, Class: MISC
-    call DEqItemTypeDefineGoldValue('i60n', 165)
+    call DEqItemTypeDefineGoldValue('I60N', 165)
 
     // Holy Cross (Common)
     // Base: lmbr, Class: MISC
@@ -1416,95 +1416,95 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // |CFFFF8C00Cloak of Arenamaster|r (Common)
     // Base: clsd, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i60q', 'AIsx', 1)
-    call DEqItemTypeDefineAbilityGranted('i60q', 'A615', 1)
-    call DEqItemTypeDefineAbilityGranted('i60q', 'A617', 1)
-    call DEqItemTypeDefineAbilityGranted('i60q', 'AIms', 1)
+    call DEqItemTypeDefineAbilityGranted('I60Q', 'AIsx', 1)
+    call DEqItemTypeDefineAbilityGranted('I60Q', 'A615', 1)
+    call DEqItemTypeDefineAbilityGranted('I60Q', 'A617', 1)
+    call DEqItemTypeDefineAbilityGranted('I60Q', 'AIms', 1)
 
     // |CFFFF8C00Boots of Arenamaster|r (Common)
     // Base: ratf, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i60r', 'AId5', 1)
-    call DEqItemTypeDefineAbilityGranted('i60r', 'A618', 1)
+    call DEqItemTypeDefineAbilityGranted('I60R', 'AId5', 1)
+    call DEqItemTypeDefineAbilityGranted('I60R', 'A618', 1)
 
     // |CFFFF8C00Gloves of Arenamaster|r (Common)
     // Base: ratf, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i60s', 'A619', 1)
-    call DEqItemTypeDefineAbilityGranted('i60s', 'AIbx', 1)
+    call DEqItemTypeDefineAbilityGranted('I60S', 'A619', 1)
+    call DEqItemTypeDefineAbilityGranted('I60S', 'AIbx', 1)
 
     // |CFFFF8C00Chestpiece of Arenamaster|r (Common)
     // Base: ratf, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i60t', 'AId0', 1)
-    call DEqItemTypeDefineAbilityGranted('i60t', 'Arel', 1)
-    call DEqItemTypeDefineAbilityGranted('i60t', 'AIrm', 1)
-    call DEqItemTypeDefineAbilityGranted('i60t', 'A61A', 1)
+    call DEqItemTypeDefineAbilityGranted('I60T', 'AId0', 1)
+    call DEqItemTypeDefineAbilityGranted('I60T', 'Arel', 1)
+    call DEqItemTypeDefineAbilityGranted('I60T', 'AIrm', 1)
+    call DEqItemTypeDefineAbilityGranted('I60T', 'A61A', 1)
 
     // |CFFFF8C00Shoulders of Arenamaster|r (Common)
     // Base: ratf, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i60u', 'A61C', 1)
-    call DEqItemTypeDefineAbilityGranted('i60u', 'A61B', 1)
+    call DEqItemTypeDefineAbilityGranted('I60U', 'A61C', 1)
+    call DEqItemTypeDefineAbilityGranted('I60U', 'A61B', 1)
 
     // |CFFFF8C00Helm of Arenamaster|r (Common)
     // Base: ratf, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i60v', 'A61D', 1)
-    call DEqItemTypeDefineAbilityGranted('i60v', 'AIae', 1)
+    call DEqItemTypeDefineAbilityGranted('I60V', 'A61D', 1)
+    call DEqItemTypeDefineAbilityGranted('I60V', 'AIae', 1)
 
     // Agave (Common)
     // Base: phea, Class: MISC
 
     // Earth Roots (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i60x', 300)
+    call DEqItemTypeDefineGoldValue('I60X', 300)
 
     // Forest Flower (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i60y', 125)
+    call DEqItemTypeDefineGoldValue('I60Y', 125)
 
     // Spring Water (Common)
     // Base: pclr, Class: MISC
-    call DEqItemTypeDefineGoldValue('i60z', 150)
-    call DEqItemTypeDefineAbilityGranted('i60z', 'A61F', 1)
+    call DEqItemTypeDefineGoldValue('I60Z', 150)
+    call DEqItemTypeDefineAbilityGranted('I60Z', 'A61F', 1)
 
     // Murloc Head (Common)
     // Base: kybl, Class: MISC
 
     // Camp Fire (Common)
     // Base: tgrh, Class: MISC
-    call DEqItemTypeDefineGoldValue('i611', 350)
-    call DEqItemTypeDefineAbilityGranted('i611', 'A61P', 1)
+    call DEqItemTypeDefineGoldValue('I611', 350)
+    call DEqItemTypeDefineAbilityGranted('I611', 'A61P', 1)
 
     // Torch (Common)
     // Base: ledg, Class: MISC
-    call DEqItemTypeDefineGoldValue('i612', 50)
-    call DEqItemTypeDefineAbilityGranted('i612', 'A62I', 1)
-    call DEqItemTypeDefineAbilityGranted('i612', 'A62J', 1)
+    call DEqItemTypeDefineGoldValue('I612', 50)
+    call DEqItemTypeDefineAbilityGranted('I612', 'A62I', 1)
+    call DEqItemTypeDefineAbilityGranted('I612', 'A62J', 1)
 
     // Mount Reins (Common)
     // Base: crys, Class: MISC
-    call DEqItemTypeDefineGoldValue('i613', 2000)
-    call DEqItemTypeDefineAbilityGranted('i613', 'A626', 1)
+    call DEqItemTypeDefineGoldValue('I613', 2000)
+    call DEqItemTypeDefineAbilityGranted('I613', 'A626', 1)
 
     // Stag Hair (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i614', 50)
+    call DEqItemTypeDefineGoldValue('I614', 50)
 
     // Frog Slime (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i615', 50)
+    call DEqItemTypeDefineGoldValue('I615', 50)
 
     // Tame Beast I (Common)
     // Base: crys, Class: MISC
-    call DEqItemTypeDefineGoldValue('i616', 2000)
-    call DEqItemTypeDefineAbilityGranted('i616', 'A623', 1)
+    call DEqItemTypeDefineGoldValue('I616', 2000)
+    call DEqItemTypeDefineAbilityGranted('I616', 'A623', 1)
 
     // Tame Beast II (Common)
     // Base: crys, Class: MISC
-    call DEqItemTypeDefineGoldValue('i617', 2000)
-    call DEqItemTypeDefineAbilityGranted('i617', 'A625', 1)
+    call DEqItemTypeDefineGoldValue('I617', 2000)
+    call DEqItemTypeDefineAbilityGranted('I617', 'A625', 1)
 
     // Tame Beast III (Common)
     // Base: crys, Class: MISC
-    call DEqItemTypeDefineGoldValue('i618', 2000)
-    call DEqItemTypeDefineAbilityGranted('i618', 'A627', 1)
+    call DEqItemTypeDefineGoldValue('I618', 2000)
+    call DEqItemTypeDefineAbilityGranted('I618', 'A627', 1)
 
     // |c000080FFNecromancer Robes|r (Rare)
     // Base: rin1, Class: MISC
@@ -1514,136 +1514,136 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // Bear Skin (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61b', 50)
+    call DEqItemTypeDefineGoldValue('I61B', 50)
 
     // Boar Skin (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61c', 50)
+    call DEqItemTypeDefineGoldValue('I61C', 50)
 
     // Frog Skin (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61d', 50)
+    call DEqItemTypeDefineGoldValue('I61D', 50)
 
     // Turtle Skin (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61e', 50)
+    call DEqItemTypeDefineGoldValue('I61E', 50)
 
     // Wolf Skin (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61f', 50)
+    call DEqItemTypeDefineGoldValue('I61F', 50)
 
     // Thunder Lizard Skin (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61g', 50)
+    call DEqItemTypeDefineGoldValue('I61G', 50)
 
     // Hawk Wing (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61h', 50)
+    call DEqItemTypeDefineGoldValue('I61H', 50)
 
     // |c0090EE90Gnarled Staff|r (Uncommon)
     // Base: rde0, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i61i', 'A648', 1)
-    call DEqItemTypeDefineAbilityGranted('i61i', 'AIi3', 1)
+    call DEqItemTypeDefineAbilityGranted('I61I', 'A648', 1)
+    call DEqItemTypeDefineAbilityGranted('I61I', 'AIi3', 1)
 
     // Create Spring Water (Common)
     // Base: pclr, Class: MISC
 
     // Empty Vial (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61k', 100)
+    call DEqItemTypeDefineGoldValue('I61K', 100)
 
     // Nazgrek's Flask (Common)
     // Base: rej3, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61l', 1500)
-    call DEqItemTypeDefineAbilityGranted('i61l', 'A63V', 1)
+    call DEqItemTypeDefineGoldValue('I61L', 1500)
+    call DEqItemTypeDefineAbilityGranted('I61L', 'A63V', 1)
 
     // Empty Flask (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61m', 100)
+    call DEqItemTypeDefineGoldValue('I61M', 100)
 
     // Vizier Skin (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61n', 200)
+    call DEqItemTypeDefineGoldValue('I61N', 200)
 
     // Raw Wolf Meat (Common)
     // Base: rej3, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61o', 50)
-    call DEqItemTypeDefineAbilityGranted('i61o', 'A60V', 1)
+    call DEqItemTypeDefineGoldValue('I61O', 50)
+    call DEqItemTypeDefineAbilityGranted('I61O', 'A60V', 1)
 
     // Raw Stag Meat (Common)
     // Base: rej3, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61p', 25)
-    call DEqItemTypeDefineAbilityGranted('i61p', 'A60V', 1)
+    call DEqItemTypeDefineGoldValue('I61P', 25)
+    call DEqItemTypeDefineAbilityGranted('I61P', 'A60V', 1)
 
     // Raw Bear Meat (Common)
     // Base: rej3, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61q', 150)
-    call DEqItemTypeDefineAbilityGranted('i61q', 'A60V', 1)
+    call DEqItemTypeDefineGoldValue('I61Q', 150)
+    call DEqItemTypeDefineAbilityGranted('I61Q', 'A60V', 1)
 
     // Raw Lizard Meat (Common)
     // Base: rej3, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61r', 100)
-    call DEqItemTypeDefineAbilityGranted('i61r', 'A60V', 1)
+    call DEqItemTypeDefineGoldValue('I61R', 100)
+    call DEqItemTypeDefineAbilityGranted('I61R', 'A60V', 1)
 
     // Raw Hawk Meat (Common)
     // Base: rej3, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61s', 50)
-    call DEqItemTypeDefineAbilityGranted('i61s', 'A60V', 1)
+    call DEqItemTypeDefineGoldValue('I61S', 50)
+    call DEqItemTypeDefineAbilityGranted('I61S', 'A60V', 1)
 
     // Raw Murloc Meat (Common)
     // Base: rej3, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61t', 50)
-    call DEqItemTypeDefineAbilityGranted('i61t', 'A60V', 1)
+    call DEqItemTypeDefineGoldValue('I61T', 50)
+    call DEqItemTypeDefineAbilityGranted('I61T', 'A60V', 1)
 
     // Raw Turtle Meat (Common)
     // Base: rej3, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61u', 200)
-    call DEqItemTypeDefineAbilityGranted('i61u', 'A60V', 1)
+    call DEqItemTypeDefineGoldValue('I61U', 200)
+    call DEqItemTypeDefineAbilityGranted('I61U', 'A60V', 1)
 
     // Raw Tiger Meat (Common)
     // Base: rej3, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61v', 200)
-    call DEqItemTypeDefineAbilityGranted('i61v', 'A60V', 1)
+    call DEqItemTypeDefineGoldValue('I61V', 200)
+    call DEqItemTypeDefineAbilityGranted('I61V', 'A60V', 1)
 
     // Raw Panther Meat (Common)
     // Base: rej3, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61w', 200)
-    call DEqItemTypeDefineAbilityGranted('i61w', 'A60V', 1)
+    call DEqItemTypeDefineGoldValue('I61W', 200)
+    call DEqItemTypeDefineAbilityGranted('I61W', 'A60V', 1)
 
     // Raw Raptor Meat (Common)
     // Base: rej3, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61x', 200)
-    call DEqItemTypeDefineAbilityGranted('i61x', 'A60V', 1)
+    call DEqItemTypeDefineGoldValue('I61X', 200)
+    call DEqItemTypeDefineAbilityGranted('I61X', 'A60V', 1)
 
     // Raw Snake Meat (Common)
     // Base: rej3, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61y', 50)
-    call DEqItemTypeDefineAbilityGranted('i61y', 'A60V', 1)
+    call DEqItemTypeDefineGoldValue('I61Y', 50)
+    call DEqItemTypeDefineAbilityGranted('I61Y', 'A60V', 1)
 
     // Raw Makrura Meat (Common)
     // Base: rej3, Class: MISC
-    call DEqItemTypeDefineGoldValue('i61z', 100)
-    call DEqItemTypeDefineAbilityGranted('i61z', 'A60V', 1)
+    call DEqItemTypeDefineGoldValue('I61Z', 100)
+    call DEqItemTypeDefineAbilityGranted('I61Z', 'A60V', 1)
 
     // Raw Boar Meat (Common)
     // Base: rej3, Class: MISC
-    call DEqItemTypeDefineGoldValue('i620', 50)
-    call DEqItemTypeDefineAbilityGranted('i620', 'A60V', 1)
+    call DEqItemTypeDefineGoldValue('I620', 50)
+    call DEqItemTypeDefineAbilityGranted('I620', 'A60V', 1)
 
     // Raw Crawler Meat (Common)
     // Base: rej3, Class: MISC
-    call DEqItemTypeDefineGoldValue('i621', 25)
-    call DEqItemTypeDefineAbilityGranted('i621', 'A60V', 1)
+    call DEqItemTypeDefineGoldValue('I621', 25)
+    call DEqItemTypeDefineAbilityGranted('I621', 'A60V', 1)
 
     // Raw Rabbit Meat (Common)
     // Base: rej3, Class: MISC
-    call DEqItemTypeDefineGoldValue('i622', 25)
-    call DEqItemTypeDefineAbilityGranted('i622', 'A60V', 1)
+    call DEqItemTypeDefineGoldValue('I622', 25)
+    call DEqItemTypeDefineAbilityGranted('I622', 'A60V', 1)
 
     // Raw Cow Meat (Common)
     // Base: rej3, Class: MISC
-    call DEqItemTypeDefineGoldValue('i623', 100)
-    call DEqItemTypeDefineAbilityGranted('i623', 'A60V', 1)
+    call DEqItemTypeDefineGoldValue('I623', 100)
+    call DEqItemTypeDefineAbilityGranted('I623', 'A60V', 1)
 
     // Jin'Zun Healing Ward (Common)
     // Base: phea, Class: MISC
@@ -1653,119 +1653,119 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // Gloves of Strength (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i626', 'AId1', 1)
-    call DEqItemTypeDefineAbilityGranted('i626', 'AIs1', 1)
-    call DEqItemTypeDefineAbilityGranted('i626', 'AIs1', 1)
+    call DEqItemTypeDefineAbilityGranted('I626', 'AId1', 1)
+    call DEqItemTypeDefineAbilityGranted('I626', 'AIs1', 1)
+    call DEqItemTypeDefineAbilityGranted('I626', 'AIs1', 1)
 
     // |c0090EE90Belt of Strength|r (Uncommon)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i627', 'A63E', 1)
-    call DEqItemTypeDefineAbilityGranted('i627', 'AId2', 1)
-    call DEqItemTypeDefineAbilityGranted('i627', 'AIs3', 1)
+    call DEqItemTypeDefineAbilityGranted('I627', 'A63E', 1)
+    call DEqItemTypeDefineAbilityGranted('I627', 'AId2', 1)
+    call DEqItemTypeDefineAbilityGranted('I627', 'AIs3', 1)
 
     // Boots of Strength (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i628', 'AIa4', 1)
-    call DEqItemTypeDefineAbilityGranted('i628', 'AId1', 1)
-    call DEqItemTypeDefineAbilityGranted('i628', 'AIs3', 1)
+    call DEqItemTypeDefineAbilityGranted('I628', 'AIa4', 1)
+    call DEqItemTypeDefineAbilityGranted('I628', 'AId1', 1)
+    call DEqItemTypeDefineAbilityGranted('I628', 'AIs3', 1)
 
     // Chestpiece of Strength (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i629', 'A63Y', 1)
-    call DEqItemTypeDefineAbilityGranted('i629', 'AId2', 1)
-    call DEqItemTypeDefineAbilityGranted('i629', 'AIs6', 1)
+    call DEqItemTypeDefineAbilityGranted('I629', 'A63Y', 1)
+    call DEqItemTypeDefineAbilityGranted('I629', 'AId2', 1)
+    call DEqItemTypeDefineAbilityGranted('I629', 'AIs6', 1)
 
     // Helm of Strength (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i62a', 'A63E', 1)
-    call DEqItemTypeDefineAbilityGranted('i62a', 'AIi3', 1)
-    call DEqItemTypeDefineAbilityGranted('i62a', 'AId2', 1)
-    call DEqItemTypeDefineAbilityGranted('i62a', 'AIs6', 1)
+    call DEqItemTypeDefineAbilityGranted('I62A', 'A63E', 1)
+    call DEqItemTypeDefineAbilityGranted('I62A', 'AIi3', 1)
+    call DEqItemTypeDefineAbilityGranted('I62A', 'AId2', 1)
+    call DEqItemTypeDefineAbilityGranted('I62A', 'AIs6', 1)
 
     // Necklace of Strength (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i62b', 'AImz', 1)
-    call DEqItemTypeDefineAbilityGranted('i62b', 'AIs4', 1)
-    call DEqItemTypeDefineAbilityGranted('i62b', 'AIs4', 1)
+    call DEqItemTypeDefineAbilityGranted('I62B', 'AImz', 1)
+    call DEqItemTypeDefineAbilityGranted('I62B', 'AIs4', 1)
+    call DEqItemTypeDefineAbilityGranted('I62B', 'AIs4', 1)
 
     // Ring of Strength (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i62c', 'A63E', 1)
-    call DEqItemTypeDefineAbilityGranted('i62c', 'AIs4', 1)
-    call DEqItemTypeDefineAbilityGranted('i62c', 'AIs3', 1)
+    call DEqItemTypeDefineAbilityGranted('I62C', 'A63E', 1)
+    call DEqItemTypeDefineAbilityGranted('I62C', 'AIs4', 1)
+    call DEqItemTypeDefineAbilityGranted('I62C', 'AIs3', 1)
 
     // Shield of Strength (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i62d', 'A63Z', 1)
-    call DEqItemTypeDefineAbilityGranted('i62d', 'AIs4', 1)
-    call DEqItemTypeDefineAbilityGranted('i62d', 'AId4', 1)
-    call DEqItemTypeDefineAbilityGranted('i62d', 'AIs3', 1)
+    call DEqItemTypeDefineAbilityGranted('I62D', 'A63Z', 1)
+    call DEqItemTypeDefineAbilityGranted('I62D', 'AIs4', 1)
+    call DEqItemTypeDefineAbilityGranted('I62D', 'AId4', 1)
+    call DEqItemTypeDefineAbilityGranted('I62D', 'AIs3', 1)
 
     // Axe of Strength (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i62e', 'AIs4', 1)
-    call DEqItemTypeDefineAbilityGranted('i62e', 'AIt6', 1)
+    call DEqItemTypeDefineAbilityGranted('I62E', 'AIs4', 1)
+    call DEqItemTypeDefineAbilityGranted('I62E', 'AIt6', 1)
 
     // Staff of Strength (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i62f', 'AIs4', 1)
-    call DEqItemTypeDefineAbilityGranted('i62f', 'A63Y', 1)
+    call DEqItemTypeDefineAbilityGranted('I62F', 'AIs4', 1)
+    call DEqItemTypeDefineAbilityGranted('I62F', 'A63Y', 1)
 
     // Sword of Strength (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i62g', 'AIs4', 1)
-    call DEqItemTypeDefineAbilityGranted('i62g', 'AIa4', 1)
-    call DEqItemTypeDefineAbilityGranted('i62g', 'AIti', 1)
+    call DEqItemTypeDefineAbilityGranted('I62G', 'AIs4', 1)
+    call DEqItemTypeDefineAbilityGranted('I62G', 'AIa4', 1)
+    call DEqItemTypeDefineAbilityGranted('I62G', 'AIti', 1)
 
     // Chestpiece of Intelligence (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i62h', 'AI2m', 1)
-    call DEqItemTypeDefineAbilityGranted('i62h', 'AId1', 1)
-    call DEqItemTypeDefineAbilityGranted('i62h', 'AIi6', 1)
+    call DEqItemTypeDefineAbilityGranted('I62H', 'AI2m', 1)
+    call DEqItemTypeDefineAbilityGranted('I62H', 'AId1', 1)
+    call DEqItemTypeDefineAbilityGranted('I62H', 'AIi6', 1)
 
     // Belt of Intelligence (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i62i', 'AImz', 1)
-    call DEqItemTypeDefineAbilityGranted('i62i', 'AId1', 1)
-    call DEqItemTypeDefineAbilityGranted('i62i', 'AIi3', 1)
+    call DEqItemTypeDefineAbilityGranted('I62I', 'AImz', 1)
+    call DEqItemTypeDefineAbilityGranted('I62I', 'AId1', 1)
+    call DEqItemTypeDefineAbilityGranted('I62I', 'AIi3', 1)
 
     // Boots of Intelligence (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i62j', 'AIa3', 1)
-    call DEqItemTypeDefineAbilityGranted('i62j', 'AIi3', 1)
-    call DEqItemTypeDefineAbilityGranted('i62j', 'AIlz', 1)
-    call DEqItemTypeDefineAbilityGranted('i62j', 'A644', 1)
+    call DEqItemTypeDefineAbilityGranted('I62J', 'AIa3', 1)
+    call DEqItemTypeDefineAbilityGranted('I62J', 'AIi3', 1)
+    call DEqItemTypeDefineAbilityGranted('I62J', 'AIlz', 1)
+    call DEqItemTypeDefineAbilityGranted('I62J', 'A644', 1)
 
     // Gloves of Intelligence (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i62k', 'AId1', 1)
-    call DEqItemTypeDefineAbilityGranted('i62k', 'AIi3', 1)
-    call DEqItemTypeDefineAbilityGranted('i62k', 'AId1', 1)
-    call DEqItemTypeDefineAbilityGranted('i62k', 'A644', 1)
+    call DEqItemTypeDefineAbilityGranted('I62K', 'AId1', 1)
+    call DEqItemTypeDefineAbilityGranted('I62K', 'AIi3', 1)
+    call DEqItemTypeDefineAbilityGranted('I62K', 'AId1', 1)
+    call DEqItemTypeDefineAbilityGranted('I62K', 'A644', 1)
 
     // Helm of Intelligence (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i62l', 'A644', 1)
-    call DEqItemTypeDefineAbilityGranted('i62l', 'A647', 1)
-    call DEqItemTypeDefineAbilityGranted('i62l', 'AId1', 1)
-    call DEqItemTypeDefineAbilityGranted('i62l', 'A648', 1)
+    call DEqItemTypeDefineAbilityGranted('I62L', 'A644', 1)
+    call DEqItemTypeDefineAbilityGranted('I62L', 'A647', 1)
+    call DEqItemTypeDefineAbilityGranted('I62L', 'AId1', 1)
+    call DEqItemTypeDefineAbilityGranted('I62L', 'A648', 1)
 
     // Necklace of Intelligence (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i62m', 'AImz', 1)
-    call DEqItemTypeDefineAbilityGranted('i62m', 'A647', 1)
+    call DEqItemTypeDefineAbilityGranted('I62M', 'AImz', 1)
+    call DEqItemTypeDefineAbilityGranted('I62M', 'A647', 1)
 
     // Ring of Intelligence (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i62n', 'A643', 1)
-    call DEqItemTypeDefineAbilityGranted('i62n', 'AIi6', 1)
-    call DEqItemTypeDefineAbilityGranted('i62n', 'AImz', 1)
+    call DEqItemTypeDefineAbilityGranted('I62N', 'A643', 1)
+    call DEqItemTypeDefineAbilityGranted('I62N', 'AIi6', 1)
+    call DEqItemTypeDefineAbilityGranted('I62N', 'AImz', 1)
 
     // |c00800080Stormguard|r (Epic)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i62o', 'A640', 1)
-    call DEqItemTypeDefineAbilityGranted('i62o', 'AId5', 1)
-    call DEqItemTypeDefineAbilityGranted('i62o', 'AId1', 1)
+    call DEqItemTypeDefineAbilityGranted('I62O', 'A640', 1)
+    call DEqItemTypeDefineAbilityGranted('I62O', 'AId5', 1)
+    call DEqItemTypeDefineAbilityGranted('I62O', 'AId1', 1)
 
     // Frostward Shield (Common)
     // Base: rst1, Class: MISC
@@ -1871,7 +1871,7 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // |c00800080Vortex Warhammer|r (Epic)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i63n', 'AItx', 1)
+    call DEqItemTypeDefineAbilityGranted('I63N', 'AItx', 1)
 
     // Venomfang Scimitar (Common)
     // Base: rst1, Class: MISC
@@ -1884,7 +1884,7 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // |c00800080Stormcaller Mace|r (Epic)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i63r', 'AItn', 1)
+    call DEqItemTypeDefineAbilityGranted('I63R', 'AItn', 1)
 
     // Dragonfang Katana (Common)
     // Base: rst1, Class: MISC
@@ -2002,10 +2002,10 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // |c00800080Shadowmantle Armor|r (Epic)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i64u', 'AImz', 1)
-    call DEqItemTypeDefineAbilityGranted('i64u', 'A63Z', 1)
-    call DEqItemTypeDefineAbilityGranted('i64u', 'AIs6', 1)
-    call DEqItemTypeDefineAbilityGranted('i64u', 'AId4', 1)
+    call DEqItemTypeDefineAbilityGranted('I64U', 'AImz', 1)
+    call DEqItemTypeDefineAbilityGranted('I64U', 'A63Z', 1)
+    call DEqItemTypeDefineAbilityGranted('I64U', 'AIs6', 1)
+    call DEqItemTypeDefineAbilityGranted('I64U', 'AId4', 1)
 
     // Frostbitten Plate (Common)
     // Base: rst1, Class: MISC
@@ -2066,10 +2066,10 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // |c000080FFRunebound Cloak|r (Rare)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i65e', 'A643', 1)
-    call DEqItemTypeDefineAbilityGranted('i65e', 'AIs4', 1)
-    call DEqItemTypeDefineAbilityGranted('i65e', 'AIi4', 1)
-    call DEqItemTypeDefineAbilityGranted('i65e', 'AId2', 1)
+    call DEqItemTypeDefineAbilityGranted('I65E', 'A643', 1)
+    call DEqItemTypeDefineAbilityGranted('I65E', 'AIs4', 1)
+    call DEqItemTypeDefineAbilityGranted('I65E', 'AIi4', 1)
+    call DEqItemTypeDefineAbilityGranted('I65E', 'AId2', 1)
 
     // Shadowshroud Drape (Common)
     // Base: rst1, Class: MISC
@@ -2085,14 +2085,14 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // Rusty Dagger (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineGoldValue('i65j', 50)
+    call DEqItemTypeDefineGoldValue('I65J', 50)
 
     // |c0090EE90Steel Longsword|r (Uncommon)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineGoldValue('i65k', 1000)
-    call DEqItemTypeDefineAbilityGranted('i65k', 'A65B', 1)
-    call DEqItemTypeDefineAbilityGranted('i65k', 'AItk', 1)
-    call DEqItemTypeDefineAbilityGranted('i65k', 'AIs4', 1)
+    call DEqItemTypeDefineGoldValue('I65K', 1000)
+    call DEqItemTypeDefineAbilityGranted('I65K', 'A65B', 1)
+    call DEqItemTypeDefineAbilityGranted('I65K', 'AItk', 1)
+    call DEqItemTypeDefineAbilityGranted('I65K', 'AIs4', 1)
 
     // |c0090EE90Enchanted Amulet|r (Uncommon)
     // Base: rst1, Class: MISC
@@ -2102,13 +2102,13 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // |c00800080Vortex Blade|r (Epic)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i65n', 'A65E', 1)
-    call DEqItemTypeDefineAbilityGranted('i65n', 'AItx', 1)
+    call DEqItemTypeDefineAbilityGranted('I65N', 'A65E', 1)
+    call DEqItemTypeDefineAbilityGranted('I65N', 'AItx', 1)
 
     // |c00800080Stormcaller Boots|r (Epic)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i65o', 'AI2m', 1)
-    call DEqItemTypeDefineAbilityGranted('i65o', 'A63E', 1)
+    call DEqItemTypeDefineAbilityGranted('I65O', 'AI2m', 1)
+    call DEqItemTypeDefineAbilityGranted('I65O', 'A63E', 1)
 
     // Mystic Orb (Common)
     // Base: rst1, Class: MISC
@@ -2136,41 +2136,41 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // |c0090EE90Reinforced Leather Gloves|r (Uncommon)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i65x', 'A64V', 1)
-    call DEqItemTypeDefineAbilityGranted('i65x', 'AIa4', 1)
-    call DEqItemTypeDefineAbilityGranted('i65x', 'AId1', 1)
+    call DEqItemTypeDefineAbilityGranted('I65X', 'A64V', 1)
+    call DEqItemTypeDefineAbilityGranted('I65X', 'AIa4', 1)
+    call DEqItemTypeDefineAbilityGranted('I65X', 'AId1', 1)
 
     // |c0090EE90Reinforced Leather Boots|r (Uncommon)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i65y', 'AIa6', 1)
-    call DEqItemTypeDefineAbilityGranted('i65y', 'AIa1', 1)
-    call DEqItemTypeDefineAbilityGranted('i65y', 'AId1', 1)
+    call DEqItemTypeDefineAbilityGranted('I65Y', 'AIa6', 1)
+    call DEqItemTypeDefineAbilityGranted('I65Y', 'AIa1', 1)
+    call DEqItemTypeDefineAbilityGranted('I65Y', 'AId1', 1)
 
     // |c0090EE90Reinforced Leather Helmet|r (Uncommon)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i65z', 'A64U', 1)
-    call DEqItemTypeDefineAbilityGranted('i65z', 'AIs4', 1)
-    call DEqItemTypeDefineAbilityGranted('i65z', 'AIi4', 1)
-    call DEqItemTypeDefineAbilityGranted('i65z', 'AId2', 1)
+    call DEqItemTypeDefineAbilityGranted('I65Z', 'A64U', 1)
+    call DEqItemTypeDefineAbilityGranted('I65Z', 'AIs4', 1)
+    call DEqItemTypeDefineAbilityGranted('I65Z', 'AIi4', 1)
+    call DEqItemTypeDefineAbilityGranted('I65Z', 'AId2', 1)
 
     // |c0090EE90Reinforced Leather Chestpiece|r (Uncommon)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i660', 'A63E', 1)
-    call DEqItemTypeDefineAbilityGranted('i660', 'A644', 1)
-    call DEqItemTypeDefineAbilityGranted('i660', 'AIa6', 1)
+    call DEqItemTypeDefineAbilityGranted('I660', 'A63E', 1)
+    call DEqItemTypeDefineAbilityGranted('I660', 'A644', 1)
+    call DEqItemTypeDefineAbilityGranted('I660', 'AIa6', 1)
 
     // |c0090EE90Reinforced Leather Belt|r (Uncommon)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i661', 'A643', 1)
-    call DEqItemTypeDefineAbilityGranted('i661', 'AIa6', 1)
-    call DEqItemTypeDefineAbilityGranted('i661', 'AIs3', 1)
-    call DEqItemTypeDefineAbilityGranted('i661', 'AId2', 1)
+    call DEqItemTypeDefineAbilityGranted('I661', 'A643', 1)
+    call DEqItemTypeDefineAbilityGranted('I661', 'AIa6', 1)
+    call DEqItemTypeDefineAbilityGranted('I661', 'AIs3', 1)
+    call DEqItemTypeDefineAbilityGranted('I661', 'AId2', 1)
 
     // |c0090EE90Reinforced Leather Shoulderpads|r (Uncommon)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i662', 'A643', 1)
-    call DEqItemTypeDefineAbilityGranted('i662', 'AIi4', 1)
-    call DEqItemTypeDefineAbilityGranted('i662', 'AId1', 1)
+    call DEqItemTypeDefineAbilityGranted('I662', 'A643', 1)
+    call DEqItemTypeDefineAbilityGranted('I662', 'AIi4', 1)
+    call DEqItemTypeDefineAbilityGranted('I662', 'AId1', 1)
 
     // Crown of Celestial Mastery (Common)
     // Base: rst1, Class: MISC
@@ -2198,7 +2198,7 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // Tattered Leather Chestpiece (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i66b', 'A65C', 1)
+    call DEqItemTypeDefineAbilityGranted('I66B', 'A65C', 1)
 
     // Tattered Leather Helmet (Common)
     // Base: rst1, Class: MISC
@@ -2208,17 +2208,17 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // Wooden Shield (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i66e', 'A65N', 1)
+    call DEqItemTypeDefineAbilityGranted('I66E', 'A65N', 1)
 
     // |c00A9A9A9Faded Cloth Robes|r (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i66f', 'A644', 1)
-    call DEqItemTypeDefineAbilityGranted('i66f', 'A64X', 1)
+    call DEqItemTypeDefineAbilityGranted('I66F', 'A644', 1)
+    call DEqItemTypeDefineAbilityGranted('I66F', 'A64X', 1)
 
     // |c00A9A9A9Frayed Hat|r (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i66g', 'A643', 1)
-    call DEqItemTypeDefineAbilityGranted('i66g', 'A64X', 1)
+    call DEqItemTypeDefineAbilityGranted('I66G', 'A643', 1)
+    call DEqItemTypeDefineAbilityGranted('I66G', 'A64X', 1)
 
     // Critmaster (Common)
     // Base: ofro, Class: MISC
@@ -2228,37 +2228,30 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // Venomweave Flask (Common)
     // Base: rej3, Class: MISC
-    call DEqItemTypeDefineGoldValue('i66j', 1500)
-    call DEqItemTypeDefineAbilityGranted('i66j', 'A650', 1)
-    call DEqItemTypeDefineAbilityGranted('i66j', 'A64Z', 1)
+    call DEqItemTypeDefineGoldValue('I66J', 1500)
+    call DEqItemTypeDefineAbilityGranted('I66J', 'A650', 1)
+    call DEqItemTypeDefineAbilityGranted('I66J', 'A64Z', 1)
 
     // Salt (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i66k', 50)
+    call DEqItemTypeDefineGoldValue('I66K', 50)
 
     // Thread (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i66l', 50)
+    call DEqItemTypeDefineGoldValue('I66L', 50)
 
     // |cFFFFFFFFSkinning Knife|r (Common)
     // Base: fgrg, Class: Main Hand Weapon
-    // Rawcode aliases: 'I66M'
-    call DEqItemTypeDefineAllowedSlotByName('i66m', "MainHand")
     call DEqItemTypeDefineAllowedSlotByName('I66M', "MainHand")
-    call DEqItemTypeDefineStatGrantedByName('i66m', "Damage", 3)
     call DEqItemTypeDefineStatGrantedByName('I66M', "Damage", 3)
-    call DEqItemTypeDefineGoldValue('i66m', 100)
     call DEqItemTypeDefineGoldValue('I66M', 100)
-    call DEqItemTypeDefineAbilityGranted('i66m', 'A07N', 1)
     call DEqItemTypeDefineAbilityGranted('I66M', 'A07N', 1)
-    call DEqItemTypeDefineAbilityGranted('i66m', 'AIat', 1)
     call DEqItemTypeDefineAbilityGranted('I66M', 'AIat', 1)
-    call DEqItemTypeDefineAbilityGranted('i66m', 'A0F3', 1)
     call DEqItemTypeDefineAbilityGranted('I66M', 'A0F3', 1)
 
     // Dye (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i66n', 200)
+    call DEqItemTypeDefineGoldValue('I66N', 200)
 
     // Disgusting Slime (Common)
     // Base: ches, Class: MISC
@@ -2268,11 +2261,11 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // Spider Ichor (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i66q', 200)
+    call DEqItemTypeDefineGoldValue('I66Q', 200)
 
     // Adept Shaman Claws (Common)
     // Base: shcw, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i66r', 'A658', 1)
+    call DEqItemTypeDefineAbilityGranted('I66R', 'A658', 1)
 
     // Blindweed (Common)
     // Base: phea, Class: MISC
@@ -2306,9 +2299,9 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // Mining Pick (Common)
     // Base: rump, Class: MISC
-    call DEqItemTypeDefineGoldValue('i672', 150)
-    call DEqItemTypeDefineAbilityGranted('i672', 'A65F', 1)
-    call DEqItemTypeDefineAbilityGranted('i672', 'AIat', 1)
+    call DEqItemTypeDefineGoldValue('I672', 150)
+    call DEqItemTypeDefineAbilityGranted('I672', 'A65F', 1)
+    call DEqItemTypeDefineAbilityGranted('I672', 'AIat', 1)
 
     // TEST 1H Axe 04 (Common)
     // Base: rst1, Class: MISC
@@ -2318,7 +2311,7 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // TEST 2H Polearm (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i675', 'A65G', 1)
+    call DEqItemTypeDefineAbilityGranted('I675', 'A65G', 1)
 
     // TEST 1H Mace (Common)
     // Base: rst1, Class: MISC
@@ -2328,27 +2321,27 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // TEST 1H Sword (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i678', 'A65D', 1)
+    call DEqItemTypeDefineAbilityGranted('I678', 'A65D', 1)
 
     // TEST 2H Sword (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i679', 'A65E', 1)
+    call DEqItemTypeDefineAbilityGranted('I679', 'A65E', 1)
 
     // TEST Shield 1 (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i67a', 'A65H', 1)
+    call DEqItemTypeDefineAbilityGranted('I67A', 'A65H', 1)
 
     // TEST Shield 2 (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i67b', 'A65I', 1)
+    call DEqItemTypeDefineAbilityGranted('I67B', 'A65I', 1)
 
     // Utilities (Common)
     // Base: sbok, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i67c', 'A65J', 1)
+    call DEqItemTypeDefineAbilityGranted('I67C', 'A65J', 1)
 
     // Utilities 2 (Common)
     // Base: sbok, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i67d', 'A65M', 1)
+    call DEqItemTypeDefineAbilityGranted('I67D', 'A65M', 1)
 
     // Copper Ore (Common)
     // Base: phea, Class: MISC
@@ -2445,19 +2438,19 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // Coal (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i689', 50)
+    call DEqItemTypeDefineGoldValue('I689', 50)
 
     // |c0090EE90Nazgrek's Axe|r (Uncommon)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i68a', 'AIth', 1)
-    call DEqItemTypeDefineAbilityGranted('i68a', 'AIs3', 1)
-    call DEqItemTypeDefineAbilityGranted('i68a', 'A666', 1)
+    call DEqItemTypeDefineAbilityGranted('I68A', 'AIth', 1)
+    call DEqItemTypeDefineAbilityGranted('I68A', 'AIs3', 1)
+    call DEqItemTypeDefineAbilityGranted('I68A', 'A666', 1)
 
     // |c0090EE90Shadowcaster's Scepter|r (Uncommon)
     // Base: rde0, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i68b', 'A62U', 1)
-    call DEqItemTypeDefineAbilityGranted('i68b', 'A648', 1)
-    call DEqItemTypeDefineAbilityGranted('i68b', 'AIi3', 1)
+    call DEqItemTypeDefineAbilityGranted('I68B', 'A62U', 1)
+    call DEqItemTypeDefineAbilityGranted('I68B', 'A648', 1)
+    call DEqItemTypeDefineAbilityGranted('I68B', 'AIi3', 1)
 
     // test_helmet_level_100 (Common)
     // Base: rst1, Class: MISC
@@ -2470,71 +2463,60 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // |c0090EE90Copper Chain Helmet|r (Uncommon)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i68f', 'A63E', 1)
-    call DEqItemTypeDefineAbilityGranted('i68f', 'AIs4', 1)
-    call DEqItemTypeDefineAbilityGranted('i68f', 'AIi6', 1)
+    call DEqItemTypeDefineAbilityGranted('I68F', 'A63E', 1)
+    call DEqItemTypeDefineAbilityGranted('I68F', 'AIs4', 1)
+    call DEqItemTypeDefineAbilityGranted('I68F', 'AIi6', 1)
 
     // |c0090EE90Copper Chain Leggings|r (Uncommon)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i68g', 'A643', 1)
-    call DEqItemTypeDefineAbilityGranted('i68g', 'AId2', 1)
+    call DEqItemTypeDefineAbilityGranted('I68G', 'A643', 1)
+    call DEqItemTypeDefineAbilityGranted('I68G', 'AId2', 1)
 
     // |c0090EE90Copper Chain Vest|r (Uncommon)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i68h', 'A63E', 1)
-    call DEqItemTypeDefineAbilityGranted('i68h', 'AId1', 1)
+    call DEqItemTypeDefineAbilityGranted('I68H', 'A63E', 1)
+    call DEqItemTypeDefineAbilityGranted('I68H', 'AId1', 1)
 
     // |c0090EE90Copper Chain Bracers|r (Uncommon)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i68i', 'A669', 1)
+    call DEqItemTypeDefineAbilityGranted('I68I', 'A669', 1)
 
     // |c0090EE90Copper Chain Gauntlets|r (Uncommon)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i68j', 'A66A', 1)
-    call DEqItemTypeDefineAbilityGranted('i68j', 'AId1', 1)
+    call DEqItemTypeDefineAbilityGranted('I68J', 'A66A', 1)
+    call DEqItemTypeDefineAbilityGranted('I68J', 'AId1', 1)
 
     // |c0090EE90Copper Chain Belt|r (Uncommon)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i68k', 'A643', 1)
-    call DEqItemTypeDefineAbilityGranted('i68k', 'AIs3', 1)
-    call DEqItemTypeDefineAbilityGranted('i68k', 'AId2', 1)
+    call DEqItemTypeDefineAbilityGranted('I68K', 'A643', 1)
+    call DEqItemTypeDefineAbilityGranted('I68K', 'AIs3', 1)
+    call DEqItemTypeDefineAbilityGranted('I68K', 'AId2', 1)
 
     // |c001EFF00Copper Chain Shoulders|r (Uncommon)
     // Base: bspd, Class: MISC
-    call DEqItemTypeDefineStatGrantedByName('i68l', "Agility", 14)
-    call DEqItemTypeDefineStatGrantedByName('i68l', "Hitpoints", 70)
-    call DEqItemTypeDefineStatGrantedByName('i68l', "Strength", 14)
-    call DEqItemTypeDefineGoldValue('i68l', 500)
-    call DEqItemTypeDefineAbilityGranted('i68l', 'A6D7', 1)
-    call DEqItemTypeDefineAbilityGranted('i68l', 'A06Z', 1)
-    call DEqItemTypeDefineAbilityGranted('i68l', 'A06W', 1)
-    call DEqItemTypeDefineAbilityGranted('i68l', 'A06T', 1)
-    call DEqItemTypeDefineAbilityGranted('i68l', 'A643', 1)
-    call DEqItemTypeDefineAbilityGranted('i68l', 'A07I', 1)
-    call DEqItemTypeDefineAbilityGranted('i68l', 'A07I', 1)
+    call DEqItemTypeDefineStatGrantedByName('I68L', "Agility", 14)
+    call DEqItemTypeDefineStatGrantedByName('I68L', "Hitpoints", 70)
+    call DEqItemTypeDefineStatGrantedByName('I68L', "Strength", 14)
+    call DEqItemTypeDefineGoldValue('I68L', 500)
+    call DEqItemTypeDefineAbilityGranted('I68L', 'A6D7', 1)
+    call DEqItemTypeDefineAbilityGranted('I68L', 'A06Z', 1)
+    call DEqItemTypeDefineAbilityGranted('I68L', 'A06W', 1)
+    call DEqItemTypeDefineAbilityGranted('I68L', 'A06T', 1)
+    call DEqItemTypeDefineAbilityGranted('I68L', 'A643', 1)
+    call DEqItemTypeDefineAbilityGranted('I68L', 'A07I', 1)
+    call DEqItemTypeDefineAbilityGranted('I68L', 'A07I', 1)
 
     // |c001EFF00Copper Chain Boots|r (Uncommon)
     // Base: bspd, Class: Foot Armor
-    // Rawcode aliases: 'I68M'
-    call DEqItemTypeDefineAllowedSlotByName('i68m', "Boots")
     call DEqItemTypeDefineAllowedSlotByName('I68M', "Boots")
-    call DEqItemTypeDefineStatGrantedByName('i68m', "Agility", 14)
     call DEqItemTypeDefineStatGrantedByName('I68M', "Agility", 14)
-    call DEqItemTypeDefineStatGrantedByName('i68m', "Hitpoints", 150)
     call DEqItemTypeDefineStatGrantedByName('I68M', "Hitpoints", 150)
-    call DEqItemTypeDefineStatGrantedByName('i68m', "Strength", 14)
     call DEqItemTypeDefineStatGrantedByName('I68M', "Strength", 14)
-    call DEqItemTypeDefineGoldValue('i68m', 500)
     call DEqItemTypeDefineGoldValue('I68M', 500)
-    call DEqItemTypeDefineAbilityGranted('i68m', 'A6D7', 1)
     call DEqItemTypeDefineAbilityGranted('I68M', 'A6D7', 1)
-    call DEqItemTypeDefineAbilityGranted('i68m', 'A06Z', 1)
     call DEqItemTypeDefineAbilityGranted('I68M', 'A06Z', 1)
-    call DEqItemTypeDefineAbilityGranted('i68m', 'A06W', 1)
     call DEqItemTypeDefineAbilityGranted('I68M', 'A06W', 1)
-    call DEqItemTypeDefineAbilityGranted('i68m', 'A06T', 1)
     call DEqItemTypeDefineAbilityGranted('I68M', 'A06T', 1)
-    call DEqItemTypeDefineAbilityGranted('i68m', 'A63Y', 1)
     call DEqItemTypeDefineAbilityGranted('I68M', 'A63Y', 1)
 
     // Bronze Belt (Common)
@@ -2614,8 +2596,8 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // Barricade (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i69c', 300)
-    call DEqItemTypeDefineAbilityGranted('i69c', 'A65J', 1)
+    call DEqItemTypeDefineGoldValue('I69C', 300)
+    call DEqItemTypeDefineAbilityGranted('I69C', 'A65J', 1)
 
     // Healing Rain (Common)
     // Base: tdex, Class: MISC
@@ -2703,34 +2685,34 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // Orb of Lifesteal (Common)
     // Base: wneu, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6a5', 2000)
-    call DEqItemTypeDefineAbilityGranted('i6a5', 'A690', 1)
-    call DEqItemTypeDefineAbilityGranted('i6a5', 'AI2m', 1)
-    call DEqItemTypeDefineAbilityGranted('i6a5', 'A692', 1)
+    call DEqItemTypeDefineGoldValue('I6A5', 2000)
+    call DEqItemTypeDefineAbilityGranted('I6A5', 'A690', 1)
+    call DEqItemTypeDefineAbilityGranted('I6A5', 'AI2m', 1)
+    call DEqItemTypeDefineAbilityGranted('I6A5', 'A692', 1)
 
     // Light Leather (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6a6', 50)
+    call DEqItemTypeDefineGoldValue('I6A6', 50)
 
     // Medium Leather (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6a7', 50)
+    call DEqItemTypeDefineGoldValue('I6A7', 50)
 
     // Heavy Leather (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6a8', 50)
+    call DEqItemTypeDefineGoldValue('I6A8', 50)
 
     // Rugged Leather (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6a9', 50)
+    call DEqItemTypeDefineGoldValue('I6A9', 50)
 
     // Thick Leather (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6aa', 50)
+    call DEqItemTypeDefineGoldValue('I6AA', 50)
 
     // Big Bear Tooth (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6ab', 250)
+    call DEqItemTypeDefineGoldValue('I6AB', 250)
 
     // Frost Shock (Common)
     // Base: tdex, Class: MISC
@@ -2740,7 +2722,7 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // Murloc Fin (Common)
     // Base: bzbe, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6ae', 100)
+    call DEqItemTypeDefineGoldValue('I6AE', 100)
 
     // Rejuvenation (Common)
     // Base: tdex, Class: MISC
@@ -2762,7 +2744,7 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // Seeds of Life (Common)
     // Base: dtsb, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6al', 'A6AM', 1)
+    call DEqItemTypeDefineAbilityGranted('I6AL', 'A6AM', 1)
 
     // Ancestral Ward (Common)
     // Base: tdex, Class: MISC
@@ -2781,236 +2763,236 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // Wolf Jawbone (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6ar', 50)
+    call DEqItemTypeDefineGoldValue('I6AR', 50)
 
     // Large Hoof (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6as', 25)
+    call DEqItemTypeDefineGoldValue('I6AS', 25)
 
     // |c00A9A9A9Worn Boots|r (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6at', 'AIa1', 1)
+    call DEqItemTypeDefineAbilityGranted('I6AT', 'AIa1', 1)
 
     // |c00A9A9A9Worn Gloves|r (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6au', 'A66A', 1)
+    call DEqItemTypeDefineAbilityGranted('I6AU', 'A66A', 1)
 
     // |c00A9A9A9Dusty Cap|r (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6av', 'AIi1', 1)
+    call DEqItemTypeDefineAbilityGranted('I6AV', 'AIi1', 1)
 
     // |c00A9A9A9Ragged Cloak|r (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6aw', 'AIa1', 1)
+    call DEqItemTypeDefineAbilityGranted('I6AW', 'AIa1', 1)
 
     // |c00A9A9A9Worn Chainmail|r (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6ax', 'AIs1', 1)
+    call DEqItemTypeDefineAbilityGranted('I6AX', 'AIs1', 1)
 
     // |c00A9A9A9Frayed Bindings|r (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6ay', 'AIs1', 1)
+    call DEqItemTypeDefineAbilityGranted('I6AY', 'AIs1', 1)
 
     // |c00A9A9A9Frayed Girdle|r (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6az', 'AId1', 1)
+    call DEqItemTypeDefineAbilityGranted('I6AZ', 'AId1', 1)
 
     // |c00A9A9A9Worn Pants|r (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6b0', 'A66A', 1)
+    call DEqItemTypeDefineAbilityGranted('I6B0', 'A66A', 1)
 
     // |c00A9A9A9Blunt Sword|r (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6b1', 'AItg', 1)
+    call DEqItemTypeDefineAbilityGranted('I6B1', 'AItg', 1)
 
     // |c00A9A9A9Chipped Axe|r (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6b2', 'A6AT', 1)
-    call DEqItemTypeDefineAbilityGranted('i6b2', 'AItg', 1)
+    call DEqItemTypeDefineAbilityGranted('I6B2', 'A6AT', 1)
+    call DEqItemTypeDefineAbilityGranted('I6B2', 'AItg', 1)
 
     // |c00A9A9A9Dulled Dagger|r (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6b3', 'AItg', 1)
+    call DEqItemTypeDefineAbilityGranted('I6B3', 'AItg', 1)
 
     // |c00A9A9A9Rusted Battleaxe|r (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6b4', 'A6AS', 1)
-    call DEqItemTypeDefineAbilityGranted('i6b4', 'AIs1', 1)
-    call DEqItemTypeDefineAbilityGranted('i6b4', 'AItg', 1)
+    call DEqItemTypeDefineAbilityGranted('I6B4', 'A6AS', 1)
+    call DEqItemTypeDefineAbilityGranted('I6B4', 'AIs1', 1)
+    call DEqItemTypeDefineAbilityGranted('I6B4', 'AItg', 1)
 
     // |c00A9A9A9Warped Staff|r (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6b5', 'AIi1', 1)
+    call DEqItemTypeDefineAbilityGranted('I6B5', 'AIi1', 1)
 
     // |c00A9A9A9Dented Shield|r (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6b6', 'A6AR', 1)
-    call DEqItemTypeDefineAbilityGranted('i6b6', 'AId1', 1)
+    call DEqItemTypeDefineAbilityGranted('I6B6', 'A6AR', 1)
+    call DEqItemTypeDefineAbilityGranted('I6B6', 'AId1', 1)
 
     // |c00A9A9A9Cracked Aegis|r (Common)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6b7', 'A65H', 1)
-    call DEqItemTypeDefineAbilityGranted('i6b7', 'AIs1', 1)
-    call DEqItemTypeDefineAbilityGranted('i6b7', 'AId1', 1)
+    call DEqItemTypeDefineAbilityGranted('I6B7', 'A65H', 1)
+    call DEqItemTypeDefineAbilityGranted('I6B7', 'AIs1', 1)
+    call DEqItemTypeDefineAbilityGranted('I6B7', 'AId1', 1)
 
     // |c0090EE90Belt of Wise Man|r (Uncommon)
     // Base: bgst, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6b8', 'AIi6', 1)
+    call DEqItemTypeDefineAbilityGranted('I6B8', 'AIi6', 1)
 
     // |c0090EE90Belt of Tiger Trainer|r (Uncommon)
     // Base: bgst, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6b9', 'AIa6', 1)
+    call DEqItemTypeDefineAbilityGranted('I6B9', 'AIa6', 1)
 
     // Crystal Water (Common)
     // Base: pclr, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6ba', 350)
-    call DEqItemTypeDefineAbilityGranted('i6ba', 'A6AU', 1)
+    call DEqItemTypeDefineGoldValue('I6BA', 350)
+    call DEqItemTypeDefineAbilityGranted('I6BA', 'A6AU', 1)
 
     // Purified Water (Common)
     // Base: pclr, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6bb', 150)
-    call DEqItemTypeDefineAbilityGranted('i6bb', 'A6AV', 1)
+    call DEqItemTypeDefineGoldValue('I6BB', 150)
+    call DEqItemTypeDefineAbilityGranted('I6BB', 'A6AV', 1)
 
     // Greater Healing Salve (Common)
     // Base: hslv, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6bc', 150)
-    call DEqItemTypeDefineAbilityGranted('i6bc', 'A6AW', 1)
+    call DEqItemTypeDefineGoldValue('I6BC', 150)
+    call DEqItemTypeDefineAbilityGranted('I6BC', 'A6AW', 1)
 
     // Minor Healing Potion (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6bd', 'A6AX', 1)
+    call DEqItemTypeDefineAbilityGranted('I6BD', 'A6AX', 1)
 
     // Major Healing Potion (Common)
     // Base: pghe, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6be', 600)
-    call DEqItemTypeDefineAbilityGranted('i6be', 'A6B0', 1)
+    call DEqItemTypeDefineGoldValue('I6BE', 600)
+    call DEqItemTypeDefineAbilityGranted('I6BE', 'A6B0', 1)
 
     // Greater Restoration Potion (Common)
     // Base: pres, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6bf', 800)
-    call DEqItemTypeDefineAbilityGranted('i6bf', 'A6B2', 1)
+    call DEqItemTypeDefineGoldValue('I6BF', 800)
+    call DEqItemTypeDefineAbilityGranted('I6BF', 'A6B2', 1)
 
     // Minor Replenishment Potion (Common)
     // Base: rej3, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6bg', 'A6B4', 1)
+    call DEqItemTypeDefineAbilityGranted('I6BG', 'A6B4', 1)
 
     // Greater Replenishment Potion (Common)
     // Base: rej3, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6bh', 600)
-    call DEqItemTypeDefineAbilityGranted('i6bh', 'A6B6', 1)
+    call DEqItemTypeDefineGoldValue('I6BH', 600)
+    call DEqItemTypeDefineAbilityGranted('I6BH', 'A6B6', 1)
 
     // Scroll of Greater Healing (Common)
     // Base: shea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6bi', 400)
-    call DEqItemTypeDefineAbilityGranted('i6bi', 'A6B8', 1)
+    call DEqItemTypeDefineGoldValue('I6BI', 400)
+    call DEqItemTypeDefineAbilityGranted('I6BI', 'A6B8', 1)
 
     // Scroll of Major Healing (Common)
     // Base: shea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6bj', 600)
-    call DEqItemTypeDefineAbilityGranted('i6bj', 'A6B9', 1)
+    call DEqItemTypeDefineGoldValue('I6BJ', 600)
+    call DEqItemTypeDefineAbilityGranted('I6BJ', 'A6B9', 1)
 
     // Scroll of Greater Mana (Common)
     // Base: sman, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6bk', 400)
-    call DEqItemTypeDefineAbilityGranted('i6bk', 'A6BB', 1)
+    call DEqItemTypeDefineGoldValue('I6BK', 400)
+    call DEqItemTypeDefineAbilityGranted('I6BK', 'A6BB', 1)
 
     // Scroll of Major Mana (Common)
     // Base: sman, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6bl', 600)
-    call DEqItemTypeDefineAbilityGranted('i6bl', 'A6BC', 1)
+    call DEqItemTypeDefineGoldValue('I6BL', 600)
+    call DEqItemTypeDefineAbilityGranted('I6BL', 'A6BC', 1)
 
     // Scroll of Greater Protection (Common)
     // Base: spro, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6bm', 400)
-    call DEqItemTypeDefineAbilityGranted('i6bm', 'A6BE', 1)
+    call DEqItemTypeDefineGoldValue('I6BM', 400)
+    call DEqItemTypeDefineAbilityGranted('I6BM', 'A6BE', 1)
 
     // Scroll of Major Protection (Common)
     // Base: spro, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6bn', 600)
-    call DEqItemTypeDefineAbilityGranted('i6bn', 'A6BF', 1)
+    call DEqItemTypeDefineGoldValue('I6BN', 600)
+    call DEqItemTypeDefineAbilityGranted('I6BN', 'A6BF', 1)
 
     // Scroll of Greater Regeneration (Common)
     // Base: sreg, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6bo', 300)
-    call DEqItemTypeDefineAbilityGranted('i6bo', 'A6BH', 1)
+    call DEqItemTypeDefineGoldValue('I6BO', 300)
+    call DEqItemTypeDefineAbilityGranted('I6BO', 'A6BH', 1)
 
     // Scroll of Major Regeneration (Common)
     // Base: sreg, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6bp', 600)
-    call DEqItemTypeDefineAbilityGranted('i6bp', 'A6BI', 1)
+    call DEqItemTypeDefineGoldValue('I6BP', 600)
+    call DEqItemTypeDefineAbilityGranted('I6BP', 'A6BI', 1)
 
     // Scroll of Greater Restoration (Common)
     // Base: sres, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6bq', 800)
-    call DEqItemTypeDefineAbilityGranted('i6bq', 'A6BK', 1)
+    call DEqItemTypeDefineGoldValue('I6BQ', 800)
+    call DEqItemTypeDefineAbilityGranted('I6BQ', 'A6BK', 1)
 
     // Scroll of Major Restoration (Common)
     // Base: sres, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6br', 1000)
-    call DEqItemTypeDefineAbilityGranted('i6br', 'A6BL', 1)
+    call DEqItemTypeDefineGoldValue('I6BR', 1000)
+    call DEqItemTypeDefineAbilityGranted('I6BR', 'A6BL', 1)
 
     // Minor Mana Potion (Common)
     // Base: pman, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6bs', 150)
-    call DEqItemTypeDefineAbilityGranted('i6bs', 'A6BM', 1)
+    call DEqItemTypeDefineGoldValue('I6BS', 150)
+    call DEqItemTypeDefineAbilityGranted('I6BS', 'A6BM', 1)
 
     // Major Mana Potion (Common)
     // Base: pman, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6bt', 600)
-    call DEqItemTypeDefineAbilityGranted('i6bt', 'A6BO', 1)
+    call DEqItemTypeDefineGoldValue('I6BT', 600)
+    call DEqItemTypeDefineAbilityGranted('I6BT', 'A6BO', 1)
 
     // Unknown Item (I6BU) (Common)
     // Base: gold, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6bu', 'A6BQ', 1)
+    call DEqItemTypeDefineAbilityGranted('I6BU', 'A6BQ', 1)
 
     // Unknown Item (I6BV) (Common)
     // Base: gold, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6bv', 'A6BR', 1)
+    call DEqItemTypeDefineAbilityGranted('I6BV', 'A6BR', 1)
 
     // Unknown Item (I6BW) (Common)
     // Base: gold, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6bw', 'A6BS', 1)
+    call DEqItemTypeDefineAbilityGranted('I6BW', 'A6BS', 1)
 
     // |c0090EE90Gem of Lesser Health|r (Uncommon)
     // Base: rhth, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6bx', 450)
-    call DEqItemTypeDefineAbilityGranted('i6bx', 'A63E', 1)
+    call DEqItemTypeDefineGoldValue('I6BX', 450)
+    call DEqItemTypeDefineAbilityGranted('I6BX', 'A63E', 1)
 
     // |c0090EE90Gem of Health|r (Uncommon)
     // Base: rhth, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6by', 'A63Z', 1)
-    call DEqItemTypeDefineAbilityGranted('i6by', 'A643', 1)
+    call DEqItemTypeDefineAbilityGranted('I6BY', 'A63Z', 1)
+    call DEqItemTypeDefineAbilityGranted('I6BY', 'A643', 1)
 
     // |c0090EE90Gem of Greater Health|r (Uncommon)
     // Base: rhth, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6bz', 'A63Z', 1)
-    call DEqItemTypeDefineAbilityGranted('i6bz', 'A63Z', 1)
+    call DEqItemTypeDefineAbilityGranted('I6BZ', 'A63Z', 1)
+    call DEqItemTypeDefineAbilityGranted('I6BZ', 'A63Z', 1)
 
     // |c0090EE90Gem of Major Health|r (Uncommon)
     // Base: rhth, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6c0', 'A63Z', 1)
-    call DEqItemTypeDefineAbilityGranted('i6c0', 'A63Z', 1)
-    call DEqItemTypeDefineAbilityGranted('i6c0', 'A63Z', 1)
+    call DEqItemTypeDefineAbilityGranted('I6C0', 'A63Z', 1)
+    call DEqItemTypeDefineAbilityGranted('I6C0', 'A63Z', 1)
+    call DEqItemTypeDefineAbilityGranted('I6C0', 'A63Z', 1)
 
     // |c0090EE90Claws of Attack +20|r (Uncommon)
     // Base: ratf, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6c1', 1000)
-    call DEqItemTypeDefineAbilityGranted('i6c1', 'AItj', 1)
-    call DEqItemTypeDefineAbilityGranted('i6c1', 'AItf', 1)
+    call DEqItemTypeDefineGoldValue('I6C1', 1000)
+    call DEqItemTypeDefineAbilityGranted('I6C1', 'AItj', 1)
+    call DEqItemTypeDefineAbilityGranted('I6C1', 'AItf', 1)
 
     // |c0090EE90Claws of Attack +24|r (Uncommon)
     // Base: ratf, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6c2', 1200)
-    call DEqItemTypeDefineAbilityGranted('i6c2', 'AItx', 1)
-    call DEqItemTypeDefineAbilityGranted('i6c2', 'AIti', 1)
+    call DEqItemTypeDefineGoldValue('I6C2', 1200)
+    call DEqItemTypeDefineAbilityGranted('I6C2', 'AItx', 1)
+    call DEqItemTypeDefineAbilityGranted('I6C2', 'AIti', 1)
 
     // Water Shield (Common)
     // Base: tdex, Class: MISC
 
     // Tent (Common)
     // Base: phea, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6c4', 500)
-    call DEqItemTypeDefineAbilityGranted('i6c4', 'A6CH', 1)
+    call DEqItemTypeDefineGoldValue('I6C4', 500)
+    call DEqItemTypeDefineAbilityGranted('I6C4', 'A6CH', 1)
 
     // |c0090EE90Essence of Fire|r (Uncommon)
     // Base: phea, Class: MISC
@@ -3026,71 +3008,71 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // |c0090EE90Stealth Cloak|r (Uncommon)
     // Base: rst1, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6c9', 1200)
+    call DEqItemTypeDefineGoldValue('I6C9', 1200)
 
     // Rock (Common)
     // Base: wneg, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6ca', 25)
-    call DEqItemTypeDefineAbilityGranted('i6ca', 'A6CT', 1)
+    call DEqItemTypeDefineGoldValue('I6CA', 25)
+    call DEqItemTypeDefineAbilityGranted('I6CA', 'A6CT', 1)
 
     // |c00800080Blazing Obsidian Sharpblade|r (Epic)
     // Base: crdt, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6cb', 20000)
-    call DEqItemTypeDefineAbilityGranted('i6cb', 'A65E', 1)
-    call DEqItemTypeDefineAbilityGranted('i6cb', 'AItx', 1)
-    call DEqItemTypeDefineAbilityGranted('i6cb', 'AItf', 1)
-    call DEqItemTypeDefineAbilityGranted('i6cb', 'A6D4', 1)
+    call DEqItemTypeDefineGoldValue('I6CB', 20000)
+    call DEqItemTypeDefineAbilityGranted('I6CB', 'A65E', 1)
+    call DEqItemTypeDefineAbilityGranted('I6CB', 'AItx', 1)
+    call DEqItemTypeDefineAbilityGranted('I6CB', 'AItf', 1)
+    call DEqItemTypeDefineAbilityGranted('I6CB', 'A6D4', 1)
 
     // |c00800080Cloak of Dragonbound Mountain|r (Epic)
     // Base: crdt, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6cc', 10000)
-    call DEqItemTypeDefineAbilityGranted('i6cc', 'A640', 1)
-    call DEqItemTypeDefineAbilityGranted('i6cc', 'AId8', 1)
+    call DEqItemTypeDefineGoldValue('I6CC', 10000)
+    call DEqItemTypeDefineAbilityGranted('I6CC', 'A640', 1)
+    call DEqItemTypeDefineAbilityGranted('I6CC', 'AId8', 1)
 
     // |c00800080Crown of of the Molten Golem King|r (Epic)
     // Base: crdt, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6cd', 10000)
-    call DEqItemTypeDefineAbilityGranted('i6cd', 'A6C4', 1)
-    call DEqItemTypeDefineAbilityGranted('i6cd', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i6cd', 'A6D6', 1)
+    call DEqItemTypeDefineGoldValue('I6CD', 10000)
+    call DEqItemTypeDefineAbilityGranted('I6CD', 'A6C4', 1)
+    call DEqItemTypeDefineAbilityGranted('I6CD', 'A6D5', 1)
+    call DEqItemTypeDefineAbilityGranted('I6CD', 'A6D6', 1)
 
     // |c00800080Dragonforged Warboots|r (Epic)
     // Base: crdt, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6ce', 10000)
-    call DEqItemTypeDefineAbilityGranted('i6ce', 'A6D7', 1)
-    call DEqItemTypeDefineAbilityGranted('i6ce', 'A6D8', 1)
-    call DEqItemTypeDefineAbilityGranted('i6ce', 'A6D6', 1)
+    call DEqItemTypeDefineGoldValue('I6CE', 10000)
+    call DEqItemTypeDefineAbilityGranted('I6CE', 'A6D7', 1)
+    call DEqItemTypeDefineAbilityGranted('I6CE', 'A6D8', 1)
+    call DEqItemTypeDefineAbilityGranted('I6CE', 'A6D6', 1)
 
     // |c00FF8000Infernal Sigil of Colossus|r (Common)
     // Base: crdt, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6cf', 30000)
-    call DEqItemTypeDefineAbilityGranted('i6cf', 'A6D9', 1)
-    call DEqItemTypeDefineAbilityGranted('i6cf', 'AI2m', 1)
-    call DEqItemTypeDefineAbilityGranted('i6cf', 'A63Z', 1)
+    call DEqItemTypeDefineGoldValue('I6CF', 30000)
+    call DEqItemTypeDefineAbilityGranted('I6CF', 'A6D9', 1)
+    call DEqItemTypeDefineAbilityGranted('I6CF', 'AI2m', 1)
+    call DEqItemTypeDefineAbilityGranted('I6CF', 'A63Z', 1)
 
     // Belt03 (Common)
     // Base: rst1, Class: MISC
 
     // Net (Common)
     // Base: silk, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6ch', 500)
-    call DEqItemTypeDefineAbilityGranted('i6ch', 'A6DD', 1)
+    call DEqItemTypeDefineGoldValue('I6CH', 500)
+    call DEqItemTypeDefineAbilityGranted('I6CH', 'A6DD', 1)
 
     // Frost Trap (Common)
     // Base: gobm, Class: MISC
-    call DEqItemTypeDefineGoldValue('i6ci', 250)
-    call DEqItemTypeDefineAbilityGranted('i6ci', 'A6DK', 1)
+    call DEqItemTypeDefineGoldValue('I6CI', 250)
+    call DEqItemTypeDefineAbilityGranted('I6CI', 'A6DK', 1)
 
     // |c00FFFF00Jin'Zun's Fishing Pole|r (Common)
     // Base: bzbe, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6cj', 'A6DL', 1)
+    call DEqItemTypeDefineAbilityGranted('I6CJ', 'A6DL', 1)
 
     // Whirlwind (Common)
     // Base: tdex, Class: MISC
 
     // Traveler's Journal (Common)
     // Base: dtsb, Class: MISC
-    call DEqItemTypeDefineAbilityGranted('i6cl', 'A6DU', 1)
+    call DEqItemTypeDefineAbilityGranted('I6CL', 'A6DU', 1)
 
     // |c0090EE90Jade Ring|r (Uncommon)
     // Base: jdrn, Class: MISC
