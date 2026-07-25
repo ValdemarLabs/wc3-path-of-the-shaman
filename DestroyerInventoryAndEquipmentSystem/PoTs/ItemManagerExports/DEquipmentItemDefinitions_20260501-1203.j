@@ -2198,7 +2198,12 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // Skinning Knife (Common)
     // Base: phea, Class: MISC
+    call DEqItemTypeDefineAllowedSlotByName('i66m', "MainHand")
     call DEqItemTypeDefineAbilityGranted('i66m', 'AIat', 1)
+    call DEqItemTypeDefineAbilityGranted('i66m', 'A0F3', 1)
+    call DEqItemTypeDefineAllowedSlotByName('I66M', "MainHand")
+    call DEqItemTypeDefineAbilityGranted('I66M', 'AIat', 1)
+    call DEqItemTypeDefineAbilityGranted('I66M', 'A0F3', 1)
 
     // Dye (Common)
     // Base: phea, Class: MISC

@@ -2223,12 +2223,18 @@ function DEqPreDefineItemsHere takes nothing returns nothing
 
     // |cFFFFFFFFSkinning Knife|r (Common)
     // Base: fgrg, Class: Main Hand Weapon
-    call DEqItemTypeDefineAllowedSlotByName('i66m', "Gloves")
+    call DEqItemTypeDefineAllowedSlotByName('i66m', "MainHand")
     call DEqItemTypeDefineStatGrantedByName('i66m', "Damage", 3.00)
     call DEqItemTypeDefineGoldValue('i66m', 100)
     call DEqItemTypeDefineAbilityGranted('i66m', 'A07N', 1)
     call DEqItemTypeDefineAbilityGranted('i66m', 'AIat', 1)
     call DEqItemTypeDefineAbilityGranted('i66m', 'A0F3', 1)
+    call DEqItemTypeDefineAllowedSlotByName('I66M', "MainHand")
+    call DEqItemTypeDefineStatGrantedByName('I66M', "Damage", 3.00)
+    call DEqItemTypeDefineGoldValue('I66M', 100)
+    call DEqItemTypeDefineAbilityGranted('I66M', 'A07N', 1)
+    call DEqItemTypeDefineAbilityGranted('I66M', 'AIat', 1)
+    call DEqItemTypeDefineAbilityGranted('I66M', 'A0F3', 1)
 
     // Dye (Common)
     // Base: phea, Class: MISC
