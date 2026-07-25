@@ -54,7 +54,9 @@
 - Added the first Fishing profession gameplay flow:
   - Fish pools can be selected and fished by a tracked hero carrying a registered fishing pole.
   - Fishing now uses a compact WoW-style FishingUI cast bar with a random bite window and Reel button.
+  - FishingUI was moved higher on screen so it no longer covers the bottom unit portrait/command UI.
   - Missing the reel window fails the attempt with "Fish went away".
+  - Moving too far away from the fish pool now interrupts fishing.
   - Fishing skill and temporary bait bonuses can affect success against the selected pool's required fishing level.
 
 - Added the first Skinning profession gameplay flow:
@@ -68,9 +70,15 @@
 - Added `UI/FullscreenUI.j`
   - Created simple library to modify the UI to true fullscreen mode when called.
 
+- Added `Preload/Start.j`
+  - Converted the old `Game Start` GUI trigger into a simple JASS startup library called by `Preloader.j` after preload completes.
+  - Split player startup into clear phases for initial game state/zone disabling, delayed Nazgrek creation and starter setup, then intro cinematic/world-system initialization.
+  - Recreated Nazgrek's starting inventory, equipment setup, starter abilities, starter items, Player 1 gold, weather start, terrain-damage initialization, and bridge ignored-unit registration in JASS.
+
 - Updated `Preload/Preloader.j`
   - Uses now the newly created FullscreenUI to hide UI elements during preload.
   - Increased preload title display duration and phase pauses to 5 seconds so startup and phase screens remain readable instead of flashing past.
+  - Calls `Start_Start()` after preload instead of executing the old `gg_trg_Game_Start` GUI trigger.
 
 - Updated `Events/UnitDeathEvent.j`
   - Registered death callbacks directly on the central death trigger so `GetDyingUnit()` and `GetKillingUnit()` remain valid for systems such as `TerrainDamage`, `CreepRespawn`, AI revive handling, companion death handling, item drops, and reputation.
@@ -85,6 +93,7 @@
 
 - Updated `QuestsAndDialogs/DialogSystem.j`
   - Added reusable trainer result-line pools for learn success, reset success, and unable/failure responses.
+  - Changed registered dialog line selection to keep per-list pick state and avoid immediate repeats, preventing trainer greet/learn/reset/unable lines from feeling stuck on the first option while cinematic mode has Warcraft's random seed fixed.
 
 - Updated `Abilities/AbilityTrainerLines.j`
   - Added per-trainer result lines for Totemic, Restoration, Elemental, and Enhancement trainers.
@@ -126,6 +135,7 @@
 
 - Updated `Abilities/AbilityTrainerDialogs.j`
   - Trainer selection now passes `ATD_USE_DIALOG_CAMERA` into the configured QuestGiver dialog-entry transition instead of starting the camera immediately before the fade path finishes.
+  - Removed `FixedCameraLock` usage from ability trainer dialogs so the trainer camera follows the same normal `DialogCamera` handling style as `qAradion` and no longer applies an extra z-offset correction after the transition.
 
 - Updated `Cinematic ON` and `Cinematic OFF` GUI triggers:
   - testing using the fullscreen mode from `FullscreenUI.j` with call FullscreenUI_SetEnabled(boolean)
@@ -147,6 +157,8 @@
   - Registered Jin'Zun's Fishing Pole `'I6CJ'` as the first fishing pole and auto-equips it from DInventory when possible.
   - Registered the first fish pool unit rawcode `'n02N'` as the default fish pool gather node.
   - Added bait registration and bait consumption hooks for temporary fishing skill bonuses.
+  - Repositioned the FishingUI action buttons into a cleaner vertical stack beside the cast bar.
+  - Added a loose post-cast pool range check so walking away cancels fishing without interrupting normal animation jitter.
   - Stops fishing when the unit is attacked, the pool becomes invalid, the unit moves out of range, the reel window is missed, or the player cancels.
 
 - Updated `Professions/ProfessionsSkinning.j`
@@ -186,7 +198,8 @@
 ### Known Issues
 
 - Full in-map JassHelper / Warcraft III compile validation was not completed in this repo snapshot because no combined `war3map.j` or normal map build entry point is exposed.
-- The updated shaman scaling, Ancestral Ward orbiting effects, trainer camera timing, Ghost Wolf companion retargeting, trainer feedback lines, ability prerequisites, trainer/player ExSound registrations, and temporary summon Stats UI rows still need in-game validation with the active object data/import set.
+- The converted `Preload/Start.j` player startup flow still needs in-map validation with the active generated globals for `IntroV2Nazgrek01` and `Intro Cinematic Orc Q`.
+- The updated shaman scaling, Ancestral Ward orbiting effects, trainer camera timing, Ghost Wolf companion retargeting, trainer feedback lines/randomized registered-line picker, ability prerequisites, trainer/player ExSound registrations, and temporary summon Stats UI rows still need in-game validation with the active object data/import set.
 - The new FishingUI minigame, fish-pool shallow-water placement, preplaced fish-pool zone detection, and zone-aware fish rewards still need in-game validation with the active map object data.
 - The new Skinning flow and default beast rawcode list still need in-game validation with the active object data; Vizier Skin has no confirmed unit rawcode registered yet.
 
