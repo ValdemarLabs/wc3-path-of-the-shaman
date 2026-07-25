@@ -13,11 +13,12 @@
 
     How to install:
     Import after PreloadAbilities.j, ImagesUI.j, RegionTitlesLight.j,
-    ExSound.j, ExMusic.j, StatsLiteUI.j, and Start.j. Disable the old GUI
+    ExSound.j, ExMusic.j, StatsLiteUI.j, and GameMode.j. Disable the old GUI
     preload triggers so this library owns the elapsed-time 0.00 preload flow.
     The old Game Start GUI trigger should not also fire from its own
-    elapsed-time event; this library calls Start_Start() when preloading is
-    done. Ability preloading creates a temporary AbilityLoader unit from
+    elapsed-time event; this library shows GameMode when preloading is done.
+    GameMode calls Start_Start() after mode and difficulty are selected.
+    Ability preloading creates a temporary AbilityLoader unit from
     rawcode 'h60N' and removes it immediately after ability data is loaded.
     Saved-game loading runs sound/music preload only and does not execute
     player start setup.
@@ -27,7 +28,7 @@
     call Preloader_StartLoadedGame()
 
 **/
-library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound, ExMusic, PreloadAbilities, StatsLiteUI, FullscreenUI, Start
+library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound, ExMusic, PreloadAbilities, StatsLiteUI, FullscreenUI, GameMode
     globals
         // Timing between visible preload stages. Actual preload calls still run synchronously.
         private constant real PRL_START_MESSAGE_DELAY = 5.00
@@ -127,7 +128,7 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
         call ImagesUI_HidePreload()
 
         if PRL_RunGameStartOnFinish then
-            call Start_Start()
+            call GameMode_Show()
         else
             call EnableUserControl(true)
         endif
