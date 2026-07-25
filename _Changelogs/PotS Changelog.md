@@ -18,6 +18,39 @@
 
 ## [25.7.2026]
 
+### Player-Facing Updates
+
+- Shaman abilities now use hero attributes more meaningfully:
+  - Enhancement melee-focused abilities lean more on Strength and Agility.
+  - Elemental and Restoration caster abilities lean more on Intelligence.
+  - Frost Shock, Nature Shock, Lightning Strike, and Lightning Shield now gain Intelligence-based damage scaling.
+  - Stormstrike, Whirlwind, Ghost Wolf Bite, Primal Force, Feral Spirits, and Bloodlust now include Strength/Agility or hybrid attribute scaling where appropriate.
+
+- Summon Elemental and Feral Spirits summons now behave more like temporary controlled companions:
+  - Summoned elementals and spirit wolves are included in the companion follow/idle update flow.
+  - They appear in StatsLiteUI and StatsUI as tracked companion-style rows.
+  - They still do not consume normal companion party slots.
+
+- Ability trainer dialog camera timing now waits for the configured QuestGiver fade transition path instead of snapping immediately when the trainer is selected.
+
+- Ability trainer interactions now provide voiced/text trainer feedback when:
+  - The player successfully learns an ability.
+  - The player resets abilities, specialization, or talents.
+  - The player cannot learn or reset because of missing points, missing requirements, or invalid state.
+
+- Added specialization requirements for higher shaman progression abilities:
+  - Summon Elemental requires Stormcaller.
+  - Ghost Wolf / Spirit Wolf requires Earthwarden and still keeps its initial Spirit Wolf quest-training lock.
+  - Reincarnation requires Spiritmender.
+  - Totem Master requires Totemist.
+
+- Ghost Wolf now keeps Nazgrek/Zul'kis focused companions and pets following the active wolf form, then retargets them back to the normal hero form when shifting out.
+
+- Ancestral Ward now uses the old Bone Armor-style orbiting segment visual setup more closely:
+  - Restored three orbiting Faerie Dragon missile segments around the shielded unit.
+  - Restored positioned hit flare behavior for absorbed damage.
+  - Added safer target fallback for direct casts.
+
 ### Technical Updates
 
 - Added `UI/FullscreenUI.j`
@@ -25,6 +58,76 @@
 
 - Updated `Preload/Preloader.j`
   - Uses now the newly created FullscreenUI to hide UI elements during preload.
+  - Increased preload title display duration and phase pauses to 5 seconds so startup and phase screens remain readable instead of flashing past.
+
+- Updated `Events/UnitDeathEvent.j`
+  - Registered death callbacks directly on the central death trigger so `GetDyingUnit()` and `GetKillingUnit()` remain valid for systems such as `TerrainDamage`, `CreepRespawn`, AI revive handling, companion death handling, item drops, and reputation.
+  - Added lazy central-trigger creation so older libraries that call `UnitDeathEvent_Register` without an explicit `requires UnitDeathEvent` dependency still register safely.
+
+- Updated `UI/StatsLiteUI.j`
+  - Matched the dead-state display check to `StatsUI` by using the unit's current widget life instead of the UnitIndexer alive flag, preventing revived heroes from staying shown as dead when the handle is still valid.
+
+- Updated `Abilities/Shaman/ShamanGhostWolf.j`
+  - Added optional `TerrainDamage` handoff during Ghost Wolf morph/return so terrain damage tracks the active wolf form instead of the hidden original hero.
+  - Added optional `Companions` handoff during Ghost Wolf morph/return so focused companions, tamed pets, and controlled-display summons retarget to the currently active hero form.
+
+- Updated `QuestsAndDialogs/DialogSystem.j`
+  - Added reusable trainer result-line pools for learn success, reset success, and unable/failure responses.
+
+- Updated `Abilities/AbilityTrainerLines.j`
+  - Added per-trainer result lines for Totemic, Restoration, Elemental, and Enhancement trainers.
+  - Added helper playback APIs for learned, reset, and unable trainer feedback.
+
+- Updated `UI/AbilitiesUI.j`
+  - Plays trainer feedback lines from AbilityUI learn/reset actions based on the backend success/failure result.
+
+- Updated `Abilities/AbilitiesPlayer.j`
+  - Added ability prerequisite rawcodes for Ghost Wolf / Spirit Wolf, Reincarnation, and Totem Master.
+
+- Updated `EnvironmentSystems/TerrainDamage.j`
+  - Refreshes configured unit/group sources during the periodic scan so terrain damage still tracks Nazgrek, Zul'kis, pets, and companion groups if preload/game-start ordering makes the original delayed initialization run before those globals are ready.
+  - Removes hidden Ghost Wolf original heroes from the manual terrain-damage group while keeping the active hero/wolf globals tracked.
+
+- Updated `Abilities/Shaman/ShamanCommon.j`
+  - Added hybrid stat amount helpers so abilities can combine two hero attributes with `AbilitiesPlayerInit.j` base values and talent-aware damage/healing modifiers.
+
+- Updated shaman ability runtime libraries under `Abilities/Shaman/`
+  - Added Intelligence scaling to Frost Shock, Nature Shock, Lightning Strike, and Lightning Shield.
+  - Added Strength/Agility hybrid scaling to Stormstrike, Whirlwind, Ghost Wolf Bite, and Primal Force.
+  - Added Agility-scaled crit bonus support to Bloodlust.
+  - Added Intelligence inheritance for Summon Elemental health/damage.
+  - Added Strength/Agility inheritance for Feral Spirits health/damage.
+
+- Updated `Companions/Companions.j`
+  - Added a controlled-display unit list for temporary controlled summons.
+  - Included controlled-display units in order, idle, halt/resume, hostility-source, class/type/faction, and ability-info handling.
+  - Kept controlled-display units separate from `udg_CompanionUnit[]` so temporary summons do not change the normal companion party size.
+
+- Updated `UI/StatsLiteUI.j` and `UI/StatsUI.j`
+  - Added controlled-display summon rows after normal companion rows.
+  - Stats panels can now show Summon Elemental and Feral Spirits units without treating them as normal companion party members.
+
+- Updated `Abilities/Shaman/ShamanBoneArmor.j` and `Abilities/Shaman/ShamanAncestralWard.j`
+  - Rebuilt Ancestral Ward visuals around the old BAmr three-segment orbit setup.
+  - Added shield buff grace timing so the absorb state is not removed before Warcraft attaches the object buff.
+  - Added self-target fallback for Ancestral Ward when the cast event has no explicit target unit.
+
+- Updated `Abilities/AbilityTrainerDialogs.j`
+  - Trainer selection now passes `ATD_USE_DIALOG_CAMERA` into the configured QuestGiver dialog-entry transition instead of starting the camera immediately before the fade path finishes.
+
+- Updated `Cinematic ON` and `Cinematic OFF` GUI triggers:
+  - testing using the fullscreen mode from `FullscreenUI.j` with call FullscreenUI_SetEnabled(boolean)
+  - Disabled the following functions as they could interfere with FullScreenUI:
+    - Cinematic - Turn on letterbox mode (hide interface) for (All players): fade out over 2.00 seconds
+    - Cinematic - Turn off letterbox mode (show interface) for (All players): fade in over 2.00 seconds
+
+- Updated `DialogSystemPlayer.j`
+  - Updated Nazgrek lines and added soundkeys, Zulkis lines and soundkeys remains in wip state to be worked on later.
+
+### Known Issues
+
+- Full in-map JassHelper / Warcraft III compile validation was not completed in this repo snapshot because no combined `war3map.j` or normal map build entry point is exposed.
+- The updated shaman scaling, Ancestral Ward orbiting effects, trainer camera timing, Ghost Wolf companion retargeting, trainer feedback lines, ability prerequisites, and temporary summon Stats UI rows still need in-game validation with the active object data/import set.
 
 ## [23.7.2026]
 
