@@ -53,11 +53,14 @@
 
 - Added the first Fishing profession gameplay flow:
   - Fish pools can be selected and fished by a tracked hero carrying a registered fishing pole.
+  - All configured fishing poles can qualify for fishing, with stronger poles contributing their Fishing item-stat bonus.
   - Fishing now uses a compact WoW-style FishingUI cast bar with a random bite window and Reel button.
   - FishingUI was moved higher on screen so it no longer covers the bottom unit portrait/command UI.
   - Missing the reel window fails the attempt with "Fish went away".
   - Moving too far away from the fish pool now interrupts fishing.
-  - Fishing skill and temporary bait bonuses can affect success against the selected pool's required fishing level.
+  - FishingUI bait selection now uses the strongest usable bait found in vanilla inventory or DInventory.
+  - Baits with Fishing skill requirements cannot be applied until the fisher meets the requirement.
+  - Fishing skill, fishing pole bonuses, and temporary bait bonuses can affect success against the selected pool's required fishing level.
 
 - Added the first Skinning profession gameplay flow:
   - The Skinning Knife's Skin ability can now skin nearby dead beast corpses while the corpse still exists.
@@ -69,6 +72,8 @@
   - `Stave` items are treated as two-handed main-hand weapons.
   - Trinkets now have two visible DEquipment slots.
   - Rawcode casing mismatches such as Skinning Knife `'i66m'` / `'I66M'` are handled in the current DEquipment export.
+
+- ItemManager-authored profession skill stats now contribute to the matching profession values shown and checked in-game.
 
 ### Technical Updates
 
@@ -159,9 +164,12 @@
 
 - Updated `Professions/ProfessionsFishing.j`
   - Implemented the first Fishing profession minigame around selectable fish pool unit nodes.
-  - Registered Jin'Zun's Fishing Pole `'I6CJ'` as the first fishing pole and auto-equips it from DInventory when possible.
+  - Registered Jin'Zun's Fishing Pole `'I6CJ'`, Basic Fishing Pole `'I6CQ'`, Strong Fishing Pole `'I6CR'`, Big Iron Fishing Pole `'I6CS'`, and ProMaster Fishing Pole 2000 `'I6CT'`.
   - Registered the first fish pool unit rawcode `'n02N'` as the default fish pool gather node.
-  - Added bait registration and bait consumption hooks for temporary fishing skill bonuses.
+  - Added bait registration and bait consumption hooks for temporary fishing skill bonuses and per-bait Fishing requirements.
+  - Registered Shiny Bauble `'I6CM'`, Nightcrawlers `'I6CN'`, Bright Baubles `'I6CO'`, and Aquadynamic Fish `'I6CP'` as fishing bait items.
+  - Auto-equips the best available DInventory fishing pole when it improves the fisher's pole bonus.
+  - Selects the strongest usable bait from vanilla inventory or DInventory and reports the lowest unmet Fishing requirement when only locked bait is available.
   - Repositioned the FishingUI action buttons into a cleaner vertical stack beside the cast bar.
   - Added a loose post-cast pool range check so walking away cancels fishing without interrupting normal animation jitter.
   - Stops fishing when the unit is attacked, the pool becomes invalid, the unit moves out of range, the reel window is missed, or the player cancels.
@@ -192,6 +200,16 @@
 
 - Updated `Professions/Professions.j`
   - Exposed `Professions_ConsumeItem` so profession extension UIs such as Fishing can consume bait items from vanilla inventory or DInventory.
+  - Added profession item-bonus and effective-skill wrappers for ItemManager/DEquipment-authored profession stats.
+  - Profession crafting requirements and recipe availability summaries now use effective skill instead of base-only learned skill.
+
+- Updated `GatherSystems/GatherNodeSkills.j`
+  - Added effective profession skill calculation that combines base learned skill with DEquipment profession attributes.
+  - Gather node requirements and the `/skills` readout now account for profession item bonuses without changing base skill gain.
+
+- Updated `UI/ProfessionsUI.j`
+  - Profession rows and detail panels now display effective profession skill values, including item bonuses.
+  - Clamps only the progress bar fill to 100 while preserving over-cap effective values in the text label.
 
 - Updated `DestroyerInventoryAndEquipmentSystem/PoTs/DEquipment.j` and `DestroyerInventoryAndEquipmentSystem/PoTs/SharedDInvLib.j`
   - Enabled symmetrical `Trinket1` / `Trinket2` slots using DEquipment slot IDs `17` and `18`.
@@ -199,6 +217,7 @@
   - Increased the per-player equipment-frame stride so enabling slots `17` and `18` does not collide with the next player's frame indexes.
   - Made slot-name lookup case-insensitive enough for definitions such as `Mainhand` / `MainHand`, and made generic `Ring` / `Trinket` definitions expand to both corresponding slots.
   - Renamed DEquipment stat ID `19` from `Cleave Damage` to `Cleave Area`, matching the runtime code that already changes cleave area.
+  - Registered DEquipment profession stat names for Mining, Herbalism, Skinning, Fishing, Alchemy, Blacksmithing, Leatherworking, Enchanting, and Cooking.
 
 - Updated `DestroyerInventoryAndEquipmentSystem/PoTs/DEquipmentDefinitionHELP.j`
   - Documented the new `Trinket1` and `Trinket2` slots.
@@ -212,10 +231,15 @@
   - Preserves rawcode case instead of forcing lowercase, and emits aliases from `WC3_Database/config/item_table_mapping.json` so generated DEquipment definitions can cover both imported uppercase rawcodes and lowercase database codes.
   - Exports `Ring` items to slots `8` and `9`, `Trinket` items to slots `17` and `18`, and `Stave` items to slot `19` with the two-handed flag.
   - Normalizes current ItemManager stat names to registered DEquipment stat names such as `Hitpoints`, `Hitpoint regeneration`, `Mana regeneration`, `MoveSPD Pct`, `Spell Damage Taken Pct`, and `Cleave Area`.
+  - Exports profession item stats to the matching DEquipment stat names.
   - Converts whole-percent ItemManager values to DEquipment fractional values for stats whose Warcraft ability fields expect fractions, such as attack speed, lifesteal, armor percent, movement speed percent, and damage-taken percent.
 
 - Updated `WC3_Database/WC3ItemManager` database bootstrap paths
   - Ensures `Stave` is seeded as `TWOHAND_STAFF` and `Trinket` is seeded as `TRINKET` for older or freshly initialized ItemManager databases.
+  - Seeds ItemManager stat definitions for Healing Power and all profession skill stats through Cooking.
+
+- Added `WC3_Database/database/add_profession_stats_39_48.sql`
+  - Provides a non-destructive migration for Healing Power and profession stat definitions.
 
 - Updated `WC3_Database/core/wc3_deq_exporter.py`
   - Aligned the older level-range DEquipment exporter path with the current two ring slots and two trinket slots.
