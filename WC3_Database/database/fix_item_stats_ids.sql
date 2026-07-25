@@ -142,11 +142,44 @@ INSERT INTO item_stats (id, stat_code, stat_name, stat_description, display_form
 VALUES (33, 'sight_range', 'Sight Range', 'Vision range bonus', '+{value}', '#87CEEB', 33);
 
 -- ID 34: Inventory Space
-INSERT INTO item_stats (id, stat_code, stat_name, stat_description, display_format, color_hex, display_order) 
+INSERT INTO item_stats (id, stat_code, stat_name, stat_description, display_format, color_hex, display_order)
 VALUES (34, 'inv_space', 'Inventory Space', 'Additional inventory slots', '+{value}', '#DAA520', 34);
 
--- Update the sequence to continue from 35
-SELECT setval('item_stats_id_seq', 34, true);
+-- ID 35: Block chance
+INSERT INTO item_stats (id, stat_code, stat_name, stat_description, display_format, color_hex, display_order)
+VALUES (35, 'block', 'Block Chance', 'Chance to block incoming attacks', '+{value}%', '#4169E1', 35);
+
+-- ID 36: Hit chance
+INSERT INTO item_stats (id, stat_code, stat_name, stat_description, display_format, color_hex, display_order)
+VALUES (36, 'hit', 'Hit Chance', 'Increases accuracy and hit chance', '+{value}%', '#F0E68C', 36);
+
+-- ID 37: Spell power Pct
+INSERT INTO item_stats (id, stat_code, stat_name, stat_description, display_format, color_hex, display_order)
+VALUES (37, 'spell_power_pct', 'Spell Power %', 'Increases spell damage percent', '+{value}%', '#8A2BE2', 37);
+
+-- ID 38: Spell power Flat
+INSERT INTO item_stats (id, stat_code, stat_name, stat_description, display_format, color_hex, display_order)
+VALUES (38, 'spell_power', 'Spell Power', 'Flat spell damage bonus', '+{value}', '#9370DB', 38);
+
+-- ID 39: Healing Power
+INSERT INTO item_stats (id, stat_code, stat_name, stat_description, display_format, color_hex, display_order)
+VALUES (39, 'healing_power', 'Healing Power', 'Healing effectiveness percentage', '+{value}%', '#7CFC00', 39);
+
+-- ID 40-48: Profession skills
+INSERT INTO item_stats (id, stat_code, stat_name, stat_description, display_format, color_hex, display_order)
+VALUES
+(40, 'profession_mining', 'Mining', 'Mining profession skill bonus', '+{value}', '#B8860B', 40),
+(41, 'profession_herbalism', 'Herbalism', 'Herbalism profession skill bonus', '+{value}', '#32CD32', 41),
+(42, 'profession_skinning', 'Skinning', 'Skinning profession skill bonus', '+{value}', '#CD853F', 42),
+(43, 'profession_fishing', 'Fishing', 'Fishing profession skill bonus', '+{value}', '#40C7EB', 43),
+(44, 'profession_alchemy', 'Alchemy', 'Alchemy profession skill bonus', '+{value}', '#9370DB', 44),
+(45, 'profession_blacksmithing', 'Blacksmithing', 'Blacksmithing profession skill bonus', '+{value}', '#708090', 45),
+(46, 'profession_leatherworking', 'Leatherworking', 'Leatherworking profession skill bonus', '+{value}', '#8B4513', 46),
+(47, 'profession_enchanting', 'Enchanting', 'Enchanting profession skill bonus', '+{value}', '#DA70D6', 47),
+(48, 'profession_cooking', 'Cooking', 'Cooking profession skill bonus', '+{value}', '#FF8C00', 48);
+
+-- Update the sequence to continue from 49
+SELECT setval('item_stats_id_seq', 48, true);
 
 -- Verification query
 SELECT id, stat_code, stat_name FROM item_stats ORDER BY id;

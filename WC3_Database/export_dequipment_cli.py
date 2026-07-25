@@ -99,7 +99,16 @@ STAT_MAPPINGS = {
     'Sight Range': 'Sight Range',
     'Attack Range': 'Attack Range',
     'Inventory Space': 'Inventory Space',
-    'Healing Power': 'Healing Power'
+    'Healing Power': 'Healing Power',
+    'Mining': 'Mining',
+    'Herbalism': 'Herbalism',
+    'Skinning': 'Skinning',
+    'Fishing': 'Fishing',
+    'Alchemy': 'Alchemy',
+    'Blacksmithing': 'Blacksmithing',
+    'Leatherworking': 'Leatherworking',
+    'Enchanting': 'Enchanting',
+    'Cooking': 'Cooking'
 }
 
 DEQ_STAT_NAMES = {
@@ -142,6 +151,15 @@ DEQ_STAT_NAMES = {
     'Spell Power Pct',
     'Spell Power',
     'Healing Power',
+    'Mining',
+    'Herbalism',
+    'Skinning',
+    'Fishing',
+    'Alchemy',
+    'Blacksmithing',
+    'Leatherworking',
+    'Enchanting',
+    'Cooking',
 }
 
 FRACTION_PERCENT_STATS = {

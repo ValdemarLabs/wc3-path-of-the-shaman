@@ -808,6 +808,7 @@ namespace WC3ItemManager
                     conn.Open();
                     EnsurePowerUpAutoUseIntegrity(conn);
                     EnsureRequiredItemClasses(conn);
+                    ProfessionItemStatsSeeder.Ensure(conn);
                     EnsureItemClassColors(conn);
                     isConnected = true;
                     UpdateConnectionStatus(true, "Connected");

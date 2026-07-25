@@ -2,7 +2,7 @@
 -- WC3 POTS DATABASE - STAT SYSTEM ENHANCEMENT
 -- ====================================================================================================
 -- This schema adds comprehensive support for the DEquipment stat system
--- Includes all 39 statids and ability codes from SharedDInvLib.j
+-- Includes all 48 statids and ability codes from SharedDInvLib.j
 --
 -- Author: Enhanced for PotS Project
 -- Date: 2026-03-10
@@ -15,7 +15,7 @@ DROP TABLE IF EXISTS ability_codes CASCADE;
 DROP TABLE IF EXISTS stat_definitions CASCADE;
 
 -- ====================================================================================================
--- STAT DEFINITIONS TABLE (39 Stats from DEquipment)
+-- STAT DEFINITIONS TABLE (48 Stats from DEquipment)
 -- ====================================================================================================
 
 CREATE TABLE stat_definitions (
@@ -34,7 +34,7 @@ CREATE TABLE stat_definitions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Insert all 39 stats from DEquipment system
+-- Insert all 48 stats from DEquipment system
 INSERT INTO stat_definitions (statid, stat_name, stat_display_name, stat_short_name, display_as_percent, application_method, ability_code, ability_field, native_function, global_variable, description) VALUES
 -- Attributes & HP (1-5)
 (1, 'Strength', 'Strength', 'STR', FALSE, 'NATIVE', NULL, NULL, 'SetHeroStr', NULL, 'Hero strength attribute'),
@@ -97,10 +97,21 @@ INSERT INTO stat_definitions (statid, stat_name, stat_display_name, stat_short_n
 -- Spell Power (37-39)
 (37, 'Spell Power Pct', 'Spell Power%', 'SpellPower%', TRUE, 'GLOBAL_VAR', NULL, NULL, NULL, 'udg_Stats_SpellPowerPct', 'Percentage spell power bonus'),
 (38, 'Spell Power', 'Spell Power', 'SpellPower', TRUE, 'GLOBAL_VAR', NULL, NULL, NULL, 'udg_Stats_SpellPowerFlat', 'Flat spell power bonus'),
-(39, 'Healing Power', 'Healing Power', 'HealPower', TRUE, 'GLOBAL_VAR', NULL, NULL, NULL, 'TBD', 'Healing effectiveness percentage');
+(39, 'Healing Power', 'Healing Power', 'HealPower', TRUE, 'GLOBAL_VAR', NULL, NULL, NULL, 'TBD', 'Healing effectiveness percentage'),
 
-COMMENT ON TABLE stat_definitions IS 'Comprehensive stat system definitions for DEquipment (39 stats total)';
-COMMENT ON COLUMN stat_definitions.statid IS 'Stat ID from DEquipment system (1-39)';
+-- Profession Skills (40-48)
+(40, 'Mining', 'Mining', 'Mining', FALSE, 'GLOBAL_VAR', NULL, NULL, NULL, 'TBD', 'Mining profession skill bonus'),
+(41, 'Herbalism', 'Herbalism', 'Herbalism', FALSE, 'GLOBAL_VAR', NULL, NULL, NULL, 'TBD', 'Herbalism profession skill bonus'),
+(42, 'Skinning', 'Skinning', 'Skinning', FALSE, 'GLOBAL_VAR', NULL, NULL, NULL, 'TBD', 'Skinning profession skill bonus'),
+(43, 'Fishing', 'Fishing', 'Fishing', FALSE, 'GLOBAL_VAR', NULL, NULL, NULL, 'TBD', 'Fishing profession skill bonus'),
+(44, 'Alchemy', 'Alchemy', 'Alchemy', FALSE, 'GLOBAL_VAR', NULL, NULL, NULL, 'TBD', 'Alchemy profession skill bonus'),
+(45, 'Blacksmithing', 'Blacksmithing', 'Blacksmithing', FALSE, 'GLOBAL_VAR', NULL, NULL, NULL, 'TBD', 'Blacksmithing profession skill bonus'),
+(46, 'Leatherworking', 'Leatherworking', 'Leatherworking', FALSE, 'GLOBAL_VAR', NULL, NULL, NULL, 'TBD', 'Leatherworking profession skill bonus'),
+(47, 'Enchanting', 'Enchanting', 'Enchanting', FALSE, 'GLOBAL_VAR', NULL, NULL, NULL, 'TBD', 'Enchanting profession skill bonus'),
+(48, 'Cooking', 'Cooking', 'Cooking', FALSE, 'GLOBAL_VAR', NULL, NULL, NULL, 'TBD', 'Cooking profession skill bonus');
+
+COMMENT ON TABLE stat_definitions IS 'Comprehensive stat system definitions for DEquipment (48 stats total)';
+COMMENT ON COLUMN stat_definitions.statid IS 'Stat ID from DEquipment system (1-48)';
 COMMENT ON COLUMN stat_definitions.application_method IS 'How stat is applied: NATIVE (native function), ABILITY (WC3 ability), GLOBAL_VAR (global variable)';
 
 

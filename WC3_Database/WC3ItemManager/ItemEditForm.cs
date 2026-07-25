@@ -134,6 +134,7 @@ namespace WC3ItemManager
             EnsurePowerUpAutoUseIntegrity();
             EnsureRequiredItemClasses();
             EnsureItemClassColors();
+            EnsureProfessionItemStats();
 
             LoadDropdownData(); // Load database values into dropdowns
             LoadBaseItems(); // Load base items from database
@@ -3467,6 +3468,19 @@ namespace WC3ItemManager
                     {"Movement Speed %", "Movement Speed %"},
                 };
 
+                var deqOnlyStats = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "Mining",
+                    "Herbalism",
+                    "Skinning",
+                    "Fishing",
+                    "Alchemy",
+                    "Blacksmithing",
+                    "Leatherworking",
+                    "Enchanting",
+                    "Cooking"
+                };
+
                 var generatedAbilities = new List<string>();
                 var unmappedStats = new List<string>();
 
@@ -3521,6 +3535,12 @@ namespace WC3ItemManager
                     }
                     else
                     {
+                        if (deqOnlyStats.Contains(statName))
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[AutoGenerateAbilities] '{statName}' is handled by DEquipment export only.");
+                            continue;
+                        }
+
                         System.Diagnostics.Debug.WriteLine($"[AutoGenerateAbilities] Could not map stat name: {statName}");
                         unmappedStats.Add($"{statName} (unknown stat type)");
                     }
@@ -3906,6 +3926,22 @@ namespace WC3ItemManager
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[EnsureItemClassColors] Error: {ex.Message}");
+            }
+        }
+
+        private void EnsureProfessionItemStats()
+        {
+            try
+            {
+                using (var conn = new NpgsqlConnection(connectionString))
+                {
+                    conn.Open();
+                    ProfessionItemStatsSeeder.Ensure(conn);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[EnsureProfessionItemStats] Error: {ex.Message}");
             }
         }
 
