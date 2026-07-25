@@ -239,7 +239,6 @@ private function Init takes nothing returns nothing
     call ExSound_RegisterNazgrekEventSequence("Nazgrek_Stop", 1, 5)
     call ExSound_RegisterNazgrekEventSequence("Nazgrek_Decline", 1, 5)
     call ExSound_RegisterNazgrekEventSequence("Nazgrek_Accept", 1, 5)
-    call ExSound_Register("Nazgrek_Accep4", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_Accept4.mp3")
 
     //=================================================================
     // Zulkis Event lines
