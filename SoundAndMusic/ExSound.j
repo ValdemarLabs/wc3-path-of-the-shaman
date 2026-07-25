@@ -189,6 +189,14 @@ private function ExSound_RegisterAvelineReplySequence takes string base, integer
     endloop
 endfunction
 
+private function ExSound_RegisterNazgrekEventSequence takes string base, integer first, integer last returns nothing
+    call ExSound_RegisterUnpaddedSequence(base, first, last, "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\")
+endfunction
+
+private function ExSound_RegisterZulkisEventSequence takes string base, integer first, integer last returns nothing
+    call ExSound_RegisterUnpaddedSequence(base, first, last, "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisEventLines\\")
+endfunction
+
 private function Init takes nothing returns nothing
     // Example: single manual registration
     // call ExSound_Register("Nazgrek_0001", "Pots\\Sound\\Voicelines\\Nazgrek\\Nazgrek_0001.mp3")
@@ -222,6 +230,16 @@ private function Init takes nothing returns nothing
     call ExSound_Register("Nazgrek_ItemErrorGenera2", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_ItemErrorGenera2.mp3")    
     call ExSound_Register("Nazgrek_ItemErrorRings", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_ItemErrorRings.mp3")   
     call ExSound_Register("Nazgrek_ItemErrorWeapons", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_ItemErrorWeapons.mp3")     
+    call ExSound_RegisterNazgrekEventSequence("Nazgrek_GreetTrainer", 1, 4)
+    call ExSound_RegisterNazgrekEventSequence("Nazgrek_FarewellTrainer", 1, 3)
+    call ExSound_RegisterNazgrekEventSequence("Nazgrek_Info", 1, 6)
+    call ExSound_RegisterNazgrekEventSequence("Nazgrek_Trade", 1, 5)
+    call ExSound_RegisterNazgrekEventSequence("Nazgrek_Exit", 1, 5)
+    call ExSound_RegisterNazgrekEventSequence("Nazgrek_Follow", 1, 5)
+    call ExSound_RegisterNazgrekEventSequence("Nazgrek_Stop", 1, 5)
+    call ExSound_RegisterNazgrekEventSequence("Nazgrek_Decline", 1, 5)
+    call ExSound_RegisterNazgrekEventSequence("Nazgrek_Accept", 1, 5)
+    call ExSound_Register("Nazgrek_Accep4", "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekEventLines\\Nazgrek_Accept4.mp3")
 
     //=================================================================
     // Zulkis Event lines
@@ -241,6 +259,8 @@ private function Init takes nothing returns nothing
     call ExSound_Register("Zulkis_ItemErrorGenera2", "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisEventLines\\Zulkis_ItemErrorGenera2.mp3")
     call ExSound_Register("Zulkis_ItemErrorRings", "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisEventLines\\Zulkis_ItemErrorRings.mp3")
     call ExSound_Register("Zulkis_ItemErrorWeapons", "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisEventLines\\Zulkis_ItemErrorWeapons.mp3")
+    call ExSound_RegisterZulkisEventSequence("Zulkis_Greet", 1, 4)
+    call ExSound_RegisterZulkisEventSequence("Zulkis_Farewell", 1, 4)
 
     //=================================================================
     // HeroEngineer Event/chat lines
@@ -1284,6 +1304,10 @@ private function Init takes nothing returns nothing
     call ExSound_RegisterSequence("VoidEntity_", 1, 33, "Pots\\Sound\\Voicelines\\VoidEntity\\")  
     call ExSound_RegisterSequence("DarkShaman_", 1, 30, "Pots\\Sound\\Voicelines\\DarkShaman\\")  
     call ExSound_RegisterSequence("Mordrax_", 1, 30, "Pots\\Sound\\Voicelines\\Mordrax\\")  
+    call ExSound_RegisterSequence("TrainerElemental_", 1, 13, "Pots\\Sound\\Voicelines\\TrainerElemental\\")
+    call ExSound_RegisterSequence("TrainerEnhancement_", 1, 13, "Pots\\Sound\\Voicelines\\TrainerEnhancement\\")
+    call ExSound_RegisterSequence("TrainerRestoration_", 1, 13, "Pots\\Sound\\Voicelines\\TrainerRestoration\\")
+    call ExSound_RegisterSequence("TrainerTotemic_", 1, 13, "Pots\\Sound\\Voicelines\\TrainerTotemic\\")
   
 
     // preload all sounds after 0.0s - Note: done manually in PoTS
