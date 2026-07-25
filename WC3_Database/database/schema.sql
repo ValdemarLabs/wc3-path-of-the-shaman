@@ -398,6 +398,7 @@ INSERT INTO item_classes (class_name, slot_type, description) VALUES
 ('Main Hand Weapon', 'WEAPON', 'Primary weapon'),
 ('Off Hand Weapon', 'OFFHAND', 'Secondary weapon, shields'),
 ('Two-Hand Weapon', 'TWOHAND', 'Two-handed weapons'),
+('Stave', 'TWOHAND_STAFF', 'Staves and staffs'),
 ('Ring', 'RING', 'Rings'),
 ('Amulet', 'AMULET', 'Amulets, necklaces'),
 ('Trinket', 'TRINKET', 'Trinkets, charms'),

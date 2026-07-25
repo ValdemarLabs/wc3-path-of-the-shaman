@@ -3830,6 +3830,8 @@ namespace WC3ItemManager
                     const string ensureQuery = @"
                         INSERT INTO item_classes (class_name, slot_type, description)
                         VALUES
+                            ('Stave', 'TWOHAND_STAFF', 'Staves and staffs'),
+                            ('Trinket', 'TRINKET', 'Trinkets, charms'),
                             ('Ability', 'ABILITY', 'Ability-granting item slot/class'),
                             ('Skill', 'SKILL', 'Skill-granting item slot/class')
                         ON CONFLICT (class_name) DO NOTHING";

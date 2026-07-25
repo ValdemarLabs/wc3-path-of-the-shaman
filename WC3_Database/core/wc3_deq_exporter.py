@@ -23,8 +23,8 @@ SLOT_MAPPING = {
     (450, 499): (10, 'Belt'),              # Belt/Waist
     (500, 549): (11, 'Legpiece'),          # Legs
     (550, 599): (12, 'Boots'),             # Boots/Feet
-    (600, 649): (8, 'Ring'),               # Ring (single slot in PoTs version)
-    (650, 699): (None, 'Trinket'),         # Trinket (not enabled in current system)
+    (600, 649): (8, 'Ring'),               # Ring (uses slots 8 and 9)
+    (650, 699): (17, 'Trinket'),           # Trinket (uses slots 17 and 18)
     (700, 749): (19, '1h'),                # 1h Weapon (Main Hand)
     (750, 799): (19, '2h'),                # 2h Weapon (Main Hand + uses slot 20)
     (800, 849): (19, 'Stave'),             # Stave (Main Hand + uses slot 20)
@@ -190,7 +190,13 @@ function DEqPreDefineItemsHere takes nothing returns nothing
         lines.append(f"// {item_name} (Level {item_level})")
         
         # Define allowed slot
-        if slot_id is not None:
+        if slot_name == 'Ring':
+            lines.append(f"call DEqItemTypeDefineAllowedSlotId('{item_code}', 8)")
+            lines.append(f"call DEqItemTypeDefineAllowedSlotId('{item_code}', 9)")
+        elif slot_name == 'Trinket':
+            lines.append(f"call DEqItemTypeDefineAllowedSlotId('{item_code}', 17)")
+            lines.append(f"call DEqItemTypeDefineAllowedSlotId('{item_code}', 18)")
+        elif slot_id is not None:
             lines.append(f"call DEqItemTypeDefineAllowedSlotId('{item_code}', {slot_id})")
             
         # Mark as 2-handed if applicable

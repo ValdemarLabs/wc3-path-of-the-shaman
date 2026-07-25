@@ -4,8 +4,11 @@ DEquipment Item Definitions Exporter
 Exports items from PostgreSQL database to JASS library format for DEquipment system
 """
 
+import json
+import os
 import sys
 import psycopg2
+from decimal import Decimal
 from datetime import datetime
 
 # Database connection settings
@@ -17,34 +20,146 @@ DB_CONFIG = {
     'password': '009900'
 }
 
-# Stat name mappings from database to DEquipment
+# Stat name mappings from database to DEquipment. Keys are normalized by
+# normalize_text so exporter output is not sensitive to punctuation/case.
 STAT_MAPPINGS = {
     'Strength': 'Strength',
+    'STR': 'Strength',
     'Agility': 'Agility',
+    'AGI': 'Agility',
     'Intelligence': 'Intelligence',
+    'INT': 'Intelligence',
+    'Health': 'Hitpoints',
+    'HP': 'Hitpoints',
     'Hit Points': 'Hitpoints',
-    'HP Regen': 'HPS',
+    'Hitpoints': 'Hitpoints',
+    'Health Bonus': 'Hitpoints',
+    'HP Regen': 'Hitpoint regeneration',
+    'Health Regen': 'Hitpoint regeneration',
+    'HPS': 'Hitpoint regeneration',
+    'HP Regen %': 'HP Pct Per Sec',
+    'Health Regen %': 'HP Pct Per Sec',
     'Mana': 'Mana',
-    'Mana Regen': 'Mana Regen Per Sec',
+    'MP': 'Mana',
+    'Mana Regen': 'Mana regeneration',
+    'Mana Regen Per Sec': 'Mana regeneration',
+    'MPS': 'Mana regeneration',
+    'Mana Regen %': 'Mana Pct Per Sec',
+    'Damage': 'Damage',
+    'Damage %': 'Damage Pct',
+    'Damage Pct': 'Damage Pct',
     'Melee Attack Damage': 'Melee Damage',
+    'Melee Damage': 'Melee Damage',
+    'Melee Damage %': 'Melee DMG Pct',
+    'Melee DMG Pct': 'Melee DMG Pct',
     'Ranged Attack Damage': 'Ranged Damage',
+    'Ranged Damage': 'Ranged Damage',
+    'Ranged Damage %': 'Ranged DMG Pct',
+    'Ranged DMG Pct': 'Ranged DMG Pct',
     'Spell Power': 'Spell Power',
+    'Spell Power %': 'Spell Power Pct',
+    'Spell Power Pct': 'Spell Power Pct',
     'Attack Speed': 'Attack Speed',
     'Critical Strike Chance': 'Critical Chance',
+    'Critical Chance': 'Critical Chance',
+    'Crit Chance': 'Critical Chance',
     'Critical Strike Damage': 'Critical Damage',
+    'Critical Damage': 'Critical Damage',
+    'Crit Damage': 'Critical Damage',
+    'Lifesteal': 'Lifesteal Pct',
     'Lifesteal %': 'Lifesteal Pct',
+    'Lifesteal Pct': 'Lifesteal Pct',
     'Spell Vamp %': 'Spell Vamp Pct',
     'Cleave %': 'Cleave Pct',
+    'Cleave Pct': 'Cleave Pct',
+    'Cleave Area': 'Cleave Area',
     'Armor': 'Armor',
     'Armor %': 'Armor Pct',
+    'Armor Pct': 'Armor Pct',
     'Dodge': 'Dodge',
     'Evasion': 'Dodge',  # legacy mapping for old data
     'Block Chance': 'Block Chance',
-    'Magic Resistance %': 'Magic Resist Pct',
+    'Hit Chance': 'Hit Chance',
+    'Magic Damage Taken': 'Spell Damage Taken Pct',
+    'Magic Damage Taken %': 'Spell Damage Taken Pct',
+    'Magic Resistance %': 'Spell Damage Taken Pct',
+    'Spell Damage Taken Pct': 'Spell Damage Taken Pct',
+    'Melee Damage Taken': 'Melee Damage Taken Pct',
+    'Melee Damage Taken %': 'Melee Damage Taken Pct',
+    'Melee Damage Taken Pct': 'Melee Damage Taken Pct',
+    'Pierce Damage Taken': 'Pierce Damage Taken Pct',
+    'Pierce Damage Taken %': 'Pierce Damage Taken Pct',
+    'Pierce Damage Taken Pct': 'Pierce Damage Taken Pct',
+    'Movement Speed': 'Movement Speed',
     'Move Speed': 'Movement Speed',
+    'MS': 'Movement Speed',
+    'Movement Speed %': 'MoveSPD Pct',
     'Move Speed %': 'MoveSPD Pct',
+    'MoveSPD Pct': 'MoveSPD Pct',
     'Sight Range': 'Sight Range',
-    'Attack Range': 'Attack Range'
+    'Attack Range': 'Attack Range',
+    'Inventory Space': 'Inventory Space',
+    'Healing Power': 'Healing Power'
+}
+
+DEQ_STAT_NAMES = {
+    'Strength',
+    'Agility',
+    'Intelligence',
+    'Hitpoints',
+    'Hitpoint regeneration',
+    'HP Pct Per Sec',
+    'Mana',
+    'Mana regeneration',
+    'Mana Pct Per Sec',
+    'Critical Chance',
+    'Critical Damage',
+    'Damage',
+    'Damage Pct',
+    'Melee Damage',
+    'Melee DMG Pct',
+    'Ranged Damage',
+    'Ranged DMG Pct',
+    'Cleave Pct',
+    'Cleave Area',
+    'Attack Speed',
+    'Attack Range',
+    'Lifesteal Pct',
+    'Thorns',
+    'Thorns Pct',
+    'Armor',
+    'Armor Pct',
+    'Dodge',
+    'Spell Damage Taken Pct',
+    'Melee Damage Taken Pct',
+    'Pierce Damage Taken Pct',
+    'Movement Speed',
+    'MoveSPD Pct',
+    'Sight Range',
+    'Inventory Space',
+    'Block Chance',
+    'Hit Chance',
+    'Spell Power Pct',
+    'Spell Power',
+    'Healing Power',
+}
+
+FRACTION_PERCENT_STATS = {
+    'HP Pct Per Sec',
+    'Mana Pct Per Sec',
+    'Critical Damage',
+    'Damage Pct',
+    'Melee DMG Pct',
+    'Ranged DMG Pct',
+    'Cleave Pct',
+    'Attack Speed',
+    'Lifesteal Pct',
+    'Thorns Pct',
+    'Armor Pct',
+    'Spell Damage Taken Pct',
+    'Melee Damage Taken Pct',
+    'Pierce Damage Taken Pct',
+    'MoveSPD Pct',
 }
 
 # Slot name mappings
@@ -66,13 +181,64 @@ SLOT_MAPPINGS = {
 }
 
 
+def normalize_text(value):
+    """Normalize a user/database label while preserving the original value elsewhere."""
+    return ' '.join(str(value).strip().replace('_', ' ').replace('-', ' ').split()).upper()
+
+
+STAT_MAPPINGS = {normalize_text(key): value for key, value in STAT_MAPPINGS.items()}
+
+
+def load_item_code_aliases():
+    """Load imported object codes so lowercase DB rows can still define uppercase map rawcodes."""
+    aliases_by_lower = {}
+    mapping_path = os.path.join(os.path.dirname(__file__), 'config', 'item_table_mapping.json')
+
+    try:
+        with open(mapping_path, 'r', encoding='utf-8') as f:
+            mapping_data = json.load(f)
+    except Exception as e:
+        print(f"Warning: could not load item rawcode mapping aliases: {e}")
+        return aliases_by_lower
+
+    def collect_codes(value):
+        if isinstance(value, str):
+            if len(value) == 4:
+                aliases_by_lower.setdefault(value.lower(), set()).add(value)
+        elif isinstance(value, list):
+            for child in value:
+                collect_codes(child)
+        elif isinstance(value, dict):
+            for child in value.values():
+                collect_codes(child)
+
+    collect_codes(mapping_data)
+    return aliases_by_lower
+
+
+ITEM_CODE_ALIASES = load_item_code_aliases()
+
+
 def convert_item_code(code):
     """Convert 4-char item code to JASS format 'I###' or use as-is"""
     if code and len(code) == 4:
         # WC3 format: 4 characters (e.g., 'i0a5', 'hcun', 'I6CF')
-        # DEquipment uses both raw codes and 'XXXX' format
-        return f"'{code.lower()}'"  # Use lowercase for consistency
+        # Rawcode case is significant in JASS; keep the database/mapping case.
+        return f"'{code}'"
     return f"'{code}'"
+
+
+def get_item_code_aliases(code):
+    """Return the DB rawcode plus imported-object aliases with the same case-insensitive code."""
+    codes = []
+    seen = set()
+
+    for rawcode in [code] + sorted(ITEM_CODE_ALIASES.get(code.lower(), set())):
+        if rawcode and rawcode not in seen:
+            codes.append(rawcode)
+            seen.add(rawcode)
+
+    return codes
 
 
 def normalize_slot_value(slot_value):
@@ -80,12 +246,11 @@ def normalize_slot_value(slot_value):
     if not slot_value:
         return None
 
-    slot_text = str(slot_value).strip().upper().replace('_', ' ').replace('-', ' ')
-    slot_text = ' '.join(slot_text.split())
+    slot_text = normalize_text(slot_value)
     compact_slot = slot_text.replace(' ', '')
 
     # Check weapon hand labels before hand armor. "Main Hand Weapon" contains HAND.
-    if compact_slot in ('2H', '2HWEAPON', 'TWOHAND', 'TWOHANDED', 'TWOHANDWEAPON', 'TWOHANDEDWEAPON') or 'TWO HAND' in slot_text:
+    if compact_slot in ('2H', '2HWEAPON', 'TWOHAND', 'TWOHANDED', 'TWOHANDWEAPON', 'TWOHANDEDWEAPON', 'TWOHANDSTAFF', 'TWOHANDEDSTAFF', 'STAVE', 'STAFF') or 'TWO HAND' in slot_text or 'STAVE' in slot_text or 'STAFF' in slot_text:
         return 19  # 2-handed weapon slot ID
     if compact_slot in ('OFFHAND', 'OFFHANDWEAPON') or 'OFF HAND' in slot_text or 'SHIELD' in slot_text:
         return 'OffHand'
@@ -112,7 +277,9 @@ def normalize_slot_value(slot_value):
     elif compact_slot in ('BRACER', 'BRACERS') or 'WRIST' in slot_text:
         return 'Bracers'
     elif compact_slot == 'RING' or 'RING' in slot_text:
-        return 'Ring'
+        return [8, 9]
+    elif compact_slot == 'TRINKET' or 'TRINKET' in slot_text:
+        return [17, 18]
     elif compact_slot == 'BELT' or 'WAIST' in slot_text or 'GIRDLE' in slot_text:
         return 'Belt'
 
@@ -122,26 +289,73 @@ def normalize_slot_value(slot_value):
     return None
 
 
-def get_item_slot(class_name, slot_type=None, equipment_slot=None):
-    """Determine equipment slot from explicit slot data, then class metadata."""
+def slot_values(slot):
+    """Normalize a slot return value to a list."""
+    if slot is None:
+        return []
+    if isinstance(slot, list):
+        return slot
+    return [slot]
+
+
+def get_item_slots(class_name, slot_type=None, equipment_slot=None):
+    """Determine equipment slots from explicit slot data, then class metadata."""
     slot = normalize_slot_value(equipment_slot)
     if slot:
-        return slot
+        return slot_values(slot)
 
     slot = normalize_slot_value(class_name)
     if slot:
-        return slot
+        return slot_values(slot)
 
-    return normalize_slot_value(slot_type)
+    return slot_values(normalize_slot_value(slot_type))
 
 
 def is_two_handed_weapon(class_name, slot_type=None, equipment_slot=None):
     """Check if item is a two-handed weapon"""
     for slot_value in (equipment_slot, class_name, slot_type):
-        if normalize_slot_value(slot_value) == 19:
+        if 19 in slot_values(normalize_slot_value(slot_value)):
             return True
 
     return False
+
+
+def map_stat_name(stat_name):
+    """Return a DEquipment stat name, or None when no registered stat exists."""
+    deq_stat_name = STAT_MAPPINGS.get(normalize_text(stat_name))
+    if deq_stat_name:
+        if deq_stat_name in DEQ_STAT_NAMES:
+            return deq_stat_name
+        return None
+
+    if stat_name in DEQ_STAT_NAMES:
+        return stat_name
+
+    return None
+
+
+def normalize_stat_value(deq_stat_name, stat_value):
+    """Convert whole-percent ItemManager values to DEquipment fractional fields where needed."""
+    if deq_stat_name not in FRACTION_PERCENT_STATS:
+        return stat_value
+
+    try:
+        amount = stat_value if isinstance(stat_value, Decimal) else Decimal(str(stat_value))
+    except Exception:
+        return stat_value
+
+    if abs(amount) > Decimal('1'):
+        return amount / Decimal('100')
+    return amount
+
+
+def format_jass_number(value):
+    """Format numeric values without unnecessary trailing zeros."""
+    if isinstance(value, Decimal):
+        return format(value.normalize(), 'f')
+    if isinstance(value, float):
+        return f"{value:.3f}".rstrip('0').rstrip('.')
+    return str(value)
 
 
 def export_dequipment_definitions(output_path, library_name='DEquipmentItemDefinitions'):
@@ -198,6 +412,8 @@ def export_dequipment_definitions(output_path, library_name='DEquipmentItemDefin
         lines.append("")
         
         exported_count = 0
+        alias_count = 0
+        unsupported_stats = set()
         
         for item in items:
             item_id, code, name, base_id, gold_cost, abilities, equipment_slot, slot_type, class_name, rarity = item
@@ -207,22 +423,29 @@ def export_dequipment_definitions(output_path, library_name='DEquipmentItemDefin
                 print(f"  Skipping item {name} - invalid code: {code}")
                 continue
             
-            code_str = convert_item_code(code)
+            item_code_aliases = get_item_code_aliases(code)
+            code_strings = [convert_item_code(rawcode) for rawcode in item_code_aliases]
+            if len(code_strings) > 1:
+                alias_count += 1
             
             lines.append(f"    // {name} ({rarity})")
             lines.append(f"    // Base: {base_id}, Class: {class_name}")
+            if len(code_strings) > 1:
+                lines.append(f"    // Rawcode aliases: {', '.join(code_strings)}")
             
             # Define equipment slot
-            slot = get_item_slot(class_name, slot_type, equipment_slot)
-            if slot:
-                if isinstance(slot, int):
-                    lines.append(f"    call DEqItemTypeDefineAllowedSlotId({code_str}, {slot})")
-                else:
-                    lines.append(f"    call DEqItemTypeDefineAllowedSlotByName({code_str}, \"{slot}\")")
+            slots = get_item_slots(class_name, slot_type, equipment_slot)
+            for code_str in code_strings:
+                for slot in slots:
+                    if isinstance(slot, int):
+                        lines.append(f"    call DEqItemTypeDefineAllowedSlotId({code_str}, {slot})")
+                    else:
+                        lines.append(f"    call DEqItemTypeDefineAllowedSlotByName({code_str}, \"{slot}\")")
             
             # Check if two-handed
             if is_two_handed_weapon(class_name, slot_type, equipment_slot):
-                lines.append(f"    call DEqItemTypeDefineAs2Handed({code_str})")
+                for code_str in code_strings:
+                    lines.append(f"    call DEqItemTypeDefineAs2Handed({code_str})")
             
             # Get item stats from database
             cursor.execute(stats_query, (item_id,))
@@ -230,20 +453,26 @@ def export_dequipment_definitions(output_path, library_name='DEquipmentItemDefin
             
             for stat_name, stat_value in item_stats:
                 # Map database stat name to DEquipment stat name
-                deq_stat_name = STAT_MAPPINGS.get(stat_name, stat_name)
+                deq_stat_name = map_stat_name(stat_name)
                 
                 if stat_value and stat_value != 0:
+                    if not deq_stat_name:
+                        unsupported_stats.add(stat_name)
+                        lines.append(f"    // Unsupported DEquipment stat skipped: {stat_name} = {format_jass_number(stat_value)}")
+                        continue
+
+                    stat_value = normalize_stat_value(deq_stat_name, stat_value)
+
                     # Format value appropriately
-                    if isinstance(stat_value, float):
-                        value_str = f"{stat_value:.3f}".rstrip('0').rstrip('.')
-                    else:
-                        value_str = str(stat_value)
+                    value_str = format_jass_number(stat_value)
                     
-                    lines.append(f"    call DEqItemTypeDefineStatGrantedByName({code_str}, \"{deq_stat_name}\", {value_str})")
+                    for code_str in code_strings:
+                        lines.append(f"    call DEqItemTypeDefineStatGrantedByName({code_str}, \"{deq_stat_name}\", {value_str})")
             
             # Define gold value if set
             if gold_cost and gold_cost > 0:
-                lines.append(f"    call DEqItemTypeDefineGoldValue({code_str}, {gold_cost})")
+                for code_str in code_strings:
+                    lines.append(f"    call DEqItemTypeDefineGoldValue({code_str}, {gold_cost})")
             
             # Parse abilities if present
             if abilities:
@@ -251,7 +480,8 @@ def export_dequipment_definitions(output_path, library_name='DEquipmentItemDefin
                 ability_codes = [a.strip() for a in abilities.split(',') if a.strip()]
                 for ability_code in ability_codes:
                     if len(ability_code) == 4:
-                        lines.append(f"    call DEqItemTypeDefineAbilityGranted({code_str}, '{ability_code}', 1)")
+                        for code_str in code_strings:
+                            lines.append(f"    call DEqItemTypeDefineAbilityGranted({code_str}, '{ability_code}', 1)")
             
             lines.append("")
             exported_count += 1
@@ -270,6 +500,10 @@ def export_dequipment_definitions(output_path, library_name='DEquipmentItemDefin
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write('\n'.join(lines))
         
+        if alias_count:
+            print(f"Emitted rawcode aliases for {alias_count} items.")
+        if unsupported_stats:
+            print("Skipped unsupported DEquipment stats: " + ", ".join(sorted(unsupported_stats)))
         print(f"Successfully exported {exported_count} items!")
         print(f"Output file: {output_path}")
         

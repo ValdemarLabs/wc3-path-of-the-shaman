@@ -79,7 +79,7 @@ ON CONFLICT (class_name) DO NOTHING;
 
 -- Stave (Staff)
 INSERT INTO item_classes (class_name, slot_type, description) 
-VALUES ('Stave', 'TWOHAND', 'Staves and staffs (from Excel)')
+VALUES ('Stave', 'TWOHAND_STAFF', 'Staves and staffs (from Excel)')
 ON CONFLICT (class_name) DO NOTHING;
 
 -- Shield (Off-hand defensive)
