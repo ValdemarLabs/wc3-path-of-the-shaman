@@ -25,8 +25,8 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
         // Configuration
         private constant integer ST_PLAYER_ID = 0
         private constant integer ST_START_GOLD = 150
-        private constant real ST_HERO_SETUP_DELAY = 5.00
-        private constant real ST_INTRO_DELAY = 2.00
+        private constant real ST_HERO_SETUP_DELAY = 1.00
+        private constant real ST_INTRO_DELAY = 1.00
 
         private constant integer ST_UNIT_NAZGREK = 'H600'
 
