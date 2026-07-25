@@ -49,11 +49,15 @@ endfunction
 
 private function ApplyFire takes unit caster, unit target, integer rank returns nothing
     local real percent = 30.00 + I2R(rank) * 5.00
+    local real strength = ShamanCommon_GetStat(caster, ShamanCommon_STAT_STRENGTH)
+    local real agility = ShamanCommon_GetStat(caster, ShamanCommon_STAT_AGILITY)
+    local real intelligence = ShamanCommon_GetStat(caster, ShamanCommon_STAT_INTELLIGENCE)
+    local real attackPower = I2R(BlzGetUnitBaseDamage(caster, 0)) + strength * 0.50 + agility * 0.25 + intelligence * 0.25
     local real amount
     if target == null then
         return
     endif
-    set amount = I2R(BlzGetUnitBaseDamage(caster, 0)) * percent / 100.00
+    set amount = attackPower * percent / 100.00
     call UnitDamageTarget(caster, target, amount, true, false, ATTACK_TYPE_MAGIC, DAMAGE_TYPE_FIRE, null)
     call DestroyEffect(AddSpecialEffectTarget(EFFECT_FIRE, target, "chest"))
 endfunction
@@ -85,7 +89,7 @@ private function HandleSpellEffect takes nothing returns nothing
         set rank = ShamanCommon_GetAbilityRank(caster, ShamanCommon_ABILITY_PRIMAL_FORCE)
         set x = GetUnitX(caster)
         set y = GetUnitY(caster)
-        set amount = ShamanCommon_GetDamageAmount(caster, ShamanCommon_ABILITY_PRIMAL_FORCE, AbilitiesPlayerInit_VALUE_BASE, ShamanCommon_STAT_INTELLIGENCE, 1.50)
+        set amount = ShamanCommon_GetHybridDamageAmount(caster, ShamanCommon_ABILITY_PRIMAL_FORCE, AbilitiesPlayerInit_VALUE_BASE, ShamanCommon_STAT_INTELLIGENCE, 1.25, ShamanCommon_STAT_STRENGTH, 0.50)
         call ShamanCommon_SetRealField(caster, ShamanCommon_ABILITY_PRIMAL_FORCE, ABILITY_RLF_DAMAGE_HTB1, amount)
         call QueueUnitAnimation(caster, "stand")
         call GroupClear(EnumGroup)
