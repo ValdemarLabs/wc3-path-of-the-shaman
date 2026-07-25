@@ -54,6 +54,9 @@ private function HandleSpellEffect takes nothing returns nothing
     local unit caster = GetTriggerUnit()
     local unit target = GetSpellTargetUnit()
     if GetSpellAbilityId() == ShamanCommon_ABILITY_ANCESTRAL_WARD then
+        if target == null then
+            set target = caster
+        endif
         call ApplyInternal(caster, target, ShamanCommon_GetAbilityRank(caster, ShamanCommon_ABILITY_ANCESTRAL_WARD), GetHeroInt(caster, true), true, true)
     endif
     set target = null
