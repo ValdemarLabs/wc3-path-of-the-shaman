@@ -18,6 +18,7 @@
     API:
     - set amount = ShamanCommon_GetDamageAmount(caster, abilityId, valueType, statType, statScale)
     - set amount = ShamanCommon_GetHealingAmount(caster, abilityId, valueType, statType, statScale)
+    - set amount = ShamanCommon_GetHybridDamageAmount(caster, abilityId, valueType, primaryStat, primaryScale, secondaryStat, secondaryScale)
     - call ShamanCommon_SetRealField(caster, abilityId, field, value)
     - call ShamanCommon_ApplyCooldownReduction(caster, abilityId)
     - call ShamanCommon_RefreshAbility(caster, abilityId)
@@ -218,12 +219,24 @@ public function GetRawAmount takes unit caster, integer abilityId, integer value
     return AbilitiesPlayerInit_GetUnitBaseValue(caster, abilityId, valueType) + GetStat(caster, statType) * statScale
 endfunction
 
+public function GetHybridRawAmount takes unit caster, integer abilityId, integer valueType, integer primaryStatType, real primaryStatScale, integer secondaryStatType, real secondaryStatScale returns real
+    return AbilitiesPlayerInit_GetUnitBaseValue(caster, abilityId, valueType) + GetStat(caster, primaryStatType) * primaryStatScale + GetStat(caster, secondaryStatType) * secondaryStatScale
+endfunction
+
 public function GetDamageAmount takes unit caster, integer abilityId, integer valueType, integer statType, real statScale returns real
     return AbilitiesPlayerInit_ApplyDamageModifiers(caster, abilityId, GetRawAmount(caster, abilityId, valueType, statType, statScale))
 endfunction
 
 public function GetHealingAmount takes unit caster, integer abilityId, integer valueType, integer statType, real statScale returns real
     return AbilitiesPlayerInit_ApplyHealingModifiers(caster, abilityId, GetRawAmount(caster, abilityId, valueType, statType, statScale))
+endfunction
+
+public function GetHybridDamageAmount takes unit caster, integer abilityId, integer valueType, integer primaryStatType, real primaryStatScale, integer secondaryStatType, real secondaryStatScale returns real
+    return AbilitiesPlayerInit_ApplyDamageModifiers(caster, abilityId, GetHybridRawAmount(caster, abilityId, valueType, primaryStatType, primaryStatScale, secondaryStatType, secondaryStatScale))
+endfunction
+
+public function GetHybridHealingAmount takes unit caster, integer abilityId, integer valueType, integer primaryStatType, real primaryStatScale, integer secondaryStatType, real secondaryStatScale returns real
+    return AbilitiesPlayerInit_ApplyHealingModifiers(caster, abilityId, GetHybridRawAmount(caster, abilityId, valueType, primaryStatType, primaryStatScale, secondaryStatType, secondaryStatScale))
 endfunction
 
 public function GetSpecialBonusValue takes unit caster, integer abilityId returns integer
