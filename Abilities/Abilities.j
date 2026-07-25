@@ -28,7 +28,7 @@
     - set ok = Abilities_ResetTalents(hero)
 
 **/
-library Abilities initializer Init requires AbilitiesPlayer, AbilitiesPlayerInit, AbilityPoints, optional Talents
+library Abilities initializer Init requires AbilitiesPlayer, AbilitiesPlayerInit, AbilityPoints, optional Talents, optional GameMode
     globals
         public constant integer RESULT_OK = 1
         public constant integer RESULT_INVALID = 2
@@ -111,6 +111,30 @@ library Abilities initializer Init requires AbilitiesPlayer, AbilitiesPlayerInit
         return AB_GetEntryLevelByAbilityId(hero, requiredAbilityId) > 0
     endfunction
 
+    private function AB_AreModeAbilityPrerequisitesEnabled takes nothing returns boolean
+        static if LIBRARY_GameMode then
+            return GameMode_AreAbilityPrerequisitesEnabled()
+        else
+            return true
+        endif
+    endfunction
+
+    private function AB_AreModeAbilityQuestLocksEnabled takes nothing returns boolean
+        static if LIBRARY_GameMode then
+            return GameMode_AreAbilityQuestLocksEnabled()
+        else
+            return true
+        endif
+    endfunction
+
+    private function AB_AreModeAbilityPointCostsEnabled takes nothing returns boolean
+        static if LIBRARY_GameMode then
+            return GameMode_AreAbilityPointCostsEnabled()
+        else
+            return true
+        endif
+    endfunction
+
     private function AB_GetRequiredEntryTitle takes integer entryIndex returns string
         local integer requiredEntry = AbilitiesPlayer_GetEntryByAbilityId(AbilitiesPlayer_GetEntryRequiredAbilityId(entryIndex))
 
@@ -154,13 +178,13 @@ library Abilities initializer Init requires AbilitiesPlayer, AbilitiesPlayerInit
         if AbilitiesPlayer_GetEntryKind(entryIndex) == AbilitiesPlayer_ENTRY_SPECIALIZATION and currentLevel <= 0 and AB_HasOtherSpecialization(hero, entryIndex) then
             return RESULT_HAS_SPECIALIZATION
         endif
-        if not AB_HasEntryRequirement(hero, entryIndex) then
+        if AB_AreModeAbilityPrerequisitesEnabled() and not AB_HasEntryRequirement(hero, entryIndex) then
             return RESULT_REQUIREMENT
         endif
-        if currentLevel <= 0 and AbilitiesPlayer_IsEntryInitialQuestLocked(entryIndex) then
+        if currentLevel <= 0 and AB_AreModeAbilityQuestLocksEnabled() and AbilitiesPlayer_IsEntryInitialQuestLocked(entryIndex) then
             return RESULT_QUEST_LOCKED
         endif
-        if AbilityPoints_Get(hero) < AbilitiesPlayer_GetEntryCost(entryIndex) then
+        if AB_AreModeAbilityPointCostsEnabled() and AbilityPoints_Get(hero) < AbilitiesPlayer_GetEntryCost(entryIndex) then
             return RESULT_NOT_ENOUGH_AP
         endif
 
@@ -189,7 +213,7 @@ library Abilities initializer Init requires AbilitiesPlayer, AbilitiesPlayerInit
         if AbilitiesPlayer_GetEntryKind(entryIndex) == AbilitiesPlayer_ENTRY_SPECIALIZATION and AB_HasOtherSpecialization(hero, entryIndex) then
             return RESULT_HAS_SPECIALIZATION
         endif
-        if not AB_HasEntryRequirement(hero, entryIndex) then
+        if AB_AreModeAbilityPrerequisitesEnabled() and not AB_HasEntryRequirement(hero, entryIndex) then
             return RESULT_REQUIREMENT
         endif
 
@@ -363,7 +387,7 @@ library Abilities initializer Init requires AbilitiesPlayer, AbilitiesPlayerInit
 
         if currentLevel > 0 and maxLevel > 1 then
             return I2S(currentLevel) + "/" + I2S(maxLevel)
-        elseif cost > 0 then
+        elseif cost > 0 and AB_AreModeAbilityPointCostsEnabled() then
             return I2S(cost) + " AP"
         endif
         return "Free"
@@ -395,7 +419,7 @@ library Abilities initializer Init requires AbilitiesPlayer, AbilitiesPlayerInit
             set text = text + " |cff808080-|r Known"
         endif
 
-        if cost > 0 then
+        if cost > 0 and AB_AreModeAbilityPointCostsEnabled() then
             set text = text + " |cff808080-|r Cost " + I2S(cost) + " AP"
         else
             set text = text + " |cff808080-|r No AP cost"
@@ -429,7 +453,7 @@ library Abilities initializer Init requires AbilitiesPlayer, AbilitiesPlayerInit
         set oldLevel = GetEntryLevel(hero, entryIndex)
         set abilityId = AbilitiesPlayer_GetEntryAbilityId(entryIndex)
 
-        if not AbilityPoints_Spend(hero, AbilitiesPlayer_GetEntryCost(entryIndex)) then
+        if AB_AreModeAbilityPointCostsEnabled() and not AbilityPoints_Spend(hero, AbilitiesPlayer_GetEntryCost(entryIndex)) then
             return AB_Fail(hero, entryIndex, RESULT_NOT_ENOUGH_AP)
         endif
 
