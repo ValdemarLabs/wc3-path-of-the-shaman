@@ -263,13 +263,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('i0a7', "Armor", 5)
     call DEqItemTypeDefineStatGrantedByName('i0a7', "Hitpoints", 57)
     call DEqItemTypeDefineGoldValue('i0a7', 4500)
-    call DEqItemTypeDefineAbilityGranted('i0a7', 'A643', 1)
-    call DEqItemTypeDefineAbilityGranted('i0a7', 'A07J', 1)
-    call DEqItemTypeDefineAbilityGranted('i0a7', 'A07K', 1)
-    call DEqItemTypeDefineAbilityGranted('i0a7', 'A07K', 1)
-    call DEqItemTypeDefineAbilityGranted('i0a7', 'A083', 1)
-    call DEqItemTypeDefineAbilityGranted('i0a7', 'A06W', 1)
-    call DEqItemTypeDefineAbilityGranted('i0a7', 'A06S', 1)
     call DEqItemTypeDefineAbilityGranted('i0a7', 'A06G', 1)
 
     // |c001EFF00TEST Solid Ring of Power|r (Uncommon)
@@ -334,18 +327,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('i0b4', "Hitpoints", 44)
     call DEqItemTypeDefineStatGrantedByName('i0b4', "Sight Range", 6)
     call DEqItemTypeDefineGoldValue('i0b4', 2420)
-    call DEqItemTypeDefineAbilityGranted('i0b4', 'A66A', 1)
-    call DEqItemTypeDefineAbilityGranted('i0b4', 'A07I', 1)
-    call DEqItemTypeDefineAbilityGranted('i0b4', 'A07J', 1)
-    call DEqItemTypeDefineAbilityGranted('i0b4', 'A07K', 1)
-    call DEqItemTypeDefineAbilityGranted('i0b4', 'A07K', 1)
-    call DEqItemTypeDefineAbilityGranted('i0b4', 'A07K', 1)
-    call DEqItemTypeDefineAbilityGranted('i0b4', 'A07K', 1)
-    call DEqItemTypeDefineAbilityGranted('i0b4', 'A082', 1)
-    call DEqItemTypeDefineAbilityGranted('i0b4', 'A06W', 1)
-    call DEqItemTypeDefineAbilityGranted('i0b4', 'A06Q', 1)
-    call DEqItemTypeDefineAbilityGranted('i0b4', 'A0AH', 1)
-    call DEqItemTypeDefineAbilityGranted('i0b4', 'A01G', 1)
 
     // |c000070DDReliable Neck of the Titan|r (Rare)
     // Base: ssil, Class: Neck
@@ -395,15 +376,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('i0b9', "Hit Chance", 35)
     call DEqItemTypeDefineStatGrantedByName('i0b9', "Intelligence", 27)
     call DEqItemTypeDefineGoldValue('i0b9', 20250)
-    call DEqItemTypeDefineAbilityGranted('i0b9', 'A07T', 1)
-    call DEqItemTypeDefineAbilityGranted('i0b9', 'A07P', 1)
-    call DEqItemTypeDefineAbilityGranted('i0b9', 'A07O', 1)
-    call DEqItemTypeDefineAbilityGranted('i0b9', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i0b9', 'A079', 1)
-    call DEqItemTypeDefineAbilityGranted('i0b9', 'A08Q', 1)
-    call DEqItemTypeDefineAbilityGranted('i0b9', 'A08P', 1)
-    call DEqItemTypeDefineAbilityGranted('i0b9', 'A04N', 1)
-    call DEqItemTypeDefineAbilityGranted('i0b9', 'A01G', 1)
 
     // |c001EFF00Reliable Blade of the Bear|r (Uncommon)
     // Base: very, Class: Off Hand Weapon
@@ -442,13 +414,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('i0c3', "Hitpoints", 152)
     call DEqItemTypeDefineStatGrantedByName('i0c3', "Strength", 35)
     call DEqItemTypeDefineGoldValue('i0c3', 38500)
-    call DEqItemTypeDefineAbilityGranted('i0c3', 'A63Y', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c3', 'A07K', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c3', 'A07K', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c3', 'A085', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c3', 'A6D4', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c3', 'A6D4', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c3', 'A070', 1)
 
     // |c000070DDSturdy Axe of the Phoenix|r (Rare)
     // Base: bspd, Class: 1h
@@ -464,9 +429,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('i0c5', "Hit Chance", 5)
     call DEqItemTypeDefineStatGrantedByName('i0c5', "Strength", 8)
     call DEqItemTypeDefineGoldValue('i0c5', 4875)
-    call DEqItemTypeDefineAbilityGranted('i0c5', 'A64V', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c5', 'A64W', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c5', 'A04H', 1)
     call DEqItemTypeDefineAbilityGranted('i0c5', 'Albx', 1)
 
     // |c000070DDSturdy Chest of the Warrior|r (Rare)
@@ -475,8 +437,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('i0c6', "Hit Chance", 5)
     call DEqItemTypeDefineStatGrantedByName('i0c6', "Strength", 10)
     call DEqItemTypeDefineGoldValue('i0c6', 3000)
-    call DEqItemTypeDefineAbilityGranted('i0c6', 'A6D7', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c6', 'A04H', 1)
 
     // |c001EFF00Fine 1h of the Eagle|r (Uncommon)
     // Base: rnsp, Class: 1h
@@ -485,9 +445,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('i0c7', "Damage", 36)
     call DEqItemTypeDefineStatGrantedByName('i0c7', "Strength", 25)
     call DEqItemTypeDefineGoldValue('i0c7', 17750)
-    call DEqItemTypeDefineAbilityGranted('i0c7', 'A6D4', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c7', 'A6D7', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c7', 'A01H', 1)
     call DEqItemTypeDefineAbilityGranted('i0c7', 'AIbx', 1)
 
     // |c00FF8000Reliable Bracers of Infinity|r (Legendary)
@@ -499,13 +456,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('i0c8', "Intelligence", 10)
     call DEqItemTypeDefineStatGrantedByName('i0c8', "Strength", 10)
     call DEqItemTypeDefineGoldValue('i0c8', 78000)
-    call DEqItemTypeDefineAbilityGranted('i0c8', 'A6D7', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c8', 'A64W', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c8', 'A648', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c8', 'A647', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c8', 'A64X', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c8', 'A01G', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c8', 'A04H', 1)
 
     // |c00A335EEReliable Other of the Ancients|r (Epic)
     // Base: pinv, Class: Other
@@ -514,13 +464,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('i0c9', "Mana regeneration", 7)
     call DEqItemTypeDefineStatGrantedByName('i0c9', "Strength", 14)
     call DEqItemTypeDefineGoldValue('i0c9', 11900)
-    call DEqItemTypeDefineAbilityGranted('i0c9', 'A6D7', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c9', 'A669', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c9', 'A669', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c9', 'A64W', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c9', 'A648', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c9', 'A648', 1)
-    call DEqItemTypeDefineAbilityGranted('i0c9', 'A648', 1)
 
     // |c00A335EETEST Chest of the Ancients|r (Epic)
     // Base: rej4, Class: Chest Armor
@@ -530,20 +473,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('i0d0', "Hitpoints", 149)
     call DEqItemTypeDefineStatGrantedByName('i0d0', "Mana regeneration", 9)
     call DEqItemTypeDefineGoldValue('i0d0', 33000)
-    call DEqItemTypeDefineAbilityGranted('i0d0', 'A63E', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d0', 'A66A', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d0', 'A07I', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d0', 'A07I', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d0', 'A07K', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d0', 'A07K', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d0', 'A07K', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d0', 'A07K', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d0', 'A084', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d0', 'A082', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d0', 'A06W', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d0', 'A06W', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d0', 'A06W', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d0', 'A06V', 1)
 
     // |c00FFFFFFTEST Quality Belt|r (Common)
     // Base: tagi, Class: Belt
@@ -552,13 +481,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('i0d1', "Hitpoints", 57)
     call DEqItemTypeDefineStatGrantedByName('i0d1', "Intelligence", 13)
     call DEqItemTypeDefineGoldValue('i0d1', 4500)
-    call DEqItemTypeDefineAbilityGranted('i0d1', 'A643', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d1', 'A07J', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d1', 'A07K', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d1', 'A07K', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d1', 'A083', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d1', 'A07A', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d1', 'A076', 1)
 
     // |c001EFF00TEST Quality Trinket of the Bear|r (Uncommon)
     // Base: pspd, Class: Trinket
@@ -569,14 +491,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('i0d2', "Intelligence", 13)
     call DEqItemTypeDefineStatGrantedByName('i0d2', "Strength", 13)
     call DEqItemTypeDefineGoldValue('i0d2', 16500)
-    call DEqItemTypeDefineAbilityGranted('i0d2', 'A6D7', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d2', 'A06Y', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d2', 'A06W', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d2', 'A06S', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d2', 'A07A', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d2', 'A076', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d2', 'A01F', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d2', 'A64G', 1)
 
     // |c001EFF00Quality Foot of Power|r (Uncommon)
     // Base: sor2, Class: Foot Armor
@@ -585,14 +499,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('i0d3', "Hitpoints", 95)
     call DEqItemTypeDefineStatGrantedByName('i0d3', "Strength", 22)
     call DEqItemTypeDefineGoldValue('i0d3', 14000)
-    call DEqItemTypeDefineAbilityGranted('i0d3', 'A643', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d3', 'A66A', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d3', 'A07I', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d3', 'A07I', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d3', 'A083', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d3', 'A082', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d3', 'A6D4', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d3', 'A072', 1)
     call DEqItemTypeDefineAbilityGranted('i0d3', 'TEST', 1)
     call DEqItemTypeDefineAbilityGranted('i0d3', 'TEST', 1)
 
@@ -603,15 +509,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('i0d4', "Movement Speed", 10)
     call DEqItemTypeDefineStatGrantedByName('i0d4', "Strength", 21)
     call DEqItemTypeDefineGoldValue('i0d4', 18000)
-    call DEqItemTypeDefineAbilityGranted('i0d4', 'A6D4', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d4', 'A071', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d4', 'A06W', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d4', 'A06W', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d4', 'A06R', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d4', 'A63E', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d4', 'A07J', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d4', 'A07K', 1)
-    call DEqItemTypeDefineAbilityGranted('i0d4', 'A08G', 1)
     call DEqItemTypeDefineAbilityGranted('i0d4', 'Tase', 1)
     call DEqItemTypeDefineAbilityGranted('i0d4', 'rrtt', 1)
 
@@ -620,98 +517,84 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineAllowedSlotByName('i0d5', "Chest")
     call DEqItemTypeDefineStatGrantedByName('i0d5', "Strength", 1)
     call DEqItemTypeDefineGoldValue('i0d5', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0d5', 'A06X', 1)
 
     // |c00FF8000TEST_stat_agi|r (Legendary)
     // Base: bspd, Class: Chest Armor
     call DEqItemTypeDefineAllowedSlotByName('i0d6', "Chest")
     call DEqItemTypeDefineStatGrantedByName('i0d6', "Agility", 1)
     call DEqItemTypeDefineGoldValue('i0d6', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0d6', 'A06Q', 1)
 
     // |c00FF8000TEST_stat_int|r (Legendary)
     // Base: bspd, Class: Chest Armor
     call DEqItemTypeDefineAllowedSlotByName('i0d7', "Chest")
     call DEqItemTypeDefineStatGrantedByName('i0d7', "Intelligence", 1)
     call DEqItemTypeDefineGoldValue('i0d7', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0d7', 'A074', 1)
 
     // |c00FF8000TEST_stat_health|r (Legendary)
     // Base: bspd, Class: Chest Armor
     call DEqItemTypeDefineAllowedSlotByName('i0d8', "Chest")
     call DEqItemTypeDefineStatGrantedByName('i0d8', "Hitpoints", 1)
     call DEqItemTypeDefineGoldValue('i0d8', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0d8', 'A07K', 1)
 
     // |c00FF8000TEST_stat_hpregen|r (Legendary)
     // Base: bspd, Class: Chest Armor
     call DEqItemTypeDefineAllowedSlotByName('i0d9', "Chest")
     call DEqItemTypeDefineStatGrantedByName('i0d9', "HP Pct Per Sec", 0.1)
     call DEqItemTypeDefineGoldValue('i0d9', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0d9', 'A09Q', 1)
 
     // |c00FF8000TEST_stat_mana|r (Legendary)
     // Base: bspd, Class: Chest Armor
     call DEqItemTypeDefineAllowedSlotByName('i0e0', "Chest")
     call DEqItemTypeDefineStatGrantedByName('i0e0', "Mana", 500)
     call DEqItemTypeDefineGoldValue('i0e0', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0e0', 'A646', 1)
 
     // |c00FF8000TEST_stat_manaregen|r (Legendary)
     // Base: bspd, Class: Chest Armor
     call DEqItemTypeDefineAllowedSlotByName('i0e1', "Chest")
     call DEqItemTypeDefineStatGrantedByName('i0e1', "Mana Pct Per Sec", 0.1)
     call DEqItemTypeDefineGoldValue('i0e1', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0e1', 'A09W', 1)
 
     // |c00FF8000TEST_stat_critchance|r (Legendary)
     // Base: bspd, Class: Chest Armor
     call DEqItemTypeDefineAllowedSlotByName('i0e2', "Chest")
     call DEqItemTypeDefineStatGrantedByName('i0e2', "Critical Chance", 100)
     call DEqItemTypeDefineGoldValue('i0e2', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0e2', 'A01R', 1)
 
     // |c00FF8000TEST_stat_damage|r (Legendary)
     // Base: bspd, Class: Chest Armor
     call DEqItemTypeDefineAllowedSlotByName('i0e3', "Chest")
     call DEqItemTypeDefineStatGrantedByName('i0e3', "Damage", 50)
     call DEqItemTypeDefineGoldValue('i0e3', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0e3', 'A07V', 1)
 
     // |c00FF8000TEST_stat_meleeDMG|r (Legendary)
     // Base: bspd, Class: Chest Armor
     call DEqItemTypeDefineAllowedSlotByName('i0e4', "Chest")
     call DEqItemTypeDefineStatGrantedByName('i0e4', "Melee Damage", 50)
     call DEqItemTypeDefineGoldValue('i0e4', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0e4', 'A0AP', 1)
 
     // |c00FF8000TEST_stat_meleeDMGPct|r (Legendary)
     // Base: bspd, Class: Chest Armor
     call DEqItemTypeDefineAllowedSlotByName('i0e5', "Chest")
     call DEqItemTypeDefineStatGrantedByName('i0e5', "Melee DMG Pct", 0.5)
     call DEqItemTypeDefineGoldValue('i0e5', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0e5', 'A0AU', 1)
 
     // |c00FF8000TEST_stat_rangedDMG|r (Legendary)
     // Base: bspd, Class: Chest Armor
     call DEqItemTypeDefineAllowedSlotByName('i0e6', "Chest")
     call DEqItemTypeDefineStatGrantedByName('i0e6', "Ranged Damage", 50)
     call DEqItemTypeDefineGoldValue('i0e6', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0e6', 'A0A3', 1)
 
     // |c00FF8000TEST_stat_rangedDMGPct|r (Legendary)
     // Base: bspd, Class: Chest Armor
     call DEqItemTypeDefineAllowedSlotByName('i0e7', "Chest")
     call DEqItemTypeDefineStatGrantedByName('i0e7', "Ranged DMG Pct", 0.5)
     call DEqItemTypeDefineGoldValue('i0e7', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0e7', 'A0A8', 1)
 
     // |c00FF8000TEST_stat_cleavePct|r (Legendary)
     // Base: bspd, Class: Chest Armor
     call DEqItemTypeDefineAllowedSlotByName('i0e8', "Chest")
     call DEqItemTypeDefineStatGrantedByName('i0e8', "Cleave Pct", 0.5)
     call DEqItemTypeDefineGoldValue('i0e8', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0e8', 'A0AE', 1)
 
     // |c00FF8000TEST_stat_cleaveArea|r (Legendary)
     // Base: bspd, Class: Ring
@@ -719,7 +602,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineAllowedSlotId('i0e9', 9)
     call DEqItemTypeDefineStatGrantedByName('i0e9', "Cleave Area", 300)
     call DEqItemTypeDefineGoldValue('i0e9', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0e9', 'A0AK', 1)
 
     // |c00FF8000TEST_stat_attackSpeed|r (Legendary)
     // Base: bspd, Class: Ring
@@ -727,7 +609,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineAllowedSlotId('i0f0', 9)
     call DEqItemTypeDefineStatGrantedByName('i0f0', "Attack Speed", 0.5)
     call DEqItemTypeDefineGoldValue('i0f0', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0f0', 'A08U', 1)
 
     // |c00FF8000TEST_stat_lifesteal|r (Legendary)
     // Base: bspd, Class: Ring
@@ -735,85 +616,72 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineAllowedSlotId('i0f1', 9)
     call DEqItemTypeDefineStatGrantedByName('i0f1', "Lifesteal Pct", 0.5)
     call DEqItemTypeDefineGoldValue('i0f1', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0f1', 'A0B0', 1)
 
     // |c00FF8000TEST_stat_thornsFlat|r (Legendary)
     // Base: bspd, Class: Belt
     call DEqItemTypeDefineAllowedSlotByName('i0f2', "Belt")
     call DEqItemTypeDefineStatGrantedByName('i0f2', "Thorns", 100)
     call DEqItemTypeDefineGoldValue('i0f2', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0f2', 'A0B6', 1)
 
     // |c00FF8000TEST_stat_thornsPct|r (Legendary)
     // Base: bspd, Class: Belt
     call DEqItemTypeDefineAllowedSlotByName('i0f3', "Belt")
     call DEqItemTypeDefineStatGrantedByName('i0f3', "Thorns Pct", 0.5)
     call DEqItemTypeDefineGoldValue('i0f3', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0f3', 'A0BZ', 1)
 
     // |c00FF8000TEST_stat_armor|r (Legendary)
     // Base: bspd, Class: Hand Armor
     call DEqItemTypeDefineAllowedSlotByName('i0f4', "Gloves")
     call DEqItemTypeDefineStatGrantedByName('i0f4', "Armor", 25)
     call DEqItemTypeDefineGoldValue('i0f4', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0f4', 'A086', 1)
-    call DEqItemTypeDefineAbilityGranted('i0f4', 'A083', 1)
 
     // |c00FF8000TEST_stat_armorPct|r (Legendary)
     // Base: bspd, Class: Hand Armor
     call DEqItemTypeDefineAllowedSlotByName('i0f5', "Gloves")
     call DEqItemTypeDefineStatGrantedByName('i0f5', "Armor Pct", 0.5)
     call DEqItemTypeDefineGoldValue('i0f5', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0f5', 'A0BH', 1)
 
     // |c00FF8000TEST_stat_dodge|r (Legendary)
     // Base: bspd, Class: Hand Armor
     call DEqItemTypeDefineAllowedSlotByName('i0f6', "Gloves")
     call DEqItemTypeDefineStatGrantedByName('i0f6', "Dodge", 100)
     call DEqItemTypeDefineGoldValue('i0f6', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0f6', 'A017', 1)
 
     // |c00FF8000TEST_stat_magictakenPct|r (Legendary)
     // Base: bspd, Class: Hand Armor
     call DEqItemTypeDefineAllowedSlotByName('i0f7', "Gloves")
     call DEqItemTypeDefineStatGrantedByName('i0f7', "Spell Damage Taken Pct", 0.5)
     call DEqItemTypeDefineGoldValue('i0f7', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0f7', 'A0BT', 1)
 
     // |c00FF8000TEST_stat_meleetakenPct|r (Legendary)
     // Base: bspd, Class: Hand Armor
     call DEqItemTypeDefineAllowedSlotByName('i0f8', "Gloves")
     call DEqItemTypeDefineStatGrantedByName('i0f8', "Melee Damage Taken Pct", 0.5)
     call DEqItemTypeDefineGoldValue('i0f8', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0f8', 'A0C5', 1)
 
     // |c00FF8000TEST_stat_piercetakenPct|r (Legendary)
     // Base: bspd, Class: Hand Armor
     call DEqItemTypeDefineAllowedSlotByName('i0f9', "Gloves")
     call DEqItemTypeDefineStatGrantedByName('i0f9', "Pierce Damage Taken Pct", 0.5)
     call DEqItemTypeDefineGoldValue('i0f9', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0f9', 'A09K', 1)
 
     // |c00FF8000TEST_stat_movementSpeed|r (Legendary)
     // Base: bspd, Class: Hand Armor
     call DEqItemTypeDefineAllowedSlotByName('i0g0', "Gloves")
     call DEqItemTypeDefineStatGrantedByName('i0g0', "Movement Speed", 50)
     call DEqItemTypeDefineGoldValue('i0g0', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0g0', 'A08K', 1)
 
     // |c00FF8000TEST_stat_movementSpeedPct|r (Legendary)
     // Base: bspd, Class: Hand Armor
     call DEqItemTypeDefineAllowedSlotByName('i0g1', "Gloves")
     call DEqItemTypeDefineStatGrantedByName('i0g1', "MoveSPD Pct", 0.5)
     call DEqItemTypeDefineGoldValue('i0g1', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0g1', 'A092', 1)
 
     // |c00FF8000TEST_stat_block|r (Legendary)
     // Base: bspd, Class: Shield
     call DEqItemTypeDefineAllowedSlotByName('i0g2', "OffHand")
     call DEqItemTypeDefineStatGrantedByName('i0g2', "Block Chance", 100)
     call DEqItemTypeDefineGoldValue('i0g2', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0g2', 'A64T', 1)
 
     // |c00FF8000TEST_stat_hit|r (Legendary)
     // Base: bspd, Class: Two-Hand Weapon
@@ -821,43 +689,36 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineAs2Handed('i0g3')
     call DEqItemTypeDefineStatGrantedByName('i0g3', "Hit Chance", 100)
     call DEqItemTypeDefineGoldValue('i0g3', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0g3', 'A04T', 1)
 
     // |c00FF8000TEST_stat_spellpowerPct|r (Legendary)
     // Base: bspd, Class: Shoulders
     call DEqItemTypeDefineAllowedSlotByName('i0g4', "Shoulder")
     call DEqItemTypeDefineStatGrantedByName('i0g4', "Spell Power Pct", 100)
     call DEqItemTypeDefineGoldValue('i0g4', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0g4', 'A01E', 1)
 
     // |c00FF8000TEST_stat_spellpowerFlat|r (Legendary)
     // Base: bspd, Class: Foot Armor
     call DEqItemTypeDefineAllowedSlotByName('i0g5', "Boots")
     call DEqItemTypeDefineStatGrantedByName('i0g5', "Spell Power", 400)
     call DEqItemTypeDefineGoldValue('i0g5', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0g5', 'A091', 1)
-    call DEqItemTypeDefineAbilityGranted('i0g5', 'A08V', 1)
 
     // |c00FF8000TEST_stat_magictakenPctNeg|r (Legendary)
     // Base: bspd, Class: Hand Armor
     call DEqItemTypeDefineAllowedSlotByName('i0g6', "Gloves")
     call DEqItemTypeDefineStatGrantedByName('i0g6', "Spell Damage Taken Pct", -0.5)
     call DEqItemTypeDefineGoldValue('i0g6', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0g6', 'A0BN', 1)
 
     // |c00FF8000TEST_stat_meleetakenPctNeg|r (Legendary)
     // Base: bspd, Class: Hand Armor
     call DEqItemTypeDefineAllowedSlotByName('i0g7', "Gloves")
     call DEqItemTypeDefineStatGrantedByName('i0g7', "Melee Damage Taken Pct", -0.5)
     call DEqItemTypeDefineGoldValue('i0g7', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0g7', 'A0BB', 1)
 
     // |c00FF8000TEST_stat_piercetakenPctNeg|r (Legendary)
     // Base: bspd, Class: Hand Armor
     call DEqItemTypeDefineAllowedSlotByName('i0g8', "Gloves")
     call DEqItemTypeDefineStatGrantedByName('i0g8', "Pierce Damage Taken Pct", -0.5)
     call DEqItemTypeDefineGoldValue('i0g8', 2020)
-    call DEqItemTypeDefineAbilityGranted('i0g8', 'A09E', 1)
 
     // Ancient Lichen (Uncommon)
     // Base: bspd, Class: Miscellaneous
@@ -1103,9 +964,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('i1g1', "Intelligence", 8)
     call DEqItemTypeDefineStatGrantedByName('i1g1', "Strength", 8)
     call DEqItemTypeDefineGoldValue('i1g1', 6000)
-    call DEqItemTypeDefineAbilityGranted('i1g1', 'A64V', 1)
-    call DEqItemTypeDefineAbilityGranted('i1g1', 'A64W', 1)
-    call DEqItemTypeDefineAbilityGranted('i1g1', 'A647', 1)
     call DEqItemTypeDefineAbilityGranted('i1g1', '1111', 1)
 
     // |c00FFFFFFWine Bottle|r (Common)
@@ -1128,7 +986,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     // Base: afac, Class: 1h
     call DEqItemTypeDefineAllowedSlotByName('i1g6', "MainHand")
     call DEqItemTypeDefineStatGrantedByName('i1g6', "Critical Chance", 1)
-    call DEqItemTypeDefineAbilityGranted('i1g6', 'A64E', 1)
 
     // |c00FFFFFFamrc nostats|r (Common)
     // Base: amrc, Class: 1h
@@ -1138,7 +995,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     // Base: amrc, Class: 1h
     call DEqItemTypeDefineAllowedSlotByName('i1g8', "MainHand")
     call DEqItemTypeDefineStatGrantedByName('i1g8', "Critical Chance", 1)
-    call DEqItemTypeDefineAbilityGranted('i1g8', 'A64E', 1)
 
     // |c00FFFFFFshea test|r (Common)
     // Base: shea, Class: Consumable
@@ -1152,42 +1008,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('i1h0', "Hit Chance", 100)
     call DEqItemTypeDefineStatGrantedByName('i1h0', "Intelligence", 666)
     call DEqItemTypeDefineGoldValue('i1h0', 666)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A01R', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A04T', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h0', 'A078', 1)
     call DEqItemTypeDefineAbilityGranted('i1h0', 'A0CE', 1)
 
     // |c00FFFFFFSturdy Material|r (Common)
@@ -1196,10 +1016,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('i1h1', "Hitpoints", 26)
     call DEqItemTypeDefineStatGrantedByName('i1h1', "Strength", 5)
     call DEqItemTypeDefineGoldValue('i1h1', 1670)
-    call DEqItemTypeDefineAbilityGranted('i1h1', 'A070', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h1', 'A06T', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h1', 'A66A', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h1', 'A07K', 1)
 
     // |c001EFF00Divine Stave of the Bear|r (Uncommon)
     // Base: fgrd, Class: Stave
@@ -1209,12 +1025,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('i1h2', "Damage", 39)
     call DEqItemTypeDefineStatGrantedByName('i1h2', "Intelligence", 27)
     call DEqItemTypeDefineGoldValue('i1h2', 20250)
-    call DEqItemTypeDefineAbilityGranted('i1h2', 'A07T', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h2', 'A07P', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h2', 'A07O', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h2', 'A6D5', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h2', 'A079', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h2', 'A01H', 1)
 
     // |c00FFFFFFReliable Quest of the Warrior|r (Common)
     // Base: bgst, Class: Quest
@@ -1222,13 +1032,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('i1h3', "Hitpoints", 29)
     call DEqItemTypeDefineStatGrantedByName('i1h3', "Strength", 5)
     call DEqItemTypeDefineGoldValue('i1h3', 2350)
-    call DEqItemTypeDefineAbilityGranted('i1h3', 'A070', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h3', 'A06T', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h3', 'A66A', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h3', 'A07K', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h3', 'A07K', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h3', 'A07K', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h3', 'A07K', 1)
 
     // |c00FF8000Fine Belt of Apocalypse|r (Legendary)
     // Base: tpow, Class: Belt
@@ -1238,22 +1041,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('i1h4', "Movement Speed", 17)
     call DEqItemTypeDefineStatGrantedByName('i1h4', "Strength", 62)
     call DEqItemTypeDefineGoldValue('i1h4', 98000)
-    call DEqItemTypeDefineAbilityGranted('i1h4', 'A6D8', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h4', 'A07I', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h4', 'A07J', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h4', 'A07K', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h4', 'A07K', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h4', 'A086', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h4', 'A083', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h4', 'A07Z', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h4', 'A6D4', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h4', 'A6D4', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h4', 'A6D4', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h4', 'A6D4', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h4', 'A669', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h4', 'A08G', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h4', 'A08F', 1)
-    call DEqItemTypeDefineAbilityGranted('i1h4', 'A08C', 1)
 
     // Tiger Lily (Common)
     // Base: bspd, Class: Miscellaneous
@@ -2249,10 +2036,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('I66M', "Damage", 3)
     call DEqItemTypeDefineGoldValue('i66m', 100)
     call DEqItemTypeDefineGoldValue('I66M', 100)
-    call DEqItemTypeDefineAbilityGranted('i66m', 'A07N', 1)
-    call DEqItemTypeDefineAbilityGranted('I66M', 'A07N', 1)
-    call DEqItemTypeDefineAbilityGranted('i66m', 'AIat', 1)
-    call DEqItemTypeDefineAbilityGranted('I66M', 'AIat', 1)
     call DEqItemTypeDefineAbilityGranted('i66m', 'A0F3', 1)
     call DEqItemTypeDefineAbilityGranted('I66M', 'A0F3', 1)
 
@@ -2505,13 +2288,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('i68l', "Hitpoints", 70)
     call DEqItemTypeDefineStatGrantedByName('i68l', "Strength", 14)
     call DEqItemTypeDefineGoldValue('i68l', 500)
-    call DEqItemTypeDefineAbilityGranted('i68l', 'A6D7', 1)
-    call DEqItemTypeDefineAbilityGranted('i68l', 'A06Z', 1)
-    call DEqItemTypeDefineAbilityGranted('i68l', 'A06W', 1)
-    call DEqItemTypeDefineAbilityGranted('i68l', 'A06T', 1)
-    call DEqItemTypeDefineAbilityGranted('i68l', 'A643', 1)
-    call DEqItemTypeDefineAbilityGranted('i68l', 'A07I', 1)
-    call DEqItemTypeDefineAbilityGranted('i68l', 'A07I', 1)
 
     // |c001EFF00Copper Chain Boots|r (Uncommon)
     // Base: bspd, Class: Foot Armor
@@ -2526,16 +2302,6 @@ function DEqPreDefineItemsHere takes nothing returns nothing
     call DEqItemTypeDefineStatGrantedByName('I68M', "Strength", 14)
     call DEqItemTypeDefineGoldValue('i68m', 500)
     call DEqItemTypeDefineGoldValue('I68M', 500)
-    call DEqItemTypeDefineAbilityGranted('i68m', 'A6D7', 1)
-    call DEqItemTypeDefineAbilityGranted('I68M', 'A6D7', 1)
-    call DEqItemTypeDefineAbilityGranted('i68m', 'A06Z', 1)
-    call DEqItemTypeDefineAbilityGranted('I68M', 'A06Z', 1)
-    call DEqItemTypeDefineAbilityGranted('i68m', 'A06W', 1)
-    call DEqItemTypeDefineAbilityGranted('I68M', 'A06W', 1)
-    call DEqItemTypeDefineAbilityGranted('i68m', 'A06T', 1)
-    call DEqItemTypeDefineAbilityGranted('I68M', 'A06T', 1)
-    call DEqItemTypeDefineAbilityGranted('i68m', 'A63Y', 1)
-    call DEqItemTypeDefineAbilityGranted('I68M', 'A63Y', 1)
 
     // Bronze Belt (Common)
     // Base: rst1, Class: MISC

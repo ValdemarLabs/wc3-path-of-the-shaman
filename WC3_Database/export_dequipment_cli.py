@@ -6,6 +6,7 @@ Exports items from PostgreSQL database to JASS library format for DEquipment sys
 
 import json
 import os
+import re
 import sys
 import psycopg2
 from decimal import Decimal
@@ -236,6 +237,38 @@ def load_item_code_aliases():
 
 ITEM_CODE_ALIASES = load_item_code_aliases()
 
+LEGACY_STAT_ABILITY_CODES = {
+    # Imported vanilla stat abilities. DEquipment stats already apply these bonuses.
+    'AIat', 'AItg', 'AIth', 'AIti', 'AItj', 'AIt6', 'AItk', 'AItl', 'AIt9', 'AItc', 'AItf', 'AItn', 'AItx',
+    'AIs1', 'AIs2', 'AIs3', 'AIs4', 'AIs5', 'AIs6', 'AIsx', 'AIsz',
+    'AIa1', 'AIa2', 'AIa3', 'AIa4', 'AIa6',
+    'AIi1', 'AIi2', 'AIi3', 'AIi4', 'AIi6',
+    'AIx1', 'AIx2', 'AIx3', 'AIx4', 'AIx5', 'AIxm',
+    'AId0', 'AId1', 'AId2', 'AId3', 'AId4', 'AId5', 'AId6', 'AId8', 'AIde',
+    'AIl1', 'AIl2', 'AIlf', 'AIlz',
+    'AIm1', 'AIm2', 'AImh', 'AImz',
+    'AIas', 'AIms', 'AIgx',
+}
+
+
+def load_stat_ability_codes():
+    """Load ItemManager-generated stat ability rawcodes for DEquipment grant filtering."""
+    codes = set(LEGACY_STAT_ABILITY_CODES)
+    mapper_path = os.path.join(os.path.dirname(__file__), 'WC3ItemManager', 'StatAbilityMapper.cs')
+
+    try:
+        with open(mapper_path, 'r', encoding='utf-8') as f:
+            mapper_text = f.read()
+    except Exception as e:
+        print(f"Warning: could not load stat ability mapper for DEquipment filtering: {e}")
+        return codes
+
+    codes.update(re.findall(r'new\s+AbilityValue\("([A-Za-z0-9]{4})"', mapper_text))
+    return codes
+
+
+STAT_ABILITY_CODES = load_stat_ability_codes()
+
 
 def convert_item_code(code):
     """Convert 4-char item code to JASS format 'I###' or use as-is"""
@@ -257,6 +290,11 @@ def get_item_code_aliases(code):
             seen.add(rawcode)
 
     return codes
+
+
+def should_export_deq_ability(ability_code, has_deq_stats):
+    """Only export real granted abilities; DEquipment stats handle stat bonus abilities."""
+    return not has_deq_stats or ability_code not in STAT_ABILITY_CODES
 
 
 def normalize_slot_value(slot_value):
@@ -468,6 +506,7 @@ def export_dequipment_definitions(output_path, library_name='DEquipmentItemDefin
             # Get item stats from database
             cursor.execute(stats_query, (item_id,))
             item_stats = cursor.fetchall()
+            has_deq_stats = False
             
             for stat_name, stat_value in item_stats:
                 # Map database stat name to DEquipment stat name
@@ -486,6 +525,7 @@ def export_dequipment_definitions(output_path, library_name='DEquipmentItemDefin
                     
                     for code_str in code_strings:
                         lines.append(f"    call DEqItemTypeDefineStatGrantedByName({code_str}, \"{deq_stat_name}\", {value_str})")
+                    has_deq_stats = True
             
             # Define gold value if set
             if gold_cost and gold_cost > 0:
@@ -497,7 +537,7 @@ def export_dequipment_definitions(output_path, library_name='DEquipmentItemDefin
                 # abilities format: "Abcd,Axyz" or "Abcd" 
                 ability_codes = [a.strip() for a in abilities.split(',') if a.strip()]
                 for ability_code in ability_codes:
-                    if len(ability_code) == 4:
+                    if len(ability_code) == 4 and should_export_deq_ability(ability_code, has_deq_stats):
                         for code_str in code_strings:
                             lines.append(f"    call DEqItemTypeDefineAbilityGranted({code_str}, '{ability_code}', 1)")
             

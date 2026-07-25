@@ -33,6 +33,19 @@ class WC3W3TExporter:
     """Exports items from database to .w3t binary format."""
 
     LEGACY_COLOR_CODE_RE = re.compile(r'\|c00([0-9A-Fa-f]{6})')
+    STAT_ABILITY_VALUE_RE = re.compile(r'new\s+AbilityValue\("([^"]{4})"\s*,')
+    LEGACY_STAT_ABILITY_CODES = {
+        # Imported vanilla stat abilities. Remove them when ItemManager-generated stat abilities are present.
+        "AIat", "AItg", "AIth", "AIti", "AItj", "AIt6", "AItk", "AItl", "AIt9", "AItc", "AItf", "AItn", "AItx",
+        "AIs1", "AIs2", "AIs3", "AIs4", "AIs5", "AIs6", "AIsx", "AIsz",
+        "AIa1", "AIa2", "AIa3", "AIa4", "AIa6",
+        "AIi1", "AIi2", "AIi3", "AIi4", "AIi6",
+        "AIx1", "AIx2", "AIx3", "AIx4", "AIx5", "AIxm",
+        "AId0", "AId1", "AId2", "AId3", "AId4", "AId5", "AId6", "AId8", "AIde",
+        "AIl1", "AIl2", "AIlf", "AIlz",
+        "AIm1", "AIm2", "AImh", "AImz",
+        "AIas", "AIms", "AIgx",
+    }
     
     # Field type codes
     TYPE_INT = 0
@@ -119,6 +132,7 @@ class WC3W3TExporter:
         self.original_modifications = {}  # Cache of original item modifications
         self.original_table_items = set()  # Items that go in original objects table
         self.item_base_ids = {}  # Base item IDs for custom objects
+        self.generated_stat_ability_codes = None
         
     def load_original_modifications(self):
         """Load modifications from original .w3t file (for abilities and other data not in DB)."""
@@ -263,6 +277,51 @@ class WC3W3TExporter:
             return value
 
         return self.LEGACY_COLOR_CODE_RE.sub(r'|cFF\1', value)
+
+    def _load_generated_stat_ability_codes(self):
+        """Load ItemManager generated stat ability rawcodes from the shared mapper."""
+        if self.generated_stat_ability_codes is not None:
+            return self.generated_stat_ability_codes
+
+        self.generated_stat_ability_codes = set()
+        mapper_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            'WC3ItemManager',
+            'StatAbilityMapper.cs'
+        )
+
+        try:
+            with open(mapper_path, 'r', encoding='utf-8-sig') as mapper_file:
+                mapper_source = mapper_file.read()
+            self.generated_stat_ability_codes.update(self.STAT_ABILITY_VALUE_RE.findall(mapper_source))
+        except OSError as exc:
+            print(f"  [WARN] Could not load StatAbilityMapper.cs for ability cleanup: {exc}")
+
+        return self.generated_stat_ability_codes
+
+    def _sanitize_wc3_abilities(self, value: Any) -> Any:
+        """Remove legacy imported stat abilities when generated ItemManager stats are also present."""
+        if not isinstance(value, str) or not value.strip():
+            return value
+
+        abilities = [ability.strip() for ability in value.split(',') if ability.strip()]
+        if not abilities:
+            return value
+
+        generated_stat_abilities = self._load_generated_stat_ability_codes()
+        has_generated_stat_ability = any(ability in generated_stat_abilities for ability in abilities)
+        if not has_generated_stat_ability:
+            return value
+
+        filtered_abilities = [
+            ability for ability in abilities
+            if ability not in self.LEGACY_STAT_ABILITY_CODES
+        ]
+
+        if len(filtered_abilities) == len(abilities):
+            return value
+
+        return ','.join(filtered_abilities)
         
     def _write_object(self, f, item: Dict, is_custom: bool):
         """Write a single object."""
@@ -405,6 +464,11 @@ class WC3W3TExporter:
         if not has_cooldown and base_mods and 'icid' in base_mods:
             modifications.append(('icid', base_mods['icid']['type'], base_mods['icid']['value']))
         # --- END CUSTOM LOGIC ---
+
+        modifications = [
+            (field_code, field_type, self._sanitize_wc3_abilities(value) if field_code == 'iabi' else value)
+            for field_code, field_type, value in modifications
+        ]
         
         # Write modification count
         self._write_int(f, len(modifications))

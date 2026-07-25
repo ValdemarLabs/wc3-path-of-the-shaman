@@ -30,6 +30,19 @@ namespace WC3ItemManager
         private bool suppressItemLevelValidation = false;
         private bool isDuplicateMode = false;
         private bool isLoadingItem = false; // Suppress auto-generation during item load
+        private static readonly HashSet<string> LegacyStatAbilityCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            // Imported vanilla stat abilities. These should not become manual abilities when stats are regenerated.
+            "AIat", "AItg", "AIth", "AIti", "AItj", "AIt6", "AItk", "AItl", "AIt9", "AItc", "AItf", "AItn", "AItx",
+            "AIs1", "AIs2", "AIs3", "AIs4", "AIs5", "AIs6", "AIsx", "AIsz",
+            "AIa1", "AIa2", "AIa3", "AIa4", "AIa6",
+            "AIi1", "AIi2", "AIi3", "AIi4", "AIi6",
+            "AIx1", "AIx2", "AIx3", "AIx4", "AIx5", "AIxm",
+            "AId0", "AId1", "AId2", "AId3", "AId4", "AId5", "AId6", "AId8", "AIde",
+            "AIl1", "AIl2", "AIlf", "AIlz",
+            "AIm1", "AIm2", "AImh", "AImz",
+            "AIas", "AIms", "AIgx",
+        };
 
         // UI Controls
         private TextBox txtItemCode;
@@ -2431,7 +2444,7 @@ namespace WC3ItemManager
 
                 var attachmentSet = new HashSet<string>(attachmentList, StringComparer.OrdinalIgnoreCase);
                 var manualAbilitiesFromDb = existingList
-                    .Where(a => !statAbilities.Contains(a) && !attachmentSet.Contains(a))
+                    .Where(a => !IsGeneratedOrLegacyStatAbility(a, statAbilities) && !attachmentSet.Contains(a))
                     .ToList();
 
                 var manualAbilitiesFromJson = new List<ManualAbilityData>();
@@ -2550,6 +2563,14 @@ namespace WC3ItemManager
                 .Select(a => a.Trim())
                 .Where(a => !string.IsNullOrWhiteSpace(a))
                 .ToList();
+        }
+
+        private bool IsGeneratedOrLegacyStatAbility(string abilityCode, HashSet<string> generatedStatAbilities)
+        {
+            if (generatedStatAbilities.Contains(abilityCode))
+                return true;
+
+            return generatedStatAbilities.Count > 0 && LegacyStatAbilityCodes.Contains(abilityCode);
         }
         
         private void LoadManualAbilitiesFromCodes(List<string> manualAbilities)

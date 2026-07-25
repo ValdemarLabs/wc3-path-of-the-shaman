@@ -29,6 +29,7 @@ boolean array DisplayAsPercent
 integer DEqStatsCounter = 0
 integer HighestSlotNumber = 20
 integer DEqSlotFrameStride = 22
+boolean DEqTooltipShowGrantedAbilityNames = FALSE
 Table3DT DEqItemTypeDefinitionDB
 Table3DT DEqTroveDB
 integer TroveCounter = 0
@@ -1434,6 +1435,7 @@ exitwhen i > DEqStatsCounter
 endloop
 //call BJDebugMsg("BB after stats")
 
+if DEqTooltipShowGrantedAbilityNames == TRUE then
 // Abilities granted from itemtypedef
 set i = 1
 set statid = 1
@@ -1482,6 +1484,7 @@ endif
 //set sabgranted = sabgranted + GetObjectName(ia[i]) + " " + I2S(R2I(amount)) + "|n"
 set i = i +1
 endloop
+endif
 
 // Required level
 set i = DEqItemTypeDefinitionDB[iid][0].integer[0]
