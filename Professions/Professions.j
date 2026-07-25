@@ -28,6 +28,8 @@
     call Professions_StartRecipeForAi(whichCrafter, whichStation, recipeId)
     set wasCancelled = Professions_CancelUnitCraft(whichCrafter)
     set isAiCrafting = Professions_IsUnitAiCrafting(whichCrafter)
+    set bonus = Professions_GetProfessionItemBonus(whichCrafter, GNS_PROF_ALCHEMY)
+    set effectiveSkill = Professions_GetEffectiveSkill(whichCrafter, GNS_PROF_ALCHEMY)
     call Professions_ConsumeItem(whichCrafter, 'I60W', 1)
     call Professions_GetProfessionSummary(whichCrafter, GNS_PROF_ALCHEMY)
 
@@ -205,6 +207,14 @@ endfunction
 
 private function P_IsUnitAlive takes unit whichUnit returns boolean
     return whichUnit != null and GetUnitTypeId(whichUnit) != 0 and GetWidgetLife(whichUnit) > 0.405
+endfunction
+
+public function GetProfessionItemBonus takes unit whichUnit, integer professionId returns integer
+    return GNS_GetItemSkillBonus(whichUnit, professionId)
+endfunction
+
+public function GetEffectiveSkill takes unit whichUnit, integer professionId returns integer
+    return GNS_GetEffectiveSkill(whichUnit, professionId)
 endfunction
 
 private function P_GetDistanceSqBetweenUnits takes unit a, unit b returns real
@@ -1304,7 +1314,7 @@ private function P_CheckStartRequirements takes unit crafter, unit station, inte
         return false
     endif
 
-    if GNS_GetSkill(crafter, professionId) < P_RecipeRequiredSkill[recipeId] then
+    if GetEffectiveSkill(crafter, professionId) < P_RecipeRequiredSkill[recipeId] then
         if explain then
             set P_LastErrorText = "Requires " + GNS_GetProfessionName(professionId) + " " + I2S(P_RecipeRequiredSkill[recipeId]) + "."
         endif
@@ -2400,7 +2410,7 @@ public function GetProfessionSummary takes unit viewer, integer professionId ret
     local integer total = 0
     local integer skillReady = 0
     local integer materialReady = 0
-    local integer currentSkill = GNS_GetSkill(viewer, professionId)
+    local integer currentSkill = GetEffectiveSkill(viewer, professionId)
     local integer nextSkill = 100000
     local integer nextRecipe = 0
     local string result
