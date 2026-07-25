@@ -291,7 +291,7 @@ private function SUI_IsTrackedCompanion takes unit u returns boolean
         endif
         set i = i + 1
     endloop
-    return false
+    return Companions_IsControlledDisplayUnit(u)
 endfunction
 
 private function SUI_GetTrackedPetUnit takes nothing returns unit
@@ -780,7 +780,7 @@ private function SUI_IsTrackedUnit takes unit u returns boolean
         set i = i + 1
     endloop
 
-    return false
+    return Companions_IsControlledDisplayUnit(u)
 endfunction
 
 private function SUI_InvalidateDetailSummaryCache takes nothing returns nothing
@@ -1172,6 +1172,14 @@ private function SUI_GetRowCount takes nothing returns integer
         endif
         set i = i + 1
     endloop
+    set i = 1
+    loop
+        exitwhen i > Companions_GetControlledDisplayCount()
+        if SUI_IsValidUnit(Companions_GetControlledDisplayUnit(i)) then
+            set count = count + 1
+        endif
+        set i = i + 1
+    endloop
 
     set petUnit = null
     return count
@@ -1255,6 +1263,22 @@ private function SUI_UpdateRows takes player whichPlayer returns nothing
     loop
         exitwhen i > udg_CompanionCount
         set u = udg_CompanionUnit[i]
+        if SUI_IsValidUnit(u) then
+            if skipped < listStart then
+                set skipped = skipped + 1
+            elseif rowIndex <= SUI_VISIBLE_ROWS then
+                set SUI_RowUnit[rowIndex] = u
+                set SUI_RowKind[rowIndex] = SUI_KIND_COMPANION
+                call SUI_UpdateRowFrame(whichPlayer, rowIndex, u, SUI_KIND_COMPANION)
+                set rowIndex = rowIndex + 1
+            endif
+        endif
+        set i = i + 1
+    endloop
+    set i = 1
+    loop
+        exitwhen i > Companions_GetControlledDisplayCount()
+        set u = Companions_GetControlledDisplayUnit(i)
         if SUI_IsValidUnit(u) then
             if skipped < listStart then
                 set skipped = skipped + 1
