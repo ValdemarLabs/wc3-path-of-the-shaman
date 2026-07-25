@@ -15,9 +15,11 @@
 
     How to install:
     Requires `Table`, `Events`, and `ShamanCommon`.
+    Optionally integrates with `TerrainDamage` so the active wolf form is tracked
+    instead of the hidden original hero.
 
 **/
-library ShamanGhostWolf initializer Init requires Table, Events, ShamanCommon
+library ShamanGhostWolf initializer Init requires Table, Events, ShamanCommon, optional TerrainDamage
 
 globals
     private constant real MORPH_DELAY = 1.00
@@ -196,6 +198,10 @@ private function FinishMorphToWolf takes unit original, integer heroSlot, intege
     call QueueUnitAnimation(wolf, "attack")
     call QueueUnitAnimation(wolf, "stand")
     call ShamanCommon_TransferHeroState(original, wolf)
+    static if LIBRARY_TerrainDamage then
+        call TerrainDamage_RemoveUnit(original)
+        call TerrainDamage_AddUnit(wolf)
+    endif
     call ShowUnit(original, false)
     call PauseUnit(original, true)
     call ApplyWolfBonuses(original, wolf, rank)
@@ -222,6 +228,10 @@ private function FinishReturnToHero takes unit wolf, integer heroSlot returns no
     call BlzSetUnitFacingEx(original, GetUnitFacing(wolf))
     call ShamanCommon_TransferHeroState(wolf, original)
     call ClearWolfBonuses(wolf)
+    static if LIBRARY_TerrainDamage then
+        call TerrainDamage_RemoveUnit(wolf)
+        call TerrainDamage_AddUnit(original)
+    endif
     call RemoveUnit(wolf)
     call ShowUnit(original, true)
     call PauseUnit(original, false)
@@ -305,7 +315,7 @@ endfunction
 private function CastBiteBurst takes unit caster returns nothing
     local integer rank = ShamanCommon_GetAbilityRank(caster, ShamanCommon_ABILITY_GHOST_WOLF_BITE)
     local integer damageAbility = GetBiteDamageAbility(rank)
-    local real amount = ShamanCommon_GetDamageAmount(caster, ShamanCommon_ABILITY_GHOST_WOLF_BITE, AbilitiesPlayerInit_VALUE_BASE, ShamanCommon_STAT_STRENGTH, 1.50)
+    local real amount = ShamanCommon_GetHybridDamageAmount(caster, ShamanCommon_ABILITY_GHOST_WOLF_BITE, AbilitiesPlayerInit_VALUE_BASE, ShamanCommon_STAT_STRENGTH, 1.10, ShamanCommon_STAT_AGILITY, 0.65)
     local real x = ShamanCommon_PolarX(GetUnitX(caster), BITE_DUMMY_OFFSET, GetUnitFacing(caster))
     local real y = ShamanCommon_PolarY(GetUnitY(caster), BITE_DUMMY_OFFSET, GetUnitFacing(caster))
     local unit dummy = ShamanCommon_CreateTimedDummy(GetOwningPlayer(caster), ShamanCommon_DUMMY_BITE, x, y, bj_UNIT_FACING, BITE_DUMMY_LIFETIME)
