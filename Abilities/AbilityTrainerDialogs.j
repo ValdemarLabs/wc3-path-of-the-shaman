@@ -341,8 +341,7 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
         set ATD_SelectedTrainer = trainer
         set ATD_SelectedHero = hero
         call ATD_ConfigureTrainerCamera(trainer, hero)
-        call QuestGiver_StartConfiguredDialogEntryTransition(trainer, hero, false, false, ATD_CINEMATIC, "AbilityTrainerDialogs_ContinueToDialogAfterSelection")
-        call ATD_StartTrainerCamera(trainer, hero)
+        call QuestGiver_StartConfiguredDialogEntryTransition(trainer, hero, false, ATD_USE_DIALOG_CAMERA, ATD_CINEMATIC, "AbilityTrainerDialogs_ContinueToDialogAfterSelection")
 
         set trainer = null
         set hero = null
