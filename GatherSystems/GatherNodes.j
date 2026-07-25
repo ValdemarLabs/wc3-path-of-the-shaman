@@ -49,6 +49,14 @@ globals
     // Spawn attempt retries for random placement
     constant integer GN_RANDOM_SPAWN_ATTEMPTS = 10
 
+    // Water classification for nodes that must spawn in water.
+    constant integer GN_WATER_TYPE_NONE = 0
+    constant integer GN_WATER_TYPE_SHALLOW = 1
+    constant integer GN_WATER_TYPE_DEEP = 2
+    constant real GN_WATER_DEPTH_SHALLOW = 64.00
+    private constant integer GN_WATER_DEPTH_PLATFORM = 'OTip'
+    private constant real GN_WATER_DEPTH_PLATFORM_HEIGHT = 2.94794
+
     // Random spawn occupancy guards
     constant real GN_ITEM_SPAWN_BLOCK_RADIUS = 1000.0
     constant real GN_UNIT_SPAWN_BLOCK_RADIUS = 1000.0
@@ -105,6 +113,9 @@ globals
     private integer GN_DebugPingHead = 0
     private integer GN_DebugPingTail = 0
     private boolean GN_DebugPingActive = false
+
+    // Reused by water-depth probing to avoid allocating locations per spawn attempt.
+    private location GN_WaterDepthProbePoint = null
 endglobals
 
 // ============================================================
@@ -232,6 +243,57 @@ function GN_IsWaterLikeTerrain takes real x, real y returns boolean
     // Use floatability as the safe water check here.
     // Amphibious pathing is too broad for this filter and can match normal land.
     return not IsTerrainPathable(x, y, PATHING_TYPE_FLOATABILITY)
+endfunction
+
+function GN_GetWaterDepth takes real x, real y returns real
+    local real z
+    local destructable d = null
+
+    if not GN_IsWaterLikeTerrain(x, y) then
+        return 0.00
+    endif
+    if GN_WaterDepthProbePoint == null then
+        set GN_WaterDepthProbePoint = Location(0.00, 0.00)
+    endif
+
+    call MoveLocation(GN_WaterDepthProbePoint, x, y)
+    set z = GetLocationZ(GN_WaterDepthProbePoint)
+    set d = CreateDestructable(GN_WATER_DEPTH_PLATFORM, x, y, 0.00, 10.00, 0)
+    if d == null then
+        set d = null
+        return 0.00
+    endif
+
+    call MoveLocation(GN_WaterDepthProbePoint, x, y)
+    set z = z + GN_WATER_DEPTH_PLATFORM_HEIGHT - GetLocationZ(GN_WaterDepthProbePoint)
+    call RemoveDestructable(d)
+    set d = null
+
+    if z >= 0.00 then
+        return z
+    endif
+
+    return 0.00
+endfunction
+
+function GN_GetWaterType takes real x, real y returns integer
+    local real depth = GN_GetWaterDepth(x, y)
+
+    if depth == 0.00 then
+        return GN_WATER_TYPE_NONE
+    elseif depth < GN_WATER_DEPTH_SHALLOW then
+        return GN_WATER_TYPE_SHALLOW
+    endif
+
+    return GN_WATER_TYPE_DEEP
+endfunction
+
+function GN_IsShallowWaterUnwalkable takes real x, real y returns boolean
+    if GN_IsPointPathable(x, y) then
+        return false
+    endif
+
+    return GN_GetWaterType(x, y) == GN_WATER_TYPE_SHALLOW
 endfunction
 
 function GN_IsBlockedGatherTerrainType takes real x, real y returns boolean
