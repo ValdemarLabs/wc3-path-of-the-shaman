@@ -48,7 +48,7 @@ private function HandleSpellEffect takes nothing returns nothing
     local real y
     if GetSpellAbilityId() == ShamanCommon_ABILITY_FROST_SHOCK and target != null then
         set rank = ShamanCommon_GetAbilityRank(caster, ShamanCommon_ABILITY_FROST_SHOCK)
-        set amount = ShamanCommon_GetDamageAmount(caster, ShamanCommon_ABILITY_FROST_SHOCK, AbilitiesPlayerInit_VALUE_BASE, ShamanCommon_STAT_NONE, 0.00)
+        set amount = ShamanCommon_GetDamageAmount(caster, ShamanCommon_ABILITY_FROST_SHOCK, AbilitiesPlayerInit_VALUE_BASE, ShamanCommon_STAT_INTELLIGENCE, 1.25)
         set x = GetUnitX(target)
         set y = GetUnitY(target)
         call UnitDamageTarget(caster, target, amount, true, false, ATTACK_TYPE_MAGIC, DAMAGE_TYPE_NORMAL, null)
