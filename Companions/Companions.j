@@ -288,6 +288,10 @@ private function IsControlGroupUnit takes unit u returns boolean
     return false
 endfunction
 
+private function IsPetControlUnit takes unit u returns boolean
+    return u != null and udg_TamedUnits != null and IsUnitInGroup(u, udg_TamedUnits)
+endfunction
+
 private function IsValidControlTarget takes unit u returns boolean
     return IsAliveUnit(u) and IsControlGroupUnit(u)
 endfunction
@@ -635,7 +639,7 @@ private function RegisterControlledInternal takes unit controlledUnit, unit lead
     set CompanionSuspended[unitId] = 0
     set CompanionIcon.string[unitId] = icon
 
-    if registered then
+    if registered or IsPetControlUnit(controlledUnit) then
         call RemoveControlledDisplayUnit(controlledUnit)
     else
         call AddControlledDisplayUnit(controlledUnit)
@@ -2708,6 +2712,9 @@ endfunction
 
 public function IsControlledDisplayUnit takes unit controlledUnit returns boolean
     if controlledUnit == null or ControlledDisplayIndex == 0 then
+        return false
+    endif
+    if IsPetControlUnit(controlledUnit) then
         return false
     endif
     return ControlledDisplayIndex.integer[GetHandleId(controlledUnit)] > 0
