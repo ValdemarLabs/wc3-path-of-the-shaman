@@ -5,7 +5,8 @@
     Version:
 
     Description:
-    Bloodlust group cast and rank 3+ crit bonus converted from GUI.
+    Bloodlust group cast and rank 3+ Agility-scaled crit bonus converted from
+    GUI.
 
     Credits:
     - Old GUI "Bloodlust Cast" and "Bloodlust Crit Loop" triggers
@@ -55,15 +56,22 @@ private function HasAnyCritBloodlust takes unit target returns boolean
     return GetUnitAbilityLevel(target, ShamanCommon_BUFF_BLOODLUST_3) > 0 or GetUnitAbilityLevel(target, ShamanCommon_BUFF_BLOODLUST_4) > 0 or GetUnitAbilityLevel(target, ShamanCommon_BUFF_BLOODLUST_5) > 0
 endfunction
 
-private function GetCritBonus takes integer rank returns integer
+private function GetCritBonus takes unit caster, integer rank returns integer
+    local integer bonus = 0
     if rank == 3 then
-        return 5
+        set bonus = 5
     elseif rank == 4 then
-        return 10
+        set bonus = 10
     elseif rank >= 5 then
-        return 15
+        set bonus = 15
     endif
-    return 0
+    if bonus > 0 then
+        set bonus = bonus + R2I(ShamanCommon_GetStat(caster, ShamanCommon_STAT_AGILITY) / 25.00)
+        if bonus > 25 then
+            set bonus = 25
+        endif
+    endif
+    return bonus
 endfunction
 
 private function TrackUnit takes unit target returns nothing
@@ -108,10 +116,10 @@ private function TickCritBonuses takes nothing returns nothing
     set target = null
 endfunction
 
-private function ApplyCritBonus takes unit target, integer rank returns nothing
+private function ApplyCritBonus takes unit caster, unit target, integer rank returns nothing
     local integer handleId = GetHandleId(target)
     local integer customValue = GetUnitUserData(target)
-    local integer crit = GetCritBonus(rank)
+    local integer crit = GetCritBonus(caster, rank)
     if target == null or customValue <= 0 or crit <= 0 then
         return
     endif
@@ -134,7 +142,7 @@ private function CastBloodlustOnTarget takes unit caster, unit target, integer r
     call UnitAddAbility(dummy, ShamanCommon_ABILITY_BLOODLUST_DUMMY)
     call SetUnitAbilityLevel(dummy, ShamanCommon_ABILITY_BLOODLUST_DUMMY, rank)
     call IssueTargetOrder(dummy, "bloodlust", target)
-    call ApplyCritBonus(target, rank)
+    call ApplyCritBonus(caster, target, rank)
     set dummy = null
 endfunction
 
