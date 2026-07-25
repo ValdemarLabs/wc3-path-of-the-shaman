@@ -28,6 +28,7 @@ string array DEqStatNames
 boolean array DisplayAsPercent
 integer DEqStatsCounter = 0
 integer HighestSlotNumber = 20
+integer DEqSlotFrameStride = 22
 Table3DT DEqItemTypeDefinitionDB
 Table3DT DEqTroveDB
 integer TroveCounter = 0
@@ -720,10 +721,10 @@ endfunction
 
 
 function PIDDEqSlotFrame2FrameId takes integer pid, framehandle fr returns integer
-// frame ID and slot ID are 1-20 for equipment
-// This does NOT add the +20*pid to the return, you have to add that outside
+// frame ID and slot ID are 1-HighestSlotNumber for equipment
+// This does NOT add the +DEqSlotFrameStride*pid to the return, you have to add that outside
 local integer loopi = 1
-local integer dexter = 20*pid
+local integer dexter = DEqSlotFrameStride*pid
 loop
 exitwhen fr == EquipmentSlotButtonFrame[dexter+loopi]
 set loopi = loopi + 1
@@ -1829,8 +1830,8 @@ endfunction
 function DEqSlotDataIntoFrame takes integer pid, integer uhndl, integer slotId returns nothing
 // Local player stuff has to be done outside
 local integer eqid = DInvUnitHandleDB[uhndl][0].integer[3]
-local integer frameId = pid*20 + slotId
-// frame is the same as slotId + pid*20
+local integer frameId = pid*DEqSlotFrameStride + slotId
+// frame is the same as slotId + pid*DEqSlotFrameStride
 local item it = EQIDDB[eqid][4].item[slotId]
 local integer iid = GetItemTypeId(it)
 

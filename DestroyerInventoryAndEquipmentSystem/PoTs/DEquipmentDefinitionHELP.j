@@ -5,6 +5,7 @@
 4 - Back					10 - Belt
 5 - Chest					11 - Legs
 6 - Bracer					12 - Boots
+17 - Trinket1				18 - Trinket2
 19 - Main Hand				20 - Offhand ( 2h weapons dummy to this slot )
 */
 

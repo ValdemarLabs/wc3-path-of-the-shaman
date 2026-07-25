@@ -29,8 +29,8 @@ Slots:
 5 - Chest					11 - Legs
 6 - Bracer					12 - Boots
 Configure this! You can enable, disable 14 equipment slots in total. Maybe in your game you only want to have helm + armor + weapon + ring + boots? Have it your way.
-Slots 13, 14, 15, 16, 17, 18 are not defined. I think even 14 types of slots are probably too much for a Warcraft III map, unless you are doing some really long ARPG or campaign, but you do you.
-The system itself supports 14 items out of the box, and is programmed to draw 6 more if you enable slots 13-18
+Slots 13, 14, 15, 16 are not defined. I think even 14 types of slots are probably too much for a Warcraft III map, unless you are doing some really long ARPG or campaign, but you do you.
+17 - Trinket1				18 - Trinket2
 19 - Main Hand				20 - Offhand ( 2h weapons dummy to this slot )
 */
 
@@ -41,7 +41,7 @@ framehandle array EquipmentBackDropFrame[24]
 real DEqBackDropTopLeftX = 0.04
 real DEqBackDropTopLeftY = 0.56
 real DEqBackDropBottomRightX = 0.3
-real DEqBackDropBottomRightY = 0.2
+real DEqBackDropBottomRightY = 0.155
 framehandle array EquipmentAvgItemLevelText[24]
 real DEqILvlTextTopLeftX = 0.0
 real DEqILvlTextTopLeftY = 0.0
@@ -59,9 +59,9 @@ real DEqHeroIconBottomRightY = 0.0
 framehandle array DEqCStatSheet[24]
 
 //CONFIGURE THIS at the very bottom of this code inside "private function Init"
-framehandle array EquipmentSlotButtonFrame[481]
-framehandle array EquipmentSlotButtonIconFrame[481]
-framehandle array EquipmentSlotButtonModelFrame[481]
+framehandle array EquipmentSlotButtonFrame[529]
+framehandle array EquipmentSlotButtonIconFrame[529]
+framehandle array EquipmentSlotButtonModelFrame[529]
 framehandle array DEqHeroNameFrame[21]
 boolean array DEqEnabledSlots[21]
 string array DEqSlotName[21]
@@ -72,11 +72,11 @@ real array DEqSlotBotRightX[21]
 real array DEqSlotBotRightY[21]
 
 // Tooltip
-framehandle array DEqTooltipBackdropFrame[481]
-framehandle array DEqTooltipText[481]
-framehandle array DEqTooltipItemIconFrame[481]
-framehandle array DEqTooltipGoldIconFrame[481]
-framehandle array DEqInventoryTooltipSeparatorFrame[481]
+framehandle array DEqTooltipBackdropFrame[529]
+framehandle array DEqTooltipText[529]
+framehandle array DEqTooltipItemIconFrame[529]
+framehandle array DEqTooltipGoldIconFrame[529]
+framehandle array DEqInventoryTooltipSeparatorFrame[529]
 
 //CONFIGURE THIS
 boolean DEqRandomModifierSystemEnabled = TRUE
@@ -227,11 +227,19 @@ endfunction
 
 function DEqSlotNameToId takes string name returns integer
 local integer i = 1
+local string lowerName = StringCase(name, false)
 loop
-exitwhen DEqSlotName[i] == name or i > HighestSlotNumber
+exitwhen i > HighestSlotNumber or StringCase(DEqSlotName[i], false) == lowerName
 set i = i + 1
 endloop
 if i > HighestSlotNumber then
+    if lowerName == "mainhand" or lowerName == "main hand" then
+    return 19
+    elseif lowerName == "offhand" or lowerName == "off hand" then
+    return 20
+    elseif lowerName == "trinket" then
+    return 17
+    endif
 call BJDebugMsg("Wrong item definition. No such slot name: "+name)
 return 1
 else
@@ -242,7 +250,16 @@ endfunction
 
 
 function DEqItemTypeDefineAllowedSlotByName takes integer iid, string name returns nothing
+local string lowerName = StringCase(name, false)
+if lowerName == "ring" then
+call DEqItemTypeDefineAllowedSlotId(iid, 8)
+call DEqItemTypeDefineAllowedSlotId(iid, 9)
+elseif lowerName == "trinket" then
+call DEqItemTypeDefineAllowedSlotId(iid, 17)
+call DEqItemTypeDefineAllowedSlotId(iid, 18)
+else
 call DEqItemTypeDefineAllowedSlotId(iid, DEqSlotNameToId(name))
+endif
 endfunction
 
 
@@ -320,7 +337,7 @@ call CloseDInventory(pid)
     call CloseDEqUI(pid)
 
 else
-set frameId = frameId + pid*20
+set frameId = frameId + pid*DEqSlotFrameStride
 if DEqCurrentSlotIdActive[pid] < 0 then
 // no current DEq slot active
     if SourceDItemSlotIdActive[pid] < 0 then
@@ -511,7 +528,7 @@ call BlzFrameSetEnable(DEqCStatSheet[pid], FALSE)
 loop
 
 if DEqEnabledSlots[j] == TRUE then
-set currInt = pid*20+j
+set currInt = pid*DEqSlotFrameStride+j
 ////call BJDebugMsg("drawing DEq: "+I2S(currInt))
 set EquipmentSlotButtonFrame[currInt] = BlzCreateFrameByType("GLUEBUTTON", "DEqSlot"+I2S(currInt)+"p"+I2S(pid), EquipmentBackDropFrame[pid], "ScoreScreenTabButtonTemplate", 0)
 call BlzFrameSetAbsPoint(EquipmentSlotButtonFrame[currInt], FRAMEPOINT_TOPLEFT, DEqSlotTopLeftX[j], DEqSlotTopLeftY[j])
@@ -804,34 +821,30 @@ set DEqSlotBotRightX[16] = 0
 set DEqSlotBotRightY[16] = 0
 */
 
-set DEqEnabledSlots[17] = FALSE
-/*
-set DEqSlotName[17] = ""
-set DEqSlotIconPath[17] = "ReplaceableTextures\\PassiveButtons\\.blp"
-set DEqSlotTopLeftX[17] = 0
-set DEqSlotTopLeftY[17] = 0
-set DEqSlotBotRightX[17] = 0
-set DEqSlotBotRightY[17] = 0
-*/
+set DEqEnabledSlots[17] = TRUE
+set DEqSlotName[17] = "Trinket1"
+set DEqSlotIconPath[17] = "ReplaceableTextures\\PassiveButtons\\PASEquipmentSlotTrinket.blp"
+set DEqSlotTopLeftX[17] = DEqSlotTopLeftX[1]
+set DEqSlotTopLeftY[17] = DEqSlotTopLeftY[1]-0.252
+set DEqSlotBotRightX[17] = DEqSlotBotRightX[1]
+set DEqSlotBotRightY[17] = DEqSlotBotRightY[1]-0.252
 
-set DEqEnabledSlots[18] = FALSE
-/*
-set DEqSlotName[18] = ""
+set DEqEnabledSlots[18] = TRUE
+set DEqSlotName[18] = "Trinket2"
 set DEqSlotIconPath[18] = "ReplaceableTextures\\PassiveButtons\\PASEquipmentSlotTrinket.blp"
-set DEqSlotTopLeftX[18] = 0
-set DEqSlotTopLeftY[18] = 0
-set DEqSlotBotRightX[18] = 0
-set DEqSlotBotRightY[18] = 0
-*/
+set DEqSlotTopLeftX[18] = DEqSlotTopLeftX[7]
+set DEqSlotTopLeftY[18] = DEqSlotTopLeftY[17]
+set DEqSlotBotRightX[18] = DEqSlotBotRightX[7]
+set DEqSlotBotRightY[18] = DEqSlotBotRightY[17]
 
 //Warning: Slot 19's enable / disable status should always be the same as 20's, unless you rewrite the code about 2h weapons / dual wield
 set DEqEnabledSlots[19] = TRUE
 set DEqSlotName[19] = "MainHand"
 set DEqSlotIconPath[19] = "ReplaceableTextures\\PassiveButtons\\PASEquipmentSlotMainHand.blp"
 set DEqSlotTopLeftX[19] = DEqSlotTopLeftX[1]
-set DEqSlotTopLeftY[19] = DEqSlotTopLeftY[1]-0.252
+set DEqSlotTopLeftY[19] = DEqSlotTopLeftY[17]-0.042
 set DEqSlotBotRightX[19] = DEqSlotBotRightX[1]
-set DEqSlotBotRightY[19] = DEqSlotBotRightY[1]-0.252
+set DEqSlotBotRightY[19] = DEqSlotBotRightY[17]-0.042
 
 //Warning: Slot 19's enable / disable status should always be the same as 20's, unless you rewrite the code about 2h weapons / dual wield
 set DEqEnabledSlots[20] = TRUE
@@ -883,7 +896,7 @@ set DEqStatNames[17] = "Ranged DMG Pct"
 set DisplayAsPercent[17] = TRUE
 set DEqStatNames[18] = "Cleave Pct"
 set DisplayAsPercent[18] = TRUE
-set DEqStatNames[19] = "Cleave Damage"
+set DEqStatNames[19] = "Cleave Area"
 set DEqStatNames[20] = "Attack Speed"
 set DisplayAsPercent[20] = TRUE
 set DEqStatNames[21] = "Attack Range"
