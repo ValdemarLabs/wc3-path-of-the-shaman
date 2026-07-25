@@ -284,6 +284,9 @@ private function SUI_IsTrackedCompanion takes unit u returns boolean
     if not SUI_IsValidUnit(u) then
         return false
     endif
+    if Pet_IsPetUnit(u) then
+        return false
+    endif
     loop
         exitwhen i > udg_CompanionCount
         if udg_CompanionUnit[i] == u then
@@ -291,6 +294,16 @@ private function SUI_IsTrackedCompanion takes unit u returns boolean
         endif
         set i = i + 1
     endloop
+    return Companions_IsControlledDisplayUnit(u)
+endfunction
+
+private function SUI_IsControlledDisplayCompanion takes unit u returns boolean
+    if not SUI_IsValidUnit(u) then
+        return false
+    endif
+    if Pet_IsPetUnit(u) then
+        return false
+    endif
     return Companions_IsControlledDisplayUnit(u)
 endfunction
 
@@ -771,6 +784,9 @@ private function SUI_IsTrackedUnit takes unit u returns boolean
     if u == udg_TamedUnit then
         return true
     endif
+    if Pet_IsPetUnit(u) then
+        return true
+    endif
 
     loop
         exitwhen i > udg_CompanionCount
@@ -780,7 +796,7 @@ private function SUI_IsTrackedUnit takes unit u returns boolean
         set i = i + 1
     endloop
 
-    return Companions_IsControlledDisplayUnit(u)
+    return SUI_IsControlledDisplayCompanion(u)
 endfunction
 
 private function SUI_InvalidateDetailSummaryCache takes nothing returns nothing
@@ -1154,6 +1170,7 @@ private function SUI_GetRowCount takes nothing returns integer
     local integer count = 0
     local integer i = 1
     local unit petUnit = SUI_GetTrackedPetUnit()
+    local unit u = null
 
     if SUI_IsPlayerOwnedMainHero(udg_Nazgrek) then
         set count = count + 1
@@ -1175,12 +1192,14 @@ private function SUI_GetRowCount takes nothing returns integer
     set i = 1
     loop
         exitwhen i > Companions_GetControlledDisplayCount()
-        if SUI_IsValidUnit(Companions_GetControlledDisplayUnit(i)) then
+        set u = Companions_GetControlledDisplayUnit(i)
+        if SUI_IsControlledDisplayCompanion(u) then
             set count = count + 1
         endif
         set i = i + 1
     endloop
 
+    set u = null
     set petUnit = null
     return count
 endfunction
@@ -1279,7 +1298,7 @@ private function SUI_UpdateRows takes player whichPlayer returns nothing
     loop
         exitwhen i > Companions_GetControlledDisplayCount()
         set u = Companions_GetControlledDisplayUnit(i)
-        if SUI_IsValidUnit(u) then
+        if SUI_IsControlledDisplayCompanion(u) then
             if skipped < listStart then
                 set skipped = skipped + 1
             elseif rowIndex <= SUI_VISIBLE_ROWS then
