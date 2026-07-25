@@ -33,6 +33,7 @@ globals
 
     private constant real PF_START_RANGE = 450.00
     private constant real PF_READY_RANGE = 170.00
+    private constant real PF_CANCEL_RANGE = 300.00
     private constant real PF_APPROACH_OFFSET = 145.00
     private constant real PF_MOVE_TIMEOUT = 10.00
     private constant real PF_CAST_DURATION = 10.00
@@ -971,6 +972,13 @@ private function PF_UpdateJob takes integer pid returns nothing
     endif
 
     if PF_JobStarted[pid] then
+        if not PF_IsNearPool(fisher, pool, PF_CANCEL_RANGE) then
+            call PF_StopJob(pid, FishingInterruptedText, true, true)
+            set fisher = null
+            set pool = null
+            return
+        endif
+
         set PF_Elapsed[pid] = PF_Elapsed[pid] + PF_TICK_INTERVAL
         set PF_AnimationElapsed[pid] = PF_AnimationElapsed[pid] + PF_TICK_INTERVAL
         if PF_AnimationElapsed[pid] >= PF_ANIMATION_LOOP_PERIOD then
@@ -1287,13 +1295,13 @@ private function PF_CreateFrames takes nothing returns nothing
     call BlzFrameSetEnable(PF_UIReelButton, false)
 
     set PF_UIBaitButton = BlzCreateFrameByType("GLUETEXTBUTTON", "FishingUIBaitButton", PF_UIParent, "ScriptDialogButton", 0)
-    call BlzFrameSetPoint(PF_UIBaitButton, FRAMEPOINT_BOTTOMLEFT, PF_UIBarBackdrop, FRAMEPOINT_TOPLEFT, 0.190, 0.005)
-    call BlzFrameSetSize(PF_UIBaitButton, 0.052, 0.024)
+    call BlzFrameSetPoint(PF_UIBaitButton, FRAMEPOINT_BOTTOM, PF_UIReelButton, FRAMEPOINT_TOP, 0.000, 0.006)
+    call BlzFrameSetSize(PF_UIBaitButton, 0.055, 0.024)
     call BlzFrameSetText(PF_UIBaitButton, BaitButtonText)
     call BlzFrameSetEnable(PF_UIBaitButton, false)
 
     set PF_UICancelButton = BlzCreateFrameByType("GLUETEXTBUTTON", "FishingUICancelButton", PF_UIParent, "ScriptDialogButton", 0)
-    call BlzFrameSetPoint(PF_UICancelButton, FRAMEPOINT_TOPRIGHT, PF_UIParent, FRAMEPOINT_TOPRIGHT, -0.008, -0.034)
+    call BlzFrameSetPoint(PF_UICancelButton, FRAMEPOINT_BOTTOM, PF_UIBaitButton, FRAMEPOINT_TOP, 0.000, 0.006)
     call BlzFrameSetSize(PF_UICancelButton, 0.060, 0.024)
     call BlzFrameSetText(PF_UICancelButton, CancelButtonText)
 
