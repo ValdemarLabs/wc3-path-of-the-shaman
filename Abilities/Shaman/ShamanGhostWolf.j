@@ -15,11 +15,13 @@
 
     How to install:
     Requires `Table`, `Events`, and `ShamanCommon`.
+    Optionally integrates with `Companions` so focused companions and pets keep
+    following the active hero form through the morph transition.
     Optionally integrates with `TerrainDamage` so the active wolf form is tracked
     instead of the hidden original hero.
 
 **/
-library ShamanGhostWolf initializer Init requires Table, Events, ShamanCommon, optional TerrainDamage
+library ShamanGhostWolf initializer Init requires Table, Events, ShamanCommon, optional Companions, optional TerrainDamage
 
 globals
     private constant real MORPH_DELAY = 1.00
@@ -32,6 +34,8 @@ globals
     private Table TimerRankByHandle = 0
     private Table WolfCritByHandle = 0
     private Table WolfDodgeByHandle = 0
+    private group RetargetFocusGroup = null
+    private unit RetargetNewLeader = null
 endglobals
 
 private function EnsureState takes nothing returns nothing
@@ -41,6 +45,64 @@ private function EnsureState takes nothing returns nothing
         set TimerRankByHandle = Table.create()
         set WolfCritByHandle = Table.create()
         set WolfDodgeByHandle = Table.create()
+    endif
+endfunction
+
+private function RetargetFocusedControlledUnit takes unit controlledUnit returns nothing
+    if controlledUnit == null then
+        return
+    endif
+    if RetargetNewLeader == null or RetargetFocusGroup == null then
+        return
+    endif
+    if GetUnitTypeId(controlledUnit) == 0 then
+        return
+    endif
+    if IsUnitInGroup(controlledUnit, RetargetFocusGroup) then
+        static if LIBRARY_Companions then
+            call Companions_SetLeader(controlledUnit, RetargetNewLeader)
+        endif
+    endif
+endfunction
+
+private function RetargetFocusedControlledEnum takes nothing returns nothing
+    call RetargetFocusedControlledUnit(GetEnumUnit())
+endfunction
+
+private function RetargetFocusedFollowers takes integer heroSlot, unit newLeader returns nothing
+    local integer displayIndex = 1
+    local integer displayCount = 0
+
+    static if LIBRARY_Companions then
+        if newLeader == null then
+            return
+        endif
+
+        set displayCount = Companions_GetControlledDisplayCount()
+        if heroSlot == ShamanCommon_HERO_SLOT_ZULKIS then
+            set RetargetFocusGroup = udg_CompanionFocusZulkis
+        else
+            set RetargetFocusGroup = udg_CompanionFocusNazgrek
+        endif
+
+        if RetargetFocusGroup == null then
+            return
+        endif
+
+        set RetargetNewLeader = newLeader
+        if udg_Companion_Group != null then
+            call ForGroup(udg_Companion_Group, function RetargetFocusedControlledEnum)
+        endif
+        if udg_TamedUnits != null then
+            call ForGroup(udg_TamedUnits, function RetargetFocusedControlledEnum)
+        endif
+        loop
+            exitwhen displayIndex > displayCount
+            call RetargetFocusedControlledUnit(Companions_GetControlledDisplayUnit(displayIndex))
+            set displayIndex = displayIndex + 1
+        endloop
+        set RetargetNewLeader = null
+        set RetargetFocusGroup = null
     endif
 endfunction
 
@@ -195,6 +257,7 @@ private function FinishMorphToWolf takes unit original, integer heroSlot, intege
     set y = GetUnitY(original)
     set wolf = CreateUnit(owner, GetWolfType(heroSlot), x, y, GetUnitFacing(original))
     call ShamanCommon_SetHeroBySlot(heroSlot, wolf)
+    call RetargetFocusedFollowers(heroSlot, wolf)
     call QueueUnitAnimation(wolf, "attack")
     call QueueUnitAnimation(wolf, "stand")
     call ShamanCommon_TransferHeroState(original, wolf)
@@ -237,6 +300,7 @@ private function FinishReturnToHero takes unit wolf, integer heroSlot returns no
     call PauseUnit(original, false)
     call SetUnitPathing(original, true)
     call ShamanCommon_SetHeroBySlot(heroSlot, original)
+    call RetargetFocusedFollowers(heroSlot, original)
     call SetMorphOriginal(heroSlot, null)
     call QueueUnitAnimation(original, "spell slam")
     call QueueUnitAnimation(original, "stand")
