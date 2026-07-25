@@ -6,7 +6,8 @@
 
     Description:
     Delayed elemental channel summons converted from GUI. Summoned elementals
-    are controlled companions but do not consume normal companion party slots.
+    are controlled companions, gain Intelligence scaling, and do not consume
+    normal companion party slots.
 
     Credits:
     - Old GUI "Summon Elemental" triggers
@@ -93,16 +94,18 @@ endfunction
 
 private function ApplyElementalTalent takes unit hero, unit elemental returns nothing
     local integer bonus = ShamanCommon_GetSpecialBonusValue(hero, ShamanCommon_ABILITY_SUMMON_ELEMENTAL)
+    local real intelligence = ShamanCommon_GetStat(hero, ShamanCommon_STAT_INTELLIGENCE)
+    local real talentMultiplier = 1.00 + I2R(bonus) * 0.10
     local integer maxLife
     local integer damage
-    if bonus <= 0 or elemental == null then
+    if elemental == null then
         return
     endif
     set maxLife = BlzGetUnitMaxHP(elemental)
     set damage = BlzGetUnitBaseDamage(elemental, 0)
-    call BlzSetUnitMaxHP(elemental, R2I(I2R(maxLife) * (1.00 + I2R(bonus) * 0.10)))
+    call BlzSetUnitMaxHP(elemental, R2I(I2R(maxLife) * talentMultiplier + intelligence * 6.00))
     call SetUnitState(elemental, UNIT_STATE_LIFE, GetUnitState(elemental, UNIT_STATE_MAX_LIFE))
-    call BlzSetUnitBaseDamage(elemental, R2I(I2R(damage) * (1.00 + I2R(bonus) * 0.10)), 0)
+    call BlzSetUnitBaseDamage(elemental, R2I(I2R(damage) * talentMultiplier + intelligence * 0.45), 0)
 endfunction
 
 private function SpawnPendingElemental takes nothing returns nothing
