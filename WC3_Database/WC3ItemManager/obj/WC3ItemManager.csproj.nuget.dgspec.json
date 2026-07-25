@@ -10,7 +10,7 @@
         "projectUniqueName": "H:\\Pelit\\PotS_JASS\\WC3_Database\\WC3ItemManager\\WC3ItemManager.csproj",
         "projectName": "WC3ItemManager",
         "projectPath": "H:\\Pelit\\PotS_JASS\\WC3_Database\\WC3ItemManager\\WC3ItemManager.csproj",
-        "packagesPath": "C:\\Users\\Valtteri\\.nuget\\packages",
+        "packagesPath": "C:\\Users\\Valtteri\\.nuget\\packages\\",
         "outputPath": "H:\\Pelit\\PotS_JASS\\WC3_Database\\WC3ItemManager\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
@@ -72,19 +72,19 @@
           "downloadDependencies": [
             {
               "name": "Microsoft.AspNetCore.App.Ref",
-              "version": "[8.0.28, 8.0.28]"
+              "version": "[8.0.29, 8.0.29]"
             },
             {
               "name": "Microsoft.NETCore.App.Host.win-x64",
-              "version": "[8.0.28, 8.0.28]"
+              "version": "[8.0.29, 8.0.29]"
             },
             {
               "name": "Microsoft.NETCore.App.Ref",
-              "version": "[8.0.28, 8.0.28]"
+              "version": "[8.0.29, 8.0.29]"
             },
             {
               "name": "Microsoft.WindowsDesktop.App.Ref",
-              "version": "[8.0.28, 8.0.28]"
+              "version": "[8.0.29, 8.0.29]"
             }
           ],
           "frameworkReferences": {
@@ -95,7 +95,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.302/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
