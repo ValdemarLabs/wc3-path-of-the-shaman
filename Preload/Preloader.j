@@ -6,27 +6,28 @@
 
     Description:
     Runs the map preload flow immediately after the loading screen. It keeps
-    the intro/game start trigger from being executed until sound, music, and
-    ability preloading have completed.
+    player start setup from being executed until sound, music, and ability
+    preloading have completed.
 
     Credits:
 
     How to install:
     Import after PreloadAbilities.j, ImagesUI.j, RegionTitlesLight.j,
-    ExSound.j, ExMusic.j, and StatsLiteUI.j. Disable the old GUI preload
-    triggers so this library owns the elapsed-time 0.00 preload flow. Game
-    Start should not also fire from its own elapsed-time event; this library
-    executes gg_trg_Game_Start when preloading is done. Ability preloading
-    creates a temporary AbilityLoader unit from rawcode 'h60N' and removes it
-    immediately after ability data is loaded. Saved-game loading runs
-    sound/music preload only and does not execute Game Start.
+    ExSound.j, ExMusic.j, StatsLiteUI.j, and Start.j. Disable the old GUI
+    preload triggers so this library owns the elapsed-time 0.00 preload flow.
+    The old Game Start GUI trigger should not also fire from its own
+    elapsed-time event; this library calls Start_Start() when preloading is
+    done. Ability preloading creates a temporary AbilityLoader unit from
+    rawcode 'h60N' and removes it immediately after ability data is loaded.
+    Saved-game loading runs sound/music preload only and does not execute
+    player start setup.
 
     API:
     call Preloader_Start()
     call Preloader_StartLoadedGame()
 
 **/
-library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound, ExMusic, PreloadAbilities, StatsLiteUI, FullscreenUI
+library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound, ExMusic, PreloadAbilities, StatsLiteUI, FullscreenUI, Start
     globals
         // Timing between visible preload stages. Actual preload calls still run synchronously.
         private constant real PRL_START_MESSAGE_DELAY = 5.00
@@ -82,7 +83,8 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
     endfunction
 
     private function PRL_RestoreGameUI takes nothing returns nothing
-        call FullscreenUI_SetEnabled(false)
+        // Keep the game UI fullscreen for now
+        // call FullscreenUI_SetEnabled(false)
         set PRL_GameUIHidden = false
     endfunction
 
@@ -125,12 +127,7 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
         call ImagesUI_HidePreload()
 
         if PRL_RunGameStartOnFinish then
-            if gg_trg_Game_Start != null then
-                call TriggerExecute(gg_trg_Game_Start)
-            else
-                call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cffff8080Preloader: gg_trg_Game_Start is missing.|r")
-                call EnableUserControl(true)
-            endif
+            call Start_Start()
         else
             call EnableUserControl(true)
         endif
