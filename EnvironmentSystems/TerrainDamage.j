@@ -244,6 +244,64 @@ private function TerrainDamage_IsUnitTrackedSource takes unit u returns boolean
 endfunction
 
 //===========================================================================
+private function TerrainDamage_IsRegisteredGroup takes group g returns boolean
+    local integer i = 0
+
+    if g == null then
+        return true
+    endif
+
+    loop
+        exitwhen i >= TerrainGroupCount
+        if TerrainGroups[i] == g then
+            return true
+        endif
+        set i = i + 1
+    endloop
+
+    return false
+endfunction
+
+//===========================================================================
+private function TerrainDamage_RegisterGroupInternal takes group g returns nothing
+    if g == null then
+        return
+    endif
+    if TerrainDamage_IsRegisteredGroup(g) then
+        return
+    endif
+
+    set TerrainGroups[TerrainGroupCount] = g
+    set TerrainGroupCount = TerrainGroupCount + 1
+endfunction
+
+//===========================================================================
+private function TerrainDamage_AddUnitInternal takes unit u returns nothing
+    if TerrainDamage_IsUnitValid(u) then
+        call GroupAddUnit(TerrainDamageGroup, u)
+    endif
+endfunction
+
+//===========================================================================
+private function TerrainDamage_RemoveUnitInternal takes unit u returns nothing
+    if u != null then
+        call GroupRemoveUnit(TerrainDamageGroup, u)
+    endif
+endfunction
+
+//===========================================================================
+private function TerrainDamage_RefreshConfiguredSources takes nothing returns nothing
+    call TerrainDamage_RegisterGroupInternal(udg_Companion_Group)
+    call TerrainDamage_RegisterGroupInternal(udg_Pet)
+
+    call TerrainDamage_AddUnitInternal(udg_Nazgrek)
+    call TerrainDamage_AddUnitInternal(udg_Zulkis)
+
+    call TerrainDamage_RemoveUnitInternal(udg_NazgrekMorph)
+    call TerrainDamage_RemoveUnitInternal(udg_ZulkisMorph)
+endfunction
+
+//===========================================================================
 private function TerrainDamage_GetTrackedTerrainType takes unit u returns integer
     if not TerrainDamage_IsUnitValid(u) then
         return 0
@@ -800,21 +858,30 @@ endfunction
 //===========================================================================
 // Registers a GUI unit group into the system
 function TerrainDamage_RegisterGroup takes group g returns nothing
-    set TerrainGroups[TerrainGroupCount] = g
-    set TerrainGroupCount = TerrainGroupCount + 1
+    call TerrainDamage_RegisterGroupInternal(g)
 endfunction
 
 //===========================================================================
 // Add units to terrain damage group
 function TerrainDamage_AddUnit takes unit u returns nothing
+    if not TerrainDamage_IsUnitValid(u) then
+        call DebugMsg("AddUnit skipped invalid unit")
+        return
+    endif
+
     call DebugMsg("AddUnit unit=" + GetUnitName(u) + " unitId=" + I2S(GetUnitUserData(u)))
-    call GroupAddUnit(TerrainDamageGroup, u)
+    call TerrainDamage_AddUnitInternal(u)
 endfunction
 
 // Remove units to terrain damage group
 function TerrainDamage_RemoveUnit takes unit u returns nothing
+    if u == null then
+        call DebugMsg("RemoveUnit skipped null unit")
+        return
+    endif
+
     call DebugMsg("RemoveUnit unit=" + GetUnitName(u) + " unitId=" + I2S(GetUnitUserData(u)))
-    call GroupRemoveUnit(TerrainDamageGroup, u)
+    call TerrainDamage_RemoveUnitInternal(u)
 endfunction
 
 function TerrainDamage_RegisterIgnoredUnitType takes integer unitTypeId returns nothing
@@ -936,6 +1003,8 @@ endfunction
 // Loop through all configured groups
 private function Periodic takes nothing returns nothing
     local integer i = 0
+
+    call TerrainDamage_RefreshConfiguredSources()
 
     set TerrainDamageScanPass = TerrainDamageScanPass + 1
     if TerrainDamageScanPass <= 0 then
@@ -1103,6 +1172,7 @@ private function InitDelayed takes nothing returns nothing
     call TerrainDamage_InitIgnoreRules()
     call TerrainDamage_InitPlayerTrackRects()
     call TerrainDamage_InitPlayers()
+    call TerrainDamage_RefreshConfiguredSources()
     call TerrainDamage_InitPlayerTracking()
     call UnitDeathEvent_Register(function TerrainDamage_OnUnitDeath)
     call InitSounds()
