@@ -28,6 +28,7 @@
     call Professions_StartRecipeForAi(whichCrafter, whichStation, recipeId)
     set wasCancelled = Professions_CancelUnitCraft(whichCrafter)
     set isAiCrafting = Professions_IsUnitAiCrafting(whichCrafter)
+    call Professions_ConsumeItem(whichCrafter, 'I60W', 1)
     call Professions_GetProfessionSummary(whichCrafter, GNS_PROF_ALCHEMY)
 
 **/
@@ -1970,6 +1971,10 @@ endfunction
 
 public function CountItem takes unit u, integer itemCode returns integer
     return P_CountItems(u, itemCode)
+endfunction
+
+public function ConsumeItem takes unit u, integer itemCode, integer amount returns nothing
+    call P_ConsumeItems(u, itemCode, amount)
 endfunction
 
 public function GetRecipeMaterialLine takes unit crafter, integer recipeId, integer slot returns string
