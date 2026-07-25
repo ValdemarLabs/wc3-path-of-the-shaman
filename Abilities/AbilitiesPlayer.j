@@ -184,7 +184,7 @@ library AbilitiesPlayer initializer Init
         call ABP_RegisterAbility(TREE_ENHANCEMENT, 'A026', 'A027', 1, 0)   // Wind Shear
         call ABP_RegisterAbility(TREE_ENHANCEMENT, 'A022', 'A023', 5, 0)   // Primal Force
         call ABP_RegisterAbility(TREE_ENHANCEMENT, 'A67N', 'A67O', 5, 0)   // Bloodlust
-        set entryIndex = ABP_RegisterAbility(TREE_ENHANCEMENT, 'A68Y', 'A680', 5, 0) // Ghost Wolf / Spirit Wolf
+        set entryIndex = ABP_RegisterAbility(TREE_ENHANCEMENT, 'A68Y', 'A680', 5, 'A6A4') // Ghost Wolf / Spirit Wolf, requires Earthwarden
         call ABP_SetEntryInitialQuestLocked(entryIndex, "Requires Spirit Wolf quest training.")
         call ABP_RegisterAbility(TREE_ENHANCEMENT, 'A679', 'A67D', 5, 0)   // Feral Spirits
         call ABP_RegisterAbility(TREE_ENHANCEMENT, 'A673', 'A674', 5, 0)   // Hex
@@ -203,7 +203,7 @@ library AbilitiesPlayer initializer Init
         call ABP_RegisterAbility(TREE_RESTORATION, 'A6AL', 'A6AJ', 5, 0)   // Ancestral Ward
         call ABP_RegisterAbility(TREE_RESTORATION, 'A638', 'A639', 1, 0)   // Spiritual Healing
         call ABP_RegisterAbility(TREE_RESTORATION, 'A69Y', 'A69Z', 1, 0)   // Totemic Resurgence
-        call ABP_RegisterAbility(TREE_RESTORATION, 'A68A', 'A68B', 2, 0)   // Reincarnation
+        call ABP_RegisterAbility(TREE_RESTORATION, 'A68A', 'A68B', 2, 'A6A2') // Reincarnation, requires Spiritmender
         call ABP_RegisterSpecialization(TREE_RESTORATION, 'A6A2', 'A6A8')  // Spiritmender
     endfunction
 
@@ -217,7 +217,7 @@ library AbilitiesPlayer initializer Init
         call ABP_RegisterAbility(TREE_TOTEMIC, 'A68F', 'A68G', 2, 0)       // Cleansing Totem
         call ABP_RegisterAbility(TREE_TOTEMIC, 'A68T', 'A67Y', 2, 0)       // Windfury Totem
         call ABP_RegisterAbility(TREE_TOTEMIC, 'A01U', 'A67X', 2, 0)       // Skyfury Totem
-        call ABP_RegisterAbility(TREE_TOTEMIC, 'A636', 'A637', 1, 0)       // Totem Master
+        call ABP_RegisterAbility(TREE_TOTEMIC, 'A636', 'A637', 1, 'A6A5')  // Totem Master, requires Totemist
         call ABP_RegisterSpecialization(TREE_TOTEMIC, 'A6A5', 'A6A9')      // Totemist
     endfunction
 
