@@ -246,7 +246,7 @@
   - Uses now the newly created FullscreenUI to hide UI elements during preload.
   - Increased preload title display duration and phase pauses to 5 seconds so startup and phase screens remain readable instead of flashing past.
   - Moved post-preload player startup ownership away from the old `gg_trg_Game_Start` GUI trigger and into the JASS startup flow.
-  - Removed the final "Preload Successful" title so preload transitions directly from the music stage into the Game Mode UI.
+  - Kept the final preload completion image phase but hides the "Preload Successful" title text before the Game Mode UI opens.
 
 - Added `UI/GameMode.j`
   - Added a pre-start Game Mode UI that appears after preload and before `Start_Start()`.
