@@ -23,11 +23,19 @@
     - call ShamanCommon_ApplyCooldownReduction(caster, abilityId)
     - call ShamanCommon_RefreshAbility(caster, abilityId)
     - set dummy = ShamanCommon_CreateTimedDummy(owner, unitTypeId, x, y, facing, duration)
+    - call ShamanCommon_PlaySoundLabelOrPathOnUnit(soundLabel, soundPath, caster)
 
 **/
 library ShamanCommon requires AbilitiesPlayerInit, optional Talents, optional AbilityPoints
 
 globals
+    private constant integer SOUND_VOLUME = 127
+    private constant real SOUND_UNIT_Z = 64.00
+    private constant real SOUND_CUTOFF = 3000.00
+    private constant integer SOUND_DEFERRED_SOUND_KEY = 0
+    private constant integer SOUND_DEFERRED_KILL_KEY = 1
+    private hashtable SoundDeferredTable = InitHashtable()
+
     public constant integer STAT_NONE = 0
     public constant integer STAT_STRENGTH = 1
     public constant integer STAT_AGILITY = 2
@@ -352,11 +360,227 @@ public function DistanceBetweenCoordinates takes real ax, real ay, real bx, real
     return SquareRoot(dx * dx + dy * dy)
 endfunction
 
+private function StartDeferredSound takes nothing returns nothing
+    local timer expiredTimer = GetExpiredTimer()
+    local integer timerId = GetHandleId(expiredTimer)
+    local sound whichSound = LoadSoundHandle(SoundDeferredTable, timerId, SOUND_DEFERRED_SOUND_KEY)
+    local boolean killWhenDone = LoadBoolean(SoundDeferredTable, timerId, SOUND_DEFERRED_KILL_KEY)
+
+    if whichSound != null then
+        call StartSound(whichSound)
+        if killWhenDone then
+            call KillSoundWhenDone(whichSound)
+        endif
+    endif
+
+    call FlushChildHashtable(SoundDeferredTable, timerId)
+    call DestroyTimer(expiredTimer)
+
+    set whichSound = null
+    set expiredTimer = null
+endfunction
+
+private function StartSoundDeferred takes sound whichSound, boolean killWhenDone returns nothing
+    local timer startTimer
+
+    if whichSound == null then
+        return
+    endif
+
+    set startTimer = CreateTimer()
+    call SaveSoundHandle(SoundDeferredTable, GetHandleId(startTimer), SOUND_DEFERRED_SOUND_KEY, whichSound)
+    call SaveBoolean(SoundDeferredTable, GetHandleId(startTimer), SOUND_DEFERRED_KILL_KEY, killWhenDone)
+    call TimerStart(startTimer, 0.00, false, function StartDeferredSound)
+
+    set startTimer = null
+endfunction
+
+private function ApplySoundAtPoint takes sound whichSound, real x, real y returns nothing
+    if whichSound != null then
+        call SetSoundVolume(whichSound, SOUND_VOLUME)
+        call SetSoundDistances(whichSound, 0.00, SOUND_CUTOFF)
+        call SetSoundDistanceCutoff(whichSound, SOUND_CUTOFF)
+        call SetSoundPosition(whichSound, x, y, SOUND_UNIT_Z)
+    endif
+endfunction
+
+private function ApplySoundOnUnit takes sound whichSound, unit whichUnit returns nothing
+    if whichSound != null and whichUnit != null then
+        call ApplySoundAtPoint(whichSound, GetUnitX(whichUnit), GetUnitY(whichUnit))
+        call AttachSoundToUnit(whichSound, whichUnit)
+    endif
+endfunction
+
+private function CreateConfiguredSound takes string soundLabel, string soundPath, boolean is3D returns sound
+    local sound createdSound = null
+
+    if soundLabel != null and soundLabel != "" then
+        set createdSound = CreateSoundFromLabel(soundLabel, false, is3D, is3D, 12700, 12700)
+    endif
+
+    if createdSound == null and soundPath != null and soundPath != "" then
+        set createdSound = CreateSound(soundPath, false, is3D, is3D, 12700, 12700, "")
+    endif
+
+    return createdSound
+endfunction
+
 public function PlaySound takes sound whichSound returns nothing
     if whichSound != null then
         call StopSound(whichSound, false, false)
+        call SetSoundVolume(whichSound, SOUND_VOLUME)
         call StartSound(whichSound)
     endif
+endfunction
+
+public function PlaySoundAtPoint takes sound whichSound, real x, real y returns nothing
+    if whichSound != null then
+        call StopSound(whichSound, false, false)
+        call ApplySoundAtPoint(whichSound, x, y)
+        call StartSound(whichSound)
+    endif
+endfunction
+
+public function PlaySoundOnUnit takes sound whichSound, unit whichUnit returns nothing
+    if whichSound != null and whichUnit != null then
+        call StopSound(whichSound, false, false)
+        call ApplySoundOnUnit(whichSound, whichUnit)
+        call StartSound(whichSound)
+    endif
+endfunction
+
+public function PlaySoundLabel takes string soundLabel returns nothing
+    local sound createdSound
+
+    if soundLabel == null or soundLabel == "" then
+        return
+    endif
+
+    set createdSound = CreateSoundFromLabel(soundLabel, false, false, false, 12700, 12700)
+    if createdSound != null then
+        call SetSoundVolume(createdSound, SOUND_VOLUME)
+        call StartSoundDeferred(createdSound, true)
+    endif
+
+    set createdSound = null
+endfunction
+
+public function PlaySoundLabelAtPoint takes string soundLabel, real x, real y returns nothing
+    local sound createdSound
+
+    if soundLabel == null or soundLabel == "" then
+        return
+    endif
+
+    set createdSound = CreateSoundFromLabel(soundLabel, false, true, true, 12700, 12700)
+    if createdSound != null then
+        call ApplySoundAtPoint(createdSound, x, y)
+        call StartSoundDeferred(createdSound, true)
+    endif
+
+    set createdSound = null
+endfunction
+
+public function PlaySoundLabelOnUnit takes string soundLabel, unit whichUnit returns nothing
+    local sound createdSound
+
+    if whichUnit == null or soundLabel == null or soundLabel == "" then
+        return
+    endif
+
+    set createdSound = CreateSoundFromLabel(soundLabel, false, true, true, 12700, 12700)
+    if createdSound != null then
+        call ApplySoundOnUnit(createdSound, whichUnit)
+        call StartSoundDeferred(createdSound, true)
+    endif
+
+    set createdSound = null
+endfunction
+
+public function PlaySoundLabelOrPath takes string soundLabel, string soundPath returns nothing
+    local sound createdSound = CreateConfiguredSound(soundLabel, soundPath, false)
+
+    if createdSound != null then
+        call SetSoundVolume(createdSound, SOUND_VOLUME)
+        call StartSoundDeferred(createdSound, true)
+    endif
+
+    set createdSound = null
+endfunction
+
+public function PlaySoundLabelOrPathAtPoint takes string soundLabel, string soundPath, real x, real y returns nothing
+    local sound createdSound = CreateConfiguredSound(soundLabel, soundPath, true)
+
+    if createdSound != null then
+        call ApplySoundAtPoint(createdSound, x, y)
+        call StartSoundDeferred(createdSound, true)
+    endif
+
+    set createdSound = null
+endfunction
+
+public function PlaySoundLabelOrPathOnUnit takes string soundLabel, string soundPath, unit whichUnit returns nothing
+    local sound createdSound
+
+    if whichUnit == null then
+        return
+    endif
+
+    set createdSound = CreateConfiguredSound(soundLabel, soundPath, true)
+    if createdSound != null then
+        call ApplySoundOnUnit(createdSound, whichUnit)
+        call StartSoundDeferred(createdSound, true)
+    endif
+
+    set createdSound = null
+endfunction
+
+public function PlaySoundPath takes string soundPath returns nothing
+    local sound createdSound
+
+    if soundPath == null or soundPath == "" then
+        return
+    endif
+
+    set createdSound = CreateSound(soundPath, false, false, false, 12700, 12700, "")
+    if createdSound != null then
+        call SetSoundVolume(createdSound, SOUND_VOLUME)
+        call StartSoundDeferred(createdSound, true)
+    endif
+
+    set createdSound = null
+endfunction
+
+public function PlaySoundPathAtPoint takes string soundPath, real x, real y returns nothing
+    local sound createdSound
+
+    if soundPath == null or soundPath == "" then
+        return
+    endif
+
+    set createdSound = CreateSound(soundPath, false, true, true, 12700, 12700, "")
+    if createdSound != null then
+        call ApplySoundAtPoint(createdSound, x, y)
+        call StartSoundDeferred(createdSound, true)
+    endif
+
+    set createdSound = null
+endfunction
+
+public function PlaySoundPathOnUnit takes string soundPath, unit whichUnit returns nothing
+    local sound createdSound
+
+    if whichUnit == null or soundPath == null or soundPath == "" then
+        return
+    endif
+
+    set createdSound = CreateSound(soundPath, false, true, true, 12700, 12700, "")
+    if createdSound != null then
+        call ApplySoundOnUnit(createdSound, whichUnit)
+        call StartSoundDeferred(createdSound, true)
+    endif
+
+    set createdSound = null
 endfunction
 
 public function SelectForOwner takes unit whichUnit returns nothing
