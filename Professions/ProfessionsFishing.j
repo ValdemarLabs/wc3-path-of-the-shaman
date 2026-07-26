@@ -53,7 +53,7 @@ globals
     private constant real PF_REEL_WINDOW_MIN_START = 2.00
     private constant real PF_DEFAULT_BAIT_DURATION = 600.00
     private constant real PF_ANIMATION_LOOP_PERIOD = 1.35
-    private constant real PF_SOUND_CUTOFF = 1800.00
+    private constant real PF_SOUND_CUTOFF = 1500.00
     private constant real PF_LINE_HAND_FORWARD_OFFSET = 28.00
     private constant real PF_LINE_HAND_RIGHT_OFFSET = 22.00
     private constant real PF_LINE_HAND_HEIGHT = 105.00
