@@ -618,8 +618,8 @@ endfunction
 
 private function OnAcceptQuest${suffix} takes nothing returns nothing
 \tlocal integer seq
-\tcall QuestGiver_BeginDialogSequence()
-\tset seq = QuestGiver_CreateBaseSequence(${npcVar}, "${displayName}")
+\tcall DialogInteraction_BeginDialogSequence()
+\tset seq = DialogInteraction_CreateBaseSequence(${npcVar}, "${displayName}")
 \tcall DialogSystem_SetSequenceCallbacks(seq, null, function OnAcceptQuest${suffix}End)
 \t// Optional: switch to QuestGiver_CreateAcceptSequence(...) if you want shared accept banter before custom lines.
 \tcall DialogSystem_AddLine(seq, ${npcVar}, "${displayName}", "TODO QUEST-SPECIFIC: replace ${escapeJassString(quest.title)} accept dialog.", "", true)
@@ -638,8 +638,8 @@ endfunction
 
 private function OnCompleteQuest${suffix} takes nothing returns nothing
 \tlocal integer seq
-\tcall QuestGiver_BeginDialogSequence()
-\tset seq = QuestGiver_CreateBaseSequence(${npcVar}, "${displayName}")
+\tcall DialogInteraction_BeginDialogSequence()
+\tset seq = DialogInteraction_CreateBaseSequence(${npcVar}, "${displayName}")
 \tcall DialogSystem_SetSequenceCallbacks(seq, null, function OnCompleteQuest${suffix}End)
 \tcall DialogSystem_AddLine(seq, ${npcVar}, "${displayName}", "TODO QUEST-SPECIFIC: replace ${escapeJassString(quest.title)} completion dialog.", "", true)
 \tcall DialogSystem_PlaySequence(seq, Player(0), ${npcVar})
@@ -656,8 +656,8 @@ endfunction
 
 private function OnFailQuest${suffix} takes nothing returns nothing
 \tlocal integer seq
-\tcall QuestGiver_BeginDialogSequence()
-\tset seq = QuestGiver_CreateBaseSequence(${npcVar}, "${displayName}")
+\tcall DialogInteraction_BeginDialogSequence()
+\tset seq = DialogInteraction_CreateBaseSequence(${npcVar}, "${displayName}")
 \tcall DialogSystem_SetSequenceCallbacks(seq, null, function OnFailQuest${suffix}End)
 \tcall DialogSystem_AddLine(seq, ${npcVar}, "${displayName}", "TODO QUEST-SPECIFIC: replace ${escapeJassString(quest.title)} fail dialog.", "", true)
 \tcall DialogSystem_PlaySequence(seq, Player(0), ${npcVar})
@@ -730,7 +730,7 @@ endfunction`
         ? `QuestGiver_IsEventQuestByNameAndGiver(${questConstName(spec.quests[0], 0)}, ${npcVar})`
         : "false";
 
-      return `${generatedHeader}library ${libraryName} initializer Init requires QuestGiver, QuestMaster, DialogSystem
+      return `${generatedHeader}library ${libraryName} initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem
 
 globals
 \tprivate constant boolean DEBUG = false
@@ -770,28 +770,28 @@ private function DebugMsg takes string msg returns nothing
 endfunction
 
 private function ResolveDialogHero takes nothing returns unit
-\treturn QuestGiver_ResolveDialogHero(SelectedHero, ${npcVar}, DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
+\treturn DialogInteraction_ResolveDialogHero(SelectedHero, ${npcVar}, DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
 endfunction
 
 private function FinishDialogSequence takes nothing returns nothing
-\tcall QuestGiver_StartConfiguredDialogExitTransition(${npcVar}, SelectedHero, ${npcVar}DialogCooldown, DIALOG_COOLDOWN, USE_DIALOG_CAMERA, CINEMATIC)
+\tcall DialogInteraction_StartConfiguredDialogExitTransition(${npcVar}, SelectedHero, ${npcVar}DialogCooldown, DIALOG_COOLDOWN, USE_DIALOG_CAMERA, CINEMATIC)
 endfunction
 
 private function OnBackstoryStart takes nothing returns nothing
 \tset BackstorySeen = true
-\tcall QuestGiver_CloseActiveDialog()
-\tset ${npcVar}DialogCooldown = QuestGiver_StartCooldown(${npcVar}DialogCooldown, DIALOG_COOLDOWN)
-\tcall QuestGiver_BeginCinematicSequence(CINEMATIC)
+\tcall DialogInteraction_CloseActiveDialog()
+\tset ${npcVar}DialogCooldown = DialogInteraction_StartCooldown(${npcVar}DialogCooldown, DIALOG_COOLDOWN)
+\tcall DialogInteraction_BeginCinematicSequence(CINEMATIC)
 endfunction
 
 private function OnBackstoryEnd takes nothing returns nothing
-\tcall QuestGiver_EndCinematicSequence(CINEMATIC)
-\tcall QuestGiver_QueueDialogReopen("${libraryName}_RebuildAndShowDialog", 0.05)
+\tcall DialogInteraction_EndCinematicSequence(CINEMATIC)
+\tcall DialogInteraction_QueueDialogReopen("${libraryName}_RebuildAndShowDialog", 0.05)
 endfunction
 
 private function OnBackstory takes nothing returns nothing
 \tlocal integer seq
-\tset seq = QuestGiver_CreateInfoSequenceBase(${npcVar}, "${displayName}", function OnBackstoryStart, function OnBackstoryEnd)
+\tset seq = DialogInteraction_CreateInfoSequenceBase(${npcVar}, "${displayName}", function OnBackstoryStart, function OnBackstoryEnd)
 \tcall DialogSystem_AddLine(seq, ${npcVar}, "${displayName}", "TODO QUEST-SPECIFIC: replace with the final backstory sequence.", "", true)
 \tcall DialogSystem_PlaySequence(seq, Player(0), ${npcVar})
 endfunction
@@ -800,8 +800,8 @@ ${handlerBlocks}
 
 private function OnFarewell takes nothing returns nothing
 \tlocal integer seq
-\tcall QuestGiver_BeginDialogSequence()
-\tset seq = QuestGiver_CreateFarewellSequence(${npcVar}, "${displayName}", null, "", DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
+\tcall DialogInteraction_BeginDialogSequence()
+\tset seq = DialogInteraction_CreateFarewellSequence(${npcVar}, "${displayName}", null, "", DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
 \tcall DialogSystem_SetSequenceCallbacks(seq, null, function FinishDialogSequence)
 \tcall DialogSystem_PlaySequence(seq, Player(0), ${npcVar})
 endfunction
@@ -826,7 +826,7 @@ endfunction
 
 private function CreateQuests takes nothing returns nothing
 \tlocal QuestData q
-\tlocal string giverName = QuestGiver_GetUnitDisplayName(${npcVar})
+\tlocal string giverName = DialogInteraction_GetUnitDisplayName(${npcVar})
 \tlocal string infoText = "|cffffcc00Quest giver:|r " + giverName + "\\n"
 \tlocal string info2Text = ""
 
@@ -852,14 +852,14 @@ public function ContinueToDialogAfterSelection takes nothing returns nothing
 endfunction
 
 private function OnSelected takes nothing returns nothing
-\tlocal unit hero = QuestGiver_GetDialogSelectionHero(${npcVar}, DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
-\tif not QuestGiver_PassDialogSelectionGate(${npcVar}, hero, DIALOG_RANGE, ${npcVar}DialogCooldown, REQUIRE_DIALOG_HERO, true, true, true, false, false) then
+\tlocal unit hero = DialogInteraction_GetDialogSelectionHero(${npcVar}, DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
+\tif not DialogInteraction_PassDialogSelectionGate(${npcVar}, hero, DIALOG_RANGE, ${npcVar}DialogCooldown, REQUIRE_DIALOG_HERO, true, true, true, false, false) then
 \t\tset hero = null
 \t\treturn
 \tendif
 \tset SelectedHero = hero
 \tif USE_DIALOG_CAMERA or CINEMATIC then
-\t\tcall QuestGiver_StartConfiguredDialogEntryTransition(${npcVar}, hero, true, USE_DIALOG_CAMERA, CINEMATIC, "${libraryName}_ContinueToDialogAfterSelection")
+\t\tcall DialogInteraction_StartConfiguredDialogEntryTransition(${npcVar}, hero, true, USE_DIALOG_CAMERA, CINEMATIC, "${libraryName}_ContinueToDialogAfterSelection")
 \telse
 \t\tcall ContinueToDialogInternal()
 \tendif
@@ -884,10 +884,10 @@ private function InitDelayed takes nothing returns nothing
 \tendif
 \tset ${npcVar} = udg_${npcVar}
 \tcall QuestGiver_Register(${npcVar})
-\tcall QuestGiver_ConfigureDialogTransition(${npcVar}, CINEMATIC_MOVE_MODE, CINEMATIC_MOVE_OFFSET, CINEMATIC_MOVE_ANGLE, CAMERA_DIST, CAMERA_Z_OFFSET, CAMERA_ANGLE, CAMERA_ROT_OFFSET, CAMERA_FAR_Z, CAMERA_FOV, CAMERA_BLOCK_RADIUS, CAMERA_BLOCK_CHECK)
+\tcall DialogInteraction_ConfigureDialogTransition(${npcVar}, CINEMATIC_MOVE_MODE, CINEMATIC_MOVE_OFFSET, CINEMATIC_MOVE_ANGLE, CAMERA_DIST, CAMERA_Z_OFFSET, CAMERA_ANGLE, CAMERA_ROT_OFFSET, CAMERA_FAR_Z, CAMERA_FOV, CAMERA_BLOCK_RADIUS, CAMERA_BLOCK_CHECK)
 \tcall RegisterLines()
 \tcall CreateQuests()
-\tcall QuestGiver_RegisterSelectionHandler(${npcVar}, function OnSelected)
+\tcall DialogInteraction_RegisterSelectionHandler(${npcVar}, function OnSelected)
 \tcall QuestGiver_AddDelayedDiscoveredAction(function OnDelayedQuestDiscovered)
 endfunction
 
