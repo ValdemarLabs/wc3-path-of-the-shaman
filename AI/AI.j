@@ -3832,16 +3832,87 @@ private function IsBarkLineReputationAllowed takes integer lineKey returns boole
     return true
 endfunction
 
-public function RequestBark takes unit speaker, integer barkType returns boolean
-    local integer instanceId = AI_GetInstance(speaker)
-    local integer profileId
+private function PickEligibleBarkLineKey takes unit speaker, integer profileId, integer barkType returns integer
     local integer barkKey
-    local integer cooldownKey
     local integer count
     local integer index
     local integer lineKey
     local integer selectedLineKey = 0
     local integer eligibleCount = 0
+    if profileId <= 0 or barkType <= 0 then
+        return 0
+    endif
+    set barkKey = GetBarkKey(profileId, barkType)
+    set count = BarkLineCount[barkKey]
+    if count <= 0 then
+        return 0
+    endif
+    set index = 1
+    loop
+        exitwhen index > count
+        set lineKey = GetBarkLineKey(barkKey, index)
+        if IsBarkLineReputationAllowed(lineKey) and IsBarkTargetContextAllowed(speaker, BarkLineSound.string[lineKey]) then
+            set eligibleCount = eligibleCount + 1
+            if GetRandomInt(1, eligibleCount) == 1 then
+                set selectedLineKey = lineKey
+            endif
+        endif
+        set index = index + 1
+    endloop
+    return selectedLineKey
+endfunction
+
+private function IsCommandBarkContextAllowed takes unit speaker, integer barkType returns boolean
+    if udg_InCinematic or DialogSystem_IsSequenceActive() or DialogSystem_IsDialogVisible() then
+        return false
+    endif
+    if not IsBarkNearPlayerHero(speaker) then
+        return false
+    endif
+    if IsCompanionOnlyBark(barkType) and not IsCompanionControlled(speaker) then
+        return false
+    endif
+    return true
+endfunction
+
+private function QueueCommandResponseBark takes unit speaker, integer barkType returns boolean
+    local integer instanceId = AI_GetInstance(speaker)
+    local integer profileId
+    local integer cooldownKey
+    local integer lineKey
+    local string text
+    local string soundKey
+    local real now = GetNow()
+    local real duration
+    if instanceId <= 0 or speaker == null or barkType <= 0 then
+        return false
+    endif
+    if not IsAliveUnit(speaker) or not IsCommandBarkContextAllowed(speaker, barkType) then
+        return false
+    endif
+    set profileId = InstanceProfile[instanceId]
+    set lineKey = PickEligibleBarkLineKey(speaker, profileId, barkType)
+    if lineKey <= 0 then
+        return false
+    endif
+    set cooldownKey = GetInstanceBarkKey(instanceId, barkType)
+    set text = BarkLineText.string[lineKey]
+    set soundKey = BarkLineSound.string[lineKey]
+    set duration = DialogSystem_EstimateFieldLineDuration(text)
+    set udg_CompanionDialogueActive = true
+    call DialogSystem_QueueFieldLine(speaker, "", soundKey, text)
+    set InstanceNextChat.real[instanceId] = now + duration + AI_DIALOG_UNLOCK_PAD
+    set InstanceNextBark.real[cooldownKey] = now + GetBarkCooldown(barkType)
+    set NextGlobalBark = now + duration + AI_BARK_GLOBAL_GAP
+    call StartDialogUnlock(duration + AI_DIALOG_UNLOCK_PAD)
+    return true
+endfunction
+
+public function RequestBark takes unit speaker, integer barkType returns boolean
+    local integer instanceId = AI_GetInstance(speaker)
+    local integer profileId
+    local integer cooldownKey
+    local integer lineKey
     local string text
     local string soundKey
     local real now = GetNow()
@@ -3861,27 +3932,10 @@ public function RequestBark takes unit speaker, integer barkType returns boolean
         return false
     endif
     set profileId = InstanceProfile[instanceId]
-    set barkKey = GetBarkKey(profileId, barkType)
-    set count = BarkLineCount[barkKey]
-    if count <= 0 then
+    set lineKey = PickEligibleBarkLineKey(speaker, profileId, barkType)
+    if lineKey <= 0 then
         return false
     endif
-    set index = 1
-    loop
-        exitwhen index > count
-        set lineKey = GetBarkLineKey(barkKey, index)
-        if IsBarkLineReputationAllowed(lineKey) and IsBarkTargetContextAllowed(speaker, BarkLineSound.string[lineKey]) then
-            set eligibleCount = eligibleCount + 1
-            if GetRandomInt(1, eligibleCount) == 1 then
-                set selectedLineKey = lineKey
-            endif
-        endif
-        set index = index + 1
-    endloop
-    if selectedLineKey <= 0 then
-        return false
-    endif
-    set lineKey = selectedLineKey
     set text = BarkLineText.string[lineKey]
     set soundKey = BarkLineSound.string[lineKey]
     set udg_CompanionDialogueActive = true
@@ -6009,7 +6063,7 @@ private function FlushPendingCommandBark takes nothing returns nothing
     set PendingCommandBarkType = 0
     set PendingCommandBarkSeen = 0
     if speaker != null and barkType > 0 then
-        call AI_RequestBark(speaker, barkType)
+        call QueueCommandResponseBark(speaker, barkType)
     endif
     set speaker = null
 endfunction
@@ -6092,7 +6146,7 @@ private function HandleCompanionCommand takes nothing returns nothing
     if commandId == Companions_COMMAND_MODE then
         call QueueCommandBark(whichUnit, barkType)
     elseif barkType > 0 then
-        call AI_RequestBark(whichUnit, barkType)
+        call QueueCommandResponseBark(whichUnit, barkType)
     endif
 
     set whichUnit = null
