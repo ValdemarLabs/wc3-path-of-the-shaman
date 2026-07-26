@@ -41,7 +41,7 @@ globals
     private constant integer PF_DEFAULT_FISH_POOL_ZONE = 0
     private constant integer PF_FISHING_POLE_EQUIPMENT_SLOT = 19
 
-    private constant real PF_START_RANGE = 450.00
+    private constant real PF_START_RANGE = 550.00
     private constant real PF_READY_RANGE = 170.00
     private constant real PF_CANCEL_RANGE = 300.00
     private constant real PF_APPROACH_OFFSET = 145.00
