@@ -72,12 +72,19 @@
   - Uses `Ascii` rawcode conversion so rawcode text and four-character string input work consistently with the imported map libraries.
 
 - Updated Shaman and profession sound playback helpers
-  - `Abilities/Shaman/ShamanCommon.j` now supports fresh sound recreation from Sound Editor labels or explicit import paths, then applies the requested 2D/3D setup before playback.
+  - `SoundAndMusic/ExSound.j` now owns shared 2D/3D sound playback for reusable `sound` handles, Sound Editor labels, generated `gg_snd_*` label strings, and explicit import paths.
+  - Added central `ExSound_PlayHandle*`, `ExSound_PlayLabel*`, `ExSound_PlayPath*`, and `ExSound_PlayLabelOrPath*` helper APIs for normal, point, and unit playback.
+  - Label playback accepts both Sound Editor labels such as `"Smelting"` and generated-name strings such as `"gg_snd_Smelting"` by stripping the `gg_snd_` prefix before `CreateSoundFromLabel(...)`.
+  - 3D playback now uses min distance `600.00` and distance cutoff `1500.00` by default, and registered `ExSound_PlayAtUnit(...)` / `ExSound_PlayAtPoint(...)` now create true 3D sounds with `CreateSound(path, false, is3D, is3D, ...)`.
+  - Reusable `gg_snd_*` handles are stopped/restarted but not destroyed; `KillSoundWhenDone(...)` is only used for fresh transient handles created by label/path playback.
+  - `Abilities/Shaman/ShamanCommon.j` now delegates its sound wrappers to `ExSound` instead of owning duplicated deferred-start, create, attach, and cleanup logic.
   - Stormstrike, Whirlwind, Lightning Strike, Ghost Wolf morph/return, and Ghost Wolf Bite now play recreated 3D sounds attached to the active caster/form unit instead of reusing shared `gg_snd_*` handles.
-  - `UI/Interface.j` profession playback now recreates sounds from configured paths or labels as needed: station/unit playback creates 3D handles, while cinematic/global playback creates non-3D handles.
+  - `UI/Interface.j` profession playback now delegates to `ExSound` for configured paths or labels as needed: station/unit playback creates 3D handles, while cinematic/global playback creates non-3D handles.
   - Removed the `GetSoundDuration(professionSound) > 0` gate from profession-created sounds so valid newly created Sound Editor/import sounds are not discarded before playback.
   - Mining hit and herb-pick world event sounds now prefer fresh 3D label-created playback at the relevant unit location, with shared event handles only kept as fallback.
   - `Professions/Professions.j` now prefers recreatable path/label sound configuration for all craft jobs and only falls back to shared handles when no recreatable configuration works.
+  - `Professions/Professions.j` and `Professions/ProfessionsFishing.j` now pass the shared `1500.00` cutoff used by `ExSound` 3D playback.
+  - `Abilities/Abilities.j` and `Abilities/Talents.j` now route local-player feedback sound playback through `ExSound_PlayHandleForPlayer(...)`.
   - This follows the same sound-handle state-leak lesson noted earlier for `SoundTools`/`TerrainDamage`: reused or recycled sound handles can carry configuration state, so libraries that need situational playback must recreate/configure handles per use.
 
 - Updated `Abilities/Shaman/ShamanLightningShield.j`
@@ -88,10 +95,11 @@
   - Verified that normal Ancestral Ward and Water Shield casts already use the shared `ShamanBoneArmor.j` buff-required cleanup path; Totemic Resurgence bonus Ancestral Ward remains buff-independent by design.
 
 - Updated `Professions/ProfessionsFishing.j`
-  - Fishing now creates a lightning-based fishing line when the cast begins, starting from an approximated main-hand/two-handed weapon hand offset and ending at a randomized bobber point near the selected fish pool.
+  - Fishing now creates a lightning-based fishing line when the cast begins, starting from a hidden marker attached to the fisher's configured `"hand, right"` attachment point and ending at a randomized bobber point near the selected fish pool.
+  - Changed the fishing line lightning type/color toward a thinner line-like beam and added short endpoint/bobber wobble pulses on cast start, reel, bait use, cancellation, completion, interruption, and fish escape.
   - Added configurable `ProfessionsFishing_BobberModelPath` for the fishing bobber model.
-  - Fishing bobbers now play a creation animation, switch to stand while fishing, then play the ending animation before being destroyed on reel, cancel, interruption, or fish escape.
-  - Increased the allowed fishing start range slightly so players can begin fishing from farther away before the fisher moves into casting range.
+  - Fishing bobbers now explicitly play `Cinematic Custom0 1` on creation, switch to `Stand 1` while fishing, then replay `Cinematic Custom0 1` before destruction on reel, cancel, interruption, completion, or fish escape.
+  - Increased fishing pool interaction distance to 750 and moved the cast approach point farther from the pool so fishers do not stand almost on top of the node before casting.
 
 - Updated `ItemLootSystems/ItemLootSystem.j` and `GatherSystems/GatherNodeUnits.j`
   - Gather-node unit rawcodes registered through `GNU_RegisterDefinition(...)` are now excluded from normal ItemLoot unit death drops.
@@ -151,7 +159,7 @@
 
 - The new debug command libraries passed local JassHelper script-only validation, but still need in-map validation with the active imported object data and multiplayer sync context.
 - The new `DialogInteraction.j` split passed targeted static checks for stale `QuestGiver_*` generic dialog calls and panel-hide usage, but still needs a full in-map JassHelper compile and runtime test with ability trainers and qAradion.
-- The Shaman/profession sound changes passed targeted static checks and `git diff --check`, but still need full in-map JassHelper compile and runtime audio validation. Shaman path fallbacks assume import paths such as `war3mapImported\\Stormstrike.wav`; those strings must be corrected if the actual imported sound paths differ.
+- The Shaman/profession/ExSound changes passed targeted static checks and `git diff --check`, but still need full in-map JassHelper compile and runtime audio validation. Shaman path fallbacks assume import paths such as `war3mapImported\\Stormstrike.wav`; those strings must be corrected if the actual imported sound paths differ.
 - The seeded fishing item and fish-pool database rows passed local PostgreSQL verification, but the map still needs fresh ItemManager item object export/import and Gather Nodes JASS export/import before the new fish pools and rewards can be validated in-game.
 - The fishing line/bobber visuals and gather-node ItemLoot exclusion passed `git diff --check`, but still need full map compile and in-game validation with the active bobber model import path.
 - The profession skill-up effect passed `git diff --check`, but still needs full map compile and in-game validation with `spells_tradeskilllevelup.mdx` imported at the configured path.
@@ -234,12 +242,14 @@
   - Uses now the newly created FullscreenUI to hide UI elements during preload.
   - Increased preload title display duration and phase pauses to 5 seconds so startup and phase screens remain readable instead of flashing past.
   - Moved post-preload player startup ownership away from the old `gg_trg_Game_Start` GUI trigger and into the JASS startup flow.
+  - Removed the final "Preload Successful" title so preload transitions directly from the music stage into the Game Mode UI.
 
 - Added `UI/GameMode.j`
   - Added a pre-start Game Mode UI that appears after preload and before `Start_Start()`.
   - Added Story, Free Roam, and Developer mode configuration flags for story flow, intro cinematic usage, quest requirements, ability requirements, AP costs, quest reveal style, and starting gold bonus.
   - Shows Difficulty selection after game mode selection and applies it through `Difficulty_SetDifficulty()` before starting the player setup flow.
   - Re-enables player control while the mode/difficulty selection UI is open, then locks control again when `Start_Start()` begins.
+  - Plays `ExMusic` track 35 when the mode/difficulty selection UI opens.
   - Developer mode can be hidden for release builds with `GM_SHOW_DEVELOPER_MODE`.
 
 - Updated `Preload/Preloader.j` and `Preload/Start.j`
