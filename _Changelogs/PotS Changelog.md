@@ -80,11 +80,26 @@
   - `Professions/Professions.j` now prefers recreatable path/label sound configuration for all craft jobs and only falls back to shared handles when no recreatable configuration works.
   - This follows the same sound-handle state-leak lesson noted earlier for `SoundTools`/`TerrainDamage`: reused or recycled sound handles can carry configuration state, so libraries that need situational playback must recreate/configure handles per use.
 
+### Tool Updates
+
+- Added `WC3_Database/SQL/seed_fishing_items_and_rewards.sql`
+  - Seeded 37 fishing reward items into the PotS ItemManager database, using fish, trophy fish, and fishing junk naming patterns from WoW-style fishing items.
+  - Added 27 active self-use fish consumables using the Healing Salve-style health regeneration ability, with perishable charged stacks up to 10.
+  - Added 10 non-stackable MainHand trophy/junk weapon catches with intentionally poor attack bonuses for funny fishing rewards.
+  - Used existing ItemManager custom texture paths for fish, crab, and weapon-style icons instead of adding new imported assets.
+  - Seeded the default fish pool unit node `'n02N'` as `Fish Pool` with 979 reward rows generated from zone level-range overlap.
+
+- Updated `WC3_Database/WC3ItemManager` gather-node unit reward support
+  - Added `zone_id` and `zone_name` support to `gather_unit_node_drops` so ItemManager can store zone-specific unit-node reward rows.
+  - Added zone display to the unit-node drop grid and preserved zone metadata when editing existing drop rows.
+  - Updated `GatherNodeExporter` so zone-specific unit-node drops export as `GNU_RegisterZoneDrop(...)`, while generic fallback rows still export as `GNU_RegisterDrop(...)`.
+
 ### Known Issues
 
 - The new debug command libraries passed local JassHelper script-only validation, but still need in-map validation with the active imported object data and multiplayer sync context.
 - The new `DialogInteraction.j` split passed targeted static checks for stale `QuestGiver_*` generic dialog calls and panel-hide usage, but still needs a full in-map JassHelper compile and runtime test with ability trainers and qAradion.
 - The Shaman/profession sound changes passed targeted static checks and `git diff --check`, but still need full in-map JassHelper compile and runtime audio validation. Shaman path fallbacks assume import paths such as `war3mapImported\\Stormstrike.wav`; those strings must be corrected if the actual imported sound paths differ.
+- The seeded fishing item database rows and ItemManager build passed local verification, but the map still needs fresh ItemManager item object export/import and Gather Nodes JASS export/import before the new fish rewards can be validated in-game.
 
 
 ## [25.7.2026]
