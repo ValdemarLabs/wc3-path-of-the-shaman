@@ -161,7 +161,7 @@ private function HandleSpellEffect takes nothing returns nothing
         set x = GetSpellTargetX()
         set y = GetSpellTargetY()
         set amount = ShamanCommon_GetDamageAmount(caster, ShamanCommon_ABILITY_LIGHTNING_STRIKE, AbilitiesPlayerInit_VALUE_BASE, ShamanCommon_STAT_INTELLIGENCE, 1.50)
-        call ShamanCommon_PlaySound(gg_snd_LightningStrike)
+        call ShamanCommon_PlaySoundLabelOrPathOnUnit("LightningStrike", "war3mapImported\\LightningStrike.wav", caster)
         call CreateLightningVisuals(caster, x, y)
         call DestroyEffect(AddSpecialEffect(EFFECT_THUNDER, x, y))
         call DestroyEffect(AddSpecialEffect(EFFECT_FARSEER, x, y))

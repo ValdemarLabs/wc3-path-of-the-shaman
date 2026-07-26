@@ -53,7 +53,7 @@ private function HandleSpellEffect takes nothing returns nothing
     if GetSpellAbilityId() == ShamanCommon_ABILITY_STORMSTRIKE then
         set rank = ShamanCommon_GetAbilityRank(caster, ShamanCommon_ABILITY_STORMSTRIKE)
         set amount = ShamanCommon_GetHybridDamageAmount(caster, ShamanCommon_ABILITY_STORMSTRIKE, AbilitiesPlayerInit_VALUE_BASE, ShamanCommon_STAT_STRENGTH, 1.25, ShamanCommon_STAT_AGILITY, 0.75)
-        call ShamanCommon_PlaySound(gg_snd_Stormstrike)
+        call ShamanCommon_PlaySoundLabelOrPathOnUnit("Stormstrike", "war3mapImported\\Stormstrike.wav", caster)
         call CastBurst(caster, rank, amount)
     endif
     set caster = null

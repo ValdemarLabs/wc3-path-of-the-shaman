@@ -35,7 +35,7 @@ private function HandleSpellEffect takes nothing returns nothing
         endif
         set manaCost = R2I(AbilitiesPlayerInit_GetBaseValue(ShamanCommon_ABILITY_WHIRLWIND, AbilitiesPlayerInit_VALUE_MANA_COST, rank) * (1.00 - manaReduction / 100.00))
         set amount = ShamanCommon_GetHybridDamageAmount(caster, ShamanCommon_ABILITY_WHIRLWIND, AbilitiesPlayerInit_VALUE_BASE, ShamanCommon_STAT_AGILITY, 0.85, ShamanCommon_STAT_STRENGTH, 0.35)
-        call ShamanCommon_PlaySound(gg_snd_Whirlwind)
+        call ShamanCommon_PlaySoundLabelOrPathOnUnit("Whirlwind", "war3mapImported\\Whirlwind.wav", caster)
         call ShamanCommon_SetIntegerField(caster, ShamanCommon_ABILITY_WHIRLWIND, ABILITY_ILF_MANA_COST, manaCost)
         call BlzSetUnitAbilityManaCost(caster, ShamanCommon_ABILITY_WHIRLWIND, rank - 1, manaCost)
         call ShamanCommon_SetRealField(caster, ShamanCommon_ABILITY_WHIRLWIND, ABILITY_RLF_DAMAGE_PER_SECOND_OWW1, amount)
