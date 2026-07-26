@@ -63,7 +63,7 @@ globals
     private constant real P_CRAFT_AI_MOVE_POLL = 0.25
     private constant real P_CRAFT_AI_MOVE_TIMEOUT = 60.00
     private constant real P_CRAFT_ANIMATION_LOOP_PERIOD = 1.50
-    private constant real P_SOUND_CUTOFF = 3000.00
+    private constant real P_SOUND_CUTOFF = 1500.00
     private constant integer P_ALCHEMY_STAGE_DEATH = 1
     private constant integer P_ALCHEMY_STAGE_DECAY = 2
     private constant real P_ALCHEMY_STAND_ANIMATION_DELAY = 60.00
