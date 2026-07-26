@@ -35,6 +35,7 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
         private constant real PRL_RENDER_DELAY = 1.00
         private constant real PRL_STAGE_DELAY = 5.00
         private constant real PRL_SOUND_STAGE_DELAY = 5.00
+        private constant real PRL_DONE_DELAY = 5.00
         private constant real PRL_TITLE_FADE_IN = 0.10
         private constant real PRL_TITLE_DURATION = 5.00
         private constant real PRL_TITLE_FADE_OUT = 0.25
@@ -44,6 +45,7 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
         private constant string PRL_IMAGE_SOUNDS = "Art\\Pots_EmberpeakHighlands.blp"
         private constant string PRL_IMAGE_MUSIC = "Art\\Pots_Riverbane1.blp"
         private constant string PRL_IMAGE_ABILITIES = "Art\\Pots_Riverbane1.blp"
+        private constant string PRL_IMAGE_DONE = "Art\\Pots_Logo.blp"
         private constant string PRL_TEXT_COLOR = "|cffffffff"
         private constant string PRL_TEXT_HIGHLIGHT = "|cffffcc00"
         private constant string PRL_TEXT_END = "|r"
@@ -68,6 +70,11 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
     private function PRL_ShowStatus takes string texturePath, string message returns nothing
         call ImagesUI_ShowPreload(texturePath, "")
         call ShowPreloadTitle(PRL_TEXT_COLOR + "Preloading..." + PRL_TEXT_END, message, PRL_TITLE_FADE_IN, PRL_TITLE_DURATION, PRL_TITLE_FADE_OUT)
+    endfunction
+
+    private function PRL_ShowDoneImage takes nothing returns nothing
+        call ImagesUI_ShowPreload(PRL_IMAGE_DONE, "")
+        call HidePreloadTitle()
     endfunction
 
     private function PRL_HideGameUI takes nothing returns nothing
@@ -164,6 +171,10 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
             call ExMusic_PreloadAll()
             set PRL_Step = 6
             call TimerStart(PRL_Timer, PRL_STAGE_DELAY, false, function PRL_RunStep)
+        elseif PRL_Step == 6 then
+            call PRL_ShowDoneImage()
+            set PRL_Step = 7
+            call TimerStart(PRL_Timer, PRL_DONE_DELAY, false, function PRL_RunStep)
         else
             call PRL_Finish()
         endif
