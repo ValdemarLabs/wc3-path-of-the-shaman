@@ -16,6 +16,7 @@
     call ProfessionsFishing_RegisterPoleItemWithBonus(itemCode, skillBonus)
     call ProfessionsFishing_RegisterBaitItem(itemCode, skillBonus, duration, displayName)
     call ProfessionsFishing_RegisterBaitItemEx(itemCode, skillBonus, duration, displayName, requiredFishingSkill)
+    set ProfessionsFishing_BobberModelPath = "war3mapImported\\FishingBobber.mdx"
     set started = ProfessionsFishing_Start(whichPlayer, fisher, pool)
     set stopped = ProfessionsFishing_StopForUnit(fisher)
     call ProfessionsFishing_Init()
@@ -53,6 +54,15 @@ globals
     private constant real PF_DEFAULT_BAIT_DURATION = 600.00
     private constant real PF_ANIMATION_LOOP_PERIOD = 1.35
     private constant real PF_SOUND_CUTOFF = 1800.00
+    private constant real PF_LINE_HAND_FORWARD_OFFSET = 28.00
+    private constant real PF_LINE_HAND_RIGHT_OFFSET = 22.00
+    private constant real PF_LINE_HAND_HEIGHT = 105.00
+    private constant real PF_BOBBER_POOL_RANDOM_RADIUS = 100.00
+    private constant real PF_BOBBER_HEIGHT_OFFSET = 8.00
+    private constant real PF_BOBBER_SCALE = 1.00
+    private constant real PF_BOBBER_STAND_DELAY = 0.35
+    private constant string PF_LINE_LIGHTNING_TYPE = "LEAS"
+    private constant animtype PF_BOBBER_ANIM_CINEMATIC_CUSTOM0 = ConvertAnimType(11)
 
     private constant integer PF_MISSING_SKILL_MIN_FAIL_CHANCE = 5
     private constant integer PF_MISSING_SKILL_FAIL_PER_LEVEL = 4
@@ -72,6 +82,7 @@ globals
     public string CancelButtonText = "Cancel"
     public string PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
     public string ProgressBarTexture = "UI\\Widgets\\Console\\Human\\human-tooltip-background.blp"
+    public string BobberModelPath = "world_goober_g_fishingbobber.mdx"
     public string FishWentAwayText = "Fish went away"
     public string NoTrackedFisherText = "No tracked fisher"
     public string NeedFishingPoleText = "Requires a fishing pole."
@@ -114,6 +125,12 @@ globals
     private real array PF_WindowStart
     private real array PF_WindowEnd
     private real array PF_AnimationElapsed
+    private real array PF_LineEndX
+    private real array PF_LineEndY
+    private real array PF_LineEndZ
+    private real array PF_BobberStandDelay
+    private lightning array PF_FishingLine
+    private effect array PF_BobberEffect
 
     private Table PF_UnitJob = 0
     private Table PF_PoolJob = 0
@@ -123,6 +140,7 @@ globals
 
     private timer PF_ClockTimer = null
     private timer PF_TickTimer = null
+    private location PF_TerrainSample = null
     private trigger PF_SelectTrigger = null
     private trigger PF_ReelTrigger = null
     private trigger PF_BaitTrigger = null
@@ -872,6 +890,142 @@ private function PF_ResetFisherAnimation takes unit fisher returns nothing
     endif
 endfunction
 
+private function PF_GetTerrainZ takes real x, real y returns real
+    if PF_TerrainSample == null then
+        return 0.00
+    endif
+
+    call MoveLocation(PF_TerrainSample, x, y)
+    return GetLocationZ(PF_TerrainSample)
+endfunction
+
+private function PF_GetLineStartX takes unit fisher returns real
+    local real facing
+
+    if fisher == null then
+        return 0.00
+    endif
+
+    set facing = GetUnitFacing(fisher) * bj_DEGTORAD
+    return GetUnitX(fisher) + PF_LINE_HAND_FORWARD_OFFSET * Cos(facing) + PF_LINE_HAND_RIGHT_OFFSET * Cos(facing - bj_PI * 0.50)
+endfunction
+
+private function PF_GetLineStartY takes unit fisher returns real
+    local real facing
+
+    if fisher == null then
+        return 0.00
+    endif
+
+    set facing = GetUnitFacing(fisher) * bj_DEGTORAD
+    return GetUnitY(fisher) + PF_LINE_HAND_FORWARD_OFFSET * Sin(facing) + PF_LINE_HAND_RIGHT_OFFSET * Sin(facing - bj_PI * 0.50)
+endfunction
+
+private function PF_GetLineStartZ takes unit fisher, real x, real y returns real
+    if fisher == null then
+        return PF_GetTerrainZ(x, y) + PF_LINE_HAND_HEIGHT
+    endif
+
+    return PF_GetTerrainZ(x, y) + GetUnitFlyHeight(fisher) + PF_LINE_HAND_HEIGHT
+endfunction
+
+private function PF_PlayBobberStand takes integer pid returns nothing
+    if PF_BobberEffect[pid] != null then
+        call BlzPlaySpecialEffect(PF_BobberEffect[pid], ANIM_TYPE_STAND)
+    endif
+endfunction
+
+private function PF_DestroyFishingVisuals takes integer pid returns nothing
+    if PF_FishingLine[pid] != null then
+        call DestroyLightning(PF_FishingLine[pid])
+        set PF_FishingLine[pid] = null
+    endif
+
+    if PF_BobberEffect[pid] != null then
+        call BlzPlaySpecialEffect(PF_BobberEffect[pid], PF_BOBBER_ANIM_CINEMATIC_CUSTOM0)
+        call DestroyEffect(PF_BobberEffect[pid])
+        set PF_BobberEffect[pid] = null
+    endif
+
+    set PF_LineEndX[pid] = 0.00
+    set PF_LineEndY[pid] = 0.00
+    set PF_LineEndZ[pid] = 0.00
+    set PF_BobberStandDelay[pid] = 0.00
+endfunction
+
+private function PF_UpdateFishingVisuals takes integer pid returns nothing
+    local unit fisher = PF_Fisher[pid]
+    local real startX
+    local real startY
+    local real startZ
+
+    if fisher == null then
+        set fisher = null
+        return
+    endif
+
+    set startX = PF_GetLineStartX(fisher)
+    set startY = PF_GetLineStartY(fisher)
+    set startZ = PF_GetLineStartZ(fisher, startX, startY)
+
+    if PF_FishingLine[pid] != null then
+        call MoveLightningEx(PF_FishingLine[pid], true, startX, startY, startZ, PF_LineEndX[pid], PF_LineEndY[pid], PF_LineEndZ[pid])
+    endif
+
+    if PF_BobberEffect[pid] != null then
+        call BlzSetSpecialEffectPosition(PF_BobberEffect[pid], PF_LineEndX[pid], PF_LineEndY[pid], PF_LineEndZ[pid])
+        if PF_BobberStandDelay[pid] > 0.00 then
+            set PF_BobberStandDelay[pid] = PF_BobberStandDelay[pid] - PF_TICK_INTERVAL
+            if PF_BobberStandDelay[pid] <= 0.00 then
+                call PF_PlayBobberStand(pid)
+            endif
+        endif
+    endif
+
+    set fisher = null
+endfunction
+
+private function PF_CreateFishingVisuals takes integer pid returns nothing
+    local unit fisher = PF_Fisher[pid]
+    local unit pool = PF_Pool[pid]
+    local real startX
+    local real startY
+    local real startZ
+    local real endAngle
+    local real endDistance
+
+    call PF_DestroyFishingVisuals(pid)
+
+    if fisher == null or pool == null then
+        set fisher = null
+        set pool = null
+        return
+    endif
+
+    set startX = PF_GetLineStartX(fisher)
+    set startY = PF_GetLineStartY(fisher)
+    set startZ = PF_GetLineStartZ(fisher, startX, startY)
+    set endAngle = GetRandomReal(0.00, bj_PI * 2.00)
+    set endDistance = GetRandomReal(0.00, PF_BOBBER_POOL_RANDOM_RADIUS)
+    set PF_LineEndX[pid] = GetUnitX(pool) + endDistance * Cos(endAngle)
+    set PF_LineEndY[pid] = GetUnitY(pool) + endDistance * Sin(endAngle)
+    set PF_LineEndZ[pid] = PF_GetTerrainZ(PF_LineEndX[pid], PF_LineEndY[pid]) + PF_BOBBER_HEIGHT_OFFSET
+    set PF_FishingLine[pid] = AddLightningEx(PF_LINE_LIGHTNING_TYPE, true, startX, startY, startZ, PF_LineEndX[pid], PF_LineEndY[pid], PF_LineEndZ[pid])
+
+    if BobberModelPath != null and BobberModelPath != "" then
+        set PF_BobberEffect[pid] = AddSpecialEffect(BobberModelPath, PF_LineEndX[pid], PF_LineEndY[pid])
+        if PF_BobberEffect[pid] != null then
+            call BlzSetSpecialEffectPosition(PF_BobberEffect[pid], PF_LineEndX[pid], PF_LineEndY[pid], PF_LineEndZ[pid])
+            call BlzSetSpecialEffectScale(PF_BobberEffect[pid], PF_BOBBER_SCALE)
+            call BlzPlaySpecialEffect(PF_BobberEffect[pid], PF_BOBBER_ANIM_CINEMATIC_CUSTOM0)
+            set PF_BobberStandDelay[pid] = PF_BOBBER_STAND_DELAY
+        endif
+    endif
+
+    set fisher = null
+    set pool = null
+endfunction
+
 private function PF_DisplayError takes player whichPlayer, string message returns nothing
     if whichPlayer != null and message != null and message != "" then
         call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "|cffff8080" + message + "|r")
@@ -1003,6 +1157,8 @@ private function PF_UI_ShowForPlayer takes player whichPlayer returns nothing
 endfunction
 
 private function PF_ClearJobState takes integer pid returns nothing
+    call PF_DestroyFishingVisuals(pid)
+
     if PF_Fisher[pid] != null and PF_UnitJob.has(GetHandleId(PF_Fisher[pid])) then
         call PF_UnitJob.remove(GetHandleId(PF_Fisher[pid]))
     endif
@@ -1078,6 +1234,7 @@ private function PF_BeginCast takes integer pid returns nothing
 
     call IssueImmediateOrder(PF_Fisher[pid], "stop")
     call PF_PlayFishingAnimation(pid)
+    call PF_CreateFishingVisuals(pid)
     call PF_PlayFishingSound(PF_Fisher[pid])
     call PF_UI_UpdateForPlayer(Player(pid))
 endfunction
@@ -1160,6 +1317,7 @@ private function PF_UpdateJob takes integer pid returns nothing
             return
         endif
 
+        call PF_UpdateFishingVisuals(pid)
         set PF_Elapsed[pid] = PF_Elapsed[pid] + PF_TICK_INTERVAL
         set PF_AnimationElapsed[pid] = PF_AnimationElapsed[pid] + PF_TICK_INTERVAL
         if PF_AnimationElapsed[pid] >= PF_ANIMATION_LOOP_PERIOD then
@@ -1511,6 +1669,7 @@ public function Init takes nothing returns nothing
     set PF_BaitBonusByUnit = Table.create()
     set PF_BaitExpiresByUnit = Table.create()
     set PF_BaitNameByUnit = Table.create()
+    set PF_TerrainSample = Location(0.00, 0.00)
 
     set PF_ClockTimer = CreateTimer()
     set PF_TickTimer = CreateTimer()
