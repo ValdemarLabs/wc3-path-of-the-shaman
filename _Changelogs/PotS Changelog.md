@@ -16,6 +16,77 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [26.7.2026]
+
+### Technical Updates
+
+- Updated `UI/FullscreenUI.j`
+  - Fullscreen enable and disable now also disable fog of war and black mask through `FogEnable(false)` and `FogMaskEnable(false)`.
+  - Kept repeated fullscreen enable/disable calls enforcing the visibility state even when the fullscreen UI was already in the requested state.
+
+- Updated cinematic fullscreen callers
+  - Replaced direct `CinematicModeBJ(...)` usage with `FullscreenUI_SetEnabled(...)` in dialog interaction transition fallback paths, profession crafting cinematics, and trailer cinematic playback.
+  - Dialog transition paths that already run the shared `Cinematic ON` / `Cinematic OFF` triggers now skip extra fullscreen calls because those triggers own fullscreen enable/disable.
+  - Updated profession cinematic audio comments to refer to fullscreen craft sequences instead of the old cinematic mode behavior.
+
+- Added `QuestsAndDialogs/DialogInteraction.j`
+  - Split generic selectable-NPC dialog mechanics out of `QuestGiver.j` into a reusable interaction layer.
+  - Centralized selectable NPC registration, selection handlers, hero/range/cooldown gating, selection failure reasons, greet playback wrappers, dialog reopen timers, and configured dialog camera entry/exit transitions.
+  - Preserved immediate player-control locking during dialog fades without using `CinematicModeBJ` or hiding cinematic panels.
+  - Uses `FullscreenUI_SetEnabled(...)` only for dialog paths that do not already run the shared `Cinematic ON` / `Cinematic OFF` GUI triggers.
+
+- Updated `QuestsAndDialogs/QuestGiver.j`
+  - Reduced `QuestGiver` back toward quest ownership: quest registration, quest state, requirements, rewards, quest buttons, companion quest helpers, and quest availability.
+  - Replaced the old embedded selection/greet/dialog-camera implementation with compatibility wrappers that delegate to `DialogInteraction`.
+  - Kept `QuestGiver_Register(...)` registering both quest availability through `QuestMaster` and dialog interaction through `DialogInteraction`, so older quest givers remain compatible.
+
+- Updated `Abilities/AbilityTrainerDialogs.j`
+  - Ability trainer dialogs now depend on `DialogInteraction` and no longer require `QuestGiver`.
+  - Trainer selection, selection gates, trainer camera transition configuration, greet playback, cooldowns, and dialog sequence control now call the shared `DialogInteraction_*` API directly.
+  - Keeps ability trainers as non-quest dialog NPCs while still allowing quest libraries to add trainer quest buttons separately.
+
+- Updated `QuestsAndDialogs/QuestGivers/qAradion.j`
+  - Migrated generic dialog interaction calls from `QuestGiver_*` to `DialogInteraction_*`.
+  - Kept actual quest work on `QuestGiver_*`, including quest creation, requirements, accept/complete buttons, companion quest helpers, and availability refresh.
+  - This makes qAradion follow the new modular split while preserving the quest behavior surface.
+
+- Updated `QuestsAndDialogs/QuestGivers/tools/qxxx-generator.html`
+  - Generated quest-giver libraries now require `DialogInteraction` for selection/camera/greet/farewell dialog mechanics.
+  - Generated templates still use `QuestGiver` for quest data, quest state, quest rewards, quest buttons, and quest registration.
+
+- Added `Debug/DebugObjectRegistry.j`
+  - Generated item, unit, and ability lookup tables from the latest checked-in Path of the Shaman object exports.
+  - Registered 946 item names, 468 unit names, and 1137 ability names/aliases for debug-command lookup.
+  - Added public lookup helpers for resolving rawcodes by exact/partial display name and for listing matching lookup results.
+
+- Added `Debug/DebugCommands.j`
+  - Added centralized `/debug` chat command handling for map testing and future cheat-command support.
+  - Added `/debug item create '<rawcode-or-name>'` to create any item by rawcode or lookup name.
+  - Item creation gives the item to the player's selected unit when available, or creates it at the player's current camera target when no unit is selected.
+  - Added `/debug item lookup '<rawcode-or-name>'` to fetch item rawcodes by name or inspect a known rawcode.
+  - Added `/debug unit create '<rawcode-or-name>'` to spawn any unit at the player's current camera target.
+  - Added `/debug unit lookup '<rawcode-or-name>'` to fetch unit rawcodes by name or inspect a known rawcode.
+  - Added `/debug ability give '<rawcode-or-name>'` and `/debug ability add '<rawcode-or-name>'` to give abilities to the player's selected unit.
+  - Added `/debug ability lookup '<rawcode-or-name>'` to fetch ability rawcodes by name or inspect a known rawcode.
+  - Tracks selected units per player and syncs local camera target positions through `BlzSendSyncData` before running camera-based create commands.
+  - Uses `Ascii` rawcode conversion so rawcode text and four-character string input work consistently with the imported map libraries.
+
+- Updated Shaman and profession sound playback helpers
+  - `Abilities/Shaman/ShamanCommon.j` now supports fresh sound recreation from Sound Editor labels or explicit import paths, then applies the requested 2D/3D setup before playback.
+  - Stormstrike, Whirlwind, Lightning Strike, Ghost Wolf morph/return, and Ghost Wolf Bite now play recreated 3D sounds attached to the active caster/form unit instead of reusing shared `gg_snd_*` handles.
+  - `UI/Interface.j` profession playback now recreates sounds from configured paths or labels as needed: station/unit playback creates 3D handles, while cinematic/global playback creates non-3D handles.
+  - Removed the `GetSoundDuration(professionSound) > 0` gate from profession-created sounds so valid newly created Sound Editor/import sounds are not discarded before playback.
+  - Mining hit and herb-pick world event sounds now prefer fresh 3D label-created playback at the relevant unit location, with shared event handles only kept as fallback.
+  - `Professions/Professions.j` now prefers recreatable path/label sound configuration for all craft jobs and only falls back to shared handles when no recreatable configuration works.
+  - This follows the same sound-handle state-leak lesson noted earlier for `SoundTools`/`TerrainDamage`: reused or recycled sound handles can carry configuration state, so libraries that need situational playback must recreate/configure handles per use.
+
+### Known Issues
+
+- The new debug command libraries passed local JassHelper script-only validation, but still need in-map validation with the active imported object data and multiplayer sync context.
+- The new `DialogInteraction.j` split passed targeted static checks for stale `QuestGiver_*` generic dialog calls and panel-hide usage, but still needs a full in-map JassHelper compile and runtime test with ability trainers and qAradion.
+- The Shaman/profession sound changes passed targeted static checks and `git diff --check`, but still need full in-map JassHelper compile and runtime audio validation. Shaman path fallbacks assume import paths such as `war3mapImported\\Stormstrike.wav`; those strings must be corrected if the actual imported sound paths differ.
+
+
 ## [25.7.2026]
 
 ### Player-Facing Updates
@@ -56,6 +127,7 @@
   - All configured fishing poles can qualify for fishing, with stronger poles contributing their Fishing item-stat bonus.
   - Fishing now uses a compact WoW-style FishingUI cast bar with a random bite window and Reel button.
   - FishingUI was moved higher on screen so it no longer covers the bottom unit portrait/command UI.
+  - FishingUI status text now sits under the fishing bar instead of overlapping the action buttons.
   - Missing the reel window fails the attempt with "Fish went away".
   - Moving too far away from the fish pool now interrupts fishing.
   - FishingUI bait selection now uses the strongest usable bait found in vanilla inventory or DInventory.
@@ -72,6 +144,8 @@
   - `Stave` items are treated as two-handed main-hand weapons.
   - Trinkets now have two visible DEquipment slots.
   - Rawcode casing mismatches such as Skinning Knife `'i66m'` / `'I66M'` are handled in the current DEquipment export.
+  - DEquipment no longer double-applies ItemManager stat bonuses by also granting generated or legacy WC3 stat abilities.
+  - DEquipment and DInventory custom tooltips no longer show internal stat/dummy ability object names above the normal item tooltip text.
 
 - ItemManager-authored profession skill stats now contribute to the matching profession values shown and checked in-game.
 
@@ -88,7 +162,21 @@
 - Updated `Preload/Preloader.j`
   - Uses now the newly created FullscreenUI to hide UI elements during preload.
   - Increased preload title display duration and phase pauses to 5 seconds so startup and phase screens remain readable instead of flashing past.
-  - Calls `Start_Start()` after preload instead of executing the old `gg_trg_Game_Start` GUI trigger.
+  - Moved post-preload player startup ownership away from the old `gg_trg_Game_Start` GUI trigger and into the JASS startup flow.
+
+- Added `UI/GameMode.j`
+  - Added a pre-start Game Mode UI that appears after preload and before `Start_Start()`.
+  - Added Story, Free Roam, and Developer mode configuration flags for story flow, intro cinematic usage, quest requirements, ability requirements, AP costs, quest reveal style, and starting gold bonus.
+  - Shows Difficulty selection after game mode selection and applies it through `Difficulty_SetDifficulty()` before starting the player setup flow.
+  - Developer mode can be hidden for release builds with `GM_SHOW_DEVELOPER_MODE`.
+
+- Updated `Preload/Preloader.j` and `Preload/Start.j`
+  - `Preloader.j` now shows `GameMode_Show()` after preload instead of calling `Start_Start()` directly.
+  - `Start.j` now exposes `Start_SetRunIntroCinematic()` and `Start_SetStartingGoldBonus()` so selected game mode settings can affect startup without making `Start.j` depend on `GameMode.j`.
+
+- Updated `Abilities/Abilities.j` and `QuestsAndDialogs/QuestMaster.j`
+  - Added optional `GameMode` hooks so Developer mode can bypass ability prerequisites, ability quest locks, AP costs, and quest availability requirements.
+  - Free Roam mode can bypass configured story-style quest gates while keeping level and reputation requirements enabled by configuration.
 
 - Updated `Events/UnitDeathEvent.j`
   - Registered death callbacks directly on the central death trigger so `GetDyingUnit()` and `GetKillingUnit()` remain valid for systems such as `TerrainDamage`, `CreepRespawn`, AI revive handling, companion death handling, item drops, and reputation.
@@ -171,6 +259,7 @@
   - Auto-equips the best available DInventory fishing pole when it improves the fisher's pole bonus.
   - Selects the strongest usable bait from vanilla inventory or DInventory and reports the lowest unmet Fishing requirement when only locked bait is available.
   - Repositioned the FishingUI action buttons into a cleaner vertical stack beside the cast bar.
+  - Moved FishingUI status text below the cast bar so it does not sit under the Cancel button.
   - Added a loose post-cast pool range check so walking away cancels fishing without interrupting normal animation jitter.
   - Stops fishing when the unit is attacked, the pool becomes invalid, the unit moves out of range, the reel window is missed, or the player cancels.
 
@@ -218,6 +307,7 @@
   - Made slot-name lookup case-insensitive enough for definitions such as `Mainhand` / `MainHand`, and made generic `Ring` / `Trinket` definitions expand to both corresponding slots.
   - Renamed DEquipment stat ID `19` from `Cleave Damage` to `Cleave Area`, matching the runtime code that already changes cleave area.
   - Registered DEquipment profession stat names for Mining, Herbalism, Skinning, Fishing, Alchemy, Blacksmithing, Leatherworking, Enchanting, and Cooking.
+  - Hid the generated granted-ability-name block in DEquipment/DInventory tooltips by default so internal bonus abilities such as item attack/damage bonuses do not leak into custom tooltip frames.
 
 - Updated `DestroyerInventoryAndEquipmentSystem/PoTs/DEquipmentDefinitionHELP.j`
   - Documented the new `Trinket1` and `Trinket2` slots.
@@ -233,6 +323,13 @@
   - Normalizes current ItemManager stat names to registered DEquipment stat names such as `Hitpoints`, `Hitpoint regeneration`, `Mana regeneration`, `MoveSPD Pct`, `Spell Damage Taken Pct`, and `Cleave Area`.
   - Exports profession item stats to the matching DEquipment stat names.
   - Converts whole-percent ItemManager values to DEquipment fractional values for stats whose Warcraft ability fields expect fractions, such as attack speed, lifesteal, armor percent, movement speed percent, and damage-taken percent.
+  - Filters generated ItemManager stat abilities and legacy imported stat abilities out of DEquipment ability grants when the item already exports DEquipment stats, while preserving real item-use abilities such as Skin.
+
+- Updated `WC3_Database/WC3ItemManager/ItemEditForm.cs`
+  - Treats legacy imported stat abilities as stat-generated abilities when loading an item with regenerated stats, preventing old codes such as `AIat` from being saved back as manual abilities beside the new generated stat ability.
+
+- Updated `WC3_Database/core/wc3_w3t_exporter.py`
+  - Removes legacy imported stat ability codes from vanilla item ability export when ItemManager-generated stat abilities are already present, preventing rows such as Skinning Knife from exporting both `A07N` and `AIat`.
 
 - Updated `WC3_Database/WC3ItemManager` database bootstrap paths
   - Ensures `Stave` is seeded as `TWOHAND_STAFF` and `Trinket` is seeded as `TRINKET` for older or freshly initialized ItemManager databases.
@@ -248,11 +345,12 @@
   - Patched the current generated DEquipment definitions so `Stave`, `Ring`, and `Trinket` items have the corrected slot definitions immediately.
   - Added uppercase rawcode aliases for Skinning Knife `'I66M'` and Copper Chain Boots `'I68M'`, matching other profession, AI, and loot-system references.
   - Replaced invalid exported stat labels such as `Health`, `HPS`, `Mana Regen Per Sec`, `Lifesteal`, `Movement Speed %`, and damage-taken names with DEquipment-registered stat names.
+  - Removed generated/legacy stat ability grants from rawcodes that already have DEquipment stat definitions; Skinning Knife keeps the real Skin ability `A0F3` but no longer grants extra damage abilities.
 
 ### Known Issues
 
 - Full in-map JassHelper / Warcraft III compile validation was not completed in this repo snapshot because no combined `war3map.j` or normal map build entry point is exposed.
-- The converted `Preload/Start.j` player startup flow still needs in-map validation with the active generated globals for `IntroV2Nazgrek01` and `Intro Cinematic Orc Q`.
+- The converted `Preload/Start.j` and new `UI/GameMode.j` player startup flow still needs in-map validation with the active generated globals for `IntroV2Nazgrek01`, `Intro Cinematic Orc Q`, frame UI interaction, and selected mode/difficulty handoff.
 - The updated shaman scaling, Ancestral Ward orbiting effects, trainer camera timing, Ghost Wolf companion retargeting, trainer feedback lines/randomized registered-line picker, ability prerequisites, trainer/player ExSound registrations, and temporary summon Stats UI rows still need in-game validation with the active object data/import set.
 - The new FishingUI minigame, fish-pool shallow-water placement, preplaced fish-pool zone detection, and zone-aware fish rewards still need in-game validation with the active map object data.
 - The new Skinning flow and default beast rawcode list still need in-game validation with the active object data; Vizier Skin has no confirmed unit rawcode registered yet.
