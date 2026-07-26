@@ -193,7 +193,7 @@ private function PF_RegisterDefaultFishPoolUnit takes nothing returns nothing
     local integer defId = GNU_GetDefinitionIdByUnitCode(PF_UNIT_DEFAULT_FISH_POOL)
 
     if defId < 0 then
-        set defId = GNU_RegisterDefinition(PF_UNIT_DEFAULT_FISH_POOL, PF_DEFAULT_FISH_POOL_NAME, PF_CATEGORY_FISH_POOLS, 100, 180.00, 400.00, 5, 0, GNS_PROF_FISHING, 1, 1, 100, 100, 0, 0, 0, 23, false, true, 40, 150, 255, 200, 1.20, 0.00, false)
+        set defId = GNU_RegisterDefinition(PF_UNIT_DEFAULT_FISH_POOL, PF_DEFAULT_FISH_POOL_NAME, PF_CATEGORY_FISH_POOLS, 100, 180.00, 400.00, 5, 0, GNS_PROF_FISHING, 1, 1, 100, 100, 0, 0, 0, 23, false, false, 40, 150, 255, 200, 1.20, 0.00, false)
     endif
 
     call PF_RegisterExistingDefaultFishPools(defId)
