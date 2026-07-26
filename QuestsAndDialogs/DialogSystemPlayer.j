@@ -41,6 +41,21 @@ private function LinesZulkis takes nothing returns nothing
 
 	call DialogSystem_RegisterAcceptLine("Zulkis", "Yes.", "", true)
 
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "Invite", "Come with us, mon.", "Zulkis_CompanionInvite1", true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "Invite", "Walk with da spirits and us.", "Zulkis_CompanionInvite2", true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "Kick", "You be done here, mon.", "Zulkis_CompanionKick1", true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "Kick", "Return to your path.", "Zulkis_CompanionKick2", true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "DropItems", "Drop what ya carrying.", "Zulkis_CompanionDropItems1", true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "DropItems", "Leave da gear here.", "Zulkis_CompanionDropItems2", true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "PassiveMode", "Stay back and keep safe.", "Zulkis_CompanionPassiveMode1", true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "PassiveMode", "No fighting unless I call it.", "Zulkis_CompanionPassiveMode2", true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "NormalMode", "Stay close and guard us.", "Zulkis_CompanionNormalMode1", true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "NormalMode", "Back to formation, mon.", "Zulkis_CompanionNormalMode2", true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "AggressiveMode", "Bring da fight to them.", "Zulkis_CompanionAggressiveMode1", true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "AggressiveMode", "Show them our strength.", "Zulkis_CompanionAggressiveMode2", true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "HoldMode", "Hold this ground.", "Zulkis_CompanionHoldMode1", true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "HoldMode", "Stand firm here, mon.", "Zulkis_CompanionHoldMode2", true)
+
 endfunction
 
 private function LinesNazgrek takes nothing returns nothing
@@ -116,6 +131,21 @@ private function LinesNazgrek takes nothing returns nothing
 	call DialogSystem_RegisterAcceptLine("Nazgrek", "Consider it done.", "Nazgrek_Accept3", true)
 	call DialogSystem_RegisterAcceptLine("Nazgrek", "Very well.", "Nazgrek_Accept4", true)
 	call DialogSystem_RegisterAcceptLine("Nazgrek", "Agreed.", "Nazgrek_Accept5", true)
+
+	call DialogSystem_RegisterCompanionCommandLine("Nazgrek", "Invite", "Join us.", "Nazgrek_CompanionInvite1", true)
+	call DialogSystem_RegisterCompanionCommandLine("Nazgrek", "Invite", "Fight with us.", "Nazgrek_CompanionInvite2", true)
+	call DialogSystem_RegisterCompanionCommandLine("Nazgrek", "Kick", "You are dismissed.", "Nazgrek_CompanionKick1", true)
+	call DialogSystem_RegisterCompanionCommandLine("Nazgrek", "Kick", "Return to your post.", "Nazgrek_CompanionKick2", true)
+	call DialogSystem_RegisterCompanionCommandLine("Nazgrek", "DropItems", "Drop what you are carrying.", "Nazgrek_CompanionDropItems1", true)
+	call DialogSystem_RegisterCompanionCommandLine("Nazgrek", "DropItems", "Leave those supplies here.", "Nazgrek_CompanionDropItems2", true)
+	call DialogSystem_RegisterCompanionCommandLine("Nazgrek", "PassiveMode", "Stay back and avoid trouble.", "Nazgrek_CompanionPassiveMode1", true)
+	call DialogSystem_RegisterCompanionCommandLine("Nazgrek", "PassiveMode", "Hold your blades unless I say otherwise.", "Nazgrek_CompanionPassiveMode2", true)
+	call DialogSystem_RegisterCompanionCommandLine("Nazgrek", "NormalMode", "Stay close and defend us.", "Nazgrek_CompanionNormalMode1", true)
+	call DialogSystem_RegisterCompanionCommandLine("Nazgrek", "NormalMode", "Back to formation.", "Nazgrek_CompanionNormalMode2", true)
+	call DialogSystem_RegisterCompanionCommandLine("Nazgrek", "AggressiveMode", "Press the attack.", "Nazgrek_CompanionAggressiveMode1", true)
+	call DialogSystem_RegisterCompanionCommandLine("Nazgrek", "AggressiveMode", "Take the fight to them.", "Nazgrek_CompanionAggressiveMode2", true)
+	call DialogSystem_RegisterCompanionCommandLine("Nazgrek", "HoldMode", "Hold this position.", "Nazgrek_CompanionHoldMode1", true)
+	call DialogSystem_RegisterCompanionCommandLine("Nazgrek", "HoldMode", "Stand your ground.", "Nazgrek_CompanionHoldMode2", true)
 
 endfunction
 
