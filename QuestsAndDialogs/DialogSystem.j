@@ -40,6 +40,13 @@ globals
 	private Table DialogSystem_DeclineLines = 0
 	private Table DialogSystem_AcceptLines = 0
 	private Table DialogSystem_InfoLines = 0
+	private Table DialogSystem_CompanionInviteLines = 0
+	private Table DialogSystem_CompanionKickLines = 0
+	private Table DialogSystem_CompanionDropItemsLines = 0
+	private Table DialogSystem_CompanionPassiveModeLines = 0
+	private Table DialogSystem_CompanionNormalModeLines = 0
+	private Table DialogSystem_CompanionAggressiveModeLines = 0
+	private Table DialogSystem_CompanionHoldModeLines = 0
 	private Table DialogSystem_LookAtTimerUnit = 0
 
 	private constant integer DIALOG_SEQ_LINE_COUNT_KEY = 0
@@ -705,6 +712,51 @@ private function PickRegisteredLineData takes Table linesTable, string speakerNa
 	return true
 endfunction
 
+private function PickCompanionCommandLineData takes string speakerName, string commandName returns boolean
+	if commandName == "Invite" then
+		return PickRegisteredLineData(DialogSystem_CompanionInviteLines, speakerName)
+	elseif commandName == "Kick" then
+		return PickRegisteredLineData(DialogSystem_CompanionKickLines, speakerName)
+	elseif commandName == "DropItems" then
+		return PickRegisteredLineData(DialogSystem_CompanionDropItemsLines, speakerName)
+	elseif commandName == "PassiveMode" then
+		return PickRegisteredLineData(DialogSystem_CompanionPassiveModeLines, speakerName)
+	elseif commandName == "NormalMode" then
+		return PickRegisteredLineData(DialogSystem_CompanionNormalModeLines, speakerName)
+	elseif commandName == "AggressiveMode" then
+		return PickRegisteredLineData(DialogSystem_CompanionAggressiveModeLines, speakerName)
+	elseif commandName == "HoldMode" then
+		return PickRegisteredLineData(DialogSystem_CompanionHoldModeLines, speakerName)
+	endif
+	return false
+endfunction
+
+private function PickCompanionCommandFallback takes string commandName returns boolean
+	local string text = ""
+	if commandName == "Invite" then
+		set text = "Join us."
+	elseif commandName == "Kick" then
+		set text = "You are dismissed."
+	elseif commandName == "DropItems" then
+		set text = "Drop what you are carrying."
+	elseif commandName == "PassiveMode" then
+		set text = "Stay back."
+	elseif commandName == "NormalMode" then
+		set text = "Stay close."
+	elseif commandName == "AggressiveMode" then
+		set text = "Press the attack."
+	elseif commandName == "HoldMode" then
+		set text = "Hold this position."
+	endif
+	if text == "" then
+		return false
+	endif
+	set DialogSystem_PickedText = text
+	set DialogSystem_PickedSound = ""
+	set DialogSystem_PickedSoundAtUnit = true
+	return true
+endfunction
+
 //===========================================================================
 // Public API
 //===========================================================================
@@ -1350,6 +1402,21 @@ public function PickFarewellTrainerLine takes unit speaker, string speakerName r
 	return PickFarewellLine(speaker, speakerName)
 endfunction
 
+public function PickCompanionCommandLine takes unit speaker, string speakerName, string commandName returns boolean
+	local string lookupName
+	set DialogSystem_PickedText = ""
+	set DialogSystem_PickedSound = ""
+	set DialogSystem_PickedSoundAtUnit = true
+	set lookupName = speakerName
+	if lookupName == "" and speaker != null then
+		set lookupName = GetUnitDisplayName(speaker)
+	endif
+	if lookupName != "" and PickCompanionCommandLineData(lookupName, commandName) then
+		return true
+	endif
+	return PickCompanionCommandFallback(commandName)
+endfunction
+
 public function PlayLearnTrainerLine takes unit speaker, string speakerName returns nothing
 	local string lookupName = speakerName
 	if lookupName == "" and speaker != null then
@@ -1478,6 +1545,24 @@ endfunction
 
 public function RegisterInfoLine takes string speakerName, string text, string soundKey, boolean soundAtUnit returns nothing
 	call RegisterLineInternal(DialogSystem_InfoLines, speakerName, text, soundKey, soundAtUnit)
+endfunction
+
+public function RegisterCompanionCommandLine takes string speakerName, string commandName, string text, string soundKey, boolean soundAtUnit returns nothing
+	if commandName == "Invite" then
+		call RegisterLineInternal(DialogSystem_CompanionInviteLines, speakerName, text, soundKey, soundAtUnit)
+	elseif commandName == "Kick" then
+		call RegisterLineInternal(DialogSystem_CompanionKickLines, speakerName, text, soundKey, soundAtUnit)
+	elseif commandName == "DropItems" then
+		call RegisterLineInternal(DialogSystem_CompanionDropItemsLines, speakerName, text, soundKey, soundAtUnit)
+	elseif commandName == "PassiveMode" then
+		call RegisterLineInternal(DialogSystem_CompanionPassiveModeLines, speakerName, text, soundKey, soundAtUnit)
+	elseif commandName == "NormalMode" then
+		call RegisterLineInternal(DialogSystem_CompanionNormalModeLines, speakerName, text, soundKey, soundAtUnit)
+	elseif commandName == "AggressiveMode" then
+		call RegisterLineInternal(DialogSystem_CompanionAggressiveModeLines, speakerName, text, soundKey, soundAtUnit)
+	elseif commandName == "HoldMode" then
+		call RegisterLineInternal(DialogSystem_CompanionHoldModeLines, speakerName, text, soundKey, soundAtUnit)
+	endif
 endfunction
 
 //===========================================================================
@@ -1801,6 +1886,13 @@ private function Init takes nothing returns nothing
 	set DialogSystem_DeclineLines = Table.create()
 	set DialogSystem_AcceptLines = Table.create()
 	set DialogSystem_InfoLines = Table.create()
+	set DialogSystem_CompanionInviteLines = Table.create()
+	set DialogSystem_CompanionKickLines = Table.create()
+	set DialogSystem_CompanionDropItemsLines = Table.create()
+	set DialogSystem_CompanionPassiveModeLines = Table.create()
+	set DialogSystem_CompanionNormalModeLines = Table.create()
+	set DialogSystem_CompanionAggressiveModeLines = Table.create()
+	set DialogSystem_CompanionHoldModeLines = Table.create()
 	set DialogSystem_LookAtTimerUnit = Table.create()
 	set DialogSystem_SkipTrigger = CreateTrigger()
 	// Register ESC key for normal mode
