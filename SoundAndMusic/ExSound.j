@@ -44,6 +44,7 @@ library ExSound initializer Init
     General-purpose sound helpers:
         Label helpers accept Sound Editor labels such as "Blacksmithing" and generated-name strings such as "gg_snd_Blacksmithing".
         Existing sound handles keep their original 2D/3D creation mode; label/path helpers create fresh 2D or 3D handles.
+        Registered ExSound keys keep legacy non-spatial playback for imported voiceline compatibility.
         call ExSound_PlayHandle(gg_snd_Error)
         call ExSound_PlayHandleForPlayer(gg_snd_Error, GetTriggerPlayer())
         call ExSound_PlayLabel("Blacksmithing", false)
@@ -1705,22 +1706,14 @@ private function ExSound_PlayInternal takes string key, boolean is3D, real x, re
     // Cleanup finished sounds
     call CleanupFinished()
 
-    // Create new sound
-    set s = CreateSound(path, false, is3D, is3D, EXSOUND_FADE_RATE, EXSOUND_FADE_RATE, "")
+    // Registered ExSound keys are mostly imported voicelines and must preserve legacy non-spatial playback behavior.
+    set s = CreateSound(path, false, false, false, EXSOUND_FADE_RATE, EXSOUND_FADE_RATE, "")
     if s == null then
         return
     endif
     set es_CurrentSound[es_CurrentSoundCount] = s
     set es_CurrentSoundCount = es_CurrentSoundCount + 1
     set es_CurrentHash = StringHash(key)
-    
-    if is3D then
-        if u != null then
-            call ExSound_Apply3DOnUnit(s, u)
-        else
-            call ExSound_Apply3DAtPoint(s, x, y)
-        endif
-    endif
     
     // Duration
     // Try to get actual sound duration
@@ -1744,7 +1737,8 @@ private function ExSound_PlayInternal takes string key, boolean is3D, real x, re
 
     //call BJDebugMsg("Play: " + key + " (" + R2S(udg_ExSoundDuration) + "s)")
 
-    call ExSound_StartTransientSound(s, false)
+    call SetSoundVolume(s, EXSOUND_VOLUME)
+    call StartSound(s)
 
     set s = null
 
