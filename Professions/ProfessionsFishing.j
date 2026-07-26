@@ -10,6 +10,7 @@
 
     How to install:
     Import this library after Professions, GatherNodeSkills, ZonesCore, GatherNodes, GatherNodeUnits, Table, and Interface. Register fish pools through GatherNodeUnits with GNS_PROF_FISHING, zone rewards through GNU_RegisterZoneDrop, and additional poles or bait here.
+    For the intended thin fishing-line look with LEAS, import lariatCaught.blp as ReplaceableTextures\Weather\lariatCaught.blp so it replaces the Aerial Shackles lightning texture.
 
     API:
     call ProfessionsFishing_RegisterPoleItem('I6CJ')
@@ -17,6 +18,9 @@
     call ProfessionsFishing_RegisterBaitItem(itemCode, skillBonus, duration, displayName)
     call ProfessionsFishing_RegisterBaitItemEx(itemCode, skillBonus, duration, displayName, requiredFishingSkill)
     set ProfessionsFishing_BobberModelPath = "war3mapImported\\FishingBobber.mdx"
+    set ProfessionsFishing_FishingLineLightningType = "LEAS"
+    set ProfessionsFishing_FishingLineUseCustomColor = false
+    set ProfessionsFishing_LineHandAttachmentPoint = "hand,right"
     set started = ProfessionsFishing_Start(whichPlayer, fisher, pool)
     set stopped = ProfessionsFishing_StopForUnit(fisher)
     call ProfessionsFishing_Init()
@@ -69,9 +73,9 @@ globals
     private constant real PF_LINE_COLOR_RED = 0.78
     private constant real PF_LINE_COLOR_GREEN = 0.88
     private constant real PF_LINE_COLOR_BLUE = 1.00
-    private constant real PF_LINE_COLOR_ALPHA = 0.62
-    private constant string PF_LINE_LIGHTNING_TYPE = "DRAM"
-    private constant string PF_LINE_HAND_ATTACHMENT_POINT = "right, hand"
+    private constant real PF_LINE_COLOR_ALPHA = 0.48
+    private constant string PF_DEFAULT_LINE_LIGHTNING_TYPE = "LEAS"
+    private constant string PF_DEFAULT_LINE_HAND_ATTACHMENT_POINT = "hand,right"
     private constant string PF_LINE_HAND_MARKER_MODEL = "Abilities\\Weapons\\WispMissile\\WispMissile.mdl"
     private constant animtype PF_BOBBER_ANIM_CINEMATIC = ConvertAnimType(11)
     private constant subanimtype PF_BOBBER_SUBANIM_CUSTOM0 = ConvertSubAnimType(0)
@@ -95,6 +99,9 @@ globals
     public string PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
     public string ProgressBarTexture = "UI\\Widgets\\Console\\Human\\human-tooltip-background.blp"
     public string BobberModelPath = "world_goober_g_fishingbobber.mdx"
+    public string FishingLineLightningType = "LEAS"
+    public string LineHandAttachmentPoint = "hand,right"
+    public boolean FishingLineUseCustomColor = false
     public string FishWentAwayText = "Fish went away"
     public string NoTrackedFisherText = "No tracked fisher"
     public string NeedFishingPoleText = "Requires a fishing pole."
@@ -949,6 +956,22 @@ private function PF_GetFallbackLineStartZ takes unit fisher, real x, real y retu
     return PF_GetTerrainZ(x, y) + GetUnitFlyHeight(fisher) + PF_LINE_HAND_HEIGHT
 endfunction
 
+private function PF_GetFishingLineLightningType takes nothing returns string
+    if FishingLineLightningType != null and FishingLineLightningType != "" then
+        return FishingLineLightningType
+    endif
+
+    return PF_DEFAULT_LINE_LIGHTNING_TYPE
+endfunction
+
+private function PF_GetLineHandAttachmentPoint takes nothing returns string
+    if LineHandAttachmentPoint != null and LineHandAttachmentPoint != "" then
+        return LineHandAttachmentPoint
+    endif
+
+    return PF_DEFAULT_LINE_HAND_ATTACHMENT_POINT
+endfunction
+
 private function PF_DestroyLineHandMarker takes integer pid returns nothing
     if PF_LineHandMarker[pid] != null then
         call DestroyEffect(PF_LineHandMarker[pid])
@@ -960,7 +983,7 @@ private function PF_CreateLineHandMarker takes integer pid, unit fisher returns 
     call PF_DestroyLineHandMarker(pid)
 
     if fisher != null then
-        set PF_LineHandMarker[pid] = AddSpecialEffectTarget(PF_LINE_HAND_MARKER_MODEL, fisher, PF_LINE_HAND_ATTACHMENT_POINT)
+        set PF_LineHandMarker[pid] = AddSpecialEffectTarget(PF_LINE_HAND_MARKER_MODEL, fisher, PF_GetLineHandAttachmentPoint())
         if PF_LineHandMarker[pid] != null then
             call BlzSetSpecialEffectAlpha(PF_LineHandMarker[pid], 0)
             call BlzSetSpecialEffectScale(PF_LineHandMarker[pid], 0.01)
@@ -968,8 +991,21 @@ private function PF_CreateLineHandMarker takes integer pid, unit fisher returns 
     endif
 endfunction
 
+private function PF_LineHandMarkerIsUsable takes integer pid, unit fisher returns boolean
+    local real dx
+    local real dy
+
+    if fisher == null or PF_LineHandMarker[pid] == null then
+        return false
+    endif
+
+    set dx = BlzGetLocalSpecialEffectX(PF_LineHandMarker[pid]) - GetUnitX(fisher)
+    set dy = BlzGetLocalSpecialEffectY(PF_LineHandMarker[pid]) - GetUnitY(fisher)
+    return dx * dx + dy * dy > 4.00
+endfunction
+
 private function PF_GetLineStartX takes integer pid, unit fisher returns real
-    if PF_LineHandMarker[pid] != null then
+    if PF_LineHandMarkerIsUsable(pid, fisher) then
         return BlzGetLocalSpecialEffectX(PF_LineHandMarker[pid])
     endif
 
@@ -977,7 +1013,7 @@ private function PF_GetLineStartX takes integer pid, unit fisher returns real
 endfunction
 
 private function PF_GetLineStartY takes integer pid, unit fisher returns real
-    if PF_LineHandMarker[pid] != null then
+    if PF_LineHandMarkerIsUsable(pid, fisher) then
         return BlzGetLocalSpecialEffectY(PF_LineHandMarker[pid])
     endif
 
@@ -985,7 +1021,7 @@ private function PF_GetLineStartY takes integer pid, unit fisher returns real
 endfunction
 
 private function PF_GetLineStartZ takes integer pid, unit fisher, real x, real y returns real
-    if PF_LineHandMarker[pid] != null then
+    if PF_LineHandMarkerIsUsable(pid, fisher) then
         return BlzGetLocalSpecialEffectZ(PF_LineHandMarker[pid]) + PF_LINE_HAND_Z_OFFSET
     endif
 
@@ -1146,8 +1182,8 @@ private function PF_CreateFishingVisuals takes integer pid returns nothing
     set PF_LineEndX[pid] = PF_LineEndBaseX[pid]
     set PF_LineEndY[pid] = PF_LineEndBaseY[pid]
     set PF_LineEndZ[pid] = PF_LineEndBaseZ[pid]
-    set PF_FishingLine[pid] = AddLightningEx(PF_LINE_LIGHTNING_TYPE, true, startX, startY, startZ, PF_LineEndX[pid], PF_LineEndY[pid], PF_LineEndZ[pid])
-    if PF_FishingLine[pid] != null then
+    set PF_FishingLine[pid] = AddLightningEx(PF_GetFishingLineLightningType(), true, startX, startY, startZ, PF_LineEndX[pid], PF_LineEndY[pid], PF_LineEndZ[pid])
+    if PF_FishingLine[pid] != null and FishingLineUseCustomColor then
         call SetLightningColor(PF_FishingLine[pid], PF_LINE_COLOR_RED, PF_LINE_COLOR_GREEN, PF_LINE_COLOR_BLUE, PF_LINE_COLOR_ALPHA)
     endif
 
