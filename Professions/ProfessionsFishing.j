@@ -42,10 +42,10 @@ globals
     private constant integer PF_DEFAULT_FISH_POOL_ZONE = 0
     private constant integer PF_FISHING_POLE_EQUIPMENT_SLOT = 19
 
-    private constant real PF_START_RANGE = 550.00
-    private constant real PF_READY_RANGE = 170.00
-    private constant real PF_CANCEL_RANGE = 300.00
-    private constant real PF_APPROACH_OFFSET = 145.00
+    private constant real PF_START_RANGE = 750.00
+    private constant real PF_READY_RANGE = 650.00
+    private constant real PF_CANCEL_RANGE = 850.00
+    private constant real PF_APPROACH_OFFSET = 625.00
     private constant real PF_MOVE_TIMEOUT = 10.00
     private constant real PF_CAST_DURATION = 10.00
     private constant real PF_TICK_INTERVAL = 0.05
@@ -57,12 +57,24 @@ globals
     private constant real PF_LINE_HAND_FORWARD_OFFSET = 28.00
     private constant real PF_LINE_HAND_RIGHT_OFFSET = 22.00
     private constant real PF_LINE_HAND_HEIGHT = 105.00
+    private constant real PF_LINE_HAND_Z_OFFSET = 0.00
     private constant real PF_BOBBER_POOL_RANDOM_RADIUS = 100.00
     private constant real PF_BOBBER_HEIGHT_OFFSET = 8.00
     private constant real PF_BOBBER_SCALE = 1.00
     private constant real PF_BOBBER_STAND_DELAY = 0.35
-    private constant string PF_LINE_LIGHTNING_TYPE = "LEAS"
-    private constant animtype PF_BOBBER_ANIM_CINEMATIC_CUSTOM0 = ConvertAnimType(11)
+    private constant real PF_LINE_WOBBLE_DURATION = 0.55
+    private constant real PF_LINE_WOBBLE_STRENGTH = 18.00
+    private constant real PF_LINE_WOBBLE_END_STRENGTH = 26.00
+    private constant real PF_LINE_WOBBLE_SPEED = 37.00
+    private constant real PF_LINE_COLOR_RED = 0.78
+    private constant real PF_LINE_COLOR_GREEN = 0.88
+    private constant real PF_LINE_COLOR_BLUE = 1.00
+    private constant real PF_LINE_COLOR_ALPHA = 0.62
+    private constant string PF_LINE_LIGHTNING_TYPE = "DRAM"
+    private constant string PF_LINE_HAND_ATTACHMENT_POINT = "right, hand"
+    private constant string PF_LINE_HAND_MARKER_MODEL = "Abilities\\Weapons\\WispMissile\\WispMissile.mdl"
+    private constant animtype PF_BOBBER_ANIM_CINEMATIC = ConvertAnimType(11)
+    private constant subanimtype PF_BOBBER_SUBANIM_CUSTOM0 = ConvertSubAnimType(0)
 
     private constant integer PF_MISSING_SKILL_MIN_FAIL_CHANCE = 5
     private constant integer PF_MISSING_SKILL_FAIL_PER_LEVEL = 4
@@ -125,11 +137,19 @@ globals
     private real array PF_WindowStart
     private real array PF_WindowEnd
     private real array PF_AnimationElapsed
+    private real array PF_LineEndBaseX
+    private real array PF_LineEndBaseY
+    private real array PF_LineEndBaseZ
     private real array PF_LineEndX
     private real array PF_LineEndY
     private real array PF_LineEndZ
+    private real array PF_LineWobbleElapsed
+    private real array PF_LineWobbleDuration
+    private real array PF_LineWobbleStrength
+    private real array PF_LineWobblePhase
     private real array PF_BobberStandDelay
     private lightning array PF_FishingLine
+    private effect array PF_LineHandMarker
     private effect array PF_BobberEffect
 
     private Table PF_UnitJob = 0
@@ -899,7 +919,7 @@ private function PF_GetTerrainZ takes real x, real y returns real
     return GetLocationZ(PF_TerrainSample)
 endfunction
 
-private function PF_GetLineStartX takes unit fisher returns real
+private function PF_GetFallbackLineStartX takes unit fisher returns real
     local real facing
 
     if fisher == null then
@@ -910,7 +930,7 @@ private function PF_GetLineStartX takes unit fisher returns real
     return GetUnitX(fisher) + PF_LINE_HAND_FORWARD_OFFSET * Cos(facing) + PF_LINE_HAND_RIGHT_OFFSET * Cos(facing - bj_PI * 0.50)
 endfunction
 
-private function PF_GetLineStartY takes unit fisher returns real
+private function PF_GetFallbackLineStartY takes unit fisher returns real
     local real facing
 
     if fisher == null then
@@ -921,7 +941,7 @@ private function PF_GetLineStartY takes unit fisher returns real
     return GetUnitY(fisher) + PF_LINE_HAND_FORWARD_OFFSET * Sin(facing) + PF_LINE_HAND_RIGHT_OFFSET * Sin(facing - bj_PI * 0.50)
 endfunction
 
-private function PF_GetLineStartZ takes unit fisher, real x, real y returns real
+private function PF_GetFallbackLineStartZ takes unit fisher, real x, real y returns real
     if fisher == null then
         return PF_GetTerrainZ(x, y) + PF_LINE_HAND_HEIGHT
     endif
@@ -929,28 +949,106 @@ private function PF_GetLineStartZ takes unit fisher, real x, real y returns real
     return PF_GetTerrainZ(x, y) + GetUnitFlyHeight(fisher) + PF_LINE_HAND_HEIGHT
 endfunction
 
-private function PF_PlayBobberStand takes integer pid returns nothing
-    if PF_BobberEffect[pid] != null then
-        call BlzPlaySpecialEffect(PF_BobberEffect[pid], ANIM_TYPE_STAND)
+private function PF_DestroyLineHandMarker takes integer pid returns nothing
+    if PF_LineHandMarker[pid] != null then
+        call DestroyEffect(PF_LineHandMarker[pid])
+        set PF_LineHandMarker[pid] = null
     endif
 endfunction
 
-private function PF_DestroyFishingVisuals takes integer pid returns nothing
-    if PF_FishingLine[pid] != null then
-        call DestroyLightning(PF_FishingLine[pid])
-        set PF_FishingLine[pid] = null
+private function PF_CreateLineHandMarker takes integer pid, unit fisher returns nothing
+    call PF_DestroyLineHandMarker(pid)
+
+    if fisher != null then
+        set PF_LineHandMarker[pid] = AddSpecialEffectTarget(PF_LINE_HAND_MARKER_MODEL, fisher, PF_LINE_HAND_ATTACHMENT_POINT)
+        if PF_LineHandMarker[pid] != null then
+            call BlzSetSpecialEffectAlpha(PF_LineHandMarker[pid], 0)
+            call BlzSetSpecialEffectScale(PF_LineHandMarker[pid], 0.01)
+        endif
+    endif
+endfunction
+
+private function PF_GetLineStartX takes integer pid, unit fisher returns real
+    if PF_LineHandMarker[pid] != null then
+        return BlzGetLocalSpecialEffectX(PF_LineHandMarker[pid])
     endif
 
+    return PF_GetFallbackLineStartX(fisher)
+endfunction
+
+private function PF_GetLineStartY takes integer pid, unit fisher returns real
+    if PF_LineHandMarker[pid] != null then
+        return BlzGetLocalSpecialEffectY(PF_LineHandMarker[pid])
+    endif
+
+    return PF_GetFallbackLineStartY(fisher)
+endfunction
+
+private function PF_GetLineStartZ takes integer pid, unit fisher, real x, real y returns real
+    if PF_LineHandMarker[pid] != null then
+        return BlzGetLocalSpecialEffectZ(PF_LineHandMarker[pid]) + PF_LINE_HAND_Z_OFFSET
+    endif
+
+    return PF_GetFallbackLineStartZ(fisher, x, y)
+endfunction
+
+private function PF_PlayBobberCinematicCustomOne takes integer pid returns nothing
     if PF_BobberEffect[pid] != null then
-        call BlzPlaySpecialEffect(PF_BobberEffect[pid], PF_BOBBER_ANIM_CINEMATIC_CUSTOM0)
-        call DestroyEffect(PF_BobberEffect[pid])
-        set PF_BobberEffect[pid] = null
+        call BlzSpecialEffectClearSubAnimations(PF_BobberEffect[pid])
+        call BlzSpecialEffectAddSubAnimation(PF_BobberEffect[pid], PF_BOBBER_SUBANIM_CUSTOM0)
+        call BlzSpecialEffectAddSubAnimation(PF_BobberEffect[pid], SUBANIM_TYPE_ONE)
+        call BlzPlaySpecialEffect(PF_BobberEffect[pid], PF_BOBBER_ANIM_CINEMATIC)
+        call BlzSetSpecialEffectTime(PF_BobberEffect[pid], 0.00)
+    endif
+endfunction
+
+private function PF_PlayBobberStand takes integer pid returns nothing
+    if PF_BobberEffect[pid] != null then
+        call BlzSpecialEffectClearSubAnimations(PF_BobberEffect[pid])
+        call BlzSpecialEffectAddSubAnimation(PF_BobberEffect[pid], SUBANIM_TYPE_ONE)
+        call BlzPlaySpecialEffect(PF_BobberEffect[pid], ANIM_TYPE_STAND)
+        call BlzSetSpecialEffectTime(PF_BobberEffect[pid], 0.00)
+    endif
+endfunction
+
+private function PF_StartLineWobble takes integer pid, real duration, real strength returns nothing
+    if duration <= 0.00 or strength <= 0.00 then
+        return
     endif
 
-    set PF_LineEndX[pid] = 0.00
-    set PF_LineEndY[pid] = 0.00
-    set PF_LineEndZ[pid] = 0.00
-    set PF_BobberStandDelay[pid] = 0.00
+    set PF_LineWobbleElapsed[pid] = 0.00
+    set PF_LineWobbleDuration[pid] = duration
+    set PF_LineWobbleStrength[pid] = strength
+    set PF_LineWobblePhase[pid] = GetRandomReal(0.00, bj_PI * 2.00)
+endfunction
+
+private function PF_UpdateLineWobble takes integer pid returns nothing
+    local real scale
+    local real phase
+
+    if PF_LineWobbleDuration[pid] <= 0.00 then
+        set PF_LineEndX[pid] = PF_LineEndBaseX[pid]
+        set PF_LineEndY[pid] = PF_LineEndBaseY[pid]
+        set PF_LineEndZ[pid] = PF_LineEndBaseZ[pid]
+        return
+    endif
+
+    set PF_LineWobbleElapsed[pid] = PF_LineWobbleElapsed[pid] + PF_TICK_INTERVAL
+    if PF_LineWobbleElapsed[pid] >= PF_LineWobbleDuration[pid] then
+        set PF_LineWobbleElapsed[pid] = 0.00
+        set PF_LineWobbleDuration[pid] = 0.00
+        set PF_LineWobbleStrength[pid] = 0.00
+        set PF_LineEndX[pid] = PF_LineEndBaseX[pid]
+        set PF_LineEndY[pid] = PF_LineEndBaseY[pid]
+        set PF_LineEndZ[pid] = PF_LineEndBaseZ[pid]
+        return
+    endif
+
+    set scale = PF_LineWobbleStrength[pid] * (1.00 - PF_LineWobbleElapsed[pid] / PF_LineWobbleDuration[pid])
+    set phase = PF_LineWobblePhase[pid] + PF_LineWobbleElapsed[pid] * PF_LINE_WOBBLE_SPEED
+    set PF_LineEndX[pid] = PF_LineEndBaseX[pid] + Cos(phase) * scale
+    set PF_LineEndY[pid] = PF_LineEndBaseY[pid] + Sin(phase * 1.21) * scale
+    set PF_LineEndZ[pid] = PF_LineEndBaseZ[pid] + Sin(phase * 0.77) * scale * 0.35
 endfunction
 
 private function PF_UpdateFishingVisuals takes integer pid returns nothing
@@ -964,9 +1062,11 @@ private function PF_UpdateFishingVisuals takes integer pid returns nothing
         return
     endif
 
-    set startX = PF_GetLineStartX(fisher)
-    set startY = PF_GetLineStartY(fisher)
-    set startZ = PF_GetLineStartZ(fisher, startX, startY)
+    call PF_UpdateLineWobble(pid)
+
+    set startX = PF_GetLineStartX(pid, fisher)
+    set startY = PF_GetLineStartY(pid, fisher)
+    set startZ = PF_GetLineStartZ(pid, fisher, startX, startY)
 
     if PF_FishingLine[pid] != null then
         call MoveLightningEx(PF_FishingLine[pid], true, startX, startY, startZ, PF_LineEndX[pid], PF_LineEndY[pid], PF_LineEndZ[pid])
@@ -983,6 +1083,37 @@ private function PF_UpdateFishingVisuals takes integer pid returns nothing
     endif
 
     set fisher = null
+endfunction
+
+private function PF_DestroyFishingVisuals takes integer pid returns nothing
+    if PF_FishingLine[pid] != null or PF_BobberEffect[pid] != null then
+        call PF_StartLineWobble(pid, 0.15, PF_LINE_WOBBLE_END_STRENGTH)
+        call PF_UpdateFishingVisuals(pid)
+    endif
+
+    if PF_FishingLine[pid] != null then
+        call DestroyLightning(PF_FishingLine[pid])
+        set PF_FishingLine[pid] = null
+    endif
+
+    if PF_BobberEffect[pid] != null then
+        call PF_PlayBobberCinematicCustomOne(pid)
+        call DestroyEffect(PF_BobberEffect[pid])
+        set PF_BobberEffect[pid] = null
+    endif
+
+    call PF_DestroyLineHandMarker(pid)
+    set PF_LineEndBaseX[pid] = 0.00
+    set PF_LineEndBaseY[pid] = 0.00
+    set PF_LineEndBaseZ[pid] = 0.00
+    set PF_LineEndX[pid] = 0.00
+    set PF_LineEndY[pid] = 0.00
+    set PF_LineEndZ[pid] = 0.00
+    set PF_LineWobbleElapsed[pid] = 0.00
+    set PF_LineWobbleDuration[pid] = 0.00
+    set PF_LineWobbleStrength[pid] = 0.00
+    set PF_LineWobblePhase[pid] = 0.00
+    set PF_BobberStandDelay[pid] = 0.00
 endfunction
 
 private function PF_CreateFishingVisuals takes integer pid returns nothing
@@ -1002,25 +1133,36 @@ private function PF_CreateFishingVisuals takes integer pid returns nothing
         return
     endif
 
-    set startX = PF_GetLineStartX(fisher)
-    set startY = PF_GetLineStartY(fisher)
-    set startZ = PF_GetLineStartZ(fisher, startX, startY)
+    call PF_CreateLineHandMarker(pid, fisher)
+
+    set startX = PF_GetLineStartX(pid, fisher)
+    set startY = PF_GetLineStartY(pid, fisher)
+    set startZ = PF_GetLineStartZ(pid, fisher, startX, startY)
     set endAngle = GetRandomReal(0.00, bj_PI * 2.00)
     set endDistance = GetRandomReal(0.00, PF_BOBBER_POOL_RANDOM_RADIUS)
-    set PF_LineEndX[pid] = GetUnitX(pool) + endDistance * Cos(endAngle)
-    set PF_LineEndY[pid] = GetUnitY(pool) + endDistance * Sin(endAngle)
-    set PF_LineEndZ[pid] = PF_GetTerrainZ(PF_LineEndX[pid], PF_LineEndY[pid]) + PF_BOBBER_HEIGHT_OFFSET
+    set PF_LineEndBaseX[pid] = GetUnitX(pool) + endDistance * Cos(endAngle)
+    set PF_LineEndBaseY[pid] = GetUnitY(pool) + endDistance * Sin(endAngle)
+    set PF_LineEndBaseZ[pid] = PF_GetTerrainZ(PF_LineEndBaseX[pid], PF_LineEndBaseY[pid]) + PF_BOBBER_HEIGHT_OFFSET
+    set PF_LineEndX[pid] = PF_LineEndBaseX[pid]
+    set PF_LineEndY[pid] = PF_LineEndBaseY[pid]
+    set PF_LineEndZ[pid] = PF_LineEndBaseZ[pid]
     set PF_FishingLine[pid] = AddLightningEx(PF_LINE_LIGHTNING_TYPE, true, startX, startY, startZ, PF_LineEndX[pid], PF_LineEndY[pid], PF_LineEndZ[pid])
+    if PF_FishingLine[pid] != null then
+        call SetLightningColor(PF_FishingLine[pid], PF_LINE_COLOR_RED, PF_LINE_COLOR_GREEN, PF_LINE_COLOR_BLUE, PF_LINE_COLOR_ALPHA)
+    endif
 
     if BobberModelPath != null and BobberModelPath != "" then
         set PF_BobberEffect[pid] = AddSpecialEffect(BobberModelPath, PF_LineEndX[pid], PF_LineEndY[pid])
         if PF_BobberEffect[pid] != null then
             call BlzSetSpecialEffectPosition(PF_BobberEffect[pid], PF_LineEndX[pid], PF_LineEndY[pid], PF_LineEndZ[pid])
             call BlzSetSpecialEffectScale(PF_BobberEffect[pid], PF_BOBBER_SCALE)
-            call BlzPlaySpecialEffect(PF_BobberEffect[pid], PF_BOBBER_ANIM_CINEMATIC_CUSTOM0)
+            call PF_PlayBobberCinematicCustomOne(pid)
             set PF_BobberStandDelay[pid] = PF_BOBBER_STAND_DELAY
         endif
     endif
+
+    call PF_StartLineWobble(pid, PF_LINE_WOBBLE_DURATION, PF_LINE_WOBBLE_STRENGTH)
+    call PF_UpdateFishingVisuals(pid)
 
     set fisher = null
     set pool = null
@@ -1470,6 +1612,11 @@ private function PF_ReelAction takes nothing returns nothing
     local player whichPlayer = GetTriggerPlayer()
     local integer pid = GetPlayerId(whichPlayer)
 
+    if PF_JobActive[pid] and PF_JobStarted[pid] then
+        call PF_StartLineWobble(pid, PF_LINE_WOBBLE_DURATION, PF_LINE_WOBBLE_STRENGTH)
+        call PF_UpdateFishingVisuals(pid)
+    endif
+
     if not PF_JobActive[pid] or not PF_JobStarted[pid] then
         call PF_DisplayError(whichPlayer, WaitForBiteText)
     elseif PF_Elapsed[pid] >= PF_WindowStart[pid] and PF_Elapsed[pid] <= PF_WindowEnd[pid] then
@@ -1524,6 +1671,11 @@ private function PF_BaitAction takes nothing returns nothing
     set PF_BaitBonusByUnit.integer[handleId] = PF_BaitBonus[baitIndex]
     set PF_BaitExpiresByUnit.real[handleId] = PF_GetNow() + duration
     set PF_BaitNameByUnit.string[handleId] = baitName
+
+    if PF_JobStarted[pid] then
+        call PF_StartLineWobble(pid, PF_LINE_WOBBLE_DURATION, PF_LINE_WOBBLE_STRENGTH)
+        call PF_UpdateFishingVisuals(pid)
+    endif
 
     call Interface_PlayEventSoundForPlayer(Interface_EVENT_CONFIRM, whichPlayer)
     call PF_UI_UpdateForPlayer(whichPlayer)
