@@ -35,7 +35,6 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
         private constant real PRL_RENDER_DELAY = 1.00
         private constant real PRL_STAGE_DELAY = 5.00
         private constant real PRL_SOUND_STAGE_DELAY = 5.00
-        private constant real PRL_DONE_DELAY = 5.00
         private constant real PRL_TITLE_FADE_IN = 0.10
         private constant real PRL_TITLE_DURATION = 5.00
         private constant real PRL_TITLE_FADE_OUT = 0.25
@@ -45,10 +44,8 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
         private constant string PRL_IMAGE_SOUNDS = "Art\\Pots_EmberpeakHighlands.blp"
         private constant string PRL_IMAGE_MUSIC = "Art\\Pots_Riverbane1.blp"
         private constant string PRL_IMAGE_ABILITIES = "Art\\Pots_Riverbane1.blp"
-        private constant string PRL_IMAGE_DONE = "Art\\Pots_Logo.blp"
         private constant string PRL_TEXT_COLOR = "|cffffffff"
         private constant string PRL_TEXT_HIGHLIGHT = "|cffffcc00"
-        private constant string PRL_TEXT_SUCCESS = "|cff32cd32"
         private constant string PRL_TEXT_END = "|r"
         private constant integer PRL_ABILITY_LOADER_UNIT_ID = 'h60N'
         private constant real PRL_ABILITY_LOADER_FACING = 270.00
@@ -71,11 +68,6 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
     private function PRL_ShowStatus takes string texturePath, string message returns nothing
         call ImagesUI_ShowPreload(texturePath, "")
         call ShowPreloadTitle(PRL_TEXT_COLOR + "Preloading..." + PRL_TEXT_END, message, PRL_TITLE_FADE_IN, PRL_TITLE_DURATION, PRL_TITLE_FADE_OUT)
-    endfunction
-
-    private function PRL_ShowDoneStatus takes string texturePath returns nothing
-        call ImagesUI_ShowPreload(texturePath, "")
-        call ShowPreloadTitle(PRL_TEXT_COLOR + "Preload" + PRL_TEXT_END, PRL_TEXT_SUCCESS + "Successful" + PRL_TEXT_END, PRL_TITLE_FADE_IN, PRL_TITLE_DURATION, PRL_TITLE_FADE_OUT)
     endfunction
 
     private function PRL_HideGameUI takes nothing returns nothing
@@ -172,10 +164,6 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
             call ExMusic_PreloadAll()
             set PRL_Step = 6
             call TimerStart(PRL_Timer, PRL_STAGE_DELAY, false, function PRL_RunStep)
-        elseif PRL_Step == 6 then
-            call PRL_ShowDoneStatus(PRL_IMAGE_DONE)
-            set PRL_Step = 7
-            call TimerStart(PRL_Timer, PRL_DONE_DELAY, false, function PRL_RunStep)
         else
             call PRL_Finish()
         endif
