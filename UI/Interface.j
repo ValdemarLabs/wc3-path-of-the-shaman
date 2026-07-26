@@ -46,12 +46,12 @@
     call Interface_RefreshDefaultSounds()
     call Interface_ApplyProfessionCinematicVolumes(Player(0))
     call Interface_PlayProfessionSound(Interface_Profession_Blacksmithing_Start, "Blacksmithing", false)
-    call Interface_PlayProfessionSoundOnUnit(Interface_Profession_Blacksmithing_Start, "Blacksmithing", GetTriggerUnit(), false, 3000.00)
+    call Interface_PlayProfessionSoundOnUnit(Interface_Profession_Blacksmithing_Start, "Blacksmithing", GetTriggerUnit(), false, 1500.00)
     call Interface_PlayProfessionSoundPath(Interface_Profession_Blacksmithing_LoopPath, false)
-    call Interface_PlayProfessionSoundPathOnUnit(Interface_Profession_Blacksmithing_LoopPath, GetTriggerUnit(), false, 3000.00)
+    call Interface_PlayProfessionSoundPathOnUnit(Interface_Profession_Blacksmithing_LoopPath, GetTriggerUnit(), false, 1500.00)
 
 **/
-library Interface initializer AutoInit
+library Interface initializer AutoInit requires ExSound
     globals
         public constant integer EVENT_UNIT_SELECT = 1
         public constant integer EVENT_UI_OPEN = 2
@@ -86,17 +86,12 @@ library Interface initializer AutoInit
         public constant integer EVENT_TRADESKILL_HERB_PICK = 31
 
         private constant integer IUI_EVENT_MAX = 31
-        private constant integer IUI_FEEDBACK_SOUND_VOLUME = 127
-        private constant real IUI_SOUND_UNIT_Z = 64.00
-        private constant real IUI_MINING_SOUND_CUTOFF = 1000.00
-        private constant real IUI_PROFESSION_SOUND_CUTOFF = 3000.00
-        private constant integer IUI_DEFERRED_SOUND_KEY = 0
-        private constant integer IUI_DEFERRED_KILL_KEY = 1
+        private constant real IUI_MINING_SOUND_CUTOFF = 1500.00
+        private constant real IUI_PROFESSION_SOUND_CUTOFF = 1500.00
 
         private boolean IUI_Initialized = false
         private boolean IUI_SoundsEnabled = true
         private boolean IUI_UnitSelectSoundEnabled = true
-        private hashtable IUI_DeferredSoundTable = InitHashtable()
 
         // Event sounds are assigned during init and can be overridden through SetEventSound.
         private sound array IUI_EventSound
@@ -195,79 +190,16 @@ library Interface initializer AutoInit
         return value == null or value == ""
     endfunction
 
-    private function IUI_StartDeferredSound takes nothing returns nothing
-        local timer expiredTimer = GetExpiredTimer()
-        local integer timerId = GetHandleId(expiredTimer)
-        local sound whichSound = LoadSoundHandle(IUI_DeferredSoundTable, timerId, IUI_DEFERRED_SOUND_KEY)
-        local boolean killWhenDone = LoadBoolean(IUI_DeferredSoundTable, timerId, IUI_DEFERRED_KILL_KEY)
-
-        if whichSound != null then
-            call StartSound(whichSound)
-            if killWhenDone then
-                call KillSoundWhenDone(whichSound)
-            endif
-        endif
-
-        call FlushChildHashtable(IUI_DeferredSoundTable, timerId)
-        call DestroyTimer(expiredTimer)
-
-        set whichSound = null
-        set expiredTimer = null
-    endfunction
-
-    private function IUI_StartSoundDeferred takes sound whichSound, boolean killWhenDone returns nothing
-        local timer startTimer
-
-        if whichSound == null then
-            return
-        endif
-
-        set startTimer = CreateTimer()
-        call SaveSoundHandle(IUI_DeferredSoundTable, GetHandleId(startTimer), IUI_DEFERRED_SOUND_KEY, whichSound)
-        call SaveBoolean(IUI_DeferredSoundTable, GetHandleId(startTimer), IUI_DEFERRED_KILL_KEY, killWhenDone)
-        call TimerStart(startTimer, 0.00, false, function IUI_StartDeferredSound)
-
-        set startTimer = null
-    endfunction
-
     private function IUI_PlaySound takes sound whichSound returns nothing
         if IUI_SoundsEnabled and whichSound != null then
-            call StopSound(whichSound, false, false)
-            call StartSound(whichSound)
+            call ExSound_PlayHandle(whichSound)
         endif
     endfunction
 
     private function IUI_PlaySoundOnUnit takes sound whichSound, unit whichUnit returns nothing
         if IUI_SoundsEnabled and whichSound != null and whichUnit != null then
-            call StopSound(whichSound, false, false)
-            call SetSoundDistances(whichSound, 0.00, IUI_PROFESSION_SOUND_CUTOFF)
-            call SetSoundDistanceCutoff(whichSound, IUI_PROFESSION_SOUND_CUTOFF)
-            call SetSoundPosition(whichSound, GetUnitX(whichUnit), GetUnitY(whichUnit), IUI_SOUND_UNIT_Z)
-            call AttachSoundToUnit(whichSound, whichUnit)
-            call SetSoundVolume(whichSound, IUI_FEEDBACK_SOUND_VOLUME)
-            call StartSound(whichSound)
+            call ExSound_PlayHandleOnUnitEx(whichSound, whichUnit, EXSOUND_3D_MIN_DISTANCE, IUI_PROFESSION_SOUND_CUTOFF)
         endif
-    endfunction
-
-    private function IUI_ApplyFeedbackSound takes sound whichSound returns nothing
-        if whichSound != null then
-            call SetSoundVolume(whichSound, IUI_FEEDBACK_SOUND_VOLUME)
-        endif
-    endfunction
-
-    private function IUI_ApplyFeedbackSoundOnUnit takes sound whichSound, unit whichUnit, real cutoff returns nothing
-        if whichSound == null or whichUnit == null then
-            return
-        endif
-        if cutoff <= 0.00 then
-            set cutoff = IUI_PROFESSION_SOUND_CUTOFF
-        endif
-
-        call IUI_ApplyFeedbackSound(whichSound)
-        call SetSoundDistances(whichSound, 0.00, cutoff)
-        call SetSoundDistanceCutoff(whichSound, cutoff)
-        call SetSoundPosition(whichSound, GetUnitX(whichUnit), GetUnitY(whichUnit), IUI_SOUND_UNIT_Z)
-        call AttachSoundToUnit(whichSound, whichUnit)
     endfunction
 
     private function IUI_PlayMiningHitSoundOnUnit takes integer eventId, unit whichUnit returns nothing
@@ -280,10 +212,8 @@ library Interface initializer AutoInit
 
         set soundLabel = IUI_GetMiningHitSoundLabel(eventId)
         if soundLabel != "" then
-            set miningSound = CreateSoundFromLabel(soundLabel, false, true, true, 12700, 12700)
+            set miningSound = ExSound_PlayLabelOnUnitEx(soundLabel, whichUnit, false, EXSOUND_3D_MIN_DISTANCE, IUI_MINING_SOUND_CUTOFF)
             if miningSound != null then
-                call IUI_ApplyFeedbackSoundOnUnit(miningSound, whichUnit, IUI_MINING_SOUND_CUTOFF)
-                call IUI_StartSoundDeferred(miningSound, true)
                 set miningSound = null
                 return
             endif
@@ -291,9 +221,7 @@ library Interface initializer AutoInit
 
         set miningSound = IUI_EventSound[eventId]
         if miningSound != null then
-            call StopSound(miningSound, false, false)
-            call IUI_ApplyFeedbackSoundOnUnit(miningSound, whichUnit, IUI_MINING_SOUND_CUTOFF)
-            call StartSound(miningSound)
+            call ExSound_PlayHandleOnUnitEx(miningSound, whichUnit, EXSOUND_3D_MIN_DISTANCE, IUI_MINING_SOUND_CUTOFF)
             set miningSound = null
             return
         endif
@@ -314,20 +242,15 @@ library Interface initializer AutoInit
             return
         endif
 
-        set eventSound = CreateSoundFromLabel(soundLabel, false, true, true, 12700, 12700)
+        set eventSound = ExSound_PlayLabelOnUnitEx(soundLabel, whichUnit, false, EXSOUND_3D_MIN_DISTANCE, IUI_MINING_SOUND_CUTOFF)
         if eventSound == null then
             return
         endif
-
-        call IUI_ApplyFeedbackSoundOnUnit(eventSound, whichUnit, IUI_MINING_SOUND_CUTOFF)
-        call IUI_StartSoundDeferred(eventSound, true)
 
         set eventSound = null
     endfunction
 
     public function PlayProfessionSoundPathOnUnit takes string soundPath, unit whichUnit, boolean looping, real cutoff returns sound
-        local sound professionSound = null
-
         if not IUI_SoundsEnabled or whichUnit == null or soundPath == null or soundPath == "" then
             return null
         endif
@@ -335,31 +258,15 @@ library Interface initializer AutoInit
             set cutoff = IUI_PROFESSION_SOUND_CUTOFF
         endif
 
-        set professionSound = CreateSound(soundPath, looping, true, true, 12700, 12700, "")
-        if professionSound != null then
-            call IUI_ApplyFeedbackSoundOnUnit(professionSound, whichUnit, cutoff)
-            call IUI_StartSoundDeferred(professionSound, not looping)
-            return professionSound
-        endif
-
-        return null
+        return ExSound_PlayPathOnUnitEx(soundPath, whichUnit, looping, EXSOUND_3D_MIN_DISTANCE, cutoff)
     endfunction
 
     public function PlayProfessionSoundPath takes string soundPath, boolean looping returns sound
-        local sound professionSound = null
-
         if not IUI_SoundsEnabled or soundPath == null or soundPath == "" then
             return null
         endif
 
-        set professionSound = CreateSound(soundPath, looping, false, false, 12700, 12700, "")
-        if professionSound != null then
-            call IUI_ApplyFeedbackSound(professionSound)
-            call IUI_StartSoundDeferred(professionSound, not looping)
-            return professionSound
-        endif
-
-        return null
+        return ExSound_PlayPath(soundPath, looping)
     endfunction
 
     public function PlayProfessionSoundOnUnit takes sound whichSound, string soundLabel, unit whichUnit, boolean looping, real cutoff returns sound
@@ -373,19 +280,14 @@ library Interface initializer AutoInit
         endif
 
         if soundLabel != null and soundLabel != "" then
-            set professionSound = CreateSoundFromLabel(soundLabel, looping, true, true, 12700, 12700)
+            set professionSound = ExSound_PlayLabelOnUnitEx(soundLabel, whichUnit, looping, EXSOUND_3D_MIN_DISTANCE, cutoff)
             if professionSound != null then
-                call IUI_ApplyFeedbackSoundOnUnit(professionSound, whichUnit, cutoff)
-                call IUI_StartSoundDeferred(professionSound, not looping)
                 return professionSound
             endif
         endif
 
         if whichSound != null then
-            call StopSound(whichSound, false, false)
-            call IUI_ApplyFeedbackSoundOnUnit(whichSound, whichUnit, cutoff)
-            call StartSound(whichSound)
-            return whichSound
+            return ExSound_PlayHandleOnUnitEx(whichSound, whichUnit, EXSOUND_3D_MIN_DISTANCE, cutoff)
         endif
 
         return null
@@ -399,19 +301,14 @@ library Interface initializer AutoInit
         endif
 
         if soundLabel != null and soundLabel != "" then
-            set professionSound = CreateSoundFromLabel(soundLabel, looping, false, false, 12700, 12700)
+            set professionSound = ExSound_PlayLabel(soundLabel, looping)
             if professionSound != null then
-                call IUI_ApplyFeedbackSound(professionSound)
-                call IUI_StartSoundDeferred(professionSound, not looping)
                 return professionSound
             endif
         endif
 
         if whichSound != null then
-            call StopSound(whichSound, false, false)
-            call IUI_ApplyFeedbackSound(whichSound)
-            call StartSound(whichSound)
-            return whichSound
+            return ExSound_PlayHandle(whichSound)
         endif
 
         return null
