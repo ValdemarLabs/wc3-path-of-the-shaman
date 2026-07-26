@@ -1,0 +1,20 @@
+Quest Lost Supplies
+    Events
+    Conditions
+    Actions
+        -------- RESET Quest, if previously done --------
+        Quest - Mark QuestLostSupplies as Incomplete
+        Quest - Mark QuestLostSuppliesReq1 as Incomplete
+        Quest - Mark QuestLostSuppliesReq2 as Incomplete
+        Wait Campaign quest delay game-time seconds
+        Custom script:   call TriggerExecute(gg_trg_Quest_Lost_Supplies_Discover)
+        Custom script:   call EnableTrigger(gg_trg_Quest_Lost_Supplies_Update)
+        Item - Create Supplies at (Position of Nazgrek)
+        Item - Create Supplies at (Position of Nazgrek)
+        Item - Create Supplies at (Position of Nazgrek)
+        Item - Create Supplies at (Position of Nazgrek)
+        Item - Create Supplies at (Position of Nazgrek)
+        Item - Create Supplies at (Position of Nazgrek)
+        Item - Create Supplies at (Position of Nazgrek)
+        Item - Create Supplies at (Position of Nazgrek)
+        Trigger - Remove (This trigger) from the trigger queue

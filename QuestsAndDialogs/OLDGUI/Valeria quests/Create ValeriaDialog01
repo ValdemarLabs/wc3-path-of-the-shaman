@@ -1,0 +1,79 @@
+Create ValeriaDialog01
+    Events
+    Conditions
+    Actions
+        Cinematic - Enable user control for (All players).
+        Dialog - Clear ValeriaDialog01
+        Dialog - Change the title of ValeriaDialog01 to Valeria
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestRangerMissing is completed) Equal to True
+                (QuestTokenLove is discovered) Equal to False
+            Then - Actions
+                -------- Quest - Accept --------
+                Dialog - Create a dialog button for ValeriaDialog01 labelled Token of Love (Ques...
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_QuestInt = 1
+                Set VariableSet DialogBTN_QuestAccept[DialogBTN_QuestInt] = (Last created dialog Button)
+            Else - Actions
+        -------- ================================ --------
+        -------- CHECK ITEM --------
+        Set VariableSet DInvItemType = |cff0000ffHeart of the Ocean|r
+        Set VariableSet DInvItemAmount = 1
+        Custom script:   set udg_DInvItemCarrierHasItems = HeroItemCheckBoth(udg_DInvItemType, udg_DInvItemAmount)
+        -------- ================================ --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestRangerMissing is completed) Equal to True
+                (QuestTokenLove is discovered) Equal to True
+                (QuestTokenLove is completed) Equal to False
+                DInvItemCarrierHasItems Equal to True
+            Then - Actions
+                -------- Quest  - Completion --------
+                Dialog - Create a dialog button for ValeriaDialog01 labelled Token of Love (Comp...
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_QuestInt = 1
+                Set VariableSet DialogBTN_QuestComplete[DialogBTN_QuestInt] = (Last created dialog Button)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestRangerMissing is completed) Equal to True
+                (QuestTokenLove is completed) Equal to True
+                (QuestLostSupplies is discovered) Equal to False
+            Then - Actions
+                -------- Quest - Accept --------
+                Dialog - Create a dialog button for ValeriaDialog01 labelled Lost Supplies (Ques...
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_QuestInt = 2
+                Set VariableSet DialogBTN_QuestAccept[DialogBTN_QuestInt] = (Last created dialog Button)
+            Else - Actions
+        -------- ================================ --------
+        -------- CHECK ITEM --------
+        Set VariableSet DInvItemType = Supplies
+        Set VariableSet DInvItemAmount = 6
+        Custom script:   set udg_DInvItemCarrierHasItems = HeroItemCheckBoth(udg_DInvItemType, udg_DInvItemAmount)
+        -------- ================================ --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestRangerMissing is completed) Equal to True
+                (QuestTokenLove is completed) Equal to True
+                (QuestLostSupplies is discovered) Equal to True
+                (QuestLostSupplies is completed) Equal to False
+                DInvItemCarrierHasItems Equal to True
+            Then - Actions
+                -------- Quest  - Completion --------
+                Dialog - Create a dialog button for ValeriaDialog01 labelled Lost Supplies (Comp...
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_QuestInt = 2
+                Set VariableSet DialogBTN_QuestComplete[DialogBTN_QuestInt] = (Last created dialog Button)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- Exit dialog --------
+                Dialog - Create a dialog button for ValeriaDialog01 labelled - Farewell
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_Farewell = (Last created dialog Button)
+            Else - Actions
+        -------- ======= SHOW DIALOG --------
+        Dialog - Show ValeriaDialog01 for Player 1 (Red)

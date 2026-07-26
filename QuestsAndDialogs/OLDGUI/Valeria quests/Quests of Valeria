@@ -1,0 +1,189 @@
+Quests of Valeria
+    Events
+        Player - Player 1 (Red) Selects a unit
+    Conditions
+        (QuestRangerMissingReq1 is completed) Equal to True
+        (Triggering unit) Equal to Valeria
+        (Distance between (Position of Valeria) and (Position of Nazgrek)) Less than or equal to 500.00
+        (Remaining time for DialogOverTimer) Equal to 0.00
+    Actions
+        -------- ======== Initial check of the selected unit ======== --------
+        Set VariableSet CV = (Custom value of (Triggering unit))
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        UnitIsCasting[CV] Equal to True
+                        GCSM_UnitInCombat[CV] Equal to True
+            Then - Actions
+                -------- ======== Cinematic / dialogue cannot be started because of the conditions ======== --------
+                Skip remaining actions
+                -------- ======== ======== --------
+            Else - Actions
+        -------- ======== START ======== --------
+        Trigger - Turn off (This trigger)
+        -------- ======== CINEMATIC STARTS ======== --------
+        Trigger - Run Cinematic ON <gen> (checking conditions)
+        Cinematic - Turn cinematic mode On for (All players)
+        Cinematic - Fade out and back in over 1.00 seconds using texture Black Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        -------- PAUSE PATROL --------
+        Custom script:   call TriggerExecute(gg_trg_Valeria_Movement_Pause)
+        Wait 0.25 seconds
+        Unit - Make Valeria face Nazgrek over 0.75 seconds
+        Unit - Make Nazgrek face Valeria over 0.75 seconds
+        Wait 1.00 seconds
+        -------- DIALOG CAMERA == START --------
+        Set VariableSet DialogNPC = Valeria
+        -------- USAGE: call DialogCameraStart(p, u, dist, zOffset, angle, rotationOffset, farZ, fov, blockRadius, doBlockCheck) --------
+        -------- Typical values (no blocking): call DialogCameraStart(Player(0), udg_DialogNPC, 1200.0, 0.0, 0.0, 0.0, 10000.0, 75.0, 0.0, false) --------
+        -------- Typical values (blocking): call DialogCameraStart(Player(0), udg_DialogNPC, 1000.0, 0.0, 0.0, 0.0, 10000.0, 70.0, 0.0, true) --------
+        Custom script:   call DialogCameraStart(Player(0), udg_DialogNPC, 1050.0, 20.0, 350.0, 180.0, 10000.0, 60.0, 0.0, true)
+        -------- ================================ --------
+        Wait 1.00 seconds
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- DIALOG (QUEST(s) UNFINISHED --------
+                Custom script:   call TriggerExecute(gg_trg_Nazgrek_Greet)
+                Wait ExSoundDuration seconds
+                -------- ======================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (QuestRangerMissing is discovered) Equal to True
+                        (QuestRangerMissing is completed) Equal to False
+                    Then - Actions
+                        -------- RANGER MISSING UNFINISHED --------
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Random integer number between 1 and 2) Equal to 1
+                            Then - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = Where is Aradion?
+                                Custom script:   call ExSound_Play("Valeria_0021", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                            Else - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = I’m watching you carefully…
+                                Custom script:   call ExSound_Play("Valeria_0022", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                        -------- ====================== --------
+                        -------- DEFAULT CAMERA --------
+                        -------- ================================ --------
+                        -------- DIALOG CAMERA == RESET --------
+                        -------- USAGE: call DialogCameraReset(p, duration) to restore original camera over 'duration' seconds --------
+                        Custom script:   call DialogCameraReset(Player(0), 2.0)
+                        -------- ======== CINEMATIC ENDS ======== --------
+                        Trigger - Run Cinematic OFF <gen> (checking conditions)
+                        Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                        Trigger - Turn on (This trigger)
+                        -------- CONTINUE PATROL --------
+                        Custom script:   call TriggerExecute(gg_trg_Valeria_Movement_Continue)
+                        Skip remaining actions
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (QuestRangerMissing is completed) Equal to True
+                        (QuestTokenLove is discovered) Equal to True
+                        (QuestTokenLove is completed) Equal to False
+                    Then - Actions
+                        -------- TOKEN LOVE UNFINISHED --------
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Random integer number between 1 and 2) Equal to 1
+                            Then - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = You return empty-handed. Do not think I’ll be swayed with words alone.
+                                Custom script:   call ExSound_Play("Valeria_0032", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                            Else - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = The ruins still hold what I asked for. Find it.
+                                Custom script:   call ExSound_Play("Valeria_0033", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                        -------- ====================== --------
+                        -------- Run "Create Dialog" --------
+                        Trigger - Run Create ValeriaDialog01 <gen> (checking conditions)
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (QuestRangerMissing is completed) Equal to True
+                        (QuestTokenLove is completed) Equal to True
+                        (QuestLostSupplies is discovered) Equal to True
+                        (QuestLostSupplies is completed) Equal to False
+                    Then - Actions
+                        -------- LOST SUPPLIES UNFINISHED --------
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Random integer number between 1 and 2) Equal to 1
+                            Then - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = Without those supplies, our strength withers further.
+                                Custom script:   call ExSound_Play("Valeria_0054", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                            Else - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = Some of those supplies can be hard to find…
+                                Custom script:   call ExSound_Play("Valeria_0055", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                        -------- ====================== --------
+                        -------- Run "Create Dialog" --------
+                        Trigger - Run Create ValeriaDialog01 <gen> (checking conditions)
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+                -------- NORMAL DIALOG - NEUTRAL --------
+                Set VariableSet ValeriaRandomGreet = (Random integer number between 1 and 4)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ValeriaRandomGreet Equal to 1
+                    Then - Actions
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = If you have news, speak it swiftly.
+                        Custom script:   call ExSound_Play("Valeria_0038", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ValeriaRandomGreet Equal to 2
+                    Then - Actions
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = Every day we lose more to the void.
+                        Custom script:   call ExSound_Play("Valeria_0039", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ValeriaRandomGreet Equal to 3
+                    Then - Actions
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = I still wonder why you walk among us.
+                        Custom script:   call ExSound_Play("Valeria_0040", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ValeriaRandomGreet Equal to 4
+                    Then - Actions
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = Elarindor is but a shadow of what it once was.
+                        Custom script:   call ExSound_Play("Valeria_0041", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                    Else - Actions
+                -------- ====================== --------
+                -------- Run "Create Dialog" --------
+                Trigger - Run Create ValeriaDialog01 <gen> (checking conditions)
+                Trigger - Turn on (This trigger)
+                Skip remaining actions
+            Else - Actions

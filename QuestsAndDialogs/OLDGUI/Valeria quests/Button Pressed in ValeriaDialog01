@@ -1,0 +1,221 @@
+Button Pressed in ValeriaDialog01
+    Events
+        Dialog - A dialog button is clicked for ValeriaDialog01
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_QuestAccept[1]
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- TOKEN OF LOVE - ACCEPT --------
+                Set VariableSet ValeriaFarewellBoolean = True
+                Custom script:   call EnableTrigger(gg_trg_ValeriaDialog01_Accept_Quest_1)
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Aradion may place his faith in you, but my bow remains drawn. 
+                Custom script:   call ExSound_Play("Valeria_0028", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = I understand why you are cautious.
+                Custom script:   call ExSound_Play("Nazgrek_0355", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Orcs are not known for being friendly…
+                Custom script:   call ExSound_Play("Nazgrek_0356", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = If you would prove your worth, then bring back what I lost.
+                Custom script:   call ExSound_Play("Valeria_0029", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = In a rush I left my special necklace in the ruins what was once our beloved Elarindor.
+                Custom script:   call ExSound_Play("Valeria_0030", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Find my necklace and bring it to me. It would mean so much for me…
+                Custom script:   call ExSound_Play("Valeria_0031", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = I will return it safely to your hands.
+                Custom script:   call ExSound_Play("Nazgrek_0358", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- OVER --------
+                Custom script:   call TriggerExecute(gg_trg_ValeriaDialog01_Accept_Quest_1)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_QuestComplete[1]
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- TOKEN OF LOVE - COMPLETED --------
+                Set VariableSet ValeriaFarewellBoolean = True
+                Custom script:   call EnableTrigger(gg_trg_ValeriaDialog01_Complete_Quest_1)
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = I’ve found your necklace.
+                Custom script:   call ExSound_Play("Nazgrek_0361", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = …You found it! After all this time… it warm as if it never left me.
+                Custom script:   call ExSound_Play("Valeria_0034", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = I thought it was lost forever…
+                Custom script:   call ExSound_Play("Valeria_0035", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Perhaps I was wrong about you, orc. It seems you are not like the rest of your kind.
+                Custom script:   call ExSound_Play("Valeria_0036", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- OVER --------
+                Custom script:   call TriggerExecute(gg_trg_ValeriaDialog01_Complete_Quest_1)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_QuestAccept[2]
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- LOST SUPPLIES - ACCEPT --------
+                Set VariableSet ValeriaFarewellBoolean = True
+                Custom script:   call EnableTrigger(gg_trg_ValeriaDialog01_Accept_Quest_2)
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = When the first wraiths emerged, we fled with nothing but our lives.
+                Custom script:   call ExSound_Play("Valeria_0051", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = But not all was lost. We hid supply caches throughout Elarindor in those desperate hours.
+                Custom script:   call ExSound_Play("Valeria_0052", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = If you would like to aid us, orc. Recover what remains. Even scraps could keep us standing.
+                Custom script:   call ExSound_Play("Valeria_0053", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = I will try see what I can find from the ruins.
+                Custom script:   call ExSound_Play("Nazgrek_0375", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- OVER --------
+                Custom script:   call TriggerExecute(gg_trg_ValeriaDialog01_Accept_Quest_2)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_QuestComplete[2]
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- LOST SUPPLIES - COMPLETED --------
+                Set VariableSet ValeriaFarewellBoolean = True
+                Custom script:   call EnableTrigger(gg_trg_ValeriaDialog01_Complete_Quest_2)
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = These rations may taste of dust, yet to me, they are sweeter than any feast.
+                Custom script:   call ExSound_Play("Valeria_0057", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Nazgrek, you give us another day. And another day means another chance to endure.
+                Custom script:   call ExSound_Play("Valeria_0058", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- OVER --------
+                Custom script:   call TriggerExecute(gg_trg_ValeriaDialog01_Complete_Quest_2)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_Farewell
+            Then - Actions
+                Set VariableSet ValeriaFarewellBoolean = True
+                Cinematic - Disable user control for (All players).
+                -------- ===================================== --------
+                Custom script:   call TriggerExecute(gg_trg_Nazgrek_Farewell)
+                Wait ExSoundDuration seconds
+                -------- ===================================== --------
+                Set VariableSet ValeriaRandomGreet = (Random integer number between 1 and 3)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ValeriaRandomGreet Equal to 1
+                    Then - Actions
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = The shadows grow restless. Be swift, shaman.
+                        Custom script:   call ExSound_Play("Valeria_0046", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ValeriaRandomGreet Equal to 2
+                    Then - Actions
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = Farewell, and return with more hope than you leave.
+                        Custom script:   call ExSound_Play("Valeria_0047", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ValeriaRandomGreet Equal to 3
+                    Then - Actions
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = I will remain. Someone must keep watch.
+                        Custom script:   call ExSound_Play("Valeria_0048", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from Valeria named Valeria: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                    Else - Actions
+                -------- DEFAULT CAMERA --------
+                -------- ================================ --------
+                -------- DIALOG CAMERA == RESET --------
+                -------- USAGE: call DialogCameraReset(p, duration) to restore original camera over 'duration' seconds --------
+                Custom script:   call DialogCameraReset(Player(0), 2.0)
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                -------- CONTINUE PATROL --------
+                Custom script:   call TriggerExecute(gg_trg_Valeria_Movement_Continue)
+                Skip remaining actions
+            Else - Actions

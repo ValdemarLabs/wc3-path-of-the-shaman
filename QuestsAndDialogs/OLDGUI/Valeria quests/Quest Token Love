@@ -1,0 +1,13 @@
+Quest Token Love
+    Events
+    Conditions
+    Actions
+        -------- RESET Quest, if previously done --------
+        Quest - Mark QuestTokenLove as Incomplete
+        Quest - Mark QuestTokenLoveReq1 as Incomplete
+        Quest - Mark QuestTokenLoveReq2 as Incomplete
+        Wait Campaign quest delay game-time seconds
+        Custom script:   call TriggerExecute(gg_trg_Quest_Token_Love_Discover)
+        Custom script:   call EnableTrigger(gg_trg_Quest_Token_Love_Update)
+        Item - Create |cff0000ffHeart of the Ocean|r at (Position of Nazgrek)
+        Trigger - Remove (This trigger) from the trigger queue
