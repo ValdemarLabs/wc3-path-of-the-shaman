@@ -9,7 +9,9 @@
     Credits:
 
     How to install:
-    Import this library after GatherNodeSkills, TimerUtils, and Table. Profession sublibraries register stations and recipes through this API.
+    Import this library after GatherNodeSkills, TimerUtils, Table, and
+    FullscreenUI. Profession sublibraries register stations and recipes through
+    this API.
 
     API:
     call Professions_RegisterStationType(GNS_PROF_ALCHEMY, 'n61D', "Cauldron")
@@ -35,7 +37,7 @@
 
 **/
 
-library Professions initializer AutoInit requires GatherNodeSkills, TimerUtils, Table, DialogCamera, CinematicMover, Interface, optional SharedDInvLib, optional ItemHook, optional MasterUI
+library Professions initializer AutoInit requires GatherNodeSkills, TimerUtils, Table, DialogCamera, CinematicMover, Interface, FullscreenUI, optional SharedDInvLib, optional ItemHook, optional MasterUI
 
 globals
     // Public result codes for callers that need richer failure handling later.
@@ -579,11 +581,11 @@ private function P_PlaySoundHandleForJob takes integer jobId, sound whichSound, 
 endfunction
 
 private function P_ShouldPreferSoundLabel takes integer jobId returns boolean
-    return P_JobAiControlled[jobId]
+    return true
 endfunction
 
 private function P_ShouldPreferSoundPath takes integer jobId returns boolean
-    return P_JobCinematicActive[jobId] and not P_JobAiControlled[jobId]
+    return true
 endfunction
 
 private function P_IsBlankString takes string value returns boolean
@@ -1169,7 +1171,7 @@ private function P_StartCraftCinematic takes integer jobId, unit crafter, unit s
     set P_JobOwner[jobId] = owner
     set P_JobCinematicActive[jobId] = true
     if P_CinematicDepth <= 0 then
-        call CinematicModeBJ(true, GetPlayersAll())
+        call FullscreenUI_SetEnabled(true)
         static if LIBRARY_MasterUI then
             call MasterUI_HideGameButton()
         endif
@@ -1199,7 +1201,7 @@ private function P_FinishCraftCinematic takes integer jobId, unit crafter return
     set P_CinematicDepth = P_CinematicDepth - 1
     if P_CinematicDepth <= 0 then
         set P_CinematicDepth = 0
-        call CinematicModeBJ(false, GetPlayersAll())
+        call FullscreenUI_SetEnabled(false)
         static if LIBRARY_MasterUI then
             call MasterUI_ShowGameButton()
         endif
