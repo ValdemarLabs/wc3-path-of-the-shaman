@@ -28,7 +28,7 @@
     - set ok = Abilities_ResetTalents(hero)
 
 **/
-library Abilities initializer Init requires AbilitiesPlayer, AbilitiesPlayerInit, AbilityPoints, optional Talents, optional GameMode
+library Abilities initializer Init requires ExSound, AbilitiesPlayer, AbilitiesPlayerInit, AbilityPoints, optional Talents, optional GameMode
     globals
         public constant integer RESULT_OK = 1
         public constant integer RESULT_INVALID = 2
@@ -49,10 +49,7 @@ library Abilities initializer Init requires AbilitiesPlayer, AbilitiesPlayerInit
     endfunction
 
     private function AB_PlaySoundForPlayer takes sound whichSound, player whichPlayer returns nothing
-        if whichSound != null and whichPlayer != null and GetLocalPlayer() == whichPlayer then
-            call StopSound(whichSound, false, false)
-            call StartSound(whichSound)
-        endif
+        call ExSound_PlayHandleForPlayer(whichSound, whichPlayer)
     endfunction
 
     private function AB_PlayLearnSound takes player whichPlayer returns nothing
