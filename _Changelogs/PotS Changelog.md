@@ -80,14 +80,67 @@
   - `Professions/Professions.j` now prefers recreatable path/label sound configuration for all craft jobs and only falls back to shared handles when no recreatable configuration works.
   - This follows the same sound-handle state-leak lesson noted earlier for `SoundTools`/`TerrainDamage`: reused or recycled sound handles can carry configuration state, so libraries that need situational playback must recreate/configure handles per use.
 
+- Updated `Abilities/Shaman/ShamanLightningShield.j`
+  - Lightning Shield now tracks the actual object-editor buff after a short post-cast grace window.
+  - If the Lightning Shield buff is dispelled or otherwise removed, the custom periodic damage instance and persistent shield visual are cleaned up immediately.
+  - Natural duration expiry now also removes the Lightning Shield buff if it is still present.
+  - Recasting still replaces the previous tracked instance without stripping the newly applied buff.
+  - Verified that normal Ancestral Ward and Water Shield casts already use the shared `ShamanBoneArmor.j` buff-required cleanup path; Totemic Resurgence bonus Ancestral Ward remains buff-independent by design.
+
+- Updated `Professions/ProfessionsFishing.j`
+  - Fishing now creates a lightning-based fishing line when the cast begins, starting from an approximated main-hand/two-handed weapon hand offset and ending at a randomized bobber point near the selected fish pool.
+  - Added configurable `ProfessionsFishing_BobberModelPath` for the fishing bobber model.
+  - Fishing bobbers now play a creation animation, switch to stand while fishing, then play the ending animation before being destroyed on reel, cancel, interruption, or fish escape.
+  - Increased the allowed fishing start range slightly so players can begin fishing from farther away before the fisher moves into casting range.
+
+- Updated `ItemLootSystems/ItemLootSystem.j` and `GatherSystems/GatherNodeUnits.j`
+  - Gather-node unit rawcodes registered through `GNU_RegisterDefinition(...)` are now excluded from normal ItemLoot unit death drops.
+  - This prevents fish pools, ore veins, and other unit-based gather nodes from rolling generic or specific ItemLoot tables when their rewards are already handled through GatherNodeUnits harvest rewards.
+
+- Updated `GatherSystems/GatherNodeSkills.j`
+  - Profession skill point gains now play a one-shot special effect on the unit when the stored profession skill value actually increases.
+  - Added configurable `GatherNodeSkills_TradeSkillLevelUpEffectModelPath`, defaulting to `spells_tradeskilllevelup.mdx`.
+  - The effect is shared by crafting, gathering, fishing, and skinning paths that award profession skill through `GNS_AwardGatherSkillForNode(...)`.
+
+### Imports
+
+-Imported following models from WoW (credits Blizzard Entertainment):
+- Fishing profession related:
+  - world_skillactivated_tradeskillenablers_tradeskill_fishschool_01.mdx
+  - world_skillactivated_tradeskillenablers_tradeskill_fishschool_02.mdx
+  - world_skillactivated_tradeskillenablers_tradeskill_fishschool_03.mdx
+  - world_skillactivated_tradeskillenablers_tradeskill_fishschool_blue.mdx
+  - world_skillactivated_tradeskillenablers_tradeskill_fishschool_eelsyellow.mdx
+  - world_skillactivated_tradeskillenablers_tradeskill_fishschool_elementalfire.mdx
+  - world_skillactivated_tradeskillenablers_tradeskill_fishschool_elementalwater.mdx
+  - world_skillactivated_tradeskillenablers_tradeskill_fishschool_green.mdx
+  - world_skillactivated_tradeskillenablers_tradeskill_fishschool_lava.mdx
+  - world_skillactivated_tradeskillenablers_tradeskill_fishschool_red.mdx
+  - world_skillactivated_tradeskillenablers_tradeskill_fishschool_shipwreck.mdx
+  - world_goober_g_fishingbobber.mdx
+- Profession skill levelup:
+  - spells_tradeskilllevelup.mdx
+- Alchemy profession related but more likely to be just aesthetics in various environments:
+  - world_expansion01_doodads_generic_arakkoa_tradeskill_ak_alchemyset01.mdx (could fit The Crypt dungeon)
+  - world_skillactivated_tradeskillenablers_tradeskill_alchemycauldron_blue.mdx
+  - world_skillactivated_tradeskillenablers_tradeskill_alchemycauldron_green.mdx
+  - world_skillactivated_tradeskillenablers_tradeskill_alchemycauldron_purple.mdx
+  - world_skillactivated_tradeskillenablers_tradeskill_alchemycauldron_red.mdx
+  - world_skillactivated_tradeskillenablers_tradeskill_alchemycauldron_white.mdx
+
 ### Tool Updates
 
 - Added `WC3_Database/SQL/seed_fishing_items_and_rewards.sql`
-  - Seeded 37 fishing reward items into the PotS ItemManager database, using fish, trophy fish, and fishing junk naming patterns from WoW-style fishing items.
+  - Seeded 78 fishing reward items into the PotS ItemManager database, using fish, trophy fish, fishing junk, elemental reagent, fel-tainted, lava, pearl, and shipwreck loot naming patterns.
   - Added 27 active self-use fish consumables using the Healing Salve-style health regeneration ability, with perishable charged stacks up to 10.
   - Added 10 non-stackable MainHand trophy/junk weapon catches with intentionally poor attack bonuses for funny fishing rewards.
-  - Used existing ItemManager custom texture paths for fish, crab, and weapon-style icons instead of adding new imported assets.
-  - Seeded the default fish pool unit node `'n02N'` as `Fish Pool` with 979 reward rows generated from zone level-range overlap.
+  - Added 41 special fish-pool reward items for elemental fire/water pools, fel pools, lava pools, eel schools, and shipwreck pools.
+  - Added gather-node unit definitions for fish pool rawcodes `'n02N'`, `'n02O'`, `'n02P'`, `'n02Q'`, `'n02R'`, `'n02S'`, `'n02T'`, `'n02U'`, `'n02V'`, `'n02W'`, and `'n02X'`.
+  - Added 143 explicit fish-pool zone assignments filtered by pool tier, zone level range, and zone theme, replacing the old catch-all fish-pool placement.
+  - Rebuilt fish-pool gather rewards into 1171 bounded drop rows, with zone-specific rewards capped per pool/zone/group so the exported JASS stays below `GNU_MAX_DROPS`.
+  - Elemental Fire Pool rewards now focus on fire reagents, Fel Pool rewards on fel/shadow materials, Lava Pools on fiery catches, and Ship Wreck rewards on treasure with fish only as occasional secondary loot.
+  - Marked the fish-pool unit types as `loot_mode='none'` with `0/0` ItemLoot drop counts so their rewards are owned by GatherNodeUnits.
+  - Used existing ItemManager icon paths for fish, crab, gem, spell, chest, reagent, and weapon-style icons instead of adding new imported assets.
 
 - Updated `WC3_Database/WC3ItemManager` gather-node unit reward support
   - Added `zone_id` and `zone_name` support to `gather_unit_node_drops` so ItemManager can store zone-specific unit-node reward rows.
@@ -99,7 +152,9 @@
 - The new debug command libraries passed local JassHelper script-only validation, but still need in-map validation with the active imported object data and multiplayer sync context.
 - The new `DialogInteraction.j` split passed targeted static checks for stale `QuestGiver_*` generic dialog calls and panel-hide usage, but still needs a full in-map JassHelper compile and runtime test with ability trainers and qAradion.
 - The Shaman/profession sound changes passed targeted static checks and `git diff --check`, but still need full in-map JassHelper compile and runtime audio validation. Shaman path fallbacks assume import paths such as `war3mapImported\\Stormstrike.wav`; those strings must be corrected if the actual imported sound paths differ.
-- The seeded fishing item database rows and ItemManager build passed local verification, but the map still needs fresh ItemManager item object export/import and Gather Nodes JASS export/import before the new fish rewards can be validated in-game.
+- The seeded fishing item and fish-pool database rows passed local PostgreSQL verification, but the map still needs fresh ItemManager item object export/import and Gather Nodes JASS export/import before the new fish pools and rewards can be validated in-game.
+- The fishing line/bobber visuals and gather-node ItemLoot exclusion passed `git diff --check`, but still need full map compile and in-game validation with the active bobber model import path.
+- The profession skill-up effect passed `git diff --check`, but still needs full map compile and in-game validation with `spells_tradeskilllevelup.mdx` imported at the configured path.
 
 
 ## [25.7.2026]
@@ -184,6 +239,7 @@
   - Added a pre-start Game Mode UI that appears after preload and before `Start_Start()`.
   - Added Story, Free Roam, and Developer mode configuration flags for story flow, intro cinematic usage, quest requirements, ability requirements, AP costs, quest reveal style, and starting gold bonus.
   - Shows Difficulty selection after game mode selection and applies it through `Difficulty_SetDifficulty()` before starting the player setup flow.
+  - Re-enables player control while the mode/difficulty selection UI is open, then locks control again when `Start_Start()` begins.
   - Developer mode can be hidden for release builds with `GM_SHOW_DEVELOPER_MODE`.
 
 - Updated `Preload/Preloader.j` and `Preload/Start.j`
@@ -237,6 +293,12 @@
   - Added a controlled-display unit list for temporary controlled summons.
   - Included controlled-display units in order, idle, halt/resume, hostility-source, class/type/faction, and ability-info handling.
   - Kept controlled-display units separate from `udg_CompanionUnit[]` so temporary summons do not change the normal companion party size.
+
+- Updated companion command voicelines
+  - Added dedicated Nazgrek/Zulkis companion command lines for invite, kick, drop items, Passive, Normal, Aggressive, and Hold Position commands using `Nazgrek_CompanionXXX` / `Zulkis_CompanionXXX` sound keys.
+  - Companion commands now queue the owned Nazgrek/Zulkis command line before the selected AI companion replies; all-companion mode commands still pick one random eligible AI companion responder.
+  - If both Nazgrek and Zulkis are player-owned, the command speaker is selected randomly; if only one is owned, that hero is used.
+  - Added companion-command line registration/picking support to `DialogSystem.j`, registered the new player lines in `DialogSystemPlayer.j`, registered the new ExSound sequences, and adjusted AI command bark queuing so replies wait behind the commander line.
 
 - Updated `UI/StatsLiteUI.j` and `UI/StatsUI.j`
   - Added controlled-display summon rows after normal companion rows.
