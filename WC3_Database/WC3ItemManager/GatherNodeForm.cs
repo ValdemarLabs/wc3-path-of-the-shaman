@@ -2796,6 +2796,13 @@ namespace WC3ItemManager
             grid.Columns.Clear();
             grid.Columns.Add(new DataGridViewTextBoxColumn
             {
+                DataPropertyName = nameof(GatherUnitNodeDrop.ZoneDisplay),
+                HeaderText = "Zone",
+                Width = 110,
+                ReadOnly = true
+            });
+            grid.Columns.Add(new DataGridViewTextBoxColumn
+            {
                 DataPropertyName = nameof(GatherUnitNodeDrop.GroupName),
                 HeaderText = "Drop Group",
                 Width = 95

@@ -12,6 +12,8 @@ namespace WC3ItemManager.Models
 
         public int Id { get; set; }
         public int NodeId { get; set; }
+        public int ZoneId { get; set; }
+        public string ZoneName { get; set; }
         public string GroupName { get; set; } = MainGroup;
         public string ItemCode { get; set; }
         public string ItemName { get; set; }
@@ -24,6 +26,10 @@ namespace WC3ItemManager.Models
         public string Notes { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+
+        public string ZoneDisplay => ZoneId > 0
+            ? $"{ZoneName ?? "Zone"} ({ZoneId})"
+            : "Default";
 
         public string QuantityDisplay => MinQuantity == MaxQuantity
             ? MinQuantity.ToString()

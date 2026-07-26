@@ -86,6 +86,28 @@ CREATE TABLE IF NOT EXISTS gather_unit_nodes (
 );
 
 -- ============================================================
+-- Gather Unit Node Drops - Harvest rewards for unit nodes
+-- ============================================================
+CREATE TABLE IF NOT EXISTS gather_unit_node_drops (
+    id SERIAL PRIMARY KEY,
+    node_id INT NOT NULL REFERENCES gather_unit_nodes(id) ON DELETE CASCADE,
+    zone_id INT NOT NULL DEFAULT 0,
+    zone_name VARCHAR(100),
+    group_name VARCHAR(100) NOT NULL DEFAULT 'Main',
+    item_code VARCHAR(4) NOT NULL,
+    item_name VARCHAR(255),
+    drop_chance_percent INT NOT NULL DEFAULT 100,
+    weight INT NOT NULL DEFAULT 100,
+    min_quantity INT NOT NULL DEFAULT 1,
+    max_quantity INT NOT NULL DEFAULT 1,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    display_order INT NOT NULL DEFAULT 0,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================================
 -- Gather Node Zones - Link nodes to zones (many-to-many)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS gather_node_zones (
@@ -143,6 +165,8 @@ CREATE INDEX IF NOT EXISTS idx_gather_item_nodes_category ON gather_item_nodes(c
 CREATE INDEX IF NOT EXISTS idx_gather_item_nodes_enabled ON gather_item_nodes(enabled);
 CREATE INDEX IF NOT EXISTS idx_gather_unit_nodes_category ON gather_unit_nodes(category_id);
 CREATE INDEX IF NOT EXISTS idx_gather_unit_nodes_enabled ON gather_unit_nodes(enabled);
+CREATE INDEX IF NOT EXISTS idx_gather_unit_node_drops_node ON gather_unit_node_drops(node_id);
+CREATE INDEX IF NOT EXISTS idx_gather_unit_node_drops_zone ON gather_unit_node_drops(node_id, zone_id);
 CREATE INDEX IF NOT EXISTS idx_gather_node_zones_node ON gather_node_zones(node_type, node_id);
 CREATE INDEX IF NOT EXISTS idx_gather_node_zones_zone ON gather_node_zones(zone_id);
 CREATE INDEX IF NOT EXISTS idx_gather_node_zones_group ON gather_node_zones(spawn_group_id);

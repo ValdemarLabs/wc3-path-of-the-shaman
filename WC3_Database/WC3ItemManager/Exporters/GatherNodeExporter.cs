@@ -315,7 +315,7 @@ namespace WC3ItemManager.Exporters
                     sb.AppendLine($"        set defId = GNU_GetDefinitionIdByUnitCode('{node.UnitCode}')");
                     foreach (var drop in drops)
                     {
-                        sb.AppendLine($"        call GNU_RegisterDrop(defId, \"{EscapeString(drop.GroupName)}\", '{drop.ItemCode}', {drop.DropChancePercent}, {drop.Weight}, {drop.MinQuantity}, {drop.MaxQuantity}, true)");
+                        AppendUnitNodeDropRegistration(sb, drop);
                     }
                     sb.AppendLine();
                 }
@@ -333,7 +333,7 @@ namespace WC3ItemManager.Exporters
                 sb.AppendLine($"        set defId = GNU_GetDefinitionIdByUnitCode('{node.UnitCode}')");
                 foreach (var drop in drops)
                 {
-                    sb.AppendLine($"        call GNU_RegisterDrop(defId, \"{EscapeString(drop.GroupName)}\", '{drop.ItemCode}', {drop.DropChancePercent}, {drop.Weight}, {drop.MinQuantity}, {drop.MaxQuantity}, true)");
+                    AppendUnitNodeDropRegistration(sb, drop);
                 }
                 sb.AppendLine();
             }
@@ -481,6 +481,17 @@ namespace WC3ItemManager.Exporters
         private string EscapeString(string value)
         {
             return (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");
+        }
+
+        private void AppendUnitNodeDropRegistration(StringBuilder sb, GatherUnitNodeDrop drop)
+        {
+            if (drop.ZoneId > 0)
+            {
+                sb.AppendLine($"        call GNU_RegisterZoneDrop(defId, {drop.ZoneId}, \"{EscapeString(drop.GroupName)}\", '{drop.ItemCode}', {drop.DropChancePercent}, {drop.Weight}, {drop.MinQuantity}, {drop.MaxQuantity}, true)  // {EscapeString(drop.ZoneName)}");
+                return;
+            }
+
+            sb.AppendLine($"        call GNU_RegisterDrop(defId, \"{EscapeString(drop.GroupName)}\", '{drop.ItemCode}', {drop.DropChancePercent}, {drop.Weight}, {drop.MinQuantity}, {drop.MaxQuantity}, true)");
         }
 
         private Dictionary<string, int> BuildUnitCategoryLookup(IEnumerable<GatherNodeCategory> categories)

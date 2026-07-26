@@ -118,6 +118,12 @@ namespace WC3ItemManager.Repositories
                     ALTER TABLE gather_unit_node_drops
                         ADD COLUMN IF NOT EXISTS weight INT NOT NULL DEFAULT 100;
 
+                    ALTER TABLE gather_unit_node_drops
+                        ADD COLUMN IF NOT EXISTS zone_id INT NOT NULL DEFAULT 0;
+
+                    ALTER TABLE gather_unit_node_drops
+                        ADD COLUMN IF NOT EXISTS zone_name VARCHAR(100);
+
                     UPDATE gather_item_nodes
                     SET display_order = id
                     WHERE display_order IS NULL;
@@ -172,6 +178,7 @@ namespace WC3ItemManager.Repositories
                     CREATE INDEX IF NOT EXISTS idx_gather_spawn_points_group ON gather_spawn_points(spawn_group_id);
                     CREATE INDEX IF NOT EXISTS idx_gather_node_zones_group ON gather_node_zones(spawn_group_id);
                     CREATE INDEX IF NOT EXISTS idx_gather_unit_node_drops_node ON gather_unit_node_drops(node_id);
+                    CREATE INDEX IF NOT EXISTS idx_gather_unit_node_drops_zone ON gather_unit_node_drops(node_id, zone_id);
                 ", conn))
                 {
                     cmd.ExecuteNonQuery();
@@ -1004,10 +1011,10 @@ namespace WC3ItemManager.Repositories
                 using (var cmd = new NpgsqlCommand(@"
                     SELECT id, node_id, item_code, item_name, drop_chance_percent,
                            min_quantity, max_quantity, enabled, display_order, notes, created_at, updated_at,
-                           group_name, weight
+                           group_name, weight, zone_id, zone_name
                     FROM gather_unit_node_drops
                     WHERE node_id = @nodeId
-                    ORDER BY display_order, item_name", conn))
+                    ORDER BY zone_id, display_order, item_name", conn))
                 {
                     cmd.Parameters.AddWithValue("@nodeId", nodeId);
                     using (var reader = cmd.ExecuteReader())
@@ -1039,9 +1046,9 @@ namespace WC3ItemManager.Repositories
 
                 using (var cmd = new NpgsqlCommand(@"
                     INSERT INTO gather_unit_node_drops
-                    (node_id, group_name, item_code, item_name, drop_chance_percent, weight, min_quantity, max_quantity, enabled, display_order, notes)
+                    (node_id, zone_id, zone_name, group_name, item_code, item_name, drop_chance_percent, weight, min_quantity, max_quantity, enabled, display_order, notes)
                     VALUES
-                    (@node_id, @group_name, @item_code, @item_name, @drop_chance_percent, @weight, @min_quantity, @max_quantity, @enabled, @display_order, @notes)
+                    (@node_id, @zone_id, @zone_name, @group_name, @item_code, @item_name, @drop_chance_percent, @weight, @min_quantity, @max_quantity, @enabled, @display_order, @notes)
                     RETURNING id", conn))
                 {
                     AddUnitNodeDropParameters(cmd, drop);
@@ -1059,6 +1066,8 @@ namespace WC3ItemManager.Repositories
                     UPDATE gather_unit_node_drops SET
                         item_code = @item_code,
                         item_name = @item_name,
+                        zone_id = @zone_id,
+                        zone_name = @zone_name,
                         group_name = @group_name,
                         drop_chance_percent = @drop_chance_percent,
                         weight = @weight,
@@ -1109,13 +1118,17 @@ namespace WC3ItemManager.Repositories
                 GroupName = reader.IsDBNull(12) || !string.Equals(reader.GetString(12), GatherUnitNodeDrop.SecondaryGroup, StringComparison.OrdinalIgnoreCase)
                     ? GatherUnitNodeDrop.MainGroup
                     : GatherUnitNodeDrop.SecondaryGroup,
-                Weight = reader.IsDBNull(13) ? 100 : reader.GetInt32(13)
+                Weight = reader.IsDBNull(13) ? 100 : reader.GetInt32(13),
+                ZoneId = reader.IsDBNull(14) ? 0 : reader.GetInt32(14),
+                ZoneName = reader.IsDBNull(15) ? null : reader.GetString(15)
             };
         }
 
         private void AddUnitNodeDropParameters(NpgsqlCommand cmd, GatherUnitNodeDrop drop)
         {
             cmd.Parameters.AddWithValue("@node_id", drop.NodeId);
+            cmd.Parameters.AddWithValue("@zone_id", drop.ZoneId);
+            cmd.Parameters.AddWithValue("@zone_name", string.IsNullOrWhiteSpace(drop.ZoneName) ? DBNull.Value : (object)drop.ZoneName);
             cmd.Parameters.AddWithValue("@group_name", string.Equals(drop.GroupName, GatherUnitNodeDrop.SecondaryGroup, StringComparison.OrdinalIgnoreCase)
                 ? GatherUnitNodeDrop.SecondaryGroup
                 : GatherUnitNodeDrop.MainGroup);

@@ -264,6 +264,8 @@ namespace WC3ItemManager.Dialogs
             {
                 Id = _originalDrop?.Id ?? 0,
                 NodeId = _originalDrop?.NodeId ?? 0,
+                ZoneId = _originalDrop?.ZoneId ?? 0,
+                ZoneName = _originalDrop?.ZoneName,
                 GroupName = cmbGroupName.SelectedItem?.ToString() == GatherUnitNodeDrop.SecondaryGroup
                     ? GatherUnitNodeDrop.SecondaryGroup
                     : GatherUnitNodeDrop.MainGroup,

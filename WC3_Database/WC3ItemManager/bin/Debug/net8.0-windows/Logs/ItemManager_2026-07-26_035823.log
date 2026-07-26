@@ -1,0 +1,7 @@
+﻿[2026-07-26 03.58.23] [INFO] ============================================================
+[2026-07-26 03.58.23] [INFO] ItemManager session started
+[2026-07-26 03.58.23] [INFO] Log file: H:\Pelit\PotS_JASS\WC3_Database\WC3ItemManager\bin\Debug\net8.0-windows\logs\ItemManager_2026-07-26_035823.log
+[2026-07-26 03.58.23] [INFO] ============================================================
+[2026-07-26 03.58.23] [INFO] Loaded tooltip phrases: 6 rarities, 7 classes, 24 stats
+[2026-07-26 03.58.34] [INFO] Exported W3T file: H:\Pelit\PotS_JASS\WC3_Database\exports\ItemData_20260726_035834.w3t
+[2026-07-26 03.58.40] [INFO] Exported DEquipment JASS file: H:\Pelit\PotS_JASS\WC3_Export\DEquipmentItemDefinitions\DEquipmentItemDefinitions_20260726-0358.j
