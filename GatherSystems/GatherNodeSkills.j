@@ -9,6 +9,9 @@ globals
     private constant integer skillMax = 100
     private constant real GNS_FAILURE_COOLDOWN = 2.50
 
+    // Model path played on the unit when a profession skill point is awarded.
+    public string TradeSkillLevelUpEffectModelPath = "spells_tradeskilllevelup.mdx"
+
     constant integer GNS_PROF_NONE = 0
     constant integer GNS_PROF_MINING = 1
     constant integer GNS_PROF_HERBALISM = 2
@@ -246,6 +249,12 @@ private function GNS_GetSkillGainChance takes integer currentSkill, integer requ
     return 0
 endfunction
 
+private function GNS_PlayTradeSkillLevelUpEffect takes unit u returns nothing
+    if u != null and TradeSkillLevelUpEffectModelPath != null and TradeSkillLevelUpEffectModelPath != "" then
+        call DestroyEffect(AddSpecialEffectTarget(TradeSkillLevelUpEffectModelPath, u, "origin"))
+    endif
+endfunction
+
 function GNS_AwardGatherSkillForNode takes unit u, integer professionId, integer requiredSkill, integer amount returns nothing
     local integer oldValue
     local integer newValue
@@ -265,8 +274,11 @@ function GNS_AwardGatherSkillForNode takes unit u, integer professionId, integer
     call GNS_SetSkill(u, professionId, newValue)
     set newValue = GNS_GetSkill(u, professionId)
 
-    if newValue > oldValue and GNS_ShouldAnnounceSkillGain(u) then
-        call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cff66ccff" + GNS_GetDisplayName(u) + " skill in " + GNS_GetProfessionName(professionId) + " has increased to " + I2S(newValue) + "|r")
+    if newValue > oldValue then
+        call GNS_PlayTradeSkillLevelUpEffect(u)
+        if GNS_ShouldAnnounceSkillGain(u) then
+            call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cff66ccff" + GNS_GetDisplayName(u) + " skill in " + GNS_GetProfessionName(professionId) + " has increased to " + I2S(newValue) + "|r")
+        endif
     endif
 endfunction
 
