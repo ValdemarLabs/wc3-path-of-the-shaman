@@ -1,0 +1,10 @@
+﻿[2026-07-26 02.57.07] [INFO] ============================================================
+[2026-07-26 02.57.07] [INFO] ItemManager session started
+[2026-07-26 02.57.07] [INFO] Log file: H:\Pelit\PotS_JASS\WC3_Database\WC3ItemManager\bin\Debug\net8.0-windows\logs\ItemManager_2026-07-26_025707.log
+[2026-07-26 02.57.07] [INFO] ============================================================
+[2026-07-26 02.57.07] [INFO] Loaded tooltip phrases: 6 rarities, 7 classes, 24 stats
+[2026-07-26 02.57.52] [INFO] Exported DEquipment JASS file: H:\Pelit\PotS_JASS\WC3_Export\DEquipmentItemDefinitions\DEquipmentItemDefinitions_20260726-0257.j
+[2026-07-26 02.58.04] [INFO] Exported W3T file: H:\Pelit\PotS_JASS\WC3_Database\exports\ItemData_20260726_025803.w3t
+[2026-07-26 03.03.29] [INFO] Updated item: i66m - Skinning Knife
+[2026-07-26 03.04.44] [INFO] Updated item: i66m - Skinning Knife
+[2026-07-26 03.06.25] [INFO] Exported DEquipment JASS file: H:\Pelit\PotS_JASS\WC3_Export\DEquipmentItemDefinitions\DEquipmentItemDefinitions_20260726-0306.j
