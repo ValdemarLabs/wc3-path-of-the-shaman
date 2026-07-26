@@ -124,6 +124,7 @@
 
 - Added the first Fishing profession gameplay flow:
   - Fish pools can be selected and fished by a tracked hero carrying a registered fishing pole.
+  - Fish pools can spawn in non-walkable shallow or deep water.
   - All configured fishing poles can qualify for fishing, with stronger poles contributing their Fishing item-stat bonus.
   - Fishing now uses a compact WoW-style FishingUI cast bar with a random bite window and Reel button.
   - FishingUI was moved higher on screen so it no longer covers the bottom unit portrait/command UI.
@@ -273,10 +274,10 @@
 
 - Updated `GatherSystems/GatherNodes.j`
   - Added reusable water-depth and water-type helpers using the invisible platform probe.
-  - Added a shallow-water, non-walkable terrain predicate for gather nodes that must spawn in water.
+  - Added non-walkable water predicates for gather nodes that must spawn in shallow or deep water.
 
 - Updated `GatherSystems/GatherNodeUnits.j`
-  - Added fish-pool category handling so unit node category `9` spawns only in shallow, non-walkable water.
+  - Added fish-pool category handling so unit node category `9` spawns only in non-walkable shallow or deep water.
   - Added zone-aware unit-node drops through `GNU_RegisterZoneDrop`, with exact zone, parent zone, then generic drop fallback.
   - Added public unit-node query helpers for definition id, category id, and stored zone id.
   - Added `GNU_RegisterExistingUnitNode` and `GNU_RollGatherUnitRewards` support for preplaced or UI-driven unit-node harvesting.
@@ -352,7 +353,7 @@
 - Full in-map JassHelper / Warcraft III compile validation was not completed in this repo snapshot because no combined `war3map.j` or normal map build entry point is exposed.
 - The converted `Preload/Start.j` and new `UI/GameMode.j` player startup flow still needs in-map validation with the active generated globals for `IntroV2Nazgrek01`, `Intro Cinematic Orc Q`, frame UI interaction, and selected mode/difficulty handoff.
 - The updated shaman scaling, Ancestral Ward orbiting effects, trainer camera timing, Ghost Wolf companion retargeting, trainer feedback lines/randomized registered-line picker, ability prerequisites, trainer/player ExSound registrations, and temporary summon Stats UI rows still need in-game validation with the active object data/import set.
-- The new FishingUI minigame, fish-pool shallow-water placement, preplaced fish-pool zone detection, and zone-aware fish rewards still need in-game validation with the active map object data.
+- The new FishingUI minigame, fish-pool water placement, preplaced fish-pool zone detection, and zone-aware fish rewards still need in-game validation with the active map object data.
 - The new Skinning flow and default beast rawcode list still need in-game validation with the active object data; Vizier Skin has no confirmed unit rawcode registered yet.
 - The corrected DEquipment trinket row, slot-name fallback behavior, and regenerated ItemManager equipment definitions still need in-map validation with the active object data/import set.
 
