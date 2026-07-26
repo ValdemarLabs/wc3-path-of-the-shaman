@@ -42,7 +42,7 @@
     - set talent = Talents_RegisterTalent(...)
 
 **/
-library Talents initializer Init requires AbilitiesPlayer, optional AbilityPoints, optional Events
+library Talents initializer Init requires ExSound, AbilitiesPlayer, optional AbilityPoints, optional Events
     globals
         public constant integer RESULT_OK = 1
         public constant integer RESULT_INVALID = 2
@@ -145,10 +145,7 @@ library Talents initializer Init requires AbilitiesPlayer, optional AbilityPoint
     endfunction
 
     private function TLT_PlaySoundForPlayer takes sound whichSound, player whichPlayer returns nothing
-        if whichSound != null and whichPlayer != null and GetLocalPlayer() == whichPlayer then
-            call StopSound(whichSound, false, false)
-            call StartSound(whichSound)
-        endif
+        call ExSound_PlayHandleForPlayer(whichSound, whichPlayer)
     endfunction
 
     private function TLT_PlayLearnSound takes player whichPlayer returns nothing
