@@ -75,7 +75,7 @@
   - `SoundAndMusic/ExSound.j` now owns shared 2D/3D sound playback for reusable `sound` handles, Sound Editor labels, generated `gg_snd_*` label strings, and explicit import paths.
   - Added central `ExSound_PlayHandle*`, `ExSound_PlayLabel*`, `ExSound_PlayPath*`, and `ExSound_PlayLabelOrPath*` helper APIs for normal, point, and unit playback.
   - Label playback accepts both Sound Editor labels such as `"Smelting"` and generated-name strings such as `"gg_snd_Smelting"` by stripping the `gg_snd_` prefix before `CreateSoundFromLabel(...)`.
-  - 3D playback now uses min distance `600.00` and distance cutoff `1500.00` by default, and registered `ExSound_PlayAtUnit(...)` / `ExSound_PlayAtPoint(...)` now create true 3D sounds with `CreateSound(path, false, is3D, is3D, ...)`.
+  - Label/path 3D playback now uses min distance `600.00` and distance cutoff `1500.00` by default; registered voiceline keys keep legacy non-spatial playback for imported-audio compatibility.
   - Reusable `gg_snd_*` handles are stopped/restarted but not destroyed; `KillSoundWhenDone(...)` is only used for fresh transient handles created by label/path playback.
   - `Abilities/Shaman/ShamanCommon.j` now delegates its sound wrappers to `ExSound` instead of owning duplicated deferred-start, create, attach, and cleanup logic.
   - Stormstrike, Whirlwind, Lightning Strike, Ghost Wolf morph/return, and Ghost Wolf Bite now play recreated 3D sounds attached to the active caster/form unit instead of reusing shared `gg_snd_*` handles.
@@ -95,8 +95,10 @@
   - Verified that normal Ancestral Ward and Water Shield casts already use the shared `ShamanBoneArmor.j` buff-required cleanup path; Totemic Resurgence bonus Ancestral Ward remains buff-independent by design.
 
 - Updated `Professions/ProfessionsFishing.j`
-  - Fishing now creates a lightning-based fishing line when the cast begins, starting from a hidden marker attached to the fisher's configured `"hand, right"` attachment point and ending at a randomized bobber point near the selected fish pool.
-  - Changed the fishing line lightning type/color toward a thinner line-like beam and added short endpoint/bobber wobble pulses on cast start, reel, bait use, cancellation, completion, interruption, and fish escape.
+  - Fishing now creates a lightning-based fishing line when the cast begins, starting from a hidden marker attached to the fisher's configured `"hand,right"` attachment point and ending at a randomized bobber point near the selected fish pool.
+  - Added configurable `ProfessionsFishing_FishingLineLightningType`, `ProfessionsFishing_FishingLineUseCustomColor`, and `ProfessionsFishing_LineHandAttachmentPoint`, defaulting to `LEAS`, disabled custom tinting, and `"hand,right"`.
+  - Changed the fishing line to use raw `LEAS` by default for compatibility with a `ReplaceableTextures\Weather\lariatCaught.blp` Aerial Shackles texture replacement, with fallback right-hand offset handling if the hidden marker reports the unit origin instead of a hand position.
+  - Added short endpoint/bobber wobble pulses on cast start, reel, bait use, cancellation, completion, interruption, and fish escape.
   - Added configurable `ProfessionsFishing_BobberModelPath` for the fishing bobber model.
   - Fishing bobbers now explicitly play `Cinematic Custom0 1` on creation, switch to `Stand 1` while fishing, then replay `Cinematic Custom0 1` before destruction on reel, cancel, interruption, completion, or fish escape.
   - Increased fishing pool interaction distance to 750 and moved the cast approach point farther from the pool so fishers do not stand almost on top of the node before casting.
@@ -126,6 +128,8 @@
   - world_skillactivated_tradeskillenablers_tradeskill_fishschool_red.mdx
   - world_skillactivated_tradeskillenablers_tradeskill_fishschool_shipwreck.mdx
   - world_goober_g_fishingbobber.mdx
+- Fishing line texture replacement:
+  - `ReplaceableTextures\Weather\lariatCaught.blp` replaces the Aerial Shackles lightning texture used by `LEAS` so the fishing line renders as a thin line instead of the vanilla shackles/chain look.
 - Profession skill levelup:
   - spells_tradeskilllevelup.mdx
 - Alchemy profession related but more likely to be just aesthetics in various environments:
