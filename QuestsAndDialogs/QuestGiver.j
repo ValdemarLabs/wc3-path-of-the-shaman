@@ -1,71 +1,11 @@
-library QuestGiver initializer Init requires QuestMaster, DialogSystem, HeroItemCheck, SharedDInvLib, CameraControl, Table
+library QuestGiver initializer Init requires QuestMaster, DialogInteraction, DialogSystem, HeroItemCheck, SharedDInvLib, Table
 //===========================================================================
 // QuestGiver
-// Base utilities for quest givers and dialog entry helpers.
+// Quest data/actions plus compatibility wrappers for DialogInteraction helpers.
 //===========================================================================
 
 globals
 	private constant boolean DEBUG = false
-	private Table QuestGiver_SelectHandlers = 0
-	private trigger QuestGiver_SelectTrigger = null
-	private Table QuestGiver_FirstGreetDone = 0
-	private Table QuestGiver_SkipNextGreet = 0
-	private Table QuestGiver_GreetOrder = 0
-	private Table QuestGiver_DialogTransitionConfig = 0
-	private dialog QuestGiver_PendingDialog = null
-	private player QuestGiver_PendingPlayer = null
-	private unit QuestGiver_PendingNPC = null
-	private integer QuestGiver_PendingSeq = 0
-	private boolean QuestGiver_PendingSequenceCinematic = false
-	private string QuestGiver_ReopenDialogFuncName = ""
-	private string QuestGiver_LastSelectionBlockReason = ""
-	unit QuestGiver_SelectedUnit = null
-	private unit TransitionGiver = null
-	private unit TransitionHero = null
-	private timer TransitionCooldownTimer = null
-	private real TransitionCooldownDuration = 0.00
-	private boolean TransitionStopCamera = false
-	private real TransitionCameraStopDuration = 0.00
-	private boolean TransitionUseCamera = false
-	private boolean TransitionRunCinematicTrigger = false
-	private boolean TransitionUseCinematicMode = false
-	private integer TransitionMoveMode = 0
-	private real TransitionMoveOffset = 0.00
-	private real TransitionMoveAngle = 0.00
-	private real TransitionCameraDist = 0.00
-	private real TransitionCameraZOffset = 0.00
-	private real TransitionCameraAngle = 0.00
-	private real TransitionCameraRotOffset = 0.00
-	private real TransitionCameraFarZ = 0.00
-	private real TransitionCameraFov = 0.00
-	private real TransitionCameraBlockRadius = 0.00
-	private boolean TransitionCameraBlockCheck = false
-	private string TransitionContinueFuncName = ""
-
-	private constant integer QUESTGIVER_TRANSITION_CONFIGURED = 1
-	private constant integer QUESTGIVER_TRANSITION_MOVE_MODE = 2
-	private constant integer QUESTGIVER_TRANSITION_MOVE_OFFSET = 3
-	private constant integer QUESTGIVER_TRANSITION_MOVE_ANGLE = 4
-	private constant integer QUESTGIVER_TRANSITION_CAMERA_DIST = 5
-	private constant integer QUESTGIVER_TRANSITION_CAMERA_Z_OFFSET = 6
-	private constant integer QUESTGIVER_TRANSITION_CAMERA_ANGLE = 7
-	private constant integer QUESTGIVER_TRANSITION_CAMERA_ROT_OFFSET = 8
-	private constant integer QUESTGIVER_TRANSITION_CAMERA_FAR_Z = 9
-	private constant integer QUESTGIVER_TRANSITION_CAMERA_FOV = 10
-	private constant integer QUESTGIVER_TRANSITION_CAMERA_BLOCK_RADIUS = 11
-	private constant integer QUESTGIVER_TRANSITION_CAMERA_BLOCK_CHECK = 12
-
-	private constant integer QUESTGIVER_DEFAULT_CINEMATIC_MOVE_MODE = 1
-	private constant real QUESTGIVER_DEFAULT_CINEMATIC_MOVE_OFFSET = 256.00
-	private constant real QUESTGIVER_DEFAULT_CINEMATIC_MOVE_ANGLE = 210.00
-	private constant real QUESTGIVER_DEFAULT_CAMERA_DIST = 1050.00
-	private constant real QUESTGIVER_DEFAULT_CAMERA_Z_OFFSET = 20.00
-	private constant real QUESTGIVER_DEFAULT_CAMERA_ANGLE = 350.00
-	private constant real QUESTGIVER_DEFAULT_CAMERA_ROT_OFFSET = 180.00
-	private constant real QUESTGIVER_DEFAULT_CAMERA_FAR_Z = 10000.00
-	private constant real QUESTGIVER_DEFAULT_CAMERA_FOV = 60.00
-	private constant real QUESTGIVER_DEFAULT_CAMERA_BLOCK_RADIUS = 0.00
-	private constant boolean QUESTGIVER_DEFAULT_CAMERA_BLOCK_CHECK = true
 
 	constant integer QUESTGIVER_GREET_DEFAULT = 0
 	constant integer QUESTGIVER_GREET_NAZGREK_THEN_NPC = 1
@@ -192,76 +132,19 @@ private function DebugMsg takes string msg returns nothing
 	endif
 endfunction
 
-//===========================================================================
-// Selection dispatch
-//===========================================================================
-private function OnUnitSelected takes nothing returns nothing
-	local unit u = GetTriggerUnit()
-	local trigger t
-
-	set QuestGiver_SelectedUnit = u
-	if u != null and QuestGiver_SelectHandlers != 0 then
-		set t = QuestGiver_SelectHandlers.trigger[GetHandleId(u)]
-		if t != null then
-			call TriggerExecute(t)
-		endif
-	endif
-	set QuestGiver_SelectedUnit = null
-endfunction
-
-private function EnsureSelectTrigger takes nothing returns nothing
-	if QuestGiver_SelectTrigger == null then
-		set QuestGiver_SelectTrigger = CreateTrigger()
-		call TriggerRegisterPlayerUnitEvent(QuestGiver_SelectTrigger, Player(0), EVENT_PLAYER_UNIT_SELECTED, null)
-		call TriggerAddAction(QuestGiver_SelectTrigger, function OnUnitSelected)
-	endif
-endfunction
-
 public function RegisterSelectionHandler takes unit u, code handler returns nothing
-	local trigger t
-	if u == null or handler == null then
-		return
-	endif
-	call EnsureSelectTrigger()
-	if QuestGiver_SelectHandlers == 0 then
-		set QuestGiver_SelectHandlers = Table.create()
-	endif
-	set t = QuestGiver_SelectHandlers.trigger[GetHandleId(u)]
-	if t != null then
-		call DestroyTrigger(t)
-	endif
-	set t = CreateTrigger()
-	call TriggerAddAction(t, handler)
-	set QuestGiver_SelectHandlers.trigger[GetHandleId(u)] = t
+	call DialogInteraction_RegisterSelectionHandler(u, handler)
 endfunction
 
 //===========================================================================
 // Registration
 //===========================================================================
 public function SetFirstGreetDone takes unit u, boolean flag returns nothing
-	local integer id
-	if u == null then
-		call DebugMsg("SetFirstGreetDone: u is null!")
-		return
-	endif
-	if QuestGiver_FirstGreetDone == 0 then
-		set QuestGiver_FirstGreetDone = Table.create()
-	endif
-	set id = GetHandleId(u)
-	set QuestGiver_FirstGreetDone.integer[id] = B2I(flag)
-	call DebugMsg("SetFirstGreetDone: id=" + I2S(id) + ", flag=" + I2S(B2I(flag)))
+	call DialogInteraction_SetFirstGreetDone(u, flag)
 endfunction
 
 public function SuppressNextGreet takes unit u returns nothing
-	local integer id
-	if u == null then
-		return
-	endif
-	if QuestGiver_SkipNextGreet == 0 then
-		set QuestGiver_SkipNextGreet = Table.create()
-	endif
-	set id = GetHandleId(u)
-	set QuestGiver_SkipNextGreet.boolean[id] = true
+	call DialogInteraction_SuppressNextGreet(u)
 endfunction
 
 //===========================================================================
@@ -461,12 +344,13 @@ endfunction
 public function Register takes unit u returns nothing
 	call DebugMsg("Register giver id=" + I2S(GetHandleId(u)))
 	call QuestMaster_RegisterGiver(u)
-	call SetFirstGreetDone(u, false)
+	call DialogInteraction_Register(u)
 endfunction
 
 public function Unregister takes unit u returns nothing
 	call DebugMsg("Unregister giver id=" + I2S(GetHandleId(u)))
 	call QuestMaster_UnregisterGiver(u)
+	call DialogInteraction_Unregister(u)
 endfunction
 
 public function UpdateGiverUnitReference takes unit oldUnit, unit newUnit returns nothing
@@ -574,10 +458,7 @@ endfunction
 // Dialog helpers
 //===========================================================================
 public function IsUnitAlive takes unit u returns boolean
-	if u == null then
-		return false
-	endif
-	return GetUnitTypeId(u) != 0 and not IsUnitType(u, UNIT_TYPE_DEAD)
+	return DialogInteraction_IsUnitAlive(u)
 endfunction
 
 public function FindPreferredUnitInRect takes rect searchRect, integer expectedTypeId, player preferredOwner, unit excludeA, unit excludeB, unit excludeC, unit excludeD, boolean excludeHeroes returns unit
@@ -689,416 +570,95 @@ endfunction
 
 
 public function IsWithinRange takes unit a, unit b, real range returns boolean
-	local real dx
-	local real dy
-	if a == null or b == null then
-		return false
-	endif
-	set dx = GetUnitX(a) - GetUnitX(b)
-	set dy = GetUnitY(a) - GetUnitY(b)
-	return dx*dx + dy*dy <= range*range
-endfunction
-
-private function IsLiveDialogHero takes unit hero returns boolean
-	return hero != null and IsUnitAlive(hero)
+	return DialogInteraction_IsWithinRange(a, b, range)
 endfunction
 
 public function GetAvailableHero takes unit giver, real range returns unit
-    local boolean nazgrekOk = false
-    local boolean zulkisOk = false
-    if IsLiveDialogHero(udg_Nazgrek) then
-        if range <= 0.00 or IsWithinRange(giver, udg_Nazgrek, range) then
-			set nazgrekOk = true
-		endif
-	endif
-    if IsLiveDialogHero(udg_Zulkis) then
-        if range <= 0.00 or IsWithinRange(giver, udg_Zulkis, range) then
-            set zulkisOk = true
-        endif
-    endif
-    if zulkisOk and IsUnitSelected(udg_Zulkis, Player(0)) then
-        return udg_Zulkis
-    endif
-    if nazgrekOk and IsUnitSelected(udg_Nazgrek, Player(0)) then
-        return udg_Nazgrek
-    endif
-    if nazgrekOk then
-        return udg_Nazgrek
-    endif
-    if zulkisOk then
-        return udg_Zulkis
-	endif
-	return null
+	return DialogInteraction_GetAvailableHero(giver, range)
 endfunction
 
 public function GetAllowedHero takes unit giver, real range, boolean allowNazgrek, boolean allowZulkis returns unit
-    if allowZulkis and IsLiveDialogHero(udg_Zulkis) and IsUnitSelected(udg_Zulkis, Player(0)) then
-        if range <= 0.00 or IsWithinRange(giver, udg_Zulkis, range) then
-            return udg_Zulkis
-        endif
-    endif
-    if allowNazgrek and IsLiveDialogHero(udg_Nazgrek) and IsUnitSelected(udg_Nazgrek, Player(0)) then
-        if range <= 0.00 or IsWithinRange(giver, udg_Nazgrek, range) then
-            return udg_Nazgrek
-        endif
-    endif
-    if allowNazgrek and IsLiveDialogHero(udg_Nazgrek) then
-        if range <= 0.00 or IsWithinRange(giver, udg_Nazgrek, range) then
-            return udg_Nazgrek
-        endif
-    endif
-	if allowZulkis and IsLiveDialogHero(udg_Zulkis) then
-		if range <= 0.00 or IsWithinRange(giver, udg_Zulkis, range) then
-			return udg_Zulkis
-		endif
-	endif
-	return null
+	return DialogInteraction_GetAllowedHero(giver, range, allowNazgrek, allowZulkis)
 endfunction
 
 public function ResolveDialogHero takes unit selectedHero, unit giver, real range, boolean allowNazgrek, boolean allowZulkis returns unit
-	if IsLiveDialogHero(selectedHero) then
-		return selectedHero
-	endif
-	return GetAllowedHero(giver, range, allowNazgrek, allowZulkis)
+	return DialogInteraction_ResolveDialogHero(selectedHero, giver, range, allowNazgrek, allowZulkis)
 endfunction
 
 public function GetHeroName takes unit hero returns string
-	if hero == null then
-		return ""
-	endif
-	if hero == udg_Nazgrek then
-		return "Nazgrek"
-	endif
-	if hero == udg_Zulkis then
-		return "Zulkis"
-	endif
-	return GetUnitName(hero)
+	return DialogInteraction_GetHeroName(hero)
 endfunction
 
 public function AddHeroLine takes integer seq, unit hero, string text, string nazgrekSound returns nothing
-	if hero == null then
-		return
-	endif
-	if hero == udg_Nazgrek then
-		call DialogSystem_AddLine(seq, hero, "Nazgrek", text, nazgrekSound, true)
-	else
-		call DialogSystem_AddLine(seq, hero, GetHeroName(hero), text, "", true)
-	endif
+	call DialogInteraction_AddHeroLine(seq, hero, text, nazgrekSound)
 endfunction
 
 public function AddHeroLookAtLine takes integer seq, unit hero, unit lookTarget, string text, string nazgrekSound returns nothing
-	if hero != null and lookTarget != null then
-		call DialogSystem_AddLookAtUnit(seq, hero, lookTarget, 0.50)
-	endif
-	call AddHeroLine(seq, hero, text, nazgrekSound)
+	call DialogInteraction_AddHeroLookAtLine(seq, hero, lookTarget, text, nazgrekSound)
 endfunction
 
 public function GetUnitDisplayName takes unit u returns string
-	if u == null then
-		return ""
-	endif
-	if IsUnitType(u, UNIT_TYPE_HERO) then
-		return GetHeroProperName(u)
-	endif
-	return GetUnitName(u)
+	return DialogInteraction_GetUnitDisplayName(u)
 endfunction
 
 public function BeginCinematicSequence takes boolean useCinematicMode returns nothing
-	call EnableUserControl(false)
-	if useCinematicMode then
-		call ExecuteFunc("MasterUI_HideGameButton")
-		call CinematicModeBJ(true, GetPlayersAll())
-	endif
+	call DialogInteraction_BeginCinematicSequence(useCinematicMode)
 endfunction
 
 public function EndCinematicSequence takes boolean useCinematicMode returns nothing
-	if useCinematicMode then
-		call CinematicModeBJ(false, GetPlayersAll())
-		call ExecuteFunc("MasterUI_ShowGameButton")
-	endif
-	call EnableUserControl(true)
-endfunction
-
-private function BeginPendingGreetSequence takes nothing returns nothing
-	call BeginCinematicSequence(QuestGiver_PendingSequenceCinematic)
-endfunction
-
-private function EndPendingGreetSequenceControl takes nothing returns nothing
-	call EndCinematicSequence(QuestGiver_PendingSequenceCinematic)
-	set QuestGiver_PendingSequenceCinematic = false
-endfunction
-
-private function ReleasePendingGreetSequenceToDialog takes nothing returns nothing
-	set QuestGiver_PendingSequenceCinematic = false
+	call DialogInteraction_EndCinematicSequence(useCinematicMode)
 endfunction
 
 public function CreateGreetSequenceBase takes unit giver, string giverName, unit hero, real startDelay, real heroReplyDelay, boolean faceEachOther returns integer
-	local integer seq = DialogSystem_CreateSequence()
-	local string heroName = GetHeroName(hero)
-	call DialogSystem_SetSequenceDefaultSpeaker(seq, giver, giverName)
-	if hero != null and faceEachOther then
-		call DialogSystem_MakeFaceEachOther(giver, hero, 0.00)
-	endif
-	if startDelay > 0.00 then
-		call DialogSystem_AddDelay(seq, startDelay)
-	endif
-	if hero != null then
-		call DialogSystem_PickGreetLine(hero, heroName)
-		call DialogSystem_AddLine(seq, hero, heroName, DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
-		if heroReplyDelay > 0.00 then
-			call DialogSystem_AddDelay(seq, heroReplyDelay)
-		endif
-	endif
-	return seq
+	return DialogInteraction_CreateGreetSequenceBase(giver, giverName, hero, startDelay, heroReplyDelay, faceEachOther)
 endfunction
 
 public function CreateInfoSequenceBase takes unit giver, string giverName, code onStart, code onEnd returns integer
-	local integer seq = DialogSystem_CreateSequence()
-	call DialogSystem_SetSequenceDefaultSpeaker(seq, giver, giverName)
-	call DialogSystem_SetSequenceCallbacks(seq, onStart, onEnd)
-	return seq
-endfunction
-
-private function ReopenDialogTimerExpired takes nothing returns nothing
-	local timer t = GetExpiredTimer()
-	local string funcName = QuestGiver_ReopenDialogFuncName
-	call DestroyTimer(t)
-	set t = null
-	set QuestGiver_ReopenDialogFuncName = ""
-	if funcName != "" then
-		call ExecuteFunc(funcName)
-	endif
+	return DialogInteraction_CreateInfoSequenceBase(giver, giverName, onStart, onEnd)
 endfunction
 
 public function QueueDialogReopen takes string rebuildFuncName, real delay returns nothing
-	local timer t
-	if rebuildFuncName == "" then
-		return
-	endif
-	if delay < 0.00 then
-		set delay = 0.00
-	endif
-	set QuestGiver_ReopenDialogFuncName = rebuildFuncName
-	set t = CreateTimer()
-	call TimerStart(t, delay, false, function ReopenDialogTimerExpired)
-	set t = null
-endfunction
-
-private function OnGreetSequenceEnd takes nothing returns nothing
-	local unit npc = QuestGiver_PendingNPC
-	local dialog d = QuestGiver_PendingDialog
-	local player p = QuestGiver_PendingPlayer
-	if d != null and p != null then
-		call ReleasePendingGreetSequenceToDialog()
-		if npc != null then
-			call DialogSystem_SetContext(npc, p)
-		endif
-		call DialogSystem_ShowDialog(d, p)
-	else
-		call EndPendingGreetSequenceControl()
-	endif
-	if QuestGiver_PendingSeq != 0 then
-		call DialogSystem_ClearSequence(QuestGiver_PendingSeq)
-		set QuestGiver_PendingSeq = 0
-	endif
-	set QuestGiver_PendingDialog = null
-	set QuestGiver_PendingPlayer = null
-	set QuestGiver_PendingNPC = null
-	set npc = null
-	set d = null
-	set p = null
+	call DialogInteraction_QueueDialogReopen(rebuildFuncName, delay)
 endfunction
 
 public function ShowDialog takes unit npc, player p, dialog d returns nothing
-	local integer id
-	local boolean skipGreet = false
-	local integer seq = 0
-	local integer greetOrder = QUESTGIVER_GREET_DEFAULT
-	local unit hero
-	local string heroName
-	if DialogSystem_IsSequenceActive() or QuestGiver_PendingDialog != null then
-		call DebugMsg("Show dialog ignored: sequence active or pending")
-		return
-	endif
-	call DebugMsg("Show dialog for giver id=" + I2S(GetHandleId(npc)))
-	call DialogSystem_SetContext(npc, p)
-	if npc != null and QuestGiver_SkipNextGreet != 0 then
-		set id = GetHandleId(npc)
-		if QuestGiver_SkipNextGreet.boolean[id] then
-			set skipGreet = true
-			set QuestGiver_SkipNextGreet.boolean[id] = false
-		endif
-	endif
-	if npc != null and QuestGiver_GreetOrder != 0 and QuestGiver_GreetOrder.has(GetHandleId(npc)) then
-		set greetOrder = QuestGiver_GreetOrder.integer[GetHandleId(npc)]
-	endif
-	if greetOrder == QUESTGIVER_GREET_DEFAULT then
-		set greetOrder = QUESTGIVER_GREET_NAZGREK_THEN_NPC
-	endif
-	if greetOrder == QUESTGIVER_GREET_NONE then
-		set skipGreet = true
-	endif
-	set hero = GetAvailableHero(npc, 0.00)
-	set heroName = GetHeroName(hero)
-	if not skipGreet and (greetOrder == QUESTGIVER_GREET_NAZGREK_THEN_NPC or greetOrder == QUESTGIVER_GREET_NAZGREK_ONLY) then
-		if hero != null then
-			call DialogSystem_PickGreetLine(hero, heroName)
-			set seq = DialogSystem_CreateSequence()
-			call DialogSystem_SetSequenceDefaultSpeaker(seq, npc, GetUnitName(npc))
-			call DialogSystem_AddLine(seq, hero, heroName, DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
-		endif
-	endif
-	if not skipGreet and (greetOrder == QUESTGIVER_GREET_NPC_THEN_NAZGREK or greetOrder == QUESTGIVER_GREET_NPC_ONLY or greetOrder == QUESTGIVER_GREET_NAZGREK_THEN_NPC) then
-		call DialogSystem_PickGreetLine(npc, "")
-		if seq == 0 then
-			set seq = DialogSystem_CreateSequence()
-			call DialogSystem_SetSequenceDefaultSpeaker(seq, npc, GetUnitName(npc))
-		endif
-		call DialogSystem_AddLine(seq, null, "", DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
-	endif
-	if not skipGreet and (greetOrder == QUESTGIVER_GREET_NPC_THEN_NAZGREK or greetOrder == QUESTGIVER_GREET_NAZGREK_ONLY) then
-		if hero != null then
-			call DialogSystem_PickGreetLine(hero, heroName)
-			if seq == 0 then
-				set seq = DialogSystem_CreateSequence()
-				call DialogSystem_SetSequenceDefaultSpeaker(seq, npc, GetUnitName(npc))
-			endif
-			call DialogSystem_AddLine(seq, hero, heroName, DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
-		endif
-	endif
-	if seq != 0 then
-		set QuestGiver_PendingDialog = d
-		set QuestGiver_PendingPlayer = p
-		set QuestGiver_PendingNPC = npc
-		set QuestGiver_PendingSeq = seq
-		call DialogSystem_SetSequenceCallbacks(seq, null, function OnGreetSequenceEnd)
-		call DialogSystem_PlaySequence(seq, p, npc)
-		set hero = null
-		return
-	endif
-	call DialogSystem_ShowDialog(d, p)
-	set hero = null
+	call DialogInteraction_ShowDialog(npc, p, d)
 endfunction
-
-private function OnFirstGreetSequenceEnd takes nothing returns nothing
-	local unit npc = QuestGiver_PendingNPC
-	local dialog d = QuestGiver_PendingDialog
-	local player p = QuestGiver_PendingPlayer
-	call DebugMsg("OnFirstGreetSequenceEnd: callback fired, npc=" + I2S(B2I(npc != null)) + ", dialog=" + I2S(B2I(d != null)))
-	if npc != null then
-		call SetFirstGreetDone(npc, true)
-		call SuppressNextGreet(npc)
-		call DebugMsg("OnFirstGreetSequenceEnd: marked as greeted")
-	endif
-	if npc != null and d != null and p != null then
-		call ReleasePendingGreetSequenceToDialog()
-		call DebugMsg("OnFirstGreetSequenceEnd: showing dialog")
-		call DialogSystem_SetContext(npc, p)
-		call DialogSystem_ShowDialog(d, p)
-	else
-		call EndPendingGreetSequenceControl()
-		call DebugMsg("OnFirstGreetSequenceEnd: skipping dialog show")
-	endif
-	if QuestGiver_PendingSeq != 0 then
-		call DialogSystem_ClearSequence(QuestGiver_PendingSeq)
-		set QuestGiver_PendingSeq = 0
-	endif
-	set QuestGiver_PendingDialog = null
-	set QuestGiver_PendingPlayer = null
-	set QuestGiver_PendingNPC = null
-	set npc = null
-	set d = null
-	set p = null
-endfunction
-
-
 
 public function PlayFirstGreetSequenceEx takes unit npc, player p, dialog d, integer seqId, boolean useCinematicMode returns nothing
-	call DebugMsg("PlayFirstGreetSequence: npc=" + I2S(B2I(npc != null)) + ", seqId=" + I2S(seqId))
-	if seqId == 0 or npc == null or p == null or d == null then
-		return
-	endif
-	set QuestGiver_PendingNPC = npc
-	set QuestGiver_PendingDialog = d
-	set QuestGiver_PendingPlayer = p
-	set QuestGiver_PendingSeq = seqId
-	set QuestGiver_PendingSequenceCinematic = useCinematicMode
-	call DialogSystem_SetSequenceCallbacks(seqId, function BeginPendingGreetSequence, function OnFirstGreetSequenceEnd)
-	call DialogSystem_PlaySequence(seqId, p, npc)
+	call DialogInteraction_PlayFirstGreetSequenceEx(npc, p, d, seqId, useCinematicMode)
 endfunction
 
 public function PlayFirstGreetSequence takes unit npc, player p, dialog d, integer seqId returns nothing
-	call PlayFirstGreetSequenceEx(npc, p, d, seqId, false)
+	call DialogInteraction_PlayFirstGreetSequence(npc, p, d, seqId)
 endfunction
 
 public function PlayGreetSequenceEx takes integer seqId, unit npc, player p, dialog d, boolean useCinematicMode returns nothing
-	if seqId == 0 or npc == null or p == null or d == null then
-		return
-	endif
-	set QuestGiver_PendingNPC = npc
-	set QuestGiver_PendingDialog = d
-	set QuestGiver_PendingPlayer = p
-	set QuestGiver_PendingSeq = seqId
-	set QuestGiver_PendingSequenceCinematic = useCinematicMode
-	call DialogSystem_SetSequenceCallbacks(seqId, function BeginPendingGreetSequence, function OnGreetSequenceEnd)
-	call DialogSystem_PlaySequence(seqId, p, npc)
+	call DialogInteraction_PlayGreetSequenceEx(seqId, npc, p, d, useCinematicMode)
 endfunction
 
 public function PlayGreetSequence takes integer seqId, unit npc, player p, dialog d returns nothing
-	call PlayGreetSequenceEx(seqId, npc, p, d, false)
+	call DialogInteraction_PlayGreetSequence(seqId, npc, p, d)
 endfunction
 
 public function SetGreetOrder takes unit u, integer order returns nothing
-	local integer id
-	if u == null then
-		return
-	endif
-	if QuestGiver_GreetOrder == 0 then
-		set QuestGiver_GreetOrder = Table.create()
-	endif
-	set id = GetHandleId(u)
-	set QuestGiver_GreetOrder.integer[id] = order
+	call DialogInteraction_SetGreetOrder(u, order)
 endfunction
 
 public function IsFirstGreetDone takes unit u returns boolean
-	local integer id
-	local integer result
-	if u == null then
-		call DebugMsg("IsFirstGreetDone: u is null!")
-		return false
-	endif
-	if QuestGiver_FirstGreetDone == 0 then
-		call DebugMsg("IsFirstGreetDone: Table not created!")
-		return false
-	endif
-	set id = GetHandleId(u)
-	if not QuestGiver_FirstGreetDone.has(id) then
-		call DebugMsg("IsFirstGreetDone: key not in table, id=" + I2S(id))
-		return false
-	endif
-	set result = QuestGiver_FirstGreetDone.integer[id]
-	call DebugMsg("IsFirstGreetDone: id=" + I2S(id) + ", result=" + I2S(result))
-	return result == 1
+	return DialogInteraction_IsFirstGreetDone(u)
 endfunction
 
 public function HideDialog takes dialog d, player p returns nothing
-	call DebugMsg("Hide dialog")
-	call DialogSystem_HideDialog(d, p)
+	call DialogInteraction_HideDialog(d, p)
 endfunction
 
 public function CloseActiveDialog takes nothing returns nothing
-	if DialogSystem_LastDialog == null or DialogSystem_ActivePlayer == null then
-		return
-	endif
-	call DebugMsg("Close active dialog")
-	call DialogSystem_HideDialog(DialogSystem_LastDialog, DialogSystem_ActivePlayer)
+	call DialogInteraction_CloseActiveDialog()
 endfunction
 
 public function BeginDialogSequence takes nothing returns nothing
-	call EnableUserControl(false)
-	call CloseActiveDialog()
-	call ExecuteFunc("TasQuestBox_Hide")
-	call ExecuteFunc("MasterUI_HideGameButton")
+	call DialogInteraction_BeginDialogSequence()
 endfunction
 
 //===========================================================================
@@ -1114,130 +674,44 @@ public function RefreshAvailabilityForGiver takes unit u returns nothing
 	call QuestMaster_RefreshAvailabilityForGiver(u)
 endfunction
 
-//===========================================================================
-// Common gating helpers
-//===========================================================================
-private function CooldownEnd takes nothing returns nothing
-endfunction
-
 public function GetCooldownRemaining takes timer t returns real
-	if t == null then
-		return 0.00
-	endif
-	return TimerGetRemaining(t)
+	return DialogInteraction_GetCooldownRemaining(t)
 endfunction
 
 public function IsCooldownActive takes timer t returns boolean
-	return GetCooldownRemaining(t) > 0.00
+	return DialogInteraction_IsCooldownActive(t)
 endfunction
 
 public function StartCooldown takes timer t, real duration returns timer
-	if t == null then
-		set t = CreateTimer()
-	endif
-	call TimerStart(t, duration, false, function CooldownEnd)
-	return t
+	return DialogInteraction_StartCooldown(t, duration)
 endfunction
 
 public function GetSelectedUnit takes nothing returns unit
-	return QuestGiver_SelectedUnit
+	return DialogInteraction_GetSelectedUnit()
 endfunction
 
 public function PassSelectionGate takes unit giver, unit hero, real range, timer cooldown returns boolean
-// hero/range checks are optional: 
-// if hero is null it skips hero/range validation, and it only checks range when range > 0.00. 
-// That makes it flexible per quest giver without changing the call signature.
-	if GetSelectedUnit() != giver then
-		return false
-	endif
-	if hero != null then
-		if range > 0.00 and not IsWithinRange(giver, hero, range) then
-			return false
-		endif
-	endif
-	if cooldown != null and TimerGetRemaining(cooldown) > 0.00 then
-		return false
-	endif
-	return true
+	return DialogInteraction_PassSelectionGate(giver, hero, range, cooldown)
 endfunction
 
 public function IsUnitCasting takes unit whichUnit returns boolean
-	local integer customValue
-	if whichUnit == null then
-		return false
-	endif
-	set customValue = GetUnitUserData(whichUnit)
-	if customValue <= 0 then
-		return false
-	endif
-	return udg_UnitIsCasting[customValue]
+	return DialogInteraction_IsUnitCasting(whichUnit)
 endfunction
 
 public function IsUnitInCombat takes unit whichUnit returns boolean
-	local integer customValue
-	if whichUnit == null then
-		return false
-	endif
-	set customValue = GetUnitUserData(whichUnit)
-	if customValue <= 0 then
-		return false
-	endif
-	return udg_GCSM_UnitInCombat[customValue]
+	return DialogInteraction_IsUnitInCombat(whichUnit)
 endfunction
 
 public function GetDialogSelectionHero takes unit giver, real range, boolean allowNazgrek, boolean allowZulkis returns unit
-	return GetAllowedHero(giver, range, allowNazgrek, allowZulkis)
+	return DialogInteraction_GetDialogSelectionHero(giver, range, allowNazgrek, allowZulkis)
 endfunction
 
 public function GetLastSelectionBlockReason takes nothing returns string
-	return QuestGiver_LastSelectionBlockReason
+	return DialogInteraction_GetLastSelectionBlockReason()
 endfunction
 
 public function PassDialogSelectionGate takes unit giver, unit hero, real range, timer cooldown, boolean requireHero, boolean blockSequenceActive, boolean blockGiverCasting, boolean blockGiverCombat, boolean blockHeroCasting, boolean blockHeroCombat returns boolean
-	set QuestGiver_LastSelectionBlockReason = ""
-	if giver == null then
-		set QuestGiver_LastSelectionBlockReason = "missing giver"
-		return false
-	endif
-	if GetSelectedUnit() != giver then
-		set QuestGiver_LastSelectionBlockReason = "selected unit mismatch"
-		return false
-	endif
-	if blockSequenceActive and DialogSystem_IsSequenceActive() then
-		set QuestGiver_LastSelectionBlockReason = "dialog sequence active"
-		return false
-	endif
-	if requireHero and hero == null then
-		set QuestGiver_LastSelectionBlockReason = "missing allowed hero"
-		return false
-	endif
-	if hero != null then
-		if range > 0.00 and not IsWithinRange(giver, hero, range) then
-			set QuestGiver_LastSelectionBlockReason = "hero out of range"
-			return false
-		endif
-		if blockHeroCasting and IsUnitCasting(hero) then
-			set QuestGiver_LastSelectionBlockReason = "hero is casting"
-			return false
-		endif
-		if blockHeroCombat and IsUnitInCombat(hero) then
-			set QuestGiver_LastSelectionBlockReason = "hero is in combat"
-			return false
-		endif
-	endif
-	if cooldown != null and TimerGetRemaining(cooldown) > 0.00 then
-		set QuestGiver_LastSelectionBlockReason = "cooldown active"
-		return false
-	endif
-	if blockGiverCasting and IsUnitCasting(giver) then
-		set QuestGiver_LastSelectionBlockReason = "giver is casting"
-		return false
-	endif
-	if blockGiverCombat and IsUnitInCombat(giver) then
-		set QuestGiver_LastSelectionBlockReason = "giver is in combat"
-		return false
-	endif
-	return true
+	return DialogInteraction_PassDialogSelectionGate(giver, hero, range, cooldown, requireHero, blockSequenceActive, blockGiverCasting, blockGiverCombat, blockHeroCasting, blockHeroCombat)
 endfunction
 
 //===========================================================================
@@ -1535,293 +1009,42 @@ endfunction
 // Generic sequence-end handler builder
 //===========================================================================
 public function HandleSequenceEnd takes unit giver, timer cooldownTimer, real cooldownDuration, boolean stopCamera, real cameraStopDuration, boolean useCamera, boolean reopenDialog returns nothing
-	// Generic handler for end of quest accept/complete/fail/farewell sequences
-	call CloseActiveDialog()
-	
-	if cooldownTimer != null and cooldownDuration > 0.00 then
-		call StartCooldown(cooldownTimer, cooldownDuration)
-	endif
-	
-	if stopCamera and useCamera then
-		call DialogSystem_StopDialogCamera(Player(0), cameraStopDuration, true)
-	endif
-	
-	// Note: reopenDialog would require storing additional context; 
-	// for now this is a placeholder for future enhancement
-endfunction
-
-private function ClearTransitionState takes nothing returns nothing
-	set TransitionGiver = null
-	set TransitionHero = null
-	set TransitionCooldownTimer = null
-	set TransitionCooldownDuration = 0.00
-	set TransitionStopCamera = false
-	set TransitionCameraStopDuration = 0.00
-	set TransitionUseCamera = false
-	set TransitionRunCinematicTrigger = false
-	set TransitionUseCinematicMode = false
-	set TransitionMoveMode = 0
-	set TransitionMoveOffset = 0.00
-	set TransitionMoveAngle = 0.00
-	set TransitionCameraDist = 0.00
-	set TransitionCameraZOffset = 0.00
-	set TransitionCameraAngle = 0.00
-	set TransitionCameraRotOffset = 0.00
-	set TransitionCameraFarZ = 0.00
-	set TransitionCameraFov = 0.00
-	set TransitionCameraBlockRadius = 0.00
-	set TransitionCameraBlockCheck = false
-	set TransitionContinueFuncName = ""
-endfunction
-
-private function FinishDialogExitTransition takes nothing returns nothing
-	local timer t = GetExpiredTimer()
-
-	call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, 1.0, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
-	call HandleSequenceEnd(TransitionGiver, TransitionCooldownTimer, TransitionCooldownDuration, TransitionStopCamera, TransitionCameraStopDuration, TransitionUseCamera, false)
-	if TransitionRunCinematicTrigger then
-		call TriggerExecute(gg_trg_Cinematic_OFF)
-	endif
-	if TransitionUseCinematicMode then
-		call CinematicModeBJ(false, GetPlayersAll())
-	endif
-	if TransitionRunCinematicTrigger or TransitionUseCinematicMode then
-		call ExecuteFunc("MasterUI_ShowGameButton")
-	endif
-	call EnableUserControl(true)
-	if TransitionHero != null and GetWidgetLife(TransitionHero) > 0.405 and not IsUnitType(TransitionHero, UNIT_TYPE_DEAD) then
-		call CameraControl_SetTargetUnit(Player(0), TransitionHero)
-		call SelectUnitForPlayerSingle(TransitionHero, Player(0))
-	endif
-
-	call ClearTransitionState()
-	call DestroyTimer(t)
-	set t = null
-endfunction
-
-private function ContinueDialogExitTransition takes nothing returns nothing
-	local timer t = GetExpiredTimer()
-	local timer nextTimer = CreateTimer()
-
-	call DestroyTimer(t)
-	set t = null
-	call TimerStart(nextTimer, 1.0, false, function FinishDialogExitTransition)
-	set nextTimer = null
+	call DialogInteraction_HandleSequenceEnd(giver, cooldownTimer, cooldownDuration, stopCamera, cameraStopDuration, useCamera, reopenDialog)
 endfunction
 
 public function StartDialogExitTransition takes unit giver, unit restoreHero, timer cooldownTimer, real cooldownDuration, boolean stopCamera, real cameraStopDuration, boolean useCamera, boolean runCinematicTrigger, boolean useCinematicMode returns nothing
-	local timer t = CreateTimer()
-
-	set TransitionGiver = giver
-	set TransitionHero = restoreHero
-	set TransitionCooldownTimer = cooldownTimer
-	set TransitionCooldownDuration = cooldownDuration
-	set TransitionStopCamera = stopCamera
-	set TransitionCameraStopDuration = cameraStopDuration
-	set TransitionUseCamera = useCamera
-	set TransitionRunCinematicTrigger = runCinematicTrigger
-	set TransitionUseCinematicMode = useCinematicMode
-
-	call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUT, 1.0, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
-	call TimerStart(t, 1.0, false, function ContinueDialogExitTransition)
-	set t = null
+	call DialogInteraction_StartDialogExitTransition(giver, restoreHero, cooldownTimer, cooldownDuration, stopCamera, cameraStopDuration, useCamera, runCinematicTrigger, useCinematicMode)
 endfunction
 
 public function StartConfiguredDialogExitTransition takes unit giver, unit restoreHero, timer cooldownTimer, real cooldownDuration, boolean useCamera, boolean useCinematicMode returns nothing
-	call StartDialogExitTransition(giver, restoreHero, cooldownTimer, cooldownDuration, true, 2.00, useCamera, true, useCinematicMode)
-endfunction
-
-private function ExecuteDialogEntryContinue takes nothing returns nothing
-	local timer t = GetExpiredTimer()
-	local string continueFuncName = TransitionContinueFuncName
-
-	call DestroyTimer(t)
-	set t = null
-	set TransitionContinueFuncName = ""
-	if continueFuncName != "" then
-		call ExecuteFunc(continueFuncName)
-	endif
-endfunction
-
-private function FinishDialogEntryTransition takes nothing returns nothing
-	local timer t = CreateTimer()
-
-	call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, 1.0, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
-	call TimerStart(t, 1.0, false, function ExecuteDialogEntryContinue)
-	set t = null
-endfunction
-
-private function ContinueDialogEntryTransition takes nothing returns nothing
-	local timer t = GetExpiredTimer()
-	local location p1
-	local location p2
-	local unit hero = TransitionHero
-	local real x
-	local real y
-
-	call DestroyTimer(t)
-	set t = null
-
-	if hero == null then
-		set hero = TransitionGiver
-	endif
-
-	if TransitionRunCinematicTrigger and TransitionGiver != null then
-		set udg_CinematicTriggerUnit = hero
-		set udg_CinematicMoveMode = TransitionMoveMode
-		set x = GetUnitX(TransitionGiver) + TransitionMoveOffset * Cos(TransitionMoveAngle * bj_DEGTORAD)
-		set y = GetUnitY(TransitionGiver) + TransitionMoveOffset * Sin(TransitionMoveAngle * bj_DEGTORAD)
-		set p1 = Location(x, y)
-		set p2 = Location(x, y)
-		set udg_CinematicMovePoint[1] = p1
-		set udg_CinematicMovePoint[2] = p2
-		call TriggerExecute(gg_trg_Cinematic_ON)
-		call RemoveLocation(p1)
-		call RemoveLocation(p2)
-		set p1 = null
-		set p2 = null
-	endif
-
-	if TransitionGiver != null then
-		call DialogSystem_StartDialogCamera(Player(0), TransitionGiver, TransitionCameraDist, TransitionCameraZOffset, TransitionCameraAngle, TransitionCameraRotOffset, TransitionCameraFarZ, TransitionCameraFov, TransitionCameraBlockRadius, TransitionCameraBlockCheck, TransitionUseCamera)
-	endif
-
-	call FinishDialogEntryTransition()
+	call DialogInteraction_StartConfiguredDialogExitTransition(giver, restoreHero, cooldownTimer, cooldownDuration, useCamera, useCinematicMode)
 endfunction
 
 public function StartDialogEntryTransition takes unit giver, unit hero, integer moveMode, real moveOffset, real moveAngle, boolean runCinematicTrigger, boolean useCamera, real cameraDist, real cameraZOffset, real cameraAngle, real cameraRotOffset, real cameraFarZ, real cameraFov, real cameraBlockRadius, boolean cameraBlockCheck, boolean useCinematicMode, string continueFuncName returns nothing
-	local timer t = CreateTimer()
-
-	set TransitionGiver = giver
-	set TransitionHero = hero
-	set TransitionMoveMode = moveMode
-	set TransitionMoveOffset = moveOffset
-	set TransitionMoveAngle = moveAngle
-	set TransitionRunCinematicTrigger = runCinematicTrigger
-	set TransitionUseCamera = useCamera
-	set TransitionCameraDist = cameraDist
-	set TransitionCameraZOffset = cameraZOffset
-	set TransitionCameraAngle = cameraAngle
-	set TransitionCameraRotOffset = cameraRotOffset
-	set TransitionCameraFarZ = cameraFarZ
-	set TransitionCameraFov = cameraFov
-	set TransitionCameraBlockRadius = cameraBlockRadius
-	set TransitionCameraBlockCheck = cameraBlockCheck
-	set TransitionUseCinematicMode = useCinematicMode
-	set TransitionContinueFuncName = continueFuncName
-
-	if hero != null then
-		call CameraControl_SetTargetUnit(Player(0), hero)
-	endif
-	if runCinematicTrigger or useCinematicMode then
-		call ExecuteFunc("MasterUI_HideGameButton")
-	endif
-	if useCinematicMode then
-		call CinematicModeBJ(true, GetPlayersAll())
-	endif
-
-	call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUT, 1.0, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
-	call TimerStart(t, 1.0, false, function ContinueDialogEntryTransition)
-	set t = null
-endfunction
-
-private function GetDialogTransitionKey takes unit giver, integer fieldId returns integer
-	return GetHandleId(giver) * 100 + fieldId
-endfunction
-
-private function EnsureDialogTransitionConfig takes nothing returns nothing
-	if QuestGiver_DialogTransitionConfig == 0 then
-		set QuestGiver_DialogTransitionConfig = Table.create()
-	endif
+	call DialogInteraction_StartDialogEntryTransition(giver, hero, moveMode, moveOffset, moveAngle, runCinematicTrigger, useCamera, cameraDist, cameraZOffset, cameraAngle, cameraRotOffset, cameraFarZ, cameraFov, cameraBlockRadius, cameraBlockCheck, useCinematicMode, continueFuncName)
 endfunction
 
 public function ConfigureDialogTransition takes unit giver, integer moveMode, real moveOffset, real moveAngle, real cameraDist, real cameraZOffset, real cameraAngle, real cameraRotOffset, real cameraFarZ, real cameraFov, real cameraBlockRadius, boolean cameraBlockCheck returns nothing
-	if giver == null then
-		return
-	endif
-	call EnsureDialogTransitionConfig()
-	set QuestGiver_DialogTransitionConfig.boolean[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CONFIGURED)] = true
-	set QuestGiver_DialogTransitionConfig.integer[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_MOVE_MODE)] = moveMode
-	set QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_MOVE_OFFSET)] = moveOffset
-	set QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_MOVE_ANGLE)] = moveAngle
-	set QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_DIST)] = cameraDist
-	set QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_Z_OFFSET)] = cameraZOffset
-	set QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_ANGLE)] = cameraAngle
-	set QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_ROT_OFFSET)] = cameraRotOffset
-	set QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_FAR_Z)] = cameraFarZ
-	set QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_FOV)] = cameraFov
-	set QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_BLOCK_RADIUS)] = cameraBlockRadius
-	set QuestGiver_DialogTransitionConfig.boolean[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_BLOCK_CHECK)] = cameraBlockCheck
+	call DialogInteraction_ConfigureDialogTransition(giver, moveMode, moveOffset, moveAngle, cameraDist, cameraZOffset, cameraAngle, cameraRotOffset, cameraFarZ, cameraFov, cameraBlockRadius, cameraBlockCheck)
 endfunction
 
 public function HasDialogTransitionConfig takes unit giver returns boolean
-	if giver == null or QuestGiver_DialogTransitionConfig == 0 then
-		return false
-	endif
-	return QuestGiver_DialogTransitionConfig.boolean[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CONFIGURED)]
+	return DialogInteraction_HasDialogTransitionConfig(giver)
 endfunction
 
 public function StartConfiguredDialogCamera takes player p, unit giver, boolean useCamera returns nothing
-	local real cameraDist = QUESTGIVER_DEFAULT_CAMERA_DIST
-	local real cameraZOffset = QUESTGIVER_DEFAULT_CAMERA_Z_OFFSET
-	local real cameraAngle = QUESTGIVER_DEFAULT_CAMERA_ANGLE
-	local real cameraRotOffset = QUESTGIVER_DEFAULT_CAMERA_ROT_OFFSET
-	local real cameraFarZ = QUESTGIVER_DEFAULT_CAMERA_FAR_Z
-	local real cameraFov = QUESTGIVER_DEFAULT_CAMERA_FOV
-	local real cameraBlockRadius = QUESTGIVER_DEFAULT_CAMERA_BLOCK_RADIUS
-	local boolean cameraBlockCheck = QUESTGIVER_DEFAULT_CAMERA_BLOCK_CHECK
-	if giver == null then
-		return
-	endif
-	if HasDialogTransitionConfig(giver) then
-		set cameraDist = QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_DIST)]
-		set cameraZOffset = QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_Z_OFFSET)]
-		set cameraAngle = QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_ANGLE)]
-		set cameraRotOffset = QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_ROT_OFFSET)]
-		set cameraFarZ = QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_FAR_Z)]
-		set cameraFov = QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_FOV)]
-		set cameraBlockRadius = QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_BLOCK_RADIUS)]
-		set cameraBlockCheck = QuestGiver_DialogTransitionConfig.boolean[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_BLOCK_CHECK)]
-	endif
-	call DialogSystem_StartDialogCamera(p, giver, cameraDist, cameraZOffset, cameraAngle, cameraRotOffset, cameraFarZ, cameraFov, cameraBlockRadius, cameraBlockCheck, useCamera)
+	call DialogInteraction_StartConfiguredDialogCamera(p, giver, useCamera)
 endfunction
 
 public function StartConfiguredDialogEntryTransition takes unit giver, unit hero, boolean runCinematicTrigger, boolean useCamera, boolean useCinematicMode, string continueFuncName returns nothing
-	local integer moveMode = QUESTGIVER_DEFAULT_CINEMATIC_MOVE_MODE
-	local real moveOffset = QUESTGIVER_DEFAULT_CINEMATIC_MOVE_OFFSET
-	local real moveAngle = QUESTGIVER_DEFAULT_CINEMATIC_MOVE_ANGLE
-	local real cameraDist = QUESTGIVER_DEFAULT_CAMERA_DIST
-	local real cameraZOffset = QUESTGIVER_DEFAULT_CAMERA_Z_OFFSET
-	local real cameraAngle = QUESTGIVER_DEFAULT_CAMERA_ANGLE
-	local real cameraRotOffset = QUESTGIVER_DEFAULT_CAMERA_ROT_OFFSET
-	local real cameraFarZ = QUESTGIVER_DEFAULT_CAMERA_FAR_Z
-	local real cameraFov = QUESTGIVER_DEFAULT_CAMERA_FOV
-	local real cameraBlockRadius = QUESTGIVER_DEFAULT_CAMERA_BLOCK_RADIUS
-	local boolean cameraBlockCheck = QUESTGIVER_DEFAULT_CAMERA_BLOCK_CHECK
-	if HasDialogTransitionConfig(giver) then
-		set moveMode = QuestGiver_DialogTransitionConfig.integer[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_MOVE_MODE)]
-		set moveOffset = QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_MOVE_OFFSET)]
-		set moveAngle = QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_MOVE_ANGLE)]
-		set cameraDist = QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_DIST)]
-		set cameraZOffset = QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_Z_OFFSET)]
-		set cameraAngle = QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_ANGLE)]
-		set cameraRotOffset = QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_ROT_OFFSET)]
-		set cameraFarZ = QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_FAR_Z)]
-		set cameraFov = QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_FOV)]
-		set cameraBlockRadius = QuestGiver_DialogTransitionConfig.real[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_BLOCK_RADIUS)]
-		set cameraBlockCheck = QuestGiver_DialogTransitionConfig.boolean[GetDialogTransitionKey(giver, QUESTGIVER_TRANSITION_CAMERA_BLOCK_CHECK)]
-	endif
-	call StartDialogEntryTransition(giver, hero, moveMode, moveOffset, moveAngle, runCinematicTrigger, useCamera, cameraDist, cameraZOffset, cameraAngle, cameraRotOffset, cameraFarZ, cameraFov, cameraBlockRadius, cameraBlockCheck, useCinematicMode, continueFuncName)
+	call DialogInteraction_StartConfiguredDialogEntryTransition(giver, hero, runCinematicTrigger, useCamera, useCinematicMode, continueFuncName)
 endfunction
 
 //===========================================================================
 // Generic accept/complete sequence builders
 //===========================================================================
 public function CreateBaseSequence takes unit giver, string giverName returns integer
-	local integer seq
-	set seq = DialogSystem_CreateSequence()
-	call DialogSystem_SetSequenceDefaultSpeaker(seq, giver, giverName)
-	return seq
+	return DialogInteraction_CreateBaseSequence(giver, giverName)
 endfunction
 
 public function CreateAcceptSequence takes unit giver, string giverName, unit hero, string heroName, real dialogRange, boolean allowNazgrek, boolean allowZulkis returns integer
@@ -1852,26 +1075,7 @@ public function CreateCompleteSequence takes unit giver, string giverName return
 endfunction
 
 public function CreateFarewellSequence takes unit giver, string giverName, unit hero, string heroName, real dialogRange, boolean allowNazgrek, boolean allowZulkis returns integer
-	local integer seq
-	set seq = CreateBaseSequence(giver, giverName)
-	
-	// Auto-resolve hero if not provided
-	if hero == null then
-		set hero = GetAllowedHero(giver, dialogRange, allowNazgrek, allowZulkis)
-		set heroName = GetHeroName(hero)
-	endif
-	
-	// 1) Player hero says farewell
-	if hero != null then
-		call DialogSystem_PickFarewellLine(hero, heroName)
-		call DialogSystem_AddLine(seq, hero, heroName, DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
-	endif
-	
-	// 2) NPC responds
-	call DialogSystem_PickFarewellLine(giver, "")
-	call DialogSystem_AddLine(seq, giver, giverName, DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
-	
-	return seq
+	return DialogInteraction_CreateFarewellSequence(giver, giverName, hero, heroName, dialogRange, allowNazgrek, allowZulkis)
 endfunction
 
 //===========================================================================
@@ -3248,11 +2452,6 @@ endfunction
 // Init
 //===========================================================================
 private function Init takes nothing returns nothing
-	set QuestGiver_SelectHandlers = Table.create()
-	set QuestGiver_FirstGreetDone = Table.create()
-	set QuestGiver_SkipNextGreet = Table.create()
-	set QuestGiver_GreetOrder = Table.create()
-	set QuestGiver_DialogTransitionConfig = Table.create()
 	set CompanionIndex = Table.create()
 	set CompanionIcon = Table.create()
 
