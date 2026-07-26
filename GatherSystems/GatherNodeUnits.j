@@ -21,7 +21,7 @@
 //
 // ============================================================
 
-library GatherNodeUnits initializer Init requires GatherNodes, GatherNodeSkills, DamageEngine, ZonesCore, TimerUtils, Table, Interface
+library GatherNodeUnits initializer Init requires GatherNodes, GatherNodeSkills, DamageEngine, ZonesCore, TimerUtils, Table, Interface, optional ItemLootSystem
 
 // ============================================================
 // CONFIGURATION
@@ -244,6 +244,10 @@ function GNU_RegisterDefinition takes integer unitCode, string nodeName, integer
     set GNU_DefGlowHeight[defId] = glowHeight
     set GNU_DefIsRare[defId] = isRare
     set GNU_DefEnabled[defId] = true
+
+    static if LIBRARY_ItemLootSystem then
+        call ItemLoot_RegisterExcludedUnitType(unitCode)
+    endif
     
     set GNU_DefinitionCount = GNU_DefinitionCount + 1
     
