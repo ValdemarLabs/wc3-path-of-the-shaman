@@ -1,0 +1,4 @@
+interface:
+  display_name: "GUI to qXXX"
+  short_description: "Convert old GUI quests into qXXX JASS"
+  default_prompt: "Use $create-qxxx-from-gui to convert old GUI quest giver triggers into a PotS qXXX library."
