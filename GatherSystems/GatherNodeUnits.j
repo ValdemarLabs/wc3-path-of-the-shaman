@@ -5,7 +5,7 @@
 // - Ore Veins (copper, iron, gold, etc.)
 // - Crystal Veins (gems, crystals)
 // - Rich Veins (high-yield nodes)
-// - Fish Pools (shallow-water placement, zone-aware rewards)
+// - Fish Pools (water placement, zone-aware rewards)
 // - Treasure Chests
 // - Rare Spawns
 //
@@ -1013,7 +1013,7 @@ private function GNU_IsFishPoolTerrainAllowed takes integer zoneId, real x, real
         return false
     endif
 
-    return GN_IsShallowWaterUnwalkable(x, y)
+    return GN_IsWaterUnwalkable(x, y)
 endfunction
 
 // Spawn a unit at specific coordinates
