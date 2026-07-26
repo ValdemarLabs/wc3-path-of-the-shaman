@@ -239,6 +239,13 @@ private function Init takes nothing returns nothing
     call ExSound_RegisterNazgrekEventSequence("Nazgrek_Stop", 1, 5)
     call ExSound_RegisterNazgrekEventSequence("Nazgrek_Decline", 1, 5)
     call ExSound_RegisterNazgrekEventSequence("Nazgrek_Accept", 1, 5)
+    call ExSound_RegisterNazgrekEventSequence("Nazgrek_CompanionInvite", 1, 2)
+    call ExSound_RegisterNazgrekEventSequence("Nazgrek_CompanionKick", 1, 2)
+    call ExSound_RegisterNazgrekEventSequence("Nazgrek_CompanionDropItems", 1, 2)
+    call ExSound_RegisterNazgrekEventSequence("Nazgrek_CompanionPassiveMode", 1, 2)
+    call ExSound_RegisterNazgrekEventSequence("Nazgrek_CompanionNormalMode", 1, 2)
+    call ExSound_RegisterNazgrekEventSequence("Nazgrek_CompanionAggressiveMode", 1, 2)
+    call ExSound_RegisterNazgrekEventSequence("Nazgrek_CompanionHoldMode", 1, 2)
 
     //=================================================================
     // Zulkis Event lines
@@ -260,6 +267,13 @@ private function Init takes nothing returns nothing
     call ExSound_Register("Zulkis_ItemErrorWeapons", "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisEventLines\\Zulkis_ItemErrorWeapons.mp3")
     call ExSound_RegisterZulkisEventSequence("Zulkis_Greet", 1, 4)
     call ExSound_RegisterZulkisEventSequence("Zulkis_Farewell", 1, 4)
+    call ExSound_RegisterZulkisEventSequence("Zulkis_CompanionInvite", 1, 2)
+    call ExSound_RegisterZulkisEventSequence("Zulkis_CompanionKick", 1, 2)
+    call ExSound_RegisterZulkisEventSequence("Zulkis_CompanionDropItems", 1, 2)
+    call ExSound_RegisterZulkisEventSequence("Zulkis_CompanionPassiveMode", 1, 2)
+    call ExSound_RegisterZulkisEventSequence("Zulkis_CompanionNormalMode", 1, 2)
+    call ExSound_RegisterZulkisEventSequence("Zulkis_CompanionAggressiveMode", 1, 2)
+    call ExSound_RegisterZulkisEventSequence("Zulkis_CompanionHoldMode", 1, 2)
 
     //=================================================================
     // HeroEngineer Event/chat lines
