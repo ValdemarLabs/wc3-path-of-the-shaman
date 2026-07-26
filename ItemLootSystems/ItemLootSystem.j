@@ -87,6 +87,9 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent
         private Table specificIsGuaranteed    // entry_index -> 0/1
         private Table specificWeight          // entry_index -> weight
         private integer specificEntryCount = 0
+
+        // Unit rawcodes excluded from normal ItemLoot death processing.
+        private Table excludedUnitTypes
         
         // Initialization flag
         private boolean initialized = false
@@ -874,6 +877,12 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent
             call BJDebugMsg("Registered specific drop: unit " + I2S(unitTypeId) + " -> item " + I2S(itemTypeId))
         endif
     endfunction
+
+    function ItemLoot_RegisterExcludedUnitType takes integer unitTypeId returns nothing
+        if unitTypeId != 0 then
+            set excludedUnitTypes[unitTypeId] = 1
+        endif
+    endfunction
     
     // =========================================================================
     // CORE LOGIC
@@ -1116,6 +1125,11 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent
         endif
         
         set unitTypeId = GetUnitTypeId(dying)
+        if excludedUnitTypes[unitTypeId] != 0 then
+            set dying = null
+            return
+        endif
+
         set unitLevel = GetUnitLevel(dying)
         set x = GetUnitX(dying)
         set y = GetUnitY(dying)
@@ -1162,6 +1176,7 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent
         set specificDropChance = Table.create()
         set specificIsGuaranteed = Table.create()
         set specificWeight = Table.create()
+        set excludedUnitTypes = Table.create()
         
         // Create drop queue timer (will be started/paused as needed)
         set dropQueueTimer = CreateTimer()
