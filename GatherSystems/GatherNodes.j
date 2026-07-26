@@ -296,6 +296,14 @@ function GN_IsShallowWaterUnwalkable takes real x, real y returns boolean
     return GN_GetWaterType(x, y) == GN_WATER_TYPE_SHALLOW
 endfunction
 
+function GN_IsWaterUnwalkable takes real x, real y returns boolean
+    if GN_IsPointPathable(x, y) then
+        return false
+    endif
+
+    return GN_GetWaterType(x, y) != GN_WATER_TYPE_NONE
+endfunction
+
 function GN_IsBlockedGatherTerrainType takes real x, real y returns boolean
     local integer terrainType = GetTerrainType(x, y)
 
