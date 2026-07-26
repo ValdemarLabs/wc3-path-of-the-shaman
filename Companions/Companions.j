@@ -42,7 +42,7 @@
     call Companions_GetAbilityInfoText(unit controlledUnit) returns string
 
 **/
-library Companions initializer Init requires QuestGiver, FollowSystem, IconQuery, Table, Events, UnitDeathEvent, SpeciFX, Reputation
+library Companions initializer Init requires QuestGiver, FollowSystem, IconQuery, Table, Events, UnitDeathEvent, SpeciFX, Reputation, DialogSystem
 
 globals
     constant integer COMPANION_MODE_DEFEND = 1
@@ -317,6 +317,74 @@ private function GetModeName takes integer mode returns string
         return "Aggressive"
     endif
     return "Normal"
+endfunction
+
+private function IsPlayerOwnedCommander takes unit u returns boolean
+    return IsAliveUnit(u) and GetOwningPlayer(u) == Player(CONTROL_PLAYER_INDEX)
+endfunction
+
+private function PickCompanionCommandSpeaker takes nothing returns unit
+    local boolean nazgrekOwned = IsPlayerOwnedCommander(udg_Nazgrek)
+    local boolean zulkisOwned = IsPlayerOwnedCommander(udg_Zulkis)
+
+    if nazgrekOwned and zulkisOwned then
+        if GetRandomInt(1, 2) == 1 then
+            return udg_Nazgrek
+        endif
+        return udg_Zulkis
+    elseif nazgrekOwned then
+        return udg_Nazgrek
+    elseif zulkisOwned then
+        return udg_Zulkis
+    endif
+    return null
+endfunction
+
+private function GetCompanionCommandSpeakerName takes unit speaker returns string
+    if speaker == udg_Zulkis then
+        return "Zulkis"
+    endif
+    return "Nazgrek"
+endfunction
+
+private function GetCompanionCommandLineKey takes integer commandId, integer mode returns string
+    if commandId == COMMAND_INVITE then
+        return "Invite"
+    elseif commandId == COMMAND_KICK then
+        return "Kick"
+    elseif commandId == COMMAND_DROP_ITEMS then
+        return "DropItems"
+    elseif commandId == COMMAND_MODE then
+        set mode = NormalizeMode(mode)
+        if mode == COMPANION_MODE_PASSIVE then
+            return "PassiveMode"
+        elseif mode == COMPANION_MODE_HOLD then
+            return "HoldMode"
+        elseif mode == COMPANION_MODE_AGGRESSIVE then
+            return "AggressiveMode"
+        endif
+        return "NormalMode"
+    endif
+    return ""
+endfunction
+
+private function QueueCompanionCommandLine takes integer commandId, integer mode returns nothing
+    local unit speaker = PickCompanionCommandSpeaker()
+    local string speakerName
+    local string commandKey
+
+    if speaker == null then
+        set speaker = null
+        return
+    endif
+
+    set speakerName = GetCompanionCommandSpeakerName(speaker)
+    set commandKey = GetCompanionCommandLineKey(commandId, mode)
+    if commandKey != "" and DialogSystem_PickCompanionCommandLine(speaker, speakerName, commandKey) then
+        call DialogSystem_QueueFieldLine(speaker, speakerName, DialogSystem_PickedSound, DialogSystem_PickedText)
+    endif
+
+    set speaker = null
 endfunction
 
 private function GetModeDistance takes integer mode returns real
@@ -1773,6 +1841,7 @@ private function ApplyModeToSingleTarget takes unit target, integer mode returns
     set mode = NormalizeMode(mode)
     call TrackExistingControlUnit(target)
     call SetModeInternal(target, mode)
+    call QueueCompanionCommandLine(COMMAND_MODE, mode)
     call FireCommandEvent(target, ModeCommandCaster, COMMAND_MODE, mode)
     call PlayCommandSound(gg_snd_GoodJob)
     call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(target) + ": " + GetModeName(mode) + " Mode")
@@ -1795,8 +1864,11 @@ private function ApplyModeToAllTargets takes integer mode returns nothing
     set CurrentGroupMode = mode
 
     set ModeActionMode = mode
-    call ForGroup(ModeTargetGroup, function ApplyModeTarget)
     set count = CountUnitsInGroup(ModeTargetGroup)
+    if count > 0 then
+        call QueueCompanionCommandLine(COMMAND_MODE, mode)
+    endif
+    call ForGroup(ModeTargetGroup, function ApplyModeTarget)
 
     if count > 0 then
         call PlayCommandSound(gg_snd_GoodJob)
@@ -1952,6 +2024,7 @@ private function HandleInvite takes unit caster, unit target returns nothing
     set leader = GetPreferredLeader(caster)
     call SetUnitOwner(target, Player(COMPANION_OWNER_INDEX), true)
     call AddInternal(target, icon, leader, CurrentGroupMode)
+    call QueueCompanionCommandLine(COMMAND_INVITE, CurrentGroupMode)
     call FireCommandEvent(target, caster, COMMAND_INVITE, CurrentGroupMode)
     call PlayCommandSound(gg_snd_Rescue)
 
@@ -1968,6 +2041,7 @@ private function HandleKick takes unit caster, unit target returns nothing
     set udg_CompanionUnitKicked = target
     call PlayCommandSound(gg_snd_UpkeepRing)
 
+    call QueueCompanionCommandLine(COMMAND_KICK, 0)
     call FireCommandEvent(target, caster, COMMAND_KICK, 0)
     set returnOwner = GetReturnOwner(GetUnitTypeId(target))
     call RemoveInternal(target)
@@ -2433,6 +2507,7 @@ private function HandleDropItems takes unit caster, unit target returns nothing
     endif
 
     call DropUnitItems(target)
+    call QueueCompanionCommandLine(COMMAND_DROP_ITEMS, 0)
     call FireCommandEvent(target, caster, COMMAND_DROP_ITEMS, 0)
     call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(target) + " dropped carried items.")
     set caster = null
