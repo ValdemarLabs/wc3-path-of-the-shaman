@@ -292,6 +292,7 @@ library GameMode initializer AutoInit requires Difficulty, Start, Interface
         call Start_SetRunIntroCinematic(GM_RunIntroCinematic)
         call Start_SetStartingGoldBonus(GM_StartingGoldBonus)
         call GM_HideInternal()
+        call EnableUserControl(false)
         call Start_Start()
     endfunction
 
@@ -406,6 +407,7 @@ library GameMode initializer AutoInit requires Difficulty, Start, Interface
         if GM_Parent == null then
             call GM_CreateFrames()
         endif
+        call EnableUserControl(true)
         call GM_ApplyModeConfig(GAME_MODE_STORY)
         call GM_ShowModeView()
         if GM_Parent != null then
