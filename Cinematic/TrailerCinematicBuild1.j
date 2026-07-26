@@ -200,8 +200,8 @@ function PlayNextCameraPan takes nothing returns nothing
         // Show udg_Nazgrek again
         call ShowUnitShow(udg_Nazgrek)
 
-        // Turn cinematic mode off
-        call CinematicModeBJ(false, GetPlayersAll())
+        // Turn fullscreen mode off
+        call FullscreenUI_SetEnabled(false)
         set udg_CinematicTrailer = false
 
         // Stop timers
@@ -243,8 +243,8 @@ function ClearMessagesPeriodic takes nothing returns nothing
 endfunction
 
 function PlayCinematicTrailer1 takes nothing returns nothing
-    // Enable cinematic mode
-    call CinematicModeBJ(true, GetPlayersAll())
+    // Enable fullscreen mode
+    call FullscreenUI_SetEnabled(true)
     set udg_CinematicTrailer = true
 
     // Hide udg_Nazgrek during cinematic
@@ -276,8 +276,8 @@ function PlayCinematicTrailer1 takes nothing returns nothing
 endfunction
 
 function PlayCinematicTrailer2 takes nothing returns nothing
-    // Enable cinematic mode
-    call CinematicModeBJ(true, GetPlayersAll())
+    // Enable fullscreen mode
+    call FullscreenUI_SetEnabled(true)
     set udg_CinematicTrailer = true
 
     // Hide udg_Nazgrek during cinematic
