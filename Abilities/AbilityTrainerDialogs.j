@@ -6,14 +6,14 @@
 
     Description:
     Dialog/cinematic entry layer for shaman ability trainers. Selecting a
-    trainer starts the normal QuestGiver cinematic transition, plays a short
+    trainer starts the normal DialogInteraction cinematic transition, plays a short
     trainer greeting sequence, then opens a dialog with Learn and Farewell.
     Quest libraries can register dialog builders to add trainer quest buttons.
 
     Credits:
 
     How to install:
-    Import after QuestGiver, DialogSystem, DialogSystemPlayer, AbilitiesUI,
+    Import after DialogInteraction, DialogSystem, DialogSystemPlayer, AbilitiesUI,
     AbilitiesPlayer, AbilityTrainerLines, Interface, and Events.
 
     API:
@@ -24,7 +24,7 @@
     - set treeId = AbilityTrainerDialogs_GetSelectedTree()
 
 **/
-library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, DialogSystem, DialogSystemPlayer, AbilitiesPlayer, AbilitiesUI, AbilityTrainerLines, Interface, optional Events
+library AbilityTrainerDialogs initializer Init requires Table, DialogInteraction, DialogSystem, DialogSystemPlayer, AbilitiesPlayer, AbilitiesUI, AbilityTrainerLines, Interface, optional Events
     globals
         private constant real ATD_DIALOG_RANGE = 900.00
         private constant real ATD_DIALOG_COOLDOWN = 3.00
@@ -95,7 +95,7 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
     endfunction
 
     private function ATD_IsSelectedContextValid takes nothing returns boolean
-        return ATD_SelectedTrainer != null and ATD_SelectedHero != null and QuestGiver_IsUnitAlive(ATD_SelectedTrainer) and QuestGiver_IsUnitAlive(ATD_SelectedHero)
+        return ATD_SelectedTrainer != null and ATD_SelectedHero != null and DialogInteraction_IsUnitAlive(ATD_SelectedTrainer) and DialogInteraction_IsUnitAlive(ATD_SelectedHero)
     endfunction
 
     private function ATD_AddRegisteredDialogButtons takes nothing returns nothing
@@ -115,7 +115,7 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
     endfunction
 
     private function ATD_ReportSelectionFailure takes unit trainer returns nothing
-        local string reason = QuestGiver_GetLastSelectionBlockReason()
+        local string reason = DialogInteraction_GetLastSelectionBlockReason()
 
         if reason == "missing allowed hero" then
             call DisplayTextToPlayer(Player(0), 0.00, 0.00, "|cffff8080No player shaman hero found near the " + AbilityTrainerLines_GetTrainerName(trainer) + ".|r")
@@ -129,7 +129,7 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
     private function ATD_CreateGreetSequence takes unit trainer, unit hero returns integer
         local integer seq = DialogSystem_CreateSequence()
         local string trainerName = AbilityTrainerLines_GetTrainerName(trainer)
-        local string heroName = QuestGiver_GetHeroName(hero)
+        local string heroName = DialogInteraction_GetHeroName(hero)
 
         call DialogSystem_SetSequenceDefaultSpeaker(seq, trainer, trainerName)
         call DialogSystem_AddMakeFaceEachOther(seq, trainer, hero, 0.50, 0.00)
@@ -147,7 +147,7 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
     private function ATD_CreateFarewellSequence takes unit trainer, unit hero returns integer
         local integer seq = DialogSystem_CreateSequence()
         local string trainerName = AbilityTrainerLines_GetTrainerName(trainer)
-        local string heroName = QuestGiver_GetHeroName(hero)
+        local string heroName = DialogInteraction_GetHeroName(hero)
 
         call DialogSystem_SetSequenceDefaultSpeaker(seq, trainer, trainerName)
         call DialogSystem_AddMakeFaceEachOther(seq, trainer, hero, 0.50, 0.00)
@@ -184,7 +184,7 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
             return
         endif
 
-        call QuestGiver_ConfigureDialogTransition(trainer, ATD_CINEMATIC_MOVE_MODE, ATD_CINEMATIC_MOVE_OFFSET, ATD_CINEMATIC_MOVE_ANGLE, ATD_CAMERA_DIST, ATD_CAMERA_Z_OFFSET, ATD_CAMERA_ANGLE, ATD_GetHeroCameraRotationOffset(trainer, hero), ATD_CAMERA_FAR_Z, ATD_CAMERA_FOV, ATD_CAMERA_BLOCK_RADIUS, ATD_CAMERA_BLOCK_CHECK)
+        call DialogInteraction_ConfigureDialogTransition(trainer, ATD_CINEMATIC_MOVE_MODE, ATD_CINEMATIC_MOVE_OFFSET, ATD_CINEMATIC_MOVE_ANGLE, ATD_CAMERA_DIST, ATD_CAMERA_Z_OFFSET, ATD_CAMERA_ANGLE, ATD_GetHeroCameraRotationOffset(trainer, hero), ATD_CAMERA_FAR_Z, ATD_CAMERA_FOV, ATD_CAMERA_BLOCK_RADIUS, ATD_CAMERA_BLOCK_CHECK)
     endfunction
 
     private function ATD_StartTrainerCamera takes unit trainer, unit hero returns nothing
@@ -201,12 +201,12 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
         call DialogSystem_ClearEscapeAction()
         call DialogSystem_HideDialog(ATD_Dialog, Player(0))
         call DialogSystem_StopDialogCamera(Player(0), ATD_CAMERA_RESET_TIME, ATD_USE_DIALOG_CAMERA)
-        call QuestGiver_EndCinematicSequence(ATD_CINEMATIC)
+        call DialogInteraction_EndCinematicSequence(ATD_CINEMATIC)
 
         if startCooldown then
-            set ATD_DialogCooldown = QuestGiver_StartCooldown(ATD_DialogCooldown, ATD_DIALOG_COOLDOWN)
+            set ATD_DialogCooldown = DialogInteraction_StartCooldown(ATD_DialogCooldown, ATD_DIALOG_COOLDOWN)
         endif
-        if hero != null and QuestGiver_IsUnitAlive(hero) then
+        if hero != null and DialogInteraction_IsUnitAlive(hero) then
             call ShowUnit(hero, true)
             call PauseUnit(hero, false)
             call SelectUnitForPlayerSingle(hero, Player(0))
@@ -243,7 +243,7 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
             return
         endif
 
-        call QuestGiver_BeginDialogSequence()
+        call DialogInteraction_BeginDialogSequence()
         set seq = ATD_CreateFarewellSequence(ATD_SelectedTrainer, ATD_SelectedHero)
         call DialogSystem_SetSequenceCallbacks(seq, null, function ATD_OnFarewellEnd)
         call DialogSystem_PlaySequence(seq, Player(0), ATD_SelectedTrainer)
@@ -285,7 +285,7 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
         endif
 
         call ATD_BuildDialog()
-        call QuestGiver_BeginCinematicSequence(ATD_CINEMATIC)
+        call DialogInteraction_BeginCinematicSequence(ATD_CINEMATIC)
         call ATD_StartTrainerCamera(ATD_SelectedTrainer, ATD_SelectedHero)
         call DialogSystem_SetContext(ATD_SelectedTrainer, Player(0))
         call DialogSystem_ShowDialog(ATD_Dialog, Player(0))
@@ -301,7 +301,7 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
 
         call ATD_BuildDialog()
         set seq = ATD_CreateGreetSequence(ATD_SelectedTrainer, ATD_SelectedHero)
-        call QuestGiver_PlayGreetSequenceEx(seq, ATD_SelectedTrainer, Player(0), ATD_Dialog, ATD_CINEMATIC)
+        call DialogInteraction_PlayGreetSequenceEx(seq, ATD_SelectedTrainer, Player(0), ATD_Dialog, ATD_CINEMATIC)
     endfunction
 
     public function ContinueToDialogAfterSelection takes nothing returns nothing
@@ -309,7 +309,7 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
     endfunction
 
     private function ATD_OnSelected takes nothing returns nothing
-        local unit trainer = QuestGiver_GetSelectedUnit()
+        local unit trainer = DialogInteraction_GetSelectedUnit()
         local unit hero
         local boolean gateOk
 
@@ -319,8 +319,8 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
             return
         endif
 
-        set hero = QuestGiver_GetDialogSelectionHero(trainer, ATD_DIALOG_RANGE, ATD_ALLOW_NAZGREK, ATD_ALLOW_ZULKIS)
-        set gateOk = QuestGiver_PassDialogSelectionGate(trainer, hero, ATD_DIALOG_RANGE, ATD_DialogCooldown, ATD_REQUIRE_DIALOG_HERO, true, true, true, false, false)
+        set hero = DialogInteraction_GetDialogSelectionHero(trainer, ATD_DIALOG_RANGE, ATD_ALLOW_NAZGREK, ATD_ALLOW_ZULKIS)
+        set gateOk = DialogInteraction_PassDialogSelectionGate(trainer, hero, ATD_DIALOG_RANGE, ATD_DialogCooldown, ATD_REQUIRE_DIALOG_HERO, true, true, true, false, false)
         if not gateOk then
             call ATD_ReportSelectionFailure(trainer)
             set trainer = null
@@ -331,7 +331,7 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
         set ATD_SelectedTrainer = trainer
         set ATD_SelectedHero = hero
         call ATD_ConfigureTrainerCamera(trainer, hero)
-        call QuestGiver_StartConfiguredDialogEntryTransition(trainer, hero, false, ATD_USE_DIALOG_CAMERA, ATD_CINEMATIC, "AbilityTrainerDialogs_ContinueToDialogAfterSelection")
+        call DialogInteraction_StartConfiguredDialogEntryTransition(trainer, hero, false, ATD_USE_DIALOG_CAMERA, ATD_CINEMATIC, "AbilityTrainerDialogs_ContinueToDialogAfterSelection")
 
         set trainer = null
         set hero = null
@@ -340,7 +340,7 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
     private function ATD_RegisterTrainer takes unit trainer returns nothing
         local integer handleId
 
-        if trainer == null or not QuestGiver_IsUnitAlive(trainer) then
+        if trainer == null or not DialogInteraction_IsUnitAlive(trainer) then
             return
         endif
         if not AbilitiesPlayer_IsTrainerUnitType(GetUnitTypeId(trainer)) then
@@ -353,10 +353,10 @@ library AbilityTrainerDialogs initializer Init requires Table, QuestGiver, Dialo
         endif
 
         set ATD_RegisteredTrainer.boolean[handleId] = true
-        call QuestGiver_Register(trainer)
+        call DialogInteraction_Register(trainer)
         call ATD_ConfigureTrainerCamera(trainer, null)
-        call QuestGiver_SetGreetOrder(trainer, QUESTGIVER_GREET_NONE)
-        call QuestGiver_RegisterSelectionHandler(trainer, function ATD_OnSelected)
+        call DialogInteraction_SetGreetOrder(trainer, DIALOGINTERACTION_GREET_NONE)
+        call DialogInteraction_RegisterSelectionHandler(trainer, function ATD_OnSelected)
     endfunction
 
     private function ATD_RegisterExistingTrainers takes nothing returns nothing
