@@ -90,10 +90,13 @@ library Interface initializer AutoInit
         private constant real IUI_SOUND_UNIT_Z = 64.00
         private constant real IUI_MINING_SOUND_CUTOFF = 1000.00
         private constant real IUI_PROFESSION_SOUND_CUTOFF = 3000.00
+        private constant integer IUI_DEFERRED_SOUND_KEY = 0
+        private constant integer IUI_DEFERRED_KILL_KEY = 1
 
         private boolean IUI_Initialized = false
         private boolean IUI_SoundsEnabled = true
         private boolean IUI_UnitSelectSoundEnabled = true
+        private hashtable IUI_DeferredSoundTable = InitHashtable()
 
         // Event sounds are assigned during init and can be overridden through SetEventSound.
         private sound array IUI_EventSound
@@ -178,8 +181,53 @@ library Interface initializer AutoInit
         return ""
     endfunction
 
+    private function IUI_GetWorldEventSoundLabel takes integer eventId returns string
+        if IUI_IsMiningHitEvent(eventId) then
+            return IUI_GetMiningHitSoundLabel(eventId)
+        elseif eventId == EVENT_TRADESKILL_HERB_PICK then
+            return "Tradeskill_HerbPick"
+        endif
+
+        return ""
+    endfunction
+
     private function IUI_IsBlankString takes string value returns boolean
         return value == null or value == ""
+    endfunction
+
+    private function IUI_StartDeferredSound takes nothing returns nothing
+        local timer expiredTimer = GetExpiredTimer()
+        local integer timerId = GetHandleId(expiredTimer)
+        local sound whichSound = LoadSoundHandle(IUI_DeferredSoundTable, timerId, IUI_DEFERRED_SOUND_KEY)
+        local boolean killWhenDone = LoadBoolean(IUI_DeferredSoundTable, timerId, IUI_DEFERRED_KILL_KEY)
+
+        if whichSound != null then
+            call StartSound(whichSound)
+            if killWhenDone then
+                call KillSoundWhenDone(whichSound)
+            endif
+        endif
+
+        call FlushChildHashtable(IUI_DeferredSoundTable, timerId)
+        call DestroyTimer(expiredTimer)
+
+        set whichSound = null
+        set expiredTimer = null
+    endfunction
+
+    private function IUI_StartSoundDeferred takes sound whichSound, boolean killWhenDone returns nothing
+        local timer startTimer
+
+        if whichSound == null then
+            return
+        endif
+
+        set startTimer = CreateTimer()
+        call SaveSoundHandle(IUI_DeferredSoundTable, GetHandleId(startTimer), IUI_DEFERRED_SOUND_KEY, whichSound)
+        call SaveBoolean(IUI_DeferredSoundTable, GetHandleId(startTimer), IUI_DEFERRED_KILL_KEY, killWhenDone)
+        call TimerStart(startTimer, 0.00, false, function IUI_StartDeferredSound)
+
+        set startTimer = null
     endfunction
 
     private function IUI_PlaySound takes sound whichSound returns nothing
@@ -192,6 +240,9 @@ library Interface initializer AutoInit
     private function IUI_PlaySoundOnUnit takes sound whichSound, unit whichUnit returns nothing
         if IUI_SoundsEnabled and whichSound != null and whichUnit != null then
             call StopSound(whichSound, false, false)
+            call SetSoundDistances(whichSound, 0.00, IUI_PROFESSION_SOUND_CUTOFF)
+            call SetSoundDistanceCutoff(whichSound, IUI_PROFESSION_SOUND_CUTOFF)
+            call SetSoundPosition(whichSound, GetUnitX(whichUnit), GetUnitY(whichUnit), IUI_SOUND_UNIT_Z)
             call AttachSoundToUnit(whichSound, whichUnit)
             call SetSoundVolume(whichSound, IUI_FEEDBACK_SOUND_VOLUME)
             call StartSound(whichSound)
@@ -227,6 +278,17 @@ library Interface initializer AutoInit
             return
         endif
 
+        set soundLabel = IUI_GetMiningHitSoundLabel(eventId)
+        if soundLabel != "" then
+            set miningSound = CreateSoundFromLabel(soundLabel, false, true, true, 12700, 12700)
+            if miningSound != null then
+                call IUI_ApplyFeedbackSoundOnUnit(miningSound, whichUnit, IUI_MINING_SOUND_CUTOFF)
+                call IUI_StartSoundDeferred(miningSound, true)
+                set miningSound = null
+                return
+            endif
+        endif
+
         set miningSound = IUI_EventSound[eventId]
         if miningSound != null then
             call StopSound(miningSound, false, false)
@@ -236,21 +298,31 @@ library Interface initializer AutoInit
             return
         endif
 
-        set soundLabel = IUI_GetMiningHitSoundLabel(eventId)
+        set miningSound = null
+    endfunction
+
+    private function IUI_PlayWorldEventSoundOnUnit takes integer eventId, unit whichUnit returns nothing
+        local string soundLabel
+        local sound eventSound
+
+        if not IUI_SoundsEnabled or whichUnit == null then
+            return
+        endif
+
+        set soundLabel = IUI_GetWorldEventSoundLabel(eventId)
         if soundLabel == "" then
             return
         endif
 
-        set miningSound = CreateSoundFromLabel(soundLabel, false, true, true, 12700, 12700)
-        if miningSound == null then
+        set eventSound = CreateSoundFromLabel(soundLabel, false, true, true, 12700, 12700)
+        if eventSound == null then
             return
         endif
 
-        call IUI_ApplyFeedbackSoundOnUnit(miningSound, whichUnit, IUI_MINING_SOUND_CUTOFF)
-        call StartSound(miningSound)
-        call KillSoundWhenDone(miningSound)
+        call IUI_ApplyFeedbackSoundOnUnit(eventSound, whichUnit, IUI_MINING_SOUND_CUTOFF)
+        call IUI_StartSoundDeferred(eventSound, true)
 
-        set miningSound = null
+        set eventSound = null
     endfunction
 
     public function PlayProfessionSoundPathOnUnit takes string soundPath, unit whichUnit, boolean looping, real cutoff returns sound
@@ -264,16 +336,10 @@ library Interface initializer AutoInit
         endif
 
         set professionSound = CreateSound(soundPath, looping, true, true, 12700, 12700, "")
-        if professionSound != null and GetSoundDuration(professionSound) > 0 then
-            call IUI_ApplyFeedbackSoundOnUnit(professionSound, whichUnit, cutoff)
-            call StartSound(professionSound)
-            if not looping then
-                call KillSoundWhenDone(professionSound)
-            endif
-            return professionSound
-        endif
         if professionSound != null then
-            call KillSoundWhenDone(professionSound)
+            call IUI_ApplyFeedbackSoundOnUnit(professionSound, whichUnit, cutoff)
+            call IUI_StartSoundDeferred(professionSound, not looping)
+            return professionSound
         endif
 
         return null
@@ -287,16 +353,10 @@ library Interface initializer AutoInit
         endif
 
         set professionSound = CreateSound(soundPath, looping, false, false, 12700, 12700, "")
-        if professionSound != null and GetSoundDuration(professionSound) > 0 then
-            call IUI_ApplyFeedbackSound(professionSound)
-            call StartSound(professionSound)
-            if not looping then
-                call KillSoundWhenDone(professionSound)
-            endif
-            return professionSound
-        endif
         if professionSound != null then
-            call KillSoundWhenDone(professionSound)
+            call IUI_ApplyFeedbackSound(professionSound)
+            call IUI_StartSoundDeferred(professionSound, not looping)
+            return professionSound
         endif
 
         return null
@@ -312,23 +372,20 @@ library Interface initializer AutoInit
             set cutoff = IUI_PROFESSION_SOUND_CUTOFF
         endif
 
+        if soundLabel != null and soundLabel != "" then
+            set professionSound = CreateSoundFromLabel(soundLabel, looping, true, true, 12700, 12700)
+            if professionSound != null then
+                call IUI_ApplyFeedbackSoundOnUnit(professionSound, whichUnit, cutoff)
+                call IUI_StartSoundDeferred(professionSound, not looping)
+                return professionSound
+            endif
+        endif
+
         if whichSound != null then
             call StopSound(whichSound, false, false)
             call IUI_ApplyFeedbackSoundOnUnit(whichSound, whichUnit, cutoff)
             call StartSound(whichSound)
             return whichSound
-        endif
-
-        if soundLabel != null and soundLabel != "" then
-            set professionSound = CreateSoundFromLabel(soundLabel, looping, true, true, 12700, 12700)
-            if professionSound != null then
-                call IUI_ApplyFeedbackSoundOnUnit(professionSound, whichUnit, cutoff)
-                call StartSound(professionSound)
-                if not looping then
-                    call KillSoundWhenDone(professionSound)
-                endif
-                return professionSound
-            endif
         endif
 
         return null
@@ -341,23 +398,20 @@ library Interface initializer AutoInit
             return null
         endif
 
+        if soundLabel != null and soundLabel != "" then
+            set professionSound = CreateSoundFromLabel(soundLabel, looping, false, false, 12700, 12700)
+            if professionSound != null then
+                call IUI_ApplyFeedbackSound(professionSound)
+                call IUI_StartSoundDeferred(professionSound, not looping)
+                return professionSound
+            endif
+        endif
+
         if whichSound != null then
             call StopSound(whichSound, false, false)
             call IUI_ApplyFeedbackSound(whichSound)
             call StartSound(whichSound)
             return whichSound
-        endif
-
-        if soundLabel != null and soundLabel != "" then
-            set professionSound = CreateSoundFromLabel(soundLabel, looping, false, false, 12700, 12700)
-            if professionSound != null then
-                call IUI_ApplyFeedbackSound(professionSound)
-                call StartSound(professionSound)
-                if not looping then
-                    call KillSoundWhenDone(professionSound)
-                endif
-                return professionSound
-            endif
         endif
 
         return null
@@ -368,7 +422,7 @@ library Interface initializer AutoInit
             return
         endif
 
-        // Profession craft feedback must stay audible after CinematicModeBJ mutes UI/unit groups.
+        // Profession craft feedback must stay audible during fullscreen craft sequences.
         call VolumeGroupSetVolumeForPlayerBJ(whichPlayer, SOUND_VOLUMEGROUP_UNITSOUNDS, 1.00)
         call VolumeGroupSetVolumeForPlayerBJ(whichPlayer, SOUND_VOLUMEGROUP_UI, 1.00)
         call VolumeGroupSetVolumeForPlayerBJ(whichPlayer, SOUND_VOLUMEGROUP_COMBAT, 1.00)
@@ -389,6 +443,8 @@ library Interface initializer AutoInit
     private function IUI_PlayEventOnUnit takes integer eventId, unit whichUnit returns nothing
         if IUI_IsMiningHitEvent(eventId) then
             call IUI_PlayMiningHitSoundOnUnit(eventId, whichUnit)
+        elseif eventId == EVENT_TRADESKILL_HERB_PICK then
+            call IUI_PlayWorldEventSoundOnUnit(eventId, whichUnit)
         elseif IUI_IsValidEvent(eventId) then
             call IUI_PlaySoundOnUnit(IUI_EventSound[eventId], whichUnit)
         endif
