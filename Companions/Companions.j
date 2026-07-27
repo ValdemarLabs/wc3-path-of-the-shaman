@@ -1102,8 +1102,12 @@ private function UpdateCompanionOrderEnum takes nothing returns nothing
     call UpdateCompanionOrderUnit(GetEnumUnit())
 endfunction
 
+private function IsDialogOrderBlocked takes nothing returns boolean
+    return udg_InCinematic or udg_CompanionDialogueActive or DialogSystem_IsSequenceActive() or DialogSystem_IsDialogVisible() or DialogSystem_IsFieldLineQueueActive()
+endfunction
+
 private function OnOrderPeriodic takes nothing returns nothing
-    if udg_InCinematic then
+    if IsDialogOrderBlocked() then
         return
     endif
 
@@ -1455,7 +1459,7 @@ private function UpdatePetIdleEnum takes nothing returns nothing
 endfunction
 
 private function OnIdlePeriodic takes nothing returns nothing
-    if udg_InCinematic then
+    if IsDialogOrderBlocked() then
         return
     endif
 
@@ -1790,6 +1794,9 @@ private function GetSelectedCommandTarget takes player commandPlayer returns uni
     if udg_TamedUnits != null then
         call ForGroup(udg_TamedUnits, function FindSelectedCommandTarget)
     endif
+    if ControlledDisplayGroup != null then
+        call ForGroup(ControlledDisplayGroup, function FindSelectedCommandTarget)
+    endif
 
     if CommandSelectionCount == 1 then
         set selectedTarget = CommandSelectionTarget
@@ -1860,6 +1867,9 @@ private function ApplyModeToAllTargets takes integer mode returns nothing
     endif
     if udg_TamedUnits != null then
         call ForGroup(udg_TamedUnits, function AddAllModeTarget)
+    endif
+    if ControlledDisplayGroup != null then
+        call ForGroup(ControlledDisplayGroup, function AddAllModeTarget)
     endif
     set CurrentGroupMode = mode
 
@@ -2088,6 +2098,9 @@ private function ApplyFocusToAllTargets takes unit leader returns nothing
     endif
     if udg_TamedUnits != null then
         call ForGroup(udg_TamedUnits, function AddAllModeTarget)
+    endif
+    if ControlledDisplayGroup != null then
+        call ForGroup(ControlledDisplayGroup, function AddAllModeTarget)
     endif
 
     set FocusActionLeader = leader
