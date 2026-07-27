@@ -12,7 +12,7 @@
     Credits:
 
     How to install:
-    Import before Preloader.j and after Difficulty.j, Start.j, Interface.j, and ExMusic.j.
+    Import before Preloader.j and after Difficulty.j, Start.j, and Interface.j.
     Preloader.j calls GameMode_Show() after preload; this library applies the
     selected difficulty and then calls Start_Start().
 
@@ -27,7 +27,7 @@
     call GameMode_AreAbilityRequirementsEnabled()
 
 **/
-library GameMode initializer AutoInit requires Difficulty, Start, Interface, ExMusic
+library GameMode initializer AutoInit requires Difficulty, Start, Interface
     globals
         constant integer GAME_MODE_STORY = 1
         constant integer GAME_MODE_FREE_ROAM = 2
@@ -408,7 +408,6 @@ library GameMode initializer AutoInit requires Difficulty, Start, Interface, ExM
             call GM_CreateFrames()
         endif
         call EnableUserControl(true)
-        call ExMusic_PlayTrack(35)
         call GM_ApplyModeConfig(GAME_MODE_STORY)
         call GM_ShowModeView()
         if GM_Parent != null then
