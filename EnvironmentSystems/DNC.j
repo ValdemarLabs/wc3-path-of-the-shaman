@@ -40,7 +40,7 @@ library DNC initializer InitDNC
 
 globals
 
-    private constant boolean DEBUG = true
+    private constant boolean DEBUG = false
     // DNC type constants
     constant string DNC_Outdoors_TYPE = "DNC_Outdoors"
     constant string DNC_OutdoorsCloudy_TYPE = "DNC_OutdoorsCloudy"
