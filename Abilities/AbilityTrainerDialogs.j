@@ -37,7 +37,7 @@ library AbilityTrainerDialogs initializer Init requires Table, DialogInteraction
         private constant real ATD_CINEMATIC_MOVE_OFFSET = 256.00
         private constant real ATD_CINEMATIC_MOVE_ANGLE = 210.00
         private constant real ATD_CAMERA_DIST = 950.00
-        private constant real ATD_CAMERA_Z_OFFSET = 70.00
+        private constant real ATD_CAMERA_Z_OFFSET = 90.00
         private constant real ATD_CAMERA_ANGLE = 328.00
         private constant real ATD_CAMERA_ROT_OFFSET = 180.00
         private constant real ATD_CAMERA_FAR_Z = 10000.00
