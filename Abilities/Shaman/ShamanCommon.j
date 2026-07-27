@@ -354,7 +354,7 @@ public function DistanceBetweenCoordinates takes real ax, real ay, real bx, real
 endfunction
 
 private function RegisterSoundEditorLabels takes nothing returns nothing
-    call ExSound_RegisterEditorSound("Stormstrike", gg_snd_Stormstrike)
+    call ExSound_RegisterEditorSoundEx("Stormstrike",gg_snd_Stormstrike,"war3mapImported\\Stormstrike.wav")
     call ExSound_RegisterEditorSound("Whirlwind", gg_snd_Whirlwind)
     call ExSound_RegisterEditorSound("LightningStrike", gg_snd_LightningStrike)
     call ExSound_RegisterEditorSound("GhostWolfBegin", gg_snd_GhostWolfBegin)
