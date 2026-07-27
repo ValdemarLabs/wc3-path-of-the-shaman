@@ -190,6 +190,28 @@ library Interface initializer AutoInit requires ExSound
         return value == null or value == ""
     endfunction
 
+    private function IUI_RegisterDefaultSoundLabels takes nothing returns nothing
+        call ExSound_RegisterEditorSound("Tradeskill_MiningHitA", IUI_EventSound[EVENT_TRADESKILL_MINING_HIT_A])
+        call ExSound_RegisterEditorSound("Tradeskill_MiningHitB", IUI_EventSound[EVENT_TRADESKILL_MINING_HIT_B])
+        call ExSound_RegisterEditorSound("Tradeskill_MiningHitC", IUI_EventSound[EVENT_TRADESKILL_MINING_HIT_C])
+        call ExSound_RegisterEditorSound("Tradeskill_MiningHitD", IUI_EventSound[EVENT_TRADESKILL_MINING_HIT_D])
+        call ExSound_RegisterEditorSound("Tradeskill_MiningHitE", IUI_EventSound[EVENT_TRADESKILL_MINING_HIT_E])
+        call ExSound_RegisterEditorSound("Tradeskill_HerbPick", IUI_EventSound[EVENT_TRADESKILL_HERB_PICK])
+
+        call ExSound_RegisterEditorSound("CauldronSound", Profession_Alchemy_Loop)
+        call ExSound_RegisterEditorSound("Alchemy start", Profession_Alchemy_Start)
+        call ExSound_RegisterEditorSound("Alchemy loop", Profession_Alchemy_Loop)
+        call ExSound_RegisterEditorSound("Tradeskill_AlchemyEnd", Profession_Alchemy_End)
+        call ExSound_RegisterEditorSound("Tradeskill_BlacksmithStart", Profession_Blacksmithing_Start)
+        call ExSound_RegisterEditorSound("Blacksmithing", Profession_Blacksmithing_Loop)
+        call ExSound_RegisterEditorSound("Smelting", Profession_Mining_Loop)
+        call ExSound_RegisterEditorSound("Tannery", Profession_Leatherworking_Loop)
+        call ExSound_RegisterEditorSound("CookingPrepareA", Profession_Cooking_Loop)
+        call ExSound_RegisterEditorSound("Tradeskill_Fishing", Profession_Fishing_End)
+        call ExSound_RegisterEditorSound("Tradeskill_LeatherworkingPick", Profession_Skinning_Loop)
+        call ExSound_RegisterEditorSound("Skinning", Profession_Skinning_Loop)
+    endfunction
+
     private function IUI_PlaySound takes sound whichSound returns nothing
         if IUI_SoundsEnabled and whichSound != null then
             call ExSound_PlayHandle(whichSound)
@@ -210,6 +232,13 @@ library Interface initializer AutoInit requires ExSound
             return
         endif
 
+        set miningSound = IUI_EventSound[eventId]
+        if miningSound != null then
+            call ExSound_PlayHandleOnUnitEx(miningSound, whichUnit, EXSOUND_3D_MIN_DISTANCE, IUI_MINING_SOUND_CUTOFF)
+            set miningSound = null
+            return
+        endif
+
         set soundLabel = IUI_GetMiningHitSoundLabel(eventId)
         if soundLabel != "" then
             set miningSound = ExSound_PlayLabelOnUnitEx(soundLabel, whichUnit, false, EXSOUND_3D_MIN_DISTANCE, IUI_MINING_SOUND_CUTOFF)
@@ -217,13 +246,6 @@ library Interface initializer AutoInit requires ExSound
                 set miningSound = null
                 return
             endif
-        endif
-
-        set miningSound = IUI_EventSound[eventId]
-        if miningSound != null then
-            call ExSound_PlayHandleOnUnitEx(miningSound, whichUnit, EXSOUND_3D_MIN_DISTANCE, IUI_MINING_SOUND_CUTOFF)
-            set miningSound = null
-            return
         endif
 
         set miningSound = null
@@ -234,6 +256,13 @@ library Interface initializer AutoInit requires ExSound
         local sound eventSound
 
         if not IUI_SoundsEnabled or whichUnit == null then
+            return
+        endif
+
+        set eventSound = IUI_EventSound[eventId]
+        if eventSound != null then
+            call ExSound_PlayHandleOnUnitEx(eventSound, whichUnit, EXSOUND_3D_MIN_DISTANCE, IUI_MINING_SOUND_CUTOFF)
+            set eventSound = null
             return
         endif
 
@@ -279,15 +308,15 @@ library Interface initializer AutoInit requires ExSound
             set cutoff = IUI_PROFESSION_SOUND_CUTOFF
         endif
 
+        if whichSound != null then
+            return ExSound_PlayHandleOnUnitEx(whichSound, whichUnit, EXSOUND_3D_MIN_DISTANCE, cutoff)
+        endif
+
         if soundLabel != null and soundLabel != "" then
             set professionSound = ExSound_PlayLabelOnUnitEx(soundLabel, whichUnit, looping, EXSOUND_3D_MIN_DISTANCE, cutoff)
             if professionSound != null then
                 return professionSound
             endif
-        endif
-
-        if whichSound != null then
-            return ExSound_PlayHandleOnUnitEx(whichSound, whichUnit, EXSOUND_3D_MIN_DISTANCE, cutoff)
         endif
 
         return null
@@ -300,15 +329,15 @@ library Interface initializer AutoInit requires ExSound
             return null
         endif
 
+        if whichSound != null then
+            return ExSound_PlayHandle(whichSound)
+        endif
+
         if soundLabel != null and soundLabel != "" then
             set professionSound = ExSound_PlayLabel(soundLabel, looping)
             if professionSound != null then
                 return professionSound
             endif
-        endif
-
-        if whichSound != null then
-            return ExSound_PlayHandle(whichSound)
         endif
 
         return null
@@ -510,6 +539,8 @@ library Interface initializer AutoInit requires ExSound
         if IUI_IsBlankString(Profession_Skinning_EndPath) then
             set Profession_Skinning_EndPath = "war3mapImported\\Tradeskill_LeatherworkingPick.wav"
         endif
+
+        call IUI_RegisterDefaultSoundLabels()
     endfunction
 
     public function RefreshDefaultSounds takes nothing returns nothing
