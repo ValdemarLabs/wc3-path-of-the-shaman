@@ -18,6 +18,12 @@
     call ProfessionsFishing_RegisterBaitItem(itemCode, skillBonus, duration, displayName)
     call ProfessionsFishing_RegisterBaitItemEx(itemCode, skillBonus, duration, displayName, requiredFishingSkill)
     set ProfessionsFishing_BobberModelPath = "war3mapImported\\FishingBobber.mdx"
+    set ProfessionsFishing_BobberCinematicAnimationTypeId = 11
+    set ProfessionsFishing_BobberCinematicSubAnimationAId = 0
+    set ProfessionsFishing_BobberCinematicSubAnimationBId = 44
+    set ProfessionsFishing_BobberStandAnimationTypeId = 4
+    set ProfessionsFishing_BobberStandSubAnimationAId = 44
+    set ProfessionsFishing_BobberStandSubAnimationBId = -1
     set ProfessionsFishing_FishingLineLightningType = "LEAS"
     set ProfessionsFishing_FishingLineUseCustomColor = false
     set ProfessionsFishing_LineHandAttachmentPoint = "hand,right"
@@ -66,6 +72,7 @@ globals
     private constant real PF_BOBBER_HEIGHT_OFFSET = 8.00
     private constant real PF_BOBBER_SCALE = 1.00
     private constant real PF_BOBBER_STAND_DELAY = 0.35
+    private constant real PF_BOBBER_END_DESTROY_DELAY = 0.45
     private constant real PF_LINE_WOBBLE_DURATION = 0.55
     private constant real PF_LINE_WOBBLE_STRENGTH = 18.00
     private constant real PF_LINE_WOBBLE_END_STRENGTH = 26.00
@@ -77,8 +84,6 @@ globals
     private constant string PF_DEFAULT_LINE_LIGHTNING_TYPE = "LEAS"
     private constant string PF_DEFAULT_LINE_HAND_ATTACHMENT_POINT = "hand,right"
     private constant string PF_LINE_HAND_MARKER_MODEL = "Abilities\\Weapons\\WispMissile\\WispMissile.mdl"
-    private constant animtype PF_BOBBER_ANIM_CINEMATIC = ConvertAnimType(11)
-    private constant subanimtype PF_BOBBER_SUBANIM_CUSTOM0 = ConvertSubAnimType(0)
 
     private constant integer PF_MISSING_SKILL_MIN_FAIL_CHANCE = 5
     private constant integer PF_MISSING_SKILL_FAIL_PER_LEVEL = 4
@@ -99,6 +104,12 @@ globals
     public string PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
     public string ProgressBarTexture = "UI\\Widgets\\Console\\Human\\human-tooltip-background.blp"
     public string BobberModelPath = "world_goober_g_fishingbobber.mdx"
+    public integer BobberCinematicAnimationTypeId = 11
+    public integer BobberCinematicSubAnimationAId = 0
+    public integer BobberCinematicSubAnimationBId = 44
+    public integer BobberStandAnimationTypeId = 4
+    public integer BobberStandSubAnimationAId = 44
+    public integer BobberStandSubAnimationBId = -1
     public string FishingLineLightningType = "LEAS"
     public string LineHandAttachmentPoint = "hand,right"
     public boolean FishingLineUseCustomColor = false
@@ -164,6 +175,7 @@ globals
     private Table PF_BaitBonusByUnit = 0
     private Table PF_BaitExpiresByUnit = 0
     private Table PF_BaitNameByUnit = 0
+    private Table PF_BobberDestroyTimerEffect = 0
 
     private timer PF_ClockTimer = null
     private timer PF_TickTimer = null
@@ -992,6 +1004,8 @@ private function PF_CreateLineHandMarker takes integer pid, unit fisher returns 
 endfunction
 
 private function PF_LineHandMarkerIsUsable takes integer pid, unit fisher returns boolean
+    local real markerX
+    local real markerY
     local real dx
     local real dy
 
@@ -999,8 +1013,14 @@ private function PF_LineHandMarkerIsUsable takes integer pid, unit fisher return
         return false
     endif
 
-    set dx = BlzGetLocalSpecialEffectX(PF_LineHandMarker[pid]) - GetUnitX(fisher)
-    set dy = BlzGetLocalSpecialEffectY(PF_LineHandMarker[pid]) - GetUnitY(fisher)
+    set markerX = BlzGetLocalSpecialEffectX(PF_LineHandMarker[pid])
+    set markerY = BlzGetLocalSpecialEffectY(PF_LineHandMarker[pid])
+    if markerX * markerX + markerY * markerY <= 16.00 then
+        return false
+    endif
+
+    set dx = markerX - GetUnitX(fisher)
+    set dy = markerY - GetUnitY(fisher)
     return dx * dx + dy * dy > 4.00
 endfunction
 
@@ -1028,23 +1048,82 @@ private function PF_GetLineStartZ takes integer pid, unit fisher, real x, real y
     return PF_GetFallbackLineStartZ(fisher, x, y)
 endfunction
 
-private function PF_PlayBobberCinematicCustomOne takes integer pid returns nothing
-    if PF_BobberEffect[pid] != null then
-        call BlzSpecialEffectClearSubAnimations(PF_BobberEffect[pid])
-        call BlzSpecialEffectAddSubAnimation(PF_BobberEffect[pid], PF_BOBBER_SUBANIM_CUSTOM0)
-        call BlzSpecialEffectAddSubAnimation(PF_BobberEffect[pid], SUBANIM_TYPE_ONE)
-        call BlzPlaySpecialEffect(PF_BobberEffect[pid], PF_BOBBER_ANIM_CINEMATIC)
-        call BlzSetSpecialEffectTime(PF_BobberEffect[pid], 0.00)
+private function PF_AddBobberSubAnimationId takes effect bobber, integer subAnimId returns nothing
+    if bobber != null and subAnimId >= 0 then
+        call BlzSpecialEffectAddSubAnimation(bobber, ConvertSubAnimType(subAnimId))
     endif
 endfunction
 
-private function PF_PlayBobberStand takes integer pid returns nothing
-    if PF_BobberEffect[pid] != null then
-        call BlzSpecialEffectClearSubAnimations(PF_BobberEffect[pid])
-        call BlzSpecialEffectAddSubAnimation(PF_BobberEffect[pid], SUBANIM_TYPE_ONE)
-        call BlzPlaySpecialEffect(PF_BobberEffect[pid], ANIM_TYPE_STAND)
-        call BlzSetSpecialEffectTime(PF_BobberEffect[pid], 0.00)
+private function PF_PlayBobberAnimationByIds takes integer pid, integer animTypeId, integer subAnimAId, integer subAnimBId returns nothing
+    local effect bobber = PF_BobberEffect[pid]
+
+    if bobber != null then
+        call BlzSpecialEffectClearSubAnimations(bobber)
+        call PF_AddBobberSubAnimationId(bobber, subAnimAId)
+        call PF_AddBobberSubAnimationId(bobber, subAnimBId)
+        call BlzSetSpecialEffectTimeScale(bobber, 1.00)
+        call BlzSetSpecialEffectTime(bobber, 0.00)
+        call BlzPlaySpecialEffectWithTimeScale(bobber, ConvertAnimType(animTypeId), 1.00)
+        call BlzSetSpecialEffectTime(bobber, 0.00)
     endif
+
+    set bobber = null
+endfunction
+
+private function PF_PlayBobberCinematicCustomOne takes integer pid returns nothing
+    call PF_PlayBobberAnimationByIds(pid, BobberCinematicAnimationTypeId, BobberCinematicSubAnimationAId, BobberCinematicSubAnimationBId)
+endfunction
+
+private function PF_PlayBobberStand takes integer pid returns nothing
+    call PF_PlayBobberAnimationByIds(pid, BobberStandAnimationTypeId, BobberStandSubAnimationAId, BobberStandSubAnimationBId)
+endfunction
+
+private function PF_BobberDestroyTimerAction takes nothing returns nothing
+    local timer expiredTimer = GetExpiredTimer()
+    local integer timerId = GetHandleId(expiredTimer)
+    local effect bobber = null
+
+    if PF_BobberDestroyTimerEffect != 0 and PF_BobberDestroyTimerEffect.effect.has(timerId) then
+        set bobber = PF_BobberDestroyTimerEffect.effect[timerId]
+        call PF_BobberDestroyTimerEffect.effect.remove(timerId)
+    endif
+
+    if bobber != null then
+        call DestroyEffect(bobber)
+    endif
+
+    call DestroyTimer(expiredTimer)
+    set bobber = null
+    set expiredTimer = null
+endfunction
+
+private function PF_QueueBobberDestroy takes integer pid returns nothing
+    local timer destroyTimer
+    local integer timerId
+    local effect bobber = PF_BobberEffect[pid]
+
+    if bobber == null then
+        set bobber = null
+        return
+    endif
+
+    call PF_PlayBobberCinematicCustomOne(pid)
+    set PF_BobberEffect[pid] = null
+    set PF_BobberStandDelay[pid] = 0.00
+
+    if PF_BobberDestroyTimerEffect == 0 or PF_BOBBER_END_DESTROY_DELAY <= 0.00 then
+        call DestroyEffect(bobber)
+        set bobber = null
+        return
+    endif
+
+    set destroyTimer = CreateTimer()
+    set timerId = GetHandleId(destroyTimer)
+    set PF_BobberDestroyTimerEffect.effect[timerId] = bobber
+    call TimerStart(destroyTimer, PF_BOBBER_END_DESTROY_DELAY, false, function PF_BobberDestroyTimerAction)
+
+    set destroyTimer = null
+    set bobber = null
 endfunction
 
 private function PF_StartLineWobble takes integer pid, real duration, real strength returns nothing
@@ -1133,9 +1212,7 @@ private function PF_DestroyFishingVisuals takes integer pid returns nothing
     endif
 
     if PF_BobberEffect[pid] != null then
-        call PF_PlayBobberCinematicCustomOne(pid)
-        call DestroyEffect(PF_BobberEffect[pid])
-        set PF_BobberEffect[pid] = null
+        call PF_QueueBobberDestroy(pid)
     endif
 
     call PF_DestroyLineHandMarker(pid)
@@ -1857,6 +1934,7 @@ public function Init takes nothing returns nothing
     set PF_BaitBonusByUnit = Table.create()
     set PF_BaitExpiresByUnit = Table.create()
     set PF_BaitNameByUnit = Table.create()
+    set PF_BobberDestroyTimerEffect = Table.create()
     set PF_TerrainSample = Location(0.00, 0.00)
 
     set PF_ClockTimer = CreateTimer()
