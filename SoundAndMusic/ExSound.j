@@ -88,7 +88,7 @@ globals
     private integer         es_KeyCount = 0                     // number of registered keys    
 
     private constant integer EXSOUND_VOLUME = 127
-    private constant integer EXSOUND_FADE_RATE = 12700
+    private constant integer EXSOUND_FADE_RATE = 10
     private constant integer EXSOUND_EDITOR_HANDLE_CHILD = 1
     private constant integer EXSOUND_EDITOR_HANDLE_MARKER_CHILD = 2
     private constant integer EXSOUND_EDITOR_PATH_CHILD = 3
@@ -96,7 +96,7 @@ globals
     private constant string EXSOUND_EDITOR_VARIABLE_PREFIX = "gg_snd_"
 
     constant real           EXSOUND_3D_MIN_DISTANCE = 600.00
-    constant real           EXSOUND_3D_CUTOFF = 1500.00
+    constant real           EXSOUND_3D_CUTOFF = 4000.00
     constant real           EXSOUND_UNIT_Z = 64.00
 
     constant real           EXSOUND_FALLBACK_DURATION = 5.0     // seconds if sound duration cannot be determined
