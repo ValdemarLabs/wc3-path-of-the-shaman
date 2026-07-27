@@ -435,7 +435,7 @@ private function CreateQuests takes nothing returns nothing
     local string info2Text = "|cff99ff99Location:|r Ruins of Elarindor"
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_TOKEN_LOVE, Valeria) then
-        set q = QuestGiver_CreateConfiguredQuest(QUEST_TOKEN_LOVE, Valeria, "normal", 18, null, "Token of Love", "ReplaceableTextures\\CommandButtons\\BTNINV_Jewelry_Necklace_11.TGA", "Find Valeria's missing necklace somewhere around the ruins of Elarindor.\n\n", infoText, info2Text, 18, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
+        set q = QuestGiver_CreateConfiguredQuest(QUEST_TOKEN_LOVE, Valeria, "normal", 15, null, "Token of Love", "ReplaceableTextures\\CommandButtons\\BTNINV_Jewelry_Necklace_11.TGA", "Find Valeria's missing necklace somewhere around the ruins of Elarindor.\n\n", infoText, info2Text, 18, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
         call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_ENEMY)
         call QuestGiver_SetQuestRewards(q, true, 0, true, 0, false, 0, true, 200, false)
         call QuestGiver_AddQuestPrerequisite(q, QUEST_RANGER_MISSING, Aradion)
@@ -444,7 +444,7 @@ private function CreateQuests takes nothing returns nothing
     endif
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_LOST_SUPPLIES, Valeria) then
-        set q = QuestGiver_CreateConfiguredQuest(QUEST_LOST_SUPPLIES, Valeria, "normal", 18, null, "Lost Supplies", "ReplaceableTextures\\CommandButtons\\BTNINV_Crate_03.TGA", "Find supplies found around the ruins of Elarindor.\n\n", infoText, info2Text, 18, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
+        set q = QuestGiver_CreateConfiguredQuest(QUEST_LOST_SUPPLIES, Valeria, "normal", 15, null, "Lost Supplies", "ReplaceableTextures\\CommandButtons\\BTNINV_Crate_03.TGA", "Find supplies found around the ruins of Elarindor.\n\n", infoText, info2Text, 18, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
         call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_ENEMY)
         call QuestGiver_SetQuestRewards(q, true, 0, true, 0, false, 0, true, 200, false)
         call QuestGiver_AddQuestPrerequisite(q, QUEST_TOKEN_LOVE, Valeria)
