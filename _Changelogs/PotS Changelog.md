@@ -73,19 +73,21 @@
 
 - Updated Shaman and profession sound playback helpers
   - `SoundAndMusic/ExSound.j` now owns shared 2D/3D sound playback for reusable `sound` handles, Sound Editor labels, generated `gg_snd_*` label strings, and explicit import paths.
-  - Added central `ExSound_PlayHandle*`, `ExSound_PlayLabel*`, `ExSound_PlayPath*`, and `ExSound_PlayLabelOrPath*` helper APIs for normal, point, and unit playback.
+  - Added central `ExSound_PlayHandle*`, `ExSound_PlayLabel*`, `ExSound_PlayPath*`, `ExSound_PlayLabelOrPath*`, and handle-label-path helper APIs for normal, point, and unit playback.
   - Label playback accepts both Sound Editor labels such as `"Smelting"` and generated-name strings such as `"gg_snd_Smelting"` by stripping the `gg_snd_` prefix before `CreateSoundFromLabel(...)`.
+  - Added `ExSound_RegisterEditorSound(...)`, `ExSound_GetEditorSound(...)`, and `ExSound_ClearEditorSound(...)` so string-based Sound Editor labels can resolve back to reusable `gg_snd_*` handles when the handle has been registered.
   - Label/path 3D playback now uses min distance `600.00` and distance cutoff `1500.00` by default; registered voiceline keys keep legacy non-spatial playback for imported-audio compatibility.
-  - Reusable `gg_snd_*` handles are stopped/restarted but not destroyed; `KillSoundWhenDone(...)` is only used for fresh transient handles created by label/path playback.
+  - Reusable `gg_snd_*` handles are stopped/restarted but not destroyed; registered editor handles are marked so loop cleanup does not kill them, and `KillSoundWhenDone(...)` is only used for fresh transient handles created by label/path playback.
   - `Abilities/Shaman/ShamanCommon.j` now delegates its sound wrappers to `ExSound` instead of owning duplicated deferred-start, create, attach, and cleanup logic.
-  - Stormstrike, Whirlwind, Lightning Strike, Ghost Wolf morph/return, and Ghost Wolf Bite now play recreated 3D sounds attached to the active caster/form unit instead of reusing shared `gg_snd_*` handles.
-  - `UI/Interface.j` profession playback now delegates to `ExSound` for configured paths or labels as needed: station/unit playback creates 3D handles, while cinematic/global playback creates non-3D handles.
+  - `Abilities/Shaman/ShamanCommon.j` now registers the old GUI Sound Editor handles for Stormstrike, Whirlwind, Lightning Strike, Ghost Wolf morph/return, and Ghost Wolf Bite so existing label/path calls resolve to the reliable `gg_snd_*` handles before path fallback.
+  - `UI/Interface.j` now registers profession, mining-hit, and herb-pick Sound Editor labels and prefers reusable handles before trying label/path-created sounds.
   - Removed the `GetSoundDuration(professionSound) > 0` gate from profession-created sounds so valid newly created Sound Editor/import sounds are not discarded before playback.
-  - Mining hit and herb-pick world event sounds now prefer fresh 3D label-created playback at the relevant unit location, with shared event handles only kept as fallback.
-  - `Professions/Professions.j` now prefers recreatable path/label sound configuration for all craft jobs and only falls back to shared handles when no recreatable configuration works.
+  - Mining hit and herb-pick world event sounds now prefer their configured `gg_snd_*` handles at the relevant unit location, with label-created sounds kept as fallback.
+  - `Professions/Professions.j` now prefers configured profession `gg_snd_*` handles for craft start/loop/finish sounds and only falls back to label/path recreation when no handle is available.
+  - Profession craft sounds now attach to the workstation when a station unit is available, matching the old GUI playback shape for Cauldron, Forge, Anvil, and Tannery sounds.
   - `Professions/Professions.j` and `Professions/ProfessionsFishing.j` now pass the shared `1500.00` cutoff used by `ExSound` 3D playback.
   - `Abilities/Abilities.j` and `Abilities/Talents.j` now route local-player feedback sound playback through `ExSound_PlayHandleForPlayer(...)`.
-  - This follows the same sound-handle state-leak lesson noted earlier for `SoundTools`/`TerrainDamage`: reused or recycled sound handles can carry configuration state, so libraries that need situational playback must recreate/configure handles per use.
+  - This keeps registered external voiceline playback unchanged while making Sound Editor variable sounds the reliable first path for profession, gather, and converted shaman SFX.
 
 - Updated `Abilities/Shaman/ShamanLightningShield.j`
   - Lightning Shield now tracks the actual object-editor buff after a short post-cast grace window.
@@ -97,10 +99,11 @@
 - Updated `Professions/ProfessionsFishing.j`
   - Fishing now creates a lightning-based fishing line when the cast begins, starting from a hidden marker attached to the fisher's configured `"hand,right"` attachment point and ending at a randomized bobber point near the selected fish pool.
   - Added configurable `ProfessionsFishing_FishingLineLightningType`, `ProfessionsFishing_FishingLineUseCustomColor`, and `ProfessionsFishing_LineHandAttachmentPoint`, defaulting to `LEAS`, disabled custom tinting, and `"hand,right"`.
-  - Changed the fishing line to use raw `LEAS` by default for compatibility with a `ReplaceableTextures\Weather\lariatCaught.blp` Aerial Shackles texture replacement, with fallback right-hand offset handling if the hidden marker reports the unit origin instead of a hand position.
+  - Changed the fishing line to use raw `LEAS` by default for compatibility with a `ReplaceableTextures\Weather\lariatCaught.blp` Aerial Shackles texture replacement, with fallback right-hand offset handling if the hidden marker reports the unit origin or map-center null coordinates instead of a hand position.
   - Added short endpoint/bobber wobble pulses on cast start, reel, bait use, cancellation, completion, interruption, and fish escape.
   - Added configurable `ProfessionsFishing_BobberModelPath` for the fishing bobber model.
-  - Fishing bobbers now explicitly play `Cinematic Custom0 1` on creation, switch to `Stand 1` while fishing, then replay `Cinematic Custom0 1` before destruction on reel, cancel, interruption, completion, or fish escape.
+  - Fishing bobbers now use configurable special-effect animation type/subanimation IDs for the intended `Cinematic Custom0 1` creation/end animation and `Stand 1` fishing animation.
+  - Bobber cleanup now delays `DestroyEffect` briefly after the ending animation is triggered so the ending animation has time to show before the model's death/removal behavior runs.
   - Increased fishing pool interaction distance to 750 and moved the cast approach point farther from the pool so fishers do not stand almost on top of the node before casting.
 
 - Updated `ItemLootSystems/ItemLootSystem.j` and `GatherSystems/GatherNodeUnits.j`
@@ -247,13 +250,13 @@
   - Increased preload title display duration and phase pauses to 5 seconds so startup and phase screens remain readable instead of flashing past.
   - Moved post-preload player startup ownership away from the old `gg_trg_Game_Start` GUI trigger and into the JASS startup flow.
   - Kept the final preload completion image phase but hides the "Preload Successful" title text before the Game Mode UI opens.
+  - Starts `ExMusic` track 35 during the final preload completion image phase.
 
 - Added `UI/GameMode.j`
   - Added a pre-start Game Mode UI that appears after preload and before `Start_Start()`.
   - Added Story, Free Roam, and Developer mode configuration flags for story flow, intro cinematic usage, quest requirements, ability requirements, AP costs, quest reveal style, and starting gold bonus.
   - Shows Difficulty selection after game mode selection and applies it through `Difficulty_SetDifficulty()` before starting the player setup flow.
   - Re-enables player control while the mode/difficulty selection UI is open, then locks control again when `Start_Start()` begins.
-  - Plays `ExMusic` track 35 when the mode/difficulty selection UI opens.
   - Developer mode can be hidden for release builds with `GM_SHOW_DEVELOPER_MODE`.
 
 - Updated `Preload/Preloader.j` and `Preload/Start.j`
