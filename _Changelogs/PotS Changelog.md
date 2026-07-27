@@ -16,6 +16,96 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [28.7.2026]
+
+### Technical Updates
+
+- Updated `CastingBar/CastingBarSystem.j`
+  - Reworked spell event handling so normal cast-time abilities start their casting bar from `EVENT_PLAYER_UNIT_SPELL_CAST` / `EVENT_PLAYER_UNIT_SPELL_CHANNEL` instead of waiting for the later channel path, fixing cases where a 5s cast could only flash briefly.
+  - Split casting state into explicit pre-cast, pending channel, and confirmed channel phases.
+  - Channel/follow-through bars now start from `EVENT_PLAYER_UNIT_SPELL_EFFECT` only after a short current-order confirmation, so ordinary buff/debuff duration fields are not automatically mistaken for true channeled casts.
+  - Channel timing now prefers `ABILITY_RLF_FOLLOW_THROUGH_TIME` and falls back to hero/normal duration for abilities such as Life Drain.
+  - Cleaned up all per-unit casting tables on interruption, endcast, completion, death, or invalid-unit cleanup to avoid stale handle-id state.
+  - Added the standard PotS library header and clarified install/API notes.
+
+- Added `QuestsAndDialogs/QuestItemSpawner.j`
+  - Added a reusable quest/event helper for temporary item sets that can spawn items at registered rects, points, or locations.
+  - Spawning chooses a random configured spawn point per item and respects each spawner's configured maximum active item count before creating more items.
+  - Added tracked cleanup helpers for despawning all spawned items, despawning random tracked items, and rotating random items by despawning and respawning replacements.
+
+- Updated `QuestsAndDialogs/QuestGivers/qValeria.j`
+  - Aligned `Token of Love` and `Lost Supplies` quest metadata formatting with the current `qAradion.j` quest-log style, using the shared `Quest giver:` and `Recommended level:` text layout.
+  - Fixed `Token of Love` item creation so `Heart of the Ocean` is created at `gg_rct_ItemTokenLove` instead of at the interacting hero / Nazgrek position.
+  - Moved Valeria's temporary quest item spawning to `QuestItemSpawner`.
+  - `Lost Supplies` now creates `ITEM_SUPPLIES` through a max-8 spawner using `gg_rct_ItemSupplies01` through `gg_rct_ItemSupplies07`.
+  - Added Valeria-owned availability gates so `Token of Love` waits for `Ranger Missing` completion and `Lost Supplies` waits for `Token of Love` completion, even when game-mode quest prerequisite checks are disabled.
+  - Hid the `Lost Supplies` accept/complete dialog buttons until `Token of Love` has actually been completed.
+  - Restored player-control locking on Valeria's farewell button by starting a dialog sequence before playing the farewell lines.
+
+- Updated `Companions/Companions.j` and `AI/AI.j`
+  - Companion order and idle timers now pause while a dialog sequence, visible dialog, field-line queue, cinematic, or companion dialog is active.
+  - Companion-controlled AI profile thinking now uses the same dialog-blocking guard instead of only checking `udg_InCinematic`, preventing companions from issuing movement, pickup, gather, or AI orders during normal dialog windows.
+
+- Updated `Companions/Companions.j`
+  - Companion command abilities that target the ground now also include temporary controlled companions in `ControlledDisplayGroup`, so summoned/temporary companions follow group command mode and focus orders without needing to be manually selected.
+
+- Updated `Abilities/Shaman/ShamanSummonElemental.j`
+  - Added simple periodic spell-use AI for Shaman summoned elementals.
+  - Elementals now look for nearby hostile ground targets and cast their own abilities when ready, while respecting passive mode, cinematics, current casting state, cooldowns, and mana.
+  - Air elementals can use Lightning Shield, Chain Lightning, and Purge; Water elementals can use Crushing Wave and Frost Nova; Fire elementals can use Flame Strike and Firebolt; Earth elementals can use Taunt, Thunder Clap, and Hurl Boulder.
+  - `Abilities/Shaman/ShamanFeralSpirits.j` was intentionally left without spell AI because Feral Spirit summons currently do not have their own abilities.
+
+- Updated Shaman and profession sound playback helpers
+  - `SoundAndMusic/ExSound.j` now owns shared 2D/3D sound playback for reusable `sound` handles, Sound Editor labels, generated `gg_snd_*` label strings, and explicit import paths.
+  - Added central `ExSound_PlayHandle*`, `ExSound_PlayLabel*`, `ExSound_PlayPath*`, `ExSound_PlayLabelOrPath*`, and handle-label-path helper APIs for normal, point, and unit playback.
+  - Label playback accepts both Sound Editor labels such as `"Smelting"` and generated-name strings such as `"gg_snd_Smelting"` by stripping the `gg_snd_` prefix before `CreateSoundFromLabel(...)`.
+  - Added `ExSound_RegisterEditorSound(...)`, `ExSound_RegisterEditorSoundEx(...)`, `ExSound_GetEditorSound(...)`, `ExSound_GetEditorSoundPath(...)`, and `ExSound_ClearEditorSound(...)` so string-based Sound Editor labels can resolve to reusable handles and exported filepaths.
+  - Added generated `SoundAndMusic/ExSoundEditorSounds.j` and `SoundAndMusic/SoundEditorSounds.json` from `temp/war3map.w3s`, registering each `gg_snd_*` Sound Editor entry once with its actual filepath.
+  - Label/path 3D playback now uses min distance `600.00` and distance cutoff `1500.00` by default; registered voiceline keys keep legacy non-spatial playback for imported-audio compatibility.
+  - Reusable `gg_snd_*` handles are stopped/restarted but not destroyed; registered editor handles are marked so loop cleanup does not kill them, and `KillSoundWhenDone(...)` is only used for fresh transient handles created by label/path playback.
+  - Spatial Sound Editor label playback now creates fresh 3D handles from registered filepaths so simultaneous casts do not interrupt a shared `gg_snd_*` handle.
+  - `Abilities/Shaman/ShamanCommon.j` now delegates its sound wrappers to `ExSound` instead of owning duplicated deferred-start, create, attach, and cleanup logic.
+  - `Abilities/Shaman/ShamanCommon.j` now initializes the generated Sound Editor registry and uses label-only calls for Stormstrike, Whirlwind, Lightning Strike, Ghost Wolf morph/return, and Ghost Wolf Bite.
+  - `UI/Interface.j` now initializes the generated Sound Editor registry, resolves profession filepath defaults from it, and prefers label-created fresh 3D sounds before shared handles for unit-attached profession, mining-hit, and herb-pick playback.
+  - Removed the `GetSoundDuration(professionSound) > 0` gate from profession-created sounds so valid newly created Sound Editor/import sounds are not discarded before playback.
+  - Mining hit and herb-pick world event sounds now prefer generated Sound Editor labels at the relevant unit location, with configured `gg_snd_*` handles kept as fallback.
+  - `Professions/Professions.j` now prefers configured profession labels for craft start/loop/finish sounds and only falls back to handles/paths when label playback is unavailable.
+  - Profession craft sounds now attach to the workstation when a station unit is available, matching the old GUI playback shape for Cauldron, Forge, Anvil, and Tannery sounds.
+  - `Professions/Professions.j` and `Professions/ProfessionsFishing.j` now pass the shared `1500.00` cutoff used by `ExSound` 3D playback.
+  - `Abilities/Abilities.j` and `Abilities/Talents.j` now route local-player feedback sound playback through `ExSound_PlayHandleForPlayer(...)`.
+  - This keeps registered external voiceline playback unchanged while making generated Sound Editor labels the reliable first path for profession, gather, and converted shaman SFX.
+
+- Updated `Debug/DebugCommands.j`
+  - Added `/debug fishpool spawn` for fishing testing.
+  - The command syncs the player's camera target, finds the current `ZonesCore` zone at that point, selects a random enabled GatherNodeUnits definition registered as a Fishing fish-pool node, and attempts to spawn it through `GNU_ForceSpawn(...)`.
+  - Added aliases `/debug fish pool spawn` and `/debug fishing pool spawn`.
+  - Debug feedback now reports successful fish-pool spawns with the selected definition name/rawcode and zone, or reports failure when no fish-pool definitions are registered, no zone is found, or the selected point fails water/terrain restrictions.
+
+### Tool Updates
+
+- Updated `WC3_Database/WC3ItemManager`
+  - Fixed the Edit Item form so opening an existing item no longer rewrites its stored WC3 item level during form load.
+  - This fixes cases such as `Copper Ore`, where the item list correctly showed WC3 item level / stack cap `20`, but opening Edit Item could snap the field to an equipment-range value such as `700` before the item's final class/rarity state was fully loaded.
+  - Renamed the raw item-level UI to `WC3 Level / Stack Cap` in the item editor and batch editor to make its current runtime meaning explicit.
+  - Added and exposed `Loot Level` / `item_level_unclassified` beside the raw WC3 item level in the editor, item list, and column configuration.
+  - The intended data model is now documented in the tool: stackable consumables/materials use WC3 item level as their stack cap in the `0-49` range, miscellaneous non-equippable non-stackable items can occupy the `50-99` range, and equipment continues to use higher WC3 item-level values.
+  - Background: `DestroyerInventoryAndEquipmentSystem` still reads Warcraft III's object-editor item level through `GetItemLevel(...)` when deciding stack capacity. Because Warcraft III item charges are the visible count used by DInventory stacks, PotS has historically repurposed WC3 item level as the maximum stack/charge cap for stackable non-equipment instead of treating it as item power.
+  - `item_level_unclassified` remains the separate loot/drop tier field for items whose raw WC3 item level is being used for stack behavior.
+
+### Known Issues
+
+- Critical ItemManager/DInventory caveat: `DInventoryIsItemStackable(...)` currently treats matching WC3 item categories with `GetItemLevel(item) > 0` as stackable. It does not itself enforce the intended `0-49` stack-cap boundary, so miscellaneous non-stackable items in the `50-99` range must avoid stackable WC3 item categories, or the JASS predicate should later be tightened to require `GetItemLevel(item) < 50`.
+- `qValeria.j` now references `gg_rct_ItemTokenLove` and `gg_rct_ItemSupplies01` through `gg_rct_ItemSupplies07`; confirm these rects exist in the main map globals during the next in-map compile.
+- The Shaman/profession/ExSound changes passed targeted static checks and `git diff --check`, but still need full in-map JassHelper compile and runtime audio validation with `SoundAndMusic/ExSoundEditorSounds.j` included after `SoundAndMusic/ExSound.j`.
+
+### Actions Remaining
+
+- Re-test `CastingBar/CastingBarSystem.j` in-game with normal cast-time spells and channel/follow-through spells, especially Firebolt-style casts, Rain of Fire, Blizzard, Life Drain, and Channel-based custom abilities.
+- Decide whether to tighten `DestroyerInventoryAndEquipmentSystem/PoTs/SharedDInvLib.j` so stackability requires WC3 item level `1-49`, matching the ItemManager convention and protecting `50-99` miscellaneous items from accidental stacking.
+- Re-test Valeria's `Token of Love` and `Lost Supplies` chain in-game: quest-log text, item spawn at `ItemTokenLove`, `ITEM_SUPPLIES` spawning across `ItemSupplies01` through `ItemSupplies07`, sequential availability, item turn-in cleanup, and farewell control lock.
+- Re-test Aradion/Valeria/Nazgrek dialog scenes with companions present to confirm companion movement stays paused during dialog and resumes correctly afterward.
+
+
 ## [26.7.2026]
 
 ### Technical Updates
@@ -71,24 +161,6 @@
   - Tracks selected units per player and syncs local camera target positions through `BlzSendSyncData` before running camera-based create commands.
   - Uses `Ascii` rawcode conversion so rawcode text and four-character string input work consistently with the imported map libraries.
 
-- Updated Shaman and profession sound playback helpers
-  - `SoundAndMusic/ExSound.j` now owns shared 2D/3D sound playback for reusable `sound` handles, Sound Editor labels, generated `gg_snd_*` label strings, and explicit import paths.
-  - Added central `ExSound_PlayHandle*`, `ExSound_PlayLabel*`, `ExSound_PlayPath*`, `ExSound_PlayLabelOrPath*`, and handle-label-path helper APIs for normal, point, and unit playback.
-  - Label playback accepts both Sound Editor labels such as `"Smelting"` and generated-name strings such as `"gg_snd_Smelting"` by stripping the `gg_snd_` prefix before `CreateSoundFromLabel(...)`.
-  - Added `ExSound_RegisterEditorSound(...)`, `ExSound_GetEditorSound(...)`, and `ExSound_ClearEditorSound(...)` so string-based Sound Editor labels can resolve back to reusable `gg_snd_*` handles when the handle has been registered.
-  - Label/path 3D playback now uses min distance `600.00` and distance cutoff `1500.00` by default; registered voiceline keys keep legacy non-spatial playback for imported-audio compatibility.
-  - Reusable `gg_snd_*` handles are stopped/restarted but not destroyed; registered editor handles are marked so loop cleanup does not kill them, and `KillSoundWhenDone(...)` is only used for fresh transient handles created by label/path playback.
-  - `Abilities/Shaman/ShamanCommon.j` now delegates its sound wrappers to `ExSound` instead of owning duplicated deferred-start, create, attach, and cleanup logic.
-  - `Abilities/Shaman/ShamanCommon.j` now registers the old GUI Sound Editor handles for Stormstrike, Whirlwind, Lightning Strike, Ghost Wolf morph/return, and Ghost Wolf Bite so existing label/path calls resolve to the reliable `gg_snd_*` handles before path fallback.
-  - `UI/Interface.j` now registers profession, mining-hit, and herb-pick Sound Editor labels and prefers reusable handles before trying label/path-created sounds.
-  - Removed the `GetSoundDuration(professionSound) > 0` gate from profession-created sounds so valid newly created Sound Editor/import sounds are not discarded before playback.
-  - Mining hit and herb-pick world event sounds now prefer their configured `gg_snd_*` handles at the relevant unit location, with label-created sounds kept as fallback.
-  - `Professions/Professions.j` now prefers configured profession `gg_snd_*` handles for craft start/loop/finish sounds and only falls back to label/path recreation when no handle is available.
-  - Profession craft sounds now attach to the workstation when a station unit is available, matching the old GUI playback shape for Cauldron, Forge, Anvil, and Tannery sounds.
-  - `Professions/Professions.j` and `Professions/ProfessionsFishing.j` now pass the shared `1500.00` cutoff used by `ExSound` 3D playback.
-  - `Abilities/Abilities.j` and `Abilities/Talents.j` now route local-player feedback sound playback through `ExSound_PlayHandleForPlayer(...)`.
-  - This keeps registered external voiceline playback unchanged while making Sound Editor variable sounds the reliable first path for profession, gather, and converted shaman SFX.
-
 - Updated `Abilities/Shaman/ShamanLightningShield.j`
   - Lightning Shield now tracks the actual object-editor buff after a short post-cast grace window.
   - If the Lightning Shield buff is dispelled or otherwise removed, the custom periodic damage instance and persistent shield visual are cleaned up immediately.
@@ -99,6 +171,7 @@
 - Updated `Professions/ProfessionsFishing.j`
   - Fishing now creates a lightning-based fishing line when the cast begins, starting from a hidden marker attached to the fisher's configured `"hand,right"` attachment point and ending at a randomized bobber point near the selected fish pool.
   - Added configurable `ProfessionsFishing_FishingLineLightningType`, `ProfessionsFishing_FishingLineUseCustomColor`, and `ProfessionsFishing_LineHandAttachmentPoint`, defaulting to `LEAS`, disabled custom tinting, and `"hand,right"`.
+  - Added configurable fishing-line fallback offsets `ProfessionsFishing_LineHandForwardOffset`, `ProfessionsFishing_LineHandRightOffset`, `ProfessionsFishing_LineHandHeight`, and `ProfessionsFishing_LineHandZOffset`; lowered the default fallback height from overhead-level `105.00` to `70.00`.
   - Changed the fishing line to use raw `LEAS` by default for compatibility with a `ReplaceableTextures\Weather\lariatCaught.blp` Aerial Shackles texture replacement, with fallback right-hand offset handling if the hidden marker reports the unit origin or map-center null coordinates instead of a hand position.
   - Added short endpoint/bobber wobble pulses on cast start, reel, bait use, cancellation, completion, interruption, and fish escape.
   - Added configurable `ProfessionsFishing_BobberModelPath` for the fishing bobber model.
@@ -166,7 +239,6 @@
 
 - The new debug command libraries passed local JassHelper script-only validation, but still need in-map validation with the active imported object data and multiplayer sync context.
 - The new `DialogInteraction.j` split passed targeted static checks for stale `QuestGiver_*` generic dialog calls and panel-hide usage, but still needs a full in-map JassHelper compile and runtime test with ability trainers and qAradion.
-- The Shaman/profession/ExSound changes passed targeted static checks and `git diff --check`, but still need full in-map JassHelper compile and runtime audio validation. Shaman path fallbacks assume import paths such as `war3mapImported\\Stormstrike.wav`; those strings must be corrected if the actual imported sound paths differ.
 - The seeded fishing item and fish-pool database rows passed local PostgreSQL verification, but the map still needs fresh ItemManager item object export/import and Gather Nodes JASS export/import before the new fish pools and rewards can be validated in-game.
 - The fishing line/bobber visuals and gather-node ItemLoot exclusion passed `git diff --check`, but still need full map compile and in-game validation with the active bobber model import path.
 - The profession skill-up effect passed `git diff --check`, but still needs full map compile and in-game validation with `spells_tradeskilllevelup.mdx` imported at the configured path.
@@ -1059,9 +1131,9 @@
 
 - `Professions/ProfessionsAlchemy.j`
   - Registered the Cauldron workstation and Alchemy start/loop/finish sound labels:
-    - `Alchemy start`
-    - `Alchemy loop`
-    - `Alchemy loop`
+    - `CauldronSound`
+    - `CauldronSound`
+    - `Tradeskill_AlchemyEnd`
   - Expanded Alchemy from the first-pass six recipes into the concrete `ALCHEMY` / `alchemy_help` workbook recipe set.
   - Corrected the workbook material requirements for Crystal Water, Healing Salve, Greater Healing Salve, and Minor Healing Potion.
   - Assigned every registered Alchemy recipe to Basic Alchemy, Basic Potions, Utility Potions, or Flasks.
