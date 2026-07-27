@@ -150,7 +150,7 @@ library CinematicMover initializer Init requires Table
 
         set data.real[id*2]   = GetUnitX(u)
         set data.real[id*2+1] = GetUnitY(u)
-        call BJDebugMsg("[CinematicMover] Stored companion position: " + GetUnitName(u))
+        //call BJDebugMsg("[CinematicMover] Stored companion position: " + GetUnitName(u))
     endfunction
 
     private function StoreTamedPosition takes nothing returns nothing
@@ -159,7 +159,7 @@ library CinematicMover initializer Init requires Table
 
         set data.real[id*2]   = GetUnitX(u)
         set data.real[id*2+1] = GetUnitY(u)
-        call BJDebugMsg("[CinematicMover] Stored pet position: " + GetUnitName(u))
+        //call BJDebugMsg("[CinematicMover] Stored pet position: " + GetUnitName(u))
     endfunction
 
     // Helper function to store initial distance to cineTriggerUnit
@@ -176,14 +176,14 @@ library CinematicMover initializer Init requires Table
         local unit u
         local integer id
 
-        call BJDebugMsg("[CinematicMover] Storing unit locations...")
+        //call BJDebugMsg("[CinematicMover] Storing unit locations...")
 
         // Store Nazgrek's position
         if udg_Nazgrek != null then
             set id = GetHandleId(udg_Nazgrek)
             set data.real[id * 2] = GetUnitX(udg_Nazgrek)
             set data.real[id * 2 + 1] = GetUnitY(udg_Nazgrek)
-            call BJDebugMsg("[CinematicMover] Stored Nazgrek position.")
+            //call BJDebugMsg("[CinematicMover] Stored Nazgrek position.")
         endif
 
         // Store Zulkis's position
@@ -191,21 +191,21 @@ library CinematicMover initializer Init requires Table
             set id = GetHandleId(udg_Zulkis)
             set data.real[id * 2] = GetUnitX(udg_Zulkis)
             set data.real[id * 2 + 1] = GetUnitY(udg_Zulkis)
-            call BJDebugMsg("[CinematicMover] Stored Zulkis position.")
+            //call BJDebugMsg("[CinematicMover] Stored Zulkis position.")
         endif
 
         // Store Companion units' positions
         if CountUnitsInGroup(udg_Companion_Group) > 0 then
             call ForGroupBJ(udg_Companion_Group, function StoreCompanionPosition)
         else
-            call BJDebugMsg("[CinematicMover] No companions found in group.")
+            //call BJDebugMsg("[CinematicMover] No companions found in group.")
         endif
 
         // Store Tamed units' positions
         if CountUnitsInGroup(udg_TamedUnits) > 0 then
             call ForGroupBJ(udg_TamedUnits, function StoreTamedPosition)
         else
-            call BJDebugMsg("[CinematicMover] No tamed units found in group.")
+            //call BJDebugMsg("[CinematicMover] No tamed units found in group.")
         endif
 
         /*
@@ -303,11 +303,12 @@ library CinematicMover initializer Init requires Table
             set ry = RMaxBJ(RMinBJ(cy + GetRandomReal(-RANDOM_OFFSET, RANDOM_OFFSET), GetRectMaxY(bj_mapInitialPlayableArea)), GetRectMinY(bj_mapInitialPlayableArea))
             call SetUnitX(u, rx)
             call SetUnitY(u, ry)
-            call BJDebugMsg("[CinematicMover] Moved alive unit: " + GetUnitName(u))
+            //call BJDebugMsg("[CinematicMover] Moved alive unit: " + GetUnitName(u))
         // Unit is dead, revive if not already revived
 
         else
-            call BJDebugMsg("[CinematicMover] Reviving unit: " + GetUnitName(u))
+            //call BJDebugMsg("[CinematicMover] Reviving unit: " + GetUnitName(u))
+
             // REVIVAL
 
             /*
@@ -325,7 +326,7 @@ library CinematicMover initializer Init requires Table
             */
 
             if IsUnitInGroup(u, udg_TamedUnits) then
-                call BJDebugMsg("[CinematicMover] Reviving tamed unit via Tamed Unit Revival trigger: " + GetUnitName(u))
+                //call BJDebugMsg("[CinematicMover] Reviving tamed unit via Tamed Unit Revival trigger: " + GetUnitName(u))
                 /* This trigger doesnt exist anymore. TODO to check corresponding function from Pet.j library if needed.
                 call TriggerExecute(gg_trg_Tamed_Unit_Revival)
                 */
@@ -343,7 +344,7 @@ library CinematicMover initializer Init requires Table
             set ry = cy + GetRandomReal(-RANDOM_OFFSET, RANDOM_OFFSET)
             call SetUnitX(u, rx)
             call SetUnitY(u, ry)
-            call BJDebugMsg("[CinematicMover] Unit revived and moved: " + GetUnitName(u))
+            //call BJDebugMsg("[CinematicMover] Unit revived and moved: " + GetUnitName(u))
         endif
 
     endfunction
@@ -402,21 +403,22 @@ library CinematicMover initializer Init requires Table
         if data.real.has(id*2 + 100) then
             set dist = data.real[id*2 + 100]
             if dist <= MAX_RETURN_RANGE then
-                call BJDebugMsg("[CinematicMover] Skipped returning " + GetUnitName(u) + " (was within " + R2S(dist) + " of cineTriggerUnit).")
+                //call BJDebugMsg("[CinematicMover] Skipped returning " + GetUnitName(u) + " (was within " + R2S(dist) + " of cineTriggerUnit).")
                 return
             endif
         endif
 
         // If the unit was revived during the cinematic, move to off-map corner then kill and resume timer
         if WasRevived(u) then
-            call BJDebugMsg("[CinematicMover] Moving revived unit to off-map corner before killing: " + GetUnitName(u))
+            //call BJDebugMsg("[CinematicMover] Moving revived unit to off-map corner before killing: " + GetUnitName(u))
             // Move to off-map corner to hide death animation
             call SetUnitX(u, OFF_MAP_CORNER_X)
             call SetUnitY(u, OFF_MAP_CORNER_Y)
             
             // Tamed units are returned to "dead" state if they were dead
             if IsUnitInGroup(u, udg_TamedUnits) then
-                call BJDebugMsg("[CinematicMover] Returning tamed unit to dead-state via Tamed Unit Kill: " + GetUnitName(u))
+                //call BJDebugMsg("[CinematicMover] Returning tamed unit to dead-state via Tamed Unit Kill: " + GetUnitName(u))
+
                 /* This trigger doesnt exist anymore. TODO to check corresponding function from Pet.j library if needed.
                 call TriggerExecute(gg_trg_Tamed_Unit_Dies)
                 */
@@ -427,7 +429,7 @@ library CinematicMover initializer Init requires Table
             // Resume revive timer with stored remaining time
             call ResumeReviveTimer(u)
             call ClearRevived(u)
-            call BJDebugMsg("[CinematicMover] Revived unit returned to dead-state with resumed timer: " + GetUnitName(u))
+            //call BJDebugMsg("[CinematicMover] Revived unit returned to dead-state with resumed timer: " + GetUnitName(u))
             return
         endif
 
@@ -435,10 +437,10 @@ library CinematicMover initializer Init requires Table
         if data.real.has(id*2) and data.real.has(id*2+1) then
             call SetUnitX(u, data.real[id*2])
             call SetUnitY(u, data.real[id*2+1])
-            call BJDebugMsg("[CinematicMover] Restored original position for: " + GetUnitName(u))
+            //call BJDebugMsg("[CinematicMover] Restored original position for: " + GetUnitName(u))
             return
         else
-            call BJDebugMsg("[CinematicMover] No stored position found for: " + GetUnitName(u))
+            //call BJDebugMsg("[CinematicMover] No stored position found for: " + GetUnitName(u))
         endif
         // Fallback: nothing to restore
     endfunction
@@ -467,13 +469,13 @@ library CinematicMover initializer Init requires Table
         if data.real.has(id*2 + 100) then
             set dist = data.real[id*2 + 100]
             if dist <= MAX_MOVE_RANGE then
-                call BJDebugMsg("[CinematicMover] Skipped moving companion " + GetUnitName(u) + " (already within " + R2S(dist) + " of trigger unit).")
+                //call BJDebugMsg("[CinematicMover] Skipped moving companion " + GetUnitName(u) + " (already within " + R2S(dist) + " of trigger unit).")
                 return
             endif
         endif
 
         call HandleUnitMove(u, CENTER_X, CENTER_Y) // random offset will be applied inside
-        call BJDebugMsg("[CinematicMover] Moving companion: " + GetUnitName(u))
+        //call BJDebugMsg("[CinematicMover] Moving companion: " + GetUnitName(u))
     endfunction
 
     private function MoveTamedCallback takes nothing returns nothing
@@ -485,13 +487,13 @@ library CinematicMover initializer Init requires Table
         if data.real.has(id*2 + 100) then
             set dist = data.real[id*2 + 100]
             if dist <= MAX_MOVE_RANGE then
-                call BJDebugMsg("[CinematicMover] Skipped moving pet " + GetUnitName(u) + " (already within " + R2S(dist) + " of trigger unit).")
+                //call BJDebugMsg("[CinematicMover] Skipped moving pet " + GetUnitName(u) + " (already within " + R2S(dist) + " of trigger unit).")
                 return
             endif
         endif
 
         call HandleUnitMove(u, CENTER_X, CENTER_Y)
-        call BJDebugMsg("[CinematicMover] Moving pet: " + GetUnitName(u))
+        //call BJDebugMsg("[CinematicMover] Moving pet: " + GetUnitName(u))
     endfunction
 
     private function StoreDistanceToTriggerWrapper takes nothing returns nothing
@@ -516,7 +518,7 @@ library CinematicMover initializer Init requires Table
             return
         endif
 
-        call BJDebugMsg("[CinematicMover] Starting cinematic move with mode " + I2S(moveMode))
+        //call BJDebugMsg("[CinematicMover] Starting cinematic move with mode " + I2S(moveMode))
 
         // ============================================================
         // OPTIONAL: Move the cinematic trigger unit itself
@@ -690,7 +692,7 @@ library CinematicMover initializer Init requires Table
         local unit u = GetEnumUnit()
         
         call HandleUnitReturn(u, GetUnitX(u), GetUnitY(u))
-        call BJDebugMsg("[CinematicMover] Returning companion: " + GetUnitName(u))
+        //call BJDebugMsg("[CinematicMover] Returning companion: " + GetUnitName(u))
     endfunction
 
     // Tamed return callback
@@ -698,7 +700,7 @@ library CinematicMover initializer Init requires Table
         local unit u = GetEnumUnit()
 
         call HandleUnitReturn(u, GetUnitX(u), GetUnitY(u))
-        call BJDebugMsg("[CinematicMover] Returning pet: " + GetUnitName(u))
+        //call BJDebugMsg("[CinematicMover] Returning pet: " + GetUnitName(u))
     endfunction
 
     //===========================================================================
@@ -719,7 +721,7 @@ library CinematicMover initializer Init requires Table
             return
         endif
 
-        call BJDebugMsg("[CinematicMover] Returning units from cinematic...")
+        //call BJDebugMsg("[CinematicMover] Returning units from cinematic...")
 
         // Retrieve stored move mode from when cinematic started
         if data.integer.has(GetHandleId(cineTriggerUnit)) then
@@ -730,7 +732,7 @@ library CinematicMover initializer Init requires Table
 
         // Mode 9: No Return - exit early without returning any units
         if moveMode == 9 then
-            call BJDebugMsg("[CinematicMover] Mode 9 (No Return) - units will stay at cinematic location.")
+            //call BJDebugMsg("[CinematicMover] Mode 9 (No Return) - units will stay at cinematic location.")
             call data.integer.remove(GetHandleId(cineTriggerUnit))
             set udg_CinematicMovePoint[0] = null
             set udg_CinematicMovePoint[1] = null
