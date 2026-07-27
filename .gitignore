@@ -75,7 +75,7 @@ _Roadmap/
 /Installer/*.sha256
 
 # tools
-/_WC3MapTranslator-4.0.0
+/_WC3MapTranslator-4.0.0/
 
 # Pictures
 *.png
