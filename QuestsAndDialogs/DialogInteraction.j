@@ -160,7 +160,7 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
             set DialogInteraction_FirstGreetDone = Table.create()
         endif
         set id = GetHandleId(u)
-        set DialogInteraction_FirstGreetDone.integer[id] = B2I(flag)
+        set DialogInteraction_FirstGreetDone.boolean[id] = flag
     endfunction
 
     public function SuppressNextGreet takes unit u returns nothing
@@ -199,7 +199,7 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
             endif
         endif
         if DialogInteraction_FirstGreetDone != 0 then
-            set DialogInteraction_FirstGreetDone.integer[id] = 0
+            set DialogInteraction_FirstGreetDone.boolean[id] = false
         endif
         if DialogInteraction_SkipNextGreet != 0 then
             set DialogInteraction_SkipNextGreet.boolean[id] = false
@@ -617,10 +617,7 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
             return false
         endif
         set id = GetHandleId(u)
-        if not DialogInteraction_FirstGreetDone.has(id) then
-            return false
-        endif
-        return DialogInteraction_FirstGreetDone.integer[id] == 1
+        return DialogInteraction_FirstGreetDone.boolean[id]
     endfunction
 
     public function HideDialog takes dialog d, player p returns nothing
