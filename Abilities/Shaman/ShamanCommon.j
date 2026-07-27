@@ -26,7 +26,7 @@
     - call ShamanCommon_PlaySoundLabelOrPathOnUnit(soundLabel, soundPath, caster)
 
 **/
-library ShamanCommon requires ExSound, AbilitiesPlayerInit, optional Talents, optional AbilityPoints
+library ShamanCommon initializer Init requires ExSound, AbilitiesPlayerInit, optional Talents, optional AbilityPoints
 
 globals
     public constant integer STAT_NONE = 0
@@ -353,6 +353,15 @@ public function DistanceBetweenCoordinates takes real ax, real ay, real bx, real
     return SquareRoot(dx * dx + dy * dy)
 endfunction
 
+private function RegisterSoundEditorLabels takes nothing returns nothing
+    call ExSound_RegisterEditorSound("Stormstrike", gg_snd_Stormstrike)
+    call ExSound_RegisterEditorSound("Whirlwind", gg_snd_Whirlwind)
+    call ExSound_RegisterEditorSound("LightningStrike", gg_snd_LightningStrike)
+    call ExSound_RegisterEditorSound("GhostWolfBegin", gg_snd_GhostWolfBegin)
+    call ExSound_RegisterEditorSound("GhostWolfMorph", gg_snd_GhostWolfMorph)
+    call ExSound_RegisterEditorSound("Bite", gg_snd_Bite)
+endfunction
+
 public function PlaySound takes sound whichSound returns nothing
     call ExSound_PlayHandle(whichSound)
 endfunction
@@ -366,27 +375,38 @@ public function PlaySoundOnUnit takes sound whichSound, unit whichUnit returns n
 endfunction
 
 public function PlaySoundLabel takes string soundLabel returns nothing
+    call RegisterSoundEditorLabels()
     call ExSound_PlayLabel(soundLabel, false)
 endfunction
 
 public function PlaySoundLabelAtPoint takes string soundLabel, real x, real y returns nothing
+    call RegisterSoundEditorLabels()
     call ExSound_PlayLabelAtPoint(soundLabel, x, y, false)
 endfunction
 
 public function PlaySoundLabelOnUnit takes string soundLabel, unit whichUnit returns nothing
+    call RegisterSoundEditorLabels()
     call ExSound_PlayLabelOnUnit(soundLabel, whichUnit, false)
 endfunction
 
 public function PlaySoundLabelOrPath takes string soundLabel, string soundPath returns nothing
+    call RegisterSoundEditorLabels()
     call ExSound_PlayLabelOrPath(soundLabel, soundPath, false)
 endfunction
 
 public function PlaySoundLabelOrPathAtPoint takes string soundLabel, string soundPath, real x, real y returns nothing
+    call RegisterSoundEditorLabels()
     call ExSound_PlayLabelOrPathAtPoint(soundLabel, soundPath, x, y, false)
 endfunction
 
 public function PlaySoundLabelOrPathOnUnit takes string soundLabel, string soundPath, unit whichUnit returns nothing
+    call RegisterSoundEditorLabels()
     call ExSound_PlayLabelOrPathOnUnit(soundLabel, soundPath, whichUnit, false)
+endfunction
+
+public function PlaySoundHandleLabelOrPathOnUnit takes sound whichSound, string soundLabel, string soundPath, unit whichUnit returns nothing
+    call RegisterSoundEditorLabels()
+    call ExSound_PlayHandleLabelOrPathOnUnit(whichSound, soundLabel, soundPath, whichUnit, false)
 endfunction
 
 public function PlaySoundPath takes string soundPath returns nothing
@@ -522,6 +542,10 @@ public function IsSpiritWolfUnitType takes integer unitTypeId returns boolean
         */ or unitTypeId == UNIT_SPIRIT_WOLF_OSW1 /*
         */ or unitTypeId == UNIT_SPIRIT_WOLF_OSW2 /*
         */ or unitTypeId == UNIT_SPIRIT_WOLF_OSW3
+endfunction
+
+private function Init takes nothing returns nothing
+    call RegisterSoundEditorLabels()
 endfunction
 
 endlibrary
