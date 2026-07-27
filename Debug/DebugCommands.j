@@ -23,14 +23,16 @@
     - /debug unit lookup '<rawcode-or-name>'
     - /debug ability give '<rawcode-or-name>'
     - /debug ability lookup '<rawcode-or-name>'
+    - /debug fishpool spawn
 
 **/
-library DebugCommands initializer Init requires DebugObjectRegistry, Ascii
+library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, GatherNodeUnits, GatherNodeSkills, ZonesCore
     globals
         private constant string DBG_ROOT = "/debug"
         private constant string DBG_PREFIX = "/debug "
         private constant string DBG_SYNC_PREFIX = "PDBG"
         private constant integer DBG_MAX_LOOKUP_RESULTS = 8
+        private constant integer DBG_FISH_POOL_CATEGORY_ID = 9
 
         private trigger DBG_ChatTrigger = null
         private trigger DBG_SyncTrigger = null
@@ -534,6 +536,90 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii
         set createdUnit = null
     endfunction
 
+    private function DBG_IsFishPoolDefinition takes integer defId returns boolean
+        return GNU_IsDefinitionEnabled(defId) and GNU_GetDefinitionCategoryId(defId) == DBG_FISH_POOL_CATEGORY_ID and GNU_GetDefinitionProfessionId(defId) == GNS_PROF_FISHING
+    endfunction
+
+    private function DBG_GetFishPoolDefinitionCount takes nothing returns integer
+        local integer defId = 0
+        local integer count = 0
+        local integer definitionCount = GNU_GetDefinitionCount()
+
+        loop
+            exitwhen defId >= definitionCount
+            if DBG_IsFishPoolDefinition(defId) then
+                set count = count + 1
+            endif
+            set defId = defId + 1
+        endloop
+
+        return count
+    endfunction
+
+    private function DBG_GetFishPoolDefinitionByOrdinal takes integer ordinal returns integer
+        local integer defId = 0
+        local integer count = 0
+        local integer definitionCount = GNU_GetDefinitionCount()
+
+        loop
+            exitwhen defId >= definitionCount
+            if DBG_IsFishPoolDefinition(defId) then
+                set count = count + 1
+                if count == ordinal then
+                    return defId
+                endif
+            endif
+            set defId = defId + 1
+        endloop
+
+        return -1
+    endfunction
+
+    private function DBG_SpawnRandomFishPool takes player whichPlayer, real cameraX, real cameraY, boolean hasCamera returns nothing
+        local integer fishPoolCount
+        local integer defId
+        local integer zoneId
+        local string zoneName
+        local unit spawnedPool = null
+
+        if not hasCamera then
+            call DBG_Message(whichPlayer, "No synced camera position. Try the command again.")
+            return
+        endif
+
+        set fishPoolCount = DBG_GetFishPoolDefinitionCount()
+        if fishPoolCount <= 0 then
+            call DBG_Message(whichPlayer, "Failed to spawn random fish pool: no enabled fishing pool definitions registered in GatherNodeUnits.")
+            return
+        endif
+
+        set zoneId = ZonesCore_GetZoneIdAtPoint(cameraX, cameraY)
+        if zoneId <= 0 then
+            call DBG_Message(whichPlayer, "Failed to spawn random fish pool: camera target is not inside a registered zone.")
+            return
+        endif
+
+        set defId = DBG_GetFishPoolDefinitionByOrdinal(GetRandomInt(1, fishPoolCount))
+        if defId < 0 then
+            call DBG_Message(whichPlayer, "Failed to spawn random fish pool: random definition lookup failed.")
+            return
+        endif
+
+        set spawnedPool = GNU_ForceSpawn(defId, cameraX, cameraY, zoneId)
+        set zoneName = ZonesCore_Zones_GetZoneName(zoneId)
+        if zoneName == null or zoneName == "" then
+            set zoneName = "zone " + I2S(zoneId)
+        endif
+
+        if spawnedPool == null then
+            call DBG_Message(whichPlayer, "Failed to spawn " + GNU_GetDefinitionName(defId) + " " + DBG_RawCodeText(GNU_GetDefinitionUnitCode(defId)) + " in " + zoneName + ". Check water/terrain restrictions.")
+        else
+            call DBG_Message(whichPlayer, "Spawned " + GNU_GetDefinitionName(defId) + " " + DBG_RawCodeText(GNU_GetDefinitionUnitCode(defId)) + " in " + zoneName + " at camera target.")
+        endif
+
+        set spawnedPool = null
+    endfunction
+
     private function DBG_GiveAbilityToSelected takes player whichPlayer, string argument returns nothing
         local string query = DBG_Unquote(argument)
         local integer rawCode = DBG_ResolveAbility(query)
@@ -575,6 +661,7 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii
         call DBG_Message(whichPlayer, "/debug unit lookup '<rawcode-or-name>'")
         call DBG_Message(whichPlayer, "/debug ability give '<rawcode-or-name>'")
         call DBG_Message(whichPlayer, "/debug ability lookup '<rawcode-or-name>'")
+        call DBG_Message(whichPlayer, "/debug fishpool spawn")
     endfunction
 
     private function DBG_ExecuteCommand takes player whichPlayer, string command, real cameraX, real cameraY, boolean hasCamera returns nothing
@@ -619,6 +706,8 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii
             call DBG_GiveAbilityToSelected(whichPlayer, argument)
         elseif lowerCommand == "ability add" then
             call DBG_GiveAbilityToSelected(whichPlayer, "")
+        elseif lowerCommand == "fishpool spawn" or lowerCommand == "fish pool spawn" or lowerCommand == "fishing pool spawn" then
+            call DBG_SpawnRandomFishPool(whichPlayer, cameraX, cameraY, hasCamera)
         else
             call DBG_Message(whichPlayer, "Unknown command. Use /debug help.")
         endif
@@ -629,6 +718,10 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii
         local string lowerCommand = StringCase(trimmed, false)
 
         if DBG_StartsWith(lowerCommand, "unit create ") or lowerCommand == "unit create" then
+            return true
+        endif
+
+        if lowerCommand == "fishpool spawn" or lowerCommand == "fish pool spawn" or lowerCommand == "fishing pool spawn" then
             return true
         endif
 
