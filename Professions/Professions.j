@@ -37,7 +37,7 @@
 
 **/
 
-library Professions initializer AutoInit requires GatherNodeSkills, TimerUtils, Table, DialogCamera, CinematicMover, Interface, FullscreenUI, optional SharedDInvLib, optional ItemHook, optional MasterUI
+library Professions initializer AutoInit requires GatherNodeSkills, TimerUtils, Table, DialogCamera, CinematicMover, ExSound, Interface, FullscreenUI, optional SharedDInvLib, optional ItemHook, optional MasterUI
 
 globals
     // Public result codes for callers that need richer failure handling later.
@@ -545,47 +545,47 @@ private function P_PlaySoundPathForJob takes integer jobId, string soundPath, un
         return null
     endif
 
-    if P_JobCinematicActive[jobId] and not P_JobAiControlled[jobId] then
-        return Interface_PlayProfessionSoundPath(soundPath, looping)
-    endif
-
     if station != null then
         return Interface_PlayProfessionSoundPathOnUnit(soundPath, station, looping, P_SOUND_CUTOFF)
+    endif
+
+    if P_JobCinematicActive[jobId] and not P_JobAiControlled[jobId] then
+        return Interface_PlayProfessionSoundPath(soundPath, looping)
     endif
 
     return null
 endfunction
 
 private function P_PlaySoundLabelForJob takes integer jobId, string soundLabel, unit station, boolean looping returns sound
-    if P_JobCinematicActive[jobId] and not P_JobAiControlled[jobId] then
-        return Interface_PlayProfessionSound(null, soundLabel, looping)
-    endif
-
     if station != null then
         return Interface_PlayProfessionSoundOnUnit(null, soundLabel, station, looping, P_SOUND_CUTOFF)
+    endif
+
+    if P_JobCinematicActive[jobId] and not P_JobAiControlled[jobId] then
+        return Interface_PlayProfessionSound(null, soundLabel, looping)
     endif
 
     return null
 endfunction
 
 private function P_PlaySoundHandleForJob takes integer jobId, sound whichSound, unit station, boolean looping returns sound
-    if P_JobCinematicActive[jobId] and not P_JobAiControlled[jobId] then
-        return Interface_PlayProfessionSound(whichSound, "", looping)
-    endif
-
     if station != null then
         return Interface_PlayProfessionSoundOnUnit(whichSound, "", station, looping, P_SOUND_CUTOFF)
+    endif
+
+    if P_JobCinematicActive[jobId] and not P_JobAiControlled[jobId] then
+        return Interface_PlayProfessionSound(whichSound, "", looping)
     endif
 
     return null
 endfunction
 
 private function P_ShouldPreferSoundLabel takes integer jobId returns boolean
-    return true
+    return false
 endfunction
 
 private function P_ShouldPreferSoundPath takes integer jobId returns boolean
-    return true
+    return false
 endfunction
 
 private function P_IsBlankString takes string value returns boolean
@@ -786,7 +786,7 @@ private function P_StopLoopSound takes integer jobId returns nothing
     local sound whichSound = P_JobLoopSound[jobId]
 
     if whichSound != null then
-        if P_JobLoopSoundTransient[jobId] then
+        if P_JobLoopSoundTransient[jobId] and not ExSound_IsRegisteredEditorHandle(whichSound) then
             call StopSound(whichSound, true, true)
         else
             call StopSound(whichSound, false, true)
