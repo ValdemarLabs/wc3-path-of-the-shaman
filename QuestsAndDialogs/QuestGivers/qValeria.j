@@ -19,7 +19,7 @@
 // - Token of Love and Lost Supplies keep their legacy titles, rewards, faction,
 //   item requirements, dialog branches, and prerequisite chain.
 //============================================================================
-library qValeria initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, PatrolSystem, Reputation, HeroItemCheck, VoicelinesValeria, VoicelinesNazgrek
+library qValeria initializer Init requires QuestItemSpawner, QuestGiver, QuestMaster, DialogInteraction, DialogSystem, PatrolSystem, Reputation, HeroItemCheck, VoicelinesValeria, VoicelinesNazgrek
 
 globals
     private constant boolean DEBUG = false
@@ -38,7 +38,6 @@ globals
     private constant real DIALOG_COOLDOWN = 6.00
     private constant real DIALOG_FADE_OUT = 1.00
     private constant real DIALOG_FADE_IN = 1.00
-    private constant real QUEST_ITEM_SPAWN_OFFSET = 64.00
     private constant integer CINEMATIC_MOVE_MODE = 1
     private constant real CINEMATIC_MOVE_OFFSET = 256.00
     private constant real CINEMATIC_MOVE_ANGLE = 210.00
@@ -63,6 +62,8 @@ globals
 
     private dialog ValeriaDialog = null
     private timer ValeriaDialogCooldown = null
+    private integer TokenLoveItemSpawner = 0
+    private integer LostSuppliesItemSpawner = 0
     private boolean ValeriaInitWaitingLogged = false
 endglobals
 
@@ -153,74 +154,46 @@ private function CanOfferLostSupplies takes nothing returns boolean
     return QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_TOKEN_LOVE, Valeria)
 endfunction
 
-private function CreateQuestItemsAtHero takes integer itemTypeId, integer count returns nothing
-    local unit source = null
-    local unit hero = null
-    local real baseX
-    local real baseY
-    local integer index = 0
-    local real angle
-    local item createdItem
-
-    if count <= 0 then
-        return
+private function EnsureQuestItemSpawners takes nothing returns nothing
+    if TokenLoveItemSpawner == 0 then
+        set TokenLoveItemSpawner = QuestItemSpawner_Create(TOKEN_HEART_REQUIRED)
+        call QuestItemSpawner_AddRect(TokenLoveItemSpawner, gg_rct_ItemTokenLove)
     endif
 
-    set hero = ResolveDialogHero()
-    if DialogInteraction_IsUnitAlive(hero) then
-        set source = hero
-    elseif DialogInteraction_IsUnitAlive(Nazgrek) then
-        set source = Nazgrek
-    else
-        set source = Valeria
+    if LostSuppliesItemSpawner == 0 then
+        set LostSuppliesItemSpawner = QuestItemSpawner_Create(SUPPLIES_SPAWN_COUNT)
+        call QuestItemSpawner_AddRect(LostSuppliesItemSpawner, gg_rct_ItemSupplies01)
+        call QuestItemSpawner_AddRect(LostSuppliesItemSpawner, gg_rct_ItemSupplies02)
+        call QuestItemSpawner_AddRect(LostSuppliesItemSpawner, gg_rct_ItemSupplies03)
+        call QuestItemSpawner_AddRect(LostSuppliesItemSpawner, gg_rct_ItemSupplies04)
+        call QuestItemSpawner_AddRect(LostSuppliesItemSpawner, gg_rct_ItemSupplies05)
+        call QuestItemSpawner_AddRect(LostSuppliesItemSpawner, gg_rct_ItemSupplies06)
+        call QuestItemSpawner_AddRect(LostSuppliesItemSpawner, gg_rct_ItemSupplies07)
     endif
-    if source == null then
-        set hero = null
-        return
-    endif
-
-    set baseX = GetUnitX(source)
-    set baseY = GetUnitY(source)
-
-    loop
-        exitwhen index >= count
-        set angle = 6.283185307 * I2R(index) / I2R(count)
-        set createdItem = QuestGiver_CreateQuestItem(itemTypeId, 0, baseX + QUEST_ITEM_SPAWN_OFFSET * Cos(angle), baseY + QUEST_ITEM_SPAWN_OFFSET * Sin(angle))
-        set index = index + 1
-    endloop
-
-    set createdItem = null
-    set hero = null
-    set source = null
 endfunction
 
-private function CreateQuestItemsInRect takes integer itemTypeId, integer count, rect spawnRect returns nothing
-    local integer index = 0
-    local real x
-    local real y
-    local item createdItem
+private function SpawnTokenLoveItems takes nothing returns nothing
+    call EnsureQuestItemSpawners()
+    call QuestItemSpawner_DespawnAll(TokenLoveItemSpawner)
+    call QuestItemSpawner_Spawn(TokenLoveItemSpawner, ITEM_HEART_OCEAN, 0, TOKEN_HEART_REQUIRED)
+endfunction
 
-    if count <= 0 then
-        set spawnRect = null
-        return
+private function SpawnLostSuppliesItems takes nothing returns nothing
+    call EnsureQuestItemSpawners()
+    call QuestItemSpawner_DespawnAll(LostSuppliesItemSpawner)
+    call QuestItemSpawner_Spawn(LostSuppliesItemSpawner, ITEM_SUPPLIES, 0, SUPPLIES_SPAWN_COUNT)
+endfunction
+
+private function DespawnTokenLoveItems takes nothing returns nothing
+    if TokenLoveItemSpawner != 0 then
+        call QuestItemSpawner_DespawnAll(TokenLoveItemSpawner)
     endif
+endfunction
 
-    if spawnRect == null then
-        call CreateQuestItemsAtHero(itemTypeId, count)
-        set spawnRect = null
-        return
+private function DespawnLostSuppliesItems takes nothing returns nothing
+    if LostSuppliesItemSpawner != 0 then
+        call QuestItemSpawner_DespawnAll(LostSuppliesItemSpawner)
     endif
-
-    set x = GetRectCenterX(spawnRect)
-    set y = GetRectCenterY(spawnRect)
-    loop
-        exitwhen index >= count
-        set createdItem = QuestGiver_CreateQuestItem(itemTypeId, 0, x, y)
-        set index = index + 1
-    endloop
-
-    set createdItem = null
-    set spawnRect = null
 endfunction
 
 private function RefreshQuestAfterAccept takes string questName returns nothing
@@ -246,17 +219,20 @@ private function RefreshValeriaAvailabilityInternal takes nothing returns nothin
     endif
 endfunction
 
-private function CompleteItemQuest takes string questName, integer itemTypeId, integer amount returns nothing
+private function CompleteItemQuest takes string questName, integer itemTypeId, integer amount returns boolean
     local QuestData q = QuestGiver_GetByNameAndGiver(questName, Valeria)
     if q == 0 then
-        return
+        return false
     endif
 
     if HeroItemCheckBothAndRemove(itemTypeId, amount) then
         call QuestGiver_CompleteItemRequirements(q.id)
         call QuestGiver_CompleteQuestByNameAndGiver(questName, Valeria)
         call RefreshValeriaAvailabilityInternal()
+        return true
     endif
+
+    return false
 endfunction
 
 private function OnNoDialogGreetEnd takes nothing returns nothing
@@ -277,7 +253,7 @@ endfunction
 private function OnAcceptTokenLoveEnd takes nothing returns nothing
     call QuestGiver_AcceptQuestByNameAndGiver(QUEST_TOKEN_LOVE, Valeria)
     call RefreshQuestAfterAccept(QUEST_TOKEN_LOVE)
-    call CreateQuestItemsInRect(ITEM_HEART_OCEAN, TOKEN_HEART_REQUIRED, gg_rct_ItemTokenLove)
+    call SpawnTokenLoveItems()
     call StartExitFadeOut()
 endfunction
 
@@ -303,7 +279,9 @@ private function OnAcceptTokenLove takes nothing returns nothing
 endfunction
 
 private function OnCompleteTokenLoveEnd takes nothing returns nothing
-    call CompleteItemQuest(QUEST_TOKEN_LOVE, ITEM_HEART_OCEAN, TOKEN_HEART_REQUIRED)
+    if CompleteItemQuest(QUEST_TOKEN_LOVE, ITEM_HEART_OCEAN, TOKEN_HEART_REQUIRED) then
+        call DespawnTokenLoveItems()
+    endif
     call StartExitFadeOut()
 endfunction
 
@@ -328,7 +306,7 @@ endfunction
 private function OnAcceptLostSuppliesEnd takes nothing returns nothing
     call QuestGiver_AcceptQuestByNameAndGiver(QUEST_LOST_SUPPLIES, Valeria)
     call RefreshQuestAfterAccept(QUEST_LOST_SUPPLIES)
-    call CreateQuestItemsAtHero(ITEM_SUPPLIES, SUPPLIES_SPAWN_COUNT)
+    call SpawnLostSuppliesItems()
     call StartExitFadeOut()
 endfunction
 
@@ -351,7 +329,9 @@ private function OnAcceptLostSupplies takes nothing returns nothing
 endfunction
 
 private function OnCompleteLostSuppliesEnd takes nothing returns nothing
-    call CompleteItemQuest(QUEST_LOST_SUPPLIES, ITEM_SUPPLIES, SUPPLIES_REQUIRED)
+    if CompleteItemQuest(QUEST_LOST_SUPPLIES, ITEM_SUPPLIES, SUPPLIES_REQUIRED) then
+        call DespawnLostSuppliesItems()
+    endif
     call StartExitFadeOut()
 endfunction
 
@@ -543,6 +523,7 @@ private function InitDelayed takes nothing returns nothing
 
     call QuestGiver_Register(Valeria)
     call DialogInteraction_ConfigureDialogTransition(Valeria, CINEMATIC_MOVE_MODE, CINEMATIC_MOVE_OFFSET, CINEMATIC_MOVE_ANGLE, CAMERA_DIST, CAMERA_Z_OFFSET, CAMERA_ANGLE, CAMERA_ROT_OFFSET, CAMERA_FAR_Z, CAMERA_FOV, CAMERA_BLOCK_RADIUS, CAMERA_BLOCK_CHECK)
+    call EnsureQuestItemSpawners()
     call RegisterDialogLines()
     call CreateQuests()
     call RefreshValeriaAvailabilityInternal()
