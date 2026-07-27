@@ -268,7 +268,7 @@ private function FinishMorphToWolf takes unit original, integer heroSlot, intege
     call ShowUnit(original, false)
     call PauseUnit(original, true)
     call ApplyWolfBonuses(original, wolf, rank)
-    call ShamanCommon_PlaySoundLabelOrPathOnUnit("GhostWolfBegin", "war3mapImported\\GhostWolfBegin.wav", wolf)
+    call ShamanCommon_PlaySoundLabelOnUnit("GhostWolfBegin", wolf)
     call ShamanCommon_SelectForOwner(wolf)
     call StartMorphingClear(heroSlot)
 
@@ -304,7 +304,7 @@ private function FinishReturnToHero takes unit wolf, integer heroSlot returns no
     call SetMorphOriginal(heroSlot, null)
     call QueueUnitAnimation(original, "spell slam")
     call QueueUnitAnimation(original, "stand")
-    call ShamanCommon_PlaySoundLabelOrPathOnUnit("GhostWolfMorph", "war3mapImported\\GhostWolfMorph.wav", original)
+    call ShamanCommon_PlaySoundLabelOnUnit("GhostWolfMorph", original)
     call ShamanCommon_SelectForOwner(original)
     call StartMorphingClear(heroSlot)
 
@@ -385,7 +385,7 @@ private function CastBiteBurst takes unit caster returns nothing
     local unit dummy = ShamanCommon_CreateTimedDummy(GetOwningPlayer(caster), ShamanCommon_DUMMY_BITE, x, y, bj_UNIT_FACING, BITE_DUMMY_LIFETIME)
     local ability dummyAbility
 
-    call ShamanCommon_PlaySoundLabelOrPathOnUnit("Bite", "war3mapImported\\Bite.wav", caster)
+    call ShamanCommon_PlaySoundLabelOnUnit("Bite", caster)
     call UnitAddAbility(dummy, damageAbility)
     set dummyAbility = BlzGetUnitAbility(dummy, damageAbility)
     if dummyAbility != null then
