@@ -27,6 +27,10 @@
     set ProfessionsFishing_FishingLineLightningType = "LEAS"
     set ProfessionsFishing_FishingLineUseCustomColor = false
     set ProfessionsFishing_LineHandAttachmentPoint = "hand,right"
+    set ProfessionsFishing_LineHandForwardOffset = 28.00
+    set ProfessionsFishing_LineHandRightOffset = 22.00
+    set ProfessionsFishing_LineHandHeight = 70.00
+    set ProfessionsFishing_LineHandZOffset = 0.00
     set started = ProfessionsFishing_Start(whichPlayer, fisher, pool)
     set stopped = ProfessionsFishing_StopForUnit(fisher)
     call ProfessionsFishing_Init()
@@ -64,10 +68,6 @@ globals
     private constant real PF_DEFAULT_BAIT_DURATION = 600.00
     private constant real PF_ANIMATION_LOOP_PERIOD = 1.35
     private constant real PF_SOUND_CUTOFF = 1500.00
-    private constant real PF_LINE_HAND_FORWARD_OFFSET = 28.00
-    private constant real PF_LINE_HAND_RIGHT_OFFSET = 22.00
-    private constant real PF_LINE_HAND_HEIGHT = 105.00
-    private constant real PF_LINE_HAND_Z_OFFSET = 0.00
     private constant real PF_BOBBER_POOL_RANDOM_RADIUS = 100.00
     private constant real PF_BOBBER_HEIGHT_OFFSET = 8.00
     private constant real PF_BOBBER_SCALE = 1.00
@@ -112,6 +112,10 @@ globals
     public integer BobberStandSubAnimationBId = -1
     public string FishingLineLightningType = "LEAS"
     public string LineHandAttachmentPoint = "hand,right"
+    public real LineHandForwardOffset = 28.00
+    public real LineHandRightOffset = 22.00
+    public real LineHandHeight = 70.00
+    public real LineHandZOffset = 0.00
     public boolean FishingLineUseCustomColor = false
     public string FishWentAwayText = "Fish went away"
     public string NoTrackedFisherText = "No tracked fisher"
@@ -950,7 +954,7 @@ private function PF_GetFallbackLineStartX takes unit fisher returns real
     endif
 
     set facing = GetUnitFacing(fisher) * bj_DEGTORAD
-    return GetUnitX(fisher) + PF_LINE_HAND_FORWARD_OFFSET * Cos(facing) + PF_LINE_HAND_RIGHT_OFFSET * Cos(facing - bj_PI * 0.50)
+    return GetUnitX(fisher) + LineHandForwardOffset * Cos(facing) + LineHandRightOffset * Cos(facing - bj_PI * 0.50)
 endfunction
 
 private function PF_GetFallbackLineStartY takes unit fisher returns real
@@ -961,15 +965,15 @@ private function PF_GetFallbackLineStartY takes unit fisher returns real
     endif
 
     set facing = GetUnitFacing(fisher) * bj_DEGTORAD
-    return GetUnitY(fisher) + PF_LINE_HAND_FORWARD_OFFSET * Sin(facing) + PF_LINE_HAND_RIGHT_OFFSET * Sin(facing - bj_PI * 0.50)
+    return GetUnitY(fisher) + LineHandForwardOffset * Sin(facing) + LineHandRightOffset * Sin(facing - bj_PI * 0.50)
 endfunction
 
 private function PF_GetFallbackLineStartZ takes unit fisher, real x, real y returns real
     if fisher == null then
-        return PF_GetTerrainZ(x, y) + PF_LINE_HAND_HEIGHT
+        return PF_GetTerrainZ(x, y) + LineHandHeight
     endif
 
-    return PF_GetTerrainZ(x, y) + GetUnitFlyHeight(fisher) + PF_LINE_HAND_HEIGHT
+    return PF_GetTerrainZ(x, y) + GetUnitFlyHeight(fisher) + LineHandHeight
 endfunction
 
 private function PF_GetFishingLineLightningType takes nothing returns string
@@ -1046,7 +1050,7 @@ endfunction
 
 private function PF_GetLineStartZ takes integer pid, unit fisher, real x, real y returns real
     if PF_LineHandMarkerIsUsable(pid, fisher) then
-        return BlzGetLocalSpecialEffectZ(PF_LineHandMarker[pid]) + PF_LINE_HAND_Z_OFFSET
+        return BlzGetLocalSpecialEffectZ(PF_LineHandMarker[pid]) + LineHandZOffset
     endif
 
     return PF_GetFallbackLineStartZ(fisher, x, y)
