@@ -41,12 +41,28 @@ library ExSound initializer Init
         call ExSound_PlayAmbience(udg_ExSoundRegion, "ForestAmbience")
         call ExSound_StopAmbience(udg_ExSoundRegion)
 
+    Example (28.7.2026)
+    You maintain only one definition:
+        call ExSound_RegisterEditorSoundEx("Stormstrike",gg_snd_Stormstrike,"war3mapImported\\Stormstrike.wav")
+            (in eg ShamanCommon.j)
+
+    Then use:
+        // 2D
+        call ShamanCommon_PlaySoundLabel("Stormstrike")
+
+        // 3D on unit
+        call ShamanCommon_PlaySoundLabelOnUnit("Stormstrike", caster)
+
+        // 3D at coordinates
+        call ShamanCommon_PlaySoundLabelAtPoint("Stormstrike", x, y)
+
     General-purpose sound helpers:
         Label helpers accept Sound Editor labels such as "Blacksmithing" and generated-name strings such as "gg_snd_Blacksmithing".
         Existing sound handles keep their original 2D/3D creation mode; label/path helpers create fresh 2D or 3D handles.
         Register Sound Editor handles with ExSound_RegisterEditorSound("Blacksmithing", gg_snd_Blacksmithing) when string-based playback should resolve to the reusable gg_snd handle first.
         Registered ExSound keys keep legacy non-spatial playback for imported voiceline compatibility.
         call ExSound_RegisterEditorSound("Blacksmithing", gg_snd_Blacksmithing)
+        call ExSound_RegisterEditorSoundEx("Stormstrike",gg_snd_Stormstrike,"war3mapImported\\Stormstrike.wav")
         call ExSound_PlayHandle(gg_snd_Error)
         call ExSound_PlayHandleForPlayer(gg_snd_Error, GetTriggerPlayer())
         call ExSound_PlayLabel("Blacksmithing", false)
@@ -75,6 +91,7 @@ globals
     private constant integer EXSOUND_FADE_RATE = 12700
     private constant integer EXSOUND_EDITOR_HANDLE_CHILD = 1
     private constant integer EXSOUND_EDITOR_HANDLE_MARKER_CHILD = 2
+    private constant integer EXSOUND_EDITOR_PATH_CHILD = 3
     private constant integer EXSOUND_EDITOR_VARIABLE_PREFIX_LENGTH = 7
     private constant string EXSOUND_EDITOR_VARIABLE_PREFIX = "gg_snd_"
 
@@ -115,6 +132,56 @@ function ExSound_RegisterEditorSound takes string soundLabel, sound whichSound r
         call SaveSoundHandle(es_Table, StringHash(normalizedLabel), EXSOUND_EDITOR_HANDLE_CHILD, whichSound)
         call SaveBoolean(es_Table, GetHandleId(whichSound), EXSOUND_EDITOR_HANDLE_MARKER_CHILD, true)
     endif
+endfunction
+
+function ExSound_RegisterEditorSoundEx takes string soundLabel, sound whichSound, string soundPath returns nothing
+    local string normalizedLabel = ExSound_NormalizeSoundLabel(soundLabel)
+    local integer parentKey
+
+    if ExSound_IsBlankString(normalizedLabel) then
+        return
+    endif
+
+    set parentKey = StringHash(normalizedLabel)
+
+    if whichSound != null then
+        call SaveSoundHandle(
+            es_Table,
+            parentKey,
+            EXSOUND_EDITOR_HANDLE_CHILD,
+            whichSound
+        )
+
+        call SaveBoolean(
+            es_Table,
+            GetHandleId(whichSound),
+            EXSOUND_EDITOR_HANDLE_MARKER_CHILD,
+            true
+        )
+    endif
+
+    if not ExSound_IsBlankString(soundPath) then
+        call SaveStr(
+            es_Table,
+            parentKey,
+            EXSOUND_EDITOR_PATH_CHILD,
+            soundPath
+        )
+    endif
+endfunction
+
+private function ExSound_GetEditorSoundPath takes string soundLabel returns string
+    local string normalizedLabel = ExSound_NormalizeSoundLabel(soundLabel)
+
+    if ExSound_IsBlankString(normalizedLabel) then
+        return ""
+    endif
+
+    return LoadStr(
+        es_Table,
+        StringHash(normalizedLabel),
+        EXSOUND_EDITOR_PATH_CHILD
+    )
 endfunction
 
 function ExSound_ClearEditorSound takes string soundLabel returns nothing
@@ -272,16 +339,19 @@ function ExSound_PlayLabel takes string soundLabel, boolean looping returns soun
     local sound createdSound = null
 
     if editorSound != null then
-        set createdSound = ExSound_PlayHandle(editorSound)
-        set editorSound = null
+            return ExSound_PlayHandle(editorSound)
+        endif
+
+        set createdSound = ExSound_CreateConfiguredSound(
+            soundLabel,
+            ExSound_GetEditorSoundPath(soundLabel),
+            looping,
+            false
+        )
+
+        call ExSound_StartTransientSound(createdSound, looping)
+
         return createdSound
-    endif
-
-    set createdSound = ExSound_CreateConfiguredSound(soundLabel, "", looping, false)
-
-    call ExSound_StartTransientSound(createdSound, looping)
-
-    return createdSound
 endfunction
 
 function ExSound_PlayLabelAtPointEx takes string soundLabel, real x, real y, boolean looping, real minDistance, real cutoff returns sound
@@ -309,23 +379,39 @@ function ExSound_PlayLabelAtPoint takes string soundLabel, real x, real y, boole
 endfunction
 
 function ExSound_PlayLabelOnUnitEx takes string soundLabel, unit whichUnit, boolean looping, real minDistance, real cutoff returns sound
-    local sound editorSound = null
+    local string soundPath
     local sound createdSound = null
 
     if whichUnit == null then
         return null
     endif
 
-    set editorSound = ExSound_GetEditorSound(soundLabel)
-    if editorSound != null then
-        set createdSound = ExSound_PlayHandleOnUnitEx(editorSound, whichUnit, minDistance, cutoff)
-        set editorSound = null
-        return createdSound
+    set soundPath = ExSound_GetEditorSoundPath(soundLabel)
+
+    if not ExSound_IsBlankString(soundPath) then
+        set createdSound = ExSound_CreateConfiguredSound(
+            "",
+            soundPath,
+            looping,
+            true
+        )
+    else
+        set createdSound = ExSound_CreateConfiguredSound(
+            soundLabel,
+            "",
+            looping,
+            true
+        )
     endif
 
-    set createdSound = ExSound_CreateConfiguredSound(soundLabel, "", looping, true)
     if createdSound != null then
-        call ExSound_Apply3DOnUnitEx(createdSound, whichUnit, minDistance, cutoff)
+        call ExSound_Apply3DOnUnitEx(
+            createdSound,
+            whichUnit,
+            minDistance,
+            cutoff
+        )
+
         call ExSound_StartTransientSound(createdSound, looping)
     endif
 
