@@ -5497,7 +5497,7 @@ private function RunProfileThink takes integer instanceId, unit whichUnit return
     if instanceId <= 0 or whichUnit == null then
         return
     endif
-    if udg_InCinematic and IsCompanionControlled(whichUnit) then
+    if IsCompanionControlled(whichUnit) and IsDialogBlockingBark() then
         return
     endif
     if IsCastingLocked(whichUnit) then
@@ -5661,7 +5661,7 @@ private function ProcessInstance takes integer instanceId, real now returns noth
     call CleanupProfessionTool(instanceId, now)
     set companionControlled = IsCompanionControlled(whichUnit)
     set InstanceCompanionControlled.boolean[instanceId] = companionControlled
-    if companionControlled and udg_InCinematic then
+    if companionControlled and IsDialogBlockingBark() then
         call ParkCompanionForCinematic(instanceId, whichUnit, now)
         set whichUnit = null
         return
