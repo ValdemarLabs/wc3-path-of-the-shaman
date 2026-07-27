@@ -13,9 +13,10 @@
     Credits:
 
     How to install:
-    Import this library before any UI library that calls it. Update the sound
-    assignments in IUI_InitDefaultSounds with the final gg_snd_* globals, or
-    configure them during map init with Interface_SetEventSound.
+    Import this library before any UI library that calls it. The generated
+    ExSoundEditorSounds registry supplies Sound Editor filepaths for fresh 3D
+    playback from normal gg_snd_* entries. Configure overrides during map init
+    with Interface_SetEventSound when needed.
 
     API:
     call Interface_SetEventSound(Interface_EVENT_UI_OPEN, gg_snd_Interface_UIOpen)
@@ -45,13 +46,13 @@
     call Interface_NotifyMiningHitOnUnit(GetTriggerUnit())
     call Interface_RefreshDefaultSounds()
     call Interface_ApplyProfessionCinematicVolumes(Player(0))
-    call Interface_PlayProfessionSound(Interface_Profession_Blacksmithing_Start, "Blacksmithing", false)
-    call Interface_PlayProfessionSoundOnUnit(Interface_Profession_Blacksmithing_Start, "Blacksmithing", GetTriggerUnit(), false, 1500.00)
+    call Interface_PlayProfessionSound(Interface_Profession_Blacksmithing_Start, "Tradeskill_BlacksmithStart", false)
+    call Interface_PlayProfessionSoundOnUnit(Interface_Profession_Blacksmithing_Start, "Tradeskill_BlacksmithStart", GetTriggerUnit(), false, 1500.00)
     call Interface_PlayProfessionSoundPath(Interface_Profession_Blacksmithing_LoopPath, false)
     call Interface_PlayProfessionSoundPathOnUnit(Interface_Profession_Blacksmithing_LoopPath, GetTriggerUnit(), false, 1500.00)
 
 **/
-library Interface initializer AutoInit requires ExSound
+library Interface initializer AutoInit requires ExSound, ExSoundEditorSounds
     globals
         public constant integer EVENT_UNIT_SELECT = 1
         public constant integer EVENT_UI_OPEN = 2
@@ -190,28 +191,6 @@ library Interface initializer AutoInit requires ExSound
         return value == null or value == ""
     endfunction
 
-    private function IUI_RegisterDefaultSoundLabels takes nothing returns nothing
-        call ExSound_RegisterEditorSound("Tradeskill_MiningHitA", IUI_EventSound[EVENT_TRADESKILL_MINING_HIT_A])
-        call ExSound_RegisterEditorSound("Tradeskill_MiningHitB", IUI_EventSound[EVENT_TRADESKILL_MINING_HIT_B])
-        call ExSound_RegisterEditorSound("Tradeskill_MiningHitC", IUI_EventSound[EVENT_TRADESKILL_MINING_HIT_C])
-        call ExSound_RegisterEditorSound("Tradeskill_MiningHitD", IUI_EventSound[EVENT_TRADESKILL_MINING_HIT_D])
-        call ExSound_RegisterEditorSound("Tradeskill_MiningHitE", IUI_EventSound[EVENT_TRADESKILL_MINING_HIT_E])
-        call ExSound_RegisterEditorSound("Tradeskill_HerbPick", IUI_EventSound[EVENT_TRADESKILL_HERB_PICK])
-
-        call ExSound_RegisterEditorSound("CauldronSound", Profession_Alchemy_Loop)
-        call ExSound_RegisterEditorSound("Alchemy start", Profession_Alchemy_Start)
-        call ExSound_RegisterEditorSound("Alchemy loop", Profession_Alchemy_Loop)
-        call ExSound_RegisterEditorSound("Tradeskill_AlchemyEnd", Profession_Alchemy_End)
-        call ExSound_RegisterEditorSound("Tradeskill_BlacksmithStart", Profession_Blacksmithing_Start)
-        call ExSound_RegisterEditorSound("Blacksmithing", Profession_Blacksmithing_Loop)
-        call ExSound_RegisterEditorSound("Smelting", Profession_Mining_Loop)
-        call ExSound_RegisterEditorSound("Tannery", Profession_Leatherworking_Loop)
-        call ExSound_RegisterEditorSound("CookingPrepareA", Profession_Cooking_Loop)
-        call ExSound_RegisterEditorSound("Tradeskill_Fishing", Profession_Fishing_End)
-        call ExSound_RegisterEditorSound("Tradeskill_LeatherworkingPick", Profession_Skinning_Loop)
-        call ExSound_RegisterEditorSound("Skinning", Profession_Skinning_Loop)
-    endfunction
-
     private function IUI_PlaySound takes sound whichSound returns nothing
         if IUI_SoundsEnabled and whichSound != null then
             call ExSound_PlayHandle(whichSound)
@@ -232,13 +211,6 @@ library Interface initializer AutoInit requires ExSound
             return
         endif
 
-        set miningSound = IUI_EventSound[eventId]
-        if miningSound != null then
-            call ExSound_PlayHandleOnUnitEx(miningSound, whichUnit, EXSOUND_3D_MIN_DISTANCE, IUI_MINING_SOUND_CUTOFF)
-            set miningSound = null
-            return
-        endif
-
         set soundLabel = IUI_GetMiningHitSoundLabel(eventId)
         if soundLabel != "" then
             set miningSound = ExSound_PlayLabelOnUnitEx(soundLabel, whichUnit, false, EXSOUND_3D_MIN_DISTANCE, IUI_MINING_SOUND_CUTOFF)
@@ -246,6 +218,13 @@ library Interface initializer AutoInit requires ExSound
                 set miningSound = null
                 return
             endif
+        endif
+
+        set miningSound = IUI_EventSound[eventId]
+        if miningSound != null then
+            call ExSound_PlayHandleOnUnitEx(miningSound, whichUnit, EXSOUND_3D_MIN_DISTANCE, IUI_MINING_SOUND_CUTOFF)
+            set miningSound = null
+            return
         endif
 
         set miningSound = null
@@ -259,20 +238,19 @@ library Interface initializer AutoInit requires ExSound
             return
         endif
 
+        set soundLabel = IUI_GetWorldEventSoundLabel(eventId)
+        if soundLabel != "" then
+            set eventSound = ExSound_PlayLabelOnUnitEx(soundLabel, whichUnit, false, EXSOUND_3D_MIN_DISTANCE, IUI_MINING_SOUND_CUTOFF)
+            if eventSound != null then
+                set eventSound = null
+                return
+            endif
+        endif
+
         set eventSound = IUI_EventSound[eventId]
         if eventSound != null then
             call ExSound_PlayHandleOnUnitEx(eventSound, whichUnit, EXSOUND_3D_MIN_DISTANCE, IUI_MINING_SOUND_CUTOFF)
             set eventSound = null
-            return
-        endif
-
-        set soundLabel = IUI_GetWorldEventSoundLabel(eventId)
-        if soundLabel == "" then
-            return
-        endif
-
-        set eventSound = ExSound_PlayLabelOnUnitEx(soundLabel, whichUnit, false, EXSOUND_3D_MIN_DISTANCE, IUI_MINING_SOUND_CUTOFF)
-        if eventSound == null then
             return
         endif
 
@@ -308,15 +286,15 @@ library Interface initializer AutoInit requires ExSound
             set cutoff = IUI_PROFESSION_SOUND_CUTOFF
         endif
 
-        if whichSound != null then
-            return ExSound_PlayHandleOnUnitEx(whichSound, whichUnit, EXSOUND_3D_MIN_DISTANCE, cutoff)
-        endif
-
         if soundLabel != null and soundLabel != "" then
             set professionSound = ExSound_PlayLabelOnUnitEx(soundLabel, whichUnit, looping, EXSOUND_3D_MIN_DISTANCE, cutoff)
             if professionSound != null then
                 return professionSound
             endif
+        endif
+
+        if whichSound != null then
+            return ExSound_PlayHandleOnUnitEx(whichSound, whichUnit, EXSOUND_3D_MIN_DISTANCE, cutoff)
         endif
 
         return null
@@ -424,6 +402,8 @@ library Interface initializer AutoInit requires ExSound
     endfunction
 
     private function IUI_InitDefaultSounds takes nothing returns nothing
+        call ExSoundEditorSounds_RegisterAll()
+
         // Replace any remaining null entries with final World Editor sound globals when they exist. Commented ones are fyi.
         set IUI_EventSound[EVENT_UNIT_SELECT] = null                                            // Reserved for a future own-unit select sound.
         set IUI_EventSound[EVENT_UI_OPEN] = gg_snd_Interface_LeftGlueScreenPopUp                // gg_snd_Interface_MenuClick
@@ -483,64 +463,62 @@ library Interface initializer AutoInit requires ExSound
         set Profession_Skinning_End = gg_snd_Tradeskill_LeatherworkingPick
 
         if IUI_IsBlankString(Profession_Alchemy_StartPath) then
-            set Profession_Alchemy_StartPath = "war3mapImported\\CauldronSound.wav"
+            set Profession_Alchemy_StartPath = ExSoundEditorSounds_GetPath("CauldronSound")
         endif
         if IUI_IsBlankString(Profession_Alchemy_LoopPath) then
-            set Profession_Alchemy_LoopPath = "war3mapImported\\CauldronSound.wav"
+            set Profession_Alchemy_LoopPath = ExSoundEditorSounds_GetPath("CauldronSound")
         endif
         if IUI_IsBlankString(Profession_Alchemy_EndPath) then
-            set Profession_Alchemy_EndPath = "war3mapImported\\Tradeskill_AlchemyEnd.wav"
+            set Profession_Alchemy_EndPath = ExSoundEditorSounds_GetPath("Tradeskill_AlchemyEnd")
         endif
         if IUI_IsBlankString(Profession_Blacksmithing_StartPath) then
-            set Profession_Blacksmithing_StartPath = "war3mapImported\\Tradeskill_BlacksmithStart.wav"
+            set Profession_Blacksmithing_StartPath = ExSoundEditorSounds_GetPath("Tradeskill_BlacksmithStart")
         endif
         if IUI_IsBlankString(Profession_Blacksmithing_LoopPath) then
-            set Profession_Blacksmithing_LoopPath = "war3mapImported\\Blacksmithing.wav"
+            set Profession_Blacksmithing_LoopPath = ExSoundEditorSounds_GetPath("Blacksmithing")
         endif
         if IUI_IsBlankString(Profession_Blacksmithing_EndPath) then
-            set Profession_Blacksmithing_EndPath = "war3mapImported\\Blacksmithing.wav"
+            set Profession_Blacksmithing_EndPath = ExSoundEditorSounds_GetPath("Blacksmithing")
         endif
         if IUI_IsBlankString(Profession_Mining_StartPath) then
-            set Profession_Mining_StartPath = "war3mapImported\\Smelting.wav"                    // Use of forge for smelting ores
+            set Profession_Mining_StartPath = ExSoundEditorSounds_GetPath("Smelting")            // Use of forge for smelting ores
         endif
         if IUI_IsBlankString(Profession_Mining_LoopPath) then
-            set Profession_Mining_LoopPath = "war3mapImported\\Smelting.wav"
+            set Profession_Mining_LoopPath = ExSoundEditorSounds_GetPath("Smelting")
         endif
         if IUI_IsBlankString(Profession_Mining_EndPath) then
-            set Profession_Mining_EndPath = "war3mapImported\\Smelting.wav"
+            set Profession_Mining_EndPath = ExSoundEditorSounds_GetPath("Smelting")
         endif
         if IUI_IsBlankString(Profession_Leatherworking_StartPath) then
-            set Profession_Leatherworking_StartPath = "war3mapImported\\Tannery.wav"
+            set Profession_Leatherworking_StartPath = ExSoundEditorSounds_GetPath("Tannery")
         endif
         if IUI_IsBlankString(Profession_Leatherworking_LoopPath) then
-            set Profession_Leatherworking_LoopPath = "war3mapImported\\Tannery.wav"
+            set Profession_Leatherworking_LoopPath = ExSoundEditorSounds_GetPath("Tannery")
         endif
         if IUI_IsBlankString(Profession_Leatherworking_EndPath) then
-            set Profession_Leatherworking_EndPath = "war3mapImported\\Tannery.wav"
+            set Profession_Leatherworking_EndPath = ExSoundEditorSounds_GetPath("Tannery")
         endif
         if IUI_IsBlankString(Profession_Cooking_StartPath) then
-            set Profession_Cooking_StartPath = "war3mapImported\\CookingPrepareA.wav"
+            set Profession_Cooking_StartPath = ExSoundEditorSounds_GetPath("CookingPrepareA")
         endif
         if IUI_IsBlankString(Profession_Cooking_LoopPath) then
-            set Profession_Cooking_LoopPath = "war3mapImported\\CookingPrepareA.wav"
+            set Profession_Cooking_LoopPath = ExSoundEditorSounds_GetPath("CookingPrepareA")
         endif
         if IUI_IsBlankString(Profession_Cooking_EndPath) then
-            set Profession_Cooking_EndPath = "war3mapImported\\CookingPrepareA.wav"
+            set Profession_Cooking_EndPath = ExSoundEditorSounds_GetPath("CookingPrepareA")
         endif
         if IUI_IsBlankString(Profession_Fishing_EndPath) then
-            set Profession_Fishing_EndPath = "war3mapImported\\Tradeskill_Fishing.wav"
+            set Profession_Fishing_EndPath = ExSoundEditorSounds_GetPath("Tradeskill_Fishing")
         endif
         if IUI_IsBlankString(Profession_Skinning_StartPath) then
-            set Profession_Skinning_StartPath = "war3mapImported\\Tradeskill_LeatherworkingPick.wav"
+            set Profession_Skinning_StartPath = ExSoundEditorSounds_GetPath("Tradeskill_LeatherworkingPick")
         endif
         if IUI_IsBlankString(Profession_Skinning_LoopPath) then
-            set Profession_Skinning_LoopPath = "war3mapImported\\Tradeskill_LeatherworkingPick.wav"
+            set Profession_Skinning_LoopPath = ExSoundEditorSounds_GetPath("Tradeskill_LeatherworkingPick")
         endif
         if IUI_IsBlankString(Profession_Skinning_EndPath) then
-            set Profession_Skinning_EndPath = "war3mapImported\\Tradeskill_LeatherworkingPick.wav"
+            set Profession_Skinning_EndPath = ExSoundEditorSounds_GetPath("Tradeskill_LeatherworkingPick")
         endif
-
-        call IUI_RegisterDefaultSoundLabels()
     endfunction
 
     public function RefreshDefaultSounds takes nothing returns nothing
