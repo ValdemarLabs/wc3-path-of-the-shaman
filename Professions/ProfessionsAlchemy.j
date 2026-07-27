@@ -29,9 +29,9 @@ globals
     private constant string PA_CRAFTER_ANIMATION_FALLBACK = "spell"
 
     // Sound labels. Professions plays Start once, Loop until done, and Finish once.
-    private constant string PA_SOUND_START = "Alchemy start"
-    private constant string PA_SOUND_LOOP = "Alchemy loop"
-    private constant string PA_SOUND_FINISH = "Alchemy loop"
+    private constant string PA_SOUND_START = "CauldronSound"
+    private constant string PA_SOUND_LOOP = "CauldronSound"
+    private constant string PA_SOUND_FINISH = "Tradeskill_AlchemyEnd"
 
     // Recipe categories mirror the workbook spellbook groups.
     private constant string PA_CATEGORY_BASIC_ALCHEMY = "Basic Alchemy"

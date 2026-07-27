@@ -94,7 +94,7 @@ globals
     private constant string PF_CRAFTER_ANIMATION_FALLBACK = "spell"
     private constant string PF_SOUND_START = ""
     private constant string PF_SOUND_LOOP = ""
-    private constant string PF_SOUND_FINISH = ""
+    private constant string PF_SOUND_FINISH = "Tradeskill_Fishing"
     private constant string PF_DEFAULT_FISH_POOL_NAME = "Fish"
 
     public string TitleText = "|cffffe4a3Fishing|r"
@@ -893,12 +893,16 @@ private function PF_GetSkillFailChance takes integer effectiveSkill, integer req
 endfunction
 
 private function PF_PlayFishingSound takes unit fisher returns nothing
+    local sound fishingSound = null
+
     call Interface_RefreshDefaultSounds()
-    if Interface_Profession_Fishing_EndPath != null and Interface_Profession_Fishing_EndPath != "" then
-        call Interface_PlayProfessionSoundPathOnUnit(Interface_Profession_Fishing_EndPath, fisher, false, PF_SOUND_CUTOFF)
-    else
-        call Interface_PlayProfessionSoundOnUnit(Interface_Profession_Fishing_End, PF_SOUND_FINISH, fisher, false, PF_SOUND_CUTOFF)
+    set fishingSound = Interface_PlayProfessionSoundOnUnit(Interface_Profession_Fishing_End, PF_SOUND_FINISH, fisher, false, PF_SOUND_CUTOFF)
+
+    if fishingSound == null and Interface_Profession_Fishing_EndPath != null and Interface_Profession_Fishing_EndPath != "" then
+        set fishingSound = Interface_PlayProfessionSoundPathOnUnit(Interface_Profession_Fishing_EndPath, fisher, false, PF_SOUND_CUTOFF)
     endif
+
+    set fishingSound = null
 endfunction
 
 private function PF_PlayFishingAnimation takes integer pid returns nothing

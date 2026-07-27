@@ -30,7 +30,7 @@ globals
     private constant string PB_CRAFTER_ANIMATION_FALLBACK = "attack"
 
     // Sound labels. Professions plays Start once, Loop until done, and Finish once.
-    private constant string PB_SOUND_START = "Blacksmithing"
+    private constant string PB_SOUND_START = "Tradeskill_BlacksmithStart"
     private constant string PB_SOUND_LOOP = "Blacksmithing"
     private constant string PB_SOUND_FINISH = "Blacksmithing"
 

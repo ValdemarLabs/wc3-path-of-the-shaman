@@ -46,9 +46,9 @@ globals
     private constant integer PS_ITEM_THUNDER_LIZARD_SKIN = 'I61G'
     private constant integer PS_ITEM_VIZIER_SKIN = 'I61N'
 
-    private constant string PS_SOUND_START = "Skinning"
-    private constant string PS_SOUND_LOOP = "Skinning"
-    private constant string PS_SOUND_FINISH = "Skinning"
+    private constant string PS_SOUND_START = "Tradeskill_LeatherworkingPick"
+    private constant string PS_SOUND_LOOP = "Tradeskill_LeatherworkingPick"
+    private constant string PS_SOUND_FINISH = "Tradeskill_LeatherworkingPick"
 
     private constant string PS_NEED_KNIFE_TEXT = "Requires a Skinning Knife."
     private constant string PS_NO_CORPSE_TEXT = "No skinnable beast corpse nearby."

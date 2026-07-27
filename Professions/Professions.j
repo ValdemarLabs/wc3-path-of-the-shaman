@@ -18,7 +18,7 @@
     set recipeId = Professions_RegisterRecipe(GNS_PROF_ALCHEMY, 'n61D', "Spring Water", "Creates spring water.", "ReplaceableTextures\\CommandButtons\\BTNPotionGreenSmall.blp", 'I60Z', 1, 0, 5.00, 0.00)
     call Professions_AddRecipeMaterial(recipeId, 'I60W', 1, "Agave")
     call Professions_SetRecipeSkillGain(recipeId, 1)
-    call Professions_SetProfessionSoundLabels(GNS_PROF_ALCHEMY, "Alchemy start", "Alchemy loop", "Alchemy loop")
+    call Professions_SetProfessionSoundLabels(GNS_PROF_ALCHEMY, "CauldronSound", "CauldronSound", "Tradeskill_AlchemyEnd")
     call Professions_SetProfessionSoundHandles(GNS_PROF_ALCHEMY, Interface_Profession_Alchemy_Start, Interface_Profession_Alchemy_Loop, Interface_Profession_Alchemy_End)
     call Professions_SetProfessionSoundPaths(GNS_PROF_ALCHEMY, Interface_Profession_Alchemy_StartPath, Interface_Profession_Alchemy_LoopPath, Interface_Profession_Alchemy_EndPath)
     call Professions_SetProfessionAiCheatCrafting(GNS_PROF_ALCHEMY, true)
@@ -581,7 +581,7 @@ private function P_PlaySoundHandleForJob takes integer jobId, sound whichSound, 
 endfunction
 
 private function P_ShouldPreferSoundLabel takes integer jobId returns boolean
-    return false
+    return true
 endfunction
 
 private function P_ShouldPreferSoundPath takes integer jobId returns boolean
