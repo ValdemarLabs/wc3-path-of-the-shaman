@@ -56,7 +56,7 @@ private function UnitDeathEvent_EnsureTrigger takes nothing returns nothing
         set playerIndex = playerIndex + 1
         exitwhen playerIndex > UNIT_DEATH_EVENT_MAX_PLAYER_INDEX
     endloop
-    call BJDebugMsg("[UnitDeathEvent] Centralized death event system initialized")
+    //call BJDebugMsg("[UnitDeathEvent] Centralized death event system initialized")
 endfunction
 
 // Register a callback function to be called on unit death
@@ -64,14 +64,14 @@ endfunction
 function UnitDeathEvent_Register takes code callback returns nothing
     call UnitDeathEvent_EnsureTrigger()
     if callbackCount >= MAX_CALLBACKS then
-        call BJDebugMsg("[UnitDeathEvent] ERROR: Maximum callbacks reached (" + I2S(MAX_CALLBACKS) + ")")
+        //call BJDebugMsg("[UnitDeathEvent] ERROR: Maximum callbacks reached (" + I2S(MAX_CALLBACKS) + ")")
         return
     endif
 
     call TriggerAddAction(deathTrigger, callback)
     set callbackCount = callbackCount + 1
 
-    call BJDebugMsg("[UnitDeathEvent] Registered callback #" + I2S(callbackCount) + " for unit death events")
+    //call BJDebugMsg("[UnitDeathEvent] Registered callback #" + I2S(callbackCount) + " for unit death events")
 endfunction
 
 // Initialize the death event system
