@@ -142,28 +142,12 @@ function ExSound_RegisterEditorSoundEx takes string soundLabel, sound whichSound
     set parentKey = StringHash(normalizedLabel)
 
     if whichSound != null then
-        call SaveSoundHandle(
-            es_Table,
-            parentKey,
-            EXSOUND_EDITOR_HANDLE_CHILD,
-            whichSound
-        )
-
-        call SaveBoolean(
-            es_Table,
-            GetHandleId(whichSound),
-            EXSOUND_EDITOR_HANDLE_MARKER_CHILD,
-            true
-        )
+        call SaveSoundHandle(es_Table, parentKey, EXSOUND_EDITOR_HANDLE_CHILD, whichSound)
+        call SaveBoolean(es_Table, GetHandleId(whichSound), EXSOUND_EDITOR_HANDLE_MARKER_CHILD, true)
     endif
 
     if not ExSound_IsBlankString(soundPath) then
-        call SaveStr(
-            es_Table,
-            parentKey,
-            EXSOUND_EDITOR_PATH_CHILD,
-            soundPath
-        )
+        call SaveStr(es_Table, parentKey, EXSOUND_EDITOR_PATH_CHILD, soundPath)
     endif
 endfunction
 
@@ -174,11 +158,7 @@ function ExSound_GetEditorSoundPath takes string soundLabel returns string
         return ""
     endif
 
-    return LoadStr(
-        es_Table,
-        StringHash(normalizedLabel),
-        EXSOUND_EDITOR_PATH_CHILD
-    )
+    return LoadStr(es_Table, StringHash(normalizedLabel), EXSOUND_EDITOR_PATH_CHILD)
 endfunction
 
 function ExSound_ClearEditorSound takes string soundLabel returns nothing
@@ -391,29 +371,13 @@ function ExSound_PlayLabelOnUnitEx takes string soundLabel, unit whichUnit, bool
     set soundPath = ExSound_GetEditorSoundPath(soundLabel)
 
     if not ExSound_IsBlankString(soundPath) then
-        set createdSound = ExSound_CreateConfiguredSound(
-            "",
-            soundPath,
-            looping,
-            true
-        )
+        set createdSound = ExSound_CreateConfiguredSound("", soundPath, looping, true)
     else
-        set createdSound = ExSound_CreateConfiguredSound(
-            soundLabel,
-            "",
-            looping,
-            true
-        )
+        set createdSound = ExSound_CreateConfiguredSound(soundLabel, "", looping, true)
     endif
 
     if createdSound != null then
-        call ExSound_Apply3DOnUnitEx(
-            createdSound,
-            whichUnit,
-            minDistance,
-            cutoff
-        )
-
+        call ExSound_Apply3DOnUnitEx(createdSound, whichUnit, minDistance, cutoff)
         call ExSound_StartTransientSound(createdSound, looping)
     endif
 
