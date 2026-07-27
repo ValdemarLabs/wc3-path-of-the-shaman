@@ -74,6 +74,9 @@ _Roadmap/
 /Installer/release-version.generated.iss
 /Installer/*.sha256
 
+# tools
+/_WC3MapTranslator-4.0.0
+
 # Pictures
 *.png
 *.dds
