@@ -502,7 +502,7 @@ namespace WC3ItemManager
             AppendSpacer(rtb);
             
             AppendFAQ(rtb, "What's the difference between item_level and item_level_unclassified?",
-                "item_level is for equippable items and determines loot tier drops. item_level_unclassified is for consumables where level means something else (like stack size).");
+                "item_level is the WC3 item level. Stackable items use it as stack cap (0-49), misc non-stackables use 50-99, and equipment uses 100+. item_level_unclassified stores the separate loot/drop level when the WC3 level is being used for stack behavior.");
             
             AppendFAQ(rtb, "What is item_code and why 4 characters?",
                 "WC3 uses 4-character codes for all objects (e.g., 'I001'). They must be unique. The format is typically letter-digit-letter-digit.");

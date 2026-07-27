@@ -406,7 +406,8 @@ namespace WC3ItemManager
                 { "icon_path", "Icon Path" },
                 { "rarity", "Rarity" },
                 { "class", "Class" },
-                { "item_level", "Level" },
+                { "item_level", "WC3 Level / Stack" },
+                { "item_level_unclassified", "Loot Level" },
                 { "gold_cost", "Gold Cost" },
                 { "type", "Type" },
                 { "created_at", "Created Date" },
@@ -433,6 +434,8 @@ namespace WC3ItemManager
                 { "Rarity", "rarity" },
                 { "Class", "class" },
                 { "Level", "item_level" },
+                { "WC3 Level / Stack", "item_level" },
+                { "Loot Level", "item_level_unclassified" },
                 { "Gold Cost", "gold_cost" },
                 { "Type", "type" },
                 { "Created Date", "created_at" },
@@ -478,7 +481,7 @@ namespace WC3ItemManager
             {
                 // Define default visibility
                 var defaults = new HashSet<string> { 
-                    "item_code", "item_name", "rarity", "class", "item_level", "gold_cost", "type" 
+                    "item_code", "item_name", "rarity", "class", "item_level", "item_level_unclassified", "gold_cost", "type" 
                 };
                 
                 for (int i = 0; i < lstColumns.Items.Count; i++)

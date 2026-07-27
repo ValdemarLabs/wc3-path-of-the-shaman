@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Windows.Forms;
 using Npgsql;
+using NpgsqlTypes;
 using WC3ItemManager.Repositories;
 using WC3ItemManager.Models;
 
@@ -50,6 +51,7 @@ namespace WC3ItemManager
         private ComboBox cmbBaseId;
         private CheckBox chkAutoIncrementCode;
         private NumericUpDown numLevel;
+        private NumericUpDown numLootLevel;
         private NumericUpDown numGoldCost;
         private NumericUpDown numLumberCost;
         private NumericUpDown numMaxCharges;
@@ -143,6 +145,7 @@ namespace WC3ItemManager
             
             // Ensure database has required columns and seed data before loading UI values.
             EnsureManualAbilitiesColumn();
+            EnsureLootLevelColumn();
             EnsureAbilityLookupColumns();
             EnsurePowerUpAutoUseIntegrity();
             EnsureRequiredItemClasses();
@@ -335,6 +338,40 @@ namespace WC3ItemManager
             {
                 System.Diagnostics.Debug.WriteLine($"[EnsureManualAbilitiesColumn] Error: {ex.Message}");
                 // Non-fatal - continue without this feature
+            }
+        }
+
+        private void EnsureLootLevelColumn()
+        {
+            try
+            {
+                using (var conn = new NpgsqlConnection(connectionString))
+                {
+                    conn.Open();
+                    const string alterQuery = @"
+                        ALTER TABLE items
+                        ADD COLUMN IF NOT EXISTS item_level_unclassified INTEGER";
+
+                    using (var cmd = new NpgsqlCommand(alterQuery, conn))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    const string indexQuery = @"
+                        CREATE INDEX IF NOT EXISTS idx_items_item_level_unclassified
+                        ON items(item_level_unclassified)
+                        WHERE item_level_unclassified IS NOT NULL";
+
+                    using (var cmd = new NpgsqlCommand(indexQuery, conn))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[EnsureLootLevelColumn] Error: {ex.Message}");
+                // Non-fatal - migrated databases can continue normally.
             }
         }
 
@@ -782,7 +819,7 @@ namespace WC3ItemManager
             // Types will be loaded from database in LoadDropdownData
             consumablePanel.Controls.Add(cmbConsumableType);
             
-            Label lblConsumableLevel = new Label { Text = "Item Level:", Location = new Point(390, 68), AutoSize = true };
+            Label lblConsumableLevel = new Label { Text = "Stack Cap:", Location = new Point(390, 68), AutoSize = true };
             consumablePanel.Controls.Add(lblConsumableLevel);
             
             NumericUpDown numConsumableLevel = new NumericUpDown
@@ -847,7 +884,7 @@ namespace WC3ItemManager
             
             Label lblConsumableInfo = new Label
             {
-                Text = "Level: -1 for random (0-49), or set specific (0-49). Equipment uses 50+",
+                Text = "WC3 level: -1 random, 0-49 stack cap. Use Loot Level for drop tier.",
                 Location = new Point(420, 98),
                 AutoSize = true,
                 ForeColor = Color.Gray,
@@ -934,8 +971,8 @@ namespace WC3ItemManager
             tab.Controls.Add(cmbType);
             y += lineHeight;
 
-            // Item Level
-            tab.Controls.Add(new Label { Text = "Item Level:", Location = new Point(labelX, y), AutoSize = true });
+            // WC3 item level doubles as stack cap for stackable non-equipment.
+            tab.Controls.Add(new Label { Text = "WC3 Level / Stack Cap:", Location = new Point(labelX, y), AutoSize = true });
             numLevel = new NumericUpDown { Location = new Point(controlX, y), Width = 100, Minimum = 0, Maximum = 999, Value = 1 };
             numLevel.ValueChanged += (s, e) => { UpdateItemLevelRange(); UpdateItemPreview(); };
             tab.Controls.Add(numLevel);
@@ -948,6 +985,14 @@ namespace WC3ItemManager
                 ForeColor = Color.Gray
             };
             tab.Controls.Add(lblItemLevelRange);
+            y += lineHeight;
+
+            // Loot Level
+            tab.Controls.Add(new Label { Text = "Loot Level:", Location = new Point(labelX, y), AutoSize = true });
+            numLootLevel = new NumericUpDown { Location = new Point(controlX, y), Width = 100, Minimum = -1, Maximum = 999, Value = -1 };
+            numLootLevel.ValueChanged += (s, e) => UpdateItemPreview();
+            tab.Controls.Add(numLootLevel);
+            tab.Controls.Add(new Label { Text = "(-1 = unset / use WC3 level)", Location = new Point(controlX + 110, y), AutoSize = true, ForeColor = Color.Gray });
             y += lineHeight;
 
             // Gold Cost
@@ -2306,6 +2351,10 @@ namespace WC3ItemManager
 
         private void LoadItem()
         {
+            bool previousSuppressItemLevelValidation = suppressItemLevelValidation;
+            suppressItemLevelValidation = true;
+            isLoadingItem = true;
+
             try
             {
                 string existingAbilitiesFromDb = "";
@@ -2356,6 +2405,7 @@ namespace WC3ItemManager
                                 numLumberCost.Value = reader["lumber_cost"] != DBNull.Value ? Convert.ToDecimal(reader["lumber_cost"]) : 0;
                                 numMaxCharges.Value = reader["max_charges"] != DBNull.Value ? Convert.ToDecimal(reader["max_charges"]) : 0;
                                 numMaxStack.Value = reader["max_stack"] != DBNull.Value ? Convert.ToDecimal(reader["max_stack"]) : 0;
+                                numLootLevel.Value = reader["item_level_unclassified"] != DBNull.Value ? Convert.ToDecimal(reader["item_level_unclassified"]) : -1;
                                 txtTooltip.Text = reader["tooltip"]?.ToString() ?? "";
                                 
                                 // Load extended tooltip - clean it up for editing (remove stats/headers)
@@ -2427,7 +2477,6 @@ namespace WC3ItemManager
                 }
                 
                 // Load item stats (suppress auto-generation during load)
-                isLoadingItem = true;
                 var itemStats = tooltipGenerator.LoadItemStats(itemId.Value);
                 statsPicker.SetStatValues(itemStats);
                 
@@ -2533,9 +2582,8 @@ namespace WC3ItemManager
 
                 UpdateCombinedAbilitiesField();
 
-                isLoadingItem = false;
-                
                 // Update item level range validation
+                suppressItemLevelValidation = previousSuppressItemLevelValidation;
                 UpdateItemLevelRange();
                 
                 // Update ability debug display (in case debug checkbox is already checked)
@@ -2550,6 +2598,11 @@ namespace WC3ItemManager
             catch (Exception ex)
             {
                 MessageBox.Show($"Error loading item: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                suppressItemLevelValidation = previousSuppressItemLevelValidation;
+                isLoadingItem = false;
             }
         }
 
@@ -2652,6 +2705,7 @@ namespace WC3ItemManager
                                 class_id = @class_id,
                                 type_id = @type_id,
                                 item_level = @item_level,
+                                item_level_unclassified = @item_level_unclassified,
                                 gold_cost = @gold_cost,
                                 lumber_cost = @lumber_cost,
                                 max_charges = @max_charges,
@@ -2690,14 +2744,14 @@ namespace WC3ItemManager
                         string insertQuery = @"
                             INSERT INTO items (
                                 item_code, item_name, base_id, rarity_id, class_id, type_id,
-                                item_level, gold_cost, lumber_cost, max_charges, max_stack,
+                                item_level, item_level_unclassified, gold_cost, lumber_cost, max_charges, max_stack,
                                 tooltip, tooltip_extended, description, hotkey,
                                 icon_path, model_path, wc3_abilities, wc3_abilities_attachments, manual_abilities_data, wc3_classification,
                                 is_powerup, use_automatically,
                                 is_droppable, is_sellable, is_pawnable, actively_used, dropped_on_death, specific_drop_only
                             ) VALUES (
                                 @item_code, @item_name, @base_id, @rarity_id, @class_id, @type_id,
-                                @item_level, @gold_cost, @lumber_cost, @max_charges, @max_stack,
+                                @item_level, @item_level_unclassified, @gold_cost, @lumber_cost, @max_charges, @max_stack,
                                 @tooltip, @tooltip_extended, @description, @hotkey,
                                 @icon_path, @model_path, @wc3_abilities, @wc3_abilities_attachments, @manual_abilities_data, @wc3_classification,
                                 @is_powerup, @use_automatically,
@@ -2789,6 +2843,7 @@ namespace WC3ItemManager
                 cmd.Parameters.AddWithValue("class_id", classId);
                 cmd.Parameters.AddWithValue("type_id", typeId);
                 cmd.Parameters.AddWithValue("item_level", (int)numLevel.Value);
+                cmd.Parameters.Add("item_level_unclassified", NpgsqlDbType.Integer).Value = GetNullableLootLevelValue();
                 cmd.Parameters.AddWithValue("gold_cost", (int)numGoldCost.Value);
                 cmd.Parameters.AddWithValue("lumber_cost", (int)numLumberCost.Value);
                 cmd.Parameters.AddWithValue("max_charges", (int)numMaxCharges.Value);
@@ -2878,6 +2933,12 @@ namespace WC3ItemManager
                 cmd.Parameters.AddWithValue("dropped_on_death", chkDroppedOnDeath.Checked);
                 cmd.Parameters.AddWithValue("specific_drop_only", chkSpecificDropOnly.Checked);
             }
+        }
+
+        private object GetNullableLootLevelValue()
+        {
+            int lootLevel = (int)(numLootLevel?.Value ?? -1);
+            return lootLevel >= 0 ? (object)lootLevel : DBNull.Value;
         }
 
         private int GetOrCreateRarityId(NpgsqlConnection conn, string name)
@@ -5544,7 +5605,8 @@ namespace WC3ItemManager
                 // Suppress item level validation to prevent auto-adjustment
                 suppressItemLevelValidation = true;
                 numLevel.Value = itemLevel;
-                lblItemLevelRange.Text = $"Consumable (Level: {itemLevel})";
+                numLootLevel.Value = -1;
+                lblItemLevelRange.Text = $"Stack cap: {itemLevel}";
                 lblItemLevelRange.ForeColor = Color.Blue;
                 suppressItemLevelValidation = false;
                 
@@ -6015,9 +6077,9 @@ namespace WC3ItemManager
                             
                             lblItemLevelRange.Text = $"Valid: {minLevel}-{maxLevel}";
                             
-                            // Auto-set item level to min value if creating new item or out of range
+                            // Auto-set only new items. Existing item levels may be stack caps or legacy values.
                             int currentLevel = (int)numLevel.Value;
-                            if (!itemId.HasValue || currentLevel < minLevel || currentLevel > maxLevel)
+                            if (!itemId.HasValue && (currentLevel < minLevel || currentLevel > maxLevel))
                             {
                                 numLevel.Value = minLevel;
                                 currentLevel = minLevel;

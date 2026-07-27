@@ -209,7 +209,7 @@ namespace WC3ItemManager
 
             chkApplyItemLevel = CreateApplyCheckBox();
             numItemLevel = CreateNumericUpDown(0, 999, 120);
-            AddEditorRow(contentPanel, chkApplyItemLevel, "Item Level:", numItemLevel, ref y);
+            AddEditorRow(contentPanel, chkApplyItemLevel, "WC3 Level / Stack Cap:", numItemLevel, ref y);
 
             chkApplyGoldCost = CreateApplyCheckBox();
             numGoldCost = CreateNumericUpDown(0, 999999, 140);

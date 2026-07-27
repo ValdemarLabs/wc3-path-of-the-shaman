@@ -307,14 +307,14 @@ namespace WC3ItemManager
             // Level filters
             Label lblLevel = new Label
             {
-                Text = "Level:",
+                Text = "WC3 Level:",
                 Location = new Point(10, 30),
                 AutoSize = true
             };
 
             numMinLevel = new NumericUpDown
             {
-                Location = new Point(60, 28),
+                Location = new Point(90, 28),
                 Width = 70,
                 Minimum = 0,
                 Maximum = 999,
@@ -325,13 +325,13 @@ namespace WC3ItemManager
             Label lblTo1 = new Label
             {
                 Text = "to",
-                Location = new Point(135, 30),
+                Location = new Point(165, 30),
                 AutoSize = true
             };
 
             numMaxLevel = new NumericUpDown
             {
-                Location = new Point(160, 28),
+                Location = new Point(190, 28),
                 Width = 70,
                 Minimum = 0,
                 Maximum = 999,
@@ -664,8 +664,8 @@ namespace WC3ItemManager
                 "Name (Z-A)",
                 "Recently Added",
                 "Recently Modified",
-                "Level (Low-High)",
-                "Level (High-Low)"
+                "WC3 Level (Low-High)",
+                "WC3 Level (High-Low)"
             });
             cmbSort.SelectedIndex = 0; // Default to Code (A-Z)
             cmbSort.SelectedIndexChanged += CmbSort_SelectedIndexChanged;
@@ -807,6 +807,7 @@ namespace WC3ItemManager
                 {
                     conn.Open();
                     EnsurePowerUpAutoUseIntegrity(conn);
+                    EnsureLootLevelColumn(conn);
                     EnsureRequiredItemClasses(conn);
                     ProfessionItemStatsSeeder.Ensure(conn);
                     EnsureItemClassColors(conn);
@@ -865,6 +866,28 @@ namespace WC3ItemManager
             using (var repairCmd = new NpgsqlCommand(repairQuery, conn))
             {
                 repairCmd.ExecuteNonQuery();
+            }
+        }
+
+        private void EnsureLootLevelColumn(NpgsqlConnection conn)
+        {
+            const string alterQuery = @"
+                ALTER TABLE items
+                ADD COLUMN IF NOT EXISTS item_level_unclassified INTEGER";
+
+            using (var alterCmd = new NpgsqlCommand(alterQuery, conn))
+            {
+                alterCmd.ExecuteNonQuery();
+            }
+
+            const string indexQuery = @"
+                CREATE INDEX IF NOT EXISTS idx_items_item_level_unclassified
+                ON items(item_level_unclassified)
+                WHERE item_level_unclassified IS NOT NULL";
+
+            using (var indexCmd = new NpgsqlCommand(indexQuery, conn))
+            {
+                indexCmd.ExecuteNonQuery();
             }
         }
 
@@ -1019,6 +1042,7 @@ namespace WC3ItemManager
                             COALESCE(r.rarity_name, 'Unknown') as rarity,
                             COALESCE(c.class_name, 'MISC') as class,
                             i.item_level,
+                            i.item_level_unclassified,
                             i.gold_cost,
                             i.tooltip,
                             i.tooltip_extended,
@@ -1094,7 +1118,8 @@ namespace WC3ItemManager
                             dgvItems.Columns["icon_path"].Visible = false;
                             dgvItems.Columns["rarity"].HeaderText = "Rarity";
                             dgvItems.Columns["class"].HeaderText = "Class";
-                            dgvItems.Columns["item_level"].HeaderText = "Level";
+                            dgvItems.Columns["item_level"].HeaderText = "WC3 Level / Stack";
+                            dgvItems.Columns["item_level_unclassified"].HeaderText = "Loot Level";
                             dgvItems.Columns["gold_cost"].HeaderText = "Gold";
                             dgvItems.Columns["type"].HeaderText = "Type";
                             dgvItems.Columns["tooltip"].Visible = false;
@@ -1115,7 +1140,8 @@ namespace WC3ItemManager
                             ApplyColumnWidth("base_id", 80);
                             ApplyColumnWidth("rarity", 100);
                             ApplyColumnWidth("class", 100);
-                            ApplyColumnWidth("item_level", 60);
+                            ApplyColumnWidth("item_level", 110);
+                            ApplyColumnWidth("item_level_unclassified", 80);
                             ApplyColumnWidth("gold_cost", 80);
                             ApplyColumnWidth("type", 80);
                             
@@ -3899,8 +3925,8 @@ namespace WC3ItemManager
                 case 3: return "ORDER BY i.item_name DESC";      // Name (Z-A)
                 case 4: return "ORDER BY i.created_at DESC";     // Recently Added
                 case 5: return "ORDER BY i.updated_at DESC";     // Recently Modified
-                case 6: return "ORDER BY i.item_level ASC";      // Level (Low-High)
-                case 7: return "ORDER BY i.item_level DESC";     // Level (High-Low)
+                case 6: return "ORDER BY i.item_level ASC";      // WC3 Level (Low-High)
+                case 7: return "ORDER BY i.item_level DESC";     // WC3 Level (High-Low)
                 default: return "ORDER BY i.item_code ASC";
             }
         }
