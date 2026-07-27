@@ -75,6 +75,7 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
     private function PRL_ShowDoneImage takes nothing returns nothing
         call ImagesUI_ShowPreload(PRL_IMAGE_DONE, "")
         call HidePreloadTitle()
+        call ExMusic_PlayTrack(35)
     endfunction
 
     private function PRL_HideGameUI takes nothing returns nothing
