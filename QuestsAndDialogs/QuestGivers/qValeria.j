@@ -137,6 +137,22 @@ private function IsRangerMissingInProgress takes nothing returns boolean
     return q.discovered and not q.completed and not q.failed
 endfunction
 
+private function IsRangerMissingCompleted takes nothing returns boolean
+    local QuestData q = GetRangerMissingData()
+    if q == 0 then
+        return false
+    endif
+    return q.completed
+endfunction
+
+private function CanOfferTokenLove takes nothing returns boolean
+    return IsRangerMissingCompleted()
+endfunction
+
+private function CanOfferLostSupplies takes nothing returns boolean
+    return QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_TOKEN_LOVE, Valeria)
+endfunction
+
 private function CreateQuestItemsAtHero takes integer itemTypeId, integer count returns nothing
     local unit source = null
     local unit hero = null
@@ -178,10 +194,55 @@ private function CreateQuestItemsAtHero takes integer itemTypeId, integer count 
     set source = null
 endfunction
 
+private function CreateQuestItemsInRect takes integer itemTypeId, integer count, rect spawnRect returns nothing
+    local integer index = 0
+    local real x
+    local real y
+    local item createdItem
+
+    if count <= 0 then
+        set spawnRect = null
+        return
+    endif
+
+    if spawnRect == null then
+        call CreateQuestItemsAtHero(itemTypeId, count)
+        set spawnRect = null
+        return
+    endif
+
+    set x = GetRectCenterX(spawnRect)
+    set y = GetRectCenterY(spawnRect)
+    loop
+        exitwhen index >= count
+        set createdItem = QuestGiver_CreateQuestItem(itemTypeId, 0, x, y)
+        set index = index + 1
+    endloop
+
+    set createdItem = null
+    set spawnRect = null
+endfunction
+
 private function RefreshQuestAfterAccept takes string questName returns nothing
     local QuestData q = QuestGiver_GetByNameAndGiver(questName, Valeria)
     if q != 0 then
         call QuestGiver_RefreshItemRequirementsForQuest(q.id)
+    endif
+endfunction
+
+private function RefreshValeriaAvailabilityInternal takes nothing returns nothing
+    if Valeria == null then
+        return
+    endif
+
+    call QuestGiver_RefreshAvailabilityForGiver(Valeria)
+
+    if QuestGiver_QuestExistsByNameAndGiver(QUEST_TOKEN_LOVE, Valeria) and not QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_TOKEN_LOVE, Valeria) and not QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_TOKEN_LOVE, Valeria) and not CanOfferTokenLove() then
+        call QuestGiver_SetStateByNameAndGiver(QUEST_TOKEN_LOVE, Valeria, QUEST_STATE_UNAVAILABLE)
+    endif
+
+    if QuestGiver_QuestExistsByNameAndGiver(QUEST_LOST_SUPPLIES, Valeria) and not QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_LOST_SUPPLIES, Valeria) and not QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_LOST_SUPPLIES, Valeria) and not CanOfferLostSupplies() then
+        call QuestGiver_SetStateByNameAndGiver(QUEST_LOST_SUPPLIES, Valeria, QUEST_STATE_UNAVAILABLE)
     endif
 endfunction
 
@@ -194,7 +255,7 @@ private function CompleteItemQuest takes string questName, integer itemTypeId, i
     if HeroItemCheckBothAndRemove(itemTypeId, amount) then
         call QuestGiver_CompleteItemRequirements(q.id)
         call QuestGiver_CompleteQuestByNameAndGiver(questName, Valeria)
-        call QuestGiver_RefreshAvailabilityForGiver(Valeria)
+        call RefreshValeriaAvailabilityInternal()
     endif
 endfunction
 
@@ -216,7 +277,7 @@ endfunction
 private function OnAcceptTokenLoveEnd takes nothing returns nothing
     call QuestGiver_AcceptQuestByNameAndGiver(QUEST_TOKEN_LOVE, Valeria)
     call RefreshQuestAfterAccept(QUEST_TOKEN_LOVE)
-    call CreateQuestItemsAtHero(ITEM_HEART_OCEAN, TOKEN_HEART_REQUIRED)
+    call CreateQuestItemsInRect(ITEM_HEART_OCEAN, TOKEN_HEART_REQUIRED, gg_rct_ItemTokenLove)
     call StartExitFadeOut()
 endfunction
 
@@ -316,7 +377,10 @@ endfunction
 
 private function OnFarewell takes nothing returns nothing
     local unit hero = ResolveDialogHero()
-    local integer seq = DialogInteraction_CreateFarewellSequence(Valeria, "Valeria", hero, DialogInteraction_GetHeroName(hero), DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
+    local integer seq
+
+    call DialogInteraction_BeginDialogSequence()
+    set seq = DialogInteraction_CreateFarewellSequence(Valeria, "Valeria", hero, DialogInteraction_GetHeroName(hero), DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
 
     call DialogSystem_SetSequenceCallbacks(seq, null, function OnFarewellEnd)
     call DialogSystem_PlaySequence(seq, Player(0), Valeria)
@@ -342,8 +406,10 @@ private function BuildDialog takes nothing returns nothing
 
     call QuestGiver_AddAvailableQuestAcceptButton(ValeriaDialog, QUEST_TOKEN_LOVE, Valeria, 1, function OnAcceptTokenLove, true, false)
     call QuestGiver_AddReadyQuestCompleteButton(ValeriaDialog, QUEST_TOKEN_LOVE, Valeria, 2, function OnCompleteTokenLove, true)
-    call QuestGiver_AddAvailableQuestAcceptButton(ValeriaDialog, QUEST_LOST_SUPPLIES, Valeria, 3, function OnAcceptLostSupplies, true, false)
-    call QuestGiver_AddReadyQuestCompleteButton(ValeriaDialog, QUEST_LOST_SUPPLIES, Valeria, 4, function OnCompleteLostSupplies, true)
+    if CanOfferLostSupplies() then
+        call QuestGiver_AddAvailableQuestAcceptButton(ValeriaDialog, QUEST_LOST_SUPPLIES, Valeria, 3, function OnAcceptLostSupplies, true, false)
+        call QuestGiver_AddReadyQuestCompleteButton(ValeriaDialog, QUEST_LOST_SUPPLIES, Valeria, 4, function OnCompleteLostSupplies, true)
+    endif
     set b = DialogSystem_AddFarewellButton(ValeriaDialog)
     call DialogSystem_BindButtonCode(b, function OnFarewell)
     set b = null
@@ -399,7 +465,7 @@ private function ContinueToDialogInternal takes nothing returns nothing
     if IsRangerMissingInProgress() then
         call PlayRangerMissingUnfinishedSequence(hero)
     else
-        call QuestGiver_RefreshAvailabilityForGiver(Valeria)
+        call RefreshValeriaAvailabilityInternal()
         call BuildDialog()
         call PlayDialogGreeting(hero)
     endif
@@ -431,27 +497,35 @@ endfunction
 private function CreateQuests takes nothing returns nothing
     local QuestData q
     local string giverName = DialogInteraction_GetUnitDisplayName(Valeria)
-    local string infoText = "|cff99ff99Quest Giver:|r " + giverName
-    local string info2Text = "|cff99ff99Location:|r Ruins of Elarindor"
+    local string infoText = "|cffffcc00Quest giver:|r " + giverName + "\n"
+    local string info2Text = "|cffffcc00Recommended level:|r 18\n\n"
+    local trigger availabilityCondition
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_TOKEN_LOVE, Valeria) then
-        set q = QuestGiver_CreateConfiguredQuest(QUEST_TOKEN_LOVE, Valeria, "normal", 15, null, "Token of Love", "ReplaceableTextures\\CommandButtons\\BTNINV_Jewelry_Necklace_11.TGA", "Find Valeria's missing necklace somewhere around the ruins of Elarindor.\n\n", infoText, info2Text, 18, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
+        set q = QuestGiver_CreateConfiguredQuest(QUEST_TOKEN_LOVE, Valeria, "normal", 18, null, "Token of Love", "ReplaceableTextures\\CommandButtons\\BTNINV_Jewelry_Necklace_11.TGA", "Find Valeria's missing necklace somewhere around the ruins of Elarindor.\n\n", infoText, info2Text, 15, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
         call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_ENEMY)
         call QuestGiver_SetQuestRewards(q, true, 0, true, 0, false, 0, true, 200, false)
         call QuestGiver_AddQuestPrerequisite(q, QUEST_RANGER_MISSING, Aradion)
+        set availabilityCondition = CreateTrigger()
+        call TriggerAddCondition(availabilityCondition, Condition(function CanOfferTokenLove))
+        call QuestGiver_SetQuestCustomCondition(q, availabilityCondition)
         call QuestGiver_SetRequirements(q.id, "", "Find Valeria's missing necklace", "", "", "", "", "", "", "")
         call QuestGiver_RegisterItemRequirement(q.id, Valeria, 1, ITEM_HEART_OCEAN, TOKEN_HEART_REQUIRED)
     endif
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_LOST_SUPPLIES, Valeria) then
-        set q = QuestGiver_CreateConfiguredQuest(QUEST_LOST_SUPPLIES, Valeria, "normal", 15, null, "Lost Supplies", "ReplaceableTextures\\CommandButtons\\BTNINV_Crate_03.TGA", "Find supplies found around the ruins of Elarindor.\n\n", infoText, info2Text, 18, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
+        set q = QuestGiver_CreateConfiguredQuest(QUEST_LOST_SUPPLIES, Valeria, "normal", 18, null, "Lost Supplies", "ReplaceableTextures\\CommandButtons\\BTNINV_Crate_03.TGA", "Find supplies found around the ruins of Elarindor.\n\n", infoText, info2Text, 15, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Elarindor", giverName)
         call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_ENEMY)
         call QuestGiver_SetQuestRewards(q, true, 0, true, 0, false, 0, true, 200, false)
         call QuestGiver_AddQuestPrerequisite(q, QUEST_TOKEN_LOVE, Valeria)
+        set availabilityCondition = CreateTrigger()
+        call TriggerAddCondition(availabilityCondition, Condition(function CanOfferLostSupplies))
+        call QuestGiver_SetQuestCustomCondition(q, availabilityCondition)
         call QuestGiver_SetRequirements(q.id, "", "Find lost supplies", "", "", "", "", "", "", "")
         call QuestGiver_RegisterItemRequirement(q.id, Valeria, 1, ITEM_SUPPLIES, SUPPLIES_REQUIRED)
     endif
 
+    set availabilityCondition = null
     set q = 0
 endfunction
 
@@ -471,7 +545,7 @@ private function InitDelayed takes nothing returns nothing
     call DialogInteraction_ConfigureDialogTransition(Valeria, CINEMATIC_MOVE_MODE, CINEMATIC_MOVE_OFFSET, CINEMATIC_MOVE_ANGLE, CAMERA_DIST, CAMERA_Z_OFFSET, CAMERA_ANGLE, CAMERA_ROT_OFFSET, CAMERA_FAR_Z, CAMERA_FOV, CAMERA_BLOCK_RADIUS, CAMERA_BLOCK_CHECK)
     call RegisterDialogLines()
     call CreateQuests()
-    call QuestGiver_RefreshAvailabilityForGiver(Valeria)
+    call RefreshValeriaAvailabilityInternal()
     call DialogInteraction_RegisterSelectionHandler(Valeria, function OnSelected)
     call DebugMsg("Initialized.")
 endfunction
@@ -483,9 +557,7 @@ endfunction
 
 public function RefreshAvailability takes nothing returns nothing
     call SyncUnitReferences()
-    if Valeria != null then
-        call QuestGiver_RefreshAvailabilityForGiver(Valeria)
-    endif
+    call RefreshValeriaAvailabilityInternal()
 endfunction
 
 public function RefreshRespawnedUnitHooks takes nothing returns nothing
