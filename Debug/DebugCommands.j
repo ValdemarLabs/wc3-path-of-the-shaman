@@ -612,7 +612,7 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
         endif
 
         if spawnedPool == null then
-            call DBG_Message(whichPlayer, "Failed to spawn " + GNU_GetDefinitionName(defId) + " " + DBG_RawCodeText(GNU_GetDefinitionUnitCode(defId)) + " in " + zoneName + ". Check water/terrain restrictions.")
+            call DBG_Message(whichPlayer, "Failed to spawn " + GNU_GetDefinitionName(defId) + " " + DBG_RawCodeText(GNU_GetDefinitionUnitCode(defId)) + " in " + zoneName + ". Check water/terrain restrictions or FishRects.")
         else
             call DBG_Message(whichPlayer, "Spawned " + GNU_GetDefinitionName(defId) + " " + DBG_RawCodeText(GNU_GetDefinitionUnitCode(defId)) + " in " + zoneName + " at camera target.")
         endif
