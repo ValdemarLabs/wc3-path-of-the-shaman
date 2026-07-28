@@ -1013,11 +1013,15 @@ private function GNU_IsFishPoolDefinition takes integer defId returns boolean
 endfunction
 
 private function GNU_IsFishPoolTerrainAllowed takes integer zoneId, real x, real y returns boolean
+    if GN_IsPointInFishRect(zoneId, x, y) then
+        return true
+    endif
+
     if not GN_IsTerrainAllowedForNode(zoneId, x, y, false, false) then
         return false
     endif
 
-    return GN_IsWaterUnwalkable(x, y)
+    return GN_IsWaterLikeTerrain(x, y)
 endfunction
 
 // Spawn a unit at specific coordinates
@@ -1112,11 +1116,19 @@ function GNU_SpawnUnitInZone takes integer defId, integer zoneId, integer assign
     local real y
     local integer attempts = 0
     local unit u = null
+
+    if GNU_IsFishPoolDefinition(defId) then
+        set r = GN_GetZoneFishSpawnRect(zoneId)
+        if r == null then
+            set r = GetZoneSpawnRect(zoneId)
+        endif
+    endif
     
     if r == null then
         if GN_IsDebugMode() then
             call BJDebugMsg("|cffff8800[GatherNodeUnits]|r No zone spawn rect configured in ZonesCore for zone " + I2S(zoneId))
         endif
+        set r = null
         return null
     endif
     
@@ -1139,6 +1151,7 @@ function GNU_SpawnUnitInZone takes integer defId, integer zoneId, integer assign
         set attempts = attempts + 1
     endloop
     
+    set r = null
     return u
 endfunction
 

@@ -223,6 +223,55 @@ function GN_IsPointInWaterIgnoreRect takes integer zoneId, real x, real y return
     return false
 endfunction
 
+function GN_IsPointInFishRect takes integer zoneId, real x, real y returns boolean
+    local ZoneData z = ZonesCore_GetZoneData(zoneId)
+    local integer i = 0
+    local rect r
+
+    if z == 0 then
+        return false
+    endif
+
+    loop
+        exitwhen i >= z.fishRectCount
+        set r = z.fishRects[i]
+        if r != null and RectContainsCoords(r, x, y) then
+            set r = null
+            return true
+        endif
+        set i = i + 1
+    endloop
+
+    set r = null
+    return false
+endfunction
+
+function GN_GetZoneFishSpawnRect takes integer zoneId returns rect
+    local ZoneData z = ZonesCore_GetZoneData(zoneId)
+    local integer startIndex
+    local integer i = 0
+    local integer rectIndex
+
+    if z == 0 or z.fishRectCount <= 0 then
+        return null
+    endif
+
+    set startIndex = GetRandomInt(0, z.fishRectCount - 1)
+    loop
+        exitwhen i >= z.fishRectCount
+        set rectIndex = startIndex + i
+        if rectIndex >= z.fishRectCount then
+            set rectIndex = rectIndex - z.fishRectCount
+        endif
+        if z.fishRects[rectIndex] != null then
+            return z.fishRects[rectIndex]
+        endif
+        set i = i + 1
+    endloop
+
+    return null
+endfunction
+
 // Check if a point is pathable (simple check)
 function GN_IsPointPathable takes real x, real y returns boolean
     local item testItem = CreateItem('afac', x, y)
