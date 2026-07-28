@@ -20,6 +20,7 @@
     - set amount = ShamanCommon_GetHealingAmount(caster, abilityId, valueType, statType, statScale)
     - set amount = ShamanCommon_GetHybridDamageAmount(caster, abilityId, valueType, primaryStat, primaryScale, secondaryStat, secondaryScale)
     - call ShamanCommon_SetRealField(caster, abilityId, field, value)
+    - call ShamanCommon_SetStringField(caster, abilityId, field, value)
     - call ShamanCommon_ApplyCooldownReduction(caster, abilityId)
     - call ShamanCommon_RefreshAbility(caster, abilityId)
     - set dummy = ShamanCommon_CreateTimedDummy(owner, unitTypeId, x, y, facing, duration)
@@ -303,6 +304,15 @@ public function SetIntegerField takes unit caster, integer abilityId, abilityint
     local ability whichAbility = BlzGetUnitAbility(caster, abilityId)
     if whichAbility != null then
         call BlzSetAbilityIntegerLevelField(whichAbility, whichField, rank - 1, value)
+    endif
+    set whichAbility = null
+endfunction
+
+public function SetStringField takes unit caster, integer abilityId, abilitystringlevelfield whichField, string value returns nothing
+    local integer rank = GetAbilityRank(caster, abilityId)
+    local ability whichAbility = BlzGetUnitAbility(caster, abilityId)
+    if whichAbility != null then
+        call BlzSetAbilityStringLevelField(whichAbility, whichField, rank - 1, value)
     endif
     set whichAbility = null
 endfunction
