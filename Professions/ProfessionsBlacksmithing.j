@@ -25,6 +25,7 @@ globals
     // Workstation and material configuration.
     private constant integer PB_STATION_ANVIL = 'n62R'
     private constant integer PB_ITEM_COPPER_BAR = 'I67M'
+    private constant integer PB_ITEM_BLACKSMITH_HAMMER = 'I700'
     private constant boolean PB_AI_CHEAT_CRAFTING = true
     private constant string PB_CRAFTER_ANIMATION_PRIMARY = "stand work"
     private constant string PB_CRAFTER_ANIMATION_FALLBACK = "attack"
@@ -47,29 +48,26 @@ globals
     private constant integer PB_ITEM_COPPER_CHAIN_BELT = 'I68K'
     private constant integer PB_ITEM_COPPER_CHAIN_SHOULDERS = 'I68L'
     private constant integer PB_ITEM_COPPER_CHAIN_BOOTS = 'I68M'
-
-    // Recipe icon paths.
-    private constant string PB_ICON_ARMOR = "ReplaceableTextures\\CommandButtons\\BTNThoriumArmor.blp"
-    private constant string PB_ICON_CHEST = "war3campImported\\BTNINV_Chest_Chain_10.blp"
 endglobals
 
-private function PB_RegisterCopperArmor takes string recipeName, string description, string iconPath, integer outputItemCode, integer requiredSkill, integer copperBars returns nothing
-    local integer recipeId = Professions_RegisterRecipe(GNS_PROF_BLACKSMITHING, PB_STATION_ANVIL, recipeName, description, iconPath, outputItemCode, 1, requiredSkill, 5.00, 0.00)
+private function PB_RegisterCopperArmor takes string recipeName, string description, integer outputItemCode, integer requiredSkill, integer copperBars returns nothing
+    local integer recipeId = Professions_RegisterRecipe(GNS_PROF_BLACKSMITHING, PB_STATION_ANVIL, recipeName, description, "", outputItemCode, 1, requiredSkill, 5.00, 0.00)
 
     call Professions_AddRecipeMaterial(recipeId, PB_ITEM_COPPER_BAR, copperBars, "Copper Bar")
+    call Professions_SetRecipeRequiredItem(recipeId, PB_ITEM_BLACKSMITH_HAMMER, "Blacksmith's Hammer")
     call Professions_SetRecipeCategoryPath(recipeId, PB_CATEGORY_APPRENTICE, PB_SUBCATEGORY_COPPER_ARMOR)
     call Professions_SetRecipeSkillGain(recipeId, 1)
 endfunction
 
 private function PB_RegisterRecipes takes nothing returns nothing
-    call PB_RegisterCopperArmor("Copper Chain Belt", "Forges a copper chain belt.", PB_ICON_ARMOR, PB_ITEM_COPPER_CHAIN_BELT, 0, 4)
-    call PB_RegisterCopperArmor("Copper Chain Boots", "Forges copper chain boots.", PB_ICON_ARMOR, PB_ITEM_COPPER_CHAIN_BOOTS, 5, 6)
-    call PB_RegisterCopperArmor("Copper Chain Bracers", "Forges copper chain bracers.", PB_ICON_ARMOR, PB_ITEM_COPPER_CHAIN_BRACERS, 5, 4)
-    call PB_RegisterCopperArmor("Copper Chain Gauntlets", "Forges copper chain gauntlets.", PB_ICON_ARMOR, PB_ITEM_COPPER_CHAIN_GAUNTLETS, 10, 5)
-    call PB_RegisterCopperArmor("Copper Chain Helmet", "Forges a copper chain helmet.", PB_ICON_ARMOR, PB_ITEM_COPPER_CHAIN_HELMET, 15, 7)
-    call PB_RegisterCopperArmor("Copper Chain Shoulders", "Forges copper chain shoulders.", PB_ICON_ARMOR, PB_ITEM_COPPER_CHAIN_SHOULDERS, 20, 7)
-    call PB_RegisterCopperArmor("Copper Chain Leggings", "Forges copper chain leggings.", PB_ICON_ARMOR, PB_ITEM_COPPER_CHAIN_LEGGINGS, 20, 8)
-    call PB_RegisterCopperArmor("Copper Chain Vest", "Forges a copper chain vest.", PB_ICON_CHEST, PB_ITEM_COPPER_CHAIN_VEST, 25, 10)
+    call PB_RegisterCopperArmor("Copper Chain Belt", "Forges a copper chain belt.", PB_ITEM_COPPER_CHAIN_BELT, 0, 4)
+    call PB_RegisterCopperArmor("Copper Chain Boots", "Forges copper chain boots.", PB_ITEM_COPPER_CHAIN_BOOTS, 5, 6)
+    call PB_RegisterCopperArmor("Copper Chain Bracers", "Forges copper chain bracers.", PB_ITEM_COPPER_CHAIN_BRACERS, 5, 4)
+    call PB_RegisterCopperArmor("Copper Chain Gauntlets", "Forges copper chain gauntlets.", PB_ITEM_COPPER_CHAIN_GAUNTLETS, 10, 5)
+    call PB_RegisterCopperArmor("Copper Chain Helmet", "Forges a copper chain helmet.", PB_ITEM_COPPER_CHAIN_HELMET, 15, 7)
+    call PB_RegisterCopperArmor("Copper Chain Shoulders", "Forges copper chain shoulders.", PB_ITEM_COPPER_CHAIN_SHOULDERS, 20, 7)
+    call PB_RegisterCopperArmor("Copper Chain Leggings", "Forges copper chain leggings.", PB_ITEM_COPPER_CHAIN_LEGGINGS, 20, 8)
+    call PB_RegisterCopperArmor("Copper Chain Vest", "Forges a copper chain vest.", PB_ITEM_COPPER_CHAIN_VEST, 25, 10)
 endfunction
 
 public function Init takes nothing returns nothing
