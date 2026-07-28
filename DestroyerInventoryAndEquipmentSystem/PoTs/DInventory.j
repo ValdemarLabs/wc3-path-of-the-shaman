@@ -22,6 +22,9 @@ trigger trg_OpenDInvAbilityUsed = CreateTrigger()
 trigger trg_AutoAddNewHeroToDInv = CreateTrigger()
 trigger trg_ItemObtainedDI = CreateTrigger()
 trigger trg_InventoryToggleButtonClicked = CreateTrigger()
+trigger trg_DInvGiveButtonClicked = CreateTrigger()
+trigger trg_DInvGiveUnitSelected = CreateTrigger()
+trigger trg_DInvGiveUnitDeselected = CreateTrigger()
 
 // LowestFrame is the parent used to hold all the inventory related frames
 framehandle array InventoryLowestFrame[24]
@@ -89,12 +92,18 @@ string InventoryTooltipGoldIconTexture = "UI\\Widgets\\ToolTips\\Human\\ToolTipG
 // Close / X Button
 framehandle array InventoryXButtonFrame[24]
 framehandle array InventoryXButtonIconFrame[24]
+framehandle array InventoryGiveButtonFrame[24]
+unit array DInvGiveSelectedUnit[24]
 string InventoryXButtonIconTexture = "UI\\Widgets\\EscMenu\\Human\\checkbox-background-disabled.blp"
 //CONFIGURE in function LoadBugProtectionActions: These are actually set up in loadbug protection actions, because they rely on the slots being drawn and calculated
 real InventoryCloseTopLeftX = 0
 real InventoryCloseTopLeftY = 0
 real InventoryCloseBotRightX = 0
 real InventoryCloseBotRightY = 0
+real InventoryGiveTopLeftX = 0
+real InventoryGiveTopLeftY = 0
+real InventoryGiveBotRightX = 0
+real InventoryGiveBotRightY = 0
 framehandle array InventoryXButtonTipFrame[24]
 framehandle array InventoryXButtonTipTextFrame[24]
 
@@ -222,12 +231,35 @@ endfunction
 
 
 
+function DInvGiveSetButtonVisible takes integer pid, boolean visible returns nothing
+if InventoryGiveButtonFrame[pid] != null and GetLocalPlayer() == Player(pid) then
+call BlzFrameSetVisible(InventoryGiveButtonFrame[pid], visible)
+endif
+endfunction
+
+
+
+function DInvGiveRefreshButtonForPlayer takes player viewer returns nothing
+local integer pid = GetPlayerId(viewer)
+local integer bid = CurrentBID[pid]
+local integer slotId = SourceDItemSlotIdActive[pid]
+if DInvCurrentInspectMode[pid] == FALSE and DInvCurrentUnit[pid] != null and bid > 0 and slotId > -1 and DInventoryDB[bid].item[slotId] != null then
+call DInvGiveSetButtonVisible(pid, TRUE)
+else
+call DInvGiveSetButtonVisible(pid, FALSE)
+endif
+set viewer = null
+endfunction
+
+
+
 function DeactivateActiveDItemSlotIds takes integer pid returns nothing
 ////call BJDebugMsg("Deactivating frameId: "+I2S(pid*340+SourceDItemFrameIdActive[pid]))
 call BlzFrameSetVisible(InventorySlotButtonModelFrame[pid*340+SourceDItemFrameIdActive[pid]], FALSE)
 set SourceDItemSlotIdActive[pid] = -1
 set SourceDItemFrameIdActive[pid] = -1
 set SourceDItemPage[pid] = -1
+call DInvGiveRefreshButtonForPlayer(Player(pid))
 endfunction
 
 
@@ -235,6 +267,7 @@ endfunction
 function ActivateCurrentFrameIds takes integer pid returns nothing
 ////call BJDebugMsg("Activating frameId: "+I2S(pid*340+SourceDItemFrameIdActive[pid]))
 call BlzFrameSetVisible(InventorySlotButtonModelFrame[pid*340+SourceDItemFrameIdActive[pid]], TRUE)
+call DInvGiveRefreshButtonForPlayer(Player(pid))
 endfunction
 
 
@@ -783,6 +816,7 @@ call BlzFrameSetVisible(InventoryLowestFrame[pid], FALSE)
 call BlzFrameSetVisible(InventoryMainFrame[pid], FALSE)
 call BlzFrameSetVisible(InventoryXButtonFrame[pid], FALSE)
 call BlzFrameSetVisible(InventoryXButtonIconFrame[pid], FALSE)
+call BlzFrameSetVisible(InventoryGiveButtonFrame[pid], FALSE)
 //Page buttons here
 call BlzFrameSetVisible(InventoryPageLeftButtonFrame[pid], false)
 call BlzFrameSetVisible(InventoryPageRightButtonFrame[pid], false)
@@ -1003,6 +1037,7 @@ if pid == localplyr then
         endif
 
         call UnitDInventoryDBIntoDInventoryFrames(pid, bid)
+        call DInvGiveRefreshButtonForPlayer(Player(pid))
     endif
 endif
 ////call BJDebugMsg("OpenDInventory finished")
@@ -1102,7 +1137,7 @@ local unit u = null
 loop
     exitwhen eqid > EQIDCounter
     set u = DInvUnits.unit[eqid]
-    if u != null and u != caster and BIDOfUnit(u) > 0 and UnitAlive(u) == TRUE and IsUnitSelected(u, viewer) then
+    if u != null and u != caster and DInvCanPlayerInspectUnit(viewer, u) == TRUE and IsUnitSelected(u, viewer) then
     set viewer = null
     set caster = null
     return u
@@ -1523,6 +1558,13 @@ call BlzFrameSetTooltip(InventoryXButtonFrame[pid], InventoryXButtonTipFrame[pid
         // Disable mouse control for the text:
         call BlzFrameSetEnable(InventoryXButtonTipTextFrame[pid], FALSE)
         call BlzFrameSetVisible(InventoryXButtonTipFrame[pid], false)
+
+set InventoryGiveButtonFrame[pid] = BlzCreateFrameByType("GLUETEXTBUTTON", "GiveButt"+I2S(pid), InventoryLowestFrame[pid], "ScriptDialogButton", 0)
+call BlzFrameSetText(InventoryGiveButtonFrame[pid], "Give")
+call BlzFrameSetTextAlignment(InventoryGiveButtonFrame[pid], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
+call BlzFrameSetAbsPoint(InventoryGiveButtonFrame[pid], FRAMEPOINT_TOPLEFT, InventoryGiveTopLeftX, InventoryGiveTopLeftY)
+call BlzFrameSetAbsPoint(InventoryGiveButtonFrame[pid], FRAMEPOINT_BOTTOMRIGHT, InventoryGiveBotRightX, InventoryGiveBotRightY)
+call BlzFrameSetVisible(InventoryGiveButtonFrame[pid], false)
 //Page buttons here
 set InventoryPageLeftButtonFrame[pid] = BlzCreateFrameByType("GLUEBUTTON", "PageLeftButt"+I2S(pid), InventoryLowestFrame[pid], "ScoreScreenTabButtonTemplate", 0)
 set InventoryPageRightButtonFrame[pid] = BlzCreateFrameByType("GLUEBUTTON", "PageRightButt"+I2S(pid), InventoryLowestFrame[pid], "ScoreScreenTabButtonTemplate", 0)
@@ -1573,6 +1615,7 @@ call BlzFrameSetVisible(InventoryPageRightButtonFrame[pid], false)
 call BlzFrameSetVisible(InventoryPageCounterTextFrame[pid], false)
 call BlzFrameSetVisible(InventoryXButtonIconFrame[pid], false)
 call BlzFrameSetVisible(InventoryXButtonFrame[pid], false)
+call BlzFrameSetVisible(InventoryGiveButtonFrame[pid], false)
 call BlzFrameSetVisible(InventoryMainFrame[pid], false)
 call BlzFrameSetVisible(InventoryLowestFrame[pid], false)
 endfunction
@@ -1601,6 +1644,60 @@ endfunction
 
 
 
+function DInvGiveUnitSelectedActions takes nothing returns nothing
+set DInvGiveSelectedUnit[GetPlayerId(GetTriggerPlayer())] = GetTriggerUnit()
+endfunction
+
+
+
+function DInvGiveUnitDeselectedActions takes nothing returns nothing
+local integer pid = GetPlayerId(GetTriggerPlayer())
+if DInvGiveSelectedUnit[pid] == GetTriggerUnit() then
+set DInvGiveSelectedUnit[pid] = null
+endif
+endfunction
+
+
+
+function DInvGiveButtonClickedActions takes nothing returns nothing
+local player localplyr = GetLocalPlayer()
+local player plyr = GetTriggerPlayer()
+local integer pid = GetPlayerId(plyr)
+local unit sourceUnit = DInvCurrentUnit[pid]
+local unit targetUnit = DInvGiveSelectedUnit[pid]
+local integer sourceSlotId = SourceDItemSlotIdActive[pid]
+local integer result = DINV_TRANSFER_RESULT_INVALID
+local framehandle myFrame = BlzGetTriggerFrame()
+if plyr == localplyr then
+call BlzFrameSetEnable(myFrame, false)
+call BlzFrameSetEnable(myFrame, true)
+call StopCamera()
+endif
+if sourceUnit == null or sourceSlotId < 0 or targetUnit == null or targetUnit == sourceUnit or UnitAlive(targetUnit) == FALSE then
+call DInvPlayInventoryErrorForUnit(sourceUnit, "Target unit doesn't have inventory.")
+elseif DInvCurrentInspectMode[pid] == TRUE then
+call DInvGiveSetButtonVisible(pid, FALSE)
+else
+set result = DInvTransferStoredItemToUnit(sourceUnit, sourceSlotId, targetUnit)
+    if result == DINV_TRANSFER_RESULT_TARGET_FULL then
+    call DInvPlayInventoryErrorForUnit(sourceUnit, "Target unit inventory is full.")
+    elseif result == DINV_TRANSFER_RESULT_NO_TARGET_INVENTORY then
+    call DInvPlayInventoryErrorForUnit(sourceUnit, "Target unit doesn't have inventory.")
+    elseif result == DINV_TRANSFER_RESULT_DINV or result == DINV_TRANSFER_RESULT_VANILLA then
+    call DeactivateActiveDItemSlotIds(pid)
+    else
+    call DInvGiveRefreshButtonForPlayer(plyr)
+    endif
+endif
+set localplyr = null
+set plyr = null
+set sourceUnit = null
+set targetUnit = null
+set myFrame = null
+endfunction
+
+
+
 function LoadBugProtectionActions takes nothing returns nothing
 // As of 2023 September, there is a bug in Warcraft III's current patch, where logic containing frames always crashes the game upon loading a save game
 // Because of that, we set certain variables during EVENT_GAME_LOADED rather than map initialization
@@ -1611,8 +1708,10 @@ call DestroyTrigger(trg_PageLeftClicked)
 call DestroyTrigger(trg_PageRightClicked)
 call DestroyTrigger(trg_InfiniteStackingButtonClicked)
 call DestroyTrigger(trg_InventorySlotClicked)
+call DestroyTrigger(trg_DInvGiveButtonClicked)
 
 set trg_InventoryToggleButtonClicked = CreateTrigger()
+set trg_DInvGiveButtonClicked = CreateTrigger()
 
 set trg_PageLeftClicked = CreateTrigger()
 set trg_PageRightClicked = CreateTrigger()
@@ -1633,6 +1732,10 @@ set InventoryCloseTopLeftX = InventoryBotRightX
 set InventoryCloseTopLeftY = InventoryTopLeftY
 set InventoryCloseBotRightX = InventoryCloseTopLeftX + 0.03
 set InventoryCloseBotRightY = InventoryCloseTopLeftY - 0.03
+set InventoryGiveTopLeftX = InventoryTopLeftX
+set InventoryGiveTopLeftY = InventoryTopLeftY + 0.055
+set InventoryGiveBotRightX = InventoryGiveTopLeftX + 0.06
+set InventoryGiveBotRightY = InventoryGiveTopLeftY - 0.03
 
 set InventoryPageLeftTopLeftX = InventoryBotRightX
 set InventoryPageLeftTopLeftY = InventoryTopLeftY - 0.03 - 0.03 - InventorySlotGap - InventorySlotGap - InventorySlotGap
@@ -1675,6 +1778,7 @@ loop
     call BlzTriggerRegisterFrameEvent(trg_PageLeftClicked, InventoryPageLeftButtonFrame[i], FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(trg_PageRightClicked, InventoryPageRightButtonFrame[i], FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(trg_InventoryToggleButtonClicked, InventoryXButtonFrame[i], FRAMEEVENT_CONTROL_CLICK)
+    call BlzTriggerRegisterFrameEvent(trg_DInvGiveButtonClicked, InventoryGiveButtonFrame[i], FRAMEEVENT_CONTROL_CLICK)
         if InfiniteStackingSystemAllowed == TRUE then
         call BlzTriggerRegisterFrameEvent(trg_InfiniteStackingButtonClicked, InfiniteStackingCheckBoxFrame[i], FRAMEEVENT_CONTROL_CLICK)
         endif
@@ -1687,6 +1791,7 @@ call TriggerAddAction(trg_InventoryToggleButtonClicked, function InventoryButton
 call TriggerAddAction(trg_PageLeftClicked, function PageLeftClickedActions)
 call TriggerAddAction(trg_PageRightClicked, function PageRightClickedActions)
 call TriggerAddAction(trg_InventorySlotClicked, function InventorySlotClickedActions)
+call TriggerAddAction(trg_DInvGiveButtonClicked, function DInvGiveButtonClickedActions)
 call TriggerAddAction(trg_InfiniteStackingButtonClicked, function InfiniteStackingButtonClickedActions)
 ////call BJDebugMsg("LoadBugProtectionActions function finished")
 endfunction
@@ -1778,6 +1883,8 @@ loop
         set DInvTotalPlayers = DInvTotalPlayers + 1
 
         call TriggerRegisterPlayerUnitEvent( trg_OpenDInvAbilityUsed, Player(i), EVENT_PLAYER_UNIT_SPELL_EFFECT, null )
+        call TriggerRegisterPlayerUnitEvent(trg_DInvGiveUnitSelected, Player(i), EVENT_PLAYER_UNIT_SELECTED, null)
+        call TriggerRegisterPlayerUnitEvent(trg_DInvGiveUnitDeselected, Player(i), EVENT_PLAYER_UNIT_DESELECTED, null)
 
         set DInvDoubleClickTimer[i] = CreateTimer()
     endif
@@ -1797,6 +1904,8 @@ endif
 
 call TriggerAddCondition(trg_OpenDInvAbilityUsed, function OpenDInvAbilityUsedCond)
 call TriggerAddAction(trg_OpenDInvAbilityUsed, function OpenDInvAbilityUsedActions)
+call TriggerAddAction(trg_DInvGiveUnitSelected, function DInvGiveUnitSelectedActions)
+call TriggerAddAction(trg_DInvGiveUnitDeselected, function DInvGiveUnitDeselectedActions)
 
 call LoadBugProtectionActions()
 
