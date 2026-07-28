@@ -93,7 +93,8 @@ globals
     private constant string EXSOUND_EDITOR_VARIABLE_PREFIX = "gg_snd_"
 
     constant real           EXSOUND_3D_MIN_DISTANCE = 600.00
-    constant real           EXSOUND_3D_CUTOFF = 1500.00
+    constant real           EXSOUND_3D_MAX_DISTANCE = 10000.00
+    constant real           EXSOUND_3D_CUTOFF = 4000.00
     constant real           EXSOUND_UNIT_Z = 64.00
 
     constant real           EXSOUND_FALLBACK_DURATION = 5.0     // seconds if sound duration cannot be determined
@@ -243,7 +244,7 @@ function ExSound_Apply3DAtPointEx takes sound whichSound, real x, real y, real z
     set actualMinDistance = ExSound_GetMinDistance(minDistance)
     set actualCutoff = ExSound_GetCutoff(cutoff)
 
-    call SetSoundDistances(whichSound, actualMinDistance, actualCutoff)
+    call SetSoundDistances(whichSound, actualMinDistance, EXSOUND_3D_MAX_DISTANCE)
     call SetSoundDistanceCutoff(whichSound, actualCutoff)
     call SetSoundPosition(whichSound, x, y, z)
 endfunction
