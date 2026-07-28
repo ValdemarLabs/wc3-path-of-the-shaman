@@ -1,0 +1,29 @@
+Murloc Heads
+    Events
+        Unit - A unit Dies
+    Conditions
+        (QuestMurlocsHeads is discovered) Equal to True
+        Or - Any (Conditions) are true
+            Conditions
+                (Unit-type of (Dying unit)) Equal to Murloc Sorcerer
+                (Unit-type of (Dying unit)) Equal to Murloc Tidecaller
+                (Unit-type of (Dying unit)) Equal to Margul
+                (Unit-type of (Dying unit)) Equal to Mur'gal
+                (Unit-type of (Dying unit)) Equal to Murloc Tiderunner
+                (Unit-type of (Dying unit)) Equal to Murloc Huntsman
+                (Unit-type of (Dying unit)) Equal to Murloc Nightcrawler
+                (Unit-type of (Dying unit)) Equal to Murloc Flesheater
+                (Unit-type of (Dying unit)) Equal to Murloc Plaguebearer
+                (Unit-type of (Dying unit)) Equal to Murloc Mutant
+    Actions
+        Set VariableSet Random = (Random integer number between 1 and 3)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Random Equal to 1
+            Then - Actions
+                Set VariableSet DyingUnitPos = (Position of (Dying unit))
+                Item - Create Murloc Head at DyingUnitPos
+                Custom script:   call RemoveLocation(udg_DyingUnitPos)
+            Else - Actions
+        Set VariableSet Random = 0
+        Trigger - Remove (This trigger) from the trigger queue

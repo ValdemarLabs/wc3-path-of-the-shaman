@@ -1,0 +1,17 @@
+Rabbit Meat Drop
+    Events
+        Unit - A unit Dies
+    Conditions
+        (Owner of (Killing unit)) Not equal to Neutral Hostile
+        Or - Any (Conditions) are true
+            Conditions
+                (Unit-type of (Dying unit)) Equal to Rabbit
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Random integer number between 1 and 10) Equal to 1
+            Then - Actions
+                Set VariableSet DyingUnitPos = (Position of (Dying unit))
+                Item - Create Raw Rabbit Meat at DyingUnitPos
+                Custom script:   call RemoveLocation(udg_DyingUnitPos)
+            Else - Actions

@@ -1,0 +1,112 @@
+Item Drop System Unic Specific Dragons
+    Events
+        Unit - A unit Dies
+    Conditions
+        ((Owner of (Triggering unit)) is in ItemDrop_Players.) Equal to True
+        ((Triggering unit) is in BOSS.) Not equal to True
+    Actions
+        -------- Set position of dying unit for item drop --------
+        Set VariableSet DyingUnitPos = (Position of (Triggering unit))
+        -------- ================================================= LEVELS 1 to 5 --------
+        -------- ================================================= LEVELS 6 to 10 --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Level of (Triggering unit)) Less than or equal to 10
+                (Level of (Triggering unit)) Greater than or equal to 6
+            Then - Actions
+                -------- ====================================================================== --------
+                -------- UNIT SPECIFIC --------
+                -------- =================== Whelps --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Or - Any (Conditions) are true
+                            Conditions
+                                (Unit-type of (Triggering unit)) Equal to Red Whelp (Level 10)
+                                (Unit-type of (Triggering unit)) Equal to Scorching Whelp (Level 10)
+                    Then - Actions
+                        -------- Unit specific junk --------
+                        Set VariableSet ItemLootTable[1] = Sharp Claw
+                        Set VariableSet ItemLootTable[2] = Small Flame Sac
+                        Set VariableSet ItemLootTable[3] = Ruined Dragonhide
+                        -------- Unit specific usable --------
+                        -------- Skin --------
+                        Set VariableSet ItemLootTable[4] = Whelp Scale
+                        -------- Quest item(s) --------
+                        -------- ======DROP ITEM (1) --------
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Random integer number between 1 and 6) Equal to 1
+                            Then - Actions
+                                -------- Set random item from ItemX -item-array --------
+                                Set VariableSet Random = (Random integer number between 1 and 3)
+                                Item - Create ItemLootTable[Random] at DyingUnitPos
+                                Set VariableSet Random = 0
+                            Else - Actions
+                        -------- ======DROP ITEM (2) --------
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Random integer number between 1 and 2) Equal to 1
+                            Then - Actions
+                                -------- Set random item from ItemX -item-array --------
+                                Set VariableSet Random = 4
+                                Item - Create ItemLootTable[Random] at DyingUnitPos
+                                Set VariableSet Random = 0
+                            Else - Actions
+                    Else - Actions
+            Else - Actions
+        -------- ====================================================================== --------
+        -------- ================================================= LEVELS 11 to 15 --------
+        -------- =================== XXX --------
+        -------- ================================================= LEVELS 16 to 20 --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Level of (Triggering unit)) Less than or equal to 20
+                (Level of (Triggering unit)) Greater than or equal to 16
+            Then - Actions
+                -------- ====================================================================== --------
+                -------- UNIT SPECIFIC --------
+                -------- =================== Whelps --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Or - Any (Conditions) are true
+                            Conditions
+                                (Unit-type of (Triggering unit)) Equal to Red Whelp (Level 20)
+                                (Unit-type of (Triggering unit)) Equal to Scorching Whelp (Level 20)
+                    Then - Actions
+                        -------- Unit specific junk --------
+                        Set VariableSet ItemLootTable[1] = Sharp Claw
+                        Set VariableSet ItemLootTable[2] = Small Flame Sac
+                        Set VariableSet ItemLootTable[3] = Ruined Dragonhide
+                        -------- Unit specific usable --------
+                        -------- Skin --------
+                        Set VariableSet ItemLootTable[4] = Whelp Scale
+                        -------- Quest item(s) --------
+                        -------- ======DROP ITEM (1) --------
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Random integer number between 1 and 6) Equal to 1
+                            Then - Actions
+                                -------- Set random item from ItemX -item-array --------
+                                Set VariableSet Random = (Random integer number between 1 and 3)
+                                Item - Create ItemLootTable[Random] at DyingUnitPos
+                                Set VariableSet Random = 0
+                            Else - Actions
+                        -------- ======DROP ITEM (2) --------
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Random integer number between 1 and 2) Equal to 1
+                            Then - Actions
+                                -------- Set random item from ItemX -item-array --------
+                                Set VariableSet Random = 4
+                                Item - Create ItemLootTable[Random] at DyingUnitPos
+                                Set VariableSet Random = 0
+                            Else - Actions
+                    Else - Actions
+            Else - Actions
+        -------- =================== XXX --------
+        -------- ================================================= LEVELS 21 to 25 --------
+        -------- =================== XXX --------
+        -------- ================================================= LEVELS 26 to 30 --------
+        -------- =================== XXX --------
+        -------- Remove leaks --------
+        Custom script:   call RemoveLocation(udg_DyingUnitPos)

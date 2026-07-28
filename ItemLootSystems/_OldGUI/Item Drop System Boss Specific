@@ -1,0 +1,243 @@
+Item Drop System Boss Specific
+    Events
+        Unit - A unit Dies
+    Conditions
+        ((Owner of (Triggering unit)) is in ItemDrop_Players.) Equal to True
+    Actions
+        -------- Set position of dying unit for item drop --------
+        Set VariableSet DyingUnitPos = (Position of (Triggering unit))
+        -------- =================== FELDOK --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of (Triggering unit)) Equal to Deathlord Fel'Dok
+            Then - Actions
+                -------- Unit specific usable --------
+                Set VariableSet ItemLootTable[1] = Helm of Fel'Dok
+                Set VariableSet ItemLootTable[2] = |cFFFF8000Weapon of Fel'Dok|r
+                -------- Quest item(s) --------
+                -------- ======DROP ITEM (1) --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        -------- Set random item from ItemX -item-array --------
+                        Set VariableSet Random = (Random integer number between 1 and 2)
+                        Item - Create ItemLootTable[Random] at DyingUnitPos
+                        Set VariableSet Random = 0
+                    Else - Actions
+            Else - Actions
+        -------- =================== IMPALER --------
+        -------- =================== ABOMINATION --------
+        -------- =================== MARGUL --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of (Triggering unit)) Equal to Margul
+            Then - Actions
+                -------- Unit specific usable --------
+                Set VariableSet ItemLootTable[1] = Margul's Claw
+                -------- Quest item(s) --------
+                -------- ======DROP ITEM (1) --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        -------- Set random item from ItemX -item-array --------
+                        Set VariableSet Random = (Random integer number between 1 and 1)
+                        Item - Create ItemLootTable[Random] at DyingUnitPos
+                        Set VariableSet Random = 0
+                    Else - Actions
+            Else - Actions
+        -------- =================== MURGAL --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of (Triggering unit)) Equal to Mur'gal
+            Then - Actions
+                -------- Unit specific usable --------
+                Set VariableSet ItemLootTable[1] = (Item-type of No item)
+                -------- Quest item(s) --------
+                Hero - Create Eye of Mur'gal and give it to (Dying unit)
+                Set VariableSet ItemMagicalEye = (Last created item)
+                Item - Make ItemMagicalEye Invulnerable
+                -------- ======DROP ITEM (1) --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        -------- Set random item from ItemX -item-array --------
+                        Set VariableSet Random = (Random integer number between 1 and 1)
+                        Item - Create ItemLootTable[Random] at DyingUnitPos
+                        Set VariableSet Random = 0
+                    Else - Actions
+            Else - Actions
+        -------- =================== SARGOTH --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of (Triggering unit)) Equal to Sargoth
+            Then - Actions
+                -------- Unit specific usable --------
+                Set VariableSet ItemLootTable[1] = (Item-type of No item)
+                -------- Quest item(s) --------
+                Hero - Create Sargoth's Ichor and give it to (Dying unit)
+                Item - Make (Last created item) Invulnerable
+                -------- ======DROP ITEM (1) --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        -------- Set random item from ItemX -item-array --------
+                        Set VariableSet Random = (Random integer number between 1 and 1)
+                        Item - Create ItemLootTable[Random] at DyingUnitPos
+                        Set VariableSet Random = 0
+                    Else - Actions
+            Else - Actions
+        -------- =================== UNKNOWN ENTITY --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of (Triggering unit)) Equal to Unknown Entity
+            Then - Actions
+                -------- Unit specific usable --------
+                Set VariableSet ItemLootTable[1] = Orb of Darkness
+                -------- Quest item(s) --------
+                Hero - Create Disgusting Slime and give it to (Dying unit)
+                Item - Make (Last created item) Invulnerable
+                -------- ======DROP ITEM (1) --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        -------- Set random item from ItemX -item-array --------
+                        Set VariableSet Random = (Random integer number between 1 and 1)
+                        Item - Create ItemLootTable[Random] at DyingUnitPos
+                        Set VariableSet Random = 0
+                    Else - Actions
+            Else - Actions
+        -------- =================== ROLJIN --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of (Triggering unit)) Equal to Rol'jin
+            Then - Actions
+                -------- Unit specific usable --------
+                Set VariableSet ItemLootTable[1] = (Item-type of No item)
+                -------- Quest item(s) --------
+                Hero - Create Rol'jin's Head and give it to (Dying unit)
+                Set VariableSet ItemTrollHead = (Last created item)
+                Item - Make ItemTrollHead Invulnerable
+                -------- ======DROP ITEM (1) --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        -------- Set random item from ItemX -item-array --------
+                        Set VariableSet Random = (Random integer number between 1 and 1)
+                        Item - Create ItemLootTable[Random] at DyingUnitPos
+                        Set VariableSet Random = 0
+                    Else - Actions
+            Else - Actions
+        -------- =================== SUCCUBUS --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of (Triggering unit)) Equal to Velaria (Succubus)
+            Then - Actions
+                -------- Unit specific usable --------
+                Set VariableSet ItemLootTable[1] = Orb of Lifesteal
+                -------- Quest item(s) --------
+                -------- ======DROP ITEM (1) --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        -------- Set random item from ItemX -item-array --------
+                        Set VariableSet Random = (Random integer number between 1 and 1)
+                        Item - Create ItemLootTable[Random] at DyingUnitPos
+                        Set VariableSet Random = 0
+                    Else - Actions
+            Else - Actions
+        -------- =================== SERETHA --------
+        -------- =================== GORLASH --------
+        -------- =================== DARKMAW THE SOUL DEVOURER --------
+        -------- =================== MARDUK THE ENDBRINGER --------
+        -------- =================== ROTSPINE --------
+        -------- =================== PRINCE ZAEKOLAERR --------
+        -------- =================== Razzlewhip Mudgrubber --------
+        -------- =================== SARLACC --------
+        -------- =================== GAR --------
+        -------- =================== GOR --------
+        -------- =================== COLOSSUS --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of (Triggering unit)) Equal to Colossus (Level 15)
+            Then - Actions
+                -------- Unit specific usable --------
+                Set VariableSet ItemLootTable[1] = |cFF800080Blazing Obsidian Sharpblade|r
+                Set VariableSet ItemLootTable[2] = |cFF800080Crown of of the Molten Golem King|r
+                Set VariableSet ItemLootTable[3] = |cFF800080Dragonforged Warboots|r
+                Set VariableSet ItemLootTable[4] = |cFF800080Cloak of Dragonbound Mountain|r
+                Set VariableSet ItemLootTable[5] = |cFFFF8000Infernal Sigil of Colossus|r
+                -------- Quest item(s) --------
+                -------- ======DROP ITEM (1) --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        -------- Set random item from ItemX -item-array --------
+                        Set VariableSet Random = (Random integer number between 1 and 5)
+                        Item - Create ItemLootTable[Random] at DyingUnitPos
+                        Set VariableSet Random = 0
+                    Else - Actions
+                -------- ======DROP ITEM (2) --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        -------- Set random item from ItemX -item-array --------
+                        Set VariableSet Random = (Random integer number between 1 and 5)
+                        Item - Create ItemLootTable[Random] at DyingUnitPos
+                        Set VariableSet Random = 0
+                    Else - Actions
+            Else - Actions
+        -------- =================== GOLLUM --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of (Triggering unit)) Equal to Gollum (Level 13)
+            Then - Actions
+                -------- Unit specific usable --------
+                Set VariableSet ItemLootTable[1] = The One Ring
+                -------- Quest item(s) --------
+                -------- ======DROP ITEM (1) --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        -------- Set random item from ItemX -item-array --------
+                        Set VariableSet Random = (Random integer number between 1 and 1)
+                        Item - Create ItemLootTable[Random] at DyingUnitPos
+                        Set VariableSet Random = 0
+                    Else - Actions
+            Else - Actions
+        -------- =================== MORDRAX --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit-type of (Triggering unit)) Equal to MordraxDummy
+            Then - Actions
+                -------- Unit specific usable --------
+                Game - Display to (All players) the text: WIP: Create Mordrax...
+                Set VariableSet ItemLootTable[1] = |cFF800080Blazing Obsidian Sharpblade|r
+                Set VariableSet ItemLootTable[2] = |cFF800080Crown of of the Molten Golem King|r
+                Set VariableSet ItemLootTable[3] = |cFF800080Dragonforged Warboots|r
+                Set VariableSet ItemLootTable[4] = |cFF800080Cloak of Dragonbound Mountain|r
+                Set VariableSet ItemLootTable[5] = |cFFFF8000Infernal Sigil of Colossus|r
+                -------- Quest item(s) --------
+                Hero - Create |cff0000ffScale of Mordrax|r and give it to (Dying unit)
+                Set VariableSet QuestDesolatorItem = (Last created item)
+                Item - Make QuestDesolatorItem Invulnerable
+                -------- ======DROP ITEM (1) --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        -------- Set random item from ItemX -item-array --------
+                        Set VariableSet Random = (Random integer number between 1 and 5)
+                        Item - Create ItemLootTable[Random] at DyingUnitPos
+                        Set VariableSet Random = 0
+                    Else - Actions
+                -------- ======DROP ITEM (2) --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        -------- Set random item from ItemX -item-array --------
+                        Set VariableSet Random = (Random integer number between 1 and 5)
+                        Item - Create ItemLootTable[Random] at DyingUnitPos
+                        Set VariableSet Random = 0
+                    Else - Actions
+            Else - Actions
+        -------- Remove leaks --------
+        Custom script:   call RemoveLocation(udg_DyingUnitPos)

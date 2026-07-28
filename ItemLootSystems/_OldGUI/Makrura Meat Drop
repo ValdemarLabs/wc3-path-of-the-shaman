@@ -1,0 +1,22 @@
+Makrura Meat Drop
+    Events
+        Unit - A unit Dies
+    Conditions
+        (Owner of (Killing unit)) Not equal to Neutral Hostile
+        Or - Any (Conditions) are true
+            Conditions
+                (Unit-type of (Dying unit)) Equal to Makrura Prawn
+                (Unit-type of (Dying unit)) Equal to Makrura Pooldweller
+                (Unit-type of (Dying unit)) Equal to Makrura Tidecaller
+                (Unit-type of (Dying unit)) Equal to Makrura Deepseer
+                (Unit-type of (Dying unit)) Equal to Makrura Snapper
+                (Unit-type of (Dying unit)) Equal to Makrura Tidal Lord
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Random integer number between 1 and 10) Equal to 1
+            Then - Actions
+                Set VariableSet DyingUnitPos = (Position of (Dying unit))
+                Item - Create Raw Makrura Meat at DyingUnitPos
+                Custom script:   call RemoveLocation(udg_DyingUnitPos)
+            Else - Actions

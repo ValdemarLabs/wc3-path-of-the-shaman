@@ -1,0 +1,102 @@
+Item Drop System Unic Specific Gnolls
+    Events
+        Unit - A unit Dies
+    Conditions
+        ((Owner of (Triggering unit)) is in ItemDrop_Players.) Equal to True
+        ((Triggering unit) is in BOSS.) Not equal to True
+    Actions
+        -------- Set position of dying unit for item drop --------
+        Set VariableSet DyingUnitPos = (Position of (Triggering unit))
+        -------- ================================================= LEVELS 1 to 5 --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Level of (Triggering unit)) Less than or equal to 5
+                (Level of (Triggering unit)) Greater than or equal to 1
+            Then - Actions
+                -------- ====================================================================== --------
+                -------- UNIT SPECIFIC --------
+                -------- =================== GNOLL --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Or - Any (Conditions) are true
+                            Conditions
+                                (Unit-type of (Triggering unit)) Equal to Gnoll
+                                (Unit-type of (Triggering unit)) Equal to Gnoll Brute
+                                (Unit-type of (Triggering unit)) Equal to Gnoll Crusher
+                                (Unit-type of (Triggering unit)) Equal to Gnoll Necromancer
+                                (Unit-type of (Triggering unit)) Equal to Gnoll Ravager
+                                (Unit-type of (Triggering unit)) Equal to Deathlord Fel'Dok
+                                (Unit-type of (Triggering unit)) Equal to Gnoll Poacher
+                                (Unit-type of (Triggering unit)) Equal to Gnoll Assassin
+                                (Unit-type of (Triggering unit)) Equal to Gnoll Warden
+                                (Unit-type of (Triggering unit)) Equal to Gnoll Overseer
+                    Then - Actions
+                        -------- Unit specific junk --------
+                        Set VariableSet ItemLootTable[1] = Phat Lewt
+                        Set VariableSet ItemLootTable[2] = Phat Lewt
+                        Set VariableSet ItemLootTable[3] = Phat Lewt
+                        -------- Unit specific usable --------
+                        Set VariableSet ItemLootTable[4] = Phat Lewt
+                        Set VariableSet ItemLootTable[5] = Phat Lewt
+                        Set VariableSet ItemLootTable[6] = Phat Lewt
+                        -------- Skin --------
+                        -------- Quest item(s) --------
+                        Set VariableSet TempGroupDrop = (Units within 1000.00 of DyingUnitPos matching ((Owner of (Matching unit)) Equal to Player 1 (Red)).)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (QuestGnollHeadcount is discovered) Equal to True
+                            Then - Actions
+                                Set VariableSet Random = (Random integer number between 1 and 3)
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        Random Equal to 1
+                                    Then - Actions
+                                        Item - Create Gnoll Head at DyingUnitPos
+                                    Else - Actions
+                                Set VariableSet Random = 0
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (QuestKribugsSatchel is discovered) Equal to True
+                                KribugsSatchel Equal to No item
+                            Then - Actions
+                                Set VariableSet Random = (Random integer number between 1 and 5)
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        Random Equal to 1
+                                    Then - Actions
+                                        Item - Create Kribug's Satchel at DyingUnitPos
+                                        Set VariableSet KribugsSatchel = (Last created item)
+                                    Else - Actions
+                                Set VariableSet Random = 0
+                            Else - Actions
+                        Custom script:   call DestroyGroup(udg_TempGroupDrop)
+                        -------- ======DROP ITEM (1) --------
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Random integer number between 1 and 6) Equal to 1
+                            Then - Actions
+                                -------- Set random item from ItemX -item-array --------
+                                Set VariableSet Random = (Random integer number between 1 and 6)
+                                Item - Create ItemLootTable[Random] at DyingUnitPos
+                                Set VariableSet Random = 0
+                            Else - Actions
+                    Else - Actions
+                -------- =================== XXX --------
+                -------- =================== XXX --------
+                -------- =================== XXX --------
+                -------- =================== XXX --------
+                -------- =================== XXX --------
+            Else - Actions
+        -------- ================================================= LEVELS 6 to 10 --------
+        -------- =================== XXX --------
+        -------- ================================================= LEVELS 11 to 15 --------
+        -------- =================== XXX --------
+        -------- ================================================= LEVELS 16 to 20 --------
+        -------- =================== XXX --------
+        -------- ================================================= LEVELS 21 to 25 --------
+        -------- =================== XXX --------
+        -------- ================================================= LEVELS 26 to 30 --------
+        -------- =================== XXX --------
+        -------- Remove leaks --------
+        Custom script:   call RemoveLocation(udg_DyingUnitPos)

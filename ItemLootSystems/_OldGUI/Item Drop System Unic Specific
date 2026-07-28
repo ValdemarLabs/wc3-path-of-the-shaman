@@ -1,0 +1,78 @@
+Item Drop System Unic Specific
+    Events
+        Unit - A unit Dies
+    Conditions
+        ((Owner of (Triggering unit)) is in ItemDrop_Players.) Equal to True
+        ((Triggering unit) is in BOSS.) Not equal to True
+    Actions
+        -------- Set position of dying unit for item drop --------
+        Set VariableSet DyingUnitPos = (Position of (Triggering unit))
+        -------- ================================================= LEVELS 1 to 5 --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Level of (Triggering unit)) Less than or equal to 5
+                (Level of (Triggering unit)) Greater than or equal to 1
+            Then - Actions
+                -------- ====================================================================== --------
+                -------- UNIT SPECIFIC --------
+                -------- =================== WOLF --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Or - Any (Conditions) are true
+                            Conditions
+                                (Unit-type of (Triggering unit)) Equal to Timber Wolf (Level 2)
+                                (Unit-type of (Triggering unit)) Equal to Giant Wolf (Level 4)
+                                (Unit-type of (Triggering unit)) Equal to Dire Wolf (Level 5)
+                    Then - Actions
+                        -------- Unit specific junk --------
+                        Set VariableSet ItemLootTable[1] = Wolf Jawbone
+                        -------- Unit specific usable --------
+                        Set VariableSet ItemLootTable[2] = Raw Wolf Meat
+                        -------- Skin --------
+                        Set VariableSet ItemLootTable[3] = Wolf Skin
+                        -------- Quest item(s) --------
+                        -------- ======DROP ITEM (1) --------
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Random integer number between 1 and 6) Equal to 1
+                            Then - Actions
+                                -------- Set random item from ItemX -item-array --------
+                                Set VariableSet Random = (Random integer number between 1 and 3)
+                                Item - Create ItemLootTable[Random] at DyingUnitPos
+                                Set VariableSet Random = 0
+                            Else - Actions
+                    Else - Actions
+                -------- =================== STAG --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Or - Any (Conditions) are true
+                            Conditions
+                                (Unit-type of (Triggering unit)) Equal to Stag (Level 1)
+                                (Unit-type of (Triggering unit)) Equal to Stag (Level 5)
+                    Then - Actions
+                        -------- Unit specific junk --------
+                        Set VariableSet ItemLootTable[1] = Large Hoof
+                        -------- Unit specific usable --------
+                        Set VariableSet ItemLootTable[2] = Raw Stag Meat
+                        -------- Skin --------
+                        Set VariableSet ItemLootTable[3] = Stag Hair
+                        -------- Quest item(s) --------
+                        -------- ======DROP ITEM (1) --------
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Random integer number between 1 and 6) Equal to 1
+                            Then - Actions
+                                -------- Set random item from ItemX -item-array --------
+                                Set VariableSet Random = (Random integer number between 1 and 3)
+                                Item - Create ItemLootTable[Random] at DyingUnitPos
+                                Set VariableSet Random = 0
+                            Else - Actions
+                    Else - Actions
+            Else - Actions
+        -------- ================================================= LEVELS 6 to 10 --------
+        -------- ================================================= LEVELS 11 to 15 --------
+        -------- ================================================= LEVELS 16 to 20 --------
+        -------- ================================================= LEVELS 21 to 25 --------
+        -------- ================================================= LEVELS 26 to 30 --------
+        -------- Remove leaks --------
+        Custom script:   call RemoveLocation(udg_DyingUnitPos)
