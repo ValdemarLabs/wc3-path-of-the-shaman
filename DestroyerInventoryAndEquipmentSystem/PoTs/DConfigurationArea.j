@@ -46,7 +46,7 @@ boolean SetItemModuleUsed = FALSE
 //Choose here whether each hero should have their separate inventories, or if 1 inventory should be shared by all heroes of a certain player
 //string InventoryParadigm = "1PerPlayer"
 string InventoryParadigm = "1PerHero"
-//If you have 1PerHero paradigm, and below is set to true, any non-computer player hero will be automatically added to the system the first time they enter the map
+//If you have 1PerHero paradigm, and below is set to true, any player or computer hero will be automatically added to the system the first time they enter the map
 //Otherwise you have to tell the system one by one which hero you want to have in the system with the function: InitializeDInventoryForUnit(yourunitvariable)
 boolean AutomaticallyAddHeroesToTheSystem = FALSE
 //Items that say "Droppable = False" in the Object Editor may be configured to be stored or not stored.
@@ -97,7 +97,7 @@ real CleaveBaseArea = 150.0
 // If you want the item's Extended Tooltip to be equal to the one you set up in the Object Editor, then set this to FALSE
 // In case of FALSE, this is what you get: GetItemName(it)+"|n|n" + BlzGetItemExtendedTooltip(it)
 boolean DEqTooltipAutoReadReq = TRUE
-//If below is set to true, any non-computer player hero will be automatically added to the system the first time they enter the map
+//If below is set to true, any player or computer hero will be automatically added to the system the first time they enter the map
 //Otherwise you have to tell the system one by one which hero you want to have in the system with the function: InitializeDEquipmentForUnit(yourunitvariable)
 boolean AutomaticallyAddHeroesToTheDEqSystem = FALSE
 //If you set it to TRUE then make sure you set the ability ID properly here! If TRUE then dual wield is only possible if the unit has the dual wield ability.
