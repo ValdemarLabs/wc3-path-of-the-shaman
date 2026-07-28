@@ -2,12 +2,13 @@
 // GatherNodeSkills - Profession Skill Tracking & Enforcement
 // ============================================================
 
-library GatherNodeSkills initializer Init requires GatherNodes, DamageEngine, ExSound, Table, optional SharedDInvLib
+library GatherNodeSkills initializer Init requires GatherNodes, DamageEngine, ExSound, Table, SpeciFX, optional SharedDInvLib
 
 globals
     private constant integer skillMin = 0
     private constant integer skillMax = 100
     private constant real GNS_FAILURE_COOLDOWN = 2.50
+    private constant real GNS_LEVEL_UP_EFFECT_DURATION = 2.00
 
     // Model path played on the unit when a profession skill point is awarded.
     public string TradeSkillLevelUpEffectModelPath = "spells_tradeskilllevelup.mdx"
@@ -250,9 +251,14 @@ private function GNS_GetSkillGainChance takes integer currentSkill, integer requ
 endfunction
 
 private function GNS_PlayTradeSkillLevelUpEffect takes unit u returns nothing
+    local effect sfx
+
     if u != null and TradeSkillLevelUpEffectModelPath != null and TradeSkillLevelUpEffectModelPath != "" then
-        call DestroyEffect(AddSpecialEffectTarget(TradeSkillLevelUpEffectModelPath, u, "origin"))
+        set sfx = AddSpecialEffectTarget(TradeSkillLevelUpEffectModelPath, u, "origin")
+        call SpeciFX_DestroyTimed(sfx, GNS_LEVEL_UP_EFFECT_DURATION)
     endif
+
+    set sfx = null
 endfunction
 
 function GNS_AwardGatherSkillForNode takes unit u, integer professionId, integer requiredSkill, integer amount returns nothing
