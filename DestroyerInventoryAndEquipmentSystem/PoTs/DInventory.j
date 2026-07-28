@@ -243,12 +243,14 @@ function DInvGiveRefreshButtonForPlayer takes player viewer returns nothing
 local integer pid = GetPlayerId(viewer)
 local integer bid = CurrentBID[pid]
 local integer slotId = SourceDItemSlotIdActive[pid]
-if DInvCurrentInspectMode[pid] == FALSE and DInvCurrentUnit[pid] != null and bid > 0 and slotId > -1 and DInventoryDB[bid].item[slotId] != null then
+local unit targetUnit = DInvGiveSelectedUnit[pid]
+if DInvCurrentInspectMode[pid] == FALSE and DInvCurrentUnit[pid] != null and targetUnit != null and targetUnit != DInvCurrentUnit[pid] and UnitAlive(targetUnit) == TRUE and bid > 0 and slotId > -1 and DInventoryDB[bid].item[slotId] != null then
 call DInvGiveSetButtonVisible(pid, TRUE)
 else
 call DInvGiveSetButtonVisible(pid, FALSE)
 endif
 set viewer = null
+set targetUnit = null
 endfunction
 
 
@@ -1562,6 +1564,8 @@ call BlzFrameSetTooltip(InventoryXButtonFrame[pid], InventoryXButtonTipFrame[pid
 set InventoryGiveButtonFrame[pid] = BlzCreateFrameByType("GLUETEXTBUTTON", "GiveButt"+I2S(pid), InventoryLowestFrame[pid], "ScriptDialogButton", 0)
 call BlzFrameSetText(InventoryGiveButtonFrame[pid], "Give")
 call BlzFrameSetTextAlignment(InventoryGiveButtonFrame[pid], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
+call BlzFrameSetLevel(InventoryGiveButtonFrame[pid], 8)
+call BlzFrameSetScale(InventoryGiveButtonFrame[pid], 0.9)
 call BlzFrameSetAbsPoint(InventoryGiveButtonFrame[pid], FRAMEPOINT_TOPLEFT, InventoryGiveTopLeftX, InventoryGiveTopLeftY)
 call BlzFrameSetAbsPoint(InventoryGiveButtonFrame[pid], FRAMEPOINT_BOTTOMRIGHT, InventoryGiveBotRightX, InventoryGiveBotRightY)
 call BlzFrameSetVisible(InventoryGiveButtonFrame[pid], false)
@@ -1645,7 +1649,10 @@ endfunction
 
 
 function DInvGiveUnitSelectedActions takes nothing returns nothing
-set DInvGiveSelectedUnit[GetPlayerId(GetTriggerPlayer())] = GetTriggerUnit()
+local player plyr = GetTriggerPlayer()
+set DInvGiveSelectedUnit[GetPlayerId(plyr)] = GetTriggerUnit()
+call DInvGiveRefreshButtonForPlayer(plyr)
+set plyr = null
 endfunction
 
 
@@ -1655,6 +1662,7 @@ local integer pid = GetPlayerId(GetTriggerPlayer())
 if DInvGiveSelectedUnit[pid] == GetTriggerUnit() then
 set DInvGiveSelectedUnit[pid] = null
 endif
+call DInvGiveRefreshButtonForPlayer(GetTriggerPlayer())
 endfunction
 
 
@@ -1733,8 +1741,8 @@ set InventoryCloseTopLeftY = InventoryTopLeftY
 set InventoryCloseBotRightX = InventoryCloseTopLeftX + 0.03
 set InventoryCloseBotRightY = InventoryCloseTopLeftY - 0.03
 set InventoryGiveTopLeftX = InventoryTopLeftX
-set InventoryGiveTopLeftY = InventoryTopLeftY + 0.055
-set InventoryGiveBotRightX = InventoryGiveTopLeftX + 0.06
+set InventoryGiveTopLeftY = InventoryBotRightY - 0.006
+set InventoryGiveBotRightX = InventoryGiveTopLeftX + 0.08
 set InventoryGiveBotRightY = InventoryGiveTopLeftY - 0.03
 
 set InventoryPageLeftTopLeftX = InventoryBotRightX
