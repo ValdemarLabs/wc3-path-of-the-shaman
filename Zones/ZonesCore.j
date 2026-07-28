@@ -109,6 +109,8 @@ struct ZoneData
     integer nodeUnitRestrictRectCount
     rect array nodeWaterIgnoreRects[100]
     integer nodeWaterIgnoreRectCount
+    rect array fishRects[100]
+    integer fishRectCount
 
     // Current weather state for this zone
     string currentWeatherState
@@ -206,6 +208,13 @@ struct ZoneData
         if this.nodeWaterIgnoreRectCount < 100 then
             set this.nodeWaterIgnoreRects[this.nodeWaterIgnoreRectCount] = r
             set this.nodeWaterIgnoreRectCount = this.nodeWaterIgnoreRectCount + 1
+        endif
+    endmethod
+
+    method addFishRect takes rect r returns nothing
+        if this.fishRectCount < 100 then
+            set this.fishRects[this.fishRectCount] = r
+            set this.fishRectCount = this.fishRectCount + 1
         endif
     endmethod
 
@@ -394,6 +403,7 @@ struct ZoneData
         set this.nodeItemRestrictRectCount = 0
         set this.nodeUnitRestrictRectCount = 0
         set this.nodeWaterIgnoreRectCount = 0
+        set this.fishRectCount = 0
         set this.weatherAllowed = true          // Default allowed
         set this.weatherInheritFromParent = true // Default inherit from parent for subzones
         set this.weatherTypeCount = 0
@@ -2098,6 +2108,20 @@ endfunction
 //=======================================================================
 public function GetZoneData takes integer zoneId returns ZoneData
     return zoneDatabase[zoneId]
+endfunction
+
+public function AddFishRect takes integer zoneId, rect r returns boolean
+    local ZoneData z = GetZoneData(zoneId)
+
+    if z == 0 or r == null then
+        return false
+    endif
+    if z.fishRectCount >= 100 then
+        return false
+    endif
+
+    call z.addFishRect(r)
+    return true
 endfunction
 
 public function GetZoneLevelMin takes integer zoneId returns integer
