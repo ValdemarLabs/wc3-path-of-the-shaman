@@ -19,7 +19,7 @@
     Import this library before AI sublibraries and after the required shared
     systems: Table, CampFire, Companions, UnitDeathEvent, DamageEngine,
     DialogSystem, ExSound, and Reputation. AI professions also require
-    GatherNodes, GatherNodeSkills, GatherNodeItems, and GatherNodeUnits. File
+    DEquipment, GatherNodes, GatherNodeSkills, GatherNodeItems, and GatherNodeUnits. File
     names may use underscores, but vJASS library identifiers and generated
     public function prefixes must not.
 
@@ -86,7 +86,7 @@
     call AI_SetDebugMode(enabled)
 
 **/
-library AI initializer Init requires Table, CampFire, Companions, Events, UnitDeathEvent, DamageEngine, DialogSystem, ExSound, IconQuery, Reputation, GatherNodes, GatherNodeSkills, GatherNodeItems, GatherNodeUnits, Professions, VoicelinesWarlock, VoicelinesUndeadWarlock, VoicelinesRestoShaman, VoicelinesEngineer, VoicelinesPaladin
+library AI initializer Init requires Table, CampFire, Companions, Events, UnitDeathEvent, DamageEngine, DialogSystem, ExSound, IconQuery, Reputation, DEquipment, GatherNodes, GatherNodeSkills, GatherNodeItems, GatherNodeUnits, Professions, VoicelinesWarlock, VoicelinesUndeadWarlock, VoicelinesRestoShaman, VoicelinesEngineer, VoicelinesPaladin
 
 globals
     constant integer AI_STATE_INACTIVE = 0
@@ -1541,6 +1541,139 @@ private function IsInventoryFull takes unit whichUnit returns boolean
         return false
     endif
     return GetFreeInventorySlots(whichUnit) <= 0
+endfunction
+
+private function IsNeededConsumableItemType takes integer itemTypeId, boolean needsLife, boolean needsMana returns boolean
+    if needsLife and IsHealingConsumableItemType(itemTypeId) then
+        return true
+    endif
+    if needsMana and IsManaOnlyItemType(itemTypeId) then
+        return true
+    endif
+    return false
+endfunction
+
+private function FindVanillaItemByType takes unit whichUnit, integer itemTypeId returns item
+    local integer slot = 0
+    local item slotItem
+    if whichUnit == null or itemTypeId == 0 then
+        return null
+    endif
+    loop
+        exitwhen slot >= bj_MAX_INVENTORY
+        set slotItem = UnitItemInSlot(whichUnit, slot)
+        if slotItem != null and GetItemTypeId(slotItem) == itemTypeId then
+            return slotItem
+        endif
+        set slot = slot + 1
+    endloop
+    set slotItem = null
+    return null
+endfunction
+
+private function TryStashUnneededVanillaItem takes unit whichUnit, boolean needsLife, boolean needsMana returns boolean
+    local integer slot = 0
+    local item slotItem
+    local integer itemTypeId
+    if whichUnit == null or BIDOfUnit(whichUnit) < 1 then
+        return false
+    endif
+    loop
+        exitwhen slot >= bj_MAX_INVENTORY
+        set slotItem = UnitItemInSlot(whichUnit, slot)
+        if slotItem != null then
+            set itemTypeId = GetItemTypeId(slotItem)
+            if not IsAIUtilityItemType(itemTypeId) and not IsNeededConsumableItemType(itemTypeId, needsLife, needsMana) then
+                if DInvMoveVanillaItemToDInventory(whichUnit, slotItem) then
+                    set slotItem = null
+                    return true
+                endif
+            endif
+        endif
+        set slot = slot + 1
+    endloop
+    set slotItem = null
+    return false
+endfunction
+
+private function StageDInvConsumableType takes unit whichUnit, integer itemTypeId, boolean needsLife, boolean needsMana returns item
+    local item slotItem
+    if whichUnit == null or itemTypeId == 0 then
+        return null
+    endif
+    set slotItem = FindVanillaItemByType(whichUnit, itemTypeId)
+    if slotItem != null then
+        return slotItem
+    endif
+    if IsInventoryFull(whichUnit) and not TryStashUnneededVanillaItem(whichUnit, needsLife, needsMana) then
+        set slotItem = null
+        return null
+    endif
+    if DInvMoveStoredItemTypeToVanillaInventory(whichUnit, itemTypeId) then
+        set slotItem = FindVanillaItemByType(whichUnit, itemTypeId)
+        return slotItem
+    endif
+    set slotItem = null
+    return null
+endfunction
+
+private function StageDInvHealingConsumable takes unit whichUnit, boolean urgent returns item
+    local item slotItem
+    if urgent then
+        set slotItem = StageDInvConsumableType(whichUnit, ITEM_MAJOR_HEALING_POTION, true, false)
+        if slotItem != null then
+            return slotItem
+        endif
+        set slotItem = StageDInvConsumableType(whichUnit, ITEM_GREATER_HEALING_SALVE, true, false)
+        if slotItem != null then
+            return slotItem
+        endif
+    endif
+    set slotItem = StageDInvConsumableType(whichUnit, ITEM_HEALING_POTION, true, false)
+    if slotItem != null then
+        return slotItem
+    endif
+    set slotItem = StageDInvConsumableType(whichUnit, ITEM_MINOR_HEALING_POTION, true, false)
+    if slotItem != null then
+        return slotItem
+    endif
+    set slotItem = StageDInvConsumableType(whichUnit, ITEM_HEALING_SALVE, true, false)
+    if slotItem != null then
+        return slotItem
+    endif
+    if not urgent then
+        set slotItem = StageDInvConsumableType(whichUnit, ITEM_GREATER_HEALING_SALVE, true, false)
+        if slotItem != null then
+            return slotItem
+        endif
+        set slotItem = StageDInvConsumableType(whichUnit, ITEM_MAJOR_HEALING_POTION, true, false)
+        if slotItem != null then
+            return slotItem
+        endif
+    endif
+    set slotItem = null
+    return null
+endfunction
+
+private function StageDInvManaConsumable takes unit whichUnit returns item
+    local item slotItem = StageDInvConsumableType(whichUnit, ITEM_MAJOR_MANA_POTION, false, true)
+    if slotItem != null then
+        return slotItem
+    endif
+    set slotItem = StageDInvConsumableType(whichUnit, ITEM_MANA_POTION, false, true)
+    if slotItem != null then
+        return slotItem
+    endif
+    set slotItem = StageDInvConsumableType(whichUnit, ITEM_MINOR_MANA_POTION, false, true)
+    if slotItem != null then
+        return slotItem
+    endif
+    set slotItem = StageDInvConsumableType(whichUnit, ITEM_SPRING_WATER, false, true)
+    if slotItem != null then
+        return slotItem
+    endif
+    set slotItem = null
+    return null
 endfunction
 
 private function UnitHasItemType takes unit whichUnit, integer itemTypeId returns boolean
@@ -3060,6 +3193,10 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
     if uniqueId != 0 then
         set UniqueInstance[uniqueId] = instanceId
     endif
+    if IsUnitType(whichUnit, UNIT_TYPE_HERO) then
+        call InitializeDInventoryForUnit(whichUnit)
+        call InitializeDEquipmentForUnit(whichUnit)
+    endif
     call ApplyStartingAbilities(instanceId, whichUnit)
     call ApplyProfileHeroRules(instanceId, whichUnit)
     call RefreshInstanceProfessionSkills(instanceId, whichUnit)
@@ -3523,6 +3660,7 @@ endfunction
 public function TryUseConsumable takes unit whichUnit returns boolean
     local integer slot = 0
     local item slotItem
+    local item stagedItem
     local integer itemTypeId
     local integer instanceId
     local integer profileId
@@ -3542,28 +3680,41 @@ public function TryUseConsumable takes unit whichUnit returns boolean
     if not needsLife and not needsMana and not noMana then
         return false
     endif
-    loop
-        exitwhen slot >= bj_MAX_INVENTORY
-        set slotItem = UnitItemInSlot(whichUnit, slot)
-        if slotItem != null then
-            set itemTypeId = GetItemTypeId(slotItem)
-            if noMana and IsManaOnlyItemType(itemTypeId) then
-                call UnitDropItemPoint(whichUnit, slotItem, GetUnitX(whichUnit), GetUnitY(whichUnit))
-                call DebugMsg(GetDebugUnitName(whichUnit) + " dropped mana-only item " + GetObjectName(itemTypeId) + ".")
-                set slotItem = null
-                return true
-            elseif needsLife and IsHealingConsumableItemType(itemTypeId) then
-                call UnitUseItem(whichUnit, slotItem)
-                set slotItem = null
-                return true
-            elseif needsMana and IsManaOnlyItemType(itemTypeId) then
-                call UnitUseItem(whichUnit, slotItem)
-                set slotItem = null
-                return true
-            endif
+    if needsLife then
+        set stagedItem = StageDInvHealingConsumable(whichUnit, GetLifePercent(whichUnit) <= 25.00)
+        if stagedItem != null then
+            call UnitUseItem(whichUnit, stagedItem)
+            set stagedItem = null
+            set slotItem = null
+            return true
         endif
-        set slot = slot + 1
-    endloop
+    endif
+    if noMana then
+        loop
+            exitwhen slot >= bj_MAX_INVENTORY
+            set slotItem = UnitItemInSlot(whichUnit, slot)
+            if slotItem != null then
+                set itemTypeId = GetItemTypeId(slotItem)
+                if IsManaOnlyItemType(itemTypeId) then
+                    call UnitDropItemPoint(whichUnit, slotItem, GetUnitX(whichUnit), GetUnitY(whichUnit))
+                    call DebugMsg(GetDebugUnitName(whichUnit) + " dropped mana-only item " + GetObjectName(itemTypeId) + ".")
+                    set slotItem = null
+                    return true
+                endif
+            endif
+            set slot = slot + 1
+        endloop
+    endif
+    if needsMana then
+        set stagedItem = StageDInvManaConsumable(whichUnit)
+        if stagedItem != null then
+            call UnitUseItem(whichUnit, stagedItem)
+            set stagedItem = null
+            set slotItem = null
+            return true
+        endif
+    endif
+    set stagedItem = null
     set slotItem = null
     return false
 endfunction
