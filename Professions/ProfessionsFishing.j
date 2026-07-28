@@ -92,9 +92,10 @@ globals
     private constant boolean PF_AI_CHEAT_CRAFTING = true
     private constant string PF_CRAFTER_ANIMATION_PRIMARY = "stand work"
     private constant string PF_CRAFTER_ANIMATION_FALLBACK = "spell"
-    private constant string PF_SOUND_START = ""
+    private constant string PF_SOUND_START = "Tradeskill_FishingStart"
     private constant string PF_SOUND_LOOP = ""
-    private constant string PF_SOUND_FINISH = "Tradeskill_Fishing"
+    private constant string PF_SOUND_FINISH = "Tradeskill_FishingEnd"
+    private constant string PF_SOUND_FAIL = "Tradeskill_Fishing"
     private constant string PF_DEFAULT_FISH_POOL_NAME = "Fish"
 
     public string TitleText = "|cffffe4a3Fishing|r"
@@ -170,6 +171,7 @@ globals
     private real array PF_LineWobbleStrength
     private real array PF_LineWobblePhase
     private real array PF_BobberStandDelay
+    private boolean array PF_BiteSoundPlayed
     private lightning array PF_FishingLine
     private effect array PF_LineHandMarker
     private effect array PF_BobberEffect
@@ -896,17 +898,36 @@ private function PF_GetSkillFailChance takes integer effectiveSkill, integer req
     return chance
 endfunction
 
-private function PF_PlayFishingSound takes unit fisher returns nothing
+private function PF_PlayFishingProfessionSound takes unit fisher, sound whichSound, string soundLabel, string soundPath returns nothing
     local sound fishingSound = null
 
     call Interface_RefreshDefaultSounds()
-    set fishingSound = Interface_PlayProfessionSoundOnUnit(Interface_Profession_Fishing_End, PF_SOUND_FINISH, fisher, false, PF_SOUND_CUTOFF)
+    set fishingSound = Interface_PlayProfessionSoundOnUnit(whichSound, soundLabel, fisher, false, PF_SOUND_CUTOFF)
 
-    if fishingSound == null and Interface_Profession_Fishing_EndPath != null and Interface_Profession_Fishing_EndPath != "" then
-        set fishingSound = Interface_PlayProfessionSoundPathOnUnit(Interface_Profession_Fishing_EndPath, fisher, false, PF_SOUND_CUTOFF)
+    if fishingSound == null and soundPath != null and soundPath != "" then
+        set fishingSound = Interface_PlayProfessionSoundPathOnUnit(soundPath, fisher, false, PF_SOUND_CUTOFF)
     endif
 
     set fishingSound = null
+endfunction
+
+private function PF_PlayFishingStartSound takes unit fisher returns nothing
+    call PF_PlayFishingProfessionSound(fisher, Interface_Profession_Fishing_Start, PF_SOUND_START, Interface_Profession_Fishing_StartPath)
+endfunction
+
+private function PF_PlayFishingEndSound takes unit fisher returns nothing
+    call PF_PlayFishingProfessionSound(fisher, Interface_Profession_Fishing_End, PF_SOUND_FINISH, Interface_Profession_Fishing_EndPath)
+endfunction
+
+private function PF_PlayFishingFailSound takes unit fisher returns nothing
+    call PF_PlayFishingProfessionSound(fisher, Interface_Profession_Fishing_Fail, PF_SOUND_FAIL, Interface_Profession_Fishing_FailPath)
+endfunction
+
+private function PF_PlayFishingBiteSoundIfNeeded takes integer pid, unit fisher returns nothing
+    if not PF_BiteSoundPlayed[pid] then
+        set PF_BiteSoundPlayed[pid] = true
+        call PF_PlayFishingEndSound(fisher)
+    endif
 endfunction
 
 private function PF_PlayFishingAnimation takes integer pid returns nothing
@@ -1419,6 +1440,12 @@ private function PF_UI_ShowForPlayer takes player whichPlayer returns nothing
     call PF_UI_UpdateForPlayer(whichPlayer)
 endfunction
 
+private function PF_DisplayErrorText takes player whichPlayer, string message returns nothing
+    if whichPlayer != null and message != null and message != "" then
+        call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "|cffff8080" + message + "|r")
+    endif
+endfunction
+
 private function PF_ClearJobState takes integer pid returns nothing
     call PF_DestroyFishingVisuals(pid)
 
@@ -1439,11 +1466,13 @@ private function PF_ClearJobState takes integer pid returns nothing
     set PF_WindowStart[pid] = 0.00
     set PF_WindowEnd[pid] = 0.00
     set PF_AnimationElapsed[pid] = 0.00
+    set PF_BiteSoundPlayed[pid] = false
 endfunction
 
 private function PF_StopJob takes integer pid, string message, boolean showMessage, boolean errorSound returns nothing
     local player whichPlayer = Player(pid)
     local unit fisher = PF_Fisher[pid]
+    local boolean fishingFailed = message == FishWentAwayText or message == NothingCaughtText
 
     if not PF_JobActive[pid] then
         set fisher = null
@@ -1464,9 +1493,17 @@ private function PF_StopJob takes integer pid, string message, boolean showMessa
         call PauseTimer(PF_TickTimer)
     endif
 
+    if fishingFailed then
+        call PF_PlayFishingFailSound(fisher)
+    endif
+
     if showMessage then
         if errorSound then
-            call PF_DisplayError(whichPlayer, message)
+            if fishingFailed then
+                call PF_DisplayErrorText(whichPlayer, message)
+            else
+                call PF_DisplayError(whichPlayer, message)
+            endif
         else
             call PF_DisplayMessage(whichPlayer, message)
         endif
@@ -1491,6 +1528,7 @@ private function PF_BeginCast takes integer pid returns nothing
     set PF_AnimationElapsed[pid] = 0.00
     set PF_WindowStart[pid] = GetRandomReal(PF_REEL_WINDOW_MIN_START, latestWindowStart)
     set PF_WindowEnd[pid] = PF_WindowStart[pid] + PF_REEL_WINDOW_DURATION
+    set PF_BiteSoundPlayed[pid] = false
     if PF_WindowEnd[pid] > PF_CAST_DURATION then
         set PF_WindowEnd[pid] = PF_CAST_DURATION
     endif
@@ -1498,7 +1536,7 @@ private function PF_BeginCast takes integer pid returns nothing
     call IssueImmediateOrder(PF_Fisher[pid], "stop")
     call PF_PlayFishingAnimation(pid)
     call PF_CreateFishingVisuals(pid)
-    call PF_PlayFishingSound(PF_Fisher[pid])
+    call PF_PlayFishingStartSound(PF_Fisher[pid])
     call PF_UI_UpdateForPlayer(Player(pid))
 endfunction
 
@@ -1521,6 +1559,7 @@ private function PF_CompleteJob takes integer pid returns nothing
     set requiredSkill = GN_GetGatherUnitSkillRequired(pool)
     set effectiveSkill = PF_GetEffectiveFishingSkill(fisher)
     set failChance = PF_GetSkillFailChance(effectiveSkill, requiredSkill)
+    call PF_PlayFishingBiteSoundIfNeeded(pid, fisher)
     if failChance > 0 and GetRandomInt(1, 100) <= failChance then
         call PF_StopJob(pid, FishWentAwayText, true, true)
         set fisher = null
@@ -1587,6 +1626,9 @@ private function PF_UpdateJob takes integer pid returns nothing
             set PF_AnimationElapsed[pid] = 0.00
             call PF_PlayFishingAnimation(pid)
         endif
+        if PF_Elapsed[pid] >= PF_WindowStart[pid] and PF_Elapsed[pid] <= PF_WindowEnd[pid] then
+            call PF_PlayFishingBiteSoundIfNeeded(pid, fisher)
+        endif
         if PF_Elapsed[pid] > PF_WindowEnd[pid] then
             call PF_StopJob(pid, FishWentAwayText, true, true)
         else
@@ -1619,6 +1661,7 @@ private function PF_ReserveJob takes integer pid, unit fisher, unit pool returns
     set PF_WindowStart[pid] = 0.00
     set PF_WindowEnd[pid] = 0.00
     set PF_AnimationElapsed[pid] = 0.00
+    set PF_BiteSoundPlayed[pid] = false
     set PF_UnitJob.integer[GetHandleId(fisher)] = pid + 1
     set PF_PoolJob.integer[GetHandleId(pool)] = pid + 1
     set PF_ActiveJobCount = PF_ActiveJobCount + 1
