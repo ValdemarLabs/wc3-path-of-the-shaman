@@ -27,6 +27,7 @@
     call Professions_SetRecipeCategory(recipeId, "Basic Alchemy")
     call Professions_SetRecipeCategoryPath(recipeId, "Apprentice Blacksmithing", "Copper Armor")
     call Professions_StartRecipe(whichCrafter, whichStation, recipeId)
+    call Professions_StartRecipeContinuation(whichCrafter, whichStation, recipeId)
     call Professions_StartRecipeForAi(whichCrafter, whichStation, recipeId)
     set wasCancelled = Professions_CancelUnitCraft(whichCrafter)
     set isAiCrafting = Professions_IsUnitAiCrafting(whichCrafter)
@@ -84,6 +85,7 @@ globals
     private integer P_RecipeRevision = 0
     private integer P_JobCount = 0
     private string P_LastErrorText = ""
+    private boolean P_QueryContinuationClaimedCinematic = false
 
     // Recipe definitions registered by ProfessionsXXX sublibraries.
     private integer array P_RecipeProfessionId
@@ -1433,7 +1435,15 @@ private function P_FinishJob takes integer jobId returns nothing
         call P_StationActiveJob.remove(GetHandleId(station))
     endif
 
-    call P_FinishCraftCinematic(jobId, crafter)
+    set P_QueryContinuationClaimedCinematic = false
+    if P_JobCinematicActive[jobId] and not P_JobAiControlled[jobId] then
+        call ExecuteFunc("CraftingUI_TryContinueQueryCraft")
+    endif
+
+    if not P_QueryContinuationClaimedCinematic then
+        call P_FinishCraftCinematic(jobId, crafter)
+    endif
+    set P_QueryContinuationClaimedCinematic = false
 
     set P_JobCrafter[jobId] = null
     set P_JobStation[jobId] = null
@@ -2458,7 +2468,7 @@ public function GetLastErrorText takes nothing returns string
     return P_LastErrorText
 endfunction
 
-private function P_StartRecipeInternal takes unit crafter, unit station, integer recipeId, boolean aiControlled returns boolean
+private function P_StartRecipeInternal takes unit crafter, unit station, integer recipeId, boolean aiControlled, boolean reusePlayerCinematic returns boolean
     local integer jobId
     local integer professionId
     local boolean ignoreMaterials
@@ -2483,9 +2493,26 @@ private function P_StartRecipeInternal takes unit crafter, unit station, integer
         return false
     endif
 
+    if reusePlayerCinematic and P_CinematicDepth <= 0 then
+        return false
+    endif
+
     set jobId = P_CreateReservedJob(crafter, station, recipeId, aiControlled, ignoreMaterials)
     if aiControlled then
         call P_StartAiCraftPreparation(jobId)
+    elseif reusePlayerCinematic then
+        set owner = GetOwningPlayer(crafter)
+        if owner == null then
+            set owner = Player(0)
+        endif
+        set P_JobOwner[jobId] = owner
+        if P_BeginActualCraft(jobId) then
+            set P_JobCinematicActive[jobId] = true
+            set P_QueryContinuationClaimedCinematic = true
+        else
+            set owner = null
+            return false
+        endif
     else
         call P_StartPlayerCraftPreparation(jobId)
     endif
@@ -2495,11 +2522,15 @@ private function P_StartRecipeInternal takes unit crafter, unit station, integer
 endfunction
 
 public function StartRecipe takes unit crafter, unit station, integer recipeId returns boolean
-    return P_StartRecipeInternal(crafter, station, recipeId, false)
+    return P_StartRecipeInternal(crafter, station, recipeId, false, false)
+endfunction
+
+public function StartRecipeContinuation takes unit crafter, unit station, integer recipeId returns boolean
+    return P_StartRecipeInternal(crafter, station, recipeId, false, true)
 endfunction
 
 public function StartRecipeForAi takes unit crafter, unit station, integer recipeId returns boolean
-    return P_StartRecipeInternal(crafter, station, recipeId, true)
+    return P_StartRecipeInternal(crafter, station, recipeId, true, false)
 endfunction
 
 public function GetProfessionSummary takes unit viewer, integer professionId returns string
