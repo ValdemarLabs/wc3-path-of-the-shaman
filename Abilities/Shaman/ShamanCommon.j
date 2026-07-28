@@ -120,7 +120,7 @@ globals
     public constant integer BUFF_WATER_SHIELD = 'B615'
 
     public constant integer UNIT_AIR_ELEMENTAL = 'h60D'
-    public constant integer UNIT_WATER_ELEMENTAL = 'n00O'
+    public constant integer UNIT_WATER_ELEMENTAL = 'h60C'
     public constant integer UNIT_FIRE_ELEMENTAL = 'n616'
     public constant integer UNIT_EARTH_ELEMENTAL = 'n615'
     public constant integer UNIT_NAZGREK_GHOST_WOLF = 'H60K'
