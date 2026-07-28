@@ -114,6 +114,16 @@
   - This prevents stale DEquipment definitions that still grant dummy/stat abilities from leaking lines such as `Item Attack Bonus 1`, `Item Damage Bonus 1`, or `Skin 1` into custom item tooltip frames once the updated library is imported.
   - Confirmed the current generated DEquipment export keeps Skinning Knife damage as a DEquipment `Damage` stat and only grants the real Skin ability `A0F3`; older generated exports that still grant `A07N`/`AIat` should not be used for the active map import.
 
+- Critical update to AI hero inventory/equipment support
+  - `AI/AI.j` now initializes DInventory and DEquipment for registered AI heroes on creation/registration.
+  - AI consumable logic can now stage needed healing or mana consumables from DInventory into the vanilla inventory, stash unneeded vanilla items back into DInventory when space is needed, and then use the best available consumable based on current life/mana need.
+  - `DestroyerInventoryAndEquipmentSystem/PoTs/DInventory.j` and `DestroyerInventoryAndEquipmentSystem/PoTs/DEquipment.j` now allow computer-player heroes to own DInventory/DEquipment data while keeping frame UI creation user-only.
+  - Added inspect-mode open helpers for DInventory and DEquipment so a player using the inventory ability can inspect another selected initialized unit's inventory/equipment UI instead of only opening the caster's own UI.
+  - Inspect mode is read-only for inventory/equipment slot clicks while still allowing UI viewing and DInventory paging.
+  - Vanilla inventory handling now rejects DEquipment items, keeping equippable gear in DInventory or DEquipment slots while still allowing consumables, materials, and miscellaneous non-equipment items in vanilla inventory.
+  - Invalid vanilla-equipment moves and failed DEquipment equip checks now use the Nazgrek/Zulkis `ExSound` item-error voicelines when applicable.
+  - Fixed a DEquipment initialization edge case where enabling equipment after creating DInventory could keep using a stale `eqid = 0`.
+
 ### Tool Updates
 
 - Updated `WC3_Database/WC3ItemManager`
@@ -124,6 +134,13 @@
   - The intended data model is now documented in the tool: stackable consumables/materials use WC3 item level as their stack cap in the `0-49` range, miscellaneous non-equippable non-stackable items can occupy the `50-99` range, and equipment continues to use higher WC3 item-level values.
   - Background: `DestroyerInventoryAndEquipmentSystem` still reads Warcraft III's object-editor item level through `GetItemLevel(...)` when deciding stack capacity. Because Warcraft III item charges are the visible count used by DInventory stacks, PotS has historically repurposed WC3 item level as the maximum stack/charge cap for stackable non-equipment instead of treating it as item power.
   - `item_level_unclassified` remains the separate loot/drop tier field for items whose raw WC3 item level is being used for stack behavior.
+  - Populated the PotS ItemManager database with 64 additional item records: 32 junk/misc/food/material creature-drop items and 32 Cloth, Leather, Mail, and Plate armor pieces.
+  - Added stat rows and matching WC3 ability-code grants for the new armor pieces, following the existing Copper Chain armor pattern while using `item_level_unclassified` as the drop-tier level.
+  - Added rare armor descriptions/flavor text to selected higher-rarity pieces while keeping common/simple items concise.
+  - Added the new items and existing OldGUI loot items into relevant generic and category loot tables, including dragon, undead, humanoid, and boss-oriented pools.
+  - Added explicit `unit_specific_drops` for OldGUI-style creature categories and fitting imported units: wolves, bears, stags, boars, snakes, frogs, crawlers, murlocs, makrura, lizards, dragons/whelps, gnolls, and undead.
+  - Added boss-oriented drops for old boss-trigger units such as Deathlord Fel'Dok, Margul, Mur'gal, Unknown Entity, Velaria, Colossus, Gollum, Sargoth, Mordrax, and Rol'jin, and marked those units for boss/both loot behavior where applicable.
+  - Verified the inserted loot data has no duplicate unit/item or loot-table/item mappings.
 
 ### Known Issues
 
