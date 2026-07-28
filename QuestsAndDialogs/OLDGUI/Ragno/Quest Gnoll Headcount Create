@@ -1,0 +1,11 @@
+Quest Gnoll Headcount Create
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create the quest objects --------
+        Quest - Create a Required, undiscovered quest titled Gnoll Headcount with the description Ragno wants you to ..., using icon path ReplaceableTextures\CommandButtons\BTNGnoll.blp
+        Set VariableSet QuestGnollHeadcount = (Last created quest)
+        Quest - Create a quest requirement for QuestGnollHeadcount with the description Bring 20 Gnoll Head...
+        Set VariableSet QuestGnollHeadcountHeads = (Last created quest requirement)

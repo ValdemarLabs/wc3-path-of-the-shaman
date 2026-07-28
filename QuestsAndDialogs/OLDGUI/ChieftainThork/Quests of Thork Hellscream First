@@ -1,0 +1,34 @@
+Quests of Thork Hellscream First
+    Events
+        Player - Player 1 (Red) Selects a unit
+    Conditions
+        (Triggering unit) Equal to Thork
+        (Distance between (Position of Thork) and (Position of Nazgrek)) Less than or equal to 500.00
+        (Remaining time for DialogOverTimer) Equal to 0.00
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- ======== CINEMATIC STARTS ======== --------
+        Trigger - Run Cinematic ON <gen> (checking conditions)
+        -------- Camera --------
+        Cinematic - Turn cinematic mode On for (All players)
+        Camera - Apply ThorkCamera1 <gen> for Player 1 (Red) over 0.00 seconds
+        Camera - Pan camera for Player 1 (Red) to (Position of Thork) over 1.00 seconds
+        Wait 1.00 seconds
+        Unit - Make Thork face Nazgrek over 0.75 seconds
+        Unit - Make Nazgrek face Thork over 0.75 seconds
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestCallOfTheHorde is completed) Equal to False
+                (QuestCallOfTheHorde is discovered) Equal to True
+            Then - Actions
+                Cinematic - Send transmission to (All players) from Thork named Thork Hellscream: Play Thork_0010 <gen> and display So, you've arrived.....  Modify duration: Set to 4.00 seconds and Wait
+                Trigger - Run CreateThorkHellscreamDialog01 <gen> (checking conditions)
+                Trigger - Turn on (This trigger)
+                Skip remaining actions
+            Else - Actions
+                -------- DEFAULT CAMERA --------
+                Camera - Apply ThorkCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+        Trigger - Remove (This trigger) from the trigger queue

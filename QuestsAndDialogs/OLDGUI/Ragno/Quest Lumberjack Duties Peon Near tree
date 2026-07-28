@@ -1,0 +1,25 @@
+Quest Lumberjack Duties Peon Near tree
+    Events
+        Time - Every 0.20 seconds of game time
+    Conditions
+        (LumberPeon is alive) Equal to True
+    Actions
+        Set VariableSet VarPoint = (Position of LumberPeon)
+        Destructible - Pick every destructible within 250.00 of VarPoint and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Destructible-type of (Picked destructible)) Equal to Pine Tree
+                        ((Picked destructible) is alive) Equal to True
+                        (Distance between (Position of LumberPeon) and (Position of Nazgrek)) Less than or equal to 250.00
+                    Then - Actions
+                        -------- DEBUG --------
+                        Game - Display to (All players) the text: (DEBUG:  + (LumperPeon >>  + Peon near tree))
+                        -------- DEBUG --------
+                        -------- Set follow --------
+                        Set VariableSet FollowSystem_Source = LumberPeon
+                        Set VariableSet FollowSystem_Target = Nazgrek
+                        Custom script:   call FollowSystem_RemoveUnit(udg_FollowSystem_Source)
+                        Unit - Order LumberPeon to Harvest (Picked destructible)
+                    Else - Actions
+        Custom script:   call RemoveLocation(udg_VarPoint)

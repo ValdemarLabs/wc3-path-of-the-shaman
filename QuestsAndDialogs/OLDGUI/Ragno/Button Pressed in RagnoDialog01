@@ -1,0 +1,273 @@
+Button Pressed in RagnoDialog01
+    Events
+        Dialog - A dialog button is clicked for RagnoDialog01
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to RagnoDialog01GnollHeadcount
+            Then - Actions
+                -------- GNOLL HEADCOUNT - ACCEPT --------
+                Set VariableSet RagnoDialog01FarewellBoolean = True
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0094 <gen> and display The stench of gnoll....  Modify duration: Set to 7.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply RagnoCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Trigger - Run Quest Gnoll Headcount <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to RagnoDialog01GnollHeadcountC
+            Then - Actions
+                -------- GNOLL HEADCOUNT - COMPLETED --------
+                Set VariableSet RagnoDialog01FarewellBoolean = True
+                Cinematic - Disable user control for (All players).
+                Camera - Apply RagnoCamera02 <gen> for Player 1 (Red) over 0.00 seconds
+                Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0095 <gen> and display Ah, back already? L....  Modify duration: Set to 7.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply RagnoCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- Remove quest items --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Charges remaining in (Item carried by Nazgrek of type Gnoll Head)) Greater than or equal to 20
+                        (Charges remaining in (Item carried by Zulkis of type Gnoll Head)) Less than 20
+                    Then - Actions
+                        Item - Set charges remaining in (Item carried by Nazgrek of type Gnoll Head) to ((Charges remaining in (Item carried by Nazgrek of type Gnoll Head)) - 20)
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Charges remaining in (Item carried by Zulkis of type Gnoll Head)) Greater than or equal to 20
+                        (Charges remaining in (Item carried by Nazgrek of type Gnoll Head)) Less than 20
+                    Then - Actions
+                        Item - Set charges remaining in (Item carried by Zulkis of type Gnoll Head) to ((Charges remaining in (Item carried by Zulkis of type Gnoll Head)) - 20)
+                    Else - Actions
+                -------- Remove Charged items that have 0 charges --------
+                Trigger - Run Item Stack Clear Empty <gen> (checking conditions)
+                -------- Rewards --------
+                Player - Add 300 to Player 1 (Red).Current gold
+                Hero - Add 100 experience to Nazgrek, Show level-up graphics
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Wait Campaign quest delay seconds
+                Trigger - Run Quest Gnoll Headcount Completed <gen> (checking conditions)
+                -------- Change quest mark --------
+                Special Effect - Destroy QuestGiverRagno
+                Special Effect - Create a special effect attached to the overhead of Ragno using war3campImported\ExcMark_Blue_RepetableQuest.mdx
+                Set VariableSet QuestGiverRagno = (Last created special effect)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to RagnoDialog01LumberjackDuties
+            Then - Actions
+                -------- LUMBERJACK DUTIES - ACCEPT --------
+                Set VariableSet RagnoDialog01FarewellBoolean = True
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0097 <gen> and display Our settlements are....  Modify duration: Set to 3.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0098 <gen> and display Grab a peon and get....  Modify duration: Set to 10.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply RagnoCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Trigger - Run Quest Lumberjack Duties <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to RagnoDialog01LumberjackDutiesC
+            Then - Actions
+                -------- LUMBERJACK DUTIES - COMPLETED --------
+                Set VariableSet RagnoDialog01FarewellBoolean = True
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0099 <gen> and display Well, well, well.......  Modify duration: Set to 11.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply RagnoCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- Remove quest items --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Charges remaining in (Item carried by Nazgrek of type Pile Of Wood)) Greater than or equal to 10
+                        (Charges remaining in (Item carried by Zulkis of type Pile Of Wood)) Less than 10
+                    Then - Actions
+                        Item - Set charges remaining in (Item carried by Nazgrek of type Pile Of Wood) to ((Charges remaining in (Item carried by Nazgrek of type Pile Of Wood)) - 10)
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Charges remaining in (Item carried by Zulkis of type Pile Of Wood)) Greater than or equal to 10
+                        (Charges remaining in (Item carried by Nazgrek of type Pile Of Wood)) Less than 10
+                    Then - Actions
+                        Item - Set charges remaining in (Item carried by Zulkis of type Pile Of Wood) to ((Charges remaining in (Item carried by Zulkis of type Pile Of Wood)) - 10)
+                    Else - Actions
+                -------- Remove Charged items that have 0 charges --------
+                Trigger - Run Item Stack Clear Empty <gen> (checking conditions)
+                -------- Set follow --------
+                Set VariableSet FollowSystem_Source = KodoGrak
+                Set VariableSet FollowSystem_Target = Nazgrek
+                Custom script:   call FollowSystem_RemoveUnit(udg_FollowSystem_Source)
+                -------- turn off triggers --------
+                Trigger - Turn off Quest Lumberjack Duties Peon Chop <gen>
+                Trigger - Turn off Quest Lumberjack Duties Peon Random Getting Lost <gen>
+                Trigger - Turn off Quest Lumberjack Duties Peon Near tree <gen>
+                Trigger - Turn off Quest Lumberjack Duties Peon Chat <gen>
+                Trigger - Turn off Quest Lumberjack Duties Peon Dies <gen>
+                -------- Rewards --------
+                Player - Add 300 to Player 1 (Red).Current gold
+                Hero - Add 100 experience to Nazgrek, Show level-up graphics
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Wait Campaign quest delay seconds
+                Trigger - Run Quest Lumberjack Duties Completed <gen> (checking conditions)
+                -------- Change quest mark --------
+                Special Effect - Destroy QuestGiverRagno
+                Special Effect - Create a special effect attached to the overhead of Ragno using war3campImported\ExcMark_Blue_RepetableQuest.mdx
+                Set VariableSet QuestGiverRagno = (Last created special effect)
+                -------- remove peon --------
+                Set VariableSet VarPoint = (Center of LumberPeonSpawn <gen>)
+                Unit - Order LumberPeon to Move To VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Wait 15.00 seconds
+                Unit - Remove LumberPeon from the game
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to RagnoDialog01Kobolds
+            Then - Actions
+                -------- KOBOLD THIEVES - ACCEPT --------
+                Set VariableSet RagnoDialog01FarewellBoolean = True
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0104 <gen> and display Kobolds dared to tr....  Modify duration: Set to 8.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply RagnoCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Trigger - Run Quest Kobolds <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to RagnoDialog01KoboldsC
+            Then - Actions
+                -------- KOBOLD THIEVES - COMPLETED --------
+                Set VariableSet RagnoDialog01FarewellBoolean = True
+                Cinematic - Disable user control for (All players).
+                Camera - Apply RagnoCamera03 <gen> for Player 1 (Red) over 0.00 seconds
+                Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0106 <gen> and display You've returned, ba....  Modify duration: Set to 5.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply RagnoCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- Remove quest items --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Charges remaining in (Item carried by Nazgrek of type Stolen Goods)) Greater than or equal to 6
+                        (Charges remaining in (Item carried by Zulkis of type Stolen Goods)) Less than 6
+                    Then - Actions
+                        Item - Set charges remaining in (Item carried by Nazgrek of type Stolen Goods) to ((Charges remaining in (Item carried by Nazgrek of type Stolen Goods)) - 6)
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Charges remaining in (Item carried by Zulkis of type Stolen Goods)) Greater than or equal to 6
+                        (Charges remaining in (Item carried by Nazgrek of type Stolen Goods)) Less than 6
+                    Then - Actions
+                        Item - Set charges remaining in (Item carried by Zulkis of type Stolen Goods) to ((Charges remaining in (Item carried by Zulkis of type Stolen Goods)) - 6)
+                    Else - Actions
+                -------- Remove Charged items that have 0 charges --------
+                Trigger - Run Item Stack Clear Empty <gen> (checking conditions)
+                -------- turn off triggers --------
+                Trigger - Turn off Quest Kobolds Random Chests <gen>
+                -------- Rewards --------
+                Player - Add 300 to Player 1 (Red).Current gold
+                Hero - Add 100 experience to Nazgrek, Show level-up graphics
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Wait Campaign quest delay seconds
+                Trigger - Run Quest Kobolds Completed <gen> (checking conditions)
+                -------- Change quest mark --------
+                Special Effect - Destroy QuestGiverRagno
+                Special Effect - Create a special effect attached to the overhead of Ragno using war3campImported\ExcMark_Blue_RepetableQuest.mdx
+                Set VariableSet QuestGiverRagno = (Last created special effect)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to RagnoDialog01SatyrNegotiations
+            Then - Actions
+                -------- SATYR NEGOTIATIONS - ACCEPT --------
+                Set VariableSet RagnoDialog01FarewellBoolean = True
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0101 <gen> and display The woods are about....  Modify duration: Set to 10.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply RagnoCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Trigger - Run Quest Satyr Negotiations <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to RagnoDialog01SatyrNegotiatiosC
+            Then - Actions
+                -------- SATYR NEGOTIATIONS - COMPLETED --------
+                Set VariableSet RagnoDialog01FarewellBoolean = True
+                Cinematic - Disable user control for (All players).
+                Camera - Apply RagnoCamera02 <gen> for Player 1 (Red) over 0.00 seconds
+                Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0102 <gen> and display You made it back! I....  Modify duration: Set to 8.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0103 <gen> and display Ha, I knew I could ....  Modify duration: Set to 3.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply RagnoCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- Rewards --------
+                Player - Add 300 to Player 1 (Red).Current gold
+                Hero - Add 150 experience to Nazgrek, Show level-up graphics
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Wait Campaign quest delay seconds
+                Trigger - Run Quest Satyr Negotiations Completed <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to RagnoDialog01MountainDefense
+            Then - Actions
+                -------- MOUNTAIN DEFENSE - CONTINUE --------
+                Set VariableSet RagnoDialog01FarewellBoolean = True
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0055 <gen> and display I've been expecting....  Modify duration: Set to 14.00 seconds and Wait
+                Camera - Apply RagnoCamera03 <gen> for Player 1 (Red) over 0.00 seconds
+                Camera - Apply RagnoCamera04 <gen> for Player 1 (Red) over 13.00 seconds
+                Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0056 <gen> and display We must prepare our....  Modify duration: Set to 3.00 seconds and Wait
+                Wait 10.00 seconds
+                Set VariableSet QuestMountainDefenseActive = True
+                -------- DEFAULT CAMERA --------
+                Camera - Apply RagnoCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Trigger - Run Quest Mountain Defense Orcs <gen> (checking conditions)
+                Wait Campaign quest delay game-time seconds
+                Trigger - Run Quest Mountain Defense Update 1 <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to RagnoDialog01Farewell
+            Then - Actions
+                Set VariableSet RagnoDialog01FarewellBoolean = True
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0004 <gen> and display Until our paths cro....  Modify duration: Set to 5.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0091 <gen> and display Strength and honor..  Modify duration: Set to 2.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply RagnoCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Skip remaining actions
+            Else - Actions

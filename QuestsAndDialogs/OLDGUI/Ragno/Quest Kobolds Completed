@@ -1,0 +1,13 @@
+Quest Kobolds Completed
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Kobolds Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestKobolds as Discovered
+        Quest - Mark QuestKoboldsReq1 as Completed
+        Quest - Mark QuestKoboldsReq2 as Completed
+        Quest - Mark QuestKobolds as Completed
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Completed message: |cffffcc00DAILY QUE...

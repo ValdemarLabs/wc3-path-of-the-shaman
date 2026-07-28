@@ -1,0 +1,11 @@
+Quest Kobolds Update
+    Events
+    Conditions
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Kobolds Create <gen> (checking conditions)
+        -------- Display a quest message. --------
+        Quest - Mark QuestKoboldsReq1 as Completed
+        -------- Update quest --------
+        Quest - Display to (All players) the Quest Update message: |cffffcc00DAILY QUE...

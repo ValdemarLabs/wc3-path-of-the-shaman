@@ -1,0 +1,27 @@
+Quest Kobolds Stolen Goods
+    Events
+    Conditions
+    Actions
+        Set VariableSet KoboldChestDying = (Dying destructible)
+        Set VariableSet KoboldChests = (KoboldChests - 1)
+        -------- Chance to drop Stolen Goods --------
+        Set VariableSet Chance_StolenGoods = (Random integer number between 1 and 2)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Chance_StolenGoods Equal to 1
+            Then - Actions
+                Item - Create Stolen Goods at (Position of (Dying destructible))
+                Set VariableSet Chance_StolenGoods = 0
+                Wait 5.00 seconds
+                Trigger - Turn off (This trigger)
+                Destructible - Remove KoboldChestDying
+                Wait 0.20 seconds
+                Trigger - Turn on (This trigger)
+            Else - Actions
+        Set VariableSet Chance_StolenGoods = 0
+        Wait 5.00 seconds
+        Trigger - Turn off (This trigger)
+        Destructible - Remove KoboldChestDying
+        Wait 0.20 seconds
+        Trigger - Turn on (This trigger)
+        Trigger - Remove (This trigger) from the trigger queue

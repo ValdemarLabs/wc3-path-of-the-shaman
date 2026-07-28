@@ -1,0 +1,16 @@
+Quest Kobolds
+    Events
+    Conditions
+    Actions
+        -------- RESET Quest, if previously done --------
+        Quest - Mark QuestKobolds as Incomplete
+        Quest - Mark QuestKoboldsReq1 as Incomplete
+        Quest - Mark QuestKoboldsReq2 as Incomplete
+        Quest - Mark QuestKoboldsReq3 as Incomplete
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Kobolds Discover <gen> (checking conditions)
+        Set VariableSet KoboldChests = 0
+        Set VariableSet QuestKoboldsLeaderKilled = False
+        Trigger - Turn on Quest Kobolds Random Chests <gen>
+        Trigger - Turn on Quest Kobolds Leader Killed <gen>
+        Trigger - Remove (This trigger) from the trigger queue

@@ -1,0 +1,11 @@
+Quest Kobolds Leader Killed
+    Events
+        Unit - A unit Dies
+    Conditions
+        (Unit-type of (Triggering unit)) Equal to Razzlewhip Mudgrubber
+        (Owner of (Killing unit)) Equal to Player 1 (Red)
+    Actions
+        Trigger - Turn off (This trigger)
+        Set VariableSet QuestKoboldsLeaderKilled = True
+        Trigger - Run Quest Kobolds Update <gen> (checking conditions)
+        Trigger - Remove (This trigger) from the trigger queue

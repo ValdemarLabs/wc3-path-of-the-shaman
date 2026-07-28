@@ -1,0 +1,12 @@
+Quest Call of the Horde Completed
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Call of the Horde Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestCallOfTheHorde as Discovered
+        Quest - Mark QuestCallOfTheHordeReqGive as Completed
+        Quest - Mark QuestCallOfTheHorde as Completed
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Completed message: |cffffcc00MAIN QUES...

@@ -1,0 +1,147 @@
+Create RagnoDialog01
+    Events
+    Conditions
+    Actions
+        Dialog - Clear RagnoDialog01
+        Dialog - Change the title of RagnoDialog01 to Available Quests
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        And - All (Conditions) are true
+                            Conditions
+                                (QuestGnollHeadcount is discovered) Equal to False
+                                (QuestGnollHeadcount is completed) Equal to False
+                        And - All (Conditions) are true
+                            Conditions
+                                (QuestGnollHeadcount is completed) Equal to True
+            Then - Actions
+                -------- Daily Quest - Gnoll Headcount - Accept --------
+                Dialog - Create a dialog button for RagnoDialog01 labelled Gnoll Headcount (Da...
+                Set VariableSet RagnoDialog01GnollHeadcount = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show RagnoDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestGnollHeadcount is discovered) Equal to True
+                (QuestGnollHeadcount is completed) Equal to False
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Charges remaining in (Item carried by Nazgrek of type Gnoll Head)) Greater than or equal to 20
+                        (Charges remaining in (Item carried by Zulkis of type Gnoll Head)) Greater than or equal to 20
+            Then - Actions
+                -------- Daily Quest - Gnoll Headcount - Completion --------
+                Dialog - Create a dialog button for RagnoDialog01 labelled Gnoll Headcount (Co...
+                Set VariableSet RagnoDialog01GnollHeadcountC = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show RagnoDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        And - All (Conditions) are true
+                            Conditions
+                                (QuestLumberjackDuties is discovered) Equal to False
+                                (QuestLumberjackDuties is completed) Equal to False
+                        And - All (Conditions) are true
+                            Conditions
+                                (QuestLumberjackDuties is failed) Equal to True
+                        And - All (Conditions) are true
+                            Conditions
+                                (QuestLumberjackDuties is completed) Equal to True
+                                (QuestLumberjackDuties is failed) Equal to False
+            Then - Actions
+                -------- Daily Quest - Lumberjack Duties - Accept --------
+                Dialog - Create a dialog button for RagnoDialog01 labelled Lumberjack Duties (...
+                Set VariableSet RagnoDialog01LumberjackDuties = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show RagnoDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestLumberjackDuties is discovered) Equal to True
+                (QuestLumberjackDuties is completed) Equal to False
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Charges remaining in (Item carried by Nazgrek of type Pile Of Wood)) Greater than or equal to 10
+                        (Charges remaining in (Item carried by Zulkis of type Pile Of Wood)) Greater than or equal to 10
+            Then - Actions
+                -------- Daily Quest - Lumberjack Duties - Completion --------
+                Dialog - Create a dialog button for RagnoDialog01 labelled Lumberjack Duties (...
+                Set VariableSet RagnoDialog01LumberjackDutiesC = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show RagnoDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestKobolds is discovered) Equal to False
+                (QuestKobolds is completed) Equal to False
+            Then - Actions
+                -------- Daily Quest - Kobold Thieves - Accept --------
+                Dialog - Create a dialog button for RagnoDialog01 labelled Kobold Thieves (Dai...
+                Set VariableSet RagnoDialog01Kobolds = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show RagnoDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestKobolds is discovered) Equal to True
+                (QuestKobolds is completed) Equal to False
+                QuestKoboldsLeaderKilled Equal to True
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Charges remaining in (Item carried by Nazgrek of type Stolen Goods)) Greater than or equal to 6
+                        (Charges remaining in (Item carried by Zulkis of type Stolen Goods)) Greater than or equal to 6
+            Then - Actions
+                -------- Daily Quest - Kobold Thieves - Completion --------
+                Dialog - Create a dialog button for RagnoDialog01 labelled Kobold Thieves (Com...
+                Set VariableSet RagnoDialog01KoboldsC = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show RagnoDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestSatyrNegotiations is discovered) Equal to False
+                (QuestSatyrNegotiations is completed) Equal to False
+            Then - Actions
+                -------- Quest - Satyrn Negotations - Accept --------
+                Dialog - Create a dialog button for RagnoDialog01 labelled Satyr Negotiations ...
+                Set VariableSet RagnoDialog01SatyrNegotiations = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show RagnoDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestSatyrNegotiations is discovered) Equal to True
+                (QuestSatyrNegotiations is completed) Equal to False
+                QuestSatyrNegotiationsReady Equal to True
+            Then - Actions
+                -------- Quest - Satyrn Negotations - Completion --------
+                Dialog - Create a dialog button for RagnoDialog01 labelled Satyr Negotiations ...
+                Set VariableSet RagnoDialog01SatyrNegotiatiosC = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show RagnoDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestMountainDefense is discovered) Equal to True
+                (QuestMountainDefense is completed) Equal to False
+                QuestMountainDefenseActive Equal to False
+            Then - Actions
+                -------- Quest - Mountain Defense - Continue (aid Ragno) --------
+                Dialog - Create a dialog button for RagnoDialog01 labelled Mountain Defense (A...
+                Set VariableSet RagnoDialog01MountainDefense = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show RagnoDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- Exit dialog --------
+                Dialog - Create a dialog button for RagnoDialog01 labelled - Farewell
+                Set VariableSet RagnoDialog01Farewell = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show RagnoDialog01 for Player 1 (Red)
+            Else - Actions

@@ -1,0 +1,82 @@
+Giving The Letter Q
+    Events
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                debug_givezulkis Equal to True
+            Then - Actions
+                Skip remaining actions
+            Else - Actions
+        Item - Remove BloodSignedLetter
+        Cinematic - Disable user control for (All players).
+        Camera - Apply ThorkCamera1 <gen> for Player 1 (Red) over 0.00 seconds
+        Camera - Apply ThorkCamera3 <gen> for Player 1 (Red) over 15.00 seconds
+        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0005 <gen> and display What exactly is the....  Modify duration: Set to 4.00 seconds and Wait
+        Wait 1.00 seconds
+        Cinematic - Send transmission to (All players) from Thork named Thork Hellscream: Play Thork_0002 <gen> and display You were brought he....  Modify duration: Set to 4.50 seconds and Wait
+        Wait 0.50 seconds
+        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0006 <gen> and display With all due respec....  Modify duration: Set to 21.00 seconds and Wait
+        Cinematic - Send transmission to (All players) from Thork named Thork Hellscream: Play Thork_0006 <gen> and display At the time, we did....  Modify duration: Set to 16.00 seconds and Wait
+        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0067 <gen> and display Hellscream, you kno....  Modify duration: Set to 14.00 seconds and Wait
+        Cinematic - Send transmission to (All players) from Thork named Thork Hellscream: Play Thork_0008 <gen> and display Indeed... but now w....  Modify duration: Set to 20.00 seconds and Wait
+        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0064 <gen> and display It's that all? Am I....  Modify duration: Set to 4.00 seconds and Wait
+        Wait 1.00 seconds
+        Animation - Lock Chieftain Thork 0018 <gen>'s Head to face Zul'kis (ranged) 0511 <gen>, offset by (0.00, 0.00, 90.00)
+        Wait 1.00 seconds
+        Animation - Reset Chieftain Thork 0018 <gen>'s body-part facing
+        Cinematic - Send transmission to (All players) from Thork named Thork Hellscream: Play Thork_0003 <gen> and display The witchdoctors of....  Modify duration: Set to 10.00 seconds and Wait
+        Cinematic - Send transmission to (All players) from Zulkis named Zul'kis: Play Zulkis_0001 <gen> and display Hey mon, it be look....  Modify duration: Set to 6.00 seconds and Wait
+        Wait 1.00 seconds
+        Animation - Lock Chieftain Thork 0018 <gen>'s Head to face Nazgrek, offset by (0.00, 0.00, 90.00)
+        Wait 1.00 seconds
+        Animation - Reset Chieftain Thork 0018 <gen>'s body-part facing
+        Cinematic - Send transmission to (All players) from Thork named Thork Hellscream: Play Thork_0004 <gen> and display If you get along, h....  Modify duration: Set to 7.00 seconds and Wait
+        Animation - Lock Nazgrek's Head to face Zulkis, offset by (0.00, 0.00, 90.00)
+        Cinematic - Send transmission to (All players) from Zulkis named Zul'kis: Play Zulkis_0002 <gen> and display "I be sensin' ya le....  Modify duration: Set to 11.00 seconds and Wait
+        Wait 1.00 seconds
+        Camera - Apply ThorkCamera2 <gen> for Player 1 (Red) over 0.00 seconds
+        Animation - Reset Nazgrek's body-part facing
+        Wait 0.50 seconds
+        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0066 <gen> and display I will join with th....  Modify duration: Set to 9.00 seconds and Wait
+        Camera - Apply ThorkCamera3 <gen> for Player 1 (Red) over 0.00 seconds
+        Cinematic - Send transmission to (All players) from Chieftain Thork 0018 <gen> named Thork Hellscream: Play Thork_0005 <gen> and display You do what you do,....  Modify duration: Set to 10.00 seconds and Wait
+        Cinematic - Enable user control for (All players).
+        -------- DEFAULT CAMERA --------
+        Camera - Apply ThorkCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+        -------- ======== CINEMATIC ENDS ======== --------
+        Trigger - Run Cinematic OFF <gen> (checking conditions)
+        Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+        Special Effect - Destroy QuestGiverThorkHellscream
+        Special Effect - Create a special effect attached to the overhead of Thork using war3campImported\Completed_Quest_NOT.mdx
+        Set VariableSet QuestGiverThorkHellscream = (Last created special effect)
+        Special Effect - Create a special effect attached to the overhead of Granis using war3campImported\ExcMark_Gold_NonrepeatableQuest.mdx
+        Set VariableSet QuestGiverGranis = (Last created special effect)
+        Special Effect - Create a special effect attached to the overhead of Garthork using war3campImported\ExcMark_Gold_NonrepeatableQuest.mdx
+        Set VariableSet QuestGiverGarthork = (Last created special effect)
+        Special Effect - Create a special effect attached to the overhead of Drek'thor 0086 <gen> using war3campImported\ExcMark_Gold_NonrepeatableQuest.mdx
+        Set VariableSet QuestGiverDrekthor = (Last created special effect)
+        Trigger - Turn off Quests of Thork Hellscream First <gen>
+        Trigger - Turn on Quests of Granis <gen>
+        Trigger - Turn on Quests of Garthork <gen>
+        Trigger - Turn on Quests of Drekthor <gen>
+        Wait 0.50 seconds
+        Unit - Rescue Zul'kis (ranged) 0511 <gen> for Player 1 (Red) and Change color
+        -------- Inventory & Equipment System --------
+        Custom script:   call InitializeDInventoryForUnit(udg_Zulkis)
+        Custom script:   call InitializeDEquipmentForUnit(udg_Zulkis)
+        Unit - Make Zulkis Vulnerable
+        Unit Group - Remove Zulkis from UnEquipNPCS.
+        Hero - Create Lesser Clarity Potion and give it to Zulkis
+        Hero - Create Healing Wards and give it to Zulkis
+        Hero - Create Lesser Clarity Potion and give it to Zulkis
+        Trigger - Run Quest Call of the Horde Completed <gen> (checking conditions)
+        Trigger - Run Hint 5 Quests Q <gen> (checking conditions)
+        Wait 4.50 seconds
+        Trigger - Turn on Quests of Thork Hellscream <gen>
+        Trigger - Turn on Quest First Quests Completed <gen>
+        Trigger - Run Quest First Quest Discover <gen> (checking conditions)
+        -------- Chat with Zulkis --------
+        Cinematic - Send transmission to (All players) from Zulkis named Zul'kis: Play Zulkis_0003 <gen> and display Well, Nazgrek, my m....  Modify duration: Set to 13.00 seconds and Wait
+        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0065 <gen> and display I don't know. And I....  Modify duration: Set to 7.00 seconds and Wait
+        Trigger - Remove (This trigger) from the trigger queue

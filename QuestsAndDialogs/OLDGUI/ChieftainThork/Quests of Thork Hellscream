@@ -1,0 +1,108 @@
+Quests of Thork Hellscream
+    Events
+        Player - Player 1 (Red) Selects a unit
+    Conditions
+        (Triggering unit) Equal to Thork
+        (Distance between (Position of Thork) and (Position of Nazgrek)) Less than or equal to 500.00
+        (Remaining time for DialogOverTimer) Equal to 0.00
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- ======== CINEMATIC STARTS ======== --------
+        Trigger - Run Cinematic ON <gen> (checking conditions)
+        -------- Camera --------
+        Cinematic - Turn cinematic mode On for (All players)
+        Camera - Apply ThorkCamera1 <gen> for Player 1 (Red) over 0.00 seconds
+        Camera - Pan camera for Player 1 (Red) to (Position of Thork) over 1.00 seconds
+        Wait 1.00 seconds
+        Unit - Make Thork face Nazgrek over 0.75 seconds
+        Unit - Make Nazgrek face Thork over 0.75 seconds
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestCallOfTheHorde is completed) Equal to True
+                (QuestFirstQuests is completed) Equal to False
+            Then - Actions
+                Cinematic - Send transmission to (All players) from Chieftain Thork 0018 <gen> named Thork Hellscream: Play No sound and display Someones in our bas....  Modify duration: Set to 4.50 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply ThorkCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Trigger - Turn on (This trigger)
+                Skip remaining actions
+            Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (QuestFirstQuests is completed) Equal to True
+                        (QuestTask is discovered) Equal to False
+                    Then - Actions
+                        Cinematic - Send transmission to (All players) from Chieftain Thork 0018 <gen> named Thork Hellscream: Play No sound and display I see that you have....  Modify duration: Set to 5.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Chieftain Thork 0018 <gen> named Thork Hellscream: Play No sound and display But now I got new t....  Modify duration: Set to 3.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Chieftain Thork 0018 <gen> named Thork Hellscream: Play No sound and display Go to the wind ride....  Modify duration: Set to 7.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Chieftain Thork 0018 <gen> named Thork Hellscream: Play No sound and display When you're at the ....  Modify duration: Set to 7.50 seconds and Wait
+                        -------- DEFAULT CAMERA --------
+                        Camera - Apply ThorkCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                        -------- ======== CINEMATIC ENDS ======== --------
+                        Trigger - Run Cinematic OFF <gen> (checking conditions)
+                        Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                        Wait 5.00 seconds
+                        Trigger - Run Quest Task Discover <gen> (checking conditions)
+                        Trigger - Turn on Quest of Rager Grimtotem <gen>
+                        Special Effect - Destroy QuestGiverThorkHellscream
+                        Special Effect - Create a special effect attached to the overhead of Rager Grimtotem 0215 <gen> using Abilities\Spells\Other\TalkToMe\TalkToMe.mdl
+                        Set VariableSet QuestGiverRager = (Last created special effect)
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (QuestPurification is completed) Equal to True
+                                (QuestCheck is discovered) Equal to False
+                            Then - Actions
+                                Cinematic - Send transmission to (All players) from Chieftain Thork 0018 <gen> named Thork Hellscream: Play No sound and display Rager said that you....  Modify duration: Set to 5.00 seconds and Wait
+                                Cinematic - Send transmission to (All players) from Chieftain Thork 0018 <gen> named Thork Hellscream: Play No sound and display I'm proud of you ra....  Modify duration: Set to 2.00 seconds and Wait
+                                Cinematic - Send transmission to (All players) from Chieftain Thork 0018 <gen> named Thork Hellscream: Play No sound and display Now I want you to g....  Modify duration: Set to 7.25 seconds and Wait
+                                -------- DEFAULT CAMERA --------
+                                Camera - Apply ThorkCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                                -------- ======== CINEMATIC ENDS ======== --------
+                                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                                Wait 5.00 seconds
+                                Special Effect - Create a special effect attached to the overhead of Chieftain Thork 0018 <gen> using Abilities\Spells\Other\TalkToMe\TalkToMe.mdl
+                                Set VariableSet QuestGiverThorkHellscream = (Last created special effect)
+                                Trigger - Run Quest Check Discover <gen> (checking conditions)
+                                Trigger - Turn on (This trigger)
+                                Skip remaining actions
+                            Else - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (QuestHumanVillage is completed) Equal to True
+                                    Then - Actions
+                                        Cinematic - Send transmission to (All players) from Chieftain Thork 0018 <gen> named Thork Hellscream: Play No sound and display Well...what happene....  Modify duration: Set to 3.00 seconds and Wait
+                                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display Ogres were assaulti....  Modify duration: Set to 4.00 seconds and Wait
+                                        Cinematic - Send transmission to (All players) from Chieftain Thork 0018 <gen> named Thork Hellscream: Play No sound and display You helped ogres? O....  Modify duration: Set to 8.00 seconds and Wait
+                                        Cinematic - Send transmission to (All players) from Chieftain Thork 0018 <gen> named Thork Hellscream: Play No sound and display You should go to th....  Modify duration: Set to 7.00 seconds and Wait
+                                        -------- DEFAULT CAMERA --------
+                                        Camera - Apply ThorkCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                                        -------- ======== CINEMATIC ENDS ======== --------
+                                        Trigger - Run Cinematic OFF <gen> (checking conditions)
+                                        Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                                        Trigger - Turn on (This trigger)
+                                        Skip remaining actions
+                                    Else - Actions
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                (QuestCheckReqCheck is completed) Equal to True
+                                            Then - Actions
+                                                Cinematic - Send transmission to (All players) from Chieftain Thork 0018 <gen> named Thork Hellscream: Play No sound and display Well...what happene....  Modify duration: Set to 3.00 seconds and Wait
+                                                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display Ogres were assaulti....  Modify duration: Set to 6.00 seconds and Wait
+                                                Cinematic - Send transmission to (All players) from Chieftain Thork 0018 <gen> named Thork Hellscream: Play No sound and display Ogres raiding human....  Modify duration: Set to 4.25 seconds and Wait
+                                                Cinematic - Send transmission to (All players) from Chieftain Thork 0018 <gen> named Thork Hellscream: Play No sound and display It was good that yo....  Modify duration: Set to 10.50 seconds and Wait
+                                                Cinematic - Send transmission to (All players) from Chieftain Thork 0018 <gen> named Thork Hellscream: Play No sound and display We must destroy the....  Modify duration: Set to 7.00 seconds and Wait
+                                                -------- DEFAULT CAMERA --------
+                                                Camera - Apply ThorkCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                                                -------- ======== CINEMATIC ENDS ======== --------
+                                                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                                                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                                                Trigger - Turn on (This trigger)
+                                                Skip remaining actions
+                                            Else - Actions

@@ -1,0 +1,172 @@
+Quest Protect The Outpost Gnolls Dead
+    Events
+        Time - Every 2.00 seconds of game time
+    Conditions
+        (HordeMountainCamp2 <gen> contains Nazgrek) Equal to True
+        (All units of GnollGroupSecondWave are dead) Equal to True
+        (Nazgrek is alive) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- INIT SKIP --------
+        Trigger - Turn on Quest Protect The Outpost Gnolls Dead SKIP <gen>
+        If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        -------- INIT SKIP over --------
+        Set VariableSet VarPoint = (Center of RagnoIntroNazgrek <gen>)
+        Unit - Move Nazgrek instantly to VarPoint, facing 73.00 degrees
+        Set VariableSet VarPoint = (Center of RagnoPoint <gen>)
+        Unit - Move Ragno instantly to VarPoint, facing 73.00 degrees
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- ======== CINEMATIC STARTS ======== --------
+        Trigger - Run Cinematic ON <gen> (checking conditions)
+        -------- Fade Out --------
+        Cinematic - Fade out over 0.00 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        -------- Fade In --------
+        Cinematic - Fade in over 2.00 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        -------- Camera --------
+        Camera - Apply ProtectOutpost03 <gen> for Player 1 (Red) over 0.00 seconds
+        Wait 2.00 seconds
+        If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        -------- Voice lines --------
+        -------- Check if grunts alive --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                And - All (Conditions) are true
+                    Conditions
+                        (Grunt 1209 <gen> is alive) Equal to True
+                        (Grunt 1210 <gen> is alive) Equal to False
+            Then - Actions
+                Unit - Make Nazgrek face Grunt 1209 <gen> over 1.00 seconds
+                Unit - Make Grunt 1209 <gen> face Nazgrek over 1.00 seconds
+                Cinematic - Send transmission to (All players) from Grunt 1209 <gen> named Grunt: Play OrcGrunt_0014 <gen> and display Thank you shaman! W....  Modify duration: Set to 5.00 seconds and Don't wait
+                Wait 6.00 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0058 <gen> and display The pleasure was al....  Modify duration: Set to 3.00 seconds and Don't wait
+                Wait 5.00 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                And - All (Conditions) are true
+                    Conditions
+                        (Grunt 1209 <gen> is alive) Equal to False
+                        (Grunt 1210 <gen> is alive) Equal to True
+            Then - Actions
+                Unit - Make Nazgrek face Grunt 1210 <gen> over 1.00 seconds
+                Unit - Make Grunt 1210 <gen> face Nazgrek over 1.00 seconds
+                Cinematic - Send transmission to (All players) from Grunt 1210 <gen> named Grunt: Play OrcGrunt_0014 <gen> and display Thank you shaman! W....  Modify duration: Set to 5.00 seconds and Don't wait
+                Wait 6.00 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0058 <gen> and display The pleasure was al....  Modify duration: Set to 3.00 seconds and Don't wait
+                Wait 5.00 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                And - All (Conditions) are true
+                    Conditions
+                        (Grunt 1209 <gen> is alive) Equal to True
+                        (Grunt 1210 <gen> is alive) Equal to True
+            Then - Actions
+                Unit - Make Nazgrek face Grunt 1210 <gen> over 1.00 seconds
+                Unit - Make Grunt 1210 <gen> face Nazgrek over 1.00 seconds
+                Cinematic - Send transmission to (All players) from Grunt 1210 <gen> named Grunt: Play OrcGrunt_0014 <gen> and display Thank you shaman! W....  Modify duration: Set to 5.00 seconds and Don't wait
+                Wait 6.00 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0058 <gen> and display The pleasure was al....  Modify duration: Set to 3.00 seconds and Don't wait
+                Wait 5.00 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+            Else - Actions
+        Wait 1.00 seconds
+        If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        Unit - Make Ragno face Nazgrek over 0.50 seconds
+        Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0015 <gen> and display Hey you! You must b....  Modify duration: Set to 5.00 seconds and Don't wait
+        Wait 1.00 seconds
+        If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        Unit - Make Nazgrek face Ragno over 1.00 seconds
+        Wait 2.00 seconds
+        If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        Set VariableSet VarPoint = (Center of RagnoIntroRagno <gen>)
+        Unit - Order Ragno to Move To VarPoint
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Wait 2.50 seconds
+        If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        Unit - Make Nazgrek face Ragno over 1.00 seconds
+        Wait 1.00 seconds
+        If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        Unit - Make Ragno face Nazgrek over 1.00 seconds
+        Unit - Make Nazgrek face Ragno over 1.00 seconds
+        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0059 <gen> and display Yes, that is my nam....  Modify duration: Set to 5.00 seconds and Don't wait
+        Custom script:   call SetUnitAnimationByIndex(udg_Nazgrek, 104)
+        Wait 5.00 seconds
+        If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        Unit - Make Ragno face Nazgrek over 1.00 seconds
+        Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0016 <gen> and display Wait! I knew you lo....  Modify duration: Set to 4.00 seconds and Don't wait
+        Wait 5.00 seconds
+        If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0060 <gen> and display That sounds trouble....  Modify duration: Set to 3.00 seconds and Don't wait
+        Custom script:   call SetUnitAnimationByIndex(udg_Nazgrek, 104)
+        Wait 4.00 seconds
+        If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        Unit - Make Ragno face Nazgrek over 1.00 seconds
+        Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0017 <gen> and display Your days at exile ....  Modify duration: Set to 3.00 seconds and Don't wait
+        Wait 4.00 seconds
+        If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0005 <gen> and display The war chief has i....  Modify duration: Set to 3.00 seconds and Don't wait
+        Wait 3.00 seconds
+        If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0061 <gen> and display To aid the Horde? I....  Modify duration: Set to 4.00 seconds and Don't wait
+        Custom script:   call SetUnitAnimationByIndex(udg_Nazgrek, 104)
+        Wait 5.50 seconds
+        If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0006 <gen> and display If you accept his s....  Modify duration: Set to 8.00 seconds and Don't wait
+        Wait 8.50 seconds
+        If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0007 <gen> and display He would not summon....  Modify duration: Set to 9.00 seconds and Don't wait
+        Wait 10.00 seconds
+        If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0062 <gen> and display I guess the times h....  Modify duration: Set to 5.00 seconds and Don't wait
+        Custom script:   call SetUnitAnimationByIndex(udg_Nazgrek, 104)
+        Wait 5.00 seconds
+        If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        Set VariableSet VarPoint = (Center of RagoIntroRagno3 <gen>)
+        Unit - Order Ragno to Move To VarPoint
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Wait 3.00 seconds
+        -------- SKIP over --------
+        Trigger - Turn off Quest Protect The Outpost Gnolls Dead SKIP <gen>
+        -------- SKIP over --------
+        Set VariableSet VarPoint = (Center of RagnoIntroRagno2 <gen>)
+        Unit - Order Ragno to Move To VarPoint
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- Give Item --------
+        Hero - Create Blood Signed Summon Letter and give it to Nazgrek
+        Set VariableSet BloodSignedLetter = (Last created item)
+        Item - Make BloodSignedLetter Invulnerable
+        -------- Fade Out --------
+        Cinematic - Fade out over 0.50 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        Wait 0.50 seconds
+        -------- Reset Camera --------
+        Camera - Reset camera smoothing factor
+        Camera - Reset camera for Player 1 (Red) to standard game-view over 0.00 seconds
+        Camera - Pan camera for Player 1 (Red) to (Target of ProtectOutpostSkipped02 <gen>) over 0.00 seconds
+        Wait 0.50 seconds
+        -------- Fade In --------
+        Cinematic - Fade in over 0.50 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        Wait 0.50 seconds
+        -------- ======== CINEMATIC ENDS ======== --------
+        Trigger - Run Cinematic OFF <gen> (checking conditions)
+        -------- Unhide Gnoll Mountain Camp gnolls --------
+        Unit Group - Pick every unit in GnollMountainCamp and do (Actions)
+            Loop - Actions
+                Unit - Unhide (Picked unit)
+        Custom script:   call DestroyGroup(udg_GnollMountainCamp)
+        -------- Run triggers --------
+        Trigger - Turn on Chat Horde Mountains Confront Grunts First <gen>
+        -------- Start quest --------
+        Set VariableSet GnollAttackFirstActive = False
+        Trigger - Run Quest Call of the Horde Discover <gen> (checking conditions)
+        Special Effect - Create a special effect attached to the overhead of Chieftain Thork 0018 <gen> using war3campImported\ExcMark_Gold_NonrepeatableQuest.mdx
+        Set VariableSet QuestGiverThorkHellscream = (Last created special effect)
+        -------- Allow Ragno quests --------
+        Special Effect - Create a special effect attached to the overhead of Ragno using war3campImported\ExcMark_Blue_RepetableQuest.mdx
+        Set VariableSet QuestGiverRagno = (Last created special effect)

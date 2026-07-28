@@ -1,0 +1,15 @@
+Quest Call of the Horde Discover
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Call of the Horde Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestCallOfTheHorde as Discovered
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Discovered message: |cffffcc00MAIN QUES...
+        -------- Reveal Human Outpost --------
+        Visibility - Create an initially Enabled visibility modifier for Player 1 (Red) emitting Visibility from (Center of Reveal Horde Scout Base <gen>) to a radius of 1024.00.
+        Visibility - Destroy (Last created visibility modifier)
+        Cinematic - Ping minimap for Player Group - Player 1 (Red) at (Center of Reveal Horde Scout Base <gen>) for 7.00 seconds
+        Camera - Set a spacebar-point for Player 1 (Red) at (Center of Reveal Horde Scout Base <gen>)

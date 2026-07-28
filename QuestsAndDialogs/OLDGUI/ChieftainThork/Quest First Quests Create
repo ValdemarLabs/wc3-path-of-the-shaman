@@ -1,0 +1,11 @@
+Quest First Quests Create
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create the quest objects --------
+        Quest - Create a Required, undiscovered quest titled Duty For The Horde with the description Thork Hellscream wa..., using icon path ReplaceableTextures\CommandButtons\BTNHellScream.blp
+        Set VariableSet QuestFirstQuests = (Last created quest)
+        Quest - Create a quest requirement for QuestFirstQuests with the description Complete Gar'thork'...
+        Set VariableSet QuestFirstQuestsReqComplete = (Last created quest requirement)

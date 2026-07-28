@@ -1,0 +1,105 @@
+Quest Lumberjack Duties Peon Chop
+    Events
+        Unit - A unit Is issued an order targeting an object
+    Conditions
+        (Issued order) Equal to (Order(harvest))
+        (Ordered unit) Equal to LumberPeon
+        (LumberPeon is alive) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Set follow --------
+        Set VariableSet FollowSystem_Source = LumberPeon
+        Set VariableSet FollowSystem_Target = Nazgrek
+        Custom script:   call FollowSystem_RemoveUnit(udg_FollowSystem_Source)
+        Trigger - Turn off Quest Lumberjack Duties Peon Near tree <gen>
+        Trigger - Turn off Quest Lumberjack Duties Peon Random Getting Lost <gen>
+        Trigger - Turn off Quest Lumberjack Duties Peon Chat <gen>
+        -------- Peon starts harvesting --------
+        -------- DEBUG --------
+        Game - Display to (All players) the text: (DEBUG:  + (LumperPeon >>  + Peon starts harvesting wood))
+        -------- DEBUG --------
+        Set VariableSet QuestLumberjackPeonHarvesting = True
+        Set VariableSet QuestLumberjackDutiesTree = (Target destructible of issued order)
+        If ((LumberPeon is dead) Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        Cinematic - Send transmission to (All players) from LumberPeon named Peon: Play OrcPeon_0009 <gen> and display Choppin' away! Hope....  Modify duration: Set to 4.00 seconds and Wait
+        If ((LumberPeon is dead) Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        Wait 2.00 seconds
+        If ((LumberPeon is dead) Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        Cinematic - Send transmission to (All players) from LumberPeon named Peon: Play OrcPeon_0010 <gen> and display Feel da power of me....  Modify duration: Set to 4.00 seconds and Wait
+        If ((LumberPeon is dead) Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        Wait 2.00 seconds
+        If ((LumberPeon is dead) Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        -------- Kill the tree and insert pathing blocker --------
+        Destructible - Kill QuestLumberjackDutiesTree
+        Set VariableSet VarPoint = (Position of QuestLumberjackDutiesTree)
+        Destructible - Create a Pathing Blocker (Ground) (lumber quest) at VarPoint facing (Random angle) with scale 1.00 and variation 0
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Wait 1.00 seconds
+        If ((LumberPeon is dead) Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        Unit - Order LumberPeon to Stop.
+        Set VariableSet QuestLumberjackPeonHarvesting = False
+        -------- Peon ready --------
+        -------- Set chance to receive lumber --------
+        Set VariableSet QuestLumberjackChance = (Random integer number between 1 and 2)
+        -------- Good wood = Receive item Pile of Wood --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                QuestLumberjackChance Equal to 1
+            Then - Actions
+                Cinematic - Send transmission to (All players) from LumberPeon named Peon: Play OrcPeon_0011 <gen> and display Hmm, dis lumber fee....  Modify duration: Set to 5.00 seconds and Wait
+                Set VariableSet VarPoint = (Position of LumberPeon)
+                Item - Create Pile Of Wood at VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Set VariableSet QuestLumberjackChance = 0
+            Else - Actions
+        -------- Bad wood = no items received --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        QuestLumberjackChance Equal to 2
+            Then - Actions
+                Set VariableSet QuestLumberjackChanceSpeak = (Random integer number between 1 and 3)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        QuestLumberjackChanceSpeak Equal to 1
+                    Then - Actions
+                        Cinematic - Send transmission to (All players) from LumberPeon named Peon: Play OrcPeon_0012 <gen> and display Uh-oh, boss... bad ....  Modify duration: Set to 3.00 seconds and Wait
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        QuestLumberjackChanceSpeak Equal to 2
+                    Then - Actions
+                        Cinematic - Send transmission to (All players) from LumberPeon named Peon: Play OrcPeon_0013 <gen> and display Wood no good wood, ....  Modify duration: Set to 3.00 seconds and Wait
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        QuestLumberjackChanceSpeak Equal to 3
+                    Then - Actions
+                        Cinematic - Send transmission to (All players) from LumberPeon named Peon: Play OrcPeon_0014 <gen> and display Eh... Uhhum... Wood....  Modify duration: Set to 5.00 seconds and Wait
+                    Else - Actions
+                Set VariableSet QuestLumberjackChanceSpeak = 0
+                Set VariableSet QuestLumberjackChance = 0
+            Else - Actions
+        -------- Make peon return lumber (e.g., remove harvested lumber) --------
+        Set VariableSet VarPoint = (Position of LumberPeon)
+        Unit - Create 1 Lumber return for Player 2 (Blue) at VarPoint facing Default building facing degrees
+        Set VariableSet LumberReturnUnit = (Last created unit)
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Unit - Order LumberPeon to Right-Click LumberReturnUnit
+        If ((LumberPeon is dead) Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        Wait 0.20 seconds
+        Unit - Order LumberPeon to Stop.
+        If ((LumberPeon is dead) Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        Unit - Remove LumberReturnUnit from the game
+        Wait 1.00 seconds
+        If ((LumberPeon is dead) Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        -------- Set follow --------
+        Set VariableSet FollowSystem_Source = LumberPeon
+        Set VariableSet FollowSystem_Target = Nazgrek
+        Custom script:   call FollowSystem_SetFollow(udg_FollowSystem_Source, udg_FollowSystem_Target, 1200.0, true, 5.0, FOLLOW_STYLE_PASSIVE, true, true)
+        Trigger - Turn on Quest Lumberjack Duties Peon Chat <gen>
+        Trigger - Turn on Quest Lumberjack Duties Peon Random Getting Lost <gen>
+        Trigger - Turn on Quest Lumberjack Duties Peon Near tree <gen>
+        Trigger - Turn on (This trigger)
+        Trigger - Remove (This trigger) from the trigger queue

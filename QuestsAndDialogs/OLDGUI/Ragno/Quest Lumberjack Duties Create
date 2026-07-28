@@ -1,0 +1,13 @@
+Quest Lumberjack Duties Create
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create the quest objects --------
+        Quest - Create a Required, undiscovered quest titled Lumberjack Duties with the description Harvest 10 Pile of ..., using icon path ReplaceableTextures\CommandButtons\BTNBundleOfLumber.blp
+        Set VariableSet QuestLumberjackDuties = (Last created quest)
+        Quest - Create a quest requirement for QuestLumberjackDuties with the description Harvest 10 Pile of ...
+        Set VariableSet QuestLumberjackReq1 = (Last created quest requirement)
+        Quest - Create a quest requirement for QuestLumberjackDuties with the description Peon must survive
+        Set VariableSet QuestLumberjackReq2 = (Last created quest requirement)

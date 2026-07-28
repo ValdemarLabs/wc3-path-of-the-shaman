@@ -1,0 +1,36 @@
+Quest Lumberjack Duties Peon Wood Collected
+    Events
+        Time - Every 5.00 seconds of game time
+    Conditions
+        (LumberPeon is alive) Equal to True
+        Or - Any (Conditions) are true
+            Conditions
+                (Charges remaining in (Item carried by Nazgrek of type Pile Of Wood)) Greater than or equal to 10
+                (Charges remaining in (Item carried by Zulkis of type Pile Of Wood)) Greater than or equal to 10
+    Actions
+        Trigger - Turn off (This trigger)
+        Trigger - Turn off Quest Lumberjack Duties Peon Chop <gen>
+        Trigger - Turn off Quest Lumberjack Duties Peon Chat <gen>
+        Trigger - Turn off Quest Lumberjack Duties Peon Near tree <gen>
+        Trigger - Turn off Quest Lumberjack Duties Peon Random Getting Lost <gen>
+        Cinematic - Send transmission to (All players) from LumberPeon named Peon: Play OrcPeon_0015 <gen> and display Quest complete, bos....  Modify duration: Set to 5.00 seconds and Wait
+        Wait 15.00 seconds
+        -------- Resurrect harvested trees --------
+        Destructible - Pick every destructible in (Playable map area) and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Destructible-type of (Picked destructible)) Equal to Pine Tree
+                    Then - Actions
+                        Destructible - Resurrect (Picked destructible) with (Max life of (Last created destructible)) life and Show birth animation
+                    Else - Actions
+        -------- Destroy quest related pathing blockers --------
+        Destructible - Pick every destructible in (Playable map area) and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Destructible-type of (Picked destructible)) Equal to Pathing Blocker (Ground) (lumber quest)
+                    Then - Actions
+                        Destructible - Remove (Picked destructible)
+                    Else - Actions
+        Trigger - Remove (This trigger) from the trigger queue

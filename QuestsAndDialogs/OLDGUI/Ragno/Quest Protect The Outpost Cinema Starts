@@ -1,0 +1,79 @@
+Quest Protect The Outpost Cinema Starts
+    Events
+        Unit - A unit enters RagnoIntroRegion01 <gen>
+        Unit - A unit enters RagnoIntroRegion02 <gen>
+        Unit - A unit enters RagnoIntroRegion03 <gen>
+        Unit - A unit enters RagnoIntroRegion04 <gen>
+    Conditions
+        (Owner of (Entering unit)) Equal to Player 1 (Red)
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Hide Gnoll Mountain Camp gnolls --------
+        Set VariableSet GnollAttackFirstActive = True
+        Unit Group - Pick every unit in (Units in GnollMountainCamp <gen> owned by Neutral Hostile) and do (Actions)
+            Loop - Actions
+                Unit Group - Add (Picked unit) to GnollMountainCamp
+                Unit - Hide (Picked unit)
+        -------- Set cinema units --------
+        -------- ======== CINEMATIC STARTS ======== --------
+        Trigger - Run Cinematic ON <gen> (checking conditions)
+        Set VariableSet VarPoint = (Center of RagnoIntroPlayerUnits <gen>)
+        Unit Group - Pick every unit in PlayerCinemaGroup and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Unit-type of (Picked unit)) Equal to Camp Fire
+                        (Unit-type of (Picked unit)) Equal to Tent (Resting)
+                    Then - Actions
+                        Unit - Move (Picked unit) instantly to VarPoint, facing 49.00 degrees
+                    Else - Actions
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Center of RagnoIntroRegionNazgrek <gen>)
+        Unit - Move Nazgrek instantly to VarPoint, facing 49.00 degrees
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Trigger - Run Quest Protect The Outpost Cinema Gnolls First Wave <gen> (checking conditions)
+        -------- Fade Out --------
+        Cinematic - Fade out over 0.00 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        -------- Fade In --------
+        Cinematic - Fade in over 2.00 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        -------- Camera --------
+        Camera - Apply ProtectOutpost01 <gen> for Player 1 (Red) over 0.00 seconds
+        Wait 2.00 seconds
+        -------- Voice lines --------
+        Cinematic - Send transmission to (All players) from Grunt 1209 <gen> named Grunt: Play OrcGrunt_0012 <gen> and display The gnolls are atta....  Modify duration: Set to 3.00 seconds and Don't wait
+        Wait 5.00 seconds
+        -------- send "help" --------
+        Set VariableSet VarPoint = (Center of HordeMountaintCampAssist <gen>)
+        Unit - Order Ragno to Attack-Move To VarPoint
+        Unit - Order Grunt 1633 <gen> to Attack-Move To VarPoint
+        Unit - Order Raider 1221 <gen> to Attack-Move To VarPoint
+        Unit - Order Grunt 1634 <gen> to Attack-Move To VarPoint
+        Unit - Order Grunt 1632 <gen> to Attack-Move To VarPoint
+        Sound - Play GruntWarcry101 <gen> at 100.00% volume, located at VarPoint with Z offset 0.00
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Camera - Apply ProtectOutpost02 <gen> for Player 1 (Red) over 0.00 seconds
+        Cinematic - Send transmission to (All players) from Grunt 1210 <gen> named Grunt: Play OrcGrunt_0013 <gen> and display They are too many! ....  Modify duration: Set to 3.00 seconds and Don't wait
+        Wait 2.00 seconds
+        Camera - Apply ProtectOutpost01 <gen> for Player 1 (Red) over 0.00 seconds
+        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0057 <gen> and display I must aid these wa....  Modify duration: Set to 2.00 seconds and Don't wait
+        Custom script:   call SetUnitAnimationByIndex(udg_Nazgrek, 104)
+        Wait 2.00 seconds
+        -------- Fade Out --------
+        Cinematic - Fade out over 0.50 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        Wait 0.50 seconds
+        -------- Fade In --------
+        -------- DEFAULT CAMERA --------
+        Camera - Apply ProtectOutpostSkipped <gen> for Player 1 (Red) over 0.00 seconds
+        Cinematic - Fade in over 0.50 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        Wait 0.50 seconds
+        -------- ======== CINEMATIC ENDS ======== --------
+        Trigger - Run Cinematic OFF <gen> (checking conditions)
+        Wait 0.50 seconds
+        Set VariableSet VarPoint = (Center of GnollAttackRegion2 <gen>)
+        Unit - Order Nazgrek to Attack-Move To VarPoint
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- Run triggers --------
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Trigger - Run Quest Protect The Outpost Cinema Gnolls Second Wave <gen> (checking conditions)
+        Wait 5.00 seconds
+        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0007 <gen> and display You foul wretched!.  Modify duration: Set to 2.00 seconds and Don't wait

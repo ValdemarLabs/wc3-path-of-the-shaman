@@ -1,0 +1,12 @@
+Quest Satyr Negotiations Completed
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Satyr Negotiations Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestSatyrNegotiations as Discovered
+        Quest - Mark QuestSatyrNegotiationsReq1 as Completed
+        Quest - Mark QuestSatyrNegotiations as Completed
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Completed message: |cffffcc00QUEST COM...

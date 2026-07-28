@@ -1,0 +1,46 @@
+Quests of Ragno
+    Events
+        Player - Player 1 (Red) Selects a unit
+    Conditions
+        (Triggering unit) Equal to Ragno
+        (Distance between (Position of Ragno) and (Position of Nazgrek)) Less than or equal to 500.00
+        (Remaining time for DialogOverTimer) Equal to 0.00
+        QuestMountainDefenseActive Equal to False
+        GnollAttackFirstActive Equal to False
+        SuccubusSeduced Equal to False
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- ======== CINEMATIC STARTS ======== --------
+        Trigger - Run Cinematic ON <gen> (checking conditions)
+        -------- Camera --------
+        Cinematic - Turn cinematic mode On for (All players)
+        Camera - Pan camera for Player 1 (Red) to (Position of Ragno) over 1.00 seconds
+        Camera - Apply RagnoCamera01 <gen> for Player 1 (Red) over 0.00 seconds
+        Wait 1.00 seconds
+        Unit - Make Ragno face Nazgrek over 0.75 seconds
+        Unit - Make Nazgrek face Ragno over 0.75 seconds
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- NORMAL DIALOG --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        RagnoDialog01FarewellBoolean Equal to False
+                    Then - Actions
+                        -------- If the Player has previosly not declined the quest --------
+                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0170 <gen> and display Greetings warrior. ....  Modify duration: Set to 3.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0085 <gen> and display Hail Nazgrek! I sen....  Modify duration: Set to 8.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0088 <gen> and display If you are interest....  Modify duration: Set to 4.00 seconds and Wait
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        RagnoDialog01FarewellBoolean Equal to True
+                    Then - Actions
+                        Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0090 <gen> and display Lok'tar, my friend..  Modify duration: Set to 2.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0089 <gen> and display What do you have in....  Modify duration: Set to 2.00 seconds and Wait
+                    Else - Actions
+                -------- Run "Create Dialog" --------
+                Trigger - Run Create RagnoDialog01 <gen> (checking conditions)
+                Trigger - Turn on (This trigger)
+                Skip remaining actions
+            Else - Actions

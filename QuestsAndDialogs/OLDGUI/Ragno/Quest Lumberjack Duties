@@ -1,0 +1,37 @@
+Quest Lumberjack Duties
+    Events
+    Conditions
+    Actions
+        -------- RESET Quest, if previously done --------
+        Quest - Mark QuestLumberjackDuties as Incomplete
+        Quest - Mark QuestLumberjackReq1 as Incomplete
+        Quest - Mark QuestLumberjackReq2 as Incomplete
+        Quest - Mark QuestLumberjackReq3 as Incomplete
+        -------- Create peon --------
+        Set VariableSet VarPoint = (Center of LumberPeonSpawn <gen>)
+        Unit - Create 1 Peon (Lumber) for Player 2 (Blue) at VarPoint facing 345.00 degrees
+        Set VariableSet LumberPeon = (Last created unit)
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- Issue peon move --------
+        Set VariableSet VarPoint = (Center of LumberPeonMove <gen>)
+        Unit - Order LumberPeon to Move To VarPoint
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- Update quest log --------
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Lumberjack Duties Discover <gen> (checking conditions)
+        -------- activate peon related --------
+        -------- Set follow --------
+        Set VariableSet FollowSystem_Source = LumberPeon
+        Set VariableSet FollowSystem_Target = Nazgrek
+        Custom script:   call FollowSystem_SetFollow(udg_FollowSystem_Source, udg_FollowSystem_Target, 1200.0, true, 5.0, FOLLOW_STYLE_PASSIVE, true, true)
+        Trigger - Turn on Quest Lumberjack Duties Peon Random Getting Lost <gen>
+        Trigger - Turn on Quest Lumberjack Duties Peon Chat <gen>
+        Trigger - Turn on Quest Lumberjack Duties Peon Chop <gen>
+        Trigger - Turn on Quest Lumberjack Duties Peon Wood Collected <gen>
+        Trigger - Turn on Quest Lumberjack Duties Peon Near tree <gen>
+        Trigger - Turn on Quest Lumberjack Duties Peon Dies <gen>
+        Wait 2.00 seconds
+        Cinematic - Send transmission to (All players) from LumberPeon named Peon: Play OrcPeon_0016 <gen> and display Hello! Me can chop ....  Modify duration: Set to 5.00 seconds and Wait
+        Cinematic - Send transmission to (All players) from LumberPeon named Peon: Play OrcPeon_0005 <gen> and display Help a lumber orc o....  Modify duration: Set to 6.00 seconds and Wait
+        Cinematic - Send transmission to (All players) from LumberPeon named Peon: Play OrcPeon_0017 <gen> and display Me feel when da woo....  Modify duration: Set to 7.00 seconds and Wait
+        Trigger - Remove (This trigger) from the trigger queue

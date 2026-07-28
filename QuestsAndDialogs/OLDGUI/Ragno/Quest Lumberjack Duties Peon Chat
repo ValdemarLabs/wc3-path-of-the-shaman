@@ -1,0 +1,59 @@
+Quest Lumberjack Duties Peon Chat
+    Events
+        Time - Every (Random real number between 30.00 and 200.00) seconds of game time
+    Conditions
+        (LumberPeon is alive) Equal to True
+        QuestLumberjackPeonHarvesting Equal to False
+    Actions
+        -------- Set voice line chance --------
+        Set VariableSet QuestLumberjackPeonChatChance = (Random integer number between 1 and 7)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                QuestLumberjackPeonChatChance Equal to 1
+            Then - Actions
+                Cinematic - Send transmission to (All players) from LumberPeon named Peon: Play OrcPeon_0001 <gen> and display Me need help, me ca....  Modify duration: Set to 4.00 seconds and Wait
+                Set VariableSet QuestLumberjackPeonChatChance = 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                QuestLumberjackPeonChatChance Equal to 2
+            Then - Actions
+                Cinematic - Send transmission to (All players) from LumberPeon named Peon: Play OrcPeon_0002 <gen> and display Trees, trees everyw....  Modify duration: Set to 5.00 seconds and Wait
+                Set VariableSet QuestLumberjackPeonChatChance = 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                QuestLumberjackPeonChatChance Equal to 3
+            Then - Actions
+                Cinematic - Send transmission to (All players) from LumberPeon named Peon: Play OrcPeon_0003 <gen> and display Me axe be ready, bu....  Modify duration: Set to 6.00 seconds and Wait
+                Set VariableSet QuestLumberjackPeonChatChance = 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                QuestLumberjackPeonChatChance Equal to 4
+            Then - Actions
+                Cinematic - Send transmission to (All players) from LumberPeon named Peon: Play OrcPeon_0004 <gen> and display Me no see good, nee....  Modify duration: Set to 6.00 seconds and Wait
+                Set VariableSet QuestLumberjackPeonChatChance = 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                QuestLumberjackPeonChatChance Equal to 5
+            Then - Actions
+                Cinematic - Send transmission to (All players) from LumberPeon named Peon: Play OrcPeon_0006 <gen> and display Stickin' by ya, bos....  Modify duration: Set to 4.00 seconds and Wait
+                Set VariableSet QuestLumberjackPeonChatChance = 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                QuestLumberjackPeonChatChance Equal to 6
+            Then - Actions
+                Cinematic - Send transmission to (All players) from LumberPeon named Peon: Play OrcPeon_0007 <gen> and display Me right here! Read....  Modify duration: Set to 3.00 seconds and Wait
+                Set VariableSet QuestLumberjackPeonChatChance = 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                QuestLumberjackPeonChatChance Equal to 7
+            Then - Actions
+                Cinematic - Send transmission to (All players) from LumberPeon named Peon: Play OrcPeon_0008 <gen> and display Watchin' where ya g....  Modify duration: Set to 4.00 seconds and Wait
+                Set VariableSet QuestLumberjackPeonChatChance = 0
+            Else - Actions
+        Trigger - Remove (This trigger) from the trigger queue

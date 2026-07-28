@@ -1,0 +1,18 @@
+// Info
+In an attempt to negotiate peace, the player unintentionally says something offensive or foolish, angering the satyr leaders. The situation quickly escalates, and the player finds themselves in danger within the Satyr Camp.
+The player must now navigate through hostile territory, evading angry satyrs and seeking a way to escape. Along the way, they witness the outbreak of war between the orcs and satyr, their diplomatic efforts having backfired spectacularly.
+As they flee, the player must deal with the consequences of their words, facing the guilt of igniting conflict and seeking redemption through subsequent actions in the game.
+
+Quest Satyr Negotiations Update The Path of Diplomacy Gone Wrong
+    Events
+    Conditions
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Satyr Negotiations Create <gen> (checking conditions)
+        -------- Display a quest message. --------
+        Quest - Mark QuestSatyrNegotiationsReq1 as Completed
+        Quest - Create a quest requirement for QuestSatyrNegotiations with the description Escape the Satyr te...
+        Set VariableSet QuestSatyrNegotiationsReq3 = (Last created quest requirement)
+        -------- Update quest --------
+        Quest - Display to (All players) the Quest Update message: |cffffcc00QUEST|r  ...

@@ -1,0 +1,18 @@
+Quest Kobold Ready
+    Events
+        Time - Every 2.00 seconds of game time
+    Conditions
+        (QuestKobolds is discovered) Equal to True
+        (QuestKobolds is completed) Equal to False
+        QuestKoboldsLeaderKilled Equal to True
+        Or - Any (Conditions) are true
+            Conditions
+                (Charges remaining in (Item carried by Nazgrek of type Stolen Goods)) Greater than or equal to 6
+                (Charges remaining in (Item carried by Zulkis of type Stolen Goods)) Greater than or equal to 6
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Change quest mark --------
+        Special Effect - Destroy QuestGiverRagno
+        Special Effect - Create a special effect attached to the overhead of Ragno using war3campImported\Completed_Quest_Daily.mdx
+        Set VariableSet QuestGiverRagno = (Last created special effect)
+        Trigger - Remove (This trigger) from the trigger queue

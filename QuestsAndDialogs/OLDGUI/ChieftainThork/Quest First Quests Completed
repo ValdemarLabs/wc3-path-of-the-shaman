@@ -1,0 +1,12 @@
+Quest First Quests Completed
+    Events
+        Time - Every 2.00 seconds of game time
+    Conditions
+        ((QuestMurgal is completed) Equal to True) and ((QuestRoljin is completed) Equal to True)
+    Actions
+        Trigger - Turn off (This trigger)
+        Wait Campaign quest delay seconds
+        Trigger - Run Quest First Quests Completed Q <gen> (checking conditions)
+        Special Effect - Create a special effect attached to the overhead of Chieftain Thork 0018 <gen> using Abilities\Spells\Other\TalkToMe\TalkToMe.mdl
+        Set VariableSet QuestGiverThorkHellscream = (Last created special effect)
+        Trigger - Remove (This trigger) from the trigger queue

@@ -1,0 +1,17 @@
+CreateThorkHellscreamDialog01
+    Events
+    Conditions
+    Actions
+        Cinematic - Enable user control for (All players).
+        Dialog - Clear ThorkDialog01
+        Dialog - Change the title of ThorkDialog01 to (null)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestCallOfTheHorde is completed) Equal to False
+            Then - Actions
+                Dialog - Create a dialog button for ThorkDialog01 labelled - Speak to Thork He...
+                Set VariableSet ThorkDialog01Letter = (Last created dialog Button)
+            Else - Actions
+        Dialog - Create a dialog button for ThorkDialog01 labelled - Farewell
+        Set VariableSet ThorkDialog01Farewell = (Last created dialog Button)
+        Dialog - Show ThorkDialog01 for Player 1 (Red)

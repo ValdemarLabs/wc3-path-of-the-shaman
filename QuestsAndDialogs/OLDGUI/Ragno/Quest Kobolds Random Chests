@@ -1,0 +1,308 @@
+Quest Kobolds Random Chests
+    Events
+        Time - Every (Random real number between 30.00 and 100.00) seconds of game time
+        Player - Player 1 (Red) types a chat message containing spawnchests as An exact match
+    Conditions
+        KoboldChests Less than 6
+    Actions
+        -------- Create chests within kobold area with random amount of "Stolen Goods" --------
+        -------- Chests must in total "Stolen goods" of 6x --------
+        Set VariableSet Chance_ChestLocations = (Random integer number between 1 and 8)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Chance_ChestLocations Equal to 1
+            Then - Actions
+                -------- Check that chest in this place does not exist --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (KoboldChest[1] is dead) Equal to True
+                    Then - Actions
+                        Set VariableSet VarPoint = (Center of KoboldsChest01 <gen>)
+                        Destructible - Remove KoboldChest[1]
+                        Destructible - Create a Stash (Quest) at VarPoint facing (Random angle) with scale 1.70 and variation 0
+                        Set VariableSet KoboldChest[1] = (Last created destructible)
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+                        Set VariableSet Chance_ChestLocations = 0
+                        Set VariableSet KoboldChests = (KoboldChests + 1)
+                        Trigger - Add to Quest Kobolds Stolen Goods <gen> the event (Destructible - KoboldChest[1] dies)
+                        Skip remaining actions
+                    Else - Actions
+                        Set VariableSet VarPoint = (Center of KoboldsChest01 <gen>)
+                        Destructible - Pick every destructible within 256.00 of VarPoint and do (Actions)
+                            Loop - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (Destructible-type of (Picked destructible)) Not equal to Stash (Quest)
+                                    Then - Actions
+                                        Set VariableSet VarPoint = (Center of KoboldsChest01 <gen>)
+                                        Destructible - Remove KoboldChest[1]
+                                        Destructible - Create a Stash (Quest) at VarPoint facing (Random angle) with scale 1.70 and variation 0
+                                        Set VariableSet KoboldChest[1] = (Last created destructible)
+                                        Custom script:   call RemoveLocation(udg_VarPoint)
+                                        Set VariableSet Chance_ChestLocations = 0
+                                        Set VariableSet KoboldChests = (KoboldChests + 1)
+                                        Trigger - Add to Quest Kobolds Stolen Goods <gen> the event (Destructible - KoboldChest[1] dies)
+                                        Skip remaining actions
+                                    Else - Actions
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Chance_ChestLocations Equal to 2
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (KoboldChest[2] is dead) Equal to True
+                    Then - Actions
+                        Set VariableSet VarPoint = (Center of KoboldsChest02 <gen>)
+                        Destructible - Remove KoboldChest[2]
+                        Destructible - Create a Stash (Quest) at VarPoint facing (Random angle) with scale 1.70 and variation 0
+                        Set VariableSet KoboldChest[2] = (Last created destructible)
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+                        Set VariableSet Chance_ChestLocations = 0
+                        Set VariableSet KoboldChests = (KoboldChests + 1)
+                        Trigger - Add to Quest Kobolds Stolen Goods <gen> the event (Destructible - KoboldChest[2] dies)
+                        Skip remaining actions
+                    Else - Actions
+                        Set VariableSet VarPoint = (Center of KoboldsChest02 <gen>)
+                        Destructible - Pick every destructible within 256.00 of VarPoint and do (Actions)
+                            Loop - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (Destructible-type of (Picked destructible)) Not equal to Stash (Quest)
+                                    Then - Actions
+                                        Set VariableSet VarPoint = (Center of KoboldsChest02 <gen>)
+                                        Destructible - Remove KoboldChest[2]
+                                        Destructible - Create a Stash (Quest) at VarPoint facing (Random angle) with scale 1.70 and variation 0
+                                        Set VariableSet KoboldChest[2] = (Last created destructible)
+                                        Custom script:   call RemoveLocation(udg_VarPoint)
+                                        Set VariableSet Chance_ChestLocations = 0
+                                        Set VariableSet KoboldChests = (KoboldChests + 1)
+                                        Trigger - Add to Quest Kobolds Stolen Goods <gen> the event (Destructible - KoboldChest[2] dies)
+                                        Skip remaining actions
+                                    Else - Actions
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Chance_ChestLocations Equal to 3
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (KoboldChest[3] is dead) Equal to True
+                    Then - Actions
+                        Set VariableSet VarPoint = (Center of KoboldsChest03 <gen>)
+                        Destructible - Remove KoboldChest[3]
+                        Destructible - Create a Stash (Quest) at VarPoint facing (Random angle) with scale 1.70 and variation 0
+                        Set VariableSet KoboldChest[3] = (Last created destructible)
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+                        Set VariableSet Chance_ChestLocations = 0
+                        Set VariableSet KoboldChests = (KoboldChests + 1)
+                        Trigger - Add to Quest Kobolds Stolen Goods <gen> the event (Destructible - KoboldChest[3] dies)
+                        Skip remaining actions
+                    Else - Actions
+                        Set VariableSet VarPoint = (Center of KoboldsChest03 <gen>)
+                        Destructible - Pick every destructible within 256.00 of VarPoint and do (Actions)
+                            Loop - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (Destructible-type of (Picked destructible)) Not equal to Stash (Quest)
+                                    Then - Actions
+                                        Set VariableSet VarPoint = (Center of KoboldsChest03 <gen>)
+                                        Destructible - Remove KoboldChest[3]
+                                        Destructible - Create a Stash (Quest) at VarPoint facing (Random angle) with scale 1.70 and variation 0
+                                        Set VariableSet KoboldChest[3] = (Last created destructible)
+                                        Custom script:   call RemoveLocation(udg_VarPoint)
+                                        Set VariableSet Chance_ChestLocations = 0
+                                        Set VariableSet KoboldChests = (KoboldChests + 1)
+                                        Trigger - Add to Quest Kobolds Stolen Goods <gen> the event (Destructible - KoboldChest[3] dies)
+                                        Skip remaining actions
+                                    Else - Actions
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Chance_ChestLocations Equal to 4
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (KoboldChest[4] is dead) Equal to True
+                    Then - Actions
+                        Set VariableSet VarPoint = (Center of KoboldsChest04 <gen>)
+                        Destructible - Remove KoboldChest[4]
+                        Destructible - Create a Stash (Quest) at VarPoint facing (Random angle) with scale 1.70 and variation 0
+                        Set VariableSet KoboldChest[4] = (Last created destructible)
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+                        Set VariableSet Chance_ChestLocations = 0
+                        Set VariableSet KoboldChests = (KoboldChests + 1)
+                        Trigger - Add to Quest Kobolds Stolen Goods <gen> the event (Destructible - KoboldChest[4] dies)
+                        Skip remaining actions
+                    Else - Actions
+                        Set VariableSet VarPoint = (Center of KoboldsChest04 <gen>)
+                        Destructible - Pick every destructible within 256.00 of VarPoint and do (Actions)
+                            Loop - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (Destructible-type of (Picked destructible)) Not equal to Stash (Quest)
+                                    Then - Actions
+                                        Set VariableSet VarPoint = (Center of KoboldsChest04 <gen>)
+                                        Destructible - Remove KoboldChest[4]
+                                        Destructible - Create a Stash (Quest) at VarPoint facing (Random angle) with scale 1.70 and variation 0
+                                        Set VariableSet KoboldChest[4] = (Last created destructible)
+                                        Custom script:   call RemoveLocation(udg_VarPoint)
+                                        Set VariableSet Chance_ChestLocations = 0
+                                        Set VariableSet KoboldChests = (KoboldChests + 1)
+                                        Trigger - Add to Quest Kobolds Stolen Goods <gen> the event (Destructible - KoboldChest[4] dies)
+                                        Skip remaining actions
+                                    Else - Actions
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Chance_ChestLocations Equal to 5
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (KoboldChest[5] is dead) Equal to True
+                    Then - Actions
+                        Set VariableSet VarPoint = (Center of KoboldsChest05 <gen>)
+                        Destructible - Remove KoboldChest[5]
+                        Destructible - Create a Stash (Quest) at VarPoint facing (Random angle) with scale 1.70 and variation 0
+                        Set VariableSet KoboldChest[5] = (Last created destructible)
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+                        Set VariableSet Chance_ChestLocations = 0
+                        Set VariableSet KoboldChests = (KoboldChests + 1)
+                        Trigger - Add to Quest Kobolds Stolen Goods <gen> the event (Destructible - KoboldChest[5] dies)
+                        Skip remaining actions
+                    Else - Actions
+                        Set VariableSet VarPoint = (Center of KoboldsChest05 <gen>)
+                        Destructible - Pick every destructible within 256.00 of VarPoint and do (Actions)
+                            Loop - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (Destructible-type of (Picked destructible)) Not equal to Stash (Quest)
+                                    Then - Actions
+                                        Set VariableSet VarPoint = (Center of KoboldsChest05 <gen>)
+                                        Destructible - Remove KoboldChest[5]
+                                        Destructible - Create a Stash (Quest) at VarPoint facing (Random angle) with scale 1.70 and variation 0
+                                        Set VariableSet KoboldChest[5] = (Last created destructible)
+                                        Custom script:   call RemoveLocation(udg_VarPoint)
+                                        Set VariableSet Chance_ChestLocations = 0
+                                        Set VariableSet KoboldChests = (KoboldChests + 1)
+                                        Trigger - Add to Quest Kobolds Stolen Goods <gen> the event (Destructible - KoboldChest[5] dies)
+                                        Skip remaining actions
+                                    Else - Actions
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Chance_ChestLocations Equal to 6
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (KoboldChest[6] is dead) Equal to True
+                    Then - Actions
+                        Set VariableSet VarPoint = (Center of KoboldsChest06 <gen>)
+                        Destructible - Remove KoboldChest[6]
+                        Destructible - Create a Stash (Quest) at VarPoint facing (Random angle) with scale 1.70 and variation 0
+                        Set VariableSet KoboldChest[6] = (Last created destructible)
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+                        Set VariableSet Chance_ChestLocations = 0
+                        Set VariableSet KoboldChests = (KoboldChests + 1)
+                        Trigger - Add to Quest Kobolds Stolen Goods <gen> the event (Destructible - KoboldChest[6] dies)
+                        Skip remaining actions
+                    Else - Actions
+                        Set VariableSet VarPoint = (Center of KoboldsChest06 <gen>)
+                        Destructible - Pick every destructible within 256.00 of VarPoint and do (Actions)
+                            Loop - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (Destructible-type of (Picked destructible)) Not equal to Stash (Quest)
+                                    Then - Actions
+                                        Set VariableSet VarPoint = (Center of KoboldsChest06 <gen>)
+                                        Destructible - Remove KoboldChest[6]
+                                        Destructible - Create a Stash (Quest) at VarPoint facing (Random angle) with scale 1.70 and variation 0
+                                        Set VariableSet KoboldChest[6] = (Last created destructible)
+                                        Custom script:   call RemoveLocation(udg_VarPoint)
+                                        Set VariableSet Chance_ChestLocations = 0
+                                        Set VariableSet KoboldChests = (KoboldChests + 1)
+                                        Trigger - Add to Quest Kobolds Stolen Goods <gen> the event (Destructible - KoboldChest[6] dies)
+                                        Skip remaining actions
+                                    Else - Actions
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Chance_ChestLocations Equal to 7
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (KoboldChest[7] is dead) Equal to True
+                    Then - Actions
+                        Set VariableSet VarPoint = (Center of KoboldsChest07 <gen>)
+                        Destructible - Remove KoboldChest[7]
+                        Destructible - Create a Stash (Quest) at VarPoint facing (Random angle) with scale 1.70 and variation 0
+                        Set VariableSet KoboldChest[7] = (Last created destructible)
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+                        Set VariableSet Chance_ChestLocations = 0
+                        Set VariableSet KoboldChests = (KoboldChests + 1)
+                        Trigger - Add to Quest Kobolds Stolen Goods <gen> the event (Destructible - KoboldChest[7] dies)
+                        Skip remaining actions
+                    Else - Actions
+                        Set VariableSet VarPoint = (Center of KoboldsChest07 <gen>)
+                        Destructible - Pick every destructible within 256.00 of VarPoint and do (Actions)
+                            Loop - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (Destructible-type of (Picked destructible)) Not equal to Stash (Quest)
+                                    Then - Actions
+                                        Set VariableSet VarPoint = (Center of KoboldsChest07 <gen>)
+                                        Destructible - Remove KoboldChest[7]
+                                        Destructible - Create a Stash (Quest) at VarPoint facing (Random angle) with scale 1.70 and variation 0
+                                        Set VariableSet KoboldChest[7] = (Last created destructible)
+                                        Custom script:   call RemoveLocation(udg_VarPoint)
+                                        Set VariableSet Chance_ChestLocations = 0
+                                        Set VariableSet KoboldChests = (KoboldChests + 1)
+                                        Trigger - Add to Quest Kobolds Stolen Goods <gen> the event (Destructible - KoboldChest[7] dies)
+                                        Skip remaining actions
+                                    Else - Actions
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Chance_ChestLocations Equal to 8
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (KoboldChest[8] is dead) Equal to True
+                    Then - Actions
+                        Set VariableSet VarPoint = (Center of KoboldsChest08 <gen>)
+                        Destructible - Remove KoboldChest[8]
+                        Destructible - Create a Stash (Quest) at VarPoint facing (Random angle) with scale 1.70 and variation 0
+                        Set VariableSet KoboldChest[8] = (Last created destructible)
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+                        Set VariableSet Chance_ChestLocations = 0
+                        Set VariableSet KoboldChests = (KoboldChests + 1)
+                        Trigger - Add to Quest Kobolds Stolen Goods <gen> the event (Destructible - KoboldChest[8] dies)
+                        Skip remaining actions
+                    Else - Actions
+                        Set VariableSet VarPoint = (Center of KoboldsChest08 <gen>)
+                        Destructible - Pick every destructible within 256.00 of VarPoint and do (Actions)
+                            Loop - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (Destructible-type of (Picked destructible)) Not equal to Stash (Quest)
+                                    Then - Actions
+                                        Set VariableSet VarPoint = (Center of KoboldsChest08 <gen>)
+                                        Destructible - Remove KoboldChest[8]
+                                        Destructible - Create a Stash (Quest) at VarPoint facing (Random angle) with scale 1.70 and variation 0
+                                        Set VariableSet KoboldChest[8] = (Last created destructible)
+                                        Custom script:   call RemoveLocation(udg_VarPoint)
+                                        Set VariableSet Chance_ChestLocations = 0
+                                        Set VariableSet KoboldChests = (KoboldChests + 1)
+                                        Trigger - Add to Quest Kobolds Stolen Goods <gen> the event (Destructible - KoboldChest[8] dies)
+                                        Skip remaining actions
+                                    Else - Actions
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+            Else - Actions
+        Trigger - Remove (This trigger) from the trigger queue

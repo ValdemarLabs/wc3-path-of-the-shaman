@@ -1,0 +1,13 @@
+Quest Lumberjack Duties Completed
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Lumberjack Duties Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestLumberjackDuties as Discovered
+        Quest - Mark QuestLumberjackReq1 as Completed
+        Quest - Mark QuestLumberjackReq2 as Completed
+        Quest - Mark QuestLumberjackDuties as Completed
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Completed message: |cffffcc00DAILY QUE...

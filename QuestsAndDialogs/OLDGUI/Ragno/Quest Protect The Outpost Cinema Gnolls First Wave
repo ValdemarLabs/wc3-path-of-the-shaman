@@ -1,0 +1,32 @@
+Quest Protect The Outpost Cinema Gnolls First Wave
+    Events
+    Conditions
+    Actions
+        -------- group 1 --------
+        Set VariableSet VarPoint = (Center of GnollCinemaSpawnRegion <gen>)
+        Unit - Create 1 Gnoll Brute for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Set VariableSet GroupVar = (Last created unit group)
+        Unit - Create 1 Gnoll Brute for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Unit - Create 1 Gnoll Poacher for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Unit - Create 1 Gnoll Poacher for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Unit - Create 1 Gnoll Poacher for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Unit - Create 1 Gnoll Poacher for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Unit - Create 1 Gnoll for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Unit - Create 1 Gnoll for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- attack --------
+        Set VariableSet VarPoint = (Center of HordeMountainCamp <gen>)
+        Unit Group - Pick every unit in GroupVar and do (Actions)
+            Loop - Actions
+                Unit - Order (Picked unit) to Attack-Move To VarPoint
+        Custom script:   call DestroyGroup(udg_GroupVar)
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Trigger - Remove (This trigger) from the trigger queue

@@ -1,0 +1,13 @@
+Quest Kobolds Create
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create the quest objects --------
+        Quest - Create a Required, undiscovered quest titled Kobold Thieves with the description Kill Kobold leader ..., using icon path ReplaceableTextures\CommandButtons\BTNKobold.blp
+        Set VariableSet QuestKobolds = (Last created quest)
+        Quest - Create a quest requirement for QuestKobolds with the description Kill Kobold leader ...
+        Set VariableSet QuestKoboldsReq1 = (Last created quest requirement)
+        Quest - Create a quest requirement for QuestKobolds with the description Retrieve 6 Stolen G...
+        Set VariableSet QuestKoboldsReq2 = (Last created quest requirement)

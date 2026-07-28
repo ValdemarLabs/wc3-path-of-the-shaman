@@ -1,0 +1,18 @@
+// info
+Upon arriving in Zaekolaerr, the player learns of the Coliseum of Ages, a legendary arena where conflicts are resolved through combat.
+To negotiate peace with the orcs and satyr, the player decides to prove their worth in the Coliseum. They must navigate through a series of challenging battles, facing off against formidable opponents, earning the respect and admiration of both the orcs and satyr.
+If the player emerges victorious and brings joy to the satyr by showcasing their combat prowess, a peace treaty is guaranteed. The orcs, impressed by the player's strength and skill, agree to the terms of peace.
+
+Quest Satyr Negotiations Update Arena
+    Events
+    Conditions
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Satyr Negotiations Create <gen> (checking conditions)
+        -------- Display a quest message. --------
+        Quest - Mark QuestSatyrNegotiationsReq1 as Completed
+        Quest - Create a quest requirement for QuestSatyrNegotiations with the description Enter the Coliseum ...
+        Set VariableSet QuestSatyrNegotiationsReq2 = (Last created quest requirement)
+        -------- Update quest --------
+        Quest - Display to (All players) the Quest Update message: |cffffcc00QUEST|r  ...

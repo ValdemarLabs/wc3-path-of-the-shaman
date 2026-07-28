@@ -1,0 +1,37 @@
+Quest Lumberjack Duties Peon Dies
+    Events
+        Unit - A unit Dies
+    Conditions
+        (Triggering unit) Equal to LumberPeon
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Set follow --------
+        Set VariableSet FollowSystem_Source = LumberPeon
+        Set VariableSet FollowSystem_Target = Nazgrek
+        Custom script:   call FollowSystem_RemoveUnit(udg_FollowSystem_Source)
+        Trigger - Turn off Quest Lumberjack Duties Peon Chop <gen>
+        Trigger - Turn off Quest Lumberjack Duties Peon Random Getting Lost <gen>
+        Trigger - Turn off Quest Lumberjack Duties Peon Near tree <gen>
+        Trigger - Turn off Quest Lumberjack Duties Peon Chat <gen>
+        Wait Campaign quest delay seconds
+        Trigger - Run Quest Lumberjack Duties Failure <gen> (checking conditions)
+        Wait 15.00 seconds
+        -------- Resurrect harvested trees --------
+        Destructible - Pick every destructible in (Playable map area) and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Destructible-type of (Picked destructible)) Equal to Pine Tree
+                    Then - Actions
+                        Destructible - Resurrect (Picked destructible) with (Max life of (Last created destructible)) life and Show birth animation
+                    Else - Actions
+        -------- Destroy quest related pathing blockers --------
+        Destructible - Pick every destructible in (Playable map area) and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Destructible-type of (Picked destructible)) Equal to Pathing Blocker (Ground) (lumber quest)
+                    Then - Actions
+                        Destructible - Remove (Picked destructible)
+                    Else - Actions
+        Trigger - Remove (This trigger) from the trigger queue

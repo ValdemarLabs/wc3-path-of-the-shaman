@@ -1,0 +1,23 @@
+// Must negotiate with the Satyr
+
+Quest Satyr Negotiations
+    Events
+    Conditions
+    Actions
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Satyr Negotiations Discover <gen> (checking conditions)
+        -------- Quest mark --------
+        Special Effect - Create a special effect attached to the overhead of Zaekolaerr using war3campImported\Completed_Quest.mdx
+        Set VariableSet QuestGiverZaekolaerr = (Last created special effect)
+        Trigger - Remove (This trigger) from the trigger queue
+Quest Satyr Negotiations Create
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create the quest objects --------
+        Quest - Create a Required, undiscovered quest titled Satyrn Negotiations with the description The relations betwe..., using icon path ReplaceableTextures\CommandButtons\BTNForestTroll.blp
+        Set VariableSet QuestSatyrNegotiations = (Last created quest)
+        Quest - Create a quest requirement for QuestSatyrNegotiations with the description Meet with Satyrs an...
+        Set VariableSet QuestSatyrNegotiationsReq1 = (Last created quest requirement)

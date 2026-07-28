@@ -1,0 +1,42 @@
+Button Pressed in ThorkHellscreamDialog01
+    Events
+        Dialog - A dialog button is clicked for ThorkDialog01
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to ThorkDialog01Letter
+                (Nazgrek has BloodSignedLetter) Equal to True
+            Then - Actions
+                Trigger - Run Giving The Letter Q <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Clicked dialog button) Equal to ThorkDialog01Letter
+                        (Nazgrek has BloodSignedLetter) Equal to False
+                    Then - Actions
+                        Cinematic - Disable user control for (All players).
+                        Camera - Apply ThorkCamera3 <gen> for Player 1 (Red) over 0.00 seconds
+                        Cinematic - Send transmission to (All players) from Thork named Thork Hellscream: Play Thork_0011 <gen> and display Where’s the blood....  Modify duration: Set to 8.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0025 <gen> and display ....  Modify duration: Set to 2.00 seconds and Wait
+                        -------- DEFAULT CAMERA --------
+                        Camera - Apply ThorkCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                        -------- ======== CINEMATIC ENDS ======== --------
+                        Trigger - Run Cinematic OFF <gen> (checking conditions)
+                        Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                        Wait 5.00 seconds
+                        Quest - Display to Player Group - Player 1 (Red) the Hint message: |cff32CD32Hint|r - ...
+                        Skip remaining actions
+                    Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to ThorkDialog01Farewell
+            Then - Actions
+                -------- DEFAULT CAMERA --------
+                Camera - Apply ThorkCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Skip remaining actions
+            Else - Actions

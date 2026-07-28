@@ -1,0 +1,77 @@
+Quest Protect The Outpost Cinema Gnolls Second Wave
+    Events
+        Time - Every 20.00 seconds of game time
+    Conditions
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- group 1 --------
+        Set VariableSet VarPoint = (Center of GnollSpawnRegion <gen>)
+        Unit - Create 1 Gnoll Brute for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollGroupSecondWave
+        Set VariableSet GnollGroupSecondWave = (Last created unit group)
+        Unit - Create 1 Gnoll Brute for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollGroupSecondWave
+        Unit - Create 1 Gnoll Poacher for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollGroupSecondWave
+        Unit - Create 1 Gnoll Poacher for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollGroupSecondWave
+        Unit - Create 1 Gnoll Poacher for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollGroupSecondWave
+        Unit - Create 1 Gnoll Warden for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollGroupSecondWave
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- attack --------
+        Set VariableSet VarPoint = (Center of HordeMountainCamp <gen>)
+        Unit Group - Pick every unit in GroupVar and do (Actions)
+            Loop - Actions
+                Unit - Order (Picked unit) to Attack-Move To VarPoint
+        Custom script:   call DestroyGroup(udg_GroupVar)
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- group 2 --------
+        Wait 10.00 seconds
+        Set VariableSet VarPoint = (Center of GnollSpawnRegion2 <gen>)
+        Unit - Create 1 Gnoll Brute for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollGroupSecondWave
+        Unit - Create 1 Gnoll Brute for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollGroupSecondWave
+        Unit - Create 1 Gnoll Ravager for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollGroupSecondWave
+        Unit - Create 1 Gnoll Ravager for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollGroupSecondWave
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- attack --------
+        Set VariableSet VarPoint = (Center of HordeMountainCamp <gen>)
+        Unit Group - Pick every unit in GnollGroupSecondWave and do (Actions)
+            Loop - Actions
+                Unit - Order (Picked unit) to Attack-Move To VarPoint
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Wait 10.00 seconds
+        -------- send "help" --------
+        Set VariableSet VarPoint = (Center of HordeMountaintCampAssist <gen>)
+        Unit - Order Ragno to Attack-Move To VarPoint
+        Unit - Order Grunt 1633 <gen> to Attack-Move To VarPoint
+        Unit - Order Raider 1221 <gen> to Attack-Move To VarPoint
+        Unit - Order Grunt 1634 <gen> to Attack-Move To VarPoint
+        Unit - Order Grunt 1632 <gen> to Attack-Move To VarPoint
+        Sound - Play GruntWarcry101 <gen> at 100.00% volume, located at VarPoint with Z offset 0.00
+        -------- Gnoll Crusher --------
+        Wait 5.00 seconds
+        Set VariableSet VarPoint = (Center of GnollSpawnRegion2 <gen>)
+        Unit - Create 1 Gnoll Crusher for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollGroupSecondWave
+        Unit - Create 1 Gnoll for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollGroupSecondWave
+        Unit - Create 1 Gnoll for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollGroupSecondWave
+        Unit - Create 1 Gnoll for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollGroupSecondWave
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- attack --------
+        Set VariableSet VarPoint = (Center of HordeMountainCamp <gen>)
+        Unit Group - Pick every unit in GnollGroupSecondWave and do (Actions)
+            Loop - Actions
+                Unit - Order (Picked unit) to Attack-Move To VarPoint
+        Custom script:   call DestroyGroup(udg_GroupVar)
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Trigger - Turn on Quest Protect The Outpost Gnolls Dead <gen>
+        Trigger - Remove (This trigger) from the trigger queue

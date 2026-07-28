@@ -1,0 +1,18 @@
+// Info
+Instead of relying solely on their own kind, the player decides to forge an alliance with the satyr by betraying their own people, the orcs.
+They undertake missions to sabotage orcish efforts, disrupt supply lines, and weaken orcish strongholds, earning the trust and friendship of the satyr in the process.
+As the player proves their loyalty to the satyr cause, they pave the way for peace negotiations, demonstrating their commitment to forging a new path of cooperation between the two factions.
+
+Quest Satyr Negotiations Update Unlikely Alliances
+    Events
+    Conditions
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Satyr Negotiations Create <gen> (checking conditions)
+        -------- Display a quest message. --------
+        Quest - Mark QuestSatyrNegotiationsReq1 as Completed
+        Quest - Create a quest requirement for QuestSatyrNegotiations with the description Earn the trust of t...
+        Set VariableSet QuestSatyrNegotiationsReq4 = (Last created quest requirement)
+        -------- Update quest --------
+        Quest - Display to (All players) the Quest Update message: |cffffcc00QUEST|r  ...

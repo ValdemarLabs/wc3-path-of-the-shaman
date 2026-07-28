@@ -1,0 +1,10 @@
+Quest Gnoll Headcount
+    Events
+    Conditions
+    Actions
+        -------- RESET Quest, if previously done --------
+        Quest - Mark QuestGnollHeadcount as Incomplete
+        Quest - Mark QuestGnollHeadcountHeads as Incomplete
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Gnoll Headcount Discover <gen> (checking conditions)
+        Trigger - Remove (This trigger) from the trigger queue

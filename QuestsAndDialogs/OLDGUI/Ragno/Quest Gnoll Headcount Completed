@@ -1,0 +1,12 @@
+Quest Gnoll Headcount Completed
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Gnoll Headcount Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestGnollHeadcount as Discovered
+        Quest - Mark QuestGnollHeadcountHeads as Completed
+        Quest - Mark QuestGnollHeadcount as Completed
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Completed message: |cffffcc00DAILY QUE...

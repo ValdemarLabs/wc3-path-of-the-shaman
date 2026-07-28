@@ -1,0 +1,42 @@
+Quest Protect The Outpost Gnolls Dead SKIP
+    Events
+        Player - Player 1 (Red) skips a cinematic sequence
+    Conditions
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- SKIPPED --------
+        Set VariableSet DialogSkipped = True
+        Trigger - Remove Quest Protect The Outpost Gnolls Dead <gen> from the trigger queue
+        -------- SKIPPED --------
+        -------- Give Item --------
+        Hero - Create Blood Signed Summon Letter and give it to Nazgrek
+        Set VariableSet BloodSignedLetter = (Last created item)
+        Item - Make BloodSignedLetter Invulnerable
+        -------- Fade Out --------
+        Cinematic - Fade out over 0.50 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        Wait 0.50 seconds
+        -------- Reset Camera --------
+        Camera - Reset camera smoothing factor
+        Camera - Reset camera for Player 1 (Red) to standard game-view over 0.00 seconds
+        Camera - Pan camera for Player 1 (Red) to (Target of ProtectOutpostSkipped02 <gen>) over 0.00 seconds
+        Wait 0.50 seconds
+        -------- Fade In --------
+        Cinematic - Fade in over 0.50 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        Wait 0.50 seconds
+        -------- ======== CINEMATIC ENDS ======== --------
+        Trigger - Run Cinematic OFF <gen> (checking conditions)
+        -------- Unhide Gnoll Mountain Camp gnolls --------
+        Unit Group - Pick every unit in GnollMountainCamp and do (Actions)
+            Loop - Actions
+                Unit - Unhide (Picked unit)
+        Custom script:   call DestroyGroup(udg_GnollMountainCamp)
+        -------- Run triggers --------
+        Trigger - Turn on Chat Horde Mountains Confront Grunts First <gen>
+        -------- Start quest --------
+        Set VariableSet GnollAttackFirstActive = False
+        Trigger - Run Quest Call of the Horde Discover <gen> (checking conditions)
+        Special Effect - Create a special effect attached to the overhead of Chieftain Thork 0018 <gen> using war3campImported\ExcMark_Gold_NonrepeatableQuest.mdx
+        Set VariableSet QuestGiverThorkHellscream = (Last created special effect)
+        -------- Allow Ragno quests --------
+        Special Effect - Create a special effect attached to the overhead of Ragno using war3campImported\ExcMark_Blue_RepetableQuest.mdx
+        Set VariableSet QuestGiverRagno = (Last created special effect)

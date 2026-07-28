@@ -1,0 +1,108 @@
+Quest Lumberjack Duties Peon Random Getting Lost
+    Events
+        Time - Every (Random real number between 40.00 and 200.00) seconds of game time
+    Conditions
+        (LumberPeon is alive) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Set follow --------
+        Set VariableSet FollowSystem_Source = LumberPeon
+        Set VariableSet FollowSystem_Target = Nazgrek
+        Custom script:   call FollowSystem_RemoveUnit(udg_FollowSystem_Source)
+        Trigger - Turn off Quest Lumberjack Duties Peon Chop <gen>
+        Trigger - Turn off Quest Lumberjack Duties Peon Near tree <gen>
+        -------- DEBUG --------
+        Game - Display to (All players) the text: (DEBUG:  + (LumperPeon >>  + Peon getting lost activated))
+        -------- DEBUG --------
+        Set VariableSet LumberPeonWander = (Random integer number between 1 and 5)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                LumberPeonWander Equal to 1
+            Then - Actions
+                Set VariableSet LumberPeonWander = 0
+                Set VariableSet VarPoint = ((Position of Nazgrek) offset by (200.00, 300.00))
+                Unit - Order LumberPeon to Move To VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Wait (Random real number between 5.00 and 15.00) seconds
+                -------- Set follow --------
+                Set VariableSet FollowSystem_Source = LumberPeon
+                Set VariableSet FollowSystem_Target = Nazgrek
+                Custom script:   call FollowSystem_SetFollow(udg_FollowSystem_Source, udg_FollowSystem_Target, 1200.0, true, 5.0, FOLLOW_STYLE_PASSIVE, true, true)
+                Trigger - Turn on (This trigger)
+                Trigger - Turn on Quest Lumberjack Duties Peon Chop <gen>
+                Trigger - Turn on Quest Lumberjack Duties Peon Near tree <gen>
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                LumberPeonWander Equal to 2
+            Then - Actions
+                Set VariableSet LumberPeonWander = 0
+                Set VariableSet VarPoint = ((Position of Nazgrek) offset by (600.00, 800.00))
+                Unit - Order LumberPeon to Move To VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Wait (Random real number between 5.00 and 15.00) seconds
+                -------- Set follow --------
+                Set VariableSet FollowSystem_Source = LumberPeon
+                Set VariableSet FollowSystem_Target = Nazgrek
+                Custom script:   call FollowSystem_SetFollow(udg_FollowSystem_Source, udg_FollowSystem_Target, 1200.0, true, 5.0, FOLLOW_STYLE_PASSIVE, true, true)
+                Trigger - Turn on (This trigger)
+                Trigger - Turn on Quest Lumberjack Duties Peon Chop <gen>
+                Trigger - Turn on Quest Lumberjack Duties Peon Near tree <gen>
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                LumberPeonWander Equal to 3
+            Then - Actions
+                Set VariableSet LumberPeonWander = 0
+                Set VariableSet VarPoint = ((Position of Nazgrek) offset by (-1000.00, -1200.00))
+                Unit - Order LumberPeon to Move To VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Wait (Random real number between 5.00 and 15.00) seconds
+                -------- Set follow --------
+                Set VariableSet FollowSystem_Source = LumberPeon
+                Set VariableSet FollowSystem_Target = Nazgrek
+                Custom script:   call FollowSystem_SetFollow(udg_FollowSystem_Source, udg_FollowSystem_Target, 1200.0, true, 5.0, FOLLOW_STYLE_PASSIVE, true, true)
+                Trigger - Turn on (This trigger)
+                Trigger - Turn on Quest Lumberjack Duties Peon Chop <gen>
+                Trigger - Turn on Quest Lumberjack Duties Peon Near tree <gen>
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                LumberPeonWander Equal to 4
+            Then - Actions
+                Set VariableSet LumberPeonWander = 0
+                Set VariableSet VarPoint = ((Position of Nazgrek) offset by (100.00, 200.00))
+                Unit - Order LumberPeon to Move To VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Wait (Random real number between 5.00 and 15.00) seconds
+                -------- Set follow --------
+                Set VariableSet FollowSystem_Source = LumberPeon
+                Set VariableSet FollowSystem_Target = Nazgrek
+                Custom script:   call FollowSystem_SetFollow(udg_FollowSystem_Source, udg_FollowSystem_Target, 1200.0, true, 5.0, FOLLOW_STYLE_PASSIVE, true, true)
+                Trigger - Turn on (This trigger)
+                Trigger - Turn on Quest Lumberjack Duties Peon Chop <gen>
+                Trigger - Turn on Quest Lumberjack Duties Peon Near tree <gen>
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                LumberPeonWander Equal to 5
+            Then - Actions
+                Set VariableSet LumberPeonWander = 0
+                Set VariableSet VarPoint = ((Position of Nazgrek) offset by (300.00, 400.00))
+                Unit - Order LumberPeon to Move To VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Wait (Random real number between 5.00 and 15.00) seconds
+                -------- Set follow --------
+                Set VariableSet FollowSystem_Source = LumberPeon
+                Set VariableSet FollowSystem_Target = Nazgrek
+                Custom script:   call FollowSystem_SetFollow(udg_FollowSystem_Source, udg_FollowSystem_Target, 1200.0, true, 5.0, FOLLOW_STYLE_PASSIVE, true, true)
+                Trigger - Turn on (This trigger)
+                Trigger - Turn on Quest Lumberjack Duties Peon Chop <gen>
+                Trigger - Turn on Quest Lumberjack Duties Peon Near tree <gen>
+                Skip remaining actions
+            Else - Actions
+        Trigger - Remove (This trigger) from the trigger queue
