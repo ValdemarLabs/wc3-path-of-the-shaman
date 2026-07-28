@@ -28,7 +28,7 @@
     - set ok = Abilities_ResetTalents(hero)
 
 **/
-library Abilities initializer Init requires ExSound, AbilitiesPlayer, AbilitiesPlayerInit, AbilityPoints, optional Talents, optional GameMode
+library Abilities initializer Init requires ExSound, AbilitiesPlayer, AbilitiesPlayerInit, AbilityPoints, optional Talents, optional GameMode, optional ShamanSummonElemental
     globals
         public constant integer RESULT_OK = 1
         public constant integer RESULT_INVALID = 2
@@ -265,6 +265,14 @@ library Abilities initializer Init requires ExSound, AbilitiesPlayer, AbilitiesP
         endif
     endfunction
 
+    private function AB_OnEntryAbilityChanged takes unit hero, integer abilityId returns nothing
+        static if LIBRARY_ShamanSummonElemental then
+            if abilityId == 'A67Q' then
+                call ShamanSummonElemental_RefreshSummonAbilityNames(hero)
+            endif
+        endif
+    endfunction
+
     private function AB_Success takes unit hero, integer entryIndex, integer oldLevel returns boolean
         local player feedbackPlayer = AB_GetFeedbackPlayer(hero)
         local integer newLevel = AB_GetEntryLevelRaw(hero, entryIndex)
@@ -460,6 +468,7 @@ library Abilities initializer Init requires ExSound, AbilitiesPlayer, AbilitiesP
             call SetUnitAbilityLevel(hero, abilityId, oldLevel + 1)
         endif
 
+        call AB_OnEntryAbilityChanged(hero, abilityId)
         return AB_Success(hero, entryIndex, oldLevel)
     endfunction
 
@@ -478,6 +487,7 @@ library Abilities initializer Init requires ExSound, AbilitiesPlayer, AbilitiesP
         endif
 
         call AB_AddEntryAbility(hero, entryIndex)
+        call AB_OnEntryAbilityChanged(hero, AbilitiesPlayer_GetEntryAbilityId(entryIndex))
         return AB_Success(hero, entryIndex, oldLevel)
     endfunction
 
