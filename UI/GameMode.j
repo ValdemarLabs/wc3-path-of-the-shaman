@@ -58,7 +58,7 @@ library GameMode initializer AutoInit requires Difficulty, Start, Interface
         private constant integer GM_STORY_STARTING_GOLD_BONUS = 0
 
         private constant boolean GM_FREE_ROAM_STORY_ENABLED = false
-        private constant boolean GM_FREE_ROAM_RUN_INTRO_CINEMATIC = false
+        private constant boolean GM_FREE_ROAM_RUN_INTRO_CINEMATIC = true
         private constant boolean GM_FREE_ROAM_QUEST_REQUIREMENTS_ENABLED = true
         private constant boolean GM_FREE_ROAM_QUEST_LEVEL_REQUIREMENTS_ENABLED = true
         private constant boolean GM_FREE_ROAM_QUEST_REPUTATION_REQUIREMENTS_ENABLED = true
@@ -74,7 +74,7 @@ library GameMode initializer AutoInit requires Difficulty, Start, Interface
         private constant integer GM_FREE_ROAM_STARTING_GOLD_BONUS = 0
 
         private constant boolean GM_DEVELOPER_STORY_ENABLED = false
-        private constant boolean GM_DEVELOPER_RUN_INTRO_CINEMATIC = false
+        private constant boolean GM_DEVELOPER_RUN_INTRO_CINEMATIC = true
         private constant boolean GM_DEVELOPER_QUEST_REQUIREMENTS_ENABLED = false
         private constant boolean GM_DEVELOPER_QUEST_LEVEL_REQUIREMENTS_ENABLED = false
         private constant boolean GM_DEVELOPER_QUEST_REPUTATION_REQUIREMENTS_ENABLED = false
