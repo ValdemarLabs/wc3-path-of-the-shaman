@@ -1675,6 +1675,8 @@ public function RegisterAll takes nothing returns nothing
     call ExSound_RegisterEditorSoundEx("Ambient_SwampNight", gg_snd_Ambient_SwampNight, "war3mapImported/WetlandsNight.mp3")
     call ExSound_RegisterEditorSoundEx("Interface_ZoneDiscovered", gg_snd_Interface_ZoneDiscovered, "war3mapImported/DwarfExploration.mp3")
     call ExSound_RegisterEditorSoundEx("Tradeskill_Fishing", gg_snd_Tradeskill_Fishing, "war3mapImported/FishReelIn.mp3")
+    call ExSound_RegisterEditorSoundEx("Tradeskill_FishingStart", gg_snd_Tradeskill_FishingStart, "war3mapImported\\FX_Fishing_Cast_02.mp3")
+    call ExSound_RegisterEditorSoundEx("Tradeskill_FishingEnd", gg_snd_Tradeskill_FishingEnd, "war3mapImported\\FishingBobber_ver2_1.mp3")
     call ExSound_RegisterEditorSoundEx("Interface_FriendJoin", gg_snd_Interface_FriendJoin, "war3mapImported/FriendJoin.mp3")
     call ExSound_RegisterEditorSoundEx("Interface_TurnPage", gg_snd_Interface_TurnPage, "war3mapImported/iAbilitiesTurnPageA.mp3")
     call ExSound_RegisterEditorSoundEx("Interface_DungeonEnter", gg_snd_Interface_DungeonEnter, "war3mapImported/iEnterWorldA.mp3")
