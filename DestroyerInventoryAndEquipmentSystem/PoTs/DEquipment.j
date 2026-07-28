@@ -37,7 +37,12 @@ Slots 13, 14, 15, 16 are not defined. I think even 14 types of slots are probabl
 trigger trg_DEqPreDefinedItems = CreateTrigger()
 integer array SourceDEqSlotIdActive[24]
 trigger trg_DEqSlotClicked = CreateTrigger()
+trigger trg_DInspectButtonClicked = CreateTrigger()
+trigger trg_DInspectUnitSelected = CreateTrigger()
+trigger trg_DInspectUnitDeselected = CreateTrigger()
 framehandle array EquipmentBackDropFrame[24]
+framehandle array DInspectButtonFrame[24]
+unit array DInspectSelectedUnit[24]
 real DEqBackDropTopLeftX = 0.04
 real DEqBackDropTopLeftY = 0.56
 real DEqBackDropBottomRightX = 0.3
@@ -421,11 +426,38 @@ endfunction
 
 
 
+function DInspectSetButtonState takes integer pid, boolean visible, string label returns nothing
+if DInspectButtonFrame[pid] != null and GetLocalPlayer() == Player(pid) then
+call BlzFrameSetText(DInspectButtonFrame[pid], label)
+call BlzFrameSetVisible(DInspectButtonFrame[pid], visible)
+endif
+endfunction
+
+
+
+function DInspectRefreshButtonForPlayer takes player viewer returns nothing
+local integer pid = GetPlayerId(viewer)
+local unit target = DInspectSelectedUnit[pid]
+if DInvIsPlayerInspecting(pid) == TRUE then
+call DInspectSetButtonState(pid, TRUE, "Close")
+elseif DInvCanPlayerInspectUnit(viewer, target) == TRUE and IsUnitSelected(target, viewer) == TRUE then
+call DInspectSetButtonState(pid, TRUE, "Inspect")
+else
+set DInspectSelectedUnit[pid] = null
+call DInspectSetButtonState(pid, FALSE, "Inspect")
+endif
+set viewer = null
+set target = null
+endfunction
+
+
+
 function XCloseDEqUI takes nothing returns nothing
 local integer pid = GetPlayerId(GetTriggerPlayer())
 set DEqCurrentUnit[pid] = null
 set CurrentEQId[pid] = -1
 call CloseDEqUI(pid)
+call DInspectRefreshButtonForPlayer(GetTriggerPlayer())
 endfunction
 
 
@@ -546,19 +578,114 @@ endfunction
 
 
 
-function InventoryButtonClickedDEq takes nothing returns nothing
-local integer pid = GetPlayerId(GetTriggerPlayer())
+function DInspectButtonClickedActions takes nothing returns nothing
 local player viewer = GetTriggerPlayer()
-local unit caster = GetTriggerUnit()
-local unit inspectTarget = DInvGetInspectTargetForPlayer(viewer, caster)
-if inspectTarget != null then
-call ToggleDEqUIForUnit(pid, inspectTarget)
+local player localplyr = GetLocalPlayer()
+local integer pid = GetPlayerId(viewer)
+local unit target = DInspectSelectedUnit[pid]
+local framehandle buttonFrame = BlzGetTriggerFrame()
+local boolean opened = FALSE
+
+if viewer == localplyr then
+call BlzFrameSetEnable(buttonFrame, false)
+call BlzFrameSetEnable(buttonFrame, true)
+call StopCamera()
+endif
+
+if DInvIsPlayerInspecting(pid) == TRUE then
+call DInvCloseForPlayer(viewer)
+set DEqCurrentUnit[pid] = null
+set CurrentEQId[pid] = -1
+call CloseDEqUI(pid)
+    if DInvCanPlayerInspectUnit(viewer, target) == TRUE and IsUnitSelected(target, viewer) == TRUE then
+    call DInspectSetButtonState(pid, TRUE, "Inspect")
+    else
+    set DInspectSelectedUnit[pid] = null
+    call DInspectSetButtonState(pid, FALSE, "Inspect")
+    endif
+elseif DInvCanPlayerInspectUnit(viewer, target) == TRUE then
+    if BIDOfUnit(target) > 0 then
+    set opened = DInvShowUnitForPlayer(viewer, target, TRUE)
+    endif
+    if DEqShowUnitForPlayer(viewer, target, TRUE) == TRUE then
+    set opened = TRUE
+    endif
+    if opened == TRUE then
+    call DInspectSetButtonState(pid, TRUE, "Close")
+    else
+    set DInspectSelectedUnit[pid] = null
+    call DInspectSetButtonState(pid, FALSE, "Inspect")
+    endif
 else
-call ToggleDEqUIForUnit(pid, caster)
+set DInspectSelectedUnit[pid] = null
+call DInspectSetButtonState(pid, FALSE, "Inspect")
+endif
+
+set viewer = null
+set localplyr = null
+set target = null
+set buttonFrame = null
+endfunction
+
+
+
+function DInspectUnitSelectedActions takes nothing returns nothing
+local player viewer = GetTriggerPlayer()
+local integer pid = GetPlayerId(viewer)
+local unit u = GetTriggerUnit()
+if DInvCanPlayerInspectUnit(viewer, u) == TRUE then
+set DInspectSelectedUnit[pid] = u
+call DInspectRefreshButtonForPlayer(viewer)
+elseif DInvIsPlayerInspecting(pid) == TRUE then
+call DInspectSetButtonState(pid, TRUE, "Close")
+else
+set DInspectSelectedUnit[pid] = null
+call DInspectSetButtonState(pid, FALSE, "Inspect")
 endif
 set viewer = null
+set u = null
+endfunction
+
+
+
+function DInspectUnitDeselectedActions takes nothing returns nothing
+local player viewer = GetTriggerPlayer()
+local integer pid = GetPlayerId(viewer)
+local unit u = GetTriggerUnit()
+if u == DInspectSelectedUnit[pid] then
+    if DInvIsPlayerInspecting(pid) == TRUE then
+    call DInspectSetButtonState(pid, TRUE, "Close")
+    else
+    set DInspectSelectedUnit[pid] = null
+    call DInspectSetButtonState(pid, FALSE, "Inspect")
+    endif
+endif
+set viewer = null
+set u = null
+endfunction
+
+
+
+function DInspectCreateButton takes integer pid returns nothing
+set DInspectButtonFrame[pid] = BlzCreateFrameByType("GLUETEXTBUTTON", "DInspectButton"+I2S(pid), BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "ScriptDialogButton", 0)
+call BlzFrameSetText(DInspectButtonFrame[pid], "Inspect")
+call BlzFrameSetTextAlignment(DInspectButtonFrame[pid], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
+call BlzFrameSetScale(DInspectButtonFrame[pid], 0.85)
+call BlzFrameSetLevel(DInspectButtonFrame[pid], 8)
+call BlzFrameSetPoint(DInspectButtonFrame[pid], FRAMEPOINT_TOPLEFT, BlzGetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 4), FRAMEPOINT_BOTTOMLEFT, 0.00, -0.004)
+call BlzFrameSetPoint(DInspectButtonFrame[pid], FRAMEPOINT_BOTTOMRIGHT, BlzGetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 5), FRAMEPOINT_BOTTOMRIGHT, 0.00, -0.030)
+call BlzFrameSetVisible(DInspectButtonFrame[pid], FALSE)
+call BlzTriggerRegisterFrameEvent(trg_DInspectButtonClicked, DInspectButtonFrame[pid], FRAMEEVENT_CONTROL_CLICK)
+endfunction
+
+
+
+function InventoryButtonClickedDEq takes nothing returns nothing
+local integer pid = GetPlayerId(GetTriggerPlayer())
+local unit caster = GetTriggerUnit()
+call ToggleDEqUIForUnit(pid, caster)
+call DInspectRefreshButtonForPlayer(GetTriggerPlayer())
 set caster = null
-set inspectTarget = null
 endfunction
 
 
@@ -685,10 +812,13 @@ local integer pid = 0
 
 call DestroyTrigger(trg_DEqSlotClicked)
 set trg_DEqSlotClicked = CreateTrigger()
+call DestroyTrigger(trg_DInspectButtonClicked)
+set trg_DInspectButtonClicked = CreateTrigger()
 
     loop
         if GetPlayerSlotState(Player(pid)) == PLAYER_SLOT_STATE_PLAYING and GetPlayerController(Player(pid)) == MAP_CONTROL_USER then
             call CreateDEqUI(pid)
+            call DInspectCreateButton(pid)
         endif
     set pid = pid + 1
     exitwhen pid > 23
@@ -696,6 +826,7 @@ set trg_DEqSlotClicked = CreateTrigger()
 
 call TriggerAddAction(trg_InventoryToggleButtonClicked, function XCloseDEqUI)
 call TriggerAddAction(trg_DEqSlotClicked, function DEqSlotClickedActions)
+call TriggerAddAction(trg_DInspectButtonClicked, function DInspectButtonClickedActions)
 call DestroyTimer(GetExpiredTimer())
 //call BJDebugMsg("DEqLoadBugProtectionActions ran")
 endfunction
@@ -739,6 +870,8 @@ local group ug = CreateGroup()
 loop
     if DInvCanPlayerUseInventoryFrames(i) == TRUE then
     set DEqDoubleClickTimer[i] = CreateTimer()
+    call TriggerRegisterPlayerUnitEvent(trg_DInspectUnitSelected, Player(i), EVENT_PLAYER_UNIT_SELECTED, null)
+    call TriggerRegisterPlayerUnitEvent(trg_DInspectUnitDeselected, Player(i), EVENT_PLAYER_UNIT_DESELECTED, null)
     endif
 
     if DInvCanPlayerOwnInventoryUnit(i) == TRUE then
@@ -757,6 +890,8 @@ call TriggerAddAction( trg_AutoAddNewHeroToDEq, function AutoAddNewHeroToDEqActi
 endif
 
 call TriggerAddAction(trg_OpenDInvAbilityUsed, function InventoryButtonClickedDEq)
+call TriggerAddAction(trg_DInspectUnitSelected, function DInspectUnitSelectedActions)
+call TriggerAddAction(trg_DInspectUnitDeselected, function DInspectUnitDeselectedActions)
 
 call DEqLoadBugProtectionActions()
 call DestroyGroup(ug)
