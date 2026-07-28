@@ -53,6 +53,17 @@
   - Hid the `Lost Supplies` accept/complete dialog buttons until `Token of Love` has actually been completed.
   - Restored player-control locking on Valeria's farewell button by starting a dialog sequence before playing the farewell lines.
 
+- Added `QuestsAndDialogs/QuestGivers/qRagno.j` and `QuestsAndDialogs/QuestGivers/qChieftainThork.j`
+  - Converted Ragno's old GUI quest giver flow to the shared `QuestGiver`, `QuestMaster`, `DialogInteraction`, and `DialogSystem` stack.
+  - Added Ragno's repeatable `Gnoll Headcount`, `Lumberjack Duties`, and `Kobold Thieves` quests with item turn-ins, lumber peon support, Kobold leader kill tracking, and random Kobold stash drops.
+  - Added `Satyr Negotiations` with public update/ready/complete hooks for the external satyr branch.
+  - Added Ragno-owned `Giving the Letter` as the renamed Thork handoff quest, with Chieftain Thork as the quest receiver so the ready turn-in marker appears on Thork.
+  - Added Chieftain Thork dialog completion for `Giving the Letter`, including Blood Signed Summon Letter removal, Zul'kis rescue/ownership setup, DInventory/DEquipment initialization, starter item grants, and `Duty For The Horde` unlock helpers.
+  - Normalized new Thork dialog text to `Chieftain Thork` / `Thork` instead of the old title naming.
+
+- Updated `CreepRespawn/CreepUnitAssignment.j`
+  - Ragno and Chieftain Thork respawns now run quest-giver restoration and refresh the new `qRagno` / `qChieftainThork` dialog hooks after unit references are transferred.
+
 - Updated `Companions/Companions.j` and `AI/AI.j`
   - Companion order and idle timers now pause while a dialog sequence, visible dialog, field-line queue, cinematic, or companion dialog is active.
   - Companion-controlled AI profile thinking now uses the same dialog-blocking guard instead of only checking `udg_InCinematic`, preventing companions from issuing movement, pickup, gather, or AI orders during normal dialog windows.
@@ -67,6 +78,8 @@
   - Added required-tool support to profession recipes and applied it to blacksmithing recipes with `Blacksmith's Hammer` rawcode `I700`.
   - Crafting UI now shows missing required tools in recipe rows and recipe details.
   - Added a `Query` craft button that keeps crafting the selected recipe until the required tool or materials are no longer available, then reopens the same crafting view.
+  - Query crafting now continues repeated crafts inside the same active crafting camera/fade sequence instead of flashing back to the normal view between each item.
+  - Pressing ESC now stops an active crafting query, and starting a query displays a reminder that ESC cancels it.
 
 - Updated `Companions/Companions.j`
   - Companion command abilities that target the ground now also include temporary controlled companions in `ControlledDisplayGroup`, so summoned/temporary companions follow group command mode and focus orders without needing to be manually selected.
@@ -144,6 +157,7 @@
   - The inspect button appears when selecting another player's initialized unit that has DInventory and/or DEquipment, opens that unit's custom inventory/equipment UI, and hides again after deselecting if inspect mode was not opened.
   - The normal inventory ability remains self-only because it is a self-targeted ability.
   - Added a DInventory `Give` button for transferring the selected DInventory item to the currently selected target unit, using target DInventory first and target vanilla inventory only when the target has no DInventory.
+  - The DInventory `Give` button now refreshes when the target selection changes and is positioned below the DInventory slots so it appears reliably after selecting both an item and a target unit.
   - DInventory give transfer now reports `Target unit doesn't have inventory.` or `Target unit inventory is full.` when the selected target cannot receive the item.
   - Inspect mode is read-only for inventory/equipment slot clicks while still allowing UI viewing and DInventory paging.
   - The Inspect/Close button now resolves the selected inspect target again on click, preventing stale selection cache cases where the button only worked after switching selection away and back.
@@ -174,6 +188,7 @@
 
 - Critical ItemManager/DInventory caveat: `DInventoryIsItemStackable(...)` currently treats matching WC3 item categories with `GetItemLevel(item) > 0` as stackable. It does not itself enforce the intended `0-49` stack-cap boundary, so miscellaneous non-stackable items in the `50-99` range must avoid stackable WC3 item categories, or the JASS predicate should later be tightened to require `GetItemLevel(item) < 50`.
 - `qValeria.j` now references `gg_rct_ItemTokenLove` and `gg_rct_ItemSupplies01` through `gg_rct_ItemSupplies07`; confirm these rects exist in the main map globals during the next in-map compile.
+- `qRagno.j` now references Ragno/Kobold/Lumber old-GUI rect globals such as `gg_rct_KoboldsChest01` through `gg_rct_KoboldsChest08`, `gg_rct_LumberPeonSpawn`, and `gg_rct_LumberPeonMove`; confirm these rects and the new quest-giver import order in the next full in-map JassHelper compile.
 - The Shaman/profession/ExSound changes passed targeted static checks and `git diff --check`, but still need full in-map JassHelper compile and runtime audio validation with `SoundAndMusic/ExSoundEditorSounds.j` included after `SoundAndMusic/ExSound.j`.
 - The gather-node skill effect, SteamBreath exclusion, and StatsUI pet rename changes passed `git diff --check`, but still need full in-map JassHelper compile and runtime validation because this checkout does not expose a combined `war3map.j` build entry point.
 
@@ -182,6 +197,7 @@
 - Re-test `CastingBar/CastingBarSystem.j` in-game with normal cast-time spells and channel/follow-through spells, especially Firebolt-style casts, Rain of Fire, Blizzard, Life Drain, and Channel-based custom abilities.
 - Decide whether to tighten `DestroyerInventoryAndEquipmentSystem/PoTs/SharedDInvLib.j` so stackability requires WC3 item level `1-49`, matching the ItemManager convention and protecting `50-99` miscellaneous items from accidental stacking.
 - Re-test Valeria's `Token of Love` and `Lost Supplies` chain in-game: quest-log text, item spawn at `ItemTokenLove`, `ITEM_SUPPLIES` spawning across `ItemSupplies01` through `ItemSupplies07`, sequential availability, item turn-in cleanup, and farewell control lock.
+- Re-test Ragno and Chieftain Thork in-game: repeatable quest reset, Kobold chest drops, Lumberjack peon survival/failure, `Giving the Letter` turn-in marker on Thork, Zul'kis unlock, and Ragno/Thork respawn hook refresh.
 - Re-test Aradion/Valeria/Nazgrek dialog scenes with companions present to confirm companion movement stays paused during dialog and resumes correctly afterward.
 
 
