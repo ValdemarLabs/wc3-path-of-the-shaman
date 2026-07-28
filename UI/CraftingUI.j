@@ -47,6 +47,7 @@ globals
     private framehandle CUI_PrevButton = null
     private framehandle CUI_NextButton = null
     private framehandle CUI_CraftButton = null
+    private framehandle CUI_QueryButton = null
     private framehandle CUI_DetailIcon = null
     private framehandle CUI_DetailTitle = null
     private framehandle CUI_DetailInfo = null
@@ -61,6 +62,7 @@ globals
     private unit array CUI_Station
     private unit array CUI_Crafter
     private boolean array CUI_ReopenAfterCraft
+    private boolean array CUI_QueryAfterCraft
     private integer array CUI_ListStart
     private integer array CUI_SelectedRecipe
     private string array CUI_SelectedCategory
@@ -75,6 +77,7 @@ globals
     private trigger CUI_PrevTrigger = null
     private trigger CUI_NextTrigger = null
     private trigger CUI_CraftTrigger = null
+    private trigger CUI_QueryTrigger = null
     private trigger CUI_ClearFocusTrigger = null
 endglobals
 
@@ -286,9 +289,13 @@ private function CUI_GetRecipeStateText takes unit crafter, unit station, intege
     endif
 
     set requiredSkill = Professions_GetRecipeRequiredSkill(recipeId)
-    set currentSkill = GNS_GetSkill(crafter, Professions_GetRecipeProfessionId(recipeId))
+    set currentSkill = Professions_GetEffectiveSkill(crafter, Professions_GetRecipeProfessionId(recipeId))
     if currentSkill < requiredSkill then
         return "|cffff8080Skill " + I2S(requiredSkill) + "|r"
+    endif
+
+    if not Professions_HasRecipeRequiredItem(crafter, recipeId) then
+        return "|cffff8080Tool|r"
     endif
 
     set missingText = Professions_GetMissingRecipeText(crafter, recipeId)
@@ -307,6 +314,13 @@ private function CUI_GetRecipeStateText takes unit crafter, unit station, intege
     return "|cffffcc00Busy|r"
 endfunction
 
+private function CUI_SetCraftButtons takes boolean canCraft returns nothing
+    call BlzFrameSetText(CUI_CraftButton, "Craft")
+    call BlzFrameSetEnable(CUI_CraftButton, canCraft)
+    call BlzFrameSetText(CUI_QueryButton, "Query")
+    call BlzFrameSetEnable(CUI_QueryButton, canCraft)
+endfunction
+
 private function CUI_GetDetailBody takes unit crafter, unit station, integer recipeId returns string
     local integer materialCount
     local integer slot = 1
@@ -321,7 +335,7 @@ private function CUI_GetDetailBody takes unit crafter, unit station, integer rec
     endif
 
     set professionId = Professions_GetRecipeProfessionId(recipeId)
-    set currentSkill = GNS_GetSkill(crafter, professionId)
+    set currentSkill = Professions_GetEffectiveSkill(crafter, professionId)
     set requiredSkill = Professions_GetRecipeRequiredSkill(recipeId)
     set description = Professions_GetRecipeDescription(recipeId)
     if description == null or description == "" then
@@ -332,6 +346,9 @@ private function CUI_GetDetailBody takes unit crafter, unit station, integer rec
     set body = body + "|n|cffbfbfbfProfession: " + GNS_GetProfessionName(professionId) + "|r"
     set body = body + "|n|cffbfbfbfSkill: " + I2S(currentSkill) + " / " + I2S(requiredSkill) + "|r"
     set body = body + "|n|cffbfbfbfTime: " + R2SW(Professions_GetRecipeCraftTime(recipeId), 1, 1) + " sec|r"
+    if Professions_GetRecipeRequiredItemCode(recipeId) != 0 then
+        set body = body + "|n|cffbfbfbfTool:|r " + Professions_GetRecipeRequiredItemLine(crafter, recipeId)
+    endif
     set body = body + "|n|n|cffffcc00Materials|r"
 
     set materialCount = Professions_GetRecipeMaterialCount(recipeId)
@@ -436,8 +453,7 @@ private function CUI_UpdateDetail takes player whichPlayer returns nothing
         call BlzFrameSetText(CUI_DetailTitle, NoStationText)
         call BlzFrameSetText(CUI_DetailInfo, "")
         call BlzFrameSetText(CUI_DetailBody, NoRecipesText)
-        call BlzFrameSetText(CUI_CraftButton, "Craft")
-        call BlzFrameSetEnable(CUI_CraftButton, false)
+        call CUI_SetCraftButtons(false)
         return
     endif
 
@@ -446,8 +462,7 @@ private function CUI_UpdateDetail takes player whichPlayer returns nothing
         call BlzFrameSetText(CUI_DetailTitle, Professions_GetStationNameByUnitType(CUI_GetStationType(pid)))
         call BlzFrameSetText(CUI_DetailInfo, GNS_GetProfessionName(CUI_GetProfession(pid)))
         call BlzFrameSetText(CUI_DetailBody, CategoryPromptText)
-        call BlzFrameSetText(CUI_CraftButton, "Craft")
-        call BlzFrameSetEnable(CUI_CraftButton, false)
+        call CUI_SetCraftButtons(false)
         return
     endif
 
@@ -456,8 +471,7 @@ private function CUI_UpdateDetail takes player whichPlayer returns nothing
         call BlzFrameSetText(CUI_DetailTitle, "|cffffe4a3" + CUI_GetSelectedCategory(pid) + "|r")
         call BlzFrameSetText(CUI_DetailInfo, GNS_GetProfessionName(CUI_GetProfession(pid)))
         call BlzFrameSetText(CUI_DetailBody, CategoryPromptText)
-        call BlzFrameSetText(CUI_CraftButton, "Craft")
-        call BlzFrameSetEnable(CUI_CraftButton, false)
+        call CUI_SetCraftButtons(false)
         return
     endif
 
@@ -466,8 +480,7 @@ private function CUI_UpdateDetail takes player whichPlayer returns nothing
         call BlzFrameSetText(CUI_DetailTitle, Professions_GetStationNameByUnitType(CUI_GetStationType(pid)))
         call BlzFrameSetText(CUI_DetailInfo, GNS_GetProfessionName(CUI_GetProfession(pid)))
         call BlzFrameSetText(CUI_DetailBody, NoRecipesText)
-        call BlzFrameSetText(CUI_CraftButton, "Craft")
-        call BlzFrameSetEnable(CUI_CraftButton, false)
+        call CUI_SetCraftButtons(false)
         return
     endif
 
@@ -477,12 +490,7 @@ private function CUI_UpdateDetail takes player whichPlayer returns nothing
     call BlzFrameSetText(CUI_DetailTitle, "|cffffe4a3" + Professions_GetRecipeName(recipeId) + "|r")
     call BlzFrameSetText(CUI_DetailInfo, "|cffbfbfbf" + infoText + "|r")
     call BlzFrameSetText(CUI_DetailBody, CUI_GetDetailBody(CUI_Crafter[pid], CUI_Station[pid], recipeId))
-    if canCraft then
-        call BlzFrameSetText(CUI_CraftButton, "Craft")
-    else
-        call BlzFrameSetText(CUI_CraftButton, "Unavailable")
-    endif
-    call BlzFrameSetEnable(CUI_CraftButton, canCraft)
+    call CUI_SetCraftButtons(canCraft)
 endfunction
 
 private function CUI_UpdateForPlayer takes player whichPlayer returns nothing
@@ -546,6 +554,7 @@ private function CUI_OpenForPlayerEx takes player whichPlayer, unit station, uni
     set CUI_Crafter[pid] = crafter
     set CUI_ListStart[pid] = 0
     set CUI_SelectedRecipe[pid] = 0
+    set CUI_QueryAfterCraft[pid] = false
     if categoryName == null then
         set CUI_SelectedCategory[pid] = ""
     else
@@ -579,6 +588,7 @@ private function CUI_ClearFocusAction takes nothing returns nothing
 endfunction
 
 private function CUI_CloseAction takes nothing returns nothing
+    set CUI_QueryAfterCraft[GetPlayerId(GetTriggerPlayer())] = false
     call CUI_HideForPlayer(GetTriggerPlayer())
 endfunction
 
@@ -597,6 +607,7 @@ private function CUI_ReturnAction takes nothing returns nothing
         set CUI_ListStart[pid] = 0
         call CUI_UpdateForPlayer(p)
     else
+        set CUI_QueryAfterCraft[pid] = false
         call CUI_HideForPlayer(p)
         call MasterUI_Show()
     endif
@@ -690,10 +701,32 @@ private function CUI_CraftAction takes nothing returns nothing
     if not CUI_IsCategoryMode(pid) and not CUI_IsSubcategoryMode(pid) and CUI_SelectedRecipe[pid] != 0 then
         if Professions_StartRecipe(CUI_Crafter[pid], CUI_Station[pid], CUI_SelectedRecipe[pid]) then
             set CUI_ReopenAfterCraft[pid] = true
+            set CUI_QueryAfterCraft[pid] = false
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_CONFIRM, p)
             call CUI_HideForPlayer(p)
             call ExecuteFunc("ProfessionsUI_Refresh")
         else
+            call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, p)
+            call CUI_UpdateForPlayer(p)
+        endif
+    endif
+
+    set p = null
+endfunction
+
+private function CUI_QueryAction takes nothing returns nothing
+    local player p = GetTriggerPlayer()
+    local integer pid = GetPlayerId(p)
+
+    if not CUI_IsCategoryMode(pid) and not CUI_IsSubcategoryMode(pid) and CUI_SelectedRecipe[pid] != 0 then
+        if Professions_StartRecipe(CUI_Crafter[pid], CUI_Station[pid], CUI_SelectedRecipe[pid]) then
+            set CUI_ReopenAfterCraft[pid] = true
+            set CUI_QueryAfterCraft[pid] = true
+            call Interface_PlayEventSoundForPlayer(Interface_EVENT_CONFIRM, p)
+            call CUI_HideForPlayer(p)
+            call ExecuteFunc("ProfessionsUI_Refresh")
+        else
+            set CUI_QueryAfterCraft[pid] = false
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, p)
             call CUI_UpdateForPlayer(p)
         endif
@@ -850,7 +883,12 @@ private function CUI_CreateFrames takes nothing returns nothing
     set CUI_CraftButton = BlzCreateFrameByType("GLUETEXTBUTTON", "CraftingUICraft", CUI_Parent, "ScriptDialogButton", 0)
     call BlzFrameSetSize(CUI_CraftButton, 0.100, 0.032)
     call BlzFrameSetText(CUI_CraftButton, "Craft")
-    call BlzFrameSetPoint(CUI_CraftButton, FRAMEPOINT_BOTTOMRIGHT, CUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.024, 0.030)
+
+    set CUI_QueryButton = BlzCreateFrameByType("GLUETEXTBUTTON", "CraftingUIQuery", CUI_Parent, "ScriptDialogButton", 0)
+    call BlzFrameSetSize(CUI_QueryButton, 0.100, 0.032)
+    call BlzFrameSetText(CUI_QueryButton, "Query")
+    call BlzFrameSetPoint(CUI_QueryButton, FRAMEPOINT_BOTTOMRIGHT, CUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.024, 0.030)
+    call BlzFrameSetPoint(CUI_CraftButton, FRAMEPOINT_BOTTOMRIGHT, CUI_QueryButton, FRAMEPOINT_BOTTOMLEFT, -0.010, 0.000)
 
     call BlzTriggerRegisterFrameEvent(CUI_CloseTrigger, CUI_CloseButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(CUI_ClearFocusTrigger, CUI_CloseButton, FRAMEEVENT_CONTROL_CLICK)
@@ -862,6 +900,8 @@ private function CUI_CreateFrames takes nothing returns nothing
     call BlzTriggerRegisterFrameEvent(CUI_ClearFocusTrigger, CUI_NextButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(CUI_CraftTrigger, CUI_CraftButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(CUI_ClearFocusTrigger, CUI_CraftButton, FRAMEEVENT_CONTROL_CLICK)
+    call BlzTriggerRegisterFrameEvent(CUI_QueryTrigger, CUI_QueryButton, FRAMEEVENT_CONTROL_CLICK)
+    call BlzTriggerRegisterFrameEvent(CUI_ClearFocusTrigger, CUI_QueryButton, FRAMEEVENT_CONTROL_CLICK)
 
     call BlzFrameSetVisible(CUI_Parent, false)
 endfunction
@@ -874,12 +914,26 @@ endfunction
 
 public function ReopenAfterCraft takes nothing returns nothing
     local integer playerIndex = 0
+    local integer recipeId
 
     loop
         exitwhen playerIndex >= bj_MAX_PLAYERS
         if CUI_ReopenAfterCraft[playerIndex] and CUI_Station[playerIndex] != null and CUI_Crafter[playerIndex] != null then
-            set CUI_ReopenAfterCraft[playerIndex] = false
-            call CUI_OpenForPlayerEx(Player(playerIndex), CUI_Station[playerIndex], CUI_Crafter[playerIndex], CUI_SelectedCategory[playerIndex], CUI_SelectedSubcategory[playerIndex])
+            set recipeId = CUI_SelectedRecipe[playerIndex]
+            if CUI_QueryAfterCraft[playerIndex] and recipeId != 0 and Professions_CanStartRecipe(CUI_Crafter[playerIndex], CUI_Station[playerIndex], recipeId) then
+                if Professions_StartRecipe(CUI_Crafter[playerIndex], CUI_Station[playerIndex], recipeId) then
+                    set CUI_ReopenAfterCraft[playerIndex] = true
+                    call ExecuteFunc("ProfessionsUI_Refresh")
+                else
+                    set CUI_ReopenAfterCraft[playerIndex] = false
+                    set CUI_QueryAfterCraft[playerIndex] = false
+                    call CUI_OpenForPlayerEx(Player(playerIndex), CUI_Station[playerIndex], CUI_Crafter[playerIndex], CUI_SelectedCategory[playerIndex], CUI_SelectedSubcategory[playerIndex])
+                endif
+            else
+                set CUI_ReopenAfterCraft[playerIndex] = false
+                set CUI_QueryAfterCraft[playerIndex] = false
+                call CUI_OpenForPlayerEx(Player(playerIndex), CUI_Station[playerIndex], CUI_Crafter[playerIndex], CUI_SelectedCategory[playerIndex], CUI_SelectedSubcategory[playerIndex])
+            endif
         endif
         set playerIndex = playerIndex + 1
     endloop
@@ -934,6 +988,9 @@ public function Init takes nothing returns nothing
 
     set CUI_CraftTrigger = CreateTrigger()
     call TriggerAddAction(CUI_CraftTrigger, function CUI_CraftAction)
+
+    set CUI_QueryTrigger = CreateTrigger()
+    call TriggerAddAction(CUI_QueryTrigger, function CUI_QueryAction)
 
     set CUI_ClearFocusTrigger = CreateTrigger()
     call TriggerAddAction(CUI_ClearFocusTrigger, function CUI_ClearFocusAction)
