@@ -28,19 +28,18 @@ globals
     private Table ignoredUnits
     private group RespawnGroup
     private integer nextRespawnId = 0
+    private boolean exclusionListReady = false
+    private boolean initialPositionsSaved = false
     
     // Debug mode - set to true to enable debug messages
     private constant boolean DEBUG_MODE = false
-    
-    // Event ID constant for map initialization
-    private constant integer EVENT_GAME_INIT = 4
     
     // String hash constants for Table keys
     private constant integer HASH_X = StringHash("x")
     private constant integer HASH_Y = StringHash("y")
     private constant integer HASH_FACING = StringHash("facing")
-    private constant real MIN_RESPAWN_TIME = 80.0
-    private constant real MAX_RESPAWN_TIME = 240.0
+    private constant real MIN_RESPAWN_TIME = 120.0
+    private constant real MAX_RESPAWN_TIME = 320.0
     
     //===========================================================================
     // EXCLUSION LIST - Unit-types that will NOT respawn
@@ -76,6 +75,25 @@ endfunction
 //===========================================================================
 // UTILITY FUNCTIONS
 //===========================================================================
+
+private function EnsureState takes nothing returns nothing
+    if not exclusionListReady then
+        call InitExclusionList()
+        set exclusionListReady = true
+    endif
+    if rhash == 0 then
+        set rhash = Table.create()
+    endif
+    if respawnData == 0 then
+        set respawnData = Table.create()
+    endif
+    if ignoredUnits == 0 then
+        set ignoredUnits = Table.create()
+    endif
+    if RespawnGroup == null then
+        set RespawnGroup = CreateGroup()
+    endif
+endfunction
 
 private function IsExcludedUnitType takes integer unitTypeId returns boolean
     local integer i = 0
@@ -134,15 +152,20 @@ private function IsRespawnableUnit takes unit u returns boolean
 endfunction
 
 private function IsIgnoredUnit takes unit u returns boolean
-    if u == null or ignoredUnits == 0 then
+    if u == null then
         return false
     endif
+    call EnsureState()
     return ignoredUnits.has(GetHandleId(u))
 endfunction
 
 private function SaveUnitPosition takes unit u returns nothing
     local integer id
-    if u == null or IsIgnoredUnit(u) then
+    if u == null then
+        return
+    endif
+    call EnsureState()
+    if IsIgnoredUnit(u) then
         return
     endif
     set id = GetHandleId(u)
@@ -167,6 +190,7 @@ function CreepRespawn_OnUnitEnter takes unit u returns nothing
     if u == null then
         return
     endif
+    call EnsureState()
     if IsIgnoredUnit(u) then
         set u = null
         return
@@ -190,9 +214,7 @@ function CreepRespawn_DiscardUnit takes unit u returns nothing
     if u == null then
         return
     endif
-    if ignoredUnits == 0 then
-        set ignoredUnits = Table.create()
-    endif
+    call EnsureState()
     set id = GetHandleId(u)
     set ignoredUnits[id] = 1
     if RespawnGroup != null then
@@ -213,6 +235,8 @@ endfunction
 
 private function InitializeRespawnGroup takes nothing returns nothing
     local group tempGroup
+
+    call EnsureState()
     
     // Player(2) = Player 3 (Teal)
     set tempGroup = CreateGroup()
@@ -285,6 +309,8 @@ endfunction
 
 private function SaveAllUnitPositions takes nothing returns nothing
     local unit u
+
+    call EnsureState()
     
     loop
         set u = FirstOfGroup(RespawnGroup)
@@ -300,6 +326,7 @@ endfunction
 
 private function ClearRespawnData takes integer respawnId returns nothing
     local integer base = respawnId * 5
+    call EnsureState()
     call respawnData.remove(base + 0)
     call respawnData.remove(base + 1)
     call respawnData.remove(base + 2)
@@ -309,14 +336,23 @@ endfunction
 
 private function OnRespawnTimerExpire takes nothing returns nothing
     local timer t = GetExpiredTimer()
-    local integer respawnId = GetTimerData(t)
-    local integer base = respawnId * 5
-    local integer utype = respawnData[base + 0]
-    local player p = Player(respawnData[base + 1])
-    local real x = respawnData.real[base + 2]
-    local real y = respawnData.real[base + 3]
-    local real facing = respawnData.real[base + 4]
+    local integer respawnId
+    local integer base
+    local integer utype
+    local player p
+    local real x
+    local real y
+    local real facing
     local unit newUnit
+
+    call EnsureState()
+    set respawnId = GetTimerData(t)
+    set base = respawnId * 5
+    set utype = respawnData[base + 0]
+    set p = Player(respawnData[base + 1])
+    set x = respawnData.real[base + 2]
+    set y = respawnData.real[base + 3]
+    set facing = respawnData.real[base + 4]
     
     if DEBUG_MODE then
         call BJDebugMsg("[CreepRespawn] Timer expired for unit type " + I2S(utype) + " at (" + R2S(x) + ", " + R2S(y) + ")")
@@ -344,16 +380,31 @@ private function OnRespawnTimerExpire takes nothing returns nothing
 endfunction
 
 private function ScheduleRespawn takes unit dying returns nothing
-    local integer handleId = GetHandleId(dying)
-    local integer respawnId = nextRespawnId + 1
-    local integer base = respawnId * 5
-    local integer utype = GetUnitTypeId(dying)
-    local player p = GetRespawnOwner(dying)
-    local real x = rhash.real[handleId * 4 + 0]
-    local real y = rhash.real[handleId * 4 + 1]
-    local real facing = rhash.real[handleId * 4 + 2]
-    local real delay = GetRandomReal(MIN_RESPAWN_TIME, MAX_RESPAWN_TIME)
-    local timer t = NewTimer()
+    local integer handleId
+    local integer respawnId
+    local integer base
+    local integer utype
+    local player p
+    local real x
+    local real y
+    local real facing
+    local real delay
+    local timer t
+
+    if dying == null then
+        return
+    endif
+    call EnsureState()
+    set handleId = GetHandleId(dying)
+    set respawnId = nextRespawnId + 1
+    set base = respawnId * 5
+    set utype = GetUnitTypeId(dying)
+    set p = GetRespawnOwner(dying)
+    set x = rhash.real[handleId * 4 + 0]
+    set y = rhash.real[handleId * 4 + 1]
+    set facing = rhash.real[handleId * 4 + 2]
+    set delay = GetRandomReal(MIN_RESPAWN_TIME, MAX_RESPAWN_TIME)
+    set t = NewTimer()
     
     set nextRespawnId = respawnId
     set respawnData[base + 0] = utype
@@ -376,11 +427,21 @@ endfunction
 private function OnUnitDeath takes nothing returns nothing
     local unit dying = GetDyingUnit()
     local integer unitType
-    local player owner = GetRespawnOwner(dying)
-    local integer playerId = GetPlayerId(owner)
-    local integer handleId = GetHandleId(dying)
-    local real savedX = rhash.real[handleId * 4 + 0]
-    local real savedY = rhash.real[handleId * 4 + 1]
+    local player owner
+    local integer playerId
+    local integer handleId
+    local real savedX
+    local real savedY
+
+    if dying == null then
+        return
+    endif
+    call EnsureState()
+    set owner = GetRespawnOwner(dying)
+    set playerId = GetPlayerId(owner)
+    set handleId = GetHandleId(dying)
+    set savedX = rhash.real[handleId * 4 + 0]
+    set savedY = rhash.real[handleId * 4 + 1]
     
     if GetOwningPlayer(dying) == Player(22) and DEBUG_MODE then
         call BJDebugMsg("[CreepRespawn] Player 23 (Emerald) unit detected - converting to Neutral Passive for respawn")
@@ -450,33 +511,37 @@ endfunction
 //===========================================================================
 
 private function InitActions takes nothing returns nothing
-    local integer eventId = GetHandleId(GetTriggerEventId())
-    
-    if eventId == EVENT_GAME_INIT then
-        if DEBUG_MODE then
-            call BJDebugMsg("[CreepRespawn] Initializing CreepRespawn system...")
+    local timer t = GetExpiredTimer()
+
+    if initialPositionsSaved then
+        if t != null then
+            call ReleaseTimer(t)
         endif
-        
-        // Initialize exclusion list
-        call InitExclusionList()
-        if DEBUG_MODE then
-            call BJDebugMsg("[CreepRespawn] Excluded " + I2S(EXCLUDED_COUNT) + " unit types from respawning")
-        endif
-        
-        // Initialize tables
-        set rhash = Table.create()
-        set respawnData = Table.create()
-        
-        // Initialize respawn group
-        call InitializeRespawnGroup()
-        
-        // Save all unit positions
-        call SaveAllUnitPositions()
-        
-        if DEBUG_MODE then
-            call BJDebugMsg("[CreepRespawn] Initialization complete!")
-        endif
+        set t = null
+        return
     endif
+
+    call EnsureState()
+    if DEBUG_MODE then
+        call BJDebugMsg("[CreepRespawn] Initializing CreepRespawn system...")
+        call BJDebugMsg("[CreepRespawn] Excluded " + I2S(EXCLUDED_COUNT) + " unit types from respawning")
+    endif
+
+    // Initialize respawn group
+    call InitializeRespawnGroup()
+
+    // Save all unit positions
+    call SaveAllUnitPositions()
+    set initialPositionsSaved = true
+
+    if DEBUG_MODE then
+        call BJDebugMsg("[CreepRespawn] Initialization complete!")
+    endif
+
+    if t != null then
+        call ReleaseTimer(t)
+    endif
+    set t = null
 endfunction
 
 //===========================================================================
@@ -484,17 +549,12 @@ endfunction
 //===========================================================================
 
 private function Init takes nothing returns nothing
-    local trigger initTrigger = CreateTrigger()
+    local timer initTimer = NewTimer()
     
-    // Initialize respawn group
-    set RespawnGroup = CreateGroup()
-    if ignoredUnits == 0 then
-        set ignoredUnits = Table.create()
-    endif
+    call EnsureState()
     
     // Respawn System Init (runs at map start)
-    call TriggerRegisterTimerEvent(initTrigger, 0.00, false)
-    call TriggerAddAction(initTrigger, function InitActions)
+    call TimerStart(initTimer, 0.00, false, function InitActions)
     
     // Register with centralized death event system
     call UnitDeathEvent_Register(function OnUnitDeath)
@@ -504,7 +564,7 @@ private function Init takes nothing returns nothing
         call BJDebugMsg("[CreepRespawn] Registered with centralized unit-enter event system")
     endif
     
-    set initTrigger = null
+    set initTimer = null
 endfunction
 
 endlibrary
