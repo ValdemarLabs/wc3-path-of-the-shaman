@@ -31,6 +31,28 @@
 - Updated `Professions/Professions.j`
   - Profession crafting now updates the temporary `A6DY` Craft fake-cast ability's `acas` casting time to match the selected recipe's actual craft duration before issuing the self-cast order.
   - This keeps the Warcraft ability cast phase and casting bar aligned with variable recipe craft times instead of always using the old fixed 5 second object-data value.
+  - Raised the internal maximum registered profession recipe count from `256` to `512` so the expanded Cooking recipe table has room without crowding other profession libraries.
+
+- Updated `Professions/ProfessionsCooking.j`
+  - Replaced the placeholder Cooking hook with a full campfire recipe set for Cooking skill `1-300`.
+  - Registered `55` Camp Fire recipes across Apprentice, Journeyman, Expert, and Artisan tiers, including meat dishes, seafood, stews, beverages, and odd high-skill recipes.
+  - Cooking recipes still require proximity to the Camp Fire unit `n61C`; library comments now note that future fire-source units should be added as additional station registrations.
+  - Added Cooking-owned timed food and beverage stat effects instead of relying on Object Editor aura abilities for the first implementation.
+  - Food and beverage buffs are separate timed slots: a new food replaces the old food buff, a new beverage replaces the old beverage stat buff, and both remove their stat deltas when they expire.
+  - Added runtime stat support for Strength, Agility, Intelligence, max hit points, max mana, hit point regeneration, mana regeneration, damage, armor, movement speed, sight range, Crit, Dodge, Block, Hit, flat Spell Power, and percent Spell Power.
+  - `udg_Stats_Crit`, `udg_Stats_Dodge`, `udg_Stats_Block`, `udg_Stats_Hit`, `udg_Stats_SpellPowerFlat`, and `udg_Stats_SpellPowerPct` are updated directly for timed Cooking effects.
+  - Added a delayed reapply path after hero item drops so `UnitStats_RecalculateHero(...)` item-stat clears do not permanently wipe active Cooking timed stats.
+  - Added public lookup helpers for Cooking consumables and effect text while keeping aura rawcode slots available for a later Object Editor aura migration.
+
+- Added `Professions/Drunk.j`
+  - Added a helper library for beverage drunkenness.
+  - `Drunk_Add(...)` stacks a unit's drunk level, attaches a Drunken Haze target visual, expires through `TimerUtils`, and clears visual/player state when the drunk timer ends.
+  - Player drunk fade and camera sway are local to the player currently selecting an owned drunk unit.
+  - Switching selection away from a drunk unit, such as from drunk Nazgrek to non-drunk Zul'kis, clears the local drunk filter and camera roll until a drunk owned unit is selected again.
+  - Camera sway uses `CAMERA_FIELD_ROLL` instead of rotation to avoid the known camera-rotation crash path.
+
+- Updated `GatherSystems/GatherNodeSkills.j`
+  - Raised the shared profession skill cap from `100` to `300`, matching the new Cooking recipe progression.
 
 - Updated `CreepRespawn/CreepRespawn.j`
   - Added defensive state initialization so respawn tables, ignored-unit tracking, the exclusion list, and the bootstrap group exist before `Events_RegisterUnitEnter` or `UnitDeathEvent_Register` callbacks can touch them.
@@ -183,6 +205,10 @@
   - Added explicit `unit_specific_drops` for OldGUI-style creature categories and fitting imported units: wolves, bears, stags, boars, snakes, frogs, crawlers, murlocs, makrura, lizards, dragons/whelps, gnolls, and undead.
   - Added boss-oriented drops for old boss-trigger units such as Deathlord Fel'Dok, Margul, Mur'gal, Unknown Entity, Velaria, Colossus, Gollum, Sargoth, Mordrax, and Rol'jin, and marked those units for boss/both loot behavior where applicable.
   - Verified the inserted loot data has no duplicate unit/item or loot-table/item mappings.
+  - Added `CookingItemsSeeder.cs` for deterministic startup seeding of Cooking item data.
+  - The seeder upserts `65` Cooking-related items: `55` cooked food/beverage outputs and `10` new cooking materials such as Coarse Flour, Honey, Peppercorn, Baker's Yeast, Bitter Hops, Cactus Pulp, Sour Berries, Glowcap, Icecap Shavings, and Empty Bottle.
+  - Wired the Cooking item seeder into `MainForm` and `ItemEditForm` connection startup beside the existing profession stat seeder.
+  - Cooking-seeded consumables use generic item abilities to trigger item-use events while `ProfessionsCooking.j` owns the actual timed stat and drunk effects.
 
 ### Known Issues
 
@@ -191,6 +217,8 @@
 - `qRagno.j` now references Ragno/Kobold/Lumber old-GUI rect globals such as `gg_rct_KoboldsChest01` through `gg_rct_KoboldsChest08`, `gg_rct_LumberPeonSpawn`, and `gg_rct_LumberPeonMove`; confirm these rects and the new quest-giver import order in the next full in-map JassHelper compile.
 - The Shaman/profession/ExSound changes passed targeted static checks and `git diff --check`, but still need full in-map JassHelper compile and runtime audio validation with `SoundAndMusic/ExSoundEditorSounds.j` included after `SoundAndMusic/ExSound.j`.
 - The gather-node skill effect, SteamBreath exclusion, and StatsUI pet rename changes passed `git diff --check`, but still need full in-map JassHelper compile and runtime validation because this checkout does not expose a combined `war3map.j` build entry point.
+- The expanded Cooking and new Drunk libraries passed focused rawcode/effect cross-checks, `git diff --check`, and `WC3ItemManager` build validation, but still need a full in-map JassHelper compile with `Professions/Drunk.j` imported before `Professions/ProfessionsCooking.j`.
+- Drunk fade uses the cinematic filter layer, so it may visually compete with other cinematic-filter systems such as wounded screen feedback until runtime priority/ownership is tested.
 
 ### Actions Remaining
 
@@ -199,6 +227,9 @@
 - Re-test Valeria's `Token of Love` and `Lost Supplies` chain in-game: quest-log text, item spawn at `ItemTokenLove`, `ITEM_SUPPLIES` spawning across `ItemSupplies01` through `ItemSupplies07`, sequential availability, item turn-in cleanup, and farewell control lock.
 - Re-test Ragno and Chieftain Thork in-game: repeatable quest reset, Kobold chest drops, Lumberjack peon survival/failure, `Giving the Letter` turn-in marker on Thork, Zul'kis unlock, and Ragno/Thork respawn hook refresh.
 - Re-test Aradion/Valeria/Nazgrek dialog scenes with companions present to confirm companion movement stays paused during dialog and resumes correctly afterward.
+- Import `Professions/Drunk.j` into the actual map build order before `Professions/ProfessionsCooking.j`.
+- Re-export or run `WC3ItemManager` against the PotS database so the new Cooking materials, cooked foods, and beverages are present in the generated item object data.
+- Runtime-test Cooking at a Camp Fire: material consumption, skill gating through `1-300`, repeated query crafting, crafted item creation, item-use event firing, food replacement, beverage replacement, expiration stat removal, and drunk selection switching between Nazgrek/Zul'kis.
 
 
 ## [26.7.2026]
