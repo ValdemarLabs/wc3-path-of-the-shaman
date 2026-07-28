@@ -50,7 +50,7 @@ globals
     // Recipe/material limits and shared workstation feedback settings.
     public constant integer MAX_MATERIALS = 6
 
-    private constant integer P_MAX_RECIPES = 256
+    private constant integer P_MAX_RECIPES = 512
     private constant integer P_MAX_PROFESSION_ID = GNS_PROF_COOKING
     private constant string P_DEFAULT_CATEGORY = "Recipes"
     private constant integer P_ALCHEMY_LIGHT_ABILITY = 'A6DJ'
