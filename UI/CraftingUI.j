@@ -35,6 +35,8 @@ globals
     public string CategoryPromptText = "|cffbfbfbfSelect a category from the list.|r"
     public string CategoryIcon = "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp"
     public string PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
+    public string QueryStartText = "|cffffcc00Crafting query started.|r Press ESC to stop."
+    public string QueryStopText = "|cffffcc00Crafting query stopped.|r"
 
     private framehandle CUI_Parent = null
     private framehandle CUI_Title = null
@@ -78,6 +80,7 @@ globals
     private trigger CUI_NextTrigger = null
     private trigger CUI_CraftTrigger = null
     private trigger CUI_QueryTrigger = null
+    private trigger CUI_EscapeTrigger = null
     private trigger CUI_ClearFocusTrigger = null
 endglobals
 
@@ -587,6 +590,32 @@ private function CUI_ClearFocusAction takes nothing returns nothing
     endif
 endfunction
 
+private function CUI_StopQueryForPlayer takes player whichPlayer, boolean showMessage returns boolean
+    local integer pid
+
+    if whichPlayer == null then
+        return false
+    endif
+
+    set pid = GetPlayerId(whichPlayer)
+    if not CUI_QueryAfterCraft[pid] then
+        return false
+    endif
+
+    set CUI_QueryAfterCraft[pid] = false
+    set CUI_ReopenAfterCraft[pid] = false
+    call Professions_CancelUnitCraft(CUI_Crafter[pid])
+    if showMessage then
+        call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, QueryStopText)
+    endif
+
+    return true
+endfunction
+
+private function CUI_EscapeAction takes nothing returns nothing
+    call CUI_StopQueryForPlayer(GetTriggerPlayer(), true)
+endfunction
+
 private function CUI_CloseAction takes nothing returns nothing
     set CUI_QueryAfterCraft[GetPlayerId(GetTriggerPlayer())] = false
     call CUI_HideForPlayer(GetTriggerPlayer())
@@ -723,6 +752,7 @@ private function CUI_QueryAction takes nothing returns nothing
             set CUI_ReopenAfterCraft[pid] = true
             set CUI_QueryAfterCraft[pid] = true
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_CONFIRM, p)
+            call DisplayTextToPlayer(p, 0.00, 0.00, QueryStartText)
             call CUI_HideForPlayer(p)
             call ExecuteFunc("ProfessionsUI_Refresh")
         else
@@ -912,28 +942,38 @@ public function Hide takes nothing returns nothing
     endif
 endfunction
 
-public function ReopenAfterCraft takes nothing returns nothing
+public function TryContinueQueryCraft takes nothing returns nothing
     local integer playerIndex = 0
     local integer recipeId
+    local boolean started = false
+
+    loop
+        exitwhen playerIndex >= bj_MAX_PLAYERS or started
+        if CUI_ReopenAfterCraft[playerIndex] and CUI_QueryAfterCraft[playerIndex] and CUI_Station[playerIndex] != null and CUI_Crafter[playerIndex] != null then
+            set recipeId = CUI_SelectedRecipe[playerIndex]
+            if recipeId != 0 and Professions_CanStartRecipe(CUI_Crafter[playerIndex], CUI_Station[playerIndex], recipeId) then
+                if Professions_StartRecipeContinuation(CUI_Crafter[playerIndex], CUI_Station[playerIndex], recipeId) then
+                    set CUI_ReopenAfterCraft[playerIndex] = true
+                    set started = true
+                    call ExecuteFunc("ProfessionsUI_Refresh")
+                else
+                    set CUI_QueryAfterCraft[playerIndex] = false
+                endif
+            endif
+        endif
+        set playerIndex = playerIndex + 1
+    endloop
+endfunction
+
+public function ReopenAfterCraft takes nothing returns nothing
+    local integer playerIndex = 0
 
     loop
         exitwhen playerIndex >= bj_MAX_PLAYERS
         if CUI_ReopenAfterCraft[playerIndex] and CUI_Station[playerIndex] != null and CUI_Crafter[playerIndex] != null then
-            set recipeId = CUI_SelectedRecipe[playerIndex]
-            if CUI_QueryAfterCraft[playerIndex] and recipeId != 0 and Professions_CanStartRecipe(CUI_Crafter[playerIndex], CUI_Station[playerIndex], recipeId) then
-                if Professions_StartRecipe(CUI_Crafter[playerIndex], CUI_Station[playerIndex], recipeId) then
-                    set CUI_ReopenAfterCraft[playerIndex] = true
-                    call ExecuteFunc("ProfessionsUI_Refresh")
-                else
-                    set CUI_ReopenAfterCraft[playerIndex] = false
-                    set CUI_QueryAfterCraft[playerIndex] = false
-                    call CUI_OpenForPlayerEx(Player(playerIndex), CUI_Station[playerIndex], CUI_Crafter[playerIndex], CUI_SelectedCategory[playerIndex], CUI_SelectedSubcategory[playerIndex])
-                endif
-            else
-                set CUI_ReopenAfterCraft[playerIndex] = false
-                set CUI_QueryAfterCraft[playerIndex] = false
-                call CUI_OpenForPlayerEx(Player(playerIndex), CUI_Station[playerIndex], CUI_Crafter[playerIndex], CUI_SelectedCategory[playerIndex], CUI_SelectedSubcategory[playerIndex])
-            endif
+            set CUI_ReopenAfterCraft[playerIndex] = false
+            set CUI_QueryAfterCraft[playerIndex] = false
+            call CUI_OpenForPlayerEx(Player(playerIndex), CUI_Station[playerIndex], CUI_Crafter[playerIndex], CUI_SelectedCategory[playerIndex], CUI_SelectedSubcategory[playerIndex])
         endif
         set playerIndex = playerIndex + 1
     endloop
@@ -991,6 +1031,16 @@ public function Init takes nothing returns nothing
 
     set CUI_QueryTrigger = CreateTrigger()
     call TriggerAddAction(CUI_QueryTrigger, function CUI_QueryAction)
+
+    set CUI_EscapeTrigger = CreateTrigger()
+    set playerIndex = 0
+    loop
+        exitwhen playerIndex >= bj_MAX_PLAYERS
+        call BlzTriggerRegisterPlayerKeyEvent(CUI_EscapeTrigger, Player(playerIndex), OSKEY_ESCAPE, 0, true)
+        call TriggerRegisterPlayerEvent(CUI_EscapeTrigger, Player(playerIndex), EVENT_PLAYER_END_CINEMATIC)
+        set playerIndex = playerIndex + 1
+    endloop
+    call TriggerAddAction(CUI_EscapeTrigger, function CUI_EscapeAction)
 
     set CUI_ClearFocusTrigger = CreateTrigger()
     call TriggerAddAction(CUI_ClearFocusTrigger, function CUI_ClearFocusAction)
