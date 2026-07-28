@@ -36,6 +36,8 @@
   - Added defensive state initialization so respawn tables, ignored-unit tracking, the exclusion list, and the bootstrap group exist before `Events_RegisterUnitEnter` or `UnitDeathEvent_Register` callbacks can touch them.
   - Replaced the delayed startup trigger and hard-coded timer event-id check with a one-shot `TimerUtils` timer that saves initial creep positions once.
   - Kept CreepRespawn on the centralized `Events.j` unit-enter dispatcher and `UnitDeathEvent.j` death dispatcher; both APIs preserve native event responses for direct code callbacks.
+  - Added Player 23 / Emerald to the initial respawn-position enumeration, matching the existing Emerald-to-Neutral-Passive respawn-owner mapping.
+  - Added a saved-position existence check and death-time fallback save so valid creeps that missed startup or enter tracking still respawn from their current death position instead of failing with blank respawn data.
 
 - Added `QuestsAndDialogs/QuestItemSpawner.j`
   - Added a reusable quest/event helper for temporary item sets that can spawn items at registered rects, points, or locations.
@@ -54,6 +56,17 @@
 - Updated `Companions/Companions.j` and `AI/AI.j`
   - Companion order and idle timers now pause while a dialog sequence, visible dialog, field-line queue, cinematic, or companion dialog is active.
   - Companion-controlled AI profile thinking now uses the same dialog-blocking guard instead of only checking `udg_InCinematic`, preventing companions from issuing movement, pickup, gather, or AI orders during normal dialog windows.
+
+- Updated `AI/AI.j`
+  - AI gather-node selection now uses effective profession skill when checking whether a hero can gather from a node.
+  - AI heroes now permanently ignore a specific gather node while their profile lacks the required profession or effective skill, preventing repeated gather attempts against nodes they cannot use.
+  - Ignored gather nodes become valid again automatically if the AI later gains the required profession and reaches the node's required skill level.
+
+- Updated `Professions/Professions.j`, `Professions/ProfessionsBlacksmithing.j`, and `UI/CraftingUI.j`
+  - Profession recipe icons now fall back to the output item's object-data icon when a recipe does not define an explicit icon, so crafting buttons can show the actual item being created.
+  - Added required-tool support to profession recipes and applied it to blacksmithing recipes with `Blacksmith's Hammer` rawcode `I700`.
+  - Crafting UI now shows missing required tools in recipe rows and recipe details.
+  - Added a `Query` craft button that keeps crafting the selected recipe until the required tool or materials are no longer available, then reopens the same crafting view.
 
 - Updated `Companions/Companions.j`
   - Companion command abilities that target the ground now also include temporary controlled companions in `ControlledDisplayGroup`, so summoned/temporary companions follow group command mode and focus orders without needing to be manually selected.
@@ -109,8 +122,10 @@
   - StatsUI now replaces the right-side `Professions` button with a `Rename` button when the selected stats target is an eligible pet.
   - Shadowclaw and already-renamed pets do not show the Rename button; clicking Rename hides StatsUI and prompts the existing `/pet rename <name>` chat command flow.
 
-- Updated `DestroyerInventoryAndEquipmentSystem/PoTs/SharedDInvLib.j`
-  - Hardened DEquipment/DInventory custom tooltip generation so the internal granted-ability text fragment starts empty while the debug-only granted ability name listing remains disabled.
+- Updated `DestroyerInventoryAndEquipmentSystem/PoTs/DConfigurationArea.j` and `DestroyerInventoryAndEquipmentSystem/PoTs/SharedDInvLib.j`
+  - DEquipment/DInventory equipment tooltips now default to the vanilla-style authored item text: item name, custom gold row, and the Object Editor extended tooltip.
+  - Disabled generated equipment tooltip detail blocks by default because ItemManager-authored item descriptions already contain slot, rarity, stat, and ability text.
+  - Hardened custom tooltip generation so the internal granted-ability text fragment starts empty while the debug-only granted ability name listing remains disabled.
   - This prevents stale DEquipment definitions that still grant dummy/stat abilities from leaking lines such as `Item Attack Bonus 1`, `Item Damage Bonus 1`, or `Skin 1` into custom item tooltip frames once the updated library is imported.
   - Confirmed the current generated DEquipment export keeps Skinning Knife damage as a DEquipment `Damage` stat and only grants the real Skin ability `A0F3`; older generated exports that still grant `A07N`/`AIat` should not be used for the active map import.
 
@@ -118,7 +133,9 @@
   - `AI/AI.j` now initializes DInventory and DEquipment for registered AI heroes on creation/registration.
   - AI consumable logic can now stage needed healing or mana consumables from DInventory into the vanilla inventory, stash unneeded vanilla items back into DInventory when space is needed, and then use the best available consumable based on current life/mana need.
   - `DestroyerInventoryAndEquipmentSystem/PoTs/DInventory.j` and `DestroyerInventoryAndEquipmentSystem/PoTs/DEquipment.j` now allow computer-player heroes to own DInventory/DEquipment data while keeping frame UI creation user-only.
-  - Added inspect-mode open helpers for DInventory and DEquipment so a player using the inventory ability can inspect another selected initialized unit's inventory/equipment UI instead of only opening the caster's own UI.
+  - Added inspect-mode open helpers for DInventory and DEquipment plus a new `Inspect` / `Close` button above the vanilla inventory.
+  - The inspect button appears when selecting another player's initialized unit that has DInventory and/or DEquipment, opens that unit's custom inventory/equipment UI, and hides again after deselecting if inspect mode was not opened.
+  - The normal inventory ability remains self-only because it is a self-targeted ability.
   - Inspect mode is read-only for inventory/equipment slot clicks while still allowing UI viewing and DInventory paging.
   - Vanilla inventory handling now rejects DEquipment items, keeping equippable gear in DInventory or DEquipment slots while still allowing consumables, materials, and miscellaneous non-equipment items in vanilla inventory.
   - Invalid vanilla-equipment moves and failed DEquipment equip checks now use the Nazgrek/Zulkis `ExSound` item-error voicelines when applicable.
