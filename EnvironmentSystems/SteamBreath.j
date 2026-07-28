@@ -20,7 +20,7 @@
 */ 
 //===========================================================================
 
-library SteamBreathSystem initializer Init requires UnitDeathEvent
+library SteamBreathSystem initializer Init requires UnitDeathEvent, optional GatherNodes
 
 globals
     private constant integer MAX_UNITS_PER_REGION = 1000 // Maximum units that can have steam in one region
@@ -30,9 +30,17 @@ globals
     private integer array RegionUnitCount // Track units per region
 endglobals
 //===========================================================================
+private function IsGatherNodeSteamTarget takes unit u returns boolean
+    static if LIBRARY_GatherNodes then
+        return GN_IsGatherUnit(u)
+    endif
+
+    return false
+endfunction
+
 function Filter_IsSteamTarget takes nothing returns boolean
     local unit u = GetFilterUnit()
-    local boolean result = IsUnitAliveBJ(u) and not IsUnitType(u, UNIT_TYPE_MECHANICAL) and not IsUnitType(u, UNIT_TYPE_STRUCTURE) and not IsUnitType(u, UNIT_TYPE_SUMMONED)
+    local boolean result = IsUnitAliveBJ(u) and not IsUnitType(u, UNIT_TYPE_MECHANICAL) and not IsUnitType(u, UNIT_TYPE_STRUCTURE) and not IsUnitType(u, UNIT_TYPE_SUMMONED) and not IsGatherNodeSteamTarget(u)
     set u = null
     return result
 endfunction

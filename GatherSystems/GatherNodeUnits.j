@@ -21,7 +21,7 @@
 //
 // ============================================================
 
-library GatherNodeUnits initializer Init requires GatherNodes, GatherNodeSkills, DamageEngine, ZonesCore, TimerUtils, Table, Interface, optional ItemLootSystem
+library GatherNodeUnits initializer Init requires GatherNodes, GatherNodeSkills, DamageEngine, ZonesCore, TimerUtils, Table, Interface, optional ItemLootSystem, optional SteamBreathSystem
 
 // ============================================================
 // CONFIGURATION
@@ -428,6 +428,12 @@ private function RemoveGlowEffect takes unit u returns nothing
     call GN_RemoveGlowEffect(u)
 endfunction
 
+private function RemoveSteamBreathEffect takes unit u returns nothing
+    static if LIBRARY_SteamBreathSystem then
+        call RemoveSteamEffectUnit(u)
+    endif
+endfunction
+
 private function IsAnyUnitNearSpawnPoint takes integer spawnPointId returns boolean
     local group g
     local unit nearby
@@ -693,6 +699,7 @@ function GNU_RegisterExistingUnitNode takes unit node, integer defId, integer zo
     if not GN_IsGatherUnit(node) then
         call GN_RegisterActiveUnit(node, defId, zoneId, GNU_DefProfessionId[defId], GNU_DefSkillRequired[defId], GNU_DefNodeName[defId])
     endif
+    call RemoveSteamBreathEffect(node)
 
     set GNU_UnitToDefId.integer[handleId] = defId
     set GNU_UnitToZoneId.integer[handleId] = zoneId
@@ -1064,6 +1071,7 @@ function GNU_SpawnUnitAt takes integer defId, real x, real y, real facing, integ
         
         // Register with master system
         call GN_RegisterActiveUnit(u, defId, zoneId, GNU_DefProfessionId[defId], GNU_DefSkillRequired[defId], GNU_DefNodeName[defId])
+        call RemoveSteamBreathEffect(u)
         
         // Track locally
         set GNU_UnitToDefId.integer[handleId] = defId
