@@ -542,7 +542,8 @@ private function ConfigureZones takes nothing returns nothing
     call z.weatherChance("snow_light", 0.5)
     call z.weatherChance("snow_medium", 0.3)
     call z.weatherChance("snow_heavy", 0.1)
-
+    call z.addFishRect(gg_rct_Fish0001)
+    call z.addFishRect(gg_rct_Fish0002)
     call RegisterZone(z)
     
     // Zone 02: Sereneglade
@@ -588,6 +589,27 @@ private function ConfigureZones takes nothing returns nothing
     call z.weatherChance("snow_light", 0.5)
     call z.weatherChance("snow_medium", 0.3)
     call z.weatherChance("snow_heavy", 0.1)
+    call z.addFishRect(gg_rct_Fish0003)
+    call z.addFishRect(gg_rct_Fish0004)
+    call z.addFishRect(gg_rct_Fish0005)
+    call z.addFishRect(gg_rct_Fish0006)
+    call z.addFishRect(gg_rct_Fish0007)
+    call z.addFishRect(gg_rct_Fish0008)
+    call z.addFishRect(gg_rct_Fish0009)
+    call z.addFishRect(gg_rct_Fish0010)
+    call z.addFishRect(gg_rct_Fish0011)
+    call z.addFishRect(gg_rct_Fish0012)
+    call z.addFishRect(gg_rct_Fish0013)
+    call z.addFishRect(gg_rct_Fish0014)
+    call z.addFishRect(gg_rct_Fish0015)
+    call z.addFishRect(gg_rct_Fish0016)
+    call z.addFishRect(gg_rct_Fish0017)
+    call z.addFishRect(gg_rct_Fish0018)
+    call z.addFishRect(gg_rct_Fish0019)
+    call z.addFishRect(gg_rct_Fish0020)
+    call z.addFishRect(gg_rct_Fish0021)
+    call z.addFishRect(gg_rct_Fish0022)
+    call z.addFishRect(gg_rct_Fish0023)
     call RegisterZone(z)
     
     // Zone 03: Emberpeak Highlands
