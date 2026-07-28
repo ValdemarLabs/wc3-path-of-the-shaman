@@ -1,0 +1,20 @@
+﻿[2026-07-28 14.05.00] [INFO] ============================================================
+[2026-07-28 14.05.00] [INFO] ItemManager session started
+[2026-07-28 14.05.00] [INFO] Log file: H:\Pelit\PotS_JASS\WC3_Database\WC3ItemManager\bin\Debug\net8.0-windows\logs\ItemManager_2026-07-28_140500.log
+[2026-07-28 14.05.00] [INFO] ============================================================
+[2026-07-28 14.05.00] [INFO] Loaded tooltip phrases: 6 rarities, 7 classes, 24 stats
+[2026-07-28 14.05.54] [INFO] Removed drop source: Deathlord Fel'Dok
+[2026-07-28 14.05.55] [INFO] Removed drop source: Gnoll (Elite)
+[2026-07-28 14.05.57] [INFO] Removed drop source: Gnoll Assasin (Elite)
+[2026-07-28 14.05.59] [INFO] Removed drop source: Gnoll Assasin Rogue (Elite)
+[2026-07-28 14.06.00] [INFO] Removed drop source: Gnoll Brute (Elite)
+[2026-07-28 14.06.01] [INFO] Removed drop source: Gnoll Crusher
+[2026-07-28 14.06.06] [INFO] Removed drop source: Gnoll Curser (Elite)
+[2026-07-28 14.06.07] [INFO] Removed drop source: Gnoll Necromancer
+[2026-07-28 14.06.08] [INFO] Removed drop source: Gnoll Overseer (Elite)
+[2026-07-28 14.06.09] [INFO] Removed drop source: Gnoll Poacher (Elite)
+[2026-07-28 14.06.11] [INFO] Removed drop source: Gnoll Ravager
+[2026-07-28 14.06.12] [INFO] Removed drop source: Gnoll Warden (Elite)
+[2026-07-28 14.06.19] [INFO] Updated item: i6a4 - Gnoll Pillage
+[2026-07-28 14.06.45] [INFO] Exported W3T file: H:\Pelit\PotS_JASS\WC3_Database\exports\ItemData_20260728_140645.w3t
+[2026-07-28 14.06.48] [INFO] Exported DEquipment JASS file: H:\Pelit\PotS_JASS\WC3_Export\DEquipmentItemDefinitions\DEquipmentItemDefinitions_20260728-1406.j
