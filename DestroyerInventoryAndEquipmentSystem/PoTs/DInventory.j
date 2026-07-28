@@ -1696,15 +1696,9 @@ endfunction
 function OpenDInvAbilityUsedActions takes nothing returns nothing
 local player viewer = GetTriggerPlayer()
 local unit u = GetTriggerUnit()
-local unit inspectTarget = DInvGetInspectTargetForPlayer(viewer, u)
-if inspectTarget != null then
-call DInvToggleUnitForPlayer(viewer, inspectTarget, TRUE)
-else
 call DInvToggleUnitForPlayer(viewer, u, FALSE)
-endif
 ////call BJDebugMsg("OpenDInvAbilityUsedActions "+GetUnitName(u))
 set viewer = null
-set inspectTarget = null
 set u = null
 endfunction
 
