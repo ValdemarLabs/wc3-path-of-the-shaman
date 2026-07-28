@@ -28,6 +28,15 @@
   - Cleaned up all per-unit casting tables on interruption, endcast, completion, death, or invalid-unit cleanup to avoid stale handle-id state.
   - Added the standard PotS library header and clarified install/API notes.
 
+- Updated `Professions/Professions.j`
+  - Profession crafting now updates the temporary `A6DY` Craft fake-cast ability's `acas` casting time to match the selected recipe's actual craft duration before issuing the self-cast order.
+  - This keeps the Warcraft ability cast phase and casting bar aligned with variable recipe craft times instead of always using the old fixed 5 second object-data value.
+
+- Updated `CreepRespawn/CreepRespawn.j`
+  - Added defensive state initialization so respawn tables, ignored-unit tracking, the exclusion list, and the bootstrap group exist before `Events_RegisterUnitEnter` or `UnitDeathEvent_Register` callbacks can touch them.
+  - Replaced the delayed startup trigger and hard-coded timer event-id check with a one-shot `TimerUtils` timer that saves initial creep positions once.
+  - Kept CreepRespawn on the centralized `Events.j` unit-enter dispatcher and `UnitDeathEvent.j` death dispatcher; both APIs preserve native event responses for direct code callbacks.
+
 - Added `QuestsAndDialogs/QuestItemSpawner.j`
   - Added a reusable quest/event helper for temporary item sets that can spawn items at registered rects, points, or locations.
   - Spawning chooses a random configured spawn point per item and respects each spawner's configured maximum active item count before creating more items.
@@ -53,6 +62,8 @@
   - Added simple periodic spell-use AI for Shaman summoned elementals.
   - Elementals now look for nearby hostile ground targets and cast their own abilities when ready, while respecting passive mode, cinematics, current casting state, cooldowns, and mana.
   - Air elementals can use Lightning Shield, Chain Lightning, and Purge; Water elementals can use Crushing Wave and Frost Nova; Fire elementals can use Flame Strike and Firebolt; Earth elementals can use Taunt, Thunder Clap, and Hurl Boulder.
+  - Rank 5 Summon Elemental now creates Greater elementals by prefixing the summoned unit name with `Greater ` and applying stronger summoner Intelligence scaling to elemental life and damage.
+  - Greater Fire and Water Elementals gain `+25%` Spell Power and `+10%` Crit; Greater Earth Elementals gain `+25%` Block and `+10%` Hit; Greater Air Elementals gain `+20%` Dodge, `+10%` Crit, and `+15%` Spell Power.
   - `Abilities/Shaman/ShamanFeralSpirits.j` was intentionally left without spell AI because Feral Spirit summons currently do not have their own abilities.
 
 - Updated Shaman and profession sound playback helpers
@@ -81,6 +92,28 @@
   - Added aliases `/debug fish pool spawn` and `/debug fishing pool spawn`.
   - Debug feedback now reports successful fish-pool spawns with the selected definition name/rawcode and zone, or reports failure when no fish-pool definitions are registered, no zone is found, or the selected point fails water/terrain restrictions.
 
+- Updated Fishing line and fish-pool placement support
+  - `Professions/ProfessionsFishing.j` now defaults fishing-line fallback offsets to `0.00` so the line start is no longer pushed away from the configured `"hand,right"` attachment marker.
+  - Enabled the fishing-line custom color by default and lowered the lightning alpha to make the `LEAS` fishing line appear slightly thinner/fainter with the imported lariat texture.
+  - `GatherSystems/GatherNodeUnits.j` now accepts water-like terrain for fish pools instead of requiring unwalkable water, allowing fish pools to spawn in shallow walkable water.
+  - `Zones/ZonesCore.j` now supports per-zone FishRects through `z.addFishRect(...)` and `ZonesCore_AddFishRect(...)`.
+  - Random fish-pool spawning now prefers registered FishRects for the zone before falling back to the normal zone spawn rect, and FishRects override the fish-pool terrain restriction for manually approved water areas.
+
+- Updated gather-node profession skill and SteamBreath handling
+  - `GatherSystems/GatherNodeSkills.j` now keeps `TradeSkillLevelUpEffectModelPath` effects alive briefly through `SpeciFX_DestroyTimed(...)` instead of creating and destroying the attached effect on the same tick.
+  - `GatherSystems/GatherNodeUnits.j` now strips any existing SteamBreath effect from unit gather nodes when they are registered or spawned.
+  - `EnvironmentSystems/SteamBreath.j` now excludes active `GatherNodes` unit nodes from SteamBreath target enumeration, preventing fish pools and other gather-node units from receiving head-attached breath effects.
+
+- Updated `Companions/Pet.j` and `UI/StatsUI.j`
+  - Added `Pet_CanRename(...)` and `Pet_ShowRenamePrompt(...)` so UI code can reuse the existing pet rename rules instead of duplicating rename logic.
+  - StatsUI now replaces the right-side `Professions` button with a `Rename` button when the selected stats target is an eligible pet.
+  - Shadowclaw and already-renamed pets do not show the Rename button; clicking Rename hides StatsUI and prompts the existing `/pet rename <name>` chat command flow.
+
+- Updated `DestroyerInventoryAndEquipmentSystem/PoTs/SharedDInvLib.j`
+  - Hardened DEquipment/DInventory custom tooltip generation so the internal granted-ability text fragment starts empty while the debug-only granted ability name listing remains disabled.
+  - This prevents stale DEquipment definitions that still grant dummy/stat abilities from leaking lines such as `Item Attack Bonus 1`, `Item Damage Bonus 1`, or `Skin 1` into custom item tooltip frames once the updated library is imported.
+  - Confirmed the current generated DEquipment export keeps Skinning Knife damage as a DEquipment `Damage` stat and only grants the real Skin ability `A0F3`; older generated exports that still grant `A07N`/`AIat` should not be used for the active map import.
+
 ### Tool Updates
 
 - Updated `WC3_Database/WC3ItemManager`
@@ -97,6 +130,7 @@
 - Critical ItemManager/DInventory caveat: `DInventoryIsItemStackable(...)` currently treats matching WC3 item categories with `GetItemLevel(item) > 0` as stackable. It does not itself enforce the intended `0-49` stack-cap boundary, so miscellaneous non-stackable items in the `50-99` range must avoid stackable WC3 item categories, or the JASS predicate should later be tightened to require `GetItemLevel(item) < 50`.
 - `qValeria.j` now references `gg_rct_ItemTokenLove` and `gg_rct_ItemSupplies01` through `gg_rct_ItemSupplies07`; confirm these rects exist in the main map globals during the next in-map compile.
 - The Shaman/profession/ExSound changes passed targeted static checks and `git diff --check`, but still need full in-map JassHelper compile and runtime audio validation with `SoundAndMusic/ExSoundEditorSounds.j` included after `SoundAndMusic/ExSound.j`.
+- The gather-node skill effect, SteamBreath exclusion, and StatsUI pet rename changes passed `git diff --check`, but still need full in-map JassHelper compile and runtime validation because this checkout does not expose a combined `war3map.j` build entry point.
 
 ### Actions Remaining
 
