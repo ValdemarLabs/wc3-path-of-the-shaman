@@ -39336,6 +39336,54 @@
                      }
     },
     {
+        "name":  "gg_snd_Tradeskill_FishingStart",
+        "variableName":  "gg_snd_Tradeskill_FishingStart",
+        "path":  "war3mapImported\\FX_Fishing_Cast_02.mp3",
+        "eax":  "DefaultEAXON",
+        "flags":  {
+                      "looping":  false,
+                      "3dSound":  false,
+                      "stopOutOfRange":  false,
+                      "music":  false
+                  },
+        "fadeRate":  {
+                         "in":  1,
+                         "out":  1
+                     },
+        "volume":  127,
+        "pitch":  1,
+        "channel":  0,
+        "distance":  {
+                         "min":  0,
+                         "max":  10000,
+                         "cutoff":  3000
+                     }
+    },
+    {
+        "name":  "gg_snd_Tradeskill_FishingEnd",
+        "variableName":  "gg_snd_Tradeskill_FishingEnd",
+        "path":  "war3mapImported\\FishingBobber_ver2_1.mp3",
+        "eax":  "DefaultEAXON",
+        "flags":  {
+                      "looping":  false,
+                      "3dSound":  false,
+                      "stopOutOfRange":  false,
+                      "music":  false
+                  },
+        "fadeRate":  {
+                         "in":  1,
+                         "out":  1
+                     },
+        "volume":  127,
+        "pitch":  1,
+        "channel":  0,
+        "distance":  {
+                         "min":  0,
+                         "max":  10000,
+                         "cutoff":  3000
+                     }
+    },
+    {
         "name":  "gg_snd_Interface_FriendJoin",
         "variableName":  "gg_snd_Interface_FriendJoin",
         "path":  "war3mapImported/FriendJoin.mp3",
