@@ -434,6 +434,37 @@ endfunction
 
 
 
+function DInvCanPlayerInspectUnit takes player viewer, unit u returns boolean
+local integer pid = GetPlayerId(viewer)
+local integer eqid = -1
+if DInvCanPlayerUseInventoryFrames(pid) == FALSE or u == null then
+set viewer = null
+set u = null
+return FALSE
+endif
+if GetOwningPlayer(u) == viewer or UnitAlive(u) == FALSE then
+set viewer = null
+set u = null
+return FALSE
+endif
+if BIDOfUnit(u) > 0 then
+set viewer = null
+set u = null
+return TRUE
+endif
+set eqid = EQIDOfUnit(u)
+if eqid > 0 and EQIDDB[eqid][0].integer[0] == 1 then
+set viewer = null
+set u = null
+return TRUE
+endif
+set viewer = null
+set u = null
+return FALSE
+endfunction
+
+
+
 function UnitOfEQID takes integer eqid returns unit
 return DInvUnits.unit[eqid]
 endfunction
