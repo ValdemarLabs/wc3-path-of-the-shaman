@@ -25,7 +25,7 @@ globals
     // Workstation and material configuration.
     private constant integer PB_STATION_ANVIL = 'n62R'
     private constant integer PB_ITEM_COPPER_BAR = 'I67M'
-    private constant integer PB_ITEM_BLACKSMITH_HAMMER = 'J1D2'
+    private constant integer PB_ITEM_BLACKSMITH_HAMMER = 'j1d2'
     private constant boolean PB_AI_CHEAT_CRAFTING = true
     private constant string PB_CRAFTER_ANIMATION_PRIMARY = "stand work"
     private constant string PB_CRAFTER_ANIMATION_FALLBACK = "attack"
