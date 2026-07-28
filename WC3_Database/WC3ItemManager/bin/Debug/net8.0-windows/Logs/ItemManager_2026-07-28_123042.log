@@ -1,0 +1,29 @@
+﻿[2026-07-28 12.30.42] [INFO] ============================================================
+[2026-07-28 12.30.42] [INFO] ItemManager session started
+[2026-07-28 12.30.42] [INFO] Log file: H:\Pelit\PotS_JASS\WC3_Database\WC3ItemManager\bin\Debug\net8.0-windows\logs\ItemManager_2026-07-28_123042.log
+[2026-07-28 12.30.42] [INFO] ============================================================
+[2026-07-28 12.30.42] [INFO] Loaded tooltip phrases: 6 rarities, 7 classes, 24 stats
+[2026-07-28 12.32.10] [INFO] Updated item: i68a - Nazgrek's Axe
+[2026-07-28 12.32.38] [INFO] Updated item: i68a - Nazgrek's Axe
+[2026-07-28 12.33.39] [INFO] Updated item: i68f - Copper Chain Helmet
+[2026-07-28 12.35.05] [INFO] Updated item: i68f - Copper Chain Helmet
+[2026-07-28 12.35.33] [INFO] Updated item: i68l - Copper Chain Shoulders
+[2026-07-28 12.35.53] [INFO] Updated item: i68m - Copper Chain Boots
+[2026-07-28 12.36.09] [INFO] Updated item: i68f - Copper Chain Helmet
+[2026-07-28 12.36.26] [INFO] Updated item: i68l - Copper Chain Shoulders
+[2026-07-28 12.36.39] [INFO] Updated item: i68l - Copper Chain Shoulders
+[2026-07-28 12.37.29] [INFO] Updated item: i68g - Copper Chain Leggings
+[2026-07-28 12.38.17] [INFO] Updated item: i68h - Copper Chain Vest
+[2026-07-28 12.38.54] [INFO] Updated item: i68i - Copper Chain Bracers
+[2026-07-28 12.39.04] [INFO] Updated item: i68i - Copper Chain Bracers
+[2026-07-28 12.39.11] [INFO] Updated item: i68m - Copper Chain Boots
+[2026-07-28 12.40.00] [INFO] Updated item: i68k - Copper Chain Belt
+[2026-07-28 12.42.09] [INFO] Updated item: i68j - Copper Chain Gauntlets
+[2026-07-28 12.42.37] [INFO] Updated item: i68i - Copper Chain Bracers
+[2026-07-28 12.43.17] [INFO] Updated item: i68h - Copper Chain Vest
+[2026-07-28 12.43.28] [INFO] Updated item: i68h - Copper Chain Vest
+[2026-07-28 12.45.15] [INFO] Updated item: i68f - Copper Chain Helmet
+[2026-07-28 12.45.40] [INFO] Updated item: i68k - Copper Chain Belt
+[2026-07-28 12.46.28] [INFO] Updated item: i68l - Copper Chain Shoulders
+[2026-07-28 12.47.48] [INFO] Exported W3T file: H:\Pelit\PotS_JASS\WC3_Database\exports\ItemData_20260728_124748.w3t
+[2026-07-28 12.47.51] [INFO] Exported DEquipment JASS file: H:\Pelit\PotS_JASS\WC3_Export\DEquipmentItemDefinitions\DEquipmentItemDefinitions_20260728-1247.j
