@@ -13,6 +13,7 @@
 - `GUI Unit Event` - by Bribe
 - `UnitMoving` - by Bribe
 - `Alloc` - by Sevion
+- `Math` (credits masterninja13579, Tristronic, Bribe https://www.hiveworkshop.com/threads/simple-math-functions.339165/)
 - `TimerUtils` - by Vexorian
 - `DestructibleHider` - by Zwiebelchen
 - `DestructibleRevival` - by Bannar
