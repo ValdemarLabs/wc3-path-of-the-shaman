@@ -79,6 +79,22 @@ private function GetElementalUnitType takes integer abilityId returns integer
     return 0
 endfunction
 
+private function SetChannelAbilityTitle takes unit hero, integer abilityId, string titleText returns nothing
+    if hero != null then
+        call ShamanCommon_SetStringField(hero, abilityId, ABILITY_SLF_TOOLTIP_NORMAL, titleText)
+    endif
+endfunction
+
+public function RefreshSummonAbilityNames takes unit hero returns nothing
+    if hero == null or GetUnitAbilityLevel(hero, ShamanCommon_ABILITY_SUMMON_ELEMENTAL) < GREATER_SUMMON_RANK then
+        return
+    endif
+    call SetChannelAbilityTitle(hero, ShamanCommon_ABILITY_CHANNEL_AIR_ELEMENTAL, "Summon Air Elemental - Level 2")
+    call SetChannelAbilityTitle(hero, ShamanCommon_ABILITY_CHANNEL_WATER_ELEMENTAL, "Summon Water Elemental - Level 2")
+    call SetChannelAbilityTitle(hero, ShamanCommon_ABILITY_CHANNEL_FIRE_ELEMENTAL, "Summon Fire Elemental - Level 2")
+    call SetChannelAbilityTitle(hero, ShamanCommon_ABILITY_CHANNEL_EARTH_ELEMENTAL, "Summon Earth Elemental - Level 2")
+endfunction
+
 private function ClearPendingTimer takes integer heroSlot returns nothing
     local timer pending = PendingTimerBySlot.timer[heroSlot]
     local integer timerId
