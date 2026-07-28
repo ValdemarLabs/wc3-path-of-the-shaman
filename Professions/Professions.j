@@ -93,11 +93,13 @@ globals
     private integer array P_RecipeRequiredSkill
     private integer array P_RecipeSkillGain
     private integer array P_RecipeMaterialCount
+    private integer array P_RecipeRequiredItemCode
     private real array P_RecipeCraftTime
     private real array P_RecipeCooldown
     private string array P_RecipeName
     private string array P_RecipeDescription
     private string array P_RecipeIcon
+    private string array P_RecipeRequiredItemName
     private string array P_RecipeCategory
     private string array P_RecipeSubcategory
 
@@ -522,6 +524,21 @@ private function P_HasMaterials takes unit crafter, integer recipeId returns boo
     endloop
 
     return true
+endfunction
+
+private function P_HasRequiredItem takes unit crafter, integer recipeId returns boolean
+    local integer requiredItemCode
+
+    if not P_IsRecipeValid(recipeId) then
+        return false
+    endif
+
+    set requiredItemCode = P_RecipeRequiredItemCode[recipeId]
+    if requiredItemCode == 0 then
+        return true
+    endif
+
+    return P_CountItems(crafter, requiredItemCode) > 0
 endfunction
 
 private function P_ConsumeRecipeMaterials takes unit crafter, integer recipeId returns nothing
@@ -1337,6 +1354,13 @@ private function P_CheckStartRequirements takes unit crafter, unit station, inte
         return false
     endif
 
+    if not ignoreMaterials and not P_HasRequiredItem(crafter, recipeId) then
+        if explain then
+            set P_LastErrorText = P_GetRecipeDisplayName(recipeId) + " requires " + P_GetSafeItemName(P_RecipeRequiredItemCode[recipeId], P_RecipeRequiredItemName[recipeId]) + "."
+        endif
+        return false
+    endif
+
     if P_CrafterActiveJob.has(GetHandleId(crafter)) then
         if explain then
             set P_LastErrorText = GetUnitName(crafter) + " is already crafting."
@@ -1843,6 +1867,16 @@ public function AddRecipeMaterial takes integer recipeId, integer itemCode, inte
     set P_RecipeRevision = P_RecipeRevision + 1
 endfunction
 
+public function SetRecipeRequiredItem takes integer recipeId, integer itemCode, string itemName returns nothing
+    if not P_IsRecipeValid(recipeId) then
+        return
+    endif
+
+    set P_RecipeRequiredItemCode[recipeId] = itemCode
+    set P_RecipeRequiredItemName[recipeId] = itemName
+    set P_RecipeRevision = P_RecipeRevision + 1
+endfunction
+
 public function SetRecipeSkillGain takes integer recipeId, integer amount returns nothing
     if not P_IsRecipeValid(recipeId) then
         return
@@ -1905,13 +1939,23 @@ public function GetRecipeDescription takes integer recipeId returns string
 endfunction
 
 public function GetRecipeIcon takes integer recipeId returns string
+    local string iconPath
+
     if not P_IsRecipeValid(recipeId) then
         return "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp"
     endif
-    if P_RecipeIcon[recipeId] == null or P_RecipeIcon[recipeId] == "" then
+
+    set iconPath = P_RecipeIcon[recipeId]
+    if iconPath != null and iconPath != "" then
+        return iconPath
+    endif
+
+    set iconPath = BlzGetAbilityIcon(P_RecipeOutputItemCode[recipeId])
+    if iconPath == null or iconPath == "" then
         return "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp"
     endif
-    return P_RecipeIcon[recipeId]
+
+    return iconPath
 endfunction
 
 public function GetRecipeCategory takes integer recipeId returns string
@@ -1999,6 +2043,39 @@ public function CountItem takes unit u, integer itemCode returns integer
     return P_CountItems(u, itemCode)
 endfunction
 
+public function GetRecipeRequiredItemCode takes integer recipeId returns integer
+    if not P_IsRecipeValid(recipeId) then
+        return 0
+    endif
+    return P_RecipeRequiredItemCode[recipeId]
+endfunction
+
+public function HasRecipeRequiredItem takes unit crafter, integer recipeId returns boolean
+    return P_HasRequiredItem(crafter, recipeId)
+endfunction
+
+public function GetRecipeRequiredItemLine takes unit crafter, integer recipeId returns string
+    local integer itemCode
+    local string color
+
+    if not P_IsRecipeValid(recipeId) then
+        return ""
+    endif
+
+    set itemCode = P_RecipeRequiredItemCode[recipeId]
+    if itemCode == 0 then
+        return ""
+    endif
+
+    if P_CountItems(crafter, itemCode) > 0 then
+        set color = "|cff80ff80"
+    else
+        set color = "|cffff8080"
+    endif
+
+    return color + P_GetSafeItemName(itemCode, P_RecipeRequiredItemName[recipeId]) + "|r"
+endfunction
+
 public function ConsumeItem takes unit u, integer itemCode, integer amount returns nothing
     call P_ConsumeItems(u, itemCode, amount)
 endfunction
@@ -2033,6 +2110,10 @@ public function GetMissingRecipeText takes unit crafter, integer recipeId return
 
     if not P_IsRecipeValid(recipeId) then
         return "Invalid recipe."
+    endif
+
+    if P_RecipeRequiredItemCode[recipeId] != 0 and P_CountItems(crafter, P_RecipeRequiredItemCode[recipeId]) <= 0 then
+        set result = P_GetSafeItemName(P_RecipeRequiredItemCode[recipeId], P_RecipeRequiredItemName[recipeId]) + " 0/1"
     endif
 
     loop
