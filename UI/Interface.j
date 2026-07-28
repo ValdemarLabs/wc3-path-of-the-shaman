@@ -119,6 +119,7 @@ library Interface initializer AutoInit requires ExSound, ExSoundEditorSounds
         public sound Profession_Fishing_Start = null
         public sound Profession_Fishing_Loop = null
         public sound Profession_Fishing_End = null
+        public sound Profession_Fishing_Fail = null
         public sound Profession_Skinning_Start = null
         public sound Profession_Skinning_Loop = null
         public sound Profession_Skinning_End = null
@@ -145,6 +146,7 @@ library Interface initializer AutoInit requires ExSound, ExSoundEditorSounds
         public string Profession_Fishing_StartPath = ""
         public string Profession_Fishing_LoopPath = ""
         public string Profession_Fishing_EndPath = ""
+        public string Profession_Fishing_FailPath = ""
         public string Profession_Skinning_StartPath = ""
         public string Profession_Skinning_LoopPath = ""
         public string Profession_Skinning_EndPath = ""
@@ -455,9 +457,10 @@ library Interface initializer AutoInit requires ExSound, ExSoundEditorSounds
         set Profession_Enchanting_Start = null
         set Profession_Enchanting_Loop = null
         set Profession_Enchanting_End = null
-        set Profession_Fishing_Start = null
+        set Profession_Fishing_Start = gg_snd_Tradeskill_FishingStart
         set Profession_Fishing_Loop = null
-        set Profession_Fishing_End = gg_snd_Tradeskill_Fishing
+        set Profession_Fishing_End = gg_snd_Tradeskill_FishingEnd
+        set Profession_Fishing_Fail = gg_snd_Tradeskill_Fishing
         set Profession_Skinning_Start = gg_snd_Tradeskill_LeatherworkingPick
         set Profession_Skinning_Loop = gg_snd_Tradeskill_LeatherworkingPick
         set Profession_Skinning_End = gg_snd_Tradeskill_LeatherworkingPick
@@ -507,8 +510,14 @@ library Interface initializer AutoInit requires ExSound, ExSoundEditorSounds
         if IUI_IsBlankString(Profession_Cooking_EndPath) then
             set Profession_Cooking_EndPath = ExSoundEditorSounds_GetPath("CookingPrepareA")
         endif
+        if IUI_IsBlankString(Profession_Fishing_StartPath) then
+            set Profession_Fishing_StartPath = ExSoundEditorSounds_GetPath("Tradeskill_FishingStart")
+        endif
         if IUI_IsBlankString(Profession_Fishing_EndPath) then
-            set Profession_Fishing_EndPath = ExSoundEditorSounds_GetPath("Tradeskill_Fishing")
+            set Profession_Fishing_EndPath = ExSoundEditorSounds_GetPath("Tradeskill_FishingEnd")
+        endif
+        if IUI_IsBlankString(Profession_Fishing_FailPath) then
+            set Profession_Fishing_FailPath = ExSoundEditorSounds_GetPath("Tradeskill_Fishing")
         endif
         if IUI_IsBlankString(Profession_Skinning_StartPath) then
             set Profession_Skinning_StartPath = ExSoundEditorSounds_GetPath("Tradeskill_LeatherworkingPick")
