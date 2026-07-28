@@ -1457,6 +1457,19 @@ else
     //endif
 endif
 
+if DEqTooltipAutoReadReq == FALSE then
+    if utt == null or utt == "" then
+    call BlzFrameSetText(ttfr, s)
+    else
+    call BlzFrameSetText(ttfr, s + utt)
+    endif
+set ttfr = null
+set it = null
+call tabl.destroy()
+set u = null
+return
+endif
+
 set i = 1
 loop
     if DEqItemTypeDefinitionDB[iid][9].integer[i] == 0 then
@@ -1897,14 +1910,7 @@ else
             endif
         endif
 
-        if DEqTooltipAutoReadReq == TRUE then
         call GenerateDEqTooltip(iid, it, InventoryTooltipText[frind], frind)
-        else
-        // Tooltips are not auto generated
-//call BJDebugMsg("Tooltips are not auto generated")
-        set s = GetItemName(it)+"|n|n|n" + BlzGetItemExtendedTooltip(it)
-        call BlzFrameSetText(InventoryTooltipText[frind], s)
-        endif
 
     else
     // Equipment system is not used or item is not equipment
