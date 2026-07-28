@@ -1,4 +1,4 @@
-library SharedDInvLib initializer Init requires DConfigurationArea, ItemLootSystem
+library SharedDInvLib initializer Init requires DConfigurationArea, ItemLootSystem, ExSound
 
 globals
 // Core
@@ -185,8 +185,101 @@ endfunction
 function CanNotEquipMsg takes integer p, string msg returns nothing
 if GetLocalPlayer() == Player(p) then
 call DisplayTimedTextToPlayer(Player(p),0,0,20,"Can not equip item: "+msg)
-// NeedToDo: Sound?
 endif
+endfunction
+
+
+
+function DInvCanPlayerUseInventoryFrames takes integer pid returns boolean
+if pid < 0 or pid > 23 then
+return FALSE
+endif
+if GetPlayerSlotState(Player(pid)) != PLAYER_SLOT_STATE_PLAYING then
+return FALSE
+endif
+return GetPlayerController(Player(pid)) == MAP_CONTROL_USER
+endfunction
+
+
+
+function DInvCanPlayerOwnInventoryUnit takes integer pid returns boolean
+local mapcontrol controller
+if pid < 0 or pid > 23 then
+return FALSE
+endif
+if GetPlayerSlotState(Player(pid)) != PLAYER_SLOT_STATE_PLAYING then
+return FALSE
+endif
+set controller = GetPlayerController(Player(pid))
+if controller == MAP_CONTROL_USER or controller == MAP_CONTROL_COMPUTER then
+set controller = null
+return TRUE
+endif
+set controller = null
+return FALSE
+endfunction
+
+
+
+function DInvGetInventoryOwnerPidForViewer takes integer viewerPid returns integer
+local unit u = DInvCurrentUnit[viewerPid]
+local integer ownerPid = viewerPid
+if u != null then
+set ownerPid = GetPlayerId(GetOwningPlayer(u))
+endif
+set u = null
+return ownerPid
+endfunction
+
+
+
+function DInvGetItemErrorSoundKey takes unit u returns string
+if u == udg_Nazgrek then
+return "Nazgrek_ItemErrorGeneral"
+elseif u == udg_Zulkis then
+return "Zulkis_ItemErrorGeneral"
+endif
+return ""
+endfunction
+
+
+
+function DInvPlayInventoryErrorForUnit takes unit u, string msg returns nothing
+local integer pid = -1
+local string soundKey = ""
+if u == null then
+set u = null
+return
+endif
+set pid = GetPlayerId(GetOwningPlayer(u))
+set soundKey = DInvGetItemErrorSoundKey(u)
+if GetLocalPlayer() == Player(pid) then
+call DisplayTimedTextToPlayer(Player(pid), 0, 0, 5, "|cffffcc00WARNING:|r " + msg)
+endif
+if soundKey != "" then
+call ExSound_PlayAtUnit(soundKey, u, msg)
+endif
+set u = null
+endfunction
+
+
+
+function CanNotEquipUnitMsg takes unit u, string msg returns nothing
+local integer p = -1
+local string soundKey = ""
+if u == null then
+set u = null
+return
+endif
+set p = GetPlayerId(GetOwningPlayer(u))
+set soundKey = DInvGetItemErrorSoundKey(u)
+if GetLocalPlayer() == Player(p) then
+call DisplayTimedTextToPlayer(Player(p),0,0,20,"Can not equip item: "+msg)
+endif
+if soundKey != "" then
+call ExSound_PlayAtUnit(soundKey, u, msg)
+endif
+set u = null
 endfunction
 
 
@@ -551,6 +644,38 @@ set result = TRUE
 endif
 set it = null
 return result
+endfunction
+
+
+
+function DInvCanItemUseVanillaInventory takes item it returns boolean
+if it == null then
+set it = null
+return FALSE
+endif
+if EquipmentSystemUsed == TRUE and IsItemDEquipment(it) == TRUE then
+set it = null
+return FALSE
+endif
+set it = null
+return TRUE
+endfunction
+
+
+
+function DInvRejectVanillaEquipmentItem takes unit u, item it returns nothing
+if u != null and it != null and DInvCanItemUseVanillaInventory(it) == FALSE then
+call DInvPlayInventoryErrorForUnit(u, "Equipment must be kept in the DInventory or equipped in a DEquipment slot.")
+if IsItemOwned(it) == TRUE then
+call UnitDropItemPoint(u, it, GetUnitX(u), GetUnitY(u))
+else
+call SetItemVisible(it, TRUE)
+call SetItemPosition(it, GetUnitX(u), GetUnitY(u))
+call ItemLoot_CreateFloatingTextCustom(it, GetItemName(it), 255, 255, 255)
+endif
+endif
+set u = null
+set it = null
 endfunction
 
 
@@ -2304,7 +2429,10 @@ endfunction
 
 
 function FromItemHeavenToVanillaInventory takes item it, unit u returns nothing
-if IsVanillaInventoryFull(u) == TRUE then
+if DInvCanItemUseVanillaInventory(it) == FALSE then
+call FromItemHeavenToGround(it, GetUnitX(u), GetUnitY(u))
+call DInvPlayInventoryErrorForUnit(u, "Equipment can not be moved to the vanilla inventory.")
+elseif IsVanillaInventoryFull(u) == TRUE then
 call FromItemHeavenToGround(it, GetUnitX(u), GetUnitY(u))
 else
 call SetItemVisible(it, TRUE)
@@ -2313,6 +2441,43 @@ call UnitAddItem(u, it)
 endif
 set it = null
 set u = null
+endfunction
+
+
+
+function DInvMoveStoredItemTypeToVanillaInventory takes unit u, integer itemTypeId returns boolean
+local integer pid = -1
+local integer bid = -1
+local integer slotId = 0
+local integer capacity = 0
+local item it = null
+if u == null or itemTypeId == 0 or IsVanillaInventoryFull(u) == TRUE then
+set u = null
+return FALSE
+endif
+set pid = GetPlayerId(GetOwningPlayer(u))
+set bid = BIDOfUnit(u)
+if bid < 1 then
+set u = null
+return FALSE
+endif
+set capacity = MaxBagCapacityOfBID(pid, bid)
+loop
+    exitwhen slotId >= capacity
+    set it = DInventoryDB[bid].item[slotId]
+    if it != null and GetItemTypeId(it) == itemTypeId and DInvCanItemUseVanillaInventory(it) == TRUE then
+    set DInvItemHandleDB[GetHandleId(it)].integer[3] = 1
+    call FromItemHeavenToVanillaInventory(it, u)
+    call DeleteBIDSlotIdItemFromDInventory(bid, slotId)
+    set it = null
+    set u = null
+    return TRUE
+    endif
+    set slotId = slotId + 1
+endloop
+set it = null
+set u = null
+return FALSE
 endfunction
 
 
@@ -2412,8 +2577,9 @@ function UnitDInventoryDBIntoDInventoryFrames takes integer pid, integer bid ret
 local integer loopFrI = 0
 local integer slotId = (DInvCurrentPage[pid]-1) * ColXRow
 local integer frLimit = ColXRow
-local integer slLimit = HowManyDInvSlotsOnPage(pid, bid, DInvCurrentPage[pid])
-local integer maxPage = MaxPageCountOfPIDBID(pid, bid)
+local integer ownerPid = DInvGetInventoryOwnerPidForViewer(pid)
+local integer slLimit = HowManyDInvSlotsOnPage(ownerPid, bid, DInvCurrentPage[pid])
+local integer maxPage = MaxPageCountOfPIDBID(ownerPid, bid)
 
 if maxPage < DInvCurrentPage[pid] then
 set DInvCurrentPage[pid] = maxPage 
@@ -2488,6 +2654,9 @@ else
                 if bagFull == TRUE then
                     if IsVanillaInventoryFull(u) == TRUE then
                     call FromItemHeavenToGround(DInventoryDB[bid].item[slotId], GetUnitX(u), GetUnitY(u))
+                    call DeleteBIDSlotIdItemFromDInventory(bid, slotId)
+                    elseif DInvCanItemUseVanillaInventory(DInventoryDB[bid].item[slotId]) == FALSE then
+                    call DInvRejectVanillaEquipmentItem(u, DInventoryDB[bid].item[slotId])
                     call DeleteBIDSlotIdItemFromDInventory(bid, slotId)
                     else
                     set DInvItemHandleDB[GetHandleId(DInventoryDB[bid].item[slotId])].integer[3] = 1
@@ -3577,7 +3746,7 @@ else
                 // Unit has Titan's grip
                 else
                 // No titan's grip
-                call CanNotEquipMsg(p, "You need "+GetObjectName('DQTG')+" to equip this item in this slot.")
+                call CanNotEquipUnitMsg(u, "You need "+GetObjectName('DQTG')+" to equip this item in this slot.")
                 set u = null
                 set it = null
                 return FALSE
@@ -3587,13 +3756,13 @@ else
             endif
         else
         // Unit has no DW
-        call CanNotEquipMsg(p, "You need "+GetObjectName('DQDW')+" to equip this item in this slot.")
+        call CanNotEquipUnitMsg(u, "You need "+GetObjectName('DQDW')+" to equip this item in this slot.")
         set u = null
         set it = null
         return FALSE
         endif
     else
-    call CanNotEquipMsg(p, "Item is not allowed in this slot.")
+    call CanNotEquipUnitMsg(u, "Item is not allowed in this slot.")
     set u = null
     set it = null
     return FALSE
@@ -3618,7 +3787,7 @@ else
                 // Unit has Titan's grip
                 else
                 // No titan's grip
-                call CanNotEquipMsg(p, "You need "+GetObjectName('DQTG')+" to equip this item in this slot.")
+                call CanNotEquipUnitMsg(u, "You need "+GetObjectName('DQTG')+" to equip this item in this slot.")
                 set u = null
                 set it = null
                 return FALSE
@@ -3628,13 +3797,13 @@ else
             endif
         else
         // Unit has no DW
-        call CanNotEquipMsg(p, "You need "+GetObjectName('DQDW')+" to equip this item in this slot.")
+        call CanNotEquipUnitMsg(u, "You need "+GetObjectName('DQDW')+" to equip this item in this slot.")
         set u = null
         set it = null
         return FALSE
         endif
     else
-    call CanNotEquipMsg(p, "Item is not allowed in this slot.")
+    call CanNotEquipUnitMsg(u, "Item is not allowed in this slot.")
     set u = null
     set it = null
     return FALSE
@@ -3668,7 +3837,7 @@ endif
 if GetHeroLevel(u) >= i then
 //Hero is high enough level
 else
-call CanNotEquipMsg(p, "You do not meet the level requirements for this item.")
+call CanNotEquipUnitMsg(u, "You do not meet the level requirements for this item.")
 set u = null
 set it = null
 return FALSE
@@ -3688,7 +3857,7 @@ if DEqItemTypeDefinitionDB[iid][1].integer[1] == 0 then
         
         if auxi == DEqItemTypeDefinitionDB[iid][2].integer[i] then
         // UnitTypeId is the same as a forbidden class
-            call CanNotEquipMsg(p, "This class is forbidden to equip this item.")
+            call CanNotEquipUnitMsg(u, "This class is forbidden to equip this item.")
             set u = null
             set it = null
             return FALSE
@@ -3713,7 +3882,7 @@ else
     endloop
     
     if b == FALSE then
-    call CanNotEquipMsg(p, "This class can not equip this item.")
+    call CanNotEquipUnitMsg(u, "This class can not equip this item.")
     set it = null
     set u = null
     return FALSE
@@ -3730,7 +3899,7 @@ else
     set i = 1
     loop
     if GetUnitAbilityLevel(u, DEqItemTypeDefinitionDB[iid][3].integer[i]) < DEqItemTypeDefinitionDB[iid][4].integer[i] then
-    call CanNotEquipMsg(p, "You do not meet ability requirements to equip this item.")
+    call CanNotEquipUnitMsg(u, "You do not meet ability requirements to equip this item.")
     set it = null
     set u = null
     return FALSE
@@ -3748,7 +3917,7 @@ else
     loop
     if GetUnitAbilityLevel(u, DEqItemTypeDefinitionDB[iid][5].integer[i]) >= DEqItemTypeDefinitionDB[iid][6].integer[i] then
     // AbilityId is the same as a forbidden ability
-    call CanNotEquipMsg(p, "You do not meet ability requirements to equip this item.")
+    call CanNotEquipUnitMsg(u, "You do not meet ability requirements to equip this item.")
     set u = null
     set it = null
     return FALSE
@@ -3768,7 +3937,7 @@ loop
     // This stat is needed
         if DEqGetUnitStatById(u, i) < DEqItemTypeDefinitionDB[iid][8].real[i] then
         // Unit's stat is lower than the required stat
-        call CanNotEquipMsg(p, "You do not meet stat requirements to equip this item.")
+        call CanNotEquipUnitMsg(u, "You do not meet stat requirements to equip this item.")
         set it = null
         set u = null
         return FALSE
@@ -3915,6 +4084,52 @@ endif
 
 set it = null
 return targetSlot
+endfunction
+
+function DInvMoveVanillaItemToDInventory takes unit u, item it returns boolean
+local integer pid = -1
+local integer bid = -1
+local integer eqid = -1
+local integer iid = 0
+local integer storedSlot = -1
+if u == null or it == null then
+set u = null
+set it = null
+return FALSE
+endif
+set pid = GetPlayerId(GetOwningPlayer(u))
+set bid = BIDOfUnit(u)
+set eqid = EQIDOfUnit(u)
+set iid = GetItemTypeId(it)
+if bid < 1 or eqid < 1 then
+set u = null
+set it = null
+return FALSE
+endif
+if IsItemStoredInDInv(it) == TRUE or IsBIDInventoryFull(pid, bid) == TRUE then
+set u = null
+set it = null
+return FALSE
+endif
+if BlzGetItemBooleanField(it, ConvertItemBooleanField('ipow')) == TRUE then
+set u = null
+set it = null
+return FALSE
+endif
+if DInvIsItemIdOnGlobalExclusionList(iid) == TRUE then
+set u = null
+set it = null
+return FALSE
+endif
+if MakeDInventoryAcceptUndroppableItems == FALSE and BlzGetItemBooleanField(it, ConvertItemBooleanField('idro')) == FALSE then
+set u = null
+set it = null
+return FALSE
+endif
+set storedSlot = StoreItemForPIDBID(it, pid, bid, eqid)
+set u = null
+set it = null
+return storedSlot > -1
 endfunction
 
 /* Original StoreItemForPIDBID function below, kept for reference
