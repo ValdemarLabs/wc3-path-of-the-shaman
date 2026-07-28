@@ -100,6 +100,12 @@
   - `Abilities/Abilities.j` and `Abilities/Talents.j` now route local-player feedback sound playback through `ExSound_PlayHandleForPlayer(...)`.
   - This keeps registered external voiceline playback unchanged while making generated Sound Editor labels the reliable first path for profession, gather, and converted shaman SFX.
 
+- Updated Fishing profession sounds
+  - Registered `Tradeskill_FishingStart` and `Tradeskill_FishingEnd` in `SoundAndMusic/ExSoundEditorSounds.j` / `SoundAndMusic/SoundEditorSounds.json` for `war3mapImported\\FX_Fishing_Cast_02.mp3` and `war3mapImported\\FishingBobber_ver2_1.mp3`.
+  - `UI/Interface.j` now maps `Profession_Fishing_Start` to `gg_snd_Tradeskill_FishingStart`, `Profession_Fishing_End` to `gg_snd_Tradeskill_FishingEnd`, and new `Profession_Fishing_Fail` to the existing `gg_snd_Tradeskill_Fishing`.
+  - `Professions/ProfessionsFishing.j` now plays the cast sound when fishing starts, plays the bite/end sound once when the bite window opens or when a valid reel happens first, and plays the fail sound when the fish gets away or no reward is caught.
+  - Fish-got-away failures now suppress the generic UI error sound so the dedicated fishing fail sound owns that feedback.
+
 - Updated `Debug/DebugCommands.j`
   - Added `/debug fishpool spawn` for fishing testing.
   - The command syncs the player's camera target, finds the current `ZonesCore` zone at that point, selects a random enabled GatherNodeUnits definition registered as a Fishing fish-pool node, and attempts to spawn it through `GNU_ForceSpawn(...)`.
