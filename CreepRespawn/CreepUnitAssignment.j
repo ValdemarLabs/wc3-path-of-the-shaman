@@ -52,6 +52,13 @@ private function TriggerQuestEvaluation_Delayed takes nothing returns nothing
     
     // Refresh quest availability and icons for the new unit
     call QuestGiver_RefreshAvailabilityForGiver(newUnit)
+    if unitTypeId == 'O606' then
+        call ExecuteFunc("qChieftainThork_RefreshRespawnedUnitHooks")
+        call ExecuteFunc("qRagno_RefreshAvailability")
+    elseif unitTypeId == 'o61L' then
+        call ExecuteFunc("qRagno_RefreshRespawnedUnitHooks")
+        call ExecuteFunc("qChieftainThork_RefreshAvailability")
+    endif
     
     // Cleanup
     call QuestRestorationTable.unit.remove(GetHandleId(t))
@@ -80,8 +87,10 @@ function CreepUnitAssignment takes integer utype returns nothing
     // HORDE
     if utype == 'O606' then
         set udg_Thork = bj_lastCreatedUnit
+        call TriggerQuestEvaluation(bj_lastCreatedUnit)
     elseif utype == 'o61L' then
         set udg_Ragno = bj_lastCreatedUnit
+        call TriggerQuestEvaluation(bj_lastCreatedUnit)
     elseif utype == 'o60A' then
         set udg_Garthork = bj_lastCreatedUnit
     elseif utype == 'o60F' then
