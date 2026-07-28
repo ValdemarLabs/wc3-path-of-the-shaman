@@ -4019,6 +4019,7 @@ namespace WC3ItemManager
                 {
                     conn.Open();
                     ProfessionItemStatsSeeder.Ensure(conn);
+                    CookingItemsSeeder.Ensure(conn);
                 }
             }
             catch (Exception ex)
