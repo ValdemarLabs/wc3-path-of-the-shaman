@@ -1,0 +1,58 @@
+Item 200 to 249 check Shoulders
+    Events
+        Unit - A unit Acquires an item
+    Conditions
+        (Item level of (Item being manipulated)) Greater than or equal to 200
+        (Item level of (Item being manipulated)) Less than or equal to 249
+        (Unit-type of (Hero manipulating item)) Not equal to Bag
+        (Unit-type of (Hero manipulating item)) Not equal to Stash
+    Actions
+        Set VariableSet IDS_Level = (Item level of (Item being manipulated))
+        Set VariableSet IDS_Unit = (Triggering unit)
+        Set VariableSet IDS_Size = (Size of inventory for IDS_Unit)
+        -------- -------- Setting value of Item from random to 0 -------- --------
+        Set VariableSet IDS_Item = 0
+        For each (Integer IDS_LoopInteger) from 1 to IDS_Size, do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Item level of (Item carried by IDS_Unit in slot IDS_LoopInteger)) Greater than or equal to 200
+                        (Item level of (Item carried by IDS_Unit in slot IDS_LoopInteger)) Less than or equal to 249
+                    Then - Actions
+                        Set VariableSet IDS_Item = (IDS_Item + 1)
+                        -------- -------- It will increase to 1 if hero have 1 item level 1, to 2 if hero have 2 items level 1... -------- --------
+                    Else - Actions
+        -------- How many items of item Level allowed --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                IDS_Item Greater than 1
+            Then - Actions
+                Set VariableSet tmp_point = (Position of (Triggering unit))
+                -------- -------- Move the item, and the hero will lose it. -------- --------
+                Item - Move (Item being manipulated) to tmp_point
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        EasyItem_SystemActive Equal to False
+                    Then - Actions
+                        -------- -------- Warn player -------- --------
+                        Custom script:   call DisplayTextToPlayer(GetOwningPlayer(GetTriggerUnit()), 0, 0, "|cffffcc00WARNING:|r You cannot carry more than 1 of this item.")
+                        -------- ================ --------
+                        -------- CHAT --------
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Triggering unit) Equal to Nazgrek
+                            Then - Actions
+                                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_ItemErrorAny <gen> and display I’m already weari....  Modify duration: Set to 2.25 seconds and Don't wait
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Triggering unit) Equal to Zulkis
+                            Then - Actions
+                                Cinematic - Send transmission to (All players) from Zulkis named Zul'kis: Play Zulkis_ItemErrorAny <gen> and display I’m already weari....  Modify duration: Set to 2.00 seconds and Don't wait
+                            Else - Actions
+                        -------- ================ --------
+                    Else - Actions
+                -------- -------- Get rid of leaks -------- --------
+                Custom script:   call RemoveLocation(udg_tmp_point)
+            Else - Actions
+        Set VariableSet IDS_Unit = No unit
