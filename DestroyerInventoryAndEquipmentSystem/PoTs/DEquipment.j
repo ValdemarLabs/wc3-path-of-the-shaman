@@ -435,12 +435,33 @@ endfunction
 
 
 
-function DInspectRefreshButtonForPlayer takes player viewer returns nothing
+function DInspectResolveSelectedTarget takes player viewer returns unit
 local integer pid = GetPlayerId(viewer)
 local unit target = DInspectSelectedUnit[pid]
+if DInvCanPlayerInspectUnit(viewer, target) == TRUE and IsUnitSelected(target, viewer) == TRUE then
+set viewer = null
+return target
+endif
+set target = DInvGetInspectTargetForPlayer(viewer, null)
+if DInvCanPlayerInspectUnit(viewer, target) == TRUE and IsUnitSelected(target, viewer) == TRUE then
+set DInspectSelectedUnit[pid] = target
+set viewer = null
+return target
+endif
+set DInspectSelectedUnit[pid] = null
+set viewer = null
+set target = null
+return null
+endfunction
+
+
+
+function DInspectRefreshButtonForPlayer takes player viewer returns nothing
+local integer pid = GetPlayerId(viewer)
+local unit target = DInspectResolveSelectedTarget(viewer)
 if DInvIsPlayerInspecting(pid) == TRUE then
 call DInspectSetButtonState(pid, TRUE, "Close")
-elseif DInvCanPlayerInspectUnit(viewer, target) == TRUE and IsUnitSelected(target, viewer) == TRUE then
+elseif target != null then
 call DInspectSetButtonState(pid, TRUE, "Inspect")
 else
 set DInspectSelectedUnit[pid] = null
@@ -582,7 +603,7 @@ function DInspectButtonClickedActions takes nothing returns nothing
 local player viewer = GetTriggerPlayer()
 local player localplyr = GetLocalPlayer()
 local integer pid = GetPlayerId(viewer)
-local unit target = DInspectSelectedUnit[pid]
+local unit target = DInspectResolveSelectedTarget(viewer)
 local framehandle buttonFrame = BlzGetTriggerFrame()
 local boolean opened = FALSE
 
