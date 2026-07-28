@@ -65,6 +65,7 @@ trigger trg_InventorySlotClicked = CreateTrigger()
 
 unit array DInvCurrentUnit[24]
 unit array DEqCurrentUnit[24]
+boolean array DInvCurrentInspectMode[24]
 integer array DInvCurrentUnitHandleId[24]
 integer array CurrentBID[24]
 integer array CurrentEQId[24]
@@ -186,8 +187,37 @@ set DInvCurrentUnit[pid] = u
 set DInvCurrentUnitHandleId[pid] = GetHandleId(u)
 set CurrentBID[pid] = BIDOfUnit(u)
 set CurrentEQId[pid] = EQIDOfUnit(u)
+set DInvCurrentInspectMode[pid] = FALSE
 //call BJDebugMsg("DInvSetCurrentUnit bid = "+I2S(CurrentBID[pid]))
 set u = null
+endfunction
+
+
+
+function DInvSetCurrentUnitForPlayer takes player viewer, unit u, boolean inspectMode returns boolean
+local integer pid = GetPlayerId(viewer)
+if DInvCanPlayerUseInventoryFrames(pid) == FALSE or u == null or BIDOfUnit(u) < 1 then
+set viewer = null
+set u = null
+return FALSE
+endif
+set DInvCurrentUnit[pid] = u
+set DInvCurrentUnitHandleId[pid] = GetHandleId(u)
+set CurrentBID[pid] = BIDOfUnit(u)
+set CurrentEQId[pid] = EQIDOfUnit(u)
+set DInvCurrentInspectMode[pid] = inspectMode
+set viewer = null
+set u = null
+return TRUE
+endfunction
+
+
+
+function DInvIsPlayerInspecting takes integer pid returns boolean
+if pid < 0 or pid > 23 then
+return FALSE
+endif
+return DInvCurrentInspectMode[pid]
 endfunction
 
 
@@ -241,10 +271,13 @@ local integer pid = GetPlayerId(GetOwningPlayer(u))
 local integer bid = DInvGetUnusedBID(pid)
 local integer eqid = EQIDCounter + 1
 local integer uhndl = GetHandleId(u)
-if GetPlayerSlotState(Player(pid)) == PLAYER_SLOT_STATE_PLAYING and GetPlayerController(Player(pid)) == MAP_CONTROL_USER then
-// Only for player units
+if DInvCanPlayerOwnInventoryUnit(pid) == TRUE then
+// Player and computer heroes can own DInventory data. Frames are still user-only.
     if EQIDOfUnit(u) > 0 then
     //Unit has been initialized already - Protect against double initialization
+        set bid = BIDOfUnit(u)
+        set u = null
+        return bid
     else
         set EQIDCounter = EQIDCounter + 1 
         call UnitAddAbility(u, OpenDInventoryAbilityId)
@@ -788,6 +821,8 @@ call CloseDInventory(pid)
     if EquipmentSystemUsed == TRUE then
     call CloseDEqUI(pid)
     endif
+elseif DInvCurrentInspectMode[pid] == TRUE then
+// Inspect mode is read-only. Tooltips and page buttons still work.
 else
 //call BJDebugMsg("current page: "+I2S(DInvCurrentPage[pid]))
 set frameId = PIDSlotFrame2FrameId(pid, meinFrame)
@@ -846,10 +881,14 @@ set slotId = SlotFrameId2DItemSlotId(pid, frameId)
                 else
                 // Single click - move to vanilla inventory
     //call BJDebugMsg("moving to vanilla")
+                if DInvCanItemUseVanillaInventory(DInventoryDB[bid].item[slotId]) == FALSE then
+                call DInvPlayInventoryErrorForUnit(u, "Equipment can not be moved to the vanilla inventory.")
+                else
                 set DInvItemHandleDB[GetHandleId(DInventoryDB[bid].item[slotId])].integer[3] = 1
                 call FromItemHeavenToVanillaInventory(DInventoryDB[bid].item[slotId], u)
                 //call TriggerSleepAction(1)
                 call DeleteBIDSlotIdItemFromDInventory(bid, slotId)
+                endif
                 endif
                 
             call DInvSlotDataIntoFrame(pid, bid, slotId, frameId)
@@ -912,8 +951,9 @@ function OpenDInventory takes integer pid returns nothing
 local integer localplyr = GetPlayerId(GetLocalPlayer())
 local unit u = DInvCurrentUnit[pid]
 local integer bid = CurrentBID[pid]
+local integer ownerPid = DInvGetInventoryOwnerPidForViewer(pid)
 local integer invCap = 0
-local integer maxPage = MaxPageCountOfPIDBID(pid, bid)
+local integer maxPage = MaxPageCountOfPIDBID(ownerPid, bid)
 ////call BJDebugMsg("OpenDInventory started")
 
 //set InventorySlotIdOfCurrentTooltip[pid] = -1
@@ -943,7 +983,7 @@ if pid == localplyr then
     call BlzFrameSetVisible(InventoryXButtonIconFrame[pid], TRUE)
     call BlzFrameSetLevel(InventoryMainFrame[pid], 3)
 
-    set invCap = MaxBagCapacityOfBID(pid, bid)
+    set invCap = MaxBagCapacityOfBID(ownerPid, bid)
 
         if I2R(invCap) / I2R(ColXRow) > 1.0 then
         //Page buttons here
@@ -970,18 +1010,61 @@ endfunction
 
 
 
-function ToggleInventory takes integer pid returns nothing
-local unit u = GetTriggerUnit()
+function DInvCloseForPlayer takes player viewer returns nothing
+local integer pid = GetPlayerId(viewer)
+call CloseDInventory(pid)
+set DInvCurrentUnit[pid] = null
+set DInvCurrentUnitHandleId[pid] = 0
+set CurrentBID[pid] = -1
+set CurrentEQId[pid] = -1
+set DInvCurrentInspectMode[pid] = FALSE
+set viewer = null
+endfunction
+
+
+
+function DInvShowUnitForPlayer takes player viewer, unit u, boolean inspectMode returns boolean
+local integer pid = GetPlayerId(viewer)
+if DInvCanPlayerUseInventoryFrames(pid) == FALSE or u == null then
+set viewer = null
+set u = null
+return FALSE
+endif
+if DInvCurrentUnit[pid] != null and (DInvCurrentUnit[pid] != u or DInvCurrentInspectMode[pid] != inspectMode) then
+call CloseDInventory(pid)
+endif
+if DInvSetCurrentUnitForPlayer(viewer, u, inspectMode) == FALSE then
+set viewer = null
+set u = null
+return FALSE
+endif
+call OpenDInventory(pid)
+set viewer = null
+set u = null
+return TRUE
+endfunction
+
+
+
+function DInvToggleUnitForPlayer takes player viewer, unit u, boolean inspectMode returns boolean
+local integer pid = GetPlayerId(viewer)
 
 //call BJDebugMsg("ToggleInventory started")
 
-if u == DInvCurrentUnit[pid] then
+if DInvCanPlayerUseInventoryFrames(pid) == FALSE or u == null then
+set viewer = null
+set u = null
+return FALSE
+endif
+
+if u == DInvCurrentUnit[pid] and DInvCurrentInspectMode[pid] == inspectMode then
 // Was open
 call CloseDInventory(pid)
 set DInvCurrentUnit[pid] = null
 set DInvCurrentUnitHandleId[pid] = 0
 set CurrentBID[pid] = -1
 set CurrentEQId[pid] = -1
+set DInvCurrentInspectMode[pid] = FALSE
 
 else
     if DInvCurrentUnit[pid] == null then
@@ -990,15 +1073,53 @@ else
     // was open for another unit
     call CloseDInventory(pid)
     endif
-set DInvCurrentUnit[pid] = u
-set DInvCurrentUnitHandleId[pid] = GetHandleId(u)
-set CurrentBID[pid] = BIDOfUnit(u)
-set CurrentEQId[pid] = EQIDOfUnit(u)
+if DInvSetCurrentUnitForPlayer(viewer, u, inspectMode) == FALSE then
+set viewer = null
+set u = null
+return FALSE
+endif
 //call BJDebugMsg("DInvCurrentUnit[pid] ="+GetUnitName(DInvCurrentUnit[pid]))
 call OpenDInventory(pid)
 //call BJDebugMsg("After openinventory DInvCurrentUnit[pid] ="+GetUnitName(DInvCurrentUnit[pid]))
 endif
 
+set viewer = null
+set u = null
+return TRUE
+endfunction
+
+
+
+function DInvOpenInspectForPlayer takes player viewer, unit target returns boolean
+return DInvShowUnitForPlayer(viewer, target, TRUE)
+endfunction
+
+
+
+function DInvGetInspectTargetForPlayer takes player viewer, unit caster returns unit
+local integer eqid = 1
+local unit u = null
+loop
+    exitwhen eqid > EQIDCounter
+    set u = DInvUnits.unit[eqid]
+    if u != null and u != caster and BIDOfUnit(u) > 0 and UnitAlive(u) == TRUE and IsUnitSelected(u, viewer) then
+    set viewer = null
+    set caster = null
+    return u
+    endif
+    set eqid = eqid + 1
+endloop
+set viewer = null
+set caster = null
+set u = null
+return null
+endfunction
+
+
+
+function ToggleInventory takes integer pid returns nothing
+local unit u = GetTriggerUnit()
+call DInvToggleUnitForPlayer(Player(pid), u, FALSE)
 set u = null
 endfunction
 
@@ -1054,7 +1175,8 @@ function PageLeftClickedActions takes nothing returns nothing
 local integer pid = GetPlayerId(GetTriggerPlayer())
 local integer bid = CurrentBID[pid]
 local unit u = DInvCurrentUnit[pid]
-local integer maxPages = MaxPageCountOfPIDBID(pid, bid)
+local integer ownerPid = DInvGetInventoryOwnerPidForViewer(pid)
+local integer maxPages = MaxPageCountOfPIDBID(ownerPid, bid)
 local framehandle meinFrame = BlzGetTriggerFrame()
 local integer eqid = CurrentEQId[pid]
 
@@ -1093,7 +1215,8 @@ function PageRightClickedActions takes nothing returns nothing
 local integer pid = GetPlayerId(GetTriggerPlayer())
 local integer bid = CurrentBID[pid]
 local unit u = DInvCurrentUnit[pid]
-local integer maxPages = MaxPageCountOfPIDBID(pid, bid)
+local integer ownerPid = DInvGetInventoryOwnerPidForViewer(pid)
+local integer maxPages = MaxPageCountOfPIDBID(ownerPid, bid)
 local framehandle meinFrame = BlzGetTriggerFrame()
 local integer eqid = CurrentEQId[pid]
 
@@ -1160,6 +1283,9 @@ else
             if IsItemStoreableForPIDBID(it, pid, bid) == FALSE then
             // Do nothing, item must not be stored
 ////call BJDebugMsg("Item is not storeable")
+                if DInvCanItemUseVanillaInventory(it) == FALSE then
+                call DInvRejectVanillaEquipmentItem(u, it)
+                endif
             elseif IsItemStoredInDInv(it) == TRUE then
 ////call BJDebugMsg("Item is flagged as buffered")
             // Item is already in some unit's DInv
@@ -1168,7 +1294,11 @@ else
 ////call BJDebugMsg("Inventory is full")
             // DInventory is full
             // This will automatically check also the player inventory if paradigm is set to 1 Inventory Per Player
-            call UnitAddItem(u, it)
+                if DInvCanItemUseVanillaInventory(it) == FALSE then
+                call DInvRejectVanillaEquipmentItem(u, it)
+                else
+                call UnitAddItem(u, it)
+                endif
             else
             // This also checks if local player has the inventory open and refreshes the frames
 ////call BJDebugMsg("Before firing of StoreItemForPIDBID. Pid: "+I2S(pid)+" hid: "+I2S(hid))
@@ -1212,10 +1342,16 @@ else
             if IsItemStoreableForPIDBID(it, pid, bid) == FALSE then
             // Do nothing, item must not be stored
 ////call BJDebugMsg("Item is not storeable")
+                if DInvCanItemUseVanillaInventory(it) == FALSE then
+                call DInvRejectVanillaEquipmentItem(u, it)
+                endif
             elseif IsBIDInventoryFull(pid, bid) == TRUE then
 ////call BJDebugMsg("Inventory is full")
             // Do nothing, DInventory is full
             // This will automatically check also the player inventory if paradigm is set to 1 Inventory Per Player
+                if DInvCanItemUseVanillaInventory(it) == FALSE then
+                call DInvRejectVanillaEquipmentItem(u, it)
+                endif
             elseif IsItemStoredInDInv(it) == TRUE then
 ////call BJDebugMsg("Item is flagged as buffered")
             // Item is in the buffer, because it was just removed from the DInventory
@@ -1456,7 +1592,7 @@ call BlzFrameSetVisible(myFrame, true)
 call StopCamera()
 endif
 
-call ToggleInventory(pid)
+call DInvCloseForPlayer(plyr)
 
 set myFrame = null
 set localplyr = null
@@ -1558,9 +1694,17 @@ endfunction
 
 
 function OpenDInvAbilityUsedActions takes nothing returns nothing
+local player viewer = GetTriggerPlayer()
 local unit u = GetTriggerUnit()
-call ToggleInventory(GetPlayerId(GetOwningPlayer(u)))
+local unit inspectTarget = DInvGetInspectTargetForPlayer(viewer, u)
+if inspectTarget != null then
+call DInvToggleUnitForPlayer(viewer, inspectTarget, TRUE)
+else
+call DInvToggleUnitForPlayer(viewer, u, FALSE)
+endif
 ////call BJDebugMsg("OpenDInvAbilityUsedActions "+GetUnitName(u))
+set viewer = null
+set inspectTarget = null
 set u = null
 endfunction
 
@@ -1623,19 +1767,21 @@ set EQIDDB = Table3DT.create()
 set BIDDB = Table3DT.create()
 
 loop
-    if GetPlayerSlotState(Player(i)) == PLAYER_SLOT_STATE_PLAYING and GetPlayerController(Player(i)) == MAP_CONTROL_USER then
-        ////call BJDebugMsg("Player "+I2S(i)+" is a real boi")
-        set DInvCurrentPage[i] = 1
-
+    if DInvCanPlayerOwnInventoryUnit(i) == TRUE then
         if AutomaticDInventoryStorage == TRUE then
         call TriggerRegisterPlayerUnitEvent(trg_ItemObtainedDI, Player(i), EVENT_PLAYER_UNIT_PICKUP_ITEM, null)
         endif
 
-        set DInvTotalPlayers = DInvTotalPlayers + 1
-
         if AutomaticallyAddHeroesToTheSystem == TRUE then
         call GroupEnumUnitsOfPlayer(ug, Player(i), function DInvHeroAutoAddFilter)
         endif
+    endif
+
+    if DInvCanPlayerUseInventoryFrames(i) == TRUE then
+        ////call BJDebugMsg("Player "+I2S(i)+" is a real boi")
+        set DInvCurrentPage[i] = 1
+
+        set DInvTotalPlayers = DInvTotalPlayers + 1
 
         call TriggerRegisterPlayerUnitEvent( trg_OpenDInvAbilityUsed, Player(i), EVENT_PLAYER_UNIT_SPELL_EFFECT, null )
 

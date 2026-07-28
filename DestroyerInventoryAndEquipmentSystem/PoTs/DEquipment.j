@@ -91,17 +91,25 @@ endglobals
 function InitializeDEquipmentForUnit takes unit u returns integer
 local integer pid = GetPlayerId(GetOwningPlayer(u))
 local integer eqid = EQIDOfUHndl(GetHandleId(u))
-if GetPlayerSlotState(Player(pid)) == PLAYER_SLOT_STATE_PLAYING and GetPlayerController(Player(pid)) == MAP_CONTROL_USER then
-// Only for player units
+if DInvCanPlayerOwnInventoryUnit(pid) == TRUE then
+// Player and computer heroes can own DEquipment data. Frames are still user-only.
     if eqid > 0 then
     // eqid is already there - Protect against double initialization
         if EQIDDB[eqid][0].integer[0] == 0 then
         set EQIDDB[eqid][0].integer[0] = 1
         set u = null
         return eqid
+        else
+        set u = null
+        return eqid
         endif
     else
         call InitializeDInventoryForUnit(u)
+        set eqid = EQIDOfUHndl(GetHandleId(u))
+        if eqid < 1 then
+        set u = null
+        return -1
+        endif
         set EQIDDB[eqid][0].integer[0] = 1
         set u = null
         return eqid
@@ -328,6 +336,13 @@ if pid == lp then
     call StopCamera()
 endif
 
+if DInvIsPlayerInspecting(pid) == TRUE then
+set auxit = null
+set meinFrame = null
+set u = null
+return
+endif
+
 //call BJDebugMsg("DEq slot clicked")
 //call BJDebugMsg("DEqCurrentSlotIdActive[pid] = "+I2S(DEqCurrentSlotIdActive[pid]))
 //call BJDebugMsg("SourceDItemSlotIdActive[pid] = "+I2S(SourceDItemSlotIdActive[pid]))
@@ -416,8 +431,7 @@ endfunction
 
 
 function OpenDEqUI takes integer pid returns nothing
-//NEEDTODO: Remove u, not needed, just for testing purposes
-local unit u = GetTriggerUnit()
+local unit u = DInvCurrentUnit[pid]
 local integer lp = GetPlayerId(GetLocalPlayer())
 local integer uhndl = GetHandleId(u)
 //call BJDebugMsg("OpenDEqUI started")
@@ -439,11 +453,53 @@ endfunction
 
 
 
-function ToggleDEqUI takes integer pid returns nothing
-local unit u = GetTriggerUnit()
-local integer eqid = EQIDOfUHndl(GetHandleId(u))
+function DEqShowUnitForPlayer takes player viewer, unit u, boolean inspectMode returns boolean
+local integer pid = GetPlayerId(viewer)
+local integer eqid = -1
+if DInvCanPlayerUseInventoryFrames(pid) == FALSE or u == null then
+set viewer = null
+set u = null
+return FALSE
+endif
+set eqid = EQIDOfUHndl(GetHandleId(u))
+if eqid < 1 then
+set viewer = null
+set u = null
+return FALSE
+endif
+if EQIDDB[eqid][0].integer[0] != 1 then
+set viewer = null
+set u = null
+return FALSE
+endif
+if DInvSetCurrentUnitForPlayer(viewer, u, inspectMode) == FALSE then
+set viewer = null
+set u = null
+return FALSE
+endif
+if DEqCurrentUnit[pid] != null and DEqCurrentUnit[pid] != u then
+call CloseDEqUI(pid)
+endif
+set DEqCurrentUnit[pid] = u
+set CurrentEQId[pid] = eqid
+call OpenDEqUI(pid)
+set viewer = null
+set u = null
+return TRUE
+endfunction
+
+
+
+function ToggleDEqUIForUnit takes integer pid, unit u returns boolean
+local integer eqid = -1
 
 //call BJDebugMsg("ToggleDEqUI started")
+
+if DInvCanPlayerUseInventoryFrames(pid) == FALSE or u == null then
+set u = null
+return FALSE
+endif
+set eqid = EQIDOfUHndl(GetHandleId(u))
 
 if u == DEqCurrentUnit[pid] then
 // Was open
@@ -461,6 +517,7 @@ else
     
     if EQIDDB[eqid][0].integer[0] == 1 then
     // check if equipment is enabled for this unit
+    call DInvSetCurrentUnitForPlayer(Player(pid), u, DInvIsPlayerInspecting(pid))
     set DEqCurrentUnit[pid] = u
     set CurrentEQId[pid] = eqid
     call OpenDEqUI(pid)
@@ -470,13 +527,38 @@ endif
 //call BJDebugMsg("CurrentEQId[pid]: "+I2S(CurrentEQId[pid]))
 
 set u = null
+return TRUE
+endfunction
+
+
+
+function ToggleDEqUI takes integer pid returns nothing
+local unit u = GetTriggerUnit()
+call ToggleDEqUIForUnit(pid, u)
+set u = null
+endfunction
+
+
+
+function DEqOpenInspectForPlayer takes player viewer, unit target returns boolean
+return DEqShowUnitForPlayer(viewer, target, TRUE)
 endfunction
 
 
 
 function InventoryButtonClickedDEq takes nothing returns nothing
 local integer pid = GetPlayerId(GetTriggerPlayer())
-call ToggleDEqUI(pid)
+local player viewer = GetTriggerPlayer()
+local unit caster = GetTriggerUnit()
+local unit inspectTarget = DInvGetInspectTargetForPlayer(viewer, caster)
+if inspectTarget != null then
+call ToggleDEqUIForUnit(pid, inspectTarget)
+else
+call ToggleDEqUIForUnit(pid, caster)
+endif
+set viewer = null
+set caster = null
+set inspectTarget = null
 endfunction
 
 
@@ -628,7 +710,9 @@ endfunction
 
 function AutoAddNewHeroToDEqActions takes nothing returns nothing
 local unit u = GetTriggerUnit()
+if IsUnitType(u, UNIT_TYPE_HERO) == true and IsUnitType(u, UNIT_TYPE_SUMMONED) == false then
 call InitializeDEquipmentForUnit(u)
+endif
 set u = null
 endfunction
 
@@ -636,7 +720,7 @@ endfunction
 
 function DEqHeroAutoAddFilter takes nothing returns boolean
 local unit u = GetFilterUnit()
-if IsHeroUnitId(GetUnitTypeId(u)) then
+if IsUnitType(u, UNIT_TYPE_HERO) == true and IsUnitType(u, UNIT_TYPE_SUMMONED) == false then
 call InitializeDEquipmentForUnit(u)
 ////call BJDebugMsg("DInvHeroAutoAddFilter "+GetUnitName(GetFilterUnit()))
 set u = null
@@ -653,9 +737,11 @@ local integer i = 0
 local group ug = CreateGroup()
 
 loop
-    if GetPlayerSlotState(Player(i)) == PLAYER_SLOT_STATE_PLAYING and GetPlayerController(Player(i)) == MAP_CONTROL_USER then
+    if DInvCanPlayerUseInventoryFrames(i) == TRUE then
     set DEqDoubleClickTimer[i] = CreateTimer()
-    
+    endif
+
+    if DInvCanPlayerOwnInventoryUnit(i) == TRUE then
         if AutomaticallyAddHeroesToTheDEqSystem == TRUE then
         call GroupEnumUnitsOfPlayer(ug, Player(i), function DEqHeroAutoAddFilter)
         endif
@@ -665,7 +751,7 @@ set i = i + 1
 exitwhen i > 23
 endloop
     
-if AutomaticallyAddHeroesToTheSystem == TRUE then
+if AutomaticallyAddHeroesToTheDEqSystem == TRUE then
 call TriggerRegisterEnterRectSimple( trg_AutoAddNewHeroToDEq, GetWorldBounds() )
 call TriggerAddAction( trg_AutoAddNewHeroToDEq, function AutoAddNewHeroToDEqActions )
 endif
