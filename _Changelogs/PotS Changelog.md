@@ -77,6 +77,7 @@
   - Air elementals can use Lightning Shield, Chain Lightning, and Purge; Water elementals can use Crushing Wave and Frost Nova; Fire elementals can use Flame Strike and Firebolt; Earth elementals can use Taunt, Thunder Clap, and Hurl Boulder.
   - Rank 5 Summon Elemental now creates Greater elementals by prefixing the summoned unit name with `Greater ` and applying stronger summoner Intelligence scaling to elemental life and damage.
   - Greater Fire and Water Elementals gain `+25%` Spell Power and `+10%` Crit; Greater Earth Elementals gain `+25%` Block and `+10%` Hit; Greater Air Elementals gain `+20%` Dodge, `+10%` Crit, and `+15%` Spell Power.
+  - Rank 5 Summon Elemental now refreshes the four elemental summon channel ability titles to `Summon Air Elemental - Level 2`, `Summon Water Elemental - Level 2`, `Summon Fire Elemental - Level 2`, and `Summon Earth Elemental - Level 2`.
   - `Abilities/Shaman/ShamanFeralSpirits.j` was intentionally left without spell AI because Feral Spirit summons currently do not have their own abilities.
 
 - Updated Shaman and profession sound playback helpers
@@ -136,10 +137,14 @@
   - Added inspect-mode open helpers for DInventory and DEquipment plus a new `Inspect` / `Close` button above the vanilla inventory.
   - The inspect button appears when selecting another player's initialized unit that has DInventory and/or DEquipment, opens that unit's custom inventory/equipment UI, and hides again after deselecting if inspect mode was not opened.
   - The normal inventory ability remains self-only because it is a self-targeted ability.
+  - Added a DInventory `Give` button for transferring the selected DInventory item to the currently selected target unit, using target DInventory first and target vanilla inventory only when the target has no DInventory.
+  - DInventory give transfer now reports `Target unit doesn't have inventory.` or `Target unit inventory is full.` when the selected target cannot receive the item.
   - Inspect mode is read-only for inventory/equipment slot clicks while still allowing UI viewing and DInventory paging.
+  - The Inspect/Close button now resolves the selected inspect target again on click, preventing stale selection cache cases where the button only worked after switching selection away and back.
   - Vanilla inventory handling now rejects DEquipment items, keeping equippable gear in DInventory or DEquipment slots while still allowing consumables, materials, and miscellaneous non-equipment items in vanilla inventory.
   - Invalid vanilla-equipment moves and failed DEquipment equip checks now use the Nazgrek/Zulkis `ExSound` item-error voicelines when applicable.
   - Fixed a DEquipment initialization edge case where enabling equipment after creating DInventory could keep using a stale `eqid = 0`.
+  - AI heroes now periodically evaluate DEquipment items stored in their DInventory and equip a higher-level valid item into a matching slot when possible.
 
 ### Tool Updates
 
