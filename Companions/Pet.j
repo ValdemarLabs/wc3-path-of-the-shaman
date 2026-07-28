@@ -977,6 +977,47 @@ private function OnRenameChat takes nothing returns nothing
     set pet = null
 endfunction
 
+public function CanRename takes unit pet returns boolean
+    local integer petKey
+
+    if pet == null or pet != udg_TamedUnit or GetPetCount() <= 0 then
+        return false
+    endif
+
+    if pet == udg_Shadowclaw then
+        return false
+    endif
+
+    set petKey = GetUnitUserData(pet)
+    if petKey > 0 and udg_Pet_Renamed[petKey] then
+        return false
+    endif
+
+    return true
+endfunction
+
+public function ShowRenamePrompt takes unit pet returns nothing
+    local integer petKey
+
+    if pet == null or pet != udg_TamedUnit or GetPetCount() <= 0 then
+        call DisplayTextToPlayer(Player(0), 0.00, 0.00, "You do not have a pet to rename.")
+        return
+    endif
+
+    if pet == udg_Shadowclaw then
+        call DisplayTextToPlayer(Player(0), 0.00, 0.00, "Shadowclaw cannot be renamed.")
+        return
+    endif
+
+    set petKey = GetUnitUserData(pet)
+    if petKey > 0 and udg_Pet_Renamed[petKey] then
+        call DisplayTextToPlayer(Player(0), 0.00, 0.00, "This pet has already been renamed.")
+        return
+    endif
+
+    call DisplayTextToPlayer(Player(0), 0.00, 0.00, "Type |cff66ccff/pet rename <name>|r to rename your pet.")
+endfunction
+
 public function IsPetUnit takes unit pet returns boolean
     if pet == null then
         return false

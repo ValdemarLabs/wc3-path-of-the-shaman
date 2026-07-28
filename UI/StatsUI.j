@@ -16,7 +16,7 @@ library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, Abili
     call StatsUI_Toggle()
     call StatsUI_GetRequiredXPForUnit(unit whichUnit) returns integer
     call StatsUI_IsVisible() returns boolean
-    Selected unit action buttons open AbilitiesLiteUI and ProfessionsUI.
+    Selected unit action buttons open AbilitiesLiteUI, ProfessionsUI, or the pet rename prompt.
     call StatsUI_RegisterManaResourceClass(integer classId)
     call StatsUI_RegisterRageResourceClass(integer classId)
     call StatsUI_RegisterEnergyResourceClass(integer classId)
@@ -49,6 +49,7 @@ globals
     private framehandle SUI_ReturnButton = null
     private framehandle SUI_AbilitiesButton = null
     private framehandle SUI_ProfessionsButton = null
+    private framehandle SUI_PetRenameButton = null
     private framehandle SUI_MonitorButton = null
     private framehandle SUI_InfoButton = null
     private framehandle SUI_PartyText = null
@@ -119,6 +120,7 @@ globals
     private trigger SUI_ReturnTrigger = null
     private trigger SUI_AbilitiesTrigger = null
     private trigger SUI_ProfessionsTrigger = null
+    private trigger SUI_PetRenameTrigger = null
     private trigger SUI_MonitorTrigger = null
     private trigger SUI_InfoTrigger = null
     private trigger SUI_RowTrigger = null
@@ -1490,6 +1492,7 @@ private function SUI_UpdateDetail takes player whichPlayer, boolean refreshStats
             call BlzFrameSetText(SUI_DetailRested, "")
             call BlzFrameSetVisible(SUI_AbilitiesButton, false)
             call BlzFrameSetVisible(SUI_ProfessionsButton, false)
+            call BlzFrameSetVisible(SUI_PetRenameButton, false)
         endif
         call SUI_UpdateDetailSummary(whichPlayer, null)
         if refreshStats then
@@ -1528,7 +1531,13 @@ private function SUI_UpdateDetail takes player whichPlayer, boolean refreshStats
         endif
         call BlzFrameSetText(SUI_DetailValue, "Level " + I2S(level) + " | XP " + SUI_GetXPText(u))
         call BlzFrameSetVisible(SUI_AbilitiesButton, true)
-        call BlzFrameSetVisible(SUI_ProfessionsButton, true)
+        if kind == SUI_KIND_PET then
+            call BlzFrameSetVisible(SUI_ProfessionsButton, false)
+            call BlzFrameSetVisible(SUI_PetRenameButton, Pet_CanRename(u))
+        else
+            call BlzFrameSetVisible(SUI_ProfessionsButton, true)
+            call BlzFrameSetVisible(SUI_PetRenameButton, false)
+        endif
     endif
     call SUI_UpdateDetailSummary(whichPlayer, u)
     if refreshStats then
@@ -1625,6 +1634,13 @@ private function SUI_ProfessionsAction takes nothing returns nothing
     if SUI_IsTrackedUnit(SUI_SelectedUnit) then
         call Hide()
         call ProfessionsUI_ShowForUnit(SUI_SelectedUnit)
+    endif
+endfunction
+
+private function SUI_PetRenameAction takes nothing returns nothing
+    if SUI_IsTrackedUnit(SUI_SelectedUnit) and SUI_GetKindByUnit(SUI_SelectedUnit) == SUI_KIND_PET then
+        call Hide()
+        call Pet_ShowRenamePrompt(SUI_SelectedUnit)
     endif
 endfunction
 
@@ -1819,6 +1835,14 @@ private function SUI_CreateFrames takes nothing returns nothing
     call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_ProfessionsButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzFrameSetVisible(SUI_ProfessionsButton, false)
 
+    set SUI_PetRenameButton = BlzCreateFrameByType("GLUETEXTBUTTON", "StatsUIPetRename", SUI_RightPane, "ScriptDialogButton", 0)
+    call BlzFrameSetSize(SUI_PetRenameButton, 0.090, 0.030)
+    call BlzFrameSetText(SUI_PetRenameButton, "Rename")
+    call BlzFrameSetPoint(SUI_PetRenameButton, FRAMEPOINT_TOPLEFT, SUI_AbilitiesButton, FRAMEPOINT_TOPRIGHT, 0.006, 0.0)
+    call BlzTriggerRegisterFrameEvent(SUI_PetRenameTrigger, SUI_PetRenameButton, FRAMEEVENT_CONTROL_CLICK)
+    call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_PetRenameButton, FRAMEEVENT_CONTROL_CLICK)
+    call BlzFrameSetVisible(SUI_PetRenameButton, false)
+
     loop
         exitwhen summaryRow > SUI_SUMMARY_ROWS
         set summaryTopOffset = -0.132 - (I2R(summaryRow - 1) * 0.015)
@@ -1986,6 +2010,9 @@ public function Init takes nothing returns nothing
 
     set SUI_ProfessionsTrigger = CreateTrigger()
     call TriggerAddAction(SUI_ProfessionsTrigger, function SUI_ProfessionsAction)
+
+    set SUI_PetRenameTrigger = CreateTrigger()
+    call TriggerAddAction(SUI_PetRenameTrigger, function SUI_PetRenameAction)
 
     set SUI_MonitorTrigger = CreateTrigger()
     call TriggerAddAction(SUI_MonitorTrigger, function SUI_MonitorAction)
