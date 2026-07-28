@@ -2225,23 +2225,23 @@ function RemoveDInvItemChargesByType takes unit u, integer itemTypeId, integer a
     local boolean itemMatches = false
     
     // DEBUG: Track removals
-    call BJDebugMsg("RemoveDInvItemChargesByType called: itemType=" + I2S(itemTypeId) + " amount=" + I2S(amountToRemove))
+    //call BJDebugMsg("RemoveDInvItemChargesByType called: itemType=" + I2S(itemTypeId) + " amount=" + I2S(amountToRemove))
 
     if bid == -1 then
         // The unit does not have a valid inventory
-        call BJDebugMsg("  ERROR: Unit has no valid inventory (bid=-1)")
+        //call BJDebugMsg("  ERROR: Unit has no valid inventory (bid=-1)")
         return
     endif
 
     // PHASE 1: Remove from DInventory
-    call BJDebugMsg("  Phase 1: Checking DInventory")
+    //call BJDebugMsg("  Phase 1: Checking DInventory")
     loop
         exitwhen slotId >= maxCapacity or remainingToRemove <= 0 // Stop if all charges are removed or inventory is fully checked
         set it = DInventoryDB[bid].item[slotId]
         
         // Check if slot has an item
         if it == null then
-            call BJDebugMsg("  DInv Slot[" + I2S(slotId) + "] is null, skipping")
+            //call BJDebugMsg("  DInv Slot[" + I2S(slotId) + "] is null, skipping")
             set slotId = slotId + 1
         else
             // Get the item type and check if it matches
@@ -2249,43 +2249,43 @@ function RemoveDInvItemChargesByType takes unit u, integer itemTypeId, integer a
             set itemMatches = (currentItemType == itemTypeId)
             
             if itemMatches then
-                call BJDebugMsg("  DInv Slot[" + I2S(slotId) + "]: itemType=" + I2S(currentItemType) + " target=" + I2S(itemTypeId) + " match=1")
+                //call BJDebugMsg("  DInv Slot[" + I2S(slotId) + "]: itemType=" + I2S(currentItemType) + " target=" + I2S(itemTypeId) + " match=1")
             else
-                call BJDebugMsg("  DInv Slot[" + I2S(slotId) + "]: itemType=" + I2S(currentItemType) + " target=" + I2S(itemTypeId) + " match=0")
+                //call BJDebugMsg("  DInv Slot[" + I2S(slotId) + "]: itemType=" + I2S(currentItemType) + " target=" + I2S(itemTypeId) + " match=0")
             endif
             
             if itemMatches then
                 set charges = GetItemCharges(it)
-                call BJDebugMsg("    MATCH! charges=" + I2S(charges) + " remaining=" + I2S(remainingToRemove))
+                //call BJDebugMsg("    MATCH! charges=" + I2S(charges) + " remaining=" + I2S(remainingToRemove))
                 
                 // CRITICAL SAFETY CHECK: Verify types match before any deletion
                 if GetItemTypeId(it) != itemTypeId then
-                    call BJDebugMsg("      -> ERROR: Item type mismatch detected! currentType=" + I2S(GetItemTypeId(it)) + " expected=" + I2S(itemTypeId))
-                    call BJDebugMsg("      -> Skipping this item to prevent wrong item deletion!")
+                    //call BJDebugMsg("      -> ERROR: Item type mismatch detected! currentType=" + I2S(GetItemTypeId(it)) + " expected=" + I2S(itemTypeId))
+                    //call BJDebugMsg("      -> Skipping this item to prevent wrong item deletion!")
                     set slotId = slotId + 1
                 elseif charges <= 0 then
                     // Handle items with 0 charges (non-stackable items)
                     // Item has no charges (quest items, equipment) - treat as 1 item
-                    call BJDebugMsg("      -> Branch A: Deleting 0-charge item from DInv")
+                    //call BJDebugMsg("      -> Branch A: Deleting 0-charge item from DInv")
                     set remainingToRemove = remainingToRemove - 1
                     call DeleteBIDSlotIdItemFromDInventory(bid, slotId)
                     // Don't increment slotId - next item shifts into this slot
                 elseif charges > remainingToRemove then
                     // Item has more charges than we need to remove - partial removal
-                    call BJDebugMsg("      -> Branch B: Partial removal from DInv (" + I2S(charges) + " -> " + I2S(charges - remainingToRemove) + ")")
+                    //call BJDebugMsg("      -> Branch B: Partial removal from DInv (" + I2S(charges) + " -> " + I2S(charges - remainingToRemove) + ")")
                     call SetItemCharges(it, charges - remainingToRemove)
                     set remainingToRemove = 0
                     set slotId = slotId + 1
                 else
                     // Item has charges <= remaining amount - remove entire item
-                    call BJDebugMsg("      -> Branch C: Deleting item with " + I2S(charges) + " charges from DInv")
+                    //call BJDebugMsg("      -> Branch C: Deleting item with " + I2S(charges) + " charges from DInv")
                     set remainingToRemove = remainingToRemove - charges
                     call DeleteBIDSlotIdItemFromDInventory(bid, slotId)
                     // Don't increment slotId - next item shifts into this slot
                 endif
             else
                 // Item type doesn't match - skip this slot
-                call BJDebugMsg("    No match, skipping")
+                //call BJDebugMsg("    No match, skipping")
                 set slotId = slotId + 1
             endif
         endif
@@ -2293,65 +2293,65 @@ function RemoveDInvItemChargesByType takes unit u, integer itemTypeId, integer a
     
     // PHASE 2: If still need to remove more, check vanilla inventory
     if remainingToRemove > 0 then
-        call BJDebugMsg("  Phase 2: Still need to remove " + I2S(remainingToRemove) + ", checking vanilla inventory")
+       // call BJDebugMsg("  Phase 2: Still need to remove " + I2S(remainingToRemove) + ", checking vanilla inventory")
         
         loop
             exitwhen vanillaSlot >= vanillaInvSize or remainingToRemove <= 0
             set it = UnitItemInSlot(u, vanillaSlot)
             
             if it == null then
-                call BJDebugMsg("  Vanilla Slot[" + I2S(vanillaSlot) + "] is null, skipping")
+                //call BJDebugMsg("  Vanilla Slot[" + I2S(vanillaSlot) + "] is null, skipping")
                 set vanillaSlot = vanillaSlot + 1
             elseif IsItemStoredInDInv(it) then
-                call BJDebugMsg("  Vanilla Slot[" + I2S(vanillaSlot) + "] is still DInventory-managed, skipping duplicate count")
+                //call BJDebugMsg("  Vanilla Slot[" + I2S(vanillaSlot) + "] is still DInventory-managed, skipping duplicate count")
                 set vanillaSlot = vanillaSlot + 1
             else
                 set currentItemType = GetItemTypeId(it)
                 set itemMatches = (currentItemType == itemTypeId)
                 
                 if itemMatches then
-                    call BJDebugMsg("  Vanilla Slot[" + I2S(vanillaSlot) + "]: itemType=" + I2S(currentItemType) + " target=" + I2S(itemTypeId) + " match=1")
+                    //call BJDebugMsg("  Vanilla Slot[" + I2S(vanillaSlot) + "]: itemType=" + I2S(currentItemType) + " target=" + I2S(itemTypeId) + " match=1")
                 else
-                    call BJDebugMsg("  Vanilla Slot[" + I2S(vanillaSlot) + "]: itemType=" + I2S(currentItemType) + " target=" + I2S(itemTypeId) + " match=0")
+                    //call BJDebugMsg("  Vanilla Slot[" + I2S(vanillaSlot) + "]: itemType=" + I2S(currentItemType) + " target=" + I2S(itemTypeId) + " match=0")
                 endif
                 
                 if itemMatches then
                     set charges = GetItemCharges(it)
-                    call BJDebugMsg("    MATCH! charges=" + I2S(charges) + " remaining=" + I2S(remainingToRemove))
+                    //call BJDebugMsg("    MATCH! charges=" + I2S(charges) + " remaining=" + I2S(remainingToRemove))
                     
                     // CRITICAL SAFETY CHECK: Verify types match before any deletion
                     if GetItemTypeId(it) != itemTypeId then
-                        call BJDebugMsg("      -> ERROR: Item type mismatch in vanilla! currentType=" + I2S(GetItemTypeId(it)) + " expected=" + I2S(itemTypeId))
-                        call BJDebugMsg("      -> Skipping this item to prevent wrong item deletion!")
+                        //call BJDebugMsg("      -> ERROR: Item type mismatch in vanilla! currentType=" + I2S(GetItemTypeId(it)) + " expected=" + I2S(itemTypeId))
+                        //call BJDebugMsg("      -> Skipping this item to prevent wrong item deletion!")
                         set vanillaSlot = vanillaSlot + 1
                     elseif charges <= 0 then
                         // Item has no charges - treat as 1 item and remove completely
-                        call BJDebugMsg("      -> Branch A: Removing 0-charge item from vanilla inventory")
+                        //call BJDebugMsg("      -> Branch A: Removing 0-charge item from vanilla inventory")
                         set remainingToRemove = remainingToRemove - 1
                         call RemoveItem(it)
                         // Don't increment vanillaSlot - items shift down
                     elseif charges > remainingToRemove then
                         // Item has more charges than needed - partial removal
-                        call BJDebugMsg("      -> Branch B: Partial removal from vanilla (" + I2S(charges) + " -> " + I2S(charges - remainingToRemove) + ")")
+                        //call BJDebugMsg("      -> Branch B: Partial removal from vanilla (" + I2S(charges) + " -> " + I2S(charges - remainingToRemove) + ")")
                         call SetItemCharges(it, charges - remainingToRemove)
                         set remainingToRemove = 0
                         set vanillaSlot = vanillaSlot + 1
                     else
                         // Item has charges <= remaining - remove entire item
-                        call BJDebugMsg("      -> Branch C: Removing item with " + I2S(charges) + " charges from vanilla")
+                        //call BJDebugMsg("      -> Branch C: Removing item with " + I2S(charges) + " charges from vanilla")
                         set remainingToRemove = remainingToRemove - charges
                         call RemoveItem(it)
                         // Don't increment vanillaSlot - items shift down
                     endif
                 else
-                    call BJDebugMsg("    No match, skipping")
+                    //call BJDebugMsg("    No match, skipping")
                     set vanillaSlot = vanillaSlot + 1
                 endif
             endif
         endloop
     endif
     
-    call BJDebugMsg("RemoveDInvItemChargesByType finished: remainingToRemove=" + I2S(remainingToRemove))
+    //call BJDebugMsg("RemoveDInvItemChargesByType finished: remainingToRemove=" + I2S(remainingToRemove))
 endfunction
 
 
