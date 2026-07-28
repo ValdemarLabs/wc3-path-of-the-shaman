@@ -1141,12 +1141,26 @@ private function P_StartCrafterAnimationLoop takes integer jobId returns nothing
 endfunction
 
 private function P_StartFakeCast takes integer jobId, unit crafter returns nothing
+    local integer recipeId = P_JobRecipe[jobId]
+    local real craftTime = 0.00
+    local ability craftAbility
+
     if crafter == null then
         return
     endif
 
+    if P_IsRecipeValid(recipeId) then
+        set craftTime = P_RecipeCraftTime[recipeId]
+    endif
+
     set P_JobFakeCastAdded[jobId] = UnitAddAbility(crafter, P_CRAFT_FAKE_CAST_ABILITY)
+    set craftAbility = BlzGetUnitAbility(crafter, P_CRAFT_FAKE_CAST_ABILITY)
+    if craftAbility != null then
+        call BlzSetAbilityRealLevelField(craftAbility, ABILITY_RLF_CASTING_TIME, 0, craftTime)
+    endif
     call IssueTargetOrder(crafter, P_CRAFT_FAKE_CAST_ORDER, crafter)
+
+    set craftAbility = null
 endfunction
 
 private function P_FinishFakeCast takes integer jobId, unit crafter returns nothing
