@@ -18,6 +18,7 @@ library CreepRespawn initializer Init requires Table, TimerUtils, Events, UnitDe
     - Player(14) = Player 15 (Turquoise)
     - Player(15) = Player 16 (Violet)
     - Player(20) = Player 21 (Coal)
+    - Player(22) = Player 23 (Emerald) -> Neutral Passive
     - Player(PLAYER_NEUTRAL_AGGRESSIVE) = Neutral Hostile
     - Player(PLAYER_NEUTRAL_PASSIVE) = Neutral Passive
 */
@@ -179,6 +180,17 @@ private function SaveUnitPosition takes unit u returns nothing
     endif
 endfunction
 
+private function HasSavedUnitPosition takes unit u returns boolean
+    local integer id
+
+    if u == null or rhash == 0 then
+        return false
+    endif
+
+    set id = GetHandleId(u)
+    return rhash.real.has(id * 4 + 0) and rhash.real.has(id * 4 + 1) and rhash.real.has(id * 4 + 2) and rhash.has(id * 4 + 3)
+endfunction
+
 
 //===========================================================================
 // PUBLIC API
@@ -289,6 +301,12 @@ private function InitializeRespawnGroup takes nothing returns nothing
     // Player(20) = Player 21 (Coal)
     set tempGroup = CreateGroup()
     call GroupEnumUnitsOfPlayer(tempGroup, Player(20), null)
+    call BlzGroupAddGroupFast(tempGroup, RespawnGroup)
+    call DestroyGroup(tempGroup)
+
+    // Player(22) = Player 23 (Emerald) -> Neutral Passive
+    set tempGroup = CreateGroup()
+    call GroupEnumUnitsOfPlayer(tempGroup, Player(22), null)
     call BlzGroupAddGroupFast(tempGroup, RespawnGroup)
     call DestroyGroup(tempGroup)
     
@@ -432,6 +450,7 @@ private function OnUnitDeath takes nothing returns nothing
     local integer handleId
     local real savedX
     local real savedY
+    local boolean hasSavedPosition
 
     if dying == null then
         return
@@ -442,6 +461,7 @@ private function OnUnitDeath takes nothing returns nothing
     set handleId = GetHandleId(dying)
     set savedX = rhash.real[handleId * 4 + 0]
     set savedY = rhash.real[handleId * 4 + 1]
+    set hasSavedPosition = HasSavedUnitPosition(dying)
     
     if GetOwningPlayer(dying) == Player(22) and DEBUG_MODE then
         call BJDebugMsg("[CreepRespawn] Player 23 (Emerald) unit detected - converting to Neutral Passive for respawn")
@@ -449,7 +469,7 @@ private function OnUnitDeath takes nothing returns nothing
     
     if DEBUG_MODE then
         call BJDebugMsg("[CreepRespawn] Unit died: " + GetUnitName(dying) + " | Type: " + I2S(GetUnitTypeId(dying)) + " | Owner: Player " + I2S(playerId) + " | HandleID: " + I2S(handleId))
-        if savedX != 0.0 or savedY != 0.0 then
+        if hasSavedPosition then
             call BJDebugMsg("[CreepRespawn] Saved position: (" + R2S(savedX) + ", " + R2S(savedY) + ") | Has saved data: true")
         else
             call BJDebugMsg("[CreepRespawn] Saved position: (" + R2S(savedX) + ", " + R2S(savedY) + ") | Has saved data: false")
@@ -499,6 +519,12 @@ private function OnUnitDeath takes nothing returns nothing
     // Unit passed all checks, proceed with respawn logic
     if DEBUG_MODE then
         call BJDebugMsg("[CreepRespawn] Unit PASSED all checks - WILL RESPAWN")
+    endif
+    if not hasSavedPosition then
+        if DEBUG_MODE then
+            call BJDebugMsg("[CreepRespawn] No saved spawn data found; saving current death position before scheduling respawn")
+        endif
+        call SaveUnitPosition(dying)
     endif
     call ScheduleRespawn(dying)
     
