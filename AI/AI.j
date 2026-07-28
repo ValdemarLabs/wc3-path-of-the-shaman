@@ -308,6 +308,8 @@ globals
     private Table InstanceNextProfession = 0
     private Table InstanceProfessionFailCount = 0
     private Table InstanceProfessionBlockedUntil = 0
+    private Table InstanceIgnoredGatherUnit = 0
+    private Table InstanceIgnoredGatherItem = 0
     private Table InstanceNextCamp = 0
     private Table InstanceNextSocial = 0
     private Table InstanceSocialUntil = 0
@@ -522,6 +524,8 @@ private function EnsureState takes nothing returns nothing
         set InstanceNextProfession = Table.create()
         set InstanceProfessionFailCount = Table.create()
         set InstanceProfessionBlockedUntil = Table.create()
+        set InstanceIgnoredGatherUnit = Table.create()
+        set InstanceIgnoredGatherItem = Table.create()
         set InstanceNextCamp = Table.create()
         set InstanceNextSocial = Table.create()
         set InstanceSocialUntil = Table.create()
@@ -4606,7 +4610,99 @@ private function CanGatherProfession takes unit whichUnit, integer profileId, in
     if not HasProfileProfession(profileId, professionId) then
         return false
     endif
-    return GNS_GetSkill(whichUnit, professionId) >= requiredSkill
+    return GNS_GetEffectiveSkill(whichUnit, professionId) >= requiredSkill
+endfunction
+
+private function GetIgnoredGatherNodeKey takes integer instanceId, integer nodeHandleId returns integer
+    return StringHash(I2S(instanceId) + ":" + I2S(nodeHandleId))
+endfunction
+
+private function IsLowSkillIgnoredGatherUnit takes integer instanceId, unit whichUnit, unit node, integer professionId, integer requiredSkill returns boolean
+    local integer key
+
+    if instanceId <= 0 or whichUnit == null or node == null or professionId <= AI_PROFESSION_NONE then
+        return false
+    endif
+
+    call EnsureState()
+    set key = GetIgnoredGatherNodeKey(instanceId, GetHandleId(node))
+    if InstanceIgnoredGatherUnit.has(key) then
+        if not HasProfileProfession(InstanceProfile[instanceId], professionId) or GNS_GetEffectiveSkill(whichUnit, professionId) < requiredSkill then
+            return true
+        endif
+        call InstanceIgnoredGatherUnit.remove(key)
+    endif
+
+    return false
+endfunction
+
+private function IsLowSkillIgnoredGatherItem takes integer instanceId, unit whichUnit, item nodeItem, integer professionId, integer requiredSkill returns boolean
+    local integer key
+
+    if instanceId <= 0 or whichUnit == null or nodeItem == null or professionId <= AI_PROFESSION_NONE then
+        return false
+    endif
+
+    call EnsureState()
+    set key = GetIgnoredGatherNodeKey(instanceId, GetHandleId(nodeItem))
+    if InstanceIgnoredGatherItem.has(key) then
+        if not HasProfileProfession(InstanceProfile[instanceId], professionId) or GNS_GetEffectiveSkill(whichUnit, professionId) < requiredSkill then
+            return true
+        endif
+        call InstanceIgnoredGatherItem.remove(key)
+    endif
+
+    return false
+endfunction
+
+private function MarkLowSkillIgnoredGatherUnit takes integer instanceId, unit whichUnit, unit node, integer professionId, integer requiredSkill returns nothing
+    local integer key
+    local integer currentSkill
+
+    if instanceId <= 0 or whichUnit == null or node == null or professionId <= AI_PROFESSION_NONE then
+        return
+    endif
+
+    set currentSkill = GNS_GetEffectiveSkill(whichUnit, professionId)
+    if HasProfileProfession(InstanceProfile[instanceId], professionId) and currentSkill >= requiredSkill then
+        return
+    endif
+
+    call EnsureState()
+    set key = GetIgnoredGatherNodeKey(instanceId, GetHandleId(node))
+    if not InstanceIgnoredGatherUnit.has(key) then
+        if HasProfileProfession(InstanceProfile[instanceId], professionId) then
+            call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " ignores " + GN_GetGatherUnitName(node) + " until " + GNS_GetProfessionName(professionId) + " " + I2S(requiredSkill) + ".")
+        else
+            call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " ignores " + GN_GetGatherUnitName(node) + " because it does not know " + GNS_GetProfessionName(professionId) + ".")
+        endif
+    endif
+    set InstanceIgnoredGatherUnit[key] = requiredSkill
+endfunction
+
+private function MarkLowSkillIgnoredGatherItem takes integer instanceId, unit whichUnit, item nodeItem, integer professionId, integer requiredSkill returns nothing
+    local integer key
+    local integer currentSkill
+
+    if instanceId <= 0 or whichUnit == null or nodeItem == null or professionId <= AI_PROFESSION_NONE then
+        return
+    endif
+
+    set currentSkill = GNS_GetEffectiveSkill(whichUnit, professionId)
+    if HasProfileProfession(InstanceProfile[instanceId], professionId) and currentSkill >= requiredSkill then
+        return
+    endif
+
+    call EnsureState()
+    set key = GetIgnoredGatherNodeKey(instanceId, GetHandleId(nodeItem))
+    if not InstanceIgnoredGatherItem.has(key) then
+        if HasProfileProfession(InstanceProfile[instanceId], professionId) then
+            call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " ignores " + GN_GetGatherItemName(nodeItem) + " until " + GNS_GetProfessionName(professionId) + " " + I2S(requiredSkill) + ".")
+        else
+            call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " ignores " + GN_GetGatherItemName(nodeItem) + " because it does not know " + GNS_GetProfessionName(professionId) + ".")
+        endif
+    endif
+    set InstanceIgnoredGatherItem[key] = requiredSkill
 endfunction
 
 private function CanHoldGatherItem takes integer instanceId, unit whichUnit, integer professionId returns boolean
@@ -4707,7 +4803,7 @@ private function FindNearbyProfessionItem takes integer instanceId, unit whichUn
         if nodeItem != null and GN_IsGatherItem(nodeItem) then
             set professionId = GN_GetGatherItemProfessionId(nodeItem)
             set requiredSkill = GN_GetGatherItemSkillRequired(nodeItem)
-            if CanGatherProfession(whichUnit, profileId, professionId, requiredSkill) and CanHoldGatherItem(instanceId, whichUnit, professionId) then
+            if not IsLowSkillIgnoredGatherItem(instanceId, whichUnit, nodeItem, professionId, requiredSkill) and CanGatherProfession(whichUnit, profileId, professionId, requiredSkill) and CanHoldGatherItem(instanceId, whichUnit, professionId) then
                 set dx = GetItemX(nodeItem) - GetUnitX(whichUnit)
                 set dy = GetItemY(nodeItem) - GetUnitY(whichUnit)
                 set distance = dx * dx + dy * dy
@@ -4747,7 +4843,7 @@ private function FindNearbyProfessionUnit takes integer instanceId, unit whichUn
         if node != null and GN_IsGatherUnit(node) and IsAliveUnit(node) then
             set professionId = GN_GetGatherUnitProfessionId(node)
             set requiredSkill = GN_GetGatherUnitSkillRequired(node)
-            if professionId == AI_PROFESSION_MINING and CanGatherProfession(whichUnit, profileId, professionId, requiredSkill) and CanHoldGatherItem(instanceId, whichUnit, professionId) then
+            if professionId == AI_PROFESSION_MINING and not IsLowSkillIgnoredGatherUnit(instanceId, whichUnit, node, professionId, requiredSkill) and CanGatherProfession(whichUnit, profileId, professionId, requiredSkill) and CanHoldGatherItem(instanceId, whichUnit, professionId) then
                 set dx = GetUnitX(node) - GetUnitX(whichUnit)
                 set dy = GetUnitY(node) - GetUnitY(whichUnit)
                 set distance = dx * dx + dy * dy
@@ -4827,6 +4923,7 @@ private function BeginGatherItem takes integer instanceId, unit whichUnit, item 
     set requiredSkill = GN_GetGatherItemSkillRequired(nodeItem)
     set toolId = GetProfessionToolId(professionId)
     if not CanGatherProfession(whichUnit, InstanceProfile[instanceId], professionId, requiredSkill) then
+        call MarkLowSkillIgnoredGatherItem(instanceId, whichUnit, nodeItem, professionId, requiredSkill)
         call BackoffProfessionWork(instanceId, whichUnit, now, "profession skill too low")
         return false
     endif
@@ -4861,6 +4958,7 @@ private function BeginGatherUnit takes integer instanceId, unit whichUnit, unit 
     endif
     set requiredSkill = GN_GetGatherUnitSkillRequired(node)
     if not CanGatherProfession(whichUnit, InstanceProfile[instanceId], professionId, requiredSkill) then
+        call MarkLowSkillIgnoredGatherUnit(instanceId, whichUnit, node, professionId, requiredSkill)
         call BackoffProfessionWork(instanceId, whichUnit, now, "mining skill too low")
         return false
     endif
@@ -5095,6 +5193,7 @@ private function ShouldBlockAiGatherUnitAttack takes integer instanceId, unit at
     set professionId = GN_GetGatherUnitProfessionId(node)
     set requiredSkill = GN_GetGatherUnitSkillRequired(node)
     if not CanGatherProfession(attacker, InstanceProfile[instanceId], professionId, requiredSkill) then
+        call MarkLowSkillIgnoredGatherUnit(instanceId, attacker, node, professionId, requiredSkill)
         return true
     endif
     if not CanHoldGatherItem(instanceId, attacker, professionId) then
@@ -5116,6 +5215,7 @@ private function ShouldBlockAiGatherItemOrder takes integer instanceId, unit ord
     set professionId = GN_GetGatherItemProfessionId(nodeItem)
     set requiredSkill = GN_GetGatherItemSkillRequired(nodeItem)
     if not CanGatherProfession(ordered, InstanceProfile[instanceId], professionId, requiredSkill) then
+        call MarkLowSkillIgnoredGatherItem(instanceId, ordered, nodeItem, professionId, requiredSkill)
         return true
     endif
     if not CanHoldGatherItem(instanceId, ordered, professionId) then
