@@ -79,6 +79,13 @@ Table4D DEqSetDB
 // Stash
 Table DStash
 
+constant integer DINV_TRANSFER_RESULT_INVALID = 0
+constant integer DINV_TRANSFER_RESULT_DINV = 1
+constant integer DINV_TRANSFER_RESULT_VANILLA = 2
+constant integer DINV_TRANSFER_RESULT_NO_TARGET_INVENTORY = -1
+constant integer DINV_TRANSFER_RESULT_TARGET_FULL = -2
+boolean DInvSuppressEquipErrorMessages = FALSE
+
 endglobals
 
 
@@ -268,6 +275,10 @@ function CanNotEquipUnitMsg takes unit u, string msg returns nothing
 local integer p = -1
 local string soundKey = ""
 if u == null then
+set u = null
+return
+endif
+if DInvSuppressEquipErrorMessages == TRUE then
 set u = null
 return
 endif
@@ -2655,6 +2666,19 @@ endfunction
 
 
 
+function DInvRefreshOpenInventoryForBID takes integer bid returns nothing
+local integer pid = 0
+loop
+    if DInvCanPlayerUseInventoryFrames(pid) == TRUE and CurrentBID[pid] == bid then
+    call UnitDInventoryDBIntoDInventoryFrames(pid, bid)
+    endif
+set pid = pid + 1
+exitwhen pid > 23
+endloop
+endfunction
+
+
+
 function DInvDeltaAdditionalSlotsForUnit takes unit u, integer d returns nothing
 // You can use this function to increase or decrease the bag size of an individual hero if the DInventory paradigm is 1 Inventory Per Hero
 local integer bid = BIDOfUnit(u)
@@ -4123,6 +4147,110 @@ set it = null
 return targetSlot
 endfunction
 
+
+
+function DInvCanBIDReceiveItem takes item it, integer pid, integer bid returns boolean
+local integer stackSlot = -1
+local item stackItem = null
+local integer stackRoom = 0
+if it == null or bid < 1 then
+set it = null
+return FALSE
+endif
+if DInventoryIsItemStackable(it) == TRUE and PlayerStackingMode[pid] == 2 then
+set stackSlot = FirstStackableItemSlotOfBID(it, pid, bid)
+    if stackSlot > -1 then
+    set stackItem = DInventoryDB[bid].item[stackSlot]
+    set stackRoom = GetItemLevel(stackItem) - GetItemCharges(stackItem)
+        if stackRoom >= GetItemCharges(it) then
+        set it = null
+        set stackItem = null
+        return TRUE
+        endif
+    endif
+endif
+set stackItem = null
+if FirstFreeDInvSlotOfBID(pid, bid) > -1 then
+set it = null
+return TRUE
+endif
+set it = null
+return FALSE
+endfunction
+
+
+
+function DInvTransferStoredItemToUnit takes unit sourceUnit, integer sourceSlotId, unit targetUnit returns integer
+local integer sourcePid = -1
+local integer sourceBid = -1
+local integer sourceEqid = -1
+local integer targetPid = -1
+local integer targetBid = -1
+local integer targetEqid = -1
+local item it = null
+if sourceUnit == null or targetUnit == null or sourceUnit == targetUnit then
+set sourceUnit = null
+set targetUnit = null
+return DINV_TRANSFER_RESULT_INVALID
+endif
+set sourcePid = GetPlayerId(GetOwningPlayer(sourceUnit))
+set sourceBid = BIDOfUnit(sourceUnit)
+set sourceEqid = EQIDOfUnit(sourceUnit)
+if sourceBid < 1 or sourceEqid < 1 or sourceSlotId < 0 or sourceSlotId >= MaxBagCapacityOfBID(sourcePid, sourceBid) then
+set sourceUnit = null
+set targetUnit = null
+return DINV_TRANSFER_RESULT_INVALID
+endif
+set it = DInventoryDB[sourceBid].item[sourceSlotId]
+if it == null then
+set sourceUnit = null
+set targetUnit = null
+return DINV_TRANSFER_RESULT_INVALID
+endif
+set targetPid = GetPlayerId(GetOwningPlayer(targetUnit))
+set targetBid = BIDOfUnit(targetUnit)
+set targetEqid = EQIDOfUnit(targetUnit)
+if targetBid > 0 then
+    if DInvCanBIDReceiveItem(it, targetPid, targetBid) == FALSE then
+    set sourceUnit = null
+    set targetUnit = null
+    set it = null
+    return DINV_TRANSFER_RESULT_TARGET_FULL
+    endif
+call DeleteBIDSlotIdItemFromDInventory(sourceBid, sourceSlotId)
+call StoreItemForPIDBID(it, targetPid, targetBid, targetEqid)
+call DInvRefreshOpenInventoryForBID(sourceBid)
+call DInvRefreshOpenInventoryForBID(targetBid)
+set sourceUnit = null
+set targetUnit = null
+set it = null
+return DINV_TRANSFER_RESULT_DINV
+endif
+if UnitInventorySize(targetUnit) <= 0 then
+set sourceUnit = null
+set targetUnit = null
+set it = null
+return DINV_TRANSFER_RESULT_NO_TARGET_INVENTORY
+endif
+if IsVanillaInventoryFull(targetUnit) == TRUE then
+set sourceUnit = null
+set targetUnit = null
+set it = null
+return DINV_TRANSFER_RESULT_TARGET_FULL
+endif
+call DeleteBIDSlotIdItemFromDInventory(sourceBid, sourceSlotId)
+call SetItemVisible(it, TRUE)
+call ItemLoot_RegisterCustomDropTextItem(it)
+call UnitAddItem(targetUnit, it)
+call DInvRefreshOpenInventoryForBID(sourceBid)
+set sourceUnit = null
+set targetUnit = null
+set it = null
+return DINV_TRANSFER_RESULT_VANILLA
+endfunction
+
+
+
 function DInvMoveVanillaItemToDInventory takes unit u, item it returns boolean
 local integer pid = -1
 local integer bid = -1
@@ -5321,6 +5449,138 @@ call UpdateDEqCSheet(pid, u, uhndl, eqid)
 set it = null
 set u = null
 return TRUE
+endfunction
+
+
+
+function DInvGetEquipmentItemScore takes item it returns integer
+local integer result = -1
+if it == null then
+set it = null
+return result
+endif
+set result = DEqGetItemLevelOfItem(it)
+if result <= 0 then
+set result = GetItemLevel(it)
+endif
+set it = null
+return result
+endfunction
+
+
+
+function DInvIsEquipmentCandidateForSlot takes unit u, item it, integer deqslot returns boolean
+local integer iid = 0
+if u == null or it == null then
+set u = null
+set it = null
+return FALSE
+endif
+set iid = GetItemTypeId(it)
+if DEqItemTypeDefinitionDB[iid][9].integer[deqslot] > 0 then
+set u = null
+set it = null
+return TRUE
+endif
+if deqslot == 20 and DEqItemTypeDefinitionDB[iid][9].integer[19] > 0 and GetUnitAbilityLevel(u, 'DQDW') > 0 then
+set u = null
+set it = null
+return TRUE
+endif
+set u = null
+set it = null
+return FALSE
+endfunction
+
+
+
+function DInvTryEquipBestStoredEquipmentForUnit takes unit u returns boolean
+local integer pid = -1
+local integer bid = -1
+local integer eqid = -1
+local integer uhndl = 0
+local integer capacity = 0
+local integer slotId = 0
+local integer deqslot = 1
+local integer bestSlotId = -1
+local integer bestDEqSlot = -1
+local integer score = -1
+local integer equippedScore = -1
+local integer bestScore = -1
+local boolean canEquip = FALSE
+local item it = null
+local item equipped = null
+if u == null then
+set u = null
+return FALSE
+endif
+set pid = GetPlayerId(GetOwningPlayer(u))
+set bid = BIDOfUnit(u)
+set eqid = EQIDOfUnit(u)
+set uhndl = GetHandleId(u)
+if bid < 1 or eqid < 1 or EQIDDB[eqid][0].integer[0] != 1 then
+set u = null
+return FALSE
+endif
+set capacity = MaxBagCapacityOfBID(pid, bid)
+loop
+    exitwhen slotId >= capacity
+    set it = DInventoryDB[bid].item[slotId]
+    if it != null and IsItemDEquipment(it) == TRUE then
+    set score = DInvGetEquipmentItemScore(it)
+    set deqslot = 1
+        loop
+        exitwhen deqslot > HighestSlotNumber
+            if DInvIsEquipmentCandidateForSlot(u, it, deqslot) == TRUE then
+            set equipped = EQIDDB[eqid][4].item[deqslot]
+            set equippedScore = DInvGetEquipmentItemScore(equipped)
+                if score > equippedScore and score > bestScore then
+                set DInvSuppressEquipErrorMessages = TRUE
+                set canEquip = DEqCanUnitEquipItemInSlot(u, it, deqslot)
+                set DInvSuppressEquipErrorMessages = FALSE
+                    if canEquip == TRUE then
+                    set bestScore = score
+                    set bestSlotId = slotId
+                    set bestDEqSlot = deqslot
+                    endif
+                endif
+                if DInvSuppressEquipErrorMessages == TRUE then
+                set DInvSuppressEquipErrorMessages = FALSE
+                endif
+            endif
+        set deqslot = deqslot + 1
+        endloop
+    endif
+set slotId = slotId + 1
+endloop
+if bestSlotId > -1 and bestDEqSlot > -1 then
+set it = DInventoryDB[bid].item[bestSlotId]
+set equipped = EQIDDB[eqid][4].item[bestDEqSlot]
+    if equipped != null then
+        if FirstFreeDInvSlotOfBID(pid, bid) == -1 then
+        set u = null
+        set it = null
+        set equipped = null
+        return FALSE
+        endif
+        if UnequipDEqItemToDInvSlot(pid, bid, eqid, u, uhndl, equipped, FirstFreeDInvSlotOfBID(pid, bid), bestDEqSlot) == FALSE then
+        set u = null
+        set it = null
+        set equipped = null
+        return FALSE
+        endif
+    endif
+    if EquipDInvItemToDEqSlot(pid, bid, eqid, u, uhndl, it, bestSlotId, bestDEqSlot) == TRUE then
+    set u = null
+    set it = null
+    set equipped = null
+    return TRUE
+    endif
+endif
+set u = null
+set it = null
+set equipped = null
+return FALSE
 endfunction
 
 

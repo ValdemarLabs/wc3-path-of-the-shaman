@@ -158,6 +158,8 @@ globals
     private constant real AI_DEFAULT_THINK_MAX = 1.20
     private constant real AI_DEFAULT_REVIVE_DELAY = 60.00
     private constant real AI_DEFAULT_ABILITY_GAP = 2.00
+    private constant real AI_EQUIPMENT_CHECK_MIN = 6.00
+    private constant real AI_EQUIPMENT_CHECK_MAX = 14.00
     private constant real AI_ABILITY_ORDER_JITTER = 0.35
     private constant real AI_RETREAT_COMBAT_TIME = 5.00
     private constant real AI_RETREAT_BASE_TIME = 30.00
@@ -301,6 +303,7 @@ globals
     private Table InstanceNextThink = 0
     private Table InstanceNextAbility = 0
     private Table InstanceNextItem = 0
+    private Table InstanceNextEquipment = 0
     private Table InstanceNextPickup = 0
     private Table InstanceNextChat = 0
     private Table InstanceNextBark = 0
@@ -517,6 +520,7 @@ private function EnsureState takes nothing returns nothing
         set InstanceNextThink = Table.create()
         set InstanceNextAbility = Table.create()
         set InstanceNextItem = Table.create()
+        set InstanceNextEquipment = Table.create()
         set InstanceNextPickup = Table.create()
         set InstanceNextChat = Table.create()
         set InstanceNextBark = Table.create()
@@ -3180,6 +3184,7 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
     set InstanceNextThink.real[instanceId] = GetNow() + GetRandomReal(0.00, AI_DEFAULT_THINK_MAX)
     set InstanceNextAbility.real[instanceId] = GetNow() + GetRandomReal(0.00, AI_DEFAULT_ABILITY_GAP)
     set InstanceNextItem.real[instanceId] = GetNow() + GetRandomReal(1.00, 3.00)
+    set InstanceNextEquipment.real[instanceId] = GetNow() + GetRandomReal(2.00, 8.00)
     set InstanceNextPickup.real[instanceId] = GetNow() + GetRandomReal(AI_COMPANION_PICKUP_MIN_DELAY, AI_COMPANION_PICKUP_MAX_DELAY)
     set InstanceNextShop.real[instanceId] = GetNow() + GetRandomReal(AI_SHOP_CHECK_MIN, AI_SHOP_CHECK_MAX)
     set InstanceNextProfession.real[instanceId] = GetNow() + GetRandomReal(4.00, 12.00)
@@ -3298,6 +3303,7 @@ public function UnregisterUnit takes unit whichUnit returns nothing
     call InstanceNextThink.remove(instanceId)
     call InstanceNextAbility.remove(instanceId)
     call InstanceNextItem.remove(instanceId)
+    call InstanceNextEquipment.remove(instanceId)
     call InstanceNextPickup.remove(instanceId)
     call InstanceNextChat.remove(instanceId)
     call InstanceNextShop.remove(instanceId)
@@ -5879,6 +5885,17 @@ private function ShouldHoldReservedProfessionJob takes integer instanceId, unit 
     return true
 endfunction
 
+private function TryEquipStoredEquipmentForInstance takes integer instanceId, unit whichUnit, real now returns nothing
+    if instanceId <= 0 or whichUnit == null or now < InstanceNextEquipment.real[instanceId] then
+        return
+    endif
+    if DInvTryEquipBestStoredEquipmentForUnit(whichUnit) then
+        set InstanceNextEquipment.real[instanceId] = now + GetRandomReal(AI_EQUIPMENT_CHECK_MIN, AI_EQUIPMENT_CHECK_MAX)
+    else
+        set InstanceNextEquipment.real[instanceId] = now + GetRandomReal(AI_EQUIPMENT_CHECK_MAX, AI_EQUIPMENT_CHECK_MAX + 8.00)
+    endif
+endfunction
+
 private function ProcessInstance takes integer instanceId, real now returns nothing
     local unit whichUnit = InstanceUnit.unit[instanceId]
     local boolean companionControlled
@@ -5939,6 +5956,7 @@ private function ProcessInstance takes integer instanceId, real now returns noth
                 set InstanceNextItem.real[instanceId] = now + 2.00 + GetRandomReal(0.10, 0.80)
             endif
         endif
+        call TryEquipStoredEquipmentForInstance(instanceId, whichUnit, now)
         if TryStartCompanionChatAction(instanceId, whichUnit, now) then
             set whichUnit = null
             return
@@ -6049,6 +6067,7 @@ private function ProcessInstance takes integer instanceId, real now returns noth
             set InstanceNextItem.real[instanceId] = now + 2.00 + GetRandomReal(0.10, 0.80)
         endif
     endif
+    call TryEquipStoredEquipmentForInstance(instanceId, whichUnit, now)
 
     if now >= InstanceNextPickup.real[instanceId] and not IsCastingLocked(whichUnit) and TryStartPickupAction(instanceId, whichUnit, now) then
         set whichUnit = null
