@@ -7,7 +7,8 @@
     Description:
     Delayed elemental channel summons converted from GUI. Summoned elementals
     are controlled companions, gain Intelligence scaling, and do not consume
-    normal companion party slots.
+    normal companion party slots. Rank 5 Summon Elemental creates Greater
+    variants with stronger summoner scaling and fixed elemental stat bonuses.
 
     Credits:
     - Old GUI "Summon Elemental" triggers
@@ -24,6 +25,11 @@ globals
     private constant real SUMMON_OFFSET = 120.00
     private constant real AI_PERIOD = 1.25
     private constant real AI_SEARCH_RADIUS = 750.00
+    private constant real ELEMENTAL_INTELLIGENCE_LIFE_SCALE = 6.00
+    private constant real ELEMENTAL_INTELLIGENCE_DAMAGE_SCALE = 0.45
+    private constant real GREATER_ELEMENTAL_SUMMONER_STAT_MULTIPLIER = 1.50
+
+    private constant integer GREATER_SUMMON_RANK = 5
 
     private constant integer ABILITY_AIR_LIGHTNING_SHIELD = 'ACls'
     private constant integer ABILITY_AIR_CHAIN_LIGHTNING = 'ACcl'
@@ -41,6 +47,7 @@ globals
     private Table PendingTimerBySlot = 0
     private Table PendingSlotByTimer = 0
     private Table PendingUnitTypeByTimer = 0
+    private Table PendingRankByTimer = 0
     private group AiEnumGroup = null
     private timer AiTimer = null
 endglobals
@@ -52,6 +59,7 @@ private function EnsureState takes nothing returns nothing
         set PendingTimerBySlot = Table.create()
         set PendingSlotByTimer = Table.create()
         set PendingUnitTypeByTimer = Table.create()
+        set PendingRankByTimer = Table.create()
     endif
     if AiEnumGroup == null then
         set AiEnumGroup = CreateGroup()
@@ -78,6 +86,7 @@ private function ClearPendingTimer takes integer heroSlot returns nothing
         set timerId = GetHandleId(pending)
         call PendingSlotByTimer.integer.remove(timerId)
         call PendingUnitTypeByTimer.integer.remove(timerId)
+        call PendingRankByTimer.integer.remove(timerId)
         call DestroyTimer(pending)
         call PendingTimerBySlot.timer.remove(heroSlot)
     endif
@@ -111,20 +120,54 @@ private function KillActiveElemental takes integer heroSlot returns nothing
     set elemental = null
 endfunction
 
-private function ApplyElementalTalent takes unit hero, unit elemental returns nothing
+private function ApplyGreaterElementalBonuses takes unit elemental, integer unitTypeId returns nothing
+    local integer customValue
+    if elemental == null then
+        return
+    endif
+    call BlzSetUnitName(elemental, "Greater " + GetUnitName(elemental))
+    set customValue = GetUnitUserData(elemental)
+    if customValue <= 0 then
+        return
+    endif
+    if unitTypeId == ShamanCommon_UNIT_FIRE_ELEMENTAL or unitTypeId == ShamanCommon_UNIT_WATER_ELEMENTAL then
+        set udg_Stats_SpellPowerPct[customValue] = udg_Stats_SpellPowerPct[customValue] + 25
+        set udg_Stats_Crit[customValue] = udg_Stats_Crit[customValue] + 10
+    elseif unitTypeId == ShamanCommon_UNIT_EARTH_ELEMENTAL then
+        set udg_Stats_Block[customValue] = udg_Stats_Block[customValue] + 25
+        set udg_Stats_Hit[customValue] = udg_Stats_Hit[customValue] + 10
+    elseif unitTypeId == ShamanCommon_UNIT_AIR_ELEMENTAL then
+        set udg_Stats_Dodge[customValue] = udg_Stats_Dodge[customValue] + 20
+        set udg_Stats_Crit[customValue] = udg_Stats_Crit[customValue] + 10
+        set udg_Stats_SpellPowerPct[customValue] = udg_Stats_SpellPowerPct[customValue] + 15
+    endif
+endfunction
+
+private function ApplyElementalTalent takes unit hero, unit elemental, integer unitTypeId, integer summonRank returns nothing
     local integer bonus = ShamanCommon_GetSpecialBonusValue(hero, ShamanCommon_ABILITY_SUMMON_ELEMENTAL)
     local real intelligence = ShamanCommon_GetStat(hero, ShamanCommon_STAT_INTELLIGENCE)
     local real talentMultiplier = 1.00 + I2R(bonus) * 0.10
+    local real summonerStatMultiplier = 1.00
+    local real lifeBonus
+    local real damageBonus
     local integer maxLife
     local integer damage
     if elemental == null then
         return
     endif
+    if summonRank >= GREATER_SUMMON_RANK then
+        set summonerStatMultiplier = GREATER_ELEMENTAL_SUMMONER_STAT_MULTIPLIER
+    endif
     set maxLife = BlzGetUnitMaxHP(elemental)
     set damage = BlzGetUnitBaseDamage(elemental, 0)
-    call BlzSetUnitMaxHP(elemental, R2I(I2R(maxLife) * talentMultiplier + intelligence * 6.00))
+    set lifeBonus = intelligence * ELEMENTAL_INTELLIGENCE_LIFE_SCALE * summonerStatMultiplier
+    set damageBonus = intelligence * ELEMENTAL_INTELLIGENCE_DAMAGE_SCALE * summonerStatMultiplier
+    call BlzSetUnitMaxHP(elemental, R2I(I2R(maxLife) * talentMultiplier + lifeBonus))
     call SetUnitState(elemental, UNIT_STATE_LIFE, GetUnitState(elemental, UNIT_STATE_MAX_LIFE))
-    call BlzSetUnitBaseDamage(elemental, R2I(I2R(damage) * talentMultiplier + intelligence * 0.45), 0)
+    call BlzSetUnitBaseDamage(elemental, R2I(I2R(damage) * talentMultiplier + damageBonus), 0)
+    if summonRank >= GREATER_SUMMON_RANK then
+        call ApplyGreaterElementalBonuses(elemental, unitTypeId)
+    endif
 endfunction
 
 private function IsCasting takes unit elemental returns boolean
@@ -301,12 +344,14 @@ private function SpawnPendingElemental takes nothing returns nothing
     local integer timerId = GetHandleId(expired)
     local integer heroSlot = PendingSlotByTimer.integer[timerId]
     local integer unitTypeId = PendingUnitTypeByTimer.integer[timerId]
+    local integer summonRank = PendingRankByTimer.integer[timerId]
     local unit hero = ShamanCommon_GetHeroBySlot(heroSlot)
     local unit elemental
     local real x
     local real y
     call PendingSlotByTimer.integer.remove(timerId)
     call PendingUnitTypeByTimer.integer.remove(timerId)
+    call PendingRankByTimer.integer.remove(timerId)
     call PendingTimerBySlot.timer.remove(heroSlot)
     call DestroyTimer(expired)
     if ShamanCommon_IsAlive(hero) and unitTypeId != 0 then
@@ -314,7 +359,7 @@ private function SpawnPendingElemental takes nothing returns nothing
         set y = ShamanCommon_PolarY(GetUnitY(hero), SUMMON_OFFSET, GetUnitFacing(hero))
         set elemental = CreateUnit(GetOwningPlayer(hero), unitTypeId, x, y, GetUnitFacing(hero))
         call SetUnitOwner(elemental, Player(ShamanCommon_COMPANION_OWNER_PLAYER_INDEX), false)
-        call ApplyElementalTalent(hero, elemental)
+        call ApplyElementalTalent(hero, elemental, unitTypeId, summonRank)
         set ElementalBySlot.unit[heroSlot] = elemental
         set ElementalSlotByHandle.integer[GetHandleId(elemental)] = heroSlot
         call Companions_RegisterControlled(elemental, hero, COMPANION_MODE_DEFEND)
@@ -326,6 +371,8 @@ endfunction
 
 private function ScheduleSummon takes unit caster, integer unitTypeId returns nothing
     local integer heroSlot = ShamanCommon_GetHeroSlot(caster)
+    local integer summonRank = ShamanCommon_GetAbilityRank(caster, ShamanCommon_ABILITY_SUMMON_ELEMENTAL)
+    local integer timerId
     local timer pending
     if heroSlot == ShamanCommon_HERO_SLOT_NONE or unitTypeId == 0 then
         return
@@ -335,8 +382,10 @@ private function ScheduleSummon takes unit caster, integer unitTypeId returns no
     call KillActiveElemental(heroSlot)
     set pending = CreateTimer()
     set PendingTimerBySlot.timer[heroSlot] = pending
-    set PendingSlotByTimer.integer[GetHandleId(pending)] = heroSlot
-    set PendingUnitTypeByTimer.integer[GetHandleId(pending)] = unitTypeId
+    set timerId = GetHandleId(pending)
+    set PendingSlotByTimer.integer[timerId] = heroSlot
+    set PendingUnitTypeByTimer.integer[timerId] = unitTypeId
+    set PendingRankByTimer.integer[timerId] = summonRank
     call TimerStart(pending, SUMMON_DELAY, false, function SpawnPendingElemental)
     set pending = null
 endfunction
