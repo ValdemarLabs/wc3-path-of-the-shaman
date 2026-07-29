@@ -102,6 +102,10 @@ globals
     private timer LumberPeonHarvestTimer = null
     private timer ProtectOutpostSecondWaveTimer = null
     private timer ProtectOutpostCompletionTimer = null
+    private timer ProtectOutpostIntroCameraAssistTimer = null
+    private timer ProtectOutpostIntroCameraReturnTimer = null
+    private timer ProtectOutpostCompletionDelayTimer = null
+    private timer ProtectOutpostLetterDelayTimer = null
     private trigger KoboldChestDeathTrigger = null
     private trigger LumberPeonDeathTrigger = null
     private trigger LumberPeonOrderTrigger = null
@@ -212,7 +216,7 @@ private function RestoreBaseRequirements takes QuestData q returns nothing
     elseif q.name == QUEST_PROTECT_OUTPOST then
         call SetRagnoQuestBaseRequirements(q, "Protect the mountain outpost from the gnoll attack", "", "", "")
     elseif q.name == QUEST_GIVING_LETTER then
-        call SetRagnoQuestBaseRequirements(q, "Bring the blood signed letter to Chieftain Thork", "", "", "")
+        call SetRagnoQuestBaseRequirements(q, "Take the Blood Signed Summon Letter to Chieftain Thork", "", "", "")
     endif
 endfunction
 
@@ -313,7 +317,7 @@ private function UnlockGivingLetterInternal takes nothing returns nothing
     set q = GetRagnoQuest(QUEST_GIVING_LETTER)
     if q != 0 and not q.completed then
         call QuestGiver_GiveUniqueQuestItemToHero(Nazgrek, ITEM_BLOOD_SIGNED_LETTER, 0, "Blood Signed Summon Letter")
-        call QuestGiver_RefreshItemRequirementsForQuest(q.id)
+        call q.setState(QUEST_STATE_READY_TURNIN)
     endif
 
     set q = 0
@@ -822,6 +826,18 @@ private function EnsureProtectOutpostRuntime takes nothing returns nothing
     if ProtectOutpostCompletionTimer == null then
         set ProtectOutpostCompletionTimer = CreateTimer()
     endif
+    if ProtectOutpostIntroCameraAssistTimer == null then
+        set ProtectOutpostIntroCameraAssistTimer = CreateTimer()
+    endif
+    if ProtectOutpostIntroCameraReturnTimer == null then
+        set ProtectOutpostIntroCameraReturnTimer = CreateTimer()
+    endif
+    if ProtectOutpostCompletionDelayTimer == null then
+        set ProtectOutpostCompletionDelayTimer = CreateTimer()
+    endif
+    if ProtectOutpostLetterDelayTimer == null then
+        set ProtectOutpostLetterDelayTimer = CreateTimer()
+    endif
 endfunction
 
 private function IsProtectOutpostQuestOpen takes nothing returns boolean
@@ -925,6 +941,120 @@ private function SpawnProtectOutpostSecondWave takes nothing returns nothing
     set ProtectOutpostSecondWaveSpawned = true
 endfunction
 
+private function OnProtectOutpostIntroCameraAssist takes nothing returns nothing
+    call CameraSetupApplyForPlayer(true, gg_cam_ProtectOutpost02, Player(0), 0.00)
+    call IssuePointOrder(Ragno, "attack", GetRectCenterX(gg_rct_HordeMountaintCampAssist), GetRectCenterY(gg_rct_HordeMountaintCampAssist))
+    call IssuePointOrder(gg_unit_ogru_1633, "attack", GetRectCenterX(gg_rct_HordeMountaintCampAssist), GetRectCenterY(gg_rct_HordeMountaintCampAssist))
+    call IssuePointOrder(gg_unit_orai_1221, "attack", GetRectCenterX(gg_rct_HordeMountaintCampAssist), GetRectCenterY(gg_rct_HordeMountaintCampAssist))
+endfunction
+
+private function OnProtectOutpostIntroCameraReturn takes nothing returns nothing
+    call CameraSetupApplyForPlayer(true, gg_cam_ProtectOutpost01, Player(0), 0.00)
+endfunction
+
+private function OnProtectOutpostIntroCinematicStart takes nothing returns nothing
+    call DialogInteraction_BeginCinematicSequence(CINEMATIC)
+    call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUTIN, 2.00, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+    call CameraSetupApplyForPlayer(true, gg_cam_ProtectOutpost01, Player(0), 0.00)
+    call TimerStart(ProtectOutpostIntroCameraAssistTimer, 5.00, false, function OnProtectOutpostIntroCameraAssist)
+    call TimerStart(ProtectOutpostIntroCameraReturnTimer, 8.00, false, function OnProtectOutpostIntroCameraReturn)
+endfunction
+
+private function OnProtectOutpostIntroCinematicEnd takes nothing returns nothing
+    call PauseTimer(ProtectOutpostIntroCameraAssistTimer)
+    call PauseTimer(ProtectOutpostIntroCameraReturnTimer)
+    call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUTIN, 0.50, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+    call CameraSetupApplyForPlayer(true, gg_cam_ProtectOutpostSkipped, Player(0), 0.00)
+    call DialogInteraction_EndCinematicSequence(CINEMATIC)
+    if DialogInteraction_IsUnitAlive(Nazgrek) then
+        call IssuePointOrder(Nazgrek, "attack", GetRectCenterX(gg_rct_GnollAttackRegion2), GetRectCenterY(gg_rct_GnollAttackRegion2))
+    endif
+endfunction
+
+private function PlayProtectOutpostIntroCinematic takes nothing returns nothing
+    local integer seq = DialogInteraction_CreateBaseSequence(Nazgrek, "Nazgrek")
+
+    call DialogSystem_SetSequenceCallbacks(seq, function OnProtectOutpostIntroCinematicStart, function OnProtectOutpostIntroCinematicEnd)
+    call DialogSystem_AddDelay(seq, 2.00)
+    call DialogSystem_AddLine(seq, gg_unit_ogru_1209, "Grunt", "The gnolls are attacking the outpost!", "OrcGrunt_0012", true)
+    call DialogSystem_AddLine(seq, gg_unit_ogru_1210, "Grunt", "They are too many! We need aid!", "OrcGrunt_0013", true)
+    call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0057_TEXT, VL_NAZGREK_0057_KEY, true)
+    call DialogSystem_PlaySequence(seq, Player(0), Nazgrek)
+endfunction
+
+private function GetProtectOutpostSurvivingGrunt takes nothing returns unit
+    if DialogInteraction_IsUnitAlive(gg_unit_ogru_1210) then
+        return gg_unit_ogru_1210
+    endif
+    if DialogInteraction_IsUnitAlive(gg_unit_ogru_1209) then
+        return gg_unit_ogru_1209
+    endif
+    return null
+endfunction
+
+private function OnProtectOutpostLetterDelay takes nothing returns nothing
+    call UnlockGivingLetterInternal()
+    call RefreshRagnoAvailabilityInternal()
+endfunction
+
+private function OnProtectOutpostCompletionCinematicStart takes nothing returns nothing
+    call DialogInteraction_BeginCinematicSequence(CINEMATIC)
+    call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUTIN, 2.00, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+    call CameraSetupApplyForPlayer(true, gg_cam_ProtectOutpost03, Player(0), 0.00)
+    if DialogInteraction_IsUnitAlive(Nazgrek) then
+        call SetUnitPosition(Nazgrek, GetRectCenterX(gg_rct_RagnoIntroNazgrek), GetRectCenterY(gg_rct_RagnoIntroNazgrek))
+        call SetUnitFacing(Nazgrek, 73.00)
+    endif
+    if DialogInteraction_IsUnitAlive(Ragno) then
+        call SetUnitPosition(Ragno, GetRectCenterX(gg_rct_RagnoPoint), GetRectCenterY(gg_rct_RagnoPoint))
+        call SetUnitFacing(Ragno, 73.00)
+    endif
+endfunction
+
+private function OnProtectOutpostCompletionCinematicEnd takes nothing returns nothing
+    call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUTIN, 0.50, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+    call CameraSetupApplyForPlayer(true, gg_cam_ProtectOutpostSkipped02, Player(0), 0.00)
+    call ResetToGameCameraForPlayer(Player(0), 0.00)
+    call DialogInteraction_EndCinematicSequence(CINEMATIC)
+    call UnhideProtectOutpostPreplacedGnolls()
+    if DialogInteraction_IsUnitAlive(Ragno) then
+        call IssuePointOrder(Ragno, "move", GetRectCenterX(gg_rct_RagnoIntroRagno2), GetRectCenterY(gg_rct_RagnoIntroRagno2))
+    endif
+    call TimerStart(ProtectOutpostLetterDelayTimer, 2.00, false, function OnProtectOutpostLetterDelay)
+endfunction
+
+private function PlayProtectOutpostCompletionCinematic takes nothing returns nothing
+    local unit grunt = GetProtectOutpostSurvivingGrunt()
+    local integer seq = DialogInteraction_CreateBaseSequence(Ragno, "Ragno")
+
+    call DialogSystem_SetSequenceCallbacks(seq, function OnProtectOutpostCompletionCinematicStart, function OnProtectOutpostCompletionCinematicEnd)
+    call DialogSystem_AddDelay(seq, 2.00)
+    if grunt != null then
+        call DialogSystem_AddMakeFaceEachOther(seq, Nazgrek, grunt, 1.00, 0.00)
+        call DialogSystem_AddLine(seq, grunt, "Grunt", "Thank you, shaman! We would not have held without you.", "OrcGrunt_0014", true)
+        call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0058_TEXT, VL_NAZGREK_0058_KEY, true)
+        call DialogSystem_AddDelay(seq, 1.00)
+    endif
+    call DialogSystem_AddMakeFaceEachOther(seq, Ragno, Nazgrek, 1.00, 0.00)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Hey you! You must be Nazgrek.", "OrcGrunt_0015", true)
+    call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0059_TEXT, VL_NAZGREK_0059_KEY, true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Wait! I knew you looked familiar.", "OrcGrunt_0016", true)
+    call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0060_TEXT, VL_NAZGREK_0060_KEY, true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Your days at exile may be over.", "OrcGrunt_0017", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "The war chief has issued a summons.", "OrcGrunt_0005", true)
+    call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0061_TEXT, VL_NAZGREK_0061_KEY, true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "If you accept his summons, take this blood signed letter to Chieftain Thork.", "OrcGrunt_0006", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "He would not summon you unless the Horde had need of you.", "OrcGrunt_0007", true)
+    call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0062_TEXT, VL_NAZGREK_0062_KEY, true)
+    call DialogSystem_PlaySequence(seq, Player(0), Ragno)
+
+    set grunt = null
+endfunction
+
+private function OnProtectOutpostCompletionDelay takes nothing returns nothing
+    call PlayProtectOutpostCompletionCinematic()
+endfunction
+
 private function CompleteProtectOutpost takes nothing returns nothing
     local QuestData q = GetRagnoQuest(QUEST_PROTECT_OUTPOST)
 
@@ -933,7 +1063,6 @@ private function CompleteProtectOutpost takes nothing returns nothing
     endif
     set ProtectOutpostCompleted = true
     set MountainDefenseActive = false
-    call UnhideProtectOutpostPreplacedGnolls()
 
     if q != 0 and not q.completed then
         if not q.active then
@@ -942,8 +1071,8 @@ private function CompleteProtectOutpost takes nothing returns nothing
         call q.markRequirementCompleted(1, true)
         call QuestGiver_CompleteQuestByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno)
     endif
-    call UnlockGivingLetterInternal()
     call RefreshRagnoAvailabilityInternal()
+    call TimerStart(ProtectOutpostCompletionDelayTimer, 6.00, false, function OnProtectOutpostCompletionDelay)
 
     set q = 0
 endfunction
@@ -987,10 +1116,7 @@ private function StartProtectOutpostEncounter takes nothing returns nothing
     endif
 
     call SpawnProtectOutpostFirstWave()
-    if DialogInteraction_IsUnitAlive(Nazgrek) then
-        call DialogSystem_QueueFieldLine(Nazgrek, "Nazgrek", VL_NAZGREK_0057_KEY, VL_NAZGREK_0057_TEXT)
-        call IssuePointOrder(Nazgrek, "attack", GetRectCenterX(gg_rct_GnollAttackRegion2), GetRectCenterY(gg_rct_GnollAttackRegion2))
-    endif
+    call PlayProtectOutpostIntroCinematic()
     call TimerStart(ProtectOutpostSecondWaveTimer, 20.00, false, function OnProtectOutpostSecondWaveTimer)
 
     set q = 0
@@ -1310,7 +1436,6 @@ endfunction
 
 private function AddPreDialogBark takes integer seq, unit hero returns nothing
     if not RagnoGreeted and hero == Nazgrek then
-        call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0170_TEXT, VL_NAZGREK_0170_KEY, true)
         call DialogSystem_AddLine(seq, Ragno, "Ragno", "Hail Nazgrek! I sense the Horde's fire still burns in you.", "OrcGrunt_0085", true)
         call DialogSystem_AddLine(seq, Ragno, "Ragno", "If you are interested in work, I have tasks that need a steady hand.", "OrcGrunt_0088", true)
     else
@@ -1377,8 +1502,8 @@ private function CreateQuests takes nothing returns nothing
     local trigger availabilityCondition
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno) then
-        set q = QuestGiver_CreateConfiguredQuest(QUEST_PROTECT_OUTPOST, Ragno, "normal", 1, null, QUEST_PROTECT_OUTPOST, "ReplaceableTextures\\CommandButtons\\BTNGnoll.blp", "Gnolls are attacking the mountain outpost. Aid Ragno's defenders and drive the raiders back.\n\n", infoText, "|cffffcc00Event quest:|r Ragno mountain outpost\n\n", 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
-        call QuestGiver_SetQuestRewards(q, false, 0, false, 0, false, 0, false, 0, false)
+        set q = QuestGiver_CreateConfiguredQuest(QUEST_PROTECT_OUTPOST, Ragno, "normal", 1, null, QUEST_PROTECT_OUTPOST, "ReplaceableTextures\\CommandButtons\\BTNGnoll.blp", "Gnolls are attacking the mountain outpost.\n\n", "", "", 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", "")
+        call QuestGiver_SetQuestRewards(q, true, 0, false, 0, false, 0, true, 0, false)
         call QuestGiver_SetRequirements(q.id, "", "Protect the mountain outpost from the gnoll attack", "", "", "", "", "", "", "")
         call q.setAutoComplete(true)
         set availabilityCondition = CreateTrigger()
@@ -1389,39 +1514,38 @@ private function CreateQuests takes nothing returns nothing
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_GNOLL_HEADCOUNT, Ragno) then
         set q = QuestGiver_CreateConfiguredQuest(QUEST_GNOLL_HEADCOUNT, Ragno, "daily", 2, null, QUEST_GNOLL_HEADCOUNT, "ReplaceableTextures\\CommandButtons\\BTNGnoll.blp", "Ragno wants you to thin out the gnolls threatening the mountain outpost.\n\n", infoText, info2DailyText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
-        call QuestGiver_SetQuestRewards(q, true, 0, true, 200, false, 0, false, 0, false)
+        call QuestGiver_SetQuestRewards(q, true, 0, true, 200, false, 0, true, 0, false)
         call QuestGiver_SetRequirements(q.id, "", "Bring 20 Gnoll Heads to Ragno", "", "", "", "", "", "", "")
         call QuestGiver_RegisterItemRequirement(q.id, Ragno, 1, ITEM_GNOLL_HEAD, GNOLL_HEAD_REQUIRED)
     endif
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_LUMBERJACK_DUTIES, Ragno) then
         set q = QuestGiver_CreateConfiguredQuest(QUEST_LUMBERJACK_DUTIES, Ragno, "daily", 2, null, QUEST_LUMBERJACK_DUTIES, "ReplaceableTextures\\CommandButtons\\BTNBundleOfLumber.blp", "Harvest 10 Pile Of Wood for the mountain outpost. A peon will help, but he must survive.\n\n", infoText, info2DailyText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
-        call QuestGiver_SetQuestRewards(q, true, 0, true, 200, false, 0, false, 0, false)
+        call QuestGiver_SetQuestRewards(q, true, 0, true, 200, false, 0, true, 0, false)
         call QuestGiver_SetRequirements(q.id, "", "Harvest 10 Pile Of Wood", "Peon must survive", "", "", "", "", "", "")
         call QuestGiver_RegisterItemRequirement(q.id, Ragno, 1, ITEM_PILE_WOOD, PILE_WOOD_REQUIRED)
     endif
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_KOBOLD_THIEVES, Ragno) then
         set q = QuestGiver_CreateConfiguredQuest(QUEST_KOBOLD_THIEVES, Ragno, "daily", 2, null, QUEST_KOBOLD_THIEVES, "ReplaceableTextures\\CommandButtons\\BTNKobold.blp", "Kill the kobold leader and recover the stolen goods taken from the Horde.\n\n", infoText, info2DailyText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
-        call QuestGiver_SetQuestRewards(q, true, 0, true, 200, false, 0, false, 0, false)
+        call QuestGiver_SetQuestRewards(q, true, 0, true, 200, false, 0, true, 0, false)
         call QuestGiver_SetRequirements(q.id, "", "Kill Razzlewhip Mudgrubber", "Retrieve 6 Stolen Goods", "", "", "", "", "", "")
         call QuestGiver_RegisterItemRequirement(q.id, Ragno, 2, ITEM_STOLEN_GOODS, STOLEN_GOODS_REQUIRED)
     endif
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_SATYR_NEGOTIATIONS, Ragno) then
         set q = QuestGiver_CreateConfiguredQuest(QUEST_SATYR_NEGOTIATIONS, Ragno, "normal", 3, null, QUEST_SATYR_NEGOTIATIONS, "ReplaceableTextures\\CommandButtons\\BTNForestTroll.blp", "The relations between the Horde and the satyrs are unstable. Meet with them and learn whether diplomacy is still possible.\n\n", infoText, info2MainText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
-        call QuestGiver_SetQuestRewards(q, true, 0, true, 150, false, 0, false, 0, false)
+        call QuestGiver_SetQuestRewards(q, true, 0, true, 150, false, 0, true, 0, false)
         call QuestGiver_SetRequirements(q.id, "", "Meet with the satyrs and learn what they want", "", "", "", "", "", "", "")
     endif
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_GIVING_LETTER, Ragno) then
         set q = QuestGiver_CreateConfiguredQuest(QUEST_GIVING_LETTER, Ragno, "normal", 1, Thork, QUEST_GIVING_LETTER, "ReplaceableTextures\\CommandButtons\\BTNOrcCaptureFlag.blp", "Ragno has given Nazgrek a blood-signed summon letter. Bring it to Chieftain Thork at the Horde camp.\n\n", infoText, "|cffffcc00Quest receiver:|r Chieftain Thork\n\n", 1, true, ALLOW_NAZGREK, false, "Horde", "Chieftain Thork")
-        call QuestGiver_SetQuestRewards(q, false, 0, false, 0, false, 0, false, 0, false)
+        call QuestGiver_SetQuestRewards(q, true, 0, false, 0, false, 0, true, 0, false)
         set availabilityCondition = CreateTrigger()
         call TriggerAddCondition(availabilityCondition, Condition(function CanOfferGivingLetter))
         call QuestGiver_SetQuestCustomCondition(q, availabilityCondition)
-        call QuestGiver_SetRequirements(q.id, "", "Bring the blood signed letter to Chieftain Thork", "", "", "", "", "", "", "")
-        call QuestGiver_RegisterItemRequirement(q.id, Ragno, 1, ITEM_BLOOD_SIGNED_LETTER, 1)
+        call QuestGiver_SetRequirements(q.id, "", "Take the Blood Signed Summon Letter to Chieftain Thork", "", "", "", "", "", "", "")
         call QuestGiver_SetStateByNameAndGiver(QUEST_GIVING_LETTER, Ragno, QUEST_STATE_UNAVAILABLE)
     endif
 
