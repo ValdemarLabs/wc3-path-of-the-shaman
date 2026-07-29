@@ -416,7 +416,8 @@ namespace WC3ItemManager
                 { "tooltip_extended", "Extended Tooltip" },
                 { "hotkey", "Hotkey" },
                 { "wc3_abilities", "WC3 Abilities" },
-                { "wc3_classification", "WC3 Classification" }
+                { "wc3_classification", "WC3 Classification" },
+                { "specific_drop_only", "Ignore Loot Tables" }
             };
             
             return mapping.ContainsKey(columnName) ? mapping[columnName] : columnName;
@@ -444,7 +445,8 @@ namespace WC3ItemManager
                 { "Extended Tooltip", "tooltip_extended" },
                 { "Hotkey", "hotkey" },
                 { "WC3 Abilities", "wc3_abilities" },
-                { "WC3 Classification", "wc3_classification" }
+                { "WC3 Classification", "wc3_classification" },
+                { "Ignore Loot Tables", "specific_drop_only" }
             };
             
             return mapping.ContainsKey(displayName) ? mapping[displayName] : displayName;
@@ -481,7 +483,7 @@ namespace WC3ItemManager
             {
                 // Define default visibility
                 var defaults = new HashSet<string> { 
-                    "item_code", "item_name", "rarity", "class", "item_level", "item_level_unclassified", "gold_cost", "type" 
+                    "item_code", "item_name", "rarity", "class", "item_level", "item_level_unclassified", "gold_cost", "specific_drop_only", "type"
                 };
                 
                 for (int i = 0; i < lstColumns.Items.Count; i++)

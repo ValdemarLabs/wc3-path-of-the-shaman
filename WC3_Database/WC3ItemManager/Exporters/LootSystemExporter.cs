@@ -344,7 +344,7 @@ namespace WC3ItemManager.Exporters
                     continue;
                 }
 
-                var tableItems = _tableItemRepo.GetByLootTableId(dest.LootTableId.Value);
+                var tableItems = _tableItemRepo.GetByLootTableIdForExport(dest.LootTableId.Value);
                 if (tableItems.Count == 0)
                 {
                     continue;
@@ -394,13 +394,13 @@ namespace WC3ItemManager.Exporters
             
             int tableItemCount = tableAssignedDestructibles
                 .Where(d => d.LootTableId.HasValue && lootTables.ContainsKey(d.LootTableId.Value) && lootTables[d.LootTableId.Value].Enabled)
-                .Sum(d => _tableItemRepo.GetByLootTableId(d.LootTableId!.Value).Count);
+                .Sum(d => _tableItemRepo.GetByLootTableIdForExport(d.LootTableId!.Value).Count);
 
             return genericDestructibles.Count + drops.Count + tableItemCount;
         }
 
         /// <summary>
-        /// Get all items that can drop (have item_level and rarity set, not specific_drop_only)
+        /// Get all items that can drop through generic loot pools.
         /// </summary>
         private List<DroppableItem> GetDroppableItems()
         {

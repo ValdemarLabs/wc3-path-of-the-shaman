@@ -99,7 +99,9 @@ namespace WC3ItemManager.Repositories
                            dsd.enabled, dsd.notes, dsd.created_at
                     FROM destructible_specific_drops dsd
                     INNER JOIN destructible_types dt ON dsd.destructible_code = dt.destructible_code
+                    INNER JOIN items i ON dsd.item_code = i.item_code
                     WHERE dsd.enabled = true AND dt.enabled = true
+                      AND COALESCE(i.specific_drop_only, false) = false
                     ORDER BY dsd.destructible_code, dsd.is_guaranteed DESC, dsd.drop_chance DESC", conn))
                 {
                     using (var reader = cmd.ExecuteReader())

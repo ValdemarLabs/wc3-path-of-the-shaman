@@ -874,7 +874,9 @@ namespace WC3ItemManager
         {
             const string alterQuery = @"
                 ALTER TABLE items
-                ADD COLUMN IF NOT EXISTS item_level_unclassified INTEGER";
+                ADD COLUMN IF NOT EXISTS item_level_unclassified INTEGER;
+                ALTER TABLE items
+                ADD COLUMN IF NOT EXISTS specific_drop_only BOOLEAN DEFAULT FALSE";
 
             using (var alterCmd = new NpgsqlCommand(alterQuery, conn))
             {
@@ -1050,6 +1052,7 @@ namespace WC3ItemManager
                             i.hotkey,
                             i.wc3_abilities,
                             i.wc3_classification,
+                            COALESCE(i.specific_drop_only, false) as specific_drop_only,
                             CASE WHEN i.base_id IS NOT NULL THEN 'Custom' ELSE 'Original' END as type,
                             i.created_at,
                             i.updated_at
@@ -1134,6 +1137,7 @@ namespace WC3ItemManager
                             dgvItems.Columns["hotkey"].Visible = false;
                             dgvItems.Columns["wc3_abilities"].Visible = false;
                             dgvItems.Columns["wc3_classification"].Visible = false;
+                            dgvItems.Columns["specific_drop_only"].HeaderText = "Ignore Loot";
 
                             // Apply saved column widths or defaults
                             ApplyColumnWidth("item_code", 80);
@@ -1144,6 +1148,7 @@ namespace WC3ItemManager
                             ApplyColumnWidth("item_level", 110);
                             ApplyColumnWidth("item_level_unclassified", 80);
                             ApplyColumnWidth("gold_cost", 80);
+                            ApplyColumnWidth("specific_drop_only", 90);
                             ApplyColumnWidth("type", 80);
                             
                             // Apply saved column visibility settings

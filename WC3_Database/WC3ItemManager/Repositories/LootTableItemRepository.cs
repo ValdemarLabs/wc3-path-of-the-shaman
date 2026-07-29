@@ -19,12 +19,22 @@ namespace WC3ItemManager.Repositories
 
         public List<LootTableItem> GetByLootTableId(int lootTableId)
         {
+            return GetByLootTableId(lootTableId, false);
+        }
+
+        public List<LootTableItem> GetByLootTableIdForExport(int lootTableId)
+        {
+            return GetByLootTableId(lootTableId, true);
+        }
+
+        private List<LootTableItem> GetByLootTableId(int lootTableId, bool excludeIgnoredLootItems)
+        {
             var items = new List<LootTableItem>();
 
             using (var conn = new NpgsqlConnection(_connectionString))
             {
                 conn.Open();
-                using (var cmd = new NpgsqlCommand(@"
+                var sql = @"
                     SELECT lti.id, lti.loot_table_id, lti.item_code, lti.drop_chance, lti.weight,
                            lti.is_guaranteed, lti.quantity_min, lti.quantity_max, lti.notes, lti.created_at,
                            i.item_name, r.rarity_name, 
@@ -33,7 +43,16 @@ namespace WC3ItemManager.Repositories
                     LEFT JOIN items i ON i.item_code = lti.item_code
                     LEFT JOIN item_rarities r ON r.id = i.rarity_id
                     WHERE lti.loot_table_id = @loot_table_id
-                    ORDER BY lti.is_guaranteed DESC, lti.weight DESC, lti.drop_chance DESC", conn))
+                    ";
+
+                if (excludeIgnoredLootItems)
+                {
+                    sql += " AND COALESCE(i.specific_drop_only, false) = false";
+                }
+
+                sql += " ORDER BY lti.is_guaranteed DESC, lti.weight DESC, lti.drop_chance DESC";
+
+                using (var cmd = new NpgsqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@loot_table_id", lootTableId);
                     using (var reader = cmd.ExecuteReader())

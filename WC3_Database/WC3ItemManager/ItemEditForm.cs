@@ -350,7 +350,9 @@ namespace WC3ItemManager
                     conn.Open();
                     const string alterQuery = @"
                         ALTER TABLE items
-                        ADD COLUMN IF NOT EXISTS item_level_unclassified INTEGER";
+                        ADD COLUMN IF NOT EXISTS item_level_unclassified INTEGER;
+                        ALTER TABLE items
+                        ADD COLUMN IF NOT EXISTS specific_drop_only BOOLEAN DEFAULT FALSE";
 
                     using (var cmd = new NpgsqlCommand(alterQuery, conn))
                     {
@@ -884,7 +886,7 @@ namespace WC3ItemManager
             
             Label lblConsumableInfo = new Label
             {
-                Text = "WC3 level: -1 random, 0-49 stack cap. Use Loot Level for drop tier.",
+                Text = "WC3 level: 1-49 stack cap, 50+ non-stack. Use Loot Level for drop tier.",
                 Location = new Point(420, 98),
                 AutoSize = true,
                 ForeColor = Color.Gray,
@@ -971,7 +973,7 @@ namespace WC3ItemManager
             tab.Controls.Add(cmbType);
             y += lineHeight;
 
-            // WC3 item level doubles as stack cap for stackable non-equipment.
+            // WC3 item level 1-49 doubles as stack cap for stackable items.
             tab.Controls.Add(new Label { Text = "WC3 Level / Stack Cap:", Location = new Point(labelX, y), AutoSize = true });
             numLevel = new NumericUpDown { Location = new Point(controlX, y), Width = 100, Minimum = 0, Maximum = 999, Value = 1 };
             numLevel.ValueChanged += (s, e) => { UpdateItemLevelRange(); UpdateItemPreview(); };
@@ -1038,13 +1040,13 @@ namespace WC3ItemManager
 
             chkSpecificDropOnly = new CheckBox 
             { 
-                Text = "Specific Drop Only (no generic loot)", 
+                Text = "Ignore Loot Tables",
                 Location = new Point(labelX, y), 
                 AutoSize = true,
                 ForeColor = Color.Orange
             };
             var tooltipSpecificDrop = new ToolTip();
-            tooltipSpecificDrop.SetToolTip(chkSpecificDropOnly, "When checked, this item will ONLY drop from units explicitly defined in Drop Sources.\nIt will NOT appear in generic tier-based loot pools.");
+            tooltipSpecificDrop.SetToolTip(chkSpecificDropOnly, "When checked, generated loot exports and loot-table autofill skip this item.\nUse this for crafter-only gear and other items that should not drop.");
             tab.Controls.Add(chkSpecificDropOnly);
         }
 

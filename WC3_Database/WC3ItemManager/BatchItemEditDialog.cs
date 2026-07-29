@@ -285,8 +285,8 @@ namespace WC3ItemManager
             AddEditorRow(contentPanel, chkApplyDroppedOnDeath, "Dropped On Death:", chkDroppedOnDeath, ref y);
 
             chkApplySpecificDropOnly = CreateApplyCheckBox();
-            chkSpecificDropOnly = CreateValueCheckBox("Specific Drop Only");
-            AddEditorRow(contentPanel, chkApplySpecificDropOnly, "Specific Drop Only:", chkSpecificDropOnly, ref y);
+            chkSpecificDropOnly = CreateValueCheckBox("Ignore Loot Tables");
+            AddEditorRow(contentPanel, chkApplySpecificDropOnly, "Ignore Loot Tables:", chkSpecificDropOnly, ref y);
         }
 
         private CheckBox CreateApplyCheckBox()
@@ -1064,7 +1064,7 @@ namespace WC3ItemManager
                 if (!AddBooleanUpdate(cmd, updates, updatedFields, chkApplyPawnable, chkPawnable, "is_pawnable", "pawnable")) return;
                 if (!AddBooleanUpdate(cmd, updates, updatedFields, chkApplyActivelyUsed, chkActivelyUsed, "actively_used", "actively_used")) return;
                 if (!AddBooleanUpdate(cmd, updates, updatedFields, chkApplyDroppedOnDeath, chkDroppedOnDeath, "dropped_on_death", "dropped_on_death")) return;
-                if (!AddBooleanUpdate(cmd, updates, updatedFields, chkApplySpecificDropOnly, chkSpecificDropOnly, "specific_drop_only", "specific_drop_only")) return;
+                if (!AddBooleanUpdate(cmd, updates, updatedFields, chkApplySpecificDropOnly, chkSpecificDropOnly, "specific_drop_only", "ignore_loot_tables")) return;
 
                 if (updates.Count == 0)
                 {

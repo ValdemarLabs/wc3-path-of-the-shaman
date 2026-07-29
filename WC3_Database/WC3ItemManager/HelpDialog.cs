@@ -502,7 +502,10 @@ namespace WC3ItemManager
             AppendSpacer(rtb);
             
             AppendFAQ(rtb, "What's the difference between item_level and item_level_unclassified?",
-                "item_level is the WC3 item level. Stackable items use it as stack cap (0-49), misc non-stackables use 50-99, and equipment uses 100+. item_level_unclassified stores the separate loot/drop level when the WC3 level is being used for stack behavior.");
+                "item_level is the WC3 item level. Any item can use 1-49 as its stack cap. Level 0 and 50+ are intended non-stackable, and equipment uses 100+. item_level_unclassified stores the separate loot/drop level when the WC3 level is being used for stack behavior.");
+
+            AppendFAQ(rtb, "How do I keep an item out of generated loot?",
+                "Enable Ignore Loot Tables on the item, or batch edit the same flag for selected items. Generated loot exports and loot-table autofill skip flagged items.");
             
             AppendFAQ(rtb, "What is item_code and why 4 characters?",
                 "WC3 uses 4-character codes for all objects (e.g., 'I001'). They must be unique. The format is typically letter-digit-letter-digit.");

@@ -550,7 +550,8 @@ namespace WC3ItemManager
                 var sql = @"
                     SELECT i.item_code, i.item_name, i.item_level, i.rarity_id, i.class_id, i.type_id, i.wc3_classification
                     FROM items i
-                    WHERE i.item_level >= @minLevel AND i.item_level <= @maxLevel";
+                    WHERE i.item_level >= @minLevel AND i.item_level <= @maxLevel
+                      AND COALESCE(i.specific_drop_only, false) = false";
 
                 var conditions = new List<string>();
 
