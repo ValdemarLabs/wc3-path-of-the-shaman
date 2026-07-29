@@ -622,23 +622,20 @@ endfunction
 
 
 function DInventoryIsItemStackable takes item it returns boolean
-local itemtype IT = GetItemType(it)
-local integer level = GetItemLevel(it)
+local integer level
 //////call BJDebugMsg("DInventoryIsItemStackable fired")
-if IT == ITEM_TYPE_CHARGED or IT == ITEM_TYPE_PURCHASABLE or IT == ITEM_TYPE_POWERUP or IT == ITEM_TYPE_CAMPAIGN then
-// Configure if you want: you can put in more conditions here if you want less or more stuff to be stackable
-// Added ITEM_TYPE_CAMPAIGN to allow campaign items to stack
-// CRITICAL FIX Oct 22 2025: Item must have Level > 0 to be truly stackable
-// Campaign items with Level = 0 should NOT show charges even if they have item type CAMPAIGN
-    if level > 0 then
+if it == null then
+    return FALSE
+endif
+set level = GetItemLevel(it)
+// PotS uses WC3 item level 1-49 as the DInventory stack cap for any item category.
+// Level 0 and level 50+ items are treated as non-stackable.
+if level > 0 and level < 50 then
 ////call BJDebugMsg("DInventoryIsItemStackable says this is STACKABLE")
-        set IT = null
-        set it = null
-        return TRUE
-    endif
+    set it = null
+    return TRUE
 endif
 ////call BJDebugMsg("DInventoryIsItemStackable says this is not not not stackymecky")
-set IT = null
 set it = null
 return FALSE
 endfunction

@@ -72,8 +72,8 @@ boolean AutomaticDInventoryStorage = TRUE
 // Just copy paste mine, or better: export / import the abilities and the buffs as described in the documentation.
 integer OpenDInventoryAbilityId = 'DInv'
 // Stacking
-// Note: The DInventory will only stack items that are of categories in the Object Editor: Power Up, Charged, Purchasable. If you want to change that you need to edit the code.
-// Or you can just set your item to be in these categories.
+// PotS DInventory stackability is controlled by WC3 item level: 1-49 is stackable and also acts as the stack cap.
+// Level 0 and level 50+ items are treated as non-stackable, regardless of Object Editor item category.
 boolean InfiniteStackingSystemAllowed = FALSE
 
 // Gold value / Shop  - - - - - - - - - - -
