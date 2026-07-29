@@ -2,7 +2,7 @@
     CraftingUI
 
     Author: Valdemar
-    Version: 1.2
+    Version: 1.3
 
     Description: Shared custom-frame crafting panel for profession workstations. Recipe and category data is fetched from Professions and its profession sublibraries.
 
@@ -53,7 +53,6 @@ globals
     private framehandle CUI_DetailIcon = null
     private framehandle CUI_DetailTitle = null
     private framehandle CUI_DetailInfo = null
-    private framehandle CUI_DetailBodyBackdrop = null
     private framehandle CUI_DetailBody = null
 
     private framehandle array CUI_RowButton
@@ -914,18 +913,9 @@ private function CUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetEnable(CUI_DetailInfo, false)
     call BlzFrameSetLevel(CUI_DetailInfo, 5)
 
-    set CUI_DetailBodyBackdrop = BlzCreateFrameByType("BACKDROP", "CraftingUIDetailBodyBackdrop", CUI_RightPane, "", 0)
-    call BlzFrameSetTexture(CUI_DetailBodyBackdrop, PanelTexture, 0, false)
-    call BlzFrameSetPoint(CUI_DetailBodyBackdrop, FRAMEPOINT_TOPLEFT, CUI_DetailIcon, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.018)
-    call BlzFrameSetPoint(CUI_DetailBodyBackdrop, FRAMEPOINT_BOTTOMRIGHT, CUI_RightPane, FRAMEPOINT_BOTTOMRIGHT, -0.004, 0.004)
-    call BlzFrameSetAlpha(CUI_DetailBodyBackdrop, 235)
-    call BlzFrameSetVertexColor(CUI_DetailBodyBackdrop, BlzConvertColor(235, 12, 12, 12))
-    call BlzFrameSetEnable(CUI_DetailBodyBackdrop, false)
-    call BlzFrameSetLevel(CUI_DetailBodyBackdrop, 3)
-
     set CUI_DetailBody = BlzCreateFrameByType("TEXT", "CraftingUIDetailBody", CUI_RightPane, "", 0)
-    call BlzFrameSetPoint(CUI_DetailBody, FRAMEPOINT_TOPLEFT, CUI_DetailBodyBackdrop, FRAMEPOINT_TOPLEFT, 0.008, -0.008)
-    call BlzFrameSetPoint(CUI_DetailBody, FRAMEPOINT_BOTTOMRIGHT, CUI_DetailBodyBackdrop, FRAMEPOINT_BOTTOMRIGHT, -0.008, 0.008)
+    call BlzFrameSetPoint(CUI_DetailBody, FRAMEPOINT_TOPLEFT, CUI_DetailIcon, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.018)
+    call BlzFrameSetPoint(CUI_DetailBody, FRAMEPOINT_BOTTOMRIGHT, CUI_RightPane, FRAMEPOINT_BOTTOMRIGHT, -0.004, 0.004)
     call BlzFrameSetTextAlignment(CUI_DetailBody, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetScale(CUI_DetailBody, 0.90)
     call BlzFrameSetEnable(CUI_DetailBody, false)

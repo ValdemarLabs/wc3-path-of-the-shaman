@@ -2,7 +2,7 @@
     ProfessionsCooking
 
     Author: Valdemar
-    Version: 1.4
+    Version: 1.5
 
     Description:
     Registers Cooking workstation data, campfire recipes, timed food and
@@ -84,7 +84,7 @@ globals
     private constant string PC_ICON_MEAT = "ReplaceableTextures\\CommandButtons\\BTNMonsterLure.blp"
     private constant string PC_ICON_ROAST = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Food_15.blp"
     private constant string PC_ICON_STEW = "ReplaceableTextures\\CommandButtons\\BTNPotionGreenSmall.blp"
-    private constant string PC_ICON_FISH = "ReplaceableTextures\\CommandButtons\\BTNCritterFish.blp"
+    private constant string PC_ICON_FISH = "ReplaceableTextures\\CommandButtons\\BTNMonsterLure.blp"
     private constant string PC_ICON_DRINK = "ReplaceableTextures\\CommandButtons\\BTNPotionBlueSmall.blp"
     private constant string PC_ICON_ODDITY = "ReplaceableTextures\\CommandButtons\\BTNOrbOfCorruption.blp"
 
