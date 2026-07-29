@@ -118,7 +118,7 @@ namespace WC3ItemManager
 
         private static SeedItem FishFood(string code, string name, string rarity, int level, int goldCost, string effectText)
         {
-            return Consumable(code, name, rarity, level, goldCost, effectText, "Food", "rej3", "A60V", "ReplaceableTextures\\CommandButtons\\BTNCritterFish.blp", "war3campImported\\ITEMMonsterLure.mdl");
+            return Consumable(code, name, rarity, level, goldCost, effectText, "Food", "rej3", "A60V", "ReplaceableTextures\\CommandButtons\\BTNMonsterLure.blp", "war3campImported\\ITEMMonsterLure.mdl");
         }
 
         private static SeedItem Stew(string code, string name, string rarity, int level, int goldCost, string effectText)
