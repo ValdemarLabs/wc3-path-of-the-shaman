@@ -2,7 +2,7 @@
     ProfessionsCooking
 
     Author: Valdemar
-    Version: 1.3
+    Version: 1.4
 
     Description:
     Registers Cooking workstation data, campfire recipes, timed food and
@@ -72,22 +72,20 @@ globals
     private constant string PC_SOUND_FINISH = "CookingPrepareA"
 
     // Recipe category path for campfire cooking. Camp Fire is the only enabled fire source for now.
+    // Keep the subcategory layer simple: each skill tier contains Food and Beverages.
     private constant string PC_CATEGORY_APPRENTICE = "Apprentice Cooking"
     private constant string PC_CATEGORY_JOURNEYMAN = "Journeyman Cooking"
     private constant string PC_CATEGORY_EXPERT = "Expert Cooking"
     private constant string PC_CATEGORY_ARTISAN = "Artisan Cooking"
-    private constant string PC_SUBCATEGORY_CAMPFIRE_FOOD = "Campfire Food"
-    private constant string PC_SUBCATEGORY_SEAFOOD = "Seafood"
-    private constant string PC_SUBCATEGORY_STEWS = "Stews"
+    private constant string PC_SUBCATEGORY_FOOD = "Food"
     private constant string PC_SUBCATEGORY_BEVERAGES = "Beverages"
-    private constant string PC_SUBCATEGORY_ODDITIES = "Oddities"
 
     // Recipe icon paths.
     private constant string PC_ICON_MEAT = "ReplaceableTextures\\CommandButtons\\BTNMonsterLure.blp"
     private constant string PC_ICON_ROAST = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Food_15.blp"
-    private constant string PC_ICON_STEW = "ReplaceableTextures\\CommandButtons\\BTNINV_Drink_14.blp"
+    private constant string PC_ICON_STEW = "ReplaceableTextures\\CommandButtons\\BTNPotionGreenSmall.blp"
     private constant string PC_ICON_FISH = "ReplaceableTextures\\CommandButtons\\BTNCritterFish.blp"
-    private constant string PC_ICON_DRINK = "ReplaceableTextures\\CommandButtons\\BTNINV_Drink_05.blp"
+    private constant string PC_ICON_DRINK = "ReplaceableTextures\\CommandButtons\\BTNPotionBlueSmall.blp"
     private constant string PC_ICON_ODDITY = "ReplaceableTextures\\CommandButtons\\BTNOrbOfCorruption.blp"
 
     // Reagent item raw codes from PotS exports.
@@ -1062,206 +1060,206 @@ private function PC_RegisterRecipes takes nothing returns nothing
     local integer recipeId
 
     // Apprentice 0-25.
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_APPRENTICE, PC_SUBCATEGORY_CAMPFIRE_FOOD, "Smoked Wolf Jerky", "Smokes wolf meat into compact trail food.", PC_ICON_MEAT, PC_ITEM_SMOKED_WOLF_JERKY, 0, 4.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_APPRENTICE, PC_SUBCATEGORY_FOOD, "Smoked Wolf Jerky", "Smokes wolf meat into compact trail food.", PC_ICON_MEAT, PC_ITEM_SMOKED_WOLF_JERKY, 0, 4.00)
     call PC_Add(recipeId, PC_ITEM_RAW_WOLF_MEAT, 1, "Raw Wolf Meat")
     call PC_Add(recipeId, PC_ITEM_SALT, 1, "Salt")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_APPRENTICE, PC_SUBCATEGORY_SEAFOOD, "Brilliant Smallfish", "Pan-fries smallfish with a pinch of salt.", PC_ICON_FISH, PC_ITEM_BRILLIANT_SMALLFISH, 1, 3.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_APPRENTICE, PC_SUBCATEGORY_FOOD, "Brilliant Smallfish", "Pan-fries smallfish with a pinch of salt.", PC_ICON_FISH, PC_ITEM_BRILLIANT_SMALLFISH, 1, 3.00)
     call PC_Add(recipeId, PC_ITEM_RAW_SMALLFISH, 1, "Raw Brilliant Smallfish")
     call PC_Add(recipeId, PC_ITEM_SALT, 1, "Salt")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_APPRENTICE, PC_SUBCATEGORY_CAMPFIRE_FOOD, "Roasted Stag Haunch", "Roasts stag meat into a hearty haunch.", PC_ICON_ROAST, PC_ITEM_ROASTED_STAG_HAUNCH, 3, 4.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_APPRENTICE, PC_SUBCATEGORY_FOOD, "Roasted Stag Haunch", "Roasts stag meat into a hearty haunch.", PC_ICON_ROAST, PC_ITEM_ROASTED_STAG_HAUNCH, 3, 4.00)
     call PC_Add(recipeId, PC_ITEM_RAW_STAG_MEAT, 2, "Raw Stag Meat")
     call PC_Add(recipeId, PC_ITEM_SALT, 1, "Salt")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_APPRENTICE, PC_SUBCATEGORY_SEAFOOD, "Slitherskin Mackerel", "Cooks mackerel over open flame until the skin crisps.", PC_ICON_FISH, PC_ITEM_SLITHERSKIN_MACKEREL, 5, 3.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_APPRENTICE, PC_SUBCATEGORY_FOOD, "Slitherskin Mackerel", "Cooks mackerel over open flame until the skin crisps.", PC_ICON_FISH, PC_ITEM_SLITHERSKIN_MACKEREL, 5, 3.00)
     call PC_Add(recipeId, PC_ITEM_RAW_MACKEREL, 1, "Raw Slitherskin Mackerel")
     call PC_Add(recipeId, PC_ITEM_SALT, 1, "Salt")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_APPRENTICE, PC_SUBCATEGORY_CAMPFIRE_FOOD, "Spiced Snake Strips", "Cooks snake meat into salted strips.", PC_ICON_MEAT, PC_ITEM_SPICED_SNAKE_STRIPS, 8, 4.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_APPRENTICE, PC_SUBCATEGORY_FOOD, "Spiced Snake Strips", "Cooks snake meat into salted strips.", PC_ICON_MEAT, PC_ITEM_SPICED_SNAKE_STRIPS, 8, 4.00)
     call PC_Add(recipeId, PC_ITEM_RAW_SNAKE_MEAT, 1, "Raw Snake Meat")
     call PC_Add(recipeId, PC_ITEM_SALT, 1, "Salt")
     call PC_Add(recipeId, PC_ITEM_COOKING_PEPPERCORN, 1, "Peppercorn")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_APPRENTICE, PC_SUBCATEGORY_CAMPFIRE_FOOD, "Bear Fat Biscuit", "Bakes bear meat with flour, water, and salt into a filling biscuit.", PC_ICON_ROAST, PC_ITEM_BEAR_FAT_BISCUIT, 13, 5.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_APPRENTICE, PC_SUBCATEGORY_FOOD, "Bear Fat Biscuit", "Bakes bear meat with flour, water, and salt into a filling biscuit.", PC_ICON_ROAST, PC_ITEM_BEAR_FAT_BISCUIT, 13, 5.00)
     call PC_Add(recipeId, PC_ITEM_RAW_BEAR_MEAT, 1, "Raw Bear Meat")
     call PC_Add(recipeId, PC_ITEM_COARSE_FLOUR, 1, "Coarse Flour")
     call PC_Add(recipeId, PC_ITEM_SPRING_WATER, 1, "Spring Water")
     call PC_Add(recipeId, PC_ITEM_SALT, 1, "Salt")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_APPRENTICE, PC_SUBCATEGORY_SEAFOOD, "Mud Snapper Cake", "Binds mud snapper with flour into a simple fish cake.", PC_ICON_FISH, PC_ITEM_MUD_SNAPPER_CAKE, 17, 5.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_APPRENTICE, PC_SUBCATEGORY_FOOD, "Mud Snapper Cake", "Binds mud snapper with flour into a simple fish cake.", PC_ICON_FISH, PC_ITEM_MUD_SNAPPER_CAKE, 17, 5.00)
     call PC_Add(recipeId, PC_ITEM_RAW_MUD_SNAPPER, 1, "Raw Longjaw Mud Snapper")
     call PC_Add(recipeId, PC_ITEM_COARSE_FLOUR, 1, "Coarse Flour")
     call PC_Add(recipeId, PC_ITEM_SALT, 1, "Salt")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_APPRENTICE, PC_SUBCATEGORY_STEWS, "Boiled Makrura Claw", "Boils makrura meat into a briny campfire meal.", PC_ICON_STEW, PC_ITEM_BOILED_MAKRURA_CLAW, 18, 5.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_APPRENTICE, PC_SUBCATEGORY_FOOD, "Boiled Makrura Claw", "Boils makrura meat into a briny campfire meal.", PC_ICON_STEW, PC_ITEM_BOILED_MAKRURA_CLAW, 18, 5.00)
     call PC_Add(recipeId, PC_ITEM_RAW_MAKRURA_MEAT, 1, "Raw Makrura Meat")
     call PC_Add(recipeId, PC_ITEM_SPRING_WATER, 1, "Spring Water")
     call PC_Add(recipeId, PC_ITEM_SEA_SALT_GLAND, 1, "Sea-Salt Gland")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_APPRENTICE, PC_SUBCATEGORY_SEAFOOD, "Fried Crawler Cake", "Fries crawler meat into a salted shellfish cake.", PC_ICON_FISH, PC_ITEM_FRIED_CRAWLER_CAKE, 22, 5.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_APPRENTICE, PC_SUBCATEGORY_FOOD, "Fried Crawler Cake", "Fries crawler meat into a salted shellfish cake.", PC_ICON_FISH, PC_ITEM_FRIED_CRAWLER_CAKE, 22, 5.00)
     call PC_Add(recipeId, PC_ITEM_RAW_CRAWLER_MEAT, 2, "Raw Crawler Meat")
     call PC_Add(recipeId, PC_ITEM_COARSE_FLOUR, 1, "Coarse Flour")
     call PC_Add(recipeId, PC_ITEM_SEA_SALT_GLAND, 1, "Sea-Salt Gland")
 
     // Journeyman 25-50.
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_JOURNEYMAN, PC_SUBCATEGORY_CAMPFIRE_FOOD, "Charred Boar Ribs", "Chars boar ribs with salt and pepper.", PC_ICON_ROAST, PC_ITEM_CHARRED_BOAR_RIBS, 25, 5.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_JOURNEYMAN, PC_SUBCATEGORY_FOOD, "Charred Boar Ribs", "Chars boar ribs with salt and pepper.", PC_ICON_ROAST, PC_ITEM_CHARRED_BOAR_RIBS, 25, 5.00)
     call PC_Add(recipeId, PC_ITEM_RAW_BOAR_MEAT, 2, "Raw Boar Meat")
     call PC_Add(recipeId, PC_ITEM_SALT, 1, "Salt")
     call PC_Add(recipeId, PC_ITEM_COOKING_PEPPERCORN, 1, "Peppercorn")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_JOURNEYMAN, PC_SUBCATEGORY_STEWS, "Rabbit Broth", "Simmered rabbit broth with a gentle herbal finish.", PC_ICON_STEW, PC_ITEM_RABBIT_BROTH, 27, 5.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_JOURNEYMAN, PC_SUBCATEGORY_FOOD, "Rabbit Broth", "Simmered rabbit broth with a gentle herbal finish.", PC_ICON_STEW, PC_ITEM_RABBIT_BROTH, 27, 5.00)
     call PC_Add(recipeId, PC_ITEM_RAW_RABBIT_MEAT, 1, "Raw Rabbit Meat")
     call PC_Add(recipeId, PC_ITEM_SPRING_WATER, 1, "Spring Water")
     call PC_Add(recipeId, PC_ITEM_PEACEBLOOM, 1, "Peacebloom")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_JOURNEYMAN, PC_SUBCATEGORY_CAMPFIRE_FOOD, "Hawk Skewer", "Skewers hawk meat with pepper and honey glaze.", PC_ICON_MEAT, PC_ITEM_HAWK_SKEWER, 30, 5.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_JOURNEYMAN, PC_SUBCATEGORY_FOOD, "Hawk Skewer", "Skewers hawk meat with pepper and honey glaze.", PC_ICON_MEAT, PC_ITEM_HAWK_SKEWER, 30, 5.00)
     call PC_Add(recipeId, PC_ITEM_RAW_HAWK_MEAT, 2, "Raw Hawk Meat")
     call PC_Add(recipeId, PC_ITEM_HONEY, 1, "Honey")
     call PC_Add(recipeId, PC_ITEM_COOKING_PEPPERCORN, 1, "Peppercorn")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_JOURNEYMAN, PC_SUBCATEGORY_SEAFOOD, "Rainbow Albacore", "Grills albacore with salt and bright herbs.", PC_ICON_FISH, PC_ITEM_RAINBOW_ALBACORE, 32, 5.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_JOURNEYMAN, PC_SUBCATEGORY_FOOD, "Rainbow Albacore", "Grills albacore with salt and bright herbs.", PC_ICON_FISH, PC_ITEM_RAINBOW_ALBACORE, 32, 5.00)
     call PC_Add(recipeId, PC_ITEM_RAW_ALBACORE, 1, "Raw Rainbow Fin Albacore")
     call PC_Add(recipeId, PC_ITEM_SALT, 1, "Salt")
     call PC_Add(recipeId, PC_ITEM_PEACEBLOOM, 1, "Peacebloom")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_JOURNEYMAN, PC_SUBCATEGORY_STEWS, "Turtle Stew", "A thick stew of turtle meat and salted broth.", PC_ICON_STEW, PC_ITEM_TURTLE_STEW, 33, 6.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_JOURNEYMAN, PC_SUBCATEGORY_FOOD, "Turtle Stew", "A thick stew of turtle meat and salted broth.", PC_ICON_STEW, PC_ITEM_TURTLE_STEW, 33, 6.00)
     call PC_Add(recipeId, PC_ITEM_RAW_TURTLE_MEAT, 2, "Raw Turtle Meat")
     call PC_Add(recipeId, PC_ITEM_SPRING_WATER, 1, "Spring Water")
     call PC_Add(recipeId, PC_ITEM_SALT, 1, "Salt")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_JOURNEYMAN, PC_SUBCATEGORY_SEAFOOD, "Catfish Chowder", "A heavy catfish chowder thickened with flour.", PC_ICON_STEW, PC_ITEM_CATFISH_CHOWDER, 37, 6.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_JOURNEYMAN, PC_SUBCATEGORY_FOOD, "Catfish Chowder", "A heavy catfish chowder thickened with flour.", PC_ICON_STEW, PC_ITEM_CATFISH_CHOWDER, 37, 6.00)
     call PC_Add(recipeId, PC_ITEM_RAW_CATFISH, 1, "Raw Bristle Whisker Catfish")
     call PC_Add(recipeId, PC_ITEM_COARSE_FLOUR, 1, "Coarse Flour")
     call PC_Add(recipeId, PC_ITEM_SPRING_WATER, 1, "Spring Water")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_JOURNEYMAN, PC_SUBCATEGORY_STEWS, "Murloc Fin Soup", "Boils murloc fins in a sharp sea-salt broth.", PC_ICON_STEW, PC_ITEM_MURLOC_FIN_SOUP, 40, 6.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_JOURNEYMAN, PC_SUBCATEGORY_FOOD, "Murloc Fin Soup", "Boils murloc fins in a sharp sea-salt broth.", PC_ICON_STEW, PC_ITEM_MURLOC_FIN_SOUP, 40, 6.00)
     call PC_Add(recipeId, PC_ITEM_RAW_MURLOC_MEAT, 1, "Raw Murloc Meat")
     call PC_Add(recipeId, PC_ITEM_SEA_SALT_GLAND, 1, "Sea-Salt Gland")
     call PC_Add(recipeId, PC_ITEM_CRYSTAL_WATER, 1, "Crystal Water")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_JOURNEYMAN, PC_SUBCATEGORY_SEAFOOD, "Loch Frenzy Delight", "Pan-fries loch frenzy with peppercorn.", PC_ICON_FISH, PC_ITEM_LOCH_FRENZY_DELIGHT, 42, 5.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_JOURNEYMAN, PC_SUBCATEGORY_FOOD, "Loch Frenzy Delight", "Pan-fries loch frenzy with peppercorn.", PC_ICON_FISH, PC_ITEM_LOCH_FRENZY_DELIGHT, 42, 5.00)
     call PC_Add(recipeId, PC_ITEM_RAW_LOCH_FRENZY, 1, "Raw Loch Frenzy")
     call PC_Add(recipeId, PC_ITEM_COOKING_PEPPERCORN, 1, "Peppercorn")
     call PC_Add(recipeId, PC_ITEM_SALT, 1, "Salt")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_JOURNEYMAN, PC_SUBCATEGORY_CAMPFIRE_FOOD, "Lizard Pepper Roast", "Roasts lizard meat with extra pepper.", PC_ICON_ROAST, PC_ITEM_LIZARD_PEPPER_ROAST, 43, 6.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_JOURNEYMAN, PC_SUBCATEGORY_FOOD, "Lizard Pepper Roast", "Roasts lizard meat with extra pepper.", PC_ICON_ROAST, PC_ITEM_LIZARD_PEPPER_ROAST, 43, 6.00)
     call PC_Add(recipeId, PC_ITEM_RAW_LIZARD_MEAT, 2, "Raw Lizard Meat")
     call PC_Add(recipeId, PC_ITEM_COOKING_PEPPERCORN, 2, "Peppercorn")
     call PC_Add(recipeId, PC_ITEM_SALT, 1, "Salt")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_JOURNEYMAN, PC_SUBCATEGORY_SEAFOOD, "Firefin Chili", "A dangerous chili built around Firefin Snapper.", PC_ICON_STEW, PC_ITEM_FIREFIN_CHILI, 47, 6.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_JOURNEYMAN, PC_SUBCATEGORY_FOOD, "Firefin Chili", "A dangerous chili built around Firefin Snapper.", PC_ICON_STEW, PC_ITEM_FIREFIN_CHILI, 47, 6.00)
     call PC_Add(recipeId, PC_ITEM_FIREFIN_SNAPPER, 1, "Firefin Snapper")
     call PC_Add(recipeId, PC_ITEM_COOKING_PEPPERCORN, 2, "Peppercorn")
     call PC_Add(recipeId, PC_ITEM_CACTUS_PULP, 1, "Cactus Pulp")
 
     // Expert 50-75.
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_EXPERT, PC_SUBCATEGORY_CAMPFIRE_FOOD, "Tiger Steak", "Sears tiger meat hard and fast over the fire.", PC_ICON_ROAST, PC_ITEM_TIGER_STEAK, 50, 6.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_EXPERT, PC_SUBCATEGORY_FOOD, "Tiger Steak", "Sears tiger meat hard and fast over the fire.", PC_ICON_ROAST, PC_ITEM_TIGER_STEAK, 50, 6.00)
     call PC_Add(recipeId, PC_ITEM_RAW_TIGER_MEAT, 2, "Raw Tiger Meat")
     call PC_Add(recipeId, PC_ITEM_COOKING_PEPPERCORN, 1, "Peppercorn")
     call PC_Add(recipeId, PC_ITEM_HONEY, 1, "Honey")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_EXPERT, PC_SUBCATEGORY_SEAFOOD, "Sagefish Soup", "A clear soup that preserves sagefish oils.", PC_ICON_STEW, PC_ITEM_SAGEFISH_SOUP, 52, 6.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_EXPERT, PC_SUBCATEGORY_FOOD, "Sagefish Soup", "A clear soup that preserves sagefish oils.", PC_ICON_STEW, PC_ITEM_SAGEFISH_SOUP, 52, 6.00)
     call PC_Add(recipeId, PC_ITEM_RAW_SAGEFISH, 1, "Raw Sagefish")
     call PC_Add(recipeId, PC_ITEM_PURIFIED_WATER, 1, "Purified Water")
     call PC_Add(recipeId, PC_ITEM_MOUNTAIN_SILVERSAGE, 1, "Mountain Silversage")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_EXPERT, PC_SUBCATEGORY_CAMPFIRE_FOOD, "Panther Fillet", "Smokes panther fillet until it stays tender.", PC_ICON_MEAT, PC_ITEM_PANTHER_FILLET, 55, 6.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_EXPERT, PC_SUBCATEGORY_FOOD, "Panther Fillet", "Smokes panther fillet until it stays tender.", PC_ICON_MEAT, PC_ITEM_PANTHER_FILLET, 55, 6.00)
     call PC_Add(recipeId, PC_ITEM_RAW_PANTHER_MEAT, 2, "Raw Panther Meat")
     call PC_Add(recipeId, PC_ITEM_SALT, 1, "Salt")
     call PC_Add(recipeId, PC_ITEM_SOUR_BERRIES, 1, "Sour Berries")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_EXPERT, PC_SUBCATEGORY_SEAFOOD, "Rockscale Cod", "Roasts cod until the scales crack into a salty crust.", PC_ICON_FISH, PC_ITEM_ROCKSCALE_COD, 57, 6.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_EXPERT, PC_SUBCATEGORY_FOOD, "Rockscale Cod", "Roasts cod until the scales crack into a salty crust.", PC_ICON_FISH, PC_ITEM_ROCKSCALE_COD, 57, 6.00)
     call PC_Add(recipeId, PC_ITEM_RAW_ROCKSCALE_COD, 1, "Raw Rockscale Cod")
     call PC_Add(recipeId, PC_ITEM_SEA_SALT_GLAND, 1, "Sea-Salt Gland")
     call PC_Add(recipeId, PC_ITEM_SALT, 1, "Salt")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_EXPERT, PC_SUBCATEGORY_CAMPFIRE_FOOD, "Raptor Chili", "A fast-burning chili with raptor meat and cactus pulp.", PC_ICON_STEW, PC_ITEM_RAPTOR_CHILI, 60, 6.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_EXPERT, PC_SUBCATEGORY_FOOD, "Raptor Chili", "A fast-burning chili with raptor meat and cactus pulp.", PC_ICON_STEW, PC_ITEM_RAPTOR_CHILI, 60, 6.00)
     call PC_Add(recipeId, PC_ITEM_RAW_RAPTOR_MEAT, 2, "Raw Raptor Meat")
     call PC_Add(recipeId, PC_ITEM_CACTUS_PULP, 1, "Cactus Pulp")
     call PC_Add(recipeId, PC_ITEM_COOKING_PEPPERCORN, 2, "Peppercorn")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_EXPERT, PC_SUBCATEGORY_SEAFOOD, "Mithril Head Trout", "Crisps trout in a salt-heavy pan.", PC_ICON_FISH, PC_ITEM_MITHRIL_TROUT, 63, 6.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_EXPERT, PC_SUBCATEGORY_FOOD, "Mithril Head Trout", "Crisps trout in a salt-heavy pan.", PC_ICON_FISH, PC_ITEM_MITHRIL_TROUT, 63, 6.00)
     call PC_Add(recipeId, PC_ITEM_RAW_MITHRIL_TROUT, 1, "Raw Mithril Head Trout")
     call PC_Add(recipeId, PC_ITEM_SEA_SALT_GLAND, 1, "Sea-Salt Gland")
     call PC_Add(recipeId, PC_ITEM_BRUISEWEED, 1, "Bruiseweed")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_EXPERT, PC_SUBCATEGORY_CAMPFIRE_FOOD, "Cow Rump Roast", "A large roast that needs time and a steady fire.", PC_ICON_ROAST, PC_ITEM_COW_RUMP_ROAST, 67, 7.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_EXPERT, PC_SUBCATEGORY_FOOD, "Cow Rump Roast", "A large roast that needs time and a steady fire.", PC_ICON_ROAST, PC_ITEM_COW_RUMP_ROAST, 67, 7.00)
     call PC_Add(recipeId, PC_ITEM_RAW_COW_MEAT, 2, "Raw Cow Meat")
     call PC_Add(recipeId, PC_ITEM_COARSE_FLOUR, 1, "Coarse Flour")
     call PC_Add(recipeId, PC_ITEM_HONEY, 1, "Honey")
     call PC_Add(recipeId, PC_ITEM_SALT, 1, "Salt")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_EXPERT, PC_SUBCATEGORY_SEAFOOD, "Spotted Yellowtail", "Grills yellowtail with sour berries.", PC_ICON_FISH, PC_ITEM_SPOTTED_YELLOWTAIL, 68, 6.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_EXPERT, PC_SUBCATEGORY_FOOD, "Spotted Yellowtail", "Grills yellowtail with sour berries.", PC_ICON_FISH, PC_ITEM_SPOTTED_YELLOWTAIL, 68, 6.00)
     call PC_Add(recipeId, PC_ITEM_RAW_SPOTTED_YELLOWTAIL, 1, "Raw Spotted Yellowtail")
     call PC_Add(recipeId, PC_ITEM_SOUR_BERRIES, 1, "Sour Berries")
     call PC_Add(recipeId, PC_ITEM_SALT, 1, "Salt")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_EXPERT, PC_SUBCATEGORY_ODDITIES, "Deviate Delight", "Prepares Deviate Fish into an unpredictable meal.", PC_ICON_ODDITY, PC_ITEM_DEVIATE_DELIGHT, 72, 7.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_EXPERT, PC_SUBCATEGORY_FOOD, "Deviate Delight", "Prepares Deviate Fish into an unpredictable meal.", PC_ICON_ODDITY, PC_ITEM_DEVIATE_DELIGHT, 72, 7.00)
     call PC_Add(recipeId, PC_ITEM_DEVIATE_FISH, 1, "Deviate Fish")
     call PC_Add(recipeId, PC_ITEM_GLOWCAP, 1, "Glowcap")
     call PC_Add(recipeId, PC_ITEM_SOUR_BERRIES, 1, "Sour Berries")
 
     // Artisan 75-100.
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_SEAFOOD, "Glossy Mightfish Steak", "A dense steak from Glossy Mightfish.", PC_ICON_FISH, PC_ITEM_GLOSSY_MIGHTFISH_STEAK, 75, 7.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_FOOD, "Glossy Mightfish Steak", "A dense steak from Glossy Mightfish.", PC_ICON_FISH, PC_ITEM_GLOSSY_MIGHTFISH_STEAK, 75, 7.00)
     call PC_Add(recipeId, PC_ITEM_RAW_GLOSSY_MIGHTFISH, 1, "Raw Glossy Mightfish")
     call PC_Add(recipeId, PC_ITEM_HONEY, 1, "Honey")
     call PC_Add(recipeId, PC_ITEM_COOKING_PEPPERCORN, 1, "Peppercorn")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_SEAFOOD, "Redgill Skillet", "Skillet-cooks redgill with pepper and blindweed.", PC_ICON_FISH, PC_ITEM_REDGILL_SKILLET, 77, 7.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_FOOD, "Redgill Skillet", "Skillet-cooks redgill with pepper and blindweed.", PC_ICON_FISH, PC_ITEM_REDGILL_SKILLET, 77, 7.00)
     call PC_Add(recipeId, PC_ITEM_RAW_REDGILL, 1, "Raw Redgill")
     call PC_Add(recipeId, PC_ITEM_BLINDWEED, 1, "Blindweed")
     call PC_Add(recipeId, PC_ITEM_COOKING_PEPPERCORN, 1, "Peppercorn")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_STEWS, "Nightfin Soup", "A deep nightfin soup for patient casters.", PC_ICON_STEW, PC_ITEM_NIGHTFIN_SOUP, 80, 7.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_FOOD, "Nightfin Soup", "A deep nightfin soup for patient casters.", PC_ICON_STEW, PC_ITEM_NIGHTFIN_SOUP, 80, 7.00)
     call PC_Add(recipeId, PC_ITEM_NIGHTFIN_SNAPPER, 1, "Nightfin Snapper")
     call PC_Add(recipeId, PC_ITEM_PURIFIED_WATER, 1, "Purified Water")
     call PC_Add(recipeId, PC_ITEM_LIFEROOT, 1, "Liferoot")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_SEAFOOD, "Sunscale Fillet", "A bright salmon fillet cooked with liferoot.", PC_ICON_FISH, PC_ITEM_SUNSCALE_FILLET, 82, 7.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_FOOD, "Sunscale Fillet", "A bright salmon fillet cooked with liferoot.", PC_ICON_FISH, PC_ITEM_SUNSCALE_FILLET, 82, 7.00)
     call PC_Add(recipeId, PC_ITEM_SUNSCALE_SALMON, 1, "Sunscale Salmon")
     call PC_Add(recipeId, PC_ITEM_LIFEROOT, 1, "Liferoot")
     call PC_Add(recipeId, PC_ITEM_HONEY, 1, "Honey")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_SEAFOOD, "Stonescale Eel", "Charred eel with a mineral-heavy crust.", PC_ICON_FISH, PC_ITEM_COOKED_STONESCALE_EEL, 83, 7.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_FOOD, "Stonescale Eel", "Charred eel with a mineral-heavy crust.", PC_ICON_FISH, PC_ITEM_COOKED_STONESCALE_EEL, 83, 7.00)
     call PC_Add(recipeId, PC_ITEM_RAW_STONESCALE_EEL, 1, "Stonescale Eel")
     call PC_Add(recipeId, PC_ITEM_SEA_SALT_GLAND, 1, "Sea-Salt Gland")
     call PC_Add(recipeId, PC_ITEM_ICECAP_SHAVINGS, 1, "Icecap Shavings")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_SEAFOOD, "Whitescale Salmon", "A refined salmon meal with silversage.", PC_ICON_FISH, PC_ITEM_WHITESCALE_SALMON, 87, 7.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_FOOD, "Whitescale Salmon", "A refined salmon meal with silversage.", PC_ICON_FISH, PC_ITEM_WHITESCALE_SALMON, 87, 7.00)
     call PC_Add(recipeId, PC_ITEM_RAW_WHITESCALE_SALMON, 1, "Raw Whitescale Salmon")
     call PC_Add(recipeId, PC_ITEM_MOUNTAIN_SILVERSAGE, 1, "Mountain Silversage")
     call PC_Add(recipeId, PC_ITEM_PURIFIED_WATER, 1, "Purified Water")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_STEWS, "Darkclaw Bisque", "A rich lobster bisque with a bite.", PC_ICON_STEW, PC_ITEM_DARKCLAW_BISQUE, 90, 8.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_FOOD, "Darkclaw Bisque", "A rich lobster bisque with a bite.", PC_ICON_STEW, PC_ITEM_DARKCLAW_BISQUE, 90, 8.00)
     call PC_Add(recipeId, PC_ITEM_DARKCLAW_LOBSTER, 1, "Darkclaw Lobster")
     call PC_Add(recipeId, PC_ITEM_COARSE_FLOUR, 1, "Coarse Flour")
     call PC_Add(recipeId, PC_ITEM_PURIFIED_WATER, 1, "Purified Water")
     call PC_Add(recipeId, PC_ITEM_COOKING_PEPPERCORN, 1, "Peppercorn")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_SEAFOOD, "Winter Squid", "Cold-prepped squid finished over flame.", PC_ICON_FISH, PC_ITEM_COOKED_WINTER_SQUID, 93, 8.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_FOOD, "Winter Squid", "Cold-prepped squid finished over flame.", PC_ICON_FISH, PC_ITEM_COOKED_WINTER_SQUID, 93, 8.00)
     call PC_Add(recipeId, PC_ITEM_RAW_WINTER_SQUID, 1, "Winter Squid")
     call PC_Add(recipeId, PC_ITEM_ICECAP_SHAVINGS, 1, "Icecap Shavings")
     call PC_Add(recipeId, PC_ITEM_SOUR_BERRIES, 1, "Sour Berries")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_SEAFOOD, "Summer Bass", "A quick bass dish that keeps the feet light.", PC_ICON_FISH, PC_ITEM_SUMMER_BASS, 97, 8.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_FOOD, "Summer Bass", "A quick bass dish that keeps the feet light.", PC_ICON_FISH, PC_ITEM_SUMMER_BASS, 97, 8.00)
     call PC_Add(recipeId, PC_ITEM_RAW_SUMMER_BASS, 1, "Raw Summer Bass")
     call PC_Add(recipeId, PC_ITEM_AGAVE, 1, "Agave")
     call PC_Add(recipeId, PC_ITEM_SALT, 1, "Salt")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_ODDITIES, "Ember Whelp Roast", "An illegal-looking roast seasoned like dragonfire.", PC_ICON_ODDITY, PC_ITEM_EMBER_WHELP_ROAST, 95, 8.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_FOOD, "Ember Whelp Roast", "An illegal-looking roast seasoned like dragonfire.", PC_ICON_ODDITY, PC_ITEM_EMBER_WHELP_ROAST, 95, 8.00)
     call PC_Add(recipeId, PC_ITEM_RAW_RAPTOR_MEAT, 2, "Raw Raptor Meat")
     call PC_Add(recipeId, PC_ITEM_GROMSBLOOD, 1, "Gromsblood")
     call PC_Add(recipeId, PC_ITEM_FIREFIN_SNAPPER, 1, "Firefin Snapper")
     call PC_Add(recipeId, PC_ITEM_COOKING_PEPPERCORN, 2, "Peppercorn")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_ODDITIES, "Plaguebloom Dumpling", "A risky dumpling that should probably be labeled.", PC_ICON_ODDITY, PC_ITEM_PLAGUEBLOOM_DUMPLING, 98, 8.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_FOOD, "Plaguebloom Dumpling", "A risky dumpling that should probably be labeled.", PC_ICON_ODDITY, PC_ITEM_PLAGUEBLOOM_DUMPLING, 98, 8.00)
     call PC_Add(recipeId, PC_ITEM_PLAGUEBLOOM, 1, "Plaguebloom")
     call PC_Add(recipeId, PC_ITEM_COARSE_FLOUR, 1, "Coarse Flour")
     call PC_Add(recipeId, PC_ITEM_SICKLY_FISH, 1, "Sickly Looking Fish")
     call PC_Add(recipeId, PC_ITEM_GLOWCAP, 1, "Glowcap")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_ODDITIES, "Tigerseye Eel", "A strange eel dish that sharpens spell focus.", PC_ICON_ODDITY, PC_ITEM_TIGERSEYE_EEL, 100, 8.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_ARTISAN, PC_SUBCATEGORY_FOOD, "Tigerseye Eel", "A strange eel dish that sharpens spell focus.", PC_ICON_ODDITY, PC_ITEM_TIGERSEYE_EEL, 100, 8.00)
     call PC_Add(recipeId, PC_ITEM_RAW_TIGERSEYE_EEL, 1, "Raw Tigerseye Eel")
     call PC_Add(recipeId, PC_ITEM_GLOWCAP, 1, "Glowcap")
     call PC_Add(recipeId, PC_ITEM_MOUNTAIN_SILVERSAGE, 1, "Mountain Silversage")
