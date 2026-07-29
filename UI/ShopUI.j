@@ -183,7 +183,6 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         if GetTriggerPlayer() == GetLocalPlayer() then
             call BlzFrameSetEnable(BlzGetTriggerFrame(), false)
             call BlzFrameSetEnable(BlzGetTriggerFrame(), true)
-            call StopCamera()
         endif
     endfunction
 
@@ -271,7 +270,11 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
                 else
                     set iconPath = Shop_GetViewIconPath(viewIndex)
                     set rowText = "|cffffe4a3" + Shop_GetViewName(viewIndex) + "|r|n" + Shop_GetViewSourceLabel(viewIndex)
-                    set rowPrice = "|cffffcc00" + I2S(Shop_GetViewSaleValue(viewIndex)) + "g|r"
+                    if Shop_IsViewItemSellable(viewIndex) then
+                        set rowPrice = "|cffffcc00" + I2S(Shop_GetViewSaleValue(viewIndex)) + "g|r"
+                    else
+                        set rowPrice = "|cff808080No sale|r"
+                    endif
                 endif
 
                 if GetLocalPlayer() == whichPlayer then
@@ -372,7 +375,11 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
             set actionText = "Buy"
         else
             set titleText = Shop_GetViewName(SUI_SelectedIndex)
-            set infoText = Shop_GetViewSourceLabel(SUI_SelectedIndex) + "  |  " + I2S(Shop_GetViewSaleValue(SUI_SelectedIndex)) + " gold"
+            if Shop_IsViewItemSellable(SUI_SelectedIndex) then
+                set infoText = Shop_GetViewSourceLabel(SUI_SelectedIndex) + "  |  " + I2S(Shop_GetViewSaleValue(SUI_SelectedIndex)) + " gold"
+            else
+                set infoText = Shop_GetViewSourceLabel(SUI_SelectedIndex) + "  |  Cannot sell"
+            endif
             set bodyText = Shop_GetViewTooltip(SUI_SelectedIndex)
             set iconPath = Shop_GetViewIconPath(SUI_SelectedIndex)
             set actionText = "Sell"
@@ -613,7 +620,7 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
             set rowIndex = SUI_ButtonRow.integer[handleId]
             if SUI_RowIndex[rowIndex] > 0 then
                 set SUI_SelectedIndex = SUI_RowIndex[rowIndex]
-                call Interface_PlayEventSoundForPlayer(Interface_EVENT_BUTTON_CLICK, GetTriggerPlayer())
+                call Interface_PlayEventSoundForPlayer(Interface_EVENT_MENU_CLICK, GetTriggerPlayer())
                 call SUI_Update(GetTriggerPlayer())
             endif
         endif
@@ -641,7 +648,11 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         endif
 
         if success then
-            call Interface_PlayEventSoundForPlayer(Interface_EVENT_CONFIRM, p)
+            if SUI_ViewMode == SHOP_VIEW_MERCHANT then
+                call Interface_PlayEventSoundForPlayer(Interface_EVENT_SHOP_BUY, p)
+            else
+                call Interface_PlayEventSoundForPlayer(Interface_EVENT_SHOP_SELL, p)
+            endif
             set SUI_SelectedIndex = 0
         else
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, p)
