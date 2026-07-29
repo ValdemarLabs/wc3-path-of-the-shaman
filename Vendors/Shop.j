@@ -55,7 +55,7 @@ library Shop initializer Init requires Table, DEquipment
         private constant integer SHP_AI_MAX_DUPLICATE_ITEMS = 3
         private constant string SHP_CATEGORY_ALL = "All"
         private constant string SHP_CATEGORY_GOODS = "Goods"
-        private constant string SHP_CATEGORY_RECENTLY_SOLD = "Recently Sold"
+        private constant string SHP_CATEGORY_RECENTLY_SOLD = "Recent"
 
         // Registered vendors and unit lookup.
         private Table SHP_VendorByUnit = 0
@@ -165,6 +165,13 @@ library Shop initializer Init requires Table, DEquipment
             return false
         endif
         return DEqItemTypeDefinitionDB[itemTypeId][0].integer[2] == 1
+    endfunction
+
+    private function SHP_IsQuestItem takes item whichItem returns boolean
+        if whichItem == null then
+            return false
+        endif
+        return GetItemType(whichItem) == ITEM_TYPE_CAMPAIGN
     endfunction
 
     private function SHP_IsAIUtilityItemType takes integer itemTypeId returns boolean
@@ -465,6 +472,11 @@ library Shop initializer Init requires Table, DEquipment
             set whichItem = null
             return false
         endif
+        if SHP_IsQuestItem(whichItem) then
+            set owner = null
+            set whichItem = null
+            return true
+        endif
         if SHP_IsAIUtilityItemType(itemTypeId) then
             set owner = null
             set whichItem = null
@@ -508,6 +520,13 @@ library Shop initializer Init requires Table, DEquipment
 
         if whichItem == null then
             call SHP_SetMessage("|cffff8080That item is no longer available.|r")
+            set receiver = null
+            set owner = null
+            return false
+        endif
+        if SHP_IsQuestItem(whichItem) then
+            call SHP_SetMessage("|cffff8080Quest items cannot be sold.|r")
+            set whichItem = null
             set receiver = null
             set owner = null
             return false
@@ -1168,7 +1187,25 @@ library Shop initializer Init requires Table, DEquipment
     endfunction
 
     public function GetViewSaleValue takes integer viewIndex returns integer
-        return Shop_GetItemSaleValue(Shop_GetViewItem(viewIndex))
+        local item whichItem = Shop_GetViewItem(viewIndex)
+        local integer value = 0
+
+        if whichItem != null and not SHP_IsQuestItem(whichItem) then
+            set value = Shop_GetItemSaleValue(whichItem)
+        endif
+        set whichItem = null
+        return value
+    endfunction
+
+    public function IsViewItemSellable takes integer viewIndex returns boolean
+        local item whichItem = Shop_GetViewItem(viewIndex)
+        local boolean result = false
+
+        if whichItem != null and not SHP_IsQuestItem(whichItem) and Shop_GetViewSource(viewIndex) != SHOP_SOURCE_DEQUIP then
+            set result = true
+        endif
+        set whichItem = null
+        return result
     endfunction
 
     public function SellViewItem takes player receiver, unit owner, integer viewIndex returns boolean
