@@ -16,6 +16,25 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [29.7.2026]
+
+### Technical Updates
+
+- Updated `DestroyerInventoryAndEquipmentSystem/PoTs/DConfigurationArea.j` and `DestroyerInventoryAndEquipmentSystem/PoTs/SharedDInvLib.j`
+  - Tightened DInventory stackability so `DInventoryIsItemStackable(...)` now treats WC3 item level `1-49` as the stack-cap range and treats level `0` and `50+` as non-stackable, regardless of Object Editor item category.
+  - Updated the DInventory stacking configuration comments to document that WC3 item level, not item class/type, owns the stackability rule.
+
+- Updated `UI/CraftingUI.j`
+  - Crafting UI selected-recipe details now use a dedicated dark body panel so recipe description, skill/time, and material lines remain visible for Cooking category/subcategory views the same way they do for Mining and Blacksmithing.
+
+### Tool Updates
+
+- Updated `WC3_Database/WC3ItemManager`
+  - Corrected the documented item-level data model: any item class/type can be stackable when its WC3 item level is `1-49`, with that value acting as the stack cap; WC3 item level `0` and `50+` are intended non-stackable, and equipment continues to use higher WC3 item-level values.
+  - Added clearer `Ignore Loot Tables` wording for the existing per-item loot exclusion flag, exposed it in the item list and batch editor, and kept it mapped to `specific_drop_only` so existing data remains compatible.
+  - Generated loot export now skips `specific_drop_only` items in generic item pools, named destructible loot tables, unit-specific drops, and destructible-specific drops; loot-table autofill also skips those items so crafter gear and other manually controlled items are not pulled into loot accidentally.
+
+
 ## [28.7.2026]
 
 ### Technical Updates
@@ -102,7 +121,6 @@
   - Added a `Query` craft button that keeps crafting the selected recipe until the required tool or materials are no longer available, then reopens the same crafting view.
   - Query crafting now continues repeated crafts inside the same active crafting camera/fade sequence instead of flashing back to the normal view between each item.
   - Pressing ESC now stops an active crafting query, and starting a query displays a reminder that ESC cancels it.
-  - Crafting UI selected-recipe details now use a dedicated dark body panel so recipe description, skill/time, and material lines remain visible for Cooking category/subcategory views the same way they do for Mining and Blacksmithing.
 
 - Updated `Companions/Companions.j`
   - Companion command abilities that target the ground now also include temporary controlled companions in `ControlledDisplayGroup`, so summoned/temporary companions follow group command mode and focus orders without needing to be manually selected.
@@ -182,7 +200,6 @@
   - Added a DInventory `Give` button for transferring the selected DInventory item to the currently selected target unit, using target DInventory first and target vanilla inventory only when the target has no DInventory.
   - The DInventory `Give` button now refreshes when the target selection changes and is positioned below the DInventory slots so it appears reliably after selecting both an item and a target unit.
   - DInventory give transfer now reports `Target unit doesn't have inventory.` or `Target unit inventory is full.` when the selected target cannot receive the item.
-  - Tightened DInventory stackability so `DInventoryIsItemStackable(...)` now treats WC3 item level `1-49` as the stack-cap range and treats level `0` and `50+` as non-stackable, regardless of Object Editor item category.
   - Inspect mode is read-only for inventory/equipment slot clicks while still allowing UI viewing and DInventory paging.
   - The Inspect/Close button now resolves the selected inspect target again on click, preventing stale selection cache cases where the button only worked after switching selection away and back.
   - Vanilla inventory handling now rejects DEquipment items, keeping equippable gear in DInventory or DEquipment slots while still allowing consumables, materials, and miscellaneous non-equipment items in vanilla inventory.
@@ -197,11 +214,8 @@
   - This fixes cases such as `Copper Ore`, where the item list correctly showed WC3 item level / stack cap `20`, but opening Edit Item could snap the field to an equipment-range value such as `700` before the item's final class/rarity state was fully loaded.
   - Renamed the raw item-level UI to `WC3 Level / Stack Cap` in the item editor and batch editor to make its current runtime meaning explicit.
   - Added and exposed `Loot Level` / `item_level_unclassified` beside the raw WC3 item level in the editor, item list, and column configuration.
-  - The intended data model is now documented in the tool: any item class/type can be stackable when its WC3 item level is `1-49`, with that value acting as the stack cap; WC3 item level `0` and `50+` are intended non-stackable, and equipment continues to use higher WC3 item-level values.
   - Background: `DestroyerInventoryAndEquipmentSystem` still reads Warcraft III's object-editor item level through `GetItemLevel(...)` when deciding stack capacity. Because Warcraft III item charges are the visible count used by DInventory stacks, PotS has historically repurposed WC3 item level as the maximum stack/charge cap for stackable non-equipment instead of treating it as item power.
   - `item_level_unclassified` remains the separate loot/drop tier field for items whose raw WC3 item level is being used for stack behavior.
-  - Added clearer `Ignore Loot Tables` wording for the existing per-item loot exclusion flag, exposed it in the item list and batch editor, and kept it mapped to `specific_drop_only` so existing data remains compatible.
-  - Generated loot export now skips `specific_drop_only` items in generic item pools, named destructible loot tables, unit-specific drops, and destructible-specific drops; loot-table autofill also skips those items so crafter gear and other manually controlled items are not pulled into loot accidentally.
   - Populated the PotS ItemManager database with 64 additional item records: 32 junk/misc/food/material creature-drop items and 32 Cloth, Leather, Mail, and Plate armor pieces.
   - Added stat rows and matching WC3 ability-code grants for the new armor pieces, following the existing Copper Chain armor pattern while using `item_level_unclassified` as the drop-tier level.
   - Added rare armor descriptions/flavor text to selected higher-rarity pieces while keeping common/simple items concise.
