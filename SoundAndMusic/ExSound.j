@@ -149,6 +149,11 @@ function ExSound_RegisterEditorSoundEx takes string soundLabel, sound whichSound
 
     if not ExSound_IsBlankString(soundPath) then
         call SaveStr(es_Table, parentKey, EXSOUND_EDITOR_PATH_CHILD, soundPath)
+        if not HaveSavedString(es_Table, parentKey, 0) then
+            set es_KeyList[es_KeyCount] = normalizedLabel
+            set es_KeyCount = es_KeyCount + 1
+        endif
+        call SaveStr(es_Table, parentKey, 0, soundPath)
     endif
 endfunction
 
@@ -587,7 +592,12 @@ endfunction
 // Register single sound by key in a folder.
 //=================================================================
 function ExSound_RegisterKeyInFolder takes string key, string folder returns nothing
-    call ExSound_Register(key, folder + key + ".mp3")
+    local string editorPath = ExSound_GetEditorSoundPath(key)
+    if not ExSound_IsBlankString(editorPath) then
+        call ExSound_Register(key, editorPath)
+    else
+        call ExSound_Register(key, folder + key + ".mp3")
+    endif
 endfunction
 
 //=================================================================
