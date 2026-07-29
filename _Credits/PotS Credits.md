@@ -150,6 +150,7 @@ The following systems have been developed by Valdemar:
     - `SettingsUI`
     - `StatsLiteUI` (Party monitor)
     - `StatsUI`
+    - `ShopUI`  (Credits Elprede, for RpgMerchantShop as feature inspiration)
 - `UnitSystems`
     - `UnitExperience` (used by pets mostly)
     - `UnitHider`
