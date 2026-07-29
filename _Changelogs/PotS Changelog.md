@@ -27,6 +27,13 @@
 - Updated `UI/CraftingUI.j`
   - Crafting UI selected-recipe details now use a dedicated dark body panel so recipe description, skill/time, and material lines remain visible for Cooking category/subcategory views the same way they do for Mining and Blacksmithing.
 
+- Updated `Professions/ProfessionsCooking.j`
+  - Made Cooking's consumable buff split explicit: each unit can have one active food buff and one active drink buff, and applying a new consumable only removes/replaces the existing same-type stats and aura ability.
+  - Added food-only, drink-only, and generic Cooking consumable lookup helpers for aura abilities and effect text.
+  - Clarified that not every drink buff is intoxicating: non-alcohol drinks such as Honeyed Milk, Salted Makrura Broth, Sagefish Tonic, and Lobster Bisque Cup now keep their drink buff stats/aura without adding drunkenness.
+  - Wired all 55 Cooking consumables to their recipe-specific `S000`-series Object Editor aura ability rawcodes, keeping per-unit buff text/icons stable while Cooking still enforces one active food buff and one active drink buff.
+  - Documented that Warcraft runtime tooltip setters are object-code global, so collapsing Cooking to one shared food aura and one shared drink aura would not provide correct per-unit text when different units have different active food or drink effects.
+
 ### Tool Updates
 
 - Updated `WC3_Database/WC3ItemManager`
