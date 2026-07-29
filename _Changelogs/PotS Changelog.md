@@ -26,17 +26,21 @@
   - The `You` view combines DInventory, DEquipment, and vanilla inventory items into one list.
   - Equipped DEquipment items are shown with an `Equipt` label and are blocked from normal selling until unequipped.
   - Merchant stock can now be filtered through category buttons such as `Shields`, with `All` as the default category.
-  - Sold items now appear under a session-only `Recently Sold` category so players can buy back mistakes during the same trade window.
+  - Sold items now appear under each vendor's capped `Recent` category so players can buy back mistakes across later visits until the item is bought back or older entries are evicted.
   - Vendor trade entry now uses the same fullscreen fade/camera presentation as ability trainers and exits if the buyer or vendor is attacked, dies, or the shop UI is closed.
+  - Shop item selection now uses a normal menu-click sound, while successful buying and selling use distinct gold sounds.
+  - Quest/campaign items are now marked as unsellable in the shop and cannot be sold from DInventory, vanilla inventory, or AI sell paths.
   - Added starter General Goods and Blacksmith vendor templates with conservative early-game stock.
 
 ### Technical Updates
 
 - Added `Shop.j` and `ShopUI.j`
   - `Shop.j` owns vendor registration, unit-type/unit lookup, stock entries, buy/sell transactions, sell values, item delivery into DInventory with vanilla inventory fallback, and a cached combined inventory view for UI rendering.
-  - Added shop category query helpers, filtered stock lookups, and a trade-session buyback cache that is cleared by `Shop_EndTradeSession()`.
+  - Added shop category query helpers, filtered stock lookups, and a persistent per-vendor buyback cache capped at 64 recent entries per vendor.
+  - Renamed the buyback category display from `Recently Sold` to `Recent`.
   - `ShopUI.j` follows the existing PotS frame UI pattern with a left item list, right detail pane, item icons/tooltips, local-player frame updates, scroll handling, buy/sell action button, and transaction status text.
   - `ShopUI.j` now owns the active trade-session lifecycle, session buyback purchases, merchant category buttons, ESC close handling, and attack/death interruption cleanup.
+  - Added `Interface_EVENT_SHOP_BUY` and `Interface_EVENT_SHOP_SELL` so shop transaction sounds can be configured separately from generic confirm/cancel UI feedback.
   - Credited Elprede's Hive Workshop `RpgMerchantShop` as shop-system inspiration while keeping the PotS implementation separate and integrated with local inventory/dialog systems.
 
 - Added `Vendors/`
@@ -55,27 +59,49 @@
   - Updated the DInventory stacking configuration comments to document that WC3 item level, not item class/type, owns the stackability rule.
 
 - Updated `UI/CraftingUI.j`
-  - Crafting UI selected-recipe details now use a dedicated dark body panel so recipe description, skill/time, and material lines remain visible for Cooking category/subcategory views the same way they do for Mining and Blacksmithing.
-  - Raised recipe row and selected-recipe detail frame levels so the detail title, recipe body, and materials render above the pane backdrop consistently.
+  - Crafting UI selected-recipe details now keep the same transparent right-pane layout used by Mining and Blacksmithing while still raising recipe row/detail text frame levels so recipe description, skill/time, and materials render consistently.
 
 - Updated `Professions/ProfessionsCooking.j`
   - Simplified Cooking recipe browsing so each skill tier now contains only `Food` and `Beverages` subcategories instead of separate meat, seafood, stew, and oddity branches.
-  - Replaced invalid generic Cooking drink/stew recipe icon paths with stable command button icons to avoid green missing-texture squares in the crafting list and recipe detail pane.
+  - Replaced invalid generic Cooking drink/stew/fish recipe icon paths with stable command button icons to avoid green missing-texture squares in the crafting list and recipe detail pane.
   - Made Cooking's consumable buff split explicit: each unit can have one active food buff and one active drink buff, and applying a new consumable only removes/replaces the existing same-type stats and aura ability.
   - Added food-only, drink-only, and generic Cooking consumable lookup helpers for aura abilities and effect text.
   - Clarified that not every drink buff is intoxicating: non-alcohol drinks such as Honeyed Milk, Salted Makrura Broth, Sagefish Tonic, and Lobster Bisque Cup now keep their drink buff stats/aura without adding drunkenness.
   - Wired all 55 Cooking consumables to their recipe-specific `S000`-series Object Editor aura ability rawcodes, keeping per-unit buff text/icons stable while Cooking still enforces one active food buff and one active drink buff.
   - Documented that Warcraft runtime tooltip setters are object-code global, so collapsing Cooking to one shared food aura and one shared drink aura would not provide correct per-unit text when different units have different active food or drink effects.
 
+- Updated `Debug/DebugObjectRegistry.j`
+  - Added debug lookup entries for newer DEquipment-exported item rawcodes, including Fishing materials, creature drops, seeded profession gear, Cooking cooked foods/beverages, and new cooking materials.
+  - Added or refreshed debug lookup entries for the Cooking food/drink buff aura ability rawcodes used by the one-food-buff and one-drink-buff consumable system.
+
 - Updated `QuestsAndDialogs/QuestGivers/qRagno.j`
   - Restored the event-driven `Protect the Outpost` intro from the old `RagnoIntroRegion01` through `RagnoIntroRegion04` rects as a hidden Ragno quest that starts gnoll waves and self-completes into `Giving the Letter` when the spawned gnolls are dead.
-  - Restored more of `Lumberjack Duties`: the helper peon now belongs to Player 2 Blue, scans nearby `B61E` lumber trees, issues harvest orders, creates/removes the old lumber blocker/return helper objects, and uses the migrated Orc Peon voice barks for intro, chopping, and random chatter.
+  - Restored more of `Lumberjack Duties`: the helper peon now belongs to Player 2 Blue, scans nearby `LTlt` Pine Trees and custom `B61E` lumber trees, issues harvest orders, creates/removes the old lumber blocker/return helper objects, and uses the migrated Orc Peon voice barks for intro, chopping, and random chatter.
   - Added optional Zaekolaerr availability refresh calls so accepting, readying, or completing `Satyr Negotiations` updates the external satyr quest marker when `qZaekolaerr.j` is imported.
+  - Removed qRagno's extra Nazgrek first-greet line so Ragno's first dialog no longer plays two player greeting lines.
+  - Reworked Ragno's greeting to use only qRagno's custom Ragno lines instead of the generic hero-greet helper.
+  - Moved the Lumberjack peon's accept-intro barks into the accept sequence so the cinematic does not exit before the peon finishes talking.
+  - Tightened `Protect the Outpost` quest-log text so it does not mention Ragno before the player has met him.
+  - Added short intro and post-fight Protect Outpost cinematics using the old GUI camera/unit globals, with the post-fight flow now completing `Protect the Outpost`, delaying, playing the Ragno/Nazgrek letter scene, delaying again, then accepting `Giving the Letter`.
+  - Changed `Giving the Letter` to a single-objective delivery quest with no registered item-gather requirement; the Blood Signed Summon Letter is still given when the quest is accepted.
+  - Enabled XP/reputation reward text for Ragno's quest descriptions, with minimal early-chain rewards for `Protect the Outpost` and `Giving the Letter`.
+
+- Updated `QuestsAndDialogs/QuestMaster.j`
+  - Cross-NPC turn-ins now remove the giver-side marker when the quest is ready and show the turn-in question mark only on the receiver; completed quests are removed from giver icon tables.
+
+- Updated `QuestsAndDialogs/QuestGivers/qChieftainThork.j`
+  - Adjusted `Giving the Letter` completion for the single-objective delivery shape: Thork still checks/removes the Blood Signed Summon Letter manually, then marks the one delivery objective complete.
+
+- Updated `SoundAndMusic/ExSound.j`
+  - Sound Editor registration now also populates normal ExSound playback keys, and batch sequence registration preserves an existing Sound Editor path for overlapping labels.
+  - This fixes converted dialog lines such as `OrcGrunt_0085`, `OrcGrunt_0088`, `OrcGrunt_0089`, `OrcGrunt_0090`, and `OrcGrunt_0094` being registered but resolving to the wrong playback path.
 
 - Added `QuestsAndDialogs/QuestGivers/qZaekolaerr.j`
   - Added Prince Zaekolaerr as the selectable satyr endpoint for Ragno's `Satyr Negotiations` quest.
   - Zaekolaerr now uses the `Satyr_####` voiceline constants, plays first-meet/greet/farewell lines through `DialogSystem`, exposes the three negotiation branch choices, updates Ragno's quest objective, and supports ESC closing through `DialogSystem_SetEscapeAction`.
   - Added a dummy ready-turn-in style quest marker on Zaekolaerr while `Satyr Negotiations` is active and waiting for the satyr conversation.
+  - Split Zaekolaerr back into the old GUI two-dialog flow: first greet/farewell dialog, a `Satyr Negotiations (Continue Quest)` intro sequence, then a second dialog with arena/taunt/alliance choices.
+  - Shows the second negotiation dialog directly after the intro sequence so it does not inject another generic greet line or reopen the first dialog state.
 
 - Updated `CreepRespawn/CreepUnitAssignment.j`
   - Prince Zaekolaerr respawns now run quest-giver restoration and refresh the new `qZaekolaerr` dialog/icon hook after `udg_Zaekolaerr` is reassigned.
@@ -86,13 +112,14 @@
   - Corrected the documented item-level data model: any item class/type can be stackable when its WC3 item level is `1-49`, with that value acting as the stack cap; WC3 item level `0` and `50+` are intended non-stackable, and equipment continues to use higher WC3 item-level values.
   - Added clearer `Ignore Loot Tables` wording for the existing per-item loot exclusion flag, exposed it in the item list and batch editor, and kept it mapped to `specific_drop_only` so existing data remains compatible.
   - Generated loot export now skips `specific_drop_only` items in generic item pools, named destructible loot tables, unit-specific drops, and destructible-specific drops; loot-table autofill also skips those items so crafter gear and other manually controlled items are not pulled into loot accidentally.
-  - Updated Cooking item seeding to use non-missing food, stew, and beverage icon paths that match the simplified Cooking crafting UI recipe icons.
+  - Updated Cooking item seeding to use non-missing food, fish, stew, and beverage icon paths that match the simplified Cooking crafting UI recipe icons.
 
 ### Known Issues
 
 - The new shop libraries still need full in-map/JassHelper validation after import order is finalized, especially the frame panel, vendor selection scan, DInventory/DEquipment sale paths, and AI shop behavior against real registered shop units.
-- `qRagno.j` now references additional Outpost old-GUI rect globals such as `gg_rct_RagnoIntroRegion01` through `gg_rct_RagnoIntroRegion04` and the gnoll attack/spawn rects; confirm these rects and the new quest-giver import order in the next full in-map JassHelper compile.
-- `qZaekolaerr.j` still needs full in-map JassHelper compile/runtime validation with `VoicelinesSatyr`, `DialogSystem`, and `qRagno` imported before it.
+- `qRagno.j` now references additional Outpost old-GUI globals such as `gg_rct_RagnoIntroRegion01` through `gg_rct_RagnoIntroRegion04`, the gnoll attack/spawn rects, `gg_cam_ProtectOutpost01` / `02` / `03` / `Skipped` / `Skipped02`, `gg_unit_ogru_1209`, `gg_unit_ogru_1210`, `gg_unit_ogru_1633`, and `gg_unit_orai_1221`; confirm these globals and the new quest-giver import order in the next full in-map JassHelper compile.
+- `qZaekolaerr.j` still needs full in-map JassHelper compile/runtime validation with `VoicelinesSatyr`, `VoicelinesDemoness`, `DialogSystem`, and `qRagno` imported before it, plus confirmation of the old Zaekolaerr camera globals.
+- The ExSound Sound Editor path override needs runtime validation with `SoundAndMusic/ExSoundEditorSounds.j` imported after `SoundAndMusic/ExSound.j`.
 - `Satyr_0028` exists as a voiceline constant but was not present in the checked-in Sound Editor registry; Zaekolaerr's runtime dialog avoids that line until the import/path is verified.
 
 
