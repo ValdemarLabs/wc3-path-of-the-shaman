@@ -158,7 +158,9 @@ private function RefreshThorkAvailabilityInternal takes nothing returns nothing
     endif
     if q != 0 and q.active and not q.completed and not q.failed then
         if HeroItemCheckBoth(ITEM_BLOOD_SIGNED_LETTER, 1) then
-            call QuestGiver_RefreshItemRequirementsForQuest(q.id)
+            if q.state != QUEST_STATE_READY_TURNIN then
+                call q.setState(QUEST_STATE_READY_TURNIN)
+            endif
         elseif q.state == QUEST_STATE_READY_TURNIN then
             call q.setState(QUEST_STATE_IN_PROGRESS)
         endif
@@ -209,8 +211,7 @@ private function CompleteGivingLetterQuest takes nothing returns boolean
         return false
     endif
 
-    call QuestGiver_CompleteItemRequirements(q.id)
-    call QuestGiver_MarkReturnRequirementCompleted(q.id)
+    call q.markRequirementCompleted(1, true)
     call QuestGiver_CompleteQuestByNameAndGiver(QUEST_GIVING_LETTER, Ragno)
     call EnableZulkisCompanion()
     call UnlockDutyForHorde()
