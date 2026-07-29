@@ -26,11 +26,14 @@
     0.00 call Drunk_Add; non-alcohol drinks are still normal drink buffs.
 
     Aura ability rawcodes are defined in PC_RegisterAuraRawcodes. Keep one aura
-    ability per recipe, replacing the 0 placeholder with the Object Editor
-    rawcode when the ability exists. Cooking adds that aura while the timed
-    effect is active and removes it on replacement, expiration, or unit death.
-    The JASS stat definitions below remain the primary stat source unless the
-    aura ability intentionally adds extra object-data bonuses.
+    ability per recipe when the buff text/icon must be recipe-specific. Warcraft
+    runtime tooltip setters are object-code global, so one shared food aura and
+    one shared drink aura would not give per-unit tooltip text when multiple
+    units have different food or drink buffs active. Cooking adds the mapped
+    aura while the timed effect is active and removes it on replacement,
+    expiration, or unit death. The JASS stat definitions below remain the
+    primary stat source unless the aura ability intentionally adds extra
+    object-data bonuses.
 
     API:
     call ProfessionsCooking_Init()
@@ -996,64 +999,63 @@ private function PC_RegisterEffects takes nothing returns nothing
 endfunction
 
 private function PC_RegisterAuraRawcodes takes nothing returns nothing
-    // Replace 0 with one Object Editor aura ability rawcode per recipe, for example 'A000'.
-    // These abilities are added while the matching timed effect is active and removed on death.
-    call PC_SetAuraByItem(PC_ITEM_SMOKED_WOLF_JERKY, 0)
-    call PC_SetAuraByItem(PC_ITEM_BRILLIANT_SMALLFISH, 0)
-    call PC_SetAuraByItem(PC_ITEM_ROASTED_STAG_HAUNCH, 0)
-    call PC_SetAuraByItem(PC_ITEM_SLITHERSKIN_MACKEREL, 0)
-    call PC_SetAuraByItem(PC_ITEM_SPICED_SNAKE_STRIPS, 0)
-    call PC_SetAuraByItem(PC_ITEM_BEAR_FAT_BISCUIT, 0)
-    call PC_SetAuraByItem(PC_ITEM_MUD_SNAPPER_CAKE, 0)
-    call PC_SetAuraByItem(PC_ITEM_BOILED_MAKRURA_CLAW, 0)
-    call PC_SetAuraByItem(PC_ITEM_FRIED_CRAWLER_CAKE, 0)
-    call PC_SetAuraByItem(PC_ITEM_CHARRED_BOAR_RIBS, 0)
-    call PC_SetAuraByItem(PC_ITEM_RABBIT_BROTH, 0)
-    call PC_SetAuraByItem(PC_ITEM_HAWK_SKEWER, 0)
-    call PC_SetAuraByItem(PC_ITEM_RAINBOW_ALBACORE, 0)
-    call PC_SetAuraByItem(PC_ITEM_TURTLE_STEW, 0)
-    call PC_SetAuraByItem(PC_ITEM_CATFISH_CHOWDER, 0)
-    call PC_SetAuraByItem(PC_ITEM_MURLOC_FIN_SOUP, 0)
-    call PC_SetAuraByItem(PC_ITEM_LOCH_FRENZY_DELIGHT, 0)
-    call PC_SetAuraByItem(PC_ITEM_LIZARD_PEPPER_ROAST, 0)
-    call PC_SetAuraByItem(PC_ITEM_FIREFIN_CHILI, 0)
-    call PC_SetAuraByItem(PC_ITEM_TIGER_STEAK, 0)
-    call PC_SetAuraByItem(PC_ITEM_SAGEFISH_SOUP, 0)
-    call PC_SetAuraByItem(PC_ITEM_PANTHER_FILLET, 0)
-    call PC_SetAuraByItem(PC_ITEM_ROCKSCALE_COD, 0)
-    call PC_SetAuraByItem(PC_ITEM_RAPTOR_CHILI, 0)
-    call PC_SetAuraByItem(PC_ITEM_MITHRIL_TROUT, 0)
-    call PC_SetAuraByItem(PC_ITEM_COW_RUMP_ROAST, 0)
-    call PC_SetAuraByItem(PC_ITEM_SPOTTED_YELLOWTAIL, 0)
-    call PC_SetAuraByItem(PC_ITEM_DEVIATE_DELIGHT, 0)
-    call PC_SetAuraByItem(PC_ITEM_GLOSSY_MIGHTFISH_STEAK, 0)
-    call PC_SetAuraByItem(PC_ITEM_REDGILL_SKILLET, 0)
-    call PC_SetAuraByItem(PC_ITEM_NIGHTFIN_SOUP, 0)
-    call PC_SetAuraByItem(PC_ITEM_SUNSCALE_FILLET, 0)
-    call PC_SetAuraByItem(PC_ITEM_COOKED_STONESCALE_EEL, 0)
-    call PC_SetAuraByItem(PC_ITEM_WHITESCALE_SALMON, 0)
-    call PC_SetAuraByItem(PC_ITEM_DARKCLAW_BISQUE, 0)
-    call PC_SetAuraByItem(PC_ITEM_COOKED_WINTER_SQUID, 0)
-    call PC_SetAuraByItem(PC_ITEM_SUMMER_BASS, 0)
-    call PC_SetAuraByItem(PC_ITEM_EMBER_WHELP_ROAST, 0)
-    call PC_SetAuraByItem(PC_ITEM_PLAGUEBLOOM_DUMPLING, 0)
-    call PC_SetAuraByItem(PC_ITEM_TIGERSEYE_EEL, 0)
+    // Recipe-specific aura abilities keep Object Editor buff text/icons stable per unit.
+    call PC_SetAuraByItem(PC_ITEM_SMOKED_WOLF_JERKY, 'S003')
+    call PC_SetAuraByItem(PC_ITEM_BRILLIANT_SMALLFISH, 'S004')
+    call PC_SetAuraByItem(PC_ITEM_ROASTED_STAG_HAUNCH, 'S005')
+    call PC_SetAuraByItem(PC_ITEM_SLITHERSKIN_MACKEREL, 'S006')
+    call PC_SetAuraByItem(PC_ITEM_SPICED_SNAKE_STRIPS, 'S007')
+    call PC_SetAuraByItem(PC_ITEM_BEAR_FAT_BISCUIT, 'S008')
+    call PC_SetAuraByItem(PC_ITEM_MUD_SNAPPER_CAKE, 'S009')
+    call PC_SetAuraByItem(PC_ITEM_BOILED_MAKRURA_CLAW, 'S00A')
+    call PC_SetAuraByItem(PC_ITEM_FRIED_CRAWLER_CAKE, 'S00B')
+    call PC_SetAuraByItem(PC_ITEM_CHARRED_BOAR_RIBS, 'S00C')
+    call PC_SetAuraByItem(PC_ITEM_RABBIT_BROTH, 'S00D')
+    call PC_SetAuraByItem(PC_ITEM_HAWK_SKEWER, 'S00E')
+    call PC_SetAuraByItem(PC_ITEM_RAINBOW_ALBACORE, 'S00F')
+    call PC_SetAuraByItem(PC_ITEM_TURTLE_STEW, 'S00G')
+    call PC_SetAuraByItem(PC_ITEM_CATFISH_CHOWDER, 'S00H')
+    call PC_SetAuraByItem(PC_ITEM_MURLOC_FIN_SOUP, 'S001')
+    call PC_SetAuraByItem(PC_ITEM_LOCH_FRENZY_DELIGHT, 'S00J')
+    call PC_SetAuraByItem(PC_ITEM_LIZARD_PEPPER_ROAST, 'S00K')
+    call PC_SetAuraByItem(PC_ITEM_FIREFIN_CHILI, 'S00L')
+    call PC_SetAuraByItem(PC_ITEM_TIGER_STEAK, 'S00M')
+    call PC_SetAuraByItem(PC_ITEM_SAGEFISH_SOUP, 'S00N')
+    call PC_SetAuraByItem(PC_ITEM_PANTHER_FILLET, 'S000')
+    call PC_SetAuraByItem(PC_ITEM_ROCKSCALE_COD, 'S00P')
+    call PC_SetAuraByItem(PC_ITEM_RAPTOR_CHILI, 'S00Q')
+    call PC_SetAuraByItem(PC_ITEM_MITHRIL_TROUT, 'S00R')
+    call PC_SetAuraByItem(PC_ITEM_COW_RUMP_ROAST, 'S00S')
+    call PC_SetAuraByItem(PC_ITEM_SPOTTED_YELLOWTAIL, 'S00T')
+    call PC_SetAuraByItem(PC_ITEM_DEVIATE_DELIGHT, 'S00U')
+    call PC_SetAuraByItem(PC_ITEM_GLOSSY_MIGHTFISH_STEAK, 'S00V')
+    call PC_SetAuraByItem(PC_ITEM_REDGILL_SKILLET, 'S00W')
+    call PC_SetAuraByItem(PC_ITEM_NIGHTFIN_SOUP, 'S00X')
+    call PC_SetAuraByItem(PC_ITEM_SUNSCALE_FILLET, 'S00Y')
+    call PC_SetAuraByItem(PC_ITEM_COOKED_STONESCALE_EEL, 'S00Z')
+    call PC_SetAuraByItem(PC_ITEM_WHITESCALE_SALMON, 'S010')
+    call PC_SetAuraByItem(PC_ITEM_DARKCLAW_BISQUE, 'S011')
+    call PC_SetAuraByItem(PC_ITEM_COOKED_WINTER_SQUID, 'S012')
+    call PC_SetAuraByItem(PC_ITEM_SUMMER_BASS, 'S013')
+    call PC_SetAuraByItem(PC_ITEM_EMBER_WHELP_ROAST, 'S014')
+    call PC_SetAuraByItem(PC_ITEM_PLAGUEBLOOM_DUMPLING, 'S015')
+    call PC_SetAuraByItem(PC_ITEM_TIGERSEYE_EEL, 'S016')
 
-    call PC_SetAuraByItem(PC_ITEM_SPRINGWATER_TEA, 0)
-    call PC_SetAuraByItem(PC_ITEM_HONEYED_MILK, 0)
-    call PC_SetAuraByItem(PC_ITEM_CACTUS_ALE, 0)
-    call PC_SetAuraByItem(PC_ITEM_STOUT_MEAD, 0)
-    call PC_SetAuraByItem(PC_ITEM_SALTED_MAKRURA_BROTH, 0)
-    call PC_SetAuraByItem(PC_ITEM_BLACKMOUTH_GROG, 0)
-    call PC_SetAuraByItem(PC_ITEM_FIREFIN_WHISKEY, 0)
-    call PC_SetAuraByItem(PC_ITEM_SAGEFISH_TONIC, 0)
-    call PC_SetAuraByItem(PC_ITEM_DEVIATE_RUM, 0)
-    call PC_SetAuraByItem(PC_ITEM_NIGHTFIN_WINE, 0)
-    call PC_SetAuraByItem(PC_ITEM_STONESCALE_PORTER, 0)
-    call PC_SetAuraByItem(PC_ITEM_LOBSTER_CUP, 0)
-    call PC_SetAuraByItem(PC_ITEM_DRAGONFIRE_PUNCH, 0)
-    call PC_SetAuraByItem(PC_ITEM_WINTER_ABSINTHE, 0)
-    call PC_SetAuraByItem(PC_ITEM_BAD_IDEAS_BREW, 0)
+    call PC_SetAuraByItem(PC_ITEM_SPRINGWATER_TEA, 'S017')
+    call PC_SetAuraByItem(PC_ITEM_HONEYED_MILK, 'S018')
+    call PC_SetAuraByItem(PC_ITEM_CACTUS_ALE, 'S019')
+    call PC_SetAuraByItem(PC_ITEM_STOUT_MEAD, 'S01A')
+    call PC_SetAuraByItem(PC_ITEM_SALTED_MAKRURA_BROTH, 'S01B')
+    call PC_SetAuraByItem(PC_ITEM_BLACKMOUTH_GROG, 'S01C')
+    call PC_SetAuraByItem(PC_ITEM_FIREFIN_WHISKEY, 'S01D')
+    call PC_SetAuraByItem(PC_ITEM_SAGEFISH_TONIC, 'S01E')
+    call PC_SetAuraByItem(PC_ITEM_DEVIATE_RUM, 'S01F')
+    call PC_SetAuraByItem(PC_ITEM_NIGHTFIN_WINE, 'S01G')
+    call PC_SetAuraByItem(PC_ITEM_STONESCALE_PORTER, 'S01H')
+    call PC_SetAuraByItem(PC_ITEM_LOBSTER_CUP, 'S01I')
+    call PC_SetAuraByItem(PC_ITEM_DRAGONFIRE_PUNCH, 'S01J')
+    call PC_SetAuraByItem(PC_ITEM_WINTER_ABSINTHE, 'S01K')
+    call PC_SetAuraByItem(PC_ITEM_BAD_IDEAS_BREW, 'S01L')
 endfunction
 
 private function PC_RegisterRecipes takes nothing returns nothing
