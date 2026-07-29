@@ -23,7 +23,11 @@
     - call Shop_RegisterVendorUnit(unit, vendorId)
     - call Shop_RegisterVendorUnitType(vendorId, unitTypeId)
     - set entryId = Shop_AddStock(vendorId, itemTypeId, price, category)
+    - call Shop_BeginTradeSession(vendorId)
+    - call Shop_EndTradeSession()
+    - set categoryName = Shop_GetVendorCategoryName(vendorId, position)
     - call Shop_BuyStock(player, buyer, stockEntry)
+    - call Shop_BuyRecentlySold(player, buyer, soldIndex)
     - call Shop_BuildUnitInventory(unit)
     - call Shop_SellViewItem(player, seller, viewIndex)
     - call Shop_AIBuySimple(aiUnit, vendor)
@@ -43,11 +47,15 @@ library Shop initializer Init requires Table, DEquipment
         private constant integer SHP_MAX_VENDORS = 96
         private constant integer SHP_MAX_STOCK = 512
         private constant integer SHP_MAX_VIEW_ITEMS = 192
+        private constant integer SHP_MAX_SESSION_SOLD = 64
         private constant integer SHP_SELL_PERCENT = 50
         private constant integer SHP_AI_PRICE_BASE = 550
         private constant integer SHP_AI_PRICE_PER_LEVEL = 95
         private constant integer SHP_AI_PRICE_HARD_CAP = 2500
         private constant integer SHP_AI_MAX_DUPLICATE_ITEMS = 3
+        private constant string SHP_CATEGORY_ALL = "All"
+        private constant string SHP_CATEGORY_GOODS = "Goods"
+        private constant string SHP_CATEGORY_RECENTLY_SOLD = "Recently Sold"
 
         // Registered vendors and unit lookup.
         private Table SHP_VendorByUnit = 0
@@ -74,11 +82,26 @@ library Shop initializer Init requires Table, DEquipment
         private integer array SHP_ViewBid
         private integer array SHP_ViewPid
 
+        // Trade-session buyback cache. This is intentionally not saved into
+        // permanent vendor stock and is cleared when ShopUI closes.
+        private integer SHP_SessionVendorId = 0
+        private integer SHP_SessionSoldCount = 0
+        private integer array SHP_SessionSoldItemType
+        private integer array SHP_SessionSoldPrice
+        private string array SHP_SessionSoldCategory
+
         private string SHP_LastMessage = ""
     endglobals
 
     private function SHP_SetMessage takes string message returns nothing
         set SHP_LastMessage = message
+    endfunction
+
+    private function SHP_NormalizeCategory takes string category returns string
+        if category == null or category == "" then
+            return SHP_CATEGORY_GOODS
+        endif
+        return category
     endfunction
 
     private function SHP_IsVendorIdValid takes integer vendorId returns boolean
@@ -87,6 +110,17 @@ library Shop initializer Init requires Table, DEquipment
 
     private function SHP_IsStockIdValid takes integer stockId returns boolean
         return stockId > 0 and stockId <= SHP_StockCount and SHP_StockItemType[stockId] != 0
+    endfunction
+
+    private function SHP_GetStockCategoryName takes integer stockId returns string
+        if SHP_IsStockIdValid(stockId) then
+            return SHP_NormalizeCategory(SHP_StockCategory[stockId])
+        endif
+        return SHP_CATEGORY_GOODS
+    endfunction
+
+    private function SHP_IsAllCategory takes string category returns boolean
+        return category == null or category == "" or category == SHP_CATEGORY_ALL
     endfunction
 
     private function SHP_ItemTypeIcon takes integer itemTypeId returns string
@@ -151,6 +185,28 @@ library Shop initializer Init requires Table, DEquipment
             set stockId = stockId + 1
         endloop
         return best
+    endfunction
+
+    private function SHP_GetRegisteredCategoryForItemType takes integer itemTypeId returns string
+        local integer stockId = 1
+
+        loop
+            exitwhen stockId > SHP_StockCount
+            if SHP_StockVendor[stockId] == SHP_SessionVendorId and SHP_StockItemType[stockId] == itemTypeId then
+                return SHP_GetStockCategoryName(stockId)
+            endif
+            set stockId = stockId + 1
+        endloop
+
+        set stockId = 1
+        loop
+            exitwhen stockId > SHP_StockCount
+            if SHP_StockItemType[stockId] == itemTypeId then
+                return SHP_GetStockCategoryName(stockId)
+            endif
+            set stockId = stockId + 1
+        endloop
+        return SHP_CATEGORY_GOODS
     endfunction
 
     private function SHP_GetItemBasePrice takes item whichItem returns integer
@@ -232,6 +288,63 @@ library Shop initializer Init requires Table, DEquipment
             set index = index + 1
         endloop
         set SHP_ViewCount = 0
+    endfunction
+
+    private function SHP_ClearSessionSold takes nothing returns nothing
+        local integer index = 1
+
+        loop
+            exitwhen index > SHP_SessionSoldCount
+            set SHP_SessionSoldItemType[index] = 0
+            set SHP_SessionSoldPrice[index] = 0
+            set SHP_SessionSoldCategory[index] = ""
+            set index = index + 1
+        endloop
+        set SHP_SessionSoldCount = 0
+    endfunction
+
+    private function SHP_RemoveSessionSoldIndex takes integer soldIndex returns nothing
+        if soldIndex <= 0 or soldIndex > SHP_SessionSoldCount then
+            return
+        endif
+
+        loop
+            exitwhen soldIndex >= SHP_SessionSoldCount
+            set SHP_SessionSoldItemType[soldIndex] = SHP_SessionSoldItemType[soldIndex + 1]
+            set SHP_SessionSoldPrice[soldIndex] = SHP_SessionSoldPrice[soldIndex + 1]
+            set SHP_SessionSoldCategory[soldIndex] = SHP_SessionSoldCategory[soldIndex + 1]
+            set soldIndex = soldIndex + 1
+        endloop
+        set SHP_SessionSoldItemType[SHP_SessionSoldCount] = 0
+        set SHP_SessionSoldPrice[SHP_SessionSoldCount] = 0
+        set SHP_SessionSoldCategory[SHP_SessionSoldCount] = ""
+        set SHP_SessionSoldCount = SHP_SessionSoldCount - 1
+    endfunction
+
+    private function SHP_AddSessionSoldItem takes integer itemTypeId, integer price returns nothing
+        local integer index = 1
+
+        if SHP_SessionVendorId <= 0 or itemTypeId == 0 then
+            return
+        endif
+        if price <= 0 then
+            set price = 1
+        endif
+        if SHP_SessionSoldCount >= SHP_MAX_SESSION_SOLD then
+            loop
+                exitwhen index >= SHP_MAX_SESSION_SOLD
+                set SHP_SessionSoldItemType[index] = SHP_SessionSoldItemType[index + 1]
+                set SHP_SessionSoldPrice[index] = SHP_SessionSoldPrice[index + 1]
+                set SHP_SessionSoldCategory[index] = SHP_SessionSoldCategory[index + 1]
+                set index = index + 1
+            endloop
+            set SHP_SessionSoldCount = SHP_MAX_SESSION_SOLD - 1
+        endif
+
+        set SHP_SessionSoldCount = SHP_SessionSoldCount + 1
+        set SHP_SessionSoldItemType[SHP_SessionSoldCount] = itemTypeId
+        set SHP_SessionSoldPrice[SHP_SessionSoldCount] = price
+        set SHP_SessionSoldCategory[SHP_SessionSoldCount] = SHP_GetRegisteredCategoryForItemType(itemTypeId)
     endfunction
 
     private function SHP_CountStoredItemType takes unit owner, integer itemTypeId returns integer
@@ -379,6 +492,7 @@ library Shop initializer Init requires Table, DEquipment
         local integer bid
         local integer pid
         local integer value
+        local integer itemTypeId
 
         if viewIndex <= 0 or viewIndex > SHP_ViewCount or owner == null then
             set receiver = null
@@ -407,6 +521,7 @@ library Shop initializer Init requires Table, DEquipment
         endif
 
         set value = SHP_GetItemSaleValue(whichItem)
+        set itemTypeId = GetItemTypeId(whichItem)
         if sourceType == SHOP_SOURCE_DINV then
             if bid <= 0 then
                 set bid = BIDOfItem(whichItem)
@@ -448,6 +563,7 @@ library Shop initializer Init requires Table, DEquipment
         endif
 
         if payGold and receiver != null then
+            call SHP_AddSessionSoldItem(itemTypeId, value)
             call SetPlayerState(receiver, PLAYER_STATE_RESOURCE_GOLD, GetPlayerState(receiver, PLAYER_STATE_RESOURCE_GOLD) + value)
             call SHP_SetMessage("|cff80ff80Sold for " + I2S(value) + " gold.|r")
         endif
@@ -536,6 +652,7 @@ library Shop initializer Init requires Table, DEquipment
         if aiWeight < 0 then
             set aiWeight = 0
         endif
+        set category = SHP_NormalizeCategory(category)
 
         set SHP_StockCount = SHP_StockCount + 1
         set SHP_StockVendor[SHP_StockCount] = vendorId
@@ -589,6 +706,135 @@ library Shop initializer Init requires Table, DEquipment
         return 0
     endfunction
 
+    private function SHP_CategoryExistsBefore takes integer vendorId, string category, integer beforeStockId returns boolean
+        local integer stockId = 1
+
+        loop
+            exitwhen stockId >= beforeStockId
+            if SHP_StockVendor[stockId] == vendorId and SHP_GetStockCategoryName(stockId) == category then
+                return true
+            endif
+            set stockId = stockId + 1
+        endloop
+        return false
+    endfunction
+
+    public function GetAllCategoryName takes nothing returns string
+        return SHP_CATEGORY_ALL
+    endfunction
+
+    public function GetRecentlySoldCategoryName takes nothing returns string
+        return SHP_CATEGORY_RECENTLY_SOLD
+    endfunction
+
+    public function BeginTradeSession takes integer vendorId returns nothing
+        call SHP_ClearSessionSold()
+        if SHP_IsVendorIdValid(vendorId) then
+            set SHP_SessionVendorId = vendorId
+        else
+            set SHP_SessionVendorId = 0
+        endif
+        call SHP_SetMessage("")
+    endfunction
+
+    public function EndTradeSession takes nothing returns nothing
+        call SHP_ClearSessionSold()
+        set SHP_SessionVendorId = 0
+        call SHP_SetMessage("")
+    endfunction
+
+    public function GetVendorCategoryCount takes integer vendorId, boolean includeRecentlySold returns integer
+        local integer stockId = 1
+        local integer count = 1
+        local string category
+
+        if not SHP_IsVendorIdValid(vendorId) then
+            return 0
+        endif
+
+        loop
+            exitwhen stockId > SHP_StockCount
+            if SHP_StockVendor[stockId] == vendorId then
+                set category = SHP_GetStockCategoryName(stockId)
+                if not SHP_CategoryExistsBefore(vendorId, category, stockId) then
+                    set count = count + 1
+                endif
+            endif
+            set stockId = stockId + 1
+        endloop
+
+        if includeRecentlySold and SHP_SessionVendorId == vendorId and SHP_SessionSoldCount > 0 then
+            set count = count + 1
+        endif
+        return count
+    endfunction
+
+    public function GetVendorCategoryName takes integer vendorId, integer position returns string
+        local integer stockId = 1
+        local integer count = 1
+        local string category
+
+        if not SHP_IsVendorIdValid(vendorId) or position <= 0 then
+            return ""
+        endif
+        if position == 1 then
+            return SHP_CATEGORY_ALL
+        endif
+
+        loop
+            exitwhen stockId > SHP_StockCount
+            if SHP_StockVendor[stockId] == vendorId then
+                set category = SHP_GetStockCategoryName(stockId)
+                if not SHP_CategoryExistsBefore(vendorId, category, stockId) then
+                    set count = count + 1
+                    if count == position then
+                        return category
+                    endif
+                endif
+            endif
+            set stockId = stockId + 1
+        endloop
+
+        if SHP_SessionVendorId == vendorId and SHP_SessionSoldCount > 0 and count + 1 == position then
+            return SHP_CATEGORY_RECENTLY_SOLD
+        endif
+        return ""
+    endfunction
+
+    public function GetVendorStockCountByCategory takes integer vendorId, string category returns integer
+        local integer stockId = 1
+        local integer count = 0
+
+        loop
+            exitwhen stockId > SHP_StockCount
+            if SHP_StockVendor[stockId] == vendorId and (SHP_IsAllCategory(category) or SHP_GetStockCategoryName(stockId) == category) then
+                set count = count + 1
+            endif
+            set stockId = stockId + 1
+        endloop
+        return count
+    endfunction
+
+    public function GetVendorStockEntryByCategory takes integer vendorId, integer position, string category returns integer
+        local integer stockId = 1
+        local integer count = 0
+
+        if position <= 0 then
+            return 0
+        endif
+        loop
+            exitwhen stockId > SHP_StockCount
+            if SHP_StockVendor[stockId] == vendorId and (SHP_IsAllCategory(category) or SHP_GetStockCategoryName(stockId) == category) then
+                set count = count + 1
+                if count == position then
+                    return stockId
+                endif
+            endif
+            set stockId = stockId + 1
+        endloop
+        return 0
+    endfunction
+
     public function GetStockItemType takes integer stockId returns integer
         if SHP_IsStockIdValid(stockId) then
             return SHP_StockItemType[stockId]
@@ -604,10 +850,7 @@ library Shop initializer Init requires Table, DEquipment
     endfunction
 
     public function GetStockCategory takes integer stockId returns string
-        if SHP_IsStockIdValid(stockId) and SHP_StockCategory[stockId] != "" then
-            return SHP_StockCategory[stockId]
-        endif
-        return "Goods"
+        return SHP_GetStockCategoryName(stockId)
     endfunction
 
     public function GetStockName takes integer stockId returns string
@@ -629,6 +872,48 @@ library Shop initializer Init requires Table, DEquipment
             return SHP_ItemTypeTooltip(SHP_StockItemType[stockId])
         endif
         return ""
+    endfunction
+
+    public function GetSessionSoldCount takes nothing returns integer
+        return SHP_SessionSoldCount
+    endfunction
+
+    public function GetSessionSoldItemType takes integer soldIndex returns integer
+        if soldIndex > 0 and soldIndex <= SHP_SessionSoldCount then
+            return SHP_SessionSoldItemType[soldIndex]
+        endif
+        return 0
+    endfunction
+
+    public function GetSessionSoldPrice takes integer soldIndex returns integer
+        if soldIndex > 0 and soldIndex <= SHP_SessionSoldCount then
+            return SHP_SessionSoldPrice[soldIndex]
+        endif
+        return 0
+    endfunction
+
+    public function GetSessionSoldCategory takes integer soldIndex returns string
+        if soldIndex > 0 and soldIndex <= SHP_SessionSoldCount then
+            return SHP_NormalizeCategory(SHP_SessionSoldCategory[soldIndex])
+        endif
+        return SHP_CATEGORY_GOODS
+    endfunction
+
+    public function GetSessionSoldName takes integer soldIndex returns string
+        local integer itemTypeId = Shop_GetSessionSoldItemType(soldIndex)
+
+        if itemTypeId != 0 then
+            return GetObjectName(itemTypeId)
+        endif
+        return ""
+    endfunction
+
+    public function GetSessionSoldIconPath takes integer soldIndex returns string
+        return SHP_ItemTypeIcon(Shop_GetSessionSoldItemType(soldIndex))
+    endfunction
+
+    public function GetSessionSoldTooltip takes integer soldIndex returns string
+        return SHP_ItemTypeTooltip(Shop_GetSessionSoldItemType(soldIndex))
     endfunction
 
     public function GiveItemToUnit takes unit owner, item whichItem returns boolean
@@ -679,6 +964,60 @@ library Shop initializer Init requires Table, DEquipment
         if boughtItem != null and Shop_GiveItemToUnit(buyer, boughtItem) then
             call SetPlayerState(buyerPlayer, PLAYER_STATE_RESOURCE_GOLD, GetPlayerState(buyerPlayer, PLAYER_STATE_RESOURCE_GOLD) - price)
             call SHP_SetMessage("|cff80ff80Bought " + GetObjectName(itemTypeId) + " for " + I2S(price) + " gold.|r")
+            set boughtItem = null
+            set buyerPlayer = null
+            set buyer = null
+            return true
+        endif
+
+        if boughtItem != null then
+            call RemoveItem(boughtItem)
+        endif
+        call SHP_SetMessage("|cffff8080Inventory is full.|r")
+        set boughtItem = null
+        set buyerPlayer = null
+        set buyer = null
+        return false
+    endfunction
+
+    public function BuyRecentlySold takes player buyerPlayer, unit buyer, integer soldIndex returns boolean
+        local integer itemTypeId
+        local integer price
+        local item boughtItem = null
+
+        if buyer == null or soldIndex <= 0 or soldIndex > SHP_SessionSoldCount then
+            call SHP_SetMessage("|cffff8080No buyback item selected.|r")
+            set buyerPlayer = null
+            set buyer = null
+            return false
+        endif
+        if buyerPlayer == null then
+            set buyerPlayer = GetOwningPlayer(buyer)
+        endif
+
+        set itemTypeId = SHP_SessionSoldItemType[soldIndex]
+        set price = SHP_SessionSoldPrice[soldIndex]
+        if itemTypeId == 0 then
+            call SHP_SetMessage("|cffff8080That item is no longer available.|r")
+            set buyerPlayer = null
+            set buyer = null
+            return false
+        endif
+        if price <= 0 then
+            set price = 1
+        endif
+        if GetPlayerState(buyerPlayer, PLAYER_STATE_RESOURCE_GOLD) < price then
+            call SHP_SetMessage("|cffff8080Not enough gold.|r")
+            set buyerPlayer = null
+            set buyer = null
+            return false
+        endif
+
+        set boughtItem = CreateItem(itemTypeId, GetUnitX(buyer), GetUnitY(buyer))
+        if boughtItem != null and Shop_GiveItemToUnit(buyer, boughtItem) then
+            call SetPlayerState(buyerPlayer, PLAYER_STATE_RESOURCE_GOLD, GetPlayerState(buyerPlayer, PLAYER_STATE_RESOURCE_GOLD) - price)
+            call SHP_RemoveSessionSoldIndex(soldIndex)
+            call SHP_SetMessage("|cff80ff80Bought back " + GetObjectName(itemTypeId) + " for " + I2S(price) + " gold.|r")
             set boughtItem = null
             set buyerPlayer = null
             set buyer = null
