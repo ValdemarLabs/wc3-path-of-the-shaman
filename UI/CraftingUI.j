@@ -2,7 +2,7 @@
     CraftingUI
 
     Author: Valdemar
-    Version: 1.1
+    Version: 1.2
 
     Description: Shared custom-frame crafting panel for profession workstations. Recipe and category data is fetched from Professions and its profession sublibraries.
 
@@ -833,17 +833,20 @@ private function CUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetTexture(CUI_LeftPane, PanelTexture, 0, true)
     call BlzFrameSetPoint(CUI_LeftPane, FRAMEPOINT_TOPLEFT, CUI_Parent, FRAMEPOINT_TOPLEFT, 0.014, -0.088)
     call BlzFrameSetPoint(CUI_LeftPane, FRAMEPOINT_BOTTOMRIGHT, CUI_Parent, FRAMEPOINT_BOTTOMLEFT, 0.228, 0.052)
+    call BlzFrameSetLevel(CUI_LeftPane, 1)
 
     set CUI_RightPane = BlzCreateFrameByType("BACKDROP", "CraftingUIRightPane", CUI_Parent, "", 0)
     call BlzFrameSetTexture(CUI_RightPane, PanelTexture, 0, true)
     call BlzFrameSetPoint(CUI_RightPane, FRAMEPOINT_TOPLEFT, CUI_LeftPane, FRAMEPOINT_TOPRIGHT, 0.012, 0.0)
     call BlzFrameSetPoint(CUI_RightPane, FRAMEPOINT_BOTTOMRIGHT, CUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.014, 0.052)
+    call BlzFrameSetLevel(CUI_RightPane, 1)
 
     loop
         exitwhen rowIndex > CUI_VISIBLE_ROWS
         set CUI_RowButton[rowIndex] = BlzCreateFrameByType("GLUEBUTTON", "CraftingUIRowButton" + I2S(rowIndex), CUI_LeftPane, "ScoreScreenTabButtonTemplate", 0)
         call BlzFrameSetPoint(CUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, CUI_LeftPane, FRAMEPOINT_TOPLEFT, 0.006, rowTopOffset)
         call BlzFrameSetSize(CUI_RowButton[rowIndex], 0.202, CUI_ROW_HEIGHT)
+        call BlzFrameSetLevel(CUI_RowButton[rowIndex], 3)
         call BlzFrameSetVisible(CUI_RowButton[rowIndex], false)
         call BlzTriggerRegisterFrameEvent(CUI_RowTrigger, CUI_RowButton[rowIndex], FRAMEEVENT_CONTROL_CLICK)
         call BlzTriggerRegisterFrameEvent(CUI_ClearFocusTrigger, CUI_RowButton[rowIndex], FRAMEEVENT_CONTROL_CLICK)
@@ -852,12 +855,14 @@ private function CUI_CreateFrames takes nothing returns nothing
         set CUI_RowIcon[rowIndex] = BlzCreateFrameByType("BACKDROP", "CraftingUIRowIcon" + I2S(rowIndex), CUI_RowButton[rowIndex], "IconButtonTemplate", 0)
         call BlzFrameSetPoint(CUI_RowIcon[rowIndex], FRAMEPOINT_LEFT, CUI_RowButton[rowIndex], FRAMEPOINT_LEFT, 0.006, 0.0)
         call BlzFrameSetSize(CUI_RowIcon[rowIndex], 0.020, 0.020)
+        call BlzFrameSetLevel(CUI_RowIcon[rowIndex], 4)
 
         set CUI_RowText[rowIndex] = BlzCreateFrameByType("TEXT", "CraftingUIRowText" + I2S(rowIndex), CUI_RowButton[rowIndex], "", 0)
         call BlzFrameSetPoint(CUI_RowText[rowIndex], FRAMEPOINT_TOPLEFT, CUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.032, -0.004)
         call BlzFrameSetPoint(CUI_RowText[rowIndex], FRAMEPOINT_BOTTOMRIGHT, CUI_RowButton[rowIndex], FRAMEPOINT_BOTTOMRIGHT, -0.052, 0.004)
         call BlzFrameSetTextAlignment(CUI_RowText[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetEnable(CUI_RowText[rowIndex], false)
+        call BlzFrameSetLevel(CUI_RowText[rowIndex], 4)
 
         set CUI_RowState[rowIndex] = BlzCreateFrameByType("TEXT", "CraftingUIRowState" + I2S(rowIndex), CUI_RowButton[rowIndex], "", 0)
         call BlzFrameSetPoint(CUI_RowState[rowIndex], FRAMEPOINT_TOPRIGHT, CUI_RowButton[rowIndex], FRAMEPOINT_TOPRIGHT, -0.006, -0.004)
@@ -865,6 +870,7 @@ private function CUI_CreateFrames takes nothing returns nothing
         call BlzFrameSetTextAlignment(CUI_RowState[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_RIGHT)
         call BlzFrameSetScale(CUI_RowState[rowIndex], 0.86)
         call BlzFrameSetEnable(CUI_RowState[rowIndex], false)
+        call BlzFrameSetLevel(CUI_RowState[rowIndex], 4)
 
         set CUI_RowHighlight[rowIndex] = BlzCreateFrameByType("SPRITE", "CraftingUIRowHighlight" + I2S(rowIndex), CUI_RowButton[rowIndex], "", 0)
         call BlzFrameSetAllPoints(CUI_RowHighlight[rowIndex], CUI_RowButton[rowIndex])
@@ -872,6 +878,7 @@ private function CUI_CreateFrames takes nothing returns nothing
         call BlzFrameSetScale(CUI_RowHighlight[rowIndex], 0.76)
         call BlzFrameSetVisible(CUI_RowHighlight[rowIndex], false)
         call BlzFrameSetEnable(CUI_RowHighlight[rowIndex], false)
+        call BlzFrameSetLevel(CUI_RowHighlight[rowIndex], 5)
 
         set rowTopOffset = rowTopOffset - CUI_ROW_HEIGHT - CUI_ROW_GAP
         set rowIndex = rowIndex + 1
@@ -890,6 +897,7 @@ private function CUI_CreateFrames takes nothing returns nothing
     set CUI_DetailIcon = BlzCreateFrameByType("BACKDROP", "CraftingUIDetailIcon", CUI_RightPane, "IconButtonTemplate", 0)
     call BlzFrameSetPoint(CUI_DetailIcon, FRAMEPOINT_TOPLEFT, CUI_RightPane, FRAMEPOINT_TOPLEFT, 0.018, -0.018)
     call BlzFrameSetSize(CUI_DetailIcon, 0.044, 0.044)
+    call BlzFrameSetLevel(CUI_DetailIcon, 4)
 
     set CUI_DetailTitle = BlzCreateFrameByType("TEXT", "CraftingUIDetailTitle", CUI_RightPane, "", 0)
     call BlzFrameSetPoint(CUI_DetailTitle, FRAMEPOINT_TOPLEFT, CUI_DetailIcon, FRAMEPOINT_TOPRIGHT, 0.014, -0.002)
@@ -897,12 +905,14 @@ private function CUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetTextAlignment(CUI_DetailTitle, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetScale(CUI_DetailTitle, 1.05)
     call BlzFrameSetEnable(CUI_DetailTitle, false)
+    call BlzFrameSetLevel(CUI_DetailTitle, 5)
 
     set CUI_DetailInfo = BlzCreateFrameByType("TEXT", "CraftingUIDetailInfo", CUI_RightPane, "", 0)
     call BlzFrameSetPoint(CUI_DetailInfo, FRAMEPOINT_TOPLEFT, CUI_DetailTitle, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.006)
     call BlzFrameSetSize(CUI_DetailInfo, 0.230, 0.014)
     call BlzFrameSetTextAlignment(CUI_DetailInfo, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetEnable(CUI_DetailInfo, false)
+    call BlzFrameSetLevel(CUI_DetailInfo, 5)
 
     set CUI_DetailBodyBackdrop = BlzCreateFrameByType("BACKDROP", "CraftingUIDetailBodyBackdrop", CUI_RightPane, "", 0)
     call BlzFrameSetTexture(CUI_DetailBodyBackdrop, PanelTexture, 0, false)
@@ -911,6 +921,7 @@ private function CUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetAlpha(CUI_DetailBodyBackdrop, 235)
     call BlzFrameSetVertexColor(CUI_DetailBodyBackdrop, BlzConvertColor(235, 12, 12, 12))
     call BlzFrameSetEnable(CUI_DetailBodyBackdrop, false)
+    call BlzFrameSetLevel(CUI_DetailBodyBackdrop, 3)
 
     set CUI_DetailBody = BlzCreateFrameByType("TEXT", "CraftingUIDetailBody", CUI_RightPane, "", 0)
     call BlzFrameSetPoint(CUI_DetailBody, FRAMEPOINT_TOPLEFT, CUI_DetailBodyBackdrop, FRAMEPOINT_TOPLEFT, 0.008, -0.008)
@@ -918,6 +929,7 @@ private function CUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetTextAlignment(CUI_DetailBody, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetScale(CUI_DetailBody, 0.90)
     call BlzFrameSetEnable(CUI_DetailBody, false)
+    call BlzFrameSetLevel(CUI_DetailBody, 5)
 
     set CUI_CraftButton = BlzCreateFrameByType("GLUETEXTBUTTON", "CraftingUICraft", CUI_Parent, "ScriptDialogButton", 0)
     call BlzFrameSetSize(CUI_CraftButton, 0.100, 0.032)
