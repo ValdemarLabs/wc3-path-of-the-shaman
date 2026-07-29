@@ -18,7 +18,31 @@
 
 ## [29.7.2026]
 
+### Player-Facing Updates
+
+- Added the first PotS merchant shop system draft.
+  - Vendors can now expose shop stock through a dedicated shop panel.
+  - The shop panel has a shared `Merchant` / `You` mode button for switching between vendor goods and the player's sellable items.
+  - The `You` view combines DInventory, DEquipment, and vanilla inventory items into one list.
+  - Equipped DEquipment items are shown with an `Equipt` label and are blocked from normal selling until unequipped.
+  - Added starter General Goods and Blacksmith vendor templates with conservative early-game stock.
+
 ### Technical Updates
+
+- Added `Shop.j` and `ShopUI.j`
+  - `Shop.j` owns vendor registration, unit-type/unit lookup, stock entries, buy/sell transactions, sell values, item delivery into DInventory with vanilla inventory fallback, and a cached combined inventory view for UI rendering.
+  - `ShopUI.j` follows the existing PotS frame UI pattern with a left item list, right detail pane, item icons/tooltips, local-player frame updates, scroll handling, buy/sell action button, and transaction status text.
+  - Credited Elprede's Hive Workshop `RpgMerchantShop` as shop-system inspiration while keeping the PotS implementation separate and integrated with local inventory/dialog systems.
+
+- Added `Vendors/`
+  - Added `VendorLines.j` for merchant display-name lookup and generic greet/trade/farewell line registration.
+  - Added `VendorDialogs.j` for selectable merchant NPC dialogue using the existing `DialogInteraction` / `DialogSystem` flow.
+  - Added `GeneralGoodsVendor.j` and `BlacksmithVendor.j` as simple sublibrary templates for future shop vendors, including unit-type binding helpers and optional AI profile binding helpers.
+
+- Updated `AI/AI.j`
+  - Added optional `Shop` integration so AI shop buy/sell states use `Shop_AIBuySimple` and `Shop_AISellSimple` when the selected shop unit is a registered PotS vendor.
+  - Kept legacy AI shop behavior as the fallback for non-PotS shop targets.
+  - AI shop purchases use bounded item weights and price caps so AI can cheat simple shopping decisions without jumping to overly strong items.
 
 - Updated `DestroyerInventoryAndEquipmentSystem/PoTs/DConfigurationArea.j` and `DestroyerInventoryAndEquipmentSystem/PoTs/SharedDInvLib.j`
   - Tightened DInventory stackability so `DInventoryIsItemStackable(...)` now treats WC3 item level `1-49` as the stack-cap range and treats level `0` and `50+` as non-stackable, regardless of Object Editor item category.
@@ -40,6 +64,10 @@
   - Corrected the documented item-level data model: any item class/type can be stackable when its WC3 item level is `1-49`, with that value acting as the stack cap; WC3 item level `0` and `50+` are intended non-stackable, and equipment continues to use higher WC3 item-level values.
   - Added clearer `Ignore Loot Tables` wording for the existing per-item loot exclusion flag, exposed it in the item list and batch editor, and kept it mapped to `specific_drop_only` so existing data remains compatible.
   - Generated loot export now skips `specific_drop_only` items in generic item pools, named destructible loot tables, unit-specific drops, and destructible-specific drops; loot-table autofill also skips those items so crafter gear and other manually controlled items are not pulled into loot accidentally.
+
+### Known Issues
+
+- The new shop libraries still need full in-map/JassHelper validation after import order is finalized, especially the frame panel, vendor selection scan, DInventory/DEquipment sale paths, and AI shop behavior against real registered shop units.
 
 
 ## [28.7.2026]
