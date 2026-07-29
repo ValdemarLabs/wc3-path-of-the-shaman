@@ -6,7 +6,7 @@ library GatherNodeSkills initializer Init requires GatherNodes, DamageEngine, Ex
 
 globals
     private constant integer skillMin = 0
-    private constant integer skillMax = 300
+    private constant integer skillMax = 100
     private constant real GNS_FAILURE_COOLDOWN = 2.50
     private constant real GNS_LEVEL_UP_EFFECT_DURATION = 2.00
 
