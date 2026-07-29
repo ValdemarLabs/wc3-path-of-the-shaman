@@ -86,7 +86,7 @@
     call AI_SetDebugMode(enabled)
 
 **/
-library AI initializer Init requires Table, CampFire, Companions, Events, UnitDeathEvent, DamageEngine, DialogSystem, ExSound, IconQuery, Reputation, DEquipment, GatherNodes, GatherNodeSkills, GatherNodeItems, GatherNodeUnits, Professions, VoicelinesWarlock, VoicelinesUndeadWarlock, VoicelinesRestoShaman, VoicelinesEngineer, VoicelinesPaladin
+library AI initializer Init requires Table, CampFire, Companions, Events, UnitDeathEvent, DamageEngine, DialogSystem, ExSound, IconQuery, Reputation, DEquipment, GatherNodes, GatherNodeSkills, GatherNodeItems, GatherNodeUnits, Professions, VoicelinesWarlock, VoicelinesUndeadWarlock, VoicelinesRestoShaman, VoicelinesEngineer, VoicelinesPaladin, optional Shop
 
 globals
     constant integer AI_STATE_INACTIVE = 0
@@ -1243,9 +1243,24 @@ private function FinishBuyState takes integer instanceId, unit whichUnit returns
     local integer index
     local integer key
     local item boughtItem
+    local unit shopUnit
     if instanceId <= 0 or whichUnit == null then
         return
     endif
+
+    static if LIBRARY_Shop then
+        set shopUnit = InstanceActionShopUnit.unit[instanceId]
+        if shopUnit != null and Shop_GetVendorIdForUnit(shopUnit) > 0 then
+            if Shop_AIBuySimple(whichUnit, shopUnit) then
+                call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " buys from a PotS shop.")
+            endif
+            set boughtItem = null
+            set shopUnit = null
+            call SetInstanceState(instanceId, AI_STATE_IDLE)
+            return
+        endif
+    endif
+
     set profileId = InstanceProfile[instanceId]
     set count = ProfileShopItemCount[profileId]
     if count > 0 then
@@ -1258,6 +1273,7 @@ private function FinishBuyState takes integer instanceId, unit whichUnit returns
     endif
     call SetInstanceState(instanceId, AI_STATE_IDLE)
     set boughtItem = null
+    set shopUnit = null
 endfunction
 
 private function SelectProfileShop takes integer instanceId, unit whichUnit returns boolean
@@ -1312,6 +1328,19 @@ private function SellInventoryItem takes integer instanceId, unit whichUnit retu
         return false
     endif
     set shopUnit = InstanceActionShopUnit.unit[instanceId]
+    static if LIBRARY_Shop then
+        if shopUnit != null and IsAliveUnit(shopUnit) and Shop_GetVendorIdForUnit(shopUnit) > 0 then
+            if Shop_AISellSimple(whichUnit, shopUnit) then
+                call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " sells an item to a PotS shop.")
+                set slotItem = null
+                set shopUnit = null
+                return true
+            endif
+            set slotItem = null
+            set shopUnit = null
+            return false
+        endif
+    endif
     loop
         exitwhen checked >= bj_MAX_INVENTORY
         set slotItem = UnitItemInSlot(whichUnit, slot)
@@ -4376,7 +4405,17 @@ private function TryBeginShopBuy takes integer instanceId, unit whichUnit, real 
         return false
     endif
     set profileId = InstanceProfile[instanceId]
-    if ProfileShopItemCount[profileId] <= 0 or GetFreeInventorySlots(whichUnit) <= 0 then
+    if ProfileShopItemCount[profileId] <= 0 then
+        static if LIBRARY_Shop then
+            if BeginBuyState(instanceId, whichUnit) then
+                set InstanceNextShop.real[instanceId] = now + GetRandomReal(AI_SHOP_COOLDOWN_MIN, AI_SHOP_COOLDOWN_MAX)
+                call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " starts PotS shop buy.")
+                return true
+            endif
+        endif
+        return false
+    endif
+    if GetFreeInventorySlots(whichUnit) <= 0 then
         return false
     endif
     if BeginBuyState(instanceId, whichUnit) then
@@ -4389,6 +4428,13 @@ endfunction
 
 private function TryBeginShopSell takes integer instanceId, unit whichUnit, real now returns boolean
     if instanceId <= 0 or whichUnit == null or UnitInventorySize(whichUnit) <= 0 or IsInventoryEmpty(whichUnit) then
+        static if LIBRARY_Shop then
+            if instanceId > 0 and whichUnit != null and BeginSellState(instanceId, whichUnit) then
+                set InstanceNextShop.real[instanceId] = now + GetRandomReal(AI_SHOP_COOLDOWN_MIN, AI_SHOP_COOLDOWN_MAX)
+                call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " starts PotS shop sell.")
+                return true
+            endif
+        endif
         return false
     endif
     if BeginSellState(instanceId, whichUnit) then
