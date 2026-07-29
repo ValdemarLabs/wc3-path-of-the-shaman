@@ -23,18 +23,24 @@
     - call ShopUI_Refresh()
 
 **/
-library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface
+library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, DialogInteraction, DialogSystem, optional Events, optional UnitDeathEvent
     globals
         private constant integer SUI_MAX_ROWS = 10
-        private constant integer SUI_VISIBLE_ROWS = 8
+        private constant integer SUI_VISIBLE_ROWS = 7
+        private constant integer SUI_MAX_CATEGORIES = 6
+        private constant real SUI_CAMERA_RESET_TIME = 0.75
+        private constant boolean SUI_USE_DIALOG_CAMERA = true
+        private constant boolean SUI_CINEMATIC = true
 
         private boolean SUI_Initialized = false
         private boolean SUI_SyncingListScroll = false
+        private boolean SUI_TradeSessionOpen = false
         private integer SUI_ViewMode = SHOP_VIEW_MERCHANT
         private integer SUI_SelectedIndex = 0
         private integer SUI_ListScrollValue = 0
         private integer SUI_ListScrollMaxCache = -1
         private integer SUI_ListScrollFrameValueCache = -1
+        private string SUI_SelectedCategory = "All"
 
         private unit SUI_VendorUnit = null
         private unit SUI_BuyerUnit = null
@@ -46,6 +52,7 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface
         private framehandle SUI_ViewingText = null
         private framehandle SUI_CloseButton = null
         private framehandle SUI_ModeButton = null
+        private framehandle array SUI_CategoryButton
         private framehandle SUI_LeftPane = null
         private framehandle SUI_RightPane = null
         private framehandle SUI_ListScroll = null
@@ -70,6 +77,9 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface
         private integer array SUI_RowVisibleState
         private integer array SUI_RowHighlightState
 
+        private string array SUI_CategoryName
+        private integer array SUI_CategoryVisibleState
+
         private string SUI_DetailIconCache = ""
         private string SUI_DetailTitleCache = ""
         private string SUI_DetailInfoCache = ""
@@ -78,14 +88,19 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface
         private string SUI_ActionTextCache = ""
 
         private Table SUI_ButtonRow = 0
+        private Table SUI_CategoryButtonIndex = 0
 
         private trigger SUI_CloseTrigger = null
         private trigger SUI_ModeTrigger = null
+        private trigger SUI_CategoryTrigger = null
         private trigger SUI_RowTrigger = null
         private trigger SUI_ActionTrigger = null
         private trigger SUI_ListScrollTrigger = null
         private trigger SUI_WheelTrigger = null
         private trigger SUI_ClearFocusTrigger = null
+        private trigger SUI_EscapeTrigger = null
+        private trigger SUI_AttackTrigger = null
+        private trigger SUI_DeathTrigger = null
 
         private string SUI_PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
         private string SUI_DefaultIcon = "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp"
@@ -99,11 +114,49 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface
         return Player(0)
     endfunction
 
+    private function SUI_IsVisible takes nothing returns boolean
+        return SUI_Parent != null and BlzFrameIsVisible(SUI_Parent)
+    endfunction
+
+    private function SUI_IsRecentCategory takes nothing returns boolean
+        return SUI_ViewMode == SHOP_VIEW_MERCHANT and SUI_SelectedCategory == Shop_GetRecentlySoldCategoryName()
+    endfunction
+
+    private function SUI_IsCategoryAvailable takes string category returns boolean
+        local integer index = 1
+        local integer categoryCount
+
+        if SUI_ViewMode != SHOP_VIEW_MERCHANT or category == null or category == "" then
+            return false
+        endif
+        set categoryCount = Shop_GetVendorCategoryCount(SUI_VendorId, true)
+        loop
+            exitwhen index > categoryCount
+            if Shop_GetVendorCategoryName(SUI_VendorId, index) == category then
+                return true
+            endif
+            set index = index + 1
+        endloop
+        return false
+    endfunction
+
+    private function SUI_NormalizeCategory takes nothing returns nothing
+        if SUI_ViewMode != SHOP_VIEW_MERCHANT then
+            return
+        endif
+        if not SUI_IsCategoryAvailable(SUI_SelectedCategory) then
+            set SUI_SelectedCategory = Shop_GetAllCategoryName()
+        endif
+    endfunction
+
     private function SUI_GetTotalCount takes nothing returns integer
         if SUI_ViewMode == SHOP_VIEW_YOU then
             return Shop_GetViewCount()
         endif
-        return Shop_GetVendorStockCount(SUI_VendorId)
+        if SUI_IsRecentCategory() then
+            return Shop_GetSessionSoldCount()
+        endif
+        return Shop_GetVendorStockCountByCategory(SUI_VendorId, SUI_SelectedCategory)
     endfunction
 
     private function SUI_GetMaxStart takes integer totalCount returns integer
@@ -121,7 +174,7 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface
 
     private function SUI_GetSelectedStockEntry takes nothing returns integer
         if SUI_ViewMode == SHOP_VIEW_MERCHANT and SUI_SelectedIndex > 0 then
-            return Shop_GetVendorStockEntry(SUI_VendorId, SUI_SelectedIndex)
+            return Shop_GetVendorStockEntryByCategory(SUI_VendorId, SUI_SelectedIndex, SUI_SelectedCategory)
         endif
         return 0
     endfunction
@@ -143,6 +196,18 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface
         if SUI_RowVisibleState[rowIndex] != visibleState then
             set SUI_RowVisibleState[rowIndex] = visibleState
             call BlzFrameSetVisible(SUI_RowButton[rowIndex], visible)
+        endif
+    endfunction
+
+    private function SUI_SetCategoryVisible takes integer categoryIndex, boolean visible returns nothing
+        local integer visibleState = 0
+
+        if visible then
+            set visibleState = 1
+        endif
+        if SUI_CategoryVisibleState[categoryIndex] != visibleState then
+            set SUI_CategoryVisibleState[categoryIndex] = visibleState
+            call BlzFrameSetVisible(SUI_CategoryButton[categoryIndex], visible)
         endif
     endfunction
 
@@ -193,10 +258,16 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface
             if rowIndex <= SUI_VISIBLE_ROWS and viewIndex <= totalCount then
                 set SUI_RowIndex[rowIndex] = viewIndex
                 if SUI_ViewMode == SHOP_VIEW_MERCHANT then
-                    set stockEntry = Shop_GetVendorStockEntry(SUI_VendorId, viewIndex)
-                    set iconPath = Shop_GetStockIconPath(stockEntry)
-                    set rowText = "|cffffe4a3" + Shop_GetStockName(stockEntry) + "|r|n|cff808080" + Shop_GetStockCategory(stockEntry) + "|r"
-                    set rowPrice = "|cffffcc00" + I2S(Shop_GetStockPrice(stockEntry)) + "g|r"
+                    if SUI_IsRecentCategory() then
+                        set iconPath = Shop_GetSessionSoldIconPath(viewIndex)
+                        set rowText = "|cffffe4a3" + Shop_GetSessionSoldName(viewIndex) + "|r|n|cff808080" + Shop_GetSessionSoldCategory(viewIndex) + "|r"
+                        set rowPrice = "|cffffcc00" + I2S(Shop_GetSessionSoldPrice(viewIndex)) + "g|r"
+                    else
+                        set stockEntry = Shop_GetVendorStockEntryByCategory(SUI_VendorId, viewIndex, SUI_SelectedCategory)
+                        set iconPath = Shop_GetStockIconPath(stockEntry)
+                        set rowText = "|cffffe4a3" + Shop_GetStockName(stockEntry) + "|r|n|cff808080" + Shop_GetStockCategory(stockEntry) + "|r"
+                        set rowPrice = "|cffffcc00" + I2S(Shop_GetStockPrice(stockEntry)) + "g|r"
+                    endif
                 else
                     set iconPath = Shop_GetViewIconPath(viewIndex)
                     set rowText = "|cffffe4a3" + Shop_GetViewName(viewIndex) + "|r|n" + Shop_GetViewSourceLabel(viewIndex)
@@ -286,11 +357,18 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface
         endif
 
         if SUI_ViewMode == SHOP_VIEW_MERCHANT then
-            set stockEntry = SUI_GetSelectedStockEntry()
-            set titleText = Shop_GetStockName(stockEntry)
-            set infoText = Shop_GetStockCategory(stockEntry) + "  |  " + I2S(Shop_GetStockPrice(stockEntry)) + " gold"
-            set bodyText = Shop_GetStockTooltip(stockEntry)
-            set iconPath = Shop_GetStockIconPath(stockEntry)
+            if SUI_IsRecentCategory() then
+                set titleText = Shop_GetSessionSoldName(SUI_SelectedIndex)
+                set infoText = Shop_GetSessionSoldCategory(SUI_SelectedIndex) + "  |  " + I2S(Shop_GetSessionSoldPrice(SUI_SelectedIndex)) + " gold"
+                set bodyText = Shop_GetSessionSoldTooltip(SUI_SelectedIndex)
+                set iconPath = Shop_GetSessionSoldIconPath(SUI_SelectedIndex)
+            else
+                set stockEntry = SUI_GetSelectedStockEntry()
+                set titleText = Shop_GetStockName(stockEntry)
+                set infoText = Shop_GetStockCategory(stockEntry) + "  |  " + I2S(Shop_GetStockPrice(stockEntry)) + " gold"
+                set bodyText = Shop_GetStockTooltip(stockEntry)
+                set iconPath = Shop_GetStockIconPath(stockEntry)
+            endif
             set actionText = "Buy"
         else
             set titleText = Shop_GetViewName(SUI_SelectedIndex)
@@ -321,6 +399,44 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface
         endif
     endfunction
 
+    private function SUI_UpdateCategories takes player whichPlayer returns nothing
+        local integer buttonIndex = 1
+        local integer categoryCount = 0
+        local string categoryName = ""
+
+        if SUI_ViewMode == SHOP_VIEW_MERCHANT then
+            set categoryCount = Shop_GetVendorCategoryCount(SUI_VendorId, true)
+        endif
+
+        loop
+            exitwhen buttonIndex > SUI_MAX_CATEGORIES
+            set categoryName = ""
+            if buttonIndex <= categoryCount then
+                if buttonIndex == SUI_MAX_CATEGORIES and categoryCount > SUI_MAX_CATEGORIES and Shop_GetSessionSoldCount() > 0 then
+                    set categoryName = Shop_GetRecentlySoldCategoryName()
+                else
+                    set categoryName = Shop_GetVendorCategoryName(SUI_VendorId, buttonIndex)
+                endif
+            endif
+
+            set SUI_CategoryName[buttonIndex] = categoryName
+            if GetLocalPlayer() == whichPlayer then
+                if categoryName != "" then
+                    if categoryName == SUI_SelectedCategory then
+                        call BlzFrameSetText(SUI_CategoryButton[buttonIndex], "|cffffe4a3" + categoryName + "|r")
+                    else
+                        call BlzFrameSetText(SUI_CategoryButton[buttonIndex], categoryName)
+                    endif
+                    call SUI_SetCategoryVisible(buttonIndex, true)
+                else
+                    call BlzFrameSetText(SUI_CategoryButton[buttonIndex], "")
+                    call SUI_SetCategoryVisible(buttonIndex, false)
+                endif
+            endif
+            set buttonIndex = buttonIndex + 1
+        endloop
+    endfunction
+
     private function SUI_UpdateHeader takes player whichPlayer returns nothing
         local string modeLabel = "Merchant"
         local string viewingText
@@ -346,14 +462,39 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface
 
         if SUI_ViewMode == SHOP_VIEW_YOU then
             call Shop_BuildUnitInventory(SUI_BuyerUnit)
+        else
+            call SUI_NormalizeCategory()
         endif
 
         set totalCount = SUI_GetTotalCount()
         call SUI_ClampState(totalCount)
         call SUI_UpdateHeader(whichPlayer)
+        call SUI_UpdateCategories(whichPlayer)
         call SUI_UpdateRows(whichPlayer, totalCount)
         call SUI_UpdateDetail(whichPlayer, totalCount)
         call SUI_SyncListScrollFrame(whichPlayer, totalCount)
+    endfunction
+
+    private function SUI_EndTradeSession takes nothing returns nothing
+        local unit buyer = SUI_BuyerUnit
+
+        if not SUI_TradeSessionOpen then
+            set buyer = null
+            return
+        endif
+
+        set SUI_TradeSessionOpen = false
+        call Shop_EndTradeSession()
+        call DialogSystem_ClearEscapeAction()
+        call DialogSystem_StopDialogCamera(Player(0), SUI_CAMERA_RESET_TIME, SUI_USE_DIALOG_CAMERA)
+        call DialogInteraction_EndCinematicSequence(SUI_CINEMATIC)
+        if buyer != null and DialogInteraction_IsUnitAlive(buyer) then
+            call ShowUnit(buyer, true)
+            call PauseUnit(buyer, false)
+            call SelectUnitForPlayerSingle(buyer, Player(0))
+        endif
+
+        set buyer = null
     endfunction
 
     private function SUI_HideInternal takes boolean playSound returns nothing
@@ -363,11 +504,13 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface
             endif
             call BlzFrameSetVisible(SUI_Parent, false)
         endif
+        call SUI_EndTradeSession()
         set SUI_VendorUnit = null
         set SUI_BuyerUnit = null
         set SUI_VendorId = 0
         set SUI_SelectedIndex = 0
         set SUI_ListScrollValue = 0
+        set SUI_SelectedCategory = Shop_GetAllCategoryName()
     endfunction
 
     public function Hide takes nothing returns nothing
@@ -385,6 +528,50 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface
         call ShopUI_Hide()
     endfunction
 
+    private function SUI_EscapeAction takes nothing returns nothing
+        if SUI_IsVisible() then
+            call ShopUI_Hide()
+        endif
+    endfunction
+
+    private function SUI_InterruptTrade takes nothing returns nothing
+        local player p = SUI_GetActivePlayer()
+
+        if SUI_IsVisible() then
+            call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, p)
+            call DisplayTextToPlayer(p, 0.00, 0.00, "|cffff8080Trade interrupted.|r")
+            call SUI_HideInternal(false)
+        endif
+
+        set p = null
+    endfunction
+
+    private function SUI_AttackInterruptAction takes nothing returns nothing
+        local unit target = null
+
+        static if LIBRARY_Events then
+            set target = Events_GetTriggerUnit()
+        else
+            set target = GetTriggerUnit()
+        endif
+
+        if target != null and (target == SUI_VendorUnit or target == SUI_BuyerUnit) then
+            call SUI_InterruptTrade()
+        endif
+
+        set target = null
+    endfunction
+
+    private function SUI_DeathInterruptAction takes nothing returns nothing
+        local unit target = GetDyingUnit()
+
+        if target != null and (target == SUI_VendorUnit or target == SUI_BuyerUnit) then
+            call SUI_InterruptTrade()
+        endif
+
+        set target = null
+    endfunction
+
     private function SUI_ModeAction takes nothing returns nothing
         if SUI_ViewMode == SHOP_VIEW_MERCHANT then
             set SUI_ViewMode = SHOP_VIEW_YOU
@@ -394,8 +581,28 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface
 
         set SUI_SelectedIndex = 0
         set SUI_ListScrollValue = 0
+        set SUI_SelectedCategory = Shop_GetAllCategoryName()
         call Interface_PlayEventSoundForPlayer(Interface_EVENT_TAB_CHANGE, GetTriggerPlayer())
         call SUI_Update(GetTriggerPlayer())
+    endfunction
+
+    private function SUI_CategoryAction takes nothing returns nothing
+        local integer handleId = GetHandleId(BlzGetTriggerFrame())
+        local integer categoryIndex
+        local player p = GetTriggerPlayer()
+
+        if SUI_CategoryButtonIndex.has(handleId) then
+            set categoryIndex = SUI_CategoryButtonIndex.integer[handleId]
+            if SUI_CategoryName[categoryIndex] != "" then
+                set SUI_SelectedCategory = SUI_CategoryName[categoryIndex]
+                set SUI_SelectedIndex = 0
+                set SUI_ListScrollValue = 0
+                call Interface_PlayEventSoundForPlayer(Interface_EVENT_TAB_CHANGE, p)
+                call SUI_Update(p)
+            endif
+        endif
+
+        set p = null
     endfunction
 
     private function SUI_RowAction takes nothing returns nothing
@@ -423,8 +630,12 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface
         endif
 
         if SUI_ViewMode == SHOP_VIEW_MERCHANT then
-            set stockEntry = SUI_GetSelectedStockEntry()
-            set success = Shop_BuyStock(p, SUI_BuyerUnit, stockEntry)
+            if SUI_IsRecentCategory() then
+                set success = Shop_BuyRecentlySold(p, SUI_BuyerUnit, SUI_SelectedIndex)
+            else
+                set stockEntry = SUI_GetSelectedStockEntry()
+                set success = Shop_BuyStock(p, SUI_BuyerUnit, stockEntry)
+            endif
         else
             set success = Shop_SellViewItem(p, SUI_BuyerUnit, SUI_SelectedIndex)
         endif
@@ -475,6 +686,7 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface
 
     private function SUI_CreateFrames takes nothing returns nothing
         local integer rowIndex = 1
+        local integer categoryIndex = 1
         local real rowTopOffset = -0.012
         local real rowHeight = 0.033
         local real rowGap = 0.003
@@ -519,9 +731,26 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface
         call BlzTriggerRegisterFrameEvent(SUI_ModeTrigger, SUI_ModeButton, FRAMEEVENT_CONTROL_CLICK)
         call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_ModeButton, FRAMEEVENT_CONTROL_CLICK)
 
+        loop
+            exitwhen categoryIndex > SUI_MAX_CATEGORIES
+            set SUI_CategoryButton[categoryIndex] = BlzCreateFrameByType("GLUETEXTBUTTON", "ShopUICategory" + I2S(categoryIndex), SUI_Parent, "ScriptDialogButton", 0)
+            call BlzFrameSetSize(SUI_CategoryButton[categoryIndex], 0.079, 0.024)
+            if categoryIndex == 1 then
+                call BlzFrameSetPoint(SUI_CategoryButton[categoryIndex], FRAMEPOINT_TOPLEFT, SUI_Parent, FRAMEPOINT_TOPLEFT, 0.018, -0.074)
+            else
+                call BlzFrameSetPoint(SUI_CategoryButton[categoryIndex], FRAMEPOINT_LEFT, SUI_CategoryButton[categoryIndex - 1], FRAMEPOINT_RIGHT, 0.004, 0.0)
+            endif
+            call BlzTriggerRegisterFrameEvent(SUI_CategoryTrigger, SUI_CategoryButton[categoryIndex], FRAMEEVENT_CONTROL_CLICK)
+            call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_CategoryButton[categoryIndex], FRAMEEVENT_CONTROL_CLICK)
+            set SUI_CategoryButtonIndex.integer[GetHandleId(SUI_CategoryButton[categoryIndex])] = categoryIndex
+            set SUI_CategoryVisibleState[categoryIndex] = -1
+            call BlzFrameSetVisible(SUI_CategoryButton[categoryIndex], false)
+            set categoryIndex = categoryIndex + 1
+        endloop
+
         set SUI_LeftPane = BlzCreateFrameByType("BACKDROP", "ShopUILeftPane", SUI_Parent, "", 0)
         call BlzFrameSetTexture(SUI_LeftPane, SUI_PanelTexture, 0, true)
-        call BlzFrameSetPoint(SUI_LeftPane, FRAMEPOINT_TOPLEFT, SUI_Parent, FRAMEPOINT_TOPLEFT, 0.014, -0.078)
+        call BlzFrameSetPoint(SUI_LeftPane, FRAMEPOINT_TOPLEFT, SUI_Parent, FRAMEPOINT_TOPLEFT, 0.014, -0.104)
         call BlzFrameSetPoint(SUI_LeftPane, FRAMEPOINT_BOTTOMRIGHT, SUI_Parent, FRAMEPOINT_BOTTOMLEFT, 0.215, 0.014)
 
         set SUI_ListScroll = BlzCreateFrameByType("SLIDER", "ShopUIListScroll", SUI_LeftPane, "QuestMainListScrollBar", 0)
@@ -660,6 +889,10 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface
             return
         endif
 
+        if SUI_IsVisible() then
+            call SUI_HideInternal(false)
+        endif
+
         set SUI_VendorUnit = vendor
         set SUI_BuyerUnit = buyer
         set SUI_ViewMode = SHOP_VIEW_MERCHANT
@@ -667,6 +900,9 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface
         set SUI_ListScrollValue = 0
         set SUI_ListScrollMaxCache = -1
         set SUI_ListScrollFrameValueCache = -1
+        set SUI_SelectedCategory = Shop_GetAllCategoryName()
+        set SUI_TradeSessionOpen = true
+        call Shop_BeginTradeSession(SUI_VendorId)
         set p = GetOwningPlayer(buyer)
 
         if SUI_Parent != null and not BlzFrameIsVisible(SUI_Parent) then
@@ -687,12 +923,16 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface
         set SUI_Initialized = true
 
         set SUI_ButtonRow = Table.create()
+        set SUI_CategoryButtonIndex = Table.create()
 
         set SUI_CloseTrigger = CreateTrigger()
         call TriggerAddAction(SUI_CloseTrigger, function SUI_CloseAction)
 
         set SUI_ModeTrigger = CreateTrigger()
         call TriggerAddAction(SUI_ModeTrigger, function SUI_ModeAction)
+
+        set SUI_CategoryTrigger = CreateTrigger()
+        call TriggerAddAction(SUI_CategoryTrigger, function SUI_CategoryAction)
 
         set SUI_RowTrigger = CreateTrigger()
         call TriggerAddAction(SUI_RowTrigger, function SUI_RowAction)
@@ -708,6 +948,27 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface
 
         set SUI_ClearFocusTrigger = CreateTrigger()
         call TriggerAddAction(SUI_ClearFocusTrigger, function SUI_ClearFocusAction)
+
+        set SUI_EscapeTrigger = CreateTrigger()
+        call BlzTriggerRegisterPlayerKeyEvent(SUI_EscapeTrigger, Player(0), OSKEY_ESCAPE, 0, true)
+        call TriggerRegisterPlayerEvent(SUI_EscapeTrigger, Player(0), EVENT_PLAYER_END_CINEMATIC)
+        call TriggerAddAction(SUI_EscapeTrigger, function SUI_EscapeAction)
+
+        static if LIBRARY_Events then
+            call Events_RegisterUnitAttacked(function SUI_AttackInterruptAction)
+        else
+            set SUI_AttackTrigger = CreateTrigger()
+            call TriggerRegisterAnyUnitEventBJ(SUI_AttackTrigger, EVENT_PLAYER_UNIT_ATTACKED)
+            call TriggerAddAction(SUI_AttackTrigger, function SUI_AttackInterruptAction)
+        endif
+
+        static if LIBRARY_UnitDeathEvent then
+            call UnitDeathEvent_Register(function SUI_DeathInterruptAction)
+        else
+            set SUI_DeathTrigger = CreateTrigger()
+            call TriggerRegisterAnyUnitEventBJ(SUI_DeathTrigger, EVENT_PLAYER_UNIT_DEATH)
+            call TriggerAddAction(SUI_DeathTrigger, function SUI_DeathInterruptAction)
+        endif
 
         call SUI_CreateFrames()
     endfunction
