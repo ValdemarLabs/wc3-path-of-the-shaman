@@ -58,6 +58,8 @@ private function TriggerQuestEvaluation_Delayed takes nothing returns nothing
     elseif unitTypeId == 'o61L' then
         call ExecuteFunc("qRagno_RefreshRespawnedUnitHooks")
         call ExecuteFunc("qChieftainThork_RefreshAvailability")
+    elseif unitTypeId == 'n62W' then
+        call ExecuteFunc("qZaekolaerr_RefreshRespawnedUnitHooks")
     endif
     
     // Cleanup
@@ -143,6 +145,7 @@ function CreepUnitAssignment takes integer utype returns nothing
         set udg_Succubus = bj_lastCreatedUnit
     elseif utype == 'n62W' then
         set udg_Zaekolaerr = bj_lastCreatedUnit
+        call TriggerQuestEvaluation(bj_lastCreatedUnit)
     //===========================================================================
     // HUMAN
     elseif utype == 'h60Z' then
