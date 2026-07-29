@@ -34,15 +34,15 @@
   - Raised the internal maximum registered profession recipe count from `256` to `512` so the expanded Cooking recipe table has room without crowding other profession libraries.
 
 - Updated `Professions/ProfessionsCooking.j`
-  - Replaced the placeholder Cooking hook with a full campfire recipe set for Cooking skill `1-300`.
+  - Replaced the placeholder Cooking hook with a full campfire recipe set for the existing Cooking skill `1-100` scale.
   - Registered `55` Camp Fire recipes across Apprentice, Journeyman, Expert, and Artisan tiers, including meat dishes, seafood, stews, beverages, and odd high-skill recipes.
   - Cooking recipes still require proximity to the Camp Fire unit `n61C`; library comments now note that future fire-source units should be added as additional station registrations.
   - Added Cooking-owned timed food and beverage stat effects instead of relying on Object Editor aura abilities for the first implementation.
-  - Food and beverage buffs are separate timed slots: a new food replaces the old food buff, a new beverage replaces the old beverage stat buff, and both remove their stat deltas when they expire.
+  - Food and beverage buffs are separate timed slots: a new food replaces the old food buff, a new beverage replaces the old beverage stat buff, and both remove their stat deltas when they expire or the unit dies.
   - Added runtime stat support for Strength, Agility, Intelligence, max hit points, max mana, hit point regeneration, mana regeneration, damage, armor, movement speed, sight range, Crit, Dodge, Block, Hit, flat Spell Power, and percent Spell Power.
   - `udg_Stats_Crit`, `udg_Stats_Dodge`, `udg_Stats_Block`, `udg_Stats_Hit`, `udg_Stats_SpellPowerFlat`, and `udg_Stats_SpellPowerPct` are updated directly for timed Cooking effects.
   - Added a delayed reapply path after hero item drops so `UnitStats_RecalculateHero(...)` item-stat clears do not permanently wipe active Cooking timed stats.
-  - Added public lookup helpers for Cooking consumables and effect text while keeping aura rawcode slots available for a later Object Editor aura migration.
+  - Added a `PC_RegisterAuraRawcodes` section where each recipe can define one Object Editor aura rawcode; Cooking now adds/removes mapped aura abilities together with the timed stat effect and clears them through `UnitDeathEvent`.
 
 - Added `Professions/Drunk.j`
   - Added a helper library for beverage drunkenness.
@@ -52,7 +52,7 @@
   - Camera sway uses `CAMERA_FIELD_ROLL` instead of rotation to avoid the known camera-rotation crash path.
 
 - Updated `GatherSystems/GatherNodeSkills.j`
-  - Raised the shared profession skill cap from `100` to `300`, matching the new Cooking recipe progression.
+  - Kept the shared profession skill cap at `100`; Cooking recipe requirements now fit the existing 1-100 profession progression.
 
 - Updated `CreepRespawn/CreepRespawn.j`
   - Added defensive state initialization so respawn tables, ignored-unit tracking, the exclusion list, and the bootstrap group exist before `Events_RegisterUnitEnter` or `UnitDeathEvent_Register` callbacks can touch them.
@@ -102,6 +102,7 @@
   - Added a `Query` craft button that keeps crafting the selected recipe until the required tool or materials are no longer available, then reopens the same crafting view.
   - Query crafting now continues repeated crafts inside the same active crafting camera/fade sequence instead of flashing back to the normal view between each item.
   - Pressing ESC now stops an active crafting query, and starting a query displays a reminder that ESC cancels it.
+  - Crafting UI selected-recipe details now use a dedicated dark body panel so recipe description, skill/time, and material lines remain visible for Cooking category/subcategory views the same way they do for Mining and Blacksmithing.
 
 - Updated `Companions/Companions.j`
   - Companion command abilities that target the ground now also include temporary controlled companions in `ControlledDisplayGroup`, so summoned/temporary companions follow group command mode and focus orders without needing to be manually selected.
@@ -181,6 +182,7 @@
   - Added a DInventory `Give` button for transferring the selected DInventory item to the currently selected target unit, using target DInventory first and target vanilla inventory only when the target has no DInventory.
   - The DInventory `Give` button now refreshes when the target selection changes and is positioned below the DInventory slots so it appears reliably after selecting both an item and a target unit.
   - DInventory give transfer now reports `Target unit doesn't have inventory.` or `Target unit inventory is full.` when the selected target cannot receive the item.
+  - Tightened DInventory stackability so `DInventoryIsItemStackable(...)` now treats WC3 item level `1-49` as the stack-cap range and treats level `0` and `50+` as non-stackable, regardless of Object Editor item category.
   - Inspect mode is read-only for inventory/equipment slot clicks while still allowing UI viewing and DInventory paging.
   - The Inspect/Close button now resolves the selected inspect target again on click, preventing stale selection cache cases where the button only worked after switching selection away and back.
   - Vanilla inventory handling now rejects DEquipment items, keeping equippable gear in DInventory or DEquipment slots while still allowing consumables, materials, and miscellaneous non-equipment items in vanilla inventory.
@@ -195,9 +197,11 @@
   - This fixes cases such as `Copper Ore`, where the item list correctly showed WC3 item level / stack cap `20`, but opening Edit Item could snap the field to an equipment-range value such as `700` before the item's final class/rarity state was fully loaded.
   - Renamed the raw item-level UI to `WC3 Level / Stack Cap` in the item editor and batch editor to make its current runtime meaning explicit.
   - Added and exposed `Loot Level` / `item_level_unclassified` beside the raw WC3 item level in the editor, item list, and column configuration.
-  - The intended data model is now documented in the tool: stackable consumables/materials use WC3 item level as their stack cap in the `0-49` range, miscellaneous non-equippable non-stackable items can occupy the `50-99` range, and equipment continues to use higher WC3 item-level values.
+  - The intended data model is now documented in the tool: any item class/type can be stackable when its WC3 item level is `1-49`, with that value acting as the stack cap; WC3 item level `0` and `50+` are intended non-stackable, and equipment continues to use higher WC3 item-level values.
   - Background: `DestroyerInventoryAndEquipmentSystem` still reads Warcraft III's object-editor item level through `GetItemLevel(...)` when deciding stack capacity. Because Warcraft III item charges are the visible count used by DInventory stacks, PotS has historically repurposed WC3 item level as the maximum stack/charge cap for stackable non-equipment instead of treating it as item power.
   - `item_level_unclassified` remains the separate loot/drop tier field for items whose raw WC3 item level is being used for stack behavior.
+  - Added clearer `Ignore Loot Tables` wording for the existing per-item loot exclusion flag, exposed it in the item list and batch editor, and kept it mapped to `specific_drop_only` so existing data remains compatible.
+  - Generated loot export now skips `specific_drop_only` items in generic item pools, named destructible loot tables, unit-specific drops, and destructible-specific drops; loot-table autofill also skips those items so crafter gear and other manually controlled items are not pulled into loot accidentally.
   - Populated the PotS ItemManager database with 64 additional item records: 32 junk/misc/food/material creature-drop items and 32 Cloth, Leather, Mail, and Plate armor pieces.
   - Added stat rows and matching WC3 ability-code grants for the new armor pieces, following the existing Copper Chain armor pattern while using `item_level_unclassified` as the drop-tier level.
   - Added rare armor descriptions/flavor text to selected higher-rarity pieces while keeping common/simple items concise.
@@ -207,12 +211,12 @@
   - Verified the inserted loot data has no duplicate unit/item or loot-table/item mappings.
   - Added `CookingItemsSeeder.cs` for deterministic startup seeding of Cooking item data.
   - The seeder upserts `65` Cooking-related items: `55` cooked food/beverage outputs and `10` new cooking materials such as Coarse Flour, Honey, Peppercorn, Baker's Yeast, Bitter Hops, Cactus Pulp, Sour Berries, Glowcap, Icecap Shavings, and Empty Bottle.
+  - Cooking-seeded cooked food and beverage loot/tier levels now use the corrected 1-100 Cooking scale in `item_level_unclassified`, while raw WC3 item level stays reserved for stack-cap behavior.
   - Wired the Cooking item seeder into `MainForm` and `ItemEditForm` connection startup beside the existing profession stat seeder.
   - Cooking-seeded consumables use generic item abilities to trigger item-use events while `ProfessionsCooking.j` owns the actual timed stat and drunk effects.
 
 ### Known Issues
 
-- Critical ItemManager/DInventory caveat: `DInventoryIsItemStackable(...)` currently treats matching WC3 item categories with `GetItemLevel(item) > 0` as stackable. It does not itself enforce the intended `0-49` stack-cap boundary, so miscellaneous non-stackable items in the `50-99` range must avoid stackable WC3 item categories, or the JASS predicate should later be tightened to require `GetItemLevel(item) < 50`.
 - `qValeria.j` now references `gg_rct_ItemTokenLove` and `gg_rct_ItemSupplies01` through `gg_rct_ItemSupplies07`; confirm these rects exist in the main map globals during the next in-map compile.
 - `qRagno.j` now references Ragno/Kobold/Lumber old-GUI rect globals such as `gg_rct_KoboldsChest01` through `gg_rct_KoboldsChest08`, `gg_rct_LumberPeonSpawn`, and `gg_rct_LumberPeonMove`; confirm these rects and the new quest-giver import order in the next full in-map JassHelper compile.
 - The Shaman/profession/ExSound changes passed targeted static checks and `git diff --check`, but still need full in-map JassHelper compile and runtime audio validation with `SoundAndMusic/ExSoundEditorSounds.j` included after `SoundAndMusic/ExSound.j`.
@@ -223,13 +227,12 @@
 ### Actions Remaining
 
 - Re-test `CastingBar/CastingBarSystem.j` in-game with normal cast-time spells and channel/follow-through spells, especially Firebolt-style casts, Rain of Fire, Blizzard, Life Drain, and Channel-based custom abilities.
-- Decide whether to tighten `DestroyerInventoryAndEquipmentSystem/PoTs/SharedDInvLib.j` so stackability requires WC3 item level `1-49`, matching the ItemManager convention and protecting `50-99` miscellaneous items from accidental stacking.
 - Re-test Valeria's `Token of Love` and `Lost Supplies` chain in-game: quest-log text, item spawn at `ItemTokenLove`, `ITEM_SUPPLIES` spawning across `ItemSupplies01` through `ItemSupplies07`, sequential availability, item turn-in cleanup, and farewell control lock.
 - Re-test Ragno and Chieftain Thork in-game: repeatable quest reset, Kobold chest drops, Lumberjack peon survival/failure, `Giving the Letter` turn-in marker on Thork, Zul'kis unlock, and Ragno/Thork respawn hook refresh.
 - Re-test Aradion/Valeria/Nazgrek dialog scenes with companions present to confirm companion movement stays paused during dialog and resumes correctly afterward.
 - Import `Professions/Drunk.j` into the actual map build order before `Professions/ProfessionsCooking.j`.
 - Re-export or run `WC3ItemManager` against the PotS database so the new Cooking materials, cooked foods, and beverages are present in the generated item object data.
-- Runtime-test Cooking at a Camp Fire: material consumption, skill gating through `1-300`, repeated query crafting, crafted item creation, item-use event firing, food replacement, beverage replacement, expiration stat removal, and drunk selection switching between Nazgrek/Zul'kis.
+- Runtime-test Cooking at a Camp Fire: material consumption, skill gating through `1-100`, repeated query crafting, crafted item creation, item-use event firing, food replacement, beverage replacement, expiration/death stat and aura removal, and drunk selection switching between Nazgrek/Zul'kis.
 
 
 ## [26.7.2026]
