@@ -113,7 +113,7 @@ namespace WC3ItemManager
 
         private static SeedItem Food(string code, string name, string rarity, int level, int goldCost, string effectText)
         {
-            return Consumable(code, name, rarity, level, goldCost, effectText, "Food", "rej3", "A60V", "ReplaceableTextures\\PassiveButtons\\PASBTNVampiricAura.blp", "war3campImported\\ITEMMonsterLure.mdl");
+            return Consumable(code, name, rarity, level, goldCost, effectText, "Food", "rej3", "A60V", "ReplaceableTextures\\CommandButtons\\BTNMonsterLure.blp", "war3campImported\\ITEMMonsterLure.mdl");
         }
 
         private static SeedItem FishFood(string code, string name, string rarity, int level, int goldCost, string effectText)
@@ -123,7 +123,7 @@ namespace WC3ItemManager
 
         private static SeedItem Stew(string code, string name, string rarity, int level, int goldCost, string effectText)
         {
-            return Consumable(code, name, rarity, level, goldCost, effectText, "Food", "rej3", "A60V", "ReplaceableTextures\\CommandButtons\\BTNINV_Drink_14.blp", "war3campImported\\ITEMPotionGreenSmall.mdl");
+            return Consumable(code, name, rarity, level, goldCost, effectText, "Food", "rej3", "A60V", "ReplaceableTextures\\CommandButtons\\BTNPotionGreenSmall.blp", "war3campImported\\ITEMPotionGreenSmall.mdl");
         }
 
         private static SeedItem OddFood(string code, string name, string rarity, int level, int goldCost, string effectText)
@@ -133,7 +133,7 @@ namespace WC3ItemManager
 
         private static SeedItem Beverage(string code, string name, string rarity, int level, int goldCost, string effectText)
         {
-            return Consumable(code, name, rarity, level, goldCost, effectText, "Beverage", "pclr", "A61F", "ReplaceableTextures\\CommandButtons\\BTNINV_Drink_05.blp", "war3campImported\\ITEMPotionGreenSmall.mdl");
+            return Consumable(code, name, rarity, level, goldCost, effectText, "Beverage", "pclr", "A61F", "ReplaceableTextures\\CommandButtons\\BTNPotionBlueSmall.blp", "war3campImported\\ITEMPotionGreenSmall.mdl");
         }
 
         private static SeedItem Consumable(string code, string name, string rarity, int level, int goldCost, string effectText, string kind, string baseId, string ability, string iconPath, string modelPath)
