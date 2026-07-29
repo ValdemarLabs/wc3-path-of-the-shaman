@@ -2,7 +2,7 @@
     ProfessionsCooking
 
     Author: Valdemar
-    Version: 1.2
+    Version: 1.3
 
     Description:
     Registers Cooking workstation data, campfire recipes, timed food and
@@ -18,11 +18,12 @@
     as extra station registrations here, not by loosening the crafting distance
     check.
 
-    Food and beverage buff notes:
-    Cooking owns timed stat add/remove directly. One food buff and one beverage
+    Food and drink buff notes:
+    Cooking owns timed stat add/remove directly. One food buff and one drink
     buff may be active on a unit at the same time. Applying a new food replaces
-    the previous food; applying a new beverage replaces the previous beverage,
-    but drunkenness still accumulates through Drunk_Add.
+    only the previous food stats/aura; applying a new drink replaces only the
+    previous drink stats/aura. Only drinks with configured drunk amount above
+    0.00 call Drunk_Add; non-alcohol drinks are still normal drink buffs.
 
     Aura ability rawcodes are defined in PC_RegisterAuraRawcodes. Keep one aura
     ability per recipe, replacing the 0 placeholder with the Object Editor
@@ -33,9 +34,20 @@
 
     API:
     call ProfessionsCooking_Init()
+    set abilityId = ProfessionsCooking_GetCookingAuraAbility(itemCode)
     set abilityId = ProfessionsCooking_GetFoodAuraAbility(itemCode)
+    set abilityId = ProfessionsCooking_GetDrinkAuraAbility(itemCode)
+    set effectText = ProfessionsCooking_GetCookingEffectText(itemCode)
     set effectText = ProfessionsCooking_GetFoodEffectText(itemCode)
+    set effectText = ProfessionsCooking_GetDrinkEffectText(itemCode)
     set isCookingConsumable = ProfessionsCooking_IsCookingConsumable(itemCode)
+    set isCookingFood = ProfessionsCooking_IsCookingFood(itemCode)
+    set isCookingDrink = ProfessionsCooking_IsCookingDrink(itemCode)
+    set isIntoxicatingDrink = ProfessionsCooking_IsCookingIntoxicatingDrink(itemCode)
+    set activeAbilityId = ProfessionsCooking_GetActiveFoodAuraAbility(whichUnit)
+    set activeAbilityId = ProfessionsCooking_GetActiveDrinkAuraAbility(whichUnit)
+    set activeEffectText = ProfessionsCooking_GetActiveFoodEffectText(whichUnit)
+    set activeEffectText = ProfessionsCooking_GetActiveDrinkEffectText(whichUnit)
 
 **/
 
@@ -245,6 +257,7 @@ globals
     private string array PC_EffectName
     private string array PC_EffectText
 
+    // Timed buff slots. Food and drink are separate so each unit can keep one of each active.
     private integer array PC_ActiveFoodEffect
     private timer array PC_ActiveFoodTimer
     private unit array PC_ActiveFoodUnit
@@ -551,6 +564,20 @@ private function PC_StartBeverageTimer takes unit whichUnit, integer unitId, int
     set t = null
 endfunction
 
+private function PC_ApplyFoodBuff takes unit whichUnit, integer unitId, integer effectId returns nothing
+    call PC_RemoveFood(unitId)
+    call PC_ApplyEffectStats(whichUnit, effectId, 1, false)
+    call PC_AddEffectAura(whichUnit, effectId)
+    call PC_StartFoodTimer(whichUnit, unitId, effectId)
+endfunction
+
+private function PC_ApplyDrinkBuff takes unit whichUnit, integer unitId, integer effectId returns nothing
+    call PC_RemoveBeverage(unitId)
+    call PC_ApplyEffectStats(whichUnit, effectId, 1, false)
+    call PC_AddEffectAura(whichUnit, effectId)
+    call PC_StartBeverageTimer(whichUnit, unitId, effectId)
+endfunction
+
 private function PC_ApplyConsumable takes unit whichUnit, integer effectId returns nothing
     local integer unitId = PC_GetUnitId(whichUnit)
 
@@ -559,18 +586,12 @@ private function PC_ApplyConsumable takes unit whichUnit, integer effectId retur
     endif
 
     if PC_EffectIsBeverage[effectId] then
-        call PC_RemoveBeverage(unitId)
-        call PC_ApplyEffectStats(whichUnit, effectId, 1, false)
-        call PC_AddEffectAura(whichUnit, effectId)
-        call PC_StartBeverageTimer(whichUnit, unitId, effectId)
+        call PC_ApplyDrinkBuff(whichUnit, unitId, effectId)
         if PC_EffectDrunkAmount[effectId] > 0.00 then
             call Drunk_Add(whichUnit, PC_EffectDrunkAmount[effectId], PC_EffectDuration[effectId])
         endif
     else
-        call PC_RemoveFood(unitId)
-        call PC_ApplyEffectStats(whichUnit, effectId, 1, false)
-        call PC_AddEffectAura(whichUnit, effectId)
-        call PC_StartFoodTimer(whichUnit, unitId, effectId)
+        call PC_ApplyFoodBuff(whichUnit, unitId, effectId)
     endif
 
     call PC_ShowEffectApplied(whichUnit, effectId)
@@ -893,12 +914,12 @@ private function PC_RegisterEffects takes nothing returns nothing
     call PC_AddEffectStat(effectId, PC_STAT_SIGHT_RANGE, 40.00)
     call PC_AddEffectStat(effectId, PC_STAT_HITPOINT_REGEN, -2.00)
 
-    // Beverages: usually trade clarity or defense for bursts, and feed Drunk.j.
+    // Beverages occupy the drink buff slot; only entries with drunk amount > 0.00 feed Drunk.j.
     set effectId = PC_RegisterConsumable(PC_ITEM_SPRINGWATER_TEA, "Springwater Tea", "+25 maximum mana and +1 mana regeneration for 10 minutes.", PC_DEFAULT_BEVERAGE_DURATION, true, 0.00)
     call PC_AddEffectStat(effectId, PC_STAT_MANA, 25.00)
     call PC_AddEffectStat(effectId, PC_STAT_MANA_REGEN, 1.00)
 
-    set effectId = PC_RegisterConsumable(PC_ITEM_HONEYED_MILK, "Honeyed Milk", "+50 maximum hit points and -1 Intelligence for 10 minutes.", PC_DEFAULT_BEVERAGE_DURATION, true, 0.05)
+    set effectId = PC_RegisterConsumable(PC_ITEM_HONEYED_MILK, "Honeyed Milk", "+50 maximum hit points and -1 Intelligence for 10 minutes.", PC_DEFAULT_BEVERAGE_DURATION, true, 0.00)
     call PC_AddEffectStat(effectId, PC_STAT_HITPOINTS, 50.00)
     call PC_AddEffectStat(effectId, PC_STAT_INTELLIGENCE, -1.00)
 
@@ -912,7 +933,7 @@ private function PC_RegisterEffects takes nothing returns nothing
     call PC_AddEffectStat(effectId, PC_STAT_INTELLIGENCE, -2.00)
     call PC_AddEffectStat(effectId, PC_STAT_ARMOR, -1.00)
 
-    set effectId = PC_RegisterConsumable(PC_ITEM_SALTED_MAKRURA_BROTH, "Salted Makrura Broth", "+1 mana regeneration, +60 maximum mana, and -1 Armor for 10 minutes.", PC_DEFAULT_BEVERAGE_DURATION, true, 0.10)
+    set effectId = PC_RegisterConsumable(PC_ITEM_SALTED_MAKRURA_BROTH, "Salted Makrura Broth", "+1 mana regeneration, +60 maximum mana, and -1 Armor for 10 minutes.", PC_DEFAULT_BEVERAGE_DURATION, true, 0.00)
     call PC_AddEffectStat(effectId, PC_STAT_MANA_REGEN, 1.00)
     call PC_AddEffectStat(effectId, PC_STAT_MANA, 60.00)
     call PC_AddEffectStat(effectId, PC_STAT_ARMOR, -1.00)
@@ -928,7 +949,7 @@ private function PC_RegisterEffects takes nothing returns nothing
     call PC_AddEffectStat(effectId, PC_STAT_INTELLIGENCE, -4.00)
     call PC_AddEffectStat(effectId, PC_STAT_ARMOR, -2.00)
 
-    set effectId = PC_RegisterConsumable(PC_ITEM_SAGEFISH_TONIC, "Sagefish Tonic", "+4 Intelligence, +1 mana regeneration, and -1 Armor for 10 minutes.", PC_DEFAULT_BEVERAGE_DURATION, true, 0.10)
+    set effectId = PC_RegisterConsumable(PC_ITEM_SAGEFISH_TONIC, "Sagefish Tonic", "+4 Intelligence, +1 mana regeneration, and -1 Armor for 10 minutes.", PC_DEFAULT_BEVERAGE_DURATION, true, 0.00)
     call PC_AddEffectStat(effectId, PC_STAT_INTELLIGENCE, 4.00)
     call PC_AddEffectStat(effectId, PC_STAT_MANA_REGEN, 1.00)
     call PC_AddEffectStat(effectId, PC_STAT_ARMOR, -1.00)
@@ -949,7 +970,7 @@ private function PC_RegisterEffects takes nothing returns nothing
     call PC_AddEffectStat(effectId, PC_STAT_BLOCK, 4.00)
     call PC_AddEffectStat(effectId, PC_STAT_AGILITY, -4.00)
 
-    set effectId = PC_RegisterConsumable(PC_ITEM_LOBSTER_CUP, "Lobster Bisque Cup", "+200 maximum hit points, +2 hit point regeneration, and -3 Intelligence for 10 minutes.", PC_DEFAULT_BEVERAGE_DURATION, true, 0.20)
+    set effectId = PC_RegisterConsumable(PC_ITEM_LOBSTER_CUP, "Lobster Bisque Cup", "+200 maximum hit points, +2 hit point regeneration, and -3 Intelligence for 10 minutes.", PC_DEFAULT_BEVERAGE_DURATION, true, 0.00)
     call PC_AddEffectStat(effectId, PC_STAT_HITPOINTS, 200.00)
     call PC_AddEffectStat(effectId, PC_STAT_HITPOINT_REGEN, 2.00)
     call PC_AddEffectStat(effectId, PC_STAT_INTELLIGENCE, -3.00)
@@ -1278,7 +1299,7 @@ private function PC_RegisterRecipes takes nothing returns nothing
     call PC_Add(recipeId, PC_ITEM_BITTER_HOPS, 1, "Bitter Hops")
     call PC_Add(recipeId, PC_ITEM_EMPTY_BOTTLE, 1, "Empty Bottle")
 
-    set recipeId = PC_RegisterRecipe(PC_CATEGORY_EXPERT, PC_SUBCATEGORY_BEVERAGES, "Sagefish Tonic", "A low-proof tonic for focused casters.", PC_ICON_DRINK, PC_ITEM_SAGEFISH_TONIC, 58, 5.00)
+    set recipeId = PC_RegisterRecipe(PC_CATEGORY_EXPERT, PC_SUBCATEGORY_BEVERAGES, "Sagefish Tonic", "A clear tonic for focused casters.", PC_ICON_DRINK, PC_ITEM_SAGEFISH_TONIC, 58, 5.00)
     call PC_Add(recipeId, PC_ITEM_RAW_SAGEFISH, 1, "Raw Sagefish")
     call PC_Add(recipeId, PC_ITEM_MOUNTAIN_SILVERSAGE, 1, "Mountain Silversage")
     call PC_Add(recipeId, PC_ITEM_PURIFIED_WATER, 1, "Purified Water")
@@ -1320,33 +1341,129 @@ private function PC_RegisterRecipes takes nothing returns nothing
     call PC_Add(recipeId, PC_ITEM_EMPTY_BOTTLE, 1, "Empty Bottle")
 endfunction
 
-public function IsCookingConsumable takes integer itemCode returns boolean
-    if PC_ItemEffect == 0 then
-        return false
-    endif
-    return PC_ItemEffect.integer[itemCode] > 0
-endfunction
-
-public function GetFoodAuraAbility takes integer itemCode returns integer
-    local integer effectId
+private function PC_GetEffectIdByItem takes integer itemCode returns integer
     if PC_ItemEffect == 0 then
         return 0
     endif
-    set effectId = PC_ItemEffect.integer[itemCode]
+    return PC_ItemEffect.integer[itemCode]
+endfunction
+
+private function PC_GetAuraAbilityByItem takes integer itemCode returns integer
+    local integer effectId = PC_GetEffectIdByItem(itemCode)
+
     if effectId > 0 then
         return PC_EffectAuraAbility[effectId]
     endif
     return 0
 endfunction
 
-public function GetFoodEffectText takes integer itemCode returns string
-    local integer effectId
-    if PC_ItemEffect == 0 then
-        return ""
-    endif
-    set effectId = PC_ItemEffect.integer[itemCode]
+private function PC_GetEffectTextByItem takes integer itemCode returns string
+    local integer effectId = PC_GetEffectIdByItem(itemCode)
+
     if effectId > 0 then
         return PC_EffectText[effectId]
+    endif
+    return ""
+endfunction
+
+public function IsCookingConsumable takes integer itemCode returns boolean
+    return PC_GetEffectIdByItem(itemCode) > 0
+endfunction
+
+public function IsCookingFood takes integer itemCode returns boolean
+    local integer effectId = PC_GetEffectIdByItem(itemCode)
+
+    return effectId > 0 and not PC_EffectIsBeverage[effectId]
+endfunction
+
+public function IsCookingDrink takes integer itemCode returns boolean
+    local integer effectId = PC_GetEffectIdByItem(itemCode)
+
+    return effectId > 0 and PC_EffectIsBeverage[effectId]
+endfunction
+
+public function IsCookingIntoxicatingDrink takes integer itemCode returns boolean
+    local integer effectId = PC_GetEffectIdByItem(itemCode)
+
+    return effectId > 0 and PC_EffectIsBeverage[effectId] and PC_EffectDrunkAmount[effectId] > 0.00
+endfunction
+
+public function GetCookingAuraAbility takes integer itemCode returns integer
+    return PC_GetAuraAbilityByItem(itemCode)
+endfunction
+
+public function GetFoodAuraAbility takes integer itemCode returns integer
+    local integer effectId = PC_GetEffectIdByItem(itemCode)
+
+    if effectId > 0 and not PC_EffectIsBeverage[effectId] then
+        return PC_EffectAuraAbility[effectId]
+    endif
+    return 0
+endfunction
+
+public function GetDrinkAuraAbility takes integer itemCode returns integer
+    local integer effectId = PC_GetEffectIdByItem(itemCode)
+
+    if effectId > 0 and PC_EffectIsBeverage[effectId] then
+        return PC_EffectAuraAbility[effectId]
+    endif
+    return 0
+endfunction
+
+public function GetCookingEffectText takes integer itemCode returns string
+    return PC_GetEffectTextByItem(itemCode)
+endfunction
+
+public function GetFoodEffectText takes integer itemCode returns string
+    local integer effectId = PC_GetEffectIdByItem(itemCode)
+
+    if effectId > 0 and not PC_EffectIsBeverage[effectId] then
+        return PC_EffectText[effectId]
+    endif
+    return ""
+endfunction
+
+public function GetDrinkEffectText takes integer itemCode returns string
+    local integer effectId = PC_GetEffectIdByItem(itemCode)
+
+    if effectId > 0 and PC_EffectIsBeverage[effectId] then
+        return PC_EffectText[effectId]
+    endif
+    return ""
+endfunction
+
+public function GetActiveFoodAuraAbility takes unit whichUnit returns integer
+    local integer unitId = PC_GetUnitId(whichUnit)
+
+    if unitId > 0 and PC_ActiveFoodEffect[unitId] > 0 then
+        return PC_EffectAuraAbility[PC_ActiveFoodEffect[unitId]]
+    endif
+    return 0
+endfunction
+
+public function GetActiveDrinkAuraAbility takes unit whichUnit returns integer
+    local integer unitId = PC_GetUnitId(whichUnit)
+
+    if unitId > 0 and PC_ActiveBeverageEffect[unitId] > 0 then
+        return PC_EffectAuraAbility[PC_ActiveBeverageEffect[unitId]]
+    endif
+    return 0
+endfunction
+
+public function GetActiveFoodEffectText takes unit whichUnit returns string
+    local integer unitId = PC_GetUnitId(whichUnit)
+
+    if unitId > 0 and PC_ActiveFoodEffect[unitId] > 0 then
+        return PC_EffectText[PC_ActiveFoodEffect[unitId]]
+    endif
+    return ""
+endfunction
+
+public function GetActiveDrinkEffectText takes unit whichUnit returns string
+    local integer unitId = PC_GetUnitId(whichUnit)
+
+    if unitId > 0 and PC_ActiveBeverageEffect[unitId] > 0 then
+        return PC_EffectText[PC_ActiveBeverageEffect[unitId]]
     endif
     return ""
 endfunction
