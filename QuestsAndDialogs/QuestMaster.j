@@ -2006,11 +2006,11 @@ struct QuestData
 	method updateIcons takes nothing returns nothing
 		local integer currentState = this.state
 		
-		// Register icon with giver (shows available/in-progress states)
 		if this.giver != null then
-			// Show turn-in icon on giver only if giver == receiver
-			if currentState == QUEST_STATE_READY_TURNIN and this.receiver != null and this.giver != this.receiver then
-				call IconRegisterQuest(this.giver, this.id, this.questType, QUEST_STATE_IN_PROGRESS)
+			if currentState == QUEST_STATE_COMPLETE then
+				call IconRemoveQuest(this.giver, this.id)
+			elseif currentState == QUEST_STATE_READY_TURNIN and this.receiver != null and this.giver != this.receiver then
+				call IconRemoveQuest(this.giver, this.id)
 			else
 				call IconRegisterQuest(this.giver, this.id, this.questType, currentState)
 			endif
@@ -2020,7 +2020,7 @@ struct QuestData
 		if this.receiver != null and this.receiver != this.giver then
 			if currentState == QUEST_STATE_READY_TURNIN then
 				call IconRegisterQuest(this.receiver, this.id, this.questType, QUEST_STATE_READY_TURNIN)
-			elseif currentState == QUEST_STATE_COMPLETE or currentState == QUEST_STATE_AVAILABLE or currentState == QUEST_STATE_UNAVAILABLE then
+			elseif currentState == QUEST_STATE_COMPLETE or currentState == QUEST_STATE_AVAILABLE or currentState == QUEST_STATE_UNAVAILABLE or currentState == QUEST_STATE_IN_PROGRESS then
 				// Clear icon from receiver when quest completes or resets
 				call IconRemoveQuest(this.receiver, this.id)
 			endif
