@@ -50,7 +50,8 @@ globals
     private constant integer UNIT_LUMBER_PEON = 'opeo'
     private constant integer UNIT_LUMBER_RETURN = 'n62U'
     private constant integer DESTRUCT_STASH_QUEST = 'B61D'
-    private constant integer DESTRUCT_LUMBER_TREE = 'B61E'
+    private constant integer DESTRUCT_LUMBER_TREE = 'LTlt'
+    private constant integer DESTRUCT_LUMBER_TREE_ALT = 'B61E'
     private constant integer DESTRUCT_LUMBER_BLOCKER = 'B61F'
 
     private constant integer GNOLL_HEAD_REQUIRED = 20
@@ -559,13 +560,22 @@ private function OnLumberPeonChatTimer takes nothing returns nothing
     endif
 endfunction
 
+private function IsLumberjackTree takes destructable d returns boolean
+    local integer typeId
+    if d == null then
+        return false
+    endif
+    set typeId = GetDestructableTypeId(d)
+    return typeId == DESTRUCT_LUMBER_TREE or typeId == DESTRUCT_LUMBER_TREE_ALT
+endfunction
+
 private function ResetLumberjackDestructableEnum takes nothing returns nothing
     local destructable d = GetEnumDestructable()
 
     if d == null then
         return
     endif
-    if GetDestructableTypeId(d) == DESTRUCT_LUMBER_TREE then
+    if IsLumberjackTree(d) then
         if GetDestructableLife(d) <= 0.405 then
             call DestructableRestoreLife(d, GetDestructableMaxLife(d), true)
         endif
@@ -680,7 +690,7 @@ private function OnLumberPeonOrder takes nothing returns nothing
         set target = null
         return
     endif
-    if GetDestructableTypeId(target) != DESTRUCT_LUMBER_TREE or GetDestructableLife(target) <= 0.405 then
+    if not IsLumberjackTree(target) or GetDestructableLife(target) <= 0.405 then
         set target = null
         return
     endif
@@ -731,7 +741,7 @@ private function PickNearbyLumberTreeEnum takes nothing returns nothing
         set d = null
         return
     endif
-    if GetDestructableTypeId(d) != DESTRUCT_LUMBER_TREE or GetDestructableLife(d) <= 0.405 then
+    if not IsLumberjackTree(d) or GetDestructableLife(d) <= 0.405 then
         set d = null
         return
     endif
@@ -763,7 +773,7 @@ private function OnLumberPeonNearTreeTimer takes nothing returns nothing
     call EnumDestructablesInRect(LumberPeonScanRect, null, function PickNearbyLumberTreeEnum)
     if LumberPeonTreePick != null then
         call FollowSystem_RemoveUnit(LumberPeon)
-        call IssueTargetOrder(LumberPeon, "harvest", LumberPeonTreePick)
+        call IssueTargetDestructableOrder(LumberPeon, "harvest", LumberPeonTreePick)
         set LumberPeonTreePick = null
     endif
 endfunction
@@ -805,9 +815,15 @@ private function StartLumberjackRuntime takes nothing returns nothing
     endif
     call TimerStart(LumberPeonNearTreeTimer, LUMBER_NEAR_TREE_PERIOD, true, function OnLumberPeonNearTreeTimer)
     call TimerStart(LumberPeonChatTimer, GetRandomReal(30.00, 200.00), false, function OnLumberPeonChatTimer)
-    call QueueLumberPeonLine(VL_ORCPEON_0016_KEY, VL_ORCPEON_0016_TEXT)
-    call QueueLumberPeonLine(VL_ORCPEON_0005_KEY, VL_ORCPEON_0005_TEXT)
-    call QueueLumberPeonLine(VL_ORCPEON_0017_KEY, VL_ORCPEON_0017_TEXT)
+endfunction
+
+private function AddLumberPeonIntroLines takes integer seq returns nothing
+    if DialogInteraction_IsUnitAlive(LumberPeon) then
+        call DialogSystem_AddDelay(seq, 2.00)
+        call DialogSystem_AddLine(seq, LumberPeon, "Peon", VL_ORCPEON_0016_TEXT, VL_ORCPEON_0016_KEY, true)
+        call DialogSystem_AddLine(seq, LumberPeon, "Peon", VL_ORCPEON_0005_TEXT, VL_ORCPEON_0005_KEY, true)
+        call DialogSystem_AddLine(seq, LumberPeon, "Peon", VL_ORCPEON_0017_TEXT, VL_ORCPEON_0017_KEY, true)
+    endif
 endfunction
 
 private function EnsureProtectOutpostRuntime takes nothing returns nothing
@@ -1210,9 +1226,6 @@ private function OnCompleteGnollHeadcount takes nothing returns nothing
 endfunction
 
 private function OnAcceptLumberjackEnd takes nothing returns nothing
-    call QuestGiver_AcceptQuestByNameAndGiver(QUEST_LUMBERJACK_DUTIES, Ragno)
-    call RefreshQuestAfterAccept(QUEST_LUMBERJACK_DUTIES)
-    call StartLumberjackRuntime()
     call StartExitFadeOut()
 endfunction
 
@@ -1220,10 +1233,14 @@ private function OnAcceptLumberjack takes nothing returns nothing
     local integer seq
 
     set RagnoGreeted = true
+    call QuestGiver_AcceptQuestByNameAndGiver(QUEST_LUMBERJACK_DUTIES, Ragno)
+    call RefreshQuestAfterAccept(QUEST_LUMBERJACK_DUTIES)
+    call StartLumberjackRuntime()
     call DialogInteraction_BeginDialogSequence()
     set seq = DialogInteraction_CreateBaseSequence(Ragno, "Ragno")
     call DialogSystem_AddLine(seq, Ragno, "Ragno", "Our settlements are hungry for lumber.", "OrcGrunt_0097", true)
     call DialogSystem_AddLine(seq, Ragno, "Ragno", "Grab a peon and gather what wood you can. Keep him alive.", "OrcGrunt_0098", true)
+    call AddLumberPeonIntroLines(seq)
     call DialogSystem_SetSequenceCallbacks(seq, null, function OnAcceptLumberjackEnd)
     call DialogSystem_PlaySequence(seq, Player(0), Ragno)
 endfunction
@@ -1446,7 +1463,11 @@ private function AddPreDialogBark takes integer seq, unit hero returns nothing
 endfunction
 
 private function PlayDialogGreeting takes unit hero returns nothing
-    local integer seq = DialogInteraction_CreateGreetSequenceBase(Ragno, "Ragno", hero, DIALOG_FADE_OUT, DIALOG_FADE_IN, false)
+    local integer seq = DialogInteraction_CreateBaseSequence(Ragno, "Ragno")
+    if hero != null then
+        call DialogSystem_AddMakeFaceEachOther(seq, Ragno, hero, 0.75, 0.00)
+    endif
+    call DialogSystem_AddDelay(seq, DIALOG_FADE_OUT)
     call AddPreDialogBark(seq, hero)
     call DialogInteraction_PlayGreetSequenceEx(seq, Ragno, Player(0), RagnoDialog, CINEMATIC)
 endfunction
@@ -1623,6 +1644,16 @@ endfunction
 public function IsSatyrNegotiationsActive takes nothing returns boolean
     local QuestData q = GetRagnoQuest(QUEST_SATYR_NEGOTIATIONS)
     local boolean result = q != 0 and q.active and not q.completed and not q.failed
+    set q = 0
+    return result
+endfunction
+
+public function IsSatyrNegotiationsOpen takes nothing returns boolean
+    local QuestData q = GetRagnoQuest(QUEST_SATYR_NEGOTIATIONS)
+    local boolean result = false
+    if q != 0 then
+        set result = q.discovered and not q.completed and not q.failed and not SatyrNegotiationsReady and q.state != QUEST_STATE_READY_TURNIN
+    endif
     set q = 0
     return result
 endfunction
