@@ -42,6 +42,8 @@
     call Interface_NotifyQuestLogClosed()
     call Interface_NotifyQuestWritten()
     call Interface_NotifyLootCoin()
+    call Interface_PlayEventSoundForPlayer(Interface_EVENT_SHOP_BUY, GetTriggerPlayer())
+    call Interface_PlayEventSoundForPlayer(Interface_EVENT_SHOP_SELL, GetTriggerPlayer())
     call Interface_NotifyHardWarning()
     call Interface_NotifyMiningHitOnUnit(GetTriggerUnit())
     call Interface_RefreshDefaultSounds()
@@ -85,8 +87,10 @@ library Interface initializer AutoInit requires ExSound, ExSoundEditorSounds
         public constant integer EVENT_LOOT_COIN = 29
         public constant integer EVENT_HARD_WARNING = 30
         public constant integer EVENT_TRADESKILL_HERB_PICK = 31
+        public constant integer EVENT_SHOP_BUY = 32
+        public constant integer EVENT_SHOP_SELL = 33
 
-        private constant integer IUI_EVENT_MAX = 31
+        private constant integer IUI_EVENT_MAX = 33
         private constant real IUI_MINING_SOUND_CUTOFF = 1500.00
         private constant real IUI_PROFESSION_SOUND_CUTOFF = 1500.00
 
@@ -438,6 +442,8 @@ library Interface initializer AutoInit requires ExSound, ExSoundEditorSounds
         set IUI_EventSound[EVENT_LOOT_COIN] = gg_snd_Interface_LootCoin                         // gg_snd_Interface_LootCoin
         set IUI_EventSound[EVENT_HARD_WARNING] = gg_snd_Interface_HardWarning                   // gg_snd_Interface_HardWarning
         set IUI_EventSound[EVENT_TRADESKILL_HERB_PICK] = gg_snd_Tradeskill_HerbPick             // gg_snd_Tradeskill_HerbPick
+        set IUI_EventSound[EVENT_SHOP_BUY] = gg_snd_LostGold                                    // gg_snd_LostGold
+        set IUI_EventSound[EVENT_SHOP_SELL] = gg_snd_ReceiveGold                                // gg_snd_ReceiveGold
 
         set Profession_Alchemy_Start = gg_snd_CauldronSound
         set Profession_Alchemy_Loop = gg_snd_CauldronSound
