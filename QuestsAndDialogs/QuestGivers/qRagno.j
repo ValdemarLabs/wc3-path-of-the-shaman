@@ -18,36 +18,47 @@
 // - "Giving the Letter" is owned by Ragno but has Chieftain Thork as receiver,
 //   so the ready turn-in marker appears on Thork while the quest remains part
 //   of Ragno's chain.
-// - The large Mountain Defense battle script is intentionally left as an
-//   external chain; this library exposes a quest-facing hook for its ending.
+// - The old "Protect the Outpost" intro is event-driven: Red-owned units
+//   entering the Ragno intro rects start the battle, then the quest completes
+//   itself when the spawned gnoll wave is dead.
 //============================================================================
-library qRagno initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, FollowSystem, HeroItemCheck, UnitDeathEvent, VoicelinesNazgrek
+library qRagno initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, FollowSystem, HeroItemCheck, UnitDeathEvent, VoicelinesNazgrek, VoicelinesOrcPeon
 
 globals
     private constant boolean DEBUG = false
 
     public constant string QUEST_GIVING_LETTER = "Giving the Letter"
+    public constant string QUEST_PROTECT_OUTPOST = "Protect the Outpost"
     public constant string QUEST_GNOLL_HEADCOUNT = "Gnoll Headcount"
     public constant string QUEST_LUMBERJACK_DUTIES = "Lumberjack Duties"
     public constant string QUEST_KOBOLD_THIEVES = "Kobold Thieves"
     public constant string QUEST_SATYR_NEGOTIATIONS = "Satyr Negotiations"
-    public constant string QUEST_MOUNTAIN_DEFENSE = "Mountain Defense"
+    public constant string QUEST_MOUNTAIN_DEFENSE = "Protect the Outpost"
 
     private constant integer ITEM_BLOOD_SIGNED_LETTER = 'I625'
     private constant integer ITEM_GNOLL_HEAD = 'I69A'
     private constant integer ITEM_PILE_WOOD = 'I60K'
     private constant integer ITEM_STOLEN_GOODS = 'I69B'
 
+    private constant integer UNIT_GNOLL = 'n60G'
+    private constant integer UNIT_GNOLL_BRUTE = 'n60H'
+    private constant integer UNIT_GNOLL_POACHER = 'n60E'
+    private constant integer UNIT_GNOLL_WARDEN = 'n60I'
+    private constant integer UNIT_GNOLL_RAVAGER = 'n61A'
+    private constant integer UNIT_GNOLL_CRUSHER = 'n626'
     private constant integer UNIT_KOBOLD_LEADER = 'n62T'
     private constant integer UNIT_LUMBER_PEON = 'opeo'
+    private constant integer UNIT_LUMBER_RETURN = 'n62U'
     private constant integer DESTRUCT_STASH_QUEST = 'B61D'
     private constant integer DESTRUCT_LUMBER_TREE = 'B61E'
+    private constant integer DESTRUCT_LUMBER_BLOCKER = 'B61F'
 
     private constant integer GNOLL_HEAD_REQUIRED = 20
     private constant integer PILE_WOOD_REQUIRED = 10
     private constant integer STOLEN_GOODS_REQUIRED = 6
     private constant integer KOBOLD_CHEST_ACTIVE_MAX = 6
     private constant integer KOBOLD_CHEST_SLOT_COUNT = 8
+    private constant integer OUTPOST_GNOLL_OWNER = 11
 
     private constant real DIALOG_RANGE = 500.00
     private constant real DIALOG_COOLDOWN = 6.00
@@ -69,6 +80,11 @@ globals
     private constant real CAMERA_FOV = 60.00
     private constant real CAMERA_BLOCK_RADIUS = 0.00
     private constant boolean CAMERA_BLOCK_CHECK = true
+    private constant real LUMBER_NEAR_TREE_PERIOD = 0.20
+    private constant real LUMBER_NEAR_TREE_RANGE = 250.00
+    private constant real LUMBER_NEAR_TREE_RANGE_SQ = 62500.00
+    private constant real LUMBER_HARVEST_COOLDOWN = 3.50
+    private constant real OUTPOST_COMPLETION_PERIOD = 2.00
 
     private unit Ragno = null
     private unit Thork = null
@@ -80,15 +96,33 @@ globals
     private dialog RagnoDialog = null
     private timer RagnoDialogCooldown = null
     private timer KoboldChestTimer = null
+    private timer LumberPeonChatTimer = null
+    private timer LumberPeonNearTreeTimer = null
+    private timer LumberPeonWanderTimer = null
+    private timer LumberPeonHarvestTimer = null
+    private timer ProtectOutpostSecondWaveTimer = null
+    private timer ProtectOutpostCompletionTimer = null
     private trigger KoboldChestDeathTrigger = null
     private trigger LumberPeonDeathTrigger = null
     private trigger LumberPeonOrderTrigger = null
+    private trigger ProtectOutpostStartTrigger = null
+    private group ProtectOutpostGnolls = null
+    private group ProtectOutpostHiddenGnolls = null
+    private group ProtectOutpostEnumGroup = null
+    private rect LumberPeonScanRect = null
     private destructable array KoboldChest
+    private destructable LumberPeonTreePick = null
+    private unit LumberReturnUnit = null
     private integer KoboldChestCount = 0
+    private integer ProtectOutpostLivingGnolls = 0
     private boolean KoboldLeaderKilled = false
     private boolean SatyrNegotiationsReady = false
     private boolean GivingLetterUnlocked = false
     private boolean MountainDefenseActive = false
+    private boolean ProtectOutpostStarted = false
+    private boolean ProtectOutpostCompleted = false
+    private boolean ProtectOutpostSecondWaveSpawned = false
+    private boolean LumberPeonHarvesting = false
     private boolean RagnoGreeted = false
     private boolean RagnoInitWaitingLogged = false
 endglobals
@@ -175,6 +209,8 @@ private function RestoreBaseRequirements takes QuestData q returns nothing
         call SetRagnoQuestBaseRequirements(q, "Kill Razzlewhip Mudgrubber", "Retrieve 6 Stolen Goods", "", "")
     elseif q.name == QUEST_SATYR_NEGOTIATIONS then
         call SetRagnoQuestBaseRequirements(q, "Meet with the satyrs and learn what they want", "", "", "")
+    elseif q.name == QUEST_PROTECT_OUTPOST then
+        call SetRagnoQuestBaseRequirements(q, "Protect the mountain outpost from the gnoll attack", "", "", "")
     elseif q.name == QUEST_GIVING_LETTER then
         call SetRagnoQuestBaseRequirements(q, "Bring the blood signed letter to Chieftain Thork", "", "", "")
     endif
@@ -244,6 +280,10 @@ private function CanOfferGivingLetter takes nothing returns boolean
     return GivingLetterUnlocked
 endfunction
 
+private function CanOfferProtectOutpost takes nothing returns boolean
+    return false
+endfunction
+
 private function IsRagnoDialogEnabled takes nothing returns boolean
     return true
 endfunction
@@ -257,6 +297,26 @@ private function RefreshRagnoAvailabilityInternal takes nothing returns nothing
     if QuestGiver_QuestExistsByNameAndGiver(QUEST_GIVING_LETTER, Ragno) and not GivingLetterUnlocked and not QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_GIVING_LETTER, Ragno) and not QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_GIVING_LETTER, Ragno) then
         call QuestGiver_SetStateByNameAndGiver(QUEST_GIVING_LETTER, Ragno, QUEST_STATE_UNAVAILABLE)
     endif
+endfunction
+
+private function UnlockGivingLetterInternal takes nothing returns nothing
+    local QuestData q
+
+    call SyncUnitReferences()
+    if Ragno == null or Thork == null then
+        return
+    endif
+
+    set GivingLetterUnlocked = true
+    call RefreshRagnoAvailabilityInternal()
+    call QuestGiver_AcceptQuestByNameAndGiver(QUEST_GIVING_LETTER, Ragno)
+    set q = GetRagnoQuest(QUEST_GIVING_LETTER)
+    if q != 0 and not q.completed then
+        call QuestGiver_GiveUniqueQuestItemToHero(Nazgrek, ITEM_BLOOD_SIGNED_LETTER, 0, "Blood Signed Summon Letter")
+        call QuestGiver_RefreshItemRequirementsForQuest(q.id)
+    endif
+
+    set q = 0
 endfunction
 
 private function RefreshKoboldTurnInState takes nothing returns nothing
@@ -294,6 +354,10 @@ private function CanCompleteSatyrNegotiations takes nothing returns boolean
     endif
     set q = 0
     return result
+endfunction
+
+private function RefreshZaekolaerrAvailabilityExternal takes nothing returns nothing
+    call ExecuteFunc("qZaekolaerr_RefreshAvailability")
 endfunction
 
 private function GetKoboldChestRect takes integer index returns rect
@@ -450,6 +514,83 @@ private function StopKoboldChests takes boolean removeExisting returns nothing
     endif
 endfunction
 
+private function IsLumberjackQuestActive takes nothing returns boolean
+    local QuestData q = GetRagnoQuest(QUEST_LUMBERJACK_DUTIES)
+    local boolean result = q != 0 and q.active and not q.completed and not q.failed
+    set q = 0
+    return result
+endfunction
+
+private function QueueLumberPeonLine takes string soundKey, string text returns nothing
+    if DialogInteraction_IsUnitAlive(LumberPeon) then
+        call DialogSystem_QueueFieldLine(LumberPeon, "Peon", soundKey, text)
+    endif
+endfunction
+
+private function QueueRandomLumberPeonChat takes nothing returns nothing
+    local integer roll = GetRandomInt(1, 7)
+    if roll == 1 then
+        call QueueLumberPeonLine(VL_ORCPEON_0001_KEY, VL_ORCPEON_0001_TEXT)
+    elseif roll == 2 then
+        call QueueLumberPeonLine(VL_ORCPEON_0002_KEY, VL_ORCPEON_0002_TEXT)
+    elseif roll == 3 then
+        call QueueLumberPeonLine(VL_ORCPEON_0003_KEY, VL_ORCPEON_0003_TEXT)
+    elseif roll == 4 then
+        call QueueLumberPeonLine(VL_ORCPEON_0004_KEY, VL_ORCPEON_0004_TEXT)
+    elseif roll == 5 then
+        call QueueLumberPeonLine(VL_ORCPEON_0006_KEY, VL_ORCPEON_0006_TEXT)
+    elseif roll == 6 then
+        call QueueLumberPeonLine(VL_ORCPEON_0007_KEY, VL_ORCPEON_0007_TEXT)
+    else
+        call QueueLumberPeonLine(VL_ORCPEON_0008_KEY, VL_ORCPEON_0008_TEXT)
+    endif
+endfunction
+
+private function OnLumberPeonChatTimer takes nothing returns nothing
+    if IsLumberjackQuestActive() and DialogInteraction_IsUnitAlive(LumberPeon) and not LumberPeonHarvesting and not DialogSystem_IsSequenceActive() then
+        call QueueRandomLumberPeonChat()
+    endif
+    if LumberPeonChatTimer != null and IsLumberjackQuestActive() then
+        call TimerStart(LumberPeonChatTimer, GetRandomReal(30.00, 200.00), false, function OnLumberPeonChatTimer)
+    endif
+endfunction
+
+private function ResetLumberjackDestructableEnum takes nothing returns nothing
+    local destructable d = GetEnumDestructable()
+
+    if d == null then
+        return
+    endif
+    if GetDestructableTypeId(d) == DESTRUCT_LUMBER_TREE then
+        if GetDestructableLife(d) <= 0.405 then
+            call DestructableRestoreLife(d, GetDestructableMaxLife(d), true)
+        endif
+    elseif GetDestructableTypeId(d) == DESTRUCT_LUMBER_BLOCKER then
+        call RemoveDestructable(d)
+    endif
+
+    set d = null
+endfunction
+
+private function ResetLumberjackTrees takes nothing returns nothing
+    call EnumDestructablesInRect(bj_mapInitialPlayableArea, null, function ResetLumberjackDestructableEnum)
+endfunction
+
+private function StopLumberTimers takes nothing returns nothing
+    if LumberPeonChatTimer != null then
+        call PauseTimer(LumberPeonChatTimer)
+    endif
+    if LumberPeonNearTreeTimer != null then
+        call PauseTimer(LumberPeonNearTreeTimer)
+    endif
+    if LumberPeonWanderTimer != null then
+        call PauseTimer(LumberPeonWanderTimer)
+    endif
+    if LumberPeonHarvestTimer != null then
+        call PauseTimer(LumberPeonHarvestTimer)
+    endif
+endfunction
+
 private function DestroyLumberTriggers takes nothing returns nothing
     if LumberPeonDeathTrigger != null then
         call DestroyTrigger(LumberPeonDeathTrigger)
@@ -462,7 +603,14 @@ private function DestroyLumberTriggers takes nothing returns nothing
 endfunction
 
 private function CleanupLumberjackRuntime takes boolean removePeon returns nothing
+    call StopLumberTimers()
     call DestroyLumberTriggers()
+    set LumberPeonHarvesting = false
+    set LumberPeonTreePick = null
+    if LumberReturnUnit != null then
+        call RemoveUnit(LumberReturnUnit)
+        set LumberReturnUnit = null
+    endif
     if LumberPeon != null then
         call FollowSystem_RemoveUnit(LumberPeon)
         if removePeon then
@@ -470,6 +618,7 @@ private function CleanupLumberjackRuntime takes boolean removePeon returns nothi
             set LumberPeon = null
         endif
     endif
+    call ResetLumberjackTrees()
 endfunction
 
 private function OnLumberPeonDies takes nothing returns nothing
@@ -482,13 +631,44 @@ private function OnLumberPeonDies takes nothing returns nothing
     set q = 0
 endfunction
 
+private function OnLumberHarvestResume takes nothing returns nothing
+    set LumberPeonHarvesting = false
+    if LumberReturnUnit != null then
+        call RemoveUnit(LumberReturnUnit)
+        set LumberReturnUnit = null
+    endif
+    if DialogInteraction_IsUnitAlive(LumberPeon) then
+        call IssueImmediateOrder(LumberPeon, "stop")
+        if DialogInteraction_IsUnitAlive(Nazgrek) then
+            call FollowSystem_SetFollow(LumberPeon, Nazgrek, 1200.00, true, 5.00, FOLLOW_STYLE_PASSIVE, true, true)
+        endif
+    endif
+endfunction
+
+private function QueueLumberHarvestResultLine takes boolean goodWood returns nothing
+    local integer roll
+    if goodWood then
+        call QueueLumberPeonLine(VL_ORCPEON_0011_KEY, VL_ORCPEON_0011_TEXT)
+    else
+        set roll = GetRandomInt(1, 3)
+        if roll == 1 then
+            call QueueLumberPeonLine(VL_ORCPEON_0012_KEY, VL_ORCPEON_0012_TEXT)
+        elseif roll == 2 then
+            call QueueLumberPeonLine(VL_ORCPEON_0013_KEY, VL_ORCPEON_0013_TEXT)
+        else
+            call QueueLumberPeonLine(VL_ORCPEON_0014_KEY, VL_ORCPEON_0014_TEXT)
+        endif
+    endif
+endfunction
+
 private function OnLumberPeonOrder takes nothing returns nothing
     local destructable target = GetOrderTargetDestructable()
     local real x
     local real y
+    local boolean goodWood
     local QuestData q
 
-    if GetTriggerUnit() != LumberPeon or target == null then
+    if GetTriggerUnit() != LumberPeon or target == null or LumberPeonHarvesting then
         set target = null
         return
     endif
@@ -510,17 +690,78 @@ private function OnLumberPeonOrder takes nothing returns nothing
 
     set x = GetDestructableX(target)
     set y = GetDestructableY(target)
+    set LumberPeonHarvesting = true
+    call FollowSystem_RemoveUnit(LumberPeon)
+    call QueueLumberPeonLine(VL_ORCPEON_0009_KEY, VL_ORCPEON_0009_TEXT)
+    call QueueLumberPeonLine(VL_ORCPEON_0010_KEY, VL_ORCPEON_0010_TEXT)
     call KillDestructable(target)
-    if GetRandomInt(1, 2) == 1 then
-        call CreateItem(ITEM_PILE_WOOD, x, y)
+    call CreateDestructable(DESTRUCT_LUMBER_BLOCKER, x, y, GetRandomReal(0.00, 360.00), 1.00, 0)
+    set goodWood = GetRandomInt(1, 2) == 1
+    if goodWood then
+        call CreateItem(ITEM_PILE_WOOD, GetUnitX(LumberPeon), GetUnitY(LumberPeon))
     endif
-    if DialogInteraction_IsUnitAlive(LumberPeon) and DialogInteraction_IsUnitAlive(Nazgrek) then
-        call FollowSystem_SetFollow(LumberPeon, Nazgrek, 1200.00, true, 5.00, FOLLOW_STYLE_PASSIVE, true, true)
+    call QueueLumberHarvestResultLine(goodWood)
+    if LumberReturnUnit != null then
+        call RemoveUnit(LumberReturnUnit)
     endif
+    set LumberReturnUnit = CreateUnit(Player(1), UNIT_LUMBER_RETURN, GetUnitX(LumberPeon), GetUnitY(LumberPeon), bj_UNIT_FACING)
+    if LumberReturnUnit != null then
+        call IssueTargetOrder(LumberPeon, "smart", LumberReturnUnit)
+    endif
+    if LumberPeonHarvestTimer == null then
+        set LumberPeonHarvestTimer = CreateTimer()
+    endif
+    call TimerStart(LumberPeonHarvestTimer, LUMBER_HARVEST_COOLDOWN, false, function OnLumberHarvestResume)
     call RefreshQuestAfterAccept(QUEST_LUMBERJACK_DUTIES)
 
     set target = null
     set q = 0
+endfunction
+
+private function PickNearbyLumberTreeEnum takes nothing returns nothing
+    local destructable d = GetEnumDestructable()
+    local real dx
+    local real dy
+
+    if LumberPeonTreePick != null or d == null then
+        set d = null
+        return
+    endif
+    if GetDestructableTypeId(d) != DESTRUCT_LUMBER_TREE or GetDestructableLife(d) <= 0.405 then
+        set d = null
+        return
+    endif
+
+    set dx = GetDestructableX(d) - GetUnitX(LumberPeon)
+    set dy = GetDestructableY(d) - GetUnitY(LumberPeon)
+    if dx * dx + dy * dy <= LUMBER_NEAR_TREE_RANGE_SQ then
+        set LumberPeonTreePick = d
+    endif
+
+    set d = null
+endfunction
+
+private function OnLumberPeonNearTreeTimer takes nothing returns nothing
+    local real x
+    local real y
+
+    if not IsLumberjackQuestActive() or not DialogInteraction_IsUnitAlive(LumberPeon) or LumberPeonHarvesting then
+        return
+    endif
+    if not DialogInteraction_IsUnitAlive(Nazgrek) or not IsUnitInRange(LumberPeon, Nazgrek, LUMBER_NEAR_TREE_RANGE) then
+        return
+    endif
+
+    set x = GetUnitX(LumberPeon)
+    set y = GetUnitY(LumberPeon)
+    set LumberPeonTreePick = null
+    call SetRect(LumberPeonScanRect, x - LUMBER_NEAR_TREE_RANGE, y - LUMBER_NEAR_TREE_RANGE, x + LUMBER_NEAR_TREE_RANGE, y + LUMBER_NEAR_TREE_RANGE)
+    call EnumDestructablesInRect(LumberPeonScanRect, null, function PickNearbyLumberTreeEnum)
+    if LumberPeonTreePick != null then
+        call FollowSystem_RemoveUnit(LumberPeon)
+        call IssueTargetOrder(LumberPeon, "harvest", LumberPeonTreePick)
+        set LumberPeonTreePick = null
+    endif
 endfunction
 
 private function StartLumberjackRuntime takes nothing returns nothing
@@ -530,7 +771,7 @@ private function StartLumberjackRuntime takes nothing returns nothing
     call CleanupLumberjackRuntime(true)
     set x = GetRectCenterX(gg_rct_LumberPeonSpawn)
     set y = GetRectCenterY(gg_rct_LumberPeonSpawn)
-    set LumberPeon = CreateUnit(Player(0), UNIT_LUMBER_PEON, x, y, 345.00)
+    set LumberPeon = CreateUnit(Player(1), UNIT_LUMBER_PEON, x, y, 345.00)
     if LumberPeon == null then
         call DebugMsg("Failed to create lumber peon.")
         return
@@ -548,6 +789,230 @@ private function StartLumberjackRuntime takes nothing returns nothing
     set LumberPeonOrderTrigger = CreateTrigger()
     call TriggerRegisterUnitEvent(LumberPeonOrderTrigger, LumberPeon, EVENT_UNIT_ISSUED_TARGET_ORDER)
     call TriggerAddAction(LumberPeonOrderTrigger, function OnLumberPeonOrder)
+
+    if LumberPeonChatTimer == null then
+        set LumberPeonChatTimer = CreateTimer()
+    endif
+    if LumberPeonNearTreeTimer == null then
+        set LumberPeonNearTreeTimer = CreateTimer()
+    endif
+    if LumberPeonScanRect == null then
+        set LumberPeonScanRect = Rect(0.00, 0.00, 1.00, 1.00)
+    endif
+    call TimerStart(LumberPeonNearTreeTimer, LUMBER_NEAR_TREE_PERIOD, true, function OnLumberPeonNearTreeTimer)
+    call TimerStart(LumberPeonChatTimer, GetRandomReal(30.00, 200.00), false, function OnLumberPeonChatTimer)
+    call QueueLumberPeonLine(VL_ORCPEON_0016_KEY, VL_ORCPEON_0016_TEXT)
+    call QueueLumberPeonLine(VL_ORCPEON_0005_KEY, VL_ORCPEON_0005_TEXT)
+    call QueueLumberPeonLine(VL_ORCPEON_0017_KEY, VL_ORCPEON_0017_TEXT)
+endfunction
+
+private function EnsureProtectOutpostRuntime takes nothing returns nothing
+    if ProtectOutpostGnolls == null then
+        set ProtectOutpostGnolls = CreateGroup()
+    endif
+    if ProtectOutpostHiddenGnolls == null then
+        set ProtectOutpostHiddenGnolls = CreateGroup()
+    endif
+    if ProtectOutpostEnumGroup == null then
+        set ProtectOutpostEnumGroup = CreateGroup()
+    endif
+    if ProtectOutpostSecondWaveTimer == null then
+        set ProtectOutpostSecondWaveTimer = CreateTimer()
+    endif
+    if ProtectOutpostCompletionTimer == null then
+        set ProtectOutpostCompletionTimer = CreateTimer()
+    endif
+endfunction
+
+private function IsProtectOutpostQuestOpen takes nothing returns boolean
+    local QuestData q = GetRagnoQuest(QUEST_PROTECT_OUTPOST)
+    local boolean result = q != 0 and not q.completed and not q.failed
+    set q = 0
+    return result
+endfunction
+
+private function HideProtectOutpostPreplacedGnollEnum takes nothing returns nothing
+    local unit u = GetEnumUnit()
+
+    if u != null and GetOwningPlayer(u) == Player(PLAYER_NEUTRAL_AGGRESSIVE) and GetUnitTypeId(u) != 0 and not IsUnitType(u, UNIT_TYPE_DEAD) then
+        call GroupAddUnit(ProtectOutpostHiddenGnolls, u)
+        call ShowUnit(u, false)
+    endif
+
+    set u = null
+endfunction
+
+private function HideProtectOutpostPreplacedGnolls takes nothing returns nothing
+    call EnsureProtectOutpostRuntime()
+    call GroupClear(ProtectOutpostHiddenGnolls)
+    call GroupClear(ProtectOutpostEnumGroup)
+    call GroupEnumUnitsInRect(ProtectOutpostEnumGroup, gg_rct_GnollMountainCamp, null)
+    call ForGroup(ProtectOutpostEnumGroup, function HideProtectOutpostPreplacedGnollEnum)
+    call GroupClear(ProtectOutpostEnumGroup)
+endfunction
+
+private function UnhideProtectOutpostPreplacedGnollEnum takes nothing returns nothing
+    local unit u = GetEnumUnit()
+    if u != null and GetUnitTypeId(u) != 0 then
+        call ShowUnit(u, true)
+    endif
+    set u = null
+endfunction
+
+private function UnhideProtectOutpostPreplacedGnolls takes nothing returns nothing
+    if ProtectOutpostHiddenGnolls != null then
+        call ForGroup(ProtectOutpostHiddenGnolls, function UnhideProtectOutpostPreplacedGnollEnum)
+        call GroupClear(ProtectOutpostHiddenGnolls)
+    endif
+endfunction
+
+private function CountLivingProtectOutpostGnollEnum takes nothing returns nothing
+    local unit u = GetEnumUnit()
+    if u != null and GetUnitTypeId(u) != 0 and not IsUnitType(u, UNIT_TYPE_DEAD) then
+        set ProtectOutpostLivingGnolls = ProtectOutpostLivingGnolls + 1
+    endif
+    set u = null
+endfunction
+
+private function HasLivingProtectOutpostGnolls takes nothing returns boolean
+    if ProtectOutpostGnolls == null then
+        return false
+    endif
+    set ProtectOutpostLivingGnolls = 0
+    call ForGroup(ProtectOutpostGnolls, function CountLivingProtectOutpostGnollEnum)
+    return ProtectOutpostLivingGnolls > 0
+endfunction
+
+private function SpawnProtectOutpostGnoll takes integer unitTypeId, rect spawnRect returns nothing
+    local unit u
+    if spawnRect == null then
+        return
+    endif
+    set u = CreateUnit(Player(OUTPOST_GNOLL_OWNER), unitTypeId, GetRectCenterX(spawnRect), GetRectCenterY(spawnRect), bj_UNIT_FACING)
+    if u != null then
+        call GroupAddUnit(ProtectOutpostGnolls, u)
+        call IssuePointOrder(u, "attack", GetRectCenterX(gg_rct_HordeMountainCamp), GetRectCenterY(gg_rct_HordeMountainCamp))
+    endif
+    set u = null
+endfunction
+
+private function SpawnProtectOutpostFirstWave takes nothing returns nothing
+    call SpawnProtectOutpostGnoll(UNIT_GNOLL_BRUTE, gg_rct_GnollCinemaSpawnRegion)
+    call SpawnProtectOutpostGnoll(UNIT_GNOLL_BRUTE, gg_rct_GnollCinemaSpawnRegion)
+    call SpawnProtectOutpostGnoll(UNIT_GNOLL_POACHER, gg_rct_GnollCinemaSpawnRegion)
+    call SpawnProtectOutpostGnoll(UNIT_GNOLL_POACHER, gg_rct_GnollCinemaSpawnRegion)
+    call SpawnProtectOutpostGnoll(UNIT_GNOLL_POACHER, gg_rct_GnollCinemaSpawnRegion)
+    call SpawnProtectOutpostGnoll(UNIT_GNOLL_POACHER, gg_rct_GnollCinemaSpawnRegion)
+    call SpawnProtectOutpostGnoll(UNIT_GNOLL, gg_rct_GnollCinemaSpawnRegion)
+    call SpawnProtectOutpostGnoll(UNIT_GNOLL, gg_rct_GnollCinemaSpawnRegion)
+endfunction
+
+private function SpawnProtectOutpostSecondWave takes nothing returns nothing
+    call SpawnProtectOutpostGnoll(UNIT_GNOLL_BRUTE, gg_rct_GnollSpawnRegion)
+    call SpawnProtectOutpostGnoll(UNIT_GNOLL_BRUTE, gg_rct_GnollSpawnRegion)
+    call SpawnProtectOutpostGnoll(UNIT_GNOLL_POACHER, gg_rct_GnollSpawnRegion)
+    call SpawnProtectOutpostGnoll(UNIT_GNOLL_POACHER, gg_rct_GnollSpawnRegion)
+    call SpawnProtectOutpostGnoll(UNIT_GNOLL_POACHER, gg_rct_GnollSpawnRegion)
+    call SpawnProtectOutpostGnoll(UNIT_GNOLL_WARDEN, gg_rct_GnollSpawnRegion)
+    call SpawnProtectOutpostGnoll(UNIT_GNOLL_BRUTE, gg_rct_GnollSpawnRegion2)
+    call SpawnProtectOutpostGnoll(UNIT_GNOLL_BRUTE, gg_rct_GnollSpawnRegion2)
+    call SpawnProtectOutpostGnoll(UNIT_GNOLL_RAVAGER, gg_rct_GnollSpawnRegion2)
+    call SpawnProtectOutpostGnoll(UNIT_GNOLL_RAVAGER, gg_rct_GnollSpawnRegion2)
+    call SpawnProtectOutpostGnoll(UNIT_GNOLL_CRUSHER, gg_rct_GnollSpawnRegion2)
+    call SpawnProtectOutpostGnoll(UNIT_GNOLL, gg_rct_GnollSpawnRegion2)
+    call SpawnProtectOutpostGnoll(UNIT_GNOLL, gg_rct_GnollSpawnRegion2)
+    call SpawnProtectOutpostGnoll(UNIT_GNOLL, gg_rct_GnollSpawnRegion2)
+    set ProtectOutpostSecondWaveSpawned = true
+endfunction
+
+private function CompleteProtectOutpost takes nothing returns nothing
+    local QuestData q = GetRagnoQuest(QUEST_PROTECT_OUTPOST)
+
+    if ProtectOutpostCompletionTimer != null then
+        call PauseTimer(ProtectOutpostCompletionTimer)
+    endif
+    set ProtectOutpostCompleted = true
+    set MountainDefenseActive = false
+    call UnhideProtectOutpostPreplacedGnolls()
+
+    if q != 0 and not q.completed then
+        if not q.active then
+            call QuestGiver_AcceptQuestByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno)
+        endif
+        call q.markRequirementCompleted(1, true)
+        call QuestGiver_CompleteQuestByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno)
+    endif
+    call UnlockGivingLetterInternal()
+    call RefreshRagnoAvailabilityInternal()
+
+    set q = 0
+endfunction
+
+private function OnProtectOutpostCompletionTimer takes nothing returns nothing
+    if ProtectOutpostStarted and ProtectOutpostSecondWaveSpawned and not ProtectOutpostCompleted and not HasLivingProtectOutpostGnolls() then
+        call CompleteProtectOutpost()
+    endif
+endfunction
+
+private function OnProtectOutpostSecondWaveTimer takes nothing returns nothing
+    if not ProtectOutpostStarted or ProtectOutpostCompleted then
+        return
+    endif
+    call SpawnProtectOutpostSecondWave()
+    if ProtectOutpostCompletionTimer != null then
+        call TimerStart(ProtectOutpostCompletionTimer, OUTPOST_COMPLETION_PERIOD, true, function OnProtectOutpostCompletionTimer)
+    endif
+endfunction
+
+private function StartProtectOutpostEncounter takes nothing returns nothing
+    local QuestData q
+
+    call SyncUnitReferences()
+    if ProtectOutpostStarted or ProtectOutpostCompleted or GivingLetterUnlocked or not IsProtectOutpostQuestOpen() then
+        return
+    endif
+
+    call EnsureProtectOutpostRuntime()
+    call GroupClear(ProtectOutpostGnolls)
+    call HideProtectOutpostPreplacedGnolls()
+    set ProtectOutpostStarted = true
+    set ProtectOutpostSecondWaveSpawned = false
+    set MountainDefenseActive = true
+
+    call QuestGiver_AcceptQuestByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno)
+    set q = GetRagnoQuest(QUEST_PROTECT_OUTPOST)
+    if q != 0 then
+        call q.updateRequirementText(1, "Defeat the attacking gnolls")
+        call q.refreshQuestLog()
+    endif
+
+    call SpawnProtectOutpostFirstWave()
+    if DialogInteraction_IsUnitAlive(Nazgrek) then
+        call DialogSystem_QueueFieldLine(Nazgrek, "Nazgrek", VL_NAZGREK_0057_KEY, VL_NAZGREK_0057_TEXT)
+        call IssuePointOrder(Nazgrek, "attack", GetRectCenterX(gg_rct_GnollAttackRegion2), GetRectCenterY(gg_rct_GnollAttackRegion2))
+    endif
+    call TimerStart(ProtectOutpostSecondWaveTimer, 20.00, false, function OnProtectOutpostSecondWaveTimer)
+
+    set q = 0
+endfunction
+
+private function OnProtectOutpostRegionEnter takes nothing returns nothing
+    if GetOwningPlayer(GetTriggerUnit()) == Player(0) then
+        call DisableTrigger(ProtectOutpostStartTrigger)
+        call StartProtectOutpostEncounter()
+    endif
+endfunction
+
+private function RegisterProtectOutpostStartTrigger takes nothing returns nothing
+    if ProtectOutpostStartTrigger != null then
+        call DestroyTrigger(ProtectOutpostStartTrigger)
+    endif
+    set ProtectOutpostStartTrigger = CreateTrigger()
+    call TriggerRegisterEnterRectSimple(ProtectOutpostStartTrigger, gg_rct_RagnoIntroRegion01)
+    call TriggerRegisterEnterRectSimple(ProtectOutpostStartTrigger, gg_rct_RagnoIntroRegion02)
+    call TriggerRegisterEnterRectSimple(ProtectOutpostStartTrigger, gg_rct_RagnoIntroRegion03)
+    call TriggerRegisterEnterRectSimple(ProtectOutpostStartTrigger, gg_rct_RagnoIntroRegion04)
+    call TriggerAddAction(ProtectOutpostStartTrigger, function OnProtectOutpostRegionEnter)
 endfunction
 
 private function OnAnyUnitDeath takes nothing returns nothing
@@ -708,6 +1173,7 @@ private function OnAcceptSatyrNegotiationsEnd takes nothing returns nothing
     set SatyrNegotiationsReady = false
     call QuestGiver_AcceptQuestByNameAndGiver(QUEST_SATYR_NEGOTIATIONS, Ragno)
     call RefreshRagnoAvailabilityInternal()
+    call RefreshZaekolaerrAvailabilityExternal()
     call StartExitFadeOut()
 endfunction
 
@@ -731,6 +1197,7 @@ private function OnCompleteSatyrNegotiationsEnd takes nothing returns nothing
         call q.markRequirementCompleted(4, true)
         call QuestGiver_CompleteQuestByNameAndGiver(QUEST_SATYR_NEGOTIATIONS, Ragno)
         call RefreshRagnoAvailabilityInternal()
+        call RefreshZaekolaerrAvailabilityExternal()
     endif
     call StartExitFadeOut()
     set q = 0
@@ -909,6 +1376,17 @@ private function CreateQuests takes nothing returns nothing
     local string info2MainText = "|cffffcc00Recommended level:|r 8\n\n"
     local trigger availabilityCondition
 
+    if not QuestGiver_QuestExistsByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno) then
+        set q = QuestGiver_CreateConfiguredQuest(QUEST_PROTECT_OUTPOST, Ragno, "normal", 1, null, QUEST_PROTECT_OUTPOST, "ReplaceableTextures\\CommandButtons\\BTNGnoll.blp", "Gnolls are attacking the mountain outpost. Aid Ragno's defenders and drive the raiders back.\n\n", infoText, "|cffffcc00Event quest:|r Ragno mountain outpost\n\n", 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
+        call QuestGiver_SetQuestRewards(q, false, 0, false, 0, false, 0, false, 0, false)
+        call QuestGiver_SetRequirements(q.id, "", "Protect the mountain outpost from the gnoll attack", "", "", "", "", "", "", "")
+        call q.setAutoComplete(true)
+        set availabilityCondition = CreateTrigger()
+        call TriggerAddCondition(availabilityCondition, Condition(function CanOfferProtectOutpost))
+        call QuestGiver_SetQuestCustomCondition(q, availabilityCondition)
+        call QuestGiver_SetStateByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno, QUEST_STATE_UNAVAILABLE)
+    endif
+
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_GNOLL_HEADCOUNT, Ragno) then
         set q = QuestGiver_CreateConfiguredQuest(QUEST_GNOLL_HEADCOUNT, Ragno, "daily", 2, null, QUEST_GNOLL_HEADCOUNT, "ReplaceableTextures\\CommandButtons\\BTNGnoll.blp", "Ragno wants you to thin out the gnolls threatening the mountain outpost.\n\n", infoText, info2DailyText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
         call QuestGiver_SetQuestRewards(q, true, 0, true, 200, false, 0, false, 0, false)
@@ -971,6 +1449,7 @@ private function InitDelayed takes nothing returns nothing
     call DialogInteraction_ConfigureDialogTransition(Ragno, CINEMATIC_MOVE_MODE, CINEMATIC_MOVE_OFFSET, CINEMATIC_MOVE_ANGLE, CAMERA_DIST, CAMERA_Z_OFFSET, CAMERA_ANGLE, CAMERA_ROT_OFFSET, CAMERA_FAR_Z, CAMERA_FOV, CAMERA_BLOCK_RADIUS, CAMERA_BLOCK_CHECK)
     call RegisterDialogLines()
     call CreateQuests()
+    call RegisterProtectOutpostStartTrigger()
     call RefreshRagnoAvailabilityInternal()
     call DialogInteraction_RegisterSelectionHandler(Ragno, function OnSelected)
     call UnitDeathEvent_Register(function OnAnyUnitDeath)
@@ -996,36 +1475,49 @@ public function RefreshRespawnedUnitHooks takes nothing returns nothing
         call QuestGiver_Register(Ragno)
         call DialogInteraction_ConfigureDialogTransition(Ragno, CINEMATIC_MOVE_MODE, CINEMATIC_MOVE_OFFSET, CINEMATIC_MOVE_ANGLE, CAMERA_DIST, CAMERA_Z_OFFSET, CAMERA_ANGLE, CAMERA_ROT_OFFSET, CAMERA_FAR_Z, CAMERA_FOV, CAMERA_BLOCK_RADIUS, CAMERA_BLOCK_CHECK)
         call DialogInteraction_RegisterSelectionHandler(Ragno, function OnSelected)
+        call RegisterProtectOutpostStartTrigger()
         call RefreshAvailability()
     endif
 endfunction
 
 public function DiscoverGivingTheLetter takes nothing returns nothing
-    local QuestData q
-
-    call SyncUnitReferences()
-    if Ragno == null or Thork == null then
-        return
-    endif
-
-    set GivingLetterUnlocked = true
-    call RefreshRagnoAvailabilityInternal()
-    call QuestGiver_AcceptQuestByNameAndGiver(QUEST_GIVING_LETTER, Ragno)
-    set q = GetRagnoQuest(QUEST_GIVING_LETTER)
-    if q != 0 and not q.completed then
-        call QuestGiver_GiveUniqueQuestItemToHero(Nazgrek, ITEM_BLOOD_SIGNED_LETTER, 0, "Blood Signed Summon Letter")
-        call QuestGiver_RefreshItemRequirementsForQuest(q.id)
-    endif
-
-    set q = 0
+    call UnlockGivingLetterInternal()
 endfunction
 
 public function CompleteMountainDefenseAndDiscoverLetter takes nothing returns nothing
-    call DiscoverGivingTheLetter()
+    if not ProtectOutpostCompleted then
+        call CompleteProtectOutpost()
+    else
+        call DiscoverGivingTheLetter()
+    endif
 endfunction
 
 public function SetMountainDefenseActive takes boolean active returns nothing
     set MountainDefenseActive = active
+endfunction
+
+public function IsSatyrNegotiationsActive takes nothing returns boolean
+    local QuestData q = GetRagnoQuest(QUEST_SATYR_NEGOTIATIONS)
+    local boolean result = q != 0 and q.active and not q.completed and not q.failed
+    set q = 0
+    return result
+endfunction
+
+public function IsSatyrNegotiationsCompleted takes nothing returns boolean
+    local QuestData q = GetRagnoQuest(QUEST_SATYR_NEGOTIATIONS)
+    local boolean result = q != 0 and q.completed
+    set q = 0
+    return result
+endfunction
+
+public function IsSatyrNegotiationsReady takes nothing returns boolean
+    local QuestData q = GetRagnoQuest(QUEST_SATYR_NEGOTIATIONS)
+    local boolean result = SatyrNegotiationsReady
+    if q != 0 then
+        set result = result or q.state == QUEST_STATE_READY_TURNIN
+    endif
+    set q = 0
+    return result
 endfunction
 
 public function UpdateSatyrNegotiationsArena takes nothing returns nothing
@@ -1065,6 +1557,7 @@ public function MarkSatyrNegotiationsReady takes nothing returns nothing
         call q.setState(QUEST_STATE_READY_TURNIN)
         call q.addReturnRequirement()
     endif
+    call RefreshZaekolaerrAvailabilityExternal()
     set q = 0
 endfunction
 
@@ -1078,6 +1571,7 @@ public function CompleteSatyrNegotiations takes nothing returns nothing
         call q.markRequirementCompleted(4, true)
         call QuestGiver_CompleteQuestByNameAndGiver(QUEST_SATYR_NEGOTIATIONS, Ragno)
         call RefreshRagnoAvailabilityInternal()
+        call RefreshZaekolaerrAvailabilityExternal()
     endif
     set q = 0
 endfunction
