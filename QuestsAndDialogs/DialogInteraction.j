@@ -725,6 +725,10 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
             set DialogInteraction_LastSelectionBlockReason = "dialog sequence active"
             return false
         endif
+        if DialogSystem_IsInteractionReserved() then
+            set DialogInteraction_LastSelectionBlockReason = "dialog interaction reserved"
+            return false
+        endif
         if requireHero and hero == null then
             set DialogInteraction_LastSelectionBlockReason = "missing allowed hero"
             return false

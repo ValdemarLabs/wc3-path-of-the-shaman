@@ -25,6 +25,8 @@ globals
 	private integer DialogSequenceActiveIndex = 0
 	private boolean DialogSequenceFastForward = false
 	private boolean DialogSequenceSkipping = false
+	private timer DialogSystem_InteractionReservationTimer = null
+	private boolean DialogSystem_InteractionReserved = false
 
 	private Table DialogSystem_GreetLines = 0
 	private Table DialogSystem_FarewellLines = 0
@@ -964,6 +966,33 @@ endfunction
 
 public function IsDialogVisible takes nothing returns boolean
 	return DialogSystem_DialogVisible
+endfunction
+
+private function ReleaseInteractionReservationTimer takes nothing returns nothing
+	set DialogSystem_InteractionReserved = false
+endfunction
+
+public function ReserveInteractions takes real duration returns nothing
+	set DialogSystem_InteractionReserved = true
+	if duration > 0.00 then
+		if DialogSystem_InteractionReservationTimer == null then
+			set DialogSystem_InteractionReservationTimer = CreateTimer()
+		endif
+		call TimerStart(DialogSystem_InteractionReservationTimer, duration, false, function ReleaseInteractionReservationTimer)
+	elseif DialogSystem_InteractionReservationTimer != null then
+		call PauseTimer(DialogSystem_InteractionReservationTimer)
+	endif
+endfunction
+
+public function ReleaseInteractions takes nothing returns nothing
+	set DialogSystem_InteractionReserved = false
+	if DialogSystem_InteractionReservationTimer != null then
+		call PauseTimer(DialogSystem_InteractionReservationTimer)
+	endif
+endfunction
+
+public function IsInteractionReserved takes nothing returns boolean
+	return DialogSystem_InteractionReserved
 endfunction
 
 //===========================================================================
