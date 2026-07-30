@@ -2,7 +2,7 @@
     CraftingUI
 
     Author: Valdemar
-    Version: 1.3
+    Version: 1.4
 
     Description: Shared custom-frame crafting panel for profession workstations. Recipe and category data is fetched from Professions and its profession sublibraries.
 
@@ -21,9 +21,9 @@
 library CraftingUI initializer AutoInit requires Professions, GatherNodeSkills, Table, MasterUI, Interface
 
 globals
-    private constant integer CUI_VISIBLE_ROWS = 8
-    private constant real CUI_ROW_HEIGHT = 0.030
-    private constant real CUI_ROW_GAP = 0.004
+    private constant integer CUI_VISIBLE_ROWS = 12
+    private constant real CUI_ROW_HEIGHT = 0.020
+    private constant real CUI_ROW_GAP = 0.002
 
     private boolean CUI_Initialized = false
 
@@ -33,7 +33,9 @@ globals
     public string NoCrafterText = "No tracked crafter"
     public string NoRecipesText = "No recipes configured for this workstation."
     public string CategoryPromptText = "|cffbfbfbfSelect a category from the list.|r"
-    public string CategoryIcon = "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp"
+    public string CategoryIcon = "ReplaceableTextures\\CommandButtons\\BTNTrade11.blp"
+    public string FoodCategoryIcon = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Food_15.blp"
+    public string BeverageCategoryIcon = "ReplaceableTextures\\CommandButtons\\BTNPotionBlueSmall.blp"
     public string PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
     public string QueryStartText = "|cffffcc00Crafting query started.|r Press ESC to stop."
     public string QueryStopText = "|cffffcc00Crafting query stopped.|r"
@@ -69,6 +71,7 @@ globals
     private integer array CUI_SelectedRecipe
     private string array CUI_SelectedCategory
     private string array CUI_SelectedSubcategory
+    private boolean array CUI_RecipePathSelected
 
     private Table CUI_ButtonRow = 0
 
@@ -155,6 +158,45 @@ private function CUI_GetSelectedSubcategory takes integer pid returns string
     return CUI_SelectedSubcategory[pid]
 endfunction
 
+private function CUI_GetCategoryIcon takes string categoryName returns string
+    if categoryName == "Food" then
+        return FoodCategoryIcon
+    elseif categoryName == "Beverages" then
+        return BeverageCategoryIcon
+    endif
+    return CategoryIcon
+endfunction
+
+private function CUI_GetMaxListStart takes integer total returns integer
+    local integer maxStart = 0
+
+    if total <= CUI_VISIBLE_ROWS then
+        return 0
+    endif
+
+    loop
+        exitwhen maxStart + CUI_VISIBLE_ROWS >= total
+        set maxStart = maxStart + CUI_VISIBLE_ROWS
+    endloop
+
+    return maxStart
+endfunction
+
+private function CUI_GetPageStartForIndex takes integer listIndex returns integer
+    local integer pageStart = 0
+
+    if listIndex <= 1 then
+        return 0
+    endif
+
+    loop
+        exitwhen pageStart + CUI_VISIBLE_ROWS >= listIndex
+        set pageStart = pageStart + CUI_VISIBLE_ROWS
+    endloop
+
+    return pageStart
+endfunction
+
 private function CUI_GetCategoryCount takes integer pid returns integer
     return Professions_GetRecipeCategoryCountForStation(CUI_GetProfession(pid), CUI_GetStationType(pid))
 endfunction
@@ -192,6 +234,9 @@ private function CUI_IsCategoryMode takes integer pid returns boolean
 endfunction
 
 private function CUI_IsSubcategoryMode takes integer pid returns boolean
+    if CUI_RecipePathSelected[pid] then
+        return false
+    endif
     return CUI_GetSelectedCategory(pid) != "" and CUI_GetSelectedSubcategory(pid) == "" and CUI_GetSubcategoryCount(pid) > 0
 endfunction
 
@@ -224,6 +269,14 @@ private function CUI_GetRecipeIdForListIndex takes integer pid, integer listInde
     return Professions_GetRecipeIdForStationIndex(CUI_GetProfession(pid), CUI_GetStationType(pid), listIndex)
 endfunction
 
+private function CUI_SelectFirstRecipeForCurrentPath takes integer pid returns nothing
+    if not CUI_IsCategoryMode(pid) and not CUI_IsSubcategoryMode(pid) then
+        set CUI_SelectedRecipe[pid] = CUI_GetRecipeIdForListIndex(pid, CUI_ListStart[pid] + 1)
+    else
+        set CUI_SelectedRecipe[pid] = 0
+    endif
+endfunction
+
 private function CUI_GetRecipeIndex takes integer pid, integer recipeId returns integer
     local integer total = CUI_GetRecipeTotal(pid)
     local integer index = 1
@@ -246,16 +299,19 @@ endfunction
 private function CUI_ClampForPlayer takes player whichPlayer returns nothing
     local integer pid = GetPlayerId(whichPlayer)
     local integer total = CUI_GetRecipeTotal(pid)
-    local integer maxStart = total - CUI_VISIBLE_ROWS
+    local integer maxStart = CUI_GetMaxListStart(total)
     local integer selectedIndex
 
-    if maxStart < 0 then
-        set maxStart = 0
-    endif
     if CUI_ListStart[pid] < 0 then
         set CUI_ListStart[pid] = 0
     elseif CUI_ListStart[pid] > maxStart then
         set CUI_ListStart[pid] = maxStart
+    endif
+    if CUI_ListStart[pid] > 0 then
+        set CUI_ListStart[pid] = CUI_GetPageStartForIndex(CUI_ListStart[pid] + 1)
+        if CUI_ListStart[pid] > maxStart then
+            set CUI_ListStart[pid] = maxStart
+        endif
     endif
 
     if total <= 0 then
@@ -276,9 +332,9 @@ private function CUI_ClampForPlayer takes player whichPlayer returns nothing
     endif
 
     if selectedIndex <= CUI_ListStart[pid] then
-        set CUI_ListStart[pid] = selectedIndex - 1
+        set CUI_ListStart[pid] = CUI_GetPageStartForIndex(selectedIndex)
     elseif selectedIndex > CUI_ListStart[pid] + CUI_VISIBLE_ROWS then
-        set CUI_ListStart[pid] = selectedIndex - CUI_VISIBLE_ROWS
+        set CUI_ListStart[pid] = CUI_GetPageStartForIndex(selectedIndex)
     endif
 endfunction
 
@@ -368,6 +424,13 @@ private function CUI_GetDetailBody takes unit crafter, unit station, integer rec
     return body
 endfunction
 
+private function CUI_HideRow takes integer rowIndex returns nothing
+    call BlzFrameSetText(CUI_RowText[rowIndex], "")
+    call BlzFrameSetText(CUI_RowState[rowIndex], "")
+    call BlzFrameSetVisible(CUI_RowHighlight[rowIndex], false)
+    call BlzFrameSetVisible(CUI_RowButton[rowIndex], false)
+endfunction
+
 private function CUI_UpdateRows takes player whichPlayer returns nothing
     local integer pid = GetPlayerId(whichPlayer)
     local integer rowIndex = 1
@@ -393,27 +456,25 @@ private function CUI_UpdateRows takes player whichPlayer returns nothing
                 if entryCount <= 0 then
                     set entryCount = Professions_GetRecipeCountForStationCategory(CUI_GetProfession(pid), CUI_GetStationType(pid), categoryName)
                 endif
-                call BlzFrameSetTexture(CUI_RowIcon[rowIndex], CategoryIcon, 0, true)
+                call BlzFrameSetTexture(CUI_RowIcon[rowIndex], CUI_GetCategoryIcon(categoryName), 0, true)
                 call BlzFrameSetText(CUI_RowText[rowIndex], "|cffffffff" + categoryName + "|r")
                 call BlzFrameSetText(CUI_RowState[rowIndex], I2S(entryCount))
                 call BlzFrameSetVisible(CUI_RowHighlight[rowIndex], false)
                 call BlzFrameSetVisible(CUI_RowButton[rowIndex], true)
             else
-                call BlzFrameSetVisible(CUI_RowButton[rowIndex], false)
-                call BlzFrameSetVisible(CUI_RowHighlight[rowIndex], false)
+                call CUI_HideRow(rowIndex)
             endif
         elseif CUI_IsSubcategoryMode(pid) then
             set subcategoryName = Professions_GetRecipeSubcategoryForStationCategoryIndex(CUI_GetProfession(pid), CUI_GetStationType(pid), CUI_GetSelectedCategory(pid), listIndex)
             if subcategoryName != "" then
                 set entryCount = Professions_GetRecipeCountForStationSubcategory(CUI_GetProfession(pid), CUI_GetStationType(pid), CUI_GetSelectedCategory(pid), subcategoryName)
-                call BlzFrameSetTexture(CUI_RowIcon[rowIndex], CategoryIcon, 0, true)
+                call BlzFrameSetTexture(CUI_RowIcon[rowIndex], CUI_GetCategoryIcon(subcategoryName), 0, true)
                 call BlzFrameSetText(CUI_RowText[rowIndex], "|cffffffff" + subcategoryName + "|r")
                 call BlzFrameSetText(CUI_RowState[rowIndex], I2S(entryCount))
                 call BlzFrameSetVisible(CUI_RowHighlight[rowIndex], false)
                 call BlzFrameSetVisible(CUI_RowButton[rowIndex], true)
             else
-                call BlzFrameSetVisible(CUI_RowButton[rowIndex], false)
-                call BlzFrameSetVisible(CUI_RowHighlight[rowIndex], false)
+                call CUI_HideRow(rowIndex)
             endif
         else
             set recipeId = CUI_GetRecipeIdForListIndex(pid, listIndex)
@@ -433,8 +494,7 @@ private function CUI_UpdateRows takes player whichPlayer returns nothing
                 call BlzFrameSetVisible(CUI_RowHighlight[rowIndex], recipeId == CUI_SelectedRecipe[pid])
                 call BlzFrameSetVisible(CUI_RowButton[rowIndex], true)
             else
-                call BlzFrameSetVisible(CUI_RowButton[rowIndex], false)
-                call BlzFrameSetVisible(CUI_RowHighlight[rowIndex], false)
+                call CUI_HideRow(rowIndex)
             endif
         endif
         set rowIndex = rowIndex + 1
@@ -452,7 +512,7 @@ private function CUI_UpdateDetail takes player whichPlayer returns nothing
     endif
 
     if CUI_Station[pid] == null or GetUnitTypeId(CUI_Station[pid]) == 0 then
-        call BlzFrameSetTexture(CUI_DetailIcon, "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp", 0, true)
+        call BlzFrameSetTexture(CUI_DetailIcon, CategoryIcon, 0, true)
         call BlzFrameSetText(CUI_DetailTitle, NoStationText)
         call BlzFrameSetText(CUI_DetailInfo, "")
         call BlzFrameSetText(CUI_DetailBody, NoRecipesText)
@@ -470,7 +530,7 @@ private function CUI_UpdateDetail takes player whichPlayer returns nothing
     endif
 
     if CUI_IsSubcategoryMode(pid) then
-        call BlzFrameSetTexture(CUI_DetailIcon, CategoryIcon, 0, true)
+        call BlzFrameSetTexture(CUI_DetailIcon, CUI_GetCategoryIcon(CUI_GetSelectedCategory(pid)), 0, true)
         call BlzFrameSetText(CUI_DetailTitle, "|cffffe4a3" + CUI_GetSelectedCategory(pid) + "|r")
         call BlzFrameSetText(CUI_DetailInfo, GNS_GetProfessionName(CUI_GetProfession(pid)))
         call BlzFrameSetText(CUI_DetailBody, CategoryPromptText)
@@ -479,7 +539,7 @@ private function CUI_UpdateDetail takes player whichPlayer returns nothing
     endif
 
     if recipeId == 0 then
-        call BlzFrameSetTexture(CUI_DetailIcon, "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp", 0, true)
+        call BlzFrameSetTexture(CUI_DetailIcon, CategoryIcon, 0, true)
         call BlzFrameSetText(CUI_DetailTitle, Professions_GetStationNameByUnitType(CUI_GetStationType(pid)))
         call BlzFrameSetText(CUI_DetailInfo, GNS_GetProfessionName(CUI_GetProfession(pid)))
         call BlzFrameSetText(CUI_DetailBody, NoRecipesText)
@@ -508,10 +568,7 @@ private function CUI_UpdateForPlayer takes player whichPlayer returns nothing
 
     call CUI_ClampForPlayer(whichPlayer)
     set total = CUI_GetRecipeTotal(pid)
-    set maxStart = total - CUI_VISIBLE_ROWS
-    if maxStart < 0 then
-        set maxStart = 0
-    endif
+    set maxStart = CUI_GetMaxListStart(total)
 
     if GetLocalPlayer() == whichPlayer then
         set stationName = Professions_GetStationNameByUnitType(CUI_GetStationType(pid))
@@ -558,6 +615,7 @@ private function CUI_OpenForPlayerEx takes player whichPlayer, unit station, uni
     set CUI_ListStart[pid] = 0
     set CUI_SelectedRecipe[pid] = 0
     set CUI_QueryAfterCraft[pid] = false
+    set CUI_RecipePathSelected[pid] = false
     if categoryName == null then
         set CUI_SelectedCategory[pid] = ""
     else
@@ -567,6 +625,9 @@ private function CUI_OpenForPlayerEx takes player whichPlayer, unit station, uni
         set CUI_SelectedSubcategory[pid] = ""
     else
         set CUI_SelectedSubcategory[pid] = subcategoryName
+        if subcategoryName != "" then
+            set CUI_RecipePathSelected[pid] = true
+        endif
     endif
     call CUI_ClampForPlayer(whichPlayer)
 
@@ -627,11 +688,13 @@ private function CUI_ReturnAction takes nothing returns nothing
 
     if CUI_GetSelectedSubcategory(pid) != "" then
         set CUI_SelectedSubcategory[pid] = ""
+        set CUI_RecipePathSelected[pid] = false
         set CUI_SelectedRecipe[pid] = 0
         set CUI_ListStart[pid] = 0
         call CUI_UpdateForPlayer(p)
     elseif CUI_GetSelectedCategory(pid) != "" and CUI_UsesCategoryRoot(pid) then
         set CUI_SelectedCategory[pid] = ""
+        set CUI_RecipePathSelected[pid] = false
         set CUI_SelectedRecipe[pid] = 0
         set CUI_ListStart[pid] = 0
         call CUI_UpdateForPlayer(p)
@@ -656,6 +719,7 @@ private function CUI_RowAction takes nothing returns nothing
         if categoryName != "" then
             set CUI_SelectedCategory[pid] = categoryName
             set CUI_SelectedSubcategory[pid] = ""
+            set CUI_RecipePathSelected[pid] = false
             set CUI_SelectedRecipe[pid] = 0
             set CUI_ListStart[pid] = 0
             call CUI_UpdateForPlayer(p)
@@ -664,8 +728,9 @@ private function CUI_RowAction takes nothing returns nothing
         set subcategoryName = Professions_GetRecipeSubcategoryForStationCategoryIndex(CUI_GetProfession(pid), CUI_GetStationType(pid), CUI_GetSelectedCategory(pid), CUI_ListStart[pid] + rowIndex)
         if subcategoryName != "" then
             set CUI_SelectedSubcategory[pid] = subcategoryName
-            set CUI_SelectedRecipe[pid] = 0
+            set CUI_RecipePathSelected[pid] = true
             set CUI_ListStart[pid] = 0
+            call CUI_SelectFirstRecipeForCurrentPath(pid)
             call CUI_UpdateForPlayer(p)
         endif
     else
@@ -702,11 +767,8 @@ endfunction
 private function CUI_NextAction takes nothing returns nothing
     local player p = GetTriggerPlayer()
     local integer pid = GetPlayerId(p)
-    local integer maxStart = CUI_GetRecipeTotal(pid) - CUI_VISIBLE_ROWS
+    local integer maxStart = CUI_GetMaxListStart(CUI_GetRecipeTotal(pid))
 
-    if maxStart < 0 then
-        set maxStart = 0
-    endif
     if CUI_ListStart[pid] < maxStart then
         set CUI_ListStart[pid] = CUI_ListStart[pid] + CUI_VISIBLE_ROWS
         if CUI_ListStart[pid] > maxStart then
@@ -792,7 +854,7 @@ endfunction
 
 private function CUI_CreateFrames takes nothing returns nothing
     local integer rowIndex = 1
-    local real rowTopOffset = -0.010
+    local real rowTopOffset = -0.006
 
     set CUI_Parent = BlzCreateFrameByType("BACKDROP", "CraftingUIPanel", BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "EscMenuBackdrop", 0)
     call BlzFrameSetAbsPoint(CUI_Parent, FRAMEPOINT_TOPLEFT, 0.10, 0.56)
@@ -824,7 +886,7 @@ private function CUI_CreateFrames takes nothing returns nothing
 
     set CUI_StationText = BlzCreateFrameByType("TEXT", "CraftingUIStation", CUI_Parent, "", 0)
     call BlzFrameSetPoint(CUI_StationText, FRAMEPOINT_TOPLEFT, CUI_ViewingText, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.004)
-    call BlzFrameSetSize(CUI_StationText, 0.380, 0.014)
+    call BlzFrameSetSize(CUI_StationText, 0.460, 0.014)
     call BlzFrameSetTextAlignment(CUI_StationText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetEnable(CUI_StationText, false)
 
@@ -853,21 +915,22 @@ private function CUI_CreateFrames takes nothing returns nothing
 
         set CUI_RowIcon[rowIndex] = BlzCreateFrameByType("BACKDROP", "CraftingUIRowIcon" + I2S(rowIndex), CUI_RowButton[rowIndex], "IconButtonTemplate", 0)
         call BlzFrameSetPoint(CUI_RowIcon[rowIndex], FRAMEPOINT_LEFT, CUI_RowButton[rowIndex], FRAMEPOINT_LEFT, 0.006, 0.0)
-        call BlzFrameSetSize(CUI_RowIcon[rowIndex], 0.020, 0.020)
+        call BlzFrameSetSize(CUI_RowIcon[rowIndex], 0.018, 0.018)
         call BlzFrameSetLevel(CUI_RowIcon[rowIndex], 4)
 
         set CUI_RowText[rowIndex] = BlzCreateFrameByType("TEXT", "CraftingUIRowText" + I2S(rowIndex), CUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(CUI_RowText[rowIndex], FRAMEPOINT_TOPLEFT, CUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.032, -0.004)
-        call BlzFrameSetPoint(CUI_RowText[rowIndex], FRAMEPOINT_BOTTOMRIGHT, CUI_RowButton[rowIndex], FRAMEPOINT_BOTTOMRIGHT, -0.052, 0.004)
+        call BlzFrameSetPoint(CUI_RowText[rowIndex], FRAMEPOINT_TOPLEFT, CUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.030, -0.002)
+        call BlzFrameSetPoint(CUI_RowText[rowIndex], FRAMEPOINT_BOTTOMRIGHT, CUI_RowButton[rowIndex], FRAMEPOINT_BOTTOMRIGHT, -0.052, 0.002)
         call BlzFrameSetTextAlignment(CUI_RowText[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
+        call BlzFrameSetScale(CUI_RowText[rowIndex], 0.88)
         call BlzFrameSetEnable(CUI_RowText[rowIndex], false)
         call BlzFrameSetLevel(CUI_RowText[rowIndex], 4)
 
         set CUI_RowState[rowIndex] = BlzCreateFrameByType("TEXT", "CraftingUIRowState" + I2S(rowIndex), CUI_RowButton[rowIndex], "", 0)
-        call BlzFrameSetPoint(CUI_RowState[rowIndex], FRAMEPOINT_TOPRIGHT, CUI_RowButton[rowIndex], FRAMEPOINT_TOPRIGHT, -0.006, -0.004)
-        call BlzFrameSetPoint(CUI_RowState[rowIndex], FRAMEPOINT_BOTTOMRIGHT, CUI_RowButton[rowIndex], FRAMEPOINT_BOTTOMRIGHT, -0.006, 0.004)
+        call BlzFrameSetPoint(CUI_RowState[rowIndex], FRAMEPOINT_TOPRIGHT, CUI_RowButton[rowIndex], FRAMEPOINT_TOPRIGHT, -0.006, -0.002)
+        call BlzFrameSetPoint(CUI_RowState[rowIndex], FRAMEPOINT_BOTTOMRIGHT, CUI_RowButton[rowIndex], FRAMEPOINT_BOTTOMRIGHT, -0.006, 0.002)
         call BlzFrameSetTextAlignment(CUI_RowState[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_RIGHT)
-        call BlzFrameSetScale(CUI_RowState[rowIndex], 0.86)
+        call BlzFrameSetScale(CUI_RowState[rowIndex], 0.80)
         call BlzFrameSetEnable(CUI_RowState[rowIndex], false)
         call BlzFrameSetLevel(CUI_RowState[rowIndex], 4)
 
@@ -900,7 +963,7 @@ private function CUI_CreateFrames takes nothing returns nothing
 
     set CUI_DetailTitle = BlzCreateFrameByType("TEXT", "CraftingUIDetailTitle", CUI_RightPane, "", 0)
     call BlzFrameSetPoint(CUI_DetailTitle, FRAMEPOINT_TOPLEFT, CUI_DetailIcon, FRAMEPOINT_TOPRIGHT, 0.014, -0.002)
-    call BlzFrameSetSize(CUI_DetailTitle, 0.230, 0.018)
+    call BlzFrameSetSize(CUI_DetailTitle, 0.245, 0.018)
     call BlzFrameSetTextAlignment(CUI_DetailTitle, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetScale(CUI_DetailTitle, 1.05)
     call BlzFrameSetEnable(CUI_DetailTitle, false)
@@ -908,14 +971,14 @@ private function CUI_CreateFrames takes nothing returns nothing
 
     set CUI_DetailInfo = BlzCreateFrameByType("TEXT", "CraftingUIDetailInfo", CUI_RightPane, "", 0)
     call BlzFrameSetPoint(CUI_DetailInfo, FRAMEPOINT_TOPLEFT, CUI_DetailTitle, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.006)
-    call BlzFrameSetSize(CUI_DetailInfo, 0.230, 0.014)
+    call BlzFrameSetSize(CUI_DetailInfo, 0.245, 0.014)
     call BlzFrameSetTextAlignment(CUI_DetailInfo, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetEnable(CUI_DetailInfo, false)
     call BlzFrameSetLevel(CUI_DetailInfo, 5)
 
     set CUI_DetailBody = BlzCreateFrameByType("TEXT", "CraftingUIDetailBody", CUI_RightPane, "", 0)
     call BlzFrameSetPoint(CUI_DetailBody, FRAMEPOINT_TOPLEFT, CUI_DetailIcon, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.018)
-    call BlzFrameSetPoint(CUI_DetailBody, FRAMEPOINT_BOTTOMRIGHT, CUI_RightPane, FRAMEPOINT_BOTTOMRIGHT, -0.004, 0.004)
+    call BlzFrameSetPoint(CUI_DetailBody, FRAMEPOINT_BOTTOMRIGHT, CUI_RightPane, FRAMEPOINT_BOTTOMRIGHT, -0.010, 0.010)
     call BlzFrameSetTextAlignment(CUI_DetailBody, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetScale(CUI_DetailBody, 0.90)
     call BlzFrameSetEnable(CUI_DetailBody, false)
