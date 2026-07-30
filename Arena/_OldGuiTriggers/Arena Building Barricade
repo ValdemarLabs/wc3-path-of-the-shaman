@@ -1,0 +1,13 @@
+Arena Building Barricade
+    Events
+        Unit - A unit Finishes construction
+    Conditions
+        (Unit-type of (Constructed structure)) Equal to Barricade
+    Actions
+        Custom script:   local unit structure = GetConstructedStructure()
+        Unit - Make (Constructed structure) face (Facing of Nazgrek) over 0.00 seconds
+        Wait 0.30 seconds
+        Custom script:   set udg_helperUnit = structure
+        Unit - Hide helperUnit
+        Unit - Unhide helperUnit
+        Custom script:   set udg_helperUnit = null
