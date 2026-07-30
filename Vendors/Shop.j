@@ -1044,9 +1044,19 @@ library Shop initializer Init requires Table, DEquipment
     endfunction
 
     private function SHP_CanUnitUseBagSlotService takes unit buyer returns boolean
+        local player owner
+        local mapcontrol controller
         local boolean result = false
 
         if buyer == null then
+            set buyer = null
+            return false
+        endif
+        set owner = GetOwningPlayer(buyer)
+        set controller = GetPlayerController(owner)
+        if controller != MAP_CONTROL_USER then
+            set owner = null
+            set controller = null
             set buyer = null
             return false
         endif
@@ -1056,6 +1066,8 @@ library Shop initializer Init requires Table, DEquipment
             set result = true
         endif
 
+        set owner = null
+        set controller = null
         set buyer = null
         return result
     endfunction
@@ -1101,29 +1113,6 @@ library Shop initializer Init requires Table, DEquipment
         set buyerPlayer = null
         set buyer = null
         return false
-    endfunction
-
-    private function SHP_ShouldAIConsiderBagSlotService takes unit buyer, integer stockId returns boolean
-        local integer pid
-        local integer bid = 0
-        local integer currentCap
-
-        if buyer == null or not SHP_IsStockIdValid(stockId) or SHP_StockKind[stockId] != SHOP_STOCK_KIND_BAG_SLOTS then
-            set buyer = null
-            return false
-        endif
-        if not SHP_CanUnitUseBagSlotService(buyer) then
-            set buyer = null
-            return false
-        endif
-
-        set pid = GetPlayerId(GetOwningPlayer(buyer))
-        if InventoryParadigm != "1PerPlayer" then
-            set bid = BIDOfUnit(buyer)
-        endif
-        set currentCap = MaxBagCapacityOfBID(pid, bid)
-        set buyer = null
-        return currentCap > 0 and currentCap < InventoryCapacityBase + SHP_StockPayload[stockId]
     endfunction
 
     public function BuyStock takes player buyerPlayer, unit buyer, integer stockId returns boolean
@@ -1427,8 +1416,6 @@ library Shop initializer Init requires Table, DEquipment
                     if SHP_StockKind[stockId] == SHOP_STOCK_KIND_ITEM then
                         set itemTypeId = SHP_StockItemType[stockId]
                         set candidate = (not SHP_IsEquipmentItemType(itemTypeId) and SHP_CountStoredItemType(buyer, itemTypeId) < SHP_AI_MAX_DUPLICATE_ITEMS) or (SHP_IsEquipmentItemType(itemTypeId) and SHP_CountStoredItemType(buyer, itemTypeId) <= 0)
-                    elseif SHP_StockKind[stockId] == SHOP_STOCK_KIND_BAG_SLOTS then
-                        set candidate = SHP_ShouldAIConsiderBagSlotService(buyer, stockId)
                     endif
                     if candidate then
                         set totalWeight = totalWeight + weight
@@ -1442,17 +1429,6 @@ library Shop initializer Init requires Table, DEquipment
         endloop
 
         if selectedStock <= 0 then
-            set buyer = null
-            set vendor = null
-            return false
-        endif
-
-        if SHP_StockKind[selectedStock] == SHOP_STOCK_KIND_BAG_SLOTS then
-            if DInvAddSlotsForHeroVendor(buyer, SHP_StockPayload[selectedStock]) then
-                set buyer = null
-                set vendor = null
-                return true
-            endif
             set buyer = null
             set vendor = null
             return false
