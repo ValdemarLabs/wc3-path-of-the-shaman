@@ -52,8 +52,8 @@ library ExSound initializer Init
         Normal label playback reuses the registered Sound Editor handle when it
         exists. Unit/point label playback creates a fresh 3D instance from the
         registered filepath so simultaneous casts do not interrupt each other.
-        Registered ExSound keys keep legacy imported voiceline playback for
-        dialog and player unit lines.
+        Registered ExSound keys keep external voiceline playback for dialog
+        and player unit lines; Sound Editor paths stay in the editor lookup.
 
         call ExSoundEditorSounds_RegisterAll()
         set path = ExSound_GetEditorSoundPath("Stormstrike")
@@ -149,11 +149,6 @@ function ExSound_RegisterEditorSoundEx takes string soundLabel, sound whichSound
 
     if not ExSound_IsBlankString(soundPath) then
         call SaveStr(es_Table, parentKey, EXSOUND_EDITOR_PATH_CHILD, soundPath)
-        if not HaveSavedString(es_Table, parentKey, 0) then
-            set es_KeyList[es_KeyCount] = normalizedLabel
-            set es_KeyCount = es_KeyCount + 1
-        endif
-        call SaveStr(es_Table, parentKey, 0, soundPath)
     endif
 endfunction
 
@@ -592,12 +587,7 @@ endfunction
 // Register single sound by key in a folder.
 //=================================================================
 function ExSound_RegisterKeyInFolder takes string key, string folder returns nothing
-    local string editorPath = ExSound_GetEditorSoundPath(key)
-    if not ExSound_IsBlankString(editorPath) then
-        call ExSound_Register(key, editorPath)
-    else
-        call ExSound_Register(key, folder + key + ".mp3")
-    endif
+    call ExSound_Register(key, folder + key + ".mp3")
 endfunction
 
 //=================================================================
