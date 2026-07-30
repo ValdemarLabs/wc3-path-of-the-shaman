@@ -19,10 +19,9 @@
     - set vendorId = VendorBags_GetVendorId()
     - call VendorBags_RegisterUnit(vendor)
     - call VendorBags_RegisterUnitType(unitTypeId)
-    - call VendorBags_BindAIProfile(profileId)
 
 **/
-library VendorBags initializer Init requires Shop, VendorLines, optional AI
+library VendorBags initializer Init requires Shop, VendorLines
     globals
         private constant integer VBAG_UNIT_TYPE_GRAKNAR = 'o61S'
 
@@ -51,12 +50,6 @@ library VendorBags initializer Init requires Shop, VendorLines, optional AI
         return Shop_RegisterVendorUnitType(VBAG_VendorId, unitTypeId)
     endfunction
 
-    public function BindAIProfile takes integer profileId returns nothing
-        static if LIBRARY_AI then
-            call AI_AddProfileShopUnitType(profileId, VBAG_UNIT_TYPE_GRAKNAR)
-        endif
-    endfunction
-
     private function GetPriceForSlots takes integer slots returns integer
         local integer rawPrice = (slots * VBAG_BASE_PRICE + VBAG_BASE_SLOTS - 1) / VBAG_BASE_SLOTS
 
@@ -64,9 +57,9 @@ library VendorBags initializer Init requires Shop, VendorLines, optional AI
     endfunction
 
     private function RegisterStock takes nothing returns nothing
-        call Shop_AddBagSlotServiceEx(VBAG_VendorId, "Small Bag Upgrade", VBAG_SMALL_SLOTS, GetPriceForSlots(VBAG_SMALL_SLOTS), "Bags", 1200, 1)
-        call Shop_AddBagSlotServiceEx(VBAG_VendorId, "Medium Bag Upgrade", VBAG_MEDIUM_SLOTS, GetPriceForSlots(VBAG_MEDIUM_SLOTS), "Bags", 2200, 1)
-        call Shop_AddBagSlotServiceEx(VBAG_VendorId, "Large Bag Upgrade", VBAG_LARGE_SLOTS, GetPriceForSlots(VBAG_LARGE_SLOTS), "Bags", 0, 0)
+        call Shop_AddBagSlotService(VBAG_VendorId, "Small Bag Upgrade", VBAG_SMALL_SLOTS, GetPriceForSlots(VBAG_SMALL_SLOTS), "Bags")
+        call Shop_AddBagSlotService(VBAG_VendorId, "Medium Bag Upgrade", VBAG_MEDIUM_SLOTS, GetPriceForSlots(VBAG_MEDIUM_SLOTS), "Bags")
+        call Shop_AddBagSlotService(VBAG_VendorId, "Large Bag Upgrade", VBAG_LARGE_SLOTS, GetPriceForSlots(VBAG_LARGE_SLOTS), "Bags")
     endfunction
 
     private function RegisterLines takes nothing returns nothing
