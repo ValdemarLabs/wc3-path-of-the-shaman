@@ -2772,9 +2772,16 @@ endfunction
 function DInvAddSlotsForPlayerVendor takes integer pid, integer slotsToAdd returns boolean
     // Adds inventory slots for a player (works with 1PerPlayer paradigm)
     // slotsToAdd: Number of additional slots (e.g., 6, 12, 20 for small/medium/large bags)
-    local integer currentCap = InventoryCapacityBase + DInvMaxSlotModifierForPlayer[pid]
-    local integer newCap = currentCap + slotsToAdd
-    
+    local integer currentCap = 0
+    local integer newCap = 0
+
+    if pid < 0 or pid > 23 or GetPlayerController(Player(pid)) != MAP_CONTROL_USER then
+        return false
+    endif
+
+    set currentCap = InventoryCapacityBase + DInvMaxSlotModifierForPlayer[pid]
+    set newCap = currentCap + slotsToAdd
+
     // Check if we would exceed the per-page limit
     if newCap > 340 * InventoryPages then
         if GetLocalPlayer() == Player(pid) then
@@ -2782,7 +2789,7 @@ function DInvAddSlotsForPlayerVendor takes integer pid, integer slotsToAdd retur
         endif
         return false
     endif
-    
+
     call DInvDeltaAdditionalSlotsForPlayer(pid, slotsToAdd)
     if GetLocalPlayer() == Player(pid) then
         call DisplayTimedTextToPlayer(Player(pid), 0, 0, 10, "|cff00ff00Inventory expanded by " + I2S(slotsToAdd) + " slots! (Total: " + I2S(newCap) + ")|r")
@@ -2801,7 +2808,12 @@ function DInvAddSlotsForHeroVendor takes unit hero, integer slotsToAdd returns b
     local integer currentCap = 0
     local integer newCap = 0
     local boolean success = false
-    
+
+    if GetPlayerController(Player(pid)) != MAP_CONTROL_USER then
+        set hero = null
+        return false
+    endif
+
     if InventoryParadigm == "1PerPlayer" then
         // If using 1PerPlayer, redirect to player function
         set success = DInvAddSlotsForPlayerVendor(pid, slotsToAdd)
