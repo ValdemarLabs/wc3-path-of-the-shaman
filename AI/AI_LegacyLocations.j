@@ -27,6 +27,7 @@ globals
     private constant integer SHOP_UNIT_HORDE_MARKET_1 = 'o609'
     private constant integer SHOP_UNIT_HORDE_MARKET_2 = 'o62J'
     private constant integer SHOP_UNIT_HORDE_MARKET_3 = 'o61U'
+    private constant integer SHOP_UNIT_BAG_MERCHANT = 'o61S'
 endglobals
 
 private function AddHordeSpawns takes integer profileId returns nothing
@@ -62,6 +63,7 @@ private function AddHordeShops takes integer profileId returns nothing
     call AI_AddProfileShopUnitType(profileId, SHOP_UNIT_HORDE_MARKET_1)
     call AI_AddProfileShopUnitType(profileId, SHOP_UNIT_HORDE_MARKET_2)
     call AI_AddProfileShopUnitType(profileId, SHOP_UNIT_HORDE_MARKET_3)
+    call AI_AddProfileShopUnitType(profileId, SHOP_UNIT_BAG_MERCHANT)
 endfunction
 
 private function AddRiverbaneSpawns takes integer profileId returns nothing
