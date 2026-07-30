@@ -15,7 +15,7 @@
 //   one library.
 //
 // Notes:
-// - "Giving the Letter" is owned by Ragno but has Chieftain Thork as receiver,
+// - "Call of the Horde" is owned by Ragno but has Chieftain Thork as receiver,
 //   so the ready turn-in marker appears on Thork while the quest remains part
 //   of Ragno's chain.
 // - The old "Protect the Outpost" intro is event-driven: Red-owned units
@@ -27,7 +27,7 @@ library qRagno initializer Init requires QuestGiver, QuestMaster, DialogInteract
 globals
     private constant boolean DEBUG = false
 
-    public constant string QUEST_GIVING_LETTER = "Giving the Letter"
+    public constant string QUEST_GIVING_LETTER = "Call of the Horde"
     public constant string QUEST_PROTECT_OUTPOST = "Protect the Outpost"
     public constant string QUEST_GNOLL_HEADCOUNT = "Gnoll Headcount"
     public constant string QUEST_LUMBERJACK_DUTIES = "Lumberjack Duties"
