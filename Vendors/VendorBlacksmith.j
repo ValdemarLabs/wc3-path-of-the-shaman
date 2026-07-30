@@ -38,6 +38,8 @@ library BlacksmithVendor initializer Init requires Shop, VendorLines, optional A
         private constant integer VB_ITEM_STURDY_WAR_AXE = 'stwa'
         private constant integer VB_ITEM_CLAWS_ATTACK = 'rat6'
         private constant integer VB_ITEM_MINING_PICK = 'I672'
+        private constant integer VB_ITEM_BLACKSMITH_HAMMER = 'j1d2'
+        private constant integer VB_ITEM_COAL = 'I689'
 
         private integer VB_VendorId = 0
     endglobals
@@ -74,6 +76,8 @@ library BlacksmithVendor initializer Init requires Shop, VendorLines, optional A
         call Shop_AddStockEx(VB_VendorId, VB_ITEM_COPPER_CHAIN_HELMET, 140, "Armor", 450, 2)
         call Shop_AddStockEx(VB_VendorId, VB_ITEM_COPPER_CHAIN_BOOTS, 120, "Armor", 420, 2)
         call Shop_AddStockEx(VB_VendorId, VB_ITEM_MINING_PICK, 75, "Tools", 300, 2)
+        call Shop_AddStockEx(VB_VendorId, VB_ITEM_BLACKSMITH_HAMMER, 75, "Tools", 300, 2)
+        call Shop_AddStockEx(VB_VendorId, VB_ITEM_COAL, 75, "Tools", 300, 2)
         call Shop_AddStockEx(VB_VendorId, VB_ITEM_STURDY_WAR_AXE, 260, "Weapons", 700, 1)
         call Shop_AddStockEx(VB_VendorId, VB_ITEM_CLAWS_ATTACK, 500, "Weapons", 900, 1)
     endfunction
