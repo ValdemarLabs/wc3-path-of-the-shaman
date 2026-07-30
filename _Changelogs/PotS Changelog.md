@@ -16,6 +16,29 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [30.7.2026]
+
+### Player-Facing Updates
+
+- Shop category buttons now use smaller shared label text so longer categories such as `Consumables` and `Food and Drink` fit without resizing the buttons.
+
+### Technical Updates
+
+- Updated `UI/ShopUI.j`
+  - Category buttons now render their label through a disabled child text frame using one shared scale value for every category.
+
+- Updated `SoundAndMusic/ExSound.j`
+  - Kept Sound Editor paths in the editor lookup only, so normal `ExSound_Play` dialog keys keep their external `Pots\\Sound\\Voicelines\\...` paths after `ExSoundEditorSounds` initializes.
+  - Restored external-folder playback resolution for registered voice labels such as `Nazgrek_0001`, `Nazgrek_0057`, and `OrcGrunt_0017`.
+
+- Updated `QuestsAndDialogs/QuestGivers/qRagno.j`
+  - `Protect the Outpost` completion now prepares a hidden replacement Ragno if he died during the gnoll fight, rebinds quest-giver state to him, and reveals him after the completion cinematic fade-in before the letter dialogue starts.
+
+### Known Issues
+
+- ExSound path resolution and the Protect the Outpost dead-Ragno completion flow still need in-map runtime validation.
+
+
 ## [29.7.2026]
 
 ### Player-Facing Updates
@@ -29,6 +52,7 @@
   - Sold items now appear under each vendor's capped `Recent` category so players can buy back mistakes across later visits until the item is bought back or older entries are evicted.
   - Vendor trade entry now uses the same fullscreen fade/camera presentation as ability trainers and exits if the buyer or vendor is attacked, dies, or the shop UI is closed.
   - Shop item selection now uses a normal menu-click sound, while successful buying and selling use distinct gold sounds.
+  - The shop panel now shows the player's current `Gold` and `Arena Marks` beneath the transaction message.
   - Quest/campaign items are now marked as unsellable in the shop and cannot be sold from DInventory, vanilla inventory, or AI sell paths.
   - Added starter General Goods and Blacksmith vendor templates with conservative early-game stock.
 
@@ -39,6 +63,7 @@
   - Added shop category query helpers, filtered stock lookups, and a persistent per-vendor buyback cache capped at 64 recent entries per vendor.
   - Renamed the buyback category display from `Recently Sold` to `Recent`.
   - `ShopUI.j` follows the existing PotS frame UI pattern with a left item list, right detail pane, item icons/tooltips, local-player frame updates, scroll handling, buy/sell action button, and transaction status text.
+  - Added cached ShopUI resource text frames for current player gold and `PLAYER_STATE_RESOURCE_LUMBER` displayed as `Arena Marks`.
   - `ShopUI.j` now owns the active trade-session lifecycle, session buyback purchases, merchant category buttons, ESC close handling, and attack/death interruption cleanup.
   - Added `Interface_EVENT_SHOP_BUY` and `Interface_EVENT_SHOP_SELL` so shop transaction sounds can be configured separately from generic confirm/cancel UI feedback.
   - Credited Elprede's Hive Workshop `RpgMerchantShop` as shop-system inspiration while keeping the PotS implementation separate and integrated with local inventory/dialog systems.
@@ -93,7 +118,7 @@
   - Adjusted `Giving the Letter` completion for the single-objective delivery shape: Thork still checks/removes the Blood Signed Summon Letter manually, then marks the one delivery objective complete.
 
 - Updated `SoundAndMusic/ExSound.j`
-  - Sound Editor registration now also populates normal ExSound playback keys, and batch sequence registration preserves an existing Sound Editor path for overlapping labels.
+  - Sound Editor registration now exposes generated handle/path lookup for label playback while normal registered dialog keys keep their external voiceline paths.
   - This fixes converted dialog lines such as `OrcGrunt_0085`, `OrcGrunt_0088`, `OrcGrunt_0089`, `OrcGrunt_0090`, and `OrcGrunt_0094` being registered but resolving to the wrong playback path.
 
 - Added `QuestsAndDialogs/QuestGivers/qZaekolaerr.j`
