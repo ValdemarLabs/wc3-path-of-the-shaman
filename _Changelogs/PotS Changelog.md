@@ -21,18 +21,43 @@
 ### Player-Facing Updates
 
 - Shop category buttons now use smaller shared label text so longer categories such as `Consumables` and `Food and Drink` fit without resizing the buttons.
+- Added Graknar as a bag-space merchant selling direct DInventory upgrades for +6, +12, and +20 slots, starting at 1000 gold for the +6 upgrade.
+- Crafting UI recipe lists now use more of the available panel height, so Cooking tier recipe lists fit without unnecessary extra pages.
+- Cooking tier subcategories now move directly from `Food` or `Beverages` into the actual recipe list instead of showing a duplicate-looking Food/Beverages category screen.
 
 ### Technical Updates
 
+- Updated `UI/CraftingUI.j`
+  - Increased the shared crafting recipe list from `8` to `12` visible rows and changed list navigation to page-aligned starts instead of overlapping one-row-shifted pages.
+  - Added explicit recipe-path state for category/subcategory selection, so choosing a subcategory cannot keep the UI in subcategory mode.
+  - Added valid Food/Beverage category icons, widened long path/detail text frames, tightened row text/icon spacing for the denser list, and clear hidden row text to avoid stale duplicate-looking entries.
+
 - Updated `UI/ShopUI.j`
   - Category buttons now render their label through a disabled child text frame using one shared scale value for every category.
+
+- Updated `Shop.j`
+  - Added non-item stock service support for direct DInventory bag-slot purchases through `Shop_AddBagSlotService`.
+  - Bag services apply `DInvAddSlotsForHeroVendor` directly and only charge gold after the slot expansion succeeds.
+  - AI shop buying can now consider conservative bag-slot services without creating item handles.
+
+- Added `Vendors/VendorBags.j`
+  - Registered Graknar (`o61S`) as the first bag vendor, with synchronized slot-based pricing rounded to 500 gold steps.
+  - Added Graknar to the legacy AI shop unit-type list.
 
 - Updated `SoundAndMusic/ExSound.j`
   - Kept Sound Editor paths in the editor lookup only, so normal `ExSound_Play` dialog keys keep their external `Pots\\Sound\\Voicelines\\...` paths after `ExSoundEditorSounds` initializes.
   - Restored external-folder playback resolution for registered voice labels such as `Nazgrek_0001`, `Nazgrek_0057`, and `OrcGrunt_0017`.
 
 - Updated `QuestsAndDialogs/QuestGivers/qRagno.j`
+  - Renamed Ragno's Thork handoff quest title from `Giving the Letter` to `Call of the Horde`.
   - `Protect the Outpost` completion now prepares a hidden replacement Ragno if he died during the gnoll fight, rebinds quest-giver state to him, and reveals him after the completion cinematic fade-in before the letter dialogue starts.
+
+- Updated `QuestsAndDialogs/QuestGivers/qChieftainThork.j`
+  - Updated Thork's handoff completion to use the `Call of the Horde` title.
+  - Moved the final `Zulkis_0003` / Nazgrek exchange out of Thork's completion cinematic: the quest now completes first, then a 3-second reserved delay plays the companion exchange.
+
+- Updated `QuestsAndDialogs/DialogSystem.j` and `QuestsAndDialogs/DialogInteraction.j`
+  - Added a shared dialog interaction reservation gate so scripted dialogue delays can temporarily block questgiver/vendor/trainer selection without editing each individual dialog library.
 
 ### Known Issues
 
