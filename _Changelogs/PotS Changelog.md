@@ -22,8 +22,14 @@
 
 - Shop category buttons now use smaller shared label text so longer categories such as `Consumables` and `Food and Drink` fit without resizing the buttons.
 - Added Graknar as a bag-space merchant selling direct DInventory upgrades for +6, +12, and +20 slots, starting at 1000 gold for the +6 upgrade.
+- AI heroes now start with a limited 16-slot DInventory allowance and cannot buy bag-space upgrades from vendors.
 - Crafting UI recipe lists now use more of the available panel height, so Cooking tier recipe lists fit without unnecessary extra pages.
 - Cooking tier subcategories now move directly from `Food` or `Beverages` into the actual recipe list instead of showing a duplicate-looking Food/Beverages category screen.
+- Added the first arena system pass.
+  - Arena masters can now open an arena dialog with Waves, Team Deathmatch, Capture the Flag, and Duel entries.
+  - Waves mode supports Easy, Medium, and Hard difficulties, delayed wave starts, inter-wave recovery, final-wave boss spawns, random health/mana powerups, and Arena Mark rewards.
+  - Team Deathmatch starts immediately against a generated opposing team and rewards Arena Marks on victory.
+  - Capture the Flag and Duel are registered but currently fail cleanly with setup messages until their dedicated AI/opponent-selection passes are implemented.
 
 ### Technical Updates
 
@@ -38,11 +44,17 @@
 - Updated `Shop.j`
   - Added non-item stock service support for direct DInventory bag-slot purchases through `Shop_AddBagSlotService`.
   - Bag services apply `DInvAddSlotsForHeroVendor` directly and only charge gold after the slot expansion succeeds.
-  - AI shop buying can now consider conservative bag-slot services without creating item handles.
+  - Bag services are restricted to user-owned buyers, keeping AI shop buying item-only.
 
 - Added `Vendors/VendorBags.j`
   - Registered Graknar (`o61S`) as the first bag vendor, with synchronized slot-based pricing rounded to 500 gold steps.
-  - Added Graknar to the legacy AI shop unit-type list.
+  - Bag-space stock is player-only and no longer participates in AI shop buying weights or AI shop-route binding.
+
+- Updated `AI/AI.j`
+  - Registered computer-owned AI heroes normalize to a 16-slot DInventory allowance during AI setup without using vendor purchases.
+
+- Updated `DestroyerInventoryAndEquipmentSystem/PoTs/SharedDInvLib.j`
+  - Vendor bag expansion helpers now reject computer-owned units, preventing AI from buying extra bag space through ShopUI or legacy vendor calls.
 
 - Updated `SoundAndMusic/ExSound.j`
   - Kept Sound Editor paths in the editor lookup only, so normal `ExSound_Play` dialog keys keep their external `Pots\\Sound\\Voicelines\\...` paths after `ExSoundEditorSounds` initializes.
@@ -59,9 +71,33 @@
 - Updated `QuestsAndDialogs/DialogSystem.j` and `QuestsAndDialogs/DialogInteraction.j`
   - Added a shared dialog interaction reservation gate so scripted dialogue delays can temporarily block questgiver/vendor/trainer selection without editing each individual dialog library.
 
+- Added `Arena/Arena.j`
+  - Added the shared arena session core, arena/mode/difficulty ids, arena rect lookup APIs, participant tracking, arena-owned unit tracking, mode callback registration, Arena Mark rewards, and delayed cleanup back to the starting arena master.
+  - Arena sessions suspend selected player hero XP, clear rested XP bonus state for participating player heroes, and restore the prior hero XP suspension state when the arena ends.
+  - Arena-spawned units are routed through the centralized unit death event, excluded from normal item loot, removed on cleanup, and exposed to mode libraries through public query helpers.
+
+- Added `Arena/ArenaModeWaves.j`
+  - Implemented the initial Waves mode with 60-second first-wave and next-wave delays, themed creep-family wave composition, final-wave boss additions, periodic arena-unit attack orders, powerup spawning, wave rewards, completion rewards, and wave-clear participant recovery.
+
+- Added `Arena/ArenaModeTeamDeathmatch.j`
+  - Implemented the initial Team Deathmatch mode with immediate opponent-team generation, arena-unit AI orders, participant-scaling team size, master/faction-aware opponent families, and victory when all arena-owned enemies are defeated.
+
+- Added `Arena/ArenaModeCTF.j` and `Arena/ArenaModeDuel.j`
+  - Registered Capture the Flag and Duel mode ids so the arena master dialog/API can expose them, while keeping them blocked with explicit setup messages until their larger behavior systems are built.
+
+- Added `Arena/ArenaModes.j`
+  - Added selectable arena master registration for Horde (`N60L`), Satyr (`n62V`), Bonecrusher (`O61A`), and a Riverbane placeholder rawcode.
+  - Added the arena master mode dialog and a lightweight party-selection step for selected hero, both heroes, selected hero party, or full party.
+  - Bound Horde/Bonecrusher starts to Circle of Blood or Coliseum of Ages according to mode/difficulty, with Satyr/Riverbane using Coliseum of Ages.
+
+- Updated `ItemLootSystems/ItemLootSystem.j`
+  - Added per-unit loot exclusion registration so temporary arena-spawned units can suppress normal loot drops without globally excluding their shared unit rawcodes.
+
 ### Known Issues
 
 - ExSound path resolution and the Protect the Outpost dead-Ragno completion flow still need in-map runtime validation.
+- The new arena libraries still need full in-map/JassHelper validation after import order is finalized, especially arena rect globals, arena master registration, mode callback ordering, rawcode spawns, and the new per-unit loot exclusion API.
+- Non-hero companion and pet revive/recreate handling is not complete for arena wave-clear recovery because `Companions`/`Pet` do not currently expose a safe public arena revive API.
 
 
 ## [29.7.2026]
