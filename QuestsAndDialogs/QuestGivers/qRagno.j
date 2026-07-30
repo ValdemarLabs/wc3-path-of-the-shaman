@@ -40,6 +40,7 @@ globals
     private constant integer ITEM_PILE_WOOD = 'I60K'
     private constant integer ITEM_STOLEN_GOODS = 'I69B'
 
+    private constant integer UNIT_RAGNO = 'o61L'
     private constant integer UNIT_GNOLL = 'n60G'
     private constant integer UNIT_GNOLL_BRUTE = 'n60H'
     private constant integer UNIT_GNOLL_POACHER = 'n60E'
@@ -59,6 +60,8 @@ globals
     private constant integer STOLEN_GOODS_REQUIRED = 6
     private constant integer KOBOLD_CHEST_ACTIVE_MAX = 6
     private constant integer KOBOLD_CHEST_SLOT_COUNT = 8
+    private constant integer RAGNO_OWNER = 5
+    private constant integer RAGNO_PLAYER_COLOR = 22
     private constant integer OUTPOST_GNOLL_OWNER = 11
 
     private constant real DIALOG_RANGE = 500.00
@@ -86,6 +89,8 @@ globals
     private constant real LUMBER_NEAR_TREE_RANGE_SQ = 62500.00
     private constant real LUMBER_HARVEST_COOLDOWN = 3.50
     private constant real OUTPOST_COMPLETION_PERIOD = 2.00
+    private constant real OUTPOST_COMPLETION_RESPAWN_REVEAL_DELAY = 2.05
+    private constant real OUTPOST_COMPLETION_RESPAWN_DIALOG_DELAY = 2.25
 
     private unit Ragno = null
     private unit Thork = null
@@ -107,6 +112,7 @@ globals
     private timer ProtectOutpostIntroCameraReturnTimer = null
     private timer ProtectOutpostCompletionDelayTimer = null
     private timer ProtectOutpostLetterDelayTimer = null
+    private timer ProtectOutpostRagnoRespawnTimer = null
     private trigger KoboldChestDeathTrigger = null
     private trigger LumberPeonDeathTrigger = null
     private trigger LumberPeonOrderTrigger = null
@@ -127,6 +133,7 @@ globals
     private boolean ProtectOutpostStarted = false
     private boolean ProtectOutpostCompleted = false
     private boolean ProtectOutpostSecondWaveSpawned = false
+    private boolean ProtectOutpostRagnoRespawnPending = false
     private boolean LumberPeonHarvesting = false
     private boolean RagnoGreeted = false
     private boolean RagnoInitWaitingLogged = false
@@ -854,6 +861,9 @@ private function EnsureProtectOutpostRuntime takes nothing returns nothing
     if ProtectOutpostLetterDelayTimer == null then
         set ProtectOutpostLetterDelayTimer = CreateTimer()
     endif
+    if ProtectOutpostRagnoRespawnTimer == null then
+        set ProtectOutpostRagnoRespawnTimer = CreateTimer()
+    endif
 endfunction
 
 private function IsProtectOutpostQuestOpen takes nothing returns boolean
@@ -1013,10 +1023,59 @@ private function OnProtectOutpostLetterDelay takes nothing returns nothing
     call RefreshRagnoAvailabilityInternal()
 endfunction
 
+private function RefreshProtectOutpostRespawnedRagnoQuestHooks takes nothing returns nothing
+    call QuestGiver_UpdateGiverUnitReferenceByType(UNIT_RAGNO, Ragno)
+    call QuestGiver_RefreshAvailabilityForGiver(Ragno)
+    call ExecuteFunc("qRagno_RefreshRespawnedUnitHooks")
+    call ExecuteFunc("qChieftainThork_RefreshAvailability")
+endfunction
+
+private function PrepareProtectOutpostCompletionRagno takes nothing returns nothing
+    local unit oldRagno = Ragno
+
+    set ProtectOutpostRagnoRespawnPending = false
+    if DialogInteraction_IsUnitAlive(Ragno) then
+        set oldRagno = null
+        return
+    endif
+
+    set Ragno = CreateUnit(Player(RAGNO_OWNER), UNIT_RAGNO, GetRectCenterX(gg_rct_RagnoPoint), GetRectCenterY(gg_rct_RagnoPoint), 73.00)
+    if Ragno == null then
+        set Ragno = oldRagno
+        set oldRagno = null
+        return
+    endif
+
+    call SetUnitColor(Ragno, ConvertPlayerColor(RAGNO_PLAYER_COLOR))
+    call ShowUnit(Ragno, false)
+    set udg_Ragno = Ragno
+    set bj_lastCreatedUnit = Ragno
+    set ProtectOutpostRagnoRespawnPending = true
+    call RefreshProtectOutpostRespawnedRagnoQuestHooks()
+
+    if oldRagno != null then
+        call RemoveUnit(oldRagno)
+    endif
+    set oldRagno = null
+endfunction
+
+private function RevealProtectOutpostRespawnedRagno takes nothing returns nothing
+    if ProtectOutpostRagnoRespawnPending and DialogInteraction_IsUnitAlive(Ragno) then
+        call SetUnitPosition(Ragno, GetRectCenterX(gg_rct_RagnoPoint), GetRectCenterY(gg_rct_RagnoPoint))
+        call SetUnitFacing(Ragno, 73.00)
+        call ShowUnit(Ragno, true)
+        call QuestGiver_RefreshAvailabilityForGiver(Ragno)
+    endif
+    set ProtectOutpostRagnoRespawnPending = false
+endfunction
+
 private function OnProtectOutpostCompletionCinematicStart takes nothing returns nothing
     call DialogInteraction_BeginCinematicSequence(CINEMATIC)
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUTIN, 2.00, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
     call CameraSetupApplyForPlayer(true, gg_cam_ProtectOutpost03, Player(0), 0.00)
+    if ProtectOutpostRagnoRespawnPending then
+        call TimerStart(ProtectOutpostRagnoRespawnTimer, OUTPOST_COMPLETION_RESPAWN_REVEAL_DELAY, false, function RevealProtectOutpostRespawnedRagno)
+    endif
     if DialogInteraction_IsUnitAlive(Nazgrek) then
         call SetUnitPosition(Nazgrek, GetRectCenterX(gg_rct_RagnoIntroNazgrek), GetRectCenterY(gg_rct_RagnoIntroNazgrek))
         call SetUnitFacing(Nazgrek, 73.00)
@@ -1040,11 +1099,19 @@ private function OnProtectOutpostCompletionCinematicEnd takes nothing returns no
 endfunction
 
 private function PlayProtectOutpostCompletionCinematic takes nothing returns nothing
-    local unit grunt = GetProtectOutpostSurvivingGrunt()
-    local integer seq = DialogInteraction_CreateBaseSequence(Ragno, "Ragno")
+    local unit grunt
+    local integer seq
 
+    call EnsureProtectOutpostRuntime()
+    call PrepareProtectOutpostCompletionRagno()
+    set grunt = GetProtectOutpostSurvivingGrunt()
+    set seq = DialogInteraction_CreateBaseSequence(Ragno, "Ragno")
     call DialogSystem_SetSequenceCallbacks(seq, function OnProtectOutpostCompletionCinematicStart, function OnProtectOutpostCompletionCinematicEnd)
-    call DialogSystem_AddDelay(seq, 2.00)
+    if ProtectOutpostRagnoRespawnPending then
+        call DialogSystem_AddDelay(seq, OUTPOST_COMPLETION_RESPAWN_DIALOG_DELAY)
+    else
+        call DialogSystem_AddDelay(seq, 2.00)
+    endif
     if grunt != null then
         call DialogSystem_AddMakeFaceEachOther(seq, Nazgrek, grunt, 1.00, 0.00)
         call DialogSystem_AddLine(seq, grunt, "Grunt", "Thank you, shaman! We would not have held without you.", "OrcGrunt_0014", true)
