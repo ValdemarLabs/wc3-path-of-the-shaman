@@ -88,8 +88,9 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent
         private Table specificWeight          // entry_index -> weight
         private integer specificEntryCount = 0
 
-        // Unit rawcodes excluded from normal ItemLoot death processing.
+        // Unit rawcodes and specific unit handles excluded from normal ItemLoot death processing.
         private Table excludedUnitTypes
+        private Table excludedUnits
         
         // Initialization flag
         private boolean initialized = false
@@ -883,6 +884,18 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent
             set excludedUnitTypes[unitTypeId] = 1
         endif
     endfunction
+
+    function ItemLoot_RegisterExcludedUnit takes unit whichUnit returns nothing
+        if whichUnit != null then
+            set excludedUnits[GetHandleId(whichUnit)] = 1
+        endif
+    endfunction
+
+    function ItemLoot_UnregisterExcludedUnit takes unit whichUnit returns nothing
+        if whichUnit != null then
+            call excludedUnits.remove(GetHandleId(whichUnit))
+        endif
+    endfunction
     
     // =========================================================================
     // CORE LOGIC
@@ -1125,6 +1138,11 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent
         endif
         
         set unitTypeId = GetUnitTypeId(dying)
+        if excludedUnits[GetHandleId(dying)] != 0 then
+            call excludedUnits.remove(GetHandleId(dying))
+            set dying = null
+            return
+        endif
         if excludedUnitTypes[unitTypeId] != 0 then
             set dying = null
             return
@@ -1177,6 +1195,7 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent
         set specificIsGuaranteed = Table.create()
         set specificWeight = Table.create()
         set excludedUnitTypes = Table.create()
+        set excludedUnits = Table.create()
         
         // Create drop queue timer (will be started/paused as needed)
         set dropQueueTimer = CreateTimer()
