@@ -1573,6 +1573,32 @@ private function ConfigureZones takes nothing returns nothing
     call z.addEnterRegion(gg_rct_HordeScoutBase)
     call z.setParentZone(6)
     call RegisterZone(z)
+
+    // Zone 21: Circle of Blood
+    set z = ZoneData.create(21, "Circle of Blood")
+    set z.musicTrack = 10
+    set z.environmentType = "Arena"
+    set z.fogDay[0] = 1000.0
+    set z.fogDay[1] = 8000.0
+    set z.fogDay[2] = 75.0
+    set z.fogDay[3] = 75.0
+    set z.fogDay[4] = 75.0
+    set z.fogNight[0] = 3000.0
+    set z.fogNight[1] = 15000.0
+    set z.fogNight[2] = 15.0
+    set z.fogNight[3] = 15.0
+    set z.fogNight[4] = 50.0
+    set z.ambientDaySound = ""
+    set z.ambientNightSound = ""
+    set z.ambientRegion = ""
+    set z.questDescription = "The fight only ends when one side is a red stain on the ground!"
+    call z.setUnknownLevelRange("-")
+    set z.factions = "-"
+    set z.notableEntities = "-"
+    set z.notableCharacters = "-"
+    set z.iconPath = "zones\\zone_ashran.blp"
+    call z.addEnterRegion(gg_rct_ArenaArea)
+    call RegisterZone(z)
     
     //=======================================================================
     // DUNGEONS
