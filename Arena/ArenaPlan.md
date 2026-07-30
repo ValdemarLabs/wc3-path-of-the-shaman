@@ -1,9 +1,14 @@
 # Arena plan
 
+## Remaining functional gaps:
+- Remaining functional gap: non-hero companion/pet revive needs a public revive/recreate API from Companions/Pet; the arena core currently revives/restores player heroes correctly, but does not safely recreate dead non-hero party units.
+
+## General
 - Create arena system(s)
   - Create Arena.j and nescessary sublibraries for arena. 
   - Arena modes selection can be its own sublibrary ArenaModes.j
   - Each arena mode to have its own sublibrary
+
 
 ## Arenas
 - Two arenas
