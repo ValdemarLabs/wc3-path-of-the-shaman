@@ -7,7 +7,7 @@
 // - ChieftainThork
 //
 // Purpose:
-// - Completes Ragno's "Giving the Letter" quest at Chieftain Thork.
+// - Completes Ragno's "Call of the Horde" quest at Chieftain Thork.
 // - Unlocks Zulkis and creates the early Horde follow-up quest,
 //   "Duty For The Horde".
 //
@@ -22,7 +22,7 @@ library qChieftainThork initializer Init requires qRagno, QuestGiver, QuestMaste
 globals
     private constant boolean DEBUG = false
 
-    private constant string QUEST_GIVING_LETTER = "Giving the Letter"
+    private constant string QUEST_GIVING_LETTER = "Call of the Horde"
     private constant string QUEST_DUTY_FOR_HORDE = "Duty For The Horde"
     private constant string THORK_NAME = "Chieftain Thork"
 
@@ -50,6 +50,7 @@ globals
     private constant real CAMERA_FOV = 60.00
     private constant real CAMERA_BLOCK_RADIUS = 0.00
     private constant boolean CAMERA_BLOCK_CHECK = true
+    private constant real POST_CALL_OF_HORDE_DIALOG_DELAY = 3.00
 
     private unit Thork = null
     private unit Ragno = null
@@ -62,6 +63,7 @@ globals
 
     private dialog ThorkDialog = null
     private timer ThorkDialogCooldown = null
+    private timer PostCallOfHordeDialogTimer = null
     private boolean DutyForHordeUnlocked = false
     private boolean ThorkInitWaitingLogged = false
 endglobals
@@ -222,8 +224,32 @@ private function CompleteGivingLetterQuest takes nothing returns boolean
     return true
 endfunction
 
+private function OnPostCallOfHordeDialogEnd takes nothing returns nothing
+    call DialogSystem_ReleaseInteractions()
+endfunction
+
+private function PlayPostCallOfHordeDialog takes nothing returns nothing
+    local integer seq
+
+    call SyncUnitReferences()
+    if not DialogInteraction_IsUnitAlive(Zulkis) or not DialogInteraction_IsUnitAlive(Nazgrek) then
+        call DialogSystem_ReleaseInteractions()
+        return
+    endif
+
+    set seq = DialogInteraction_CreateBaseSequence(Zulkis, "Zul'kis")
+    call DialogSystem_AddMakeFaceEachOther(seq, Zulkis, Nazgrek, 0.50, 0.00)
+    call DialogSystem_AddLine(seq, Zulkis, "Zul'kis", VL_ZULKIS_0003_TEXT, VL_ZULKIS_0003_KEY, true)
+    call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0065_TEXT, VL_NAZGREK_0065_KEY, true)
+    call DialogSystem_SetSequenceCallbacks(seq, null, function OnPostCallOfHordeDialogEnd)
+    call DialogSystem_PlaySequence(seq, Player(0), Zulkis)
+endfunction
+
 private function OnGivingLetterMeetingEnd takes nothing returns nothing
-    call CompleteGivingLetterQuest()
+    if CompleteGivingLetterQuest() then
+        call DialogSystem_ReserveInteractions(0.00)
+        call TimerStart(PostCallOfHordeDialogTimer, POST_CALL_OF_HORDE_DIALOG_DELAY, false, function PlayPostCallOfHordeDialog)
+    endif
     call StartExitFadeOut()
 endfunction
 
@@ -256,10 +282,6 @@ private function OnGiveLetter takes nothing returns nothing
     endif
     call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0066_TEXT, VL_NAZGREK_0066_KEY, true)
     call DialogSystem_AddLine(seq, Thork, THORK_NAME, VL_THORK_0005_TEXT, VL_THORK_0005_KEY, true)
-    if Zulkis != null then
-        call DialogSystem_AddLine(seq, Zulkis, "Zul'kis", VL_ZULKIS_0003_TEXT, VL_ZULKIS_0003_KEY, true)
-        call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0065_TEXT, VL_NAZGREK_0065_KEY, true)
-    endif
     call DialogSystem_SetSequenceCallbacks(seq, null, function OnGivingLetterMeetingEnd)
     call DialogSystem_PlaySequence(seq, Player(0), Thork)
 
@@ -462,6 +484,7 @@ endfunction
 
 private function Init takes nothing returns nothing
     set ThorkDialogCooldown = CreateTimer()
+    set PostCallOfHordeDialogTimer = CreateTimer()
     call TimerStart(CreateTimer(), 0.00, false, function InitDelayed)
 endfunction
 
