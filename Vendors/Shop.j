@@ -23,6 +23,7 @@
     - call Shop_RegisterVendorUnit(unit, vendorId)
     - call Shop_RegisterVendorUnitType(vendorId, unitTypeId)
     - set entryId = Shop_AddStock(vendorId, itemTypeId, price, category)
+    - set entryId = Shop_AddBagSlotService(vendorId, name, slots, price, category)
     - call Shop_BeginTradeSession(vendorId)
     - call Shop_EndTradeSession()
     - set categoryName = Shop_GetVendorCategoryName(vendorId, position)
@@ -42,6 +43,8 @@ library Shop initializer Init requires Table, DEquipment
         constant integer SHOP_SOURCE_DINV = 1
         constant integer SHOP_SOURCE_DEQUIP = 2
         constant integer SHOP_SOURCE_VANILLA = 3
+        constant integer SHOP_STOCK_KIND_ITEM = 1
+        constant integer SHOP_STOCK_KIND_BAG_SLOTS = 2
 
         // Configuration
         private constant integer SHP_MAX_VENDORS = 96
@@ -56,6 +59,7 @@ library Shop initializer Init requires Table, DEquipment
         private constant string SHP_CATEGORY_ALL = "All"
         private constant string SHP_CATEGORY_GOODS = "Goods"
         private constant string SHP_CATEGORY_RECENTLY_SOLD = "Recent"
+        private constant string SHP_ICON_BAG_SERVICE = "ReplaceableTextures\\CommandButtons\\BTNPackBeast.blp"
 
         // Registered vendors and unit lookup.
         private Table SHP_VendorByUnit = 0
@@ -67,11 +71,16 @@ library Shop initializer Init requires Table, DEquipment
         // Vendor stock.
         private integer SHP_StockCount = 0
         private integer array SHP_StockVendor
+        private integer array SHP_StockKind
         private integer array SHP_StockItemType
         private integer array SHP_StockPrice
         private integer array SHP_StockAiPriceCap
         private integer array SHP_StockAiWeight
+        private integer array SHP_StockPayload
         private string array SHP_StockCategory
+        private string array SHP_StockName
+        private string array SHP_StockIconPath
+        private string array SHP_StockTooltip
 
         // Combined inventory view cache. ShopUI rebuilds this before rendering
         // the "You" page and after each sale.
@@ -109,7 +118,7 @@ library Shop initializer Init requires Table, DEquipment
     endfunction
 
     private function SHP_IsStockIdValid takes integer stockId returns boolean
-        return stockId > 0 and stockId <= SHP_StockCount and SHP_StockItemType[stockId] != 0
+        return stockId > 0 and stockId <= SHP_StockCount and SHP_IsVendorIdValid(SHP_StockVendor[stockId]) and SHP_StockKind[stockId] > 0
     endfunction
 
     private function SHP_GetStockCategoryName takes integer stockId returns string
@@ -125,6 +134,10 @@ library Shop initializer Init requires Table, DEquipment
 
     private function SHP_GetRecentSoldKey takes integer vendorId, integer soldIndex returns integer
         return (vendorId - 1) * SHP_MAX_RECENT_SOLD_PER_VENDOR + soldIndex
+    endfunction
+
+    private function SHP_GetBagSlotServiceTooltip takes integer slots returns string
+        return "Permanently adds " + I2S(slots) + " DInventory slots to this hero.|nApplied immediately. This does not create a bag item."
     endfunction
 
     private function SHP_ItemTypeIcon takes integer itemTypeId returns string
@@ -188,7 +201,7 @@ library Shop initializer Init requires Table, DEquipment
 
         loop
             exitwhen stockId > SHP_StockCount
-            if SHP_StockItemType[stockId] == itemTypeId and SHP_StockPrice[stockId] > 0 then
+            if SHP_StockKind[stockId] == SHOP_STOCK_KIND_ITEM and SHP_StockItemType[stockId] == itemTypeId and SHP_StockPrice[stockId] > 0 then
                 if best <= 0 or SHP_StockPrice[stockId] < best then
                     set best = SHP_StockPrice[stockId]
                 endif
@@ -203,7 +216,7 @@ library Shop initializer Init requires Table, DEquipment
 
         loop
             exitwhen stockId > SHP_StockCount
-            if SHP_StockVendor[stockId] == SHP_SessionVendorId and SHP_StockItemType[stockId] == itemTypeId then
+            if SHP_StockKind[stockId] == SHOP_STOCK_KIND_ITEM and SHP_StockVendor[stockId] == SHP_SessionVendorId and SHP_StockItemType[stockId] == itemTypeId then
                 return SHP_GetStockCategoryName(stockId)
             endif
             set stockId = stockId + 1
@@ -212,7 +225,7 @@ library Shop initializer Init requires Table, DEquipment
         set stockId = 1
         loop
             exitwhen stockId > SHP_StockCount
-            if SHP_StockItemType[stockId] == itemTypeId then
+            if SHP_StockKind[stockId] == SHOP_STOCK_KIND_ITEM and SHP_StockItemType[stockId] == itemTypeId then
                 return SHP_GetStockCategoryName(stockId)
             endif
             set stockId = stockId + 1
@@ -673,8 +686,17 @@ library Shop initializer Init requires Table, DEquipment
         return "Merchant"
     endfunction
 
-    public function AddStockEx takes integer vendorId, integer itemTypeId, integer price, string category, integer aiPriceCap, integer aiWeight returns integer
-        if not SHP_IsVendorIdValid(vendorId) or itemTypeId == 0 or SHP_StockCount >= SHP_MAX_STOCK then
+    private function SHP_AddStockEntry takes integer vendorId, integer stockKind, integer itemTypeId, integer price, string category, integer payload, string stockName, string iconPath, string tooltip, integer aiPriceCap, integer aiWeight returns integer
+        if not SHP_IsVendorIdValid(vendorId) or SHP_StockCount >= SHP_MAX_STOCK then
+            return 0
+        endif
+        if stockKind != SHOP_STOCK_KIND_ITEM and stockKind != SHOP_STOCK_KIND_BAG_SLOTS then
+            return 0
+        endif
+        if stockKind == SHOP_STOCK_KIND_ITEM and itemTypeId == 0 then
+            return 0
+        endif
+        if stockKind == SHOP_STOCK_KIND_BAG_SLOTS and payload <= 0 then
             return 0
         endif
         if price <= 0 then
@@ -684,15 +706,33 @@ library Shop initializer Init requires Table, DEquipment
             set aiWeight = 0
         endif
         set category = SHP_NormalizeCategory(category)
+        if stockName == null then
+            set stockName = ""
+        endif
+        if iconPath == null then
+            set iconPath = ""
+        endif
+        if tooltip == null then
+            set tooltip = ""
+        endif
 
         set SHP_StockCount = SHP_StockCount + 1
         set SHP_StockVendor[SHP_StockCount] = vendorId
+        set SHP_StockKind[SHP_StockCount] = stockKind
         set SHP_StockItemType[SHP_StockCount] = itemTypeId
         set SHP_StockPrice[SHP_StockCount] = price
         set SHP_StockCategory[SHP_StockCount] = category
+        set SHP_StockPayload[SHP_StockCount] = payload
+        set SHP_StockName[SHP_StockCount] = stockName
+        set SHP_StockIconPath[SHP_StockCount] = iconPath
+        set SHP_StockTooltip[SHP_StockCount] = tooltip
         set SHP_StockAiPriceCap[SHP_StockCount] = aiPriceCap
         set SHP_StockAiWeight[SHP_StockCount] = aiWeight
         return SHP_StockCount
+    endfunction
+
+    public function AddStockEx takes integer vendorId, integer itemTypeId, integer price, string category, integer aiPriceCap, integer aiWeight returns integer
+        return SHP_AddStockEntry(vendorId, SHOP_STOCK_KIND_ITEM, itemTypeId, price, category, 0, "", "", "", aiPriceCap, aiWeight)
     endfunction
 
     public function AddStock takes integer vendorId, integer itemTypeId, integer price, string category returns integer
@@ -701,6 +741,17 @@ library Shop initializer Init requires Table, DEquipment
 
     public function AddStockNoAI takes integer vendorId, integer itemTypeId, integer price, string category returns integer
         return Shop_AddStockEx(vendorId, itemTypeId, price, category, 0, 0)
+    endfunction
+
+    public function AddBagSlotServiceEx takes integer vendorId, string serviceName, integer slots, integer price, string category, integer aiPriceCap, integer aiWeight returns integer
+        if serviceName == null or serviceName == "" then
+            set serviceName = "+" + I2S(slots) + " Bag Slots"
+        endif
+        return SHP_AddStockEntry(vendorId, SHOP_STOCK_KIND_BAG_SLOTS, 0, price, category, slots, serviceName, SHP_ICON_BAG_SERVICE, SHP_GetBagSlotServiceTooltip(slots), aiPriceCap, aiWeight)
+    endfunction
+
+    public function AddBagSlotService takes integer vendorId, string serviceName, integer slots, integer price, string category returns integer
+        return Shop_AddBagSlotServiceEx(vendorId, serviceName, slots, price, category, 0, 0)
     endfunction
 
     public function GetVendorStockCount takes integer vendorId returns integer
@@ -865,7 +916,7 @@ library Shop initializer Init requires Table, DEquipment
     endfunction
 
     public function GetStockItemType takes integer stockId returns integer
-        if SHP_IsStockIdValid(stockId) then
+        if SHP_IsStockIdValid(stockId) and SHP_StockKind[stockId] == SHOP_STOCK_KIND_ITEM then
             return SHP_StockItemType[stockId]
         endif
         return 0
@@ -884,6 +935,12 @@ library Shop initializer Init requires Table, DEquipment
 
     public function GetStockName takes integer stockId returns string
         if SHP_IsStockIdValid(stockId) then
+            if SHP_StockName[stockId] != null and SHP_StockName[stockId] != "" then
+                return SHP_StockName[stockId]
+            endif
+            if SHP_StockKind[stockId] != SHOP_STOCK_KIND_ITEM then
+                return ""
+            endif
             return GetObjectName(SHP_StockItemType[stockId])
         endif
         return ""
@@ -891,6 +948,12 @@ library Shop initializer Init requires Table, DEquipment
 
     public function GetStockIconPath takes integer stockId returns string
         if SHP_IsStockIdValid(stockId) then
+            if SHP_StockIconPath[stockId] != null and SHP_StockIconPath[stockId] != "" then
+                return SHP_StockIconPath[stockId]
+            endif
+            if SHP_StockKind[stockId] != SHOP_STOCK_KIND_ITEM then
+                return SHP_ItemTypeIcon(0)
+            endif
             return SHP_ItemTypeIcon(SHP_StockItemType[stockId])
         endif
         return SHP_ItemTypeIcon(0)
@@ -898,6 +961,12 @@ library Shop initializer Init requires Table, DEquipment
 
     public function GetStockTooltip takes integer stockId returns string
         if SHP_IsStockIdValid(stockId) then
+            if SHP_StockTooltip[stockId] != null and SHP_StockTooltip[stockId] != "" then
+                return SHP_StockTooltip[stockId]
+            endif
+            if SHP_StockKind[stockId] != SHOP_STOCK_KIND_ITEM then
+                return ""
+            endif
             return SHP_ItemTypeTooltip(SHP_StockItemType[stockId])
         endif
         return ""
@@ -974,16 +1043,106 @@ library Shop initializer Init requires Table, DEquipment
         return result
     endfunction
 
+    private function SHP_CanUnitUseBagSlotService takes unit buyer returns boolean
+        local boolean result = false
+
+        if buyer == null then
+            set buyer = null
+            return false
+        endif
+        if InventoryParadigm == "1PerPlayer" then
+            set result = true
+        elseif BIDOfUnit(buyer) > 0 then
+            set result = true
+        endif
+
+        set buyer = null
+        return result
+    endfunction
+
+    private function SHP_BuyBagSlotService takes player buyerPlayer, unit buyer, integer stockId returns boolean
+        local integer price
+        local integer slots
+
+        if buyer == null or not SHP_IsStockIdValid(stockId) then
+            call SHP_SetMessage("|cffff8080No bag upgrade selected.|r")
+            set buyerPlayer = null
+            set buyer = null
+            return false
+        endif
+        if buyerPlayer == null then
+            set buyerPlayer = GetOwningPlayer(buyer)
+        endif
+        if not SHP_CanUnitUseBagSlotService(buyer) then
+            call SHP_SetMessage("|cffff8080This hero cannot use DInventory bag upgrades.|r")
+            set buyerPlayer = null
+            set buyer = null
+            return false
+        endif
+
+        set price = SHP_StockPrice[stockId]
+        set slots = SHP_StockPayload[stockId]
+        if GetPlayerState(buyerPlayer, PLAYER_STATE_RESOURCE_GOLD) < price then
+            call SHP_SetMessage("|cffff8080Not enough gold.|r")
+            set buyerPlayer = null
+            set buyer = null
+            return false
+        endif
+
+        if DInvAddSlotsForHeroVendor(buyer, slots) then
+            call SetPlayerState(buyerPlayer, PLAYER_STATE_RESOURCE_GOLD, GetPlayerState(buyerPlayer, PLAYER_STATE_RESOURCE_GOLD) - price)
+            call SHP_SetMessage("|cff80ff80Bought " + Shop_GetStockName(stockId) + " for " + I2S(price) + " gold.|r")
+            set buyerPlayer = null
+            set buyer = null
+            return true
+        endif
+
+        call SHP_SetMessage("|cffff8080Cannot expand inventory further.|r")
+        set buyerPlayer = null
+        set buyer = null
+        return false
+    endfunction
+
+    private function SHP_ShouldAIConsiderBagSlotService takes unit buyer, integer stockId returns boolean
+        local integer pid
+        local integer bid = 0
+        local integer currentCap
+
+        if buyer == null or not SHP_IsStockIdValid(stockId) or SHP_StockKind[stockId] != SHOP_STOCK_KIND_BAG_SLOTS then
+            set buyer = null
+            return false
+        endif
+        if not SHP_CanUnitUseBagSlotService(buyer) then
+            set buyer = null
+            return false
+        endif
+
+        set pid = GetPlayerId(GetOwningPlayer(buyer))
+        if InventoryParadigm != "1PerPlayer" then
+            set bid = BIDOfUnit(buyer)
+        endif
+        set currentCap = MaxBagCapacityOfBID(pid, bid)
+        set buyer = null
+        return currentCap > 0 and currentCap < InventoryCapacityBase + SHP_StockPayload[stockId]
+    endfunction
+
     public function BuyStock takes player buyerPlayer, unit buyer, integer stockId returns boolean
         local integer itemTypeId
         local integer price
         local item boughtItem = null
+        local boolean result
 
         if buyer == null or not SHP_IsStockIdValid(stockId) then
             call SHP_SetMessage("|cffff8080No item selected.|r")
             set buyerPlayer = null
             set buyer = null
             return false
+        endif
+        if SHP_StockKind[stockId] == SHOP_STOCK_KIND_BAG_SLOTS then
+            set result = SHP_BuyBagSlotService(buyerPlayer, buyer, stockId)
+            set buyerPlayer = null
+            set buyer = null
+            return result
         endif
         if buyerPlayer == null then
             set buyerPlayer = GetOwningPlayer(buyer)
@@ -1241,6 +1400,7 @@ library Shop initializer Init requires Table, DEquipment
         local integer itemTypeId
         local integer price
         local integer weight
+        local boolean candidate
         local item boughtItem = null
 
         if buyer == null or vendor == null then
@@ -1260,11 +1420,17 @@ library Shop initializer Init requires Table, DEquipment
         loop
             exitwhen stockId > SHP_StockCount
             if SHP_StockVendor[stockId] == vendorId and SHP_StockAiWeight[stockId] > 0 then
-                set itemTypeId = SHP_StockItemType[stockId]
+                set candidate = false
                 set price = SHP_StockPrice[stockId]
                 set weight = SHP_StockAiWeight[stockId]
                 if price <= priceCap and (SHP_StockAiPriceCap[stockId] <= 0 or price <= SHP_StockAiPriceCap[stockId]) then
-                    if (not SHP_IsEquipmentItemType(itemTypeId) and SHP_CountStoredItemType(buyer, itemTypeId) < SHP_AI_MAX_DUPLICATE_ITEMS) or (SHP_IsEquipmentItemType(itemTypeId) and SHP_CountStoredItemType(buyer, itemTypeId) <= 0) then
+                    if SHP_StockKind[stockId] == SHOP_STOCK_KIND_ITEM then
+                        set itemTypeId = SHP_StockItemType[stockId]
+                        set candidate = (not SHP_IsEquipmentItemType(itemTypeId) and SHP_CountStoredItemType(buyer, itemTypeId) < SHP_AI_MAX_DUPLICATE_ITEMS) or (SHP_IsEquipmentItemType(itemTypeId) and SHP_CountStoredItemType(buyer, itemTypeId) <= 0)
+                    elseif SHP_StockKind[stockId] == SHOP_STOCK_KIND_BAG_SLOTS then
+                        set candidate = SHP_ShouldAIConsiderBagSlotService(buyer, stockId)
+                    endif
+                    if candidate then
                         set totalWeight = totalWeight + weight
                         if GetRandomInt(1, totalWeight) <= weight then
                             set selectedStock = stockId
@@ -1276,6 +1442,17 @@ library Shop initializer Init requires Table, DEquipment
         endloop
 
         if selectedStock <= 0 then
+            set buyer = null
+            set vendor = null
+            return false
+        endif
+
+        if SHP_StockKind[selectedStock] == SHOP_STOCK_KIND_BAG_SLOTS then
+            if DInvAddSlotsForHeroVendor(buyer, SHP_StockPayload[selectedStock]) then
+                set buyer = null
+                set vendor = null
+                return true
+            endif
             set buyer = null
             set vendor = null
             return false
