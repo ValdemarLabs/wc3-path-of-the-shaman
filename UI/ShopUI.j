@@ -28,6 +28,7 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         private constant integer SUI_MAX_ROWS = 10
         private constant integer SUI_VISIBLE_ROWS = 7
         private constant integer SUI_MAX_CATEGORIES = 6
+        private constant real SUI_CATEGORY_TEXT_SCALE = 0.68
         private constant real SUI_CAMERA_RESET_TIME = 0.75
         private constant boolean SUI_USE_DIALOG_CAMERA = true
         private constant boolean SUI_CINEMATIC = true
@@ -53,6 +54,7 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         private framehandle SUI_CloseButton = null
         private framehandle SUI_ModeButton = null
         private framehandle array SUI_CategoryButton
+        private framehandle array SUI_CategoryText
         private framehandle SUI_LeftPane = null
         private framehandle SUI_RightPane = null
         private framehandle SUI_ListScroll = null
@@ -64,6 +66,8 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         private framehandle SUI_DetailBodyText = null
         private framehandle SUI_ActionButton = null
         private framehandle SUI_StatusText = null
+        private framehandle SUI_GoldText = null
+        private framehandle SUI_ArenaMarksText = null
 
         private framehandle array SUI_RowButton
         private framehandle array SUI_RowIcon
@@ -85,6 +89,8 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         private string SUI_DetailInfoCache = ""
         private string SUI_DetailBodyCache = ""
         private string SUI_StatusCache = ""
+        private string SUI_GoldCache = ""
+        private string SUI_ArenaMarksCache = ""
         private string SUI_ActionTextCache = ""
 
         private Table SUI_ButtonRow = 0
@@ -342,6 +348,24 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         endif
     endfunction
 
+    private function SUI_UpdateResources takes player whichPlayer returns nothing
+        local string goldText
+        local string arenaMarksText
+
+        if GetLocalPlayer() == whichPlayer then
+            set goldText = "|cffff3030Gold: " + I2S(GetPlayerState(whichPlayer, PLAYER_STATE_RESOURCE_GOLD)) + "|r"
+            set arenaMarksText = "|cffff3030Arena Marks: " + I2S(GetPlayerState(whichPlayer, PLAYER_STATE_RESOURCE_LUMBER)) + "|r"
+            if SUI_GoldCache != goldText then
+                set SUI_GoldCache = goldText
+                call BlzFrameSetText(SUI_GoldText, goldText)
+            endif
+            if SUI_ArenaMarksCache != arenaMarksText then
+                set SUI_ArenaMarksCache = arenaMarksText
+                call BlzFrameSetText(SUI_ArenaMarksText, arenaMarksText)
+            endif
+        endif
+    endfunction
+
     private function SUI_UpdateDetail takes player whichPlayer, integer totalCount returns nothing
         local integer stockEntry
         local string titleText
@@ -430,13 +454,13 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
             if GetLocalPlayer() == whichPlayer then
                 if categoryName != "" then
                     if categoryName == SUI_SelectedCategory then
-                        call BlzFrameSetText(SUI_CategoryButton[buttonIndex], "|cffffe4a3" + categoryName + "|r")
+                        call BlzFrameSetText(SUI_CategoryText[buttonIndex], "|cffffe4a3" + categoryName + "|r")
                     else
-                        call BlzFrameSetText(SUI_CategoryButton[buttonIndex], categoryName)
+                        call BlzFrameSetText(SUI_CategoryText[buttonIndex], "|cffffcc00" + categoryName + "|r")
                     endif
                     call SUI_SetCategoryVisible(buttonIndex, true)
                 else
-                    call BlzFrameSetText(SUI_CategoryButton[buttonIndex], "")
+                    call BlzFrameSetText(SUI_CategoryText[buttonIndex], "")
                     call SUI_SetCategoryVisible(buttonIndex, false)
                 endif
             endif
@@ -479,6 +503,7 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         call SUI_UpdateCategories(whichPlayer)
         call SUI_UpdateRows(whichPlayer, totalCount)
         call SUI_UpdateDetail(whichPlayer, totalCount)
+        call SUI_UpdateResources(whichPlayer)
         call SUI_SyncListScrollFrame(whichPlayer, totalCount)
     endfunction
 
@@ -746,11 +771,20 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
             exitwhen categoryIndex > SUI_MAX_CATEGORIES
             set SUI_CategoryButton[categoryIndex] = BlzCreateFrameByType("GLUETEXTBUTTON", "ShopUICategory" + I2S(categoryIndex), SUI_Parent, "ScriptDialogButton", 0)
             call BlzFrameSetSize(SUI_CategoryButton[categoryIndex], 0.079, 0.024)
+            call BlzFrameSetText(SUI_CategoryButton[categoryIndex], "")
             if categoryIndex == 1 then
                 call BlzFrameSetPoint(SUI_CategoryButton[categoryIndex], FRAMEPOINT_TOPLEFT, SUI_Parent, FRAMEPOINT_TOPLEFT, 0.018, -0.074)
             else
                 call BlzFrameSetPoint(SUI_CategoryButton[categoryIndex], FRAMEPOINT_LEFT, SUI_CategoryButton[categoryIndex - 1], FRAMEPOINT_RIGHT, 0.004, 0.0)
             endif
+
+            set SUI_CategoryText[categoryIndex] = BlzCreateFrameByType("TEXT", "ShopUICategoryText" + I2S(categoryIndex), SUI_CategoryButton[categoryIndex], "", 0)
+            call BlzFrameSetPoint(SUI_CategoryText[categoryIndex], FRAMEPOINT_TOPLEFT, SUI_CategoryButton[categoryIndex], FRAMEPOINT_TOPLEFT, 0.004, -0.001)
+            call BlzFrameSetPoint(SUI_CategoryText[categoryIndex], FRAMEPOINT_BOTTOMRIGHT, SUI_CategoryButton[categoryIndex], FRAMEPOINT_BOTTOMRIGHT, -0.004, 0.001)
+            call BlzFrameSetTextAlignment(SUI_CategoryText[categoryIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
+            call BlzFrameSetScale(SUI_CategoryText[categoryIndex], SUI_CATEGORY_TEXT_SCALE)
+            call BlzFrameSetEnable(SUI_CategoryText[categoryIndex], false)
+
             call BlzTriggerRegisterFrameEvent(SUI_CategoryTrigger, SUI_CategoryButton[categoryIndex], FRAMEEVENT_CONTROL_CLICK)
             call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_CategoryButton[categoryIndex], FRAMEEVENT_CONTROL_CLICK)
             set SUI_CategoryButtonIndex.integer[GetHandleId(SUI_CategoryButton[categoryIndex])] = categoryIndex
@@ -805,17 +839,31 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
 
         set SUI_DetailBodyText = BlzCreateFrameByType("TEXT", "ShopUIDetailBody", SUI_RightPane, "", 0)
         call BlzFrameSetPoint(SUI_DetailBodyText, FRAMEPOINT_TOPLEFT, SUI_RightPane, FRAMEPOINT_TOPLEFT, 0.018, -0.095)
-        call BlzFrameSetSize(SUI_DetailBodyText, 0.270, 0.152)
+        call BlzFrameSetSize(SUI_DetailBodyText, 0.270, 0.128)
         call BlzFrameSetTextAlignment(SUI_DetailBodyText, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(SUI_DetailBodyText, 0.90)
         call BlzFrameSetEnable(SUI_DetailBodyText, false)
 
         set SUI_StatusText = BlzCreateFrameByType("TEXT", "ShopUIStatus", SUI_RightPane, "", 0)
-        call BlzFrameSetPoint(SUI_StatusText, FRAMEPOINT_BOTTOMLEFT, SUI_RightPane, FRAMEPOINT_BOTTOMLEFT, 0.018, 0.018)
+        call BlzFrameSetPoint(SUI_StatusText, FRAMEPOINT_BOTTOMLEFT, SUI_RightPane, FRAMEPOINT_BOTTOMLEFT, 0.018, 0.038)
         call BlzFrameSetSize(SUI_StatusText, 0.190, 0.018)
         call BlzFrameSetTextAlignment(SUI_StatusText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(SUI_StatusText, 0.92)
         call BlzFrameSetEnable(SUI_StatusText, false)
+
+        set SUI_GoldText = BlzCreateFrameByType("TEXT", "ShopUIGoldText", SUI_RightPane, "", 0)
+        call BlzFrameSetPoint(SUI_GoldText, FRAMEPOINT_BOTTOMLEFT, SUI_RightPane, FRAMEPOINT_BOTTOMLEFT, 0.018, 0.017)
+        call BlzFrameSetSize(SUI_GoldText, 0.072, 0.016)
+        call BlzFrameSetTextAlignment(SUI_GoldText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
+        call BlzFrameSetScale(SUI_GoldText, 0.82)
+        call BlzFrameSetEnable(SUI_GoldText, false)
+
+        set SUI_ArenaMarksText = BlzCreateFrameByType("TEXT", "ShopUIArenaMarksText", SUI_RightPane, "", 0)
+        call BlzFrameSetPoint(SUI_ArenaMarksText, FRAMEPOINT_BOTTOMLEFT, SUI_RightPane, FRAMEPOINT_BOTTOMLEFT, 0.110, 0.017)
+        call BlzFrameSetSize(SUI_ArenaMarksText, 0.096, 0.016)
+        call BlzFrameSetTextAlignment(SUI_ArenaMarksText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
+        call BlzFrameSetScale(SUI_ArenaMarksText, 0.82)
+        call BlzFrameSetEnable(SUI_ArenaMarksText, false)
 
         set SUI_ActionButton = BlzCreateFrameByType("GLUETEXTBUTTON", "ShopUIAction", SUI_RightPane, "ScriptDialogButton", 0)
         call BlzFrameSetSize(SUI_ActionButton, 0.070, 0.030)
