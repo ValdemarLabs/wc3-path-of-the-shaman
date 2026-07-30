@@ -226,6 +226,7 @@ globals
     private constant real AI_CAMP_FIRE_MAX_OFFSET = 260.00
     private constant real AI_CAMP_FIRE_UNIT_LIFETIME = 60.00
     private constant integer AI_RANDOM_ACTIVE_CAP_MAX = 32
+    private constant integer AI_DEFAULT_BAG_SLOTS = 16
     private constant integer AI_PARTY_MAX_SIZE = 3
     private constant real AI_PARTY_ORGANIZE_MIN = 45.00
     private constant real AI_PARTY_ORGANIZE_MAX = 120.00
@@ -3161,6 +3162,42 @@ private function ApplyProfileHeroRules takes integer instanceId, unit whichUnit 
     endif
 endfunction
 
+private function ApplyDefaultBagSpace takes unit whichUnit returns nothing
+    local player owner
+    local integer pid
+    local integer bid
+    local integer currentCapacity
+
+    if whichUnit == null or not IsUnitType(whichUnit, UNIT_TYPE_HERO) then
+        set whichUnit = null
+        return
+    endif
+
+    set owner = GetOwningPlayer(whichUnit)
+    if GetPlayerController(owner) != MAP_CONTROL_COMPUTER then
+        set owner = null
+        set whichUnit = null
+        return
+    endif
+
+    set pid = GetPlayerId(owner)
+    if InventoryParadigm == "1PerPlayer" then
+        set currentCapacity = InventoryCapacityBase + DInvMaxSlotModifierForPlayer[pid]
+        if currentCapacity != AI_DEFAULT_BAG_SLOTS then
+            call DInvDeltaAdditionalSlotsForPlayer(pid, AI_DEFAULT_BAG_SLOTS - currentCapacity)
+        endif
+    else
+        set bid = BIDOfUnit(whichUnit)
+        set currentCapacity = MaxBagCapacityOfBID(pid, bid)
+        if currentCapacity > 0 and currentCapacity != AI_DEFAULT_BAG_SLOTS then
+            call DInvDeltaAdditionalSlotsForUnit(whichUnit, AI_DEFAULT_BAG_SLOTS - currentCapacity)
+        endif
+    endif
+
+    set owner = null
+    set whichUnit = null
+endfunction
+
 public function RegisterUnit takes unit whichUnit, integer profileId, integer uniqueId returns integer
     local integer existing
     local integer instanceId
@@ -3233,6 +3270,7 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
     endif
     if IsUnitType(whichUnit, UNIT_TYPE_HERO) then
         call InitializeDInventoryForUnit(whichUnit)
+        call ApplyDefaultBagSpace(whichUnit)
         call InitializeDEquipmentForUnit(whichUnit)
     endif
     call ApplyStartingAbilities(instanceId, whichUnit)
