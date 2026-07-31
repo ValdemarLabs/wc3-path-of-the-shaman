@@ -15,6 +15,18 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [1.8.2026]
+
+### Technical Updates
+
+- Updated `qRagno.j`
+  - Edited voicelines slightly and created new voice files
+
+- Updated `ExSound.j`
+  - Allow register for more orc grunt voice files
+
+- Slight terraining of `Thornwoods` and `Sereneglade`
+
 ## [31.7.2026]
 
 ### Technical Updates
