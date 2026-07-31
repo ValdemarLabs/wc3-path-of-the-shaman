@@ -4021,7 +4021,6 @@ namespace WC3ItemManager
                 {
                     conn.Open();
                     ProfessionItemStatsSeeder.Ensure(conn);
-                    CookingItemsSeeder.Ensure(conn);
                 }
             }
             catch (Exception ex)
@@ -6061,6 +6060,13 @@ namespace WC3ItemManager
                     return;
                 }
 
+                if (IsMiscItemClass(className))
+                {
+                    lblItemLevelRange.Text = "MISC: WC3 level is not forced";
+                    lblItemLevelRange.ForeColor = Color.Gray;
+                    return;
+                }
+
                 using (var conn = new NpgsqlConnection(connectionString))
                 {
                     conn.Open();
@@ -6114,6 +6120,12 @@ namespace WC3ItemManager
                 lblItemLevelRange.Text = $"(Error: {ex.Message})";
                 lblItemLevelRange.ForeColor = Color.Gray;
             }
+        }
+
+        private static bool IsMiscItemClass(string className)
+        {
+            return string.Equals(className, "MISC", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(className, "Miscellaneous", StringComparison.OrdinalIgnoreCase);
         }
 
         // ===== SMART ASSISTANCE METHODS =====

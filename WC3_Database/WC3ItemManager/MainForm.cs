@@ -810,7 +810,6 @@ namespace WC3ItemManager
                     EnsureLootLevelColumn(conn);
                     EnsureRequiredItemClasses(conn);
                     ProfessionItemStatsSeeder.Ensure(conn);
-                    CookingItemsSeeder.Ensure(conn);
                     EnsureItemClassColors(conn);
                     isConnected = true;
                     UpdateConnectionStatus(true, "Connected");

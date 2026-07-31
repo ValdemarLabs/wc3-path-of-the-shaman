@@ -226,12 +226,12 @@ namespace WC3ItemManager.Repositories
                     SELECT r.rarity_name, COUNT(i.id) as cnt
                     FROM items i
                     JOIN item_rarities r ON i.rarity_id = r.id
-                    WHERE (i.item_level = @common_level AND r.rarity_level = 0)
-                       OR (i.item_level = @uncommon_level AND r.rarity_level = 1)
-                       OR (i.item_level = @rare_level AND r.rarity_level = 2)
-                       OR (i.item_level = @epic_level AND r.rarity_level = 3)
-                       OR (i.item_level = @legendary_level AND r.rarity_level = 4)
-                       OR (i.item_level = @artifact_level AND r.rarity_level = 5)
+                    WHERE (COALESCE(i.item_level_unclassified, i.item_level) = @common_level AND r.rarity_level = 0)
+                       OR (COALESCE(i.item_level_unclassified, i.item_level) = @uncommon_level AND r.rarity_level = 1)
+                       OR (COALESCE(i.item_level_unclassified, i.item_level) = @rare_level AND r.rarity_level = 2)
+                       OR (COALESCE(i.item_level_unclassified, i.item_level) = @epic_level AND r.rarity_level = 3)
+                       OR (COALESCE(i.item_level_unclassified, i.item_level) = @legendary_level AND r.rarity_level = 4)
+                       OR (COALESCE(i.item_level_unclassified, i.item_level) = @artifact_level AND r.rarity_level = 5)
                     GROUP BY r.rarity_name", conn))
                 {
                     cmd.Parameters.AddWithValue("@common_level", (object)tier.CommonItemLevel ?? DBNull.Value);

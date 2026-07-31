@@ -308,31 +308,7 @@ namespace WC3ItemManager
                     @actively_used, FALSE, FALSE, @copy_base_abilities,
                     CURRENT_TIMESTAMP
                 )
-                ON CONFLICT (item_code) DO UPDATE SET
-                    item_name = EXCLUDED.item_name,
-                    base_id = EXCLUDED.base_id,
-                    rarity_id = EXCLUDED.rarity_id,
-                    class_id = EXCLUDED.class_id,
-                    type_id = EXCLUDED.type_id,
-                    item_level = EXCLUDED.item_level,
-                    item_level_unclassified = EXCLUDED.item_level_unclassified,
-                    required_level = EXCLUDED.required_level,
-                    gold_cost = EXCLUDED.gold_cost,
-                    sell_value = EXCLUDED.sell_value,
-                    max_charges = EXCLUDED.max_charges,
-                    max_stack = EXCLUDED.max_stack,
-                    tooltip = EXCLUDED.tooltip,
-                    tooltip_extended = EXCLUDED.tooltip_extended,
-                    description = EXCLUDED.description,
-                    icon_path = EXCLUDED.icon_path,
-                    model_path = EXCLUDED.model_path,
-                    wc3_abilities = EXCLUDED.wc3_abilities,
-                    wc3_classification = EXCLUDED.wc3_classification,
-                    actively_used = EXCLUDED.actively_used,
-                    dropped_on_death = EXCLUDED.dropped_on_death,
-                    specific_drop_only = EXCLUDED.specific_drop_only,
-                    copy_base_abilities = EXCLUDED.copy_base_abilities,
-                    updated_at = CURRENT_TIMESTAMP;";
+                ON CONFLICT (item_code) DO NOTHING;";
 
             using (var cmd = new NpgsqlCommand(query, conn))
             {

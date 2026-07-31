@@ -28,8 +28,10 @@ namespace WC3ItemManager
         private IconEntry selectedIcon;
         private string currentFolder = "";
         
-        // Static cache persists across dialog instances (prevents reloading every time)
-        private static Dictionary<string, Image> imageCache = new Dictionary<string, Image>();
+        // Static caches persist across dialog instances (prevents reloading large icon folders repeatedly)
+        private const int IMAGE_CACHE_LIMIT = 6000;
+        private static Dictionary<string, Image> imageCache = new Dictionary<string, Image>(StringComparer.OrdinalIgnoreCase);
+        private static Dictionary<string, List<string>> folderFileCache = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         private static object cacheLock = new object(); // Thread safety
         private static string cacheFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cache");
         
@@ -367,20 +369,7 @@ namespace WC3ItemManager
             
             try
             {
-                string[] extensions = { "*.blp", "*.tga", "*.png", "*.jpg", "*.jpeg" };
-                var files = await System.Threading.Tasks.Task.Run(() => 
-                {
-                    var allFiles = new List<string>();
-                    foreach (var ext in extensions)
-                    {
-                        try
-                        {
-                            allFiles.AddRange(Directory.GetFiles(folderPath, ext, SearchOption.TopDirectoryOnly));
-                        }
-                        catch { /* Ignore access errors */ }
-                    }
-                    return allFiles;
-                });
+                var files = await System.Threading.Tasks.Task.Run(() => GetFolderIconFiles(folderPath));
                 
                 string search = txtSearch.Text.ToLower();
                 var filtered = files.Where(f => 
@@ -448,6 +437,39 @@ namespace WC3ItemManager
             {
                 await LoadNextBatch(source);
             }
+        }
+
+        private static List<string> GetFolderIconFiles(string folderPath)
+        {
+            lock (cacheLock)
+            {
+                if (folderFileCache.TryGetValue(folderPath, out var cachedFiles))
+                {
+                    return new List<string>(cachedFiles);
+                }
+            }
+
+            string[] extensions = { "*.blp", "*.tga", "*.png", "*.jpg", "*.jpeg" };
+            var allFiles = new List<string>();
+
+            foreach (var ext in extensions)
+            {
+                try
+                {
+                    allFiles.AddRange(Directory.GetFiles(folderPath, ext, SearchOption.TopDirectoryOnly));
+                }
+                catch
+                {
+                    // Ignore access errors for individual folders.
+                }
+            }
+
+            lock (cacheLock)
+            {
+                folderFileCache[folderPath] = new List<string>(allFiles);
+            }
+
+            return allFiles;
         }
         
         private void ShowLoadingIndicator(bool show)
@@ -645,10 +667,7 @@ namespace WC3ItemManager
                     if (File.Exists(cachedPath))
                     {
                         // Load from disk cache (much faster)
-                        using (var fs = new FileStream(cachedPath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                        {
-                            img = Image.FromStream(fs);
-                        }
+                        img = LoadBitmapFromFile(cachedPath);
                     }
                     else
                     {
@@ -659,10 +678,7 @@ namespace WC3ItemManager
                 else if (ext == ".png" || ext == ".jpg" || ext == ".jpeg")
                 {
                     // Load PNG/JPG normally
-                    using (var fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                    {
-                        img = Image.FromStream(fs);
-                    }
+                    img = LoadBitmapFromFile(fullPath);
                 }
                 else if (ext == ".tga")
                 {
@@ -670,12 +686,12 @@ namespace WC3ItemManager
                     return null;
                 }
                 
-                // Cache the image in memory (limit to 500 images)
+                // Cache the image in memory. The cap is high enough for large root icon folders.
                 if (img != null)
                 {
                     lock (cacheLock)
                     {
-                        if (imageCache.Count < 500 && !imageCache.ContainsKey(fullPath))
+                        if (imageCache.Count < IMAGE_CACHE_LIMIT && !imageCache.ContainsKey(fullPath))
                         {
                             imageCache[fullPath] = img;
                         }
@@ -709,7 +725,7 @@ namespace WC3ItemManager
                 try
                 {
                     // Use pre-converted PNG directly
-                    return Image.FromFile(pngPath);
+                    return LoadBitmapFromFile(pngPath);
                 }
                 catch
                 {
@@ -794,6 +810,17 @@ namespace WC3ItemManager
             catch
             {
                 return null;
+            }
+        }
+
+        private static Image LoadBitmapFromFile(string path)
+        {
+            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                using (var loaded = Image.FromStream(fs))
+                {
+                    return new Bitmap(loaded);
+                }
             }
         }
         
@@ -974,6 +1001,7 @@ namespace WC3ItemManager
                     img?.Dispose();
                 }
                 imageCache.Clear();
+                folderFileCache.Clear();
             }
         }
         
@@ -997,6 +1025,7 @@ namespace WC3ItemManager
             {
                 if (configDialog.ShowDialog() == DialogResult.OK)
                 {
+                    ClearCache();
                     LoadIcons(); // Reload icons with new paths
                 }
             }

@@ -548,9 +548,10 @@ namespace WC3ItemManager
                 conn.Open();
 
                 var sql = @"
-                    SELECT i.item_code, i.item_name, i.item_level, i.rarity_id, i.class_id, i.type_id, i.wc3_classification
+                    SELECT i.item_code, i.item_name, COALESCE(i.item_level_unclassified, i.item_level) as item_level, i.rarity_id, i.class_id, i.type_id, i.wc3_classification
                     FROM items i
-                    WHERE i.item_level >= @minLevel AND i.item_level <= @maxLevel
+                    WHERE COALESCE(i.item_level_unclassified, i.item_level) >= @minLevel
+                      AND COALESCE(i.item_level_unclassified, i.item_level) <= @maxLevel
                       AND COALESCE(i.specific_drop_only, false) = false";
 
                 var conditions = new List<string>();
@@ -570,7 +571,7 @@ namespace WC3ItemManager
                 if (conditions.Count > 0)
                     sql += " AND " + string.Join(" AND ", conditions);
 
-                sql += " ORDER BY i.item_level, i.item_name";
+                sql += " ORDER BY COALESCE(i.item_level_unclassified, i.item_level), i.item_name";
 
                 using (var cmd = new NpgsqlCommand(sql, conn))
                 {
