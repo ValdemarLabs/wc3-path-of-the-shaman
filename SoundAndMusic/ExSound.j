@@ -1816,7 +1816,7 @@ private function Init takes nothing returns nothing
     call ExSound_RegisterSequence("Krezgrel_", 1, 50, "Pots\\Sound\\Voicelines\\Krezgrel\\")
     call ExSound_RegisterSequence("Narrator_", 1, 25, "Pots\\Sound\\Voicelines\\Narrator\\")
     call ExSound_RegisterSequence("Nazgrek_", 1, 500, "Pots\\Sound\\Voicelines\\Nazgrek\\")
-    call ExSound_RegisterSequence("OrcGrunt_", 1, 150, "Pots\\Sound\\Voicelines\\Orc Grunt\\")
+    call ExSound_RegisterSequence("OrcGrunt_", 1, 550, "Pots\\Sound\\Voicelines\\Orc Grunt\\")
     call ExSound_RegisterSequence("OrcPeon_", 1, 50, "Pots\\Sound\\Voicelines\\Orc Peon\\")
     call ExSound_RegisterSequence("Satyr_", 1, 100, "Pots\\Sound\\Voicelines\\Satyr\\")
     call ExSound_RegisterSequence("Shipmaster_", 1, 50, "Pots\\Sound\\Voicelines\\Shipmaster\\")
