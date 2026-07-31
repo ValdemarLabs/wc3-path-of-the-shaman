@@ -15,6 +15,28 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [31.7.2026]
+
+### Technical Updates
+
+- Updated `UI/IconQuery.j`
+  - Change quest icons to show on map always by default. This can be changed to other mode like "query" by the Player.
+
+### Tool Updates
+
+- Updated `WC3_Database/WC3ItemManager`
+  - [MainForm.cs] and [ItemEditForm.cs]: removed automatic CookingItemsSeeder.Ensure(...) calls. The app no longer seeds/manipulates cooking item rows on startup or item edit form init.
+  - [CookingItemsSeeder.cs]: if manually called later, it no longer overwrites existing item rows.
+  - [ItemEditForm.cs]: MISC/Miscellaneous items no longer get forced into rarity item-level ranges.
+  - [IconSelectorDialog.cs]: added folder file-list caching, raised memory image cache to 6000 icons, and load images as cloned bitmaps so revisiting large folders should be much faster.
+  - [LootTableAutoFillDialog.cs] and [LootTierRepository.cs]: loot auto-fill and tier item counts now use COALESCE(item_level_unclassified, item_level), matching the generic loot exporter.
+- Stormlink Girdle:
+    - Live DB row for `j1c1` has max_charges=0, max_stack=0, no stock values, item_level=460, item_level_unclassified=15.
+    - So (1) is not coming from the current ItemManager row.
+    - In WC3 object data, (1) is usually item charges from iuse. The exporter maps max_charges -> iuse, and current data should export iuse=0. If the map still shows (1), it is likely stale object data in the map or another export/import path.
+- Loot Level:
+    - WC3 Level / Stack exports to WC3 object ilev and drives equipment slot ranges.
+    - `Note`: Loot Level is separate drop-tier level. It is used by generic loot export and now also by loot auto-fill/count UI. It does not change the item’s equipment slot or WC3 object item level.
 
 ## [30.7.2026]
 
