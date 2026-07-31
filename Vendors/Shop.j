@@ -59,7 +59,9 @@ library Shop initializer Init requires Table, DEquipment
         private constant string SHP_CATEGORY_ALL = "All"
         private constant string SHP_CATEGORY_GOODS = "Goods"
         private constant string SHP_CATEGORY_RECENTLY_SOLD = "Recent"
-        private constant string SHP_ICON_BAG_SERVICE = "ReplaceableTextures\\CommandButtons\\BTNPackBeast.blp"
+        private constant string SHP_ICON_BAG_SERVICE_6 = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Bag_09.blp"    // use for 6 slot
+        private constant string SHP_ICON_BAG_SERVICE_12 = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Bag_07.blp"    // use for 12 slot
+        private constant string SHP_ICON_BAG_SERVICE_20 = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Bag_08.blp"    // use for 20 slot
 
         // Registered vendors and unit lookup.
         private Table SHP_VendorByUnit = 0
@@ -134,6 +136,19 @@ library Shop initializer Init requires Table, DEquipment
 
     private function SHP_GetRecentSoldKey takes integer vendorId, integer soldIndex returns integer
         return (vendorId - 1) * SHP_MAX_RECENT_SOLD_PER_VENDOR + soldIndex
+    endfunction
+
+    private function SHP_GetBagSlotServiceIcon takes integer slots returns string
+        if slots == 6 then
+            return SHP_ICON_BAG_SERVICE_6
+        elseif slots == 12 then
+            return SHP_ICON_BAG_SERVICE_12
+        elseif slots == 20 then
+            return SHP_ICON_BAG_SERVICE_20
+        endif
+
+        // Preserve the previous icon as the fallback for unsupported values.
+        return SHP_ICON_BAG_SERVICE_6
     endfunction
 
     private function SHP_GetBagSlotServiceTooltip takes integer slots returns string
@@ -747,7 +762,7 @@ library Shop initializer Init requires Table, DEquipment
         if serviceName == null or serviceName == "" then
             set serviceName = "+" + I2S(slots) + " Bag Slots"
         endif
-        return SHP_AddStockEntry(vendorId, SHOP_STOCK_KIND_BAG_SLOTS, 0, price, category, slots, serviceName, SHP_ICON_BAG_SERVICE, SHP_GetBagSlotServiceTooltip(slots), aiPriceCap, aiWeight)
+        return SHP_AddStockEntry(vendorId, SHOP_STOCK_KIND_BAG_SLOTS, 0, price, category, slots, serviceName, SHP_GetBagSlotServiceIcon(slots), SHP_GetBagSlotServiceTooltip(slots), aiPriceCap, aiWeight)
     endfunction
 
     public function AddBagSlotService takes integer vendorId, string serviceName, integer slots, integer price, string category returns integer
