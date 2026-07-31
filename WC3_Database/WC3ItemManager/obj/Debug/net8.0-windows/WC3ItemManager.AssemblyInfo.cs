@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCopyrightAttribute("Copyright © 2026")]
 [assembly: System.Reflection.AssemblyDescriptionAttribute("Warcraft 3 Item Database Manager for Path of the Shaman")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+57f59555b6f5ccded8c32bda53a6c0b7647f4b6c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+678b6ea2afa5a6a8461edb1dd44a040d71bd42f4")]
 [assembly: System.Reflection.AssemblyProductAttribute("WC3 Item Manager")]
 [assembly: System.Reflection.AssemblyTitleAttribute("WC3ItemManager")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

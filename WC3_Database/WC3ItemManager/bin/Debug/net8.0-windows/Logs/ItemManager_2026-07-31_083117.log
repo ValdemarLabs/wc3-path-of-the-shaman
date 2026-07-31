@@ -1,0 +1,18 @@
+﻿[2026-07-31 08.31.17] [INFO] Cleaned up 1 old log file(s)
+[2026-07-31 08.31.17] [INFO] ============================================================
+[2026-07-31 08.31.17] [INFO] ItemManager session started
+[2026-07-31 08.31.17] [INFO] Log file: H:\Pelit\PotS_JASS\WC3_Database\WC3ItemManager\bin\Debug\net8.0-windows\logs\ItemManager_2026-07-31_083117.log
+[2026-07-31 08.31.17] [INFO] ============================================================
+[2026-07-31 08.31.17] [INFO] Loaded tooltip phrases: 6 rarities, 7 classes, 24 stats
+[2026-07-31 08.55.15] [INFO] Batch updated 8 items (ignore_loot_tables)
+[2026-07-31 08.56.57] [INFO] Batch updated 8 items (class_id, type_id)
+[2026-07-31 08.57.24] [INFO] Batch updated 8 items (actively_used)
+[2026-07-31 08.57.59] [INFO] Batch updated 10 items (class_id, type_id, actively_used)
+[2026-07-31 08.58.47] [INFO] Updated item: i012 - Safety Instructions
+[2026-07-31 09.00.52] [INFO] Updated item: j0c6 - Smoked Wolf Jerky
+[2026-07-31 09.02.23] [INFO] Batch updated 54 items (item_level, max_stack)
+[2026-07-31 09.02.47] [INFO] Updated item: j0c7 - Roasted Stag Haunch
+[2026-07-31 09.04.07] [INFO] Updated item: j0c7 - Roasted Stag Haunch
+[2026-07-31 09.04.25] [INFO] Updated item: j0c7 - Roasted Stag Haunch
+[2026-07-31 09.05.41] [INFO] Updated item: j0c7 - Roasted Stag Haunch
+[2026-07-31 09.06.55] [INFO] Updated item: j0c6 - Smoked Wolf Jerky
