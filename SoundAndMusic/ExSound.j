@@ -125,9 +125,14 @@ endfunction
 
 function ExSound_RegisterEditorSound takes string soundLabel, sound whichSound returns nothing
     local string normalizedLabel = ExSound_NormalizeSoundLabel(soundLabel)
+    local integer parentKey
 
     if not ExSound_IsBlankString(normalizedLabel) and whichSound != null then
-        call SaveSoundHandle(es_Table, StringHash(normalizedLabel), EXSOUND_EDITOR_HANDLE_CHILD, whichSound)
+        set parentKey = StringHash(normalizedLabel)
+        if HaveSavedString(es_Table, parentKey, 0) then
+            return
+        endif
+        call SaveSoundHandle(es_Table, parentKey, EXSOUND_EDITOR_HANDLE_CHILD, whichSound)
         call SaveBoolean(es_Table, GetHandleId(whichSound), EXSOUND_EDITOR_HANDLE_MARKER_CHILD, true)
     endif
 endfunction
@@ -141,6 +146,9 @@ function ExSound_RegisterEditorSoundEx takes string soundLabel, sound whichSound
     endif
 
     set parentKey = StringHash(normalizedLabel)
+    if HaveSavedString(es_Table, parentKey, 0) then
+        return
+    endif
 
     if whichSound != null then
         call SaveSoundHandle(es_Table, parentKey, EXSOUND_EDITOR_HANDLE_CHILD, whichSound)
@@ -572,6 +580,8 @@ function ExSound_Register takes string key, string path returns nothing
     local boolean alreadyRegistered = HaveSavedString(es_Table, hash, 0)
 
     call SaveStr(es_Table, hash, 0, path)
+    call RemoveSavedHandle(es_Table, hash, EXSOUND_EDITOR_HANDLE_CHILD)
+    call RemoveSavedString(es_Table, hash, EXSOUND_EDITOR_PATH_CHILD)
 
     // store key for preload
     if not alreadyRegistered then
@@ -1806,8 +1816,8 @@ private function Init takes nothing returns nothing
     call ExSound_RegisterSequence("Krezgrel_", 1, 50, "Pots\\Sound\\Voicelines\\Krezgrel\\")
     call ExSound_RegisterSequence("Narrator_", 1, 25, "Pots\\Sound\\Voicelines\\Narrator\\")
     call ExSound_RegisterSequence("Nazgrek_", 1, 500, "Pots\\Sound\\Voicelines\\Nazgrek\\")
-    call ExSound_RegisterSequence("OrcGrunt_", 1, 150, "Pots\\Sound\\Voicelines\\OrcGrunt\\")
-    call ExSound_RegisterSequence("OrcPeon_", 1, 50, "Pots\\Sound\\Voicelines\\OrcPeon\\")
+    call ExSound_RegisterSequence("OrcGrunt_", 1, 150, "Pots\\Sound\\Voicelines\\Orc Grunt\\")
+    call ExSound_RegisterSequence("OrcPeon_", 1, 50, "Pots\\Sound\\Voicelines\\Orc Peon\\")
     call ExSound_RegisterSequence("Satyr_", 1, 100, "Pots\\Sound\\Voicelines\\Satyr\\")
     call ExSound_RegisterSequence("Shipmaster_", 1, 50, "Pots\\Sound\\Voicelines\\Shipmaster\\")
     call ExSound_RegisterSequence("Thork_", 1, 50, "Pots\\Sound\\Voicelines\\Thork\\")    
