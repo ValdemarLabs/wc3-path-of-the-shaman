@@ -59,6 +59,8 @@
 - Updated `SoundAndMusic/ExSound.j`
   - Kept Sound Editor paths in the editor lookup only, so normal `ExSound_Play` dialog keys keep their external `Pots\\Sound\\Voicelines\\...` paths after `ExSoundEditorSounds` initializes.
   - Restored external-folder playback resolution for registered voice labels such as `Nazgrek_0001`, `Nazgrek_0057`, and `OrcGrunt_0017`.
+  - Corrected `OrcGrunt_####` and `OrcPeon_####` external folder registration to use `Orc Grunt` and `Orc Peon`, matching the speaker-owned voiceline folder constants.
+  - Normal ExSound key registration now clears/blocks generated Sound Editor associations for the same key, so voicelines never route through removed `gg_snd_*` imports.
 
 - Updated `QuestsAndDialogs/QuestGivers/qRagno.j`
   - Renamed Ragno's Thork handoff quest title from `Giving the Letter` to `Call of the Horde`.
