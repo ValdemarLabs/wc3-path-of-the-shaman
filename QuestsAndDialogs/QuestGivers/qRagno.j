@@ -41,10 +41,10 @@ globals
     private constant integer ITEM_STOLEN_GOODS = 'I69B'
 
     private constant integer UNIT_RAGNO = 'o61L'
-    private constant integer UNIT_GNOLL = 'n60G'
-    private constant integer UNIT_GNOLL_BRUTE = 'n60H'
-    private constant integer UNIT_GNOLL_POACHER = 'n60E'
-    private constant integer UNIT_GNOLL_WARDEN = 'n60I'
+    private constant integer UNIT_GNOLL = 'ngno'
+    private constant integer UNIT_GNOLL_BRUTE = 'ngnb'
+    private constant integer UNIT_GNOLL_POACHER = 'ngna'
+    private constant integer UNIT_GNOLL_WARDEN = 'ngnw'
     private constant integer UNIT_GNOLL_RAVAGER = 'n61A'
     private constant integer UNIT_GNOLL_CRUSHER = 'n626'
     private constant integer UNIT_KOBOLD_LEADER = 'n62T'
@@ -1002,8 +1002,8 @@ private function PlayProtectOutpostIntroCinematic takes nothing returns nothing
 
     call DialogSystem_SetSequenceCallbacks(seq, function OnProtectOutpostIntroCinematicStart, function OnProtectOutpostIntroCinematicEnd)
     call DialogSystem_AddDelay(seq, 2.00)
-    call DialogSystem_AddLine(seq, gg_unit_ogru_1209, "Grunt", "The gnolls are attacking the outpost!", "OrcGrunt_0012", true)
-    call DialogSystem_AddLine(seq, gg_unit_ogru_1210, "Grunt", "They are too many! We need aid!", "OrcGrunt_0013", true)
+    call DialogSystem_AddLine(seq, gg_unit_ogru_1209, "Grunt", "The gnolls are attacking the outpost! Crush them in the name of the Horde!", "OrcGrunt_0012", true)
+    call DialogSystem_AddLine(seq, gg_unit_ogru_1210, "Grunt", "They are too many! We're outnumbered! Lok'tar Ogar!!!", "OrcGrunt_0013", true)
     call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0057_TEXT, VL_NAZGREK_0057_KEY, true)
     call DialogSystem_PlaySequence(seq, Player(0), Nazgrek)
 endfunction
@@ -1114,20 +1114,20 @@ private function PlayProtectOutpostCompletionCinematic takes nothing returns not
     endif
     if grunt != null then
         call DialogSystem_AddMakeFaceEachOther(seq, Nazgrek, grunt, 1.00, 0.00)
-        call DialogSystem_AddLine(seq, grunt, "Grunt", "Thank you, shaman! We would not have held without you.", "OrcGrunt_0014", true)
+        call DialogSystem_AddLine(seq, grunt, "Grunt", "Thank you, shaman! Without your assistance, the gnolls would've surely outnumbered us.", "OrcGrunt_0014", true)
         call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0058_TEXT, VL_NAZGREK_0058_KEY, true)
         call DialogSystem_AddDelay(seq, 1.00)
     endif
     call DialogSystem_AddMakeFaceEachOther(seq, Ragno, Nazgrek, 1.00, 0.00)
-    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Hey you! You must be Nazgrek.", "OrcGrunt_0015", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Hey you! You must be that shaman from the forest nearby...", "OrcGrunt_0015", true)
     call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0059_TEXT, VL_NAZGREK_0059_KEY, true)
-    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Wait! I knew you looked familiar.", "OrcGrunt_0016", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Wait! I knew you looked familiar. I was issued a task related to you shaman.", "OrcGrunt_0016", true)
     call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0060_TEXT, VL_NAZGREK_0060_KEY, true)
-    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Your days at exile may be over.", "OrcGrunt_0017", true)
-    call DialogSystem_AddLine(seq, Ragno, "Ragno", "The war chief has issued a summons.", "OrcGrunt_0005", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Your days at exile have come to an end. If, you so decide...", "OrcGrunt_0017", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "The warchief has issued you to aid the Horde once again.", "OrcGrunt_0005", true)
     call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0061_TEXT, VL_NAZGREK_0061_KEY, true)
-    call DialogSystem_AddLine(seq, Ragno, "Ragno", "If you accept his summons, take this blood signed letter to Chieftain Thork.", "OrcGrunt_0006", true)
-    call DialogSystem_AddLine(seq, Ragno, "Ragno", "He would not summon you unless the Horde had need of you.", "OrcGrunt_0007", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "If you accept his summon, sign this letter with blood and go meet our chieftain Thork face to face in the outpost to the east.", "OrcGrunt_0006", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "He would not summon you if the matters where not so severe. I'll leave you to think this through... Remember the blood sign of the letter - that is if you make the right call...", "OrcGrunt_0007", true)
     call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0062_TEXT, VL_NAZGREK_0062_KEY, true)
     call DialogSystem_PlaySequence(seq, Player(0), Ragno)
 
@@ -1271,7 +1271,9 @@ private function OnAcceptGnollHeadcount takes nothing returns nothing
     set RagnoGreeted = true
     call DialogInteraction_BeginDialogSequence()
     set seq = DialogInteraction_CreateBaseSequence(Ragno, "Ragno")
-    call DialogSystem_AddLine(seq, Ragno, "Ragno", "The stench of gnoll is growing stronger around the outpost. Bring me their heads and thin their numbers.", "OrcGrunt_0094", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "The stench of gnolls fouls our air...", "OrcGrunt_0094", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "They are growing stronger around the outpost and their attacks on this outpost are increasing.", "OrcGrunt_0160", true) 
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Slay any gnoll you encounter and bring me their heads!", "OrcGrunt_0161", true)
     call DialogSystem_SetSequenceCallbacks(seq, null, function OnAcceptGnollHeadcountEnd)
     call DialogSystem_PlaySequence(seq, Player(0), Ragno)
 endfunction
@@ -1287,7 +1289,8 @@ private function OnCompleteGnollHeadcount takes nothing returns nothing
     set RagnoGreeted = true
     call DialogInteraction_BeginDialogSequence()
     set seq = DialogInteraction_CreateBaseSequence(Ragno, "Ragno")
-    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Ah, back already? Let the gnolls learn to fear the Horde again.", "OrcGrunt_0095", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Ah, back already? Let me see those disgusting gnoll heads...", "OrcGrunt_0162", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Excellent work! Your victory shall be celebrated!", "OrcGrunt_0163", true)
     call DialogSystem_SetSequenceCallbacks(seq, null, function OnCompleteGnollHeadcountEnd)
     call DialogSystem_PlaySequence(seq, Player(0), Ragno)
 endfunction
@@ -1305,8 +1308,8 @@ private function OnAcceptLumberjack takes nothing returns nothing
     call StartLumberjackRuntime()
     call DialogInteraction_BeginDialogSequence()
     set seq = DialogInteraction_CreateBaseSequence(Ragno, "Ragno")
-    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Our settlements are hungry for lumber.", "OrcGrunt_0097", true)
-    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Grab a peon and gather what wood you can. Keep him alive.", "OrcGrunt_0098", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Our settlements are in dire need of quality lumber.", "OrcGrunt_0097", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Grab a peon and get him to collect wood. The peon's got a few loose screws, but he can swing an axe. Make sure he brings back decent timber!", "OrcGrunt_0098", true)
     call AddLumberPeonIntroLines(seq)
     call DialogSystem_SetSequenceCallbacks(seq, null, function OnAcceptLumberjackEnd)
     call DialogSystem_PlaySequence(seq, Player(0), Ragno)
@@ -1331,7 +1334,9 @@ private function OnCompleteLumberjack takes nothing returns nothing
     set RagnoGreeted = true
     call DialogInteraction_BeginDialogSequence()
     set seq = DialogInteraction_CreateBaseSequence(Ragno, "Ragno")
-    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Well, well, well. That should keep the outpost stocked for now.", "OrcGrunt_0099", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Well look at you!","OrcGrunt_0164", true)
+    call DialogSystem_AddLine(seq, Ragno, "Not only did you manage to bring back quality wood, but you also didn't lose our nearly-blind peon in the process.", "OrcGrunt_0165", true)
+    call DialogSystem_AddLine(seq, Ragno, "I suppose that deserves some recognition.","OrcGrunt_0166", true)
     call DialogSystem_SetSequenceCallbacks(seq, null, function OnCompleteLumberjackEnd)
     call DialogSystem_PlaySequence(seq, Player(0), Ragno)
 endfunction
@@ -1350,7 +1355,7 @@ private function OnAcceptKoboldThieves takes nothing returns nothing
     set RagnoGreeted = true
     call DialogInteraction_BeginDialogSequence()
     set seq = DialogInteraction_CreateBaseSequence(Ragno, "Ragno")
-    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Kobolds dared to trespass and steal from the Horde. Slay their leader and recover the stolen goods.", "OrcGrunt_0104", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Kobolds dared to trespass and loot our treasures, again… Go forth, vanquish their leader, and reclaim what's rightfully ours.", "OrcGrunt_0104", true)
     call DialogSystem_SetSequenceCallbacks(seq, null, function OnAcceptKoboldThievesEnd)
     call DialogSystem_PlaySequence(seq, Player(0), Ragno)
 endfunction
@@ -1374,7 +1379,7 @@ private function OnCompleteKoboldThieves takes nothing returns nothing
     set RagnoGreeted = true
     call DialogInteraction_BeginDialogSequence()
     set seq = DialogInteraction_CreateBaseSequence(Ragno, "Ragno")
-    call DialogSystem_AddLine(seq, Ragno, "Ragno", "You've returned, bags full and kobolds humbled. Good work.", "OrcGrunt_0106", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "You've returned, battle-worn. Crushed the kobolds and secured what's rightfully ours.", "OrcGrunt_0106", true)
     call DialogSystem_SetSequenceCallbacks(seq, null, function OnCompleteKoboldThievesEnd)
     call DialogSystem_PlaySequence(seq, Player(0), Ragno)
 endfunction
@@ -1393,7 +1398,7 @@ private function OnAcceptSatyrNegotiations takes nothing returns nothing
     set RagnoGreeted = true
     call DialogInteraction_BeginDialogSequence()
     set seq = DialogInteraction_CreateBaseSequence(Ragno, "Ragno")
-    call DialogSystem_AddLine(seq, Ragno, "Ragno", "The woods are about to drown in satyr schemes. Speak with them and learn where their game leads.", "OrcGrunt_0101", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "The woods are about to be in turmoil, and it's all cause of the satyrs. You're gonna march over there and talk some sense into them. Otherwise, we will bring the fight to their doorstep!", "OrcGrunt_0101", true)
     call DialogSystem_SetSequenceCallbacks(seq, null, function OnAcceptSatyrNegotiationsEnd)
     call DialogSystem_PlaySequence(seq, Player(0), Ragno)
 endfunction
@@ -1419,8 +1424,8 @@ private function OnCompleteSatyrNegotiations takes nothing returns nothing
     set RagnoGreeted = true
     call DialogInteraction_BeginDialogSequence()
     set seq = DialogInteraction_CreateBaseSequence(Ragno, "Ragno")
-    call DialogSystem_AddLine(seq, Ragno, "Ragno", "You made it back. I had begun to think the satyrs had claimed you.", "OrcGrunt_0102", true)
-    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Ha, I knew I could count on you.", "OrcGrunt_0103", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "You made it back! I was starting to think you got tangled up in vines out there. So, spill it. Did you convince them satyrs to see reason?", "OrcGrunt_0102", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Ha, I knew I could count on you. Nice work.", "OrcGrunt_0103", true)
     call DialogSystem_SetSequenceCallbacks(seq, null, function OnCompleteSatyrNegotiationsEnd)
     call DialogSystem_PlaySequence(seq, Player(0), Ragno)
 endfunction
@@ -1436,8 +1441,8 @@ private function OnAidMountainDefense takes nothing returns nothing
     set RagnoGreeted = true
     call DialogInteraction_BeginDialogSequence()
     set seq = DialogInteraction_CreateBaseSequence(Ragno, "Ragno")
-    call DialogSystem_AddLine(seq, Ragno, "Ragno", "I've been expecting you. The outpost will need every axe we can muster.", "OrcGrunt_0055", true)
-    call DialogSystem_AddLine(seq, Ragno, "Ragno", "We must prepare our defense before the gnolls strike again.", "OrcGrunt_0056", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "I've been expecting you. The situation is dire. The gnolls gather their forces, ready to strike at our outpost. We shall stand firm and repel their advance. Together, we shall emerge victorious!", "OrcGrunt_0055", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "We must prepare our defenses before the attack commences.", "OrcGrunt_0056", true)
     call DialogSystem_SetSequenceCallbacks(seq, null, function OnAidMountainDefenseEnd)
     call DialogSystem_PlaySequence(seq, Player(0), Ragno)
 endfunction
@@ -1520,8 +1525,8 @@ endfunction
 
 private function AddPreDialogBark takes integer seq, unit hero returns nothing
     if not RagnoGreeted and hero == Nazgrek then
-        call DialogSystem_AddLine(seq, Ragno, "Ragno", "Hail Nazgrek! I sense the Horde's fire still burns in you.", "OrcGrunt_0085", true)
-        call DialogSystem_AddLine(seq, Ragno, "Ragno", "If you are interested in work, I have tasks that need a steady hand.", "OrcGrunt_0088", true)
+        call DialogSystem_AddLine(seq, Ragno, "Ragno", "Hail Nazgrek! I sense the weight of a turbulent past upon your shoulders. Sit, and let us share stories of trials endured.", "OrcGrunt_0085", true)
+        call DialogSystem_AddLine(seq, Ragno, "Ragno", "If you are interested, I've got some tasks that require some attention.", "OrcGrunt_0088", true)
     else
         call DialogSystem_AddLine(seq, Ragno, "Ragno", "Lok'tar, my friend.", "OrcGrunt_0090", true)
         call DialogSystem_AddLine(seq, Ragno, "Ragno", "What do you have in mind?", "OrcGrunt_0089", true)
