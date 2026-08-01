@@ -30,6 +30,8 @@
 - Vendor cinematic transmissions now identify the unit by name or hero proper name followed by its vendor type, such as `Graknar (Bags)`.
 - Vendors now speak randomized trade chatter every 60-120 seconds by default and react when a trade closes after purchases, sales, both, or no transaction.
 - Blacksmith, general-goods, and bag merchants now have larger role-specific line pools, with reusable human, orc, satyr, Bonecrusher ogre, and regional goblin voice profiles available for future vendors.
+- Added 26 ready-to-use merchant catalogs covering weapons, armor, shields, arena rewards, travelling trade, profession supplies, quartermasters, rare goods, provisions, potions, reagents, and other specialized stock.
+- Travelling and specialty merchants can now change their stock and dialogue according to their current zone, while curiosity merchants reroll randomized goods whenever a new trade begins.
 - Camp fires now last five minutes instead of one minute.
 - Crafting recipe details now include the crafted item's extended tooltip below the recipe description.
 - Shields now grant their matching 50%, 75%, or 100% Shield Block ability while equipped and remove that equipment-granted ability when unequipped.
@@ -73,6 +75,12 @@
   - Added a separate trade-line picker so registered vendor lines retain their lookup name while transmissions use the unit's proper display name and vendor type.
   - Added profile-based chatter and transaction-result categories, unit/unit-type voice-profile binding, per-vendor chatter enable and interval configuration, and standardized labels for weapon, armor, shield, arena, travelling, profession-supply, quartermaster, and randomized-goods vendors.
   - Added session purchase/sale counters and limited outcome lines to normal trade closure so interrupted trades do not play misleading commerce responses.
+  - Added role-specific greeting, chatter, purchase, sale, exchange, and no-transaction lines for 26 vendor catalogs, plus public unit and unit-type registration helpers.
+
+- Added `Vendors/VendorCatalogs.j` and updated `Vendors/Shop.j` and `Vendors/VendorLines.j`
+  - Added zone-restricted stock with optional child-zone inheritance and zone-selected voice profiles based on vendor coordinates from `ZonesCore`.
+  - Added configurable random-stock pools that reroll when trade opens, and supplied rotating equipment, consumable, and material examples.
+  - Auto-bound explicit weaponsmith, armorsmith, arena master, shopkeeper, barkeeper, tome merchant, and beastmaster types, and assigned four existing generic vendor placeholders starter shield, fishing, alchemy, and mining roles in one configurable section.
 
 - Updated `UI/CraftingUI.j` and `Leveling/CampFire.j`
   - Added output item extended tooltips to every profession's shared recipe details and increased constructed camp-fire/light timed life to five minutes.
@@ -111,6 +119,7 @@
   - Replaced the player graveyard GUI flow while preserving the Nazgrek/Zulkis timers, death flags, graveyard selection, Spirit Healer group, and item-recovery globals used by existing systems.
   - Added configurable temporary `u605` Spirit Healers and `u607` Spirit Walkers, with Spirit Walkers used by default at the two totem graveyards.
   - Recreated the legacy Death Camera on retained hero corpses and integrated it with CameraControl target switching and revival cleanup.
+  - Preserved the GUI `rect` handle type of the legacy Nazgrek and Zulkis death-area variables for item recovery compatibility.
 
 - Updated `qRagno.j`
   - Edited voicelines slightly and created new voice files
