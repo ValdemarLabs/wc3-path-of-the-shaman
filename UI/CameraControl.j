@@ -1,4 +1,3 @@
-library CameraControl initializer AutoInit requires FixedCameraLock, AdvancedCameraSystem, ArrowKeyMovement
 /**
     CameraControl
     
@@ -9,7 +8,19 @@ library CameraControl initializer AutoInit requires FixedCameraLock, AdvancedCam
 
     Credits: Tasyen (TasQuestBox as inspiration), Rahko, Sabe
 
+    How to install:
+    Import after FixedCameraLock, AdvancedCameraSystem, and ArrowKeyMovement.
+
+    API:
+    call CameraControl_SetTargetUnit(whichPlayer, whichUnit)
+    call CameraControl_GetTargetUnit(whichPlayer) returns unit
+    call CameraControl_GetStoredTargetUnit(whichPlayer) returns unit
+    call CameraControl_Suspend(whichPlayer)
+    call CameraControl_ResumeQuick(whichPlayer)
+    call CameraControl_IsSuspended(whichPlayer) returns boolean
+
 **/
+library CameraControl initializer AutoInit requires FixedCameraLock, AdvancedCameraSystem, ArrowKeyMovement
 globals
     public constant integer CAMERA_MODE_NORMAL = 1
     public constant integer CAMERA_MODE_ADVANCED = 2
@@ -1205,6 +1216,10 @@ endfunction
 
 public function GetTargetUnit takes player whichPlayer returns unit
     return CC_GetFallbackTarget(whichPlayer)
+endfunction
+
+public function GetStoredTargetUnit takes player whichPlayer returns unit
+    return CC_TargetUnit[CC_GetPlayerIndex(whichPlayer)]
 endfunction
 
 public function GetTargetName takes player whichPlayer returns string
