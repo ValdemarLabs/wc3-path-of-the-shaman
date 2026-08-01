@@ -532,16 +532,34 @@ namespace WC3ItemManager
 
         private async void LoadVisibleThumbnailsAsync()
         {
+            try
+            {
+                await LoadVisibleThumbnailsCoreAsync();
+            }
+            catch (ObjectDisposedException)
+            {
+                // The selector was closed while a thumbnail was loading.
+            }
+            catch (Exception ex)
+            {
+                if (!isClosing && lblStatus != null && !lblStatus.IsDisposed)
+                {
+                    lblStatus.Text = $"Error loading icon thumbnails: {ex.Message}";
+                    lblStatus.ForeColor = Color.Red;
+                }
+                System.Diagnostics.Debug.WriteLine($"[IconSelector] Thumbnail loading failed: {ex}");
+            }
+        }
+
+        private async System.Threading.Tasks.Task LoadVisibleThumbnailsCoreAsync()
+        {
             if (iconList.IsDisposed || iconList.Items.Count == 0)
                 return;
 
             int generation = thumbnailGeneration;
-            int firstIndex = iconList.TopItem?.Index ?? 0;
-            int columns = Math.Max(1, iconList.ClientSize.Width / 90);
-            int rows = Math.Max(1, iconList.ClientSize.Height / 90) + 2;
-            int lastIndex = Math.Min(iconList.Items.Count, firstIndex + columns * rows);
+            List<int> visibleIndexes = GetVisibleIconIndexes();
 
-            for (int index = firstIndex; index < lastIndex; index++)
+            foreach (int index in visibleIndexes)
             {
                 if (generation != thumbnailGeneration || iconList.IsDisposed)
                     return;
@@ -584,6 +602,35 @@ namespace WC3ItemManager
                 if (item.ListView == iconList)
                     item.ImageIndex = imageIndex;
             }
+        }
+
+        private List<int> GetVisibleIconIndexes()
+        {
+            var hitIndexes = new HashSet<int>();
+            const int sampleStep = 24;
+
+            for (int y = 0; y < iconList.ClientSize.Height; y += sampleStep)
+            {
+                for (int x = 0; x < iconList.ClientSize.Width; x += sampleStep)
+                {
+                    ListViewItem item = iconList.GetItemAt(x, y);
+                    if (item != null)
+                        hitIndexes.Add(item.Index);
+                }
+            }
+
+            if (hitIndexes.Count == 0 && iconList.Items.Count > 0)
+            {
+                ListViewItem nearest = iconList.FindNearestItem(
+                    SearchDirectionHint.Down,
+                    new Point(iconList.ClientSize.Width / 2, 0));
+                hitIndexes.Add(nearest?.Index ?? 0);
+            }
+
+            int columns = Math.Max(1, iconList.ClientSize.Width / 90);
+            int firstIndex = Math.Max(0, hitIndexes.Min() - columns);
+            int lastIndex = Math.Min(iconList.Items.Count - 1, hitIndexes.Max() + columns * 2);
+            return Enumerable.Range(firstIndex, lastIndex - firstIndex + 1).ToList();
         }
 
         private void IconList_SelectedIndexChanged(object sender, EventArgs e)
