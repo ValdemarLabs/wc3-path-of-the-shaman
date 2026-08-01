@@ -12,18 +12,19 @@
     Credits:
 
     How to install:
-    Import after Shop and DialogSystem. Import before VendorDialogs and vendor
-    template libraries that call VendorLines_RegisterBasicLines.
+    Import after Shop, DialogSystem, and DialogInteraction. Import before
+    VendorDialogs and vendor template libraries that register lines.
 
     API:
     - set name = VendorLines_GetVendorNameByType(unitTypeId)
     - set name = VendorLines_GetVendorName(vendor)
+    - set name = VendorLines_GetVendorSpeakerName(vendor)
     - call VendorLines_RegisterBasicLines(name, greet1, greet2, trade, farewell)
     - call VendorLines_PlayTradeLine(vendor)
     - call VendorLines_PlayFarewellLine(vendor)
 
 **/
-library VendorLines initializer Init requires DialogSystem, Shop
+library VendorLines initializer Init requires DialogSystem, DialogInteraction, Shop
     public function GetVendorNameByType takes integer unitTypeId returns string
         local integer vendorId = Shop_GetVendorIdForUnitType(unitTypeId)
 
@@ -50,6 +51,30 @@ library VendorLines initializer Init requires DialogSystem, Shop
         return "Merchant"
     endfunction
 
+    public function GetVendorSpeakerName takes unit vendor returns string
+        local integer vendorId
+        local string unitName
+        local string vendorType
+
+        if vendor == null then
+            set vendor = null
+            return "Merchant"
+        endif
+        set vendorId = Shop_GetVendorIdForUnit(vendor)
+        set unitName = DialogInteraction_GetUnitDisplayName(vendor)
+        set vendorType = Shop_GetVendorTypeLabel(vendorId)
+        if unitName == null or unitName == "" then
+            set unitName = VendorLines_GetVendorName(vendor)
+        endif
+        if vendorType == null or vendorType == "" or vendorType == unitName then
+            set vendor = null
+            return unitName
+        endif
+
+        set vendor = null
+        return unitName + " (" + vendorType + ")"
+    endfunction
+
     public function RegisterBasicLines takes string vendorName, string greetA, string greetB, string tradeLine, string farewellLine returns nothing
         if vendorName == "" then
             set vendorName = "Merchant"
@@ -70,12 +95,14 @@ library VendorLines initializer Init requires DialogSystem, Shop
     endfunction
 
     public function PlayTradeLine takes unit vendor returns nothing
-        call DialogSystem_PlayTrade(vendor, VendorLines_GetVendorName(vendor), "", "")
+        call DialogSystem_PickTradeLine(vendor, VendorLines_GetVendorName(vendor))
+        call DialogSystem_PlayLine(vendor, VendorLines_GetVendorSpeakerName(vendor), DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
         set vendor = null
     endfunction
 
     public function PlayFarewellLine takes unit vendor returns nothing
-        call DialogSystem_PlayExit(vendor, VendorLines_GetVendorName(vendor), "", "")
+        call DialogSystem_PickFarewellLine(vendor, VendorLines_GetVendorName(vendor))
+        call DialogSystem_PlayLine(vendor, VendorLines_GetVendorSpeakerName(vendor), DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
         set vendor = null
     endfunction
 
