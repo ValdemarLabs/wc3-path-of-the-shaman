@@ -22,7 +22,7 @@
     - call BlacksmithVendor_BindAIProfile(profileId)
 
 **/
-library BlacksmithVendor initializer Init requires Shop, VendorLines, optional AI
+library BlacksmithVendor initializer Init requires Shop, VendorLines, Reputation, optional AI
     globals
         private constant integer VB_UNIT_TYPE_HUMAN_BLACKSMITH = 'h00I'
         private constant integer VB_UNIT_TYPE_ORC_BLACKSMITH = 'o60H'
@@ -69,6 +69,8 @@ library BlacksmithVendor initializer Init requires Shop, VendorLines, optional A
     endfunction
 
     private function RegisterStock takes nothing returns nothing
+        local integer stockId
+
         call Shop_AddStockEx(VB_VendorId, VB_ITEM_BLUNT_SWORD, 60, "Weapons", 220, 4)
         call Shop_AddStockEx(VB_VendorId, VB_ITEM_CHIPPED_AXE, 65, "Weapons", 240, 4)
         call Shop_AddStockEx(VB_VendorId, VB_ITEM_WOODEN_SHIELD, 55, "Shields", 220, 3)
@@ -78,8 +80,13 @@ library BlacksmithVendor initializer Init requires Shop, VendorLines, optional A
         call Shop_AddStockEx(VB_VendorId, VB_ITEM_MINING_PICK, 75, "Tools", 300, 2)
         call Shop_AddStockEx(VB_VendorId, VB_ITEM_BLACKSMITH_HAMMER, 75, "Tools", 300, 2)
         call Shop_AddStockEx(VB_VendorId, VB_ITEM_COAL, 75, "Tools", 300, 2)
-        call Shop_AddStockEx(VB_VendorId, VB_ITEM_STURDY_WAR_AXE, 260, "Weapons", 700, 1)
-        call Shop_AddStockEx(VB_VendorId, VB_ITEM_CLAWS_ATTACK, 500, "Weapons", 900, 1)
+        set stockId = Shop_AddStockEx(VB_VendorId, VB_ITEM_STURDY_WAR_AXE, 260, "Weapons", 700, 1)
+        call Shop_SetStockMinimumReputation(stockId, Reputation_REP_FRIENDLY)
+        call Shop_SetStockSupply(stockId, 2, 300.00)
+
+        set stockId = Shop_AddStockEx(VB_VendorId, VB_ITEM_CLAWS_ATTACK, 500, "Weapons", 900, 1)
+        call Shop_SetStockMinimumReputation(stockId, Reputation_REP_COVENANT)
+        call Shop_SetStockSupply(stockId, 1, 600.00)
     endfunction
 
     private function RegisterLines takes nothing returns nothing
@@ -88,6 +95,7 @@ library BlacksmithVendor initializer Init requires Shop, VendorLines, optional A
 
     private function Init takes nothing returns nothing
         set VB_VendorId = Shop_CreateVendor("Blacksmith", VB_UNIT_TYPE_HUMAN_BLACKSMITH)
+        call Shop_SetVendorTypeLabel(VB_VendorId, "Blacksmith")
         call BlacksmithVendor_RegisterUnitType(VB_UNIT_TYPE_ORC_BLACKSMITH)
         call BlacksmithVendor_RegisterUnitType(VB_UNIT_TYPE_BROKKAR)
         call BlacksmithVendor_RegisterUnitType(VB_UNIT_TYPE_THROGAR)
