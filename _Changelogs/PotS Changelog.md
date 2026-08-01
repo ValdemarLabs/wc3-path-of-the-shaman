@@ -17,7 +17,67 @@
 
 ## [1.8.2026]
 
+### Player-Facing Updates
+
+- DInventory now has an 80-slot maximum, shows used/total bag space, and grows from 3 to 6 visible rows as bag capacity expands before using additional pages.
+- Shops now show the selected hero's used/total bag space and clamp bag upgrades that would exceed the inventory maximum.
+- Opening the Master UI now closes DInventory and DEquipment, and the unit Inspect/Close button has been moved upward to avoid the game UI intercepting clicks.
+- Shop vendors now require Neutral reputation with their faction by default, while individual goods can require higher standings and remain hidden until unlocked.
+- Limited vendor stock now shows its remaining supply, turns grey when sold out, and can replenish after a vendor-defined delay.
+- Item charges are now shown on merchant, buyback, DInventory/DEquipment, and vanilla inventory item icons, and buyback items preserve their sold charge count.
+- Shop inventory source labels now use `Inventory` and `Quick inventory` instead of `DInv` and `Bag`.
+- Shop resource text now displays the `Gold` label in yellow and `Arena Marks` in red, with both resource values in white.
+- Vendor cinematic transmissions now identify the unit by name or hero proper name followed by its vendor type, such as `Graknar (Bags)`.
+- Well Fed and Well Hydrated recipe abilities no longer occupy visible unit command-card slots while their status buffs are active.
+- Drunken vision now follows the active Nazgrek/Zulkis camera target instead of being removed when another unit is merely selected.
+- Higher drunkenness now produces stronger irregular camera sway and increasingly frequent mishaps, including sudden stops, facing changes, and accidental casts from learned Shaman abilities.
+- Cooking navigation now stays on the selected tier, Food/Beverages group, and recipe screen without reopening an earlier selection layer when a recipe is clicked.
+- Opening a different profession workstation now clears the previous profession's selected recipe, preventing Alchemy or other recipe details from carrying into Cooking.
+- Cooking category and recipe buttons no longer repeatedly rescan the full profession registry during every frame refresh, reducing the navigation lag spikes.
+- Dead campfires and other destroyed profession stations can no longer start or complete crafting.
+- All active pets now become fatigued and revive after lethal damage instead of ordinary tamed beasts dying permanently.
+- Kicked pets now return to Shadowclaw's home and can be invited back later, automatically replacing the current pet. The roster holds two ordinary tamed pets in addition to Shadowclaw.
+- Taming a third ordinary pet now opens a choice dialog that dismisses one of the two older pets while keeping the newly tamed pet active; dismissed pets leave their carried items at home.
+
 ### Technical Updates
+
+- Updated `DestroyerInventoryAndEquipmentSystem`, `Vendors/Shop.j`, `UI/ShopUI.j`, and `UI/MasterUI.j`
+  - Decoupled the 12-slot starting capacity from the 24-slot page layout, added configurable maximum-capacity clamping, capacity counters, combined inventory/equipment closing, and safer Inspect button placement.
+  - Completed the required PotS library header sections for the touched legacy inventory and MasterUI libraries.
+
+- Updated `Vendors/Shop.j`
+  - Added vendor-level and stock-entry reputation thresholds based on the vendor unit's registered faction.
+  - Added synchronized unlimited/limited supply configuration and full-stock replenishment timers that begin when an entry sells out.
+  - Added stock, inventory, and persistent buyback charge queries; purchases now preserve configured or sold charges.
+  - AI purchases now obey vendor reputation, item reputation, and shared stock availability.
+
+- Updated `UI/ShopUI.j`
+  - Added charge overlays, grey sold-out icons, stock counts, sold-out action disabling, and visible-session refreshes for replenished stock.
+
+- Updated vendor templates and dialogue
+  - Added vendor-type labels for General Goods, Blacksmith, and Bags vendors.
+  - Added Friendly/Covenant reputation stock and finite replenishing stock examples to the Blacksmith template.
+  - Added a separate trade-line picker so registered vendor lines retain their lookup name while transmissions use the unit's proper display name and vendor type.
+
+- Updated `Professions/ProfessionsCooking.j`
+  - Recipe aura abilities are hidden immediately after being added to a unit, while expiration, replacement, and death cleanup continue to remove them normally.
+
+- Updated `Professions/Drunk.j`
+  - Replaced selection-owned drunk view state with polling of `CameraControl`'s active target.
+  - Added synchronized level-scaled mishap scheduling and a restricted learned-ability miscast pool that excludes profession and UI Channel abilities.
+  - Added deterministic irregular sway noise without consuming synchronized random values from local camera-only branches.
+
+- Updated `UI/CraftingUI.j`
+  - Replaced inferred category state with explicit root, subcategory, and recipe view modes.
+  - Added a per-player navigation cache rebuilt only when the workstation or category path changes.
+  - Reset selected recipe, query, and reopen state when opening a workstation, and reduced duplicate recipe readiness checks per row.
+
+- Updated `Professions/Professions.j`
+  - Workstation range/start/preparation/completion checks now require the station unit to be alive.
+
+- Updated `Companions/Pet.j` and `Companions/Companions.j`
+  - Added the retained pet roster, shared home-return behavior with per-pet fallback timers, automatic active-pet replacement, and over-limit dismissal dialog.
+  - Applied fatigue and revival protection to every active pet and routed pet-owned Invite casts away from the generic companion invite handler.
 
 - Updated `qRagno.j`
   - Edited voicelines slightly and created new voice files
@@ -26,6 +86,15 @@
   - Allow register for more orc grunt voice files
 
 - Slight terraining of `Thornwoods` and `Sereneglade`
+
+### Tool Updates
+
+- Updated `WC3_Database/WC3ItemManager`
+  - Fixed Icon Selector search so it searches all configured icon folders, respects the selected Blizzard/Custom source filter, and can match icon names or relative paths again.
+  - Replaced the problematic 6000-image cache with a bounded cache of 1000 compact thumbnails and paginated large result sets to 200 icons per page.
+  - Properly dispose removed icon controls and uncached images, preventing repeated searches or folder visits from exhausting Windows handles and causing `Error creating windows handle`.
+  - Cached the global icon index and per-folder file lists so revisiting folders avoids repeated filesystem scanning.
+  - Prevent unit-level dropdown initialization from overwriting the saved WC3 Level while opening an item. WC3 Levels changed through single-item or batch editing now remain visible when the item is reopened.
 
 ## [31.7.2026]
 
