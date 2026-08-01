@@ -1823,6 +1823,8 @@ private function Init takes nothing returns nothing
     call ExSound_RegisterSequence("VendorQuestHuman_", 1, 18, "Pots\\Sound\\Voicelines\\VendorQuestHuman\\")
     call ExSound_RegisterSequence("VendorQuestGoblin_", 1, 16, "Pots\\Sound\\Voicelines\\VendorQuestGoblin\\")
     call ExSound_RegisterSequence("VendorQuestBonecrusher_", 1, 10, "Pots\\Sound\\Voicelines\\VendorQuestBonecrusher\\")
+    call ExSound_RegisterSequence("VendorElarindorMale_", 1, 6, "Pots\\Sound\\Voicelines\\VendorElarindorMale\\")
+    call ExSound_RegisterSequence("VendorElarindorFemale_", 1, 6, "Pots\\Sound\\Voicelines\\VendorElarindorFemale\\")
     call ExSound_RegisterSequence("Satyr_", 1, 100, "Pots\\Sound\\Voicelines\\Satyr\\")
     call ExSound_RegisterSequence("Shipmaster_", 1, 50, "Pots\\Sound\\Voicelines\\Shipmaster\\")
     call ExSound_RegisterSequence("Thork_", 1, 50, "Pots\\Sound\\Voicelines\\Thork\\")    

@@ -47,5 +47,19 @@ library VendorVoiceProfiles initializer Init requires VendorLines
         call RegisterProfile("Goblin Sirensong", "Jungle-tested means it survived the walk to my stall.", "Nothing here bites unless you skip payment.", "A survival essential at a luxury margin.", "Jungle salvage! Very fashionable.", "Supplies rotate, profits accumulate.", "The mosquitoes browse longer than you.")
         call RegisterProfile("Goblin Travelling Merchant", "My shop moves, so decide before it does.", "Every road has customers and unattended cargo.", "Portable, profitable, and now your problem.", "I will sell it three towns from here.", "A complete trade before the wheels cool.", "Next time you see me, the price may have legs.")
         call RegisterProfile("Goblin Arena Vendor", "Arena rules forbid refunds after dismemberment.", "Champions buy quality. Survivors buy replacements.", "That should improve the odds. Slightly.", "Blood washes off. Value remains.", "Old gear out, arena gear in. Bold strategy.", "Spectating is cheaper, but far less profitable for me.")
+
+        call VendorLines_RegisterLine("Elarindor Male", VendorLines_LINE_CHATTER, "Elarindor's forges burn softly, but they have not gone cold.", "VendorElarindorMale_0001")
+        call VendorLines_RegisterLine("Elarindor Male", VendorLines_LINE_CHATTER, "Every restored relic returns a fragment of our home.", "VendorElarindorMale_0002")
+        call VendorLines_RegisterLine("Elarindor Male", VendorLines_LINE_BOUGHT, "May it serve you in Elarindor's defense.", "VendorElarindorMale_0003")
+        call VendorLines_RegisterLine("Elarindor Male", VendorLines_LINE_SOLD, "We will restore what usefulness remains.", "VendorElarindorMale_0004")
+        call VendorLines_RegisterLine("Elarindor Male", VendorLines_LINE_BOUGHT_AND_SOLD, "A measured exchange, worthy of trusted allies.", "VendorElarindorMale_0005")
+        call VendorLines_RegisterLine("Elarindor Male", VendorLines_LINE_NO_TRANSACTION, "Another time. Patience has preserved us this long.", "VendorElarindorMale_0006")
+
+        call VendorLines_RegisterLine("Elarindor Female", VendorLines_LINE_CHATTER, "The arcane currents around Elarindor still bless careful craft.", "VendorElarindorFemale_0001")
+        call VendorLines_RegisterLine("Elarindor Female", VendorLines_LINE_CHATTER, "What survives the ruins deserves a discerning keeper.", "VendorElarindorFemale_0002")
+        call VendorLines_RegisterLine("Elarindor Female", VendorLines_LINE_BOUGHT, "Carry it with the grace its makers intended.", "VendorElarindorFemale_0003")
+        call VendorLines_RegisterLine("Elarindor Female", VendorLines_LINE_SOLD, "This may yet find purpose among our people.", "VendorElarindorFemale_0004")
+        call VendorLines_RegisterLine("Elarindor Female", VendorLines_LINE_BOUGHT_AND_SOLD, "A fair exchange strengthens Elarindor.", "VendorElarindorFemale_0005")
+        call VendorLines_RegisterLine("Elarindor Female", VendorLines_LINE_NO_TRANSACTION, "Browse as you wish. Memory has taught us patience.", "VendorElarindorFemale_0006")
     endfunction
 endlibrary
