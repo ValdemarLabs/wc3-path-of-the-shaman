@@ -226,22 +226,45 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
         local integer vendorId = Shop_GetVendorIdForUnit(vendor)
         local integer profileId = VL_GetBoundProfile(vendor)
         local integer fallbackProfile
+        local integer roleProfile
         local string vendorName = VL_GetVendorName(vendor)
         local string vendorType = Shop_GetVendorTypeLabel(vendorId)
 
         set VL_PickedText = ""
         set VL_PickedSound = ""
-        if VL_PickFromProfile(profileId, category) then
-            set vendor = null
-            return true
-        endif
-        set fallbackProfile = VL_GetProfileByName(vendorName)
-        if fallbackProfile != profileId and VL_PickFromProfile(fallbackProfile, category) then
-            set vendor = null
-            return true
+        set roleProfile = VL_GetProfileByName(vendorName)
+        if profileId > 0 and roleProfile > 0 and profileId != roleProfile then
+            if GetRandomInt(0, 1) == 0 then
+                if VL_PickFromProfile(profileId, category) then
+                    set vendor = null
+                    return true
+                endif
+                if VL_PickFromProfile(roleProfile, category) then
+                    set vendor = null
+                    return true
+                endif
+            else
+                if VL_PickFromProfile(roleProfile, category) then
+                    set vendor = null
+                    return true
+                endif
+                if VL_PickFromProfile(profileId, category) then
+                    set vendor = null
+                    return true
+                endif
+            endif
+        else
+            if VL_PickFromProfile(profileId, category) then
+                set vendor = null
+                return true
+            endif
+            if roleProfile != profileId and VL_PickFromProfile(roleProfile, category) then
+                set vendor = null
+                return true
+            endif
         endif
         set fallbackProfile = VL_GetProfileByName(vendorType)
-        if fallbackProfile != profileId and VL_PickFromProfile(fallbackProfile, category) then
+        if fallbackProfile != profileId and fallbackProfile != roleProfile and VL_PickFromProfile(fallbackProfile, category) then
             set vendor = null
             return true
         endif
