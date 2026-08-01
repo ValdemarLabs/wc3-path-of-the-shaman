@@ -1335,8 +1335,8 @@ private function OnCompleteLumberjack takes nothing returns nothing
     call DialogInteraction_BeginDialogSequence()
     set seq = DialogInteraction_CreateBaseSequence(Ragno, "Ragno")
     call DialogSystem_AddLine(seq, Ragno, "Ragno", "Well look at you!","OrcGrunt_0164", true)
-    call DialogSystem_AddLine(seq, Ragno, "Not only did you manage to bring back quality wood, but you also didn't lose our nearly-blind peon in the process.", "OrcGrunt_0165", true)
-    call DialogSystem_AddLine(seq, Ragno, "I suppose that deserves some recognition.","OrcGrunt_0166", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Not only did you manage to bring back quality wood, but you also didn't lose our nearly-blind peon in the process.","OrcGrunt_0165", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", "I suppose that deserves some recognition.","OrcGrunt_0166", true)
     call DialogSystem_SetSequenceCallbacks(seq, null, function OnCompleteLumberjackEnd)
     call DialogSystem_PlaySequence(seq, Player(0), Ragno)
 endfunction
