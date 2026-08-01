@@ -376,6 +376,16 @@ def is_two_handed_weapon(class_name, slot_type=None, equipment_slot=None):
     return False
 
 
+def get_shield_block_amount(rarity):
+    """Return the active Shield Block tier granted by a shield's rarity."""
+    normalized_rarity = (rarity or "Common").strip().upper()
+    if normalized_rarity == "LEGENDARY":
+        return 100
+    if normalized_rarity == "EPIC":
+        return 75
+    return 50
+
+
 def map_stat_name(stat_name):
     """Return a DEquipment stat name, or None when no registered stat exists."""
     deq_stat_name = STAT_MAPPINGS.get(normalize_text(stat_name))
@@ -459,6 +469,25 @@ def export_dequipment_definitions(output_path, library_name='DEquipmentItemDefin
         
         # Start building JASS output
         lines = []
+        lines.append("/**")
+        lines.append(f"    {library_name}")
+        lines.append("")
+        lines.append("    Author: Valdemar")
+        lines.append("    Version:")
+        lines.append("")
+        lines.append("    Description:")
+        lines.append("    Auto-generated PotS item definitions for DEquipment.")
+        lines.append("")
+        lines.append("    Credits:")
+        lines.append("    - WC3ItemManager database export")
+        lines.append("")
+        lines.append("    How to install:")
+        lines.append("    Import after DEquipment and regenerate after equipment database changes.")
+        lines.append("")
+        lines.append("    API:")
+        lines.append("    - Registers exported item definitions during map initialization.")
+        lines.append("")
+        lines.append("**/")
         lines.append(f"library {library_name} initializer Init requires DEquipment")
         lines.append("")
         lines.append("function DEqPreDefineItemsHere takes nothing returns nothing")
@@ -502,6 +531,13 @@ def export_dequipment_definitions(output_path, library_name='DEquipmentItemDefin
             if is_two_handed_weapon(class_name, slot_type, equipment_slot):
                 for code_str in code_strings:
                     lines.append(f"    call DEqItemTypeDefineAs2Handed({code_str})")
+
+            # Shield Block is equipment-driven. Common through Rare shields use
+            # 50%, Epic shields use 75%, and Legendary shields use 100%.
+            if class_name.strip().upper() == "SHIELD":
+                block_amount = get_shield_block_amount(rarity)
+                for code_str in code_strings:
+                    lines.append(f"    call DEqItemTypeDefineShieldBlock({code_str}, {block_amount})")
             
             # Get item stats from database
             cursor.execute(stats_query, (item_id,))
