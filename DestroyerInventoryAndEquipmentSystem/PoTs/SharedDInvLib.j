@@ -1,3 +1,26 @@
+/**
+    SharedDInvLib
+
+    Author: Valdemar
+    Version:
+
+    Description:
+    Shared data, capacity, item-transfer, equipment, tooltip, and frame-refresh
+    helpers used by the PotS Destroyer inventory and equipment libraries.
+
+    Credits:
+    - emperor_d3st, original Destroyer inventory and equipment system
+
+    How to install:
+    Import after DConfigurationArea and before DInventory and DEquipment.
+
+    API:
+    - set capacity = MaxDInvCapacityOfUnit(unit)
+    - set freeSlots = CountUnitDInventoryFreeSpace(unit)
+    - call DInvAddSlotsForHeroVendor(unit, slots)
+    - call DInvAddSlotsForPlayerVendor(playerId, slots)
+
+**/
 library SharedDInvLib initializer Init requires DConfigurationArea, ItemLootSystem, ExSound
 
 globals
@@ -643,15 +666,21 @@ endfunction
 
 
 function MaxBagCapacityOfBID takes integer pid, integer bid returns integer
+local integer capacity
 if InventoryParadigm == "1PerPlayer" then
 ////call BJDebugMsg("InventoryCapacity of pid("+I2S(pid)+") hid("+I2S(hid)+"): "+I2S(InventoryCapacityBase + DInvMaxSlotModifierForPlayer[pid]))
-return InventoryCapacityBase + DInvMaxSlotModifierForPlayer[pid]
+set capacity = InventoryCapacityBase + DInvMaxSlotModifierForPlayer[pid]
 elseif bid < 1 then
 return 0
 else
 ////call BJDebugMsg("InventoryCapacity of pid("+I2S(pid)+") hid("+I2S(hid)+"): "+I2S(InventoryCapacityBase + DInvMaxSlotModifierForPlayer[pid] + BIDDB[bid][0].integer[1]))
-return InventoryCapacityBase + DInvMaxSlotModifierForPlayer[pid] + BIDDB[bid][0].integer[1]
+set capacity = InventoryCapacityBase + DInvMaxSlotModifierForPlayer[pid] + BIDDB[bid][0].integer[1]
 endif
+// Clamp effective capacity here so temporary equipment modifiers remain reversible.
+if capacity > InventoryCapacityMaximum then
+return InventoryCapacityMaximum
+endif
+return capacity
 endfunction
 
 
@@ -2188,6 +2217,36 @@ endfunction
 
 
 
+function DInvRefreshCapacityTextForBID takes integer bid returns nothing
+local integer pid = 0
+local integer ownerPid
+local integer capacity
+local integer slotId
+local integer usedSlots
+loop
+    if CurrentBID[pid] == bid then
+    set ownerPid = DInvGetInventoryOwnerPidForViewer(pid)
+    set capacity = MaxBagCapacityOfBID(ownerPid, bid)
+    set slotId = 0
+    set usedSlots = 0
+        loop
+            exitwhen slotId >= capacity
+            if DInventoryDB[bid].item[slotId] != null then
+            set usedSlots = usedSlots + 1
+            endif
+            set slotId = slotId + 1
+        endloop
+        if GetLocalPlayer() == Player(pid) and InventoryCapacityTextFrame[pid] != null then
+        call BlzFrameSetText(InventoryCapacityTextFrame[pid], "Bag: "+I2S(usedSlots)+"/"+I2S(capacity))
+        endif
+    endif
+set pid = pid + 1
+exitwhen pid > 23
+endloop
+endfunction
+
+
+
 function DeleteBIDSlotIdItemFromDInventory takes integer bid, integer slotId returns nothing
 local integer ihndl = GetHandleId(DInventoryDB[bid].item[slotId])
 // NUCLEAR : this does not unequip the item, and might screw things up if the item is deleted from the inv while equipped
@@ -2203,6 +2262,7 @@ set DInvItemHandleDB[ihndl].integer[4] = 0
 set DInvItemHandleDB[ihndl].integer[6] = 0
 // NEEDTODO: Remove further data from future systems and modules?
 call DInventoryDB[bid].item.remove(slotId)
+call DInvRefreshCapacityTextForBID(bid)
 //call BJDebugMsg("Delete-FromDInventory Nulling slotId "+I2S(slotId))
 endfunction
 
@@ -2587,6 +2647,58 @@ endfunction
 
 
 
+function DInvRefreshCapacityText takes integer pid, integer bid returns nothing
+local integer ownerPid = DInvGetInventoryOwnerPidForViewer(pid)
+local integer capacity = MaxBagCapacityOfBID(ownerPid, bid)
+local integer usedSlots = capacity - CountBIDDInventoryFreeSpace(ownerPid, bid)
+if GetLocalPlayer() == Player(pid) and InventoryCapacityTextFrame[pid] != null then
+call BlzFrameSetText(InventoryCapacityTextFrame[pid], "Bag: "+I2S(usedSlots)+"/"+I2S(capacity))
+endif
+endfunction
+
+
+
+function DInvApplyCapacityLayout takes integer pid, integer capacity returns nothing
+local integer frameId = 0
+local integer visibleSlots = capacity
+local integer visibleRows
+local integer frameIndex
+local real bottomY
+if GetLocalPlayer() != Player(pid) or InventoryMainFrame[pid] == null then
+return
+endif
+if visibleSlots > ColXRow then
+set visibleSlots = ColXRow
+elseif visibleSlots < 1 then
+set visibleSlots = 1
+endif
+set visibleRows = R2I(I2R(visibleSlots + InventoryColumns - 1) / I2R(InventoryColumns))
+set visibleSlots = visibleRows * InventoryColumns
+set bottomY = -InventorySlotGap + InventoryTopLeftY - visibleRows * (InventorySlotGap + InventorySlotSize)
+
+call BlzFrameClearAllPoints(InventoryMainFrame[pid])
+call BlzFrameSetAbsPoint(InventoryMainFrame[pid], FRAMEPOINT_TOPLEFT, InventoryTopLeftX, InventoryTopLeftY)
+call BlzFrameSetAbsPoint(InventoryMainFrame[pid], FRAMEPOINT_BOTTOMRIGHT, InventoryBotRightX, bottomY)
+call BlzFrameClearAllPoints(InventoryLowestFrame[pid])
+call BlzFrameSetAbsPoint(InventoryLowestFrame[pid], FRAMEPOINT_TOPLEFT, InventoryTopLeftX-0.06, InventoryTopLeftY+0.06)
+call BlzFrameSetAbsPoint(InventoryLowestFrame[pid], FRAMEPOINT_BOTTOMRIGHT, InventoryBotRightX+0.06, bottomY-0.06)
+call BlzFrameClearAllPoints(InventoryGiveButtonFrame[pid])
+call BlzFrameSetAbsPoint(InventoryGiveButtonFrame[pid], FRAMEPOINT_TOPLEFT, InventoryTopLeftX, bottomY-0.006)
+call BlzFrameSetAbsPoint(InventoryGiveButtonFrame[pid], FRAMEPOINT_BOTTOMRIGHT, InventoryTopLeftX+0.08, bottomY-0.036)
+
+loop
+    exitwhen frameId >= ColXRow
+    set frameIndex = pid*340+frameId
+    call BlzFrameSetVisible(InventorySlotButtonFrame[frameIndex], frameId < visibleSlots)
+    if frameId >= visibleSlots and (DInvRarityModuleUsed == TRUE or DEqRarityModuleUsed == TRUE) then
+    call BlzFrameSetVisible(DInvSlotOutlineModelFrame[frameIndex], FALSE)
+    endif
+    set frameId = frameId + 1
+endloop
+endfunction
+
+
+
 function DInvDeltaAdditionalSlotsForPlayer takes integer pid, integer d returns nothing
 // You can use this function to increase or decrease the bag size of a player
 set DInvMaxSlotModifierForPlayer[pid] = DInvMaxSlotModifierForPlayer[pid] + d
@@ -2620,6 +2732,7 @@ endfunction
 
 function UnitDInventoryDBIntoDInventoryFrames takes integer pid, integer bid returns nothing
 local integer loopFrI = 0
+local integer frameIndex
 local integer slotId = (DInvCurrentPage[pid]-1) * ColXRow
 local integer frLimit = ColXRow
 local integer ownerPid = DInvGetInventoryOwnerPidForViewer(pid)
@@ -2637,6 +2750,7 @@ if pid == GetPlayerId(GetLocalPlayer()) then
     // not a valid hero id
     else
         if bid == CurrentBID[pid] then
+        call DInvRefreshCapacityText(pid, bid)
         loop
         call DInvSlotDataIntoFrame(pid, bid, slotId, loopFrI)
         set slotId = slotId + 1
@@ -2647,13 +2761,14 @@ if pid == GetPlayerId(GetLocalPlayer()) then
 
         loop
         exitwhen loopFrI >= frLimit
+        set frameIndex = pid*340+loopFrI
         //call BlzFrameSetAlpha(InventoryTooltipBackdropFrame[loopFrI], 100)
         //call BlzFrameSetVisible(InventoryTooltipBackdropFrame[loopFrI], FALSE)
-        call BlzFrameSetTexture(InventorySlotButtonFrame[loopFrI], InventorySlotForbiddenTexture, 0, TRUE)
-        call BlzFrameSetTexture(InventorySlotButtonIconFrame[loopFrI], InventorySlotForbiddenTexture, 0, TRUE)
-        call BlzFrameSetVisible(InventorySlotStacksFrame[loopFrI], FALSE)
-        call BlzFrameSetVisible(DInvSlotOutlineModelFrame[loopFrI], FALSE)
-        call BlzFrameSetText(InventoryTooltipText[loopFrI], " ")
+        call BlzFrameSetTexture(InventorySlotButtonFrame[frameIndex], InventorySlotForbiddenTexture, 0, TRUE)
+        call BlzFrameSetTexture(InventorySlotButtonIconFrame[frameIndex], InventorySlotForbiddenTexture, 0, TRUE)
+        call BlzFrameSetVisible(InventorySlotStacksFrame[frameIndex], FALSE)
+        call BlzFrameSetVisible(DInvSlotOutlineModelFrame[frameIndex], FALSE)
+        call BlzFrameSetText(InventoryTooltipText[frameIndex], " ")
         set loopFrI = loopFrI + 1
         endloop
         endif
@@ -2665,9 +2780,30 @@ endfunction
 
 function DInvRefreshOpenInventoryForBID takes integer bid returns nothing
 local integer pid = 0
+local integer ownerPid
 loop
     if DInvCanPlayerUseInventoryFrames(pid) == TRUE and CurrentBID[pid] == bid then
+    set ownerPid = DInvGetInventoryOwnerPidForViewer(pid)
+    call DInvApplyCapacityLayout(pid, MaxBagCapacityOfBID(ownerPid, bid))
     call UnitDInventoryDBIntoDInventoryFrames(pid, bid)
+    endif
+set pid = pid + 1
+exitwhen pid > 23
+endloop
+endfunction
+
+
+
+function DInvRefreshOpenInventoriesForOwnerPid takes integer ownerPid returns nothing
+local integer pid = 0
+local integer bid
+loop
+    if DInvCanPlayerUseInventoryFrames(pid) == TRUE and DInvGetInventoryOwnerPidForViewer(pid) == ownerPid then
+    set bid = CurrentBID[pid]
+        if bid >= 0 then
+        call DInvApplyCapacityLayout(pid, MaxBagCapacityOfBID(ownerPid, bid))
+        call UnitDInventoryDBIntoDInventoryFrames(pid, bid)
+        endif
     endif
 set pid = pid + 1
 exitwhen pid > 23
@@ -2734,10 +2870,7 @@ else
     endif
 set BIDDB[bid][0].integer[1] = BIDDB[bid][0].integer[1] + d
     if d != 0 then
-    // redraw UI if page was open and slots were taken away
-        if DInvCurrentUnit[pid] == u then
-        call UnitDInventoryDBIntoDInventoryFrames(pid, bid)
-        endif
+    call DInvRefreshOpenInventoryForBID(bid)
     endif
 endif
 set u = null
@@ -2753,8 +2886,8 @@ endfunction
 // the appropriate function to extend inventory capacity.
 //
 // IMPORTANT LIMITS:
-// - Maximum slots per page: 340 (technical limit due to frame array size: 8160/24 players = 340)
-// - Maximum total slots: No hard limit, but system uses pages beyond 340 slots
+// - Maximum visible slots per page: 340 (technical limit due to frame array size: 8160/24 players = 340)
+// - Maximum total slots: InventoryCapacityMaximum
 // - When inventory is FULL during expansion: Nothing bad happens! New slots are simply added as empty slots
 //   The system does NOT need to "move" existing items - it just creates more available space
 //
@@ -2766,7 +2899,7 @@ endfunction
 // Or for specific heroes:
 //   call DInvAddSlotsForHeroVendor(buyerHero, 12)
 //
-// Returns: TRUE if successful, FALSE if would exceed 340 slots per page
+// Returns: TRUE if at least one slot was added, FALSE if already at the maximum
 // ============================================================================
 
 function DInvAddSlotsForPlayerVendor takes integer pid, integer slotsToAdd returns boolean
@@ -2780,17 +2913,17 @@ function DInvAddSlotsForPlayerVendor takes integer pid, integer slotsToAdd retur
     endif
 
     set currentCap = InventoryCapacityBase + DInvMaxSlotModifierForPlayer[pid]
-    set newCap = currentCap + slotsToAdd
-
-    // Check if we would exceed the per-page limit
-    if newCap > 340 * InventoryPages then
-        if GetLocalPlayer() == Player(pid) then
-            call DisplayTimedTextToPlayer(Player(pid), 0, 0, 10, "|cffff0000Cannot expand inventory - maximum capacity reached!|r")
-        endif
+    if currentCap >= InventoryCapacityMaximum or slotsToAdd <= 0 then
         return false
     endif
+    set newCap = currentCap + slotsToAdd
+    if newCap > InventoryCapacityMaximum then
+        set newCap = InventoryCapacityMaximum
+    endif
 
+    set slotsToAdd = newCap - currentCap
     call DInvDeltaAdditionalSlotsForPlayer(pid, slotsToAdd)
+    call DInvRefreshOpenInventoriesForOwnerPid(pid)
     if GetLocalPlayer() == Player(pid) then
         call DisplayTimedTextToPlayer(Player(pid), 0, 0, 10, "|cff00ff00Inventory expanded by " + I2S(slotsToAdd) + " slots! (Total: " + I2S(newCap) + ")|r")
     endif
@@ -2822,14 +2955,13 @@ function DInvAddSlotsForHeroVendor takes unit hero, integer slotsToAdd returns b
         set currentCap = MaxBagCapacityOfBID(pid, bid)
         set newCap = currentCap + slotsToAdd
         
-        // Check if we would exceed the per-page limit
-        if newCap > 340 * InventoryPages then
-            if GetLocalPlayer() == Player(pid) then
-                call DisplayTimedTextToPlayer(Player(pid), 0, 0, 10, "|cffff0000Cannot expand inventory - maximum capacity reached!|r")
-            endif
+        if currentCap >= InventoryCapacityMaximum or slotsToAdd <= 0 then
             set success = false
         else
-            // 1PerHero paradigm - extend this specific hero's inventory
+            if newCap > InventoryCapacityMaximum then
+                set newCap = InventoryCapacityMaximum
+            endif
+            set slotsToAdd = newCap - currentCap
             call DInvDeltaAdditionalSlotsForUnit(hero, slotsToAdd)
             if GetLocalPlayer() == Player(pid) then
                 call DisplayTimedTextToPlayer(Player(pid), 0, 0, 10, "|cff00ff00Inventory expanded by " + I2S(slotsToAdd) + " slots! (Total: " + I2S(newCap) + ")|r")
@@ -4151,6 +4283,7 @@ if pid == GetPlayerId(GetLocalPlayer()) then
         endif
     endif
 endif
+call DInvRefreshCapacityTextForBID(bid)
 
 set it = null
 return targetSlot
@@ -5300,6 +5433,7 @@ call DEqSlotDataIntoFrame(pid, uhndl, deqslot)
 endif
 
 call UpdateDEqCSheet(pid, u, uhndl, eqid)
+call DInvRefreshCapacityTextForBID(bid)
 set it = null
 set u = null
 return TRUE
@@ -5455,6 +5589,7 @@ endif
 //call BJDebugMsg("EquipDInvItemToDEqSlot finished")
 
 call UpdateDEqCSheet(pid, u, uhndl, eqid)
+call DInvRefreshCapacityTextForBID(bid)
 set it = null
 set u = null
 return TRUE
