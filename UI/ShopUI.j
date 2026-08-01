@@ -14,7 +14,7 @@
       https://www.hiveworkshop.com/threads/custom-rpg-shop-system.372995/
 
     How to install:
-    Import after Shop, MasterUI, Interface, and Table. Vendor dialogs can open
+    Import after Shop, VendorLines, MasterUI, Interface, and Table. Vendor dialogs can open
     the panel with ShopUI_ShowForVendor(vendor, hero).
 
     API:
@@ -23,7 +23,7 @@
     - call ShopUI_Refresh()
 
 **/
-library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, DialogInteraction, DialogSystem, optional Events, optional UnitDeathEvent
+library ShopUI initializer AutoInit requires Table, Shop, VendorLines, MasterUI, Interface, DialogInteraction, DialogSystem, optional Events, optional UnitDeathEvent
     globals
         private constant integer SUI_MAX_ROWS = 10
         private constant integer SUI_VISIBLE_ROWS = 7
@@ -43,6 +43,7 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         private integer SUI_ListScrollMaxCache = -1
         private integer SUI_ListScrollFrameValueCache = -1
         private string SUI_SelectedCategory = "All"
+        private real SUI_RandomVendorLineRemaining = 0.00
 
         private unit SUI_VendorUnit = null
         private unit SUI_BuyerUnit = null
@@ -580,15 +581,20 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         call SUI_SyncListScrollFrame(whichPlayer, totalCount)
     endfunction
 
-    private function SUI_EndTradeSession takes nothing returns nothing
+    private function SUI_EndTradeSession takes boolean playOutcome returns nothing
         local unit buyer = SUI_BuyerUnit
+        local unit vendor = SUI_VendorUnit
 
         if not SUI_TradeSessionOpen then
             set buyer = null
+            set vendor = null
             return
         endif
 
         set SUI_TradeSessionOpen = false
+        if playOutcome and vendor != null and DialogInteraction_IsUnitAlive(vendor) then
+            call VendorLines_PlayTradeOutcome(vendor, Shop_GetSessionBoughtTransactionCount(), Shop_GetSessionSoldTransactionCount())
+        endif
         call Shop_EndTradeSession()
         call DialogSystem_ClearEscapeAction()
         call DialogSystem_StopDialogCamera(Player(0), SUI_CAMERA_RESET_TIME, SUI_USE_DIALOG_CAMERA)
@@ -600,26 +606,28 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         endif
 
         set buyer = null
+        set vendor = null
     endfunction
 
-    private function SUI_HideInternal takes boolean playSound returns nothing
+    private function SUI_HideInternal takes boolean playSound, boolean playOutcome returns nothing
         if SUI_Parent != null then
             if playSound and BlzFrameIsVisible(SUI_Parent) then
                 call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, Player(0))
             endif
             call BlzFrameSetVisible(SUI_Parent, false)
         endif
-        call SUI_EndTradeSession()
+        call SUI_EndTradeSession(playOutcome)
         set SUI_VendorUnit = null
         set SUI_BuyerUnit = null
         set SUI_VendorId = 0
         set SUI_SelectedIndex = 0
         set SUI_ListScrollValue = 0
         set SUI_SelectedCategory = Shop_GetAllCategoryName()
+        set SUI_RandomVendorLineRemaining = 0.00
     endfunction
 
     public function Hide takes nothing returns nothing
-        call SUI_HideInternal(true)
+        call SUI_HideInternal(true, true)
     endfunction
 
     public function Refresh takes nothing returns nothing
@@ -645,7 +653,7 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         if SUI_IsVisible() then
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, p)
             call DisplayTextToPlayer(p, 0.00, 0.00, "|cffff8080Trade interrupted.|r")
-            call SUI_HideInternal(false)
+            call SUI_HideInternal(false, false)
         endif
 
         set p = null
@@ -1043,7 +1051,7 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         endif
 
         if SUI_IsVisible() then
-            call SUI_HideInternal(false)
+            call SUI_HideInternal(false, false)
         endif
 
         set SUI_VendorUnit = vendor
@@ -1056,6 +1064,7 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         set SUI_SelectedCategory = Shop_GetAllCategoryName()
         set SUI_TradeSessionOpen = true
         call Shop_BeginTradeSessionForUnits(SUI_VendorId, vendor, buyer)
+        set SUI_RandomVendorLineRemaining = VendorLines_GetRandomLineInterval(SUI_VendorId)
         set p = GetOwningPlayer(buyer)
 
         if SUI_Parent != null and not BlzFrameIsVisible(SUI_Parent) then
@@ -1071,6 +1080,15 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
 
     private function SUI_RefreshAction takes nothing returns nothing
         if SUI_IsVisible() and SUI_BuyerUnit != null then
+            if VendorLines_AreRandomLinesEnabled(SUI_VendorId) then
+                set SUI_RandomVendorLineRemaining = SUI_RandomVendorLineRemaining - SUI_REFRESH_INTERVAL
+                if SUI_RandomVendorLineRemaining <= 0.00 then
+                    if SUI_VendorUnit != null and DialogInteraction_IsUnitAlive(SUI_VendorUnit) and not DialogSystem_IsFieldLineQueueActive() and not DialogSystem_IsSequenceActive() then
+                        call VendorLines_PlayRandomTradeLine(SUI_VendorUnit)
+                    endif
+                    set SUI_RandomVendorLineRemaining = VendorLines_GetRandomLineInterval(SUI_VendorId)
+                endif
+            endif
             call SUI_Update(SUI_GetActivePlayer())
         endif
     endfunction
