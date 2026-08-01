@@ -132,10 +132,11 @@
 ### Tool Updates
 
 - Updated `WC3_Database/WC3ItemManager`
-  - Fixed Icon Selector search so it searches all configured icon folders, respects the selected Blizzard/Custom source filter, and can match icon names or relative paths again.
-  - Replaced the problematic 6000-image cache with a bounded cache of 1000 compact thumbnails and paginated large result sets to 200 icons per page.
-  - Properly dispose removed icon controls and uncached images, preventing repeated searches or folder visits from exhausting Windows handles and causing `Error creating windows handle`.
-  - Cached the global icon index and per-folder file lists so revisiting folders avoids repeated filesystem scanning.
+  - Replaced the Icon Selector's control-per-icon and paginated result grid with a lightweight ListView so all matching textures remain browsable without exhausting Windows handles.
+  - Added a 300 ms search debounce and scoped search to the selected folder tree. The new `All configured icons` root can search both Blizzard and custom icons when a global search is needed.
+  - Load only visible icon thumbnails while browsing and retain up to 5000 compact thumbnails in memory, avoiding full-folder texture decoding on every search or folder visit.
+  - Added virtual Abilities, Items, Units, Buildings, UI, Effects, and Other filters without changing the source texture folders.
+  - Cached the global icon index so reopening the selector avoids repeated filesystem scanning, reduced initial indexing to one recursive directory pass per configured source, and now build the folder tree directly from that index instead of scanning the folders again.
   - Prevent unit-level dropdown initialization from overwriting the saved WC3 Level while opening an item. WC3 Levels changed through single-item or batch editing now remain visible when the item is reopened.
   - Updated the DEquipment CLI exporter to assign 50%, 75%, or 100% Shield Block to current and future Shield-class items according to rarity.
 
