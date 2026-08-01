@@ -1,19 +1,27 @@
-/*
-DInventory by emperor_d3st
-Here is the link to the documentation:
-https://docs.google.com/document/d/11v__wJNyUZ4i0gqzcspp4AOuQCyrS5Kb26GuHu4MHW0/edit?usp=sharing
+/**
+    DInventory
 
-Hive Workshop link (where you can reach me):
-Github link
+    Author: Valdemar
+    Version: 1.0.0
 
-Current Version 1.0.0
-2024 August 04
+    Description:
+    Frame-based per-player or per-hero inventory with stacking, paging,
+    capacity upgrades, item transfer, and read-only inspection support.
 
-Version history:
+    Credits:
+    - emperor_d3st, original DInventory system
+    - Tasyen, Warcraft III frame guidance
 
-Special thanks to Tasyen's truly heroic efforts to educate us about the wonders (and nasty bugs) of Frames:
-https://www.hiveworkshop.com/threads/the-big-ui-frame-tutorial.335296/
-*/
+    How to install:
+    Import after Table, SharedDInvLib, and Interface. Configure capacity and the
+    inventory ability in DConfigurationArea.
+
+    API:
+    - call DInvShowUnitForPlayer(viewer, unit, inspectMode)
+    - call DInvToggleUnitForPlayer(viewer, unit, inspectMode)
+    - call DInvCloseForPlayer(viewer)
+
+**/
 
 library DInventory initializer Init requires Table, SharedDInvLib, Interface, optional UnitStats
 
@@ -113,6 +121,7 @@ framehandle array InventoryPageRightButtonFrame[24]
 framehandle array InventoryPageLeftButtonIconFrame[24]
 framehandle array InventoryPageRightButtonIconFrame[24]
 framehandle array InventoryPageCounterTextFrame[24]
+framehandle array InventoryCapacityTextFrame[24]
 trigger trg_PageLeftClicked = CreateTrigger()
 trigger trg_PageRightClicked = CreateTrigger()
 string InventoryPageLeftTexture = "ReplaceableTextures\\CommandButtons\\BTNReplay-SpeedDown.blp"
@@ -823,6 +832,7 @@ call BlzFrameSetVisible(InventoryGiveButtonFrame[pid], FALSE)
 call BlzFrameSetVisible(InventoryPageLeftButtonFrame[pid], false)
 call BlzFrameSetVisible(InventoryPageRightButtonFrame[pid], false)
 call BlzFrameSetVisible(InventoryPageCounterTextFrame[pid], false)
+call BlzFrameSetVisible(InventoryCapacityTextFrame[pid], false)
 call DeactivateActiveDItemSlotIds(pid)
 endif
 ////call BJDebugMsg("CloseDInventory finished")
@@ -962,6 +972,7 @@ set slotId = SlotFrameId2DItemSlotId(pid, frameId)
 endif
 
 //call BJDebugMsg("Inv Click finished")
+call DInvRefreshCapacityTextForBID(bid)
 
 set meinFrame = null
 set u = null
@@ -1017,9 +1028,11 @@ if pid == localplyr then
     call BlzFrameSetVisible(InventoryMainFrame[pid], TRUE)
     call BlzFrameSetVisible(InventoryXButtonFrame[pid], TRUE)
     call BlzFrameSetVisible(InventoryXButtonIconFrame[pid], TRUE)
+    call BlzFrameSetVisible(InventoryCapacityTextFrame[pid], TRUE)
     call BlzFrameSetLevel(InventoryMainFrame[pid], 3)
 
     set invCap = MaxBagCapacityOfBID(ownerPid, bid)
+    call DInvApplyCapacityLayout(pid, invCap)
 
         if I2R(invCap) / I2R(ColXRow) > 1.0 then
         //Page buttons here
@@ -1581,6 +1594,13 @@ call BlzFrameSetTextSizeLimit(InventoryPageCounterTextFrame[pid], 11)
 call BlzFrameSetScale(InventoryPageCounterTextFrame[pid], 2)
 call BlzFrameSetAbsPoint(InventoryPageCounterTextFrame[pid], FRAMEPOINT_TOPLEFT, InventoryPageCounterTextTopLeftX, InventoryPageCounterTextTopLeftY)
 call BlzFrameSetAbsPoint(InventoryPageCounterTextFrame[pid], FRAMEPOINT_BOTTOMRIGHT, InventoryPageCounterTextBotRightX, InventoryPageCounterTextBotRightY)
+set InventoryCapacityTextFrame[pid] = BlzCreateFrameByType("TEXT", "DInvCapacityTxt"+I2S(pid), InventoryLowestFrame[pid], "", 0)
+call BlzFrameSetText(InventoryCapacityTextFrame[pid], "Bag: 0/"+I2S(InventoryCapacityBase))
+call BlzFrameSetTextAlignment(InventoryCapacityTextFrame[pid], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_RIGHT)
+call BlzFrameSetScale(InventoryCapacityTextFrame[pid], 0.90)
+call BlzFrameSetPoint(InventoryCapacityTextFrame[pid], FRAMEPOINT_TOPRIGHT, InventoryMainFrame[pid], FRAMEPOINT_BOTTOMRIGHT, 0.0, -0.006)
+call BlzFrameSetSize(InventoryCapacityTextFrame[pid], 0.065, 0.024)
+call BlzFrameSetEnable(InventoryCapacityTextFrame[pid], FALSE)
 call BlzFrameSetAbsPoint(InventoryPageLeftButtonFrame[pid], FRAMEPOINT_TOPLEFT, InventoryPageLeftTopLeftX, InventoryPageLeftTopLeftY)
 call BlzFrameSetAbsPoint(InventoryPageLeftButtonFrame[pid], FRAMEPOINT_BOTTOMRIGHT, InventoryPageLeftBotRightX, InventoryPageLeftBotRightY)
 call BlzFrameSetAbsPoint(InventoryPageRightButtonFrame[pid], FRAMEPOINT_TOPLEFT, InventoryPageRightTopLeftX, InventoryPageRightTopLeftY)
@@ -1617,6 +1637,7 @@ endif
 call BlzFrameSetVisible(InventoryPageLeftButtonFrame[pid], false)
 call BlzFrameSetVisible(InventoryPageRightButtonFrame[pid], false)
 call BlzFrameSetVisible(InventoryPageCounterTextFrame[pid], false)
+call BlzFrameSetVisible(InventoryCapacityTextFrame[pid], false)
 call BlzFrameSetVisible(InventoryXButtonIconFrame[pid], false)
 call BlzFrameSetVisible(InventoryXButtonFrame[pid], false)
 call BlzFrameSetVisible(InventoryGiveButtonFrame[pid], false)
