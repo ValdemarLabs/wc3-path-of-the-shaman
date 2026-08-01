@@ -473,10 +473,12 @@ private function CUI_GetDetailBody takes unit crafter, unit station, integer rec
     local integer materialCount
     local integer slot = 1
     local integer professionId
+    local integer outputItemCode
     local integer currentSkill
     local integer requiredSkill
     local string body
     local string description
+    local string itemTooltip
 
     if recipeId == 0 then
         return NoRecipesText
@@ -486,11 +488,20 @@ private function CUI_GetDetailBody takes unit crafter, unit station, integer rec
     set currentSkill = Professions_GetEffectiveSkill(crafter, professionId)
     set requiredSkill = Professions_GetRecipeRequiredSkill(recipeId)
     set description = Professions_GetRecipeDescription(recipeId)
+    set outputItemCode = Professions_GetRecipeOutputItemCode(recipeId)
+    set itemTooltip = ""
+    if outputItemCode != 0 then
+        set itemTooltip = BlzGetAbilityExtendedTooltip(outputItemCode, 0)
+    endif
     if description == null or description == "" then
         set description = "No recipe description configured."
     endif
 
-    set body = description + "|n|n|cffffcc00Crafting|r"
+    set body = description
+    if itemTooltip != null and itemTooltip != "" then
+        set body = body + "|n|n|cffffcc00Crafted item|r|n" + itemTooltip
+    endif
+    set body = body + "|n|n|cffffcc00Crafting|r"
     set body = body + "|n|cffbfbfbfProfession: " + GNS_GetProfessionName(professionId) + "|r"
     set body = body + "|n|cffbfbfbfSkill: " + I2S(currentSkill) + " / " + I2S(requiredSkill) + "|r"
     set body = body + "|n|cffbfbfbfTime: " + R2SW(Professions_GetRecipeCraftTime(recipeId), 1, 1) + " sec|r"
