@@ -13,16 +13,19 @@
     - Tasyen, GetMainSelectedUnit and Warcraft III frame guidance
 
     How to install:
-    Import after DInventory, SharedDInvLib, Table, and GetItemCost.
+    Import after DInventory, SharedDInvLib, Table, GetItemCost, and
+    AbilityShieldBlock.
 
     API:
     - call DEqShowUnitForPlayer(viewer, unit, inspectMode)
     - call ToggleDEqUIForUnit(playerId, unit)
     - call DInventoryEquipment_Hide()
+    - call DEqItemTypeDefineShieldBlock(itemTypeId, blockAmount)
+    - call DEqItemTypeDefineAsShield(itemTypeId) // 50% compatibility helper
 
 **/
 
-library DEquipment initializer Init requires DInventory, Table, SharedDInvLib, GetItemCost
+library DEquipment initializer Init requires DInventory, Table, SharedDInvLib, GetItemCost, AbilityShieldBlock
 
 globals
 trigger trg_AutoAddNewHeroToDEq = CreateTrigger()
@@ -47,6 +50,7 @@ trigger trg_DEqSlotClicked = CreateTrigger()
 trigger trg_DInspectButtonClicked = CreateTrigger()
 trigger trg_DInspectUnitSelected = CreateTrigger()
 trigger trg_DInspectUnitDeselected = CreateTrigger()
+
 framehandle array EquipmentBackDropFrame[24]
 framehandle array DInspectButtonFrame[24]
 unit array DInspectSelectedUnit[24]
@@ -304,6 +308,18 @@ set loopi = loopi + 1
 endloop
 set DEqItemTypeDefinitionDB[iid][7].integer[loopi] = abid
 set DEqItemTypeDefinitionDB[iid][11].integer[loopi] = ablev
+endfunction
+
+
+
+function DEqItemTypeDefineShieldBlock takes integer iid, integer blockAmount returns nothing
+call DEqItemTypeDefineAbilityGranted(iid, AbilityShieldBlock_GetAbilityId(blockAmount), 1)
+endfunction
+
+
+
+function DEqItemTypeDefineAsShield takes integer iid returns nothing
+call DEqItemTypeDefineShieldBlock(iid, 50)
 endfunction
 
 
@@ -715,8 +731,8 @@ call BlzFrameSetText(DInspectButtonFrame[pid], "Inspect")
 call BlzFrameSetTextAlignment(DInspectButtonFrame[pid], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
 call BlzFrameSetScale(DInspectButtonFrame[pid], 0.85)
 call BlzFrameSetLevel(DInspectButtonFrame[pid], 8)
-call BlzFrameSetPoint(DInspectButtonFrame[pid], FRAMEPOINT_BOTTOMLEFT, BlzGetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPLEFT, 0.00, 0.014)
-call BlzFrameSetPoint(DInspectButtonFrame[pid], FRAMEPOINT_TOPRIGHT, BlzGetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 1), FRAMEPOINT_TOPRIGHT, 0.00, 0.040)
+call BlzFrameSetPoint(DInspectButtonFrame[pid], FRAMEPOINT_BOTTOMLEFT, BlzGetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPLEFT, 0.00, 0.018)
+call BlzFrameSetPoint(DInspectButtonFrame[pid], FRAMEPOINT_TOPRIGHT, BlzGetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 1), FRAMEPOINT_TOPRIGHT, 0.00, 0.044)
 call BlzFrameSetVisible(DInspectButtonFrame[pid], FALSE)
 call BlzTriggerRegisterFrameEvent(trg_DInspectButtonClicked, DInspectButtonFrame[pid], FRAMEEVENT_CONTROL_CLICK)
 endfunction
