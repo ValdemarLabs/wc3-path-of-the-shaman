@@ -1,3 +1,25 @@
+/**
+    DConfigurationArea
+
+    Author: Valdemar
+    Version:
+
+    Description:
+    Shared configuration for DInventory, DEquipment, item rarity, stacking,
+    capacity, and related item-system modules.
+
+    Credits:
+    - emperor_d3st, original Destroyer inventory and equipment system
+
+    How to install:
+    Import before SharedDInvLib and the remaining Destroyer system libraries.
+
+    API:
+    - Configure InventoryCapacityBase and InventoryCapacityMaximum.
+    - Configure InventoryColumns and InventoryRows for the visible page grid.
+    - Implement DInvIsItemIdOnGlobalExclusionList for map-specific exclusions.
+
+**/
 library DConfigurationArea initializer Init requires Table, GetItemCost
 
 globals
@@ -53,17 +75,18 @@ boolean AutomaticallyAddHeroesToTheSystem = FALSE
 boolean MakeDInventoryAcceptUndroppableItems = FALSE
 //Drop items that in the Object Editor are set to "Dropped on death = TRUE"
 boolean MakeDInventoryDropDroppedOnDeathItems = TRUE
-//Maximum number of slots PER PAGE may not exceed 340 in this system
-// So do NOT make Rows*Colums > 340
+// Maximum number of visible slots per page may not exceed 340 in this system.
+// The inventory grows from the starting 3 rows up to the configured 6-row view.
 integer InventoryPages = 1
 integer InventoryColumns = 4
-integer InventoryRows = 3
+integer InventoryRows = 6
 integer ColXRow = InventoryColumns * InventoryRows
 //The actual number of items you can carry. If you want you can adjust this number mid-game.
 // Or if you have 1 inventory per hero paradigm, you can use a function to adjust the number of items each individual can carry:
 // By default it is assumed that you choose the number of rows, columns, pages to make up the inventory capacity
-// CONFIGURED: Starting with 12 slots (3 rows x 4 columns), can be extended by buying bags from vendors
-integer InventoryCapacityBase = ColXRow * InventoryPages
+// CONFIGURED: Start with 12 slots and allow bag upgrades up to the hard total cap.
+integer InventoryCapacityBase = 12
+integer InventoryCapacityMaximum = 80
 //If this is TRUE, then items picked up by heroes will automatically be attempted to be stored in the DInventory.
 //If FALSE, you need to drag and drop every item from the vanilla inventory to the DInventory in order to store them
 // currently it must be set to TRUE as the manual way is not yet implemented
