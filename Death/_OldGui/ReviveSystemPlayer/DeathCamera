@@ -1,0 +1,23 @@
+Death Camera
+    Events
+    Conditions
+    Actions
+        Unit - Create 1 DummyDeath for Player 1 (Red) at DeathCameraPoint facing Default building facing degrees
+        Unit - Add a 30.00 second Generic expiration timer to (Last created unit)
+        Camera - Lock camera target for Player 1 (Red) to (Last created unit), offset by (0.00, 0.00) using Default rotation
+        -------- Instantly snap the camera to the point --------
+        Camera - Pan camera for Player 1 (Red) to DeathCameraPoint over 0.00 seconds
+        -------- Set camera distance/angle for zoom effect --------
+        Camera - Set Player 1 (Red)'s camera Distance to target to 1400.00 over 2.00 seconds
+        Camera - Set Player 1 (Red)'s camera Angle of attack to 280.00 over 2.00 seconds
+        Camera - Set Player 1 (Red)'s camera Rotation to 90.00 over 2.00 seconds
+        -------- Smoothly zoom in a bit more --------
+        Camera - Set Player 1 (Red)'s camera Distance to target to 1300.00 over 4.00 seconds
+        Camera - Set Player 1 (Red)'s camera Angle of attack to 315.00 over 8.00 seconds
+        -------- Rotate around the death point --------
+        Camera - Rotate camera 360.00 degrees around DeathCameraPoint for Player 1 (Red) over 45.00 seconds
+        -------- Cleanup --------
+        Custom script:   call RemoveLocation(udg_DeathCameraPoint)
+        -------- Wait until Hero is revived --------
+        Wait 30.00 seconds
+        Camera - Reset camera for Player 1 (Red) to standard game-view over 0.00 seconds
