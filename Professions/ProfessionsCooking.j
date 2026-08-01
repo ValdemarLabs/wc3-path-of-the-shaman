@@ -16,7 +16,8 @@
     Table, Drunk, and UnitStats. Cooking recipes are currently registered only
     against the Camp Fire unit ('n61C'). Later fire-source units should be added
     as extra station registrations here, not by loosening the crafting distance
-    check.
+    check. Active recipe aura abilities are hidden from the unit command card;
+    their associated buff icons remain available in the status bar.
 
     Food and drink buff notes:
     Cooking owns timed stat add/remove directly. One food buff and one drink
@@ -461,6 +462,7 @@ private function PC_AddEffectAura takes unit whichUnit, integer effectId returns
     set auraAbilityId = PC_EffectAuraAbility[effectId]
     if auraAbilityId != 0 then
         call UnitAddAbility(whichUnit, auraAbilityId)
+        call BlzUnitHideAbility(whichUnit, auraAbilityId, true)
     endif
 endfunction
 
