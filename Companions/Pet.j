@@ -2,17 +2,25 @@
     Pet
 
     Author: Valdemar
-    Credits:
-    - Old GUI pet/taming triggers, converted and consolidated into JASS.
     Version:
 
     Description:
     Pet and tame-beast logic. Pets use the companion control layer for follow
-    modes, but keep separate ownership, tame, fatigue, revival, food, rename,
-    and Shadowclaw rules.
+    modes, but keep separate ownership, tame, roster, fatigue, revival, food,
+    rename, and Shadowclaw rules.
+
+    Credits:
+    - Old GUI pet/taming triggers, converted and consolidated into JASS.
+
+    How to install:
+    Import after the required libraries and disable the legacy GUI pet triggers.
+
+    API:
+    Pet_CanRename, Pet_ShowRenamePrompt, Pet_IsPetUnit, Pet_IsDead,
+    Pet_GetClassInfoText, Pet_GetTypeInfoText, and Pet_GetAbilityInfoText.
 
 **/
-library Pet initializer Init requires Table, Companions, UnitExperience, DamageEngine, FloatingTextSimple, PetDefinitions, Events, UnitDeathEvent
+library Pet initializer Init requires Table, Companions, UnitExperience, DamageEngine, FloatingTextSimple, PetDefinitions, Events
 
 globals
     private constant boolean DEBUG = false
@@ -22,8 +30,10 @@ globals
     private constant real PET_REVIVE_DURATION = 20.00
     private constant real TAME_DAMAGE_MULTIPLIER = 1.75
     private constant real SHADOWCLAW_INIT_RETRY_DELAY = 0.50
-    private constant real SHADOWCLAW_HOME_TELEPORT_DELAY = 120.00
-    private constant real SHADOWCLAW_HOME_ARRIVE_DISTANCE = 300.00
+    private constant real PET_HOME_TELEPORT_DELAY = 120.00
+    private constant real PET_HOME_ARRIVE_DISTANCE = 300.00
+    // Maximum ordinary pets in the roster; Shadowclaw does not use a slot.
+    private constant integer MAX_NON_SHADOWCLAW_PETS = 2
 
     private constant integer ABIL_INVITE = 'A622'
     private constant integer ABIL_KICK = 'A621'
@@ -37,17 +47,24 @@ globals
     private Table TameTimer = 0
     private Table TameTimerCaster = 0
     private Table TameReady = 0
-    private Table TameAbility = 0
     private Table FreezeTimerUnit = 0
-    private Table PetPersistent = 0
+    private Table PetHomeTimer = 0
+    private Table HomeTimerPet = 0
 
     private group PetEnumGroup = null
+    private group PetRoster = null
     private unit FoundShadowclaw = null
     private player SelectedPetPlayer = null
     private unit SelectedPetTarget = null
     private integer SelectedPetCount = 0
     private trigger PetDamageTrigger = null
-    private timer ShadowclawHomeTimer = null
+    private dialog DismissPetDialog = null
+    private trigger DismissPetTrigger = null
+    private button DismissPetButtonOne = null
+    private button DismissPetButtonTwo = null
+    private unit DismissPetOne = null
+    private unit DismissPetTwo = null
+    private integer TamedRosterCount = 0
 endglobals
 
 private function DebugMsg takes string msg returns nothing
@@ -62,12 +79,15 @@ private function EnsureState takes nothing returns nothing
         set TameTimer = Table.create()
         set TameTimerCaster = Table.create()
         set TameReady = Table.create()
-        set TameAbility = Table.create()
         set FreezeTimerUnit = Table.create()
-        set PetPersistent = Table.create()
+        set PetHomeTimer = Table.create()
+        set HomeTimerPet = Table.create()
     endif
     if PetEnumGroup == null then
         set PetEnumGroup = CreateGroup()
+    endif
+    if PetRoster == null then
+        set PetRoster = CreateGroup()
     endif
 endfunction
 
@@ -88,29 +108,8 @@ private function EnsurePetGroup takes nothing returns nothing
     endif
 endfunction
 
-private function IsPersistentTameAbility takes integer abilityId returns boolean
-    return abilityId == ABIL_TAME_III
-endfunction
-
-private function SetPetPersistent takes unit pet, boolean persistent returns nothing
-    if pet == null or PetPersistent == 0 then
-        return
-    endif
-    if persistent or pet == udg_Shadowclaw then
-        set PetPersistent[GetHandleId(pet)] = 1
-    else
-        call PetPersistent.remove(GetHandleId(pet))
-    endif
-endfunction
-
-private function IsPersistentPet takes unit pet returns boolean
-    if pet == null then
-        return false
-    endif
-    if pet == udg_Shadowclaw then
-        return true
-    endif
-    return PetPersistent != 0 and PetPersistent[GetHandleId(pet)] == 1
+private function IsRosterPet takes unit pet returns boolean
+    return pet != null and PetRoster != null and IsUnitInGroup(pet, PetRoster)
 endfunction
 
 private function GetPreferredLeader takes unit caster returns unit
@@ -249,7 +248,6 @@ private function ClearTameState takes integer casterKey, boolean clearReady retu
 
     set TameTimer.timer[casterKey] = null
     call TameTarget.remove(casterKey)
-    call TameAbility.remove(casterKey)
     if clearReady then
         call TameReady.remove(casterKey)
         set udg_TM_TimerFinished = false
@@ -293,8 +291,13 @@ private function StartTame takes unit caster, unit target, integer abilityId ret
         return
     endif
 
-    if GetPetCount() >= 1 then
-        call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "You already have a beast companion.")
+    if udg_Pet_Dead then
+        call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "Your current pet must recover before you tame another beast.")
+        return
+    endif
+
+    if IsRosterPet(target) then
+        call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(target) + " is already one of your pets.")
         return
     endif
 
@@ -320,7 +323,6 @@ private function StartTame takes unit caster, unit target, integer abilityId ret
     set udg_Pet_TamerChanneling[casterKey] = true
     set udg_UDexUnits[casterKey] = target
     set TameTarget.unit[casterKey] = target
-    set TameAbility[casterKey] = abilityId
     set TameReady[casterKey] = 0
 
     call IssuePointOrder(target, "attack", GetUnitX(caster), GetUnitY(caster))
@@ -399,7 +401,7 @@ endfunction
 private function FatiguePet takes unit pet returns nothing
     local player textPlayer
 
-    if pet == null or udg_Pet_Dead or not IsPersistentPet(pet) then
+    if pet == null or udg_Pet_Dead then
         return
     endif
 
@@ -442,14 +444,12 @@ private function OnPetDamaged takes nothing returns nothing
 
     set life = GetWidgetLife(pet)
     if damage >= life - 0.41 then
-        if IsPersistentPet(pet) then
-            if life > 1.00 then
-                call BlzSetEventDamage(life - 1.00)
-            else
-                call BlzSetEventDamage(0.00)
-            endif
-            call FatiguePet(pet)
+        if life > 1.00 then
+            call BlzSetEventDamage(life - 1.00)
+        else
+            call BlzSetEventDamage(0.00)
         endif
+        call FatiguePet(pet)
     endif
 
     set pet = null
@@ -467,36 +467,26 @@ private function RefreshPetDamageTrigger takes unit pet returns nothing
     endif
 endfunction
 
-private function HandlePermanentPetDeath takes unit pet returns nothing
-    if pet == null or udg_TamedUnits == null or not IsUnitInGroup(pet, udg_TamedUnits) or IsPersistentPet(pet) then
+private function StopPetHomeFallback takes unit pet returns nothing
+    local integer petId
+    local timer homeTimer
+
+    if pet == null then
         return
     endif
 
-    set udg_CompanionUnitKicked = pet
-    call UnitExperience_DisableXP(pet, true)
-    call Companions_UnregisterControlled(pet)
-    call GroupRemoveUnit(udg_TamedUnits, pet)
-    call RemovePetFocus(pet)
-    call RefreshPetDamageTrigger(null)
-    call PetPersistent.remove(GetHandleId(pet))
-
-    if pet == udg_TamedUnit then
-        set udg_TamedUnit = null
+    set petId = GetHandleId(pet)
+    set homeTimer = PetHomeTimer.timer[petId]
+    if homeTimer != null then
+        call HomeTimerPet.remove(GetHandleId(homeTimer))
+        call PauseTimer(homeTimer)
+        call DestroyTimer(homeTimer)
+        set PetHomeTimer.timer[petId] = null
     endif
-    set udg_Pet_Dead = false
-
-    call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(pet) + " has died.")
+    set homeTimer = null
 endfunction
 
-private function StopShadowclawHomeFallback takes nothing returns nothing
-    if ShadowclawHomeTimer != null then
-        call PauseTimer(ShadowclawHomeTimer)
-        call DestroyTimer(ShadowclawHomeTimer)
-        set ShadowclawHomeTimer = null
-    endif
-endfunction
-
-private function IsShadowclawAtHome takes unit pet returns boolean
+private function IsPetAtHome takes unit pet returns boolean
     local real dx
     local real dy
 
@@ -506,33 +496,45 @@ private function IsShadowclawAtHome takes unit pet returns boolean
 
     set dx = GetUnitX(pet) - GetRectCenterX(gg_rct_NazgrekIntroPoint)
     set dy = GetUnitY(pet) - GetRectCenterY(gg_rct_NazgrekIntroPoint)
-    return dx * dx + dy * dy <= SHADOWCLAW_HOME_ARRIVE_DISTANCE * SHADOWCLAW_HOME_ARRIVE_DISTANCE
+    return dx * dx + dy * dy <= PET_HOME_ARRIVE_DISTANCE * PET_HOME_ARRIVE_DISTANCE
 endfunction
 
-private function TeleportShadowclawHomeFallback takes nothing returns nothing
-    local unit pet = udg_Shadowclaw
+private function TeleportPetHomeFallback takes nothing returns nothing
+    local timer expired = GetExpiredTimer()
+    local integer timerId = GetHandleId(expired)
+    local unit pet = HomeTimerPet.unit[timerId]
 
-    if pet != null and GetUnitTypeId(pet) != 0 and gg_rct_NazgrekIntroPoint != null and not IsShadowclawAtHome(pet) then
+    if pet != null and GetUnitTypeId(pet) != 0 and gg_rct_NazgrekIntroPoint != null and not IsPetAtHome(pet) then
         call SetUnitX(pet, GetRectCenterX(gg_rct_NazgrekIntroPoint))
         call SetUnitY(pet, GetRectCenterY(gg_rct_NazgrekIntroPoint))
         call IssueImmediateOrder(pet, "stop")
     endif
 
-    call StopShadowclawHomeFallback()
+    if pet != null then
+        set PetHomeTimer.timer[GetHandleId(pet)] = null
+    endif
+    call HomeTimerPet.remove(timerId)
+    call DestroyTimer(expired)
     set pet = null
+    set expired = null
 endfunction
 
-private function StartShadowclawHomeFallback takes unit pet returns nothing
+private function StartPetHomeFallback takes unit pet returns nothing
+    local timer homeTimer
+
     if pet == null or gg_rct_NazgrekIntroPoint == null then
         return
     endif
 
-    call StopShadowclawHomeFallback()
-    set ShadowclawHomeTimer = CreateTimer()
-    call TimerStart(ShadowclawHomeTimer, SHADOWCLAW_HOME_TELEPORT_DELAY, false, function TeleportShadowclawHomeFallback)
+    call StopPetHomeFallback(pet)
+    set homeTimer = CreateTimer()
+    set PetHomeTimer.timer[GetHandleId(pet)] = homeTimer
+    set HomeTimerPet.unit[GetHandleId(homeTimer)] = pet
+    call TimerStart(homeTimer, PET_HOME_TELEPORT_DELAY, false, function TeleportPetHomeFallback)
+    set homeTimer = null
 endfunction
 
-private function SendShadowclawHome takes unit pet returns nothing
+private function SendPetHome takes unit pet returns nothing
     if pet == null then
         return
     endif
@@ -542,11 +544,168 @@ private function SendShadowclawHome takes unit pet returns nothing
     call RemovePetWander(pet)
     if gg_rct_NazgrekIntroPoint != null then
         call IssuePointOrder(pet, "move", GetRectCenterX(gg_rct_NazgrekIntroPoint), GetRectCenterY(gg_rct_NazgrekIntroPoint))
-        call StartShadowclawHomeFallback(pet)
+        call StartPetHomeFallback(pet)
     endif
 endfunction
 
-private function RegisterPetUnit takes unit pet, unit leader, boolean resetCounters, boolean startSuspended, boolean persistent returns nothing
+private function StoreActivePet takes unit pet, boolean playSound, boolean announce returns boolean
+    if pet == null or udg_TamedUnits == null or not IsUnitInGroup(pet, udg_TamedUnits) then
+        return false
+    endif
+    if pet == udg_TamedUnit and udg_Pet_Dead then
+        call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(pet) + " must recover before returning home.")
+        return false
+    endif
+
+    set udg_CompanionUnitKicked = pet
+    if playSound and gg_snd_UpkeepRing != null then
+        call StartSound(gg_snd_UpkeepRing)
+    endif
+
+    call UnitExperience_DisableXP(pet, true)
+    call Companions_UnregisterControlled(pet)
+    call GroupRemoveUnit(udg_TamedUnits, pet)
+    call RemovePetFocus(pet)
+    call IssueImmediateOrder(pet, "stop")
+    call SetUnitPathing(pet, true)
+    call PauseUnit(pet, false)
+    call SetUnitTimeScale(pet, 1.00)
+    call RefreshPetDamageTrigger(null)
+
+    if pet == udg_TamedUnit then
+        set udg_TamedUnit = null
+    endif
+    set udg_Pet_Dead = false
+    call SendPetHome(pet)
+
+    if announce then
+        call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(pet) + " is waiting at home.")
+    endif
+    return true
+endfunction
+
+private function CountTamedRosterPetEnum takes nothing returns nothing
+    local unit pet = GetEnumUnit()
+    if pet != null and pet != udg_Shadowclaw then
+        set TamedRosterCount = TamedRosterCount + 1
+    endif
+    set pet = null
+endfunction
+
+private function GetTamedRosterCount takes nothing returns integer
+    set TamedRosterCount = 0
+    if PetRoster != null then
+        call ForGroup(PetRoster, function CountTamedRosterPetEnum)
+    endif
+    return TamedRosterCount
+endfunction
+
+private function FindDismissPetEnum takes nothing returns nothing
+    local unit pet = GetEnumUnit()
+    if pet != null and pet != udg_Shadowclaw and pet != udg_TamedUnit then
+        if DismissPetOne == null then
+            set DismissPetOne = pet
+        elseif DismissPetTwo == null then
+            set DismissPetTwo = pet
+        endif
+    endif
+    set pet = null
+endfunction
+
+private function DropPetItems takes unit pet returns nothing
+    local integer slot = 0
+    local integer maxSlots = UnitInventorySize(pet)
+    local item droppedItem
+    local real angle
+    local real x = GetUnitX(pet)
+    local real y = GetUnitY(pet)
+
+    if maxSlots > 6 then
+        set maxSlots = 6
+    endif
+
+    loop
+        exitwhen slot >= maxSlots
+        set droppedItem = UnitItemInSlot(pet, slot)
+        if droppedItem != null then
+            call UnitRemoveItem(pet, droppedItem)
+            set angle = 6.2831853 * I2R(slot) / 6.00
+            call SetItemPosition(droppedItem, x + 90.00 * Cos(angle), y + 90.00 * Sin(angle))
+        endif
+        set slot = slot + 1
+    endloop
+
+    set droppedItem = null
+endfunction
+
+private function DismissRosterPet takes unit pet returns nothing
+    if pet == null or not IsRosterPet(pet) or pet == udg_Shadowclaw or pet == udg_TamedUnit then
+        return
+    endif
+
+    call StopPetHomeFallback(pet)
+    if gg_rct_NazgrekIntroPoint != null then
+        call SetUnitX(pet, GetRectCenterX(gg_rct_NazgrekIntroPoint))
+        call SetUnitY(pet, GetRectCenterY(gg_rct_NazgrekIntroPoint))
+        call IssueImmediateOrder(pet, "stop")
+    endif
+    call DropPetItems(pet)
+    call GroupRemoveUnit(PetRoster, pet)
+    call UnitExperience_DisableXP(pet, true)
+    call Companions_UnregisterControlled(pet)
+    call RemovePetFocus(pet)
+    call SetUnitInvulnerable(pet, false)
+    call SetUnitOwner(pet, Player(PLAYER_NEUTRAL_PASSIVE), true)
+    if GetUnitAbilityLevel(pet, ABIL_WANDER_NEUTRAL) == 0 then
+        call UnitAddAbility(pet, ABIL_WANDER_NEUTRAL)
+    endif
+    call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(pet) + " has been dismissed.")
+endfunction
+
+private function OnDismissPet takes nothing returns nothing
+    local button clicked = GetClickedButton()
+
+    call DialogDisplay(Player(CONTROL_PLAYER_INDEX), DismissPetDialog, false)
+    if clicked == DismissPetButtonOne then
+        call DismissRosterPet(DismissPetOne)
+    elseif clicked == DismissPetButtonTwo then
+        call DismissRosterPet(DismissPetTwo)
+    endif
+
+    set DismissPetButtonOne = null
+    set DismissPetButtonTwo = null
+    set DismissPetOne = null
+    set DismissPetTwo = null
+    set clicked = null
+endfunction
+
+private function ShowDismissPetDialog takes nothing returns nothing
+    if GetTamedRosterCount() <= MAX_NON_SHADOWCLAW_PETS then
+        return
+    endif
+
+    set DismissPetOne = null
+    set DismissPetTwo = null
+    call ForGroup(PetRoster, function FindDismissPetEnum)
+    if DismissPetOne == null or DismissPetTwo == null then
+        return
+    endif
+
+    if DismissPetDialog == null then
+        set DismissPetDialog = DialogCreate()
+        set DismissPetTrigger = CreateTrigger()
+        call TriggerRegisterDialogEvent(DismissPetTrigger, DismissPetDialog)
+        call TriggerAddAction(DismissPetTrigger, function OnDismissPet)
+    endif
+
+    call DialogClear(DismissPetDialog)
+    call DialogSetMessage(DismissPetDialog, "Choose a pet to dismiss")
+    set DismissPetButtonOne = DialogAddButton(DismissPetDialog, GetUnitName(DismissPetOne), 0)
+    set DismissPetButtonTwo = DialogAddButton(DismissPetDialog, GetUnitName(DismissPetTwo), 0)
+    call DialogDisplay(Player(CONTROL_PLAYER_INDEX), DismissPetDialog, true)
+endfunction
+
+private function RegisterPetUnit takes unit pet, unit leader, boolean resetCounters, boolean startSuspended returns nothing
     local integer petKey
     local boolean registered
     local unit focusLeader = leader
@@ -557,11 +716,11 @@ private function RegisterPetUnit takes unit pet, unit leader, boolean resetCount
     endif
 
     if pet == udg_Shadowclaw then
-        call StopShadowclawHomeFallback()
         if udg_Nazgrek != null then
             set focusLeader = udg_Nazgrek
         endif
     endif
+    call StopPetHomeFallback(pet)
 
     set petKey = GetUnitUserData(pet)
     if petKey > 0 then
@@ -570,7 +729,7 @@ private function RegisterPetUnit takes unit pet, unit leader, boolean resetCount
 
     call EnsurePetGroup()
     call GroupAddUnit(udg_TamedUnits, pet)
-    call SetPetPersistent(pet, persistent)
+    call GroupAddUnit(PetRoster, pet)
     call RemovePetWander(pet)
     call SetPetFocus(pet, focusLeader)
     call SetUnitPathing(pet, true)
@@ -664,7 +823,7 @@ private function OnShadowclawInitTimer takes nothing returns nothing
 
     if shadowclaw != null then
         call ScaleShadowclawStats(shadowclaw)
-        call RegisterPetUnit(shadowclaw, udg_Nazgrek, true, udg_InCinematic, true)
+        call RegisterPetUnit(shadowclaw, udg_Nazgrek, true, udg_InCinematic)
     endif
 
     if expired != null then
@@ -674,27 +833,33 @@ private function OnShadowclawInitTimer takes nothing returns nothing
     set expired = null
 endfunction
 
-private function CompleteTame takes unit caster, unit target, integer abilityId returns nothing
+private function CompleteTame takes unit caster, unit target returns nothing
     local unit leader
+    local unit currentPet = udg_TamedUnit
 
     if caster == null or target == null or GetUnitTypeId(target) == 0 then
+        set currentPet = null
         return
     endif
 
-    if GetPetCount() >= 1 then
-        call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "You already have a beast companion.")
-        return
+    if currentPet != null and currentPet != target then
+        if not StoreActivePet(currentPet, false, true) then
+            set currentPet = null
+            return
+        endif
     endif
 
     set leader = GetPreferredLeader(caster)
-    call RegisterPetUnit(target, leader, true, false, IsPersistentTameAbility(abilityId))
+    call RegisterPetUnit(target, leader, true, false)
 
     if gg_snd_Rescue != null then
         call StartSound(gg_snd_Rescue)
     endif
     call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(target) + " has been tamed.")
+    call ShowDismissPetDialog()
 
     set leader = null
+    set currentPet = null
 endfunction
 
 private function FinishTame takes unit caster, integer abilityId returns nothing
@@ -712,7 +877,7 @@ private function FinishTame takes unit caster, integer abilityId returns nothing
 
     set target = TameTarget.unit[casterKey]
     if TameReady[casterKey] == 1 and target != null then
-        call CompleteTame(caster, target, abilityId)
+        call CompleteTame(caster, target)
     endif
 
     call ClearTameState(casterKey, true)
@@ -736,58 +901,34 @@ private function CancelTame takes unit caster, integer abilityId returns nothing
     endif
 endfunction
 
-private function InviteShadowclaw takes unit caster, unit target returns nothing
-    if target == null or target != udg_Shadowclaw then
+private function InvitePet takes unit caster, unit target returns nothing
+    local unit currentPet = udg_TamedUnit
+
+    if target == null or not IsRosterPet(target) or target == currentPet then
+        set currentPet = null
         return
     endif
 
-    if GetPetCount() >= 1 then
-        call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "You already have a beast companion.")
-        return
+    if currentPet != null then
+        if not StoreActivePet(currentPet, false, true) then
+            set currentPet = null
+            return
+        endif
     endif
 
-    call ScaleShadowclawStats(target)
-    call RegisterPetUnit(target, GetPreferredLeader(caster), true, false, true)
+    if target == udg_Shadowclaw then
+        call ScaleShadowclawStats(target)
+    endif
+    call RegisterPetUnit(target, GetPreferredLeader(caster), true, false)
     if gg_snd_Rescue != null then
         call StartSound(gg_snd_Rescue)
     endif
     call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(target) + " has joined you again.")
+    set currentPet = null
 endfunction
 
 private function KickPet takes unit pet returns nothing
-    if pet == null or udg_TamedUnits == null or not IsUnitInGroup(pet, udg_TamedUnits) then
-        return
-    endif
-
-    set udg_CompanionUnitKicked = pet
-    if gg_snd_UpkeepRing != null then
-        call StartSound(gg_snd_UpkeepRing)
-    endif
-
-    call UnitExperience_DisableXP(pet, true)
-    call Companions_UnregisterControlled(pet)
-    call GroupRemoveUnit(udg_TamedUnits, pet)
-    call RemovePetFocus(pet)
-    call IssueImmediateOrder(pet, "stop")
-    call SetUnitPathing(pet, true)
-    call PauseUnit(pet, false)
-    call SetUnitTimeScale(pet, 1.00)
-    call RefreshPetDamageTrigger(null)
-    call PetPersistent.remove(GetHandleId(pet))
-
-    set udg_TamedUnit = null
-    set udg_Pet_Dead = false
-
-    if pet == udg_Shadowclaw then
-        call SendShadowclawHome(pet)
-    else
-        call SetUnitOwner(pet, Player(PLAYER_NEUTRAL_PASSIVE), true)
-        if GetUnitAbilityLevel(pet, ABIL_WANDER_NEUTRAL) == 0 then
-            call UnitAddAbility(pet, ABIL_WANDER_NEUTRAL)
-        endif
-    endif
-
-    call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(pet) + " is no longer your pet.")
+    call StoreActivePet(pet, true, true)
 endfunction
 
 private function GetCommandPlayer takes unit caster returns player
@@ -855,7 +996,7 @@ private function OnSpellEffect takes nothing returns nothing
     if IsTameAbility(abilityId) then
         call StartTame(caster, target, abilityId)
     elseif abilityId == ABIL_INVITE then
-        call InviteShadowclaw(caster, target)
+        call InvitePet(caster, target)
     elseif abilityId == ABIL_KICK then
         set target = ResolvePetCommandTarget(caster, target)
         call KickPet(target)
@@ -890,24 +1031,16 @@ private function OnDamageModifier takes nothing returns nothing
     if damaged == udg_TamedUnit and not udg_Pet_Dead and udg_DamageEventAmount > 0.00 then
         set life = GetWidgetLife(damaged)
         if udg_DamageEventAmount >= life - 0.41 then
-            if IsPersistentPet(damaged) then
-                if life > 1.00 then
-                    set udg_DamageEventAmount = life - 1.00
-                else
-                    set udg_DamageEventAmount = 0.00
-                endif
-                call FatiguePet(damaged)
+            if life > 1.00 then
+                set udg_DamageEventAmount = life - 1.00
+            else
+                set udg_DamageEventAmount = 0.00
             endif
+            call FatiguePet(damaged)
         endif
     endif
 
     set damaged = null
-endfunction
-
-private function OnUnitDeath takes nothing returns nothing
-    local unit dying = GetDyingUnit()
-    call HandlePermanentPetDeath(dying)
-    set dying = null
 endfunction
 
 private function OnPetPickupItem takes nothing returns nothing
@@ -1019,13 +1152,7 @@ public function ShowRenamePrompt takes unit pet returns nothing
 endfunction
 
 public function IsPetUnit takes unit pet returns boolean
-    if pet == null then
-        return false
-    endif
-    if pet == udg_TamedUnit then
-        return true
-    endif
-    return udg_TamedUnits != null and IsUnitInGroup(pet, udg_TamedUnits)
+    return IsRosterPet(pet)
 endfunction
 
 public function IsDead takes unit pet returns boolean
@@ -1058,8 +1185,6 @@ private function Init takes nothing returns nothing
     set t = CreateTrigger()
     call TriggerRegisterVariableEvent(t, "udg_DamageModifierEvent", EQUAL, 1.00)
     call TriggerAddAction(t, function OnDamageModifier)
-
-    call UnitDeathEvent_Register(function OnUnitDeath)
 
     set t = CreateTrigger()
     call TriggerRegisterPlayerChatEvent(t, Player(0), "/pet rename ", false)

@@ -2,8 +2,6 @@
     Companions
 
     Author: Valdemar
-    Credits:
-    - Old GUI companion triggers, converted and consolidated into JASS.
     Version:
 
     Description:
@@ -12,6 +10,12 @@
     synchronized for older systems. Normal companions and pets use this
     library's companion controller; quest escort cases can opt into
     FollowSystem leash behavior explicitly.
+
+    Credits:
+    - Old GUI companion triggers, converted and consolidated into JASS.
+
+    How to install:
+    Import with the required libraries and disable the replaced GUI triggers.
 
     API:
     call Companions_Add(unit companionUnit, string companionIcon, unit leader, integer mode)
@@ -2643,8 +2647,10 @@ private function OnSpellEffect takes nothing returns nothing
     if mode != 0 then
         call ApplyModeFromCommand(caster, target, mode)
     elseif abilityId == ABIL_INVITE then
-        if target != udg_Shadowclaw then
-            call HandleInvite(caster, target)
+        if target != null then
+            if target != udg_Shadowclaw and target != udg_TamedUnit and GetOwningPlayer(target) != Player(COMPANION_OWNER_INDEX) then
+                call HandleInvite(caster, target)
+            endif
         endif
     elseif abilityId == ABIL_KICK then
         if target == null or udg_TamedUnits == null or not IsUnitInGroup(target, udg_TamedUnits) then
