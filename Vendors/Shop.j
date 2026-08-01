@@ -15,8 +15,9 @@
       https://www.hiveworkshop.com/threads/custom-rpg-shop-system.372995/
 
     How to install:
-    Import after Table and the PotS DInventory/DEquipment stack. Import ShopUI
-    after this file. Vendor files should live in Vendors/ and require Shop.
+    Import after Table, ZonesCore, Reputation, and the PotS
+    DInventory/DEquipment stack. Import ShopUI after this file. Vendor files
+    should live in Vendors/ and require Shop.
 
     API:
     - set vendorId = Shop_CreateVendor(name, unitTypeId)
@@ -30,6 +31,10 @@
     - call Shop_SetStockMinimumReputation(entryId, reputation)
     - call Shop_SetStockCharges(entryId, charges)
     - call Shop_SetStockSupply(entryId, maximum, replenishSeconds)
+    - call Shop_SetStockZone(entryId, zoneId, includeChildZones)
+    - set entryId = Shop_AddRandomStock(vendorId, itemTypeId, price, category)
+    - call Shop_AddRandomStockOption(entryId, itemTypeId)
+    - call Shop_SetVendorRandomStockOnTrade(vendorId, enabled)
     - call Shop_EndTradeSession()
     - set boughtCount = Shop_GetSessionBoughtTransactionCount()
     - set soldCount = Shop_GetSessionSoldTransactionCount()
@@ -42,7 +47,7 @@
     - call Shop_AISellSimple(aiUnit, vendor)
 
 **/
-library Shop initializer Init requires Table, DEquipment, Reputation
+library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
     globals
         // Public view/source constants used by ShopUI.
         constant integer SHOP_VIEW_MERCHANT = 1
@@ -58,6 +63,7 @@ library Shop initializer Init requires Table, DEquipment, Reputation
         private constant integer SHP_MAX_STOCK = 512
         private constant integer SHP_MAX_VIEW_ITEMS = 192
         private constant integer SHP_MAX_RECENT_SOLD_PER_VENDOR = 64
+        private constant integer SHP_RANDOM_OPTION_STRIDE = 12
         private constant integer SHP_SELL_PERCENT = 50
         private constant integer SHP_AI_PRICE_BASE = 550
         private constant integer SHP_AI_PRICE_PER_LEVEL = 95
@@ -79,6 +85,7 @@ library Shop initializer Init requires Table, DEquipment, Reputation
         private string array SHP_VendorTypeLabel
         private integer array SHP_VendorUnitType
         private integer array SHP_VendorMinimumReputation
+        private boolean array SHP_VendorRandomStockOnTrade
 
         // Vendor stock.
         private integer SHP_StockCount = 0
@@ -99,6 +106,10 @@ library Shop initializer Init requires Table, DEquipment, Reputation
         private integer array SHP_StockCurrentSupply
         private real array SHP_StockReplenishTime
         private real array SHP_StockReplenishRemaining
+        private integer array SHP_StockZoneId
+        private boolean array SHP_StockZoneIncludesChildren
+        private integer array SHP_StockRandomOptionCount
+        private integer array SHP_StockRandomOption
 
         // Combined inventory view cache. ShopUI rebuilds this before rendering
         // the "You" page and after each sale.
@@ -195,6 +206,27 @@ library Shop initializer Init requires Table, DEquipment, Reputation
         return result
     endfunction
 
+    private function SHP_StockMatchesVendorZone takes integer stockId, unit vendor returns boolean
+        local integer requiredZoneId = SHP_StockZoneId[stockId]
+        local integer vendorZoneId
+        local boolean result = true
+
+        if requiredZoneId > 0 then
+            if vendor == null then
+                set result = false
+            else
+                set vendorZoneId = ZonesCore_GetZoneIdAtPoint(GetUnitX(vendor), GetUnitY(vendor))
+                set result = vendorZoneId == requiredZoneId
+                if not result and SHP_StockZoneIncludesChildren[stockId] then
+                    set result = ZonesCore_GetParentZoneId(vendorZoneId) == requiredZoneId
+                endif
+            endif
+        endif
+
+        set vendor = null
+        return result
+    endfunction
+
     private function SHP_IsStockVisibleForSession takes integer stockId returns boolean
         if not SHP_IsStockIdValid(stockId) then
             return false
@@ -202,7 +234,7 @@ library Shop initializer Init requires Table, DEquipment, Reputation
         if SHP_SessionVendorId <= 0 or SHP_StockVendor[stockId] != SHP_SessionVendorId or SHP_SessionVendorUnit == null or SHP_SessionBuyerPlayer == null then
             return true
         endif
-        return SHP_MeetsStockReputation(SHP_SessionBuyerPlayer, SHP_SessionVendorUnit, stockId)
+        return SHP_MeetsStockReputation(SHP_SessionBuyerPlayer, SHP_SessionVendorUnit, stockId) and SHP_StockMatchesVendorZone(stockId, SHP_SessionVendorUnit)
     endfunction
 
     private function SHP_IsStockAvailable takes integer stockId returns boolean
@@ -958,6 +990,85 @@ library Shop initializer Init requires Table, DEquipment, Reputation
         set SHP_StockReplenishRemaining[stockId] = 0.00
     endfunction
 
+    public function SetStockZone takes integer stockId, integer zoneId, boolean includeChildZones returns nothing
+        if SHP_IsStockIdValid(stockId) then
+            if zoneId < 0 then
+                set zoneId = 0
+            endif
+            set SHP_StockZoneId[stockId] = zoneId
+            set SHP_StockZoneIncludesChildren[stockId] = includeChildZones
+        endif
+    endfunction
+
+    public function AddRandomStock takes integer vendorId, integer itemTypeId, integer price, string category returns integer
+        local integer stockId = Shop_AddStock(vendorId, itemTypeId, price, category)
+
+        if stockId > 0 then
+            set SHP_StockRandomOptionCount[stockId] = 1
+            set SHP_StockRandomOption[stockId * SHP_RANDOM_OPTION_STRIDE + 1] = itemTypeId
+        endif
+        return stockId
+    endfunction
+
+    public function AddRandomStockOption takes integer stockId, integer itemTypeId returns boolean
+        local integer optionCount
+
+        if not SHP_IsStockIdValid(stockId) or SHP_StockKind[stockId] != SHOP_STOCK_KIND_ITEM or itemTypeId == 0 then
+            return false
+        endif
+        set optionCount = SHP_StockRandomOptionCount[stockId]
+        if optionCount <= 0 or optionCount >= SHP_RANDOM_OPTION_STRIDE - 1 then
+            return false
+        endif
+        set optionCount = optionCount + 1
+        set SHP_StockRandomOptionCount[stockId] = optionCount
+        set SHP_StockRandomOption[stockId * SHP_RANDOM_OPTION_STRIDE + optionCount] = itemTypeId
+        return true
+    endfunction
+
+    public function RerollVendorStock takes integer vendorId returns nothing
+        local integer stockId = 1
+        local integer optionCount
+        local integer optionIndex
+        local integer itemTypeId
+        local item stockItem = null
+
+        if not SHP_IsVendorIdValid(vendorId) then
+            return
+        endif
+        loop
+            exitwhen stockId > SHP_StockCount
+            set optionCount = SHP_StockRandomOptionCount[stockId]
+            if SHP_StockVendor[stockId] == vendorId and optionCount > 1 then
+                set optionIndex = GetRandomInt(1, optionCount)
+                set itemTypeId = SHP_StockRandomOption[stockId * SHP_RANDOM_OPTION_STRIDE + optionIndex]
+                if itemTypeId == SHP_StockItemType[stockId] then
+                    set optionIndex = optionIndex + 1
+                    if optionIndex > optionCount then
+                        set optionIndex = 1
+                    endif
+                    set itemTypeId = SHP_StockRandomOption[stockId * SHP_RANDOM_OPTION_STRIDE + optionIndex]
+                endif
+                set SHP_StockItemType[stockId] = itemTypeId
+                set SHP_StockCharges[stockId] = 0
+                set stockItem = CreateItem(itemTypeId, 0.00, 0.00)
+                if stockItem != null then
+                    set SHP_StockCharges[stockId] = GetItemCharges(stockItem)
+                    call RemoveItem(stockItem)
+                    set stockItem = null
+                endif
+            endif
+            set stockId = stockId + 1
+        endloop
+        set stockItem = null
+    endfunction
+
+    public function SetVendorRandomStockOnTrade takes integer vendorId, boolean enabled returns nothing
+        if SHP_IsVendorIdValid(vendorId) then
+            set SHP_VendorRandomStockOnTrade[vendorId] = enabled
+        endif
+    endfunction
+
     public function GetVendorStockCount takes integer vendorId returns integer
         local integer stockId = 1
         local integer count = 0
@@ -1027,6 +1138,9 @@ library Shop initializer Init requires Table, DEquipment, Reputation
     endfunction
 
     public function BeginTradeSessionForUnits takes integer vendorId, unit vendor, unit buyer returns nothing
+        if SHP_IsVendorIdValid(vendorId) and SHP_VendorRandomStockOnTrade[vendorId] then
+            call Shop_RerollVendorStock(vendorId)
+        endif
         call Shop_BeginTradeSession(vendorId)
         if SHP_IsVendorIdValid(vendorId) and vendor != null and buyer != null then
             set SHP_SessionVendorUnit = vendor
@@ -1423,6 +1537,12 @@ library Shop initializer Init requires Table, DEquipment, Reputation
             set buyer = null
             return false
         endif
+        if SHP_SessionVendorUnit != null and not SHP_StockMatchesVendorZone(stockId, SHP_SessionVendorUnit) then
+            call SHP_SetMessage("|cffff8080That item is not stocked in this zone.|r")
+            set buyerPlayer = null
+            set buyer = null
+            return false
+        endif
         if not SHP_IsStockAvailable(stockId) then
             call SHP_SetMessage("|cffff8080Sold out.|r")
             set buyerPlayer = null
@@ -1741,7 +1861,7 @@ library Shop initializer Init requires Table, DEquipment, Reputation
         set priceCap = SHP_GetAIPriceCap(buyer)
         loop
             exitwhen stockId > SHP_StockCount
-            if SHP_StockVendor[stockId] == vendorId and SHP_StockAiWeight[stockId] > 0 and SHP_IsStockAvailable(stockId) and SHP_MeetsStockReputation(GetOwningPlayer(buyer), vendor, stockId) then
+            if SHP_StockVendor[stockId] == vendorId and SHP_StockAiWeight[stockId] > 0 and SHP_IsStockAvailable(stockId) and SHP_MeetsStockReputation(GetOwningPlayer(buyer), vendor, stockId) and SHP_StockMatchesVendorZone(stockId, vendor) then
                 set candidate = false
                 set price = SHP_StockPrice[stockId]
                 set weight = SHP_StockAiWeight[stockId]
