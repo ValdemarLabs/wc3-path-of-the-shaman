@@ -17,8 +17,9 @@
     API:
     - set capacity = MaxDInvCapacityOfUnit(unit)
     - set freeSlots = CountUnitDInventoryFreeSpace(unit)
-    - call DInvAddSlotsForHeroVendor(unit, slots)
-    - call DInvAddSlotsForPlayerVendor(playerId, slots)
+    - set tier = DInvGetBagTierOfUnit(unit)
+    - call DInvUpgradeBagForHeroVendor(unit, targetTier)
+    - call DInvUpgradeBagForPlayerVendor(playerId, targetTier)
 
 **/
 library SharedDInvLib initializer Init requires DConfigurationArea, ItemLootSystem, ExSound
@@ -37,6 +38,7 @@ integer DInvTotalPlayers = 0
 integer EQIDCounter = 0
 Table DInvUnits
 integer array DInvMaxSlotModifierForPlayer[25]
+integer array DInvBagTierForPlayer[25]
 integer array ItemTypeExclusionListLengthForPlayer[25]
 integer array ItemExclusionListLengthForPlayer[25]
 TableArray DInvItemTypeExclusionListForPlayer
@@ -665,16 +667,81 @@ endfunction
 
 
 
+function DInvBagCapacityOfTier takes integer tier returns integer
+if tier == DINV_BAG_TIER_SMALL then
+return DInvBagCapacitySmall
+elseif tier == DINV_BAG_TIER_MEDIUM then
+return DInvBagCapacityMedium
+elseif tier == DINV_BAG_TIER_LARGE then
+return DInvBagCapacityLarge
+elseif tier == DINV_BAG_TIER_TRAVELER then
+return DInvBagCapacityTraveler
+elseif tier == DINV_BAG_TIER_EXPLORER then
+return DInvBagCapacityExplorer
+elseif tier == DINV_BAG_TIER_ADVENTURER then
+return DInvBagCapacityAdventurer
+elseif tier == DINV_BAG_TIER_BOTTOMLESS then
+return DInvBagCapacityBottomless
+endif
+return DInvBagCapacityStarting
+endfunction
+
+
+
+function DInvBagNameOfTier takes integer tier returns string
+if tier == DINV_BAG_TIER_SMALL then
+return "Small Bag"
+elseif tier == DINV_BAG_TIER_MEDIUM then
+return "Medium Bag"
+elseif tier == DINV_BAG_TIER_LARGE then
+return "Large Bag"
+elseif tier == DINV_BAG_TIER_TRAVELER then
+return "Traveler's Backpack"
+elseif tier == DINV_BAG_TIER_EXPLORER then
+return "Explorer's Backpack"
+elseif tier == DINV_BAG_TIER_ADVENTURER then
+return "Adventurer's Backpack"
+elseif tier == DINV_BAG_TIER_BOTTOMLESS then
+return "Bottomless Bag"
+endif
+return "Starting Bag"
+endfunction
+
+
+
+function DInvGetBagTierOfPIDBID takes integer pid, integer bid returns integer
+if InventoryParadigm == "1PerPlayer" then
+return DInvBagTierForPlayer[pid]
+elseif bid < 1 then
+return -1
+endif
+return BIDDB[bid][0].integer[4]
+endfunction
+
+
+
+function DInvGetBagTierOfUnit takes unit u returns integer
+local integer pid
+local integer bid
+if u == null then
+return -1
+endif
+set pid = GetPlayerId(GetOwningPlayer(u))
+set bid = BIDOfUnit(u)
+set u = null
+return DInvGetBagTierOfPIDBID(pid, bid)
+endfunction
+
+
+
 function MaxBagCapacityOfBID takes integer pid, integer bid returns integer
 local integer capacity
 if InventoryParadigm == "1PerPlayer" then
-////call BJDebugMsg("InventoryCapacity of pid("+I2S(pid)+") hid("+I2S(hid)+"): "+I2S(InventoryCapacityBase + DInvMaxSlotModifierForPlayer[pid]))
-set capacity = InventoryCapacityBase + DInvMaxSlotModifierForPlayer[pid]
+set capacity = DInvBagCapacityOfTier(DInvBagTierForPlayer[pid]) + DInvMaxSlotModifierForPlayer[pid]
 elseif bid < 1 then
 return 0
 else
-////call BJDebugMsg("InventoryCapacity of pid("+I2S(pid)+") hid("+I2S(hid)+"): "+I2S(InventoryCapacityBase + DInvMaxSlotModifierForPlayer[pid] + BIDDB[bid][0].integer[1]))
-set capacity = InventoryCapacityBase + DInvMaxSlotModifierForPlayer[pid] + BIDDB[bid][0].integer[1]
+set capacity = DInvBagCapacityOfTier(BIDDB[bid][0].integer[4]) + DInvMaxSlotModifierForPlayer[pid] + BIDDB[bid][0].integer[1]
 endif
 // Clamp effective capacity here so temporary equipment modifiers remain reversible.
 if capacity > InventoryCapacityMaximum then
@@ -2660,7 +2727,7 @@ endfunction
 
 function DInvApplyCapacityLayout takes integer pid, integer capacity returns nothing
 local integer frameId = 0
-local integer visibleSlots = capacity
+local integer visibleSlots = capacity - (DInvCurrentPage[pid]-1) * ColXRow
 local integer visibleRows
 local integer frameIndex
 local real bottomY
@@ -2733,10 +2800,10 @@ endfunction
 function UnitDInventoryDBIntoDInventoryFrames takes integer pid, integer bid returns nothing
 local integer loopFrI = 0
 local integer frameIndex
-local integer slotId = (DInvCurrentPage[pid]-1) * ColXRow
+local integer slotId
 local integer frLimit = ColXRow
 local integer ownerPid = DInvGetInventoryOwnerPidForViewer(pid)
-local integer slLimit = HowManyDInvSlotsOnPage(ownerPid, bid, DInvCurrentPage[pid])
+local integer slLimit
 local integer maxPage = MaxPageCountOfPIDBID(ownerPid, bid)
 
 if maxPage < DInvCurrentPage[pid] then
@@ -2744,6 +2811,9 @@ set DInvCurrentPage[pid] = maxPage
 elseif DInvCurrentPage[pid] < 1 then
 set DInvCurrentPage[pid] = 1
 endif
+set slotId = (DInvCurrentPage[pid]-1) * ColXRow
+set slLimit = HowManyDInvSlotsOnPage(ownerPid, bid, DInvCurrentPage[pid])
+call DInvApplyCapacityLayout(pid, MaxBagCapacityOfBID(ownerPid, bid))
 
 if pid == GetPlayerId(GetLocalPlayer()) then
     if bid < 0 then
@@ -2879,94 +2949,93 @@ endfunction
 
 
 // ============================================================================
-// VENDOR BAG PURCHASE FUNCTIONS - Add inventory slots dynamically
+// PERMANENT BAG TIER FUNCTIONS
 // ============================================================================
-// These are convenience wrapper functions for vendors to call when players buy bags
-// They automatically determine the correct paradigm (1PerPlayer or 1PerHero) and call
-// the appropriate function to extend inventory capacity.
-//
-// IMPORTANT LIMITS:
-// - Maximum visible slots per page: 340 (technical limit due to frame array size: 8160/24 players = 340)
-// - Maximum total slots: InventoryCapacityMaximum
-// - When inventory is FULL during expansion: Nothing bad happens! New slots are simply added as empty slots
-//   The system does NOT need to "move" existing items - it just creates more available space
-//
-// Usage examples for vendors:
-//   - Small bag adds 6 slots:  call DInvAddSlotsForPlayerVendor(GetPlayerId(buyer), 6)
-//   - Medium bag adds 12 slots: call DInvAddSlotsForPlayerVendor(GetPlayerId(buyer), 12)
-//   - Large bag adds 20 slots:  call DInvAddSlotsForPlayerVendor(GetPlayerId(buyer), 20)
-//
-// Or for specific heroes:
-//   call DInvAddSlotsForHeroVendor(buyerHero, 12)
-//
-// Returns: TRUE if at least one slot was added, FALSE if already at the maximum
+// Setters are available for initialization and AI setup. Vendor wrappers require
+// exactly the next tier and therefore cannot skip or repurchase upgrades.
 // ============================================================================
 
-function DInvAddSlotsForPlayerVendor takes integer pid, integer slotsToAdd returns boolean
-    // Adds inventory slots for a player (works with 1PerPlayer paradigm)
-    // slotsToAdd: Number of additional slots (e.g., 6, 12, 20 for small/medium/large bags)
-    local integer currentCap = 0
-    local integer newCap = 0
-
-    if pid < 0 or pid > 23 or GetPlayerController(Player(pid)) != MAP_CONTROL_USER then
+function DInvSetBagTierForPlayer takes integer pid, integer targetTier returns boolean
+    local integer currentTier
+    if pid < 0 or pid > 23 or targetTier < DINV_BAG_TIER_STARTING or targetTier > DINV_BAG_TIER_BOTTOMLESS then
         return false
     endif
-
-    set currentCap = InventoryCapacityBase + DInvMaxSlotModifierForPlayer[pid]
-    if currentCap >= InventoryCapacityMaximum or slotsToAdd <= 0 then
+    set currentTier = DInvBagTierForPlayer[pid]
+    if targetTier < currentTier then
         return false
     endif
-    set newCap = currentCap + slotsToAdd
-    if newCap > InventoryCapacityMaximum then
-        set newCap = InventoryCapacityMaximum
-    endif
-
-    set slotsToAdd = newCap - currentCap
-    call DInvDeltaAdditionalSlotsForPlayer(pid, slotsToAdd)
+    set DInvBagTierForPlayer[pid] = targetTier
     call DInvRefreshOpenInventoriesForOwnerPid(pid)
-    if GetLocalPlayer() == Player(pid) then
-        call DisplayTimedTextToPlayer(Player(pid), 0, 0, 10, "|cff00ff00Inventory expanded by " + I2S(slotsToAdd) + " slots! (Total: " + I2S(newCap) + ")|r")
-    endif
     return true
 endfunction
 
 
 
-function DInvAddSlotsForHeroVendor takes unit hero, integer slotsToAdd returns boolean
-    // Adds inventory slots for a specific hero (works with 1PerHero paradigm)
-    // hero: The hero unit buying the bag
-    // slotsToAdd: Number of additional slots (e.g., 6, 12, 20 for small/medium/large bags)
-    local integer pid = GetPlayerId(GetOwningPlayer(hero))
-    local integer bid = BIDOfUnit(hero)
-    local integer currentCap = 0
-    local integer newCap = 0
-    local boolean success = false
+function DInvSetBagTierForBID takes integer bid, integer targetTier returns boolean
+    local integer currentTier
+    if bid < 1 or targetTier < DINV_BAG_TIER_STARTING or targetTier > DINV_BAG_TIER_BOTTOMLESS then
+        return false
+    endif
+    set currentTier = BIDDB[bid][0].integer[4]
+    if targetTier < currentTier then
+        return false
+    endif
+    set BIDDB[bid][0].integer[4] = targetTier
+    call DInvRefreshOpenInventoryForBID(bid)
+    return true
+endfunction
 
-    if GetPlayerController(Player(pid)) != MAP_CONTROL_USER then
+
+
+function DInvSetBagTierForUnit takes unit hero, integer targetTier returns boolean
+    local integer pid
+    local integer bid
+    local boolean success
+    if hero == null then
+        return false
+    endif
+    set pid = GetPlayerId(GetOwningPlayer(hero))
+    set bid = BIDOfUnit(hero)
+    if DInvCanPlayerOwnInventoryUnit(pid) == false then
         set hero = null
         return false
     endif
 
     if InventoryParadigm == "1PerPlayer" then
-        // If using 1PerPlayer, redirect to player function
-        set success = DInvAddSlotsForPlayerVendor(pid, slotsToAdd)
+        set success = DInvSetBagTierForPlayer(pid, targetTier)
     else
-        // 1PerHero paradigm - calculate current capacity
-        set currentCap = MaxBagCapacityOfBID(pid, bid)
-        set newCap = currentCap + slotsToAdd
-        
-        if currentCap >= InventoryCapacityMaximum or slotsToAdd <= 0 then
-            set success = false
-        else
-            if newCap > InventoryCapacityMaximum then
-                set newCap = InventoryCapacityMaximum
-            endif
-            set slotsToAdd = newCap - currentCap
-            call DInvDeltaAdditionalSlotsForUnit(hero, slotsToAdd)
-            if GetLocalPlayer() == Player(pid) then
-                call DisplayTimedTextToPlayer(Player(pid), 0, 0, 10, "|cff00ff00Inventory expanded by " + I2S(slotsToAdd) + " slots! (Total: " + I2S(newCap) + ")|r")
-            endif
-            set success = true
+        set success = DInvSetBagTierForBID(bid, targetTier)
+    endif
+    set hero = null
+    return success
+endfunction
+
+
+
+function DInvUpgradeBagForPlayerVendor takes integer pid, integer targetTier returns boolean
+    if pid < 0 or pid > 23 or GetPlayerController(Player(pid)) != MAP_CONTROL_USER then
+        return false
+    endif
+    if targetTier != DInvBagTierForPlayer[pid] + 1 then
+        return false
+    endif
+    return DInvSetBagTierForPlayer(pid, targetTier)
+endfunction
+
+
+
+function DInvUpgradeBagForHeroVendor takes unit hero, integer targetTier returns boolean
+    local integer pid
+    local integer currentTier
+    local boolean success = false
+    if hero == null then
+        return false
+    endif
+    set pid = GetPlayerId(GetOwningPlayer(hero))
+    if GetPlayerController(Player(pid)) == MAP_CONTROL_USER then
+        set currentTier = DInvGetBagTierOfUnit(hero)
+        if targetTier == currentTier + 1 then
+            set success = DInvSetBagTierForUnit(hero, targetTier)
         endif
     endif
     set hero = null

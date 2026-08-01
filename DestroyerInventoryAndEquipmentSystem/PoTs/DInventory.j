@@ -332,6 +332,7 @@ if DInvCanPlayerOwnInventoryUnit(pid) == TRUE then
         set DInvUnitHandleDB[uhndl][0].integer[1] = pid + 1
         set DInvUnitHandleDB[uhndl][0].integer[2] = bid
         set DInvUnitHandleDB[uhndl][0].integer[3] = eqid
+        set BIDDB[bid][0].integer[4] = DINV_BAG_TIER_STARTING
 
         // set stacking automatically to infinite stacking for the player
         set PlayerStackingMode[pid] = 2
@@ -1595,7 +1596,7 @@ call BlzFrameSetScale(InventoryPageCounterTextFrame[pid], 2)
 call BlzFrameSetAbsPoint(InventoryPageCounterTextFrame[pid], FRAMEPOINT_TOPLEFT, InventoryPageCounterTextTopLeftX, InventoryPageCounterTextTopLeftY)
 call BlzFrameSetAbsPoint(InventoryPageCounterTextFrame[pid], FRAMEPOINT_BOTTOMRIGHT, InventoryPageCounterTextBotRightX, InventoryPageCounterTextBotRightY)
 set InventoryCapacityTextFrame[pid] = BlzCreateFrameByType("TEXT", "DInvCapacityTxt"+I2S(pid), InventoryLowestFrame[pid], "", 0)
-call BlzFrameSetText(InventoryCapacityTextFrame[pid], "Bag: 0/"+I2S(InventoryCapacityBase))
+call BlzFrameSetText(InventoryCapacityTextFrame[pid], "Bag: 0/"+I2S(DInvBagCapacityStarting))
 call BlzFrameSetTextAlignment(InventoryCapacityTextFrame[pid], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_RIGHT)
 call BlzFrameSetScale(InventoryCapacityTextFrame[pid], 0.90)
 call BlzFrameSetPoint(InventoryCapacityTextFrame[pid], FRAMEPOINT_TOPRIGHT, InventoryMainFrame[pid], FRAMEPOINT_BOTTOMRIGHT, 0.0, -0.006)

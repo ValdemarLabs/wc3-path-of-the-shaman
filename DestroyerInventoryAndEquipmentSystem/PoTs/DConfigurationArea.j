@@ -15,7 +15,7 @@
     Import before SharedDInvLib and the remaining Destroyer system libraries.
 
     API:
-    - Configure InventoryCapacityBase and InventoryCapacityMaximum.
+    - Configure the DINV_BAG_TIER_* capacities and InventoryCapacityMaximum.
     - Configure InventoryColumns and InventoryRows for the visible page grid.
     - Implement DInvIsItemIdOnGlobalExclusionList for map-specific exclusions.
 
@@ -50,19 +50,16 @@ boolean SetItemModuleUsed = FALSE
 
 //DInventory - - - - - - - - - - -
 // === INVENTORY CAPACITY SYSTEM ===
-// Initial inventory size is configurable below (currently set to 12 slots: 3 rows x 4 columns)
-// You can extend inventory dynamically at runtime using these functions:
-//
-// For vendors selling bags to players:
-//   call DInvAddSlotsForPlayerVendor(playerId, numberOfSlots)
-//   call DInvAddSlotsForHeroVendor(heroUnit, numberOfSlots)
+// Every inventory starts with 12 slots. Bag vendors replace that permanent bag
+// with the next tier instead of adding the purchased number of slots.
+//   call DInvUpgradeBagForPlayerVendor(playerId, targetTier)
+//   call DInvUpgradeBagForHeroVendor(heroUnit, targetTier)
 //
 // Advanced usage (manual control):
 //   call DInvDeltaAdditionalSlotsForPlayer(playerId, delta)  // For 1PerPlayer paradigm
 //   call DInvDeltaAdditionalSlotsForUnit(unit, delta)        // For 1PerHero paradigm
 //   call DInvDeltaAdditionalSlotsForBID(bagId, delta)        // For specific bag IDs
 //
-// Example: Small bag = 6 slots, Medium bag = 12 slots, Large bag = 20 slots
 // ================================
 
 //Choose here whether each hero should have their separate inventories, or if 1 inventory should be shared by all heroes of a certain player
@@ -84,7 +81,24 @@ integer ColXRow = InventoryColumns * InventoryRows
 //The actual number of items you can carry. If you want you can adjust this number mid-game.
 // Or if you have 1 inventory per hero paradigm, you can use a function to adjust the number of items each individual can carry:
 // By default it is assumed that you choose the number of rows, columns, pages to make up the inventory capacity
-// CONFIGURED: Start with 12 slots and allow bag upgrades up to the hard total cap.
+constant integer DINV_BAG_TIER_STARTING = 0
+constant integer DINV_BAG_TIER_SMALL = 1
+constant integer DINV_BAG_TIER_MEDIUM = 2
+constant integer DINV_BAG_TIER_LARGE = 3
+constant integer DINV_BAG_TIER_TRAVELER = 4
+constant integer DINV_BAG_TIER_EXPLORER = 5
+constant integer DINV_BAG_TIER_ADVENTURER = 6
+constant integer DINV_BAG_TIER_BOTTOMLESS = 7
+
+integer DInvBagCapacityStarting = 12
+integer DInvBagCapacitySmall = 16
+integer DInvBagCapacityMedium = 20
+integer DInvBagCapacityLarge = 24
+integer DInvBagCapacityTraveler = 36
+integer DInvBagCapacityExplorer = 48
+integer DInvBagCapacityAdventurer = 64
+integer DInvBagCapacityBottomless = 80
+// Compatibility aliases used by older capacity and frame code.
 integer InventoryCapacityBase = 12
 integer InventoryCapacityMaximum = 80
 //If this is TRUE, then items picked up by heroes will automatically be attempted to be stored in the DInventory.

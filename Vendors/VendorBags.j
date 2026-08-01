@@ -5,8 +5,8 @@
     Version:
 
     Description:
-    Bag-space merchant template for the PotS shop system. This vendor sells
-    direct DInventory slot upgrades instead of dummy bag items.
+    Bag merchant for the PotS shop system. Each purchase replaces the hero's
+    permanent bag with the next fixed tier; tiers cannot be skipped.
 
     Credits:
 
@@ -25,10 +25,7 @@ library VendorBags initializer Init requires Shop, VendorLines
     globals
         private constant integer VBAG_UNIT_TYPE_GRAKNAR = 'o61S'
 
-        private constant integer VBAG_SMALL_SLOTS = 6
-        private constant integer VBAG_MEDIUM_SLOTS = 12
-        private constant integer VBAG_LARGE_SLOTS = 20
-        private constant integer VBAG_BASE_SLOTS = 6
+        private constant integer VBAG_BASE_SLOTS = 4
         private constant integer VBAG_BASE_PRICE = 1000
         private constant integer VBAG_PRICE_ROUNDING = 500
 
@@ -50,16 +47,21 @@ library VendorBags initializer Init requires Shop, VendorLines
         return Shop_RegisterVendorUnitType(VBAG_VendorId, unitTypeId)
     endfunction
 
-    private function GetPriceForSlots takes integer slots returns integer
-        local integer rawPrice = (slots * VBAG_BASE_PRICE + VBAG_BASE_SLOTS - 1) / VBAG_BASE_SLOTS
+    private function GetPriceForUpgrade takes integer fromCapacity, integer targetCapacity returns integer
+        local integer slots = targetCapacity - fromCapacity
+        local integer rawPrice = R2I(I2R(slots * VBAG_BASE_PRICE + VBAG_BASE_SLOTS - 1) / I2R(VBAG_BASE_SLOTS))
 
-        return ((rawPrice + VBAG_PRICE_ROUNDING - 1) / VBAG_PRICE_ROUNDING) * VBAG_PRICE_ROUNDING
+        return R2I(I2R(rawPrice + VBAG_PRICE_ROUNDING - 1) / I2R(VBAG_PRICE_ROUNDING)) * VBAG_PRICE_ROUNDING
     endfunction
 
     private function RegisterStock takes nothing returns nothing
-        call Shop_AddBagSlotService(VBAG_VendorId, "Small Bag Upgrade", VBAG_SMALL_SLOTS, GetPriceForSlots(VBAG_SMALL_SLOTS), "Bags")
-        call Shop_AddBagSlotService(VBAG_VendorId, "Medium Bag Upgrade", VBAG_MEDIUM_SLOTS, GetPriceForSlots(VBAG_MEDIUM_SLOTS), "Bags")
-        call Shop_AddBagSlotService(VBAG_VendorId, "Large Bag Upgrade", VBAG_LARGE_SLOTS, GetPriceForSlots(VBAG_LARGE_SLOTS), "Bags")
+        call Shop_AddBagUpgradeService(VBAG_VendorId, "Small Bag", DINV_BAG_TIER_SMALL, GetPriceForUpgrade(DInvBagCapacityStarting, DInvBagCapacitySmall), "Bags")
+        call Shop_AddBagUpgradeService(VBAG_VendorId, "Medium Bag", DINV_BAG_TIER_MEDIUM, GetPriceForUpgrade(DInvBagCapacitySmall, DInvBagCapacityMedium), "Bags")
+        call Shop_AddBagUpgradeService(VBAG_VendorId, "Large Bag", DINV_BAG_TIER_LARGE, GetPriceForUpgrade(DInvBagCapacityMedium, DInvBagCapacityLarge), "Bags")
+        call Shop_AddBagUpgradeService(VBAG_VendorId, "Traveler's Backpack", DINV_BAG_TIER_TRAVELER, GetPriceForUpgrade(DInvBagCapacityLarge, DInvBagCapacityTraveler), "Bags")
+        call Shop_AddBagUpgradeService(VBAG_VendorId, "Explorer's Backpack", DINV_BAG_TIER_EXPLORER, GetPriceForUpgrade(DInvBagCapacityTraveler, DInvBagCapacityExplorer), "Bags")
+        call Shop_AddBagUpgradeService(VBAG_VendorId, "Adventurer's Backpack", DINV_BAG_TIER_ADVENTURER, GetPriceForUpgrade(DInvBagCapacityExplorer, DInvBagCapacityAdventurer), "Bags")
+        call Shop_AddBagUpgradeService(VBAG_VendorId, "Bottomless Bag", DINV_BAG_TIER_BOTTOMLESS, GetPriceForUpgrade(DInvBagCapacityAdventurer, DInvBagCapacityBottomless), "Bags")
     endfunction
 
     private function RegisterLines takes nothing returns nothing

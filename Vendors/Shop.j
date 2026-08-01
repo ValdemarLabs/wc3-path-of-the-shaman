@@ -23,7 +23,7 @@
     - call Shop_RegisterVendorUnit(unit, vendorId)
     - call Shop_RegisterVendorUnitType(vendorId, unitTypeId)
     - set entryId = Shop_AddStock(vendorId, itemTypeId, price, category)
-    - set entryId = Shop_AddBagSlotService(vendorId, name, slots, price, category)
+    - set entryId = Shop_AddBagUpgradeService(vendorId, name, targetTier, price, category)
     - call Shop_BeginTradeSessionForUnits(vendorId, vendor, buyer)
     - call Shop_SetVendorTypeLabel(vendorId, vendorType)
     - call Shop_SetVendorMinimumReputation(vendorId, reputation)
@@ -49,7 +49,7 @@ library Shop initializer Init requires Table, DEquipment, Reputation
         constant integer SHOP_SOURCE_DEQUIP = 2
         constant integer SHOP_SOURCE_VANILLA = 3
         constant integer SHOP_STOCK_KIND_ITEM = 1
-        constant integer SHOP_STOCK_KIND_BAG_SLOTS = 2
+        constant integer SHOP_STOCK_KIND_BAG_UPGRADE = 2
 
         // Configuration
         private constant integer SHP_MAX_VENDORS = 96
@@ -65,9 +65,9 @@ library Shop initializer Init requires Table, DEquipment, Reputation
         private constant string SHP_CATEGORY_ALL = "All"
         private constant string SHP_CATEGORY_GOODS = "Goods"
         private constant string SHP_CATEGORY_RECENTLY_SOLD = "Recent"
-        private constant string SHP_ICON_BAG_SERVICE_6 = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Bag_09.blp"    // use for 6 slot
-        private constant string SHP_ICON_BAG_SERVICE_12 = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Bag_07.blp"    // use for 12 slot
-        private constant string SHP_ICON_BAG_SERVICE_20 = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Bag_08.blp"    // use for 20 slot
+        private constant string SHP_ICON_BAG_SMALL = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Bag_09.blp"
+        private constant string SHP_ICON_BAG_LARGE = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Bag_07.blp"
+        private constant string SHP_ICON_BACKPACK = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Bag_08.blp"
 
         // Registered vendors and unit lookup.
         private Table SHP_VendorByUnit = 0
@@ -245,21 +245,17 @@ library Shop initializer Init requires Table, DEquipment, Reputation
         return (vendorId - 1) * SHP_MAX_RECENT_SOLD_PER_VENDOR + soldIndex
     endfunction
 
-    private function SHP_GetBagSlotServiceIcon takes integer slots returns string
-        if slots == 6 then
-            return SHP_ICON_BAG_SERVICE_6
-        elseif slots == 12 then
-            return SHP_ICON_BAG_SERVICE_12
-        elseif slots == 20 then
-            return SHP_ICON_BAG_SERVICE_20
+    private function SHP_GetBagUpgradeIcon takes integer targetTier returns string
+        if targetTier == DINV_BAG_TIER_SMALL then
+            return SHP_ICON_BAG_SMALL
+        elseif targetTier <= DINV_BAG_TIER_LARGE then
+            return SHP_ICON_BAG_LARGE
         endif
-
-        // Preserve the previous icon as the fallback for unsupported values.
-        return SHP_ICON_BAG_SERVICE_6
+        return SHP_ICON_BACKPACK
     endfunction
 
-    private function SHP_GetBagSlotServiceTooltip takes integer slots returns string
-        return "Permanently adds up to " + I2S(slots) + " DInventory slots to this hero, capped at " + I2S(InventoryCapacityMaximum) + " total slots.|nApplied immediately. This does not create a bag item."
+    private function SHP_GetBagUpgradeTooltip takes integer targetTier returns string
+        return "Upgrades this hero's bag to " + I2S(DInvBagCapacityOfTier(targetTier)) + " total slots.|nRequires " + DInvBagNameOfTier(targetTier - 1) + " (" + I2S(DInvBagCapacityOfTier(targetTier - 1)) + " slots).|nApplied immediately. This does not create a bag item."
     endfunction
 
     private function SHP_ItemTypeIcon takes integer itemTypeId returns string
@@ -850,13 +846,13 @@ library Shop initializer Init requires Table, DEquipment, Reputation
         if not SHP_IsVendorIdValid(vendorId) or SHP_StockCount >= SHP_MAX_STOCK then
             return 0
         endif
-        if stockKind != SHOP_STOCK_KIND_ITEM and stockKind != SHOP_STOCK_KIND_BAG_SLOTS then
+        if stockKind != SHOP_STOCK_KIND_ITEM and stockKind != SHOP_STOCK_KIND_BAG_UPGRADE then
             return 0
         endif
         if stockKind == SHOP_STOCK_KIND_ITEM and itemTypeId == 0 then
             return 0
         endif
-        if stockKind == SHOP_STOCK_KIND_BAG_SLOTS and payload <= 0 then
+        if stockKind == SHOP_STOCK_KIND_BAG_UPGRADE and (payload <= DINV_BAG_TIER_STARTING or payload > DINV_BAG_TIER_BOTTOMLESS) then
             return 0
         endif
         if price <= 0 then
@@ -912,15 +908,15 @@ library Shop initializer Init requires Table, DEquipment, Reputation
         return Shop_AddStockEx(vendorId, itemTypeId, price, category, 0, 0)
     endfunction
 
-    public function AddBagSlotServiceEx takes integer vendorId, string serviceName, integer slots, integer price, string category, integer aiPriceCap, integer aiWeight returns integer
+    public function AddBagUpgradeServiceEx takes integer vendorId, string serviceName, integer targetTier, integer price, string category, integer aiPriceCap, integer aiWeight returns integer
         if serviceName == null or serviceName == "" then
-            set serviceName = "+" + I2S(slots) + " Bag Slots"
+            set serviceName = DInvBagNameOfTier(targetTier)
         endif
-        return SHP_AddStockEntry(vendorId, SHOP_STOCK_KIND_BAG_SLOTS, 0, price, category, slots, serviceName, SHP_GetBagSlotServiceIcon(slots), SHP_GetBagSlotServiceTooltip(slots), aiPriceCap, aiWeight)
+        return SHP_AddStockEntry(vendorId, SHOP_STOCK_KIND_BAG_UPGRADE, 0, price, category, targetTier, serviceName, SHP_GetBagUpgradeIcon(targetTier), SHP_GetBagUpgradeTooltip(targetTier), aiPriceCap, aiWeight)
     endfunction
 
-    public function AddBagSlotService takes integer vendorId, string serviceName, integer slots, integer price, string category returns integer
-        return Shop_AddBagSlotServiceEx(vendorId, serviceName, slots, price, category, 0, 0)
+    public function AddBagUpgradeService takes integer vendorId, string serviceName, integer targetTier, integer price, string category returns integer
+        return Shop_AddBagUpgradeServiceEx(vendorId, serviceName, targetTier, price, category, 0, 0)
     endfunction
 
     public function SetStockMinimumReputation takes integer stockId, integer minimumReputation returns nothing
@@ -1295,7 +1291,7 @@ library Shop initializer Init requires Table, DEquipment, Reputation
         return result
     endfunction
 
-    private function SHP_CanUnitUseBagSlotService takes unit buyer returns boolean
+    private function SHP_CanUnitUseBagUpgrade takes unit buyer returns boolean
         local player owner
         local mapcontrol controller
         local boolean result = false
@@ -1324,9 +1320,10 @@ library Shop initializer Init requires Table, DEquipment, Reputation
         return result
     endfunction
 
-    private function SHP_BuyBagSlotService takes player buyerPlayer, unit buyer, integer stockId returns boolean
+    private function SHP_BuyBagUpgrade takes player buyerPlayer, unit buyer, integer stockId returns boolean
         local integer price
-        local integer slots
+        local integer targetTier
+        local integer currentTier
         local integer oldCapacity
         local integer newCapacity
 
@@ -1339,7 +1336,7 @@ library Shop initializer Init requires Table, DEquipment, Reputation
         if buyerPlayer == null then
             set buyerPlayer = GetOwningPlayer(buyer)
         endif
-        if not SHP_CanUnitUseBagSlotService(buyer) then
+        if not SHP_CanUnitUseBagUpgrade(buyer) then
             call SHP_SetMessage("|cffff8080This hero cannot use DInventory bag upgrades.|r")
             set buyerPlayer = null
             set buyer = null
@@ -1347,8 +1344,21 @@ library Shop initializer Init requires Table, DEquipment, Reputation
         endif
 
         set price = SHP_StockPrice[stockId]
-        set slots = SHP_StockPayload[stockId]
-        set oldCapacity = MaxDInvCapacityOfUnit(buyer)
+        set targetTier = SHP_StockPayload[stockId]
+        set currentTier = DInvGetBagTierOfUnit(buyer)
+        if targetTier != currentTier + 1 then
+            if currentTier >= DINV_BAG_TIER_BOTTOMLESS then
+                call SHP_SetMessage("|cffff8080This hero already has the best bag.|r")
+            elseif targetTier <= currentTier then
+                call SHP_SetMessage("|cffff8080This hero already owns this bag or a better one.|r")
+            else
+                call SHP_SetMessage("|cffff8080You must buy " + DInvBagNameOfTier(currentTier + 1) + " first.|r")
+            endif
+            set buyerPlayer = null
+            set buyer = null
+            return false
+        endif
+        set oldCapacity = DInvBagCapacityOfTier(currentTier)
         if GetPlayerState(buyerPlayer, PLAYER_STATE_RESOURCE_GOLD) < price then
             call SHP_SetMessage("|cffff8080Not enough gold.|r")
             set buyerPlayer = null
@@ -1356,8 +1366,8 @@ library Shop initializer Init requires Table, DEquipment, Reputation
             return false
         endif
 
-        if DInvAddSlotsForHeroVendor(buyer, slots) then
-            set newCapacity = MaxDInvCapacityOfUnit(buyer)
+        if DInvUpgradeBagForHeroVendor(buyer, targetTier) then
+            set newCapacity = DInvBagCapacityOfTier(targetTier)
             call SetPlayerState(buyerPlayer, PLAYER_STATE_RESOURCE_GOLD, GetPlayerState(buyerPlayer, PLAYER_STATE_RESOURCE_GOLD) - price)
             call SHP_ConsumeStock(stockId)
             call SHP_SetMessage("|cff80ff80Bought " + Shop_GetStockName(stockId) + " for " + I2S(price) + " gold. Bag: " + I2S(oldCapacity) + " -> " + I2S(newCapacity) + ".|r")
@@ -1366,7 +1376,7 @@ library Shop initializer Init requires Table, DEquipment, Reputation
             return true
         endif
 
-        call SHP_SetMessage("|cffff8080Cannot expand inventory further.|r")
+        call SHP_SetMessage("|cffff8080Cannot upgrade this hero's bag.|r")
         set buyerPlayer = null
         set buyer = null
         return false
@@ -1405,8 +1415,8 @@ library Shop initializer Init requires Table, DEquipment, Reputation
             set buyer = null
             return false
         endif
-        if SHP_StockKind[stockId] == SHOP_STOCK_KIND_BAG_SLOTS then
-            set result = SHP_BuyBagSlotService(buyerPlayer, buyer, stockId)
+        if SHP_StockKind[stockId] == SHOP_STOCK_KIND_BAG_UPGRADE then
+            set result = SHP_BuyBagUpgrade(buyerPlayer, buyer, stockId)
             set buyerPlayer = null
             set buyer = null
             return result
