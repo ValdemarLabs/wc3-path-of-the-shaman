@@ -37,7 +37,7 @@ library CampFire initializer Init requires Experience, Events, UnitDeathEvent, o
         private constant real CF_SCAN_INTERVAL = 1.00
         private constant real CF_RADIUS = 300.00
         private constant real CF_REST_REQUIRED = 15.00
-        private constant real CF_LIFETIME = 60.00
+        private constant real CF_LIFETIME = 300.00
         private constant real CF_LIGHT_CLEANUP_RADIUS = 80.00
 
         private unit array CF_Fire
