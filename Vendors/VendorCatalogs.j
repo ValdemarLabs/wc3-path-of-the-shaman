@@ -14,7 +14,9 @@
     - Warcraft Wiki vendor taxonomy, used as role inspiration
 
     How to install:
-    Import after Shop, VendorLines, VendorVoiceProfiles, and Reputation.
+    Import after Shop, VendorLines, VendorVoiceProfiles, and Reputation. Import
+    VendorOrcs, VendorSatyrs, VendorHumans, VendorGoblins, and
+    VendorBonecrusherOgres afterward when those object families are present.
 
     API:
     - VendorCatalogs_VENDOR_CATALOG_* constants select one of the 26 catalogs.
@@ -25,32 +27,32 @@
 **/
 library VendorCatalogs initializer Init requires Shop, VendorLines, VendorVoiceProfiles, Reputation
     globals
-        constant integer VENDOR_CATALOG_WEAPONS = 1
-        constant integer VENDOR_CATALOG_ARMOR = 2
-        constant integer VENDOR_CATALOG_SHIELDS = 3
-        constant integer VENDOR_CATALOG_ARENA = 4
-        constant integer VENDOR_CATALOG_TRAVELLING = 5
-        constant integer VENDOR_CATALOG_FISHER = 6
-        constant integer VENDOR_CATALOG_MINER = 7
-        constant integer VENDOR_CATALOG_COOK = 8
-        constant integer VENDOR_CATALOG_ALCHEMY_SUPPLIES = 9
-        constant integer VENDOR_CATALOG_BLACKSMITHING_SUPPLIES = 10
-        constant integer VENDOR_CATALOG_COOKING_SUPPLIES = 11
-        constant integer VENDOR_CATALOG_ENCHANTING_SUPPLIES = 12
-        constant integer VENDOR_CATALOG_FISHING_SUPPLIES = 13
-        constant integer VENDOR_CATALOG_LEATHERWORKING_SUPPLIES = 14
-        constant integer VENDOR_CATALOG_MINING_SUPPLIES = 15
-        constant integer VENDOR_CATALOG_SKINNING_SUPPLIES = 16
-        constant integer VENDOR_CATALOG_PROFESSION_SUPPLIES = 17
-        constant integer VENDOR_CATALOG_QUARTERMASTER = 18
-        constant integer VENDOR_CATALOG_RANDOMIZED_GOODS = 19
-        constant integer VENDOR_CATALOG_REAGENTS = 20
-        constant integer VENDOR_CATALOG_FOOD_AND_DRINK = 21
-        constant integer VENDOR_CATALOG_POTIONS = 22
-        constant integer VENDOR_CATALOG_RARE_GOODS = 23
-        constant integer VENDOR_CATALOG_ADVENTURING_SUPPLIES = 24
-        constant integer VENDOR_CATALOG_TRADE_GOODS = 25
-        constant integer VENDOR_CATALOG_BEAST_SUPPLIES = 26
+        public constant integer VENDOR_CATALOG_WEAPONS = 1
+        public constant integer VENDOR_CATALOG_ARMOR = 2
+        public constant integer VENDOR_CATALOG_SHIELDS = 3
+        public constant integer VENDOR_CATALOG_ARENA = 4
+        public constant integer VENDOR_CATALOG_TRAVELLING = 5
+        public constant integer VENDOR_CATALOG_FISHER = 6
+        public constant integer VENDOR_CATALOG_MINER = 7
+        public constant integer VENDOR_CATALOG_COOK = 8
+        public constant integer VENDOR_CATALOG_ALCHEMY_SUPPLIES = 9
+        public constant integer VENDOR_CATALOG_BLACKSMITHING_SUPPLIES = 10
+        public constant integer VENDOR_CATALOG_COOKING_SUPPLIES = 11
+        public constant integer VENDOR_CATALOG_ENCHANTING_SUPPLIES = 12
+        public constant integer VENDOR_CATALOG_FISHING_SUPPLIES = 13
+        public constant integer VENDOR_CATALOG_LEATHERWORKING_SUPPLIES = 14
+        public constant integer VENDOR_CATALOG_MINING_SUPPLIES = 15
+        public constant integer VENDOR_CATALOG_SKINNING_SUPPLIES = 16
+        public constant integer VENDOR_CATALOG_PROFESSION_SUPPLIES = 17
+        public constant integer VENDOR_CATALOG_QUARTERMASTER = 18
+        public constant integer VENDOR_CATALOG_RANDOMIZED_GOODS = 19
+        public constant integer VENDOR_CATALOG_REAGENTS = 20
+        public constant integer VENDOR_CATALOG_FOOD_AND_DRINK = 21
+        public constant integer VENDOR_CATALOG_POTIONS = 22
+        public constant integer VENDOR_CATALOG_RARE_GOODS = 23
+        public constant integer VENDOR_CATALOG_ADVENTURING_SUPPLIES = 24
+        public constant integer VENDOR_CATALOG_TRADE_GOODS = 25
+        public constant integer VENDOR_CATALOG_BEAST_SUPPLIES = 26
 
         private constant integer VC_MAX_CATALOGS = 26
         private integer array VC_VendorId
