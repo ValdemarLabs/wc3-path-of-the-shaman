@@ -1,3 +1,26 @@
+/**
+    QuestMaster
+
+    Author: Valdemar
+    Version:
+
+    Description:
+    Owns PotS quest data, state transitions, rewards, availability, quest-log
+    entries, quest-giver markers, and daily quest resets.
+
+    Credits:
+
+    How to install:
+    Import before QuestGiver and quest-content libraries. The map must expose
+    udg_DNE_DayNightEvent, where 1.00 signals the start of a new day.
+
+    API:
+    - QuestMaster_Create(...) creates and registers quest data.
+    - QuestMaster_AddStateChangedAction(handler) listens for state changes.
+    - QuestMaster_AddDailyResetAction(handler) listens for daily resets.
+    - QuestMaster_ResetDailyQuests() manually resets completed daily quests.
+
+**/
 library QuestMaster initializer Init requires Table, SpeciFX, Reputation, IconQuery, optional GameMode
 //===========================================================================
 // QuestMaster
@@ -114,6 +137,8 @@ globals
 	// State change event bridge
 	trigger QuestMaster_OnStateChanged = null
 	trigger QuestMaster_OnDelayedDiscovered = null
+	trigger QuestMaster_OnDailyReset = null
+	private trigger QuestDailyResetTrigger = null
 	integer QuestMaster_EventQuestId = 0
 	integer QuestMaster_EventState = 0
 endglobals
@@ -755,6 +780,13 @@ public function AddDelayedDiscoveredAction takes code actionFunc returns nothing
 		return
 	endif
 	call TriggerAddAction(QuestMaster_OnDelayedDiscovered, actionFunc)
+endfunction
+
+public function AddDailyResetAction takes code actionFunc returns nothing
+	if QuestMaster_OnDailyReset == null then
+		return
+	endif
+	call TriggerAddAction(QuestMaster_OnDailyReset, actionFunc)
 endfunction
 
 //===========================================================================
@@ -2897,6 +2929,67 @@ private function EvaluateQuest takes QuestData q returns nothing
 	endif
 endfunction
 
+private function ResetDailyQuest takes QuestData q returns nothing
+	if q == 0 or q.questType != "daily" or not q.completed then
+		return
+	endif
+
+	if q.hasReturnReq and q.returnReqIndex > 0 then
+		call q.setRequirement(q.returnReqIndex, "")
+	endif
+	if q.wcQuest != null then
+		call QuestByHandle.integer.remove(GetHandleId(q.wcQuest))
+		call DestroyQuest(q.wcQuest)
+	endif
+
+	set q.wcQuest = null
+	set q.req1 = null
+	set q.req2 = null
+	set q.req3 = null
+	set q.req4 = null
+	set q.req5 = null
+	set q.req6 = null
+	set q.req7 = null
+	set q.req8 = null
+	set q.req1Completed = false
+	set q.req2Completed = false
+	set q.req3Completed = false
+	set q.req4Completed = false
+	set q.req5Completed = false
+	set q.req6Completed = false
+	set q.req7Completed = false
+	set q.req8Completed = false
+	set q.returnReqIndex = 0
+	set q.hasReturnReq = false
+	set q.discovered = false
+	set q.active = false
+	set q.completed = false
+	set q.failed = false
+	set q.failReasonText = ""
+	call q.setState(QUEST_STATE_UNAVAILABLE)
+
+	set QuestMaster_EventQuestId = q.id
+	set QuestMaster_EventState = QUEST_STATE_UNAVAILABLE
+	call TriggerExecute(QuestMaster_OnDailyReset)
+	call EvaluateQuest(q)
+endfunction
+
+public function ResetDailyQuests takes nothing returns nothing
+	local integer i = 1
+	local QuestData q
+
+	loop
+		exitwhen i > QuestCount
+		set q = GetById(QuestIdList[i])
+		call ResetDailyQuest(q)
+		set i = i + 1
+	endloop
+endfunction
+
+private function OnNewDay takes nothing returns nothing
+	call ResetDailyQuests()
+endfunction
+
 public function RefreshAvailabilityForGiver takes unit u returns nothing
 	local integer count
 	local integer i = 1
@@ -2946,8 +3039,12 @@ private function Init takes nothing returns nothing
 	set QuestCompletedTimerData = Table.create()
 	set QuestMaster_OnStateChanged = CreateTrigger()
 	set QuestMaster_OnDelayedDiscovered = CreateTrigger()
+	set QuestMaster_OnDailyReset = CreateTrigger()
 	set QuestEvalTimer = CreateTimer()
 	call TimerStart(QuestEvalTimer, QUEST_EVAL_INTERVAL, true, function EvalTimerTick)
+	set QuestDailyResetTrigger = CreateTrigger()
+	call TriggerRegisterVariableEvent(QuestDailyResetTrigger, "udg_DNE_DayNightEvent", EQUAL, 1.00)
+	call TriggerAddAction(QuestDailyResetTrigger, function OnNewDay)
 endfunction
 
 endlibrary

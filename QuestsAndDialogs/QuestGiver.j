@@ -1,3 +1,27 @@
+/**
+    QuestGiver
+
+    Author: Valdemar
+    Version:
+
+    Description:
+    Provides PotS quest creation helpers, objective tracking, quest-item
+    handling, dialogue buttons, and requirement resets for daily quests.
+
+    Credits:
+
+    How to install:
+    Import after QuestMaster, DialogInteraction, DialogSystem, HeroItemCheck,
+    SharedDInvLib, Table, and UnitDeathEvent.
+
+    API:
+    - QuestGiver_CreateConfiguredQuest(...) creates configured quest data.
+    - QuestGiver_RegisterItemRequirement(...) tracks gathered items.
+    - QuestGiver_RegisterUnitKillRequirement(...) tracks unit kills.
+    - QuestGiver_RegisterTalkToRequirement(...) tracks manual conversations.
+    - QuestGiver_ResetRequirements(questId) clears objective progress.
+
+**/
 library QuestGiver initializer Init requires QuestMaster, DialogInteraction, DialogSystem, HeroItemCheck, SharedDInvLib, Table, UnitDeathEvent
 //===========================================================================
 // QuestGiver
@@ -2446,6 +2470,95 @@ public function CompleteInvestigateRequirement takes integer questId, integer re
 endfunction
 
 //===========================================================================
+// Daily requirement reset
+//===========================================================================
+public function ResetRequirements takes integer questId returns nothing
+	local integer i = 1
+	local QuestData q = QuestMaster_GetById(questId)
+
+	if q == 0 then
+		return
+	endif
+
+	loop
+		exitwhen i > ItemReqCount
+		if ItemReqQuestId[i] == questId then
+			set ItemReqCurrent[i] = 0
+			call q.setRequirement(ItemReqIndex[i], "Gather " + I2S(ItemReqAmount[i]) + " " + GetObjectName(ItemReqItemType[i]) + " (0/" + I2S(ItemReqAmount[i]) + ")")
+		endif
+		set i = i + 1
+	endloop
+
+	set i = 1
+	loop
+		exitwhen i > UnitReqCount
+		if UnitReqQuestId[i] == questId then
+			set UnitReqCurrent[i] = 0
+			call q.setRequirement(UnitReqIndex[i], "Kill " + I2S(UnitReqAmount[i]) + " " + GetObjectName(UnitReqUnitType[i]) + " (0/" + I2S(UnitReqAmount[i]) + ")")
+		endif
+		set i = i + 1
+	endloop
+
+	set i = 1
+	loop
+		exitwhen i > EscortReqCount
+		if EscortReqQuestId[i] == questId then
+			set EscortReqComplete[i] = false
+		endif
+		set i = i + 1
+	endloop
+
+	set i = 1
+	loop
+		exitwhen i > TalkToReqCount
+		if TalkToReqQuestId[i] == questId then
+			set TalkToReqComplete[i] = false
+		endif
+		set i = i + 1
+	endloop
+
+	set i = 1
+	loop
+		exitwhen i > FindNPCReqCount
+		if FindNPCReqQuestId[i] == questId then
+			set FindNPCReqComplete[i] = false
+		endif
+		set i = i + 1
+	endloop
+
+	set i = 1
+	loop
+		exitwhen i > GoToPlaceReqCount
+		if GoToPlaceReqQuestId[i] == questId then
+			set GoToPlaceReqComplete[i] = false
+		endif
+		set i = i + 1
+	endloop
+
+	set i = 1
+	loop
+		exitwhen i > RepReqCount
+		if RepReqQuestId[i] == questId then
+			set RepReqComplete[i] = false
+		endif
+		set i = i + 1
+	endloop
+
+	set i = 1
+	loop
+		exitwhen i > InvestigateReqCount
+		if InvestigateReqQuestId[i] == questId then
+			set InvestigateReqComplete[i] = false
+		endif
+		set i = i + 1
+	endloop
+endfunction
+
+private function OnDailyReset takes nothing returns nothing
+	call ResetRequirements(QuestMaster_EventQuestId)
+endfunction
+
+//===========================================================================
 // Init
 //===========================================================================
 private function Init takes nothing returns nothing
@@ -2454,6 +2567,7 @@ private function Init takes nothing returns nothing
 
 	// Register with centralized death event system at map start
 	call UnitDeathEvent_Register(function OnUnitDeath)
+	call QuestMaster_AddDailyResetAction(function OnDailyReset)
 	
 	// Map GUI variables to library variables (if they exist in the map)
 	// For reference types (groups, sounds), we store the reference

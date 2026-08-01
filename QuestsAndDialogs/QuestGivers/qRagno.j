@@ -274,7 +274,7 @@ endfunction
 
 private function PrepareRepeatableForDialog takes string questName returns nothing
     local QuestData q = GetRagnoQuest(questName)
-    if q != 0 and (q.completed or q.failed) then
+    if q != 0 and q.failed then
         call ClearQuestProgress(q)
     endif
     set q = 0
