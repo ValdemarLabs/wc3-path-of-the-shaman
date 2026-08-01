@@ -2,7 +2,7 @@
     Professions
 
     Author: Valdemar
-    Version: 1.0
+    Version: 1.1
 
     Description: Central registry and executor for profession crafting recipes, workstation definitions, materials, sounds, and completion feedback.
 
@@ -556,7 +556,7 @@ private function P_ConsumeRecipeMaterials takes unit crafter, integer recipeId r
 endfunction
 
 private function P_IsNearStation takes unit crafter, unit station returns boolean
-    return P_GetDistanceSqBetweenUnits(crafter, station) <= P_STATION_USE_RANGE * P_STATION_USE_RANGE
+    return P_IsUnitAlive(crafter) and P_IsUnitAlive(station) and P_GetDistanceSqBetweenUnits(crafter, station) <= P_STATION_USE_RANGE * P_STATION_USE_RANGE
 endfunction
 
 private function P_PlaySoundPathForJob takes integer jobId, string soundPath, unit station, boolean looping returns sound
@@ -1137,7 +1137,7 @@ private function P_CrafterAnimationLoopAction takes nothing returns nothing
     local unit crafter = P_JobCrafter[jobId]
     local unit station = P_JobStation[jobId]
 
-    if P_JobStartedCrafting[jobId] and P_IsRecipeValid(recipeId) and P_IsUnitAlive(crafter) and station != null and GetUnitTypeId(station) != 0 then
+    if P_JobStartedCrafting[jobId] and P_IsRecipeValid(recipeId) and P_IsUnitAlive(crafter) and P_IsUnitAlive(station) then
         set professionId = P_RecipeProfessionId[recipeId]
         call P_StartCrafterFeedback(professionId, crafter, station)
         call P_RestartStationCraftAnimation(professionId, station)
@@ -1335,6 +1335,13 @@ private function P_CheckStartRequirements takes unit crafter, unit station, inte
         return false
     endif
 
+    if not P_IsUnitAlive(station) then
+        if explain then
+            set P_LastErrorText = "That " + P_GetStationDisplayName(GetUnitTypeId(station)) + " is no longer active."
+        endif
+        return false
+    endif
+
     if stationTypeId != 0 and GetUnitTypeId(station) != stationTypeId then
         if explain then
             set P_LastErrorText = P_GetRecipeDisplayName(recipeId) + " requires " + P_GetStationDisplayName(stationTypeId) + "."
@@ -1413,7 +1420,7 @@ private function P_FinishJob takes integer jobId returns nothing
     call P_StopCrafterAnimationLoop(jobId)
     call P_FinishFakeCast(jobId, crafter)
 
-    if P_IsRecipeValid(recipeId) then
+    if P_IsRecipeValid(recipeId) and P_IsUnitAlive(crafter) and P_IsUnitAlive(station) then
         set professionId = P_RecipeProfessionId[recipeId]
         call P_PlayFinishSound(jobId, professionId, station)
         call P_FinishCrafterFeedback(crafter)
@@ -1556,7 +1563,7 @@ private function P_BeginActualCraft takes integer jobId returns boolean
         return true
     endif
 
-    if not P_IsRecipeValid(recipeId) or not P_IsUnitAlive(crafter) or station == null or GetUnitTypeId(station) == 0 then
+    if not P_IsRecipeValid(recipeId) or not P_IsUnitAlive(crafter) or not P_IsUnitAlive(station) then
         call P_CancelJob(jobId)
         set crafter = null
         set station = null
@@ -1632,7 +1639,7 @@ private function P_PlayerFadeOutDoneAction takes nothing returns nothing
     local real y
     local real rotationOffset
 
-    if P_IsUnitAlive(crafter) and station != null and GetUnitTypeId(station) != 0 then
+    if P_IsUnitAlive(crafter) and P_IsUnitAlive(station) then
         set x = P_GetCraftPointX(crafter, station)
         set y = P_GetCraftPointY(crafter, station)
         call CinematicMover_MoveSingleUnitToPoint(crafter, x, y)
@@ -1680,7 +1687,7 @@ private function P_AiPrepareAction takes nothing returns nothing
     local unit station = P_JobStation[jobId]
     local integer orderId
 
-    if not P_IsUnitAlive(crafter) or station == null or GetUnitTypeId(station) == 0 then
+    if not P_IsUnitAlive(crafter) or not P_IsUnitAlive(station) then
         call P_CancelJob(jobId)
         call ReleaseTimer(t)
         set crafter = null
@@ -2372,7 +2379,7 @@ public function IsStationUnitType takes integer unitTypeId returns boolean
 endfunction
 
 public function IsStationUnit takes unit station returns boolean
-    return station != null and IsStationUnitType(GetUnitTypeId(station))
+    return P_IsUnitAlive(station) and IsStationUnitType(GetUnitTypeId(station))
 endfunction
 
 public function IsCrafterNearStation takes unit crafter, unit station returns boolean
