@@ -2,12 +2,17 @@ library ReputationUI initializer AutoInit requires Table, Reputation, MasterUI, 
 /**
     ReputationUI
     
-    Author: [Valdemar]
+    Author: Valdemar
     Version: 1.0
 
     Description: Displays the player's standing with visible factions and a short summary of each one.
 
     Credits: Tasyen (TasQuestBox as inspiration)
+
+    How to install: Import after Reputation, MasterUI, Interface, and Table.
+
+    API: ReputationUI_Show, ReputationUI_Hide, ReputationUI_Refresh,
+         ReputationUI_Toggle, ReputationUI_IsVisible, and ReputationUI_Init.
 
 **/
 
@@ -33,12 +38,14 @@ globals
     private framehandle RUI_DetailBackdrop = null
     private framehandle RUI_DetailBodyBackdrop = null
     private framehandle RUI_DetailIcon = null
+    private framehandle RUI_DetailStatusIcon = null
     private framehandle RUI_DetailTitle = null
     private framehandle RUI_DetailValue = null
     private framehandle RUI_DetailDescription = null
 
     private framehandle array RUI_RowButton
     private framehandle array RUI_RowIcon
+    private framehandle array RUI_RowStatusIcon
     private framehandle array RUI_RowText
     private framehandle array RUI_RowLevel
     private framehandle array RUI_RowHighlight
@@ -47,11 +54,13 @@ globals
     private integer array RUI_RowVisibleState
     private integer array RUI_RowHighlightState
     private string array RUI_RowIconCache
+    private string array RUI_RowStatusIconCache
     private string array RUI_RowTextCache
     private string array RUI_RowLevelCache
     private integer RUI_ListScrollMaxCache = -1
     private integer RUI_ListScrollValueCache = -1
     private string RUI_DetailIconCache = ""
+    private string RUI_DetailStatusIconCache = ""
     private string RUI_DetailTitleCache = ""
     private string RUI_DetailValueCache = ""
     private string RUI_DetailDescriptionCache = ""
@@ -81,6 +90,16 @@ private function RUI_GetFactionIcon takes Faction f returns string
         return RUI_DefaultFactionIcon
     endif
     return f.iconPath
+endfunction
+
+private function RUI_GetFactionStatusIcon takes Faction f returns string
+    if f == 0 then
+        return ""
+    endif
+    if Reputation_IsFactionTemporarilyHostile(f.name) then
+        return Reputation_ICON_HOSTILE
+    endif
+    return Reputation.getStatusIcon(Player(0), f)
 endfunction
 
 private function RUI_GetFactionStatusText takes Faction f returns string
@@ -231,6 +250,7 @@ private function RUI_UpdateRows takes player whichPlayer returns nothing
     local integer maxStart = RUI_GetFactionCount() - RUI_VISIBLE_ROWS
     local Faction f
     local string iconPath
+    local string statusIconPath
     local string rowText
     local string rowLevel
 
@@ -255,6 +275,8 @@ private function RUI_UpdateRows takes player whichPlayer returns nothing
                 set RUI_RowIconCache[rowIndex] = iconPath
                 call BlzFrameSetTexture(RUI_RowIcon[rowIndex], iconPath, 0, true)
             endif
+            set RUI_RowStatusIconCache[rowIndex] = ""
+            call BlzFrameSetVisible(RUI_RowStatusIcon[rowIndex], false)
             if RUI_RowTextCache[rowIndex] != rowText then
                 set RUI_RowTextCache[rowIndex] = rowText
                 call BlzFrameSetText(RUI_RowText[rowIndex], rowText)
@@ -279,12 +301,18 @@ private function RUI_UpdateRows takes player whichPlayer returns nothing
                 set RUI_RowFactionId[rowIndex] = f.id
                 if GetLocalPlayer() == whichPlayer then
                     set iconPath = RUI_GetFactionIcon(f)
+                    set statusIconPath = RUI_GetFactionStatusIcon(f)
                     set rowText = "|cff80a0ff" + f.name + "|r"
                     set rowLevel = RUI_GetFactionStatusText(f)
                     if RUI_RowIconCache[rowIndex] != iconPath then
                         set RUI_RowIconCache[rowIndex] = iconPath
                         call BlzFrameSetTexture(RUI_RowIcon[rowIndex], iconPath, 0, true)
                     endif
+                    if RUI_RowStatusIconCache[rowIndex] != statusIconPath then
+                        set RUI_RowStatusIconCache[rowIndex] = statusIconPath
+                        call BlzFrameSetTexture(RUI_RowStatusIcon[rowIndex], statusIconPath, 0, true)
+                    endif
+                    call BlzFrameSetVisible(RUI_RowStatusIcon[rowIndex], true)
                     if RUI_RowTextCache[rowIndex] != rowText then
                         set RUI_RowTextCache[rowIndex] = rowText
                         call BlzFrameSetText(RUI_RowText[rowIndex], rowText)
@@ -307,6 +335,7 @@ private function RUI_UpdateRows takes player whichPlayer returns nothing
         set RUI_RowFactionId[rowIndex] = 0
         if GetLocalPlayer() == whichPlayer then
             set RUI_RowIconCache[rowIndex] = ""
+            set RUI_RowStatusIconCache[rowIndex] = ""
             set RUI_RowTextCache[rowIndex] = ""
             set RUI_RowLevelCache[rowIndex] = ""
             call RUI_SetRowVisible(rowIndex, false)
@@ -330,11 +359,21 @@ private function RUI_UpdateRows takes player whichPlayer returns nothing
     endif
 endfunction
 
-private function RUI_SetDetail takes player whichPlayer, string iconPath, string titleText, string valueText, string detailText returns nothing
+private function RUI_SetDetail takes player whichPlayer, string iconPath, string statusIconPath, string titleText, string valueText, string detailText returns nothing
     if GetLocalPlayer() == whichPlayer then
         if RUI_DetailIconCache != iconPath then
             set RUI_DetailIconCache = iconPath
             call BlzFrameSetTexture(RUI_DetailIcon, iconPath, 0, true)
+        endif
+        if statusIconPath == "" then
+            set RUI_DetailStatusIconCache = ""
+            call BlzFrameSetVisible(RUI_DetailStatusIcon, false)
+        else
+            if RUI_DetailStatusIconCache != statusIconPath then
+                set RUI_DetailStatusIconCache = statusIconPath
+                call BlzFrameSetTexture(RUI_DetailStatusIcon, statusIconPath, 0, true)
+            endif
+            call BlzFrameSetVisible(RUI_DetailStatusIcon, true)
         endif
         if RUI_DetailTitleCache != titleText then
             set RUI_DetailTitleCache = titleText
@@ -356,6 +395,7 @@ private function RUI_UpdateDetail takes player whichPlayer returns nothing
     local integer rep
     local string detailText
     local string iconPath
+    local string statusIconPath
     local string titleText
     local string valueText
 
@@ -364,30 +404,31 @@ private function RUI_UpdateDetail takes player whichPlayer returns nothing
     endif
 
     if RUI_SelectedFactionId == RUI_INFO_ROW_ID then
-        call RUI_SetDetail(whichPlayer, RUI_InfoIcon, "|cffffe4a3Info|r", "|cff808080Thresholds|r", RUI_GetStatusInfoText())
+        call RUI_SetDetail(whichPlayer, RUI_InfoIcon, "", "|cffffe4a3Info|r", "|cff808080Thresholds|r", RUI_GetStatusInfoText())
         return
     endif
 
     set f = RUI_GetSelectedFaction(whichPlayer)
     if RUI_SelectedFactionId == RUI_INFO_ROW_ID then
-        call RUI_SetDetail(whichPlayer, RUI_InfoIcon, "|cffffe4a3Info|r", "|cff808080Thresholds|r", RUI_GetStatusInfoText())
+        call RUI_SetDetail(whichPlayer, RUI_InfoIcon, "", "|cffffe4a3Info|r", "|cff808080Thresholds|r", RUI_GetStatusInfoText())
         return
     endif
 
     if f == 0 then
-        call RUI_SetDetail(whichPlayer, RUI_DefaultFactionIcon, "No faction", "", "No visible factions configured.")
+        call RUI_SetDetail(whichPlayer, RUI_DefaultFactionIcon, "", "No faction", "", "No visible factions configured.")
         return
     endif
 
     set rep = Reputation.getRep(Player(0), f)
     set iconPath = RUI_GetFactionIcon(f)
+    set statusIconPath = RUI_GetFactionStatusIcon(f)
     set titleText = "|cff80a0ff" + f.name + "|r"
     set valueText = RUI_GetFactionStatusText(f)
     set detailText = RUI_GetFactionDescription(f.name) + "|n|nCurrent status: " + valueText + "|nReputation value: |cffffffff" + I2S(rep) + "|r|n" + RUI_GetFactionConsequence(rep)
     if Reputation_IsFactionTemporarilyHostile(f.name) then
         set detailText = detailText + "|nTemporary status: |cffff8040Aggressive|r - faction units currently treat you as hostile."
     endif
-    call RUI_SetDetail(whichPlayer, iconPath, titleText, valueText, detailText)
+    call RUI_SetDetail(whichPlayer, iconPath, statusIconPath, titleText, valueText, detailText)
 endfunction
 
 private function RUI_RefreshVisibleData takes player whichPlayer returns nothing
@@ -395,6 +436,7 @@ private function RUI_RefreshVisibleData takes player whichPlayer returns nothing
     local integer factionId
     local Faction f
     local string rowLevel
+    local string statusIconPath
 
     if RUI_Parent == null or not BlzFrameIsVisible(RUI_Parent) then
         return
@@ -407,7 +449,12 @@ private function RUI_RefreshVisibleData takes player whichPlayer returns nothing
             if factionId > 0 then
                 set f = Faction.all[factionId]
                 if f != 0 then
+                    set statusIconPath = RUI_GetFactionStatusIcon(f)
                     set rowLevel = RUI_GetFactionStatusText(f)
+                    if RUI_RowStatusIconCache[rowIndex] != statusIconPath then
+                        set RUI_RowStatusIconCache[rowIndex] = statusIconPath
+                        call BlzFrameSetTexture(RUI_RowStatusIcon[rowIndex], statusIconPath, 0, true)
+                    endif
                     if RUI_RowLevelCache[rowIndex] != rowLevel then
                         set RUI_RowLevelCache[rowIndex] = rowLevel
                         call BlzFrameSetText(RUI_RowLevel[rowIndex], rowLevel)
@@ -599,6 +646,11 @@ private function RUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetPoint(RUI_DetailIcon, FRAMEPOINT_TOPLEFT, RUI_DetailBackdrop, FRAMEPOINT_TOPLEFT, 0.018, -0.018)
     call BlzFrameSetSize(RUI_DetailIcon, 0.042, 0.042)
 
+    set RUI_DetailStatusIcon = BlzCreateFrameByType("BACKDROP", "ReputationUIDetailStatusIcon", RUI_DetailBackdrop, "IconButtonTemplate", 0)
+    call BlzFrameSetPoint(RUI_DetailStatusIcon, FRAMEPOINT_BOTTOMRIGHT, RUI_DetailIcon, FRAMEPOINT_BOTTOMRIGHT, 0.005, -0.005)
+    call BlzFrameSetSize(RUI_DetailStatusIcon, 0.018, 0.018)
+    call BlzFrameSetVisible(RUI_DetailStatusIcon, false)
+
     set RUI_DetailTitle = BlzCreateFrameByType("TEXT", "ReputationUIDetailTitle", RUI_DetailBackdrop, "", 0)
     call BlzFrameSetPoint(RUI_DetailTitle, FRAMEPOINT_TOPLEFT, RUI_DetailIcon, FRAMEPOINT_TOPRIGHT, 0.014, -0.002)
     call BlzFrameSetSize(RUI_DetailTitle, 0.260, 0.018)
@@ -643,6 +695,11 @@ private function RUI_CreateFrames takes nothing returns nothing
         set RUI_RowIcon[rowIndex] = BlzCreateFrameByType("BACKDROP", "ReputationUIRowIcon" + I2S(rowIndex), RUI_RowButton[rowIndex], "IconButtonTemplate", 0)
         call BlzFrameSetPoint(RUI_RowIcon[rowIndex], FRAMEPOINT_LEFT, RUI_RowButton[rowIndex], FRAMEPOINT_LEFT, 0.006, 0.0)
         call BlzFrameSetSize(RUI_RowIcon[rowIndex], 0.02, 0.02)
+
+        set RUI_RowStatusIcon[rowIndex] = BlzCreateFrameByType("BACKDROP", "ReputationUIRowStatusIcon" + I2S(rowIndex), RUI_RowButton[rowIndex], "IconButtonTemplate", 0)
+        call BlzFrameSetPoint(RUI_RowStatusIcon[rowIndex], FRAMEPOINT_BOTTOMRIGHT, RUI_RowIcon[rowIndex], FRAMEPOINT_BOTTOMRIGHT, 0.003, -0.003)
+        call BlzFrameSetSize(RUI_RowStatusIcon[rowIndex], 0.011, 0.011)
+        call BlzFrameSetVisible(RUI_RowStatusIcon[rowIndex], false)
 
         set RUI_RowText[rowIndex] = BlzCreateFrameByType("TEXT", "ReputationUIRowText" + I2S(rowIndex), RUI_RowButton[rowIndex], "", 0)
         call BlzFrameSetPoint(RUI_RowText[rowIndex], FRAMEPOINT_TOPLEFT, RUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.032, -0.004)

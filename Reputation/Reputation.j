@@ -100,8 +100,19 @@ library Reputation initializer InitReputations requires Table, Events, UnitDeath
     Getting faction (no other use)
         local Faction f = Faction.getFaction("Horde")
         call Reputation.addRaw(Player(0), f, 100)
+        set iconPath = Reputation.getStatusIcon(Player(0), f)
         call Reputation_RegisterUnitTypeFaction('O629', "Horde")
         call Reputation_GetUnitFactionName(whichUnit) returns string
+
+    Credits:
+        Valdemar
+
+    How to install:
+        Import this library and its required Table, Events, and UnitDeathEvent dependencies.
+
+    API:
+        Faction registry, Reputation value/status methods, public tier thresholds and icons,
+        and the prefixed faction/unit registration helpers documented above.
     
     Master Alliance System Configuration:
         Set ENABLE_INTER_FACTION_ALLIANCES = true to enable inter-faction alliance control
@@ -156,13 +167,14 @@ globals
     // Duration (in seconds) that a faction remains temporarily hostile
     private constant real TEMPORAL_HOSTILITY_DURATION = 120.0
 
-    private constant string ICON_ENEMY              = "ReplaceableTextures\\PassiveButtons\\PASRepHated.blp"
-    private constant string ICON_HOSTILE            = "ReplaceableTextures\\PassiveButtons\\PASRepHostile.blp"
-    private constant string ICON_UNFRIENDLY         = "ReplaceableTextures\\PassiveButtons\\PASRepUnfriendly.blp"
-    private constant string ICON_NEUTRAL            = "ReplaceableTextures\\PassiveButtons\\PASRepNeutral.blp"
-    private constant string ICON_FRIENDLY           = "ReplaceableTextures\\PassiveButtons\\PASRepHonored.blp"
-    private constant string ICON_COVENANT           = "ReplaceableTextures\\PassiveButtons\\PASRepRevered.blp"
-    private constant string ICON_EXALTED            = "ReplaceableTextures\\PassiveButtons\\PASRepExalted.blp"
+    // Public tier textures for reputation displays (Reputation_ICON_ENEMY, etc.)
+    public constant string ICON_ENEMY              = "ReplaceableTextures\\PassiveButtons\\PASRepHated.blp"
+    public constant string ICON_HOSTILE            = "ReplaceableTextures\\PassiveButtons\\PASRepHostile.blp"
+    public constant string ICON_UNFRIENDLY         = "ReplaceableTextures\\PassiveButtons\\PASRepUnfriendly.blp"
+    public constant string ICON_NEUTRAL            = "ReplaceableTextures\\PassiveButtons\\PASRepNeutral.blp"
+    public constant string ICON_FRIENDLY           = "ReplaceableTextures\\PassiveButtons\\PASRepHonored.blp"
+    public constant string ICON_COVENANT           = "ReplaceableTextures\\PassiveButtons\\PASRepRevered.blp"
+    public constant string ICON_EXALTED            = "ReplaceableTextures\\PassiveButtons\\PASRepExalted.blp"
 
     // Reputation change values per faction (when killed)
     private Table REP_KILL_DELTA
@@ -374,6 +386,24 @@ struct Reputation
         else
             return "|cffffd700Exalted|r"      // Gold
         endif
+    endmethod
+
+    static method getStatusIcon takes player p, Faction f returns string
+        local integer val = .getRep(p, f)
+        if val < REP_HOSTILE then
+            return ICON_ENEMY
+        elseif val < REP_UNFRIENDLY then
+            return ICON_HOSTILE
+        elseif val < REP_NEUTRAL then
+            return ICON_UNFRIENDLY
+        elseif val < REP_FRIENDLY then
+            return ICON_NEUTRAL
+        elseif val < REP_COVENANT then
+            return ICON_FRIENDLY
+        elseif val < REP_EXALTED then
+            return ICON_COVENANT
+        endif
+        return ICON_EXALTED
     endmethod
 
     static method OnUnitKilled takes unit killer, unit victim returns nothing
