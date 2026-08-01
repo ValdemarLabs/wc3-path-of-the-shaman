@@ -99,6 +99,9 @@ Thumbs.db
 # JASS
 jass.config.json
 
-# Local Codex skill workspace notes/helpers
+# Local Codex skill workspace notes/helpers/agents
 /codex-skills/README.md
 /codex-skills/sync-jassmaster-to-codex.ps1
+/codex-skills/
+AGENTS.md
+
