@@ -8,13 +8,14 @@
     Revives Nazgrek and Zulkis at the selected graveyard after 30 seconds,
     keeps the legacy player revive timers and graveyard globals compatible,
     and creates a temporary Spirit Healer or Spirit Walker that can recover
-    items dropped at the death location.
+    items dropped at the death location. The active fallen player hero receives
+    a rotating death camera until revival or a switch to the other living hero.
 
     Credits:
     - Old GUI ReviveSystemPlayer triggers
 
     How to install:
-    Import after Death, Events, UnitDeathEvent, Table, and ExSound. Disable the
+    Import after Death, Events, UnitDeathEvent, Table, ExSound, and CameraControl. Disable the
     old ReviveSystemPlayer death, graveyard, revive, reveal, and healer-dialog
     GUI triggers while retaining their GUI variables.
 
@@ -24,7 +25,7 @@
     call Revival_GetSelectedGraveyard() returns integer
 
 **/
-library Revival initializer Init requires Death, Table, Events, UnitDeathEvent, ExSound
+library Revival initializer Init requires Death, Table, Events, UnitDeathEvent, ExSound, CameraControl
 
 globals
     // Configuration
@@ -34,6 +35,16 @@ globals
     private constant real REVIVAL_ITEM_REGION_RADIUS = 150.00
     private constant real REVIVAL_HEALER_INTERACT_RANGE = 500.00
     private constant real REVIVAL_HEALER_DURATION = 60.00
+    private constant real REVIVAL_DEATH_CAMERA_CHECK_INTERVAL = 0.10
+    private constant real REVIVAL_DEATH_CAMERA_INITIAL_DISTANCE = 1400.00
+    private constant real REVIVAL_DEATH_CAMERA_INITIAL_ANGLE = 280.00
+    private constant real REVIVAL_DEATH_CAMERA_FINAL_DISTANCE = 1300.00
+    private constant real REVIVAL_DEATH_CAMERA_FINAL_ANGLE = 315.00
+    private constant real REVIVAL_DEATH_CAMERA_ROTATION = 90.00
+    private constant real REVIVAL_DEATH_CAMERA_INITIAL_DURATION = 2.00
+    private constant real REVIVAL_DEATH_CAMERA_DISTANCE_DURATION = 4.00
+    private constant real REVIVAL_DEATH_CAMERA_ANGLE_DURATION = 8.00
+    private constant real REVIVAL_DEATH_CAMERA_ROTATE_DURATION = 45.00
     private constant integer REVIVAL_SPIRIT_HEALER_ID = 'u605'
     private constant integer REVIVAL_SPIRIT_WALKER_ID = 'u607'
     private constant integer REVIVAL_TIMED_LIFE_BUFF_ID = 'BTLF'
@@ -56,6 +67,9 @@ globals
     private unit Revival_SelectedHealer = null
     private real Revival_ItemTargetX = 0.00
     private real Revival_ItemTargetY = 0.00
+    private timer Revival_DeathCameraTimer = null
+    private unit Revival_DeathCameraHero = null
+    private boolean Revival_DeathCameraActive = false
 endglobals
 
 public function GetGraveyardRect takes integer graveyardId returns rect
@@ -119,6 +133,73 @@ endfunction
 
 private function Revival_IsPlayerHero takes unit whichHero returns boolean
     return whichHero != null and (whichHero == udg_Nazgrek or whichHero == udg_Zulkis)
+endfunction
+
+private function Revival_StopDeathCamera takes nothing returns nothing
+    if not Revival_DeathCameraActive then
+        return
+    endif
+    set Revival_DeathCameraActive = false
+    call PauseTimer(Revival_DeathCameraTimer)
+    set Revival_DeathCameraHero = null
+    call CameraControl_ResumeQuick(Player(0))
+endfunction
+
+private function Revival_CheckDeathCamera takes nothing returns nothing
+    local unit cameraTarget = CameraControl_GetStoredTargetUnit(Player(0))
+
+    if Revival_DeathCameraHero == null or GetUnitTypeId(Revival_DeathCameraHero) == 0 or GetWidgetLife(Revival_DeathCameraHero) > 0.405 then
+        call Revival_StopDeathCamera()
+    elseif cameraTarget != Revival_DeathCameraHero and Revival_IsPlayerHero(cameraTarget) and GetWidgetLife(cameraTarget) > 0.405 then
+        call Revival_StopDeathCamera()
+    endif
+    set cameraTarget = null
+endfunction
+
+private function Revival_StartDeathCamera takes unit whichHero, real x, real y returns nothing
+    local unit storedTarget = CameraControl_GetStoredTargetUnit(Player(0))
+    local location cameraPoint
+    local boolean isActiveTarget = storedTarget == whichHero
+
+    // A missing or dead stored target means CameraControl was using its
+    // Nazgrek-then-Zulkis fallback immediately before this death.
+    if not isActiveTarget and (storedTarget == null or GetWidgetLife(storedTarget) <= 0.405) then
+        set isActiveTarget = whichHero == udg_Nazgrek or (whichHero == udg_Zulkis and GetWidgetLife(udg_Nazgrek) <= 0.405)
+    endif
+    if not isActiveTarget or (not Revival_DeathCameraActive and CameraControl_IsSuspended(Player(0))) then
+        set storedTarget = null
+        return
+    endif
+    if Revival_DeathCameraActive then
+        call PauseTimer(Revival_DeathCameraTimer)
+    endif
+    set Revival_DeathCameraHero = whichHero
+    set Revival_DeathCameraActive = true
+    call CameraControl_Suspend(Player(0))
+    call SetCameraTargetControllerNoZForPlayer(Player(0), whichHero, 0.00, 0.00, false)
+    call PanCameraToTimedForPlayer(Player(0), x, y, 0.00)
+    call SetCameraFieldForPlayer(Player(0), CAMERA_FIELD_TARGET_DISTANCE, REVIVAL_DEATH_CAMERA_INITIAL_DISTANCE, REVIVAL_DEATH_CAMERA_INITIAL_DURATION)
+    call SetCameraFieldForPlayer(Player(0), CAMERA_FIELD_ANGLE_OF_ATTACK, REVIVAL_DEATH_CAMERA_INITIAL_ANGLE, REVIVAL_DEATH_CAMERA_INITIAL_DURATION)
+    call SetCameraFieldForPlayer(Player(0), CAMERA_FIELD_ROTATION, REVIVAL_DEATH_CAMERA_ROTATION, REVIVAL_DEATH_CAMERA_INITIAL_DURATION)
+    call SetCameraFieldForPlayer(Player(0), CAMERA_FIELD_TARGET_DISTANCE, REVIVAL_DEATH_CAMERA_FINAL_DISTANCE, REVIVAL_DEATH_CAMERA_DISTANCE_DURATION)
+    call SetCameraFieldForPlayer(Player(0), CAMERA_FIELD_ANGLE_OF_ATTACK, REVIVAL_DEATH_CAMERA_FINAL_ANGLE, REVIVAL_DEATH_CAMERA_ANGLE_DURATION)
+    set cameraPoint = Location(x, y)
+    call RotateCameraAroundLocBJ(360.00, cameraPoint, Player(0), REVIVAL_DEATH_CAMERA_ROTATE_DURATION)
+    call RemoveLocation(cameraPoint)
+    call TimerStart(Revival_DeathCameraTimer, REVIVAL_DEATH_CAMERA_CHECK_INTERVAL, true, function Revival_CheckDeathCamera)
+
+    set cameraPoint = null
+    set storedTarget = null
+endfunction
+
+private function Revival_OnPlayerHeroSelected takes nothing returns nothing
+    local unit selectedHero = GetTriggerUnit()
+
+    if GetTriggerPlayer() == Player(0) and Revival_DeathCameraActive and selectedHero != Revival_DeathCameraHero and Revival_IsPlayerHero(selectedHero) and GetWidgetLife(selectedHero) > 0.405 then
+        call CameraControl_SetTargetUnit(Player(0), selectedHero)
+        call Revival_StopDeathCamera()
+    endif
+    set selectedHero = null
 endfunction
 
 private function Revival_IsNear takes unit firstUnit, unit secondUnit, real range returns boolean
@@ -229,6 +310,10 @@ endfunction
 private function Revival_OnDeathRevived takes nothing returns nothing
     local unit whichHero = Death_EventHero
 
+    if Revival_DeathCameraActive and Revival_DeathCameraHero == whichHero then
+        call Revival_StopDeathCamera()
+    endif
+
     if whichHero == udg_Nazgrek then
         if udg_ReviveTimerNazgrek != null then
             call PauseTimer(udg_ReviveTimerNazgrek)
@@ -315,6 +400,7 @@ private function Revival_OnHeroDeath takes nothing returns nothing
     call Revival_DropHeroItems(whichHero, x, y)
     call Revival_CreateDeathRegion(whichHero, x, y)
     call Revival_StartPlayerTimer(whichHero)
+    call Revival_StartDeathCamera(whichHero, x, y)
 
     if whichHero == udg_Nazgrek then
         set udg_NazgrekDead = true
@@ -489,6 +575,7 @@ private function Init takes nothing returns nothing
     set Revival_HealerGraveyard = Table.create()
     set Revival_OwnerTimerHealer = Table.create()
     set Revival_RestoreDialog = DialogCreate()
+    set Revival_DeathCameraTimer = CreateTimer()
 
     set Revival_HealerType[1] = REVIVAL_SPIRIT_HEALER_ID
     set Revival_HealerType[2] = REVIVAL_SPIRIT_HEALER_ID
@@ -509,6 +596,7 @@ private function Init takes nothing returns nothing
 
     call Death_RegisterReviveCallback(function Revival_OnDeathRevived)
     call UnitDeathEvent_Register(function Revival_OnHeroDeath)
+    call Events_RegisterPlayerUnitEvent(function Revival_OnPlayerHeroSelected, EVENT_PLAYER_UNIT_SELECTED)
     call Events_RegisterPlayerUnitEvent(function Revival_OnSpiritHealerSelected, EVENT_PLAYER_UNIT_SELECTED)
     call TriggerRegisterDialogEvent(dialogTrigger, Revival_RestoreDialog)
     call TriggerAddAction(dialogTrigger, function Revival_OnDialogClick)
