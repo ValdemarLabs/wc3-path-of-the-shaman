@@ -68,6 +68,7 @@ library VendorBags initializer Init requires Shop, VendorLines
 
     private function Init takes nothing returns nothing
         set VBAG_VendorId = Shop_CreateVendor("Graknar", VBAG_UNIT_TYPE_GRAKNAR)
+        call Shop_SetVendorTypeLabel(VBAG_VendorId, "Bags")
         call RegisterStock()
         call RegisterLines()
     endfunction

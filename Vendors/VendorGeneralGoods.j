@@ -86,6 +86,7 @@ library GeneralGoodsVendor initializer Init requires Shop, VendorLines, optional
 
     private function Init takes nothing returns nothing
         set VGG_VendorId = Shop_CreateVendor("General Goods Merchant", VGG_UNIT_TYPE_GOBLIN_MERCHANT)
+        call Shop_SetVendorTypeLabel(VGG_VendorId, "General Goods")
         call GeneralGoodsVendor_RegisterUnitType(VGG_UNIT_TYPE_UTILITIES_VENDOR)
         call GeneralGoodsVendor_RegisterUnitType(VGG_UNIT_TYPE_HORDE_MARKET)
         call GeneralGoodsVendor_RegisterUnitType(VGG_UNIT_TYPE_THRAKNAR)
