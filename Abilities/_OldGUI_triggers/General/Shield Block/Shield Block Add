@@ -1,0 +1,13 @@
+Shield Block Add
+    Events
+        Unit - A unit Acquires an item
+    Conditions
+        (Item level of (Item being manipulated)) Greater than or equal to 850
+        (Item level of (Item being manipulated)) Less than or equal to 899
+        Or - Any (Conditions) are true
+            Conditions
+                (Unit-type of (Triggering unit)) Not equal to Bag
+                (Unit-type of (Triggering unit)) Not equal to Stash
+                (Unit-type of (Triggering unit)) Not equal to Engineer (Shredder)
+    Actions
+        Unit - Add Shield Block (50) to (Triggering unit)

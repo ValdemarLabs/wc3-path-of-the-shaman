@@ -1,0 +1,8 @@
+Shield Block Remove
+    Events
+        Unit - A unit Loses an item
+    Conditions
+        (Item level of (Item being manipulated)) Greater than or equal to 850
+        (Item level of (Item being manipulated)) Less than or equal to 899
+    Actions
+        Unit - Remove Shield Block (50) from (Triggering unit)

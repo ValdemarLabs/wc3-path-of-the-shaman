@@ -1,0 +1,61 @@
+Shield Block Use
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Ability being cast) Equal to Shield Block (50)
+                (Ability being cast) Equal to Shield Block (75)
+                (Ability being cast) Equal to Shield Block (100)
+    Actions
+        -------- 50 % --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to Shield Block (50)
+            Then - Actions
+                Set VariableSet Temp_Integer = (Custom value of (Triggering unit))
+                Set VariableSet Stats_Block[Temp_Integer] = (Stats_Block[Temp_Integer] + 50)
+                Set VariableSet Shieldblock_index50 = (Shieldblock_index50 + 1)
+                Set VariableSet Shieldblock_unit50[Shieldblock_index50] = (Triggering unit)
+                Set VariableSet Shieldblock_counter50[Shieldblock_index50] = 0
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Shieldblock_index50 Equal to 1
+                    Then - Actions
+                        Trigger - Turn on Shield Block 50 Use Loop <gen>
+                    Else - Actions
+            Else - Actions
+        -------- 75 % --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to Shield Block (75)
+            Then - Actions
+                Set VariableSet Temp_Integer = (Custom value of (Triggering unit))
+                Set VariableSet Stats_Block[Temp_Integer] = (Stats_Block[Temp_Integer] + 75)
+                Set VariableSet Shieldblock_index75 = (Shieldblock_index75 + 1)
+                Set VariableSet Shieldblock_unit75[Shieldblock_index75] = (Triggering unit)
+                Set VariableSet Shieldblock_counter75[Shieldblock_index75] = 0
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Shieldblock_index75 Equal to 1
+                    Then - Actions
+                        Trigger - Turn on Shield Block 75 Use Loop <gen>
+                    Else - Actions
+            Else - Actions
+        -------- 100 % --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Ability being cast) Equal to Shield Block (100)
+            Then - Actions
+                Set VariableSet Temp_Integer = (Custom value of (Triggering unit))
+                Set VariableSet Stats_Block[Temp_Integer] = (Stats_Block[Temp_Integer] + 100)
+                Set VariableSet Shieldblock_index100 = (Shieldblock_index100 + 1)
+                Set VariableSet Shieldblock_unit100[Shieldblock_index100] = (Triggering unit)
+                Set VariableSet Shieldblock_counter100[Shieldblock_index100] = 0
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Shieldblock_index100 Equal to 1
+                    Then - Actions
+                        Trigger - Turn on Shield Block 100 Use Loop <gen>
+                    Else - Actions
+            Else - Actions

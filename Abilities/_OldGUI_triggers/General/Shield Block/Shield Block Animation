@@ -1,0 +1,13 @@
+Shield Block Animation
+    Events
+        Unit - A unit Finishes casting an ability
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Ability being cast) Equal to Shield Block (50)
+                (Ability being cast) Equal to Shield Block (75)
+                (Ability being cast) Equal to Shield Block (100)
+    Actions
+        -------- Animation to look like "shield bash" --------
+        Animation - Play (Triggering unit)'s attack slam animation
+        Animation - Queue (Triggering unit)'s stand animation

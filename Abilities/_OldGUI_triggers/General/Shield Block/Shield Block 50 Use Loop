@@ -1,0 +1,25 @@
+Shield Block 50 Use Loop
+    Events
+        Time - Every 1.00 seconds of game time
+    Conditions
+    Actions
+        For each (Integer Shieldblock_loop50_integer) from 1 to Shieldblock_index50, do (Actions)
+            Loop - Actions
+                Set VariableSet Shieldblock_counter50[Shieldblock_loop50_integer] = (Shieldblock_counter50[Shieldblock_loop50_integer] + 1)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Shieldblock_counter50[Shieldblock_loop50_integer] Greater than or equal to 5
+                    Then - Actions
+                        Set VariableSet Temp_Integer = (Custom value of Shieldblock_unit50[Shieldblock_loop50_integer])
+                        Set VariableSet Stats_Block[Temp_Integer] = (Stats_Block[Temp_Integer] - 50)
+                        Set VariableSet Shieldblock_unit50[Shieldblock_loop50_integer] = Shieldblock_unit50[Shieldblock_index50]
+                        Set VariableSet Shieldblock_counter50[Shieldblock_loop50_integer] = Shieldblock_counter50[Shieldblock_index50]
+                        Set VariableSet Shieldblock_index50 = (Shieldblock_index50 - 1)
+                        Set VariableSet Shieldblock_loop50_integer = (Shieldblock_loop50_integer - 1)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                Shieldblock_index50 Equal to 0
+                            Then - Actions
+                                Trigger - Turn off (This trigger)
+                            Else - Actions
+                    Else - Actions
