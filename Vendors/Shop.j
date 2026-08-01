@@ -31,6 +31,8 @@
     - call Shop_SetStockCharges(entryId, charges)
     - call Shop_SetStockSupply(entryId, maximum, replenishSeconds)
     - call Shop_EndTradeSession()
+    - set boughtCount = Shop_GetSessionBoughtTransactionCount()
+    - set soldCount = Shop_GetSessionSoldTransactionCount()
     - set categoryName = Shop_GetVendorCategoryName(vendorId, position)
     - call Shop_BuyStock(player, buyer, stockEntry)
     - call Shop_BuyRecentlySold(player, buyer, soldIndex)
@@ -110,6 +112,8 @@ library Shop initializer Init requires Table, DEquipment, Reputation
         // Per-vendor buyback cache. Each vendor keeps a bounded recent list so
         // old entries cannot grow without limit.
         private integer SHP_SessionVendorId = 0
+        private integer SHP_SessionBoughtTransactionCount = 0
+        private integer SHP_SessionSoldTransactionCount = 0
         private integer array SHP_RecentSoldCount
         private integer array SHP_RecentSoldItemType
         private integer array SHP_RecentSoldPrice
@@ -1012,6 +1016,8 @@ library Shop initializer Init requires Table, DEquipment, Reputation
     public function BeginTradeSession takes integer vendorId returns nothing
         set SHP_SessionVendorUnit = null
         set SHP_SessionBuyerPlayer = null
+        set SHP_SessionBoughtTransactionCount = 0
+        set SHP_SessionSoldTransactionCount = 0
         if SHP_IsVendorIdValid(vendorId) then
             set SHP_SessionVendorId = vendorId
         else
@@ -1035,6 +1041,14 @@ library Shop initializer Init requires Table, DEquipment, Reputation
         set SHP_SessionVendorUnit = null
         set SHP_SessionBuyerPlayer = null
         call SHP_SetMessage("")
+    endfunction
+
+    public function GetSessionBoughtTransactionCount takes nothing returns integer
+        return SHP_SessionBoughtTransactionCount
+    endfunction
+
+    public function GetSessionSoldTransactionCount takes nothing returns integer
+        return SHP_SessionSoldTransactionCount
     endfunction
 
     public function GetVendorCategoryCount takes integer vendorId, boolean includeRecentlySold returns integer
@@ -1417,6 +1431,9 @@ library Shop initializer Init requires Table, DEquipment, Reputation
         endif
         if SHP_StockKind[stockId] == SHOP_STOCK_KIND_BAG_UPGRADE then
             set result = SHP_BuyBagUpgrade(buyerPlayer, buyer, stockId)
+            if result and SHP_SessionVendorId > 0 and buyerPlayer == SHP_SessionBuyerPlayer then
+                set SHP_SessionBoughtTransactionCount = SHP_SessionBoughtTransactionCount + 1
+            endif
             set buyerPlayer = null
             set buyer = null
             return result
@@ -1439,6 +1456,9 @@ library Shop initializer Init requires Table, DEquipment, Reputation
             call SetPlayerState(buyerPlayer, PLAYER_STATE_RESOURCE_GOLD, GetPlayerState(buyerPlayer, PLAYER_STATE_RESOURCE_GOLD) - price)
             call SHP_ConsumeStock(stockId)
             call SHP_SetMessage("|cff80ff80Bought " + GetObjectName(itemTypeId) + " for " + I2S(price) + " gold.|r")
+            if SHP_SessionVendorId > 0 and buyerPlayer == SHP_SessionBuyerPlayer then
+                set SHP_SessionBoughtTransactionCount = SHP_SessionBoughtTransactionCount + 1
+            endif
             set boughtItem = null
             set buyerPlayer = null
             set buyer = null
@@ -1497,6 +1517,9 @@ library Shop initializer Init requires Table, DEquipment, Reputation
             call SetPlayerState(buyerPlayer, PLAYER_STATE_RESOURCE_GOLD, GetPlayerState(buyerPlayer, PLAYER_STATE_RESOURCE_GOLD) - price)
             call SHP_RemoveRecentSoldIndex(soldIndex)
             call SHP_SetMessage("|cff80ff80Bought back " + GetObjectName(itemTypeId) + " for " + I2S(price) + " gold.|r")
+            if buyerPlayer == SHP_SessionBuyerPlayer then
+                set SHP_SessionBoughtTransactionCount = SHP_SessionBoughtTransactionCount + 1
+            endif
             set boughtItem = null
             set buyerPlayer = null
             set buyer = null
@@ -1680,7 +1703,14 @@ library Shop initializer Init requires Table, DEquipment, Reputation
     endfunction
 
     public function SellViewItem takes player receiver, unit owner, integer viewIndex returns boolean
-        return SHP_RemoveViewItem(receiver, owner, viewIndex, SHP_SessionVendorId, true, false)
+        local boolean result = SHP_RemoveViewItem(receiver, owner, viewIndex, SHP_SessionVendorId, true, false)
+
+        if result and SHP_SessionVendorId > 0 and receiver == SHP_SessionBuyerPlayer then
+            set SHP_SessionSoldTransactionCount = SHP_SessionSoldTransactionCount + 1
+        endif
+        set receiver = null
+        set owner = null
+        return result
     endfunction
 
     public function AIBuySimple takes unit buyer, unit vendor returns boolean
