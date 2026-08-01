@@ -4,6 +4,11 @@ Import `VendorQuests.j`, `Voicelines_VendorQuests.j`, and the desired
 `qVendorName.j` libraries. `VendorDialogs.j` discovers placed vendor units and
 instantiates every quest registered for their unit type.
 
+All spoken acceptance/completion text, shared progress dialogue, sound-key
+prefixes, sequence ranges, and external sound folders are controlled from
+`Voicelines/Voicelines_VendorQuests.j`. Individual `qVendorName.j` libraries
+only reference the matching numbered constants.
+
 The canonical vendor names below come from `VendorCatalogs.j` and match the
 quest-library filenames and library identifiers. Object Editor names may remain
 unchanged.
@@ -50,6 +55,10 @@ unchanged.
 | `n04G` | Bolguk Broadwall | Heavy Metal | Daily | `VendorQuestBonecrusher_0005-0006` |
 | `n04H` | Kragmog Skullstake | Pit Supplies | Daily | `VendorQuestBonecrusher_0007-0008` |
 | `n04J` | Gubmog Stewpot | The Bigger Stew | Normal | `VendorQuestBonecrusher_0009-0010` |
+| `n04O` | Aerendir Sunblade | Wraiths at the Forge | Daily | `VendorQuestElarindor_0001-0002` |
+| `n04R` | Elowen Starweaver | Fragments of Elarindor | Daily | `VendorQuestElarindor_0003-0004` |
+| `n04T` | Vaeriel Dawnflask | Dawn's Restorative | Daily | `VendorQuestElarindor_0005-0006` |
+| `n04V` | Maerith Silvercrest | A Precise Inventory | Daily | `VendorQuestElarindor_0007-0008` |
 
 Expected external sound folders:
 
@@ -58,6 +67,7 @@ Expected external sound folders:
 - `Pots\Sound\Voicelines\VendorQuestHuman\`
 - `Pots\Sound\Voicelines\VendorQuestGoblin\`
 - `Pots\Sound\Voicelines\VendorQuestBonecrusher\`
+- `Pots\Sound\Voicelines\VendorQuestElarindor\`
 
 Each quest uses the odd-numbered key for acceptance and the following
 even-numbered key for completion. Missing files fall back to ExSound's text

@@ -1226,6 +1226,17 @@ public function IsSequenceActive takes nothing returns boolean
 	return DialogSequenceActiveId != 0
 endfunction
 
+public function CancelActiveSequence takes nothing returns nothing
+	if DialogSequenceActiveId == 0 then
+		return
+	endif
+	if DialogSequenceTimer != null then
+		call PauseTimer(DialogSequenceTimer)
+	endif
+	call ClearTextMessages()
+	call EndSequence(false)
+endfunction
+
 public function GetActiveSequenceId takes nothing returns integer
 	return DialogSequenceActiveId
 endfunction

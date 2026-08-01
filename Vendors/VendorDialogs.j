@@ -202,6 +202,10 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
 
         call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, Player(0))
         call DisplayTextToPlayer(Player(0), 0.00, 0.00, "|cffff8080Trade interrupted.|r")
+        call DialogSystem_CancelActiveSequence()
+        static if LIBRARY_VendorQuests then
+            call VendorQuests_CancelPendingAction()
+        endif
         call VDI_EndDialog(true)
     endfunction
 
@@ -253,16 +257,31 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         call DialogSystem_PlaySequence(seq, Player(0), VDI_SelectedVendor)
     endfunction
 
+    private function VDI_OnQuestSequenceEnd takes nothing returns nothing
+        static if LIBRARY_VendorQuests then
+            call VendorQuests_FinishPendingAction()
+        endif
+        call VDI_EndDialog(true)
+    endfunction
+
     private function VDI_OnQuest takes nothing returns nothing
+        local integer seq = 0
+
         if not VDI_IsSelectedContextValid() then
             call VDI_EndDialog(true)
             return
         endif
 
         static if LIBRARY_VendorQuests then
-            call VendorQuests_HandleAction(DialogSystem_LastAction, VDI_SelectedVendor, VDI_SelectedHero)
+            set seq = VendorQuests_BeginAction(DialogSystem_LastAction, VDI_SelectedVendor, VDI_SelectedHero)
         endif
-        call VDI_EndDialog(true)
+        if seq > 0 then
+            call DialogInteraction_BeginDialogSequence()
+            call DialogSystem_SetSequenceCallbacks(seq, null, function VDI_OnQuestSequenceEnd)
+            call DialogSystem_PlaySequence(seq, Player(0), VDI_SelectedVendor)
+        else
+            call VDI_EndDialog(true)
+        endif
     endfunction
 
     private function VDI_BuildDialog takes nothing returns nothing
