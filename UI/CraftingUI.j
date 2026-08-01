@@ -2,7 +2,7 @@
     CraftingUI
 
     Author: Valdemar
-    Version: 1.4
+    Version: 1.5
 
     Description: Shared custom-frame crafting panel for profession workstations. Recipe and category data is fetched from Professions and its profession sublibraries.
 
@@ -22,10 +22,15 @@ library CraftingUI initializer AutoInit requires Professions, GatherNodeSkills, 
 
 globals
     private constant integer CUI_VISIBLE_ROWS = 12
+    private constant integer CUI_MAX_CACHED_ENTRIES = 256
+    private constant integer CUI_VIEW_ROOT = 1
+    private constant integer CUI_VIEW_SUBCATEGORIES = 2
+    private constant integer CUI_VIEW_RECIPES = 3
     private constant real CUI_ROW_HEIGHT = 0.020
     private constant real CUI_ROW_GAP = 0.002
 
     private boolean CUI_Initialized = false
+    private boolean CUI_LastRecipeReady = false
 
     public string TitleText = "|cffffe4a3Crafting|r"
     public string CloseButtonText = "X"
@@ -71,7 +76,11 @@ globals
     private integer array CUI_SelectedRecipe
     private string array CUI_SelectedCategory
     private string array CUI_SelectedSubcategory
-    private boolean array CUI_RecipePathSelected
+    private integer array CUI_ViewMode
+    private integer array CUI_EntryCount
+    private integer array CUI_EntryRecipeId
+    private integer array CUI_EntryChildCount
+    private string array CUI_EntryName
 
     private Table CUI_ButtonRow = 0
 
@@ -230,43 +239,121 @@ private function CUI_UsesCategoryRoot takes integer pid returns boolean
 endfunction
 
 private function CUI_IsCategoryMode takes integer pid returns boolean
-    return CUI_UsesCategoryRoot(pid) and CUI_GetSelectedCategory(pid) == ""
+    return CUI_ViewMode[pid] == CUI_VIEW_ROOT
 endfunction
 
 private function CUI_IsSubcategoryMode takes integer pid returns boolean
-    if CUI_RecipePathSelected[pid] then
+    return CUI_ViewMode[pid] == CUI_VIEW_SUBCATEGORIES
+endfunction
+
+private function CUI_RecipeMatchesCurrentPath takes integer pid, integer recipeId returns boolean
+    if Professions_GetRecipeProfessionId(recipeId) != CUI_GetProfession(pid) or Professions_GetRecipeStationTypeId(recipeId) != CUI_GetStationType(pid) then
         return false
     endif
-    return CUI_GetSelectedCategory(pid) != "" and CUI_GetSelectedSubcategory(pid) == "" and CUI_GetSubcategoryCount(pid) > 0
+    if CUI_GetSelectedCategory(pid) != "" and Professions_GetRecipeCategory(recipeId) != CUI_GetSelectedCategory(pid) then
+        return false
+    endif
+    if CUI_GetSelectedSubcategory(pid) != "" and Professions_GetRecipeSubcategory(recipeId) != CUI_GetSelectedSubcategory(pid) then
+        return false
+    endif
+    return true
+endfunction
+
+private function CUI_GetEntryKey takes integer pid, integer listIndex returns integer
+    return pid*CUI_MAX_CACHED_ENTRIES + listIndex
+endfunction
+
+private function CUI_ClearEntryCache takes integer pid returns nothing
+    local integer listIndex = 1
+    local integer key
+
+    loop
+        exitwhen listIndex > CUI_EntryCount[pid]
+        set key = CUI_GetEntryKey(pid, listIndex)
+        set CUI_EntryRecipeId[key] = 0
+        set CUI_EntryChildCount[key] = 0
+        set CUI_EntryName[key] = ""
+        set listIndex = listIndex + 1
+    endloop
+    set CUI_EntryCount[pid] = 0
+endfunction
+
+// Navigation changes rebuild once; ordinary row/detail refreshes use this cache.
+private function CUI_RebuildEntryCache takes integer pid returns nothing
+    local integer listIndex = 1
+    local integer total
+    local integer key
+    local integer recipeId
+    local string entryName
+
+    call CUI_ClearEntryCache(pid)
+    if CUI_IsCategoryMode(pid) then
+        set total = CUI_GetCategoryCount(pid)
+        if total > CUI_MAX_CACHED_ENTRIES then
+            set total = CUI_MAX_CACHED_ENTRIES
+        endif
+        loop
+            exitwhen listIndex > total
+            set key = CUI_GetEntryKey(pid, listIndex)
+            set entryName = Professions_GetRecipeCategoryForStationIndex(CUI_GetProfession(pid), CUI_GetStationType(pid), listIndex)
+            set CUI_EntryName[key] = entryName
+            set CUI_EntryChildCount[key] = Professions_GetRecipeSubcategoryCountForStationCategory(CUI_GetProfession(pid), CUI_GetStationType(pid), entryName)
+            if CUI_EntryChildCount[key] <= 0 then
+                set CUI_EntryChildCount[key] = Professions_GetRecipeCountForStationCategory(CUI_GetProfession(pid), CUI_GetStationType(pid), entryName)
+            endif
+            set listIndex = listIndex + 1
+        endloop
+    elseif CUI_IsSubcategoryMode(pid) then
+        set total = CUI_GetSubcategoryCount(pid)
+        if total > CUI_MAX_CACHED_ENTRIES then
+            set total = CUI_MAX_CACHED_ENTRIES
+        endif
+        loop
+            exitwhen listIndex > total
+            set key = CUI_GetEntryKey(pid, listIndex)
+            set entryName = Professions_GetRecipeSubcategoryForStationCategoryIndex(CUI_GetProfession(pid), CUI_GetStationType(pid), CUI_GetSelectedCategory(pid), listIndex)
+            set CUI_EntryName[key] = entryName
+            set CUI_EntryChildCount[key] = Professions_GetRecipeCountForStationSubcategory(CUI_GetProfession(pid), CUI_GetStationType(pid), CUI_GetSelectedCategory(pid), entryName)
+            set listIndex = listIndex + 1
+        endloop
+    else
+        set total = 0
+        set recipeId = 1
+        loop
+            exitwhen recipeId > Professions_GetRecipeCount() or total >= CUI_MAX_CACHED_ENTRIES
+            if CUI_RecipeMatchesCurrentPath(pid, recipeId) then
+                set total = total + 1
+                set CUI_EntryRecipeId[CUI_GetEntryKey(pid, total)] = recipeId
+            endif
+            set recipeId = recipeId + 1
+        endloop
+    endif
+    set CUI_EntryCount[pid] = total
 endfunction
 
 private function CUI_GetRecipeTotal takes integer pid returns integer
-    if CUI_IsCategoryMode(pid) then
-        return CUI_GetCategoryCount(pid)
-    endif
-    if CUI_IsSubcategoryMode(pid) then
-        return CUI_GetSubcategoryCount(pid)
-    endif
-    if CUI_GetSelectedCategory(pid) != "" then
-        if CUI_GetSelectedSubcategory(pid) != "" then
-            return Professions_GetRecipeCountForStationSubcategory(CUI_GetProfession(pid), CUI_GetStationType(pid), CUI_GetSelectedCategory(pid), CUI_GetSelectedSubcategory(pid))
-        endif
-        return Professions_GetRecipeCountForStationCategory(CUI_GetProfession(pid), CUI_GetStationType(pid), CUI_GetSelectedCategory(pid))
-    endif
-    return Professions_GetRecipeCountForStation(CUI_GetProfession(pid), CUI_GetStationType(pid))
+    return CUI_EntryCount[pid]
 endfunction
 
 private function CUI_GetRecipeIdForListIndex takes integer pid, integer listIndex returns integer
-    if CUI_IsCategoryMode(pid) or CUI_IsSubcategoryMode(pid) then
+    if listIndex <= 0 or listIndex > CUI_EntryCount[pid] or CUI_IsCategoryMode(pid) or CUI_IsSubcategoryMode(pid) then
         return 0
     endif
-    if CUI_GetSelectedCategory(pid) != "" then
-        if CUI_GetSelectedSubcategory(pid) != "" then
-            return Professions_GetRecipeIdForStationSubcategoryIndex(CUI_GetProfession(pid), CUI_GetStationType(pid), CUI_GetSelectedCategory(pid), CUI_GetSelectedSubcategory(pid), listIndex)
-        endif
-        return Professions_GetRecipeIdForStationCategoryIndex(CUI_GetProfession(pid), CUI_GetStationType(pid), CUI_GetSelectedCategory(pid), listIndex)
+    return CUI_EntryRecipeId[CUI_GetEntryKey(pid, listIndex)]
+endfunction
+
+private function CUI_GetEntryName takes integer pid, integer listIndex returns string
+    if listIndex <= 0 or listIndex > CUI_EntryCount[pid] then
+        return ""
     endif
-    return Professions_GetRecipeIdForStationIndex(CUI_GetProfession(pid), CUI_GetStationType(pid), listIndex)
+    return CUI_EntryName[CUI_GetEntryKey(pid, listIndex)]
+endfunction
+
+private function CUI_GetEntryChildCount takes integer pid, integer listIndex returns integer
+    if listIndex <= 0 or listIndex > CUI_EntryCount[pid] then
+        return 0
+    endif
+    return CUI_EntryChildCount[CUI_GetEntryKey(pid, listIndex)]
 endfunction
 
 private function CUI_SelectFirstRecipeForCurrentPath takes integer pid returns nothing
@@ -343,6 +430,7 @@ private function CUI_GetRecipeStateText takes unit crafter, unit station, intege
     local integer currentSkill
     local string missingText
 
+    set CUI_LastRecipeReady = false
     if recipeId == 0 then
         return ""
     endif
@@ -367,6 +455,7 @@ private function CUI_GetRecipeStateText takes unit crafter, unit station, intege
     endif
 
     if Professions_CanStartRecipe(crafter, station, recipeId) then
+        set CUI_LastRecipeReady = true
         return "|cff80ff80Ready|r"
     endif
 
@@ -437,6 +526,8 @@ private function CUI_UpdateRows takes player whichPlayer returns nothing
     local integer recipeId
     local integer listIndex
     local integer entryCount
+    local boolean canCraft
+    local string stateText
     local string rowName
     local string categoryName
     local string subcategoryName
@@ -450,12 +541,9 @@ private function CUI_UpdateRows takes player whichPlayer returns nothing
         set listIndex = CUI_ListStart[pid] + rowIndex
 
         if CUI_IsCategoryMode(pid) then
-            set categoryName = Professions_GetRecipeCategoryForStationIndex(CUI_GetProfession(pid), CUI_GetStationType(pid), listIndex)
+            set categoryName = CUI_GetEntryName(pid, listIndex)
             if categoryName != "" then
-                set entryCount = Professions_GetRecipeSubcategoryCountForStationCategory(CUI_GetProfession(pid), CUI_GetStationType(pid), categoryName)
-                if entryCount <= 0 then
-                    set entryCount = Professions_GetRecipeCountForStationCategory(CUI_GetProfession(pid), CUI_GetStationType(pid), categoryName)
-                endif
+                set entryCount = CUI_GetEntryChildCount(pid, listIndex)
                 call BlzFrameSetTexture(CUI_RowIcon[rowIndex], CUI_GetCategoryIcon(categoryName), 0, true)
                 call BlzFrameSetText(CUI_RowText[rowIndex], "|cffffffff" + categoryName + "|r")
                 call BlzFrameSetText(CUI_RowState[rowIndex], I2S(entryCount))
@@ -465,9 +553,9 @@ private function CUI_UpdateRows takes player whichPlayer returns nothing
                 call CUI_HideRow(rowIndex)
             endif
         elseif CUI_IsSubcategoryMode(pid) then
-            set subcategoryName = Professions_GetRecipeSubcategoryForStationCategoryIndex(CUI_GetProfession(pid), CUI_GetStationType(pid), CUI_GetSelectedCategory(pid), listIndex)
+            set subcategoryName = CUI_GetEntryName(pid, listIndex)
             if subcategoryName != "" then
-                set entryCount = Professions_GetRecipeCountForStationSubcategory(CUI_GetProfession(pid), CUI_GetStationType(pid), CUI_GetSelectedCategory(pid), subcategoryName)
+                set entryCount = CUI_GetEntryChildCount(pid, listIndex)
                 call BlzFrameSetTexture(CUI_RowIcon[rowIndex], CUI_GetCategoryIcon(subcategoryName), 0, true)
                 call BlzFrameSetText(CUI_RowText[rowIndex], "|cffffffff" + subcategoryName + "|r")
                 call BlzFrameSetText(CUI_RowState[rowIndex], I2S(entryCount))
@@ -479,10 +567,12 @@ private function CUI_UpdateRows takes player whichPlayer returns nothing
         else
             set recipeId = CUI_GetRecipeIdForListIndex(pid, listIndex)
             if recipeId != 0 then
+                set stateText = CUI_GetRecipeStateText(CUI_Crafter[pid], CUI_Station[pid], recipeId)
+                set canCraft = CUI_LastRecipeReady
                 set rowName = Professions_GetRecipeName(recipeId)
                 if recipeId == CUI_SelectedRecipe[pid] then
                     set rowName = "|cffffe4a3" + rowName + "|r"
-                elseif Professions_CanStartRecipe(CUI_Crafter[pid], CUI_Station[pid], recipeId) then
+                elseif canCraft then
                     set rowName = "|cffffffff" + rowName + "|r"
                 else
                     set rowName = "|cff9a9a9a" + rowName + "|r"
@@ -490,7 +580,7 @@ private function CUI_UpdateRows takes player whichPlayer returns nothing
 
                 call BlzFrameSetTexture(CUI_RowIcon[rowIndex], Professions_GetRecipeIcon(recipeId), 0, true)
                 call BlzFrameSetText(CUI_RowText[rowIndex], rowName)
-                call BlzFrameSetText(CUI_RowState[rowIndex], CUI_GetRecipeStateText(CUI_Crafter[pid], CUI_Station[pid], recipeId))
+                call BlzFrameSetText(CUI_RowState[rowIndex], stateText)
                 call BlzFrameSetVisible(CUI_RowHighlight[rowIndex], recipeId == CUI_SelectedRecipe[pid])
                 call BlzFrameSetVisible(CUI_RowButton[rowIndex], true)
             else
@@ -511,7 +601,7 @@ private function CUI_UpdateDetail takes player whichPlayer returns nothing
         return
     endif
 
-    if CUI_Station[pid] == null or GetUnitTypeId(CUI_Station[pid]) == 0 then
+    if not Professions_IsStationUnit(CUI_Station[pid]) then
         call BlzFrameSetTexture(CUI_DetailIcon, CategoryIcon, 0, true)
         call BlzFrameSetText(CUI_DetailTitle, NoStationText)
         call BlzFrameSetText(CUI_DetailInfo, "")
@@ -554,6 +644,43 @@ private function CUI_UpdateDetail takes player whichPlayer returns nothing
     call BlzFrameSetText(CUI_DetailInfo, "|cffbfbfbf" + infoText + "|r")
     call BlzFrameSetText(CUI_DetailBody, CUI_GetDetailBody(CUI_Crafter[pid], CUI_Station[pid], recipeId))
     call CUI_SetCraftButtons(canCraft)
+endfunction
+
+private function CUI_UpdateRecipeSelection takes player whichPlayer, integer previousRecipeId returns nothing
+    local integer pid = GetPlayerId(whichPlayer)
+    local integer rowIndex = 1
+    local integer recipeId
+    local boolean canCraft
+    local string rowName
+    local string stateText
+
+    if GetLocalPlayer() != whichPlayer then
+        return
+    endif
+
+    loop
+        exitwhen rowIndex > CUI_VISIBLE_ROWS
+        set recipeId = CUI_GetRecipeIdForListIndex(pid, CUI_ListStart[pid] + rowIndex)
+        if recipeId == CUI_SelectedRecipe[pid] then
+            call BlzFrameSetText(CUI_RowText[rowIndex], "|cffffe4a3" + Professions_GetRecipeName(recipeId) + "|r")
+            call BlzFrameSetVisible(CUI_RowHighlight[rowIndex], true)
+        elseif recipeId == previousRecipeId then
+            set stateText = CUI_GetRecipeStateText(CUI_Crafter[pid], CUI_Station[pid], recipeId)
+            set canCraft = CUI_LastRecipeReady
+            set rowName = Professions_GetRecipeName(recipeId)
+            if canCraft then
+                set rowName = "|cffffffff" + rowName + "|r"
+            else
+                set rowName = "|cff9a9a9a" + rowName + "|r"
+            endif
+            call BlzFrameSetText(CUI_RowText[rowIndex], rowName)
+            call BlzFrameSetText(CUI_RowState[rowIndex], stateText)
+            call BlzFrameSetVisible(CUI_RowHighlight[rowIndex], false)
+        endif
+        set rowIndex = rowIndex + 1
+    endloop
+
+    call CUI_UpdateDetail(whichPlayer)
 endfunction
 
 private function CUI_UpdateForPlayer takes player whichPlayer returns nothing
@@ -614,8 +741,8 @@ private function CUI_OpenForPlayerEx takes player whichPlayer, unit station, uni
     set CUI_Crafter[pid] = crafter
     set CUI_ListStart[pid] = 0
     set CUI_SelectedRecipe[pid] = 0
+    set CUI_ReopenAfterCraft[pid] = false
     set CUI_QueryAfterCraft[pid] = false
-    set CUI_RecipePathSelected[pid] = false
     if categoryName == null then
         set CUI_SelectedCategory[pid] = ""
     else
@@ -625,10 +752,21 @@ private function CUI_OpenForPlayerEx takes player whichPlayer, unit station, uni
         set CUI_SelectedSubcategory[pid] = ""
     else
         set CUI_SelectedSubcategory[pid] = subcategoryName
-        if subcategoryName != "" then
-            set CUI_RecipePathSelected[pid] = true
-        endif
     endif
+
+    if CUI_GetSelectedSubcategory(pid) != "" then
+        set CUI_ViewMode[pid] = CUI_VIEW_RECIPES
+    elseif CUI_GetSelectedCategory(pid) != "" and CUI_GetSubcategoryCount(pid) > 0 then
+        set CUI_ViewMode[pid] = CUI_VIEW_SUBCATEGORIES
+    elseif CUI_GetSelectedCategory(pid) != "" then
+        set CUI_ViewMode[pid] = CUI_VIEW_RECIPES
+    elseif CUI_UsesCategoryRoot(pid) then
+        set CUI_ViewMode[pid] = CUI_VIEW_ROOT
+    else
+        set CUI_ViewMode[pid] = CUI_VIEW_RECIPES
+    endif
+    call CUI_RebuildEntryCache(pid)
+    call CUI_SelectFirstRecipeForCurrentPath(pid)
     call CUI_ClampForPlayer(whichPlayer)
 
     if GetLocalPlayer() == whichPlayer then
@@ -686,17 +824,27 @@ private function CUI_ReturnAction takes nothing returns nothing
     local player p = GetTriggerPlayer()
     local integer pid = GetPlayerId(p)
 
-    if CUI_GetSelectedSubcategory(pid) != "" then
+    if CUI_IsSubcategoryMode(pid) then
+        set CUI_SelectedCategory[pid] = ""
         set CUI_SelectedSubcategory[pid] = ""
-        set CUI_RecipePathSelected[pid] = false
+        set CUI_ViewMode[pid] = CUI_VIEW_ROOT
         set CUI_SelectedRecipe[pid] = 0
         set CUI_ListStart[pid] = 0
+        call CUI_RebuildEntryCache(pid)
+        call CUI_UpdateForPlayer(p)
+    elseif CUI_GetSelectedSubcategory(pid) != "" then
+        set CUI_SelectedSubcategory[pid] = ""
+        set CUI_ViewMode[pid] = CUI_VIEW_SUBCATEGORIES
+        set CUI_SelectedRecipe[pid] = 0
+        set CUI_ListStart[pid] = 0
+        call CUI_RebuildEntryCache(pid)
         call CUI_UpdateForPlayer(p)
     elseif CUI_GetSelectedCategory(pid) != "" and CUI_UsesCategoryRoot(pid) then
         set CUI_SelectedCategory[pid] = ""
-        set CUI_RecipePathSelected[pid] = false
+        set CUI_ViewMode[pid] = CUI_VIEW_ROOT
         set CUI_SelectedRecipe[pid] = 0
         set CUI_ListStart[pid] = 0
+        call CUI_RebuildEntryCache(pid)
         call CUI_UpdateForPlayer(p)
     else
         set CUI_QueryAfterCraft[pid] = false
@@ -711,33 +859,42 @@ private function CUI_RowAction takes nothing returns nothing
     local integer pid = GetPlayerId(p)
     local integer rowIndex = CUI_ButtonRow.integer[GetHandleId(BlzGetTriggerFrame())]
     local integer recipeId
+    local integer previousRecipeId
     local string categoryName
     local string subcategoryName
 
     if CUI_IsCategoryMode(pid) then
-        set categoryName = Professions_GetRecipeCategoryForStationIndex(CUI_GetProfession(pid), CUI_GetStationType(pid), CUI_ListStart[pid] + rowIndex)
+        set categoryName = CUI_GetEntryName(pid, CUI_ListStart[pid] + rowIndex)
         if categoryName != "" then
             set CUI_SelectedCategory[pid] = categoryName
             set CUI_SelectedSubcategory[pid] = ""
-            set CUI_RecipePathSelected[pid] = false
             set CUI_SelectedRecipe[pid] = 0
             set CUI_ListStart[pid] = 0
+            if CUI_GetSubcategoryCount(pid) > 0 then
+                set CUI_ViewMode[pid] = CUI_VIEW_SUBCATEGORIES
+            else
+                set CUI_ViewMode[pid] = CUI_VIEW_RECIPES
+            endif
+            call CUI_RebuildEntryCache(pid)
+            call CUI_SelectFirstRecipeForCurrentPath(pid)
             call CUI_UpdateForPlayer(p)
         endif
     elseif CUI_IsSubcategoryMode(pid) then
-        set subcategoryName = Professions_GetRecipeSubcategoryForStationCategoryIndex(CUI_GetProfession(pid), CUI_GetStationType(pid), CUI_GetSelectedCategory(pid), CUI_ListStart[pid] + rowIndex)
+        set subcategoryName = CUI_GetEntryName(pid, CUI_ListStart[pid] + rowIndex)
         if subcategoryName != "" then
             set CUI_SelectedSubcategory[pid] = subcategoryName
-            set CUI_RecipePathSelected[pid] = true
+            set CUI_ViewMode[pid] = CUI_VIEW_RECIPES
             set CUI_ListStart[pid] = 0
+            call CUI_RebuildEntryCache(pid)
             call CUI_SelectFirstRecipeForCurrentPath(pid)
             call CUI_UpdateForPlayer(p)
         endif
     else
         set recipeId = CUI_GetRecipeIdForListIndex(pid, CUI_ListStart[pid] + rowIndex)
         if recipeId != 0 then
+            set previousRecipeId = CUI_SelectedRecipe[pid]
             set CUI_SelectedRecipe[pid] = recipeId
-            call CUI_UpdateForPlayer(p)
+            call CUI_UpdateRecipeSelection(p, previousRecipeId)
         endif
     endif
 
