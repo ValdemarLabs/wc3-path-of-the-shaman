@@ -16,7 +16,7 @@ The DInventory system **already has all the functionality** needed for dynamic i
 
 **Changes Made:**
 - Set `InventoryColumns = 4` (was 5)
-- Set `InventoryRows = 3` (was 5)
+- Set `InventoryRows = 6` so the visible grid can grow from 3 to 6 rows
 - Initial capacity is now 12 slots instead of 25 slots
 - Added comprehensive documentation header explaining the bag system
 
@@ -24,8 +24,9 @@ The DInventory system **already has all the functionality** needed for dynamic i
 ```jass
 integer InventoryPages = 1
 integer InventoryColumns = 4
-integer InventoryRows = 3
-integer InventoryCapacityBase = 12  // (4 × 3 × 1)
+integer InventoryRows = 6
+integer InventoryCapacityBase = 12
+integer InventoryCapacityMaximum = 80
 ```
 
 ---
@@ -39,7 +40,7 @@ These wrapper functions are designed for vendor/shop systems to call when player
 #### `DInvAddSlotsForPlayerVendor(playerId, numberOfSlots)` → returns boolean
 - Adds inventory slots for a player (works with "1PerPlayer" paradigm)
 - Shows a confirmation message to the player
-- **Returns**: `true` if successful, `false` if would exceed maximum capacity
+- **Returns**: `true` if at least one slot was added, `false` if already at maximum capacity
 - **Parameters:**
   - `playerId`: Player index (0-11)
   - `numberOfSlots`: Number of slots to add (e.g., 6, 12, 20)
@@ -57,7 +58,7 @@ endif
 - Adds inventory slots for a specific hero (works with "1PerHero" paradigm)
 - Automatically detects paradigm and calls the appropriate function
 - Shows a confirmation message to the player
-- **Returns**: `true` if successful, `false` if would exceed maximum capacity
+- **Returns**: `true` if at least one slot was added, `false` if already at maximum capacity
 - **Parameters:**
   - `heroUnit`: The hero unit purchasing the bag
   - `numberOfSlots`: Number of slots to add (e.g., 6, 12, 20)
@@ -77,34 +78,28 @@ endif
 
 ### Technical Limits
 
-**Maximum slots per page: 340**
+**Maximum total capacity: 80 by default**
+- Configure this with `InventoryCapacityMaximum`
+- An upgrade that would overshoot the limit adds only the remaining slots
+- An upgrade fails only when the inventory is already at the limit
+
+**Technical frame limit: 340 visible slots per page**
 - This is a hard technical limit due to frame array size
 - Frame arrays are declared as `framehandle array [8160]`
 - With 24 players max: 8160 ÷ 24 = 340 slots per player per page
 
-**What happens when full?**
-- If you try to add slots that would exceed 340 × pages, the function returns `false`
-- An error message is shown: "Cannot expand inventory - maximum capacity reached!"
-- **No items are lost** - the purchase simply fails
-
 **Multi-page support:**
-- You can configure multiple pages: `integer InventoryPages = 2`
-- With 2 pages: maximum 680 slots (340 × 2)
-- With 3 pages: maximum 1020 slots (340 × 3)
+- The PotS layout shows up to 24 slots per page and uses additional pages up to the configured total cap
 
 ### Practical Limits
 
 With the current configuration:
-- **Pages**: 1
+- **Visible page size**: up to 24 slots (6 rows × 4 columns)
 - **Initial capacity**: 12 slots (3 rows × 4 columns)
-- **Maximum with bags**: 340 slots
-- **Available expansion**: 328 slots (340 - 12 = 328)
+- **Maximum with bags**: 80 slots
+- **Available expansion**: 68 slots (80 - 12 = 68)
 
-This means you could theoretically buy:
-- 54 small bags (328 ÷ 6 = 54.6)
-- 27 medium bags (328 ÷ 12 = 27.3)
-- 16 large bags (328 ÷ 20 = 16.4)
-- Or any combination that doesn't exceed 328 additional slots
+This means repeated purchases can add at most 68 more slots. The final purchase is clamped when its normal slot value would pass 80.
 
 ---
 
@@ -124,15 +119,14 @@ When you call `DInvAddSlotsForHeroVendor(hero, 12)`:
 - Buy Medium Bag: +12 slots
 - Result: 24 slots (first 12 full, last 12 empty)
 
-### Scenario 2: Would exceed 340 slot limit
-**Answer**: Purchase fails safely! ✓
+### Scenario 2: Would exceed the configured 80-slot limit
+**Answer**: The upgrade is clamped safely! ✓
 
 When you try to buy a bag that would exceed the limit:
-1. Function returns `false`
-2. Error message shown: "Cannot expand inventory - maximum capacity reached!"
-3. **No gold is deducted** (if you check return value first)
-4. **Bag item is not consumed** (if you check return value first)
-5. Player can sell the bag back or save it
+1. Only the remaining slots are added, up to 80
+2. Function returns `true` because capacity increased
+3. The function returns `false` only if capacity was already 80
+4. **No items are lost**
 
 **Example with proper error handling:**
 ```jass
@@ -304,7 +298,7 @@ integer InventoryRows = 2
 // This would give 2 pages × 6 slots = 12 total slots
 ```
 
-**Note:** Maximum slots per page is 340 (technical limitation).
+**Note:** Maximum total capacity is configured by `InventoryCapacityMaximum`; the frame system supports at most 340 visible slots per page.
 
 ---
 

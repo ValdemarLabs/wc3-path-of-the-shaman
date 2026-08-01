@@ -66,7 +66,7 @@ function BagItemUsed takes nothing returns nothing
             // Optional: Play a sound effect
             // call PlaySoundOnUnitBJ(gg_snd_ReceiveGold, 100, hero)
         else
-            // Failed to add slots (probably hit the 340 slot limit)
+            // Failed to add slots because the inventory is already at its configured maximum
             // Don't remove the bag item so player can sell it back or use it later
         endif
     endif
