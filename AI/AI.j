@@ -82,6 +82,8 @@
     call AI_GetReviveTimer(whichUnit) returns timer
     call AI_GetReviveRemaining(whichUnit) returns real
     call AI_IsReviving(whichUnit) returns boolean
+    call AI_ReviveAt(whichUnit, x, y, showEffects) returns boolean
+    call AI_ArePartyMembers(firstUnit, secondUnit) returns boolean
     call AI_GetFactionInfoText(whichUnit) returns string
     call AI_SetDebugMode(enabled)
 
@@ -1897,6 +1899,68 @@ private function ClearInstanceProfessionState takes integer instanceId, unit whi
     endif
 endfunction
 
+private function CompleteRevive takes integer instanceId, unit whichUnit, real x, real y, boolean showEffects returns nothing
+    local integer profileId = InstanceProfile[instanceId]
+
+    if IsUnitType(whichUnit, UNIT_TYPE_HERO) then
+        call ReviveHero(whichUnit, x, y, showEffects)
+    else
+        call SetUnitPosition(whichUnit, x, y)
+        call ShowUnit(whichUnit, true)
+    endif
+    call PauseUnit(whichUnit, false)
+    call SetUnitTimeScale(whichUnit, 1.00)
+    call SetUnitPathing(whichUnit, true)
+    call ResetUnitAnimation(whichUnit)
+    call SetUnitAnimation(whichUnit, "stand")
+    call SetWidgetLife(whichUnit, GetUnitState(whichUnit, UNIT_STATE_MAX_LIFE) * 0.50)
+    if not ProfileNoManaRestore.boolean[profileId] then
+        call SetUnitState(whichUnit, UNIT_STATE_MANA, GetUnitState(whichUnit, UNIT_STATE_MAX_MANA) * 0.50)
+    else
+        call SetUnitState(whichUnit, UNIT_STATE_MANA, 0.00)
+    endif
+    set InstanceAlive.boolean[instanceId] = true
+    call SetInstanceState(instanceId, AI_STATE_IDLE)
+    if InstanceRandomManaged.boolean[instanceId] then
+        if CanShowRandomManaged(instanceId) then
+            call ShowRandomManagedFromCap(instanceId, whichUnit)
+        else
+            call HideRandomManagedByCap(instanceId, whichUnit)
+        endif
+    endif
+    if IsCompanionControlled(whichUnit) and not udg_InCinematic then
+        call PingMinimapEx(x, y, 1.00, 255, 0, 0, true)
+        call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, 5.00, "|cffffff00|r" + GetDisplayName(whichUnit) + " |cffffffffis |r|cff00ff00revived.|r")
+    endif
+    call RunProfileTrigger(ProfileReviveTrigger, instanceId, whichUnit)
+    call RefreshInstanceProfessionSkills(instanceId, whichUnit)
+endfunction
+
+public function ReviveAt takes unit whichUnit, real x, real y, boolean showEffects returns boolean
+    local integer instanceId
+    local timer reviveTimer
+
+    if whichUnit == null or GetUnitTypeId(whichUnit) == 0 then
+        return false
+    endif
+    set instanceId = UnitInstance[GetHandleId(whichUnit)]
+    if instanceId <= 0 then
+        return false
+    endif
+
+    set reviveTimer = InstanceReviveTimer.timer[instanceId]
+    if reviveTimer != null then
+        call ReviveTimerInstance.remove(GetHandleId(reviveTimer))
+        call InstanceReviveTimer.timer.remove(instanceId)
+        call PauseTimer(reviveTimer)
+        call DestroyTimer(reviveTimer)
+    endif
+    call CompleteRevive(instanceId, whichUnit, x, y, showEffects)
+
+    set reviveTimer = null
+    return true
+endfunction
+
 private function ReviveExpired takes nothing returns nothing
     local timer expired = GetExpiredTimer()
     local integer timerId = GetHandleId(expired)
@@ -1906,41 +1970,12 @@ private function ReviveExpired takes nothing returns nothing
     local integer graveyardId
     local real x
     local real y
-    local integer profileId
     if instanceId > 0 and whichUnit != null and GetUnitTypeId(whichUnit) != 0 then
-        set profileId = InstanceProfile[instanceId]
         set graveyardId = GetReviveGraveyardId(whichUnit)
         set graveyardRect = GetGraveyardRect(graveyardId)
         set x = GetRectCenterX(graveyardRect)
         set y = GetRectCenterY(graveyardRect)
-        if IsUnitType(whichUnit, UNIT_TYPE_HERO) then
-            call ReviveHero(whichUnit, x, y, true)
-        else
-            call SetUnitPosition(whichUnit, x, y)
-            call ShowUnit(whichUnit, true)
-            call PauseUnit(whichUnit, false)
-        endif
-        call SetWidgetLife(whichUnit, GetUnitState(whichUnit, UNIT_STATE_MAX_LIFE) * 0.50)
-        if not ProfileNoManaRestore.boolean[profileId] then
-            call SetUnitState(whichUnit, UNIT_STATE_MANA, GetUnitState(whichUnit, UNIT_STATE_MAX_MANA) * 0.50)
-        else
-            call SetUnitState(whichUnit, UNIT_STATE_MANA, 0.00)
-        endif
-        set InstanceAlive.boolean[instanceId] = true
-        call SetInstanceState(instanceId, AI_STATE_IDLE)
-        if InstanceRandomManaged.boolean[instanceId] then
-            if CanShowRandomManaged(instanceId) then
-                call ShowRandomManagedFromCap(instanceId, whichUnit)
-            else
-                call HideRandomManagedByCap(instanceId, whichUnit)
-            endif
-        endif
-        if IsCompanionControlled(whichUnit) and not udg_InCinematic then
-            call PingMinimapEx(x, y, 1.00, 255, 0, 0, true)
-            call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, 5.00, "|cffffff00|r" + GetDisplayName(whichUnit) + " |cffffffffis |r|cff00ff00revived.|r")
-        endif
-        call RunProfileTrigger(ProfileReviveTrigger, instanceId, whichUnit)
-        call RefreshInstanceProfessionSkills(instanceId, whichUnit)
+        call CompleteRevive(instanceId, whichUnit, x, y, true)
     endif
     call ReviveTimerInstance.remove(timerId)
     call InstanceReviveTimer.timer.remove(instanceId)
@@ -2252,6 +2287,23 @@ endfunction
 
 public function IsReviving takes unit whichUnit returns boolean
     return GetReviveTimer(whichUnit) != null
+endfunction
+
+public function ArePartyMembers takes unit firstUnit, unit secondUnit returns boolean
+    local integer firstInstance
+    local integer secondInstance
+    local integer leaderInstance
+
+    if firstUnit == null or secondUnit == null or firstUnit == secondUnit then
+        return false
+    endif
+    set firstInstance = UnitInstance[GetHandleId(firstUnit)]
+    set secondInstance = UnitInstance[GetHandleId(secondUnit)]
+    if firstInstance <= 0 or secondInstance <= 0 then
+        return false
+    endif
+    set leaderInstance = InstanceAiPartyLeader[firstInstance]
+    return leaderInstance > 0 and leaderInstance == InstanceAiPartyLeader[secondInstance]
 endfunction
 
 public function SetProfileReviveDelay takes integer profileId, real delay returns nothing
