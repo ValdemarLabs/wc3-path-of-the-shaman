@@ -29,6 +29,11 @@ No automated test framework or coverage threshold is configured. Name focused ha
 
 Recent history uses short, direct, sentence-case summaries without Conventional Commit prefixes, such as `Add Circle of Blood arena zone`. Keep each commit cohesive and describe the observable result. Pull requests should list affected systems, dependencies or import-order changes, test-map/full-map results, and known validation gaps. Include screenshots for UI/frame changes and identify regenerated exports separately from hand-edited source.
 
+## Changelog and commit messages
+
+Always update `Pots Changelog.md` on the current date.
+Write short commit messages in chat per changed files or sometimes for many files if the commit is clearly for many files.
+
 ## Subagent policy
 
 Use subagents only for independent, bounded work.
