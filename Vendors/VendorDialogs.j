@@ -13,8 +13,9 @@
 
     How to install:
     Import after DialogInteraction, DialogSystem, Shop, ShopUI, VendorLines,
-    Interface, and Table. Vendor unit types must be registered in Shop before
-    the delayed scan runs, or individual units can be registered manually.
+    Interface, Table, and optional VendorQuests. Vendor unit types must be
+    registered in Shop before the delayed scan runs, or individual units can
+    be registered manually.
 
     API:
     - call VendorDialogs_RegisterVendor(vendor)
@@ -23,7 +24,7 @@
     - set hero = VendorDialogs_GetSelectedHero()
 
 **/
-library VendorDialogs initializer Init requires Table, DialogInteraction, DialogSystem, Shop, ShopUI, VendorLines, Interface, optional Events, optional UnitDeathEvent
+library VendorDialogs initializer Init requires Table, DialogInteraction, DialogSystem, Shop, ShopUI, VendorLines, Interface, optional VendorQuests, optional Events, optional UnitDeathEvent
     globals
         private constant real VDI_DIALOG_RANGE = 900.00
         private constant real VDI_DIALOG_COOLDOWN = 3.00
@@ -252,6 +253,18 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         call DialogSystem_PlaySequence(seq, Player(0), VDI_SelectedVendor)
     endfunction
 
+    private function VDI_OnQuest takes nothing returns nothing
+        if not VDI_IsSelectedContextValid() then
+            call VDI_EndDialog(true)
+            return
+        endif
+
+        static if LIBRARY_VendorQuests then
+            call VendorQuests_HandleAction(DialogSystem_LastAction, VDI_SelectedVendor, VDI_SelectedHero)
+        endif
+        call VDI_EndDialog(true)
+    endfunction
+
     private function VDI_BuildDialog takes nothing returns nothing
         local button b
         local string vendorName
@@ -268,6 +281,10 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
 
         call DialogSystem_ClearDialog(VDI_Dialog)
         call DialogSystem_SetTitle(VDI_Dialog, vendorName)
+
+        static if LIBRARY_VendorQuests then
+            call VendorQuests_AddDialogButtons(VDI_Dialog, VDI_SelectedVendor, function VDI_OnQuest)
+        endif
 
         set b = DialogSystem_AddButtonTrade(VDI_Dialog, VDI_ACTION_TRADE)
         call DialogSystem_BindButtonCode(b, function VDI_OnTrade)
@@ -318,6 +335,9 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
 
         set VDI_SelectedVendor = vendor
         set VDI_SelectedHero = hero
+        static if LIBRARY_VendorQuests then
+            call VendorQuests_OnVendorSelected(vendor, hero)
+        endif
         call VDI_ConfigureVendorCamera(vendor, hero)
         call DialogInteraction_StartConfiguredDialogEntryTransition(vendor, hero, false, VDI_USE_DIALOG_CAMERA, VDI_CINEMATIC, "VendorDialogs_ContinueToDialogAfterSelection")
 
@@ -343,6 +363,9 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         call DialogInteraction_Register(vendor)
         call DialogInteraction_SetGreetOrder(vendor, DIALOGINTERACTION_GREET_NONE)
         call DialogInteraction_RegisterSelectionHandler(vendor, function VDI_OnSelected)
+        static if LIBRARY_VendorQuests then
+            call VendorQuests_RegisterUnit(vendor)
+        endif
 
         set vendor = null
     endfunction

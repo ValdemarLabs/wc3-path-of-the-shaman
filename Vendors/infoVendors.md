@@ -5,6 +5,7 @@ VendorCatalogs.j | Shared definitions for 26 reusable vendor roles. Many differe
 VendorOrcs.j, etc. | Connect Object Editor unit rawcodes to a catalog and racial/regional voice profile.
 VendorBlacksmith.j | A bespoke vendor implementation with its own vendor ID, stock, AI weights, reputation items, unit bindings, and dialogue.
 VendorFloatingText.j |Presentation layer that displays the final registered vendor type above units.
+VendorQuests.j | Adds quest buttons to the existing vendor dialogue and instantiates separate `qVendorName.j` quest templates by vendor unit rawcode.
 
 # For example:
 o011
