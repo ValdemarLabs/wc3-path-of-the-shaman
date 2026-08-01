@@ -2,7 +2,7 @@
 File | Responsibility
 Shop.j	| Core buying, selling, stock, reputation, zone filtering, and vendor lookup engine.
 VendorCatalogs.j | Shared definitions for 26 reusable vendor roles. Many different racial units can use the same catalog.
-VendorOrcs.j, etc. | Connect Object Editor unit rawcodes to a catalog and racial/regional voice profile.
+VendorOrcs.j, VendorElarindor.j, etc. | Connect Object Editor unit rawcodes to a catalog and racial, regional, or faction voice profile.
 VendorBlacksmith.j | A bespoke vendor implementation with its own vendor ID, stock, AI weights, reputation items, unit bindings, and dialogue.
 VendorFloatingText.j |Presentation layer that displays the final registered vendor type above units.
 VendorQuests.j | Adds quest buttons to the existing vendor dialogue and instantiates separate `qVendorName.j` quest templates by vendor unit rawcode.

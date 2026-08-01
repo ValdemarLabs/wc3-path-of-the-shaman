@@ -117,3 +117,16 @@
 | `n04L` | Mogrum Manythings | Profession Supplier | — |
 | `n04M` | Bargul Bonecount | Bonecrusher Quartermaster | — |
 | `n04N` | Grothak Heavytrade | Trade Goods Merchant | — |
+
+### Elarindor vendors
+
+| Rawcode | Name | Editor suffix | Quest giver |
+|---|---|---|---|
+| `n04O` | Aerendir Sunblade | Elarindor Weapons Vendor | — |
+| `n04P` | Lyssara Moonweave | Elarindor Armor Vendor | — |
+| `n04Q` | Thaelion Spellward | Elarindor Shield Vendor | — |
+| `n04R` | Elowen Starweaver | Elarindor Enchanting Supplier | — |
+| `n04S` | Sylvaris Dewleaf | Elarindor Reagent Merchant | — |
+| `n04T` | Vaeriel Dawnflask | Elarindor Potion Seller | — |
+| `n04U` | Arannis Wayfarer | Elarindor Expedition Supplier | — |
+| `n04V` | Maerith Silvercrest | Elarindor Quartermaster | — |
