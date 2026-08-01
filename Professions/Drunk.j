@@ -2,23 +2,22 @@
     Drunk
 
     Author: Valdemar
-    Version: 1.0
+    Version: 1.1
 
     Description:
-    Handles drunken unit visuals, local player drunk fade, and subtle camera
-    sway for beverage effects.
+    Handles drunken unit visuals, local player drunk fade, escalating camera
+    sway, and high-level drunken movement/casting mishaps.
 
     Credits:
 
     How to install:
-    Import this library after Events, TimerUtils, and Table. Call Drunk_Add from
-    consumable systems when a unit drinks a beverage.
+    Import this library after TimerUtils, Table, and CameraControl. Call
+    Drunk_Add from consumable systems when a unit drinks a beverage.
 
-    The player-side filter follows the currently selected owned unit. If the
-    player switches from a drunk unit to another unit, the filter and camera roll
-    are cleared locally. The fade uses the cinematic filter layer, so other
-    systems that also write cinematic filters may visually override it until the
-    next Drunk tick.
+    The player-side filter follows CameraControl's active Nazgrek/Zulkis target,
+    not ordinary unit selection. The fade uses the cinematic filter layer, so
+    other systems that also write cinematic filters may visually override it
+    until the next Drunk tick.
 
     API:
     call Drunk_Add(whichUnit, amount, duration)
@@ -28,13 +27,18 @@
 
 **/
 
-library Drunk initializer Init requires TimerUtils, Table, Events
+library Drunk initializer Init requires TimerUtils, Table, CameraControl
 
 globals
     private constant real D_TICK_PERIOD = 0.35
     private constant real D_MAX_LEVEL = 3.00
     private constant real D_MIN_ROLL = 1.25
     private constant real D_MAX_ROLL = 7.00
+    private constant real D_MISHAP_MIN_LEVEL = 0.30
+    private constant integer D_MISHAP_MIN_TICKS = 10
+    private constant integer D_MISHAP_MAX_TICKS = 28
+    private constant real D_MISCAST_MEDIUM_LEVEL = 0.60
+    private constant real D_MISCAST_HIGH_LEVEL = 0.85
     private constant string D_FILTER_TEXTURE = "ReplaceableTextures\\CameraMasks\\DiagonalSlash_mask.blp"
     private constant string D_TARGET_EFFECT = "Abilities\\Spells\\Other\\DrunkenHaze\\DrunkenHazeTarget.mdl"
     private constant string D_TARGET_ATTACH = "overhead"
@@ -45,10 +49,12 @@ globals
     private effect array D_UnitEffect
     private timer array D_UnitTimer
     private integer array D_UnitGeneration
+    private integer array D_NextMishapTick
+    private group D_DrunkUnits = null
 
-    private unit array D_SelectedUnit
     private boolean array D_FilterActive
     private real array D_SwayPhase
+    private integer D_TickCount = 0
     private timer D_TickTimer = null
 endglobals
 
@@ -123,6 +129,10 @@ private function D_ShouldPlayerSeeDrunkUnit takes player whichPlayer, unit which
     return D_IsUnitAlive(whichUnit) and GetOwningPlayer(whichUnit) == whichPlayer and D_UnitLevel[unitId] > 0.00
 endfunction
 
+private function D_GetPlayerViewUnit takes player whichPlayer returns unit
+    return CameraControl_GetTargetUnit(whichPlayer)
+endfunction
+
 private function D_RefreshPlayerIndex takes integer playerIndex returns nothing
     local player whichPlayer
     local unit whichUnit
@@ -133,7 +143,7 @@ private function D_RefreshPlayerIndex takes integer playerIndex returns nothing
     endif
 
     set whichPlayer = Player(playerIndex)
-    set whichUnit = D_SelectedUnit[playerIndex]
+    set whichUnit = D_GetPlayerViewUnit(whichPlayer)
     set unitId = D_GetUnitId(whichUnit)
 
     if D_ShouldPlayerSeeDrunkUnit(whichPlayer, whichUnit) then
@@ -154,7 +164,7 @@ private function D_RefreshPlayersForUnit takes unit whichUnit returns nothing
     local integer playerIndex = 0
     loop
         exitwhen playerIndex >= bj_MAX_PLAYERS
-        if D_SelectedUnit[playerIndex] == whichUnit then
+        if D_GetPlayerViewUnit(Player(playerIndex)) == whichUnit then
             call D_RefreshPlayerIndex(playerIndex)
         endif
         set playerIndex = playerIndex + 1
@@ -188,7 +198,9 @@ private function D_ClearById takes integer unitId returns nothing
     call D_ReleaseUnitTimer(unitId)
     call D_DestroyUnitVisual(unitId)
     set D_UnitLevel[unitId] = 0.00
+    set D_NextMishapTick[unitId] = 0
     set D_UnitGeneration[unitId] = D_UnitGeneration[unitId] + 1
+    call GroupRemoveUnit(D_DrunkUnits, whichUnit)
     set D_Unit[unitId] = null
 
     call D_RefreshPlayersForUnit(whichUnit)
@@ -207,6 +219,8 @@ private function D_Expire takes nothing returns nothing
         set D_UnitTimer[unitId] = null
         call D_DestroyUnitVisual(unitId)
         set D_UnitLevel[unitId] = 0.00
+        set D_NextMishapTick[unitId] = 0
+        call GroupRemoveUnit(D_DrunkUnits, whichUnit)
         set D_Unit[unitId] = null
         call D_RefreshPlayersForUnit(whichUnit)
     endif
@@ -233,16 +247,135 @@ private function D_StartTimer takes integer unitId, real duration returns nothin
     set t = null
 endfunction
 
-private function D_OnUnitSelected takes nothing returns nothing
-    local player whichPlayer = GetTriggerPlayer()
-    local integer playerIndex = D_GetPlayerIndex(whichPlayer)
+// Only gameplay abilities are eligible. This excludes profession/UI abilities
+// that may also use Channel and would otherwise open interfaces while drunk.
+private function D_IsElementalMiscastAbility takes integer abilityId returns boolean
+    return abilityId == 'A6A0' or abilityId == 'A67H' or abilityId == 'A67L' or abilityId == 'A67J' or abilityId == 'A69L' or abilityId == 'A69N' or abilityId == 'A68H' or abilityId == 'A67Q'
+endfunction
 
-    if playerIndex >= 0 and playerIndex < bj_MAX_PLAYERS then
-        set D_SelectedUnit[playerIndex] = GetTriggerUnit()
-        call D_RefreshPlayerIndex(playerIndex)
+private function D_IsEnhancementMiscastAbility takes integer abilityId returns boolean
+    return abilityId == 'A685' or abilityId == 'A6DP' or abilityId == 'A026' or abilityId == 'A022' or abilityId == 'A67N' or abilityId == 'A679' or abilityId == 'A673' or abilityId == 'A675' or abilityId == 'A677'
+endfunction
+
+private function D_IsRestorationMiscastAbility takes integer abilityId returns boolean
+    return abilityId == 'A66Y' or abilityId == 'A672' or abilityId == 'A66W' or abilityId == 'A69W' or abilityId == 'A62Z' or abilityId == 'A01Z' or abilityId == 'A6AL' or abilityId == 'A638' or abilityId == 'A69Y'
+endfunction
+
+private function D_IsTotemicMiscastAbility takes integer abilityId returns boolean
+    return abilityId == 'A63F' or abilityId == 'A63G' or abilityId == 'A63H' or abilityId == 'A63I' or abilityId == 'A68J' or abilityId == 'A68L' or abilityId == 'A68F' or abilityId == 'A68T' or abilityId == 'A01U' or abilityId == 'A636'
+endfunction
+
+private function D_IsMiscastAbility takes integer abilityId returns boolean
+    return D_IsElementalMiscastAbility(abilityId) or D_IsEnhancementMiscastAbility(abilityId) or D_IsRestorationMiscastAbility(abilityId) or D_IsTotemicMiscastAbility(abilityId)
+endfunction
+
+private function D_TryRandomMiscast takes unit whichUnit returns boolean
+    local integer index = 0
+    local integer abilityId
+    local integer abilityLevel
+    local integer candidateCount = 0
+    local integer selectedAbilityId = 0
+    local string selectedOrder = ""
+    local string order
+    local ability whichAbility = BlzGetUnitAbilityByIndex(whichUnit, index)
+    local real angle
+    local real distance
+    local integer castMode
+
+    loop
+        exitwhen whichAbility == null
+        set abilityId = BlzGetAbilityId(whichAbility)
+        set abilityLevel = GetUnitAbilityLevel(whichUnit, abilityId)
+        if D_IsMiscastAbility(abilityId) and abilityLevel > 0 and BlzGetUnitAbilityCooldownRemaining(whichUnit, abilityId) <= 0.00 and GetUnitState(whichUnit, UNIT_STATE_MANA) >= I2R(BlzGetUnitAbilityManaCost(whichUnit, abilityId, abilityLevel - 1)) then
+            set order = BlzGetAbilityStringLevelField(whichAbility, ABILITY_SLF_BASE_ORDER_ID_NCL6, abilityLevel - 1)
+            if order != null and order != "" then
+                set candidateCount = candidateCount + 1
+                if GetRandomInt(1, candidateCount) == 1 then
+                    set selectedAbilityId = abilityId
+                    set selectedOrder = order
+                endif
+            endif
+        endif
+        set index = index + 1
+        set whichAbility = BlzGetUnitAbilityByIndex(whichUnit, index)
+    endloop
+
+    set whichAbility = null
+    if selectedAbilityId == 0 then
+        return false
     endif
 
-    set whichPlayer = null
+    set castMode = GetRandomInt(1, 3)
+    if castMode == 1 and IssueImmediateOrder(whichUnit, selectedOrder) then
+        return true
+    elseif castMode == 2 and IssueTargetOrder(whichUnit, selectedOrder, whichUnit) then
+        return true
+    elseif castMode == 3 then
+        set angle = GetRandomReal(0.00, 2.00*bj_PI)
+        set distance = GetRandomReal(100.00, 450.00)
+        if IssuePointOrder(whichUnit, selectedOrder, GetUnitX(whichUnit) + distance*Cos(angle), GetUnitY(whichUnit) + distance*Sin(angle)) then
+            return true
+        endif
+    endif
+
+    if IssueImmediateOrder(whichUnit, selectedOrder) then
+        return true
+    endif
+    if IssueTargetOrder(whichUnit, selectedOrder, whichUnit) then
+        return true
+    endif
+    set angle = GetRandomReal(0.00, 2.00*bj_PI)
+    set distance = GetRandomReal(100.00, 450.00)
+    return IssuePointOrder(whichUnit, selectedOrder, GetUnitX(whichUnit) + distance*Cos(angle), GetUnitY(whichUnit) + distance*Sin(angle))
+endfunction
+
+private function D_ScheduleNextMishap takes integer unitId, real normalizedLevel returns nothing
+    local integer interval = D_MISHAP_MAX_TICKS - R2I((D_MISHAP_MAX_TICKS - D_MISHAP_MIN_TICKS)*normalizedLevel)
+    if interval < D_MISHAP_MIN_TICKS then
+        set interval = D_MISHAP_MIN_TICKS
+    endif
+    set D_NextMishapTick[unitId] = D_TickCount + GetRandomInt(interval, interval + 8)
+endfunction
+
+private function D_ApplyMishap takes nothing returns nothing
+    local unit whichUnit = GetEnumUnit()
+    local integer unitId = D_GetUnitId(whichUnit)
+    local real level
+    local integer miscastChance = 0
+
+    if unitId <= 0 or not D_IsUnitAlive(whichUnit) or IsUnitPaused(whichUnit) then
+        set whichUnit = null
+        return
+    endif
+
+    set level = D_NormalizeLevel(D_UnitLevel[unitId])
+    if level < D_MISHAP_MIN_LEVEL then
+        set whichUnit = null
+        return
+    endif
+    if D_NextMishapTick[unitId] <= 0 then
+        call D_ScheduleNextMishap(unitId, level)
+    elseif D_TickCount >= D_NextMishapTick[unitId] then
+        if level >= D_MISCAST_HIGH_LEVEL then
+            set miscastChance = 45
+        elseif level >= D_MISCAST_MEDIUM_LEVEL then
+            set miscastChance = 20
+        endif
+
+        if miscastChance > 0 and GetRandomInt(1, 100) <= miscastChance then
+            if not D_TryRandomMiscast(whichUnit) then
+                call IssueImmediateOrder(whichUnit, "stop")
+            endif
+        else
+            call IssueImmediateOrder(whichUnit, "stop")
+        endif
+        if level >= D_MISCAST_MEDIUM_LEVEL then
+            call SetUnitFacing(whichUnit, GetUnitFacing(whichUnit) + GetRandomReal(-55.00, 55.00))
+        endif
+        call D_ScheduleNextMishap(unitId, level)
+    endif
+
+    set whichUnit = null
 endfunction
 
 private function D_Tick takes nothing returns nothing
@@ -252,19 +385,24 @@ private function D_Tick takes nothing returns nothing
     local integer unitId
     local real level
     local real roll
+    local real swayScale
+
+    set D_TickCount = D_TickCount + 1
+    call ForGroup(D_DrunkUnits, function D_ApplyMishap)
 
     loop
         exitwhen playerIndex >= bj_MAX_PLAYERS
         set whichPlayer = Player(playerIndex)
-        set whichUnit = D_SelectedUnit[playerIndex]
+        set whichUnit = D_GetPlayerViewUnit(whichPlayer)
         set unitId = D_GetUnitId(whichUnit)
 
         if D_ShouldPlayerSeeDrunkUnit(whichPlayer, whichUnit) then
             set level = D_NormalizeLevel(D_UnitLevel[unitId])
             set D_FilterActive[playerIndex] = true
             call D_ShowFilter(whichPlayer, D_UnitLevel[unitId])
-            set D_SwayPhase[playerIndex] = D_SwayPhase[playerIndex] + 0.70 + level * 0.55
-            set roll = Sin(D_SwayPhase[playerIndex]) * (D_MIN_ROLL + (D_MAX_ROLL - D_MIN_ROLL) * level)
+            set D_SwayPhase[playerIndex] = D_SwayPhase[playerIndex] + 0.70 + level*0.55 + 0.08*Sin(D_SwayPhase[playerIndex]*0.73 + I2R(playerIndex))
+            set swayScale = 1.00 + 0.18*Sin(D_SwayPhase[playerIndex]*2.31 + I2R(playerIndex)*1.77)
+            set roll = Sin(D_SwayPhase[playerIndex])*(D_MIN_ROLL + (D_MAX_ROLL - D_MIN_ROLL)*level)*swayScale
             if GetLocalPlayer() == whichPlayer then
                 call SetCameraField(CAMERA_FIELD_ROLL, roll, D_TICK_PERIOD)
             endif
@@ -291,6 +429,8 @@ public function Add takes unit whichUnit, real amount, real duration returns not
 
     set D_Unit[unitId] = whichUnit
     set D_UnitLevel[unitId] = D_ClampLevel(D_UnitLevel[unitId] + amount)
+    call GroupAddUnit(D_DrunkUnits, whichUnit)
+    call D_ScheduleNextMishap(unitId, D_NormalizeLevel(D_UnitLevel[unitId]))
     if D_UnitEffect[unitId] == null then
         set D_UnitEffect[unitId] = AddSpecialEffectTarget(D_TARGET_EFFECT, whichUnit, D_TARGET_ATTACH)
     endif
@@ -317,7 +457,7 @@ endfunction
 
 private function Init takes nothing returns nothing
     set D_TimerGeneration = Table.create()
-    call Events_RegisterPlayerUnitEvent(function D_OnUnitSelected, EVENT_PLAYER_UNIT_SELECTED)
+    set D_DrunkUnits = CreateGroup()
     set D_TickTimer = CreateTimer()
     call TimerStart(D_TickTimer, D_TICK_PERIOD, true, function D_Tick)
 endfunction
