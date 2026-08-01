@@ -128,17 +128,6 @@ library Experience initializer Init requires Events, UnitDeathEvent
         return multiplier
     endfunction
 
-    private function EXP_SyncLegacyMultiplier takes unit whichUnit returns nothing
-        local integer customValue = 0
-
-        if whichUnit != null then
-            set customValue = GetUnitUserData(whichUnit)
-            if customValue > 0 then
-                set udg_XP_ExpMultiplier[customValue] = GetTotalMultiplier(whichUnit)
-            endif
-        endif
-    endfunction
-
     public function SetBonusMultiplier takes unit whichUnit, real bonus returns nothing
         local integer key = EXP_GetUnitKey(whichUnit)
 
@@ -147,7 +136,6 @@ library Experience initializer Init requires Events, UnitDeathEvent
         endif
 
         call SaveReal(EXP_Hash, key, EXP_KEY_BONUS, bonus)
-        call EXP_SyncLegacyMultiplier(whichUnit)
     endfunction
 
     public function AddBonusMultiplier takes unit whichUnit, real bonus returns nothing
@@ -203,7 +191,6 @@ library Experience initializer Init requires Events, UnitDeathEvent
         endif
 
         call ResetRestingProgress(whichUnit)
-        call EXP_SyncLegacyMultiplier(whichUnit)
     endfunction
 
     public function ClearRested takes unit whichUnit returns nothing
@@ -227,7 +214,6 @@ library Experience initializer Init requires Events, UnitDeathEvent
         endif
 
         call RemoveSavedReal(EXP_Hash, key, EXP_KEY_RESTED_EXPIRES)
-        call EXP_SyncLegacyMultiplier(whichUnit)
 
         set restedTimer = null
     endfunction
