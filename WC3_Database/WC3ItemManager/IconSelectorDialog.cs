@@ -21,6 +21,9 @@ namespace WC3ItemManager
         private Button btnSelect;
         private Button btnCancel;
         private Button btnConfig;
+        private Button btnPreviousPage;
+        private Button btnNextPage;
+        private Label lblPage;
         private Label lblStatus;
         private Label lblCurrentPath;
         private SplitContainer splitContainer;
@@ -29,16 +32,20 @@ namespace WC3ItemManager
         private string currentFolder = "";
         
         // Static caches persist across dialog instances (prevents reloading large icon folders repeatedly)
-        private const int IMAGE_CACHE_LIMIT = 6000;
+        private const int IMAGE_CACHE_LIMIT = 1000;
+        private const int PAGE_SIZE = 200;
         private static Dictionary<string, Image> imageCache = new Dictionary<string, Image>(StringComparer.OrdinalIgnoreCase);
         private static Dictionary<string, List<string>> folderFileCache = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        private static List<IconEntry> allIconCache;
+        private static string allIconCacheKey = "";
         private static object cacheLock = new object(); // Thread safety
         private static string cacheFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cache");
         
         // Async loading state
-        private bool isLoading = false;
-        private List<string> pendingIcons = new List<string>();
+        private List<IconEntry> pendingIcons = new List<IconEntry>();
         private int loadedIconCount = 0;
+        private int currentPage = 0;
+        private int loadGeneration = 0;
         private const int BATCH_SIZE = 50;
         private ProgressBar progressBar;
         private Label lblLoading;
@@ -64,8 +71,12 @@ namespace WC3ItemManager
         
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
-            // Cache is now static and persists - don't clear it
-            // Only dispose on application exit or when explicitly requested
+            loadGeneration++;
+            ClearDisplayedIcons();
+            lblLoading?.Dispose();
+            progressBar?.Dispose();
+            lblLoading = null;
+            progressBar = null;
             base.OnFormClosed(e);
         }
         
@@ -125,6 +136,49 @@ namespace WC3ItemManager
                 Height = 28
             };
             btnConfig.Click += BtnConfig_Click;
+
+            btnPreviousPage = new Button
+            {
+                Text = "Previous",
+                Location = new Point(720, 10),
+                Width = 80,
+                Height = 28,
+                Enabled = false
+            };
+            btnPreviousPage.Click += async (s, e) =>
+            {
+                if (currentPage > 0)
+                {
+                    currentPage--;
+                    await LoadCurrentPageAsync();
+                }
+            };
+
+            lblPage = new Label
+            {
+                Text = "Page 0/0",
+                Location = new Point(810, 15),
+                Width = 90,
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+
+            btnNextPage = new Button
+            {
+                Text = "Next",
+                Location = new Point(910, 10),
+                Width = 80,
+                Height = 28,
+                Enabled = false
+            };
+            btnNextPage.Click += async (s, e) =>
+            {
+                int pageCount = GetPageCount();
+                if (currentPage + 1 < pageCount)
+                {
+                    currentPage++;
+                    await LoadCurrentPageAsync();
+                }
+            };
             
             lblCurrentPath = new Label
             {
@@ -144,7 +198,8 @@ namespace WC3ItemManager
             };
             
             topPanel.Controls.AddRange(new Control[] { 
-                lblSearch, txtSearch, lblSource, cmbSource, btnConfig, lblCurrentPath, lblStatus 
+                lblSearch, txtSearch, lblSource, cmbSource, btnConfig,
+                btnPreviousPage, lblPage, btnNextPage, lblCurrentPath, lblStatus
             });
             
             // Main split container: Tree on left, Icons on right
@@ -243,13 +298,13 @@ namespace WC3ItemManager
         private void LoadIcons()
         {
             treeFolder.Nodes.Clear();
-            flowIcons.Controls.Clear();
+            ClearDisplayedIcons();
             lblStatus.Text = "Loading folder structure...";
             Application.DoEvents();
             
             try
             {
-                allIcons = IconPathConfig.Instance.GetAllIcons();
+                allIcons = GetAllIconsWithCache();
                 LoadFolderTree();
                 lblStatus.Text = $"Loaded {allIcons.Count} icons";
             }
@@ -313,20 +368,13 @@ namespace WC3ItemManager
                     {
                         Tag = new FolderInfo { FullPath = dir, Source = source }
                     };
-                    
-                    // Check if folder has icons or subfolders
-                    bool hasContent = Directory.GetFiles(dir, "*.*", SearchOption.AllDirectories)
-                        .Any(f => IsIconFile(f));
-                    
-                    if (hasContent || Directory.GetDirectories(dir).Length > 0)
+
+                    BuildFolderTree(childNode, dir, source);
+                    bool hasIcons = GetFolderIconFiles(dir).Count > 0;
+
+                    if (hasIcons || childNode.Nodes.Count > 0)
                     {
                         parentNode.Nodes.Add(childNode);
-                        
-                        // Recursively build tree
-                        if (Directory.GetDirectories(dir).Length > 0)
-                        {
-                            BuildFolderTree(childNode, dir, source);
-                        }
                     }
                 }
             }
@@ -336,7 +384,7 @@ namespace WC3ItemManager
             }
         }
         
-        private bool IsIconFile(string file)
+        private static bool IsIconFile(string file)
         {
             string ext = Path.GetExtension(file).ToLower();
             return ext == ".blp" || ext == ".tga" || ext == ".png" || ext == ".jpg" || ext == ".jpeg";
@@ -354,89 +402,155 @@ namespace WC3ItemManager
         
         private async void LoadIconsFromFolderAsync(string folderPath, string source)
         {
-            // Cancel any pending load
-            if (isLoading)
-            {
-                await System.Threading.Tasks.Task.Delay(100); // Wait a moment
-            }
-            
-            isLoading = true;
-            flowIcons.Controls.Clear();
-            flowIcons.SuspendLayout();
-            
-            // Show loading indicator
-            ShowLoadingIndicator(true);
-            
+            int generation = ++loadGeneration;
+            lblStatus.ForeColor = Color.Gray;
             try
             {
-                var files = await System.Threading.Tasks.Task.Run(() => GetFolderIconFiles(folderPath));
-                
-                string search = txtSearch.Text.ToLower();
-                var filtered = files.Where(f => 
-                    string.IsNullOrEmpty(search) || 
-                    Path.GetFileNameWithoutExtension(f).ToLower().Contains(search)
-                ).ToList();
-                
+                string search = txtSearch.Text.Trim();
+                List<IconEntry> filtered;
+
+                if (!string.IsNullOrEmpty(search))
+                {
+                    string sourceFilter = cmbSource.SelectedItem?.ToString() ?? "All";
+                    filtered = allIcons
+                        .Where(icon => (sourceFilter == "All" || icon.Source == sourceFilter) &&
+                            (icon.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                             icon.RelativePath.Contains(search, StringComparison.OrdinalIgnoreCase)))
+                        .ToList();
+                }
+                else
+                {
+                    var files = await System.Threading.Tasks.Task.Run(() => GetFolderIconFiles(folderPath));
+                    filtered = files.Select(file => CreateIconEntry(file, source)).ToList();
+                }
+
+                if (generation != loadGeneration)
+                    return;
+
                 pendingIcons = filtered;
-                loadedIconCount = 0;
-                
-                lblStatus.Text = $"Loading {filtered.Count} icons...";
-                
-                // Load icons in batches
-                await LoadNextBatch(source);
-                
-                lblStatus.Text = $"Showing {filtered.Count} icons in selected folder";
+                currentPage = 0;
+                await LoadCurrentPageAsync(generation);
             }
             catch (Exception ex)
             {
                 lblStatus.Text = $"Error loading folder: {ex.Message}";
                 lblStatus.ForeColor = Color.Red;
             }
-            finally
-            {
-                ShowLoadingIndicator(false);
-                flowIcons.ResumeLayout();
-                isLoading = false;
-            }
         }
         
-        private async System.Threading.Tasks.Task LoadNextBatch(string source)
+        private async System.Threading.Tasks.Task LoadCurrentPageAsync(int? requestedGeneration = null)
         {
-            if (loadedIconCount >= pendingIcons.Count)
+            int generation = requestedGeneration ?? ++loadGeneration;
+            int pageCount = GetPageCount();
+            if (pageCount == 0)
+                currentPage = 0;
+            else if (currentPage >= pageCount)
+                currentPage = pageCount - 1;
+
+            ClearDisplayedIcons();
+            ShowLoadingIndicator(true);
+
+            var pageIcons = pendingIcons
+                .Skip(currentPage * PAGE_SIZE)
+                .Take(PAGE_SIZE)
+                .ToList();
+            loadedIconCount = 0;
+            UpdatePageControls();
+            lblStatus.Text = $"Loading {pageIcons.Count} of {pendingIcons.Count} matching icons...";
+
+            if (pageIcons.Count == 0)
             {
+                ShowLoadingIndicator(false);
+                lblStatus.Text = "No matching icons";
                 return;
             }
-            
-            var batch = pendingIcons.Skip(loadedIconCount).Take(BATCH_SIZE).ToList();
-            
-            foreach (var file in batch)
+
+            foreach (var icon in pageIcons)
             {
-                AddIconButton(file, source);
+                if (generation != loadGeneration)
+                    return;
+
+                AddIconButton(icon);
                 loadedIconCount++;
-                
-                // Update progress every 10 icons
-                if (loadedIconCount % 10 == 0)
+
+                if (loadedIconCount % BATCH_SIZE == 0)
                 {
                     if (progressBar != null && progressBar.Visible)
                     {
-                        int percent = (int)((float)loadedIconCount / pendingIcons.Count * 100);
+                        int percent = (int)((float)loadedIconCount / pageIcons.Count * 100);
                         progressBar.Value = Math.Min(percent, 100);
                     }
-                    lblStatus.Text = $"Loading {loadedIconCount}/{pendingIcons.Count} icons...";
-                    await System.Threading.Tasks.Task.Delay(1); // Allow UI to update
+                    flowIcons.PerformLayout();
+                    await System.Threading.Tasks.Task.Yield();
                 }
             }
-            
-            flowIcons.ResumeLayout();
+
+            ShowLoadingIndicator(false);
             flowIcons.PerformLayout();
-            await System.Threading.Tasks.Task.Delay(10);
-            flowIcons.SuspendLayout();
-            
-            // If there are more icons, load next batch
-            if (loadedIconCount < pendingIcons.Count)
+            lblStatus.Text = $"Showing {pageIcons.Count} of {pendingIcons.Count} matching icons";
+        }
+
+        private void ClearDisplayedIcons()
+        {
+            foreach (Control control in flowIcons.Controls.Cast<Control>().ToArray())
             {
-                await LoadNextBatch(source);
+                flowIcons.Controls.Remove(control);
+                if (ReferenceEquals(control, lblLoading) || ReferenceEquals(control, progressBar))
+                    continue;
+
+                foreach (PictureBox pictureBox in control.Controls.OfType<PictureBox>())
+                {
+                    if (pictureBox.Tag is bool ownsImage && ownsImage)
+                        pictureBox.Image?.Dispose();
+                    pictureBox.Image = null;
+                }
+                control.Dispose();
             }
+        }
+
+        private int GetPageCount()
+        {
+            return pendingIcons.Count == 0 ? 0 : (pendingIcons.Count + PAGE_SIZE - 1) / PAGE_SIZE;
+        }
+
+        private void UpdatePageControls()
+        {
+            int pageCount = GetPageCount();
+            lblPage.Text = pageCount == 0 ? "Page 0/0" : $"Page {currentPage + 1}/{pageCount}";
+            btnPreviousPage.Enabled = currentPage > 0;
+            btnNextPage.Enabled = currentPage + 1 < pageCount;
+        }
+
+        private static IconEntry CreateIconEntry(string fullPath, string source)
+        {
+            var config = IconPathConfig.Instance;
+            string basePath = source == "Blizzard" ? config.WarCraft3IconPath : config.CustomIconPath;
+            return new IconEntry
+            {
+                FullPath = fullPath,
+                RelativePath = fullPath.Replace(basePath, "").TrimStart('\\', '/'),
+                Name = Path.GetFileNameWithoutExtension(fullPath),
+                Source = source
+            };
+        }
+
+        private static List<IconEntry> GetAllIconsWithCache()
+        {
+            var config = IconPathConfig.Instance;
+            string cacheKey = $"{config.WarCraft3IconPath}|{config.CustomIconPath}";
+            lock (cacheLock)
+            {
+                if (allIconCache != null && string.Equals(allIconCacheKey, cacheKey, StringComparison.OrdinalIgnoreCase))
+                    return allIconCache;
+            }
+
+            var icons = config.GetAllIcons();
+            lock (cacheLock)
+            {
+                allIconCache = icons;
+                allIconCacheKey = cacheKey;
+            }
+            return icons;
         }
 
         private static List<string> GetFolderIconFiles(string folderPath)
@@ -449,19 +563,16 @@ namespace WC3ItemManager
                 }
             }
 
-            string[] extensions = { "*.blp", "*.tga", "*.png", "*.jpg", "*.jpeg" };
-            var allFiles = new List<string>();
-
-            foreach (var ext in extensions)
+            List<string> allFiles;
+            try
             {
-                try
-                {
-                    allFiles.AddRange(Directory.GetFiles(folderPath, ext, SearchOption.TopDirectoryOnly));
-                }
-                catch
-                {
-                    // Ignore access errors for individual folders.
-                }
+                allFiles = Directory.EnumerateFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly)
+                    .Where(IsIconFile)
+                    .ToList();
+            }
+            catch
+            {
+                allFiles = new List<string>();
             }
 
             lock (cacheLock)
@@ -530,11 +641,9 @@ namespace WC3ItemManager
             }
         }
         
-        private void AddIconButton(string fullPath, string source)
+        private void AddIconButton(IconEntry icon)
         {
-            var config = IconPathConfig.Instance;
-            string basePath = source == "Blizzard" ? config.WarCraft3IconPath : config.CustomIconPath;
-            string relativePath = fullPath.Replace(basePath, "").TrimStart('\\', '/');
+            string fullPath = icon.FullPath;
             
             Panel iconBox = new Panel
             {
@@ -543,13 +652,7 @@ namespace WC3ItemManager
                 Margin = new Padding(5),
                 BorderStyle = BorderStyle.FixedSingle,
                 Cursor = Cursors.Hand,
-                Tag = new IconEntry
-                {
-                    FullPath = fullPath,
-                    RelativePath = relativePath,
-                    Name = Path.GetFileNameWithoutExtension(fullPath),
-                    Source = source
-                }
+                Tag = icon
             };
             
             PictureBox pic = new PictureBox
@@ -579,13 +682,13 @@ namespace WC3ItemManager
             }
             
             // Load icon image with caching
-            string ext = Path.GetExtension(fullPath).ToLower();
             try
             {
-                Image loadedImage = LoadImageWithCache(fullPath);
+                Image loadedImage = LoadImageWithCache(fullPath, out bool isCached);
                 if (loadedImage != null)
                 {
                     pic.Image = loadedImage;
+                    pic.Tag = !isCached;
                     pic.BackColor = Color.Black;
                 }
                 else
@@ -642,13 +745,15 @@ namespace WC3ItemManager
             }
         }
         
-        private Image LoadImageWithCache(string fullPath)
+        private Image LoadImageWithCache(string fullPath, out bool isCached)
         {
+            isCached = false;
             lock (cacheLock)
             {
                 // Check memory cache first
                 if (imageCache.ContainsKey(fullPath))
                 {
+                    isCached = true;
                     return imageCache[fullPath];
                 }
             }
@@ -686,7 +791,20 @@ namespace WC3ItemManager
                     return null;
                 }
                 
-                // Cache the image in memory. The cap is high enough for large root icon folders.
+                if (img != null && (img.Width != 64 || img.Height != 64))
+                {
+                    Image original = img;
+                    var thumbnail = new Bitmap(64, 64, PixelFormat.Format32bppPArgb);
+                    using (Graphics graphics = Graphics.FromImage(thumbnail))
+                    {
+                        graphics.Clear(Color.Transparent);
+                        graphics.DrawImage(original, new Rectangle(0, 0, 64, 64));
+                    }
+                    original.Dispose();
+                    img = thumbnail;
+                }
+
+                // Keep only compact thumbnails in memory.
                 if (img != null)
                 {
                     lock (cacheLock)
@@ -694,6 +812,7 @@ namespace WC3ItemManager
                         if (imageCache.Count < IMAGE_CACHE_LIMIT && !imageCache.ContainsKey(fullPath))
                         {
                             imageCache[fullPath] = img;
+                            isCached = true;
                         }
                     }
                 }
@@ -983,9 +1102,7 @@ namespace WC3ItemManager
             {
                 try
                 {
-                    var config = IconPathConfig.Instance;
-                    var allIcons = config.GetAllIcons();
-                    // Preload happens naturally when dialog opens
+                    GetAllIconsWithCache();
                 }
                 catch { /* Silent fail for background task */ }
             });
@@ -1002,6 +1119,8 @@ namespace WC3ItemManager
                 }
                 imageCache.Clear();
                 folderFileCache.Clear();
+                allIconCache = null;
+                allIconCacheKey = "";
             }
         }
         
@@ -1025,6 +1144,7 @@ namespace WC3ItemManager
             {
                 if (configDialog.ShowDialog() == DialogResult.OK)
                 {
+                    ClearDisplayedIcons();
                     ClearCache();
                     LoadIcons(); // Reload icons with new paths
                 }

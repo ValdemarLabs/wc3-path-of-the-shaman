@@ -5877,7 +5877,7 @@ namespace WC3ItemManager
         
         private void SetItemLevelFromUnitRange(ComboBox cmb)
         {
-            if (cmb == null || cmb.SelectedItem == null) return;
+            if (isLoadingItem || cmb == null || cmb.SelectedItem == null) return;
             
             string selection = cmb.SelectedItem.ToString();
             // Extract unit_level_range from "Levels 1-5 (iLvl 100)"
