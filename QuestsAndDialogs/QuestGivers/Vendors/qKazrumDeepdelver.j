@@ -1,0 +1,23 @@
+/**
+    qKazrumDeepdelver
+
+    Author: Valdemar
+    Version: 1.0.0
+
+    Description:
+    Daily vendor quest content for Drogun Deepdelver, Orc miner.
+
+    Credits:
+
+    How to install:
+    Import after VendorQuests and VoicelinesVendorQuests.
+
+    API:
+    Registers Drogun's vendor quest automatically.
+
+**/
+library qKazrumDeepdelver initializer Init requires VendorQuests, VoicelinesVendorQuests
+    private function Init takes nothing returns nothing
+        call VendorQuests_RegisterFetchQuest('o00D', "The Deep Vein", "daily", 10, "The Deep Vein", "ReplaceableTextures\\CommandButtons\\BTNThoriumMelee.blp", "Bring Drogun a shipment of dense ore from the deeper seams.", 'I67H', 4, 55, VL_VENDORQUEST_ORC_TYPE, 9, "The shallow rock is picked clean. I need four chunks from a deeper vein.", "Heavy, dark, and full of promise. This is proper mountain ore.")
+    endfunction
+endlibrary
