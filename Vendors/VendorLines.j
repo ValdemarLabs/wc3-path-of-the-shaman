@@ -5,36 +5,134 @@
     Version:
 
     Description:
-    Generic vendor display-name and dialogue-line helpers for PotS shop
-    merchants. Vendor template libraries can register their own greet, trade,
-    and farewell lines with one call.
+    Vendor dialogue profiles and trade-session voice configuration for PotS
+    merchants. Profiles can be bound to individual units or unit types, while
+    vendor names and type labels remain automatic fallbacks.
 
     Credits:
 
     How to install:
-    Import after Shop, DialogSystem, and DialogInteraction. Import before
-    VendorDialogs and vendor template libraries that register lines.
+    Import after Shop, DialogSystem, DialogInteraction, and Table. Import before
+    ShopUI, VendorDialogs, and vendor template libraries that register lines.
 
     API:
-    - set name = VendorLines_GetVendorNameByType(unitTypeId)
-    - set name = VendorLines_GetVendorName(vendor)
-    - set name = VendorLines_GetVendorSpeakerName(vendor)
     - call VendorLines_RegisterBasicLines(name, greet1, greet2, trade, farewell)
-    - call VendorLines_PlayTradeLine(vendor)
-    - call VendorLines_PlayFarewellLine(vendor)
+    - call VendorLines_RegisterLine(profile, category, text, soundKey)
+    - call VendorLines_BindUnitTypeProfile(unitTypeId, profile)
+    - call VendorLines_BindUnitProfile(vendor, profile)
+    - call VendorLines_SetVendorRandomLinesEnabled(vendorId, enabled)
+    - call VendorLines_SetDefaultRandomLineInterval(minimum, maximum)
+    - call VendorLines_SetVendorRandomLineInterval(vendorId, minimum, maximum)
+    - call VendorLines_PlayRandomTradeLine(vendor)
+    - call VendorLines_PlayTradeOutcome(vendor, boughtCount, soldCount)
 
 **/
-library VendorLines initializer Init requires DialogSystem, DialogInteraction, Shop
-    public function GetVendorNameByType takes integer unitTypeId returns string
-        local integer vendorId = Shop_GetVendorIdForUnitType(unitTypeId)
+library VendorLines initializer Init requires Table, DialogSystem, DialogInteraction, Shop
+    globals
+        public constant integer LINE_CHATTER = 1
+        public constant integer LINE_BOUGHT = 2
+        public constant integer LINE_SOLD = 3
+        public constant integer LINE_BOUGHT_AND_SOLD = 4
+        public constant integer LINE_NO_TRANSACTION = 5
 
-        if vendorId > 0 then
-            return Shop_GetVendorName(vendorId)
-        endif
-        return "Merchant"
+        // Standardized commerce labels. Stock libraries may use narrower labels.
+        public constant string TYPE_GENERAL_GOODS = "General Goods"
+        public constant string TYPE_BAGS = "Bags"
+        public constant string TYPE_WEAPONS = "Weapons"
+        public constant string TYPE_ARMOR = "Armor"
+        public constant string TYPE_SHIELDS = "Shields"
+        public constant string TYPE_ARENA = "Arena Vendor"
+        public constant string TYPE_TRAVELLING = "Travelling Merchant"
+        public constant string TYPE_FISHER = "Fisher"
+        public constant string TYPE_MINER = "Miner"
+        public constant string TYPE_COOK = "Cook/Chef"
+        public constant string TYPE_ALCHEMY_SUPPLIES = "Alchemy Supplies"
+        public constant string TYPE_BLACKSMITHING_SUPPLIES = "Blacksmithing Supplies"
+        public constant string TYPE_COOKING_SUPPLIES = "Cooking Supplies"
+        public constant string TYPE_ENCHANTING_SUPPLIES = "Enchanting Supplies"
+        public constant string TYPE_FISHING_SUPPLIES = "Fishing Supplies"
+        public constant string TYPE_LEATHERWORKING_SUPPLIES = "Leatherworking Supplies"
+        public constant string TYPE_MINING_SUPPLIES = "Mining Supplies"
+        public constant string TYPE_SKINNING_SUPPLIES = "Skinning Supplies"
+        public constant string TYPE_PROFESSION_SUPPLIES = "Profession Supplies"
+        public constant string TYPE_FACTION_QUARTERMASTER = "Faction Quartermaster"
+        public constant string TYPE_RANDOMIZED_GOODS = "Randomized Goods"
+
+        private constant integer VL_MAX_PROFILES = 80
+        private constant integer VL_MAX_LINES_PER_CATEGORY = 8
+        private constant integer VL_LINE_STRIDE = 10
+        private constant integer VL_CATEGORY_STRIDE = 10
+        private constant integer VL_PROFILE_STRIDE = 80
+
+        private Table VL_ProfileByName = 0
+        private Table VL_ProfileByUnitType = 0
+        private Table VL_ProfileByUnit = 0
+        private Table VL_LineCount = 0
+        private Table VL_LastLine = 0
+        private integer VL_ProfileCount = 0
+        private string array VL_ProfileName
+        private string array VL_LineText
+        private string array VL_LineSound
+
+        private boolean VL_DefaultRandomLinesEnabled = true
+        private real VL_DefaultMinimumInterval = 60.00
+        private real VL_DefaultMaximumInterval = 120.00
+        private boolean array VL_VendorRandomLinesOverride
+        private boolean array VL_VendorRandomLinesEnabled
+        private real array VL_VendorMinimumInterval
+        private real array VL_VendorMaximumInterval
+
+        private string VL_PickedText = ""
+        private string VL_PickedSound = ""
+    endglobals
+
+    private function VL_GetCountKey takes integer profileId, integer category returns integer
+        return profileId * VL_CATEGORY_STRIDE + category
     endfunction
 
-    public function GetVendorName takes unit vendor returns string
+    private function VL_GetLineKey takes integer profileId, integer category, integer lineIndex returns integer
+        return profileId * VL_PROFILE_STRIDE + category * VL_LINE_STRIDE + lineIndex
+    endfunction
+
+    private function VL_GetOrCreateProfile takes string profileName returns integer
+        local integer key
+        local integer profileId
+
+        if profileName == null or profileName == "" then
+            set profileName = "Merchant"
+        endif
+        set key = StringHash(profileName)
+        set profileId = VL_ProfileByName.integer[key]
+        if profileId <= 0 and VL_ProfileCount < VL_MAX_PROFILES then
+            set VL_ProfileCount = VL_ProfileCount + 1
+            set profileId = VL_ProfileCount
+            set VL_ProfileName[profileId] = profileName
+            set VL_ProfileByName.integer[key] = profileId
+        endif
+        return profileId
+    endfunction
+
+    private function VL_GetProfileByName takes string profileName returns integer
+        if profileName == null or profileName == "" then
+            return 0
+        endif
+        return VL_ProfileByName.integer[StringHash(profileName)]
+    endfunction
+
+    private function VL_GetBoundProfile takes unit vendor returns integer
+        local integer profileId = 0
+
+        if vendor != null then
+            set profileId = VL_ProfileByUnit.integer[GetHandleId(vendor)]
+            if profileId <= 0 then
+                set profileId = VL_ProfileByUnitType.integer[GetUnitTypeId(vendor)]
+            endif
+        endif
+        set vendor = null
+        return profileId
+    endfunction
+
+    private function VL_GetVendorName takes unit vendor returns string
         local integer vendorId
 
         if vendor == null then
@@ -46,12 +144,11 @@ library VendorLines initializer Init requires DialogSystem, DialogInteraction, S
             set vendor = null
             return Shop_GetVendorName(vendorId)
         endif
-
         set vendor = null
         return "Merchant"
     endfunction
 
-    public function GetVendorSpeakerName takes unit vendor returns string
+    private function VL_GetVendorSpeakerName takes unit vendor returns string
         local integer vendorId
         local string unitName
         local string vendorType
@@ -64,18 +161,143 @@ library VendorLines initializer Init requires DialogSystem, DialogInteraction, S
         set unitName = DialogInteraction_GetUnitDisplayName(vendor)
         set vendorType = Shop_GetVendorTypeLabel(vendorId)
         if unitName == null or unitName == "" then
-            set unitName = VendorLines_GetVendorName(vendor)
+            set unitName = VL_GetVendorName(vendor)
         endif
         if vendorType == null or vendorType == "" or vendorType == unitName then
             set vendor = null
             return unitName
         endif
-
         set vendor = null
         return unitName + " (" + vendorType + ")"
     endfunction
 
+    private function VL_PickFromProfile takes integer profileId, integer category returns boolean
+        local integer count
+        local integer countKey
+        local integer lineIndex
+        local integer lastIndex
+        local integer lineKey
+
+        if profileId <= 0 then
+            return false
+        endif
+        set countKey = VL_GetCountKey(profileId, category)
+        set count = VL_LineCount.integer[countKey]
+        if count <= 0 then
+            return false
+        endif
+        set lineIndex = GetRandomInt(1, count)
+        set lastIndex = VL_LastLine.integer[countKey]
+        if count > 1 and lineIndex == lastIndex then
+            set lineIndex = lineIndex + 1
+            if lineIndex > count then
+                set lineIndex = 1
+            endif
+        endif
+        set VL_LastLine.integer[countKey] = lineIndex
+        set lineKey = VL_GetLineKey(profileId, category, lineIndex)
+        set VL_PickedText = VL_LineText[lineKey]
+        set VL_PickedSound = VL_LineSound[lineKey]
+        return VL_PickedText != ""
+    endfunction
+
+    private function VL_PickForVendor takes unit vendor, integer category returns boolean
+        local integer vendorId = Shop_GetVendorIdForUnit(vendor)
+        local integer profileId = VL_GetBoundProfile(vendor)
+        local integer fallbackProfile
+        local string vendorName = VL_GetVendorName(vendor)
+        local string vendorType = Shop_GetVendorTypeLabel(vendorId)
+
+        set VL_PickedText = ""
+        set VL_PickedSound = ""
+        if VL_PickFromProfile(profileId, category) then
+            set vendor = null
+            return true
+        endif
+        set fallbackProfile = VL_GetProfileByName(vendorName)
+        if fallbackProfile != profileId and VL_PickFromProfile(fallbackProfile, category) then
+            set vendor = null
+            return true
+        endif
+        set fallbackProfile = VL_GetProfileByName(vendorType)
+        if fallbackProfile != profileId and VL_PickFromProfile(fallbackProfile, category) then
+            set vendor = null
+            return true
+        endif
+        set fallbackProfile = VL_GetProfileByName("Merchant")
+        set vendor = null
+        return VL_PickFromProfile(fallbackProfile, category)
+    endfunction
+
+    private function VL_QueuePickedLine takes unit vendor returns nothing
+        if vendor != null and VL_PickedText != "" then
+            call DialogSystem_QueueFieldLine(vendor, VL_GetVendorSpeakerName(vendor), VL_PickedSound, VL_PickedText)
+        endif
+        set vendor = null
+    endfunction
+
+    public function GetVendorNameByType takes integer unitTypeId returns string
+        local integer vendorId = Shop_GetVendorIdForUnitType(unitTypeId)
+
+        if vendorId > 0 then
+            return Shop_GetVendorName(vendorId)
+        endif
+        return "Merchant"
+    endfunction
+
+    public function GetVendorName takes unit vendor returns string
+        return VL_GetVendorName(vendor)
+    endfunction
+
+    public function GetVendorSpeakerName takes unit vendor returns string
+        return VL_GetVendorSpeakerName(vendor)
+    endfunction
+
+    public function RegisterLine takes string profileName, integer category, string text, string soundKey returns nothing
+        local integer profileId
+        local integer countKey
+        local integer count
+        local integer lineKey
+
+        if text == null or text == "" or category < LINE_CHATTER or category > LINE_NO_TRANSACTION then
+            return
+        endif
+        set profileId = VL_GetOrCreateProfile(profileName)
+        set countKey = VL_GetCountKey(profileId, category)
+        set count = VL_LineCount.integer[countKey]
+        if profileId <= 0 or count >= VL_MAX_LINES_PER_CATEGORY then
+            return
+        endif
+        set count = count + 1
+        set VL_LineCount.integer[countKey] = count
+        set lineKey = VL_GetLineKey(profileId, category, count)
+        set VL_LineText[lineKey] = text
+        if soundKey == null then
+            set soundKey = ""
+        endif
+        set VL_LineSound[lineKey] = soundKey
+    endfunction
+
+    public function BindUnitTypeProfile takes integer unitTypeId, string profileName returns nothing
+        local integer profileId = VL_GetOrCreateProfile(profileName)
+
+        if unitTypeId != 0 and profileId > 0 then
+            set VL_ProfileByUnitType.integer[unitTypeId] = profileId
+        endif
+    endfunction
+
+    public function BindUnitProfile takes unit vendor, string profileName returns nothing
+        local integer profileId = VL_GetOrCreateProfile(profileName)
+
+        if vendor != null and profileId > 0 then
+            set VL_ProfileByUnit.integer[GetHandleId(vendor)] = profileId
+        endif
+        set vendor = null
+    endfunction
+
     public function RegisterBasicLines takes string vendorName, string greetA, string greetB, string tradeLine, string farewellLine returns nothing
+        local integer profileId = VL_GetOrCreateProfile(vendorName)
+
         if vendorName == "" then
             set vendorName = "Merchant"
         endif
@@ -94,19 +316,124 @@ library VendorLines initializer Init requires DialogSystem, DialogInteraction, S
         endif
     endfunction
 
+    public function SetDefaultRandomLinesEnabled takes boolean enabled returns nothing
+        set VL_DefaultRandomLinesEnabled = enabled
+    endfunction
+
+    public function SetVendorRandomLinesEnabled takes integer vendorId, boolean enabled returns nothing
+        if vendorId > 0 then
+            set VL_VendorRandomLinesOverride[vendorId] = true
+            set VL_VendorRandomLinesEnabled[vendorId] = enabled
+        endif
+    endfunction
+
+    public function SetDefaultRandomLineInterval takes real minimum, real maximum returns nothing
+        local real swap
+
+        if minimum < 1.00 then
+            set minimum = 1.00
+        endif
+        if maximum < minimum then
+            set swap = minimum
+            set minimum = maximum
+            set maximum = swap
+            if minimum < 1.00 then
+                set minimum = 1.00
+            endif
+        endif
+        set VL_DefaultMinimumInterval = minimum
+        set VL_DefaultMaximumInterval = maximum
+    endfunction
+
+    public function SetVendorRandomLineInterval takes integer vendorId, real minimum, real maximum returns nothing
+        local real swap
+
+        if vendorId <= 0 then
+            return
+        endif
+        if minimum < 1.00 then
+            set minimum = 1.00
+        endif
+        if maximum < minimum then
+            set swap = minimum
+            set minimum = maximum
+            set maximum = swap
+            if minimum < 1.00 then
+                set minimum = 1.00
+            endif
+        endif
+        set VL_VendorMinimumInterval[vendorId] = minimum
+        set VL_VendorMaximumInterval[vendorId] = maximum
+    endfunction
+
+    public function AreRandomLinesEnabled takes integer vendorId returns boolean
+        if vendorId > 0 and VL_VendorRandomLinesOverride[vendorId] then
+            return VL_VendorRandomLinesEnabled[vendorId]
+        endif
+        return VL_DefaultRandomLinesEnabled
+    endfunction
+
+    public function GetRandomLineInterval takes integer vendorId returns real
+        local real minimum = VL_VendorMinimumInterval[vendorId]
+        local real maximum = VL_VendorMaximumInterval[vendorId]
+
+        if minimum <= 0.00 then
+            set minimum = VL_DefaultMinimumInterval
+        endif
+        if maximum < minimum then
+            set maximum = VL_DefaultMaximumInterval
+        endif
+        return GetRandomReal(minimum, maximum)
+    endfunction
+
+    public function PlayRandomTradeLine takes unit vendor returns nothing
+        if VL_PickForVendor(vendor, LINE_CHATTER) then
+            call VL_QueuePickedLine(vendor)
+        endif
+        set vendor = null
+    endfunction
+
+    public function PlayTradeOutcome takes unit vendor, integer boughtCount, integer soldCount returns nothing
+        local integer category = LINE_NO_TRANSACTION
+
+        if boughtCount > 0 and soldCount > 0 then
+            set category = LINE_BOUGHT_AND_SOLD
+        elseif boughtCount > 0 then
+            set category = LINE_BOUGHT
+        elseif soldCount > 0 then
+            set category = LINE_SOLD
+        endif
+        if VL_PickForVendor(vendor, category) then
+            call VL_QueuePickedLine(vendor)
+        endif
+        set vendor = null
+    endfunction
+
     public function PlayTradeLine takes unit vendor returns nothing
-        call DialogSystem_PickTradeLine(vendor, VendorLines_GetVendorName(vendor))
-        call DialogSystem_PlayLine(vendor, VendorLines_GetVendorSpeakerName(vendor), DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
+        call DialogSystem_PickTradeLine(vendor, VL_GetVendorName(vendor))
+        call DialogSystem_PlayLine(vendor, VL_GetVendorSpeakerName(vendor), DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
         set vendor = null
     endfunction
 
     public function PlayFarewellLine takes unit vendor returns nothing
-        call DialogSystem_PickFarewellLine(vendor, VendorLines_GetVendorName(vendor))
-        call DialogSystem_PlayLine(vendor, VendorLines_GetVendorSpeakerName(vendor), DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
+        call DialogSystem_PickFarewellLine(vendor, VL_GetVendorName(vendor))
+        call DialogSystem_PlayLine(vendor, VL_GetVendorSpeakerName(vendor), DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
         set vendor = null
     endfunction
 
     private function Init takes nothing returns nothing
+        set VL_ProfileByName = Table.create()
+        set VL_ProfileByUnitType = Table.create()
+        set VL_ProfileByUnit = Table.create()
+        set VL_LineCount = Table.create()
+        set VL_LastLine = Table.create()
+
         call VendorLines_RegisterBasicLines("Merchant", "Take a look. Fair prices today.", "If you have coin, I have goods.", "Let us see what changes hands.", "Come back when your purse is heavier.")
+        call VendorLines_RegisterLine("Merchant", LINE_CHATTER, "Take your time. Good goods do not fear inspection.", "")
+        call VendorLines_RegisterLine("Merchant", LINE_CHATTER, "If you need it for the road, I probably have it.", "")
+        call VendorLines_RegisterLine("Merchant", LINE_BOUGHT, "A good purchase. May it serve you well.", "")
+        call VendorLines_RegisterLine("Merchant", LINE_SOLD, "I can find a buyer for that.", "")
+        call VendorLines_RegisterLine("Merchant", LINE_BOUGHT_AND_SOLD, "A fair exchange both ways.", "")
+        call VendorLines_RegisterLine("Merchant", LINE_NO_TRANSACTION, "Nothing today? The stock will still be here.", "")
     endfunction
 endlibrary
