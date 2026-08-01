@@ -111,12 +111,13 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
     private function VDI_CreateGreetSequence takes unit vendor, unit hero returns integer
         local integer seq = DialogSystem_CreateSequence()
         local string vendorName = VendorLines_GetVendorName(vendor)
+        local string speakerName = VendorLines_GetVendorSpeakerName(vendor)
 
-        call DialogSystem_SetSequenceDefaultSpeaker(seq, vendor, vendorName)
+        call DialogSystem_SetSequenceDefaultSpeaker(seq, vendor, speakerName)
         call DialogSystem_AddMakeFaceEachOther(seq, vendor, hero, 0.45, 0.00)
 
         call DialogSystem_PickGreetLine(vendor, vendorName)
-        call DialogSystem_AddLine(seq, vendor, vendorName, DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
+        call DialogSystem_AddLine(seq, vendor, speakerName, DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
 
         return seq
     endfunction
@@ -124,12 +125,13 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
     private function VDI_CreateFarewellSequence takes unit vendor, unit hero returns integer
         local integer seq = DialogSystem_CreateSequence()
         local string vendorName = VendorLines_GetVendorName(vendor)
+        local string speakerName = VendorLines_GetVendorSpeakerName(vendor)
 
-        call DialogSystem_SetSequenceDefaultSpeaker(seq, vendor, vendorName)
+        call DialogSystem_SetSequenceDefaultSpeaker(seq, vendor, speakerName)
         call DialogSystem_AddMakeFaceEachOther(seq, vendor, hero, 0.45, 0.00)
 
         call DialogSystem_PickFarewellLine(vendor, vendorName)
-        call DialogSystem_AddLine(seq, vendor, vendorName, DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
+        call DialogSystem_AddLine(seq, vendor, speakerName, DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
 
         return seq
     endfunction
@@ -161,6 +163,14 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         local unit hero = VDI_SelectedHero
 
         if not VDI_IsSelectedContextValid() then
+            call VDI_EndDialog(true)
+            set vendor = null
+            set hero = null
+            return
+        endif
+        if not Shop_CanPlayerTradeWithVendor(GetOwningPlayer(hero), vendor) then
+            call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, GetOwningPlayer(hero))
+            call DisplayTextToPlayer(GetOwningPlayer(hero), 0.00, 0.00, "|cffff8040Your reputation with this vendor's faction is too low to trade.|r")
             call VDI_EndDialog(true)
             set vendor = null
             set hero = null
@@ -243,7 +253,7 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
             return
         endif
 
-        set vendorName = VendorLines_GetVendorName(VDI_SelectedVendor)
+        set vendorName = VendorLines_GetVendorSpeakerName(VDI_SelectedVendor)
         if VDI_Dialog == null then
             set VDI_Dialog = DialogSystem_CreateDialog(vendorName)
         endif
