@@ -66,6 +66,13 @@ library VendorBags initializer Init requires Shop, VendorLines
 
     private function RegisterLines takes nothing returns nothing
         call VendorLines_RegisterBasicLines("Graknar", "Strong bags. Strong price.", "A bigger pack saves longer walks.", "No bag to carry. I make your pack bigger now.", "Travel lighter, come back richer.")
+        call VendorLines_BindUnitTypeProfile(VBAG_UNIT_TYPE_GRAKNAR, "Bonecrusher Ogre Bag Merchant")
+        call VendorLines_RegisterLine("Bonecrusher Ogre Bag Merchant", VendorLines_LINE_CHATTER, "Bonecrusher stitching. Even rocks stay inside.", "")
+        call VendorLines_RegisterLine("Bonecrusher Ogre Bag Merchant", VendorLines_LINE_CHATTER, "Tiny bag makes tiny loot. Graknar fixes.", "")
+        call VendorLines_RegisterLine("Bonecrusher Ogre Bag Merchant", VendorLines_LINE_BOUGHT, "Bigger bag. Now bring bigger treasure.", "")
+        call VendorLines_RegisterLine("Bonecrusher Ogre Bag Merchant", VendorLines_LINE_SOLD, "Graknar keeps this. Maybe sells twice.", "")
+        call VendorLines_RegisterLine("Bonecrusher Ogre Bag Merchant", VendorLines_LINE_BOUGHT_AND_SOLD, "Pack changes, coin changes. Graknar approves.", "")
+        call VendorLines_RegisterLine("Bonecrusher Ogre Bag Merchant", VendorLines_LINE_NO_TRANSACTION, "No bag? Then carry regret in pockets.", "")
     endfunction
 
     private function Init takes nothing returns nothing
