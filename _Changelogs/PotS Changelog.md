@@ -32,6 +32,9 @@
 - Blacksmith, general-goods, and bag merchants now have larger role-specific line pools, with reusable human, orc, satyr, Bonecrusher ogre, and regional goblin voice profiles available for future vendors.
 - Added 26 ready-to-use merchant catalogs covering weapons, armor, shields, arena rewards, travelling trade, profession supplies, quartermasters, rare goods, provisions, potions, reagents, and other specialized stock.
 - Travelling and specialty merchants can now change their stock and dialogue according to their current zone, while curiosity merchants reroll randomized goods whenever a new trade begins.
+- Ninety-three new Orc, Satyr, Human, Goblin, and Bonecrusher Ogre vendor unit types now have assigned merchant roles and combine their racial or regional personality with role-specific trade dialogue.
+- Vendors now display their merchant type as gold floating text while inside the local player's current camera view, with all active labels hidden during cinematics.
+- Forty Orc, Satyr, Human, Goblin, and Bonecrusher vendor NPC types now offer generic kill, gathering, and cross-vendor supply quests alongside trading; thirty-five of these quests can be completed again after each new dawn.
 - Camp fires now last five minutes instead of one minute.
 - Crafting recipe details now include the crafted item's extended tooltip below the recipe description.
 - Shields now grant their matching 50%, 75%, or 100% Shield Block ability while equipped and remove that equipment-granted ability when unequipped.
@@ -82,6 +85,18 @@
   - Added configurable random-stock pools that reroll when trade opens, and supplied rotating equipment, consumable, and material examples.
   - Auto-bound explicit weaponsmith, armorsmith, arena master, shopkeeper, barkeeper, tome merchant, and beastmaster types, and assigned four existing generic vendor placeholders starter shield, fishing, alchemy, and mining roles in one configurable section.
 
+- Added racial vendor assignment libraries
+  - Added `VendorOrcs.j`, `VendorSatyrs.j`, `VendorHumans.j`, `VendorGoblins.j`, and `VendorBonecrusherOgres.j` with explicit catalog and voice-profile assignments for all 93 newly created vendor rawcodes.
+  - Vendor dialogue now mixes role lines with bound racial, regional, or zone profiles instead of allowing one profile layer to suppress the others.
+
+- Added `Vendors/VendorFloatingText.j`
+  - Added camera-local vendor-type labels using the Totems floating-text visibility pattern, including fog and cinematic checks, moving-vendor position updates, delayed discovery, and runtime vendor support.
+
+- Added `Vendors/VendorQuests.j` and forty `qVendorName.j` quest-content libraries
+  - Added contextual vendor quest buttons without replacing the vendor selection handler, including 22 gathering quests, 11 kill quests, and 7 cross-vendor supply pickups.
+  - Added shared Orc, Satyr, Human, Goblin, and Bonecrusher vendor-quest voice-key families and registered all 80 planned lines through `ExSound`.
+  - Added dawn resets for completed `daily` quests through `udg_DNE_DayNightEvent`, including quest-log cleanup and objective-progress resets for existing and new daily quests.
+
 - Updated `UI/CraftingUI.j` and `Leveling/CampFire.j`
   - Added output item extended tooltips to every profession's shared recipe details and increased constructed camp-fire/light timed life to five minutes.
 
@@ -120,6 +135,11 @@
   - Added configurable temporary `u605` Spirit Healers and `u607` Spirit Walkers, with Spirit Walkers used by default at the two totem graveyards.
   - Recreated the legacy Death Camera on retained hero corpses and integrated it with CameraControl target switching and revival cleanup.
   - Preserved the GUI `rect` handle type of the legacy Nazgrek and Zulkis death-area variables for item recovery compatibility.
+
+- Updated `Events/UnitDeathEvent.j` and centralized death subscribers
+  - Isolated every registered death callback behind its own trigger so a failing or operation-heavy subscriber cannot prevent later systems such as creep respawning from running.
+  - Cached the dying and killing units during dispatch, added accessor APIs, and migrated active death handlers to use the preserved event context, including nested death handling.
+  - Confirmed that the migrated `Events.j` unit-enter dispatcher registers CreepRespawn, UnitStats, Rage, and Energy handlers that replaced the old playable-map GUI trigger.
 
 - Updated `qRagno.j`
   - Edited voicelines slightly and created new voice files
