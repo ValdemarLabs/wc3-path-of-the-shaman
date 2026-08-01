@@ -29,6 +29,7 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         private constant integer SUI_VISIBLE_ROWS = 7
         private constant integer SUI_MAX_CATEGORIES = 6
         private constant real SUI_CATEGORY_TEXT_SCALE = 0.68
+        private constant real SUI_REFRESH_INTERVAL = 0.50
         private constant real SUI_CAMERA_RESET_TIME = 0.75
         private constant boolean SUI_USE_DIALOG_CAMERA = true
         private constant boolean SUI_CINEMATIC = true
@@ -60,6 +61,7 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         private framehandle SUI_ListScroll = null
         private framehandle SUI_ListWheelArea = null
         private framehandle SUI_DetailIcon = null
+        private framehandle SUI_DetailCharges = null
         private framehandle SUI_DetailTitle = null
         private framehandle SUI_DetailInfoBackdrop = null
         private framehandle SUI_DetailInfoText = null
@@ -71,6 +73,7 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
 
         private framehandle array SUI_RowButton
         private framehandle array SUI_RowIcon
+        private framehandle array SUI_RowCharges
         private framehandle array SUI_RowText
         private framehandle array SUI_RowPrice
         private framehandle array SUI_RowHighlight
@@ -78,6 +81,7 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         private string array SUI_RowIconCache
         private string array SUI_RowTextCache
         private string array SUI_RowPriceCache
+        private string array SUI_RowChargesCache
         private integer array SUI_RowVisibleState
         private integer array SUI_RowHighlightState
 
@@ -85,6 +89,7 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         private integer array SUI_CategoryVisibleState
 
         private string SUI_DetailIconCache = ""
+        private string SUI_DetailChargesCache = ""
         private string SUI_DetailTitleCache = ""
         private string SUI_DetailInfoCache = ""
         private string SUI_DetailBodyCache = ""
@@ -107,6 +112,7 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         private trigger SUI_EscapeTrigger = null
         private trigger SUI_AttackTrigger = null
         private trigger SUI_DeathTrigger = null
+        private timer SUI_RefreshTimer = null
 
         private string SUI_PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
         private string SUI_DefaultIcon = "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp"
@@ -254,6 +260,9 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         local string iconPath
         local string rowText
         local string rowPrice
+        local string chargesText
+        local integer charges
+        local boolean available
 
         loop
             exitwhen rowIndex > SUI_MAX_ROWS
@@ -262,25 +271,40 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
 
             if rowIndex <= SUI_VISIBLE_ROWS and viewIndex <= totalCount then
                 set SUI_RowIndex[rowIndex] = viewIndex
+                set charges = 0
+                set available = true
                 if SUI_ViewMode == SHOP_VIEW_MERCHANT then
                     if SUI_IsRecentCategory() then
                         set iconPath = Shop_GetSessionSoldIconPath(viewIndex)
                         set rowText = "|cffffe4a3" + Shop_GetSessionSoldName(viewIndex) + "|r|n|cff808080" + Shop_GetSessionSoldCategory(viewIndex) + "|r"
                         set rowPrice = "|cffffcc00" + I2S(Shop_GetSessionSoldPrice(viewIndex)) + "g|r"
+                        set charges = Shop_GetSessionSoldCharges(viewIndex)
                     else
                         set stockEntry = Shop_GetVendorStockEntryByCategory(SUI_VendorId, viewIndex, SUI_SelectedCategory)
                         set iconPath = Shop_GetStockIconPath(stockEntry)
                         set rowText = "|cffffe4a3" + Shop_GetStockName(stockEntry) + "|r|n|cff808080" + Shop_GetStockCategory(stockEntry) + "|r"
-                        set rowPrice = "|cffffcc00" + I2S(Shop_GetStockPrice(stockEntry)) + "g|r"
+                        set charges = Shop_GetStockCharges(stockEntry)
+                        set available = Shop_IsStockAvailable(stockEntry)
+                        if available then
+                            set rowPrice = "|cffffcc00" + I2S(Shop_GetStockPrice(stockEntry)) + "g|r"
+                        else
+                            set rowPrice = "|cff808080Sold out|r"
+                        endif
                     endif
                 else
                     set iconPath = Shop_GetViewIconPath(viewIndex)
                     set rowText = "|cffffe4a3" + Shop_GetViewName(viewIndex) + "|r|n" + Shop_GetViewSourceLabel(viewIndex)
+                    set charges = Shop_GetViewCharges(viewIndex)
                     if Shop_IsViewItemSellable(viewIndex) then
                         set rowPrice = "|cffffcc00" + I2S(Shop_GetViewSaleValue(viewIndex)) + "g|r"
                     else
                         set rowPrice = "|cff808080No sale|r"
                     endif
+                endif
+                if charges > 0 then
+                    set chargesText = I2S(charges)
+                else
+                    set chargesText = ""
                 endif
 
                 if GetLocalPlayer() == whichPlayer then
@@ -290,6 +314,15 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
                     if SUI_RowIconCache[rowIndex] != iconPath then
                         set SUI_RowIconCache[rowIndex] = iconPath
                         call BlzFrameSetTexture(SUI_RowIcon[rowIndex], iconPath, 0, true)
+                    endif
+                    if available then
+                        call BlzFrameSetVertexColor(SUI_RowIcon[rowIndex], BlzConvertColor(255, 255, 255, 255))
+                    else
+                        call BlzFrameSetVertexColor(SUI_RowIcon[rowIndex], BlzConvertColor(255, 96, 96, 96))
+                    endif
+                    if SUI_RowChargesCache[rowIndex] != chargesText then
+                        set SUI_RowChargesCache[rowIndex] = chargesText
+                        call BlzFrameSetText(SUI_RowCharges[rowIndex], chargesText)
                     endif
                     if SUI_RowTextCache[rowIndex] != rowText then
                         set SUI_RowTextCache[rowIndex] = rowText
@@ -307,6 +340,7 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
                     set SUI_RowIconCache[rowIndex] = ""
                     set SUI_RowTextCache[rowIndex] = ""
                     set SUI_RowPriceCache[rowIndex] = ""
+                    set SUI_RowChargesCache[rowIndex] = ""
                     call SUI_SetRowVisible(rowIndex, false)
                     call SUI_SetRowHighlight(rowIndex, false)
                 endif
@@ -316,7 +350,12 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         endloop
     endfunction
 
-    private function SUI_SetDetail takes player whichPlayer, string iconPath, string titleText, string infoText, string bodyText, string actionText, string statusText returns nothing
+    private function SUI_SetDetail takes player whichPlayer, string iconPath, string titleText, string infoText, string bodyText, string actionText, string statusText, integer charges, boolean available returns nothing
+        local string chargesText = ""
+
+        if charges > 0 then
+            set chargesText = I2S(charges)
+        endif
         if GetLocalPlayer() == whichPlayer then
             if iconPath == null or iconPath == "" then
                 set iconPath = SUI_DefaultIcon
@@ -324,6 +363,15 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
             if SUI_DetailIconCache != iconPath then
                 set SUI_DetailIconCache = iconPath
                 call BlzFrameSetTexture(SUI_DetailIcon, iconPath, 0, true)
+            endif
+            if available then
+                call BlzFrameSetVertexColor(SUI_DetailIcon, BlzConvertColor(255, 255, 255, 255))
+            else
+                call BlzFrameSetVertexColor(SUI_DetailIcon, BlzConvertColor(255, 96, 96, 96))
+            endif
+            if SUI_DetailChargesCache != chargesText then
+                set SUI_DetailChargesCache = chargesText
+                call BlzFrameSetText(SUI_DetailCharges, chargesText)
             endif
             if SUI_DetailTitleCache != titleText then
                 set SUI_DetailTitleCache = titleText
@@ -341,6 +389,7 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
                 set SUI_ActionTextCache = actionText
                 call BlzFrameSetText(SUI_ActionButton, actionText)
             endif
+            call BlzFrameSetEnable(SUI_ActionButton, available)
             if SUI_StatusCache != statusText then
                 set SUI_StatusCache = statusText
                 call BlzFrameSetText(SUI_StatusText, statusText)
@@ -353,8 +402,8 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         local string arenaMarksText
 
         if GetLocalPlayer() == whichPlayer then
-            set goldText = "|cffff3030Gold: " + I2S(GetPlayerState(whichPlayer, PLAYER_STATE_RESOURCE_GOLD)) + "|r"
-            set arenaMarksText = "|cffff3030Arena Marks: " + I2S(GetPlayerState(whichPlayer, PLAYER_STATE_RESOURCE_LUMBER)) + "|r"
+            set goldText = "|cffffcc00Gold:|r |cffffffff" + I2S(GetPlayerState(whichPlayer, PLAYER_STATE_RESOURCE_GOLD)) + "|r"
+            set arenaMarksText = "|cffff3030Arena Marks:|r |cffffffff" + I2S(GetPlayerState(whichPlayer, PLAYER_STATE_RESOURCE_LUMBER)) + "|r"
             if SUI_GoldCache != goldText then
                 set SUI_GoldCache = goldText
                 call BlzFrameSetText(SUI_GoldText, goldText)
@@ -373,12 +422,16 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         local string bodyText
         local string iconPath
         local string actionText
+        local integer charges = 0
+        local integer currentSupply
+        local integer maximumSupply
+        local boolean available = true
 
         if totalCount <= 0 or SUI_SelectedIndex <= 0 then
             if SUI_ViewMode == SHOP_VIEW_MERCHANT then
-                call SUI_SetDetail(whichPlayer, SUI_DefaultIcon, "No stock", "Merchant", "", "Buy", "")
+                call SUI_SetDetail(whichPlayer, SUI_DefaultIcon, "No stock", "Merchant", "", "Buy", "", 0, false)
             else
-                call SUI_SetDetail(whichPlayer, SUI_DefaultIcon, "No items", "You", "", "Sell", "")
+                call SUI_SetDetail(whichPlayer, SUI_DefaultIcon, "No items", "You", "", "Sell", "", 0, false)
             endif
             return
         endif
@@ -389,12 +442,24 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
                 set infoText = Shop_GetSessionSoldCategory(SUI_SelectedIndex) + "  |  " + I2S(Shop_GetSessionSoldPrice(SUI_SelectedIndex)) + " gold"
                 set bodyText = Shop_GetSessionSoldTooltip(SUI_SelectedIndex)
                 set iconPath = Shop_GetSessionSoldIconPath(SUI_SelectedIndex)
+                set charges = Shop_GetSessionSoldCharges(SUI_SelectedIndex)
             else
                 set stockEntry = SUI_GetSelectedStockEntry()
                 set titleText = Shop_GetStockName(stockEntry)
                 set infoText = Shop_GetStockCategory(stockEntry) + "  |  " + I2S(Shop_GetStockPrice(stockEntry)) + " gold"
                 set bodyText = Shop_GetStockTooltip(stockEntry)
                 set iconPath = Shop_GetStockIconPath(stockEntry)
+                set charges = Shop_GetStockCharges(stockEntry)
+                set available = Shop_IsStockAvailable(stockEntry)
+                set maximumSupply = Shop_GetStockMaximumSupply(stockEntry)
+                if maximumSupply > 0 then
+                    set currentSupply = Shop_GetStockCurrentSupply(stockEntry)
+                    if available then
+                        set infoText = infoText + "  |  Stock: " + I2S(currentSupply) + "/" + I2S(maximumSupply)
+                    else
+                        set infoText = infoText + "  |  Sold out"
+                    endif
+                endif
             endif
             set actionText = "Buy"
         else
@@ -406,10 +471,11 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
             endif
             set bodyText = Shop_GetViewTooltip(SUI_SelectedIndex)
             set iconPath = Shop_GetViewIconPath(SUI_SelectedIndex)
+            set charges = Shop_GetViewCharges(SUI_SelectedIndex)
             set actionText = "Sell"
         endif
 
-        call SUI_SetDetail(whichPlayer, iconPath, titleText, infoText, bodyText, actionText, Shop_GetLastMessage())
+        call SUI_SetDetail(whichPlayer, iconPath, titleText, infoText, bodyText, actionText, Shop_GetLastMessage(), charges, available)
     endfunction
 
     private function SUI_SyncListScrollFrame takes player whichPlayer, integer totalCount returns nothing
@@ -471,12 +537,19 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
     private function SUI_UpdateHeader takes player whichPlayer returns nothing
         local string modeLabel = "Merchant"
         local string viewingText
+        local integer capacity = 0
+        local integer usedSlots = 0
 
         if SUI_ViewMode == SHOP_VIEW_YOU then
             set modeLabel = "You"
         endif
         if SUI_BuyerUnit != null then
             set viewingText = "Viewing: " + GetUnitName(SUI_BuyerUnit)
+            set capacity = MaxDInvCapacityOfUnit(SUI_BuyerUnit)
+            if capacity > 0 then
+                set usedSlots = capacity - CountUnitDInventoryFreeSpace(SUI_BuyerUnit)
+                set viewingText = viewingText + "  |  Bag: " + I2S(usedSlots) + "/" + I2S(capacity)
+            endif
         else
             set viewingText = "Viewing: You"
         endif
@@ -818,6 +891,13 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         call BlzFrameSetPoint(SUI_DetailIcon, FRAMEPOINT_TOPLEFT, SUI_RightPane, FRAMEPOINT_TOPLEFT, 0.018, -0.018)
         call BlzFrameSetSize(SUI_DetailIcon, 0.042, 0.042)
 
+        set SUI_DetailCharges = BlzCreateFrameByType("TEXT", "ShopUIDetailCharges", SUI_DetailIcon, "", 0)
+        call BlzFrameSetPoint(SUI_DetailCharges, FRAMEPOINT_BOTTOMRIGHT, SUI_DetailIcon, FRAMEPOINT_BOTTOMRIGHT, -0.002, 0.002)
+        call BlzFrameSetSize(SUI_DetailCharges, 0.020, 0.012)
+        call BlzFrameSetTextAlignment(SUI_DetailCharges, TEXT_JUSTIFY_BOTTOM, TEXT_JUSTIFY_RIGHT)
+        call BlzFrameSetScale(SUI_DetailCharges, 0.82)
+        call BlzFrameSetEnable(SUI_DetailCharges, false)
+
         set SUI_DetailTitle = BlzCreateFrameByType("TEXT", "ShopUIDetailTitle", SUI_RightPane, "", 0)
         call BlzFrameSetPoint(SUI_DetailTitle, FRAMEPOINT_TOPLEFT, SUI_DetailIcon, FRAMEPOINT_TOPRIGHT, 0.014, -0.002)
         call BlzFrameSetSize(SUI_DetailTitle, 0.250, 0.018)
@@ -893,6 +973,13 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
             call BlzFrameSetPoint(SUI_RowIcon[rowIndex], FRAMEPOINT_LEFT, SUI_RowButton[rowIndex], FRAMEPOINT_LEFT, 0.006, 0.0)
             call BlzFrameSetSize(SUI_RowIcon[rowIndex], 0.020, 0.020)
 
+            set SUI_RowCharges[rowIndex] = BlzCreateFrameByType("TEXT", "ShopUIRowCharges" + I2S(rowIndex), SUI_RowIcon[rowIndex], "", 0)
+            call BlzFrameSetPoint(SUI_RowCharges[rowIndex], FRAMEPOINT_BOTTOMRIGHT, SUI_RowIcon[rowIndex], FRAMEPOINT_BOTTOMRIGHT, -0.001, 0.001)
+            call BlzFrameSetSize(SUI_RowCharges[rowIndex], 0.012, 0.009)
+            call BlzFrameSetTextAlignment(SUI_RowCharges[rowIndex], TEXT_JUSTIFY_BOTTOM, TEXT_JUSTIFY_RIGHT)
+            call BlzFrameSetScale(SUI_RowCharges[rowIndex], 0.72)
+            call BlzFrameSetEnable(SUI_RowCharges[rowIndex], false)
+
             set SUI_RowText[rowIndex] = BlzCreateFrameByType("TEXT", "ShopUIRowText" + I2S(rowIndex), SUI_RowButton[rowIndex], "", 0)
             call BlzFrameSetPoint(SUI_RowText[rowIndex], FRAMEPOINT_TOPLEFT, SUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.032, -0.004)
             call BlzFrameSetPoint(SUI_RowText[rowIndex], FRAMEPOINT_BOTTOMRIGHT, SUI_RowButton[rowIndex], FRAMEPOINT_BOTTOMRIGHT, -0.060, 0.004)
@@ -947,6 +1034,13 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
             set buyer = null
             return
         endif
+        if not Shop_CanPlayerTradeWithVendor(GetOwningPlayer(buyer), vendor) then
+            call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, GetOwningPlayer(buyer))
+            call DisplayTextToPlayer(GetOwningPlayer(buyer), 0.00, 0.00, "|cffff8040Your reputation with this vendor's faction is too low to trade.|r")
+            set vendor = null
+            set buyer = null
+            return
+        endif
 
         if SUI_IsVisible() then
             call SUI_HideInternal(false)
@@ -961,7 +1055,7 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         set SUI_ListScrollFrameValueCache = -1
         set SUI_SelectedCategory = Shop_GetAllCategoryName()
         set SUI_TradeSessionOpen = true
-        call Shop_BeginTradeSession(SUI_VendorId)
+        call Shop_BeginTradeSessionForUnits(SUI_VendorId, vendor, buyer)
         set p = GetOwningPlayer(buyer)
 
         if SUI_Parent != null and not BlzFrameIsVisible(SUI_Parent) then
@@ -975,6 +1069,12 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
         set buyer = null
     endfunction
 
+    private function SUI_RefreshAction takes nothing returns nothing
+        if SUI_IsVisible() and SUI_BuyerUnit != null then
+            call SUI_Update(SUI_GetActivePlayer())
+        endif
+    endfunction
+
     public function Init takes nothing returns nothing
         if SUI_Initialized then
             return
@@ -983,6 +1083,8 @@ library ShopUI initializer AutoInit requires Table, Shop, MasterUI, Interface, D
 
         set SUI_ButtonRow = Table.create()
         set SUI_CategoryButtonIndex = Table.create()
+        set SUI_RefreshTimer = CreateTimer()
+        call TimerStart(SUI_RefreshTimer, SUI_REFRESH_INTERVAL, true, function SUI_RefreshAction)
 
         set SUI_CloseTrigger = CreateTrigger()
         call TriggerAddAction(SUI_CloseTrigger, function SUI_CloseAction)
