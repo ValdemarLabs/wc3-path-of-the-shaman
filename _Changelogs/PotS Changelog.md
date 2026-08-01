@@ -15,6 +15,22 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [2.8.2026]
+
+### Player-Facing Updates
+
+- Added support for eight named Elarindor vendors covering weapons, armor, shields, enchanting supplies, reagents, potions, expedition supplies, and faction-quartermaster goods.
+- Elarindor merchants now have faction-specific trade chatter and purchase, sale, exchange, and no-transaction responses with separate male and female voice sets.
+
+### Technical Updates
+
+- Added `Vendors/VendorElarindor.j` with catalog and voice-profile assignments for rawcodes `n04O` through `n04V`.
+- Registered all eight canonical Elarindor vendor names in `VendorCatalogs.j`, documented them in `VendorsHelper.md`, and reserved twelve external `ExSound` keys under `VendorElarindorMale` and `VendorElarindorFemale` voice folders.
+
+### Actions Remaining
+
+- Create or assign the eight matching Object Editor unit types and import recordings for the twelve reserved Elarindor vendor voice keys.
+
 ## [1.8.2026]
 
 ### Player-Facing Updates
@@ -84,6 +100,7 @@
   - Added zone-restricted stock with optional child-zone inheritance and zone-selected voice profiles based on vendor coordinates from `ZonesCore`.
   - Added configurable random-stock pools that reroll when trade opens, and supplied rotating equipment, consumable, and material examples.
   - Auto-bound explicit weaponsmith, armorsmith, arena master, shopkeeper, barkeeper, tome merchant, and beastmaster types, and assigned four existing generic vendor placeholders starter shield, fishing, alchemy, and mining roles in one configurable section.
+  - Added canonical runtime names for all 93 vendor rawcodes and applied them to placed vendors automatically, removing the need to duplicate the roster in Object Editor names.
 
 - Added racial vendor assignment libraries
   - Added `VendorOrcs.j`, `VendorSatyrs.j`, `VendorHumans.j`, `VendorGoblins.j`, and `VendorBonecrusherOgres.j` with explicit catalog and voice-profile assignments for all 93 newly created vendor rawcodes.
@@ -96,6 +113,7 @@
   - Added contextual vendor quest buttons without replacing the vendor selection handler, including 22 gathering quests, 11 kill quests, and 7 cross-vendor supply pickups.
   - Added shared Orc, Satyr, Human, Goblin, and Bonecrusher vendor-quest voice-key families and registered all 80 planned lines through `ExSound`.
   - Added dawn resets for completed `daily` quests through `udg_DNE_DayNightEvent`, including quest-log cleanup and objective-progress resets for existing and new daily quests.
+  - Renamed every vendor quest file and library identifier to the canonical `VendorCatalogs` NPC name and documented all 40 quest-enabled vendors in `VendorsHelper.md`.
 
 - Updated `UI/CraftingUI.j` and `Leveling/CampFire.j`
   - Added output item extended tooltips to every profession's shared recipe details and increased constructed camp-fire/light timed life to five minutes.
@@ -153,6 +171,7 @@
 
 - Updated `WC3_Database/WC3ItemManager`
   - Replaced the Icon Selector's control-per-icon and paginated result grid with a lightweight ListView so all matching textures remain browsable without exhausting Windows handles.
+  - Fixed the LargeIcon viewport lookup that caused an unhandled `Cannot get the top item in LargeIcon` exception immediately after opening Browse Icons, and guarded deferred thumbnail loading from closing the application on future loader errors.
   - Added a 300 ms search debounce and scoped search to the selected folder tree. The new `All configured icons` root can search both Blizzard and custom icons when a global search is needed.
   - Load only visible icon thumbnails while browsing and retain up to 5000 compact thumbnails in memory, avoiding full-folder texture decoding on every search or folder visit.
   - Added virtual Abilities, Items, Units, Buildings, UI, Effects, and Other filters without changing the source texture folders.
