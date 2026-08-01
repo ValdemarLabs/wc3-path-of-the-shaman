@@ -1367,6 +1367,34 @@ public function PickGreetLine takes unit speaker, string speakerName returns boo
 	return true
 endfunction
 
+public function PickTradeLine takes unit speaker, string speakerName returns boolean
+	local integer roll
+	local string lookupName
+	set DialogSystem_PickedText = ""
+	set DialogSystem_PickedSound = ""
+	set DialogSystem_PickedSoundAtUnit = true
+	set lookupName = speakerName
+	if lookupName == "" and speaker != null then
+		set lookupName = GetUnitDisplayName(speaker)
+	endif
+	if lookupName != "" and PickRegisteredLineData(DialogSystem_TradeLines, lookupName) then
+		return true
+	endif
+	set roll = GetRandomInt(1, 5)
+	if roll == 1 then
+		set DialogSystem_PickedText = "Let's trade."
+	elseif roll == 2 then
+		set DialogSystem_PickedText = "Show me what you have."
+	elseif roll == 3 then
+		set DialogSystem_PickedText = "Let's see your wares."
+	elseif roll == 4 then
+		set DialogSystem_PickedText = "Got anything for sale?"
+	else
+		set DialogSystem_PickedText = "Let us trade."
+	endif
+	return true
+endfunction
+
 public function PickFarewellLine takes unit speaker, string speakerName returns boolean
 	local integer roll
 	local string text
