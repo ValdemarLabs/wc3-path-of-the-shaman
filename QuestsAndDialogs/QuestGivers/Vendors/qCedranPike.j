@@ -18,6 +18,6 @@
 **/
 library qCedranPike initializer Init requires VendorQuests, VoicelinesVendorQuests
     private function Init takes nothing returns nothing
-        call VendorQuests_RegisterSupplyQuest('n03P', "The Travelling Manifest", "daily", 8, "The Travelling Manifest", "ReplaceableTextures\\CommandButtons\\BTNScroll.blp", "Collect a supply manifest from Elias Roam and return it to Marshal Rowan.", 'n03C', "Elias Roam", 'I010', 45, VL_VENDORQUEST_HUMAN_TYPE, 13, "Elias has today's travelling manifest. Bring the sealed copy back to me.", "The figures match our ledger. That is rarer than it ought to be.")
+        call VendorQuests_RegisterSupplyQuest('n03P', "The Travelling Manifest", "daily", 8, "The Travelling Manifest", "ReplaceableTextures\\CommandButtons\\BTNScroll.blp", "Collect a supply manifest from Elias Roam and return it to Marshal Rowan.", 'n03C', "Elias Roam", 'I010', 45, VL_VENDORQUEST_HUMAN_TYPE, 13, VL_VENDORQUEST_HUMAN_0013, VL_VENDORQUEST_HUMAN_0014)
     endfunction
 endlibrary

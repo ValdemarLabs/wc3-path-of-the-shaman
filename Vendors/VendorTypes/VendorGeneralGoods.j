@@ -2,7 +2,7 @@
     GeneralGoodsVendor
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
     Template general goods merchant for the PotS shop system. This vendor sells
@@ -11,9 +11,9 @@
     Credits:
 
     How to install:
-    Import after Shop and VendorLines. Replace or extend the unit-type constants
-    below for map-specific merchants, then call GeneralGoodsVendor_RegisterUnit
-    for hand-picked vendor units if unit-type binding is not enough.
+    Import after Shop and VoicelinesVendorLines. Replace or extend the unit-type
+    constants below for map-specific merchants, then call
+    GeneralGoodsVendor_RegisterUnit for hand-picked vendor units if needed.
 
     API:
     - set vendorId = GeneralGoodsVendor_GetVendorId()
@@ -22,7 +22,7 @@
     - call GeneralGoodsVendor_BindAIProfile(profileId)
 
 **/
-library GeneralGoodsVendor initializer Init requires Shop, VendorLines, optional AI
+library GeneralGoodsVendor initializer Init requires Shop, VoicelinesVendorLines, optional AI
     globals
         private constant integer VGG_UNIT_TYPE_GOBLIN_MERCHANT = 'nmrk'
         private constant integer VGG_UNIT_TYPE_UTILITIES_VENDOR = 'o62U'
@@ -80,26 +80,11 @@ library GeneralGoodsVendor initializer Init requires Shop, VendorLines, optional
         call Shop_AddStockEx(VGG_VendorId, VGG_ITEM_SKINNING_KNIFE, 75, "Tools", 300, 2)
     endfunction
 
-    private function RegisterLines takes nothing returns nothing
-        call VendorLines_RegisterBasicLines("General Goods Merchant", "Supplies for the road, friend.", "A full pack keeps trouble small.", "Take what you need and leave the rest for someone poorer.", "Safe roads and steady coin.")
-
-        call VendorLines_RegisterLine("General Goods Merchant", VendorLines_LINE_CHATTER, "Rope, water, salves. Heroes always remember them one mile too late.", "")
-        call VendorLines_RegisterLine("General Goods Merchant", VendorLines_LINE_CHATTER, "The cheapest supply is the one that gets you home.", "")
-        call VendorLines_RegisterLine("General Goods Merchant", VendorLines_LINE_BOUGHT, "Packed and ready. Try not to lose it.", "")
-        call VendorLines_RegisterLine("General Goods Merchant", VendorLines_LINE_SOLD, "Used, perhaps. Useless, never.", "")
-        call VendorLines_RegisterLine("General Goods Merchant", VendorLines_LINE_BOUGHT_AND_SOLD, "A lighter pack and better supplies. Good business.", "")
-        call VendorLines_RegisterLine("General Goods Merchant", VendorLines_LINE_NO_TRANSACTION, "Window-shopping is free. My patience is nearly so.", "")
-
+    private function BindVoiceProfiles takes nothing returns nothing
         call VendorLines_BindUnitTypeProfile(VGG_UNIT_TYPE_GOBLIN_MERCHANT, "Goblin General Goods")
-        call VendorLines_RegisterLine("Goblin General Goods", VendorLines_LINE_CHATTER, "Guaranteed genuine until proven otherwise!", "")
-        call VendorLines_RegisterLine("Goblin General Goods", VendorLines_LINE_CHATTER, "Bulk discount starts immediately after you buy in bulk.", "")
-        call VendorLines_RegisterLine("Goblin General Goods", VendorLines_LINE_BOUGHT, "No refunds, but compliments are always accepted.", "")
-        call VendorLines_RegisterLine("Goblin General Goods", VendorLines_LINE_SOLD, "I know three people who will pay twice that.", "")
         call VendorLines_BindUnitTypeProfile(VGG_UNIT_TYPE_UTILITIES_VENDOR, "Forest Orc Supplies")
         call VendorLines_BindUnitTypeProfile(VGG_UNIT_TYPE_HORDE_MARKET, "Forest Orc Supplies")
         call VendorLines_BindUnitTypeProfile(VGG_UNIT_TYPE_THRAKNAR, "Forest Orc Supplies")
-        call VendorLines_RegisterLine("Forest Orc Supplies", VendorLines_LINE_CHATTER, "Thornwoods punish travelers who pack poorly.", "")
-        call VendorLines_RegisterLine("Forest Orc Supplies", VendorLines_LINE_BOUGHT, "Use it well, and return from the wilds.", "")
     endfunction
 
     private function Init takes nothing returns nothing
@@ -109,6 +94,6 @@ library GeneralGoodsVendor initializer Init requires Shop, VendorLines, optional
         call GeneralGoodsVendor_RegisterUnitType(VGG_UNIT_TYPE_HORDE_MARKET)
         call GeneralGoodsVendor_RegisterUnitType(VGG_UNIT_TYPE_THRAKNAR)
         call RegisterStock()
-        call RegisterLines()
+        call BindVoiceProfiles()
     endfunction
 endlibrary

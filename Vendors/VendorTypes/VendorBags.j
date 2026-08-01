@@ -2,7 +2,7 @@
     VendorBags
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
     Bag merchant for the PotS shop system. Each purchase replaces the hero's
@@ -11,9 +11,8 @@
     Credits:
 
     How to install:
-    Import after Shop and VendorLines. Graknar is bound by unit type below; call
-    VendorBags_RegisterUnit for hand-picked vendor units if unit-type binding is
-    not enough.
+    Import after Shop and VoicelinesVendorLines. Graknar is bound by unit type
+    below; call VendorBags_RegisterUnit for hand-picked vendor units if needed.
 
     API:
     - set vendorId = VendorBags_GetVendorId()
@@ -21,7 +20,7 @@
     - call VendorBags_RegisterUnitType(unitTypeId)
 
 **/
-library VendorBags initializer Init requires Shop, VendorLines
+library VendorBags initializer Init requires Shop, VoicelinesVendorLines
     globals
         private constant integer VBAG_UNIT_TYPE_GRAKNAR = 'o61S'
 
@@ -64,21 +63,14 @@ library VendorBags initializer Init requires Shop, VendorLines
         call Shop_AddBagUpgradeService(VBAG_VendorId, "Bottomless Bag", DINV_BAG_TIER_BOTTOMLESS, GetPriceForUpgrade(DInvBagCapacityAdventurer, DInvBagCapacityBottomless), "Bags")
     endfunction
 
-    private function RegisterLines takes nothing returns nothing
-        call VendorLines_RegisterBasicLines("Graknar", "Strong bags. Strong price.", "A bigger pack saves longer walks.", "No bag to carry. I make your pack bigger now.", "Travel lighter, come back richer.")
+    private function BindVoiceProfile takes nothing returns nothing
         call VendorLines_BindUnitTypeProfile(VBAG_UNIT_TYPE_GRAKNAR, "Bonecrusher Ogre Bag Merchant")
-        call VendorLines_RegisterLine("Bonecrusher Ogre Bag Merchant", VendorLines_LINE_CHATTER, "Bonecrusher stitching. Even rocks stay inside.", "")
-        call VendorLines_RegisterLine("Bonecrusher Ogre Bag Merchant", VendorLines_LINE_CHATTER, "Tiny bag makes tiny loot. Graknar fixes.", "")
-        call VendorLines_RegisterLine("Bonecrusher Ogre Bag Merchant", VendorLines_LINE_BOUGHT, "Bigger bag. Now bring bigger treasure.", "")
-        call VendorLines_RegisterLine("Bonecrusher Ogre Bag Merchant", VendorLines_LINE_SOLD, "Graknar keeps this. Maybe sells twice.", "")
-        call VendorLines_RegisterLine("Bonecrusher Ogre Bag Merchant", VendorLines_LINE_BOUGHT_AND_SOLD, "Pack changes, coin changes. Graknar approves.", "")
-        call VendorLines_RegisterLine("Bonecrusher Ogre Bag Merchant", VendorLines_LINE_NO_TRANSACTION, "No bag? Then carry regret in pockets.", "")
     endfunction
 
     private function Init takes nothing returns nothing
         set VBAG_VendorId = Shop_CreateVendor("Graknar", VBAG_UNIT_TYPE_GRAKNAR)
         call Shop_SetVendorTypeLabel(VBAG_VendorId, "Bags")
         call RegisterStock()
-        call RegisterLines()
+        call BindVoiceProfile()
     endfunction
 endlibrary

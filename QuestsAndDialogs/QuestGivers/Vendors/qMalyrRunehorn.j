@@ -18,6 +18,6 @@
 **/
 library qMalyrRunehorn initializer Init requires VendorQuests, VoicelinesVendorQuests
     private function Init takes nothing returns nothing
-        call VendorQuests_RegisterSupplyQuest('n031', "A Sealed Flask", "daily", 10, "A Sealed Flask", "ReplaceableTextures\\CommandButtons\\BTNPotionBlueSmall.blp", "Collect a sealed reagent flask from Selyth and return it to Ithryx.", 'n033', "Selyth Venomcup", 'I6BB', 55, VL_VENDORQUEST_SATYR_TYPE, 7, "Selyth holds a sealed flask for my runes. Bring it here without tasting it.", "The seal remains intact. Perhaps you possess restraint after all.")
+        call VendorQuests_RegisterSupplyQuest('n031', "A Sealed Flask", "daily", 10, "A Sealed Flask", "ReplaceableTextures\\CommandButtons\\BTNPotionBlueSmall.blp", "Collect a sealed reagent flask from Selyth and return it to Ithryx.", 'n033', "Selyth Venomcup", 'I6BB', 55, VL_VENDORQUEST_SATYR_TYPE, 7, VL_VENDORQUEST_SATYR_0007, VL_VENDORQUEST_SATYR_0008)
     endfunction
 endlibrary

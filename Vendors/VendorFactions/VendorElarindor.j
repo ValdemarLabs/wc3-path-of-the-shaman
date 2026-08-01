@@ -23,13 +23,13 @@ library VendorElarindor initializer Init requires VendorCatalogs
     endfunction
 
     private function Init takes nothing returns nothing
-        call Register('n04O', VendorCatalogs_VENDOR_CATALOG_WEAPONS, "Elarindor Male")
-        call Register('n04P', VendorCatalogs_VENDOR_CATALOG_ARMOR, "Elarindor Female")
-        call Register('n04Q', VendorCatalogs_VENDOR_CATALOG_SHIELDS, "Elarindor Male")
-        call Register('n04R', VendorCatalogs_VENDOR_CATALOG_ENCHANTING_SUPPLIES, "Elarindor Female")
-        call Register('n04S', VendorCatalogs_VENDOR_CATALOG_REAGENTS, "Elarindor Male")
-        call Register('n04T', VendorCatalogs_VENDOR_CATALOG_POTIONS, "Elarindor Female")
-        call Register('n04U', VendorCatalogs_VENDOR_CATALOG_ADVENTURING_SUPPLIES, "Elarindor Male")
-        call Register('n04V', VendorCatalogs_VENDOR_CATALOG_QUARTERMASTER, "Elarindor Female")
+        call Register('n04O', VendorCatalogs_VENDOR_CATALOG_WEAPONS, VL_VENDOR_PROFILE_ELARINDOR_MALE)
+        call Register('n04P', VendorCatalogs_VENDOR_CATALOG_ARMOR, VL_VENDOR_PROFILE_ELARINDOR_FEMALE)
+        call Register('n04Q', VendorCatalogs_VENDOR_CATALOG_SHIELDS, VL_VENDOR_PROFILE_ELARINDOR_MALE)
+        call Register('n04R', VendorCatalogs_VENDOR_CATALOG_ENCHANTING_SUPPLIES, VL_VENDOR_PROFILE_ELARINDOR_FEMALE)
+        call Register('n04S', VendorCatalogs_VENDOR_CATALOG_REAGENTS, VL_VENDOR_PROFILE_ELARINDOR_MALE)
+        call Register('n04T', VendorCatalogs_VENDOR_CATALOG_POTIONS, VL_VENDOR_PROFILE_ELARINDOR_FEMALE)
+        call Register('n04U', VendorCatalogs_VENDOR_CATALOG_ADVENTURING_SUPPLIES, VL_VENDOR_PROFILE_ELARINDOR_MALE)
+        call Register('n04V', VendorCatalogs_VENDOR_CATALOG_QUARTERMASTER, VL_VENDOR_PROFILE_ELARINDOR_FEMALE)
     endfunction
 endlibrary

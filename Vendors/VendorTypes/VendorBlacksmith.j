@@ -2,7 +2,7 @@
     BlacksmithVendor
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
     Template blacksmith merchant for the PotS shop system. This vendor sells
@@ -11,9 +11,9 @@
     Credits:
 
     How to install:
-    Import after Shop and VendorLines. Replace or extend the unit-type constants
-    below for map-specific blacksmiths, then call BlacksmithVendor_RegisterUnit
-    for hand-picked vendor units if unit-type binding is not enough.
+    Import after Shop and VoicelinesVendorLines. Replace or extend the unit-type
+    constants below for map-specific blacksmiths, then call
+    BlacksmithVendor_RegisterUnit for hand-picked vendor units if needed.
 
     API:
     - set vendorId = BlacksmithVendor_GetVendorId()
@@ -22,7 +22,7 @@
     - call BlacksmithVendor_BindAIProfile(profileId)
 
 **/
-library BlacksmithVendor initializer Init requires Shop, VendorLines, Reputation, optional AI
+library BlacksmithVendor initializer Init requires Shop, VoicelinesVendorLines, Reputation, optional AI
     globals
         private constant integer VB_UNIT_TYPE_HUMAN_BLACKSMITH = 'h00I'
         private constant integer VB_UNIT_TYPE_ORC_BLACKSMITH = 'o60H'
@@ -89,25 +89,11 @@ library BlacksmithVendor initializer Init requires Shop, VendorLines, Reputation
         call Shop_SetStockSupply(stockId, 1, 600.00)
     endfunction
 
-    private function RegisterLines takes nothing returns nothing
-        call VendorLines_RegisterBasicLines("Blacksmith", "Steel is honest. Coin should be too.", "Blades, mail, tools. All tested before they leave my forge.", "Pick it up if you mean to buy it.", "Keep the edge dry.")
-
-        call VendorLines_RegisterLine("Blacksmith", VendorLines_LINE_CHATTER, "A balanced weapon feels light before it ever strikes.", "")
-        call VendorLines_RegisterLine("Blacksmith", VendorLines_LINE_CHATTER, "Armor should stop a blade, not stop you walking.", "")
-        call VendorLines_RegisterLine("Blacksmith", VendorLines_LINE_BOUGHT, "Good choice. I stand behind that work.", "")
-        call VendorLines_RegisterLine("Blacksmith", VendorLines_LINE_SOLD, "I can melt that down or put a new edge on it.", "")
-        call VendorLines_RegisterLine("Blacksmith", VendorLines_LINE_BOUGHT_AND_SOLD, "Old steel out, better steel in. Sensible.", "")
-        call VendorLines_RegisterLine("Blacksmith", VendorLines_LINE_NO_TRANSACTION, "No sparks today? Come back when you need honest steel.", "")
-
+    private function BindVoiceProfiles takes nothing returns nothing
         call VendorLines_BindUnitTypeProfile(VB_UNIT_TYPE_HUMAN_BLACKSMITH, "Riverbane Human Blacksmith")
-        call VendorLines_RegisterLine("Riverbane Human Blacksmith", VendorLines_LINE_CHATTER, "Riverbane roads are hard on boots, buckles, and blades.", "")
-        call VendorLines_RegisterLine("Riverbane Human Blacksmith", VendorLines_LINE_BOUGHT, "That will hold through a Riverbane winter.", "")
         call VendorLines_BindUnitTypeProfile(VB_UNIT_TYPE_ORC_BLACKSMITH, "Fiery Mountain Orc Blacksmith")
         call VendorLines_BindUnitTypeProfile(VB_UNIT_TYPE_BROKKAR, "Fiery Mountain Orc Blacksmith")
         call VendorLines_BindUnitTypeProfile(VB_UNIT_TYPE_THROGAR, "Fiery Mountain Orc Blacksmith")
-        call VendorLines_RegisterLine("Fiery Mountain Orc Blacksmith", VendorLines_LINE_CHATTER, "Mountain fire makes hard steel and harder smiths.", "")
-        call VendorLines_RegisterLine("Fiery Mountain Orc Blacksmith", VendorLines_LINE_CHATTER, "If the edge chips, you struck like a human.", "")
-        call VendorLines_RegisterLine("Fiery Mountain Orc Blacksmith", VendorLines_LINE_BOUGHT, "Strong iron for a strong hand.", "")
     endfunction
 
     private function Init takes nothing returns nothing
@@ -117,6 +103,6 @@ library BlacksmithVendor initializer Init requires Shop, VendorLines, Reputation
         call BlacksmithVendor_RegisterUnitType(VB_UNIT_TYPE_BROKKAR)
         call BlacksmithVendor_RegisterUnitType(VB_UNIT_TYPE_THROGAR)
         call RegisterStock()
-        call RegisterLines()
+        call BindVoiceProfiles()
     endfunction
 endlibrary

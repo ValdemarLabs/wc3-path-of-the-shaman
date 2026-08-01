@@ -18,6 +18,6 @@
 **/
 library qKargunAshblade initializer Init requires VendorQuests, VoicelinesVendorQuests
     private function Init takes nothing returns nothing
-        call VendorQuests_RegisterFetchQuest('o011', "Ore for the Edge", "daily", 4, "Ore for the Edge", "ReplaceableTextures\\CommandButtons\\BTNOrcMeleeUpOne.blp", "Bring Ghorak iron ore suitable for sharpening the day's weapon stock.", 'I67E', 5, 25, VL_VENDORQUEST_ORC_TYPE, 1, "A sharp blade starts with honest ore. Bring me five pieces before the forge cools.", "Good weight, clean grain. These will make blades worth carrying.")
+        call VendorQuests_RegisterFetchQuest('o011', "Ore for the Edge", "daily", 4, "Ore for the Edge", "ReplaceableTextures\\CommandButtons\\BTNOrcMeleeUpOne.blp", "Bring Ghorak iron ore suitable for sharpening the day's weapon stock.", 'I67E', 5, 25, VL_VENDORQUEST_ORC_TYPE, 1, VL_VENDORQUEST_ORC_0001, VL_VENDORQUEST_ORC_0002)
     endfunction
 endlibrary

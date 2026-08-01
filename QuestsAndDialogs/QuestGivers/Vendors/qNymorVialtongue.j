@@ -18,6 +18,6 @@
 **/
 library qNymorVialtongue initializer Init requires VendorQuests, VoicelinesVendorQuests
     private function Init takes nothing returns nothing
-        call VendorQuests_RegisterFetchQuest('n033', "Bitter Leaves", "daily", 9, "Bitter Leaves", "ReplaceableTextures\\CommandButtons\\BTNHerb.blp", "Gather bitter herbs for Selyth's daily potion batch.", 'I60Y', 7, 45, VL_VENDORQUEST_SATYR_TYPE, 9, "Seven bitter leaves. Green, unbruised, and preferably not covered in orc fingerprints.", "The leaves survived your handling. An unexpectedly pleasant result.")
+        call VendorQuests_RegisterFetchQuest('n033', "Bitter Leaves", "daily", 9, "Bitter Leaves", "ReplaceableTextures\\CommandButtons\\BTNHerb.blp", "Gather bitter herbs for Selyth's daily potion batch.", 'I60Y', 7, 45, VL_VENDORQUEST_SATYR_TYPE, 9, VL_VENDORQUEST_SATYR_0009, VL_VENDORQUEST_SATYR_0010)
     endfunction
 endlibrary

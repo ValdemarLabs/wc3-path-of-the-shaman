@@ -18,6 +18,6 @@
 **/
 library qKazrumDeepdelver initializer Init requires VendorQuests, VoicelinesVendorQuests
     private function Init takes nothing returns nothing
-        call VendorQuests_RegisterFetchQuest('o00D', "The Deep Vein", "daily", 10, "The Deep Vein", "ReplaceableTextures\\CommandButtons\\BTNThoriumMelee.blp", "Bring Drogun a shipment of dense ore from the deeper seams.", 'I67H', 4, 55, VL_VENDORQUEST_ORC_TYPE, 9, "The shallow rock is picked clean. I need four chunks from a deeper vein.", "Heavy, dark, and full of promise. This is proper mountain ore.")
+        call VendorQuests_RegisterFetchQuest('o00D', "The Deep Vein", "daily", 10, "The Deep Vein", "ReplaceableTextures\\CommandButtons\\BTNThoriumMelee.blp", "Bring Drogun a shipment of dense ore from the deeper seams.", 'I67H', 4, 55, VL_VENDORQUEST_ORC_TYPE, 9, VL_VENDORQUEST_ORC_0009, VL_VENDORQUEST_ORC_0010)
     endfunction
 endlibrary

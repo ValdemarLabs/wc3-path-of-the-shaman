@@ -18,6 +18,6 @@
 **/
 library qRixitRoadcoin initializer Init requires VendorQuests, VoicelinesVendorQuests
     private function Init takes nothing returns nothing
-        call VendorQuests_RegisterSupplyQuest('n03X', "A Favor Between Merchants", "daily", 7, "A Favor Between Merchants", "ReplaceableTextures\\CommandButtons\\BTNChestOfGold.blp", "Collect Brakko's trade bundle from Tink Sprocketcrate and return.", 'n04C', "Tink Sprocketcrate", 'I689', 40, VL_VENDORQUEST_GOBLIN_TYPE, 3, "Tink owes me a trade bundle. Collect it, and do not agree to any extra fees.", "You paid no surprise fee? Hah! Tink must be losing his edge.")
+        call VendorQuests_RegisterSupplyQuest('n03X', "A Favor Between Merchants", "daily", 7, "A Favor Between Merchants", "ReplaceableTextures\\CommandButtons\\BTNChestOfGold.blp", "Collect Brakko's trade bundle from Tink Sprocketcrate and return.", 'n04C', "Tink Sprocketcrate", 'I689', 40, VL_VENDORQUEST_GOBLIN_TYPE, 3, VL_VENDORQUEST_GOBLIN_0003, VL_VENDORQUEST_GOBLIN_0004)
     endfunction
 endlibrary

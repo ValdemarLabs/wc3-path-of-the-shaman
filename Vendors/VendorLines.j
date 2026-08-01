@@ -2,7 +2,7 @@
     VendorLines
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
     Vendor dialogue profiles and trade-session voice configuration for PotS
@@ -13,8 +13,8 @@
 
     How to install:
     Import after Shop, ZonesCore, DialogSystem, DialogInteraction, and Table.
-    Import before ShopUI, VendorDialogs, and vendor template libraries that
-    register lines.
+    Import VoicelinesVendorLines afterward to register all merchant content,
+    then import ShopUI, VendorDialogs, catalogs, and vendor templates.
 
     API:
     - call VendorLines_RegisterBasicLines(name, greet1, greet2, trade, farewell)
@@ -27,6 +27,7 @@
     - call VendorLines_SetVendorRandomLineInterval(vendorId, minimum, maximum)
     - call VendorLines_PlayRandomTradeLine(vendor)
     - call VendorLines_PlayTradeOutcome(vendor, boughtCount, soldCount)
+    - Content libraries should register text only from VoicelinesVendorLines.
 
 **/
 library VendorLines initializer Init requires Table, DialogSystem, DialogInteraction, Shop, ZonesCore
@@ -480,12 +481,5 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
         set VL_LineCount = Table.create()
         set VL_LastLine = Table.create()
 
-        call VendorLines_RegisterBasicLines("Merchant", "Take a look. Fair prices today.", "If you have coin, I have goods.", "Let us see what changes hands.", "Come back when your purse is heavier.")
-        call VendorLines_RegisterLine("Merchant", LINE_CHATTER, "Take your time. Good goods do not fear inspection.", "")
-        call VendorLines_RegisterLine("Merchant", LINE_CHATTER, "If you need it for the road, I probably have it.", "")
-        call VendorLines_RegisterLine("Merchant", LINE_BOUGHT, "A good purchase. May it serve you well.", "")
-        call VendorLines_RegisterLine("Merchant", LINE_SOLD, "I can find a buyer for that.", "")
-        call VendorLines_RegisterLine("Merchant", LINE_BOUGHT_AND_SOLD, "A fair exchange both ways.", "")
-        call VendorLines_RegisterLine("Merchant", LINE_NO_TRANSACTION, "Nothing today? The stock will still be here.", "")
     endfunction
 endlibrary

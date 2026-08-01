@@ -18,6 +18,6 @@
 **/
 library qOwenMarlow initializer Init requires VendorQuests, VoicelinesVendorQuests
     private function Init takes nothing returns nothing
-        call VendorQuests_RegisterFetchQuest('n03F', "Stock the Smokehouse", "daily", 6, "Stock the Smokehouse", "ReplaceableTextures\\CommandButtons\\BTNMonsterLure.blp", "Gather meat for Odette's Stormhaven smokehouse.", 'I61O', 6, 35, VL_VENDORQUEST_HUMAN_TYPE, 9, "The smokehouse has room for six more cuts. Bring them while the coals are ready.", "Perfect timing. These can go straight onto the hooks.")
+        call VendorQuests_RegisterFetchQuest('n03F', "Stock the Smokehouse", "daily", 6, "Stock the Smokehouse", "ReplaceableTextures\\CommandButtons\\BTNMonsterLure.blp", "Gather meat for Odette's Stormhaven smokehouse.", 'I61O', 6, 35, VL_VENDORQUEST_HUMAN_TYPE, 9, VL_VENDORQUEST_HUMAN_0009, VL_VENDORQUEST_HUMAN_0010)
     endfunction
 endlibrary

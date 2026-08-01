@@ -18,6 +18,6 @@
 **/
 library qGrizzikBloodbet initializer Init requires VendorQuests, VoicelinesVendorQuests
     private function Init takes nothing returns nothing
-        call VendorQuests_RegisterKillQuest('n046', "Prizefighter's Proof", "normal", 11, "Prizefighter's Proof", "ReplaceableTextures\\CommandButtons\\BTNSatyrTrickster.blp", "Demonstrate arena-worthy aggression by defeating satyr shadowdancers.", 'nsty', 10, 85, VL_VENDORQUEST_GOBLIN_TYPE, 13, "Ten shadowdancers. Beat that number and I will call you marketable.", "Marketable, dangerous, and still alive. That is a profitable combination.")
+        call VendorQuests_RegisterKillQuest('n046', "Prizefighter's Proof", "normal", 11, "Prizefighter's Proof", "ReplaceableTextures\\CommandButtons\\BTNSatyrTrickster.blp", "Demonstrate arena-worthy aggression by defeating satyr shadowdancers.", 'nsty', 10, 85, VL_VENDORQUEST_GOBLIN_TYPE, 13, VL_VENDORQUEST_GOBLIN_0013, VL_VENDORQUEST_GOBLIN_0014)
     endfunction
 endlibrary
