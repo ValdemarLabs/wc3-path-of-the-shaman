@@ -19,8 +19,8 @@
 
 ### Player-Facing Updates
 
-- DInventory now has an 80-slot maximum, shows used/total bag space, and grows from 3 to 6 visible rows as bag capacity expands before using additional pages.
-- Shops now show the selected hero's used/total bag space and clamp bag upgrades that would exceed the inventory maximum.
+- DInventory now has fixed sequential bag tiers from the 12-slot Starting Bag through the 80-slot Bottomless Bag, shows used/total bag space, and sizes partial pages to their occupied rows.
+- Shops now show the selected hero's used/total bag space, set purchases to the advertised total capacity, and require Small, Medium, Large, Traveler's, Explorer's, Adventurer's, and Bottomless upgrades in order.
 - Opening the Master UI now closes DInventory and DEquipment, and the unit Inspect/Close button has been moved upward to avoid the game UI intercepting clicks.
 - Shop vendors now require Neutral reputation with their faction by default, while individual goods can require higher standings and remain hidden until unlocked.
 - Limited vendor stock now shows its remaining supply, turns grey when sold out, and can replenish after a vendor-defined delay.
@@ -28,6 +28,12 @@
 - Shop inventory source labels now use `Inventory` and `Quick inventory` instead of `DInv` and `Bag`.
 - Shop resource text now displays the `Gold` label in yellow and `Arena Marks` in red, with both resource values in white.
 - Vendor cinematic transmissions now identify the unit by name or hero proper name followed by its vendor type, such as `Graknar (Bags)`.
+- Vendors now speak randomized trade chatter every 60-120 seconds by default and react when a trade closes after purchases, sales, both, or no transaction.
+- Blacksmith, general-goods, and bag merchants now have larger role-specific line pools, with reusable human, orc, satyr, Bonecrusher ogre, and regional goblin voice profiles available for future vendors.
+- Camp fires now last five minutes instead of one minute.
+- Crafting recipe details now include the crafted item's extended tooltip below the recipe description.
+- Shields now grant their matching 50%, 75%, or 100% Shield Block ability while equipped and remove that equipment-granted ability when unequipped.
+- The Inventory Inspect/Close button has been moved slightly farther upward.
 - Well Fed and Well Hydrated recipe abilities no longer occupy visible unit command-card slots while their status buffs are active.
 - Drunken vision now follows the active Nazgrek/Zulkis camera target instead of being removed when another unit is merely selected.
 - Higher drunkenness now produces stronger irregular camera sway and increasingly frequent mishaps, including sudden stops, facing changes, and accidental casts from learned Shaman abilities.
@@ -36,13 +42,20 @@
 - Cooking category and recipe buttons no longer repeatedly rescan the full profession registry during every frame refresh, reducing the navigation lag spikes.
 - Dead campfires and other destroyed profession stations can no longer start or complete crafting.
 - All active pets now become fatigued and revive after lethal damage instead of ordinary tamed beasts dying permanently.
+- Fallen player, companion, and AI heroes now remain at their death location without decaying or dissipating, and a Spirit Shard's three-second Revive cast can restore the nearest allied fallen hero within 250 range.
+- Nazgrek and Zulkis now revive at the selected graveyard after 30 seconds, where a temporary Spirit Healer or Spirit Walker can recover items left at their death site.
+- A fallen active player hero now receives the rotating death camera until revival; switching the camera to the other living player hero ends the death view immediately.
 - Kicked pets now return to Shadowclaw's home and can be invited back later, automatically replacing the current pet. The roster holds two ordinary tamed pets in addition to Shadowclaw.
 - Taming a third ordinary pet now opens a choice dialog that dismisses one of the two older pets while keeping the newly tamed pet active; dismissed pets leave their carried items at home.
 
 ### Technical Updates
 
+- Updated `Leveling/Experience.j`
+  - Removed obsolete synchronization with the deleted GUI `XP_ExpMultiplier` variable; XP multipliers continue to use the library's hashtable-backed API directly.
+
 - Updated `DestroyerInventoryAndEquipmentSystem`, `Vendors/Shop.j`, `UI/ShopUI.j`, and `UI/MasterUI.j`
-  - Decoupled the 12-slot starting capacity from the 24-slot page layout, added configurable maximum-capacity clamping, capacity counters, combined inventory/equipment closing, and safer Inspect button placement.
+  - Decoupled the 12-slot starting capacity from the 24-slot page layout, added fixed per-inventory bag-tier storage, maximum-capacity clamping, capacity counters, partial-page sizing, combined inventory/equipment closing, and safer Inspect button placement.
+  - Reworked bag vendor stock to target permanent total capacities and reject skipped, duplicate, or downgrade purchases before charging gold.
   - Completed the required PotS library header sections for the touched legacy inventory and MasterUI libraries.
 
 - Updated `Vendors/Shop.j`
@@ -58,6 +71,18 @@
   - Added vendor-type labels for General Goods, Blacksmith, and Bags vendors.
   - Added Friendly/Covenant reputation stock and finite replenishing stock examples to the Blacksmith template.
   - Added a separate trade-line picker so registered vendor lines retain their lookup name while transmissions use the unit's proper display name and vendor type.
+  - Added profile-based chatter and transaction-result categories, unit/unit-type voice-profile binding, per-vendor chatter enable and interval configuration, and standardized labels for weapon, armor, shield, arena, travelling, profession-supply, quartermaster, and randomized-goods vendors.
+  - Added session purchase/sale counters and limited outcome lines to normal trade closure so interrupted trades do not play misleading commerce responses.
+
+- Updated `UI/CraftingUI.j` and `Leveling/CampFire.j`
+  - Added output item extended tooltips to every profession's shared recipe details and increased constructed camp-fire/light timed life to five minutes.
+
+- Updated `DestroyerInventoryAndEquipmentSystem` equipment generation
+  - Shield Block is emitted from the database's Shield class instead of inferred from the shared OffHand slot, keeping off-hand weapons unaffected and reusing DEquipment's safe ability-level ownership tracking.
+  - Common through Rare shields receive the 50% ability, Epic shields receive 75%, and Legendary shields receive 100%; manual definitions can select a tier explicitly.
+
+- Added `Abilities/General/AbilityShieldBlock.j`
+  - Converted the imported GUI Shield Block effect, five-second timed removal, and finish animation to a multi-instance JASS library for all three ability variants.
 
 - Updated `Professions/ProfessionsCooking.j`
   - Recipe aura abilities are hidden immediately after being added to a unit, while expiration, replacement, and death cleanup continue to remove them normally.
@@ -79,6 +104,14 @@
   - Added the retained pet roster, shared home-return behavior with per-pet fallback timers, automatic active-pet replacement, and over-limit dismissal dialog.
   - Applied fatigue and revival protection to every active pet and routed pet-owned Invite casts away from the generic companion invite handler.
 
+- Added `Death/Death.j` and `Death/Revival.j`, and updated `AI/AI.j`
+  - Added retained hero corpses, Revive item range/cast handling, and corpse-scoped AI reviver searches that only run while a managed hero is fallen.
+  - Limited automatic item revival to companion-controlled AI helping the player party and AI heroes helping members of their current AI party.
+  - Added atomic external AI revival so item casts cancel the original AI revive timer and restore AI state without a second delayed revival.
+  - Replaced the player graveyard GUI flow while preserving the Nazgrek/Zulkis timers, death flags, graveyard selection, Spirit Healer group, and item-recovery globals used by existing systems.
+  - Added configurable temporary `u605` Spirit Healers and `u607` Spirit Walkers, with Spirit Walkers used by default at the two totem graveyards.
+  - Recreated the legacy Death Camera on retained hero corpses and integrated it with CameraControl target switching and revival cleanup.
+
 - Updated `qRagno.j`
   - Edited voicelines slightly and created new voice files
 
@@ -95,6 +128,11 @@
   - Properly dispose removed icon controls and uncached images, preventing repeated searches or folder visits from exhausting Windows handles and causing `Error creating windows handle`.
   - Cached the global icon index and per-folder file lists so revisiting folders avoids repeated filesystem scanning.
   - Prevent unit-level dropdown initialization from overwriting the saved WC3 Level while opening an item. WC3 Levels changed through single-item or batch editing now remain visible when the item is reopened.
+  - Updated the DEquipment CLI exporter to assign 50%, 75%, or 100% Shield Block to current and future Shield-class items according to rarity.
+
+### Known Issues
+
+- Cooking food and drink still use the heal/mana-based `A60V` and `A61F` object abilities. Their required Berserk-based no-target ability rebase must be made in the map's `war3map.w3a`, which is not present in this repository, before they can self-cast at full health or mana.
 
 ## [31.7.2026]
 
