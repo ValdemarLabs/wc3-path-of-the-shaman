@@ -675,8 +675,16 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, MasterUI,
         set target = null
     endfunction
 
+    private function SUI_GetDeathUnit takes nothing returns unit
+        static if LIBRARY_UnitDeathEvent then
+            return UnitDeathEvent_GetDyingUnit()
+        else
+            return GetDyingUnit()
+        endif
+    endfunction
+
     private function SUI_DeathInterruptAction takes nothing returns nothing
-        local unit target = GetDyingUnit()
+        local unit target = SUI_GetDeathUnit()
 
         if target != null and (target == SUI_VendorUnit or target == SUI_BuyerUnit) then
             call SUI_InterruptTrade()

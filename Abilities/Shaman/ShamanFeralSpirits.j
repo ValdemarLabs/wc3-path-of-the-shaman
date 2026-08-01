@@ -61,7 +61,7 @@ private function HandleSummon takes nothing returns nothing
 endfunction
 
 private function HandleDeath takes nothing returns nothing
-    local unit dying = GetDyingUnit()
+    local unit dying = UnitDeathEvent_GetDyingUnit()
     if dying != null and WolfSummonerByHandle.unit[GetHandleId(dying)] != null then
         call WolfSummonerByHandle.unit.remove(GetHandleId(dying))
         call Companions_UnregisterControlled(dying)

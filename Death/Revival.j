@@ -374,7 +374,7 @@ private function Revival_StartPlayerTimer takes unit whichHero returns nothing
 endfunction
 
 private function Revival_OnHeroDeath takes nothing returns nothing
-    local unit whichHero = GetDyingUnit()
+    local unit whichHero = UnitDeathEvent_GetDyingUnit()
     local integer healerGraveyard
     local real x
     local real y

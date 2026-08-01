@@ -854,8 +854,8 @@ library Arena initializer Init requires Table, UnitDeathEvent, ItemLootSystem, E
     endfunction
 
     private function Arena_OnDeath takes nothing returns nothing
-        local unit dying = GetDyingUnit()
-        local unit killer = GetKillingUnit()
+        local unit dying = UnitDeathEvent_GetDyingUnit()
+        local unit killer = UnitDeathEvent_GetKillingUnit()
         local trigger callbackTrigger
 
         if not Arena_Active or dying == null then

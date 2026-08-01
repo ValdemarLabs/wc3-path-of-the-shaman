@@ -415,7 +415,7 @@ private function HandleSpellChannel takes nothing returns nothing
 endfunction
 
 private function HandleDeath takes nothing returns nothing
-    local unit dying = GetDyingUnit()
+    local unit dying = UnitDeathEvent_GetDyingUnit()
     if dying != null and ElementalSlotByHandle.integer[GetHandleId(dying)] > 0 then
         call CleanupElemental(dying)
     endif

@@ -400,13 +400,16 @@ endfunction
 */
 private function AddXPToNearbyUnits takes nothing returns nothing
     local unit u = GetEnumUnit()
-    local unit dying = GetDyingUnit()
+    local unit dying = UnitDeathEvent_GetDyingUnit()
     local integer id = GetUnitUserData(u)
 
     // Unit is already filtered as registered, now just check if near hero
     if IsNearbyHero(u) and u != dying then
         call AddXP(u, GetUnitLevel(dying))
     endif
+
+    set u = null
+    set dying = null
 endfunction
 
 /**
@@ -418,8 +421,8 @@ endfunction
  * - Killer is the dying unit itself
 */
 private function UnitDeathHandler takes nothing returns nothing
-    local unit dying = GetDyingUnit()
-    local unit killer = GetKillingUnit()
+    local unit dying = UnitDeathEvent_GetDyingUnit()
+    local unit killer = UnitDeathEvent_GetKillingUnit()
     local integer dyingId = GetUnitUserData(dying)
     local boolexpr filter
 
@@ -433,17 +436,23 @@ private function UnitDeathHandler takes nothing returns nothing
         if not PetDefinitions_IsShadowclawType(GetUnitTypeId(dying)) then
             call DeregisterUnit(dying)
         endif
-        
+
+        set dying = null
+        set killer = null
         return
     endif
 
     // Don't grant XP if dying unit has Locust
     if GetUnitAbilityLevel(dying, 'Aloc') > 0 then
+        set dying = null
+        set killer = null
         return
     endif
 
     // Don't grant XP if killer is the dying unit itself
     if killer == dying then
+        set dying = null
+        set killer = null
         return
     endif
 
@@ -453,6 +462,9 @@ private function UnitDeathHandler takes nothing returns nothing
     call ForGroup(ENUM_GROUP, function AddXPToNearbyUnits)
     call GroupClear(ENUM_GROUP)
     call DestroyBoolExpr(filter)
+    set filter = null
+    set dying = null
+    set killer = null
 endfunction
 
 /**

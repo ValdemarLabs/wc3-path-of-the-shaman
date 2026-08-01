@@ -576,7 +576,7 @@ struct PatrolGroup
     endmethod
     
     private static method onUnitDeath takes nothing returns nothing
-        local unit dying = GetDyingUnit()
+        local unit dying = UnitDeathEvent_GetDyingUnit()
         local player dyingOwner = GetOwningPlayer(dying)
         local integer dyingType = GetUnitTypeId(dying)
         local integer i = 0

@@ -815,7 +815,7 @@ private function HandleSpellFinish takes nothing returns nothing
 endfunction
 
 private function HandleDeath takes nothing returns nothing
-    local unit dying = GetDyingUnit()
+    local unit dying = UnitDeathEvent_GetDyingUnit()
     if IsTotemUnitType(GetUnitTypeId(dying)) or ActiveTotemTracked.boolean[GetHandleId(dying)] then
         call CleanupTotem(dying)
         call RemoveUnit(dying)

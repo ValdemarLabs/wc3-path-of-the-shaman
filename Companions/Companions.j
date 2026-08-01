@@ -2608,8 +2608,8 @@ private function HandleSoldUnit takes nothing returns nothing
 endfunction
 
 private function OnUnitDeath takes nothing returns nothing
-    local unit dying = GetDyingUnit()
-    local unit killer = GetKillingUnit()
+    local unit dying = UnitDeathEvent_GetDyingUnit()
+    local unit killer = UnitDeathEvent_GetKillingUnit()
 
     call HandleHostilityAgainstFactionUnit(killer, dying)
 

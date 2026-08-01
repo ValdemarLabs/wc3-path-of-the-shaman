@@ -386,7 +386,7 @@ private function Death_ProcessFallenAI takes nothing returns nothing
 endfunction
 
 private function Death_OnHeroDeath takes nothing returns nothing
-    local unit whichHero = GetDyingUnit()
+    local unit whichHero = UnitDeathEvent_GetDyingUnit()
 
     if Death_IsManagedHero(whichHero) and not IsUnitInGroup(whichHero, Death_FallenHeroes) then
         call GroupAddUnit(Death_FallenHeroes, whichHero)

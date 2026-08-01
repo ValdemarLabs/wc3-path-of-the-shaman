@@ -443,7 +443,7 @@ private function ScheduleRespawn takes unit dying returns nothing
 endfunction
 
 private function OnUnitDeath takes nothing returns nothing
-    local unit dying = GetDyingUnit()
+    local unit dying = UnitDeathEvent_GetDyingUnit()
     local integer unitType
     local player owner
     local integer playerId

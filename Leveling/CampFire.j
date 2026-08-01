@@ -223,7 +223,7 @@ library CampFire initializer Init requires Experience, Events, UnitDeathEvent, o
     endfunction
 
     private function CF_OnDeath takes nothing returns nothing
-        local unit fire = GetTriggerUnit()
+        local unit fire = UnitDeathEvent_GetDyingUnit()
 
         if fire != null and GetUnitTypeId(fire) == UNIT_ID then
             call Unregister(fire)

@@ -234,7 +234,7 @@ endfunction
 // Trigger to detect death and remove steam breath
 //===========================================================================
 function SteamBreath_Death takes nothing returns nothing
-    local unit u = GetDyingUnit()
+    local unit u = UnitDeathEvent_GetDyingUnit()
     call RemoveSteamEffectUnit(u)
     set u = null
 endfunction

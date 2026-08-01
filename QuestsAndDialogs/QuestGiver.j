@@ -1,4 +1,4 @@
-library QuestGiver initializer Init requires QuestMaster, DialogInteraction, DialogSystem, HeroItemCheck, SharedDInvLib, Table
+library QuestGiver initializer Init requires QuestMaster, DialogInteraction, DialogSystem, HeroItemCheck, SharedDInvLib, Table, UnitDeathEvent
 //===========================================================================
 // QuestGiver
 // Quest data/actions plus compatibility wrappers for DialogInteraction helpers.
@@ -1731,17 +1731,14 @@ private function OnUnitDeath takes nothing returns nothing
 	local unit killed
 	local integer unitTypeId
 
-	if GetTriggerEventId() != EVENT_PLAYER_UNIT_DEATH then
-		return
-	endif
-
-	set killed = GetTriggerUnit()
+	set killed = UnitDeathEvent_GetDyingUnit()
 	if killed == null then
 		return
 	endif
 
 	set unitTypeId = GetUnitTypeId(killed)
 	call CheckUnitKillProgress(unitTypeId)
+	set killed = null
 endfunction
 
 public function RegisterUnitKillRequirement takes integer questId, unit questGiver, integer reqIndex, integer unitTypeId, integer amount returns nothing

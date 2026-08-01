@@ -1121,7 +1121,7 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent
     
     // PRIVATE - used with centralized death event system (UnitDeathEvent)
     private function OnUnitDeathHandler takes nothing returns nothing
-        local unit dying = GetDyingUnit()
+        local unit dying = UnitDeathEvent_GetDyingUnit()
         local integer unitTypeId
         local integer unitLevel
         local real x

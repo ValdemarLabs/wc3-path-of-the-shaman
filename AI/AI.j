@@ -6269,8 +6269,8 @@ private function RequestCompanionDeathBark takes unit victim returns nothing
 endfunction
 
 private function HandleDeath takes nothing returns nothing
-    local unit victim = GetDyingUnit()
-    local unit killer = GetKillingUnit()
+    local unit victim = UnitDeathEvent_GetDyingUnit()
+    local unit killer = UnitDeathEvent_GetKillingUnit()
     local integer instanceId = UnitInstance[GetHandleId(victim)]
     if instanceId <= 0 and IsCompanionControlled(victim) then
         set instanceId = AI_RegisterUnitByType(victim, 0)

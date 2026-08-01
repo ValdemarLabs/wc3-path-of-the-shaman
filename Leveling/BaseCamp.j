@@ -472,7 +472,7 @@ library BaseCamp initializer Init requires Experience, Events, UnitDeathEvent, o
     endfunction
 
     private function BC_OnDeath takes nothing returns nothing
-        local unit tent = GetTriggerUnit()
+        local unit tent = UnitDeathEvent_GetDyingUnit()
         local unit deathUnit = null
 
         if tent != null and GetUnitTypeId(tent) == TENT_UNIT_ID then

@@ -1,80 +1,116 @@
+/**
+    UnitDeathEvent
+
+    Author: Valdemar
+    Version: 2.0
+
+    Description:
+    Centralized unit-death dispatcher. The native death event is registered
+    once for every player slot, while each subscriber runs through its own
+    callback trigger. Death-event responses are cached before dispatch so one
+    subscriber cannot consume the execution budget of later subscribers.
+
+    Credits:
+    - Original PotS UnitDeathEvent implementation
+
+    How to install:
+    Import this library before systems that register death callbacks and add
+    UnitDeathEvent to their library requirements.
+
+    API:
+    call UnitDeathEvent_Register(function YourCallback)
+    set dying = UnitDeathEvent_GetDyingUnit()
+    set killer = UnitDeathEvent_GetKillingUnit()
+
+    Registered callbacks must use the accessors above instead of the native
+    GetDyingUnit() and GetKillingUnit() event responses.
+**/
 library UnitDeathEvent initializer Init
 
-/*
-    Unit Death Event System
-    Author: [Valdemar]
-    Version: 1.0
-    
-    Description:
-    Centralized unit death event system that prevents event limit issues.
-    Instead of having multiple systems register EVENT_PLAYER_UNIT_DEATH,
-    this library registers it once and attaches all code callbacks directly to
-    that central trigger. This preserves native event responses.
-    
-    Usage:
-    1. Register your callback function:
-       call UnitDeathEvent_Register(function YourCallback)
-       
-    2. Your callback should have this signature:
-       function YourCallback takes nothing returns nothing
-           local unit killer = GetKillingUnit()
-           local unit victim = GetDyingUnit()
-           // Your death handling code here
-       endfunction
-       
-    Benefits:
-    - Only ONE death event registration for all 24 players
-    - Preserves GetDyingUnit() and GetKillingUnit() in registered callbacks
-    - Prevents hitting Warcraft 3's event registration limits
-    - Ensures all death events are captured reliably
-    - Easy to add/remove death callbacks
-    - Better performance with many death listeners
-    
-    Note:
-    This should be one of the first libraries to initialize (minimal dependencies).
-    Registration also lazily creates the central trigger if an older library calls
-    UnitDeathEvent_Register before declaring an explicit dependency.
-*/
-
 globals
-    private trigger deathTrigger = null
-    private integer callbackCount = 0
-    private constant integer MAX_CALLBACKS = 50
+    private constant integer UNIT_DEATH_EVENT_MAX_CALLBACKS = 50
     private constant integer UNIT_DEATH_EVENT_MAX_PLAYER_INDEX = 27
+
+    private trigger UnitDeathEvent_DeathTrigger = null
+    private trigger array UnitDeathEvent_Callbacks
+    private integer UnitDeathEvent_CallbackCount = 0
+    private unit UnitDeathEvent_CurrentDyingUnit = null
+    private unit UnitDeathEvent_CurrentKillingUnit = null
 endglobals
+
+private function UnitDeathEvent_RunCallback takes trigger callbackTrigger returns nothing
+    if callbackTrigger == null then
+        return
+    endif
+    if not IsTriggerEnabled(callbackTrigger) then
+        return
+    endif
+    if TriggerEvaluate(callbackTrigger) then
+        call TriggerExecute(callbackTrigger)
+    endif
+endfunction
+
+private function UnitDeathEvent_Dispatch takes nothing returns nothing
+    local integer callbackIndex = 0
+    local integer callbackCount = UnitDeathEvent_CallbackCount
+    local unit previousDyingUnit = UnitDeathEvent_CurrentDyingUnit
+    local unit previousKillingUnit = UnitDeathEvent_CurrentKillingUnit
+
+    set UnitDeathEvent_CurrentDyingUnit = GetDyingUnit()
+    set UnitDeathEvent_CurrentKillingUnit = GetKillingUnit()
+
+    loop
+        exitwhen callbackIndex >= callbackCount
+        call UnitDeathEvent_RunCallback(UnitDeathEvent_Callbacks[callbackIndex])
+        set callbackIndex = callbackIndex + 1
+    endloop
+
+    set UnitDeathEvent_CurrentDyingUnit = previousDyingUnit
+    set UnitDeathEvent_CurrentKillingUnit = previousKillingUnit
+    set previousDyingUnit = null
+    set previousKillingUnit = null
+endfunction
 
 private function UnitDeathEvent_EnsureTrigger takes nothing returns nothing
     local integer playerIndex = 0
 
-    if deathTrigger != null then
+    if UnitDeathEvent_DeathTrigger != null then
         return
     endif
 
-    set deathTrigger = CreateTrigger()
+    set UnitDeathEvent_DeathTrigger = CreateTrigger()
     loop
-        call TriggerRegisterPlayerUnitEvent(deathTrigger, Player(playerIndex), EVENT_PLAYER_UNIT_DEATH, null)
+        call TriggerRegisterPlayerUnitEvent(UnitDeathEvent_DeathTrigger, Player(playerIndex), EVENT_PLAYER_UNIT_DEATH, null)
         set playerIndex = playerIndex + 1
         exitwhen playerIndex > UNIT_DEATH_EVENT_MAX_PLAYER_INDEX
     endloop
-    //call BJDebugMsg("[UnitDeathEvent] Centralized death event system initialized")
+    call TriggerAddAction(UnitDeathEvent_DeathTrigger, function UnitDeathEvent_Dispatch)
 endfunction
 
-// Register a callback function to be called on unit death
-// The callback should use GetKillingUnit() and GetDyingUnit()
+function UnitDeathEvent_GetDyingUnit takes nothing returns unit
+    return UnitDeathEvent_CurrentDyingUnit
+endfunction
+
+function UnitDeathEvent_GetKillingUnit takes nothing returns unit
+    return UnitDeathEvent_CurrentKillingUnit
+endfunction
+
 function UnitDeathEvent_Register takes code callback returns nothing
+    local trigger callbackTrigger
+
     call UnitDeathEvent_EnsureTrigger()
-    if callbackCount >= MAX_CALLBACKS then
-        //call BJDebugMsg("[UnitDeathEvent] ERROR: Maximum callbacks reached (" + I2S(MAX_CALLBACKS) + ")")
+    if UnitDeathEvent_CallbackCount >= UNIT_DEATH_EVENT_MAX_CALLBACKS then
+        call BJDebugMsg("[UnitDeathEvent] ERROR: Maximum callbacks reached (" + I2S(UNIT_DEATH_EVENT_MAX_CALLBACKS) + ").")
         return
     endif
 
-    call TriggerAddAction(deathTrigger, callback)
-    set callbackCount = callbackCount + 1
-
-    //call BJDebugMsg("[UnitDeathEvent] Registered callback #" + I2S(callbackCount) + " for unit death events")
+    set callbackTrigger = CreateTrigger()
+    call TriggerAddAction(callbackTrigger, callback)
+    set UnitDeathEvent_Callbacks[UnitDeathEvent_CallbackCount] = callbackTrigger
+    set UnitDeathEvent_CallbackCount = UnitDeathEvent_CallbackCount + 1
+    set callbackTrigger = null
 endfunction
 
-// Initialize the death event system
 private function Init takes nothing returns nothing
     call UnitDeathEvent_EnsureTrigger()
 endfunction

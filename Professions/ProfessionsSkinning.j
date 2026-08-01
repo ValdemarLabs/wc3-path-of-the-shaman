@@ -542,7 +542,7 @@ private function PS_AttackedAction takes nothing returns nothing
 endfunction
 
 private function PS_DeathAction takes nothing returns nothing
-    local unit dyingUnit = GetDyingUnit()
+    local unit dyingUnit = UnitDeathEvent_GetDyingUnit()
     local integer handleId = 0
     local integer jobId = 0
 

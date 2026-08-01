@@ -1225,10 +1225,10 @@ private function RegisterProtectOutpostStartTrigger takes nothing returns nothin
 endfunction
 
 private function OnAnyUnitDeath takes nothing returns nothing
-    local unit killed = GetDyingUnit()
+    local unit killed = UnitDeathEvent_GetDyingUnit()
     local QuestData q
 
-    if killed != null and GetUnitTypeId(killed) == UNIT_KOBOLD_LEADER and GetOwningPlayer(GetKillingUnit()) == Player(0) then
+    if killed != null and GetUnitTypeId(killed) == UNIT_KOBOLD_LEADER and GetOwningPlayer(UnitDeathEvent_GetKillingUnit()) == Player(0) then
         set q = GetRagnoQuest(QUEST_KOBOLD_THIEVES)
         if q != 0 and q.active and not q.completed and not q.failed then
             set KoboldLeaderKilled = true

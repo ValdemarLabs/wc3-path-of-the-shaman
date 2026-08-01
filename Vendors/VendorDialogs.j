@@ -220,8 +220,16 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         set target = null
     endfunction
 
+    private function VDI_GetDeathUnit takes nothing returns unit
+        static if LIBRARY_UnitDeathEvent then
+            return UnitDeathEvent_GetDyingUnit()
+        else
+            return GetDyingUnit()
+        endif
+    endfunction
+
     private function VDI_DeathInterruptAction takes nothing returns nothing
-        local unit target = GetDyingUnit()
+        local unit target = VDI_GetDeathUnit()
 
         if VDI_IsSelectedContextUnit(target) then
             call VDI_InterruptDialog()

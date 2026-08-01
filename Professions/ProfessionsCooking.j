@@ -705,7 +705,7 @@ private function PC_OnItemDrop takes nothing returns nothing
 endfunction
 
 private function PC_OnUnitDeath takes nothing returns nothing
-    local unit dyingUnit = GetDyingUnit()
+    local unit dyingUnit = UnitDeathEvent_GetDyingUnit()
     local integer unitId = PC_GetUnitId(dyingUnit)
 
     if unitId > 0 then

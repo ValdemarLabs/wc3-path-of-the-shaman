@@ -418,7 +418,7 @@ library Experience initializer Init requires Events, UnitDeathEvent
     endfunction
 
     private function EXP_OnDeath takes nothing returns nothing
-        local unit dying = GetDyingUnit()
+        local unit dying = UnitDeathEvent_GetDyingUnit()
 
         if IsRested(dying) then
             call ClearRested(dying)

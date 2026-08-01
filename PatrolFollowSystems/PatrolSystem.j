@@ -1658,7 +1658,7 @@ endfunction
 
 // ===================== CLEANUP =========================
 private function OnDeath takes nothing returns nothing
-    local unit u = GetTriggerUnit()
+    local unit u = UnitDeathEvent_GetDyingUnit()
     local integer id = GetHandleId(u)
     local integer groupId = LoadInteger(ht, id, 100)
     
@@ -1684,6 +1684,8 @@ private function OnDeath takes nothing returns nothing
         endif
         call FlushUnit(u)
     endif
+
+    set u = null
 endfunction
 
 private function Init takes nothing returns nothing

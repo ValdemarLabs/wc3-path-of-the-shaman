@@ -1228,8 +1228,8 @@ endfunction
 //===================================================
 // PRIVATE - used with centralized death event system
 private function OnUnitDeathHandler takes nothing returns nothing
-    local unit killer = GetKillingUnit()
-    local unit victim = GetDyingUnit()
+    local unit killer = UnitDeathEvent_GetKillingUnit()
+    local unit victim = UnitDeathEvent_GetDyingUnit()
     local Faction victimFaction
     
     if RE_DEBUG then

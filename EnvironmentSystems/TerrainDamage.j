@@ -695,7 +695,7 @@ endfunction
 
 //===========================================================================
 private function TerrainDamage_OnUnitDeath takes nothing returns nothing
-    call TerrainDamage_RefreshPlayerTrackedUnit(GetDyingUnit())
+    call TerrainDamage_RefreshPlayerTrackedUnit(UnitDeathEvent_GetDyingUnit())
 endfunction
 
 //===========================================================================
