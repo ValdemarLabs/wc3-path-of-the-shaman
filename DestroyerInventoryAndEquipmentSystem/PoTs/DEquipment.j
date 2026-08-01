@@ -1,19 +1,26 @@
-/*
-DEquipment by emperor_d3st
-Hiveworkshop link
-Github link
+/**
+    DEquipment
 
-Version 1.0.0
-2024 August 4
+    Author: Valdemar
+    Version: 1.0.0
 
-Version history:
+    Description:
+    Equipment frames, equip/unequip behavior, character-sheet updates, and
+    read-only inspection integrated with DInventory.
 
-Special thanks to Tasyen's truly heroic efforts to educate us about the wonders (and nasty bugs) of Frames:
-https://www.hiveworkshop.com/threads/the-big-ui-frame-tutorial.335296/
+    Credits:
+    - emperor_d3st, original DEquipment system
+    - Tasyen, GetMainSelectedUnit and Warcraft III frame guidance
 
-Thanks to Tasyen for his GetMainSelectedUnit library
-https://www.hiveworkshop.com/threads/getmainselectedunit.325337/
-*/
+    How to install:
+    Import after DInventory, SharedDInvLib, Table, and GetItemCost.
+
+    API:
+    - call DEqShowUnitForPlayer(viewer, unit, inspectMode)
+    - call ToggleDEqUIForUnit(playerId, unit)
+    - call DInventoryEquipment_Hide()
+
+**/
 
 library DEquipment initializer Init requires DInventory, Table, SharedDInvLib, GetItemCost
 
@@ -473,6 +480,21 @@ endfunction
 
 
 
+function DInventoryEquipment_Hide takes nothing returns nothing
+local player viewer = GetTriggerPlayer()
+local integer pid
+if viewer == null then
+set viewer = Player(0)
+endif
+set pid = GetPlayerId(viewer)
+call DInvCloseForPlayer(viewer)
+call CloseDEqUI(pid)
+call DInspectRefreshButtonForPlayer(viewer)
+set viewer = null
+endfunction
+
+
+
 function XCloseDEqUI takes nothing returns nothing
 local integer pid = GetPlayerId(GetTriggerPlayer())
 set DEqCurrentUnit[pid] = null
@@ -693,8 +715,8 @@ call BlzFrameSetText(DInspectButtonFrame[pid], "Inspect")
 call BlzFrameSetTextAlignment(DInspectButtonFrame[pid], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
 call BlzFrameSetScale(DInspectButtonFrame[pid], 0.85)
 call BlzFrameSetLevel(DInspectButtonFrame[pid], 8)
-call BlzFrameSetPoint(DInspectButtonFrame[pid], FRAMEPOINT_BOTTOMLEFT, BlzGetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPLEFT, 0.00, 0.004)
-call BlzFrameSetPoint(DInspectButtonFrame[pid], FRAMEPOINT_TOPRIGHT, BlzGetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 1), FRAMEPOINT_TOPRIGHT, 0.00, 0.030)
+call BlzFrameSetPoint(DInspectButtonFrame[pid], FRAMEPOINT_BOTTOMLEFT, BlzGetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPLEFT, 0.00, 0.014)
+call BlzFrameSetPoint(DInspectButtonFrame[pid], FRAMEPOINT_TOPRIGHT, BlzGetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 1), FRAMEPOINT_TOPRIGHT, 0.00, 0.040)
 call BlzFrameSetVisible(DInspectButtonFrame[pid], FALSE)
 call BlzTriggerRegisterFrameEvent(trg_DInspectButtonClicked, DInspectButtonFrame[pid], FRAMEEVENT_CONTROL_CLICK)
 endfunction
