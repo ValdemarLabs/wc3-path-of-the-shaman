@@ -17,38 +17,32 @@ namespace WC3ItemManager
         private TextBox txtSearch;
         private ComboBox cmbSource;
         private TreeView treeFolder;
-        private FlowLayoutPanel flowIcons;
+        private ListView iconList;
+        private ImageList iconImages;
         private Button btnSelect;
         private Button btnCancel;
         private Button btnConfig;
-        private Button btnPreviousPage;
-        private Button btnNextPage;
-        private Label lblPage;
+        private ComboBox cmbCategory;
         private Label lblStatus;
         private Label lblCurrentPath;
         private SplitContainer splitContainer;
         private List<IconEntry> allIcons;
         private IconEntry selectedIcon;
-        private string currentFolder = "";
         
         // Static caches persist across dialog instances (prevents reloading large icon folders repeatedly)
-        private const int IMAGE_CACHE_LIMIT = 1000;
-        private const int PAGE_SIZE = 200;
+        private const int IMAGE_CACHE_LIMIT = 5000;
+        private const int DISPLAYED_IMAGE_LIMIT = 4000;
         private static Dictionary<string, Image> imageCache = new Dictionary<string, Image>(StringComparer.OrdinalIgnoreCase);
-        private static Dictionary<string, List<string>> folderFileCache = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         private static List<IconEntry> allIconCache;
         private static string allIconCacheKey = "";
         private static object cacheLock = new object(); // Thread safety
         private static string cacheFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cache");
         
-        // Async loading state
-        private List<IconEntry> pendingIcons = new List<IconEntry>();
-        private int loadedIconCount = 0;
-        private int currentPage = 0;
-        private int loadGeneration = 0;
-        private const int BATCH_SIZE = 50;
-        private ProgressBar progressBar;
-        private Label lblLoading;
+        private readonly Dictionary<string, int> displayedImageIndexes = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> loadingThumbnails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private System.Windows.Forms.Timer searchTimer;
+        private int thumbnailGeneration = 0;
+        private bool isClosing = false;
         
         public string SelectedIconPath { get; private set; }
         
@@ -71,13 +65,20 @@ namespace WC3ItemManager
         
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
-            loadGeneration++;
-            ClearDisplayedIcons();
-            lblLoading?.Dispose();
-            progressBar?.Dispose();
-            lblLoading = null;
-            progressBar = null;
+            isClosing = true;
+            thumbnailGeneration++;
+            searchTimer?.Stop();
+            searchTimer?.Dispose();
+            if (iconList != null)
+                iconList.LargeImageList = null;
+            iconImages?.Dispose();
             base.OnFormClosed(e);
+        }
+
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            QueueVisibleThumbnailLoad();
         }
         
         private void InitializeUI()
@@ -109,7 +110,17 @@ namespace WC3ItemManager
                 Width = 250,
                 Font = new Font("Segoe UI", 9)
             };
-            txtSearch.TextChanged += (s, e) => FilterIcons();
+            searchTimer = new System.Windows.Forms.Timer { Interval = 300 };
+            searchTimer.Tick += (s, e) =>
+            {
+                searchTimer.Stop();
+                FilterIcons();
+            };
+            txtSearch.TextChanged += (s, e) =>
+            {
+                searchTimer.Stop();
+                searchTimer.Start();
+            };
             
             Label lblSource = new Label
             {
@@ -137,48 +148,22 @@ namespace WC3ItemManager
             };
             btnConfig.Click += BtnConfig_Click;
 
-            btnPreviousPage = new Button
+            Label lblCategory = new Label
             {
-                Text = "Previous",
-                Location = new Point(720, 10),
-                Width = 80,
-                Height = 28,
-                Enabled = false
-            };
-            btnPreviousPage.Click += async (s, e) =>
-            {
-                if (currentPage > 0)
-                {
-                    currentPage--;
-                    await LoadCurrentPageAsync();
-                }
+                Text = "Category:",
+                Location = new Point(720, 15),
+                AutoSize = true
             };
 
-            lblPage = new Label
+            cmbCategory = new ComboBox
             {
-                Text = "Page 0/0",
-                Location = new Point(810, 15),
-                Width = 90,
-                TextAlign = ContentAlignment.MiddleCenter
+                Location = new Point(785, 12),
+                Width = 140,
+                DropDownStyle = ComboBoxStyle.DropDownList
             };
-
-            btnNextPage = new Button
-            {
-                Text = "Next",
-                Location = new Point(910, 10),
-                Width = 80,
-                Height = 28,
-                Enabled = false
-            };
-            btnNextPage.Click += async (s, e) =>
-            {
-                int pageCount = GetPageCount();
-                if (currentPage + 1 < pageCount)
-                {
-                    currentPage++;
-                    await LoadCurrentPageAsync();
-                }
-            };
+            cmbCategory.Items.AddRange(new object[] { "All", "Abilities", "Items", "Units", "Buildings", "UI", "Effects", "Other" });
+            cmbCategory.SelectedIndex = 0;
+            cmbCategory.SelectedIndexChanged += (s, e) => FilterIcons();
             
             lblCurrentPath = new Label
             {
@@ -199,7 +184,7 @@ namespace WC3ItemManager
             
             topPanel.Controls.AddRange(new Control[] { 
                 lblSearch, txtSearch, lblSource, cmbSource, btnConfig,
-                btnPreviousPage, lblPage, btnNextPage, lblCurrentPath, lblStatus
+                lblCategory, cmbCategory, lblCurrentPath, lblStatus
             });
             
             // Main split container: Tree on left, Icons on right
@@ -249,15 +234,30 @@ namespace WC3ItemManager
                 Padding = new Padding(5)
             };
             
-            flowIcons = new FlowLayoutPanel
+            iconImages = new ImageList
+            {
+                ColorDepth = ColorDepth.Depth32Bit,
+                ImageSize = new Size(64, 64)
+            };
+            iconImages.Images.Add(CreatePlaceholderImage());
+
+            iconList = new ListView
             {
                 Dock = DockStyle.Fill,
-                AutoScroll = true,
-                WrapContents = true,
-                Padding = new Padding(5)
+                View = View.LargeIcon,
+                LargeImageList = iconImages,
+                MultiSelect = false,
+                HideSelection = false,
+                LabelWrap = true
             };
-            
-            iconPanel.Controls.Add(flowIcons);
+            iconList.SelectedIndexChanged += IconList_SelectedIndexChanged;
+            iconList.DoubleClick += IconList_DoubleClick;
+            iconList.MouseWheel += (s, e) => QueueVisibleThumbnailLoad();
+            iconList.MouseUp += (s, e) => QueueVisibleThumbnailLoad();
+            iconList.KeyUp += (s, e) => QueueVisibleThumbnailLoad();
+            iconList.Resize += (s, e) => QueueVisibleThumbnailLoad();
+
+            iconPanel.Controls.Add(iconList);
             splitContainer.Panel2.Controls.Add(iconPanel);
             
             // Bottom panel - buttons
@@ -298,7 +298,7 @@ namespace WC3ItemManager
         private void LoadIcons()
         {
             treeFolder.Nodes.Clear();
-            ClearDisplayedIcons();
+            iconList.Items.Clear();
             lblStatus.Text = "Loading folder structure...";
             Application.DoEvents();
             
@@ -306,7 +306,6 @@ namespace WC3ItemManager
             {
                 allIcons = GetAllIconsWithCache();
                 LoadFolderTree();
-                lblStatus.Text = $"Loaded {allIcons.Count} icons";
             }
             catch (Exception ex)
             {
@@ -319,10 +318,18 @@ namespace WC3ItemManager
         {
             treeFolder.Nodes.Clear();
             string sourceFilter = cmbSource.SelectedItem?.ToString() ?? "All";
-            
             var config = IconPathConfig.Instance;
-            
-            // Add Blizzard root if applicable
+
+            TreeNode allNode = null;
+            if (sourceFilter == "All")
+            {
+                allNode = new TreeNode("All configured icons")
+                {
+                    Tag = new FolderInfo { FullPath = "", Source = "All" }
+                };
+                treeFolder.Nodes.Add(allNode);
+            }
+
             if ((sourceFilter == "All" || sourceFilter == "Blizzard") && Directory.Exists(config.WarCraft3IconPath))
             {
                 TreeNode blizzNode = new TreeNode("Blizzard WC3 Icons")
@@ -331,11 +338,12 @@ namespace WC3ItemManager
                     ImageIndex = 0
                 };
                 BuildFolderTree(blizzNode, config.WarCraft3IconPath, "Blizzard");
-                treeFolder.Nodes.Add(blizzNode);
-                blizzNode.Expand();
+                if (allNode != null)
+                    allNode.Nodes.Add(blizzNode);
+                else
+                    treeFolder.Nodes.Add(blizzNode);
             }
-            
-            // Add Custom root if applicable
+
             if ((sourceFilter == "All" || sourceFilter == "Custom") && Directory.Exists(config.CustomIconPath))
             {
                 TreeNode customNode = new TreeNode("Custom Icons")
@@ -344,194 +352,65 @@ namespace WC3ItemManager
                     ImageIndex = 0
                 };
                 BuildFolderTree(customNode, config.CustomIconPath, "Custom");
-                treeFolder.Nodes.Add(customNode);
-                customNode.Expand();
+                if (allNode != null)
+                    allNode.Nodes.Add(customNode);
+                else
+                    treeFolder.Nodes.Add(customNode);
             }
-            
-            // Select first node by default
+
             if (treeFolder.Nodes.Count > 0)
             {
                 treeFolder.SelectedNode = treeFolder.Nodes[0];
+                treeFolder.Nodes[0].Expand();
             }
         }
         
         private void BuildFolderTree(TreeNode parentNode, string path, string source)
         {
-            try
+            var directories = allIcons
+                .Where(icon => icon.Source == source)
+                .Select(icon => Path.GetDirectoryName(icon.FullPath))
+                .Where(directory => !string.IsNullOrEmpty(directory))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(directory => directory.Length);
+
+            foreach (string directory in directories)
             {
-                // Add subdirectories
-                var directories = Directory.GetDirectories(path);
-                foreach (var dir in directories)
+                string relativePath = Path.GetRelativePath(path, directory);
+                if (relativePath == "." || relativePath.StartsWith(".."))
+                    continue;
+
+                TreeNode currentNode = parentNode;
+                string currentPath = path;
+                foreach (string folderName in relativePath.Split(
+                    new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar },
+                    StringSplitOptions.RemoveEmptyEntries))
                 {
-                    string folderName = Path.GetFileName(dir);
-                    TreeNode childNode = new TreeNode(folderName)
+                    currentPath = Path.Combine(currentPath, folderName);
+                    TreeNode childNode = currentNode.Nodes
+                        .Cast<TreeNode>()
+                        .FirstOrDefault(node => node.Tag is FolderInfo info &&
+                            string.Equals(info.FullPath, currentPath, StringComparison.OrdinalIgnoreCase));
+                    if (childNode == null)
                     {
-                        Tag = new FolderInfo { FullPath = dir, Source = source }
-                    };
-
-                    BuildFolderTree(childNode, dir, source);
-                    bool hasIcons = GetFolderIconFiles(dir).Count > 0;
-
-                    if (hasIcons || childNode.Nodes.Count > 0)
-                    {
-                        parentNode.Nodes.Add(childNode);
+                        childNode = new TreeNode(folderName)
+                        {
+                            Tag = new FolderInfo { FullPath = currentPath, Source = source }
+                        };
+                        currentNode.Nodes.Add(childNode);
                     }
+                    currentNode = childNode;
                 }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error building folder tree for {path}: {ex.Message}");
-            }
-        }
-        
-        private static bool IsIconFile(string file)
-        {
-            string ext = Path.GetExtension(file).ToLower();
-            return ext == ".blp" || ext == ".tga" || ext == ".png" || ext == ".jpg" || ext == ".jpeg";
         }
         
         private void TreeFolder_AfterSelect(object sender, TreeViewEventArgs e)
         {
             if (e.Node?.Tag is FolderInfo folderInfo)
             {
-                currentFolder = folderInfo.FullPath;
                 lblCurrentPath.Text = $"Current folder: {e.Node.FullPath}";
-                LoadIconsFromFolderAsync(folderInfo.FullPath, folderInfo.Source);
+                FilterIcons();
             }
-        }
-        
-        private async void LoadIconsFromFolderAsync(string folderPath, string source)
-        {
-            int generation = ++loadGeneration;
-            lblStatus.ForeColor = Color.Gray;
-            try
-            {
-                string search = txtSearch.Text.Trim();
-                List<IconEntry> filtered;
-
-                if (!string.IsNullOrEmpty(search))
-                {
-                    string sourceFilter = cmbSource.SelectedItem?.ToString() ?? "All";
-                    filtered = allIcons
-                        .Where(icon => (sourceFilter == "All" || icon.Source == sourceFilter) &&
-                            (icon.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                             icon.RelativePath.Contains(search, StringComparison.OrdinalIgnoreCase)))
-                        .ToList();
-                }
-                else
-                {
-                    var files = await System.Threading.Tasks.Task.Run(() => GetFolderIconFiles(folderPath));
-                    filtered = files.Select(file => CreateIconEntry(file, source)).ToList();
-                }
-
-                if (generation != loadGeneration)
-                    return;
-
-                pendingIcons = filtered;
-                currentPage = 0;
-                await LoadCurrentPageAsync(generation);
-            }
-            catch (Exception ex)
-            {
-                lblStatus.Text = $"Error loading folder: {ex.Message}";
-                lblStatus.ForeColor = Color.Red;
-            }
-        }
-        
-        private async System.Threading.Tasks.Task LoadCurrentPageAsync(int? requestedGeneration = null)
-        {
-            int generation = requestedGeneration ?? ++loadGeneration;
-            int pageCount = GetPageCount();
-            if (pageCount == 0)
-                currentPage = 0;
-            else if (currentPage >= pageCount)
-                currentPage = pageCount - 1;
-
-            ClearDisplayedIcons();
-            ShowLoadingIndicator(true);
-
-            var pageIcons = pendingIcons
-                .Skip(currentPage * PAGE_SIZE)
-                .Take(PAGE_SIZE)
-                .ToList();
-            loadedIconCount = 0;
-            UpdatePageControls();
-            lblStatus.Text = $"Loading {pageIcons.Count} of {pendingIcons.Count} matching icons...";
-
-            if (pageIcons.Count == 0)
-            {
-                ShowLoadingIndicator(false);
-                lblStatus.Text = "No matching icons";
-                return;
-            }
-
-            foreach (var icon in pageIcons)
-            {
-                if (generation != loadGeneration)
-                    return;
-
-                AddIconButton(icon);
-                loadedIconCount++;
-
-                if (loadedIconCount % BATCH_SIZE == 0)
-                {
-                    if (progressBar != null && progressBar.Visible)
-                    {
-                        int percent = (int)((float)loadedIconCount / pageIcons.Count * 100);
-                        progressBar.Value = Math.Min(percent, 100);
-                    }
-                    flowIcons.PerformLayout();
-                    await System.Threading.Tasks.Task.Yield();
-                }
-            }
-
-            ShowLoadingIndicator(false);
-            flowIcons.PerformLayout();
-            lblStatus.Text = $"Showing {pageIcons.Count} of {pendingIcons.Count} matching icons";
-        }
-
-        private void ClearDisplayedIcons()
-        {
-            foreach (Control control in flowIcons.Controls.Cast<Control>().ToArray())
-            {
-                flowIcons.Controls.Remove(control);
-                if (ReferenceEquals(control, lblLoading) || ReferenceEquals(control, progressBar))
-                    continue;
-
-                foreach (PictureBox pictureBox in control.Controls.OfType<PictureBox>())
-                {
-                    if (pictureBox.Tag is bool ownsImage && ownsImage)
-                        pictureBox.Image?.Dispose();
-                    pictureBox.Image = null;
-                }
-                control.Dispose();
-            }
-        }
-
-        private int GetPageCount()
-        {
-            return pendingIcons.Count == 0 ? 0 : (pendingIcons.Count + PAGE_SIZE - 1) / PAGE_SIZE;
-        }
-
-        private void UpdatePageControls()
-        {
-            int pageCount = GetPageCount();
-            lblPage.Text = pageCount == 0 ? "Page 0/0" : $"Page {currentPage + 1}/{pageCount}";
-            btnPreviousPage.Enabled = currentPage > 0;
-            btnNextPage.Enabled = currentPage + 1 < pageCount;
-        }
-
-        private static IconEntry CreateIconEntry(string fullPath, string source)
-        {
-            var config = IconPathConfig.Instance;
-            string basePath = source == "Blizzard" ? config.WarCraft3IconPath : config.CustomIconPath;
-            return new IconEntry
-            {
-                FullPath = fullPath,
-                RelativePath = fullPath.Replace(basePath, "").TrimStart('\\', '/'),
-                Name = Path.GetFileNameWithoutExtension(fullPath),
-                Source = source
-            };
         }
 
         private static List<IconEntry> GetAllIconsWithCache()
@@ -553,196 +432,229 @@ namespace WC3ItemManager
             return icons;
         }
 
-        private static List<string> GetFolderIconFiles(string folderPath)
-        {
-            lock (cacheLock)
-            {
-                if (folderFileCache.TryGetValue(folderPath, out var cachedFiles))
-                {
-                    return new List<string>(cachedFiles);
-                }
-            }
-
-            List<string> allFiles;
-            try
-            {
-                allFiles = Directory.EnumerateFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly)
-                    .Where(IsIconFile)
-                    .ToList();
-            }
-            catch
-            {
-                allFiles = new List<string>();
-            }
-
-            lock (cacheLock)
-            {
-                folderFileCache[folderPath] = new List<string>(allFiles);
-            }
-
-            return allFiles;
-        }
-        
-        private void ShowLoadingIndicator(bool show)
-        {
-            if (show)
-            {
-                if (lblLoading == null)
-                {
-                    lblLoading = new Label
-                    {
-                        Text = "Loading icons...",
-                        Location = new Point(flowIcons.Width / 2 - 100, 50),
-                        Width = 200,
-                        Height = 30,
-                        TextAlign = ContentAlignment.MiddleCenter,
-                        Font = new Font("Segoe UI", 12, FontStyle.Bold),
-                        ForeColor = Color.DarkBlue,
-                        BackColor = Color.White
-                    };
-                    
-                    progressBar = new ProgressBar
-                    {
-                        Location = new Point(flowIcons.Width / 2 - 100, 90),
-                        Width = 200,
-                        Height = 20,
-                        Style = ProgressBarStyle.Continuous
-                    };
-                }
-                
-                if (!flowIcons.Controls.Contains(lblLoading))
-                {
-                    flowIcons.Controls.Add(lblLoading);
-                    flowIcons.Controls.Add(progressBar);
-                    lblLoading.BringToFront();
-                    progressBar.BringToFront();
-                }
-                
-                lblLoading.Visible = true;
-                progressBar.Visible = true;
-                progressBar.Value = 0;
-            }
-            else
-            {
-                if (lblLoading != null)
-                {
-                    lblLoading.Visible = false;
-                    progressBar.Visible = false;
-                }
-            }
-        }
-        
         private void FilterIcons()
         {
-            // Just refresh current folder with search filter
-            if (!string.IsNullOrEmpty(currentFolder) && treeFolder.SelectedNode?.Tag is FolderInfo folderInfo)
+            if (allIcons == null || iconList == null)
+                return;
+
+            searchTimer?.Stop();
+            thumbnailGeneration++;
+            loadingThumbnails.Clear();
+            string search = txtSearch.Text.Trim();
+            string category = cmbCategory.SelectedItem?.ToString() ?? "All";
+
+            IEnumerable<IconEntry> filtered = GetIconsInCurrentScope();
+            if (!string.IsNullOrEmpty(search))
             {
-                LoadIconsFromFolderAsync(currentFolder, folderInfo.Source);
+                filtered = filtered.Where(icon =>
+                    icon.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                    icon.RelativePath.Contains(search, StringComparison.OrdinalIgnoreCase));
             }
+            if (category != "All")
+                filtered = filtered.Where(icon => GetVirtualCategory(icon) == category);
+
+            var results = filtered.ToList();
+            iconList.BeginUpdate();
+            iconList.Items.Clear();
+            selectedIcon = null;
+            btnSelect.Enabled = false;
+            var items = results.Select(icon =>
+            {
+                int imageIndex = displayedImageIndexes.TryGetValue(icon.FullPath, out int cachedIndex)
+                    ? cachedIndex
+                    : 0;
+                return new ListViewItem(icon.Name, imageIndex) { Tag = icon };
+            }).ToArray();
+            iconList.Items.AddRange(items);
+            iconList.EndUpdate();
+
+            lblStatus.ForeColor = Color.Gray;
+            lblStatus.Text = results.Count == 0
+                ? "No matching icons in this folder"
+                : $"Showing {results.Count} icons; thumbnails load as you browse";
+            QueueVisibleThumbnailLoad();
         }
-        
-        private void AddIconButton(IconEntry icon)
+
+        private IEnumerable<IconEntry> GetIconsInCurrentScope()
         {
-            string fullPath = icon.FullPath;
-            
-            Panel iconBox = new Panel
-            {
-                Width = 90,
-                Height = 120,
-                Margin = new Padding(5),
-                BorderStyle = BorderStyle.FixedSingle,
-                Cursor = Cursors.Hand,
-                Tag = icon
-            };
-            
-            PictureBox pic = new PictureBox
-            {
-                Width = 64,
-                Height = 64,
-                Location = new Point(13, 5),
-                SizeMode = PictureBoxSizeMode.Zoom,
-                BackColor = Color.FromArgb(30, 30, 30)
-            };
-            
-            Label lbl = new Label
-            {
-                Text = Path.GetFileNameWithoutExtension(fullPath),
-                Location = new Point(2, 72),
-                Width = 86,
-                Height = 45,
-                TextAlign = ContentAlignment.TopCenter,
-                Font = new Font("Segoe UI", 7),
-                ForeColor = Color.Black
-            };
-            
-            // Wrap text if too long
-            if (lbl.Text.Length > 15)
-            {
-                lbl.Text = lbl.Text.Substring(0, 12) + "...";
-            }
-            
-            // Load icon image with caching
+            string sourceFilter = cmbSource.SelectedItem?.ToString() ?? "All";
+            IEnumerable<IconEntry> icons = allIcons;
+            if (sourceFilter != "All")
+                icons = icons.Where(icon => icon.Source == sourceFilter);
+
+            if (!(treeFolder.SelectedNode?.Tag is FolderInfo folderInfo) || string.IsNullOrEmpty(folderInfo.FullPath))
+                return icons;
+
+            var config = IconPathConfig.Instance;
+            bool sourceRoot =
+                string.Equals(folderInfo.FullPath, config.WarCraft3IconPath, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(folderInfo.FullPath, config.CustomIconPath, StringComparison.OrdinalIgnoreCase);
+            if (sourceRoot)
+                return icons.Where(icon => icon.Source == folderInfo.Source);
+
+            string folderPrefix = folderInfo.FullPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                + Path.DirectorySeparatorChar;
+            return icons.Where(icon => icon.FullPath.StartsWith(folderPrefix, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static string GetVirtualCategory(IconEntry icon)
+        {
+            string value = $"{icon.RelativePath} {icon.Name}".ToLowerInvariant();
+            if (value.Contains("ability") || value.Contains("spell"))
+                return "Abilities";
+            if (value.Contains("item") || value.Contains("weapon") || value.Contains("armor") ||
+                value.Contains("potion") || value.Contains("scroll") || value.Contains("artifact"))
+                return "Items";
+            if (value.Contains("building") || value.Contains("structure"))
+                return "Buildings";
+            if (value.Contains("unit") || value.Contains("hero") || value.Contains("creature"))
+                return "Units";
+            if (value.Contains("interface") || value.Contains("ui\\") || value.Contains("ui/") || value.Contains("menu"))
+                return "UI";
+            if (value.Contains("effect") || value.Contains("buff") || value.Contains("aura"))
+                return "Effects";
+            return "Other";
+        }
+
+        private void QueueVisibleThumbnailLoad()
+        {
+            if (isClosing || iconList == null || iconList.IsDisposed || !iconList.IsHandleCreated)
+                return;
             try
             {
-                Image loadedImage = LoadImageWithCache(fullPath, out bool isCached);
-                if (loadedImage != null)
-                {
-                    pic.Image = loadedImage;
-                    pic.Tag = !isCached;
-                    pic.BackColor = Color.Black;
-                }
-                else
-                {
-                    // Failed to load - show placeholder
-                    pic.BackColor = Color.FromArgb(120, 40, 40);
-                }
+                iconList.BeginInvoke(new Action(LoadVisibleThumbnailsAsync));
             }
-            catch
+            catch (InvalidOperationException)
             {
-                pic.BackColor = Color.FromArgb(120, 40, 40);
+                // The dialog was closed before the deferred viewport load could be queued.
             }
-            
-            iconBox.Controls.Add(pic);
-            iconBox.Controls.Add(lbl);
-            
-            // Click handlers
-            iconBox.Click += (s, e) => SelectIcon(iconBox, (IconEntry)iconBox.Tag);
-            pic.Click += (s, e) => SelectIcon(iconBox, (IconEntry)iconBox.Tag);
-            lbl.Click += (s, e) => SelectIcon(iconBox, (IconEntry)iconBox.Tag);
-            iconBox.DoubleClick += (s, e) => { SelectIcon(iconBox, (IconEntry)iconBox.Tag); this.DialogResult = DialogResult.OK; };
-            
-            flowIcons.Controls.Add(iconBox);
         }
-        
-        private void SelectIcon(Panel iconBox, IconEntry icon)
+
+        private async void LoadVisibleThumbnailsAsync()
         {
-            // Remove highlight from previous selection
-            foreach (Control ctrl in flowIcons.Controls)
+            if (iconList.IsDisposed || iconList.Items.Count == 0)
+                return;
+
+            int generation = thumbnailGeneration;
+            int firstIndex = iconList.TopItem?.Index ?? 0;
+            int columns = Math.Max(1, iconList.ClientSize.Width / 90);
+            int rows = Math.Max(1, iconList.ClientSize.Height / 90) + 2;
+            int lastIndex = Math.Min(iconList.Items.Count, firstIndex + columns * rows);
+
+            for (int index = firstIndex; index < lastIndex; index++)
             {
-                if (ctrl is Panel p)
-                    p.BackColor = SystemColors.Control;
+                if (generation != thumbnailGeneration || iconList.IsDisposed)
+                    return;
+
+                ListViewItem item = iconList.Items[index];
+                if (!(item.Tag is IconEntry icon) || item.ImageIndex != 0)
+                    continue;
+                if (!loadingThumbnails.Add(icon.FullPath))
+                    continue;
+
+                var loaded = await System.Threading.Tasks.Task.Run(() =>
+                {
+                    Image image = LoadImageWithCache(icon.FullPath, out bool cached);
+                    return (Image: image, Cached: cached);
+                });
+                loadingThumbnails.Remove(icon.FullPath);
+
+                if (generation != thumbnailGeneration || iconList.IsDisposed)
+                {
+                    if (!loaded.Cached)
+                        loaded.Image?.Dispose();
+                    return;
+                }
+
+                if (loaded.Image == null)
+                    continue;
+
+                if (!displayedImageIndexes.TryGetValue(icon.FullPath, out int imageIndex))
+                {
+                    if (iconImages.Images.Count >= DISPLAYED_IMAGE_LIMIT)
+                        ResetThumbnailImages();
+                    using (var listImage = new Bitmap(loaded.Image))
+                        iconImages.Images.Add(listImage);
+                    imageIndex = iconImages.Images.Count - 1;
+                    displayedImageIndexes[icon.FullPath] = imageIndex;
+                }
+                if (!loaded.Cached)
+                    loaded.Image.Dispose();
+
+                if (item.ListView == iconList)
+                    item.ImageIndex = imageIndex;
             }
-            
-            // Highlight selected
-            iconBox.BackColor = Color.LightBlue;
-            selectedIcon = icon;
-            btnSelect.Enabled = true;
         }
-        
+
+        private void IconList_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            selectedIcon = iconList.SelectedItems.Count == 1
+                ? iconList.SelectedItems[0].Tag as IconEntry
+                : null;
+            btnSelect.Enabled = selectedIcon != null;
+            QueueVisibleThumbnailLoad();
+        }
+
+        private void IconList_DoubleClick(object sender, EventArgs e)
+        {
+            if (selectedIcon != null)
+            {
+                BtnSelect_Click(sender, e);
+                DialogResult = DialogResult.OK;
+            }
+        }
+
         private void HighlightIcon(string path)
         {
-            // Try to find and highlight the icon with the given path
-            foreach (Control ctrl in flowIcons.Controls)
+            string normalizedPath = NormalizeComparableIconPath(path);
+            foreach (ListViewItem item in iconList.Items)
             {
-                if (ctrl is Panel p && p.Tag is IconEntry icon)
+                if (item.Tag is IconEntry icon &&
+                    NormalizeComparableIconPath(icon.RelativePath) == normalizedPath)
                 {
-                    if (icon.RelativePath.Equals(path, StringComparison.OrdinalIgnoreCase))
-                    {
-                        SelectIcon(p, icon);
-                        break;
-                    }
+                    item.Selected = true;
+                    item.EnsureVisible();
+                    break;
                 }
             }
+        }
+
+        private static string NormalizeComparableIconPath(string path)
+        {
+            return Path.ChangeExtension((path ?? "").Replace('/', '\\'), null)
+                .TrimStart('\\')
+                .ToLowerInvariant();
+        }
+
+        private static Bitmap CreatePlaceholderImage()
+        {
+            var bitmap = new Bitmap(64, 64, PixelFormat.Format32bppPArgb);
+            using (Graphics graphics = Graphics.FromImage(bitmap))
+                graphics.Clear(Color.FromArgb(35, 35, 35));
+            return bitmap;
+        }
+
+        private void ResetDisplayedImages()
+        {
+            thumbnailGeneration++;
+            iconList.Items.Clear();
+            displayedImageIndexes.Clear();
+            loadingThumbnails.Clear();
+            iconImages.Images.Clear();
+            using (Bitmap placeholder = CreatePlaceholderImage())
+                iconImages.Images.Add(placeholder);
+        }
+
+        private void ResetThumbnailImages()
+        {
+            iconList.BeginUpdate();
+            foreach (ListViewItem item in iconList.Items)
+                item.ImageIndex = 0;
+            iconImages.Images.Clear();
+            using (Bitmap placeholder = CreatePlaceholderImage())
+                iconImages.Images.Add(placeholder);
+            displayedImageIndexes.Clear();
+            iconList.EndUpdate();
         }
         
         private Image LoadImageWithCache(string fullPath, out bool isCached)
@@ -1118,7 +1030,6 @@ namespace WC3ItemManager
                     img?.Dispose();
                 }
                 imageCache.Clear();
-                folderFileCache.Clear();
                 allIconCache = null;
                 allIconCacheKey = "";
             }
@@ -1144,7 +1055,7 @@ namespace WC3ItemManager
             {
                 if (configDialog.ShowDialog() == DialogResult.OK)
                 {
-                    ClearDisplayedIcons();
+                    ResetDisplayedImages();
                     ClearCache();
                     LoadIcons(); // Reload icons with new paths
                 }

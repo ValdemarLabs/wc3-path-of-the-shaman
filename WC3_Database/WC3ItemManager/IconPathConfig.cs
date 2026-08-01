@@ -131,31 +131,39 @@ namespace WC3ItemManager
         {
             try
             {
-                // Supported formats: BLP (WC3 native), TGA, PNG, JPG
-                string[] extensions = { "*.blp", "*.tga", "*.png", "*.jpg", "*.jpeg" };
-                
-                foreach (var ext in extensions)
+                SearchOption searchOption = recursive
+                    ? SearchOption.AllDirectories
+                    : SearchOption.TopDirectoryOnly;
+
+                foreach (var file in Directory.EnumerateFiles(path, "*.*", searchOption))
                 {
-                    var files = Directory.GetFiles(path, ext, 
-                        recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
-                    
-                    foreach (var file in files)
+                    if (!IsSupportedIconFile(file))
+                        continue;
+
+                    string relativePath = file.Replace(path, "").TrimStart('\\', '/');
+                    icons.Add(new IconEntry
                     {
-                        string relativePath = file.Replace(path, "").TrimStart('\\', '/');
-                        icons.Add(new IconEntry
-                        {
-                            FullPath = file,
-                            RelativePath = relativePath,
-                            Name = Path.GetFileNameWithoutExtension(file),
-                            Source = source
-                        });
-                    }
+                        FullPath = file,
+                        RelativePath = relativePath,
+                        Name = Path.GetFileNameWithoutExtension(file),
+                        Source = source
+                    });
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error loading icons from {path}: {ex.Message}");
             }
+        }
+
+        private static bool IsSupportedIconFile(string path)
+        {
+            string extension = Path.GetExtension(path);
+            return extension.Equals(".blp", StringComparison.OrdinalIgnoreCase)
+                || extension.Equals(".tga", StringComparison.OrdinalIgnoreCase)
+                || extension.Equals(".png", StringComparison.OrdinalIgnoreCase)
+                || extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase)
+                || extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase);
         }
         
         /// <summary>
