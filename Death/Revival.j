@@ -217,12 +217,12 @@ endfunction
 private function Revival_ClearDeathRegion takes unit whichHero returns nothing
     if whichHero == udg_Nazgrek then
         if udg_NazgrekDeathRegion != null then
-            call RemoveRegion(udg_NazgrekDeathRegion)
+            call RemoveRect(udg_NazgrekDeathRegion)
             set udg_NazgrekDeathRegion = null
         endif
     elseif whichHero == udg_Zulkis then
         if udg_ZulkisDeathRegion != null then
-            call RemoveRegion(udg_ZulkisDeathRegion)
+            call RemoveRect(udg_ZulkisDeathRegion)
             set udg_ZulkisDeathRegion = null
         endif
     endif
@@ -233,13 +233,12 @@ private function Revival_CreateDeathRegion takes unit whichHero, real x, real y 
 
     call Revival_ClearDeathRegion(whichHero)
     if whichHero == udg_Nazgrek then
-        set udg_NazgrekDeathRegion = CreateRegion()
-        call RegionAddRect(udg_NazgrekDeathRegion, deathRect)
+        set udg_NazgrekDeathRegion = deathRect
     elseif whichHero == udg_Zulkis then
-        set udg_ZulkisDeathRegion = CreateRegion()
-        call RegionAddRect(udg_ZulkisDeathRegion, deathRect)
+        set udg_ZulkisDeathRegion = deathRect
+    else
+        call RemoveRect(deathRect)
     endif
-    call RemoveRect(deathRect)
     set deathRect = null
 endfunction
 
