@@ -1,0 +1,74 @@
+HeroDeathResurrect Hero Revive
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to Revive 
+        (Unit-type of (Target unit of ability being cast)) Equal to Deceased
+    Actions
+        Set VariableSet CV_Deceased = (Custom value of (Target unit of ability being cast))
+        Set VariableSet CV = NPC_DeceasedHero[CV_Deceased]
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (NPC_Deceased[CV] is alive) Equal to False
+            Then - Actions
+                -------- ============================================ --------
+                Set VariableSet NPC_DeathPoint = (Position of (Target unit of ability being cast))
+                -------- ============================================ --------
+                -------- ============================================ --------
+                Hero - Instantly revive NPC_Deceased[CV] at NPC_DeathPoint, Show revival graphics
+                Cinematic - Ping minimap for (All players) at NPC_DeathPoint for 3.00 seconds
+                Unit - Set life of NPC_Deceased[CV] to 50.00%
+                Unit - Set mana of NPC_Deceased[CV] to 50.00%
+                Unit - Remove (Target unit of ability being cast) from the game
+                -------- ============================================ --------
+                Custom script:   call RemoveLocation(udg_NPC_DeathPoint)
+                -------- ============================================ --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        NPC_Deceased[CV] Equal to NPC_Neutral_Engineer
+                    Then - Actions
+                        Countdown Timer - Pause ReviveTimerEngineer
+                    Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                NPC_Deceased[CV] Equal to NPC_Riverbane_Paladin
+                            Then - Actions
+                                Countdown Timer - Pause ReviveTimerPaladin
+                            Else - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        NPC_Deceased[CV] Equal to NPC_Horde_AI_Rogue
+                                    Then - Actions
+                                        Countdown Timer - Pause ReviveTimerRogue
+                                    Else - Actions
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                NPC_Deceased[CV] Equal to NPC_Horde_AI_Shaman
+                                            Then - Actions
+                                                Countdown Timer - Pause ReviveTimerRestoshaman
+                                            Else - Actions
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        NPC_Deceased[CV] Equal to NPC_Horde_AI_Warlock
+                                                    Then - Actions
+                                                        Countdown Timer - Pause ReviveTimerWarlock
+                                                    Else - Actions
+                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                            If - Conditions
+                                                                NPC_Deceased[CV] Equal to Nazgrek
+                                                            Then - Actions
+                                                                Countdown Timer - Pause ReviveTimerNazgrek
+                                                            Else - Actions
+                                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                    If - Conditions
+                                                                        NPC_Deceased[CV] Equal to Zulkis
+                                                                    Then - Actions
+                                                                        Countdown Timer - Pause ReviveTimerZulkis
+                                                                    Else - Actions
+                                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                            If - Conditions
+                                                                                NPC_Deceased[CV] Equal to NPC_Horde_AI_Warrior
+                                                                            Then - Actions
+                                                                                Countdown Timer - Pause ReviveTimerWarrior
+                                                                            Else - Actions
+            Else - Actions

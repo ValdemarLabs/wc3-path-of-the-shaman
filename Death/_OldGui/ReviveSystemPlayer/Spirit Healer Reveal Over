@@ -1,0 +1,14 @@
+Spirit Healer Reveal Over
+    Events
+        Time - SpiritHealerRevealTimer expires
+    Conditions
+    Actions
+        Trigger - Turn off (This trigger)
+        Unit Group - Pick every unit in SpiritHealers and do (Actions)
+            Loop - Actions
+                Animation - Queue (Picked unit)'s spell throw animation
+        Trigger - Remove (This trigger) from the trigger queue
+        Wait 2.00 seconds
+        Unit Group - Pick every unit in SpiritHealers and do (Actions)
+            Loop - Actions
+                Unit - Add Ghost to (Picked unit)

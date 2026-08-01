@@ -1,0 +1,27 @@
+HeroDeathResurrect AI Hero Reviver
+    Events
+        Time - Every 2.00 seconds of game time
+    Conditions
+    Actions
+        -------- Loop through each AI hero group --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in NPC_WANDERINGHORDEUNITS) Greater than 0
+            Then - Actions
+                Set VariableSet HeroDeathResurrect_HeroUnit = (Picked unit)
+                Trigger - Run HeroDeathResurrect AI Hero Reviver Loop <gen> (checking conditions)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in NPC_WANDERINGNEUTRALUNITS) Greater than 0
+            Then - Actions
+                Set VariableSet HeroDeathResurrect_HeroUnit = (Picked unit)
+                Trigger - Run HeroDeathResurrect AI Hero Reviver Loop <gen> (checking conditions)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in NPC_WANDERINGRIVERBANEUNITS) Greater than 0
+            Then - Actions
+                Set VariableSet HeroDeathResurrect_HeroUnit = (Picked unit)
+                Trigger - Run HeroDeathResurrect AI Hero Reviver Loop <gen> (checking conditions)
+            Else - Actions

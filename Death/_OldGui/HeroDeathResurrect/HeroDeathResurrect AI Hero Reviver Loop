@@ -1,0 +1,27 @@
+HeroDeathResurrect AI Hero Reviver Loop
+    Events
+    Conditions
+    Actions
+        Unit Group - Pick every unit in HeroDeathResurrect_TempGroup and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (HeroDeathResurrect_HeroUnit is alive) Equal to True
+                        (HeroDeathResurrect_HeroUnit has an item of type Spirit Shard) Equal to True
+                    Then - Actions
+                        -------- Search for Deceased units nearby --------
+                        Set VariableSet HeroDeathResurrect_TempPoint = (Position of HeroDeathResurrect_HeroUnit)
+                        Set VariableSet HeroDeathResurrect_DeadGroup = (Units within 1200.00 of HeroDeathResurrect_TempPoint matching ((Unit-type of (Matching unit)) Equal to Deceased).)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Number of units in HeroDeathResurrect_DeadGroup) Greater than 0
+                            Then - Actions
+                                Set VariableSet HeroDeathResurrect_DeadUnit = (Random unit from HeroDeathResurrect_DeadGroup)
+                                Unit - Order HeroDeathResurrect_HeroUnit to Stop.
+                                Unit - Order HeroDeathResurrect_HeroUnit to Human Mountain King - Storm Bolt HeroDeathResurrect_DeadUnit
+                            Else - Actions
+                        -------- Clean --------
+                        Custom script:   call RemoveLocation(udg_HeroDeathResurrect_TempPoint)
+                        Unit Group - Remove all units from HeroDeathResurrect_DeadGroup.
+                        Unit Group - Remove all units from HeroDeathResurrect_TempGroup.
+                    Else - Actions

@@ -1,0 +1,36 @@
+HeroDeathResurrect Hero Dies
+    Events
+        Unit - A unit Dies
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                ((Triggering unit) is in Companion_Group.) Equal to True
+                (Triggering unit) Equal to Nazgrek
+                (Triggering unit) Equal to Zulkis
+    Actions
+        -------- ============================================ --------
+        Set VariableSet CV = (Custom value of (Triggering unit))
+        Set VariableSet NPC_DeathPoint = (Position of (Triggering unit))
+        Set VariableSet NPC_Deceased[CV] = (Triggering unit)
+        -------- ============================================ --------
+        Unit - Create 1 Deceased for (Owner of NPC_Deceased[CV]) at NPC_DeathPoint facing Default building facing degrees
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Triggering unit) Equal to Nazgrek
+                        (Triggering unit) Equal to Zulkis
+            Then - Actions
+                -------- Player Hero time --------
+                Unit - Add a 30.00 second Generic expiration timer to (Last created unit)
+            Else - Actions
+                -------- AI Hero time --------
+                Unit - Add a 60.00 second Generic expiration timer to (Last created unit)
+        Set VariableSet CV_Deceased = (Custom value of (Last created unit))
+        Set VariableSet NPC_DeceasedTarget[CV_Deceased] = (Last created unit)
+        Set VariableSet NPC_DeceasedHero[CV_Deceased] = CV
+        -------- ============================================ --------
+        Custom script:   call RemoveLocation(udg_NPC_DeathPoint)
+        -------- ============================================ --------
+        -------- Enable AI heroes to resurrect fallen Player or AI heroes --------
+        Trigger - Turn on HeroDeathResurrect AI Hero Reviver <gen>

@@ -1,0 +1,23 @@
+Restore Nazgrek Items
+    Events
+    Conditions
+    Actions
+        Set VariableSet NazgrekCurPos = (Position of Nazgrek)
+        Sound - Play ItemRestore <gen> at 100.00% volume, attached to Nazgrek
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                Item - Pick every item in NazgrekDeathRegion and do (Actions)
+                    Loop - Actions
+                        Item - Move (Picked item) to NazgrekCurPos
+                Set VariableSet RestoreItemsPossibleN = False
+                Custom script:   call RemoveLocation(udg_NazgrekCurPos)
+            Else - Actions
+        Unit - Change ownership of SpiritHealer to Neutral Hostile and Retain color
+        Unit - Order SpiritHealer to Neutral Alchemist - Acid Bomb Nazgrek
+        Wait 0.50 seconds
+        Unit - Change ownership of SpiritHealer to Neutral Passive and Retain color
+        Sound - Play SpiritHealerResSickness <gen> at 100.00% volume, attached to Nazgrek
+        Countdown Timer - Resume SpiritHealerRevealTimer
+        Cinematic - Turn cinematic mode Off for (All players)
+        Trigger - Remove (This trigger) from the trigger queue

@@ -1,0 +1,73 @@
+Zulkis Revived at Graveyard
+    Events
+        Time - ReviveTimerZulkis expires
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                GraveyardSelect Equal to 1
+            Then - Actions
+                Set VariableSet GraveyardPoint = (Center of Graveyard <gen>)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                GraveyardSelect Equal to 2
+            Then - Actions
+                Set VariableSet GraveyardPoint = (Center of Graveyard02 <gen>)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                GraveyardSelect Equal to 3
+            Then - Actions
+                Set VariableSet GraveyardPoint = (Center of Graveyard03 <gen>)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                GraveyardSelect Equal to 4
+            Then - Actions
+                Set VariableSet GraveyardPoint = (Center of Graveyard04 <gen>)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                GraveyardSelect Equal to 5
+            Then - Actions
+                Set VariableSet GraveyardPoint = (Center of Graveyard05 <gen>)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                GraveyardSelect Equal to 6
+            Then - Actions
+                Set VariableSet GraveyardPoint = (Center of Graveyard06 <gen>)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                GraveyardSelect Equal to 7
+            Then - Actions
+                Set VariableSet GraveyardPoint = (Center of Graveyard07 <gen>)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                GraveyardSelect Equal to 8
+            Then - Actions
+                Set VariableSet GraveyardPoint = (Center of Graveyard08 <gen>)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                GraveyardSelect Equal to 9
+            Then - Actions
+                Set VariableSet GraveyardPoint = (Center of Graveyard09 <gen>)
+            Else - Actions
+        Hero - Instantly revive Zulkis at GraveyardPoint, Show revival graphics
+        Cinematic - Ping minimap for (All players) at GraveyardPoint for 1.00 seconds, using a Flashy ping of color (100.00%, 0.00%, 0.00%)
+        Custom script:   call RemoveLocation(udg_GraveyardPoint)
+        Set VariableSet VarPoint = (Position of Zulkis)
+        Camera - Pan camera for Player 1 (Red) to VarPoint over 0.00 seconds
+        Camera - Reset camera for Player 1 (Red) to standard game-view over 0.00 seconds
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Unit - Set life of Zulkis to 50.00%
+        Unit - Set mana of Zulkis to 50.00%
+        Set VariableSet RestoreItemsPossibleZ = True
+        Set VariableSet ZulkisDead = False
+        -------- Reveal Spirit Healers for a while --------
+        Trigger - Run Spirit Healer Reveal <gen> (checking conditions)
+        Trigger - Remove (This trigger) from the trigger queue

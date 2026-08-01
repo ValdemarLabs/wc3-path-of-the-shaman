@@ -1,0 +1,46 @@
+Hero Nazgrek Dies
+    Events
+        Unit - A unit owned by Player 1 (Red) Dies
+    Conditions
+        (Triggering unit) Equal to Nazgrek
+    Actions
+        Custom script:   local string a
+        Custom script:   local string b
+        Custom script:   local string c
+        Custom script:   local string d
+        -------- ======================= --------
+        Custom script:   set a = "|cffffcc00"
+        Custom script:   set b = GetHeroProperName(GetTriggerUnit())
+        Custom script:   set c = "|r has |cffff0000died..|r"
+        Custom script:   set d = a + b + c
+        -------- ======================= --------
+        Custom script:   call ShowSingleLineText(d, 0.5, 3, 1.5, 1.5)
+        -------- ======================= --------
+        Set VariableSet NazgrekDead = True
+        -------- Start timer --------
+        Countdown Timer - Start ReviveTimerNazgrek as a One-shot timer that will expire in 30.00 seconds
+        -------- Drop items --------
+        Hero - Drop the item from slot 1 of (Dying unit).
+        Hero - Drop the item from slot 2 of (Dying unit).
+        Hero - Drop the item from slot 3 of (Dying unit).
+        Hero - Drop the item from slot 4 of (Dying unit).
+        Hero - Drop the item from slot 5 of (Dying unit).
+        Hero - Drop the item from slot 6 of (Dying unit).
+        Set VariableSet NazgrekDeathPoint = (Position of (Dying unit))
+        Set VariableSet NazgrekDeathRegion = (Region centered at NazgrekDeathPoint with size (300.00, 300.00))
+        -------- Death Camera --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        ZulkisDead Equal to False
+                        And - All (Conditions) are true
+                            Conditions
+                                ZulkisDead Equal to True
+                                NazgrekDead Equal to True
+            Then - Actions
+                Set VariableSet DeathCameraPoint = NazgrekDeathPoint
+                Trigger - Run Death Camera <gen> (ignoring conditions)
+            Else - Actions
+        Custom script:   call RemoveLocation(udg_NazgrekDeathPoint)
+        Trigger - Remove (This trigger) from the trigger queue

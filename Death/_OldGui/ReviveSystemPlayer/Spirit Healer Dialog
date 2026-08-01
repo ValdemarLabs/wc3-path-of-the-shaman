@@ -1,0 +1,40 @@
+Spirit Healer Dialog
+    Events
+        Player - Player 1 (Red) Selects a unit
+    Conditions
+        ((Triggering unit) is in SpiritHealers.) Equal to True
+        Or - Any (Conditions) are true
+            Conditions
+                (Distance between (Position of (Triggering unit)) and (Position of Nazgrek)) Less than or equal to 500.00
+                (Distance between (Position of (Triggering unit)) and (Position of Zulkis)) Less than or equal to 500.00
+    Actions
+        Set VariableSet SpiritHealer = (Triggering unit)
+        Countdown Timer - Pause SpiritHealerRevealTimer
+        Cinematic - Turn cinematic mode On for (All players)
+        Set VariableSet VarPoint = (Position of SpiritHealer)
+        Camera - Pan camera for Player 1 (Red) to VarPoint over 1.00 seconds
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Unit - Make SpiritHealer face Nazgrek over 0.75 seconds
+        Wait 1.00 seconds
+        Cinematic - Send transmission to (All players) from SpiritHealer named Spirit Healer: Play No sound and display I can restore your ....  Modify duration: Set to 2.00 seconds and Wait
+        Wait 2.00 seconds
+        Dialog - Clear SpiritHealerDialog
+        Dialog - Change the title of SpiritHealerDialog to Restore items
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                RestoreItemsPossibleN Equal to True
+            Then - Actions
+                Dialog - Create a dialog button for SpiritHealerDialog labelled - Restore Nazgrek's...
+                Set VariableSet SpiritHealerDialogRestoN = (Last created dialog Button)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                RestoreItemsPossibleZ Equal to True
+            Then - Actions
+                Dialog - Create a dialog button for SpiritHealerDialog labelled - Restore Zul'ki's ...
+                Set VariableSet SpiritHealerDialogRestoZ = (Last created dialog Button)
+            Else - Actions
+        Dialog - Create a dialog button for SpiritHealerDialog labelled - Cancel
+        Set VariableSet SpiritHealerDialogCancel = (Last created dialog Button)
+        Cinematic - Enable user control for (All players).
+        Dialog - Show SpiritHealerDialog for Player 1 (Red)

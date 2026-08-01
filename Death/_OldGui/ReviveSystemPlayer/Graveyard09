@@ -1,0 +1,27 @@
+Graveyard09
+    Events
+        Unit - A unit enters Graveyard09Area <gen>
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Triggering unit) Equal to Zulkis
+                (Triggering unit) Equal to Nazgrek
+    Actions
+        Trigger - Turn off (This trigger)
+        Trigger - Turn on Graveyard01 <gen>
+        Trigger - Turn on Graveyard02 <gen>
+        Trigger - Turn on Graveyard03 <gen>
+        Trigger - Turn on Graveyard04 Totem <gen>
+        Trigger - Turn on Graveyard05 <gen>
+        Trigger - Turn on Graveyard06 <gen>
+        Trigger - Turn on Graveyard07 Totem <gen>
+        Trigger - Turn on Graveyard08 Dragons <gen>
+        -------- Set integer --------
+        Set VariableSet GraveyardSelect = 9
+        -------- Other --------
+        Special Effect - Destroy GraveyardSpecialEffect
+        Set VariableSet GraveyardPoint = (Center of Graveyard09 <gen>)
+        Special Effect - Create a special effect at GraveyardPoint using Abilities\Spells\Items\HealingSalve\HealingSalveTarget.mdl
+        Set VariableSet GraveyardSpecialEffect = (Last created special effect)
+        Custom script:   call RemoveLocation(udg_GraveyardPoint)
+        Trigger - Remove (This trigger) from the trigger queue

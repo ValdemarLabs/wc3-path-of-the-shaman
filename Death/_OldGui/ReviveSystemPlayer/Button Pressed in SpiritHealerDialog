@@ -1,0 +1,26 @@
+Button Pressed in SpiritHealerDialog
+    Events
+        Dialog - A dialog button is clicked for SpiritHealerDialog
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to SpiritHealerDialogRestoN
+            Then - Actions
+                Trigger - Run Restore Nazgrek Items <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to SpiritHealerDialogRestoZ
+            Then - Actions
+                Trigger - Run Restore Zulkis Items <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Clicked dialog button) Equal to SpiritHealerDialogCancel
+                    Then - Actions
+                        Countdown Timer - Resume SpiritHealerRevealTimer
+                        Cinematic - Turn cinematic mode Off for (All players)
+                    Else - Actions
