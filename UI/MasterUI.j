@@ -1,15 +1,25 @@
-library MasterUI initializer AutoInit requires Table, Interface
 /**
     MasterUI
     
-    Author: [Valdemar]
+    Author: Valdemar
     Version: 1.0
 
     Description: Serves as the main in-game menu for opening the different info and utility panels.
 
     Credits: Tasyen (TasQuestBox as inspiration)
 
+    How to install:
+    Import after Table and Interface and before panels that return to MasterUI.
+
+    API:
+    - call MasterUI_Show()
+    - call MasterUI_Hide()
+    - call MasterUI_Toggle()
+    - call MasterUI_ShowGameButton()
+    - call MasterUI_HideGameButton()
+
 **/
+library MasterUI initializer AutoInit requires Table, Interface
 
 globals
     private boolean MUI_Initialized = false
@@ -119,6 +129,7 @@ private function MUI_ApplyOpenButtonVisibility takes nothing returns nothing
 endfunction
 
 private function MUI_HideAllPanels takes nothing returns nothing
+    call ExecuteFunc("DInventoryEquipment_Hide")
     call ExecuteFunc("TasQuestBox_Hide")
     call ExecuteFunc("ProfessionsUI_Hide")
     call ExecuteFunc("CraftingUI_Hide")
@@ -238,6 +249,7 @@ endfunction
 private function MUI_OpenAction takes nothing returns nothing
     local boolean showPanel
 
+    call MUI_HideAllPanels()
     if GetLocalPlayer() == GetTriggerPlayer() then
         set showPanel = not BlzFrameIsVisible(MUI_Parent)
         call BlzFrameSetVisible(MUI_Parent, showPanel)
@@ -379,6 +391,7 @@ public function Show takes nothing returns nothing
         call Init()
     endif
     if MUI_Parent != null then
+        call MUI_HideAllPanels()
         if not BlzFrameIsVisible(MUI_Parent) then
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
         endif
