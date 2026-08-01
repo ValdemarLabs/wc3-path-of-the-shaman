@@ -7,7 +7,8 @@
     Description:
     Displays a vendor-type label above registered Shop units while they are in
     the local player's current camera view. Labels follow moving vendors and
-    remain hidden through fog or outside the configured camera range.
+    remain hidden through fog, cinematics, or outside the configured camera
+    range.
 
     Credits:
     - Totems.j camera-local floating-text visibility pattern
@@ -148,7 +149,7 @@ library VendorFloatingText initializer Init requires Shop, Table
                 if tt != null then
                     call SetTextTagText(tt, VFT_GetLabel(vendor), VFT_TEXT_SIZE * 0.023 / 10.00)
                     call SetTextTagPosUnit(tt, vendor, VFT_TEXT_OFFSET_Z)
-                    call SetTextTagVisibility(tt, VFT_Enabled and VFT_IsInCameraView(vendor))
+                    call SetTextTagVisibility(tt, VFT_Enabled and not udg_InCinematic and VFT_IsInCameraView(vendor))
                 endif
                 set index = index + 1
             endif
