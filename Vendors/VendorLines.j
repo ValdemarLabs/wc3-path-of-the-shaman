@@ -12,14 +12,16 @@
     Credits:
 
     How to install:
-    Import after Shop, DialogSystem, DialogInteraction, and Table. Import before
-    ShopUI, VendorDialogs, and vendor template libraries that register lines.
+    Import after Shop, ZonesCore, DialogSystem, DialogInteraction, and Table.
+    Import before ShopUI, VendorDialogs, and vendor template libraries that
+    register lines.
 
     API:
     - call VendorLines_RegisterBasicLines(name, greet1, greet2, trade, farewell)
     - call VendorLines_RegisterLine(profile, category, text, soundKey)
     - call VendorLines_BindUnitTypeProfile(unitTypeId, profile)
     - call VendorLines_BindUnitProfile(vendor, profile)
+    - call VendorLines_BindVendorZoneProfile(vendorId, zoneId, profile)
     - call VendorLines_SetVendorRandomLinesEnabled(vendorId, enabled)
     - call VendorLines_SetDefaultRandomLineInterval(minimum, maximum)
     - call VendorLines_SetVendorRandomLineInterval(vendorId, minimum, maximum)
@@ -27,7 +29,7 @@
     - call VendorLines_PlayTradeOutcome(vendor, boughtCount, soldCount)
 
 **/
-library VendorLines initializer Init requires Table, DialogSystem, DialogInteraction, Shop
+library VendorLines initializer Init requires Table, DialogSystem, DialogInteraction, Shop, ZonesCore
     globals
         public constant integer LINE_CHATTER = 1
         public constant integer LINE_BOUGHT = 2
@@ -57,6 +59,14 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
         public constant string TYPE_PROFESSION_SUPPLIES = "Profession Supplies"
         public constant string TYPE_FACTION_QUARTERMASTER = "Faction Quartermaster"
         public constant string TYPE_RANDOMIZED_GOODS = "Randomized Goods"
+        public constant string TYPE_REAGENTS = "Reagents"
+        public constant string TYPE_FOOD_AND_DRINK = "Food and Drink"
+        public constant string TYPE_POTIONS = "Potion Seller"
+        public constant string TYPE_RARE_GOODS = "Rare Goods"
+        public constant string TYPE_ADVENTURING_SUPPLIES = "Adventuring Supplies"
+        public constant string TYPE_TRADE_GOODS = "Trade Goods"
+        public constant string TYPE_BEAST_SUPPLIES = "Beast Supplies"
+        public constant string TYPE_ARCANE_GOODS = "Arcane Goods"
 
         private constant integer VL_MAX_PROFILES = 80
         private constant integer VL_MAX_LINES_PER_CATEGORY = 8
@@ -67,6 +77,7 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
         private Table VL_ProfileByName = 0
         private Table VL_ProfileByUnitType = 0
         private Table VL_ProfileByUnit = 0
+        private hashtable VL_ProfileByVendorZone = InitHashtable()
         private Table VL_LineCount = 0
         private Table VL_LastLine = 0
         private integer VL_ProfileCount = 0
@@ -121,9 +132,19 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
 
     private function VL_GetBoundProfile takes unit vendor returns integer
         local integer profileId = 0
+        local integer vendorId
+        local integer zoneId
 
         if vendor != null then
             set profileId = VL_ProfileByUnit.integer[GetHandleId(vendor)]
+            if profileId <= 0 then
+                set vendorId = Shop_GetVendorIdForUnit(vendor)
+                set zoneId = ZonesCore_GetZoneIdAtPoint(GetUnitX(vendor), GetUnitY(vendor))
+                set profileId = LoadInteger(VL_ProfileByVendorZone, vendorId, zoneId)
+                if profileId <= 0 then
+                    set profileId = LoadInteger(VL_ProfileByVendorZone, vendorId, ZonesCore_GetParentZoneId(zoneId))
+                endif
+            endif
             if profileId <= 0 then
                 set profileId = VL_ProfileByUnitType.integer[GetUnitTypeId(vendor)]
             endif
@@ -293,6 +314,14 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
             set VL_ProfileByUnit.integer[GetHandleId(vendor)] = profileId
         endif
         set vendor = null
+    endfunction
+
+    public function BindVendorZoneProfile takes integer vendorId, integer zoneId, string profileName returns nothing
+        local integer profileId = VL_GetOrCreateProfile(profileName)
+
+        if vendorId > 0 and zoneId > 0 and profileId > 0 then
+            call SaveInteger(VL_ProfileByVendorZone, vendorId, zoneId, profileId)
+        endif
     endfunction
 
     public function RegisterBasicLines takes string vendorName, string greetA, string greetB, string tradeLine, string farewellLine returns nothing
