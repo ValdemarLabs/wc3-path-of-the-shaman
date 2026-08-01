@@ -15,14 +15,16 @@
 
     How to install:
     Import after Shop, VendorLines, VendorVoiceProfiles, and Reputation. Import
-    VendorOrcs, VendorSatyrs, VendorHumans, VendorGoblins, and
-    VendorBonecrusherOgres afterward when those object families are present.
+    VendorOrcs, VendorSatyrs, VendorHumans, VendorGoblins,
+    VendorBonecrusherOgres, and VendorElarindor afterward when those object
+    families are present.
 
     API:
     - VendorCatalogs_VENDOR_CATALOG_* constants select one of the 26 catalogs.
     - set vendorId = VendorCatalogs_GetVendorId(catalogType)
     - call VendorCatalogs_RegisterUnit(vendor, catalogType, voiceProfile)
     - call VendorCatalogs_RegisterUnitType(unitTypeId, catalogType, voiceProfile)
+    - Canonical vendor names are registered automatically by unit rawcode.
 
 **/
 library VendorCatalogs initializer Init requires Shop, VendorLines, VendorVoiceProfiles, Reputation
@@ -81,6 +83,125 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VendorVoiceP
         call VendorLines_RegisterLine(profileName, VendorLines_LINE_SOLD, sold, "")
         call VendorLines_RegisterLine(profileName, VendorLines_LINE_BOUGHT_AND_SOLD, exchanged, "")
         call VendorLines_RegisterLine(profileName, VendorLines_LINE_NO_TRANSACTION, noTrade, "")
+    endfunction
+
+    private function RegisterVendorName takes integer unitTypeId, string displayName returns nothing
+        call Shop_SetVendorUnitTypeName(unitTypeId, displayName)
+    endfunction
+
+    private function ConfigureVendorNames takes nothing returns nothing
+        // Orc vendors
+        call RegisterVendorName('o011', "Kargun Ashblade")
+        call RegisterVendorName('o012', "Drokmar Ironhide")
+        call RegisterVendorName('o013', "Varok Emberwall")
+        call RegisterVendorName('o00A', "Ghorak Bloodmark")
+        call RegisterVendorName('o00B', "Rukgar Longroad")
+        call RegisterVendorName('o00C', "Nargash Tidehook")
+        call RegisterVendorName('o00D', "Kazrum Deepdelver")
+        call RegisterVendorName('o00E', "Hurgan Potbelly")
+        call RegisterVendorName('o00F', "Zarkul Vialroot")
+        call RegisterVendorName('o00G', "Brakkun Coalhand")
+        call RegisterVendorName('o00H', "Dagrok Firekeeper")
+        call RegisterVendorName('o00I', "Velgor Runeleaf")
+        call RegisterVendorName('o00J', "Mokrag Reedline")
+        call RegisterVendorName('o00K', "Kragmar Hidebinder")
+        call RegisterVendorName('o00L', "Thurgash Ore-Eye")
+        call RegisterVendorName('o00M', "Lokruk Skinner")
+        call RegisterVendorName('o00N', "Garshan Manytools")
+        call RegisterVendorName('o00O', "Korghan Greenbanner")
+        call RegisterVendorName('o00P', "Snagrok Oddskeeper")
+        call RegisterVendorName('o00Q', "Urgash Saltleaf")
+        call RegisterVendorName('o00R', "Grosh Fullbelly")
+        call RegisterVendorName('o00S', "Mazgor Bitterbrew")
+        call RegisterVendorName('o00T', "Mordrak Cindercoin")
+        call RegisterVendorName('o00U', "Dravok Trailwise")
+        call RegisterVendorName('o00V', "Korgul Barterhand")
+        call RegisterVendorName('o00W', "Brugar Beastfriend")
+        call RegisterVendorName('o00X', "Rethgar Reefblade")
+        call RegisterVendorName('o00Y', "Vrokan Scalehide")
+        call RegisterVendorName('o00Z', "Shargul Tidewall")
+        call RegisterVendorName('o010', "Krazhan Far-Sail")
+        call RegisterVendorName('o014', "Gorthak Jungle Banner")
+
+        // Satyr vendors
+        call RegisterVendorName('n02Y', "Xyros Bloodwager")
+        call RegisterVendorName('n02Z', "Vaelith the Covetous")
+        call RegisterVendorName('n030', "Sythren Duskmoss")
+        call RegisterVendorName('n031', "Malyr Runehorn")
+        call RegisterVendorName('n032', "Zarethis Oddhoof")
+        call RegisterVendorName('n033', "Nymor Vialtongue")
+        call RegisterVendorName('n034', "Krythos Thornblade")
+        call RegisterVendorName('n036', "Velthyr Nighthide")
+        call RegisterVendorName('n037', "Ozyr Blackhorn")
+        call RegisterVendorName('n038', "Faelrix Wayhoof")
+
+        // Human vendors
+        call RegisterVendorName('n035', "Garrick Holt")
+        call RegisterVendorName('n039', "Edric Vale")
+        call RegisterVendorName('n03A', "Rowan Targe")
+        call RegisterVendorName('n03B', "Roderic Kane")
+        call RegisterVendorName('n03C', "Merrick Wayland")
+        call RegisterVendorName('n03D', "Silas Reed")
+        call RegisterVendorName('n03E', "Tobin Slate")
+        call RegisterVendorName('n03F', "Owen Marlow")
+        call RegisterVendorName('n03G', "Aldren Voss")
+        call RegisterVendorName('n03H', "Bram Calder")
+        call RegisterVendorName('n03I', "Percy Bell")
+        call RegisterVendorName('n03J', "Lucan Wren")
+        call RegisterVendorName('n03K', "Hollis Finn")
+        call RegisterVendorName('n03L', "Osric Tanner")
+        call RegisterVendorName('n03M', "Martin Greaves")
+        call RegisterVendorName('n03N', "Corwin Hale")
+        call RegisterVendorName('n03O', "Alistair Crane")
+        call RegisterVendorName('n03P', "Cedran Pike")
+        call RegisterVendorName('n03Q', "Jasper Quill")
+        call RegisterVendorName('n03R', "Elias Moor")
+        call RegisterVendorName('n03S', "Walter Shore")
+        call RegisterVendorName('n03T', "Edwin Harrow")
+        call RegisterVendorName('n03U', "Leander Crow")
+        call RegisterVendorName('n03V', "Roland Mercer")
+
+        // Goblin vendors
+        call RegisterVendorName('n03W', "Nackle Quickdeal")
+        call RegisterVendorName('n03X', "Rixit Roadcoin")
+        call RegisterVendorName('n03Y', "Giznak Edgeprice")
+        call RegisterVendorName('n03Z', "Brizzle Rivetcoat")
+        call RegisterVendorName('n040', "Skabbin Bucklesnap")
+        call RegisterVendorName('n041', "Fizzik Hookline")
+        call RegisterVendorName('n042', "Krikzak Deepcut")
+        call RegisterVendorName('n043', "Nibbs Hotpan")
+        call RegisterVendorName('n044', "Zabble Mixwell")
+        call RegisterVendorName('n045', "Tinksy Multitool")
+        call RegisterVendorName('n046', "Grizzik Bloodbet")
+        call RegisterVendorName('n047', "Snikka Sparkdust")
+        call RegisterVendorName('n048', "Poggle Snackstack")
+        call RegisterVendorName('n049', "Vexli Quickdose")
+        call RegisterVendorName('n04A', "Razwick Goldglint")
+        call RegisterVendorName('n04B', "Bixby Packsmart")
+        call RegisterVendorName('n04C', "Mogzik Cratecount")
+        call RegisterVendorName('n04D', "Zippi Beastbits")
+
+        // Bonecrusher Ogre vendors
+        call RegisterVendorName('n04E', "Mugrok Ironclub")
+        call RegisterVendorName('n04F', "Grumbar Thickhide")
+        call RegisterVendorName('n04G', "Bolguk Broadwall")
+        call RegisterVendorName('n04H', "Kragmog Skullstake")
+        call RegisterVendorName('n04I', "Durgan Rockbite")
+        call RegisterVendorName('n04J', "Gubmog Stewpot")
+        call RegisterVendorName('n04K', "Thrumgar Forgelug")
+        call RegisterVendorName('n04L', "Mogrum Manythings")
+        call RegisterVendorName('n04M', "Bargul Bonecount")
+        call RegisterVendorName('n04N', "Grothak Heavytrade")
+
+        // Elarindor vendors
+        call RegisterVendorName('n04O', "Aerendir Sunblade")
+        call RegisterVendorName('n04P', "Lyssara Moonweave")
+        call RegisterVendorName('n04Q', "Thaelion Spellward")
+        call RegisterVendorName('n04R', "Elowen Starweaver")
+        call RegisterVendorName('n04S', "Sylvaris Dewleaf")
+        call RegisterVendorName('n04T', "Vaeriel Dawnflask")
+        call RegisterVendorName('n04U', "Arannis Wayfarer")
+        call RegisterVendorName('n04V', "Maerith Silvercrest")
     endfunction
 
     private function ConfigureCatalogs takes nothing returns nothing
@@ -354,6 +475,7 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VendorVoiceP
 
     private function Init takes nothing returns nothing
         call ConfigureCatalogs()
+        call ConfigureVendorNames()
         call ConfigureEquipmentStock()
         call ConfigureProfessionStock()
         call ConfigureGeneralStock()

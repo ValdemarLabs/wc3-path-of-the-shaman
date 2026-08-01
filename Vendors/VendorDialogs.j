@@ -360,6 +360,7 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         endif
 
         set VDI_RegisteredVendor.boolean[handleId] = true
+        call Shop_ApplyVendorUnitTypeName(vendor)
         call DialogInteraction_Register(vendor)
         call DialogInteraction_SetGreetOrder(vendor, DIALOGINTERACTION_GREET_NONE)
         call DialogInteraction_RegisterSelectionHandler(vendor, function VDI_OnSelected)

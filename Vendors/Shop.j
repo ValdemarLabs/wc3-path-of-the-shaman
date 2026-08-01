@@ -23,6 +23,9 @@
     - set vendorId = Shop_CreateVendor(name, unitTypeId)
     - call Shop_RegisterVendorUnit(unit, vendorId)
     - call Shop_RegisterVendorUnitType(vendorId, unitTypeId)
+    - call Shop_SetVendorUnitTypeName(unitTypeId, displayName)
+    - call Shop_ApplyVendorUnitTypeName(vendor)
+    - set displayName = Shop_GetVendorUnitDisplayName(vendor)
     - set entryId = Shop_AddStock(vendorId, itemTypeId, price, category)
     - set entryId = Shop_AddBagUpgradeService(vendorId, name, targetTier, price, category)
     - call Shop_BeginTradeSessionForUnits(vendorId, vendor, buyer)
@@ -80,6 +83,7 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
         // Registered vendors and unit lookup.
         private Table SHP_VendorByUnit = 0
         private Table SHP_VendorByUnitType = 0
+        private Table SHP_VendorNameByUnitType = 0
         private integer SHP_VendorCount = 0
         private string array SHP_VendorName
         private string array SHP_VendorTypeLabel
@@ -815,6 +819,53 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
         set SHP_VendorByUnit.integer[GetHandleId(vendor)] = vendorId
         set vendor = null
         return true
+    endfunction
+
+    public function SetVendorUnitTypeName takes integer unitTypeId, string displayName returns boolean
+        if unitTypeId == 0 or displayName == null or displayName == "" then
+            return false
+        endif
+        set SHP_VendorNameByUnitType.string[unitTypeId] = displayName
+        return true
+    endfunction
+
+    public function GetVendorUnitTypeName takes integer unitTypeId returns string
+        if unitTypeId == 0 then
+            return ""
+        endif
+        return SHP_VendorNameByUnitType.string[unitTypeId]
+    endfunction
+
+    public function ApplyVendorUnitTypeName takes unit vendor returns boolean
+        local string displayName
+
+        if vendor == null then
+            set vendor = null
+            return false
+        endif
+        set displayName = Shop_GetVendorUnitTypeName(GetUnitTypeId(vendor))
+        if displayName == null or displayName == "" then
+            set vendor = null
+            return false
+        endif
+        call BlzSetUnitName(vendor, displayName)
+        set vendor = null
+        return true
+    endfunction
+
+    public function GetVendorUnitDisplayName takes unit vendor returns string
+        local string displayName
+
+        if vendor == null then
+            set vendor = null
+            return ""
+        endif
+        set displayName = Shop_GetVendorUnitTypeName(GetUnitTypeId(vendor))
+        if displayName == null or displayName == "" then
+            set displayName = GetUnitName(vendor)
+        endif
+        set vendor = null
+        return displayName
     endfunction
 
     public function GetVendorIdForUnitType takes integer unitTypeId returns integer
@@ -1955,6 +2006,7 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
     private function Init takes nothing returns nothing
         set SHP_VendorByUnit = Table.create()
         set SHP_VendorByUnitType = Table.create()
+        set SHP_VendorNameByUnitType = Table.create()
         set SHP_ReplenishTimer = CreateTimer()
         call TimerStart(SHP_ReplenishTimer, SHP_REPLENISH_INTERVAL, true, function SHP_ReplenishStock)
     endfunction

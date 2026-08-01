@@ -179,7 +179,7 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
             return "Merchant"
         endif
         set vendorId = Shop_GetVendorIdForUnit(vendor)
-        set unitName = DialogInteraction_GetUnitDisplayName(vendor)
+        set unitName = Shop_GetVendorUnitDisplayName(vendor)
         set vendorType = Shop_GetVendorTypeLabel(vendorId)
         if unitName == null or unitName == "" then
             set unitName = VL_GetVendorName(vendor)

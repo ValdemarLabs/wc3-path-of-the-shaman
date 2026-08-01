@@ -26,7 +26,7 @@
     - VendorQuests_OnVendorSelected(vendor, hero) resolves supply pickups.
 
 **/
-library VendorQuests initializer Init requires QuestGiver, QuestMaster, DialogSystem, HeroItemCheck, VendorLines, Table
+library VendorQuests initializer Init requires QuestGiver, QuestMaster, DialogSystem, HeroItemCheck, VendorLines, Shop, Table
     globals
         private constant integer VQ_MAX_DEFINITIONS = 64
         private constant integer VQ_MAX_QUESTS = 256
@@ -130,6 +130,7 @@ library VendorQuests initializer Init requires QuestGiver, QuestMaster, DialogSy
         local string infoText
         local string info2Text
         local string giverName
+        local string targetVendorName
 
         if definitionId <= 0 or definitionId > VQ_DefinitionCount or vendor == null or VQ_QuestCount >= VQ_MAX_QUESTS then
             set vendor = null
@@ -151,7 +152,11 @@ library VendorQuests initializer Init requires QuestGiver, QuestMaster, DialogSy
         elseif VQ_ObjectiveType[definitionId] == VQ_OBJECTIVE_KILL then
             call QuestGiver_RegisterUnitKillRequirement(q.id, vendor, 1, VQ_TargetType[definitionId], VQ_TargetAmount[definitionId])
         elseif VQ_ObjectiveType[definitionId] == VQ_OBJECTIVE_SUPPLY then
-            call QuestGiver_RegisterTalkToRequirement(q.id, vendor, 1, null, VQ_TargetVendorName[definitionId])
+            set targetVendorName = Shop_GetVendorUnitTypeName(VQ_TargetVendorUnitType[definitionId])
+            if targetVendorName == null or targetVendorName == "" then
+                set targetVendorName = VQ_TargetVendorName[definitionId]
+            endif
+            call QuestGiver_RegisterTalkToRequirement(q.id, vendor, 1, null, targetVendorName)
         endif
 
         set VQ_QuestCount = VQ_QuestCount + 1
