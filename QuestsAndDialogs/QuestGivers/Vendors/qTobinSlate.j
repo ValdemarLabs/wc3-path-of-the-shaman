@@ -10,14 +10,14 @@
     Credits:
 
     How to install:
-    Import after VendorQuests and VoicelinesVendorQuests.
+    Import after QuestsVendor and VoicelinesQuests.
 
     API:
     Registers Bram's vendor quest automatically.
 
 **/
-library qTobinSlate initializer Init requires VendorQuests, VoicelinesVendorQuests
+library qTobinSlate initializer Init requires QuestsVendor, VoicelinesQuests
     private function Init takes nothing returns nothing
-        call VendorQuests_RegisterFetchQuest('n03E', "Lantern Fuel", "daily", 5, "Lantern Fuel", "ReplaceableTextures\\CommandButtons\\BTNHumanLumberUpgrade1.blp", "Collect fuel for Bram's mine lanterns and heating braziers.", 'I689', 7, 30, VL_VENDORQUEST_HUMAN_TYPE, 11, VL_VENDORQUEST_HUMAN_0011, VL_VENDORQUEST_HUMAN_0012)
+        call QuestsVendor_RegisterFetchQuest('n03E', "Lantern Fuel", "daily", 5, "Lantern Fuel", "ReplaceableTextures\\CommandButtons\\BTNHumanLumberUpgrade1.blp", "Collect fuel for Bram's mine lanterns and heating braziers.", 'I689', 7, 30, VL_VENDORQUEST_HUMAN_TYPE, 11, VL_VENDORQUEST_HUMAN_0011, VL_VENDORQUEST_HUMAN_0012)
     endfunction
 endlibrary

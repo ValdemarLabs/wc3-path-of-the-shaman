@@ -10,14 +10,14 @@
     Credits:
 
     How to install:
-    Import after VendorQuests and VoicelinesVendorQuests.
+    Import after QuestsVendor and VoicelinesQuests.
 
     API:
     Registers Drogun's vendor quest automatically.
 
 **/
-library qKazrumDeepdelver initializer Init requires VendorQuests, VoicelinesVendorQuests
+library qKazrumDeepdelver initializer Init requires QuestsVendor, VoicelinesQuests
     private function Init takes nothing returns nothing
-        call VendorQuests_RegisterFetchQuest('o00D', "The Deep Vein", "daily", 10, "The Deep Vein", "ReplaceableTextures\\CommandButtons\\BTNThoriumMelee.blp", "Bring Drogun a shipment of dense ore from the deeper seams.", 'I67H', 4, 55, VL_VENDORQUEST_ORC_TYPE, 9, VL_VENDORQUEST_ORC_0009, VL_VENDORQUEST_ORC_0010)
+        call QuestsVendor_RegisterFetchQuest('o00D', "The Deep Vein", "daily", 10, "The Deep Vein", "ReplaceableTextures\\CommandButtons\\BTNThoriumMelee.blp", "Bring Drogun a shipment of dense ore from the deeper seams.", 'I67H', 4, 55, VL_VENDORQUEST_ORC_TYPE, 9, VL_VENDORQUEST_ORC_0009, VL_VENDORQUEST_ORC_0010)
     endfunction
 endlibrary

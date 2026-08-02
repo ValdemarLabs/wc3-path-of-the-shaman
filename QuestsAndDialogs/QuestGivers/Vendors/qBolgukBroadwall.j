@@ -10,14 +10,14 @@
     Credits:
 
     How to install:
-    Import after VendorQuests and VoicelinesVendorQuests.
+    Import after QuestsVendor and VoicelinesQuests.
 
     API:
     Registers Krunn's vendor quest automatically.
 
 **/
-library qBolgukBroadwall initializer Init requires VendorQuests, VoicelinesVendorQuests
+library qBolgukBroadwall initializer Init requires QuestsVendor, VoicelinesQuests
     private function Init takes nothing returns nothing
-        call VendorQuests_RegisterFetchQuest('n04G', "Heavy Metal", "daily", 11, "Heavy Metal", "ReplaceableTextures\\CommandButtons\\BTNThoriumMelee.blp", "Bring dense ore for Krunn's oversized shield rims.", 'I67H', 5, 60, VL_VENDORQUEST_BONECRUSHER_TYPE, 5, VL_VENDORQUEST_BONECRUSHER_0005, VL_VENDORQUEST_BONECRUSHER_0006)
+        call QuestsVendor_RegisterFetchQuest('n04G', "Heavy Metal", "daily", 11, "Heavy Metal", "ReplaceableTextures\\CommandButtons\\BTNThoriumMelee.blp", "Bring dense ore for Krunn's oversized shield rims.", 'I67H', 5, 60, VL_VENDORQUEST_BONECRUSHER_TYPE, 5, VL_VENDORQUEST_BONECRUSHER_0005, VL_VENDORQUEST_BONECRUSHER_0006)
     endfunction
 endlibrary

@@ -10,14 +10,14 @@
     Credits:
 
     How to install:
-    Import after VendorQuests and VoicelinesVendorQuests.
+    Import after QuestsVendor and VoicelinesQuests.
 
     API:
     Registers Kargul's vendor quest automatically.
 
 **/
-library qGhorakBloodmark initializer Init requires VendorQuests, VoicelinesVendorQuests
+library qGhorakBloodmark initializer Init requires QuestsVendor, VoicelinesQuests
     private function Init takes nothing returns nothing
-        call VendorQuests_RegisterKillQuest('o00A', "A Worthy Warm-Up", "daily", 4, "A Worthy Warm-Up", "ReplaceableTextures\\CommandButtons\\BTNGnoll.blp", "Prove your readiness for the arena by hunting nearby gnolls.", 'ngno', 8, 35, VL_VENDORQUEST_ORC_TYPE, 7, VL_VENDORQUEST_ORC_0007, VL_VENDORQUEST_ORC_0008)
+        call QuestsVendor_RegisterKillQuest('o00A', "A Worthy Warm-Up", "daily", 4, "A Worthy Warm-Up", "ReplaceableTextures\\CommandButtons\\BTNGnoll.blp", "Prove your readiness for the arena by hunting nearby gnolls.", 'ngno', 8, 35, VL_VENDORQUEST_ORC_TYPE, 7, VL_VENDORQUEST_ORC_0007, VL_VENDORQUEST_ORC_0008)
     endfunction
 endlibrary

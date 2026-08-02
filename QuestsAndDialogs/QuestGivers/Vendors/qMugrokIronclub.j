@@ -5,19 +5,23 @@
     Version: 1.0.0
 
     Description:
-    Daily vendor quest content for Mugrak Boneedge, Bonecrusher weaponsmith.
+    Daily and normal vendor quest content for Mugrok Ironclub.
 
     Credits:
 
     How to install:
-    Import after VendorQuests and VoicelinesVendorQuests.
+    Import after QuestsVendor and VoicelinesQuests.
 
     API:
-    Registers Mugrak's vendor quest automatically.
+    Registers Mugrok Ironclub's vendor quests automatically.
 
 **/
-library qMugrokIronclub initializer Init requires VendorQuests, VoicelinesVendorQuests
+library qMugrokIronclub initializer Init requires QuestsVendor, VoicelinesQuests
     private function Init takes nothing returns nothing
-        call VendorQuests_RegisterKillQuest('n04E', "Break the Stalkers", "daily", 10, "Break the Stalkers", "ReplaceableTextures\\CommandButtons\\BTNSatyrHellcaller.blp", "Crush the satyr stalkers harassing Mugrak's weapon haulers.", 'nsth', 7, 55, VL_VENDORQUEST_BONECRUSHER_TYPE, 1, VL_VENDORQUEST_BONECRUSHER_0001, VL_VENDORQUEST_BONECRUSHER_0002)
+        local integer definitionId
+
+        call QuestsVendor_RegisterKillQuest('n04E', "Break the Stalkers", "daily", 10, "Break the Stalkers", "ReplaceableTextures\\CommandButtons\\BTNSatyrHellcaller.blp", "Crush the satyr stalkers harassing Mugrak's weapon haulers.", 'nsth', 7, 55, VL_VENDORQUEST_BONECRUSHER_TYPE, 1, VL_VENDORQUEST_BONECRUSHER_0001, VL_VENDORQUEST_BONECRUSHER_0002)
+        set definitionId = QuestsVendor_RegisterKillQuest('n04E', "A Weapon's Reputation", "normal", 13, "A Weapon's Reputation", "ReplaceableTextures\\CommandButtons\\BTNSatyrHellcaller.blp", "Build the reputation of Mugrok's steel by crushing twelve satyr stalkers.", 'nsth', 12, 90, VL_VENDORQUEST_BONECRUSHER_TYPE, 11, VL_VENDORQUEST_BONECRUSHER_0011, VL_VENDORQUEST_BONECRUSHER_0012)
+        call QuestsVendor_SetExtendedDialogue(definitionId, VL_VENDORQUEST_BONECRUSHER_0013, 13, VL_VENDORQUEST_BONECRUSHER_0014, 14)
     endfunction
 endlibrary

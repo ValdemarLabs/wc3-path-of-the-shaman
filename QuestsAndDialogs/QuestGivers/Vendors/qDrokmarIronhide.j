@@ -10,14 +10,14 @@
     Credits:
 
     How to install:
-    Import after VendorQuests and VoicelinesVendorQuests.
+    Import after QuestsVendor and VoicelinesQuests.
 
     API:
     Registers Mazgura's vendor quest automatically.
 
 **/
-library qDrokmarIronhide initializer Init requires VendorQuests, VoicelinesVendorQuests
+library qDrokmarIronhide initializer Init requires QuestsVendor, VoicelinesQuests
     private function Init takes nothing returns nothing
-        call VendorQuests_RegisterKillQuest('o012', "Thin the Shadowdancers", "daily", 8, "Thin the Shadowdancers", "ReplaceableTextures\\CommandButtons\\BTNSatyrTrickster.blp", "Reduce the satyr threat against Mazgura's hide and metal caravans.", 'nsty', 6, 40, VL_VENDORQUEST_ORC_TYPE, 3, VL_VENDORQUEST_ORC_0003, VL_VENDORQUEST_ORC_0004)
+        call QuestsVendor_RegisterKillQuest('o012', "Thin the Shadowdancers", "daily", 8, "Thin the Shadowdancers", "ReplaceableTextures\\CommandButtons\\BTNSatyrTrickster.blp", "Reduce the satyr threat against Mazgura's hide and metal caravans.", 'nsty', 6, 40, VL_VENDORQUEST_ORC_TYPE, 3, VL_VENDORQUEST_ORC_0003, VL_VENDORQUEST_ORC_0004)
     endfunction
 endlibrary

@@ -5,20 +5,24 @@
     Version: 1.0.0
 
     Description:
-    Daily vendor quest content for Rukha Trailhoof, Orc travelling merchant.
+    Daily and normal vendor quest content for Rukgar Longroad.
 
     Credits:
 
     How to install:
-    Import after VendorQuests and VoicelinesVendorQuests.
+    Import after QuestsVendor and VoicelinesQuests.
 
     API:
-    Registers Rukha's vendor quest automatically.
+    Registers Rukgar Longroad's vendor quests automatically.
 
 **/
-library qRukgarLongroad initializer Init requires VendorQuests, VoicelinesVendorQuests
+library qRukgarLongroad initializer Init requires QuestsVendor, VoicelinesQuests
     private function Init takes nothing returns nothing
-        local integer definitionId = VendorQuests_RegisterSupplyQuest('o00B', "Quartermaster's Parcel", "daily", 6, "Quartermaster's Parcel", "ReplaceableTextures\\CommandButtons\\BTNPackBeast.blp", "Pick up Rukha's supply parcel from Vargan Warstock and return.", 'o014', "Vargan Warstock", 'I010', 35, VL_VENDORQUEST_ORC_TYPE, 17, VL_VENDORQUEST_ORC_0017, VL_VENDORQUEST_ORC_0018)
-        call VendorQuests_SetSupplyRequiresPurchase(definitionId, false)
+        local integer definitionId = QuestsVendor_RegisterSupplyQuest('o00B', "Quartermaster's Parcel", "daily", 6, "Quartermaster's Parcel", "ReplaceableTextures\\CommandButtons\\BTNPackBeast.blp", "Pick up Rukha's supply parcel from Vargan Warstock and return.", 'o014', "Vargan Warstock", 'I010', 35, VL_VENDORQUEST_ORC_TYPE, 17, VL_VENDORQUEST_ORC_0017, VL_VENDORQUEST_ORC_0018)
+        local integer normalDefinitionId
+
+        call QuestsVendor_SetSupplyRequiresPurchase(definitionId, false)
+        set normalDefinitionId = QuestsVendor_RegisterKillQuest('o00B', "The Road Takes Its Due", "normal", 8, "The Road Takes Its Due", "ReplaceableTextures\\CommandButtons\\BTNGnoll.blp", "Clear the gnolls that have repeatedly raided Rukgar's longest caravan route.", 'ngno', 10, 60, VL_VENDORQUEST_ORC_TYPE, 29, VL_VENDORQUEST_ORC_0029, VL_VENDORQUEST_ORC_0030)
+        call QuestsVendor_SetExtendedDialogue(normalDefinitionId, VL_VENDORQUEST_ORC_0031, 31, VL_VENDORQUEST_ORC_0032, 32)
     endfunction
 endlibrary

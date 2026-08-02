@@ -5,19 +5,23 @@
     Version: 1.0.0
 
     Description:
-    Daily vendor quest content for Maren Tidewell, Human fisher.
+    Daily and normal vendor quest content for Silas Reed.
 
     Credits:
 
     How to install:
-    Import after VendorQuests and VoicelinesVendorQuests.
+    Import after QuestsVendor and VoicelinesQuests.
 
     API:
-    Registers Maren's vendor quest automatically.
+    Registers Silas Reed's vendor quests automatically.
 
 **/
-library qSilasReed initializer Init requires VendorQuests, VoicelinesVendorQuests
+library qSilasReed initializer Init requires QuestsVendor, VoicelinesQuests
     private function Init takes nothing returns nothing
-        call VendorQuests_RegisterFetchQuest('n03D', "Stormhaven Supper", "daily", 6, "Stormhaven Supper", "ReplaceableTextures\\CommandButtons\\BTNFishing.blp", "Bring Maren a fresh catch for Stormhaven's evening tables.", 'I6CV', 8, 35, VL_VENDORQUEST_HUMAN_TYPE, 7, VL_VENDORQUEST_HUMAN_0007, VL_VENDORQUEST_HUMAN_0008)
+        local integer definitionId
+
+        call QuestsVendor_RegisterFetchQuest('n03D', "Stormhaven Supper", "daily", 6, "Stormhaven Supper", "ReplaceableTextures\\CommandButtons\\BTNFishing.blp", "Bring Maren a fresh catch for Stormhaven's evening tables.", 'I6CV', 8, 35, VL_VENDORQUEST_HUMAN_TYPE, 7, VL_VENDORQUEST_HUMAN_0007, VL_VENDORQUEST_HUMAN_0008)
+        set definitionId = QuestsVendor_RegisterFetchQuest('n03D', "The Deepwater Table", "normal", 9, "The Deepwater Table", "ReplaceableTextures\\CommandButtons\\BTNFishing.blp", "Land twelve Stormhaven fish worthy of the harbor's deepwater feast.", 'I6CV', 12, 65, VL_VENDORQUEST_HUMAN_TYPE, 23, VL_VENDORQUEST_HUMAN_0023, VL_VENDORQUEST_HUMAN_0024)
+        call QuestsVendor_SetExtendedDialogue(definitionId, VL_VENDORQUEST_HUMAN_0025, 25, VL_VENDORQUEST_HUMAN_0026, 26)
     endfunction
 endlibrary
