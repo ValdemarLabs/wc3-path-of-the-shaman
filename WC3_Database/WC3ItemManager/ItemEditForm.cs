@@ -56,6 +56,8 @@ namespace WC3ItemManager
         private NumericUpDown numLumberCost;
         private NumericUpDown numMaxCharges;
         private NumericUpDown numMaxStack;
+        private NumericUpDown numStockMaximum;
+        private NumericUpDown numStockReplenishInterval;
         private TextBox txtTooltip;
         private TextBox txtTooltipExtended; // Now serves as unified tooltip/description field
         // txtDescription removed - merged with txtTooltipExtended
@@ -379,8 +381,12 @@ namespace WC3ItemManager
 
         private void SetupUI()
         {
+            Rectangle workingArea = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1100, 1350);
+            int initialWidth = Math.Min(1100, Math.Max(980, workingArea.Width - 40));
+            int initialHeight = Math.Min(1350, Math.Max(920, workingArea.Height - 40));
+
             this.Text = itemId.HasValue ? "Edit Item" : "Add New Item";
-            this.Size = new Size(1000, 1000);
+            this.Size = new Size(initialWidth, initialHeight);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.Sizable;
             this.MinimumSize = new Size(980, 920);
@@ -1020,6 +1026,18 @@ namespace WC3ItemManager
             tab.Controls.Add(new Label { Text = "Max Stack:", Location = new Point(labelX, y), AutoSize = true });
             numMaxStack = new NumericUpDown { Location = new Point(controlX, y), Width = 100, Minimum = 0, Maximum = 999 };
             tab.Controls.Add(numMaxStack);
+            y += lineHeight;
+
+            // Native WC3 shop stock fields (isto / istr).
+            tab.Controls.Add(new Label { Text = "Stock Maximum:", Location = new Point(labelX, y), AutoSize = true });
+            numStockMaximum = new NumericUpDown { Location = new Point(controlX, y), Width = 100, Minimum = 0, Maximum = 999, Value = 1 };
+            tab.Controls.Add(numStockMaximum);
+            y += lineHeight;
+
+            tab.Controls.Add(new Label { Text = "Stock Replenish Interval:", Location = new Point(labelX, y), AutoSize = true });
+            numStockReplenishInterval = new NumericUpDown { Location = new Point(controlX, y), Width = 100, Minimum = 0, Maximum = 999999, Value = 60 };
+            tab.Controls.Add(numStockReplenishInterval);
+            tab.Controls.Add(new Label { Text = "seconds (0 keeps custom Shop stock unlimited by default)", Location = new Point(controlX + 110, y), AutoSize = true, ForeColor = Color.Gray });
             y += lineHeight;
 
             // Checkboxes
@@ -2407,6 +2425,8 @@ namespace WC3ItemManager
                                 numLumberCost.Value = reader["lumber_cost"] != DBNull.Value ? Convert.ToDecimal(reader["lumber_cost"]) : 0;
                                 numMaxCharges.Value = reader["max_charges"] != DBNull.Value ? Convert.ToDecimal(reader["max_charges"]) : 0;
                                 numMaxStack.Value = reader["max_stack"] != DBNull.Value ? Convert.ToDecimal(reader["max_stack"]) : 0;
+                                numStockMaximum.Value = reader["stock_max"] != DBNull.Value ? Convert.ToDecimal(reader["stock_max"]) : 1;
+                                numStockReplenishInterval.Value = reader["stock_replenish"] != DBNull.Value ? Convert.ToDecimal(reader["stock_replenish"]) : 60;
                                 numLootLevel.Value = reader["item_level_unclassified"] != DBNull.Value ? Convert.ToDecimal(reader["item_level_unclassified"]) : -1;
                                 txtTooltip.Text = reader["tooltip"]?.ToString() ?? "";
                                 
@@ -2712,6 +2732,8 @@ namespace WC3ItemManager
                                 lumber_cost = @lumber_cost,
                                 max_charges = @max_charges,
                                 max_stack = @max_stack,
+                                stock_max = @stock_max,
+                                stock_replenish = @stock_replenish,
                                 tooltip = @tooltip,
                                 tooltip_extended = @tooltip_extended,
                                 description = @description,
@@ -2746,14 +2768,14 @@ namespace WC3ItemManager
                         string insertQuery = @"
                             INSERT INTO items (
                                 item_code, item_name, base_id, rarity_id, class_id, type_id,
-                                item_level, item_level_unclassified, gold_cost, lumber_cost, max_charges, max_stack,
+                                item_level, item_level_unclassified, gold_cost, lumber_cost, max_charges, max_stack, stock_max, stock_replenish,
                                 tooltip, tooltip_extended, description, hotkey,
                                 icon_path, model_path, wc3_abilities, wc3_abilities_attachments, manual_abilities_data, wc3_classification,
                                 is_powerup, use_automatically,
                                 is_droppable, is_sellable, is_pawnable, actively_used, dropped_on_death, specific_drop_only
                             ) VALUES (
                                 @item_code, @item_name, @base_id, @rarity_id, @class_id, @type_id,
-                                @item_level, @item_level_unclassified, @gold_cost, @lumber_cost, @max_charges, @max_stack,
+                                @item_level, @item_level_unclassified, @gold_cost, @lumber_cost, @max_charges, @max_stack, @stock_max, @stock_replenish,
                                 @tooltip, @tooltip_extended, @description, @hotkey,
                                 @icon_path, @model_path, @wc3_abilities, @wc3_abilities_attachments, @manual_abilities_data, @wc3_classification,
                                 @is_powerup, @use_automatically,
@@ -2850,6 +2872,8 @@ namespace WC3ItemManager
                 cmd.Parameters.AddWithValue("lumber_cost", (int)numLumberCost.Value);
                 cmd.Parameters.AddWithValue("max_charges", (int)numMaxCharges.Value);
                 cmd.Parameters.AddWithValue("max_stack", (int)numMaxStack.Value);
+                cmd.Parameters.AddWithValue("stock_max", (int)numStockMaximum.Value);
+                cmd.Parameters.AddWithValue("stock_replenish", (int)numStockReplenishInterval.Value);
                 cmd.Parameters.AddWithValue("tooltip", txtTooltip.Text);
                 
                 // Generate complete WC3 tooltip with description + stats + abilities
