@@ -9,7 +9,7 @@
     Credits: Tasyen (TasQuestBox as inspiration), Rahko, Sabe
 
     How to install:
-    Import after FixedCameraLock, AdvancedCameraSystem, ArrowKeyMovement, and Death.
+    Import after FixedCameraLock, AdvancedCameraSystem, ArrowKeyMovement, and FallenHeroState.
 
     API:
     call CameraControl_SetTargetUnit(whichPlayer, whichUnit)
@@ -20,7 +20,7 @@
     call CameraControl_IsSuspended(whichPlayer) returns boolean
 
 **/
-library CameraControl initializer AutoInit requires FixedCameraLock, AdvancedCameraSystem, ArrowKeyMovement, Death
+library CameraControl initializer AutoInit requires FixedCameraLock, AdvancedCameraSystem, ArrowKeyMovement, FallenHeroState
 globals
     public constant integer CAMERA_MODE_NORMAL = 1
     public constant integer CAMERA_MODE_ADVANCED = 2
@@ -257,14 +257,14 @@ endfunction
 private function CC_GetFallbackTarget takes player whichPlayer returns unit
     local unit u = CC_TargetUnit[CC_GetPlayerIndex(whichPlayer)]
 
-    if IsTrackedCameraUnit(u) and GetHandleId(u) != 0 and GetWidgetLife(u) > 0.405 and not Death_IsFallen(u) then
+    if IsTrackedCameraUnit(u) and GetHandleId(u) != 0 and GetWidgetLife(u) > 0.405 and not FallenHeroState_IsFallen(u) then
         return u
     endif
 
-    if IsTrackedCameraUnit(udg_Nazgrek) and GetHandleId(udg_Nazgrek) != 0 and GetWidgetLife(udg_Nazgrek) > 0.405 and not Death_IsFallen(udg_Nazgrek) then
+    if IsTrackedCameraUnit(udg_Nazgrek) and GetHandleId(udg_Nazgrek) != 0 and GetWidgetLife(udg_Nazgrek) > 0.405 and not FallenHeroState_IsFallen(udg_Nazgrek) then
         return udg_Nazgrek
     endif
-    if IsTrackedCameraUnit(udg_Zulkis) and GetHandleId(udg_Zulkis) != 0 and GetWidgetLife(udg_Zulkis) > 0.405 and not Death_IsFallen(udg_Zulkis) then
+    if IsTrackedCameraUnit(udg_Zulkis) and GetHandleId(udg_Zulkis) != 0 and GetWidgetLife(udg_Zulkis) > 0.405 and not FallenHeroState_IsFallen(udg_Zulkis) then
         return udg_Zulkis
     endif
     return null
@@ -1199,7 +1199,7 @@ endfunction
 public function SetTargetUnit takes player whichPlayer, unit whichUnit returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
 
-    if IsTrackedCameraUnit(whichUnit) and GetHandleId(whichUnit) != 0 and GetWidgetLife(whichUnit) > 0.405 and not Death_IsFallen(whichUnit) then
+    if IsTrackedCameraUnit(whichUnit) and GetHandleId(whichUnit) != 0 and GetWidgetLife(whichUnit) > 0.405 and not FallenHeroState_IsFallen(whichUnit) then
         set CC_TargetUnit[pid] = whichUnit
         if not CC_Suspended[pid] and not CC_ResumePending[pid] then
             call CC_ApplyMode(whichPlayer)
@@ -1640,7 +1640,7 @@ endfunction
 private function CC_SelectAction takes nothing returns nothing
     local player whichPlayer = GetTriggerPlayer()
     local integer pid = CC_GetPlayerIndex(whichPlayer)
-    if IsTrackedCameraUnit(GetTriggerUnit()) and not Death_IsFallen(GetTriggerUnit()) then
+    if IsTrackedCameraUnit(GetTriggerUnit()) and not FallenHeroState_IsFallen(GetTriggerUnit()) then
         if not CC_Suspended[pid] and not CC_ResumePending[pid] then
             set CC_TargetUnit[pid] = GetTriggerUnit()
             call CC_ApplyMode(whichPlayer)
