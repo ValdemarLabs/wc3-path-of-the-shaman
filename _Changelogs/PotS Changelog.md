@@ -19,6 +19,9 @@
 
 ### Player-Facing Updates
 
+- Cooked food and beverages now use the shared Eat/Drink item ability, allowing their charge to be consumed while Cooking applies the correct Well Fed or Well Hydrated effect through JASS.
+- Custom shop entries now use each item's WC3 Stock Maximum and Stock Replenish Interval by default, restoring one item per interval until the entry reaches maximum stock. Explicit `Shop_SetStockSupply` configuration still overrides the item defaults.
+- Fixed vendor floating text exhausting Warcraft III's shared text-tag capacity, restoring reliable totem labels, dropped-item names, casting text, and damage numbers while retaining camera-visible vendor-type labels.
 - Reputation faction entries now display a live standing badge over their faction emblem, using distinct Enemy through Exalted textures and a Hostile badge during temporary aggression.
 - Added support for eight named Elarindor vendors covering weapons, armor, shields, enchanting supplies, reagents, potions, expedition supplies, and faction-quartermaster goods.
 - Elarindor merchants now have faction-specific trade chatter and purchase, sale, exchange, and no-transaction responses with separate male and female voice sets.
@@ -29,6 +32,9 @@
 
 ### Technical Updates
 
+- Removed the redundant raw-meat and spring-water abilities from all 55 cooked outputs. Food/drink stats and recipe aura abilities remain owned exclusively by `ProfessionsCooking.j`.
+- Updated `Shop.j` to read item object fields `isto` and `istr` while registering stock, and changed replenishment from full-stack-at-empty behavior to WC3-style incremental replenishment whenever current stock is below maximum.
+- Reworked `VendorFloatingText.j` from one permanent text tag per discovered vendor to a bounded pool of eight reusable labels assigned to the nearest camera-visible vendors. Off-screen, hidden, dead, fogged, and cinematic vendors no longer reserve individual text tags.
 - Published the seven reputation-tier texture constants and added `Reputation.getStatusIcon`, then connected `ReputationUI` row/detail badges to the shared tier mapping.
 - Added `Vendors/VendorFactions/VendorElarindor.j` with catalog and voice-profile assignments for rawcodes `h00L`, `h00N` through `h00S`, and `n00M`.
 - Registered all eight canonical Elarindor vendor names in `VendorCatalogs.j`, documented them in `VendorsHelper.md`, and reserved twelve external `ExSound` keys under `VendorElarindorMale` and `VendorElarindorFemale` voice folders.
@@ -39,8 +45,15 @@
 - Centralized all merchant and generic vendor-quest dialogue text, profile constants, ExSound keys, sequence ranges, and sound folders under `Voicelines_VendorLines.j` and `Voicelines_VendorQuests.j`.
 - Aligned Female Human, Elarindor, and Horde Tauren catalog bindings, canonical names, and Elarindor quest targets with the final Object Editor rawcodes documented in `VendorsHelper.md`.
 
+### Tool Updates
+
+- `WC3ItemManager`
+  Updated the one-time Cooking seed data and live database so all cooked consumables export only `A0F5`, with inherited base abilities disabled and consistent manual-ability metadata. The historical seeder is excluded from the application build so normal ItemManager use cannot rerun it; the auditable SQL migration remains available for database setup.
+  Exposed the existing `stock_max` and `stock_replenish` database fields as Stock Maximum and Stock Replenish Interval in the Add/Edit Item Basic Info tab. Increased the initial editor window size within the current screen's working area so all Basic Info fields are visible without manual resizing on sufficiently large displays.
+
 ### Actions Remaining
 
+- Rebase Object Editor abilities `A60V` (Raw Meat) and `A61F` (Spring Water) onto a Berserk-style no-target ability so their separate raw-consumable behavior can cast at full hit points or mana.
 - Create or assign the eight matching Object Editor unit types and import recordings for the twelve reserved Elarindor vendor voice keys.
 - Create or assign the six Horde Tauren and 24 female Human Object Editor unit types; ensure Tauren vendors are owned by Horde `Player(5)`.
 - Import recordings for the eight Elarindor quest, 36 Human merchant, and six Tauren merchant voice keys; text-duration fallback remains active until then.
