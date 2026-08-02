@@ -82,6 +82,7 @@
     call AI_GetReviveTimer(whichUnit) returns timer
     call AI_GetReviveRemaining(whichUnit) returns real
     call AI_IsReviving(whichUnit) returns boolean
+    call AI_IsAlive(whichUnit) returns boolean
     call AI_ReviveAt(whichUnit, x, y, showEffects) returns boolean
     call AI_ArePartyMembers(firstUnit, secondUnit) returns boolean
     call AI_GetFactionInfoText(whichUnit) returns string
@@ -1902,11 +1903,14 @@ endfunction
 private function CompleteRevive takes integer instanceId, unit whichUnit, real x, real y, boolean showEffects returns nothing
     local integer profileId = InstanceProfile[instanceId]
 
-    if IsUnitType(whichUnit, UNIT_TYPE_HERO) then
+    if IsUnitType(whichUnit, UNIT_TYPE_HERO) and GetWidgetLife(whichUnit) <= 0.405 then
         call ReviveHero(whichUnit, x, y, showEffects)
     else
         call SetUnitPosition(whichUnit, x, y)
         call ShowUnit(whichUnit, true)
+        if showEffects and IsUnitType(whichUnit, UNIT_TYPE_HERO) then
+            call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Resurrect\\ResurrectTarget.mdl", whichUnit, "origin"))
+        endif
     endif
     call PauseUnit(whichUnit, false)
     call SetUnitTimeScale(whichUnit, 1.00)
@@ -3088,6 +3092,12 @@ public function GetInstance takes unit whichUnit returns integer
         return 0
     endif
     return UnitInstance[GetHandleId(whichUnit)]
+endfunction
+
+public function IsAlive takes unit whichUnit returns boolean
+    local integer instanceId = AI_GetInstance(whichUnit)
+
+    return instanceId > 0 and InstanceAlive.boolean[instanceId]
 endfunction
 
 public function GetUnitByInstance takes integer instanceId returns unit
