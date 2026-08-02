@@ -9,6 +9,13 @@ prefixes, sequence ranges, and external sound folders are controlled from
 `Voicelines/Voicelines_VendorQuests.j`. Individual `qVendorName.j` libraries
 only reference the matching numbered constants.
 
+Cross-vendor supply objectives are resolved through a quest-specific choice in
+the target vendor's normal dialog; selecting that vendor alone does not advance
+the quest. `A Favor Between Merchants` and `Reagent on Credit` continue from
+that choice into trade and require the requested catalog item to be purchased
+and returned. Other supply quests use a dialogue handoff and can replace their
+quest item through the same choice if it was lost before turn-in.
+
 The canonical vendor names below come from `VendorCatalogs.j` and match the
 quest-library filenames and library identifiers. Object Editor names may remain
 unchanged.
