@@ -15,6 +15,31 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [3.8.2026]
+
+### Player-Facing Updates
+
+- Generic vendor commissions are now presented as Daily quests, Repeatable quests, or Quests instead of the misleading Vendor quest category.
+- Added ten one-time vendor quests for Kargun Ashblade, Rukgar Longroad, Vaelith the Covetous, Garrick Holt, Silas Reed, Rixit Roadcoin, Nackle Quickdeal, Mugrok Ironclub, Aerendir Sunblade, and Maerith Silvercrest.
+- All fifteen normal vendor quests now include an additional voiced giver line after acceptance and completion. Daily quests add one randomized objective- and culture-specific follow-up after the hero accepts.
+
+### Technical Updates
+
+- Added `QuestsGeneric.j`, a Shop-independent template and dialogue layer for reusable kill, fetch, and talk quests, including faction rewards, daily variants, authored extensions, and interrupt-safe state commits.
+- Replaced `VendorQuests.j` with the focused `QuestsVendor.j` adapter, retaining cross-vendor handoffs, purchase objectives, stock detection, lost-item replacement, and continuation into ShopUI.
+- Consolidated shared quest dialogue and ExSound registration in `Voicelines_Quests.j`, migrated every vendor quest giver to the new API, and documented the revised import order and quest classifications.
+
+### Tool Updates
+
+- `WC3ItemManager`
+  Reused loaded icon-selector thumbnails across dialog openings during the active application session and added an enabled-by-default Remember folder option that restores the previously browsed icon source and folder.
+  Preserved the item grid's selected items and scroll position by item ID when database data is refreshed, while add/edit operations now retain the active filters and sorting.
+  Normalized all 40 Food tooltips to show their configured Well Fed stat effects, normalized all 15 Drink tooltips to the shared beverage-consumption style, restored Bear Fat Biscuit's missing effect text, and assigned themed custom food and drink icons through an explicit one-time migration.
+
+### Actions Remaining
+
+- Import recordings for the newly reserved vendor-quest ranges: Orc through `0043`, Satyr through `0027`, Human through `0037`, Goblin through `0035`, Bonecrusher through `0025`, and Elarindor through `0025`. Missing recordings continue to use text-duration fallback.
+
 ## [2.8.2026]
 
 ### Player-Facing Updates
@@ -35,6 +60,7 @@
 
 ### Technical Updates
 
+- Split fallen-hero state tracking into the low-level `FallenHeroState` library, removing the `CameraControl -> Death` requirement cycle while retaining fake-corpse camera filtering.
 - Documented the intended placement zone for every vendor in `VendorsHelper.md`, retaining explicit multi-zone and unspecified entries where no single location is defined.
 - Updated `Death/Death.j`, `Events/UnitDeathEvent.j`, `AI/AI.j`, `Death/Revival.j`, `UI/CameraControl.j`, and `Arena/Arena.j` with one-life fake hero death, synthetic centralized death dispatch, fake-body revival support, fallen-aware camera/arena targeting, and 60-second cleanup for unmanaged heroes.
 - Removed the redundant raw-meat and spring-water abilities from all 55 cooked outputs. Food/drink stats and recipe aura abilities remain owned exclusively by `ProfessionsCooking.j`.
