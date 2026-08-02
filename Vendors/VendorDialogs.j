@@ -258,10 +258,17 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
     endfunction
 
     private function VDI_OnQuestSequenceEnd takes nothing returns nothing
+        local boolean openTrade = false
+
         static if LIBRARY_VendorQuests then
             call VendorQuests_FinishPendingAction()
+            set openTrade = VendorQuests_ConsumeOpenTradeRequest()
         endif
-        call VDI_EndDialog(true)
+        if openTrade then
+            call VDI_OnTrade()
+        else
+            call VDI_EndDialog(true)
+        endif
     endfunction
 
     private function VDI_OnQuest takes nothing returns nothing
@@ -354,9 +361,6 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
 
         set VDI_SelectedVendor = vendor
         set VDI_SelectedHero = hero
-        static if LIBRARY_VendorQuests then
-            call VendorQuests_OnVendorSelected(vendor, hero)
-        endif
         call VDI_ConfigureVendorCamera(vendor, hero)
         call DialogInteraction_StartConfiguredDialogEntryTransition(vendor, hero, false, VDI_USE_DIALOG_CAMERA, VDI_CINEMATIC, "VendorDialogs_ContinueToDialogAfterSelection")
 
