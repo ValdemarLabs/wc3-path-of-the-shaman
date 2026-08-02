@@ -23,11 +23,11 @@ library VendorTauren initializer Init requires VendorCatalogs
     endfunction
 
     private function Init takes nothing returns nothing
-        call Register('n04W', VendorCatalogs_VENDOR_CATALOG_WEAPONS)
-        call Register('n04X', VendorCatalogs_VENDOR_CATALOG_ARMOR)
-        call Register('n04Y', VendorCatalogs_VENDOR_CATALOG_SHIELDS)
-        call Register('n04Z', VendorCatalogs_VENDOR_CATALOG_FOOD_AND_DRINK)
-        call Register('n050', VendorCatalogs_VENDOR_CATALOG_BEAST_SUPPLIES)
-        call Register('n051', VendorCatalogs_VENDOR_CATALOG_QUARTERMASTER)
+        call Register('o015', VendorCatalogs_VENDOR_CATALOG_WEAPONS)
+        call Register('o016', VendorCatalogs_VENDOR_CATALOG_ARMOR)
+        call Register('o017', VendorCatalogs_VENDOR_CATALOG_SHIELDS)
+        call Register('o018', VendorCatalogs_VENDOR_CATALOG_FOOD_AND_DRINK)
+        call Register('o019', VendorCatalogs_VENDOR_CATALOG_BEAST_SUPPLIES)
+        call Register('o01A', VendorCatalogs_VENDOR_CATALOG_QUARTERMASTER)
     endfunction
 endlibrary

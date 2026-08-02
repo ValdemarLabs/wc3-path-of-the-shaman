@@ -18,7 +18,7 @@
 **/
 library qMaerithSilvercrest initializer Init requires VendorQuests, VoicelinesVendorQuests
     private function Init takes nothing returns nothing
-        local integer definitionId = VendorQuests_RegisterSupplyQuest('n04V', "A Precise Inventory", "daily", 17, "A Precise Inventory", "ReplaceableTextures\\CommandButtons\\BTNChestOfGold.blp", "Collect Maerith's sealed reagent inventory from Sylvaris Dewleaf and return it.", 'n04S', "Sylvaris Dewleaf", 'I010', 90, VL_VENDORQUEST_ELARINDOR_TYPE, 7, VL_VENDORQUEST_ELARINDOR_0007, VL_VENDORQUEST_ELARINDOR_0008)
+        local integer definitionId = VendorQuests_RegisterSupplyQuest('h00S', "A Precise Inventory", "daily", 17, "A Precise Inventory", "ReplaceableTextures\\CommandButtons\\BTNChestOfGold.blp", "Collect Maerith's sealed reagent inventory from Sylvaris Dewleaf and return it.", 'h00N', "Sylvaris Dewleaf", 'I010', 90, VL_VENDORQUEST_ELARINDOR_TYPE, 7, VL_VENDORQUEST_ELARINDOR_0007, VL_VENDORQUEST_ELARINDOR_0008)
         call VendorQuests_SetFactionReward(definitionId, "Elarindor", 25, false)
     endfunction
 endlibrary

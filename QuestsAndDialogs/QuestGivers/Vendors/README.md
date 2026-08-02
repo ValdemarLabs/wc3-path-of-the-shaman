@@ -55,10 +55,10 @@ unchanged.
 | `n04G` | Bolguk Broadwall | Heavy Metal | Daily | `VendorQuestBonecrusher_0005-0006` |
 | `n04H` | Kragmog Skullstake | Pit Supplies | Daily | `VendorQuestBonecrusher_0007-0008` |
 | `n04J` | Gubmog Stewpot | The Bigger Stew | Normal | `VendorQuestBonecrusher_0009-0010` |
-| `n04O` | Aerendir Sunblade | Wraiths at the Forge | Daily | `VendorQuestElarindor_0001-0002` |
-| `n04R` | Elowen Starweaver | Fragments of Elarindor | Daily | `VendorQuestElarindor_0003-0004` |
-| `n04T` | Vaeriel Dawnflask | Dawn's Restorative | Daily | `VendorQuestElarindor_0005-0006` |
-| `n04V` | Maerith Silvercrest | A Precise Inventory | Daily | `VendorQuestElarindor_0007-0008` |
+| `h00L` | Aerendir Sunblade | Wraiths at the Forge | Daily | `VendorQuestElarindor_0001-0002` |
+| `h00Q` | Elowen Starweaver | Fragments of Elarindor | Daily | `VendorQuestElarindor_0003-0004` |
+| `h00R` | Vaeriel Dawnflask | Dawn's Restorative | Daily | `VendorQuestElarindor_0005-0006` |
+| `h00S` | Maerith Silvercrest | A Precise Inventory | Daily | `VendorQuestElarindor_0007-0008` |
 
 Expected external sound folders:
 

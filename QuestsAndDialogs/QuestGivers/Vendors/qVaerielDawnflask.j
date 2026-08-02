@@ -18,7 +18,7 @@
 **/
 library qVaerielDawnflask initializer Init requires VendorQuests, VoicelinesVendorQuests
     private function Init takes nothing returns nothing
-        local integer definitionId = VendorQuests_RegisterFetchQuest('n04T', "Dawn's Restorative", "daily", 15, "Dawn's Restorative", "ReplaceableTextures\\CommandButtons\\BTNHerb.blp", "Bring fresh herbs for Vaeriel's restorative draughts.", 'I60Y', 8, 75, VL_VENDORQUEST_ELARINDOR_TYPE, 5, VL_VENDORQUEST_ELARINDOR_0005, VL_VENDORQUEST_ELARINDOR_0006)
+        local integer definitionId = VendorQuests_RegisterFetchQuest('h00R', "Dawn's Restorative", "daily", 15, "Dawn's Restorative", "ReplaceableTextures\\CommandButtons\\BTNHerb.blp", "Bring fresh herbs for Vaeriel's restorative draughts.", 'I60Y', 8, 75, VL_VENDORQUEST_ELARINDOR_TYPE, 5, VL_VENDORQUEST_ELARINDOR_0005, VL_VENDORQUEST_ELARINDOR_0006)
         call VendorQuests_SetFactionReward(definitionId, "Elarindor", 15, false)
     endfunction
 endlibrary
