@@ -26,6 +26,9 @@
     only the previous food stats/aura; applying a new drink replaces only the
     previous drink stats/aura. Only drinks with configured drunk amount above
     0.00 call Drunk_Add; non-alcohol drinks are still normal drink buffs.
+    Cooked item object data should grant only Eat/Drink ('A0F5') to consume a
+    charge. Recipe aura abilities belong on the unit at runtime and must not be
+    added to the food or beverage item itself.
 
     Aura ability rawcodes are defined in PC_RegisterAuraRawcodes. Keep one aura
     ability per recipe when the buff text/icon must be recipe-specific. Warcraft

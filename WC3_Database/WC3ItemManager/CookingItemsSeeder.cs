@@ -4,6 +4,8 @@ namespace WC3ItemManager
 {
     internal static class CookingItemsSeeder
     {
+        private const string ConsumeAbility = "A0F5";
+
         private sealed class SeedItem
         {
             public string Code = "";
@@ -104,6 +106,7 @@ namespace WC3ItemManager
         {
             EnsureColumns(conn);
             EnsureLookupRows(conn);
+            EnsureConsumeAbility(conn);
 
             foreach (var item in Items)
             {
@@ -113,30 +116,30 @@ namespace WC3ItemManager
 
         private static SeedItem Food(string code, string name, string rarity, int level, int goldCost, string effectText)
         {
-            return Consumable(code, name, rarity, level, goldCost, effectText, "Food", "rej3", "A60V", "ReplaceableTextures\\CommandButtons\\BTNMonsterLure.blp", "war3campImported\\ITEMMonsterLure.mdl");
+            return Consumable(code, name, rarity, level, goldCost, effectText, "Food", "rej3", "ReplaceableTextures\\CommandButtons\\BTNMonsterLure.blp", "war3campImported\\ITEMMonsterLure.mdl");
         }
 
         private static SeedItem FishFood(string code, string name, string rarity, int level, int goldCost, string effectText)
         {
-            return Consumable(code, name, rarity, level, goldCost, effectText, "Food", "rej3", "A60V", "ReplaceableTextures\\CommandButtons\\BTNMonsterLure.blp", "war3campImported\\ITEMMonsterLure.mdl");
+            return Consumable(code, name, rarity, level, goldCost, effectText, "Food", "rej3", "ReplaceableTextures\\CommandButtons\\BTNMonsterLure.blp", "war3campImported\\ITEMMonsterLure.mdl");
         }
 
         private static SeedItem Stew(string code, string name, string rarity, int level, int goldCost, string effectText)
         {
-            return Consumable(code, name, rarity, level, goldCost, effectText, "Food", "rej3", "A60V", "ReplaceableTextures\\CommandButtons\\BTNPotionGreenSmall.blp", "war3campImported\\ITEMPotionGreenSmall.mdl");
+            return Consumable(code, name, rarity, level, goldCost, effectText, "Food", "rej3", "ReplaceableTextures\\CommandButtons\\BTNPotionGreenSmall.blp", "war3campImported\\ITEMPotionGreenSmall.mdl");
         }
 
         private static SeedItem OddFood(string code, string name, string rarity, int level, int goldCost, string effectText)
         {
-            return Consumable(code, name, rarity, level, goldCost, effectText, "Food", "rej3", "A60V", "ReplaceableTextures\\CommandButtons\\BTNOrbOfCorruption.blp", "war3campImported\\ITEMMonsterLure.mdl");
+            return Consumable(code, name, rarity, level, goldCost, effectText, "Food", "rej3", "ReplaceableTextures\\CommandButtons\\BTNOrbOfCorruption.blp", "war3campImported\\ITEMMonsterLure.mdl");
         }
 
         private static SeedItem Beverage(string code, string name, string rarity, int level, int goldCost, string effectText)
         {
-            return Consumable(code, name, rarity, level, goldCost, effectText, "Beverage", "pclr", "A61F", "ReplaceableTextures\\CommandButtons\\BTNPotionBlueSmall.blp", "war3campImported\\ITEMPotionGreenSmall.mdl");
+            return Consumable(code, name, rarity, level, goldCost, effectText, "Beverage", "pclr", "ReplaceableTextures\\CommandButtons\\BTNPotionBlueSmall.blp", "war3campImported\\ITEMPotionGreenSmall.mdl");
         }
 
-        private static SeedItem Consumable(string code, string name, string rarity, int level, int goldCost, string effectText, string kind, string baseId, string ability, string iconPath, string modelPath)
+        private static SeedItem Consumable(string code, string name, string rarity, int level, int goldCost, string effectText, string kind, string baseId, string iconPath, string modelPath)
         {
             string extended = $"|cff87CEEB{kind}|r|nCooking applies for a limited time: {effectText}";
             return new SeedItem
@@ -158,7 +161,7 @@ namespace WC3ItemManager
                 Description = extended,
                 BaseId = baseId,
                 Wc3Classification = "Charged",
-                Wc3Abilities = ability,
+                Wc3Abilities = ConsumeAbility,
                 ActivelyUsed = true,
                 CopyBaseAbilities = false
             };
@@ -217,6 +220,24 @@ namespace WC3ItemManager
             EnsureClass(conn, "Material", "MATERIAL", "Crafting materials");
             EnsureType(conn, "Consumable");
             EnsureType(conn, "Material");
+        }
+
+        private static void EnsureConsumeAbility(NpgsqlConnection conn)
+        {
+            const string query = @"
+                INSERT INTO wc3_abilities (ability_code, ability_name, tooltip_normal, tooltip_extended)
+                VALUES (@code, 'Eat/Drink', 'Eat/Drink', 'Consumes one food or beverage charge. Cooking applies the configured timed effect.')
+                ON CONFLICT (ability_code) DO UPDATE SET
+                    ability_name = EXCLUDED.ability_name,
+                    tooltip_normal = EXCLUDED.tooltip_normal,
+                    tooltip_extended = EXCLUDED.tooltip_extended,
+                    updated_at = CURRENT_TIMESTAMP;";
+
+            using (var cmd = new NpgsqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("code", ConsumeAbility);
+                cmd.ExecuteNonQuery();
+            }
         }
 
         private static void EnsureRarity(NpgsqlConnection conn, string name, int level, string colorCode, decimal multiplier, string description)

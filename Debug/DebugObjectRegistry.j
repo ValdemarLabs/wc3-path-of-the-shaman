@@ -2142,6 +2142,7 @@ library DebugObjectRegistry initializer Init
         call DOR_RegisterAbility('A6DZ', "Drop Items")
         call DOR_RegisterAbility('A69V', "Drowning")
         call DOR_RegisterAbility('DQTG', "Dual Wield")
+        call DOR_RegisterAbility('A0F5', "Eat/Drink")
         call DOR_RegisterAbility('A008', "Earth Totem")
         call DOR_RegisterAbility('A63F', "Earth Totem")
         call DOR_RegisterAbility('A01Y', "Earth Totem Aura")
