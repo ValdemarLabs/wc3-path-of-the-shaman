@@ -36,7 +36,7 @@
 ### Technical Updates
 
 - Documented the intended placement zone for every vendor in `VendorsHelper.md`, retaining explicit multi-zone and unspecified entries where no single location is defined.
-- Updated `Death/Death.j`, `Events/UnitDeathEvent.j`, `AI/AI.j`, `Death/Revival.j`, and `UI/CameraControl.j` with one-life fake hero death, synthetic centralized death dispatch, fake-body revival support, fallen-aware camera targeting, and 60-second cleanup for unmanaged heroes.
+- Updated `Death/Death.j`, `Events/UnitDeathEvent.j`, `AI/AI.j`, `Death/Revival.j`, `UI/CameraControl.j`, and `Arena/Arena.j` with one-life fake hero death, synthetic centralized death dispatch, fake-body revival support, fallen-aware camera/arena targeting, and 60-second cleanup for unmanaged heroes.
 - Removed the redundant raw-meat and spring-water abilities from all 55 cooked outputs. Food/drink stats and recipe aura abilities remain owned exclusively by `ProfessionsCooking.j`.
 - Updated `Shop.j` to read item object fields `isto` and `istr` while registering stock, and changed replenishment from full-stack-at-empty behavior to WC3-style incremental replenishment whenever current stock is below maximum.
 - Reworked `VendorFloatingText.j` from one permanent text tag per discovered vendor to a bounded pool of eight reusable labels assigned to the nearest camera-visible vendors. Off-screen, hidden, dead, fogged, and cinematic vendors no longer reserve individual text tags.
@@ -57,6 +57,7 @@
 - `WC3ItemManager`
   Updated the one-time Cooking seed data and live database so all cooked consumables export only `A0F5`, with inherited base abilities disabled and consistent manual-ability metadata. The historical seeder is excluded from the application build so normal ItemManager use cannot rerun it; the auditable SQL migration remains available for database setup.
   Exposed the existing `stock_max` and `stock_replenish` database fields as Stock Maximum and Stock Replenish Interval in the Add/Edit Item Basic Info tab. Increased the initial editor window size within the current screen's working area so all Basic Info fields are visible without manual resizing on sufficiently large displays.
+  Added Food and Drink item classes with distinct tooltip colors, made them selectable in the consumable editor, and changed the main class filter to load every class from the database.
 
 ### Actions Remaining
 
