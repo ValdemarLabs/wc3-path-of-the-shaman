@@ -14,7 +14,7 @@
 
     How to install:
     Import after Table, UnitDeathEvent, ItemLootSystem, Experience, and
-    Companions. Import Arena mode libraries after this file.
+    Companions, and Death. Import Arena mode libraries after this file.
 
     API:
     - call Arena_RegisterMode(modeId, name, startCb, stopCb, unitDeathCb, participantDeathCb)
@@ -27,7 +27,7 @@
     - if Arena_IsParticipant(unit) then
 
 **/
-library Arena initializer Init requires Table, UnitDeathEvent, ItemLootSystem, Experience, Companions, optional RegionTitles
+library Arena initializer Init requires Table, UnitDeathEvent, ItemLootSystem, Experience, Companions, Death, optional RegionTitles
     globals
         // Public configuration and ids.
         constant integer ARENA_ID_NONE = 0
@@ -105,7 +105,7 @@ library Arena initializer Init requires Table, UnitDeathEvent, ItemLootSystem, E
     endfunction
 
     private function Arena_IsAliveUnit takes unit whichUnit returns boolean
-        return Arena_IsExistingUnit(whichUnit) and not IsUnitType(whichUnit, UNIT_TYPE_DEAD) and GetWidgetLife(whichUnit) > 0.405
+        return Arena_IsExistingUnit(whichUnit) and not IsUnitType(whichUnit, UNIT_TYPE_DEAD) and GetWidgetLife(whichUnit) > 0.405 and not Death_IsFallen(whichUnit)
     endfunction
 
     private function Arena_IsPlayerMainHero takes unit whichUnit returns boolean
@@ -435,7 +435,13 @@ library Arena initializer Init requires Table, UnitDeathEvent, ItemLootSystem, E
             return
         endif
 
-        if IsUnitType(whichUnit, UNIT_TYPE_DEAD) then
+        if Death_IsFallen(whichUnit) then
+            if reviveDead then
+                call Death_ReviveAt(whichUnit, x, y, 100.00, 100.00, true)
+            else
+                return
+            endif
+        elseif IsUnitType(whichUnit, UNIT_TYPE_DEAD) then
             if reviveDead and IsUnitType(whichUnit, UNIT_TYPE_HERO) then
                 call ReviveHero(whichUnit, x, y, true)
             else
