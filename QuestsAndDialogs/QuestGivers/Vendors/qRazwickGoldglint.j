@@ -18,6 +18,7 @@
 **/
 library qRazwickGoldglint initializer Init requires VendorQuests, VoicelinesVendorQuests
     private function Init takes nothing returns nothing
-        call VendorQuests_RegisterSupplyQuest('n04A', "Reagent on Credit", "daily", 12, "Reagent on Credit", "ReplaceableTextures\\CommandButtons\\BTNCrystalBall.blp", "Collect Krikzak's reagent shipment from Fizzik Hexstock and return.", 'n047', "Fizzik Hexstock", 'I003', 70, VL_VENDORQUEST_GOBLIN_TYPE, 15, VL_VENDORQUEST_GOBLIN_0015, VL_VENDORQUEST_GOBLIN_0016)
+        local integer definitionId = VendorQuests_RegisterSupplyQuest('n04A', "Reagent on Credit", "daily", 12, "Reagent on Credit", "ReplaceableTextures\\CommandButtons\\BTNCrystalBall.blp", "Buy Krikzak's reagent shipment from Fizzik Hexstock and return it.", 'n047', "Fizzik Hexstock", 'I003', 70, VL_VENDORQUEST_GOBLIN_TYPE, 15, VL_VENDORQUEST_GOBLIN_0015, VL_VENDORQUEST_GOBLIN_0016)
+        call VendorQuests_SetSupplyRequiresPurchase(definitionId, true)
     endfunction
 endlibrary
