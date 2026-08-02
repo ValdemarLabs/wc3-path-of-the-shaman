@@ -34,6 +34,7 @@
     - call Shop_SetStockMinimumReputation(entryId, reputation)
     - call Shop_SetStockCharges(entryId, charges)
     - call Shop_SetStockSupply(entryId, maximum, replenishSeconds)
+    - Item stock defaults use WC3 `isto` / `istr`; SetStockSupply overrides them.
     - call Shop_SetStockZone(entryId, zoneId, includeChildZones)
     - set entryId = Shop_AddRandomStock(vendorId, itemTypeId, price, category)
     - call Shop_AddRandomStockOption(entryId, itemTypeId)
@@ -73,6 +74,8 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
         private constant integer SHP_AI_PRICE_HARD_CAP = 2500
         private constant integer SHP_AI_MAX_DUPLICATE_ITEMS = 3
         private constant real SHP_REPLENISH_INTERVAL = 1.00
+        private constant itemintegerfield SHP_ITEM_FIELD_STOCK_MAXIMUM = ConvertItemIntegerField('isto')
+        private constant itemintegerfield SHP_ITEM_FIELD_STOCK_REPLENISH = ConvertItemIntegerField('istr')
         private constant string SHP_CATEGORY_ALL = "All"
         private constant string SHP_CATEGORY_GOODS = "Goods"
         private constant string SHP_CATEGORY_RECENTLY_SOLD = "Recent"
@@ -110,6 +113,7 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
         private integer array SHP_StockCurrentSupply
         private real array SHP_StockReplenishTime
         private real array SHP_StockReplenishRemaining
+        private boolean array SHP_StockSupplyOverridden
         private integer array SHP_StockZoneId
         private boolean array SHP_StockZoneIncludesChildren
         private integer array SHP_StockRandomOptionCount
@@ -248,7 +252,7 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
     private function SHP_ConsumeStock takes integer stockId returns nothing
         if SHP_IsStockIdValid(stockId) and SHP_StockMaximumSupply[stockId] > 0 and SHP_StockCurrentSupply[stockId] > 0 then
             set SHP_StockCurrentSupply[stockId] = SHP_StockCurrentSupply[stockId] - 1
-            if SHP_StockCurrentSupply[stockId] == 0 then
+            if SHP_StockCurrentSupply[stockId] < SHP_StockMaximumSupply[stockId] and SHP_StockReplenishTime[stockId] > 0.00 and SHP_StockReplenishRemaining[stockId] <= 0.00 then
                 set SHP_StockReplenishRemaining[stockId] = SHP_StockReplenishTime[stockId]
             endif
         endif
@@ -259,11 +263,15 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
 
         loop
             exitwhen stockId > SHP_StockCount
-            if SHP_StockMaximumSupply[stockId] > 0 and SHP_StockCurrentSupply[stockId] == 0 and SHP_StockReplenishRemaining[stockId] > 0.00 then
+            if SHP_StockMaximumSupply[stockId] > 0 and SHP_StockCurrentSupply[stockId] < SHP_StockMaximumSupply[stockId] and SHP_StockReplenishRemaining[stockId] > 0.00 then
                 set SHP_StockReplenishRemaining[stockId] = SHP_StockReplenishRemaining[stockId] - SHP_REPLENISH_INTERVAL
                 if SHP_StockReplenishRemaining[stockId] <= 0.00 then
-                    set SHP_StockCurrentSupply[stockId] = SHP_StockMaximumSupply[stockId]
-                    set SHP_StockReplenishRemaining[stockId] = 0.00
+                    set SHP_StockCurrentSupply[stockId] = SHP_StockCurrentSupply[stockId] + 1
+                    if SHP_StockCurrentSupply[stockId] < SHP_StockMaximumSupply[stockId] then
+                        set SHP_StockReplenishRemaining[stockId] = SHP_StockReplenishTime[stockId]
+                    else
+                        set SHP_StockReplenishRemaining[stockId] = 0.00
+                    endif
                 endif
             endif
             set stockId = stockId + 1
@@ -927,6 +935,31 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
         return result
     endfunction
 
+    // Zero replenish interval is treated as the legacy unlimited-stock default.
+    private function SHP_ApplyItemObjectStockDefaults takes integer stockId, item stockItem returns nothing
+        local integer maximumSupply
+        local integer replenishSeconds
+
+        if not SHP_IsStockIdValid(stockId) or stockItem == null or SHP_StockSupplyOverridden[stockId] then
+            set stockItem = null
+            return
+        endif
+
+        set maximumSupply = BlzGetItemIntegerField(stockItem, SHP_ITEM_FIELD_STOCK_MAXIMUM)
+        set replenishSeconds = BlzGetItemIntegerField(stockItem, SHP_ITEM_FIELD_STOCK_REPLENISH)
+        if maximumSupply > 0 and replenishSeconds > 0 then
+            set SHP_StockMaximumSupply[stockId] = maximumSupply
+            set SHP_StockCurrentSupply[stockId] = maximumSupply
+            set SHP_StockReplenishTime[stockId] = I2R(replenishSeconds)
+        else
+            set SHP_StockMaximumSupply[stockId] = 0
+            set SHP_StockCurrentSupply[stockId] = 0
+            set SHP_StockReplenishTime[stockId] = 0.00
+        endif
+        set SHP_StockReplenishRemaining[stockId] = 0.00
+        set stockItem = null
+    endfunction
+
     private function SHP_AddStockEntry takes integer vendorId, integer stockKind, integer itemTypeId, integer price, string category, integer payload, string stockName, string iconPath, string tooltip, integer aiPriceCap, integer aiWeight returns integer
         local item stockItem = null
 
@@ -976,6 +1009,7 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
             set stockItem = CreateItem(itemTypeId, 0.00, 0.00)
             if stockItem != null then
                 set SHP_StockCharges[SHP_StockCount] = GetItemCharges(stockItem)
+                call SHP_ApplyItemObjectStockDefaults(SHP_StockCount, stockItem)
                 call RemoveItem(stockItem)
             endif
         endif
@@ -1025,6 +1059,7 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
         if not SHP_IsStockIdValid(stockId) then
             return
         endif
+        set SHP_StockSupplyOverridden[stockId] = true
         if maximumSupply <= 0 then
             set SHP_StockMaximumSupply[stockId] = 0
             set SHP_StockCurrentSupply[stockId] = 0
@@ -1105,6 +1140,7 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
                 set stockItem = CreateItem(itemTypeId, 0.00, 0.00)
                 if stockItem != null then
                     set SHP_StockCharges[stockId] = GetItemCharges(stockItem)
+                    call SHP_ApplyItemObjectStockDefaults(stockId, stockItem)
                     call RemoveItem(stockItem)
                     set stockItem = null
                 endif
