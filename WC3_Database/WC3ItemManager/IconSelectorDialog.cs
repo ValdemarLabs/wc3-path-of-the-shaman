@@ -22,6 +22,7 @@ namespace WC3ItemManager
         private Button btnSelect;
         private Button btnCancel;
         private Button btnConfig;
+        private CheckBox chkRememberFolder;
         private ComboBox cmbCategory;
         private Label lblStatus;
         private Label lblCurrentPath;
@@ -38,7 +39,11 @@ namespace WC3ItemManager
         private static object cacheLock = new object(); // Thread safety
         private static string cacheFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cache");
         
-        private readonly Dictionary<string, int> displayedImageIndexes = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, int> displayedImageIndexes = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        private static ImageList sharedIconImages;
+        private static bool rememberLastFolder = true;
+        private static string lastSource = "All";
+        private static string lastFolderPath = "";
         private readonly HashSet<string> loadingThumbnails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private System.Windows.Forms.Timer searchTimer;
         private int thumbnailGeneration = 0;
@@ -71,7 +76,6 @@ namespace WC3ItemManager
             searchTimer?.Dispose();
             if (iconList != null)
                 iconList.LargeImageList = null;
-            iconImages?.Dispose();
             base.OnFormClosed(e);
         }
 
@@ -164,6 +168,27 @@ namespace WC3ItemManager
             cmbCategory.Items.AddRange(new object[] { "All", "Abilities", "Items", "Units", "Buildings", "UI", "Effects", "Other" });
             cmbCategory.SelectedIndex = 0;
             cmbCategory.SelectedIndexChanged += (s, e) => FilterIcons();
+
+            chkRememberFolder = new CheckBox
+            {
+                Text = "Remember folder",
+                Location = new Point(945, 13),
+                AutoSize = true,
+                Checked = rememberLastFolder
+            };
+            chkRememberFolder.CheckedChanged += (s, e) =>
+            {
+                rememberLastFolder = chkRememberFolder.Checked;
+                if (!rememberLastFolder)
+                {
+                    lastSource = "All";
+                    lastFolderPath = "";
+                }
+                else
+                {
+                    RememberCurrentFolder();
+                }
+            };
             
             lblCurrentPath = new Label
             {
@@ -184,7 +209,7 @@ namespace WC3ItemManager
             
             topPanel.Controls.AddRange(new Control[] { 
                 lblSearch, txtSearch, lblSource, cmbSource, btnConfig,
-                lblCategory, cmbCategory, lblCurrentPath, lblStatus
+                lblCategory, cmbCategory, chkRememberFolder, lblCurrentPath, lblStatus
             });
             
             // Main split container: Tree on left, Icons on right
@@ -234,12 +259,7 @@ namespace WC3ItemManager
                 Padding = new Padding(5)
             };
             
-            iconImages = new ImageList
-            {
-                ColorDepth = ColorDepth.Depth32Bit,
-                ImageSize = new Size(64, 64)
-            };
-            iconImages.Images.Add(CreatePlaceholderImage());
+            iconImages = GetSharedImageList();
 
             iconList = new ListView
             {
@@ -305,6 +325,8 @@ namespace WC3ItemManager
             try
             {
                 allIcons = GetAllIconsWithCache();
+                if (rememberLastFolder && cmbSource.Items.Contains(lastSource))
+                    cmbSource.SelectedItem = lastSource;
                 LoadFolderTree();
             }
             catch (Exception ex)
@@ -360,9 +382,31 @@ namespace WC3ItemManager
 
             if (treeFolder.Nodes.Count > 0)
             {
-                treeFolder.SelectedNode = treeFolder.Nodes[0];
-                treeFolder.Nodes[0].Expand();
+                TreeNode selectedNode = rememberLastFolder
+                    ? FindFolderNode(treeFolder.Nodes, lastFolderPath)
+                    : null;
+                treeFolder.SelectedNode = selectedNode ?? treeFolder.Nodes[0];
+                treeFolder.SelectedNode.EnsureVisible();
+                treeFolder.SelectedNode.Expand();
             }
+        }
+
+        private static TreeNode FindFolderNode(TreeNodeCollection nodes, string folderPath)
+        {
+            if (string.IsNullOrEmpty(folderPath))
+                return null;
+
+            foreach (TreeNode node in nodes)
+            {
+                if (node.Tag is FolderInfo info &&
+                    string.Equals(info.FullPath, folderPath, StringComparison.OrdinalIgnoreCase))
+                    return node;
+
+                TreeNode match = FindFolderNode(node.Nodes, folderPath);
+                if (match != null)
+                    return match;
+            }
+            return null;
         }
         
         private void BuildFolderTree(TreeNode parentNode, string path, string source)
@@ -409,8 +453,18 @@ namespace WC3ItemManager
             if (e.Node?.Tag is FolderInfo folderInfo)
             {
                 lblCurrentPath.Text = $"Current folder: {e.Node.FullPath}";
+                RememberCurrentFolder();
                 FilterIcons();
             }
+        }
+
+        private void RememberCurrentFolder()
+        {
+            if (!rememberLastFolder)
+                return;
+
+            lastSource = cmbSource.SelectedItem?.ToString() ?? "All";
+            lastFolderPath = (treeFolder.SelectedNode?.Tag as FolderInfo)?.FullPath ?? "";
         }
 
         private static List<IconEntry> GetAllIconsWithCache()
@@ -679,6 +733,24 @@ namespace WC3ItemManager
             using (Graphics graphics = Graphics.FromImage(bitmap))
                 graphics.Clear(Color.FromArgb(35, 35, 35));
             return bitmap;
+        }
+
+        private static ImageList GetSharedImageList()
+        {
+            lock (cacheLock)
+            {
+                if (sharedIconImages == null)
+                {
+                    sharedIconImages = new ImageList
+                    {
+                        ColorDepth = ColorDepth.Depth32Bit,
+                        ImageSize = new Size(64, 64)
+                    };
+                    using (Bitmap placeholder = CreatePlaceholderImage())
+                        sharedIconImages.Images.Add(placeholder);
+                }
+                return sharedIconImages;
+            }
         }
 
         private void ResetDisplayedImages()
@@ -1079,6 +1151,7 @@ namespace WC3ItemManager
                 imageCache.Clear();
                 allIconCache = null;
                 allIconCacheKey = "";
+                displayedImageIndexes.Clear();
             }
         }
         

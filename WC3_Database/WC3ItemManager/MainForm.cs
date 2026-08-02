@@ -520,7 +520,7 @@ namespace WC3ItemManager
                 Height = 35,
                 Font = new Font("Segoe UI", 9)
             };
-            btnRefresh.Click += (s, e) => LoadData();
+            btnRefresh.Click += (s, e) => ApplyFilters();
 
             btnExport = new Button
             {
@@ -1054,6 +1054,66 @@ namespace WC3ItemManager
             }
         }
 
+        private sealed class ItemGridState
+        {
+            public readonly List<int> SelectedItemIds = new List<int>();
+            public int? CurrentItemId;
+            public int? FirstVisibleItemId;
+        }
+
+        private ItemGridState CaptureItemGridState()
+        {
+            var state = new ItemGridState();
+            if (dgvItems?.Columns.Contains("id") != true)
+                return state;
+
+            foreach (DataGridViewRow row in dgvItems.SelectedRows)
+            {
+                if (row.Cells["id"].Value != null && row.Cells["id"].Value != DBNull.Value)
+                    state.SelectedItemIds.Add(Convert.ToInt32(row.Cells["id"].Value));
+            }
+
+            if (dgvItems.CurrentRow?.Cells["id"].Value != null &&
+                dgvItems.CurrentRow.Cells["id"].Value != DBNull.Value)
+                state.CurrentItemId = Convert.ToInt32(dgvItems.CurrentRow.Cells["id"].Value);
+
+            if (dgvItems.FirstDisplayedScrollingRowIndex >= 0)
+            {
+                DataGridViewRow row = dgvItems.Rows[dgvItems.FirstDisplayedScrollingRowIndex];
+                if (row.Cells["id"].Value != null && row.Cells["id"].Value != DBNull.Value)
+                    state.FirstVisibleItemId = Convert.ToInt32(row.Cells["id"].Value);
+            }
+            return state;
+        }
+
+        private void RestoreItemGridState(ItemGridState state)
+        {
+            if (state == null || dgvItems?.Columns.Contains("id") != true)
+                return;
+
+            var rowsById = dgvItems.Rows.Cast<DataGridViewRow>()
+                .Where(row => !row.IsNewRow && row.Cells["id"].Value != null && row.Cells["id"].Value != DBNull.Value)
+                .ToDictionary(row => Convert.ToInt32(row.Cells["id"].Value));
+
+            dgvItems.ClearSelection();
+            foreach (int itemId in state.SelectedItemIds)
+            {
+                if (rowsById.TryGetValue(itemId, out DataGridViewRow row))
+                    row.Selected = true;
+            }
+
+            if (state.CurrentItemId.HasValue && rowsById.TryGetValue(state.CurrentItemId.Value, out DataGridViewRow currentRow))
+            {
+                DataGridViewCell currentCell = currentRow.Cells.Cast<DataGridViewCell>()
+                    .FirstOrDefault(cell => cell.Visible);
+                if (currentCell != null)
+                    dgvItems.CurrentCell = currentCell;
+            }
+
+            if (state.FirstVisibleItemId.HasValue && rowsById.TryGetValue(state.FirstVisibleItemId.Value, out DataGridViewRow firstRow))
+                dgvItems.FirstDisplayedScrollingRowIndex = firstRow.Index;
+        }
+
         private void LoadData(string whereClause = "", string orderByClause = "ORDER BY i.item_code ASC")
         {
             if (!isConnected || dgvItems == null)
@@ -1061,6 +1121,7 @@ namespace WC3ItemManager
                 return;
             }
 
+            ItemGridState gridState = CaptureItemGridState();
             try
             {
                 using (var conn = new NpgsqlConnection(connectionString))
@@ -1195,6 +1256,7 @@ namespace WC3ItemManager
 
                         lblCount.Text = $"Items: {dt.Rows.Count}";
                         lblStatus.Text = $"Loaded {dt.Rows.Count} items";
+                        RestoreItemGridState(gridState);
                     }
                 }
             }
@@ -1362,7 +1424,7 @@ namespace WC3ItemManager
             {
                 if (form.ShowDialog() == DialogResult.OK)
                 {
-                    LoadData();
+                    ApplyFilters();
                 }
             }
         }
@@ -1386,7 +1448,7 @@ namespace WC3ItemManager
             {
                 if (form.ShowDialog() == DialogResult.OK)
                 {
-                    LoadData();
+                    ApplyFilters();
                 }
             }
         }
