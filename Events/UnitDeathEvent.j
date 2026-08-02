@@ -19,6 +19,7 @@
 
     API:
     call UnitDeathEvent_Register(function YourCallback)
+    call UnitDeathEvent_Fire(whichUnit, killingUnit)
     set dying = UnitDeathEvent_GetDyingUnit()
     set killer = UnitDeathEvent_GetKillingUnit()
 
@@ -50,14 +51,14 @@ private function UnitDeathEvent_RunCallback takes trigger callbackTrigger return
     endif
 endfunction
 
-private function UnitDeathEvent_Dispatch takes nothing returns nothing
+private function UnitDeathEvent_DispatchUnits takes unit dyingUnit, unit killingUnit returns nothing
     local integer callbackIndex = 0
     local integer callbackCount = UnitDeathEvent_CallbackCount
     local unit previousDyingUnit = UnitDeathEvent_CurrentDyingUnit
     local unit previousKillingUnit = UnitDeathEvent_CurrentKillingUnit
 
-    set UnitDeathEvent_CurrentDyingUnit = GetDyingUnit()
-    set UnitDeathEvent_CurrentKillingUnit = GetKillingUnit()
+    set UnitDeathEvent_CurrentDyingUnit = dyingUnit
+    set UnitDeathEvent_CurrentKillingUnit = killingUnit
 
     loop
         exitwhen callbackIndex >= callbackCount
@@ -69,6 +70,10 @@ private function UnitDeathEvent_Dispatch takes nothing returns nothing
     set UnitDeathEvent_CurrentKillingUnit = previousKillingUnit
     set previousDyingUnit = null
     set previousKillingUnit = null
+endfunction
+
+private function UnitDeathEvent_Dispatch takes nothing returns nothing
+    call UnitDeathEvent_DispatchUnits(GetDyingUnit(), GetKillingUnit())
 endfunction
 
 private function UnitDeathEvent_EnsureTrigger takes nothing returns nothing
@@ -93,6 +98,14 @@ endfunction
 
 function UnitDeathEvent_GetKillingUnit takes nothing returns unit
     return UnitDeathEvent_CurrentKillingUnit
+endfunction
+
+function UnitDeathEvent_Fire takes unit dyingUnit, unit killingUnit returns nothing
+    if dyingUnit == null then
+        return
+    endif
+    call UnitDeathEvent_EnsureTrigger()
+    call UnitDeathEvent_DispatchUnits(dyingUnit, killingUnit)
 endfunction
 
 function UnitDeathEvent_Register takes code callback returns nothing
