@@ -2,7 +2,7 @@
     VendorQuests
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
     Bridges Shop vendors into QuestMaster without registering a second unit
@@ -19,16 +19,22 @@
     API:
     - VendorQuests_RegisterFetchQuest(...) registers an item quest template.
     - VendorQuests_RegisterKillQuest(...) registers a kill quest template.
-    - VendorQuests_RegisterSupplyQuest(...) registers a cross-vendor pickup.
+    - VendorQuests_RegisterSupplyQuest(...) registers a cross-vendor pickup or
+      purchase, selected automatically from the target vendor's stock.
+    - VendorQuests_SetSupplyRequiresPurchase(definitionId, required) overrides
+      automatic stock detection for a supply quest.
     - VendorQuests_SetFactionReward(definitionId, faction, amount, linked)
       assigns faction metadata and reputation rewards.
     - VendorQuests_RegisterUnit(vendor) instantiates matching templates.
     - VendorQuests_AddDialogButtons(dialog, vendor, handler) adds quest choices.
     - VendorQuests_BeginAction(actionId, vendor, hero) creates quest dialogue.
     - VendorQuests_FinishPendingAction() commits its accept/complete event.
+    - VendorQuests_ConsumeOpenTradeRequest() reports whether a target-vendor
+      quest choice should continue directly into the shop.
     - VendorQuests_CancelPendingAction() cancels an interrupted quest dialogue.
     - VendorQuests_HandleAction(actionId, vendor, hero) resolves a choice.
-    - VendorQuests_OnVendorSelected(vendor, hero) resolves supply pickups.
+    - Cross-vendor objectives appear as explicit choices in the target vendor's
+      normal dialog. Selecting the unit alone never advances the quest.
 
 **/
 library VendorQuests initializer Init requires QuestGiver, QuestMaster, DialogSystem, DialogInteraction, HeroItemCheck, VendorLines, VoicelinesVendorQuests, Shop, Table
@@ -36,11 +42,13 @@ library VendorQuests initializer Init requires QuestGiver, QuestMaster, DialogSy
         private constant integer VQ_MAX_DEFINITIONS = 64
         private constant integer VQ_MAX_QUESTS = 256
         private constant integer VQ_ACTION_BASE = 10000
+        private constant integer VQ_TARGET_ACTION_BASE = 20000
         private constant integer VQ_OBJECTIVE_FETCH = 1
         private constant integer VQ_OBJECTIVE_KILL = 2
         private constant integer VQ_OBJECTIVE_SUPPLY = 3
         private constant integer VQ_PENDING_ACCEPT = 1
         private constant integer VQ_PENDING_COMPLETE = 2
+        private constant integer VQ_PENDING_SUPPLY_HANDOFF = 3
 
         private integer VQ_DefinitionCount = 0
         private integer array VQ_VendorUnitType
@@ -63,6 +71,8 @@ library VendorQuests initializer Init requires QuestGiver, QuestMaster, DialogSy
         private integer array VQ_VoiceIndex
         private string array VQ_IntroText
         private string array VQ_CompleteText
+        private boolean array VQ_SupplyRequiresPurchase
+        private boolean array VQ_SupplyModeConfigured
 
         private integer VQ_QuestCount = 0
         private integer array VQ_QuestIds
@@ -73,6 +83,9 @@ library VendorQuests initializer Init requires QuestGiver, QuestMaster, DialogSy
         private integer VQ_PendingDefinitionId = 0
         private integer VQ_PendingAction = 0
         private unit VQ_PendingVendor = null
+        private unit VQ_PendingHero = null
+        private boolean VQ_PendingOpenTrade = false
+        private boolean VQ_OpenTradeRequest = false
     endglobals
 
     private function VQ_FormatSoundKey takes string voiceType, integer lineIndex returns string
@@ -148,6 +161,35 @@ library VendorQuests initializer Init requires QuestGiver, QuestMaster, DialogSy
         set VQ_ReputationLinked[definitionId] = linked
     endfunction
 
+    public function SetSupplyRequiresPurchase takes integer definitionId, boolean required returns nothing
+        if definitionId <= 0 or definitionId > VQ_DefinitionCount or VQ_ObjectiveType[definitionId] != VQ_OBJECTIVE_SUPPLY then
+            return
+        endif
+        set VQ_SupplyModeConfigured[definitionId] = true
+        set VQ_SupplyRequiresPurchase[definitionId] = required
+    endfunction
+
+    private function VQ_TargetVendorSellsItem takes integer definitionId returns boolean
+        local integer vendorId = Shop_GetVendorIdForUnitType(VQ_TargetVendorUnitType[definitionId])
+        local integer position = 1
+        local integer stockId
+        local integer stockCount
+
+        if vendorId <= 0 or VQ_TargetType[definitionId] == 0 then
+            return false
+        endif
+        set stockCount = Shop_GetVendorStockCount(vendorId)
+        loop
+            exitwhen position > stockCount
+            set stockId = Shop_GetVendorStockEntry(vendorId, position)
+            if Shop_GetStockItemType(stockId) == VQ_TargetType[definitionId] then
+                return true
+            endif
+            set position = position + 1
+        endloop
+        return false
+    endfunction
+
     private function VQ_CreateQuest takes integer definitionId, unit vendor returns nothing
         local QuestData q
         local string infoText
@@ -179,7 +221,14 @@ library VendorQuests initializer Init requires QuestGiver, QuestMaster, DialogSy
             if targetVendorName == null or targetVendorName == "" then
                 set targetVendorName = VQ_TargetVendorName[definitionId]
             endif
-            call QuestGiver_RegisterTalkToRequirement(q.id, vendor, 1, null, targetVendorName)
+            if not VQ_SupplyModeConfigured[definitionId] then
+                set VQ_SupplyRequiresPurchase[definitionId] = VQ_TargetVendorSellsItem(definitionId)
+            endif
+            if VQ_SupplyRequiresPurchase[definitionId] then
+                call QuestGiver_RegisterItemRequirement(q.id, vendor, 1, VQ_TargetType[definitionId], VQ_TargetAmount[definitionId])
+            else
+                call QuestGiver_RegisterTalkToRequirement(q.id, vendor, 1, null, targetVendorName)
+            endif
         endif
 
         set VQ_QuestCount = VQ_QuestCount + 1
@@ -255,6 +304,26 @@ library VendorQuests initializer Init requires QuestGiver, QuestMaster, DialogSy
             set index = index + 1
         endloop
 
+        set index = 1
+        loop
+            exitwhen index > VQ_QuestCount
+            set questId = VQ_QuestIds[index]
+            set q = QuestMaster_GetById(questId)
+            if q != 0 and q.active and not q.completed then
+                if VQ_ObjectiveType[VQ_DefinitionByQuest.integer[questId]] == VQ_OBJECTIVE_SUPPLY and VQ_TargetVendorUnitType[VQ_DefinitionByQuest.integer[questId]] == GetUnitTypeId(vendor) then
+                    if VQ_SupplyRequiresPurchase[VQ_DefinitionByQuest.integer[questId]] then
+                        set label = "|cff80ff80[Quest]|r Ask about buying " + GetObjectName(VQ_TargetType[VQ_DefinitionByQuest.integer[questId]])
+                    else
+                        set label = "|cff80ff80[Quest]|r Collect " + GetObjectName(VQ_TargetType[VQ_DefinitionByQuest.integer[questId]])
+                    endif
+                    set b = DialogSystem_AddButton(d, label, VQ_TARGET_ACTION_BASE + questId)
+                    call DialogSystem_BindButtonCode(b, actionFunc)
+                    set added = added + 1
+                endif
+            endif
+            set index = index + 1
+        endloop
+
         set d = null
         set vendor = null
         set b = null
@@ -262,6 +331,9 @@ library VendorQuests initializer Init requires QuestGiver, QuestMaster, DialogSy
     endfunction
 
     public function IsQuestAction takes integer actionId returns boolean
+        if actionId > VQ_TARGET_ACTION_BASE then
+            return VQ_DefinitionByQuest.integer.has(actionId - VQ_TARGET_ACTION_BASE)
+        endif
         return actionId > VQ_ACTION_BASE and VQ_DefinitionByQuest.integer.has(actionId - VQ_ACTION_BASE)
     endfunction
 
@@ -283,10 +355,13 @@ library VendorQuests initializer Init requires QuestGiver, QuestMaster, DialogSy
         set VQ_PendingDefinitionId = 0
         set VQ_PendingAction = 0
         set VQ_PendingVendor = null
+        set VQ_PendingHero = null
+        set VQ_PendingOpenTrade = false
     endfunction
 
     public function CancelPendingAction takes nothing returns nothing
         call VQ_ClearPendingAction()
+        set VQ_OpenTradeRequest = false
     endfunction
 
     private function VQ_GetHeroActionText takes integer definitionId, integer pendingAction returns string
@@ -328,14 +403,81 @@ library VendorQuests initializer Init requires QuestGiver, QuestMaster, DialogSy
         return seq
     endfunction
 
-    public function BeginAction takes integer actionId, unit vendor, unit hero returns integer
-        local integer questId = actionId - VQ_ACTION_BASE
+    private function VQ_CreateTargetSequence takes unit vendor, unit hero, integer definitionId, boolean alreadyHandedOff returns integer
+        local integer seq = DialogSystem_CreateSequence()
+        local string speakerName = VendorLines_GetVendorSpeakerName(vendor)
+
+        call DialogSystem_SetSequenceDefaultSpeaker(seq, vendor, speakerName)
+        call DialogSystem_AddMakeFaceEachOther(seq, vendor, hero, 0.45, 0.00)
+        if VQ_SupplyRequiresPurchase[definitionId] then
+            call DialogInteraction_AddHeroLookAtLine(seq, hero, vendor, VL_VENDORQUEST_HERO_ASK_TO_BUY, "")
+            call DialogSystem_AddLine(seq, vendor, speakerName, VL_VENDORQUEST_VENDOR_PURCHASE, "", true)
+        else
+            call DialogInteraction_AddHeroLookAtLine(seq, hero, vendor, VL_VENDORQUEST_HERO_REQUEST_SUPPLY, "")
+            if alreadyHandedOff then
+                call DialogSystem_AddLine(seq, vendor, speakerName, VL_VENDORQUEST_VENDOR_ALREADY_HANDED_OFF, "", true)
+            else
+                call DialogSystem_AddLine(seq, vendor, speakerName, VL_VENDORQUEST_VENDOR_HANDOFF, "", true)
+            endif
+        endif
+
+        set vendor = null
+        set hero = null
+        return seq
+    endfunction
+
+    private function VQ_BeginTargetAction takes integer actionId, unit vendor, unit hero returns integer
+        local integer questId = actionId - VQ_TARGET_ACTION_BASE
         local integer definitionId = VQ_DefinitionByQuest.integer[questId]
         local QuestData q = QuestMaster_GetById(questId)
+        local boolean alreadyHandedOff
+        local integer seq
+
+        if definitionId <= 0 or q == 0 or vendor == null or hero == null or not q.active or q.completed then
+            set vendor = null
+            set hero = null
+            return 0
+        endif
+        if VQ_ObjectiveType[definitionId] != VQ_OBJECTIVE_SUPPLY or VQ_TargetVendorUnitType[definitionId] != GetUnitTypeId(vendor) then
+            set vendor = null
+            set hero = null
+            return 0
+        endif
+
+        set alreadyHandedOff = VQ_SupplyClaimed.boolean[questId] and HeroItemCheckBoth(VQ_TargetType[definitionId], VQ_TargetAmount[definitionId])
+        if not VQ_SupplyRequiresPurchase[definitionId] and not alreadyHandedOff then
+            set VQ_PendingQuestId = questId
+            set VQ_PendingDefinitionId = definitionId
+            set VQ_PendingAction = VQ_PENDING_SUPPLY_HANDOFF
+            set VQ_PendingVendor = vendor
+            set VQ_PendingHero = hero
+        elseif VQ_SupplyRequiresPurchase[definitionId] then
+            set VQ_PendingOpenTrade = true
+        endif
+        set seq = VQ_CreateTargetSequence(vendor, hero, definitionId, alreadyHandedOff)
+        set vendor = null
+        set hero = null
+        return seq
+    endfunction
+
+    public function BeginAction takes integer actionId, unit vendor, unit hero returns integer
+        local integer questId
+        local integer definitionId
+        local QuestData q
         local integer pendingAction = 0
         local integer seq
 
         call VQ_ClearPendingAction()
+        set VQ_OpenTradeRequest = false
+        if actionId > VQ_TARGET_ACTION_BASE then
+            set seq = VQ_BeginTargetAction(actionId, vendor, hero)
+            set vendor = null
+            set hero = null
+            return seq
+        endif
+        set questId = actionId - VQ_ACTION_BASE
+        set definitionId = VQ_DefinitionByQuest.integer[questId]
+        set q = QuestMaster_GetById(questId)
         if definitionId <= 0 or q == 0 or vendor == null or hero == null or q.giver != vendor then
             set vendor = null
             set hero = null
@@ -376,20 +518,35 @@ library VendorQuests initializer Init requires QuestGiver, QuestMaster, DialogSy
         local integer definitionId = VQ_PendingDefinitionId
         local integer pendingAction = VQ_PendingAction
         local QuestData q = QuestMaster_GetById(questId)
+        local boolean openTrade = VQ_PendingOpenTrade
 
-        if q != 0 and q.giver == VQ_PendingVendor then
-            if pendingAction == VQ_PENDING_ACCEPT and q.state == QUEST_STATE_AVAILABLE then
+        if q != 0 then
+            if pendingAction == VQ_PENDING_ACCEPT and q.giver == VQ_PendingVendor and q.state == QUEST_STATE_AVAILABLE then
                 call QuestGiver_AcceptQuest(questId)
-            elseif pendingAction == VQ_PENDING_COMPLETE and q.state == QUEST_STATE_READY_TURNIN and VQ_HasTurnInItems(definitionId) then
+            elseif pendingAction == VQ_PENDING_COMPLETE and q.giver == VQ_PendingVendor and q.state == QUEST_STATE_READY_TURNIN and VQ_HasTurnInItems(definitionId) then
                 call VQ_RemoveTurnInItems(definitionId)
                 call QuestGiver_CompleteQuest(questId)
+            elseif pendingAction == VQ_PENDING_SUPPLY_HANDOFF and q.active and not q.completed and VQ_PendingVendor != null and GetUnitTypeId(VQ_PendingVendor) == VQ_TargetVendorUnitType[definitionId] then
+                if QuestGiver_GiveQuestItemToHero(VQ_PendingHero, VQ_TargetType[definitionId], 0, GetObjectName(VQ_TargetType[definitionId])) then
+                    set VQ_SupplyClaimed.boolean[questId] = true
+                    call QuestGiver_CompleteTalkToRequirement(questId, 1)
+                    call DisplayTextToPlayer(Player(0), 0.00, 0.00, "|cff80ff80Received " + GetObjectName(VQ_TargetType[definitionId]) + " for " + q.title + ".|r")
+                endif
             endif
         endif
         call VQ_ClearPendingAction()
+        set VQ_OpenTradeRequest = openTrade
     endfunction
 
     public function FinishPendingAction takes nothing returns nothing
         call VQ_FinishPendingAction()
+    endfunction
+
+    public function ConsumeOpenTradeRequest takes nothing returns boolean
+        local boolean result = VQ_OpenTradeRequest
+
+        set VQ_OpenTradeRequest = false
+        return result
     endfunction
 
     public function HandleAction takes integer actionId, unit vendor, unit hero returns boolean
@@ -406,42 +563,6 @@ library VendorQuests initializer Init requires QuestGiver, QuestMaster, DialogSy
         set vendor = null
         set hero = null
         return true
-    endfunction
-
-    public function OnVendorSelected takes unit vendor, unit hero returns nothing
-        local integer index = 1
-        local integer questId
-        local integer definitionId
-        local QuestData q
-
-        if vendor == null or hero == null then
-            set vendor = null
-            set hero = null
-            return
-        endif
-
-        loop
-            exitwhen index > VQ_QuestCount
-            set questId = VQ_QuestIds[index]
-            set definitionId = VQ_DefinitionByQuest.integer[questId]
-            if VQ_ObjectiveType[definitionId] == VQ_OBJECTIVE_SUPPLY and VQ_TargetVendorUnitType[definitionId] == GetUnitTypeId(vendor) then
-                set q = QuestMaster_GetById(questId)
-                if q != 0 and q.active and not q.completed then
-                    if not VQ_SupplyClaimed.boolean[questId] then
-                        call QuestGiver_GiveQuestItemToHero(hero, VQ_TargetType[definitionId], 0, GetObjectName(VQ_TargetType[definitionId]))
-                        set VQ_SupplyClaimed.boolean[questId] = true
-                        call QuestGiver_CompleteTalkToRequirement(questId, 1)
-                        call DisplayTextToPlayer(Player(0), 0.00, 0.00, "|cff80ff80Received " + GetObjectName(VQ_TargetType[definitionId]) + " for " + q.title + ".|r")
-                    elseif q.state == QUEST_STATE_READY_TURNIN and not HeroItemCheckBoth(VQ_TargetType[definitionId], 1) then
-                        call QuestGiver_GiveQuestItemToHero(hero, VQ_TargetType[definitionId], 0, GetObjectName(VQ_TargetType[definitionId]))
-                    endif
-                endif
-            endif
-            set index = index + 1
-        endloop
-
-        set vendor = null
-        set hero = null
     endfunction
 
     private function VQ_OnDailyReset takes nothing returns nothing
