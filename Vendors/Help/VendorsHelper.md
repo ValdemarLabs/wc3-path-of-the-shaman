@@ -84,30 +84,30 @@
 
 | Rawcode | Name | Editor suffix | Gender | Quest giver |
 |---|---|---|---|---|
-| `n052` | Mara Vane | Riverbane Weapons Vendor | Female | — |
-| `n053` | Elayne Ward | Riverbane Armor Vendor | Female | — |
-| `n054` | Catrin Targe | Riverbane Shield Vendor | Female | — |
-| `n055` | Nora Flint | Riverbane Miner | Female | — |
-| `n056` | Elira Moss | Riverbane Alchemy Supplier | Female | — |
-| `n057` | Hester Bellows | Riverbane Blacksmithing Supplier | Female | — |
-| `n058` | Talia Tanner | Riverbane Leatherworking Supplier | Female | — |
-| `n059` | Greta Stone | Riverbane Mining Supplier | Female | — |
-| `n05A` | Willa Hart | Riverbane Skinning Supplier | Female | — |
-| `n05B` | Sabine Pike | Riverbane Quartermaster | Female | — |
-| `n05C` | Maren Tidewell | Stormhaven Fisher | Female | — |
-| `n05D` | Odette Hearth | Stormhaven Cook | Female | — |
-| `n05E` | Clara Bell | Stormhaven Cooking Supplier | Female | — |
-| `n05F` | Isolde Wren | Stormhaven Enchanting Supplier | Female | — |
-| `n05G` | Fenna Reed | Stormhaven Fishing Supplier | Female | — |
-| `n05H` | Mira Salt | Stormhaven Reagent Merchant | Female | — |
-| `n05I` | Adele Shore | Stormhaven Provisioner | Female | — |
-| `n05J` | Kessa Kane | Arena Quartermaster | Female | — |
-| `n05K` | Elara Wayland | Travelling Merchant | Female | — |
-| `n05L` | Petra Crane | Profession Supplier | Female | — |
-| `n05M` | Vianne Quill | Curiosity Merchant | Female | — |
-| `n05N` | Celia Harrow | Potion Seller | Female | — |
-| `n05O` | Lenora Crow | Rare Goods Dealer | Female | — |
-| `n05P` | Roslyn Mercer | Expedition Supplier | Female | — |
+| `n04O` | Mara Vane | Riverbane Weapons Vendor | Female | — |
+| `n04P` | Elayne Ward | Riverbane Armor Vendor | Female | — |
+| `n04Q` | Catrin Targe | Riverbane Shield Vendor | Female | — |
+| `n04R` | Nora Flint | Riverbane Miner | Female | — |
+| `n04S` | Elira Moss | Riverbane Alchemy Supplier | Female | — |
+| `n04T` | Hester Bellows | Riverbane Blacksmithing Supplier | Female | — |
+| `n04U` | Talia Tanner | Riverbane Leatherworking Supplier | Female | — |
+| `n04V` | Greta Stone | Riverbane Mining Supplier | Female | — |
+| `n04W` | Willa Hart | Riverbane Skinning Supplier | Female | — |
+| `n04X` | Sabine Pike | Riverbane Quartermaster | Female | — |
+| `n04Y` | Maren Tidewell | Stormhaven Fisher | Female | — |
+| `n04Z` | Odette Hearth | Stormhaven Cook | Female | — |
+| `n050` | Clara Bell | Stormhaven Cooking Supplier | Female | — |
+| `n051` | Isolde Wren | Stormhaven Enchanting Supplier | Female | — |
+| `n052` | Fenna Reed | Stormhaven Fishing Supplier | Female | — |
+| `n053` | Mira Salt | Stormhaven Reagent Merchant | Female | — |
+| `n054` | Adele Shore | Stormhaven Provisioner | Female | — |
+| `n055` | Kessa Kane | Arena Quartermaster | Female | — |
+| `n056` | Elara Wayland | Travelling Merchant | Female | — |
+| `n057` | Petra Crane | Profession Supplier | Female | — |
+| `n058` | Vianne Quill | Curiosity Merchant | Female | — |
+| `n059` | Celia Harrow | Potion Seller | Female | — |
+| `n05A` | Lenora Crow | Rare Goods Dealer | Female | — |
+| `n05B` | Roslyn Mercer | Expedition Supplier | Female | — |
 
 ### Goblin vendors
 
@@ -151,14 +151,14 @@
 
 | Rawcode | Name | Editor suffix | Gender | Quest giver |
 |---|---|---|---|---|
-| `n04O` | Aerendir Sunblade | Elarindor Weapons Vendor | Male | Yes |
-| `n04P` | Lyssara Moonweave | Elarindor Armor Vendor | Female | — |
-| `n04Q` | Thaelion Spellward | Elarindor Shield Vendor | Male | — |
-| `n04R` | Elowen Starweaver | Elarindor Enchanting Supplier | Female | Yes |
-| `n04S` | Sylvaris Dewleaf | Elarindor Reagent Merchant | Male | — |
-| `n04T` | Vaeriel Dawnflask | Elarindor Potion Seller | Female | Yes |
-| `n04U` | Arannis Wayfarer | Elarindor Expedition Supplier | Male | — |
-| `n04V` | Maerith Silvercrest | Elarindor Quartermaster | Female | Yes |
+| `h00L` | Aerendir Sunblade | Elarindor Weapons Vendor | Male | Yes |
+| `h00P` | Lyssara Moonweave | Elarindor Armor Vendor | Female | — |
+| `n00M` | Thaelion Spellward | Elarindor Shield Vendor | Male | — |
+| `h00Q` | Elowen Starweaver | Elarindor Enchanting Supplier | Female | Yes |
+| `h00N` | Sylvaris Dewleaf | Elarindor Reagent Merchant | Male | — |
+| `h00R` | Vaeriel Dawnflask | Elarindor Potion Seller | Female | Yes |
+| `h00O` | Arannis Wayfarer | Elarindor Expedition Supplier | Male | — |
+| `h00S` | Maerith Silvercrest | Elarindor Quartermaster | Female | Yes |
 
 ### Horde Tauren vendors
 
@@ -166,9 +166,9 @@ Place these units under the Horde faction owner (`Player(5)`) so Shop reputation
 
 | Rawcode | Name | Editor suffix | Gender | Quest giver |
 |---|---|---|---|---|
-| `n04W` | Korak Ironhorn | Horde Weapons Vendor | Male | — |
-| `n04X` | Bovan Earthhide | Horde Armor Vendor | Male | — |
-| `n04Y` | Turog Stoneguard | Horde Shield Vendor | Male | — |
-| `n04Z` | Marn Thunderkettle | Horde Provisioner | Male | — |
-| `n050` | Doran Plainstrider | Horde Beastmaster Supplier | Male | — |
-| `n051` | Kargan Redtotem | Horde Quartermaster | Male | — |
+| `o015` | Korak Ironhorn | Horde Weapons Vendor | Male | — |
+| `o016` | Bovan Earthhide | Horde Armor Vendor | Male | — |
+| `o017` | Turog Stoneguard | Horde Shield Vendor | Male | — |
+| `o018` | Marn Thunderkettle | Horde Provisioner | Male | — |
+| `o019` | Doran Plainstrider | Horde Beastmaster Supplier | Male | — |
+| `o01A` | Kargan Redtotem | Horde Quartermaster | Male | — |
