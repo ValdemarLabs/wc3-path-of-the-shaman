@@ -18,6 +18,8 @@ namespace WC3ItemManager
             ["MISC"] = "#D3D3D3",
             ["Consumable"] = "#90EE90",
             ["CONSUMABLE"] = "#90EE90",
+            ["Food"] = "#D2B48C",
+            ["Drink"] = "#87CEEB",
             ["Artifact"] = "#FFB400",
             ["ARTIFACT"] = "#FFB400",
             ["Head Armor"] = "#C0C0C0",

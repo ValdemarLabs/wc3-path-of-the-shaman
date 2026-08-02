@@ -468,7 +468,8 @@ namespace WC3ItemManager
             }
 
             if (normalized.Contains("consumable") || normalized.Contains("potion") || normalized.Contains("elixir") ||
-                normalized.Contains("scroll") || normalized.Contains("food") || normalized.Contains("flask"))
+                normalized.Contains("scroll") || normalized.Contains("food") || normalized.Contains("drink") ||
+                normalized.Contains("beverage") || normalized.Contains("flask"))
             {
                 return "Consumable";
             }

@@ -810,7 +810,7 @@ namespace WC3ItemManager
                 Size = new Size(120, 25),
                 DropDownStyle = ComboBoxStyle.DropDownList
             };
-            cmbConsumableClass.Items.AddRange(new object[] { "Miscellaneous", "MISC", "Other", "Quest", "Consumable" });
+            cmbConsumableClass.Items.AddRange(new object[] { "Miscellaneous", "MISC", "Other", "Quest", "Consumable", "Food", "Drink" });
             cmbConsumableClass.SelectedIndex = 0; // Default to Miscellaneous
             consumablePanel.Controls.Add(cmbConsumableClass);
             
@@ -3961,7 +3961,9 @@ namespace WC3ItemManager
                             ('Stave', 'TWOHAND_STAFF', 'Staves and staffs'),
                             ('Trinket', 'TRINKET', 'Trinkets, charms'),
                             ('Ability', 'ABILITY', 'Ability-granting item slot/class'),
-                            ('Skill', 'SKILL', 'Skill-granting item slot/class')
+                            ('Skill', 'SKILL', 'Skill-granting item slot/class'),
+                            ('Food', 'FOOD', 'Edible consumable items'),
+                            ('Drink', 'DRINK', 'Drinkable consumable items')
                         ON CONFLICT (class_name) DO NOTHING";
 
                     using (var cmd = new NpgsqlCommand(ensureQuery, conn))
@@ -4007,6 +4009,8 @@ namespace WC3ItemManager
                             ('class', 'Ability', '#00CED1', 'Ability items'),
                             ('class', 'Skill', '#1E90FF', 'Skill items'),
                             ('class', 'Quest', '#FFFF00', 'Quest items'),
+                            ('class', 'Food', '#D2B48C', 'Food consumables'),
+                            ('class', 'Drink', '#87CEEB', 'Drink consumables'),
                             ('class', 'Miscellaneous', '#D3D3D3', 'Miscellaneous items'),
                             ('class', 'Other', '#D3D3D3', 'Other items'),
                             ('class', 'Head Armor', '#C0C0C0', 'Head armor items'),

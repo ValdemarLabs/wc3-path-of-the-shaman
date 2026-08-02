@@ -250,7 +250,7 @@ namespace WC3ItemManager
                 Width = 120,
                 DropDownStyle = ComboBoxStyle.DropDownList
             };
-            cmbClass.Items.AddRange(new object[] { "All", "MISC", "CONSUMABLE", "ARTIFACT", "QUEST" });
+            cmbClass.Items.Add("All");
             cmbClass.SelectedIndex = 0;
             cmbClass.SelectedIndexChanged += (s, e) => ApplyFilters();
 
@@ -811,6 +811,7 @@ namespace WC3ItemManager
                     EnsureRequiredItemClasses(conn);
                     ProfessionItemStatsSeeder.Ensure(conn);
                     EnsureItemClassColors(conn);
+                    LoadClassFilter(conn);
                     isConnected = true;
                     UpdateConnectionStatus(true, "Connected");
                 }
@@ -869,6 +870,33 @@ namespace WC3ItemManager
             }
         }
 
+        private void LoadClassFilter(NpgsqlConnection conn)
+        {
+            string selectedClass = cmbClass.SelectedItem?.ToString() ?? "All";
+            cmbClass.BeginUpdate();
+            try
+            {
+                cmbClass.Items.Clear();
+                cmbClass.Items.Add("All");
+
+                using (var cmd = new NpgsqlCommand("SELECT class_name FROM item_classes ORDER BY class_name", conn))
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        cmbClass.Items.Add(reader.GetString(0));
+                    }
+                }
+
+                int selectedIndex = cmbClass.FindStringExact(selectedClass);
+                cmbClass.SelectedIndex = selectedIndex >= 0 ? selectedIndex : 0;
+            }
+            finally
+            {
+                cmbClass.EndUpdate();
+            }
+        }
+
         private void EnsureLootLevelColumn(NpgsqlConnection conn)
         {
             const string alterQuery = @"
@@ -901,7 +929,9 @@ namespace WC3ItemManager
                     ('Stave', 'TWOHAND_STAFF', 'Staves and staffs'),
                     ('Trinket', 'TRINKET', 'Trinkets, charms'),
                     ('Ability', 'ABILITY', 'Ability-granting item slot/class'),
-                    ('Skill', 'SKILL', 'Skill-granting item slot/class')
+                    ('Skill', 'SKILL', 'Skill-granting item slot/class'),
+                    ('Food', 'FOOD', 'Edible consumable items'),
+                    ('Drink', 'DRINK', 'Drinkable consumable items')
                 ON CONFLICT (class_name) DO NOTHING";
 
             using (var cmd = new NpgsqlCommand(ensureQuery, conn))
@@ -936,6 +966,8 @@ namespace WC3ItemManager
                     ('class', 'Ability', '#00CED1', 'Ability items'),
                     ('class', 'Skill', '#1E90FF', 'Skill items'),
                     ('class', 'Quest', '#FFFF00', 'Quest items'),
+                    ('class', 'Food', '#D2B48C', 'Food consumables'),
+                    ('class', 'Drink', '#87CEEB', 'Drink consumables'),
                     ('class', 'Miscellaneous', '#D3D3D3', 'Miscellaneous items'),
                     ('class', 'Other', '#D3D3D3', 'Other items'),
                     ('class', 'Head Armor', '#C0C0C0', 'Head armor items'),

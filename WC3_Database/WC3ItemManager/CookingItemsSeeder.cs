@@ -149,7 +149,7 @@ namespace WC3ItemManager
                 Code = code,
                 Name = name,
                 Rarity = rarity,
-                ClassName = "Consumable",
+                ClassName = kind == "Beverage" ? "Drink" : "Food",
                 TypeName = "Consumable",
                 Level = level,
                 GoldCost = goldCost,
@@ -219,6 +219,8 @@ namespace WC3ItemManager
             EnsureRarity(conn, "Uncommon", 1, "#1EFF00", 1.50m, "Uncommon quality items");
             EnsureRarity(conn, "Rare", 2, "#0070DD", 2.00m, "Rare quality items");
             EnsureClass(conn, "Consumable", "CONSUMABLE", "Food, drinks, potions, and other used items");
+            EnsureClass(conn, "Food", "FOOD", "Edible consumable items");
+            EnsureClass(conn, "Drink", "DRINK", "Drinkable consumable items");
             EnsureClass(conn, "Material", "MATERIAL", "Crafting materials");
             EnsureType(conn, "Consumable");
             EnsureType(conn, "Material");
@@ -363,7 +365,8 @@ namespace WC3ItemManager
 
         private static int GetWc3ItemLevel(SeedItem item)
         {
-            if (item.ClassName == "Consumable" || item.ClassName == "Material")
+            if (item.ClassName == "Consumable" || item.ClassName == "Food" ||
+                item.ClassName == "Drink" || item.ClassName == "Material")
             {
                 if (item.MaxStack <= 0)
                 {
