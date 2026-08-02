@@ -13,7 +13,7 @@
 
     How to install:
     Import after DialogInteraction, DialogSystem, Shop, ShopUI, VendorLines,
-    Interface, Table, and optional VendorQuests. Vendor unit types must be
+    Interface, Table, and optional QuestsVendor. Vendor unit types must be
     registered in Shop before the delayed scan runs, or individual units can
     be registered manually.
 
@@ -24,7 +24,7 @@
     - set hero = VendorDialogs_GetSelectedHero()
 
 **/
-library VendorDialogs initializer Init requires Table, DialogInteraction, DialogSystem, Shop, ShopUI, VendorLines, Interface, optional VendorQuests, optional Events, optional UnitDeathEvent
+library VendorDialogs initializer Init requires Table, DialogInteraction, DialogSystem, Shop, ShopUI, VendorLines, Interface, optional QuestsVendor, optional Events, optional UnitDeathEvent
     globals
         private constant real VDI_DIALOG_RANGE = 900.00
         private constant real VDI_DIALOG_COOLDOWN = 3.00
@@ -203,8 +203,8 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, Player(0))
         call DisplayTextToPlayer(Player(0), 0.00, 0.00, "|cffff8080Trade interrupted.|r")
         call DialogSystem_CancelActiveSequence()
-        static if LIBRARY_VendorQuests then
-            call VendorQuests_CancelPendingAction()
+        static if LIBRARY_QuestsVendor then
+            call QuestsVendor_CancelPendingAction()
         endif
         call VDI_EndDialog(true)
     endfunction
@@ -260,9 +260,9 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
     private function VDI_OnQuestSequenceEnd takes nothing returns nothing
         local boolean openTrade = false
 
-        static if LIBRARY_VendorQuests then
-            call VendorQuests_FinishPendingAction()
-            set openTrade = VendorQuests_ConsumeOpenTradeRequest()
+        static if LIBRARY_QuestsVendor then
+            call QuestsVendor_FinishPendingAction()
+            set openTrade = QuestsVendor_ConsumeOpenTradeRequest()
         endif
         if openTrade then
             call VDI_OnTrade()
@@ -279,8 +279,8 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
             return
         endif
 
-        static if LIBRARY_VendorQuests then
-            set seq = VendorQuests_BeginAction(DialogSystem_LastAction, VDI_SelectedVendor, VDI_SelectedHero)
+        static if LIBRARY_QuestsVendor then
+            set seq = QuestsVendor_BeginAction(DialogSystem_LastAction, VDI_SelectedVendor, VDI_SelectedHero)
         endif
         if seq > 0 then
             call DialogInteraction_BeginDialogSequence()
@@ -308,8 +308,8 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         call DialogSystem_ClearDialog(VDI_Dialog)
         call DialogSystem_SetTitle(VDI_Dialog, vendorName)
 
-        static if LIBRARY_VendorQuests then
-            call VendorQuests_AddDialogButtons(VDI_Dialog, VDI_SelectedVendor, function VDI_OnQuest)
+        static if LIBRARY_QuestsVendor then
+            call QuestsVendor_AddDialogButtons(VDI_Dialog, VDI_SelectedVendor, function VDI_OnQuest)
         endif
 
         set b = DialogSystem_AddButtonTrade(VDI_Dialog, VDI_ACTION_TRADE)
@@ -387,8 +387,8 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         call DialogInteraction_Register(vendor)
         call DialogInteraction_SetGreetOrder(vendor, DIALOGINTERACTION_GREET_NONE)
         call DialogInteraction_RegisterSelectionHandler(vendor, function VDI_OnSelected)
-        static if LIBRARY_VendorQuests then
-            call VendorQuests_RegisterUnit(vendor)
+        static if LIBRARY_QuestsVendor then
+            call QuestsVendor_RegisterUnit(vendor)
         endif
 
         set vendor = null
