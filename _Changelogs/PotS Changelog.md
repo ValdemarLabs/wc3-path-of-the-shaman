@@ -19,6 +19,7 @@
 
 ### Player-Facing Updates
 
+- Lethal hero damage now leaves a visible frozen body without entering Warcraft III's dissipate state. Player, companion, and AI heroes remain available for revival, while other hero bodies are removed after one minute.
 - Cooked food and beverages now use the shared Eat/Drink item ability, allowing their charge to be consumed while Cooking applies the correct Well Fed or Well Hydrated effect through JASS.
 - Custom shop entries now use each item's WC3 Stock Maximum and Stock Replenish Interval by default, restoring one item per interval until the entry reaches maximum stock. Explicit `Shop_SetStockSupply` configuration still overrides the item defaults.
 - Fixed vendor floating text exhausting Warcraft III's shared text-tag capacity, restoring reliable totem labels, dropped-item names, casting text, and damage numbers while retaining camera-visible vendor-type labels.
@@ -29,9 +30,13 @@
 - Vendor quests now use cinematic NPC-and-hero dialogue sequences for acceptance, progress checks, and completion, committing quest events when the sequence finishes.
 - Added support for six Horde Tauren vendors covering weapons, armor, shields, provisions, beast supplies, and quartermaster goods.
 - Added female Human variants for all 24 Riverbane, Stormhaven, neutral, and travelling Human vendor roles.
+- Every merchant voice profile and vendor role now has at least three randomized active-trade lines and three responses for each purchase, sale, mixed-trade, and no-transaction exit outcome.
+- Cross-vendor supply quests now require an explicit quest dialogue choice at the target merchant instead of advancing when the merchant is merely selected. Some commissions continue directly into trade and require buying and returning the requested stock item.
 
 ### Technical Updates
 
+- Documented the intended placement zone for every vendor in `VendorsHelper.md`, retaining explicit multi-zone and unspecified entries where no single location is defined.
+- Updated `Death/Death.j`, `Events/UnitDeathEvent.j`, `AI/AI.j`, `Death/Revival.j`, and `UI/CameraControl.j` with one-life fake hero death, synthetic centralized death dispatch, fake-body revival support, fallen-aware camera targeting, and 60-second cleanup for unmanaged heroes.
 - Removed the redundant raw-meat and spring-water abilities from all 55 cooked outputs. Food/drink stats and recipe aura abilities remain owned exclusively by `ProfessionsCooking.j`.
 - Updated `Shop.j` to read item object fields `isto` and `istr` while registering stock, and changed replenishment from full-stack-at-empty behavior to WC3-style incremental replenishment whenever current stock is below maximum.
 - Reworked `VendorFloatingText.j` from one permanent text tag per discovered vendor to a bounded pool of eight reusable labels assigned to the nearest camera-visible vendors. Off-screen, hidden, dead, fogged, and cinematic vendors no longer reserve individual text tags.
@@ -44,6 +49,8 @@
 - Added gender metadata to the full vendor helper roster and reserved 18 male Human, 18 female Human, and 6 male Tauren merchant voice keys.
 - Centralized all merchant and generic vendor-quest dialogue text, profile constants, ExSound keys, sequence ranges, and sound folders under `Voicelines_VendorLines.j` and `Voicelines_VendorQuests.j`.
 - Aligned Female Human, Elarindor, and Horde Tauren catalog bindings, canonical names, and Elarindor quest targets with the final Object Editor rawcodes documented in `VendorsHelper.md`.
+- Expanded centralized merchant line pools and ExSound ranges to 45 lines per Human gender/region set and 15 lines per Tauren or Elarindor gender set, while retaining vendor-role-specific dialogue fallbacks.
+- Reworked `VendorQuests.j` target-vendor actions into interrupt-safe dialog handoffs or catalog purchases; `VendorDialogs.j` can now continue a purchase objective directly into the shop after its dialogue sequence.
 
 ### Tool Updates
 
@@ -54,9 +61,9 @@
 ### Actions Remaining
 
 - Rebase Object Editor abilities `A60V` (Raw Meat) and `A61F` (Spring Water) onto a Berserk-style no-target ability so their separate raw-consumable behavior can cast at full hit points or mana.
-- Create or assign the eight matching Object Editor unit types and import recordings for the twelve reserved Elarindor vendor voice keys.
+- Create or assign the eight matching Object Editor unit types and import recordings for the thirty reserved Elarindor vendor voice keys.
 - Create or assign the six Horde Tauren and 24 female Human Object Editor unit types; ensure Tauren vendors are owned by Horde `Player(5)`.
-- Import recordings for the eight Elarindor quest, 36 Human merchant, and six Tauren merchant voice keys; text-duration fallback remains active until then.
+- Import recordings for the eight Elarindor quest, 90 Human merchant, 30 Elarindor merchant, and 15 Tauren merchant voice keys; text-duration fallback remains active until then.
 
 ## [1.8.2026]
 
