@@ -2,7 +2,7 @@
     VoicelinesVendorLines
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
     Central source of truth for merchant greetings, trade chatter, transaction
@@ -50,6 +50,18 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         return soundType + I2S(lineIndex)
     endfunction
 
+    private function RegisterUnvoicedVariations takes string profileName returns nothing
+        call VendorLines_RegisterLine(profileName, VendorLines_LINE_CHATTER, "There is more stock here than the first glance reveals.", "")
+        call VendorLines_RegisterLine(profileName, VendorLines_LINE_BOUGHT, "A wise purchase. I hope it serves you well.", "")
+        call VendorLines_RegisterLine(profileName, VendorLines_LINE_BOUGHT, "Good choice. That belongs in capable hands.", "")
+        call VendorLines_RegisterLine(profileName, VendorLines_LINE_SOLD, "I can put that back into useful circulation.", "")
+        call VendorLines_RegisterLine(profileName, VendorLines_LINE_SOLD, "Fair value for something you no longer need.", "")
+        call VendorLines_RegisterLine(profileName, VendorLines_LINE_BOUGHT_AND_SOLD, "A productive exchange for both of us.", "")
+        call VendorLines_RegisterLine(profileName, VendorLines_LINE_BOUGHT_AND_SOLD, "Your pack changed, and my shelves did too. Good trade.", "")
+        call VendorLines_RegisterLine(profileName, VendorLines_LINE_NO_TRANSACTION, "All that browsing and not a single coin moved.", "")
+        call VendorLines_RegisterLine(profileName, VendorLines_LINE_NO_TRANSACTION, "Nothing suited you? That is disappointing.", "")
+    endfunction
+
     private function RegisterBasicProfile takes string profileName, string greetingA, string greetingB, string trade, string farewell, string chatterA, string chatterB, string bought, string sold, string exchanged, string noTrade returns nothing
         call VendorLines_RegisterBasicLines(profileName, greetingA, greetingB, trade, farewell)
         call VendorLines_RegisterLine(profileName, VendorLines_LINE_CHATTER, chatterA, "")
@@ -58,6 +70,7 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call VendorLines_RegisterLine(profileName, VendorLines_LINE_SOLD, sold, "")
         call VendorLines_RegisterLine(profileName, VendorLines_LINE_BOUGHT_AND_SOLD, exchanged, "")
         call VendorLines_RegisterLine(profileName, VendorLines_LINE_NO_TRANSACTION, noTrade, "")
+        call RegisterUnvoicedVariations(profileName)
     endfunction
 
     private function RegisterProfile takes string profileName, string chatterA, string chatterB, string bought, string sold, string exchanged, string noTrade returns nothing
@@ -67,34 +80,37 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call VendorLines_RegisterLine(profileName, VendorLines_LINE_SOLD, sold, "")
         call VendorLines_RegisterLine(profileName, VendorLines_LINE_BOUGHT_AND_SOLD, exchanged, "")
         call VendorLines_RegisterLine(profileName, VendorLines_LINE_NO_TRANSACTION, noTrade, "")
+        call RegisterUnvoicedVariations(profileName)
     endfunction
 
-    private function RegisterVoicedProfile takes string profileName, string chatterA, string chatterB, string bought, string sold, string exchanged, string noTrade, string soundType, integer firstLine returns nothing
+    private function RegisterVoicedProfile takes string profileName, string chatterA, string chatterB, string bought, string sold, string exchanged, string noTrade, string soundType, integer firstLine, integer extraFirstLine returns nothing
         call VendorLines_RegisterLine(profileName, VendorLines_LINE_CHATTER, chatterA, FormatSoundKey(soundType, firstLine))
         call VendorLines_RegisterLine(profileName, VendorLines_LINE_CHATTER, chatterB, FormatSoundKey(soundType, firstLine + 1))
         call VendorLines_RegisterLine(profileName, VendorLines_LINE_BOUGHT, bought, FormatSoundKey(soundType, firstLine + 2))
         call VendorLines_RegisterLine(profileName, VendorLines_LINE_SOLD, sold, FormatSoundKey(soundType, firstLine + 3))
         call VendorLines_RegisterLine(profileName, VendorLines_LINE_BOUGHT_AND_SOLD, exchanged, FormatSoundKey(soundType, firstLine + 4))
         call VendorLines_RegisterLine(profileName, VendorLines_LINE_NO_TRANSACTION, noTrade, FormatSoundKey(soundType, firstLine + 5))
+        call VendorLines_RegisterLine(profileName, VendorLines_LINE_CHATTER, "Take your time. The right purchase is worth considering.", FormatSoundKey(soundType, extraFirstLine))
+        call VendorLines_RegisterLine(profileName, VendorLines_LINE_BOUGHT, "A wise purchase. I hope it serves you well.", FormatSoundKey(soundType, extraFirstLine + 1))
+        call VendorLines_RegisterLine(profileName, VendorLines_LINE_BOUGHT, "Good choice. That belongs in capable hands.", FormatSoundKey(soundType, extraFirstLine + 2))
+        call VendorLines_RegisterLine(profileName, VendorLines_LINE_SOLD, "I can put that back into useful circulation.", FormatSoundKey(soundType, extraFirstLine + 3))
+        call VendorLines_RegisterLine(profileName, VendorLines_LINE_SOLD, "Fair value for something you no longer need.", FormatSoundKey(soundType, extraFirstLine + 4))
+        call VendorLines_RegisterLine(profileName, VendorLines_LINE_BOUGHT_AND_SOLD, "A productive exchange for both of us.", FormatSoundKey(soundType, extraFirstLine + 5))
+        call VendorLines_RegisterLine(profileName, VendorLines_LINE_BOUGHT_AND_SOLD, "Your pack changed, and my shelves did too. Good trade.", FormatSoundKey(soundType, extraFirstLine + 6))
+        call VendorLines_RegisterLine(profileName, VendorLines_LINE_NO_TRANSACTION, "All that browsing and not a single coin moved.", FormatSoundKey(soundType, extraFirstLine + 7))
+        call VendorLines_RegisterLine(profileName, VendorLines_LINE_NO_TRANSACTION, "Nothing suited you? That is disappointing.", FormatSoundKey(soundType, extraFirstLine + 8))
     endfunction
 
     private function RegisterDefaultAndSpecialistLines takes nothing returns nothing
         call RegisterBasicProfile("Merchant", "Take a look. Fair prices today.", "If you have coin, I have goods.", "Let us see what changes hands.", "Come back when your purse is heavier.", "Take your time. Good goods do not fear inspection.", "If you need it for the road, I probably have it.", "A good purchase. May it serve you well.", "I can find a buyer for that.", "A fair exchange both ways.", "Nothing today? The stock will still be here.")
         call RegisterBasicProfile("Blacksmith", "Steel is honest. Coin should be too.", "Blades, mail, tools. All tested before they leave my forge.", "Pick it up if you mean to buy it.", "Keep the edge dry.", "A balanced weapon feels light before it ever strikes.", "Armor should stop a blade, not stop you walking.", "Good choice. I stand behind that work.", "I can melt that down or put a new edge on it.", "Old steel out, better steel in. Sensible.", "No sparks today? Come back when you need honest steel.")
-        call VendorLines_RegisterLine("Riverbane Human Blacksmith", VendorLines_LINE_CHATTER, "Riverbane roads are hard on boots, buckles, and blades.", "")
-        call VendorLines_RegisterLine("Riverbane Human Blacksmith", VendorLines_LINE_BOUGHT, "That will hold through a Riverbane winter.", "")
-        call VendorLines_RegisterLine("Fiery Mountain Orc Blacksmith", VendorLines_LINE_CHATTER, "Mountain fire makes hard steel and harder smiths.", "")
-        call VendorLines_RegisterLine("Fiery Mountain Orc Blacksmith", VendorLines_LINE_CHATTER, "If the edge chips, you struck like a human.", "")
-        call VendorLines_RegisterLine("Fiery Mountain Orc Blacksmith", VendorLines_LINE_BOUGHT, "Strong iron for a strong hand.", "")
+        call RegisterProfile("Riverbane Human Blacksmith", "Riverbane roads are hard on boots, buckles, and blades.", "Good steel earns its keep on every patrol.", "That will hold through a Riverbane winter.", "The lower forge can reclaim this metal.", "Worn steel out, Riverbane steel in.", "No work for the forge today? Keep your gear dry.")
+        call RegisterProfile("Fiery Mountain Orc Blacksmith", "Mountain fire makes hard steel and harder smiths.", "If the edge chips, you struck like a human.", "Strong iron for a strong hand.", "I hammer this into something less embarrassing.", "Weak gear out. Mountain steel in.", "No trade? Then stop cooling my forge.")
         call VendorLines_RegisterBasicLines("Graknar", "Strong bags. Strong price.", "A bigger pack saves longer walks.", "No bag to carry. I make your pack bigger now.", "Travel lighter, come back richer.")
         call RegisterProfile("Bonecrusher Ogre Bag Merchant", "Bonecrusher stitching. Even rocks stay inside.", "Tiny bag makes tiny loot. Graknar fixes.", "Bigger bag. Now bring bigger treasure.", "Graknar keeps this. Maybe sells twice.", "Pack changes, coin changes. Graknar approves.", "No bag? Then carry regret in pockets.")
         call RegisterBasicProfile("General Goods Merchant", "Supplies for the road, friend.", "A full pack keeps trouble small.", "Take what you need and leave the rest for someone poorer.", "Safe roads and steady coin.", "Rope, water, salves. Heroes always remember them one mile too late.", "The cheapest supply is the one that gets you home.", "Packed and ready. Try not to lose it.", "Used, perhaps. Useless, never.", "A lighter pack and better supplies. Good business.", "Window-shopping is free. My patience is nearly so.")
-        call VendorLines_RegisterLine("Goblin General Goods", VendorLines_LINE_CHATTER, "Guaranteed genuine until proven otherwise!", "")
-        call VendorLines_RegisterLine("Goblin General Goods", VendorLines_LINE_CHATTER, "Bulk discount starts immediately after you buy in bulk.", "")
-        call VendorLines_RegisterLine("Goblin General Goods", VendorLines_LINE_BOUGHT, "No refunds, but compliments are always accepted.", "")
-        call VendorLines_RegisterLine("Goblin General Goods", VendorLines_LINE_SOLD, "I know three people who will pay twice that.", "")
-        call VendorLines_RegisterLine("Forest Orc Supplies", VendorLines_LINE_CHATTER, "Thornwoods punish travelers who pack poorly.", "")
-        call VendorLines_RegisterLine("Forest Orc Supplies", VendorLines_LINE_BOUGHT, "Use it well, and return from the wilds.", "")
+        call RegisterProfile("Goblin General Goods", "Guaranteed genuine until proven otherwise!", "Bulk discount starts immediately after you buy in bulk.", "No refunds, but compliments are always accepted.", "I know three people who will pay twice that.", "You leave supplied and I leave richer. Perfect balance!", "Not even one purchase? My projections are ruined!")
+        call RegisterProfile("Forest Orc Supplies", "Thornwoods punish travelers who pack poorly.", "A dry bedroll matters when the forest turns cold.", "Use it well, and return from the wilds.", "The clan will find another use for this.", "Good supplies traded without waste.", "Return when the forest teaches you what you forgot.")
     endfunction
 
     private function RegisterCatalogRoleLines takes nothing returns nothing
@@ -127,15 +143,15 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
     endfunction
 
     private function RegisterRaceAndFactionLines takes nothing returns nothing
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_RIVERBANE_MALE, "Riverbane caravans bring new stock every week.", "Keep your purse close in the market quarter.", "A practical choice for Riverbane roads.", "Someone in the lower ward will want this.", "A tidy exchange. Riverbane prospers on trade.", "Another time, then. The market stays busy.", VL_VENDOR_HUMAN_MALE_TYPE, 1)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_STORMHAVEN_MALE, "Stormhaven workmanship travels farther than its banners.", "Salt air ruins cheap metal and cheaper cloth.", "Stormhaven quality. Treat it accordingly.", "I will see what the harbor buyers offer.", "Goods out, goods in. The harbor never rests.", "No trade? Enjoy the harbor while you are here.", VL_VENDOR_HUMAN_MALE_TYPE, 7)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_NEUTRAL_MALE, "Coin has fewer loyalties than people do.", "I trade with anyone who keeps the peace.", "Fair coin for useful goods.", "No questions asked, within reason.", "That is how neutral ground stays prosperous.", "We can disagree about price another day.", VL_VENDOR_HUMAN_MALE_TYPE, 13)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_RIVERBANE_FEMALE, "Riverbane's market wakes before the watch does.", "A careful buyer keeps coin and cargo equally close.", "A sound choice for the roads beyond the walls.", "The lower ward can give this a second life.", "Fair goods for fair coin. Riverbane moves forward.", "Another time. The next caravan may bring something new.", VL_VENDOR_HUMAN_FEMALE_TYPE, 1)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_STORMHAVEN_FEMALE, "Stormhaven craft carries well beyond the harbor.", "Sea air tests every buckle, stitch, and blade.", "A fine choice. Keep it clear of the salt spray.", "The harbor buyers will find a use for this.", "One cargo exchanged for another. That is harbor life.", "Nothing today? The tide may bring you back.", VL_VENDOR_HUMAN_FEMALE_TYPE, 7)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_NEUTRAL_FEMALE, "Trade travels farther when banners stay outside.", "Peaceful customers receive peaceful prices.", "Useful goods deserve useful hands.", "I know a buyer who values discretion.", "A balanced exchange keeps neutral ground stable.", "We can settle on a price another day.", VL_VENDOR_HUMAN_FEMALE_TYPE, 13)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_TAUREN_HORDE_MALE, "The Horde's roads are long; choose supplies that endure.", "Earth, hide, and iron each reward patient hands.", "Carry it with strength and purpose.", "Nothing useful should be wasted.", "A fair exchange honors both sides.", "Walk in peace. Return when the road provides a need.", VL_VENDOR_TAUREN_MALE_TYPE, 1)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ELARINDOR_MALE, "Elarindor's forges burn softly, but they have not gone cold.", "Every restored relic returns a fragment of our home.", "May it serve you in Elarindor's defense.", "We will restore what usefulness remains.", "A measured exchange, worthy of trusted allies.", "Another time. Patience has preserved us this long.", VL_VENDOR_ELARINDOR_MALE_TYPE, 1)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ELARINDOR_FEMALE, "The arcane currents around Elarindor still bless careful craft.", "What survives the ruins deserves a discerning keeper.", "Carry it with the grace its makers intended.", "This may yet find purpose among our people.", "A fair exchange strengthens Elarindor.", "Browse as you wish. Memory has taught us patience.", VL_VENDOR_ELARINDOR_FEMALE_TYPE, 1)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_RIVERBANE_MALE, "Riverbane caravans bring new stock every week.", "Keep your purse close in the market quarter.", "A practical choice for Riverbane roads.", "Someone in the lower ward will want this.", "A tidy exchange. Riverbane prospers on trade.", "Another time, then. The market stays busy.", VL_VENDOR_HUMAN_MALE_TYPE, 1, 19)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_STORMHAVEN_MALE, "Stormhaven workmanship travels farther than its banners.", "Salt air ruins cheap metal and cheaper cloth.", "Stormhaven quality. Treat it accordingly.", "I will see what the harbor buyers offer.", "Goods out, goods in. The harbor never rests.", "No trade? Enjoy the harbor while you are here.", VL_VENDOR_HUMAN_MALE_TYPE, 7, 28)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_NEUTRAL_MALE, "Coin has fewer loyalties than people do.", "I trade with anyone who keeps the peace.", "Fair coin for useful goods.", "No questions asked, within reason.", "That is how neutral ground stays prosperous.", "We can disagree about price another day.", VL_VENDOR_HUMAN_MALE_TYPE, 13, 37)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_RIVERBANE_FEMALE, "Riverbane's market wakes before the watch does.", "A careful buyer keeps coin and cargo equally close.", "A sound choice for the roads beyond the walls.", "The lower ward can give this a second life.", "Fair goods for fair coin. Riverbane moves forward.", "Another time. The next caravan may bring something new.", VL_VENDOR_HUMAN_FEMALE_TYPE, 1, 19)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_STORMHAVEN_FEMALE, "Stormhaven craft carries well beyond the harbor.", "Sea air tests every buckle, stitch, and blade.", "A fine choice. Keep it clear of the salt spray.", "The harbor buyers will find a use for this.", "One cargo exchanged for another. That is harbor life.", "Nothing today? The tide may bring you back.", VL_VENDOR_HUMAN_FEMALE_TYPE, 7, 28)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_NEUTRAL_FEMALE, "Trade travels farther when banners stay outside.", "Peaceful customers receive peaceful prices.", "Useful goods deserve useful hands.", "I know a buyer who values discretion.", "A balanced exchange keeps neutral ground stable.", "We can settle on a price another day.", VL_VENDOR_HUMAN_FEMALE_TYPE, 13, 37)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_TAUREN_HORDE_MALE, "The Horde's roads are long; choose supplies that endure.", "Earth, hide, and iron each reward patient hands.", "Carry it with strength and purpose.", "Nothing useful should be wasted.", "A fair exchange honors both sides.", "Walk in peace. Return when the road provides a need.", VL_VENDOR_TAUREN_MALE_TYPE, 1, 7)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ELARINDOR_MALE, "Elarindor's forges burn softly, but they have not gone cold.", "Every restored relic returns a fragment of our home.", "May it serve you in Elarindor's defense.", "We will restore what usefulness remains.", "A measured exchange, worthy of trusted allies.", "Another time. Patience has preserved us this long.", VL_VENDOR_ELARINDOR_MALE_TYPE, 1, 7)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ELARINDOR_FEMALE, "The arcane currents around Elarindor still bless careful craft.", "What survives the ruins deserves a discerning keeper.", "Carry it with the grace its makers intended.", "This may yet find purpose among our people.", "A fair exchange strengthens Elarindor.", "Browse as you wish. Memory has taught us patience.", VL_VENDOR_ELARINDOR_FEMALE_TYPE, 1, 7)
 
         call RegisterProfile("Fiery Mountain Orc", "Ash keeps weak steel honest.", "Mountain paths reward a well-packed warrior.", "Good. That belongs in a warrior's hands.", "I can hammer some use back into this.", "You leave better armed and less burdened.", "Then quit blocking the heat from my forge.")
         call RegisterProfile("Forest Orc", "The Thornwoods take payment from careless travelers.", "Sereneglade herbs, Riverbane iron, orcish prices.", "Carry it with honor.", "The forest wastes nothing. Neither do I.", "A worthy exchange beneath the old trees.", "Listen to the leaves, then return with coin.")
@@ -150,11 +166,11 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
     endfunction
 
     private function Init takes nothing returns nothing
-        call ExSound_RegisterSequence(VL_VENDOR_HUMAN_MALE_TYPE, 1, 18, "Pots\\Sound\\Voicelines\\VendorHumanMale\\")
-        call ExSound_RegisterSequence(VL_VENDOR_HUMAN_FEMALE_TYPE, 1, 18, "Pots\\Sound\\Voicelines\\VendorHumanFemale\\")
-        call ExSound_RegisterSequence(VL_VENDOR_TAUREN_MALE_TYPE, 1, 6, "Pots\\Sound\\Voicelines\\VendorTaurenMale\\")
-        call ExSound_RegisterSequence(VL_VENDOR_ELARINDOR_MALE_TYPE, 1, 6, "Pots\\Sound\\Voicelines\\VendorElarindorMale\\")
-        call ExSound_RegisterSequence(VL_VENDOR_ELARINDOR_FEMALE_TYPE, 1, 6, "Pots\\Sound\\Voicelines\\VendorElarindorFemale\\")
+        call ExSound_RegisterSequence(VL_VENDOR_HUMAN_MALE_TYPE, 1, 45, "Pots\\Sound\\Voicelines\\VendorHumanMale\\")
+        call ExSound_RegisterSequence(VL_VENDOR_HUMAN_FEMALE_TYPE, 1, 45, "Pots\\Sound\\Voicelines\\VendorHumanFemale\\")
+        call ExSound_RegisterSequence(VL_VENDOR_TAUREN_MALE_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\VendorTaurenMale\\")
+        call ExSound_RegisterSequence(VL_VENDOR_ELARINDOR_MALE_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\VendorElarindorMale\\")
+        call ExSound_RegisterSequence(VL_VENDOR_ELARINDOR_FEMALE_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\VendorElarindorFemale\\")
         call RegisterDefaultAndSpecialistLines()
         call RegisterCatalogRoleLines()
         call RegisterRaceAndFactionLines()
