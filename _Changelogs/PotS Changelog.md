@@ -30,13 +30,14 @@
 ### Technical Updates
 
 - Published the seven reputation-tier texture constants and added `Reputation.getStatusIcon`, then connected `ReputationUI` row/detail badges to the shared tier mapping.
-- Added `Vendors/VendorFactions/VendorElarindor.j` with catalog and voice-profile assignments for rawcodes `n04O` through `n04V`.
+- Added `Vendors/VendorFactions/VendorElarindor.j` with catalog and voice-profile assignments for rawcodes `h00L`, `h00N` through `h00S`, and `n00M`.
 - Registered all eight canonical Elarindor vendor names in `VendorCatalogs.j`, documented them in `VendorsHelper.md`, and reserved twelve external `ExSound` keys under `VendorElarindorMale` and `VendorElarindorFemale` voice folders.
 - Added four Elarindor `qVendorName.j` libraries, eight `VendorQuestElarindor` voice keys, and configurable vendor-quest faction reputation rewards.
 - Added interrupt-safe pending accept/complete events to `VendorQuests.j`; `VendorDialogs.j` now owns sequence completion and `DialogSystem.j` exposes non-completing sequence cancellation.
-- Added `Vendors/VendorFactions/VendorTauren.j` for rawcodes `n04W` through `n051` and expanded `VendorHumans.j` with 24 female variants on `n052` through `n05P`.
+- Added `Vendors/VendorFactions/VendorTauren.j` for rawcodes `o015` through `o01A` and expanded `VendorHumans.j` with 24 female variants on `n04O` through `n05B`.
 - Added gender metadata to the full vendor helper roster and reserved 18 male Human, 18 female Human, and 6 male Tauren merchant voice keys.
 - Centralized all merchant and generic vendor-quest dialogue text, profile constants, ExSound keys, sequence ranges, and sound folders under `Voicelines_VendorLines.j` and `Voicelines_VendorQuests.j`.
+- Aligned Female Human, Elarindor, and Horde Tauren catalog bindings, canonical names, and Elarindor quest targets with the final Object Editor rawcodes documented in `VendorsHelper.md`.
 
 ### Actions Remaining
 
