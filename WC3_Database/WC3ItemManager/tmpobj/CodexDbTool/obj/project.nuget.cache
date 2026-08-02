@@ -1,16 +1,17 @@
 {
   "version": 2,
-  "dgSpecHash": "it/xVqJrpGY=",
-  "success": true,
+  "dgSpecHash": "0qFDYfb/LSE=",
+  "success": false,
   "projectFilePath": "H:\\Pelit\\PotS_JASS\\WC3_Database\\WC3ItemManager\\tmpobj\\CodexDbTool\\CodexDbTool.csproj",
-  "expectedPackageFiles": [
-    "C:\\Users\\Valtteri\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\8.0.0\\microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
-    "C:\\Users\\Valtteri\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\8.0.0\\microsoft.extensions.logging.abstractions.8.0.0.nupkg.sha512",
-    "C:\\Users\\Valtteri\\.nuget\\packages\\npgsql\\8.0.9\\npgsql.8.0.9.nupkg.sha512",
-    "C:\\Users\\Valtteri\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.29\\microsoft.netcore.app.ref.8.0.29.nupkg.sha512",
-    "C:\\Users\\Valtteri\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.29\\microsoft.windowsdesktop.app.ref.8.0.29.nupkg.sha512",
-    "C:\\Users\\Valtteri\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.29\\microsoft.aspnetcore.app.ref.8.0.29.nupkg.sha512",
-    "C:\\Users\\Valtteri\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\8.0.29\\microsoft.netcore.app.host.win-x64.8.0.29.nupkg.sha512"
-  ],
-  "logs": []
+  "expectedPackageFiles": [],
+  "logs": [
+    {
+      "code": "NU1301",
+      "level": "Error",
+      "message": "Failed to retrieve information about 'Npgsql' from remote source 'https://api.nuget.org/v3-flatcontainer/npgsql/index.json'.\r\n  Yritettiin käyttää vastaketta tavalla, jonka sen käyttöoikeudet kieltävät. (api.nuget.org:443)\r\n  Yritettiin käyttää vastaketta tavalla, jonka sen käyttöoikeudet kieltävät.",
+      "projectPath": "H:\\Pelit\\PotS_JASS\\WC3_Database\\WC3ItemManager\\tmpobj\\CodexDbTool\\CodexDbTool.csproj",
+      "filePath": "H:\\Pelit\\PotS_JASS\\WC3_Database\\WC3ItemManager\\tmpobj\\CodexDbTool\\CodexDbTool.csproj",
+      "targetGraphs": []
+    }
+  ]
 }
