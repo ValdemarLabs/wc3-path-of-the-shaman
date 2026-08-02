@@ -2,7 +2,7 @@
     VoicelinesVendorQuests
 
     Author: Valdemar
-    Version: 2.0.0
+    Version: 2.1.0
 
     Description:
     Central source of truth for generic vendor quest dialogue text and shared
@@ -35,6 +35,11 @@ library VoicelinesVendorQuests initializer Init requires ExSound
         constant string VL_VENDORQUEST_HERO_COMPLETE_FETCH = "I brought what you asked for."
         constant string VL_VENDORQUEST_HERO_PROGRESS = "What remains to be done?"
         constant string VL_VENDORQUEST_VENDOR_PROGRESS = "I am still waiting on "
+        constant string VL_VENDORQUEST_HERO_REQUEST_SUPPLY = "I was sent to collect the supplies you are holding."
+        constant string VL_VENDORQUEST_HERO_ASK_TO_BUY = "I was told you carry the item needed for this commission."
+        constant string VL_VENDORQUEST_VENDOR_HANDOFF = "It is ready. Take it back to the one who sent you."
+        constant string VL_VENDORQUEST_VENDOR_ALREADY_HANDED_OFF = "I already gave you the parcel. Keep it safe until you deliver it."
+        constant string VL_VENDORQUEST_VENDOR_PURCHASE = "It is in my regular stock. Buy it through trade, then return it to your quest giver."
 
         // Bonecrusher Ogre quest dialogue.
         constant string VL_VENDORQUEST_BONECRUSHER_0001 = "Stalkers scratch weapon carts. Break seven stalkers. Carts stop scratching."
