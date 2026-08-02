@@ -148,9 +148,9 @@ endfunction
 private function Revival_CheckDeathCamera takes nothing returns nothing
     local unit cameraTarget = CameraControl_GetStoredTargetUnit(Player(0))
 
-    if Revival_DeathCameraHero == null or GetUnitTypeId(Revival_DeathCameraHero) == 0 or GetWidgetLife(Revival_DeathCameraHero) > 0.405 then
+    if Revival_DeathCameraHero == null or GetUnitTypeId(Revival_DeathCameraHero) == 0 or not Death_IsFallen(Revival_DeathCameraHero) then
         call Revival_StopDeathCamera()
-    elseif cameraTarget != Revival_DeathCameraHero and Revival_IsPlayerHero(cameraTarget) and GetWidgetLife(cameraTarget) > 0.405 then
+    elseif cameraTarget != Revival_DeathCameraHero and Revival_IsPlayerHero(cameraTarget) and not Death_IsFallen(cameraTarget) then
         call Revival_StopDeathCamera()
     endif
     set cameraTarget = null
@@ -163,8 +163,8 @@ private function Revival_StartDeathCamera takes unit whichHero, real x, real y r
 
     // A missing or dead stored target means CameraControl was using its
     // Nazgrek-then-Zulkis fallback immediately before this death.
-    if not isActiveTarget and (storedTarget == null or GetWidgetLife(storedTarget) <= 0.405) then
-        set isActiveTarget = whichHero == udg_Nazgrek or (whichHero == udg_Zulkis and GetWidgetLife(udg_Nazgrek) <= 0.405)
+    if not isActiveTarget and (storedTarget == null or Death_IsFallen(storedTarget)) then
+        set isActiveTarget = whichHero == udg_Nazgrek or (whichHero == udg_Zulkis and Death_IsFallen(udg_Nazgrek))
     endif
     if not isActiveTarget or (not Revival_DeathCameraActive and CameraControl_IsSuspended(Player(0))) then
         set storedTarget = null
@@ -195,7 +195,7 @@ endfunction
 private function Revival_OnPlayerHeroSelected takes nothing returns nothing
     local unit selectedHero = GetTriggerUnit()
 
-    if GetTriggerPlayer() == Player(0) and Revival_DeathCameraActive and selectedHero != Revival_DeathCameraHero and Revival_IsPlayerHero(selectedHero) and GetWidgetLife(selectedHero) > 0.405 then
+    if GetTriggerPlayer() == Player(0) and Revival_DeathCameraActive and selectedHero != Revival_DeathCameraHero and Revival_IsPlayerHero(selectedHero) and not Death_IsFallen(selectedHero) then
         call CameraControl_SetTargetUnit(Player(0), selectedHero)
         call Revival_StopDeathCamera()
     endif
@@ -417,7 +417,7 @@ private function Revival_OnGraveyardEnter takes nothing returns nothing
     local unit entering = GetTriggerUnit()
     local integer graveyardId = 1
 
-    if not Revival_IsPlayerHero(entering) or GetWidgetLife(entering) <= 0.405 then
+    if not Revival_IsPlayerHero(entering) or Death_IsFallen(entering) then
         set sourceTrigger = null
         set entering = null
         return
@@ -523,8 +523,8 @@ private function Revival_OnSpiritHealerSelected takes nothing returns nothing
         set healer = null
         return
     endif
-    set nazgrekAvailable = udg_RestoreItemsPossibleN and GetWidgetLife(udg_Nazgrek) > 0.405 and Revival_IsNear(healer, udg_Nazgrek, REVIVAL_HEALER_INTERACT_RANGE)
-    set zulkisAvailable = udg_RestoreItemsPossibleZ and GetWidgetLife(udg_Zulkis) > 0.405 and Revival_IsNear(healer, udg_Zulkis, REVIVAL_HEALER_INTERACT_RANGE)
+    set nazgrekAvailable = udg_RestoreItemsPossibleN and not Death_IsFallen(udg_Nazgrek) and Revival_IsNear(healer, udg_Nazgrek, REVIVAL_HEALER_INTERACT_RANGE)
+    set zulkisAvailable = udg_RestoreItemsPossibleZ and not Death_IsFallen(udg_Zulkis) and Revival_IsNear(healer, udg_Zulkis, REVIVAL_HEALER_INTERACT_RANGE)
     if not nazgrekAvailable and not zulkisAvailable then
         set selectingPlayer = null
         set healer = null
