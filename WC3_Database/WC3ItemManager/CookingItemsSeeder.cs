@@ -2,6 +2,8 @@ using Npgsql;
 
 namespace WC3ItemManager
 {
+    // One-time historical seed helper. WC3ItemManager.csproj excludes this file
+    // so normal application startup can never mutate Cooking item data.
     internal static class CookingItemsSeeder
     {
         private const string ConsumeAbility = "A0F5";

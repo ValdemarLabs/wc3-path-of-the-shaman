@@ -23,6 +23,7 @@
     <Compile Remove="bin\**" />
     <Compile Remove="tmpobj\**" />
     <Compile Remove="tmpobj2\**" />
+    <Compile Remove="CookingItemsSeeder.cs" />
     <None Remove="BACKUPS\**" />
     <Content Remove="BACKUPS\**" />
   </ItemGroup>
