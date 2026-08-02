@@ -6,12 +6,13 @@ VendorCatalogs.j | Shared definitions for 26 reusable vendor roles. Many differe
 VendorOrcs.j, VendorElarindor.j, VendorTauren.j, etc. | Connect Object Editor unit rawcodes to a catalog and racial, regional, gendered, or faction voice profile.
 VendorBlacksmith.j | A bespoke vendor implementation with its own vendor ID, stock, AI weights, reputation items, unit bindings, and dialogue.
 VendorFloatingText.j | Presentation layer that displays the final registered vendor type above units.
-VendorQuests.j | Adds quest buttons to the existing vendor dialogue and instantiates separate `qVendorName.j` quest templates by vendor unit rawcode.
+QuestsAndDialogs/QuestsGeneric.j | Reusable kill, fetch, and talk quest templates, requirements, rewards, dialogue sequences, and daily acceptance variants for any NPC.
+QuestsAndDialogs/QuestsVendor.j | Adapts generic quests to vendor dialogue and retains shop-only handoffs, purchase objectives, stock detection, and ShopUI continuation.
 Voicelines_VendorLines.j | Single source of truth for merchant greetings, chatter, transaction responses, farewells, voice profiles, sound keys, and sound folders.
-Voicelines_VendorQuests.j | Single source of truth for all generic vendor-quest acceptance, progress, and completion dialogue plus sound registration.
+Voicelines_Quests.j | Single source of truth for shared quest dialogue, daily variants, normal-quest extensions, and sound registration.
 VendorVoiceProfiles.j | Compatibility wrapper for older import lists; new dialogue belongs in `Voicelines_VendorLines.j`.
 
-To change spoken vendor content, edit the two files under `Voicelines/`. Vendor faction, catalog, and `qVendorName.j` files now only bind or reference those centralized definitions.
+To change spoken vendor content, edit `Voicelines_VendorLines.j`; to change generic quest dialogue, edit `Voicelines_Quests.j`. Vendor faction, catalog, and `qVendorName.j` files only bind or reference those centralized definitions.
 
 # For example:
 o011

@@ -1,4 +1,4 @@
-`VendorCatalogs.j` registers these canonical names by unit rawcode, so vendor dialogue and quest-giver headings do not depend on Object Editor names. The `Name`, `Editor Suffix`, and `Gender` fields may still mirror this roster for clearer Object Editor entries. `Yes` in the quest-giver column means a matching `qVendorName.j` library already exists.
+`VendorCatalogs.j` registers these canonical names by unit rawcode, so vendor dialogue and quest-giver headings do not depend on Object Editor names. The `Name`, `Editor Suffix`, and `Gender` fields may still mirror this roster for clearer Object Editor entries. `Yes` in the quest-giver column means a matching `qVendorName.j` library exists; the parenthesized classification shows whether it registers daily, normal, or both quest types.
 
 `Intended zone` is map-placement guidance derived from the regional assignments in the vendor faction libraries. It does not place or restrict the unit at runtime. A slash-separated value permits any of the listed zones, while `unspecified` means that no exact settlement or arena has been selected yet.
 
@@ -6,21 +6,21 @@
 
 | Rawcode | Name | Editor suffix | Gender | Intended zone | Quest giver |
 |---|---|---|---|---|---|
-| `o011` | Kargun Ashblade | Weapons Vendor | Male | Emberpeak Highlands | Yes |
-| `o012` | Drokmar Ironhide | Armor Vendor | Male | Emberpeak Highlands | Yes |
-| `o013` | Varok Emberwall | Shield Vendor | Male | Emberpeak Highlands | Yes |
-| `o00A` | Ghorak Bloodmark | Arena Quartermaster | Male | Emberpeak Highlands | Yes |
-| `o00B` | Rukgar Longroad | Travelling Merchant | Male | Sereneglade / Thornwoods / Riverbane | Yes |
-| `o00C` | Nargash Tidehook | Fisher | Male | Sirensong | Yes |
-| `o00D` | Kazrum Deepdelver | Miner | Male | Emberpeak Highlands | Yes |
-| `o00E` | Hurgan Potbelly | Cook | Male | Sereneglade / Thornwoods / Riverbane | Yes |
+| `o011` | Kargun Ashblade | Weapons Vendor | Male | Emberpeak Highlands | Yes (Daily + Normal) |
+| `o012` | Drokmar Ironhide | Armor Vendor | Male | Emberpeak Highlands | Yes (Daily) |
+| `o013` | Varok Emberwall | Shield Vendor | Male | Emberpeak Highlands | Yes (Daily) |
+| `o00A` | Ghorak Bloodmark | Arena Quartermaster | Male | Emberpeak Highlands | Yes (Daily) |
+| `o00B` | Rukgar Longroad | Travelling Merchant | Male | Sereneglade / Thornwoods / Riverbane | Yes (Daily + Normal) |
+| `o00C` | Nargash Tidehook | Fisher | Male | Sirensong | Yes (Daily) |
+| `o00D` | Kazrum Deepdelver | Miner | Male | Emberpeak Highlands | Yes (Daily) |
+| `o00E` | Hurgan Potbelly | Cook | Male | Sereneglade / Thornwoods / Riverbane | Yes (Daily) |
 | `o00F` | Zarkul Vialroot | Alchemy Supplier | Male | Sirensong | — |
-| `o00G` | Brakkun Coalhand | Blacksmithing Supplier | Male | Emberpeak Highlands | Yes |
+| `o00G` | Brakkun Coalhand | Blacksmithing Supplier | Male | Emberpeak Highlands | Yes (Daily) |
 | `o00H` | Dagrok Firekeeper | Cooking Supplier | Male | Sereneglade / Thornwoods / Riverbane | — |
 | `o00I` | Velgor Runeleaf | Enchanting Supplier | Male | Sereneglade / Thornwoods / Riverbane | — |
 | `o00J` | Mokrag Reedline | Fishing Supplier | Male | Sirensong | — |
 | `o00K` | Kragmar Hidebinder | Leatherworking Supplier | Male | Sereneglade / Thornwoods / Riverbane | — |
-| `o00L` | Thurgash Ore-Eye | Mining Supplier | Male | Emberpeak Highlands | Yes |
+| `o00L` | Thurgash Ore-Eye | Mining Supplier | Male | Emberpeak Highlands | Yes (Daily) |
 | `o00M` | Lokruk Skinner | Skinning Supplier | Male | Sereneglade / Thornwoods / Riverbane | — |
 | `o00N` | Garshan Manytools | Profession Supplier | Male | Sereneglade / Thornwoods / Riverbane | — |
 | `o00O` | Korghan Greenbanner | Faction Quartermaster | Male | Sereneglade / Thornwoods / Riverbane | — |
@@ -28,7 +28,7 @@
 | `o00Q` | Urgash Saltleaf | Reagent Merchant | Male | Sirensong | — |
 | `o00R` | Grosh Fullbelly | Provisioner | Male | Sereneglade / Thornwoods / Riverbane | — |
 | `o00S` | Mazgor Bitterbrew | Potion Seller | Male | Sereneglade / Thornwoods / Riverbane | — |
-| `o00T` | Mordrak Cindercoin | Rare Goods Dealer | Male | Emberpeak Highlands | Yes |
+| `o00T` | Mordrak Cindercoin | Rare Goods Dealer | Male | Emberpeak Highlands | Yes (Daily) |
 | `o00U` | Dravok Trailwise | Expedition Supplier | Male | Sereneglade / Thornwoods / Riverbane | — |
 | `o00V` | Korgul Barterhand | Trade Goods Merchant | Male | Sereneglade / Thornwoods / Riverbane | — |
 | `o00W` | Brugar Beastfriend | Beastmaster Supplier | Male | Sereneglade / Thornwoods / Riverbane | — |
@@ -36,35 +36,35 @@
 | `o00Y` | Vrokan Scalehide | Sirensong Armor Vendor | Male | Sirensong | — |
 | `o00Z` | Shargul Tidewall | Sirensong Shield Vendor | Male | Sirensong | — |
 | `o010` | Krazhan Far-Sail | Sirensong Travelling Merchant | Male | Sirensong | — |
-| `o014` | Gorthak Jungle Banner | Sirensong Quartermaster | Male | Sirensong | Yes |
+| `o014` | Gorthak Jungle Banner | Sirensong Quartermaster | Male | Sirensong | Yes (Normal) |
 
 ### Satyr vendors
 
 | Rawcode | Name | Editor suffix | Gender | Intended zone | Quest giver |
 |---|---|---|---|---|---|
-| `n02Y` | Xyros Bloodwager | Arena Quartermaster | Male | Sereneglade | Yes |
-| `n02Z` | Vaelith the Covetous | Rare Goods Dealer | Male | Sereneglade | Yes |
-| `n030` | Sythren Duskmoss | Reagent Merchant | Male | Sereneglade | Yes |
-| `n031` | Malyr Runehorn | Enchanting Supplier | Male | Sereneglade | Yes |
+| `n02Y` | Xyros Bloodwager | Arena Quartermaster | Male | Sereneglade | Yes (Daily) |
+| `n02Z` | Vaelith the Covetous | Rare Goods Dealer | Male | Sereneglade | Yes (Daily + Normal) |
+| `n030` | Sythren Duskmoss | Reagent Merchant | Male | Sereneglade | Yes (Daily) |
+| `n031` | Malyr Runehorn | Enchanting Supplier | Male | Sereneglade | Yes (Daily) |
 | `n032` | Zarethis Oddhoof | Curiosity Merchant | Male | Sereneglade | — |
-| `n033` | Nymor Vialtongue | Potion Seller | Male | Sereneglade | Yes |
+| `n033` | Nymor Vialtongue | Potion Seller | Male | Sereneglade | Yes (Daily) |
 | `n034` | Krythos Thornblade | Weapons Vendor | Male | Sereneglade | — |
 | `n036` | Velthyr Nighthide | Armor Vendor | Male | Sereneglade | — |
 | `n037` | Ozyr Blackhorn | Shield Vendor | Male | Sereneglade | — |
-| `n038` | Faelrix Wayhoof | Travelling Merchant | Male | Sereneglade / travelling | Yes |
+| `n038` | Faelrix Wayhoof | Travelling Merchant | Male | Sereneglade / travelling | Yes (Normal) |
 
 ### Human vendors
 
 | Rawcode | Name | Editor suffix | Gender | Intended zone | Quest giver |
 |---|---|---|---|---|---|
-| `n035` | Garrick Holt | Riverbane Weapons Vendor | Male | Riverbane | Yes |
-| `n039` | Edric Vale | Riverbane Armor Vendor | Male | Riverbane | Yes |
-| `n03A` | Rowan Targe | Riverbane Shield Vendor | Male | Riverbane | Yes |
+| `n035` | Garrick Holt | Riverbane Weapons Vendor | Male | Riverbane | Yes (Daily + Normal) |
+| `n039` | Edric Vale | Riverbane Armor Vendor | Male | Riverbane | Yes (Daily) |
+| `n03A` | Rowan Targe | Riverbane Shield Vendor | Male | Riverbane | Yes (Daily) |
 | `n03B` | Roderic Kane | Arena Quartermaster | Male | Arena (unspecified) | — |
-| `n03C` | Merrick Wayland | Travelling Merchant | Male | Travelling / any zone | Yes |
-| `n03D` | Silas Reed | Stormhaven Fisher | Male | Stormhaven | Yes |
-| `n03E` | Tobin Slate | Riverbane Miner | Male | Riverbane | Yes |
-| `n03F` | Owen Marlow | Stormhaven Cook | Male | Stormhaven | Yes |
+| `n03C` | Merrick Wayland | Travelling Merchant | Male | Travelling / any zone | Yes (Normal) |
+| `n03D` | Silas Reed | Stormhaven Fisher | Male | Stormhaven | Yes (Daily + Normal) |
+| `n03E` | Tobin Slate | Riverbane Miner | Male | Riverbane | Yes (Daily) |
+| `n03F` | Owen Marlow | Stormhaven Cook | Male | Stormhaven | Yes (Daily) |
 | `n03G` | Aldren Voss | Riverbane Alchemy Supplier | Male | Riverbane | — |
 | `n03H` | Bram Calder | Riverbane Blacksmithing Supplier | Male | Riverbane | — |
 | `n03I` | Percy Bell | Stormhaven Cooking Supplier | Male | Stormhaven | — |
@@ -74,11 +74,11 @@
 | `n03M` | Martin Greaves | Riverbane Mining Supplier | Male | Riverbane | — |
 | `n03N` | Corwin Hale | Riverbane Skinning Supplier | Male | Riverbane | — |
 | `n03O` | Alistair Crane | Profession Supplier | Male | Neutral settlement (unspecified) | — |
-| `n03P` | Cedran Pike | Riverbane Quartermaster | Male | Riverbane | Yes |
+| `n03P` | Cedran Pike | Riverbane Quartermaster | Male | Riverbane | Yes (Daily) |
 | `n03Q` | Jasper Quill | Curiosity Merchant | Male | Neutral settlement (unspecified) | — |
 | `n03R` | Elias Moor | Stormhaven Reagent Merchant | Male | Stormhaven | — |
 | `n03S` | Walter Shore | Stormhaven Provisioner | Male | Stormhaven | — |
-| `n03T` | Edwin Harrow | Potion Seller | Male | Neutral settlement (unspecified) | Yes |
+| `n03T` | Edwin Harrow | Potion Seller | Male | Neutral settlement (unspecified) | Yes (Daily) |
 | `n03U` | Leander Crow | Rare Goods Dealer | Male | Neutral settlement (unspecified) | — |
 | `n03V` | Roland Mercer | Expedition Supplier | Male | Neutral settlement (unspecified) | — |
 
@@ -115,21 +115,21 @@
 
 | Rawcode | Name | Editor suffix | Gender | Intended zone | Quest giver |
 |---|---|---|---|---|---|
-| `n03W` | Nackle Quickdeal | Curiosity Merchant | Male | Travelling / any zone | Yes |
-| `n03X` | Rixit Roadcoin | Travelling Merchant | Male | Travelling / any zone | Yes |
-| `n03Y` | Giznak Edgeprice | Weapons Vendor | Male | Riverbane | Yes |
+| `n03W` | Nackle Quickdeal | Curiosity Merchant | Male | Travelling / any zone | Yes (Daily + Normal) |
+| `n03X` | Rixit Roadcoin | Travelling Merchant | Male | Travelling / any zone | Yes (Daily + Normal) |
+| `n03Y` | Giznak Edgeprice | Weapons Vendor | Male | Riverbane | Yes (Daily) |
 | `n03Z` | Brizzle Rivetcoat | Armor Vendor | Male | Riverbane | — |
 | `n040` | Skabbin Bucklesnap | Shield Vendor | Male | Riverbane | — |
-| `n041` | Fizzik Hookline | Fisher | Male | Stormhaven | Yes |
-| `n042` | Krikzak Deepcut | Miner | Male | Riverbane | Yes |
-| `n043` | Nibbs Hotpan | Cook | Male | Sirensong | Yes |
+| `n041` | Fizzik Hookline | Fisher | Male | Stormhaven | Yes (Daily) |
+| `n042` | Krikzak Deepcut | Miner | Male | Riverbane | Yes (Daily) |
+| `n043` | Nibbs Hotpan | Cook | Male | Sirensong | Yes (Daily) |
 | `n044` | Zabble Mixwell | Alchemy Supplier | Male | Sirensong | — |
 | `n045` | Tinksy Multitool | Profession Supplier | Male | Riverbane | — |
-| `n046` | Grizzik Bloodbet | Arena Quartermaster | Male | Arena (unspecified) | Yes |
+| `n046` | Grizzik Bloodbet | Arena Quartermaster | Male | Arena (unspecified) | Yes (Normal) |
 | `n047` | Snikka Sparkdust | Reagent Merchant | Male | Sirensong | — |
 | `n048` | Poggle Snackstack | Provisioner | Male | Stormhaven | — |
 | `n049` | Vexli Quickdose | Potion Seller | Male | Riverbane | — |
-| `n04A` | Razwick Goldglint | Rare Goods Dealer | Male | Travelling / any zone | Yes |
+| `n04A` | Razwick Goldglint | Rare Goods Dealer | Male | Travelling / any zone | Yes (Daily) |
 | `n04B` | Bixby Packsmart | Expedition Supplier | Male | Travelling / any zone | — |
 | `n04C` | Mogzik Cratecount | Trade Goods Merchant | Male | Stormhaven | — |
 | `n04D` | Zippi Beastbits | Beastmaster Supplier | Male | Sirensong | — |
@@ -138,12 +138,12 @@
 
 | Rawcode | Name | Editor suffix | Gender | Intended zone | Quest giver |
 |---|---|---|---|---|---|
-| `n04E` | Mugrok Ironclub | Weapons Vendor | Male | Bonecrush Stronghold | Yes |
-| `n04F` | Grumbar Thickhide | Armor Vendor | Male | Bonecrush Stronghold | Yes |
-| `n04G` | Bolguk Broadwall | Shield Vendor | Male | Bonecrush Stronghold | Yes |
-| `n04H` | Kragmog Skullstake | Arena Quartermaster | Male | Bonecrush Stronghold | Yes |
+| `n04E` | Mugrok Ironclub | Weapons Vendor | Male | Bonecrush Stronghold | Yes (Daily + Normal) |
+| `n04F` | Grumbar Thickhide | Armor Vendor | Male | Bonecrush Stronghold | Yes (Daily) |
+| `n04G` | Bolguk Broadwall | Shield Vendor | Male | Bonecrush Stronghold | Yes (Daily) |
+| `n04H` | Kragmog Skullstake | Arena Quartermaster | Male | Bonecrush Stronghold | Yes (Daily) |
 | `n04I` | Durgan Rockbite | Miner | Male | Bonecrush Stronghold | — |
-| `n04J` | Gubmog Stewpot | Cook | Male | Bonecrush Stronghold | Yes |
+| `n04J` | Gubmog Stewpot | Cook | Male | Bonecrush Stronghold | Yes (Normal) |
 | `n04K` | Thrumgar Forgelug | Blacksmithing Supplier | Male | Bonecrush Stronghold | — |
 | `n04L` | Mogrum Manythings | Profession Supplier | Male | Bonecrush Stronghold | — |
 | `n04M` | Bargul Bonecount | Bonecrusher Quartermaster | Male | Bonecrush Stronghold | — |
@@ -153,14 +153,14 @@
 
 | Rawcode | Name | Editor suffix | Gender | Intended zone | Quest giver |
 |---|---|---|---|---|---|
-| `h00L` | Aerendir Sunblade | Elarindor Weapons Vendor | Male | Vanguard Vale / Vael'Anorath | Yes |
+| `h00L` | Aerendir Sunblade | Elarindor Weapons Vendor | Male | Vanguard Vale / Vael'Anorath | Yes (Daily + Normal) |
 | `h00P` | Lyssara Moonweave | Elarindor Armor Vendor | Female | Vanguard Vale / Vael'Anorath | — |
 | `n00M` | Thaelion Spellward | Elarindor Shield Vendor | Male | Vanguard Vale / Vael'Anorath | — |
-| `h00Q` | Elowen Starweaver | Elarindor Enchanting Supplier | Female | Vanguard Vale / Vael'Anorath | Yes |
+| `h00Q` | Elowen Starweaver | Elarindor Enchanting Supplier | Female | Vanguard Vale / Vael'Anorath | Yes (Daily) |
 | `h00N` | Sylvaris Dewleaf | Elarindor Reagent Merchant | Male | Vanguard Vale / Vael'Anorath | — |
-| `h00R` | Vaeriel Dawnflask | Elarindor Potion Seller | Female | Vanguard Vale / Vael'Anorath | Yes |
+| `h00R` | Vaeriel Dawnflask | Elarindor Potion Seller | Female | Vanguard Vale / Vael'Anorath | Yes (Daily) |
 | `h00O` | Arannis Wayfarer | Elarindor Expedition Supplier | Male | Vanguard Vale / Vael'Anorath | — |
-| `h00S` | Maerith Silvercrest | Elarindor Quartermaster | Female | Vanguard Vale / Vael'Anorath | Yes |
+| `h00S` | Maerith Silvercrest | Elarindor Quartermaster | Female | Vanguard Vale / Vael'Anorath | Yes (Daily + Normal) |
 
 ### Horde Tauren vendors
 
