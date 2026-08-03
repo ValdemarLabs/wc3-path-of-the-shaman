@@ -5,8 +5,9 @@
     Version:
 
     Description:
-    Stores fallen-hero state independently from the high-level Death system so
-    low-level consumers can reject fake corpses without requiring Death.
+    Stores retained fallen-hero state independently from the high-level Death
+    system so low-level consumers can reject fake corpses without requiring
+    the full revival system.
 
     Credits:
     - Path of the Shaman Death system
@@ -17,13 +18,15 @@
     API:
     call FallenHeroState_SetFallen(whichHero, isFallen)
     call FallenHeroState_IsFallen(whichHero) returns boolean
+    call FallenHeroState_IsAlive(whichUnit) returns boolean
+    call FallenHeroState_IsDead(whichUnit) returns boolean
     call FallenHeroState_ForEach(callback)
 
 **/
 library FallenHeroState initializer Init
 
 globals
-    // Heroes currently managed as fallen by the Death system.
+    // All hero bodies currently retained by the Death system.
     private group FallenHeroState_Heroes = null
 endglobals
 
@@ -40,6 +43,14 @@ endfunction
 
 public function IsFallen takes unit whichHero returns boolean
     return whichHero != null and IsUnitInGroup(whichHero, FallenHeroState_Heroes)
+endfunction
+
+public function IsAlive takes unit whichUnit returns boolean
+    return whichUnit != null and GetUnitTypeId(whichUnit) != 0 and GetWidgetLife(whichUnit) > 0.405 and not IsUnitType(whichUnit, UNIT_TYPE_DEAD) and not FallenHeroState_IsFallen(whichUnit)
+endfunction
+
+public function IsDead takes unit whichUnit returns boolean
+    return whichUnit != null and GetUnitTypeId(whichUnit) != 0 and (GetWidgetLife(whichUnit) <= 0.405 or IsUnitType(whichUnit, UNIT_TYPE_DEAD) or FallenHeroState_IsFallen(whichUnit))
 endfunction
 
 public function ForEach takes code callback returns nothing
@@ -100,6 +111,7 @@ globals
     private constant string DEATH_REVIVE_EFFECT = "Abilities\\Spells\\Human\\Resurrect\\ResurrectTarget.mdl"
 
     private group Death_FakeCorpses = null
+    private group Death_ManagedFallenHeroes = null
     private group Death_RetainedCorpses = null
     private group Death_RegisteredHeroes = null
     private group Death_SearchGroup = null
@@ -134,7 +146,7 @@ globals
 endglobals
 
 private function Death_IsAlive takes unit whichUnit returns boolean
-    return whichUnit != null and GetUnitTypeId(whichUnit) != 0 and GetWidgetLife(whichUnit) > 0.405 and not FallenHeroState_IsFallen(whichUnit)
+    return FallenHeroState_IsAlive(whichUnit)
 endfunction
 
 private function Death_IsManagedHero takes unit whichHero returns boolean
@@ -216,7 +228,7 @@ private function Death_FindClosestFallen takes unit caster, real range returns u
     set Death_FindY = GetUnitY(caster)
     set Death_FindRangeSquared = range * range
     set Death_FindDistanceSquared = Death_FindRangeSquared + 1.00
-    call FallenHeroState_ForEach(function Death_FindClosestFallenEnum)
+    call ForGroup(Death_ManagedFallenHeroes, function Death_FindClosestFallenEnum)
     set Death_FindCaster = null
     return Death_FindResult
 endfunction
@@ -312,7 +324,7 @@ private function Death_RestoreHeroState takes unit whichHero returns nothing
 endfunction
 
 private function Death_ReleaseCorpse takes unit whichHero returns boolean
-    if whichHero == null or not FallenHeroState_IsFallen(whichHero) then
+    if whichHero == null or not IsUnitInGroup(whichHero, Death_ManagedFallenHeroes) then
         return false
     endif
     call Death_CancelFreezeTimer(whichHero)
@@ -320,6 +332,7 @@ private function Death_ReleaseCorpse takes unit whichHero returns boolean
     call GroupRemoveUnit(Death_RetainedCorpses, whichHero)
 
     call Death_ClearFallenReservation(whichHero)
+    call GroupRemoveUnit(Death_ManagedFallenHeroes, whichHero)
     call FallenHeroState_SetFallen(whichHero, false)
     set Death_FallenCount = Death_FallenCount - 1
     if Death_FallenCount <= 0 then
@@ -335,13 +348,14 @@ private function Death_ReleaseCorpse takes unit whichHero returns boolean
 endfunction
 
 private function Death_ReleaseUnmanagedCorpse takes unit whichHero returns boolean
-    if whichHero == null or FallenHeroState_IsFallen(whichHero) or not IsUnitInGroup(whichHero, Death_RetainedCorpses) then
+    if whichHero == null or IsUnitInGroup(whichHero, Death_ManagedFallenHeroes) or not IsUnitInGroup(whichHero, Death_RetainedCorpses) then
         return false
     endif
     call Death_CancelFreezeTimer(whichHero)
     call Death_CancelRemoveTimer(whichHero)
     call GroupRemoveUnit(Death_FakeCorpses, whichHero)
     call GroupRemoveUnit(Death_RetainedCorpses, whichHero)
+    call FallenHeroState_SetFallen(whichHero, false)
     call Death_RestoreHeroState(whichHero)
     return true
 endfunction
@@ -349,7 +363,7 @@ endfunction
 public function ReviveAt takes unit whichHero, real x, real y, real lifePercent, real manaPercent, boolean showEffects returns boolean
     local boolean revived
 
-    if whichHero == null or not FallenHeroState_IsFallen(whichHero) or Death_IsAlive(whichHero) then
+    if whichHero == null or not IsUnitInGroup(whichHero, Death_ManagedFallenHeroes) or Death_IsAlive(whichHero) then
         return false
     endif
     if IsUnitInGroup(whichHero, Death_FakeCorpses) and AI_GetInstance(whichHero) > 0 then
@@ -418,10 +432,11 @@ private function Death_RemoveUnmanagedCorpse takes nothing returns nothing
     if whichHero != null and Death_HeroRemoveTimer.timer[GetHandleId(whichHero)] == expired then
         call Death_HeroRemoveTimer.timer.remove(GetHandleId(whichHero))
     endif
-    if whichHero != null and IsUnitInGroup(whichHero, Death_RetainedCorpses) and not FallenHeroState_IsFallen(whichHero) then
+    if whichHero != null and IsUnitInGroup(whichHero, Death_RetainedCorpses) and not IsUnitInGroup(whichHero, Death_ManagedFallenHeroes) then
         call Death_CancelFreezeTimer(whichHero)
         call GroupRemoveUnit(Death_FakeCorpses, whichHero)
         call GroupRemoveUnit(Death_RetainedCorpses, whichHero)
+        call FallenHeroState_SetFallen(whichHero, false)
         call UnitSuspendDecay(whichHero, false)
         call SetUnitInvulnerable(whichHero, false)
         call RemoveUnit(whichHero)
@@ -499,11 +514,6 @@ private function Death_ProcessFallenAIEnum takes nothing returns nothing
     local item reviveItem
 
     if fallen != null and IsUnitInGroup(fallen, Death_FakeCorpses) then
-        if AI_GetInstance(fallen) > 0 and AI_IsAlive(fallen) then
-            call Death_ReleaseCorpse(fallen)
-            set fallen = null
-            return
-        endif
         call SetWidgetLife(fallen, 1.00)
     endif
     if fallen == null or Death_IsAlive(fallen) then
@@ -540,11 +550,12 @@ private function Death_ProcessFallenAIEnum takes nothing returns nothing
 endfunction
 
 private function Death_ProcessFallenAI takes nothing returns nothing
-    call FallenHeroState_ForEach(function Death_ProcessFallenAIEnum)
+    call ForGroup(Death_ManagedFallenHeroes, function Death_ProcessFallenAIEnum)
 endfunction
 
 private function Death_RetainHero takes unit whichHero, boolean managed returns nothing
     call GroupAddUnit(Death_RetainedCorpses, whichHero)
+    call FallenHeroState_SetFallen(whichHero, true)
     if GetWidgetLife(whichHero) <= 0.405 then
         call UnitSuspendDecay(whichHero, true)
     endif
@@ -555,7 +566,7 @@ private function Death_RetainHero takes unit whichHero, boolean managed returns 
     call SetUnitPathing(whichHero, false)
     call Death_StartFreezeTimer(whichHero)
     if managed then
-        call FallenHeroState_SetFallen(whichHero, true)
+        call GroupAddUnit(Death_ManagedFallenHeroes, whichHero)
         set Death_FallenCount = Death_FallenCount + 1
         if Death_FallenCount == 1 then
             call TimerStart(Death_AITimer, DEATH_AI_INTERVAL, true, function Death_ProcessFallenAI)
@@ -717,6 +728,7 @@ endfunction
 
 private function Init takes nothing returns nothing
     set Death_FakeCorpses = CreateGroup()
+    set Death_ManagedFallenHeroes = CreateGroup()
     set Death_RetainedCorpses = CreateGroup()
     set Death_RegisteredHeroes = CreateGroup()
     set Death_SearchGroup = CreateGroup()
