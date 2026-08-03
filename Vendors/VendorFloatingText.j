@@ -2,7 +2,7 @@
     VendorFloatingText
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.1.1
 
     Description:
     Displays a vendor-type label above registered Shop units while they are in
@@ -23,12 +23,13 @@
     - call VendorFloatingText_SetEnabled(enabled)
 
 **/
-library VendorFloatingText initializer Init requires Shop, Table
+library VendorFloatingText initializer Init requires Shop, Table, FallenHeroState
     globals
         private constant integer VFT_MAX_VENDORS = 256
         private constant integer VFT_MAX_VISIBLE_LABELS = 8
         private constant real VFT_TEXT_SIZE = 7.00
         private constant real VFT_TEXT_OFFSET_Z = 80.00
+        private constant real VFT_TEXT_CHARACTER_WIDTH = 5.00
         private constant real VFT_VISIBLE_RANGE = 1000.00
         private constant real VFT_UPDATE_PERIOD = 0.25
         private constant real VFT_DISCOVERY_PERIOD = 5.00
@@ -60,7 +61,7 @@ library VendorFloatingText initializer Init requires Shop, Table
     private function VFT_IsInCameraView takes unit vendor returns boolean
         local real distanceSquared
 
-        if vendor == null or GetUnitTypeId(vendor) == 0 or GetWidgetLife(vendor) <= 0.405 or IsUnitHidden(vendor) or not IsUnitVisible(vendor, GetLocalPlayer()) then
+        if not FallenHeroState_IsAlive(vendor) or IsUnitHidden(vendor) or not IsUnitVisible(vendor, GetLocalPlayer()) then
             set vendor = null
             return false
         endif
@@ -160,6 +161,8 @@ library VendorFloatingText initializer Init requires Shop, Table
 
     private function VFT_RenderVisibleLabels takes nothing returns nothing
         local integer index = 1
+        local string label
+        local real offsetX
         local unit vendor
         local texttag tt
 
@@ -169,8 +172,10 @@ library VendorFloatingText initializer Init requires Shop, Table
             if index <= VFT_VisibleCount then
                 set vendor = VFT_VisibleVendors[index]
                 if tt != null and vendor != null then
-                    call SetTextTagText(tt, VFT_GetLabel(vendor), VFT_TEXT_SIZE * 0.023 / 10.00)
-                    call SetTextTagPosUnit(tt, vendor, VFT_TEXT_OFFSET_Z)
+                    set label = VFT_GetLabel(vendor)
+                    set offsetX = I2R(StringLength(label)) * VFT_TEXT_CHARACTER_WIDTH * 0.50
+                    call SetTextTagText(tt, label, VFT_TEXT_SIZE * 0.023 / 10.00)
+                    call SetTextTagPos(tt, GetUnitX(vendor) - offsetX, GetUnitY(vendor), VFT_TEXT_OFFSET_Z)
                     call SetTextTagVisibility(tt, true)
                 endif
             elseif tt != null then
@@ -182,6 +187,7 @@ library VendorFloatingText initializer Init requires Shop, Table
         endloop
 
         set VFT_VisibleCount = 0
+        set label = null
         set tt = null
         set vendor = null
     endfunction
