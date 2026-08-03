@@ -257,14 +257,14 @@ endfunction
 private function CC_GetFallbackTarget takes player whichPlayer returns unit
     local unit u = CC_TargetUnit[CC_GetPlayerIndex(whichPlayer)]
 
-    if IsTrackedCameraUnit(u) and GetHandleId(u) != 0 and GetWidgetLife(u) > 0.405 and not FallenHeroState_IsFallen(u) then
+    if IsTrackedCameraUnit(u) and FallenHeroState_IsAlive(u) then
         return u
     endif
 
-    if IsTrackedCameraUnit(udg_Nazgrek) and GetHandleId(udg_Nazgrek) != 0 and GetWidgetLife(udg_Nazgrek) > 0.405 and not FallenHeroState_IsFallen(udg_Nazgrek) then
+    if IsTrackedCameraUnit(udg_Nazgrek) and FallenHeroState_IsAlive(udg_Nazgrek) then
         return udg_Nazgrek
     endif
-    if IsTrackedCameraUnit(udg_Zulkis) and GetHandleId(udg_Zulkis) != 0 and GetWidgetLife(udg_Zulkis) > 0.405 and not FallenHeroState_IsFallen(udg_Zulkis) then
+    if IsTrackedCameraUnit(udg_Zulkis) and FallenHeroState_IsAlive(udg_Zulkis) then
         return udg_Zulkis
     endif
     return null
@@ -280,7 +280,7 @@ endfunction
 
 private function CC_GetLifeRatio takes unit whichUnit returns real
     local real maxLife
-    if whichUnit == null or GetHandleId(whichUnit) == 0 or GetWidgetLife(whichUnit) <= 0.405 then
+    if not FallenHeroState_IsAlive(whichUnit) then
         return 0.00
     endif
     set maxLife = GetUnitState(whichUnit, UNIT_STATE_MAX_LIFE)
@@ -1040,7 +1040,7 @@ private function CC_GetSpecialRectModeForUnit takes unit whichUnit returns integ
     local integer i = CC_SpecialCameraRectCount
     local real x
     local real y
-    if whichUnit == null or GetHandleId(whichUnit) == 0 or GetWidgetLife(whichUnit) <= 0.405 then
+    if not FallenHeroState_IsAlive(whichUnit) then
         return CAMERA_SPECIAL_MODE_NONE
     endif
     set x = GetUnitX(whichUnit)
@@ -1199,7 +1199,7 @@ endfunction
 public function SetTargetUnit takes player whichPlayer, unit whichUnit returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
 
-    if IsTrackedCameraUnit(whichUnit) and GetHandleId(whichUnit) != 0 and GetWidgetLife(whichUnit) > 0.405 and not FallenHeroState_IsFallen(whichUnit) then
+    if IsTrackedCameraUnit(whichUnit) and FallenHeroState_IsAlive(whichUnit) then
         set CC_TargetUnit[pid] = whichUnit
         if not CC_Suspended[pid] and not CC_ResumePending[pid] then
             call CC_ApplyMode(whichPlayer)

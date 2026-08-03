@@ -31,7 +31,7 @@
     call StatsLiteUI_Refresh()
 
 **/
-library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, Interface // CHANGE: use AI registry instead of legacy udg_NPC_Horde_AI_xxx globals
+library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, Interface, FallenHeroState // CHANGE: use AI registry instead of legacy udg_NPC_Horde_AI_xxx globals
     globals
         // Monitor sizing and refresh cadence.
         private constant real SLUI_REFRESH_INTERVAL = 0.25
@@ -350,7 +350,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
 
     private function SLUI_GetHealthPercent takes unit u returns integer
         local real maxLife
-        if not SLUI_IsValidUnit(u) then
+        if not SLUI_IsValidUnit(u) or FallenHeroState_IsFallen(u) then
             return 0
         endif
         set maxLife = GetUnitState(u, UNIT_STATE_MAX_LIFE)
@@ -386,8 +386,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         if Pet_IsDead(u) then
             return true
         endif
-
-        return GetWidgetLife(u) <= 0.405
+        return FallenHeroState_IsDead(u)
     endfunction
 
     private function SLUI_GetLevelText takes unit u returns string

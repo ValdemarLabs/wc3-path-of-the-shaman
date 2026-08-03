@@ -1,4 +1,4 @@
-library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, AbilitiesLiteUI, ProfessionsUI, StatsLiteUI, QuestGiver, Companions, Pet, UnitExperience, AI, Interface, AbilityPoints, Experience
+library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, AbilitiesLiteUI, ProfessionsUI, StatsLiteUI, QuestGiver, Companions, Pet, UnitExperience, AI, Interface, AbilityPoints, Experience, FallenHeroState
 /**
     StatsUI
 
@@ -351,7 +351,7 @@ endfunction
 
 private function SUI_GetHealthPercent takes unit u returns integer
     local real maxLife
-    if not SUI_IsValidUnit(u) then
+    if not SUI_IsValidUnit(u) or FallenHeroState_IsFallen(u) then
         return 0
     endif
     set maxLife = GetUnitState(u, UNIT_STATE_MAX_LIFE)
@@ -387,7 +387,7 @@ private function SUI_IsDeadForDisplay takes unit u returns boolean
     if Pet_IsDead(u) then
         return true
     endif
-    return GetWidgetLife(u) <= 0.405
+    return FallenHeroState_IsDead(u)
 endfunction
 
 private function SUI_IsRestedForDisplay takes unit u returns boolean

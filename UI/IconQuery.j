@@ -43,7 +43,7 @@
     call IconQuery_CycleDisplayMode()
 
 **/
-library IconQuery initializer Init requires Table
+library IconQuery initializer Init requires Table, FallenHeroState
     globals
         // Public category IDs used by SettingsUI and GUI custom script bridges.
         constant integer ICONQUERY_CATEGORY_QUEST_GIVERS = 1
@@ -186,15 +186,12 @@ library IconQuery initializer Init requires Table
     endfunction
 
     private function IQ_IsUnitValid takes unit u returns boolean
-        return u != null and GetUnitTypeId(u) != 0 and not IsUnitType(u, UNIT_TYPE_DEAD)
+        return FallenHeroState_IsAlive(u)
     endfunction
 
     private function IQ_IsUnitValidForCategory takes unit u, integer category returns boolean
         if u == null or GetUnitTypeId(u) == 0 then
             return false
-        endif
-        if category == ICONQUERY_CATEGORY_COMPANIONS_AND_FOLLOWERS then
-            return true
         endif
         return IQ_IsUnitValid(u)
     endfunction
