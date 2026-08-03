@@ -1,6 +1,6 @@
 //TESH.scrollpos=0
 //TESH.alwaysfold=0
-library Stealth initializer Init requires Events
+library Stealth initializer Init requires Events, FallenHeroState
 // A useful expansion to the existing "windwalk" ability:
 //  The caster can only stealth when enemies aren't near
 //  Enemies can detect the unit when they come close enough
@@ -161,7 +161,7 @@ private struct data
 endstruct
 
 private function EnemiesOnly takes nothing returns boolean
-    local boolean b = IsUnitEnemy(GetFilterUnit(),GetOwningPlayer(data.TEMP.u)) and not (IsUnitType(GetFilterUnit(),UNIT_TYPE_DEAD) or GetUnitTypeId(GetFilterUnit()) == 0 )
+    local boolean b = IsUnitEnemy(GetFilterUnit(),GetOwningPlayer(data.TEMP.u)) and FallenHeroState_IsAlive(GetFilterUnit())
     local real AngleDif = GetAngleDifference(GetUnitFacing(GetFilterUnit()),bj_RADTODEG * Atan2(GetUnitY(GetFilterUnit()) - GetUnitY(data.TEMP.u), GetUnitX(GetFilterUnit()) - GetUnitX(data.TEMP.u)))
     if b then
         if data.TEMP.id == -2 then

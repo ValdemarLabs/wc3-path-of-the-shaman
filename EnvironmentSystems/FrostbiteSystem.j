@@ -133,7 +133,7 @@ endfunction
 
 // Check if the unit is alive and not a structure
 function ConditionIsAlive takes nothing returns boolean
-    return IsUnitAliveBJ(GetFilterUnit()) and not IsUnitType(GetFilterUnit(), UNIT_TYPE_STRUCTURE)
+    return FallenHeroState_IsAlive(GetFilterUnit()) and not IsUnitType(GetFilterUnit(), UNIT_TYPE_STRUCTURE)
 endfunction
 
 //===========================================================================

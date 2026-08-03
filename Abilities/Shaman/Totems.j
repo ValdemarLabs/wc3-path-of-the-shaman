@@ -20,7 +20,7 @@
     call Totems_GetLiveTotem(unit caster, integer abilityId)
 
 **/
-library Totems initializer Init requires Table, DamageEngine, Events, UnitDeathEvent
+library Totems initializer Init requires Table, DamageEngine, Events, UnitDeathEvent, FallenHeroState
 
 globals
     private constant integer MAX_ACTIVE_TOTEMS = 512
@@ -134,7 +134,7 @@ private function EnsureState takes nothing returns nothing
 endfunction
 
 private function IsAliveUnit takes unit whichUnit returns boolean
-    return whichUnit != null and GetUnitTypeId(whichUnit) != 0 and not IsUnitType(whichUnit, UNIT_TYPE_DEAD)
+    return FallenHeroState_IsAlive(whichUnit)
 endfunction
 
 private function IsPlayerTotemAbility takes integer abilityId returns boolean

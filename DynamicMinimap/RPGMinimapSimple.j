@@ -1,4 +1,4 @@
-library RPGMinimap initializer Init requires optional TerrainTextureColors
+library RPGMinimap initializer Init requires FallenHeroState, optional TerrainTextureColors
 //===========================================================================
 /*
     RPG Minimap - vJASS Implementation
@@ -42,7 +42,7 @@ endglobals
 // Native functions (remove if already in MAP header or elsewhere)
 //===========================================================================
 function UnitAlive takes unit u returns boolean
-    return not IsUnitType(u, UNIT_TYPE_DEAD) and GetUnitTypeId(u) != 0
+    return FallenHeroState_IsAlive(u)
 endfunction
 
 //===========================================================================

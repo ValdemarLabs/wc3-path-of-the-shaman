@@ -1,4 +1,4 @@
-library PatrolSystem initializer Init requires Events, UnitDeathEvent
+library PatrolSystem initializer Init requires Events, UnitDeathEvent, FallenHeroState
 //===========================================================================
 /*
     PatrolSystem
@@ -567,7 +567,7 @@ private function GroupTimerExpire takes nothing returns nothing
         loop
             exitwhen i >= unitCount
             set u = LoadUnitHandle(grpHt, groupId, 10000 + i)
-            if u != null and GetUnitTypeId(u) != 0 and not IsUnitType(u, UNIT_TYPE_DEAD) then
+            if FallenHeroState_IsAlive(u) then
                 exitwhen true  // Found a living unit
             endif
             set u = null  // Current unit is dead or null, keep searching

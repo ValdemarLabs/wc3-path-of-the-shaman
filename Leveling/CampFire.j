@@ -22,7 +22,7 @@
     - Legacy wrappers: AddCampfire(fire), RemoveCampfire(fire)
 
 **/
-library CampFire initializer Init requires Experience, Events, UnitDeathEvent, optional HintsUI
+library CampFire initializer Init requires Experience, Events, UnitDeathEvent, FallenHeroState, optional HintsUI
     globals
         // Object data configuration.
         public constant integer UNIT_ID = 'n61C'
@@ -50,12 +50,12 @@ library CampFire initializer Init requires Experience, Events, UnitDeathEvent, o
     endglobals
 
     private function CF_IsAlive takes unit whichUnit returns boolean
-        return whichUnit != null and GetWidgetLife(whichUnit) > 0.405
+        return FallenHeroState_IsAlive(whichUnit)
     endfunction
 
     private function CF_FilterRestingHero takes nothing returns boolean
         local unit hero = GetFilterUnit()
-        local boolean result = hero != null and IsUnitType(hero, UNIT_TYPE_HERO) and GetWidgetLife(hero) > 0.405 and not Experience_IsRested(hero)
+        local boolean result = FallenHeroState_IsAlive(hero) and IsUnitType(hero, UNIT_TYPE_HERO) and not Experience_IsRested(hero)
 
         set hero = null
         return result

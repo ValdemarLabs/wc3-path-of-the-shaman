@@ -20,7 +20,7 @@
 */ 
 //===========================================================================
 
-library SteamBreathSystem initializer Init requires UnitDeathEvent, optional GatherNodes
+library SteamBreathSystem initializer Init requires UnitDeathEvent, FallenHeroState, optional GatherNodes
 
 globals
     private constant integer MAX_UNITS_PER_REGION = 1000 // Maximum units that can have steam in one region
@@ -40,7 +40,7 @@ endfunction
 
 function Filter_IsSteamTarget takes nothing returns boolean
     local unit u = GetFilterUnit()
-    local boolean result = IsUnitAliveBJ(u) and not IsUnitType(u, UNIT_TYPE_MECHANICAL) and not IsUnitType(u, UNIT_TYPE_STRUCTURE) and not IsUnitType(u, UNIT_TYPE_SUMMONED) and not IsGatherNodeSteamTarget(u)
+    local boolean result = FallenHeroState_IsAlive(u) and not IsUnitType(u, UNIT_TYPE_MECHANICAL) and not IsUnitType(u, UNIT_TYPE_STRUCTURE) and not IsUnitType(u, UNIT_TYPE_SUMMONED) and not IsGatherNodeSteamTarget(u)
     set u = null
     return result
 endfunction

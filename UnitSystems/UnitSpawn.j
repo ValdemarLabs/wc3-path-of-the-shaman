@@ -43,7 +43,7 @@
 */
 //===========================================================================
 
-library UnitSpawn initializer Init requires Table, SpeciFX
+library UnitSpawn initializer Init requires Table, SpeciFX, FallenHeroState
 
 globals
     // Configuration
@@ -83,7 +83,7 @@ endfunction
 
 private function OrderWaveUnitAttackMoveEnum takes nothing returns nothing
     local unit u = GetEnumUnit()
-    if u != null and GetUnitTypeId(u) != 0 and not IsUnitType(u, UNIT_TYPE_DEAD) then
+    if FallenHeroState_IsAlive(u) then
         call IssuePointOrder(u, "attack", WaveOrderX, WaveOrderY)
     endif
     set u = null
@@ -195,7 +195,7 @@ struct Wave
             set u = FirstOfGroup(this.units)
             exitwhen u == null
             call GroupRemoveUnit(this.units, u)
-            if GetUnitTypeId(u) != 0 and IsUnitType(u, UNIT_TYPE_DEAD) == false then
+            if FallenHeroState_IsAlive(u) then
                 set count = count + 1
             endif
             call GroupAddUnit(temp, u)

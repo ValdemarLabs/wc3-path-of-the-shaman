@@ -37,7 +37,7 @@
 
 **/
 
-library ProfessionsFishing initializer AutoInit requires Professions, GatherNodeSkills, ZonesCore, GatherNodes, GatherNodeUnits, Table, Interface, optional GatherNodeDefinitions, optional SharedDInvLib
+library ProfessionsFishing initializer AutoInit requires Professions, GatherNodeSkills, ZonesCore, GatherNodes, GatherNodeUnits, Table, Interface, FallenHeroState, optional GatherNodeDefinitions, optional SharedDInvLib
 
 globals
     private constant integer PF_MAX_POLE_ITEMS = 16
@@ -219,7 +219,7 @@ private function PF_GetNow takes nothing returns real
 endfunction
 
 private function PF_IsUnitAlive takes unit whichUnit returns boolean
-    return whichUnit != null and GetUnitTypeId(whichUnit) != 0 and GetWidgetLife(whichUnit) > 0.405 and not IsUnitType(whichUnit, UNIT_TYPE_DEAD)
+    return FallenHeroState_IsAlive(whichUnit)
 endfunction
 
 private function PF_RegisterExistingDefaultFishPools takes integer defId returns nothing

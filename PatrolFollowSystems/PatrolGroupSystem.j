@@ -1,4 +1,4 @@
-library PatrolGroupSystem requires PatrolSystem, Table, UnitDeathEvent
+library PatrolGroupSystem requires PatrolSystem, Table, UnitDeathEvent, FallenHeroState
 
 /*
     Generic Patrol Group System
@@ -153,7 +153,7 @@ struct PatrolGroup
             exitwhen u == null
             call GroupRemoveUnit(this.unitGroup, u)
             
-            if GetUnitTypeId(u) == 0 or IsUnitType(u, UNIT_TYPE_DEAD) then
+            if not FallenHeroState_IsAlive(u) then
                 set deadCount = deadCount + 1
                 // Don't add dead units back to the group
             else
@@ -373,7 +373,7 @@ struct PatrolGroup
             exitwhen u == null
             call GroupRemoveUnit(copyGroup, u)
             
-            if GetUnitTypeId(u) != 0 and not IsUnitType(u, UNIT_TYPE_DEAD) then
+            if FallenHeroState_IsAlive(u) then
                 call GroupAddUnit(tempGroup, u)
                 set hasValidUnits = true
                 set unitCount = unitCount + 1

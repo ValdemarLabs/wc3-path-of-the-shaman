@@ -1,6 +1,6 @@
 //TESH.scrollpos=0
 //TESH.alwaysfold=0
-library ArrowKeyMovement initializer Init requires KeyboardSystem, ArrowKeyMovementPlugins
+library ArrowKeyMovement initializer Init requires KeyboardSystem, ArrowKeyMovementPlugins, FallenHeroState
 
     // Arrow key movement by The_Witcher
     //   this system allows each player to control 1 unit 
@@ -61,7 +61,7 @@ library ArrowKeyMovement initializer Init requires KeyboardSystem, ArrowKeyMovem
     // whenever this function returns false for a unit it won't be moved even if the player
     //  presses the keys! change to create your own "No Movement" conditions
     private function MoveConditions takes unit u returns boolean
-        return not IsUnitType(u,UNIT_TYPE_SLEEPING) and not IsUnitType(u,UNIT_TYPE_STUNNED) and not (IsUnitType(u,UNIT_TYPE_DEAD) or GetUnitTypeId(u) == 0 )
+        return FallenHeroState_IsAlive(u) and not IsUnitType(u,UNIT_TYPE_SLEEPING) and not IsUnitType(u,UNIT_TYPE_STUNNED)
     endfunction
 
     //   --------- don't modify anything below this line ------------

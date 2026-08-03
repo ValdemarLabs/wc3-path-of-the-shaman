@@ -27,7 +27,7 @@
     - if Arena_IsParticipant(unit) then
 
 **/
-library Arena initializer Init requires Table, UnitDeathEvent, ItemLootSystem, Experience, Companions, Death, optional RegionTitles
+library Arena initializer Init requires Table, UnitDeathEvent, ItemLootSystem, Experience, Companions, Death, FallenHeroState, optional RegionTitles
     globals
         // Public configuration and ids.
         constant integer ARENA_ID_NONE = 0
@@ -105,7 +105,7 @@ library Arena initializer Init requires Table, UnitDeathEvent, ItemLootSystem, E
     endfunction
 
     private function Arena_IsAliveUnit takes unit whichUnit returns boolean
-        return Arena_IsExistingUnit(whichUnit) and not IsUnitType(whichUnit, UNIT_TYPE_DEAD) and GetWidgetLife(whichUnit) > 0.405 and not Death_IsFallen(whichUnit)
+        return FallenHeroState_IsAlive(whichUnit)
     endfunction
 
     private function Arena_IsPlayerMainHero takes unit whichUnit returns boolean

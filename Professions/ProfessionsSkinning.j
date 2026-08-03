@@ -17,7 +17,7 @@
 
 **/
 
-library ProfessionsSkinning initializer AutoInit requires Professions, GatherNodeSkills, Events, UnitDeathEvent, Table, Interface, optional SharedDInvLib
+library ProfessionsSkinning initializer AutoInit requires Professions, GatherNodeSkills, Events, UnitDeathEvent, Table, Interface, FallenHeroState, optional SharedDInvLib
 
 globals
     // Runtime guard.
@@ -115,11 +115,11 @@ private function PS_DisplayError takes player whichPlayer, string message return
 endfunction
 
 private function PS_IsUnitAlive takes unit whichUnit returns boolean
-    return whichUnit != null and GetUnitTypeId(whichUnit) != 0 and GetWidgetLife(whichUnit) > 0.405
+    return FallenHeroState_IsAlive(whichUnit)
 endfunction
 
 private function PS_IsUnitCorpse takes unit whichUnit returns boolean
-    return whichUnit != null and GetUnitTypeId(whichUnit) != 0 and GetWidgetLife(whichUnit) <= 0.405
+    return FallenHeroState_IsDead(whichUnit)
 endfunction
 
 private function PS_GetDistanceSqBetweenUnits takes unit a, unit b returns real

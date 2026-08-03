@@ -27,7 +27,7 @@
     - call ShamanCommon_PlaySoundLabelOnUnit(soundLabel, caster)
 
 **/
-library ShamanCommon initializer Init requires ExSound, ExSoundEditorSounds, AbilitiesPlayerInit, optional Talents, optional AbilityPoints
+library ShamanCommon initializer Init requires ExSound, ExSoundEditorSounds, AbilitiesPlayerInit, FallenHeroState, optional Talents, optional AbilityPoints
 
 globals
     public constant integer STAT_NONE = 0
@@ -158,7 +158,7 @@ globals
 endglobals
 
 public function IsAlive takes unit whichUnit returns boolean
-    return whichUnit != null and GetUnitTypeId(whichUnit) != 0 and not IsUnitType(whichUnit, UNIT_TYPE_DEAD)
+    return FallenHeroState_IsAlive(whichUnit)
 endfunction
 
 public function IsPlayerHero takes unit whichUnit returns boolean

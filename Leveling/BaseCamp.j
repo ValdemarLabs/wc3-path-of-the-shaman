@@ -23,7 +23,7 @@
       start time skipping and rested progress or renewal.
 
 **/
-library BaseCamp initializer Init requires Experience, Events, UnitDeathEvent, optional HintsUI
+library BaseCamp initializer Init requires Experience, Events, UnitDeathEvent, FallenHeroState, optional HintsUI
     globals
         // Object data configuration.
         public constant integer TENT_UNIT_ID = 'n643'
@@ -68,7 +68,7 @@ library BaseCamp initializer Init requires Experience, Events, UnitDeathEvent, o
     endglobals
 
     private function BC_IsAlive takes unit whichUnit returns boolean
-        return whichUnit != null and GetWidgetLife(whichUnit) > 0.405
+        return FallenHeroState_IsAlive(whichUnit)
     endfunction
 
     private function BC_IsTrackedHero takes unit whichUnit returns boolean

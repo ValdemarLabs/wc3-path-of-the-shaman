@@ -1,4 +1,4 @@
-library CinematicMover initializer Init requires Table
+library CinematicMover initializer Init requires Table, FallenHeroState
 //===========================================================================
 /*
     Cinematic Mover
@@ -297,7 +297,7 @@ library CinematicMover initializer Init requires Table
         // Retrieve the revive timer for the unit
         set unitReviveTimer = data.timer[GetHandleId(u)]
 
-        if IsUnitAliveBJ(u) then
+        if FallenHeroState_IsAlive(u) then
             // Add randomness to the cinematic position
             set rx = RMaxBJ(RMinBJ(cx + GetRandomReal(-RANDOM_OFFSET, RANDOM_OFFSET), GetRectMaxX(bj_mapInitialPlayableArea)), GetRectMinX(bj_mapInitialPlayableArea))
             set ry = RMaxBJ(RMinBJ(cy + GetRandomReal(-RANDOM_OFFSET, RANDOM_OFFSET), GetRectMaxY(bj_mapInitialPlayableArea)), GetRectMinY(bj_mapInitialPlayableArea))
@@ -315,7 +315,7 @@ library CinematicMover initializer Init requires Table
             // Shadowclaw has a special revive trigger - normal pets (TamedUnits group) dont revive
             if u == udg_Shadowclaw then
                 call TriggerExecute(gg_trg_Shadowclaw_Revival)
-                if IsUnitAliveBJ(u) then
+                if FallenHeroState_IsAlive(u) then
                     call MarkRevived(u)
                     call BJDebugMsg("[CinematicMover] Shadowclaw revived successfully.")
                 endif
@@ -380,7 +380,7 @@ library CinematicMover initializer Init requires Table
         set data.real[id * 2] = GetUnitX(movingUnit)
         set data.real[id * 2 + 1] = GetUnitY(movingUnit)
         call StoreDistanceToTrigger(movingUnit, x, y)
-        if IsUnitAliveBJ(movingUnit) then
+        if FallenHeroState_IsAlive(movingUnit) then
             call SetUnitX(movingUnit, RMaxBJ(RMinBJ(x, GetRectMaxX(bj_mapInitialPlayableArea)), GetRectMinX(bj_mapInitialPlayableArea)))
             call SetUnitY(movingUnit, RMaxBJ(RMinBJ(y, GetRectMaxY(bj_mapInitialPlayableArea)), GetRectMinY(bj_mapInitialPlayableArea)))
         endif

@@ -1,4 +1,4 @@
-library UnitExperience initializer Init requires Table, UnitDeathEvent, PetDefinitions, optional Experience
+library UnitExperience initializer Init requires Table, UnitDeathEvent, PetDefinitions, FallenHeroState, optional Experience
 /*
     UnitExperience
     Version: 3.0
@@ -391,7 +391,7 @@ private function FilterRegisteredUnits takes nothing returns boolean
     local integer id = GetUnitUserData(u)
     
     // Only check units that are registered and not dead
-    return id > 0 and registered.boolean[id] and GetUnitState(u, UNIT_STATE_LIFE) > 0
+    return id > 0 and registered.boolean[id] and FallenHeroState_IsAlive(u)
 endfunction
 
 /**

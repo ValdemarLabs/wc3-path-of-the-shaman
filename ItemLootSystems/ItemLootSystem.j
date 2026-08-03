@@ -13,7 +13,7 @@
 //
 //===========================================================================
 
-library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent
+library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent, FallenHeroState
 
     // =========================================================================
     // CONFIGURATION
@@ -216,7 +216,7 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent
         local real dx
         local real dy
 
-        if hero == null or GetUnitTypeId(hero) == 0 or GetWidgetLife(hero) <= 0.405 then
+        if not FallenHeroState_IsAlive(hero) then
             return false
         endif
 

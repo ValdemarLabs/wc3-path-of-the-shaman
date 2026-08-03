@@ -147,7 +147,7 @@
       // reports at least one player hero in zone 2.
 
 **/
-library AIRoutines initializer Init requires AI, Table, ZoneEvent
+library AIRoutines initializer Init requires AI, Table, ZoneEvent, FallenHeroState
 
 globals
     constant integer AIR_STEP_WAIT = 1
@@ -292,7 +292,7 @@ private function AIR_GetNow takes nothing returns real
 endfunction
 
 private function AIR_IsAliveUnit takes unit whichUnit returns boolean
-    return whichUnit != null and GetUnitTypeId(whichUnit) != 0 and GetWidgetLife(whichUnit) > 0.405 and not IsUnitType(whichUnit, UNIT_TYPE_DEAD)
+    return FallenHeroState_IsAlive(whichUnit)
 endfunction
 
 private function AIR_IsPlayerUnitNear takes unit whichUnit, real range returns boolean

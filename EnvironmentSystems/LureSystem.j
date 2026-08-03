@@ -68,7 +68,7 @@ function LureEffect takes unit lure returns nothing
         call GroupRemoveUnit(g, u)
         
         // Only affect neutral hostile creeps
-        if GetOwningPlayer(u) == Player(PLAYER_NEUTRAL_AGGRESSIVE) and IsUnitAliveBJ(u) then
+        if GetOwningPlayer(u) == Player(PLAYER_NEUTRAL_AGGRESSIVE) and FallenHeroState_IsAlive(u) then
             // Order unit to move towards lure
             call IssuePointOrder(u, "attack", GetUnitX(lure), GetUnitY(lure))
         endif

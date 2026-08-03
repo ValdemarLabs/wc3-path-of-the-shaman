@@ -21,7 +21,7 @@
 //
 // ============================================================
 
-library GatherNodeUnits initializer Init requires GatherNodes, GatherNodeSkills, DamageEngine, ZonesCore, TimerUtils, Table, Interface, optional ItemLootSystem, optional SteamBreathSystem
+library GatherNodeUnits initializer Init requires GatherNodes, GatherNodeSkills, DamageEngine, ZonesCore, TimerUtils, Table, Interface, FallenHeroState, optional ItemLootSystem, optional SteamBreathSystem
 
 // ============================================================
 // CONFIGURATION
@@ -453,7 +453,7 @@ private function IsAnyUnitNearSpawnPoint takes integer spawnPointId returns bool
         set nearby = FirstOfGroup(g)
         exitwhen nearby == null
         call GroupRemoveUnit(g, nearby)
-        if GetWidgetLife(nearby) > 0.405 and not IsUnitType(nearby, UNIT_TYPE_DEAD) then
+        if FallenHeroState_IsAlive(nearby) then
             call DestroyGroup(g)
             set g = null
             set nearby = null
@@ -734,7 +734,7 @@ private function GNU_TriggerManaCrystalExplosion takes unit node returns nothing
         set target = FirstOfGroup(g)
         exitwhen target == null
         call GroupRemoveUnit(g, target)
-        if target != node and GetWidgetLife(target) > 0.405 and not IsUnitType(target, UNIT_TYPE_DEAD) then
+        if target != node and FallenHeroState_IsAlive(target) then
             call UnitDamageTarget(node, target, GNU_MANA_CRYSTAL_EXPLOSION_DAMAGE, true, false, ATTACK_TYPE_MAGIC, DAMAGE_TYPE_MAGIC, WEAPON_TYPE_WHOKNOWS)
             call SetUnitState(target, UNIT_STATE_MANA, GetUnitState(target, UNIT_STATE_MANA) * (1.00 - GNU_MANA_CRYSTAL_MANA_DRAIN_FACTOR))
         endif
@@ -1707,7 +1707,7 @@ private function GNU_IsTrackedUnitMissing takes unit u returns boolean
     if GetUnitTypeId(u) == 0 then
         return true
     endif
-    if GetWidgetLife(u) <= 0.405 or IsUnitType(u, UNIT_TYPE_DEAD) then
+    if not FallenHeroState_IsAlive(u) then
         return true
     endif
     return false

@@ -1,4 +1,4 @@
-library UnitStats initializer Init requires Table, TimerUtils, Events, optional UnitIndexer
+library UnitStats initializer Init requires Table, TimerUtils, Events, FallenHeroState, optional UnitIndexer
 
 /*
     UnitStats 1.0 - Optimized Event-Driven Version
@@ -751,7 +751,7 @@ private function ProcessUnitStatsOnce takes unit u returns nothing
     endif
     
     // Skip dead units
-    if GetUnitState(u, UNIT_STATE_LIFE) <= 0 then
+    if not FallenHeroState_IsAlive(u) then
         return
     endif
     
@@ -1071,7 +1071,7 @@ private function FilterStatsUnits takes nothing returns boolean
     endif
     
     // Skip dead units
-    if GetUnitState(u, UNIT_STATE_LIFE) <= 0 then
+    if not FallenHeroState_IsAlive(u) then
         return false
     endif
     

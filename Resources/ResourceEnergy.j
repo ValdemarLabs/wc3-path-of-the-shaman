@@ -31,7 +31,7 @@
     call ResourceEnergy_Refresh(unit whichUnit)
 
 **/
-library ResourceEnergy initializer Init requires Table, SetUnitMaxState, Events
+library ResourceEnergy initializer Init requires Table, SetUnitMaxState, Events, FallenHeroState
 
 globals
     constant integer RESOURCE_ENERGY_UNIT_ROGUE_HORDE = 'O631'
@@ -79,7 +79,7 @@ private function ClampEnergy takes real value returns real
 endfunction
 
 private function IsAliveUnit takes unit whichUnit returns boolean
-    return whichUnit != null and GetUnitTypeId(whichUnit) != 0 and not IsUnitType(whichUnit, UNIT_TYPE_DEAD)
+    return FallenHeroState_IsAlive(whichUnit)
 endfunction
 
 private function IsTrackedUnit takes unit whichUnit returns boolean

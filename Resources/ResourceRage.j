@@ -33,7 +33,7 @@
     call ResourceRage_Refresh(unit whichUnit)
 
 **/
-library ResourceRage initializer Init requires Table, SetUnitMaxState, DamageEngine, Events
+library ResourceRage initializer Init requires Table, SetUnitMaxState, DamageEngine, Events, FallenHeroState
 
 globals
     constant integer RESOURCE_RAGE_UNIT_WARRIOR_HORDE = 'O629'
@@ -110,7 +110,7 @@ private function ClampRage takes real value returns real
 endfunction
 
 private function IsAliveUnit takes unit whichUnit returns boolean
-    return whichUnit != null and GetUnitTypeId(whichUnit) != 0 and not IsUnitType(whichUnit, UNIT_TYPE_DEAD)
+    return FallenHeroState_IsAlive(whichUnit)
 endfunction
 
 private function IsTrackedUnit takes unit whichUnit returns boolean

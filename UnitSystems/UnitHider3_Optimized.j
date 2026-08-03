@@ -1,4 +1,4 @@
-library UnitHider3 initializer Init requires Table, TimerUtils, optional UnitIndexer
+library UnitHider3 initializer Init requires Table, TimerUtils, FallenHeroState, optional UnitIndexer
 
 /*
     UnitHider 3.0 - Highly Optimized Unit Hiding System
@@ -169,7 +169,7 @@ private function FilterValidUnits takes nothing returns boolean
     local integer i
     
     // Skip dead units immediately
-    if GetUnitState(u, UNIT_STATE_LIFE) <= 0 then
+    if not FallenHeroState_IsAlive(u) then
         return false
     endif
     

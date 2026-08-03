@@ -1,4 +1,4 @@
-library BridgeSystem initializer Init requires PatrolSystem
+library BridgeSystem initializer Init requires PatrolSystem, FallenHeroState
 /*
     BridgeSystem
 
@@ -1138,7 +1138,7 @@ private function BridgeSystem_AdoptBridgeRectUnderUnits takes integer bridgeId r
         exitwhen u == null
         call GroupRemoveUnit(BridgeSystemRectEnumGroup, u)
 
-        if GetUnitTypeId(u) != 0 and not IsUnitType(u, UNIT_TYPE_DEAD) and not BridgeSystem_ShouldIgnoreUnit(u) then
+        if FallenHeroState_IsAlive(u) and not BridgeSystem_ShouldIgnoreUnit(u) then
             if not BridgeSystem_IsUnitForced(u) and not BridgeSystem_IsUnitWaiting(u) then
                 set entrySlot = BridgeSystem_GetUnitLastUnderSlot(u)
                 if entrySlot < 1 or entrySlot > 2 then
@@ -1452,7 +1452,7 @@ private function BridgeSystem_ShouldForceReleaseManagedUnit takes unit whichUnit
     if bridgeId <= 0 or not BridgeSystem_IsUnitForced(whichUnit) then
         return false
     endif
-    if GetUnitTypeId(whichUnit) == 0 or IsUnitType(whichUnit, UNIT_TYPE_DEAD) then
+    if not FallenHeroState_IsAlive(whichUnit) then
         return true
     endif
     if BridgeSystem_ShouldIgnoreUnit(whichUnit) then
@@ -1485,7 +1485,7 @@ private function BridgeSystem_HasTopLaneForceExitTimedOut takes unit whichUnit r
     if BridgeSystem_GetUnitLane(whichUnit) != BRIDGE_LANE_TOP then
         return false
     endif
-    if GetUnitTypeId(whichUnit) == 0 or IsUnitType(whichUnit, UNIT_TYPE_DEAD) then
+    if not FallenHeroState_IsAlive(whichUnit) then
         return false
     endif
 
@@ -1934,7 +1934,7 @@ private function BridgeSystem_ShouldKeepManagedUnit takes unit whichUnit returns
         return false
     endif
 
-    if GetUnitTypeId(whichUnit) == 0 or IsUnitType(whichUnit, UNIT_TYPE_DEAD) then
+    if not FallenHeroState_IsAlive(whichUnit) then
         return false
     endif
 

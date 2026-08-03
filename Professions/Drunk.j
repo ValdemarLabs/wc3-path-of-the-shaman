@@ -27,7 +27,7 @@
 
 **/
 
-library Drunk initializer Init requires TimerUtils, Table, CameraControl
+library Drunk initializer Init requires TimerUtils, Table, CameraControl, FallenHeroState
 
 globals
     private constant real D_TICK_PERIOD = 0.35
@@ -73,7 +73,7 @@ private function D_GetUnitId takes unit whichUnit returns integer
 endfunction
 
 private function D_IsUnitAlive takes unit whichUnit returns boolean
-    return whichUnit != null and GetUnitTypeId(whichUnit) != 0 and GetWidgetLife(whichUnit) > 0.405
+    return FallenHeroState_IsAlive(whichUnit)
 endfunction
 
 private function D_ClampLevel takes real value returns real

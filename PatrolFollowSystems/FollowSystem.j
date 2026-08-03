@@ -45,7 +45,7 @@
 
 //============================================================================
 
-library FollowSystem initializer Init requires Table, SpeciFX, IconQuery
+library FollowSystem initializer Init requires Table, SpeciFX, IconQuery, FallenHeroState
 
 //============================================================================
 // CONFIGURATION
@@ -264,7 +264,7 @@ private function GetDistance takes unit u1, unit u2 returns real
 endfunction
 
 private function IsUnitValid takes unit u returns boolean
-    return u != null and not IsUnitType(u, UNIT_TYPE_DEAD) and GetUnitTypeId(u) != 0
+    return FallenHeroState_IsAlive(u)
 endfunction
 
 private function IssueFollowOrder takes unit follower, unit target, integer style returns nothing

@@ -22,7 +22,7 @@
     set started = StormhavenCity_DebugForceChat()
 
 **/
-library StormhavenCity initializer Init requires AIRoutines, Reputation, Table
+library StormhavenCity initializer Init requires AIRoutines, Reputation, Table, FallenHeroState
 
 globals
     // Configuration
@@ -73,7 +73,7 @@ globals
 endglobals
 
 private function IsAliveUnit takes unit whichUnit returns boolean
-    return whichUnit != null and GetUnitTypeId(whichUnit) != 0 and not IsUnitType(whichUnit, UNIT_TYPE_DEAD) and GetWidgetLife(whichUnit) > 0.405
+    return FallenHeroState_IsAlive(whichUnit)
 endfunction
 
 private function GetCitizenClass takes integer unitTypeId returns integer

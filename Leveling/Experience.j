@@ -31,7 +31,7 @@
     - if Experience_IsRested(hero) then
 
 **/
-library Experience initializer Init requires Events, UnitDeathEvent
+library Experience initializer Init requires Events, UnitDeathEvent, FallenHeroState
     globals
         // Rested is a hidden aura ability added directly to the hero.
         // UnitAddAbility/UnitRemoveAbility need this ability rawcode, not the generated buff rawcode.
@@ -68,7 +68,7 @@ library Experience initializer Init requires Events, UnitDeathEvent
     endglobals
 
     private function EXP_IsAliveHero takes unit whichUnit returns boolean
-        return whichUnit != null and IsUnitType(whichUnit, UNIT_TYPE_HERO) and GetWidgetLife(whichUnit) > 0.405
+        return FallenHeroState_IsAlive(whichUnit) and IsUnitType(whichUnit, UNIT_TYPE_HERO)
     endfunction
 
     private function EXP_GetUnitKey takes unit whichUnit returns integer

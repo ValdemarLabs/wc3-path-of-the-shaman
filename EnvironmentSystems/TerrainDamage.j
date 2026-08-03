@@ -1,4 +1,4 @@
-library TerrainDamage initializer Init requires SoundTools, TimerUtils, Table, UnitDeathEvent
+library TerrainDamage initializer Init requires SoundTools, TimerUtils, Table, UnitDeathEvent, FallenHeroState
 //===========================================================================
 
 /*    TerrainDamage library
@@ -156,7 +156,7 @@ endfunction
 
 //===========================================================================
 private function TerrainDamage_IsUnitAlive takes unit u returns boolean
-    return TerrainDamage_IsUnitValid(u) and not IsUnitType(u, UNIT_TYPE_DEAD) and GetUnitState(u, UNIT_STATE_LIFE) > 0.405
+    return TerrainDamage_IsUnitValid(u) and FallenHeroState_IsAlive(u)
 endfunction
 
 //===========================================================================

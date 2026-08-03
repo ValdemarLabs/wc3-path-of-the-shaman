@@ -23,7 +23,7 @@
     call CastingBarSystem_EnableAbilityName(true)
 
 **/
-library CastingBarSystem initializer Init requires Table, Events
+library CastingBarSystem initializer Init requires Table, Events, FallenHeroState
 
 //============================================================================
 // CONFIGURATION
@@ -657,7 +657,7 @@ private function UpdateSingleUnit takes nothing returns nothing
     local integer unitId
     local integer phase
 
-    if u == null or GetUnitTypeId(u) == 0 or IsUnitType(u, UNIT_TYPE_DEAD) then
+    if not FallenHeroState_IsAlive(u) then
         call ClearCastingState(u)
         set u = null
         return

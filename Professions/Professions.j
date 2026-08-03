@@ -38,7 +38,7 @@
 
 **/
 
-library Professions initializer AutoInit requires GatherNodeSkills, TimerUtils, Table, DialogCamera, CinematicMover, ExSound, Interface, FullscreenUI, optional SharedDInvLib, optional ItemHook, optional MasterUI
+library Professions initializer AutoInit requires GatherNodeSkills, TimerUtils, Table, DialogCamera, CinematicMover, ExSound, Interface, FullscreenUI, FallenHeroState, optional SharedDInvLib, optional ItemHook, optional MasterUI
 
 globals
     // Public result codes for callers that need richer failure handling later.
@@ -212,7 +212,7 @@ private function P_IsRecipeValid takes integer recipeId returns boolean
 endfunction
 
 private function P_IsUnitAlive takes unit whichUnit returns boolean
-    return whichUnit != null and GetUnitTypeId(whichUnit) != 0 and GetWidgetLife(whichUnit) > 0.405
+    return FallenHeroState_IsAlive(whichUnit)
 endfunction
 
 public function GetProfessionItemBonus takes unit whichUnit, integer professionId returns integer
