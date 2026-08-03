@@ -70,14 +70,28 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
     private function VDI_ReportSelectionFailure takes unit vendor returns nothing
         local string reason = DialogInteraction_GetLastSelectionBlockReason()
         local string vendorName = VendorLines_GetVendorName(vendor)
+        local string message = ""
 
         if reason == "missing allowed hero" then
-            call DisplayTextToPlayer(Player(0), 0.00, 0.00, "|cffff8080No player hero found near the " + vendorName + ".|r")
-            call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, Player(0))
+            set message = "No player hero found near the " + vendorName + "."
         elseif reason == "hero out of range" then
-            call DisplayTextToPlayer(Player(0), 0.00, 0.00, "|cffff8080Move closer to the " + vendorName + ".|r")
-            call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, Player(0))
+            set message = "Move closer to the " + vendorName + "."
         elseif reason == "dialog sequence active" then
+            set message = "Finish the current conversation first."
+        elseif reason == "dialog interaction reserved" then
+            set message = "Another interaction is still finishing."
+        elseif reason == "cooldown active" then
+            set message = "Wait a moment before speaking with this vendor again."
+        elseif reason == "hero is casting" or reason == "hero is in combat" then
+            set message = "Your hero is currently too busy to trade."
+        elseif reason == "npc is casting" or reason == "npc is in combat" then
+            set message = "This vendor is currently too busy to trade."
+        else
+            set message = "This vendor cannot start a trade conversation right now."
+        endif
+
+        if message != "" then
+            call DisplayTextToPlayer(Player(0), 0.00, 0.00, "|cffff8080" + message + "|r")
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, Player(0))
         endif
 
@@ -351,9 +365,17 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         endif
 
         set hero = DialogInteraction_GetDialogSelectionHero(vendor, VDI_DIALOG_RANGE, VDI_ALLOW_NAZGREK, VDI_ALLOW_ZULKIS)
-        set gateOk = DialogInteraction_PassDialogSelectionGate(vendor, hero, VDI_DIALOG_RANGE, VDI_DialogCooldown, VDI_REQUIRE_DIALOG_HERO, true, true, true, false, false)
+        // Reputation owns faction access; transient vendor combat/cast flags must not silently block shop dialogue.
+        set gateOk = DialogInteraction_PassDialogSelectionGate(vendor, hero, VDI_DIALOG_RANGE, VDI_DialogCooldown, VDI_REQUIRE_DIALOG_HERO, true, false, false, false, false)
         if not gateOk then
             call VDI_ReportSelectionFailure(vendor)
+            set vendor = null
+            set hero = null
+            return
+        endif
+        if not Shop_CanPlayerTradeWithVendor(GetOwningPlayer(hero), vendor) then
+            call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, GetOwningPlayer(hero))
+            call DisplayTextToPlayer(GetOwningPlayer(hero), 0.00, 0.00, "|cffff8040Your reputation with this vendor's faction is too low to trade.|r")
             set vendor = null
             set hero = null
             return
