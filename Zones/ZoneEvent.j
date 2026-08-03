@@ -1,4 +1,4 @@
-library ZoneEvent initializer Init requires ZonesCore, Table, DNC, ExMusic, TasQuestBox, CameraControl
+library ZoneEvent initializer Init requires ZonesCore, Table, DNC, ExMusic, TasQuestBox, CameraControl, FallenHeroState
 //===========================================================================
 /*
     ZoneEvent
@@ -546,7 +546,7 @@ private function MoveStart takes ZoneData z, unit enteringUnit returns nothing
         set u = FirstOfGroup(tempGroup)
         exitwhen u == null
         call GroupRemoveUnit(tempGroup, u)
-        if IsUnitAliveBJ(u) then
+        if FallenHeroState_IsAlive(u) then
             call SetUnitPosition(u, xStart, yStart)
             call IssuePointOrder(u, "move", xMove, yMove)
         endif
@@ -680,7 +680,7 @@ private function MoveOut takes nothing returns nothing
         set u = FirstOfGroup(tempGroup)
         exitwhen u == null
         call GroupRemoveUnit(tempGroup, u)
-        if IsUnitAliveBJ(u) then
+        if FallenHeroState_IsAlive(u) then
             call SetUnitPosition(u, xStart, yStart)
             call IssuePointOrder(u, "move", xMove, yMove)
         endif
