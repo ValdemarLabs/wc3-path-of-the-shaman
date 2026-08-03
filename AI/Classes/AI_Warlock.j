@@ -18,7 +18,7 @@
     call AIWarlock_Register(unit whichUnit)
 
 **/
-library AIWarlock initializer Init requires AI, AbilitiesLiteUI, Table, VoicelinesWarlock
+library AIWarlock initializer Init requires AI, AbilitiesLiteUI, Table, VoicelinesWarlock, FallenHeroState
 
 globals
     constant integer AI_WARLOCK_UNIT_UNDEAD = 'O61K'
@@ -71,7 +71,7 @@ private function RegisterPlayerUnitEventAll takes trigger whichTrigger, playerun
 endfunction
 
 private function IsAliveUnit takes unit whichUnit returns boolean
-    return whichUnit != null and GetUnitTypeId(whichUnit) != 0 and not IsUnitType(whichUnit, UNIT_TYPE_DEAD)
+    return FallenHeroState_IsAlive(whichUnit)
 endfunction
 
 private function IsImpUnitType takes integer unitTypeId returns boolean
