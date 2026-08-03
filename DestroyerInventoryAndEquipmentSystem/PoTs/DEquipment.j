@@ -25,7 +25,7 @@
 
 **/
 
-library DEquipment initializer Init requires DInventory, Table, SharedDInvLib, GetItemCost, AbilityShieldBlock
+library DEquipment initializer Init requires DInventory, Table, SharedDInvLib, GetItemCost, AbilityShieldBlock, FallenHeroState
 
 globals
 trigger trg_AutoAddNewHeroToDEq = CreateTrigger()
@@ -374,7 +374,7 @@ endif
 //call BJDebugMsg("DEq slot clicked")
 //call BJDebugMsg("DEqCurrentSlotIdActive[pid] = "+I2S(DEqCurrentSlotIdActive[pid]))
 //call BJDebugMsg("SourceDItemSlotIdActive[pid] = "+I2S(SourceDItemSlotIdActive[pid]))
-if UnitAlive(u) == FALSE or u == null then
+if not FallenHeroState_IsAlive(u) then
 // Unit is dead close DInv and DEq
 call CloseDInventory(pid)
     call CloseDEqUI(pid)

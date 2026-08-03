@@ -23,7 +23,7 @@
 
 **/
 
-library DInventory initializer Init requires Table, SharedDInvLib, Interface, optional UnitStats
+library DInventory initializer Init requires Table, SharedDInvLib, Interface, FallenHeroState, optional UnitStats
 
 globals
 trigger trg_OpenDInvAbilityUsed = CreateTrigger()
@@ -253,7 +253,7 @@ local integer pid = GetPlayerId(viewer)
 local integer bid = CurrentBID[pid]
 local integer slotId = SourceDItemSlotIdActive[pid]
 local unit targetUnit = DInvGiveSelectedUnit[pid]
-if DInvCurrentInspectMode[pid] == FALSE and DInvCurrentUnit[pid] != null and targetUnit != null and targetUnit != DInvCurrentUnit[pid] and UnitAlive(targetUnit) == TRUE and bid > 0 and slotId > -1 and DInventoryDB[bid].item[slotId] != null then
+if DInvCurrentInspectMode[pid] == FALSE and DInvCurrentUnit[pid] != null and targetUnit != null and targetUnit != DInvCurrentUnit[pid] and FallenHeroState_IsAlive(targetUnit) and bid > 0 and slotId > -1 and DInventoryDB[bid].item[slotId] != null then
 call DInvGiveSetButtonVisible(pid, TRUE)
 else
 call DInvGiveSetButtonVisible(pid, FALSE)
@@ -862,7 +862,7 @@ if pid == lp then
 endif
         
 //if hid < 0 and InventoryParadigm == "1PerHero" or GetWidgetLife(u) < 0.405 or u == null then
-if (bid < 0 and InventoryParadigm == "1PerHero") or UnitAlive(u) == FALSE or u == null then
+if (bid < 0 and InventoryParadigm == "1PerHero") or not FallenHeroState_IsAlive(u) then
 // Unit is dead, or hid is invalid, close DInv
 call CloseDInventory(pid)
     if EquipmentSystemUsed == TRUE then
@@ -1703,7 +1703,7 @@ call BlzFrameSetEnable(myFrame, false)
 call BlzFrameSetEnable(myFrame, true)
 call StopCamera()
 endif
-if sourceUnit == null or sourceSlotId < 0 or targetUnit == null or targetUnit == sourceUnit or UnitAlive(targetUnit) == FALSE then
+if sourceUnit == null or sourceSlotId < 0 or targetUnit == null or targetUnit == sourceUnit or not FallenHeroState_IsAlive(targetUnit) then
 call DInvPlayInventoryErrorForUnit(sourceUnit, "Target unit doesn't have inventory.")
 elseif DInvCurrentInspectMode[pid] == TRUE then
 call DInvGiveSetButtonVisible(pid, FALSE)

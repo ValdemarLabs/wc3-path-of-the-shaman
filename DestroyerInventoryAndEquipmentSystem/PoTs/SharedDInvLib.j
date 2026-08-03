@@ -22,7 +22,7 @@
     - call DInvUpgradeBagForPlayerVendor(playerId, targetTier)
 
 **/
-library SharedDInvLib initializer Init requires DConfigurationArea, ItemLootSystem, ExSound
+library SharedDInvLib initializer Init requires DConfigurationArea, ItemLootSystem, ExSound, FallenHeroState
 
 globals
 // Core
@@ -478,7 +478,7 @@ set viewer = null
 set u = null
 return FALSE
 endif
-if GetOwningPlayer(u) == viewer or UnitAlive(u) == FALSE then
+if GetOwningPlayer(u) == viewer or not FallenHeroState_IsAlive(u) then
 set viewer = null
 set u = null
 return FALSE
