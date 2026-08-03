@@ -19,12 +19,16 @@
 
 ### Player-Facing Updates
 
+- **Critical hero-death compatibility update:** Fallen player, AI, companion, and other hero bodies now remain technically alive at one life so Warcraft III cannot force the hero-dissipation animation. Updated party frames, cameras, AI, quests, professions, inventory, minimap, and nearby-world systems nevertheless treat these retained bodies as dead.
+- Selecting a vendor now immediately explains insufficient faction reputation, while valid vendors no longer fail silently because of stale NPC casting or combat flags. Other blocked selection states also report their reason.
+- Centered pooled vendor-type floating labels over their units instead of anchoring each label's left edge to the unit origin.
 - Generic vendor commissions are now presented as Daily quests, Repeatable quests, or Quests instead of the misleading Vendor quest category.
 - Added ten one-time vendor quests for Kargun Ashblade, Rukgar Longroad, Vaelith the Covetous, Garrick Holt, Silas Reed, Rixit Roadcoin, Nackle Quickdeal, Mugrok Ironclub, Aerendir Sunblade, and Maerith Silvercrest.
 - All fifteen normal vendor quests now include an additional voiced giver line after acceptance and completion. Daily quests add one randomized objective- and culture-specific follow-up after the hero accepts.
 
 ### Technical Updates
 
+- **Critical system contract:** Added `FallenHeroState_IsAlive`, `FallenHeroState_IsDead`, and `FallenHeroState_IsFallen` as the authoritative hero life-state checks. Because a retained corpse has approximately one life and is not natively dead, direct checks using `UnitAlive`, `IsUnitAliveBJ`, `UNIT_TYPE_DEAD`, or life greater than zero can return the wrong result. Migrated the identified active JASS consumers to the shared predicates. Revivable party heroes remain privately separated from one-minute unmanaged hero corpses in `Death.j`.
 - Added `QuestsGeneric.j`, a Shop-independent template and dialogue layer for reusable kill, fetch, and talk quests, including faction rewards, daily variants, authored extensions, and interrupt-safe state commits.
 - Replaced `VendorQuests.j` with the focused `QuestsVendor.j` adapter, retaining cross-vendor handoffs, purchase objectives, stock detection, lost-item replacement, and continuation into ShopUI.
 - Consolidated shared quest dialogue and ExSound registration in `Voicelines_Quests.j`, migrated every vendor quest giver to the new API, and documented the revised import order and quest classifications.
@@ -36,8 +40,14 @@
   Preserved the item grid's selected items and scroll position by item ID when database data is refreshed, while add/edit operations now retain the active filters and sorting.
   Normalized all 40 Food tooltips to show their configured Well Fed stat effects, normalized all 15 Drink tooltips to the shared beverage-consumption style, restored Bear Fat Biscuit's missing effect text, and assigned themed custom food and drink icons through an explicit one-time migration.
 
+### Known Issues
+
+- Legacy GUI triggers remain a high-risk compatibility area. The map contains thousands of triggers, and any trigger that determines hero death through normal Warcraft III alive/dead conditions, current life, or `UNIT_TYPE_DEAD` may incorrectly treat a retained corpse as alive. These failures can be intermittent and difficult to trace because the hero visually appears dead while the engine still considers the unit alive.
+- Newly imported or re-enabled GUI/JASS systems must use `FallenHeroState_IsAlive`, `FallenHeroState_IsDead`, or `FallenHeroState_IsFallen` whenever their logic can receive a player, AI, companion, or other hero-type unit.
+
 ### Actions Remaining
 
+- Continue auditing legacy GUI triggers and converted custom-script conditions for native hero alive/dead checks, prioritizing resurrection, camera, quest, cinematic, companion, AI, inventory, and periodic unit-group logic.
 - Import recordings for the newly reserved vendor-quest ranges: Orc through `0043`, Satyr through `0027`, Human through `0037`, Goblin through `0035`, Bonecrusher through `0025`, and Elarindor through `0025`. Missing recordings continue to use text-duration fallback.
 
 ## [2.8.2026]
