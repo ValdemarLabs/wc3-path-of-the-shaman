@@ -22,7 +22,7 @@
 //   entering the Ragno intro rects start the battle, then the quest completes
 //   itself when the spawned gnoll wave is dead.
 //============================================================================
-library qRagno initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, FollowSystem, HeroItemCheck, UnitDeathEvent, VoicelinesNazgrek, VoicelinesOrcPeon
+library qRagno initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, FollowSystem, HeroItemCheck, UnitDeathEvent, VoicelinesNazgrek, VoicelinesOrcPeon, FallenHeroState
 
 globals
     private constant boolean DEBUG = false
@@ -876,7 +876,7 @@ endfunction
 private function HideProtectOutpostPreplacedGnollEnum takes nothing returns nothing
     local unit u = GetEnumUnit()
 
-    if u != null and GetOwningPlayer(u) == Player(PLAYER_NEUTRAL_AGGRESSIVE) and GetUnitTypeId(u) != 0 and not IsUnitType(u, UNIT_TYPE_DEAD) then
+    if FallenHeroState_IsAlive(u) and GetOwningPlayer(u) == Player(PLAYER_NEUTRAL_AGGRESSIVE) then
         call GroupAddUnit(ProtectOutpostHiddenGnolls, u)
         call ShowUnit(u, false)
     endif
@@ -910,7 +910,7 @@ endfunction
 
 private function CountLivingProtectOutpostGnollEnum takes nothing returns nothing
     local unit u = GetEnumUnit()
-    if u != null and GetUnitTypeId(u) != 0 and not IsUnitType(u, UNIT_TYPE_DEAD) then
+    if FallenHeroState_IsAlive(u) then
         set ProtectOutpostLivingGnolls = ProtectOutpostLivingGnolls + 1
     endif
     set u = null

@@ -25,7 +25,7 @@
     - call DialogInteraction_PlayGreetSequenceEx(...)
 
 **/
-library DialogInteraction initializer Init requires Table, DialogSystem, CameraControl, FullscreenUI
+library DialogInteraction initializer Init requires Table, DialogSystem, CameraControl, FullscreenUI, FallenHeroState
     globals
         private constant boolean DEBUG = false
 
@@ -211,7 +211,7 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         if u == null then
             return false
         endif
-        return GetUnitTypeId(u) != 0 and not IsUnitType(u, UNIT_TYPE_DEAD)
+        return FallenHeroState_IsAlive(u)
     endfunction
 
     public function IsWithinRange takes unit a, unit b, real range returns boolean
@@ -811,7 +811,7 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
             call ExecuteFunc("MasterUI_ShowGameButton")
         endif
         call EnableUserControl(true)
-        if TransitionHero != null and GetWidgetLife(TransitionHero) > 0.405 and not IsUnitType(TransitionHero, UNIT_TYPE_DEAD) then
+        if FallenHeroState_IsAlive(TransitionHero) then
             call CameraControl_SetTargetUnit(Player(0), TransitionHero)
             call SelectUnitForPlayerSingle(TransitionHero, Player(0))
         endif

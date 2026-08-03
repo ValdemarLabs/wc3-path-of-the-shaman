@@ -3875,7 +3875,7 @@ private function OnCompleteQuest1 takes nothing returns nothing
 	local unit hero
 	local QuestData q
 	
-	if Valeria == null or not UnitAlive(Valeria) then
+	if not DialogInteraction_IsUnitAlive(Valeria) then
 		call BJDebugMsg("[qAradion] ERROR: Cannot complete quest - Valeria is null or dead!")
 		call EnableUserControl(true)
 		return
@@ -4172,13 +4172,13 @@ private function OnAcceptQuest4 takes nothing returns nothing
 	local integer seq
 	local unit hero
 	
-	if Valeria == null or not UnitAlive(Valeria) then
+	if not DialogInteraction_IsUnitAlive(Valeria) then
 		call RecreateValeriaAtHome()
 	endif
 
 	// SAFETY CHECK: Verify Valeria exists for this quest dialogue
 	// DialogSystem will skip null unit actions, but log warning for debugging
-	if Valeria == null or not UnitAlive(Valeria) then
+	if not DialogInteraction_IsUnitAlive(Valeria) then
 		call BJDebugMsg("[qAradion] WARNING: Valeria is null/dead in OnAcceptQuest4 - some dialogue actions will be skipped")
 	endif
 	
@@ -4241,7 +4241,7 @@ private function OnCompleteQuest4 takes nothing returns nothing
 	
 	// SAFETY CHECK: Verify Valeria exists for this quest dialogue
 	// DialogSystem will skip null unit actions, but log warning for debugging
-	if Valeria == null or not UnitAlive(Valeria) then
+	if not DialogInteraction_IsUnitAlive(Valeria) then
 		call BJDebugMsg("[qAradion] WARNING: Valeria is null/dead in OnCompleteQuest4 - some dialogue actions will be skipped")
 	endif
 	

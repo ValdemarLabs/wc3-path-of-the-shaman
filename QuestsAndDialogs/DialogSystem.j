@@ -1,4 +1,4 @@
-library DialogSystem initializer Init requires Table, ExSound, DialogCamera, Interface
+library DialogSystem initializer Init requires Table, ExSound, DialogCamera, Interface, FallenHeroState
 //===========================================================================
 // DialogSystem
 // Lightweight dialog creation + button routing for quest givers.
@@ -513,7 +513,7 @@ private function IsFieldLineSpeakerAlive takes unit speaker returns boolean
 	if speaker == null then
 		return false
 	endif
-	return GetUnitTypeId(speaker) != 0 and not IsUnitType(speaker, UNIT_TYPE_DEAD)
+	return FallenHeroState_IsAlive(speaker)
 endfunction
 
 public function EstimateFieldLineDuration takes string text returns real

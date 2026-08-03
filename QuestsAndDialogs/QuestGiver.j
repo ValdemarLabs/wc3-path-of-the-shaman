@@ -1838,7 +1838,7 @@ private function CheckEscortProgress takes nothing returns nothing
 			
 			if q != 0 and q.active then
 				// Check if escort unit exists and is alive
-				if escortUnit != null and UnitAlive(escortUnit) then
+				if DialogInteraction_IsUnitAlive(escortUnit) then
 					set ux = GetUnitX(escortUnit)
 					set uy = GetUnitY(escortUnit)
 					
@@ -2039,7 +2039,7 @@ private function CheckFindNPCProgress takes nothing returns nothing
 			set npc = FindNPCReqNPC[i]
 			set q = QuestMaster_GetById(FindNPCReqQuestId[i])
 
-			if q != 0 and q.active and npc != null and UnitAlive(npc) then
+			if q != 0 and q.active and DialogInteraction_IsUnitAlive(npc) then
 				// Check if any hero is within discovery range
 				if (udg_Nazgrek != null and IsWithinRange(udg_Nazgrek, npc, FINDNPC_DISCOVERY_RANGE)) or (udg_Zulkis != null and IsWithinRange(udg_Zulkis, npc, FINDNPC_DISCOVERY_RANGE)) then
 					set FindNPCReqComplete[i] = true
