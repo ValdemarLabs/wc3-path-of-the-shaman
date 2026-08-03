@@ -89,7 +89,7 @@
     call AI_SetDebugMode(enabled)
 
 **/
-library AI initializer Init requires Table, CampFire, Companions, Events, UnitDeathEvent, DamageEngine, DialogSystem, ExSound, IconQuery, Reputation, DEquipment, GatherNodes, GatherNodeSkills, GatherNodeItems, GatherNodeUnits, Professions, VoicelinesWarlock, VoicelinesUndeadWarlock, VoicelinesRestoShaman, VoicelinesEngineer, VoicelinesPaladin, optional Shop
+library AI initializer Init requires Table, CampFire, Companions, Events, UnitDeathEvent, DamageEngine, DialogSystem, ExSound, IconQuery, Reputation, DEquipment, GatherNodes, GatherNodeSkills, GatherNodeItems, GatherNodeUnits, Professions, VoicelinesWarlock, VoicelinesUndeadWarlock, VoicelinesRestoShaman, VoicelinesEngineer, VoicelinesPaladin, FallenHeroState, optional Shop
 
 globals
     constant integer AI_STATE_INACTIVE = 0
@@ -610,7 +610,7 @@ private function GetNow takes nothing returns real
 endfunction
 
 private function IsAliveUnit takes unit whichUnit returns boolean
-    return whichUnit != null and GetUnitTypeId(whichUnit) != 0 and not IsUnitType(whichUnit, UNIT_TYPE_DEAD)
+    return FallenHeroState_IsAlive(whichUnit)
 endfunction
 
 private function IsCompanionControlled takes unit whichUnit returns boolean
@@ -3097,7 +3097,7 @@ endfunction
 public function IsAlive takes unit whichUnit returns boolean
     local integer instanceId = AI_GetInstance(whichUnit)
 
-    return instanceId > 0 and InstanceAlive.boolean[instanceId]
+    return instanceId > 0 and InstanceAlive.boolean[instanceId] and FallenHeroState_IsAlive(whichUnit)
 endfunction
 
 public function GetUnitByInstance takes integer instanceId returns unit

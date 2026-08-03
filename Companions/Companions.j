@@ -46,7 +46,7 @@
     call Companions_GetAbilityInfoText(unit controlledUnit) returns string
 
 **/
-library Companions initializer Init requires QuestGiver, FollowSystem, IconQuery, Table, Events, UnitDeathEvent, SpeciFX, Reputation, DialogSystem
+library Companions initializer Init requires QuestGiver, FollowSystem, IconQuery, Table, Events, UnitDeathEvent, SpeciFX, Reputation, DialogSystem, FallenHeroState
 
 globals
     constant integer COMPANION_MODE_DEFEND = 1
@@ -273,7 +273,7 @@ private function GetNow takes nothing returns real
 endfunction
 
 private function IsAliveUnit takes unit u returns boolean
-    return u != null and GetUnitTypeId(u) != 0 and not IsUnitType(u, UNIT_TYPE_DEAD)
+    return FallenHeroState_IsAlive(u)
 endfunction
 
 private function IsControlGroupUnit takes unit u returns boolean

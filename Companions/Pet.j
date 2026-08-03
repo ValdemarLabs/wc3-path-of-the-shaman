@@ -20,7 +20,7 @@
     Pet_GetClassInfoText, Pet_GetTypeInfoText, and Pet_GetAbilityInfoText.
 
 **/
-library Pet initializer Init requires Table, Companions, UnitExperience, DamageEngine, FloatingTextSimple, PetDefinitions, Events
+library Pet initializer Init requires Table, Companions, UnitExperience, DamageEngine, FloatingTextSimple, PetDefinitions, Events, FallenHeroState
 
 globals
     private constant boolean DEBUG = false
@@ -92,7 +92,7 @@ private function EnsureState takes nothing returns nothing
 endfunction
 
 private function IsAliveUnit takes unit u returns boolean
-    return u != null and GetUnitTypeId(u) != 0 and not IsUnitType(u, UNIT_TYPE_DEAD)
+    return FallenHeroState_IsAlive(u)
 endfunction
 
 private function GetPetCount takes nothing returns integer
