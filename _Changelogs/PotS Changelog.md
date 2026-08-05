@@ -15,6 +15,27 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [5.8.2026]
+
+### Player-Facing Updates
+
+- Reworked delayed respawning for configured creep factions and respawn-managed NPCs to remove the remaining centralized-event and timer-dispatch failure points.
+
+### Technical Updates
+
+- Updated `Events/UnitDeathEvent.j`
+  - Replaced manual `TriggerEvaluate`/`TriggerExecute` subscriber calls with separate Warcraft variable-event triggers while preserving cached dying and killing units, including nested and synthetic death dispatch.
+
+- Updated `CreepRespawn/CreepRespawn.j`
+  - Removed TimerUtils from respawn scheduling and keyed payloads directly to native respawn timers.
+  - Corrected typed real-value cleanup for saved positions and respawn payloads.
+  - Retained centralized `Events.j` unit-enter tracking, with death-position fallback when a unit was not previously tracked.
+  - Added `CreepRespawn_SetDebugEnabled` for in-map tracing without editing the library constant.
+
+### Known Issues
+
+- The centralized death fan-out and full 120-320 second creep respawn cycle still require in-map runtime validation.
+
 ## [3.8.2026]
 
 ### Player-Facing Updates
