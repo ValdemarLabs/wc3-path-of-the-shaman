@@ -6,9 +6,9 @@
 
     Description:
     Centralized unit-death dispatcher. The native death event is registered
-    once for every player slot, while each subscriber runs through its own
-    callback trigger. Death-event responses are cached before dispatch so one
-    subscriber cannot consume the execution budget of later subscribers.
+    once for every player slot, while subscribers listen to a shared variable
+    event through separate callback triggers. Death-event responses are cached
+    before dispatch so subscribers retain the dying and killing units.
 
     Credits:
     - Original PotS UnitDeathEvent implementation
@@ -33,38 +33,23 @@ globals
     private constant integer UNIT_DEATH_EVENT_MAX_PLAYER_INDEX = 27
 
     private trigger UnitDeathEvent_DeathTrigger = null
-    private trigger array UnitDeathEvent_Callbacks
     private integer UnitDeathEvent_CallbackCount = 0
     private unit UnitDeathEvent_CurrentDyingUnit = null
     private unit UnitDeathEvent_CurrentKillingUnit = null
+    real UnitDeathEvent_Event = 0.00
 endglobals
 
-private function UnitDeathEvent_RunCallback takes trigger callbackTrigger returns nothing
-    if callbackTrigger == null then
-        return
-    endif
-    if not IsTriggerEnabled(callbackTrigger) then
-        return
-    endif
-    if TriggerEvaluate(callbackTrigger) then
-        call TriggerExecute(callbackTrigger)
-    endif
-endfunction
-
 private function UnitDeathEvent_DispatchUnits takes unit dyingUnit, unit killingUnit returns nothing
-    local integer callbackIndex = 0
-    local integer callbackCount = UnitDeathEvent_CallbackCount
     local unit previousDyingUnit = UnitDeathEvent_CurrentDyingUnit
     local unit previousKillingUnit = UnitDeathEvent_CurrentKillingUnit
 
     set UnitDeathEvent_CurrentDyingUnit = dyingUnit
     set UnitDeathEvent_CurrentKillingUnit = killingUnit
 
-    loop
-        exitwhen callbackIndex >= callbackCount
-        call UnitDeathEvent_RunCallback(UnitDeathEvent_Callbacks[callbackIndex])
-        set callbackIndex = callbackIndex + 1
-    endloop
+    // Reset first so nested deaths can cross the equality threshold again.
+    set UnitDeathEvent_Event = 0.00
+    set UnitDeathEvent_Event = 1.00
+    set UnitDeathEvent_Event = 0.00
 
     set UnitDeathEvent_CurrentDyingUnit = previousDyingUnit
     set UnitDeathEvent_CurrentKillingUnit = previousKillingUnit
@@ -118,8 +103,8 @@ function UnitDeathEvent_Register takes code callback returns nothing
     endif
 
     set callbackTrigger = CreateTrigger()
+    call TriggerRegisterVariableEvent(callbackTrigger, "UnitDeathEvent_Event", EQUAL, 1.00)
     call TriggerAddAction(callbackTrigger, callback)
-    set UnitDeathEvent_Callbacks[UnitDeathEvent_CallbackCount] = callbackTrigger
     set UnitDeathEvent_CallbackCount = UnitDeathEvent_CallbackCount + 1
     set callbackTrigger = null
 endfunction

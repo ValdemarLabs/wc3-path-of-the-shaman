@@ -1,13 +1,26 @@
+/**
+    CreepRespawn
 
-library CreepRespawn initializer Init requires Table, TimerUtils, Events, UnitDeathEvent, CreepUnitAssignmentSystem
+    Author: Valdemar
+    Version:
 
-/*
-    Creep Respawn System
-    Converted from GUI triggers to vJASS
-    
-    Automatically respawns creeps at their original spawn location after a random delay.
-    Stores original position and facing for each unit in a Table.
-    
+    Description:
+    Tracks configured-owner units and recreates them at their saved spawn
+    position after a random delay. Recreated quest NPCs are passed to
+    CreepUnitAssignmentSystem to refresh their map references.
+
+    Credits:
+    - Original PotS GUI creep respawn triggers
+
+    How to install:
+    Import after Table, Events, UnitDeathEvent, and
+    CreepUnitAssignmentSystem. Disable the migrated GUI respawn triggers.
+
+    API:
+    call CreepRespawn_OnUnitEnter(whichUnit)
+    call CreepRespawn_DiscardUnit(whichUnit)
+    call CreepRespawn_SetDebugEnabled(true)
+
     Supported Players (JASS / Visual):
     - Player(2) = Player 3 (Teal)
     - Player(3) = Player 4 (Purple)
@@ -21,19 +34,19 @@ library CreepRespawn initializer Init requires Table, TimerUtils, Events, UnitDe
     - Player(22) = Player 23 (Emerald) -> Neutral Passive
     - Player(PLAYER_NEUTRAL_AGGRESSIVE) = Neutral Hostile
     - Player(PLAYER_NEUTRAL_PASSIVE) = Neutral Passive
-*/
+**/
+library CreepRespawn initializer Init requires Table, Events, UnitDeathEvent, CreepUnitAssignmentSystem
 
 globals
     private Table rhash
     private Table respawnData
     private Table ignoredUnits
     private group RespawnGroup
-    private integer nextRespawnId = 0
     private boolean exclusionListReady = false
     private boolean initialPositionsSaved = false
     
     // Debug mode - set to true to enable debug messages
-    private constant boolean DEBUG_MODE = false
+    private boolean DEBUG_MODE = false
     
     // String hash constants for Table keys
     private constant integer HASH_X = StringHash("x")
@@ -196,6 +209,10 @@ endfunction
 // PUBLIC API
 //===========================================================================
 
+function CreepRespawn_SetDebugEnabled takes boolean enabled returns nothing
+    set DEBUG_MODE = enabled
+endfunction
+
 // Call this function when a unit enters the map to track it for respawning.
 // The normal map-wide enter hook is registered through Events in Init.
 function CreepRespawn_OnUnitEnter takes unit u returns nothing
@@ -233,9 +250,9 @@ function CreepRespawn_DiscardUnit takes unit u returns nothing
         call GroupRemoveUnit(RespawnGroup, u)
     endif
     if rhash != 0 then
-        call rhash.remove(id * 4 + 0)
-        call rhash.remove(id * 4 + 1)
-        call rhash.remove(id * 4 + 2)
+        call rhash.real.remove(id * 4 + 0)
+        call rhash.real.remove(id * 4 + 1)
+        call rhash.real.remove(id * 4 + 2)
         call rhash.remove(id * 4 + 3)
     endif
     set u = null
@@ -342,19 +359,19 @@ endfunction
 // RESPAWN SYSTEM
 //===========================================================================
 
-private function ClearRespawnData takes integer respawnId returns nothing
-    local integer base = respawnId * 5
+private function ClearRespawnData takes integer timerId returns nothing
+    local integer base = timerId * 5
     call EnsureState()
     call respawnData.remove(base + 0)
     call respawnData.remove(base + 1)
-    call respawnData.remove(base + 2)
-    call respawnData.remove(base + 3)
-    call respawnData.remove(base + 4)
+    call respawnData.real.remove(base + 2)
+    call respawnData.real.remove(base + 3)
+    call respawnData.real.remove(base + 4)
 endfunction
 
 private function OnRespawnTimerExpire takes nothing returns nothing
     local timer t = GetExpiredTimer()
-    local integer respawnId
+    local integer timerId
     local integer base
     local integer utype
     local player p
@@ -364,13 +381,22 @@ private function OnRespawnTimerExpire takes nothing returns nothing
     local unit newUnit
 
     call EnsureState()
-    set respawnId = GetTimerData(t)
-    set base = respawnId * 5
+    set timerId = GetHandleId(t)
+    set base = timerId * 5
     set utype = respawnData[base + 0]
     set p = Player(respawnData[base + 1])
     set x = respawnData.real[base + 2]
     set y = respawnData.real[base + 3]
     set facing = respawnData.real[base + 4]
+
+    if utype == 0 then
+        call BJDebugMsg("[CreepRespawn] ERROR: Respawn timer has no saved unit type.")
+        call ClearRespawnData(timerId)
+        call DestroyTimer(t)
+        set t = null
+        set p = null
+        return
+    endif
     
     if DEBUG_MODE then
         call BJDebugMsg("[CreepRespawn] Timer expired for unit type " + I2S(utype) + " at (" + R2S(x) + ", " + R2S(y) + ")")
@@ -378,6 +404,15 @@ private function OnRespawnTimerExpire takes nothing returns nothing
     
     // Create new unit
     set newUnit = CreateUnit(p, utype, x, y, facing)
+
+    if newUnit == null then
+        call BJDebugMsg("[CreepRespawn] ERROR: CreateUnit failed for unit type " + I2S(utype) + ".")
+        call ClearRespawnData(timerId)
+        call DestroyTimer(t)
+        set t = null
+        set p = null
+        return
+    endif
     
     if DEBUG_MODE then
         call BJDebugMsg("[CreepRespawn] Spawned new unit: " + GetUnitName(newUnit) + " (New ID: " + I2S(GetHandleId(newUnit)) + ")")
@@ -389,8 +424,8 @@ private function OnRespawnTimerExpire takes nothing returns nothing
     // Assign the unit to Unit variable (quest givers, etc. important units)
     set bj_lastCreatedUnit = newUnit
     call CreepUnitAssignment(utype)
-    call ClearRespawnData(respawnId)
-    call ReleaseTimer(t)
+    call ClearRespawnData(timerId)
+    call DestroyTimer(t)
     
     set t = null
     set p = null
@@ -399,7 +434,7 @@ endfunction
 
 private function ScheduleRespawn takes unit dying returns nothing
     local integer handleId
-    local integer respawnId
+    local integer timerId
     local integer base
     local integer utype
     local player p
@@ -414,23 +449,26 @@ private function ScheduleRespawn takes unit dying returns nothing
     endif
     call EnsureState()
     set handleId = GetHandleId(dying)
-    set respawnId = nextRespawnId + 1
-    set base = respawnId * 5
     set utype = GetUnitTypeId(dying)
     set p = GetRespawnOwner(dying)
     set x = rhash.real[handleId * 4 + 0]
     set y = rhash.real[handleId * 4 + 1]
     set facing = rhash.real[handleId * 4 + 2]
     set delay = GetRandomReal(MIN_RESPAWN_TIME, MAX_RESPAWN_TIME)
-    set t = NewTimer()
-    
-    set nextRespawnId = respawnId
+    set t = CreateTimer()
+    if t == null then
+        call BJDebugMsg("[CreepRespawn] ERROR: Unable to create a respawn timer for " + GetUnitName(dying) + ".")
+        set p = null
+        return
+    endif
+    set timerId = GetHandleId(t)
+    set base = timerId * 5
+
     set respawnData[base + 0] = utype
     set respawnData[base + 1] = GetPlayerId(p)
     set respawnData.real[base + 2] = x
     set respawnData.real[base + 3] = y
     set respawnData.real[base + 4] = facing
-    call SetTimerData(t, respawnId)
     
     if DEBUG_MODE then
         call BJDebugMsg("[CreepRespawn] Scheduling respawn: " + GetUnitName(dying) + " Type: " + I2S(utype) + " at (" + R2S(x) + ", " + R2S(y) + ") in " + R2S(delay) + " seconds")
@@ -541,7 +579,7 @@ private function InitActions takes nothing returns nothing
 
     if initialPositionsSaved then
         if t != null then
-            call ReleaseTimer(t)
+            call DestroyTimer(t)
         endif
         set t = null
         return
@@ -565,7 +603,7 @@ private function InitActions takes nothing returns nothing
     endif
 
     if t != null then
-        call ReleaseTimer(t)
+        call DestroyTimer(t)
     endif
     set t = null
 endfunction
@@ -575,7 +613,7 @@ endfunction
 //===========================================================================
 
 private function Init takes nothing returns nothing
-    local timer initTimer = NewTimer()
+    local timer initTimer = CreateTimer()
     
     call EnsureState()
     
