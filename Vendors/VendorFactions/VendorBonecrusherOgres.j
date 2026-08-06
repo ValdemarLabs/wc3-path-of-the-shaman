@@ -20,6 +20,7 @@
 library VendorBonecrusherOgres initializer Init requires VendorCatalogs
     private function Register takes integer unitTypeId, integer catalogType returns nothing
         call VendorCatalogs_RegisterUnitType(unitTypeId, catalogType, "Bonecrusher Ogre")
+        call Reputation_RegisterUnitTypeFaction(unitTypeId, "Bonecrusher Clan")
     endfunction
 
     private function Init takes nothing returns nothing

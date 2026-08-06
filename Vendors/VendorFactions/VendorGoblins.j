@@ -20,6 +20,7 @@
 library VendorGoblins initializer Init requires VendorCatalogs
     private function Register takes integer unitTypeId, integer catalogType, string profile returns nothing
         call VendorCatalogs_RegisterUnitType(unitTypeId, catalogType, profile)
+        call Reputation_RegisterUnitTypeFaction(unitTypeId, "Goblins")
     endfunction
 
     private function Init takes nothing returns nothing

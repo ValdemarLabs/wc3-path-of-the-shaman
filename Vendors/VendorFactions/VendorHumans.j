@@ -20,6 +20,13 @@
 library VendorHumans initializer Init requires VendorCatalogs
     private function Register takes integer unitTypeId, integer catalogType, string profile returns nothing
         call VendorCatalogs_RegisterUnitType(unitTypeId, catalogType, profile)
+        if profile == VL_VENDOR_PROFILE_HUMAN_RIVERBANE_MALE or profile == VL_VENDOR_PROFILE_HUMAN_RIVERBANE_FEMALE then
+            call Reputation_RegisterUnitTypeFaction(unitTypeId, "Riverbane")
+        elseif profile == VL_VENDOR_PROFILE_HUMAN_STORMHAVEN_MALE or profile == VL_VENDOR_PROFILE_HUMAN_STORMHAVEN_FEMALE then
+            call Reputation_RegisterUnitTypeFaction(unitTypeId, "Stormhaven")
+        else
+            call Reputation_RegisterUnitTypeFaction(unitTypeId, "Human Citizen")
+        endif
     endfunction
 
     private function Init takes nothing returns nothing
