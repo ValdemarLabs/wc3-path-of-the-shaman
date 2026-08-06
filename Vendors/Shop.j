@@ -38,7 +38,7 @@
     - call Shop_SetStockZone(entryId, zoneId, includeChildZones)
     - set entryId = Shop_AddRandomStock(vendorId, itemTypeId, price, category)
     - call Shop_AddRandomStockOption(entryId, itemTypeId)
-    - call Shop_SetVendorRandomStockOnTrade(vendorId, enabled)
+    - call Shop_SetVendorRandomStockInterval(vendorId, seconds)
     - call Shop_EndTradeSession()
     - set boughtCount = Shop_GetSessionBoughtTransactionCount()
     - set soldCount = Shop_GetSessionSoldTransactionCount()
@@ -74,6 +74,8 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
         private constant integer SHP_AI_PRICE_HARD_CAP = 2500
         private constant integer SHP_AI_MAX_DUPLICATE_ITEMS = 3
         private constant real SHP_REPLENISH_INTERVAL = 1.00
+        private constant real SHP_RANDOM_STOCK_UPDATE_INTERVAL = 1.00
+        private constant real SHP_DEFAULT_RANDOM_STOCK_INTERVAL = 900.00
         private constant itemintegerfield SHP_ITEM_FIELD_STOCK_MAXIMUM = ConvertItemIntegerField('isto')
         private constant itemintegerfield SHP_ITEM_FIELD_STOCK_REPLENISH = ConvertItemIntegerField('istr')
         private constant string SHP_CATEGORY_ALL = "All"
@@ -92,7 +94,9 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
         private string array SHP_VendorTypeLabel
         private integer array SHP_VendorUnitType
         private integer array SHP_VendorMinimumReputation
-        private boolean array SHP_VendorRandomStockOnTrade
+        private boolean array SHP_VendorRandomStockEnabled
+        private real array SHP_VendorRandomStockInterval
+        private real array SHP_VendorRandomStockRemaining
 
         // Vendor stock.
         private integer SHP_StockCount = 0
@@ -143,6 +147,7 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
         private unit SHP_SessionVendorUnit = null
         private player SHP_SessionBuyerPlayer = null
         private timer SHP_ReplenishTimer = null
+        private timer SHP_RandomStockTimer = null
     endglobals
 
     private function SHP_SetMessage takes string message returns nothing
@@ -1150,10 +1155,37 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
         set stockItem = null
     endfunction
 
-    public function SetVendorRandomStockOnTrade takes integer vendorId, boolean enabled returns nothing
+    public function SetVendorRandomStockInterval takes integer vendorId, real interval returns nothing
         if SHP_IsVendorIdValid(vendorId) then
-            set SHP_VendorRandomStockOnTrade[vendorId] = enabled
+            if interval <= 0.00 then
+                set SHP_VendorRandomStockEnabled[vendorId] = false
+                set SHP_VendorRandomStockInterval[vendorId] = 0.00
+                set SHP_VendorRandomStockRemaining[vendorId] = 0.00
+            else
+                set SHP_VendorRandomStockEnabled[vendorId] = true
+                set SHP_VendorRandomStockInterval[vendorId] = interval
+                set SHP_VendorRandomStockRemaining[vendorId] = interval
+            endif
         endif
+    endfunction
+
+    private function SHP_UpdateRandomStock takes nothing returns nothing
+        local integer vendorId = 1
+
+        loop
+            exitwhen vendorId > SHP_VendorCount
+            if SHP_VendorRandomStockEnabled[vendorId] then
+                set SHP_VendorRandomStockRemaining[vendorId] = SHP_VendorRandomStockRemaining[vendorId] - SHP_RANDOM_STOCK_UPDATE_INTERVAL
+                if SHP_VendorRandomStockRemaining[vendorId] <= 0.00 then
+                    call Shop_RerollVendorStock(vendorId)
+                    set SHP_VendorRandomStockRemaining[vendorId] = SHP_VendorRandomStockInterval[vendorId]
+                    if SHP_VendorRandomStockRemaining[vendorId] <= 0.00 then
+                        set SHP_VendorRandomStockRemaining[vendorId] = SHP_DEFAULT_RANDOM_STOCK_INTERVAL
+                    endif
+                endif
+            endif
+            set vendorId = vendorId + 1
+        endloop
     endfunction
 
     public function GetVendorStockCount takes integer vendorId returns integer
@@ -1225,9 +1257,6 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
     endfunction
 
     public function BeginTradeSessionForUnits takes integer vendorId, unit vendor, unit buyer returns nothing
-        if SHP_IsVendorIdValid(vendorId) and SHP_VendorRandomStockOnTrade[vendorId] then
-            call Shop_RerollVendorStock(vendorId)
-        endif
         call Shop_BeginTradeSession(vendorId)
         if SHP_IsVendorIdValid(vendorId) and vendor != null and buyer != null then
             set SHP_SessionVendorUnit = vendor
@@ -2044,6 +2073,8 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
         set SHP_VendorByUnitType = Table.create()
         set SHP_VendorNameByUnitType = Table.create()
         set SHP_ReplenishTimer = CreateTimer()
+        set SHP_RandomStockTimer = CreateTimer()
         call TimerStart(SHP_ReplenishTimer, SHP_REPLENISH_INTERVAL, true, function SHP_ReplenishStock)
+        call TimerStart(SHP_RandomStockTimer, SHP_RANDOM_STOCK_UPDATE_INTERVAL, true, function SHP_UpdateRandomStock)
     endfunction
 endlibrary

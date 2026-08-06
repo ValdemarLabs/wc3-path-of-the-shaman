@@ -13,7 +13,7 @@
 
     How to install:
     Import after DialogInteraction, DialogSystem, Shop, ShopUI, VendorLines,
-    Interface, Table, and optional QuestsVendor. Vendor unit types must be
+    Reputation, Interface, Table, and optional QuestsVendor. Vendor unit types must be
     registered in Shop before the delayed scan runs, or individual units can
     be registered manually.
 
@@ -24,7 +24,7 @@
     - set hero = VendorDialogs_GetSelectedHero()
 
 **/
-library VendorDialogs initializer Init requires Table, DialogInteraction, DialogSystem, Shop, ShopUI, VendorLines, Interface, optional QuestsVendor, optional Events, optional UnitDeathEvent
+library VendorDialogs initializer Init requires Table, DialogInteraction, DialogSystem, Shop, ShopUI, VendorLines, Reputation, Interface, optional QuestsVendor, optional Events, optional UnitDeathEvent
     globals
         private constant real VDI_DIALOG_RANGE = 900.00
         private constant real VDI_DIALOG_COOLDOWN = 3.00
@@ -176,6 +176,7 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
     private function VDI_OnTrade takes nothing returns nothing
         local unit vendor = VDI_SelectedVendor
         local unit hero = VDI_SelectedHero
+        local string factionName
 
         if not VDI_IsSelectedContextValid() then
             call VDI_EndDialog(true)
@@ -184,8 +185,13 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
             return
         endif
         if not Shop_CanPlayerTradeWithVendor(GetOwningPlayer(hero), vendor) then
+            set factionName = Reputation_GetUnitFactionName(vendor)
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, GetOwningPlayer(hero))
-            call DisplayTextToPlayer(GetOwningPlayer(hero), 0.00, 0.00, "|cffff8040Your reputation with this vendor's faction is too low to trade.|r")
+            if factionName == "" then
+                call DisplayTextToPlayer(GetOwningPlayer(hero), 0.00, 0.00, "|cffff8040Your reputation with this vendor's faction is too low to trade.|r")
+            else
+                call DisplayTextToPlayer(GetOwningPlayer(hero), 0.00, 0.00, "|cffff8040Your reputation with " + factionName + " is too low to trade.|r")
+            endif
             call VDI_EndDialog(true)
             set vendor = null
             set hero = null
@@ -373,14 +379,6 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
             set hero = null
             return
         endif
-        if not Shop_CanPlayerTradeWithVendor(GetOwningPlayer(hero), vendor) then
-            call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, GetOwningPlayer(hero))
-            call DisplayTextToPlayer(GetOwningPlayer(hero), 0.00, 0.00, "|cffff8040Your reputation with this vendor's faction is too low to trade.|r")
-            set vendor = null
-            set hero = null
-            return
-        endif
-
         set VDI_SelectedVendor = vendor
         set VDI_SelectedHero = hero
         call VDI_ConfigureVendorCamera(vendor, hero)
