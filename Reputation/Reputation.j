@@ -4,7 +4,7 @@ library Reputation initializer InitReputations requires Table, Events, UnitDeath
     Reputation system
 
     Author: [Valdemar]
-    Version: 2.0
+    Version: 2.1
 
     Required global variables (Path of the Shaman)
         udg_InCinematic (when cinematic is turned on in trigger CinematicON)
@@ -161,7 +161,8 @@ globals
     
     // TEMPORAL HOSTILITY SYSTEM
     // When true, non-hostile factions become temporarily hostile when attacked/killed by Player(0)
-    // After the duration expires, the faction returns to its original status
+    // Continued attacks or kills refresh the duration. After it expires, the
+    // faction returns to its original status.
     private constant boolean ENABLE_TEMPORAL_HOSTILITY = true
     
     // Duration (in seconds) that a faction remains temporarily hostile
@@ -574,6 +575,7 @@ endfunction
 // Get remaining temporal hostility time for a faction
 private function GetTemporalHostilityRemaining takes integer factionId returns real
     local timer t
+    local real remaining
     
     if not temporalHostilityActive.has(factionId) then
         return 0.0
@@ -583,8 +585,10 @@ private function GetTemporalHostilityRemaining takes integer factionId returns r
     if t == null then
         return 0.0
     endif
-    
-    return TimerGetRemaining(t)
+
+    set remaining = TimerGetRemaining(t)
+    set t = null
+    return remaining
 endfunction
 
 struct TemporalHostility
@@ -639,49 +643,58 @@ struct TemporalHostility
         endif
         
         set factionId = f.id
+
+        // Further aggression extends the existing hostility window without
+        // replacing its stored pre-hostility state or allocating another timer.
+        if temporalHostilityActive.has(factionId) then
+            set t = LoadTimerHandle(temporalHostilityHash, factionId, 0)
+            if t != null then
+                call TimerStart(t, TEMPORAL_HOSTILITY_DURATION, false, function TemporalHostility.onExpire)
+                if RE_DEBUG then
+                    call BJDebugMsg("[TemporalHostility] Refreshed " + f.name + " hostility for " + R2S(TEMPORAL_HOSTILITY_DURATION) + " seconds")
+                endif
+            endif
+            set t = null
+            return
+        endif
+
         set currentRep = Reputation.getRep(mainPlayer, f)
         set currentState = GetAllianceStateFromRep(currentRep)
         
         // Only apply temporal hostility if faction is NOT already hostile or enemy
         // (allianceState 1 = Enemy, 2 = Hostile)
         if currentState > 2 then
-            // Check if already temporarily hostile
-            if not temporalHostilityActive.has(factionId) then
-                // Store original alliance state
-                set temporalHostilityOriginalStatus[factionId] = currentState
-                
-                // Mark as temporarily hostile
-                set temporalHostilityActive[factionId] = 1
-                
-                // Apply hostile alliance state (state 2 = Hostile/Unallied) to all faction players
-                call ApplyFactionAllianceState(mainPlayer, f, 2)
-                
-                // Sync companion player alliance if enabled
-                call SyncCompanionAlliance(f, 2)
-                
-                // Display message if faction is visible
-                if f.isVisible then
-                    call DisplayTimedTextToPlayer(mainPlayer, 0, 0, 3.0, "|cffff4040" + f.name + " has become temporarily hostile!|r")
-                endif
-                
-                if RE_DEBUG then
-                    call BJDebugMsg("[TemporalHostility] " + f.name + " is now temporarily hostile (was state " + I2S(currentState) + ")")
-                endif
-                
-                // Create timer to restore status
-                set data = TemporalHostility.allocate()
-                set data.faction = f
-                set data.originalAllianceState = currentState
-                
-                set t = CreateTimer()
-                call SaveTimerHandle(temporalHostilityHash, factionId, 0, t)
-                call SaveInteger(temporalHostilityHash, GetHandleId(t), 0, data)
-                call TimerStart(t, TEMPORAL_HOSTILITY_DURATION, false, function TemporalHostility.onExpire)
-            else
-                if RE_DEBUG then
-                    call BJDebugMsg("[TemporalHostility] " + f.name + " is already temporarily hostile, not re-triggering")
-                endif
+            // Store original alliance state
+            set temporalHostilityOriginalStatus[factionId] = currentState
+
+            // Mark as temporarily hostile
+            set temporalHostilityActive[factionId] = 1
+
+            // Apply hostile alliance state (state 2 = Hostile/Unallied) to all faction players
+            call ApplyFactionAllianceState(mainPlayer, f, 2)
+
+            // Sync companion player alliance if enabled
+            call SyncCompanionAlliance(f, 2)
+
+            // Display message if faction is visible
+            if f.isVisible then
+                call DisplayTimedTextToPlayer(mainPlayer, 0, 0, 3.0, "|cffff4040" + f.name + " has become temporarily hostile!|r")
             endif
+
+            if RE_DEBUG then
+                call BJDebugMsg("[TemporalHostility] " + f.name + " is now temporarily hostile (was state " + I2S(currentState) + ")")
+            endif
+
+            // Create timer to restore status
+            set data = TemporalHostility.allocate()
+            set data.faction = f
+            set data.originalAllianceState = currentState
+
+            set t = CreateTimer()
+            call SaveTimerHandle(temporalHostilityHash, factionId, 0, t)
+            call SaveInteger(temporalHostilityHash, GetHandleId(t), 0, data)
+            call TimerStart(t, TEMPORAL_HOSTILITY_DURATION, false, function TemporalHostility.onExpire)
+            set t = null
         else
             if RE_DEBUG then
                 call BJDebugMsg("[TemporalHostility] " + f.name + " is already hostile/enemy (state " + I2S(currentState) + "), skipping temporal hostility")
@@ -1493,7 +1506,7 @@ private function InitFactions takes nothing returns nothing
     local Faction goblins      = Faction.createFaction("Goblins", Player(13))
     local Faction elarindor    = Faction.createFaction("Elarindor", Player(15))
     local Faction bonecrushers = Faction.createFaction("Bonecrusher Clan", Player(10))
-    local Faction realhorde    = Faction.createFaction("The True Horde", Player(7))
+    local Faction morgrim      = Faction.createFaction("Morgrim Clan", Player(7))
     local Faction humancitizen = Faction.createFaction("Human Citizen", Player(2))
     local Faction gnolls       = Faction.createFaction("Gnolls", null)
     local Faction jungletrolls = Faction.createFaction("Jungle trolls", null)
@@ -1549,7 +1562,7 @@ private function InitFactions takes nothing returns nothing
     set REP_KILL_DELTA.real[goblins.id] = -50
     set REP_KILL_DELTA.real[elarindor.id] = -50
     set REP_KILL_DELTA.real[bonecrushers.id] = -50
-    set REP_KILL_DELTA.real[realhorde.id] = -50
+    set REP_KILL_DELTA.real[morgrim.id] = -50
     set REP_KILL_DELTA.real[humancitizen.id] = -50
     set REP_KILL_DELTA.real[gnolls.id] = -50
     set REP_KILL_DELTA.real[jungletrolls.id] = -50
@@ -1572,7 +1585,7 @@ private function InitFactions takes nothing returns nothing
     call Reputation.setRep(p, goblins, 0)
     call Reputation.setRep(p, elarindor, 0)
     call Reputation.setRep(p, bonecrushers, -2000)
-    call Reputation.setRep(p, realhorde, -20000)
+    call Reputation.setRep(p, morgrim, 0)
     call Reputation.setRep(p, humancitizen, -2000)
     call Reputation.setRep(p, gnolls, -6000)
     call Reputation.setRep(p, jungletrolls, -6000)
@@ -1586,7 +1599,7 @@ private function InitFactions takes nothing returns nothing
 
     //set horde.iconPath        = "ReplaceableTextures\\CommandButtons\\BTNGrunt.blp"
     set horde.iconPath        = "ReplaceableTextures\\PassiveButtons\\PASFactionHorde.blp"
-    set realhorde.iconPath    = "ReplaceableTextures\\PassiveButtons\\PASFactionTrueHorde.blp"
+    set morgrim.iconPath      = "ReplaceableTextures\\PassiveButtons\\PASBTNDwarvenLongRifle.blp"
     set alliance.iconPath     = "ReplaceableTextures\\PassiveButtons\\PASFactionHumanAlliance.blp"
     set stormhaven.iconPath   = "zones\\zone013_stormhaven.blp"
     set felorcs.iconPath      = "ReplaceableTextures\\CommandButtons\\BTNChaosGrunt.blp"

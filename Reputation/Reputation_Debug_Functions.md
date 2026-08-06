@@ -80,6 +80,7 @@ call TriggerFactionTemporalHostility("Goblins")
 ### Behavior
 - Only triggers if faction is NOT already Enemy or Hostile by reputation
 - Lasts for 120 seconds (configurable via `TEMPORAL_HOSTILITY_DURATION`)
+- Attacking or killing another unit from that faction restarts the 120-second timer
 - Affects all players mapped to that faction
 - After expiration, faction returns to original reputation-based state
 - Shows "X has become temporarily hostile!" message
@@ -89,7 +90,7 @@ call TriggerFactionTemporalHostility("Goblins")
 - Useful for testing temporal hostility system
 - Won't trigger if faction is already Enemy or Hostile
 - Debug message is printed to console
-- If already temporarily hostile, won't restart the timer
+- If already temporarily hostile, the existing timer is refreshed without creating another timer
 
 ---
 
@@ -184,7 +185,7 @@ Use these exact strings (case-sensitive) with the debug functions:
 - `"Goblins"`
 - `"Elarindor"`
 - `"Bonecrusher Clan"`
-- `"The True Horde"`
+- `"Morgrim Clan"`
 - `"Human Citizen"`
 - `"Gnolls"`
 - `"Jungle trolls"`
