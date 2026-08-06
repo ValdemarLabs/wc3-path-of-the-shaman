@@ -6,52 +6,56 @@
 
 | Rawcode | Name | Editor suffix | Gender | Intended zone | Quest giver | Placed |
 |---|---|---|---|---|---|---| 
-| `o011` | Kargun Ashblade | Weapons Vendor | Male | Dragonfire Peaks | Yes (Daily + Normal) | No |
-| `o012` | Drokmar Ironhide | Armor Vendor | Male | Dragonfire Peaks | Yes (Daily) | No |
-| `o013` | Varok Emberwall | Shield Vendor | Male | Dragonfire Peaks | Yes (Daily) | No |
-| `o00A` | Ghorak Bloodmark | Arena Quartermaster | Male | Dragonfire Peaks | Yes (Daily) | No |
-| `o00B` | Rukgar Longroad | Travelling Merchant | Male | Thornwoods / Havenwoods / Sereneglade | Yes (Daily + Normal) | No |
-| `o00C` | Nargash Tidehook | Fisher | Male | Sirensong | Yes (Daily) | No |
-| `o00D` | Kazrum Deepdelver | Miner | Male | Dragonfire Peaks | Yes (Daily) | No |
-| `o00E` | Hurgan Potbelly | Cook | Male | Thornwoods / Havenwoods / Sereneglade | Yes (Daily) | No |
-| `o00F` | Zarkul Vialroot | Alchemy Supplier | Male | Sirensong | — | No |
-| `o00G` | Brakkun Coalhand | Blacksmithing Supplier | Male | Dragonfire Peaks | Yes (Daily) | No |
-| `o00H` | Dagrok Firekeeper | Cooking Supplier | Male | Thornwoods / Havenwoods / Sereneglade | — | No |
-| `o00I` | Velgor Runeleaf | Enchanting Supplier | Male | Thornwoods / Havenwoods / Sereneglade | — | No |
-| `o00J` | Mokrag Reedline | Fishing Supplier | Male | Sirensong | — | No |
-| `o00K` | Kragmar Hidebinder | Leatherworking Supplier | Male | Thornwoods / Havenwoods / Sereneglade | — | No |
-| `o00L` | Thurgash Ore-Eye | Mining Supplier | Male | Dragonfire Peaks | Yes (Daily) | No |
-| `o00M` | Lokruk Skinner | Skinning Supplier | Male | Thornwoods / Havenwoods / Sereneglade | — | No |
-| `o00N` | Garshan Manytools | Profession Supplier | Male | Thornwoods / Havenwoods / Sereneglade | — | No |
-| `o00O` | Korghan Greenbanner | Faction Quartermaster | Male | Thornwoods / Havenwoods / Sereneglade | — | No |
-| `o00P` | Snagrok Oddskeeper | Curiosity Merchant | Male | Thornwoods / Havenwoods / Sereneglade | — | No |
-| `o00Q` | Urgash Saltleaf | Reagent Merchant | Male | Sirensong | — | No |
-| `o00R` | Grosh Fullbelly | Provisioner | Male | Thornwoods / Havenwoods / Sereneglade | — | No |
-| `o00S` | Mazgor Bitterbrew | Potion Seller | Male | Thornwoods / Havenwoods / Sereneglade | — | No |
-| `o00T` | Mordrak Cindercoin | Rare Goods Dealer | Male | Dragonfire Peaks | Yes (Daily) | No |
-| `o00U` | Dravok Trailwise | Expedition Supplier | Male | Thornwoods / Havenwoods / Sereneglade | — | No |
-| `o00V` | Korgul Barterhand | Trade Goods Merchant | Male | Thornwoods / Havenwoods / Sereneglade | — | No |
-| `o00W` | Brugar Beastfriend | Beastmaster Supplier | Male | Thornwoods / Havenwoods / Sereneglade | — | No |
-| `o00X` | Rethgar Reefblade | Sirensong Weapons Vendor | Male | Sirensong | — | No |
-| `o00Y` | Vrokan Scalehide | Sirensong Armor Vendor | Male | Sirensong | — | No |
-| `o00Z` | Shargul Tidewall | Sirensong Shield Vendor | Male | Sirensong | — | No |
-| `o010` | Krazhan Far-Sail | Sirensong Travelling Merchant | Male | Sirensong | — | No |
-| `o014` | Gorthak Jungle Banner | Sirensong Quartermaster | Male | Sirensong | Yes (Normal) | No |
+| `o011` | Kargun Ashblade | Weapons Vendor | Male | Dragonfire Peaks | Yes (Daily + Normal) | Yes |
+| `o012` | Drokmar Ironhide | Armor Vendor | Male | Dragonfire Peaks | Yes (Daily) | Yes |
+| `o013` | Varok Emberwall | Shield Vendor | Male | Dragonfire Peaks | Yes (Daily) | Yes |
+| `o00A` | Ghorak Bloodmark | Arena Quartermaster | Male | Dragonfire Peaks | Yes (Daily) | Yes |
+| `o00B` | Rukgar Longroad | Travelling Merchant | Male | Thornwoods / Havenwoods / Sereneglade | Yes (Daily + Normal) | Yes |
+| `o00C` | Nargash Tidehook | Fisher | Male | Sirensong | Yes (Daily) | Yes |
+| `o00D` | Kazrum Deepdelver | Miner | Male | Dragonfire Peaks | Yes (Daily) | Yes |
+| `o00E` | Hurgan Potbelly | Cook | Male | Thornwoods / Havenwoods / Sereneglade | Yes (Daily) | Yes |
+| `o00F` | Zarkul Vialroot | Alchemy Supplier | Male | Sirensong | — | Yes |
+| `o00G` | Brakkun Coalhand | Blacksmithing Supplier | Male | Dragonfire Peaks | Yes (Daily) | Yes |
+| `o00H` | Dagrok Firekeeper | Cooking Supplier | Male | Thornwoods / Havenwoods / Sereneglade | — | Yes |
+| `o00I` | Velgor Runeleaf | Enchanting Supplier | Male | Thornwoods / Havenwoods / Sereneglade | — | Yes |
+| `o00J` | Mokrag Reedline | Fishing Supplier | Male | Sirensong | — | Yes |
+| `o00K` | Kragmar Hidebinder | Leatherworking Supplier | Male | Thornwoods / Havenwoods / Sereneglade | — | Yes |
+| `o00L` | Thurgash Ore-Eye | Mining Supplier | Male | Dragonfire Peaks | Yes (Daily) | Yes |
+| `o00M` | Lokruk Skinner | Skinning Supplier | Male | Thornwoods / Havenwoods / Sereneglade | — | Yes |
+| `o00N` | Garshan Manytools | Profession Supplier | Male | Thornwoods / Havenwoods / Sereneglade | — | Yes |
+| `o00O` | Korghan Greenbanner | Faction Quartermaster | Male | Thornwoods / Havenwoods / Sereneglade | — | Yes |
+| `o00P` | Snagrok Oddskeeper | Curiosity Merchant | Male | Thornwoods / Havenwoods / Sereneglade | — | Yes |
+| `o00Q` | Urgash Saltleaf | Reagent Merchant | Male | Sirensong | — | Yes |
+| `o00R` | Grosh Fullbelly | Provisioner | Male | Verdant Plains | — | Yes |
+| `o00S` | Mazgor Bitterbrew | Potion Seller | Male | Thornwoods / Havenwoods / Sereneglade | — | Yes |
+| `o00T` | Mordrak Cindercoin | Rare Goods Dealer | Male | Dragonfire Peaks | Yes (Daily) | Yes |
+| `o00U` | Dravok Trailwise | Expedition Supplier | Male | Thornwoods / Havenwoods / Sereneglade | — | Yes |
+| `o00V` | Korgul Barterhand | Trade Goods Merchant | Male | Thornwoods / Havenwoods / Sereneglade | — | Yes |
+| `o00W` | Brugar Beastfriend | Beastmaster Supplier | Male | Thornwoods / Havenwoods / Sereneglade | — | Yes |
+| `o00X` | Rethgar Reefblade | Sirensong Weapons Vendor | Male | Sirensong | — | Yes |
+| `o00Y` | Vrokan Scalehide | Sirensong Armor Vendor | Male | Sirensong | — | Yes |
+| `o00Z` | Shargul Tidewall | Sirensong Shield Vendor | Male | Sirensong | — | Yes |
+| `o010` | Krazhan Far-Sail | Sirensong Travelling Merchant | Male | Sirensong | — | Yes |
+| `o014` | Gorthak Jungle Banner | Sirensong Quartermaster | Male | Sirensong | Yes (Normal) | Yes |
+
+Notes:
+- Ghorak is weird as arena quarmaster in dragonpeaks where there is no arena related stuff.
+- Dagrok is placed with ogres, maybe ogres think he is eatable.
 
 ### Satyr vendors
 
 | Rawcode | Name | Editor suffix | Gender | Intended zone | Quest giver | Placed |
 |---|---|---|---|---|---|---| 
-| `n02Y` | Xyros Bloodwager | Arena Quartermaster | Male | Sereneglade / Weeping Hollow | Yes (Daily) | No |
-| `n02Z` | Vaelith the Covetous | Rare Goods Dealer | Male | Sereneglade / Weeping Hollow | Yes (Daily + Normal) | No |
-| `n030` | Sythren Duskmoss | Reagent Merchant | Male | Sereneglade / Weeping Hollow | Yes (Daily) | No |
-| `n031` | Malyr Runehorn | Enchanting Supplier | Male | Sereneglade / Weeping Hollow | Yes (Daily) | No |
-| `n032` | Zarethis Oddhoof | Curiosity Merchant | Male | Sereneglade / Weeping Hollow | — | No |
-| `n033` | Nymor Vialtongue | Potion Seller | Male | Sereneglade / Weeping Hollow | Yes (Daily) | No |
-| `n034` | Krythos Thornblade | Weapons Vendor | Male | Weeping Hollow | — | No |
-| `n036` | Velthyr Nighthide | Armor Vendor | Male | Weeping Hollow | — | No |
-| `n037` | Ozyr Blackhorn | Shield Vendor | Male | Weeping Hollow | — | No |
-| `n038` | Faelrix Wayhoof | Travelling Merchant | Male | Sereneglade / Weeping Hollow / travelling | Yes (Normal) | No |
+| `n02Y` | Xyros Bloodwager | Arena Quartermaster | Male | Sereneglade / Weeping Hollow | Yes (Daily) | Yes |
+| `n02Z` | Vaelith the Covetous | Rare Goods Dealer | Male | Sereneglade / Weeping Hollow | Yes (Daily + Normal) | Yes |
+| `n030` | Sythren Duskmoss | Reagent Merchant | Male | Sereneglade / Weeping Hollow | Yes (Daily) | Yes |
+| `n031` | Malyr Runehorn | Enchanting Supplier | Male | Sereneglade / Weeping Hollow | Yes (Daily) | Yes |
+| `n032` | Zarethis Oddhoof | Curiosity Merchant | Male | Sereneglade / Weeping Hollow | — | Yes |
+| `n033` | Nymor Vialtongue | Potion Seller | Male | Sereneglade / Weeping Hollow | Yes (Daily) | Yes |
+| `n034` | Krythos Thornblade | Weapons Vendor | Male | Weeping Hollow | — | Yes |
+| `n036` | Velthyr Nighthide | Armor Vendor | Male | Weeping Hollow | — | Yes |
+| `n037` | Ozyr Blackhorn | Shield Vendor | Male | Weeping Hollow | — | Yes |
+| `n038` | Faelrix Wayhoof | Travelling Merchant | Male | Sereneglade / Weeping Hollow / travelling | Yes (Normal) | Yes |
 
 ### Human vendors
 
