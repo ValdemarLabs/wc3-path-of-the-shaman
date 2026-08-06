@@ -142,7 +142,7 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
             call UnitAddItemByIdSwapped(ST_ITEM_NAZGREKS_AXE, udg_Nazgrek)
             call UnitAddItemByIdSwapped(ST_ITEM_BACK, udg_Nazgrek)
             call UnitAddItemByIdSwapped(ST_ITEM_BELT, udg_Nazgrek)
-            call UnitAddItemByIdSwapped(ST_ITEM_BRACERS udg_Nazgrek)
+            call UnitAddItemByIdSwapped(ST_ITEM_BRACERS, udg_Nazgrek)
             call UnitAddItemByIdSwapped(ST_ITEM_CHEST, udg_Nazgrek)
             call UnitAddItemByIdSwapped(ST_ITEM_FOOT, udg_Nazgrek)
             call UnitAddItemByIdSwapped(ST_ITEM_HANDS, udg_Nazgrek)
