@@ -1,68 +1,31 @@
-library CinematicMover initializer Init requires Table, FallenHeroState
-//===========================================================================
-/*
-    Cinematic Mover
+/**
+    CinematicMover
 
-    Author: [Valdemar]
+    Author: Valdemar
+    Version:
 
     Description:
-    This library manages the movement of hero units (Nazgrek and Zulkis), their companions, and pets during cinematic sequences.
-    It ensures that these units are moved to a specified cinematic location, and if they die during the cinematic, they are revived and returned to their original positions afterward.
-    Features:
-    - Register Nazgrek and Zulkis with ownership flags.
-    - Move heroes, companions, and pets to a cinematic location.
-    - Revive heroes if they die during the cinematic.
-    - Return units to their original locations after the cinematic, with a maximum return range.
-    - Uses global revive timers for heroes (must be defined in the map script).
-    - Companion and pet groups are set externally.
+    Moves the player heroes, companions, and pets into cinematic scenes and
+    returns them afterward. Dead AI companions can be revived temporarily;
+    their original revive-timer state is restored when the scene ends.
 
-    Requires:
-    - Table library for data storage by Bribe
+    Credits:
+    - Bribe's Table library for handle-keyed state.
 
-    // Companion + Pet groups (set externally)
-    //group udg_Companion_Group
-    //group udg_TamedUnits 
+    How to install:
+    Import after AI, FallenHeroState, and Table. Companion and pet groups and
+    the legacy player/pet revive-timer globals must be initialized by the map.
 
-    Move Modes:
-    1 = All units (default)
-    2 = All except Zulkis
-    3 = All except Nazgrek
-    4 = All except Companion group
-    5 = All except TamedUnits group
-    6 = Only Nazgrek and Zulkis
-    7 = Only Nazgrek
-    8 = Only Zulkis
-    9 = No Return (move all units but don't return them)
+    API:
+    call CinematicMover_RegisterReviveTimer(unit whichUnit, timer reviveTimer)
+    call CinematicMover_MoveSingleUnitToCinematic(unit triggerUnit, unit movingUnit)
+    call CinematicMover_MoveSingleUnitToPoint(unit movingUnit, real x, real y)
+    call CinematicMover_ReturnSingleUnitFromCinematic(unit movingUnit)
+    call CinematicMover_MoveUnitsToCinematic(unit triggerUnit, integer moveMode)
+    call CinematicMover_ReturnUnitsFromCinematic(unit triggerUnit)
 
-    Usage:
-    call CinematicMover_MoveUnitsToCinematic(udg_CinematicTriggerUnit, moveMode)
-
-    call CinematicMover_MoveUnitsToCinematic(udg_CinematicTriggerUnit, 1)
-    call CinematicMover_ReturnUnitsFromCinematic(udg_CinematicTriggerUnit, 1)
-    // Move mode is optional, default is 1 (all units)
-
-    // Register heroes and their revive timers
-    call CinematicMover_RegisterReviveTimer(udg_Nazgrek, udg_ReviveTimerNazgrek)
-    call CinematicMover_RegisterReviveTimer(udg_Zulkis, udg_ReviveTimerZulkis)
-    call CinematicMover_RegisterReviveTimer(udg_Engineer, udg_ReviveTimer_Engineer)
-    call CinematicMover_RegisterReviveTimer(udg_Paladin, udg_ReviveTimerPaladin)
-    call CinematicMover_RegisterReviveTimer(udg_Rogue, udg_ReviveTimerRogue)
-    call CinematicMover_RegisterReviveTimer(udg_Warlock, udg_ReviveTimerWarlock)
-    call CinematicMover_RegisterReviveTimer(udg_Restoshaman, udg_ReviveTimerRestoshaman)
-    call CinematicMover_RegisterReviveTimer(udg_Shadowclaw, udg_ReviveTimerPet)
-    call CinematicMover_RegisterReviveTimer(udg_Warrior, udg_ReviveTimerWarrior)
-
-    //
-    // Move units to cinematic location
-    call CinematicMoverMoveUnitsToCinematic(udg_CinematicTriggerUnit)
-    // ... cinematic sequence ...
-    // Return units to their original locations 
-    call CinematicMoverReturnUnitsFromCinematic(udg_CinematicTriggerUnit)
-
-*/
-//===========================================================================
-// Globals
-//===========================================================================
+**/
+library CinematicMover initializer Init requires Table, AI, FallenHeroState
 
     globals
         // Constants
@@ -116,32 +79,71 @@ library CinematicMover initializer Init requires Table, FallenHeroState
     private function StoreAndPauseReviveTimer takes unit u returns nothing
         local timer t
         local real remaining
+        local integer id
         if u == null then
             return
         endif
-        set t = data.timer[GetHandleId(u)]
+        set id = GetHandleId(u)
+        if AI_GetInstance(u) > 0 then
+            set t = AI_GetReviveTimer(u)
+        elseif u == udg_Nazgrek then
+            set t = udg_ReviveTimerNazgrek
+        elseif u == udg_Zulkis then
+            set t = udg_ReviveTimerZulkis
+        elseif u == udg_TamedUnit then
+            set t = udg_ReviveTimerPet
+        else
+            set t = data.timer[id]
+        endif
+        set data.boolean[id + 1000000] = true
+        set data.boolean[id + 2000000] = t != null
         if t != null then
             set remaining = TimerGetRemaining(t)
             if remaining > 0.0 then
                 call PauseTimer(t)
-                set data.real[GetHandleId(u) + 1000000] = remaining
+                set data.real[id + 1000000] = remaining
             endif
         endif
+        if AI_GetInstance(u) > 0 then
+            call AI_CancelReviveTimer(u)
+        endif
+        set t = null
     endfunction
 
     // Resume the revive timer for a unit
     private function ResumeReviveTimer takes unit u returns nothing
         local timer t
         local real remaining
+        local integer id
         if u == null then
             return
         endif
-        set t = data.timer[GetHandleId(u)]
-        if t != null and data.real.has(GetHandleId(u) + 1000000) then
-            set remaining = data.real[GetHandleId(u) + 1000000]
-            call TimerStart(t, remaining, false, null)
-            call data.real.remove(GetHandleId(u) + 1000000)
+        set id = GetHandleId(u)
+        if AI_GetInstance(u) > 0 and data.boolean[id + 1000000] then
+            if data.boolean[id + 2000000] and data.real.has(id + 1000000) then
+                call AI_SetReviveRemaining(u, data.real[id + 1000000])
+            else
+                call AI_CancelReviveTimer(u)
+            endif
+        else
+            if u == udg_Nazgrek then
+                set t = udg_ReviveTimerNazgrek
+            elseif u == udg_Zulkis then
+                set t = udg_ReviveTimerZulkis
+            elseif u == udg_TamedUnit then
+                set t = udg_ReviveTimerPet
+            else
+                set t = data.timer[id]
+            endif
+            if t != null and data.real.has(id + 1000000) then
+                set remaining = data.real[id + 1000000]
+                call ResumeTimer(t)
+            endif
         endif
+        call data.real.remove(id + 1000000)
+        call data.boolean.remove(id + 1000000)
+        call data.boolean.remove(id + 2000000)
+        set t = null
     endfunction
 
     private function StoreCompanionPosition takes nothing returns nothing
@@ -283,7 +285,6 @@ library CinematicMover initializer Init requires Table, FallenHeroState
     private function HandleUnitMove takes unit u, real cx, real cy returns nothing
         local real rx
         local real ry
-        local timer unitReviveTimer
 
         if u == null then
             return
@@ -293,9 +294,6 @@ library CinematicMover initializer Init requires Table, FallenHeroState
             set cx = GetUnitX(u)
             set cy = GetUnitY(u)
         endif
-
-        // Retrieve the revive timer for the unit
-        set unitReviveTimer = data.timer[GetHandleId(u)]
 
         if FallenHeroState_IsAlive(u) then
             // Add randomness to the cinematic position
@@ -325,19 +323,19 @@ library CinematicMover initializer Init requires Table, FallenHeroState
             endif
             */
 
+            call StoreAndPauseReviveTimer(u)
             if IsUnitInGroup(u, udg_TamedUnits) then
                 //call BJDebugMsg("[CinematicMover] Reviving tamed unit via Tamed Unit Revival trigger: " + GetUnitName(u))
                 /* This trigger doesnt exist anymore. TODO to check corresponding function from Pet.j library if needed.
                 call TriggerExecute(gg_trg_Tamed_Unit_Revival)
                 */
                 call MarkRevived(u)
-            else
+            elseif ReviveHero(u, cx, cy, false) then
                 call MarkRevived(u)
-                call ReviveHero(u, cx, cy, false)
+            else
+                call ResumeReviveTimer(u)
+                return
             endif
-
-            // Store and pause revive timer (preserve remaining time)
-            call StoreAndPauseReviveTimer(u)
 
             // Add randomness to the revived position
             set rx = cx + GetRandomReal(-RANDOM_OFFSET, RANDOM_OFFSET)
@@ -400,7 +398,7 @@ library CinematicMover initializer Init requires Table, FallenHeroState
         set id = GetHandleId(u)
 
         // Check if within MAX_RETURN_RANGE initially
-        if data.real.has(id*2 + 100) then
+        if not WasRevived(u) and data.real.has(id*2 + 100) then
             set dist = data.real[id*2 + 100]
             if dist <= MAX_RETURN_RANGE then
                 //call BJDebugMsg("[CinematicMover] Skipped returning " + GetUnitName(u) + " (was within " + R2S(dist) + " of cineTriggerUnit).")
