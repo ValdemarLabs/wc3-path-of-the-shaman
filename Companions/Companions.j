@@ -44,6 +44,8 @@
     call Companions_GetTypeInfoText(unit controlledUnit) returns string
     call Companions_GetFactionInfoText(unit controlledUnit) returns string
     call Companions_GetAbilityInfoText(unit controlledUnit) returns string
+    Abilities A0F6 and A0F7 issue persistent Move and Attack orders to all
+    non-Hold controlled units and emit COMMAND_MOVE or COMMAND_ATTACK events.
 
 **/
 library Companions initializer Init requires QuestGiver, FollowSystem, IconQuery, Table, Events, UnitDeathEvent, SpeciFX, Reputation, DialogSystem, FallenHeroState
@@ -59,6 +61,8 @@ globals
     public constant integer COMMAND_KICK = 2
     public constant integer COMMAND_MODE = 3
     public constant integer COMMAND_DROP_ITEMS = 4
+    public constant integer COMMAND_MOVE = 5
+    public constant integer COMMAND_ATTACK = 6
     public unit EventUnit = null
     public unit EventSource = null
     public integer EventCommand = 0
@@ -114,6 +118,8 @@ globals
     private constant integer ABIL_MODE_HOLD = 'A6DX'
     private constant integer ABIL_INFORMATION = 'A6E9'
     private constant integer ABIL_DROP_ITEMS = 'A6DZ'
+    private constant integer ABIL_MOVE = 'A0F6'
+    private constant integer ABIL_ATTACK = 'A0F7'
     private constant integer ABIL_FOCUS_NAZGREK = 'A6E4'
     private constant integer ABIL_FOCUS_ZULKIS = 'A6E5'
     private constant integer ABIL_WANDER_NEUTRAL = 'Awan'
@@ -169,6 +175,7 @@ globals
     private Table CompanionFollowingEffect = 0
     private Table CompanionMapIconSlot = 0
     private Table CompanionPingCycle = 0
+    private Table CompanionManualOrder = 0
     private Table ControlledDisplayIndex = 0
     private minimapicon array CompanionMapIcons
     private unit array ControlledDisplayUnits
@@ -192,6 +199,11 @@ globals
     private integer HostilityDropFactionId = 0
     private unit HostilityDropBarkUnit = null
     private integer HostilityDropSeen = 0
+    private unit OrderCommandCaster = null
+    private unit OrderCommandTarget = null
+    private real OrderCommandX = 0.00
+    private real OrderCommandY = 0.00
+    private boolean OrderCommandAttack = false
 endglobals
 
 private function DebugMsg takes string msg returns nothing
@@ -250,6 +262,7 @@ private function EnsureState takes nothing returns nothing
         set CompanionFollowingEffect = Table.create()
         set CompanionMapIconSlot = Table.create()
         set CompanionPingCycle = Table.create()
+        set CompanionManualOrder = Table.create()
         set ControlledDisplayIndex = Table.create()
     endif
     if ModeTargetGroup == null then
@@ -1058,6 +1071,15 @@ private function UpdateCompanionOrderUnit takes unit controlledUnit returns noth
         return
     endif
 
+    set currentOrder = GetUnitCurrentOrder(controlledUnit)
+    if CompanionManualOrder[unitId] != 0 then
+        if currentOrder == CompanionManualOrder[unitId] then
+            set leader = null
+            return
+        endif
+        call CompanionManualOrder.remove(unitId)
+    endif
+
     set distance = GetDistanceBetweenUnits(controlledUnit, leader)
     call UpdateCompanionFarIcon(controlledUnit, leader, distance, mode)
 
@@ -1089,7 +1111,6 @@ private function UpdateCompanionOrderUnit takes unit controlledUnit returns noth
         return
     endif
 
-    set currentOrder = GetUnitCurrentOrder(controlledUnit)
     if mode == COMPANION_MODE_PASSIVE then
         call ClearOrderIdleState(controlledUnit, customValue)
         call IssueCompanionPassiveOrder(controlledUnit, leader, distance, currentOrder)
@@ -1269,6 +1290,7 @@ private function RemoveInternal takes unit companionUnit returns nothing
     call CompanionNextRandomMove.remove(unitId)
     call CompanionStoppedEffect.remove(unitId)
     call CompanionFollowingEffect.remove(unitId)
+    call CompanionManualOrder.remove(unitId)
     call DebugMsg("Remove " + GetUnitName(companionUnit))
 endfunction
 
@@ -1304,6 +1326,7 @@ private function SetModeInternal takes unit companionUnit, integer mode returns 
     endif
 
     set CompanionMode[unitId] = NormalizeMode(mode)
+    call CompanionManualOrder.remove(unitId)
     call ApplyOrders(companionUnit)
 endfunction
 
@@ -1907,6 +1930,62 @@ private function ApplyModeFromCommand takes unit caster, unit target, integer mo
     endif
     set ModeCommandCaster = null
     set target = null
+endfunction
+
+private function ApplyOrderCommandTarget takes nothing returns nothing
+    local unit controlledUnit = GetEnumUnit()
+    local integer unitId
+
+    call TrackExistingControlUnit(controlledUnit)
+    set unitId = GetHandleId(controlledUnit)
+    if CompanionTracked[unitId] == 1 and CompanionSuspended[unitId] == 0 and NormalizeMode(CompanionMode[unitId]) != COMPANION_MODE_HOLD and IsAliveUnit(controlledUnit) then
+        call ClearOrderIdleState(controlledUnit, GetUnitUserData(controlledUnit))
+        if OrderCommandAttack then
+            set CompanionManualOrder[unitId] = OrderId("attack")
+            call FireCommandEvent(controlledUnit, OrderCommandCaster, COMMAND_ATTACK, 0)
+            if OrderCommandTarget != null then
+                call IssueTargetOrder(controlledUnit, "attack", OrderCommandTarget)
+            else
+                call IssuePointOrder(controlledUnit, "attack", OrderCommandX, OrderCommandY)
+            endif
+        else
+            set CompanionManualOrder[unitId] = OrderId("move")
+            call FireCommandEvent(controlledUnit, OrderCommandCaster, COMMAND_MOVE, 0)
+            if OrderCommandTarget != null then
+                call IssueTargetOrder(controlledUnit, "move", OrderCommandTarget)
+            else
+                call IssuePointOrder(controlledUnit, "move", OrderCommandX, OrderCommandY)
+            endif
+        endif
+    endif
+    set controlledUnit = null
+endfunction
+
+private function ApplyOrderCommand takes unit caster, unit target, real x, real y, boolean attackCommand returns nothing
+    call EnsureState()
+    call RepairGuiCompanionState()
+    call GroupClear(ModeTargetGroup)
+    if udg_Companion_Group != null then
+        call ForGroup(udg_Companion_Group, function AddAllModeTarget)
+    endif
+    if udg_TamedUnits != null then
+        call ForGroup(udg_TamedUnits, function AddAllModeTarget)
+    endif
+    if ControlledDisplayGroup != null then
+        call ForGroup(ControlledDisplayGroup, function AddAllModeTarget)
+    endif
+
+    set OrderCommandCaster = caster
+    set OrderCommandTarget = target
+    set OrderCommandX = x
+    set OrderCommandY = y
+    set OrderCommandAttack = attackCommand
+    call ForGroup(ModeTargetGroup, function ApplyOrderCommandTarget)
+    call GroupClear(ModeTargetGroup)
+    set OrderCommandCaster = null
+    set OrderCommandTarget = null
+    set target = null
+    set caster = null
 endfunction
 
 private function GetModeFromAbility takes integer abilityId returns integer
@@ -2664,6 +2743,10 @@ private function OnSpellEffect takes nothing returns nothing
         call HandleInformation(target)
     elseif abilityId == ABIL_DROP_ITEMS then
         call HandleDropItems(caster, target)
+    elseif abilityId == ABIL_MOVE then
+        call ApplyOrderCommand(caster, target, GetSpellTargetX(), GetSpellTargetY(), false)
+    elseif abilityId == ABIL_ATTACK then
+        call ApplyOrderCommand(caster, target, GetSpellTargetX(), GetSpellTargetY(), true)
     endif
 
     set caster = null
@@ -2795,6 +2878,7 @@ public function UnregisterControlled takes unit controlledUnit returns nothing
     call CompanionNextRandomMove.remove(unitId)
     call CompanionStoppedEffect.remove(unitId)
     call CompanionFollowingEffect.remove(unitId)
+    call CompanionManualOrder.remove(unitId)
 endfunction
 
 public function IsControlled takes unit controlledUnit returns boolean
