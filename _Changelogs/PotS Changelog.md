@@ -46,6 +46,7 @@
 - Added DInventory helpers for staging revive and consumable items, swapping a full-bag equipment upgrade, and dropping equipped or stored items without leaving stale equipment stats.
 - Restored native AI hero death before retention so autonomous `ReviveHero` completion releases `Death` and `FallenHeroState` consistently.
 - Kept difficulty-based death item loss while removing the `Difficulty -> Revival` library dependency that formed a JassHelper requirements cycle.
+- Decoupled CinematicMover from AI through registered revive-state callbacks, removing the `AI -> Professions -> CinematicMover -> AI` requirements cycle.
 
 ### Actions Remaining
 
