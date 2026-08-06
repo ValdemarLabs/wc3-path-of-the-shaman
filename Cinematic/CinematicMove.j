@@ -13,11 +13,12 @@
     - Bribe's Table library for handle-keyed state.
 
     How to install:
-    Import after AI, FallenHeroState, and Table. Companion and pet groups and
+    Import after FallenHeroState and Table. Companion and pet groups and
     the legacy player/pet revive-timer globals must be initialized by the map.
 
     API:
     call CinematicMover_RegisterReviveTimer(unit whichUnit, timer reviveTimer)
+    call CinematicMover_RegisterAiReviveCallbacks(code inspectCallback, code cancelCallback, code restoreCallback)
     call CinematicMover_MoveSingleUnitToCinematic(unit triggerUnit, unit movingUnit)
     call CinematicMover_MoveSingleUnitToPoint(unit movingUnit, real x, real y)
     call CinematicMover_ReturnSingleUnitFromCinematic(unit movingUnit)
@@ -25,7 +26,7 @@
     call CinematicMover_ReturnUnitsFromCinematic(unit triggerUnit)
 
 **/
-library CinematicMover initializer Init requires Table, AI, FallenHeroState
+library CinematicMover initializer Init requires Table, FallenHeroState
 
     globals
         // Constants
@@ -45,6 +46,15 @@ library CinematicMover initializer Init requires Table, AI, FallenHeroState
         // data.boolean[id] : revived flag
         // data.integer[id] : stored moveMode per cine trigger
         private Table data
+        private trigger AiReviveInspectTrigger = null
+        private trigger AiReviveCancelTrigger = null
+        private trigger AiReviveRestoreTrigger = null
+
+        public unit EventUnit = null
+        public timer EventReviveTimer = null
+        public real EventReviveRemaining = 0.0
+        public boolean EventAiManaged = false
+        public boolean EventHadReviveTimer = false
     endglobals
 
 //===========================================================================
@@ -56,6 +66,16 @@ library CinematicMover initializer Init requires Table, AI, FallenHeroState
         if u != null and reviveTimer != null then
             set data.timer[GetHandleId(u)] = reviveTimer
         endif
+    endfunction
+
+    // AI registers these callbacks after both systems initialize, avoiding a library dependency cycle.
+    function CinematicMover_RegisterAiReviveCallbacks takes code inspectCallback, code cancelCallback, code restoreCallback returns nothing
+        call TriggerClearActions(AiReviveInspectTrigger)
+        call TriggerClearActions(AiReviveCancelTrigger)
+        call TriggerClearActions(AiReviveRestoreTrigger)
+        call TriggerAddAction(AiReviveInspectTrigger, inspectCallback)
+        call TriggerAddAction(AiReviveCancelTrigger, cancelCallback)
+        call TriggerAddAction(AiReviveRestoreTrigger, restoreCallback)
     endfunction
 
     // Register a hero unit with its revive timer
@@ -84,8 +104,13 @@ library CinematicMover initializer Init requires Table, AI, FallenHeroState
             return
         endif
         set id = GetHandleId(u)
-        if AI_GetInstance(u) > 0 then
-            set t = AI_GetReviveTimer(u)
+        set EventUnit = u
+        set EventReviveTimer = null
+        set EventAiManaged = false
+        call TriggerExecute(AiReviveInspectTrigger)
+        set data.boolean[id + 3000000] = EventAiManaged
+        if EventAiManaged then
+            set t = EventReviveTimer
         elseif u == udg_Nazgrek then
             set t = udg_ReviveTimerNazgrek
         elseif u == udg_Zulkis then
@@ -104,9 +129,12 @@ library CinematicMover initializer Init requires Table, AI, FallenHeroState
                 set data.real[id + 1000000] = remaining
             endif
         endif
-        if AI_GetInstance(u) > 0 then
-            call AI_CancelReviveTimer(u)
+        if EventAiManaged then
+            call TriggerExecute(AiReviveCancelTrigger)
         endif
+        set EventUnit = null
+        set EventReviveTimer = null
+        set EventAiManaged = false
         set t = null
     endfunction
 
@@ -119,12 +147,18 @@ library CinematicMover initializer Init requires Table, AI, FallenHeroState
             return
         endif
         set id = GetHandleId(u)
-        if AI_GetInstance(u) > 0 and data.boolean[id + 1000000] then
-            if data.boolean[id + 2000000] and data.real.has(id + 1000000) then
-                call AI_SetReviveRemaining(u, data.real[id + 1000000])
+        if data.boolean[id + 3000000] and data.boolean[id + 1000000] then
+            set EventUnit = u
+            set EventHadReviveTimer = data.boolean[id + 2000000] and data.real.has(id + 1000000)
+            if EventHadReviveTimer then
+                set EventReviveRemaining = data.real[id + 1000000]
             else
-                call AI_CancelReviveTimer(u)
+                set EventReviveRemaining = 0.0
             endif
+            call TriggerExecute(AiReviveRestoreTrigger)
+            set EventUnit = null
+            set EventHadReviveTimer = false
+            set EventReviveRemaining = 0.0
         else
             if u == udg_Nazgrek then
                 set t = udg_ReviveTimerNazgrek
@@ -143,6 +177,7 @@ library CinematicMover initializer Init requires Table, AI, FallenHeroState
         call data.real.remove(id + 1000000)
         call data.boolean.remove(id + 1000000)
         call data.boolean.remove(id + 2000000)
+        call data.boolean.remove(id + 3000000)
         set t = null
     endfunction
 
@@ -805,6 +840,9 @@ library CinematicMover initializer Init requires Table, AI, FallenHeroState
     private function Init takes nothing returns nothing
         // Initialize storage table
         set data = Table.create()
+        set AiReviveInspectTrigger = CreateTrigger()
+        set AiReviveCancelTrigger = CreateTrigger()
+        set AiReviveRestoreTrigger = CreateTrigger()
 
         // Register default heroes and their revive timers
         call RegisterDefaultReviveTimers()
