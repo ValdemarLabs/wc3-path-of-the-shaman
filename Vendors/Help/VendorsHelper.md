@@ -138,16 +138,16 @@
 
 | Rawcode | Name | Editor suffix | Gender | Intended zone | Quest giver | Placed |
 |---|---|---|---|---|---|---| 
-| `n04E` | Mugrok Ironclub | Weapons Vendor | Male | Dragonfire Peaks | Yes (Daily + Normal) | No |
-| `n04F` | Grumbar Thickhide | Armor Vendor | Male | Dragonfire Peaks | Yes (Daily) | No |
-| `n04G` | Bolguk Broadwall | Shield Vendor | Male | Dragonfire Peaks | Yes (Daily) | No |
-| `n04H` | Kragmog Skullstake | Arena Quartermaster | Male | Havenwoods / Bonecrush Stronghold | Yes (Daily) | No |
-| `n04I` | Durgan Rockbite | Miner | Male | Dragonfire Peaks | — | No |
-| `n04J` | Gubmog Stewpot | Cook | Male | Havenwoods / Bonecrush Stronghold | Yes (Normal) | No |
-| `n04K` | Thrumgar Forgelug | Blacksmithing Supplier | Male | Havenwoods / Bonecrush Stronghold | — | No |
-| `n04L` | Mogrum Manythings | Profession Supplier | Male | Havenwoods / Bonecrush Stronghold | — | No |
-| `n04M` | Bargul Bonecount | Bonecrusher Quartermaster | Male | Bonecrush Stronghold | — | No |
-| `n04N` | Grothak Heavytrade | Trade Goods Merchant | Male | Thornwoods | — | No |
+| `n04E` | Mugrok Ironclub | Weapons Vendor | Male | Dragonfire Peaks | Yes (Daily + Normal) | Yes |
+| `n04F` | Grumbar Thickhide | Armor Vendor | Male | Dragonfire Peaks | Yes (Daily) | Yes |
+| `n04G` | Bolguk Broadwall | Shield Vendor | Male | Dragonfire Peaks | Yes (Daily) | Yes |
+| `n04H` | Kragmog Skullstake | Arena Quartermaster | Male | Havenwoods / Bonecrush Stronghold | Yes (Daily) | Yes |
+| `n04I` | Durgan Rockbite | Miner | Male | Dragonfire Peaks | — | Yes |
+| `n04J` | Gubmog Stewpot | Cook | Male | Havenwoods / Bonecrush Stronghold | Yes (Normal) | Yes |
+| `n04K` | Thrumgar Forgelug | Blacksmithing Supplier | Male | Havenwoods / Bonecrush Stronghold | — | Yes |
+| `n04L` | Mogrum Manythings | Profession Supplier | Male | Havenwoods / Bonecrush Stronghold | — | Yes |
+| `n04M` | Bargul Bonecount | Bonecrusher Quartermaster | Male | Bonecrush Stronghold | — | Yes |
+| `n04N` | Grothak Heavytrade | Trade Goods Merchant | Male | Thornwoods | — | Yes |
 
 ### Elarindor vendors
 
@@ -168,16 +168,16 @@ These rawcodes are explicitly bound to Horde reputation; placing them under the 
 
 | Rawcode | Name | Editor suffix | Gender | Intended zone | Quest giver | Placed |
 |---|---|---|---|---|---|---| 
-| `o015` | Korak Ironhorn | Horde Weapons Vendor | Male | Dragonfire Peaks | — | No |
-| `o016` | Bovan Earthhide | Horde Armor Vendor | Male | Ghostwalkridge / Ironspine Post | — | No |
-| `o017` | Turog Stoneguard | Horde Shield Vendor | Male | Thornwoods | — | No |
-| `o018` | Marn Thunderkettle | Horde Provisioner | Male | Sirensong | — | No |
-| `o019` | Doran Plainstrider | Horde Beastmaster Supplier | Male | Thornwoods / Ghostwalkridge | — | No |
-| `o01A` | Kargan Redtotem | Horde Quartermaster | Male | Ghostwalkridge / Ironspine Post | — | No |
-| `o01B` | Boran Flintmane | Horde Blacksmithing Supplier | Male | Dragonfire Peaks | Yes (Daily) | No |
-| `o01C` | Tawa Deepvein | Horde Miner | Male | Ghostwalkridge / Ironspine Post | Yes (Daily) | No |
-| `o01D` | Koro Windpack | Horde Trade Goods Merchant | Male | Thornwoods / Sirensong | Yes (Daily) | No |
-| `o01E` | Nara Stormhoof | Horde Travelling Merchant | Male | Dragonfire Peaks / Sirensong | Yes (Daily) | No |
+| `o015` | Korak Ironhorn | Horde Weapons Vendor | Male | Dragonfire Peaks | — | Yes |
+| `o016` | Bovan Earthhide | Horde Armor Vendor | Male | Ghostwalkridge / Ironspine Post | — | Yes |
+| `o017` | Turog Stoneguard | Horde Shield Vendor | Male | Thornwoods | — | Yes |
+| `o018` | Marn Thunderkettle | Horde Provisioner | Male | Sirensong | — | Yes |
+| `o019` | Doran Plainstrider | Horde Beastmaster Supplier | Male | Thornwoods / Ghostwalkridge | — | Yes |
+| `o01A` | Kargan Redtotem | Horde Quartermaster | Male | Ghostwalkridge / Ironspine Post | — | Yes |
+| `o01B` | Boran Flintmane | Horde Blacksmithing Supplier | Male | Dragonfire Peaks | Yes (Daily) | Yes |
+| `o01C` | Tawa Deepvein | Horde Miner | Male | Ghostwalkridge / Ironspine Post | Yes (Daily) | Yes |
+| `o01D` | Koro Windpack | Horde Trade Goods Merchant | Male | Thornwoods / Sirensong | Yes (Daily) | Yes |
+| `o01E` | Nara Stormhoof | Horde Travelling Merchant | Male | Dragonfire Peaks / Sirensong | Yes (Daily) | Yes |
 
 Trade dialogue uses the existing `VendorTaurenMale_0001-0015` range. The four new daily quests reserve `VendorQuestTauren_0001-0014`; missing recordings use text-duration fallback.
 
@@ -187,13 +187,14 @@ Use `Player(7)` as the Morgrim Clan owner. The vendor libraries also bind these 
 
 | Rawcode | Name | Editor suffix | Gender | Intended zone | Quest giver | Placed |
 |---|---|---|---|---|---|---|
-| `n05C` | Durnik Forgefather | Morgrim Blacksmith | Male | Dragonfire Peaks | — | No |
-| `n05D` | Helga Ironbraid | Morgrim Blacksmith | Female | Dragonfire Peaks | — | No |
-| `n05E` | Torren Deepsteel | Morgrim Blacksmith | Male | Emberpeak Highlands | — | No |
-| `n05F` | Bruni Axeledger | Morgrim Weapons Vendor | Male | Dragonfire Peaks | — | No |
-| `n05G` | Hilda Stoneplate | Morgrim Armor Vendor | Female | Havenwoods | — | No |
-| `n05H` | Keld Coalvein | Morgrim Blacksmithing Supplier | Male | Dragonfire Peaks | — | No |
-| `n05I` | Orin Deepdelver | Morgrim Miner | Male | Dragonfire Peaks | — | No |
-| `n05J` | Magda Caskcoin | Morgrim Trade Goods Merchant | Female | Havenwoods | — | No |
+| `h00T` | Durnik Forgefather | Morgrim Blacksmith | Male | Dragonfire Peaks | — | Yes |
+| `h00U` | Helga Ironbraid | Morgrim Blacksmith | Female | Dragonfire Peaks | — | Yes |
+| `h00V` | Torren Deepsteel | Morgrim Blacksmith | Male | Emberpeak Highlands | — | Yes |
+| `h00W` | Bruni Axeledger | Morgrim Weapons Vendor | Male | Dragonfire Peaks | — | Yes |
+| `h00X` | Hilda Stoneplate | Morgrim Armor Vendor | Female | Havenwoods | — | Yes |
+| `h00Y` | Keld Coalvein | Morgrim Blacksmithing Supplier | Male | Dragonfire Peaks | — | Yes |
+| `h00Z` | Orin Deepdelver | Morgrim Miner | Male | Dragonfire Peaks | — | Yes |
+| `h010` | Magda Caskcoin | Morgrim Trade Goods Merchant | Female | Havenwoods | — | Yes |
 
 Morgrim trade dialogue reserves `VendorDwarfMorgrim_0001-0015`; missing recordings use text-duration fallback.
+Note: all dwarfs must be changed to males (this concerns mostly naming but also lines could be affected)
