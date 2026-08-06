@@ -23,6 +23,9 @@
     call Difficulty_GetCreepHealthMultiplier()
     call Difficulty_GetCreepDamageMultiplier()
     call Difficulty_GetCreepGoldMultiplier()
+    Revival reads the native difficulty applied here for death-item loss:
+    Story drops nothing, Normal drops equipped gear, and Hard drops gear plus
+    carried items. Difficulty does not require Revival.
 
 **/
 library Difficulty initializer Init
