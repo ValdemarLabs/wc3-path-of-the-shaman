@@ -20,6 +20,7 @@
     - call DEqShowUnitForPlayer(viewer, unit, inspectMode)
     - call ToggleDEqUIForUnit(playerId, unit)
     - call DInventoryEquipment_Hide()
+    - call DInventoryEquipment_HideForPlayer(viewer)
     - call DEqItemTypeDefineShieldBlock(itemTypeId, blockAmount)
     - call DEqItemTypeDefineAsShield(itemTypeId) // 50% compatibility helper
 
@@ -496,16 +497,26 @@ endfunction
 
 
 
-function DInventoryEquipment_Hide takes nothing returns nothing
-local player viewer = GetTriggerPlayer()
+function DInventoryEquipment_HideForPlayer takes player viewer returns nothing
 local integer pid
 if viewer == null then
-set viewer = Player(0)
+return
 endif
 set pid = GetPlayerId(viewer)
 call DInvCloseForPlayer(viewer)
 call CloseDEqUI(pid)
 call DInspectRefreshButtonForPlayer(viewer)
+set viewer = null
+endfunction
+
+
+
+function DInventoryEquipment_Hide takes nothing returns nothing
+local player viewer = GetTriggerPlayer()
+if viewer == null then
+set viewer = Player(0)
+endif
+call DInventoryEquipment_HideForPlayer(viewer)
 set viewer = null
 endfunction
 
