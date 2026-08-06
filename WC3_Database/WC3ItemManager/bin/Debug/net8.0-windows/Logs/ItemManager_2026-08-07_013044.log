@@ -1,0 +1,23 @@
+﻿[2026-08-07 01.30.44] [INFO] ============================================================
+[2026-08-07 01.30.44] [INFO] ItemManager session started
+[2026-08-07 01.30.44] [INFO] Log file: H:\Pelit\PotS_JASS\WC3_Database\WC3ItemManager\bin\Debug\net8.0-windows\logs\ItemManager_2026-08-07_013044.log
+[2026-08-07 01.30.44] [INFO] ============================================================
+[2026-08-07 01.30.44] [INFO] Loaded tooltip phrases: 6 rarities, 7 classes, 24 stats
+[2026-08-07 01.32.35] [INFO] Duplicated item: j4b1 - Shaman’s Garb
+[2026-08-07 01.32.53] [INFO] Updated item: j4b0 - Bonebound Mantle
+[2026-08-07 01.33.40] [INFO] Duplicated item: j4b2 - Leather Handwraps
+[2026-08-07 01.34.31] [INFO] Duplicated item: j4b3 - Braided Ritual Belt
+[2026-08-07 01.35.20] [ERROR] Error saving item j4b3: 23505: duplicate key value violates unique constraint "items_item_code_key"
+
+DETAIL: Detail redacted as it may contain sensitive data. Specify 'Include Error Detail' in the connection string to include this information.
+[2026-08-07 01.35.23] [ERROR] Error saving item j4b3: 23505: duplicate key value violates unique constraint "items_item_code_key"
+
+DETAIL: Detail redacted as it may contain sensitive data. Specify 'Include Error Detail' in the connection string to include this information.
+[2026-08-07 01.35.35] [INFO] Duplicated item: j4b4 - Shaman’s Kilt
+[2026-08-07 01.36.27] [INFO] Duplicated item: j4b5 - Earthwalker Sandals
+[2026-08-07 01.37.05] [INFO] Duplicated item: j4b6 - Weathered Cloak
+[2026-08-07 01.37.54] [INFO] Duplicated item: j4b7 - Spirit Beads
+[2026-08-07 01.38.23] [INFO] Duplicated item: j4b8 - Carved Bone Ring
+[2026-08-07 01.40.20] [INFO] Duplicated item: j4b9 - Shaman’s Hood
+[2026-08-07 01.41.04] [INFO] Duplicated item: j4c0 - Bone-laced Bracers
+[2026-08-07 01.41.57] [INFO] Duplicated item: j4c1 - Ancestral Charm
