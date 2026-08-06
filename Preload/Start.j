@@ -160,7 +160,7 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
 
         // Equip gear for Nazgrek
         loop
-            exitwhen not DInvTryEquipBestStoredEquipmentForUnit(ST_UNIT_NAZGREK)
+            exitwhen not DInvTryEquipBestStoredEquipmentForUnit(udg_Nazgrek)
         endloop
     endfunction
 
