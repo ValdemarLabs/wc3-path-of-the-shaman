@@ -2,7 +2,7 @@
     VoicelinesVendorLines
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Central source of truth for merchant greetings, trade chatter, transaction
@@ -29,12 +29,14 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         constant string VL_VENDOR_PROFILE_HUMAN_STORMHAVEN_FEMALE = "Stormhaven Human Female"
         constant string VL_VENDOR_PROFILE_HUMAN_NEUTRAL_FEMALE = "Neutral Human Female"
         constant string VL_VENDOR_PROFILE_TAUREN_HORDE_MALE = "Horde Tauren Male"
+        constant string VL_VENDOR_PROFILE_DWARF_MORGRIM = "Morgrim Clan Dwarf"
         constant string VL_VENDOR_PROFILE_ELARINDOR_MALE = "Elarindor Male"
         constant string VL_VENDOR_PROFILE_ELARINDOR_FEMALE = "Elarindor Female"
 
         constant string VL_VENDOR_HUMAN_MALE_TYPE = "VendorHumanMale_"
         constant string VL_VENDOR_HUMAN_FEMALE_TYPE = "VendorHumanFemale_"
         constant string VL_VENDOR_TAUREN_MALE_TYPE = "VendorTaurenMale_"
+        constant string VL_VENDOR_DWARF_MORGRIM_TYPE = "VendorDwarfMorgrim_"
         constant string VL_VENDOR_ELARINDOR_MALE_TYPE = "VendorElarindorMale_"
         constant string VL_VENDOR_ELARINDOR_FEMALE_TYPE = "VendorElarindorFemale_"
     endglobals
@@ -132,7 +134,7 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call RegisterBasicProfile("Skinning Supplier", "Knives and hides for practiced hands.", "A clean cut preserves the value.", "Let us see what changes hands.", "Safe roads until next time.", "Keep the blade short, sharp, and controlled.", "The wilds provide if nothing is wasted.", "That edge should serve you well.", "This hide can still be worked.", "Tools out, useful hides in.", "The beasts will not skin themselves.")
         call RegisterBasicProfile("Profession Supplier", "Tools for every useful trade.", "One stall, many crafts.", "Let us see what changes hands.", "Safe roads until next time.", "A missing tool can stop an entire expedition.", "Professionals buy spares before they need them.", "That should keep your work moving.", "Another craft will find a use for this.", "Many trades, one fair exchange.", "Come back when work creates a need.")
         call RegisterBasicProfile("Faction Quartermaster", "Standing earns access to the best stores.", "Service is remembered here.", "Let us see what changes hands.", "Safe roads until next time.", "Trusted allies see stock others do not.", "Reputation opens storerooms coin cannot.", "Your service has earned this.", "The faction can reclaim value from it.", "Supplies exchanged among trusted hands.", "More service may reveal better stock.")
-        call RegisterBasicProfile("Curiosity Merchant", "The selection changes whenever fortune stirs.", "Rare, odd, and occasionally useful.", "Let us see what changes hands.", "Safe roads until next time.", "Close the stall and open it again; fate may restock it.", "Certainty is expensive. Curiosity is profitable.", "A brave purchase.", "How wonderfully unexpected.", "Chance favored the exchange.", "Even fortune cannot tempt you today.")
+        call RegisterBasicProfile("Curiosity Merchant", "The selection changes whenever fortune stirs.", "Rare, odd, and occasionally useful.", "Let us see what changes hands.", "Safe roads until next time.", "Fortune turns the stock when its hour arrives.", "Certainty is expensive. Curiosity is profitable.", "A brave purchase.", "How wonderfully unexpected.", "Chance favored the exchange.", "Even fortune cannot tempt you today.")
         call RegisterBasicProfile("Reagent Merchant", "Reagents for practical and arcane work.", "Everything measured, labeled, and mostly stable.", "Let us see what changes hands.", "Safe roads until next time.", "Purity decides whether a spell sings or sputters.", "Keep crystals apart unless sparks are intended.", "Exactly what the formula calls for.", "I can refine this.", "Raw material traded for prepared stock.", "Return when the recipe demands it.")
         call RegisterBasicProfile("Provisioner", "Food and drink for the road.", "Fresh provisions, clean water.", "Let us see what changes hands.", "Safe roads until next time.", "Never begin a long road on an empty stomach.", "Water weighs less than regret.", "Packed for travel.", "Someone less particular will eat this.", "Old provisions out, fresh supplies in.", "Hunger will negotiate later.")
         call RegisterBasicProfile("Potion Seller", "Healing, mana, and restorative mixtures.", "Read the label before the emergency.", "Let us see what changes hands.", "Safe roads until next time.", "Potions work best before the final breath.", "Never mix two bottles because the colors match.", "Keep it within reach.", "The bottle is worth something, at least.", "Used stock traded for fresh remedies.", "May you remain healthy enough to reconsider.")
@@ -150,6 +152,7 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_STORMHAVEN_FEMALE, "Stormhaven craft carries well beyond the harbor.", "Sea air tests every buckle, stitch, and blade.", "A fine choice. Keep it clear of the salt spray.", "The harbor buyers will find a use for this.", "One cargo exchanged for another. That is harbor life.", "Nothing today? The tide may bring you back.", VL_VENDOR_HUMAN_FEMALE_TYPE, 7, 28)
         call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_NEUTRAL_FEMALE, "Trade travels farther when banners stay outside.", "Peaceful customers receive peaceful prices.", "Useful goods deserve useful hands.", "I know a buyer who values discretion.", "A balanced exchange keeps neutral ground stable.", "We can settle on a price another day.", VL_VENDOR_HUMAN_FEMALE_TYPE, 13, 37)
         call RegisterVoicedProfile(VL_VENDOR_PROFILE_TAUREN_HORDE_MALE, "The Horde's roads are long; choose supplies that endure.", "Earth, hide, and iron each reward patient hands.", "Carry it with strength and purpose.", "Nothing useful should be wasted.", "A fair exchange honors both sides.", "Walk in peace. Return when the road provides a need.", VL_VENDOR_TAUREN_MALE_TYPE, 1, 7)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_DWARF_MORGRIM, "Morgrim steel is shaped for mountains, not market shelves.", "A patient hammer leaves no weakness for the cold to find.", "Aye, that piece will earn its weight on the climb.", "There is useful metal beneath these scars.", "Good coin and honest craft; the clan prospers by both.", "Return when stone, steel, or the road gives you reason.", VL_VENDOR_DWARF_MORGRIM_TYPE, 1, 7)
         call RegisterVoicedProfile(VL_VENDOR_PROFILE_ELARINDOR_MALE, "Elarindor's forges burn softly, but they have not gone cold.", "Every restored relic returns a fragment of our home.", "May it serve you in Elarindor's defense.", "We will restore what usefulness remains.", "A measured exchange, worthy of trusted allies.", "Another time. Patience has preserved us this long.", VL_VENDOR_ELARINDOR_MALE_TYPE, 1, 7)
         call RegisterVoicedProfile(VL_VENDOR_PROFILE_ELARINDOR_FEMALE, "The arcane currents around Elarindor still bless careful craft.", "What survives the ruins deserves a discerning keeper.", "Carry it with the grace its makers intended.", "This may yet find purpose among our people.", "A fair exchange strengthens Elarindor.", "Browse as you wish. Memory has taught us patience.", VL_VENDOR_ELARINDOR_FEMALE_TYPE, 1, 7)
 
@@ -169,6 +172,7 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call ExSound_RegisterSequence(VL_VENDOR_HUMAN_MALE_TYPE, 1, 45, "Pots\\Sound\\Voicelines\\VendorHumanMale\\")
         call ExSound_RegisterSequence(VL_VENDOR_HUMAN_FEMALE_TYPE, 1, 45, "Pots\\Sound\\Voicelines\\VendorHumanFemale\\")
         call ExSound_RegisterSequence(VL_VENDOR_TAUREN_MALE_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\VendorTaurenMale\\")
+        call ExSound_RegisterSequence(VL_VENDOR_DWARF_MORGRIM_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\VendorDwarfMorgrim\\")
         call ExSound_RegisterSequence(VL_VENDOR_ELARINDOR_MALE_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\VendorElarindorMale\\")
         call ExSound_RegisterSequence(VL_VENDOR_ELARINDOR_FEMALE_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\VendorElarindorFemale\\")
         call RegisterDefaultAndSpecialistLines()

@@ -134,8 +134,8 @@ private function RUI_GetFactionDescription takes string factionName returns stri
         return "An elven power with its own guarded agenda. They respond strongly to threats against their territory."
     elseif factionName == "Bonecrusher Clan" then
         return "A brutal clan whose respect is earned through strength, survival, and decisive action."
-    elseif factionName == "The True Horde" then
-        return "A separate Horde-aligned force with stricter loyalties and a more militant political stance."
+    elseif factionName == "Morgrim Clan" then
+        return "A resilient Dwarf clan of Dragonfire Peaks whose miners, smiths, and traders measure trust through honest craft and shared hardship."
     elseif factionName == "Human Citizen" then
         return "Local civilians and town communities. Their reaction reflects everyday order, safety, and trust."
     endif

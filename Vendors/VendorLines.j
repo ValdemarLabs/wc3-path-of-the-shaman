@@ -44,6 +44,7 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
         public constant string TYPE_WEAPONS = "Weapons"
         public constant string TYPE_ARMOR = "Armor"
         public constant string TYPE_SHIELDS = "Shields"
+        public constant string TYPE_BLACKSMITH = "Blacksmith"
         public constant string TYPE_ARENA = "Arena Vendor"
         public constant string TYPE_TRAVELLING = "Travelling Merchant"
         public constant string TYPE_FISHER = "Fisher"

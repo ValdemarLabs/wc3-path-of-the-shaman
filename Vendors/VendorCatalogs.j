@@ -16,11 +16,11 @@
     How to install:
     Import after Shop, VoicelinesVendorLines, and Reputation. Import
     VendorOrcs, VendorSatyrs, VendorHumans, VendorGoblins,
-    VendorBonecrusherOgres, VendorElarindor, and VendorTauren afterward when
-    those object families are present.
+    VendorBonecrusherOgres, VendorElarindor, VendorTauren, and VendorDwarves
+    afterward when those object families are present.
 
     API:
-    - VendorCatalogs_VENDOR_CATALOG_* constants select one of the 26 catalogs.
+    - VendorCatalogs_VENDOR_CATALOG_* constants select one of the 27 catalogs.
     - set vendorId = VendorCatalogs_GetVendorId(catalogType)
     - call VendorCatalogs_RegisterUnit(vendor, catalogType, voiceProfile)
     - call VendorCatalogs_RegisterUnitType(unitTypeId, catalogType, voiceProfile)
@@ -55,8 +55,9 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
         public constant integer VENDOR_CATALOG_ADVENTURING_SUPPLIES = 24
         public constant integer VENDOR_CATALOG_TRADE_GOODS = 25
         public constant integer VENDOR_CATALOG_BEAST_SUPPLIES = 26
+        public constant integer VENDOR_CATALOG_BLACKSMITH = 27
 
-        private constant integer VC_MAX_CATALOGS = 26
+        private constant integer VC_MAX_CATALOGS = 27
         private integer array VC_VendorId
     endglobals
 
@@ -200,6 +201,20 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
         call RegisterVendorName('o018', "Marn Thunderkettle")
         call RegisterVendorName('o019', "Doran Plainstrider")
         call RegisterVendorName('o01A', "Kargan Redtotem")
+        call RegisterVendorName('o01B', "Boran Flintmane")
+        call RegisterVendorName('o01C', "Tawa Deepvein")
+        call RegisterVendorName('o01D', "Koro Windpack")
+        call RegisterVendorName('o01E', "Nara Stormhoof")
+
+        // Morgrim Clan Dwarf vendors
+        call RegisterVendorName('n05C', "Durnik Forgefather")
+        call RegisterVendorName('n05D', "Helga Ironbraid")
+        call RegisterVendorName('n05E', "Torren Deepsteel")
+        call RegisterVendorName('n05F', "Bruni Axeledger")
+        call RegisterVendorName('n05G', "Hilda Stoneplate")
+        call RegisterVendorName('n05H', "Keld Coalvein")
+        call RegisterVendorName('n05I', "Orin Deepdelver")
+        call RegisterVendorName('n05J', "Magda Caskcoin")
 
         // Female Human vendors
         call RegisterVendorName('n04O', "Mara Vane")
@@ -258,6 +273,7 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
         call CreateCatalog(VENDOR_CATALOG_ADVENTURING_SUPPLIES, "Expedition Supplier", VendorLines_TYPE_ADVENTURING_SUPPLIES, 0)
         call CreateCatalog(VENDOR_CATALOG_TRADE_GOODS, "Trade Goods Merchant", VendorLines_TYPE_TRADE_GOODS, 0)
         call CreateCatalog(VENDOR_CATALOG_BEAST_SUPPLIES, "Beastmaster Supplier", VendorLines_TYPE_BEAST_SUPPLIES, 'o001')
+        call CreateCatalog(VENDOR_CATALOG_BLACKSMITH, "Blacksmith", VendorLines_TYPE_BLACKSMITH, 0)
     endfunction
 
     private function ConfigureEquipmentStock takes nothing returns nothing
@@ -279,6 +295,13 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
         call AddStock(VENDOR_CATALOG_SHIELDS, 'I6B6', 90, "Shields")
         call AddStock(VENDOR_CATALOG_SHIELDS, 'I62D', 450, "Shields")
         call AddStock(VENDOR_CATALOG_SHIELDS, 'I62Z', 900, "Shields")
+
+        call AddStock(VENDOR_CATALOG_BLACKSMITH, 'I6B1', 60, "Weapons")
+        call AddStock(VENDOR_CATALOG_BLACKSMITH, 'I6B2', 65, "Weapons")
+        call AddStock(VENDOR_CATALOG_BLACKSMITH, 'I68F', 140, "Armor")
+        call AddStock(VENDOR_CATALOG_BLACKSMITH, 'I68M', 120, "Armor")
+        call AddStock(VENDOR_CATALOG_BLACKSMITH, 'I66E', 55, "Shields")
+        call AddStock(VENDOR_CATALOG_BLACKSMITH, 'I6B6', 90, "Shields")
 
         set stockId = AddStock(VENDOR_CATALOG_ARENA, 'I60R', 1200, "Arena Armor")
         call Shop_SetStockMinimumReputation(stockId, Reputation_REP_FRIENDLY)
@@ -384,7 +407,8 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
         call Shop_AddRandomStockOption(stockId, 'I689')
         call Shop_AddRandomStockOption(stockId, 'I67E')
         call Shop_AddRandomStockOption(stockId, 'I6A6')
-        call Shop_SetVendorRandomStockOnTrade(VC_VendorId[VENDOR_CATALOG_RANDOMIZED_GOODS], true)
+        call Shop_RerollVendorStock(VC_VendorId[VENDOR_CATALOG_RANDOMIZED_GOODS])
+        call Shop_SetVendorRandomStockInterval(VC_VendorId[VENDOR_CATALOG_RANDOMIZED_GOODS], 900.00)
 
         call AddStock(VENDOR_CATALOG_REAGENTS, 'I60Y', 20, "Herbs")
         call AddStock(VENDOR_CATALOG_REAGENTS, 'I6C6', 80, "Essences")
