@@ -2,8 +2,8 @@
 File | Responsibility
 ---|---
 Shop.j	| Core buying, selling, stock, reputation, zone filtering, and vendor lookup engine.
-VendorCatalogs.j | Shared definitions for 26 reusable vendor roles. Many different racial units can use the same catalog.
-VendorOrcs.j, VendorElarindor.j, VendorTauren.j, etc. | Connect Object Editor unit rawcodes to a catalog and racial, regional, gendered, or faction voice profile.
+VendorCatalogs.j | Shared definitions for 27 reusable vendor roles. Many different racial units can use the same catalog.
+VendorOrcs.j, VendorElarindor.j, VendorTauren.j, VendorDwarves.j, etc. | Connect Object Editor unit rawcodes to a catalog, explicit reputation faction, and racial, regional, gendered, or faction voice profile.
 VendorBlacksmith.j | A bespoke vendor implementation with its own vendor ID, stock, AI weights, reputation items, unit bindings, and dialogue.
 VendorFloatingText.j | Presentation layer that displays the final registered vendor type above units.
 QuestsAndDialogs/QuestsGeneric.j | Reusable kill, fetch, and talk quest templates, requirements, rewards, dialogue sequences, and daily acceptance variants for any NPC.
