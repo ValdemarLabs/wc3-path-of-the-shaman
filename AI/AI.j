@@ -80,6 +80,8 @@
     call AI_HandleBossCast(caster, abilityId, targetX, targetY)
     call AI_RequestBark(speaker, barkType)
     call AI_GetReviveTimer(whichUnit) returns timer
+    call AI_CancelReviveTimer(whichUnit)
+    call AI_SetReviveRemaining(whichUnit, remaining)
     call AI_GetReviveRemaining(whichUnit) returns real
     call AI_IsReviving(whichUnit) returns boolean
     call AI_IsAlive(whichUnit) returns boolean
@@ -249,6 +251,7 @@ globals
     private constant integer ITEM_MINING_PICK = 'I672'
     private constant integer ITEM_SKINNING_KNIFE = 'I66M'
     private constant integer ITEM_CAMP_FIRE = 'I611'
+    private constant integer ITEM_SPIRIT_SHARD = 'I00C'
     private constant integer UNIT_AVELINE_RIVERBANE = 'O009'
     private constant integer UNIT_CAMP_FIRE = 'n61C'
 
@@ -1717,6 +1720,29 @@ private function StageDInvManaConsumable takes unit whichUnit returns item
     return null
 endfunction
 
+private function StageDInvOtherConsumable takes unit whichUnit, boolean needsLife, boolean needsMana returns item
+    local item stagedItem
+    local integer itemTypeId
+
+    if whichUnit == null then
+        return null
+    endif
+    if IsInventoryFull(whichUnit) and not TryStashUnneededVanillaItem(whichUnit, needsLife, needsMana) then
+        return null
+    endif
+    set stagedItem = DInvStageFirstStoredActiveItem(whichUnit, ITEM_SPIRIT_SHARD)
+    if stagedItem == null then
+        return null
+    endif
+    set itemTypeId = GetItemTypeId(stagedItem)
+    if IsAIUtilityItemType(itemTypeId) then
+        call DInvMoveVanillaItemToDInventory(whichUnit, stagedItem)
+        set stagedItem = null
+        return null
+    endif
+    return stagedItem
+endfunction
+
 private function UnitHasItemType takes unit whichUnit, integer itemTypeId returns boolean
     local integer slot = 0
     local integer size
@@ -2006,6 +2032,52 @@ private function StartReviveTimer takes integer instanceId, unit whichUnit retur
     set ReviveTimerInstance[GetHandleId(reviveTimer)] = instanceId
     call TimerStart(reviveTimer, reviveDelay, false, function ReviveExpired)
     set reviveTimer = null
+endfunction
+
+public function CancelReviveTimer takes unit whichUnit returns nothing
+    local integer instanceId
+    local timer reviveTimer
+
+    if whichUnit == null then
+        return
+    endif
+    set instanceId = UnitInstance[GetHandleId(whichUnit)]
+    if instanceId <= 0 then
+        set whichUnit = null
+        return
+    endif
+    set reviveTimer = InstanceReviveTimer.timer[instanceId]
+    if reviveTimer != null then
+        call ReviveTimerInstance.remove(GetHandleId(reviveTimer))
+        call InstanceReviveTimer.timer.remove(instanceId)
+        call PauseTimer(reviveTimer)
+        call DestroyTimer(reviveTimer)
+    endif
+    set reviveTimer = null
+    set whichUnit = null
+endfunction
+
+public function SetReviveRemaining takes unit whichUnit, real remaining returns nothing
+    local integer instanceId
+    local timer reviveTimer
+
+    if whichUnit == null then
+        return
+    endif
+    set instanceId = UnitInstance[GetHandleId(whichUnit)]
+    if instanceId <= 0 then
+        set whichUnit = null
+        return
+    endif
+    call AI_CancelReviveTimer(whichUnit)
+    if remaining > 0.00 then
+        set reviveTimer = CreateTimer()
+        set InstanceReviveTimer.timer[instanceId] = reviveTimer
+        set ReviveTimerInstance[GetHandleId(reviveTimer)] = instanceId
+        call TimerStart(reviveTimer, remaining, false, function ReviveExpired)
+    endif
+    set reviveTimer = null
+    set whichUnit = null
 endfunction
 
 private function CompleteTravel takes integer instanceId, unit whichUnit returns nothing
@@ -3839,6 +3911,13 @@ public function TryUseConsumable takes unit whichUnit returns boolean
             set slotItem = null
             return true
         endif
+    endif
+    set stagedItem = StageDInvOtherConsumable(whichUnit, needsLife, needsMana)
+    if stagedItem != null then
+        call UnitUseItem(whichUnit, stagedItem)
+        set stagedItem = null
+        set slotItem = null
+        return true
     endif
     set stagedItem = null
     set slotItem = null
@@ -6543,6 +6622,8 @@ private function HandleCompanionCommand takes nothing returns nothing
         else
             set barkType = AI_BARK_NORMAL
         endif
+        call ResetCompanionCommandState(instanceId, whichUnit, true)
+    elseif commandId == Companions_COMMAND_MOVE or commandId == Companions_COMMAND_ATTACK then
         call ResetCompanionCommandState(instanceId, whichUnit, true)
     endif
 
