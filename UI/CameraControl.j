@@ -16,6 +16,7 @@
     call CameraControl_GetTargetUnit(whichPlayer) returns unit
     call CameraControl_GetStoredTargetUnit(whichPlayer) returns unit
     call CameraControl_Suspend(whichPlayer)
+    call CameraControl_SuspendInteractive(whichPlayer, angle, rotation)
     call CameraControl_ResumeQuick(whichPlayer)
     call CameraControl_IsSuspended(whichPlayer) returns boolean
 
@@ -112,6 +113,7 @@ globals
     private boolean array CC_NormalTraceEnabled
     private unit array CC_TargetUnit
     private boolean array CC_Suspended
+    private boolean array CC_SuspendedKeyboardAdjustable
     private boolean array CC_PressingLeft
     private boolean array CC_PressingRight
     private boolean array CC_PressingUp
@@ -504,8 +506,11 @@ endfunction
 
 private function CC_IsKeyboardModeActive takes player whichPlayer returns boolean
     local integer pid = CC_GetPlayerIndex(whichPlayer)
-    if CC_Suspended[pid] or CC_ResumePending[pid] then
+    if CC_ResumePending[pid] then
         return false
+    endif
+    if CC_Suspended[pid] then
+        return CC_SuspendedKeyboardAdjustable[pid]
     endif
     // Special modes opt into arrow-key control through CC_DefineSpecialMode(..., keyboardAdjustable, ...).
     if CC_IsResolvedSpecialModeKeyboardAdjustable(pid) then
@@ -805,7 +810,12 @@ endfunction
 
 private function CC_ApplyKeyboardFields takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
-    if CC_IsResolvedSpecialModeKeyboardAdjustable(pid) then
+    if CC_Suspended[pid] and CC_SuspendedKeyboardAdjustable[pid] then
+        if GetLocalPlayer() == whichPlayer then
+            call SetCameraField(CAMERA_FIELD_ANGLE_OF_ATTACK, CC_SpecialAngle[pid], CAMERA_KEYBOARD_FIELD_DURATION)
+            call SetCameraField(CAMERA_FIELD_ROTATION, CC_SpecialRotation[pid], CAMERA_KEYBOARD_FIELD_DURATION)
+        endif
+    elseif CC_IsResolvedSpecialModeKeyboardAdjustable(pid) then
         call CC_ApplySpecialFields(whichPlayer, CAMERA_KEYBOARD_FIELD_DURATION)
     else
         call CC_UpdateAndApplyNormalFields(whichPlayer, CAMERA_KEYBOARD_FIELD_DURATION)
@@ -922,7 +932,34 @@ private function CC_UpdateKeyboardCamera takes nothing returns nothing
     loop
         exitwhen i >= bj_MAX_PLAYERS
         set specialMode = CC_GetResolvedSpecialMode(i)
-        if CC_IsSpecialModeKeyboardAdjustable(specialMode) and not CC_Suspended[i] then
+        if CC_Suspended[i] and CC_SuspendedKeyboardAdjustable[i] then
+            set specialAngleMax = CAMERA_ANGLE_MAX
+            if CC_MoveDown[i] then
+                set CC_SpecialAngle[i] = CC_SpecialAngle[i] + CAMERA_KEYBOARD_VERTICAL_SPEED
+                if CC_SpecialAngle[i] > specialAngleMax then
+                    set CC_SpecialAngle[i] = specialAngleMax
+                endif
+            elseif CC_MoveUp[i] then
+                set CC_SpecialAngle[i] = CC_SpecialAngle[i] - CAMERA_KEYBOARD_VERTICAL_SPEED
+                if CC_SpecialAngle[i] < CAMERA_ANGLE_MIN then
+                    set CC_SpecialAngle[i] = CAMERA_ANGLE_MIN
+                endif
+            endif
+
+            if CC_MoveRight[i] then
+                set CC_SpecialRotation[i] = CC_SpecialRotation[i] + CAMERA_KEYBOARD_HORIZONTAL_SPEED
+                if CC_SpecialRotation[i] >= 360.00 then
+                    set CC_SpecialRotation[i] = CC_SpecialRotation[i] - 360.00
+                endif
+            elseif CC_MoveLeft[i] then
+                set CC_SpecialRotation[i] = CC_SpecialRotation[i] - CAMERA_KEYBOARD_HORIZONTAL_SPEED
+                if CC_SpecialRotation[i] <= 0.00 then
+                    set CC_SpecialRotation[i] = CC_SpecialRotation[i] + 360.00
+                endif
+            endif
+
+            call CC_ApplyKeyboardFields(Player(i))
+        elseif CC_IsSpecialModeKeyboardAdjustable(specialMode) and not CC_Suspended[i] then
             set specialAngleMax = CC_GetConfiguredSpecialModeAngleMax(specialMode)
             if CC_MoveDown[i] then
                 set CC_SpecialAngle[i] = CC_SpecialAngle[i] + CAMERA_KEYBOARD_VERTICAL_SPEED
@@ -1180,6 +1217,7 @@ endfunction
 private function CC_FinishSmoothResume takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     set CC_ResumePending[pid] = false
+    set CC_SuspendedKeyboardAdjustable[pid] = false
     set CC_Suspended[pid] = false
     call CC_ApplyMode(whichPlayer)
 endfunction
@@ -1382,6 +1420,7 @@ endfunction
 
 public function Suspend takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
+    set CC_SuspendedKeyboardAdjustable[pid] = false
     if CC_Suspended[pid] then
         if CC_ResumePending[pid] then
             set CC_ResumePending[pid] = false
@@ -1393,6 +1432,7 @@ public function Suspend takes player whichPlayer returns nothing
     endif
     set CC_Suspended[pid] = true
     set CC_ResumePending[pid] = false
+    set CC_SuspendedKeyboardAdjustable[pid] = false
     call PauseTimer(CC_ResumeTimer[pid])
     call CC_ClearKeyState(whichPlayer)
     call CC_UpdateLoopState()
@@ -1404,12 +1444,24 @@ public function Suspend takes player whichPlayer returns nothing
     call ReleaseMovementUnit(whichPlayer)
 endfunction
 
+public function SuspendInteractive takes player whichPlayer, real angle, real rotation returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+
+    call Suspend(whichPlayer)
+    set CC_SuspendedKeyboardAdjustable[pid] = true
+    set CC_SpecialAngle[pid] = CC_Clamp(angle, CAMERA_ANGLE_MIN, CAMERA_ANGLE_MAX)
+    set CC_SpecialRotation[pid] = CC_NormalizeAngle(rotation)
+endfunction
+
 public function ResumeQuick takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     if CC_ResumePending[pid] or not CC_Suspended[pid] then
         return
     endif
     set CC_ResumePending[pid] = false
+    set CC_SuspendedKeyboardAdjustable[pid] = false
+    call CC_ClearKeyState(whichPlayer)
+    call CC_UpdateLoopState()
     set CC_Suspended[pid] = false
     call CC_ApplyMode(whichPlayer)
 endfunction

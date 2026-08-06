@@ -14,6 +14,7 @@ library DialogCamera initializer Init requires CameraControl
     
     Usage:
         call DialogCameraStart(p, u, dist, zOffset, angle, rotationOffset, farZ, fov, blockRadius, doBlockCheck)
+        call DialogCameraStartInteractive(p, u, dist, zOffset, angle, rotationOffset, farZ, fov, blockRadius, doBlockCheck)
 
     Params for DialogCameraStart:
       p             - Player to affect
@@ -117,7 +118,7 @@ endfunction
 //===========================================================================
 // Start dialog camera for one player
 //===========================================================================
-function DialogCameraStart takes player p, unit u, real dist, real zOffset, real angle, real rotationOffset, real farZ, real fov, real blockRadius, boolean doBlockCheck returns nothing
+private function Start takes player p, unit u, real dist, real zOffset, real angle, real rotationOffset, real farZ, real fov, real blockRadius, boolean doBlockCheck, boolean keyboardAdjustable returns nothing
     local integer pid
     local real x
     local real y
@@ -169,11 +170,6 @@ function DialogCameraStart takes player p, unit u, real dist, real zOffset, real
 
     set nearz = DEFAULT_NEARZ
 
-    if not dialogCameraActive[pid] then
-        set dialogCameraActive[pid] = true
-        call CameraControl_Suspend(p)
-    endif
-
     // pan to unit position
     set x = GetUnitX(u)
     set y = GetUnitY(u)
@@ -195,6 +191,13 @@ function DialogCameraStart takes player p, unit u, real dist, real zOffset, real
         endif
     endif
 
+    set dialogCameraActive[pid] = true
+    if keyboardAdjustable then
+        call CameraControl_SuspendInteractive(p, finalPitch, finalRot)
+    else
+        call CameraControl_Suspend(p)
+    endif
+
     // Apply to this player only (Blizzard.j wrappers)
     call SetCameraFieldForPlayer(p, CAMERA_FIELD_TARGET_DISTANCE, dist,       DEFAULT_CAMTIME)
     call SetCameraFieldForPlayer(p, CAMERA_FIELD_FARZ,            farZ,       DEFAULT_CAMTIME)
@@ -204,6 +207,14 @@ function DialogCameraStart takes player p, unit u, real dist, real zOffset, real
     call SetCameraFieldForPlayer(p, CAMERA_FIELD_ZOFFSET,         zOffset,    DEFAULT_CAMTIME)
     call SetCameraFieldForPlayer(p, CAMERA_FIELD_NEARZ,           nearz,      DEFAULT_CAMTIME)
 
+endfunction
+
+function DialogCameraStart takes player p, unit u, real dist, real zOffset, real angle, real rotationOffset, real farZ, real fov, real blockRadius, boolean doBlockCheck returns nothing
+    call Start(p, u, dist, zOffset, angle, rotationOffset, farZ, fov, blockRadius, doBlockCheck, false)
+endfunction
+
+function DialogCameraStartInteractive takes player p, unit u, real dist, real zOffset, real angle, real rotationOffset, real farZ, real fov, real blockRadius, boolean doBlockCheck returns nothing
+    call Start(p, u, dist, zOffset, angle, rotationOffset, farZ, fov, blockRadius, doBlockCheck, true)
 endfunction
 
 //===========================================================================

@@ -18,7 +18,7 @@
 
 **/
 
-library CraftingUI initializer AutoInit requires Professions, GatherNodeSkills, Table, MasterUI, Interface
+library CraftingUI initializer AutoInit requires Professions, GatherNodeSkills, Table, MasterUI, Interface, DEquipment
 
 globals
     private constant integer CUI_VISIBLE_ROWS = 12
@@ -748,6 +748,7 @@ private function CUI_OpenForPlayerEx takes player whichPlayer, unit station, uni
     endif
 
     set pid = GetPlayerId(whichPlayer)
+    call DInventoryEquipment_HideForPlayer(whichPlayer)
     set CUI_Station[pid] = station
     set CUI_Crafter[pid] = crafter
     set CUI_ListStart[pid] = 0

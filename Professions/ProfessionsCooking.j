@@ -275,7 +275,8 @@ globals
 endglobals
 
 private function PC_RegisterRecipe takes string categoryName, string subcategoryName, string recipeName, string description, string iconPath, integer outputItemCode, integer requiredSkill, real craftTime returns integer
-    local integer recipeId = Professions_RegisterRecipe(GNS_PROF_COOKING, PC_STATION_CAMP_FIRE, recipeName, description, iconPath, outputItemCode, 1, requiredSkill, craftTime, 0.00)
+    // Leave the recipe icon empty so Professions resolves the crafted item's Object Editor icon.
+    local integer recipeId = Professions_RegisterRecipe(GNS_PROF_COOKING, PC_STATION_CAMP_FIRE, recipeName, description, "", outputItemCode, 1, requiredSkill, craftTime, 0.00)
 
     call Professions_SetRecipeCategoryPath(recipeId, categoryName, subcategoryName)
     call Professions_SetRecipeSkillGain(recipeId, 1)

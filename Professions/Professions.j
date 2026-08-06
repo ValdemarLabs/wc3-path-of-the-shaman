@@ -70,7 +70,7 @@ globals
     private constant real P_ALCHEMY_STAND_ANIMATION_DELAY = 60.00
     private constant real P_ALCHEMY_DEATH_ANIMATION_DELAY = 120.00
     private constant real P_CRAFT_CAMERA_DISTANCE = 950.00
-    private constant real P_CRAFT_CAMERA_ZOFFSET = 40.00
+    private constant real P_CRAFT_CAMERA_ZOFFSET = 350.00
     private constant real P_CRAFT_CAMERA_ANGLE = 328.00
     private constant real P_CRAFT_CAMERA_ROTATION = 180.00
     private constant real P_CRAFT_CAMERA_FARZ = 10000.00
@@ -1602,13 +1602,6 @@ private function P_BeginActualCraft takes integer jobId returns boolean
     call P_StartCrafterAnimationLoop(jobId)
     call P_StartStationFeedback(professionId, station)
 
-    if not P_JobAiControlled[jobId] then
-        set owner = GetOwningPlayer(crafter)
-        if owner != null then
-            call DisplayTextToPlayer(owner, 0.00, 0.00, "|cffffcc00Crafting:|r " + P_GetRecipeDisplayName(recipeId))
-        endif
-    endif
-
     set t = NewTimerEx(jobId)
     call TimerStart(t, P_RecipeCraftTime[recipeId], false, function P_FinishJobAction)
 
@@ -1646,7 +1639,7 @@ private function P_PlayerFadeOutDoneAction takes nothing returns nothing
         call P_FaceStation(crafter, station)
         if owner != null then
             set rotationOffset = P_GetCraftCameraRotationOffset(crafter, station)
-            call DialogCameraStart(owner, station, P_CRAFT_CAMERA_DISTANCE, P_CRAFT_CAMERA_ZOFFSET, P_CRAFT_CAMERA_ANGLE, rotationOffset, P_CRAFT_CAMERA_FARZ, P_CRAFT_CAMERA_FOV, P_CRAFT_CAMERA_BLOCK_RADIUS, P_CRAFT_CAMERA_BLOCK_CHECK)
+            call DialogCameraStartInteractive(owner, station, P_CRAFT_CAMERA_DISTANCE, P_CRAFT_CAMERA_ZOFFSET, P_CRAFT_CAMERA_ANGLE, rotationOffset, P_CRAFT_CAMERA_FARZ, P_CRAFT_CAMERA_FOV, P_CRAFT_CAMERA_BLOCK_RADIUS, P_CRAFT_CAMERA_BLOCK_CHECK)
         endif
         call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, P_CRAFT_FADE_TIME, P_CRAFT_FADE_TEXTURE, 0.00, 0.00, 0.00, 0.00)
         call TimerStart(t, P_CRAFT_FADE_TIME, false, function P_PlayerFadeInDoneAction)
