@@ -48,6 +48,18 @@
 - Kept difficulty-based death item loss while removing the `Difficulty -> Revival` library dependency that formed a JassHelper requirements cycle.
 - Decoupled CinematicMover from AI through registered revive-state callbacks, removing the `AI -> Professions -> CinematicMover -> AI` requirements cycle.
 
+- debug commands for reputation testing purposes (increase rep level so can eg test vendors):
+/debug setfactionrep horde
+/debug setfactionrep elarindor
+/debug setfactionrep riverbane
+/debug setfactionrep morgrim
+/debug setfactionrep bonecrusher
+/debug setfactionrep undead
+/debug setfactionrep goblins
+/debug setfactionrep satyr
+/debug setfactionrep stormhaven
+/debug setfactionrep stormhaven
+
 ### Actions Remaining
 
 - Create or update Object Editor vendor unit types `o01B-o01E` and `n05C-n05J` to match `VendorsHelper.md`, including Morgrim ownership on `Player(7)` where appropriate.
