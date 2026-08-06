@@ -15,6 +15,45 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [6.8.2026]
+
+### Player-Facing Updates
+
+- Continued attacks or kills against a temporarily hostile reputation faction now restart its hostility timer, preventing the faction from becoming peaceful while combat is still ongoing.
+- Cooking recipes now display the crafted item's Object Editor icon consistently with the other professions.
+- Opening any crafting station now closes the crafter owner's inventory and equipment panels.
+- Raised the crafting camera and restored arrow-key pitch and rotation control while a player craft is in progress.
+- Removed the duplicate crafting-start announcement; the crafted-item completion message remains.
+- Vendor conversations and quests can now open regardless of faction standing; attempting to enter Trade still rejects insufficient reputation with an on-screen warning.
+- Randomized-goods catalogs now retain their inventory between trade sessions and reroll on a configurable internal timer, initially set to fifteen minutes.
+- Added eight Morgrim Clan Dwarf vendors covering blacksmithing, weapons, armor, mining supplies, and trade goods.
+- Added four Horde Tauren vendors and daily kill or gathering quests for Boran Flintmane, Tawa Deepvein, Koro Windpack, and Nara Stormhoof.
+- Added companion Move (`A0F6`) and Attack (`A0F7`) commands for unit or point targets; companions in Hold Position ignore both commands.
+- Corrected AI hero revival, including Spirit Shards stored in DInventory, and made AI heroes use better stored equipment without downgrading their current slot.
+- AI heroes can move stored potions, food, drinks, and other active-use consumables into their normal inventory when they need to use them.
+- Player death item loss now follows difficulty: Story drops nothing, Normal drops equipped gear, and Hard drops equipped gear plus carried inventory items.
+- Spirit Healers now use the preplaced graveyard units and open the shared fullscreen dialogue flow when restoring lost items.
+
+### Technical Updates
+
+- Temporal hostility refreshes its existing per-faction timer while preserving the original restoration state, without allocating duplicate timers or hostility records.
+- Added player-specific inventory/equipment closing and an interactive suspended-camera mode used by profession crafting cinematics.
+- Bound Orc, Satyr, Human, Goblin, Bonecrusher, Elarindor, Tauren, and Dwarf vendor rawcodes directly to their intended reputation factions instead of relying only on Object Editor ownership.
+- Reassigned `Player(7)` reputation from The True Horde to the Morgrim Clan and added its Reputation UI description and Dwarf icon.
+- Added a reusable Blacksmith catalog, Morgrim Dwarf trade voice profile, Tauren quest dialogue pool, and ExSound ranges for both cultures.
+- Updated the vendor roster with the intended regional distribution for Orc, Satyr, Human, Goblin, Bonecrusher, Tauren, and Dwarf vendors.
+- Preserved AI companion revive-timer remaining time, including the unusual dead-without-an-active-timer state, across temporary cinematic revival.
+- Added DInventory helpers for staging revive and consumable items, swapping a full-bag equipment upgrade, and dropping equipped or stored items without leaving stale equipment stats.
+- Restored native AI hero death before retention so autonomous `ReviveHero` completion releases `Death` and `FallenHeroState` consistently.
+- Kept difficulty-based death item loss while removing the `Difficulty -> Revival` library dependency that formed a JassHelper requirements cycle.
+
+### Actions Remaining
+
+- Create or update Object Editor vendor unit types `o01B-o01E` and `n05C-n05J` to match `VendorsHelper.md`, including Morgrim ownership on `Player(7)` where appropriate.
+- Import recordings for `VendorDwarfMorgrim_0001-0015` and `VendorQuestTauren_0001-0014`; text-duration fallback remains active until those files exist.
+- Compile the affected libraries in the full map and runtime-test hostile-reputation dialogue, trade rejection, timed randomized stock, daily reset, and the new vendor quests.
+- Compile and runtime-test companion point/unit commands, AI death and Spirit Shard revival, full-bag equipment upgrades, cinematic timer restoration, difficulty item loss, and every preplaced graveyard healer dialogue.
+
 ## [5.8.2026]
 
 ### Player-Facing Updates
