@@ -20,6 +20,11 @@
     - set tier = DInvGetBagTierOfUnit(unit)
     - call DInvUpgradeBagForHeroVendor(unit, targetTier)
     - call DInvUpgradeBagForPlayerVendor(playerId, targetTier)
+    - call DInvEnsureItemTypeInVanillaInventory(unit, itemTypeId)
+    - set item = DInvStageFirstStoredActiveItem(unit, excludedItemTypeId)
+    - call DInvTryEquipBestStoredEquipmentForUnit(unit)
+    - call DInvDropEquippedItemsForUnit(unit, x, y)
+    - call DInvDropStoredItemsForUnit(unit, x, y)
 
 **/
 library SharedDInvLib initializer Init requires DConfigurationArea, ItemLootSystem, ExSound, FallenHeroState
@@ -46,6 +51,7 @@ TableArray ItemExclusionListForPlayer
 Table2DT DInvItemHandleDB
 Table3DT DInvUnitHandleDB
 TableArray DInventoryDB
+item DInvStagedActiveItemResult = null
 
 // DEquipment and its modules
 string array DEqStatNames
@@ -4508,6 +4514,87 @@ set it = null
 return storedSlot > -1
 endfunction
 
+
+
+function DInvEnsureItemTypeInVanillaInventory takes unit u, integer itemTypeId returns boolean
+local integer slotId = 0
+local integer inventorySize = 0
+local item it = null
+if u == null or itemTypeId == 0 then
+set u = null
+return FALSE
+endif
+set inventorySize = UnitInventorySize(u)
+loop
+    exitwhen slotId >= inventorySize
+    set it = UnitItemInSlot(u, slotId)
+    if it != null and GetItemTypeId(it) == itemTypeId then
+    set it = null
+    set u = null
+    return TRUE
+    endif
+set slotId = slotId + 1
+endloop
+if IsVanillaInventoryFull(u) == TRUE then
+set slotId = 0
+    loop
+        exitwhen slotId >= inventorySize
+        set it = UnitItemInSlot(u, slotId)
+        if it != null and GetItemTypeId(it) != itemTypeId and DInvMoveVanillaItemToDInventory(u, it) == TRUE then
+        set slotId = inventorySize
+        endif
+    set slotId = slotId + 1
+    endloop
+endif
+if IsVanillaInventoryFull(u) == FALSE and DInvMoveStoredItemTypeToVanillaInventory(u, itemTypeId) == TRUE then
+set it = null
+set u = null
+return TRUE
+endif
+set it = null
+set u = null
+return FALSE
+endfunction
+
+
+
+function DInvStageFirstStoredActiveItem takes unit u, integer excludedItemTypeId returns item
+local integer pid = -1
+local integer bid = -1
+local integer slotId = 0
+local integer capacity = 0
+local item it = null
+set DInvStagedActiveItemResult = null
+if u == null or IsVanillaInventoryFull(u) == TRUE then
+set u = null
+return null
+endif
+set pid = GetPlayerId(GetOwningPlayer(u))
+set bid = BIDOfUnit(u)
+if bid < 1 then
+set u = null
+return null
+endif
+set capacity = MaxBagCapacityOfBID(pid, bid)
+loop
+    exitwhen slotId >= capacity
+    set it = DInventoryDB[bid].item[slotId]
+    if it != null and GetItemTypeId(it) != excludedItemTypeId and IsItemDEquipment(it) == FALSE and BlzGetItemBooleanField(it, ITEM_BF_ACTIVELY_USED) == TRUE and DInvCanItemUseVanillaInventory(it) == TRUE then
+    set DInvItemHandleDB[GetHandleId(it)].integer[3] = 1
+    call FromItemHeavenToVanillaInventory(it, u)
+    call DeleteBIDSlotIdItemFromDInventory(bid, slotId)
+    set DInvStagedActiveItemResult = it
+    set it = null
+    set u = null
+    return DInvStagedActiveItemResult
+    endif
+set slotId = slotId + 1
+endloop
+set it = null
+set u = null
+return null
+endfunction
+
 /* Original StoreItemForPIDBID function below, kept for reference
 function StoreItemForPIDBID takes item it, integer pid, integer bid, integer eqid returns integer
 local integer targetSlot = -1
@@ -5707,6 +5794,58 @@ endfunction
 
 
 
+function DInvSwapStoredUpgradeIntoDEqSlot takes integer pid, integer bid, integer eqid, unit u, integer uhndl, item stored, integer dInvSlotId, integer deqslot returns boolean
+local item equipped = EQIDDB[eqid][4].item[deqslot]
+local integer storedSetId = 0
+local integer equippedSetId = 0
+if u == null or stored == null or equipped == null then
+set u = null
+set stored = null
+set equipped = null
+return FALSE
+endif
+if deqslot == 19 and DEqItemTypeDefinitionDB[GetItemTypeId(stored)][0].integer[1] == 1 and EQIDDB[eqid][4].item[20] != null and GetUnitAbilityLevel(u, 'DQTG') == 0 then
+set u = null
+set stored = null
+set equipped = null
+return FALSE
+endif
+if deqslot == 20 and EQIDDB[eqid][4].item[19] != null and DEqItemTypeDefinitionDB[GetItemTypeId(EQIDDB[eqid][4].item[19])][0].integer[1] == 1 and GetUnitAbilityLevel(u, 'DQTG') == 0 then
+set u = null
+set stored = null
+set equipped = null
+return FALSE
+endif
+set storedSetId = DEqIsItemASetItem(stored)
+set equippedSetId = DEqIsItemASetItem(equipped)
+if equippedSetId != 0 then
+call DEqDecreaseSetEquippedOnUnit(u, equippedSetId)
+endif
+call RemoveDEqStatsOfItemFromUnit(pid, eqid, deqslot, equipped, u)
+set EQIDDB[eqid][4].item[deqslot] = stored
+if storedSetId != 0 then
+call DEqIncreaseSetEquippedOnUnit(u, storedSetId)
+endif
+call AddDEqStatsOfItemToUnit(pid, eqid, deqslot, stored, u)
+set DInvItemHandleDB[GetHandleId(stored)].integer[2] = 0
+set DInvItemHandleDB[GetHandleId(stored)].integer[4] = deqslot
+set DInventoryDB[bid].item[dInvSlotId] = equipped
+set DInvItemHandleDB[GetHandleId(equipped)].integer[2] = dInvSlotId
+set DInvItemHandleDB[GetHandleId(equipped)].integer[4] = 0
+call DEqSlotDataIntoFrame(pid, uhndl, deqslot)
+if u == DInvCurrentUnit[pid] and DItemSlotId2SlotFrameId(pid, dInvSlotId) > -1 then
+call DInvSlotDataIntoFrame(pid, bid, dInvSlotId, DItemSlotId2SlotFrameId(pid, dInvSlotId))
+endif
+call UpdateDEqCSheet(pid, u, uhndl, eqid)
+call DInvRefreshCapacityTextForBID(bid)
+set u = null
+set stored = null
+set equipped = null
+return TRUE
+endfunction
+
+
+
 function DInvTryEquipBestStoredEquipmentForUnit takes unit u returns boolean
 local integer pid = -1
 local integer bid = -1
@@ -5771,6 +5910,12 @@ set it = DInventoryDB[bid].item[bestSlotId]
 set equipped = EQIDDB[eqid][4].item[bestDEqSlot]
     if equipped != null then
         if FirstFreeDInvSlotOfBID(pid, bid) == -1 then
+            if DInvSwapStoredUpgradeIntoDEqSlot(pid, bid, eqid, u, uhndl, it, bestSlotId, bestDEqSlot) == TRUE then
+            set u = null
+            set it = null
+            set equipped = null
+            return TRUE
+            endif
         set u = null
         set it = null
         set equipped = null
@@ -5794,6 +5939,93 @@ set u = null
 set it = null
 set equipped = null
 return FALSE
+endfunction
+
+
+
+function DInvDropEquippedItemsForUnit takes unit u, real x, real y returns integer
+local integer pid = -1
+local integer eqid = -1
+local integer uhndl = 0
+local integer deqslot = 1
+local integer dropped = 0
+local integer setId = 0
+local integer itemHandleId = 0
+local item it = null
+if u == null then
+set u = null
+return 0
+endif
+set pid = GetPlayerId(GetOwningPlayer(u))
+set eqid = EQIDOfUnit(u)
+set uhndl = GetHandleId(u)
+if eqid < 1 or EQIDDB[eqid][0].integer[0] != 1 then
+set u = null
+return 0
+endif
+loop
+    exitwhen deqslot > HighestSlotNumber
+    set it = EQIDDB[eqid][4].item[deqslot]
+    if it != null then
+    set setId = DEqIsItemASetItem(it)
+        if setId != 0 then
+        call DEqDecreaseSetEquippedOnUnit(u, setId)
+        endif
+    call RemoveDEqStatsOfItemFromUnit(pid, eqid, deqslot, it, u)
+    call EQIDDB[eqid][4].item.remove(deqslot)
+    set itemHandleId = GetHandleId(it)
+    set DInvItemHandleDB[itemHandleId].integer[0] = 0
+    set DInvItemHandleDB[itemHandleId].integer[1] = 0
+    set DInvItemHandleDB[itemHandleId].integer[2] = 0
+    set DInvItemHandleDB[itemHandleId].integer[3] = 0
+    set DInvItemHandleDB[itemHandleId].integer[4] = 0
+    set DInvItemHandleDB[itemHandleId].integer[6] = 0
+    call FromItemHeavenToGround(it, x, y)
+    call DEqSlotDataIntoFrame(pid, uhndl, deqslot)
+    set dropped = dropped + 1
+    endif
+set deqslot = deqslot + 1
+endloop
+call UpdateDEqCSheet(pid, u, uhndl, eqid)
+set it = null
+set u = null
+return dropped
+endfunction
+
+
+
+function DInvDropStoredItemsForUnit takes unit u, real x, real y returns integer
+local integer pid = -1
+local integer bid = -1
+local integer slotId = 0
+local integer capacity = 0
+local integer dropped = 0
+local item it = null
+if u == null then
+set u = null
+return 0
+endif
+set pid = GetPlayerId(GetOwningPlayer(u))
+set bid = BIDOfUnit(u)
+if bid < 1 then
+set u = null
+return 0
+endif
+set capacity = MaxBagCapacityOfBID(pid, bid)
+loop
+    exitwhen slotId >= capacity
+    set it = DInventoryDB[bid].item[slotId]
+    if it != null then
+    call FromItemHeavenToGround(it, x, y)
+    call DeleteBIDSlotIdItemFromDInventory(bid, slotId)
+    set dropped = dropped + 1
+    endif
+set slotId = slotId + 1
+endloop
+call DInvRefreshOpenInventoryForBID(bid)
+set it = null
+set u = null
+return dropped
 endfunction
 
 
