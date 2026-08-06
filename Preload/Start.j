@@ -30,6 +30,9 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
         private constant real ST_HERO_SETUP_DELAY = 1.00
         private constant real ST_INTRO_DELAY = 1.00
 
+
+        // ============================================================
+        // NAZGREK
         private constant integer ST_UNIT_NAZGREK = 'H600'
 
         // These (except Specialization ability) must be the dummy ability, not the "real one"
@@ -38,9 +41,26 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
         private constant integer ST_ABILITY_WHIRLWIND = 'A6DQ'
         private constant integer ST_ABILITY_PRIMAL_FORCE = 'A023'
 
+        // Starting equipment
         private constant integer ST_ITEM_NAZGREKS_AXE = 'I68A'
+        private constant integer ST_ITEM_CHEST = 'j4b1'
+        private constant integer ST_ITEM_SHOULDERS = 'j4b0'
+        private constant integer ST_ITEM_HANDS = 'j4b2'
+        private constant integer ST_ITEM_BELT = 'j4b3'
+        private constant integer ST_ITEM_LEGS = 'j4b4'
+        private constant integer ST_ITEM_FOOT = 'j4b5'
+        private constant integer ST_ITEM_BACK = 'j4b6'
+        private constant integer ST_ITEM_NECK = 'j4b7'
+        private constant integer ST_ITEM_RING = 'j4b8'
+        private constant integer ST_ITEM_HEAD = 'j4b9'
+        private constant integer ST_ITEM_BRACERS = 'j4c0'
+        private constant integer ST_ITEM_TRINKET = 'j4c1'
+
+        // starting consumables
         private constant integer ST_ITEM_HEALING_SALVE = 'hslv'
         private constant integer ST_ITEM_SPRING_WATER = 'I60Z'
+
+        // ============================================================
 
         // Runtime state
         private timer ST_Timer = null
@@ -115,11 +135,33 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
     endfunction
 
     private function ST_AddStartingItems takes nothing returns nothing
+        
+        // Create items for Nazgrek
         if ST_HasNazgrek() then
+            // gear
             call UnitAddItemByIdSwapped(ST_ITEM_NAZGREKS_AXE, udg_Nazgrek)
+            call UnitAddItemByIdSwapped(ST_ITEM_BACK, udg_Nazgrek)
+            call UnitAddItemByIdSwapped(ST_ITEM_BELT, udg_Nazgrek)
+            call UnitAddItemByIdSwapped(ST_ITEM_BRACERS udg_Nazgrek)
+            call UnitAddItemByIdSwapped(ST_ITEM_CHEST, udg_Nazgrek)
+            call UnitAddItemByIdSwapped(ST_ITEM_FOOT, udg_Nazgrek)
+            call UnitAddItemByIdSwapped(ST_ITEM_HANDS, udg_Nazgrek)
+            call UnitAddItemByIdSwapped(ST_ITEM_HEAD, udg_Nazgrek)
+            call UnitAddItemByIdSwapped(ST_ITEM_LEGS, udg_Nazgrek)
+            call UnitAddItemByIdSwapped(ST_ITEM_NECK, udg_Nazgrek)
+            call UnitAddItemByIdSwapped(ST_ITEM_RING, udg_Nazgrek)
+            call UnitAddItemByIdSwapped(ST_ITEM_SHOULDERS, udg_Nazgrek)
+            call UnitAddItemByIdSwapped(ST_ITEM_TRINKET, udg_Nazgrek)
+
+            // consumables
             call UnitAddItemByIdSwapped(ST_ITEM_HEALING_SALVE, udg_Nazgrek)
             call UnitAddItemByIdSwapped(ST_ITEM_SPRING_WATER, udg_Nazgrek)
         endif
+
+        // Equip gear for Nazgrek
+        loop
+            exitwhen not DInvTryEquipBestStoredEquipmentForUnit(ST_UNIT_NAZGREK)
+        endloop
     endfunction
 
     private function ST_SetStartingResources takes nothing returns nothing
