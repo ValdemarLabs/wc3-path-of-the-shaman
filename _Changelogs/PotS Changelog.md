@@ -60,6 +60,8 @@
 /debug setfactionrep stormhaven
 /debug setfactionrep stormhaven
 
+ - Add more starting items to Nazgrek and make him equip them
+
 ### Actions Remaining
 
 - Create or update Object Editor vendor unit types `o01B-o01E` and `n05C-n05J` to match `VendorsHelper.md`, including Morgrim ownership on `Player(7)` where appropriate.
