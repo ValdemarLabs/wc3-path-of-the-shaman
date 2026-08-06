@@ -91,7 +91,7 @@
     call AI_SetDebugMode(enabled)
 
 **/
-library AI initializer Init requires Table, CampFire, Companions, Events, UnitDeathEvent, DamageEngine, DialogSystem, ExSound, IconQuery, Reputation, DEquipment, GatherNodes, GatherNodeSkills, GatherNodeItems, GatherNodeUnits, Professions, VoicelinesWarlock, VoicelinesUndeadWarlock, VoicelinesRestoShaman, VoicelinesEngineer, VoicelinesPaladin, FallenHeroState, optional Shop
+library AI initializer Init requires Table, CampFire, Companions, Events, UnitDeathEvent, DamageEngine, DialogSystem, ExSound, IconQuery, Reputation, DEquipment, GatherNodes, GatherNodeSkills, GatherNodeItems, GatherNodeUnits, CinematicMover, Professions, VoicelinesWarlock, VoicelinesUndeadWarlock, VoicelinesRestoShaman, VoicelinesEngineer, VoicelinesPaladin, FallenHeroState, optional Shop
 
 globals
     constant integer AI_STATE_INACTIVE = 0
@@ -2347,6 +2347,31 @@ public function GetReviveTimer takes unit whichUnit returns timer
     endif
 
     return InstanceReviveTimer.timer[instanceId]
+endfunction
+
+private function InspectCinematicReviveState takes nothing returns nothing
+    local integer instanceId
+
+    if CinematicMover_EventUnit == null then
+        return
+    endif
+    set instanceId = UnitInstance[GetHandleId(CinematicMover_EventUnit)]
+    if instanceId > 0 then
+        set CinematicMover_EventAiManaged = true
+        set CinematicMover_EventReviveTimer = InstanceReviveTimer.timer[instanceId]
+    endif
+endfunction
+
+private function CancelCinematicReviveTimer takes nothing returns nothing
+    call AI_CancelReviveTimer(CinematicMover_EventUnit)
+endfunction
+
+private function RestoreCinematicReviveTimer takes nothing returns nothing
+    if CinematicMover_EventHadReviveTimer and CinematicMover_EventReviveRemaining > 0.0 then
+        call AI_SetReviveRemaining(CinematicMover_EventUnit, CinematicMover_EventReviveRemaining)
+    else
+        call AI_CancelReviveTimer(CinematicMover_EventUnit)
+    endif
 endfunction
 
 public function GetReviveRemaining takes unit whichUnit returns real
@@ -6638,6 +6663,7 @@ endfunction
 
 private function Init takes nothing returns nothing
     call EnsureState()
+    call CinematicMover_RegisterAiReviveCallbacks(function InspectCinematicReviveState, function CancelCinematicReviveTimer, function RestoreCinematicReviveTimer)
     set ThinkTimer = CreateTimer()
     call TimerStart(ThinkTimer, AI_THINK_INTERVAL, true, function Think)
 
