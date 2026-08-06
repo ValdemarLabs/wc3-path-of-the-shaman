@@ -95,7 +95,7 @@ endlibrary
     call Death_RegisterReviveCallback(callback)
 
 **/
-library Death initializer Init requires Table, Companions, AI, DamageEngine, Events, FallenHeroState, UnitDeathEvent
+library Death initializer Init requires Table, Companions, AI, DInventory, DamageEngine, Events, FallenHeroState, UnitDeathEvent
 
 globals
     // Object data and tuning
@@ -462,7 +462,13 @@ private function Death_CanAIRevive takes unit reviver, unit fallen returns boole
     if reviver == null or fallen == null or not Death_IsAlive(reviver) or not IsUnitType(reviver, UNIT_TYPE_HERO) or AI_GetInstance(reviver) <= 0 then
         return false
     endif
-    if not IsUnitAlly(fallen, GetOwningPlayer(reviver)) or Death_GetReviveItem(reviver) == null then
+    if not IsUnitAlly(fallen, GetOwningPlayer(reviver)) then
+        return false
+    endif
+    if Death_GetReviveItem(reviver) == null and not DInvEnsureItemTypeInVanillaInventory(reviver, DEATH_REVIVE_ITEM_ID) then
+        return false
+    endif
+    if Death_GetReviveItem(reviver) == null then
         return false
     endif
     if Companions_IsControlled(reviver) then
@@ -610,7 +616,7 @@ private function Death_OnLethalDamage takes nothing returns nothing
     local unit whichHero = udg_DamageEventTarget
     local unit killer = udg_DamageEventSource
 
-    if whichHero != null and IsUnitType(whichHero, UNIT_TYPE_HERO) and not IsUnitInGroup(whichHero, Death_RetainedCorpses) then
+    if whichHero != null and IsUnitType(whichHero, UNIT_TYPE_HERO) and AI_GetInstance(whichHero) <= 0 and not IsUnitInGroup(whichHero, Death_RetainedCorpses) then
         set udg_LethalDamageHP = 1.00
         call Death_StartFakeFall(whichHero, killer)
     endif
