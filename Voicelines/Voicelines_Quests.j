@@ -2,7 +2,7 @@
     VoicelinesQuests
 
     Author: Valdemar
-    Version: 3.0.0
+    Version: 3.1.0
 
     Description:
     Central source of truth for reusable and vendor quest dialogue, random
@@ -26,6 +26,7 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound
         constant string VL_VENDORQUEST_GOBLIN_TYPE = "VendorQuestGoblin_"
         constant string VL_VENDORQUEST_BONECRUSHER_TYPE = "VendorQuestBonecrusher_"
         constant string VL_VENDORQUEST_ELARINDOR_TYPE = "VendorQuestElarindor_"
+        constant string VL_VENDORQUEST_TAUREN_TYPE = "VendorQuestTauren_"
 
         // Shared unvoiced hero and progress dialogue.
         constant string VL_QUEST_HERO_ACCEPT = "I will see it done."
@@ -39,6 +40,16 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound
         constant string VL_QUEST_VENDOR_HANDOFF = "It is ready. Take it back to the one who sent you."
         constant string VL_QUEST_VENDOR_ALREADY_HANDED_OFF = "I already gave you the parcel. Keep it safe until you deliver it."
         constant string VL_QUEST_VENDOR_PURCHASE = "It is in my regular stock. Buy it through trade, then return it to your quest giver."
+
+        // Horde Tauren quest dialogue.
+        constant string VL_VENDORQUEST_TAUREN_0001 = "The warforge needs eight bundles of clean fuel before the evening hammers begin."
+        constant string VL_VENDORQUEST_TAUREN_0002 = "The fire will burn steadily. Every weapon shaped tonight carries part of your labor."
+        constant string VL_VENDORQUEST_TAUREN_0003 = "Bring six pieces of dense ore from stone that has not been weakened by corruption."
+        constant string VL_VENDORQUEST_TAUREN_0004 = "Good weight and a clean grain. The mountain yielded honestly to you."
+        constant string VL_VENDORQUEST_TAUREN_0005 = "Eight gnolls are circling the supply trail. Clear them before another pack animal is lost."
+        constant string VL_VENDORQUEST_TAUREN_0006 = "The trail breathes freely again. The next caravan will pass beneath a quieter sky."
+        constant string VL_VENDORQUEST_TAUREN_0007 = "Shadowdancers stalk the long road ahead. Defeat eight before they learn our travelling rhythm."
+        constant string VL_VENDORQUEST_TAUREN_0008 = "Their shadows have withdrawn. The road remembers the strength of your steps."
 
         // Bonecrusher Ogre quest dialogue.
         constant string VL_VENDORQUEST_BONECRUSHER_0001 = "Stalkers scratch weapon carts. Break seven stalkers. Carts stop scratching."
@@ -221,6 +232,9 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound
         call RegisterDailySet(VL_VENDORQUEST_ELARINDOR_TYPE, QuestsGeneric_OBJECTIVE_KILL, 17, "Let precision guide you where anger would waste strength.", "Each fallen threat buys another quiet hour for our people.", "Return safely. Elarindor has buried enough brave souls.")
         call RegisterDailySet(VL_VENDORQUEST_ELARINDOR_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 20, "Choose intact pieces; damaged magic remembers the wound.", "Carry them gently and let no careless hand disturb them.", "What you recover today may preserve a century tomorrow.")
         call RegisterDailySet(VL_VENDORQUEST_ELARINDOR_TYPE, QuestsGeneric_OBJECTIVE_TALK, 23, "Speak the agreed phrase and accept only the sealed parcel.", "Treat the exchange with patience; trust is our rarest supply.", "Return by the warded road, even if the longer path tempts you.")
+
+        call RegisterDailySet(VL_VENDORQUEST_TAUREN_TYPE, QuestsGeneric_OBJECTIVE_KILL, 9, "Walk with purpose and let no threat follow you home.", "Strength is measured by what your journey protects.", "Return beneath an open sky when the trail is safe.")
+        call RegisterDailySet(VL_VENDORQUEST_TAUREN_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 12, "Take only what the earth offers freely, and waste nothing.", "Choose sound materials; patient work begins with honest substance.", "Carry the burden evenly and the road will feel shorter.")
     endfunction
 
     private function Init takes nothing returns nothing
@@ -231,6 +245,7 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound
         call ExSound_RegisterSequence(VL_VENDORQUEST_GOBLIN_TYPE, 1, 35, "Pots\\Sound\\Voicelines\\VendorQuestGoblin\\")
         call ExSound_RegisterSequence(VL_VENDORQUEST_BONECRUSHER_TYPE, 1, 25, "Pots\\Sound\\Voicelines\\VendorQuestBonecrusher\\")
         call ExSound_RegisterSequence(VL_VENDORQUEST_ELARINDOR_TYPE, 1, 25, "Pots\\Sound\\Voicelines\\VendorQuestElarindor\\")
+        call ExSound_RegisterSequence(VL_VENDORQUEST_TAUREN_TYPE, 1, 14, "Pots\\Sound\\Voicelines\\VendorQuestTauren\\")
         call RegisterDailyDialogue()
     endfunction
 endlibrary
