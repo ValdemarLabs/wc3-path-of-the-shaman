@@ -7,8 +7,8 @@
     Description:
     Revives Nazgrek and Zulkis at the selected graveyard after 30 seconds,
     keeps the legacy player revive timers and graveyard globals compatible,
-    and creates a temporary Spirit Healer or Spirit Walker that can recover
-    items dropped at the death location. The active fallen player hero receives
+    and uses the preplaced Spirit Healer or Spirit Walker at that graveyard to
+    recover items dropped at the death location. The active fallen player hero receives
     a rotating death camera until revival or a switch to the other living hero.
 
     Credits:
@@ -21,11 +21,15 @@
 
     API:
     call Revival_SetGraveyardHealerType(graveyardId, unitTypeId)
+    call Revival_SetCreateMissingSpiritHealers(enabled)
+    call Revival_SetUseGameDifficultyDropRules(enabled)
+    call Revival_SetDropEquipmentOnDeath(enabled)
+    call Revival_SetDropItemsOnDeath(enabled)
     call Revival_GetGraveyardRect(graveyardId) returns rect
     call Revival_GetSelectedGraveyard() returns integer
 
 **/
-library Revival initializer Init requires Death, Table, Events, UnitDeathEvent, ExSound, CameraControl
+library Revival initializer Init requires Death, Table, Events, UnitDeathEvent, ExSound, CameraControl, DEquipment, DialogInteraction, DialogSystem
 
 globals
     // Configuration
@@ -53,7 +57,9 @@ globals
     private Table Revival_TimerHero = 0
     private Table Revival_DeathX = 0
     private Table Revival_DeathY = 0
+    private Table Revival_HasDroppedItems = 0
     private Table Revival_HealerGraveyard = 0
+    private Table Revival_GeneratedHealer = 0
     private Table Revival_OwnerTimerHealer = 0
 
     private integer array Revival_HealerType
@@ -61,16 +67,35 @@ globals
     private trigger array Revival_GraveyardTrigger
 
     private dialog Revival_RestoreDialog = null
-    private button Revival_RestoreNazgrekButton = null
-    private button Revival_RestoreZulkisButton = null
-    private button Revival_CancelButton = null
     private unit Revival_SelectedHealer = null
     private real Revival_ItemTargetX = 0.00
     private real Revival_ItemTargetY = 0.00
     private timer Revival_DeathCameraTimer = null
     private unit Revival_DeathCameraHero = null
     private boolean Revival_DeathCameraActive = false
+    public boolean DropEquipmentOnDeath = true
+    public boolean DropItemsOnDeath = false
+    public boolean CreateMissingSpiritHealers = false
+    public boolean UseGameDifficultyDropRules = true
 endglobals
+
+public function SetUseGameDifficultyDropRules takes boolean enabled returns nothing
+    set UseGameDifficultyDropRules = enabled
+endfunction
+
+public function SetDropEquipmentOnDeath takes boolean enabled returns nothing
+    set UseGameDifficultyDropRules = false
+    set DropEquipmentOnDeath = enabled
+endfunction
+
+public function SetDropItemsOnDeath takes boolean enabled returns nothing
+    set UseGameDifficultyDropRules = false
+    set DropItemsOnDeath = enabled
+endfunction
+
+public function SetCreateMissingSpiritHealers takes boolean enabled returns nothing
+    set CreateMissingSpiritHealers = enabled
+endfunction
 
 public function GetGraveyardRect takes integer graveyardId returns rect
     if graveyardId == 2 then
@@ -242,23 +267,47 @@ private function Revival_CreateDeathRegion takes unit whichHero, real x, real y 
     set deathRect = null
 endfunction
 
-private function Revival_DropHeroItems takes unit whichHero, real x, real y returns nothing
+private function Revival_DropHeroItems takes unit whichHero, real x, real y returns boolean
     local integer slot = 0
     local integer inventorySize = UnitInventorySize(whichHero)
+    local integer droppedCount = 0
     local item droppedItem
+    local boolean dropEquipment = DropEquipmentOnDeath
+    local boolean dropItems = DropItemsOnDeath
 
-    if inventorySize > bj_MAX_INVENTORY then
-        set inventorySize = bj_MAX_INVENTORY
-    endif
-    loop
-        exitwhen slot >= inventorySize
-        set droppedItem = UnitItemInSlot(whichHero, slot)
-        if droppedItem != null then
-            call UnitDropItemPoint(whichHero, droppedItem, x, y)
+    if UseGameDifficultyDropRules then
+        if GetGameDifficulty() == MAP_DIFFICULTY_EASY then
+            set dropEquipment = false
+            set dropItems = false
+        elseif GetGameDifficulty() == MAP_DIFFICULTY_HARD then
+            set dropEquipment = true
+            set dropItems = true
+        else
+            set dropEquipment = true
+            set dropItems = false
         endif
-        set slot = slot + 1
-    endloop
+    endif
+    if dropEquipment then
+        set droppedCount = droppedCount + DInvDropEquippedItemsForUnit(whichHero, x, y)
+    endif
+    if dropItems then
+        set droppedCount = droppedCount + DInvDropStoredItemsForUnit(whichHero, x, y)
+        if inventorySize > bj_MAX_INVENTORY then
+            set inventorySize = bj_MAX_INVENTORY
+        endif
+        loop
+            exitwhen slot >= inventorySize
+            set droppedItem = UnitItemInSlot(whichHero, slot)
+            if droppedItem != null then
+                if UnitDropItemPoint(whichHero, droppedItem, x, y) then
+                    set droppedCount = droppedCount + 1
+                endif
+            endif
+            set slot = slot + 1
+        endloop
+    endif
     set droppedItem = null
+    return droppedCount > 0
 endfunction
 
 private function Revival_UpdateGraveyardLegacyState takes integer graveyardId returns nothing
@@ -278,15 +327,77 @@ private function Revival_UpdateGraveyardLegacyState takes integer graveyardId re
     set graveyardRect = null
 endfunction
 
+private function Revival_GetNearestGraveyardId takes unit healer returns integer
+    local integer graveyardId = 1
+    local integer nearestId = 1
+    local rect graveyardRect
+    local real dx
+    local real dy
+    local real distanceSquared
+    local real nearestDistanceSquared = 999999999.00
+
+    loop
+        exitwhen graveyardId > 9
+        set graveyardRect = Revival_GetGraveyardRect(graveyardId)
+        set dx = GetUnitX(healer) - GetRectCenterX(graveyardRect)
+        set dy = GetUnitY(healer) - GetRectCenterY(graveyardRect)
+        set distanceSquared = dx * dx + dy * dy
+        if distanceSquared < nearestDistanceSquared then
+            set nearestDistanceSquared = distanceSquared
+            set nearestId = graveyardId
+        endif
+        set graveyardId = graveyardId + 1
+    endloop
+    set graveyardRect = null
+    set healer = null
+    return nearestId
+endfunction
+
+private function Revival_RegisterSpiritHealer takes unit healer returns nothing
+    local integer graveyardId
+    local unit current
+
+    if healer == null or (GetUnitTypeId(healer) != REVIVAL_SPIRIT_HEALER_ID and GetUnitTypeId(healer) != REVIVAL_SPIRIT_WALKER_ID) then
+        set healer = null
+        return
+    endif
+    set graveyardId = Revival_GetNearestGraveyardId(healer)
+    set current = Revival_Healer[graveyardId]
+    if current == null or GetUnitTypeId(current) == 0 or GetWidgetLife(current) <= 0.405 then
+        set Revival_Healer[graveyardId] = healer
+    endif
+    call SetUnitInvulnerable(healer, true)
+    call GroupAddUnit(udg_SpiritHealers, healer)
+    set Revival_HealerGraveyard[GetHandleId(healer)] = graveyardId
+    set current = null
+    set healer = null
+endfunction
+
+private function Revival_RegisterSpiritHealerEnum takes nothing returns nothing
+    call Revival_RegisterSpiritHealer(GetEnumUnit())
+endfunction
+
+private function Revival_RegisterPreplacedSpiritHealers takes nothing returns nothing
+    local group healerGroup = CreateGroup()
+
+    call GroupEnumUnitsInRect(healerGroup, bj_mapInitialPlayableArea, null)
+    call ForGroup(healerGroup, function Revival_RegisterSpiritHealerEnum)
+    call DestroyGroup(healerGroup)
+    set healerGroup = null
+endfunction
+
 private function Revival_CreateSpiritHealer takes integer graveyardId returns unit
     local rect graveyardRect
     local unit healer = Revival_Healer[graveyardId]
     local integer healerType = Revival_HealerType[graveyardId]
 
     if healer != null and GetUnitTypeId(healer) != 0 and GetWidgetLife(healer) > 0.405 then
-        call UnitApplyTimedLife(healer, REVIVAL_TIMED_LIFE_BUFF_ID, REVIVAL_HEALER_DURATION)
         set healer = null
         return Revival_Healer[graveyardId]
+    endif
+    if not CreateMissingSpiritHealers then
+        set healer = null
+        return null
     endif
     if healerType == 0 then
         set healerType = REVIVAL_SPIRIT_HEALER_ID
@@ -301,6 +412,7 @@ private function Revival_CreateSpiritHealer takes integer graveyardId returns un
     call GroupAddUnit(udg_SpiritHealers, healer)
     set Revival_Healer[graveyardId] = healer
     set Revival_HealerGraveyard[GetHandleId(healer)] = graveyardId
+    set Revival_GeneratedHealer.boolean[GetHandleId(healer)] = true
     set graveyardRect = null
     set healer = null
     return Revival_Healer[graveyardId]
@@ -326,6 +438,11 @@ private function Revival_OnDeathRevived takes nothing returns nothing
         endif
         set udg_ZulkisDead = false
     endif
+    if whichHero != null and not Revival_HasDroppedItems.boolean[GetHandleId(whichHero)] then
+        call Revival_DeathX.real.remove(GetHandleId(whichHero))
+        call Revival_DeathY.real.remove(GetHandleId(whichHero))
+        call Revival_HasDroppedItems.boolean.remove(GetHandleId(whichHero))
+    endif
     set whichHero = null
 endfunction
 
@@ -336,15 +453,18 @@ private function Revival_ReviveTimerExpired takes nothing returns nothing
     local rect graveyardRect = Revival_GetGraveyardRect(graveyardId)
     local real x = GetRectCenterX(graveyardRect)
     local real y = GetRectCenterY(graveyardRect)
+    local boolean hasDroppedItems = whichHero != null and Revival_HasDroppedItems.boolean[GetHandleId(whichHero)]
 
     call Revival_TimerHero.unit.remove(GetHandleId(expired))
     if whichHero != null and Death_IsFallen(whichHero) and Death_ReviveAt(whichHero, x, y, REVIVAL_LIFE_PERCENT, REVIVAL_MANA_PERCENT, true) then
         if whichHero == udg_Nazgrek then
-            set udg_RestoreItemsPossibleN = true
+            set udg_RestoreItemsPossibleN = hasDroppedItems
         elseif whichHero == udg_Zulkis then
-            set udg_RestoreItemsPossibleZ = true
+            set udg_RestoreItemsPossibleZ = hasDroppedItems
         endif
-        call Revival_CreateSpiritHealer(graveyardId)
+        if hasDroppedItems then
+            call Revival_CreateSpiritHealer(graveyardId)
+        endif
         call PingMinimapEx(x, y, 1.00, 255, 255, 255, true)
         call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, 5.00, "|cffffff00" + GetHeroProperName(whichHero) + "|r |cff00ff00has been revived at the graveyard.|r")
     endif
@@ -386,6 +506,7 @@ private function Revival_OnHeroDeath takes nothing returns nothing
             set Revival_Healer[healerGraveyard] = null
         endif
         call Revival_HealerGraveyard.remove(GetHandleId(whichHero))
+        call Revival_GeneratedHealer.boolean.remove(GetHandleId(whichHero))
     endif
     if not Revival_IsPlayerHero(whichHero) then
         set whichHero = null
@@ -396,8 +517,12 @@ private function Revival_OnHeroDeath takes nothing returns nothing
     set y = GetUnitY(whichHero)
     set Revival_DeathX.real[GetHandleId(whichHero)] = x
     set Revival_DeathY.real[GetHandleId(whichHero)] = y
-    call Revival_DropHeroItems(whichHero, x, y)
-    call Revival_CreateDeathRegion(whichHero, x, y)
+    set Revival_HasDroppedItems.boolean[GetHandleId(whichHero)] = Revival_DropHeroItems(whichHero, x, y)
+    if Revival_HasDroppedItems.boolean[GetHandleId(whichHero)] then
+        call Revival_CreateDeathRegion(whichHero, x, y)
+    else
+        call Revival_ClearDeathRegion(whichHero)
+    endif
     call Revival_StartPlayerTimer(whichHero)
     call Revival_StartDeathCamera(whichHero, x, y)
 
@@ -491,6 +616,7 @@ private function Revival_RestoreItems takes unit whichHero returns nothing
     call Revival_ClearDeathRegion(whichHero)
     call Revival_DeathX.real.remove(GetHandleId(whichHero))
     call Revival_DeathY.real.remove(GetHandleId(whichHero))
+    call Revival_HasDroppedItems.boolean.remove(GetHandleId(whichHero))
     if whichHero == udg_Nazgrek then
         set udg_RestoreItemsPossibleN = false
     elseif whichHero == udg_Zulkis then
@@ -499,17 +625,24 @@ private function Revival_RestoreItems takes unit whichHero returns nothing
     set itemRect = null
 endfunction
 
-private function Revival_OnDialogClick takes nothing returns nothing
-    local button clicked = GetClickedButton()
-
-    call DialogDisplay(Player(0), Revival_RestoreDialog, false)
-    if clicked == Revival_RestoreNazgrekButton then
-        call Revival_RestoreItems(udg_Nazgrek)
-    elseif clicked == Revival_RestoreZulkisButton then
-        call Revival_RestoreItems(udg_Zulkis)
-    endif
+private function Revival_EndSpiritHealerDialog takes nothing returns nothing
+    call DialogSystem_HideDialog(Revival_RestoreDialog, Player(0))
+    call DialogInteraction_EndCinematicSequence(true)
     set Revival_SelectedHealer = null
-    set clicked = null
+endfunction
+
+private function Revival_OnRestoreNazgrek takes nothing returns nothing
+    call Revival_RestoreItems(udg_Nazgrek)
+    call Revival_EndSpiritHealerDialog()
+endfunction
+
+private function Revival_OnRestoreZulkis takes nothing returns nothing
+    call Revival_RestoreItems(udg_Zulkis)
+    call Revival_EndSpiritHealerDialog()
+endfunction
+
+private function Revival_OnRestoreCancel takes nothing returns nothing
+    call Revival_EndSpiritHealerDialog()
 endfunction
 
 private function Revival_OnSpiritHealerSelected takes nothing returns nothing
@@ -517,6 +650,8 @@ private function Revival_OnSpiritHealerSelected takes nothing returns nothing
     local player selectingPlayer = GetTriggerPlayer()
     local boolean nazgrekAvailable
     local boolean zulkisAvailable
+    local button dialogButton
+    local integer sequenceId
 
     if selectingPlayer != Player(0) or healer == null or udg_SpiritHealers == null or not IsUnitInGroup(healer, udg_SpiritHealers) then
         set selectingPlayer = null
@@ -533,19 +668,23 @@ private function Revival_OnSpiritHealerSelected takes nothing returns nothing
 
     set Revival_SelectedHealer = healer
     set udg_SpiritHealer = healer
-    call DisplayTimedTextToPlayer(selectingPlayer, 0.00, 0.00, 3.00, GetUnitName(healer) + ": I can restore the items lost at your death site.")
-    call DialogClear(Revival_RestoreDialog)
-    call DialogSetMessage(Revival_RestoreDialog, "Restore lost items")
-    set Revival_RestoreNazgrekButton = null
-    set Revival_RestoreZulkisButton = null
+    call DialogSystem_ClearDialog(Revival_RestoreDialog)
+    call DialogSystem_SetTitle(Revival_RestoreDialog, GetUnitName(healer))
     if nazgrekAvailable then
-        set Revival_RestoreNazgrekButton = DialogAddButton(Revival_RestoreDialog, "Restore " + GetHeroProperName(udg_Nazgrek) + "'s items", 0)
+        set dialogButton = DialogSystem_AddButton(Revival_RestoreDialog, "Restore " + GetHeroProperName(udg_Nazgrek) + "'s items", 1)
+        call DialogSystem_BindButtonCode(dialogButton, function Revival_OnRestoreNazgrek)
     endif
     if zulkisAvailable then
-        set Revival_RestoreZulkisButton = DialogAddButton(Revival_RestoreDialog, "Restore " + GetHeroProperName(udg_Zulkis) + "'s items", 0)
+        set dialogButton = DialogSystem_AddButton(Revival_RestoreDialog, "Restore " + GetHeroProperName(udg_Zulkis) + "'s items", 2)
+        call DialogSystem_BindButtonCode(dialogButton, function Revival_OnRestoreZulkis)
     endif
-    set Revival_CancelButton = DialogAddButton(Revival_RestoreDialog, "Cancel", 0)
-    call DialogDisplay(selectingPlayer, Revival_RestoreDialog, true)
+    set dialogButton = DialogSystem_AddButtonExit(Revival_RestoreDialog, 3)
+    call DialogSystem_BindButtonCode(dialogButton, function Revival_OnRestoreCancel)
+    set sequenceId = DialogSystem_CreateSequence()
+    call DialogSystem_SetSequenceDefaultSpeaker(sequenceId, healer, GetUnitName(healer))
+    call DialogSystem_AddLine(sequenceId, healer, GetUnitName(healer), "I can restore the items lost at your death site.", "", true)
+    call DialogInteraction_PlayGreetSequenceEx(sequenceId, healer, selectingPlayer, Revival_RestoreDialog, true)
+    set dialogButton = null
     set selectingPlayer = null
     set healer = null
 endfunction
@@ -566,14 +705,15 @@ private function Revival_RegisterGraveyardEvents takes nothing returns nothing
 endfunction
 
 private function Init takes nothing returns nothing
-    local trigger dialogTrigger = CreateTrigger()
 
     set Revival_TimerHero = Table.create()
     set Revival_DeathX = Table.create()
     set Revival_DeathY = Table.create()
+    set Revival_HasDroppedItems = Table.create()
     set Revival_HealerGraveyard = Table.create()
+    set Revival_GeneratedHealer = Table.create()
     set Revival_OwnerTimerHealer = Table.create()
-    set Revival_RestoreDialog = DialogCreate()
+    set Revival_RestoreDialog = DialogSystem_CreateDialog("Spirit Healer")
     set Revival_DeathCameraTimer = CreateTimer()
 
     set Revival_HealerType[1] = REVIVAL_SPIRIT_HEALER_ID
@@ -592,16 +732,13 @@ private function Init takes nothing returns nothing
     if udg_GraveyardSelect < 1 or udg_GraveyardSelect > 9 then
         set udg_GraveyardSelect = 1
     endif
+    call Revival_RegisterPreplacedSpiritHealers()
 
     call Death_RegisterReviveCallback(function Revival_OnDeathRevived)
     call UnitDeathEvent_Register(function Revival_OnHeroDeath)
     call Events_RegisterPlayerUnitEvent(function Revival_OnPlayerHeroSelected, EVENT_PLAYER_UNIT_SELECTED)
     call Events_RegisterPlayerUnitEvent(function Revival_OnSpiritHealerSelected, EVENT_PLAYER_UNIT_SELECTED)
-    call TriggerRegisterDialogEvent(dialogTrigger, Revival_RestoreDialog)
-    call TriggerAddAction(dialogTrigger, function Revival_OnDialogClick)
     call Revival_RegisterGraveyardEvents()
-
-    set dialogTrigger = null
 endfunction
 
 endlibrary
