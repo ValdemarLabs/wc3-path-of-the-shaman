@@ -70,7 +70,7 @@ Notes:
 | `n03E` | Tobin Slate | Riverbane Miner | Male | Riverbane / outskirts | Yes (Daily) | No |
 | `n03F` | Owen Marlow | Stormhaven Cook | Male | Stormhaven / outskirts | Yes (Daily) | No |
 | `n03G` | Aldren Voss | Riverbane Alchemy Supplier | Male | Riverbane / outskirts | — | Yes |
-| `n03H` | Bram Calder | Riverbane Blacksmithing Supplier | Male | Riverbane / outskirts | — | No |
+| `n03H` | Bram Calder | Riverbane Blacksmithing Supplier | Male | Riverbane / outskirts | — | Yes |
 | `n03I` | Percy Bell | Stormhaven Cooking Supplier | Male | Stormhaven / outskirts | — | No |
 | `n03J` | Lucan Wren | Stormhaven Enchanting Supplier | Male | Stormhaven / outskirts | — | No |
 | `n03K` | Hollis Finn | Stormhaven Fishing Supplier | Male | Stormhaven / outskirts | — | No |
