@@ -42,7 +42,7 @@ The world also contains numerous side characters, quest givers, faction leaders,
 - **Large interconnected world** divided into zones, subzones, settlements, and dungeons
 - **Custom item, loot, rarity, inventory, and equipment systems**
 - **Faction and reputation system** that affects hostility, dialogue, quests, trading, companions, and rewards
-- **Character progression** with ability points and Elemental, Enhancement, Restoration, and Totemic specialization paths
+- **Character progression** Custom ability and talent progression with Elemental, Enhancement, Restoration, and Totemic specialization paths
 - **Companion system** with recruitable AI heroes and multiple behaviour modes
 - **Pet system** with tameable and independently levelled beasts
 - **Crafting and gathering**, including dynamically spawning resources
@@ -58,14 +58,22 @@ The world also contains numerous side characters, quest givers, faction leaders,
 
 Path of the Shaman is largely developed as a solo project. Because of its scope, development is gradual and individual systems, areas, quests, balance, and presentation may change substantially before completion.
 
-Casual development videos may show ongoing work and experimentation, while larger milestones and updates may be announced separately.
+Much of the project is supported by custom JASS/vJASS systems covering AI, abilities and talents, quests and dialogue, companions, vendors, UI, environments, combat, events, and other RPG functionality.
+
+Casual development videos, posts, screenshots, etc. may show ongoing work and experimentation, while larger milestones and updates may be announced separately.
 
 Testing, bug reports, gameplay feedback, code review, proofreading, and help identifying missing resource credits are particularly useful to the project.
 
+### Installation
+Path of the Shaman uses its own installer to install and update the map, required PotS local assets, and the supported Warcraft III Rebirth files.
+
+See [INSTALLATION](INSTALLATION.md) for installation, updating, and troubleshooting instructions.
+
 ### Documentation
 
-- [FAQ](FAQ.md) - common questions about the project and its development
-- [Credits](PotS%20Credits.md) - resources, systems, authors, and other project credits
+- [INSTALLATION](INSTALLATION.md) - Player installation, updating, and troubleshooting
+- [FAQ](FAQ.md) - Common questions about the map itself and the project and its development
+- [Credits](_Credits/PotS%20Credits.md)- Resources, systems, authors, and other project credits
 
 ### Disclaimer
 
