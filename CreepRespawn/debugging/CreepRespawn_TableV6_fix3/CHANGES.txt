@@ -1,0 +1,24 @@
+CreepRespawn Table v6 fix 3
+
+Diagnosis from in-game stage log:
+- Stage 10 means the early initializer entered InitExclusionList() and never returned.
+- Therefore the failure occurred before the first Table.create(); Bribe Table v6 was not the failing operation in that build.
+
+Changes:
+1. Preserved Bribe Table v6. No native hashtable replacement.
+2. Removed runtime EXCLUDED_UNIT_TYPES array initialization from the Table initializer path.
+3. Replaced the fixed 7-entry exclusion array with equivalent direct unit-type comparisons in IsExcludedUnitType().
+4. CreepRespawnTableState.onInit now mirrors Reputation.j: it does only Table.create() calls and readiness bookkeeping.
+5. Table stage markers now directly identify Table allocation:
+   20/21 = rhash before/after Table.create()
+   30/31 = respawnData before/after Table.create()
+   40/41 = ignoredUnits before/after Table.create()
+   50/51 = summonedUnits before/after Table.create()
+   100   = all Table state ready
+6. Added a separate game-time-0 repair function that creates only missing Tables; it never manually calls the struct onInit and does not overwrite successfully-created Table instances.
+7. UnitDeathEvent direct callback dispatch remains unchanged from the previous fixed version (no TriggerRegisterVariableEvent for code subscribers).
+
+Expected next test:
+- InitActions should report Table stage=100.
+- A unit death should show UnitDeathEvent dispatch followed by CreepRespawn OnUnitDeath ENTER and normal respawn scheduling.
+- If initialization still fails, the new stage value now points at a specific Table.create() call.

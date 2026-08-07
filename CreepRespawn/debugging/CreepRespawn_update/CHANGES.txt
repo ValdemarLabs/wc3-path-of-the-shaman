@@ -1,0 +1,25 @@
+CreepRespawn / UnitDeathEvent update
+
+CreepRespawn.j
+- Makes initialization diagnostics occur before risky registration work.
+- Initializes persistent state once in Init; removes redundant internal EnsureState calls.
+- Keeps defensive EnsureState only on public API boundaries.
+- Registers death, unit-enter, and summon callbacks explicitly.
+- Tracks actual summoned unit instances through EVENT_PLAYER_UNIT_SUMMON.
+- Removes IsUnitType(..., UNIT_TYPE_SUMMONED) as the respawn exclusion test.
+- Adds first-line OnUnitDeath diagnostics.
+- Keeps the deferred 0.00 timer scan for preplaced units.
+- Mirrors CreepRespawn debug mode to UnitDeathEvent debug mode.
+
+UnitDeathEvent.j
+- Replaces TriggerRegisterVariableEvent-based code callback registration.
+- Stores callback triggers directly and dispatches with TriggerEvaluate/TriggerExecute.
+- Saves/restores dying/killing-unit context for nested deaths.
+- Snapshots callback count per dispatch.
+- Keeps UnitDeathEvent_Event only as legacy GUI compatibility pulse.
+- Suppresses nested legacy variable pulses; direct subscribers still receive nested deaths.
+- Raises callback capacity from 50 to 256.
+- Adds explicit error/debug diagnostics.
+
+Events.j
+- Unchanged; included for reference/compatibility with the supplied version.

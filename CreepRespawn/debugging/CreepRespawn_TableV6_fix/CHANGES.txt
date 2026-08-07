@@ -1,0 +1,27 @@
+CreepRespawn Table v6 initialization fix
+========================================
+
+CreepRespawn.j
+- Keeps Bribe Table v6; native hashtables are NOT used for CreepRespawn storage.
+- Moves the primary Table.create() lifecycle into CreepRespawnTableState.onInit,
+  matching the working struct-initializer pattern used by Reputation.j.
+- CreepRespawn's library Init no longer calls Table.create() or EnsureState().
+- Registers UnitDeathEvent/Events callbacks before any deferred runtime state work.
+- Adds tableInitStage diagnostics so a silent Table initialization interruption can
+  be localized (20=rhash create, 30=respawnData, 40=ignoredUnits, 50=summonedUnits,
+  100=all Table state ready).
+- Retries incomplete Table initialization once at game-time 0 in InitActions.
+- Runtime callbacks validate Table state before accessing it.
+- Keeps actual summoned-instance tracking instead of UNIT_TYPE_SUMMONED filtering.
+
+UnitDeathEvent.j
+- Keeps direct callback dispatch; no TriggerRegisterVariableEvent is used for code
+  subscribers.
+- Code callbacks are TriggerExecute'd directly.
+- RegisterTrigger callers retain condition evaluation before TriggerExecute.
+- Nested death context remains save/restored.
+
+Reputation.j observation
+- Faction.onInit() and Reputation.onInit() already qualify as automatic struct
+  initializers. InitReputations() manually calls them again, which is redundant and
+  replaces/leaks previously-created Table instances. That behavior was NOT copied.
