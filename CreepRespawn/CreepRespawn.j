@@ -2,7 +2,7 @@
     CreepRespawn
 
     Author: Valdemar
-    Version:
+    Version: 2.2
 
     Description:
     Tracks configured-owner units and recreates them at their saved spawn
@@ -41,86 +41,134 @@ globals
     private Table rhash
     private Table respawnData
     private Table ignoredUnits
+    private Table summonedUnits
     private group RespawnGroup
-    private boolean exclusionListReady = false
     private boolean initialPositionsSaved = false
+    private boolean tableStateReady = false
+    private integer tableInitStage = 0
     
     // Debug mode - set to true to enable debug messages
-    private boolean DEBUG_MODE = false
+    private boolean DEBUG_MODE = true
     
-    // String hash constants for Table keys
-    private constant integer HASH_X = StringHash("x")
-    private constant integer HASH_Y = StringHash("y")
-    private constant integer HASH_FACING = StringHash("facing")
+    // Respawn min/max times
     private constant real MIN_RESPAWN_TIME = 120.0
     private constant real MAX_RESPAWN_TIME = 320.0
     
     //===========================================================================
     // EXCLUSION LIST - Unit-types that will NOT respawn
     //===========================================================================
-    private integer array EXCLUDED_UNIT_TYPES
-    private integer EXCLUDED_COUNT = 0
+    private constant integer EXCLUDED_COUNT = 7
 endglobals
 
 //===========================================================================
-// EXCLUSION LIST SETUP
+// EXCLUSION LIST
 //===========================================================================
-// Add unit-type IDs here to prevent them from respawning
-// Use 4-character unit-type codes in 'XXXX' format
+// Keep this as pure constant logic. Do not initialize static configuration from
+// the early Table struct initializer; that initializer is reserved solely for
+// Table.create(), matching the working Reputation.j pattern.
 //===========================================================================
-private function InitExclusionList takes nothing returns nothing
-    // Add your exclusions here:
-    // AI HEROES
-    set EXCLUDED_UNIT_TYPES[0] = 'H60Y'  // Human Paladin (companion)
-    set EXCLUDED_UNIT_TYPES[1] = '061H'  // Shaman (companion)
-    set EXCLUDED_UNIT_TYPES[2] = '0631'  // Rogue (companion)
-    set EXCLUDED_UNIT_TYPES[3] = '0629'  // Warrior (companion)
-    set EXCLUDED_UNIT_TYPES[4] = 'H60X'  // Warlock (companion) 
-    set EXCLUDED_UNIT_TYPES[5] = 'N64O'  // Engineer (companion) 
-    set EXCLUDED_UNIT_TYPES[6] = 'N661'  // Engineer shredder-form (companion) 
-
-    // Other exclusions
-    // set EXCLUDED_UNIT_TYPES[7] = 'yyyy'  // Another unit
-    
-    // Update this count to match the number of exclusions above:
-    set EXCLUDED_COUNT = 7
-endfunction
 
 //===========================================================================
 // UTILITY FUNCTIONS
 //===========================================================================
 
-private function EnsureState takes nothing returns nothing
-    if not exclusionListReady then
-        call InitExclusionList()
-        set exclusionListReady = true
-    endif
-    if rhash == 0 then
+// Table v6 state is initialized exactly like Reputation.j: the struct onInit
+// performs Table.create() directly and does no unrelated configuration work.
+// This keeps the early initializer minimal and makes the stage marker identify
+// the exact Table.create() call if Warcraft III terminates the initializer thread.
+private struct CreepRespawnTableState extends array
+    static method onInit takes nothing returns nothing
+        set tableInitStage = 20
         set rhash = Table.create()
-    endif
-    if respawnData == 0 then
+        set tableInitStage = 21
+
+        set tableInitStage = 30
         set respawnData = Table.create()
-    endif
-    if ignoredUnits == 0 then
+        set tableInitStage = 31
+
+        set tableInitStage = 40
         set ignoredUnits = Table.create()
+        set tableInitStage = 41
+
+        set tableInitStage = 50
+        set summonedUnits = Table.create()
+        set tableInitStage = 51
+
+        set tableStateReady = rhash != 0 and respawnData != 0 and ignoredUnits != 0 and summonedUnits != 0
+        if tableStateReady then
+            set tableInitStage = 100
+        endif
+    endmethod
+endstruct
+
+// Runtime repair path used only after game time has started. This is deliberately
+// separate from the struct initializer so we never manually invoke onInit or
+// recreate Tables that were already allocated successfully.
+private function EnsureTableStateRuntime takes nothing returns boolean
+    if tableStateReady and rhash != 0 and respawnData != 0 and ignoredUnits != 0 and summonedUnits != 0 then
+        return true
     endif
+
+    if rhash == 0 then
+        set tableInitStage = 20
+        set rhash = Table.create()
+        set tableInitStage = 21
+    endif
+
+    if respawnData == 0 then
+        set tableInitStage = 30
+        set respawnData = Table.create()
+        set tableInitStage = 31
+    endif
+
+    if ignoredUnits == 0 then
+        set tableInitStage = 40
+        set ignoredUnits = Table.create()
+        set tableInitStage = 41
+    endif
+
+    if summonedUnits == 0 then
+        set tableInitStage = 50
+        set summonedUnits = Table.create()
+        set tableInitStage = 51
+    endif
+
+    set tableStateReady = rhash != 0 and respawnData != 0 and ignoredUnits != 0 and summonedUnits != 0
+    if tableStateReady then
+        set tableInitStage = 100
+    endif
+
+    return tableStateReady
+endfunction
+
+private function EnsureRespawnGroup takes nothing returns nothing
     if RespawnGroup == null then
         set RespawnGroup = CreateGroup()
     endif
 endfunction
 
+private function IsTableStateReady takes nothing returns boolean
+    return tableStateReady and rhash != 0 and respawnData != 0 and ignoredUnits != 0 and summonedUnits != 0
+endfunction
+
 private function IsExcludedUnitType takes integer unitTypeId returns boolean
-    local integer i = 0
-    
-    // Check if unit type is in exclusion list
-    loop
-        exitwhen i >= EXCLUDED_COUNT
-        if EXCLUDED_UNIT_TYPES[i] == unitTypeId then
-            return true
-        endif
-        set i = i + 1
-    endloop
-    
+    // AI HEROES / COMPANIONS
+    if unitTypeId == 'H60Y' then
+        return true
+    elseif unitTypeId == '061H' then
+        return true
+    elseif unitTypeId == '0631' then
+        return true
+    elseif unitTypeId == '0629' then
+        return true
+    elseif unitTypeId == 'H60X' then
+        return true
+    elseif unitTypeId == 'N64O' then
+        return true
+    elseif unitTypeId == 'N661' then
+        return true
+    endif
+
     return false
 endfunction
 
@@ -166,10 +214,9 @@ private function IsRespawnableUnit takes unit u returns boolean
 endfunction
 
 private function IsIgnoredUnit takes unit u returns boolean
-    if u == null then
+    if u == null or ignoredUnits == 0 then
         return false
     endif
-    call EnsureState()
     return ignoredUnits.has(GetHandleId(u))
 endfunction
 
@@ -178,7 +225,6 @@ private function SaveUnitPosition takes unit u returns nothing
     if u == null then
         return
     endif
-    call EnsureState()
     if IsIgnoredUnit(u) then
         return
     endif
@@ -204,6 +250,20 @@ private function HasSavedUnitPosition takes unit u returns boolean
     return rhash.real.has(id * 4 + 0) and rhash.real.has(id * 4 + 1) and rhash.real.has(id * 4 + 2) and rhash.has(id * 4 + 3)
 endfunction
 
+private function ClearSavedUnitPosition takes unit u returns nothing
+    local integer id
+
+    if u == null or rhash == 0 then
+        return
+    endif
+
+    set id = GetHandleId(u)
+    call rhash.real.remove(id * 4 + 0)
+    call rhash.real.remove(id * 4 + 1)
+    call rhash.real.remove(id * 4 + 2)
+    call rhash.remove(id * 4 + 3)
+endfunction
+
 
 //===========================================================================
 // PUBLIC API
@@ -211,6 +271,7 @@ endfunction
 
 function CreepRespawn_SetDebugEnabled takes boolean enabled returns nothing
     set DEBUG_MODE = enabled
+    call UnitDeathEvent_SetDebugEnabled(enabled)
 endfunction
 
 // Call this function when a unit enters the map to track it for respawning.
@@ -219,8 +280,21 @@ function CreepRespawn_OnUnitEnter takes unit u returns nothing
     if u == null then
         return
     endif
-    call EnsureState()
+    if not IsTableStateReady() then
+        if DEBUG_MODE then
+            call BJDebugMsg("[CreepRespawn] OnUnitEnter skipped: Table state is not ready (stage " + I2S(tableInitStage) + ").")
+        endif
+        set u = null
+        return
+    endif
     if IsIgnoredUnit(u) then
+        set u = null
+        return
+    endif
+    if summonedUnits.has(GetHandleId(u)) then
+        if DEBUG_MODE then
+            call BJDebugMsg("[CreepRespawn] OnUnitEnter: Summoned instance ignored: " + GetUnitName(u))
+        endif
         set u = null
         return
     endif
@@ -237,13 +311,53 @@ private function OnUnitEnterEvent takes nothing returns nothing
     call CreepRespawn_OnUnitEnter(GetTriggerUnit())
 endfunction
 
+// Track actual summoned instances instead of relying on UNIT_TYPE_SUMMONED.
+// A preplaced unit may use a summoned-classified unit type and must still be
+// allowed to respawn; only instances that actually fired the summon event are
+// excluded.
+private function OnUnitSummonEvent takes nothing returns nothing
+    local unit summoned = Events_GetSummonedUnit()
+    local integer id
+
+    if summoned == null then
+        return
+    endif
+
+    if not IsTableStateReady() then
+        if DEBUG_MODE then
+            call BJDebugMsg("[CreepRespawn] Summon tracking skipped: Table state is not ready (stage " + I2S(tableInitStage) + ").")
+        endif
+        set summoned = null
+        return
+    endif
+
+    set id = GetHandleId(summoned)
+    set summonedUnits[id] = 1
+
+    // The world-enter event can run before the summon event. Remove any spawn
+    // position that may already have been captured for this summoned instance.
+    call ClearSavedUnitPosition(summoned)
+
+    if DEBUG_MODE then
+        call BJDebugMsg("[CreepRespawn] Summoned instance marked non-respawnable: " + GetUnitName(summoned) + " (ID: " + I2S(id) + ")")
+    endif
+
+    set summoned = null
+endfunction
+
 // Mark quest-managed units that must never be saved or scheduled for respawn.
 function CreepRespawn_DiscardUnit takes unit u returns nothing
     local integer id
     if u == null then
         return
     endif
-    call EnsureState()
+    if not IsTableStateReady() then
+        if DEBUG_MODE then
+            call BJDebugMsg("[CreepRespawn] DiscardUnit skipped: Table state is not ready (stage " + I2S(tableInitStage) + ").")
+        endif
+        set u = null
+        return
+    endif
     set id = GetHandleId(u)
     set ignoredUnits[id] = 1
     if RespawnGroup != null then
@@ -265,7 +379,6 @@ endfunction
 private function InitializeRespawnGroup takes nothing returns nothing
     local group tempGroup
 
-    call EnsureState()
     
     // Player(2) = Player 3 (Teal)
     set tempGroup = CreateGroup()
@@ -345,7 +458,6 @@ endfunction
 private function SaveAllUnitPositions takes nothing returns nothing
     local unit u
 
-    call EnsureState()
     
     loop
         set u = FirstOfGroup(RespawnGroup)
@@ -361,7 +473,6 @@ endfunction
 
 private function ClearRespawnData takes integer timerId returns nothing
     local integer base = timerId * 5
-    call EnsureState()
     call respawnData.remove(base + 0)
     call respawnData.remove(base + 1)
     call respawnData.real.remove(base + 2)
@@ -380,7 +491,6 @@ private function OnRespawnTimerExpire takes nothing returns nothing
     local real facing
     local unit newUnit
 
-    call EnsureState()
     set timerId = GetHandleId(t)
     set base = timerId * 5
     set utype = respawnData[base + 0]
@@ -447,7 +557,6 @@ private function ScheduleRespawn takes unit dying returns nothing
     if dying == null then
         return
     endif
-    call EnsureState()
     set handleId = GetHandleId(dying)
     set utype = GetUnitTypeId(dying)
     set p = GetRespawnOwner(dying)
@@ -481,7 +590,7 @@ private function ScheduleRespawn takes unit dying returns nothing
 endfunction
 
 private function OnUnitDeath takes nothing returns nothing
-    local unit dying = UnitDeathEvent_GetDyingUnit()
+    local unit dying
     local integer unitType
     local player owner
     local integer playerId
@@ -490,21 +599,49 @@ private function OnUnitDeath takes nothing returns nothing
     local real savedY
     local boolean hasSavedPosition
 
+    // This is intentionally the first operation in the callback. If this is
+    // not printed while DEBUG_MODE is true, UnitDeathEvent did not dispatch
+    // to CreepRespawn.
+    if DEBUG_MODE then
+        call BJDebugMsg("[CreepRespawn] OnUnitDeath ENTER")
+    endif
+
+    set dying = UnitDeathEvent_GetDyingUnit()
     if dying == null then
+        call BJDebugMsg("[CreepRespawn] ERROR: UnitDeathEvent returned a null dying unit.")
         return
     endif
-    call EnsureState()
+
+    if not IsTableStateReady() then
+        call BJDebugMsg("[CreepRespawn] ERROR: Death callback reached but Table v6 state is not ready (stage " + I2S(tableInitStage) + ").")
+        set dying = null
+        return
+    endif
+
+    set handleId = GetHandleId(dying)
+
+    // Skip only real summoned instances. Do not use UNIT_TYPE_SUMMONED here;
+    // that classification can also be present on preplaced custom units.
+    if summonedUnits.has(handleId) then
+        if DEBUG_MODE then
+            call BJDebugMsg("[CreepRespawn] Actual summoned instance died - SKIPPED: " + GetUnitName(dying))
+        endif
+        call summonedUnits.remove(handleId)
+        call ClearSavedUnitPosition(dying)
+        set dying = null
+        return
+    endif
+
     set owner = GetRespawnOwner(dying)
     set playerId = GetPlayerId(owner)
-    set handleId = GetHandleId(dying)
     set savedX = rhash.real[handleId * 4 + 0]
     set savedY = rhash.real[handleId * 4 + 1]
     set hasSavedPosition = HasSavedUnitPosition(dying)
-    
+
     if GetOwningPlayer(dying) == Player(22) and DEBUG_MODE then
         call BJDebugMsg("[CreepRespawn] Player 23 (Emerald) unit detected - converting to Neutral Passive for respawn")
     endif
-    
+
     if DEBUG_MODE then
         call BJDebugMsg("[CreepRespawn] Unit died: " + GetUnitName(dying) + " | Type: " + I2S(GetUnitTypeId(dying)) + " | Owner: Player " + I2S(playerId) + " | HandleID: " + I2S(handleId))
         if hasSavedPosition then
@@ -522,19 +659,8 @@ private function OnUnitDeath takes nothing returns nothing
         set owner = null
         return
     endif
-    
-    // Check if unit is not summoned
-    if IsUnitType(dying, UNIT_TYPE_SUMMONED) then
-        if DEBUG_MODE then
-            call BJDebugMsg("[CreepRespawn] Unit is summoned - SKIPPED")
-        endif
-        set dying = null
-        set owner = null
-        return
-    endif
-    
-    // Check if unit is respawnable owner
-    if not IsRespawnableUnit(dying) then
+
+    if not IsRespawnableOwner(owner) then
         if DEBUG_MODE then
             call BJDebugMsg("[CreepRespawn] Unit owner not respawnable - SKIPPED")
         endif
@@ -542,8 +668,7 @@ private function OnUnitDeath takes nothing returns nothing
         set owner = null
         return
     endif
-    
-    // Check if unit type is excluded from respawning
+
     set unitType = GetUnitTypeId(dying)
     if IsExcludedUnitType(unitType) then
         if DEBUG_MODE then
@@ -553,19 +678,20 @@ private function OnUnitDeath takes nothing returns nothing
         set owner = null
         return
     endif
-    
-    // Unit passed all checks, proceed with respawn logic
-    if DEBUG_MODE then
-        call BJDebugMsg("[CreepRespawn] Unit PASSED all checks - WILL RESPAWN")
-    endif
+
     if not hasSavedPosition then
         if DEBUG_MODE then
             call BJDebugMsg("[CreepRespawn] No saved spawn data found; saving current death position before scheduling respawn")
         endif
         call SaveUnitPosition(dying)
     endif
+
+    if DEBUG_MODE then
+        call BJDebugMsg("[CreepRespawn] Unit PASSED all checks - WILL RESPAWN")
+    endif
+
     call ScheduleRespawn(dying)
-    
+
     set dying = null
     set owner = null
 endfunction
@@ -577,6 +703,37 @@ endfunction
 private function InitActions takes nothing returns nothing
     local timer t = GetExpiredTimer()
 
+    if DEBUG_MODE then
+        call BJDebugMsg("[CreepRespawn] InitActions ENTER | Table stage=" + I2S(tableInitStage))
+    endif
+
+    // Repair any missing Table state at game time 0 if the earlier struct
+    // initializer did not complete. Already-created Tables are preserved.
+    if not IsTableStateReady() then
+        if DEBUG_MODE then
+            call BJDebugMsg("[CreepRespawn] Retrying Table v6 state initialization at game time 0 (previous stage " + I2S(tableInitStage) + ").")
+        endif
+        call EnsureTableStateRuntime()
+        if not IsTableStateReady() then
+            call BJDebugMsg("[CreepRespawn] ERROR: Table v6 state initialization incomplete (stage " + I2S(tableInitStage) + ").")
+            if t != null then
+                call DestroyTimer(t)
+            endif
+            set t = null
+            return
+        endif
+    endif
+
+    call EnsureRespawnGroup()
+    if RespawnGroup == null then
+        call BJDebugMsg("[CreepRespawn] ERROR: Unable to create respawn enumeration group.")
+        if t != null then
+            call DestroyTimer(t)
+        endif
+        set t = null
+        return
+    endif
+
     if initialPositionsSaved then
         if t != null then
             call DestroyTimer(t)
@@ -585,7 +742,6 @@ private function InitActions takes nothing returns nothing
         return
     endif
 
-    call EnsureState()
     if DEBUG_MODE then
         call BJDebugMsg("[CreepRespawn] Initializing CreepRespawn system...")
         call BJDebugMsg("[CreepRespawn] Excluded " + I2S(EXCLUDED_COUNT) + " unit types from respawning")
@@ -613,21 +769,27 @@ endfunction
 //===========================================================================
 
 private function Init takes nothing returns nothing
-    local timer initTimer = CreateTimer()
-    
-    call EnsureState()
-    
-    // Respawn System Init (runs at map start)
-    call TimerStart(initTimer, 0.00, false, function InitActions)
-    
-    // Register with centralized death event system
+    local timer initTimer = null
+
+    // Enable centralized dispatcher diagnostics first.
+    call UnitDeathEvent_SetDebugEnabled(DEBUG_MODE)
+
+    // CRITICAL: register every event callback before doing any CreepRespawn
+    // runtime-state work. Table allocation is handled by a struct initializer
+    // and, if needed, retried later by InitActions.
     call UnitDeathEvent_Register(function OnUnitDeath)
     call Events_RegisterUnitEnter(function OnUnitEnterEvent)
-    if DEBUG_MODE then
-        call BJDebugMsg("[CreepRespawn] Registered with centralized death event system")
-        call BJDebugMsg("[CreepRespawn] Registered with centralized unit-enter event system")
+    call Events_RegisterUnitSummon(function OnUnitSummonEvent)
+
+    // Defer preplaced-unit enumeration and any Table-state retry until game
+    // time 0. This initializer itself intentionally does not call Table.create().
+    set initTimer = CreateTimer()
+    if initTimer == null then
+        call BJDebugMsg("[CreepRespawn] ERROR: Unable to create initialization timer.")
+        return
     endif
-    
+
+    call TimerStart(initTimer, 0.00, false, function InitActions)
     set initTimer = null
 endfunction
 
