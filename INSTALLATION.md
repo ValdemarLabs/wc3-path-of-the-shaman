@@ -7,6 +7,26 @@
 > The PotS installer is the recommended installation and update method.
 > These instructions may change as the installer and game requirements are updated.
 
+## Table of Contents
+
+- [Requirements](#requirements)
+- [What the installer installs](#what-the-installer-installs)
+- [Installing Path of the Shaman](#installing-path-of-the-shaman)
+  - [1. Run the installer](#1-run-the-installer)
+  - [2. Select the installation type](#2-select-the-installation-type)
+  - [3. Check the Warcraft III folders](#3-check-the-warcraft-iii-folders)
+  - [4. Review the installation summary](#4-review-the-installation-summary)
+  - [5. Install](#5-install)
+- [Launching the map](#launching-the-map)
+- [Updating Path of the Shaman](#updating-path-of-the-shaman)
+- [Troubleshooting](#troubleshooting)
+  - [Map does not appear in Warcraft III](#map-does-not-appear-in-warcraft-iii)
+  - [Missing sounds, music, or other PotS assets](#missing-sounds-music-or-other-pots-assets)
+  - [Installer cannot find the Warcraft III installation](#installer-cannot-find-the-warcraft-iii-installation)
+  - [Rebirth mod is missing or does not work correctly](#rebirth-mod-is-missing-or-does-not-work-correctly)
+  - [PotS local files still do not load](#pots-local-files-still-do-not-load)
+  - [Problems continue after repair](#problems-continue-after-repair)
+
 
 ### Requirements
 
@@ -15,7 +35,7 @@
 - Latest supported Warcraft III retail patch
 - Administrator approval for installing PotS files into the Warcraft III installation directory
 
-> **Important:** PotS is intended for the current Warcraft III Reforged retail version. Older game versions, such as patch 1.36 or older, are not supported by the current map.
+> **Important:** PotS is intended for the current Warcraft III Reforged retail version. Older game versions, such as patch 1.36, are not supported by the current map.
 
 
 ### What the installer installs
