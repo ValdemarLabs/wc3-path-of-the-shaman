@@ -11,6 +11,15 @@ While inspired by Warcraft's universe, the story, locations, and characters in P
 **Map size:** 480x480  
 **Status:** Under heavy development
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Main Characters](#main-characters)
+- [Core Features](#core-features)
+- [Development](#development)
+- [Documentation](#documentation)
+- [Disclaimer](#disclaimer)
+
 ### Overview
 
 Path of the Shaman combines familiar Warcraft III and RPG mechanics with a large number of custom systems built specifically for the project.
