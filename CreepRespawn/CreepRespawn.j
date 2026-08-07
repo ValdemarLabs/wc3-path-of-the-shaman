@@ -48,7 +48,7 @@ globals
     private integer tableInitStage = 0
     
     // Debug mode - set to true to enable debug messages
-    private boolean DEBUG_MODE = true
+    private boolean DEBUG_MODE = false
     
     // Respawn min/max times
     private constant real MIN_RESPAWN_TIME = 120.0
@@ -772,7 +772,7 @@ private function Init takes nothing returns nothing
     local timer initTimer = null
 
     // Enable centralized dispatcher diagnostics first.
-    call UnitDeathEvent_SetDebugEnabled(DEBUG_MODE)
+    //call UnitDeathEvent_SetDebugEnabled(DEBUG_MODE)
 
     // CRITICAL: register every event callback before doing any CreepRespawn
     // runtime-state work. Table allocation is handled by a struct initializer
