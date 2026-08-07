@@ -1,6 +1,6 @@
 # WC3 - Path of the Shaman
 ## README
-*Last updated: 2026-08-07*
+*Last updated: 2026-08-08*
 
 **Path of the Shaman (PotS)** is an open-world, story-driven single-player RPG for Warcraft III, with a strong focus on immersion, exploration, character progression, and a living game world.
 
