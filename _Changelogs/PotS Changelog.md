@@ -15,6 +15,49 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [7.8.2026]
+
+### Technical Updates
+
+Issue with CreepRespawn not respawing creeps anymore for some reason:
+- Updated `CreepRespawn/CreepRespawn.j` and `Events/UnitDeathEvent.j`
+- Keeps Bribe Table v6; native hashtables are NOT used for CreepRespawn storage.
+- Moves the primary Table.create() lifecycle into CreepRespawnTableState.onInit,
+  matching the working struct-initializer pattern used by Reputation.j.
+- CreepRespawn's library Init no longer calls Table.create() or EnsureState().
+- Registers UnitDeathEvent/Events callbacks before any deferred runtime state work.
+- Adds tableInitStage diagnostics so a silent Table initialization interruption can
+  be localized (20=rhash create, 30=respawnData, 40=ignoredUnits, 50=summonedUnits,
+  100=all Table state ready).
+- Retries incomplete Table initialization once at game-time 0 in InitActions.
+- Runtime callbacks validate Table state before accessing it.
+- Keeps actual summoned-instance tracking instead of UNIT_TYPE_SUMMONED filtering.
+
+UnitDeathEvent.j
+- Keeps direct callback dispatch; no TriggerRegisterVariableEvent is used for code
+  subscribers.
+- Code callbacks are TriggerExecute'd directly.
+- RegisterTrigger callers retain condition evaluation before TriggerExecute.
+- Nested death context remains save/restored.
+1. Preserved Bribe Table v6. No native hashtable replacement.
+2. Removed runtime EXCLUDED_UNIT_TYPES array initialization from the Table initializer path.
+3. Replaced the fixed 7-entry exclusion array with equivalent direct unit-type comparisons in IsExcludedUnitType().
+4. CreepRespawnTableState.onInit now mirrors Reputation.j: it does only Table.create() calls and readiness bookkeeping.
+5. Table stage markers now directly identify Table allocation:
+   20/21 = rhash before/after Table.create()
+   30/31 = respawnData before/after Table.create()
+   40/41 = ignoredUnits before/after Table.create()
+   50/51 = summonedUnits before/after Table.create()
+   100   = all Table state ready
+6. Added a separate game-time-0 repair function that creates only missing Tables; it never manually calls the struct onInit and does not overwrite successfully-created Table instances.
+7. UnitDeathEvent direct callback dispatch remains unchanged from the previous fixed version (no TriggerRegisterVariableEvent for code subscribers).
+
+Expected next test:
+- InitActions should report Table stage=100.
+- A unit death should show UnitDeathEvent dispatch followed by CreepRespawn OnUnitDeath ENTER and normal respawn scheduling.
+- If initialization still fails, the new stage value now points at a specific Table.create() call.
+
+
 ## [6.8.2026]
 
 ### Player-Facing Updates
@@ -58,7 +101,7 @@
 /debug setfactionrep goblins
 /debug setfactionrep satyr
 /debug setfactionrep stormhaven
-/debug setfactionrep stormhaven
+/debug setfactionrep gnolls
 
  - Add more starting items to Nazgrek and make him equip them
 
