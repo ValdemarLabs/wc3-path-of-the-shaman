@@ -1503,15 +1503,16 @@ private function InitFactions takes nothing returns nothing
     local Faction stormhaven   = Faction.createFaction("Stormhaven", Player(8))
     local Faction felorcs      = Faction.createFaction("Fel Orcs", Player(3))
     local Faction undead       = Faction.createFaction("Undead", Player(20))
-    local Faction goblins      = Faction.createFaction("Goblins", Player(13))
+    local Faction goblins      = Faction.createFaction("Goblins", Player(6))
     local Faction elarindor    = Faction.createFaction("Elarindor", Player(15))
     local Faction bonecrushers = Faction.createFaction("Bonecrusher Clan", Player(10))
     local Faction morgrim      = Faction.createFaction("Morgrim Clan", Player(7))
     local Faction humancitizen = Faction.createFaction("Human Citizen", Player(2))
     local Faction gnolls       = Faction.createFaction("Gnolls", null)
     local Faction jungletrolls = Faction.createFaction("Jungle trolls", null)
-    local Faction foresttrolls  = Faction.createFaction("Forest trolls", null)
+    local Faction foresttrolls = Faction.createFaction("Forest trolls", null)
     local Faction kobolds      = Faction.createFaction("Kobolds", null)
+    local Faction realhorde    = Faction.createFaction("The True Horde", Player(13))
 
     if RE_DEBUG then
         call BJDebugMsg("[InitFactions] All factions created successfully")
@@ -1552,22 +1553,23 @@ private function InitFactions takes nothing returns nothing
     // Setup kill deltas
     // Positive = friendly, negative = hostile
     //set REP_KILL_DELTA.real[satyr.id] = 200    // increases Horde rep
-    set REP_KILL_DELTA.real[horde.id] = -50
-    set REP_KILL_DELTA.real[satyr.id] = -50
-    set REP_KILL_DELTA.real[riverbane.id] = -50
-    set REP_KILL_DELTA.real[alliance.id] = -50
-    set REP_KILL_DELTA.real[stormhaven.id] = -50
-    set REP_KILL_DELTA.real[felorcs.id] = -50
-    set REP_KILL_DELTA.real[undead.id] = -50
-    set REP_KILL_DELTA.real[goblins.id] = -50
-    set REP_KILL_DELTA.real[elarindor.id] = -50
-    set REP_KILL_DELTA.real[bonecrushers.id] = -50
-    set REP_KILL_DELTA.real[morgrim.id] = -50
-    set REP_KILL_DELTA.real[humancitizen.id] = -50
-    set REP_KILL_DELTA.real[gnolls.id] = -50
-    set REP_KILL_DELTA.real[jungletrolls.id] = -50
-    set REP_KILL_DELTA.real[foresttrolls.id] = -50
-    set REP_KILL_DELTA.real[kobolds.id] = -50
+    set REP_KILL_DELTA.real[horde.id] = -10
+    set REP_KILL_DELTA.real[satyr.id] = -10
+    set REP_KILL_DELTA.real[riverbane.id] = -10
+    set REP_KILL_DELTA.real[alliance.id] = -10
+    set REP_KILL_DELTA.real[stormhaven.id] = -10
+    set REP_KILL_DELTA.real[felorcs.id] = -10
+    set REP_KILL_DELTA.real[undead.id] = -10
+    set REP_KILL_DELTA.real[goblins.id] = -10
+    set REP_KILL_DELTA.real[elarindor.id] = -10
+    set REP_KILL_DELTA.real[bonecrushers.id] = -10
+    set REP_KILL_DELTA.real[morgrim.id] = -10
+    set REP_KILL_DELTA.real[humancitizen.id] = -10
+    set REP_KILL_DELTA.real[gnolls.id] = -10
+    set REP_KILL_DELTA.real[jungletrolls.id] = -10
+    set REP_KILL_DELTA.real[foresttrolls.id] = -10
+    set REP_KILL_DELTA.real[kobolds.id] = -10
+    set REP_KILL_DELTA.real[realhorde.id] = -10
 
     if RE_DEBUG then
         call BJDebugMsg("[InitFactions] Kill deltas set")
@@ -1591,6 +1593,7 @@ private function InitFactions takes nothing returns nothing
     call Reputation.setRep(p, jungletrolls, -6000)
     call Reputation.setRep(p, foresttrolls, -6000)
     call Reputation.setRep(p, kobolds, -6000)
+    call Reputation.setRep(p, realhorde, -20000)
 
     if RE_DEBUG then
         call BJDebugMsg("[InitFactions] Initial reputation values set")
@@ -1599,7 +1602,7 @@ private function InitFactions takes nothing returns nothing
 
     //set horde.iconPath        = "ReplaceableTextures\\CommandButtons\\BTNGrunt.blp"
     set horde.iconPath        = "ReplaceableTextures\\PassiveButtons\\PASFactionHorde.blp"
-    set morgrim.iconPath      = "ReplaceableTextures\\PassiveButtons\\PASBTNDwarvenLongRifle.blp"
+    set morgrim.iconPath      = "ReplaceableTextures\\PassiveButtons\\PASBTNDwarvenLongRifle.blp"   // this must be replaced eventually...
     set alliance.iconPath     = "ReplaceableTextures\\PassiveButtons\\PASFactionHumanAlliance.blp"
     set stormhaven.iconPath   = "zones\\zone013_stormhaven.blp"
     set felorcs.iconPath      = "ReplaceableTextures\\CommandButtons\\BTNChaosGrunt.blp"
@@ -1614,6 +1617,7 @@ private function InitFactions takes nothing returns nothing
     set jungletrolls.iconPath = "ReplaceableTextures\\PassiveButtons\\PASFactionTroll.blp"
     set foresttrolls.iconPath = "ReplaceableTextures\\PassiveButtons\\PASFactionTroll.blp"
     set kobolds.iconPath      = "ReplaceableTextures\\PassiveButtons\\PASFactionOther1.blp"
+    set realhorde.iconPath    = "ReplaceableTextures\\PassiveButtons\\PASFactionTrueHorde.blp"
 
     // Note: Status icons (Enemy, Hostile, Unfriendly, Neutral, Friendly, Covenant, Exalted)
     // are now standardized across all factions using the global ICON_* constants
