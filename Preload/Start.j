@@ -134,34 +134,36 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
         endif
     endfunction
 
+    private function ST_AddAndEquipStartingItem takes integer itemTypeId returns nothing
+        call UnitAddItemByIdSwapped(itemTypeId, udg_Nazgrek)
+        loop
+            exitwhen not DInvTryEquipBestStoredEquipmentForUnit(udg_Nazgrek)
+        endloop
+    endfunction
+
     private function ST_AddStartingItems takes nothing returns nothing
         
         // Create items for Nazgrek
         if ST_HasNazgrek() then
             // gear
-            call UnitAddItemByIdSwapped(ST_ITEM_NAZGREKS_AXE, udg_Nazgrek)
-            call UnitAddItemByIdSwapped(ST_ITEM_BACK, udg_Nazgrek)
-            call UnitAddItemByIdSwapped(ST_ITEM_BELT, udg_Nazgrek)
-            call UnitAddItemByIdSwapped(ST_ITEM_BRACERS, udg_Nazgrek)
-            call UnitAddItemByIdSwapped(ST_ITEM_CHEST, udg_Nazgrek)
-            call UnitAddItemByIdSwapped(ST_ITEM_FOOT, udg_Nazgrek)
-            call UnitAddItemByIdSwapped(ST_ITEM_HANDS, udg_Nazgrek)
-            call UnitAddItemByIdSwapped(ST_ITEM_HEAD, udg_Nazgrek)
-            call UnitAddItemByIdSwapped(ST_ITEM_LEGS, udg_Nazgrek)
-            call UnitAddItemByIdSwapped(ST_ITEM_NECK, udg_Nazgrek)
-            call UnitAddItemByIdSwapped(ST_ITEM_RING, udg_Nazgrek)
-            call UnitAddItemByIdSwapped(ST_ITEM_SHOULDERS, udg_Nazgrek)
-            call UnitAddItemByIdSwapped(ST_ITEM_TRINKET, udg_Nazgrek)
+            call ST_AddAndEquipStartingItem(ST_ITEM_NAZGREKS_AXE)
+            call ST_AddAndEquipStartingItem(ST_ITEM_BACK)
+            call ST_AddAndEquipStartingItem(ST_ITEM_BELT)
+            call ST_AddAndEquipStartingItem(ST_ITEM_BRACERS)
+            call ST_AddAndEquipStartingItem(ST_ITEM_CHEST)
+            call ST_AddAndEquipStartingItem(ST_ITEM_FOOT)
+            call ST_AddAndEquipStartingItem(ST_ITEM_HANDS)
+            call ST_AddAndEquipStartingItem(ST_ITEM_HEAD)
+            call ST_AddAndEquipStartingItem(ST_ITEM_LEGS)
+            call ST_AddAndEquipStartingItem(ST_ITEM_NECK)
+            call ST_AddAndEquipStartingItem(ST_ITEM_RING)
+            call ST_AddAndEquipStartingItem(ST_ITEM_SHOULDERS)
+            call ST_AddAndEquipStartingItem(ST_ITEM_TRINKET)
 
             // consumables
             call UnitAddItemByIdSwapped(ST_ITEM_HEALING_SALVE, udg_Nazgrek)
             call UnitAddItemByIdSwapped(ST_ITEM_SPRING_WATER, udg_Nazgrek)
         endif
-
-        // Equip gear for Nazgrek
-        loop
-            exitwhen not DInvTryEquipBestStoredEquipmentForUnit(udg_Nazgrek)
-        endloop
     endfunction
 
     private function ST_SetStartingResources takes nothing returns nothing

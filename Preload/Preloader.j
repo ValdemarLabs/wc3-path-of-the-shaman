@@ -125,11 +125,13 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
             call PRL_RestoreGameUI()
         endif
         call HidePreloadTitle()
-        call ImagesUI_HidePreload()
 
         if PRL_RunGameStartOnFinish then
+            // Retain the completed logo beneath GameMode until the run starts.
+            call ImagesUI_SetPreloadText("")
             call GameMode_Show()
         else
+            call ImagesUI_HidePreload()
             call EnableUserControl(true)
         endif
 

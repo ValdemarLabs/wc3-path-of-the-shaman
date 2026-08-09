@@ -12,7 +12,7 @@
     Credits:
 
     How to install:
-    Import before Preloader.j and after Difficulty.j, Start.j, and Interface.j.
+    Import before Preloader.j and after Difficulty.j, Start.j, Interface.j, and ImagesUI.j.
     Preloader.j calls GameMode_Show() after preload; this library applies the
     selected difficulty and then calls Start_Start().
 
@@ -27,7 +27,7 @@
     call GameMode_AreAbilityRequirementsEnabled()
 
 **/
-library GameMode initializer AutoInit requires Difficulty, Start, Interface
+library GameMode initializer AutoInit requires Difficulty, Start, Interface, ImagesUI
     globals
         constant integer GAME_MODE_STORY = 1
         constant integer GAME_MODE_FREE_ROAM = 2
@@ -292,6 +292,7 @@ library GameMode initializer AutoInit requires Difficulty, Start, Interface
         call Start_SetRunIntroCinematic(GM_RunIntroCinematic)
         call Start_SetStartingGoldBonus(GM_StartingGoldBonus)
         call GM_HideInternal()
+        call ImagesUI_HidePreload()
         call EnableUserControl(false)
         call Start_Start()
     endfunction
@@ -339,6 +340,7 @@ library GameMode initializer AutoInit requires Difficulty, Start, Interface
 
     private function GM_CreateFrames takes nothing returns nothing
         set GM_Parent = BlzCreateFrameByType("BACKDROP", "GameModePanel", BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "EscMenuBackdrop", 0)
+        call BlzFrameSetLevel(GM_Parent, 2)
         call BlzFrameSetAbsPoint(GM_Parent, FRAMEPOINT_TOPLEFT, GM_PANEL_LEFT, GM_PANEL_TOP)
         call BlzFrameSetAbsPoint(GM_Parent, FRAMEPOINT_BOTTOMRIGHT, GM_PANEL_RIGHT, GM_PANEL_BOTTOM)
 
