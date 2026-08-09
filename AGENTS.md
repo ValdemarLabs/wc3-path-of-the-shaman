@@ -31,7 +31,7 @@ Recent history uses short, direct, sentence-case summaries without Conventional 
 
 ## Changelog and commit messages
 
-Always update `Pots Changelog.md` on the current date.
+Always update `Pots Changelog.md` on the current date. Use for example "Added/updated `Arena/ArenaModes.j`" this styling when updating library.
 Write short commit messages in chat per changed files or sometimes for many files if the commit is clearly for many files.
 
 ## Subagent policy
