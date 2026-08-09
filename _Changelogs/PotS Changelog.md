@@ -31,6 +31,8 @@
 - Aveline now uses the retained Fake Death flow while preserving her AI revive timer.
 - Hired non-hero companions now remain as revivable Fake Death units for 60 seconds, appear dead in Stats UI, and receive a real death with normal cleanup and decay if no Spirit Shard revives them.
 - Spirit Shards can now revive fatigued pets as well as other fallen party units, restoring the selected unit to exactly 50% health and 50% mana.
+- Game mode and difficulty selection now render in front of the retained Path of the Shaman logo.
+- Pressing ESC now closes the active MasterUI panel through a shared handler.
 
 ### Technical Updates
 
@@ -43,6 +45,8 @@
 - Added profile-selectable AI Fake Death handling so Aveline can use retained death without regressing normal engine death for other AI heroes.
 - Extended FallenHeroState and Spirit Shard targeting to hired non-hero companions, with timed conversion from retained Fake Death to permanent engine death.
 - Integrated fatigued pets into Spirit Shard targeting and AI revival searches, canceling their pending automatic recovery and applying the requested health and mana percentages consistently to every revived unit.
+- Updated `UI/ImagesUI.j` and `UI/GameMode.j` with a dedicated preload overlay layer that keeps selection controls above the logo image.
+- Updated `UI/MasterUI.j` with a centralized Player 0 ESC trigger that closes MasterUI and every panel in its existing shared hide list.
 - Updated `CreepRespawn/CreepRespawn.j`
   - Require an immutable saved spawn record before a unit can schedule a respawn; deaths of unregistered units no longer create records from their death positions.
   - Preserve original unit type, owner, position, and facing across every respawn generation.
