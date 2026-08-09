@@ -30,6 +30,7 @@
     call Companions_RegisterControlled(unit controlledUnit, unit leader, integer mode)
     call Companions_UnregisterControlled(unit controlledUnit)
     call Companions_IsControlled(unit controlledUnit) returns boolean
+    call Companions_IsManualCommandActive(unit controlledUnit) returns boolean
     call Companions_IsControlledDisplayUnit(unit controlledUnit) returns boolean
     call Companions_GetControlledDisplayCount() returns integer
     call Companions_GetControlledDisplayUnit(integer index) returns unit
@@ -1040,6 +1041,12 @@ private function UpdateCompanionOrderUnit takes unit controlledUnit returns noth
     if CompanionTracked[unitId] == 0 then
         return
     endif
+    if CompanionManualOrder[unitId] != 0 then
+        call FollowSystem_RemoveUnit(controlledUnit)
+        call ClearCompanionFarIcon(controlledUnit)
+        call DestroyCompanionFollowerEffects(controlledUnit)
+        return
+    endif
     if CompanionOrderProfile[unitId] == COMPANION_PROFILE_ESCORT then
         return
     endif
@@ -1072,13 +1079,6 @@ private function UpdateCompanionOrderUnit takes unit controlledUnit returns noth
     endif
 
     set currentOrder = GetUnitCurrentOrder(controlledUnit)
-    if CompanionManualOrder[unitId] != 0 then
-        if currentOrder == CompanionManualOrder[unitId] then
-            set leader = null
-            return
-        endif
-        call CompanionManualOrder.remove(unitId)
-    endif
 
     set distance = GetDistanceBetweenUnits(controlledUnit, leader)
     call UpdateCompanionFarIcon(controlledUnit, leader, distance, mode)
@@ -1432,7 +1432,7 @@ private function IsCompanionIdleBlocked takes unit controlledUnit returns boolea
     endif
 
     set mode = NormalizeMode(CompanionMode[unitId])
-    return CompanionSuspended[unitId] == 1 or mode == COMPANION_MODE_HOLD
+    return CompanionSuspended[unitId] == 1 or mode == COMPANION_MODE_HOLD or CompanionManualOrder[unitId] != 0
 endfunction
 
 private function UpdateCompanionIdleUnit takes unit controlledUnit, boolean isPet returns nothing
@@ -1940,6 +1940,9 @@ private function ApplyOrderCommandTarget takes nothing returns nothing
     set unitId = GetHandleId(controlledUnit)
     if CompanionTracked[unitId] == 1 and CompanionSuspended[unitId] == 0 and NormalizeMode(CompanionMode[unitId]) != COMPANION_MODE_HOLD and IsAliveUnit(controlledUnit) then
         call ClearOrderIdleState(controlledUnit, GetUnitUserData(controlledUnit))
+        call FollowSystem_RemoveUnit(controlledUnit)
+        call ClearCompanionFarIcon(controlledUnit)
+        call DestroyCompanionFollowerEffects(controlledUnit)
         if OrderCommandAttack then
             set CompanionManualOrder[unitId] = OrderId("attack")
             call FireCommandEvent(controlledUnit, OrderCommandCaster, COMMAND_ATTACK, 0)
@@ -2692,7 +2695,10 @@ private function OnUnitDeath takes nothing returns nothing
 
     call HandleHostilityAgainstFactionUnit(killer, dying)
 
-    if dying != null and udg_Companion_Group != null and IsUnitInGroup(dying, udg_Companion_Group) and not IsUnitType(dying, UNIT_TYPE_HERO) and dying != udg_Valeria and dying != udg_Aradion and dying != udg_Aveline then
+    if dying != null and CompanionTracked != 0 and CompanionTracked[GetHandleId(dying)] == 1 then
+        call CompanionManualOrder.remove(GetHandleId(dying))
+    endif
+    if dying != null and not FallenHeroState_IsFallen(dying) and udg_Companion_Group != null and IsUnitInGroup(dying, udg_Companion_Group) and not IsUnitType(dying, UNIT_TYPE_HERO) and dying != udg_Valeria and dying != udg_Aradion and dying != udg_Aveline then
         set udg_CompanionUnitKicked = dying
         call SyncGuiCompanionEntry(dying, "")
         call RemoveInternal(dying)
@@ -2886,6 +2892,13 @@ public function IsControlled takes unit controlledUnit returns boolean
         return false
     endif
     return CompanionTracked[GetHandleId(controlledUnit)] == 1
+endfunction
+
+public function IsManualCommandActive takes unit controlledUnit returns boolean
+    if controlledUnit == null or CompanionTracked == 0 then
+        return false
+    endif
+    return CompanionTracked[GetHandleId(controlledUnit)] == 1 and CompanionManualOrder[GetHandleId(controlledUnit)] != 0
 endfunction
 
 public function IsControlledDisplayUnit takes unit controlledUnit returns boolean
