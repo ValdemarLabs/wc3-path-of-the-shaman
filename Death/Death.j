@@ -616,7 +616,7 @@ private function Death_OnLethalDamage takes nothing returns nothing
     local unit whichHero = udg_DamageEventTarget
     local unit killer = udg_DamageEventSource
 
-    if whichHero != null and IsUnitType(whichHero, UNIT_TYPE_HERO) and AI_GetInstance(whichHero) <= 0 and not IsUnitInGroup(whichHero, Death_RetainedCorpses) then
+    if whichHero != null and IsUnitType(whichHero, UNIT_TYPE_HERO) and (AI_GetInstance(whichHero) <= 0 or AI_UsesFakeDeath(whichHero)) and not IsUnitInGroup(whichHero, Death_RetainedCorpses) then
         set udg_LethalDamageHP = 1.00
         call Death_StartFakeFall(whichHero, killer)
     endif
