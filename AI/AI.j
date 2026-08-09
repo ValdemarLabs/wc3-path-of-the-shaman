@@ -37,6 +37,7 @@
     call AI_SetUnitTypeDefaultProfile(unitTypeId, profileId)
     call AI_SetProfileFixedHeroLevel(profileId, level)
     call AI_SetProfileXpLockedUntilInvite(profileId, enabled)
+    call AI_SetProfileUsesFakeDeath(profileId, enabled)
     call AI_SetProfileAutonomous(profileId, enabled)
     call AI_SetProfileSpawnOwner(profileId, owner)
     call AI_SetProfileFaction(profileId, factionName)
@@ -85,6 +86,7 @@
     call AI_GetReviveRemaining(whichUnit) returns real
     call AI_IsReviving(whichUnit) returns boolean
     call AI_IsAlive(whichUnit) returns boolean
+    call AI_UsesFakeDeath(whichUnit) returns boolean
     call AI_ReviveAt(whichUnit, x, y, showEffects) returns boolean
     call AI_ArePartyMembers(firstUnit, secondUnit) returns boolean
     call AI_GetFactionInfoText(whichUnit) returns string
@@ -170,7 +172,8 @@ globals
     private constant real AI_RETREAT_BASE_TIME = 30.00
     private constant real AI_BOSS_EVADE_TIME = 2.25
     private constant real AI_DIALOG_UNLOCK_PAD = 0.15
-    private constant real AI_BARK_AUDIBLE_RANGE = 2600.00
+    private constant real AI_BARK_AUDIBLE_RANGE = 2000.00
+    private constant real AI_COMPANION_BARK_AUDIBLE_RANGE = 2600.00
     private constant real AI_BARK_REPLY_RANGE = 900.00
     private constant real AI_BARK_GLOBAL_GAP = 0.75
     private constant real AI_COMMAND_BARK_DELAY = 0.01
@@ -195,6 +198,7 @@ globals
     private constant integer AI_PROFESSION_CRAFT_CHANCE = 25
     private constant real AI_PROFESSION_TOOL_DURATION = 45.00
     private constant real AI_PROFESSION_TOOL_CLEANUP_DELAY = 10.00
+    private constant real AI_BLOCKED_GATHER_RETREAT_DISTANCE = 700.00
     private constant integer AI_PROFESSION_FAIL_LIMIT = 3
     private constant real AI_PROFESSION_FAIL_BACKOFF_MIN = 35.00
     private constant real AI_PROFESSION_FAIL_BACKOFF_MAX = 75.00
@@ -274,6 +278,7 @@ globals
     private Table ProfileFixedHeroLevel = 0
     private Table ProfileLockXpUntilInvite = 0
     private Table ProfileNoManaRestore = 0
+    private Table ProfileUsesFakeDeath = 0
     private Table ProfileAllowCompanionTravel = 0
     private Table ProfileAutonomousDisabled = 0
     private Table ProfileFaction = 0
@@ -493,6 +498,7 @@ private function EnsureState takes nothing returns nothing
         set ProfileFixedHeroLevel = Table.create()
         set ProfileLockXpUntilInvite = Table.create()
         set ProfileNoManaRestore = Table.create()
+        set ProfileUsesFakeDeath = Table.create()
         set ProfileAllowCompanionTravel = Table.create()
         set ProfileAutonomousDisabled = Table.create()
         set ProfileFaction = Table.create()
@@ -720,13 +726,18 @@ private function IsPlayerOwnedHeroListener takes unit hero returns boolean
 endfunction
 
 private function IsBarkNearPlayerHero takes unit speaker returns boolean
+    local real audibleRange = AI_BARK_AUDIBLE_RANGE
+
     if speaker == null then
         return false
     endif
-    if IsPlayerOwnedHeroListener(udg_Nazgrek) and IsUnitInRange(speaker, udg_Nazgrek, AI_BARK_AUDIBLE_RANGE) then
+    if udg_Companion_Group != null and IsUnitInGroup(speaker, udg_Companion_Group) then
+        set audibleRange = AI_COMPANION_BARK_AUDIBLE_RANGE
+    endif
+    if IsPlayerOwnedHeroListener(udg_Nazgrek) and IsUnitInRange(speaker, udg_Nazgrek, audibleRange) then
         return true
     endif
-    if IsPlayerOwnedHeroListener(udg_Zulkis) and IsUnitInRange(speaker, udg_Zulkis, AI_BARK_AUDIBLE_RANGE) then
+    if IsPlayerOwnedHeroListener(udg_Zulkis) and IsUnitInRange(speaker, udg_Zulkis, audibleRange) then
         return true
     endif
     return false
@@ -1161,7 +1172,7 @@ private function BeginWander takes integer instanceId, unit whichUnit returns no
         set y = GetRandomReal(GetRectMinY(bj_mapInitialPlayableArea), GetRectMaxY(bj_mapInitialPlayableArea))
     endif
     call SetInstanceState(instanceId, AI_STATE_WANDER)
-    call IssuePointOrder(whichUnit, "attack", x, y)
+    call IssuePointOrder(whichUnit, "move", x, y)
 endfunction
 
 private function BeginCombatRetreat takes integer instanceId, unit whichUnit returns nothing
@@ -1226,7 +1237,7 @@ private function TryReturnToProfileAllowedZone takes integer instanceId, unit wh
     endif
     if PickProfileAllowedZonePoint(profileId) then
         call SetInstanceState(instanceId, AI_STATE_WANDER)
-        call IssuePointOrder(whichUnit, "attack", RandomPointX, RandomPointY)
+        call IssuePointOrder(whichUnit, "move", RandomPointX, RandomPointY)
         call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " returns to its allowed initial zones.")
         return true
     endif
@@ -2417,6 +2428,11 @@ public function SetProfileNoManaRestore takes integer profileId, boolean noMana 
     set ProfileNoManaRestore.boolean[profileId] = noMana
 endfunction
 
+public function SetProfileUsesFakeDeath takes integer profileId, boolean enabled returns nothing
+    call EnsureState()
+    set ProfileUsesFakeDeath.boolean[profileId] = enabled
+endfunction
+
 public function SetProfileCompanionRetreat takes integer profileId, boolean enabled returns nothing
     call EnsureState()
     set ProfileCompanionRetreatDisabled.boolean[profileId] = not enabled
@@ -3221,6 +3237,15 @@ public function GetProfileId takes unit whichUnit returns integer
         return 0
     endif
     return InstanceProfile[instanceId]
+endfunction
+
+public function UsesFakeDeath takes unit whichUnit returns boolean
+    local integer instanceId = AI_GetInstance(whichUnit)
+
+    if instanceId <= 0 then
+        return false
+    endif
+    return ProfileUsesFakeDeath.boolean[InstanceProfile[instanceId]]
 endfunction
 
 public function GetProfileFaction takes integer profileId returns string
@@ -4982,7 +5007,7 @@ private function StopProfessionOrder takes unit whichUnit returns nothing
 endfunction
 
 private function RequestProfessionFailureBark takes unit whichUnit returns nothing
-    if whichUnit != null and IsCompanionControlled(whichUnit) and IsBarkNearPlayerHero(whichUnit) then
+    if whichUnit != null and udg_Companion_Group != null and IsUnitInGroup(whichUnit, udg_Companion_Group) and IsBarkNearPlayerHero(whichUnit) then
         call AI_RequestBark(whichUnit, AI_BARK_IDLE)
     endif
 endfunction
@@ -5474,6 +5499,7 @@ endfunction
 private function BackoffBlockedGatherUnitAttack takes integer instanceId, unit attacker, unit node returns nothing
     if node != null and GN_IsGatherUnit(node) then
         call BackoffProfessionWork(instanceId, attacker, GetNow(), "requirements not met for " + GN_GetGatherUnitName(node))
+        call MoveAwayFromPoint(attacker, GetUnitX(node), GetUnitY(node), AI_BLOCKED_GATHER_RETREAT_DISTANCE)
     else
         call BackoffProfessionWork(instanceId, attacker, GetNow(), "gather requirements not met")
     endif
@@ -6174,6 +6200,13 @@ private function ProcessInstance takes integer instanceId, real now returns noth
     if not udg_InCinematic then
         call InstanceCinematicParked.remove(instanceId)
     endif
+    if companionControlled and Companions_IsManualCommandActive(whichUnit) then
+        call ClearSocialState(instanceId)
+        call SetInstanceState(instanceId, AI_STATE_COMPANION_CONTROLLED)
+        call ResetMovementMemory(instanceId, whichUnit, GetUnitCurrentOrder(whichUnit), now)
+        set whichUnit = null
+        return
+    endif
     if ShouldHoldReservedProfessionJob(instanceId, whichUnit, now) then
         set whichUnit = null
         return
@@ -6401,7 +6434,9 @@ private function HandleDeath takes nothing returns nothing
             call RequestCompanionDeathBark(victim)
         endif
         call RunProfileTrigger(ProfileDeathTrigger, instanceId, victim)
-        call StartReviveTimer(instanceId, victim)
+        if IsUnitType(victim, UNIT_TYPE_HERO) or not IsCompanionControlled(victim) then
+            call StartReviveTimer(instanceId, victim)
+        endif
     endif
     if killer != null then
         set instanceId = UnitInstance[GetHandleId(killer)]
@@ -6649,6 +6684,9 @@ private function HandleCompanionCommand takes nothing returns nothing
         endif
         call ResetCompanionCommandState(instanceId, whichUnit, true)
     elseif commandId == Companions_COMMAND_MOVE or commandId == Companions_COMMAND_ATTACK then
+        if Professions_IsUnitReserved(whichUnit) then
+            call Professions_CancelUnitCraft(whichUnit)
+        endif
         call ResetCompanionCommandState(instanceId, whichUnit, true)
     endif
 
