@@ -2,12 +2,13 @@
     CreepRespawn
 
     Author: Valdemar
-    Version: 2.2
+    Version: 2.3
 
     Description:
-    Tracks configured-owner units and recreates them at their saved spawn
-    position after a random delay. Recreated quest NPCs are passed to
-    CreepUnitAssignmentSystem to refresh their map references.
+    Tracks configured-owner units and recreates them from immutable spawn
+    records after a random delay. Recreated quest NPCs are passed to
+    CreepUnitAssignmentSystem to refresh their map references. Summoned,
+    timed-life, BloodSplat, and explicitly discarded units are not tracked.
 
     Credits:
     - Original PotS GUI creep respawn triggers
@@ -53,11 +54,12 @@ globals
     // Respawn min/max times
     private constant real MIN_RESPAWN_TIME = 120.0
     private constant real MAX_RESPAWN_TIME = 320.0
+    private constant integer SPAWN_DATA_STRIDE = 5
     
     //===========================================================================
     // EXCLUSION LIST - Unit-types that will NOT respawn
     //===========================================================================
-    private constant integer EXCLUDED_COUNT = 7
+    private constant integer EXCLUDED_COUNT = 13
 endglobals
 
 //===========================================================================
@@ -167,31 +169,28 @@ private function IsExcludedUnitType takes integer unitTypeId returns boolean
         return true
     elseif unitTypeId == 'N661' then
         return true
+    // GUI-created BloodSplat timed-life units.
+    elseif unitTypeId == 'n00W' then
+        return true
+    elseif unitTypeId == 'n00X' then
+        return true
+    elseif unitTypeId == 'n00Y' then
+        return true
+    elseif unitTypeId == 'n00Z' then
+        return true
+    elseif unitTypeId == 'n010' then
+        return true
+    elseif unitTypeId == 'n011' then
+        return true
     endif
 
     return false
 endfunction
 
-private function GetRespawnOwner takes unit u returns player
-    local integer id
-    local integer savedOwnerId
-    local player owner = null
-
-    if u == null then
-        return null
-    endif
-
-    set owner = GetOwningPlayer(u)
-    set id = GetHandleId(u)
-    if rhash != 0 and rhash.has(id * 4 + 3) then
-        set savedOwnerId = rhash[id * 4 + 3]
-        return Player(savedOwnerId)
-    endif
-
+private function NormalizeRespawnOwner takes player owner returns player
     if owner == Player(22) then
         return Player(PLAYER_NEUTRAL_PASSIVE)
     endif
-
     return owner
 endfunction
 
@@ -210,14 +209,36 @@ private function IsRespawnableOwner takes player p returns boolean
 endfunction
 
 private function IsRespawnableUnit takes unit u returns boolean
-    return IsRespawnableOwner(GetRespawnOwner(u))
+    return u != null and IsRespawnableOwner(NormalizeRespawnOwner(GetOwningPlayer(u)))
 endfunction
 
 private function IsIgnoredUnit takes unit u returns boolean
     if u == null or ignoredUnits == 0 then
         return false
     endif
-    return ignoredUnits.has(GetHandleId(u))
+    return ignoredUnits[GetHandleId(u)] == GetUnitTypeId(u)
+endfunction
+
+private function IsTransientUnit takes unit u returns boolean
+    if u == null then
+        return true
+    endif
+    return IsExcludedUnitType(GetUnitTypeId(u)) or GetUnitAbilityLevel(u, 'BTLF') > 0
+endfunction
+
+private function SaveUnitSpawnData takes unit u, integer unitTypeId, player owner, real x, real y, real facing returns nothing
+    local integer base
+
+    if u == null then
+        return
+    endif
+
+    set base = GetHandleId(u) * SPAWN_DATA_STRIDE
+    set rhash.real[base + 0] = x
+    set rhash.real[base + 1] = y
+    set rhash.real[base + 2] = facing
+    set rhash[base + 3] = GetPlayerId(owner)
+    set rhash[base + 4] = unitTypeId
 endfunction
 
 private function SaveUnitPosition takes unit u returns nothing
@@ -228,11 +249,11 @@ private function SaveUnitPosition takes unit u returns nothing
     if IsIgnoredUnit(u) then
         return
     endif
+    if IsTransientUnit(u) then
+        return
+    endif
     set id = GetHandleId(u)
-    set rhash.real[id * 4 + 0] = GetUnitX(u)
-    set rhash.real[id * 4 + 1] = GetUnitY(u)
-    set rhash.real[id * 4 + 2] = GetUnitFacing(u)
-    set rhash[id * 4 + 3] = GetPlayerId(GetRespawnOwner(u))
+    call SaveUnitSpawnData(u, GetUnitTypeId(u), NormalizeRespawnOwner(GetOwningPlayer(u)), GetUnitX(u), GetUnitY(u), GetUnitFacing(u))
     
     if DEBUG_MODE then
         call BJDebugMsg("[CreepRespawn] Saved position for " + GetUnitName(u) + " (ID: " + I2S(id) + ") at (" + R2S(GetUnitX(u)) + ", " + R2S(GetUnitY(u)) + ")")
@@ -247,7 +268,8 @@ private function HasSavedUnitPosition takes unit u returns boolean
     endif
 
     set id = GetHandleId(u)
-    return rhash.real.has(id * 4 + 0) and rhash.real.has(id * 4 + 1) and rhash.real.has(id * 4 + 2) and rhash.has(id * 4 + 3)
+    set id = id * SPAWN_DATA_STRIDE
+    return rhash.real.has(id + 0) and rhash.real.has(id + 1) and rhash.real.has(id + 2) and rhash.has(id + 3) and rhash.has(id + 4)
 endfunction
 
 private function ClearSavedUnitPosition takes unit u returns nothing
@@ -257,11 +279,12 @@ private function ClearSavedUnitPosition takes unit u returns nothing
         return
     endif
 
-    set id = GetHandleId(u)
-    call rhash.real.remove(id * 4 + 0)
-    call rhash.real.remove(id * 4 + 1)
-    call rhash.real.remove(id * 4 + 2)
-    call rhash.remove(id * 4 + 3)
+    set id = GetHandleId(u) * SPAWN_DATA_STRIDE
+    call rhash.real.remove(id + 0)
+    call rhash.real.remove(id + 1)
+    call rhash.real.remove(id + 2)
+    call rhash.remove(id + 3)
+    call rhash.remove(id + 4)
 endfunction
 
 
@@ -271,7 +294,6 @@ endfunction
 
 function CreepRespawn_SetDebugEnabled takes boolean enabled returns nothing
     set DEBUG_MODE = enabled
-    call UnitDeathEvent_SetDebugEnabled(enabled)
 endfunction
 
 // Call this function when a unit enters the map to track it for respawning.
@@ -291,14 +313,14 @@ function CreepRespawn_OnUnitEnter takes unit u returns nothing
         set u = null
         return
     endif
-    if summonedUnits.has(GetHandleId(u)) then
+    if summonedUnits[GetHandleId(u)] == GetUnitTypeId(u) then
         if DEBUG_MODE then
             call BJDebugMsg("[CreepRespawn] OnUnitEnter: Summoned instance ignored: " + GetUnitName(u))
         endif
         set u = null
         return
     endif
-    if IsRespawnableUnit(u) then
+    if IsRespawnableUnit(u) and not IsTransientUnit(u) then
         call SaveUnitPosition(u)
         if DEBUG_MODE then
             call BJDebugMsg("[CreepRespawn] OnUnitEnter: Tracking unit " + GetUnitName(u) + " for respawn")
@@ -332,7 +354,7 @@ private function OnUnitSummonEvent takes nothing returns nothing
     endif
 
     set id = GetHandleId(summoned)
-    set summonedUnits[id] = 1
+    set summonedUnits[id] = GetUnitTypeId(summoned)
 
     // The world-enter event can run before the summon event. Remove any spawn
     // position that may already have been captured for this summoned instance.
@@ -359,16 +381,11 @@ function CreepRespawn_DiscardUnit takes unit u returns nothing
         return
     endif
     set id = GetHandleId(u)
-    set ignoredUnits[id] = 1
+    set ignoredUnits[id] = GetUnitTypeId(u)
     if RespawnGroup != null then
         call GroupRemoveUnit(RespawnGroup, u)
     endif
-    if rhash != 0 then
-        call rhash.real.remove(id * 4 + 0)
-        call rhash.real.remove(id * 4 + 1)
-        call rhash.real.remove(id * 4 + 2)
-        call rhash.remove(id * 4 + 3)
-    endif
+    call ClearSavedUnitPosition(u)
     set u = null
 endfunction
 
@@ -528,8 +545,10 @@ private function OnRespawnTimerExpire takes nothing returns nothing
         call BJDebugMsg("[CreepRespawn] Spawned new unit: " + GetUnitName(newUnit) + " (New ID: " + I2S(GetHandleId(newUnit)) + ")")
     endif
     
-    // Save new unit position
-    call SaveUnitPosition(newUnit)
+    // Restore the exact immutable record copied from the previous instance.
+    // The world-enter event fires during CreateUnit and may have saved current
+    // values already, so overwrite them explicitly with the timer payload.
+    call SaveUnitSpawnData(newUnit, utype, p, x, y, facing)
     
     // Assign the unit to Unit variable (quest givers, etc. important units)
     set bj_lastCreatedUnit = newUnit
@@ -557,16 +576,17 @@ private function ScheduleRespawn takes unit dying returns nothing
     if dying == null then
         return
     endif
-    set handleId = GetHandleId(dying)
-    set utype = GetUnitTypeId(dying)
-    set p = GetRespawnOwner(dying)
-    set x = rhash.real[handleId * 4 + 0]
-    set y = rhash.real[handleId * 4 + 1]
-    set facing = rhash.real[handleId * 4 + 2]
+    set handleId = GetHandleId(dying) * SPAWN_DATA_STRIDE
+    set utype = rhash[handleId + 4]
+    set p = Player(rhash[handleId + 3])
+    set x = rhash.real[handleId + 0]
+    set y = rhash.real[handleId + 1]
+    set facing = rhash.real[handleId + 2]
     set delay = GetRandomReal(MIN_RESPAWN_TIME, MAX_RESPAWN_TIME)
     set t = CreateTimer()
     if t == null then
         call BJDebugMsg("[CreepRespawn] ERROR: Unable to create a respawn timer for " + GetUnitName(dying) + ".")
+        call ClearSavedUnitPosition(dying)
         set p = null
         return
     endif
@@ -578,6 +598,10 @@ private function ScheduleRespawn takes unit dying returns nothing
     set respawnData.real[base + 2] = x
     set respawnData.real[base + 3] = y
     set respawnData.real[base + 4] = facing
+
+    // The timer owns a complete copy now. Remove the dead-unit record before
+    // Warcraft can recycle its handle ID for a temporary unit.
+    call ClearSavedUnitPosition(dying)
     
     if DEBUG_MODE then
         call BJDebugMsg("[CreepRespawn] Scheduling respawn: " + GetUnitName(dying) + " Type: " + I2S(utype) + " at (" + R2S(x) + ", " + R2S(y) + ") in " + R2S(delay) + " seconds")
@@ -595,16 +619,9 @@ private function OnUnitDeath takes nothing returns nothing
     local player owner
     local integer playerId
     local integer handleId
+    local integer spawnBase
     local real savedX
     local real savedY
-    local boolean hasSavedPosition
-
-    // This is intentionally the first operation in the callback. If this is
-    // not printed while DEBUG_MODE is true, UnitDeathEvent did not dispatch
-    // to CreepRespawn.
-    if DEBUG_MODE then
-        call BJDebugMsg("[CreepRespawn] OnUnitDeath ENTER")
-    endif
 
     set dying = UnitDeathEvent_GetDyingUnit()
     if dying == null then
@@ -622,7 +639,7 @@ private function OnUnitDeath takes nothing returns nothing
 
     // Skip only real summoned instances. Do not use UNIT_TYPE_SUMMONED here;
     // that classification can also be present on preplaced custom units.
-    if summonedUnits.has(handleId) then
+    if summonedUnits[handleId] == GetUnitTypeId(dying) then
         if DEBUG_MODE then
             call BJDebugMsg("[CreepRespawn] Actual summoned instance died - SKIPPED: " + GetUnitName(dying))
         endif
@@ -632,62 +649,58 @@ private function OnUnitDeath takes nothing returns nothing
         return
     endif
 
-    set owner = GetRespawnOwner(dying)
-    set playerId = GetPlayerId(owner)
-    set savedX = rhash.real[handleId * 4 + 0]
-    set savedY = rhash.real[handleId * 4 + 1]
-    set hasSavedPosition = HasSavedUnitPosition(dying)
-
-    if GetOwningPlayer(dying) == Player(22) and DEBUG_MODE then
-        call BJDebugMsg("[CreepRespawn] Player 23 (Emerald) unit detected - converting to Neutral Passive for respawn")
-    endif
-
-    if DEBUG_MODE then
-        call BJDebugMsg("[CreepRespawn] Unit died: " + GetUnitName(dying) + " | Type: " + I2S(GetUnitTypeId(dying)) + " | Owner: Player " + I2S(playerId) + " | HandleID: " + I2S(handleId))
-        if hasSavedPosition then
-            call BJDebugMsg("[CreepRespawn] Saved position: (" + R2S(savedX) + ", " + R2S(savedY) + ") | Has saved data: true")
-        else
-            call BJDebugMsg("[CreepRespawn] Saved position: (" + R2S(savedX) + ", " + R2S(savedY) + ") | Has saved data: false")
-        endif
-    endif
-
     if IsIgnoredUnit(dying) then
         if DEBUG_MODE then
             call BJDebugMsg("[CreepRespawn] Unit was explicitly discarded - SKIPPED")
         endif
+        call ignoredUnits.remove(handleId)
+        call ClearSavedUnitPosition(dying)
         set dying = null
-        set owner = null
         return
     endif
 
-    if not IsRespawnableOwner(owner) then
-        if DEBUG_MODE then
-            call BJDebugMsg("[CreepRespawn] Unit owner not respawnable - SKIPPED")
-        endif
+    // Only explicitly registered instances may respawn. In particular, never
+    // manufacture a spawn record from the unit's death location.
+    if not HasSavedUnitPosition(dying) then
         set dying = null
-        set owner = null
         return
     endif
 
+    set spawnBase = handleId * SPAWN_DATA_STRIDE
     set unitType = GetUnitTypeId(dying)
-    if IsExcludedUnitType(unitType) then
+    if rhash[spawnBase + 4] != unitType then
         if DEBUG_MODE then
-            call BJDebugMsg("[CreepRespawn] Unit type is excluded - SKIPPED")
+            call BJDebugMsg("[CreepRespawn] Recycled handle record rejected for " + GetUnitName(dying) + " (ID: " + I2S(handleId) + ")")
         endif
+        call ClearSavedUnitPosition(dying)
+        set dying = null
+        return
+    endif
+
+    if IsTransientUnit(dying) then
+        if DEBUG_MODE then
+            call BJDebugMsg("[CreepRespawn] Transient or excluded unit died - SKIPPED: " + GetUnitName(dying))
+        endif
+        call ClearSavedUnitPosition(dying)
+        set dying = null
+        return
+    endif
+
+    set owner = Player(rhash[spawnBase + 3])
+    if not IsRespawnableOwner(owner) then
+        call ClearSavedUnitPosition(dying)
         set dying = null
         set owner = null
         return
     endif
 
-    if not hasSavedPosition then
-        if DEBUG_MODE then
-            call BJDebugMsg("[CreepRespawn] No saved spawn data found; saving current death position before scheduling respawn")
-        endif
-        call SaveUnitPosition(dying)
-    endif
+    set playerId = GetPlayerId(owner)
+    set savedX = rhash.real[spawnBase + 0]
+    set savedY = rhash.real[spawnBase + 1]
 
     if DEBUG_MODE then
-        call BJDebugMsg("[CreepRespawn] Unit PASSED all checks - WILL RESPAWN")
+        call BJDebugMsg("[CreepRespawn] Tracked unit died: " + GetUnitName(dying) + " | Type: " + I2S(unitType) + " | Respawn owner: Player " + I2S(playerId) + " | HandleID: " + I2S(handleId))
+        call BJDebugMsg("[CreepRespawn] Original spawn position: (" + R2S(savedX) + ", " + R2S(savedY) + ")")
     endif
 
     call ScheduleRespawn(dying)
@@ -770,9 +783,6 @@ endfunction
 
 private function Init takes nothing returns nothing
     local timer initTimer = null
-
-    // Enable centralized dispatcher diagnostics first.
-    //call UnitDeathEvent_SetDebugEnabled(DEBUG_MODE)
 
     // CRITICAL: register every event callback before doing any CreepRespawn
     // runtime-state work. Table allocation is handled by a struct initializer
