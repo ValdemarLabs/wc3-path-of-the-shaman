@@ -72,7 +72,7 @@ endlibrary
     Description:
     Intercepts configured lethal damage and presents the unit as a frozen corpse
     at one life, preventing immediate decay. A Revive item restores the nearest
-    allied fallen unit within 250 range. Hired non-hero companions remain
+    allied fallen unit or fatigued pet within 250 range. Hired non-hero companions remain
     revivable for 60 seconds before receiving a real death. Companion AI and AI party
     members can approach and use their own Revive items without a map-wide
     periodic unit scan. Other hero corpses receive the same visual protection
@@ -83,7 +83,7 @@ endlibrary
     - Old GUI HeroDeathResurrect triggers
 
     How to install:
-    Import after AI, Companions, DamageEngine, Events, FallenHeroState,
+    Import after AI, Companions, Pet, DamageEngine, Events, FallenHeroState,
     UnitDeathEvent, and Table. Disable the
     old HeroDeathResurrect GUI triggers. The Revive item must be `I00C` and
     grant the no-target, three-second cast ability `A0F4`.
@@ -96,7 +96,7 @@ endlibrary
     call Death_RegisterReviveCallback(callback)
 
 **/
-library Death initializer Init requires Table, Companions, AI, DInventory, DamageEngine, Events, FallenHeroState, UnitDeathEvent
+library Death initializer Init requires Table, Companions, Pet, AI, DInventory, DamageEngine, Events, FallenHeroState, UnitDeathEvent
 
 globals
     // Object data and tuning
@@ -209,7 +209,7 @@ private function Death_IsInReviveRange takes unit caster, unit fallen returns bo
 endfunction
 
 private function Death_IsValidCastTarget takes unit caster, unit fallen returns boolean
-    return caster != null and fallen != null and FallenHeroState_IsFallen(fallen) and not Death_IsAlive(fallen) and IsUnitAlly(fallen, GetOwningPlayer(caster)) and Death_IsInReviveRange(caster, fallen)
+    return caster != null and fallen != null and (Pet_IsDead(fallen) or (FallenHeroState_IsFallen(fallen) and not Death_IsAlive(fallen))) and IsUnitAlly(fallen, GetOwningPlayer(caster)) and Death_IsInReviveRange(caster, fallen)
 endfunction
 
 private function Death_FindClosestFallenEnum takes nothing returns nothing
@@ -231,6 +231,11 @@ private function Death_FindClosestFallenEnum takes nothing returns nothing
 endfunction
 
 private function Death_FindClosestFallen takes unit caster, real range returns unit
+    local unit pet
+    local real dx
+    local real dy
+    local real distanceSquared
+
     set Death_FindCaster = caster
     set Death_FindResult = null
     set Death_FindX = GetUnitX(caster)
@@ -238,7 +243,18 @@ private function Death_FindClosestFallen takes unit caster, real range returns u
     set Death_FindRangeSquared = range * range
     set Death_FindDistanceSquared = Death_FindRangeSquared + 1.00
     call ForGroup(Death_ManagedFallenHeroes, function Death_FindClosestFallenEnum)
+    set pet = udg_TamedUnit
+    if Pet_IsDead(pet) and IsUnitAlly(pet, GetOwningPlayer(caster)) then
+        set dx = GetUnitX(pet) - Death_FindX
+        set dy = GetUnitY(pet) - Death_FindY
+        set distanceSquared = dx * dx + dy * dy
+        if distanceSquared <= Death_FindRangeSquared and (Death_FindResult == null or distanceSquared < Death_FindDistanceSquared) then
+            set Death_FindResult = pet
+            set Death_FindDistanceSquared = distanceSquared
+        endif
+    endif
     set Death_FindCaster = null
+    set pet = null
     return Death_FindResult
 endfunction
 
@@ -348,7 +364,6 @@ private function Death_ReleaseCorpse takes unit whichHero returns boolean
     set Death_FallenCount = Death_FallenCount - 1
     if Death_FallenCount <= 0 then
         set Death_FallenCount = 0
-        call PauseTimer(Death_AITimer)
     endif
 
     call Death_RestoreUnitState(whichHero)
@@ -375,6 +390,9 @@ endfunction
 public function ReviveAt takes unit whichHero, real x, real y, real lifePercent, real manaPercent, boolean showEffects returns boolean
     local boolean revived
 
+    if Pet_IsDead(whichHero) then
+        return Pet_Revive(whichHero, lifePercent, manaPercent, showEffects)
+    endif
     if whichHero == null or not IsUnitInGroup(whichHero, Death_ManagedFallenHeroes) or Death_IsAlive(whichHero) then
         return false
     endif
@@ -382,8 +400,6 @@ public function ReviveAt takes unit whichHero, real x, real y, real lifePercent,
         set revived = AI_ReviveAt(whichHero, x, y, showEffects)
     elseif IsUnitInGroup(whichHero, Death_FakeCorpses) then
         call SetUnitPosition(whichHero, x, y)
-        call SetWidgetLife(whichHero, GetUnitState(whichHero, UNIT_STATE_MAX_LIFE) * lifePercent * 0.01)
-        call SetUnitState(whichHero, UNIT_STATE_MANA, GetUnitState(whichHero, UNIT_STATE_MAX_MANA) * manaPercent * 0.01)
         if showEffects then
             call DestroyEffect(AddSpecialEffectTarget(DEATH_REVIVE_EFFECT, whichHero, "origin"))
         endif
@@ -392,12 +408,10 @@ public function ReviveAt takes unit whichHero, real x, real y, real lifePercent,
         set revived = AI_ReviveAt(whichHero, x, y, showEffects)
     else
         set revived = ReviveHero(whichHero, x, y, showEffects)
-        if revived then
-            call SetWidgetLife(whichHero, GetUnitState(whichHero, UNIT_STATE_MAX_LIFE) * lifePercent * 0.01)
-            call SetUnitState(whichHero, UNIT_STATE_MANA, GetUnitState(whichHero, UNIT_STATE_MAX_MANA) * manaPercent * 0.01)
-        endif
     endif
     if revived then
+        call SetWidgetLife(whichHero, GetUnitState(whichHero, UNIT_STATE_MAX_LIFE) * lifePercent * 0.01)
+        call SetUnitState(whichHero, UNIT_STATE_MANA, GetUnitState(whichHero, UNIT_STATE_MAX_MANA) * manaPercent * 0.01)
         call Death_ReleaseCorpse(whichHero)
     endif
     return revived
@@ -456,7 +470,6 @@ private function Death_ExpireRetainedCorpse takes nothing returns nothing
             set Death_FallenCount = Death_FallenCount - 1
             if Death_FallenCount <= 0 then
                 set Death_FallenCount = 0
-                call PauseTimer(Death_AITimer)
             endif
         endif
         call FallenHeroState_SetFallen(whichHero, false)
@@ -545,16 +558,22 @@ private function Death_FindAIReviver takes unit fallen returns unit
     return Death_AIResult
 endfunction
 
-private function Death_ProcessFallenAIEnum takes nothing returns nothing
-    local unit fallen = GetEnumUnit()
+private function Death_ProcessFallenAIUnit takes unit fallen returns nothing
     local unit reviver
     local item reviveItem
 
     if fallen != null and IsUnitInGroup(fallen, Death_FakeCorpses) then
         call SetWidgetLife(fallen, 1.00)
     endif
-    if fallen == null or Death_IsAlive(fallen) then
-        set fallen = null
+    if fallen == null then
+        return
+    endif
+    if not Pet_IsDead(fallen) and Death_IsAlive(fallen) then
+        set reviver = Death_TargetReviver.unit[GetHandleId(fallen)]
+        if reviver != null then
+            call Death_ClearReviver(reviver)
+        endif
+        set reviver = null
         return
     endif
     set reviver = Death_TargetReviver.unit[GetHandleId(fallen)]
@@ -583,11 +602,24 @@ private function Death_ProcessFallenAIEnum takes nothing returns nothing
 
     set reviveItem = null
     set reviver = null
+endfunction
+
+private function Death_ProcessFallenAIEnum takes nothing returns nothing
+    local unit fallen = GetEnumUnit()
+
+    call Death_ProcessFallenAIUnit(fallen)
+
     set fallen = null
 endfunction
 
 private function Death_ProcessFallenAI takes nothing returns nothing
+    local unit pet = udg_TamedUnit
+
     call ForGroup(Death_ManagedFallenHeroes, function Death_ProcessFallenAIEnum)
+    if Pet_IsDead(pet) then
+        call Death_ProcessFallenAIUnit(pet)
+    endif
+    set pet = null
 endfunction
 
 private function Death_RetainUnit takes unit whichHero, boolean managed returns nothing
@@ -605,9 +637,6 @@ private function Death_RetainUnit takes unit whichHero, boolean managed returns 
     if managed then
         call GroupAddUnit(Death_ManagedFallenHeroes, whichHero)
         set Death_FallenCount = Death_FallenCount + 1
-        if Death_FallenCount == 1 then
-            call TimerStart(Death_AITimer, DEATH_AI_INTERVAL, true, function Death_ProcessFallenAI)
-        endif
         if Death_IsHiredUnit(whichHero) then
             call GroupAddUnit(Death_ExpiringHiredCorpses, whichHero)
             call Death_StartRetainedExpiryTimer(whichHero)
@@ -691,7 +720,7 @@ private function Death_OnReviveChannel takes nothing returns nothing
     set fallen = Death_FindClosestFallen(caster, DEATH_REVIVE_RANGE)
     if fallen == null then
         call IssueImmediateOrder(caster, "stop")
-        call DisplayTimedTextToPlayer(GetOwningPlayer(caster), 0.00, 0.00, 2.00, "|cffff4040No fallen allied hero is close enough to revive.|r")
+        call DisplayTimedTextToPlayer(GetOwningPlayer(caster), 0.00, 0.00, 2.00, "|cffff4040No fallen allied unit is close enough to revive.|r")
     else
         set Death_CastTarget.unit[GetHandleId(caster)] = fallen
         set Death_CastingReviver.boolean[GetHandleId(caster)] = true
@@ -715,7 +744,7 @@ private function Death_OnReviveEffect takes nothing returns nothing
         set fallen = Death_FindClosestFallen(caster, DEATH_REVIVE_RANGE)
     endif
     if fallen == null then
-        call DisplayTimedTextToPlayer(GetOwningPlayer(caster), 0.00, 0.00, 2.00, "|cffff4040The fallen hero is no longer in revive range.|r")
+        call DisplayTimedTextToPlayer(GetOwningPlayer(caster), 0.00, 0.00, 2.00, "|cffff4040The fallen unit is no longer in revive range.|r")
     else
         set x = GetUnitX(fallen)
         set y = GetUnitY(fallen)
@@ -785,6 +814,7 @@ private function Init takes nothing returns nothing
     set Death_TargetReviver = Table.create()
     set Death_CastTarget = Table.create()
     set Death_CastingReviver = Table.create()
+    call TimerStart(Death_AITimer, DEATH_AI_INTERVAL, true, function Death_ProcessFallenAI)
 
     call RegisterDamageEngine(function Death_OnLethalDamage, "Lethal", 1.00)
     call UnitDeathEvent_Register(function Death_OnHeroDeath)
