@@ -71,6 +71,7 @@ STAT_MAPPINGS = {
     'Lifesteal %': 'Lifesteal Pct',
     'Lifesteal Pct': 'Lifesteal Pct',
     'Spell Vamp %': 'Spell Vamp Pct',
+    'Thorns %': 'Thorns Pct',
     'Cleave %': 'Cleave Pct',
     'Cleave Pct': 'Cleave Pct',
     'Cleave Area': 'Cleave Area',
@@ -410,9 +411,7 @@ def normalize_stat_value(deq_stat_name, stat_value):
     except Exception:
         return stat_value
 
-    if abs(amount) > Decimal('1'):
-        return amount / Decimal('100')
-    return amount
+    return amount / Decimal('100')
 
 
 def format_jass_number(value):
