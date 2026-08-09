@@ -18,6 +18,9 @@
     - call MasterUI_ShowGameButton()
     - call MasterUI_HideGameButton()
 
+    Pressing ESC closes MasterUI and every panel registered in its centralized
+    hide list.
+
 **/
 library MasterUI initializer AutoInit requires Table, Interface
 
@@ -35,6 +38,7 @@ globals
     private trigger MUI_OpenTrigger = null
     private trigger MUI_CloseTrigger = null
     private trigger MUI_MenuTrigger = null
+    private trigger MUI_EscapeTrigger = null
     private trigger MUI_ClearFocusTrigger = null
     private trigger MUI_InitTrigger = null
 
@@ -270,6 +274,20 @@ private function MUI_CloseAction takes nothing returns nothing
     endif
 endfunction
 
+private function MUI_EscapeAction takes nothing returns nothing
+    if GetTriggerPlayer() != Player(0) then
+        return
+    endif
+
+    if GetLocalPlayer() == GetTriggerPlayer() then
+        if MUI_Parent != null and BlzFrameIsVisible(MUI_Parent) then
+            call Interface_NotifyUIClosed()
+        endif
+        call MUI_HideMaster()
+    endif
+    call MUI_HideAllPanels()
+endfunction
+
 private function MUI_MenuAction takes nothing returns nothing
     local integer handleId = GetHandleId(BlzGetTriggerFrame())
 
@@ -377,6 +395,10 @@ public function Init takes nothing returns nothing
 
     set MUI_MenuTrigger = CreateTrigger()
     call TriggerAddAction(MUI_MenuTrigger, function MUI_MenuAction)
+
+    set MUI_EscapeTrigger = CreateTrigger()
+    call BlzTriggerRegisterPlayerKeyEvent(MUI_EscapeTrigger, Player(0), OSKEY_ESCAPE, 0, true)
+    call TriggerAddAction(MUI_EscapeTrigger, function MUI_EscapeAction)
 
     set MUI_ClearFocusTrigger = CreateTrigger()
     call TriggerAddAction(MUI_ClearFocusTrigger, function MUI_ClearFocusAction)
