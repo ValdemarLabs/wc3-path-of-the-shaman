@@ -19,6 +19,7 @@
     call ImagesUI_ShowPreload("war3mapImported\\PreloadStart.blp", "")
     call ImagesUI_SetPreloadImage("war3mapImported\\PreloadSounds.blp")
     call ImagesUI_SetPreloadText("==== Sounds")
+    ImagesUI_GetPreloadOverlayParent() returns framehandle
     call ImagesUI_HidePreload()
 
 **/
@@ -43,6 +44,7 @@ library ImagesUI
         private framehandle IMUI_Background = null
         private framehandle IMUI_Image = null
         private framehandle IMUI_Text = null
+        private framehandle IMUI_Overlay = null
     endglobals
 
     private function IMUI_CreateFrames takes nothing returns nothing
@@ -76,6 +78,11 @@ library ImagesUI
         call BlzFrameSetScale(IMUI_Text, IMUI_TEXT_SCALE)
         call BlzFrameSetEnable(IMUI_Text, false)
         call BlzFrameSetText(IMUI_Text, "")
+
+        // Child UIs parented here always render above the preload image.
+        set IMUI_Overlay = BlzCreateFrameByType("FRAME", "ImagesUIPreloadOverlay", IMUI_Root, "", 0)
+        call BlzFrameSetAllPoints(IMUI_Overlay, IMUI_Root)
+        call BlzFrameSetLevel(IMUI_Overlay, 10)
 
         call BlzFrameSetVisible(IMUI_Root, false)
 
@@ -120,6 +127,13 @@ library ImagesUI
         call SetPreloadImage(texturePath)
         call SetPreloadText(message)
         call BlzFrameSetVisible(IMUI_Root, true)
+    endfunction
+
+    public function GetPreloadOverlayParent takes nothing returns framehandle
+        if not IMUI_Initialized then
+            call Init()
+        endif
+        return IMUI_Overlay
     endfunction
 
     public function HidePreload takes nothing returns nothing

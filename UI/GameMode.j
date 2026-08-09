@@ -339,7 +339,13 @@ library GameMode initializer AutoInit requires Difficulty, Start, Interface, Ima
     endfunction
 
     private function GM_CreateFrames takes nothing returns nothing
-        set GM_Parent = BlzCreateFrameByType("BACKDROP", "GameModePanel", BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "EscMenuBackdrop", 0)
+        local framehandle overlayParent = ImagesUI_GetPreloadOverlayParent()
+
+        if overlayParent == null then
+            set overlayParent = BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0)
+        endif
+
+        set GM_Parent = BlzCreateFrameByType("BACKDROP", "GameModePanel", overlayParent, "EscMenuBackdrop", 0)
         call BlzFrameSetLevel(GM_Parent, 2)
         call BlzFrameSetAbsPoint(GM_Parent, FRAMEPOINT_TOPLEFT, GM_PANEL_LEFT, GM_PANEL_TOP)
         call BlzFrameSetAbsPoint(GM_Parent, FRAMEPOINT_BOTTOMRIGHT, GM_PANEL_RIGHT, GM_PANEL_BOTTOM)
@@ -381,6 +387,8 @@ library GameMode initializer AutoInit requires Difficulty, Start, Interface, Ima
 
         call GM_ShowModeView()
         call BlzFrameSetVisible(GM_Parent, false)
+
+        set overlayParent = null
     endfunction
 
     public function Init takes nothing returns nothing
