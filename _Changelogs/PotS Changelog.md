@@ -30,6 +30,7 @@
 - Under-skilled AI gatherers now remember rejected nodes and move away instead of repeatedly trying to harvest them; autonomous wandering uses Move rather than Attack-Move so hostile resource nodes are not acquired incidentally.
 - Aveline now uses the retained Fake Death flow while preserving her AI revive timer.
 - Hired non-hero companions now remain as revivable Fake Death units for 60 seconds, appear dead in Stats UI, and receive a real death with normal cleanup and decay if no Spirit Shard revives them.
+- Spirit Shards can now revive fatigued pets as well as other fallen party units, restoring the selected unit to exactly 50% health and 50% mana.
 
 ### Technical Updates
 
@@ -41,6 +42,7 @@
 - Persisted manual companion-command state across completed Warcraft orders and blocked idle wandering, AI actions, follower corrections, and mode-driven orders while that state is active.
 - Added profile-selectable AI Fake Death handling so Aveline can use retained death without regressing normal engine death for other AI heroes.
 - Extended FallenHeroState and Spirit Shard targeting to hired non-hero companions, with timed conversion from retained Fake Death to permanent engine death.
+- Integrated fatigued pets into Spirit Shard targeting and AI revival searches, canceling their pending automatic recovery and applying the requested health and mana percentages consistently to every revived unit.
 - Updated `CreepRespawn/CreepRespawn.j`
   - Require an immutable saved spawn record before a unit can schedule a respawn; deaths of unregistered units no longer create records from their death positions.
   - Preserve original unit type, owner, position, and facing across every respawn generation.
@@ -53,6 +55,7 @@
 ### Tool Updates
 
 - Updated the DEquipment exporter to convert every ItemManager whole-percent value used by Warcraft fractional ability fields, including exactly 1%, and added the missing `Thorns %` mapping. Trinket classes continue to export both slot 17 and slot 18; a new corrected 9.8.2026 definition file was generated without modifying earlier exports.
+- Restored WC3ItemManager's stable flow-based Icon Selector loading model and removed the shared native image list that caused slow reopenings and intermittent Windows-handle failures. Thumbnail and icon-file caches now persist for the active session, loading is cancellable and batched, and remembered folders, folder-scoped search, category filtering, and configurable icon paths remain available.
 
 ### Actions Remaining
 
@@ -61,6 +64,7 @@
 - Compile and runtime-test point- and unit-target Move and Attack commands in every companion mode, including Hold Position exclusion.
 - Runtime-test autonomous profession failure near hostile unit nodes, companion-only failure barks, 2000-range autonomous chatter, and Aveline's Fake Death revival cycle.
 - Runtime-test hired non-hero Fake Death status in both Stats interfaces, Spirit Shard revival before expiry, and permanent death/decay after 60 seconds.
+- Runtime-test manual and AI Spirit Shard revival of a fatigued pet, including exact 50% health/mana restoration and cancellation of the normal pet recovery timer.
 - Compile the full map and runtime-test preplaced Player(10), Player(12), and Neutral Hostile respawns, including repeated generations and original position/facing preservation.
 
 ## [8.8.2026]
