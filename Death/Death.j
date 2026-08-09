@@ -70,9 +70,10 @@ endlibrary
     Version:
 
     Description:
-    Intercepts lethal hero damage and presents the hero as a frozen corpse at
-    one life, preventing the engine's dissipate state entirely. A Revive item restores the
-    nearest allied fallen hero within 250 range. Companion AI and AI party
+    Intercepts configured lethal damage and presents the unit as a frozen corpse
+    at one life, preventing immediate decay. A Revive item restores the nearest
+    allied fallen unit within 250 range. Hired non-hero companions remain
+    revivable for 60 seconds before receiving a real death. Companion AI and AI party
     members can approach and use their own Revive items without a map-wide
     periodic unit scan. Other hero corpses receive the same visual protection
     but are removed after 60 seconds and cannot be revived through this system.
@@ -106,7 +107,7 @@ globals
     private constant real DEATH_AI_INTERVAL = 0.50
     private constant real DEATH_FREEZE_LEAD_TIME = 0.10
     private constant real DEATH_MIN_FREEZE_DELAY = 0.03
-    private constant real DEATH_UNMANAGED_CORPSE_DURATION = 60.00
+    private constant real DEATH_RETAINED_CORPSE_DURATION = 60.00
     private constant integer DEATH_MAX_REVIVE_CALLBACKS = 10
     private constant string DEATH_REVIVE_EFFECT = "Abilities\\Spells\\Human\\Resurrect\\ResurrectTarget.mdl"
 
@@ -114,6 +115,7 @@ globals
     private group Death_ManagedFallenHeroes = null
     private group Death_RetainedCorpses = null
     private group Death_RegisteredHeroes = null
+    private group Death_ExpiringHiredCorpses = null
     private group Death_SearchGroup = null
     private timer Death_AITimer = null
     private integer Death_FallenCount = 0
@@ -149,10 +151,17 @@ private function Death_IsAlive takes unit whichUnit returns boolean
     return FallenHeroState_IsAlive(whichUnit)
 endfunction
 
-private function Death_IsManagedHero takes unit whichHero returns boolean
+private function Death_IsHiredUnit takes unit whichUnit returns boolean
+    return whichUnit != null and not IsUnitType(whichUnit, UNIT_TYPE_HERO) and udg_Companion_Group != null and IsUnitInGroup(whichUnit, udg_Companion_Group) and Companions_IsControlled(whichUnit)
+endfunction
+
+private function Death_IsManagedUnit takes unit whichHero returns boolean
     local player owner
     local boolean managed = false
 
+    if Death_IsHiredUnit(whichHero) then
+        return true
+    endif
     if whichHero == null or not IsUnitType(whichHero, UNIT_TYPE_HERO) then
         return false
     endif
@@ -313,7 +322,7 @@ private function Death_CancelRemoveTimer takes unit whichHero returns nothing
     set removeTimer = null
 endfunction
 
-private function Death_RestoreHeroState takes unit whichHero returns nothing
+private function Death_RestoreUnitState takes unit whichHero returns nothing
     call UnitSuspendDecay(whichHero, false)
     call SetUnitInvulnerable(whichHero, false)
     call PauseUnit(whichHero, false)
@@ -328,8 +337,10 @@ private function Death_ReleaseCorpse takes unit whichHero returns boolean
         return false
     endif
     call Death_CancelFreezeTimer(whichHero)
+    call Death_CancelRemoveTimer(whichHero)
     call GroupRemoveUnit(Death_FakeCorpses, whichHero)
     call GroupRemoveUnit(Death_RetainedCorpses, whichHero)
+    call GroupRemoveUnit(Death_ExpiringHiredCorpses, whichHero)
 
     call Death_ClearFallenReservation(whichHero)
     call GroupRemoveUnit(Death_ManagedFallenHeroes, whichHero)
@@ -340,7 +351,7 @@ private function Death_ReleaseCorpse takes unit whichHero returns boolean
         call PauseTimer(Death_AITimer)
     endif
 
-    call Death_RestoreHeroState(whichHero)
+    call Death_RestoreUnitState(whichHero)
     set Death_EventHero = whichHero
     call Death_RunReviveCallbacks()
     set Death_EventHero = null
@@ -355,8 +366,9 @@ private function Death_ReleaseUnmanagedCorpse takes unit whichHero returns boole
     call Death_CancelRemoveTimer(whichHero)
     call GroupRemoveUnit(Death_FakeCorpses, whichHero)
     call GroupRemoveUnit(Death_RetainedCorpses, whichHero)
+    call GroupRemoveUnit(Death_ExpiringHiredCorpses, whichHero)
     call FallenHeroState_SetFallen(whichHero, false)
-    call Death_RestoreHeroState(whichHero)
+    call Death_RestoreUnitState(whichHero)
     return true
 endfunction
 
@@ -423,35 +435,54 @@ private function Death_StartFreezeTimer takes unit whichHero returns nothing
     set freezeTimer = null
 endfunction
 
-private function Death_RemoveUnmanagedCorpse takes nothing returns nothing
+private function Death_ExpireRetainedCorpse takes nothing returns nothing
     local timer expired = GetExpiredTimer()
     local integer timerId = GetHandleId(expired)
     local unit whichHero = Death_RemoveTimerHero.unit[timerId]
+    local boolean expiringHired = whichHero != null and IsUnitInGroup(whichHero, Death_ExpiringHiredCorpses)
 
     call Death_RemoveTimerHero.unit.remove(timerId)
     if whichHero != null and Death_HeroRemoveTimer.timer[GetHandleId(whichHero)] == expired then
         call Death_HeroRemoveTimer.timer.remove(GetHandleId(whichHero))
     endif
-    if whichHero != null and IsUnitInGroup(whichHero, Death_RetainedCorpses) and not IsUnitInGroup(whichHero, Death_ManagedFallenHeroes) then
+    if whichHero != null and IsUnitInGroup(whichHero, Death_RetainedCorpses) and (expiringHired or not IsUnitInGroup(whichHero, Death_ManagedFallenHeroes)) then
         call Death_CancelFreezeTimer(whichHero)
+        call Death_ClearFallenReservation(whichHero)
         call GroupRemoveUnit(Death_FakeCorpses, whichHero)
         call GroupRemoveUnit(Death_RetainedCorpses, whichHero)
+        call GroupRemoveUnit(Death_ExpiringHiredCorpses, whichHero)
+        if IsUnitInGroup(whichHero, Death_ManagedFallenHeroes) then
+            call GroupRemoveUnit(Death_ManagedFallenHeroes, whichHero)
+            set Death_FallenCount = Death_FallenCount - 1
+            if Death_FallenCount <= 0 then
+                set Death_FallenCount = 0
+                call PauseTimer(Death_AITimer)
+            endif
+        endif
         call FallenHeroState_SetFallen(whichHero, false)
         call UnitSuspendDecay(whichHero, false)
         call SetUnitInvulnerable(whichHero, false)
-        call RemoveUnit(whichHero)
+        if expiringHired then
+            call PauseUnit(whichHero, false)
+            call SetUnitTimeScale(whichHero, 1.00)
+            call SetUnitPathing(whichHero, true)
+            call AI_UnregisterUnit(whichHero)
+            call KillUnit(whichHero)
+        else
+            call RemoveUnit(whichHero)
+        endif
     endif
     call DestroyTimer(expired)
     set whichHero = null
     set expired = null
 endfunction
 
-private function Death_StartUnmanagedRemoveTimer takes unit whichHero returns nothing
+private function Death_StartRetainedExpiryTimer takes unit whichHero returns nothing
     local timer removeTimer = CreateTimer()
 
     set Death_RemoveTimerHero.unit[GetHandleId(removeTimer)] = whichHero
     set Death_HeroRemoveTimer.timer[GetHandleId(whichHero)] = removeTimer
-    call TimerStart(removeTimer, DEATH_UNMANAGED_CORPSE_DURATION, false, function Death_RemoveUnmanagedCorpse)
+    call TimerStart(removeTimer, DEATH_RETAINED_CORPSE_DURATION, false, function Death_ExpireRetainedCorpse)
     set removeTimer = null
 endfunction
 
@@ -559,7 +590,7 @@ private function Death_ProcessFallenAI takes nothing returns nothing
     call ForGroup(Death_ManagedFallenHeroes, function Death_ProcessFallenAIEnum)
 endfunction
 
-private function Death_RetainHero takes unit whichHero, boolean managed returns nothing
+private function Death_RetainUnit takes unit whichHero, boolean managed returns nothing
     call GroupAddUnit(Death_RetainedCorpses, whichHero)
     call FallenHeroState_SetFallen(whichHero, true)
     if GetWidgetLife(whichHero) <= 0.405 then
@@ -577,8 +608,12 @@ private function Death_RetainHero takes unit whichHero, boolean managed returns 
         if Death_FallenCount == 1 then
             call TimerStart(Death_AITimer, DEATH_AI_INTERVAL, true, function Death_ProcessFallenAI)
         endif
+        if Death_IsHiredUnit(whichHero) then
+            call GroupAddUnit(Death_ExpiringHiredCorpses, whichHero)
+            call Death_StartRetainedExpiryTimer(whichHero)
+        endif
     else
-        call Death_StartUnmanagedRemoveTimer(whichHero)
+        call Death_StartRetainedExpiryTimer(whichHero)
     endif
 endfunction
 
@@ -605,7 +640,7 @@ private function Death_StartFakeFall takes unit whichHero, unit killer returns n
 
     call GroupAddUnit(Death_FakeCorpses, whichHero)
     call SetUnitInvulnerable(whichHero, true)
-    call Death_RetainHero(whichHero, Death_IsManagedHero(whichHero))
+    call Death_RetainUnit(whichHero, Death_IsManagedUnit(whichHero))
     set Death_FallTimerHero.unit[GetHandleId(dispatchTimer)] = whichHero
     set Death_FallTimerKiller.unit[GetHandleId(dispatchTimer)] = killer
     call TimerStart(dispatchTimer, 0.00, false, function Death_DispatchFakeFall)
@@ -616,7 +651,7 @@ private function Death_OnLethalDamage takes nothing returns nothing
     local unit whichHero = udg_DamageEventTarget
     local unit killer = udg_DamageEventSource
 
-    if whichHero != null and IsUnitType(whichHero, UNIT_TYPE_HERO) and (AI_GetInstance(whichHero) <= 0 or AI_UsesFakeDeath(whichHero)) and not IsUnitInGroup(whichHero, Death_RetainedCorpses) then
+    if whichHero != null and (Death_IsHiredUnit(whichHero) or (IsUnitType(whichHero, UNIT_TYPE_HERO) and (AI_GetInstance(whichHero) <= 0 or AI_UsesFakeDeath(whichHero)))) and not IsUnitInGroup(whichHero, Death_RetainedCorpses) then
         set udg_LethalDamageHP = 1.00
         call Death_StartFakeFall(whichHero, killer)
     endif
@@ -628,7 +663,7 @@ private function Death_OnHeroDeath takes nothing returns nothing
     local unit whichHero = UnitDeathEvent_GetDyingUnit()
 
     if whichHero != null and IsUnitType(whichHero, UNIT_TYPE_HERO) and not IsUnitInGroup(whichHero, Death_RetainedCorpses) then
-        call Death_RetainHero(whichHero, Death_IsManagedHero(whichHero))
+        call Death_RetainUnit(whichHero, Death_IsManagedUnit(whichHero))
     endif
     set whichHero = null
 endfunction
@@ -737,6 +772,7 @@ private function Init takes nothing returns nothing
     set Death_ManagedFallenHeroes = CreateGroup()
     set Death_RetainedCorpses = CreateGroup()
     set Death_RegisteredHeroes = CreateGroup()
+    set Death_ExpiringHiredCorpses = CreateGroup()
     set Death_SearchGroup = CreateGroup()
     set Death_AITimer = CreateTimer()
     set Death_FreezeTimerHero = Table.create()
