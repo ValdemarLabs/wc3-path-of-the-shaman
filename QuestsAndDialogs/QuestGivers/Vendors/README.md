@@ -1,7 +1,8 @@
 # Generic and vendor quest roster
 
 Import in this order: `QuestsGeneric.j`, `Voicelines_Quests.j`,
-`QuestsVendor.j`, the desired `qVendorName.j` libraries, and `VendorDialogs.j`.
+`QuestsVendor.j`, the desired `qVendorName.j` libraries, `VendorCatalogs.j`,
+all `VendorFactions/Vendor*.j` libraries, and `VendorDialogs.j`.
 `VendorDialogs.j` discovers placed vendor units and instantiates every quest
 registered for their unit type.
 

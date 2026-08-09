@@ -4,6 +4,7 @@ File | Responsibility
 Shop.j	| Core buying, selling, stock, reputation, zone filtering, and vendor lookup engine.
 VendorCatalogs.j | Shared definitions for 27 reusable vendor roles. Many different racial units can use the same catalog.
 VendorOrcs.j, VendorElarindor.j, VendorTauren.j, VendorDwarves.j, etc. | Connect Object Editor unit rawcodes to a catalog, explicit reputation faction, and racial, regional, gendered, or faction voice profile.
+VendorDialogs.j | Opens dialogue through the shared global selection listener and requires every vendor-family binding so missing catalogs fail at compile time instead of silently producing inert units.
 VendorBlacksmith.j | A bespoke vendor implementation with its own vendor ID, stock, AI weights, reputation items, unit bindings, and dialogue.
 VendorFloatingText.j | Presentation layer that displays the final registered vendor type above units.
 QuestsAndDialogs/QuestsGeneric.j | Reusable kill, fetch, and talk quest templates, requirements, rewards, dialogue sequences, and daily acceptance variants for any NPC.
@@ -13,6 +14,8 @@ Voicelines_Quests.j | Single source of truth for shared quest dialogue, daily va
 VendorVoiceProfiles.j | Compatibility wrapper for older import lists; new dialogue belongs in `Voicelines_VendorLines.j`.
 
 To change spoken vendor content, edit `Voicelines_VendorLines.j`; to change generic quest dialogue, edit `Voicelines_Quests.j`. Vendor faction, catalog, and `qVendorName.j` files only bind or reference those centralized definitions.
+
+Import `VendorCatalogs.j`, all eight `VendorFactions/Vendor*.j` libraries, and then `VendorDialogs.j`. The delayed world scan registers preplaced quest vendors, while the global selection listener also registers a valid mapped vendor on demand.
 
 # For example:
 o011
