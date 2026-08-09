@@ -17,6 +17,7 @@
 
     API:
     Pet_CanRename, Pet_ShowRenamePrompt, Pet_IsPetUnit, Pet_IsDead,
+    Pet_Revive(unit pet, real lifePercent, real manaPercent, boolean showEffects),
     Pet_GetClassInfoText, Pet_GetTypeInfoText, and Pet_GetAbilityInfoText.
 
 **/
@@ -369,23 +370,28 @@ private function StartFreezeTimer takes unit pet returns nothing
     set t = null
 endfunction
 
-private function OnReviveTimer takes nothing returns nothing
-    local unit pet = udg_TamedUnit
-
-    if pet == null or GetUnitTypeId(pet) == 0 then
-        set pet = null
-        return
+private function RestoreFatiguedPet takes unit pet, real lifePercent, real manaPercent, boolean restoreMana, string effectPath returns boolean
+    if pet == null or pet != udg_TamedUnit or not udg_Pet_Dead then
+        return false
     endif
 
+    if udg_ReviveTimerPet != null then
+        call PauseTimer(udg_ReviveTimerPet)
+    endif
     call SetUnitPathing(pet, true)
     call PauseUnit(pet, false)
     call SetUnitTimeScale(pet, 1.00)
     call ResetUnitAnimation(pet)
     call SetUnitAnimation(pet, "stand")
-    call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Levelup\\LevelupCaster.mdl", pet, "origin"))
+    if effectPath != "" then
+        call DestroyEffect(AddSpecialEffectTarget(effectPath, pet, "origin"))
+    endif
 
     set udg_Pet_Dead = false
-    call HealPetByPercent(pet, 25.00)
+    call SetWidgetLife(pet, GetUnitState(pet, UNIT_STATE_MAX_LIFE) * lifePercent * 0.01)
+    if restoreMana then
+        call SetUnitState(pet, UNIT_STATE_MANA, GetUnitState(pet, UNIT_STATE_MAX_MANA) * manaPercent * 0.01)
+    endif
     call SetUnitInvulnerable(pet, false)
     call SetUnitOwner(pet, Player(PET_OWNER_INDEX), true)
     call Companions_Resume(pet)
@@ -394,6 +400,18 @@ private function OnReviveTimer takes nothing returns nothing
         call RemoveLocation(udg_Pet_DeathPoint)
         set udg_Pet_DeathPoint = null
     endif
+    return true
+endfunction
+
+private function OnReviveTimer takes nothing returns nothing
+    local unit pet = udg_TamedUnit
+
+    if pet == null or GetUnitTypeId(pet) == 0 then
+        set pet = null
+        return
+    endif
+
+    call RestoreFatiguedPet(pet, 25.00, 0.00, false, "Abilities\\Spells\\Other\\Levelup\\LevelupCaster.mdl")
 
     set pet = null
 endfunction
@@ -1157,6 +1175,13 @@ endfunction
 
 public function IsDead takes unit pet returns boolean
     return pet != null and pet == udg_TamedUnit and udg_Pet_Dead
+endfunction
+
+public function Revive takes unit pet, real lifePercent, real manaPercent, boolean showEffects returns boolean
+    if showEffects then
+        return RestoreFatiguedPet(pet, lifePercent, manaPercent, true, "Abilities\\Spells\\Human\\Resurrect\\ResurrectTarget.mdl")
+    endif
+    return RestoreFatiguedPet(pet, lifePercent, manaPercent, true, "")
 endfunction
 
 public function GetClassInfoText takes unit pet returns string
