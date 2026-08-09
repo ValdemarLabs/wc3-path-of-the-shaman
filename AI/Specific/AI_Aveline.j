@@ -383,6 +383,7 @@ private function Init takes nothing returns nothing
     call AI_SetProfileRandomUniqueId(AI_Aveline_ProfileId, AI_AVELINE_UNIQUE_ID)
     call AI_SetProfileFixedHeroLevel(AI_Aveline_ProfileId, 10)
     call AI_SetProfileXpLockedUntilInvite(AI_Aveline_ProfileId, true)
+    call AI_SetProfileUsesFakeDeath(AI_Aveline_ProfileId, true)
     call AI_SetRandomSpawnFirstProfile(AI_Aveline_ProfileId)
     call AI_SetUnitTypeDefaultProfile(AI_AVELINE_UNIT_RIVERBANE, AI_Aveline_ProfileId)
     call AI_SetProfileRegisterCallback(AI_Aveline_ProfileId, function OnRegister)
