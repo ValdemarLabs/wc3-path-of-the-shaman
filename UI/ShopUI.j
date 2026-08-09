@@ -14,7 +14,7 @@
       https://www.hiveworkshop.com/threads/custom-rpg-shop-system.372995/
 
     How to install:
-    Import after Shop, VendorLines, MasterUI, Interface, and Table. Vendor dialogs can open
+    Import after Shop, VendorLines, DialogCamera, MasterUI, Interface, and Table. Vendor dialogs can open
     the panel with ShopUI_ShowForVendor(vendor, hero).
 
     API:
@@ -23,7 +23,7 @@
     - call ShopUI_Refresh()
 
 **/
-library ShopUI initializer AutoInit requires Table, Shop, VendorLines, MasterUI, Interface, DialogInteraction, DialogSystem, optional Events, optional UnitDeathEvent
+library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCamera, MasterUI, Interface, DialogInteraction, DialogSystem, optional Events, optional UnitDeathEvent
     globals
         private constant integer SUI_MAX_ROWS = 10
         private constant integer SUI_VISIBLE_ROWS = 7
@@ -31,6 +31,8 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, MasterUI,
         private constant real SUI_CATEGORY_TEXT_SCALE = 0.68
         private constant real SUI_REFRESH_INTERVAL = 0.50
         private constant real SUI_CAMERA_RESET_TIME = 0.75
+        private constant real SUI_CAMERA_CHANGE_MIN_INTERVAL = 8.00
+        private constant real SUI_CAMERA_CHANGE_MAX_INTERVAL = 14.00
         private constant boolean SUI_USE_DIALOG_CAMERA = true
         private constant boolean SUI_CINEMATIC = true
 
@@ -1033,6 +1035,21 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, MasterUI,
         call BlzFrameSetVisible(SUI_Parent, false)
     endfunction
 
+    private function SUI_GetCameraRotationOffset takes unit vendor, unit buyer returns real
+        local real dx
+        local real dy
+
+        if vendor == null or buyer == null then
+            return 180.00
+        endif
+        set dx = GetUnitX(buyer) - GetUnitX(vendor)
+        set dy = GetUnitY(buyer) - GetUnitY(vendor)
+        if dx * dx + dy * dy < 1.00 then
+            return 180.00
+        endif
+        return (Atan2(dy, dx) * bj_RADTODEG + 180.00) - GetUnitFacing(vendor)
+    endfunction
+
     public function ShowForVendor takes unit vendor, unit buyer returns nothing
         local player p
 
@@ -1074,6 +1091,9 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, MasterUI,
         call Shop_BeginTradeSessionForUnits(SUI_VendorId, vendor, buyer)
         set SUI_RandomVendorLineRemaining = VendorLines_GetRandomLineInterval(SUI_VendorId)
         set p = GetOwningPlayer(buyer)
+        if SUI_USE_DIALOG_CAMERA then
+            call DialogCameraStartRandomCycle(p, vendor, SUI_GetCameraRotationOffset(vendor, buyer), SUI_CAMERA_CHANGE_MIN_INTERVAL, SUI_CAMERA_CHANGE_MAX_INTERVAL, false)
+        endif
 
         if SUI_Parent != null and not BlzFrameIsVisible(SUI_Parent) then
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, p)

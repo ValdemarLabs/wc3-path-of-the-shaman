@@ -20,6 +20,7 @@
     API:
     - call DialogInteraction_Register(unit npc)
     - call DialogInteraction_RegisterSelectionHandler(unit npc, function OnSelected)
+    - call DialogInteraction_RegisterAnySelectionHandler(function OnAnySelected)
     - call DialogInteraction_ConfigureDialogTransition(...)
     - call DialogInteraction_StartConfiguredDialogEntryTransition(...)
     - call DialogInteraction_PlayGreetSequenceEx(...)
@@ -31,6 +32,7 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
 
         private Table DialogInteraction_SelectHandlers = 0
         private trigger DialogInteraction_SelectTrigger = null
+        private trigger DialogInteraction_AnySelectHandlers = null
         private Table DialogInteraction_FirstGreetDone = 0
         private Table DialogInteraction_SkipNextGreet = 0
         private Table DialogInteraction_GreetOrder = 0
@@ -117,6 +119,9 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
                 call TriggerExecute(t)
             endif
         endif
+        if u != null and DialogInteraction_AnySelectHandlers != null then
+            call TriggerExecute(DialogInteraction_AnySelectHandlers)
+        endif
         set DialogInteraction_SelectedUnit = null
         set t = null
         set u = null
@@ -148,6 +153,17 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         call TriggerAddAction(t, handler)
         set DialogInteraction_SelectHandlers.trigger[GetHandleId(u)] = t
         set t = null
+    endfunction
+
+    public function RegisterAnySelectionHandler takes code handler returns nothing
+        if handler == null then
+            return
+        endif
+        call EnsureSelectTrigger()
+        if DialogInteraction_AnySelectHandlers == null then
+            set DialogInteraction_AnySelectHandlers = CreateTrigger()
+        endif
+        call TriggerAddAction(DialogInteraction_AnySelectHandlers, handler)
     endfunction
 
     public function SetFirstGreetDone takes unit u, boolean flag returns nothing

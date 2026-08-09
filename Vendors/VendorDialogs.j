@@ -12,10 +12,9 @@
     Credits:
 
     How to install:
-    Import after DialogInteraction, DialogSystem, Shop, ShopUI, VendorLines,
-    Reputation, Interface, Table, and optional QuestsVendor. Vendor unit types must be
-    registered in Shop before the delayed scan runs, or individual units can
-    be registered manually.
+    Import after DialogInteraction, DialogCamera, DialogSystem, Shop, ShopUI,
+    VendorCatalogs, every imported VendorFactions library, VendorLines,
+    Reputation, Interface, Table, and optional QuestsVendor.
 
     API:
     - call VendorDialogs_RegisterVendor(vendor)
@@ -24,7 +23,7 @@
     - set hero = VendorDialogs_GetSelectedHero()
 
 **/
-library VendorDialogs initializer Init requires Table, DialogInteraction, DialogSystem, Shop, ShopUI, VendorLines, Reputation, Interface, optional QuestsVendor, optional Events, optional UnitDeathEvent
+library VendorDialogs initializer Init requires Table, DialogInteraction, DialogCamera, DialogSystem, Shop, ShopUI, VendorCatalogs, VendorOrcs, VendorSatyrs, VendorHumans, VendorGoblins, VendorBonecrusherOgres, VendorElarindor, VendorTauren, VendorDwarves, VendorLines, Reputation, Interface, optional QuestsVendor, optional Events, optional UnitDeathEvent
     globals
         private constant real VDI_DIALOG_RANGE = 900.00
         private constant real VDI_DIALOG_COOLDOWN = 3.00
@@ -42,8 +41,10 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         private constant real VDI_CAMERA_ROT_OFFSET = 180.00
         private constant real VDI_CAMERA_FAR_Z = 10000.00
         private constant real VDI_CAMERA_FOV = 60.00
-        private constant real VDI_CAMERA_BLOCK_RADIUS = 0.00
-        private constant boolean VDI_CAMERA_BLOCK_CHECK = false
+        private constant real VDI_CAMERA_BLOCK_RADIUS = 180.00
+        private constant boolean VDI_CAMERA_BLOCK_CHECK = true
+        private constant real VDI_CAMERA_CHANGE_MIN_INTERVAL = 8.00
+        private constant real VDI_CAMERA_CHANGE_MAX_INTERVAL = 14.00
         private constant real VDI_CAMERA_RESET_TIME = 0.75
 
         private constant integer VDI_ACTION_TRADE = 1
@@ -350,6 +351,9 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
             return
         endif
 
+        if VDI_USE_DIALOG_CAMERA then
+            call DialogCameraStartRandomCycle(Player(0), VDI_SelectedVendor, VDI_GetHeroCameraRotationOffset(VDI_SelectedVendor, VDI_SelectedHero), VDI_CAMERA_CHANGE_MIN_INTERVAL, VDI_CAMERA_CHANGE_MAX_INTERVAL, false)
+        endif
         call VDI_BuildDialog()
         set seq = VDI_CreateGreetSequence(VDI_SelectedVendor, VDI_SelectedHero)
         call DialogInteraction_PlayGreetSequenceEx(seq, VDI_SelectedVendor, Player(0), VDI_Dialog, VDI_CINEMATIC)
@@ -357,35 +361,6 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
 
     public function ContinueToDialogAfterSelection takes nothing returns nothing
         call VDI_ShowDialogForSelection()
-    endfunction
-
-    private function VDI_OnSelected takes nothing returns nothing
-        local unit vendor = DialogInteraction_GetSelectedUnit()
-        local unit hero
-        local boolean gateOk
-
-        if vendor == null or Shop_GetVendorIdForUnit(vendor) <= 0 then
-            set vendor = null
-            set hero = null
-            return
-        endif
-
-        set hero = DialogInteraction_GetDialogSelectionHero(vendor, VDI_DIALOG_RANGE, VDI_ALLOW_NAZGREK, VDI_ALLOW_ZULKIS)
-        // Reputation owns faction access; transient vendor combat/cast flags must not silently block shop dialogue.
-        set gateOk = DialogInteraction_PassDialogSelectionGate(vendor, hero, VDI_DIALOG_RANGE, VDI_DialogCooldown, VDI_REQUIRE_DIALOG_HERO, true, false, false, false, false)
-        if not gateOk then
-            call VDI_ReportSelectionFailure(vendor)
-            set vendor = null
-            set hero = null
-            return
-        endif
-        set VDI_SelectedVendor = vendor
-        set VDI_SelectedHero = hero
-        call VDI_ConfigureVendorCamera(vendor, hero)
-        call DialogInteraction_StartConfiguredDialogEntryTransition(vendor, hero, false, VDI_USE_DIALOG_CAMERA, VDI_CINEMATIC, "VendorDialogs_ContinueToDialogAfterSelection")
-
-        set vendor = null
-        set hero = null
     endfunction
 
     public function RegisterVendor takes unit vendor returns nothing
@@ -406,12 +381,49 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         call Shop_ApplyVendorUnitTypeName(vendor)
         call DialogInteraction_Register(vendor)
         call DialogInteraction_SetGreetOrder(vendor, DIALOGINTERACTION_GREET_NONE)
-        call DialogInteraction_RegisterSelectionHandler(vendor, function VDI_OnSelected)
         static if LIBRARY_QuestsVendor then
             call QuestsVendor_RegisterUnit(vendor)
         endif
 
         set vendor = null
+    endfunction
+
+    private function VDI_OnSelected takes nothing returns nothing
+        local unit vendor = DialogInteraction_GetSelectedUnit()
+        local unit hero
+        local boolean gateOk
+        local string canonicalName
+
+        if vendor == null or Shop_GetVendorIdForUnit(vendor) <= 0 then
+            if vendor != null then
+                set canonicalName = Shop_GetVendorUnitTypeName(GetUnitTypeId(vendor))
+                if canonicalName != null and canonicalName != "" then
+                    call DisplayTextToPlayer(Player(0), 0.00, 0.00, "|cffff4040Vendor setup error: " + canonicalName + " has no registered catalog binding.|r")
+                    call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, Player(0))
+                endif
+            endif
+            set vendor = null
+            set hero = null
+            return
+        endif
+
+        call VendorDialogs_RegisterVendor(vendor)
+        set hero = DialogInteraction_GetDialogSelectionHero(vendor, VDI_DIALOG_RANGE, VDI_ALLOW_NAZGREK, VDI_ALLOW_ZULKIS)
+        // Reputation owns faction access; transient vendor combat/cast flags must not silently block shop dialogue.
+        set gateOk = DialogInteraction_PassDialogSelectionGate(vendor, hero, VDI_DIALOG_RANGE, VDI_DialogCooldown, VDI_REQUIRE_DIALOG_HERO, true, false, false, false, false)
+        if not gateOk then
+            call VDI_ReportSelectionFailure(vendor)
+            set vendor = null
+            set hero = null
+            return
+        endif
+        set VDI_SelectedVendor = vendor
+        set VDI_SelectedHero = hero
+        call VDI_ConfigureVendorCamera(vendor, hero)
+        call DialogInteraction_StartConfiguredDialogEntryTransition(vendor, hero, false, VDI_USE_DIALOG_CAMERA, VDI_CINEMATIC, "VendorDialogs_ContinueToDialogAfterSelection")
+
+        set vendor = null
+        set hero = null
     endfunction
 
     public function RegisterExistingVendors takes nothing returns nothing
@@ -463,6 +475,7 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
 
         set VDI_DialogCooldown = CreateTimer()
         set VDI_RegisteredVendor = Table.create()
+        call DialogInteraction_RegisterAnySelectionHandler(function VDI_OnSelected)
         static if LIBRARY_Events then
             call Events_RegisterUnitAttacked(function VDI_AttackInterruptAction)
         else
