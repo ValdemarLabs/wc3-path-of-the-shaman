@@ -1,10 +1,8 @@
-library Reputation initializer InitReputations requires Table, Events, UnitDeathEvent
-
-/*
+/**
     Reputation system
 
-    Author: [Valdemar]
-    Version: 2.1
+    Author: Valdemar
+    Version: 2.2
 
     Required global variables (Path of the Shaman)
         udg_InCinematic (when cinematic is turned on in trigger CinematicON)
@@ -97,6 +95,10 @@ library Reputation initializer InitReputations requires Table, Events, UnitDeath
     Linking factions:
         call horde.link(felorcs, -0.5)
 
+    Hidden source factions:
+        Factions with isVisible = false still grant linked reputation from kills.
+        Set isVisible = true during faction configuration to include one in ReputationUI.
+
     Getting faction (no other use)
         local Faction f = Faction.getFaction("Horde")
         call Reputation.addRaw(Player(0), f, 100)
@@ -123,7 +125,9 @@ library Reputation initializer InitReputations requires Table, Events, UnitDeath
         
         This means changing one faction's reputation affects the entire political landscape!
 
-*/
+**/
+
+library Reputation initializer InitReputations requires Table, Events, UnitDeathEvent
 
 //===================================================
 // CONFIGURATION
@@ -1489,7 +1493,51 @@ private function InitUnitTypeFactions takes nothing returns nothing
     set tmpCodes[11]    = "n609"
     call AddUnitTypesToFaction(f, 12)
 
-    // Add more factions and unit types as needed
+    // === Murlocs ===
+    set f = Faction.getFaction("Murlocs")
+    set tmpCodes[0]     = "nmmu"
+    set tmpCodes[1]     = "nmrl"
+    set tmpCodes[2]     = "nmrm"
+    set tmpCodes[3]     = "nmrr"
+    set tmpCodes[4]     = "nmrk"
+    set tmpCodes[5]     = "n607"
+    set tmpCodes[6]     = "n60R"
+    set tmpCodes[7]     = "n62A"
+    set tmpCodes[8]     = "n62B"
+    call AddUnitTypesToFaction(f, 9)
+
+    // === Bandits ===
+    set f = Faction.getFaction("Bandits")
+    set tmpCodes[0]     = "nass"
+    set tmpCodes[1]     = "nban"
+    set tmpCodes[2]     = "nbrg"
+    set tmpCodes[3]     = "nenf"
+    set tmpCodes[4]     = "nrog"
+    set tmpCodes[5]     = "n652"
+    call AddUnitTypesToFaction(f, 6)
+
+    // === Forest trolls ===
+    set f = Faction.getFaction("Forest trolls")
+    set tmpCodes[0]     = "nfra"
+    set tmpCodes[1]     = "nfrb"
+    set tmpCodes[2]     = "nfre"
+    set tmpCodes[3]     = "nfrg"
+    set tmpCodes[4]     = "nfrl"
+    set tmpCodes[5]     = "nfrs"
+    set tmpCodes[6]     = "n63W"
+    set tmpCodes[7]     = "n64T"
+    set tmpCodes[8]     = "n63Y"
+    set tmpCodes[9]     = "n63Z"
+    set tmpCodes[10]    = "n65F"
+    call AddUnitTypesToFaction(f, 11)
+
+    // === Mana aberrations ===
+    set f = Faction.getFaction("Mana Aberrations")
+    set tmpCodes[0]     = "n002"
+    set tmpCodes[1]     = "n023"
+    set tmpCodes[2]     = "n027"
+    set tmpCodes[3]     = "n028"
+    call AddUnitTypesToFaction(f, 4)
 endfunction
 
 private function InitFactions takes nothing returns nothing
@@ -1509,8 +1557,11 @@ private function InitFactions takes nothing returns nothing
     local Faction morgrim      = Faction.createFaction("Morgrim Clan", Player(7))
     local Faction humancitizen = Faction.createFaction("Human Citizen", Player(2))
     local Faction gnolls       = Faction.createFaction("Gnolls", null)
+    local Faction murlocs      = Faction.createFaction("Murlocs", null)
+    local Faction bandits      = Faction.createFaction("Bandits", null)
     local Faction jungletrolls = Faction.createFaction("Jungle trolls", null)
     local Faction foresttrolls = Faction.createFaction("Forest trolls", null)
+    local Faction manaaberrations = Faction.createFaction("Mana Aberrations", null)
     local Faction kobolds      = Faction.createFaction("Kobolds", null)
     local Faction realhorde    = Faction.createFaction("The True Horde", Player(13))
 
@@ -1520,6 +1571,7 @@ private function InitFactions takes nothing returns nothing
 
     // Map additional players to factions (multiple players can share the same faction)
     call Faction.mapPlayerToFaction(Player(1), horde)  // Player 2 is also Horde
+    call Faction.mapPlayerToFaction(Player(4), felorcs)  // Player(3) is primary; Player(4) is also Fel Orcs
     call Faction.mapPlayerToFaction(Player(8), stormhaven)  // Player 9 is Stormhaven
     // Example: call Faction.mapPlayerToFaction(Player(9), horde)  // Player 10 is also Horde
 
@@ -1544,6 +1596,10 @@ private function InitFactions takes nothing returns nothing
     call stormhaven.linkFaction(horde, -1.0) // Kill stormhaven citizens = +horde rep
     call humancitizen.linkFaction(horde, -1.0) // Kill citizens = +horde rep
     call felorcs.linkFaction(horde, -1.0)   // Kill fel orcs = +horde rep
+    call murlocs.linkFaction(horde, -0.2)   // Kill murlocs = a small Horde gain
+    call bandits.linkFaction(riverbane, -1.0) // Kill bandits = +riverbane rep
+    call foresttrolls.linkFaction(horde, -1.0) // Kill forest trolls = +horde rep
+    call manaaberrations.linkFaction(elarindor, -1.0) // Kill mana aberrations = +elarindor rep
 
     if RE_DEBUG then
         call BJDebugMsg("[InitFactions] Faction linking complete")
@@ -1566,8 +1622,11 @@ private function InitFactions takes nothing returns nothing
     set REP_KILL_DELTA.real[morgrim.id] = -10
     set REP_KILL_DELTA.real[humancitizen.id] = -10
     set REP_KILL_DELTA.real[gnolls.id] = -10
+    set REP_KILL_DELTA.real[murlocs.id] = -10
+    set REP_KILL_DELTA.real[bandits.id] = -10
     set REP_KILL_DELTA.real[jungletrolls.id] = -10
     set REP_KILL_DELTA.real[foresttrolls.id] = -10
+    set REP_KILL_DELTA.real[manaaberrations.id] = -10
     set REP_KILL_DELTA.real[kobolds.id] = -10
     set REP_KILL_DELTA.real[realhorde.id] = -10
 
@@ -1590,8 +1649,11 @@ private function InitFactions takes nothing returns nothing
     call Reputation.setRep(p, morgrim, 0)
     call Reputation.setRep(p, humancitizen, -2000)
     call Reputation.setRep(p, gnolls, -6000)
+    call Reputation.setRep(p, murlocs, -6000)
+    call Reputation.setRep(p, bandits, -6000)
     call Reputation.setRep(p, jungletrolls, -6000)
     call Reputation.setRep(p, foresttrolls, -6000)
+    call Reputation.setRep(p, manaaberrations, -6000)
     call Reputation.setRep(p, kobolds, -6000)
     call Reputation.setRep(p, realhorde, -20000)
 
@@ -1608,6 +1670,8 @@ private function InitFactions takes nothing returns nothing
     set felorcs.iconPath      = "ReplaceableTextures\\CommandButtons\\BTNChaosGrunt.blp"
     set satyr.iconPath        = "ReplaceableTextures\\PassiveButtons\\PASFactionOther1.blp"
     set gnolls.iconPath       = "ReplaceableTextures\\CommandButtons\\BTNGnoll.blp"
+    set murlocs.iconPath      = "ReplaceableTextures\\CommandButtons\\BTNMurloc.blp"
+    set bandits.iconPath      = "ReplaceableTextures\\CommandButtons\\BTNBandit.blp"
     set riverbane.iconPath    = "ReplaceableTextures\\PassiveButtons\\PASFactionHuman.blp"
     set humancitizen.iconPath = "ReplaceableTextures\\PassiveButtons\\PASFactionHuman.blp"
     set bonecrushers.iconPath = "ReplaceableTextures\\PassiveButtons\\PASFactionOther2.blp"
@@ -1616,6 +1680,7 @@ private function InitFactions takes nothing returns nothing
     set undead.iconPath       = "ReplaceableTextures\\PassiveButtons\\PASFactionUndead.blp"
     set jungletrolls.iconPath = "ReplaceableTextures\\PassiveButtons\\PASFactionTroll.blp"
     set foresttrolls.iconPath = "ReplaceableTextures\\PassiveButtons\\PASFactionTroll.blp"
+    set manaaberrations.iconPath = "ReplaceableTextures\\CommandButtons\\BTNGhost.blp"
     set kobolds.iconPath      = "ReplaceableTextures\\PassiveButtons\\PASFactionOther1.blp"
     set realhorde.iconPath    = "ReplaceableTextures\\PassiveButtons\\PASFactionTrueHorde.blp"
 
@@ -1631,12 +1696,15 @@ private function InitFactions takes nothing returns nothing
     // Configure faction visibility (optional - all factions are visible by default)
     // Set isVisible = false to hide faction from multiboard and suppress reputation messages
     // Example: set gnolls.isVisible = false  // Gnolls won't appear in reputation board
-    set gnolls.isVisible = false  // Gnolls won't appear in reputation board
-    set undead.isVisible = false  // Gnolls won't appear in reputation board
-    set felorcs.isVisible = false  // Gnolls won't appear in reputation board
-    set jungletrolls.isVisible = false  // Gnolls won't appear in reputation board
-    set foresttrolls.isVisible = false  // Gnolls won't appear in reputation board
-    set kobolds.isVisible = false  // Gnolls won't appear in reputation board
+    set gnolls.isVisible = false
+    set murlocs.isVisible = false
+    set bandits.isVisible = false
+    set undead.isVisible = false
+    set felorcs.isVisible = false
+    set jungletrolls.isVisible = false
+    set foresttrolls.isVisible = false
+    set manaaberrations.isVisible = false
+    set kobolds.isVisible = false
     
     if RE_DEBUG then
         call BJDebugMsg("[InitFactions] Calling InitializePrevStates()...")
