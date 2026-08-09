@@ -186,6 +186,7 @@ Use these exact strings (case-sensitive) with the debug functions:
 - `"Elarindor"`
 - `"Bonecrusher Clan"`
 - `"Morgrim Clan"`
+- `"The True Horde"`
 - `"Human Citizen"`
 - `"Gnolls"`
 - `"Jungle trolls"`
