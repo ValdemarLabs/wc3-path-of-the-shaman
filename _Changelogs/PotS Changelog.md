@@ -56,6 +56,7 @@
 
 - Updated the DEquipment exporter to convert every ItemManager whole-percent value used by Warcraft fractional ability fields, including exactly 1%, and added the missing `Thorns %` mapping. Trinket classes continue to export both slot 17 and slot 18; a new corrected 9.8.2026 definition file was generated without modifying earlier exports.
 - Restored WC3ItemManager's stable flow-based Icon Selector loading model and removed the shared native image list that caused slow reopenings and intermittent Windows-handle failures. Thumbnail and icon-file caches now persist for the active session, loading is cancellable and batched, and remembered folders, folder-scoped search, category filtering, and configurable icon paths remain available.
+- Updated `WC3_Database/WC3ItemManager/IconSelectorDialog.cs` and `WC3_Database/WC3ItemManager/IconPathConfig.cs` to remember the Icon Selector window size, maximized state, and folder-grid splitter position. Large folders now open with an initial icon page and load the remaining unbounded results incrementally while scrolling.
 
 ### Actions Remaining
 
