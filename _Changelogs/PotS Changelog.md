@@ -15,6 +15,54 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [9.8.2026]
+
+### Player-Facing Updates
+
+- Killing Murlocs and Forest Trolls now grants Horde reputation, Bandits grant Riverbane reputation, mana aberrations grant Elarindor reputation, and Player(4) Fel Orc kills share the existing Fel Orc reputation behavior.
+- The Path of the Shaman logo now remains behind game mode and difficulty selection and disappears only when the selected run starts.
+- Nazgrek's complete starter equipment, including Ancestral Charm in a trinket slot, now equips without overflowing the starting bag.
+- Restored The True Horde's dedicated Reputation UI description while retaining the separate Morgrim Clan Dwarf faction.
+- Vendor selection now uses a global catalog-aware selection listener, so every registered vendor family can open dialogue even when its unit missed the initial world scan.
+- Vendor dialogue and active trade now rotate through five cinematic camera compositions, selecting alternate angles when destructibles obstruct the requested view.
+- Companion Move and Attack commands now remain in control after reaching their destination and bypass normal companion and AI behaviors until another companion mode or command replaces them; Hold Position units continue to ignore both commands.
+- Profession failure barks now require actual companion-group membership and proximity to a player hero; autonomous AI chatter uses a reduced 2000 range.
+- Under-skilled AI gatherers now remember rejected nodes and move away instead of repeatedly trying to harvest them; autonomous wandering uses Move rather than Attack-Move so hostile resource nodes are not acquired incidentally.
+- Aveline now uses the retained Fake Death flow while preserving her AI revive timer.
+- Hired non-hero companions now remain as revivable Fake Death units for 60 seconds, appear dead in Stats UI, and receive a real death with normal cleanup and decay if no Spirit Shard revives them.
+
+### Technical Updates
+
+- Added hidden, unit-type-backed Murloc, Bandit, Forest Troll, and Mana Aberration reputation sources; they remain available to the Reputation UI by changing their faction visibility setting.
+- Changed starter gear setup to equip each item immediately instead of staging all 13 equipment pieces in the 12-slot starting bag.
+- Kept the completed preload image active through game mode selection and raised the selection panel above the retained logo frame.
+- Made every vendor-family library an explicit VendorDialogs dependency and added visible setup feedback when a canonically named vendor lacks its catalog binding.
+- Added reusable dialogue-camera presets, custom preset registration, randomized camera cycling, smooth shot changes, and multi-angle destructible path checks.
+- Persisted manual companion-command state across completed Warcraft orders and blocked idle wandering, AI actions, follower corrections, and mode-driven orders while that state is active.
+- Added profile-selectable AI Fake Death handling so Aveline can use retained death without regressing normal engine death for other AI heroes.
+- Extended FallenHeroState and Spirit Shard targeting to hired non-hero companions, with timed conversion from retained Fake Death to permanent engine death.
+- Updated `CreepRespawn/CreepRespawn.j`
+  - Require an immutable saved spawn record before a unit can schedule a respawn; deaths of unregistered units no longer create records from their death positions.
+  - Preserve original unit type, owner, position, and facing across every respawn generation.
+  - Clear dead-unit spawn records after copying them to timer data, preventing recycled handle IDs from transferring records to unrelated units.
+  - Exclude the six BloodSplat unit types, actual summoned instances, and generic timed-life units from respawn tracking.
+  - Keep saved owners independent from later ownership changes, including Player(10) Dark Green units.
+  - Restrict debug death messages to units that actually have a valid tracked spawn record.
+  - Keep CreepRespawn debug mode local instead of enabling global UnitDeathEvent dispatch messages for every map death.
+
+### Tool Updates
+
+- Updated the DEquipment exporter to convert every ItemManager whole-percent value used by Warcraft fractional ability fields, including exactly 1%, and added the missing `Thorns %` mapping. Trinket classes continue to export both slot 17 and slot 18; a new corrected 9.8.2026 definition file was generated without modifying earlier exports.
+
+### Actions Remaining
+
+- Compile the full map and runtime-test representative Murloc, Bandit, Forest Troll, mana aberration, and Player(4) Fel Orc kills, including linked gains and hidden Reputation UI filtering.
+- Compile and runtime-test Riverbane, Horde, and the remaining vendor-family selections, including missing-hero feedback, reputation-gated Trade, quest buttons, direct ShopUI entry, camera cycling, and obstructed market stalls.
+- Compile and runtime-test point- and unit-target Move and Attack commands in every companion mode, including Hold Position exclusion.
+- Runtime-test autonomous profession failure near hostile unit nodes, companion-only failure barks, 2000-range autonomous chatter, and Aveline's Fake Death revival cycle.
+- Runtime-test hired non-hero Fake Death status in both Stats interfaces, Spirit Shard revival before expiry, and permanent death/decay after 60 seconds.
+- Compile the full map and runtime-test preplaced Player(10), Player(12), and Neutral Hostile respawns, including repeated generations and original position/facing preservation.
+
 ## [8.8.2026]
 
 ### Technical Updates
@@ -88,7 +136,7 @@ Issue with CreepRespawn not respawing creeps anymore for some reason:
 - Temporal hostility refreshes its existing per-faction timer while preserving the original restoration state, without allocating duplicate timers or hostility records.
 - Added player-specific inventory/equipment closing and an interactive suspended-camera mode used by profession crafting cinematics.
 - Bound Orc, Satyr, Human, Goblin, Bonecrusher, Elarindor, Tauren, and Dwarf vendor rawcodes directly to their intended reputation factions instead of relying only on Object Editor ownership.
-- Reassigned `Player(7)` reputation from The True Horde to the Morgrim Clan and added its Reputation UI description and Dwarf icon.
+- Added Morgrim Clan as the separate `Player(7)` Dwarf reputation faction and retained The True Horde as its own faction.
 - Added a reusable Blacksmith catalog, Morgrim Dwarf trade voice profile, Tauren quest dialogue pool, and ExSound ranges for both cultures.
 - Updated the vendor roster with the intended regional distribution for Orc, Satyr, Human, Goblin, Bonecrusher, Tauren, and Dwarf vendors.
 - Preserved AI companion revive-timer remaining time, including the unusual dead-without-an-active-timer state, across temporary cinematic revival.
