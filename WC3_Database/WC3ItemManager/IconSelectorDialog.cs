@@ -22,6 +22,7 @@ namespace WC3ItemManager
         private Button btnCancel;
         private Button btnConfig;
         private CheckBox chkRememberFolder;
+        private CheckBox chkRememberWindowSize;
         private ComboBox cmbCategory;
         private Label lblStatus;
         private Label lblCurrentPath;
@@ -32,6 +33,8 @@ namespace WC3ItemManager
         
         // Static caches persist across dialog instances (prevents reloading large icon folders repeatedly)
         private const int IMAGE_CACHE_LIMIT = 5000;
+        private const int INITIAL_ICON_COUNT = 240;
+        private const int LOAD_MORE_ICON_COUNT = 240;
         private static Dictionary<string, Image> imageCache = new Dictionary<string, Image>(StringComparer.OrdinalIgnoreCase);
         private static List<IconEntry> allIconCache;
         private static string allIconCacheKey = "";
@@ -47,11 +50,17 @@ namespace WC3ItemManager
         private bool isClosing = false;
         private string requestedIconPath = "";
         private readonly Dictionary<Button, Image> uncachedButtonImages = new Dictionary<Button, Image>();
+        private readonly HashSet<int> loadingGenerations = new HashSet<int>();
+        private List<IconEntry> currentResults = new List<IconEntry>();
+        private int nextResultIndex = 0;
+        private bool isResettingResults = false;
         
         public string SelectedIconPath { get; private set; }
         
         public IconSelectorDialog(string currentPath = "")
         {
+            requestedIconPath = NormalizeComparableIconPath(currentPath);
+
             // Ensure cache folder exists
             if (!Directory.Exists(cacheFolder))
             {
@@ -59,17 +68,18 @@ namespace WC3ItemManager
             }
             
             InitializeUI();
+            RestoreWindowLayout();
             LoadIcons();
             
             if (!string.IsNullOrEmpty(currentPath))
             {
-                requestedIconPath = NormalizeComparableIconPath(currentPath);
                 HighlightIcon(currentPath);
             }
         }
         
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
+            SaveWindowLayout();
             isClosing = true;
             loadGeneration++;
             searchTimer?.Stop();
@@ -182,6 +192,18 @@ namespace WC3ItemManager
                     RememberCurrentFolder();
                 }
             };
+
+            chkRememberWindowSize = new CheckBox
+            {
+                Text = "Remember window sizes",
+                Location = new Point(1070, 13),
+                AutoSize = true,
+                Checked = IconPathConfig.Instance.RememberIconSelectorWindowSize
+            };
+            chkRememberWindowSize.CheckedChanged += (s, e) =>
+            {
+                IconPathConfig.Instance.RememberIconSelectorWindowSize = chkRememberWindowSize.Checked;
+            };
             
             lblCurrentPath = new Label
             {
@@ -202,7 +224,8 @@ namespace WC3ItemManager
             
             topPanel.Controls.AddRange(new Control[] { 
                 lblSearch, txtSearch, lblSource, cmbSource, btnConfig,
-                lblCategory, cmbCategory, chkRememberFolder, lblCurrentPath, lblStatus
+                lblCategory, cmbCategory, chkRememberFolder, chkRememberWindowSize,
+                lblCurrentPath, lblStatus
             });
             
             // Main split container: Tree on left, Icons on right
@@ -259,6 +282,13 @@ namespace WC3ItemManager
                 WrapContents = true,
                 Padding = new Padding(5)
             };
+            flowIcons.Scroll += (s, e) => LoadMoreIconsIfNeeded();
+            flowIcons.MouseWheel += (s, e) =>
+            {
+                if (!isClosing && flowIcons.IsHandleCreated)
+                    flowIcons.BeginInvoke(new Action(LoadMoreIconsIfNeeded));
+            };
+            flowIcons.Resize += (s, e) => LoadMoreIconsIfNeeded();
 
             iconPanel.Controls.Add(flowIcons);
             splitContainer.Panel2.Controls.Add(iconPanel);
@@ -296,6 +326,45 @@ namespace WC3ItemManager
             this.Controls.Add(splitContainer);
             this.Controls.Add(topPanel);
             this.Controls.Add(bottomPanel);
+        }
+
+        private void RestoreWindowLayout()
+        {
+            var config = IconPathConfig.Instance;
+            if (!config.RememberIconSelectorWindowSize)
+                return;
+
+            Rectangle workingArea = Screen.PrimaryScreen.WorkingArea;
+            int width = Math.Clamp(config.IconSelectorWidth, MinimumSize.Width, workingArea.Width);
+            int height = Math.Clamp(config.IconSelectorHeight, MinimumSize.Height, workingArea.Height);
+            Size = new Size(width, height);
+
+            int maxSplitterDistance = Math.Max(100, splitContainer.Width - 300);
+            splitContainer.SplitterDistance = Math.Clamp(
+                config.IconSelectorSplitterDistance,
+                100,
+                maxSplitterDistance);
+
+            if (config.IconSelectorMaximized)
+                WindowState = FormWindowState.Maximized;
+        }
+
+        private void SaveWindowLayout()
+        {
+            if (chkRememberWindowSize == null)
+                return;
+
+            var config = IconPathConfig.Instance;
+            config.RememberIconSelectorWindowSize = chkRememberWindowSize.Checked;
+            if (chkRememberWindowSize.Checked)
+            {
+                Rectangle bounds = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
+                config.IconSelectorWidth = Math.Max(MinimumSize.Width, bounds.Width);
+                config.IconSelectorHeight = Math.Max(MinimumSize.Height, bounds.Height);
+                config.IconSelectorSplitterDistance = splitContainer.SplitterDistance;
+                config.IconSelectorMaximized = WindowState == FormWindowState.Maximized;
+            }
+            config.Save();
         }
         
         private void LoadIcons()
@@ -490,7 +559,29 @@ namespace WC3ItemManager
                 filtered = filtered.Where(icon => GetVirtualCategory(icon) == category);
 
             List<IconEntry> results = filtered.ToList();
-            ClearIconButtons();
+            if (!string.IsNullOrEmpty(requestedIconPath))
+            {
+                int requestedIndex = results.FindIndex(icon =>
+                    NormalizeComparableIconPath(icon.RelativePath) == requestedIconPath);
+                if (requestedIndex > 0)
+                {
+                    IconEntry requestedIcon = results[requestedIndex];
+                    results.RemoveAt(requestedIndex);
+                    results.Insert(0, requestedIcon);
+                }
+            }
+
+            isResettingResults = true;
+            try
+            {
+                ClearIconButtons();
+                currentResults = results;
+                nextResultIndex = 0;
+            }
+            finally
+            {
+                isResettingResults = false;
+            }
             selectedIcon = null;
             btnSelect.Enabled = false;
 
@@ -501,9 +592,7 @@ namespace WC3ItemManager
 
             try
             {
-                await LoadIconButtonsAsync(results, generation);
-                if (generation == loadGeneration && !isClosing)
-                    lblStatus.Text = $"Showing {results.Count} icons";
+                await LoadIconButtonsAsync(generation, INITIAL_ICON_COUNT);
             }
             catch (ObjectDisposedException)
             {
@@ -561,16 +650,22 @@ namespace WC3ItemManager
             return "Other";
         }
 
-        private async System.Threading.Tasks.Task LoadIconButtonsAsync(List<IconEntry> icons, int generation)
+        private async System.Threading.Tasks.Task LoadIconButtonsAsync(int generation, int requestedCount)
         {
-            const int batchSize = 40;
+            if (generation != loadGeneration || isClosing || !loadingGenerations.Add(generation))
+                return;
 
-            for (int offset = 0; offset < icons.Count; offset += batchSize)
+            try
             {
-                if (generation != loadGeneration || isClosing)
+                int startIndex = nextResultIndex;
+                int count = Math.Min(requestedCount, currentResults.Count - startIndex);
+                if (count <= 0)
+                {
+                    UpdateIconStatus();
                     return;
+                }
 
-                List<IconEntry> batch = icons.Skip(offset).Take(batchSize).ToList();
+                List<IconEntry> batch = currentResults.Skip(startIndex).Take(count).ToList();
                 List<(IconEntry Icon, Image Image, bool Cached)> loaded =
                     await System.Threading.Tasks.Task.Run(() => batch.Select(icon =>
                     {
@@ -596,12 +691,61 @@ namespace WC3ItemManager
                         requestedIconPath = "";
                     }
                 }
-                int loadedCount = Math.Min(offset + batch.Count, icons.Count);
+                nextResultIndex = startIndex + batch.Count;
                 flowIcons.ResumeLayout(false);
-                if (loadedCount % 400 == 0 || loadedCount == icons.Count)
-                    flowIcons.PerformLayout();
-                lblStatus.Text = $"Loading {loadedCount}/{icons.Count} icons...";
+                flowIcons.PerformLayout();
+                UpdateIconStatus();
                 await System.Threading.Tasks.Task.Yield();
+            }
+            finally
+            {
+                loadingGenerations.Remove(generation);
+            }
+        }
+
+        private async void LoadMoreIconsIfNeeded()
+        {
+            if (isClosing || isResettingResults || currentResults == null || nextResultIndex >= currentResults.Count ||
+                loadingGenerations.Contains(loadGeneration) || flowIcons.IsDisposed)
+                return;
+
+            int visibleBottom = flowIcons.VerticalScroll.Value + flowIcons.ClientSize.Height;
+            int remainingHeight = flowIcons.DisplayRectangle.Height - visibleBottom;
+            if (remainingHeight > 300)
+                return;
+
+            try
+            {
+                await LoadIconButtonsAsync(loadGeneration, LOAD_MORE_ICON_COUNT);
+            }
+            catch (ObjectDisposedException)
+            {
+                // The selector closed while the next page was loading.
+            }
+            catch (Exception ex)
+            {
+                if (!isClosing)
+                {
+                    lblStatus.Text = $"Error loading icon thumbnails: {ex.Message}";
+                    lblStatus.ForeColor = Color.Red;
+                }
+                System.Diagnostics.Debug.WriteLine($"[IconSelector] Incremental loading failed: {ex}");
+            }
+        }
+
+        private void UpdateIconStatus()
+        {
+            if (currentResults.Count == 0)
+            {
+                lblStatus.Text = "No matching icons in this folder";
+            }
+            else if (nextResultIndex < currentResults.Count)
+            {
+                lblStatus.Text = $"Showing {nextResultIndex} of {currentResults.Count} icons; scroll for more";
+            }
+            else
+            {
+                lblStatus.Text = $"Showing {currentResults.Count} icons";
             }
         }
 

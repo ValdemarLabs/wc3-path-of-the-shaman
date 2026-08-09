@@ -12,6 +12,11 @@ namespace WC3ItemManager
     {
         public string WarCraft3IconPath { get; set; }
         public string CustomIconPath { get; set; }
+        public bool RememberIconSelectorWindowSize { get; set; }
+        public int IconSelectorWidth { get; set; }
+        public int IconSelectorHeight { get; set; }
+        public int IconSelectorSplitterDistance { get; set; }
+        public bool IconSelectorMaximized { get; set; }
         
         private static IconPathConfig instance;
         private static readonly string configFile = "IconPathConfig.ini";
@@ -35,6 +40,11 @@ namespace WC3ItemManager
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
             WarCraft3IconPath = Path.Combine(baseDir, "blizzard");
             CustomIconPath = Path.Combine(baseDir, "custom");
+            RememberIconSelectorWindowSize = true;
+            IconSelectorWidth = 1400;
+            IconSelectorHeight = 800;
+            IconSelectorSplitterDistance = 250;
+            IconSelectorMaximized = false;
         }
         
         public void Load()
@@ -59,6 +69,26 @@ namespace WC3ItemManager
                                 case "CustomIconPath":
                                     CustomIconPath = value;
                                     break;
+                                case "RememberIconSelectorWindowSize":
+                                    if (bool.TryParse(value, out bool rememberWindowSize))
+                                        RememberIconSelectorWindowSize = rememberWindowSize;
+                                    break;
+                                case "IconSelectorWidth":
+                                    if (int.TryParse(value, out int selectorWidth))
+                                        IconSelectorWidth = selectorWidth;
+                                    break;
+                                case "IconSelectorHeight":
+                                    if (int.TryParse(value, out int selectorHeight))
+                                        IconSelectorHeight = selectorHeight;
+                                    break;
+                                case "IconSelectorSplitterDistance":
+                                    if (int.TryParse(value, out int splitterDistance))
+                                        IconSelectorSplitterDistance = splitterDistance;
+                                    break;
+                                case "IconSelectorMaximized":
+                                    if (bool.TryParse(value, out bool selectorMaximized))
+                                        IconSelectorMaximized = selectorMaximized;
+                                    break;
                             }
                         }
                     }
@@ -77,7 +107,12 @@ namespace WC3ItemManager
                 var lines = new List<string>
                 {
                     $"WarCraft3IconPath={WarCraft3IconPath}",
-                    $"CustomIconPath={CustomIconPath}"
+                    $"CustomIconPath={CustomIconPath}",
+                    $"RememberIconSelectorWindowSize={RememberIconSelectorWindowSize}",
+                    $"IconSelectorWidth={IconSelectorWidth}",
+                    $"IconSelectorHeight={IconSelectorHeight}",
+                    $"IconSelectorSplitterDistance={IconSelectorSplitterDistance}",
+                    $"IconSelectorMaximized={IconSelectorMaximized}"
                 };
                 File.WriteAllLines(configFile, lines);
             }
