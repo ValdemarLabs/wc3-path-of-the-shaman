@@ -17,8 +17,7 @@ namespace WC3ItemManager
         private TextBox txtSearch;
         private ComboBox cmbSource;
         private TreeView treeFolder;
-        private ListView iconList;
-        private ImageList iconImages;
+        private FlowLayoutPanel flowIcons;
         private Button btnSelect;
         private Button btnCancel;
         private Button btnConfig;
@@ -29,25 +28,25 @@ namespace WC3ItemManager
         private SplitContainer splitContainer;
         private List<IconEntry> allIcons;
         private IconEntry selectedIcon;
+        private Button selectedButton;
         
         // Static caches persist across dialog instances (prevents reloading large icon folders repeatedly)
         private const int IMAGE_CACHE_LIMIT = 5000;
-        private const int DISPLAYED_IMAGE_LIMIT = 4000;
         private static Dictionary<string, Image> imageCache = new Dictionary<string, Image>(StringComparer.OrdinalIgnoreCase);
         private static List<IconEntry> allIconCache;
         private static string allIconCacheKey = "";
         private static object cacheLock = new object(); // Thread safety
         private static string cacheFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cache");
+        private static readonly Font iconButtonFont = new Font("Segoe UI", 7);
         
-        private static readonly Dictionary<string, int> displayedImageIndexes = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        private static ImageList sharedIconImages;
         private static bool rememberLastFolder = true;
         private static string lastSource = "All";
         private static string lastFolderPath = "";
-        private readonly HashSet<string> loadingThumbnails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private System.Windows.Forms.Timer searchTimer;
-        private int thumbnailGeneration = 0;
+        private int loadGeneration = 0;
         private bool isClosing = false;
+        private string requestedIconPath = "";
+        private readonly Dictionary<Button, Image> uncachedButtonImages = new Dictionary<Button, Image>();
         
         public string SelectedIconPath { get; private set; }
         
@@ -64,6 +63,7 @@ namespace WC3ItemManager
             
             if (!string.IsNullOrEmpty(currentPath))
             {
+                requestedIconPath = NormalizeComparableIconPath(currentPath);
                 HighlightIcon(currentPath);
             }
         }
@@ -71,18 +71,11 @@ namespace WC3ItemManager
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
             isClosing = true;
-            thumbnailGeneration++;
+            loadGeneration++;
             searchTimer?.Stop();
             searchTimer?.Dispose();
-            if (iconList != null)
-                iconList.LargeImageList = null;
+            ClearIconButtons();
             base.OnFormClosed(e);
-        }
-
-        protected override void OnShown(EventArgs e)
-        {
-            base.OnShown(e);
-            QueueVisibleThumbnailLoad();
         }
         
         private void InitializeUI()
@@ -145,7 +138,7 @@ namespace WC3ItemManager
             
             btnConfig = new Button
             {
-                Text = "⚙ Configure Paths",
+                Text = "Configure Paths",
                 Location = new Point(550, 10),
                 Width = 150,
                 Height = 28
@@ -259,25 +252,15 @@ namespace WC3ItemManager
                 Padding = new Padding(5)
             };
             
-            iconImages = GetSharedImageList();
-
-            iconList = new ListView
+            flowIcons = new FlowLayoutPanel
             {
                 Dock = DockStyle.Fill,
-                View = View.LargeIcon,
-                LargeImageList = iconImages,
-                MultiSelect = false,
-                HideSelection = false,
-                LabelWrap = true
+                AutoScroll = true,
+                WrapContents = true,
+                Padding = new Padding(5)
             };
-            iconList.SelectedIndexChanged += IconList_SelectedIndexChanged;
-            iconList.DoubleClick += IconList_DoubleClick;
-            iconList.MouseWheel += (s, e) => QueueVisibleThumbnailLoad();
-            iconList.MouseUp += (s, e) => QueueVisibleThumbnailLoad();
-            iconList.KeyUp += (s, e) => QueueVisibleThumbnailLoad();
-            iconList.Resize += (s, e) => QueueVisibleThumbnailLoad();
 
-            iconPanel.Controls.Add(iconList);
+            iconPanel.Controls.Add(flowIcons);
             splitContainer.Panel2.Controls.Add(iconPanel);
             
             // Bottom panel - buttons
@@ -318,7 +301,7 @@ namespace WC3ItemManager
         private void LoadIcons()
         {
             treeFolder.Nodes.Clear();
-            iconList.Items.Clear();
+            ClearIconButtons();
             lblStatus.Text = "Loading folder structure...";
             Application.DoEvents();
             
@@ -486,14 +469,13 @@ namespace WC3ItemManager
             return icons;
         }
 
-        private void FilterIcons()
+        private async void FilterIcons()
         {
-            if (allIcons == null || iconList == null)
+            if (allIcons == null || flowIcons == null || isClosing)
                 return;
 
             searchTimer?.Stop();
-            thumbnailGeneration++;
-            loadingThumbnails.Clear();
+            int generation = ++loadGeneration;
             string search = txtSearch.Text.Trim();
             string category = cmbCategory.SelectedItem?.ToString() ?? "All";
 
@@ -507,26 +489,35 @@ namespace WC3ItemManager
             if (category != "All")
                 filtered = filtered.Where(icon => GetVirtualCategory(icon) == category);
 
-            var results = filtered.ToList();
-            iconList.BeginUpdate();
-            iconList.Items.Clear();
+            List<IconEntry> results = filtered.ToList();
+            ClearIconButtons();
             selectedIcon = null;
             btnSelect.Enabled = false;
-            var items = results.Select(icon =>
-            {
-                int imageIndex = displayedImageIndexes.TryGetValue(icon.FullPath, out int cachedIndex)
-                    ? cachedIndex
-                    : 0;
-                return new ListViewItem(icon.Name, imageIndex) { Tag = icon };
-            }).ToArray();
-            iconList.Items.AddRange(items);
-            iconList.EndUpdate();
 
             lblStatus.ForeColor = Color.Gray;
             lblStatus.Text = results.Count == 0
                 ? "No matching icons in this folder"
-                : $"Showing {results.Count} icons; thumbnails load as you browse";
-            QueueVisibleThumbnailLoad();
+                : $"Loading {results.Count} icons...";
+
+            try
+            {
+                await LoadIconButtonsAsync(results, generation);
+                if (generation == loadGeneration && !isClosing)
+                    lblStatus.Text = $"Showing {results.Count} icons";
+            }
+            catch (ObjectDisposedException)
+            {
+                // The selector closed while a thumbnail batch was loading.
+            }
+            catch (Exception ex)
+            {
+                if (generation == loadGeneration && !isClosing)
+                {
+                    lblStatus.Text = $"Error loading icon thumbnails: {ex.Message}";
+                    lblStatus.ForeColor = Color.Red;
+                }
+                System.Diagnostics.Debug.WriteLine($"[IconSelector] Thumbnail loading failed: {ex}");
+            }
         }
 
         private IEnumerable<IconEntry> GetIconsInCurrentScope()
@@ -570,151 +561,112 @@ namespace WC3ItemManager
             return "Other";
         }
 
-        private void QueueVisibleThumbnailLoad()
+        private async System.Threading.Tasks.Task LoadIconButtonsAsync(List<IconEntry> icons, int generation)
         {
-            if (isClosing || iconList == null || iconList.IsDisposed || !iconList.IsHandleCreated)
-                return;
-            try
-            {
-                iconList.BeginInvoke(new Action(LoadVisibleThumbnailsAsync));
-            }
-            catch (InvalidOperationException)
-            {
-                // The dialog was closed before the deferred viewport load could be queued.
-            }
-        }
+            const int batchSize = 40;
 
-        private async void LoadVisibleThumbnailsAsync()
-        {
-            try
+            for (int offset = 0; offset < icons.Count; offset += batchSize)
             {
-                await LoadVisibleThumbnailsCoreAsync();
-            }
-            catch (ObjectDisposedException)
-            {
-                // The selector was closed while a thumbnail was loading.
-            }
-            catch (Exception ex)
-            {
-                if (!isClosing && lblStatus != null && !lblStatus.IsDisposed)
-                {
-                    lblStatus.Text = $"Error loading icon thumbnails: {ex.Message}";
-                    lblStatus.ForeColor = Color.Red;
-                }
-                System.Diagnostics.Debug.WriteLine($"[IconSelector] Thumbnail loading failed: {ex}");
-            }
-        }
-
-        private async System.Threading.Tasks.Task LoadVisibleThumbnailsCoreAsync()
-        {
-            if (iconList.IsDisposed || iconList.Items.Count == 0)
-                return;
-
-            int generation = thumbnailGeneration;
-            List<int> visibleIndexes = GetVisibleIconIndexes();
-
-            foreach (int index in visibleIndexes)
-            {
-                if (generation != thumbnailGeneration || iconList.IsDisposed)
+                if (generation != loadGeneration || isClosing)
                     return;
 
-                ListViewItem item = iconList.Items[index];
-                if (!(item.Tag is IconEntry icon) || item.ImageIndex != 0)
-                    continue;
-                if (!loadingThumbnails.Add(icon.FullPath))
-                    continue;
+                List<IconEntry> batch = icons.Skip(offset).Take(batchSize).ToList();
+                List<(IconEntry Icon, Image Image, bool Cached)> loaded =
+                    await System.Threading.Tasks.Task.Run(() => batch.Select(icon =>
+                    {
+                        Image image = LoadImageWithCache(icon.FullPath, out bool cached);
+                        return (icon, image, cached);
+                    }).ToList());
 
-                var loaded = await System.Threading.Tasks.Task.Run(() =>
+                if (generation != loadGeneration || isClosing || flowIcons.IsDisposed)
                 {
-                    Image image = LoadImageWithCache(icon.FullPath, out bool cached);
-                    return (Image: image, Cached: cached);
-                });
-                loadingThumbnails.Remove(icon.FullPath);
-
-                if (generation != thumbnailGeneration || iconList.IsDisposed)
-                {
-                    if (!loaded.Cached)
-                        loaded.Image?.Dispose();
+                    DisposeUncachedImages(loaded);
                     return;
                 }
 
-                if (loaded.Image == null)
-                    continue;
-
-                if (!displayedImageIndexes.TryGetValue(icon.FullPath, out int imageIndex))
+                flowIcons.SuspendLayout();
+                foreach (var item in loaded)
                 {
-                    if (iconImages.Images.Count >= DISPLAYED_IMAGE_LIMIT)
-                        ResetThumbnailImages();
-                    using (var listImage = new Bitmap(loaded.Image))
-                        iconImages.Images.Add(listImage);
-                    imageIndex = iconImages.Images.Count - 1;
-                    displayedImageIndexes[icon.FullPath] = imageIndex;
+                    Button button = CreateIconButton(item.Icon, item.Image, item.Cached);
+                    flowIcons.Controls.Add(button);
+                    if (!string.IsNullOrEmpty(requestedIconPath) &&
+                        NormalizeComparableIconPath(item.Icon.RelativePath) == requestedIconPath)
+                    {
+                        SelectIcon(button, item.Icon);
+                        requestedIconPath = "";
+                    }
                 }
-                if (!loaded.Cached)
-                    loaded.Image.Dispose();
-
-                if (item.ListView == iconList)
-                    item.ImageIndex = imageIndex;
+                int loadedCount = Math.Min(offset + batch.Count, icons.Count);
+                flowIcons.ResumeLayout(false);
+                if (loadedCount % 400 == 0 || loadedCount == icons.Count)
+                    flowIcons.PerformLayout();
+                lblStatus.Text = $"Loading {loadedCount}/{icons.Count} icons...";
+                await System.Threading.Tasks.Task.Yield();
             }
         }
 
-        private List<int> GetVisibleIconIndexes()
+        private static void DisposeUncachedImages(List<(IconEntry Icon, Image Image, bool Cached)> loaded)
         {
-            var hitIndexes = new HashSet<int>();
-            const int sampleStep = 24;
-
-            for (int y = 0; y < iconList.ClientSize.Height; y += sampleStep)
+            foreach (var item in loaded)
             {
-                for (int x = 0; x < iconList.ClientSize.Width; x += sampleStep)
-                {
-                    ListViewItem item = iconList.GetItemAt(x, y);
-                    if (item != null)
-                        hitIndexes.Add(item.Index);
-                }
+                if (!item.Cached)
+                    item.Image?.Dispose();
             }
-
-            if (hitIndexes.Count == 0 && iconList.Items.Count > 0)
-            {
-                ListViewItem nearest = iconList.FindNearestItem(
-                    SearchDirectionHint.Down,
-                    new Point(iconList.ClientSize.Width / 2, 0));
-                hitIndexes.Add(nearest?.Index ?? 0);
-            }
-
-            int columns = Math.Max(1, iconList.ClientSize.Width / 90);
-            int firstIndex = Math.Max(0, hitIndexes.Min() - columns);
-            int lastIndex = Math.Min(iconList.Items.Count - 1, hitIndexes.Max() + columns * 2);
-            return Enumerable.Range(firstIndex, lastIndex - firstIndex + 1).ToList();
         }
 
-        private void IconList_SelectedIndexChanged(object sender, EventArgs e)
+        private Button CreateIconButton(IconEntry icon, Image image, bool cached)
         {
-            selectedIcon = iconList.SelectedItems.Count == 1
-                ? iconList.SelectedItems[0].Tag as IconEntry
-                : null;
-            btnSelect.Enabled = selectedIcon != null;
-            QueueVisibleThumbnailLoad();
-        }
-
-        private void IconList_DoubleClick(object sender, EventArgs e)
-        {
-            if (selectedIcon != null)
+            string label = icon.Name.Length > 18 ? icon.Name.Substring(0, 15) + "..." : icon.Name;
+            var button = new Button
             {
-                BtnSelect_Click(sender, e);
+                Width = 92,
+                Height = 112,
+                Margin = new Padding(4),
+                Padding = new Padding(3),
+                Text = label,
+                Image = image,
+                ImageAlign = ContentAlignment.TopCenter,
+                TextAlign = ContentAlignment.BottomCenter,
+                TextImageRelation = TextImageRelation.ImageAboveText,
+                Font = iconButtonFont,
+                Tag = icon,
+                UseVisualStyleBackColor = false,
+                BackColor = SystemColors.Control
+            };
+            button.Click += (s, e) => SelectIcon(button, icon);
+            button.MouseDoubleClick += (s, e) =>
+            {
+                SelectIcon(button, icon);
+                BtnSelect_Click(s, e);
                 DialogResult = DialogResult.OK;
-            }
+            };
+            if (!cached && image != null)
+                uncachedButtonImages[button] = image;
+            return button;
+        }
+
+        private void SelectIcon(Button button, IconEntry icon)
+        {
+            if (selectedButton != null && !selectedButton.IsDisposed)
+                selectedButton.BackColor = SystemColors.Control;
+
+            button.BackColor = Color.LightBlue;
+            selectedButton = button;
+            selectedIcon = icon;
+            btnSelect.Enabled = true;
         }
 
         private void HighlightIcon(string path)
         {
-            string normalizedPath = NormalizeComparableIconPath(path);
-            foreach (ListViewItem item in iconList.Items)
+            requestedIconPath = NormalizeComparableIconPath(path);
+            foreach (Button button in flowIcons.Controls.OfType<Button>())
             {
-                if (item.Tag is IconEntry icon &&
-                    NormalizeComparableIconPath(icon.RelativePath) == normalizedPath)
+                if (button.Tag is IconEntry icon &&
+                    NormalizeComparableIconPath(icon.RelativePath) == requestedIconPath)
                 {
-                    item.Selected = true;
-                    item.EnsureVisible();
+                    SelectIcon(button, icon);
+                    button.Focus();
+                    requestedIconPath = "";
                     break;
                 }
             }
@@ -727,53 +679,29 @@ namespace WC3ItemManager
                 .ToLowerInvariant();
         }
 
-        private static Bitmap CreatePlaceholderImage()
+        private void ClearIconButtons()
         {
-            var bitmap = new Bitmap(64, 64, PixelFormat.Format32bppPArgb);
-            using (Graphics graphics = Graphics.FromImage(bitmap))
-                graphics.Clear(Color.FromArgb(35, 35, 35));
-            return bitmap;
-        }
+            if (flowIcons == null || flowIcons.IsDisposed)
+                return;
 
-        private static ImageList GetSharedImageList()
-        {
-            lock (cacheLock)
+            selectedButton = null;
+            flowIcons.SuspendLayout();
+            foreach (Control control in flowIcons.Controls.Cast<Control>().ToArray())
             {
-                if (sharedIconImages == null)
+                if (control is Button button)
                 {
-                    sharedIconImages = new ImageList
+                    button.Image = null;
+                    if (uncachedButtonImages.TryGetValue(button, out Image ownedImage))
                     {
-                        ColorDepth = ColorDepth.Depth32Bit,
-                        ImageSize = new Size(64, 64)
-                    };
-                    using (Bitmap placeholder = CreatePlaceholderImage())
-                        sharedIconImages.Images.Add(placeholder);
+                        ownedImage.Dispose();
+                        uncachedButtonImages.Remove(button);
+                    }
                 }
-                return sharedIconImages;
+                control.Dispose();
             }
-        }
-
-        private void ResetDisplayedImages()
-        {
-            thumbnailGeneration++;
-            iconList.Items.Clear();
-            displayedImageIndexes.Clear();
-            loadingThumbnails.Clear();
-            iconImages.Images.Clear();
-            using (Bitmap placeholder = CreatePlaceholderImage())
-                iconImages.Images.Add(placeholder);
-        }
-
-        private void ResetThumbnailImages()
-        {
-            iconList.BeginUpdate();
-            foreach (ListViewItem item in iconList.Items)
-                item.ImageIndex = 0;
-            iconImages.Images.Clear();
-            using (Bitmap placeholder = CreatePlaceholderImage())
-                iconImages.Images.Add(placeholder);
-            displayedImageIndexes.Clear();
-            iconList.EndUpdate();
+            flowIcons.Controls.Clear();
+            uncachedButtonImages.Clear();
+            flowIcons.ResumeLayout();
         }
         
         private Image LoadImageWithCache(string fullPath, out bool isCached)
@@ -1151,7 +1079,6 @@ namespace WC3ItemManager
                 imageCache.Clear();
                 allIconCache = null;
                 allIconCacheKey = "";
-                displayedImageIndexes.Clear();
             }
         }
         
@@ -1175,7 +1102,8 @@ namespace WC3ItemManager
             {
                 if (configDialog.ShowDialog() == DialogResult.OK)
                 {
-                    ResetDisplayedImages();
+                    loadGeneration++;
+                    ClearIconButtons();
                     ClearCache();
                     LoadIcons(); // Reload icons with new paths
                 }
