@@ -24,6 +24,7 @@
     - QuestsGeneric_SetFactionReward(...) configures reputation rewards.
     - QuestsGeneric_SetExtendedDialogue(...) adds authored normal-quest lines.
     - QuestsGeneric_RegisterDailyAcceptanceVariant(...) adds a random line.
+    - QuestsGeneric_RegisterProgressVariant(...) adds shared incomplete dialogue.
     - QuestsGeneric_RegisterUnit(giver, displayName) instantiates templates.
     - QuestsGeneric_AddDialogButtons(...) adds managed quest choices.
     - QuestsGeneric_BeginAction/FinishPendingAction/CancelPendingAction manage
@@ -40,6 +41,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         private constant integer QG_MAX_DEFINITIONS = 128
         private constant integer QG_MAX_QUESTS = 512
         private constant integer QG_MAX_DAILY_VARIANTS = 96
+        private constant integer QG_MAX_PROGRESS_VARIANTS = 16
         private constant integer QG_ACTION_BASE = 10000
         private constant integer QG_PENDING_ACCEPT = 1
         private constant integer QG_PENDING_COMPLETE = 2
@@ -79,6 +81,11 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         private integer array QG_DailyVariantObjectiveType
         private string array QG_DailyVariantText
         private integer array QG_DailyVariantVoiceIndex
+
+        private integer QG_ProgressVariantCount = 0
+        private integer array QG_ProgressVariantObjectiveType
+        private string array QG_ProgressVariantText
+        private string array QG_ProgressVariantSoundKey
 
         private string QG_HeroAcceptText = ""
         private string QG_HeroCompleteKillText = ""
@@ -215,6 +222,19 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         set QG_DailyVariantVoiceIndex[QG_DailyVariantCount] = voiceIndex
     endfunction
 
+    public function RegisterProgressVariant takes integer objectiveType, string text, string soundKey returns nothing
+        if objectiveType < OBJECTIVE_FETCH or objectiveType > OBJECTIVE_PURCHASE or text == null or text == "" or QG_ProgressVariantCount >= QG_MAX_PROGRESS_VARIANTS then
+            return
+        endif
+        set QG_ProgressVariantCount = QG_ProgressVariantCount + 1
+        set QG_ProgressVariantObjectiveType[QG_ProgressVariantCount] = objectiveType
+        set QG_ProgressVariantText[QG_ProgressVariantCount] = text
+        if soundKey == null then
+            set soundKey = ""
+        endif
+        set QG_ProgressVariantSoundKey[QG_ProgressVariantCount] = soundKey
+    endfunction
+
     private function QG_GetInfoText takes string questType returns string
         if questType == "daily" then
             return "|cff80a0ffDaily quest|r\n\n"
@@ -304,23 +324,11 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         return QG_TargetAmount[definitionId]
     endfunction
 
-    private function QG_GetButtonLabel takes QuestData q returns string
-        if q.state == QUEST_STATE_AVAILABLE then
-            return "|cff00ff00[!]|r " + q.title
-        elseif q.state == QUEST_STATE_READY_TURNIN then
-            return "|cffffff00[?]|r " + q.title
-        elseif q.state == QUEST_STATE_IN_PROGRESS then
-            return "|cffaaaaaa[-]|r " + q.title
-        endif
-        return ""
-    endfunction
-
     public function AddDialogButtons takes dialog d, unit giver, code actionFunc returns integer
         local integer count
         local integer index = 1
         local integer added = 0
         local integer questId
-        local string label
         local QuestData q
         local button b
 
@@ -336,9 +344,8 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
             set questId = QuestMaster_GetGiverQuestIdByIndex(giver, index)
             if QG_DefinitionByQuest.integer.has(questId) then
                 set q = QuestMaster_GetById(questId)
-                set label = QG_GetButtonLabel(q)
-                if label != "" then
-                    set b = DialogSystem_AddButton(d, label, QG_ACTION_BASE + questId)
+                set b = DialogSystem_AddButtonQuestState(d, q.title, q.state, QG_ACTION_BASE + questId)
+                if b != null then
                     call DialogSystem_BindButtonCode(b, actionFunc)
                     set added = added + 1
                 endif
@@ -422,6 +429,42 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         set giver = null
     endfunction
 
+    private function QG_AddProgressVariant takes integer seq, unit giver, string giverName, integer definitionId, QuestData q returns nothing
+        local integer index = 1
+        local integer count = 0
+        local integer selected
+
+        loop
+            exitwhen index > QG_ProgressVariantCount
+            if QG_ProgressVariantObjectiveType[index] == QG_ObjectiveType[definitionId] then
+                set count = count + 1
+            endif
+            set index = index + 1
+        endloop
+        if count <= 0 then
+            call DialogSystem_AddLine(seq, giver, giverName, QG_GiverProgressPrefix + q.title + ". " + q.requirement1, "", true)
+            set giver = null
+            return
+        endif
+
+        set selected = GetRandomInt(1, count)
+        set index = 1
+        set count = 0
+        loop
+            exitwhen index > QG_ProgressVariantCount
+            if QG_ProgressVariantObjectiveType[index] == QG_ObjectiveType[definitionId] then
+                set count = count + 1
+                if count == selected then
+                    call DialogSystem_AddLine(seq, giver, giverName, QG_ProgressVariantText[index] + " " + q.requirement1, QG_ProgressVariantSoundKey[index], true)
+                    set giver = null
+                    return
+                endif
+            endif
+            set index = index + 1
+        endloop
+        set giver = null
+    endfunction
+
     private function QG_CreateActionSequence takes unit giver, string giverName, unit hero, integer definitionId, QuestData q, integer pendingAction returns integer
         local integer seq = DialogSystem_CreateSequence()
         local string soundKey
@@ -448,7 +491,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
             endif
         else
             call DialogInteraction_AddHeroLookAtLine(seq, hero, giver, QG_HeroProgressText, "")
-            call DialogSystem_AddLine(seq, giver, giverName, QG_GiverProgressPrefix + q.title + ". " + q.requirement1, "", true)
+            call QG_AddProgressVariant(seq, giver, giverName, definitionId, q)
         endif
         set giver = null
         set hero = null

@@ -843,7 +843,7 @@ public function AddButtonPrevious takes dialog d, integer actionId returns butto
 endfunction
 
 public function AddButtonQuestAccept takes dialog d, string questName, integer actionId returns button
-	local button b = AddButton(d, questName + " (Accept)", actionId)
+	local button b = AddButton(d, "|cff00ff00[!]|r " + questName, actionId)
 	if b != null then
 		set DialogButtonLineAction.integer[GetHandleId(b)] = DIALOG_LINE_ACTION_ACCEPT
 	endif
@@ -851,7 +851,7 @@ public function AddButtonQuestAccept takes dialog d, string questName, integer a
 endfunction
 
 public function AddButtonQuestAcceptNoAutoPlay takes dialog d, string questName, integer actionId returns button
-	return AddButton(d, questName + " (Accept)", actionId)
+	return AddButton(d, "|cff00ff00[!]|r " + questName, actionId)
 endfunction
 
 public function AddButtonQuestFailed takes dialog d, string questName, integer actionId returns button
@@ -859,11 +859,22 @@ public function AddButtonQuestFailed takes dialog d, string questName, integer a
 endfunction
 
 public function AddButtonQuestComplete takes dialog d, string questName, integer actionId returns button
-	return AddButton(d, questName + " (Completion)", actionId)
+	return AddButton(d, "|cffffff00[?]|r " + questName, actionId)
 endfunction
 
 public function AddButtonQuestSubComplete takes dialog d, string questName, integer actionId returns button
 	return AddButton(d, questName + " (Sub-Complete)", actionId)
+endfunction
+
+public function AddButtonQuestState takes dialog d, string questName, integer questState, integer actionId returns button
+	if questState == QUEST_STATE_AVAILABLE then
+		return AddButtonQuestAcceptNoAutoPlay(d, questName, actionId)
+	elseif questState == QUEST_STATE_READY_TURNIN then
+		return AddButtonQuestComplete(d, questName, actionId)
+	elseif questState == QUEST_STATE_IN_PROGRESS then
+		return AddButton(d, "|cffaaaaaa[-]|r " + questName, actionId)
+	endif
+	return null
 endfunction
 
 public function AddButtonQuestItemRecovery takes dialog d, string itemName, integer actionId returns button

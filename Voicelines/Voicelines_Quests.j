@@ -27,6 +27,7 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound
         constant string VL_VENDORQUEST_BONECRUSHER_TYPE = "VendorQuestBonecrusher_"
         constant string VL_VENDORQUEST_ELARINDOR_TYPE = "VendorQuestElarindor_"
         constant string VL_VENDORQUEST_TAUREN_TYPE = "VendorQuestTauren_"
+        constant string VL_QUEST_GENERIC_TYPE = "QuestGeneric_"
 
         // Shared unvoiced hero and progress dialogue.
         constant string VL_QUEST_HERO_ACCEPT = "I will see it done."
@@ -237,6 +238,21 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound
         call RegisterDailySet(VL_VENDORQUEST_TAUREN_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 12, "Take only what the earth offers freely, and waste nothing.", "Choose sound materials; patient work begins with honest substance.", "Carry the burden evenly and the road will feel shorter.")
     endfunction
 
+    private function RegisterProgressDialogue takes nothing returns nothing
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_KILL, "The danger remains.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 1))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_KILL, "The road is not safe yet.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 2))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_KILL, "Finish the hunt, then return.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 3))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_FETCH, "The shipment is still short.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 4))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_FETCH, "I still need the remaining materials.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 5))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_FETCH, "Bring the full amount before we settle this.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 6))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_TALK, "The message has not reached its destination.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 7))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_TALK, "Speak with the one I named, then come back.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 8))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_TALK, "The other party is still waiting for you.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 9))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_PURCHASE, "The required goods have not been purchased yet.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 10))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_PURCHASE, "Return after you have bought the full order.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 11))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_PURCHASE, "The merchant still has what this commission needs.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 12))
+    endfunction
+
     private function Init takes nothing returns nothing
         call QuestsGeneric_ConfigureSharedDialogue(VL_QUEST_HERO_ACCEPT, VL_QUEST_HERO_COMPLETE_KILL, VL_QUEST_HERO_COMPLETE_FETCH, VL_QUEST_HERO_COMPLETE_TALK, VL_QUEST_HERO_PROGRESS, VL_QUEST_GIVER_PROGRESS)
         call ExSound_RegisterSequence(VL_VENDORQUEST_ORC_TYPE, 1, 43, "Pots\\Sound\\Voicelines\\VendorQuestOrc\\")
@@ -246,6 +262,8 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound
         call ExSound_RegisterSequence(VL_VENDORQUEST_BONECRUSHER_TYPE, 1, 25, "Pots\\Sound\\Voicelines\\VendorQuestBonecrusher\\")
         call ExSound_RegisterSequence(VL_VENDORQUEST_ELARINDOR_TYPE, 1, 25, "Pots\\Sound\\Voicelines\\VendorQuestElarindor\\")
         call ExSound_RegisterSequence(VL_VENDORQUEST_TAUREN_TYPE, 1, 14, "Pots\\Sound\\Voicelines\\VendorQuestTauren\\")
+        call ExSound_RegisterSequence(VL_QUEST_GENERIC_TYPE, 1, 12, "Pots\\Sound\\Voicelines\\QuestGeneric\\")
         call RegisterDailyDialogue()
+        call RegisterProgressDialogue()
     endfunction
 endlibrary
