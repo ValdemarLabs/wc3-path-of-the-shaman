@@ -192,13 +192,12 @@ Use `Player(7)` as the Morgrim Clan owner. The vendor libraries also bind these 
 | Rawcode | Name | Editor suffix | Gender | Intended zone | Quest giver | Placed |
 |---|---|---|---|---|---|---|
 | `h00T` | Durnik Forgefather | Morgrim Blacksmith | Male | Dragonfire Peaks | — | Yes |
-| `h00U` | Helga Ironbraid | Morgrim Blacksmith | Female | Dragonfire Peaks | — | Yes |
+| `h00U` | Helgar Ironbraid | Morgrim Blacksmith | Male | Dragonfire Peaks | — | Yes |
 | `h00V` | Torren Deepsteel | Morgrim Blacksmith | Male | Emberpeak Highlands | — | Yes |
 | `h00W` | Bruni Axeledger | Morgrim Weapons Vendor | Male | Dragonfire Peaks | — | Yes |
-| `h00X` | Hilda Stoneplate | Morgrim Armor Vendor | Female | Havenwoods | — | Yes |
+| `h00X` | Hildrek Stoneplate | Morgrim Armor Vendor | Male | Havenwoods | — | Yes |
 | `h00Y` | Keld Coalvein | Morgrim Blacksmithing Supplier | Male | Dragonfire Peaks | — | Yes |
 | `h00Z` | Orin Deepdelver | Morgrim Miner | Male | Dragonfire Peaks | — | Yes |
-| `h010` | Magda Caskcoin | Morgrim Trade Goods Merchant | Female | Havenwoods | — | Yes |
+| `h010` | Magdor Caskcoin | Morgrim Trade Goods Merchant | Male | Havenwoods | — | Yes |
 
-Morgrim trade dialogue reserves `VendorDwarfMorgrim_0001-0015`; missing recordings use text-duration fallback.
-Note: all dwarfs must be changed to males (this concerns mostly naming but also lines could be affected)
+All Morgrim Dwarf vendors are male. `VendorCatalogs.j` and `VendorDwarves.j` bind this current `h00T`-`h010` Object Editor range directly. Morgrim trade dialogue reserves the male-only `VendorDwarfMorgrimMale_0001-0015` range; missing recordings use text-duration fallback.
