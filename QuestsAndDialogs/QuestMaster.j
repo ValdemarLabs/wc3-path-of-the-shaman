@@ -2734,14 +2734,14 @@ private function GetHighestHeroLevel takes nothing returns integer
 		endif
 	endloop
 
-	if udg_Nazgrek != null and IsUnitType(udg_Nazgrek, UNIT_TYPE_HERO) then
+	if udg_Nazgrek != null and GetOwningPlayer(udg_Nazgrek) == Player(0) and IsUnitType(udg_Nazgrek, UNIT_TYPE_HERO) then
 		set level = GetHeroLevel(udg_Nazgrek)
 		if level > bestLevel then
 			set bestLevel = level
 		endif
 	endif
 
-	if udg_Zulkis != null and IsUnitType(udg_Zulkis, UNIT_TYPE_HERO) then
+	if udg_Zulkis != null and GetOwningPlayer(udg_Zulkis) == Player(0) and IsUnitType(udg_Zulkis, UNIT_TYPE_HERO) then
 		set level = GetHeroLevel(udg_Zulkis)
 		if level > bestLevel then
 			set bestLevel = level
@@ -2762,14 +2762,14 @@ private function GetHighestAllowedHeroLevel takes QuestData q returns integer
 		return GetHighestHeroLevel()
 	endif
 
-	if q.levelCheckAllowNazgrek and udg_Nazgrek != null and IsUnitType(udg_Nazgrek, UNIT_TYPE_HERO) then
+	if q.levelCheckAllowNazgrek and udg_Nazgrek != null and GetOwningPlayer(udg_Nazgrek) == Player(0) and IsUnitType(udg_Nazgrek, UNIT_TYPE_HERO) then
 		set level = GetHeroLevel(udg_Nazgrek)
 		if level > bestLevel then
 			set bestLevel = level
 		endif
 	endif
 
-	if q.levelCheckAllowZulkis and udg_Zulkis != null and IsUnitType(udg_Zulkis, UNIT_TYPE_HERO) then
+	if q.levelCheckAllowZulkis and udg_Zulkis != null and GetOwningPlayer(udg_Zulkis) == Player(0) and IsUnitType(udg_Zulkis, UNIT_TYPE_HERO) then
 		set level = GetHeroLevel(udg_Zulkis)
 		if level > bestLevel then
 			set bestLevel = level
@@ -3006,7 +3006,6 @@ public function RefreshAvailabilityForGiver takes unit u returns nothing
 		call EvaluateQuest(GetById(questId))
 		set i = i + 1
 	endloop
-	call IconUpdateForNPC(u)
 endfunction
 
 public function RefreshAvailability takes nothing returns nothing
