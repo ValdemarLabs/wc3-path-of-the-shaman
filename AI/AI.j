@@ -85,6 +85,7 @@
     call AI_SetReviveRemaining(whichUnit, remaining)
     call AI_GetReviveRemaining(whichUnit) returns real
     call AI_IsReviving(whichUnit) returns boolean
+    call AI_RegisterAutomaticReviveCallback(callback)
     call AI_IsAlive(whichUnit) returns boolean
     call AI_UsesFakeDeath(whichUnit) returns boolean
     call AI_ReviveAt(whichUnit, x, y, showEffects) returns boolean
@@ -290,6 +291,7 @@ globals
     private Table ProfileCompanionRetreatDisabled = 0
     private Table ProfileProfession = 0
     private Table ProfileProfessionCount = 0
+    private trigger AutomaticReviveCallbacks = null
 
     private Table UnitTypeCap = 0
     private Table UnitTypeActiveCount = 0
@@ -1977,6 +1979,15 @@ private function CompleteRevive takes integer instanceId, unit whichUnit, real x
     call RefreshInstanceProfessionSkills(instanceId, whichUnit)
 endfunction
 
+private function RunAutomaticReviveCallbacks takes integer instanceId, unit whichUnit returns nothing
+    if AutomaticReviveCallbacks == null or instanceId <= 0 or whichUnit == null then
+        return
+    endif
+    call SetEventContext(instanceId, whichUnit, 0)
+    call TriggerExecute(AutomaticReviveCallbacks)
+    call ClearEventContext()
+endfunction
+
 public function ReviveAt takes unit whichUnit, real x, real y, boolean showEffects returns boolean
     local integer instanceId
     local timer reviveTimer
@@ -2017,6 +2028,7 @@ private function ReviveExpired takes nothing returns nothing
         set x = GetRectCenterX(graveyardRect)
         set y = GetRectCenterY(graveyardRect)
         call CompleteRevive(instanceId, whichUnit, x, y, true)
+        call RunAutomaticReviveCallbacks(instanceId, whichUnit)
     endif
     call ReviveTimerInstance.remove(timerId)
     call InstanceReviveTimer.timer.remove(instanceId)
@@ -2267,6 +2279,7 @@ public function RegisterProfile takes integer classId, integer unitTypeId, strin
     set ProfileUnitType[profileId] = unitTypeId
     set ProfileName.string[profileId] = profileName
     set ProfileReviveDelay.real[profileId] = AI_DEFAULT_REVIVE_DELAY
+    set ProfileUsesFakeDeath.boolean[profileId] = IsUnitIdType(unitTypeId, UNIT_TYPE_HERO)
     if UnitTypeDefaultProfile[unitTypeId] == 0 then
         set UnitTypeDefaultProfile[unitTypeId] = profileId
     endif
@@ -2399,6 +2412,14 @@ endfunction
 
 public function IsReviving takes unit whichUnit returns boolean
     return GetReviveTimer(whichUnit) != null
+endfunction
+
+public function RegisterAutomaticReviveCallback takes code callback returns nothing
+    call EnsureState()
+    if AutomaticReviveCallbacks == null then
+        set AutomaticReviveCallbacks = CreateTrigger()
+    endif
+    call TriggerAddAction(AutomaticReviveCallbacks, callback)
 endfunction
 
 public function ArePartyMembers takes unit firstUnit, unit secondUnit returns boolean
@@ -6701,6 +6722,9 @@ endfunction
 
 private function Init takes nothing returns nothing
     call EnsureState()
+    if AutomaticReviveCallbacks == null then
+        set AutomaticReviveCallbacks = CreateTrigger()
+    endif
     call CinematicMover_RegisterAiReviveCallbacks(function InspectCinematicReviveState, function CancelCinematicReviveTimer, function RestoreCinematicReviveTimer)
     set ThinkTimer = CreateTimer()
     call TimerStart(ThinkTimer, AI_THINK_INTERVAL, true, function Think)
