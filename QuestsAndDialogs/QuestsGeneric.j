@@ -25,6 +25,7 @@
     - QuestsGeneric_SetExtendedDialogue(...) adds authored normal-quest lines.
     - QuestsGeneric_RegisterDailyAcceptanceVariant(...) adds a random line.
     - QuestsGeneric_RegisterProgressVariant(...) adds shared incomplete dialogue.
+    - QuestsGeneric_HasDefinitionForUnitType(...) checks template ownership.
     - QuestsGeneric_RegisterUnit(giver, displayName) instantiates templates.
     - QuestsGeneric_AddDialogButtons(...) adds managed quest choices.
     - QuestsGeneric_BeginAction/FinishPendingAction/CancelPendingAction manage
@@ -247,6 +248,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
     private function QG_CreateQuest takes integer definitionId, unit giver, string giverName returns nothing
         local QuestData q
         local string info2Text
+        local string factionName
 
         if definitionId <= 0 or definitionId > QG_DefinitionCount or giver == null or QG_QuestCount >= QG_MAX_QUESTS then
             set giver = null
@@ -256,8 +258,15 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
             set giverName = GetUnitName(giver)
         endif
 
+        set factionName = QG_FactionName[definitionId]
+        if factionName == null or factionName == "" then
+            set factionName = Reputation_GetUnitFactionName(giver)
+        endif
         set info2Text = "|cffffcc00Recommended level:|r " + I2S(QG_QuestLevel[definitionId]) + "\n\n"
-        set q = QuestGiver_CreateConfiguredQuest(QG_QuestName[definitionId], giver, QG_QuestType[definitionId], QG_QuestLevel[definitionId], null, QG_Title[definitionId], QG_IconPath[definitionId], QG_Description[definitionId] + "\n\n", QG_GetInfoText(QG_QuestType[definitionId]), info2Text, QG_QuestLevel[definitionId], true, true, true, QG_FactionName[definitionId], giverName)
+        set q = QuestGiver_CreateConfiguredQuest(QG_QuestName[definitionId], giver, QG_QuestType[definitionId], QG_QuestLevel[definitionId], null, QG_Title[definitionId], QG_IconPath[definitionId], QG_Description[definitionId] + "\n\n", QG_GetInfoText(QG_QuestType[definitionId]), info2Text, QG_QuestLevel[definitionId], true, true, true, factionName, giverName)
+        if factionName != null and factionName != "" then
+            call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_NEUTRAL)
+        endif
         call QuestGiver_SetQuestRewards(q, true, 0, true, QG_GoldBonus[definitionId], false, 0, QG_ReputationBonus[definitionId] != 0, QG_ReputationBonus[definitionId], QG_ReputationLinked[definitionId])
 
         if QG_ObjectiveType[definitionId] == OBJECTIVE_FETCH or QG_ObjectiveType[definitionId] == OBJECTIVE_PURCHASE then
@@ -273,6 +282,22 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         set QG_DefinitionByQuest.integer[q.id] = definitionId
         call QuestMaster_RefreshAvailabilityForGiver(giver)
         set giver = null
+    endfunction
+
+    public function HasDefinitionForUnitType takes integer unitTypeId returns boolean
+        local integer definitionId = 1
+
+        if unitTypeId == 0 then
+            return false
+        endif
+        loop
+            exitwhen definitionId > QG_DefinitionCount
+            if QG_GiverUnitType[definitionId] == unitTypeId then
+                return true
+            endif
+            set definitionId = definitionId + 1
+        endloop
+        return false
     endfunction
 
     public function RegisterUnit takes unit giver, string giverName returns nothing
