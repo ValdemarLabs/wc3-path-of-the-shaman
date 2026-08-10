@@ -49,6 +49,8 @@
     - call Shop_SellViewItem(player, seller, viewIndex)
     - call Shop_AIBuySimple(aiUnit, vendor)
     - call Shop_AISellSimple(aiUnit, vendor)
+    - set priceCap = Shop_GetAIPriceCap()
+    - set utility = Shop_GetAIVendorUtility(aiUnit, vendor, priceCap)
 
 **/
 library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
@@ -69,10 +71,10 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
         private constant integer SHP_MAX_RECENT_SOLD_PER_VENDOR = 64
         private constant integer SHP_RANDOM_OPTION_STRIDE = 12
         private constant integer SHP_SELL_PERCENT = 50
-        private constant integer SHP_AI_PRICE_BASE = 550
-        private constant integer SHP_AI_PRICE_PER_LEVEL = 95
-        private constant integer SHP_AI_PRICE_HARD_CAP = 2500
-        private constant integer SHP_AI_MAX_DUPLICATE_ITEMS = 3
+        private constant integer SHP_AI_PRICE_BASE = 60
+        private constant integer SHP_AI_PRICE_PER_LEVEL = 28
+        private constant integer SHP_AI_PRICE_HARD_CAP = 1500
+        private constant integer SHP_AI_MAX_DUPLICATE_ITEMS = 2
         private constant real SHP_REPLENISH_INTERVAL = 1.00
         private constant real SHP_RANDOM_STOCK_UPDATE_INTERVAL = 1.00
         private constant real SHP_DEFAULT_RANDOM_STOCK_INTERVAL = 900.00
@@ -439,21 +441,40 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
         return value
     endfunction
 
-    private function SHP_GetAIPriceCap takes unit buyer returns integer
+    private function SHP_GetPlayerHeroScaleLevel takes nothing returns integer
+        local group heroes = CreateGroup()
+        local unit hero
+        local integer heroLevel
+        local integer bestLevel = 1
+
+        call GroupEnumUnitsOfPlayer(heroes, Player(0), null)
+        loop
+            set hero = FirstOfGroup(heroes)
+            exitwhen hero == null
+            call GroupRemoveUnit(heroes, hero)
+            if IsUnitType(hero, UNIT_TYPE_HERO) then
+                set heroLevel = GetHeroLevel(hero)
+                if heroLevel > bestLevel then
+                    set bestLevel = heroLevel
+                endif
+            endif
+        endloop
+
+        call DestroyGroup(heroes)
+        set hero = null
+        set heroes = null
+        return bestLevel
+    endfunction
+
+    private function SHP_GetAIPriceCap takes nothing returns integer
         local integer heroLevel = 1
         local integer priceCap
 
-        if buyer != null and IsUnitType(buyer, UNIT_TYPE_HERO) then
-            set heroLevel = GetHeroLevel(buyer)
-            if heroLevel < 1 then
-                set heroLevel = 1
-            endif
-        endif
+        set heroLevel = SHP_GetPlayerHeroScaleLevel()
         set priceCap = SHP_AI_PRICE_BASE + heroLevel * SHP_AI_PRICE_PER_LEVEL
         if priceCap > SHP_AI_PRICE_HARD_CAP then
             set priceCap = SHP_AI_PRICE_HARD_CAP
         endif
-        set buyer = null
         return priceCap
     endfunction
 
@@ -1949,16 +1970,114 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
         return result
     endfunction
 
+    private function SHP_GetAIReputationPlayer takes unit buyer returns player
+        local Faction faction
+
+        if buyer == null then
+            return null
+        endif
+        set faction = Faction.getByUnit(buyer)
+        if faction != 0 and faction.p != null then
+            return faction.p
+        endif
+        return GetOwningPlayer(buyer)
+    endfunction
+
+    private function SHP_AreAIFactionsCompatible takes unit buyer, unit vendor returns boolean
+        local Faction buyerFaction
+        local Faction vendorFaction
+
+        if buyer == null or vendor == null then
+            return false
+        endif
+        set buyerFaction = Faction.getByUnit(buyer)
+        set vendorFaction = Faction.getByUnit(vendor)
+        if vendorFaction == 0 then
+            return true
+        endif
+        if buyerFaction == 0 or buyerFaction.p == null then
+            return false
+        endif
+        if buyerFaction == vendorFaction then
+            return true
+        endif
+        if buyerFaction.weights.real[vendorFaction.id] < 0.00 or vendorFaction.weights.real[buyerFaction.id] < 0.00 then
+            return false
+        endif
+        if Reputation.getRep(buyerFaction.p, vendorFaction) < Reputation_REP_NEUTRAL then
+            return false
+        endif
+        return vendorFaction.p == null or GetPlayerAlliance(buyerFaction.p, vendorFaction.p, ALLIANCE_PASSIVE)
+    endfunction
+
+    private function SHP_IsAIStockCandidate takes unit buyer, unit vendor, player reputationPlayer, integer stockId, integer priceCap returns boolean
+        local integer itemTypeId
+        local integer price
+
+        if buyer == null or vendor == null or reputationPlayer == null or not SHP_IsStockAvailable(stockId) or SHP_StockAiWeight[stockId] <= 0 then
+            return false
+        endif
+        if not SHP_MeetsStockReputation(reputationPlayer, vendor, stockId) or not SHP_StockMatchesVendorZone(stockId, vendor) then
+            return false
+        endif
+        set price = SHP_StockPrice[stockId]
+        if price > priceCap or (SHP_StockAiPriceCap[stockId] > 0 and price > SHP_StockAiPriceCap[stockId]) then
+            return false
+        endif
+        if SHP_StockKind[stockId] != SHOP_STOCK_KIND_ITEM then
+            return false
+        endif
+        set itemTypeId = SHP_StockItemType[stockId]
+        if SHP_IsEquipmentItemType(itemTypeId) then
+            return SHP_CountStoredItemType(buyer, itemTypeId) <= 0
+        endif
+        return SHP_CountStoredItemType(buyer, itemTypeId) < SHP_AI_MAX_DUPLICATE_ITEMS
+    endfunction
+
+    public function GetAIPriceCap takes nothing returns integer
+        return SHP_GetAIPriceCap()
+    endfunction
+
+    public function GetAIVendorUtility takes unit buyer, unit vendor, integer priceCap returns integer
+        local player reputationPlayer
+        local integer vendorId
+        local integer stockId = 1
+        local integer utility = 0
+
+        if buyer == null or vendor == null then
+            set buyer = null
+            set vendor = null
+            return 0
+        endif
+        set vendorId = Shop_GetVendorIdForUnit(vendor)
+        set reputationPlayer = SHP_GetAIReputationPlayer(buyer)
+        if priceCap <= 0 then
+            set priceCap = SHP_GetAIPriceCap()
+        endif
+        if vendorId > 0 and reputationPlayer != null and SHP_AreAIFactionsCompatible(buyer, vendor) and SHP_MeetsVendorReputation(reputationPlayer, vendor, vendorId) then
+            loop
+                exitwhen stockId > SHP_StockCount
+                if SHP_StockVendor[stockId] == vendorId and SHP_IsAIStockCandidate(buyer, vendor, reputationPlayer, stockId, priceCap) then
+                    set utility = utility + SHP_StockAiWeight[stockId]
+                endif
+                set stockId = stockId + 1
+            endloop
+        endif
+
+        set reputationPlayer = null
+        set buyer = null
+        set vendor = null
+        return utility
+    endfunction
+
     public function AIBuySimple takes unit buyer, unit vendor returns boolean
         local integer vendorId
         local integer stockId = 1
         local integer selectedStock = 0
         local integer totalWeight = 0
         local integer priceCap
-        local integer itemTypeId
-        local integer price
         local integer weight
-        local boolean candidate
+        local player reputationPlayer
         local item boughtItem = null
 
         if buyer == null or vendor == null then
@@ -1968,36 +2087,29 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
         endif
 
         set vendorId = Shop_GetVendorIdForUnit(vendor)
-        if vendorId <= 0 or not Shop_CanPlayerTradeWithVendor(GetOwningPlayer(buyer), vendor) then
+        set reputationPlayer = SHP_GetAIReputationPlayer(buyer)
+        if vendorId <= 0 or reputationPlayer == null or not SHP_AreAIFactionsCompatible(buyer, vendor) or not SHP_MeetsVendorReputation(reputationPlayer, vendor, vendorId) then
+            set reputationPlayer = null
             set buyer = null
             set vendor = null
             return false
         endif
 
-        set priceCap = SHP_GetAIPriceCap(buyer)
+        set priceCap = SHP_GetAIPriceCap()
         loop
             exitwhen stockId > SHP_StockCount
-            if SHP_StockVendor[stockId] == vendorId and SHP_StockAiWeight[stockId] > 0 and SHP_IsStockAvailable(stockId) and SHP_MeetsStockReputation(GetOwningPlayer(buyer), vendor, stockId) and SHP_StockMatchesVendorZone(stockId, vendor) then
-                set candidate = false
-                set price = SHP_StockPrice[stockId]
+            if SHP_StockVendor[stockId] == vendorId and SHP_IsAIStockCandidate(buyer, vendor, reputationPlayer, stockId, priceCap) then
                 set weight = SHP_StockAiWeight[stockId]
-                if price <= priceCap and (SHP_StockAiPriceCap[stockId] <= 0 or price <= SHP_StockAiPriceCap[stockId]) then
-                    if SHP_StockKind[stockId] == SHOP_STOCK_KIND_ITEM then
-                        set itemTypeId = SHP_StockItemType[stockId]
-                        set candidate = (not SHP_IsEquipmentItemType(itemTypeId) and SHP_CountStoredItemType(buyer, itemTypeId) < SHP_AI_MAX_DUPLICATE_ITEMS) or (SHP_IsEquipmentItemType(itemTypeId) and SHP_CountStoredItemType(buyer, itemTypeId) <= 0)
-                    endif
-                    if candidate then
-                        set totalWeight = totalWeight + weight
-                        if GetRandomInt(1, totalWeight) <= weight then
-                            set selectedStock = stockId
-                        endif
-                    endif
+                set totalWeight = totalWeight + weight
+                if GetRandomInt(1, totalWeight) <= weight then
+                    set selectedStock = stockId
                 endif
             endif
             set stockId = stockId + 1
         endloop
 
         if selectedStock <= 0 then
+            set reputationPlayer = null
             set buyer = null
             set vendor = null
             return false
@@ -2010,6 +2122,7 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
         if boughtItem != null and Shop_GiveItemToUnit(buyer, boughtItem) then
             call SHP_ConsumeStock(selectedStock)
             set boughtItem = null
+            set reputationPlayer = null
             set buyer = null
             set vendor = null
             return true
@@ -2019,6 +2132,7 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
         endif
 
         set boughtItem = null
+        set reputationPlayer = null
         set buyer = null
         set vendor = null
         return false
@@ -2029,6 +2143,7 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
         local integer viewIndex = 1
         local integer selected = 0
         local boolean sold = false
+        local player reputationPlayer
         local item whichItem = null
 
         if seller == null or vendor == null then
@@ -2037,7 +2152,9 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
             return false
         endif
         set vendorId = Shop_GetVendorIdForUnit(vendor)
-        if vendorId <= 0 then
+        set reputationPlayer = SHP_GetAIReputationPlayer(seller)
+        if vendorId <= 0 or reputationPlayer == null or not SHP_AreAIFactionsCompatible(seller, vendor) or not SHP_MeetsVendorReputation(reputationPlayer, vendor, vendorId) then
+            set reputationPlayer = null
             set seller = null
             set vendor = null
             return false
@@ -2057,12 +2174,14 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
         if selected > 0 then
             set whichItem = null
             set sold = SHP_RemoveViewItem(null, seller, selected, vendorId, false, false)
+            set reputationPlayer = null
             set seller = null
             set vendor = null
             return sold
         endif
 
         set whichItem = null
+        set reputationPlayer = null
         set seller = null
         set vendor = null
         return false
