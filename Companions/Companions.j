@@ -205,6 +205,7 @@ globals
     private real OrderCommandX = 0.00
     private real OrderCommandY = 0.00
     private boolean OrderCommandAttack = false
+    private integer OrderCommandCount = 0
 endglobals
 
 private function DebugMsg takes string msg returns nothing
@@ -372,6 +373,11 @@ private function GetCompanionCommandLineKey takes integer commandId, integer mod
         return "Kick"
     elseif commandId == COMMAND_DROP_ITEMS then
         return "DropItems"
+    // Keep order commands separate so dedicated line sets can replace these fallbacks later.
+    elseif commandId == COMMAND_MOVE then
+        return "NormalMode"
+    elseif commandId == COMMAND_ATTACK then
+        return "AggressiveMode"
     elseif commandId == COMMAND_MODE then
         set mode = NormalizeMode(mode)
         if mode == COMPANION_MODE_PASSIVE then
@@ -1939,6 +1945,7 @@ private function ApplyOrderCommandTarget takes nothing returns nothing
     call TrackExistingControlUnit(controlledUnit)
     set unitId = GetHandleId(controlledUnit)
     if CompanionTracked[unitId] == 1 and CompanionSuspended[unitId] == 0 and NormalizeMode(CompanionMode[unitId]) != COMPANION_MODE_HOLD and IsAliveUnit(controlledUnit) then
+        set OrderCommandCount = OrderCommandCount + 1
         call ClearOrderIdleState(controlledUnit, GetUnitUserData(controlledUnit))
         call FollowSystem_RemoveUnit(controlledUnit)
         call ClearCompanionFarIcon(controlledUnit)
@@ -1983,10 +1990,19 @@ private function ApplyOrderCommand takes unit caster, unit target, real x, real 
     set OrderCommandX = x
     set OrderCommandY = y
     set OrderCommandAttack = attackCommand
+    set OrderCommandCount = 0
     call ForGroup(ModeTargetGroup, function ApplyOrderCommandTarget)
+    if OrderCommandCount > 0 then
+        if attackCommand then
+            call QueueCompanionCommandLine(COMMAND_ATTACK, 0)
+        else
+            call QueueCompanionCommandLine(COMMAND_MOVE, 0)
+        endif
+    endif
     call GroupClear(ModeTargetGroup)
     set OrderCommandCaster = null
     set OrderCommandTarget = null
+    set OrderCommandCount = 0
     set target = null
     set caster = null
 endfunction
