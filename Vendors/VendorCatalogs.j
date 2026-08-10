@@ -207,14 +207,14 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
         call RegisterVendorName('o01E', "Nara Stormhoof")
 
         // Morgrim Clan Dwarf vendors
-        call RegisterVendorName('n05C', "Durnik Forgefather")
-        call RegisterVendorName('n05D', "Helga Ironbraid")
-        call RegisterVendorName('n05E', "Torren Deepsteel")
-        call RegisterVendorName('n05F', "Bruni Axeledger")
-        call RegisterVendorName('n05G', "Hilda Stoneplate")
-        call RegisterVendorName('n05H', "Keld Coalvein")
-        call RegisterVendorName('n05I', "Orin Deepdelver")
-        call RegisterVendorName('n05J', "Magda Caskcoin")
+        call RegisterVendorName('h00T', "Durnik Forgefather")
+        call RegisterVendorName('h00U', "Helgar Ironbraid")
+        call RegisterVendorName('h00V', "Torren Deepsteel")
+        call RegisterVendorName('h00W', "Bruni Axeledger")
+        call RegisterVendorName('h00X', "Hildrek Stoneplate")
+        call RegisterVendorName('h00Y', "Keld Coalvein")
+        call RegisterVendorName('h00Z', "Orin Deepdelver")
+        call RegisterVendorName('h010', "Magdor Caskcoin")
 
         // Female Human vendors
         call RegisterVendorName('n04O', "Mara Vane")
