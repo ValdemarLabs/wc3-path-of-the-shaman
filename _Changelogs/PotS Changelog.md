@@ -19,6 +19,7 @@
 
 ### Player-Facing Updates
 
+- Companion Attack commands now use the Aggressive mode voice lines, while Move commands use the Normal mode voice lines.
 - Forest Trolls now grant Horde reputation using their actual Thornwoods unit types, and killing the Riverbane Bandit Lord now grants Riverbane reputation.
 - AI heroes, including Aveline, now use selectable retained Fake Death bodies and return normally when their automatic revival completes.
 - Nazgrek's starting Healing Salve and Spring Water now begin in his standard six-slot inventory instead of DInventory.
@@ -28,9 +29,13 @@
 - Selecting a vendor below its faction reputation requirement now reports that faction immediately instead of entering a conversation that cannot trade.
 - Quest dialogue buttons now use shared state markers, and incomplete generic quests draw from objective-specific kill, fetch, talk, and purchase responses.
 - All Morgrim Clan Dwarf vendors now use male names and the dedicated male Dwarf merchant voice profile.
+- Vendor dialogue and Trade UI cameras now remain locked to the active vendor until the interaction fully exits.
+- Vendor quest availability now updates independently of vendor selection using the higher Player(0)-owned Nazgrek or Zulkis level and the giver faction's Neutral reputation requirement.
+- Quest giver overhead markers now remain stable when an availability check leaves every quest in the same state.
 
 ### Technical Updates
 
+- Updated `Companions/Companions.j` with separate Move and Attack voice-line mappings, currently backed by the Normal and Aggressive mode line sets so dedicated command recordings can replace them later.
 - Updated `Reputation/Reputation.j`
   - Replaced the mistakenly registered Furbolg rawcodes with all six standard Forest Troll rawcodes used in Thornwoods.
   - Added the missing Bandit Lord rawcode to the hidden Bandit reputation source.
@@ -42,12 +47,18 @@
   - Slowed preset transitions to 4.5 seconds, expanded shot intervals to 16-26 seconds, constrained the built-in dialogue presets to 820-900 distance with moderated Z offsets, and extended path checks to blocking structures.
   - Added a ShopUI return callback that preserves the active camera and cinematic interaction while returning from trade to vendor choices.
   - Moved final vendor farewell playback outside cinematic mode.
+  - Locked the native camera target to the active dialogue unit and restored the tracked hero target during the smooth camera reset.
 - Updated `Vendors/VendorCatalogs.j` and `Vendors/VendorFactions/VendorDwarves.j` to replace obsolete `n05C`-`n05J` bindings with the documented Morgrim `h00T`-`h010` unit types.
 - Updated `Vendors/VendorCatalogs.j`, `Vendors/VendorFactions/VendorDwarves.j`, and `Voicelines/Voicelines_VendorLines.j` to rename the three female-named Dwarves and replace the neutral Morgrim voice key with male-only `VendorDwarfMorgrimMale_0001-0015` registration.
 - Updated `QuestsAndDialogs/DialogSystem.j`, `QuestsAndDialogs/QuestMaster.j`, `QuestsAndDialogs/QuestsGeneric.j`, `Reputation/Reputation.j`, and `Voicelines/Voicelines_Quests.j`
   - Centralized `[!]`, `[?]`, and in-progress quest-button formatting for vendor and authored quest givers.
   - Added immediate availability and overhead-marker refreshes for hero-level and reputation changes while retaining the periodic custom-condition fallback.
   - Added twelve reusable incomplete-objective lines and reserved `QuestGeneric_0001-0012` ExSound keys.
+- Updated `QuestsAndDialogs/QuestMaster.j`, `QuestsAndDialogs/QuestsGeneric.j`, `QuestsAndDialogs/QuestsVendor.j`, and `Vendors/VendorDialogs.j`
+  - Restricted vendor quest level checks to Player(0)-owned Nazgrek and Zulkis and selected the higher eligible hero level.
+  - Applied each giver's registered faction as a Neutral-standing availability requirement when no quest-specific faction override exists.
+  - Added an independent delayed vendor quest-giver scan and kept selection as an idempotent fallback rather than the quest creation event.
+- Updated `QuestsAndDialogs/QuestMaster.j` to rebuild a giver's overhead quest marker only when `QuestData.setState` detects an actual state transition.
 - Updated `Vendors/Help/infoVendors.md` and `Vendors/Help/VendorsHelper.md` with the Trade UI return lifecycle, quest refresh behavior, generic quest voice range, and current Morgrim rawcode contract.
 
 ### Actions Remaining
