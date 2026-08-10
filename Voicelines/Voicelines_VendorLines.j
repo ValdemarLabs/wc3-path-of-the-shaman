@@ -29,14 +29,14 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         constant string VL_VENDOR_PROFILE_HUMAN_STORMHAVEN_FEMALE = "Stormhaven Human Female"
         constant string VL_VENDOR_PROFILE_HUMAN_NEUTRAL_FEMALE = "Neutral Human Female"
         constant string VL_VENDOR_PROFILE_TAUREN_HORDE_MALE = "Horde Tauren Male"
-        constant string VL_VENDOR_PROFILE_DWARF_MORGRIM = "Morgrim Clan Dwarf"
+        constant string VL_VENDOR_PROFILE_DWARF_MORGRIM_MALE = "Morgrim Clan Dwarf Male"
         constant string VL_VENDOR_PROFILE_ELARINDOR_MALE = "Elarindor Male"
         constant string VL_VENDOR_PROFILE_ELARINDOR_FEMALE = "Elarindor Female"
 
         constant string VL_VENDOR_HUMAN_MALE_TYPE = "VendorHumanMale_"
         constant string VL_VENDOR_HUMAN_FEMALE_TYPE = "VendorHumanFemale_"
         constant string VL_VENDOR_TAUREN_MALE_TYPE = "VendorTaurenMale_"
-        constant string VL_VENDOR_DWARF_MORGRIM_TYPE = "VendorDwarfMorgrim_"
+        constant string VL_VENDOR_DWARF_MORGRIM_MALE_TYPE = "VendorDwarfMorgrimMale_"
         constant string VL_VENDOR_ELARINDOR_MALE_TYPE = "VendorElarindorMale_"
         constant string VL_VENDOR_ELARINDOR_FEMALE_TYPE = "VendorElarindorFemale_"
     endglobals
@@ -152,7 +152,7 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_STORMHAVEN_FEMALE, "Stormhaven craft carries well beyond the harbor.", "Sea air tests every buckle, stitch, and blade.", "A fine choice. Keep it clear of the salt spray.", "The harbor buyers will find a use for this.", "One cargo exchanged for another. That is harbor life.", "Nothing today? The tide may bring you back.", VL_VENDOR_HUMAN_FEMALE_TYPE, 7, 28)
         call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_NEUTRAL_FEMALE, "Trade travels farther when banners stay outside.", "Peaceful customers receive peaceful prices.", "Useful goods deserve useful hands.", "I know a buyer who values discretion.", "A balanced exchange keeps neutral ground stable.", "We can settle on a price another day.", VL_VENDOR_HUMAN_FEMALE_TYPE, 13, 37)
         call RegisterVoicedProfile(VL_VENDOR_PROFILE_TAUREN_HORDE_MALE, "The Horde's roads are long; choose supplies that endure.", "Earth, hide, and iron each reward patient hands.", "Carry it with strength and purpose.", "Nothing useful should be wasted.", "A fair exchange honors both sides.", "Walk in peace. Return when the road provides a need.", VL_VENDOR_TAUREN_MALE_TYPE, 1, 7)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_DWARF_MORGRIM, "Morgrim steel is shaped for mountains, not market shelves.", "A patient hammer leaves no weakness for the cold to find.", "Aye, that piece will earn its weight on the climb.", "There is useful metal beneath these scars.", "Good coin and honest craft; the clan prospers by both.", "Return when stone, steel, or the road gives you reason.", VL_VENDOR_DWARF_MORGRIM_TYPE, 1, 7)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_DWARF_MORGRIM_MALE, "Morgrim steel is shaped for mountains, not market shelves.", "A patient hammer leaves no weakness for the cold to find.", "Aye, that piece will earn its weight on the climb.", "There is useful metal beneath these scars.", "Good coin and honest craft; the clan prospers by both.", "Return when stone, steel, or the road gives you reason.", VL_VENDOR_DWARF_MORGRIM_MALE_TYPE, 1, 7)
         call RegisterVoicedProfile(VL_VENDOR_PROFILE_ELARINDOR_MALE, "Elarindor's forges burn softly, but they have not gone cold.", "Every restored relic returns a fragment of our home.", "May it serve you in Elarindor's defense.", "We will restore what usefulness remains.", "A measured exchange, worthy of trusted allies.", "Another time. Patience has preserved us this long.", VL_VENDOR_ELARINDOR_MALE_TYPE, 1, 7)
         call RegisterVoicedProfile(VL_VENDOR_PROFILE_ELARINDOR_FEMALE, "The arcane currents around Elarindor still bless careful craft.", "What survives the ruins deserves a discerning keeper.", "Carry it with the grace its makers intended.", "This may yet find purpose among our people.", "A fair exchange strengthens Elarindor.", "Browse as you wish. Memory has taught us patience.", VL_VENDOR_ELARINDOR_FEMALE_TYPE, 1, 7)
 
@@ -172,7 +172,7 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call ExSound_RegisterSequence(VL_VENDOR_HUMAN_MALE_TYPE, 1, 45, "Pots\\Sound\\Voicelines\\VendorHumanMale\\")
         call ExSound_RegisterSequence(VL_VENDOR_HUMAN_FEMALE_TYPE, 1, 45, "Pots\\Sound\\Voicelines\\VendorHumanFemale\\")
         call ExSound_RegisterSequence(VL_VENDOR_TAUREN_MALE_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\VendorTaurenMale\\")
-        call ExSound_RegisterSequence(VL_VENDOR_DWARF_MORGRIM_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\VendorDwarfMorgrim\\")
+        call ExSound_RegisterSequence(VL_VENDOR_DWARF_MORGRIM_MALE_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\VendorDwarfMorgrimMale\\")
         call ExSound_RegisterSequence(VL_VENDOR_ELARINDOR_MALE_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\VendorElarindorMale\\")
         call ExSound_RegisterSequence(VL_VENDOR_ELARINDOR_FEMALE_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\VendorElarindorFemale\\")
         call RegisterDefaultAndSpecialistLines()
