@@ -15,6 +15,49 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [10.8.2026]
+
+### Player-Facing Updates
+
+- Forest Trolls now grant Horde reputation using their actual Thornwoods unit types, and killing the Riverbane Bandit Lord now grants Riverbane reputation.
+- AI heroes, including Aveline, now use selectable retained Fake Death bodies and return normally when their automatic revival completes.
+- Nazgrek's starting Healing Salve and Spring Water now begin in his standard six-slot inventory instead of DInventory.
+- Vendor cameras now remain near an 850-range view and drift slowly between low-height, obstacle-checked compositions instead of snapping through distant or excessively elevated shots.
+- Closing Trade UI now plays the correct bought, sold, bought-and-sold, or no-transaction response and returns to the vendor's dialogue choices; choosing Exit restores gameplay before the farewell line.
+- Morgrim Clan vendors now respond using their current `h00T` through `h010` Object Editor rawcodes.
+- Selecting a vendor below its faction reputation requirement now reports that faction immediately instead of entering a conversation that cannot trade.
+- Quest dialogue buttons now use shared state markers, and incomplete generic quests draw from objective-specific kill, fetch, talk, and purchase responses.
+- All Morgrim Clan Dwarf vendors now use male names and the dedicated male Dwarf merchant voice profile.
+
+### Technical Updates
+
+- Updated `Reputation/Reputation.j`
+  - Replaced the mistakenly registered Furbolg rawcodes with all six standard Forest Troll rawcodes used in Thornwoods.
+  - Added the missing Bandit Lord rawcode to the hidden Bandit reputation source.
+- Updated `AI/AI.j` and `Death/Death.j`
+  - Enabled Fake Death by default for every AI hero profile while preserving the existing per-profile override.
+  - Added an automatic AI revival callback that releases retained Death-system state, clearing corpse invulnerability, pause, pathing, and fallen-state tracking.
+- Updated `Preload/Start.j` to exclude Nazgrek's newly created starter consumables from DInventory pickup storage while placing them in his standard inventory.
+- Updated `Camera/DialogCamera.j`, `Vendors/VendorDialogs.j`, and `UI/ShopUI.j`
+  - Slowed preset transitions to 4.5 seconds, expanded shot intervals to 16-26 seconds, constrained the built-in dialogue presets to 820-900 distance with moderated Z offsets, and extended path checks to blocking structures.
+  - Added a ShopUI return callback that preserves the active camera and cinematic interaction while returning from trade to vendor choices.
+  - Moved final vendor farewell playback outside cinematic mode.
+- Updated `Vendors/VendorCatalogs.j` and `Vendors/VendorFactions/VendorDwarves.j` to replace obsolete `n05C`-`n05J` bindings with the documented Morgrim `h00T`-`h010` unit types.
+- Updated `Vendors/VendorCatalogs.j`, `Vendors/VendorFactions/VendorDwarves.j`, and `Voicelines/Voicelines_VendorLines.j` to rename the three female-named Dwarves and replace the neutral Morgrim voice key with male-only `VendorDwarfMorgrimMale_0001-0015` registration.
+- Updated `QuestsAndDialogs/DialogSystem.j`, `QuestsAndDialogs/QuestMaster.j`, `QuestsAndDialogs/QuestsGeneric.j`, `Reputation/Reputation.j`, and `Voicelines/Voicelines_Quests.j`
+  - Centralized `[!]`, `[?]`, and in-progress quest-button formatting for vendor and authored quest givers.
+  - Added immediate availability and overhead-marker refreshes for hero-level and reputation changes while retaining the periodic custom-condition fallback.
+  - Added twelve reusable incomplete-objective lines and reserved `QuestGeneric_0001-0012` ExSound keys.
+- Updated `Vendors/Help/infoVendors.md` and `Vendors/Help/VendorsHelper.md` with the Trade UI return lifecycle, quest refresh behavior, generic quest voice range, and current Morgrim rawcode contract.
+
+### Actions Remaining
+
+- Compile the full map and runtime-test Horde reputation from each Thornwoods Forest Troll type and Riverbane reputation from Bandits and the Bandit Lord.
+- Compile the full map and runtime-test Aveline and representative autonomous and companion AI heroes through lethal damage, corpse selection, Spirit Shard revival, and automatic timer revival.
+- Compile the full map and confirm Nazgrek starts with Healing Salve and Spring Water in his standard inventory while his starter equipment remains equipped.
+- Compile the full map and test vendor camera movement, Trade UI return/outcome dialogue, Morgrim selection, reputation gating, and quest-marker refreshes after level and reputation changes.
+- Import recordings for `QuestGeneric_0001-0012`; text-duration fallback remains active until those files exist.
+
 ## [9.8.2026]
 
 ### Player-Facing Updates
@@ -171,7 +214,7 @@ Issue with CreepRespawn not respawing creeps anymore for some reason:
 ### Actions Remaining
 
 - Create or update Object Editor vendor unit types `o01B-o01E` and `n05C-n05J` to match `VendorsHelper.md`, including Morgrim ownership on `Player(7)` where appropriate.
-- Import recordings for `VendorDwarfMorgrim_0001-0015` and `VendorQuestTauren_0001-0014`; text-duration fallback remains active until those files exist.
+- Import recordings for `VendorDwarfMorgrimMale_0001-0015` and `VendorQuestTauren_0001-0014`; text-duration fallback remains active until those files exist.
 - Compile the affected libraries in the full map and runtime-test hostile-reputation dialogue, trade rejection, timed randomized stock, daily reset, and the new vendor quests.
 - Compile and runtime-test companion point/unit commands, AI death and Spirit Shard revival, full-bag equipment upgrades, cinematic timer restoration, difficulty item loss, and every preplaced graveyard healer dialogue.
 
