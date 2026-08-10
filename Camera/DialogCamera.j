@@ -7,8 +7,8 @@
     Description:
     Focuses a player's camera on a dialogue unit, provides reusable cinematic
     presets, and can rotate between presets during long conversations or UI
-    interactions. Destructible checks test several camera angles and points
-    along the view path before selecting a shot.
+    interactions. Destructible and structure checks test several camera angles
+    and points along the view path before selecting a shot.
 
     Credits:
     - Path of the Shaman CameraControl system
@@ -52,9 +52,9 @@ library DialogCamera initializer Init requires CameraControl
         private constant real DEFAULT_ANGLE = 340.00
         private constant real DEFAULT_NEAR_Z = 20.00
         private constant real DEFAULT_BLOCK_RADIUS = 180.00
-        private constant real PRESET_TRANSITION_TIME = 0.80
-        private constant real DEFAULT_CYCLE_MIN_INTERVAL = 8.00
-        private constant real DEFAULT_CYCLE_MAX_INTERVAL = 14.00
+        private constant real PRESET_TRANSITION_TIME = 4.50
+        private constant real DEFAULT_CYCLE_MIN_INTERVAL = 16.00
+        private constant real DEFAULT_CYCLE_MAX_INTERVAL = 26.00
 
         private boolean array DialogCamera_Active
         private boolean array DialogCamera_PresetConfigured
@@ -72,6 +72,7 @@ library DialogCamera initializer Init requires CameraControl
         private real DialogCamera_CheckY = 0.00
         private real DialogCamera_CheckRadius = 0.00
         private boolean DialogCamera_Blocked = false
+        private group DialogCamera_BlockingUnits = null
 
         private timer array DialogCamera_CycleTimer
         private unit array DialogCamera_CycleTarget
@@ -99,6 +100,7 @@ library DialogCamera initializer Init requires CameraControl
         local integer sample = 1
         local real sampleDistance
         local rect scanRect = null
+        local unit blockingUnit
 
         set DialogCamera_CheckRadius = radius
         loop
@@ -111,11 +113,22 @@ library DialogCamera initializer Init requires CameraControl
             call EnumDestructablesInRect(scanRect, null, function DialogCamera_CheckDestructable)
             call RemoveRect(scanRect)
             set scanRect = null
+            call GroupEnumUnitsInRange(DialogCamera_BlockingUnits, DialogCamera_CheckX, DialogCamera_CheckY, radius, null)
+            loop
+                set blockingUnit = FirstOfGroup(DialogCamera_BlockingUnits)
+                exitwhen blockingUnit == null
+                call GroupRemoveUnit(DialogCamera_BlockingUnits, blockingUnit)
+                if GetWidgetLife(blockingUnit) > 0.405 and IsUnitType(blockingUnit, UNIT_TYPE_STRUCTURE) then
+                    set DialogCamera_Blocked = true
+                endif
+            endloop
             if DialogCamera_Blocked then
+                set blockingUnit = null
                 return true
             endif
             set sample = sample + 1
         endloop
+        set blockingUnit = null
         return false
     endfunction
 
@@ -348,6 +361,7 @@ library DialogCamera initializer Init requires CameraControl
     endfunction
 
     private function Init takes nothing returns nothing
+        set DialogCamera_BlockingUnits = CreateGroup()
         set DialogCamera_BlockRotationOffset[1] = 0.00
         set DialogCamera_BlockRotationOffset[2] = 45.00
         set DialogCamera_BlockRotationOffset[3] = -45.00
@@ -357,10 +371,11 @@ library DialogCamera initializer Init requires CameraControl
         set DialogCamera_BlockRotationOffset[7] = -135.00
         set DialogCamera_BlockRotationOffset[8] = 180.00
 
-        call DialogCameraRegisterPreset(PRESET_CLOSE_LEFT, 820.00, 85.00, 326.00, -24.00, 10000.00, 54.00, 165.00)
-        call DialogCameraRegisterPreset(PRESET_CLOSE_RIGHT, 900.00, 105.00, 332.00, 30.00, 10000.00, 58.00, 175.00)
-        call DialogCameraRegisterPreset(PRESET_SHOULDER, 860.00, 65.00, 320.00, -42.00, 10000.00, 55.00, 160.00)
-        call DialogCameraRegisterPreset(PRESET_WIDE, 1160.00, 145.00, 342.00, 48.00, 10000.00, 65.00, 210.00)
-        call DialogCameraRegisterPreset(PRESET_ELEVATED, 1020.00, 210.00, 350.00, 0.00, 10000.00, 60.00, 190.00)
+        // Keep dialogue cameras inside the 1000-range blocker scan and close to eye level.
+        call DialogCameraRegisterPreset(PRESET_CLOSE_LEFT, 820.00, 82.00, 326.00, -24.00, 10000.00, 54.00, 165.00)
+        call DialogCameraRegisterPreset(PRESET_CLOSE_RIGHT, 875.00, 96.00, 330.00, 30.00, 10000.00, 57.00, 175.00)
+        call DialogCameraRegisterPreset(PRESET_SHOULDER, 840.00, 72.00, 322.00, -40.00, 10000.00, 55.00, 165.00)
+        call DialogCameraRegisterPreset(PRESET_WIDE, 900.00, 108.00, 336.00, 45.00, 10000.00, 61.00, 190.00)
+        call DialogCameraRegisterPreset(PRESET_ELEVATED, 860.00, 124.00, 340.00, 4.00, 10000.00, 58.00, 180.00)
     endfunction
 endlibrary
