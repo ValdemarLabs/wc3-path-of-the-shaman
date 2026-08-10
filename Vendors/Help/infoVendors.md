@@ -19,7 +19,7 @@ All Morgrim Clan Dwarf vendors are male. Keep their Object Editor names aligned 
 
 ShopUI transaction outcomes are selected from the bought, sold, bought-and-sold, or no-transaction pools when its X button is pressed. The panel then returns to the vendor's dialogue choices. Choosing Exit there restores normal gameplay first and plays the vendor farewell outside cinematic mode.
 
-QuestMaster instantiates no content on selection. Vendor quest templates are instantiated during the delayed vendor registration scan, availability is refreshed immediately on hero-level and reputation changes, and the five-second evaluation timer remains as a fallback for custom conditions. Shared incomplete dialogue reserves `QuestGeneric_0001-0012`, with three alternatives each for kill, fetch, talk, and purchase objectives.
+QuestMaster instantiates no content on selection. `QuestsVendor.j` performs its own delayed world scan after quest definitions initialize, so placed vendor quest givers exist independently of VendorDialogs and selection. Availability uses the higher level of Player(0)-owned Nazgrek or Zulkis, requires at least Neutral standing with the giver's registered faction, refreshes immediately on hero-level and reputation changes, and retains the five-second evaluation timer as a custom-condition fallback. Shared incomplete dialogue reserves `QuestGeneric_0001-0012`, with three alternatives each for kill, fetch, talk, and purchase objectives.
 
 Import `VendorCatalogs.j`, all eight `VendorFactions/Vendor*.j` libraries, and then `VendorDialogs.j`. The delayed world scan registers preplaced quest vendors, while the global selection listener also registers a valid mapped vendor on demand.
 
