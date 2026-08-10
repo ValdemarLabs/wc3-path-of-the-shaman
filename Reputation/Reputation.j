@@ -2,7 +2,7 @@
     Reputation system
 
     Author: Valdemar
-    Version: 2.2
+    Version: 2.3
 
     Required global variables (Path of the Shaman)
         udg_InCinematic (when cinematic is turned on in trigger CinematicON)
@@ -343,6 +343,9 @@ struct Reputation
 
         set newVal = .getRep(p, f) + adjustedDelta
         call .setRep(p, f, newVal)
+        if p == Player(0) and adjustedDelta != 0 then
+            call ExecuteFunc("QuestMaster_RefreshAvailability")
+        endif
         
         // Only show messages if faction is visible
         if f.isVisible then
@@ -1390,6 +1393,10 @@ function SetFactionReputation takes player whichPlayer, string factionName, inte
     endif
     
     call Reputation.setRep(whichPlayer, f, repValue)
+    if whichPlayer == Player(0) then
+        call ExecuteFunc("QuestMaster_RefreshAvailability")
+        call ExecuteFunc("ReputationUI_Refresh")
+    endif
     call BJDebugMsg("[DEBUG] Set " + factionName + " reputation to " + I2S(repValue) + " for " + GetPlayerName(whichPlayer))
     
     // Display message to player
@@ -1513,17 +1520,18 @@ private function InitUnitTypeFactions takes nothing returns nothing
     set tmpCodes[2]     = "nbrg"
     set tmpCodes[3]     = "nenf"
     set tmpCodes[4]     = "nrog"
-    set tmpCodes[5]     = "n652"
-    call AddUnitTypesToFaction(f, 6)
+    set tmpCodes[5]     = "nbld"
+    set tmpCodes[6]     = "n652"
+    call AddUnitTypesToFaction(f, 7)
 
     // === Forest trolls ===
     set f = Faction.getFaction("Forest trolls")
-    set tmpCodes[0]     = "nfra"
-    set tmpCodes[1]     = "nfrb"
-    set tmpCodes[2]     = "nfre"
-    set tmpCodes[3]     = "nfrg"
-    set tmpCodes[4]     = "nfrl"
-    set tmpCodes[5]     = "nfrs"
+    set tmpCodes[0]     = "nfsh"
+    set tmpCodes[1]     = "nfsp"
+    set tmpCodes[2]     = "nftb"
+    set tmpCodes[3]     = "nftk"
+    set tmpCodes[4]     = "nftr"
+    set tmpCodes[5]     = "nftt"
     set tmpCodes[6]     = "n63W"
     set tmpCodes[7]     = "n64T"
     set tmpCodes[8]     = "n63Y"
