@@ -391,6 +391,9 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
 
         set handleId = GetHandleId(vendor)
         if VDI_RegisteredVendor.boolean[handleId] then
+            static if LIBRARY_QuestsVendor then
+                call QuestsVendor_RegisterUnit(vendor)
+            endif
             set vendor = null
             return
         endif

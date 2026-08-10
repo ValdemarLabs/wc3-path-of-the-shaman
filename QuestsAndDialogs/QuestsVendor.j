@@ -6,8 +6,9 @@
 
     Description:
     Shop-vendor adapter for QuestsGeneric. Generic giver quests are delegated
-    to the shared template engine; this library owns only cross-vendor handoff
-    and purchase interactions plus vendor display-name integration.
+    to the shared template engine; this library independently instantiates
+    placed vendor quest givers and owns cross-vendor handoff and purchase
+    interactions plus vendor display-name integration.
 
     Credits:
 
@@ -21,6 +22,7 @@
     - QuestsVendor_SetSupplyRequiresPurchase overrides stock detection.
     - QuestsVendor_SetFactionReward/SetExtendedDialogue configure definitions.
     - QuestsVendor_RegisterUnit instantiates matching vendor templates.
+    - QuestsVendor_RegisterExistingQuestGivers scans placed template owners.
     - QuestsVendor_AddDialogButtons adds giver and target-vendor choices.
     - QuestsVendor_BeginAction/FinishPendingAction/CancelPendingAction manage
       vendor quest dialogue and target-vendor side effects.
@@ -147,6 +149,36 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
         call QV_ConfigureSupplyObjectives()
         call QuestsGeneric_RegisterUnit(vendor, VendorLines_GetVendorSpeakerName(vendor))
         set vendor = null
+    endfunction
+
+    public function RegisterExistingQuestGivers takes nothing returns nothing
+        local group worldUnits = CreateGroup()
+        local rect worldBounds = GetWorldBounds()
+        local unit vendor
+
+        call GroupEnumUnitsInRect(worldUnits, worldBounds, null)
+        loop
+            set vendor = FirstOfGroup(worldUnits)
+            exitwhen vendor == null
+            call GroupRemoveUnit(worldUnits, vendor)
+            if QuestsGeneric_HasDefinitionForUnitType(GetUnitTypeId(vendor)) then
+                call QuestsVendor_RegisterUnit(vendor)
+            endif
+        endloop
+
+        call DestroyGroup(worldUnits)
+        call RemoveRect(worldBounds)
+        set worldUnits = null
+        set worldBounds = null
+        set vendor = null
+    endfunction
+
+    private function QV_RegisterExistingDelayed takes nothing returns nothing
+        local timer expiredTimer = GetExpiredTimer()
+
+        call QuestsVendor_RegisterExistingQuestGivers()
+        call DestroyTimer(expiredTimer)
+        set expiredTimer = null
     endfunction
 
     private function QV_AddTargetButtons takes dialog d, unit vendor, code actionFunc returns integer
@@ -313,8 +345,13 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
     endfunction
 
     private function Init takes nothing returns nothing
+        local timer initTimer
+
         set QV_SupplyIndexByDefinition = Table.create()
         set QV_SupplyClaimed = Table.create()
         call QuestMaster_AddDailyResetAction(function QV_OnDailyReset)
+        set initTimer = CreateTimer()
+        call TimerStart(initTimer, 0.10, false, function QV_RegisterExistingDelayed)
+        set initTimer = null
     endfunction
 endlibrary
