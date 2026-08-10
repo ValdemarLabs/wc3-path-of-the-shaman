@@ -73,6 +73,7 @@ globals
 	// Availability evaluation
 	private constant real QUEST_EVAL_INTERVAL = 5.00
 	private timer QuestEvalTimer = null
+	private trigger QuestLevelRefreshTrigger = null
 	private boolean array QuestEventFlags
 	
 	// Quest update message queue
@@ -3005,6 +3006,7 @@ public function RefreshAvailabilityForGiver takes unit u returns nothing
 		call EvaluateQuest(GetById(questId))
 		set i = i + 1
 	endloop
+	call IconUpdateForNPC(u)
 endfunction
 
 public function RefreshAvailability takes nothing returns nothing
@@ -3020,6 +3022,10 @@ public function RefreshAvailability takes nothing returns nothing
 endfunction
 
 private function EvalTimerTick takes nothing returns nothing
+	call RefreshAvailability()
+endfunction
+
+private function OnHeroLevel takes nothing returns nothing
 	call RefreshAvailability()
 endfunction
 
@@ -3042,6 +3048,9 @@ private function Init takes nothing returns nothing
 	set QuestMaster_OnDailyReset = CreateTrigger()
 	set QuestEvalTimer = CreateTimer()
 	call TimerStart(QuestEvalTimer, QUEST_EVAL_INTERVAL, true, function EvalTimerTick)
+	set QuestLevelRefreshTrigger = CreateTrigger()
+	call TriggerRegisterPlayerUnitEvent(QuestLevelRefreshTrigger, Player(0), EVENT_PLAYER_HERO_LEVEL, null)
+	call TriggerAddAction(QuestLevelRefreshTrigger, function OnHeroLevel)
 	set QuestDailyResetTrigger = CreateTrigger()
 	call TriggerRegisterVariableEvent(QuestDailyResetTrigger, "udg_DNE_DayNightEvent", EQUAL, 1.00)
 	call TriggerAddAction(QuestDailyResetTrigger, function OnNewDay)
