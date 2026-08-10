@@ -15,6 +15,38 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [11.8.2026]
+
+### Player-Facing Updates
+
+- Converted Kribugs' six legacy quests, ogre fullness cycle, patrol interaction, unique dialogue, and merchant access to the current quest and vendor systems.
+- Kribugs now sells randomized curiosities through the shared Trade UI; his Special Deal pitch leads into the same inventory so purchases use normal stock, pricing, and trade-session rules.
+- Added 21 planned dialogue vendors: ten bartenders, four jewelcrafters, two Orc spirit speakers, two Orc fel-curio dealers, one Troll voodoo merchant, one Human arcanist, and one Elarindor magister.
+- Bartenders primarily sell common drinks with light food stock; jewelcrafters sell rings, necklaces, and trinkets; each mystical specialist carries themed crystals, essences, charms, or relics.
+- Horde Troll merchants now use Horde reputation and their own male merchant dialogue profile.
+- Autonomous AI heroes now shop across nearby Vendor-system merchants, favoring faction-compatible, reachable, useful, and situationally relevant catalogs without requiring manual shop bindings.
+- AI purchasing now follows a conservative price tier based on Player(0)'s highest hero level, buys at most one item per trip, waits four to eight minutes between successful shopping trips, and keeps at most two copies of a consumable type.
+
+### Technical Updates
+
+- Added `QuestsAndDialogs/QuestGivers/qKribugs.j` from the legacy `QuestsAndDialogs/OLDGUI/Kribugs` triggers, including quest prerequisites, item and kill tracking, repeatable meat/cure flow, dialogue voicelines, patrol control, and respawn hooks.
+- Updated `Vendors/VendorDialogs.j` with custom-dialog vendor registration so bespoke quest givers can retain ShopUI, catalog, trade outcome, and return-flow integration without opening the generic vendor dialog in parallel.
+- Updated `CreepRespawn/CreepUnitAssignment.j` to restore `qKribugs` vendor, quest-dialog, and patrol hooks after respawn instead of executing the converted GUI patrol trigger.
+- Updated `Vendors/VendorCatalogs.j` and `Vendors/VendorLines.j` with seven new catalogs, 21 canonical unit names, initial stock, and specialist type labels.
+- Updated the Orc, Tauren, Human, Goblin, Bonecrusher Ogre, Elarindor, and Morgrim Dwarf faction libraries with the new unit bindings.
+- Added `Vendors/VendorFactions/VendorTrolls.j` and required it from `Vendors/VendorDialogs.j`.
+- Updated `Voicelines/Voicelines_VendorLines.j` with centralized bartender, jewelcrafter, shamanic, fel, voodoo, arcanist, magister, and Horde Troll dialogue; reserved `VendorTrollMale_0001-0015` in ExSound.
+- Removed legacy Marketplace, Goblin Merchant, Voodoo Lounge, Armorsmith, Weaponsmith, and Tome Merchant buildings from current vendor defaults and AI shop bindings while leaving their Object Editor definitions untouched.
+- Updated `Vendors/Help/VendorsHelper.md` and `Vendors/Help/infoVendors.md` with the Object Editor roster, genders, zones, import order, and legacy-building exclusion list.
+- Updated `AI/AI.j` with dynamic nearby vendor discovery, weighted catalog selection, allowed-zone checks, faction-link and Neutral-reputation gating, and low-health/low-mana shopping priorities.
+- Updated `Vendors/Shop.j` with reusable AI vendor-utility evaluation and a Player(0)-hero-level price ceiling shared by discovery and final purchasing.
+
+### Actions Remaining
+
+- Create the 21 documented unit types in Object Editor using the assigned rawcodes, names, suffixes, and genders, then place and runtime-test representative vendors from every new catalog.
+- Import recordings for `VendorTrollMale_0001-0015`; text-duration fallback remains active until those files exist.
+- Full-map test autonomous Horde, Riverbane, Goblin, and Elarindor heroes near friendly, neutral, hostile, inaccessible, empty-stock, and high-price vendors.
+
 ## [10.8.2026]
 
 ### Player-Facing Updates
