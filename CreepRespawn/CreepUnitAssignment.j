@@ -60,6 +60,8 @@ private function TriggerQuestEvaluation_Delayed takes nothing returns nothing
         call ExecuteFunc("qChieftainThork_RefreshAvailability")
     elseif unitTypeId == 'n62W' then
         call ExecuteFunc("qZaekolaerr_RefreshRespawnedUnitHooks")
+    elseif unitTypeId == 'n61E' then
+        call ExecuteFunc("qKribugs_RefreshRespawnedUnitHooks")
     endif
     
     // Cleanup
@@ -137,8 +139,6 @@ function CreepUnitAssignment takes integer utype returns nothing
     elseif utype == 'n61E' then
         set udg_Kribugs = bj_lastCreatedUnit
         call TriggerQuestEvaluation(bj_lastCreatedUnit)
-        // Start patrol movement
-        call TriggerExecute(gg_trg_Kribugs_Movement_Start)        
     //===========================================================================
     // SATYR
     elseif utype == 'n636' then

@@ -18,6 +18,7 @@
 
     API:
     - call VendorDialogs_RegisterVendor(vendor)
+    - call VendorDialogs_RegisterCustomVendor(vendor, returnHandler)
     - call VendorDialogs_RegisterExistingVendors()
     - ShopUI's close button returns to the active vendor dialogue.
     - set vendor = VendorDialogs_GetSelectedVendor()
@@ -54,6 +55,8 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         private dialog VDI_Dialog = null
         private timer VDI_DialogCooldown = null
         private Table VDI_RegisteredVendor = 0
+        private Table VDI_CustomDialogVendor = 0
+        private Table VDI_CustomReturnHandler = 0
         private trigger VDI_AttackTrigger = null
         private trigger VDI_DeathTrigger = null
 
@@ -342,11 +345,22 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
     private function VDI_ReturnFromTrade takes nothing returns boolean
         local unit vendor = ShopUI_GetVendorUnit()
         local unit hero = ShopUI_GetBuyerUnit()
+        local trigger returnHandler
+        local boolean handled
 
         if vendor == null or hero == null or not DialogInteraction_IsUnitAlive(vendor) or not DialogInteraction_IsUnitAlive(hero) or Shop_GetVendorIdForUnit(vendor) <= 0 then
             set vendor = null
             set hero = null
+            set returnHandler = null
             return false
+        endif
+        if VDI_CustomDialogVendor.boolean[GetHandleId(vendor)] then
+            set returnHandler = VDI_CustomReturnHandler.trigger[GetHandleId(vendor)]
+            set handled = returnHandler != null and TriggerEvaluate(returnHandler)
+            set vendor = null
+            set hero = null
+            set returnHandler = null
+            return handled
         endif
 
         set VDI_SelectedVendor = vendor
@@ -358,6 +372,7 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
 
         set vendor = null
         set hero = null
+        set returnHandler = null
         return true
     endfunction
 
@@ -409,12 +424,46 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         set vendor = null
     endfunction
 
+    public function RegisterCustomVendor takes unit vendor, code returnHandler returns nothing
+        local integer handleId
+        local trigger oldHandler
+        local trigger newHandler
+
+        if vendor == null then
+            set vendor = null
+            set oldHandler = null
+            set newHandler = null
+            return
+        endif
+
+        set handleId = GetHandleId(vendor)
+        set VDI_CustomDialogVendor.boolean[handleId] = true
+        if returnHandler != null then
+            set oldHandler = VDI_CustomReturnHandler.trigger[handleId]
+            if oldHandler != null then
+                call DestroyTrigger(oldHandler)
+            endif
+            set newHandler = CreateTrigger()
+            call TriggerAddCondition(newHandler, Filter(returnHandler))
+            set VDI_CustomReturnHandler.trigger[handleId] = newHandler
+        endif
+        call VendorDialogs_RegisterVendor(vendor)
+        set vendor = null
+        set oldHandler = null
+        set newHandler = null
+    endfunction
+
     private function VDI_OnSelected takes nothing returns nothing
         local unit vendor = DialogInteraction_GetSelectedUnit()
         local unit hero
         local boolean gateOk
         local string canonicalName
 
+        if vendor != null and VDI_CustomDialogVendor.boolean[GetHandleId(vendor)] then
+            set vendor = null
+            set hero = null
+            return
+        endif
         if vendor == null or Shop_GetVendorIdForUnit(vendor) <= 0 then
             if vendor != null then
                 set canonicalName = Shop_GetVendorUnitTypeName(GetUnitTypeId(vendor))
@@ -502,6 +551,8 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
 
         set VDI_DialogCooldown = CreateTimer()
         set VDI_RegisteredVendor = Table.create()
+        set VDI_CustomDialogVendor = Table.create()
+        set VDI_CustomReturnHandler = Table.create()
         call ShopUI_RegisterReturnHandler(function VDI_ReturnFromTrade)
         call DialogInteraction_RegisterAnySelectionHandler(function VDI_OnSelected)
         static if LIBRARY_Events then
