@@ -141,6 +141,18 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
         endloop
     endfunction
 
+    private function ST_AddStartingConsumable takes integer itemTypeId returns nothing
+        local item startingItem = CreateItem(itemTypeId, GetUnitX(udg_Nazgrek), GetUnitY(udg_Nazgrek))
+
+        if startingItem != null then
+            call AddItemToUnitExclusionList(startingItem, udg_Nazgrek)
+            call UnitAddItem(udg_Nazgrek, startingItem)
+            call RemoveItemFromUnitExclusionList(startingItem, udg_Nazgrek)
+        endif
+
+        set startingItem = null
+    endfunction
+
     private function ST_AddStartingItems takes nothing returns nothing
         
         // Create items for Nazgrek
@@ -161,8 +173,8 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
             call ST_AddAndEquipStartingItem(ST_ITEM_TRINKET)
 
             // consumables
-            call UnitAddItemByIdSwapped(ST_ITEM_HEALING_SALVE, udg_Nazgrek)
-            call UnitAddItemByIdSwapped(ST_ITEM_SPRING_WATER, udg_Nazgrek)
+            call ST_AddStartingConsumable(ST_ITEM_HEALING_SALVE)
+            call ST_AddStartingConsumable(ST_ITEM_SPRING_WATER)
         endif
     endfunction
 
