@@ -19,6 +19,7 @@
     API:
     - call VendorDialogs_RegisterVendor(vendor)
     - call VendorDialogs_RegisterExistingVendors()
+    - ShopUI's close button returns to the active vendor dialogue.
     - set vendor = VendorDialogs_GetSelectedVendor()
     - set hero = VendorDialogs_GetSelectedHero()
 
@@ -35,7 +36,7 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         private constant integer VDI_CINEMATIC_MOVE_MODE = 1
         private constant real VDI_CINEMATIC_MOVE_OFFSET = 256.00
         private constant real VDI_CINEMATIC_MOVE_ANGLE = 210.00
-        private constant real VDI_CAMERA_DIST = 950.00
+        private constant real VDI_CAMERA_DIST = 850.00
         private constant real VDI_CAMERA_Z_OFFSET = 90.00
         private constant real VDI_CAMERA_ANGLE = 328.00
         private constant real VDI_CAMERA_ROT_OFFSET = 180.00
@@ -43,8 +44,8 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         private constant real VDI_CAMERA_FOV = 60.00
         private constant real VDI_CAMERA_BLOCK_RADIUS = 180.00
         private constant boolean VDI_CAMERA_BLOCK_CHECK = true
-        private constant real VDI_CAMERA_CHANGE_MIN_INTERVAL = 8.00
-        private constant real VDI_CAMERA_CHANGE_MAX_INTERVAL = 14.00
+        private constant real VDI_CAMERA_CHANGE_MIN_INTERVAL = 16.00
+        private constant real VDI_CAMERA_CHANGE_MAX_INTERVAL = 26.00
         private constant real VDI_CAMERA_RESET_TIME = 0.75
 
         private constant integer VDI_ACTION_TRADE = 1
@@ -116,6 +117,25 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         return (Atan2(dy, dx) * bj_RADTODEG + 180.00) - GetUnitFacing(vendor)
     endfunction
 
+    private function VDI_ReportReputationFailure takes unit vendor, unit hero returns nothing
+        local player p = Player(0)
+        local string factionName = Reputation_GetUnitFactionName(vendor)
+
+        if hero != null then
+            set p = GetOwningPlayer(hero)
+        endif
+        call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, p)
+        if factionName == "" then
+            call DisplayTextToPlayer(p, 0.00, 0.00, "|cffff8040Your reputation with this vendor's faction is too low to trade.|r")
+        else
+            call DisplayTextToPlayer(p, 0.00, 0.00, "|cffff8040Your reputation with " + factionName + " is too low to trade.|r")
+        endif
+
+        set p = null
+        set vendor = null
+        set hero = null
+    endfunction
+
     private function VDI_ConfigureVendorCamera takes unit vendor, unit hero returns nothing
         if vendor == null then
             return
@@ -133,20 +153,6 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         call DialogSystem_AddMakeFaceEachOther(seq, vendor, hero, 0.45, 0.00)
 
         call DialogSystem_PickGreetLine(vendor, vendorName)
-        call DialogSystem_AddLine(seq, vendor, speakerName, DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
-
-        return seq
-    endfunction
-
-    private function VDI_CreateFarewellSequence takes unit vendor, unit hero returns integer
-        local integer seq = DialogSystem_CreateSequence()
-        local string vendorName = VendorLines_GetVendorName(vendor)
-        local string speakerName = VendorLines_GetVendorSpeakerName(vendor)
-
-        call DialogSystem_SetSequenceDefaultSpeaker(seq, vendor, speakerName)
-        call DialogSystem_AddMakeFaceEachOther(seq, vendor, hero, 0.45, 0.00)
-
-        call DialogSystem_PickFarewellLine(vendor, vendorName)
         call DialogSystem_AddLine(seq, vendor, speakerName, DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
 
         return seq
@@ -177,7 +183,6 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
     private function VDI_OnTrade takes nothing returns nothing
         local unit vendor = VDI_SelectedVendor
         local unit hero = VDI_SelectedHero
-        local string factionName
 
         if not VDI_IsSelectedContextValid() then
             call VDI_EndDialog(true)
@@ -186,13 +191,7 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
             return
         endif
         if not Shop_CanPlayerTradeWithVendor(GetOwningPlayer(hero), vendor) then
-            set factionName = Reputation_GetUnitFactionName(vendor)
-            call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, GetOwningPlayer(hero))
-            if factionName == "" then
-                call DisplayTextToPlayer(GetOwningPlayer(hero), 0.00, 0.00, "|cffff8040Your reputation with this vendor's faction is too low to trade.|r")
-            else
-                call DisplayTextToPlayer(GetOwningPlayer(hero), 0.00, 0.00, "|cffff8040Your reputation with " + factionName + " is too low to trade.|r")
-            endif
+            call VDI_ReportReputationFailure(vendor, hero)
             call VDI_EndDialog(true)
             set vendor = null
             set hero = null
@@ -204,16 +203,12 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         call VendorLines_PlayTradeLine(vendor)
         call ShowUnit(hero, true)
         set VDI_DialogCooldown = DialogInteraction_StartCooldown(VDI_DialogCooldown, VDI_DIALOG_COOLDOWN)
-        call ShopUI_ShowForVendor(vendor, hero)
+        call ShopUI_ShowForVendorWithReturn(vendor, hero)
         set VDI_SelectedVendor = null
         set VDI_SelectedHero = null
 
         set vendor = null
         set hero = null
-    endfunction
-
-    private function VDI_OnFarewellEnd takes nothing returns nothing
-        call VDI_EndDialog(true)
     endfunction
 
     private function VDI_InterruptDialog takes nothing returns nothing
@@ -265,17 +260,18 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
     endfunction
 
     private function VDI_OnFarewell takes nothing returns nothing
-        local integer seq
+        local unit vendor = VDI_SelectedVendor
 
         if not VDI_IsSelectedContextValid() then
             call VDI_EndDialog(true)
+            set vendor = null
             return
         endif
 
-        call DialogInteraction_BeginDialogSequence()
-        set seq = VDI_CreateFarewellSequence(VDI_SelectedVendor, VDI_SelectedHero)
-        call DialogSystem_SetSequenceCallbacks(seq, null, function VDI_OnFarewellEnd)
-        call DialogSystem_PlaySequence(seq, Player(0), VDI_SelectedVendor)
+        // Restore gameplay first, then play the farewell without keeping cinematic mode open.
+        call VDI_EndDialog(true)
+        call VendorLines_PlayFarewellLine(vendor)
+        set vendor = null
     endfunction
 
     private function VDI_OnQuestSequenceEnd takes nothing returns nothing
@@ -341,6 +337,28 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         call DialogSystem_BindButtonCode(b, function VDI_OnFarewell)
 
         set b = null
+    endfunction
+
+    private function VDI_ReturnFromTrade takes nothing returns boolean
+        local unit vendor = ShopUI_GetVendorUnit()
+        local unit hero = ShopUI_GetBuyerUnit()
+
+        if vendor == null or hero == null or not DialogInteraction_IsUnitAlive(vendor) or not DialogInteraction_IsUnitAlive(hero) or Shop_GetVendorIdForUnit(vendor) <= 0 then
+            set vendor = null
+            set hero = null
+            return false
+        endif
+
+        set VDI_SelectedVendor = vendor
+        set VDI_SelectedHero = hero
+        call PauseUnit(hero, true)
+        call VDI_BuildDialog()
+        call DialogSystem_SetContext(vendor, GetOwningPlayer(hero))
+        call DialogSystem_ShowDialog(VDI_Dialog, GetOwningPlayer(hero))
+
+        set vendor = null
+        set hero = null
+        return true
     endfunction
 
     private function VDI_ShowDialogForSelection takes nothing returns nothing
@@ -417,6 +435,12 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
             set hero = null
             return
         endif
+        if not Shop_CanPlayerTradeWithVendor(GetOwningPlayer(hero), vendor) then
+            call VDI_ReportReputationFailure(vendor, hero)
+            set vendor = null
+            set hero = null
+            return
+        endif
         set VDI_SelectedVendor = vendor
         set VDI_SelectedHero = hero
         call VDI_ConfigureVendorCamera(vendor, hero)
@@ -475,6 +499,7 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
 
         set VDI_DialogCooldown = CreateTimer()
         set VDI_RegisteredVendor = Table.create()
+        call ShopUI_RegisterReturnHandler(function VDI_ReturnFromTrade)
         call DialogInteraction_RegisterAnySelectionHandler(function VDI_OnSelected)
         static if LIBRARY_Events then
             call Events_RegisterUnitAttacked(function VDI_AttackInterruptAction)

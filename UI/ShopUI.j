@@ -19,6 +19,10 @@
 
     API:
     - call ShopUI_ShowForVendor(vendor, buyer)
+    - call ShopUI_ShowForVendorWithReturn(vendor, buyer)
+    - call ShopUI_RegisterReturnHandler(callback)
+    - set vendor = ShopUI_GetVendorUnit()
+    - set buyer = ShopUI_GetBuyerUnit()
     - call ShopUI_Hide()
     - call ShopUI_Refresh()
 
@@ -31,14 +35,15 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         private constant real SUI_CATEGORY_TEXT_SCALE = 0.68
         private constant real SUI_REFRESH_INTERVAL = 0.50
         private constant real SUI_CAMERA_RESET_TIME = 0.75
-        private constant real SUI_CAMERA_CHANGE_MIN_INTERVAL = 8.00
-        private constant real SUI_CAMERA_CHANGE_MAX_INTERVAL = 14.00
+        private constant real SUI_CAMERA_CHANGE_MIN_INTERVAL = 16.00
+        private constant real SUI_CAMERA_CHANGE_MAX_INTERVAL = 26.00
         private constant boolean SUI_USE_DIALOG_CAMERA = true
         private constant boolean SUI_CINEMATIC = true
 
         private boolean SUI_Initialized = false
         private boolean SUI_SyncingListScroll = false
         private boolean SUI_TradeSessionOpen = false
+        private boolean SUI_ReturnToDialog = false
         private integer SUI_ViewMode = SHOP_VIEW_MERCHANT
         private integer SUI_SelectedIndex = 0
         private integer SUI_ListScrollValue = 0
@@ -115,6 +120,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         private trigger SUI_EscapeTrigger = null
         private trigger SUI_AttackTrigger = null
         private trigger SUI_DeathTrigger = null
+        private trigger SUI_ReturnTrigger = null
         private timer SUI_RefreshTimer = null
 
         private string SUI_PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
@@ -583,7 +589,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call SUI_SyncListScrollFrame(whichPlayer, totalCount)
     endfunction
 
-    private function SUI_EndTradeSession takes boolean playOutcome returns nothing
+    private function SUI_EndTradeSession takes boolean playOutcome, boolean returnToDialog returns nothing
         local unit buyer = SUI_BuyerUnit
         local unit vendor = SUI_VendorUnit
 
@@ -599,12 +605,16 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         endif
         call Shop_EndTradeSession()
         call DialogSystem_ClearEscapeAction()
-        call DialogSystem_StopDialogCamera(Player(0), SUI_CAMERA_RESET_TIME, SUI_USE_DIALOG_CAMERA)
-        call DialogInteraction_EndCinematicSequence(SUI_CINEMATIC)
-        if buyer != null and DialogInteraction_IsUnitAlive(buyer) then
-            call ShowUnit(buyer, true)
-            call PauseUnit(buyer, false)
-            call SelectUnitForPlayerSingle(buyer, Player(0))
+        if returnToDialog and SUI_ReturnTrigger != null and TriggerEvaluate(SUI_ReturnTrigger) then
+            call TriggerExecute(SUI_ReturnTrigger)
+        else
+            call DialogSystem_StopDialogCamera(Player(0), SUI_CAMERA_RESET_TIME, SUI_USE_DIALOG_CAMERA)
+            call DialogInteraction_EndCinematicSequence(SUI_CINEMATIC)
+            if buyer != null and DialogInteraction_IsUnitAlive(buyer) then
+                call ShowUnit(buyer, true)
+                call PauseUnit(buyer, false)
+                call SelectUnitForPlayerSingle(buyer, Player(0))
+            endif
         endif
 
         set buyer = null
@@ -612,13 +622,16 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
     endfunction
 
     private function SUI_HideInternal takes boolean playSound, boolean playOutcome returns nothing
+        local boolean returnToDialog = SUI_ReturnToDialog and playOutcome
+
         if SUI_Parent != null then
             if playSound and BlzFrameIsVisible(SUI_Parent) then
                 call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, Player(0))
             endif
             call BlzFrameSetVisible(SUI_Parent, false)
         endif
-        call SUI_EndTradeSession(playOutcome)
+        call SUI_EndTradeSession(playOutcome, returnToDialog)
+        set SUI_ReturnToDialog = false
         set SUI_VendorUnit = null
         set SUI_BuyerUnit = null
         set SUI_VendorId = 0
@@ -1050,7 +1063,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         return (Atan2(dy, dx) * bj_RADTODEG + 180.00) - GetUnitFacing(vendor)
     endfunction
 
-    public function ShowForVendor takes unit vendor, unit buyer returns nothing
+    private function SUI_ShowForVendor takes unit vendor, unit buyer, boolean returnToDialog returns nothing
         local player p
 
         if vendor == null or buyer == null then
@@ -1088,6 +1101,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         set SUI_ListScrollFrameValueCache = -1
         set SUI_SelectedCategory = Shop_GetAllCategoryName()
         set SUI_TradeSessionOpen = true
+        set SUI_ReturnToDialog = returnToDialog
         call Shop_BeginTradeSessionForUnits(SUI_VendorId, vendor, buyer)
         set SUI_RandomVendorLineRemaining = VendorLines_GetRandomLineInterval(SUI_VendorId)
         set p = GetOwningPlayer(buyer)
@@ -1104,6 +1118,32 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         set p = null
         set vendor = null
         set buyer = null
+    endfunction
+
+    public function ShowForVendor takes unit vendor, unit buyer returns nothing
+        call SUI_ShowForVendor(vendor, buyer, false)
+    endfunction
+
+    public function ShowForVendorWithReturn takes unit vendor, unit buyer returns nothing
+        call SUI_ShowForVendor(vendor, buyer, true)
+    endfunction
+
+    public function RegisterReturnHandler takes code callback returns nothing
+        if callback == null then
+            return
+        endif
+        if SUI_ReturnTrigger == null then
+            set SUI_ReturnTrigger = CreateTrigger()
+        endif
+        call TriggerAddCondition(SUI_ReturnTrigger, Filter(callback))
+    endfunction
+
+    public function GetVendorUnit takes nothing returns unit
+        return SUI_VendorUnit
+    endfunction
+
+    public function GetBuyerUnit takes nothing returns unit
+        return SUI_BuyerUnit
     endfunction
 
     private function SUI_RefreshAction takes nothing returns nothing
