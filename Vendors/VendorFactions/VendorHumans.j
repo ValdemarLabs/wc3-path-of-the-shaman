@@ -89,5 +89,11 @@ library VendorHumans initializer Init requires VendorCatalogs
         call Register('n059', VendorCatalogs_VENDOR_CATALOG_POTIONS, VL_VENDOR_PROFILE_HUMAN_NEUTRAL_FEMALE)
         call Register('n05A', VendorCatalogs_VENDOR_CATALOG_RARE_GOODS, VL_VENDOR_PROFILE_HUMAN_NEUTRAL_FEMALE)
         call Register('n05B', VendorCatalogs_VENDOR_CATALOG_ADVENTURING_SUPPLIES, VL_VENDOR_PROFILE_HUMAN_NEUTRAL_FEMALE)
+
+        // Tavern and arcane specialists.
+        call Register('n05C', VendorCatalogs_VENDOR_CATALOG_BARTENDER, VL_VENDOR_PROFILE_HUMAN_STORMHAVEN_MALE)
+        call Register('n05D', VendorCatalogs_VENDOR_CATALOG_BARTENDER, VL_VENDOR_PROFILE_HUMAN_RIVERBANE_FEMALE)
+        call Register('n05E', VendorCatalogs_VENDOR_CATALOG_BARTENDER, VL_VENDOR_PROFILE_HUMAN_NEUTRAL_FEMALE)
+        call Register('n05K', VendorCatalogs_VENDOR_CATALOG_ARCANIST, VL_VENDOR_PROFILE_HUMAN_STORMHAVEN_MALE)
     endfunction
 endlibrary

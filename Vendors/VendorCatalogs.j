@@ -2,7 +2,7 @@
     VendorCatalogs
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
     Ready-to-use PotS vendor definitions for equipment, professions, factions,
@@ -16,11 +16,11 @@
     How to install:
     Import after Shop, VoicelinesVendorLines, and Reputation. Import
     VendorOrcs, VendorSatyrs, VendorHumans, VendorGoblins,
-    VendorBonecrusherOgres, VendorElarindor, VendorTauren, and VendorDwarves
-    afterward when those object families are present.
+    VendorBonecrusherOgres, VendorElarindor, VendorTauren, VendorDwarves, and
+    VendorTrolls afterward when those object families are present.
 
     API:
-    - VendorCatalogs_VENDOR_CATALOG_* constants select one of the 27 catalogs.
+    - VendorCatalogs_VENDOR_CATALOG_* constants select one of the 34 catalogs.
     - set vendorId = VendorCatalogs_GetVendorId(catalogType)
     - call VendorCatalogs_RegisterUnit(vendor, catalogType, voiceProfile)
     - call VendorCatalogs_RegisterUnitType(unitTypeId, catalogType, voiceProfile)
@@ -56,8 +56,15 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
         public constant integer VENDOR_CATALOG_TRADE_GOODS = 25
         public constant integer VENDOR_CATALOG_BEAST_SUPPLIES = 26
         public constant integer VENDOR_CATALOG_BLACKSMITH = 27
+        public constant integer VENDOR_CATALOG_BARTENDER = 28
+        public constant integer VENDOR_CATALOG_JEWELCRAFTER = 29
+        public constant integer VENDOR_CATALOG_SHAMANIC_GOODS = 30
+        public constant integer VENDOR_CATALOG_FEL_CURIOS = 31
+        public constant integer VENDOR_CATALOG_VOODOO_GOODS = 32
+        public constant integer VENDOR_CATALOG_ARCANIST = 33
+        public constant integer VENDOR_CATALOG_MAGISTER = 34
 
-        private constant integer VC_MAX_CATALOGS = 27
+        private constant integer VC_MAX_CATALOGS = 34
         private integer array VC_VendorId
     endglobals
 
@@ -241,14 +248,41 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
         call RegisterVendorName('n059', "Celia Harrow")
         call RegisterVendorName('n05A', "Lenora Crow")
         call RegisterVendorName('n05B', "Roslyn Mercer")
+
+        // Bartenders
+        call RegisterVendorName('o01F', "Harn Earthbrew")
+        call RegisterVendorName('o01G', "Tobar Keghoof")
+        call RegisterVendorName('o01H', "Borug Foamaxe")
+        call RegisterVendorName('o01I', "Krogar Caskfire")
+        call RegisterVendorName('h013', "Bromli Alethane")
+        call RegisterVendorName('n05C', "Duncan Cask")
+        call RegisterVendorName('n05D', "Marta Vale")
+        call RegisterVendorName('n05E', "Ilyse Faircup")
+        call RegisterVendorName('n05F', "Kizzi Kegcoin")
+        call RegisterVendorName('n05G', "Brugrum Manymugs")
+
+        // Jewelcrafters
+        call RegisterVendorName('n05H', "Zanjin Gemeye")
+        call RegisterVendorName('h011', "Saelira Gemwhisper")
+        call RegisterVendorName('o01J', "Zugrak Gemfang")
+        call RegisterVendorName('n05I', "Jexxi Gemcut")
+
+        // Mystical goods vendors
+        call RegisterVendorName('o01K', "Drekhan Spiritbead")
+        call RegisterVendorName('o01L', "Vorgra Totemveil")
+        call RegisterVendorName('o01M', "Gulvar Ashsigil")
+        call RegisterVendorName('o01N', "Morzun Felwhisper")
+        call RegisterVendorName('n05J', "Rokjin Hexsmoke")
+        call RegisterVendorName('n05K', "Arlen Wyrd")
+        call RegisterVendorName('h012', "Caladren Starvault")
     endfunction
 
     private function ConfigureCatalogs takes nothing returns nothing
         // Explicit merchant unit types and selected generic vendor placeholders
         // are bound here. Change these rawcodes when map placement roles settle.
         set VC_VendorId[VENDOR_CATALOG_WEAPONS] = 0
-        call CreateCatalog(VENDOR_CATALOG_WEAPONS, "Weapons Merchant", VendorLines_TYPE_WEAPONS, 'o60Q')
-        call CreateCatalog(VENDOR_CATALOG_ARMOR, "Armor Merchant", VendorLines_TYPE_ARMOR, 'o60G')
+        call CreateCatalog(VENDOR_CATALOG_WEAPONS, "Weapons Merchant", VendorLines_TYPE_WEAPONS, 0)
+        call CreateCatalog(VENDOR_CATALOG_ARMOR, "Armor Merchant", VendorLines_TYPE_ARMOR, 0)
         call CreateCatalog(VENDOR_CATALOG_SHIELDS, "Shield Merchant", VendorLines_TYPE_SHIELDS, 'o62H')
         call CreateCatalog(VENDOR_CATALOG_ARENA, "Arena Quartermaster", VendorLines_TYPE_ARENA, 'N60L')
         call CreateCatalog(VENDOR_CATALOG_TRAVELLING, "Travelling Merchant", VendorLines_TYPE_TRAVELLING, 'h00H')
@@ -258,7 +292,7 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
         call CreateCatalog(VENDOR_CATALOG_ALCHEMY_SUPPLIES, "Alchemy Supplier", VendorLines_TYPE_ALCHEMY_SUPPLIES, 'o62F')
         call CreateCatalog(VENDOR_CATALOG_BLACKSMITHING_SUPPLIES, "Blacksmithing Supplier", VendorLines_TYPE_BLACKSMITHING_SUPPLIES, 0)
         call CreateCatalog(VENDOR_CATALOG_COOKING_SUPPLIES, "Cooking Supplier", VendorLines_TYPE_COOKING_SUPPLIES, 0)
-        call CreateCatalog(VENDOR_CATALOG_ENCHANTING_SUPPLIES, "Enchanting Supplier", VendorLines_TYPE_ENCHANTING_SUPPLIES, 'n60N')
+        call CreateCatalog(VENDOR_CATALOG_ENCHANTING_SUPPLIES, "Enchanting Supplier", VendorLines_TYPE_ENCHANTING_SUPPLIES, 0)
         call CreateCatalog(VENDOR_CATALOG_FISHING_SUPPLIES, "Fishing Supplier", VendorLines_TYPE_FISHING_SUPPLIES, 0)
         call CreateCatalog(VENDOR_CATALOG_LEATHERWORKING_SUPPLIES, "Leatherworking Supplier", VendorLines_TYPE_LEATHERWORKING_SUPPLIES, 0)
         call CreateCatalog(VENDOR_CATALOG_MINING_SUPPLIES, "Mining Supplier", VendorLines_TYPE_MINING_SUPPLIES, 'o62G')
@@ -274,6 +308,13 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
         call CreateCatalog(VENDOR_CATALOG_TRADE_GOODS, "Trade Goods Merchant", VendorLines_TYPE_TRADE_GOODS, 0)
         call CreateCatalog(VENDOR_CATALOG_BEAST_SUPPLIES, "Beastmaster Supplier", VendorLines_TYPE_BEAST_SUPPLIES, 'o001')
         call CreateCatalog(VENDOR_CATALOG_BLACKSMITH, "Blacksmith", VendorLines_TYPE_BLACKSMITH, 0)
+        call CreateCatalog(VENDOR_CATALOG_BARTENDER, "Bartender", VendorLines_TYPE_BARTENDER, 0)
+        call CreateCatalog(VENDOR_CATALOG_JEWELCRAFTER, "Jewelcrafter", VendorLines_TYPE_JEWELCRAFTER, 0)
+        call CreateCatalog(VENDOR_CATALOG_SHAMANIC_GOODS, "Spirit Speaker", VendorLines_TYPE_SHAMANIC_GOODS, 0)
+        call CreateCatalog(VENDOR_CATALOG_FEL_CURIOS, "Fel Curio Dealer", VendorLines_TYPE_FEL_CURIOS, 0)
+        call CreateCatalog(VENDOR_CATALOG_VOODOO_GOODS, "Voodoo Merchant", VendorLines_TYPE_VOODOO_GOODS, 0)
+        call CreateCatalog(VENDOR_CATALOG_ARCANIST, "Arcanist", VendorLines_TYPE_ARCANIST, 0)
+        call CreateCatalog(VENDOR_CATALOG_MAGISTER, "Magister", VendorLines_TYPE_MAGISTER, 0)
     endfunction
 
     private function ConfigureEquipmentStock takes nothing returns nothing
@@ -448,6 +489,47 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
         call AddStock(VENDOR_CATALOG_BEAST_SUPPLIES, 'I620', 20, "Feed")
         call AddStock(VENDOR_CATALOG_BEAST_SUPPLIES, 'hslv', 45, "Care")
         call AddStock(VENDOR_CATALOG_BEAST_SUPPLIES, 'I66M', 75, "Tools")
+
+        call AddStock(VENDOR_CATALOG_BARTENDER, 'I60Z', 20, "Drinks")
+        call AddStock(VENDOR_CATALOG_BARTENDER, 'j3a0', 30, "Drinks")
+        call AddStock(VENDOR_CATALOG_BARTENDER, 'I60E', 5, "Drinks")
+        call AddStock(VENDOR_CATALOG_BARTENDER, 'I60F', 50, "Drinks")
+        call AddStock(VENDOR_CATALOG_BARTENDER, 'i1g2', 55, "Drinks")
+        call AddStock(VENDOR_CATALOG_BARTENDER, 'i1g3', 55, "Drinks")
+        call AddStock(VENDOR_CATALOG_BARTENDER, 'j2b0', 20, "Food")
+        call AddStock(VENDOR_CATALOG_BARTENDER, 'j2b1', 25, "Food")
+
+        call AddStock(VENDOR_CATALOG_JEWELCRAFTER, 'I60N', 45, "Rings")
+        call AddStock(VENDOR_CATALOG_JEWELCRAFTER, 'I62C', 90, "Rings")
+        call AddStock(VENDOR_CATALOG_JEWELCRAFTER, 'I62N', 90, "Rings")
+        call AddStock(VENDOR_CATALOG_JEWELCRAFTER, 'I62B', 90, "Necklaces")
+        call AddStock(VENDOR_CATALOG_JEWELCRAFTER, 'I62M', 90, "Necklaces")
+        call AddStock(VENDOR_CATALOG_JEWELCRAFTER, 'j4c1', 650, "Trinkets")
+
+        call AddStock(VENDOR_CATALOG_SHAMANIC_GOODS, 'I003', 55, "Crystals")
+        call AddStock(VENDOR_CATALOG_SHAMANIC_GOODS, 'I6C6', 80, "Essences")
+        call AddStock(VENDOR_CATALOG_SHAMANIC_GOODS, 'I6E0', 110, "Essences")
+        call AddStock(VENDOR_CATALOG_SHAMANIC_GOODS, 'j4b7', 180, "Totems and Charms")
+
+        call AddStock(VENDOR_CATALOG_FEL_CURIOS, 'I6C6', 90, "Essences")
+        call AddStock(VENDOR_CATALOG_FEL_CURIOS, 'I6E0', 125, "Essences")
+        call AddStock(VENDOR_CATALOG_FEL_CURIOS, 'I003', 65, "Crystals")
+        call AddStock(VENDOR_CATALOG_FEL_CURIOS, 'I60N', 375, "Fel Curios")
+
+        call AddStock(VENDOR_CATALOG_VOODOO_GOODS, 'I60Y', 25, "Herbs")
+        call AddStock(VENDOR_CATALOG_VOODOO_GOODS, 'I6BB', 40, "Ritual Water")
+        call AddStock(VENDOR_CATALOG_VOODOO_GOODS, 'I6C6', 90, "Essences")
+        call AddStock(VENDOR_CATALOG_VOODOO_GOODS, 'j4c1', 200, "Charms")
+
+        call AddStock(VENDOR_CATALOG_ARCANIST, 'I003', 55, "Crystals")
+        call AddStock(VENDOR_CATALOG_ARCANIST, 'I6C6', 80, "Essences")
+        call AddStock(VENDOR_CATALOG_ARCANIST, 'I6E0', 110, "Essences")
+        call AddStock(VENDOR_CATALOG_ARCANIST, 'j4c1', 650, "Arcane Items")
+
+        call AddStock(VENDOR_CATALOG_MAGISTER, 'I003', 55, "Crystals")
+        call AddStock(VENDOR_CATALOG_MAGISTER, 'I6C6', 80, "Essences")
+        call AddStock(VENDOR_CATALOG_MAGISTER, 'I6E0', 110, "Essences")
+        call AddStock(VENDOR_CATALOG_MAGISTER, 'j4b7', 450, "Arcane Relics")
     endfunction
 
     private function ConfigureZoneVoices takes nothing returns nothing

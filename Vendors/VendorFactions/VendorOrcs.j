@@ -60,5 +60,14 @@ library VendorOrcs initializer Init requires VendorCatalogs
         call Register('o00Z', VendorCatalogs_VENDOR_CATALOG_SHIELDS, "Sirensong Jungle Orc")
         call Register('o010', VendorCatalogs_VENDOR_CATALOG_TRAVELLING, "Sirensong Jungle Orc")
         call Register('o014', VendorCatalogs_VENDOR_CATALOG_QUARTERMASTER, "Sirensong Jungle Orc")
+
+        // Tavern, jewelry, and mystical-goods specialists.
+        call Register('o01H', VendorCatalogs_VENDOR_CATALOG_BARTENDER, "Forest Orc")
+        call Register('o01I', VendorCatalogs_VENDOR_CATALOG_BARTENDER, "Fiery Mountain Orc")
+        call Register('o01J', VendorCatalogs_VENDOR_CATALOG_JEWELCRAFTER, "Fiery Mountain Orc")
+        call Register('o01K', VendorCatalogs_VENDOR_CATALOG_SHAMANIC_GOODS, "Forest Orc")
+        call Register('o01L', VendorCatalogs_VENDOR_CATALOG_SHAMANIC_GOODS, "Sirensong Jungle Orc")
+        call Register('o01M', VendorCatalogs_VENDOR_CATALOG_FEL_CURIOS, "Fiery Mountain Orc")
+        call Register('o01N', VendorCatalogs_VENDOR_CATALOG_FEL_CURIOS, "Forest Orc")
     endfunction
 endlibrary

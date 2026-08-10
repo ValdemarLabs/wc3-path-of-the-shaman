@@ -23,10 +23,8 @@
 library AILegacyLocations initializer Init requires AI, AIWarrior, AIRogue, AIWarlock, AIRestoshaman, AIPaladin, AIEngineer, AIAveline
 
 globals
-    private constant integer SHOP_UNIT_GOBLIN_MERCHANT = 'nmrk'
-    private constant integer SHOP_UNIT_HORDE_MARKET_1 = 'o609'
-    private constant integer SHOP_UNIT_HORDE_MARKET_2 = 'o62J'
-    private constant integer SHOP_UNIT_HORDE_MARKET_3 = 'o61U'
+    private constant integer SHOP_UNIT_HORDE_MARKET_1 = 'o62J'
+    private constant integer SHOP_UNIT_HORDE_MARKET_2 = 'o61U'
 endglobals
 
 private function AddHordeSpawns takes integer profileId returns nothing
@@ -58,10 +56,8 @@ private function AddHordeRetreats takes integer profileId returns nothing
 endfunction
 
 private function AddHordeShops takes integer profileId returns nothing
-    call AI_AddProfileShopUnitType(profileId, SHOP_UNIT_GOBLIN_MERCHANT)
     call AI_AddProfileShopUnitType(profileId, SHOP_UNIT_HORDE_MARKET_1)
     call AI_AddProfileShopUnitType(profileId, SHOP_UNIT_HORDE_MARKET_2)
-    call AI_AddProfileShopUnitType(profileId, SHOP_UNIT_HORDE_MARKET_3)
 endfunction
 
 private function AddRiverbaneSpawns takes integer profileId returns nothing

@@ -42,5 +42,7 @@ library VendorGoblins initializer Init requires VendorCatalogs
         call Register('n04B', VendorCatalogs_VENDOR_CATALOG_ADVENTURING_SUPPLIES, "Goblin Travelling Merchant")
         call Register('n04C', VendorCatalogs_VENDOR_CATALOG_TRADE_GOODS, "Goblin Stormhaven")
         call Register('n04D', VendorCatalogs_VENDOR_CATALOG_BEAST_SUPPLIES, "Goblin Sirensong")
+        call Register('n05F', VendorCatalogs_VENDOR_CATALOG_BARTENDER, "Goblin Stormhaven")
+        call Register('n05I', VendorCatalogs_VENDOR_CATALOG_JEWELCRAFTER, "Goblin Travelling Merchant")
     endfunction
 endlibrary

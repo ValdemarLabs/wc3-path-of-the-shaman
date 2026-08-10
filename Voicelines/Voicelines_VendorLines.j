@@ -2,7 +2,7 @@
     VoicelinesVendorLines
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.3.0
 
     Description:
     Central source of truth for merchant greetings, trade chatter, transaction
@@ -32,6 +32,7 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         constant string VL_VENDOR_PROFILE_DWARF_MORGRIM_MALE = "Morgrim Clan Dwarf Male"
         constant string VL_VENDOR_PROFILE_ELARINDOR_MALE = "Elarindor Male"
         constant string VL_VENDOR_PROFILE_ELARINDOR_FEMALE = "Elarindor Female"
+        constant string VL_VENDOR_PROFILE_TROLL_HORDE_MALE = "Horde Troll Male"
 
         constant string VL_VENDOR_HUMAN_MALE_TYPE = "VendorHumanMale_"
         constant string VL_VENDOR_HUMAN_FEMALE_TYPE = "VendorHumanFemale_"
@@ -39,6 +40,7 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         constant string VL_VENDOR_DWARF_MORGRIM_MALE_TYPE = "VendorDwarfMorgrimMale_"
         constant string VL_VENDOR_ELARINDOR_MALE_TYPE = "VendorElarindorMale_"
         constant string VL_VENDOR_ELARINDOR_FEMALE_TYPE = "VendorElarindorFemale_"
+        constant string VL_VENDOR_TROLL_MALE_TYPE = "VendorTrollMale_"
     endglobals
 
     private function FormatSoundKey takes string soundType, integer lineIndex returns string
@@ -142,6 +144,13 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call RegisterBasicProfile("Expedition Supplier", "Everything needed beyond the safe road.", "Prepare here or improvise badly later.", "Let us see what changes hands.", "Safe roads until next time.", "A campfire, salve, and proper tool solve many problems.", "Expeditions fail from small omissions.", "Your pack is better prepared now.", "I can equip another traveler with this.", "Old weight exchanged for useful supplies.", "The wilderness charges more than I do.")
         call RegisterBasicProfile("Trade Goods Merchant", "Materials bought and sold in useful quantities.", "Every craft begins with ordinary goods.", "Let us see what changes hands.", "Safe roads until next time.", "Common materials keep uncommon work moving.", "Markets are built one crate at a time.", "Useful stock for useful work.", "Another artisan will need this.", "Materials exchanged without waste.", "The warehouses remain patient.")
         call RegisterBasicProfile("Beastmaster Supplier", "Feed and field care for loyal beasts.", "A healthy companion fights longer.", "Let us see what changes hands.", "Safe roads until next time.", "Pack food for the beast before yourself.", "Good care earns loyalty no command can force.", "Your companion will approve.", "Another handler can use this.", "Fresh care supplies for old field goods.", "Your beast may have stronger opinions later.")
+        call RegisterBasicProfile("Bartender", "Pull up a stool. What are you drinking?", "Ale, water, and something warm for the road.", "Name your drink and mind the mugs.", "Keep your feet steady out there.", "The common brew is common because it works.", "A warm meal keeps the drink from winning too quickly.", "A sound choice. Drink it before it gets warm.", "An unopened bottle always finds another table.", "Fresh drink in, empty pack out.", "No thirst today? That never lasts.")
+        call RegisterBasicProfile("Jewelcrafter", "Rings, necklaces, and charms cut with care.", "Small pieces can carry remarkable power.", "Look closely. Fine work rewards patience.", "May it catch the light and turn misfortune.", "A clean setting matters as much as the stone.", "Every gem has a flaw; skill decides whether it shows.", "That piece suits a discerning owner.", "The setting can be reclaimed and shaped again.", "Old adornment out, finer craft in.", "Nothing caught your eye? Then I must polish harder.")
+        call RegisterBasicProfile("Spirit Speaker", "The spirits leave signs for those who listen.", "Totems, crystals, and offerings for the old ways.", "Choose with respect; these are more than trinkets.", "Walk with the ancestors beside you.", "A quiet charm can speak louder than a war drum.", "Incense and crystal help impatient ears hear.", "The spirits approve of a prepared traveler.", "Its spirit is faint, but not silent.", "One sacred thing passes for another.", "The spirits counsel patience. I prefer customers.")
+        call RegisterBasicProfile("Fel Curio Dealer", "Power always has a price. Mine is clearly marked.", "Ash, essence, and secrets for careful hands.", "Touch nothing unless you intend to own the consequence.", "Try not to summon anything on the road.", "The safest fel relic is the one someone else carries.", "Do not confuse a sealed vessel with a harmless one.", "A dangerous choice. I respect that.", "There is residue enough to interest another buyer.", "Power changes hands; the risk remains.", "Wisdom or cowardice? Either way, no sale.")
+        call RegisterBasicProfile("Voodoo Merchant", "Charms, herbs, and spirits in bottles.", "Good mojo for coin. Bad mojo costs extra.", "Pick careful. Some things pick back.", "Keep the spirits amused, mon.", "A proper charm knows who carries it.", "Fresh herbs make friendlier hexes.", "Dis one brings strong fortune.", "Old mojo still got a little bite.", "Your luck changes, my stock changes.", "No deal? The spirits still watching.")
+        call RegisterBasicProfile("Arcanist", "Crystals, essences, and disciplined arcana.", "Magic rewards preparation more than confidence.", "Examine the weave before choosing.", "May your formulas remain stable.", "A clean focus prevents a costly correction.", "Essence quality determines the shape of the spell.", "An exact choice for exacting work.", "I can distill what remains of its enchantment.", "Prepared reagents for spent arcana.", "No research today? The mysteries will wait.")
+        call RegisterBasicProfile("Magister", "Elarindor's arcane craft endures.", "Relics and refined essences for worthy hands.", "Consider the history carried in each piece.", "May its light guide you back to us.", "A relic is memory given purpose.", "True refinement preserves power without diminishing grace.", "A fitting piece for an ally of discernment.", "Elarindor can restore what remains.", "One fragment of history exchanged for another.", "Patience has preserved these. It can preserve them longer.")
     endfunction
 
     private function RegisterRaceAndFactionLines takes nothing returns nothing
@@ -155,6 +164,7 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call RegisterVoicedProfile(VL_VENDOR_PROFILE_DWARF_MORGRIM_MALE, "Morgrim steel is shaped for mountains, not market shelves.", "A patient hammer leaves no weakness for the cold to find.", "Aye, that piece will earn its weight on the climb.", "There is useful metal beneath these scars.", "Good coin and honest craft; the clan prospers by both.", "Return when stone, steel, or the road gives you reason.", VL_VENDOR_DWARF_MORGRIM_MALE_TYPE, 1, 7)
         call RegisterVoicedProfile(VL_VENDOR_PROFILE_ELARINDOR_MALE, "Elarindor's forges burn softly, but they have not gone cold.", "Every restored relic returns a fragment of our home.", "May it serve you in Elarindor's defense.", "We will restore what usefulness remains.", "A measured exchange, worthy of trusted allies.", "Another time. Patience has preserved us this long.", VL_VENDOR_ELARINDOR_MALE_TYPE, 1, 7)
         call RegisterVoicedProfile(VL_VENDOR_PROFILE_ELARINDOR_FEMALE, "The arcane currents around Elarindor still bless careful craft.", "What survives the ruins deserves a discerning keeper.", "Carry it with the grace its makers intended.", "This may yet find purpose among our people.", "A fair exchange strengthens Elarindor.", "Browse as you wish. Memory has taught us patience.", VL_VENDOR_ELARINDOR_FEMALE_TYPE, 1, 7)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_TROLL_HORDE_MALE, "Horde roads carry good coin and better stories, mon.", "Every charm got a spirit, and every spirit got a price.", "Good choice. Dis one got strong mojo.", "I know where dis can find a second life.", "Goods move, coin moves, fortune moves with dem.", "No trade today? The spirits bring you back.", VL_VENDOR_TROLL_MALE_TYPE, 1, 7)
 
         call RegisterProfile("Fiery Mountain Orc", "Ash keeps weak steel honest.", "Mountain paths reward a well-packed warrior.", "Good. That belongs in a warrior's hands.", "I can hammer some use back into this.", "You leave better armed and less burdened.", "Then quit blocking the heat from my forge.")
         call RegisterProfile("Forest Orc", "The Thornwoods take payment from careless travelers.", "Sereneglade herbs, Riverbane iron, orcish prices.", "Carry it with honor.", "The forest wastes nothing. Neither do I.", "A worthy exchange beneath the old trees.", "Listen to the leaves, then return with coin.")
@@ -175,6 +185,7 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call ExSound_RegisterSequence(VL_VENDOR_DWARF_MORGRIM_MALE_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\VendorDwarfMorgrimMale\\")
         call ExSound_RegisterSequence(VL_VENDOR_ELARINDOR_MALE_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\VendorElarindorMale\\")
         call ExSound_RegisterSequence(VL_VENDOR_ELARINDOR_FEMALE_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\VendorElarindorFemale\\")
+        call ExSound_RegisterSequence(VL_VENDOR_TROLL_MALE_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\VendorTrollMale\\")
         call RegisterDefaultAndSpecialistLines()
         call RegisterCatalogRoleLines()
         call RegisterRaceAndFactionLines()

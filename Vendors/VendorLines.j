@@ -69,6 +69,13 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
         public constant string TYPE_TRADE_GOODS = "Trade Goods"
         public constant string TYPE_BEAST_SUPPLIES = "Beast Supplies"
         public constant string TYPE_ARCANE_GOODS = "Arcane Goods"
+        public constant string TYPE_BARTENDER = "Bartender"
+        public constant string TYPE_JEWELCRAFTER = "Jewelcrafter"
+        public constant string TYPE_SHAMANIC_GOODS = "Shamanic Goods"
+        public constant string TYPE_FEL_CURIOS = "Fel Curios"
+        public constant string TYPE_VOODOO_GOODS = "Voodoo Goods"
+        public constant string TYPE_ARCANIST = "Arcanist"
+        public constant string TYPE_MAGISTER = "Magister"
 
         private constant integer VL_MAX_PROFILES = 80
         private constant integer VL_MAX_LINES_PER_CATEGORY = 8

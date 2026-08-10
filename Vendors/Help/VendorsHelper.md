@@ -2,6 +2,10 @@
 
 `Intended zone` is map-placement guidance derived from the regional assignments in the vendor faction libraries. It does not place or restrict the unit at runtime. A slash-separated value permits any of the listed zones, while `unspecified` means that no exact settlement or arena has been selected yet.
 
+### Legacy building shops (do not use as dialogue vendors)
+
+These Object Editor units are retained only as legacy building objects. They are deliberately absent from `VendorCatalogs`, `GeneralGoodsVendor`, and AI shop bindings: `nmrk` Marketplace, `ngme` Goblin Merchant, `n61F` Marketplace 2, `n608` Tavern, `n60N` Tome Merchant, `o60G` Armorsmith, `o60M` Orbs, `o60N` Rings, `o60K` Spirit Lodge, `o609` Voodoo Lounge, and `o60Q` Weaponsmith.
+
 ### Orc vendors
 
 | Rawcode | Name | Editor suffix | Gender | Intended zone | Quest giver | Placed |
@@ -37,6 +41,13 @@
 | `o00Z` | Shargul Tidewall | Sirensong Shield Vendor | Male | Sirensong | — | Yes |
 | `o010` | Krazhan Far-Sail | Sirensong Travelling Merchant | Male | Sirensong | — | Yes |
 | `o014` | Gorthak Jungle Banner | Sirensong Quartermaster | Male | Sirensong | Yes (Normal) | Yes |
+| `o01H` | Borug Foamaxe | Bartender | Male | Thornwoods / Havenwoods | — | No |
+| `o01I` | Krogar Caskfire | Bartender | Male | Dragonfire Peaks | — | No |
+| `o01J` | Zugrak Gemfang | Jewelcrafter | Male | Dragonfire Peaks | — | No |
+| `o01K` | Drekhan Spiritbead | Shamanic Goods Vendor | Male | Sereneglade / Thornwoods | — | No |
+| `o01L` | Vorgra Totemveil | Shamanic Goods Vendor | Male | Sirensong | — | No |
+| `o01M` | Gulvar Ashsigil | Fel Curio Dealer | Male | Dragonfire Peaks | — | No |
+| `o01N` | Morzun Felwhisper | Fel Curio Dealer | Male | Havenwoods / Thornwoods | — | No |
 
 Notes:
 - Ghorak is weird as arena quarmaster in dragonpeaks where there is no arena related stuff.
@@ -85,6 +96,8 @@ Notes:
 | `n03T` | Edwin Harrow | Potion Seller | Male | Vanguard Vale | Yes (Daily) | No |
 | `n03U` | Leander Crow | Rare Goods Dealer | Male | Ghostwalkridge / Dawnhold | — | No |
 | `n03V` | Roland Mercer | Expedition Supplier | Male | Dragonfire Peaks | — | No |
+| `n05C` | Duncan Cask | Stormhaven Bartender | Male | Stormhaven / outskirts | — | No |
+| `n05K` | Arlen Wyrd | Stormhaven Arcanist | Male | Stormhaven / outskirts | — | No |
  
 ### Female Human vendor variants
 
@@ -114,6 +127,8 @@ Notes:
 | `n059` | Celia Harrow | Potion Seller | Female | Vanguard Vale | — | No |
 | `n05A` | Lenora Crow | Rare Goods Dealer | Female | Ghostwalkridge / Dawnhold | — | No |
 | `n05B` | Roslyn Mercer | Expedition Supplier | Female | Dragonfire Peaks | — | No |
+| `n05D` | Marta Vale | Riverbane Bartender | Female | Riverbane / outskirts | — | No |
+| `n05E` | Ilyse Faircup | Neutral Bartender | Female | Havenwoods / Vanguard Vale / Sirensong | — | No |
 
 ### Goblin vendors
 
@@ -137,6 +152,8 @@ Notes:
 | `n04B` | Bixby Packsmart | Expedition Supplier | Male | Dragonfire Peaks / Sirensong | — | No |
 | `n04C` | Mogzik Cratecount | Trade Goods Merchant | Male | Havenwoods | — | No |
 | `n04D` | Zippi Beastbits | Beastmaster Supplier | Male | Sirensong / Thornwoods | — | No |
+| `n05F` | Kizzi Kegcoin | Bartender | Female | Sereneglade / Havenwoods | — | No |
+| `n05I` | Jexxi Gemcut | Jewelcrafter | Female | Sereneglade / Sirensong / travelling | — | No |
 
 ### Bonecrusher Ogre vendors
 
@@ -152,6 +169,7 @@ Notes:
 | `n04L` | Mogrum Manythings | Profession Supplier | Male | Havenwoods / Bonecrush Stronghold | — | Yes |
 | `n04M` | Bargul Bonecount | Bonecrusher Quartermaster | Male | Bonecrush Stronghold | — | Yes |
 | `n04N` | Grothak Heavytrade | Trade Goods Merchant | Male | Thornwoods | — | Yes |
+| `n05G` | Brugrum Manymugs | Bartender | Male | Havenwoods / Bonecrush Stronghold | — | No |
 
 ### Elarindor vendors
 
@@ -165,6 +183,8 @@ Notes:
 | `h00R` | Vaeriel Dawnflask | Elarindor Potion Seller | Female | Vanguard Vale / Vael'Anorath | Yes (Daily) | Yes |
 | `h00O` | Arannis Wayfarer | Elarindor Expedition Supplier | Male | Vanguard Vale / Vael'Anorath | — | Yes |
 | `h00S` | Maerith Silvercrest | Elarindor Quartermaster | Female | Vanguard Vale / Vael'Anorath | Yes (Daily + Normal) | Yes |
+| `h011` | Saelira Gemwhisper | Elarindor Jewelcrafter | Female | Vanguard Vale / Vael'Anorath | — | No |
+| `h012` | Caladren Starvault | Elarindor Magister | Male | Vanguard Vale / Vael'Anorath | — | No |
 
 ### Horde Tauren vendors
 
@@ -182,6 +202,8 @@ These rawcodes are explicitly bound to Horde reputation; placing them under the 
 | `o01C` | Tawa Deepvein | Horde Miner | Male | Ghostwalkridge / Ironspine Post | Yes (Daily) | Yes |
 | `o01D` | Koro Windpack | Horde Trade Goods Merchant | Male | Thornwoods / Sirensong | Yes (Daily) | Yes |
 | `o01E` | Nara Stormhoof | Horde Travelling Merchant | Male | Dragonfire Peaks / Sirensong | Yes (Daily) | Yes |
+| `o01F` | Harn Earthbrew | Horde Bartender | Male | Ghostwalkridge / Ironspine Post | — | No |
+| `o01G` | Tobar Keghoof | Horde Bartender | Male | Sirensong | — | No |
 
 Trade dialogue uses the existing `VendorTaurenMale_0001-0015` range. The four new daily quests reserve `VendorQuestTauren_0001-0014`; missing recordings use text-duration fallback.
 
@@ -199,5 +221,15 @@ Use `Player(7)` as the Morgrim Clan owner. The vendor libraries also bind these 
 | `h00Y` | Keld Coalvein | Morgrim Blacksmithing Supplier | Male | Dragonfire Peaks | — | Yes |
 | `h00Z` | Orin Deepdelver | Morgrim Miner | Male | Dragonfire Peaks | — | Yes |
 | `h010` | Magdor Caskcoin | Morgrim Trade Goods Merchant | Male | Havenwoods | — | Yes |
+| `h013` | Bromli Alethane | Morgrim Bartender | Male | Dragonfire Peaks | — | No |
 
-All Morgrim Dwarf vendors are male. `VendorCatalogs.j` and `VendorDwarves.j` bind this current `h00T`-`h010` Object Editor range directly. Morgrim trade dialogue reserves the male-only `VendorDwarfMorgrimMale_0001-0015` range; missing recordings use text-duration fallback.
+All Morgrim Dwarf vendors are male. `VendorCatalogs.j` and `VendorDwarves.j` bind `h00T`-`h010` plus bartender `h013` directly. Morgrim trade dialogue reserves the male-only `VendorDwarfMorgrimMale_0001-0015` range; missing recordings use text-duration fallback.
+
+### Horde Troll vendors
+
+Use Horde ownership where practical. `VendorTrolls.j` also binds both rawcodes explicitly to Horde reputation, and their male voice profile reserves `VendorTrollMale_0001-0015`.
+
+| Rawcode | Name | Editor suffix | Gender | Intended zone | Quest giver | Placed |
+|---|---|---|---|---|---|---|
+| `n05H` | Zanjin Gemeye | Horde Jewelcrafter | Male | Thornwoods / Sereneglade | — | No |
+| `n05J` | Rokjin Hexsmoke | Horde Voodoo Merchant | Male | Sirensong | — | No |

@@ -2,7 +2,7 @@
 File | Responsibility
 ---|---
 Shop.j	| Core buying, selling, stock, reputation, zone filtering, and vendor lookup engine.
-VendorCatalogs.j | Shared definitions for 27 reusable vendor roles. Many different racial units can use the same catalog.
+VendorCatalogs.j | Shared definitions for 34 reusable vendor roles. Many different racial units can use the same catalog.
 VendorOrcs.j, VendorElarindor.j, VendorTauren.j, VendorDwarves.j, etc. | Connect Object Editor unit rawcodes to a catalog, explicit reputation faction, and racial, regional, gendered, or faction voice profile.
 VendorDialogs.j | Opens dialogue through the shared global selection listener, returns ShopUI's X button to the vendor choices, and requires every vendor-family binding so missing catalogs fail at compile time instead of silently producing inert units.
 VendorBlacksmith.j | A bespoke vendor implementation with its own vendor ID, stock, AI weights, reputation items, unit bindings, and dialogue.
@@ -21,7 +21,9 @@ ShopUI transaction outcomes are selected from the bought, sold, bought-and-sold,
 
 QuestMaster instantiates no content on selection. `QuestsVendor.j` performs its own delayed world scan after quest definitions initialize, so placed vendor quest givers exist independently of VendorDialogs and selection. Availability uses the higher level of Player(0)-owned Nazgrek or Zulkis, requires at least Neutral standing with the giver's registered faction, refreshes immediately on hero-level and reputation changes, and retains the five-second evaluation timer as a custom-condition fallback. Shared incomplete dialogue reserves `QuestGeneric_0001-0012`, with three alternatives each for kill, fetch, talk, and purchase objectives.
 
-Import `VendorCatalogs.j`, all eight `VendorFactions/Vendor*.j` libraries, and then `VendorDialogs.j`. The delayed world scan registers preplaced quest vendors, while the global selection listener also registers a valid mapped vendor on demand.
+Import `VendorCatalogs.j`, all nine `VendorFactions/Vendor*.j` libraries including `VendorTrolls.j`, and then `VendorDialogs.j`. The delayed world scan registers preplaced quest vendors, while the global selection listener also registers a valid mapped vendor on demand.
+
+Legacy building shops (`nmrk`, `ngme`, `n61F`, `n608`, `n60N`, `o60G`, `o60M`, `o60N`, `o60K`, `o609`, and `o60Q`) are not dialogue vendors. Their Object Editor definitions may remain for old map content, but do not bind them through Shop, VendorCatalogs, GeneralGoodsVendor, or AI shop profiles.
 
 # For example:
 o011

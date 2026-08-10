@@ -32,5 +32,6 @@ library VendorDwarves initializer Init requires VendorCatalogs
         call Register('h00Y', VendorCatalogs_VENDOR_CATALOG_BLACKSMITHING_SUPPLIES)
         call Register('h00Z', VendorCatalogs_VENDOR_CATALOG_MINER)
         call Register('h010', VendorCatalogs_VENDOR_CATALOG_TRADE_GOODS)
+        call Register('h013', VendorCatalogs_VENDOR_CATALOG_BARTENDER)
     endfunction
 endlibrary

@@ -32,5 +32,7 @@ library VendorElarindor initializer Init requires VendorCatalogs
         call Register('h00R', VendorCatalogs_VENDOR_CATALOG_POTIONS, VL_VENDOR_PROFILE_ELARINDOR_FEMALE)
         call Register('h00O', VendorCatalogs_VENDOR_CATALOG_ADVENTURING_SUPPLIES, VL_VENDOR_PROFILE_ELARINDOR_MALE)
         call Register('h00S', VendorCatalogs_VENDOR_CATALOG_QUARTERMASTER, VL_VENDOR_PROFILE_ELARINDOR_FEMALE)
+        call Register('h011', VendorCatalogs_VENDOR_CATALOG_JEWELCRAFTER, VL_VENDOR_PROFILE_ELARINDOR_FEMALE)
+        call Register('h012', VendorCatalogs_VENDOR_CATALOG_MAGISTER, VL_VENDOR_PROFILE_ELARINDOR_MALE)
     endfunction
 endlibrary

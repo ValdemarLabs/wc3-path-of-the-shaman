@@ -34,5 +34,7 @@ library VendorTauren initializer Init requires VendorCatalogs
         call Register('o01C', VendorCatalogs_VENDOR_CATALOG_MINER)
         call Register('o01D', VendorCatalogs_VENDOR_CATALOG_TRADE_GOODS)
         call Register('o01E', VendorCatalogs_VENDOR_CATALOG_TRAVELLING)
+        call Register('o01F', VendorCatalogs_VENDOR_CATALOG_BARTENDER)
+        call Register('o01G', VendorCatalogs_VENDOR_CATALOG_BARTENDER)
     endfunction
 endlibrary

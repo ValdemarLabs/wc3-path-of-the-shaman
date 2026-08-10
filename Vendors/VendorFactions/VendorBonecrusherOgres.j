@@ -34,5 +34,6 @@ library VendorBonecrusherOgres initializer Init requires VendorCatalogs
         call Register('n04L', VendorCatalogs_VENDOR_CATALOG_PROFESSION_SUPPLIES)
         call Register('n04M', VendorCatalogs_VENDOR_CATALOG_QUARTERMASTER)
         call Register('n04N', VendorCatalogs_VENDOR_CATALOG_TRADE_GOODS)
+        call Register('n05G', VendorCatalogs_VENDOR_CATALOG_BARTENDER)
     endfunction
 endlibrary

@@ -24,7 +24,7 @@
     - set hero = VendorDialogs_GetSelectedHero()
 
 **/
-library VendorDialogs initializer Init requires Table, DialogInteraction, DialogCamera, DialogSystem, Shop, ShopUI, VendorCatalogs, VendorOrcs, VendorSatyrs, VendorHumans, VendorGoblins, VendorBonecrusherOgres, VendorElarindor, VendorTauren, VendorDwarves, VendorLines, Reputation, Interface, optional QuestsVendor, optional Events, optional UnitDeathEvent
+library VendorDialogs initializer Init requires Table, DialogInteraction, DialogCamera, DialogSystem, Shop, ShopUI, VendorCatalogs, VendorOrcs, VendorSatyrs, VendorHumans, VendorGoblins, VendorBonecrusherOgres, VendorElarindor, VendorTauren, VendorDwarves, VendorTrolls, VendorLines, Reputation, Interface, optional QuestsVendor, optional Events, optional UnitDeathEvent
     globals
         private constant real VDI_DIALOG_RANGE = 900.00
         private constant real VDI_DIALOG_COOLDOWN = 3.00

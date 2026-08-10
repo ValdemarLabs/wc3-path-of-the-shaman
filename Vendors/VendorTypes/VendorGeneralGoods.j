@@ -2,7 +2,7 @@
     GeneralGoodsVendor
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Template general goods merchant for the PotS shop system. This vendor sells
@@ -24,9 +24,7 @@
 **/
 library GeneralGoodsVendor initializer Init requires Shop, VoicelinesVendorLines, optional AI
     globals
-        private constant integer VGG_UNIT_TYPE_GOBLIN_MERCHANT = 'nmrk'
         private constant integer VGG_UNIT_TYPE_UTILITIES_VENDOR = 'o62U'
-        private constant integer VGG_UNIT_TYPE_HORDE_MARKET = 'o609'
         private constant integer VGG_UNIT_TYPE_THRAKNAR = 'o61U'
 
         private constant integer VGG_ITEM_MINOR_MANA_POTION = 'I6BS'
@@ -60,9 +58,7 @@ library GeneralGoodsVendor initializer Init requires Shop, VoicelinesVendorLines
 
     public function BindAIProfile takes integer profileId returns nothing
         static if LIBRARY_AI then
-            call AI_AddProfileShopUnitType(profileId, VGG_UNIT_TYPE_GOBLIN_MERCHANT)
             call AI_AddProfileShopUnitType(profileId, VGG_UNIT_TYPE_UTILITIES_VENDOR)
-            call AI_AddProfileShopUnitType(profileId, VGG_UNIT_TYPE_HORDE_MARKET)
             call AI_AddProfileShopUnitType(profileId, VGG_UNIT_TYPE_THRAKNAR)
         endif
     endfunction
@@ -81,17 +77,14 @@ library GeneralGoodsVendor initializer Init requires Shop, VoicelinesVendorLines
     endfunction
 
     private function BindVoiceProfiles takes nothing returns nothing
-        call VendorLines_BindUnitTypeProfile(VGG_UNIT_TYPE_GOBLIN_MERCHANT, "Goblin General Goods")
         call VendorLines_BindUnitTypeProfile(VGG_UNIT_TYPE_UTILITIES_VENDOR, "Forest Orc Supplies")
-        call VendorLines_BindUnitTypeProfile(VGG_UNIT_TYPE_HORDE_MARKET, "Forest Orc Supplies")
         call VendorLines_BindUnitTypeProfile(VGG_UNIT_TYPE_THRAKNAR, "Forest Orc Supplies")
     endfunction
 
     private function Init takes nothing returns nothing
-        set VGG_VendorId = Shop_CreateVendor("General Goods Merchant", VGG_UNIT_TYPE_GOBLIN_MERCHANT)
+        set VGG_VendorId = Shop_CreateVendor("General Goods Merchant", 0)
         call Shop_SetVendorTypeLabel(VGG_VendorId, "General Goods")
         call GeneralGoodsVendor_RegisterUnitType(VGG_UNIT_TYPE_UTILITIES_VENDOR)
-        call GeneralGoodsVendor_RegisterUnitType(VGG_UNIT_TYPE_HORDE_MARKET)
         call GeneralGoodsVendor_RegisterUnitType(VGG_UNIT_TYPE_THRAKNAR)
         call RegisterStock()
         call BindVoiceProfiles()
