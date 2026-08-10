@@ -70,8 +70,8 @@ endlibrary
     Version:
 
     Description:
-    Intercepts configured lethal damage and presents the unit as a frozen corpse
-    at one life, preventing immediate decay. A Revive item restores the nearest
+    Intercepts configured lethal damage and presents heroes and hired units as
+    frozen corpses at one life, preventing immediate decay. A Revive item restores the nearest
     allied fallen unit or fatigued pet within 250 range. Hired non-hero companions remain
     revivable for 60 seconds before receiving a real death. Companion AI and AI party
     members can approach and use their own Revive items without a map-wide
@@ -709,6 +709,17 @@ private function Death_OnHeroRevived takes nothing returns nothing
     set whichHero = null
 endfunction
 
+private function Death_OnAIAutomaticRevive takes nothing returns nothing
+    local unit whichHero = AI_EventUnit
+
+    if whichHero != null and IsUnitInGroup(whichHero, Death_RetainedCorpses) then
+        if not Death_ReleaseCorpse(whichHero) then
+            call Death_ReleaseUnmanagedCorpse(whichHero)
+        endif
+    endif
+    set whichHero = null
+endfunction
+
 private function Death_OnReviveChannel takes nothing returns nothing
     local unit caster
     local unit fallen
@@ -815,6 +826,7 @@ private function Init takes nothing returns nothing
     set Death_CastTarget = Table.create()
     set Death_CastingReviver = Table.create()
     call TimerStart(Death_AITimer, DEATH_AI_INTERVAL, true, function Death_ProcessFallenAI)
+    call AI_RegisterAutomaticReviveCallback(function Death_OnAIAutomaticRevive)
 
     call RegisterDamageEngine(function Death_OnLethalDamage, "Lethal", 1.00)
     call UnitDeathEvent_Register(function Death_OnHeroDeath)
