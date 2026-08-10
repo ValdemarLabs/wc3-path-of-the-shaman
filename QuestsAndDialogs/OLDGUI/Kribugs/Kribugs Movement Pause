@@ -1,0 +1,11 @@
+Kribugs Movement Pause
+    Events
+    Conditions
+    Actions
+        -------- ==================================== --------
+        -------- PAUSE PATROL --------
+        -------- -------------------------- --------
+        Set VariableSet TempUnit = Kribugs
+        Custom script:   call PatrolSystem_Pause(udg_TempUnit)
+        -------- -------------------------- --------
+        -------- ==================================== --------

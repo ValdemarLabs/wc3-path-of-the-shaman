@@ -1,0 +1,40 @@
+Kribugs Trade Random Talk
+    Events
+        Time - Every 10.00 seconds of game time
+    Conditions
+    Actions
+        Set VariableSet KribugsRandomGreet = (Random integer number between 1 and 8)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                KribugsRandomGreet Equal to 1
+            Then - Actions
+                Cinematic - Send transmission to (All players) from Kribugs named Ogre: Play KribugsOgreHungry <gen> and display So angry... So hung....  Modify duration: Set to 5.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Kribugs named Kribugs: Play No sound and display No, Ogre, you can....  Modify duration: Set to 5.00 seconds and Wait
+                Trigger - Run Kribugs Ogre Random Voice <gen> (checking conditions)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                KribugsRandomGreet Equal to 2
+            Then - Actions
+                Cinematic - Send transmission to (All players) from Kribugs named Kribugs: Play No sound and display Hey, hey—stop dro....  Modify duration: Set to 5.00 seconds and Wait
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                KribugsRandomGreet Equal to 3
+            Then - Actions
+                Cinematic - Send transmission to (All players) from Kribugs named Kribugs: Play No sound and display Business is booming....  Modify duration: Set to 5.00 seconds and Wait
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                KribugsRandomGreet Equal to 4
+            Then - Actions
+                Cinematic - Send transmission to (All players) from Kribugs named Kribugs: Play No sound and display Kribugs talks, Ogre....  Modify duration: Set to 5.00 seconds and Wait
+                Trigger - Run Kribugs Ogre Random Voice <gen> (checking conditions)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                KribugsRandomGreet Equal to 5
+            Then - Actions
+                Cinematic - Send transmission to (All players) from Kribugs named Kribugs: Play No sound and display He’s big, I’m s....  Modify duration: Set to 5.00 seconds and Wait
+                Trigger - Run Kribugs Ogre Random Voice <gen> (checking conditions)
+            Else - Actions

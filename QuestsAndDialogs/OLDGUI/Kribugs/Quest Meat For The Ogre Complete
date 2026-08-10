@@ -1,0 +1,32 @@
+Quest Meat For The Ogre Complete
+    Events
+    Conditions
+    Actions
+        -------- ======= ================================= ========================== --------
+        -------- ======= ADJUST WHICH QUEST --------
+        Set VariableSet QuestTemp = QuestMeatForOgre
+        -------- ======= DONT MODIFY: LOAD HASHTABLE --------
+        Trigger - Run Quest System Load Hashtable <gen> (ignoring conditions)
+        -------- ======= ================================= ========================== --------
+        -------- ======= REWARDS --------
+        Trigger - Run Quest System Complete Rewards <gen> (ignoring conditions)
+        -------- ======= ================================= ========================== --------
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Meat For The Ogre Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestMeatForOgre as Discovered
+        Quest - Mark QuestMeatForOgreReq1 as Completed
+        Quest - Mark QuestMeatForOgre as Completed
+        -------- Display a quest message. --------
+        Trigger - Run Quest System Complete <gen> (ignoring conditions)
+        -------- REFRESH QUEST ICON --------
+        -------- ======= QUEST State 1-5: (unavailable, available, in progress, complete, ready to turn in) --------
+        Custom script:   set udg_QuestState[udg_QuestID_Temp] = 4
+        Custom script:   call QuestIcon_RegisterQuest(udg_QuestGiverUnit[udg_QuestID_Temp], udg_QuestID_Temp, udg_QuestType[udg_QuestID_Temp], udg_QuestState[udg_QuestID_Temp] )
+        Wait 2.00 seconds
+        -------- ======= QUEST ICON STATUS --------
+        -------- ======= QUEST TYPE: normal, daily, repeatable, dungeon  --------
+        -------- ======= QUEST State 1-5: (unavailable, available, in progress, complete, ready to turn in) --------
+        Set VariableSet QuestGiverUnitTemp = Kribugs
+        Custom script:   call CreateDummyQuestIcon(udg_QuestGiverUnitTemp, "daily", 2)
+        -------- ======= ================================= ========================== --------

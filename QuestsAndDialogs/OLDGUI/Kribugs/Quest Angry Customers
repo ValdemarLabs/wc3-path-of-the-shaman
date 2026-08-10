@@ -1,0 +1,10 @@
+Quest Angry Customers
+    Events
+    Conditions
+    Actions
+        -------- RESET Quest, if previously done --------
+        Quest - Mark QuestAngryCustomers as Incomplete
+        Quest - Mark QuestAngryCustomersReq1 as Incomplete
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Angry Customers Discover <gen> (checking conditions)
+        Trigger - Remove (This trigger) from the trigger queue

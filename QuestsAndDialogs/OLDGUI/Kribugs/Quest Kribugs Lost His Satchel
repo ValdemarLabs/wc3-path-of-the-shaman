@@ -1,0 +1,10 @@
+Quest Kribugs Lost His Satchel
+    Events
+    Conditions
+    Actions
+        -------- RESET Quest, if previously done --------
+        Quest - Mark QuestKribugsSatchel as Incomplete
+        Quest - Mark QuestKribugsSatchelReq1 as Incomplete
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Kribugs Lost His Satchel Discover <gen> (checking conditions)
+        Trigger - Remove (This trigger) from the trigger queue

@@ -1,0 +1,6 @@
+Kribugs Ogre Full Active
+    Events
+        Time - Every (Random real number between 10.00 and 20.00) seconds of game time
+    Conditions
+    Actions
+        Sound - Play KribugsOgreFart <gen> at 100.00% volume, attached to Kribugs

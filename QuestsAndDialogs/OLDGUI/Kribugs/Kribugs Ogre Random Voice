@@ -1,0 +1,29 @@
+Kribugs Ogre Random Voice
+    Events
+    Conditions
+    Actions
+        Set VariableSet KribugsRandomGreet = (Random integer number between 1 and 4)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                KribugsRandomGreet Equal to 1
+            Then - Actions
+                Cinematic - Send transmission to (All players) from Kribugs named Ogre: Play KribugsOgreWhat3 <gen> and display Huh?.  Modify duration: Set to 0.60 seconds and Wait
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                KribugsRandomGreet Equal to 2
+            Then - Actions
+                Cinematic - Send transmission to (All players) from Kribugs named Ogre: Play KribugsOgreWhat4 <gen> and display Rrrhmm?.  Modify duration: Set to 0.60 seconds and Wait
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                KribugsRandomGreet Equal to 3
+            Then - Actions
+                Cinematic - Send transmission to (All players) from Kribugs named Ogre: Play KribugsOgreYes1 <gen> and display (Grunt).  Modify duration: Set to 0.80 seconds and Wait
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                KribugsRandomGreet Equal to 4
+            Then - Actions
+                Cinematic - Send transmission to (All players) from Kribugs named Ogre: Play KribugsOgreAttack3 <gen> and display (Growl).  Modify duration: Set to 1.00 seconds and Wait
+            Else - Actions

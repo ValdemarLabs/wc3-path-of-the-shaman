@@ -1,0 +1,14 @@
+Quest Ogre Lost His Sandwich
+    Events
+    Conditions
+    Actions
+        -------- RESET Quest, if previously done --------
+        Quest - Mark QuestOgreSandwich as Incomplete
+        Quest - Mark QuestOgreSandwichReq1 as Incomplete
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Ogre Lost His Sandwich Discover <gen> (checking conditions)
+        -------- Spawn the sandwich --------
+        Set VariableSet VarPoint = (Center of KribugsSandwich <gen>)
+        Item - Create Old Sandwich at VarPoint
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Trigger - Remove (This trigger) from the trigger queue

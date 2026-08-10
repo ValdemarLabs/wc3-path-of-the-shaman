@@ -1,0 +1,38 @@
+Kribugs Movement Start
+    Events
+        Time - Elapsed game time is 15.00 seconds
+    Conditions
+    Actions
+        -------- ==================================== --------
+        -------- START PATROL --------
+        -------- -------------------------- --------
+        Set VariableSet TempUnit = Kribugs
+        Set VariableSet PatrolSystem_Point[0] = (Center of Kribugs01 <gen>)
+        Set VariableSet PatrolSystem_Wait[0] = 5.00
+        Set VariableSet PatrolSystem_Point[1] = (Center of Kribugs02 <gen>)
+        Set VariableSet PatrolSystem_Wait[1] = 20.00
+        Set VariableSet PatrolSystem_Point[2] = (Center of Kribugs03 <gen>)
+        Set VariableSet PatrolSystem_Wait[2] = 1.00
+        Set VariableSet PatrolSystem_Point[3] = (Center of Kribugs04 <gen>)
+        Set VariableSet PatrolSystem_Wait[3] = 1.00
+        Set VariableSet PatrolSystem_Point[4] = (Center of Kribugs05 <gen>)
+        Set VariableSet PatrolSystem_Wait[4] = 15.00
+        Set VariableSet PatrolSystem_Point[5] = (Center of Kribugs06 <gen>)
+        Set VariableSet PatrolSystem_Wait[5] = 15.00
+        Set VariableSet PatrolSystem_Point[6] = (Center of Kribugs07 <gen>)
+        Set VariableSet PatrolSystem_Wait[6] = 1.00
+        Set VariableSet PatrolSystem_Point[7] = (Center of Kribugs08 <gen>)
+        Set VariableSet PatrolSystem_Wait[7] = 10.00
+        -------- -------------------------- --------
+        Custom script:   call PatrolSystem_Start(udg_TempUnit, 8, 10.00, 1, true, "move", 190.00)
+        -------- Remove leaks --------
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[0])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[1])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[2])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[3])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[4])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[5])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[6])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[7])
+        -------- -------------------------- --------
+        -------- ==================================== --------

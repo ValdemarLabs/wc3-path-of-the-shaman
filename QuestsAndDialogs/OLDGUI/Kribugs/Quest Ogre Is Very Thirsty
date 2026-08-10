@@ -1,0 +1,10 @@
+Quest Ogre Is Very Thirsty
+    Events
+    Conditions
+    Actions
+        -------- RESET Quest, if previously done --------
+        Quest - Mark QuestOgreThirsty as Incomplete
+        Quest - Mark QuestOgreThirstyReq1 as Incomplete
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Ogre Is Very Thirsty Discover <gen> (checking conditions)
+        Trigger - Remove (This trigger) from the trigger queue

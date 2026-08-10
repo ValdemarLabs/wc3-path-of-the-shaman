@@ -1,0 +1,19 @@
+Kribugs Ogre Full
+    Events
+    Conditions
+    Actions
+        -------- SET COUNTER --------
+        Set VariableSet KribugsOgreFullCount = (KribugsOgreFullCount + 1)
+        -------- SET COUNTER --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                KribugsOgreFullCount Greater than or equal to 5
+            Then - Actions
+                Set VariableSet KribugsOgreFull = True
+                -------- Full active --------
+                Unit - Add Fart Cloud (Neutral Hostile no damage) to Kribugs
+                Unit - Set Unit: Kribugs's Integer Field: Tinting Color 1 (Red) ('uclr') to Value: 155
+                Unit - Set Unit: Kribugs's Integer Field: Tinting Color 2 (Green) ('uclg') to Value: 255
+                Unit - Set Unit: Kribugs's Integer Field: Tinting Color 3 (Blue) ('uclb') to Value: 175
+                Trigger - Turn on Kribugs Ogre Full Active <gen>
+            Else - Actions
