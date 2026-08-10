@@ -2,13 +2,14 @@
     DialogCamera
 
     Author: Valdemar
-    Version: 2.0.0
+    Version: 2.1.0
 
     Description:
     Focuses a player's camera on a dialogue unit, provides reusable cinematic
-    presets, and can rotate between presets during long conversations or UI
-    interactions. Destructible and structure checks test several camera angles
-    and points along the view path before selecting a shot.
+    presets, locks the camera target to the dialogue unit, and can rotate between
+    presets during long conversations or UI interactions. Destructible and
+    structure checks test several camera angles and points along the view path
+    before selecting a shot.
 
     Credits:
     - Path of the Shaman CameraControl system
@@ -193,6 +194,11 @@ library DialogCamera initializer Init requires CameraControl
             call CameraControl_Suspend(p)
         endif
 
+        if GetLocalPlayer() == p then
+            call CameraSetSmoothingFactor(1)
+            call SetCameraTargetController(u, 0.00, 0.00, false)
+        endif
+
         call PanCameraToTimedForPlayer(p, x, y, transitionTime)
         call SetCameraFieldForPlayer(p, CAMERA_FIELD_TARGET_DISTANCE, distance, transitionTime)
         call SetCameraFieldForPlayer(p, CAMERA_FIELD_FARZ, farZ, transitionTime)
@@ -348,6 +354,7 @@ library DialogCamera initializer Init requires CameraControl
 
     function DialogCameraReset takes player p, real duration returns nothing
         local integer pid
+        local unit target
 
         if p == null then
             return
@@ -356,8 +363,18 @@ library DialogCamera initializer Init requires CameraControl
         call DialogCameraStopRandomCycle(p)
         if DialogCamera_Active[pid] then
             set DialogCamera_Active[pid] = false
+            set target = CameraControl_GetTargetUnit(p)
+            if GetLocalPlayer() == p then
+                call CameraSetSmoothingFactor(1)
+                if target != null then
+                    call SetCameraTargetController(target, 0.00, 0.00, false)
+                else
+                    call ResetToGameCamera(duration)
+                endif
+            endif
             call CameraControl_ResumeWithDuration(p, duration)
         endif
+        set target = null
     endfunction
 
     private function Init takes nothing returns nothing
