@@ -187,9 +187,13 @@ globals
     private constant real AI_RANDOM_TRAVEL_DURATION_MAX = 180.00
     private constant real AI_SHOP_CHECK_MIN = 18.00
     private constant real AI_SHOP_CHECK_MAX = 45.00
-    private constant real AI_SHOP_COOLDOWN_MIN = 120.00
-    private constant real AI_SHOP_COOLDOWN_MAX = 240.00
+    private constant real AI_SHOP_COOLDOWN_MIN = 240.00
+    private constant real AI_SHOP_COOLDOWN_MAX = 480.00
     private constant integer AI_SHOP_EMPTY_BUY_CHANCE = 20
+    private constant integer AI_SHOP_SITUATIONAL_BUY_CHANCE = 12
+    private constant integer AI_SHOP_GENERAL_BUY_CHANCE = 4
+    private constant real AI_SHOP_LOW_RESOURCE_PERCENT = 0.60
+    private constant real AI_VENDOR_DISCOVERY_RANGE = 6500.00
     private constant real AI_PROFESSION_SCAN_RANGE = 900.00
     private constant real AI_PROFESSION_DEBUG_STATION_RANGE = 99999.00
     private constant real AI_PROFESSION_ACTION_MIN = 12.00
@@ -1296,15 +1300,179 @@ private function FinishBuyState takes integer instanceId, unit whichUnit returns
     set shopUnit = null
 endfunction
 
-private function SelectProfileShop takes integer instanceId, unit whichUnit returns boolean
+private function IsAIShopFactionCompatible takes integer instanceId, unit whichUnit, unit vendor returns boolean
+    local Faction buyerFaction
+    local Faction vendorFaction
+    local string factionName
+
+    if instanceId <= 0 or whichUnit == null or vendor == null then
+        return false
+    endif
+    set vendorFaction = Faction.getByUnit(vendor)
+    if vendorFaction == 0 then
+        return true
+    endif
+    set factionName = ProfileFaction.string[InstanceProfile[instanceId]]
+    if factionName != "" then
+        set buyerFaction = Faction.getFaction(factionName)
+    else
+        set buyerFaction = Faction.getByUnit(whichUnit)
+    endif
+    if buyerFaction == 0 or buyerFaction.p == null then
+        return false
+    endif
+    if buyerFaction == vendorFaction then
+        return true
+    endif
+    if buyerFaction.weights.real[vendorFaction.id] < 0.00 or vendorFaction.weights.real[buyerFaction.id] < 0.00 then
+        return false
+    endif
+    if Reputation.getRep(buyerFaction.p, vendorFaction) < Reputation_REP_NEUTRAL then
+        return false
+    endif
+    if vendorFaction.p != null and not GetPlayerAlliance(buyerFaction.p, vendorFaction.p, ALLIANCE_PASSIVE) then
+        return false
+    endif
+    return true
+endfunction
+
+private function GetAIShopSituationMultiplier takes unit whichUnit, unit vendor returns integer
+    local string vendorType
+    local real healthPercent = 1.00
+    local real manaPercent = 1.00
+    local real maximumMana
+
+    static if LIBRARY_Shop then
+        if whichUnit == null or vendor == null then
+            return 1
+        endif
+        set vendorType = Shop_GetVendorTypeLabel(Shop_GetVendorIdForUnit(vendor))
+        if GetUnitState(whichUnit, UNIT_STATE_MAX_LIFE) > 0.00 then
+            set healthPercent = GetUnitState(whichUnit, UNIT_STATE_LIFE) / GetUnitState(whichUnit, UNIT_STATE_MAX_LIFE)
+        endif
+        set maximumMana = GetUnitState(whichUnit, UNIT_STATE_MAX_MANA)
+        if maximumMana > 0.00 then
+            set manaPercent = GetUnitState(whichUnit, UNIT_STATE_MANA) / maximumMana
+        endif
+        if healthPercent <= AI_SHOP_LOW_RESOURCE_PERCENT and (vendorType == "Potion Seller" or vendorType == "Food and Drink" or vendorType == "Bartender" or vendorType == "Cook/Chef") then
+            return 4
+        endif
+        if manaPercent <= AI_SHOP_LOW_RESOURCE_PERCENT and (vendorType == "Potion Seller" or vendorType == "Reagents" or vendorType == "Shamanic Goods" or vendorType == "Fel Curios" or vendorType == "Voodoo Goods" or vendorType == "Arcanist" or vendorType == "Magister") then
+            return 3
+        endif
+    endif
+    return 1
+endfunction
+
+private function IsAIShopRouteReasonable takes unit whichUnit, unit vendor returns boolean
+    local real sourceX
+    local real sourceY
+    local real dx
+    local real dy
+    local real distance
+    local real progress
+    local integer samples
+    local integer blocked = 0
+    local integer i = 1
+
+    if whichUnit == null or vendor == null then
+        return false
+    endif
+    set sourceX = GetUnitX(whichUnit)
+    set sourceY = GetUnitY(whichUnit)
+    set dx = GetUnitX(vendor) - sourceX
+    set dy = GetUnitY(vendor) - sourceY
+    set distance = SquareRoot(dx * dx + dy * dy)
+    set samples = R2I(distance / 800.00)
+    if samples < 1 then
+        set samples = 1
+    elseif samples > 8 then
+        set samples = 8
+    endif
+    loop
+        exitwhen i > samples
+        set progress = I2R(i) / I2R(samples + 1)
+        if IsTerrainPathable(sourceX + dx * progress, sourceY + dy * progress, PATHING_TYPE_WALKABILITY) then
+            set blocked = blocked + 1
+        endif
+        set i = i + 1
+    endloop
+    return blocked * 2 <= samples
+endfunction
+
+private function SelectDynamicVendor takes integer instanceId, unit whichUnit, boolean requireUsefulStock returns boolean
+    local integer profileId
+    local integer priceCap
+    local integer utility
+    local integer weight
+    local integer totalWeight = 0
+    local real dx
+    local real dy
+    local real distance
+    local unit candidate
+    local unit selected = null
+
+    static if LIBRARY_Shop then
+        if instanceId <= 0 or whichUnit == null or not IsUnitType(whichUnit, UNIT_TYPE_HERO) then
+            return false
+        endif
+        set profileId = InstanceProfile[instanceId]
+        set priceCap = Shop_GetAIPriceCap()
+        call GroupClear(TempGroup)
+        call GroupEnumUnitsInRange(TempGroup, GetUnitX(whichUnit), GetUnitY(whichUnit), AI_VENDOR_DISCOVERY_RANGE, null)
+        loop
+            set candidate = FirstOfGroup(TempGroup)
+            exitwhen candidate == null
+            call GroupRemoveUnit(TempGroup, candidate)
+            if candidate != whichUnit and IsAliveUnit(candidate) and not IsUnitHidden(candidate) and Shop_GetVendorIdForUnit(candidate) > 0 and IsAIShopFactionCompatible(instanceId, whichUnit, candidate) and IsAIShopRouteReasonable(whichUnit, candidate) then
+                if not IsProfileZoneRestricted(instanceId) or IsPointInProfileAllowedZone(profileId, GetUnitX(candidate), GetUnitY(candidate)) then
+                    if requireUsefulStock then
+                        set utility = Shop_GetAIVendorUtility(whichUnit, candidate, priceCap)
+                    else
+                        set utility = 1
+                    endif
+                    if utility > 0 then
+                        set dx = GetUnitX(candidate) - GetUnitX(whichUnit)
+                        set dy = GetUnitY(candidate) - GetUnitY(whichUnit)
+                        set distance = SquareRoot(dx * dx + dy * dy)
+                        set weight = utility * GetAIShopSituationMultiplier(whichUnit, candidate) + R2I((AI_VENDOR_DISCOVERY_RANGE - distance) / 900.00) + 1
+                        set totalWeight = totalWeight + weight
+                        if GetRandomInt(1, totalWeight) <= weight then
+                            set selected = candidate
+                        endif
+                    endif
+                endif
+            endif
+        endloop
+        call GroupClear(TempGroup)
+        if selected != null then
+            set InstanceActionX.real[instanceId] = GetUnitX(selected)
+            set InstanceActionY.real[instanceId] = GetUnitY(selected)
+            set InstanceActionShopUnit.unit[instanceId] = selected
+            set selected = null
+            set candidate = null
+            return true
+        endif
+    endif
+
+    set selected = null
+    set candidate = null
+    return false
+endfunction
+
+private function SelectProfileShop takes integer instanceId, unit whichUnit, boolean requireUsefulStock returns boolean
     local integer profileId
     local integer count
     local integer index
     local integer checked = 0
     local integer key
+    local integer utility
     local unit shopUnit
     if instanceId <= 0 or whichUnit == null then
         return false
+    endif
+    if SelectDynamicVendor(instanceId, whichUnit, requireUsefulStock) then
+        return true
     endif
     set profileId = InstanceProfile[instanceId]
     set count = ProfileShopCount[profileId]
@@ -1316,17 +1484,29 @@ private function SelectProfileShop takes integer instanceId, unit whichUnit retu
         exitwhen checked >= count
         set key = GetPointKey(profileId, index)
         set shopUnit = ProfileShopUnit.unit[key]
-        if shopUnit == null or IsAliveUnit(shopUnit) then
-            if shopUnit != null then
-                set InstanceActionX.real[instanceId] = GetUnitX(shopUnit)
-                set InstanceActionY.real[instanceId] = GetUnitY(shopUnit)
-            else
-                set InstanceActionX.real[instanceId] = ProfileShopX.real[key]
-                set InstanceActionY.real[instanceId] = ProfileShopY.real[key]
-            endif
-            set InstanceActionShopUnit.unit[instanceId] = shopUnit
+        if shopUnit == null then
+            set InstanceActionX.real[instanceId] = ProfileShopX.real[key]
+            set InstanceActionY.real[instanceId] = ProfileShopY.real[key]
+            call InstanceActionShopUnit.unit.remove(instanceId)
             set shopUnit = null
             return true
+        elseif IsAliveUnit(shopUnit) and IsAIShopFactionCompatible(instanceId, whichUnit, shopUnit) then
+            static if LIBRARY_Shop then
+                if requireUsefulStock and Shop_GetVendorIdForUnit(shopUnit) > 0 then
+                    set utility = Shop_GetAIVendorUtility(whichUnit, shopUnit, Shop_GetAIPriceCap())
+                else
+                    set utility = 1
+                endif
+            else
+                set utility = 1
+            endif
+            if utility > 0 then
+                set InstanceActionX.real[instanceId] = GetUnitX(shopUnit)
+                set InstanceActionY.real[instanceId] = GetUnitY(shopUnit)
+                set InstanceActionShopUnit.unit[instanceId] = shopUnit
+                set shopUnit = null
+                return true
+            endif
         endif
         set index = index + 1
         if index > count then
@@ -1474,7 +1654,7 @@ private function BeginBuyState takes integer instanceId, unit whichUnit returns 
     if instanceId <= 0 or whichUnit == null or IsCompanionControlled(whichUnit) then
         return false
     endif
-    if not SelectProfileShop(instanceId, whichUnit) then
+    if not SelectProfileShop(instanceId, whichUnit, true) then
         return false
     endif
     call SetInstanceState(instanceId, AI_STATE_BUY)
@@ -1488,7 +1668,7 @@ private function BeginSellState takes integer instanceId, unit whichUnit returns
         return false
     endif
     set profileId = InstanceProfile[instanceId]
-    if SelectProfileShop(instanceId, whichUnit) then
+    if SelectProfileShop(instanceId, whichUnit, false) then
         call SetInstanceState(instanceId, AI_STATE_SELL)
         call IssuePointOrder(whichUnit, "move", InstanceActionX.real[instanceId], InstanceActionY.real[instanceId])
         return true
@@ -4627,8 +4807,17 @@ private function IsShopActionCandidate takes integer instanceId, unit whichUnit,
     if not IsSideActionState(state) or IsCompanionControlled(whichUnit) or ProfileAutonomousDisabled.boolean[InstanceProfile[instanceId]] then
         return false
     endif
-    if ProfileShopCount[InstanceProfile[instanceId]] <= 0 or IsCastingLocked(whichUnit) or HasNearbyCombatEnemy(whichUnit, 900.00) then
+    if IsCastingLocked(whichUnit) or HasNearbyCombatEnemy(whichUnit, 900.00) then
         return false
+    endif
+    static if LIBRARY_Shop then
+        if ProfileShopCount[InstanceProfile[instanceId]] <= 0 and not IsUnitType(whichUnit, UNIT_TYPE_HERO) then
+            return false
+        endif
+    else
+        if ProfileShopCount[InstanceProfile[instanceId]] <= 0 then
+            return false
+        endif
     endif
     if requireNoOrder and GetUnitCurrentOrder(whichUnit) != 0 then
         return false
@@ -4683,6 +4872,10 @@ private function TryBeginShopSell takes integer instanceId, unit whichUnit, real
 endfunction
 
 private function TryStartShopAction takes integer instanceId, unit whichUnit, integer state, real now returns boolean
+    local real healthPercent = 1.00
+    local real manaPercent = 1.00
+    local real maximumMana
+
     if not IsShopActionCandidate(instanceId, whichUnit, state, true) or now < InstanceNextShop.real[instanceId] then
         return false
     endif
@@ -4692,6 +4885,21 @@ private function TryStartShopAction takes integer instanceId, unit whichUnit, in
     endif
     if IsInventoryEmpty(whichUnit) and GetRandomInt(1, 100) <= AI_SHOP_EMPTY_BUY_CHANCE then
         return TryBeginShopBuy(instanceId, whichUnit, now)
+    endif
+    if GetFreeInventorySlots(whichUnit) > 0 then
+        if GetUnitState(whichUnit, UNIT_STATE_MAX_LIFE) > 0.00 then
+            set healthPercent = GetUnitState(whichUnit, UNIT_STATE_LIFE) / GetUnitState(whichUnit, UNIT_STATE_MAX_LIFE)
+        endif
+        set maximumMana = GetUnitState(whichUnit, UNIT_STATE_MAX_MANA)
+        if maximumMana > 0.00 then
+            set manaPercent = GetUnitState(whichUnit, UNIT_STATE_MANA) / maximumMana
+        endif
+        if (healthPercent <= AI_SHOP_LOW_RESOURCE_PERCENT or manaPercent <= AI_SHOP_LOW_RESOURCE_PERCENT) and GetRandomInt(1, 100) <= AI_SHOP_SITUATIONAL_BUY_CHANCE then
+            return TryBeginShopBuy(instanceId, whichUnit, now)
+        endif
+        if GetRandomInt(1, 100) <= AI_SHOP_GENERAL_BUY_CHANCE then
+            return TryBeginShopBuy(instanceId, whichUnit, now)
+        endif
     endif
     return false
 endfunction
