@@ -72,6 +72,16 @@ library ZoneEvent initializer Init requires ZonesCore, Table, DNC, ExMusic, TasQ
             callback. These are intended for systems that should activate
             only while a player hero is nearby, such as AIRoutines.
 
+        - ZoneEvent_RegisterEntranceTransition(zoneId, sourceRect, destinationRect, facing)
+        - ZoneEvent_RegisterExitTransition(zoneId, sourceRect, destinationRect, facing)
+            Register dungeon/interior portal geometry beside the owning zone
+            sublibrary while ZoneEvent retains movement and zone-state logic.
+
+        - ZoneEvent_SetZoneCameraMode(zoneId, cameraMode)
+        - ZoneEvent_SetFastPanOnEnter(zoneId, enabled)
+            Keep zone-specific presentation choices in the owning zone or
+            dungeon sublibrary while ZoneEvent applies them generically.
+
     Example usage:
         // Disable Zone 11 (Deadwoods) entry events
         call ZoneEvent_EnableZone(11, false)
@@ -121,6 +131,7 @@ globals
     private constant boolean DEBUG = false               // Enable/disable debug messages
     private constant integer MAX_ZONES = 90000          // Support up to zone ID 10000
     private constant integer MAX_AMBIENT_SOUNDS = 10    // Max ambient sounds per zone
+    private constant integer MAX_REGISTERED_TRANSITIONS = 128
     
     // Unit types to exclude from zone detection (easy to extend - just add more!)
     private constant integer MAX_EXCLUDED_UNIT_TYPES = 10
@@ -138,11 +149,23 @@ globals
     private trigger array zoneLeaveTriggers             // Trigger handles for zone leave events
     private Table triggerToZoneId                       // Table mapping triggers to zoneIds
     private Table unitCurrentZone                       // Per-hero zone state for listener events
+    private Table transitionTriggerToId
+    private Table zoneCameraMode
+    private Table zoneFastPanOnEnter
     private trigger zoneEnterListeners = null
     private trigger zoneLeaveListeners = null
     private trigger dayNightEventTrigger = null         // Trigger for day/night transitions
     private timer dayNightUpdateTimer = null            // Timer for periodic day/night updates
     private timer dayNightResetTimer  = null            // Timer to reset day/night event flag
+    private integer transitionCount = 0
+    private integer array transitionZoneId
+    private rect array transitionDestination
+    private real array transitionFacing
+    private boolean array transitionIsExit
+    private trigger array transitionTrigger
+    private group transitionMoveGroup = null
+    private real transitionMoveX = 0.00
+    private real transitionMoveY = 0.00
     // Configurable sounds for zone discover/enter
     private sound ZONE_DISCOVER_SOUND = null
     private sound ZONE_ENTER_SOUND = null
@@ -352,17 +375,18 @@ private function ShouldFastPanOnEnter takes ZoneData z returns boolean
         return false
     endif
 
-    // Keep fast camera pans limited to teleported subzones and a few explicit
-    // dungeon transitions so ordinary zone borders do not snap the camera.
+    // Teleported subzones pan by default. Other zones opt in through their
+    // owning configuration library.
     if z.startRegion != null and z.moveRegion != null then
         return true
     endif
 
-    return z.zoneId == 101 or z.zoneId == 102 or z.zoneId == 104 or z.zoneId == 105
+    return zoneFastPanOnEnter.boolean[z.zoneId]
 endfunction
 
 private function HandleSpecialEffects takes ZoneData z, unit triggeringUnit returns nothing
     local player whichPlayer = Player(0)
+    local integer cameraMode
     // Handle special zone effects (camera, sky, etc.)
 
     if triggeringUnit != null then
@@ -373,11 +397,11 @@ private function HandleSpecialEffects takes ZoneData z, unit triggeringUnit retu
         call SetSkyModel(null)
     endif
     
-    if z.hasSpecialCamera and z.zoneId == 104 then
-        // Boom Mine special camera
-        call CameraControl_SetSpecialMode(whichPlayer, CameraControl_CAMERA_SPECIAL_MODE_BOOMMINE)
+    set cameraMode = zoneCameraMode[z.zoneId]
+    if cameraMode > 0 then
+        call CameraControl_SetSpecialMode(whichPlayer, cameraMode)
         if DEBUG then
-            call Debug("Applying special camera for Boom Mine")
+            call Debug("Applying special camera mode " + I2S(cameraMode) + " for zone " + I2S(z.zoneId))
         endif
     else
         call CameraControl_ClearSpecialMode(whichPlayer)
@@ -469,6 +493,30 @@ endfunction
 
 private function BuildZoneName takes string zoneName, string zoneColor returns string
     return zoneColor + zoneName + COLOR_END
+endfunction
+
+public function SetZoneCameraMode takes integer zoneId, integer cameraMode returns nothing
+    if ZonesCore_GetZoneData(zoneId) == 0 then
+        call BJDebugMsg("|cffff8080[ZoneEvent] Cannot set a camera mode for unknown zone " + I2S(zoneId) + ".|r")
+        return
+    endif
+    if cameraMode > 0 then
+        set zoneCameraMode[zoneId] = cameraMode
+    else
+        call zoneCameraMode.remove(zoneId)
+    endif
+endfunction
+
+public function SetFastPanOnEnter takes integer zoneId, boolean enabled returns nothing
+    if ZonesCore_GetZoneData(zoneId) == 0 then
+        call BJDebugMsg("|cffff8080[ZoneEvent] Cannot set fast-pan behavior for unknown zone " + I2S(zoneId) + ".|r")
+        return
+    endif
+    if enabled then
+        set zoneFastPanOnEnter.boolean[zoneId] = true
+    else
+        call zoneFastPanOnEnter.boolean.remove(zoneId)
+    endif
 endfunction
 
 private function AddUnitsFromGroupToMoveGroup takes group sourceGroup, group targetGroup returns nothing
@@ -779,6 +827,115 @@ private function NotifyUnitZoneEnter takes integer zoneId, unit triggeringUnit r
 
     set unitCurrentZone[unitKey] = zoneId
     call FireZoneListener(zoneEnterListeners, zoneId, triggeringUnit)
+endfunction
+
+private function NotifyUnitZoneLeave takes integer zoneId, unit triggeringUnit returns nothing
+    local integer unitKey
+
+    if zoneId <= 0 or triggeringUnit == null then
+        return
+    endif
+    set unitKey = GetHandleId(triggeringUnit)
+    if unitCurrentZone[unitKey] == zoneId then
+        call unitCurrentZone.remove(unitKey)
+        call FireZoneListener(zoneLeaveListeners, zoneId, triggeringUnit)
+    endif
+endfunction
+
+private function MoveRegisteredTransitionUnit takes nothing returns nothing
+    local unit whichUnit = GetEnumUnit()
+
+    if FallenHeroState_IsAlive(whichUnit) then
+        call SetUnitPosition(whichUnit, transitionMoveX, transitionMoveY)
+    endif
+    set whichUnit = null
+endfunction
+
+private function OnRegisteredTransition takes nothing returns nothing
+    local trigger whichTrigger = GetTriggeringTrigger()
+    local integer transitionId = transitionTriggerToId.get(whichTrigger)
+    local integer zoneId
+    local unit enteringUnit = GetTriggerUnit()
+    local player owner = null
+    local rect destination = null
+
+    if transitionId <= 0 or enteringUnit == null or not systemEnabled then
+        set whichTrigger = null
+        set enteringUnit = null
+        return
+    endif
+    set zoneId = transitionZoneId[transitionId]
+    set owner = GetOwningPlayer(enteringUnit)
+    if not ZonesCore_IsZoneEnabled(zoneId) or not IsPlayerInForce(owner, udg_PlayerGroup) or not IsUnitType(enteringUnit, UNIT_TYPE_HERO) or IsUnitTypeExcluded(GetUnitTypeId(enteringUnit)) then
+        set owner = null
+        set whichTrigger = null
+        set enteringUnit = null
+        return
+    endif
+
+    set destination = transitionDestination[transitionId]
+    set transitionMoveX = GetRectCenterX(destination)
+    set transitionMoveY = GetRectCenterY(destination)
+    call SetUnitPosition(enteringUnit, transitionMoveX, transitionMoveY)
+    call SetUnitFacing(enteringUnit, transitionFacing[transitionId])
+
+    call GroupClear(transitionMoveGroup)
+    call AddControlledUnitsToMoveGroup(transitionMoveGroup)
+    call GroupRemoveUnit(transitionMoveGroup, enteringUnit)
+    call ForGroup(transitionMoveGroup, function MoveRegisteredTransitionUnit)
+    call GroupClear(transitionMoveGroup)
+
+    if transitionIsExit[transitionId] then
+        call NotifyUnitZoneLeave(zoneId, enteringUnit)
+        call HandleZoneLeaveCleanup(zoneId, enteringUnit)
+        call ZonesCore_ResetZone()
+        call DNC_Outdoors()
+        call CameraControl_ClearSpecialMode(owner)
+    else
+        call NotifyUnitZoneEnter(zoneId, enteringUnit)
+    endif
+    call CameraControl_UpdateTargetCache(owner)
+
+    set destination = null
+    set owner = null
+    set enteringUnit = null
+    set whichTrigger = null
+endfunction
+
+private function RegisterTransition takes integer zoneId, rect sourceRect, rect destinationRect, real facing, boolean isExit returns integer
+    local trigger whichTrigger = null
+    local integer transitionId
+
+    if ZonesCore_GetZoneData(zoneId) == 0 or sourceRect == null or destinationRect == null then
+        call BJDebugMsg("|cffff8080[ZoneEvent] Invalid registered transition for zone " + I2S(zoneId) + ".|r")
+        return 0
+    endif
+    if transitionCount >= MAX_REGISTERED_TRANSITIONS then
+        call BJDebugMsg("|cffff8080[ZoneEvent] Registered transition limit reached.|r")
+        return 0
+    endif
+
+    set transitionCount = transitionCount + 1
+    set transitionId = transitionCount
+    set whichTrigger = CreateTrigger()
+    set transitionZoneId[transitionId] = zoneId
+    set transitionDestination[transitionId] = destinationRect
+    set transitionFacing[transitionId] = facing
+    set transitionIsExit[transitionId] = isExit
+    set transitionTrigger[transitionId] = whichTrigger
+    call transitionTriggerToId.store(whichTrigger, transitionId)
+    call TriggerRegisterEnterRectSimple(whichTrigger, sourceRect)
+    call TriggerAddAction(whichTrigger, function OnRegisteredTransition)
+    set whichTrigger = null
+    return transitionId
+endfunction
+
+public function RegisterEntranceTransition takes integer zoneId, rect sourceRect, rect destinationRect, real facing returns integer
+    return RegisterTransition(zoneId, sourceRect, destinationRect, facing, false)
+endfunction
+
+public function RegisterExitTransition takes integer zoneId, rect sourceRect, rect destinationRect, real facing returns integer
+    return RegisterTransition(zoneId, sourceRect, destinationRect, facing, true)
 endfunction
 
 //===========================================================================
@@ -1237,6 +1394,10 @@ private function Init takes nothing returns nothing
     
     set triggerToZoneId = Table.create()
     set unitCurrentZone = Table.create()
+    set transitionTriggerToId = Table.create()
+    set zoneCameraMode = Table.create()
+    set zoneFastPanOnEnter = Table.create()
+    set transitionMoveGroup = CreateGroup()
 
     // Register zone enter triggers
     call RegisterZoneRegions() 
