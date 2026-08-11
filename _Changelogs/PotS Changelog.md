@@ -19,6 +19,9 @@
 
 ### Player-Facing Updates
 
+- Converted Outcast Jin'Zun's legacy quest chain, optional quests, roaming dialogue, Healing Ward placement, tree restoration, and succubus dispel interaction to the current quest and dialogue systems.
+- Jin'Zun's quests no longer grant Horde reputation. After Sargoth he equips his fishing pole; after Unknown Entity he loses it, discovers `Da Fishing Pole Missing`, relocates to his lake spot, and resumes fishing animation when the pole is returned.
+- Prince Zaekolaerr can now be questioned about Jin'Zun's missing fishing pole while the retrieval quest is active.
 - Converted Kribugs' six legacy quests, ogre fullness cycle, patrol interaction, unique dialogue, and merchant access to the current quest and vendor systems.
 - Kribugs now sells randomized curiosities through the shared Trade UI; his Special Deal pitch leads into the same inventory so purchases use normal stock, pricing, and trade-session rules.
 - Added 21 planned dialogue vendors: ten bartenders, four jewelcrafters, two Orc spirit speakers, two Orc fel-curio dealers, one Troll voodoo merchant, one Human arcanist, and one Elarindor magister.
@@ -29,6 +32,9 @@
 
 ### Technical Updates
 
+- Added `QuestsAndDialogs/QuestGivers/qOutcastJinzun.j` from the legacy `QuestsAndDialogs/OLDGUI/OutcastJinzun` triggers, including quest prerequisites and rewards, item tracking, staged Unknown Entity and crypt hooks, patrol and fishing-spot control, quest-item recovery, neutral-faction rewards, and respawn refresh support.
+- Updated `QuestsAndDialogs/QuestGivers/qZaekolaerr.j` with the active fishing-pole quest inquiry and availability marker integration.
+- Updated `CreepRespawn/CreepUnitAssignment.j` and its test-map variant to restore Jin'Zun through `qOutcastJinzun` instead of restarting the legacy GUI patrol trigger.
 - Added `QuestsAndDialogs/QuestGivers/qKribugs.j` from the legacy `QuestsAndDialogs/OLDGUI/Kribugs` triggers, including quest prerequisites, item and kill tracking, repeatable meat/cure flow, dialogue voicelines, patrol control, and respawn hooks.
 - Updated `Vendors/VendorDialogs.j` with custom-dialog vendor registration so bespoke quest givers can retain ShopUI, catalog, trade outcome, and return-flow integration without opening the generic vendor dialog in parallel.
 - Updated `CreepRespawn/CreepUnitAssignment.j` to restore `qKribugs` vendor, quest-dialog, and patrol hooks after respawn instead of executing the converted GUI patrol trigger.
@@ -43,6 +49,7 @@
 
 ### Actions Remaining
 
+- Import `QuestsAndDialogs/QuestGivers/qOutcastJinzun.j` before `qZaekolaerr.j`, disable the converted OutcastJinzun GUI trigger group, connect the Unknown Entity and Crypt encounter update hooks, then compile and runtime-test the full quest chain, Jin'Zun's fishing-spot pathing, and both player interaction paths.
 - Create the 21 documented unit types in Object Editor using the assigned rawcodes, names, suffixes, and genders, then place and runtime-test representative vendors from every new catalog.
 - Import recordings for `VendorTrollMale_0001-0015`; text-duration fallback remains active until those files exist.
 - Full-map test autonomous Horde, Riverbane, Goblin, and Elarindor heroes near friendly, neutral, hostile, inaccessible, empty-stock, and high-price vendors.
