@@ -2,7 +2,7 @@
     qOutcastJinzun
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
     Quest, dialogue, patrol, fishing, ward-placement, tree-restoration, and
@@ -13,10 +13,10 @@
     - Legacy GUI triggers in QuestsAndDialogs/OLDGUI/OutcastJinzun.
 
     How to install:
-    Import after the required quest, dialogue, patrol, item, sound, and
-    voiceline libraries. Disable the converted OutcastJinzun GUI trigger
-    group. Keep the Unknown Entity encounter and Crypt encounter triggers,
-    and connect them through the public update hooks below.
+    Import after the required quest, dialogue, encounter, patrol, item, sound,
+    and voiceline libraries. Disable the converted OutcastJinzun and Unknown
+    Entity GUI trigger groups. The remaining Crypt encounter can call the
+    public Resurgence objective hook below until it is converted.
 
     API:
     - call qOutcastJinzun_UpdateUnknownEntityLure()
@@ -28,7 +28,7 @@
     - call qOutcastJinzun_RefreshRespawnedUnitHooks()
 
 **/
-library qOutcastJinzun initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, PatrolSystem, HeroItemCheck, ExSound, VoicelinesJinzun, VoicelinesNazgrek, VoicelinesDemoness
+library qOutcastJinzun initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, BossUnknownEntity, PatrolSystem, HeroItemCheck, ExSound, VoicelinesJinzun, VoicelinesNazgrek, VoicelinesDemoness
     globals
         private constant boolean DEBUG = false
 
@@ -472,7 +472,7 @@ library qOutcastJinzun initializer Init requires QuestGiver, QuestMaster, Dialog
 
         set x = GetRectCenterX(targetRect)
         set y = GetRectCenterY(targetRect)
-        set ward = CreateUnit(Player(bj_PLAYER_NEUTRAL_PASSIVE), UNIT_HEALING_WARD, x, y, bj_UNIT_FACING)
+        set ward = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_HEALING_WARD, x, y, bj_UNIT_FACING)
         call ExSound_PlayLabelAtPoint("StasisTotem", x, y, false)
         call RemovePlagueRitual(index)
         set PlagueWardPlaced[index] = true
@@ -539,7 +539,7 @@ library qOutcastJinzun initializer Init requires QuestGiver, QuestMaster, Dialog
         call SetUnitAnimation(hero, "stand victory")
         call RemoveDestructable(oldTree)
         set udg_MightyTree[index] = CreateDestructable(DESTRUCTIBLE_MIGHTY_TREE_ALIVE, x, y, GetRestoredTreeFacing(index), 4.20, 0)
-        call SetBlightRect(Player(bj_PLAYER_NEUTRAL_PASSIVE), GetTreeBlightRect(index), false)
+        call SetBlightRect(Player(PLAYER_NEUTRAL_PASSIVE), GetTreeBlightRect(index), false)
         call ResetUnitAnimation(hero)
         set SeedsTreeRestored[index] = true
         set SeedsTreesRestored = SeedsTreesRestored + 1
@@ -690,7 +690,7 @@ library qOutcastJinzun initializer Init requires QuestGiver, QuestMaster, Dialog
             call PreparePlagueWorld()
             call GiveHealingWards(SelectedHero)
         elseif PendingQuestName == QUEST_UNKNOWN_ENTITY then
-            call ExecuteFunc("Trig_BOSS_Unknown_Entity_Init_Actions")
+            call BossUnknownEntity_Arm()
         elseif PendingQuestName == QUEST_SEEDS_LIFE then
             set SeedsTreesRestored = 0
             set SeedsTreeRestored[1] = false
@@ -1247,6 +1247,7 @@ library qOutcastJinzun initializer Init requires QuestGiver, QuestMaster, Dialog
         call DialogInteraction_SetGreetOrder(Jinzun, DIALOGINTERACTION_GREET_NAZGREK_THEN_NPC)
         call RegisterDialogLines()
         call CreateQuests()
+        call BossUnknownEntity_SetQuestCallbacks(function UpdateUnknownEntityLure, function UpdateUnknownEntityKill, function UpdateUnknownEntitySlime)
         call RefreshAvailabilityInternal()
         call EnsureFishingQuestDiscovered()
         call DialogInteraction_RegisterSelectionHandler(Jinzun, function OnSelected)
