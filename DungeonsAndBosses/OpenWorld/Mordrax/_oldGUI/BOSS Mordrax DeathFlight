@@ -1,0 +1,10 @@
+BOSS Mordrax DeathFlight
+    Events
+    Conditions
+    Actions
+        Set VariableSet BossMordrax_Point = (Position of BossMordrax)
+        Set VariableSet BossMordrax_TargetPoint = (BossMordrax_Point offset by 5000.00 towards (Random angle) degrees.)
+        Unit - Set BossMordrax movement speed to 150.00
+        Unit - Order BossMordrax to Move To BossMordrax_TargetPoint
+        Unit - Add Crow Form to BossMordrax
+        Animation - Change BossMordrax flying height to 2000.00 at 50.00

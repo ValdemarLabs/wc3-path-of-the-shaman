@@ -1,0 +1,26 @@
+BOSS Sargoth Dies
+    Events
+        Unit - A unit Dies
+    Conditions
+        (Dying unit) Equal to BossSargoth
+    Actions
+        -------- =================== --------
+        -------- Destroy attacking spiders group --------
+        Custom script:   call DestroyGroup(udg_SargothSpiderGroup)
+        -------- turn off triggers --------
+        -------- =================== --------
+        Trigger - Turn off BOSS Sargoth Burrow 25 <gen>
+        Trigger - Turn off BOSS Sargoth Burrow 50 <gen>
+        Trigger - Turn off BOSS Sargoth SpiderGroup <gen>
+        Trigger - Remove BOSS Sargoth Burrow 25 Q <gen> from the trigger queue
+        Trigger - Remove BOSS Sargoth Burrow 50 Q <gen> from the trigger queue
+        -------- =================== --------
+        -------- Turn on BOSS fight starting trigger --------
+        Trigger - Turn on BOSS Sargoth Start <gen>
+        -------- Respawn --------
+        Set VariableSet BOSS_RT = (Random real number between 240.00 and 500.00)
+        Countdown Timer - Start BossSargothRT as a One-shot timer that will expire in BOSS_RT seconds
+        -------- Turn off this trigger --------
+        Trigger - Turn off (This trigger)
+        Trigger - Remove (This trigger) from the trigger queue
+        -------- =================== --------

@@ -1,0 +1,9 @@
+BOSS Colossus Cleaving Attacks Add
+    Events
+        Time - Every 1.00 seconds of game time
+    Conditions
+        (BossColossus has buff Flame Strike) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        Unit - Add Cleaving Attack (Colossus) to BossColossus
+        Trigger - Turn on BOSS Colossus Cleaving Attacks Remove <gen>

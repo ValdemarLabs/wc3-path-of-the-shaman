@@ -1,0 +1,28 @@
+BOSS Scorchion Dark Shamans Torture
+    Events
+        Time - BossScorchionTortureTimer expires
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in BossScorchionDarkShamans) Greater than 0
+            Then - Actions
+                Set VariableSet BossScorchionDarkShaman = (Random unit from BossScorchionDarkShamans)
+                Set VariableSet CV = (Custom value of BossScorchionDarkShaman)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        IsUnitAlive[CV] Equal to True
+                    Then - Actions
+                        Unit - Order BossScorchionDarkShaman to Attack Once BossScorchion
+                        Wait 0.50 seconds
+                        Unit - Make BossScorchion face BossScorchionDarkShaman over 0.20 seconds
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Random integer number between 1 and 5) Equal to 5
+                            Then - Actions
+                                Wait (Random real number between 0.50 and 1.00) seconds
+                                Unit - Make BossScorchion face (Random unit from BossScorchionDarkShamans) over 0.20 seconds
+                            Else - Actions
+                    Else - Actions
+            Else - Actions
+        Countdown Timer - Start BossScorchionTortureTimer as a One-shot timer that will expire in (Random real number between 1.00 and 4.00) seconds

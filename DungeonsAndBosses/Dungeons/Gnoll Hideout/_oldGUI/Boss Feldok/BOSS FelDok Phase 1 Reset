@@ -1,0 +1,17 @@
+BOSS FelDok Phase 1 Reset
+    Events
+        Time - Every 5.00 seconds of game time
+    Conditions
+        ((Units in BossFeldokArea01 <gen> owned by Player 1 (Red)) is empty) Equal to True
+    Actions
+        -------- Boss Chat --------
+        Cinematic - Send transmission to (All players) from a Player 12 (Brown).Deathlord Fel'Dok named Deathlord Fel'Dok at (Center of (Playable map area)): Play No sound and display Run cowards, run!.  Modify duration: Set to 1.50 seconds and Wait
+        -------- Reset Boss + other starting initials --------
+        Unit - Set life of BossFeldok to 100.00%
+        Unit - Set mana of BossFeldok to 100.00%
+        -------- Turn off all BOSS phases --------
+        Trigger - Turn off BOSS FelDok Phase 1 Fight <gen>
+        -------- Turn on BOSS fight starting trigger --------
+        Trigger - Turn on BOSS FelDok Phase 1 Start <gen>
+        -------- Turn off this trigger --------
+        Trigger - Turn off (This trigger)

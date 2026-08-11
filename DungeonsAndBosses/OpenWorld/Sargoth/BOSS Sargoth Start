@@ -1,0 +1,22 @@
+BOSS Sargoth Start
+    Events
+        Unit - A unit Is attacked
+    Conditions
+        (Unit-type of (Triggering unit)) Equal to Sargoth
+    Actions
+        Trigger - Turn off (This trigger)
+        Set VariableSet BossSargothReset = False
+        Set VariableSet BossSargoth = (Triggering unit)
+        Unit Group - Add BossSargoth to BOSS
+        -------- =================== --------
+        Cinematic - Send transmission to (All players) from a Neutral Hostile.Sargoth named Sargoth at (Center of (Playable map area)): Play Sargoth_1 <gen> and display *Unrecognizable scr....  Modify duration: Set to 1.50 seconds and Wait
+        -------- =================== --------
+        Trigger - Turn on BOSS Sargoth Burrow 25 <gen>
+        Trigger - Turn on BOSS Sargoth Burrow 50 <gen>
+        Unit - For BossSargoth, Ability Burrow (Sargoth) , Disable ability: True, Hide UI: True
+        Trigger - Turn on BOSS Sargoth Reset <gen>
+        Trigger - Turn on BOSS Sargoth Dies <gen>
+        Trigger - Turn on BOSS Sargoth Movement <gen>
+        Trigger - Turn on BOSS Sargoth SpiderGroup <gen>
+        -------- =================== --------
+        Trigger - Remove (This trigger) from the trigger queue

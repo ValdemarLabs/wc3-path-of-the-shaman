@@ -1,0 +1,29 @@
+BOSS Scorchion Fire Orbs End
+    Events
+        Time - BossScorchionFireOrbsTimer expires
+    Conditions
+    Actions
+        Game - Display to (All players) the text: debug: Fire Orbs End
+        Unit - Remove Fire Orb (Scorchion) from BossScorchion
+        Custom script:   call SetUnitPropWindow( udg_BossScorchion, 60.00 )
+        -------- ========================================= --------
+        Unit Group - Pick every unit in BossScorchionOrbGroup and do (Actions)
+            Loop - Actions
+                Custom script:   call SetUnitPropWindow(GetEnumUnit(),60.00)
+                Unit - Set (Picked unit) movement speed to 140.00
+                Unit - Set Base Damage of (Picked unit) to 100 for weapon index: 0
+                Unit - Make (Picked unit) Invulnerable
+                Unit - Turn collision for (Picked unit) Off.
+                Unit - Order (Picked unit) to Attack BossScorchion
+                Unit - Add a 30.00 second Generic expiration timer to (Picked unit)
+                Unit - Add Undying Flame (Scorchion Orbs) to (Picked unit)
+        -------- ========================================= --------
+        Trigger - Turn on BOSS Scorchion Fire Orbs Start <gen>
+        Countdown Timer - Start BossScorchionPhaseTimer as a One-shot timer that will expire in 60.00 seconds
+        Trigger - Turn on BOSS Scorchion Fire Meteors <gen>
+        Trigger - Turn on BOSS Scorchion Blink <gen>
+        Trigger - Turn on BOSS Scorchion Fire Ward <gen>
+        Trigger - Turn on BOSS Scorchion Random Aggro <gen>
+        -------- ========================================= --------
+        Trigger - Turn off BOSS Scorchion Fire Orbs Loop <gen>
+        -------- ========================================= --------

@@ -1,0 +1,11 @@
+BOSS Scorchion Fire Orbs Temporal Instability Ends
+    Events
+        Time - BossColossusTempWeaknessTime expires
+    Conditions
+    Actions
+        Game - Display to (All players) the text: debug: Fire Orbs Te...
+        -------- ========================================= --------
+        Unit - Remove Temporal Instability (Scorchion) from BossScorchion
+        -------- ========================================= --------
+        Trigger - Turn off BOSS Scorchion Fire Orbs Temporal Instability Damage <gen>
+        -------- ========================================= --------

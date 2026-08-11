@@ -1,0 +1,64 @@
+BOSS Scorchion Start
+    Events
+        Time - Every 2.00 seconds of game time
+    Conditions
+        (All units of BossScorchionDarkShamans are dead) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        Trigger - Turn off BOSS Scorchion Engage Reset <gen>
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Scorchion_Engage_During_Lines)
+        Countdown Timer - Pause BossScorchionDarkShamansRTimer
+        Set VariableSet BossScorchionDarkShamansLine = (Random integer number between 1 and 3)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BossScorchionDarkShamansLine Equal to 1
+                (All units of BossScorchionDarkShamans are dead) Equal to False
+            Then - Actions
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = The spirits… never to be… controlled…
+                Custom script:   call ExSound_Play("DarkShaman_0007", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from (Random unit from BossScorchionDarkShamans) named Dark Shaman: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BossScorchionDarkShamansLine Equal to 2
+                (All units of BossScorchionDarkShamans are dead) Equal to False
+            Then - Actions
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = The fire… is unbound… It devours… us all… 
+                Custom script:   call ExSound_Play("DarkShaman_0008", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from (Random unit from BossScorchionDarkShamans) named Dark Shaman: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BossScorchionDarkShamansLine Equal to 3
+                (All units of BossScorchionDarkShamans are dead) Equal to False
+            Then - Actions
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = ...Scorchion will destroy you!
+                Custom script:   call ExSound_Play("DarkShaman_0009", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from (Random unit from BossScorchionDarkShamans) named Dark Shaman: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+            Else - Actions
+        -------- ========== - ============= --------
+        Special Effect - Destroy BossScorchionStartFx
+        Countdown Timer - Pause BossScorchionEngageFacingTimer
+        Cinematic - Send transmission to (All players) from BossScorchion named Scorchion: Play Scorchion05 <gen> and display Beware, I live..  Modify duration: Set to 3.50 seconds and Don't wait
+        Wait 5.00 seconds
+        Unit - Change ownership of BossScorchion to Player 12 (Brown) and Retain color
+        Unit - Make BossScorchion Vulnerable
+        Unit - Set Unit: BossScorchion's Real Field: Hit Points Regeneration Rate ('uhpr') to Value: 0.50
+        Custom script:   call SetUnitPropWindow( udg_BossScorchion, 60.00 )
+        -------- ========== - ============= --------
+        Trigger - Turn on BOSS Scorchion Reset <gen>
+        Trigger - Turn on BOSS Scorchion Dies <gen>
+        -------- ========== PHASES ============= --------
+        Trigger - Turn on BOSS Scorchion Fire Orbs Start <gen>
+        Countdown Timer - Start BossScorchionPhaseTimer as a One-shot timer that will expire in 60.00 seconds
+        Trigger - Turn on BOSS Scorchion Fire Meteors <gen>
+        Trigger - Turn on BOSS Scorchion Blink <gen>
+        Trigger - Turn on BOSS Scorchion Fire Ward <gen>
+        Trigger - Turn on BOSS Scorchion Random Aggro <gen>
+        -------- ========== - ============= --------

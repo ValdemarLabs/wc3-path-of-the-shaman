@@ -1,0 +1,8 @@
+BOSS Scorchion Fire Meteors
+    Events
+        Time - Every 8.00 seconds of game time
+    Conditions
+        (BossScorchion is alive) Equal to True
+    Actions
+        Unit - Add Infernal Rain (Scorchion) to BossScorchion
+        Unit - Order BossScorchion to Human Mountain King - Thunder Clap.

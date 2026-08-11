@@ -1,0 +1,31 @@
+BOSS Scorchion Fire Orbs Loop
+    Events
+        Time - Every 2.20 seconds of game time
+    Conditions
+        (BossScorchion is alive) Equal to True
+    Actions
+        Game - Display to (All players) the text: debug: Fire Orbs Ca...
+        -------- =================================== --------
+        Set VariableSet BossScorchionPoint = (Position of BossScorchion)
+        Set VariableSet BossScorchionTargetGroup = (Units within 700.00 of BossScorchionPoint matching ((((Matching unit) is alive) Equal to True) and (((Matching unit) belongs to an enemy of (Owner of BossScorchion).) Equal to True)).)
+        Set VariableSet BossScorchionTarget = (Random unit from BossScorchionTargetGroup)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BossScorchionTarget Not equal to No unit
+            Then - Actions
+                Set VariableSet BossScorchionTargetPoint = (Position of BossScorchionTarget)
+                Set VariableSet BossScorchionAngle = (Angle from BossScorchionPoint to BossScorchionTargetPoint)
+                Set VariableSet BossScorchionTargetPoint = (BossScorchionPoint offset by 150.00 towards BossScorchionAngle degrees.)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Unit-type of BossScorchionTarget) Not equal to Totem
+                    Then - Actions
+                        Unit - Order BossScorchion to Special - Dark Summoning BossScorchionTargetPoint
+                    Else - Actions
+                -------- =================================== --------
+            Else - Actions
+        -------- =================================== --------
+        Custom script:   call DestroyGroup(udg_BossScorchionTargetGroup)
+        Custom script:   call RemoveLocation(udg_BossScorchionPoint)
+        Custom script:   call RemoveLocation(udg_BossScorchionTargetPoint)
+        -------- =================================== --------

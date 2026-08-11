@@ -1,0 +1,24 @@
+BOSS Scorchion Fire Orbs Orbs Consume
+    Events
+        Game - DamageModifierEvent becomes Equal to 1.00
+    Conditions
+        (Unit-type of DamageEventTarget) Equal to Scorchion (Level 20)
+        (Unit-type of DamageEventSource) Equal to Orb of Fire
+    Actions
+        -------- ========================================= --------
+        Set VariableSet DamageEventAmount = 0.00
+        Special Effect - Create a special effect attached to the chest of BossScorchion using Abilities\Spells\Orc\Disenchant\DisenchantSpecialArt.mdl
+        Special Effect - Destroy (Last created special effect)
+        Unit - Kill DamageEventSource
+        -------- ========================================= --------
+        -------- Make Scorchion stronger --------
+        Animation - Queue BossScorchion's spell channel second animation
+        Unit - Set Base Damage of BossScorchion to ((Base Damage of BossScorchion for weapon index 0) + 5) for weapon index: 0
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Unit: BossScorchion's Real Field: Scaling Value ('usca')) Less than or equal to 5.00
+            Then - Actions
+                Unit - Set Unit: BossScorchion's Real Field: Scaling Value ('usca') to Value: ((Unit: BossScorchion's Real Field: Scaling Value ('usca')) + 0.25)
+                Cinematic - Send transmission to (All players) from BossScorchion named Scorchion: Play Scorchion03 <gen> and display Consume....  Modify duration: Set to 3.00 seconds and Don't wait
+            Else - Actions
+        -------- ========================================= --------

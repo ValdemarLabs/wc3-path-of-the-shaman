@@ -1,0 +1,13 @@
+BOSS Roljin Phase 1 Start
+    Events
+        Unit - A unit Is attacked
+    Conditions
+        (Attacked unit) Equal to Roljin
+    Actions
+        Trigger - Turn off (This trigger)
+        Cinematic - Send transmission to (All players) from Roljin named Rol'jin: Play ForestTrollWarcry1 <gen> and display I kill you!.  Modify duration: Set to 2.00 seconds and Wait
+        Trigger - Turn on BOSS Roljin Phase 1 Dies <gen>
+        Trigger - Turn on BOSS Roljin Phase 1 Move <gen>
+        Trigger - Turn on BOSS Roljin Phase 1 Reset <gen>
+        Trigger - Turn on BOSS Roljin Phase 1 Support <gen>
+        Trigger - Remove (This trigger) from the trigger queue

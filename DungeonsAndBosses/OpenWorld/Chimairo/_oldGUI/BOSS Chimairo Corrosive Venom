@@ -1,0 +1,15 @@
+BOSS Chimairo Corrosive Venom
+    Events
+        Game - DamageEvent becomes Equal to 1.00
+    Conditions
+        (Unit-type of DamageEventSource) Equal to Chimairo (Level 20)
+        IsDamageSpell Equal to True
+        (DamageEventTarget has buff Venomous Breath ) Equal to True
+        (DamageEventTarget has buff Corrosive Venom ) Equal to False
+    Actions
+        Set VariableSet BossChimairo_Point = (Position of DamageEventTarget)
+        Unit - Create 1 DummyVenom for Player 12 (Brown) at BossChimairo_Point facing Default building facing degrees
+        Unit - Add a 2.00 second Generic expiration timer to (Last created unit)
+        Unit - Order (Last created unit) to Night Elf Warden - Shadow Strike DamageEventTarget
+        Game - Display to (All players) the text: (debug: Chimairo Corrosive Venom applied to unit:  + (Name of DamageEventTarget))
+        Custom script:   call RemoveLocation(udg_BossChimairo_Point)

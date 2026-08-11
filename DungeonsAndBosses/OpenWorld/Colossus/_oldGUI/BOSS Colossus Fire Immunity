@@ -1,0 +1,12 @@
+BOSS Colossus Fire Immunity
+    Events
+        Game - DamageModifierEvent becomes Equal to 1.00
+        Game - AfterDamageEvent becomes Equal to 1.00
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Unit-type of DamageEventTarget) Equal to Colossus (Level 15)
+                (Unit-type of DamageEventTarget) Equal to Golem Spawn (Boss Phase)
+        (DamageEventTarget has buff Flame Strike) Equal to True
+    Actions
+        Set VariableSet DamageEventAmount = 0.00

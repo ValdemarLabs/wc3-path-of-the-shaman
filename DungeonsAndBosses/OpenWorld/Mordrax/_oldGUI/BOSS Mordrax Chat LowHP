@@ -1,0 +1,24 @@
+BOSS Mordrax Chat LowHP
+    Events
+        Game - DamageEvent becomes Equal to 1.00
+    Conditions
+        BossMordrax_VoicelineActive Equal to False
+        DamageEventTarget Equal to BossMordrax
+        IsUnitAlive[(Custom value of BossMordrax)] Equal to True
+        (Life of BossVoidEntity) Less than or equal to 25.00
+        (Remaining time for BossMordrax_VoicelineTimer) Equal to 0.00
+        InCinematic Equal to False
+    Actions
+        -------- ============ RANGE CHECK --------
+        Custom script:   local real range = RangeCheck_Unit(udg_BossMordrax, Player(0))
+        Custom script:   if range >= 1500.0 then
+        Custom script:   return
+        Custom script:   endif
+        -------- ============ RANGE END --------
+        Set VariableSet BossMordrax_VoicelineActive = True
+        -------- ===================================== --------
+        Set VariableSet ExSoundString = No… I have endured for centuries – I will not fall!
+        Custom script:   call ExSound_Play("Mordrax_0009", udg_ExSoundString)
+        Cinematic - Send transmission to (All players) from BossMordrax named Mordrax: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Don't wait
+        -------- ===================================== --------
+        Countdown Timer - Start BossMordrax_VoicelineTimer as a One-shot timer that will expire in (ExSoundDuration + 3.00) seconds

@@ -1,0 +1,25 @@
+BOSS Scorchion Engage Worshippers
+    Events
+        Unit - A unit Is attacked
+    Conditions
+        ((Attacked unit) is in BossScorchionDarkShamans.) Equal to True
+    Actions
+        Unit Group - Pick every unit in BossScorchionDarkShamans and do (Actions)
+            Loop - Actions
+                Unit - Order (Picked unit) to Attack Once (Attacking unit)
+        -------- ===================================== --------
+        Set VariableSet ExSoundString = How dare you interfere with our plans! The flames obey us, they kneel to us… but now, they shall consume you instead!
+        Custom script:   call ExSound_Play("DarkShaman_0001", udg_ExSoundString)
+        Cinematic - Send transmission to (All players) from (Random unit from BossScorchionDarkShamans) named Dark Shaman: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Don't wait
+        -------- ===================================== --------
+        Unit - Make BossScorchion Invulnerable
+        Trigger - Turn on BOSS Scorchion Start <gen>
+        Trigger - Turn on BOSS Scorchion Engage Reset <gen>
+        Trigger - Turn off BOSS Scorchion Dark Shamans Torture <gen>
+        Custom script:   call EnableTrigger(gg_trg_BOSS_Scorchion_Engage_During_Lines)
+        -------- //////////// --------
+        Special Effect - Create a special effect attached to the origin of BossScorchion using Abilities\Spells\Other\BreathOfFire\BreathOfFireDamage.mdl
+        Set VariableSet BossScorchionStartFx = (Last created special effect)
+        Countdown Timer - Start BossScorchionEngageFacingTimer as a One-shot timer that will expire in (Random real number between 0.50 and 2.00) seconds
+        -------- //////////// --------
+        Trigger - Turn off (This trigger)

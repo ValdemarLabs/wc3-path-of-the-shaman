@@ -1,0 +1,37 @@
+BOSS Scorchion Engage Reset
+    Events
+        Time - Every 2.00 seconds of game time
+    Conditions
+    Actions
+        -------- Assume all units are out of combat initially --------
+        Set VariableSet DarkShamansInCombat = False
+        Unit Group - Pick every unit in BossScorchionDarkShamans and do (Actions)
+            Loop - Actions
+                Set VariableSet CV = (Custom value of (Picked unit))
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GCSM_UnitInCombat[CV] Equal to True
+                    Then - Actions
+                        -------- If any unit is in combat, set TempBoolean to False --------
+                        Set VariableSet DarkShamansInCombat = True
+                    Else - Actions
+        -------- This part runs AFTER checking all units --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                DarkShamansInCombat Equal to False
+                BossScorchionDarkShamansR_ON Equal to False
+            Then - Actions
+                -------- If ALL units are out of combat, start the timer --------
+                Countdown Timer - Start BossScorchionDarkShamansRTimer as a One-shot timer that will expire in 30.00 seconds
+                Game - Display to (All players) the text: Starting timer to r...
+                Set VariableSet BossScorchionDarkShamansR_ON = True
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                DarkShamansInCombat Equal to True
+            Then - Actions
+                -------- If even ONE unit is still in combat, pause the timer --------
+                Countdown Timer - Pause BossScorchionDarkShamansRTimer
+                Game - Display to (All players) the text: Some unit still in ...
+                Set VariableSet BossScorchionDarkShamansR_ON = False
+            Else - Actions

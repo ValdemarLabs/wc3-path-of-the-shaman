@@ -1,0 +1,33 @@
+BOSS Colossus Dies
+    Events
+        Unit - A unit Dies
+    Conditions
+        (Dying unit) Equal to BossColossus
+    Actions
+        -------- Boss Chat --------
+        Sound - Play ColossusDead <gen> at 100.00% volume, attached to BossColossus
+        -------- Reset Boss + other starting initials --------
+        -------- Turn off all BOSS phases --------
+        Trigger - Turn off BOSS Colossus Splitting Boulder <gen>
+        Trigger - Turn off BOSS Colossus Phase 1 Slam <gen>
+        Trigger - Turn off BOSS Colossus Phase 1 Slam Q <gen>
+        Trigger - Turn off BOSS Colossus Phase 1 Slam End <gen>
+        Trigger - Turn off BOSS Colossus Phase 2 <gen>
+        Trigger - Turn off BOSS Colossus Phase 2A Boulders Q <gen>
+        Trigger - Turn off BOSS Colossus Phase 2B Golems Spawn <gen>
+        Trigger - Turn off BOSS Colossus Phase 2B Golems Spawn Q <gen>
+        Trigger - Turn off BOSS Colossus Phase 2B Golems Issue Move <gen>
+        Trigger - Turn off BOSS Colossus Phase 2B Golems Dead <gen>
+        Trigger - Turn off BOSS Colossus Phase 3 <gen>
+        Trigger - Turn off BOSS Colossus Cleaving Attacks Add <gen>
+        -------- -----DRAGONS --------
+        Trigger - Turn off Emberpeak Dragonfire Flame Strike Colossus 2 <gen>
+        Trigger - Turn on Emberpeak Dragonfire Flame Strike Player Units <gen>
+        -------- Turn on BOSS fight starting trigger --------
+        Trigger - Turn on BOSS Colossus Start <gen>
+        -------- Respawn --------
+        Set VariableSet BOSS_RT = (Random real number between 240.00 and 500.00)
+        Countdown Timer - Start BossColossusRT as a One-shot timer that will expire in BOSS_RT seconds
+        -------- Turn off this trigger --------
+        Trigger - Turn off (This trigger)
+        Trigger - Remove (This trigger) from the trigger queue

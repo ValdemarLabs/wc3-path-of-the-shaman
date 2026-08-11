@@ -1,0 +1,10 @@
+debug BOSS Chimairo Corrosive Venom AfterEvent
+    Events
+        Game - AfterDamageEvent becomes Equal to 1.00
+    Conditions
+        (Unit-type of DamageEventSource) Equal to Chimairo (Level 20)
+        IsDamageSpell Equal to True
+        (DamageEventTarget has buff Venomous Breath ) Equal to True
+        (DamageEventTarget has buff Corrosive Venom ) Equal to False
+    Actions
+        Game - Display to (All players) the text: (debug: Chimairo Corrosive Venom AfterDamageEvent for unit  + (Name of DamageEventTarget))

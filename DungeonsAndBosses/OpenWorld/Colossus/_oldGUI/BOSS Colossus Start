@@ -1,0 +1,36 @@
+BOSS Colossus Start
+    Events
+        Unit - A unit Is attacked
+    Conditions
+        (Unit-type of (Attacked unit)) Equal to Colossus (Level 15)
+        Or - Any (Conditions) are true
+            Conditions
+                (Owner of (Attacking unit)) Not equal to Neutral Passive
+                (Owner of (Attacking unit)) Not equal to Neutral Hostile
+    Actions
+        Trigger - Turn off (This trigger)
+        Trigger - Turn on BOSS Colossus Reset <gen>
+        Trigger - Turn on BOSS Colossus Dies <gen>
+        Trigger - Turn on BOSS Colossus Splitting Boulder <gen>
+        Trigger - Turn on BOSS Colossus Cleaving Attacks Add <gen>
+        Trigger - Turn on BOSS Colossus Phase 1 Slam <gen>
+        Trigger - Turn on BOSS Colossus Phase 2 <gen>
+        Trigger - Turn on BOSS Colossus Phase 3 <gen>
+        -------- -----DRAGONS --------
+        Trigger - Turn off Emberpeak Dragonfire Flame Strike Colossus <gen>
+        Trigger - Turn on Emberpeak Dragonfire Flame Strike Player Units <gen>
+        Set VariableSet BossColossus = (Attacked unit)
+        Unit Group - Add BossColossus to BOSS
+        Wait 0.50 seconds
+        Animation - Change BossColossus's animation speed to 30.00% of its original speed
+        Animation - Play BossColossus's birth animation
+        Sound - Play ColossusReady <gen> at 100.00% volume, attached to BossColossus
+        Sound - Play RockGolemPissed2 <gen> at 100.00% volume, attached to BossColossus
+        Wait 5.50 seconds
+        Unit - Unpause BossColossus
+        Unit - Change ownership of BossColossus to Player 12 (Brown) and Retain color
+        Animation - Change BossColossus's animation speed to 100.00% of its original speed
+        Animation - Play BossColossus's attack spell animation
+        Animation - Queue BossColossus's stand animation
+        Sound - Play RockGolemYesAttack2 <gen> at 100.00% volume, attached to BossColossus
+        Unit - Order BossColossus to Attack Once (Random unit from (Units in DragonFireSpam01 <gen> matching (((Matching unit) belongs to an enemy of Player 12 (Brown).) Equal to True)))

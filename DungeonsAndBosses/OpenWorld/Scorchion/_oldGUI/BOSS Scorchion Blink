@@ -1,0 +1,34 @@
+BOSS Scorchion Blink
+    Events
+        Time - Every 10.00 seconds of game time
+    Conditions
+        (BossScorchion is alive) Equal to True
+    Actions
+        -------- =================================== --------
+        Set VariableSet BossScorchionPoint = (Position of BossScorchion)
+        Set VariableSet BossScorchionTargetGroup = (Units within 700.00 of BossScorchionPoint matching ((((Matching unit) is alive) Equal to True) and (((Matching unit) belongs to an enemy of (Owner of BossScorchion).) Equal to True)).)
+        Set VariableSet BossScorchionTarget = (Random unit from BossScorchionTargetGroup)
+        Set VariableSet BossScorchionTargetPoint = (Position of BossScorchionTarget)
+        -------- =================================== --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                UnitIsCasting[(Custom value of BossScorchion)] Equal to False
+                (Unit-type of BossScorchionTarget) Not equal to Totem
+                (Unit-type of BossScorchionTarget) Not equal to Bag
+                (Unit-type of BossScorchionTarget) Not equal to Companions
+            Then - Actions
+                Cinematic - Send transmission to (All players) from BossScorchion named Scorchion: Play Scorchion02 <gen> and display Fire away..  Modify duration: Set to 2.30 seconds and Don't wait
+                Unit - Add Blink (Scorchion) to BossScorchion
+                Unit - Order BossScorchion to Night Elf Warden - Blink BossScorchionTargetPoint
+                Special Effect - Create a special effect attached to the origin of BossScorchion using Abilities\Spells\Other\Volcano\VolcanoMissile.mdl
+                Special Effect - Destroy (Last created special effect)
+                Special Effect - Create a special effect attached to the origin of BossScorchion using Abilities\Spells\Other\Volcano\VolcanoMissile.mdl
+                Special Effect - Destroy (Last created special effect)
+                Wait 0.50 seconds
+                Unit - Remove Blink (Scorchion) from BossScorchion
+            Else - Actions
+        -------- =================================== --------
+        Custom script:   call DestroyGroup(udg_BossScorchionTargetGroup)
+        Custom script:   call RemoveLocation(udg_BossScorchionPoint)
+        Custom script:   call RemoveLocation(udg_BossScorchionTargetPoint)
+        -------- =================================== --------

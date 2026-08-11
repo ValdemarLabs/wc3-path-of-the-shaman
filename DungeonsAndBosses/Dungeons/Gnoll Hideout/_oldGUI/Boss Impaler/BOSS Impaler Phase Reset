@@ -1,0 +1,18 @@
+BOSS Impaler Phase Reset
+    Events
+        Time - Every 5.00 seconds of game time
+    Conditions
+        ((Units in BossImpalerArea <gen> owned by Player 1 (Red)) is empty) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Turn off this trigger --------
+        -------- Boss Chat --------
+        -------- Reset Boss + other starting initials --------
+        Unit - Replace BossImpaler with a Impaler using The new unit's max life and mana
+        Set VariableSet VarPoint = (Center of BossImpaler <gen>)
+        Unit - Order (Last created unit) to Move To VarPoint
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- Turn off all BOSS phases --------
+        Trigger - Turn off BOSS Impaler Phase Fight <gen>
+        -------- Turn on BOSS fight starting trigger --------
+        Trigger - Turn on BOSS Impaler Phase Start <gen>

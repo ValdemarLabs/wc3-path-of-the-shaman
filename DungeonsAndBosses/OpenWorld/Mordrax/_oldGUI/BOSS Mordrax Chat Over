@@ -1,0 +1,6 @@
+BOSS Mordrax Chat Over
+    Events
+        Time - BossMordrax_VoicelineTimer expires
+    Conditions
+    Actions
+        Set VariableSet BossMordrax_VoicelineActive = False

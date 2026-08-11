@@ -1,0 +1,16 @@
+BOSS Impaler Phase Fight
+    Events
+        Time - Every 15.00 seconds of game time
+    Conditions
+    Actions
+        -------- The boss is contantly getting increased damage & armor --------
+        Unit - Set Armor of BossImpaler to ((Armor of BossImpaler) + 1.00)
+        Unit - Set Base Damage of BossImpaler to ((Base Damage of BossImpaler for weapon index 1) + 3) for weapon index: 1
+        Cinematic - Send transmission to (All players) from BossImpaler named Impaler: Play No sound and display Me strong!.  Modify duration: Set to 1.00 seconds and Wait
+        -------- Boss chat --------
+        -------- special effect --------
+        Special Effect - Create a special effect attached to the overhead of BossImpaler using Abilities\Spells\NightElf\FaerieDragonInvis\FaerieDragon_Invis.mdl
+        Set VariableSet BossImpalerEffect = (Last created special effect)
+        Wait 2.00 seconds
+        Special Effect - Destroy BossImpalerEffect
+        Trigger - Remove (This trigger) from the trigger queue

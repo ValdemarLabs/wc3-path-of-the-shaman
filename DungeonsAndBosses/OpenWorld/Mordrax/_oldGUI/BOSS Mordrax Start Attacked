@@ -1,0 +1,23 @@
+BOSS Mordrax Start Attacked
+    Events
+        Unit - A unit Is attacked
+    Conditions
+        (Triggering unit) Equal to BossMordrax
+    Actions
+        Trigger - Turn off (This trigger)
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Mordrax_Start_Attacking)
+        Custom script:   call TriggerExecute(gg_trg_Mordrax_Movement_Pause)
+        Custom script:   call EnableTrigger(gg_trg_BOSS_Mordrax_Reset)
+        Animation - Change BossMordrax flying height to 100.00 at 2.00
+        Unit - Remove Crow Form from BossMordrax
+        -------- Start reset check timer --------
+        Countdown Timer - Start BossMordrax_ResetTimer as a One-shot timer that will expire in 10.00 seconds
+        -------- Turn on BOSS phases --------
+        Custom script:   call EnableTrigger(gg_trg_BOSS_Mordrax_Fire_Orbs)
+        -------- Enable chat --------
+        Custom script:   call EnableTrigger(gg_trg_BOSS_Mordrax_Chat_During)
+        Custom script:   call EnableTrigger(gg_trg_BOSS_Mordrax_Chat_Ability)
+        Custom script:   call EnableTrigger(gg_trg_BOSS_Mordrax_Chat_Hero_Dies)
+        Custom script:   call EnableTrigger(gg_trg_BOSS_Mordrax_Chat_LowHP)
+        -------- CHAT START --------
+        Custom script:   call TriggerExecute(gg_trg_BOSS_Mordrax_Chat_Start)

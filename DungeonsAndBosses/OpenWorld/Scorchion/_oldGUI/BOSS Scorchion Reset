@@ -1,0 +1,34 @@
+BOSS Scorchion Reset
+    Events
+        Time - Every 5.00 seconds of game time
+    Conditions
+        ((Units in BossScorchionArea <gen> owned by Player 1 (Red)) is empty) Equal to True
+    Actions
+        -------- =================== --------
+        Trigger - Turn off BOSS Scorchion Fire Orbs Start <gen>
+        Trigger - Turn off BOSS Scorchion Fire Orbs Loop <gen>
+        Trigger - Turn off BOSS Scorchion Fire Orbs Temporal Instability Damage <gen>
+        Trigger - Turn off BOSS Scorchion Fire Ward <gen>
+        Trigger - Turn off BOSS Scorchion Fire Meteors <gen>
+        Trigger - Turn off BOSS Scorchion Blink <gen>
+        Trigger - Turn off BOSS Scorchion Random Aggro <gen>
+        -------- =================== --------
+        -------- Reset Boss + other starting initials --------
+        Unit - Set life of BossScorchion to 100.00%
+        Unit - Set Unit: BossScorchion's Real Field: Hit Points Regeneration Rate ('uhpr') to Value: 1000.00
+        Unit - Set Base Damage of BossScorchion to (Base Damage of BossScorchion for weapon index 0) for weapon index: 0
+        Unit - Set Unit: BossScorchion's Real Field: Scaling Value ('usca') to Value: 2.50
+        Custom script:   call SetUnitPropWindow( udg_BossScorchion, 0.00 )
+        Unit Group - Pick every unit in BossScorchionOrbGroup and do (Actions)
+            Loop - Actions
+                Unit - Kill (Picked unit)
+        -------- Allow boss start --------
+        Trigger - Turn on BOSS Scorchion Engage Worshippers <gen>
+        -------- Start Timer to Create new Dark Shamans --------
+        Countdown Timer - Start BossScorchionResetTimer as a One-shot timer that will expire in 30.00 seconds
+        -------- Issue Boss to starting location --------
+        Set VariableSet VarPoint = (Center of BossScorchionSpot <gen>)
+        Unit - Order BossScorchion to Move To VarPoint
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- turn off this trigger --------
+        Trigger - Turn off (This trigger)

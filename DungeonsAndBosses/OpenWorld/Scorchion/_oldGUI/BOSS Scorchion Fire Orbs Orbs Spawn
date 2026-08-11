@@ -1,0 +1,37 @@
+BOSS Scorchion Fire Orbs Orbs Spawn
+    Events
+        Time - BossScorchionOrbTimer expires
+    Conditions
+    Actions
+        -------- Check if Scorchion is Alive Before Spawning Orbs --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (BossScorchion is alive) Equal to False
+            Then - Actions
+                -------- Cleanup Special Effects to Prevent Stuck Visuals  --------
+                For each (Integer BossScorchionOrbLoop) from 1 to BossScorchionOrbInt, do (Actions)
+                    Loop - Actions
+                        Special Effect - Destroy BossScorchionOrbEffect[BossScorchionOrbLoop]
+                        Custom script:   call RemoveLocation(udg_BossScorchionOrbPoint[udg_BossScorchionOrbLoop])
+                Skip remaining actions
+            Else - Actions
+        -------- ========================================= --------
+        -------- Spawn Orbs and Destroy Indication Effects --------
+        For each (Integer BossScorchionOrbLoop) from 1 to BossScorchionOrbInt, do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        Unit - Create 1 Orb of Fire for Player 12 (Brown) at BossScorchionOrbPoint[BossScorchionOrbLoop] facing (Random angle) degrees
+                        Custom script:   call SetUnitPropWindow(bj_lastCreatedUnit, 0.00)
+                        Unit Group - Add (Last created unit) to BossScorchionOrbGroup
+                        Unit - Set Base Damage of (Last created unit) to 0 for weapon index: 0
+                        Special Effect - Create a special effect attached to the origin of (Last created unit) using Abilities\Spells\Other\Volcano\VolcanoMissile.mdl
+                        Special Effect - Destroy (Last created special effect)
+                        Special Effect - Destroy BossScorchionOrbEffect[BossScorchionOrbLoop]
+                        Custom script:   call RemoveLocation(udg_BossScorchionOrbPoint[udg_BossScorchionOrbLoop])
+                    Else - Actions
+                -------- remove leaks --------
+        -------- ========================================= --------
+        Trigger - Turn on BOSS Scorchion Fire Orbs Temporal Instability Starts <gen>
+        -------- ========================================= --------

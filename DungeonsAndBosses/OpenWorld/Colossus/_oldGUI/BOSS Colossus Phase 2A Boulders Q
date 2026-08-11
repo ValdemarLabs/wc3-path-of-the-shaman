@@ -1,0 +1,25 @@
+BOSS Colossus Phase 2A Boulders Q
+    Events
+        Time - Every 30.00 seconds of game time
+    Conditions
+        BossColossusGolems Equal to False
+        (BossColossus is alive) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        Unit - Add Boulders (Colossus) to BossColossus
+        Set VariableSet BossColossusBoulders = True
+        Sound - Play Colossus03 <gen> at 100.00% volume, attached to BossColossus
+        Wait 0.50 seconds
+        -------- Get BossColossus location and facing angle --------
+        Set VariableSet BossColossusTempPoint = (Position of BossColossus)
+        Set VariableSet BossColossusFacingAngle = (Facing of BossColossus)
+        -------- Calculate the location 300 units in front of BossColossus --------
+        Set VariableSet BossColossus_BouldersPoint = (BossColossusTempPoint offset by 0.00 towards BossColossusFacingAngle degrees.)
+        Unit - Order BossColossus to Neutral Beastmaster - Stampede BossColossus_BouldersPoint
+        Custom script:   call RemoveLocation(udg_BossColossusTempPoint)
+        Custom script:   call RemoveLocation(udg_BossColossus_BouldersPoint)
+        Wait 10.00 seconds
+        Unit - Remove Boulders (Colossus) from BossColossus
+        Unit - Order BossColossus to Attack Once (Random unit from (Units in DragonFireSpam01 <gen> matching (((Matching unit) belongs to an enemy of Player 12 (Brown).) Equal to True)))
+        Set VariableSet BossColossusBoulders = False
+        Trigger - Turn on (This trigger)

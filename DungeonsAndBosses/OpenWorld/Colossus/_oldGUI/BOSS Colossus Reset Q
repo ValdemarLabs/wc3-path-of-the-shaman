@@ -1,0 +1,21 @@
+BOSS Colossus Reset Q
+    Events
+        Unit - A unit enters ColossusSpot <gen>
+    Conditions
+        (Triggering unit) Equal to BossColossus
+    Actions
+        Trigger - Turn off (This trigger)
+        Sound - Play RockGolemPissed2 <gen> at 100.00% volume, attached to BossColossus
+        Wait 1.00 seconds
+        Animation - Queue BossColossus's death animation
+        Animation - Queue BossColossus's sleep animation
+        Wait 2.70 seconds
+        Unit - Pause BossColossus
+        Unit - Make BossColossus Vulnerable
+        Unit - Change ownership of BossColossus to Neutral Passive and Retain color
+        -------- -----DRAGONS --------
+        Trigger - Turn on Emberpeak Dragonfire Flame Strike Colossus <gen>
+        Trigger - Turn off Emberpeak Dragonfire Flame Strike Colossus 2 <gen>
+        Trigger - Turn off Emberpeak Dragonfire Flame Strike Player Units <gen>
+        -------- Allow boss start --------
+        Trigger - Turn on BOSS Colossus Start <gen>

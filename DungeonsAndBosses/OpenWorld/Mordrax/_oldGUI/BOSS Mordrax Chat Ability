@@ -1,0 +1,39 @@
+BOSS Mordrax Chat Ability
+    Events
+        Unit - A unit Starts the effect of an ability
+    Conditions
+        BossMordrax_VoicelineActive Equal to False
+        (Casting unit) Equal to BossMordrax
+        IsUnitAlive[(Custom value of BossMordrax)] Equal to True
+        (Remaining time for BossMordrax_VoicelineTimer) Equal to 0.00
+        InCinematic Equal to False
+    Actions
+        -------- ============ RANGE CHECK --------
+        Custom script:   local real range = RangeCheck_Unit(udg_BossMordrax, Player(0))
+        Custom script:   if range >= 1500.0 then
+        Custom script:   return
+        Custom script:   endif
+        -------- ============ RANGE END --------
+        Set VariableSet BossMordrax_LinesInt = (Random integer number between 1 and 2)
+        Set VariableSet BossMordrax_VoicelineActive = True
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BossMordrax_LinesInt Equal to 1
+            Then - Actions
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Everything shall burn!
+                Custom script:   call ExSound_Play("Mordrax_0005", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BossMordrax named Mordrax: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Don't wait
+                -------- ===================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BossMordrax_LinesInt Equal to 2
+            Then - Actions
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = I will turn you to cinder!
+                Custom script:   call ExSound_Play("Mordrax_0006", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BossMordrax named Mordrax: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Don't wait
+                -------- ===================================== --------
+            Else - Actions
+        Countdown Timer - Start BossMordrax_VoicelineTimer as a One-shot timer that will expire in (ExSoundDuration + 6.00) seconds

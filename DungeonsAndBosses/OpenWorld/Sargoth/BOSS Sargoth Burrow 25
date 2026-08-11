@@ -1,0 +1,11 @@
+BOSS Sargoth Burrow 25
+    Events
+        Time - Every 0.10 seconds of game time
+    Conditions
+        (Percentage life of BossSargoth) Less than or equal to 25.00
+        (BossSargoth is alive) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        Trigger - Run BOSS Sargoth Burrow 25 Q <gen> (checking conditions)
+        Trigger - Turn off BOSS Sargoth Movement <gen>
+        Trigger - Remove (This trigger) from the trigger queue

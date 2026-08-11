@@ -1,0 +1,17 @@
+BOSS Mordrax Chat Start
+    Events
+    Conditions
+    Actions
+        -------- ============ RANGE CHECK --------
+        Custom script:   local real range = RangeCheck_Unit(udg_BossMordrax, Player(0))
+        Custom script:   if range >= 1500.0 then
+        Custom script:   return
+        Custom script:   endif
+        -------- ============ RANGE END --------
+        Set VariableSet BossMordrax_VoicelineActive = True
+        -------- ===================================== --------
+        Set VariableSet ExSoundString = Who dares to challenge mighty Mordrax?!
+        Custom script:   call ExSound_Play("Mordrax_0001", udg_ExSoundString)
+        Cinematic - Send transmission to (All players) from BossMordrax named Mordrax: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Don't wait
+        -------- ===================================== --------
+        Countdown Timer - Start BossMordrax_VoicelineTimer as a One-shot timer that will expire in (ExSoundDuration + 3.00) seconds

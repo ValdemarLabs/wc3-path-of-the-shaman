@@ -1,0 +1,13 @@
+BOSS Colossus Respawn
+    Events
+        Time - BossColossusRT expires
+    Conditions
+    Actions
+        Set VariableSet BossVarPoint = (Center of ColossusSpot <gen>)
+        Unit - Create 1 Colossus (Level 15) for Neutral Passive at BossVarPoint facing Default building facing degrees
+        Special Effect - Create a special effect attached to the overhead of (Last created unit) using Abilities\Spells\Human\Polymorph\PolyMorphDoneGround.mdl
+        Set VariableSet BossColossus = (Last created unit)
+        Animation - Play BossColossus's sleep animation
+        Unit - Pause BossColossus
+        Trigger - Turn on Emberpeak Dragonfire Flame Strike Colossus <gen>
+        Custom script:   call RemoveLocation(udg_BossVarPoint)

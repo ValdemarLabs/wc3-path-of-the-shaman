@@ -1,0 +1,40 @@
+BOSS Mordrax Dies
+    Events
+        Unit - A unit Takes damage
+    Conditions
+        (Damage Target) Equal to BossMordrax
+        (Damage taken) Greater than or equal to ((Life of BossMordrax) - 0.41)
+    Actions
+        Event Response - Set Damage of Unit Damaged Event to ((Life of BossMordrax) - 1.00)
+        Unit - Make BossMordrax Invulnerable
+        Unit - Change ownership of BossMordrax to Neutral Passive and Retain color
+        -------- Loot (with dummy unit) --------
+        Set VariableSet BossMordrax_Point = (Position of BossMordrax)
+        Unit - Create 1 MordraxDummy for Player 12 (Brown) at BossMordrax_Point facing Default building facing degrees
+        Unit - Kill (Last created unit)
+        Custom script:   call RemoveLocation(udg_BossMordrax_Point)
+        -------- effects --------
+        Sound - Play BloodSplat <gen> at 100.00% volume, attached to BossMordrax
+        Special Effect - Create a special effect attached to the chest of BossMordrax using Objects\Spawnmodels\Other\HumanBloodCinematicEffect\HumanBloodCinematicEffect.mdl
+        Special Effect - Destroy (Last created special effect)
+        -------- Reset Boss + other starting initials --------
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Mordrax_Reset)
+        -------- Disable chat --------
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Mordrax_Chat_During)
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Mordrax_Chat_Ability)
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Mordrax_Chat_Hero_Dies)
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Mordrax_Chat_LowHP)
+        -------- =================== --------
+        -------- Begin the flight --------
+        Custom script:   call TriggerExecute(gg_trg_BOSS_Mordrax_DeathFlight)
+        Wait 2.00 seconds
+        -------- Boss Chat --------
+        Custom script:   call TriggerExecute(gg_trg_BOSS_Mordrax_Chat_Dies)
+        Wait ExSoundDuration seconds
+        -------- =================== --------
+        -------- Turn on BOSS fight starting trigger --------
+        -------- Respawn --------
+        Set VariableSet BOSS_RT = (Random real number between 240.00 and 500.00)
+        Countdown Timer - Start BossMordrax_RT as a One-shot timer that will expire in BOSS_RT seconds
+        Wait 30.00 seconds
+        Unit - Remove BossMordrax from the game

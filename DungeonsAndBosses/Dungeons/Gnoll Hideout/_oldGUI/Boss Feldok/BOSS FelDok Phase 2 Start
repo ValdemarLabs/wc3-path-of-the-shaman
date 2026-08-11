@@ -1,0 +1,10 @@
+BOSS FelDok Phase 2 Start
+    Events
+        Unit - A unit enters BossFeldokPhase2Point <gen>
+    Conditions
+        (Entering unit) Equal to BossFeldok
+    Actions
+        Trigger - Turn off (This trigger)
+        Unit - Make BossFeldok Vulnerable
+        Unit - Change ownership of BossFeldok to Player 12 (Brown) and Retain color
+        Trigger - Remove (This trigger) from the trigger queue

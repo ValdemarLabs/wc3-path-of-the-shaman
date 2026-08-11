@@ -1,0 +1,105 @@
+BOSS Roljin Phase 1 Support
+    Events
+        Time - Every (Random real number between 25.00 and 45.00) seconds of game time
+    Conditions
+        (Roljin is alive) Equal to True
+        (Number of units in RoljinGroup) Less than or equal to 6
+    Actions
+        -------- Support hostile mobs will appear at random interval from random spawn points --------
+        Set VariableSet RoljinSupportInt1 = (Random integer number between 1 and 4)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                RoljinSupportInt1 Equal to 1
+            Then - Actions
+                -------- ============= GROUP 1 =============  --------
+                Set VariableSet VarPoint = (Random point in ForestTrollsSpawn01 <gen>)
+                Unit - Create 1 Forest Troll for Player 12 (Brown) at VarPoint facing Default building facing degrees
+                Unit Group - Add (Last created unit) to RoljinGroup
+                Set VariableSet RoljinGroup = (Last created unit group)
+                Unit - Create 1 Forest Troll for Player 12 (Brown) at VarPoint facing Default building facing degrees
+                Unit Group - Add (Last created unit) to RoljinGroup
+                Unit - Create 1 Forest Troll Trapper for Player 12 (Brown) at VarPoint facing Default building facing degrees
+                Unit Group - Add (Last created unit) to RoljinGroup
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                -------- attack --------
+                Unit Group - Pick every unit in RoljinGroup and do (Actions)
+                    Loop - Actions
+                        Unit - Order (Picked unit) to Right-Click Roljin
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                RoljinSupportInt1 Equal to 2
+            Then - Actions
+                -------- ============= GROUP 2 =============  --------
+                Set VariableSet VarPoint = (Random point in ForestTrollsSpawn02 <gen>)
+                Unit - Create 1 Forest Troll High Priest for Player 12 (Brown) at VarPoint facing Default building facing degrees
+                Unit Group - Add (Last created unit) to RoljinGroup
+                Unit - Create 1 Forest Troll High Priest for Player 12 (Brown) at VarPoint facing Default building facing degrees
+                Unit Group - Add (Last created unit) to RoljinGroup
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                -------- attack --------
+                Unit Group - Pick every unit in GroupVar and do (Actions)
+                    Loop - Actions
+                        Unit - Order (Picked unit) to Right-Click Roljin
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                RoljinSupportInt1 Equal to 3
+            Then - Actions
+                Set VariableSet RoljinSupportInt2 = (Random integer number between 1 and 2)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        RoljinSupportInt2 Equal to 1
+                    Then - Actions
+                        -------- ============= GROUP 3 =============  --------
+                        Set VariableSet VarPoint = (Random point in ForestTrollsSpawn01 <gen>)
+                        Unit - Create 1 Forest Troll for Player 12 (Brown) at VarPoint facing Default building facing degrees
+                        Unit Group - Add (Last created unit) to RoljinGroup
+                        Unit - Create 1 Forest Troll for Player 12 (Brown) at VarPoint facing Default building facing degrees
+                        Unit Group - Add (Last created unit) to RoljinGroup
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+                        Set VariableSet VarPoint = (Random point in ForestTrollsSpawn02 <gen>)
+                        Unit - Create 1 Forest Troll Berserker for Player 12 (Brown) at VarPoint facing Default building facing degrees
+                        Unit Group - Add (Last created unit) to RoljinGroup
+                        Unit - Create 1 Forest Troll Berserker for Player 12 (Brown) at VarPoint facing Default building facing degrees
+                        Unit Group - Add (Last created unit) to RoljinGroup
+                        -------- attack --------
+                        Unit Group - Pick every unit in RoljinGroup and do (Actions)
+                            Loop - Actions
+                                Unit - Order (Picked unit) to Right-Click Roljin
+                        Skip remaining actions
+                    Else - Actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                RoljinSupportInt1 Equal to 4
+            Then - Actions
+                Set VariableSet RoljinSupportInt2 = (Random integer number between 1 and 2)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        RoljinSupportInt2 Equal to 1
+                    Then - Actions
+                        -------- ============= GROUP 3 =============  --------
+                        Set VariableSet VarPoint = (Random point in ForestTrollsSpawn01 <gen>)
+                        Unit - Create 1 Forest Troll for Player 12 (Brown) at VarPoint facing Default building facing degrees
+                        Unit Group - Add (Last created unit) to RoljinGroup
+                        Unit - Create 1 Forest Troll Shadow Priest for Player 12 (Brown) at VarPoint facing Default building facing degrees
+                        Unit Group - Add (Last created unit) to RoljinGroup
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+                        Set VariableSet VarPoint = (Random point in ForestTrollsSpawn02 <gen>)
+                        Unit - Create 1 Forest Troll for Player 12 (Brown) at VarPoint facing Default building facing degrees
+                        Unit Group - Add (Last created unit) to RoljinGroup
+                        Unit - Create 1 Forest Troll Shadow Priest for Player 12 (Brown) at VarPoint facing Default building facing degrees
+                        Unit Group - Add (Last created unit) to RoljinGroup
+                        Unit - Create 1 Forest Troll Shadow Priest for Player 12 (Brown) at VarPoint facing Default building facing degrees
+                        Unit Group - Add (Last created unit) to RoljinGroup
+                        -------- attack --------
+                        Unit Group - Pick every unit in RoljinGroup and do (Actions)
+                            Loop - Actions
+                                Unit - Order (Picked unit) to Right-Click Roljin
+                        Skip remaining actions
+                    Else - Actions
+            Else - Actions
+        Trigger - Remove (This trigger) from the trigger queue

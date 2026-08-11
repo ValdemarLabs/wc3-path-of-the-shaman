@@ -1,0 +1,49 @@
+BOSS Roljin Phase 1 Move
+    Events
+        Time - Every (Random real number between 30.00 and 45.00) seconds of game time
+    Conditions
+        (Roljin is alive) Equal to True
+    Actions
+        -------- Boss will move at random intervals to random point in area --------
+        Set VariableSet RoljinMoveInt = (Random integer number between 1 and 4)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                RoljinMoveInt Equal to 1
+            Then - Actions
+                Set VariableSet VarPoint = (Center of BossRoljinMove01 <gen>)
+                Unit - Order Roljin to Move To VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Cinematic - Send transmission to (All players) from Roljin named Rol'jin: Play ForestTrollYesAttack1 <gen> and display Die!.  Modify duration: Set to 2.00 seconds and Wait
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                RoljinMoveInt Equal to 2
+            Then - Actions
+                Set VariableSet VarPoint = (Center of BossRoljinMove02 <gen>)
+                Unit - Order Roljin to Move To VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Cinematic - Send transmission to (All players) from Roljin named Rol'jin: Play ForestTrollYesAttack2 <gen> and display Argh!.  Modify duration: Set to 2.00 seconds and Wait
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                RoljinMoveInt Equal to 3
+            Then - Actions
+                Set VariableSet VarPoint = (Center of BossRoljinMove03 <gen>)
+                Unit - Order Roljin to Move To VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Cinematic - Send transmission to (All players) from Roljin named Rol'jin: Play ForestTrollYesAttack2 <gen> and display Argh!.  Modify duration: Set to 2.00 seconds and Wait
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                RoljinMoveInt Equal to 4
+            Then - Actions
+                Set VariableSet VarPoint = (Center of BossRoljinMove04 <gen>)
+                Unit - Order Roljin to Move To VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Cinematic - Send transmission to (All players) from Roljin named Rol'jin: Play ForestTrollYesAttack2 <gen> and display Argh!.  Modify duration: Set to 2.00 seconds and Wait
+                Skip remaining actions
+            Else - Actions
+        Trigger - Remove (This trigger) from the trigger queue

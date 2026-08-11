@@ -1,0 +1,12 @@
+BOSS Impaler Phase Start
+    Events
+        Unit - A unit Is attacked
+    Conditions
+        (Unit-type of (Attacked unit)) Equal to Impaler
+    Actions
+        Trigger - Turn off (This trigger)
+        Set VariableSet BossImpaler = (Attacked unit)
+        Unit Group - Add BossImpaler to BOSS
+        Trigger - Turn on BOSS Impaler Phase Reset <gen>
+        Trigger - Turn on BOSS Impaler Phase Fight <gen>
+        Trigger - Turn on BOSS Impaler Phase Dies <gen>

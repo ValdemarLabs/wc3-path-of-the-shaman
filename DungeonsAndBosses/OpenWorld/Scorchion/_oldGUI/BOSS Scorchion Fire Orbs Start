@@ -1,0 +1,26 @@
+BOSS Scorchion Fire Orbs Start
+    Events
+        Time - BossScorchionPhaseTimer expires
+    Conditions
+        (BossScorchion is alive) Equal to True
+    Actions
+        -------- ========================================= --------
+        Trigger - Turn off BOSS Scorchion Fire Ward <gen>
+        Trigger - Turn off BOSS Scorchion Fire Meteors <gen>
+        Trigger - Turn off BOSS Scorchion Blink <gen>
+        Trigger - Turn off BOSS Scorchion Random Aggro <gen>
+        -------- ========================================= --------
+        Cinematic - Send transmission to (All players) from BossScorchion named Scorchion: Play Scorchion01 <gen> and display Everything shall bu....  Modify duration: Set to 2.70 seconds and Don't wait
+        -------- // Extra Fire Meteors upon starting the "Fire Orbs" --------
+        Trigger - Run BOSS Scorchion Fire Meteors <gen> (checking conditions)
+        -------- ========================================= --------
+        Unit - Make BossScorchion Invulnerable
+        Set VariableSet BossVarPoint = (Center of BossScorchionLava <gen>)
+        Unit - Order BossScorchion to Move To BossVarPoint
+        Unit - Add Ghost (Visible) to BossScorchion
+        Custom script:   call RemoveLocation(udg_BossVarPoint)
+        -------- ========================================= --------
+        Trigger - Turn on BOSS Scorchion Fire Orbs Start Q <gen>
+        -------- ========================================= --------
+        Trigger - Turn off (This trigger)
+        -------- ========================================= --------

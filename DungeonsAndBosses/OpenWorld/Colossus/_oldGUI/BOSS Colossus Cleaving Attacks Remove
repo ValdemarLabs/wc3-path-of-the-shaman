@@ -1,0 +1,10 @@
+BOSS Colossus Cleaving Attacks Remove
+    Events
+        Time - Every 1.00 seconds of game time
+    Conditions
+        (BossColossus has buff Flame Strike) Equal to False
+    Actions
+        Trigger - Turn off (This trigger)
+        Wait 5.00 seconds
+        Unit - Remove Cleaving Attack (Colossus) from BossColossus
+        Trigger - Turn on BOSS Colossus Cleaving Attacks Add <gen>

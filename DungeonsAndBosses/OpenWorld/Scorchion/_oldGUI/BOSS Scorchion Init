@@ -1,0 +1,12 @@
+BOSS Scorchion Init
+    Events
+        Time - Elapsed game time is 2.00 seconds
+    Conditions
+    Actions
+        -------- /////////// --------
+        Unit Group - Add Dark Shaman 1992 <gen> to BossScorchionDarkShamans
+        Unit Group - Add Dark Shaman 1988 <gen> to BossScorchionDarkShamans
+        Unit Group - Add Dark Shaman 1989 <gen> to BossScorchionDarkShamans
+        Unit Group - Add Dark Shaman 1990 <gen> to BossScorchionDarkShamans
+        Countdown Timer - Start BossScorchionTortureTimer as a One-shot timer that will expire in 10.00 seconds
+        Unit - Set Unit: BossScorchion's Real Field: Hit Points Regeneration Rate ('uhpr') to Value: 1000.00

@@ -1,0 +1,20 @@
+BOSS Scorchion Fire Ward
+    Events
+        Time - Every 15.00 seconds of game time
+    Conditions
+        (BossScorchion is alive) Equal to True
+    Actions
+        Game - Display to (All players) the text: debug: Fire Ward Ca...
+        -------- =================================== --------
+        Set VariableSet BossScorchionTargetGroup = (Units within 700.00 of BossScorchionPoint matching ((((Matching unit) is alive) Equal to True) and (((Matching unit) belongs to an enemy of (Owner of BossScorchion).) Equal to True)).)
+        Set VariableSet BossScorchionTarget = (Random unit from BossScorchionTargetGroup)
+        Set VariableSet BossScorchionTargetPoint = (Position of BossScorchionTarget)
+        -------- =================================== --------
+        -------- ========================================= --------
+        Cinematic - Send transmission to (All players) from BossScorchion named Scorchion: Play Scorchion04 <gen> and display I will reduce all t....  Modify duration: Set to 3.60 seconds and Don't wait
+        Unit - Add Fire Ward (Scorchion) to BossScorchion
+        Unit - Order BossScorchion to Neutral Tinker - Cluster Rockets BossScorchionTargetPoint
+        -------- ========================================= --------
+        Custom script:   call DestroyGroup(udg_BossScorchionTargetGroup)
+        Custom script:   call RemoveLocation(udg_BossScorchionTargetPoint)
+        -------- ========================================= --------

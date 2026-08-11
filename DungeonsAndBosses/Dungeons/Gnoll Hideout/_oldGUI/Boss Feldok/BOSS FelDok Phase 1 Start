@@ -1,0 +1,13 @@
+BOSS FelDok Phase 1 Start
+    Events
+        Unit - A unit Is attacked
+    Conditions
+        (Unit-type of (Attacked unit)) Equal to Deathlord Fel'Dok
+    Actions
+        Trigger - Turn off (This trigger)
+        Set VariableSet BossFeldok = (Triggering unit)
+        Unit Group - Add BossFeldok to BOSS
+        Cinematic - Send transmission to (All players) from a Player 12 (Brown).Deathlord Fel'Dok named Deathlord Fel'Dok at (Center of (Playable map area)): Play No sound and display Kill the outsiders!.  Modify duration: Set to 1.50 seconds and Wait
+        Trigger - Turn on BOSS FelDok Phase 1 Fight <gen>
+        Trigger - Turn on BOSS FelDok Phase 1 Reset <gen>
+        Trigger - Turn on BOSS FelDok Phase 2 Init <gen>

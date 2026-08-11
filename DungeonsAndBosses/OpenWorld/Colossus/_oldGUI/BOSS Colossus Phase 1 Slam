@@ -1,0 +1,13 @@
+BOSS Colossus Phase 1 Slam
+    Events
+        Time - Every 40.00 seconds of game time
+    Conditions
+    Actions
+        Trigger - Turn off (This trigger)
+        Unit - Add Thunder Clap (Colossus) [Lagfree] to BossColossus
+        Sound - Play Colossus01 <gen> at 100.00% volume, attached to BossColossus
+        Set VariableSet BossColossusSlamInt = 0
+        Set VariableSet BossColossusSlam = True
+        Unit - Set BossColossus movement speed to ((Default movement speed of BossColossus) x 0.25)
+        Trigger - Turn on BOSS Colossus Phase 1 Slam Q <gen>
+        Trigger - Turn on BOSS Colossus Phase 1 Slam End <gen>

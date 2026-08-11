@@ -1,0 +1,61 @@
+BOSS Colossus Phase 2B Golems Spawn Q
+    Events
+        Unit - A unit enters ColossusSpot <gen>
+    Conditions
+        (Triggering unit) Equal to BossColossus
+        (BossColossus is alive) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        Unit - Pause BossColossus
+        Animation - Play BossColossus's spell slam animation
+        Sound - Play Colossus05 <gen> at 100.00% volume, attached to BossColossus
+        Wait 1.05 seconds
+        -------- unpause + animations for boss --------
+        Unit - Unpause BossColossus
+        Unit - Make BossColossus Vulnerable
+        Unit - Set BossColossus movement speed to ((Default movement speed of BossColossus) x 0.25)
+        Unit - Order BossColossus to Attack Once (Random unit from (Units in DragonFireSpam01 <gen> matching (((Matching unit) belongs to an enemy of Player 12 (Brown).) Equal to True)))
+        Animation - Queue BossColossus's stand animation
+        -------- Get BossColossus location and facing angle --------
+        Set VariableSet BossColossusTempPoint = (Position of BossColossus)
+        -------- Calculate the location 750 units away BossColossus - multiple angles --------
+        Set VariableSet BossColossus_GolemPoint[1] = (BossColossusTempPoint offset by 750.00 towards 0.00 degrees.)
+        Set VariableSet BossColossus_GolemPoint[2] = (BossColossusTempPoint offset by 750.00 towards 90.00 degrees.)
+        Set VariableSet BossColossus_GolemPoint[3] = (BossColossusTempPoint offset by 750.00 towards 180.00 degrees.)
+        Set VariableSet BossColossus_GolemPoint[4] = (BossColossusTempPoint offset by 750.00 towards 270.00 degrees.)
+        -------- Create golem spawns around Colossus --------
+        Unit - Create 1 Golem Spawn (Boss Phase) for Player 12 (Brown) at BossColossus_GolemPoint[1] facing BossColossusTempPoint
+        Unit Group - Add (Last created unit) to BossColossus_Golems
+        Sound - Play RockGolemPissed2 <gen> at 50.00% volume, attached to (Last created unit)
+        Unit - Create 1 Golem Spawn (Boss Phase) for Player 12 (Brown) at BossColossus_GolemPoint[2] facing BossColossusTempPoint
+        Unit Group - Add (Last created unit) to BossColossus_Golems
+        Sound - Play RockGolemPissed2 <gen> at 50.00% volume, attached to (Last created unit)
+        Unit - Create 1 Golem Spawn (Boss Phase) for Player 12 (Brown) at BossColossus_GolemPoint[3] facing BossColossusTempPoint
+        Unit Group - Add (Last created unit) to BossColossus_Golems
+        Sound - Play RockGolemPissed1 <gen> at 50.00% volume, attached to (Last created unit)
+        Unit - Create 1 Golem Spawn (Boss Phase) for Player 12 (Brown) at BossColossus_GolemPoint[4] facing BossColossusTempPoint
+        Unit Group - Add (Last created unit) to BossColossus_Golems
+        Sound - Play RockGolemAttack1 <gen> at 50.00% volume, attached to (Last created unit)
+        -------- "birth" --------
+        Unit Group - Pick every unit in BossColossus_Golems and do (Actions)
+            Loop - Actions
+                Unit - Make (Picked unit) Invulnerable
+                Unit - Pause (Picked unit)
+                Animation - Play (Picked unit)'s birth animation
+        Wait 2.00 seconds
+        -------- Issue to move towards Colossus --------
+        Unit Group - Pick every unit in BossColossus_Golems and do (Actions)
+            Loop - Actions
+                Animation - Queue (Picked unit)'s stand animation
+                Unit - Make (Picked unit) Vulnerable
+                Unit - Unpause (Picked unit)
+                Unit - Order (Picked unit) to Attack BossColossus
+        -------- Clean up memory leaks --------
+        Custom script:   call RemoveLocation(udg_BossColossusTempPoint)
+        Custom script:   call RemoveLocation(udg_BossColossus_GolemPoint[1])
+        Custom script:   call RemoveLocation(udg_BossColossus_GolemPoint[2])
+        Custom script:   call RemoveLocation(udg_BossColossus_GolemPoint[3])
+        Custom script:   call RemoveLocation(udg_BossColossus_GolemPoint[4])
+        -------- turn on golems dead trigg --------
+        Trigger - Turn on BOSS Colossus Phase 2B Golems Dead <gen>
+        Trigger - Turn on BOSS Colossus Phase 2B Golems Issue Move <gen>

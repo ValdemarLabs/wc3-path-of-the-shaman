@@ -1,0 +1,48 @@
+BOSS FelDok Phase 1 Fight
+    Events
+        Time - Every (Random real number between 10.00 and 20.00) seconds of game time
+    Conditions
+    Actions
+        Set VariableSet BossFeldok_ChanceInteger = (Random integer number between 1 and 15)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BossFeldok_ChanceInteger Equal to 2
+            Then - Actions
+                Cinematic - Send transmission to (All players) from a Player 12 (Brown).Deathlord Fel'Dok named Deathlord Fel'Dok at (Center of (Playable map area)): Play No sound and display You will never leav....  Modify duration: Set to 1.50 seconds and Wait
+                Set VariableSet VarPoint = (Position of (Random unit from (Units in (Playable map area) owned by Player 1 (Red))))
+                Unit Group - Order (Units of type Deathlord Fel'Dok) to Neutral Pit Lord - Rain Of Fire VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BossFeldok_ChanceInteger Equal to 5
+            Then - Actions
+                Unit - Set BossFeldok movement speed to 666.00
+                Set VariableSet VarPoint = ((Position of BossFeldok) offset by (400.00, 400.00))
+                Unit - Order BossFeldok to Move To VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Wait 2.00 seconds
+                Set VariableSet VarPoint = ((Position of BossFeldok) offset by (400.00, 400.00))
+                Unit - Order BossFeldok to Move To VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Wait 3.00 seconds
+                Unit - Set (Triggering unit) movement speed to 270.00
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        BossFeldok_ChanceInteger Equal to 7
+                        BossFeldok_ChanceInteger Equal to 8
+                        BossFeldok_ChanceInteger Equal to 10
+            Then - Actions
+                Cinematic - Send transmission to (All players) from a Player 12 (Brown).Deathlord Fel'Dok named Deathlord Fel'Dok at (Center of (Playable map area)): Play No sound and display Stay where you are!.  Modify duration: Set to 1.50 seconds and Wait
+                Unit - Order BossFeldok to Attack (Random unit from (Units in BossFeldokArea01 <gen> owned by Player 1 (Red)))
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BossFeldok_ChanceInteger Equal to 15
+            Then - Actions
+                Cinematic - Send transmission to (All players) from a Player 12 (Brown).Deathlord Fel'Dok named Deathlord Fel'Dok at (Center of (Playable map area)): Play No sound and display You will never win!.  Modify duration: Set to 1.50 seconds and Wait
+                Unit - Order BossFeldok to Attack (Random unit from (Units in BossFeldokArea01 <gen> owned by Player 1 (Red)))
+            Else - Actions

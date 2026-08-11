@@ -1,0 +1,11 @@
+BOSS Colossus Phase 2
+    Events
+        Time - Every 1.00 seconds of game time
+    Conditions
+        (Percentage life of BossColossus) Less than or equal to 50.00
+    Actions
+        Trigger - Turn off (This trigger)
+        Trigger - Turn off BOSS Colossus Phase 1 Slam <gen>
+        Trigger - Turn off BOSS Colossus Phase 1 Slam Q <gen>
+        Trigger - Turn on BOSS Colossus Phase 2A Boulders Q <gen>
+        Trigger - Turn on BOSS Colossus Phase 2B Golems Spawn <gen>

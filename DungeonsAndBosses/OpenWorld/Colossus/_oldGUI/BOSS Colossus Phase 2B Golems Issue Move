@@ -1,0 +1,13 @@
+BOSS Colossus Phase 2B Golems Issue Move
+    Events
+        Time - Elapsed game time is 1.00 seconds
+    Conditions
+    Actions
+        Unit Group - Pick every unit in BossColossus_Golems and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Current order of (Picked unit)) Not equal to (Order(attack))
+                    Then - Actions
+                        Unit - Order (Picked unit) to Attack BossColossus
+                    Else - Actions

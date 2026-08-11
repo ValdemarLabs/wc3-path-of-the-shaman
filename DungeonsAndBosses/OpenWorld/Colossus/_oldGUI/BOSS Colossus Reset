@@ -1,0 +1,32 @@
+BOSS Colossus Reset
+    Events
+        Time - Every 5.00 seconds of game time
+    Conditions
+        ((Units in DragonFireSpam01 <gen> owned by Player 1 (Red)) is empty) Equal to True
+    Actions
+        -------- Turn off this trigger --------
+        Trigger - Turn off (This trigger)
+        -------- Turn off all BOSS phases --------
+        Trigger - Turn off BOSS Colossus Splitting Boulder <gen>
+        Trigger - Turn off BOSS Colossus Phase 1 Slam <gen>
+        Trigger - Turn off BOSS Colossus Phase 1 Slam Q <gen>
+        Trigger - Turn off BOSS Colossus Phase 1 Slam End <gen>
+        Trigger - Turn off BOSS Colossus Phase 2 <gen>
+        Trigger - Turn off BOSS Colossus Phase 2A Boulders Q <gen>
+        Trigger - Turn off BOSS Colossus Phase 2B Golems Spawn <gen>
+        Trigger - Turn off BOSS Colossus Phase 2B Golems Spawn Q <gen>
+        Trigger - Turn off BOSS Colossus Phase 2B Golems Issue Move <gen>
+        Trigger - Turn off BOSS Colossus Phase 2B Golems Dead <gen>
+        Trigger - Turn off BOSS Colossus Phase 3 <gen>
+        Trigger - Turn off BOSS Colossus Cleaving Attacks Add <gen>
+        -------- Reset Boss + other starting initials --------
+        Set VariableSet VarPoint = (Center of ColossusSpot <gen>)
+        Unit - Order BossColossus to Move To VarPoint
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Unit - Set life of BossColossus to 100.00%
+        Unit - Set mana of BossColossus to 100.00%
+        Unit - Make BossColossus Invulnerable
+        Unit Group - Pick every unit in BossColossus_Golems and do (Actions)
+            Loop - Actions
+                Unit - Kill (Picked unit)
+        Trigger - Turn on BOSS Colossus Reset Q <gen>

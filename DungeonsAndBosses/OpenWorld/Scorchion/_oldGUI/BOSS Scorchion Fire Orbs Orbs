@@ -1,0 +1,22 @@
+BOSS Scorchion Fire Orbs Orbs
+    Events
+    Conditions
+    Actions
+        -------- ========================================= --------
+        -------- Effect at Scorchion --------
+        Special Effect - Create a special effect attached to the origin of BossScorchion using Abilities\Spells\Other\Volcano\VolcanoMissile.mdl
+        Special Effect - Destroy (Last created special effect)
+        -------- ========================================= --------
+        -------- Create 2-4 orbs around Scorchion - Spawn locations and indications --------
+        Set VariableSet BossScorchionOrbInt = (Random integer number between 2 and 4)
+        -------- ========================================= --------
+        For each (Integer BossScorchionOrbLoop) from 1 to BossScorchionOrbInt, do (Actions)
+            Loop - Actions
+                Set VariableSet BossScorchionOrbPoint[BossScorchionOrbLoop] = ((Position of BossScorchion) offset by (Random real number between 400.00 and 800.00) towards (Random angle) degrees.)
+                Special Effect - Create a special effect at BossScorchionOrbPoint[BossScorchionOrbLoop] using Abilities\Spells\Other\Doom\DoomTarget.mdl
+                Set VariableSet BossScorchionOrbEffect[BossScorchionOrbLoop] = (Last created special effect)
+        -------- ========================================= --------
+        -------- Start spawn timer --------
+        Countdown Timer - Start BossScorchionOrbTimer as a One-shot timer that will expire in 5.00 seconds
+
+During the duration of fire meteors 30s, special fire orbs will appear that must all be destroyed to make the boss temporarily weaker

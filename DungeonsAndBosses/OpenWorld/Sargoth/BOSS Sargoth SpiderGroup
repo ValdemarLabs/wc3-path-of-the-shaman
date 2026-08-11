@@ -1,0 +1,17 @@
+BOSS Sargoth SpiderGroup
+    Events
+        Time - Every 1.00 seconds of game time
+    Conditions
+        (BossSargoth is alive) Equal to True
+    Actions
+        Unit Group - Pick every unit in SargothSpiderGroup and do (Actions)
+            Loop - Actions
+                Set VariableSet SargothSpiderAttackPoint = (Random point in SargothSpiderAttackPoint <gen>)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ((Picked unit) is alive) Equal to True
+                        (Current order of (Picked unit)) Not equal to (Order(attack))
+                    Then - Actions
+                        Unit - Order (Picked unit) to Attack-Move To SargothSpiderAttackPoint
+                    Else - Actions
+                Custom script:   call RemoveLocation(udg_SargothSpiderAttackPoint)

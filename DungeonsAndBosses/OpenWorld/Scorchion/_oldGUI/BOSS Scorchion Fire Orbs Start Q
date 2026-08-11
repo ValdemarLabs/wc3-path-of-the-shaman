@@ -1,0 +1,20 @@
+BOSS Scorchion Fire Orbs Start Q
+    Events
+        Unit - A unit enters BossScorchionLava <gen>
+    Conditions
+        (Triggering unit) Equal to BossScorchion
+    Actions
+        Game - Display to (All players) the text: debug: Fire Orbs St...
+        -------- ========================================= --------
+        Unit - Remove Ghost (Visible) from BossScorchion
+        Unit - Make BossScorchion Vulnerable
+        Unit - Add Fire Orb (Scorchion) to BossScorchion
+        Custom script:   call SetUnitPropWindow( udg_BossScorchion, 0.00 )
+        -------- ========================================= --------
+        -------- "activate orbs" --------
+        Trigger - Run BOSS Scorchion Fire Orbs Orbs <gen> (checking conditions)
+        -------- ========================================= --------
+        Countdown Timer - Start BossScorchionFireOrbsTimer as a One-shot timer that will expire in 50.00 seconds
+        Trigger - Turn on BOSS Scorchion Fire Orbs Loop <gen>
+        -------- ========================================= --------
+        Trigger - Turn off (This trigger)

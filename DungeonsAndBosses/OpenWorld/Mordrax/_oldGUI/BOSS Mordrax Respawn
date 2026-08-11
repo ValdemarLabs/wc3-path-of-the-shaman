@@ -1,0 +1,9 @@
+BOSS Mordrax Respawn
+    Events
+        Time - BossMordrax_RT expires
+    Conditions
+    Actions
+        Set VariableSet BossVarPoint = (Center of MordraxWP01 <gen>)
+        Unit - Create 1 Mordrax the Desolator (Level 15) for Player 12 (Brown) at BossVarPoint facing 307.00 degrees
+        Set VariableSet BossMordrax = (Last created unit)
+        Custom script:   call TriggerExecute(gg_trg_Mordrax_Movement_Start)

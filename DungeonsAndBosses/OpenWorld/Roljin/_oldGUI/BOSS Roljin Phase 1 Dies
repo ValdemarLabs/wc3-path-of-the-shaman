@@ -1,0 +1,15 @@
+BOSS Roljin Phase 1 Dies
+    Events
+        Unit - A unit Dies
+    Conditions
+        (Dying unit) Equal to Roljin
+    Actions
+        Custom script:   call DestroyGroup(udg_RoljinGroup)
+        -------- Turn off this trigger --------
+        Trigger - Turn off (This trigger)
+        -------- Turn off all BOSS phases --------
+        Trigger - Turn off BOSS Roljin Phase 1 Support <gen>
+        Trigger - Turn off BOSS Roljin Phase 1 Move <gen>
+        Trigger - Turn off BOSS Roljin Phase 1 Reset <gen>
+        -------- Turn on BOSS fight starting trigger --------
+        Trigger - Remove (This trigger) from the trigger queue

@@ -1,0 +1,31 @@
+BOSS Scorchion Engage Scorchion Facing
+    Events
+        Time - BossScorchionEngageFacingTimer expires
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in BossScorchionDarkShamans) Greater than 0
+            Then - Actions
+                Set VariableSet BossScorchionEngageAngle = (Random angle)
+                Unit - Make BossScorchion face BossScorchionEngageAngle over 0.20 seconds
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Random integer number between 1 and 3) Equal to 1
+                    Then - Actions
+                        Animation - Queue BossScorchion's stand 3 animation
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Random integer number between 1 and 3) Equal to 2
+                    Then - Actions
+                        Animation - Queue BossScorchion's stand hit large animation
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Random integer number between 1 and 3) Equal to 3
+                    Then - Actions
+                        Animation - Queue BossScorchion's stand hit critical animation
+                    Else - Actions
+            Else - Actions
+        Countdown Timer - Start BossScorchionEngageFacingTimer as a One-shot timer that will expire in (Random real number between 0.50 and 3.00) seconds

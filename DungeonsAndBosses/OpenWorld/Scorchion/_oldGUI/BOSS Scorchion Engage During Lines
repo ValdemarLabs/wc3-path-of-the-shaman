@@ -1,0 +1,50 @@
+BOSS Scorchion Engage During Lines
+    Events
+        Time - Every (Random real number between 10.00 and 25.00) seconds of game time
+    Conditions
+    Actions
+        Set VariableSet BossScorchionDarkShamansLine = (Random integer number between 1 and 4)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BossScorchionDarkShamansLine Equal to 1
+                (All units of BossScorchionDarkShamans are dead) Equal to False
+            Then - Actions
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = The spirits of fire are bound to our will—your flesh shall be their feast!
+                Custom script:   call ExSound_Play("DarkShaman_0002", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from (Random unit from BossScorchionDarkShamans) named Dark Shaman: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Don't wait
+                -------- ===================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BossScorchionDarkShamansLine Equal to 2
+                (All units of BossScorchionDarkShamans are dead) Equal to False
+            Then - Actions
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Witness the true power of shackled flame!
+                Custom script:   call ExSound_Play("DarkShaman_0003", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from (Random unit from BossScorchionDarkShamans) named Dark Shaman: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Don't wait
+                -------- ===================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BossScorchionDarkShamansLine Equal to 3
+                (All units of BossScorchionDarkShamans are dead) Equal to False
+            Then - Actions
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Aaargh! Why can’t you just.. die?!
+                Custom script:   call ExSound_Play("DarkShaman_0004", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from (Random unit from BossScorchionDarkShamans) named Dark Shaman: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Don't wait
+                -------- ===================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BossScorchionDarkShamansLine Equal to 4
+                (All units of BossScorchionDarkShamans are dead) Equal to False
+            Then - Actions
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Haha! Your actions are amusing!
+                Custom script:   call ExSound_Play("DarkShaman_0005", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from (Random unit from BossScorchionDarkShamans) named Dark Shaman: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Don't wait
+                -------- ===================================== --------
+            Else - Actions

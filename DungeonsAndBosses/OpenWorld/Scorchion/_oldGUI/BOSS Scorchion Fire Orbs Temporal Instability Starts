@@ -1,0 +1,15 @@
+BOSS Scorchion Fire Orbs Temporal Instability Starts
+    Events
+        Time - Every 1.00 seconds of game time
+    Conditions
+        (Number of units in BossScorchionOrbGroup) Equal to 0
+    Actions
+        Game - Display to (All players) the text: debug: Fire Orbs Te...
+        -------- ========================================= --------
+        Unit - Add Temporal Instability (Scorchion) to BossScorchion
+        Countdown Timer - Start BossColossusTempWeaknessTime as a One-shot timer that will expire in 15.00 seconds
+        -------- ========================================= --------
+        Trigger - Turn on BOSS Scorchion Fire Orbs Temporal Instability Damage <gen>
+        -------- ========================================= --------
+        Trigger - Turn off (This trigger)
+        -------- ========================================= --------

@@ -1,0 +1,116 @@
+BOSS Sargoth Burrow 25 Q
+    Events
+    Conditions
+    Actions
+        If ((BossSargoth is alive) Equal to False) then do (Skip remaining actions) else do (Do nothing)
+        If (BossSargothReset Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        -------- Sargoth burrows --------
+        Unit - For BossSargoth, Ability Burrow (Sargoth) , Disable ability: False, Hide UI: False
+        Unit - Order BossSargoth to Undead Crypt Fiend - Burrow.
+        Wait 1.00 seconds
+        -------- Spiders attack in waves --------
+        If ((BossSargoth is alive) Equal to False) then do (Skip remaining actions) else do (Do nothing)
+        If (BossSargothReset Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        -------- =================== --------
+        Set VariableSet SargothSpiderSpawnPoint1 = (Random point in SargothSpiders1 <gen>)
+        Unit - Create 1 Giant Spider for Player 12 (Brown) at SargothSpiderSpawnPoint1 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Unit - Create 1 Giant Spider for Player 12 (Brown) at SargothSpiderSpawnPoint1 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Unit - Create 1 Giant Spider for Player 12 (Brown) at SargothSpiderSpawnPoint1 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Sound - Play SpiderYes2 <gen> at 100.00% volume, located at SargothSpiderSpawnPoint1 with Z offset 0.00
+        Custom script:   call RemoveLocation(udg_SargothSpiderSpawnPoint1)
+        -------- =================== --------
+        Wait 2.00 seconds
+        If ((BossSargoth is alive) Equal to False) then do (Skip remaining actions) else do (Do nothing)
+        If (BossSargothReset Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        -------- =================== --------
+        Set VariableSet SargothSpiderSpawnPoint2 = (Random point in SargothSpiders2 <gen>)
+        Unit - Create 1 Giant Spider for Player 12 (Brown) at SargothSpiderSpawnPoint2 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Unit - Create 1 Giant Spider for Player 12 (Brown) at SargothSpiderSpawnPoint2 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Unit - Create 1 Giant Spider for Player 12 (Brown) at SargothSpiderSpawnPoint2 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Sound - Play SpiderYes2 <gen> at 100.00% volume, located at SargothSpiderSpawnPoint2 with Z offset 0.00
+        Custom script:   call RemoveLocation(udg_SargothSpiderSpawnPoint2)
+        -------- =================== --------
+        Wait 2.00 seconds
+        If ((BossSargoth is alive) Equal to False) then do (Skip remaining actions) else do (Do nothing)
+        If (BossSargothReset Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        -------- =================== --------
+        Set VariableSet SargothSpiderSpawnPoint3 = (Random point in SargothSpiders3 <gen>)
+        Unit - Create 1 Giant Spider for Player 12 (Brown) at SargothSpiderSpawnPoint3 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Unit - Create 1 Giant Spider for Player 12 (Brown) at SargothSpiderSpawnPoint3 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Unit - Create 1 Giant Spider for Player 12 (Brown) at SargothSpiderSpawnPoint3 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Sound - Play SpiderYes2 <gen> at 100.00% volume, located at SargothSpiderSpawnPoint3 with Z offset 0.00
+        Custom script:   call RemoveLocation(udg_SargothSpiderSpawnPoint3)
+        -------- =================== --------
+        Wait 10.00 seconds
+        If ((BossSargoth is alive) Equal to False) then do (Skip remaining actions) else do (Do nothing)
+        If (BossSargothReset Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        -------- =================== --------
+        Set VariableSet SargothSpiderSpawnPoint1 = (Random point in SargothSpiders1 <gen>)
+        Unit - Create 1 Giant Spider for Player 12 (Brown) at SargothSpiderSpawnPoint1 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Unit - Create 1 Spider for Player 12 (Brown) at SargothSpiderSpawnPoint1 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Unit - Create 1 Spider for Player 12 (Brown) at SargothSpiderSpawnPoint1 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Unit - Create 1 Spider for Player 12 (Brown) at SargothSpiderSpawnPoint1 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Unit - Create 1 Spider for Player 12 (Brown) at SargothSpiderSpawnPoint1 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Sound - Play SpiderYes2 <gen> at 100.00% volume, located at SargothSpiderSpawnPoint1 with Z offset 0.00
+        Custom script:   call RemoveLocation(udg_SargothSpiderSpawnPoint1)
+        -------- =================== --------
+        Wait 10.00 seconds
+        If ((BossSargoth is alive) Equal to False) then do (Skip remaining actions) else do (Do nothing)
+        If (BossSargothReset Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        -------- =================== --------
+        Set VariableSet SargothSpiderSpawnPoint2 = (Random point in SargothSpiders2 <gen>)
+        Unit - Create 1 Giant Spider for Player 12 (Brown) at SargothSpiderSpawnPoint2 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Unit - Create 1 Spider for Player 12 (Brown) at SargothSpiderSpawnPoint2 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Unit - Create 1 Spider for Player 12 (Brown) at SargothSpiderSpawnPoint2 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Unit - Create 1 Spider for Player 12 (Brown) at SargothSpiderSpawnPoint2 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Unit - Create 1 Spider for Player 12 (Brown) at SargothSpiderSpawnPoint2 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Sound - Play SpiderYes2 <gen> at 100.00% volume, located at SargothSpiderSpawnPoint2 with Z offset 0.00
+        Custom script:   call RemoveLocation(udg_SargothSpiderSpawnPoint2)
+        -------- =================== --------
+        Wait 10.00 seconds
+        If ((BossSargoth is alive) Equal to False) then do (Skip remaining actions) else do (Do nothing)
+        If (BossSargothReset Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        -------- =================== --------
+        Set VariableSet SargothSpiderSpawnPoint3 = (Random point in SargothSpiders3 <gen>)
+        Unit - Create 1 Giant Spider for Player 12 (Brown) at SargothSpiderSpawnPoint3 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Unit - Create 1 Spider for Player 12 (Brown) at SargothSpiderSpawnPoint3 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Unit - Create 1 Spider for Player 12 (Brown) at SargothSpiderSpawnPoint3 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Unit - Create 1 Spider for Player 12 (Brown) at SargothSpiderSpawnPoint3 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Unit - Create 1 Spider for Player 12 (Brown) at SargothSpiderSpawnPoint3 facing Default building facing degrees
+        Unit Group - Add (Last created unit) to SargothSpiderGroup
+        Sound - Play SpiderYes2 <gen> at 100.00% volume, located at SargothSpiderSpawnPoint3 with Z offset 0.00
+        Custom script:   call RemoveLocation(udg_SargothSpiderSpawnPoint3)
+        -------- =================== --------
+        Wait 30.00 seconds
+        If ((BossSargoth is alive) Equal to False) then do (Skip remaining actions) else do (Do nothing)
+        If (BossSargothReset Equal to True) then do (Skip remaining actions) else do (Do nothing)
+        -------- =================== --------
+        -------- Sargoth unburrows --------
+        Cinematic - Send transmission to (All players) from a Neutral Hostile.Sargoth named Sargoth at (Center of (Playable map area)): Play Sargoth_1 <gen> and display *Unrecognizable scr....  Modify duration: Set to 1.50 seconds and Wait
+        Unit - Order BossSargoth to Undead Crypt Fiend - Unburrow.
+        Unit - For BossSargoth, Ability Burrow (Sargoth) , Disable ability: True, Hide UI: True
+        Trigger - Turn on BOSS Sargoth Movement <gen>
+        Trigger - Remove (This trigger) from the trigger queue

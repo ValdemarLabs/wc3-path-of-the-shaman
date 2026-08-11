@@ -1,0 +1,17 @@
+BOSS Scorchion Random Aggro
+    Events
+        Time - Every (Random real number between 15.00 and 30.00) seconds of game time
+    Conditions
+        (BossScorchion is alive) Equal to True
+    Actions
+        -------- =================================== --------
+        Set VariableSet BossScorchionPoint = (Position of BossScorchion)
+        Set VariableSet BossScorchionTargetGroup = (Units within 700.00 of BossScorchionPoint matching ((((Matching unit) is alive) Equal to True) and (((Matching unit) belongs to an enemy of (Owner of BossScorchion).) Equal to True)).)
+        Set VariableSet BossScorchionTarget = (Random unit from BossScorchionTargetGroup)
+        -------- =================================== --------
+        Unit - Order BossScorchion to Attack BossScorchionTarget
+        Cinematic - Send transmission to (All players) from BossScorchion named Scorchion: Play Scorchion05 <gen> and display Beware, I live..  Modify duration: Set to 3.50 seconds and Don't wait
+        -------- =================================== --------
+        Custom script:   call DestroyGroup(udg_BossScorchionTargetGroup)
+        Custom script:   call RemoveLocation(udg_BossScorchionPoint)
+        -------- =================================== --------

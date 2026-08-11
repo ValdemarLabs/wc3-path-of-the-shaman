@@ -1,0 +1,19 @@
+BOSS Colossus Splitting Boulder
+    Events
+        Time - Every (Random real number between 10.00 and 20.00) seconds of game time
+    Conditions
+        BossColossusSlam Equal to False
+        BossColossusGolems Equal to False
+        BossColossusBoulders Equal to False
+    Actions
+        -------- Get BossColossus location and facing angle --------
+        Set VariableSet BossColossusTempPoint = (Position of BossColossus)
+        Set VariableSet BossColossusFacingAngle = (Facing of BossColossus)
+        -------- Calculate the location 300 units in front of BossColossus --------
+        Set VariableSet BossColossusSplitBoulderLoc = (BossColossusTempPoint offset by 300.00 towards BossColossusFacingAngle degrees.)
+        -------- Order BossColossus to cast the ability at the new location --------
+        Unit - Order BossColossus to Neutral Brewmaster - Breath Of Fire BossColossusSplitBoulderLoc
+        -------- Clean up memory leaks --------
+        Custom script:   call RemoveLocation(udg_BossColossusTempPoint)
+        Custom script:   call RemoveLocation(udg_BossColossusSplitBoulderLoc)
+        Sound - Play Colossus04 <gen> at 100.00% volume, attached to BossColossus

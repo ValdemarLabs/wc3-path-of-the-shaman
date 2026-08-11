@@ -1,0 +1,31 @@
+BOSS Scorchion Reset or Respawn Q
+    Events
+        Time - BossScorchionResetTimer expires
+    Conditions
+    Actions
+        Unit Group - Pick every unit in BossScorchionDarkShamans and do (Actions)
+            Loop - Actions
+                Unit - Remove (Picked unit) from the game
+        -------- ////////////// --------
+        Set VariableSet VarPoint = (Center of DarkShaman01 <gen>)
+        Unit - Create 1 Dark Shaman for Player 12 (Brown) at VarPoint facing 47.00 degrees
+        Unit Group - Add (Last created unit) to BossScorchionDarkShamans
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- ////////////// --------
+        Set VariableSet VarPoint = (Center of DarkShaman02 <gen>)
+        Unit - Create 1 Dark Shaman for Player 12 (Brown) at VarPoint facing 120.00 degrees
+        Unit Group - Add (Last created unit) to BossScorchionDarkShamans
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- ////////////// --------
+        Set VariableSet VarPoint = (Center of DarkShaman03 <gen>)
+        Unit - Create 1 Dark Shaman for Player 12 (Brown) at VarPoint facing 160.00 degrees
+        Unit Group - Add (Last created unit) to BossScorchionDarkShamans
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- ////////////// --------
+        Set VariableSet VarPoint = (Center of DarkShaman04 <gen>)
+        Unit - Create 1 Dark Shaman for Player 12 (Brown) at VarPoint facing 195.00 degrees
+        Unit Group - Add (Last created unit) to BossScorchionDarkShamans
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- ////////////// --------
+        Trigger - Turn on BOSS Scorchion Dark Shamans Torture <gen>
+        Countdown Timer - Start BossScorchionTortureTimer as a One-shot timer that will expire in 10.00 seconds

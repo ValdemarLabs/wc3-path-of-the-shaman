@@ -1,0 +1,16 @@
+BOSS Colossus Phase 1 Slam Q
+    Events
+        Time - Every 1.00 seconds of game time
+    Conditions
+        (BossColossus is alive) Equal to True
+    Actions
+        Wait 0.00 seconds
+        -------- -- waterelemental 852097 --------
+        Custom script:   call IssueImmediateOrderById(udg_BossColossus, 852097)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BossColossusSlamInt Equal to 5
+            Then - Actions
+                Sound - Play Colossus02 <gen> at 100.00% volume, attached to BossColossus
+            Else - Actions
+        Set VariableSet BossColossusSlamInt = (BossColossusSlamInt + 1)

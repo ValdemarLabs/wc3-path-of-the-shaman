@@ -1,0 +1,6 @@
+DungeonCryptTrap1Restore
+    Events
+        Time - CryptTrap1Timer expires
+    Conditions
+    Actions
+        Animation - Play the Stand animation for all doodads of type UD_9mw_domination_floorspiketrap05 Animated within CryptTrap1 <gen>.

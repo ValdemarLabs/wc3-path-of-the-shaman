@@ -1,0 +1,27 @@
+DungeonCryptTrap1
+    Events
+        Unit - A unit enters CryptTrap1 <gen>
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Unit-type of (Triggering unit)) Not equal to DummyDamage
+                (Unit-type of (Triggering unit)) Not equal to Reputations
+                (Unit-type of (Triggering unit)) Not equal to Stats
+                (Unit-type of (Triggering unit)) Not equal to Companions
+    Actions
+        -------- ======================== --------
+        -------- Skip if the unit has Locust --------
+        Custom script:   local unit u = GetTriggerUnit()
+        Custom script:   if GetUnitAbilityLevel(u, 'Aloc') > 0 then
+        Custom script:   set u = null
+        Custom script:   return
+        Custom script:   endif
+        -------- ======================== --------
+        Wait 1.00 seconds
+        Set VariableSet VarPoint = (Position of (Triggering unit))
+        Unit - Create 1 DummyDamage for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit - Add a 1.00 second Generic expiration timer to (Last created unit)
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Animation - Play the Spell animation for all doodads of type UD_9mw_domination_floorspiketrap05 Animated within CryptTrap1 <gen>.
+        Unit - Cause (Last created unit) to damage (Triggering unit), dealing 65000.00 damage of attack type Chaos and damage type Normal
+        Countdown Timer - Start CryptTrap1Timer as a One-shot timer that will expire in 2.00 seconds

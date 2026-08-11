@@ -1,0 +1,31 @@
+BOSS Mordrax Fire Orbs
+    Events
+        Time - Every 10.00 seconds of game time
+    Conditions
+        (BossMordrax is alive) Equal to True
+    Actions
+        Game - Display to (All players) the text: debug: Fire Orbs Ca...
+        -------- =================================== --------
+        Set VariableSet BossMordrax_Point = (Position of BossMordrax)
+        Set VariableSet BossMordrax_TargetGroup = (Units in (Region centered at BossMordrax_Point with size (1000.00, 1000.00)) matching (((Matching unit) belongs to an enemy of (Owner of BossMordrax).) Equal to True))
+        Set VariableSet BossMordrax_Target = (Random unit from BossMordrax_TargetGroup)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BossMordrax_Target Not equal to No unit
+            Then - Actions
+                Set VariableSet BossMordrax_TargetPoint = (Position of BossMordrax_Target)
+                Set VariableSet BossMordrax_Angle = (Angle from BossMordrax_Point to BossMordrax_TargetPoint)
+                Set VariableSet BossMordrax_TargetPoint = (BossMordrax_Point offset by 150.00 towards BossMordrax_Angle degrees.)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Unit-type of BossMordrax_Target) Not equal to Totem
+                    Then - Actions
+                        Unit - Order BossMordrax to Special - Dark Summoning BossMordrax_TargetPoint
+                    Else - Actions
+                -------- =================================== --------
+            Else - Actions
+        -------- =================================== --------
+        Custom script:   call DestroyGroup(udg_BossMordrax_TargetGroup)
+        Custom script:   call RemoveLocation(udg_BossMordrax_Point)
+        Custom script:   call RemoveLocation(udg_BossMordrax_TargetPoint)
+        -------- =================================== --------

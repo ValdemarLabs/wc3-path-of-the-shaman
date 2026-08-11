@@ -1,0 +1,13 @@
+BOSS Colossus Phase 2B Heal
+    Events
+        Game - DamageModifierEvent becomes Equal to 1.00
+    Conditions
+        (Unit-type of DamageEventTarget) Equal to Colossus (Level 15)
+        (Unit-type of DamageEventSource) Equal to Golem Spawn (Boss Phase)
+    Actions
+        Set VariableSet DamageEventAmount = -50.00
+        Unit - Cause DamageEventTarget to damage DamageEventSource, dealing 50.00 damage of attack type Chaos and damage type Normal
+        Set VariableSet DamageEventType = DamageTypeHeal
+        Sound - Play ColossusHeal <gen> at 100.00% volume, attached to BossColossus
+        Special Effect - Create a special effect attached to the chest of BossColossus using Abilities\Spells\Demon\DemonBoltImpact\DemonBoltImpact.mdl
+        Special Effect - Destroy (Last created special effect)

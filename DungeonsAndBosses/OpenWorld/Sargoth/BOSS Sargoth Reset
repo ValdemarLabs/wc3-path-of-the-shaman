@@ -1,0 +1,37 @@
+BOSS Sargoth Reset
+    Events
+        Time - Every 5.00 seconds of game time
+    Conditions
+        ((Units in SargothLair <gen> owned by Player 1 (Red)) is empty) Equal to True
+    Actions
+        Set VariableSet BossSargothReset = True
+        -------- =================== --------
+        -------- Issue spawned spiders to move back into the forest --------
+        Set VariableSet SargothSpiderAttackPoint = (Random point in SargothSpiders2 <gen>)
+        Unit Group - Pick every unit in SargothSpiderGroup and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ((Picked unit) is alive) Equal to True
+                    Then - Actions
+                        Unit - Set (Picked unit) movement speed to 350.00
+                        Unit - Add a 8.00 second Generic expiration timer to (Picked unit)
+                        Unit - Order (Picked unit) to Move To SargothSpiderAttackPoint
+                    Else - Actions
+        Custom script:   call RemoveLocation(udg_SargothSpiderAttackPoint)
+        -------- Destroy attacking spiders group --------
+        Custom script:   call DestroyGroup(udg_SargothSpiderGroup)
+        -------- =================== --------
+        Trigger - Turn off BOSS Sargoth Movement <gen>
+        Trigger - Turn off BOSS Sargoth SpiderGroup <gen>
+        Trigger - Turn off BOSS Sargoth Burrow 25 <gen>
+        Trigger - Turn off BOSS Sargoth Burrow 50 <gen>
+        Trigger - Remove BOSS Sargoth Burrow 25 Q <gen> from the trigger queue
+        Trigger - Remove BOSS Sargoth Burrow 50 Q <gen> from the trigger queue
+        -------- =================== --------
+        -------- Reset Boss + other starting initials --------
+        Unit - Set life of BossSargoth to 100.00%
+        -------- Allow boss start --------
+        Trigger - Turn on BOSS Sargoth Start <gen>
+        -------- turn off this trigger --------
+        Trigger - Turn off (This trigger)

@@ -1,0 +1,8 @@
+BOSS Scorchion Fire Ward End
+    Events
+        Unit - A unit Finishes casting an ability
+        Unit - A unit Stops casting an ability
+    Conditions
+        (Ability being cast) Equal to Fire Ward (Scorchion)
+    Actions
+        Unit - Remove Fire Ward (Scorchion) from BossScorchion

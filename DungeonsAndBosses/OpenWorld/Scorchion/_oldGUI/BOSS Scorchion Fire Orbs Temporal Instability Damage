@@ -1,0 +1,11 @@
+BOSS Scorchion Fire Orbs Temporal Instability Damage
+    Events
+        Game - DamageModifierEvent becomes Equal to 1.00
+    Conditions
+        (Unit-type of DamageEventTarget) Equal to Scorchion (Level 20)
+    Actions
+        --------   --------
+        -------- EXTRA CRIT --------
+        --------   --------
+        Set VariableSet DamageEventAmount = (DamageEventAmount x 2.50)
+        Set VariableSet DamageEventType = DamageTypeCriticalStrike

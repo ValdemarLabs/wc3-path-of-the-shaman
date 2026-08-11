@@ -1,0 +1,6 @@
+Jinvorrak Statue
+    Events
+        Time - Elapsed game time is 2.00 seconds
+    Conditions
+    Actions
+        Animation - Change Jinvorrak (Statue) 2195 <gen>'s animation speed to 0.00% of its original speed

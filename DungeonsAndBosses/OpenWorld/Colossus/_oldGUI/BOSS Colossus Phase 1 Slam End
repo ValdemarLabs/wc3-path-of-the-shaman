@@ -1,0 +1,13 @@
+BOSS Colossus Phase 1 Slam End
+    Events
+        Time - Every 1.00 seconds of game time
+    Conditions
+        BossColossusSlamInt Equal to 10
+    Actions
+        Unit - Remove Thunder Clap (Colossus) [Lagfree] from BossColossus
+        Set VariableSet BossColossusSlam = False
+        Unit - Set BossColossus movement speed to (Default movement speed of BossColossus)
+        Unit - Order BossColossus to Attack Once (Random unit from (Units in DragonFireSpam01 <gen> matching (((Matching unit) belongs to an enemy of Player 12 (Brown).) Equal to True)))
+        Trigger - Turn off (This trigger)
+        Trigger - Turn off BOSS Colossus Phase 1 Slam Q <gen>
+        Trigger - Turn on BOSS Colossus Phase 1 Slam <gen>

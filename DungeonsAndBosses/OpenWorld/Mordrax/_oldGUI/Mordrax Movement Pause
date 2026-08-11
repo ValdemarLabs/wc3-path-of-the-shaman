@@ -1,0 +1,11 @@
+Mordrax Movement Pause
+    Events
+    Conditions
+    Actions
+        -------- ==================================== --------
+        -------- PAUSE PATROL --------
+        -------- -------------------------- --------
+        Set VariableSet TempUnit = BossMordrax
+        Custom script:   call PatrolSystem_Pause(udg_TempUnit)
+        -------- -------------------------- --------
+        -------- ==================================== --------

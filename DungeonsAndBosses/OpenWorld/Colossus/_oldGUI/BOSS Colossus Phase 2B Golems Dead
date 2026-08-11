@@ -1,0 +1,18 @@
+BOSS Colossus Phase 2B Golems Dead
+    Events
+        Time - Every 1.00 seconds of game time
+    Conditions
+        (All units of BossColossus_Golems are dead) Equal to True
+    Actions
+        -------- triggers off / on --------
+        Trigger - Turn off (This trigger)
+        Trigger - Turn off BOSS Colossus Phase 2B Golems Issue Move <gen>
+        Trigger - Turn on BOSS Colossus Phase 2B Golems Spawn Q <gen>
+        Trigger - Turn on BOSS Colossus Phase 2A Boulders Q <gen>
+        -------- Cleanu unit group --------
+        Unit Group - Remove all units of BossColossus_Golems from BossColossus_Golems.
+        -------- set phase over --------
+        Set VariableSet BossColossusGolems = False
+        Unit - Set BossColossus movement speed to (Default movement speed of BossColossus)
+        Unit - Order BossColossus to Attack Once (Random unit from (Units in DragonFireSpam01 <gen> matching (((Matching unit) belongs to an enemy of Player 12 (Brown).) Equal to True)))
+        Sound - Play ColossusReady <gen> at 100.00% volume, attached to BossColossus

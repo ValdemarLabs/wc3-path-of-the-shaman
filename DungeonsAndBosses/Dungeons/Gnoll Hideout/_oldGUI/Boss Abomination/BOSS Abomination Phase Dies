@@ -1,0 +1,16 @@
+BOSS Abomination Phase Dies
+    Events
+        Unit - A unit Dies
+    Conditions
+        (Dying unit) Equal to BossAbomination
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Boss Chat --------
+        -------- Reset Boss + other starting initials --------
+        -------- Turn off all BOSS phases --------
+        Trigger - Turn off BOSS Abomination Phase Zombies <gen>
+        Trigger - Turn off BOSS Abomination Phase Reset <gen>
+        -------- Turn on BOSS fight starting trigger --------
+        Trigger - Turn on BOSS Abomination Phase Start <gen>
+        -------- Turn off this trigger --------
+        Trigger - Remove (This trigger) from the trigger queue

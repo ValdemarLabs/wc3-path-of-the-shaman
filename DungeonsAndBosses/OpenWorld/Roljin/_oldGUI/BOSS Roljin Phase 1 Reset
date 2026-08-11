@@ -1,0 +1,18 @@
+BOSS Roljin Phase 1 Reset
+    Events
+        Time - Every 5.00 seconds of game time
+    Conditions
+        ((Units in BloodtuskTribe <gen> owned by Player 1 (Red)) is empty) Equal to True
+    Actions
+        -------- Turn off this trigger --------
+        Trigger - Turn off (This trigger)
+        -------- Boss Chat --------
+        Cinematic - Send transmission to (All players) from Roljin named Rol'jin: Play ForestTrollPissed6 <gen> and display Oh, just like that,....  Modify duration: Set to 4.00 seconds and Wait
+        -------- Reset Boss + other starting initials --------
+        Unit - Set life of Roljin to 100.00%
+        Unit - Set mana of Roljin to 100.00%
+        -------- Turn off all BOSS phases --------
+        Trigger - Turn off BOSS Roljin Phase 1 Support <gen>
+        Trigger - Turn off BOSS Roljin Phase 1 Move <gen>
+        Trigger - Turn off BOSS Roljin Phase 1 Reset <gen>
+        -------- Turn on BOSS fight starting trigger --------

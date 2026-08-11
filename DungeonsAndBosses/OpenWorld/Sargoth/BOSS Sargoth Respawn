@@ -1,0 +1,10 @@
+BOSS Sargoth Respawn
+    Events
+        Time - BossSargothRT expires
+    Conditions
+    Actions
+        Set VariableSet BossVarPoint = (Center of BossSargothSpot <gen>)
+        Unit - Create 1 Sargoth for Player 12 (Brown) at BossVarPoint facing Default building facing degrees
+        Special Effect - Create a special effect attached to the overhead of (Last created unit) using Abilities\Spells\Human\Polymorph\PolyMorphDoneGround.mdl
+        Set VariableSet BossSargoth = (Last created unit)
+        Custom script:   call RemoveLocation(udg_BossVarPoint)

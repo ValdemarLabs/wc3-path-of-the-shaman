@@ -1,0 +1,19 @@
+BOSS Colossus Phase 2B Golems Spawn
+    Events
+        Time - Every 50.00 seconds of game time
+    Conditions
+        (BossColossus is alive) Equal to True
+        BossColossusBoulders Equal to False
+    Actions
+        Trigger - Turn off (This trigger)
+        Trigger - Turn off BOSS Colossus Phase 2A Boulders Q <gen>
+        -------- Set boolean for the action --------
+        Set VariableSet BossColossusGolems = True
+        -------- ========== Transition to phase golems --------
+        -------- Colossus wil move the original center location (blight area) --------
+        Unit - Make BossColossus Invulnerable
+        Set VariableSet BossColossusTempPoint = (Center of ColossusSpot <gen>)
+        Unit - Order BossColossus to Move To BossColossusTempPoint
+        Sound - Play ColossusMove <gen> at 100.00% volume, attached to BossColossus
+        Custom script:   call RemoveLocation(udg_BossColossusTempPoint)
+        Trigger - Turn on BOSS Colossus Phase 2B Golems Spawn Q <gen>

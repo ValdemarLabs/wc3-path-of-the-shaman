@@ -1,0 +1,54 @@
+BOSS Mordrax Reset
+    Events
+        Time - BossMordrax_ResetTimer expires
+    Conditions
+    Actions
+        -------- ======== Check hostile players near ======== --------
+        Set VariableSet BossMordrax_Point = (Position of BossMordrax)
+        Set VariableSet BossMordrax_TargetGroup = (Units in (Region centered at BossMordrax_Point with size (1000.00, 1000.00)) matching (((Matching unit) belongs to an enemy of (Owner of BossMordrax).) Equal to True))
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in BossMordrax_TargetGroup) Greater than 0
+            Then - Actions
+                -------- ======== Clean up leaks ======== --------
+                Custom script:   call DestroyGroup(udg_BossMordrax_TargetGroup)
+                Custom script:   call RemoveLocation(udg_BossMordrax_Point)
+                -------- Start reset check timer --------
+                Countdown Timer - Start BossMordrax_ResetTimer as a One-shot timer that will expire in 10.00 seconds
+                -------- ======== cannot be started because of enemies of BOSS unit close ======== --------
+                Skip remaining actions
+            Else - Actions
+        -------- ======== Clean up leaks ======== --------
+        Custom script:   call DestroyGroup(udg_BossMordrax_TargetGroup)
+        Custom script:   call RemoveLocation(udg_BossMordrax_Point)
+        -------- ======== Initial check of the selected unit ======== --------
+        Set VariableSet CV = (Custom value of BossMordrax)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        UnitIsCasting[CV] Equal to True
+                        GCSM_UnitInCombat[CV] Equal to True
+            Then - Actions
+                -------- Start reset check timer --------
+                Countdown Timer - Start BossMordrax_ResetTimer as a One-shot timer that will expire in 10.00 seconds
+                -------- ======== cannot be started because of the conditions ======== --------
+                Skip remaining actions
+                -------- ======== ======== --------
+            Else - Actions
+        -------- ======== RESET======== --------
+        Custom script:   call TriggerExecute(gg_trg_Mordrax_Movement_Continue)
+        Unit - Add Crow Form to BossMordrax
+        Animation - Change BossMordrax flying height to 600.00 at 5.00
+        -------- Turn off / on relevant triggers --------
+        Trigger - Turn off (This trigger)
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Mordrax_Fire_Orbs)
+        Custom script:   call EnableTrigger(gg_trg_BOSS_Mordrax_Start_Attacked)
+        Custom script:   call EnableTrigger(gg_trg_BOSS_Mordrax_Start_Attacking)
+        -------- Reset Boss + other starting initials --------
+        Unit - Set life of BossMordrax to 100.00%
+        -------- Disable chat --------
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Mordrax_Chat_During)
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Mordrax_Chat_Ability)
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Mordrax_Chat_Hero_Dies)
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Mordrax_Chat_LowHP)

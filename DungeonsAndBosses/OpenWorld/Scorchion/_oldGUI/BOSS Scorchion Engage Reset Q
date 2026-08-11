@@ -1,0 +1,55 @@
+BOSS Scorchion Engage Reset Q
+    Events
+        Time - BossScorchionDarkShamansRTimer expires
+    Conditions
+    Actions
+        Unit - Make BossScorchion Vulnerable
+        Unit - Set Unit: BossScorchion's Real Field: Hit Points Regeneration Rate ('uhpr') to Value: 1000.00
+        Special Effect - Destroy BossScorchionStartFx
+        Unit Group - Pick every unit in BossScorchionDarkShamans and do (Actions)
+            Loop - Actions
+                Unit - Remove (Picked unit) from the game
+        -------- Allow engaging dark shamans --------
+        Trigger - Turn on BOSS Scorchion Engage Worshippers <gen>
+        Trigger - Turn off BOSS Scorchion Start <gen>
+        Trigger - Turn off BOSS Scorchion Engage Reset <gen>
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Scorchion_Engage_During_Lines)
+        Set VariableSet BossScorchionDarkShamansR_ON = False
+        Set VariableSet DarkShamansInCombat = False
+        -------- Start Timer to Create new Dark Shamans --------
+        Countdown Timer - Start BossScorchionResetTimer as a One-shot timer that will expire in 5.00 seconds
+        Countdown Timer - Pause BossScorchionEngageFacingTimer
+        Set VariableSet BossScorchionDarkShamansLine = (Random integer number between 1 and 3)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BossScorchionDarkShamansLine Equal to 1
+                (All units of BossScorchionDarkShamans are dead) Equal to False
+            Then - Actions
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Run, little coward! The spirits have abandoned you!
+                Custom script:   call ExSound_Play("DarkShaman_0012", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from (Random unit from BossScorchionDarkShamans) named Dark Shaman: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Don't wait
+                -------- ===================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BossScorchionDarkShamansLine Equal to 2
+                (All units of BossScorchionDarkShamans are dead) Equal to False
+            Then - Actions
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Flee! You are no match for us!
+                Custom script:   call ExSound_Play("DarkShaman_0013", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from (Random unit from BossScorchionDarkShamans) named Dark Shaman: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Don't wait
+                -------- ===================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BossScorchionDarkShamansLine Equal to 3
+                (All units of BossScorchionDarkShamans are dead) Equal to False
+            Then - Actions
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = There is nowhere to hide under the burning sky!
+                Custom script:   call ExSound_Play("DarkShaman_0014", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from (Random unit from BossScorchionDarkShamans) named Dark Shaman: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Don't wait
+                -------- ===================================== --------
+            Else - Actions

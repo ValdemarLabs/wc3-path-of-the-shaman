@@ -1,0 +1,10 @@
+BOSS Colossus Phase 3
+    Events
+        Time - Every 1.00 seconds of game time
+    Conditions
+        (Percentage life of BossColossus) Less than or equal to 25.00
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- -----DRAGONS --------
+        Trigger - Turn off Emberpeak Dragonfire Flame Strike Player Units <gen>
+        Trigger - Turn on Emberpeak Dragonfire Flame Strike Colossus 2 <gen>

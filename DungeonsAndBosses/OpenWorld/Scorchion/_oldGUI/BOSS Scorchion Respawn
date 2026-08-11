@@ -1,0 +1,13 @@
+BOSS Scorchion Respawn
+    Events
+        Time - BossScorchionRT expires
+    Conditions
+    Actions
+        Set VariableSet BossVarPoint = (Center of BossScorchionUp <gen>)
+        Unit - Create 1 Scorchion (Level 20) for Neutral Passive at BossVarPoint facing 307.00 degrees
+        Special Effect - Create a special effect attached to the overhead of (Last created unit) using Abilities\Spells\Human\Polymorph\PolyMorphDoneGround.mdl
+        Set VariableSet BossScorchion = (Last created unit)
+        Unit - Make BossScorchion Invulnerable
+        Unit - Set Unit: BossScorchion's Real Field: Hit Points Regeneration Rate ('uhpr') to Value: 1000.00
+        -------- Spawn Dark Shamans + Orb Starter --------
+        Trigger - Run BOSS Scorchion Reset or Respawn Q <gen> (ignoring conditions)

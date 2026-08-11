@@ -1,0 +1,107 @@
+BOSS FelDok Phase 2 Init
+    Events
+        Time - Every 0.20 seconds of game time
+    Conditions
+        (Percentage life of BossFeldok) Less than or equal to 50.00
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Turn off previous PHASE triggers --------
+        Trigger - Turn off BOSS FelDok Phase 1 Fight <gen>
+        Trigger - Remove BOSS FelDok Phase 1 Fight <gen> from the trigger queue
+        Trigger - Turn off BOSS FelDok Phase 1 Reset <gen>
+        -------- Action before moving to next phase --------
+        Set VariableSet VarPoint = (Random point in BossFeldokMobs01 <gen>)
+        Unit - Create 1 Skeleton (Weak) for Neutral Passive at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Set VariableSet GroupVar = (Last created unit group)
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Random point in BossFeldokMobs01 <gen>)
+        Unit - Create 1 Skeleton (Weak) for Neutral Passive at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Random point in BossFeldokMobs01 <gen>)
+        Unit - Create 1 Skeleton (Weak) for Neutral Passive at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Random point in BossFeldokMobs01 <gen>)
+        Unit - Create 1 Skeleton (Weak) for Neutral Passive at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Random point in BossFeldokMobs01 <gen>)
+        Unit - Create 1 Skeleton (Weak) for Neutral Passive at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Random point in BossFeldokMobs01 <gen>)
+        Unit - Create 1 Skeleton (Weak) for Neutral Passive at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Random point in BossFeldokMobs01 <gen>)
+        Unit - Create 1 Skeleton (Weak) for Neutral Passive at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Random point in BossFeldokMobs01 <gen>)
+        Unit - Create 1 Skeleton (Weak) for Neutral Passive at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Random point in BossFeldokMobs01 <gen>)
+        Unit - Create 1 Skeleton (Weak) for Neutral Passive at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Random point in BossFeldokMobs01 <gen>)
+        Unit - Create 1 Skeleton (Weak) for Neutral Passive at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Random point in BossFeldokMobs01 <gen>)
+        Unit - Create 1 Skeleton (Weak) for Neutral Passive at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Random point in BossFeldokMobs01 <gen>)
+        Unit - Create 1 Zombie for Neutral Passive at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Random point in BossFeldokMobs01 <gen>)
+        Unit - Create 1 Zombie for Neutral Passive at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Random point in BossFeldokMobs01 <gen>)
+        Unit - Create 1 Zombie for Neutral Passive at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Random point in BossFeldokMobs01 <gen>)
+        Unit - Create 1 Zombie for Neutral Passive at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Random point in BossFeldokMobs01 <gen>)
+        Unit - Create 1 Zombie for Neutral Passive at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Random point in BossFeldokMobs01 <gen>)
+        Unit - Create 1 Zombie for Neutral Passive at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Random point in BossFeldokMobs01 <gen>)
+        Unit - Create 1 Zombie for Neutral Passive at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Random point in BossFeldokMobs01 <gen>)
+        Unit - Create 1 Zombie for Neutral Passive at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GroupVar
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Unit Group - Pick every unit in GroupVar and do (Actions)
+            Loop - Actions
+                Animation - Play (Picked unit)'s Birth animation
+                Sound - Play SkeletonYes1 <gen> at 100.00% volume, located at (Random point in BossFeldokMobs01 <gen>) with Z offset 0.00
+                Sound - Play GhoulWarcry1 <gen> at 100.00% volume, located at (Random point in BossFeldokMobs01 <gen>) with Z offset 0.00
+        Wait 1.00 seconds
+        Unit Group - Pick every unit in GroupVar and do (Actions)
+            Loop - Actions
+                Animation - Reset (Picked unit)'s animation
+                Unit - Change ownership of (Picked unit) to Player 12 (Brown) and Retain color
+                Unit - Order (Picked unit) to Attack-Move To (Random point in BossFeldokMobs01Attack <gen>)
+        Custom script:   call DestroyGroup(udg_GroupVar)
+        -------- Issue boss move to next PHASE --------
+        Unit - Make BossFeldok Invulnerable
+        Cinematic - Send transmission to (All players) from a Player 12 (Brown).Deathlord Fel'Dok named Deathlord Fel'Dok at (Center of (Playable map area)): Play No sound and display Feast on their fles....  Modify duration: Set to 3.00 seconds and Wait
+        Unit - Change ownership of BossFeldok to Neutral Passive and Retain color
+        Unit - Order BossFeldok to Move To (Center of BossFeldokPhase2Point <gen>)
+        Trigger - Remove (This trigger) from the trigger queue

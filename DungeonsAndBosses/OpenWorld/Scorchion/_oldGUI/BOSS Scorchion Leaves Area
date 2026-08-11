@@ -1,0 +1,8 @@
+BOSS Scorchion Leaves Area
+    Events
+        Unit - A unit leaves BossScorchionArea <gen>
+    Conditions
+        (Triggering unit) Equal to BossScorchion
+    Actions
+        -------- Reset fight --------
+        Trigger - Run BOSS Scorchion Reset <gen> (ignoring conditions)
