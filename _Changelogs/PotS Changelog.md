@@ -20,8 +20,10 @@
 ### Player-Facing Updates
 
 - Dungeon bosses and their full-respawn creep packs now return together after five minutes, while a configured 35% share of ordinary dungeon creeps can repopulate independently after 120-320 seconds; bosses are never part of that random pool.
-- Revived AI heroes now follow their focused player hero back toward the active dungeon entrance. Changing focus restores normal companion behavior immediately, and an AI hero still outside after 120 seconds teleports just inside the entrance with teleport effects.
+- Revived AI heroes now follow their focused player hero back toward the active dungeon entrance. Changing focus restores normal companion behavior immediately, and an AI hero still outside after 120 seconds teleports to the dungeon's configured inside point with teleport effects.
+- Gnoll Hideout, Crypt, and Boom Mine entrances and exits now use registered ZoneEvent transitions, moving the entering hero, controlled companions, and tamed units without their disabled GUI portal triggers.
 - Restored the recoverable dungeon mechanics for Impaler, Deathlord Fel'Dok, Abomination, the Crypt spike trap, Boom Brothers Mine, and Mad Blix, plus the recoverable open-world mechanics for Chimairo, Colossus, Mordrax, Rol'jin, Sargoth, Scorchion, and the Void Entity.
+- Restored Boom Mine barrel countdown text, the Colossus dragonfire reversal and healing-golem cycle, Scorchion's worshipper engagement and fire-orb warnings, Mordrax's loot and combat lines, Rol'jin's movement taunts, and the Void Entity's reveal, dialogue, scripted defeat, and quest requirement completion.
 - Converted Outcast Jin'Zun's legacy quest chain, optional quests, roaming dialogue, Healing Ward placement, tree restoration, and succubus dispel interaction to the current quest and dialogue systems.
 - Jin'Zun's quests no longer grant Horde reputation. After Sargoth he equips his fishing pole; after Unknown Entity he loses it, discovers `Da Fishing Pole Missing`, relocates to his lake spot, and resumes fishing animation when the pole is returned.
 - The Unknown Entity lake investigation, meat lure, tentacle ambushes, boss reveal, combat start, slime drop, and death cleanup now run without the legacy GUI triggers.
@@ -44,6 +46,10 @@
 - Added encounter libraries for Chimairo, Colossus, Jinvorrak, Mal'kiri, Mordrax, Morthun, Mountain Giant, Rol'jin, Sargoth, Scorchion, Void Entity, and Vorkatha under `DungeonsAndBosses/OpenWorld/`; source-empty encounters remain catalogued without invented mechanics.
 - Updated `Companions/Companions.j` with focused-leader queries, suspension state, and immediate leader-change callbacks used by dungeon revival routing.
 - Updated `Zones/ZoneEvent.j` with synchronized per-hero zone queries and leave-state cleanup for dungeon routing.
+- Updated `Zones/ZoneEvent.j` with reusable entrance/exit transition and presentation registration so each dungeon sublibrary owns its rects, facings, fast-pan choice, and special camera mode while ZoneEvent owns movement and zone state.
+- Added `DungeonsAndBosses/OpenWorld/Colossus/EmberpeakDragonfire.j`, `DungeonsAndBosses/OpenWorld/Mordrax/BossMordraxDialogue.j`, and `DungeonsAndBosses/OpenWorld/Void Entity/BossVoidEntityDialogue.j` to replace the remaining disabled arena and voice GUI triggers.
+- Updated `Companions/Companions.j` with an external-order override used by dungeon revival routing without changing player suspension state.
+- Updated `CreepRespawn/CreepUnitAssignment.j` to stop executing the disabled Mordrax, Morthun, and Mountain Giant patrol triggers; their encounter libraries now own patrol setup.
 - Updated `CreepRespawn/CreepRespawn.j` so encounter-owned units can be durably excluded before its deferred preplaced-unit scan, preventing duplicate boss or dungeon-creep respawns.
 - Added `DungeonsAndBosses/Unknown Entity/BossUnknownEntity.j` to implement the complete imported Unknown Entity encounter on `Boss.j`, with quest callback registration instead of GUI trigger calls.
 - Added `QuestsAndDialogs/QuestGivers/qOutcastJinzun.j` from the legacy `QuestsAndDialogs/OLDGUI/OutcastJinzun` triggers, including quest prerequisites and rewards, item tracking, direct `BossUnknownEntity` integration, the remaining crypt hook, patrol and fishing-spot control, quest-item recovery, neutral-faction rewards, and respawn refresh support.
@@ -66,9 +72,9 @@
 
 ### Actions Remaining
 
-- Import the new Boss, Dungeon, dungeon-zone, dungeon encounter, and open-world encounter libraries in dependency order; disable their matching legacy GUI gameplay triggers, then compile the affected test map and full map with JassHelper.
+- Import the new Boss, Dungeon, dungeon-zone, dungeon encounter, open-world encounter, dragonfire, and dialogue sublibraries in dependency order, then compile the affected test map and full map with JassHelper. The matching legacy GUI triggers are now disabled; `Init Boss Units` remains enabled for preplaced-unit setup.
 - Multiplayer runtime-test simultaneous/random dungeon respawns, Crypt and Boom Mine events, focus switching, graveyards at different distances, portal pathing, physical dungeon entry, and the 120-second teleport fallback in all six configured dungeon zones.
-- Runtime-test every migrated boss reset, phase, summoned-unit cleanup, scripted defeat, patrol, and respawn path. Colossus still depends on the separate Emberpeak dragonfire arena system, while Mal'kiri and Vorkatha have no non-empty source mechanics to reconstruct.
+- Runtime-test every migrated boss reset, phase, summoned-unit cleanup, scripted defeat, patrol, dialogue, quest callback, and respawn path. Mal'kiri and Vorkatha remain catalog encounters because no non-empty source mechanics exist to reconstruct.
 - Full-map compile and multiplayer runtime-test Ragno's starting availability, daily reset, outpost wave threshold, cinematic movement and speakers, Gnoll Head drops, and lumber-peon harvesting.
 - Import `QuestsAndDialogs/QuestGivers/qOutcastJinzun.j` after `BossUnknownEntity` and before `qZaekolaerr.j`; disable the converted OutcastJinzun and Unknown Entity GUI trigger groups, connect the remaining Crypt encounter hook, then compile and runtime-test the full quest chain, lake encounter, Jin'Zun's fishing-spot pathing, and both player interaction paths.
 - Create the 21 documented unit types in Object Editor using the assigned rawcodes, names, suffixes, and genders, then place and runtime-test representative vendors from every new catalog.
