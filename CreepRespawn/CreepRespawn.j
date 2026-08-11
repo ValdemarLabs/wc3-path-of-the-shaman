@@ -2,13 +2,14 @@
     CreepRespawn
 
     Author: Valdemar
-    Version: 2.3
+    Version: 2.4
 
     Description:
     Tracks configured-owner units and recreates them from immutable spawn
     records after a random delay. Recreated quest NPCs are passed to
     CreepUnitAssignmentSystem to refresh their map references. Summoned,
     timed-life, BloodSplat, and explicitly discarded units are not tracked.
+    Discard requests remain durable even before the deferred preplaced scan.
 
     Credits:
     - Original PotS GUI creep respawn triggers
@@ -44,6 +45,7 @@ globals
     private Table ignoredUnits
     private Table summonedUnits
     private group RespawnGroup
+    private group DiscardedUnits
     private boolean initialPositionsSaved = false
     private boolean tableStateReady = false
     private integer tableInitStage = 0
@@ -213,10 +215,13 @@ private function IsRespawnableUnit takes unit u returns boolean
 endfunction
 
 private function IsIgnoredUnit takes unit u returns boolean
-    if u == null or ignoredUnits == 0 then
+    if u == null then
         return false
     endif
-    return ignoredUnits[GetHandleId(u)] == GetUnitTypeId(u)
+    if DiscardedUnits != null and IsUnitInGroup(u, DiscardedUnits) then
+        return true
+    endif
+    return ignoredUnits != 0 and ignoredUnits[GetHandleId(u)] == GetUnitTypeId(u)
 endfunction
 
 private function IsTransientUnit takes unit u returns boolean
@@ -373,9 +378,13 @@ function CreepRespawn_DiscardUnit takes unit u returns nothing
     if u == null then
         return
     endif
+    if DiscardedUnits == null then
+        set DiscardedUnits = CreateGroup()
+    endif
     if not IsTableStateReady() then
+        call GroupAddUnit(DiscardedUnits, u)
         if DEBUG_MODE then
-            call BJDebugMsg("[CreepRespawn] DiscardUnit skipped: Table state is not ready (stage " + I2S(tableInitStage) + ").")
+            call BJDebugMsg("[CreepRespawn] DiscardUnit recorded before Table state was ready (stage " + I2S(tableInitStage) + ").")
         endif
         set u = null
         return
@@ -387,6 +396,27 @@ function CreepRespawn_DiscardUnit takes unit u returns nothing
     endif
     call ClearSavedUnitPosition(u)
     set u = null
+endfunction
+
+private function PromoteEarlyDiscardedUnits takes nothing returns nothing
+    local unit discarded = null
+    local integer handleId
+
+    if DiscardedUnits == null or not IsTableStateReady() then
+        return
+    endif
+    loop
+        set discarded = FirstOfGroup(DiscardedUnits)
+        exitwhen discarded == null
+        call GroupRemoveUnit(DiscardedUnits, discarded)
+        set handleId = GetHandleId(discarded)
+        set ignoredUnits[handleId] = GetUnitTypeId(discarded)
+        if RespawnGroup != null then
+            call GroupRemoveUnit(RespawnGroup, discarded)
+        endif
+        call ClearSavedUnitPosition(discarded)
+    endloop
+    set discarded = null
 endfunction
 
 //===========================================================================
@@ -653,6 +683,9 @@ private function OnUnitDeath takes nothing returns nothing
         if DEBUG_MODE then
             call BJDebugMsg("[CreepRespawn] Unit was explicitly discarded - SKIPPED")
         endif
+        if DiscardedUnits != null then
+            call GroupRemoveUnit(DiscardedUnits, dying)
+        endif
         call ignoredUnits.remove(handleId)
         call ClearSavedUnitPosition(dying)
         set dying = null
@@ -747,6 +780,8 @@ private function InitActions takes nothing returns nothing
         return
     endif
 
+    call PromoteEarlyDiscardedUnits()
+
     if initialPositionsSaved then
         if t != null then
             call DestroyTimer(t)
@@ -787,6 +822,7 @@ private function Init takes nothing returns nothing
     // CRITICAL: register every event callback before doing any CreepRespawn
     // runtime-state work. Table allocation is handled by a struct initializer
     // and, if needed, retried later by InitActions.
+    set DiscardedUnits = CreateGroup()
     call UnitDeathEvent_Register(function OnUnitDeath)
     call Events_RegisterUnitEnter(function OnUnitEnterEvent)
     call Events_RegisterUnitSummon(function OnUnitSummonEvent)

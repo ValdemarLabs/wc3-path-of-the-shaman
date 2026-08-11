@@ -292,6 +292,7 @@ library BossUnknownEntity initializer Init requires Boss, ExSound, VoicelinesNaz
         endif
         call Boss_SetEventCallback(UnknownEntityBossId, BOSS_EVENT_DEATH, function OnBossDeath)
         call Boss_SetPhaseCount(UnknownEntityBossId, 1)
+        call Boss_SetDescription(UnknownEntityBossId, "A hidden lake creature drawn to the surface with raw meat while its tentacles ambush explorers.", "The investigation and lure sequence reveals the Unknown Entity; the revealed creature then fights as a single phase.", "Tentacles erupt from nine lake areas before the reveal and continue to threaten careless explorers.", "Probe the lake carefully, use raw meat at the lure circle after Nazgrek's clue, then focus the revealed creature and recover its slime.")
         call TimerStart(BossSequenceTimer, BOSS_LINE_DELAY, false, function OnBossRevealLine)
     endfunction
 

@@ -2,32 +2,34 @@
     Boss
 
     Author: Valdemar
-    Version: 0.1.0
+    Version: 0.2.0
 
     Description:
-    Initial shared foundation for PotS boss encounters. The library registers
+    Shared foundation for PotS boss encounters. The library registers
     boss units, tracks idle/active/resetting/defeated state, exposes phase and
     lifecycle callbacks, supports optional attack-start and arena-empty reset,
-    and can intercept lethal damage for scripted defeat sequences.
+    and can intercept lethal damage for scripted defeat sequences. Registered
+    bosses are removed from ordinary creep respawn so Boss or Dungeon remains
+    the single owner of their lifecycle.
 
-    This is intentionally only the first layer of the boss system. Encounter-
-    specific ability scheduling, phase thresholds, summoned-unit cleanup,
-    dialogue, arena presentation, loot, quest updates, and save integration
-    remain for later boss-specific libraries. The imported Void Entity GUI is
-    itself unfinished and does not yet define its intended phases or abilities.
+    Encounter libraries can also publish a short overview, phase summary,
+    ability summary, and tactics text for quest/UI consumers. Boss_Respawn
+    recreates a defeated boss at its captured home and preserves its id and
+    callbacks.
 
     Credits:
-    - DungeonsAndBosses/Unknown Entity/_OldGui
-    - DungeonsAndBosses/Void Entity/_OldGUI
+    - DungeonsAndBosses/OpenWorld/Unknown Entity/_OldGui
+    - DungeonsAndBosses/OpenWorld/Void Entity/_OldGUI
     - DungeonsAndBosses/_oldGUI/Init Boss Units
 
     How to install:
-    Import after Table, Events, UnitDeathEvent, and DamageEngine. Import this
-    library before encounter-specific boss libraries. Arena rects passed to
-    Boss_SetArena are borrowed references and remain owned by the map.
+    Import after Table, Events, UnitDeathEvent, DamageEngine, and CreepRespawn.
+    Import this library before encounter-specific boss libraries. Arena rects
+    passed to Boss_SetArena are borrowed references and remain owned by the map.
 
     API:
     - set bossId = Boss_Register(whichUnit, displayName)
+    - set whichUnit = Boss_FindUnitByName(unitName, searchRect)
     - call Boss_Unregister(bossId)
     - call Boss_ReplaceUnit(bossId, newUnit, true)
     - call Boss_SetEventCallback(bossId, eventType, function YourCallback)
@@ -35,22 +37,31 @@
     - call Boss_SetArena(bossId, arenaRect, Player(0), true)
     - call Boss_SetDefeatMode(bossId, BOSS_DEFEAT_MODE_SCRIPTED)
     - call Boss_SetPhaseCount(bossId, 3)
+    - call Boss_SetDescription(bossId, overview, phases, abilities, tactics)
+    - call Boss_SetDungeonId(bossId, dungeonId)
     - call Boss_Start(bossId)
     - call Boss_SetPhase(bossId, phase)
     - call Boss_AdvancePhase(bossId)
     - call Boss_Reset(bossId)
     - call Boss_Defeat(bossId, killer)
     - call Boss_FinishScriptedDefeat(bossId)
+    - set whichUnit = Boss_Respawn(bossId)
     - set bossId = Boss_GetId(whichUnit)
     - set whichUnit = Boss_GetUnit(bossId)
+    - set text = Boss_GetName(bossId)
+    - set text = Boss_GetOverview(bossId)
+    - set text = Boss_GetPhaseDescription(bossId)
+    - set text = Boss_GetAbilityDescription(bossId)
+    - set text = Boss_GetTactics(bossId)
     - set state = Boss_GetState(bossId)
     - set phase = Boss_GetPhase(bossId)
+    - set text = Boss_GetEncounterText(bossId)
 
     Event callbacks read Boss_EventBossId, Boss_EventType, Boss_EventUnit,
     Boss_EventKiller, Boss_EventPreviousPhase, and Boss_EventPhase.
 
 **/
-library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngine
+library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngine, CreepRespawn
     globals
         // Lifecycle states.
         constant integer BOSS_STATE_NONE = 0
@@ -65,6 +76,7 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
         constant integer BOSS_EVENT_PHASE = 3
         constant integer BOSS_EVENT_DEFEAT = 4
         constant integer BOSS_EVENT_DEATH = 5
+        constant integer BOSS_EVENT_RESPAWN = 6
 
         // Normal bosses die through the native death flow. Scripted bosses
         // stop at one life so their encounter library can finish presentation.
@@ -80,18 +92,24 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
         integer Boss_EventPhase = 0
 
         private constant integer BOSS_MAX_COUNT = 128
-        private constant integer BOSS_EVENT_MAX = 6
+        private constant integer BOSS_EVENT_MAX = 7
         private constant real BOSS_ARENA_CHECK_INTERVAL = 5.00
 
         private Table Boss_UnitId = 0
         private integer Boss_Count = 0
         private integer Boss_ActiveCount = 0
         private unit array Boss_Unit
+        private integer array Boss_UnitTypeId
         private string array Boss_Name
+        private string array Boss_Overview
+        private string array Boss_PhaseDescription
+        private string array Boss_AbilityDescription
+        private string array Boss_Tactics
         private integer array Boss_State
         private integer array Boss_Phase
         private integer array Boss_PhaseCount
         private integer array Boss_DefeatMode
+        private integer array Boss_DungeonId
         private boolean array Boss_AutoStartOnAttack
         private boolean array Boss_ResetWhenArenaEmpty
         private rect array Boss_Arena
@@ -102,6 +120,8 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
         private real array Boss_HomeFacing
         private trigger array Boss_Callback
         private group Boss_ArenaSearchGroup = null
+        private group Boss_FindGroup = null
+        private unit Boss_FindResult = null
         private timer Boss_ArenaCheckTimer = null
         private boolean Boss_DebugEnabled = false
     endglobals
@@ -121,7 +141,7 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
     endfunction
 
     private function Boss_IsValidEventType takes integer eventType returns boolean
-        return eventType >= BOSS_EVENT_START and eventType <= BOSS_EVENT_DEATH
+        return eventType >= BOSS_EVENT_START and eventType <= BOSS_EVENT_RESPAWN
     endfunction
 
     private function Boss_IsUnitAlive takes unit whichUnit returns boolean
@@ -181,16 +201,16 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
         local unit whichUnit = null
         local integer phase
 
-        if not Boss_IsValidId(bossId) or Boss_State[bossId] != BOSS_STATE_ACTIVE then
+        if not Boss_IsValidId(bossId) or (Boss_State[bossId] != BOSS_STATE_ACTIVE and Boss_State[bossId] != BOSS_STATE_IDLE) then
             return false
         endif
 
         set whichUnit = Boss_Unit[bossId]
         set phase = Boss_Phase[bossId]
-        set Boss_State[bossId] = BOSS_STATE_DEFEATED
-        if Boss_ActiveCount > 0 then
+        if Boss_State[bossId] == BOSS_STATE_ACTIVE and Boss_ActiveCount > 0 then
             set Boss_ActiveCount = Boss_ActiveCount - 1
         endif
+        set Boss_State[bossId] = BOSS_STATE_DEFEATED
 
         if Boss_DefeatMode[bossId] == BOSS_DEFEAT_MODE_SCRIPTED and Boss_IsUnitAlive(whichUnit) then
             call SetUnitInvulnerable(whichUnit, true)
@@ -253,6 +273,61 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
         return Boss_Name[bossId]
     endfunction
 
+    public function GetOverview takes integer bossId returns string
+        if not Boss_IsValidId(bossId) then
+            return ""
+        endif
+        return Boss_Overview[bossId]
+    endfunction
+
+    public function GetPhaseDescription takes integer bossId returns string
+        if not Boss_IsValidId(bossId) then
+            return ""
+        endif
+        return Boss_PhaseDescription[bossId]
+    endfunction
+
+    public function GetAbilityDescription takes integer bossId returns string
+        if not Boss_IsValidId(bossId) then
+            return ""
+        endif
+        return Boss_AbilityDescription[bossId]
+    endfunction
+
+    public function GetTactics takes integer bossId returns string
+        if not Boss_IsValidId(bossId) then
+            return ""
+        endif
+        return Boss_Tactics[bossId]
+    endfunction
+
+    public function GetEncounterText takes integer bossId returns string
+        local string text
+
+        if not Boss_IsValidId(bossId) then
+            return ""
+        endif
+
+        set text = Boss_Overview[bossId]
+        if Boss_PhaseDescription[bossId] != "" then
+            set text = text + "|n|n|cffffcc00Phases|r|n" + Boss_PhaseDescription[bossId]
+        endif
+        if Boss_AbilityDescription[bossId] != "" then
+            set text = text + "|n|n|cffffcc00Abilities|r|n" + Boss_AbilityDescription[bossId]
+        endif
+        if Boss_Tactics[bossId] != "" then
+            set text = text + "|n|n|cff80ff80Tactics|r|n" + Boss_Tactics[bossId]
+        endif
+        return text
+    endfunction
+
+    public function GetDungeonId takes integer bossId returns integer
+        if not Boss_IsValidId(bossId) then
+            return 0
+        endif
+        return Boss_DungeonId[bossId]
+    endfunction
+
     public function GetState takes integer bossId returns integer
         if not Boss_IsValidId(bossId) then
             return BOSS_STATE_NONE
@@ -286,6 +361,35 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
         return Boss_IsValidId(bossId) and Boss_State[bossId] == BOSS_STATE_ACTIVE
     endfunction
 
+    public function FindUnitByName takes string unitName, rect searchRect returns unit
+        local unit pickedUnit = null
+
+        if unitName == "" then
+            return null
+        endif
+        set Boss_FindResult = null
+        call GroupClear(Boss_FindGroup)
+        if searchRect == null then
+            call GroupEnumUnitsInRect(Boss_FindGroup, bj_mapInitialPlayableArea, null)
+        else
+            call GroupEnumUnitsInRect(Boss_FindGroup, searchRect, null)
+        endif
+        loop
+            set pickedUnit = FirstOfGroup(Boss_FindGroup)
+            exitwhen pickedUnit == null
+            call GroupRemoveUnit(Boss_FindGroup, pickedUnit)
+            if GetUnitName(pickedUnit) == unitName then
+                set Boss_FindResult = pickedUnit
+                call GroupClear(Boss_FindGroup)
+                set pickedUnit = null
+                return Boss_FindResult
+            endif
+        endloop
+        call GroupClear(Boss_FindGroup)
+        set pickedUnit = null
+        return null
+    endfunction
+
     public function Register takes unit whichUnit, string displayName returns integer
         local integer bossId
 
@@ -306,6 +410,7 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
         set Boss_Count = Boss_Count + 1
         set bossId = Boss_Count
         set Boss_Unit[bossId] = whichUnit
+        set Boss_UnitTypeId[bossId] = GetUnitTypeId(whichUnit)
         if displayName == null or displayName == "" then
             set Boss_Name[bossId] = GetUnitName(whichUnit)
         else
@@ -315,6 +420,7 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
         set Boss_Phase[bossId] = 0
         set Boss_PhaseCount[bossId] = 1
         set Boss_DefeatMode[bossId] = BOSS_DEFEAT_MODE_NORMAL
+        set Boss_DungeonId[bossId] = 0
         set Boss_AutoStartOnAttack[bossId] = false
         set Boss_ResetWhenArenaEmpty[bossId] = false
         set Boss_ResetPlayer[bossId] = Player(0)
@@ -323,6 +429,7 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
         set Boss_HomeY[bossId] = GetUnitY(whichUnit)
         set Boss_HomeFacing[bossId] = GetUnitFacing(whichUnit)
         set Boss_UnitId[GetHandleId(whichUnit)] = bossId
+        call CreepRespawn_DiscardUnit(whichUnit)
 
         if udg_BOSS == null then
             set udg_BOSS = CreateGroup()
@@ -351,7 +458,7 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
 
         set eventType = BOSS_EVENT_START
         loop
-            exitwhen eventType > BOSS_EVENT_DEATH
+            exitwhen eventType > BOSS_EVENT_RESPAWN
             set callbackIndex = Boss_GetCallbackIndex(bossId, eventType)
             set callbackTrigger = Boss_Callback[callbackIndex]
             if callbackTrigger != null then
@@ -362,11 +469,17 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
         endloop
 
         set Boss_Unit[bossId] = null
+        set Boss_UnitTypeId[bossId] = 0
         set Boss_Name[bossId] = ""
+        set Boss_Overview[bossId] = ""
+        set Boss_PhaseDescription[bossId] = ""
+        set Boss_AbilityDescription[bossId] = ""
+        set Boss_Tactics[bossId] = ""
         set Boss_State[bossId] = BOSS_STATE_NONE
         set Boss_Phase[bossId] = 0
         set Boss_PhaseCount[bossId] = 0
         set Boss_DefeatMode[bossId] = BOSS_DEFEAT_MODE_NORMAL
+        set Boss_DungeonId[bossId] = 0
         set Boss_AutoStartOnAttack[bossId] = false
         set Boss_ResetWhenArenaEmpty[bossId] = false
         set Boss_Arena[bossId] = null
@@ -399,11 +512,13 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
 
         set Boss_Unit[bossId] = newUnit
         set Boss_UnitId[GetHandleId(newUnit)] = bossId
+        call CreepRespawn_DiscardUnit(newUnit)
         if udg_BOSS == null then
             set udg_BOSS = CreateGroup()
         endif
         call GroupAddUnit(udg_BOSS, newUnit)
         if captureHome then
+            set Boss_UnitTypeId[bossId] = GetUnitTypeId(newUnit)
             set Boss_ResetOwner[bossId] = GetOwningPlayer(newUnit)
             set Boss_HomeX[bossId] = GetUnitX(newUnit)
             set Boss_HomeY[bossId] = GetUnitY(newUnit)
@@ -496,6 +611,22 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
         set Boss_PhaseCount[bossId] = phaseCount
         if Boss_Phase[bossId] > phaseCount then
             set Boss_Phase[bossId] = phaseCount
+        endif
+    endfunction
+
+    public function SetDescription takes integer bossId, string overview, string phases, string abilities, string tactics returns nothing
+        if not Boss_IsValidId(bossId) then
+            return
+        endif
+        set Boss_Overview[bossId] = overview
+        set Boss_PhaseDescription[bossId] = phases
+        set Boss_AbilityDescription[bossId] = abilities
+        set Boss_Tactics[bossId] = tactics
+    endfunction
+
+    public function SetDungeonId takes integer bossId, integer dungeonId returns nothing
+        if Boss_IsValidId(bossId) then
+            set Boss_DungeonId[bossId] = dungeonId
         endif
     endfunction
 
@@ -604,13 +735,68 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
         return true
     endfunction
 
+    public function Respawn takes integer bossId returns unit
+        local unit oldUnit = null
+        local unit newUnit = null
+        local player ownerPlayer = null
+
+        if not Boss_IsValidId(bossId) or Boss_State[bossId] != BOSS_STATE_DEFEATED or Boss_UnitTypeId[bossId] == 0 or Boss_IsUnitAlive(Boss_Unit[bossId]) then
+            return null
+        endif
+
+        set oldUnit = Boss_Unit[bossId]
+        set ownerPlayer = Boss_ResetOwner[bossId]
+        if ownerPlayer == null then
+            set ownerPlayer = Player(PLAYER_NEUTRAL_AGGRESSIVE)
+        endif
+        set newUnit = CreateUnit(ownerPlayer, Boss_UnitTypeId[bossId], Boss_HomeX[bossId], Boss_HomeY[bossId], Boss_HomeFacing[bossId])
+        if newUnit == null then
+            set oldUnit = null
+            set ownerPlayer = null
+            return null
+        endif
+
+        if not ReplaceUnit(bossId, newUnit, false) then
+            call RemoveUnit(newUnit)
+            set oldUnit = null
+            set newUnit = null
+            set ownerPlayer = null
+            return null
+        endif
+        if oldUnit != null and oldUnit != newUnit and GetUnitTypeId(oldUnit) != 0 then
+            call RemoveUnit(oldUnit)
+        endif
+
+        call SetUnitOwner(newUnit, ownerPlayer, true)
+        call SetUnitPosition(newUnit, Boss_HomeX[bossId], Boss_HomeY[bossId])
+        call SetUnitFacing(newUnit, Boss_HomeFacing[bossId])
+        call SetWidgetLife(newUnit, GetUnitState(newUnit, UNIT_STATE_MAX_LIFE))
+        call SetUnitState(newUnit, UNIT_STATE_MANA, GetUnitState(newUnit, UNIT_STATE_MAX_MANA))
+        call SetUnitInvulnerable(newUnit, false)
+        call PauseUnit(newUnit, false)
+        set Boss_State[bossId] = BOSS_STATE_IDLE
+        set Boss_Phase[bossId] = 0
+        call Boss_RunEvent(bossId, BOSS_EVENT_RESPAWN, null, 0, 0)
+        call Boss_Debug("Respawned " + Boss_Name[bossId] + ".")
+
+        set oldUnit = null
+        set ownerPlayer = null
+        return newUnit
+    endfunction
+
     private function Boss_OnUnitAttacked takes nothing returns nothing
         local unit attackedUnit = GetTriggerUnit()
+        local unit attackingUnit = GetAttacker()
         local integer bossId = GetId(attackedUnit)
 
         if Boss_IsValidId(bossId) and Boss_AutoStartOnAttack[bossId] then
             call Start(bossId)
         endif
+        set bossId = GetId(attackingUnit)
+        if Boss_IsValidId(bossId) and Boss_AutoStartOnAttack[bossId] then
+            call Start(bossId)
+        endif
+        set attackingUnit = null
         set attackedUnit = null
     endfunction
 
@@ -635,7 +821,7 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
 
         if Boss_IsValidId(bossId) then
             set phase = Boss_Phase[bossId]
-            if Boss_State[bossId] == BOSS_STATE_ACTIVE then
+            if Boss_State[bossId] == BOSS_STATE_ACTIVE or Boss_State[bossId] == BOSS_STATE_IDLE then
                 call Boss_DefeatInternal(bossId, killingUnit)
             endif
             call Boss_RunEvent(bossId, BOSS_EVENT_DEATH, killingUnit, phase, phase)
@@ -659,6 +845,7 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
     private function Init takes nothing returns nothing
         set Boss_UnitId = Table.create()
         set Boss_ArenaSearchGroup = CreateGroup()
+        set Boss_FindGroup = CreateGroup()
         set Boss_ArenaCheckTimer = CreateTimer()
         call TimerStart(Boss_ArenaCheckTimer, BOSS_ARENA_CHECK_INTERVAL, true, function Boss_OnArenaCheck)
         call Events_RegisterUnitAttacked(function Boss_OnUnitAttacked)

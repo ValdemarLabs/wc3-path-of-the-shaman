@@ -2,7 +2,7 @@
     Companions
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
     Companion party registration, information, idle state, and control-mode
@@ -21,6 +21,8 @@
     call Companions_Add(unit companionUnit, string companionIcon, unit leader, integer mode)
     call Companions_Remove(unit companionUnit)
     call Companions_SetLeader(unit companionUnit, unit leader)
+    call Companions_GetLeader(unit companionUnit) returns unit
+    call Companions_RegisterLeaderChangeCallback(code callback)
     call Companions_SetMode(unit companionUnit, integer mode)
     call Companions_Halt(unit companionUnit)
     call Companions_HaltAll()
@@ -36,6 +38,7 @@
     call Companions_GetControlledDisplayUnit(integer index) returns unit
     call Companions_SetEscortBehavior(unit controlledUnit, boolean enabled)
     call Companions_SetFollowerBehavior(unit controlledUnit, boolean enabled)
+    call Companions_IsSuspended(unit controlledUnit) returns boolean
     call Companions_GetMode(unit controlledUnit) returns integer
     call Companions_RefreshOrders(unit controlledUnit)
     call Companions_GetCompanionLimit() returns integer
@@ -66,6 +69,7 @@ globals
     public constant integer COMMAND_ATTACK = 6
     public unit EventUnit = null
     public unit EventSource = null
+    public unit EventLeader = null
     public integer EventCommand = 0
     public integer EventMode = 0
 
@@ -189,6 +193,7 @@ globals
     private trigger CommandEventTrigger = null
     private trigger IdleTrigger = null
     private trigger OrderTrigger = null
+    private trigger LeaderChangeCallbacks = null
     private unit ModeCommandCaster = null
     private player CommandSelectionPlayer = null
     private unit CommandSelectionTarget = null
@@ -1300,6 +1305,21 @@ private function RemoveInternal takes unit companionUnit returns nothing
     call DebugMsg("Remove " + GetUnitName(companionUnit))
 endfunction
 
+private function FireLeaderChangeCallbacks takes unit companionUnit, unit leader returns nothing
+    local unit previousEventUnit = Companions_EventUnit
+    local unit previousEventLeader = Companions_EventLeader
+
+    if LeaderChangeCallbacks != null then
+        set Companions_EventUnit = companionUnit
+        set Companions_EventLeader = leader
+        call TriggerExecute(LeaderChangeCallbacks)
+        set Companions_EventUnit = previousEventUnit
+        set Companions_EventLeader = previousEventLeader
+    endif
+    set previousEventUnit = null
+    set previousEventLeader = null
+endfunction
+
 private function SetLeaderInternal takes unit companionUnit, unit leader returns nothing
     local integer unitId
 
@@ -1316,6 +1336,7 @@ private function SetLeaderInternal takes unit companionUnit, unit leader returns
     set CompanionLeader.unit[unitId] = leader
     call SetFocusUnit(companionUnit, leader)
     call ApplyOrders(companionUnit)
+    call FireLeaderChangeCallbacks(companionUnit, leader)
 endfunction
 
 private function SetModeInternal takes unit companionUnit, integer mode returns nothing
@@ -2796,6 +2817,20 @@ public function SetLeader takes unit companionUnit, unit leader returns nothing
     call SetLeaderInternal(companionUnit, leader)
 endfunction
 
+public function GetLeader takes unit companionUnit returns unit
+    return GetFocusedLeader(companionUnit)
+endfunction
+
+public function RegisterLeaderChangeCallback takes code callback returns nothing
+    if callback == null then
+        return
+    endif
+    if LeaderChangeCallbacks == null then
+        set LeaderChangeCallbacks = CreateTrigger()
+    endif
+    call TriggerAddAction(LeaderChangeCallbacks, callback)
+endfunction
+
 public function SetMode takes unit companionUnit, integer mode returns nothing
     call SetModeInternal(companionUnit, mode)
 endfunction
@@ -2819,6 +2854,13 @@ public function GetMode takes unit companionUnit returns integer
         return COMPANION_MODE_DEFEND
     endif
     return NormalizeMode(CompanionMode[unitId])
+endfunction
+
+public function IsSuspended takes unit controlledUnit returns boolean
+    if controlledUnit == null or CompanionTracked == 0 then
+        return false
+    endif
+    return CompanionTracked[GetHandleId(controlledUnit)] == 1 and CompanionSuspended[GetHandleId(controlledUnit)] == 1
 endfunction
 
 public function RefreshOrders takes unit companionUnit returns nothing

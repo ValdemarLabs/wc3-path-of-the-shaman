@@ -4,7 +4,7 @@ library ZoneEvent initializer Init requires ZonesCore, Table, DNC, ExMusic, TasQ
     ZoneEvent
 
     Author: Valdemar
-    Version: 1.0 (updated header & API usage)
+    Version: 1.1.0
 
     Purpose:
         Central handler for per-zone behaviour and transitions. Responsibilities
@@ -40,6 +40,9 @@ library ZoneEvent initializer Init requires ZonesCore, Table, DNC, ExMusic, TasQ
 
         - ZoneEvent_IsZoneEnabled(integer zoneId) returns boolean
             Query whether a zone is enabled.
+
+        - ZoneEvent_GetUnitZoneId(unit whichUnit) returns integer
+            Returns the last synchronized zone entered by a hero.
 
         - ZoneEvent_GetZoneName(integer zoneId) returns string
             Retrieve the human-readable zone name from ZonesCore.
@@ -665,6 +668,9 @@ private function MoveOut takes nothing returns nothing
     set yMove  = (GetRectMinY(z.moveOutRegion) + GetRectMaxY(z.moveOutRegion)) * 0.5
 
     // Move entering unit to outRegion
+    if unitCurrentZone[GetHandleId(u)] == zoneId then
+        call unitCurrentZone.remove(GetHandleId(u))
+    endif
     call SetUnitPosition(u, xStart, yStart)
     call SetUnitFacing(u, 215.0)
     // Issue order to move to moveOutRegion
@@ -1000,6 +1006,10 @@ private function OnUnitLeaveRegion takes nothing returns nothing
         return
     endif
     call HandleZoneLeaveCleanup(zoneId, trigUnit)
+    if unitCurrentZone[GetHandleId(trigUnit)] == zoneId then
+        call unitCurrentZone.remove(GetHandleId(trigUnit))
+        call FireZoneListener(zoneLeaveListeners, zoneId, trigUnit)
+    endif
 
 endfunction
 
@@ -1063,6 +1073,13 @@ public function EnableLeaveHandler takes integer zoneId, boolean enable returns 
             endif
         endif
     endif
+endfunction
+
+public function GetUnitZoneId takes unit whichUnit returns integer
+    if whichUnit == null or unitCurrentZone == 0 then
+        return 0
+    endif
+    return unitCurrentZone[GetHandleId(whichUnit)]
 endfunction
 
 public function RegisterEnterAction takes code callback returns nothing

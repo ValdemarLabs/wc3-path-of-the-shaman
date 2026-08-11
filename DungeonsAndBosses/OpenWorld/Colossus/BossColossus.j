@@ -1,0 +1,251 @@
+/**
+    BossColossus
+    Author: Valdemar
+    Version: 1.0.0
+    Description:
+    Registers the Emberpeak Colossus and its recovered phase schedule.
+    Credits:
+    - Legacy Colossus GUI exports.
+    How to install:
+    Import after Boss, DamageEngine, CreepRespawn, and map rect globals.
+    API:
+    - BossColossus_GetId()
+*/
+library BossColossus initializer Init requires Boss, DamageEngine, CreepRespawn
+    globals
+        private constant integer UNIT_GOLEM = 'n64E'
+        private constant integer ABILITY_SLAM = 'A6D2'
+        private constant integer ABILITY_BOULDER = 'A6CY'
+        private constant integer ABILITY_CLEAVE = 'A6DA'
+        private integer BossId = 0
+        private timer PhaseTimer = null
+        private timer BoulderTimer = null
+        private timer SlamTimer = null
+        private timer GolemTimer = null
+        private timer RespawnTimer = null
+        private group GolemGroup = null
+        private group WorkGroup = null
+    endglobals
+
+    private function IsAlive takes unit whichUnit returns boolean
+        return whichUnit != null and GetUnitTypeId(whichUnit) != 0 and GetWidgetLife(whichUnit) > 0.405
+    endfunction
+
+    private function ClearGolems takes nothing returns nothing
+        local unit picked = null
+        loop
+            set picked = FirstOfGroup(GolemGroup)
+            exitwhen picked == null
+            call GroupRemoveUnit(GolemGroup, picked)
+            if GetUnitTypeId(picked) != 0 then
+                call KillUnit(picked)
+                call RemoveUnit(picked)
+            endif
+        endloop
+        set picked = null
+    endfunction
+
+    private function CountAndOrderGolems takes nothing returns integer
+        local group swapGroup = null
+        local unit picked = null
+        local unit boss = Boss_GetUnit(BossId)
+        local integer count = 0
+
+        call GroupClear(WorkGroup)
+        loop
+            set picked = FirstOfGroup(GolemGroup)
+            exitwhen picked == null
+            call GroupRemoveUnit(GolemGroup, picked)
+            if IsAlive(picked) then
+                call GroupAddUnit(WorkGroup, picked)
+                call IssueTargetOrder(picked, "attack", boss)
+                set count = count + 1
+            endif
+        endloop
+        set swapGroup = GolemGroup
+        set GolemGroup = WorkGroup
+        set WorkGroup = swapGroup
+        set udg_BossColossus_Golems = GolemGroup
+        set swapGroup = null
+        set picked = null
+        set boss = null
+        return count
+    endfunction
+
+    private function CreateGolem takes real x, real y, unit boss returns nothing
+        local unit golem = CreateUnit(Player(11), UNIT_GOLEM, x, y, Atan2(GetUnitY(boss) - y, GetUnitX(boss) - x) * bj_RADTODEG)
+        if golem != null then
+            call CreepRespawn_DiscardUnit(golem)
+            call GroupAddUnit(GolemGroup, golem)
+            call IssueTargetOrder(golem, "attack", boss)
+        endif
+        set golem = null
+    endfunction
+
+    private function GolemTick takes nothing returns nothing
+        local unit boss = Boss_GetUnit(BossId)
+        if not Boss_IsActive(BossId) then
+            call PauseTimer(GolemTimer)
+        elseif CountAndOrderGolems() == 0 then
+            call PauseTimer(GolemTimer)
+            call SetUnitMoveSpeed(boss, GetUnitDefaultMoveSpeed(boss))
+        endif
+        set boss = null
+    endfunction
+
+    private function BeginGolemIntermission takes nothing returns nothing
+        local unit boss = Boss_GetUnit(BossId)
+        local real x
+        local real y
+
+        if not IsAlive(boss) then
+            set boss = null
+            return
+        endif
+        set x = GetUnitX(boss)
+        set y = GetUnitY(boss)
+        call SetUnitMoveSpeed(boss, GetUnitDefaultMoveSpeed(boss) * 0.25)
+        call CreateGolem(x + 750.00, y, boss)
+        call CreateGolem(x, y + 750.00, boss)
+        call CreateGolem(x - 750.00, y, boss)
+        call CreateGolem(x, y - 750.00, boss)
+        call TimerStart(GolemTimer, 1.00, true, function GolemTick)
+        set boss = null
+    endfunction
+
+    private function OnDamage takes nothing returns nothing
+        local unit target = udg_DamageEventTarget
+        local unit source = udg_DamageEventSource
+        if (target == Boss_GetUnit(BossId) or GetUnitTypeId(target) == UNIT_GOLEM) and GetUnitAbilityLevel(target, 'BHfs') > 0 then
+            set udg_DamageEventAmount = 0.00
+        elseif BossId > 0 and target == Boss_GetUnit(BossId) and GetUnitTypeId(source) == UNIT_GOLEM then
+            set udg_DamageEventAmount = -50.00
+            set udg_DamageEventType = udg_DamageTypeHeal
+            call UnitDamageTarget(target, source, 50.00, true, false, ATTACK_TYPE_CHAOS, DAMAGE_TYPE_NORMAL, WEAPON_TYPE_WHOKNOWS)
+            call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Demon\\DemonBoltImpact\\DemonBoltImpact.mdl", target, "chest"))
+        endif
+        set source = null
+        set target = null
+    endfunction
+
+    private function CastBoulder takes nothing returns nothing
+        local unit whichUnit = Boss_GetUnit(BossId)
+        if Boss_IsActive(BossId) and whichUnit != null then
+            call UnitAddAbility(whichUnit, ABILITY_BOULDER)
+            call IssuePointOrder(whichUnit, "breathoffire", GetUnitX(whichUnit) + 300.00 * Cos(GetUnitFacing(whichUnit) * bj_DEGTORAD), GetUnitY(whichUnit) + 300.00 * Sin(GetUnitFacing(whichUnit) * bj_DEGTORAD))
+            if Boss_GetPhase(BossId) == 1 then
+                call TimerStart(BoulderTimer, GetRandomReal(10.00, 20.00), false, function CastBoulder)
+            else
+                call TimerStart(BoulderTimer, 30.00, false, function CastBoulder)
+            endif
+        endif
+        set whichUnit = null
+    endfunction
+    private function CastSlam takes nothing returns nothing
+        local unit whichUnit = Boss_GetUnit(BossId)
+        if Boss_IsActive(BossId) and whichUnit != null then
+            call UnitAddAbility(whichUnit, ABILITY_SLAM)
+            if GetUnitAbilityLevel(whichUnit, 'BHfs') == 0 then
+                call UnitAddAbility(whichUnit, ABILITY_CLEAVE)
+            else
+                call UnitRemoveAbility(whichUnit, ABILITY_CLEAVE)
+            endif
+            call IssueImmediateOrder(whichUnit, "thunderclap")
+        endif
+        set whichUnit = null
+    endfunction
+    private function CheckPhase takes nothing returns nothing
+        local unit whichUnit = Boss_GetUnit(BossId)
+        if Boss_IsActive(BossId) and whichUnit != null then
+            if Boss_GetPhase(BossId) < 3 and GetUnitState(whichUnit, UNIT_STATE_LIFE) <= GetUnitState(whichUnit, UNIT_STATE_MAX_LIFE) * 0.25 then
+                call Boss_SetPhase(BossId, 3)
+            elseif Boss_GetPhase(BossId) == 1 and GetUnitState(whichUnit, UNIT_STATE_LIFE) <= GetUnitState(whichUnit, UNIT_STATE_MAX_LIFE) * 0.50 then
+                call Boss_SetPhase(BossId, 2)
+            endif
+        endif
+        set whichUnit = null
+    endfunction
+    private function OnStart takes nothing returns nothing
+        local unit boss = Boss_GetUnit(BossId)
+        call PauseUnit(boss, false)
+        call SetUnitOwner(boss, Player(11), true)
+        call SetUnitInvulnerable(boss, false)
+        call TimerStart(PhaseTimer, 1.00, true, function CheckPhase)
+        call TimerStart(SlamTimer, 40.00, true, function CastSlam)
+        call TimerStart(BoulderTimer, GetRandomReal(10.00, 20.00), false, function CastBoulder)
+        set boss = null
+    endfunction
+    private function OnPhase takes nothing returns nothing
+        if Boss_EventBossId == BossId and Boss_EventPhase == 2 then
+            call BeginGolemIntermission()
+        endif
+    endfunction
+    private function OnEnd takes nothing returns nothing
+        local unit boss = Boss_GetUnit(BossId)
+        call PauseTimer(PhaseTimer)
+        call PauseTimer(SlamTimer)
+        call PauseTimer(BoulderTimer)
+        call PauseTimer(GolemTimer)
+        call ClearGolems()
+        if boss != null then
+            call UnitRemoveAbility(boss, ABILITY_SLAM)
+            call UnitRemoveAbility(boss, ABILITY_BOULDER)
+            call UnitRemoveAbility(boss, ABILITY_CLEAVE)
+            call SetUnitMoveSpeed(boss, GetUnitDefaultMoveSpeed(boss))
+        endif
+        set boss = null
+    endfunction
+    private function Respawn takes nothing returns nothing
+        local unit boss = Boss_Respawn(BossId)
+        if boss != null then
+            set udg_BossColossus = boss
+        endif
+        set boss = null
+    endfunction
+    private function OnDeath takes nothing returns nothing
+        call OnEnd()
+        call TimerStart(RespawnTimer, GetRandomReal(240.00, 500.00), false, function Respawn)
+    endfunction
+    public function GetId takes nothing returns integer
+        return BossId
+    endfunction
+    private function Register takes nothing returns nothing
+        local timer initTimer = GetExpiredTimer()
+        local unit whichUnit = Boss_FindUnitByName("Colossus (Level 15)", gg_rct_DragonFireSpam01)
+        if whichUnit == null then
+            set whichUnit = Boss_FindUnitByName("Colossus", gg_rct_DragonFireSpam01)
+        endif
+        if whichUnit != null then
+            set udg_BossColossus = whichUnit
+            set BossId = Boss_Register(whichUnit, "Colossus")
+            call Boss_SetAutoStartOnAttack(BossId, true)
+            call Boss_SetArena(BossId, gg_rct_DragonFireSpam01, Player(0), true)
+            call Boss_SetPhaseCount(BossId, 3)
+            call Boss_SetDescription(BossId, "An Emberpeak giant empowered by the surrounding dragonfire.", "Slam phase; boulder and golem phase below 50%; dragonfire phase below 25%.", "Thunder Clap, splitting boulders, fire immunity, cleave, and healing golem spawns.", "Kill golems before they reach him, avoid forward boulders, and keep moving through dragonfire.")
+            call Boss_SetEventCallback(BossId, BOSS_EVENT_START, function OnStart)
+            call Boss_SetEventCallback(BossId, BOSS_EVENT_PHASE, function OnPhase)
+            call Boss_SetEventCallback(BossId, BOSS_EVENT_RESET, function OnEnd)
+            call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnDeath)
+            call RegisterDamageEngine(function OnDamage, "Modifier", 1.00)
+        endif
+        call DestroyTimer(initTimer)
+        set initTimer = null
+        set whichUnit = null
+    endfunction
+    private function Init takes nothing returns nothing
+        local timer initTimer = CreateTimer()
+
+        set PhaseTimer = CreateTimer()
+        set BoulderTimer = CreateTimer()
+        set SlamTimer = CreateTimer()
+        set GolemTimer = CreateTimer()
+        set RespawnTimer = CreateTimer()
+        if udg_BossColossus_Golems == null then
+            set udg_BossColossus_Golems = CreateGroup()
+        endif
+        set GolemGroup = udg_BossColossus_Golems
+        set WorkGroup = CreateGroup()
+        call TimerStart(initTimer, 0.00, false, function Register)
+        set initTimer = null
+    endfunction
+endlibrary
