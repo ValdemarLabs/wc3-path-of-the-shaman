@@ -19,12 +19,18 @@
 
 ### Technical Updates
 
+- Updated `Zones/ZonesCore.j` with `ZoneData.addDungeonEnterRegion` and `addDungeonExitRegion`; Gnoll Hideout, Crypt, and Boom Mine now keep portal source, destination, and facing metadata in ZonesCore while ZoneEvent executes the transitions.
+- Added `World/Dragons/DragonBehavior.j` for shared red/scorching dragon melee animations, opportunistic Breath of Fire and Flame Strike casts, and ambient dragon sounds.
+- Added `World/Dragons/EmberpeakDragons.j` for Emberpeak center/zone wandering, ambient flame strikes, three Dragonfire Peaks wanderers, and Colossus arena targeting modes.
+- Updated `DungeonsAndBosses/OpenWorld/Colossus/BossColossus.j` to use the world-owned Emberpeak dragon API; `EmberpeakDragonfire.j` remains as a compatibility facade for older callers.
+- Updated `UI/CameraControl.j` and `DungeonsAndBosses/Dungeons/Gnoll Hideout/DungeonGnollHideout.j` with a unique Gnoll Hideout camera preset and zone activation.
 - Added `DungeonsAndBosses/Dungeons/Gnoll Hideout/BossImpaler.j`, `BossFeldok.j`, and `BossAbomination.j`, moving all Gnoll Hideout boss state, phases, abilities, descriptions, summons, cleanup, and dungeon registration out of `DungeonGnollHideout.j`.
 - Added `DungeonsAndBosses/Dungeons/Boom Brothers Mine/BossMadBlix.j`, moving Mad Blix's recoverable encounter behavior and dungeon registration out of `DungeonBoomBrothersMine.j`.
 - Updated the Gnoll Hideout and Boom Brothers Mine dungeon libraries to contain only dungeon-wide configuration and events, with their ordinary-creep scans delayed until the separate boss libraries have registered.
 
 ### Actions Remaining
 
+- Import `World/Dragons/DragonBehavior.j` and `EmberpeakDragons.j`, disable the converted Dragons GUI triggers, and runtime-test wandering bounds, spawned Dragonfire Peaks dragons, ambient sounds, combat casting, and every Colossus dragonfire mode.
 - Import each new dungeon `BossXXX.j` after its owning dungeon library, then run the affected-map and full-map JassHelper compiles and runtime-test boss registration before ordinary-creep registration.
 
 ## [11.8.2026]
@@ -58,7 +64,7 @@
 - Added encounter libraries for Chimairo, Colossus, Jinvorrak, Mal'kiri, Mordrax, Morthun, Mountain Giant, Rol'jin, Sargoth, Scorchion, Void Entity, and Vorkatha under `DungeonsAndBosses/OpenWorld/`; source-empty encounters remain catalogued without invented mechanics.
 - Updated `Companions/Companions.j` with focused-leader queries, suspension state, and immediate leader-change callbacks used by dungeon revival routing.
 - Updated `Zones/ZoneEvent.j` with synchronized per-hero zone queries and leave-state cleanup for dungeon routing.
-- Updated `Zones/ZoneEvent.j` with reusable entrance/exit transition and presentation registration so each dungeon sublibrary owns its rects, facings, fast-pan choice, and special camera mode while ZoneEvent owns movement and zone state.
+- Updated `Zones/ZoneEvent.j` with reusable entrance/exit transition and presentation handling; ZonesCore owns portal rects/facings, dungeon libraries own presentation choices, and ZoneEvent owns movement and zone state.
 - Added `DungeonsAndBosses/OpenWorld/Colossus/EmberpeakDragonfire.j`, `DungeonsAndBosses/OpenWorld/Mordrax/BossMordraxDialogue.j`, and `DungeonsAndBosses/OpenWorld/Void Entity/BossVoidEntityDialogue.j` to replace the remaining disabled arena and voice GUI triggers.
 - Updated `Companions/Companions.j` with an external-order override used by dungeon revival routing without changing player suspension state.
 - Updated `CreepRespawn/CreepUnitAssignment.j` to stop executing the disabled Mordrax, Morthun, and Mountain Giant patrol triggers; their encounter libraries now own patrol setup.
