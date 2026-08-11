@@ -21,6 +21,7 @@
 
 - Converted Outcast Jin'Zun's legacy quest chain, optional quests, roaming dialogue, Healing Ward placement, tree restoration, and succubus dispel interaction to the current quest and dialogue systems.
 - Jin'Zun's quests no longer grant Horde reputation. After Sargoth he equips his fishing pole; after Unknown Entity he loses it, discovers `Da Fishing Pole Missing`, relocates to his lake spot, and resumes fishing animation when the pole is returned.
+- The Unknown Entity lake investigation, meat lure, tentacle ambushes, boss reveal, combat start, slime drop, and death cleanup now run without the legacy GUI triggers.
 - Prince Zaekolaerr can now be questioned about Jin'Zun's missing fishing pole while the retrieval quest is active.
 - Converted Kribugs' six legacy quests, ogre fullness cycle, patrol interaction, unique dialogue, and merchant access to the current quest and vendor systems.
 - Kribugs now sells randomized curiosities through the shared Trade UI; his Special Deal pitch leads into the same inventory so purchases use normal stock, pricing, and trade-session rules.
@@ -33,8 +34,9 @@
 ### Technical Updates
 
 - Added the initial `DungeonsAndBosses/Boss.j` foundation with boss registration, lifecycle and phase state, per-boss callbacks, attack-start handling, arena-empty reset support, shared `BOSS` group registration, respawn unit replacement, and optional scripted lethal-defeat interception.
+- Added `DungeonsAndBosses/Unknown Entity/BossUnknownEntity.j` to implement the complete imported Unknown Entity encounter on `Boss.j`, with quest callback registration instead of GUI trigger calls.
 - `Boss.j` is intentionally an initial framework only. Encounter-specific abilities, phase thresholds, summons, dialogue, presentation, loot, quest updates, and save integration still require boss-specific implementations; the imported Void Entity GUI does not yet define its planned combat phases or ability usage.
-- Added `QuestsAndDialogs/QuestGivers/qOutcastJinzun.j` from the legacy `QuestsAndDialogs/OLDGUI/OutcastJinzun` triggers, including quest prerequisites and rewards, item tracking, staged Unknown Entity and crypt hooks, patrol and fishing-spot control, quest-item recovery, neutral-faction rewards, and respawn refresh support.
+- Added `QuestsAndDialogs/QuestGivers/qOutcastJinzun.j` from the legacy `QuestsAndDialogs/OLDGUI/OutcastJinzun` triggers, including quest prerequisites and rewards, item tracking, direct `BossUnknownEntity` integration, the remaining crypt hook, patrol and fishing-spot control, quest-item recovery, neutral-faction rewards, and respawn refresh support.
 - Updated `QuestsAndDialogs/QuestGivers/qZaekolaerr.j` with the active fishing-pole quest inquiry and availability marker integration.
 - Updated `CreepRespawn/CreepUnitAssignment.j` and its test-map variant to restore Jin'Zun through `qOutcastJinzun` instead of restarting the legacy GUI patrol trigger.
 - Added `QuestsAndDialogs/QuestGivers/qKribugs.j` from the legacy `QuestsAndDialogs/OLDGUI/Kribugs` triggers, including quest prerequisites, item and kill tracking, repeatable meat/cure flow, dialogue voicelines, patrol control, and respawn hooks.
@@ -51,8 +53,8 @@
 
 ### Actions Remaining
 
-- Import `DungeonsAndBosses/Boss.j` after Table, Events, UnitDeathEvent, and DamageEngine; then build Unknown Entity and Void Entity encounter libraries on it, migrate their remaining GUI behavior, and add Void Entity's phase thresholds and abilities after representative completed boss triggers are available.
-- Import `QuestsAndDialogs/QuestGivers/qOutcastJinzun.j` before `qZaekolaerr.j`, disable the converted OutcastJinzun GUI trigger group, connect the Unknown Entity and Crypt encounter update hooks, then compile and runtime-test the full quest chain, Jin'Zun's fishing-spot pathing, and both player interaction paths.
+- Import `DungeonsAndBosses/Boss.j` after Table, Events, UnitDeathEvent, and DamageEngine; import `DungeonsAndBosses/Unknown Entity/BossUnknownEntity.j` after it, then build the Void Entity encounter library and add its phase thresholds and abilities after representative completed boss triggers are available.
+- Import `QuestsAndDialogs/QuestGivers/qOutcastJinzun.j` after `BossUnknownEntity` and before `qZaekolaerr.j`; disable the converted OutcastJinzun and Unknown Entity GUI trigger groups, connect the remaining Crypt encounter hook, then compile and runtime-test the full quest chain, lake encounter, Jin'Zun's fishing-spot pathing, and both player interaction paths.
 - Create the 21 documented unit types in Object Editor using the assigned rawcodes, names, suffixes, and genders, then place and runtime-test representative vendors from every new catalog.
 - Import recordings for `VendorTrollMale_0001-0015`; text-duration fallback remains active until those files exist.
 - Full-map test autonomous Horde, Riverbane, Goblin, and Elarindor heroes near friendly, neutral, hostile, inaccessible, empty-stock, and high-price vendors.
