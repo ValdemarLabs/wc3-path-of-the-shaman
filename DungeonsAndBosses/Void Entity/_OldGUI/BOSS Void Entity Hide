@@ -1,0 +1,8 @@
+BOSS Void Entity Hide
+    Events
+        Time - Elapsed game time is 1.00 seconds
+    Conditions
+    Actions
+        Unit - Add Ghost to BossVoidEntity
+        Unit - Make BossVoidEntity Invulnerable
+        Unit - Change ownership of BossVoidEntity to Neutral Passive and Retain color

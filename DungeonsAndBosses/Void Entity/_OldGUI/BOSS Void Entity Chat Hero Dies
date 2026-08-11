@@ -1,0 +1,59 @@
+BOSS Void Entity Chat Hero Dies
+    Events
+        Unit - A unit Dies
+    Conditions
+        BossVoidEntity_VoicelineActive Equal to False
+        IsUnitAlive[(Custom value of BossVoidEntity)] Equal to True
+        (Remaining time for BossVoidEntity_VoicelineTimer) Equal to 0.00
+        InCinematic Equal to False
+        Or - Any (Conditions) are true
+            Conditions
+                ((Dying unit) is in Companion_Group.) Equal to True
+                (Owner of (Dying unit)) Equal to Player 1 (Red)
+    Actions
+        -------- ============ RANGE CHECK --------
+        Custom script:   local real range = RangeCheck_Unit(udg_BossVoidEntity, Player(0))
+        -------- Skip if the unit has Locust --------
+        Custom script:   local unit u = GetTriggerUnit()
+        Custom script:   if GetUnitAbilityLevel(u, 'Aloc') > 0 then
+        Custom script:   set u = null
+        Custom script:   return
+        Custom script:   endif
+        -------- ======================== --------
+        Custom script:   if range >= 1500.0 then
+        Custom script:   return
+        Custom script:   endif
+        -------- ============ RANGE END --------
+        Set VariableSet BossVoidEntity_LinesInt = (Random integer number between 1 and 6)
+        Set VariableSet BossVoidEntity_VoicelineActive = True
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BossVoidEntity_LinesInt Equal to 1
+            Then - Actions
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Welcome… to the other side…
+                Custom script:   call ExSound_Play("VoidEntity_0012", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BossVoidEntity named Void Entity: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Don't wait
+                -------- ===================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BossVoidEntity_LinesInt Equal to 2
+            Then - Actions
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Feel the void…
+                Custom script:   call ExSound_Play("VoidEntity_0013", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BossVoidEntity named Void Entity: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Don't wait
+                -------- ===================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BossVoidEntity_LinesInt Equal to 3
+            Then - Actions
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = You will see… darkness…
+                Custom script:   call ExSound_Play("VoidEntity_0014", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BossVoidEntity named Void Entity: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Don't wait
+                -------- ===================================== --------
+            Else - Actions
+        Countdown Timer - Start BossVoidEntity_VoicelineTimer as a One-shot timer that will expire in (ExSoundDuration + 3.00) seconds

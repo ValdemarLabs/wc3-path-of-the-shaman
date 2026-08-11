@@ -1,0 +1,8 @@
+debug BOSS Void Entity unhide
+    Events
+        Player - Player 1 (Red) types a chat message containing /debug VoidEntity as An exact match
+    Conditions
+    Actions
+        Unit - Remove Ghost from BossVoidEntity
+        Unit - Make BossVoidEntity Vulnerable
+        Unit - Change ownership of BossVoidEntity to Player 12 (Brown) and Retain color

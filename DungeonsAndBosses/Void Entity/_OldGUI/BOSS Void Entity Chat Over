@@ -1,0 +1,6 @@
+BOSS Void Entity Chat Over
+    Events
+        Time - BossVoidEntity_VoicelineTimer expires
+    Conditions
+    Actions
+        Set VariableSet BossVoidEntity_VoicelineActive = False

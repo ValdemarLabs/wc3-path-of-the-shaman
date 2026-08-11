@@ -1,0 +1,20 @@
+BOSS Void Entity Reset
+    Events
+        Time - Every 5.00 seconds of game time
+    Conditions
+        ((Units in ElvenTown <gen> owned by Player 1 (Red)) is empty) Equal to True
+    Actions
+        -------- Turn off this trigger --------
+        Trigger - Turn off (This trigger)
+        -------- Disable chat --------
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Void_Entity_Chat_During)
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Void_Entity_Chat_Ability)
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Void_Entity_Chat_Ultimate)
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Void_Entity_Chat_Hero_Dies)
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Void_Entity_Chat_LowHP)
+        -------- Reset Boss + other starting initials --------
+        Unit - Set life of BossVoidEntity to 100.00%
+        Unit - Set mana of BossVoidEntity to 100.00%
+        -------- Turn off all BOSS phases --------
+        -------- Turn on BOSS fight starting trigger --------
+        Custom script:   call EnableTrigger(gg_trg_BOSS_Void_Entity_Start)

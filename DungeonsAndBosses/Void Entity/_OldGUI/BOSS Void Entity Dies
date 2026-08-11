@@ -1,0 +1,39 @@
+BOSS Void Entity Dies
+    Events
+        Unit - A unit Takes damage
+    Conditions
+        (Damage Target) Equal to BossVoidEntity
+        (Damage taken) Greater than or equal to ((Life of BossVoidEntity) - 0.41)
+    Actions
+        Event Response - Set Damage of Unit Damaged Event to ((Life of BossVoidEntity) - 1.00)
+        Unit - Make BossVoidEntity Invulnerable
+        Unit - Change ownership of BossVoidEntity to Neutral Passive and Retain color
+        -------- Reset Boss + other starting initials --------
+        Trigger - Turn off (This trigger)
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Void_Entity_Reset)
+        -------- Disable chat --------
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Void_Entity_Chat_During)
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Void_Entity_Chat_Ability)
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Void_Entity_Chat_Ultimate)
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Void_Entity_Chat_Hero_Dies)
+        Custom script:   call DisableTrigger(gg_trg_BOSS_Void_Entity_Chat_LowHP)
+        -------- Boss Chat --------
+        Custom script:   call TriggerExecute(gg_trg_BOSS_Void_Entity_Chat_Dies)
+        Wait ExSoundDuration seconds
+        Unit - Kill BossVoidEntity
+        -------- Boss Chat --------
+        -------- Turn off this trigger --------
+        Wait Campaign quest delay seconds
+        -------- COMPLETE QUEST --------
+        Quest - Mark QuestBoomWillBeBackReq1 as Completed
+        Quest - Display to (All players) the Quest Update message: |cffffcc00QUEST|r  ...
+        Quest - Display to (All players) the Quest Update message: Mad Blix has been d...
+        -------- ======= ADJUST WHICH QUEST --------
+        Set VariableSet QuestTemp = QuestBoomWillBeBack
+        -------- ======= DONT MODIFY: LOAD HASHTABLE --------
+        Trigger - Run Quest System Load Hashtable <gen> (ignoring conditions)
+        -------- ======= ================================= ========================== --------
+        -------- REFRESH QUEST ICON --------
+        -------- ======= QUEST State 1-5: (unavailable, available, in progress, complete, ready to turn in) --------
+        Custom script:   set udg_QuestState[udg_QuestID_Temp] = 5
+        Custom script:   call QuestIcon_RegisterQuest(udg_QuestGiverUnit[udg_QuestID_Temp], udg_QuestID_Temp, udg_QuestType[udg_QuestID_Temp], udg_QuestState[udg_QuestID_Temp] )

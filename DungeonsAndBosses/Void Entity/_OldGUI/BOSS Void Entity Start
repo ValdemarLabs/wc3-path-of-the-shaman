@@ -1,0 +1,18 @@
+BOSS Void Entity Start
+    Events
+        Unit - A unit Is attacked
+    Conditions
+        (Attacked unit) Equal to BossVoidEntity
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Enable reset / etc triggers --------
+        Custom script:   call EnableTrigger(gg_trg_BOSS_Void_Entity_Reset)
+        Custom script:   call EnableTrigger(gg_trg_BOSS_Void_Entity_Dies)
+        -------- Enable chat --------
+        Custom script:   call EnableTrigger(gg_trg_BOSS_Void_Entity_Chat_During)
+        Custom script:   call EnableTrigger(gg_trg_BOSS_Void_Entity_Chat_Ability)
+        Custom script:   call EnableTrigger(gg_trg_BOSS_Void_Entity_Chat_Ultimate)
+        Custom script:   call EnableTrigger(gg_trg_BOSS_Void_Entity_Chat_Hero_Dies)
+        Custom script:   call EnableTrigger(gg_trg_BOSS_Void_Entity_Chat_LowHP)
+        -------- CHAT START --------
+        Custom script:   call TriggerExecute(gg_trg_BOSS_Void_Entity_Chat_Start)
