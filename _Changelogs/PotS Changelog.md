@@ -24,12 +24,13 @@
 - The Unknown Entity lake investigation, meat lure, tentacle ambushes, boss reveal, combat start, slime drop, and death cleanup now run without the legacy GUI triggers.
 - Prince Zaekolaerr can now be questioned about Jin'Zun's missing fishing pole while the retrieval quest is active.
 - Converted Kribugs' six legacy quests, ogre fullness cycle, patrol interaction, unique dialogue, and merchant access to the current quest and vendor systems.
-- Kribugs now sells randomized curiosities through the shared Trade UI; his Special Deal pitch leads into the same inventory so purchases use normal stock, pricing, and trade-session rules.
+- Kribugs' ordinary Trade stock is now his own fixed selection of adventuring supplies. His 1000-gold Special Deal opens a separate mystery-item gamble, grants a weighted random reward, and no longer reuses stale ShopUI vendor state or leaves player control disabled.
 - Added 21 planned dialogue vendors: ten bartenders, four jewelcrafters, two Orc spirit speakers, two Orc fel-curio dealers, one Troll voodoo merchant, one Human arcanist, and one Elarindor magister.
 - Bartenders primarily sell common drinks with light food stock; jewelcrafters sell rings, necklaces, and trinkets; each mystical specialist carries themed crystals, essences, charms, or relics.
 - Horde Troll merchants now use Horde reputation and their own male merchant dialogue profile.
 - Autonomous AI heroes now shop across nearby Vendor-system merchants, favoring faction-compatible, reachable, useful, and situationally relevant catalogs without requiring manual shop bindings.
 - AI purchasing now follows a conservative price tier based on Player(0)'s highest hero level, buys at most one item per trip, waits four to eight minutes between successful shopping trips, and keeps at most two copies of a consumable type.
+- Fixed Ragno's starting quest availability, Protect the Outpost wave and cinematic choreography, grunt speakers, Gnoll Head drops, and Lumberjack Duties acceptance and harvesting flow.
 
 ### Technical Updates
 
@@ -41,6 +42,9 @@
 - Updated `CreepRespawn/CreepUnitAssignment.j` and its test-map variant to restore Jin'Zun through `qOutcastJinzun` instead of restarting the legacy GUI patrol trigger.
 - Added `QuestsAndDialogs/QuestGivers/qKribugs.j` from the legacy `QuestsAndDialogs/OLDGUI/Kribugs` triggers, including quest prerequisites, item and kill tracking, repeatable meat/cure flow, dialogue voicelines, patrol control, and respawn hooks.
 - Updated `Vendors/VendorDialogs.j` with custom-dialog vendor registration so bespoke quest givers can retain ShopUI, catalog, trade outcome, and return-flow integration without opening the generic vendor dialog in parallel.
+- Added `UI/GambleUI.j` as an isolated weighted mystery-item purchase panel with inventory-capacity checks, gold validation, reward reveal, and purchase/return callbacks.
+- Updated `QuestsAndDialogs/QuestGivers/qKribugs.j` so normal Trade uses a unique fixed vendor catalog while Special Deal follows the legacy 1000-gold gamble draft and its paid voicelines.
+- Updated `QuestsAndDialogs/QuestGivers/qRagno.j` with Horde-enemy starting access, a Protect the Outpost prerequisite for Call of the Horde, rect-selected surviving grunts, CinematicMover staging, threshold-based gnoll waves, base-gnoll loot registration, and delayed FollowSystem-safe peon harvesting.
 - Updated `CreepRespawn/CreepUnitAssignment.j` to restore `qKribugs` vendor, quest-dialog, and patrol hooks after respawn instead of executing the converted GUI patrol trigger.
 - Updated `Vendors/VendorCatalogs.j` and `Vendors/VendorLines.j` with seven new catalogs, 21 canonical unit names, initial stock, and specialist type labels.
 - Updated the Orc, Tauren, Human, Goblin, Bonecrusher Ogre, Elarindor, and Morgrim Dwarf faction libraries with the new unit bindings.
@@ -53,6 +57,7 @@
 
 ### Actions Remaining
 
+- Full-map compile and multiplayer runtime-test Ragno's starting availability, daily reset, outpost wave threshold, cinematic movement and speakers, Gnoll Head drops, and lumber-peon harvesting.
 - Import `DungeonsAndBosses/Boss.j` after Table, Events, UnitDeathEvent, and DamageEngine; import `DungeonsAndBosses/Unknown Entity/BossUnknownEntity.j` after it, then build the Void Entity encounter library and add its phase thresholds and abilities after representative completed boss triggers are available.
 - Import `QuestsAndDialogs/QuestGivers/qOutcastJinzun.j` after `BossUnknownEntity` and before `qZaekolaerr.j`; disable the converted OutcastJinzun and Unknown Entity GUI trigger groups, connect the remaining Crypt encounter hook, then compile and runtime-test the full quest chain, lake encounter, Jin'Zun's fishing-spot pathing, and both player interaction paths.
 - Create the 21 documented unit types in Object Editor using the assigned rawcodes, names, suffixes, and genders, then place and runtime-test representative vendors from every new catalog.
