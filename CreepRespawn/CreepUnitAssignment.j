@@ -58,6 +58,8 @@ private function TriggerQuestEvaluation_Delayed takes nothing returns nothing
     elseif unitTypeId == 'o61L' then
         call ExecuteFunc("qRagno_RefreshRespawnedUnitHooks")
         call ExecuteFunc("qChieftainThork_RefreshAvailability")
+    elseif unitTypeId == 'o60X' then
+        call ExecuteFunc("qOutcastJinzun_RefreshRespawnedUnitHooks")
     elseif unitTypeId == 'n62W' then
         call ExecuteFunc("qZaekolaerr_RefreshRespawnedUnitHooks")
     elseif unitTypeId == 'n61E' then
@@ -110,8 +112,6 @@ function CreepUnitAssignment takes integer utype returns nothing
     elseif utype == 'o60X' then
         set udg_OutcastJinzun = bj_lastCreatedUnit
         call TriggerQuestEvaluation(bj_lastCreatedUnit)
-        // Start patrol movement
-        call TriggerExecute(gg_trg_Outcast_Jinzun_Movement_Start)    
     elseif utype == 'o60D' then
         set udg_Drekthor = bj_lastCreatedUnit
     elseif utype == 'o612' then

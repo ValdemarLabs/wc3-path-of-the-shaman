@@ -52,6 +52,9 @@ private function TriggerQuestEvaluation_Delayed takes nothing returns nothing
     
     // Refresh quest availability and icons for the new unit
     call QuestGiver_RefreshAvailabilityForGiver(newUnit)
+    if unitTypeId == 'o60X' then
+        call ExecuteFunc("qOutcastJinzun_RefreshRespawnedUnitHooks")
+    endif
     
     // Cleanup
     call QuestRestorationTable.unit.remove(GetHandleId(t))
@@ -98,8 +101,6 @@ function CreepUnitAssignment takes integer utype returns nothing
     elseif utype == 'o60X' then
         set udg_OutcastJinzun = bj_lastCreatedUnit
         call TriggerQuestEvaluation(bj_lastCreatedUnit)
-        // Start patrol movement
-        call TriggerExecute(gg_trg_Outcast_Jinzun_Movement_Start)    
     elseif utype == 'o60D' then
         set udg_Drekthor = bj_lastCreatedUnit
     elseif utype == 'o612' then

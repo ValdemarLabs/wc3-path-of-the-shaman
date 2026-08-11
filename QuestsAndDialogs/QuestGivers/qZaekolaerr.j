@@ -2,22 +2,23 @@
     qZaekolaerr
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
     Prince Zaekolaerr dialog conversion for the Ragno-owned Satyr
-    Negotiations quest. This library restores Zaekolaerr as the
-    external satyr dialog endpoint while keeping quest ownership,
-    completion, and reward flow in qRagno.
+    Negotiations quest and Jin'Zun's missing fishing pole inquiry. This
+    library restores Zaekolaerr as an external quest-dialog endpoint while
+    keeping quest ownership, completion, and reward flow with each giver.
 
     Credits:
     - Legacy Ragno GUI trigger notes.
     - Voicelines/_oldExcel/VoicelinesMaster.xlsx
 
     How to install:
-    Import after qRagno, QuestGiver, DialogInteraction, DialogSystem,
-    VoicelinesSatyr, and VoicelinesDemoness. CreepUnitAssignment should refresh this
-    library when the Zaekolaerr unit type respawns.
+    Import after qRagno, qOutcastJinzun, QuestGiver, DialogInteraction,
+    DialogSystem, VoicelinesSatyr, and VoicelinesDemoness.
+    CreepUnitAssignment should refresh this library when the Zaekolaerr unit
+    type respawns.
 
     API:
     qZaekolaerr_RefreshAvailability()
@@ -25,7 +26,7 @@
     qZaekolaerr_ContinueToDialogAfterSelection()
 
 **/
-library qZaekolaerr initializer Init requires qRagno, QuestGiver, DialogInteraction, DialogSystem, VoicelinesSatyr, VoicelinesDemoness
+library qZaekolaerr initializer Init requires qRagno, qOutcastJinzun, QuestGiver, DialogInteraction, DialogSystem, VoicelinesSatyr, VoicelinesDemoness
 
 globals
     private constant boolean DEBUG = false
@@ -100,7 +101,7 @@ private function RefreshZaekolaerrAvailabilityInternal takes nothing returns not
         return
     endif
 
-    if qRagno_IsSatyrNegotiationsOpen() then
+    if qRagno_IsSatyrNegotiationsOpen() or qOutcastJinzun_IsFishingPoleQuestActive() then
         call QuestGiver_CreateDummyQuestIcon(Zaekolaerr, "normal", QUEST_STATE_READY_TURNIN)
     else
         call QuestGiver_RemoveDummyQuestIcon(Zaekolaerr)
@@ -261,6 +262,21 @@ private function OnFarewell takes nothing returns nothing
     call DialogSystem_PlaySequence(seq, Player(0), Zaekolaerr)
 endfunction
 
+private function OnFishingPoleQuestionEnd takes nothing returns nothing
+    call StartExitFadeOut()
+endfunction
+
+private function OnFishingPoleQuestion takes nothing returns nothing
+    local integer seq
+
+    call DialogInteraction_BeginDialogSequence()
+    set seq = DialogInteraction_CreateBaseSequence(Zaekolaerr, ZA_NAME)
+    call DialogSystem_AddLineNoSound(seq, SelectedHero, DialogInteraction_GetHeroName(SelectedHero), "Did you take Jin'Zun's fishing pole?")
+    call DialogSystem_AddLineNoSound(seq, Zaekolaerr, ZA_NAME, "Ha! You really think that we desire that old fool's wooden stick? Get out of my sight, fool!")
+    call DialogSystem_SetSequenceCallbacks(seq, null, function OnFishingPoleQuestionEnd)
+    call DialogSystem_PlaySequence(seq, Player(0), Zaekolaerr)
+endfunction
+
 private function BuildNegotiationChoiceDialog takes nothing returns nothing
     local button b
 
@@ -322,6 +338,11 @@ private function BuildDialog takes nothing returns nothing
     if qRagno_IsSatyrNegotiationsOpen() then
         set b = DialogSystem_AddButton(ZaekolaerrDialog, "Satyr Negotiations (Continue Quest)", 1)
         call DialogSystem_BindButtonCode(b, function OnNegotiate)
+    endif
+
+    if qOutcastJinzun_IsFishingPoleQuestActive() then
+        set b = DialogSystem_AddButton(ZaekolaerrDialog, "Ask about Jin'Zun's fishing pole", 2)
+        call DialogSystem_BindButtonCode(b, function OnFishingPoleQuestion)
     endif
 
     set b = DialogSystem_AddFarewellButton(ZaekolaerrDialog)
