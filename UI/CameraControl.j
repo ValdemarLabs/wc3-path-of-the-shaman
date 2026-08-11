@@ -28,6 +28,7 @@ globals
     public constant integer CAMERA_MODE_DEVELOPER = 3
     public constant integer CAMERA_SPECIAL_MODE_NONE = 0
     public constant integer CAMERA_SPECIAL_MODE_BOOMMINE = 1
+    public constant integer CAMERA_SPECIAL_MODE_GNOLLHIDEOUT = 2
     // Add more special camera mode ids here as needed.
     // Keep them unique and then define their preset values in CC_InitSpecialModeConfigs().
     public constant integer CAMERA_SPECIAL_MODE_TEMPLATE01 = 101
@@ -466,6 +467,7 @@ private function CC_InitSpecialModeConfigs takes nothing returns nothing
     // 4. If the mode should activate from a camera-local rect, register that rect in CC_RegisterBuiltInSpecialCameraRects().
     // 5. Leave ZoneEvent-owned zone camera switching in ZoneEvent.
     call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_BOOMMINE, "Boom Mine", 1600.00, 5000.00, 270.00, 90.00, 70.00, false, 270.00)
+    call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_GNOLLHIDEOUT, "Gnoll hideout", 2200.00, 5000.00, 270.00, 90.00, 70.00, false, 270.00)
     call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_TEMPLATE01, "Template 01", 1800.00, 6000.00, 285.00, 90.00, 70.00, false, CAMERA_ANGLE_MAX)
     call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_TEMPLATE02, "Template 02", 1400.00, 4500.00, 300.00, 180.00, 65.00, false, CAMERA_ANGLE_MAX)
 endfunction
@@ -1738,8 +1740,8 @@ public function Init takes nothing returns nothing
         set CC_Angle[i] = CAMERA_DEFAULT_ANGLE
         set CC_Rotation[i] = CAMERA_DEFAULT_ROTATION
         set CC_Fov[i] = CAMERA_DEFAULT_FOV
-        set CC_SpecialAngle[i] = CC_GetConfiguredSpecialModeAngle(CAMERA_SPECIAL_MODE_BOOMMINE)
-        set CC_SpecialRotation[i] = CC_GetConfiguredSpecialModeRotation(CAMERA_SPECIAL_MODE_BOOMMINE)
+        set CC_SpecialAngle[i] = CAMERA_DEFAULT_ANGLE
+        set CC_SpecialRotation[i] = CAMERA_DEFAULT_ROTATION
         set CC_NormalEffectiveDistance[i] = CAMERA_DEFAULT_DISTANCE
         set CC_NormalEffectiveAngle[i] = CAMERA_DEFAULT_ANGLE
         set CC_NormalTraceEnabled[i] = false

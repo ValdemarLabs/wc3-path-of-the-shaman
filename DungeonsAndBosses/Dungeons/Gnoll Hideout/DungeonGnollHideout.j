@@ -5,9 +5,9 @@
     Version: 1.0.0
 
     Description:
-    Configures the Gnoll Hideout dungeon, portal transitions, containment, and
-    ordinary-creep respawn policy. Each boss encounter is implemented in its
-    own BossXXX library in this folder.
+    Configures Gnoll Hideout gameplay containment and the ordinary-creep
+    respawn policy. ZonesCore owns its portal geometry, while each boss is
+    implemented in a separate BossXXX library in this folder.
 
     Credits:
     - DungeonsAndBosses/Dungeons/Gnoll Hideout/_oldGUI
@@ -43,8 +43,7 @@ library DungeonGnollHideout initializer Init requires Dungeon, ZoneEvent
 
         set DungeonId = Dungeon_Register(ZONE_ID, gg_rct_EnteringDungeon01, gg_rct_Dungeon01StartingPoint, FULL_RESPAWN_DELAY)
         call Dungeon_AddArea(DungeonId, gg_rct_Dungeon01Area)
-        call ZoneEvent_RegisterEntranceTransition(ZONE_ID, gg_rct_EnteringDungeon01, gg_rct_Dungeon01StartingPoint, 215.00)
-        call ZoneEvent_RegisterExitTransition(ZONE_ID, gg_rct_LeavingDungeon01, gg_rct_LeavingDungeon01Point, 295.00)
+        call ZoneEvent_SetZoneCameraMode(ZONE_ID, CameraControl_CAMERA_SPECIAL_MODE_GNOLLHIDEOUT)
         call ZoneEvent_SetFastPanOnEnter(ZONE_ID, true)
         call TimerStart(whichTimer, 0.10, false, function RegisterCreeps)
         set whichTimer = null
