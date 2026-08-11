@@ -100,10 +100,6 @@ library DungeonCrypt initializer Init requires Dungeon, ZoneEvent, Table
 
         set DungeonId = Dungeon_Register(ZONE_ID, gg_rct_DungeonCrypt01B, gg_rct_Dungeon02StartingPoint, 300.00)
         call Dungeon_AddArea(DungeonId, gg_rct_DungeonCrypt)
-        call ZoneEvent_RegisterEntranceTransition(ZONE_ID, gg_rct_DungeonCrypt01A, gg_rct_Dungeon02StartingPoint, 90.00)
-        call ZoneEvent_RegisterEntranceTransition(ZONE_ID, gg_rct_DungeonCrypt01B, gg_rct_Dungeon02StartingPoint, 90.00)
-        call ZoneEvent_RegisterEntranceTransition(ZONE_ID, gg_rct_DungeonCrypt01C, gg_rct_Dungeon02StartingPoint, 90.00)
-        call ZoneEvent_RegisterExitTransition(ZONE_ID, gg_rct_LeavingDungeon2, gg_rct_DungeonCryptOut, 290.00)
         call ZoneEvent_SetFastPanOnEnter(ZONE_ID, true)
         call GroupEnumUnitsInRect(RegisterGroup, gg_rct_DungeonCrypt, null)
         call ForGroup(RegisterGroup, function RegisterCryptCreep)

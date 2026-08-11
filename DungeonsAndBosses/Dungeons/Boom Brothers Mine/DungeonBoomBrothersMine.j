@@ -5,9 +5,9 @@
     Version: 1.0.0
 
     Description:
-    Implements Boom Mine's portal transitions, patrol waves, ordinary-creep
-    respawn policy, and explosive-barrel rock events. Mad Blix is implemented
-    separately by BossMadBlix in this folder.
+    Implements Boom Mine's patrol waves, ordinary-creep respawn policy, camera
+    choice, and explosive-barrel rock events. ZonesCore owns portal geometry;
+    BossMadBlix owns the boss encounter.
 
     Credits:
     - DungeonsAndBosses/Dungeons/Boom Brothers Mine/_oldGUI
@@ -369,8 +369,6 @@ library DungeonBoomBrothersMine initializer Init requires Dungeon, ZoneEvent, Ev
         local integer playerId = 0
 
         set DungeonId = Dungeon_Register(ZONE_ID, gg_rct_BoomBrothersMineEnter, gg_rct_BoomBrothersMineIn, 300.00)
-        call ZoneEvent_RegisterEntranceTransition(ZONE_ID, gg_rct_BoomBrothersMineEnter, gg_rct_BoomBrothersMineIn, 215.00)
-        call ZoneEvent_RegisterExitTransition(ZONE_ID, gg_rct_BoomBrothersMineLeave, gg_rct_BoomBrothersMineOut, 295.00)
         call ZoneEvent_SetZoneCameraMode(ZONE_ID, CameraControl_CAMERA_SPECIAL_MODE_BOOMMINE)
         call ZoneEvent_SetFastPanOnEnter(ZONE_ID, true)
         call RegisterTrigger(gg_rct_BoomMineR1, 0, function OnWaveOneEnter)

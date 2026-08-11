@@ -4,7 +4,7 @@ library ZoneEvent initializer Init requires ZonesCore, Table, DNC, ExMusic, TasQ
     ZoneEvent
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Purpose:
         Central handler for per-zone behaviour and transitions. Responsibilities
@@ -74,8 +74,9 @@ library ZoneEvent initializer Init requires ZonesCore, Table, DNC, ExMusic, TasQ
 
         - ZoneEvent_RegisterEntranceTransition(zoneId, sourceRect, destinationRect, facing)
         - ZoneEvent_RegisterExitTransition(zoneId, sourceRect, destinationRect, facing)
-            Register dungeon/interior portal geometry beside the owning zone
-            sublibrary while ZoneEvent retains movement and zone-state logic.
+            Register exceptional runtime portal geometry. Normal dungeon and
+            interior portals belong to ZoneData in ZonesCore and are loaded
+            automatically by ZoneEvent.
 
         - ZoneEvent_SetZoneCameraMode(zoneId, cameraMode)
         - ZoneEvent_SetFastPanOnEnter(zoneId, enabled)
@@ -104,7 +105,7 @@ library ZoneEvent initializer Init requires ZonesCore, Table, DNC, ExMusic, TasQ
 
     Adding new zones:
         1. Add a zone block in ZonesCore zone configuration.
-        2. Ensure enter/leave regions are assigned in initialization.
+        2. Assign detection regions and any dungeon enter/exit transitions.
         3. Configure fog, music, DNC name and ambient sounds in ZonesCore.
 
     Notes:
@@ -1323,6 +1324,20 @@ private function RegisterZoneRegions takes nothing returns nothing
             call TriggerAddCondition(t, Condition(function OnUnitEnterRegion))
             set zoneTriggers[zoneId] = t
             call triggerToZoneId.store(t, zoneId)
+        endif
+        if z != 0 then
+            set i = 0
+            loop
+                exitwhen i >= z.dungeonEnterRegionCount
+                call RegisterTransition(zoneId, z.dungeonEnterSourceRegions[i], z.dungeonEnterDestinationRegions[i], z.dungeonEnterFacings[i], false)
+                set i = i + 1
+            endloop
+            set i = 0
+            loop
+                exitwhen i >= z.dungeonExitRegionCount
+                call RegisterTransition(zoneId, z.dungeonExitSourceRegions[i], z.dungeonExitDestinationRegions[i], z.dungeonExitFacings[i], true)
+                set i = i + 1
+            endloop
         endif
         set zoneId = zoneId + 1
     endloop

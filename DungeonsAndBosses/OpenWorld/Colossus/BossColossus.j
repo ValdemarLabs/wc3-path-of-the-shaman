@@ -9,12 +9,12 @@
     Credits:
     - Legacy Colossus GUI exports.
     How to install:
-    Import after Boss, EmberpeakDragonfire, DamageEngine, CreepRespawn, and the
+    Import after Boss, EmberpeakDragons, DamageEngine, CreepRespawn, and the
     map rect and sound globals. Disable the legacy Colossus GUI triggers.
     API:
     - BossColossus_GetId()
 */
-library BossColossus initializer Init requires Boss, EmberpeakDragonfire, DamageEngine, CreepRespawn
+library BossColossus initializer Init requires Boss, EmberpeakDragons, DamageEngine, CreepRespawn
     globals
         private constant integer UNIT_GOLEM = 'n64E'
         private constant integer ABILITY_SLAM = 'A6D2'
@@ -279,7 +279,7 @@ library BossColossus initializer Init requires Boss, EmberpeakDragonfire, Damage
         call SetUnitTimeScale(boss, 1.00)
         call SetUnitAnimation(boss, "attack spell")
         call QueueUnitAnimation(boss, "stand")
-        call EmberpeakDragonfire_SetMode(EMBERPEAK_DRAGONFIRE_PLAYERS)
+        call EmberpeakDragons_SetArenaMode(EMBERPEAK_DRAGONS_ARENA_PLAYERS)
         call TimerStart(PhaseTimer, 1.00, true, function CheckPhase)
         call TimerStart(CleaveTimer, 1.00, true, function UpdateCleave)
         call TimerStart(SlamTimer, 40.00, false, function CastSlam)
@@ -302,7 +302,7 @@ library BossColossus initializer Init requires Boss, EmberpeakDragonfire, Damage
             set SlamPulseCount = 0
             set GolemCooldown = 50
         elseif Boss_EventBossId == BossId and Boss_EventPhase == 3 then
-            call EmberpeakDragonfire_SetMode(EMBERPEAK_DRAGONFIRE_COLOSSUS)
+            call EmberpeakDragons_SetArenaMode(EMBERPEAK_DRAGONS_ARENA_COLOSSUS)
         endif
     endfunction
     private function OnEnd takes nothing returns nothing
@@ -321,7 +321,7 @@ library BossColossus initializer Init requires Boss, EmberpeakDragonfire, Damage
         set BoulderActive = false
         set GolemActive = false
         set GolemBirthPending = false
-        call EmberpeakDragonfire_SetMode(EMBERPEAK_DRAGONFIRE_IDLE)
+        call EmberpeakDragons_SetArenaMode(EMBERPEAK_DRAGONS_ARENA_IDLE)
         if boss != null then
             call UnitRemoveAbility(boss, ABILITY_SLAM)
             call UnitRemoveAbility(boss, ABILITY_BOULDER)
@@ -339,8 +339,8 @@ library BossColossus initializer Init requires Boss, EmberpeakDragonfire, Damage
             set udg_BossColossus = boss
             call SetUnitAnimation(boss, "sleep")
             call PauseUnit(boss, true)
-            call EmberpeakDragonfire_SetBoss(boss)
-            call EmberpeakDragonfire_SetMode(EMBERPEAK_DRAGONFIRE_IDLE)
+            call EmberpeakDragons_SetColossus(boss)
+            call EmberpeakDragons_SetArenaMode(EMBERPEAK_DRAGONS_ARENA_IDLE)
         endif
         set boss = null
     endfunction
@@ -369,8 +369,8 @@ library BossColossus initializer Init requires Boss, EmberpeakDragonfire, Damage
             call Boss_SetEventCallback(BossId, BOSS_EVENT_RESET, function OnEnd)
             call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnDeath)
             call RegisterDamageEngine(function OnDamage, "Modifier", 1.00)
-            call EmberpeakDragonfire_SetBoss(whichUnit)
-            call EmberpeakDragonfire_SetMode(EMBERPEAK_DRAGONFIRE_IDLE)
+            call EmberpeakDragons_SetColossus(whichUnit)
+            call EmberpeakDragons_SetArenaMode(EMBERPEAK_DRAGONS_ARENA_IDLE)
         endif
         call DestroyTimer(initTimer)
         set initTimer = null

@@ -1,18 +1,30 @@
-library ZonesCore initializer Init
-//===========================================================================
-/*
-    ZonesCore Library
-    
-    Author: [Valdemar]
-    Version: 1.0
+/**
+    ZonesCore
+
+    Author: Valdemar
+    Version: 1.1.0
 
     Description:
-    This library provides core functionality for managing zones within the game.
-    It defines shared constants, data structures, and initialization routines
-    that can be utilized by other libraries such as Zones, WeatherSystem.
-    
-*/
-//===========================================================================
+    Defines authoritative zone metadata, lookup state, weather configuration,
+    detection regions, and dungeon/interior portal geometry.
+
+    Credits:
+    - Path of the Shaman zone definitions
+
+    How to install:
+    Import before ZoneEvent and all zone-dependent gameplay systems. Configure
+    zone detection and portal rects in each ZoneData definition.
+
+    API:
+    - ZoneData.addEnterRegion(rect)
+    - ZoneData.addLeaveRegion(rect)
+    - ZoneData.addDungeonEnterRegion(sourceRect, destinationRect, facing)
+    - ZoneData.addDungeonExitRegion(sourceRect, destinationRect, facing)
+    - ZonesCore_GetZoneData(zoneId) returns ZoneData
+    - ZonesCore_GetZoneIdAtPoint(x, y) returns integer
+
+**/
+library ZonesCore initializer Init
 
 //===========================================================================
 // GLOBALS
@@ -128,6 +140,16 @@ struct ZoneData
     rect array leaveRegions[100] // Up to 100 leave regions (rect) per zone
     integer leaveRegionCount
 
+    // Dungeon/interior portal metadata. ZoneEvent executes these transitions.
+    rect array dungeonEnterSourceRegions[10]
+    rect array dungeonEnterDestinationRegions[10]
+    real array dungeonEnterFacings[10]
+    integer dungeonEnterRegionCount
+    rect array dungeonExitSourceRegions[10]
+    rect array dungeonExitDestinationRegions[10]
+    real array dungeonExitFacings[10]
+    integer dungeonExitRegionCount
+
     // Add an enter region and increment count automatically
     method addEnterRegion takes rect r returns nothing
         if this.enterRegionCount < 100 then
@@ -141,6 +163,24 @@ struct ZoneData
         if this.leaveRegionCount < 100 then
             set this.leaveRegions[this.leaveRegionCount] = r
             set this.leaveRegionCount = this.leaveRegionCount + 1
+        endif
+    endmethod
+
+    method addDungeonEnterRegion takes rect sourceRect, rect destinationRect, real facing returns nothing
+        if sourceRect != null and destinationRect != null and this.dungeonEnterRegionCount < 10 then
+            set this.dungeonEnterSourceRegions[this.dungeonEnterRegionCount] = sourceRect
+            set this.dungeonEnterDestinationRegions[this.dungeonEnterRegionCount] = destinationRect
+            set this.dungeonEnterFacings[this.dungeonEnterRegionCount] = facing
+            set this.dungeonEnterRegionCount = this.dungeonEnterRegionCount + 1
+        endif
+    endmethod
+
+    method addDungeonExitRegion takes rect sourceRect, rect destinationRect, real facing returns nothing
+        if sourceRect != null and destinationRect != null and this.dungeonExitRegionCount < 10 then
+            set this.dungeonExitSourceRegions[this.dungeonExitRegionCount] = sourceRect
+            set this.dungeonExitDestinationRegions[this.dungeonExitRegionCount] = destinationRect
+            set this.dungeonExitFacings[this.dungeonExitRegionCount] = facing
+            set this.dungeonExitRegionCount = this.dungeonExitRegionCount + 1
         endif
     endmethod
 
@@ -393,6 +433,8 @@ struct ZoneData
         set this.isDungeon = false              // Default false
         set this.enterRegionCount = 0
         set this.leaveRegionCount = 0
+        set this.dungeonEnterRegionCount = 0
+        set this.dungeonExitRegionCount = 0
         set this.startRegion = null
         set this.moveRegion = null
         set this.exitRegion = null
@@ -1631,6 +1673,8 @@ private function ConfigureZones takes nothing returns nothing
     set z.notableCharacters = "Impaler, Deathlord Fel'Dok"
     set z.iconPath = "zones\\zone06_thornwoods.blp"   
     call z.addEnterRegion(gg_rct_Dungeon01Area)
+    call z.addDungeonEnterRegion(gg_rct_EnteringDungeon01, gg_rct_Dungeon01StartingPoint, 215.00)
+    call z.addDungeonExitRegion(gg_rct_LeavingDungeon01, gg_rct_LeavingDungeon01Point, 295.00)
     call RegisterZone(z)
 
     // Dungeon 02: Crypt
@@ -1663,6 +1707,10 @@ private function ConfigureZones takes nothing returns nothing
     call z.addEnterRegion(gg_rct_DungeonCrypt01A)
     call z.addEnterRegion(gg_rct_DungeonCrypt01B)
     call z.addEnterRegion(gg_rct_DungeonCrypt01C)
+    call z.addDungeonEnterRegion(gg_rct_DungeonCrypt01A, gg_rct_Dungeon02StartingPoint, 90.00)
+    call z.addDungeonEnterRegion(gg_rct_DungeonCrypt01B, gg_rct_Dungeon02StartingPoint, 90.00)
+    call z.addDungeonEnterRegion(gg_rct_DungeonCrypt01C, gg_rct_Dungeon02StartingPoint, 90.00)
+    call z.addDungeonExitRegion(gg_rct_LeavingDungeon2, gg_rct_DungeonCryptOut, 290.00)
     call RegisterZone(z)
 
     // Dungeon 03: Wyrmhold Sanctum
@@ -1722,6 +1770,8 @@ private function ConfigureZones takes nothing returns nothing
     set z.notableCharacters = "Mad Blix"
     set z.iconPath = "zones\\zone_boommine.blp"   
     call z.addEnterRegion(gg_rct_BoomBrothersMine)
+    call z.addDungeonEnterRegion(gg_rct_BoomBrothersMineEnter, gg_rct_BoomBrothersMineIn, 215.00)
+    call z.addDungeonExitRegion(gg_rct_BoomBrothersMineLeave, gg_rct_BoomBrothersMineOut, 295.00)
     call RegisterZone(z)
 
     // Dungeon 05: Firelands
