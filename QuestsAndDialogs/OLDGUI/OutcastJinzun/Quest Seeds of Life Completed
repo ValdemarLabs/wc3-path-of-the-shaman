@@ -1,0 +1,14 @@
+Quest Seeds of Life Completed
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Seeds of Life Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestSeedsOfLife as Discovered
+        Quest - Mark QuestSeedsOfLifeTree1 as Completed
+        Quest - Mark QuestSeedsOfLifeTree2 as Completed
+        Quest - Mark QuestSeedsOfLifeTree3 as Completed
+        Quest - Mark QuestSeedsOfLife as Completed
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Completed message: |cffffcc00QUEST COM...

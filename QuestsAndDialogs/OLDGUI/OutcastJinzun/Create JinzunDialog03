@@ -1,0 +1,43 @@
+Create JinzunDialog03
+    Events
+    Conditions
+    Actions
+        Cinematic - Enable user control for (All players).
+        Dialog - Clear JinzunDialog03
+        Dialog - Change the title of JinzunDialog03 to Available Quests
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestUnknownEntity is discovered) Equal to False
+                (QuestUnknownEntity is completed) Equal to False
+            Then - Actions
+                Dialog - Create a dialog button for JinzunDialog03 labelled Unknown Entity (Acc...
+                Set VariableSet JinzunDialog03Unknown = (Last created dialog Button)
+                Dialog - Show JinzunDialog03 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestSeedsOfLife is discovered) Equal to False
+                (QuestSeedsOfLife is completed) Equal to False
+            Then - Actions
+                Dialog - Create a dialog button for JinzunDialog03 labelled Seeds of Life (Opti...
+                Set VariableSet JinzunDialog03Seeds = (Last created dialog Button)
+                Dialog - Show JinzunDialog03 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestUnknownEntity is discovered) Equal to False
+                (QuestUnknownEntity is completed) Equal to False
+            Then - Actions
+                Dialog - Create a dialog button for JinzunDialog03 labelled - Decline
+                Set VariableSet JinzunDialog03Decline = (Last created dialog Button)
+                Dialog - Show JinzunDialog03 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestUnknownEntity is discovered) Equal to True
+                (QuestUnknownEntity is completed) Equal to False
+            Then - Actions
+                Dialog - Create a dialog button for JinzunDialog03 labelled - Farewell
+                Set VariableSet JinzunDialog03Farewell = (Last created dialog Button)
+                Dialog - Show JinzunDialog03 for Player 1 (Red)
+            Else - Actions

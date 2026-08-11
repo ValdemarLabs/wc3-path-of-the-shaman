@@ -1,0 +1,80 @@
+Plague Upon Trees 01 Ward Placed
+    Events
+        Unit - A unit owned by Player 1 (Red) Loses an item
+    Conditions
+        And - All (Conditions) are true
+            Conditions
+                (PlagueTree1Rune <gen> contains (Hero manipulating item)) Equal to True
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Item-type of (Item being manipulated)) Equal to Jin'Zun Healing Ward
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Store item for removal --------
+        Set VariableSet ItemWard[1] = (Item being manipulated)
+        -------- Remote materials --------
+        Item - Set charges remaining in ItemWard[1] to ((Charges remaining in ItemWard[1]) - 1)
+        Wait 0.10 seconds
+        Hero - Give ItemWard[1] to (Hero manipulating item)
+        -------- Play "Cauldron" noise at the location of the specific cauldron where item is "created" --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Charges remaining in (Item carried by Nazgrek in slot 1)) Equal to 0
+                (Item-class of (Item carried by Nazgrek in slot 1)) Equal to Charged
+            Then - Actions
+                Item - Remove (Item carried by Nazgrek in slot 1)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Charges remaining in (Item carried by Nazgrek in slot 2)) Equal to 0
+                (Item-class of (Item carried by Nazgrek in slot 2)) Equal to Charged
+            Then - Actions
+                Item - Remove (Item carried by Nazgrek in slot 2)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Charges remaining in (Item carried by Nazgrek in slot 3)) Equal to 0
+                (Item-class of (Item carried by Nazgrek in slot 3)) Equal to Charged
+            Then - Actions
+                Item - Remove (Item carried by Nazgrek in slot 3)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Charges remaining in (Item carried by Nazgrek in slot 4)) Equal to 0
+                (Item-class of (Item carried by Nazgrek in slot 4)) Equal to Charged
+            Then - Actions
+                Item - Remove (Item carried by Nazgrek in slot 4)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Charges remaining in (Item carried by Nazgrek in slot 5)) Equal to 0
+                (Item-class of (Item carried by Nazgrek in slot 5)) Equal to Charged
+            Then - Actions
+                Item - Remove (Item carried by Nazgrek in slot 5)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Charges remaining in (Item carried by Nazgrek in slot 6)) Equal to 0
+                (Item-class of (Item carried by Nazgrek in slot 6)) Equal to Charged
+            Then - Actions
+                Item - Remove (Item carried by Nazgrek in slot 6)
+            Else - Actions
+        -------- Create Healing ward --------
+        Set VariableSet VarPoint = (Center of PlagueTree1Rune <gen>)
+        Unit - Create 1 Jin'Zun Healing Ward for Neutral Passive at VarPoint facing Default building facing degrees
+        Sound - Play StasisTotem <gen> at 100.00% volume, located at VarPoint with Z offset 0.00
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet PlagueUponTreesWards = (PlagueUponTreesWards + 1)
+        Wait 1.00 seconds
+        Destructible - Kill PlagueTree1Ritual
+        Destructible - Kill TreeRune[1]
+        Wait 1.00 seconds
+        Destructible - Remove PlagueTree1Ritual
+        Wait 1.00 seconds
+        Destructible - Remove TreeRune[1]
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Plauge Upon Trees Create <gen> (checking conditions)
+        -------- Display a quest message. --------
+        Quest - Mark QuestPlagueUponTree1 as Completed
+        Quest - Display to (All players) the Quest Requirement message: |cFFFFCC00Plague Up...
+        Sound - Play QuestActivateWhat1 <gen>

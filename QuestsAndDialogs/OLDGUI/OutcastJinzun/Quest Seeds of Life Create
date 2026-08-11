@@ -1,0 +1,15 @@
+Quest Seeds of Life Create
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create the quest objects --------
+        Quest - Create a Required, undiscovered quest titled Seeds of Life with the description Use the Seeds of Li..., using icon path ReplaceableTextures\PassiveButtons\PASBTNThorns.blp
+        Set VariableSet QuestSeedsOfLife = (Last created quest)
+        Quest - Create a quest requirement for QuestSeedsOfLife with the description Use Seeds of Life n...
+        Set VariableSet QuestSeedsOfLifeTree1 = (Last created quest requirement)
+        Quest - Create a quest requirement for QuestSeedsOfLife with the description Use Seeds of Life n...
+        Set VariableSet QuestSeedsOfLifeTree2 = (Last created quest requirement)
+        Quest - Create a quest requirement for QuestSeedsOfLife with the description Use Seeds of Life n...
+        Set VariableSet QuestSeedsOfLifeTree3 = (Last created quest requirement)

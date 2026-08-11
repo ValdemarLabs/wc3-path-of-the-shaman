@@ -1,0 +1,11 @@
+Quest Lurking In The Shadows Create
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create the quest objects --------
+        Quest - Create a Required, undiscovered quest titled Lurking In The Shad... with the description Jin'Zun wants to ha..., using icon path ReplaceableTextures\CommandButtons\BTNSpiderGreen.blp
+        Set VariableSet QuestSargoth = (Last created quest)
+        Quest - Create a quest requirement for QuestSargoth with the description Kill mother spider ...
+        Set VariableSet QuestSargothIchor = (Last created quest requirement)

@@ -1,0 +1,20 @@
+Quest Seeds of Life Tree03
+    Events
+        Unit - A unit owned by Player 1 (Red) Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to Seeds of Life (quest)
+        ((Triggering unit) is in (Units in PlagueTree3 <gen>).) Equal to True
+    Actions
+        Sound - Play SeedsOfLife <gen> at 100.00% volume, attached to (Triggering unit)
+        Animation - Play (Triggering unit)'s stand victory animation
+        Animation - Reset (Triggering unit)'s animation
+        Wait 0.50 seconds
+        Cinematic - Fade out over 1.00 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        Wait 1.00 seconds
+        Set VariableSet VarPoint = (Position of MightyTree[3])
+        Destructible - Remove MightyTree[3]
+        Destructible - Create a Mighty Tree 1 Alive at VarPoint facing 266.00 with scale 4.20 and variation 0
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Environment - Remove Blight for Neutral Passive across DeadTree03Blight <gen>
+        Cinematic - Fade in over 1.00 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        -------- Update Quest --------

@@ -1,0 +1,8 @@
+Quest Seeds of Life
+    Events
+    Conditions
+    Actions
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Seeds of Life Discover <gen> (checking conditions)
+        Trigger - Turn on Quest Plague Upon Trees Ping <gen>
+        Trigger - Remove (This trigger) from the trigger queue

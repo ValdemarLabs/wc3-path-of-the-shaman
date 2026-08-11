@@ -1,0 +1,11 @@
+Quest Resurgence of Dead Part 1 Create
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create the quest objects --------
+        Quest - Create a Required, undiscovered quest titled Resurgence of Dead I with the description Jin'Zun has heard r..., using icon path ReplaceableTextures\CommandButtons\BTNDalaranMutant.blp
+        Set VariableSet QuestResurgenceDead1 = (Last created quest)
+        Quest - Create a quest requirement for QuestResurgenceDead1 with the description Investigate the Cry...
+        Set VariableSet QuestResurgenceDead1Req = (Last created quest requirement)

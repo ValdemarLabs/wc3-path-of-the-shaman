@@ -1,0 +1,12 @@
+Quest Da Fishing Pole Missing Completed
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Da Fishing Pole Missing Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestFirstQuests as Discovered
+        Quest - Mark QuestFishingPoleReq1 as Completed
+        Quest - Mark QuestFishingPole as Completed
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Completed message: |cffffcc00QUEST COM...

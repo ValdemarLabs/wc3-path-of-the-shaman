@@ -1,0 +1,110 @@
+Button Pressed in JinzunDialog01
+    Events
+        Dialog - A dialog button is clicked for JinzunDialog01
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to JinzunDialog01Plague
+            Then - Actions
+                Cinematic - Disable user control for (All players).
+                Animation - Queue OutcastJinzun's spell animation
+                Wait 1.00 seconds
+                Set VariableSet VarPoint = ((Position of Nazgrek) offset by (50.00, 50.00))
+                Item - Create Jin'Zun Healing Ward at VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Animation - Queue OutcastJinzun's spell animation
+                Wait 1.00 seconds
+                Set VariableSet VarPoint = ((Position of Nazgrek) offset by (-50.00, -50.00))
+                Item - Create Jin'Zun Healing Ward at VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Animation - Queue OutcastJinzun's spell animation
+                Animation - Queue OutcastJinzun's stand animation
+                Wait 1.00 seconds
+                Set VariableSet VarPoint = ((Position of Nazgrek) offset by (100.00, 100.00))
+                Item - Create Jin'Zun Healing Ward at VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Wait 1.00 seconds
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0016 <gen> and display Take dese wards, yo....  Modify duration: Set to 12.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0017 <gen> and display Remember, the spiri....  Modify duration: Set to 4.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply JinzunCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- == PATROL == --------
+                Trigger - Run Outcast Jinzun Movement Continue <gen> (checking conditions)
+                Set VariableSet JinzunTalking = False
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Trigger - Run Quest Plague Upon Trees <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to JinzunDialog01Decline
+            Then - Actions
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0029 <gen> and display I really don't have....  Modify duration: Set to 3.50 seconds and Wait
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0018 <gen> and display Ya be refusin' to l....  Modify duration: Set to 6.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply JinzunCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ================================ --------
+                -------- DIALOG CAMERA == RESET --------
+                -------- USAGE: call DialogCameraReset(p, duration) to restore original camera over 'duration' seconds --------
+                Custom script:   call DialogCameraReset(Player(0), 2.0)
+                -------- ================================ --------
+                -------- == PATROL == --------
+                Trigger - Run Outcast Jinzun Movement Continue <gen> (checking conditions)
+                Set VariableSet JinzunTalking = False
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to JinzunDialog01Wards
+            Then - Actions
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0031 <gen> and display I think... I think ....  Modify duration: Set to 4.50 seconds and Wait
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0020 <gen> and display Time be tickin', Na....  Modify duration: Set to 10.00 seconds and Wait
+                Wait 1.00 seconds
+                Animation - Queue OutcastJinzun's spell animation
+                Animation - Queue OutcastJinzun's stand animation
+                Wait 0.50 seconds
+                Set VariableSet VarPoint = ((Position of Nazgrek) offset by (50.00, 50.00))
+                Item - Create Jin'Zun Healing Ward at VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Set VariableSet VarPoint = ((Position of Nazgrek) offset by (-50.00, -50.00))
+                Item - Create Jin'Zun Healing Ward at VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Set VariableSet VarPoint = ((Position of Nazgrek) offset by (100.00, 100.00))
+                Item - Create Jin'Zun Healing Ward at VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                -------- DEFAULT CAMERA --------
+                Camera - Apply JinzunCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- == PATROL == --------
+                Trigger - Run Outcast Jinzun Movement Continue <gen> (checking conditions)
+                Set VariableSet JinzunTalking = False
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to JinzunDialog01Farewell
+            Then - Actions
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0002 <gen> and display Farewell for now, u....  Modify duration: Set to 4.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0003 <gen> and display Farewell shaman. I ....  Modify duration: Set to 3.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply JinzunCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ================================ --------
+                -------- DIALOG CAMERA == RESET --------
+                -------- USAGE: call DialogCameraReset(p, duration) to restore original camera over 'duration' seconds --------
+                Custom script:   call DialogCameraReset(Player(0), 2.0)
+                -------- == PATROL == --------
+                Trigger - Run Outcast Jinzun Movement Continue <gen> (checking conditions)
+                Set VariableSet JinzunTalking = False
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+            Else - Actions

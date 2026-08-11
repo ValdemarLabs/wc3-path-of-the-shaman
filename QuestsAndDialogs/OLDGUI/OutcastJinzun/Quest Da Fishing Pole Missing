@@ -1,0 +1,7 @@
+Quest Da Fishing Pole Missing
+    Events
+    Conditions
+    Actions
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Da Fishing Pole Missing Discover <gen> (checking conditions)
+        Trigger - Remove (This trigger) from the trigger queue

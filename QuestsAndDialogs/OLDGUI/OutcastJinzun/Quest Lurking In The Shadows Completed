@@ -1,0 +1,12 @@
+Quest Lurking In The Shadows Completed
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Lurking In The Shadows Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestSargoth as Discovered
+        Quest - Mark QuestSargothIchor as Completed
+        Quest - Mark QuestSargoth as Completed
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Completed message: |cffffcc00QUEST COM...

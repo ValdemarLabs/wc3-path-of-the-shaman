@@ -1,0 +1,71 @@
+Outcast Jinzun Movement Start
+    Events
+        Time - Elapsed game time is 5.00 seconds
+    Conditions
+    Actions
+        -------- ==================================== --------
+        -------- START PATROL --------
+        -------- -------------------------- --------
+        Set VariableSet TempUnit = OutcastJinzun
+        Set VariableSet PatrolSystem_Point[0] = (Center of JinzunWander001 <gen>)
+        Set VariableSet PatrolSystem_Wait[0] = 15.00
+        Set VariableSet PatrolSystem_Point[1] = (Center of JinzunWander004 <gen>)
+        Set VariableSet PatrolSystem_Wait[1] = 5.00
+        Set VariableSet PatrolSystem_Point[2] = (Center of JinzunWander001 <gen>)
+        Set VariableSet PatrolSystem_Wait[2] = 10.00
+        Set VariableSet PatrolSystem_Point[3] = (Center of JinzunWander002 <gen>)
+        Set VariableSet PatrolSystem_Wait[3] = 5.00
+        Set VariableSet PatrolSystem_Point[4] = (Center of JinzunWander005 <gen>)
+        Set VariableSet PatrolSystem_Wait[4] = 10.00
+        Set VariableSet PatrolSystem_Point[5] = (Center of JinzunWander001 <gen>)
+        Set VariableSet PatrolSystem_Wait[5] = 10.00
+        Set VariableSet PatrolSystem_Point[6] = (Center of JinzunWander007 <gen>)
+        Set VariableSet PatrolSystem_Wait[6] = 15.00
+        Set VariableSet PatrolSystem_Point[7] = (Center of JinzunWander006 <gen>)
+        Set VariableSet PatrolSystem_Wait[7] = 15.00
+        Set VariableSet PatrolSystem_Point[8] = (Center of JinzunWander003 <gen>)
+        Set VariableSet PatrolSystem_Wait[8] = 10.00
+        Set VariableSet PatrolSystem_Point[9] = (Center of JinzunWander008 <gen>)
+        Set VariableSet PatrolSystem_Wait[9] = 15.00
+        Set VariableSet PatrolSystem_Point[10] = (Center of JinzunWander009 <gen>)
+        Set VariableSet PatrolSystem_Wait[10] = 15.00
+        Set VariableSet PatrolSystem_Point[11] = (Center of JinzunWander002 <gen>)
+        Set VariableSet PatrolSystem_Wait[11] = 10.00
+        Set VariableSet PatrolSystem_Point[12] = (Center of JinzunWander010 <gen>)
+        Set VariableSet PatrolSystem_Wait[12] = 15.00
+        Set VariableSet PatrolSystem_Point[13] = (Center of JinzunWander001 <gen>)
+        Set VariableSet PatrolSystem_Wait[13] = 10.00
+        Set VariableSet PatrolSystem_Point[14] = (Center of JinzunWander011 <gen>)
+        Set VariableSet PatrolSystem_Wait[14] = 15.00
+        Set VariableSet PatrolSystem_Point[15] = (Center of JinzunWander001 <gen>)
+        Set VariableSet PatrolSystem_Wait[15] = 10.00
+        Set VariableSet PatrolSystem_Point[16] = (Center of JinzunWander012 <gen>)
+        Set VariableSet PatrolSystem_Wait[16] = 15.00
+        Set VariableSet PatrolSystem_Point[17] = (Center of JinzunWander001 <gen>)
+        Set VariableSet PatrolSystem_Wait[17] = 10.00
+        Set VariableSet PatrolSystem_Point[18] = (Center of JinzunWander013 <gen>)
+        Set VariableSet PatrolSystem_Wait[18] = 10.00
+        -------- -------------------------- --------
+        Custom script:   call PatrolSystem_Start(udg_TempUnit, 19, 10.00, 1, true, "move", 150.00)
+        -------- Remove leaks --------
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[0])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[1])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[2])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[3])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[4])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[5])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[6])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[7])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[8])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[9])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[10])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[11])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[12])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[13])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[14])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[15])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[16])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[17])
+        Custom script:   call RemoveLocation(udg_PatrolSystem_Point[18])
+        -------- -------------------------- --------
+        -------- ==================================== --------

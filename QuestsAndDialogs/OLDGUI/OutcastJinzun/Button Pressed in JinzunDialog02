@@ -1,0 +1,57 @@
+Button Pressed in JinzunDialog02
+    Events
+        Dialog - A dialog button is clicked for JinzunDialog02
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to JinzunDialog02Sargoth
+            Then - Actions
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0051 <gen> and display I will venture out ....  Modify duration: Set to 3.00 seconds and Wait
+                Cinematic - Enable user control for (All players).
+                -------- ==== Return gaming mode START ==== --------
+                Camera - Apply JinzunCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- == PATROL == --------
+                Trigger - Run Outcast Jinzun Movement Continue <gen> (checking conditions)
+                Set VariableSet JinzunTalking = False
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Trigger - Run Quest Lurking In The Shadows <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to JinzunDialog02Decline
+            Then - Actions
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0052 <gen> and display This sounds like ri....  Modify duration: Set to 9.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0051 <gen> and display Hmmm... so ya choos....  Modify duration: Set to 9.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply JinzunCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- == PATROL == --------
+                Trigger - Run Outcast Jinzun Movement Continue <gen> (checking conditions)
+                Set VariableSet JinzunTalking = False
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to JinzunDialog02Farewell
+            Then - Actions
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0002 <gen> and display Farewell for now, u....  Modify duration: Set to 4.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0003 <gen> and display Farewell shaman. I ....  Modify duration: Set to 3.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply JinzunCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- == PATROL == --------
+                Trigger - Run Outcast Jinzun Movement Continue <gen> (checking conditions)
+                Set VariableSet JinzunTalking = False
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Skip remaining actions
+            Else - Actions

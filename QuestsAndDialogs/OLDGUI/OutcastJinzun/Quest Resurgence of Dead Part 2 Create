@@ -1,0 +1,11 @@
+Quest Resurgence of Dead Part 2 Create
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create the quest objects --------
+        Quest - Create a Required, undiscovered quest titled Resurgence of Dead ... with the description Laid the undead of ..., using icon path ReplaceableTextures\CommandButtons\BTNAnimateDead.blp
+        Set VariableSet QuestResurgenceDead2 = (Last created quest)
+        Quest - Create a quest requirement for QuestResurgenceDead2 with the description Laid the undead of ...
+        Set VariableSet QuestResurgenceDead2Req1 = (Last created quest requirement)

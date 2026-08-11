@@ -1,0 +1,10 @@
+Outcast Jinzun Movement Continue
+    Events
+    Conditions
+    Actions
+        -------- ==================================== --------
+        -------- PAUSE PATROL --------
+        -------- Continue patrol for the NPC --------
+        Set VariableSet TempUnit = OutcastJinzun
+        Custom script:   call PatrolSystem_Continue(udg_TempUnit)
+        -------- ==================================== --------

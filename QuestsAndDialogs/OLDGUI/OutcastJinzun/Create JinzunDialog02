@@ -1,0 +1,34 @@
+Create JinzunDialog02
+    Events
+    Conditions
+    Actions
+        Cinematic - Enable user control for (All players).
+        Dialog - Clear JinzunDialog02
+        Dialog - Change the title of JinzunDialog02 to Available Quests
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestSargoth is discovered) Equal to False
+                (QuestSargoth is completed) Equal to False
+            Then - Actions
+                Dialog - Create a dialog button for JinzunDialog02 labelled Lurking In The Shad...
+                Set VariableSet JinzunDialog02Sargoth = (Last created dialog Button)
+                Dialog - Show JinzunDialog02 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestSargoth is discovered) Equal to False
+                (QuestSargoth is completed) Equal to False
+            Then - Actions
+                Dialog - Create a dialog button for JinzunDialog02 labelled - Decline
+                Set VariableSet JinzunDialog02Decline = (Last created dialog Button)
+                Dialog - Show JinzunDialog02 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestSargoth is discovered) Equal to True
+                (QuestSargoth is completed) Equal to False
+            Then - Actions
+                Dialog - Create a dialog button for JinzunDialog02 labelled - Farewell
+                Set VariableSet JinzunDialog02Farewell = (Last created dialog Button)
+                Dialog - Show JinzunDialog02 for Player 1 (Red)
+            Else - Actions

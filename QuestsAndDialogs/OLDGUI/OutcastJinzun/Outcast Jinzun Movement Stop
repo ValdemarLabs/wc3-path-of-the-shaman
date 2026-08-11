@@ -1,0 +1,7 @@
+Outcast Jinzun Movement Stop
+    Events
+    Conditions
+    Actions
+        -------- Fully stops the patrol system for the selected unit --------
+        Set VariableSet TempUnit = OutcastJinzun
+        Custom script:   call PatrolSystem_Stop(udg_TempUnit)

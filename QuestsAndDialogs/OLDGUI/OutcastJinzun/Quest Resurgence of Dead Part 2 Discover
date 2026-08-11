@@ -1,0 +1,15 @@
+Quest Resurgence of Dead Part 2 Discover
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Resurgence of Dead Part 2 Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestResurgenceDead2 as Discovered
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Discovered message: |cffffcc00QUEST|r  ...
+        Set VariableSet VarPoint = (Center of DungeonCrypt01B <gen>)
+        Visibility - Create an initially Enabled visibility modifier for Player 1 (Red) emitting Visibility from VarPoint to a radius of 600.00.
+        Visibility - Destroy (Last created visibility modifier)
+        Cinematic - Ping minimap for (All players) at VarPoint for 6.00 seconds
+        Custom script:   call RemoveLocation(udg_VarPoint)

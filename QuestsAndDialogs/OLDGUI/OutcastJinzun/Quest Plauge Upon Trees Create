@@ -1,0 +1,15 @@
+Quest Plauge Upon Trees Create
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create the quest objects --------
+        Quest - Create a Required, undiscovered quest titled Plague Upon Trees with the description There are three tre..., using icon path ReplaceableTextures\CommandButtons\BTNDarkSummoning.blp
+        Set VariableSet QuestPlagueUponTrees = (Last created quest)
+        Quest - Create a quest requirement for QuestPlagueUponTrees with the description Place the Healing W...
+        Set VariableSet QuestPlagueUponTree1 = (Last created quest requirement)
+        Quest - Create a quest requirement for QuestPlagueUponTrees with the description Place the Healing W...
+        Set VariableSet QuestPlagueUponTree2 = (Last created quest requirement)
+        Quest - Create a quest requirement for QuestPlagueUponTrees with the description Place the Healing W...
+        Set VariableSet QuestPlagueUponTree3 = (Last created quest requirement)

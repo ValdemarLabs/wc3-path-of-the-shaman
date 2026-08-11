@@ -1,0 +1,9 @@
+Quest Unknown Entity
+    Events
+    Conditions
+    Actions
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Unknown Entity Discover <gen> (checking conditions)
+        Trigger - Run BOSS Unknown Entity Init <gen> (checking conditions)
+        Trigger - Turn on Quest Unknown Entity Ping <gen>
+        Trigger - Remove (This trigger) from the trigger queue

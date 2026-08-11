@@ -1,0 +1,7 @@
+Quest Resurgence of Dead Part 2
+    Events
+    Conditions
+    Actions
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Resurgence of Dead Part 2 Discover <gen> (checking conditions)
+        Trigger - Remove (This trigger) from the trigger queue

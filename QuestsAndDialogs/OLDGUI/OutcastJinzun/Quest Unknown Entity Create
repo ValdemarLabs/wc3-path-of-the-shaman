@@ -1,0 +1,11 @@
+Quest Unknown Entity Create
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create the quest objects --------
+        Quest - Create a Required, undiscovered quest titled Unknown Entity with the description Jin'Zun was surpris..., using icon path ReplaceableTextures\CommandButtons\BTNTentacle.blp
+        Set VariableSet QuestUnknownEntity = (Last created quest)
+        Quest - Create a quest requirement for QuestUnknownEntity with the description Investigate the lak...
+        Set VariableSet QuestUnknownEntityInvestigate = (Last created quest requirement)

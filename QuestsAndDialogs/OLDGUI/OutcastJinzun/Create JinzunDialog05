@@ -1,0 +1,35 @@
+Create JinzunDialog05
+    Events
+    Conditions
+    Actions
+        Cinematic - Enable user control for (All players).
+        Dialog - Clear JinzunDialog05
+        Dialog - Change the title of JinzunDialog05 to Available Quests
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestResurgenceDead1 is discovered) Equal to False
+                (QuestResurgenceDead1 is completed) Equal to False
+            Then - Actions
+                Dialog - Create a dialog button for JinzunDialog05 labelled Resurgence of Dead ...
+                Set VariableSet JinzunDialog05Accept = (Last created dialog Button)
+                Dialog - Show JinzunDialog05 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestResurgenceDead1 is discovered) Equal to False
+                (QuestResurgenceDead1 is completed) Equal to False
+            Then - Actions
+                Dialog - Create a dialog button for JinzunDialog05 labelled - Decline
+                Set VariableSet JinzunDialog05Decline = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show JinzunDialog05 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestResurgenceDead1 is discovered) Equal to True
+                (QuestResurgenceDead1 is completed) Equal to False
+            Then - Actions
+                Dialog - Create a dialog button for JinzunDialog05 labelled - Farewell
+                Set VariableSet JinzunDialog05Farewell = (Last created dialog Button)
+                Dialog - Show JinzunDialog05 for Player 1 (Red)
+            Else - Actions

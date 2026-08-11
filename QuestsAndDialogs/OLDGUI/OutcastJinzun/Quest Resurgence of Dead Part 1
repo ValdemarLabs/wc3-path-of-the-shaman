@@ -1,0 +1,8 @@
+Quest Resurgence of Dead Part 1
+    Events
+    Conditions
+    Actions
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Resurgence of Dead Part 1 Discover <gen> (checking conditions)
+        Trigger - Turn on Quest Resurgence of Dead Part Ping <gen>
+        Trigger - Remove (This trigger) from the trigger queue

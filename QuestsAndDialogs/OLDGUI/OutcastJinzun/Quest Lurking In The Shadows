@@ -1,0 +1,7 @@
+Quest Lurking In The Shadows
+    Events
+    Conditions
+    Actions
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Lurking In The Shadows Discover <gen> (checking conditions)
+        Trigger - Remove (This trigger) from the trigger queue

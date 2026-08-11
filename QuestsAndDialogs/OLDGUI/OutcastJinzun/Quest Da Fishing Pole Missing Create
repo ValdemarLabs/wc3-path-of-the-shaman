@@ -1,0 +1,11 @@
+Quest Da Fishing Pole Missing Create
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create the quest objects --------
+        Quest - Create a Required, undiscovered quest titled Da Fishing Pole Mis... with the description Retrieve Jin'Zun's ..., using icon path ReplaceableTextures\CommandButtons\BTNInv_fishingpole_02.blp
+        Set VariableSet QuestFishingPole = (Last created quest)
+        Quest - Create a quest requirement for QuestFishingPole with the description Retrieve Jin'Zun's ...
+        Set VariableSet QuestFishingPoleReq1 = (Last created quest requirement)

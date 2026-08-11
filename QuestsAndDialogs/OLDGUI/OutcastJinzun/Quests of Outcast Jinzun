@@ -1,0 +1,386 @@
+Quests of Outcast Jinzun
+    Events
+        Player - Player 1 (Red) Selects a unit
+    Conditions
+        (Triggering unit) Equal to OutcastJinzun
+        (Distance between (Position of OutcastJinzun) and (Position of Nazgrek)) Less than or equal to 500.00
+        (Remaining time for DialogOverTimer) Equal to 0.00
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- ======== CINEMATIC STARTS ======== --------
+        Trigger - Run Cinematic ON <gen> (checking conditions)
+        -------- == PATROL == --------
+        Trigger - Run Outcast Jinzun Movement Pause <gen> (checking conditions)
+        Set VariableSet JinzunTalking = True
+        -------- Camera --------
+        Cinematic - Turn cinematic mode On for (All players)
+        Camera - Apply JinZunCamera <gen> for Player 1 (Red) over 0.00 seconds
+        Camera - Pan camera for Player 1 (Red) to (Position of OutcastJinzun) over 1.00 seconds
+        Camera - Set Player 1 (Red)'s camera Rotation to (Facing of Nazgrek) over 0.00 seconds
+        Wait 1.00 seconds
+        Unit - Make OutcastJinzun face Nazgrek over 0.75 seconds
+        Unit - Make Nazgrek face OutcastJinzun over 0.75 seconds
+        Wait 1.00 seconds
+        -------- ================================ --------
+        -------- DIALOG CAMERA == START --------
+        Set VariableSet DialogNPC = OutcastJinzun
+        -------- USAGE: call DialogCameraStart(p, u, dist, zOffset, angle, rotationOffset, farZ, fov, blockRadius, doBlockCheck) --------
+        -------- Typical values (no blocking): call DialogCameraStart(Player(0), udg_DialogNPC, 1000.0, 0.0, 0.0, 0.0, 10000.0, 70.0, 0.0, false) --------
+        -------- Typical values (blocking): call DialogCameraStart(Player(0), udg_DialogNPC, 1000.0, 0.0, 0.0, 0.0, 10000.0, 70.0, 0.0, true) --------
+        Custom script:   call DialogCameraStart(Player(0), udg_DialogNPC, 850.0, 20.0, 345.0, 180.0, 10000.0, 75.0, 0.0, true)
+        -------- ================================ --------
+        Wait 1.00 seconds
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestChainsOfSeduction is discovered) Equal to True
+                (QuestChainsOfSeduction is completed) Equal to False
+                QuestChainsOfSeductionDispelld Equal to False
+            Then - Actions
+                -------- JINZUN TO DISPEL THE SEDUCTION --------
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0194 <gen> and display Jin’Zun! Please....  Modify duration: Set to 8.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0100 <gen> and display By de spirits! What....  Modify duration: Set to 4.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0101 <gen> and display I'll dispel dis cur....  Modify duration: Set to 5.00 seconds and Wait
+                Wait 1.00 seconds
+                Animation - Queue OutcastJinzun's spell animation
+                Animation - Queue OutcastJinzun's stand animation
+                Wait 1.00 seconds
+                Set VariableSet VarPoint = (Position of Nazgrek)
+                Special Effect - Create a special effect at VarPoint using Abilities\Spells\Items\AIma\AImaTarget.mdl
+                Set VariableSet SuccubusDispel = (Last created special effect)
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Wait 1.00 seconds
+                Special Effect - Destroy SuccubusDispel
+                Wait 1.00 seconds
+                -------- Turn off succubus related triggers --------
+                Trigger - Turn off Quest Chains of Seduction Succubus Follow <gen>
+                Trigger - Turn off Quest Chains of Seduction Task 1 Complete <gen>
+                Trigger - Turn off Quest Chains of Seduction Task 1 Event <gen>
+                Trigger - Turn off Quest Chains of Seduction Task 2 Complete <gen>
+                Trigger - Turn off Quest Chains of Seduction Task 2 Event Patrol <gen>
+                Trigger - Turn off Quest Chains of Seduction Task 3 Complete <gen>
+                Trigger - Turn off Quest Chains of Seduction Task 4 Complete <gen>
+                Quest - Mark QuestChainsOfSeductionReq2 as Completed
+                Set VariableSet QuestChainsOfSeductionDispelld = True
+                Cinematic - Send transmission to (All players) from Succubus named Succubus: Play Demoness_0042 <gen> and display Foolish orc! I will....  Modify duration: Set to 5.00 seconds and Wait
+                Set VariableSet SuccubusSeduced = False
+                -------- DEFAULT CAMERA --------
+                Camera - Apply SuccubusCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Wait Campaign quest delay seconds
+                Trigger - Run Quest Chains of Seduction Update Dispelled <gen> (checking conditions)
+                Cinematic - Send transmission to (All players) from Succubus named Succubus: Play Demoness_0041 <gen> and display Now I'll make you s....  Modify duration: Set to 5.00 seconds and Wait
+                Player - Make Player 1 (Red) treat Player 13 (Maroon) as an Enemy
+                Player - Make Player 13 (Maroon) treat Player 1 (Red) as an Enemy
+                Countdown Timer - Start SatyrHostileTimer[1] as a One-shot timer that will expire in 300.00 seconds
+                Set VariableSet VarPoint = (Position of Nazgrek)
+                Unit - Order Succubus to Move To VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Unit - Make Succubus Vulnerable
+                Wait 0.50 seconds
+                Unit - Order Succubus to Attack Once Nazgrek
+                -------- == PATROL == --------
+                Trigger - Run Outcast Jinzun Movement Continue <gen> (checking conditions)
+                Set VariableSet JinzunTalking = False
+                Trigger - Turn on (This trigger)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestPlagueUponTrees is discovered) Equal to False
+                (QuestPlagueUponTrees is completed) Equal to False
+            Then - Actions
+                -------- INTRODUCTION / PLAGUE UPON TREES --------
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0019 <gen> and display Greetings witch doc....  Modify duration: Set to 8.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0001 <gen> and display Greetings, mon! Jin....  Modify duration: Set to 5.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0020 <gen> and display Glad to see that I'....  Modify duration: Set to 5.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0022 <gen> and display What is happening a....  Modify duration: Set to 3.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0012 <gen> and display Nazgrek. Dis be an ....  Modify duration: Set to 11.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0013 <gen> and display Trees I found... on....  Modify duration: Set to 5.50 seconds and Wait
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0024 <gen> and display These are some trou....  Modify duration: Set to 3.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0014 <gen> and display But ya see, I be a ....  Modify duration: Set to 14.50 seconds and Wait
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0025 <gen> and display ....  Modify duration: Set to 2.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0015 <gen> and display So, I devised a pla....  Modify duration: Set to 14.00 seconds and Wait
+                -------- Run "Create Dialog" --------
+                Trigger - Run Create JinzunDialog01 <gen> (checking conditions)
+                Trigger - Turn on (This trigger)
+                Skip remaining actions
+            Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (QuestPlagueUponTrees is discovered) Equal to True
+                        (QuestPlagueUponTrees is completed) Equal to False
+                        PlagueUponTreesWards Not equal to 3
+                    Then - Actions
+                        -------- PLAGUE UPON TREES - UNFINISHED --------
+                        Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0019 <gen> and display Ah, Nazgrek, ya be ....  Modify duration: Set to 6.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0030 <gen> and display It's a work in prog....  Modify duration: Set to 2.00 seconds and Wait
+                        Wait 2.25 seconds
+                        -------- Run "Create Dialog" --------
+                        Trigger - Run Create JinzunDialog01 <gen> (checking conditions)
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (QuestPlagueUponTrees is discovered) Equal to True
+                                (QuestPlagueUponTrees is completed) Equal to False
+                                PlagueUponTreesWards Equal to 3
+                            Then - Actions
+                                Trigger - Turn off (This trigger)
+                                -------- PLAGUE UPON TREES - COMPLETED --------
+                                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0021 <gen> and display Ah, Nazgrek! I be f....  Modify duration: Set to 12.00 seconds and Wait
+                                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0033 <gen> and display Yes, they are on to....  Modify duration: Set to 17.00 seconds and Wait
+                                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0022 <gen> and display What's dat ya say? ....  Modify duration: Set to 9.00 seconds and Wait
+                                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0023 <gen> and display We be needin' to in....  Modify duration: Set to 6.00 seconds and Wait
+                                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0034 <gen> and display Yeah... I should ha....  Modify duration: Set to 12.00 seconds and Wait
+                                Wait 2.25 seconds
+                                -------- Remove left over Ward -items --------
+                                -------- >>insert actions here<< --------
+                                -------- DEFAULT CAMERA --------
+                                Camera - Apply JinzunCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                                Special Effect - Destroy QuestGiverJinzun
+                                -------- REWARD --------
+                                Hero - Add 200 experience to Nazgrek, Show level-up graphics
+                                Hero - Create Restoration Potion and give it to Nazgrek
+                                Player - Add 500 to Player 1 (Red).Current gold
+                                -------- ======== CINEMATIC ENDS ======== --------
+                                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                                Wait Campaign quest delay seconds
+                                Trigger - Run Quest Plague Upon Trees Completed <gen> (checking conditions)
+                                Trigger - Turn off Quest Plague Upon Trees Ping <gen>
+                                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0002 <gen> and display Safe travels, mon! ....  Modify duration: Set to 13.00 seconds and Wait
+                                -------- Outcast Jinzun for more quests --------
+                                Special Effect - Create a special effect attached to the overhead of OutcastJinzun using Abilities\Spells\Other\TalkToMe\TalkToMe.mdl
+                                Set VariableSet QuestGiverJinzun = (Last created special effect)
+                                -------- == PATROL == --------
+                                Trigger - Run Outcast Jinzun Movement Continue <gen> (checking conditions)
+                                Set VariableSet JinzunTalking = False
+                                Trigger - Turn on (This trigger)
+                                Skip remaining actions
+                            Else - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (QuestPlagueUponTrees is completed) Equal to True
+                                        (QuestSargoth is discovered) Equal to False
+                                        (QuestSargoth is completed) Equal to False
+                                    Then - Actions
+                                        -------- LURKING IN THE SHADOWS (SARGOTH) --------
+                                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0047 <gen> and display Hello again, Jin'Zu....  Modify duration: Set to 2.00 seconds and Wait
+                                        Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0046 <gen> and display The trees, dey be w....  Modify duration: Set to 7.00 seconds and Wait
+                                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0048 <gen> and display What is it that is ....  Modify duration: Set to 3.00 seconds and Wait
+                                        Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0047 <gen> and display Spiders, mon! Dey b....  Modify duration: Set to 12.00 seconds and Wait
+                                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0012 <gen> and display Spiders?! I hate th....  Modify duration: Set to 4.50 seconds and Wait
+                                        Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0048 <gen> and display Sargoth, mon, she b....  Modify duration: Set to 11.00 seconds and Wait
+                                        Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0049 <gen> and display Will ya dare to fac....  Modify duration: Set to 6.00 seconds and Wait
+                                        -------- Run "Create Dialog" --------
+                                        Trigger - Run Create JinzunDialog02 <gen> (checking conditions)
+                                        Trigger - Turn on (This trigger)
+                                        Skip remaining actions
+                                    Else - Actions
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                (QuestSargoth is discovered) Equal to True
+                                                (QuestSargoth is completed) Equal to False
+                                                (Nazgrek has an item of type Sargoth's Ichor) Equal to True
+                                            Then - Actions
+                                                -------- LURKING IN THE SHADOWS (SARGOTH)  - COMPLETED --------
+                                                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0052 <gen> and display It is you shaman! I....  Modify duration: Set to 13.00 seconds and Wait
+                                                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0053 <gen> and display Here's the ichor, w....  Modify duration: Set to 5.00 seconds and Wait
+                                                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0053 <gen> and display I be sharin' ya a r....  Modify duration: Set to 13.00 seconds and Wait
+                                                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0054 <gen> and display Thank you Jin'Zun. ....  Modify duration: Set to 5.00 seconds and Wait
+                                                Wait 2.25 seconds
+                                                -------- DEFAULT CAMERA --------
+                                                Camera - Apply JinzunCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                                                -------- Remove items --------
+                                                Item - Remove (Item carried by Nazgrek of type Sargoth's Ichor)
+                                                -------- REWARD --------
+                                                Hero - Add 300 experience to Nazgrek, Show level-up graphics
+                                                -------- Add "Venonweave Flask" to cauldrons --------
+                                                Unit Group - Pick every unit in Cauldrons and do (Actions)
+                                                    Loop - Actions
+                                                        Unit - For (Picked unit), Ability A_VenomweaveFlask , Disable ability: False, Hide UI: False
+                                                -------- ======== CINEMATIC ENDS ======== --------
+                                                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                                                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                                                Wait Campaign quest delay seconds
+                                                Trigger - Run Quest Lurking In The Shadows Completed <gen> (checking conditions)
+                                                Special Effect - Destroy QuestGiverJinzun
+                                                -------- Outcast Jinzun for more quests --------
+                                                Special Effect - Create a special effect attached to the overhead of OutcastJinzun using Abilities\Spells\Other\TalkToMe\TalkToMe.mdl
+                                                Set VariableSet QuestGiverJinzun = (Last created special effect)
+                                                -------- == PATROL == --------
+                                                Trigger - Run Outcast Jinzun Movement Continue <gen> (checking conditions)
+                                                Set VariableSet JinzunTalking = False
+                                                -------- Add fishing pole to Jinzun --------
+                                                Unit - Add EQUIP_FishingPole2H_Jinzun  to OutcastJinzun
+                                                Trigger - Turn on (This trigger)
+                                                Skip remaining actions
+                                            Else - Actions
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        (QuestPlagueUponTrees is completed) Equal to True
+                                                        (QuestSargoth is completed) Equal to True
+                                                        (QuestUnknownEntity is discovered) Equal to False
+                                                    Then - Actions
+                                                        -------- UNKNOWN ENTITY --------
+                                                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0037 <gen> and display Hello, Jin. Why is ....  Modify duration: Set to 5.00 seconds and Wait
+                                                        Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0030 <gen> and display Ah, Nazgrek! Dere b....  Modify duration: Set to 14.00 seconds and Wait
+                                                        Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0031 <gen> and display Nearly got me, they....  Modify duration: Set to 10.00 seconds and Wait
+                                                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0038 <gen> and display Is this supposed to....  Modify duration: Set to 12.00 seconds and Wait
+                                                        Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0032 <gen> and display Investigate dat cen....  Modify duration: Set to 10.00 seconds and Wait
+                                                        -------- Run "Create Dialog" --------
+                                                        Trigger - Run Create JinzunDialog03 <gen> (checking conditions)
+                                                        Trigger - Turn on (This trigger)
+                                                        Skip remaining actions
+                                                    Else - Actions
+                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                            If - Conditions
+                                                                (QuestUnknownEntity is discovered) Equal to True
+                                                                (QuestUnknownEntity is completed) Equal to False
+                                                                (Nazgrek has an item of type Disgusting Slime) Equal to True
+                                                            Then - Actions
+                                                                Trigger - Turn off (This trigger)
+                                                                -------- UNKNOWN ENTITY - COMPLETED --------
+                                                                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0035 <gen> and display Did ya put an end t....  Modify duration: Set to 6.00 seconds and Wait
+                                                                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0042 <gen> and display Yes, I found the th....  Modify duration: Set to 4.00 seconds and Wait
+                                                                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0036 <gen> and display Oooh... Good work, ....  Modify duration: Set to 12.00 seconds and Wait
+                                                                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0043 <gen> and display This slime that I h....  Modify duration: Set to 12.00 seconds and Wait
+                                                                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0037 <gen> and display Disgustin' slime, y....  Modify duration: Set to 29.00 seconds and Wait
+                                                                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0044 <gen> and display ... Pleasure to res....  Modify duration: Set to 8.00 seconds and Wait
+                                                                Wait 2.25 seconds
+                                                                -------- DEFAULT CAMERA --------
+                                                                Camera - Apply JinzunCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                                                                -------- Remove items --------
+                                                                Item - Remove (Item carried by Nazgrek of type Disgusting Slime)
+                                                                -------- REWARD --------
+                                                                Hero - Add 400 experience to Nazgrek, Show level-up graphics
+                                                                -------- Other --------
+                                                                Trigger - Turn off Quest Unknown Entity Ping <gen>
+                                                                -------- ======== CINEMATIC ENDS ======== --------
+                                                                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                                                                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                                                                Wait Campaign quest delay seconds
+                                                                Trigger - Run Quest Unknown Entity Completed <gen> (checking conditions)
+                                                                Special Effect - Destroy QuestGiverJinzun
+                                                                -------- Outcast Jinzun for more quests --------
+                                                                Special Effect - Create a special effect attached to the overhead of OutcastJinzun using Abilities\Spells\Other\TalkToMe\TalkToMe.mdl
+                                                                Set VariableSet QuestGiverJinzun = (Last created special effect)
+                                                                -------- == PATROL == --------
+                                                                Trigger - Run Outcast Jinzun Movement Continue <gen> (checking conditions)
+                                                                Set VariableSet JinzunTalking = False
+                                                                -------- Remove fishing pole --------
+                                                                Unit - Remove EQUIP_FishingPole2H_Jinzun  from OutcastJinzun
+                                                                Trigger - Turn on (This trigger)
+                                                                Skip remaining actions
+                                                            Else - Actions
+                                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                    If - Conditions
+                                                                        (QuestPlagueUponTrees is completed) Equal to True
+                                                                        (QuestSargoth is completed) Equal to True
+                                                                        (QuestUnknownEntity is completed) Equal to True
+                                                                    Then - Actions
+                                                                        -------- CHAT --------
+                                                                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0220 <gen> and display Good to see you, ol....  Modify duration: Set to 4.00 seconds and Wait
+                                                                        Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0110 <gen> and display Ahhh, dere ya are, ....  Modify duration: Set to 6.00 seconds and Wait
+                                                                        -------- Run "Create Dialog" --------
+                                                                        Trigger - Run Create JinzunDialog04 <gen> (checking conditions)
+                                                                        Trigger - Turn on (This trigger)
+                                                                        Skip remaining actions
+                                                                    Else - Actions
+                                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                            If - Conditions
+                                                                                (QuestFishingPole is discovered) Equal to True
+                                                                                (QuestFishingPole is completed) Equal to False
+                                                                                (Nazgrek has an item of type |cFFA335EEJin'Zun's Fishing Pole|r) Equal to True
+                                                                            Then - Actions
+                                                                                Trigger - Turn off (This trigger)
+                                                                                -------- DA FISHING POLE MISSING - COMPLETED --------
+                                                                                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0227 <gen> and display Jin’Zun! Look wha....  Modify duration: Set to 7.00 seconds and Wait
+                                                                                Unit - Order Nazgrek to Right-Click OutcastJinzun
+                                                                                Wait 2.00 seconds
+                                                                                -------- Add fishing pole to Jinzun --------
+                                                                                Unit - Add EQUIP_FishingPole2H_Jinzun  to OutcastJinzun
+                                                                                Item - Remove (Item carried by Nazgrek of type |cFFA335EEJin'Zun's Fishing Pole|r)
+                                                                                -------- Remove items --------
+                                                                                Wait 1.00 seconds
+                                                                                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0117 <gen> and display Ahhh, dere it is! M....  Modify duration: Set to 10.00 seconds and Wait
+                                                                                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0118 <gen> and display Here’s somethin' ....  Modify duration: Set to 11.00 seconds and Wait
+                                                                                Wait 2.25 seconds
+                                                                                -------- DEFAULT CAMERA --------
+                                                                                Camera - Apply JinzunCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                                                                                -------- REWARD --------
+                                                                                Hero - Add 300 experience to Nazgrek, Show level-up graphics
+                                                                                -------- Other --------
+                                                                                -------- ======== CINEMATIC ENDS ======== --------
+                                                                                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                                                                                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                                                                                Wait Campaign quest delay seconds
+                                                                                Trigger - Run Quest Da Fishing Pole Missing Completed <gen> (checking conditions)
+                                                                                Special Effect - Destroy QuestGiverJinzun
+                                                                                -------- Outcast Jinzun for more quests --------
+                                                                                Special Effect - Create a special effect attached to the overhead of OutcastJinzun using Abilities\Spells\Other\TalkToMe\TalkToMe.mdl
+                                                                                Set VariableSet QuestGiverJinzun = (Last created special effect)
+                                                                                -------- == PATROL == --------
+                                                                                Trigger - Run Outcast Jinzun Movement Continue <gen> (checking conditions)
+                                                                                Set VariableSet JinzunTalking = False
+                                                                                Trigger - Turn on (This trigger)
+                                                                                Skip remaining actions
+                                                                            Else - Actions
+                                                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                                                    If - Conditions
+                                                                                        (QuestResurgenceDead1 is discovered) Equal to True
+                                                                                        (QuestResurgenceDead1 is completed) Equal to False
+                                                                                        (Nazgrek has an item of type Rotten Part) Equal to True
+                                                                                    Then - Actions
+                                                                                        Trigger - Turn off (This trigger)
+                                                                                        -------- RESURGENCE OF DEAD PART I - COMPLETED --------
+                                                                                        Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0077 <gen> and display Yikes! Dis bloody t....  Modify duration: Set to 5.00 seconds and Wait
+                                                                                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0108 <gen> and display Yes, disturbing as ....  Modify duration: Set to 3.00 seconds and Wait
+                                                                                        Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0078 <gen> and display I see... I be feeli....  Modify duration: Set to 11.00 seconds and Wait
+                                                                                        Special Effect - Destroy QuestGiverJinzun
+                                                                                        Wait 2.25 seconds
+                                                                                        -------- Outcast Jinzun for more quests --------
+                                                                                        Special Effect - Create a special effect attached to the overhead of OutcastJinzun using Abilities\Spells\Other\TalkToMe\TalkToMe.mdl
+                                                                                        Set VariableSet QuestGiverJinzun = (Last created special effect)
+                                                                                        -------- ==================================INSERT RESURGENCE OF DEAD PART II starting from here without dialog --------
+                                                                                        Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0084 <gen> and display Gather ya allies! G....  Modify duration: Set to 12.00 seconds and Wait
+                                                                                        Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0085 <gen> and display Spirits around me! ....  Modify duration: Set to 5.00 seconds and Wait
+                                                                                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0115 <gen> and display I’ll gather my al....  Modify duration: Set to 6.00 seconds and Wait
+                                                                                        -------- ==================================INSERT RESURGENCE OF DEAD PART II starting from here without dialog --------
+                                                                                        -------- ==================================INSERT RESURGENCE OF DEAD PART II starting from here without dialog --------
+                                                                                        -------- ==================================INSERT RESURGENCE OF DEAD PART II starting from here without dialog --------
+                                                                                        Wait 2.25 seconds
+                                                                                        -------- DEFAULT CAMERA --------
+                                                                                        Camera - Apply JinzunCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                                                                                        -------- Remove items --------
+                                                                                        Item - Remove (Item carried by Nazgrek of type Rotten Part)
+                                                                                        -------- REWARD --------
+                                                                                        Hero - Add 400 experience to Nazgrek, Show level-up graphics
+                                                                                        -------- ======== CINEMATIC ENDS ======== --------
+                                                                                        Trigger - Run Cinematic OFF <gen> (checking conditions)
+                                                                                        Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                                                                                        Wait Campaign quest delay seconds
+                                                                                        Trigger - Run Quest Resurgence of Dead Part 1 Completed <gen> (checking conditions)
+                                                                                        Trigger - Run Quest Resurgence of Dead Part 2 Discover <gen> (checking conditions)
+                                                                                        -------- == PATROL == --------
+                                                                                        Trigger - Run Outcast Jinzun Movement Continue <gen> (checking conditions)
+                                                                                        Set VariableSet JinzunTalking = False
+                                                                                        Trigger - Turn on (This trigger)
+                                                                                        Skip remaining actions
+                                                                                    Else - Actions
+                                                                                        -------- NOTHING AT THE MOMENT --------
+                                                                                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0047 <gen> and display Hello again, Jin'Zu....  Modify duration: Set to 2.00 seconds and Wait
+                                                                                        Wait 2.25 seconds
+                                                                                        -------- DEFAULT CAMERA --------
+                                                                                        Camera - Apply JinzunCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                                                                                        -------- ======== CINEMATIC ENDS ======== --------
+                                                                                        Trigger - Run Cinematic OFF <gen> (checking conditions)
+                                                                                        Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                                                                                        -------- == PATROL == --------
+                                                                                        Trigger - Run Outcast Jinzun Movement Continue <gen> (checking conditions)
+                                                                                        Set VariableSet JinzunTalking = False
+                                                                                        Trigger - Turn on (This trigger)
+                                                                                        Skip remaining actions

@@ -1,0 +1,18 @@
+Quest Plague Upon Trees
+    Events
+    Conditions
+    Actions
+        Set VariableSet PlagueUponTreesWards = 0
+        Destructible - Show PlagueTree1Ritual
+        Destructible - Show PlagueTree2Ritual
+        Destructible - Show PlagueTree3Ritual
+        Unit Group - Pick every unit in PlagueTreeNecros and do (Actions)
+            Loop - Actions
+                Unit - Unhide (Picked unit)
+                Unit - Change ownership of (Picked unit) to Player 12 (Brown) and Retain color
+                Animation - Queue (Picked unit)'s spell channel animation
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Plague Upon Trees Discover <gen> (checking conditions)
+        Trigger - Turn on Plague Upon Trees All Wards Placed <gen>
+        Trigger - Turn on Quest Plague Upon Trees Ping <gen>
+        Trigger - Remove (This trigger) from the trigger queue

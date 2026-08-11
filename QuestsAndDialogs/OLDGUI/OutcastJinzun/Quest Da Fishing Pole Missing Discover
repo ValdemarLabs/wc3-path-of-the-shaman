@@ -1,0 +1,10 @@
+Quest Da Fishing Pole Missing Discover
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Da Fishing Pole Missing Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestFishingPole as Discovered
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Discovered message: |cffffcc00OPTIONAL ...

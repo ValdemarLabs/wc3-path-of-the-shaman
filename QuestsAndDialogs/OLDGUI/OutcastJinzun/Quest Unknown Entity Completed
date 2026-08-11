@@ -1,0 +1,14 @@
+Quest Unknown Entity Completed
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Unknown Entity Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestUnknownEntity as Discovered
+        Quest - Mark QuestUnknownEntityInvestigate as Completed
+        Quest - Mark QuestUnknownEntityKill as Completed
+        Quest - Mark QuestUnknownEntityLure as Completed
+        Quest - Mark QuestUnknownEntity as Completed
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Completed message: |cffffcc00QUEST COM...

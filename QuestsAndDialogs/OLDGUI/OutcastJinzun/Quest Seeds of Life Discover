@@ -1,0 +1,22 @@
+Quest Seeds of Life Discover
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Seeds of Life Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestSeedsOfLife as Discovered
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Discovered message: |cffffcc00QUEST|r  ...
+        Set VariableSet VarPoint = (Center of PlagueTree1 <gen>)
+        Visibility - Create an initially Enabled visibility modifier for Player 1 (Red) emitting Visibility from VarPoint to a radius of 600.00.
+        Visibility - Destroy (Last created visibility modifier)
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Center of PlagueTree2 <gen>)
+        Visibility - Create an initially Enabled visibility modifier for Player 1 (Red) emitting Visibility from VarPoint to a radius of 600.00.
+        Visibility - Destroy (Last created visibility modifier)
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Center of PlagueTree3 <gen>)
+        Visibility - Create an initially Enabled visibility modifier for Player 1 (Red) emitting Visibility from VarPoint to a radius of 600.00.
+        Visibility - Destroy (Last created visibility modifier)
+        Custom script:   call RemoveLocation(udg_VarPoint)

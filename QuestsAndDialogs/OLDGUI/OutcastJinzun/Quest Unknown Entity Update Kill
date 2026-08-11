@@ -1,0 +1,12 @@
+Quest Unknown Entity Update Kill
+    Events
+    Conditions
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Unknown Entity Create <gen> (checking conditions)
+        -------- Display a quest message. --------
+        Quest - Create a quest requirement for QuestUnknownEntity with the description Kill the Unknown En...
+        Set VariableSet QuestUnknownEntityKill = (Last created quest requirement)
+        -------- Update quest --------
+        Quest - Display to (All players) the Quest Update message: |cFFFFCC00Unknown E...

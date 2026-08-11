@@ -1,0 +1,40 @@
+Button Pressed in JinzunDialog06
+    Events
+        Dialog - A dialog button is clicked for JinzunDialog06
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to JinzunDialog06Accept
+            Then - Actions
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0225 <gen> and display If those pests took....  Modify duration: Set to 6.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0115 <gen> and display Ahhh, dat's da spir....  Modify duration: Set to 11.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply JinzunCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- == PATROL == --------
+                Trigger - Run Outcast Jinzun Movement Continue <gen> (checking conditions)
+                Set VariableSet JinzunTalking = False
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Trigger - Run Quest Da Fishing Pole Missing <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to JinzunDialog06Decline
+            Then - Actions
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0224 <gen> and display Maybe another time,....  Modify duration: Set to 7.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0114 <gen> and display Aww, come on now, m....  Modify duration: Set to 2.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply JinzunCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- == PATROL == --------
+                Trigger - Run Outcast Jinzun Movement Continue <gen> (checking conditions)
+                Set VariableSet JinzunTalking = False
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Skip remaining actions
+            Else - Actions

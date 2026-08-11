@@ -1,0 +1,9 @@
+Quest Resurgence of Dead Part Ping
+    Events
+        Time - Every 60.00 seconds of game time
+    Conditions
+    Actions
+        Set VariableSet PingPoint[1] = (Center of GraveyardFog01 <gen>)
+        Cinematic - Ping minimap for (All players) at PingPoint[1] for 6.00 seconds
+        Custom script:   call RemoveLocation(udg_PingPoint[1])
+        Trigger - Remove (This trigger) from the trigger queue

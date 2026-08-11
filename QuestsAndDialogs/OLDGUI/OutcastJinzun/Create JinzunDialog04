@@ -1,0 +1,32 @@
+Create JinzunDialog04
+    Events
+    Conditions
+    Actions
+        Cinematic - Enable user control for (All players).
+        Dialog - Clear JinzunDialog04
+        Dialog - Change the title of JinzunDialog04 to Available Quests
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestResurgenceDead1 is discovered) Equal to False
+                (QuestResurgenceDead1 is completed) Equal to False
+            Then - Actions
+                Dialog - Create a dialog button for JinzunDialog04 labelled Resurgence of Dead ...
+                Set VariableSet JinzunDialog04Resurgence = (Last created dialog Button)
+                Dialog - Show JinzunDialog04 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestFishingPole is discovered) Equal to False
+                (QuestFishingPole is completed) Equal to False
+            Then - Actions
+                Dialog - Create a dialog button for JinzunDialog04 labelled Da Fishing Pole Mis...
+                Set VariableSet JinzunDialog04FishingPole = (Last created dialog Button)
+                Dialog - Show JinzunDialog04 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                Dialog - Create a dialog button for JinzunDialog04 labelled - Farewell
+                Set VariableSet JinzunDialog04Farewell = (Last created dialog Button)
+                Dialog - Show JinzunDialog04 for Player 1 (Red)
+            Else - Actions

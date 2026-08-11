@@ -1,0 +1,55 @@
+Button Pressed in JinzunDialog04
+    Events
+        Dialog - A dialog button is clicked for JinzunDialog04
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to JinzunDialog04Resurgence
+            Then - Actions
+                -------- RESURGENCE OF DEAD PART I --------
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0069 <gen> and display Hey Nazgrek! Nazgre....  Modify duration: Set to 2.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0100 <gen> and display Jin'Zun, you're scr....  Modify duration: Set to 6.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0070 <gen> and display Nazgrek, da forest ....  Modify duration: Set to 14.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0101 <gen> and display The forest is sprea....  Modify duration: Set to 10.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0071 <gen> and display If da rumors be tru....  Modify duration: Set to 5.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0072 <gen> and display Only ting I be aski....  Modify duration: Set to 11.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0103 <gen> and display Moving body part fr....  Modify duration: Set to 3.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0073 <gen> and display Ya might wanna brin....  Modify duration: Set to 5.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0104 <gen> and display Company, you say? W....  Modify duration: Set to 12.00 seconds and Wait
+                -------- Run "Create Dialog" --------
+                Trigger - Run Create JinzunDialog05 <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to JinzunDialog04FishingPole
+            Then - Actions
+                -------- DA FISHING POLE MISSING --------
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0111 <gen> and display Remember da time ya....  Modify duration: Set to 9.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0112 <gen> and display Now, I got me eye o....  Modify duration: Set to 14.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0222 <gen> and display Satyrs are not to b....  Modify duration: Set to 9.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0113 <gen> and display Either way, me pole....  Modify duration: Set to 14.00 seconds and Wait
+                -------- Run "Create Dialog" --------
+                Trigger - Run Create JinzunDialog06 <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to JinzunDialog04Farewell
+            Then - Actions
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0002 <gen> and display Farewell for now, u....  Modify duration: Set to 4.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from OutcastJinzun named Outcast Jin'Zun: Play Jinzun_0003 <gen> and display Farewell shaman. I ....  Modify duration: Set to 3.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply JinzunCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- == PATROL == --------
+                Trigger - Run Outcast Jinzun Movement Continue <gen> (checking conditions)
+                Set VariableSet JinzunTalking = False
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Skip remaining actions
+            Else - Actions

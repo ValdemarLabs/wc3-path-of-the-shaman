@@ -1,0 +1,55 @@
+Outcast Jinzun Movement Sounds
+    Events
+        Unit - A unit Is issued an order targeting a point
+    Conditions
+        (Ordered unit) Equal to OutcastJinzun
+        (Issued order) Equal to (Order(move))
+        JinzunTalking Equal to False
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                JinzunTalking Equal to True
+            Then - Actions
+                Skip remaining actions
+            Else - Actions
+        Set VariableSet JinzunInteger2 = (Random integer number between 1 and 3)
+        -------- Play sound at movement --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                JinzunInteger2 Equal to 1
+            Then - Actions
+                Set VariableSet VarPoint = (Position of OutcastJinzun)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ((Units within 1500.00 of VarPoint matching ((Owner of (Matching unit)) Equal to Player 1 (Red)).) is empty) Equal to False
+                    Then - Actions
+                        Sound - Play WitchDoctorWarcry1 <gen> at 100.00% volume, located at VarPoint with Z offset 0.00
+                    Else - Actions
+                Custom script:   call RemoveLocation(udg_VarPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                JinzunInteger2 Equal to 2
+            Then - Actions
+                Set VariableSet VarPoint = (Position of OutcastJinzun)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ((Units within 1500.00 of VarPoint matching ((Owner of (Matching unit)) Equal to Player 1 (Red)).) is empty) Equal to False
+                    Then - Actions
+                        Sound - Play WitchDoctorYesAttack2 <gen> at 100.00% volume, located at VarPoint with Z offset 0.00
+                    Else - Actions
+                Custom script:   call RemoveLocation(udg_VarPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                JinzunInteger2 Equal to 3
+            Then - Actions
+                Set VariableSet VarPoint = (Position of OutcastJinzun)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ((Units within 1500.00 of VarPoint matching ((Owner of (Matching unit)) Equal to Player 1 (Red)).) is empty) Equal to False
+                    Then - Actions
+                        Sound - Play WitchDoctorYesAttack3 <gen> at 100.00% volume, located at VarPoint with Z offset 0.00
+                    Else - Actions
+                Custom script:   call RemoveLocation(udg_VarPoint)
+            Else - Actions

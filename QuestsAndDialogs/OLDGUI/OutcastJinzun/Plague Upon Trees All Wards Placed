@@ -1,0 +1,11 @@
+Plague Upon Trees All Wards Placed
+    Events
+        Time - Every 2.00 seconds of game time
+    Conditions
+        PlagueUponTreesWards Equal to 3
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Ensure that the quest exists --------
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Requirement message: |cFFFFCC00Plague Up...
+        Sound - Play QuestActivateWhat1 <gen>

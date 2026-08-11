@@ -1,0 +1,17 @@
+Quest Resurgence of Dead Part 2 Completed
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Resurgence of Dead Part 2 Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestResurgenceDead2 as Discovered
+        Quest - Mark QuestResurgenceDead2Req1 as Completed
+        Quest - Mark QuestResurgenceDead2Req2 as Completed
+        Quest - Mark QuestResurgenceDead2Req3 as Completed
+        Quest - Mark QuestResurgenceDead2Req4 as Completed
+        Quest - Mark QuestResurgenceDead2Req5 as Completed
+        Quest - Mark QuestResurgenceDead2Req6 as Completed
+        Quest - Mark QuestResurgenceDead2 as Completed
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Completed message: |cffffcc00QUEST COM...

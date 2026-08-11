@@ -1,0 +1,35 @@
+Create JinzunDialog06
+    Events
+    Conditions
+    Actions
+        Cinematic - Enable user control for (All players).
+        Dialog - Clear JinzunDialog06
+        Dialog - Change the title of JinzunDialog06 to Available Quests
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestFishingPole is discovered) Equal to False
+                (QuestFishingPole is completed) Equal to False
+            Then - Actions
+                Dialog - Create a dialog button for JinzunDialog06 labelled Da Fishing Pole Mis...
+                Set VariableSet JinzunDialog06Accept = (Last created dialog Button)
+                Dialog - Show JinzunDialog06 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestFishingPole is discovered) Equal to False
+                (QuestFishingPole is completed) Equal to False
+            Then - Actions
+                Dialog - Create a dialog button for JinzunDialog06 labelled - Decline
+                Set VariableSet JinzunDialog06Decline = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show JinzunDialog06 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestFishingPole is discovered) Equal to True
+                (QuestFishingPole is completed) Equal to False
+            Then - Actions
+                Dialog - Create a dialog button for JinzunDialog06 labelled - Farewell
+                Set VariableSet JinzunDialog06Farewell = (Last created dialog Button)
+                Dialog - Show JinzunDialog06 for Player 1 (Red)
+            Else - Actions
