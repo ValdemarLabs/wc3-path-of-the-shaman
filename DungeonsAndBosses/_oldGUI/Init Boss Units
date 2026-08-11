@@ -1,0 +1,41 @@
+Init Boss Units
+    Events
+    Conditions
+    Actions
+        -------- FelDok --------
+        -------- Impaler --------
+        -------- Abomination --------
+        -------- Sargoth --------
+        -------- Unknown Entity --------
+        -------- Mordrax --------
+        Set VariableSet BossMordrax = Mordrax the Desolator (Level 15) 0422 <gen>
+        Unit - Add Crow Form to BossMordrax
+        Unit - Set BossMordrax movement speed to 120.00
+        Animation - Change BossMordrax flying height to 600.00 at 5.00
+        -------- Colossus --------
+        Set VariableSet BossColossus = Colossus (Level 15) 1903 <gen>
+        Set VariableSet BossColossusSP = (Position of BossColossus)
+        Animation - Play BossColossus's sleep animation
+        Unit - Pause BossColossus
+        -------- Scorchion --------
+        Set VariableSet BossScorchion = Scorchion (Level 20) 0109 <gen>
+        Unit Group - Add BossScorchion to BOSS
+        Custom script:   call SetUnitPropWindow( udg_BossScorchion, 0.00 )
+        -------- Seretha --------
+        -------- Vorkatha (DEVILSAUR) --------
+        Set VariableSet BossVorkatha = Vorkatha (Level 20) - Devilsaur 1910 <gen>
+        Unit Group - Add BossVorkatha to BOSS
+        -------- Mal'kiri (Panther) --------
+        Set VariableSet BossMalkiri = Mal'kiri (Level 15) - Panther 2014 <gen>
+        Unit Group - Add BossMalkiri to BOSS
+        -------- Mad Blix --------
+        Set VariableSet BossMadBlix = Mad Blix 2169 <gen>
+        Unit Group - Add BossMadBlix to BOSS
+        -------- Void Entity --------
+        Set VariableSet BossVoidEntity = Void Entity (Level 25) 2102 <gen>
+        -------- Morthun --------
+        Set VariableSet BossMorthun = Morthun (Level 5) 2281 <gen>
+        -------- Mountain Giant --------
+        Set VariableSet BossMountainGiant = Mountain Giant (Level 18) 2326 <gen>
+        -------- Chimairo --------
+        Set VariableSet BossChimairo = Chimairo (Level 20) 0398 <gen>
