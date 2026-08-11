@@ -19,6 +19,7 @@
 
 ### Technical Updates
 
+- Added `_developer/gui-variables.md` with a source-level inventory of current `udg_*` and `gg_*` usage, classified legacy GUI trigger removal candidates, and categorized Variable Editor cleanup candidates.
 - Updated `Zones/ZonesCore.j` with `ZoneData.addDungeonEnterRegion` and `addDungeonExitRegion`; Gnoll Hideout, Crypt, and Boom Mine now keep portal source, destination, and facing metadata in ZonesCore while ZoneEvent executes the transitions.
 - Added `World/Dragons/DragonBehavior.j` for shared red/scorching dragon melee animations, opportunistic Breath of Fire and Flame Strike casts, and ambient dragon sounds.
 - Added `World/Dragons/EmberpeakDragons.j` for Emberpeak center/zone wandering, ambient flame strikes, three Dragonfire Peaks wanderers, and Colossus arena targeting modes.
