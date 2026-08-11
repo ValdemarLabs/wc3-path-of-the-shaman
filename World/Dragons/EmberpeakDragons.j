@@ -2,47 +2,42 @@
     EmberpeakDragons
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
-    Owns Emberpeak's high-altitude dragon activity: center and zone wandering,
-    ambient flame strikes, Dragonfire Peaks wanderers, sounds, and the arena
-    targeting modes used by Colossus.
+    Manages the high-altitude dragons in Emberpeak Highlands. The dragons
+    wander within their configured areas and occasionally cast Flame Strike
+    at random living units in the Emberpeak zone.
 
     Credits:
-    - World/_oldGUI/Dragons/Emberpeak Dragonfire triggers
+    - World/_oldGUI/Dragons/Emberpeak Dragonfire ambient triggers
 
     How to install:
     Import after DragonBehavior, Table, and CreepRespawn. Keep the five named
-    high-altitude dragon units and the Emberpeak/Dragonfire rects. Disable the
-    legacy Emberpeak Dragonfire GUI triggers.
+    Emberpeak high-altitude dragons and their zone rects. Disable the legacy
+    Emberpeak center/zone wander and zone Flame Strike GUI triggers.
 
     API:
-    - EmberpeakDragons_SetColossus(whichUnit)
-    - EmberpeakDragons_SetArenaMode(mode)
-    - EmberpeakDragons_GetDragonfirePeaksGroup() returns group
+    - EmberpeakDragons_GetCenterGroup() returns group
+    - EmberpeakDragons_GetHighlandsGroup() returns group
 
 **/
 library EmberpeakDragons initializer Init requires DragonBehavior, Table, CreepRespawn
     globals
-        constant integer EMBERPEAK_DRAGONS_ARENA_IDLE = 0
-        constant integer EMBERPEAK_DRAGONS_ARENA_PLAYERS = 1
-        constant integer EMBERPEAK_DRAGONS_ARENA_COLOSSUS = 2
-
+        // Configuration
         private constant integer UNIT_HIGH_DRAGON = 'n647'
-        private constant integer DRAGONFIRE_PEAKS_WANDERER_COUNT = 3
+        private constant real CENTER_WANDER_PERIOD = 3.00
+        private constant real HIGHLANDS_WANDER_PERIOD = 7.00
+        private constant real CAST_DELAY_MIN = 10.00
+        private constant real CAST_DELAY_MAX = 20.00
 
-        private unit Colossus = null
-        private integer ArenaMode = EMBERPEAK_DRAGONS_ARENA_IDLE
         private group CenterGroup = null
         private group HighlandsGroup = null
-        private group DragonfirePeaksGroup = null
         private group WorkGroup = null
         private group TargetGroup = null
         private timer CenterWanderTimer = null
-        private timer ZoneWanderTimer = null
-        private timer ZoneCastTimer = null
-        private timer ArenaCastTimer = null
+        private timer HighlandsWanderTimer = null
+        private timer CastTimer = null
         private timer array CastingTimers
         private unit array CastingUnits
         private integer array CastingLegacyIndex
@@ -65,7 +60,7 @@ library EmberpeakDragons initializer Init requires DragonBehavior, Table, CreepR
             endif
             set slot = slot + 1
         endloop
-        if CastingSlotCount >= 16 then
+        if CastingSlotCount >= 8 then
             return 0
         endif
         set CastingSlotCount = CastingSlotCount + 1
@@ -113,14 +108,18 @@ library EmberpeakDragons initializer Init requires DragonBehavior, Table, CreepR
         if not IsAlive(dragon) or UnitCasting[GetHandleId(dragon)] == 1 then
             return false
         endif
+        if dragon == gg_unit_n647_1904 and udg_EmberpeakDragonCasting[1] then
+            return false
+        endif
+        if dragon == gg_unit_n647_0823 and udg_EmberpeakDragonCasting[2] then
+            return false
+        endif
         set orderId = GetUnitCurrentOrder(dragon)
         return orderId != OrderId("flamestrike") and orderId != OrderId("cast") and orderId != OrderId("move")
     endfunction
 
     private function WanderGroup takes group dragonGroup, rect destinationRect, rect audienceRect returns nothing
         local unit dragon = null
-        local real x
-        local real y
 
         call GroupClear(WorkGroup)
         call BlzGroupAddGroupFast(dragonGroup, WorkGroup)
@@ -129,9 +128,7 @@ library EmberpeakDragons initializer Init requires DragonBehavior, Table, CreepR
             exitwhen dragon == null
             call GroupRemoveUnit(WorkGroup, dragon)
             if CanWander(dragon) then
-                set x = GetRandomReal(GetRectMinX(destinationRect), GetRectMaxX(destinationRect))
-                set y = GetRandomReal(GetRectMinY(destinationRect), GetRectMaxY(destinationRect))
-                call IssuePointOrder(dragon, "move", x, y)
+                call IssuePointOrder(dragon, "move", GetRandomReal(GetRectMinX(destinationRect), GetRectMaxX(destinationRect)), GetRandomReal(GetRectMinY(destinationRect), GetRectMaxY(destinationRect)))
                 call DragonBehavior_TryPlayAmbientSound(dragon, audienceRect)
             endif
         endloop
@@ -142,38 +139,22 @@ library EmberpeakDragons initializer Init requires DragonBehavior, Table, CreepR
         call WanderGroup(CenterGroup, gg_rct_DragonFireSpam02, gg_rct_DragonFireSpam01)
     endfunction
 
-    private function ZoneWander takes nothing returns nothing
+    private function HighlandsWander takes nothing returns nothing
         call WanderGroup(HighlandsGroup, gg_rct_03EmberpeakHighlands, gg_rct_03EmberpeakHighlands)
-        call WanderGroup(DragonfirePeaksGroup, gg_rct_04DragonfirePeaks, gg_rct_04DragonfirePeaks)
     endfunction
 
-    private function TryCastHighlandsFlame takes unit dragon, integer legacyIndex, integer rollMaximum, integer successRoll returns nothing
-        if IsAlive(dragon) and GetRandomInt(1, rollMaximum) == successRoll then
-            call StartCasting(dragon, legacyIndex)
-            call IssuePointOrder(dragon, "flamestrike", GetUnitX(dragon) + 250.00, GetUnitY(dragon))
-            call DragonBehavior_TryPlayAmbientSound(dragon, gg_rct_03EmberpeakHighlands)
-        endif
-    endfunction
-
-    private function CastHighlandsFlame takes nothing returns nothing
-        call TryCastHighlandsFlame(gg_unit_n647_1938, 3, 2, 1)
-        call TryCastHighlandsFlame(gg_unit_n647_1009, 4, 2, 2)
-        call TryCastHighlandsFlame(gg_unit_n647_0846, 5, 3, 3)
-        call TimerStart(ZoneCastTimer, GetRandomReal(10.00, 20.00), false, function CastHighlandsFlame)
-    endfunction
-
-    private function PickArenaPlayerTarget takes unit dragon returns unit
+    private function PickRandomZoneTarget takes unit dragon returns unit
         local unit picked = null
         local unit target = null
 
         call GroupClear(WorkGroup)
         call GroupClear(TargetGroup)
-        call GroupEnumUnitsInRect(WorkGroup, gg_rct_DragonFireSpam01, null)
+        call GroupEnumUnitsInRect(WorkGroup, gg_rct_03EmberpeakHighlands, null)
         loop
             set picked = FirstOfGroup(WorkGroup)
             exitwhen picked == null
             call GroupRemoveUnit(WorkGroup, picked)
-            if IsAlive(picked) and IsUnitEnemy(picked, GetOwningPlayer(dragon)) and IsPlayerInForce(GetOwningPlayer(picked), udg_PlayerGroup) then
+            if picked != dragon and IsAlive(picked) and GetUnitTypeId(picked) != UNIT_HIGH_DRAGON and GetUnitAbilityLevel(picked, 'Aloc') == 0 then
                 call GroupAddUnit(TargetGroup, picked)
             endif
         endloop
@@ -183,35 +164,25 @@ library EmberpeakDragons initializer Init requires DragonBehavior, Table, CreepR
         return target
     endfunction
 
-    private function TryCastArenaFlame takes unit dragon, integer dragonIndex, integer successRoll returns nothing
+    private function TryCastFlameStrike takes unit dragon, integer legacyIndex, integer rollMaximum, integer successRoll returns nothing
         local unit target = null
 
-        if IsAlive(dragon) and GetRandomInt(1, 2) == successRoll then
-            if ArenaMode == EMBERPEAK_DRAGONS_ARENA_PLAYERS then
-                set target = PickArenaPlayerTarget(dragon)
-            else
-                set target = Colossus
-            endif
-            if IsAlive(target) then
-                call StartCasting(dragon, dragonIndex)
+        if IsAlive(dragon) and GetRandomInt(1, rollMaximum) == successRoll then
+            set target = PickRandomZoneTarget(dragon)
+            if target != null then
+                call StartCasting(dragon, legacyIndex)
                 call IssuePointOrder(dragon, "flamestrike", GetUnitX(target), GetUnitY(target))
-                call DragonBehavior_TryPlayAmbientSound(dragon, gg_rct_DragonFireSpam01)
+                call DragonBehavior_TryPlayAmbientSound(dragon, gg_rct_03EmberpeakHighlands)
             endif
         endif
         set target = null
     endfunction
 
-    private function ArenaCast takes nothing returns nothing
-        local real nextDelay = GetRandomReal(10.00, 20.00)
-
-        call TryCastArenaFlame(gg_unit_n647_1904, 1, 1)
-        call TryCastArenaFlame(gg_unit_n647_0823, 2, 2)
-        if ArenaMode == EMBERPEAK_DRAGONS_ARENA_COLOSSUS then
-            set nextDelay = GetRandomReal(6.00, 11.00)
-        endif
-        if Colossus != null then
-            call TimerStart(ArenaCastTimer, nextDelay, false, function ArenaCast)
-        endif
+    private function CastFlameStrikes takes nothing returns nothing
+        call TryCastFlameStrike(gg_unit_n647_1938, 3, 2, 1)
+        call TryCastFlameStrike(gg_unit_n647_1009, 4, 2, 2)
+        call TryCastFlameStrike(gg_unit_n647_0846, 5, 3, 3)
+        call TimerStart(CastTimer, GetRandomReal(CAST_DELAY_MIN, CAST_DELAY_MAX), false, function CastFlameStrikes)
     endfunction
 
     private function RegisterHighlandsDragon takes nothing returns nothing
@@ -225,55 +196,12 @@ library EmberpeakDragons initializer Init requires DragonBehavior, Table, CreepR
         set dragon = null
     endfunction
 
-    private function RegisterPeaksDragon takes nothing returns nothing
-        local unit dragon = GetEnumUnit()
-
-        if GetUnitTypeId(dragon) == UNIT_HIGH_DRAGON then
-            call CreepRespawn_DiscardUnit(dragon)
-            call SetUnitInvulnerable(dragon, true)
-            call GroupAddUnit(DragonfirePeaksGroup, dragon)
-        endif
-        set dragon = null
+    public function GetCenterGroup takes nothing returns group
+        return CenterGroup
     endfunction
 
-    private function EnsureDragonfirePeaksWanderers takes nothing returns nothing
-        local unit dragon = null
-        local integer count = BlzGroupGetSize(DragonfirePeaksGroup)
-
-        loop
-            exitwhen count >= DRAGONFIRE_PEAKS_WANDERER_COUNT
-            set dragon = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_HIGH_DRAGON, GetRandomReal(GetRectMinX(gg_rct_04DragonfirePeaks), GetRectMaxX(gg_rct_04DragonfirePeaks)), GetRandomReal(GetRectMinY(gg_rct_04DragonfirePeaks), GetRectMaxY(gg_rct_04DragonfirePeaks)), GetRandomReal(0.00, 360.00))
-            if dragon != null then
-                call CreepRespawn_DiscardUnit(dragon)
-                call SetUnitInvulnerable(dragon, true)
-                call GroupAddUnit(DragonfirePeaksGroup, dragon)
-            endif
-            set dragon = null
-            set count = count + 1
-        endloop
-    endfunction
-
-    public function SetColossus takes unit whichUnit returns nothing
-        set Colossus = whichUnit
-    endfunction
-
-    public function SetArenaMode takes integer mode returns nothing
-        if mode < EMBERPEAK_DRAGONS_ARENA_IDLE or mode > EMBERPEAK_DRAGONS_ARENA_COLOSSUS then
-            set mode = EMBERPEAK_DRAGONS_ARENA_IDLE
-        endif
-        set ArenaMode = mode
-        call PauseTimer(ArenaCastTimer)
-        if Colossus != null then
-            if ArenaMode == EMBERPEAK_DRAGONS_ARENA_COLOSSUS then
-                call TimerStart(ArenaCastTimer, GetRandomReal(6.00, 11.00), false, function ArenaCast)
-            else
-                call TimerStart(ArenaCastTimer, GetRandomReal(10.00, 20.00), false, function ArenaCast)
-            endif
-        endif
-    endfunction
-
-    public function GetDragonfirePeaksGroup takes nothing returns group
-        return DragonfirePeaksGroup
+    public function GetHighlandsGroup takes nothing returns group
+        return HighlandsGroup
     endfunction
 
     private function DelayedInit takes nothing returns nothing
@@ -292,13 +220,9 @@ library EmberpeakDragons initializer Init requires DragonBehavior, Table, CreepR
         call GroupEnumUnitsInRect(WorkGroup, gg_rct_03EmberpeakHighlands, null)
         call ForGroup(WorkGroup, function RegisterHighlandsDragon)
         call GroupClear(WorkGroup)
-        call GroupEnumUnitsInRect(WorkGroup, gg_rct_04DragonfirePeaks, null)
-        call ForGroup(WorkGroup, function RegisterPeaksDragon)
-        call GroupClear(WorkGroup)
-        call EnsureDragonfirePeaksWanderers()
-        call TimerStart(CenterWanderTimer, 3.00, true, function CenterWander)
-        call TimerStart(ZoneWanderTimer, 7.00, true, function ZoneWander)
-        call TimerStart(ZoneCastTimer, GetRandomReal(10.00, 20.00), false, function CastHighlandsFlame)
+        call TimerStart(CenterWanderTimer, CENTER_WANDER_PERIOD, true, function CenterWander)
+        call TimerStart(HighlandsWanderTimer, HIGHLANDS_WANDER_PERIOD, true, function HighlandsWander)
+        call TimerStart(CastTimer, GetRandomReal(CAST_DELAY_MIN, CAST_DELAY_MAX), false, function CastFlameStrikes)
         call DestroyTimer(initTimer)
         set initTimer = null
     endfunction
@@ -307,13 +231,11 @@ library EmberpeakDragons initializer Init requires DragonBehavior, Table, CreepR
         local timer initTimer = CreateTimer()
 
         set HighlandsGroup = CreateGroup()
-        set DragonfirePeaksGroup = CreateGroup()
         set WorkGroup = CreateGroup()
         set TargetGroup = CreateGroup()
         set CenterWanderTimer = CreateTimer()
-        set ZoneWanderTimer = CreateTimer()
-        set ZoneCastTimer = CreateTimer()
-        set ArenaCastTimer = CreateTimer()
+        set HighlandsWanderTimer = CreateTimer()
+        set CastTimer = CreateTimer()
         set CastingTimerToSlot = Table.create()
         set UnitCasting = Table.create()
         call TimerStart(initTimer, 0.00, false, function DelayedInit)
