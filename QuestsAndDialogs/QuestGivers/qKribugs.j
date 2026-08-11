@@ -6,8 +6,8 @@
 
     Description:
     Quest, dialogue, patrol, ogre-fullness, and merchant integration for
-    Kribugs. His bespoke quest dialog delegates trading to the shared vendor
-    catalog, ShopUI, VendorLines, and VendorDialogs systems.
+    Kribugs. His bespoke quest dialog delegates ordinary trading to the shared
+    vendor systems and his randomized Special Deal to GambleUI.
 
     Credits:
     - Legacy GUI triggers in QuestsAndDialogs/OLDGUI/Kribugs.
@@ -21,7 +21,7 @@
     - call qKribugs_RefreshRespawnedUnitHooks()
 
 **/
-library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, PatrolSystem, HeroItemCheck, UnitDeathEvent, VendorCatalogs, VendorDialogs, Shop, ShopUI, VendorLines, ExSound, VoicelinesKribugs
+library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, PatrolSystem, HeroItemCheck, UnitDeathEvent, VendorDialogs, Shop, ShopUI, GambleUI, VendorLines, ExSound, VoicelinesKribugs
     globals
         private constant boolean DEBUG = false
 
@@ -39,6 +39,7 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
         private constant integer ITEM_GUTCLEANSER_ELIXIR = 'I00N'
         private constant integer ITEM_CRYSTAL_WATER = 'I6BA'
         private constant integer ABILITY_FART_CLOUD = 'A039'
+        private constant integer SPECIAL_DEAL_GOLD_COST = 1000
 
         private constant real DIALOG_RANGE = 500.00
         private constant real DIALOG_COOLDOWN = 6.00
@@ -77,6 +78,7 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
 
         private unit Kribugs = null
         private unit SelectedHero = null
+        private integer KribugsVendorId = 0
         private dialog KribugsDialog = null
         private timer KribugsDialogCooldown = null
         private timer OgreFullSoundTimer = null
@@ -554,8 +556,40 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
         call OpenTrade()
     endfunction
 
+    private function OnGamblePurchaseEnd takes nothing returns nothing
+        call StartExitFadeOut()
+    endfunction
+
+    private function OnGamblePurchase takes nothing returns nothing
+        local integer seq
+        call DialogInteraction_BeginDialogSequence()
+        set seq = DialogInteraction_CreateBaseSequence(Kribugs, "Kribugs")
+        if GetRandomInt(1, 3) == 1 then
+            call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0062_TEXT, VL_KRIBUGS_0062_KEY, true)
+        elseif GetRandomInt(1, 2) == 1 then
+            call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0063_TEXT, VL_KRIBUGS_0063_KEY, true)
+        else
+            call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0064_TEXT, VL_KRIBUGS_0064_KEY, true)
+        endif
+        call DialogSystem_SetSequenceCallbacks(seq, null, function OnGamblePurchaseEnd)
+        call DialogSystem_PlaySequence(seq, Player(0), Kribugs)
+    endfunction
+
     private function OnSpecialDealEnd takes nothing returns nothing
-        call OpenTrade()
+        local unit hero = ResolveDialogHero()
+        if hero == null or not DialogInteraction_IsUnitAlive(Kribugs) then
+            set hero = null
+            call StartExitFadeOut()
+            return
+        endif
+
+        call DialogSystem_ClearEscapeAction()
+        call DialogSystem_HideDialog(KribugsDialog, Player(0))
+        call ShowUnit(hero, true)
+        call PauseUnit(hero, false)
+        call EnableUserControl(true)
+        call GambleUI_Show(Kribugs, hero, SPECIAL_DEAL_GOLD_COST)
+        set hero = null
     endfunction
 
     private function OnSpecialDeal takes nothing returns nothing
@@ -679,6 +713,21 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
         return true
     endfunction
 
+    private function OnGambleReturn takes nothing returns nothing
+        local unit hero = ResolveDialogHero()
+        if hero == null or not DialogInteraction_IsUnitAlive(Kribugs) then
+            set hero = null
+            call StartExitFadeOut()
+            return
+        endif
+        set SelectedHero = hero
+        call PauseUnit(hero, true)
+        call BuildDialog()
+        call DialogSystem_SetContext(Kribugs, GetOwningPlayer(hero))
+        call DialogSystem_ShowDialog(KribugsDialog, GetOwningPlayer(hero))
+        set hero = null
+    endfunction
+
     private function CreateQuests takes nothing returns nothing
         local QuestData q
         local string infoText = "|cffffcc00Quest giver:|r Kribugs\n"
@@ -743,9 +792,40 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
     endfunction
 
     private function ConfigureVendor takes nothing returns nothing
+        if KribugsVendorId == 0 then
+            set KribugsVendorId = Shop_CreateVendor("Kribugs", UNIT_KRIBUGS)
+            call Shop_SetVendorTypeLabel(KribugsVendorId, "Goblin General Goods")
+            call Shop_AddStock(KribugsVendorId, 'I611', 35, "Camp")
+            call Shop_AddStock(KribugsVendorId, 'hslv', 45, "Recovery")
+            call Shop_AddStock(KribugsVendorId, 'I60Z', 20, "Provisions")
+            call Shop_AddStock(KribugsVendorId, 'I672', 75, "Tools")
+            call Shop_AddStock(KribugsVendorId, 'I66M', 75, "Tools")
+        endif
         call Shop_SetVendorUnitTypeName(UNIT_KRIBUGS, "Kribugs")
-        call VendorCatalogs_RegisterUnit(Kribugs, VendorCatalogs_VENDOR_CATALOG_RANDOMIZED_GOODS, "Goblin General Goods")
+        call Shop_RegisterVendorUnit(Kribugs, KribugsVendorId)
+        call VendorLines_BindUnitProfile(Kribugs, "Goblin General Goods")
         call VendorDialogs_RegisterCustomVendor(Kribugs, function ReturnFromTrade)
+    endfunction
+
+    private function ConfigureGamble takes nothing returns nothing
+        call GambleUI_ClearRewards()
+        call GambleUI_AddReward('I6B1', 2)
+        call GambleUI_AddReward('I6B2', 2)
+        call GambleUI_AddReward('I6B6', 2)
+        call GambleUI_AddReward('I66E', 2)
+        call GambleUI_AddReward('phea', 3)
+        call GambleUI_AddReward('pman', 3)
+        call GambleUI_AddReward('hslv', 3)
+        call GambleUI_AddReward('I6BC', 3)
+        call GambleUI_AddReward('I60Y', 3)
+        call GambleUI_AddReward('I689', 3)
+        call GambleUI_AddReward('I67E', 3)
+        call GambleUI_AddReward('I6A6', 3)
+        call GambleUI_AddReward('I62Z', 1)
+        call GambleUI_AddReward('I6CS', 1)
+        call GambleUI_AddReward('I67K', 1)
+        call GambleUI_RegisterPurchaseHandler(function OnGamblePurchase)
+        call GambleUI_RegisterReturnHandler(function OnGambleReturn)
     endfunction
 
     private function InitDelayed takes nothing returns nothing
@@ -779,6 +859,7 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
     private function Init takes nothing returns nothing
         set KribugsDialogCooldown = CreateTimer()
         set OgreFullSoundTimer = CreateTimer()
+        call ConfigureGamble()
         call TimerStart(CreateTimer(), 0.00, false, function InitDelayed)
     endfunction
 
