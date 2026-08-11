@@ -1,0 +1,85 @@
+BOSS Unknown Entity Start
+    Events
+        Unit - A unit owned by Player 1 (Red) Loses an item
+    Conditions
+        And - All (Conditions) are true
+            Conditions
+                (UnknownEntityLureArea <gen> contains (Hero manipulating item)) Equal to True
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Item-type of (Item being manipulated)) Equal to Raw Bear Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Boar Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Cow Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Crawler Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Hawk Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Lizard Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Makrura Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Murloc Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Panther Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Rabbit Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Raptor Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Snake Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Stag Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Tiger Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Turtle Meat
+                        (Item-type of (Item being manipulated)) Equal to Raw Wolf Meat
+    Actions
+        -------- Turn off necessary triggers --------
+        Trigger - Turn off (This trigger)
+        -------- move dropped item --------
+        Set VariableSet tmp_point = (Position of (Triggering unit))
+        Item - Move (Item being manipulated) to tmp_point
+        Custom script:   call RemoveLocation(udg_tmp_point)
+        -------- Store "lure meat" for delete --------
+        Set VariableSet ItemMeatLureVar = (Item being manipulated)
+        -------- Position for tentacle to appear and "take away" the lure meat --------
+        Set VariableSet VarPoint2 = (Position of ItemMeatLureVar)
+        -------- Spawn Tentacle to "eat" the Meat lure --------
+        Unit - Create 1 Tentacle for Player 12 (Brown) at VarPoint2 facing 70.00 degrees
+        Set VariableSet TentacleSpawn = (Last created unit)
+        Unit - Add a 5.00 second Generic expiration timer to TentacleSpawn
+        Animation - Play TentacleSpawn's birth animation
+        Animation - Queue TentacleSpawn's attack animation
+        Animation - Queue TentacleSpawn's stand animation
+        Custom script:   call RemoveLocation(udg_VarPoint2)
+        Wait 0.10 seconds
+        Item - Remove ItemMeatLureVar
+        -------- hide unit Circle of Power --------
+        Unit - Hide COP_UnknownEntity
+        -------- Turn off necessary triggers --------
+        Trigger - Turn off BOSS Unknown Entity Spawn Tentacles 001 <gen>
+        Trigger - Turn off BOSS Unknown Entity Spawn Tentacles 002 <gen>
+        Trigger - Turn off BOSS Unknown Entity Spawn Tentacles 003 <gen>
+        Trigger - Turn off BOSS Unknown Entity Spawn Tentacles 004 <gen>
+        Trigger - Turn off BOSS Unknown Entity Spawn Tentacles 005 <gen>
+        Trigger - Turn off BOSS Unknown Entity Spawn Tentacles 006 <gen>
+        Trigger - Turn off BOSS Unknown Entity Spawn Tentacles 007 <gen>
+        Trigger - Turn off BOSS Unknown Entity Spawn Tentacles 008 <gen>
+        Trigger - Turn off BOSS Unknown Entity Spawn Tentacles 009 <gen>
+        Wait 3.50 seconds
+        -------- Position for Unknown entity spawn --------
+        Set VariableSet VarPoint = (Center of UnknownEntitySurface <gen>)
+        Unit - Create 1 Unknown Entity for Neutral Passive at VarPoint facing 70.00 degrees
+        Set VariableSet BossUnknownEntity = (Last created unit)
+        Unit Group - Add BossUnknownEntity to BOSS
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Wait 1.50 seconds
+        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0046 <gen> and display What a disgusting n....  Modify duration: Set to 2.00 seconds and Wait
+        Wait 1.50 seconds
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Unknown Entity Create <gen> (checking conditions)
+        -------- Display a quest message. --------
+        Quest - Mark QuestUnknownEntityLure as Completed
+        Quest - Display to (All players) the Quest Requirement message: |cFFFFCC00Unknown E...
+        Wait 2.00 seconds
+        Trigger - Run Quest Unknown Entity Update Kill <gen> (checking conditions)
+        -------- Unknown entity move --------
+        Set VariableSet VarPoint = (Center of UnknownEntityPoint001 <gen>)
+        Unit - Order BossUnknownEntity to Move To VarPoint
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Wait 1.00 seconds
+        Unit - Change ownership of BossUnknownEntity to Player 12 (Brown) and Retain color
+        Set VariableSet VarPoint = (Center of UnknownEntityPoint001 <gen>)
+        Unit - Order BossUnknownEntity to Attack-Move To VarPoint
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Trigger - Remove (This trigger) from the trigger queue

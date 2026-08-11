@@ -1,0 +1,26 @@
+BOSS Unknown Entity Dead
+    Events
+        Unit - A unit Dies
+    Conditions
+        (Dying unit) Equal to BossUnknownEntity
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Kill all existing tentacles at the lake --------
+        Custom script:   set bj_wantDestroyGroup = true
+        Unit Group - Pick every unit in (Units in LakeAmbient62 <gen>) and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Unit-type of (Picked unit)) Equal to Tentacle
+                    Then - Actions
+                        Unit - Kill (Picked unit)
+                    Else - Actions
+        -------- Turn off Tentacle spawns --------
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Unknown Entity Create <gen> (checking conditions)
+        -------- Display a quest message. --------
+        Quest - Mark QuestUnknownEntityKill as Completed
+        Quest - Display to (All players) the Quest Requirement message: |cFFFFCC00Unknown E...
+        Sound - Play QuestActivateWhat1 <gen>
+        Wait Campaign quest delay seconds
+        Trigger - Run Quest Unknown Entity Update Slime <gen> (checking conditions)

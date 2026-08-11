@@ -1,0 +1,59 @@
+BOSS Unknown Entity Spawn Tentacles 008
+    Events
+        Unit - A unit enters Tentacles008 <gen>
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Owner of (Entering unit)) Equal to Player 1 (Red)
+                (Owner of (Entering unit)) Equal to Player 2 (Blue)
+                (Owner of (Entering unit)) Equal to Player 6 (Orange)
+    Actions
+        Trigger - Turn off (This trigger)
+        Set VariableSet VarTentacle = (Random integer number between 1 and 3)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                VarTentacle Equal to 1
+            Then - Actions
+                Set VariableSet VarPoint = (Random point in Tentacles008 <gen>)
+                Unit - Create 1 Tentacle for Player 12 (Brown) at VarPoint facing (Random real number between 0.00 and 360.00) degrees
+                Unit - Add a 180.00 second Generic expiration timer to (Last created unit)
+                Unit - Order (Last created unit) to Attack (Picked unit)
+                Custom script:   call RemoveLocation(udg_VarPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                VarTentacle Equal to 2
+            Then - Actions
+                Set VariableSet VarPoint = (Random point in Tentacles008 <gen>)
+                Unit - Create 1 Tentacle for Player 12 (Brown) at VarPoint facing (Random real number between 0.00 and 360.00) degrees
+                Unit - Add a 180.00 second Generic expiration timer to (Last created unit)
+                Unit - Order (Last created unit) to Attack (Picked unit)
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Set VariableSet VarPoint = (Random point in Tentacles008 <gen>)
+                Unit - Create 1 Tentacle for Player 12 (Brown) at VarPoint facing (Random real number between 0.00 and 360.00) degrees
+                Unit - Add a 180.00 second Generic expiration timer to (Last created unit)
+                Unit - Order (Last created unit) to Attack (Picked unit)
+                Custom script:   call RemoveLocation(udg_VarPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                VarTentacle Equal to 3
+            Then - Actions
+                Set VariableSet VarPoint = (Random point in Tentacles008 <gen>)
+                Unit - Create 1 Tentacle for Player 12 (Brown) at VarPoint facing (Random real number between 0.00 and 360.00) degrees
+                Unit - Add a 180.00 second Generic expiration timer to (Last created unit)
+                Unit - Order (Last created unit) to Attack (Picked unit)
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Set VariableSet VarPoint = (Random point in Tentacles008 <gen>)
+                Unit - Create 1 Tentacle for Player 12 (Brown) at VarPoint facing (Random real number between 0.00 and 360.00) degrees
+                Unit - Add a 180.00 second Generic expiration timer to (Last created unit)
+                Unit - Order (Last created unit) to Attack (Picked unit)
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Set VariableSet VarPoint = (Random point in Tentacles008 <gen>)
+                Unit - Create 1 Tentacle for Player 12 (Brown) at VarPoint facing (Random real number between 0.00 and 360.00) degrees
+                Unit - Add a 180.00 second Generic expiration timer to (Last created unit)
+                Unit - Order (Last created unit) to Attack (Picked unit)
+                Custom script:   call RemoveLocation(udg_VarPoint)
+            Else - Actions
+        Wait (Random real number between 80.00 and 200.00) seconds
+        Trigger - Turn on (This trigger)

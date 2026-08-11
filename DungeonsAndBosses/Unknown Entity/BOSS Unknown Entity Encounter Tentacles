@@ -1,0 +1,26 @@
+BOSS Unknown Entity Encounter Tentacles
+    Events
+        Unit - A unit enters Tentacles001 <gen>
+        Unit - A unit enters Tentacles002 <gen>
+        Unit - A unit enters Tentacles003 <gen>
+        Unit - A unit enters Tentacles004 <gen>
+        Unit - A unit enters Tentacles005 <gen>
+        Unit - A unit enters Tentacles006 <gen>
+        Unit - A unit enters Tentacles007 <gen>
+        Unit - A unit enters Tentacles008 <gen>
+        Unit - A unit enters Tentacles009 <gen>
+    Conditions
+        (Owner of (Entering unit)) Equal to Player 1 (Red)
+        (Owner of (Entering unit)) Equal to Player 1 (Red)
+    Actions
+        Trigger - Turn off (This trigger)
+        Wait 10.00 seconds
+        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0045 <gen> and display I could try to lure....  Modify duration: Set to 7.00 seconds and Wait
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Unknown Entity Create <gen> (checking conditions)
+        -------- Display a quest message. --------
+        Quest - Mark QuestUnknownEntityInvestigate as Completed
+        Quest - Display to (All players) the Quest Requirement message: |cFFFFCC00Unknown E...
+        Wait Campaign quest delay seconds
+        Trigger - Run Quest Unknown Entity Update Lure <gen> (checking conditions)
+        Trigger - Remove (This trigger) from the trigger queue

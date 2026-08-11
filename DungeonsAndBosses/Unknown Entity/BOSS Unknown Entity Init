@@ -1,0 +1,18 @@
+BOSS Unknown Entity Init
+    Events
+    Conditions
+    Actions
+        -------- show unit Circle of Power - CopUnknownEntity --------
+        Set VariableSet COP_UnknownEntity = Circle of Power 1172 <gen>
+        Unit - Unhide COP_UnknownEntity
+        -------- Turn on necessary triggers --------
+        Trigger - Turn on BOSS Unknown Entity Spawn Tentacles 001 <gen>
+        Trigger - Turn on BOSS Unknown Entity Spawn Tentacles 002 <gen>
+        Trigger - Turn on BOSS Unknown Entity Spawn Tentacles 003 <gen>
+        Trigger - Turn on BOSS Unknown Entity Spawn Tentacles 004 <gen>
+        Trigger - Turn on BOSS Unknown Entity Spawn Tentacles 005 <gen>
+        Trigger - Turn on BOSS Unknown Entity Spawn Tentacles 006 <gen>
+        Trigger - Turn on BOSS Unknown Entity Spawn Tentacles 007 <gen>
+        Trigger - Turn on BOSS Unknown Entity Spawn Tentacles 008 <gen>
+        Trigger - Turn on BOSS Unknown Entity Spawn Tentacles 009 <gen>
+        Trigger - Turn on BOSS Unknown Entity Encounter Tentacles <gen>
