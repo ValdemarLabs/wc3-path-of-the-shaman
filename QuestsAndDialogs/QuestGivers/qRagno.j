@@ -1,28 +1,25 @@
-//============================================================================
-// qRagno
-//============================================================================
-// Ragno quest giver conversion from legacy GUI triggers.
-//
-// Converted GUI trigger groups:
-// - Ragno
-// - Ragno quest turn-in side of Chieftain Thork's first summon chain
-//
-// Purpose:
-// - Provides Ragno's qXXX sublibrary using the shared QuestGiver,
-//   QuestMaster, DialogInteraction, and DialogSystem APIs.
-// - Keeps Ragno's repeatable outpost tasks, Kobold stash drops, lumber peon
-//   support, Satyr Negotiations update hooks, and the Thork letter handoff in
-//   one library.
-//
-// Notes:
-// - "Call of the Horde" is owned by Ragno but has Chieftain Thork as receiver,
-//   so the ready turn-in marker appears on Thork while the quest remains part
-//   of Ragno's chain.
-// - The old "Protect the Outpost" intro is event-driven: Red-owned units
-//   entering the Ragno intro rects start the battle, then the quest completes
-//   itself when the spawned gnoll wave is dead.
-//============================================================================
-library qRagno initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, FollowSystem, HeroItemCheck, UnitDeathEvent, VoicelinesNazgrek, VoicelinesOrcPeon, FallenHeroState
+/**
+    qRagno
+
+    Author: Valdemar
+    Version:
+
+    Description:
+    Implements Ragno's quest dialogue, daily outpost tasks, Protect the
+    Outpost encounter, and the Call of the Horde letter handoff.
+
+    Credits:
+    Converted from the original Ragno GUI triggers.
+
+    How to install:
+    Import after the required quest, dialogue, cinematic, follow, loot,
+    reputation, death-event, hero-item, fallen-hero, and voiceline libraries.
+
+    API:
+    Public quest-state hooks are declared at the end of this library.
+
+**/
+library qRagno initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CinematicMover, FollowSystem, HeroItemCheck, ItemLootSystem, Reputation, UnitDeathEvent, VoicelinesNazgrek, VoicelinesOrcPeon, FallenHeroState
 
 globals
     private constant boolean DEBUG = false
@@ -41,6 +38,7 @@ globals
     private constant integer ITEM_STOLEN_GOODS = 'I69B'
 
     private constant integer UNIT_RAGNO = 'o61L'
+    private constant integer UNIT_GRUNT = 'ogru'
     private constant integer UNIT_GNOLL = 'ngno'
     private constant integer UNIT_GNOLL_BRUTE = 'ngnb'
     private constant integer UNIT_GNOLL_POACHER = 'ngna'
@@ -58,6 +56,8 @@ globals
     private constant integer GNOLL_HEAD_REQUIRED = 20
     private constant integer PILE_WOOD_REQUIRED = 10
     private constant integer STOLEN_GOODS_REQUIRED = 6
+    private constant integer GNOLL_HEAD_DROP_CHANCE = 2500
+    private constant integer GNOLL_HEAD_DROP_WEIGHT = 80
     private constant integer KOBOLD_CHEST_ACTIVE_MAX = 6
     private constant integer KOBOLD_CHEST_SLOT_COUNT = 8
     private constant integer RAGNO_OWNER = 5
@@ -87,7 +87,11 @@ globals
     private constant real LUMBER_NEAR_TREE_PERIOD = 0.20
     private constant real LUMBER_NEAR_TREE_RANGE = 250.00
     private constant real LUMBER_NEAR_TREE_RANGE_SQ = 62500.00
-    private constant real LUMBER_HARVEST_COOLDOWN = 3.50
+    private constant real LUMBER_HARVEST_ORDER_DELAY = 0.10
+    private constant real LUMBER_HARVEST_DURATION = 10.00
+    private constant real LUMBER_HARVEST_RETURN_DELAY = 1.00
+    private constant real OUTPOST_WAVE_CHECK_PERIOD = 0.50
+    private constant integer OUTPOST_SECOND_WAVE_LIVING_THRESHOLD = 2
     private constant real OUTPOST_COMPLETION_PERIOD = 2.00
     private constant real OUTPOST_COMPLETION_RESPAWN_REVEAL_DELAY = 2.05
     private constant real OUTPOST_COMPLETION_RESPAWN_DIALOG_DELAY = 2.25
@@ -98,6 +102,7 @@ globals
     private unit Zulkis = null
     private unit SelectedHero = null
     private unit LumberPeon = null
+    private unit ProtectOutpostGruntPick = null
 
     private dialog RagnoDialog = null
     private timer RagnoDialogCooldown = null
@@ -105,7 +110,9 @@ globals
     private timer LumberPeonChatTimer = null
     private timer LumberPeonNearTreeTimer = null
     private timer LumberPeonWanderTimer = null
+    private timer LumberPeonHarvestOrderTimer = null
     private timer LumberPeonHarvestTimer = null
+    private timer LumberPeonReturnTimer = null
     private timer ProtectOutpostSecondWaveTimer = null
     private timer ProtectOutpostCompletionTimer = null
     private timer ProtectOutpostIntroCameraAssistTimer = null
@@ -118,11 +125,13 @@ globals
     private trigger LumberPeonOrderTrigger = null
     private trigger ProtectOutpostStartTrigger = null
     private group ProtectOutpostGnolls = null
+    private group ProtectOutpostGrunts = null
     private group ProtectOutpostHiddenGnolls = null
     private group ProtectOutpostEnumGroup = null
     private rect LumberPeonScanRect = null
     private destructable array KoboldChest
     private destructable LumberPeonTreePick = null
+    private destructable LumberPeonHarvestTree = null
     private unit LumberReturnUnit = null
     private integer KoboldChestCount = 0
     private integer ProtectOutpostLivingGnolls = 0
@@ -134,6 +143,8 @@ globals
     private boolean ProtectOutpostCompleted = false
     private boolean ProtectOutpostSecondWaveSpawned = false
     private boolean ProtectOutpostRagnoRespawnPending = false
+    private boolean ProtectOutpostCinematicUnitsMoved = false
+    private boolean LumberPeonHarvestOrderPending = false
     private boolean LumberPeonHarvesting = false
     private boolean RagnoGreeted = false
     private boolean RagnoInitWaitingLogged = false
@@ -289,7 +300,7 @@ private function RefreshQuestAfterAccept takes string questName returns nothing
 endfunction
 
 private function CanOfferGivingLetter takes nothing returns boolean
-    return GivingLetterUnlocked
+    return GivingLetterUnlocked and QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno)
 endfunction
 
 private function CanOfferProtectOutpost takes nothing returns boolean
@@ -315,7 +326,7 @@ private function UnlockGivingLetterInternal takes nothing returns nothing
     local QuestData q
 
     call SyncUnitReferences()
-    if Ragno == null or Thork == null then
+    if Ragno == null or Thork == null or not QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno) then
         return
     endif
 
@@ -607,8 +618,14 @@ private function StopLumberTimers takes nothing returns nothing
     if LumberPeonWanderTimer != null then
         call PauseTimer(LumberPeonWanderTimer)
     endif
+    if LumberPeonHarvestOrderTimer != null then
+        call PauseTimer(LumberPeonHarvestOrderTimer)
+    endif
     if LumberPeonHarvestTimer != null then
         call PauseTimer(LumberPeonHarvestTimer)
+    endif
+    if LumberPeonReturnTimer != null then
+        call PauseTimer(LumberPeonReturnTimer)
     endif
 endfunction
 
@@ -626,8 +643,10 @@ endfunction
 private function CleanupLumberjackRuntime takes boolean removePeon returns nothing
     call StopLumberTimers()
     call DestroyLumberTriggers()
+    set LumberPeonHarvestOrderPending = false
     set LumberPeonHarvesting = false
     set LumberPeonTreePick = null
+    set LumberPeonHarvestTree = null
     if LumberReturnUnit != null then
         call RemoveUnit(LumberReturnUnit)
         set LumberReturnUnit = null
@@ -653,14 +672,16 @@ private function OnLumberPeonDies takes nothing returns nothing
 endfunction
 
 private function OnLumberHarvestResume takes nothing returns nothing
+    set LumberPeonHarvestOrderPending = false
     set LumberPeonHarvesting = false
+    set LumberPeonHarvestTree = null
     if LumberReturnUnit != null then
         call RemoveUnit(LumberReturnUnit)
         set LumberReturnUnit = null
     endif
     if DialogInteraction_IsUnitAlive(LumberPeon) then
         call IssueImmediateOrder(LumberPeon, "stop")
-        if DialogInteraction_IsUnitAlive(Nazgrek) then
+        if IsLumberjackQuestActive() and DialogInteraction_IsUnitAlive(Nazgrek) then
             call FollowSystem_SetFollow(LumberPeon, Nazgrek, 1200.00, true, 5.00, FOLLOW_STYLE_PASSIVE, true, true)
         endif
     endif
@@ -682,11 +703,47 @@ private function QueueLumberHarvestResultLine takes boolean goodWood returns not
     endif
 endfunction
 
-private function OnLumberPeonOrder takes nothing returns nothing
-    local destructable target = GetOrderTargetDestructable()
+private function OnLumberHarvestComplete takes nothing returns nothing
+    local destructable target = LumberPeonHarvestTree
     local real x
     local real y
     local boolean goodWood
+
+    if not IsLumberjackQuestActive() or not DialogInteraction_IsUnitAlive(LumberPeon) or target == null or GetDestructableLife(target) <= 0.405 then
+        set target = null
+        call OnLumberHarvestResume()
+        return
+    endif
+
+    set x = GetDestructableX(target)
+    set y = GetDestructableY(target)
+    call KillDestructable(target)
+    call CreateDestructable(DESTRUCT_LUMBER_BLOCKER, x, y, GetRandomReal(0.00, 360.00), 1.00, 0)
+
+    set goodWood = GetRandomInt(1, 2) == 1
+    if goodWood then
+        call CreateItem(ITEM_PILE_WOOD, GetUnitX(LumberPeon), GetUnitY(LumberPeon))
+    endif
+    call QueueLumberHarvestResultLine(goodWood)
+
+    if LumberReturnUnit != null then
+        call RemoveUnit(LumberReturnUnit)
+    endif
+    set LumberReturnUnit = CreateUnit(Player(1), UNIT_LUMBER_RETURN, GetUnitX(LumberPeon), GetUnitY(LumberPeon), bj_UNIT_FACING)
+    if LumberReturnUnit != null then
+        call IssueTargetOrder(LumberPeon, "smart", LumberReturnUnit)
+    endif
+    if LumberPeonReturnTimer == null then
+        set LumberPeonReturnTimer = CreateTimer()
+    endif
+    call TimerStart(LumberPeonReturnTimer, LUMBER_HARVEST_RETURN_DELAY, false, function OnLumberHarvestResume)
+    call RefreshQuestAfterAccept(QUEST_LUMBERJACK_DUTIES)
+
+    set target = null
+endfunction
+
+private function OnLumberPeonOrder takes nothing returns nothing
+    local destructable target = GetOrderTargetDestructable()
     local QuestData q
 
     if GetTriggerUnit() != LumberPeon or target == null or LumberPeonHarvesting then
@@ -709,34 +766,35 @@ private function OnLumberPeonOrder takes nothing returns nothing
         return
     endif
 
-    set x = GetDestructableX(target)
-    set y = GetDestructableY(target)
+    set LumberPeonHarvestOrderPending = false
     set LumberPeonHarvesting = true
+    set LumberPeonHarvestTree = target
     call FollowSystem_RemoveUnit(LumberPeon)
     call QueueLumberPeonLine(VL_ORCPEON_0009_KEY, VL_ORCPEON_0009_TEXT)
     call QueueLumberPeonLine(VL_ORCPEON_0010_KEY, VL_ORCPEON_0010_TEXT)
-    call KillDestructable(target)
-    call CreateDestructable(DESTRUCT_LUMBER_BLOCKER, x, y, GetRandomReal(0.00, 360.00), 1.00, 0)
-    set goodWood = GetRandomInt(1, 2) == 1
-    if goodWood then
-        call CreateItem(ITEM_PILE_WOOD, GetUnitX(LumberPeon), GetUnitY(LumberPeon))
-    endif
-    call QueueLumberHarvestResultLine(goodWood)
-    if LumberReturnUnit != null then
-        call RemoveUnit(LumberReturnUnit)
-    endif
-    set LumberReturnUnit = CreateUnit(Player(1), UNIT_LUMBER_RETURN, GetUnitX(LumberPeon), GetUnitY(LumberPeon), bj_UNIT_FACING)
-    if LumberReturnUnit != null then
-        call IssueTargetOrder(LumberPeon, "smart", LumberReturnUnit)
-    endif
     if LumberPeonHarvestTimer == null then
         set LumberPeonHarvestTimer = CreateTimer()
     endif
-    call TimerStart(LumberPeonHarvestTimer, LUMBER_HARVEST_COOLDOWN, false, function OnLumberHarvestResume)
-    call RefreshQuestAfterAccept(QUEST_LUMBERJACK_DUTIES)
+    call TimerStart(LumberPeonHarvestTimer, LUMBER_HARVEST_DURATION, false, function OnLumberHarvestComplete)
 
     set target = null
     set q = 0
+endfunction
+
+private function OnLumberPeonHarvestOrder takes nothing returns nothing
+    local destructable target = LumberPeonHarvestTree
+
+    set LumberPeonHarvestOrderPending = false
+    if not IsLumberjackQuestActive() or not DialogInteraction_IsUnitAlive(LumberPeon) or target == null or GetDestructableLife(target) <= 0.405 then
+        set target = null
+        call OnLumberHarvestResume()
+        return
+    endif
+
+    if not IssueTargetDestructableOrder(LumberPeon, "harvest", target) then
+        call OnLumberHarvestResume()
+    endif
+    set target = null
 endfunction
 
 private function PickNearbyLumberTreeEnum takes nothing returns nothing
@@ -766,7 +824,7 @@ private function OnLumberPeonNearTreeTimer takes nothing returns nothing
     local real x
     local real y
 
-    if not IsLumberjackQuestActive() or not DialogInteraction_IsUnitAlive(LumberPeon) or LumberPeonHarvesting then
+    if not IsLumberjackQuestActive() or not DialogInteraction_IsUnitAlive(LumberPeon) or LumberPeonHarvestOrderPending or LumberPeonHarvesting then
         return
     endif
     if not DialogInteraction_IsUnitAlive(Nazgrek) or not IsUnitInRange(LumberPeon, Nazgrek, LUMBER_NEAR_TREE_RANGE) then
@@ -779,9 +837,15 @@ private function OnLumberPeonNearTreeTimer takes nothing returns nothing
     call SetRect(LumberPeonScanRect, x - LUMBER_NEAR_TREE_RANGE, y - LUMBER_NEAR_TREE_RANGE, x + LUMBER_NEAR_TREE_RANGE, y + LUMBER_NEAR_TREE_RANGE)
     call EnumDestructablesInRect(LumberPeonScanRect, null, function PickNearbyLumberTreeEnum)
     if LumberPeonTreePick != null then
+        set LumberPeonHarvestOrderPending = true
+        set LumberPeonHarvestTree = LumberPeonTreePick
         call FollowSystem_RemoveUnit(LumberPeon)
-        call IssueTargetDestructableOrder(LumberPeon, "harvest", LumberPeonTreePick)
+        call IssueImmediateOrder(LumberPeon, "stop")
         set LumberPeonTreePick = null
+        if LumberPeonHarvestOrderTimer == null then
+            set LumberPeonHarvestOrderTimer = CreateTimer()
+        endif
+        call TimerStart(LumberPeonHarvestOrderTimer, LUMBER_HARVEST_ORDER_DELAY, false, function OnLumberPeonHarvestOrder)
     endif
 endfunction
 
@@ -833,9 +897,19 @@ private function AddLumberPeonIntroLines takes integer seq returns nothing
     endif
 endfunction
 
+private function RegisterBaseGnollHeadDrops takes nothing returns nothing
+    call RegisterSpecificDrop(UNIT_GNOLL, ITEM_GNOLL_HEAD, GNOLL_HEAD_DROP_CHANCE, false, GNOLL_HEAD_DROP_WEIGHT)
+    call RegisterSpecificDrop(UNIT_GNOLL_BRUTE, ITEM_GNOLL_HEAD, GNOLL_HEAD_DROP_CHANCE, false, GNOLL_HEAD_DROP_WEIGHT)
+    call RegisterSpecificDrop(UNIT_GNOLL_POACHER, ITEM_GNOLL_HEAD, GNOLL_HEAD_DROP_CHANCE, false, GNOLL_HEAD_DROP_WEIGHT)
+    call RegisterSpecificDrop(UNIT_GNOLL_WARDEN, ITEM_GNOLL_HEAD, GNOLL_HEAD_DROP_CHANCE, false, GNOLL_HEAD_DROP_WEIGHT)
+endfunction
+
 private function EnsureProtectOutpostRuntime takes nothing returns nothing
     if ProtectOutpostGnolls == null then
         set ProtectOutpostGnolls = CreateGroup()
+    endif
+    if ProtectOutpostGrunts == null then
+        set ProtectOutpostGrunts = CreateGroup()
     endif
     if ProtectOutpostHiddenGnolls == null then
         set ProtectOutpostHiddenGnolls = CreateGroup()
@@ -864,6 +938,81 @@ private function EnsureProtectOutpostRuntime takes nothing returns nothing
     if ProtectOutpostRagnoRespawnTimer == null then
         set ProtectOutpostRagnoRespawnTimer = CreateTimer()
     endif
+endfunction
+
+private function PickProtectOutpostGruntEnum takes nothing returns nothing
+    local unit u = GetEnumUnit()
+
+    if DialogInteraction_IsUnitAlive(u) and GetUnitTypeId(u) == UNIT_GRUNT then
+        call GroupAddUnit(ProtectOutpostGrunts, u)
+    endif
+
+    set u = null
+endfunction
+
+private function SelectProtectOutpostGrunts takes nothing returns nothing
+    call EnsureProtectOutpostRuntime()
+    call GroupClear(ProtectOutpostGrunts)
+    call GroupClear(ProtectOutpostEnumGroup)
+    call GroupEnumUnitsInRect(ProtectOutpostEnumGroup, gg_rct_HordeMountainCampSouth, null)
+    call ForGroup(ProtectOutpostEnumGroup, function PickProtectOutpostGruntEnum)
+    call GroupClear(ProtectOutpostEnumGroup)
+endfunction
+
+private function PickProtectOutpostSurvivingGruntEnum takes nothing returns nothing
+    local unit u = GetEnumUnit()
+
+    if ProtectOutpostGruntPick == null and DialogInteraction_IsUnitAlive(u) then
+        set ProtectOutpostGruntPick = u
+    endif
+
+    set u = null
+endfunction
+
+private function GetProtectOutpostSurvivingGrunt takes nothing returns unit
+    set ProtectOutpostGruntPick = null
+    if ProtectOutpostGrunts != null then
+        call ForGroup(ProtectOutpostGrunts, function PickProtectOutpostSurvivingGruntEnum)
+    endif
+    return ProtectOutpostGruntPick
+endfunction
+
+private function MovePlayerUnitsToProtectOutpostCinematic takes rect sceneCenterRect, rect nazgrekRect returns nothing
+    local location centerPoint = null
+    local location nazgrekPoint = null
+    local location zulkisPoint = null
+
+    set ProtectOutpostCinematicUnitsMoved = false
+    if not DialogInteraction_IsUnitAlive(Nazgrek) or sceneCenterRect == null or nazgrekRect == null then
+        return
+    endif
+
+    set centerPoint = Location(GetRectCenterX(sceneCenterRect), GetRectCenterY(sceneCenterRect))
+    set nazgrekPoint = Location(GetRectCenterX(nazgrekRect), GetRectCenterY(nazgrekRect))
+    set zulkisPoint = Location(GetRectCenterX(sceneCenterRect), GetRectCenterY(sceneCenterRect))
+    set udg_CinematicTriggerUnit = Nazgrek
+    set udg_CinematicMoveMode = 1
+    set udg_CinematicMovePoint[0] = centerPoint
+    set udg_CinematicMovePoint[1] = nazgrekPoint
+    set udg_CinematicMovePoint[2] = zulkisPoint
+    call CinematicMover_MoveUnitsToCinematic(Nazgrek, 1)
+    set udg_CinematicMovePoint[0] = null
+    set udg_CinematicMovePoint[1] = null
+    set udg_CinematicMovePoint[2] = null
+    call RemoveLocation(centerPoint)
+    call RemoveLocation(nazgrekPoint)
+    call RemoveLocation(zulkisPoint)
+    set centerPoint = null
+    set nazgrekPoint = null
+    set zulkisPoint = null
+    set ProtectOutpostCinematicUnitsMoved = true
+endfunction
+
+private function ReturnPlayerUnitsFromProtectOutpostCinematic takes nothing returns nothing
+    if ProtectOutpostCinematicUnitsMoved and Nazgrek != null then
+        call CinematicMover_ReturnUnitsFromCinematic(Nazgrek)
+    endif
+    set ProtectOutpostCinematicUnitsMoved = false
 endfunction
 
 private function IsProtectOutpostQuestOpen takes nothing returns boolean
@@ -916,13 +1065,13 @@ private function CountLivingProtectOutpostGnollEnum takes nothing returns nothin
     set u = null
 endfunction
 
-private function HasLivingProtectOutpostGnolls takes nothing returns boolean
+private function GetLivingProtectOutpostGnollCount takes nothing returns integer
     if ProtectOutpostGnolls == null then
-        return false
+        return 0
     endif
     set ProtectOutpostLivingGnolls = 0
     call ForGroup(ProtectOutpostGnolls, function CountLivingProtectOutpostGnollEnum)
-    return ProtectOutpostLivingGnolls > 0
+    return ProtectOutpostLivingGnolls
 endfunction
 
 private function SpawnProtectOutpostGnoll takes integer unitTypeId, rect spawnRect returns nothing
@@ -979,6 +1128,14 @@ private function OnProtectOutpostIntroCameraReturn takes nothing returns nothing
 endfunction
 
 private function OnProtectOutpostIntroCinematicStart takes nothing returns nothing
+    if DialogInteraction_IsUnitAlive(Nazgrek) then
+        call IssueImmediateOrder(Nazgrek, "stop")
+    endif
+    call MovePlayerUnitsToProtectOutpostCinematic(gg_rct_RagnoIntroPlayerUnits, gg_rct_RagnoIntroRegionNazgrek)
+    if DialogInteraction_IsUnitAlive(Nazgrek) then
+        call IssueImmediateOrder(Nazgrek, "stop")
+        call SetUnitFacing(Nazgrek, 49.00)
+    endif
     call DialogInteraction_BeginCinematicSequence(CINEMATIC)
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUTIN, 2.00, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
     call CameraSetupApplyForPlayer(true, gg_cam_ProtectOutpost01, Player(0), 0.00)
@@ -991,6 +1148,7 @@ private function OnProtectOutpostIntroCinematicEnd takes nothing returns nothing
     call PauseTimer(ProtectOutpostIntroCameraReturnTimer)
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUTIN, 0.50, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
     call CameraSetupApplyForPlayer(true, gg_cam_ProtectOutpostSkipped, Player(0), 0.00)
+    call ReturnPlayerUnitsFromProtectOutpostCinematic()
     call DialogInteraction_EndCinematicSequence(CINEMATIC)
     if DialogInteraction_IsUnitAlive(Nazgrek) then
         call IssuePointOrder(Nazgrek, "attack", GetRectCenterX(gg_rct_GnollAttackRegion2), GetRectCenterY(gg_rct_GnollAttackRegion2))
@@ -998,24 +1156,17 @@ private function OnProtectOutpostIntroCinematicEnd takes nothing returns nothing
 endfunction
 
 private function PlayProtectOutpostIntroCinematic takes nothing returns nothing
+    local unit grunt = GetProtectOutpostSurvivingGrunt()
     local integer seq = DialogInteraction_CreateBaseSequence(Nazgrek, "Nazgrek")
 
     call DialogSystem_SetSequenceCallbacks(seq, function OnProtectOutpostIntroCinematicStart, function OnProtectOutpostIntroCinematicEnd)
-    call DialogSystem_AddDelay(seq, 2.00)
-    call DialogSystem_AddLine(seq, gg_unit_ogru_1209, "Grunt", "The gnolls are attacking the outpost! Crush them in the name of the Horde!", "OrcGrunt_0012", true)
-    call DialogSystem_AddLine(seq, gg_unit_ogru_1210, "Grunt", "They are too many! We're outnumbered! Lok'tar Ogar!!!", "OrcGrunt_0013", true)
+    call DialogSystem_AddDelay(seq, 3.00)
+    if grunt != null then
+        call DialogSystem_AddLine(seq, grunt, "Grunt", "They are too many! We're outnumbered! Lok'tar Ogar!!!", "OrcGrunt_0013", true)
+    endif
     call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0057_TEXT, VL_NAZGREK_0057_KEY, true)
     call DialogSystem_PlaySequence(seq, Player(0), Nazgrek)
-endfunction
-
-private function GetProtectOutpostSurvivingGrunt takes nothing returns unit
-    if DialogInteraction_IsUnitAlive(gg_unit_ogru_1210) then
-        return gg_unit_ogru_1210
-    endif
-    if DialogInteraction_IsUnitAlive(gg_unit_ogru_1209) then
-        return gg_unit_ogru_1209
-    endif
-    return null
+    set grunt = null
 endfunction
 
 private function OnProtectOutpostLetterDelay takes nothing returns nothing
@@ -1070,6 +1221,10 @@ private function RevealProtectOutpostRespawnedRagno takes nothing returns nothin
 endfunction
 
 private function OnProtectOutpostCompletionCinematicStart takes nothing returns nothing
+    if DialogInteraction_IsUnitAlive(Nazgrek) then
+        call IssueImmediateOrder(Nazgrek, "stop")
+    endif
+    call MovePlayerUnitsToProtectOutpostCinematic(gg_rct_RagnoIntroPlayerUnits, gg_rct_RagnoIntroNazgrek)
     call DialogInteraction_BeginCinematicSequence(CINEMATIC)
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUTIN, 2.00, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
     call CameraSetupApplyForPlayer(true, gg_cam_ProtectOutpost03, Player(0), 0.00)
@@ -1079,6 +1234,7 @@ private function OnProtectOutpostCompletionCinematicStart takes nothing returns 
     if DialogInteraction_IsUnitAlive(Nazgrek) then
         call SetUnitPosition(Nazgrek, GetRectCenterX(gg_rct_RagnoIntroNazgrek), GetRectCenterY(gg_rct_RagnoIntroNazgrek))
         call SetUnitFacing(Nazgrek, 73.00)
+        call IssueImmediateOrder(Nazgrek, "stop")
     endif
     if DialogInteraction_IsUnitAlive(Ragno) then
         call SetUnitPosition(Ragno, GetRectCenterX(gg_rct_RagnoPoint), GetRectCenterY(gg_rct_RagnoPoint))
@@ -1090,6 +1246,7 @@ private function OnProtectOutpostCompletionCinematicEnd takes nothing returns no
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUTIN, 0.50, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
     call CameraSetupApplyForPlayer(true, gg_cam_ProtectOutpostSkipped02, Player(0), 0.00)
     call ResetToGameCameraForPlayer(Player(0), 0.00)
+    call ReturnPlayerUnitsFromProtectOutpostCinematic()
     call DialogInteraction_EndCinematicSequence(CINEMATIC)
     call UnhideProtectOutpostPreplacedGnolls()
     if DialogInteraction_IsUnitAlive(Ragno) then
@@ -1098,9 +1255,16 @@ private function OnProtectOutpostCompletionCinematicEnd takes nothing returns no
     call TimerStart(ProtectOutpostLetterDelayTimer, 2.00, false, function OnProtectOutpostLetterDelay)
 endfunction
 
+private function MoveRagnoToProtectOutpostConversation takes nothing returns nothing
+    if DialogInteraction_IsUnitAlive(Ragno) then
+        call IssuePointOrder(Ragno, "move", GetRectCenterX(gg_rct_RagnoIntroRagno), GetRectCenterY(gg_rct_RagnoIntroRagno))
+    endif
+endfunction
+
 private function PlayProtectOutpostCompletionCinematic takes nothing returns nothing
     local unit grunt
     local integer seq
+    local integer moveLine
 
     call EnsureProtectOutpostRuntime()
     call PrepareProtectOutpostCompletionRagno()
@@ -1120,6 +1284,9 @@ private function PlayProtectOutpostCompletionCinematic takes nothing returns not
     endif
     call DialogSystem_AddMakeFaceEachOther(seq, Ragno, Nazgrek, 1.00, 0.00)
     call DialogSystem_AddLine(seq, Ragno, "Ragno", "Hey you! You must be that shaman from the forest nearby...", "OrcGrunt_0015", true)
+    set moveLine = DialogSystem_AddDelay(seq, 2.50)
+    call DialogSystem_BindLineAction(seq, moveLine, function MoveRagnoToProtectOutpostConversation)
+    call DialogSystem_AddMakeFaceEachOther(seq, Ragno, Nazgrek, 1.00, 1.00)
     call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0059_TEXT, VL_NAZGREK_0059_KEY, true)
     call DialogSystem_AddLine(seq, Ragno, "Ragno", "Wait! I knew you looked familiar. I was issued a task related to you shaman.", "OrcGrunt_0016", true)
     call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0060_TEXT, VL_NAZGREK_0060_KEY, true)
@@ -1144,6 +1311,9 @@ private function CompleteProtectOutpost takes nothing returns nothing
     if ProtectOutpostCompletionTimer != null then
         call PauseTimer(ProtectOutpostCompletionTimer)
     endif
+    if ProtectOutpostSecondWaveTimer != null then
+        call PauseTimer(ProtectOutpostSecondWaveTimer)
+    endif
     set ProtectOutpostCompleted = true
     set MountainDefenseActive = false
 
@@ -1161,18 +1331,22 @@ private function CompleteProtectOutpost takes nothing returns nothing
 endfunction
 
 private function OnProtectOutpostCompletionTimer takes nothing returns nothing
-    if ProtectOutpostStarted and ProtectOutpostSecondWaveSpawned and not ProtectOutpostCompleted and not HasLivingProtectOutpostGnolls() then
+    if ProtectOutpostStarted and ProtectOutpostSecondWaveSpawned and not ProtectOutpostCompleted and GetLivingProtectOutpostGnollCount() == 0 then
         call CompleteProtectOutpost()
     endif
 endfunction
 
 private function OnProtectOutpostSecondWaveTimer takes nothing returns nothing
     if not ProtectOutpostStarted or ProtectOutpostCompleted then
+        call PauseTimer(ProtectOutpostSecondWaveTimer)
         return
     endif
-    call SpawnProtectOutpostSecondWave()
-    if ProtectOutpostCompletionTimer != null then
-        call TimerStart(ProtectOutpostCompletionTimer, OUTPOST_COMPLETION_PERIOD, true, function OnProtectOutpostCompletionTimer)
+    if not ProtectOutpostSecondWaveSpawned and GetLivingProtectOutpostGnollCount() <= OUTPOST_SECOND_WAVE_LIVING_THRESHOLD then
+        call PauseTimer(ProtectOutpostSecondWaveTimer)
+        call SpawnProtectOutpostSecondWave()
+        if ProtectOutpostCompletionTimer != null then
+            call TimerStart(ProtectOutpostCompletionTimer, OUTPOST_COMPLETION_PERIOD, true, function OnProtectOutpostCompletionTimer)
+        endif
     endif
 endfunction
 
@@ -1187,6 +1361,7 @@ private function StartProtectOutpostEncounter takes nothing returns nothing
     call EnsureProtectOutpostRuntime()
     call GroupClear(ProtectOutpostGnolls)
     call HideProtectOutpostPreplacedGnolls()
+    call SelectProtectOutpostGrunts()
     set ProtectOutpostStarted = true
     set ProtectOutpostSecondWaveSpawned = false
     set MountainDefenseActive = true
@@ -1200,7 +1375,7 @@ private function StartProtectOutpostEncounter takes nothing returns nothing
 
     call SpawnProtectOutpostFirstWave()
     call PlayProtectOutpostIntroCinematic()
-    call TimerStart(ProtectOutpostSecondWaveTimer, 20.00, false, function OnProtectOutpostSecondWaveTimer)
+    call TimerStart(ProtectOutpostSecondWaveTimer, OUTPOST_WAVE_CHECK_PERIOD, true, function OnProtectOutpostSecondWaveTimer)
 
     set q = 0
 endfunction
@@ -1296,6 +1471,8 @@ private function OnCompleteGnollHeadcount takes nothing returns nothing
 endfunction
 
 private function OnAcceptLumberjackEnd takes nothing returns nothing
+    call QuestGiver_AcceptQuestByNameAndGiver(QUEST_LUMBERJACK_DUTIES, Ragno)
+    call RefreshQuestAfterAccept(QUEST_LUMBERJACK_DUTIES)
     call StartExitFadeOut()
 endfunction
 
@@ -1303,8 +1480,6 @@ private function OnAcceptLumberjack takes nothing returns nothing
     local integer seq
 
     set RagnoGreeted = true
-    call QuestGiver_AcceptQuestByNameAndGiver(QUEST_LUMBERJACK_DUTIES, Ragno)
-    call RefreshQuestAfterAccept(QUEST_LUMBERJACK_DUTIES)
     call StartLumberjackRuntime()
     call DialogInteraction_BeginDialogSequence()
     set seq = DialogInteraction_CreateBaseSequence(Ragno, "Ragno")
@@ -1596,6 +1771,7 @@ private function CreateQuests takes nothing returns nothing
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno) then
         set q = QuestGiver_CreateConfiguredQuest(QUEST_PROTECT_OUTPOST, Ragno, "normal", 1, null, QUEST_PROTECT_OUTPOST, "ReplaceableTextures\\CommandButtons\\BTNGnoll.blp", "Gnolls are attacking the mountain outpost.\n\n", "", "", 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", "")
+        call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_ENEMY)
         call QuestGiver_SetQuestRewards(q, true, 0, false, 0, false, 0, true, 0, false)
         call QuestGiver_SetRequirements(q.id, "", "Protect the mountain outpost from the gnoll attack", "", "", "", "", "", "", "")
         call q.setAutoComplete(true)
@@ -1607,6 +1783,7 @@ private function CreateQuests takes nothing returns nothing
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_GNOLL_HEADCOUNT, Ragno) then
         set q = QuestGiver_CreateConfiguredQuest(QUEST_GNOLL_HEADCOUNT, Ragno, "daily", 2, null, QUEST_GNOLL_HEADCOUNT, "ReplaceableTextures\\CommandButtons\\BTNGnoll.blp", "Ragno wants you to thin out the gnolls threatening the mountain outpost.\n\n", infoText, info2DailyText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
+        call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_ENEMY)
         call QuestGiver_SetQuestRewards(q, true, 0, true, 200, false, 0, true, 0, false)
         call QuestGiver_SetRequirements(q.id, "", "Bring 20 Gnoll Heads to Ragno", "", "", "", "", "", "", "")
         call QuestGiver_RegisterItemRequirement(q.id, Ragno, 1, ITEM_GNOLL_HEAD, GNOLL_HEAD_REQUIRED)
@@ -1614,6 +1791,7 @@ private function CreateQuests takes nothing returns nothing
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_LUMBERJACK_DUTIES, Ragno) then
         set q = QuestGiver_CreateConfiguredQuest(QUEST_LUMBERJACK_DUTIES, Ragno, "daily", 2, null, QUEST_LUMBERJACK_DUTIES, "ReplaceableTextures\\CommandButtons\\BTNBundleOfLumber.blp", "Harvest 10 Pile Of Wood for the mountain outpost. A peon will help, but he must survive.\n\n", infoText, info2DailyText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
+        call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_ENEMY)
         call QuestGiver_SetQuestRewards(q, true, 0, true, 200, false, 0, true, 0, false)
         call QuestGiver_SetRequirements(q.id, "", "Harvest 10 Pile Of Wood", "Peon must survive", "", "", "", "", "", "")
         call QuestGiver_RegisterItemRequirement(q.id, Ragno, 1, ITEM_PILE_WOOD, PILE_WOOD_REQUIRED)
@@ -1621,6 +1799,7 @@ private function CreateQuests takes nothing returns nothing
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_KOBOLD_THIEVES, Ragno) then
         set q = QuestGiver_CreateConfiguredQuest(QUEST_KOBOLD_THIEVES, Ragno, "daily", 2, null, QUEST_KOBOLD_THIEVES, "ReplaceableTextures\\CommandButtons\\BTNKobold.blp", "Kill the kobold leader and recover the stolen goods taken from the Horde.\n\n", infoText, info2DailyText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
+        call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_ENEMY)
         call QuestGiver_SetQuestRewards(q, true, 0, true, 200, false, 0, true, 0, false)
         call QuestGiver_SetRequirements(q.id, "", "Kill Razzlewhip Mudgrubber", "Retrieve 6 Stolen Goods", "", "", "", "", "", "")
         call QuestGiver_RegisterItemRequirement(q.id, Ragno, 2, ITEM_STOLEN_GOODS, STOLEN_GOODS_REQUIRED)
@@ -1628,13 +1807,16 @@ private function CreateQuests takes nothing returns nothing
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_SATYR_NEGOTIATIONS, Ragno) then
         set q = QuestGiver_CreateConfiguredQuest(QUEST_SATYR_NEGOTIATIONS, Ragno, "normal", 3, null, QUEST_SATYR_NEGOTIATIONS, "ReplaceableTextures\\CommandButtons\\BTNForestTroll.blp", "The relations between the Horde and the satyrs are unstable. Meet with them and learn whether diplomacy is still possible.\n\n", infoText, info2MainText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
+        call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_ENEMY)
         call QuestGiver_SetQuestRewards(q, true, 0, true, 150, false, 0, true, 0, false)
         call QuestGiver_SetRequirements(q.id, "", "Meet with the satyrs and learn what they want", "", "", "", "", "", "", "")
     endif
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_GIVING_LETTER, Ragno) then
         set q = QuestGiver_CreateConfiguredQuest(QUEST_GIVING_LETTER, Ragno, "normal", 1, Thork, QUEST_GIVING_LETTER, "ReplaceableTextures\\CommandButtons\\BTNOrcCaptureFlag.blp", "Ragno has given Nazgrek a blood-signed summon letter. Bring it to Chieftain Thork at the Horde camp.\n\n", infoText, "|cffffcc00Quest receiver:|r Chieftain Thork\n\n", 1, true, ALLOW_NAZGREK, false, "Horde", "Chieftain Thork")
+        call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_ENEMY)
         call QuestGiver_SetQuestRewards(q, true, 0, false, 0, false, 0, true, 0, false)
+        call QuestGiver_AddQuestPrerequisite(q, QUEST_PROTECT_OUTPOST, Ragno)
         set availabilityCondition = CreateTrigger()
         call TriggerAddCondition(availabilityCondition, Condition(function CanOfferGivingLetter))
         call QuestGiver_SetQuestCustomCondition(q, availabilityCondition)
@@ -1665,6 +1847,7 @@ private function InitDelayed takes nothing returns nothing
     call QuestGiver_Register(Ragno)
     call DialogInteraction_ConfigureDialogTransition(Ragno, CINEMATIC_MOVE_MODE, CINEMATIC_MOVE_OFFSET, CINEMATIC_MOVE_ANGLE, CAMERA_DIST, CAMERA_Z_OFFSET, CAMERA_ANGLE, CAMERA_ROT_OFFSET, CAMERA_FAR_Z, CAMERA_FOV, CAMERA_BLOCK_RADIUS, CAMERA_BLOCK_CHECK)
     call RegisterDialogLines()
+    call RegisterBaseGnollHeadDrops()
     call CreateQuests()
     call RegisterProtectOutpostStartTrigger()
     call RefreshRagnoAvailabilityInternal()
