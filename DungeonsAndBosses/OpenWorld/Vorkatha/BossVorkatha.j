@@ -14,7 +14,20 @@
 library BossVorkatha initializer Init requires Boss
     globals
         private integer BossId = 0
+        private timer RespawnTimer = null
     endglobals
+
+    private function Respawn takes nothing returns nothing
+        local unit boss = Boss_Respawn(BossId)
+        if boss != null then
+            set udg_BossVorkatha = boss
+        endif
+        set boss = null
+    endfunction
+
+    private function OnDeath takes nothing returns nothing
+        call TimerStart(RespawnTimer, GetRandomReal(120.00, 320.00), false, function Respawn)
+    endfunction
 
     public function GetId takes nothing returns integer
         return BossId
@@ -38,6 +51,7 @@ library BossVorkatha initializer Init requires Boss
             set BossId = Boss_Register(whichUnit, "Vorkatha")
             call Boss_SetDescription(BossId, "Vorkatha is catalogued as an open-world boss.", "No recoverable phase data exists.", "No recoverable ability data exists.", "Encounter mechanics await a source trigger or design pass.")
             call Boss_SetAutoStartOnAttack(BossId, true)
+            call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnDeath)
         endif
         call DestroyTimer(initTimer)
         set initTimer = null
@@ -46,6 +60,7 @@ library BossVorkatha initializer Init requires Boss
 
     private function Init takes nothing returns nothing
         local timer initTimer = CreateTimer()
+        set RespawnTimer = CreateTimer()
         call TimerStart(initTimer, 0.00, false, function Register)
         set initTimer = null
     endfunction

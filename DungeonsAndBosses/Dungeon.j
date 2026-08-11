@@ -98,7 +98,6 @@ library Dungeon initializer Init requires Boss, ZonesCore, ZoneEvent, CreepRespa
         private Table Dungeon_RouteDungeon = 0
         private Table Dungeon_RouteRemaining = 0
         private Table Dungeon_RouteReissue = 0
-        private Table Dungeon_RouteWasSuspended = 0
 
         private group Dungeon_RegisterGroup = null
         private group Dungeon_AIRouteGroup = null
@@ -563,7 +562,6 @@ library Dungeon initializer Init requires Boss, ZonesCore, ZoneEvent, CreepRespa
 
     private function Dungeon_CancelAIRouteInternal takes unit whichUnit, boolean restoreOrders returns nothing
         local integer unitKey
-        local boolean wasSuspended
 
         if whichUnit == null or Dungeon_RouteDungeon == 0 then
             return
@@ -573,17 +571,15 @@ library Dungeon initializer Init requires Boss, ZonesCore, ZoneEvent, CreepRespa
             return
         endif
 
-        set wasSuspended = Dungeon_RouteWasSuspended.boolean[unitKey]
         call GroupRemoveUnit(Dungeon_AIRouteGroup, whichUnit)
         call Dungeon_RouteDungeon.remove(unitKey)
         call Dungeon_RouteRemaining.real.remove(unitKey)
         call Dungeon_RouteReissue.real.remove(unitKey)
-        call Dungeon_RouteWasSuspended.boolean.remove(unitKey)
-        if restoreOrders and Dungeon_IsUnitAlive(whichUnit) and not wasSuspended and Companions_IsControlled(whichUnit) then
-            call Companions_Resume(whichUnit)
+        if Companions_IsControlled(whichUnit) then
+            call Companions_SetExternalOrderOverride(whichUnit, false)
+        endif
+        if restoreOrders and Dungeon_IsUnitAlive(whichUnit) and not Companions_IsSuspended(whichUnit) and Companions_IsControlled(whichUnit) then
             call Companions_RefreshOrders(whichUnit)
-        elseif restoreOrders and Dungeon_IsUnitAlive(whichUnit) and wasSuspended then
-            call IssueImmediateOrder(whichUnit, "stop")
         endif
     endfunction
 
@@ -603,7 +599,7 @@ library Dungeon initializer Init requires Boss, ZonesCore, ZoneEvent, CreepRespa
         local integer dungeonId
         local integer unitKey
 
-        if whichUnit == null or not IsUnitType(whichUnit, UNIT_TYPE_HERO) or AI_GetInstance(whichUnit) <= 0 or not Companions_IsControlled(whichUnit) then
+        if whichUnit == null or not IsUnitType(whichUnit, UNIT_TYPE_HERO) or AI_GetInstance(whichUnit) <= 0 or not Companions_IsControlled(whichUnit) or Companions_IsSuspended(whichUnit) then
             return false
         endif
         set leader = Companions_GetLeader(whichUnit)
@@ -624,11 +620,8 @@ library Dungeon initializer Init requires Boss, ZonesCore, ZoneEvent, CreepRespa
         set Dungeon_RouteDungeon[unitKey] = dungeonId
         set Dungeon_RouteRemaining.real[unitKey] = DUNGEON_AI_TELEPORT_DELAY
         set Dungeon_RouteReissue.real[unitKey] = DUNGEON_AI_ROUTE_REISSUE
-        set Dungeon_RouteWasSuspended.boolean[unitKey] = Companions_IsSuspended(whichUnit)
         call GroupAddUnit(Dungeon_AIRouteGroup, whichUnit)
-        if not Dungeon_RouteWasSuspended.boolean[unitKey] then
-            call Companions_Suspend(whichUnit)
-        endif
+        call Companions_SetExternalOrderOverride(whichUnit, true)
         call Dungeon_IssueAIRouteOrder(whichUnit, dungeonId)
         call Dungeon_Debug("Routing " + GetUnitName(whichUnit) + " to dungeon " + I2S(dungeonId) + ".")
         set leader = null
@@ -784,7 +777,6 @@ library Dungeon initializer Init requires Boss, ZonesCore, ZoneEvent, CreepRespa
         set Dungeon_RouteDungeon = Table.create()
         set Dungeon_RouteRemaining = Table.create()
         set Dungeon_RouteReissue = Table.create()
-        set Dungeon_RouteWasSuspended = Table.create()
         set Dungeon_RegisterGroup = CreateGroup()
         set Dungeon_AIRouteGroup = CreateGroup()
         set Dungeon_AIRouteTimer = CreateTimer()

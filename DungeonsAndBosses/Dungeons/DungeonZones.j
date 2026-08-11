@@ -7,14 +7,18 @@
     Description:
     Registers the gameplay dungeon zones that do not yet have a dedicated
     encounter library. Wyrmhold Sanctum and Firelands receive the shared
-    grouped/random creep policy. Dreadforge supplies synchronized entrance
-    routing data while its encounter roster remains explicit and unregistered.
+    grouped/random creep policy and use their zone footprints as routing
+    fallbacks because the map defines no dedicated entrance rects for them.
+    Dreadforge supplies synchronized entrance routing data while its encounter
+    roster remains explicit and unregistered.
 
     Credits:
     - ZonesCore dungeon definitions 103, 105, and 106
 
     How to install:
-    Import after Dungeon. Keep the referenced zone and transition rects.
+    Import after Dungeon and ZoneEvent. Keep the referenced zone and transition
+    rects. Replace the Wyrmhold/Firelands routing rects here if dedicated
+    entrance rects are added in World Editor.
 
     API:
     - DungeonZones_GetWyrmholdId() returns integer
@@ -22,7 +26,7 @@
     - DungeonZones_GetDreadforgeId() returns integer
 
 **/
-library DungeonZones initializer Init requires Dungeon
+library DungeonZones initializer Init requires Dungeon, ZoneEvent
     globals
         private integer WyrmholdId = 0
         private integer FirelandsId = 0
@@ -51,6 +55,7 @@ library DungeonZones initializer Init requires Dungeon
         set FirelandsId = Dungeon_Register(105, gg_rct_016Firelands, gg_rct_016Firelands, 300.00)
         call Dungeon_AddArea(FirelandsId, gg_rct_016Firelands)
         call Dungeon_RegisterZoneCreeps(FirelandsId, 35.00, 120.00, 320.00)
+        call ZoneEvent_SetFastPanOnEnter(105, true)
 
         set DreadforgeId = Dungeon_Register(106, gg_rct_106Dreadforge, gg_rct_106DreadforgeA, 300.00)
         call Dungeon_AddArea(DreadforgeId, gg_rct_106DreadforgeA)

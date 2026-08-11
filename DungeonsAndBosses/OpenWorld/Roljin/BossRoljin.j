@@ -16,6 +16,7 @@ library BossRoljin initializer Init requires Boss, CreepRespawn
         private integer BossId = 0
         private timer MoveTimer = null
         private timer SupportTimer = null
+        private timer RespawnTimer = null
         private group SupportGroup = null
         private group WorkGroup = null
     endglobals
@@ -115,12 +116,20 @@ library BossRoljin initializer Init requires Boss, CreepRespawn
         if Boss_IsActive(BossId) and whichUnit != null then
             if pick == 1 then
                 call IssuePointOrder(whichUnit, "move", GetRectCenterX(gg_rct_BossRoljinMove01), GetRectCenterY(gg_rct_BossRoljinMove01))
+                call PlaySoundOnUnitBJ(gg_snd_ForestTrollYesAttack1, 100.00, whichUnit)
+                call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, 2.00, "|cffffcc00Rol'jin:|r Die!")
             elseif pick == 2 then
                 call IssuePointOrder(whichUnit, "move", GetRectCenterX(gg_rct_BossRoljinMove02), GetRectCenterY(gg_rct_BossRoljinMove02))
+                call PlaySoundOnUnitBJ(gg_snd_ForestTrollYesAttack2, 100.00, whichUnit)
+                call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, 2.00, "|cffffcc00Rol'jin:|r Argh!")
             elseif pick == 3 then
                 call IssuePointOrder(whichUnit, "move", GetRectCenterX(gg_rct_BossRoljinMove03), GetRectCenterY(gg_rct_BossRoljinMove03))
+                call PlaySoundOnUnitBJ(gg_snd_ForestTrollYesAttack2, 100.00, whichUnit)
+                call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, 2.00, "|cffffcc00Rol'jin:|r Argh!")
             else
                 call IssuePointOrder(whichUnit, "move", GetRectCenterX(gg_rct_BossRoljinMove04), GetRectCenterY(gg_rct_BossRoljinMove04))
+                call PlaySoundOnUnitBJ(gg_snd_ForestTrollYesAttack2, 100.00, whichUnit)
+                call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, 2.00, "|cffffcc00Rol'jin:|r Argh!")
             endif
             call TimerStart(MoveTimer, GetRandomReal(30.00, 45.00), false, function MoveRandomly)
         endif
@@ -134,6 +143,19 @@ library BossRoljin initializer Init requires Boss, CreepRespawn
         call PauseTimer(MoveTimer)
         call PauseTimer(SupportTimer)
         call ClearSupports()
+    endfunction
+
+    private function Respawn takes nothing returns nothing
+        local unit boss = Boss_Respawn(BossId)
+        if boss != null then
+            set udg_Roljin = boss
+        endif
+        set boss = null
+    endfunction
+
+    private function OnDeath takes nothing returns nothing
+        call OnEnd()
+        call TimerStart(RespawnTimer, GetRandomReal(120.00, 320.00), false, function Respawn)
     endfunction
     public function GetId takes nothing returns integer
         return BossId
@@ -159,7 +181,7 @@ library BossRoljin initializer Init requires Boss, CreepRespawn
         call Boss_SetDescription(BossId, "The Bloodtusk chieftain calls troll support while roaming his grounds.", "One recovered phase: periodic movement and reinforcements.", "Support packs include trappers, berserkers, high priests, and shadow priests.", "Prioritize healers and keep his escort group under control.")
         call Boss_SetEventCallback(BossId, BOSS_EVENT_START, function OnStart)
         call Boss_SetEventCallback(BossId, BOSS_EVENT_RESET, function OnEnd)
-        call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnEnd)
+        call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnDeath)
         call DestroyTimer(initTimer)
         set initTimer = null
         set whichUnit = null
@@ -169,6 +191,7 @@ library BossRoljin initializer Init requires Boss, CreepRespawn
 
         set MoveTimer = CreateTimer()
         set SupportTimer = CreateTimer()
+        set RespawnTimer = CreateTimer()
         if udg_RoljinGroup == null then
             set udg_RoljinGroup = CreateGroup()
         endif

@@ -154,16 +154,10 @@ function CreepUnitAssignment takes integer utype returns nothing
     // BOSS
     elseif utype == 'n645' then
         set udg_BossMordrax = bj_lastCreatedUnit
-        // Start patrol movement
-        call TriggerExecute(gg_trg_Mordrax_Movement_Start)     
     elseif utype == 'n020' then
         set udg_BossMorthun = bj_lastCreatedUnit
-        // Start patrol movement
-        call TriggerExecute(gg_trg_Morthun_Movement_Start)     
     elseif utype == 'e002' then
         set udg_BossMountainGiant = bj_lastCreatedUnit
-        // Start patrol movement
-        call TriggerExecute(gg_trg_MountainGiant_Movement_Start)            
     //===========================================================================
     // ELVES
     elseif utype == 'h00A' then

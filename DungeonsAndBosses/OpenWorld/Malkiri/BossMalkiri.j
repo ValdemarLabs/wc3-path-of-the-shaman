@@ -14,7 +14,20 @@
 library BossMalkiri initializer Init requires Boss
     globals
         private integer BossId = 0
+        private timer RespawnTimer = null
     endglobals
+
+    private function Respawn takes nothing returns nothing
+        local unit boss = Boss_Respawn(BossId)
+        if boss != null then
+            set udg_BossMalkiri = boss
+        endif
+        set boss = null
+    endfunction
+
+    private function OnDeath takes nothing returns nothing
+        call TimerStart(RespawnTimer, GetRandomReal(120.00, 320.00), false, function Respawn)
+    endfunction
 
     public function GetId takes nothing returns integer
         return BossId
@@ -38,6 +51,7 @@ library BossMalkiri initializer Init requires Boss
             set BossId = Boss_Register(whichUnit, "Mal'kiri")
             call Boss_SetDescription(BossId, "Mal'kiri is catalogued as an open-world boss.", "No source phase data is available.", "No source ability data is available.", "Encounter mechanics await a design pass.")
             call Boss_SetAutoStartOnAttack(BossId, true)
+            call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnDeath)
         endif
         call DestroyTimer(initTimer)
         set initTimer = null
@@ -46,6 +60,7 @@ library BossMalkiri initializer Init requires Boss
 
     private function Init takes nothing returns nothing
         local timer initTimer = CreateTimer()
+        set RespawnTimer = CreateTimer()
         call TimerStart(initTimer, 0.00, false, function Register)
         set initTimer = null
     endfunction

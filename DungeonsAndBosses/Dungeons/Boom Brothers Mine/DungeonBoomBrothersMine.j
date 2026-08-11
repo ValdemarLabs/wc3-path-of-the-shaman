@@ -22,7 +22,7 @@
     - DungeonBoomBrothersMine_GetDungeonId() returns integer
 
 **/
-library DungeonBoomBrothersMine initializer Init requires Dungeon, Boss, Events, UnitDeathEvent, CreepRespawn
+library DungeonBoomBrothersMine initializer Init requires Dungeon, ZoneEvent, Boss, Events, UnitDeathEvent, CreepRespawn
     globals
         private constant integer ZONE_ID = 104
         private constant integer UNIT_GOBLIN_MINER = 'n019'
@@ -39,6 +39,7 @@ library DungeonBoomBrothersMine initializer Init requires Dungeon, Boss, Events,
         private timer WaveOneTimer = null
         private timer WaveSixTimer = null
         private timer RockTimer = null
+        private timer CountdownTimer = null
         private timer MadBlixTimer = null
         private unit ActiveBarrel = null
         private integer ActiveRock = 0
@@ -280,6 +281,9 @@ library DungeonBoomBrothersMine initializer Init requires Dungeon, Boss, Events,
         call ForGroup(WorkGroup, function MobilizeRockCreep)
         call GroupClear(WorkGroup)
         call KillUnit(ActiveBarrel)
+        call PauseTimer(CountdownTimer)
+        set udg_BoomMineBarrel = null
+        set udg_BoomMineCountdown = 0
         set ActiveBarrel = null
         set ActiveRock = 0
         set rockRect = null
@@ -287,6 +291,22 @@ library DungeonBoomBrothersMine initializer Init requires Dungeon, Boss, Events,
 
     private function OnRockTimer takes nothing returns nothing
         call DetonateRock(ActiveRock)
+    endfunction
+
+    private function OnCountdownTick takes nothing returns nothing
+        local texttag countdownText = null
+
+        if ActiveBarrel == null or GetUnitTypeId(ActiveBarrel) == 0 or udg_BoomMineCountdown <= 0 then
+            call PauseTimer(CountdownTimer)
+            set countdownText = null
+            return
+        endif
+        set countdownText = CreateTextTagUnitBJ(I2S(udg_BoomMineCountdown), ActiveBarrel, 75.00, 10.00, 100.00, 20.00, 20.00, 0.00)
+        call SetTextTagPermanent(countdownText, false)
+        call SetTextTagLifespan(countdownText, 1.00)
+        call SetTextTagFadepoint(countdownText, 0.20)
+        set udg_BoomMineCountdown = udg_BoomMineCountdown - 1
+        set countdownText = null
     endfunction
 
     private function OnRockPickup takes nothing returns nothing
@@ -302,8 +322,11 @@ library DungeonBoomBrothersMine initializer Init requires Dungeon, Boss, Events,
             if rockId > 0 and ActiveBarrel == null then
                 call RemoveItem(pickedItem)
                 set ActiveBarrel = CreateUnit(Player(0), UNIT_BARREL, GetUnitX(picker), GetUnitY(picker), 0.00)
+                set udg_BoomMineBarrel = ActiveBarrel
+                set udg_BoomMineCountdown = 15
                 set ActiveRock = rockId
                 call TimerStart(RockTimer, 15.00, false, function OnRockTimer)
+                call TimerStart(CountdownTimer, 1.00, true, function OnCountdownTick)
             endif
         endif
         set pickedItem = null
@@ -314,7 +337,10 @@ library DungeonBoomBrothersMine initializer Init requires Dungeon, Boss, Events,
         local unit dying = UnitDeathEvent_GetDyingUnit()
         if dying == ActiveBarrel then
             call PauseTimer(RockTimer)
+            call PauseTimer(CountdownTimer)
             call DamageNearbyUnits(dying, 600.00)
+            set udg_BoomMineBarrel = null
+            set udg_BoomMineCountdown = 0
             set ActiveBarrel = null
             set ActiveRock = 0
         endif
@@ -376,6 +402,10 @@ library DungeonBoomBrothersMine initializer Init requires Dungeon, Boss, Events,
         local integer playerId = 0
 
         set DungeonId = Dungeon_Register(ZONE_ID, gg_rct_BoomBrothersMineEnter, gg_rct_BoomBrothersMineIn, 300.00)
+        call ZoneEvent_RegisterEntranceTransition(ZONE_ID, gg_rct_BoomBrothersMineEnter, gg_rct_BoomBrothersMineIn, 215.00)
+        call ZoneEvent_RegisterExitTransition(ZONE_ID, gg_rct_BoomBrothersMineLeave, gg_rct_BoomBrothersMineOut, 295.00)
+        call ZoneEvent_SetZoneCameraMode(ZONE_ID, CameraControl_CAMERA_SPECIAL_MODE_BOOMMINE)
+        call ZoneEvent_SetFastPanOnEnter(ZONE_ID, true)
         set boss = Boss_FindUnitByName("Mad Blix", gg_rct_BoomBrothersMine)
         if boss != null then
             set udg_BossMadBlix = boss
@@ -419,6 +449,7 @@ library DungeonBoomBrothersMine initializer Init requires Dungeon, Boss, Events,
         set WaveOneTimer = CreateTimer()
         set WaveSixTimer = CreateTimer()
         set RockTimer = CreateTimer()
+        set CountdownTimer = CreateTimer()
         set MadBlixTimer = CreateTimer()
         set RockPickupTrigger = CreateTrigger()
         call TriggerAddAction(RockPickupTrigger, function OnRockPickup)

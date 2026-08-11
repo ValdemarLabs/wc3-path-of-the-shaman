@@ -3,15 +3,16 @@
     Author: Valdemar
     Version: 1.0.0
     Description:
-    Replaces Mordrax's patrol, combat, fire-orb, death-flight, and respawn flow.
+    Replaces Mordrax's patrol, combat, fire-orb, loot, dialogue, death-flight,
+    and respawn flow.
     Credits:
     - Legacy Mordrax GUI exports.
     How to install:
-    Import after Boss and PatrolSystem.
+    Import after Boss, BossMordraxDialogue, PatrolSystem, and CreepRespawn.
     API:
     - BossMordrax_GetId()
 */
-library BossMordrax initializer Init requires Boss, PatrolSystem
+library BossMordrax initializer Init requires Boss, BossMordraxDialogue, PatrolSystem, CreepRespawn
     globals
         private integer BossId = 0
         private timer OrbTimer = null
@@ -110,12 +111,15 @@ library BossMordrax initializer Init requires Boss, PatrolSystem
         call UnitRemoveAbility(boss, 'Amrf')
         call TimerStart(OrbTimer, 10.00, true, function CastFireOrbs)
         call TimerStart(ResetTimer, 10.00, true, function CheckReset)
+        call BossMordraxDialogue_SetEnabled(true)
+        call BossMordraxDialogue_PlayStart()
         set boss = null
     endfunction
     private function OnReset takes nothing returns nothing
         local unit whichUnit = Boss_GetUnit(BossId)
         call PauseTimer(OrbTimer)
         call PauseTimer(ResetTimer)
+        call BossMordraxDialogue_SetEnabled(false)
         if whichUnit != null then
             call UnitAddAbility(whichUnit, 'Amrf')
             call SetUnitFlyHeight(whichUnit, 600.00, 5.00)
@@ -129,9 +133,19 @@ library BossMordrax initializer Init requires Boss, PatrolSystem
     endfunction
     private function OnDefeat takes nothing returns nothing
         local unit boss = Boss_GetUnit(BossId)
+        local unit lootDummy = null
         local real angle = GetRandomReal(0.00, 2.00 * bj_PI)
         call PauseTimer(OrbTimer)
         call PauseTimer(ResetTimer)
+        set lootDummy = CreateUnit(Player(11), 'n022', GetUnitX(boss), GetUnitY(boss), 0.00)
+        if lootDummy != null then
+            call CreepRespawn_DiscardUnit(lootDummy)
+            call KillUnit(lootDummy)
+        endif
+        call PlaySoundOnUnitBJ(gg_snd_BloodSplat, 100.00, boss)
+        call DestroyEffect(AddSpecialEffectTarget("Objects\\Spawnmodels\\Other\\HumanBloodCinematicEffect\\HumanBloodCinematicEffect.mdl", boss, "chest"))
+        call BossMordraxDialogue_PlayDeath()
+        call BossMordraxDialogue_SetEnabled(false)
         call SetUnitOwner(boss, Player(PLAYER_NEUTRAL_PASSIVE), false)
         call PauseUnit(boss, false)
         call UnitAddAbility(boss, 'Amrf')
@@ -139,6 +153,7 @@ library BossMordrax initializer Init requires Boss, PatrolSystem
         call SetUnitFlyHeight(boss, 2000.00, 50.00)
         call IssuePointOrder(boss, "move", GetUnitX(boss) + 5000.00 * Cos(angle), GetUnitY(boss) + 5000.00 * Sin(angle))
         call TimerStart(FlightTimer, 5.00, false, function FinishDeathFlight)
+        set lootDummy = null
         set boss = null
     endfunction
     private function Respawn takes nothing returns nothing
@@ -149,6 +164,8 @@ library BossMordrax initializer Init requires Boss, PatrolSystem
             call SetUnitMoveSpeed(boss, 120.00)
             call SetUnitFlyHeight(boss, 600.00, 5.00)
             call StartPatrol(boss)
+            call BossMordraxDialogue_Bind(boss)
+            call BossMordraxDialogue_SetEnabled(false)
         endif
         set boss = null
     endfunction
@@ -180,6 +197,8 @@ library BossMordrax initializer Init requires Boss, PatrolSystem
             call Boss_SetEventCallback(BossId, BOSS_EVENT_RESET, function OnReset)
             call Boss_SetEventCallback(BossId, BOSS_EVENT_DEFEAT, function OnDefeat)
             call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnDeath)
+            call BossMordraxDialogue_Bind(whichUnit)
+            call BossMordraxDialogue_SetEnabled(false)
             call StartPatrol(whichUnit)
         endif
         call DestroyTimer(initTimer)

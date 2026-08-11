@@ -23,6 +23,7 @@
     call Companions_SetLeader(unit companionUnit, unit leader)
     call Companions_GetLeader(unit companionUnit) returns unit
     call Companions_RegisterLeaderChangeCallback(code callback)
+    call Companions_SetExternalOrderOverride(unit controlledUnit, boolean enabled)
     call Companions_SetMode(unit companionUnit, integer mode)
     call Companions_Halt(unit companionUnit)
     call Companions_HaltAll()
@@ -171,6 +172,7 @@ globals
     private Table CompanionLeader = 0
     private Table CompanionMode = 0
     private Table CompanionSuspended = 0
+    private Table CompanionExternalOrderOverride = 0
     private Table CompanionIcon = 0
     private Table CompanionRegistered = 0
     private Table CompanionTracked = 0
@@ -260,6 +262,7 @@ private function EnsureState takes nothing returns nothing
         set CompanionLeader = Table.create()
         set CompanionMode = Table.create()
         set CompanionSuspended = Table.create()
+        set CompanionExternalOrderOverride = Table.create()
         set CompanionIcon = Table.create()
         set CompanionRegistered = Table.create()
         set CompanionTracked = Table.create()
@@ -1052,6 +1055,12 @@ private function UpdateCompanionOrderUnit takes unit controlledUnit returns noth
     if CompanionTracked[unitId] == 0 then
         return
     endif
+    if CompanionExternalOrderOverride[unitId] == 1 then
+        call FollowSystem_RemoveUnit(controlledUnit)
+        call ClearCompanionFarIcon(controlledUnit)
+        call DestroyCompanionFollowerEffects(controlledUnit)
+        return
+    endif
     if CompanionManualOrder[unitId] != 0 then
         call FollowSystem_RemoveUnit(controlledUnit)
         call ClearCompanionFarIcon(controlledUnit)
@@ -1176,6 +1185,13 @@ private function ApplyOrders takes unit companionUnit returns nothing
         return
     endif
 
+    if CompanionExternalOrderOverride[unitId] == 1 then
+        call FollowSystem_RemoveUnit(companionUnit)
+        call ClearCompanionFarIcon(companionUnit)
+        call DestroyCompanionFollowerEffects(companionUnit)
+        return
+    endif
+
     if CompanionSuspended[unitId] == 1 then
         call FollowSystem_RemoveUnit(companionUnit)
         if IsFatiguedActivePet(companionUnit) then
@@ -1294,6 +1310,7 @@ private function RemoveInternal takes unit companionUnit returns nothing
     call CompanionLeader.remove(unitId)
     call CompanionMode.remove(unitId)
     call CompanionSuspended.remove(unitId)
+    call CompanionExternalOrderOverride.remove(unitId)
     call CompanionIcon.remove(unitId)
     call CompanionRegistered.remove(unitId)
     call CompanionTracked.remove(unitId)
@@ -2863,6 +2880,26 @@ public function IsSuspended takes unit controlledUnit returns boolean
     return CompanionTracked[GetHandleId(controlledUnit)] == 1 and CompanionSuspended[GetHandleId(controlledUnit)] == 1
 endfunction
 
+public function SetExternalOrderOverride takes unit controlledUnit, boolean enabled returns nothing
+    local integer unitId
+
+    if controlledUnit == null or CompanionTracked == 0 then
+        return
+    endif
+    set unitId = GetHandleId(controlledUnit)
+    if CompanionTracked[unitId] == 0 then
+        return
+    endif
+    if enabled then
+        set CompanionExternalOrderOverride[unitId] = 1
+        call FollowSystem_RemoveUnit(controlledUnit)
+        call ClearCompanionFarIcon(controlledUnit)
+        call DestroyCompanionFollowerEffects(controlledUnit)
+    else
+        call CompanionExternalOrderOverride.remove(unitId)
+    endif
+endfunction
+
 public function RefreshOrders takes unit companionUnit returns nothing
     if companionUnit == null then
         return
@@ -2935,6 +2972,7 @@ public function UnregisterControlled takes unit controlledUnit returns nothing
     call CompanionLeader.remove(unitId)
     call CompanionMode.remove(unitId)
     call CompanionSuspended.remove(unitId)
+    call CompanionExternalOrderOverride.remove(unitId)
     call CompanionIcon.remove(unitId)
     call CompanionRegistered.remove(unitId)
     call CompanionTracked.remove(unitId)

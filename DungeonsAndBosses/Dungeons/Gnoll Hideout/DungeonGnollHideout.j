@@ -21,7 +21,7 @@
     - DungeonGnollHideout_GetDungeonId() returns integer
 
 **/
-library DungeonGnollHideout initializer Init requires Dungeon, Boss, CreepRespawn
+library DungeonGnollHideout initializer Init requires Dungeon, ZoneEvent, Boss, CreepRespawn
     globals
         private constant integer ZONE_ID = 101
         private constant real FULL_RESPAWN_DELAY = 300.00
@@ -308,6 +308,10 @@ library DungeonGnollHideout initializer Init requires Dungeon, Boss, CreepRespaw
         local timer whichTimer = GetExpiredTimer()
 
         set DungeonId = Dungeon_Register(ZONE_ID, gg_rct_EnteringDungeon01, gg_rct_Dungeon01StartingPoint, FULL_RESPAWN_DELAY)
+        call Dungeon_AddArea(DungeonId, gg_rct_Dungeon01Area)
+        call ZoneEvent_RegisterEntranceTransition(ZONE_ID, gg_rct_EnteringDungeon01, gg_rct_Dungeon01StartingPoint, 215.00)
+        call ZoneEvent_RegisterExitTransition(ZONE_ID, gg_rct_LeavingDungeon01, gg_rct_LeavingDungeon01Point, 295.00)
+        call ZoneEvent_SetFastPanOnEnter(ZONE_ID, true)
         call RegisterBosses()
         call Dungeon_RegisterZoneCreeps(DungeonId, RANDOM_RESPAWN_PERCENT, 120.00, 320.00)
         call DestroyTimer(whichTimer)
