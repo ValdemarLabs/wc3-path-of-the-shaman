@@ -32,6 +32,8 @@
 
 ### Technical Updates
 
+- Added the initial `DungeonsAndBosses/Boss.j` foundation with boss registration, lifecycle and phase state, per-boss callbacks, attack-start handling, arena-empty reset support, shared `BOSS` group registration, respawn unit replacement, and optional scripted lethal-defeat interception.
+- `Boss.j` is intentionally an initial framework only. Encounter-specific abilities, phase thresholds, summons, dialogue, presentation, loot, quest updates, and save integration still require boss-specific implementations; the imported Void Entity GUI does not yet define its planned combat phases or ability usage.
 - Added `QuestsAndDialogs/QuestGivers/qOutcastJinzun.j` from the legacy `QuestsAndDialogs/OLDGUI/OutcastJinzun` triggers, including quest prerequisites and rewards, item tracking, staged Unknown Entity and crypt hooks, patrol and fishing-spot control, quest-item recovery, neutral-faction rewards, and respawn refresh support.
 - Updated `QuestsAndDialogs/QuestGivers/qZaekolaerr.j` with the active fishing-pole quest inquiry and availability marker integration.
 - Updated `CreepRespawn/CreepUnitAssignment.j` and its test-map variant to restore Jin'Zun through `qOutcastJinzun` instead of restarting the legacy GUI patrol trigger.
@@ -49,6 +51,7 @@
 
 ### Actions Remaining
 
+- Import `DungeonsAndBosses/Boss.j` after Table, Events, UnitDeathEvent, and DamageEngine; then build Unknown Entity and Void Entity encounter libraries on it, migrate their remaining GUI behavior, and add Void Entity's phase thresholds and abilities after representative completed boss triggers are available.
 - Import `QuestsAndDialogs/QuestGivers/qOutcastJinzun.j` before `qZaekolaerr.j`, disable the converted OutcastJinzun GUI trigger group, connect the Unknown Entity and Crypt encounter update hooks, then compile and runtime-test the full quest chain, Jin'Zun's fishing-spot pathing, and both player interaction paths.
 - Create the 21 documented unit types in Object Editor using the assigned rawcodes, names, suffixes, and genders, then place and runtime-test representative vendors from every new catalog.
 - Import recordings for `VendorTrollMale_0001-0015`; text-duration fallback remains active until those files exist.
