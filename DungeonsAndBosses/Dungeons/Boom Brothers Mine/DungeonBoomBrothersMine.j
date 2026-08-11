@@ -5,24 +5,24 @@
     Version: 1.0.0
 
     Description:
-    Migrates Boom Mine's recoverable patrol waves, explosive-barrel rock
-    events, and Mad Blix's sole exported combat ability. Empty legacy Mad Blix
-    phase/chat files contain no recoverable mechanics and are deliberately not
-    invented here.
+    Implements Boom Mine's portal transitions, patrol waves, ordinary-creep
+    respawn policy, and explosive-barrel rock events. Mad Blix is implemented
+    separately by BossMadBlix in this folder.
 
     Credits:
     - DungeonsAndBosses/Dungeons/Boom Brothers Mine/_oldGUI
 
     How to install:
-    Import after Dungeon, Boss, Events, and UnitDeathEvent. Keep all named
-    editor rects, Barrel of Explosives item/unit objects, and disable legacy
-    Boom Mine GUI triggers.
+    Import after Dungeon, ZoneEvent, Events, CreepRespawn, and UnitDeathEvent.
+    Import BossMadBlix after this library. Keep all named editor rects and the
+    Barrel of Explosives item/unit objects. Disable the legacy Boom Mine GUI
+    triggers.
 
     API:
     - DungeonBoomBrothersMine_GetDungeonId() returns integer
 
 **/
-library DungeonBoomBrothersMine initializer Init requires Dungeon, ZoneEvent, Boss, Events, UnitDeathEvent, CreepRespawn
+library DungeonBoomBrothersMine initializer Init requires Dungeon, ZoneEvent, Events, UnitDeathEvent, CreepRespawn
     globals
         private constant integer ZONE_ID = 104
         private constant integer UNIT_GOBLIN_MINER = 'n019'
@@ -32,7 +32,6 @@ library DungeonBoomBrothersMine initializer Init requires Dungeon, ZoneEvent, Bo
         private constant integer UNIT_DUMMY_DAMAGE = 'n014'
 
         private integer DungeonId = 0
-        private integer MadBlixId = 0
         private group WaveOneGroup = null
         private group WaveSixGroup = null
         private group WorkGroup = null
@@ -40,7 +39,6 @@ library DungeonBoomBrothersMine initializer Init requires Dungeon, ZoneEvent, Bo
         private timer WaveSixTimer = null
         private timer RockTimer = null
         private timer CountdownTimer = null
-        private timer MadBlixTimer = null
         private unit ActiveBarrel = null
         private integer ActiveRock = 0
         private real RockAttackX = 0.00
@@ -347,44 +345,6 @@ library DungeonBoomBrothersMine initializer Init requires Dungeon, ZoneEvent, Bo
         set dying = null
     endfunction
 
-    private function MadBlixCharge takes nothing returns nothing
-        local unit boss = Boss_GetUnit(MadBlixId)
-        local unit target = null
-        if Boss_IsActive(MadBlixId) and boss != null then
-            call GroupEnumUnitsInRange(WorkGroup, GetUnitX(boss), GetUnitY(boss), 700.00, null)
-            loop
-                set target = FirstOfGroup(WorkGroup)
-                exitwhen target == null or IsUnitEnemy(target, GetOwningPlayer(boss))
-                call GroupRemoveUnit(WorkGroup, target)
-            endloop
-            if target != null and IsUnitEnemy(target, GetOwningPlayer(boss)) then
-                call IssueTargetOrder(boss, "absorbmana", target)
-            endif
-            call GroupClear(WorkGroup)
-        endif
-        if Boss_IsActive(MadBlixId) then
-            call TimerStart(MadBlixTimer, GetRandomReal(15.00, 30.00), false, function MadBlixCharge)
-        endif
-        set target = null
-        set boss = null
-    endfunction
-
-    private function StartMadBlixFight takes nothing returns nothing
-        if Boss_EventBossId == MadBlixId then
-            call TimerStart(MadBlixTimer, GetRandomReal(15.00, 30.00), false, function MadBlixCharge)
-        endif
-    endfunction
-
-    private function StopMadBlixFight takes nothing returns nothing
-        if Boss_EventBossId == MadBlixId then
-            call PauseTimer(MadBlixTimer)
-        endif
-    endfunction
-
-    private function OnMadBlixRespawn takes nothing returns nothing
-        set udg_BossMadBlix = Boss_GetUnit(MadBlixId)
-    endfunction
-
     private function RegisterTrigger takes rect whichRect, integer eventId, code callback returns nothing
         local trigger whichTrigger = CreateTrigger()
         if eventId == 0 then
@@ -396,9 +356,16 @@ library DungeonBoomBrothersMine initializer Init requires Dungeon, ZoneEvent, Bo
         set whichTrigger = null
     endfunction
 
+    private function RegisterCreeps takes nothing returns nothing
+        local timer whichTimer = GetExpiredTimer()
+
+        call Dungeon_RegisterZoneCreeps(DungeonId, 35.00, 120.00, 320.00)
+        call DestroyTimer(whichTimer)
+        set whichTimer = null
+    endfunction
+
     private function DelayedInit takes nothing returns nothing
         local timer whichTimer = GetExpiredTimer()
-        local unit boss = null
         local integer playerId = 0
 
         set DungeonId = Dungeon_Register(ZONE_ID, gg_rct_BoomBrothersMineEnter, gg_rct_BoomBrothersMineIn, 300.00)
@@ -406,20 +373,6 @@ library DungeonBoomBrothersMine initializer Init requires Dungeon, ZoneEvent, Bo
         call ZoneEvent_RegisterExitTransition(ZONE_ID, gg_rct_BoomBrothersMineLeave, gg_rct_BoomBrothersMineOut, 295.00)
         call ZoneEvent_SetZoneCameraMode(ZONE_ID, CameraControl_CAMERA_SPECIAL_MODE_BOOMMINE)
         call ZoneEvent_SetFastPanOnEnter(ZONE_ID, true)
-        set boss = Boss_FindUnitByName("Mad Blix", gg_rct_BoomBrothersMine)
-        if boss != null then
-            set udg_BossMadBlix = boss
-            set MadBlixId = Boss_Register(boss, "Mad Blix")
-            call Boss_SetArena(MadBlixId, gg_rct_BoomBrothersMine, Player(0), true)
-            call Boss_SetAutoStartOnAttack(MadBlixId, true)
-            call Boss_SetDescription(MadBlixId, "A goblin overseer whose only recoverable exported mechanic is mana absorption.", "The legacy phase files are empty, so no phase transition is reconstructed.", "Every 15-30 seconds he targets a nearby enemy with Absorb Mana.", "Keep mana available for key responses and interrupt or pressure him when he begins the drain.")
-            call Boss_SetEventCallback(MadBlixId, BOSS_EVENT_START, function StartMadBlixFight)
-            call Boss_SetEventCallback(MadBlixId, BOSS_EVENT_RESET, function StopMadBlixFight)
-            call Boss_SetEventCallback(MadBlixId, BOSS_EVENT_DEATH, function StopMadBlixFight)
-            call Boss_SetEventCallback(MadBlixId, BOSS_EVENT_RESPAWN, function OnMadBlixRespawn)
-            call Dungeon_RegisterBoss(DungeonId, MadBlixId)
-        endif
-        call Dungeon_RegisterZoneCreeps(DungeonId, 35.00, 120.00, 320.00)
         call RegisterTrigger(gg_rct_BoomMineR1, 0, function OnWaveOneEnter)
         call RegisterTrigger(gg_rct_BoomMineR6, 0, function OnWaveSixEnter)
         call RegisterTrigger(gg_rct_BoomMineR7, 0, function OnR7Enter)
@@ -431,8 +384,7 @@ library DungeonBoomBrothersMine initializer Init requires Dungeon, ZoneEvent, Bo
             call TriggerRegisterPlayerUnitEvent(RockPickupTrigger, Player(playerId), EVENT_PLAYER_UNIT_PICKUP_ITEM, null)
             set playerId = playerId + 1
         endloop
-        call DestroyTimer(whichTimer)
-        set boss = null
+        call TimerStart(whichTimer, 0.10, false, function RegisterCreeps)
         set whichTimer = null
     endfunction
 
@@ -450,7 +402,6 @@ library DungeonBoomBrothersMine initializer Init requires Dungeon, ZoneEvent, Bo
         set WaveSixTimer = CreateTimer()
         set RockTimer = CreateTimer()
         set CountdownTimer = CreateTimer()
-        set MadBlixTimer = CreateTimer()
         set RockPickupTrigger = CreateTrigger()
         call TriggerAddAction(RockPickupTrigger, function OnRockPickup)
         call UnitDeathEvent_Register(function OnUnitDeath)
