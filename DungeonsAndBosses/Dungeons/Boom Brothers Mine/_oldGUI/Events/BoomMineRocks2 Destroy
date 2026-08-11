@@ -1,0 +1,35 @@
+BoomMineRocks2 Destroy
+    Events
+        Time - BoomMineTimerRock expires
+    Conditions
+    Actions
+        Trigger - Turn off (This trigger)
+        Trigger - Turn off BoomMineRocks Floating Text <gen>
+        Destructible - Pick every destructible in BoomMineRocks2 <gen> and do (Destructible - Kill (Picked destructible))
+        Set VariableSet BoomMinePoint = (Center of BoomMineRocks2 <gen>)
+        Sound - Play Explosion <gen> at 100.00% volume, attached to BoomMineBarrel
+        Sound - Play RockDeath <gen> at 100.00% volume, attached to BoomMineBarrel
+        Special Effect - Create a special effect attached to the chest of BoomMineBarrel using Objects\Spawnmodels\Human\HCancelDeath\HCancelDeath.mdl
+        Special Effect - Destroy (Last created special effect)
+        Special Effect - Create a special effect at BoomMinePoint using Objects\Spawnmodels\Human\HCancelDeath\HCancelDeath.mdl
+        Special Effect - Destroy (Last created special effect)
+        Custom script:   call RemoveLocation(udg_BoomMinePoint)
+        -------- SPLASH DMG - Barrel --------
+        Set VariableSet BoomMinePoint = (Position of BoomMineBarrel)
+        Unit - Create 1 DummyDamage for Neutral Passive at BoomMinePoint facing Default building facing degrees
+        Unit - Add a 0.50 second Generic expiration timer to (Last created unit)
+        Unit - Cause (Last created unit) to damage circular area after 0.00 seconds of radius 500.00 at BoomMinePoint, dealing 1000.00 damage of attack type Chaos and damage type Fire
+        Unit - Kill BoomMineBarrel
+        Custom script:   call RemoveLocation(udg_BoomMinePoint)
+        -------- Attack event --------
+        Trigger - Run BoomMine AttackWave Rocks2 <gen> (checking conditions)
+        -------- Remove ItemDropLocation Unit --------
+        Custom script:   set bj_wantDestroyGroup = true
+        Unit Group - Pick every unit in (Units in BoomMineRocks2 <gen>) and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Unit-type of (Picked unit)) Equal to ItemDropLocation
+                    Then - Actions
+                        Unit - Remove (Picked unit) from the game
+                    Else - Actions

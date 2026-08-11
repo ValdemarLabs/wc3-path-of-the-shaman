@@ -1,0 +1,24 @@
+BoomMine AttackWave R10
+    Events
+        Unit - A unit enters BoomMineR10 <gen>
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Owner of (Triggering unit)) Equal to Player 1 (Red)
+                (Owner of (Triggering unit)) Equal to Player 2 (Blue)
+    Actions
+        -------- EVENT --------
+        Custom script:   set bj_wantDestroyGroup = true
+        Unit Group - Pick every unit in (Units in BoomMineR20 <gen>) and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Or - Any (Conditions) are true
+                            Conditions
+                                (Unit-type of (Picked unit)) Equal to Goblin Miner (Level 10)
+                                (Unit-type of (Picked unit)) Equal to Goblin Miner (Level 10 - No Wander)
+                                (Unit-type of (Picked unit)) Equal to Turret (Level 10)
+                                (Unit-type of (Picked unit)) Equal to Shredder (Level 14)
+                    Then - Actions
+                        Unit - Change ownership of (Picked unit) to Player 12 (Brown) and Change color
+                    Else - Actions

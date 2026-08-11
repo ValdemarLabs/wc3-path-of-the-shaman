@@ -1,0 +1,29 @@
+BoomMine AttackWave R7 Leave
+    Events
+        Unit - A unit leaves BoomMineR21 <gen>
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Owner of (Triggering unit)) Equal to Player 1 (Red)
+                (Owner of (Triggering unit)) Equal to Player 2 (Blue)
+        (Number of units in (Units in BoomMineR21 <gen> owned by Player 1 (Red))) Equal to 0
+        (Number of units in (Units in BoomMineR21 <gen> owned by Player 2 (Blue))) Equal to 0
+    Actions
+        -------- EVENT --------
+        Custom script:   set bj_wantDestroyGroup = true
+        Set VariableSet BoomMinePoint = (Center of BoomMineR21 <gen>)
+        Unit Group - Pick every unit in (Units in BoomMineR21 <gen>) and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Or - Any (Conditions) are true
+                            Conditions
+                                (Unit-type of (Picked unit)) Equal to Goblin Miner (Level 10)
+                                (Unit-type of (Picked unit)) Equal to Goblin Miner (Level 10 - No Wander)
+                                (Unit-type of (Picked unit)) Equal to Turret (Level 10)
+                                (Unit-type of (Picked unit)) Equal to Shredder (Level 14)
+                    Then - Actions
+                        Unit - Change ownership of (Picked unit) to Neutral Passive and Change color
+                        Unit - Order (Picked unit) to Move To BoomMinePoint
+                    Else - Actions
+        Custom script:   call RemoveLocation(udg_BoomMinePoint)

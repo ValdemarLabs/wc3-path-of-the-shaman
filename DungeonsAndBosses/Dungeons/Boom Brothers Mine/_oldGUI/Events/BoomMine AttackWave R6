@@ -1,0 +1,40 @@
+BoomMine AttackWave R6
+    Events
+        Unit - A unit enters BoomMineR6 <gen>
+    Conditions
+        (Remaining time for BoomMineTimerR6) Equal to 0.00
+        Or - Any (Conditions) are true
+            Conditions
+                (Owner of (Triggering unit)) Equal to Player 1 (Red)
+                (Owner of (Triggering unit)) Equal to Player 2 (Blue)
+    Actions
+        -------- ============== --------
+        Trigger - Turn off (This trigger)
+        -------- ============== --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in BoomMineGroupR6) Equal to 0
+            Then - Actions
+                -------- EVENT --------
+                Set VariableSet VarPoint = (Center of BoomMineR8 <gen>)
+                Set VariableSet VarPoint2 = (Center of BoomMineR18 <gen>)
+                For each (Integer A) from 1 to 5, do (Actions)
+                    Loop - Actions
+                        Unit - Create 1 Goblin Miner (Level 10) for Player 12 (Brown) at VarPoint facing Default building facing degrees
+                        Unit - Order (Last created unit) to Attack-Move To VarPoint2
+                        Unit Group - Add (Last created unit) to BoomMineGroupR6
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Custom script:   call RemoveLocation(udg_VarPoint2)
+                -------- Timer to start --------
+                Countdown Timer - Start BoomMineTimerR6 as a One-shot timer that will expire in 240.00 seconds
+                -------- ============== --------
+                Trigger - Turn on (This trigger)
+            Else - Actions
+                -------- If group has still units --------
+                Set VariableSet VarPoint2 = (Center of BoomMineR18 <gen>)
+                Unit Group - Pick every unit in BoomMineGroupR6 and do (Actions)
+                    Loop - Actions
+                        Unit - Order (Last created unit) to Attack-Move To VarPoint2
+                Custom script:   call RemoveLocation(udg_VarPoint2)
+                -------- ============== --------
+                Trigger - Turn on (This trigger)

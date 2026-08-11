@@ -1,0 +1,20 @@
+BoomMineRocks1
+    Events
+        Unit - A unit Acquires an item
+    Conditions
+        (Unit-type of (Triggering unit)) Equal to ItemDropLocation
+        (Item-type of (Item being manipulated)) Equal to Barrel of Explosives
+        (BoomMineRocks1 <gen> contains (Triggering unit)) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create Barrel unit --------
+        Item - Remove (Item being manipulated)
+        Set VariableSet BoomMinePoint = (Position of (Triggering unit))
+        Unit - Create 1 Barrel of Explosives for Player 1 (Red) at BoomMinePoint facing Default building facing degrees
+        Set VariableSet BoomMineBarrel = (Last created unit)
+        -------- Start countdown and timer to destroy the rocks --------
+        Countdown Timer - Start BoomMineTimerRock as a One-shot timer that will expire in 15.00 seconds
+        Trigger - Turn on BoomMineRocks1 Destroy <gen>
+        -------- --- --------
+        Set VariableSet BoomMineCountdown = 15
+        Trigger - Turn on BoomMineRocks Floating Text <gen>

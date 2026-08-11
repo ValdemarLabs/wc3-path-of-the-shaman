@@ -1,0 +1,21 @@
+BoomMine AttackWave Rocks2
+    Events
+    Conditions
+    Actions
+        -------- EVENT --------
+        Set VariableSet VarPoint = (Center of BoomMineR21 <gen>)
+        Custom script:   set bj_wantDestroyGroup = true
+        Unit Group - Pick every unit in (Units in BoomMineR22 <gen>) and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Or - Any (Conditions) are true
+                            Conditions
+                                (Unit-type of (Picked unit)) Equal to Goblin Miner (Level 10)
+                                (Unit-type of (Picked unit)) Equal to Goblin Miner (Level 10 - No Wander)
+                                (Unit-type of (Picked unit)) Equal to Turret (Level 10)
+                    Then - Actions
+                        Unit - Change ownership of (Picked unit) to Player 12 (Brown) and Change color
+                        Unit - Order (Picked unit) to Attack-Move To VarPoint
+                    Else - Actions
+        Custom script:   call RemoveLocation(udg_VarPoint)

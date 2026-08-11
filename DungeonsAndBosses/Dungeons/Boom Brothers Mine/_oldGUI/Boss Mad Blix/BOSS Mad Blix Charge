@@ -1,0 +1,18 @@
+BOSS Mad Blix Charge
+    Events
+        Time - Every (Random real number between 15.00 and 30.00) seconds of game time
+    Conditions
+        (BossMadBlix is alive) Equal to True
+    Actions
+        -------- =================================== --------
+        Set VariableSet MadBlixPoint = (Position of BossMadBlix)
+        Set VariableSet MadBlixTargetGroup = (Units within 700.00 of MadBlixPoint matching ((((Matching unit) is alive) Equal to True) and (((Matching unit) belongs to an enemy of (Owner of BossMadBlix).) Equal to True)).)
+        Set VariableSet MadBlixTarget = (Random unit from MadBlixTargetGroup)
+        -------- =================================== --------
+        Unit - Order BossMadBlix to Undead Destroyer - Absorb Mana MadBlixTarget
+        -------- CHAT START / DURING --------
+        Trigger - Run BOSS Mad Blix Chat Special <gen> (checking conditions)
+        -------- =================================== --------
+        Custom script:   call DestroyGroup(udg_MadBlixTargetGroup)
+        Custom script:   call RemoveLocation(udg_MadBlixPoint)
+        -------- =================================== --------
