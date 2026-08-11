@@ -15,6 +15,18 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [12.8.2026]
+
+### Technical Updates
+
+- Added `DungeonsAndBosses/Dungeons/Gnoll Hideout/BossImpaler.j`, `BossFeldok.j`, and `BossAbomination.j`, moving all Gnoll Hideout boss state, phases, abilities, descriptions, summons, cleanup, and dungeon registration out of `DungeonGnollHideout.j`.
+- Added `DungeonsAndBosses/Dungeons/Boom Brothers Mine/BossMadBlix.j`, moving Mad Blix's recoverable encounter behavior and dungeon registration out of `DungeonBoomBrothersMine.j`.
+- Updated the Gnoll Hideout and Boom Brothers Mine dungeon libraries to contain only dungeon-wide configuration and events, with their ordinary-creep scans delayed until the separate boss libraries have registered.
+
+### Actions Remaining
+
+- Import each new dungeon `BossXXX.j` after its owning dungeon library, then run the affected-map and full-map JassHelper compiles and runtime-test boss registration before ordinary-creep registration.
+
 ## [11.8.2026]
 
 ### Player-Facing Updates
