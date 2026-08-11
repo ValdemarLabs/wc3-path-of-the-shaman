@@ -1,0 +1,14 @@
+Dragon or Drake Melee Attack
+    Events
+        Unit - A unit Is attacked
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Unit-type of (Attacking unit)) Equal to Red Drake (Level 10)
+                (Unit-type of (Attacking unit)) Equal to Red Dragon (Level 10)
+                (Unit-type of (Attacking unit)) Equal to Red Dragon (Level 20)
+                (Unit-type of (Attacking unit)) Equal to Mordrax the Desolator (Level 15)
+    Actions
+        -------- Because Dragons are normally ranged, the melee attack looks weird. So this has to be modified --------
+        Animation - Play (Attacking unit)'s spell devour animation
+        Animation - Queue (Attacking unit)'s stand animation

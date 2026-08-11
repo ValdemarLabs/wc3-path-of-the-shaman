@@ -1,0 +1,23 @@
+Emberpeak Dragonfire Center Wander
+    Events
+        Time - Every 3.00 seconds of game time
+    Conditions
+    Actions
+        Unit Group - Pick every unit in (Units in DragonFireSpam01 <gen>) and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Unit-type of (Picked unit)) Equal to Red Dragon (High Height)
+                        ((Picked unit) is in EmberpeakDragonsCenter.) Equal to True
+                        Or - Any (Conditions) are true
+                            Conditions
+                                (Current order of (Picked unit)) Not equal to (Order(flamestrike))
+                                (Current order of (Picked unit)) Not equal to (Order(cast))
+                                (Current order of (Picked unit)) Not equal to (Order(move))
+                    Then - Actions
+                        Set VariableSet TempPointDragonWander = (Random point in DragonFireSpam02 <gen>)
+                        Unit - Order (Picked unit) to Move To TempPointDragonWander
+                        Set VariableSet DragonSoundUnit = (Picked unit)
+                        Trigger - Run Dragon Sounds <gen> (checking conditions)
+                        Custom script:   call RemoveLocation(udg_TempPointDragonWander)
+                    Else - Actions

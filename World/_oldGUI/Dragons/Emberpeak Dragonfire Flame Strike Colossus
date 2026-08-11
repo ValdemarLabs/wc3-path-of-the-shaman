@@ -1,0 +1,36 @@
+Emberpeak Dragonfire Flame Strike Colossus
+    Events
+        Time - Every (Random real number between 10.00 and 20.00) seconds of game time
+    Conditions
+    Actions
+        -------- ===============COLOSSUS (CENTER) DRAGONS=============== --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Random integer number between 1 and 2) Equal to 1
+            Then - Actions
+                -------- ===============CENTER DRAGON 1 --------
+                Set VariableSet EmberpeakDragonCasting[1] = True
+                Set VariableSet VarPoint = (Position of BossColossus)
+                -------- Breath of Fire --------
+                Unit - Order Red Dragon (High Height) 1904 <gen> to Human Blood Mage - Flame Strike VarPoint
+                Set VariableSet DragonSoundUnit = Red Dragon (High Height) 1904 <gen>
+                Trigger - Run Dragon Sounds <gen> (checking conditions)
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Wait 2.00 seconds
+                Set VariableSet EmberpeakDragonCasting[1] = False
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Random integer number between 1 and 2) Equal to 2
+            Then - Actions
+                -------- ===============CENTER DRAGON 3 --------
+                Set VariableSet EmberpeakDragonCasting[2] = True
+                Set VariableSet VarPoint = (Position of BossColossus)
+                -------- Breath of Fire --------
+                Unit - Order Red Dragon (High Height) 0823 <gen> to Human Blood Mage - Flame Strike VarPoint
+                Set VariableSet DragonSoundUnit = Red Dragon (High Height) 0823 <gen>
+                Trigger - Run Dragon Sounds <gen> (checking conditions)
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Wait 2.00 seconds
+                Set VariableSet EmberpeakDragonCasting[2] = False
+            Else - Actions

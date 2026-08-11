@@ -1,0 +1,51 @@
+Emberpeak Dragonfire Flame Strike Zone
+    Events
+        Time - Every (Random real number between 10.00 and 20.00) seconds of game time
+    Conditions
+    Actions
+        -------- ===============ZONE DRAGONS=============== --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Random integer number between 1 and 2) Equal to 1
+            Then - Actions
+                -------- ===============ZONE DRAGON 1 --------
+                Set VariableSet EmberpeakDragonCasting[3] = True
+                Set VariableSet VarPoint = ((Position of Red Dragon (High Height) 1938 <gen>) offset by 250.00 towards 0.00 degrees.)
+                -------- Breath of Fire --------
+                Unit - Order Red Dragon (High Height) 1938 <gen> to Human Blood Mage - Flame Strike VarPoint
+                Set VariableSet DragonSoundUnit = Red Dragon (High Height) 1938 <gen>
+                Trigger - Run Dragon Sounds <gen> (checking conditions)
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Wait 2.00 seconds
+                Set VariableSet EmberpeakDragonCasting[3] = False
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Random integer number between 1 and 2) Equal to 2
+            Then - Actions
+                -------- ===============ZONE DRAGON 2 --------
+                Set VariableSet EmberpeakDragonCasting[4] = True
+                Set VariableSet VarPoint = ((Position of Red Dragon (High Height) 1009 <gen>) offset by 250.00 towards 0.00 degrees.)
+                -------- Breath of Fire --------
+                Unit - Order Red Dragon (High Height) 1009 <gen> to Human Blood Mage - Flame Strike VarPoint
+                Set VariableSet DragonSoundUnit = Red Dragon (High Height) 1009 <gen>
+                Trigger - Run Dragon Sounds <gen> (checking conditions)
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Wait 2.00 seconds
+                Set VariableSet EmberpeakDragonCasting[4] = False
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Random integer number between 1 and 3) Equal to 3
+            Then - Actions
+                -------- ===============ZONE DRAGON 3 --------
+                Set VariableSet EmberpeakDragonCasting[5] = True
+                Set VariableSet VarPoint = ((Position of Red Dragon (High Height) 0846 <gen>) offset by 250.00 towards 0.00 degrees.)
+                -------- Breath of Fire --------
+                Unit - Order Red Dragon (High Height) 0846 <gen> to Human Blood Mage - Flame Strike VarPoint
+                Set VariableSet DragonSoundUnit = Red Dragon (High Height) 0846 <gen>
+                Trigger - Run Dragon Sounds <gen> (checking conditions)
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Wait 2.00 seconds
+                Set VariableSet EmberpeakDragonCasting[5] = False
+            Else - Actions

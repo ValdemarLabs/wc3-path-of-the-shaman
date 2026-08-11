@@ -1,0 +1,29 @@
+Scorching Dragon or Drake Cast
+    Events
+        Unit - A unit Is attacked
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (Unit-type of (Attacked unit)) Equal to Scorching Drake (Level 10)
+                (Unit-type of (Attacked unit)) Equal to Scorching Dragon (Level 10)
+                (Unit-type of (Attacked unit)) Equal to Scorching Dragon (Level 20)
+                (Unit-type of (Attacked unit)) Equal to Mordrax the Desolator (Level 15)
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Random integer number between 1 and 5) Equal to 1
+            Then - Actions
+                -------- Breath of Fire --------
+                Set VariableSet VarPoint = (Position of (Attacking unit))
+                Unit - Order (Attacked unit) to Neutral Brewmaster - Breath Of Fire VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Random integer number between 1 and 5) Equal to 2
+            Then - Actions
+                -------- Flame Strike --------
+                Set VariableSet VarPoint = (Position of (Random unit from (Units within 800.00 of (Position of (Attacked unit)) matching (((Triggering unit) belongs to an enemy of (Owner of (Attacked unit)).) Equal to True).)))
+                Unit - Order (Attacked unit) to Human Blood Mage - Flame Strike VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+            Else - Actions

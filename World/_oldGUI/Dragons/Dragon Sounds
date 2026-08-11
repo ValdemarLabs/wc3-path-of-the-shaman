@@ -1,0 +1,37 @@
+Dragon Sounds
+    Events
+    Conditions
+        ((Units in 03EmberpeakHighlands <gen> owned by Player 1 (Red)) is empty) Equal to False
+        (Random integer number between 1 and 8) Equal to 1
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Random integer number between 1 and 6) Equal to 1
+            Then - Actions
+                Sound - Play DragonWhat1 <gen> at 100.00% volume, attached to DragonSoundUnit
+            Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Random integer number between 1 and 6) Equal to 2
+                    Then - Actions
+                        Sound - Play DragonYes1 <gen> at 100.00% volume, attached to DragonSoundUnit
+                    Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Random integer number between 1 and 6) Equal to 3
+                            Then - Actions
+                                Sound - Play DragonYes2 <gen> at 100.00% volume, attached to DragonSoundUnit
+                            Else - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (Random integer number between 1 and 6) Equal to 4
+                                    Then - Actions
+                                        Sound - Play DragonYes3 <gen> at 100.00% volume, attached to DragonSoundUnit
+                                    Else - Actions
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                (Random integer number between 1 and 6) Equal to 5
+                                            Then - Actions
+                                                Sound - Play DragonYesAttack2 <gen> at 100.00% volume, attached to DragonSoundUnit
+                                            Else - Actions
+                                                Sound - Play DragonYesAttack3 <gen> at 100.00% volume, attached to DragonSoundUnit
