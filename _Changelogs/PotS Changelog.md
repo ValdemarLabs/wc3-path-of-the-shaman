@@ -22,8 +22,9 @@
 - Added `_developer/gui-variables.md` with a source-level inventory of current `udg_*` and `gg_*` usage, classified legacy GUI trigger removal candidates, and categorized Variable Editor cleanup candidates.
 - Updated `Zones/ZonesCore.j` with `ZoneData.addDungeonEnterRegion` and `addDungeonExitRegion`; Gnoll Hideout, Crypt, and Boom Mine now keep portal source, destination, and facing metadata in ZonesCore while ZoneEvent executes the transitions.
 - Added `World/Dragons/DragonBehavior.j` for shared red/scorching dragon melee animations, opportunistic Breath of Fire and Flame Strike casts, and ambient dragon sounds.
-- Added `World/Dragons/EmberpeakDragons.j` for Emberpeak center/zone wandering, ambient flame strikes, three Dragonfire Peaks wanderers, and Colossus arena targeting modes.
-- Updated `DungeonsAndBosses/OpenWorld/Colossus/BossColossus.j` to use the world-owned Emberpeak dragon API; `EmberpeakDragonfire.j` remains as a compatibility facade for older callers.
+- Added `World/Dragons/EmberpeakDragons.j` for Emberpeak center/highlands wandering and occasional random-unit Flame Strikes.
+- Added `World/Dragons/DragonfirePeaksDragons.j` as the separate owner of preplaced or generated Dragonfire Peaks wanderers and their occasional random-unit Flame Strikes.
+- Updated `DungeonsAndBosses/OpenWorld/Colossus/EmberpeakDragonfire.j` and `BossColossus.j` so the arena-specific dragons and targeting modes remain separate from both ambient zone systems.
 - Updated `UI/CameraControl.j` and `DungeonsAndBosses/Dungeons/Gnoll Hideout/DungeonGnollHideout.j` with a unique Gnoll Hideout camera preset and zone activation.
 - Added `DungeonsAndBosses/Dungeons/Gnoll Hideout/BossImpaler.j`, `BossFeldok.j`, and `BossAbomination.j`, moving all Gnoll Hideout boss state, phases, abilities, descriptions, summons, cleanup, and dungeon registration out of `DungeonGnollHideout.j`.
 - Added `DungeonsAndBosses/Dungeons/Boom Brothers Mine/BossMadBlix.j`, moving Mad Blix's recoverable encounter behavior and dungeon registration out of `DungeonBoomBrothersMine.j`.
@@ -31,7 +32,7 @@
 
 ### Actions Remaining
 
-- Import `World/Dragons/DragonBehavior.j` and `EmberpeakDragons.j`, disable the converted Dragons GUI triggers, and runtime-test wandering bounds, spawned Dragonfire Peaks dragons, ambient sounds, combat casting, and every Colossus dragonfire mode.
+- Import `World/Dragons/DragonBehavior.j`, `EmberpeakDragons.j`, and `DragonfirePeaksDragons.j`; disable the converted Dragons GUI triggers and runtime-test both zones' wandering/casting plus every Colossus dragonfire mode.
 - Import each new dungeon `BossXXX.j` after its owning dungeon library, then run the affected-map and full-map JassHelper compiles and runtime-test boss registration before ordinary-creep registration.
 
 ## [11.8.2026]
