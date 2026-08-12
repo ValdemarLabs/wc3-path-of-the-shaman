@@ -2908,14 +2908,18 @@ private function PassesRequirements takes QuestData q returns boolean
 	return true
 endfunction
 
-private function EvaluateQuest takes QuestData q returns nothing
+private function EvaluateQuest takes QuestData q, boolean updateIcons returns nothing
 	local boolean available
 
 	if q == 0 then
 		return
 	endif
 	if q.completed then
-		call q.setState(QUEST_STATE_COMPLETE)
+		if updateIcons then
+			call q.setState(QUEST_STATE_COMPLETE)
+		else
+			call q.setStateNoIcons(QUEST_STATE_COMPLETE)
+		endif
 		return
 	endif
 	if q.active then
@@ -2924,9 +2928,17 @@ private function EvaluateQuest takes QuestData q returns nothing
 
 	set available = PassesRequirements(q)
 	if available then
-		call q.setState(QUEST_STATE_AVAILABLE)
+		if updateIcons then
+			call q.setState(QUEST_STATE_AVAILABLE)
+		else
+			call q.setStateNoIcons(QUEST_STATE_AVAILABLE)
+		endif
 	else
-		call q.setState(QUEST_STATE_UNAVAILABLE)
+		if updateIcons then
+			call q.setState(QUEST_STATE_UNAVAILABLE)
+		else
+			call q.setStateNoIcons(QUEST_STATE_UNAVAILABLE)
+		endif
 	endif
 endfunction
 
@@ -2972,7 +2984,7 @@ private function ResetDailyQuest takes QuestData q returns nothing
 	set QuestMaster_EventQuestId = q.id
 	set QuestMaster_EventState = QUEST_STATE_UNAVAILABLE
 	call TriggerExecute(QuestMaster_OnDailyReset)
-	call EvaluateQuest(q)
+	call EvaluateQuest(q, true)
 endfunction
 
 public function ResetDailyQuests takes nothing returns nothing
@@ -3003,9 +3015,10 @@ public function RefreshAvailabilityForGiver takes unit u returns nothing
 	loop
 		exitwhen i > count
 		set questId = GetGiverQuestIdByIndexInternal(u, i)
-		call EvaluateQuest(GetById(questId))
+		call EvaluateQuest(GetById(questId), false)
 		set i = i + 1
 	endloop
+	call IconUpdateForNPC(u)
 endfunction
 
 public function RefreshAvailability takes nothing returns nothing

@@ -1,11 +1,25 @@
+/**
+    DialogSystem
+
+    Author: Valdemar
+    Version:
+
+    Description:
+    Owns PotS dialog creation, button routing, spoken-line sequences,
+    cinematic sequence actions, and registered contextual lines.
+
+    Credits:
+
+    How to install:
+    Import after Table, ExSound, DialogCamera, Interface, and FallenHeroState.
+
+    API:
+    Use DialogSystem_CreateDialog and button helpers for menus. Use the
+    sequence API, including AddFadeTransition/AddFadeOut/AddFadeIn, for
+    ordered cinematics.
+
+**/
 library DialogSystem initializer Init requires Table, ExSound, DialogCamera, Interface, FallenHeroState
-//===========================================================================
-// DialogSystem
-// Lightweight dialog creation + button routing for quest givers.
-// 
-// This system allows you to create dialogs with buttons that have associated action IDs and triggers. 
-// When a button is clicked, the system looks up the action ID and trigger for that button and executes the trigger.
-//===========================================================================
 globals
 	private Table DialogButtonAction = 0
 	private Table DialogButtonTrigger = 0
@@ -106,6 +120,8 @@ globals
 	private constant integer SEQ_ACTION_TYPE_LOOK_AT_UNIT = 4
 	private constant integer SEQ_ACTION_TYPE_LOOK_AT_POINT = 5
 	private constant integer SEQ_ACTION_TYPE_RESET_LOOK_AT = 6
+	private constant integer SEQ_ACTION_TYPE_FADE_OUT = 7
+	private constant integer SEQ_ACTION_TYPE_FADE_IN = 8
 
 	string DialogSystem_PickedText = ""
 	string DialogSystem_PickedSound = ""
@@ -430,6 +446,10 @@ private function PlayNextLine takes nothing returns nothing
 			call LookAtPointWithFacing(actionUnit1, actionX, actionY)
 		elseif actionType == SEQ_ACTION_TYPE_RESET_LOOK_AT then
 			call ResetLookAt(actionUnit1)
+		elseif actionType == SEQ_ACTION_TYPE_FADE_OUT then
+			call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUT, customDuration, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+		elseif actionType == SEQ_ACTION_TYPE_FADE_IN then
+			call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, customDuration, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
 		endif
 	endif
 
@@ -2036,10 +2056,50 @@ public function PickAcceptLine takes unit speaker, string speakerName returns no
 endfunction
 
 //===========================================================================
-// Sequence Building Blocks - Facing and Looking Actions
+// Sequence Building Blocks - Fades, Facing, and Looking Actions
 //===========================================================================
-// These functions add facing/looking actions as delay-only lines with automatic execution
+// These functions add cinematic actions as delay-only lines with automatic execution
 // They combine the action with a delay, making sequences more readable and convenient
+
+// Keeps staging callbacks hidden behind a completed fade-out in custom sequences.
+public function AddFadeOut takes integer seqId, real duration returns integer
+	local Table seqTable = DialogSequenceStore[seqId]
+	local integer index
+	local integer base
+	if seqTable == 0 then
+		return 0
+	endif
+	set index = AddDelay(seqId, duration)
+	set base = index * 10
+	set seqTable.integer[base + DIALOG_LINE_ACTION_TYPE_KEY] = SEQ_ACTION_TYPE_FADE_OUT
+	return index
+endfunction
+
+public function AddFadeIn takes integer seqId, real duration returns integer
+	local Table seqTable = DialogSequenceStore[seqId]
+	local integer index
+	local integer base
+	if seqTable == 0 then
+		return 0
+	endif
+	set index = AddDelay(seqId, duration)
+	set base = index * 10
+	set seqTable.integer[base + DIALOG_LINE_ACTION_TYPE_KEY] = SEQ_ACTION_TYPE_FADE_IN
+	return index
+endfunction
+
+public function AddFadeTransition takes integer seqId, real fadeOutDuration, real fadeInDuration, code onBlack returns integer
+	local integer fadeInIndex
+	if DialogSequenceStore[seqId] == 0 then
+		return 0
+	endif
+	call AddFadeOut(seqId, fadeOutDuration)
+	set fadeInIndex = AddFadeIn(seqId, fadeInDuration)
+	if onBlack != null then
+		call BindLineAction(seqId, fadeInIndex, onBlack)
+	endif
+	return fadeInIndex
+endfunction
 
 // Makes two units face each other
 // If faceDuration <= 0, uses random duration for natural movement
