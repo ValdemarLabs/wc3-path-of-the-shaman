@@ -2,7 +2,7 @@
     GambleUI
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
     Displays a focused mystery-item purchase panel. Callers configure a
@@ -22,6 +22,8 @@
     - call GambleUI_RegisterReturnHandler(callback)
     - call GambleUI_Show(vendor, buyer, goldCost)
     - call GambleUI_Hide()
+    - set vendor = GambleUI_GetVendorUnit()
+    - set buyer = GambleUI_GetBuyerUnit()
     - set itemTypeId = GambleUI_GetLastRewardItemType()
 
 **/
@@ -30,6 +32,7 @@ library GambleUI initializer AutoInit requires Shop, Interface
         // Reward-pool configuration.
         private constant integer GUI_MAX_REWARDS = 32
         private constant string GUI_MYSTERY_ICON = "ReplaceableTextures\\CommandButtons\\BTNChestOfGold.blp"
+        private constant string GUI_PANEL_TEXTURE = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
 
         private boolean GUI_Initialized = false
         private integer GUI_RewardCount = 0
@@ -45,15 +48,24 @@ library GambleUI initializer AutoInit requires Shop, Interface
 
         // Frame and callback state.
         private framehandle GUI_Parent = null
+        private framehandle GUI_MainBackdrop = null
         private framehandle GUI_Title = null
+        private framehandle GUI_Subtitle = null
+        private framehandle GUI_CloseButton = null
+        private framehandle GUI_OfferPane = null
         private framehandle GUI_Icon = null
+        private framehandle GUI_OfferTitle = null
+        private framehandle GUI_PriceText = null
         private framehandle GUI_Body = null
+        private framehandle GUI_StatusBackdrop = null
         private framehandle GUI_Status = null
+        private framehandle GUI_GoldText = null
         private framehandle GUI_BuyButton = null
         private framehandle GUI_ReturnButton = null
 
         private trigger GUI_BuyTrigger = null
         private trigger GUI_ReturnButtonTrigger = null
+        private trigger GUI_CloseTrigger = null
         private trigger GUI_ClearFocusTrigger = null
         private trigger GUI_EscapeTrigger = null
         private trigger GUI_PurchaseHandler = null
@@ -103,6 +115,18 @@ library GambleUI initializer AutoInit requires Shop, Interface
         set GUI_GoldCost = 0
     endfunction
 
+    private function GUI_SetStatus takes player p, string text, boolean isError returns nothing
+        if isError then
+            call BlzFrameSetText(GUI_Status, "|cffff8080" + text + "|r")
+            call DisplayTextToPlayer(p, 0.00, 0.00, "|cffff8080" + text + "|r")
+        else
+            call BlzFrameSetText(GUI_Status, text)
+        endif
+        if GUI_Buyer != null then
+            call BlzFrameSetText(GUI_GoldText, "|cffffcc00Gold:|r " + I2S(GetPlayerState(GetOwningPlayer(GUI_Buyer), PLAYER_STATE_RESOURCE_GOLD)))
+        endif
+    endfunction
+
     private function GUI_HideInternal takes boolean playSound returns nothing
         local player p = Player(0)
 
@@ -124,10 +148,14 @@ library GambleUI initializer AutoInit requires Shop, Interface
         if GetTriggerPlayer() != Player(0) or not GUI_IsVisible() then
             return
         endif
-        call GUI_HideInternal(true)
+        if GUI_Parent != null then
+            call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, GetTriggerPlayer())
+            call BlzFrameSetVisible(GUI_Parent, false)
+        endif
         if GUI_ReturnHandler != null then
             call TriggerExecute(GUI_ReturnHandler)
         endif
+        call GUI_ResetSession()
     endfunction
 
     private function GUI_BuyAction takes nothing returns nothing
@@ -141,14 +169,14 @@ library GambleUI initializer AutoInit requires Shop, Interface
         endif
         if GUI_Vendor == null or GetWidgetLife(GUI_Vendor) <= 0.405 or GetWidgetLife(GUI_Buyer) <= 0.405 or not IsUnitInRange(GUI_Buyer, GUI_Vendor, 650.00) then
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, p)
-            call DisplayTextToPlayer(p, 0.00, 0.00, "|cffff8080The special deal was interrupted.|r")
+            call GUI_SetStatus(p, "The special deal was interrupted.", true)
             call GUI_ReturnAction()
             set p = null
             return
         endif
         if GUI_GoldCost <= 0 or GetPlayerState(p, PLAYER_STATE_RESOURCE_GOLD) < GUI_GoldCost then
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, p)
-            call BlzFrameSetText(GUI_Status, "|cffff8080You don't have enough gold.|r")
+            call GUI_SetStatus(p, "You don't have enough gold.", true)
             set p = null
             return
         endif
@@ -156,7 +184,7 @@ library GambleUI initializer AutoInit requires Shop, Interface
         set itemTypeId = GUI_PickReward()
         if itemTypeId == 0 then
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, p)
-            call BlzFrameSetText(GUI_Status, "|cffff8080Kribugs has no mystery goods available.|r")
+            call GUI_SetStatus(p, "Kribugs has no mystery goods available.", true)
             set p = null
             return
         endif
@@ -167,7 +195,7 @@ library GambleUI initializer AutoInit requires Shop, Interface
                 call RemoveItem(reward)
             endif
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, p)
-            call BlzFrameSetText(GUI_Status, "|cffff8080Your inventories are full.|r")
+            call GUI_SetStatus(p, "Your inventories are full.", true)
             set reward = null
             set p = null
             return
@@ -177,7 +205,7 @@ library GambleUI initializer AutoInit requires Shop, Interface
         call Interface_NotifyLootCoin()
         set GUI_LastRewardItemType = itemTypeId
         call BlzFrameSetTexture(GUI_Icon, GUI_GetRewardIcon(itemTypeId), 0, true)
-        call BlzFrameSetText(GUI_Status, "|cff80ff80Item received: " + GetObjectName(itemTypeId) + "|r")
+        call GUI_SetStatus(p, "|cff80ff80Item received: " + GetObjectName(itemTypeId) + "|r", false)
         call DisplayTextToPlayer(p, 0.00, 0.00, "|cff80ff80Item received: " + GetObjectName(itemTypeId) + "|r")
         call GUI_HideInternal(false)
         if GUI_PurchaseHandler != null then
@@ -197,42 +225,96 @@ library GambleUI initializer AutoInit requires Shop, Interface
     private function GUI_CreateFrames takes nothing returns nothing
         set GUI_Parent = BlzCreateFrameByType("BACKDROP", "GambleUIPanel", BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "EscMenuBackdrop", 0)
         call BlzFrameSetLevel(GUI_Parent, 4)
-        call BlzFrameSetAbsPoint(GUI_Parent, FRAMEPOINT_TOPLEFT, 0.230, 0.465)
-        call BlzFrameSetAbsPoint(GUI_Parent, FRAMEPOINT_BOTTOMRIGHT, 0.570, 0.245)
+        call BlzFrameSetAbsPoint(GUI_Parent, FRAMEPOINT_TOPLEFT, 0.195, 0.535)
+        call BlzFrameSetAbsPoint(GUI_Parent, FRAMEPOINT_BOTTOMRIGHT, 0.605, 0.185)
+
+        set GUI_MainBackdrop = BlzCreateFrameByType("BACKDROP", "GambleUIMainBackdrop", GUI_Parent, "", 0)
+        call BlzFrameSetTexture(GUI_MainBackdrop, GUI_PANEL_TEXTURE, 0, false)
+        call BlzFrameSetPoint(GUI_MainBackdrop, FRAMEPOINT_TOPLEFT, GUI_Parent, FRAMEPOINT_TOPLEFT, 0.010, -0.010)
+        call BlzFrameSetPoint(GUI_MainBackdrop, FRAMEPOINT_BOTTOMRIGHT, GUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.010, 0.010)
+        call BlzFrameSetAlpha(GUI_MainBackdrop, 255)
+        call BlzFrameSetVertexColor(GUI_MainBackdrop, BlzConvertColor(255, 0, 0, 0))
+        call BlzFrameSetEnable(GUI_MainBackdrop, false)
 
         set GUI_Title = BlzCreateFrameByType("TEXT", "GambleUITitle", GUI_Parent, "", 0)
-        call BlzFrameSetPoint(GUI_Title, FRAMEPOINT_TOPLEFT, GUI_Parent, FRAMEPOINT_TOPLEFT, 0.024, -0.022)
-        call BlzFrameSetSize(GUI_Title, 0.292, 0.024)
-        call BlzFrameSetTextAlignment(GUI_Title, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
-        call BlzFrameSetScale(GUI_Title, 1.16)
+        call BlzFrameSetPoint(GUI_Title, FRAMEPOINT_TOPLEFT, GUI_Parent, FRAMEPOINT_TOPLEFT, 0.022, -0.020)
+        call BlzFrameSetSize(GUI_Title, 0.310, 0.020)
+        call BlzFrameSetTextAlignment(GUI_Title, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
+        call BlzFrameSetScale(GUI_Title, 1.12)
         call BlzFrameSetEnable(GUI_Title, false)
 
-        set GUI_Icon = BlzCreateFrameByType("BACKDROP", "GambleUIIcon", GUI_Parent, "IconButtonTemplate", 0)
-        call BlzFrameSetPoint(GUI_Icon, FRAMEPOINT_TOP, GUI_Title, FRAMEPOINT_BOTTOM, 0.000, -0.014)
-        call BlzFrameSetSize(GUI_Icon, 0.052, 0.052)
+        set GUI_Subtitle = BlzCreateFrameByType("TEXT", "GambleUISubtitle", GUI_Parent, "", 0)
+        call BlzFrameSetPoint(GUI_Subtitle, FRAMEPOINT_TOPLEFT, GUI_Title, FRAMEPOINT_BOTTOMLEFT, 0.000, -0.006)
+        call BlzFrameSetSize(GUI_Subtitle, 0.310, 0.016)
+        call BlzFrameSetTextAlignment(GUI_Subtitle, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
+        call BlzFrameSetScale(GUI_Subtitle, 0.86)
+        call BlzFrameSetEnable(GUI_Subtitle, false)
 
-        set GUI_Body = BlzCreateFrameByType("TEXT", "GambleUIBody", GUI_Parent, "", 0)
-        call BlzFrameSetPoint(GUI_Body, FRAMEPOINT_TOPLEFT, GUI_Icon, FRAMEPOINT_BOTTOMLEFT, -0.120, -0.010)
-        call BlzFrameSetSize(GUI_Body, 0.292, 0.040)
-        call BlzFrameSetTextAlignment(GUI_Body, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_CENTER)
+        set GUI_CloseButton = BlzCreateFrameByType("GLUETEXTBUTTON", "GambleUIClose", GUI_Parent, "ScriptDialogButton", 0)
+        call BlzFrameSetSize(GUI_CloseButton, 0.030, 0.030)
+        call BlzFrameSetText(GUI_CloseButton, "X")
+        call BlzFrameSetPoint(GUI_CloseButton, FRAMEPOINT_TOPRIGHT, GUI_Parent, FRAMEPOINT_TOPRIGHT, -0.012, -0.012)
+        call BlzTriggerRegisterFrameEvent(GUI_CloseTrigger, GUI_CloseButton, FRAMEEVENT_CONTROL_CLICK)
+        call BlzTriggerRegisterFrameEvent(GUI_ClearFocusTrigger, GUI_CloseButton, FRAMEEVENT_CONTROL_CLICK)
+
+        set GUI_OfferPane = BlzCreateFrameByType("BACKDROP", "GambleUIOfferPane", GUI_Parent, "", 0)
+        call BlzFrameSetTexture(GUI_OfferPane, GUI_PANEL_TEXTURE, 0, true)
+        call BlzFrameSetPoint(GUI_OfferPane, FRAMEPOINT_TOPLEFT, GUI_Parent, FRAMEPOINT_TOPLEFT, 0.018, -0.074)
+        call BlzFrameSetPoint(GUI_OfferPane, FRAMEPOINT_BOTTOMRIGHT, GUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.018, 0.076)
+
+        set GUI_Icon = BlzCreateFrameByType("BACKDROP", "GambleUIIcon", GUI_OfferPane, "IconButtonTemplate", 0)
+        call BlzFrameSetPoint(GUI_Icon, FRAMEPOINT_TOPLEFT, GUI_OfferPane, FRAMEPOINT_TOPLEFT, 0.020, -0.020)
+        call BlzFrameSetSize(GUI_Icon, 0.060, 0.060)
+
+        set GUI_OfferTitle = BlzCreateFrameByType("TEXT", "GambleUIOfferTitle", GUI_OfferPane, "", 0)
+        call BlzFrameSetPoint(GUI_OfferTitle, FRAMEPOINT_TOPLEFT, GUI_Icon, FRAMEPOINT_TOPRIGHT, 0.018, -0.002)
+        call BlzFrameSetSize(GUI_OfferTitle, 0.250, 0.020)
+        call BlzFrameSetTextAlignment(GUI_OfferTitle, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
+        call BlzFrameSetScale(GUI_OfferTitle, 1.06)
+        call BlzFrameSetEnable(GUI_OfferTitle, false)
+
+        set GUI_PriceText = BlzCreateFrameByType("TEXT", "GambleUIPrice", GUI_OfferPane, "", 0)
+        call BlzFrameSetPoint(GUI_PriceText, FRAMEPOINT_TOPLEFT, GUI_OfferTitle, FRAMEPOINT_BOTTOMLEFT, 0.000, -0.006)
+        call BlzFrameSetSize(GUI_PriceText, 0.250, 0.016)
+        call BlzFrameSetTextAlignment(GUI_PriceText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
+        call BlzFrameSetScale(GUI_PriceText, 0.92)
+        call BlzFrameSetEnable(GUI_PriceText, false)
+
+        set GUI_Body = BlzCreateFrameByType("TEXT", "GambleUIBody", GUI_OfferPane, "", 0)
+        call BlzFrameSetPoint(GUI_Body, FRAMEPOINT_TOPLEFT, GUI_Icon, FRAMEPOINT_BOTTOMLEFT, 0.000, -0.014)
+        call BlzFrameSetSize(GUI_Body, 0.338, 0.044)
+        call BlzFrameSetTextAlignment(GUI_Body, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
+        call BlzFrameSetScale(GUI_Body, 0.90)
         call BlzFrameSetEnable(GUI_Body, false)
 
-        set GUI_Status = BlzCreateFrameByType("TEXT", "GambleUIStatus", GUI_Parent, "", 0)
-        call BlzFrameSetPoint(GUI_Status, FRAMEPOINT_TOPLEFT, GUI_Body, FRAMEPOINT_BOTTOMLEFT, 0.000, -0.004)
-        call BlzFrameSetSize(GUI_Status, 0.292, 0.020)
-        call BlzFrameSetTextAlignment(GUI_Status, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
-        call BlzFrameSetScale(GUI_Status, 0.90)
+        set GUI_StatusBackdrop = BlzCreateFrameByType("BACKDROP", "GambleUIStatusBackdrop", GUI_OfferPane, "", 0)
+        call BlzFrameSetTexture(GUI_StatusBackdrop, GUI_PANEL_TEXTURE, 0, true)
+        call BlzFrameSetPoint(GUI_StatusBackdrop, FRAMEPOINT_TOPLEFT, GUI_OfferPane, FRAMEPOINT_BOTTOMLEFT, 0.016, 0.048)
+        call BlzFrameSetPoint(GUI_StatusBackdrop, FRAMEPOINT_BOTTOMRIGHT, GUI_OfferPane, FRAMEPOINT_BOTTOMRIGHT, -0.016, 0.016)
+
+        set GUI_Status = BlzCreateFrameByType("TEXT", "GambleUIStatus", GUI_StatusBackdrop, "", 0)
+        call BlzFrameSetPoint(GUI_Status, FRAMEPOINT_TOPLEFT, GUI_StatusBackdrop, FRAMEPOINT_TOPLEFT, 0.010, -0.004)
+        call BlzFrameSetPoint(GUI_Status, FRAMEPOINT_BOTTOMRIGHT, GUI_StatusBackdrop, FRAMEPOINT_BOTTOMRIGHT, -0.010, 0.004)
+        call BlzFrameSetTextAlignment(GUI_Status, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
+        call BlzFrameSetScale(GUI_Status, 0.92)
         call BlzFrameSetEnable(GUI_Status, false)
 
+        set GUI_GoldText = BlzCreateFrameByType("TEXT", "GambleUIGold", GUI_Parent, "", 0)
+        call BlzFrameSetPoint(GUI_GoldText, FRAMEPOINT_BOTTOMLEFT, GUI_Parent, FRAMEPOINT_BOTTOMLEFT, 0.024, 0.030)
+        call BlzFrameSetSize(GUI_GoldText, 0.100, 0.016)
+        call BlzFrameSetTextAlignment(GUI_GoldText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
+        call BlzFrameSetScale(GUI_GoldText, 0.86)
+        call BlzFrameSetEnable(GUI_GoldText, false)
+
         set GUI_BuyButton = BlzCreateFrameByType("GLUETEXTBUTTON", "GambleUIBuy", GUI_Parent, "ScriptDialogButton", 0)
-        call BlzFrameSetPoint(GUI_BuyButton, FRAMEPOINT_BOTTOMLEFT, GUI_Parent, FRAMEPOINT_BOTTOMLEFT, 0.032, 0.022)
-        call BlzFrameSetSize(GUI_BuyButton, 0.126, 0.036)
+        call BlzFrameSetPoint(GUI_BuyButton, FRAMEPOINT_BOTTOMRIGHT, GUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.024, 0.022)
+        call BlzFrameSetSize(GUI_BuyButton, 0.112, 0.034)
         call BlzTriggerRegisterFrameEvent(GUI_BuyTrigger, GUI_BuyButton, FRAMEEVENT_CONTROL_CLICK)
         call BlzTriggerRegisterFrameEvent(GUI_ClearFocusTrigger, GUI_BuyButton, FRAMEEVENT_CONTROL_CLICK)
 
         set GUI_ReturnButton = BlzCreateFrameByType("GLUETEXTBUTTON", "GambleUIReturn", GUI_Parent, "ScriptDialogButton", 0)
-        call BlzFrameSetPoint(GUI_ReturnButton, FRAMEPOINT_BOTTOMRIGHT, GUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.032, 0.022)
-        call BlzFrameSetSize(GUI_ReturnButton, 0.126, 0.036)
+        call BlzFrameSetPoint(GUI_ReturnButton, FRAMEPOINT_RIGHT, GUI_BuyButton, FRAMEPOINT_LEFT, -0.010, 0.000)
+        call BlzFrameSetSize(GUI_ReturnButton, 0.090, 0.034)
         call BlzFrameSetText(GUI_ReturnButton, "Previous")
         call BlzTriggerRegisterFrameEvent(GUI_ReturnButtonTrigger, GUI_ReturnButton, FRAMEEVENT_CONTROL_CLICK)
         call BlzTriggerRegisterFrameEvent(GUI_ClearFocusTrigger, GUI_ReturnButton, FRAMEEVENT_CONTROL_CLICK)
@@ -304,11 +386,15 @@ library GambleUI initializer AutoInit requires Shop, Interface
         set GUI_GoldCost = goldCost
         set GUI_LastRewardItemType = 0
         set p = GetOwningPlayer(buyer)
-        call BlzFrameSetText(GUI_Title, "|cffffe4a3Special Deal - " + GetUnitName(vendor) + "|r")
+        call BlzFrameSetText(GUI_Title, "|cffffe4a3Special Deal|r")
+        call BlzFrameSetText(GUI_Subtitle, "A private offer from " + GetUnitName(vendor))
         call BlzFrameSetTexture(GUI_Icon, GUI_MYSTERY_ICON, 0, true)
-        call BlzFrameSetText(GUI_Body, "Pay " + I2S(goldCost) + " gold and receive one random item.")
-        call BlzFrameSetText(GUI_Status, "Gold: " + I2S(GetPlayerState(p, PLAYER_STATE_RESOURCE_GOLD)))
-        call BlzFrameSetText(GUI_BuyButton, "Buy (" + I2S(goldCost) + " Gold)")
+        call BlzFrameSetText(GUI_OfferTitle, "Mystery Package")
+        call BlzFrameSetText(GUI_PriceText, "|cffffcc00Price:|r " + I2S(goldCost) + " gold")
+        call BlzFrameSetText(GUI_Body, "One weighted random item from Kribugs' private stock. The package is revealed only after payment. All deals are final.")
+        call BlzFrameSetText(GUI_GoldText, "|cffffcc00Gold:|r " + I2S(GetPlayerState(p, PLAYER_STATE_RESOURCE_GOLD)))
+        call BlzFrameSetText(GUI_Status, "Choose Buy to take the gamble.")
+        call BlzFrameSetText(GUI_BuyButton, "Buy")
         call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, p)
         call BlzFrameSetVisible(GUI_Parent, true)
 
@@ -325,6 +411,14 @@ library GambleUI initializer AutoInit requires Shop, Interface
         return GUI_LastRewardItemType
     endfunction
 
+    public function GetVendorUnit takes nothing returns unit
+        return GUI_Vendor
+    endfunction
+
+    public function GetBuyerUnit takes nothing returns unit
+        return GUI_Buyer
+    endfunction
+
     public function Init takes nothing returns nothing
         if GUI_Initialized then
             return
@@ -335,6 +429,8 @@ library GambleUI initializer AutoInit requires Shop, Interface
         call TriggerAddAction(GUI_BuyTrigger, function GUI_BuyAction)
         set GUI_ReturnButtonTrigger = CreateTrigger()
         call TriggerAddAction(GUI_ReturnButtonTrigger, function GUI_ReturnAction)
+        set GUI_CloseTrigger = CreateTrigger()
+        call TriggerAddAction(GUI_CloseTrigger, function GUI_ReturnAction)
         set GUI_ClearFocusTrigger = CreateTrigger()
         call TriggerAddAction(GUI_ClearFocusTrigger, function GUI_ClearFocusAction)
         set GUI_EscapeTrigger = CreateTrigger()

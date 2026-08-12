@@ -714,17 +714,21 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
     endfunction
 
     private function OnGambleReturn takes nothing returns nothing
-        local unit hero = ResolveDialogHero()
-        if hero == null or not DialogInteraction_IsUnitAlive(Kribugs) then
+        local unit vendor = GambleUI_GetVendorUnit()
+        local unit hero = GambleUI_GetBuyerUnit()
+        if vendor != Kribugs or hero == null or not DialogInteraction_IsUnitAlive(vendor) or not DialogInteraction_IsUnitAlive(hero) then
+            set vendor = null
             set hero = null
             call StartExitFadeOut()
             return
         endif
         set SelectedHero = hero
+        call EnableUserControl(false)
         call PauseUnit(hero, true)
         call BuildDialog()
-        call DialogSystem_SetContext(Kribugs, GetOwningPlayer(hero))
+        call DialogSystem_SetContext(vendor, GetOwningPlayer(hero))
         call DialogSystem_ShowDialog(KribugsDialog, GetOwningPlayer(hero))
+        set vendor = null
         set hero = null
     endfunction
 
