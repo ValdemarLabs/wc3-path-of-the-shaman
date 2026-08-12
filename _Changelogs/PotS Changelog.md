@@ -17,8 +17,15 @@
 
 ## [12.8.2026]
 
+### Player-Facing Updates
+
+- Updated `Professions/Professions.j` and `UI/CameraControl.j` so crafting cameras accept arrow-key angle and rotation changes while remaining locked to the active crafting unit.
+- Fixed `UI/GambleUI.j` so Previous and close reliably return to Kribugs' dialog, insufficient-gold and inventory errors remain visible inside the panel, and the Special Deal uses a clearer ShopUI-inspired offer layout.
+- Fixed Ragno's level-one Neutral-Horde quest availability and Protect the Outpost completion staging so Ragno walks into a close conversation position and cinematic units only move while the screen is fully faded out.
+
 ### Technical Updates
 
+- Updated `QuestsAndDialogs/DialogSystem.j` with reusable fade-out, black-screen action, and fade-in sequence transitions, `QuestsAndDialogs/QuestMaster.j` with batched quest-giver icon refreshes, and `QuestsAndDialogs/QuestGivers/qRagno.j` with the standardized fade-safe choreography and explicit Neutral Horde requirements.
 - Added `_developer/gui-variables.md` with a source-level inventory of current `udg_*` and `gg_*` usage, classified legacy GUI trigger removal candidates, and categorized Variable Editor cleanup candidates.
 - Updated `Zones/ZonesCore.j` with `ZoneData.addDungeonEnterRegion` and `addDungeonExitRegion`; Gnoll Hideout, Crypt, and Boom Mine now keep portal source, destination, and facing metadata in ZonesCore while ZoneEvent executes the transitions.
 - Added `World/Dragons/DragonBehavior.j` for shared red/scorching dragon melee animations, opportunistic Breath of Fire and Flame Strike casts, and ambient dragon sounds.
@@ -32,6 +39,7 @@
 
 ### Actions Remaining
 
+- Run an in-map JassHelper compile and validate Ragno's level-one quest buttons, stable overhead marker, and both Protect the Outpost fade-safe CinematicMover transitions.
 - Import `World/Dragons/DragonBehavior.j`, `EmberpeakDragons.j`, and `DragonfirePeaksDragons.j`; disable the converted Dragons GUI triggers and runtime-test both zones' wandering/casting plus every Colossus dragonfire mode.
 - Import each new dungeon `BossXXX.j` after its owning dungeon library, then run the affected-map and full-map JassHelper compiles and runtime-test boss registration before ordinary-creep registration.
 
