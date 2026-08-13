@@ -13,7 +13,7 @@
 
     How to install:
     Import after TravelSystem, TravelUI, and PatrolSystem. Keep TravelShip Init
-    enabled so udg_TravelShipB is assigned to the placed Orc Frigate.
+    enabled so TravelSystem can resolve the placed Orc Frigate binding.
 
     API:
     - TravelShipB_GetMoknathaStop()
@@ -68,15 +68,27 @@ library TravelShipB initializer Init requires TravelSystem, TravelUI, PatrolSyst
         return x >= GetRectMinX(whichRect) and x <= GetRectMaxX(whichRect) and y >= GetRectMinY(whichRect) and y <= GetRectMaxY(whichRect)
     endfunction
 
+    private function TSB_GetShip takes nothing returns unit
+        return TravelSystem_GetTravelShipB()
+    endfunction
+
+    private function TSB_GetMaster takes nothing returns unit
+        return TravelSystem_GetShipMaster(TRAVEL_SHIP_MASTER_MOKNATHA)
+    endfunction
+
     private function TSB_GetDock takes nothing returns integer
-        if TSB_UnitInRect(udg_TravelShipB, gg_rct_ShipBMoknatha) then
-            return TSB_MoknathaStop
-        elseif TSB_UnitInRect(udg_TravelShipB, gg_rct_ShipBFrontBase) then
-            return TSB_FrontlineStop
-        elseif TSB_UnitInRect(udg_TravelShipB, gg_rct_ShipBIronspinePost) then
-            return TSB_IronspineStop
+        local unit ship = TSB_GetShip()
+        local integer stopId = 0
+
+        if TSB_UnitInRect(ship, gg_rct_ShipBMoknatha) then
+            set stopId = TSB_MoknathaStop
+        elseif TSB_UnitInRect(ship, gg_rct_ShipBFrontBase) then
+            set stopId = TSB_FrontlineStop
+        elseif TSB_UnitInRect(ship, gg_rct_ShipBIronspinePost) then
+            set stopId = TSB_IronspineStop
         endif
-        return 0
+        set ship = null
+        return stopId
     endfunction
 
     public function GetMoknathaStop takes nothing returns integer
@@ -100,20 +112,27 @@ library TravelShipB initializer Init requires TravelSystem, TravelUI, PatrolSyst
     endfunction
 
     public function ConfigureHeroModels takes string nazgrekModel, real nazgrekScale, real nazgrekFacingOffset, string zulkisModel, real zulkisScale, real zulkisFacingOffset returns nothing
-        if udg_Nazgrek != null then
-            call TravelSystem_RegisterPassengerEffect(GetUnitTypeId(udg_Nazgrek), nazgrekModel, nazgrekScale, nazgrekFacingOffset)
+        local unit nazgrek = TravelSystem_GetNazgrek()
+        local unit zulkis = TravelSystem_GetZulkis()
+
+        if nazgrek != null then
+            call TravelSystem_RegisterPassengerEffect(GetUnitTypeId(nazgrek), nazgrekModel, nazgrekScale, nazgrekFacingOffset)
         endif
-        if udg_Zulkis != null then
-            call TravelSystem_RegisterPassengerEffect(GetUnitTypeId(udg_Zulkis), zulkisModel, zulkisScale, zulkisFacingOffset)
+        if zulkis != null then
+            call TravelSystem_RegisterPassengerEffect(GetUnitTypeId(zulkis), zulkisModel, zulkisScale, zulkisFacingOffset)
         endif
+        set nazgrek = null
+        set zulkis = null
     endfunction
 
     private function TSB_SetPatrolPoint takes integer index, rect waypoint, real waitTime returns nothing
-        call PatrolSystem_SetPoint(udg_TravelShipB, index, TSB_RectCenterX(waypoint), TSB_RectCenterY(waypoint), waitTime)
+        call PatrolSystem_SetPoint(TSB_GetShip(), index, TSB_RectCenterX(waypoint), TSB_RectCenterY(waypoint), waitTime)
     endfunction
 
     private function TSB_StartPatrol takes nothing returns nothing
-        call PatrolSystem_Begin(udg_TravelShipB)
+        local unit ship = TSB_GetShip()
+
+        call PatrolSystem_Begin(ship)
         call TSB_SetPatrolPoint(0, gg_rct_MoknathaShip01, 30.00)
         call TSB_SetPatrolPoint(1, gg_rct_MoknathaShip02a, 0.00)
         call TSB_SetPatrolPoint(2, gg_rct_MoknathaShip02, 0.00)
@@ -201,59 +220,78 @@ library TravelShipB initializer Init requires TravelSystem, TravelUI, PatrolSyst
         call TSB_SetPatrolPoint(84, gg_rct_MoknathaShip027, 0.00)
         call TSB_SetPatrolPoint(85, gg_rct_MoknathaShip028, 0.00)
         call TSB_SetPatrolPoint(86, gg_rct_MoknathaShip029, 0.00)
-        call PatrolSystem_StartConfigured(udg_TravelShipB, TSB_PATROL_POINT_COUNT, 10.00, PATROL_STYLE_LOOP, true, "move", -1.00)
+        call PatrolSystem_StartConfigured(ship, TSB_PATROL_POINT_COUNT, 10.00, PATROL_STYLE_LOOP, true, "move", -1.00)
         set TSB_PatrolStarted = true
+        set ship = null
     endfunction
 
     private function TSB_TryStartPatrol takes nothing returns nothing
+        local unit ship = TSB_GetShip()
+
         if TSB_PatrolStarted then
+            set ship = null
             return
         endif
-        if udg_TravelShipB == null or GetUnitTypeId(udg_TravelShipB) == 0 then
+        if ship == null or GetUnitTypeId(ship) == 0 then
             call TimerStart(TSB_PatrolTimer, 1.00, false, function TSB_TryStartPatrol)
+            set ship = null
             return
         endif
         call TSB_StartPatrol()
         call PauseTimer(TSB_PatrolTimer)
+        set ship = null
     endfunction
 
     private function TSB_OnDockCheck takes nothing returns nothing
         local integer newDock
+        local unit ship = TSB_GetShip()
 
-        if not TSB_Initialized or udg_TravelShipB == null or GetUnitTypeId(udg_TravelShipB) == 0 then
+        if not TSB_Initialized or ship == null or GetUnitTypeId(ship) == 0 then
+            set ship = null
             return
         endif
         set newDock = TSB_GetDock()
         if newDock == TSB_CurrentDock then
+            set ship = null
             return
         endif
         set TSB_CurrentDock = newDock
         if newDock > 0 then
-            call TravelSystem_NotifyScheduledStop(udg_TravelShipB, newDock)
+            call TravelSystem_NotifyScheduledStop(ship, newDock)
             if newDock == TSB_MoknathaStop then
                 call TravelSystem_SetRouteAvailable(TSB_FrontlineRoute, true)
                 call TravelSystem_SetRouteAvailable(TSB_IronspineRoute, true)
             endif
         else
-            call TravelSystem_NotifyScheduledLeave(udg_TravelShipB)
+            call TravelSystem_NotifyScheduledLeave(ship)
         endif
+        set ship = null
     endfunction
 
     private function TSB_TryInitialize takes nothing returns nothing
+        local unit ship = TSB_GetShip()
+        local unit master = TSB_GetMaster()
+
         if TSB_Initialized then
+            set ship = null
+            set master = null
             return
         endif
-        if udg_TravelShipB == null or udg_Shipmaster[1] == null then
+        if ship == null or master == null then
             call TimerStart(TSB_InitTimer, 1.00, false, function TSB_TryInitialize)
+            set ship = null
+            set master = null
             return
         endif
 
-        set TSB_MoknathaStop = TravelSystem_RegisterStop(TRAVEL_METHOD_SHIP_B, "Mok'natha", TSB_ZONE_MOKNATHA, udg_Shipmaster[1], gg_rct_TravelShipMoknatha, TSB_RectCenterX(gg_rct_TravelShipMoknathaDeck), TSB_RectCenterY(gg_rct_TravelShipMoknathaDeck), false)
+        set TSB_MoknathaStop = TravelSystem_RegisterStop(TRAVEL_METHOD_SHIP_B, "Mok'natha", TSB_ZONE_MOKNATHA, master, gg_rct_TravelShipMoknatha, TSB_RectCenterX(gg_rct_TravelShipMoknathaDeck), TSB_RectCenterY(gg_rct_TravelShipMoknathaDeck), false)
         set TSB_FrontlineStop = TravelSystem_RegisterStop(TRAVEL_METHOD_SHIP_B, "Frontline Base", 0, null, gg_rct_TravelShipFrontbaseDeck, TSB_RectCenterX(gg_rct_TravelShipFrontbaseDeck), TSB_RectCenterY(gg_rct_TravelShipFrontbaseDeck), false)
         set TSB_IronspineStop = TravelSystem_RegisterStop(TRAVEL_METHOD_SHIP_B, "Ironspine Post", TSB_ZONE_IRONSPINE, null, gg_rct_TravelShipIronspineDeck, TSB_RectCenterX(gg_rct_TravelShipIronspineDeck), TSB_RectCenterY(gg_rct_TravelShipIronspineDeck), false)
 
         if TSB_MoknathaStop <= 0 or TSB_FrontlineStop <= 0 or TSB_IronspineStop <= 0 then
             call TimerStart(TSB_InitTimer, 1.00, false, function TSB_TryInitialize)
+            set ship = null
+            set master = null
             return
         endif
 
@@ -261,8 +299,8 @@ library TravelShipB initializer Init requires TravelSystem, TravelUI, PatrolSyst
         set TSB_IronspineRoute = TravelSystem_RegisterRoute(TRAVEL_METHOD_SHIP_B, TSB_MoknathaStop, TSB_IronspineStop, TSB_FARE_IRONSPINE, TSB_SKIP_FEE)
         call TravelSystem_SetRouteDiscoveryRequirements(TSB_FrontlineRoute, false, false)
         call TravelSystem_SetRouteDiscoveryRequirements(TSB_IronspineRoute, false, false)
-        call TravelSystem_SetRouteVehicle(TSB_FrontlineRoute, udg_TravelShipB, true, true)
-        call TravelSystem_SetRouteVehicle(TSB_IronspineRoute, udg_TravelShipB, true, true)
+        call TravelSystem_SetRouteVehicle(TSB_FrontlineRoute, ship, true, true)
+        call TravelSystem_SetRouteVehicle(TSB_IronspineRoute, ship, true, true)
         call TravelSystem_SetRouteShowPassengers(TSB_FrontlineRoute, true)
         call TravelSystem_SetRouteShowPassengers(TSB_IronspineRoute, true)
         call TravelSystem_AddWaypoint(TSB_FrontlineRoute, 0.00, 0.00, TSB_FrontlineStop)
@@ -277,6 +315,8 @@ library TravelShipB initializer Init requires TravelSystem, TravelUI, PatrolSyst
         call TSB_OnDockCheck()
         call TimerStart(TSB_DockTimer, TSB_DOCK_CHECK_PERIOD, true, function TSB_OnDockCheck)
         call PauseTimer(TSB_InitTimer)
+        set ship = null
+        set master = null
     endfunction
 
     private function Init takes nothing returns nothing

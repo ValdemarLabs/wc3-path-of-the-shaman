@@ -25,6 +25,12 @@ stable configured names with `TravelSystem_GetStopIdByName` when loading. A flig
 master is registered with `IconQuery` only after discovery; ship masters are
 registered immediately unless their stop is configured as discoverable.
 
+`Init Travel Units` should only assign the `WindRiderMaster`, `FlightMaster`,
+`Shipmaster`, ship, and zeppelin GUI variables. Do not call `IconQuery` there:
+`TravelSystem` owns icon registration so discovery cannot create duplicate or
+premature master icons. Method libraries access these units only through the
+shared getters documented in `TravelSystem.j`.
+
 ## Existing map content
 
 - `TravelWyvern.j` binds `udg_WindRiderMaster[1..3]`, the three legacy boarding
@@ -32,9 +38,11 @@ registered immediately unless their stop is configured as discoverable.
 - `TravelShipB.j` binds the Mok'natha master, owns the Orc Frigate's recovered
   87-point PatrolSystem route, and starts it after the original 45-second delay.
   The detached `TravelShipB_MovementStart` trigger is no longer required.
-- `TravelZeppelin.j` remains inactive until `TravelZeppelin_Bind` receives the
-  Sirensong/Sereneglade masters, boarding areas, arrival points, vehicle, and
-  fares.
+- `TravelZeppelin.j` binds `FlightMaster[1]` at Sereneglade,
+  `FlightMaster[2]` at Sirensong, `ZeppelinA`, and the two
+  `Zeppelin*Area` regions automatically. It uses one shuttle in both directions;
+  `ZeppelinB` remains unused. Default fares are currently zero and are configured
+  in `TravelZeppelin.j`.
 - `TravelShipA.j` remains inactive until its stops, vehicle, fares, and
   waypoints are registered; no legacy Ship A patrol definition was recovered.
 

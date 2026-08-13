@@ -17,6 +17,38 @@
     and icon-query libraries. Method libraries register their content after
     map globals have been initialized.
 
+    World Editor shared-unit bindings:
+    Travel masters:
+    - udg_WindRiderMaster[1] = Horde Scout Base, unit 0025 (active).
+    - udg_WindRiderMaster[2] = Horde Lumber Mill, unit 0208 (active).
+    - udg_WindRiderMaster[3] = Horde Gold Mine, unit 0427 (active).
+    - udg_WindRiderMaster[4] = Ursa, unit 2424 (route not configured).
+    - udg_WindRiderMaster[5] = Wind Rider Master 1978 (route not configured).
+    - udg_WindRiderMaster[6] = Wind Rider Master 1239 (route not configured).
+    - udg_FlightMaster[1] = Sereneglade Flightmaster 2617 (active).
+    - udg_FlightMaster[2] = Sirensong Shipmaster 0613 (active).
+    - udg_Shipmaster[1] = Mok'natha Shipmaster 0996 (active).
+    - udg_Shipmaster[2] = Shipmaster 2230 (route not configured).
+    - udg_Shipmaster[3] = Shipmaster 2228 (route not configured).
+    - udg_Shipmaster[4] = Shipmaster 2229 (route not configured).
+    - udg_Shipmaster[5] = Shipmaster 0613 (route not configured; also FlightMaster[2]).
+
+    Travel vehicles:
+    - udg_TravelShipA = Transport Ship 0923 (route not configured).
+    - udg_TravelShipB = Orc Frigate 0061 (active scheduled patrol).
+    - udg_ZeppelinA = Zeppelin 2226 at Sereneglade (active shared shuttle).
+    - udg_ZeppelinB = Zeppelin 0922 at Sirensong (route not configured).
+
+    Shared passengers:
+    - udg_Nazgrek and udg_Zulkis = selectable player heroes.
+    - udg_TamedUnit and udg_Shadowclaw = optional pet passengers.
+
+    "Active" bindings are consumed automatically by their method libraries.
+    Other bindings must be supplied to the relevant Bind/Register API;
+    declaring or assigning the GUI variable alone does not register a stop.
+    Do not register master IconQuery icons in the GUI initializer. TravelSystem
+    registers each icon when its stop is discovered.
+
     API:
     - TravelSystem_RegisterStop(...)
     - TravelSystem_RegisterRoute(...)
@@ -32,6 +64,10 @@
     - TravelSystem_BuildPassengerList(...)
     - TravelSystem_Start(...)
     - TravelSystem_NotifyScheduledStop(...)
+    - TravelSystem_GetWindRiderMaster(...) / TravelSystem_GetFlightMaster(...)
+    - TravelSystem_GetShipMaster(...) / TravelSystem_GetZeppelin(...)
+    - TravelSystem_GetTravelShipA() / TravelSystem_GetTravelShipB()
+    - TravelSystem_GetNazgrek() / TravelSystem_GetZulkis()
 
 **/
 library TravelSystem initializer Init requires Table, DialogInteraction, DialogSystem, IconQuery, FullscreenUI, CameraControl, FixedCameraLock, Companions, Pet, ZonesCore, ZoneEvent, PatrolSystem, ExSound, FallenHeroState
@@ -40,6 +76,25 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         constant integer TRAVEL_METHOD_ZEPPELIN = 2
         constant integer TRAVEL_METHOD_SHIP_A = 3
         constant integer TRAVEL_METHOD_SHIP_B = 4
+
+        constant integer TRAVEL_WINDRIDER_MASTER_HORDE_SCOUT_BASE = 1
+        constant integer TRAVEL_WINDRIDER_MASTER_HORDE_LUMBER_MILL = 2
+        constant integer TRAVEL_WINDRIDER_MASTER_HORDE_GOLD_MINE = 3
+        constant integer TRAVEL_WINDRIDER_MASTER_URSA = 4
+        constant integer TRAVEL_WINDRIDER_MASTER_1978 = 5
+        constant integer TRAVEL_WINDRIDER_MASTER_1239 = 6
+
+        constant integer TRAVEL_FLIGHT_MASTER_SERENEGLADE = 1
+        constant integer TRAVEL_FLIGHT_MASTER_SIRENSONG = 2
+
+        constant integer TRAVEL_SHIP_MASTER_MOKNATHA = 1
+        constant integer TRAVEL_SHIP_MASTER_2230 = 2
+        constant integer TRAVEL_SHIP_MASTER_2228 = 3
+        constant integer TRAVEL_SHIP_MASTER_2229 = 4
+        constant integer TRAVEL_SHIP_MASTER_0613 = 5
+
+        constant integer TRAVEL_ZEPPELIN_SERENEGLADE = 1
+        constant integer TRAVEL_ZEPPELIN_SIRENSONG = 2
 
         private constant integer TS_MAX_STOPS = 32
         private constant integer TS_MAX_ROUTES = 64
@@ -146,6 +201,62 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
 
     private function TS_IsValidStop takes integer stopId returns boolean
         return stopId > 0 and stopId <= TS_StopCount
+    endfunction
+
+    // Central World Editor unit binding access. Method libraries must use these
+    // getters instead of depending directly on udg_* globals.
+    public function GetWindRiderMaster takes integer index returns unit
+        if index < 1 or index > 6 then
+            return null
+        endif
+        return udg_WindRiderMaster[index]
+    endfunction
+
+    public function GetFlightMaster takes integer index returns unit
+        if index < 1 or index > 2 then
+            return null
+        endif
+        return udg_FlightMaster[index]
+    endfunction
+
+    public function GetShipMaster takes integer index returns unit
+        if index < 1 or index > 5 then
+            return null
+        endif
+        return udg_Shipmaster[index]
+    endfunction
+
+    public function GetTravelShipA takes nothing returns unit
+        return udg_TravelShipA
+    endfunction
+
+    public function GetTravelShipB takes nothing returns unit
+        return udg_TravelShipB
+    endfunction
+
+    public function GetZeppelin takes integer index returns unit
+        if index == 1 then
+            return udg_ZeppelinA
+        elseif index == 2 then
+            return udg_ZeppelinB
+        endif
+        return null
+    endfunction
+
+    public function GetNazgrek takes nothing returns unit
+        return udg_Nazgrek
+    endfunction
+
+    public function GetZulkis takes nothing returns unit
+        return udg_Zulkis
+    endfunction
+
+    public function GetTamedUnit takes nothing returns unit
+        return udg_TamedUnit
+    endfunction
+
+    public function GetShadowclaw takes nothing returns unit
+        return udg_Shadowclaw
     endfunction
 
     private function TS_IsValidRoute takes integer routeId returns boolean

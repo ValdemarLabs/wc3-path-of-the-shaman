@@ -53,6 +53,10 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
         return (GetRectMinY(whichRect) + GetRectMaxY(whichRect)) * 0.50
     endfunction
 
+    private function TW_GetMaster takes integer index returns unit
+        return TravelSystem_GetWindRiderMaster(index)
+    endfunction
+
     public function RegisterStation takes string name, integer zoneId, unit master, rect boardingArea, real dropX, real dropY returns integer
         if master == null or boardingArea == null then
             return 0
@@ -96,37 +100,56 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
     endfunction
 
     private function TW_OnEffectUpdate takes nothing returns nothing
-        if TW_MasterEffectUnit != udg_WindRiderMaster[1] and TW_MasterEffect != null then
+        local unit master = TW_GetMaster(TRAVEL_WINDRIDER_MASTER_HORDE_SCOUT_BASE)
+
+        if TW_MasterEffectUnit != master and TW_MasterEffect != null then
             call DestroyEffect(TW_MasterEffect)
             set TW_MasterEffect = null
             set TW_MasterEffectUnit = null
         endif
-        if udg_WindRiderMaster[1] == null or GetUnitTypeId(udg_WindRiderMaster[1]) == 0 then
+        if master == null or GetUnitTypeId(master) == 0 then
             if TW_MasterEffect != null then
                 call DestroyEffect(TW_MasterEffect)
                 set TW_MasterEffect = null
             endif
         elseif TW_MasterEffect == null then
-            set TW_MasterEffect = AddSpecialEffectTarget(TW_MASTER_EFFECT, udg_WindRiderMaster[1], "overhead")
-            set TW_MasterEffectUnit = udg_WindRiderMaster[1]
+            set TW_MasterEffect = AddSpecialEffectTarget(TW_MASTER_EFFECT, master, "overhead")
+            set TW_MasterEffectUnit = master
         endif
+        set master = null
     endfunction
 
     private function TW_TryInitialize takes nothing returns nothing
+        local unit scoutMaster
+        local unit lumberMaster
+        local unit goldMaster
+
         if TW_Initialized then
+            set scoutMaster = null
+            set lumberMaster = null
+            set goldMaster = null
             return
         endif
-        if udg_WindRiderMaster[1] == null or udg_WindRiderMaster[2] == null or udg_WindRiderMaster[3] == null then
+        set scoutMaster = TW_GetMaster(TRAVEL_WINDRIDER_MASTER_HORDE_SCOUT_BASE)
+        set lumberMaster = TW_GetMaster(TRAVEL_WINDRIDER_MASTER_HORDE_LUMBER_MILL)
+        set goldMaster = TW_GetMaster(TRAVEL_WINDRIDER_MASTER_HORDE_GOLD_MINE)
+        if scoutMaster == null or lumberMaster == null or goldMaster == null then
             call TimerStart(TW_InitTimer, 1.00, false, function TW_TryInitialize)
+            set scoutMaster = null
+            set lumberMaster = null
+            set goldMaster = null
             return
         endif
 
-        set TW_ScoutBaseStop = RegisterStation("Horde Scout Base", TW_ZONE_HORDE_SCOUT_BASE, udg_WindRiderMaster[1], gg_rct_HordeScoutBaseWindRiderArea, TW_RectCenterX(gg_rct_FlyHere01), TW_RectCenterY(gg_rct_FlyHere01))
-        set TW_LumberMillStop = RegisterStation("Horde Lumber Mill", 0, udg_WindRiderMaster[2], gg_rct_HordeLumberMillWindRiderArea, TW_RectCenterX(gg_rct_FlyHere02), TW_RectCenterY(gg_rct_FlyHere02))
-        set TW_GoldMineStop = RegisterStation("Horde Gold Mine", 0, udg_WindRiderMaster[3], gg_rct_HordeGoldMineWindRiderArea, TW_RectCenterX(gg_rct_FlyHere03), TW_RectCenterY(gg_rct_FlyHere03))
+        set TW_ScoutBaseStop = RegisterStation("Horde Scout Base", TW_ZONE_HORDE_SCOUT_BASE, scoutMaster, gg_rct_HordeScoutBaseWindRiderArea, TW_RectCenterX(gg_rct_FlyHere01), TW_RectCenterY(gg_rct_FlyHere01))
+        set TW_LumberMillStop = RegisterStation("Horde Lumber Mill", 0, lumberMaster, gg_rct_HordeLumberMillWindRiderArea, TW_RectCenterX(gg_rct_FlyHere02), TW_RectCenterY(gg_rct_FlyHere02))
+        set TW_GoldMineStop = RegisterStation("Horde Gold Mine", 0, goldMaster, gg_rct_HordeGoldMineWindRiderArea, TW_RectCenterX(gg_rct_FlyHere03), TW_RectCenterY(gg_rct_FlyHere03))
 
         if TW_ScoutBaseStop <= 0 or TW_LumberMillStop <= 0 or TW_GoldMineStop <= 0 then
             call TimerStart(TW_InitTimer, 1.00, false, function TW_TryInitialize)
+            set scoutMaster = null
+            set lumberMaster = null
+            set goldMaster = null
             return
         endif
 
@@ -137,10 +160,13 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
         call TW_CreateLegacyRoute(TW_GoldMineStop, TW_ScoutBaseStop, 0, gg_rct_FlyHere01)
         call TW_CreateLegacyRoute(TW_GoldMineStop, TW_LumberMillStop, TW_LEGACY_FARE, gg_rct_FlyHere02)
 
-        set TW_MasterEffect = AddSpecialEffectTarget(TW_MASTER_EFFECT, udg_WindRiderMaster[1], "overhead")
-        set TW_MasterEffectUnit = udg_WindRiderMaster[1]
+        set TW_MasterEffect = AddSpecialEffectTarget(TW_MASTER_EFFECT, scoutMaster, "overhead")
+        set TW_MasterEffectUnit = scoutMaster
         set TW_Initialized = true
         call TimerStart(TW_InitTimer, 1.00, true, function TW_OnEffectUpdate)
+        set scoutMaster = null
+        set lumberMaster = null
+        set goldMaster = null
     endfunction
 
     private function Init takes nothing returns nothing
