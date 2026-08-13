@@ -77,6 +77,12 @@
     call AI_DebugForceNightCamp() returns integer
     call AI_DebugForceProfessionCraft() returns integer
     call AI_StartTravel(whichUnit, duration, returnX, returnY)
+    call AI_RegisterTravelProvider(callback)
+    set whichUnit = AI_GetTravelRequestUnit()
+    call AI_BeginExternalTravelApproach(whichUnit)
+    call AI_BeginExternalTravel(whichUnit)
+    call AI_EndExternalTravel(whichUnit, returnX, returnY)
+    call AI_MarkTravelRequestHandled()
     call AI_RegisterBossCastAbility(abilityId, evadeRadius, evadeDistance)
     call AI_HandleBossCast(caster, abilityId, targetX, targetY)
     call AI_RequestBark(speaker, barkType)
@@ -111,6 +117,7 @@ globals
     constant integer AI_STATE_COMPANION_CONTROLLED = 11
     constant integer AI_STATE_BOSS_EVADE = 12
     constant integer AI_STATE_SOCIAL = 13
+    constant integer AI_STATE_TRAVEL_APPROACH = 14
 
     constant integer AI_PROFESSION_NONE = 0
     constant integer AI_PROFESSION_MINING = 1
@@ -151,6 +158,8 @@ globals
     integer AI_EventBarkType = 0
     unit AI_EventTarget = null
     integer AI_EventAbilityId = 0
+    unit AI_TravelRequestUnit = null
+    boolean AI_TravelRequestHandled = false
 
     private constant boolean DEBUG_DEFAULT = false
     private constant integer MAX_AI_INSTANCES = 512
@@ -431,6 +440,7 @@ globals
     private boolean RandomSpawnEnabled = true
     private boolean RandomSpawnFirstProfileDone = false
     private boolean RandomTravelEnabled = true
+    private trigger AI_TravelProvider = null
     private real NextGlobalBark = 0.00
     private unit PendingCommandBarkSpeaker = null
     private integer PendingCommandBarkType = 0
@@ -864,6 +874,8 @@ private function GetStateName takes integer state returns string
         return "boss-evade"
     elseif state == AI_STATE_SOCIAL then
         return "social"
+    elseif state == AI_STATE_TRAVEL_APPROACH then
+        return "travel-approach"
     endif
     return "inactive"
 endfunction
@@ -4676,6 +4688,70 @@ public function ReturnFromTravel takes unit whichUnit returns nothing
     call CompleteTravel(instanceId, whichUnit)
 endfunction
 
+public function RegisterTravelProvider takes code handler returns nothing
+    if handler == null then
+        return
+    endif
+    if AI_TravelProvider == null then
+        set AI_TravelProvider = CreateTrigger()
+    endif
+    call TriggerAddAction(AI_TravelProvider, handler)
+endfunction
+
+public function GetTravelRequestUnit takes nothing returns unit
+    return AI_TravelRequestUnit
+endfunction
+
+public function MarkTravelRequestHandled takes nothing returns nothing
+    if AI_TravelRequestUnit != null then
+        set AI_TravelRequestHandled = true
+    endif
+endfunction
+
+public function BeginExternalTravelApproach takes unit whichUnit returns boolean
+    local integer instanceId = AI_GetInstance(whichUnit)
+    local integer profileId
+
+    if instanceId <= 0 or whichUnit == null or InstanceHiddenByCap.boolean[instanceId] or InstanceTraveling.boolean[instanceId] then
+        return false
+    endif
+    set profileId = InstanceProfile[instanceId]
+    if IsCompanionControlled(whichUnit) and not ProfileAllowCompanionTravel.boolean[profileId] then
+        return false
+    endif
+    call RemoveInstanceFromAiParty(instanceId)
+    call RemoveTrackedProfessionTool(instanceId)
+    call ClearSocialState(instanceId)
+    set InstanceTraveling.boolean[instanceId] = true
+    set InstanceTravelReturnAt.real[instanceId] = GetNow() + 999999.00
+    set InstanceTravelReturnX.real[instanceId] = GetUnitX(whichUnit)
+    set InstanceTravelReturnY.real[instanceId] = GetUnitY(whichUnit)
+    call SetInstanceState(instanceId, AI_STATE_TRAVEL_APPROACH)
+    return true
+endfunction
+
+public function BeginExternalTravel takes unit whichUnit returns boolean
+    local integer instanceId = AI_GetInstance(whichUnit)
+
+    if instanceId <= 0 or whichUnit == null or not InstanceTraveling.boolean[instanceId] then
+        return false
+    endif
+    set InstanceTravelReturnAt.real[instanceId] = GetNow() + 999999.00
+    call SetInstanceState(instanceId, AI_STATE_TRAVEL)
+    return true
+endfunction
+
+public function EndExternalTravel takes unit whichUnit, real returnX, real returnY returns nothing
+    local integer instanceId = AI_GetInstance(whichUnit)
+
+    if instanceId <= 0 or whichUnit == null or not InstanceTraveling.boolean[instanceId] then
+        return
+    endif
+    set InstanceTravelReturnX.real[instanceId] = returnX
+    set InstanceTravelReturnY.real[instanceId] = returnY
+    call CompleteTravel(instanceId, whichUnit)
+endfunction
+
 private function PickRandomTravelReturnPoint takes integer instanceId returns nothing
     local integer profileId = InstanceProfile[instanceId]
     local integer count = ProfileSpawnCount[profileId]
@@ -4701,6 +4777,18 @@ private function StartRandomManagedTravel takes integer instanceId returns boole
     if whichUnit == null or not IsAliveUnit(whichUnit) or IsCompanionControlled(whichUnit) then
         set whichUnit = null
         return false
+    endif
+    if AI_TravelProvider != null then
+        set AI_TravelRequestUnit = whichUnit
+        set AI_TravelRequestHandled = false
+        call TriggerExecute(AI_TravelProvider)
+        set AI_TravelRequestUnit = null
+        if AI_TravelRequestHandled then
+            set AI_TravelRequestHandled = false
+            set whichUnit = null
+            return true
+        endif
+        set AI_TravelRequestHandled = false
     endif
     call PickRandomTravelReturnPoint(instanceId)
     call AI_StartTravel(whichUnit, GetRandomReal(AI_RANDOM_TRAVEL_DURATION_MIN, AI_RANDOM_TRAVEL_DURATION_MAX), RandomPointX, RandomPointY)
@@ -6402,6 +6490,10 @@ private function ProcessInstance takes integer instanceId, real now returns noth
         if now >= InstanceTravelReturnAt.real[instanceId] then
             call CompleteTravel(instanceId, whichUnit)
         endif
+        set whichUnit = null
+        return
+    endif
+    if state == AI_STATE_TRAVEL_APPROACH then
         set whichUnit = null
         return
     endif
