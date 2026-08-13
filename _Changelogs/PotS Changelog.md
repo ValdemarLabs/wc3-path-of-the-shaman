@@ -15,6 +15,18 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [13.8.2026]
+
+### Player-Facing Updates
+
+- Increased grouped dungeon boss and creep respawns from five minutes to thirty minutes; independently selected random-respawn creeps retain their shorter individual timers.
+
+### Technical Updates
+
+- Updated `DungeonsAndBosses/Boss.j` to call open-world and dungeon fight boundaries combat areas, avoiding confusion with the separate `Arena/` game-mode system; `Boss_SetArena` remains as a compatibility alias.
+- Updated `DungeonsAndBosses/Dungeon.j` and dungeon registrations with the thirty-minute grouped timer plus force-respawn APIs covering dead bosses, grouped creeps, and random-respawn creeps.
+- Updated `Debug/DebugCommands.j` with `/debug creeprespawn dungeon respawn` for all registered dungeons and an optional zone-id suffix for one dungeon.
+
 ## [12.8.2026]
 
 ### Player-Facing Updates
@@ -31,7 +43,7 @@
 - Added `World/Dragons/DragonBehavior.j` for shared red/scorching dragon melee animations, opportunistic Breath of Fire and Flame Strike casts, and ambient dragon sounds.
 - Added `World/Dragons/EmberpeakDragons.j` for Emberpeak center/highlands wandering and occasional random-unit Flame Strikes.
 - Added `World/Dragons/DragonfirePeaksDragons.j` as the separate owner of preplaced or generated Dragonfire Peaks wanderers and their occasional random-unit Flame Strikes.
-- Updated `DungeonsAndBosses/OpenWorld/Colossus/EmberpeakDragonfire.j` and `BossColossus.j` so the arena-specific dragons and targeting modes remain separate from both ambient zone systems.
+- Updated `DungeonsAndBosses/OpenWorld/Colossus/EmberpeakDragonfire.j` and `BossColossus.j` so the encounter-specific dragons and targeting modes remain separate from both ambient zone systems.
 - Updated `UI/CameraControl.j` and `DungeonsAndBosses/Dungeons/Gnoll Hideout/DungeonGnollHideout.j` with a unique Gnoll Hideout camera preset and zone activation.
 - Added `DungeonsAndBosses/Dungeons/Gnoll Hideout/BossImpaler.j`, `BossFeldok.j`, and `BossAbomination.j`, moving all Gnoll Hideout boss state, phases, abilities, descriptions, summons, cleanup, and dungeon registration out of `DungeonGnollHideout.j`.
 - Added `DungeonsAndBosses/Dungeons/Boom Brothers Mine/BossMadBlix.j`, moving Mad Blix's recoverable encounter behavior and dungeon registration out of `DungeonBoomBrothersMine.j`.
@@ -47,7 +59,7 @@
 
 ### Player-Facing Updates
 
-- Dungeon bosses and their full-respawn creep packs now return together after five minutes, while a configured 35% share of ordinary dungeon creeps can repopulate independently after 120-320 seconds; bosses are never part of that random pool.
+- Dungeon bosses and their full-respawn creep packs now return together after thirty minutes, while a configured 35% share of ordinary dungeon creeps can repopulate independently after 120-320 seconds; bosses are never part of that random pool.
 - Revived AI heroes now follow their focused player hero back toward the active dungeon entrance. Changing focus restores normal companion behavior immediately, and an AI hero still outside after 120 seconds teleports to the dungeon's configured inside point with teleport effects.
 - Gnoll Hideout, Crypt, and Boom Mine entrances and exits now use registered ZoneEvent transitions, moving the entering hero, controlled companions, and tamed units without their disabled GUI portal triggers.
 - Restored the recoverable dungeon mechanics for Impaler, Deathlord Fel'Dok, Abomination, the Crypt spike trap, Boom Brothers Mine, and Mad Blix, plus the recoverable open-world mechanics for Chimairo, Colossus, Mordrax, Rol'jin, Sargoth, Scorchion, and the Void Entity.
@@ -75,7 +87,7 @@
 - Updated `Companions/Companions.j` with focused-leader queries, suspension state, and immediate leader-change callbacks used by dungeon revival routing.
 - Updated `Zones/ZoneEvent.j` with synchronized per-hero zone queries and leave-state cleanup for dungeon routing.
 - Updated `Zones/ZoneEvent.j` with reusable entrance/exit transition and presentation handling; ZonesCore owns portal rects/facings, dungeon libraries own presentation choices, and ZoneEvent owns movement and zone state.
-- Added `DungeonsAndBosses/OpenWorld/Colossus/EmberpeakDragonfire.j`, `DungeonsAndBosses/OpenWorld/Mordrax/BossMordraxDialogue.j`, and `DungeonsAndBosses/OpenWorld/Void Entity/BossVoidEntityDialogue.j` to replace the remaining disabled arena and voice GUI triggers.
+- Added `DungeonsAndBosses/OpenWorld/Colossus/EmberpeakDragonfire.j`, `DungeonsAndBosses/OpenWorld/Mordrax/BossMordraxDialogue.j`, and `DungeonsAndBosses/OpenWorld/Void Entity/BossVoidEntityDialogue.j` to replace the remaining disabled dragonfire and voice GUI triggers.
 - Updated `Companions/Companions.j` with an external-order override used by dungeon revival routing without changing player suspension state.
 - Updated `CreepRespawn/CreepUnitAssignment.j` to stop executing the disabled Mordrax, Morthun, and Mountain Giant patrol triggers; their encounter libraries now own patrol setup.
 - Updated `CreepRespawn/CreepRespawn.j` so encounter-owned units can be durably excluded before its deferred preplaced-unit scan, preventing duplicate boss or dungeon-creep respawns.
