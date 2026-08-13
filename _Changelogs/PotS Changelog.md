@@ -26,12 +26,14 @@
 
 - Added `Travel/TravelSystem.j`, `TravelUI.j`, and method sublibraries for per-route discovery policy, directed fares, waypoint paths, scheduled vehicles, passenger effects, legacy Horde wyvern stations, and the existing Ship B patrol.
 - Updated `AI/AI.j` with a travel-provider bridge and external approach/travel lifecycle used by `Travel/TravelAI.j`, retaining abstract random travel as the fallback.
+- Updated `PatrolFollowSystems/PatrolSystem.j` with a backward-compatible direct-coordinate patrol API that does not require temporary locations or GUI waypoint arrays.
+- Updated `Travel/TravelShipB.j`, the Mordrax, Morthun, and Mountain Giant boss libraries, and `QuestsAndDialogs/QuestGivers/qValeria.j` to own and start their patrol routes locally through the direct-coordinate API.
 
 ### Actions Remaining
 
 - Bind the missing Ship A, Sirensong-Sereneglade zeppelin, and future wyvern Object Editor masters, vehicles, boarding areas, arrival points, waypoints, and fares through their registration APIs.
 - Supply the Nazgrek and Zul'kis model paths for Ship B deck-effect proxies, then tune their exposed offsets in-map.
-- Import the travel libraries after their dependencies, disable the replaced legacy travel dialogs/movement actions while retaining Ship B's patrol initialization, and run focused plus full-map JassHelper and multiplayer tests.
+- Import the travel libraries after their dependencies, disable the replaced legacy travel dialogs and detached patrol initialization triggers, and run focused plus full-map JassHelper and multiplayer tests.
 
 ## [13.8.2026]
 
