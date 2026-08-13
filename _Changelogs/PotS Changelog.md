@@ -15,6 +15,24 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [14.8.2026]
+
+### Player-Facing Updates
+
+- Added configurable wyvern, zeppelin, neutral-ship, and orcish-ship travel with a ShopUI-styled destination/passenger panel, fullscreen vehicle camera, paid ESC skipping, ship stop drop-out prompts, party fare accounting, and physical AI wyvern journeys.
+- Wyvern and zeppelin routes now require both endpoint travel masters to be discovered before use; ship routes can remain available without endpoint discovery.
+
+### Technical Updates
+
+- Added `Travel/TravelSystem.j`, `TravelUI.j`, and method sublibraries for per-route discovery policy, directed fares, waypoint paths, scheduled vehicles, passenger effects, legacy Horde wyvern stations, and the existing Ship B patrol.
+- Updated `AI/AI.j` with a travel-provider bridge and external approach/travel lifecycle used by `Travel/TravelAI.j`, retaining abstract random travel as the fallback.
+
+### Actions Remaining
+
+- Bind the missing Ship A, Sirensong-Sereneglade zeppelin, and future wyvern Object Editor masters, vehicles, boarding areas, arrival points, waypoints, and fares through their registration APIs.
+- Supply the Nazgrek and Zul'kis model paths for Ship B deck-effect proxies, then tune their exposed offsets in-map.
+- Import the travel libraries after their dependencies, disable the replaced legacy travel dialogs/movement actions while retaining Ship B's patrol initialization, and run focused plus full-map JassHelper and multiplayer tests.
+
 ## [13.8.2026]
 
 ### Player-Facing Updates
