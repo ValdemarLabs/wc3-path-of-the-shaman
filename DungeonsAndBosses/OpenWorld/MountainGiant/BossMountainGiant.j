@@ -18,6 +18,7 @@ library BossMountainGiant initializer Init requires Boss, PatrolSystem
     endglobals
 
     private function StartPatrol takes unit whichUnit returns nothing
+        call PatrolSystem_Begin(whichUnit)
         call PatrolSystem_SetPoint(whichUnit, 0, GetRectCenterX(gg_rct_MountainGiantWP01), GetRectCenterY(gg_rct_MountainGiantWP01), 0.00)
         call PatrolSystem_SetPoint(whichUnit, 1, GetRectCenterX(gg_rct_MountainGiantWP02), GetRectCenterY(gg_rct_MountainGiantWP02), 0.00)
         call PatrolSystem_SetPoint(whichUnit, 2, GetRectCenterX(gg_rct_MountainGiantWP03), GetRectCenterY(gg_rct_MountainGiantWP03), 0.00)
@@ -35,7 +36,7 @@ library BossMountainGiant initializer Init requires Boss, PatrolSystem
         call PatrolSystem_SetPoint(whichUnit, 14, GetRectCenterX(gg_rct_MountainGiantWP04), GetRectCenterY(gg_rct_MountainGiantWP04), 0.00)
         call PatrolSystem_SetPoint(whichUnit, 15, GetRectCenterX(gg_rct_MountainGiantWP03), GetRectCenterY(gg_rct_MountainGiantWP03), 0.00)
         call PatrolSystem_SetPoint(whichUnit, 16, GetRectCenterX(gg_rct_MountainGiantWP02), GetRectCenterY(gg_rct_MountainGiantWP02), 0.00)
-        call PatrolSystem_Start(whichUnit, 17, 30.00, 0, true, "attack", 120.00)
+        call PatrolSystem_StartConfigured(whichUnit, 17, 30.00, PATROL_STYLE_LOOP, true, "attack", 120.00)
     endfunction
 
     private function Respawn takes nothing returns nothing

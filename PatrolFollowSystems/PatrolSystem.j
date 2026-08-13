@@ -59,6 +59,12 @@ library PatrolSystem initializer Init requires Events, UnitDeathEvent, FallenHer
     6. To change the move style (e.g., "move", "patrol", "attack"):
         call PatrolSystem_Movestyle(udg_TempUnit, "patrol")
 
+    Usage from JASS without GUI arrays or locations:
+        call PatrolSystem_Begin(whichUnit)
+        call PatrolSystem_SetPoint(whichUnit, 0, x, y, waitTime)
+        call PatrolSystem_SetPoint(whichUnit, 1, x, y, waitTime)
+        call PatrolSystem_StartConfigured(whichUnit, 2, 10.00, PATROL_STYLE_LOOP, true, "move", -1.00)
+
     Resume = conditional continue.
     - Works only if the unit is paused by the patrol system (state = 0).
 
@@ -965,6 +971,15 @@ private function CalculateFormationOffsets takes integer groupId returns nothing
 endfunction
 
 // ===================== PUBLIC API ======================
+// ===================== Begin ===========================
+// Clears an existing patrol before direct-coordinate waypoints are configured.
+function PatrolSystem_Begin takes unit u returns nothing
+    if u == null then
+        return
+    endif
+    call FlushUnit(u)
+endfunction
+
 // ===================== Setpoint =======================
 // Call this multiple times to set up waypoints before starting patrol
 function PatrolSystem_SetPoint takes unit u, integer index, real x, real y, real waitT returns nothing
@@ -979,6 +994,41 @@ function PatrolSystem_SetPoint takes unit u, integer index, real x, real y, real
     call SaveReal(ht, id, 3000 + index, waitT)
     // call BJDebugMsg("Saved WP " + I2S(index) + ": " + R2S(x) + ", " + R2S(y))
 
+endfunction
+
+// ===================== Start configured ===============
+// Starts waypoints already stored through PatrolSystem_SetPoint.
+function PatrolSystem_StartConfigured takes unit u, integer count, real resetTime, integer pathStyle, boolean autoResume, string moveOrder, real patrolSpeed returns nothing
+    local integer id
+    local real x
+    local real y
+
+    if u == null or count <= 0 then
+        return
+    endif
+
+    set id = GetHandleId(u)
+    call SaveUnitHandle(ht, id, 0, u)
+    call SaveInteger(ht, id, 6, count)
+    call SaveInteger(ht, id, 2, 0)
+    call SaveInteger(ht, id, 5, 1)
+    call SaveInteger(ht, id, 8, pathStyle)
+    call SaveReal(ht, id, 3, resetTime)
+    call SaveBoolean(ht, id, 7, autoResume)
+    call SaveStr(ht, id, 9, moveOrder)
+    call SaveReal(ht, id, 10, patrolSpeed)
+
+    if patrolSpeed > 0.00 then
+        call SetUnitMoveSpeed(u, patrolSpeed)
+    else
+        call SetUnitMoveSpeed(u, GetUnitDefaultMoveSpeed(u))
+    endif
+
+    set x = LoadReal(ht, id, 1000)
+    set y = LoadReal(ht, id, 2000)
+    call SaveBoolean(ht, id, 50, true)
+    call IssuePointOrder(u, moveOrder, x, y)
+    call StartTimerFor(u, MoveTime(u, x, y) + 0.25, 1)
 endfunction
 
 // ===================== Pause =======================

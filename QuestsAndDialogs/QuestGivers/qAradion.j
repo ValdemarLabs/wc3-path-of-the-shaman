@@ -1,4 +1,4 @@
-library qAradion initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, FollowSystem, PatrolSystem, UnitSpawn, Companions, IconQuery, ItemLootSystem, ZonesCore, Reputation, CreepRespawn, VoicelinesAradion, VoicelinesValeria, VoicelinesNazgrek
+library qAradion initializer Init requires qValeria, QuestGiver, QuestMaster, DialogInteraction, DialogSystem, FollowSystem, PatrolSystem, UnitSpawn, Companions, IconQuery, ItemLootSystem, ZonesCore, Reputation, CreepRespawn, VoicelinesAradion, VoicelinesValeria, VoicelinesNazgrek
 //===========================================================================
 // qAradion
 // Quest giver dialog + quest flow for Aradion the Farseer.
@@ -542,7 +542,7 @@ endfunction
 
 private function StartValeriaHomePatrolInternal takes nothing returns nothing
 	if Valeria != null and DialogInteraction_IsUnitAlive(Valeria) then
-		call ExecuteFunc("ValeriaMovementStart")
+		call qValeria_StartPatrol()
 	endif
 endfunction
 

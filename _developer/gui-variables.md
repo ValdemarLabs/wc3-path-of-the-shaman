@@ -81,6 +81,7 @@ These groups have current JASS counterparts, but the changelog still records imp
 - `DungeonsAndBosses/Dungeons/Boom Brothers Mine/_oldGUI/*`
 - `DungeonsAndBosses/Dungeons/Gnoll Hideout/_oldGUI/*`
 - Open-world boss groups under `Chimairo`, `Colossus`, `Jinvorrak`, `Mordrax`, `Morthun`, `MountainGiant`, `Roljin`, `Sargoth`, `Scorchion`, `Unknown Entity`, and `Void Entity`.
+- Detached `Mordrax_Movement_Start`, `Morthun_Movement_Start`, `MountainGiant_Movement_Start`, `Valeria_Movement_Start`, and `TravelShipB_MovementStart` patrol initializers; their coordinate routes now live in the owning JASS libraries.
 - The four empty Vorkatha GUI exports. `BossVorkatha.j` catalogs the source-empty encounter without inventing mechanics.
 - `QuestsAndDialogs/OLDGUI/Ragno/*`
 - `QuestsAndDialogs/OLDGUI/Example_qAradion/*`
@@ -97,7 +98,7 @@ These triggers have a concrete active source dependency or an incomplete replace
 - `Cinematic_ON` and `Cinematic_OFF`; `QuestsAndDialogs/DialogInteraction.j` executes them.
 - `Fog_Fade_System`; `EnvironmentSystems/AddFogForPlayer.j` enables it.
 - Codex GUI triggers: `Codex_UI_Entry_One_Button_Clicked` through `Codex_UI_Entry_Six_Button_Clicked`, `Codex_UI_Done_Button_Clicked`, `Codex_UI_Reload`, `Codex_UI_Pause`, `Codex_UI_Maintenance_Menu`, and `Codex_UI_Unpause`.
-- GUI configuration/container triggers: `Is_Unit_Moving_Config`, `WithinRange`, `GTS_Main`, `GCSM_Main`, `Mordrax_Movement_Start`, `Morthun_Movement_Start`, `MountainGiant_Movement_Start`, and `TravelShipB_Movement_Start`.
+- GUI configuration/container triggers: `Is_Unit_Moving_Config`, `WithinRange`, `GTS_Main`, and `GCSM_Main`.
 - `AI/_OldGUI_triggers/*`. Several current AI class headers state that detailed rotations still need to be layered into the new profiles.
 - `Professions/_oldGUI_unfinished/*`; these are unfinished or sole implementations rather than proven replacements.
 - Any remaining GUI variable-event listener using `UnitDeathEvent_Event`. `Events/UnitDeathEvent.j` deliberately retains its compatibility pulse for those listeners.

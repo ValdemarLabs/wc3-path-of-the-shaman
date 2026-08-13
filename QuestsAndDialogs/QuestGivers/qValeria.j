@@ -85,6 +85,42 @@ private function SyncUnitReferences takes nothing returns nothing
     endif
 endfunction
 
+public function StartPatrol takes nothing returns nothing
+    call SyncUnitReferences()
+    if not DialogInteraction_IsUnitAlive(Valeria) then
+        return
+    endif
+
+    call PatrolSystem_Begin(Valeria)
+    call PatrolSystem_SetPoint(Valeria, 0, GetRectCenterX(gg_rct_ValeriaNewPos), GetRectCenterY(gg_rct_ValeriaNewPos), 60.00)
+    call PatrolSystem_SetPoint(Valeria, 1, GetRectCenterX(gg_rct_ValeriaWP01), GetRectCenterY(gg_rct_ValeriaWP01), 0.00)
+    call PatrolSystem_SetPoint(Valeria, 2, GetRectCenterX(gg_rct_ValeriaWP02), GetRectCenterY(gg_rct_ValeriaWP02), 0.00)
+    call PatrolSystem_SetPoint(Valeria, 3, GetRectCenterX(gg_rct_ValeriaWP03), GetRectCenterY(gg_rct_ValeriaWP03), 0.00)
+    call PatrolSystem_SetPoint(Valeria, 4, GetRectCenterX(gg_rct_ValeriaWP04), GetRectCenterY(gg_rct_ValeriaWP04), 0.00)
+    call PatrolSystem_SetPoint(Valeria, 5, GetRectCenterX(gg_rct_ValeriaWP05), GetRectCenterY(gg_rct_ValeriaWP05), 15.00)
+    call PatrolSystem_SetPoint(Valeria, 6, GetRectCenterX(gg_rct_ValeriaWP06), GetRectCenterY(gg_rct_ValeriaWP06), 0.00)
+    call PatrolSystem_SetPoint(Valeria, 7, GetRectCenterX(gg_rct_ValeriaWP07), GetRectCenterY(gg_rct_ValeriaWP07), 0.00)
+    call PatrolSystem_SetPoint(Valeria, 8, GetRectCenterX(gg_rct_ValeriaWP08), GetRectCenterY(gg_rct_ValeriaWP08), 0.00)
+    call PatrolSystem_SetPoint(Valeria, 9, GetRectCenterX(gg_rct_ValeriaWP09), GetRectCenterY(gg_rct_ValeriaWP09), 0.00)
+    call PatrolSystem_SetPoint(Valeria, 10, GetRectCenterX(gg_rct_ValeriaWP10), GetRectCenterY(gg_rct_ValeriaWP10), 0.00)
+    call PatrolSystem_SetPoint(Valeria, 11, GetRectCenterX(gg_rct_ValeriaWP11), GetRectCenterY(gg_rct_ValeriaWP11), 0.00)
+    call PatrolSystem_SetPoint(Valeria, 12, GetRectCenterX(gg_rct_ValeriaWP12), GetRectCenterY(gg_rct_ValeriaWP12), 15.00)
+    call PatrolSystem_SetPoint(Valeria, 13, GetRectCenterX(gg_rct_ValeriaWP13), GetRectCenterY(gg_rct_ValeriaWP13), 0.00)
+    call PatrolSystem_SetPoint(Valeria, 14, GetRectCenterX(gg_rct_ValeriaWP14), GetRectCenterY(gg_rct_ValeriaWP14), 0.00)
+    call PatrolSystem_SetPoint(Valeria, 15, GetRectCenterX(gg_rct_ValeriaWP15), GetRectCenterY(gg_rct_ValeriaWP15), 0.00)
+    call PatrolSystem_SetPoint(Valeria, 16, GetRectCenterX(gg_rct_ValeriaWP16), GetRectCenterY(gg_rct_ValeriaWP16), 0.00)
+    call PatrolSystem_SetPoint(Valeria, 17, GetRectCenterX(gg_rct_ValeriaWP17), GetRectCenterY(gg_rct_ValeriaWP17), 15.00)
+    call PatrolSystem_SetPoint(Valeria, 18, GetRectCenterX(gg_rct_ValeriaWP18), GetRectCenterY(gg_rct_ValeriaWP18), 0.00)
+    call PatrolSystem_SetPoint(Valeria, 19, GetRectCenterX(gg_rct_ValeriaWP19), GetRectCenterY(gg_rct_ValeriaWP19), 0.00)
+    call PatrolSystem_SetPoint(Valeria, 20, GetRectCenterX(gg_rct_ValeriaWP20), GetRectCenterY(gg_rct_ValeriaWP20), 0.00)
+    call PatrolSystem_SetPoint(Valeria, 21, GetRectCenterX(gg_rct_ValeriaWP21), GetRectCenterY(gg_rct_ValeriaWP21), 0.00)
+    call PatrolSystem_SetPoint(Valeria, 22, GetRectCenterX(gg_rct_ValeriaWP22), GetRectCenterY(gg_rct_ValeriaWP22), 0.00)
+    call PatrolSystem_SetPoint(Valeria, 23, GetRectCenterX(gg_rct_ValeriaWP23), GetRectCenterY(gg_rct_ValeriaWP23), 15.00)
+    call PatrolSystem_SetPoint(Valeria, 24, GetRectCenterX(gg_rct_ValeriaWP24), GetRectCenterY(gg_rct_ValeriaWP24), 0.00)
+    call PatrolSystem_SetPoint(Valeria, 25, GetRectCenterX(gg_rct_ValeriaWP25), GetRectCenterY(gg_rct_ValeriaWP25), 0.00)
+    call PatrolSystem_StartConfigured(Valeria, 26, 30.00, PATROL_STYLE_LOOP, true, "attack", 120.00)
+endfunction
+
 private function ResolveDialogHero takes nothing returns unit
     local unit hero
     call SyncUnitReferences()
@@ -522,6 +558,7 @@ private function InitDelayed takes nothing returns nothing
     endif
 
     call QuestGiver_Register(Valeria)
+    call StartPatrol()
     call DialogInteraction_ConfigureDialogTransition(Valeria, CINEMATIC_MOVE_MODE, CINEMATIC_MOVE_OFFSET, CINEMATIC_MOVE_ANGLE, CAMERA_DIST, CAMERA_Z_OFFSET, CAMERA_ANGLE, CAMERA_ROT_OFFSET, CAMERA_FAR_Z, CAMERA_FOV, CAMERA_BLOCK_RADIUS, CAMERA_BLOCK_CHECK)
     call EnsureQuestItemSpawners()
     call RegisterDialogLines()
@@ -544,6 +581,7 @@ endfunction
 public function RefreshRespawnedUnitHooks takes nothing returns nothing
     call SyncUnitReferences()
     if Valeria != null then
+        call StartPatrol()
         call QuestGiver_Register(Valeria)
         call DialogInteraction_ConfigureDialogTransition(Valeria, CINEMATIC_MOVE_MODE, CINEMATIC_MOVE_OFFSET, CINEMATIC_MOVE_ANGLE, CAMERA_DIST, CAMERA_Z_OFFSET, CAMERA_ANGLE, CAMERA_ROT_OFFSET, CAMERA_FAR_Z, CAMERA_FOV, CAMERA_BLOCK_RADIUS, CAMERA_BLOCK_CHECK)
         call DialogInteraction_RegisterSelectionHandler(Valeria, function OnSelected)

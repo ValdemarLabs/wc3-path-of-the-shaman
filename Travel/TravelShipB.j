@@ -5,16 +5,15 @@
     Version:
 
     Description:
-    Connects the existing Orc Frigate PatrolSystem route to TravelSystem. The
-    ship remains persistent and reports Mok'natha, Frontline Base, and
-    Ironspine Post dock arrivals without duplicating its 87-waypoint patrol.
+    Owns the Orc Frigate's 87-point PatrolSystem route and connects its
+    scheduled dock arrivals to TravelSystem.
 
     Credits:
     The original TravelShipB GUI triggers and patrol route.
 
     How to install:
-    Import after TravelSystem and TravelUI. Keep TravelShip Init and
-    TravelShipB_MovementStart enabled so udg_TravelShipB and its patrol exist.
+    Import after TravelSystem, TravelUI, and PatrolSystem. Keep TravelShip Init
+    enabled so udg_TravelShipB is assigned to the placed Orc Frigate.
 
     API:
     - TravelShipB_GetMoknathaStop()
@@ -25,7 +24,7 @@
     - call TravelShipB_ConfigureHeroModels(...)
 
 **/
-library TravelShipB initializer Init requires TravelSystem, TravelUI
+library TravelShipB initializer Init requires TravelSystem, TravelUI, PatrolSystem
     globals
         private constant integer TSB_ZONE_MOKNATHA = 1401
         private constant integer TSB_ZONE_IRONSPINE = 1901
@@ -33,6 +32,8 @@ library TravelShipB initializer Init requires TravelSystem, TravelUI
         private constant integer TSB_FARE_IRONSPINE = 175
         private constant integer TSB_SKIP_FEE = 100
         private constant real TSB_DOCK_CHECK_PERIOD = 0.50
+        private constant real TSB_PATROL_START_DELAY = 45.00
+        private constant integer TSB_PATROL_POINT_COUNT = 87
 
         private integer TSB_MoknathaStop = 0
         private integer TSB_FrontlineStop = 0
@@ -42,7 +43,9 @@ library TravelShipB initializer Init requires TravelSystem, TravelUI
         private integer TSB_CurrentDock = 0
         private timer TSB_InitTimer = null
         private timer TSB_DockTimer = null
+        private timer TSB_PatrolTimer = null
         private boolean TSB_Initialized = false
+        private boolean TSB_PatrolStarted = false
     endglobals
 
     private function TSB_RectCenterX takes rect whichRect returns real
@@ -103,6 +106,115 @@ library TravelShipB initializer Init requires TravelSystem, TravelUI
         if udg_Zulkis != null then
             call TravelSystem_RegisterPassengerEffect(GetUnitTypeId(udg_Zulkis), zulkisModel, zulkisScale, zulkisFacingOffset)
         endif
+    endfunction
+
+    private function TSB_SetPatrolPoint takes integer index, rect waypoint, real waitTime returns nothing
+        call PatrolSystem_SetPoint(udg_TravelShipB, index, TSB_RectCenterX(waypoint), TSB_RectCenterY(waypoint), waitTime)
+    endfunction
+
+    private function TSB_StartPatrol takes nothing returns nothing
+        call PatrolSystem_Begin(udg_TravelShipB)
+        call TSB_SetPatrolPoint(0, gg_rct_MoknathaShip01, 30.00)
+        call TSB_SetPatrolPoint(1, gg_rct_MoknathaShip02a, 0.00)
+        call TSB_SetPatrolPoint(2, gg_rct_MoknathaShip02, 0.00)
+        call TSB_SetPatrolPoint(3, gg_rct_MoknathaShip03, 0.00)
+        call TSB_SetPatrolPoint(4, gg_rct_MoknathaShip04, 0.00)
+        call TSB_SetPatrolPoint(5, gg_rct_MoknathaShip05, 0.00)
+        call TSB_SetPatrolPoint(6, gg_rct_MoknathaShip06, 0.00)
+        call TSB_SetPatrolPoint(7, gg_rct_MoknathaShip07, 0.00)
+        call TSB_SetPatrolPoint(8, gg_rct_MoknathaShip77, 0.00)
+        call TSB_SetPatrolPoint(9, gg_rct_MoknathaShip09, 0.00)
+        call TSB_SetPatrolPoint(10, gg_rct_MoknathaShip10, 0.00)
+        call TSB_SetPatrolPoint(11, gg_rct_MoknathaShip11, 0.00)
+        call TSB_SetPatrolPoint(12, gg_rct_MoknathaShip12, 0.00)
+        call TSB_SetPatrolPoint(13, gg_rct_MoknathaShip13, 0.00)
+        call TSB_SetPatrolPoint(14, gg_rct_MoknathaShip14, 0.00)
+        call TSB_SetPatrolPoint(15, gg_rct_MoknathaShip15, 0.00)
+        call TSB_SetPatrolPoint(16, gg_rct_MoknathaShip16, 0.00)
+        call TSB_SetPatrolPoint(17, gg_rct_MoknathaShip17, 0.00)
+        call TSB_SetPatrolPoint(18, gg_rct_MoknathaShip18, 0.00)
+        call TSB_SetPatrolPoint(19, gg_rct_MoknathaShip19, 0.00)
+        call TSB_SetPatrolPoint(20, gg_rct_MoknathaShip20, 0.00)
+        call TSB_SetPatrolPoint(21, gg_rct_MoknathaShip21, 0.00)
+        call TSB_SetPatrolPoint(22, gg_rct_MoknathaShip22, 0.00)
+        call TSB_SetPatrolPoint(23, gg_rct_MoknathaShip23, 0.00)
+        call TSB_SetPatrolPoint(24, gg_rct_MoknathaShip24, 30.00)
+        call TSB_SetPatrolPoint(25, gg_rct_MoknathaShip032, 0.00)
+        call TSB_SetPatrolPoint(26, gg_rct_MoknathaShip033, 0.00)
+        call TSB_SetPatrolPoint(27, gg_rct_MoknathaShip034, 0.00)
+        call TSB_SetPatrolPoint(28, gg_rct_MoknathaShip035, 0.00)
+        call TSB_SetPatrolPoint(29, gg_rct_MoknathaShip036, 0.00)
+        call TSB_SetPatrolPoint(30, gg_rct_MoknathaShip037, 0.00)
+        call TSB_SetPatrolPoint(31, gg_rct_MoknathaShip038, 0.00)
+        call TSB_SetPatrolPoint(32, gg_rct_MoknathaShip039, 0.00)
+        call TSB_SetPatrolPoint(33, gg_rct_MoknathaShip040, 0.00)
+        call TSB_SetPatrolPoint(34, gg_rct_MoknathaShip041, 0.00)
+        call TSB_SetPatrolPoint(35, gg_rct_MoknathaShip042, 0.00)
+        call TSB_SetPatrolPoint(36, gg_rct_MoknathaShip043, 0.00)
+        call TSB_SetPatrolPoint(37, gg_rct_MoknathaShip044, 0.00)
+        call TSB_SetPatrolPoint(38, gg_rct_MoknathaShip045, 0.00)
+        call TSB_SetPatrolPoint(39, gg_rct_MoknathaShip046, 0.00)
+        call TSB_SetPatrolPoint(40, gg_rct_MoknathaShip047, 0.00)
+        call TSB_SetPatrolPoint(41, gg_rct_MoknathaShip048, 30.00)
+        call TSB_SetPatrolPoint(42, gg_rct_MoknathaShip045, 0.00)
+        call TSB_SetPatrolPoint(43, gg_rct_MoknathaShip044, 0.00)
+        call TSB_SetPatrolPoint(44, gg_rct_MoknathaShip043, 0.00)
+        call TSB_SetPatrolPoint(45, gg_rct_MoknathaShip042, 0.00)
+        call TSB_SetPatrolPoint(46, gg_rct_MoknathaShip041, 0.00)
+        call TSB_SetPatrolPoint(47, gg_rct_MoknathaShip040, 0.00)
+        call TSB_SetPatrolPoint(48, gg_rct_MoknathaShip039, 0.00)
+        call TSB_SetPatrolPoint(49, gg_rct_MoknathaShip038, 0.00)
+        call TSB_SetPatrolPoint(50, gg_rct_MoknathaShip037, 0.00)
+        call TSB_SetPatrolPoint(51, gg_rct_MoknathaShip036, 0.00)
+        call TSB_SetPatrolPoint(52, gg_rct_MoknathaShip035, 0.00)
+        call TSB_SetPatrolPoint(53, gg_rct_MoknathaShip034, 0.00)
+        call TSB_SetPatrolPoint(54, gg_rct_MoknathaShip033, 0.00)
+        call TSB_SetPatrolPoint(55, gg_rct_MoknathaShip032, 0.00)
+        call TSB_SetPatrolPoint(56, gg_rct_MoknathaShip031, 0.00)
+        call TSB_SetPatrolPoint(57, gg_rct_MoknathaShip030, 30.00)
+        call TSB_SetPatrolPoint(58, gg_rct_MoknathaShip24, 30.00)
+        call TSB_SetPatrolPoint(59, gg_rct_MoknathaShip23, 0.00)
+        call TSB_SetPatrolPoint(60, gg_rct_MoknathaShip22, 0.00)
+        call TSB_SetPatrolPoint(61, gg_rct_MoknathaShip21, 0.00)
+        call TSB_SetPatrolPoint(62, gg_rct_MoknathaShip20, 0.00)
+        call TSB_SetPatrolPoint(63, gg_rct_MoknathaShip19, 0.00)
+        call TSB_SetPatrolPoint(64, gg_rct_MoknathaShip18, 0.00)
+        call TSB_SetPatrolPoint(65, gg_rct_MoknathaShip17, 0.00)
+        call TSB_SetPatrolPoint(66, gg_rct_MoknathaShip16, 0.00)
+        call TSB_SetPatrolPoint(67, gg_rct_MoknathaShip15, 0.00)
+        call TSB_SetPatrolPoint(68, gg_rct_MoknathaShip14, 0.00)
+        call TSB_SetPatrolPoint(69, gg_rct_MoknathaShip13, 0.00)
+        call TSB_SetPatrolPoint(70, gg_rct_MoknathaShip12, 0.00)
+        call TSB_SetPatrolPoint(71, gg_rct_MoknathaShip11, 0.00)
+        call TSB_SetPatrolPoint(72, gg_rct_MoknathaShip10, 0.00)
+        call TSB_SetPatrolPoint(73, gg_rct_MoknathaShip09, 0.00)
+        call TSB_SetPatrolPoint(74, gg_rct_MoknathaShip77, 0.00)
+        call TSB_SetPatrolPoint(75, gg_rct_MoknathaShip07, 0.00)
+        call TSB_SetPatrolPoint(76, gg_rct_MoknathaShip08, 0.00)
+        call TSB_SetPatrolPoint(77, gg_rct_MoknathaShip06, 0.00)
+        call TSB_SetPatrolPoint(78, gg_rct_MoknathaShip05, 0.00)
+        call TSB_SetPatrolPoint(79, gg_rct_MoknathaShip04, 0.00)
+        call TSB_SetPatrolPoint(80, gg_rct_MoknathaShip03, 0.00)
+        call TSB_SetPatrolPoint(81, gg_rct_MoknathaShip02, 0.00)
+        call TSB_SetPatrolPoint(82, gg_rct_MoknathaShip025, 0.00)
+        call TSB_SetPatrolPoint(83, gg_rct_MoknathaShip026, 0.00)
+        call TSB_SetPatrolPoint(84, gg_rct_MoknathaShip027, 0.00)
+        call TSB_SetPatrolPoint(85, gg_rct_MoknathaShip028, 0.00)
+        call TSB_SetPatrolPoint(86, gg_rct_MoknathaShip029, 0.00)
+        call PatrolSystem_StartConfigured(udg_TravelShipB, TSB_PATROL_POINT_COUNT, 10.00, PATROL_STYLE_LOOP, true, "move", -1.00)
+        set TSB_PatrolStarted = true
+    endfunction
+
+    private function TSB_TryStartPatrol takes nothing returns nothing
+        if TSB_PatrolStarted then
+            return
+        endif
+        if udg_TravelShipB == null or GetUnitTypeId(udg_TravelShipB) == 0 then
+            call TimerStart(TSB_PatrolTimer, 1.00, false, function TSB_TryStartPatrol)
+            return
+        endif
+        call TSB_StartPatrol()
+        call PauseTimer(TSB_PatrolTimer)
     endfunction
 
     private function TSB_OnDockCheck takes nothing returns nothing
@@ -170,6 +282,8 @@ library TravelShipB initializer Init requires TravelSystem, TravelUI
     private function Init takes nothing returns nothing
         set TSB_InitTimer = CreateTimer()
         set TSB_DockTimer = CreateTimer()
+        set TSB_PatrolTimer = CreateTimer()
         call TimerStart(TSB_InitTimer, 5.10, false, function TSB_TryInitialize)
+        call TimerStart(TSB_PatrolTimer, TSB_PATROL_START_DELAY, false, function TSB_TryStartPatrol)
     endfunction
 endlibrary

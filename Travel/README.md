@@ -29,14 +29,14 @@ registered immediately unless their stop is configured as discoverable.
 
 - `TravelWyvern.j` binds `udg_WindRiderMaster[1..3]`, the three legacy boarding
   areas, and `gg_rct_FlyHere01..03`. All six directed fares are registered.
-- `TravelShipB.j` binds the Mok'natha master and observes the existing
-  `udg_TravelShipB` PatrolSystem route. Do not duplicate or remove the 87-point
-  patrol during initial integration.
+- `TravelShipB.j` binds the Mok'natha master, owns the Orc Frigate's recovered
+  87-point PatrolSystem route, and starts it after the original 45-second delay.
+  The detached `TravelShipB_MovementStart` trigger is no longer required.
 - `TravelZeppelin.j` remains inactive until `TravelZeppelin_Bind` receives the
   Sirensong/Sereneglade masters, boarding areas, arrival points, vehicle, and
   fares.
 - `TravelShipA.j` remains inactive until its stops, vehicle, fares, and
-  waypoints are registered.
+  waypoints are registered; no legacy Ship A patrol definition was recovered.
 
 Ship B hero proxies intentionally use empty model paths initially. Call
 `TravelShipB_ConfigureHeroModels` after the correct Nazgrek and Zul'kis model

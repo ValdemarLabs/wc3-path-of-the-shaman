@@ -23,6 +23,7 @@ library BossMordrax initializer Init requires Boss, BossMordraxDialogue, PatrolS
     endglobals
 
     private function StartPatrol takes unit whichUnit returns nothing
+        call PatrolSystem_Begin(whichUnit)
         call PatrolSystem_SetPoint(whichUnit, 0, GetRectCenterX(gg_rct_MordraxWP01), GetRectCenterY(gg_rct_MordraxWP01), 15.00)
         call PatrolSystem_SetPoint(whichUnit, 1, GetRectCenterX(gg_rct_MordraxWP02), GetRectCenterY(gg_rct_MordraxWP02), 0.00)
         call PatrolSystem_SetPoint(whichUnit, 2, GetRectCenterX(gg_rct_MordraxWP03), GetRectCenterY(gg_rct_MordraxWP03), 0.00)
@@ -49,7 +50,7 @@ library BossMordrax initializer Init requires Boss, BossMordraxDialogue, PatrolS
         call PatrolSystem_SetPoint(whichUnit, 23, GetRectCenterX(gg_rct_MordraxWP24), GetRectCenterY(gg_rct_MordraxWP24), 0.00)
         call PatrolSystem_SetPoint(whichUnit, 24, GetRectCenterX(gg_rct_MordraxWP25), GetRectCenterY(gg_rct_MordraxWP25), 0.00)
         call PatrolSystem_SetPoint(whichUnit, 25, GetRectCenterX(gg_rct_MordraxWP26), GetRectCenterY(gg_rct_MordraxWP26), 0.00)
-        call PatrolSystem_Start(whichUnit, 26, 30.00, 0, true, "attack", 120.00)
+        call PatrolSystem_StartConfigured(whichUnit, 26, 30.00, PATROL_STYLE_LOOP, true, "attack", 120.00)
     endfunction
 
     private function CastFireOrbs takes nothing returns nothing

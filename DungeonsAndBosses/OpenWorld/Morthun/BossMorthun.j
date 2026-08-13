@@ -18,6 +18,7 @@ library BossMorthun initializer Init requires Boss, PatrolSystem
     endglobals
 
     private function StartPatrol takes unit whichUnit returns nothing
+        call PatrolSystem_Begin(whichUnit)
         call PatrolSystem_SetPoint(whichUnit, 0, GetRectCenterX(gg_rct_MorthunWP02), GetRectCenterY(gg_rct_MorthunWP02), 15.00)
         call PatrolSystem_SetPoint(whichUnit, 1, GetRectCenterX(gg_rct_MorthunWP03), GetRectCenterY(gg_rct_MorthunWP03), 0.00)
         call PatrolSystem_SetPoint(whichUnit, 2, GetRectCenterX(gg_rct_MorthunWP04), GetRectCenterY(gg_rct_MorthunWP04), 0.00)
@@ -31,7 +32,7 @@ library BossMorthun initializer Init requires Boss, PatrolSystem
         call PatrolSystem_SetPoint(whichUnit, 10, GetRectCenterX(gg_rct_MorthunWP12), GetRectCenterY(gg_rct_MorthunWP12), 15.00)
         call PatrolSystem_SetPoint(whichUnit, 11, GetRectCenterX(gg_rct_MorthunWP13), GetRectCenterY(gg_rct_MorthunWP13), 0.00)
         call PatrolSystem_SetPoint(whichUnit, 12, GetRectCenterX(gg_rct_MorthunWP14), GetRectCenterY(gg_rct_MorthunWP14), 10.00)
-        call PatrolSystem_Start(whichUnit, 13, 30.00, 1, true, "attack", 120.00)
+        call PatrolSystem_StartConfigured(whichUnit, 13, 30.00, PATROL_STYLE_PINGPONG, true, "attack", 120.00)
     endfunction
 
     private function Respawn takes nothing returns nothing
