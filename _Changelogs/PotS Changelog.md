@@ -28,6 +28,9 @@
 - Updated `AI/AI.j` with a travel-provider bridge and external approach/travel lifecycle used by `Travel/TravelAI.j`, retaining abstract random travel as the fallback.
 - Updated `PatrolFollowSystems/PatrolSystem.j` with a backward-compatible direct-coordinate patrol API that does not require temporary locations or GUI waypoint arrays.
 - Updated `Travel/TravelShipB.j`, the Mordrax, Morthun, and Mountain Giant boss libraries, and `QuestsAndDialogs/QuestGivers/qValeria.j` to own and start their patrol routes locally through the direct-coordinate API.
+- Updated `Travel/TravelSystem.j` with the authoritative World Editor shared-unit mapping for wyvern, zeppelin, ship-master, vehicle, hero, and pet globals, including active versus reserved bindings.
+- Updated `Travel/TravelSystem.j`, `TravelWyvern.j`, and `TravelShipB.j` so only the master travel library accesses World Editor `udg_*` bindings; method libraries now use semantic getters and named master-index constants.
+- Updated `Travel/TravelZeppelin.j` to bind the Sereneglade and Sirensong flightmasters, endpoint regions, and single shared Zeppelin A shuttle automatically through `TravelSystem`.
 
 ### Actions Remaining
 
