@@ -1,0 +1,37 @@
+TravelShipB Arrives Ironspine
+    Events
+        Unit - A unit enters ShipBIronspinePost <gen>
+    Conditions
+        (Triggering unit) Equal to TravelShipB
+    Actions
+        Trigger - Turn off (This trigger)
+        Sound - Play TravelShipArrives <gen> at 100.00% volume, attached to TravelShipB
+        Wait Campaign quest delay seconds
+        -------- Allow Dialog For Shipmaster(X) --------
+        Set VariableSet TravelShipB_Location = 3
+        Set VariableSet TravelShipB_AtDeck = True
+        -------- IF PLAYER TRAVELS - MOVE UNITS TO DECK --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                TravelShipB_Traveling Equal to True
+                TravelShipB_Selection Equal to 3
+            Then - Actions
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                -------- ================== --------
+                Set VariableSet TravelShipB_Traveling = False
+                Set VariableSet TravelShipB_Point = (Center of TravelShipIronspineDeck <gen>)
+                Camera - Reset camera for Player 1 (Red) to standard game-view over 0.00 seconds
+                Cinematic - Turn cinematic mode Off for Player Group - Player 1 (Red)
+                Unit Group - Pick every unit in TravelShip_Group and do (Actions)
+                    Loop - Actions
+                        Unit - Unhide (Picked unit)
+                        Unit - Move (Picked unit) instantly to TravelShipB_Point, facing (Random angle) degrees
+                Custom script:   call RUA_DestroyUnitAttachmentBJ(udg_Nazgrek)
+                -------- handle leaks --------
+                Custom script:   call RemoveLocation(udg_TravelShipB_Point)
+                Custom script:   call DestroyGroup(udg_TravelShip_Group)
+                -------- Remove unit attach --------
+                Custom script:   call RUA_DestroyUnitAttachmentBJ(udg_TravelShipB)
+            Else - Actions
+        Trigger - Turn on (This trigger)

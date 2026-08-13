@@ -1,0 +1,37 @@
+Shipmaster MoknathaDialog01
+    Events
+    Conditions
+    Actions
+        Cinematic - Enable user control for (All players).
+        Dialog - Clear MoknathaDialog01
+        Dialog - Change the title of MoknathaDialog01 to Travel
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                Set VariableSet TravelShipB_Cost = 100
+                -------- FRONTBASE --------
+                Dialog - Create a dialog button for MoknathaDialog01 labelled (Frontline Base  + (( + ((String(TravelShipB_Cost)) +  gold))))
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_ButtonInt = 1
+                Set VariableSet DialogBTN_Button[DialogBTN_ButtonInt] = (Last created dialog Button)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                Set VariableSet TravelShipB_Cost = 175
+                -------- IRONSPINE POST --------
+                Dialog - Create a dialog button for MoknathaDialog01 labelled (Ironspine Post  + (( + ((String(TravelShipB_Cost)) +  gold))))
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_ButtonInt = 1
+                Set VariableSet DialogBTN_Button[DialogBTN_ButtonInt] = (Last created dialog Button)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- Exit dialog --------
+                Dialog - Create a dialog button for MoknathaDialog01 labelled - Farewell
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_Farewell = (Last created dialog Button)
+            Else - Actions
+        -------- ======= SHOW DIALOG --------
+        Dialog - Show MoknathaDialog01 for Player 1 (Red)

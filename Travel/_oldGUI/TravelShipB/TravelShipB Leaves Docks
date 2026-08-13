@@ -1,0 +1,8 @@
+TravelShipB Leaves Docks
+    Events
+        Unit - A unit leaves ShipBFrontBase <gen>
+        Unit - A unit leaves ShipBIronspinePost <gen>
+        Unit - A unit leaves ShipBMoknatha <gen>
+    Conditions
+    Actions
+        Set VariableSet TravelShipB_AtDeck = False

@@ -1,0 +1,11 @@
+Flying Camera On
+    Events
+    Conditions
+    Actions
+        Set VariableSet u = Wyvern
+        Custom script:   call SetCameraUnit(udg_u, Player(0))
+        Custom script:   call SetMovementUnit(udg_u,Player(0),5)
+        Custom script:   call SetCamMaxZCheckDistance(Player(0),20000)
+        Custom script:   call SetCamDefaultAngleOfAttack(Player(0),355)
+        Camera - Set Player 1 (Red)'s camera Far Z to 20000.00 over 0.00 seconds
+        Animation - Change Wyvern flying height to 500.00 at 100.00

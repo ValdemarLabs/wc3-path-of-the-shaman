@@ -1,0 +1,45 @@
+Button Pressed in Wind Rider Master01Dialog
+    Events
+        Dialog - A dialog button is clicked for WindRiderMaster01Dialog
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to HordeLumberMill
+                (Player 1 (Red) Current gold) Greater than or equal to 350
+            Then - Actions
+                Trigger - Run Fly To Horde Lumber Mill Q <gen> (checking conditions)
+            Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Clicked dialog button) Equal to HordeLumberMill
+                        (Player 1 (Red) Current gold) Less than 350
+                    Then - Actions
+                        Cinematic - Disable user control for (All players).
+                        Cinematic - Send transmission to (All players) from Wind Rider Master 0025 <gen> named Wind Rider Master: Play No sound and display Sorry, you need mor....  Modify duration: Set to 3.15 seconds and Wait
+                        Cinematic - Enable user control for (All players).
+                        Trigger - Run Create WindRiderMaster01Dialog <gen> (checking conditions)
+                    Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Clicked dialog button) Equal to HordeGoldMine
+                                (Player 1 (Red) Current gold) Greater than or equal to 350
+                            Then - Actions
+                                Trigger - Run Fly To Horde Gold Mine Q <gen> (checking conditions)
+                            Else - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (Clicked dialog button) Equal to HordeGoldMine
+                                        (Player 1 (Red) Current gold) Less than 350
+                                    Then - Actions
+                                        Cinematic - Disable user control for (All players).
+                                        Cinematic - Send transmission to (All players) from Wind Rider Master 0025 <gen> named Wind Rider Master: Play No sound and display Sorry, you need mor....  Modify duration: Set to 3.15 seconds and Wait
+                                        Cinematic - Enable user control for (All players).
+                                        Trigger - Run Create WindRiderMaster01Dialog <gen> (checking conditions)
+                                    Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to NoThanks
+            Then - Actions
+                Cinematic - Turn cinematic mode Off for (All players)
+            Else - Actions

@@ -1,0 +1,23 @@
+Button Pressed in Wind Rider Master02Dialog
+    Events
+        Dialog - A dialog button is clicked for WindRiderMaster02Dialog
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to HordeScoutBase
+            Then - Actions
+                Trigger - Run Fly To Horde Scout Base Q <gen> (checking conditions)
+            Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Clicked dialog button) Equal to HordeGoldMine
+                    Then - Actions
+                        Trigger - Run Fly To Horde Gold Mine QQ <gen> (checking conditions)
+                    Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to NoThanks
+            Then - Actions
+                Cinematic - Turn cinematic mode Off for (All players)
+            Else - Actions

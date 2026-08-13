@@ -1,0 +1,8 @@
+Flying Camera Off
+    Events
+    Conditions
+    Actions
+        Set VariableSet u = Nazgrek
+        Custom script:   call SetCameraUnit(udg_u, Player(0))
+        Custom script:   call SetMovementUnit(udg_u,Player(0),2)
+        Camera - Set Player 1 (Red)'s camera Far Z to 20000.00 over 0.00 seconds

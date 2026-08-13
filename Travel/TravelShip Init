@@ -1,0 +1,11 @@
+TravelShip Init
+    Events
+        Time - Elapsed game time is 5.00 seconds
+    Conditions
+    Actions
+        -------- TRAVELSHIP A --------
+        Set VariableSet TravelShipA = Transport Ship 0923 <gen>
+        -------- TRAVELSHIP B --------
+        Set VariableSet TravelShipB = Orc Frigate 0061 <gen>
+        Set VariableSet TravelShipB_AtDeck = True
+        Set VariableSet TravelShipB_Location = 1

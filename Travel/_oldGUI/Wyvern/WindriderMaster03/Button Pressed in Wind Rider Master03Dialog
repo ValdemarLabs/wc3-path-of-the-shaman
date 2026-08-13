@@ -1,0 +1,23 @@
+Button Pressed in Wind Rider Master03Dialog
+    Events
+        Dialog - A dialog button is clicked for WindRiderMaster03Dialog
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to HordeScoutBase
+            Then - Actions
+                Trigger - Run Fly To Horde Scout Base QQ <gen> (checking conditions)
+            Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Clicked dialog button) Equal to HordeLumberMill
+                    Then - Actions
+                        Trigger - Run Fly To Horde Lumber Mill QQ <gen> (checking conditions)
+                    Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to NoThanks
+            Then - Actions
+                Cinematic - Turn cinematic mode Off for (All players)
+            Else - Actions

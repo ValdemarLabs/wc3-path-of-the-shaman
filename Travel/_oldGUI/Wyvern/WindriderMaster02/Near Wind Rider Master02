@@ -1,0 +1,20 @@
+Near Wind Rider Master02
+    Events
+        Unit - Wind Rider Master 0208 <gen> Is selected
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Distance between (Position of Wind Rider Master 0208 <gen>) and (Position of Nazgrek)) Less than or equal to 500.00
+            Then - Actions
+                Cinematic - Turn cinematic mode On for (All players)
+                Camera - Pan camera for Player 1 (Red) to (Position of Wind Rider Master 0208 <gen>) over 1.00 seconds
+                Wait 1.00 seconds
+                Unit - Make Wind Rider Master 0208 <gen> face Nazgrek over 0.75 seconds
+                Unit - Make Nazgrek face Wind Rider Master 0208 <gen> over 0.75 seconds
+                Cinematic - Send transmission to (All players) from Wind Rider Master 0208 <gen> named Wind Rider Master: Play No sound and display Do you wanna fly so....  Modify duration: Set to 5.65 seconds and Wait
+                Wait 1.00 seconds
+                Quest - Display to Player Group - Player 1 (Red) the Hint message: |cff32CD32Hint|r - ...
+                Wait 1.25 seconds
+                Trigger - Run Create WindRiderMaster02Dialog <gen> (checking conditions)
+            Else - Actions

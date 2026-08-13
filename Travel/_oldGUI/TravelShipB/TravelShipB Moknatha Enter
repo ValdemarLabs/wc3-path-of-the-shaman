@@ -1,0 +1,57 @@
+TravelShipB Moknatha Enter
+    Events
+    Conditions
+    Actions
+        -------- ======== CINEMATIC STARTS ======== --------
+        Trigger - Run Cinematic ON <gen> (checking conditions)
+        Cinematic - Turn cinematic mode On for (All players)
+        -------- ========================= --------
+        Sound - Play TravelShipWhat3 <gen>
+        -------- ========================= --------
+        -------- SET CAMERA --------
+        Set VariableSet CameraPlayer = Player 1 (Red)
+        Set VariableSet Variable = Value
+        Custom script:   call FCL_Lock(udg_CameraUnit, udg_CameraPlayer)
+        Cinematic - Enable user control for (All players).
+        -------- ========================= --------
+        Unit - Hide Nazgrek
+        Unit - Change ownership of Nazgrek to Neutral Passive and Retain color
+        Unit Group - Add Nazgrek to TravelShip_Group
+        -------- ========================= --------
+        -------- Check if Zul'kis is close --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (TravelShipMoknatha <gen> contains Zulkis) Equal to True
+            Then - Actions
+                Unit - Hide Zulkis
+                Unit Group - Add Zulkis to TravelShip_Group
+            Else - Actions
+        -------- Check if companions are close --------
+        Custom script:   set bj_wantDestroyGroup = true
+        Unit Group - Pick every unit in Companion_Group and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (TravelShipMoknatha <gen> contains (Picked unit)) Equal to True
+                    Then - Actions
+                        Unit - Hide (Picked unit)
+                        Unit Group - Add (Picked unit) to TravelShip_Group
+                    Else - Actions
+        Custom script:   set bj_wantDestroyGroup = true
+        Unit Group - Pick every unit in Pet and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (TravelShipMoknatha <gen> contains (Picked unit)) Equal to True
+                    Then - Actions
+                        Unit - Hide (Picked unit)
+                        Unit Group - Add (Picked unit) to TravelShip_Group
+                    Else - Actions
+        -------- ========================= --------
+        Set VariableSet TravelShipB_Traveling = True
+        -------- ========================= --------
+        -------- Attach units to the ship --------
+        Unit - Create 1 Nazgrek for Neutral Passive at RUA_Point facing (Random angle) degrees
+        Set VariableSet RUA_DummyUnit = (Last created unit)
+        Set VariableSet RUA_TargetUnit = TravelShipB
+        Custom script:   call RUA_CreateUnitAttachment(udg_RUA_TargetUnit, udg_RUA_DummyUnit, 400, 205, 500, false, false)

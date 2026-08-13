@@ -1,0 +1,31 @@
+Fly To Horde Lumber Mill Q
+    Events
+    Conditions
+    Actions
+        -------- Turn off cinematic mode --------
+        Sound - Play HippoGryphWhat3 <gen>
+        Cinematic - Turn cinematic mode Off for (All players)
+        Player - Add -350 to Player 1 (Red).Current gold
+        Sound - Play LostGold <gen>
+        Unit - Hide Nazgrek
+        Unit - Create 1 Nazgrek Wyvernrider for Player 2 (Blue) at (Position of Nazgrek) facing (Position of Wind Rider Master 0208 <gen>)
+        Set VariableSet Wyvern = (Last created unit)
+        Unit - Change color of (Last created unit) to Black
+        Unit - Grant shared vision of Wyvern to Player 1 (Red)
+        Unit - Order Wyvern to Move To (Center of FlyHere02 <gen>)
+        Camera - Lock camera target for Player 1 (Red) to Wyvern, offset by (0.00, 0.00) using Default rotation
+        Trigger - Turn on At Flying Point02 Q <gen>
+        Trigger - Run Flying Camera On <gen> (checking conditions)
+        -------- Check if Zul'kis is to fly --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (HordeScoutBaseWindRiderArea <gen> contains Zulkis) Equal to True
+            Then - Actions
+                Unit - Hide Zulkis
+                Unit - Create 1 Zul'kis Batrider for Player 2 (Blue) at (Position of Zulkis) facing (Position of Wind Rider Master 0208 <gen>)
+                Set VariableSet Bat = (Last created unit)
+                Unit - Change color of (Last created unit) to Black
+                Unit - Grant shared vision of Bat to Player 1 (Red)
+                Unit - Order Bat to Move To (Center of FlyHere02 <gen>)
+            Else - Actions
+        Trigger - Remove (This trigger) from the trigger queue

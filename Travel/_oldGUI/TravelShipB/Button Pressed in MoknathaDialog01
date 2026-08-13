@@ -1,0 +1,186 @@
+Button Pressed in MoknathaDialog01
+    Events
+        Dialog - A dialog button is clicked for MoknathaDialog01
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_Button[1]
+            Then - Actions
+                -------- ================ FRONTBASE --------
+                -------- SKIPPED - restore state --------
+                Set VariableSet TravelShipB_Skip = False
+                Cinematic - Disable user control for (All players).
+                -------- CHECK IF THE PLAYER HAS MONEY --------
+                Wait 0.10 seconds
+                Sound - Play Interface_InventoryOpen <gen>
+                Wait 0.10 seconds
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Player 1 (Red) Current gold) Less than TravelShipB_Cost
+                    Then - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Random integer number between 1 and 2) Equal to 1
+                            Then - Actions
+                                Cinematic - Send transmission to (All players) from Shipmaster[1] named Shipmaster: Play Shipmaster_0009 <gen> and display No pay, no way!.  Modify duration: Set to 1.45 seconds and Wait
+                            Else - Actions
+                                Cinematic - Send transmission to (All players) from Shipmaster[1] named Shipmaster: Play Shipmaster_0010 <gen> and display I’m afraid you do....  Modify duration: Set to 1.80 seconds and Wait
+                        -------- DEFAULT CAMERA --------
+                        -------- ================================ --------
+                        -------- DIALOG CAMERA == RESET --------
+                        -------- USAGE: call DialogCameraReset(p, duration) to restore original camera over 'duration' seconds --------
+                        Custom script:   call DialogCameraReset(Player(0), 2.0)
+                        -------- ======== CINEMATIC ENDS ======== --------
+                        Trigger - Run Cinematic OFF <gen> (checking conditions)
+                        Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                        -------- ==================================== --------
+                        -------- PATROL - CONTINUE --------
+                        Set VariableSet TempUnit = TravelShipB
+                        Custom script:   call PatrolSystem_Continue(udg_TempUnit)
+                        Skip remaining actions
+                    Else - Actions
+                Wait 0.10 seconds
+                Sound - Play LostGold <gen>
+                Wait 0.10 seconds
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Random integer number between 1 and 2) Equal to 1
+                    Then - Actions
+                        Cinematic - Send transmission to (All players) from Shipmaster[1] named Shipmaster: Play Shipmaster_0013 <gen> and display Welcome aboard!.  Modify duration: Set to 1.20 seconds and Wait
+                    Else - Actions
+                        Cinematic - Send transmission to (All players) from Shipmaster[1] named Shipmaster: Play Shipmaster_0014 <gen> and display The waves are calli....  Modify duration: Set to 1.45 seconds and Wait
+                -------- ==================================== OVER ==================================== --------
+                -------- Fade Out --------
+                Cinematic - Fade out over 0.50 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+                Wait 0.50 seconds
+                -------- Reset Camera --------
+                Camera - Reset camera smoothing factor
+                Camera - Reset camera for Player 1 (Red) to standard game-view over 0.00 seconds
+                Wait 0.50 seconds
+                -------- Fade In --------
+                Cinematic - Fade in over 0.50 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+                Wait 0.50 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                -------- DEFAULT CAMERA --------
+                -------- ================================ --------
+                -------- DIALOG CAMERA == RESET --------
+                -------- USAGE: call DialogCameraReset(p, duration) to restore original camera over 'duration' seconds --------
+                Custom script:   call DialogCameraReset(Player(0), 2.0)
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                -------- ================================ --------
+                -------- Set selection (1==Moknatha, 2==Frontbase, 3==Ironspine Post) --------
+                Set VariableSet TravelShipB_Selection = 2
+                Trigger - Run TravelShipB Moknatha Enter <gen> (checking conditions)
+                -------- ==================================== --------
+                -------- PATROL - CONTINUE --------
+                Set VariableSet TempUnit = TravelShipB
+                Custom script:   call PatrolSystem_Continue(udg_TempUnit)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_Button[2]
+            Then - Actions
+                -------- ================ IRONSPINE POST --------
+                -------- SKIPPED - restore state --------
+                Set VariableSet TravelShipB_Skip = False
+                Cinematic - Disable user control for (All players).
+                -------- CHECK IF THE PLAYER HAS MONEY --------
+                Wait 0.10 seconds
+                Sound - Play Interface_InventoryOpen <gen>
+                Wait 0.10 seconds
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Player 1 (Red) Current gold) Less than TravelShipB_Cost
+                    Then - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Random integer number between 1 and 2) Equal to 1
+                            Then - Actions
+                                Cinematic - Send transmission to (All players) from Shipmaster[1] named Shipmaster: Play Shipmaster_0009 <gen> and display No pay, no way!.  Modify duration: Set to 1.45 seconds and Wait
+                            Else - Actions
+                                Cinematic - Send transmission to (All players) from Shipmaster[1] named Shipmaster: Play Shipmaster_0010 <gen> and display I’m afraid you do....  Modify duration: Set to 1.80 seconds and Wait
+                        -------- DEFAULT CAMERA --------
+                        -------- ================================ --------
+                        -------- DIALOG CAMERA == RESET --------
+                        -------- USAGE: call DialogCameraReset(p, duration) to restore original camera over 'duration' seconds --------
+                        Custom script:   call DialogCameraReset(Player(0), 2.0)
+                        -------- ======== CINEMATIC ENDS ======== --------
+                        Trigger - Run Cinematic OFF <gen> (checking conditions)
+                        Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                        -------- ==================================== --------
+                        -------- PATROL - CONTINUE --------
+                        Set VariableSet TempUnit = TravelShipB
+                        Custom script:   call PatrolSystem_Continue(udg_TempUnit)
+                        Skip remaining actions
+                    Else - Actions
+                Wait 0.10 seconds
+                Sound - Play LostGold <gen>
+                Wait 0.10 seconds
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Random integer number between 1 and 2) Equal to 1
+                    Then - Actions
+                        Cinematic - Send transmission to (All players) from Shipmaster[1] named Shipmaster: Play Shipmaster_0013 <gen> and display Welcome aboard!.  Modify duration: Set to 1.20 seconds and Wait
+                    Else - Actions
+                        Cinematic - Send transmission to (All players) from Shipmaster[1] named Shipmaster: Play Shipmaster_0014 <gen> and display The waves are calli....  Modify duration: Set to 1.45 seconds and Wait
+                -------- ==================================== OVER ==================================== --------
+                -------- Fade Out --------
+                Cinematic - Fade out over 0.50 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+                Wait 0.50 seconds
+                -------- Reset Camera --------
+                Camera - Reset camera smoothing factor
+                Camera - Reset camera for Player 1 (Red) to standard game-view over 0.00 seconds
+                Wait 0.50 seconds
+                -------- Fade In --------
+                Cinematic - Fade in over 0.50 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+                Wait 0.50 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                -------- DEFAULT CAMERA --------
+                -------- ================================ --------
+                -------- DIALOG CAMERA == RESET --------
+                -------- USAGE: call DialogCameraReset(p, duration) to restore original camera over 'duration' seconds --------
+                Custom script:   call DialogCameraReset(Player(0), 2.0)
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                -------- ================================ --------
+                -------- Set selection (1==Moknatha, 2==Frontbase, 3==Ironspine Post) --------
+                Set VariableSet TravelShipB_Selection = 3
+                Trigger - Run TravelShipB Moknatha Enter <gen> (checking conditions)
+                -------- ==================================== --------
+                -------- PATROL - CONTINUE --------
+                Set VariableSet TempUnit = TravelShipB
+                Custom script:   call PatrolSystem_Continue(udg_TempUnit)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_Farewell
+            Then - Actions
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0136 <gen> and display Farewell..  Modify duration: Set to 1.00 seconds and Wait
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Random integer number between 1 and 2) Equal to 1
+                    Then - Actions
+                        Cinematic - Send transmission to (All players) from Shipmaster[1] named Shipmaster: Play Shipmaster_0017 <gen> and display Safe travels!.  Modify duration: Set to 1.30 seconds and Wait
+                    Else - Actions
+                        Cinematic - Send transmission to (All players) from Shipmaster[1] named Shipmaster: Play Shipmaster_0018 <gen> and display Till next time!.  Modify duration: Set to 1.10 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                -------- ================================ --------
+                -------- DIALOG CAMERA == RESET --------
+                -------- USAGE: call DialogCameraReset(p, duration) to restore original camera over 'duration' seconds --------
+                Custom script:   call DialogCameraReset(Player(0), 2.0)
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                -------- ==================================== --------
+                -------- PATROL - CONTINUE --------
+                Set VariableSet TempUnit = TravelShipB
+                Custom script:   call PatrolSystem_Continue(udg_TempUnit)
+                Skip remaining actions
+            Else - Actions

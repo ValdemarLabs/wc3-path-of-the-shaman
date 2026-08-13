@@ -1,0 +1,19 @@
+Create WindRiderMaster02Dialog
+    Events
+    Conditions
+    Actions
+        Dialog - Clear WindRiderMaster02Dialog
+        Dialog - Change the title of WindRiderMaster02Dialog to Choose flying point
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                Dialog - Create a dialog button for WindRiderMaster02Dialog labelled Fly to Horde Scout ...
+                Set VariableSet HordeScoutBase = (Last created dialog Button)
+                Dialog - Create a dialog button for WindRiderMaster02Dialog labelled Fly to Horde Gold M...
+                Set VariableSet HordeGoldMine = (Last created dialog Button)
+            Else - Actions
+                Do nothing
+        Dialog - Create a dialog button for WindRiderMaster02Dialog labelled - No thanks
+        Cinematic - Enable user control for (All players).
+        Set VariableSet NoThanks = (Last created dialog Button)
+        Dialog - Show WindRiderMaster02Dialog for Player 1 (Red)

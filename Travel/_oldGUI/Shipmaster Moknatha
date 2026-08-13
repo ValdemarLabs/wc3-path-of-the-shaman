@@ -1,0 +1,88 @@
+Shipmaster Moknatha
+    Events
+        Player - Player 1 (Red) Selects a unit
+    Conditions
+        TravelShipB_Traveling Equal to False
+        (Triggering unit) Equal to Shipmaster[1]
+        (Distance between (Position of Shipmaster[1]) and (Position of Nazgrek)) Less than or equal to 500.00
+        (Remaining time for DialogOverTimer) Equal to 0.00
+    Actions
+        -------- ======== Initial check of the selected unit ======== --------
+        Set VariableSet CV = (Custom value of (Triggering unit))
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        UnitIsCasting[CV] Equal to True
+                        GCSM_UnitInCombat[CV] Equal to True
+            Then - Actions
+                -------- ======== Cinematic / dialogue cannot be started because of the conditions ======== --------
+                Skip remaining actions
+                -------- ======== ======== --------
+            Else - Actions
+        -------- ======== START ======== --------
+        Trigger - Turn off (This trigger)
+        -------- ======== CINEMATIC STARTS ======== --------
+        Trigger - Run Cinematic ON <gen> (checking conditions)
+        Cinematic - Turn cinematic mode On for (All players)
+        Cinematic - Fade out and back in over 1.00 seconds using texture Black Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        -------- ==================================== --------
+        -------- PATROL - PAUSE --------
+        -------- -------------------------- --------
+        Set VariableSet TempUnit = TravelShipB
+        Custom script:   call PatrolSystem_Pause(udg_TempUnit)
+        -------- -------------------------- --------
+        -------- ==================================== --------
+        Wait 0.25 seconds
+        Unit - Make Shipmaster[1] face Nazgrek over 0.75 seconds
+        Unit - Make Nazgrek face Shipmaster[1] over 0.75 seconds
+        Wait 1.00 seconds
+        -------- DIALOG CAMERA == START --------
+        Set VariableSet DialogNPC = Shipmaster[1]
+        -------- USAGE: call DialogCameraStart(p, u, dist, zOffset, angle, rotationOffset, farZ, fov, blockRadius, doBlockCheck) --------
+        -------- Typical values (no blocking): call DialogCameraStart(Player(0), udg_DialogNPC, 1000.0, 0.0, 0.0, 0.0, 10000.0, 70.0, 0.0, false) --------
+        -------- Typical values (blocking): call DialogCameraStart(Player(0), udg_DialogNPC, 1000.0, 0.0, 0.0, 0.0, 10000.0, 70.0, 0.0, true) --------
+        Custom script:   call DialogCameraStart(Player(0), udg_DialogNPC, 850.0, 20.0, 345.0, 180.0, 10000.0, 75.0, 0.0, true)
+        -------- ================================ --------
+        Wait 1.00 seconds
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                TravelShipB_AtDeck Equal to True
+                TravelShipB_Location Equal to 1
+            Then - Actions
+                -------- NORMAL DIALOG --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Random integer number between 1 and 2) Equal to 1
+                    Then - Actions
+                        Cinematic - Send transmission to (All players) from Shipmaster[1] named Shipmaster: Play Shipmaster_0001 <gen> and display You lookin’ to tr....  Modify duration: Set to 1.30 seconds and Wait
+                    Else - Actions
+                        Cinematic - Send transmission to (All players) from Shipmaster[1] named Shipmaster: Play Shipmaster_0002 <gen> and display Ahoy there, travele....  Modify duration: Set to 1.40 seconds and Wait
+                -------- ====================== --------
+                -------- Run "Create Dialog" --------
+                Trigger - Run Shipmaster MoknathaDialog01 <gen> (checking conditions)
+                Trigger - Turn on (This trigger)
+                Skip remaining actions
+            Else - Actions
+                -------- SHIP NOT YET HERE --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Random integer number between 1 and 2) Equal to 1
+                    Then - Actions
+                        Cinematic - Send transmission to (All players) from Shipmaster[1] named Shipmaster: Play Shipmaster_0005 <gen> and display Hold yer sea legs! ....  Modify duration: Set to 2.75 seconds and Wait
+                    Else - Actions
+                        Cinematic - Send transmission to (All players) from Shipmaster[1] named Shipmaster: Play Shipmaster_0006 <gen> and display Easy there, friend ....  Modify duration: Set to 3.10 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                -------- ================================ --------
+                -------- DIALOG CAMERA == RESET --------
+                -------- USAGE: call DialogCameraReset(p, duration) to restore original camera over 'duration' seconds --------
+                Custom script:   call DialogCameraReset(Player(0), 2.0)
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                -------- ==================================== --------
+                -------- PATROL - CONTINUE --------
+                Set VariableSet TempUnit = TravelShipB
+                Custom script:   call PatrolSystem_Continue(udg_TempUnit)
+                -------- ==================================== --------
+                Skip remaining actions

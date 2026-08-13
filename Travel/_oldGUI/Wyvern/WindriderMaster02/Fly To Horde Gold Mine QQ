@@ -1,0 +1,27 @@
+Fly To Horde Gold Mine QQ
+    Events
+    Conditions
+    Actions
+        -------- Turn off cinematic mode --------
+        Sound - Play HippoGryphWhat3 <gen>
+        Cinematic - Turn cinematic mode Off for (All players)
+        Player - Add -350 to Player 1 (Red).Current gold
+        Sound - Play LostGold <gen>
+        Unit - Hide Nazgrek
+        Unit - Create 1 Nazgrek Wyvernrider for Neutral Passive at (Position of Nazgrek) facing (Position of Wind Rider Master 0427 <gen>)
+        Set VariableSet Wyvern = (Last created unit)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (HordeLumberMillWindRiderArea <gen> contains Zulkis) Equal to True
+            Then - Actions
+                Unit - Hide Zulkis
+                Unit - Create 1 Zul'kis Batrider for Neutral Passive at (Position of Zulkis) facing (Position of Wind Rider Master 0427 <gen>)
+                Set VariableSet Bat = (Last created unit)
+                Unit - Grant shared vision of Bat to Player 1 (Red)
+                Unit - Order Bat to Move To (Center of FlyHere03 <gen>)
+            Else - Actions
+        Unit - Grant shared vision of Wyvern to Player 1 (Red)
+        Unit - Order Wyvern to Move To (Center of FlyHere03 <gen>)
+        Camera - Lock camera target for Player 1 (Red) to Wyvern, offset by (0.00, 0.00) using Default rotation
+        Trigger - Run At Flying Point03 QQ <gen> (checking conditions)
+        Trigger - Remove (This trigger) from the trigger queue
