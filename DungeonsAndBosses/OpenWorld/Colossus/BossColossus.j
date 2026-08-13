@@ -361,7 +361,7 @@ library BossColossus initializer Init requires Boss, EmberpeakDragonfire, Damage
             set udg_BossColossus = whichUnit
             set BossId = Boss_Register(whichUnit, "Colossus")
             call Boss_SetAutoStartOnAttack(BossId, true)
-            call Boss_SetArena(BossId, gg_rct_DragonFireSpam01, Player(0), true)
+            call Boss_SetCombatArea(BossId, gg_rct_DragonFireSpam01, Player(0), true)
             call Boss_SetPhaseCount(BossId, 3)
             call Boss_SetDescription(BossId, "An Emberpeak giant empowered by the surrounding dragonfire.", "Slam phase; boulder and golem phase below 50%; dragonfire phase below 25%.", "Thunder Clap, splitting boulders, fire immunity, cleave, and healing golem spawns.", "Kill golems before they reach him, avoid forward boulders, and keep moving through dragonfire.")
             call Boss_SetEventCallback(BossId, BOSS_EVENT_START, function OnStart)

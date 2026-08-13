@@ -368,7 +368,7 @@ library DungeonBoomBrothersMine initializer Init requires Dungeon, ZoneEvent, Ev
         local timer whichTimer = GetExpiredTimer()
         local integer playerId = 0
 
-        set DungeonId = Dungeon_Register(ZONE_ID, gg_rct_BoomBrothersMineEnter, gg_rct_BoomBrothersMineIn, 300.00)
+        set DungeonId = Dungeon_Register(ZONE_ID, gg_rct_BoomBrothersMineEnter, gg_rct_BoomBrothersMineIn, 1800.00)
         call ZoneEvent_SetZoneCameraMode(ZONE_ID, CameraControl_CAMERA_SPECIAL_MODE_BOOMMINE)
         call ZoneEvent_SetFastPanOnEnter(ZONE_ID, true)
         call RegisterTrigger(gg_rct_BoomMineR1, 0, function OnWaveOneEnter)

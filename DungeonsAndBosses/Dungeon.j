@@ -2,7 +2,7 @@
     Dungeon
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
     Connects explicitly registered dungeons to ZonesCore, owns their grouped
@@ -35,6 +35,8 @@
     - call Dungeon_SetFullRespawnCallback(dungeonId, callback)
     - call Dungeon_ScheduleFullRespawn(dungeonId)
     - call Dungeon_RespawnNow(dungeonId)
+    - call Dungeon_RespawnAllNow(dungeonId)
+    - call Dungeon_RespawnEveryDungeonNow()
     - set dungeonId = Dungeon_GetIdByZone(zoneId)
     - set zoneId = Dungeon_GetZoneId(dungeonId)
     - set dungeonId = Dungeon_GetIdForUnit(whichUnit)
@@ -57,7 +59,7 @@ library Dungeon initializer Init requires Boss, ZonesCore, ZoneEvent, CreepRespa
         private constant integer DUNGEON_MAX_COUNT = 64
         private constant integer DUNGEON_MAX_AREAS = 16
         private constant integer DUNGEON_MAX_SLOTS = 4096
-        private constant real DUNGEON_DEFAULT_FULL_RESPAWN_DELAY = 300.00
+        private constant real DUNGEON_DEFAULT_FULL_RESPAWN_DELAY = 1800.00
         private constant real DUNGEON_DEFAULT_RANDOM_RESPAWN_MIN = 120.00
         private constant real DUNGEON_DEFAULT_RANDOM_RESPAWN_MAX = 320.00
         private constant real DUNGEON_AI_ROUTE_INTERVAL = 1.00
@@ -475,7 +477,7 @@ library Dungeon initializer Init requires Boss, ZonesCore, ZoneEvent, CreepRespa
         endif
     endfunction
 
-    private function Dungeon_RespawnFullSlots takes integer dungeonId returns nothing
+    private function Dungeon_RespawnSlots takes integer dungeonId, boolean includeRandom returns nothing
         local integer slotId
         local unit respawnedUnit = null
 
@@ -485,7 +487,10 @@ library Dungeon initializer Init requires Boss, ZonesCore, ZoneEvent, CreepRespa
         set slotId = Dungeon_FirstSlot[dungeonId]
         loop
             exitwhen slotId == 0
-            if Dungeon_SlotRespawnMode[slotId] == DUNGEON_RESPAWN_FULL and not Dungeon_IsUnitAlive(Dungeon_SlotUnit[slotId]) then
+            if includeRandom and Dungeon_SlotTimer[slotId] != null then
+                call PauseTimer(Dungeon_SlotTimer[slotId])
+            endif
+            if (includeRandom or Dungeon_SlotRespawnMode[slotId] == DUNGEON_RESPAWN_FULL) and not Dungeon_IsUnitAlive(Dungeon_SlotUnit[slotId]) then
                 set respawnedUnit = Dungeon_RespawnSlot(slotId)
             endif
             set slotId = Dungeon_SlotNext[slotId]
@@ -493,6 +498,10 @@ library Dungeon initializer Init requires Boss, ZonesCore, ZoneEvent, CreepRespa
         call Dungeon_RunFullRespawnCallback(dungeonId)
         call Dungeon_Debug("Completed full respawn for dungeon " + I2S(dungeonId) + ".")
         set respawnedUnit = null
+    endfunction
+
+    private function Dungeon_RespawnFullSlots takes integer dungeonId returns nothing
+        call Dungeon_RespawnSlots(dungeonId, false)
     endfunction
 
     private function Dungeon_OnFullRespawnExpired takes nothing returns nothing
@@ -540,6 +549,24 @@ library Dungeon initializer Init requires Boss, ZonesCore, ZoneEvent, CreepRespa
         endif
         call PauseTimer(Dungeon_FullRespawnTimer[dungeonId])
         call Dungeon_RespawnFullSlots(dungeonId)
+    endfunction
+
+    public function RespawnAllNow takes integer dungeonId returns nothing
+        if not Dungeon_IsValidId(dungeonId) then
+            return
+        endif
+        call PauseTimer(Dungeon_FullRespawnTimer[dungeonId])
+        call Dungeon_RespawnSlots(dungeonId, true)
+    endfunction
+
+    public function RespawnEveryDungeonNow takes nothing returns nothing
+        local integer dungeonId = 1
+
+        loop
+            exitwhen dungeonId > Dungeon_Count
+            call RespawnAllNow(dungeonId)
+            set dungeonId = dungeonId + 1
+        endloop
     endfunction
 
     private function Dungeon_ScheduleRandomRespawn takes integer slotId returns nothing

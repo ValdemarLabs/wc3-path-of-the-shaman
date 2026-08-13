@@ -98,7 +98,7 @@ library DungeonCrypt initializer Init requires Dungeon, ZoneEvent, Table
     private function DelayedInit takes nothing returns nothing
         local timer whichTimer = GetExpiredTimer()
 
-        set DungeonId = Dungeon_Register(ZONE_ID, gg_rct_DungeonCrypt01B, gg_rct_Dungeon02StartingPoint, 300.00)
+        set DungeonId = Dungeon_Register(ZONE_ID, gg_rct_DungeonCrypt01B, gg_rct_Dungeon02StartingPoint, 1800.00)
         call Dungeon_AddArea(DungeonId, gg_rct_DungeonCrypt)
         call ZoneEvent_SetFastPanOnEnter(ZONE_ID, true)
         call GroupEnumUnitsInRect(RegisterGroup, gg_rct_DungeonCrypt, null)

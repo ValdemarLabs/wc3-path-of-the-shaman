@@ -48,16 +48,16 @@ library DungeonZones initializer Init requires Dungeon, ZoneEvent
     private function DelayedInit takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
 
-        set WyrmholdId = Dungeon_Register(103, gg_rct_05WyrmholdSanctum, gg_rct_05WyrmholdSanctum, 300.00)
+        set WyrmholdId = Dungeon_Register(103, gg_rct_05WyrmholdSanctum, gg_rct_05WyrmholdSanctum, 1800.00)
         call Dungeon_AddArea(WyrmholdId, gg_rct_05WyrmholdSanctum)
         call Dungeon_RegisterZoneCreeps(WyrmholdId, 35.00, 120.00, 320.00)
 
-        set FirelandsId = Dungeon_Register(105, gg_rct_016Firelands, gg_rct_016Firelands, 300.00)
+        set FirelandsId = Dungeon_Register(105, gg_rct_016Firelands, gg_rct_016Firelands, 1800.00)
         call Dungeon_AddArea(FirelandsId, gg_rct_016Firelands)
         call Dungeon_RegisterZoneCreeps(FirelandsId, 35.00, 120.00, 320.00)
         call ZoneEvent_SetFastPanOnEnter(105, true)
 
-        set DreadforgeId = Dungeon_Register(106, gg_rct_106Dreadforge, gg_rct_106DreadforgeA, 300.00)
+        set DreadforgeId = Dungeon_Register(106, gg_rct_106Dreadforge, gg_rct_106DreadforgeA, 1800.00)
         call Dungeon_AddArea(DreadforgeId, gg_rct_106DreadforgeA)
         call Dungeon_AddArea(DreadforgeId, gg_rct_106DreadforgeB)
         call Dungeon_AddArea(DreadforgeId, gg_rct_106DreadforgeExit)

@@ -90,7 +90,7 @@ library BossImpaler initializer Init requires Boss, DungeonGnollHideout
             set BossId = Boss_Register(boss, "Impaler")
             set BaseArmor = BlzGetUnitArmor(boss)
             set BaseDamage = BlzGetUnitBaseDamage(boss, 0)
-            call Boss_SetArena(BossId, gg_rct_BossImpalerArea, Player(0), true)
+            call Boss_SetCombatArea(BossId, gg_rct_BossImpalerArea, Player(0), true)
             call Boss_SetAutoStartOnAttack(BossId, true)
             call Boss_SetDescription(BossId, "A brutal gnoll champion who steadily hardens during a prolonged fight.", "One escalating phase.", "Every 15 seconds he gains armor and base damage.", "Finish the fight quickly; his scaling makes long engagements increasingly dangerous.")
             call Boss_SetEventCallback(BossId, BOSS_EVENT_START, function OnStart)

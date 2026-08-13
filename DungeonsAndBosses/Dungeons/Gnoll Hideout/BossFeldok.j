@@ -12,7 +12,7 @@
 
     How to install:
     Import after Boss, CreepRespawn, and DungeonGnollHideout. Keep the named
-    Fel'Dok arena, add-spawn, movement, and attack rects. Disable the legacy
+    Fel'Dok combat, add-spawn, movement, and attack rects. Disable the legacy
     Fel'Dok GUI triggers.
 
     API:
@@ -159,10 +159,10 @@ library BossFeldok initializer Init requires Boss, CreepRespawn, DungeonGnollHid
         if boss != null then
             set udg_BossFeldok = boss
             set BossId = Boss_Register(boss, "Deathlord Fel'Dok")
-            call Boss_SetArena(BossId, gg_rct_BossFeldokArea01, Player(0), true)
+            call Boss_SetCombatArea(BossId, gg_rct_BossFeldokArea01, Player(0), true)
             call Boss_SetAutoStartOnAttack(BossId, true)
             call Boss_SetPhaseCount(BossId, 2)
-            call Boss_SetDescription(BossId, "An undead deathlord who turns the arena into a feast when wounded.", "At half health he calls a skeleton-and-zombie wave before resuming the fight.", "Rain of Fire, sudden movement, and target switching in phase one; an add wave at 50%.", "Spread for Rain of Fire and clear the add wave before it overwhelms the party.")
+            call Boss_SetDescription(BossId, "An undead deathlord who turns the battlefield into a feast when wounded.", "At half health he calls a skeleton-and-zombie wave before resuming the fight.", "Rain of Fire, sudden movement, and target switching in phase one; an add wave at 50%.", "Spread for Rain of Fire and clear the add wave before it overwhelms the party.")
             call Boss_SetEventCallback(BossId, BOSS_EVENT_START, function OnStart)
             call Boss_SetEventCallback(BossId, BOSS_EVENT_RESET, function OnEnd)
             call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnEnd)

@@ -164,7 +164,7 @@ library BossSargoth initializer Init requires Boss, CreepRespawn
             set udg_BossSargoth = whichUnit
             set BossId = Boss_Register(whichUnit, "Sargoth")
             call Boss_SetAutoStartOnAttack(BossId, true)
-            call Boss_SetArena(BossId, gg_rct_SargothLair, Player(0), true)
+            call Boss_SetCombatArea(BossId, gg_rct_SargothLair, Player(0), true)
             call Boss_SetPhaseCount(BossId, 3)
             call Boss_SetDescription(BossId, "Sargoth retreats underground twice, releasing spider waves from the lair.", "Phase 1 above ground; phase 2 at 50%; phase 3 at 25%.", "Burrow calls spiders, giant spiders, spitting spiders, then larger mixed waves.", "Clear spitters and adds while he is buried; use the surface windows for boss damage.")
             call Boss_SetEventCallback(BossId, BOSS_EVENT_START, function OnStart)

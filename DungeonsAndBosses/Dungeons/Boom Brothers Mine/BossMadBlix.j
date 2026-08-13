@@ -12,7 +12,7 @@
 
     How to install:
     Import after Boss and DungeonBoomBrothersMine. Keep the Mad Blix unit name
-    and BoomBrothersMine arena rect. Disable the legacy Mad Blix GUI triggers.
+    and BoomBrothersMine combat rect. Disable the legacy Mad Blix GUI triggers.
 
     API:
     - BossMadBlix_GetId() returns integer
@@ -74,7 +74,7 @@ library BossMadBlix initializer Init requires Boss, DungeonBoomBrothersMine
         if boss != null then
             set udg_BossMadBlix = boss
             set BossId = Boss_Register(boss, "Mad Blix")
-            call Boss_SetArena(BossId, gg_rct_BoomBrothersMine, Player(0), true)
+            call Boss_SetCombatArea(BossId, gg_rct_BoomBrothersMine, Player(0), true)
             call Boss_SetAutoStartOnAttack(BossId, true)
             call Boss_SetDescription(BossId, "A goblin overseer whose only recoverable exported mechanic is mana absorption.", "The legacy phase files are empty, so no phase transition is reconstructed.", "Every 15-30 seconds he targets a nearby enemy with Absorb Mana.", "Keep mana available for key responses and interrupt or pressure him when he begins the drain.")
             call Boss_SetEventCallback(BossId, BOSS_EVENT_START, function OnStart)

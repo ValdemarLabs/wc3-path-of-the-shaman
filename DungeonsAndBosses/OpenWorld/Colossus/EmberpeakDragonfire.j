@@ -5,7 +5,7 @@
     Version: 2.0.0
 
     Description:
-    Owns only the two Emberpeak dragons that interact with the Colossus arena.
+    Owns only the two Emberpeak dragons that interact with the Colossus fight.
     The dragons target Colossus while idle, target player units during the
     encounter, and turn back on Colossus during the final phase.
 

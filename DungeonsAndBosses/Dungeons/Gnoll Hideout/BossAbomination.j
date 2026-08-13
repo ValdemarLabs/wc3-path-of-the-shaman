@@ -12,7 +12,7 @@
 
     How to install:
     Import after Boss, CreepRespawn, and DungeonGnollHideout. Keep the named
-    Abomination arena, zombie-spawn, and attack rects. Disable the legacy
+    Abomination combat, zombie-spawn, and attack rects. Disable the legacy
     Abomination GUI triggers.
 
     API:
@@ -96,7 +96,7 @@ library BossAbomination initializer Init requires Boss, CreepRespawn, DungeonGno
         if boss != null then
             set udg_BossAbomination = boss
             set BossId = Boss_Register(boss, "Abomination")
-            call Boss_SetArena(BossId, gg_rct_AbominationArea, Player(0), true)
+            call Boss_SetCombatArea(BossId, gg_rct_AbominationArea, Player(0), true)
             call Boss_SetAutoStartOnAttack(BossId, true)
             call Boss_SetDescription(BossId, "A lumbering undead brute supported by periodic zombie reinforcements.", "One phase with repeated add waves.", "Six zombies emerge from two spawn points roughly every 30-50 seconds.", "Keep the zombies controlled and defeat them before they can surround the group.")
             call Boss_SetEventCallback(BossId, BOSS_EVENT_START, function OnStart)

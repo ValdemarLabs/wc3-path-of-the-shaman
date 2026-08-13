@@ -24,7 +24,7 @@
 library DungeonGnollHideout initializer Init requires Dungeon, ZoneEvent
     globals
         private constant integer ZONE_ID = 101
-        private constant real FULL_RESPAWN_DELAY = 300.00
+        private constant real FULL_RESPAWN_DELAY = 1800.00
         private constant real RANDOM_RESPAWN_PERCENT = 35.00
 
         private integer DungeonId = 0

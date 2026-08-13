@@ -102,7 +102,7 @@ library BossVoidEntity initializer Init requires Boss, BossVoidEntityDialogue
             set udg_BossVoidEntity = whichUnit
             set BossId = Boss_Register(whichUnit, "Void Entity")
             call Boss_SetAutoStartOnAttack(BossId, true)
-            call Boss_SetArena(BossId, gg_rct_ElvenTown, Player(0), true)
+            call Boss_SetCombatArea(BossId, gg_rct_ElvenTown, Player(0), true)
             call Boss_SetDefeatMode(BossId, BOSS_DEFEAT_MODE_SCRIPTED)
             call Boss_SetEventCallback(BossId, BOSS_EVENT_START, function OnStart)
             call Boss_SetEventCallback(BossId, BOSS_EVENT_RESET, function OnReset)

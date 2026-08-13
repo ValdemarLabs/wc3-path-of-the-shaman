@@ -177,7 +177,7 @@ library BossRoljin initializer Init requires Boss, CreepRespawn
         set udg_Roljin = whichUnit
         set BossId = Boss_Register(whichUnit, "Rol'jin")
         call Boss_SetAutoStartOnAttack(BossId, true)
-        call Boss_SetArena(BossId, gg_rct_BloodtuskTribe, Player(0), true)
+        call Boss_SetCombatArea(BossId, gg_rct_BloodtuskTribe, Player(0), true)
         call Boss_SetDescription(BossId, "The Bloodtusk chieftain calls troll support while roaming his grounds.", "One recovered phase: periodic movement and reinforcements.", "Support packs include trappers, berserkers, high priests, and shadow priests.", "Prioritize healers and keep his escort group under control.")
         call Boss_SetEventCallback(BossId, BOSS_EVENT_START, function OnStart)
         call Boss_SetEventCallback(BossId, BOSS_EVENT_RESET, function OnEnd)

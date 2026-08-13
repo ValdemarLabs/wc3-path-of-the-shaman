@@ -637,7 +637,7 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
             set udg_BossScorchion = boss
             set BossId = Boss_Register(boss, "Scorchion")
             set BaseDamage = BlzGetUnitBaseDamage(boss, 0)
-            call Boss_SetArena(BossId, gg_rct_BossScorchionArea, Player(0), true)
+            call Boss_SetCombatArea(BossId, gg_rct_BossScorchionArea, Player(0), true)
             call Boss_SetPhaseCount(BossId, 2)
             call Boss_SetDescription(BossId, "A fire lord protected by four Dark Shaman worshippers.", "Kill all four worshippers to begin. After 60 seconds Scorchion enters a 50-second lava-and-orb ritual before returning to the main phase.", "Infernal Rain, Blink, Fire Ward, orb consumption that raises damage and size, Undying Flame backlash, and Temporal Instability when every orb is denied.", "Clear the shamans, keep moving through fire casts, and deny every orb during the ritual to gain the 15-second amplified-damage window.")
             call Boss_SetEventCallback(BossId, BOSS_EVENT_START, function OnStart)
