@@ -15,6 +15,27 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [15.8.2026]
+
+### Player-Facing Updates
+
+- Kribugs' dialogue now distinguishes the goblin Kribugs from his ogre carrier Mogsnort even though they share one composite unit, with situational Mogsnort interjections and the original ogre grunts, growls, hunger complaint, and fart laugh.
+- Expanded wyvern travel to Verdant Plains, Ashfang Outpost, and Sirensong, with all six flight points requiring player discovery and Verdant Plains also supporting a quest/event unlock.
+- Added gradual takeoff and landing height transitions for wyvern and bat travel, plus physical zeppelin travel for AI heroes that treats every flight point as discovered.
+- Added the scheduled neutral Ship A route between Sirensong, Dawnhold, and Stormhaven, including Dawnhold drop-out prompts and direction-aware destination choices.
+- Travel-point discovery now uses the region-title presentation, a green destination name, and the zone-discovery sound.
+- Enabled Mok'natha, Frontbase, and Ironspine as Ship B boarding points and added configured Nazgrek and Zul'kis deck models for ship journeys.
+
+### Technical Updates
+
+- Updated `Voicelines/Voicelines_Kribugs.j` and `QuestsAndDialogs/QuestGivers/qKribugs.j` with separate `Mogsnort_XXXX` voicelines, labeled legacy ogre Sound Editor cues, registered speaker folders, and shared-unit cinematic speaker routing.
+- Updated `Travel/TravelSystem.j`, `TravelWyvern.j`, `TravelAI.j`, `TravelShipA.j`, and `TravelShipB.j` with the six wind-rider masters, six shipmasters, flight-height transitions, AI zeppelin carriers, direction-aware scheduled routes, and complete local PatrolSystem paths.
+- Updated `Travel/README.md` with the active master mapping, Ship A waypoint loop, default fares, quest discovery API, passenger models, and AI discovery policy.
+
+### Known Issues
+
+- The new Ship A rect globals and full travel changes still require World Editor/JassHelper compilation and in-map route, deck-offset, camera, discovery, and multiplayer validation.
+
 ## [14.8.2026]
 
 ### Player-Facing Updates
@@ -42,9 +63,7 @@
 
 ### Actions Remaining
 
-- Bind the missing Ship A and future wyvern Object Editor masters, vehicles, boarding areas, arrival points, waypoints, and fares through their registration APIs.
-- Supply the Nazgrek and Zul'kis model paths for Ship B deck-effect proxies, then tune their exposed offsets in-map.
-- Import the travel libraries after their dependencies, disable the replaced legacy travel dialogs and detached patrol initialization triggers, and run focused plus full-map JassHelper and multiplayer tests.
+- Import the travel libraries after their dependencies, disable the replaced legacy travel dialogs and detached patrol initialization triggers, and run focused plus full-map JassHelper and multiplayer tests, including Ship A deck-offset tuning.
 - Full-map test vendor entry, greeting, quest dialogue, ShopUI, and Kribugs' custom trade/deal UI while either participant attacks, is attacked, dies, or enters combat; also verify an explicit `endOnCombat = false` test interaction remains open.
 
 ## [13.8.2026]
