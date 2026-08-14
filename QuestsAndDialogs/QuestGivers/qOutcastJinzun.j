@@ -2,7 +2,7 @@
     qOutcastJinzun
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.1.1
 
     Description:
     Quest, dialogue, patrol, fishing, ward-placement, tree-restoration, and
@@ -1062,21 +1062,21 @@ library qOutcastJinzun initializer Init requires QuestGiver, QuestMaster, Dialog
         local string infoText = "|cffffcc00Quest giver:|r " + JINZUN_NAME + "\n"
 
         if not QuestGiver_QuestExistsByNameAndGiver(QUEST_PLAGUE_TREES, Jinzun) then
-            set q = QuestGiver_CreateConfiguredQuest(QUEST_PLAGUE_TREES, Jinzun, "normal", 4, null, QUEST_PLAGUE_TREES, "ReplaceableTextures\\CommandButtons\\BTNDarkSummoning.blp", "Place Jin'Zun's Healing Wards at the three corrupted tree runes and stop the plague from spreading.\n\n", infoText, "|cffffcc00Recommended level:|r 4\n\n", 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "", JINZUN_NAME)
+            set q = QuestGiver_CreateConfiguredQuest(QUEST_PLAGUE_TREES, Jinzun, "normal", 4, null, QUEST_PLAGUE_TREES, "ReplaceableTextures\\CommandButtons\\BTNDarkSummoning.blp", "Place Jin'Zun's Healing Wards at the three corrupted tree runes and stop the plague from spreading.\n\n", infoText, "|cffffcc00Recommended level:|r 4\n\n", 0, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "", JINZUN_NAME)
             call QuestGiver_SetQuestRewards(q, true, 0, true, 300, false, 0, false, 0, false)
             call q.setRewardItemType(ITEM_RESTORATION_POTION)
             call QuestGiver_SetRequirements(q.id, "", "Place a Healing Ward at the first corrupted tree", "Place a Healing Ward at the second corrupted tree", "Place a Healing Ward at the third corrupted tree", "", "", "", "", "")
         endif
 
         if not QuestGiver_QuestExistsByNameAndGiver(QUEST_LURKING_SHADOWS, Jinzun) then
-            set q = QuestGiver_CreateConfiguredQuest(QUEST_LURKING_SHADOWS, Jinzun, "normal", 6, null, QUEST_LURKING_SHADOWS, "ReplaceableTextures\\CommandButtons\\BTNSpiderGreen.blp", "Defeat the mother spider Sargoth and bring her ichor to Jin'Zun.\n\n", infoText, "|cffffcc00Recommended level:|r 6\n\n", 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "", JINZUN_NAME)
+            set q = QuestGiver_CreateConfiguredQuest(QUEST_LURKING_SHADOWS, Jinzun, "normal", 6, null, QUEST_LURKING_SHADOWS, "ReplaceableTextures\\CommandButtons\\BTNSpiderGreen.blp", "Defeat the mother spider Sargoth and bring her ichor to Jin'Zun.\n\n", infoText, "|cffffcc00Recommended level:|r 6\n\n", 0, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "", JINZUN_NAME)
             call QuestGiver_SetQuestRewards(q, true, 0, false, 0, false, 0, false, 0, false)
             call QuestGiver_AddQuestPrerequisite(q, QUEST_PLAGUE_TREES, Jinzun)
             call QuestGiver_RegisterItemRequirement(q.id, Jinzun, 1, ITEM_SARGOTH_ICHOR, 1)
         endif
 
         if not QuestGiver_QuestExistsByNameAndGiver(QUEST_UNKNOWN_ENTITY, Jinzun) then
-            set q = QuestGiver_CreateConfiguredQuest(QUEST_UNKNOWN_ENTITY, Jinzun, "normal", 8, null, QUEST_UNKNOWN_ENTITY, "ReplaceableTextures\\CommandButtons\\BTNTentacle.blp", "Investigate the unnatural entity disturbing Jin'Zun's fishing lake.\n\n", infoText, "|cffffcc00Recommended level:|r 8\n\n", 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "", JINZUN_NAME)
+            set q = QuestGiver_CreateConfiguredQuest(QUEST_UNKNOWN_ENTITY, Jinzun, "normal", 8, null, QUEST_UNKNOWN_ENTITY, "ReplaceableTextures\\CommandButtons\\BTNTentacle.blp", "Investigate the unnatural entity disturbing Jin'Zun's fishing lake.\n\n", infoText, "|cffffcc00Recommended level:|r 8\n\n", 0, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "", JINZUN_NAME)
             call QuestGiver_SetQuestRewards(q, true, 0, false, 0, false, 0, false, 0, false)
             call QuestGiver_AddQuestPrerequisite(q, QUEST_PLAGUE_TREES, Jinzun)
             call QuestGiver_AddQuestPrerequisite(q, QUEST_LURKING_SHADOWS, Jinzun)
@@ -1084,7 +1084,7 @@ library qOutcastJinzun initializer Init requires QuestGiver, QuestMaster, Dialog
         endif
 
         if not QuestGiver_QuestExistsByNameAndGiver(QUEST_SEEDS_LIFE, Jinzun) then
-            set q = QuestGiver_CreateConfiguredQuest(QUEST_SEEDS_LIFE, Jinzun, "normal", 8, null, QUEST_SEEDS_LIFE, "ReplaceableTextures\\PassiveButtons\\PASBTNThorns.blp", "Use the Seeds of Life near the three mighty dead trees to restore them and cleanse the blight.\n\n", infoText, "|cffffcc00Recommended level:|r 8\n\n", 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "", JINZUN_NAME)
+            set q = QuestGiver_CreateConfiguredQuest(QUEST_SEEDS_LIFE, Jinzun, "normal", 8, null, QUEST_SEEDS_LIFE, "ReplaceableTextures\\PassiveButtons\\PASBTNThorns.blp", "Use the Seeds of Life near the three mighty dead trees to restore them and cleanse the blight.\n\n", infoText, "|cffffcc00Recommended level:|r 8\n\n", 0, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "", JINZUN_NAME)
             call QuestGiver_SetQuestRewards(q, false, 0, false, 0, false, 0, false, 0, false)
             call QuestGiver_AddQuestPrerequisite(q, QUEST_PLAGUE_TREES, Jinzun)
             call QuestGiver_AddQuestPrerequisite(q, QUEST_LURKING_SHADOWS, Jinzun)
@@ -1092,7 +1092,7 @@ library qOutcastJinzun initializer Init requires QuestGiver, QuestMaster, Dialog
         endif
 
         if not QuestGiver_QuestExistsByNameAndGiver(QUEST_RESURGENCE_DEAD_1, Jinzun) then
-            set q = QuestGiver_CreateConfiguredQuest(QUEST_RESURGENCE_DEAD_1, Jinzun, "normal", 8, null, QUEST_RESURGENCE_DEAD_1, "ReplaceableTextures\\CommandButtons\\BTNDalaranMutant.blp", "Investigate the crypt in the Dead Woods and bring Jin'Zun a moving rotten body part as proof of the undead resurgence.\n\n", infoText, "|cffffcc00Recommended level:|r 8\n\n", 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "", JINZUN_NAME)
+            set q = QuestGiver_CreateConfiguredQuest(QUEST_RESURGENCE_DEAD_1, Jinzun, "normal", 8, null, QUEST_RESURGENCE_DEAD_1, "ReplaceableTextures\\CommandButtons\\BTNDalaranMutant.blp", "Investigate the crypt in the Dead Woods and bring Jin'Zun a moving rotten body part as proof of the undead resurgence.\n\n", infoText, "|cffffcc00Recommended level:|r 8\n\n", 0, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "", JINZUN_NAME)
             call QuestGiver_SetQuestRewards(q, true, 0, false, 0, false, 0, false, 0, false)
             call QuestGiver_AddQuestPrerequisite(q, QUEST_PLAGUE_TREES, Jinzun)
             call QuestGiver_AddQuestPrerequisite(q, QUEST_LURKING_SHADOWS, Jinzun)
@@ -1101,14 +1101,14 @@ library qOutcastJinzun initializer Init requires QuestGiver, QuestMaster, Dialog
         endif
 
         if not QuestGiver_QuestExistsByNameAndGiver(QUEST_RESURGENCE_DEAD_2, Jinzun) then
-            set q = QuestGiver_CreateConfiguredQuest(QUEST_RESURGENCE_DEAD_2, Jinzun, "normal", 10, null, QUEST_RESURGENCE_DEAD_2, "ReplaceableTextures\\CommandButtons\\BTNAnimateDead.blp", "Lay the undead of the crypt to rest and stop the necromancy within.\n\n", infoText, "|cffffcc00Recommended level:|r 10\n\n", 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "", JINZUN_NAME)
+            set q = QuestGiver_CreateConfiguredQuest(QUEST_RESURGENCE_DEAD_2, Jinzun, "normal", 10, null, QUEST_RESURGENCE_DEAD_2, "ReplaceableTextures\\CommandButtons\\BTNAnimateDead.blp", "Lay the undead of the crypt to rest and stop the necromancy within.\n\n", infoText, "|cffffcc00Recommended level:|r 10\n\n", 0, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "", JINZUN_NAME)
             call QuestGiver_SetQuestRewards(q, false, 0, false, 0, false, 0, false, 0, false)
             call QuestGiver_AddQuestPrerequisite(q, QUEST_RESURGENCE_DEAD_1, Jinzun)
             call QuestGiver_SetRequirements(q.id, "", "Lay the undead of the crypt to rest", "", "", "", "", "", "", "")
         endif
 
         if not QuestGiver_QuestExistsByNameAndGiver(QUEST_FISHING_POLE, Jinzun) then
-            set q = QuestGiver_CreateConfiguredQuest(QUEST_FISHING_POLE, Jinzun, "normal", 6, null, QUEST_FISHING_POLE, "ReplaceableTextures\\CommandButtons\\BTNInv_fishingpole_02.blp", "Retrieve Jin'Zun's missing fishing pole from the kobolds or satyrs.\n\n", infoText, "|cffffcc00Recommended level:|r 6\n\n", 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "", JINZUN_NAME)
+            set q = QuestGiver_CreateConfiguredQuest(QUEST_FISHING_POLE, Jinzun, "normal", 6, null, QUEST_FISHING_POLE, "ReplaceableTextures\\CommandButtons\\BTNInv_fishingpole_02.blp", "Retrieve Jin'Zun's missing fishing pole from the kobolds or satyrs.\n\n", infoText, "|cffffcc00Recommended level:|r 6\n\n", 0, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "", JINZUN_NAME)
             call QuestGiver_SetQuestRewards(q, true, 0, false, 0, false, 0, false, 0, false)
             call QuestGiver_AddQuestPrerequisite(q, QUEST_PLAGUE_TREES, Jinzun)
             call QuestGiver_AddQuestPrerequisite(q, QUEST_LURKING_SHADOWS, Jinzun)
