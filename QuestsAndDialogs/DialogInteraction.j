@@ -23,7 +23,11 @@
     - call DialogInteraction_RegisterAnySelectionHandler(function OnAnySelected)
     - call DialogInteraction_ConfigureDialogTransition(...)
     - call DialogInteraction_StartConfiguredDialogEntryTransition(...)
+    - call DialogInteraction_CancelActiveTransition()
     - call DialogInteraction_PlayGreetSequenceEx(...)
+    - call DialogInteraction_BeginCombatSensitiveInteraction(npc, hero, onInterrupt)
+    - call DialogInteraction_BeginCombatSensitiveInteractionEx(npc, hero, onInterrupt, endOnCombat)
+    - call DialogInteraction_EndCombatSensitiveInteraction()
 
 **/
 library DialogInteraction initializer Init requires Table, DialogSystem, CameraControl, FullscreenUI, FallenHeroState
@@ -68,6 +72,15 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         private real TransitionCameraBlockRadius = 0.00
         private boolean TransitionCameraBlockCheck = false
         private string TransitionContinueFuncName = ""
+        private timer TransitionTimer = null
+
+        private constant real DIALOGINTERACTION_COMBAT_CHECK_INTERVAL = 0.10
+        private trigger DialogInteraction_CombatAttackTrigger = null
+        private trigger DialogInteraction_CombatInterruptHandler = null
+        private timer DialogInteraction_CombatCheckTimer = null
+        private unit DialogInteraction_CombatNPC = null
+        private unit DialogInteraction_CombatHero = null
+        private boolean DialogInteraction_CombatGuardActive = false
 
         private constant integer DIALOGINTERACTION_TRANSITION_CONFIGURED = 1
         private constant integer DIALOGINTERACTION_TRANSITION_MOVE_MODE = 2
@@ -812,8 +825,30 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         set TransitionContinueFuncName = ""
     endfunction
 
+    private function StopTransitionTimer takes nothing returns nothing
+        if TransitionTimer != null then
+            call PauseTimer(TransitionTimer)
+            call DestroyTimer(TransitionTimer)
+            set TransitionTimer = null
+        endif
+    endfunction
+
+    public function CancelActiveTransition takes nothing returns nothing
+        local boolean wasActive = TransitionTimer != null
+
+        call StopTransitionTimer()
+        call ClearTransitionState()
+        if wasActive then
+            call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, 0.25, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+        endif
+    endfunction
+
     private function FinishDialogExitTransition takes nothing returns nothing
         local timer t = GetExpiredTimer()
+
+        if t == TransitionTimer then
+            set TransitionTimer = null
+        endif
 
         call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, 1.0, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
         call HandleSequenceEnd(TransitionGiver, TransitionCooldownTimer, TransitionCooldownDuration, TransitionStopCamera, TransitionCameraStopDuration, TransitionUseCamera, false)
@@ -841,8 +876,12 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         local timer t = GetExpiredTimer()
         local timer nextTimer = CreateTimer()
 
+        if t == TransitionTimer then
+            set TransitionTimer = null
+        endif
         call DestroyTimer(t)
         set t = null
+        set TransitionTimer = nextTimer
         call TimerStart(nextTimer, 1.0, false, function FinishDialogExitTransition)
         set nextTimer = null
     endfunction
@@ -850,6 +889,7 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
     public function StartDialogExitTransition takes unit npc, unit restoreHero, timer cooldownTimer, real cooldownDuration, boolean stopCamera, real cameraStopDuration, boolean useCamera, boolean runCinematicTrigger, boolean useCinematicMode returns nothing
         local timer t = CreateTimer()
 
+        call StopTransitionTimer()
         set TransitionGiver = npc
         set TransitionHero = restoreHero
         set TransitionCooldownTimer = cooldownTimer
@@ -861,6 +901,7 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         set TransitionUseCinematicMode = useCinematicMode
 
         call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUT, 1.0, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+        set TransitionTimer = t
         call TimerStart(t, 1.0, false, function ContinueDialogExitTransition)
         set t = null
     endfunction
@@ -873,6 +914,9 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         local timer t = GetExpiredTimer()
         local string continueFuncName = TransitionContinueFuncName
 
+        if t == TransitionTimer then
+            set TransitionTimer = null
+        endif
         call DestroyTimer(t)
         set t = null
         set TransitionContinueFuncName = ""
@@ -885,6 +929,7 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         local timer t = CreateTimer()
 
         call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, 1.0, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+        set TransitionTimer = t
         call TimerStart(t, 1.0, false, function ExecuteDialogEntryContinue)
         set t = null
     endfunction
@@ -897,6 +942,9 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         local real x
         local real y
 
+        if t == TransitionTimer then
+            set TransitionTimer = null
+        endif
         call DestroyTimer(t)
         set t = null
 
@@ -933,6 +981,7 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
     public function StartDialogEntryTransition takes unit npc, unit hero, integer moveMode, real moveOffset, real moveAngle, boolean runCinematicTrigger, boolean useCamera, real cameraDist, real cameraZOffset, real cameraAngle, real cameraRotOffset, real cameraFarZ, real cameraFov, real cameraBlockRadius, boolean cameraBlockCheck, boolean useCinematicMode, string continueFuncName returns nothing
         local timer t = CreateTimer()
 
+        call StopTransitionTimer()
         set TransitionGiver = npc
         set TransitionHero = hero
         set TransitionMoveMode = moveMode
@@ -965,6 +1014,7 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         endif
 
         call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUT, 1.0, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+        set TransitionTimer = t
         call TimerStart(t, 1.0, false, function ContinueDialogEntryTransition)
         set t = null
     endfunction
@@ -1060,11 +1110,132 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         call StartDialogEntryTransition(npc, hero, moveMode, moveOffset, moveAngle, runCinematicTrigger, useCamera, cameraDist, cameraZOffset, cameraAngle, cameraRotOffset, cameraFarZ, cameraFov, cameraBlockRadius, cameraBlockCheck, useCinematicMode, continueFuncName)
     endfunction
 
+    private function ClearPendingDialogState takes nothing returns nothing
+        if DialogInteraction_PendingSeq != 0 then
+            call DialogSystem_ClearSequence(DialogInteraction_PendingSeq)
+        endif
+        set DialogInteraction_PendingDialog = null
+        set DialogInteraction_PendingPlayer = null
+        set DialogInteraction_PendingNPC = null
+        set DialogInteraction_PendingSeq = 0
+        set DialogInteraction_PendingSequenceCinematic = false
+        set DialogInteraction_ReopenDialogFuncName = ""
+    endfunction
+
+    private function ClearCombatGuardState takes nothing returns nothing
+        set DialogInteraction_CombatGuardActive = false
+        set DialogInteraction_CombatNPC = null
+        set DialogInteraction_CombatHero = null
+        if DialogInteraction_CombatCheckTimer != null then
+            call PauseTimer(DialogInteraction_CombatCheckTimer)
+        endif
+    endfunction
+
+    public function EndCombatSensitiveInteraction takes nothing returns nothing
+        local trigger handler = DialogInteraction_CombatInterruptHandler
+
+        set DialogInteraction_CombatInterruptHandler = null
+        call ClearCombatGuardState()
+        if handler != null then
+            call DestroyTrigger(handler)
+        endif
+        set handler = null
+    endfunction
+
+    private function InterruptCombatSensitiveInteraction takes nothing returns nothing
+        local trigger handler
+
+        if not DialogInteraction_CombatGuardActive then
+            set handler = null
+            return
+        endif
+        set handler = DialogInteraction_CombatInterruptHandler
+        set DialogInteraction_CombatInterruptHandler = null
+        call ClearCombatGuardState()
+        call CancelActiveTransition()
+        call DialogSystem_CancelActiveSpeech()
+        call ClearPendingDialogState()
+        call CloseActiveDialog()
+        if handler != null then
+            call TriggerExecute(handler)
+            call DestroyTrigger(handler)
+        endif
+        set handler = null
+    endfunction
+
+    private function CombatGuardTimerAction takes nothing returns nothing
+        if not DialogInteraction_CombatGuardActive then
+            return
+        endif
+        if (DialogInteraction_CombatNPC != null and (not IsUnitAlive(DialogInteraction_CombatNPC) or IsUnitInCombat(DialogInteraction_CombatNPC))) or (DialogInteraction_CombatHero != null and (not IsUnitAlive(DialogInteraction_CombatHero) or IsUnitInCombat(DialogInteraction_CombatHero))) then
+            call InterruptCombatSensitiveInteraction()
+        endif
+    endfunction
+
+    private function CombatGuardAttackAction takes nothing returns nothing
+        local unit target = GetTriggerUnit()
+        local unit attacker = GetAttacker()
+
+        if DialogInteraction_CombatGuardActive and (target == DialogInteraction_CombatNPC or target == DialogInteraction_CombatHero or attacker == DialogInteraction_CombatNPC or attacker == DialogInteraction_CombatHero) then
+            call InterruptCombatSensitiveInteraction()
+        endif
+
+        set target = null
+        set attacker = null
+    endfunction
+
+    public function BeginCombatSensitiveInteractionEx takes unit npc, unit hero, code onInterrupt, boolean endOnCombat returns boolean
+        local trigger handler = null
+
+        call EndCombatSensitiveInteraction()
+        if not endOnCombat then
+            set npc = null
+            set hero = null
+            set handler = null
+            return true
+        endif
+        if npc == null and hero == null then
+            set npc = null
+            set hero = null
+            set handler = null
+            return false
+        endif
+        if (npc != null and (not IsUnitAlive(npc) or IsUnitInCombat(npc))) or (hero != null and (not IsUnitAlive(hero) or IsUnitInCombat(hero))) then
+            set npc = null
+            set hero = null
+            set handler = null
+            return false
+        endif
+
+        if onInterrupt != null then
+            set handler = CreateTrigger()
+            call TriggerAddAction(handler, onInterrupt)
+        endif
+        set DialogInteraction_CombatNPC = npc
+        set DialogInteraction_CombatHero = hero
+        set DialogInteraction_CombatInterruptHandler = handler
+        set DialogInteraction_CombatGuardActive = true
+        call TimerStart(DialogInteraction_CombatCheckTimer, DIALOGINTERACTION_COMBAT_CHECK_INTERVAL, true, function CombatGuardTimerAction)
+
+        set npc = null
+        set hero = null
+        set handler = null
+        return true
+    endfunction
+
+    public function BeginCombatSensitiveInteraction takes unit npc, unit hero, code onInterrupt returns boolean
+        return BeginCombatSensitiveInteractionEx(npc, hero, onInterrupt, true)
+    endfunction
+
     private function Init takes nothing returns nothing
         set DialogInteraction_SelectHandlers = Table.create()
         set DialogInteraction_FirstGreetDone = Table.create()
         set DialogInteraction_SkipNextGreet = Table.create()
         set DialogInteraction_GreetOrder = Table.create()
         set DialogInteraction_DialogTransitionConfig = Table.create()
+        set DialogInteraction_CombatCheckTimer = CreateTimer()
+        set DialogInteraction_CombatAttackTrigger = CreateTrigger()
+        call TriggerRegisterAnyUnitEventBJ(DialogInteraction_CombatAttackTrigger, EVENT_PLAYER_UNIT_ATTACKED)
+        call TriggerAddAction(DialogInteraction_CombatAttackTrigger, function CombatGuardAttackAction)
     endfunction
 endlibrary
