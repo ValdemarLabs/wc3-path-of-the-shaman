@@ -19,6 +19,7 @@
 
 ### Player-Facing Updates
 
+- Restyled the crafting panel to match ShopUI, with a darker inset backdrop, clearer text hierarchy, larger recipe rows and icons, a framed profession line, and cleaner detail and action-button spacing.
 - Kribugs' dialogue now distinguishes the goblin Kribugs from his ogre carrier Mogsnort even though they share one composite unit, with situational Mogsnort interjections and the original ogre grunts, growls, hunger complaint, and fart laugh.
 - Expanded wyvern travel to Verdant Plains, Ashfang Outpost, and Sirensong, with all six flight points requiring player discovery and Verdant Plains also supporting a quest/event unlock.
 - Added gradual takeoff and landing height transitions for wyvern and bat travel, plus physical zeppelin travel for AI heroes that treats every flight point as discovered.
@@ -28,6 +29,7 @@
 
 ### Technical Updates
 
+- Updated `UI/CraftingUI.j` with the ShopUI panel proportions, seven-row recipe list, detail-info backdrop, and pane-local crafting controls.
 - Updated `Voicelines/Voicelines_Kribugs.j` and `QuestsAndDialogs/QuestGivers/qKribugs.j` with separate `Mogsnort_XXXX` voicelines, labeled legacy ogre Sound Editor cues, registered speaker folders, and shared-unit cinematic speaker routing.
 - Updated `Travel/TravelSystem.j`, `TravelWyvern.j`, `TravelAI.j`, `TravelShipA.j`, and `TravelShipB.j` with the six wind-rider masters, six shipmasters, flight-height transitions, AI zeppelin carriers, direction-aware scheduled routes, and complete local PatrolSystem paths.
 - Updated `Travel/README.md` with the active master mapping, Ship A waypoint loop, default fares, quest discovery API, passenger models, and AI discovery policy.
