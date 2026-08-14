@@ -47,6 +47,7 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
         private constant real DIALOG_FADE_IN = 1.00
         private constant boolean ALLOW_NAZGREK = true
         private constant boolean ALLOW_ZULKIS = true
+        private constant boolean END_ON_COMBAT = true
         private constant boolean USE_DIALOG_CAMERA = true
         private constant boolean CINEMATIC = true
         private constant integer CINEMATIC_MOVE_MODE = 1
@@ -161,8 +162,33 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
     endfunction
 
     private function StartExitFadeOut takes nothing returns nothing
+        call DialogInteraction_EndCombatSensitiveInteraction()
         call ContinuePatrol()
         call DialogInteraction_StartConfiguredDialogExitTransition(Kribugs, SelectedHero, KribugsDialogCooldown, DIALOG_COOLDOWN, USE_DIALOG_CAMERA, CINEMATIC)
+    endfunction
+
+    private function InterruptDialog takes nothing returns nothing
+        local unit hero = SelectedHero
+
+        call DialogInteraction_EndCombatSensitiveInteraction()
+        call DialogSystem_CancelActiveSpeech()
+        call DialogSystem_ClearEscapeAction()
+        call DialogSystem_HideDialog(KribugsDialog, Player(0))
+        call GambleUI_Hide()
+        call DialogSystem_StopDialogCamera(Player(0), 0.75, USE_DIALOG_CAMERA)
+        call TriggerExecute(gg_trg_Cinematic_OFF)
+        call DialogInteraction_EndCinematicSequence(CINEMATIC)
+        set KribugsDialogCooldown = DialogInteraction_StartCooldown(KribugsDialogCooldown, DIALOG_COOLDOWN)
+        call ContinuePatrol()
+        if hero != null and DialogInteraction_IsUnitAlive(hero) then
+            call ShowUnit(hero, true)
+            call PauseUnit(hero, false)
+            call SelectUnitForPlayerSingle(hero, Player(0))
+        endif
+        set PendingQuestName = ""
+        set PendingQuestCompletion = false
+        set SelectedHero = null
+        set hero = null
     endfunction
 
     private function HasAnyMeat takes nothing returns boolean
@@ -548,7 +574,7 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
         call VendorLines_PlayTradeLine(Kribugs)
         call ShowUnit(hero, true)
         set KribugsDialogCooldown = DialogInteraction_StartCooldown(KribugsDialogCooldown, DIALOG_COOLDOWN)
-        call ShopUI_ShowForVendorWithReturn(Kribugs, hero)
+        call ShopUI_ShowForVendorWithReturnAndInterrupt(Kribugs, hero, END_ON_COMBAT, function InterruptDialog)
         set hero = null
     endfunction
 
@@ -686,8 +712,12 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
     private function OnSelected takes nothing returns nothing
         call SyncUnitReferences()
         set SelectedHero = DialogInteraction_GetDialogSelectionHero(Kribugs, DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
-        if not DialogInteraction_PassDialogSelectionGate(Kribugs, SelectedHero, DIALOG_RANGE, KribugsDialogCooldown, true, true, true, true, false, false) then
+        if not DialogInteraction_PassDialogSelectionGate(Kribugs, SelectedHero, DIALOG_RANGE, KribugsDialogCooldown, true, true, true, true, false, true) then
             call DebugMsg("Selection blocked: " + DialogInteraction_GetLastSelectionBlockReason())
+            set SelectedHero = null
+            return
+        endif
+        if not DialogInteraction_BeginCombatSensitiveInteractionEx(Kribugs, SelectedHero, function InterruptDialog, END_ON_COMBAT) then
             set SelectedHero = null
             return
         endif
@@ -704,6 +734,12 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
             return false
         endif
         set SelectedHero = hero
+        if not DialogInteraction_BeginCombatSensitiveInteractionEx(vendor, hero, function InterruptDialog, END_ON_COMBAT) then
+            set SelectedHero = null
+            set vendor = null
+            set hero = null
+            return false
+        endif
         call PauseUnit(hero, true)
         call BuildDialog()
         call DialogSystem_SetContext(vendor, GetOwningPlayer(hero))
