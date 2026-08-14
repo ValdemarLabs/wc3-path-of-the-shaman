@@ -35,7 +35,7 @@ globals
     constant string VL_KRIBUGS_0004_KEY = "Kribugs_0004"
     constant string VL_KRIBUGS_0004_TEXT = "Step right up! Don't mind the smell, that's just him."
     constant string VL_KRIBUGS_0005_KEY = "Kribugs_0005"
-    constant string VL_KRIBUGS_0005_TEXT = "Shiny coin for shiny goods, eh? Kribugs likes you already."
+    constant string VL_KRIBUGS_0005_TEXT = "Shiny coin for shiny goods, eh?"
     constant string VL_KRIBUGS_0006_KEY = "Kribugs_0006"
     constant string VL_KRIBUGS_0006_TEXT = "You want to trade?"
 
@@ -49,7 +49,7 @@ globals
 
     // Excel draft: Kribugs | Event: Random talk
     constant string VL_KRIBUGS_0010_KEY = "Kribugs_0010"
-    constant string VL_KRIBUGS_0010_TEXT = "No, Ogre, you can't eat the customer!"
+    constant string VL_KRIBUGS_0010_TEXT = "Ogre, you can't eat the customer! Ogre: But he look like meat??"
     constant string VL_KRIBUGS_0011_KEY = "Kribugs_0011"
     constant string VL_KRIBUGS_0011_TEXT = "Hey, hey-stop drooling on the merchandise!"
     constant string VL_KRIBUGS_0012_KEY = "Kribugs_0012"
