@@ -19,9 +19,12 @@
 
 ### Player-Facing Updates
 
+- Updated `QuestsAndDialogs/QuestGivers/qOutcastJinzun.j` so Jin'Zun's quests have no hidden hero-level requirement; their displayed levels remain recommendations and the quest chain still follows its prerequisite order.
 - Added configurable wyvern, zeppelin, neutral-ship, and orcish-ship travel with a ShopUI-styled destination/passenger panel, fullscreen vehicle camera, paid ESC skipping, ship stop drop-out prompts, party fare accounting, and physical AI wyvern journeys.
 - Wyvern and zeppelin routes now require both endpoint travel masters to be discovered before use; ship routes can remain available without endpoint discovery.
 - Travel now fades before changing units or camera mode, uses a closer adjustable vehicle camera, shows working ESC confirmation dialogs, and keeps the MasterUI Game button hidden when configured.
+- Added Sirensong as a discoverable wyvern station through `WindRiderMaster[6]`, with directed connections to all three legacy Horde stations.
+- Vendors now refuse conversations while either participant is in combat, and vendor dialogue, trade UI, camera transitions, and active voicelines end immediately when the hero or vendor attacks, is attacked, dies, or enters combat.
 
 ### Technical Updates
 
@@ -33,12 +36,16 @@
 - Updated `Travel/TravelSystem.j`, `TravelWyvern.j`, and `TravelShipB.j` so only the master travel library accesses World Editor `udg_*` bindings; method libraries now use semantic getters and named master-index constants.
 - Updated `Travel/TravelZeppelin.j` to bind the Sereneglade and Sirensong flightmasters, endpoint regions, and their Zeppelin A/B outbound vehicles automatically through `TravelSystem`.
 - Updated `Travel/TravelSystem.j`, `UI/CameraControl.j`, and `UI/MasterUI.j` with fade-staged travel presentation, a 750-distance/80-FOV adjustable camera preset, configurable Game-button hiding, visible native travel prompts, Player(5) invulnerable flight vehicles, shared-master-safe selection handling, and overhead green marks for all configured GUI travel masters.
+- Updated `UI/CameraControl.j`, `Travel/TravelUI.j`, and `UI/CraftingUI.j` so suspended travel cameras start their interactive keyboard state correctly, while travel and crafting buttons release frame keyboard focus and the crafting panel restores normal camera mode.
+- Updated `QuestsAndDialogs/DialogInteraction.j` and `DialogSystem.j` with a reusable, default-on combat-sensitive interaction guard, optional per-call opt-out, cancellable transitions, and immediate sequence, field-line, transmission, and ExSound cleanup.
+- Updated `Vendors/VendorDialogs.j`, `UI/ShopUI.j`, and Kribugs' custom qXXX dialogue to transfer the guarded vendor/hero context between dialogue and trade UI instead of maintaining separate partial attack listeners.
 
 ### Actions Remaining
 
 - Bind the missing Ship A and future wyvern Object Editor masters, vehicles, boarding areas, arrival points, waypoints, and fares through their registration APIs.
 - Supply the Nazgrek and Zul'kis model paths for Ship B deck-effect proxies, then tune their exposed offsets in-map.
 - Import the travel libraries after their dependencies, disable the replaced legacy travel dialogs and detached patrol initialization triggers, and run focused plus full-map JassHelper and multiplayer tests.
+- Full-map test vendor entry, greeting, quest dialogue, ShopUI, and Kribugs' custom trade/deal UI while either participant attacks, is attacked, dies, or enters combat; also verify an explicit `endOnCombat = false` test interaction remains open.
 
 ## [13.8.2026]
 
