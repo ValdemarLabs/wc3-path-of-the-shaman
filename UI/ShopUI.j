@@ -20,14 +20,19 @@
     API:
     - call ShopUI_ShowForVendor(vendor, buyer)
     - call ShopUI_ShowForVendorWithReturn(vendor, buyer)
+    - call ShopUI_ShowForVendorEx(vendor, buyer, endOnCombat)
+    - call ShopUI_ShowForVendorWithReturnEx(vendor, buyer, endOnCombat)
+    - call ShopUI_ShowForVendorWithReturnAndInterrupt(vendor, buyer, endOnCombat, onInterrupt)
     - call ShopUI_RegisterReturnHandler(callback)
     - set vendor = ShopUI_GetVendorUnit()
     - set buyer = ShopUI_GetBuyerUnit()
     - call ShopUI_Hide()
     - call ShopUI_Refresh()
+    - Vendor trade sessions reject combat and end immediately when either
+      participant attacks, is attacked, dies, or enters combat.
 
 **/
-library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCamera, MasterUI, Interface, DialogInteraction, DialogSystem, optional Events, optional UnitDeathEvent
+library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCamera, MasterUI, Interface, DialogInteraction, DialogSystem
     globals
         private constant integer SUI_MAX_ROWS = 10
         private constant integer SUI_VISIBLE_ROWS = 7
@@ -39,6 +44,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         private constant real SUI_CAMERA_CHANGE_MAX_INTERVAL = 26.00
         private constant boolean SUI_USE_DIALOG_CAMERA = true
         private constant boolean SUI_CINEMATIC = true
+        private constant boolean SUI_END_ON_COMBAT = true
 
         private boolean SUI_Initialized = false
         private boolean SUI_SyncingListScroll = false
@@ -118,9 +124,8 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         private trigger SUI_WheelTrigger = null
         private trigger SUI_ClearFocusTrigger = null
         private trigger SUI_EscapeTrigger = null
-        private trigger SUI_AttackTrigger = null
-        private trigger SUI_DeathTrigger = null
         private trigger SUI_ReturnTrigger = null
+        private trigger SUI_ExternalInterruptHandler = null
         private timer SUI_RefreshTimer = null
 
         private string SUI_PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
@@ -137,6 +142,13 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
 
     private function SUI_IsVisible takes nothing returns boolean
         return SUI_Parent != null and BlzFrameIsVisible(SUI_Parent)
+    endfunction
+
+    private function SUI_ClearExternalInterruptHandler takes nothing returns nothing
+        if SUI_ExternalInterruptHandler != null then
+            call DestroyTrigger(SUI_ExternalInterruptHandler)
+            set SUI_ExternalInterruptHandler = null
+        endif
     endfunction
 
     private function SUI_IsRecentCategory takes nothing returns boolean
@@ -599,6 +611,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
             return
         endif
 
+        call DialogInteraction_EndCombatSensitiveInteraction()
         set SUI_TradeSessionOpen = false
         if playOutcome and vendor != null and DialogInteraction_IsUnitAlive(vendor) then
             call VendorLines_PlayTradeOutcome(vendor, Shop_GetSessionBoughtTransactionCount(), Shop_GetSessionSoldTransactionCount())
@@ -639,6 +652,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         set SUI_ListScrollValue = 0
         set SUI_SelectedCategory = Shop_GetAllCategoryName()
         set SUI_RandomVendorLineRemaining = 0.00
+        call SUI_ClearExternalInterruptHandler()
     endfunction
 
     public function Hide takes nothing returns nothing
@@ -664,48 +678,21 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
 
     private function SUI_InterruptTrade takes nothing returns nothing
         local player p = SUI_GetActivePlayer()
+        local trigger interruptHandler = SUI_ExternalInterruptHandler
 
         if SUI_IsVisible() then
+            set SUI_ExternalInterruptHandler = null
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, p)
             call DisplayTextToPlayer(p, 0.00, 0.00, "|cffff8080Trade interrupted.|r")
             call SUI_HideInternal(false, false)
+            if interruptHandler != null then
+                call TriggerExecute(interruptHandler)
+                call DestroyTrigger(interruptHandler)
+            endif
         endif
 
         set p = null
-    endfunction
-
-    private function SUI_AttackInterruptAction takes nothing returns nothing
-        local unit target = null
-
-        static if LIBRARY_Events then
-            set target = Events_GetTriggerUnit()
-        else
-            set target = GetTriggerUnit()
-        endif
-
-        if target != null and (target == SUI_VendorUnit or target == SUI_BuyerUnit) then
-            call SUI_InterruptTrade()
-        endif
-
-        set target = null
-    endfunction
-
-    private function SUI_GetDeathUnit takes nothing returns unit
-        static if LIBRARY_UnitDeathEvent then
-            return UnitDeathEvent_GetDyingUnit()
-        else
-            return GetDyingUnit()
-        endif
-    endfunction
-
-    private function SUI_DeathInterruptAction takes nothing returns nothing
-        local unit target = SUI_GetDeathUnit()
-
-        if target != null and (target == SUI_VendorUnit or target == SUI_BuyerUnit) then
-            call SUI_InterruptTrade()
-        endif
-
-        set target = null
+        set interruptHandler = null
     endfunction
 
     private function SUI_ModeAction takes nothing returns nothing
@@ -1063,7 +1050,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         return (Atan2(dy, dx) * bj_RADTODEG + 180.00) - GetUnitFacing(vendor)
     endfunction
 
-    private function SUI_ShowForVendor takes unit vendor, unit buyer, boolean returnToDialog returns nothing
+    private function SUI_ShowForVendor takes unit vendor, unit buyer, boolean returnToDialog, boolean endOnCombat, code onInterrupt returns nothing
         local player p
 
         if vendor == null or buyer == null then
@@ -1090,6 +1077,19 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
 
         if SUI_IsVisible() then
             call SUI_HideInternal(false, false)
+        endif
+        if not DialogInteraction_BeginCombatSensitiveInteractionEx(vendor, buyer, function SUI_InterruptTrade, endOnCombat) then
+            call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, GetOwningPlayer(buyer))
+            call DisplayTextToPlayer(GetOwningPlayer(buyer), 0.00, 0.00, "|cffff8080You cannot trade while either participant is in combat.|r")
+            set SUI_VendorId = 0
+            set vendor = null
+            set buyer = null
+            return
+        endif
+        call SUI_ClearExternalInterruptHandler()
+        if onInterrupt != null then
+            set SUI_ExternalInterruptHandler = CreateTrigger()
+            call TriggerAddAction(SUI_ExternalInterruptHandler, onInterrupt)
         endif
 
         set SUI_VendorUnit = vendor
@@ -1121,11 +1121,23 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
     endfunction
 
     public function ShowForVendor takes unit vendor, unit buyer returns nothing
-        call SUI_ShowForVendor(vendor, buyer, false)
+        call SUI_ShowForVendor(vendor, buyer, false, SUI_END_ON_COMBAT, null)
     endfunction
 
     public function ShowForVendorWithReturn takes unit vendor, unit buyer returns nothing
-        call SUI_ShowForVendor(vendor, buyer, true)
+        call SUI_ShowForVendor(vendor, buyer, true, SUI_END_ON_COMBAT, null)
+    endfunction
+
+    public function ShowForVendorEx takes unit vendor, unit buyer, boolean endOnCombat returns nothing
+        call SUI_ShowForVendor(vendor, buyer, false, endOnCombat, null)
+    endfunction
+
+    public function ShowForVendorWithReturnEx takes unit vendor, unit buyer, boolean endOnCombat returns nothing
+        call SUI_ShowForVendor(vendor, buyer, true, endOnCombat, null)
+    endfunction
+
+    public function ShowForVendorWithReturnAndInterrupt takes unit vendor, unit buyer, boolean endOnCombat, code onInterrupt returns nothing
+        call SUI_ShowForVendor(vendor, buyer, true, endOnCombat, onInterrupt)
     endfunction
 
     public function RegisterReturnHandler takes code callback returns nothing
@@ -1200,22 +1212,6 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call BlzTriggerRegisterPlayerKeyEvent(SUI_EscapeTrigger, Player(0), OSKEY_ESCAPE, 0, true)
         call TriggerRegisterPlayerEvent(SUI_EscapeTrigger, Player(0), EVENT_PLAYER_END_CINEMATIC)
         call TriggerAddAction(SUI_EscapeTrigger, function SUI_EscapeAction)
-
-        static if LIBRARY_Events then
-            call Events_RegisterUnitAttacked(function SUI_AttackInterruptAction)
-        else
-            set SUI_AttackTrigger = CreateTrigger()
-            call TriggerRegisterAnyUnitEventBJ(SUI_AttackTrigger, EVENT_PLAYER_UNIT_ATTACKED)
-            call TriggerAddAction(SUI_AttackTrigger, function SUI_AttackInterruptAction)
-        endif
-
-        static if LIBRARY_UnitDeathEvent then
-            call UnitDeathEvent_Register(function SUI_DeathInterruptAction)
-        else
-            set SUI_DeathTrigger = CreateTrigger()
-            call TriggerRegisterAnyUnitEventBJ(SUI_DeathTrigger, EVENT_PLAYER_UNIT_DEATH)
-            call TriggerAddAction(SUI_DeathTrigger, function SUI_DeathInterruptAction)
-        endif
 
         call SUI_CreateFrames()
     endfunction
