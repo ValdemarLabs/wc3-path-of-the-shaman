@@ -5,7 +5,7 @@
     Version:
 
     Description:
-    Physical wyvern-travel provider for autonomous AI heroes. AI heroes walk
+    Physical wyvern and zeppelin travel provider for autonomous AI heroes. AI heroes walk
     to a nearby configured flight master, hide during the flight, follow the
     route waypoints on a visible carrier, and return at the destination.
 
@@ -33,6 +33,10 @@ library TravelAI initializer Init requires AI, TravelSystem, TravelWyvern
         private constant real TAI_ARRIVAL_RANGE = 110.00
         private constant real TAI_FLY_HEIGHT = 500.00
         private constant real TAI_MOVE_SPEED = 400.00
+        private constant real TAI_ASCENT_RATE = 50.00
+        private constant real TAI_DESCENT_RATE = 50.00
+        private constant real TAI_DESCENT_RANGE = 800.00
+        private constant real TAI_LANDED_HEIGHT = 20.00
 
         private unit array TAI_Hero
         private unit array TAI_Carrier
@@ -40,6 +44,7 @@ library TravelAI initializer Init requires AI, TravelSystem, TravelWyvern
         private integer array TAI_Waypoint
         private integer array TAI_State
         private real array TAI_Elapsed
+        private boolean array TAI_Descending
         private timer TAI_UpdateTimer = null
     endglobals
 
@@ -63,6 +68,7 @@ library TravelAI initializer Init requires AI, TravelSystem, TravelWyvern
         set TAI_Waypoint[session] = 0
         set TAI_State[session] = 0
         set TAI_Elapsed[session] = 0.00
+        set TAI_Descending[session] = false
     endfunction
 
     private function TAI_GetTargetX takes integer session returns real
@@ -119,17 +125,34 @@ library TravelAI initializer Init requires AI, TravelSystem, TravelWyvern
     private function TAI_BeginFlight takes integer session returns nothing
         local unit hero = TAI_Hero[session]
         local integer routeId = TAI_Route[session]
+        local integer carrierType = TAI_CARRIER_TYPE
         local unit carrier
+        local unit routeVehicle
 
         if hero == null or not AI_BeginExternalTravel(hero) then
             call TAI_CancelApproach(session)
+            set routeVehicle = null
             set carrier = null
             set hero = null
             return
         endif
-        set carrier = CreateUnit(GetOwningPlayer(hero), TAI_CARRIER_TYPE, GetUnitX(hero), GetUnitY(hero), 0.00)
+        if TravelSystem_GetRouteMethod(routeId) == TRAVEL_METHOD_ZEPPELIN then
+            set routeVehicle = TravelSystem_GetRouteVehicle(routeId)
+            if routeVehicle != null then
+                set carrierType = GetUnitTypeId(routeVehicle)
+            endif
+        endif
+        if carrierType == 0 then
+            call TAI_CancelApproach(session)
+            set routeVehicle = null
+            set carrier = null
+            set hero = null
+            return
+        endif
+        set carrier = CreateUnit(GetOwningPlayer(hero), carrierType, GetUnitX(hero), GetUnitY(hero), 0.00)
         if carrier == null then
             call TAI_CancelApproach(session)
+            set routeVehicle = null
             set carrier = null
             set hero = null
             return
@@ -137,7 +160,12 @@ library TravelAI initializer Init requires AI, TravelSystem, TravelWyvern
         call UnitAddAbility(carrier, 'Aloc')
         call SetUnitPathing(carrier, false)
         call SetUnitInvulnerable(carrier, true)
-        call SetUnitFlyHeight(carrier, TAI_FLY_HEIGHT, 0.00)
+        if TravelSystem_GetRouteMethod(routeId) == TRAVEL_METHOD_WYVERN then
+            call SetUnitFlyHeight(carrier, 0.00, 0.00)
+            call SetUnitFlyHeight(carrier, TAI_FLY_HEIGHT, TAI_ASCENT_RATE)
+        else
+            call SetUnitFlyHeight(carrier, TAI_FLY_HEIGHT, 0.00)
+        endif
         call SetUnitMoveSpeed(carrier, TAI_MOVE_SPEED)
         call IssueImmediateOrder(hero, "stop")
         call PauseUnit(hero, true)
@@ -147,6 +175,7 @@ library TravelAI initializer Init requires AI, TravelSystem, TravelWyvern
         set TAI_Elapsed[session] = 0.00
         set TAI_Waypoint[session] = 1
         call TAI_IssueMove(session)
+        set routeVehicle = null
         set carrier = null
         set hero = null
     endfunction
@@ -192,6 +221,7 @@ library TravelAI initializer Init requires AI, TravelSystem, TravelWyvern
         local real targetY
         local real dx
         local real dy
+        local boolean finalWaypoint
 
         if carrier == null or GetUnitTypeId(carrier) == 0 then
             call TAI_EndAt(session, TravelSystem_GetStopX(TravelSystem_GetRouteEnd(routeId)), TravelSystem_GetStopY(TravelSystem_GetRouteEnd(routeId)))
@@ -202,9 +232,16 @@ library TravelAI initializer Init requires AI, TravelSystem, TravelWyvern
         set targetY = TAI_GetTargetY(session)
         set dx = GetUnitX(carrier) - targetX
         set dy = GetUnitY(carrier) - targetY
+        set finalWaypoint = TravelSystem_GetRouteWaypointCount(routeId) <= 0 or TAI_Waypoint[session] >= TravelSystem_GetRouteWaypointCount(routeId)
+        if finalWaypoint and TravelSystem_GetRouteMethod(routeId) == TRAVEL_METHOD_WYVERN and not TAI_Descending[session] and dx * dx + dy * dy <= TAI_DESCENT_RANGE * TAI_DESCENT_RANGE then
+            set TAI_Descending[session] = true
+            call SetUnitFlyHeight(carrier, 0.00, TAI_DESCENT_RATE)
+        endif
         if dx * dx + dy * dy <= TAI_ARRIVAL_RANGE * TAI_ARRIVAL_RANGE then
-            if TravelSystem_GetRouteWaypointCount(routeId) <= 0 or TAI_Waypoint[session] >= TravelSystem_GetRouteWaypointCount(routeId) then
-                call TAI_EndAt(session, TravelSystem_GetStopX(TravelSystem_GetRouteEnd(routeId)), TravelSystem_GetStopY(TravelSystem_GetRouteEnd(routeId)))
+            if finalWaypoint then
+                if not TAI_Descending[session] or GetUnitFlyHeight(carrier) <= TAI_LANDED_HEIGHT then
+                    call TAI_EndAt(session, TravelSystem_GetStopX(TravelSystem_GetRouteEnd(routeId)), TravelSystem_GetStopY(TravelSystem_GetRouteEnd(routeId)))
+                endif
             else
                 set TAI_Waypoint[session] = TAI_Waypoint[session] + 1
                 call TAI_IssueMove(session)
@@ -245,7 +282,8 @@ library TravelAI initializer Init requires AI, TravelSystem, TravelWyvern
 
         loop
             exitwhen routeId > TravelSystem_GetRouteCount()
-            if TravelSystem_IsRouteEnabled(routeId) and TravelSystem_GetRouteMethod(routeId) == TRAVEL_METHOD_WYVERN then
+            // AI intentionally ignores player discovery and sees every flight point.
+            if TravelSystem_IsRouteEnabled(routeId) and (TravelSystem_GetRouteMethod(routeId) == TRAVEL_METHOD_WYVERN or TravelSystem_GetRouteMethod(routeId) == TRAVEL_METHOD_ZEPPELIN) then
                 set startStop = TravelSystem_GetRouteStart(routeId)
                 set endStop = TravelSystem_GetRouteEnd(routeId)
                 set startMaster = TravelSystem_GetStopMaster(startStop)

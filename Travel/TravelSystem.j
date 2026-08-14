@@ -22,19 +22,20 @@
     - udg_WindRiderMaster[1] = Horde Scout Base, unit 0025 (active).
     - udg_WindRiderMaster[2] = Horde Lumber Mill, unit 0208 (active).
     - udg_WindRiderMaster[3] = Horde Gold Mine, unit 0427 (active).
-    - udg_WindRiderMaster[4] = Ursa, unit 2424 (route not configured).
-    - udg_WindRiderMaster[5] = Wind Rider Master 1978 (route not configured).
+    - udg_WindRiderMaster[4] = Verdant Plains neutral master, Ursa 2424 (active).
+    - udg_WindRiderMaster[5] = Ashfang Outpost master, unit 1978 (active).
     - udg_WindRiderMaster[6] = Sirensong Wind Rider Master 1239 (active).
     - udg_FlightMaster[1] = Sereneglade Flightmaster 2617 (active).
     - udg_FlightMaster[2] = Sirensong Shipmaster 0613 (active).
     - udg_Shipmaster[1] = Mok'natha Shipmaster 0996 (active).
-    - udg_Shipmaster[2] = Shipmaster 2230 (route not configured).
-    - udg_Shipmaster[3] = Shipmaster 2228 (route not configured).
-    - udg_Shipmaster[4] = Shipmaster 2229 (route not configured).
-    - udg_Shipmaster[5] = Shipmaster 0613 (route not configured; also FlightMaster[2]).
+    - udg_Shipmaster[2] = Sirensong shipmaster 2230 (Ship A).
+    - udg_Shipmaster[3] = Ironspine shipmaster 2228 (Ship B).
+    - udg_Shipmaster[4] = Stormhaven shipmaster 2229 (Ship A).
+    - udg_Shipmaster[5] = Dawnhold shipmaster (Ship A).
+    - udg_Shipmaster[6] = Frontbase shipmaster (Ship B).
 
     Travel vehicles:
-    - udg_TravelShipA = Transport Ship 0923 (route not configured).
+    - udg_TravelShipA = Transport Ship 0923 (active scheduled patrol).
     - udg_TravelShipB = Orc Frigate 0061 (active scheduled patrol).
     - udg_ZeppelinA = Zeppelin 2226 at Sereneglade (active outbound vehicle).
     - udg_ZeppelinB = Zeppelin 0922 at Sirensong (active outbound vehicle).
@@ -56,6 +57,7 @@
     - TravelSystem_GetRouteStartZoneId(...) / TravelSystem_GetRouteEndZoneId(...)
     - TravelSystem_AddWaypoint(...)
     - TravelSystem_SetRouteVehicle(...)
+    - TravelSystem_GetRouteVehicle(...)
     - TravelSystem_SetRouteFare(...)
     - TravelSystem_SetRouteSkipFee(...)
     - TravelSystem_SetRouteDiscoveryRequirements(...)
@@ -71,7 +73,7 @@
     - Set TRAVEL_HIDE_MASTER_UI_GAME_BUTTON to configure the travel Game button.
 
 **/
-library TravelSystem initializer Init requires Table, DialogInteraction, DialogSystem, IconQuery, FullscreenUI, MasterUI, CameraControl, FixedCameraLock, Companions, Pet, ZonesCore, ZoneEvent, PatrolSystem, ExSound, FallenHeroState
+library TravelSystem initializer Init requires Table, DialogInteraction, DialogSystem, IconQuery, RegionTitles, FullscreenUI, MasterUI, CameraControl, FixedCameraLock, Companions, Pet, ZonesCore, ZoneEvent, PatrolSystem, ExSound, FallenHeroState
     globals
         constant integer TRAVEL_METHOD_WYVERN = 1
         constant integer TRAVEL_METHOD_ZEPPELIN = 2
@@ -81,18 +83,19 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         constant integer TRAVEL_WINDRIDER_MASTER_HORDE_SCOUT_BASE = 1
         constant integer TRAVEL_WINDRIDER_MASTER_HORDE_LUMBER_MILL = 2
         constant integer TRAVEL_WINDRIDER_MASTER_HORDE_GOLD_MINE = 3
-        constant integer TRAVEL_WINDRIDER_MASTER_URSA = 4
-        constant integer TRAVEL_WINDRIDER_MASTER_1978 = 5
-        constant integer TRAVEL_WINDRIDER_MASTER_1239 = 6
+        constant integer TRAVEL_WINDRIDER_MASTER_VERDANT_PLAINS = 4
+        constant integer TRAVEL_WINDRIDER_MASTER_ASHFANG_OUTPOST = 5
+        constant integer TRAVEL_WINDRIDER_MASTER_SIRENSONG = 6
 
         constant integer TRAVEL_FLIGHT_MASTER_SERENEGLADE = 1
         constant integer TRAVEL_FLIGHT_MASTER_SIRENSONG = 2
 
         constant integer TRAVEL_SHIP_MASTER_MOKNATHA = 1
-        constant integer TRAVEL_SHIP_MASTER_2230 = 2
-        constant integer TRAVEL_SHIP_MASTER_2228 = 3
-        constant integer TRAVEL_SHIP_MASTER_2229 = 4
-        constant integer TRAVEL_SHIP_MASTER_0613 = 5
+        constant integer TRAVEL_SHIP_MASTER_SIRENSONG = 2
+        constant integer TRAVEL_SHIP_MASTER_IRONSPINE = 3
+        constant integer TRAVEL_SHIP_MASTER_STORMHAVEN = 4
+        constant integer TRAVEL_SHIP_MASTER_DAWNHOLD = 5
+        constant integer TRAVEL_SHIP_MASTER_FRONTBASE = 6
 
         constant integer TRAVEL_ZEPPELIN_SERENEGLADE = 1
         constant integer TRAVEL_ZEPPELIN_SIRENSONG = 2
@@ -120,7 +123,13 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         private constant real TS_CAMERA_ANGLE_FLIGHT = 330.00
         private constant real TS_CAMERA_ANGLE_SHIP = 335.00
         private constant real TS_FADE_DURATION = 0.50
+        private constant real TS_FLIGHT_ASCENT_RATE = 50.00
+        private constant real TS_FLIGHT_DESCENT_RATE = 50.00
+        private constant real TS_FLIGHT_DESCENT_RANGE = 800.00
+        private constant real TS_FLIGHT_LANDED_HEIGHT = 20.00
         private constant integer TS_SKIP_FEE_DEFAULT = 100
+        private constant string TS_DISCOVERED_PREFIX = "|cFF32CD32Discovered |n|r"
+        private constant string TS_DISCOVERED_NAME_COLOR = "|cFF32CD32"
         private constant string TS_MASTER_EFFECT_MODEL = "war3campImported\\ExcMark_Green_FlightPath.mdx"
         private constant string TS_FADE_TEXTURE = "ReplaceableTextures\\CameraMasks\\Black_mask.blp"
 
@@ -191,6 +200,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         private unit TS_ActiveCarrier = null
         private unit TS_ActiveCarrierB = null
         private boolean TS_ActiveCarrierTemporary = false
+        private boolean TS_ActiveDescending = false
         private effect array TS_PassengerEffect
         private real array TS_PassengerEffectFacingOffset
         private integer TS_PassengerEffectCount = 0
@@ -245,7 +255,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
     endfunction
 
     public function GetShipMaster takes integer index returns unit
-        if index < 1 or index > 5 then
+        if index < 1 or index > 6 then
             return null
         endif
         return udg_Shipmaster[index]
@@ -321,7 +331,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         endloop
         set index = 1
         loop
-            exitwhen index > 5
+            exitwhen index > 6
             call TS_RegisterMasterEffect(GetShipMaster(index))
             set index = index + 1
         endloop
@@ -558,6 +568,13 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         return 0
     endfunction
 
+    public function GetRouteVehicle takes integer routeId returns unit
+        if TS_IsValidRoute(routeId) then
+            return TS_RouteVehicle[routeId]
+        endif
+        return null
+    endfunction
+
     public function IsRouteEnabled takes integer routeId returns boolean
         return TS_IsValidRoute(routeId) and TS_RouteEnabled[routeId]
     endfunction
@@ -615,7 +632,10 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         endif
         call SetStopDiscovered(stopId, true)
         if showMessage then
-            call DisplayTextToPlayer(Player(0), 0.00, 0.00, "|cff80ff80Travel point discovered:|r " + TS_StopName[stopId])
+            call ShowRegionTitle(TS_DISCOVERED_PREFIX, TS_DISCOVERED_NAME_COLOR + TS_StopName[stopId] + "|r")
+            if gg_snd_Interface_ZoneDiscovered != null then
+                call StartSound(gg_snd_Interface_ZoneDiscovered)
+            endif
         endif
     endfunction
 
@@ -1236,6 +1256,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         set TS_ActiveCarrier = null
         set TS_ActiveCarrierB = null
         set TS_ActiveCarrierTemporary = false
+        set TS_ActiveDescending = false
     endfunction
 
     private function TS_HidePrompt takes boolean restoreFullscreen returns nothing
@@ -1476,6 +1497,8 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         local real targetY
         local real dx
         local real dy
+        local boolean finalWaypoint
+        local boolean landed
 
         if TS_RouteWaypointCount[TS_ActiveRoute] <= 0 or TS_ActiveWaypoint > TS_RouteWaypointCount[TS_ActiveRoute] then
             set targetX = TS_StopX[TS_RouteEnd[TS_ActiveRoute]]
@@ -1488,9 +1511,23 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         endif
         set dx = GetUnitX(TS_ActiveCarrier) - targetX
         set dy = GetUnitY(TS_ActiveCarrier) - targetY
+        set finalWaypoint = TS_RouteWaypointCount[TS_ActiveRoute] <= 0 or TS_ActiveWaypoint >= TS_RouteWaypointCount[TS_ActiveRoute]
+        if finalWaypoint and TS_RouteMethod[TS_ActiveRoute] == TRAVEL_METHOD_WYVERN and TS_ActiveCarrierTemporary and not TS_ActiveDescending and dx * dx + dy * dy <= TS_FLIGHT_DESCENT_RANGE * TS_FLIGHT_DESCENT_RANGE then
+            set TS_ActiveDescending = true
+            call SetUnitFlyHeight(TS_ActiveCarrier, 0.00, TS_FLIGHT_DESCENT_RATE)
+            if TS_ActiveCarrierB != null then
+                call SetUnitFlyHeight(TS_ActiveCarrierB, 0.00, TS_FLIGHT_DESCENT_RATE)
+            endif
+        endif
         if dx * dx + dy * dy <= TS_ARRIVAL_RANGE * TS_ARRIVAL_RANGE then
-            if TS_RouteWaypointCount[TS_ActiveRoute] <= 0 or TS_ActiveWaypoint >= TS_RouteWaypointCount[TS_ActiveRoute] then
-                call TS_FinishAtStop(TS_RouteEnd[TS_ActiveRoute], false, false)
+            if finalWaypoint then
+                set landed = not TS_ActiveDescending or GetUnitFlyHeight(TS_ActiveCarrier) <= TS_FLIGHT_LANDED_HEIGHT
+                if TS_ActiveCarrierB != null and GetUnitFlyHeight(TS_ActiveCarrierB) > TS_FLIGHT_LANDED_HEIGHT then
+                    set landed = false
+                endif
+                if landed then
+                    call TS_FinishAtStop(TS_RouteEnd[TS_ActiveRoute], false, false)
+                endif
             elseif TS_IsValidStop(waypointStop) and waypointStop != TS_RouteEnd[TS_ActiveRoute] then
                 set TS_LastSafeStop = waypointStop
                 set TS_ActiveWaypoint = TS_ActiveWaypoint + 1
@@ -1544,6 +1581,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         set TS_ActiveCarrier = TS_RouteVehicle[routeId]
         set TS_ActiveCarrierB = null
         set TS_ActiveCarrierTemporary = false
+        set TS_ActiveDescending = false
         if TS_ActiveCarrier != null then
             set carrier = null
             return GetUnitTypeId(TS_ActiveCarrier) != 0
@@ -1566,7 +1604,8 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
                 call UnitAddAbility(carrier, 'Aloc')
                 call SetUnitPathing(carrier, false)
                 call SetUnitInvulnerable(carrier, true)
-                call SetUnitFlyHeight(carrier, TS_RouteFlyHeight[routeId], 0.00)
+                call SetUnitFlyHeight(carrier, 0.00, 0.00)
+                call SetUnitFlyHeight(carrier, TS_RouteFlyHeight[routeId], TS_FLIGHT_ASCENT_RATE)
                 call SetUnitMoveSpeed(carrier, TS_RouteMoveSpeed[routeId])
                 set TS_ActiveCarrierTemporary = true
                 if heroIndex == 1 then
