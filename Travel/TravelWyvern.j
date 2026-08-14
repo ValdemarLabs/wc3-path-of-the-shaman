@@ -34,13 +34,10 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
         private constant integer TW_ZULKIS_CARRIER = 'o613'
         private constant real TW_FLY_HEIGHT = 500.00
         private constant real TW_MOVE_SPEED = 400.00
-        private constant string TW_MASTER_EFFECT = "war3campImported\\ExcMark_Green_FlightPath.mdx"
 
         private integer TW_ScoutBaseStop = 0
         private integer TW_LumberMillStop = 0
         private integer TW_GoldMineStop = 0
-        private effect TW_MasterEffect = null
-        private unit TW_MasterEffectUnit = null
         private timer TW_InitTimer = null
         private boolean TW_Initialized = false
     endglobals
@@ -99,26 +96,6 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
         endif
     endfunction
 
-    private function TW_OnEffectUpdate takes nothing returns nothing
-        local unit master = TW_GetMaster(TRAVEL_WINDRIDER_MASTER_HORDE_SCOUT_BASE)
-
-        if TW_MasterEffectUnit != master and TW_MasterEffect != null then
-            call DestroyEffect(TW_MasterEffect)
-            set TW_MasterEffect = null
-            set TW_MasterEffectUnit = null
-        endif
-        if master == null or GetUnitTypeId(master) == 0 then
-            if TW_MasterEffect != null then
-                call DestroyEffect(TW_MasterEffect)
-                set TW_MasterEffect = null
-            endif
-        elseif TW_MasterEffect == null then
-            set TW_MasterEffect = AddSpecialEffectTarget(TW_MASTER_EFFECT, master, "overhead")
-            set TW_MasterEffectUnit = master
-        endif
-        set master = null
-    endfunction
-
     private function TW_TryInitialize takes nothing returns nothing
         local unit scoutMaster
         local unit lumberMaster
@@ -160,10 +137,10 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
         call TW_CreateLegacyRoute(TW_GoldMineStop, TW_ScoutBaseStop, 0, gg_rct_FlyHere01)
         call TW_CreateLegacyRoute(TW_GoldMineStop, TW_LumberMillStop, TW_LEGACY_FARE, gg_rct_FlyHere02)
 
-        set TW_MasterEffect = AddSpecialEffectTarget(TW_MASTER_EFFECT, scoutMaster, "overhead")
-        set TW_MasterEffectUnit = scoutMaster
         set TW_Initialized = true
-        call TimerStart(TW_InitTimer, 1.00, true, function TW_OnEffectUpdate)
+        call PauseTimer(TW_InitTimer)
+        call DestroyTimer(TW_InitTimer)
+        set TW_InitTimer = null
         set scoutMaster = null
         set lumberMaster = null
         set goldMaster = null

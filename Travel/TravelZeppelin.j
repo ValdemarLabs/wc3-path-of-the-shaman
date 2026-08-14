@@ -5,7 +5,7 @@
     Version:
 
     Description:
-    Registers the single Sereneglade-Sirensong zeppelin shuttle from the shared
+    Registers the Sereneglade-Sirensong zeppelin service from the shared
     TravelSystem bindings and its two World Editor boarding areas.
 
     Credits:
@@ -13,11 +13,12 @@
 
     How to install:
     Import after TravelSystem and TravelUI. Assign FlightMaster[1..2] and
-    ZeppelinA in Init Travel Units, and keep ZeppelinSerenegladeArea and
+    ZeppelinA/ZeppelinB in Init Travel Units, and keep ZeppelinSerenegladeArea and
     ZeppelinSirensongArea in the Region Palette.
 
     API:
     - set success = TravelZeppelin_Bind(...)
+    - set success = TravelZeppelin_BindTwoWay(...)
     - set success = TravelZeppelin_BindShared()
     - TravelZeppelin_IsBound()
     - set stopId = TravelZeppelin_RegisterStation(...)
@@ -88,8 +89,8 @@ library TravelZeppelin initializer Init requires TravelSystem, TravelUI
         return TZ_Bound
     endfunction
 
-    public function Bind takes unit zeppelin, unit sirensongMaster, rect sirensongArea, real sirensongX, real sirensongY, unit serenegladeMaster, rect serenegladeArea, real serenegladeX, real serenegladeY, integer fareToSereneglade, integer fareToSirensong returns boolean
-        if TZ_Bound or zeppelin == null or sirensongMaster == null or sirensongArea == null or serenegladeMaster == null or serenegladeArea == null then
+    public function BindTwoWay takes unit serenegladeZeppelin, unit sirensongZeppelin, unit sirensongMaster, rect sirensongArea, real sirensongX, real sirensongY, unit serenegladeMaster, rect serenegladeArea, real serenegladeX, real serenegladeY, integer fareToSereneglade, integer fareToSirensong returns boolean
+        if TZ_Bound or serenegladeZeppelin == null or sirensongZeppelin == null or sirensongMaster == null or sirensongArea == null or serenegladeMaster == null or serenegladeArea == null then
             return false
         endif
         set TZ_SirensongStop = RegisterStation("Sirensong Forest", TZ_ZONE_SIRENSONG, sirensongMaster, sirensongArea, sirensongX, sirensongY)
@@ -97,8 +98,8 @@ library TravelZeppelin initializer Init requires TravelSystem, TravelUI
         if TZ_SirensongStop <= 0 or TZ_SerenegladeStop <= 0 then
             return false
         endif
-        set TZ_ToSerenegladeRoute = RegisterDirectedRoute(TZ_SirensongStop, TZ_SerenegladeStop, fareToSereneglade, zeppelin)
-        set TZ_ToSirensongRoute = RegisterDirectedRoute(TZ_SerenegladeStop, TZ_SirensongStop, fareToSirensong, zeppelin)
+        set TZ_ToSerenegladeRoute = RegisterDirectedRoute(TZ_SirensongStop, TZ_SerenegladeStop, fareToSereneglade, sirensongZeppelin)
+        set TZ_ToSirensongRoute = RegisterDirectedRoute(TZ_SerenegladeStop, TZ_SirensongStop, fareToSirensong, serenegladeZeppelin)
         if TZ_ToSerenegladeRoute <= 0 or TZ_ToSirensongRoute <= 0 then
             return false
         endif
@@ -108,13 +109,19 @@ library TravelZeppelin initializer Init requires TravelSystem, TravelUI
         return true
     endfunction
 
+    public function Bind takes unit zeppelin, unit sirensongMaster, rect sirensongArea, real sirensongX, real sirensongY, unit serenegladeMaster, rect serenegladeArea, real serenegladeX, real serenegladeY, integer fareToSereneglade, integer fareToSirensong returns boolean
+        return BindTwoWay(zeppelin, zeppelin, sirensongMaster, sirensongArea, sirensongX, sirensongY, serenegladeMaster, serenegladeArea, serenegladeX, serenegladeY, fareToSereneglade, fareToSirensong)
+    endfunction
+
     public function BindShared takes nothing returns boolean
-        local unit zeppelin = TravelSystem_GetZeppelin(TRAVEL_ZEPPELIN_SERENEGLADE)
+        local unit serenegladeZeppelin = TravelSystem_GetZeppelin(TRAVEL_ZEPPELIN_SERENEGLADE)
+        local unit sirensongZeppelin = TravelSystem_GetZeppelin(TRAVEL_ZEPPELIN_SIRENSONG)
         local unit sirensongMaster = TravelSystem_GetFlightMaster(TRAVEL_FLIGHT_MASTER_SIRENSONG)
         local unit serenegladeMaster = TravelSystem_GetFlightMaster(TRAVEL_FLIGHT_MASTER_SERENEGLADE)
-        local boolean success = Bind(zeppelin, sirensongMaster, gg_rct_ZeppelinSirensongArea, GetRectCenterX(gg_rct_ZeppelinSirensongArea), GetRectCenterY(gg_rct_ZeppelinSirensongArea), serenegladeMaster, gg_rct_ZeppelinSerenegladeArea, GetRectCenterX(gg_rct_ZeppelinSerenegladeArea), GetRectCenterY(gg_rct_ZeppelinSerenegladeArea), TZ_FARE_TO_SERENEGLADE, TZ_FARE_TO_SIRENSONG)
+        local boolean success = BindTwoWay(serenegladeZeppelin, sirensongZeppelin, sirensongMaster, gg_rct_ZeppelinSirensongArea, GetRectCenterX(gg_rct_ZeppelinSirensongArea), GetRectCenterY(gg_rct_ZeppelinSirensongArea), serenegladeMaster, gg_rct_ZeppelinSerenegladeArea, GetRectCenterX(gg_rct_ZeppelinSerenegladeArea), GetRectCenterY(gg_rct_ZeppelinSerenegladeArea), TZ_FARE_TO_SERENEGLADE, TZ_FARE_TO_SIRENSONG)
 
-        set zeppelin = null
+        set serenegladeZeppelin = null
+        set sirensongZeppelin = null
         set sirensongMaster = null
         set serenegladeMaster = null
         return success
@@ -127,19 +134,21 @@ library TravelZeppelin initializer Init requires TravelSystem, TravelUI
     endfunction
 
     private function TZ_TryInitialize takes nothing returns nothing
-        local unit zeppelin = TravelSystem_GetZeppelin(TRAVEL_ZEPPELIN_SERENEGLADE)
+        local unit serenegladeZeppelin = TravelSystem_GetZeppelin(TRAVEL_ZEPPELIN_SERENEGLADE)
+        local unit sirensongZeppelin = TravelSystem_GetZeppelin(TRAVEL_ZEPPELIN_SIRENSONG)
         local unit serenegladeMaster = TravelSystem_GetFlightMaster(TRAVEL_FLIGHT_MASTER_SERENEGLADE)
         local unit sirensongMaster = TravelSystem_GetFlightMaster(TRAVEL_FLIGHT_MASTER_SIRENSONG)
 
         if TZ_Bound then
             call TZ_StopInitTimer()
-        elseif zeppelin == null or serenegladeMaster == null or sirensongMaster == null then
+        elseif serenegladeZeppelin == null or sirensongZeppelin == null or serenegladeMaster == null or sirensongMaster == null then
             call TimerStart(TZ_InitTimer, 1.00, false, function TZ_TryInitialize)
         else
             call BindShared()
             call TZ_StopInitTimer()
         endif
-        set zeppelin = null
+        set serenegladeZeppelin = null
+        set sirensongZeppelin = null
         set serenegladeMaster = null
         set sirensongMaster = null
     endfunction

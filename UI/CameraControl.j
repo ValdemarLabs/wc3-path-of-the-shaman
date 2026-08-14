@@ -17,6 +17,7 @@
     call CameraControl_GetStoredTargetUnit(whichPlayer) returns unit
     call CameraControl_Suspend(whichPlayer)
     call CameraControl_SuspendInteractive(whichPlayer, angle, rotation)
+    call CameraControl_SuspendInteractiveEx(whichPlayer, distance, farZ, fov, angle, rotation)
     call CameraControl_ResumeQuick(whichPlayer)
     call CameraControl_IsSuspended(whichPlayer) returns boolean
 
@@ -110,6 +111,9 @@ globals
     private real array CC_NormalTraceDistance
     private real array CC_SpecialAngle
     private real array CC_SpecialRotation
+    private real array CC_SuspendedDistance
+    private real array CC_SuspendedFarZ
+    private real array CC_SuspendedFov
     private integer array CC_NormalTraceTargetHandle
     private boolean array CC_NormalTraceEnabled
     private unit array CC_TargetUnit
@@ -561,6 +565,9 @@ endfunction
 
 private function CC_GetSpecialDistance takes integer pid returns real
     local integer specialMode = CC_GetResolvedSpecialMode(pid)
+    if CC_Suspended[pid] and CC_SuspendedKeyboardAdjustable[pid] then
+        return CC_SuspendedDistance[pid]
+    endif
     if specialMode != CAMERA_SPECIAL_MODE_NONE then
         return CC_SpecialModeDistanceConfig[specialMode]
     endif
@@ -569,6 +576,9 @@ endfunction
 
 private function CC_GetSpecialFarZ takes integer pid returns real
     local integer specialMode = CC_GetResolvedSpecialMode(pid)
+    if CC_Suspended[pid] and CC_SuspendedKeyboardAdjustable[pid] then
+        return CC_SuspendedFarZ[pid]
+    endif
     if specialMode != CAMERA_SPECIAL_MODE_NONE then
         return CC_SpecialModeFarZConfig[specialMode]
     endif
@@ -577,7 +587,9 @@ endfunction
 
 private function CC_GetSpecialAngle takes integer pid returns real
     local integer specialMode = CC_GetResolvedSpecialMode(pid)
-    if CC_IsSpecialModeKeyboardAdjustable(specialMode) then
+    if CC_Suspended[pid] and CC_SuspendedKeyboardAdjustable[pid] then
+        return CC_SpecialAngle[pid]
+    elseif CC_IsSpecialModeKeyboardAdjustable(specialMode) then
         return CC_SpecialAngle[pid]
     elseif specialMode != CAMERA_SPECIAL_MODE_NONE then
         return CC_SpecialModeAngleConfig[specialMode]
@@ -587,7 +599,9 @@ endfunction
 
 private function CC_GetSpecialRotation takes integer pid returns real
     local integer specialMode = CC_GetResolvedSpecialMode(pid)
-    if CC_IsSpecialModeKeyboardAdjustable(specialMode) then
+    if CC_Suspended[pid] and CC_SuspendedKeyboardAdjustable[pid] then
+        return CC_SpecialRotation[pid]
+    elseif CC_IsSpecialModeKeyboardAdjustable(specialMode) then
         return CC_SpecialRotation[pid]
     elseif specialMode != CAMERA_SPECIAL_MODE_NONE then
         return CC_SpecialModeRotationConfig[specialMode]
@@ -597,6 +611,9 @@ endfunction
 
 private function CC_GetSpecialFov takes integer pid returns real
     local integer specialMode = CC_GetResolvedSpecialMode(pid)
+    if CC_Suspended[pid] and CC_SuspendedKeyboardAdjustable[pid] then
+        return CC_SuspendedFov[pid]
+    endif
     if specialMode != CAMERA_SPECIAL_MODE_NONE then
         return CC_SpecialModeFovConfig[specialMode]
     endif
@@ -813,10 +830,7 @@ endfunction
 private function CC_ApplyKeyboardFields takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     if CC_Suspended[pid] and CC_SuspendedKeyboardAdjustable[pid] then
-        if GetLocalPlayer() == whichPlayer then
-            call SetCameraField(CAMERA_FIELD_ANGLE_OF_ATTACK, CC_SpecialAngle[pid], CAMERA_KEYBOARD_FIELD_DURATION)
-            call SetCameraField(CAMERA_FIELD_ROTATION, CC_SpecialRotation[pid], CAMERA_KEYBOARD_FIELD_DURATION)
-        endif
+        call CC_ApplySpecialFields(whichPlayer, CAMERA_KEYBOARD_FIELD_DURATION)
     elseif CC_IsResolvedSpecialModeKeyboardAdjustable(pid) then
         call CC_ApplySpecialFields(whichPlayer, CAMERA_KEYBOARD_FIELD_DURATION)
     else
@@ -1451,8 +1465,22 @@ public function SuspendInteractive takes player whichPlayer, real angle, real ro
 
     call Suspend(whichPlayer)
     set CC_SuspendedKeyboardAdjustable[pid] = true
+    set CC_SuspendedDistance[pid] = CC_Distance[pid]
+    set CC_SuspendedFarZ[pid] = CC_FarZ[pid]
+    set CC_SuspendedFov[pid] = CC_Fov[pid]
     set CC_SpecialAngle[pid] = CC_Clamp(angle, CAMERA_ANGLE_MIN, CAMERA_ANGLE_MAX)
     set CC_SpecialRotation[pid] = CC_NormalizeAngle(rotation)
+    call CC_ApplySpecialFields(whichPlayer, 0.00)
+endfunction
+
+public function SuspendInteractiveEx takes player whichPlayer, real distance, real farZ, real fov, real angle, real rotation returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+
+    call SuspendInteractive(whichPlayer, angle, rotation)
+    set CC_SuspendedDistance[pid] = CC_Clamp(distance, CAMERA_DISTANCE_MIN, CAMERA_DISTANCE_MAX)
+    set CC_SuspendedFarZ[pid] = CC_Clamp(farZ, CAMERA_FARZ_MIN, CAMERA_FARZ_MAX)
+    set CC_SuspendedFov[pid] = CC_Clamp(fov, CAMERA_FOV_MIN, CAMERA_FOV_MAX)
+    call CC_ApplySpecialFields(whichPlayer, 0.00)
 endfunction
 
 public function ResumeQuick takes player whichPlayer returns nothing
@@ -1742,6 +1770,9 @@ public function Init takes nothing returns nothing
         set CC_Fov[i] = CAMERA_DEFAULT_FOV
         set CC_SpecialAngle[i] = CAMERA_DEFAULT_ANGLE
         set CC_SpecialRotation[i] = CAMERA_DEFAULT_ROTATION
+        set CC_SuspendedDistance[i] = CAMERA_DEFAULT_DISTANCE
+        set CC_SuspendedFarZ[i] = CAMERA_DEFAULT_FARZ
+        set CC_SuspendedFov[i] = CAMERA_DEFAULT_FOV
         set CC_NormalEffectiveDistance[i] = CAMERA_DEFAULT_DISTANCE
         set CC_NormalEffectiveAngle[i] = CAMERA_DEFAULT_ANGLE
         set CC_NormalTraceEnabled[i] = false

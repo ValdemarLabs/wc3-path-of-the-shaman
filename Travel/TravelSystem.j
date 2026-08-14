@@ -36,8 +36,8 @@
     Travel vehicles:
     - udg_TravelShipA = Transport Ship 0923 (route not configured).
     - udg_TravelShipB = Orc Frigate 0061 (active scheduled patrol).
-    - udg_ZeppelinA = Zeppelin 2226 at Sereneglade (active shared shuttle).
-    - udg_ZeppelinB = Zeppelin 0922 at Sirensong (route not configured).
+    - udg_ZeppelinA = Zeppelin 2226 at Sereneglade (active outbound vehicle).
+    - udg_ZeppelinB = Zeppelin 0922 at Sirensong (active outbound vehicle).
 
     Shared passengers:
     - udg_Nazgrek and udg_Zulkis = selectable player heroes.
@@ -68,9 +68,10 @@
     - TravelSystem_GetShipMaster(...) / TravelSystem_GetZeppelin(...)
     - TravelSystem_GetTravelShipA() / TravelSystem_GetTravelShipB()
     - TravelSystem_GetNazgrek() / TravelSystem_GetZulkis()
+    - Set TRAVEL_HIDE_MASTER_UI_GAME_BUTTON to configure the travel Game button.
 
 **/
-library TravelSystem initializer Init requires Table, DialogInteraction, DialogSystem, IconQuery, FullscreenUI, CameraControl, FixedCameraLock, Companions, Pet, ZonesCore, ZoneEvent, PatrolSystem, ExSound, FallenHeroState
+library TravelSystem initializer Init requires Table, DialogInteraction, DialogSystem, IconQuery, FullscreenUI, MasterUI, CameraControl, FixedCameraLock, Companions, Pet, ZonesCore, ZoneEvent, PatrolSystem, ExSound, FallenHeroState
     globals
         constant integer TRAVEL_METHOD_WYVERN = 1
         constant integer TRAVEL_METHOD_ZEPPELIN = 2
@@ -96,11 +97,16 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         constant integer TRAVEL_ZEPPELIN_SERENEGLADE = 1
         constant integer TRAVEL_ZEPPELIN_SIRENSONG = 2
 
+        // Travel presentation configuration.
+        constant boolean TRAVEL_HIDE_MASTER_UI_GAME_BUTTON = true
+
         private constant integer TS_MAX_STOPS = 32
         private constant integer TS_MAX_ROUTES = 64
         private constant integer TS_MAX_WAYPOINTS = 32
         private constant integer TS_MAX_PASSENGERS = 12
         private constant integer TS_MAX_PROXY_MODELS = 8
+        private constant integer TS_MAX_MASTER_EFFECTS = 16
+        private constant integer TS_TRAVEL_UNIT_OWNER_ID = 5
         private constant real TS_DISCOVERY_RANGE = 600.00
         private constant real TS_DISCOVERY_PERIOD = 1.00
         private constant real TS_ARRIVAL_RANGE = 96.00
@@ -108,7 +114,15 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         private constant real TS_TRAVEL_TIMEOUT = 180.00
         private constant real TS_STOP_PROMPT_DURATION = 10.00
         private constant real TS_SECOND_CARRIER_OFFSET = 160.00
+        private constant real TS_CAMERA_DISTANCE = 750.00
+        private constant real TS_CAMERA_FAR_Z = 20000.00
+        private constant real TS_CAMERA_FOV = 80.00
+        private constant real TS_CAMERA_ANGLE_FLIGHT = 330.00
+        private constant real TS_CAMERA_ANGLE_SHIP = 335.00
+        private constant real TS_FADE_DURATION = 0.50
         private constant integer TS_SKIP_FEE_DEFAULT = 100
+        private constant string TS_MASTER_EFFECT_MODEL = "war3campImported\\ExcMark_Green_FlightPath.mdx"
+        private constant string TS_FADE_TEXTURE = "ReplaceableTextures\\CameraMasks\\Black_mask.blp"
 
         private integer TS_StopCount = 0
         private integer array TS_StopMethod
@@ -122,6 +136,10 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         private boolean array TS_StopDiscovered
         private boolean array TS_StopIconRegistered
         private minimapicon array TS_StopIcon
+
+        private integer TS_MasterEffectCount = 0
+        private unit array TS_MasterEffectUnit
+        private effect array TS_MasterEffect
 
         private integer TS_RouteCount = 0
         private integer array TS_RouteMethod
@@ -165,6 +183,8 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         private boolean array TS_PassengerWasInvulnerable
 
         private boolean TS_Active = false
+        private boolean TS_Starting = false
+        private boolean TS_Ending = false
         private integer TS_ActiveRoute = 0
         private integer TS_ActiveWaypoint = 0
         private real TS_ActiveElapsed = 0.00
@@ -175,6 +195,10 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         private real array TS_PassengerEffectFacingOffset
         private integer TS_PassengerEffectCount = 0
         private integer TS_LastSafeStop = 0
+        private integer TS_EndStop = 0
+        private boolean TS_EndResumeScheduled = false
+        private boolean TS_EndSkipCurrentWaypoint = false
+        private boolean TS_GameButtonWasVisible = false
 
         private unit TS_HeldVehicle = null
         private boolean TS_HeldUsesPatrol = false
@@ -196,6 +220,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         private timer TS_UpdateTimer = null
         private timer TS_DiscoveryTimer = null
         private timer TS_StopPromptTimer = null
+        private timer TS_TransitionTimer = null
         private location TS_TerrainLocation = null
     endglobals
 
@@ -257,6 +282,49 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
 
     public function GetShadowclaw takes nothing returns unit
         return udg_Shadowclaw
+    endfunction
+
+    private function TS_RegisterMasterEffect takes unit master returns nothing
+        local integer index = 1
+
+        if master == null or GetUnitTypeId(master) == 0 then
+            return
+        endif
+        loop
+            exitwhen index > TS_MasterEffectCount
+            if TS_MasterEffectUnit[index] == master then
+                return
+            endif
+            set index = index + 1
+        endloop
+        if TS_MasterEffectCount >= TS_MAX_MASTER_EFFECTS then
+            return
+        endif
+        set TS_MasterEffectCount = TS_MasterEffectCount + 1
+        set TS_MasterEffectUnit[TS_MasterEffectCount] = master
+        set TS_MasterEffect[TS_MasterEffectCount] = AddSpecialEffectTarget(TS_MASTER_EFFECT_MODEL, master, "overhead")
+    endfunction
+
+    private function TS_RegisterSharedMasterEffects takes nothing returns nothing
+        local integer index = 1
+
+        loop
+            exitwhen index > 6
+            call TS_RegisterMasterEffect(GetWindRiderMaster(index))
+            set index = index + 1
+        endloop
+        set index = 1
+        loop
+            exitwhen index > 2
+            call TS_RegisterMasterEffect(GetFlightMaster(index))
+            set index = index + 1
+        endloop
+        set index = 1
+        loop
+            exitwhen index > 5
+            call TS_RegisterMasterEffect(GetShipMaster(index))
+            set index = index + 1
+        endloop
     endfunction
 
     private function TS_IsValidRoute takes integer routeId returns boolean
@@ -620,8 +688,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         set TS_StopY[stopId] = dropY
         set TS_StopRequiresDiscovery[stopId] = requiresDiscovery
         if master != null then
-            call DialogInteraction_Register(master)
-            call DialogInteraction_RegisterSelectionHandler(master, function TS_OnMasterSelected)
+            call TS_RegisterMasterEffect(master)
         endif
         if not requiresDiscovery then
             call SetStopDiscovered(stopId, true)
@@ -709,6 +776,9 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
             set TS_RouteUsesPatrol[routeId] = usesPatrol
             if vehicle == null then
                 set TS_RouteAvailable[routeId] = false
+            elseif TS_RouteMethod[routeId] == TRAVEL_METHOD_WYVERN or TS_RouteMethod[routeId] == TRAVEL_METHOD_ZEPPELIN then
+                call SetUnitOwner(vehicle, Player(TS_TRAVEL_UNIT_OWNER_ID), true)
+                call SetUnitInvulnerable(vehicle, true)
             endif
         endif
     endfunction
@@ -1168,7 +1238,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         set TS_ActiveCarrierTemporary = false
     endfunction
 
-    private function TS_HidePrompt takes nothing returns nothing
+    private function TS_HidePrompt takes boolean restoreFullscreen returns nothing
         if TS_PromptVisible then
             call DialogSystem_HideDialog(TS_SkipDialog, Player(0))
         endif
@@ -1179,6 +1249,9 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         set TS_PromptVisible = false
         set TS_StopPromptVisible = false
         set TS_PromptStop = 0
+        if restoreFullscreen and TS_Active and not TS_Ending then
+            call FullscreenUI_SetEnabled(true)
+        endif
     endfunction
 
     private function TS_ResumeScheduledVehicle takes boolean skipCurrentWaypoint returns nothing
@@ -1192,34 +1265,68 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         call FCL_Release(Player(0))
         call CameraControl_ResumeQuick(Player(0))
         call FullscreenUI_SetEnabled(false)
+        if TRAVEL_HIDE_MASTER_UI_GAME_BUTTON and TS_GameButtonWasVisible then
+            call MasterUI_ShowGameButton()
+        endif
+        set TS_GameButtonWasVisible = false
         set udg_InCinematic = false
     endfunction
 
-    private function TS_FinishAtStop takes integer stopId, boolean resumeScheduled, boolean skipCurrentWaypoint returns nothing
-        local integer finishedRoute = TS_ActiveRoute
+    private function TS_CompleteFinish takes nothing returns nothing
+        local integer stopId = TS_EndStop
 
-        if not TS_Active or not TS_IsValidStop(stopId) then
+        if not TS_Active or not TS_Ending or not TS_IsValidStop(stopId) then
             return
         endif
-        call TS_HidePrompt()
-        call PauseTimer(TS_UpdateTimer)
         call TS_DestroyPassengerEffects()
         call TS_RestorePassengersAtStop(stopId)
-        if resumeScheduled then
-            call TS_ResumeScheduledVehicle(skipCurrentWaypoint)
+        if TS_EndResumeScheduled then
+            call TS_ResumeScheduledVehicle(TS_EndSkipCurrentWaypoint)
+        elseif TS_RouteMethod[TS_ActiveRoute] == TRAVEL_METHOD_ZEPPELIN and not TS_ActiveCarrierTemporary and TS_ActiveCarrier != null then
+            // Each endpoint owns an outbound zeppelin; reset it while the screen is black.
+            call SetUnitX(TS_ActiveCarrier, TS_StopX[TS_RouteStart[TS_ActiveRoute]])
+            call SetUnitY(TS_ActiveCarrier, TS_StopY[TS_RouteStart[TS_ActiveRoute]])
         endif
         call TS_EndPresentation()
         call TS_RemoveTemporaryCarriers()
         set TS_Active = false
+        set TS_Ending = false
         set TS_ActiveRoute = 0
         set TS_ActiveWaypoint = 0
         set TS_ActiveElapsed = 0.00
         set TS_LastSafeStop = stopId
+        set TS_EndStop = 0
+        set TS_EndResumeScheduled = false
+        set TS_EndSkipCurrentWaypoint = false
         call TS_ClearPassengerList()
         if TS_TravelFinishedHandlers != null then
             call TriggerExecute(TS_TravelFinishedHandlers)
         endif
-        set finishedRoute = 0
+        call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, TS_FADE_DURATION, TS_FADE_TEXTURE, 0, 0, 0, 0)
+    endfunction
+
+    private function TS_FinishAtStop takes integer stopId, boolean resumeScheduled, boolean skipCurrentWaypoint returns nothing
+        if not TS_Active or TS_Starting or TS_Ending or not TS_IsValidStop(stopId) then
+            return
+        endif
+        set TS_Ending = true
+        set TS_EndStop = stopId
+        set TS_EndResumeScheduled = resumeScheduled
+        set TS_EndSkipCurrentWaypoint = skipCurrentWaypoint
+        call TS_HidePrompt(false)
+        call PauseTimer(TS_UpdateTimer)
+        if TS_RouteScheduled[TS_ActiveRoute] then
+            if TS_RouteUsesPatrol[TS_ActiveRoute] and resumeScheduled then
+                call PatrolSystem_Pause(TS_ActiveCarrier)
+            endif
+        elseif TS_ActiveCarrier != null then
+            call IssueImmediateOrder(TS_ActiveCarrier, "stop")
+            if TS_ActiveCarrierB != null then
+                call IssueImmediateOrder(TS_ActiveCarrierB, "stop")
+            endif
+        endif
+        call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUT, TS_FADE_DURATION, TS_FADE_TEXTURE, 0, 0, 0, 0)
+        call TimerStart(TS_TransitionTimer, TS_FADE_DURATION, false, function TS_CompleteFinish)
     endfunction
 
     private function TS_IssueCurrentWaypoint takes nothing returns nothing
@@ -1268,8 +1375,8 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
             return
         endif
         set cost = GetTotalSkipFee(TS_ActiveRoute)
-        call TS_HidePrompt()
         if GetPlayerState(Player(0), PLAYER_STATE_RESOURCE_GOLD) < cost then
+            call TS_HidePrompt(true)
             call ExSound_Play("LostGold", "")
             call DisplayTextToPlayer(Player(0), 0.00, 0.00, "|cffff8040Not enough gold to skip this journey.|r")
             call TS_ResumeActiveTravel(false)
@@ -1289,7 +1396,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         if not TS_Active then
             return
         endif
-        call TS_HidePrompt()
+        call TS_HidePrompt(true)
         call TS_ResumeActiveTravel(false)
     endfunction
 
@@ -1306,7 +1413,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         if not TS_Active then
             return
         endif
-        call TS_HidePrompt()
+        call TS_HidePrompt(true)
         call TS_ResumeActiveTravel(true)
     endfunction
 
@@ -1317,7 +1424,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
     private function TS_ShowSkipPrompt takes nothing returns nothing
         local integer cost
 
-        if not TS_Active or TS_PromptVisible or TS_StopPromptVisible then
+        if not TS_Active or TS_Starting or TS_Ending or TS_PromptVisible or TS_StopPromptVisible then
             return
         endif
         if TS_RouteScheduled[TS_ActiveRoute] and TS_RouteUsesPatrol[TS_ActiveRoute] then
@@ -1329,6 +1436,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
             endif
         endif
         set cost = GetTotalSkipFee(TS_ActiveRoute)
+        call FullscreenUI_SetEnabled(false)
         call DialogSystem_SetTitle(TS_SkipDialog, "Skip to " + TS_StopName[TS_RouteEnd[TS_ActiveRoute]] + "? Skipping will cost " + I2S(cost) + " gold.")
         call DialogSystem_SetContext(TS_ActiveCarrier, Player(0))
         call DialogSystem_ShowDialog(TS_SkipDialog, Player(0))
@@ -1336,11 +1444,12 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
     endfunction
 
     private function TS_ShowStopPrompt takes integer stopId returns nothing
-        if not TS_Active or not TS_IsValidStop(stopId) then
+        if not TS_Active or TS_Starting or TS_Ending or not TS_IsValidStop(stopId) then
             return
         endif
         set TS_PromptStop = stopId
         set TS_StopPromptVisible = true
+        call FullscreenUI_SetEnabled(false)
         call DialogSystem_SetTitle(TS_StopDialog, "Disembark at " + TS_StopName[stopId] + " or continue to " + TS_StopName[TS_RouteEnd[TS_ActiveRoute]] + "?")
         call DialogSystem_SetContext(TS_ActiveCarrier, Player(0))
         call DialogSystem_ShowDialog(TS_StopDialog, Player(0))
@@ -1348,7 +1457,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
     endfunction
 
     private function TS_OnEscape takes nothing returns nothing
-        if not TS_Active then
+        if not TS_Active or TS_Starting or TS_Ending then
             return
         endif
         if TS_PromptVisible then
@@ -1448,7 +1557,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
             if TS_PassengerSelected[index] and TS_PassengerHero[index] then
                 set heroIndex = heroIndex + 1
                 set carrierType = TS_GetCarrierTypeForPassenger(routeId, TS_Passenger[index])
-                set carrier = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), carrierType, GetUnitX(TS_Passenger[index]), GetUnitY(TS_Passenger[index]), 0.00)
+                set carrier = CreateUnit(Player(TS_TRAVEL_UNIT_OWNER_ID), carrierType, GetUnitX(TS_Passenger[index]), GetUnitY(TS_Passenger[index]), 0.00)
                 if carrier == null then
                     call TS_RemoveTemporaryCarriers()
                     set carrier = null
@@ -1489,9 +1598,78 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         return true
     endfunction
 
+    private function TS_AbortStart takes string message returns nothing
+        if TS_HeldVehicle != null and TS_HeldUsesPatrol then
+            call PatrolSystem_ResumeFromCurrentPositionEx(TS_HeldVehicle, false)
+        endif
+        set TS_HeldVehicle = null
+        set TS_HeldUsesPatrol = false
+        call TS_RemoveTemporaryCarriers()
+        set TS_Active = false
+        set TS_Starting = false
+        set TS_ActiveRoute = 0
+        set TS_ActiveWaypoint = 0
+        set TS_ActiveElapsed = 0.00
+        set TS_LastSafeStop = 0
+        set udg_InCinematic = false
+        call TS_ClearPassengerList()
+        call DisplayTextToPlayer(Player(0), 0.00, 0.00, message)
+        call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, TS_FADE_DURATION, TS_FADE_TEXTURE, 0, 0, 0, 0)
+    endfunction
+
+    private function TS_CompleteStart takes nothing returns nothing
+        local integer routeId = TS_ActiveRoute
+        local integer fare
+        local real cameraAngle
+        local real cameraRotation
+
+        if not TS_Active or not TS_Starting or not TS_IsValidRoute(routeId) then
+            return
+        endif
+        if not TS_PrepareCarriers(routeId) then
+            call TS_AbortStart("|cffff8040The travel vehicle is unavailable.|r")
+            return
+        endif
+        set fare = GetTotalFare(routeId)
+        if GetPlayerState(Player(0), PLAYER_STATE_RESOURCE_GOLD) < fare then
+            call TS_AbortStart("|cffff8040Not enough gold for this journey.|r")
+            return
+        endif
+        call SetPlayerState(Player(0), PLAYER_STATE_RESOURCE_GOLD, GetPlayerState(Player(0), PLAYER_STATE_RESOURCE_GOLD) - fare)
+        if fare > 0 then
+            call ExSound_Play("LostGold", "")
+        endif
+        call TS_RemoveUnselectedCompanions()
+        call TS_HideSelectedPassengers()
+        set TS_Starting = false
+        set TS_HeldVehicle = null
+        set TS_HeldUsesPatrol = false
+        set TS_GameButtonWasVisible = MasterUI_IsGameButtonVisible()
+        if TRAVEL_HIDE_MASTER_UI_GAME_BUTTON then
+            call MasterUI_HideGameButton()
+        endif
+        call FullscreenUI_SetEnabled(true)
+        set cameraRotation = GetUnitFacing(TS_ActiveCarrier)
+        if TS_RouteMethod[routeId] == TRAVEL_METHOD_WYVERN or TS_RouteMethod[routeId] == TRAVEL_METHOD_ZEPPELIN then
+            set cameraAngle = TS_CAMERA_ANGLE_FLIGHT
+        else
+            set cameraAngle = TS_CAMERA_ANGLE_SHIP
+        endif
+        call CameraControl_SuspendInteractiveEx(Player(0), TS_CAMERA_DISTANCE, TS_CAMERA_FAR_Z, TS_CAMERA_FOV, cameraAngle, cameraRotation)
+        call FCL_Lock(TS_ActiveCarrier, Player(0))
+        call TS_CreatePassengerEffects()
+        call DialogSystem_SetEscapeAction(function TS_OnEscape)
+        if TS_RouteScheduled[routeId] then
+            call TS_ResumeScheduledVehicle(true)
+        else
+            call TS_IssueCurrentWaypoint()
+        endif
+        call TimerStart(TS_UpdateTimer, TS_UPDATE_PERIOD, true, function TS_OnUpdate)
+        call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, TS_FADE_DURATION, TS_FADE_TEXTURE, 0, 0, 0, 0)
+    endfunction
+
     public function Start takes integer routeId returns boolean
         local integer fare
-        local real cameraRotation
 
         if TS_Active or not IsRouteAvailable(routeId) or not TS_ValidatePassengers(routeId) or udg_InCinematic then
             return false
@@ -1502,44 +1680,15 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
             call DisplayTextToPlayer(Player(0), 0.00, 0.00, "|cffff8040Not enough gold for this journey.|r")
             return false
         endif
-        if not TS_PrepareCarriers(routeId) then
-            call DisplayTextToPlayer(Player(0), 0.00, 0.00, "|cffff8040The travel vehicle is unavailable.|r")
-            return false
-        endif
-        call SetPlayerState(Player(0), PLAYER_STATE_RESOURCE_GOLD, GetPlayerState(Player(0), PLAYER_STATE_RESOURCE_GOLD) - fare)
-        if fare > 0 then
-            call ExSound_Play("LostGold", "")
-        endif
-        call TS_RemoveUnselectedCompanions()
-        call TS_HideSelectedPassengers()
         set TS_Active = true
+        set TS_Starting = true
         set TS_ActiveRoute = routeId
         set TS_ActiveWaypoint = 1
         set TS_ActiveElapsed = 0.00
         set TS_LastSafeStop = TS_RouteStart[routeId]
-        set TS_HeldVehicle = null
-        set TS_HeldUsesPatrol = false
         set udg_InCinematic = true
-        call FullscreenUI_SetEnabled(true)
-        if TS_RouteMethod[routeId] == TRAVEL_METHOD_WYVERN or TS_RouteMethod[routeId] == TRAVEL_METHOD_ZEPPELIN then
-            set cameraRotation = GetUnitFacing(TS_ActiveCarrier)
-            call CameraControl_SuspendInteractive(Player(0), 355.00, cameraRotation)
-            if GetLocalPlayer() == Player(0) then
-                call SetCameraField(CAMERA_FIELD_FARZ, 20000.00, 0.00)
-            endif
-        else
-            set cameraRotation = GetUnitFacing(TS_ActiveCarrier)
-            call CameraControl_SuspendInteractive(Player(0), 345.00, cameraRotation)
-        endif
-        call FCL_Lock(TS_ActiveCarrier, Player(0))
-        call TS_CreatePassengerEffects()
-        call DialogSystem_SetEscapeAction(function TS_OnEscape)
-        if TS_RouteScheduled[routeId] then
-            call TS_ResumeScheduledVehicle(true)
-        else
-            call TS_IssueCurrentWaypoint()
-        endif
-        call TimerStart(TS_UpdateTimer, TS_UPDATE_PERIOD, true, function TS_OnUpdate)
+        call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUT, TS_FADE_DURATION, TS_FADE_TEXTURE, 0, 0, 0, 0)
+        call TimerStart(TS_TransitionTimer, TS_FADE_DURATION, false, function TS_CompleteStart)
         return true
     endfunction
 
@@ -1635,6 +1784,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
     private function TS_OnDiscoveryPeriod takes nothing returns nothing
         local integer stopId = 1
 
+        call TS_RegisterSharedMasterEffects()
         loop
             exitwhen stopId > TS_StopCount
             if TS_StopDiscovered[stopId] and not TS_StopIconRegistered[stopId] then
@@ -1666,8 +1816,10 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         set TS_UpdateTimer = CreateTimer()
         set TS_DiscoveryTimer = CreateTimer()
         set TS_StopPromptTimer = CreateTimer()
+        set TS_TransitionTimer = CreateTimer()
         set TS_TerrainLocation = Location(0.00, 0.00)
         call InitDialogs()
+        call DialogInteraction_RegisterAnySelectionHandler(function TS_OnMasterSelected)
         call TimerStart(TS_DiscoveryTimer, TS_DISCOVERY_PERIOD, true, function TS_OnDiscoveryPeriod)
     endfunction
 endlibrary

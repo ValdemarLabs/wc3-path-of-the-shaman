@@ -39,10 +39,10 @@ shared getters documented in `TravelSystem.j`.
   87-point PatrolSystem route, and starts it after the original 45-second delay.
   The detached `TravelShipB_MovementStart` trigger is no longer required.
 - `TravelZeppelin.j` binds `FlightMaster[1]` at Sereneglade,
-  `FlightMaster[2]` at Sirensong, `ZeppelinA`, and the two
-  `Zeppelin*Area` regions automatically. It uses one shuttle in both directions;
-  `ZeppelinB` remains unused. Default fares are currently zero and are configured
-  in `TravelZeppelin.j`.
+  `FlightMaster[2]` at Sirensong, both endpoint zeppelins, and the two
+  `Zeppelin*Area` regions automatically. Zeppelin A departs Sereneglade and
+  Zeppelin B departs Sirensong; each returns to its home point behind the arrival
+  fade. Default fares are currently zero and are configured in `TravelZeppelin.j`.
 - `TravelShipA.j` remains inactive until its stops, vehicle, fares, and
   waypoints are registered; no legacy Ship A patrol definition was recovered.
 
@@ -50,3 +50,15 @@ Ship B hero proxies intentionally use empty model paths initially. Call
 `TravelShipB_ConfigureHeroModels` after the correct Nazgrek and Zul'kis model
 paths are known. Passenger visuals are special effects attached by relative
 position; `UnitAttachment.j` and dummy passenger units are not used.
+
+## Travel presentation
+
+Travel units for wyvern and zeppelin routes are owned by `Player(5)` and made
+invulnerable so neutral-passive guard-position behavior cannot pull them home.
+The travel camera uses a 750 distance and 80-degree field of view while arrow
+keys remain available for rotation and angle changes.
+
+`TRAVEL_HIDE_MASTER_UI_GAME_BUTTON` in `TravelSystem.j` controls whether the
+MasterUI Game button is hidden for the journey. ESC and intermediate-stop
+dialogs temporarily leave fullscreen mode so native dialog buttons remain
+visible, then restore fullscreen mode when the player continues.

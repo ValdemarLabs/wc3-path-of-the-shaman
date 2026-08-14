@@ -17,6 +17,7 @@
     - call MasterUI_Toggle()
     - call MasterUI_ShowGameButton()
     - call MasterUI_HideGameButton()
+    - call MasterUI_IsGameButtonVisible()
 
     Pressing ESC closes MasterUI and every panel registered in its centralized
     hide list.
@@ -446,6 +447,13 @@ public function HideGameButton takes nothing returns nothing
     call MUI_HideAllPanelsForCinematic()
     set MUI_OpenButtonVisible = false
     call MUI_ApplyOpenButtonVisibility()
+endfunction
+
+public function IsGameButtonVisible takes nothing returns boolean
+    if not MUI_Initialized then
+        call Init()
+    endif
+    return MUI_OpenButtonVisible
 endfunction
 
 public function Toggle takes nothing returns nothing
