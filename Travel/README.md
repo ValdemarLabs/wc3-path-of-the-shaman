@@ -33,8 +33,10 @@ shared getters documented in `TravelSystem.j`.
 
 ## Existing map content
 
-- `TravelWyvern.j` binds `udg_WindRiderMaster[1..3]`, the three legacy boarding
-  areas, and `gg_rct_FlyHere01..03`. All six directed fares are registered.
+- `TravelWyvern.j` binds `WindRiderMaster[1..3]`, the three legacy boarding
+  areas, and `gg_rct_FlyHere01..03`. It also binds Sirensong through
+  `WindRiderMaster[6]` without another GUI rect. All twelve directed routes
+  between these four stations are registered.
 - `TravelShipB.j` binds the Mok'natha master, owns the Orc Frigate's recovered
   87-point PatrolSystem route, and starts it after the original 45-second delay.
   The detached `TravelShipB_MovementStart` trigger is no longer required.
@@ -62,3 +64,11 @@ keys remain available for rotation and angle changes.
 MasterUI Game button is hidden for the journey. ESC and intermediate-stop
 dialogs temporarily leave fullscreen mode so native dialog buttons remain
 visible, then restore fullscreen mode when the player continues.
+
+## Route construction
+
+Wyvern and zeppelin travel uses directed routes: each direction is a separate
+route with its own start stop, end stop, fare, vehicle configuration, and ordered
+waypoint list. `TravelSystem_AddWaypoint` appends middle points; the final point
+is normally the destination drop position. Wyvern routes create temporary
+Player(5) flying carriers. Zeppelin routes use the placed Zeppelin A/B units.

@@ -5,7 +5,8 @@
     Version:
 
     Description:
-    Registers the three legacy Horde wyvern stations and their directed fares.
+    Registers the three legacy Horde stations plus the Sirensong station and
+    their directed fares.
     Additional stations and routes can be registered without changing the
     travel runtime.
 
@@ -13,8 +14,9 @@
     The original Wind Rider Master GUI triggers.
 
     How to install:
-    Import after TravelSystem and TravelUI. Keep the three legacy master,
-    boarding-area, and FlyHere rect globals in the map.
+    Import after TravelSystem and TravelUI. Keep the three legacy boarding-area
+    and FlyHere rect globals in the map. Sirensong uses WindRiderMaster[6]
+    directly and does not require another GUI rect.
 
     API:
     - set stopId = TravelWyvern_RegisterStation(...)
@@ -23,11 +25,13 @@
     - TravelWyvern_GetScoutBaseStop()
     - TravelWyvern_GetLumberMillStop()
     - TravelWyvern_GetGoldMineStop()
+    - TravelWyvern_GetSirensongStop()
 
 **/
 library TravelWyvern initializer Init requires TravelSystem, TravelUI
     globals
         private constant integer TW_ZONE_HORDE_SCOUT_BASE = 8810
+        private constant integer TW_ZONE_SIRENSONG = 14
         private constant integer TW_LEGACY_FARE = 350
         private constant integer TW_SKIP_FEE = 100
         private constant integer TW_NAZGREK_CARRIER = 'o60L'
@@ -38,6 +42,7 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
         private integer TW_ScoutBaseStop = 0
         private integer TW_LumberMillStop = 0
         private integer TW_GoldMineStop = 0
+        private integer TW_SirensongStop = 0
         private timer TW_InitTimer = null
         private boolean TW_Initialized = false
     endglobals
@@ -55,7 +60,7 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
     endfunction
 
     public function RegisterStation takes string name, integer zoneId, unit master, rect boardingArea, real dropX, real dropY returns integer
-        if master == null or boardingArea == null then
+        if master == null then
             return 0
         endif
         return TravelSystem_RegisterStop(TRAVEL_METHOD_WYVERN, name, zoneId, master, boardingArea, dropX, dropY, true)
@@ -88,45 +93,59 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
         return TW_GoldMineStop
     endfunction
 
-    private function TW_CreateLegacyRoute takes integer startStop, integer endStop, integer fare, rect destination returns nothing
+    public function GetSirensongStop takes nothing returns integer
+        return TW_SirensongStop
+    endfunction
+
+    private function TW_CreatePointRoute takes integer startStop, integer endStop, integer fare, real destinationX, real destinationY returns nothing
         local integer routeId = RegisterDirectedRoute(startStop, endStop, fare)
 
         if routeId > 0 then
-            call AddWaypoint(routeId, TW_RectCenterX(destination), TW_RectCenterY(destination))
+            call AddWaypoint(routeId, destinationX, destinationY)
         endif
+    endfunction
+
+    private function TW_CreateLegacyRoute takes integer startStop, integer endStop, integer fare, rect destination returns nothing
+        call TW_CreatePointRoute(startStop, endStop, fare, TW_RectCenterX(destination), TW_RectCenterY(destination))
     endfunction
 
     private function TW_TryInitialize takes nothing returns nothing
         local unit scoutMaster
         local unit lumberMaster
         local unit goldMaster
+        local unit sirensongMaster
 
         if TW_Initialized then
             set scoutMaster = null
             set lumberMaster = null
             set goldMaster = null
+            set sirensongMaster = null
             return
         endif
         set scoutMaster = TW_GetMaster(TRAVEL_WINDRIDER_MASTER_HORDE_SCOUT_BASE)
         set lumberMaster = TW_GetMaster(TRAVEL_WINDRIDER_MASTER_HORDE_LUMBER_MILL)
         set goldMaster = TW_GetMaster(TRAVEL_WINDRIDER_MASTER_HORDE_GOLD_MINE)
-        if scoutMaster == null or lumberMaster == null or goldMaster == null then
+        set sirensongMaster = TW_GetMaster(TRAVEL_WINDRIDER_MASTER_1239)
+        if scoutMaster == null or lumberMaster == null or goldMaster == null or sirensongMaster == null then
             call TimerStart(TW_InitTimer, 1.00, false, function TW_TryInitialize)
             set scoutMaster = null
             set lumberMaster = null
             set goldMaster = null
+            set sirensongMaster = null
             return
         endif
 
         set TW_ScoutBaseStop = RegisterStation("Horde Scout Base", TW_ZONE_HORDE_SCOUT_BASE, scoutMaster, gg_rct_HordeScoutBaseWindRiderArea, TW_RectCenterX(gg_rct_FlyHere01), TW_RectCenterY(gg_rct_FlyHere01))
         set TW_LumberMillStop = RegisterStation("Horde Lumber Mill", 0, lumberMaster, gg_rct_HordeLumberMillWindRiderArea, TW_RectCenterX(gg_rct_FlyHere02), TW_RectCenterY(gg_rct_FlyHere02))
         set TW_GoldMineStop = RegisterStation("Horde Gold Mine", 0, goldMaster, gg_rct_HordeGoldMineWindRiderArea, TW_RectCenterX(gg_rct_FlyHere03), TW_RectCenterY(gg_rct_FlyHere03))
+        set TW_SirensongStop = RegisterStation("Sirensong (Wyvern)", TW_ZONE_SIRENSONG, sirensongMaster, null, GetUnitX(sirensongMaster), GetUnitY(sirensongMaster))
 
-        if TW_ScoutBaseStop <= 0 or TW_LumberMillStop <= 0 or TW_GoldMineStop <= 0 then
+        if TW_ScoutBaseStop <= 0 or TW_LumberMillStop <= 0 or TW_GoldMineStop <= 0 or TW_SirensongStop <= 0 then
             call TimerStart(TW_InitTimer, 1.00, false, function TW_TryInitialize)
             set scoutMaster = null
             set lumberMaster = null
             set goldMaster = null
+            set sirensongMaster = null
             return
         endif
 
@@ -136,6 +155,12 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
         call TW_CreateLegacyRoute(TW_LumberMillStop, TW_GoldMineStop, TW_LEGACY_FARE, gg_rct_FlyHere03)
         call TW_CreateLegacyRoute(TW_GoldMineStop, TW_ScoutBaseStop, 0, gg_rct_FlyHere01)
         call TW_CreateLegacyRoute(TW_GoldMineStop, TW_LumberMillStop, TW_LEGACY_FARE, gg_rct_FlyHere02)
+        call TW_CreatePointRoute(TW_ScoutBaseStop, TW_SirensongStop, TW_LEGACY_FARE, GetUnitX(sirensongMaster), GetUnitY(sirensongMaster))
+        call TW_CreatePointRoute(TW_LumberMillStop, TW_SirensongStop, TW_LEGACY_FARE, GetUnitX(sirensongMaster), GetUnitY(sirensongMaster))
+        call TW_CreatePointRoute(TW_GoldMineStop, TW_SirensongStop, TW_LEGACY_FARE, GetUnitX(sirensongMaster), GetUnitY(sirensongMaster))
+        call TW_CreateLegacyRoute(TW_SirensongStop, TW_ScoutBaseStop, 0, gg_rct_FlyHere01)
+        call TW_CreateLegacyRoute(TW_SirensongStop, TW_LumberMillStop, TW_LEGACY_FARE, gg_rct_FlyHere02)
+        call TW_CreateLegacyRoute(TW_SirensongStop, TW_GoldMineStop, TW_LEGACY_FARE, gg_rct_FlyHere03)
 
         set TW_Initialized = true
         call PauseTimer(TW_InitTimer)
@@ -144,6 +169,7 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
         set scoutMaster = null
         set lumberMaster = null
         set goldMaster = null
+        set sirensongMaster = null
     endfunction
 
     private function Init takes nothing returns nothing

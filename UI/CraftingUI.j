@@ -9,7 +9,9 @@
     Credits: Tasyen (TasQuestBox as inspiration)
 
     How to install:
-    Import this library after Professions, MasterUI, and Interface. Profession sublibraries register workstation unit types; selecting a registered workstation opens this panel for the nearest owned tracked hero.
+    Import this library after Professions, MasterUI, CameraControl, and Interface.
+    Profession sublibraries register workstation unit types; selecting a
+    registered workstation opens this panel for the nearest owned tracked hero.
 
     API:
     call CraftingUI_OpenForStation(whichStation, whichCrafter)
@@ -18,7 +20,7 @@
 
 **/
 
-library CraftingUI initializer AutoInit requires Professions, GatherNodeSkills, Table, MasterUI, Interface, DEquipment
+library CraftingUI initializer AutoInit requires Professions, GatherNodeSkills, Table, MasterUI, CameraControl, Interface, DEquipment
 
 globals
     private constant integer CUI_VISIBLE_ROWS = 12
@@ -740,6 +742,25 @@ private function CUI_HideForPlayer takes player whichPlayer returns nothing
     endif
 endfunction
 
+private function CUI_ReleaseButtonFocus takes player whichPlayer returns nothing
+    local integer rowIndex = 1
+
+    if GetLocalPlayer() != whichPlayer then
+        return
+    endif
+    call BlzFrameSetFocus(CUI_CloseButton, false)
+    call BlzFrameSetFocus(CUI_ReturnButton, false)
+    call BlzFrameSetFocus(CUI_PrevButton, false)
+    call BlzFrameSetFocus(CUI_NextButton, false)
+    call BlzFrameSetFocus(CUI_CraftButton, false)
+    call BlzFrameSetFocus(CUI_QueryButton, false)
+    loop
+        exitwhen rowIndex > CUI_VISIBLE_ROWS
+        call BlzFrameSetFocus(CUI_RowButton[rowIndex], false)
+        set rowIndex = rowIndex + 1
+    endloop
+endfunction
+
 private function CUI_OpenForPlayerEx takes player whichPlayer, unit station, unit crafter, string categoryName, string subcategoryName returns nothing
     local integer pid
 
@@ -748,6 +769,8 @@ private function CUI_OpenForPlayerEx takes player whichPlayer, unit station, uni
     endif
 
     set pid = GetPlayerId(whichPlayer)
+    // Crafting is a gameplay panel, so it must restore normal adjustable camera input.
+    call CameraControl_ResumeQuick(whichPlayer)
     call DInventoryEquipment_HideForPlayer(whichPlayer)
     set CUI_Station[pid] = station
     set CUI_Crafter[pid] = crafter
@@ -785,8 +808,8 @@ private function CUI_OpenForPlayerEx takes player whichPlayer, unit station, uni
         call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, whichPlayer)
         call BlzFrameSetVisible(CUI_Parent, true)
     endif
-
     call CUI_UpdateForPlayer(whichPlayer)
+    call CUI_ReleaseButtonFocus(whichPlayer)
 endfunction
 
 private function CUI_OpenForPlayer takes player whichPlayer, unit station, unit crafter returns nothing
@@ -797,6 +820,7 @@ private function CUI_ClearFocusAction takes nothing returns nothing
     if GetTriggerPlayer() == GetLocalPlayer() then
         call BlzFrameSetEnable(BlzGetTriggerFrame(), false)
         call BlzFrameSetEnable(BlzGetTriggerFrame(), true)
+        call BlzFrameSetFocus(BlzGetTriggerFrame(), false)
         call StopCamera()
     endif
 endfunction

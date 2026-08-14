@@ -317,6 +317,7 @@ library TravelUI initializer Init requires TravelSystem, Table, Interface, Dialo
         if GetTriggerPlayer() == GetLocalPlayer() then
             call BlzFrameSetEnable(BlzGetTriggerFrame(), false)
             call BlzFrameSetEnable(BlzGetTriggerFrame(), true)
+            call BlzFrameSetFocus(BlzGetTriggerFrame(), false)
         endif
     endfunction
 

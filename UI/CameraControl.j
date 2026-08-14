@@ -1470,6 +1470,7 @@ public function SuspendInteractive takes player whichPlayer, real angle, real ro
     set CC_SuspendedFov[pid] = CC_Fov[pid]
     set CC_SpecialAngle[pid] = CC_Clamp(angle, CAMERA_ANGLE_MIN, CAMERA_ANGLE_MAX)
     set CC_SpecialRotation[pid] = CC_NormalizeAngle(rotation)
+    call CC_UpdateLoopState()
     call CC_ApplySpecialFields(whichPlayer, 0.00)
 endfunction
 

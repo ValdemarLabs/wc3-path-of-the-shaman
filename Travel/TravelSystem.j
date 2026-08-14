@@ -24,7 +24,7 @@
     - udg_WindRiderMaster[3] = Horde Gold Mine, unit 0427 (active).
     - udg_WindRiderMaster[4] = Ursa, unit 2424 (route not configured).
     - udg_WindRiderMaster[5] = Wind Rider Master 1978 (route not configured).
-    - udg_WindRiderMaster[6] = Wind Rider Master 1239 (route not configured).
+    - udg_WindRiderMaster[6] = Sirensong Wind Rider Master 1239 (active).
     - udg_FlightMaster[1] = Sereneglade Flightmaster 2617 (active).
     - udg_FlightMaster[2] = Sirensong Shipmaster 0613 (active).
     - udg_Shipmaster[1] = Mok'natha Shipmaster 0996 (active).
