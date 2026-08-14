@@ -17,6 +17,8 @@
     Use DialogSystem_CreateDialog and button helpers for menus. Use the
     sequence API, including AddFadeTransition/AddFadeOut/AddFadeIn, for
     ordered cinematics.
+    Call DialogSystem_CancelActiveSpeech to immediately stop the active
+    sequence, queued field lines, transmissions, and ExSound dialogue audio.
 
 **/
 library DialogSystem initializer Init requires Table, ExSound, DialogCamera, Interface, FallenHeroState
@@ -1266,6 +1268,18 @@ public function CancelActiveSequence takes nothing returns nothing
 	endif
 	call ClearTextMessages()
 	call EndSequence(false)
+endfunction
+
+public function CancelActiveSpeech takes nothing returns nothing
+	local integer seqId = DialogSequenceActiveId
+
+	call CancelActiveSequence()
+	if seqId != 0 then
+		call ClearSequence(seqId)
+	endif
+	call ClearFieldLineQueue()
+	call ExSound_Stop()
+	call ClearTextMessages()
 endfunction
 
 public function GetActiveSequenceId takes nothing returns integer
