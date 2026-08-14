@@ -2,7 +2,7 @@
     qKribugs
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.2.0
 
     Description:
     Quest, dialogue, patrol, ogre-fullness, and merchant integration for
@@ -318,7 +318,7 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
 
     private function OnOgreFullSound takes nothing returns nothing
         if OgreFull and DialogInteraction_IsUnitAlive(Kribugs) then
-            call ExSound_PlayLabelOnUnit("KribugsOgreFart", Kribugs, false)
+            call ExSound_PlayLabelOnUnit(VL_MOGSNORT_LEGACY_FART_KEY, Kribugs, false)
             call TimerStart(OgreFullSoundTimer, GetRandomReal(10.00, 20.00), false, function OnOgreFullSound)
         endif
     endfunction
@@ -361,15 +361,41 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
         set q = 0
     endfunction
 
+    private function AddKribugsLine takes integer seq, string text, string soundKey returns nothing
+        call DialogSystem_AddLine(seq, Kribugs, "Kribugs", text, soundKey, true)
+    endfunction
+
+    // Both names use the same composite unit; only the transmission speaker changes.
+    private function AddMogsnortLine takes integer seq, string text, string soundKey returns nothing
+        call DialogSystem_AddLine(seq, Kribugs, "Mogsnort", text, soundKey, true)
+    endfunction
+
+    private function AddRandomLegacyMogsnortLine takes integer seq returns nothing
+        local integer roll = GetRandomInt(1, 5)
+        if roll == 1 then
+            call AddMogsnortLine(seq, VL_MOGSNORT_LEGACY_WHAT_3_TEXT, VL_MOGSNORT_LEGACY_WHAT_3_KEY)
+        elseif roll == 2 then
+            call AddMogsnortLine(seq, VL_MOGSNORT_LEGACY_WHAT_4_TEXT, VL_MOGSNORT_LEGACY_WHAT_4_KEY)
+        elseif roll == 3 then
+            call AddMogsnortLine(seq, VL_MOGSNORT_LEGACY_YES_1_TEXT, VL_MOGSNORT_LEGACY_YES_1_KEY)
+        elseif roll == 4 then
+            call AddMogsnortLine(seq, VL_MOGSNORT_LEGACY_YES_4_TEXT, VL_MOGSNORT_LEGACY_YES_4_KEY)
+        else
+            call AddMogsnortLine(seq, VL_MOGSNORT_LEGACY_ATTACK_3_TEXT, VL_MOGSNORT_LEGACY_ATTACK_3_KEY)
+        endif
+    endfunction
+
     private function AddQuestSequenceLines takes integer seq, string questName, boolean completing returns nothing
         if questName == QUEST_OGRE_SANDWICH then
             if completing then
                 call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0022_TEXT, VL_KRIBUGS_0022_KEY, true)
+                call AddMogsnortLine(seq, VL_MOGSNORT_0022_TEXT, VL_MOGSNORT_0022_KEY)
                 call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0023_TEXT, VL_KRIBUGS_0023_KEY, true)
                 call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0024_TEXT, VL_KRIBUGS_0024_KEY, true)
             else
                 call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0018_TEXT, VL_KRIBUGS_0018_KEY, true)
                 call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0019_TEXT, VL_KRIBUGS_0019_KEY, true)
+                call AddMogsnortLine(seq, VL_MOGSNORT_0019_TEXT, VL_MOGSNORT_0019_KEY)
                 call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0020_TEXT, VL_KRIBUGS_0020_KEY, true)
             endif
         elseif questName == QUEST_KRIBUGS_SATCHEL then
@@ -390,6 +416,8 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
             else
                 call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0034_TEXT, VL_KRIBUGS_0034_KEY, true)
                 call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0035_TEXT, VL_KRIBUGS_0035_KEY, true)
+                call AddMogsnortLine(seq, VL_MOGSNORT_LEGACY_WHAT_3_TEXT, VL_MOGSNORT_LEGACY_WHAT_3_KEY)
+                call AddMogsnortLine(seq, VL_MOGSNORT_0035_TEXT, VL_MOGSNORT_0035_KEY)
                 call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0036_TEXT, VL_KRIBUGS_0036_KEY, true)
             endif
         elseif questName == QUEST_MEAT_FOR_OGRE then
@@ -398,16 +426,21 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
                 call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0047_TEXT, VL_KRIBUGS_0047_KEY, true)
             else
                 call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0043_TEXT, VL_KRIBUGS_0043_KEY, true)
+                call AddMogsnortLine(seq, VL_MOGSNORT_LEGACY_HUNGRY_TEXT, VL_MOGSNORT_LEGACY_HUNGRY_KEY)
                 call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0044_TEXT, VL_KRIBUGS_0044_KEY, true)
                 call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0045_TEXT, VL_KRIBUGS_0045_KEY, true)
             endif
         elseif questName == QUEST_OGRE_ATE_TOO_MUCH then
             if completing then
                 call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0054_TEXT, VL_KRIBUGS_0054_KEY, true)
+                call AddMogsnortLine(seq, VL_MOGSNORT_LEGACY_YES_3_TEXT, VL_MOGSNORT_LEGACY_YES_3_KEY)
                 call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0055_TEXT, VL_KRIBUGS_0055_KEY, true)
+                call AddMogsnortLine(seq, VL_MOGSNORT_0055_TEXT, VL_MOGSNORT_0055_KEY)
                 call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0056_TEXT, VL_KRIBUGS_0056_KEY, true)
             else
+                call AddMogsnortLine(seq, VL_MOGSNORT_LEGACY_FART_TEXT, VL_MOGSNORT_LEGACY_FART_KEY)
                 call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0050_TEXT, VL_KRIBUGS_0050_KEY, true)
+                call AddRandomLegacyMogsnortLine(seq)
                 call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0051_TEXT, VL_KRIBUGS_0051_KEY, true)
                 call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0052_TEXT, VL_KRIBUGS_0052_KEY, true)
             endif
@@ -419,6 +452,7 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
             else
                 call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0067_TEXT, VL_KRIBUGS_0067_KEY, true)
                 call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0068_TEXT, VL_KRIBUGS_0068_KEY, true)
+                call AddMogsnortLine(seq, VL_MOGSNORT_LEGACY_ATTACK_3_TEXT, VL_MOGSNORT_LEGACY_ATTACK_3_KEY)
                 call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0069_TEXT, VL_KRIBUGS_0069_KEY, true)
             endif
         endif
@@ -679,14 +713,35 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
     endfunction
 
     private function AddPreDialogBark takes integer seq returns nothing
+        local integer roll
         if not DialogInteraction_IsFirstGreetDone(Kribugs) then
-            call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0001_TEXT, VL_KRIBUGS_0001_KEY, true)
-        elseif GetRandomInt(1, 3) == 1 then
-            call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0004_TEXT, VL_KRIBUGS_0004_KEY, true)
-        elseif GetRandomInt(1, 2) == 1 then
-            call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0005_TEXT, VL_KRIBUGS_0005_KEY, true)
+            call AddKribugsLine(seq, VL_KRIBUGS_0001_TEXT, VL_KRIBUGS_0001_KEY)
+            return
+        endif
+
+        set roll = GetRandomInt(1, 8)
+        if roll == 1 then
+            call AddMogsnortLine(seq, VL_MOGSNORT_LEGACY_HUNGRY_TEXT, VL_MOGSNORT_LEGACY_HUNGRY_KEY)
+            call AddKribugsLine(seq, VL_KRIBUGS_0010_TEXT, VL_KRIBUGS_0010_KEY)
+        elseif roll == 2 then
+            call AddKribugsLine(seq, VL_KRIBUGS_0011_TEXT, VL_KRIBUGS_0011_KEY)
+            call AddRandomLegacyMogsnortLine(seq)
+        elseif roll == 3 then
+            call AddKribugsLine(seq, VL_KRIBUGS_0012_TEXT, VL_KRIBUGS_0012_KEY)
+        elseif roll == 4 then
+            call AddKribugsLine(seq, VL_KRIBUGS_0013_TEXT, VL_KRIBUGS_0013_KEY)
+            call AddRandomLegacyMogsnortLine(seq)
+        elseif roll == 5 then
+            call AddKribugsLine(seq, VL_KRIBUGS_0014_TEXT, VL_KRIBUGS_0014_KEY)
+            call AddRandomLegacyMogsnortLine(seq)
+        elseif roll == 6 then
+            call AddKribugsLine(seq, VL_KRIBUGS_0004_TEXT, VL_KRIBUGS_0004_KEY)
+        elseif roll == 7 then
+            call AddKribugsLine(seq, VL_KRIBUGS_0010_TEXT, VL_KRIBUGS_0010_KEY)
+            call AddMogsnortLine(seq, VL_MOGSNORT_0010_TEXT, VL_MOGSNORT_0010_KEY)
         else
-            call DialogSystem_AddLine(seq, Kribugs, "Kribugs", VL_KRIBUGS_0006_TEXT, VL_KRIBUGS_0006_KEY, true)
+            call AddKribugsLine(seq, VL_KRIBUGS_0011_TEXT, VL_KRIBUGS_0011_KEY)
+            call AddMogsnortLine(seq, VL_MOGSNORT_0011_TEXT, VL_MOGSNORT_0011_KEY)
         endif
     endfunction
 
