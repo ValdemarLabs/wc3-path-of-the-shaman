@@ -196,7 +196,7 @@ library TravelShipA initializer Init requires TravelSystem, TravelUI, PatrolSyst
         call TSA_SetPatrolPoint(29, gg_rct_SirensongShip030, 0.00)
         call TSA_SetPatrolPoint(30, gg_rct_SirensongShip031, 0.00)
         call TSA_SetPatrolPoint(31, gg_rct_SirensongShip032, TSA_DOCK_WAIT)
-        call TSA_SetPatrolPoint(32, gg_rct_SirensongShip0033, 0.00)
+        call TSA_SetPatrolPoint(32, gg_rct_SirensongShip033, 0.00)
         call TSA_SetPatrolPoint(33, gg_rct_SirensongShip029, 0.00)
         call TSA_SetPatrolPoint(34, gg_rct_SirensongShip028, 0.00)
         call TSA_SetPatrolPoint(35, gg_rct_SirensongShip027, 0.00)
