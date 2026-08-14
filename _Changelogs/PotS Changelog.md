@@ -21,6 +21,7 @@
 
 - Added configurable wyvern, zeppelin, neutral-ship, and orcish-ship travel with a ShopUI-styled destination/passenger panel, fullscreen vehicle camera, paid ESC skipping, ship stop drop-out prompts, party fare accounting, and physical AI wyvern journeys.
 - Wyvern and zeppelin routes now require both endpoint travel masters to be discovered before use; ship routes can remain available without endpoint discovery.
+- Travel now fades before changing units or camera mode, uses a closer adjustable vehicle camera, shows working ESC confirmation dialogs, and keeps the MasterUI Game button hidden when configured.
 
 ### Technical Updates
 
@@ -30,11 +31,12 @@
 - Updated `Travel/TravelShipB.j`, the Mordrax, Morthun, and Mountain Giant boss libraries, and `QuestsAndDialogs/QuestGivers/qValeria.j` to own and start their patrol routes locally through the direct-coordinate API.
 - Updated `Travel/TravelSystem.j` with the authoritative World Editor shared-unit mapping for wyvern, zeppelin, ship-master, vehicle, hero, and pet globals, including active versus reserved bindings.
 - Updated `Travel/TravelSystem.j`, `TravelWyvern.j`, and `TravelShipB.j` so only the master travel library accesses World Editor `udg_*` bindings; method libraries now use semantic getters and named master-index constants.
-- Updated `Travel/TravelZeppelin.j` to bind the Sereneglade and Sirensong flightmasters, endpoint regions, and single shared Zeppelin A shuttle automatically through `TravelSystem`.
+- Updated `Travel/TravelZeppelin.j` to bind the Sereneglade and Sirensong flightmasters, endpoint regions, and their Zeppelin A/B outbound vehicles automatically through `TravelSystem`.
+- Updated `Travel/TravelSystem.j`, `UI/CameraControl.j`, and `UI/MasterUI.j` with fade-staged travel presentation, a 750-distance/80-FOV adjustable camera preset, configurable Game-button hiding, visible native travel prompts, Player(5) invulnerable flight vehicles, shared-master-safe selection handling, and overhead green marks for all configured GUI travel masters.
 
 ### Actions Remaining
 
-- Bind the missing Ship A, Sirensong-Sereneglade zeppelin, and future wyvern Object Editor masters, vehicles, boarding areas, arrival points, waypoints, and fares through their registration APIs.
+- Bind the missing Ship A and future wyvern Object Editor masters, vehicles, boarding areas, arrival points, waypoints, and fares through their registration APIs.
 - Supply the Nazgrek and Zul'kis model paths for Ship B deck-effect proxies, then tune their exposed offsets in-map.
 - Import the travel libraries after their dependencies, disable the replaced legacy travel dialogs and detached patrol initialization triggers, and run focused plus full-map JassHelper and multiplayer tests.
 
