@@ -38,6 +38,7 @@ library TravelAI initializer Init requires AI, TravelSystem, TravelWyvern
         private constant real TAI_DESCENT_RATE = 50.00
         private constant real TAI_DESCENT_RANGE = 800.00
         private constant real TAI_LANDED_HEIGHT = 20.00
+        private constant real TAI_MAX_DESCENT_DURATION = 12.00
 
         private unit array TAI_Hero
         private unit array TAI_Carrier
@@ -47,6 +48,7 @@ library TravelAI initializer Init requires AI, TravelSystem, TravelWyvern
         private real array TAI_Elapsed
         private real array TAI_NextApproachCheck
         private boolean array TAI_Descending
+        private real array TAI_DescentElapsed
         private timer TAI_UpdateTimer = null
         private boolean TAI_UpdateTimerActive = false
     endglobals
@@ -73,6 +75,7 @@ library TravelAI initializer Init requires AI, TravelSystem, TravelWyvern
         set TAI_Elapsed[session] = 0.00
         set TAI_NextApproachCheck[session] = 0.00
         set TAI_Descending[session] = false
+        set TAI_DescentElapsed[session] = 0.00
     endfunction
 
     private function TAI_GetTargetX takes integer session returns real
@@ -178,6 +181,7 @@ library TravelAI initializer Init requires AI, TravelSystem, TravelWyvern
         set TAI_State[session] = 2
         set TAI_Elapsed[session] = 0.00
         set TAI_Waypoint[session] = 1
+        set TAI_DescentElapsed[session] = 0.00
         call TAI_IssueMove(session)
         set routeVehicle = null
         set carrier = null
@@ -239,11 +243,16 @@ library TravelAI initializer Init requires AI, TravelSystem, TravelWyvern
         set finalWaypoint = TravelSystem_GetRouteWaypointCount(routeId) <= 0 or TAI_Waypoint[session] >= TravelSystem_GetRouteWaypointCount(routeId)
         if finalWaypoint and TravelSystem_GetRouteMethod(routeId) == TRAVEL_METHOD_WYVERN and not TAI_Descending[session] and dx * dx + dy * dy <= TAI_DESCENT_RANGE * TAI_DESCENT_RANGE then
             set TAI_Descending[session] = true
+            set TAI_DescentElapsed[session] = 0.00
             call SetUnitFlyHeight(carrier, 0.00, TAI_DESCENT_RATE)
+        endif
+        if TAI_Descending[session] then
+            set TAI_DescentElapsed[session] = TAI_DescentElapsed[session] + TAI_UPDATE_PERIOD
         endif
         if dx * dx + dy * dy <= TAI_ARRIVAL_RANGE * TAI_ARRIVAL_RANGE then
             if finalWaypoint then
-                if not TAI_Descending[session] or GetUnitFlyHeight(carrier) <= TAI_LANDED_HEIGHT then
+                if not TAI_Descending[session] or GetUnitFlyHeight(carrier) <= TAI_LANDED_HEIGHT or TAI_DescentElapsed[session] >= TAI_MAX_DESCENT_DURATION then
+                    call SetUnitFlyHeight(carrier, 0.00, 0.00)
                     call TAI_EndAt(session, TravelSystem_GetStopX(TravelSystem_GetRouteEnd(routeId)), TravelSystem_GetStopY(TravelSystem_GetRouteEnd(routeId)))
                 endif
             else

@@ -27,6 +27,7 @@ library AIAveline initializer Init requires AI, AIWarrior, ResourceRage, Voiceli
 globals
     constant integer AI_AVELINE_UNIT_RIVERBANE = 'O009'
     constant integer AI_AVELINE_UNIQUE_ID = 'AVLN'
+    private constant real AI_AVELINE_DEATH_TIME = 2.00
     integer AI_Aveline_ProfileId = 0
 endglobals
 
@@ -337,6 +338,8 @@ endfunction
 
 private function OnRegister takes nothing returns nothing
     set udg_Aveline = AI_EventUnit
+    // O009's Object Editor death time is shorter than its custom model sequence.
+    call BlzSetUnitRealField(AI_EventUnit, UNIT_RF_DEATH_TIME, AI_AVELINE_DEATH_TIME)
     call ResourceRage_Register(AI_EventUnit)
 endfunction
 

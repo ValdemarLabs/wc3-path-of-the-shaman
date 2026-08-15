@@ -67,22 +67,26 @@ units are not used.
 Travel units for wyvern and zeppelin routes are owned by `Player(5)` and made
 invulnerable so neutral-passive guard-position behavior cannot pull them home.
 The travel camera uses a 750 distance and 80-degree field of view while arrow
-keys remain available for rotation and angle changes.
+keys remain available for rotation and angle changes. Fullscreen presentation
+keeps user control enabled for those camera key events.
 Temporary wyvern and bat carriers use gradual Mordrax-style fly-height changes:
 they climb during takeoff, descend on final approach, and complete the arrival
-only after reaching landing height.
+after reaching landing height. A bounded descent fallback also completes the
+arrival if Warcraft fails to report the carrier's changing fly height.
 
 `TRAVEL_HIDE_MASTER_UI_GAME_BUTTON` in `TravelSystem.j` controls whether the
 MasterUI Game button is hidden for the journey. ESC and intermediate-stop
-dialogs temporarily leave fullscreen mode so native dialog buttons remain
-visible, then restore fullscreen mode when the player continues.
+choices use a compact TravelUI frame and remain inside fullscreen mode.
 
 ## Route construction
 
 Wyvern and zeppelin travel uses directed routes: each direction is a separate
 route with its own start stop, end stop, fare, vehicle configuration, and ordered
 waypoint list. `TravelSystem_AddWaypoint` appends middle points; the final point
-is normally the destination drop position. Wyvern routes create temporary
+is normally the destination drop position. Reusable coordinates can be created
+once with `TravelSystem_RegisterWaypoint` and attached to any number of routes
+with `TravelSystem_AddRegisteredWaypoint`; all six wyvern destinations use this
+shared-point API. Wyvern routes create temporary
 Player(5) flying carriers. Zeppelin routes use the placed Zeppelin A/B units.
 AI route selection includes both methods and deliberately does not read player
 discovery state; AI heroes therefore treat every configured flight point as

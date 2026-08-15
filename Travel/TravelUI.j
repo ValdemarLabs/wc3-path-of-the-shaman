@@ -53,6 +53,14 @@ library TravelUI initializer Init requires TravelSystem, Table, Interface, Dialo
         private framehandle TUI_GoldText = null
         private framehandle TUI_ActionButton = null
 
+        // Compact prompt shown over fullscreen travel presentation.
+        private framehandle TUI_PromptParent = null
+        private framehandle TUI_PromptBackdrop = null
+        private framehandle TUI_PromptTitle = null
+        private framehandle TUI_PromptText = null
+        private framehandle TUI_PromptConfirmButton = null
+        private framehandle TUI_PromptCancelButton = null
+
         private integer array TUI_RowRoute
         private integer array TUI_RowPassenger
         private Table TUI_RouteFrameRow = 0
@@ -64,6 +72,8 @@ library TravelUI initializer Init requires TravelSystem, Table, Interface, Dialo
         private trigger TUI_ActionTrigger = null
         private trigger TUI_ClearFocusTrigger = null
         private trigger TUI_EscapeTrigger = null
+        private trigger TUI_PromptConfirmTrigger = null
+        private trigger TUI_PromptCancelTrigger = null
 
         private dialog TUI_LeaveDialog = null
         private button TUI_LeaveConfirmButton = null
@@ -400,6 +410,44 @@ library TravelUI initializer Init requires TravelSystem, Table, Interface, Dialo
         call ShowForStop(TravelSystem_GetSelectedStop())
     endfunction
 
+    private function TUI_UpdatePrompt takes nothing returns nothing
+        local integer promptType = TravelSystem_GetPromptType()
+        local integer routeId = TravelSystem_GetActiveRoute()
+        local integer stopId
+
+        if promptType == TRAVEL_PROMPT_NONE or routeId <= 0 then
+            call BlzFrameSetVisible(TUI_PromptParent, false)
+            return
+        endif
+        if promptType == TRAVEL_PROMPT_SKIP then
+            call BlzFrameSetText(TUI_PromptTitle, "Skip to " + TravelSystem_GetStopName(TravelSystem_GetRouteEnd(routeId)) + "?")
+            call BlzFrameSetText(TUI_PromptText, "Skipping this journey costs " + I2S(TravelSystem_GetTotalSkipFee(routeId)) + " gold.")
+            call BlzFrameSetText(TUI_PromptConfirmButton, "Skip travel")
+            call BlzFrameSetText(TUI_PromptCancelButton, "Continue journey")
+        else
+            set stopId = TravelSystem_GetPromptStop()
+            call BlzFrameSetText(TUI_PromptTitle, "Disembark at " + TravelSystem_GetStopName(stopId) + "?")
+            call BlzFrameSetText(TUI_PromptText, "You can leave here or continue to " + TravelSystem_GetStopName(TravelSystem_GetRouteEnd(routeId)) + ".")
+            call BlzFrameSetText(TUI_PromptConfirmButton, "Drop out here")
+            call BlzFrameSetText(TUI_PromptCancelButton, "Continue journey")
+        endif
+        call BlzFrameSetVisible(TUI_PromptParent, true)
+    endfunction
+
+    private function TUI_OnPromptChanged takes nothing returns nothing
+        call TUI_UpdatePrompt()
+    endfunction
+
+    private function TUI_OnPromptConfirmed takes nothing returns nothing
+        call Interface_PlayEventSoundForPlayer(Interface_EVENT_DIALOG_BUTTON_NORMAL, GetTriggerPlayer())
+        call TravelSystem_ConfirmPrompt()
+    endfunction
+
+    private function TUI_OnPromptCancelled takes nothing returns nothing
+        call Interface_PlayEventSoundForPlayer(Interface_EVENT_DIALOG_BUTTON_CLOSE, GetTriggerPlayer())
+        call TravelSystem_CancelPrompt()
+    endfunction
+
     private function TUI_CreateFrames takes nothing returns nothing
         local integer row = 1
         local real rowY = -0.012
@@ -547,7 +595,45 @@ library TravelUI initializer Init requires TravelSystem, Table, Interface, Dialo
         call BlzTriggerRegisterFrameEvent(TUI_ActionTrigger, TUI_ActionButton, FRAMEEVENT_CONTROL_CLICK)
         call BlzTriggerRegisterFrameEvent(TUI_ClearFocusTrigger, TUI_ActionButton, FRAMEEVENT_CONTROL_CLICK)
 
+        set TUI_PromptParent = BlzCreateFrameByType("BACKDROP", "TravelUIPrompt", BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "EscMenuBackdrop", 0)
+        call BlzFrameSetAbsPoint(TUI_PromptParent, FRAMEPOINT_TOPLEFT, 0.215, 0.390)
+        call BlzFrameSetAbsPoint(TUI_PromptParent, FRAMEPOINT_BOTTOMRIGHT, 0.585, 0.245)
+
+        set TUI_PromptBackdrop = BlzCreateFrameByType("BACKDROP", "TravelUIPromptBackdrop", TUI_PromptParent, "", 0)
+        call BlzFrameSetTexture(TUI_PromptBackdrop, TUI_PanelTexture, 0, false)
+        call BlzFrameSetPoint(TUI_PromptBackdrop, FRAMEPOINT_TOPLEFT, TUI_PromptParent, FRAMEPOINT_TOPLEFT, 0.010, -0.010)
+        call BlzFrameSetPoint(TUI_PromptBackdrop, FRAMEPOINT_BOTTOMRIGHT, TUI_PromptParent, FRAMEPOINT_BOTTOMRIGHT, -0.010, 0.010)
+        call BlzFrameSetVertexColor(TUI_PromptBackdrop, BlzConvertColor(255, 0, 0, 0))
+        call BlzFrameSetEnable(TUI_PromptBackdrop, false)
+
+        set TUI_PromptTitle = BlzCreateFrameByType("TEXT", "TravelUIPromptTitle", TUI_PromptParent, "", 0)
+        call BlzFrameSetPoint(TUI_PromptTitle, FRAMEPOINT_TOPLEFT, TUI_PromptParent, FRAMEPOINT_TOPLEFT, 0.020, -0.022)
+        call BlzFrameSetSize(TUI_PromptTitle, 0.330, 0.022)
+        call BlzFrameSetTextAlignment(TUI_PromptTitle, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
+        call BlzFrameSetScale(TUI_PromptTitle, 1.05)
+        call BlzFrameSetEnable(TUI_PromptTitle, false)
+
+        set TUI_PromptText = BlzCreateFrameByType("TEXT", "TravelUIPromptText", TUI_PromptParent, "", 0)
+        call BlzFrameSetPoint(TUI_PromptText, FRAMEPOINT_TOPLEFT, TUI_PromptTitle, FRAMEPOINT_BOTTOMLEFT, 0.0, -0.008)
+        call BlzFrameSetSize(TUI_PromptText, 0.330, 0.030)
+        call BlzFrameSetTextAlignment(TUI_PromptText, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_CENTER)
+        call BlzFrameSetScale(TUI_PromptText, 0.86)
+        call BlzFrameSetEnable(TUI_PromptText, false)
+
+        set TUI_PromptConfirmButton = BlzCreateFrameByType("GLUETEXTBUTTON", "TravelUIPromptConfirm", TUI_PromptParent, "ScriptDialogButton", 0)
+        call BlzFrameSetSize(TUI_PromptConfirmButton, 0.130, 0.032)
+        call BlzFrameSetPoint(TUI_PromptConfirmButton, FRAMEPOINT_BOTTOMLEFT, TUI_PromptParent, FRAMEPOINT_BOTTOMLEFT, 0.035, 0.018)
+        call BlzTriggerRegisterFrameEvent(TUI_PromptConfirmTrigger, TUI_PromptConfirmButton, FRAMEEVENT_CONTROL_CLICK)
+        call BlzTriggerRegisterFrameEvent(TUI_ClearFocusTrigger, TUI_PromptConfirmButton, FRAMEEVENT_CONTROL_CLICK)
+
+        set TUI_PromptCancelButton = BlzCreateFrameByType("GLUETEXTBUTTON", "TravelUIPromptCancel", TUI_PromptParent, "ScriptDialogButton", 0)
+        call BlzFrameSetSize(TUI_PromptCancelButton, 0.130, 0.032)
+        call BlzFrameSetPoint(TUI_PromptCancelButton, FRAMEPOINT_BOTTOMRIGHT, TUI_PromptParent, FRAMEPOINT_BOTTOMRIGHT, -0.035, 0.018)
+        call BlzTriggerRegisterFrameEvent(TUI_PromptCancelTrigger, TUI_PromptCancelButton, FRAMEEVENT_CONTROL_CLICK)
+        call BlzTriggerRegisterFrameEvent(TUI_ClearFocusTrigger, TUI_PromptCancelButton, FRAMEEVENT_CONTROL_CLICK)
+
         call BlzFrameSetVisible(TUI_Parent, false)
+        call BlzFrameSetVisible(TUI_PromptParent, false)
     endfunction
 
     private function Init takes nothing returns nothing
@@ -559,11 +645,15 @@ library TravelUI initializer Init requires TravelSystem, Table, Interface, Dialo
         set TUI_ActionTrigger = CreateTrigger()
         set TUI_ClearFocusTrigger = CreateTrigger()
         set TUI_EscapeTrigger = CreateTrigger()
+        set TUI_PromptConfirmTrigger = CreateTrigger()
+        set TUI_PromptCancelTrigger = CreateTrigger()
         call TriggerAddAction(TUI_CloseTrigger, function TUI_OnClose)
         call TriggerAddAction(TUI_RouteTrigger, function TUI_OnRouteClicked)
         call TriggerAddAction(TUI_PassengerTrigger, function TUI_OnPassengerClicked)
         call TriggerAddAction(TUI_ActionTrigger, function TUI_OnAction)
         call TriggerAddAction(TUI_ClearFocusTrigger, function TUI_ClearFocus)
+        call TriggerAddAction(TUI_PromptConfirmTrigger, function TUI_OnPromptConfirmed)
+        call TriggerAddAction(TUI_PromptCancelTrigger, function TUI_OnPromptCancelled)
         call TriggerRegisterPlayerEventEndCinematic(TUI_EscapeTrigger, Player(0))
         call TriggerAddAction(TUI_EscapeTrigger, function TUI_OnEscape)
 
@@ -575,6 +665,7 @@ library TravelUI initializer Init requires TravelSystem, Table, Interface, Dialo
 
         call TUI_CreateFrames()
         call TravelSystem_RegisterMasterSelectedHandler(function TUI_OnMasterSelected)
+        call TravelSystem_RegisterPromptChangedHandler(function TUI_OnPromptChanged)
         set TUI_Initialized = true
     endfunction
 endlibrary

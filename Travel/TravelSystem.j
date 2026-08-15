@@ -56,6 +56,7 @@
     - TravelSystem_GetRouteStartName(...) / TravelSystem_GetRouteEndName(...)
     - TravelSystem_GetRouteStartZoneId(...) / TravelSystem_GetRouteEndZoneId(...)
     - TravelSystem_AddWaypoint(...)
+    - TravelSystem_RegisterWaypoint(...) / TravelSystem_AddRegisteredWaypoint(...)
     - TravelSystem_SetRouteVehicle(...)
     - TravelSystem_GetRouteVehicle(...)
     - TravelSystem_SetRouteFare(...)
@@ -66,6 +67,8 @@
     - TravelSystem_BuildPassengerList(...)
     - TravelSystem_Start(...)
     - TravelSystem_NotifyScheduledStop(...)
+    - TravelSystem_RegisterPromptChangedHandler(...)
+    - TravelSystem_ConfirmPrompt() / TravelSystem_CancelPrompt()
     - TravelSystem_GetWindRiderMaster(...) / TravelSystem_GetFlightMaster(...)
     - TravelSystem_GetShipMaster(...) / TravelSystem_GetZeppelin(...)
     - TravelSystem_GetTravelShipA() / TravelSystem_GetTravelShipB()
@@ -79,6 +82,10 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         constant integer TRAVEL_METHOD_ZEPPELIN = 2
         constant integer TRAVEL_METHOD_SHIP_A = 3
         constant integer TRAVEL_METHOD_SHIP_B = 4
+
+        constant integer TRAVEL_PROMPT_NONE = 0
+        constant integer TRAVEL_PROMPT_SKIP = 1
+        constant integer TRAVEL_PROMPT_STOP = 2
 
         constant integer TRAVEL_WINDRIDER_MASTER_HORDE_SCOUT_BASE = 1
         constant integer TRAVEL_WINDRIDER_MASTER_HORDE_LUMBER_MILL = 2
@@ -106,6 +113,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         private constant integer TS_MAX_STOPS = 32
         private constant integer TS_MAX_ROUTES = 64
         private constant integer TS_MAX_WAYPOINTS = 32
+        private constant integer TS_MAX_REGISTERED_WAYPOINTS = 256
         private constant integer TS_MAX_PASSENGERS = 12
         private constant integer TS_MAX_PROXY_MODELS = 8
         private constant integer TS_MAX_MASTER_EFFECTS = 16
@@ -127,8 +135,9 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         private constant real TS_FLIGHT_DESCENT_RATE = 50.00
         private constant real TS_FLIGHT_DESCENT_RANGE = 800.00
         private constant real TS_FLIGHT_LANDED_HEIGHT = 20.00
+        private constant real TS_FLIGHT_MAX_DESCENT_DURATION = 12.00
         private constant integer TS_SKIP_FEE_DEFAULT = 100
-        private constant string TS_DISCOVERED_PREFIX = "|cFF32CD32Discovered |n|r"
+        private constant string TS_DISCOVERED_PREFIX = "|cFFFFFFFFNew travel point|n|r"
         private constant string TS_DISCOVERED_NAME_COLOR = "|cFF32CD32"
         private constant string TS_MASTER_EFFECT_MODEL = "war3campImported\\ExcMark_Green_FlightPath.mdx"
         private constant string TS_FADE_TEXTURE = "ReplaceableTextures\\CameraMasks\\Black_mask.blp"
@@ -172,6 +181,9 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         private real array TS_WaypointX
         private real array TS_WaypointY
         private integer array TS_WaypointStop
+        private integer TS_RegisteredWaypointCount = 0
+        private real array TS_RegisteredWaypointX
+        private real array TS_RegisteredWaypointY
         private real array TS_DeckOffset
         private real array TS_DeckAngle
         private real array TS_DeckHeight
@@ -201,6 +213,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         private unit TS_ActiveCarrierB = null
         private boolean TS_ActiveCarrierTemporary = false
         private boolean TS_ActiveDescending = false
+        private real TS_ActiveDescentElapsed = 0.00
         private effect array TS_PassengerEffect
         private real array TS_PassengerEffectFacingOffset
         private integer TS_PassengerEffectCount = 0
@@ -216,6 +229,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         private integer TS_SelectedStop = 0
         private trigger TS_MasterSelectedHandlers = null
         private trigger TS_TravelFinishedHandlers = null
+        private trigger TS_PromptChangedHandlers = null
 
         private dialog TS_SkipDialog = null
         private dialog TS_StopDialog = null
@@ -226,11 +240,13 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         private integer TS_PromptStop = 0
         private boolean TS_PromptVisible = false
         private boolean TS_StopPromptVisible = false
+        private boolean TS_EscapeLocked = false
 
         private timer TS_UpdateTimer = null
         private timer TS_DiscoveryTimer = null
         private timer TS_StopPromptTimer = null
         private timer TS_TransitionTimer = null
+        private timer TS_EscapeTimer = null
         private location TS_TerrainLocation = null
     endglobals
 
@@ -691,6 +707,29 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         call TriggerAddAction(TS_TravelFinishedHandlers, handler)
     endfunction
 
+    public function RegisterPromptChangedHandler takes code handler returns nothing
+        if handler == null then
+            return
+        endif
+        if TS_PromptChangedHandlers == null then
+            set TS_PromptChangedHandlers = CreateTrigger()
+        endif
+        call TriggerAddAction(TS_PromptChangedHandlers, handler)
+    endfunction
+
+    public function GetPromptType takes nothing returns integer
+        if TS_PromptVisible then
+            return TRAVEL_PROMPT_SKIP
+        elseif TS_StopPromptVisible then
+            return TRAVEL_PROMPT_STOP
+        endif
+        return TRAVEL_PROMPT_NONE
+    endfunction
+
+    public function GetPromptStop takes nothing returns integer
+        return TS_PromptStop
+    endfunction
+
     public function RegisterStop takes integer methodId, string name, integer zoneId, unit master, rect boardArea, real dropX, real dropY, boolean requiresDiscovery returns integer
         local integer stopId
 
@@ -824,6 +863,16 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         set TS_DeckHeight[index] = height
     endfunction
 
+    public function RegisterWaypoint takes real x, real y returns integer
+        if TS_RegisteredWaypointCount >= TS_MAX_REGISTERED_WAYPOINTS then
+            return 0
+        endif
+        set TS_RegisteredWaypointCount = TS_RegisteredWaypointCount + 1
+        set TS_RegisteredWaypointX[TS_RegisteredWaypointCount] = x
+        set TS_RegisteredWaypointY[TS_RegisteredWaypointCount] = y
+        return TS_RegisteredWaypointCount
+    endfunction
+
     public function AddWaypoint takes integer routeId, real x, real y, integer stopId returns boolean
         local integer waypoint
         local integer index
@@ -836,10 +885,18 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         set index = TS_GetWaypointIndex(routeId, waypoint)
         set TS_WaypointX[index] = x
         set TS_WaypointY[index] = y
+        set TS_WaypointStop[index] = 0
         if TS_IsValidStop(stopId) then
             set TS_WaypointStop[index] = stopId
         endif
         return true
+    endfunction
+
+    public function AddRegisteredWaypoint takes integer routeId, integer waypointId, integer stopId returns boolean
+        if waypointId <= 0 or waypointId > TS_RegisteredWaypointCount then
+            return false
+        endif
+        return AddWaypoint(routeId, TS_RegisteredWaypointX[waypointId], TS_RegisteredWaypointY[waypointId], stopId)
     endfunction
 
     public function RegisterPassengerEffect takes integer unitTypeId, string modelPath, real scale, real facingOffset returns nothing
@@ -1257,9 +1314,12 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         set TS_ActiveCarrierB = null
         set TS_ActiveCarrierTemporary = false
         set TS_ActiveDescending = false
+        set TS_ActiveDescentElapsed = 0.00
     endfunction
 
     private function TS_HidePrompt takes boolean restoreFullscreen returns nothing
+        local boolean hasCustomPrompt = TS_PromptChangedHandlers != null
+
         if TS_PromptVisible then
             call DialogSystem_HideDialog(TS_SkipDialog, Player(0))
         endif
@@ -1270,6 +1330,9 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         set TS_PromptVisible = false
         set TS_StopPromptVisible = false
         set TS_PromptStop = 0
+        if hasCustomPrompt then
+            call TriggerExecute(TS_PromptChangedHandlers)
+        endif
         if restoreFullscreen and TS_Active and not TS_Ending then
             call FullscreenUI_SetEnabled(true)
         endif
@@ -1457,11 +1520,16 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
             endif
         endif
         set cost = GetTotalSkipFee(TS_ActiveRoute)
-        call FullscreenUI_SetEnabled(false)
-        call DialogSystem_SetTitle(TS_SkipDialog, "Skip to " + TS_StopName[TS_RouteEnd[TS_ActiveRoute]] + "? Skipping will cost " + I2S(cost) + " gold.")
-        call DialogSystem_SetContext(TS_ActiveCarrier, Player(0))
-        call DialogSystem_ShowDialog(TS_SkipDialog, Player(0))
         set TS_PromptVisible = true
+        if TS_PromptChangedHandlers != null then
+            call TriggerExecute(TS_PromptChangedHandlers)
+            call FullscreenUI_Refresh()
+        else
+            call FullscreenUI_SetEnabled(false)
+            call DialogSystem_SetTitle(TS_SkipDialog, "Skip to " + TS_StopName[TS_RouteEnd[TS_ActiveRoute]] + "? Skipping will cost " + I2S(cost) + " gold.")
+            call DialogSystem_SetContext(TS_ActiveCarrier, Player(0))
+            call DialogSystem_ShowDialog(TS_SkipDialog, Player(0))
+        endif
     endfunction
 
     private function TS_ShowStopPrompt takes integer stopId returns nothing
@@ -1470,17 +1538,45 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         endif
         set TS_PromptStop = stopId
         set TS_StopPromptVisible = true
-        call FullscreenUI_SetEnabled(false)
-        call DialogSystem_SetTitle(TS_StopDialog, "Disembark at " + TS_StopName[stopId] + " or continue to " + TS_StopName[TS_RouteEnd[TS_ActiveRoute]] + "?")
-        call DialogSystem_SetContext(TS_ActiveCarrier, Player(0))
-        call DialogSystem_ShowDialog(TS_StopDialog, Player(0))
+        if TS_PromptChangedHandlers != null then
+            call TriggerExecute(TS_PromptChangedHandlers)
+            call FullscreenUI_Refresh()
+        else
+            call FullscreenUI_SetEnabled(false)
+            call DialogSystem_SetTitle(TS_StopDialog, "Disembark at " + TS_StopName[stopId] + " or continue to " + TS_StopName[TS_RouteEnd[TS_ActiveRoute]] + "?")
+            call DialogSystem_SetContext(TS_ActiveCarrier, Player(0))
+            call DialogSystem_ShowDialog(TS_StopDialog, Player(0))
+        endif
         call TimerStart(TS_StopPromptTimer, TS_STOP_PROMPT_DURATION, false, function TS_OnStopPromptTimeout)
     endfunction
 
+    public function ConfirmPrompt takes nothing returns nothing
+        if TS_PromptVisible then
+            call TS_OnSkipConfirmed()
+        elseif TS_StopPromptVisible then
+            call TS_OnDropOut()
+        endif
+    endfunction
+
+    public function CancelPrompt takes nothing returns nothing
+        if TS_PromptVisible then
+            call TS_OnSkipCancelled()
+        elseif TS_StopPromptVisible then
+            call TS_OnContinueStop()
+        endif
+    endfunction
+
+    private function TS_ClearEscapeLock takes nothing returns nothing
+        set TS_EscapeLocked = false
+    endfunction
+
     private function TS_OnEscape takes nothing returns nothing
-        if not TS_Active or TS_Starting or TS_Ending then
+        if not TS_Active or TS_Starting or TS_Ending or TS_EscapeLocked then
             return
         endif
+        // DialogSystem listens to both OSKEY_ESCAPE and END_CINEMATIC.
+        set TS_EscapeLocked = true
+        call TimerStart(TS_EscapeTimer, 0.05, false, function TS_ClearEscapeLock)
         if TS_PromptVisible then
             call TS_OnSkipCancelled()
         elseif TS_StopPromptVisible then
@@ -1514,18 +1610,26 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         set finalWaypoint = TS_RouteWaypointCount[TS_ActiveRoute] <= 0 or TS_ActiveWaypoint >= TS_RouteWaypointCount[TS_ActiveRoute]
         if finalWaypoint and TS_RouteMethod[TS_ActiveRoute] == TRAVEL_METHOD_WYVERN and TS_ActiveCarrierTemporary and not TS_ActiveDescending and dx * dx + dy * dy <= TS_FLIGHT_DESCENT_RANGE * TS_FLIGHT_DESCENT_RANGE then
             set TS_ActiveDescending = true
+            set TS_ActiveDescentElapsed = 0.00
             call SetUnitFlyHeight(TS_ActiveCarrier, 0.00, TS_FLIGHT_DESCENT_RATE)
             if TS_ActiveCarrierB != null then
                 call SetUnitFlyHeight(TS_ActiveCarrierB, 0.00, TS_FLIGHT_DESCENT_RATE)
             endif
         endif
+        if TS_ActiveDescending then
+            set TS_ActiveDescentElapsed = TS_ActiveDescentElapsed + TS_UPDATE_PERIOD
+        endif
         if dx * dx + dy * dy <= TS_ARRIVAL_RANGE * TS_ARRIVAL_RANGE then
             if finalWaypoint then
-                set landed = not TS_ActiveDescending or GetUnitFlyHeight(TS_ActiveCarrier) <= TS_FLIGHT_LANDED_HEIGHT
+                set landed = not TS_ActiveDescending or GetUnitFlyHeight(TS_ActiveCarrier) <= TS_FLIGHT_LANDED_HEIGHT or TS_ActiveDescentElapsed >= TS_FLIGHT_MAX_DESCENT_DURATION
                 if TS_ActiveCarrierB != null and GetUnitFlyHeight(TS_ActiveCarrierB) > TS_FLIGHT_LANDED_HEIGHT then
-                    set landed = false
+                    set landed = TS_ActiveDescentElapsed >= TS_FLIGHT_MAX_DESCENT_DURATION
                 endif
                 if landed then
+                    call SetUnitFlyHeight(TS_ActiveCarrier, 0.00, 0.00)
+                    if TS_ActiveCarrierB != null then
+                        call SetUnitFlyHeight(TS_ActiveCarrierB, 0.00, 0.00)
+                    endif
                     call TS_FinishAtStop(TS_RouteEnd[TS_ActiveRoute], false, false)
                 endif
             elseif TS_IsValidStop(waypointStop) and waypointStop != TS_RouteEnd[TS_ActiveRoute] then
@@ -1582,6 +1686,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         set TS_ActiveCarrierB = null
         set TS_ActiveCarrierTemporary = false
         set TS_ActiveDescending = false
+        set TS_ActiveDescentElapsed = 0.00
         if TS_ActiveCarrier != null then
             set carrier = null
             return GetUnitTypeId(TS_ActiveCarrier) != 0
@@ -1856,6 +1961,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         set TS_DiscoveryTimer = CreateTimer()
         set TS_StopPromptTimer = CreateTimer()
         set TS_TransitionTimer = CreateTimer()
+        set TS_EscapeTimer = CreateTimer()
         set TS_TerrainLocation = Location(0.00, 0.00)
         call InitDialogs()
         call DialogInteraction_RegisterAnySelectionHandler(function TS_OnMasterSelected)

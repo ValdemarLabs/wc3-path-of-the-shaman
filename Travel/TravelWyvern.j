@@ -43,6 +43,7 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
         private constant real TW_MOVE_SPEED = 400.00
 
         private integer array TW_Stop
+        private integer array TW_Waypoint
         private integer TW_ScoutBaseStop = 0
         private integer TW_LumberMillStop = 0
         private integer TW_GoldMineStop = 0
@@ -122,6 +123,20 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
         endif
     endfunction
 
+    private function TW_CreateWaypoints takes nothing returns boolean
+        local integer index = 1
+
+        loop
+            exitwhen index > 6
+            set TW_Waypoint[index] = TravelSystem_RegisterWaypoint(TravelSystem_GetStopX(TW_Stop[index]), TravelSystem_GetStopY(TW_Stop[index]))
+            if TW_Waypoint[index] <= 0 then
+                return false
+            endif
+            set index = index + 1
+        endloop
+        return true
+    endfunction
+
     private function TW_CreateNetwork takes nothing returns nothing
         local integer startIndex = 1
         local integer endIndex
@@ -140,7 +155,7 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
                     endif
                     set routeId = RegisterDirectedRoute(TW_Stop[startIndex], TW_Stop[endIndex], fare)
                     if routeId > 0 then
-                        call AddWaypoint(routeId, TravelSystem_GetStopX(TW_Stop[endIndex]), TravelSystem_GetStopY(TW_Stop[endIndex]))
+                        call TravelSystem_AddRegisteredWaypoint(routeId, TW_Waypoint[endIndex], 0)
                     endif
                 endif
                 set endIndex = endIndex + 1
@@ -191,6 +206,16 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
         set TW_Stop[5] = TW_AshfangOutpostStop
         set TW_Stop[6] = TW_SirensongStop
         if TW_Stop[1] <= 0 or TW_Stop[2] <= 0 or TW_Stop[3] <= 0 or TW_Stop[4] <= 0 or TW_Stop[5] <= 0 or TW_Stop[6] <= 0 then
+            call TimerStart(TW_InitTimer, 1.00, false, function TW_TryInitialize)
+            set scoutMaster = null
+            set lumberMaster = null
+            set goldMaster = null
+            set verdantMaster = null
+            set ashfangMaster = null
+            set sirensongMaster = null
+            return
+        endif
+        if not TW_CreateWaypoints() then
             call TimerStart(TW_InitTimer, 1.00, false, function TW_TryInitialize)
             set scoutMaster = null
             set lumberMaster = null

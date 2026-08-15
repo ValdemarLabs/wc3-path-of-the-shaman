@@ -62,6 +62,8 @@ globals
     private boolean FullscreenUI_Enabled = false
 
     private trigger FullscreenUI_InitTrigger = CreateTrigger()
+    private trigger FullscreenUI_EscapeTrigger = CreateTrigger()
+    private timer FullscreenUI_EscapeTimer = CreateTimer()
 endglobals
 
 private function RegisterUIFrame takes string frameName returns nothing
@@ -117,6 +119,33 @@ private function ApplyVisibility takes nothing returns nothing
     call FogMaskEnable(false)
 endfunction
 
+private function ReapplyEnabledState takes nothing returns nothing
+    local integer index = 0
+
+    if not FullscreenUI_Enabled then
+        return
+    endif
+    call ApplyVisibility()
+    call ShowInterface(false, 0.00)
+    loop
+        exitwhen index >= FullscreenUI_FrameCount
+        call BlzFrameSetVisible(FullscreenUI_Frame[index], false)
+        set index = index + 1
+    endloop
+    call HideDecorations()
+endfunction
+
+private function RefreshAfterEscape takes nothing returns nothing
+    call ReapplyEnabledState()
+endfunction
+
+private function OnEscape takes nothing returns nothing
+    if FullscreenUI_Enabled then
+        // Warcraft restores parts of the normal interface after END_CINEMATIC.
+        call TimerStart(FullscreenUI_EscapeTimer, 0.00, false, function RefreshAfterEscape)
+    endif
+endfunction
+
 private function Init takes nothing returns nothing
     if FullscreenUI_Initialized then
         return
@@ -160,6 +189,7 @@ public function Enable takes nothing returns nothing
     call ApplyVisibility()
 
     if FullscreenUI_Enabled then
+        call ReapplyEnabledState()
         return
     endif
 
@@ -262,9 +292,7 @@ endfunction
  * a transmission is harmless and protects against patch-specific resets.
  */
 public function Refresh takes nothing returns nothing
-    if FullscreenUI_Enabled then
-        call HideDecorations()
-    endif
+    call ReapplyEnabledState()
 endfunction
 
 public function SetEnabled takes boolean enabled returns nothing
@@ -280,9 +308,16 @@ public function IsEnabled takes nothing returns boolean
 endfunction
 
 private function DelayedInit takes nothing returns nothing
-    call TriggerRegisterTimerEvent(FullscreenUI_InitTrigger, 0.10, false)
+    local integer playerIndex = 0
 
+    call TriggerRegisterTimerEvent(FullscreenUI_InitTrigger, 0.10, false)
     call TriggerAddAction(FullscreenUI_InitTrigger, function Init)
+    loop
+        exitwhen playerIndex >= bj_MAX_PLAYERS
+        call TriggerRegisterPlayerEvent(FullscreenUI_EscapeTrigger, Player(playerIndex), EVENT_PLAYER_END_CINEMATIC)
+        set playerIndex = playerIndex + 1
+    endloop
+    call TriggerAddAction(FullscreenUI_EscapeTrigger, function OnEscape)
 endfunction
 
 endlibrary

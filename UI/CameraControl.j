@@ -471,7 +471,7 @@ private function CC_InitSpecialModeConfigs takes nothing returns nothing
     // 4. If the mode should activate from a camera-local rect, register that rect in CC_RegisterBuiltInSpecialCameraRects().
     // 5. Leave ZoneEvent-owned zone camera switching in ZoneEvent.
     call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_BOOMMINE, "Boom Mine", 1600.00, 5000.00, 270.00, 90.00, 70.00, false, 270.00)
-    call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_GNOLLHIDEOUT, "Gnoll hideout", 2200.00, 5000.00, 270.00, 90.00, 70.00, false, 270.00)
+    call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_GNOLLHIDEOUT, "Gnoll hideout", 2200.00, 5000.00, 270.00, 90.00, 70.00, true, 295.00)
     call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_TEMPLATE01, "Template 01", 1800.00, 6000.00, 285.00, 90.00, 70.00, false, CAMERA_ANGLE_MAX)
     call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_TEMPLATE02, "Template 02", 1400.00, 4500.00, 300.00, 180.00, 65.00, false, CAMERA_ANGLE_MAX)
 endfunction
@@ -1463,6 +1463,8 @@ endfunction
 public function SuspendInteractive takes player whichPlayer, real angle, real rotation returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
 
+    // Interactive suspended cameras require player key events even in fullscreen UI.
+    call EnableUserControl(true)
     call Suspend(whichPlayer)
     set CC_SuspendedKeyboardAdjustable[pid] = true
     set CC_SuspendedDistance[pid] = CC_Distance[pid]
