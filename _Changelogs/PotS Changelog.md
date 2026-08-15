@@ -43,6 +43,18 @@
 - Updated `Travel/TravelAI.j` and `PatrolFollowSystems/PatrolSystem.j` to pause idle travel updates, throttle AI approach scans, and avoid repeatedly rebuilding active patrol paths.
 - Updated `Travel/README.md` with the active master mapping, Ship A waypoint loop, default fares, quest discovery API, passenger models, and AI discovery policy.
 
+### Tool Updates
+
+- Updated `tools/voicelines.ps1` with exact-key filtering for selective FishAudio regeneration without replacing an entire speaker family.
+
+### Imports
+
+- Imported 270 generated vendor MP3 files for the human male, human female, Tauren male, Morgrim Dwarf male, Elarindor male, Elarindor female, Goblin male, and Bonecrusher Ogre male ExSound sequences.
+
+### Actions Remaining
+
+- Generate the Orc, Troll, and Satyr vendor sequences after suitable FishAudio voice references are available.
+
 ### Known Issues
 
 - The new Ship A rect globals and full travel changes still require World Editor/JassHelper compilation and in-map route, deck-offset, camera, discovery, and multiplayer validation.
