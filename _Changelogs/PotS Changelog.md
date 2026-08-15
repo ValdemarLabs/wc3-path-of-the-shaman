@@ -19,8 +19,15 @@
 
 ### Player-Facing Updates
 
+- Fixed Aveline's retained Fake Death pose so her custom model plays its full death animation before the corpse is frozen.
+- Gnoll Hideout now allows camera rotation with a limited 270-295-degree angle range.
+- Travel-point discovery now reads "New travel point" in white while keeping the discovered destination name green.
+- Fullscreen crafting and travel cameras now keep arrow-key control available; travel ESC and intermediate-stop choices stay in fullscreen and use a dedicated TravelUI prompt.
+- Wyvern and AI flight arrivals now finish reliably after landing instead of remaining stuck when Warcraft does not update the carrier's reported fly height.
 - Goblin vendors in Riverbane, Stormhaven, Sirensong, travelling routes, and the arena now have distinct voiced trade dialogue profiles ready for their shared goblin voice set.
 - Fiery Mountain, forest, and Sirensong orc vendors, satyr merchants, Bonecrusher ogres, Graknar's bag shop, and the regional human/orc blacksmiths now have voiced transaction profiles ready for their matching voice sets.
+- Vendor greetings, shop-open lines, catalog chatter, transaction responses, and farewells now use each vendor's bound race and gender voice, including Tauren bartenders and Elarindor quartermasters.
+- Missing external vendor sounds now keep dialogue timing intact by estimating duration from the displayed text and reporting the missing ExSound key.
 - Restyled the crafting panel to match ShopUI, with a darker inset backdrop, clearer text hierarchy, larger recipe rows and icons, a framed profession line, and cleaner detail and action-button spacing.
 - Kribugs' dialogue now distinguishes the goblin Kribugs from his ogre carrier Mogsnort even though they share one composite unit, with situational Mogsnort interjections and the original ogre grunts, growls, hunger complaint, and fart laugh.
 - Kribugs' normal shop now has a clear Back control, reliably returns to his dialogue choices, and uses unique trade chatter and transaction reactions with occasional Mogsnort interruptions.
@@ -32,8 +39,13 @@
 
 ### Technical Updates
 
+- Updated `AI/Specific/AI_Aveline.j` with the custom model's two-second death-time field used by retained Fake Death animation freezing.
+- Updated `UI/CameraControl.j` and `UI/FullscreenUI.j` with the adjustable Gnoll Hideout preset, centralized interactive-camera user control, and delayed ESC fullscreen restoration.
+- Updated `Travel/TravelSystem.j`, `TravelUI.j`, `TravelWyvern.j`, and `TravelAI.j` with fullscreen frame prompts, reusable registered waypoints, bounded player/AI flight descent completion, and active travel camera control.
+- Updated `Travel/README.md` with fullscreen prompt, interactive camera, shared waypoint, and arrival fallback behavior.
 - Updated `Voicelines/Voicelines_VendorLines.j`, `Vendors/VendorFactions/VendorGoblins.j`, `Vendors/VendorCatalogs.j`, and `tools/voicelines.ps1` with named goblin profile constants, 75 numbered `VendorGoblinMale` sound keys, constant-based unit and zone bindings, and scanner support for computed vendor sequences.
 - Updated `Voicelines/Voicelines_VendorLines.j` and the orc, satyr, Bonecrusher ogre, blacksmith, bag, and general-goods vendor libraries with 135 additional voiced lines, shared profile constants, contiguous ExSound sequences, and constant-based bindings.
+- Updated `SoundAndMusic/ExSound.j`, `Vendors/VendorLines.j`, `Vendors/VendorDialogs.j`, and `Voicelines/Voicelines_VendorLines.j` with restored missing-sound warnings, text-duration fallback, catalog sound-key resolution, and explicit race/gender catalog registrations.
 - Updated `UI/CraftingUI.j` with the ShopUI panel proportions, seven-row recipe list, detail-info backdrop, and pane-local crafting controls.
 - Updated `Voicelines/Voicelines_Kribugs.j` and `QuestsAndDialogs/QuestGivers/qKribugs.j` with separate `Mogsnort_XXXX` voicelines, labeled legacy ogre Sound Editor cues, registered speaker folders, and shared-unit cinematic speaker routing.
 - Updated `QuestsAndDialogs/QuestMaster.j` so unchanged quest-giver marker models persist instead of being destroyed and recreated during periodic availability refreshes.
@@ -46,8 +58,11 @@
 ### Tool Updates
 
 - Updated `tools/voicelines.ps1` with exact-key filtering for selective FishAudio regeneration without replacing an entire speaker family.
+- Updated `tools/voicelines.ps1` to discover race/gender catalog combinations and generate their computed numbered FishAudio keys into the correct review folders.
 
 ### Imports
+
+- Added 2,113 generated vendor catalog MP3s across the human male, human female, Tauren male, Morgrim dwarf male, Elarindor male, Elarindor female, goblin male, and Bonecrusher ogre male voice folders.
 
 - Imported 270 generated vendor MP3 files for the human male, human female, Tauren male, Morgrim Dwarf male, Elarindor male, Elarindor female, Goblin male, and Bonecrusher Ogre male ExSound sequences.
 
