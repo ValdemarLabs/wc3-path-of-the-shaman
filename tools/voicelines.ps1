@@ -253,6 +253,53 @@ function Get-JassRows {
                 Add-Row -Rows $rows -Key (Format-SequenceKey -SoundType $soundType -LineIndex $lineIndex) -Text $extraVendorTexts[$i] -Source $file.Name -ExpectedFolder "" -DefinitionId "$($file.Name):$($soundTypeConstant):$lineIndex"
             }
         }
+
+        $vendorCatalogs = @{}
+        $vendorCatalogCount = 0
+        $catalogCallPattern = '(?m)^\s*call\s+(RegisterBasicProfile|RegisterCatalogBasicProfile)\(([^\r\n]+)\)'
+        foreach ($m in [regex]::Matches($text, $catalogCallPattern)) {
+            $arguments = @([regex]::Matches($m.Groups[2].Value, '"((?:[^"\\]|\\.)*)"') | ForEach-Object { ConvertFrom-JassString $_.Groups[1].Value })
+            if ($arguments.Count -lt 5) { continue }
+
+            $vendorCatalogCount++
+            $catalogTexts = @($arguments | Select-Object -Skip 1)
+            if ($m.Groups[1].Value -eq "RegisterBasicProfile") {
+                $catalogTexts += $extraVendorTexts
+            }
+            $vendorCatalogs[$arguments[0]] = [pscustomobject]@{
+                index = $vendorCatalogCount
+                texts = $catalogTexts
+            }
+        }
+
+        $voiceFamilies = @{}
+        $familyPattern = 'call\s+RegisterVoiceFamily\(\s*(VL_VENDOR_[A-Z0-9_]+_TYPE)\s*,\s*(\d+)\s*,\s*"((?:[^"\\]|\\.)*)"\s*\)'
+        foreach ($m in [regex]::Matches($text, $familyPattern)) {
+            if (-not $soundTypeByConstant.ContainsKey($m.Groups[1].Value)) { continue }
+
+            $folder = ConvertFrom-JassString $m.Groups[3].Value
+            $folder = $folder.Replace('Pots\Sound\Voicelines\', '').TrimEnd('\')
+            $voiceFamilies[$m.Groups[1].Value] = [pscustomobject]@{
+                sound_type = $soundTypeByConstant[$m.Groups[1].Value]
+                first_line = [int]$m.Groups[2].Value
+                folder = $folder
+            }
+        }
+
+        $catalogVoicePattern = 'call\s+RegisterVoiceCatalog\(\s*(VL_VENDOR_[A-Z0-9_]+_TYPE)\s*,\s*"((?:[^"\\]|\\.)*)"\s*\)'
+        foreach ($m in [regex]::Matches($text, $catalogVoicePattern)) {
+            $familyConstant = $m.Groups[1].Value
+            $catalogName = ConvertFrom-JassString $m.Groups[2].Value
+            if (-not $voiceFamilies.ContainsKey($familyConstant) -or -not $vendorCatalogs.ContainsKey($catalogName)) { continue }
+
+            $family = $voiceFamilies[$familyConstant]
+            $catalog = $vendorCatalogs[$catalogName]
+            $firstLine = $family.first_line + ($catalog.index - 1) * 19
+            for ($i = 0; $i -lt $catalog.texts.Count; $i++) {
+                $lineIndex = $firstLine + $i
+                Add-Row -Rows $rows -Key (Format-SequenceKey -SoundType $family.sound_type -LineIndex $lineIndex) -Text $catalog.texts[$i] -Source $file.Name -ExpectedFolder $family.folder -DefinitionId "$($file.Name):${familyConstant}:${catalogName}:$lineIndex"
+            }
+        }
     }
 
     foreach ($file in Get-ChildItem -LiteralPath "AI" -Recurse -Filter "*.j" -File -ErrorAction SilentlyContinue) {

@@ -2,7 +2,7 @@
     VendorLines
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.3.0
 
     Description:
     Vendor dialogue profiles and trade-session voice configuration for PotS
@@ -18,7 +18,11 @@
 
     API:
     - call VendorLines_RegisterBasicLines(name, greet1, greet2, trade, farewell)
+    - call VendorLines_RegisterCatalogBasicLines(name, offset, greet1, greet2, trade, farewell)
     - call VendorLines_RegisterLine(profile, category, text, soundKey)
+    - call VendorLines_RegisterCatalogLine(profile, category, offset, text)
+    - call VendorLines_RegisterProfileSoundType(profile, soundType)
+    - call VendorLines_RegisterSoundTypeCatalogStart(soundType, firstLine)
     - call VendorLines_RegisterSpeakerLine(profile, category, speakerName, text, soundKey)
     - call VendorLines_BindUnitTypeProfile(unitTypeId, profile)
     - call VendorLines_BindUnitProfile(vendor, profile)
@@ -26,6 +30,9 @@
     - call VendorLines_SetVendorRandomLinesEnabled(vendorId, enabled)
     - call VendorLines_SetDefaultRandomLineInterval(minimum, maximum)
     - call VendorLines_SetVendorRandomLineInterval(vendorId, minimum, maximum)
+    - call VendorLines_PickGreetLine(vendor)
+    - call VendorLines_PickTradeLine(vendor)
+    - call VendorLines_PickFarewellLine(vendor)
     - call VendorLines_PlayRandomTradeLine(vendor)
     - call VendorLines_PlayTradeOutcome(vendor, boughtCount, soldCount)
     - Content libraries should register text only from VoicelinesVendorLines.
@@ -83,6 +90,7 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
         private constant integer VL_LINE_STRIDE = 10
         private constant integer VL_CATEGORY_STRIDE = 10
         private constant integer VL_PROFILE_STRIDE = 80
+        private constant string VL_CATALOG_SOUND_MARKER = "@VC"
 
         private Table VL_ProfileByName = 0
         private Table VL_ProfileByUnitType = 0
@@ -90,6 +98,8 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
         private hashtable VL_ProfileByVendorZone = InitHashtable()
         private Table VL_LineCount = 0
         private Table VL_LastLine = 0
+        private Table VL_SoundTypeByProfile = 0
+        private Table VL_CatalogFirstBySoundType = 0
         private integer VL_ProfileCount = 0
         private string array VL_ProfileName
         private string array VL_LineText
@@ -163,6 +173,42 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
         endif
         set vendor = null
         return profileId
+    endfunction
+
+    private function VL_FormatSoundKey takes string soundType, integer lineIndex returns string
+        if lineIndex < 10 then
+            return soundType + "000" + I2S(lineIndex)
+        elseif lineIndex < 100 then
+            return soundType + "00" + I2S(lineIndex)
+        elseif lineIndex < 1000 then
+            return soundType + "0" + I2S(lineIndex)
+        endif
+        return soundType + I2S(lineIndex)
+    endfunction
+
+    private function VL_GetCatalogSoundMarker takes integer lineOffset returns string
+        return VL_CATALOG_SOUND_MARKER + I2S(lineOffset)
+    endfunction
+
+    private function VL_ResolveSoundKey takes unit vendor, string soundKey returns string
+        local integer profileId
+        local integer firstLine
+        local integer markerLength = StringLength(VL_CATALOG_SOUND_MARKER)
+        local string soundType
+
+        if soundKey == null or soundKey == "" or StringLength(soundKey) <= markerLength or SubString(soundKey, 0, markerLength) != VL_CATALOG_SOUND_MARKER then
+            return soundKey
+        endif
+        set profileId = VL_GetBoundProfile(vendor)
+        set soundType = VL_SoundTypeByProfile.string[profileId]
+        if soundType == null or soundType == "" then
+            return ""
+        endif
+        set firstLine = VL_CatalogFirstBySoundType.integer[StringHash(soundType)]
+        if firstLine <= 0 then
+            return ""
+        endif
+        return VL_FormatSoundKey(soundType, firstLine + S2I(SubString(soundKey, markerLength, StringLength(soundKey))))
     endfunction
 
     private function VL_GetVendorName takes unit vendor returns string
@@ -293,6 +339,7 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
             if speakerName == "" then
                 set speakerName = VL_GetVendorSpeakerName(vendor)
             endif
+            set VL_PickedSound = VL_ResolveSoundKey(vendor, VL_PickedSound)
             call DialogSystem_QueueFieldLine(vendor, speakerName, VL_PickedSound, VL_PickedText)
         endif
         set vendor = null
@@ -348,8 +395,26 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
         call VL_RegisterLine(profileName, category, "", text, soundKey)
     endfunction
 
+    public function RegisterCatalogLine takes string profileName, integer category, integer lineOffset, string text returns nothing
+        call VL_RegisterLine(profileName, category, "", text, VL_GetCatalogSoundMarker(lineOffset))
+    endfunction
+
     public function RegisterSpeakerLine takes string profileName, integer category, string speakerName, string text, string soundKey returns nothing
         call VL_RegisterLine(profileName, category, speakerName, text, soundKey)
+    endfunction
+
+    public function RegisterProfileSoundType takes string profileName, string soundType returns nothing
+        local integer profileId = VL_GetOrCreateProfile(profileName)
+
+        if profileId > 0 and soundType != null and soundType != "" then
+            set VL_SoundTypeByProfile.string[profileId] = soundType
+        endif
+    endfunction
+
+    public function RegisterSoundTypeCatalogStart takes string soundType, integer firstLine returns nothing
+        if soundType != null and soundType != "" and firstLine > 0 then
+            set VL_CatalogFirstBySoundType.integer[StringHash(soundType)] = firstLine
+        endif
     endfunction
 
     public function BindUnitTypeProfile takes integer unitTypeId, string profileName returns nothing
@@ -395,6 +460,27 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
         if farewellLine != "" then
             call DialogSystem_RegisterExitLine(vendorName, farewellLine, "", true)
             call DialogSystem_RegisterFarewellLine(vendorName, farewellLine, "", true)
+        endif
+    endfunction
+
+    public function RegisterCatalogBasicLines takes string vendorName, integer lineOffset, string greetA, string greetB, string tradeLine, string farewellLine returns nothing
+        local integer profileId = VL_GetOrCreateProfile(vendorName)
+
+        if vendorName == "" then
+            set vendorName = "Merchant"
+        endif
+        if greetA != "" then
+            call DialogSystem_RegisterGreetLine(vendorName, greetA, VL_GetCatalogSoundMarker(lineOffset), true)
+        endif
+        if greetB != "" then
+            call DialogSystem_RegisterGreetLine(vendorName, greetB, VL_GetCatalogSoundMarker(lineOffset + 1), true)
+        endif
+        if tradeLine != "" then
+            call DialogSystem_RegisterTradeLine(vendorName, tradeLine, VL_GetCatalogSoundMarker(lineOffset + 2), true)
+        endif
+        if farewellLine != "" then
+            call DialogSystem_RegisterExitLine(vendorName, farewellLine, VL_GetCatalogSoundMarker(lineOffset + 3), true)
+            call DialogSystem_RegisterFarewellLine(vendorName, farewellLine, VL_GetCatalogSoundMarker(lineOffset + 3), true)
         endif
     endfunction
 
@@ -491,14 +577,38 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
         set vendor = null
     endfunction
 
+    public function PickGreetLine takes unit vendor returns boolean
+        local boolean result = DialogSystem_PickGreetLine(vendor, VL_GetVendorName(vendor))
+
+        set DialogSystem_PickedSound = VL_ResolveSoundKey(vendor, DialogSystem_PickedSound)
+        set vendor = null
+        return result
+    endfunction
+
+    public function PickTradeLine takes unit vendor returns boolean
+        local boolean result = DialogSystem_PickTradeLine(vendor, VL_GetVendorName(vendor))
+
+        set DialogSystem_PickedSound = VL_ResolveSoundKey(vendor, DialogSystem_PickedSound)
+        set vendor = null
+        return result
+    endfunction
+
+    public function PickFarewellLine takes unit vendor returns boolean
+        local boolean result = DialogSystem_PickFarewellLine(vendor, VL_GetVendorName(vendor))
+
+        set DialogSystem_PickedSound = VL_ResolveSoundKey(vendor, DialogSystem_PickedSound)
+        set vendor = null
+        return result
+    endfunction
+
     public function PlayTradeLine takes unit vendor returns nothing
-        call DialogSystem_PickTradeLine(vendor, VL_GetVendorName(vendor))
+        call PickTradeLine(vendor)
         call DialogSystem_PlayLine(vendor, VL_GetVendorSpeakerName(vendor), DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
         set vendor = null
     endfunction
 
     public function PlayFarewellLine takes unit vendor returns nothing
-        call DialogSystem_PickFarewellLine(vendor, VL_GetVendorName(vendor))
+        call PickFarewellLine(vendor)
         call DialogSystem_PlayLine(vendor, VL_GetVendorSpeakerName(vendor), DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
         set vendor = null
     endfunction
@@ -509,6 +619,8 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
         set VL_ProfileByUnit = Table.create()
         set VL_LineCount = Table.create()
         set VL_LastLine = Table.create()
+        set VL_SoundTypeByProfile = Table.create()
+        set VL_CatalogFirstBySoundType = Table.create()
 
     endfunction
 endlibrary

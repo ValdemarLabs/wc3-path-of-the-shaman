@@ -144,13 +144,12 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
 
     private function VDI_CreateGreetSequence takes unit vendor, unit hero returns integer
         local integer seq = DialogSystem_CreateSequence()
-        local string vendorName = VendorLines_GetVendorName(vendor)
         local string speakerName = VendorLines_GetVendorSpeakerName(vendor)
 
         call DialogSystem_SetSequenceDefaultSpeaker(seq, vendor, speakerName)
         call DialogSystem_AddMakeFaceEachOther(seq, vendor, hero, 0.45, 0.00)
 
-        call DialogSystem_PickGreetLine(vendor, vendorName)
+        call VendorLines_PickGreetLine(vendor)
         call DialogSystem_AddLine(seq, vendor, speakerName, DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
 
         return seq

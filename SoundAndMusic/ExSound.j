@@ -1885,6 +1885,16 @@ private function EstimateDurationFromText takes string dialogtext returns real
     return I2R(len) / charsPerSecond
 endfunction
 
+private function ExSound_ReportMissing takes string key, string dialogtext returns nothing
+    if dialogtext != null and dialogtext != "" then
+        set udg_ExSoundDuration = EstimateDurationFromText(dialogtext)
+        call BJDebugMsg("ExSound WARNING: '" + key + "' missing, estimated from text: " + R2S(udg_ExSoundDuration) + "s")
+    else
+        set udg_ExSoundDuration = EXSOUND_FALLBACK_DURATION
+        call BJDebugMsg("ExSound WARNING: '" + key + "' missing, using constant fallback: " + R2S(udg_ExSoundDuration) + "s")
+    endif
+endfunction
+
 //=================================================================
 // Stop current sound
 //=================================================================
@@ -1911,9 +1921,10 @@ private function ExSound_PlayInternal takes string key, boolean is3D, real x, re
     local string path = LoadStr(es_Table, StringHash(key), 0)
     local sound s
     local integer durMS
-    
+
+    set udg_ExSoundDuration = 0.0
     if path == null or path == "" then
-        //call BJDebugMsg("ExSound ERROR: key '" + key + "' not registered.")
+        call ExSound_ReportMissing(key, dialogtext)
         return
     endif
 
@@ -1923,6 +1934,7 @@ private function ExSound_PlayInternal takes string key, boolean is3D, real x, re
     // Registered ExSound keys are mostly imported voicelines and must preserve legacy non-spatial playback behavior.
     set s = CreateSound(path, false, false, false, EXSOUND_FADE_RATE, EXSOUND_FADE_RATE, "")
     if s == null then
+        call ExSound_ReportMissing(key, dialogtext)
         return
     endif
     set es_CurrentSound[es_CurrentSoundCount] = s
@@ -1936,17 +1948,8 @@ private function ExSound_PlayInternal takes string key, boolean is3D, real x, re
     if durMS > EXSOUND_MIN_DURATION then
         set udg_ExSoundDuration = I2R(durMS) / 1000.0
 
-    elseif dialogtext != null then
-        // Estimate from dialog text if available
-        set udg_ExSoundDuration = EstimateDurationFromText(dialogtext)
-        call BJDebugMsg("ExSound WARNING: '" + key + "' missing, estimated from text: " + R2S(udg_ExSoundDuration) + "s")
-
-    // Fallback to constant duration - UNUSED, because sound and/or dialogtext should always be provided
-    //elseif dialogtext == null then
-        // Fallback to constant if no dialog text provided
-    //    set udg_ExSoundDuration = EXSOUND_FALLBACK_DURATION
-    //    call BJDebugMsg("ExSound WARNING: '" + key + "' missing, using constant fallback: " + R2S(udg_ExSoundDuration) + "s")
-
+    else
+        call ExSound_ReportMissing(key, dialogtext)
     endif
 
     //call BJDebugMsg("Play: " + key + " (" + R2S(udg_ExSoundDuration) + "s)")
