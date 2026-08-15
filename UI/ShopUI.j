@@ -2,7 +2,7 @@
     ShopUI
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
     Frame UI for PotS merchant vendors. The panel can browse merchant stock or
@@ -23,6 +23,7 @@
     - call ShopUI_ShowForVendorEx(vendor, buyer, endOnCombat)
     - call ShopUI_ShowForVendorWithReturnEx(vendor, buyer, endOnCombat)
     - call ShopUI_ShowForVendorWithReturnAndInterrupt(vendor, buyer, endOnCombat, onInterrupt)
+    - call ShopUI_RegisterVendorReturnHandler(vendor, callback)
     - call ShopUI_RegisterReturnHandler(callback)
     - set vendor = ShopUI_GetVendorUnit()
     - set buyer = ShopUI_GetBuyerUnit()
@@ -114,6 +115,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
 
         private Table SUI_ButtonRow = 0
         private Table SUI_CategoryButtonIndex = 0
+        private Table SUI_ReturnHandlerByVendor = 0
 
         private trigger SUI_CloseTrigger = null
         private trigger SUI_ModeTrigger = null
@@ -558,6 +560,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
     private function SUI_UpdateHeader takes player whichPlayer returns nothing
         local string modeLabel = "Merchant"
         local string viewingText
+        local string vendorType = Shop_GetVendorTypeLabel(SUI_VendorId)
         local integer capacity = 0
         local integer usedSlots = 0
 
@@ -573,6 +576,9 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
             endif
         else
             set viewingText = "Viewing: You"
+        endif
+        if SUI_ViewMode == SHOP_VIEW_MERCHANT and vendorType != "" then
+            set viewingText = "|cffffcc00" + vendorType + "|r  |  " + viewingText
         endif
 
         if GetLocalPlayer() == whichPlayer then
@@ -604,6 +610,8 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
     private function SUI_EndTradeSession takes boolean playOutcome, boolean returnToDialog returns nothing
         local unit buyer = SUI_BuyerUnit
         local unit vendor = SUI_VendorUnit
+        local trigger returnHandler = null
+        local boolean returnHandled = false
 
         if not SUI_TradeSessionOpen then
             set buyer = null
@@ -618,9 +626,19 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         endif
         call Shop_EndTradeSession()
         call DialogSystem_ClearEscapeAction()
-        if returnToDialog and SUI_ReturnTrigger != null and TriggerEvaluate(SUI_ReturnTrigger) then
-            call TriggerExecute(SUI_ReturnTrigger)
-        else
+        if returnToDialog and vendor != null then
+            set returnHandler = SUI_ReturnHandlerByVendor.trigger[GetHandleId(vendor)]
+            if returnHandler != null then
+                set returnHandled = TriggerEvaluate(returnHandler)
+            endif
+            if not returnHandled and SUI_ReturnTrigger != null then
+                set returnHandled = TriggerEvaluate(SUI_ReturnTrigger)
+                if returnHandled then
+                    call TriggerExecute(SUI_ReturnTrigger)
+                endif
+            endif
+        endif
+        if not returnHandled then
             call DialogSystem_StopDialogCamera(Player(0), SUI_CAMERA_RESET_TIME, SUI_USE_DIALOG_CAMERA)
             call DialogInteraction_EndCinematicSequence(SUI_CINEMATIC)
             if buyer != null and DialogInteraction_IsUnitAlive(buyer) then
@@ -632,6 +650,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
 
         set buyer = null
         set vendor = null
+        set returnHandler = null
     endfunction
 
     private function SUI_HideInternal takes boolean playSound, boolean playOutcome returns nothing
@@ -845,8 +864,8 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call BlzFrameSetEnable(SUI_ViewingText, false)
 
         set SUI_CloseButton = BlzCreateFrameByType("GLUETEXTBUTTON", "ShopUIClose", SUI_Parent, "ScriptDialogButton", 0)
-        call BlzFrameSetSize(SUI_CloseButton, 0.030, 0.030)
-        call BlzFrameSetText(SUI_CloseButton, "X")
+        call BlzFrameSetSize(SUI_CloseButton, 0.064, 0.030)
+        call BlzFrameSetText(SUI_CloseButton, "Close")
         call BlzFrameSetPoint(SUI_CloseButton, FRAMEPOINT_TOPRIGHT, SUI_Parent, FRAMEPOINT_TOPRIGHT, -0.010, -0.010)
         call BlzTriggerRegisterFrameEvent(SUI_CloseTrigger, SUI_CloseButton, FRAMEEVENT_CONTROL_CLICK)
         call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_CloseButton, FRAMEEVENT_CONTROL_CLICK)
@@ -1105,6 +1124,11 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call Shop_BeginTradeSessionForUnits(SUI_VendorId, vendor, buyer)
         set SUI_RandomVendorLineRemaining = VendorLines_GetRandomLineInterval(SUI_VendorId)
         set p = GetOwningPlayer(buyer)
+        if returnToDialog then
+            call BlzFrameSetText(SUI_CloseButton, "Back")
+        else
+            call BlzFrameSetText(SUI_CloseButton, "Close")
+        endif
         if SUI_USE_DIALOG_CAMERA then
             call DialogCameraStartRandomCycle(p, vendor, SUI_GetCameraRotationOffset(vendor, buyer), SUI_CAMERA_CHANGE_MIN_INTERVAL, SUI_CAMERA_CHANGE_MAX_INTERVAL, false)
         endif
@@ -1150,6 +1174,31 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call TriggerAddCondition(SUI_ReturnTrigger, Filter(callback))
     endfunction
 
+    public function RegisterVendorReturnHandler takes unit vendor, code callback returns nothing
+        local integer handleId
+        local trigger oldHandler
+        local trigger newHandler
+
+        if vendor == null or callback == null then
+            set vendor = null
+            set oldHandler = null
+            set newHandler = null
+            return
+        endif
+        set handleId = GetHandleId(vendor)
+        set oldHandler = SUI_ReturnHandlerByVendor.trigger[handleId]
+        if oldHandler != null then
+            call DestroyTrigger(oldHandler)
+        endif
+        set newHandler = CreateTrigger()
+        call TriggerAddCondition(newHandler, Filter(callback))
+        set SUI_ReturnHandlerByVendor.trigger[handleId] = newHandler
+
+        set vendor = null
+        set oldHandler = null
+        set newHandler = null
+    endfunction
+
     public function GetVendorUnit takes nothing returns unit
         return SUI_VendorUnit
     endfunction
@@ -1181,6 +1230,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
 
         set SUI_ButtonRow = Table.create()
         set SUI_CategoryButtonIndex = Table.create()
+        set SUI_ReturnHandlerByVendor = Table.create()
         set SUI_RefreshTimer = CreateTimer()
         call TimerStart(SUI_RefreshTimer, SUI_REFRESH_INTERVAL, true, function SUI_RefreshAction)
 

@@ -2,7 +2,7 @@
     VendorLines
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Vendor dialogue profiles and trade-session voice configuration for PotS
@@ -19,6 +19,7 @@
     API:
     - call VendorLines_RegisterBasicLines(name, greet1, greet2, trade, farewell)
     - call VendorLines_RegisterLine(profile, category, text, soundKey)
+    - call VendorLines_RegisterSpeakerLine(profile, category, speakerName, text, soundKey)
     - call VendorLines_BindUnitTypeProfile(unitTypeId, profile)
     - call VendorLines_BindUnitProfile(vendor, profile)
     - call VendorLines_BindVendorZoneProfile(vendorId, zoneId, profile)
@@ -93,6 +94,7 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
         private string array VL_ProfileName
         private string array VL_LineText
         private string array VL_LineSound
+        private string array VL_LineSpeaker
 
         private boolean VL_DefaultRandomLinesEnabled = true
         private real VL_DefaultMinimumInterval = 60.00
@@ -104,6 +106,7 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
 
         private string VL_PickedText = ""
         private string VL_PickedSound = ""
+        private string VL_PickedSpeaker = ""
     endglobals
 
     private function VL_GetCountKey takes integer profileId, integer category returns integer
@@ -228,6 +231,7 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
         set lineKey = VL_GetLineKey(profileId, category, lineIndex)
         set VL_PickedText = VL_LineText[lineKey]
         set VL_PickedSound = VL_LineSound[lineKey]
+        set VL_PickedSpeaker = VL_LineSpeaker[lineKey]
         return VL_PickedText != ""
     endfunction
 
@@ -241,6 +245,7 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
 
         set VL_PickedText = ""
         set VL_PickedSound = ""
+        set VL_PickedSpeaker = ""
         set roleProfile = VL_GetProfileByName(vendorName)
         if profileId > 0 and roleProfile > 0 and profileId != roleProfile then
             if GetRandomInt(0, 1) == 0 then
@@ -283,8 +288,12 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
     endfunction
 
     private function VL_QueuePickedLine takes unit vendor returns nothing
+        local string speakerName = VL_PickedSpeaker
         if vendor != null and VL_PickedText != "" then
-            call DialogSystem_QueueFieldLine(vendor, VL_GetVendorSpeakerName(vendor), VL_PickedSound, VL_PickedText)
+            if speakerName == "" then
+                set speakerName = VL_GetVendorSpeakerName(vendor)
+            endif
+            call DialogSystem_QueueFieldLine(vendor, speakerName, VL_PickedSound, VL_PickedText)
         endif
         set vendor = null
     endfunction
@@ -306,7 +315,7 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
         return VL_GetVendorSpeakerName(vendor)
     endfunction
 
-    public function RegisterLine takes string profileName, integer category, string text, string soundKey returns nothing
+    private function VL_RegisterLine takes string profileName, integer category, string speakerName, string text, string soundKey returns nothing
         local integer profileId
         local integer countKey
         local integer count
@@ -328,7 +337,19 @@ library VendorLines initializer Init requires Table, DialogSystem, DialogInterac
         if soundKey == null then
             set soundKey = ""
         endif
+        if speakerName == null then
+            set speakerName = ""
+        endif
         set VL_LineSound[lineKey] = soundKey
+        set VL_LineSpeaker[lineKey] = speakerName
+    endfunction
+
+    public function RegisterLine takes string profileName, integer category, string text, string soundKey returns nothing
+        call VL_RegisterLine(profileName, category, "", text, soundKey)
+    endfunction
+
+    public function RegisterSpeakerLine takes string profileName, integer category, string speakerName, string text, string soundKey returns nothing
+        call VL_RegisterLine(profileName, category, speakerName, text, soundKey)
     endfunction
 
     public function BindUnitTypeProfile takes integer unitTypeId, string profileName returns nothing

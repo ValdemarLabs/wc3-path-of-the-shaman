@@ -2,7 +2,7 @@
     VoicelinesKribugs
 
     Author: Valdemar
-    Version: 1.3.0
+    Version: 1.5.0
 
     Description:
     Speaker-owned voiceline key/text constants migrated from legacy
@@ -86,6 +86,23 @@ globals
     constant string VL_MOGSNORT_LEGACY_YES_4_TEXT = "(Grunt.)"
     constant string VL_MOGSNORT_LEGACY_ATTACK_3_KEY = "KribugsOgreAttack3"
     constant string VL_MOGSNORT_LEGACY_ATTACK_3_TEXT = "(Growl.)"
+
+    // Kribugs' unique VendorLines profile and trade outcomes.
+    constant string VL_KRIBUGS_VENDOR_PROFILE = "Kribugs"
+    constant string VL_KRIBUGS_VENDOR_BOUGHT_KEY = "Kribugs_0073"
+    constant string VL_KRIBUGS_VENDOR_BOUGHT_TEXT = "Excellent choice! Kribugs would have charged more, but you were too quick."
+    constant string VL_KRIBUGS_VENDOR_SOLD_KEY = "Kribugs_0074"
+    constant string VL_KRIBUGS_VENDOR_SOLD_TEXT = "Kribugs knows three people who will pay twice that!"
+    constant string VL_KRIBUGS_VENDOR_EXCHANGED_KEY = "Kribugs_0075"
+    constant string VL_KRIBUGS_VENDOR_EXCHANGED_TEXT = "... and that's a deal!"
+    constant string VL_KRIBUGS_VENDOR_NO_TRADE_KEY = "Kribugs_0076"
+    constant string VL_KRIBUGS_VENDOR_NO_TRADE_TEXT = "Not even one purchase?"
+    constant string VL_MOGSNORT_VENDOR_CHATTER_KEY = "Mogsnort_0077"
+    constant string VL_MOGSNORT_VENDOR_CHATTER_TEXT = "Mogsnort guard goods. Goods not run away yet."
+    constant string VL_MOGSNORT_VENDOR_BOUGHT_KEY = "Mogsnort_0078"
+    constant string VL_MOGSNORT_VENDOR_BOUGHT_TEXT = "Coin tiny and taste bad."
+    constant string VL_MOGSNORT_VENDOR_NO_TRADE_KEY = "Mogsnort_0079"
+    constant string VL_MOGSNORT_VENDOR_NO_TRADE_TEXT = "Customer no buy. Mogsnort eat customer now?"
 
     // Excel draft: Kribugs | Quest: Ogre lost his sandwich | Event: Intro | Done: x
     constant string VL_KRIBUGS_0018_KEY = "Kribugs_0018"
@@ -271,6 +288,10 @@ private function Init takes nothing returns nothing
     call Voicelines_RegisterKey(VL_KRIBUGS_FOLDER, VL_KRIBUGS_0070_KEY)
     call Voicelines_RegisterKey(VL_KRIBUGS_FOLDER, VL_KRIBUGS_0071_KEY)
     call Voicelines_RegisterKey(VL_KRIBUGS_FOLDER, VL_KRIBUGS_0072_KEY)
+    call Voicelines_RegisterKey(VL_KRIBUGS_FOLDER, VL_KRIBUGS_VENDOR_BOUGHT_KEY)
+    call Voicelines_RegisterKey(VL_KRIBUGS_FOLDER, VL_KRIBUGS_VENDOR_SOLD_KEY)
+    call Voicelines_RegisterKey(VL_KRIBUGS_FOLDER, VL_KRIBUGS_VENDOR_EXCHANGED_KEY)
+    call Voicelines_RegisterKey(VL_KRIBUGS_FOLDER, VL_KRIBUGS_VENDOR_NO_TRADE_KEY)
 
     call Voicelines_RegisterKey(VL_MOGSNORT_FOLDER, VL_MOGSNORT_0010_KEY)
     call Voicelines_RegisterKey(VL_MOGSNORT_FOLDER, VL_MOGSNORT_0011_KEY)
@@ -281,6 +302,9 @@ private function Init takes nothing returns nothing
     call Voicelines_RegisterKey(VL_MOGSNORT_FOLDER, VL_MOGSNORT_0050_KEY)
     call Voicelines_RegisterKey(VL_MOGSNORT_FOLDER, VL_MOGSNORT_0055_KEY)
     call Voicelines_RegisterKey(VL_MOGSNORT_FOLDER, VL_MOGSNORT_0068_KEY)
+    call Voicelines_RegisterKey(VL_MOGSNORT_FOLDER, VL_MOGSNORT_VENDOR_CHATTER_KEY)
+    call Voicelines_RegisterKey(VL_MOGSNORT_FOLDER, VL_MOGSNORT_VENDOR_BOUGHT_KEY)
+    call Voicelines_RegisterKey(VL_MOGSNORT_FOLDER, VL_MOGSNORT_VENDOR_NO_TRADE_KEY)
 endfunction
 
 endlibrary

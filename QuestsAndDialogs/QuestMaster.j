@@ -2,7 +2,7 @@
     QuestMaster
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
     Owns PotS quest data, state transitions, rewards, availability, quest-log
@@ -115,6 +115,7 @@ globals
 	private constant string QUEST_ICON_MODEL_GRAY_EXCLAMATION = "war3campImported\\ExcMark_Grey_UnavailableQuest.mdl"
 
 	private integer QUEST_ICON_EFFECT_ID = StringHash("effect")
+	private integer QUEST_ICON_MODEL_ID = StringHash("model")
 	private integer QUEST_ICON_MINIMAP_ID = StringHash("minimaps")
 	private integer QUEST_ICON_QUESTS_ID = StringHash("quests")
 
@@ -518,6 +519,7 @@ private function RemoveOldEffect takes unit u returns nothing
 		call DestroyEffect(old)
 		set iconTable.effect[QUEST_ICON_EFFECT_ID] = null
 	endif
+	call iconTable.string.remove(QUEST_ICON_MODEL_ID)
 endfunction
 
 public function IconRefresh takes unit u, integer questID, string questType, integer questState returns nothing
@@ -525,9 +527,6 @@ public function IconRefresh takes unit u, integer questID, string questType, int
 	local effect e
 	local integer pingStyle = -1
 	local Table iconTable
-
-	call RemoveOldEffect(u)
-	call RemoveOldMapPing(u)
 
 	if questState == QUEST_STATE_UNAVAILABLE then
 		set model = QUEST_ICON_MODEL_GRAY_EXCLAMATION
@@ -555,16 +554,23 @@ public function IconRefresh takes unit u, integer questID, string questType, int
 		set pingStyle = bj_CAMPPINGSTYLE_TURNIN
 	endif
 
-	if model != "" then
-		set e = AddSpecialEffectTarget(model, u, "overhead")
-		call SpeciFX_MarkAsExcluded(e)
-		set iconTable = QuestIconTable.link(GetHandleId(u))
-		set iconTable.effect[QUEST_ICON_EFFECT_ID] = e
+	set iconTable = QuestIconTable.link(GetHandleId(u))
+	set e = iconTable.effect[QUEST_ICON_EFFECT_ID]
+	if iconTable.string[QUEST_ICON_MODEL_ID] != model or (model != "" and e == null) or (model == "" and e != null) then
+		call RemoveOldEffect(u)
+		if model != "" then
+			set e = AddSpecialEffectTarget(model, u, "overhead")
+			call SpeciFX_MarkAsExcluded(e)
+			set iconTable.effect[QUEST_ICON_EFFECT_ID] = e
+			set iconTable.string[QUEST_ICON_MODEL_ID] = model
+		endif
 	endif
 
+	call RemoveOldMapPing(u)
 	if pingStyle != -1 then
 		call CreateMapPingForUnit(u, pingStyle)
 	endif
+	set e = null
 endfunction
 
 private function IconStatePriority takes integer state returns integer

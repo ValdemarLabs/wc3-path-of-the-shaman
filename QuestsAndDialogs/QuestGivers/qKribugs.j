@@ -2,7 +2,7 @@
     qKribugs
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.4.0
 
     Description:
     Quest, dialogue, patrol, ogre-fullness, and merchant integration for
@@ -89,6 +89,7 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
         private boolean OgreFull = false
         private boolean SatchelDropped = false
         private boolean InitWaitingLogged = false
+        private boolean VendorLinesRegistered = false
     endglobals
 
     private function DebugMsg takes string msg returns nothing
@@ -886,7 +887,26 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
         call DialogSystem_RegisterFarewellLineForUnit(Kribugs, VL_KRIBUGS_0009_TEXT, VL_KRIBUGS_0009_KEY, true)
     endfunction
 
+    private function RegisterVendorLines takes nothing returns nothing
+        if VendorLinesRegistered then
+            return
+        endif
+        set VendorLinesRegistered = true
+        call DialogSystem_RegisterTradeLine("Kribugs", VL_KRIBUGS_0006_TEXT, VL_KRIBUGS_0006_KEY, true)
+        call VendorLines_RegisterLine(VL_KRIBUGS_VENDOR_PROFILE, VendorLines_LINE_CHATTER, VL_KRIBUGS_0012_TEXT, VL_KRIBUGS_0012_KEY)
+        call VendorLines_RegisterLine(VL_KRIBUGS_VENDOR_PROFILE, VendorLines_LINE_CHATTER, VL_KRIBUGS_0013_TEXT, VL_KRIBUGS_0013_KEY)
+        call VendorLines_RegisterLine(VL_KRIBUGS_VENDOR_PROFILE, VendorLines_LINE_CHATTER, VL_KRIBUGS_0014_TEXT, VL_KRIBUGS_0014_KEY)
+        call VendorLines_RegisterSpeakerLine(VL_KRIBUGS_VENDOR_PROFILE, VendorLines_LINE_CHATTER, "Mogsnort", VL_MOGSNORT_VENDOR_CHATTER_TEXT, VL_MOGSNORT_VENDOR_CHATTER_KEY)
+        call VendorLines_RegisterLine(VL_KRIBUGS_VENDOR_PROFILE, VendorLines_LINE_BOUGHT, VL_KRIBUGS_VENDOR_BOUGHT_TEXT, VL_KRIBUGS_VENDOR_BOUGHT_KEY)
+        call VendorLines_RegisterSpeakerLine(VL_KRIBUGS_VENDOR_PROFILE, VendorLines_LINE_BOUGHT, "Mogsnort", VL_MOGSNORT_VENDOR_BOUGHT_TEXT, VL_MOGSNORT_VENDOR_BOUGHT_KEY)
+        call VendorLines_RegisterLine(VL_KRIBUGS_VENDOR_PROFILE, VendorLines_LINE_SOLD, VL_KRIBUGS_VENDOR_SOLD_TEXT, VL_KRIBUGS_VENDOR_SOLD_KEY)
+        call VendorLines_RegisterLine(VL_KRIBUGS_VENDOR_PROFILE, VendorLines_LINE_BOUGHT_AND_SOLD, VL_KRIBUGS_VENDOR_EXCHANGED_TEXT, VL_KRIBUGS_VENDOR_EXCHANGED_KEY)
+        call VendorLines_RegisterLine(VL_KRIBUGS_VENDOR_PROFILE, VendorLines_LINE_NO_TRANSACTION, VL_KRIBUGS_VENDOR_NO_TRADE_TEXT, VL_KRIBUGS_VENDOR_NO_TRADE_KEY)
+        call VendorLines_RegisterSpeakerLine(VL_KRIBUGS_VENDOR_PROFILE, VendorLines_LINE_NO_TRANSACTION, "Mogsnort", VL_MOGSNORT_VENDOR_NO_TRADE_TEXT, VL_MOGSNORT_VENDOR_NO_TRADE_KEY)
+    endfunction
+
     private function ConfigureVendor takes nothing returns nothing
+        call RegisterVendorLines()
         if KribugsVendorId == 0 then
             set KribugsVendorId = Shop_CreateVendor("Kribugs", UNIT_KRIBUGS)
             call Shop_SetVendorTypeLabel(KribugsVendorId, "Goblin General Goods")
@@ -898,7 +918,8 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
         endif
         call Shop_SetVendorUnitTypeName(UNIT_KRIBUGS, "Kribugs")
         call Shop_RegisterVendorUnit(Kribugs, KribugsVendorId)
-        call VendorLines_BindUnitProfile(Kribugs, "Goblin General Goods")
+        call VendorLines_BindUnitProfile(Kribugs, VL_KRIBUGS_VENDOR_PROFILE)
+        call ShopUI_RegisterVendorReturnHandler(Kribugs, function ReturnFromTrade)
         call VendorDialogs_RegisterCustomVendor(Kribugs, function ReturnFromTrade)
     endfunction
 
