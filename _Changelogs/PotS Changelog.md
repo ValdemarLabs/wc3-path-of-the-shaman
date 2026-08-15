@@ -19,6 +19,8 @@
 
 ### Player-Facing Updates
 
+- Goblin vendors in Riverbane, Stormhaven, Sirensong, travelling routes, and the arena now have distinct voiced trade dialogue profiles ready for their shared goblin voice set.
+- Fiery Mountain, forest, and Sirensong orc vendors, satyr merchants, Bonecrusher ogres, Graknar's bag shop, and the regional human/orc blacksmiths now have voiced transaction profiles ready for their matching voice sets.
 - Restyled the crafting panel to match ShopUI, with a darker inset backdrop, clearer text hierarchy, larger recipe rows and icons, a framed profession line, and cleaner detail and action-button spacing.
 - Kribugs' dialogue now distinguishes the goblin Kribugs from his ogre carrier Mogsnort even though they share one composite unit, with situational Mogsnort interjections and the original ogre grunts, growls, hunger complaint, and fart laugh.
 - Kribugs' normal shop now has a clear Back control, reliably returns to his dialogue choices, and uses unique trade chatter and transaction reactions with occasional Mogsnort interruptions.
@@ -30,6 +32,8 @@
 
 ### Technical Updates
 
+- Updated `Voicelines/Voicelines_VendorLines.j`, `Vendors/VendorFactions/VendorGoblins.j`, `Vendors/VendorCatalogs.j`, and `tools/voicelines.ps1` with named goblin profile constants, 75 numbered `VendorGoblinMale` sound keys, constant-based unit and zone bindings, and scanner support for computed vendor sequences.
+- Updated `Voicelines/Voicelines_VendorLines.j` and the orc, satyr, Bonecrusher ogre, blacksmith, bag, and general-goods vendor libraries with 135 additional voiced lines, shared profile constants, contiguous ExSound sequences, and constant-based bindings.
 - Updated `UI/CraftingUI.j` with the ShopUI panel proportions, seven-row recipe list, detail-info backdrop, and pane-local crafting controls.
 - Updated `Voicelines/Voicelines_Kribugs.j` and `QuestsAndDialogs/QuestGivers/qKribugs.j` with separate `Mogsnort_XXXX` voicelines, labeled legacy ogre Sound Editor cues, registered speaker folders, and shared-unit cinematic speaker routing.
 - Updated `QuestsAndDialogs/QuestMaster.j` so unchanged quest-giver marker models persist instead of being destroyed and recreated during periodic availability refreshes.
