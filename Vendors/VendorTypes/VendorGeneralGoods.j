@@ -2,7 +2,7 @@
     GeneralGoodsVendor
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.3.0
 
     Description:
     Template general goods merchant for the PotS shop system. This vendor sells
@@ -77,8 +77,8 @@ library GeneralGoodsVendor initializer Init requires Shop, VoicelinesVendorLines
     endfunction
 
     private function BindVoiceProfiles takes nothing returns nothing
-        call VendorLines_BindUnitTypeProfile(VGG_UNIT_TYPE_UTILITIES_VENDOR, "Forest Orc Supplies")
-        call VendorLines_BindUnitTypeProfile(VGG_UNIT_TYPE_THRAKNAR, "Forest Orc Supplies")
+        call VendorLines_BindUnitTypeProfile(VGG_UNIT_TYPE_UTILITIES_VENDOR, VL_VENDOR_PROFILE_ORC_FOREST_SUPPLIES_MALE)
+        call VendorLines_BindUnitTypeProfile(VGG_UNIT_TYPE_THRAKNAR, VL_VENDOR_PROFILE_ORC_FOREST_SUPPLIES_MALE)
     endfunction
 
     private function Init takes nothing returns nothing

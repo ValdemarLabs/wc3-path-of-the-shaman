@@ -2,7 +2,7 @@
     BlacksmithVendor
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Template blacksmith merchant for the PotS shop system. This vendor sells
@@ -90,10 +90,10 @@ library BlacksmithVendor initializer Init requires Shop, VoicelinesVendorLines, 
     endfunction
 
     private function BindVoiceProfiles takes nothing returns nothing
-        call VendorLines_BindUnitTypeProfile(VB_UNIT_TYPE_HUMAN_BLACKSMITH, "Riverbane Human Blacksmith")
-        call VendorLines_BindUnitTypeProfile(VB_UNIT_TYPE_ORC_BLACKSMITH, "Fiery Mountain Orc Blacksmith")
-        call VendorLines_BindUnitTypeProfile(VB_UNIT_TYPE_BROKKAR, "Fiery Mountain Orc Blacksmith")
-        call VendorLines_BindUnitTypeProfile(VB_UNIT_TYPE_THROGAR, "Fiery Mountain Orc Blacksmith")
+        call VendorLines_BindUnitTypeProfile(VB_UNIT_TYPE_HUMAN_BLACKSMITH, VL_VENDOR_PROFILE_HUMAN_RIVERBANE_BLACKSMITH_MALE)
+        call VendorLines_BindUnitTypeProfile(VB_UNIT_TYPE_ORC_BLACKSMITH, VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_BLACKSMITH_MALE)
+        call VendorLines_BindUnitTypeProfile(VB_UNIT_TYPE_BROKKAR, VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_BLACKSMITH_MALE)
+        call VendorLines_BindUnitTypeProfile(VB_UNIT_TYPE_THROGAR, VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_BLACKSMITH_MALE)
     endfunction
 
     private function Init takes nothing returns nothing

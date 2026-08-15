@@ -2,7 +2,7 @@
     VendorBonecrusherOgres
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
     Assigns custom Bonecrusher Ogre vendor unit types to heavy equipment,
@@ -19,7 +19,7 @@
 **/
 library VendorBonecrusherOgres initializer Init requires VendorCatalogs
     private function Register takes integer unitTypeId, integer catalogType returns nothing
-        call VendorCatalogs_RegisterUnitType(unitTypeId, catalogType, "Bonecrusher Ogre")
+        call VendorCatalogs_RegisterUnitType(unitTypeId, catalogType, VL_VENDOR_PROFILE_OGRE_BONECRUSHER_MALE)
         call Reputation_RegisterUnitTypeFaction(unitTypeId, "Bonecrusher Clan")
     endfunction
 

@@ -2,7 +2,7 @@
     VoicelinesVendorLines
 
     Author: Valdemar
-    Version: 1.3.0
+    Version: 1.5.0
 
     Description:
     Central source of truth for merchant greetings, trade chatter, transaction
@@ -28,11 +28,25 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         constant string VL_VENDOR_PROFILE_HUMAN_RIVERBANE_FEMALE = "Riverbane Human Female"
         constant string VL_VENDOR_PROFILE_HUMAN_STORMHAVEN_FEMALE = "Stormhaven Human Female"
         constant string VL_VENDOR_PROFILE_HUMAN_NEUTRAL_FEMALE = "Neutral Human Female"
+        constant string VL_VENDOR_PROFILE_HUMAN_RIVERBANE_BLACKSMITH_MALE = "Riverbane Human Blacksmith"
         constant string VL_VENDOR_PROFILE_TAUREN_HORDE_MALE = "Horde Tauren Male"
         constant string VL_VENDOR_PROFILE_DWARF_MORGRIM_MALE = "Morgrim Clan Dwarf Male"
         constant string VL_VENDOR_PROFILE_ELARINDOR_MALE = "Elarindor Male"
         constant string VL_VENDOR_PROFILE_ELARINDOR_FEMALE = "Elarindor Female"
         constant string VL_VENDOR_PROFILE_TROLL_HORDE_MALE = "Horde Troll Male"
+        constant string VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_MALE = "Fiery Mountain Orc"
+        constant string VL_VENDOR_PROFILE_ORC_FOREST_MALE = "Forest Orc"
+        constant string VL_VENDOR_PROFILE_ORC_SIRENSONG_MALE = "Sirensong Jungle Orc"
+        constant string VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_BLACKSMITH_MALE = "Fiery Mountain Orc Blacksmith"
+        constant string VL_VENDOR_PROFILE_ORC_FOREST_SUPPLIES_MALE = "Forest Orc Supplies"
+        constant string VL_VENDOR_PROFILE_SATYR_MALE = "Satyr Merchant"
+        constant string VL_VENDOR_PROFILE_OGRE_BONECRUSHER_MALE = "Bonecrusher Ogre"
+        constant string VL_VENDOR_PROFILE_OGRE_BONECRUSHER_BAG_MERCHANT_MALE = "Bonecrusher Ogre Bag Merchant"
+        constant string VL_VENDOR_PROFILE_GOBLIN_RIVERBANE_MALE = "Goblin Riverbane"
+        constant string VL_VENDOR_PROFILE_GOBLIN_STORMHAVEN_MALE = "Goblin Stormhaven"
+        constant string VL_VENDOR_PROFILE_GOBLIN_SIRENSONG_MALE = "Goblin Sirensong"
+        constant string VL_VENDOR_PROFILE_GOBLIN_TRAVELLING_MALE = "Goblin Travelling Merchant"
+        constant string VL_VENDOR_PROFILE_GOBLIN_ARENA_MALE = "Goblin Arena Vendor"
 
         constant string VL_VENDOR_HUMAN_MALE_TYPE = "VendorHumanMale_"
         constant string VL_VENDOR_HUMAN_FEMALE_TYPE = "VendorHumanFemale_"
@@ -41,6 +55,10 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         constant string VL_VENDOR_ELARINDOR_MALE_TYPE = "VendorElarindorMale_"
         constant string VL_VENDOR_ELARINDOR_FEMALE_TYPE = "VendorElarindorFemale_"
         constant string VL_VENDOR_TROLL_MALE_TYPE = "VendorTrollMale_"
+        constant string VL_VENDOR_ORC_MALE_TYPE = "VendorOrcMale_"
+        constant string VL_VENDOR_SATYR_MALE_TYPE = "VendorSatyrMale_"
+        constant string VL_VENDOR_OGRE_BONECRUSHER_MALE_TYPE = "VendorOgreBonecrusherMale_"
+        constant string VL_VENDOR_GOBLIN_MALE_TYPE = "VendorGoblinMale_"
     endglobals
 
     private function FormatSoundKey takes string soundType, integer lineIndex returns string
@@ -108,13 +126,13 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
     private function RegisterDefaultAndSpecialistLines takes nothing returns nothing
         call RegisterBasicProfile("Merchant", "Take a look. Fair prices today.", "If you have coin, I have goods.", "Let us see what changes hands.", "Come back when your purse is heavier.", "Take your time. Good goods do not fear inspection.", "If you need it for the road, I probably have it.", "A good purchase. May it serve you well.", "I can find a buyer for that.", "A fair exchange both ways.", "Nothing today? The stock will still be here.")
         call RegisterBasicProfile("Blacksmith", "Steel is honest. Coin should be too.", "Blades, mail, tools. All tested before they leave my forge.", "Pick it up if you mean to buy it.", "Keep the edge dry.", "A balanced weapon feels light before it ever strikes.", "Armor should stop a blade, not stop you walking.", "Good choice. I stand behind that work.", "I can melt that down or put a new edge on it.", "Old steel out, better steel in. Sensible.", "No sparks today? Come back when you need honest steel.")
-        call RegisterProfile("Riverbane Human Blacksmith", "Riverbane roads are hard on boots, buckles, and blades.", "Good steel earns its keep on every patrol.", "That will hold through a Riverbane winter.", "The lower forge can reclaim this metal.", "Worn steel out, Riverbane steel in.", "No work for the forge today? Keep your gear dry.")
-        call RegisterProfile("Fiery Mountain Orc Blacksmith", "Mountain fire makes hard steel and harder smiths.", "If the edge chips, you struck like a human.", "Strong iron for a strong hand.", "I hammer this into something less embarrassing.", "Weak gear out. Mountain steel in.", "No trade? Then stop cooling my forge.")
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_RIVERBANE_BLACKSMITH_MALE, "Riverbane roads are hard on boots, buckles, and blades.", "Good steel earns its keep on every patrol.", "That will hold through a Riverbane winter.", "The lower forge can reclaim this metal.", "Worn steel out, Riverbane steel in.", "No work for the forge today? Keep your gear dry.", VL_VENDOR_HUMAN_MALE_TYPE, 46, 52)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_BLACKSMITH_MALE, "Mountain fire makes hard steel and harder smiths.", "If the edge chips, you struck like a human.", "Strong iron for a strong hand.", "I hammer this into something less embarrassing.", "Weak gear out. Mountain steel in.", "No trade? Then stop cooling my forge.", VL_VENDOR_ORC_MALE_TYPE, 19, 58)
         call VendorLines_RegisterBasicLines("Graknar", "Strong bags. Strong price.", "A bigger pack saves longer walks.", "No bag to carry. I make your pack bigger now.", "Travel lighter, come back richer.")
-        call RegisterProfile("Bonecrusher Ogre Bag Merchant", "Bonecrusher stitching. Even rocks stay inside.", "Tiny bag makes tiny loot. Graknar fixes.", "Bigger bag. Now bring bigger treasure.", "Graknar keeps this. Maybe sells twice.", "Pack changes, coin changes. Graknar approves.", "No bag? Then carry regret in pockets.")
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_OGRE_BONECRUSHER_BAG_MERCHANT_MALE, "Bonecrusher stitching. Even rocks stay inside.", "Tiny bag makes tiny loot. Graknar fixes.", "Bigger bag. Now bring bigger treasure.", "Graknar keeps this. Maybe sells twice.", "Pack changes, coin changes. Graknar approves.", "No bag? Then carry regret in pockets.", VL_VENDOR_OGRE_BONECRUSHER_MALE_TYPE, 7, 22)
         call RegisterBasicProfile("General Goods Merchant", "Supplies for the road, friend.", "A full pack keeps trouble small.", "Take what you need and leave the rest for someone poorer.", "Safe roads and steady coin.", "Rope, water, salves. Heroes always remember them one mile too late.", "The cheapest supply is the one that gets you home.", "Packed and ready. Try not to lose it.", "Used, perhaps. Useless, never.", "A lighter pack and better supplies. Good business.", "Window-shopping is free. My patience is nearly so.")
         call RegisterProfile("Goblin General Goods", "Guaranteed genuine until proven otherwise!", "Bulk discount starts immediately after you buy in bulk.", "No refunds, but compliments are always accepted.", "I know three people who will pay twice that.", "You leave supplied and I leave richer. Perfect balance!", "Not even one purchase? My projections are ruined!")
-        call RegisterProfile("Forest Orc Supplies", "Thornwoods punish travelers who pack poorly.", "A dry bedroll matters when the forest turns cold.", "Use it well, and return from the wilds.", "The clan will find another use for this.", "Good supplies traded without waste.", "Return when the forest teaches you what you forgot.")
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ORC_FOREST_SUPPLIES_MALE, "Thornwoods punish travelers who pack poorly.", "A dry bedroll matters when the forest turns cold.", "Use it well, and return from the wilds.", "The clan will find another use for this.", "Good supplies traded without waste.", "Return when the forest teaches you what you forgot.", VL_VENDOR_ORC_MALE_TYPE, 25, 67)
     endfunction
 
     private function RegisterCatalogRoleLines takes nothing returns nothing
@@ -166,26 +184,30 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call RegisterVoicedProfile(VL_VENDOR_PROFILE_ELARINDOR_FEMALE, "The arcane currents around Elarindor still bless careful craft.", "What survives the ruins deserves a discerning keeper.", "Carry it with the grace its makers intended.", "This may yet find purpose among our people.", "A fair exchange strengthens Elarindor.", "Browse as you wish. Memory has taught us patience.", VL_VENDOR_ELARINDOR_FEMALE_TYPE, 1, 7)
         call RegisterVoicedProfile(VL_VENDOR_PROFILE_TROLL_HORDE_MALE, "Horde roads carry good coin and better stories, mon.", "Every charm got a spirit, and every spirit got a price.", "Good choice. Dis one got strong mojo.", "I know where dis can find a second life.", "Goods move, coin moves, fortune moves with dem.", "No trade today? The spirits bring you back.", VL_VENDOR_TROLL_MALE_TYPE, 1, 7)
 
-        call RegisterProfile("Fiery Mountain Orc", "Ash keeps weak steel honest.", "Mountain paths reward a well-packed warrior.", "Good. That belongs in a warrior's hands.", "I can hammer some use back into this.", "You leave better armed and less burdened.", "Then quit blocking the heat from my forge.")
-        call RegisterProfile("Forest Orc", "The Thornwoods take payment from careless travelers.", "Sereneglade herbs, Riverbane iron, orcish prices.", "Carry it with honor.", "The forest wastes nothing. Neither do I.", "A worthy exchange beneath the old trees.", "Listen to the leaves, then return with coin.")
-        call RegisterProfile("Sirensong Jungle Orc", "Jungle damp spoils anything packed badly.", "Sirensong paths hide teeth behind every leaf.", "Keep it dry and keep it close.", "The jungle will give this a second purpose.", "Better supplies for the green road ahead.", "The jungle waits even when customers do not.")
-        call RegisterProfile("Satyr Merchant", "Desire makes every price seem reasonable.", "I acquire curios from paths mortals fear to walk.", "An indulgence well chosen.", "How charming. I know exactly who wants this.", "We have each surrendered something tempting.", "Restraint? How unexpectedly dull.")
-        call RegisterProfile("Bonecrusher Ogre", "Bonecrusher goods survive Bonecrusher customers.", "Two eyes check stock. One eye checks coin.", "Good buy. Hard to break.", "We find use. Or lunch. Probably use.", "You get goods. We get goods. Very clever.", "No buy? Both heads disappointed.")
-        call RegisterProfile("Goblin Riverbane", "Riverbane tolls are included in the price. Mostly.", "Local goods, imported goods, plausibly acquired goods!", "Excellent investment! For me and possibly you.", "I already have a buyer with poor judgment.", "You traded up. I traded profitably.", "Browsing fee waived this time.")
-        call RegisterProfile("Goblin Stormhaven", "Fresh off the ship, or at least near a ship recently.", "Harbor prices change with the wind and my mood.", "Seaworthy enough! Probably.", "Dockside buyers love mysterious provenance.", "Cargo exchanged and no customs officer in sight.", "Come back after payday or piracy.")
-        call RegisterProfile("Goblin Sirensong", "Jungle-tested means it survived the walk to my stall.", "Nothing here bites unless you skip payment.", "A survival essential at a luxury margin.", "Jungle salvage! Very fashionable.", "Supplies rotate, profits accumulate.", "The mosquitoes browse longer than you.")
-        call RegisterProfile("Goblin Travelling Merchant", "My shop moves, so decide before it does.", "Every road has customers and unattended cargo.", "Portable, profitable, and now your problem.", "I will sell it three towns from here.", "A complete trade before the wheels cool.", "Next time you see me, the price may have legs.")
-        call RegisterProfile("Goblin Arena Vendor", "Arena rules forbid refunds after dismemberment.", "Champions buy quality. Survivors buy replacements.", "That should improve the odds. Slightly.", "Blood washes off. Value remains.", "Old gear out, arena gear in. Bold strategy.", "Spectating is cheaper, but far less profitable for me.")
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_MALE, "Ash keeps weak steel honest.", "Mountain paths reward a well-packed warrior.", "Good. That belongs in a warrior's hands.", "I can hammer some use back into this.", "You leave better armed and less burdened.", "Then quit blocking the heat from my forge.", VL_VENDOR_ORC_MALE_TYPE, 1, 31)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ORC_FOREST_MALE, "The Thornwoods take payment from careless travelers.", "Sereneglade herbs, Riverbane iron, orcish prices.", "Carry it with honor.", "The forest wastes nothing. Neither do I.", "A worthy exchange beneath the old trees.", "Listen to the leaves, then return with coin.", VL_VENDOR_ORC_MALE_TYPE, 7, 40)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ORC_SIRENSONG_MALE, "Jungle damp spoils anything packed badly.", "Sirensong paths hide teeth behind every leaf.", "Keep it dry and keep it close.", "The jungle will give this a second purpose.", "Better supplies for the green road ahead.", "The jungle waits even when customers do not.", VL_VENDOR_ORC_MALE_TYPE, 13, 49)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_SATYR_MALE, "Desire makes every price seem reasonable.", "I acquire curios from paths mortals fear to walk.", "An indulgence well chosen.", "How charming. I know exactly who wants this.", "We have each surrendered something tempting.", "Restraint? How unexpectedly dull.", VL_VENDOR_SATYR_MALE_TYPE, 1, 7)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_OGRE_BONECRUSHER_MALE, "Bonecrusher goods survive Bonecrusher customers.", "Two eyes check stock. One eye checks coin.", "Good buy. Hard to break.", "We find use. Or lunch. Probably use.", "You get goods. We get goods. Very clever.", "No buy? Both heads disappointed.", VL_VENDOR_OGRE_BONECRUSHER_MALE_TYPE, 1, 13)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_GOBLIN_RIVERBANE_MALE, "Riverbane tolls are included in the price. Mostly.", "Local goods, imported goods, plausibly acquired goods!", "Excellent investment! For me and possibly you.", "I already have a buyer with poor judgment.", "You traded up. I traded profitably.", "Browsing fee waived this time.", VL_VENDOR_GOBLIN_MALE_TYPE, 1, 31)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_GOBLIN_STORMHAVEN_MALE, "Fresh off the ship, or at least near a ship recently.", "Harbor prices change with the wind and my mood.", "Seaworthy enough! Probably.", "Dockside buyers love mysterious provenance.", "Cargo exchanged and no customs officer in sight.", "Come back after payday or piracy.", VL_VENDOR_GOBLIN_MALE_TYPE, 7, 40)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_GOBLIN_SIRENSONG_MALE, "Jungle-tested means it survived the walk to my stall.", "Nothing here bites unless you skip payment.", "A survival essential at a luxury margin.", "Jungle salvage! Very fashionable.", "Supplies rotate, profits accumulate.", "The mosquitoes browse longer than you.", VL_VENDOR_GOBLIN_MALE_TYPE, 13, 49)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_GOBLIN_TRAVELLING_MALE, "My shop moves, so decide before it does.", "Every road has customers and unattended cargo.", "Portable, profitable, and now your problem.", "I will sell it three towns from here.", "A complete trade before the wheels cool.", "Next time you see me, the price may have legs.", VL_VENDOR_GOBLIN_MALE_TYPE, 19, 58)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_GOBLIN_ARENA_MALE, "Arena rules forbid refunds after dismemberment.", "Champions buy quality. Survivors buy replacements.", "That should improve the odds. Slightly.", "Blood washes off. Value remains.", "Old gear out, arena gear in. Bold strategy.", "Spectating is cheaper, but far less profitable for me.", VL_VENDOR_GOBLIN_MALE_TYPE, 25, 67)
     endfunction
 
     private function Init takes nothing returns nothing
-        call ExSound_RegisterSequence(VL_VENDOR_HUMAN_MALE_TYPE, 1, 45, "Pots\\Sound\\Voicelines\\VendorHumanMale\\")
+        call ExSound_RegisterSequence(VL_VENDOR_HUMAN_MALE_TYPE, 1, 60, "Pots\\Sound\\Voicelines\\VendorHumanMale\\")
         call ExSound_RegisterSequence(VL_VENDOR_HUMAN_FEMALE_TYPE, 1, 45, "Pots\\Sound\\Voicelines\\VendorHumanFemale\\")
         call ExSound_RegisterSequence(VL_VENDOR_TAUREN_MALE_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\VendorTaurenMale\\")
         call ExSound_RegisterSequence(VL_VENDOR_DWARF_MORGRIM_MALE_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\VendorDwarfMorgrimMale\\")
         call ExSound_RegisterSequence(VL_VENDOR_ELARINDOR_MALE_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\VendorElarindorMale\\")
         call ExSound_RegisterSequence(VL_VENDOR_ELARINDOR_FEMALE_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\VendorElarindorFemale\\")
         call ExSound_RegisterSequence(VL_VENDOR_TROLL_MALE_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\VendorTrollMale\\")
+        call ExSound_RegisterSequence(VL_VENDOR_ORC_MALE_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\VendorOrcMale\\")
+        call ExSound_RegisterSequence(VL_VENDOR_SATYR_MALE_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\VendorSatyrMale\\")
+        call ExSound_RegisterSequence(VL_VENDOR_OGRE_BONECRUSHER_MALE_TYPE, 1, 30, "Pots\\Sound\\Voicelines\\VendorOgreBonecrusherMale\\")
+        call ExSound_RegisterSequence(VL_VENDOR_GOBLIN_MALE_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\VendorGoblinMale\\")
         call RegisterDefaultAndSpecialistLines()
         call RegisterCatalogRoleLines()
         call RegisterRaceAndFactionLines()

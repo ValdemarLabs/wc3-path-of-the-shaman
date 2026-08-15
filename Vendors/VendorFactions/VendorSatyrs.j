@@ -2,7 +2,7 @@
     VendorSatyrs
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
     Assigns the custom Satyr vendor unit types to arcane, arena, equipment,
@@ -19,7 +19,7 @@
 **/
 library VendorSatyrs initializer Init requires VendorCatalogs
     private function Register takes integer unitTypeId, integer catalogType returns nothing
-        call VendorCatalogs_RegisterUnitType(unitTypeId, catalogType, "Satyr Merchant")
+        call VendorCatalogs_RegisterUnitType(unitTypeId, catalogType, VL_VENDOR_PROFILE_SATYR_MALE)
         call Reputation_RegisterUnitTypeFaction(unitTypeId, "Satyr")
     endfunction
 

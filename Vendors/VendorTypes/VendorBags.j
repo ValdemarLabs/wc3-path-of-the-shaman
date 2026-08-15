@@ -2,7 +2,7 @@
     VendorBags
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Bag merchant for the PotS shop system. Each purchase replaces the hero's
@@ -64,7 +64,7 @@ library VendorBags initializer Init requires Shop, VoicelinesVendorLines
     endfunction
 
     private function BindVoiceProfile takes nothing returns nothing
-        call VendorLines_BindUnitTypeProfile(VBAG_UNIT_TYPE_GRAKNAR, "Bonecrusher Ogre Bag Merchant")
+        call VendorLines_BindUnitTypeProfile(VBAG_UNIT_TYPE_GRAKNAR, VL_VENDOR_PROFILE_OGRE_BONECRUSHER_BAG_MERCHANT_MALE)
     endfunction
 
     private function Init takes nothing returns nothing

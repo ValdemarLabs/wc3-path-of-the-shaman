@@ -92,6 +92,15 @@ function ConvertTo-CanonicalVoicelineKey {
     return $Key
 }
 
+function Format-SequenceKey {
+    param(
+        [string]$SoundType,
+        [int]$LineIndex
+    )
+
+    return "{0}{1:D4}" -f $SoundType, $LineIndex
+}
+
 function Get-ExpectedFolderForKey {
     param([string]$Key)
 
@@ -206,6 +215,41 @@ function Get-JassRows {
             }
             else {
                 Add-Row -Rows $rows -Key $keyByBase[$base] -Text "" -Source $file.Name -ExpectedFolder $folder -DefinitionId "$($file.Name):$base"
+            }
+        }
+
+        $soundTypeByConstant = @{}
+        foreach ($m in [regex]::Matches($text, 'constant\s+string\s+(VL_VENDOR_[A-Z0-9_]+_TYPE)\s*=\s*"((?:[^"\\]|\\.)*)"')) {
+            $soundTypeByConstant[$m.Groups[1].Value] = ConvertFrom-JassString $m.Groups[2].Value
+        }
+
+        $voicedProfilePattern = 'RegisterVoicedProfile\(\s*[A-Z0-9_]+\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*(VL_VENDOR_[A-Z0-9_]+_TYPE)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)'
+        $extraVendorTexts = @(
+            "Take your time. The right purchase is worth considering.",
+            "A wise purchase. I hope it serves you well.",
+            "Good choice. That belongs in capable hands.",
+            "I can put that back into useful circulation.",
+            "Fair value for something you no longer need.",
+            "A productive exchange for both of us.",
+            "Your pack changed, and my shelves did too. Good trade.",
+            "All that browsing and not a single coin moved.",
+            "Nothing suited you? That is disappointing."
+        )
+
+        foreach ($m in [regex]::Matches($text, $voicedProfilePattern)) {
+            $soundTypeConstant = $m.Groups[7].Value
+            if (-not $soundTypeByConstant.ContainsKey($soundTypeConstant)) { continue }
+
+            $soundType = $soundTypeByConstant[$soundTypeConstant]
+            $firstLine = [int]$m.Groups[8].Value
+            $extraFirstLine = [int]$m.Groups[9].Value
+            for ($i = 0; $i -lt 6; $i++) {
+                $lineIndex = $firstLine + $i
+                Add-Row -Rows $rows -Key (Format-SequenceKey -SoundType $soundType -LineIndex $lineIndex) -Text (ConvertFrom-JassString $m.Groups[$i + 1].Value) -Source $file.Name -ExpectedFolder "" -DefinitionId "$($file.Name):$($soundTypeConstant):$lineIndex"
+            }
+            for ($i = 0; $i -lt $extraVendorTexts.Count; $i++) {
+                $lineIndex = $extraFirstLine + $i
+                Add-Row -Rows $rows -Key (Format-SequenceKey -SoundType $soundType -LineIndex $lineIndex) -Text $extraVendorTexts[$i] -Source $file.Name -ExpectedFolder "" -DefinitionId "$($file.Name):$($soundTypeConstant):$lineIndex"
             }
         }
     }

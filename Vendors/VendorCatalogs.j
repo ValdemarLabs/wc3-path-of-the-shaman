@@ -2,7 +2,7 @@
     VendorCatalogs
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Ready-to-use PotS vendor definitions for equipment, professions, factions,
@@ -534,15 +534,15 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
 
     private function ConfigureZoneVoices takes nothing returns nothing
         // Parent-zone bindings also apply inside configured child zones.
-        call VendorLines_BindVendorZoneProfile(VC_VendorId[VENDOR_CATALOG_WEAPONS], 3, "Fiery Mountain Orc")
-        call VendorLines_BindVendorZoneProfile(VC_VendorId[VENDOR_CATALOG_ARMOR], 3, "Fiery Mountain Orc")
-        call VendorLines_BindVendorZoneProfile(VC_VendorId[VENDOR_CATALOG_SHIELDS], 3, "Fiery Mountain Orc")
+        call VendorLines_BindVendorZoneProfile(VC_VendorId[VENDOR_CATALOG_WEAPONS], 3, VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_MALE)
+        call VendorLines_BindVendorZoneProfile(VC_VendorId[VENDOR_CATALOG_ARMOR], 3, VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_MALE)
+        call VendorLines_BindVendorZoneProfile(VC_VendorId[VENDOR_CATALOG_SHIELDS], 3, VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_MALE)
         // Human vendors retain their unit-type profile here so male and female voices stay distinct.
-        call VendorLines_BindVendorZoneProfile(VC_VendorId[VENDOR_CATALOG_TRAVELLING], 14, "Sirensong Jungle Orc")
-        call VendorLines_BindVendorZoneProfile(VC_VendorId[VENDOR_CATALOG_PROFESSION_SUPPLIES], 2, "Forest Orc")
-        call VendorLines_BindVendorZoneProfile(VC_VendorId[VENDOR_CATALOG_RANDOMIZED_GOODS], 10, "Goblin Riverbane")
-        call VendorLines_BindVendorZoneProfile(VC_VendorId[VENDOR_CATALOG_RANDOMIZED_GOODS], 13, "Goblin Stormhaven")
-        call VendorLines_BindVendorZoneProfile(VC_VendorId[VENDOR_CATALOG_RANDOMIZED_GOODS], 14, "Goblin Sirensong")
+        call VendorLines_BindVendorZoneProfile(VC_VendorId[VENDOR_CATALOG_TRAVELLING], 14, VL_VENDOR_PROFILE_ORC_SIRENSONG_MALE)
+        call VendorLines_BindVendorZoneProfile(VC_VendorId[VENDOR_CATALOG_PROFESSION_SUPPLIES], 2, VL_VENDOR_PROFILE_ORC_FOREST_MALE)
+        call VendorLines_BindVendorZoneProfile(VC_VendorId[VENDOR_CATALOG_RANDOMIZED_GOODS], 10, VL_VENDOR_PROFILE_GOBLIN_RIVERBANE_MALE)
+        call VendorLines_BindVendorZoneProfile(VC_VendorId[VENDOR_CATALOG_RANDOMIZED_GOODS], 13, VL_VENDOR_PROFILE_GOBLIN_STORMHAVEN_MALE)
+        call VendorLines_BindVendorZoneProfile(VC_VendorId[VENDOR_CATALOG_RANDOMIZED_GOODS], 14, VL_VENDOR_PROFILE_GOBLIN_SIRENSONG_MALE)
     endfunction
 
     public function GetVendorId takes integer catalogType returns integer

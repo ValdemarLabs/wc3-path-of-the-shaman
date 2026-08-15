@@ -2,7 +2,7 @@
     VendorOrcs
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
     Assigns the custom Orc vendor unit types to concrete vendor catalogs and
@@ -25,49 +25,49 @@ library VendorOrcs initializer Init requires VendorCatalogs
 
     private function Init takes nothing returns nothing
         // Fiery Mountain equipment and mining vendors.
-        call Register('o011', VendorCatalogs_VENDOR_CATALOG_WEAPONS, "Fiery Mountain Orc")
-        call Register('o012', VendorCatalogs_VENDOR_CATALOG_ARMOR, "Fiery Mountain Orc")
-        call Register('o013', VendorCatalogs_VENDOR_CATALOG_SHIELDS, "Fiery Mountain Orc")
-        call Register('o00A', VendorCatalogs_VENDOR_CATALOG_ARENA, "Fiery Mountain Orc")
-        call Register('o00D', VendorCatalogs_VENDOR_CATALOG_MINER, "Fiery Mountain Orc")
-        call Register('o00G', VendorCatalogs_VENDOR_CATALOG_BLACKSMITHING_SUPPLIES, "Fiery Mountain Orc")
-        call Register('o00L', VendorCatalogs_VENDOR_CATALOG_MINING_SUPPLIES, "Fiery Mountain Orc")
-        call Register('o00T', VendorCatalogs_VENDOR_CATALOG_RARE_GOODS, "Fiery Mountain Orc")
+        call Register('o011', VendorCatalogs_VENDOR_CATALOG_WEAPONS, VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_MALE)
+        call Register('o012', VendorCatalogs_VENDOR_CATALOG_ARMOR, VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_MALE)
+        call Register('o013', VendorCatalogs_VENDOR_CATALOG_SHIELDS, VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_MALE)
+        call Register('o00A', VendorCatalogs_VENDOR_CATALOG_ARENA, VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_MALE)
+        call Register('o00D', VendorCatalogs_VENDOR_CATALOG_MINER, VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_MALE)
+        call Register('o00G', VendorCatalogs_VENDOR_CATALOG_BLACKSMITHING_SUPPLIES, VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_MALE)
+        call Register('o00L', VendorCatalogs_VENDOR_CATALOG_MINING_SUPPLIES, VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_MALE)
+        call Register('o00T', VendorCatalogs_VENDOR_CATALOG_RARE_GOODS, VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_MALE)
 
         // Sereneglade, Thornwoods, and Riverbane forest vendors.
-        call Register('o00B', VendorCatalogs_VENDOR_CATALOG_TRAVELLING, "Forest Orc")
-        call Register('o00E', VendorCatalogs_VENDOR_CATALOG_COOK, "Forest Orc")
-        call Register('o00H', VendorCatalogs_VENDOR_CATALOG_COOKING_SUPPLIES, "Forest Orc")
-        call Register('o00I', VendorCatalogs_VENDOR_CATALOG_ENCHANTING_SUPPLIES, "Forest Orc")
-        call Register('o00K', VendorCatalogs_VENDOR_CATALOG_LEATHERWORKING_SUPPLIES, "Forest Orc")
-        call Register('o00M', VendorCatalogs_VENDOR_CATALOG_SKINNING_SUPPLIES, "Forest Orc")
-        call Register('o00N', VendorCatalogs_VENDOR_CATALOG_PROFESSION_SUPPLIES, "Forest Orc")
-        call Register('o00O', VendorCatalogs_VENDOR_CATALOG_QUARTERMASTER, "Forest Orc")
-        call Register('o00P', VendorCatalogs_VENDOR_CATALOG_RANDOMIZED_GOODS, "Forest Orc")
-        call Register('o00R', VendorCatalogs_VENDOR_CATALOG_FOOD_AND_DRINK, "Forest Orc")
-        call Register('o00S', VendorCatalogs_VENDOR_CATALOG_POTIONS, "Forest Orc")
-        call Register('o00U', VendorCatalogs_VENDOR_CATALOG_ADVENTURING_SUPPLIES, "Forest Orc")
-        call Register('o00V', VendorCatalogs_VENDOR_CATALOG_TRADE_GOODS, "Forest Orc")
-        call Register('o00W', VendorCatalogs_VENDOR_CATALOG_BEAST_SUPPLIES, "Forest Orc")
+        call Register('o00B', VendorCatalogs_VENDOR_CATALOG_TRAVELLING, VL_VENDOR_PROFILE_ORC_FOREST_MALE)
+        call Register('o00E', VendorCatalogs_VENDOR_CATALOG_COOK, VL_VENDOR_PROFILE_ORC_FOREST_MALE)
+        call Register('o00H', VendorCatalogs_VENDOR_CATALOG_COOKING_SUPPLIES, VL_VENDOR_PROFILE_ORC_FOREST_MALE)
+        call Register('o00I', VendorCatalogs_VENDOR_CATALOG_ENCHANTING_SUPPLIES, VL_VENDOR_PROFILE_ORC_FOREST_MALE)
+        call Register('o00K', VendorCatalogs_VENDOR_CATALOG_LEATHERWORKING_SUPPLIES, VL_VENDOR_PROFILE_ORC_FOREST_MALE)
+        call Register('o00M', VendorCatalogs_VENDOR_CATALOG_SKINNING_SUPPLIES, VL_VENDOR_PROFILE_ORC_FOREST_MALE)
+        call Register('o00N', VendorCatalogs_VENDOR_CATALOG_PROFESSION_SUPPLIES, VL_VENDOR_PROFILE_ORC_FOREST_MALE)
+        call Register('o00O', VendorCatalogs_VENDOR_CATALOG_QUARTERMASTER, VL_VENDOR_PROFILE_ORC_FOREST_MALE)
+        call Register('o00P', VendorCatalogs_VENDOR_CATALOG_RANDOMIZED_GOODS, VL_VENDOR_PROFILE_ORC_FOREST_MALE)
+        call Register('o00R', VendorCatalogs_VENDOR_CATALOG_FOOD_AND_DRINK, VL_VENDOR_PROFILE_ORC_FOREST_MALE)
+        call Register('o00S', VendorCatalogs_VENDOR_CATALOG_POTIONS, VL_VENDOR_PROFILE_ORC_FOREST_MALE)
+        call Register('o00U', VendorCatalogs_VENDOR_CATALOG_ADVENTURING_SUPPLIES, VL_VENDOR_PROFILE_ORC_FOREST_MALE)
+        call Register('o00V', VendorCatalogs_VENDOR_CATALOG_TRADE_GOODS, VL_VENDOR_PROFILE_ORC_FOREST_MALE)
+        call Register('o00W', VendorCatalogs_VENDOR_CATALOG_BEAST_SUPPLIES, VL_VENDOR_PROFILE_ORC_FOREST_MALE)
 
         // Sirensong coastal and jungle vendors.
-        call Register('o00C', VendorCatalogs_VENDOR_CATALOG_FISHER, "Sirensong Jungle Orc")
-        call Register('o00F', VendorCatalogs_VENDOR_CATALOG_ALCHEMY_SUPPLIES, "Sirensong Jungle Orc")
-        call Register('o00J', VendorCatalogs_VENDOR_CATALOG_FISHING_SUPPLIES, "Sirensong Jungle Orc")
-        call Register('o00Q', VendorCatalogs_VENDOR_CATALOG_REAGENTS, "Sirensong Jungle Orc")
-        call Register('o00X', VendorCatalogs_VENDOR_CATALOG_WEAPONS, "Sirensong Jungle Orc")
-        call Register('o00Y', VendorCatalogs_VENDOR_CATALOG_ARMOR, "Sirensong Jungle Orc")
-        call Register('o00Z', VendorCatalogs_VENDOR_CATALOG_SHIELDS, "Sirensong Jungle Orc")
-        call Register('o010', VendorCatalogs_VENDOR_CATALOG_TRAVELLING, "Sirensong Jungle Orc")
-        call Register('o014', VendorCatalogs_VENDOR_CATALOG_QUARTERMASTER, "Sirensong Jungle Orc")
+        call Register('o00C', VendorCatalogs_VENDOR_CATALOG_FISHER, VL_VENDOR_PROFILE_ORC_SIRENSONG_MALE)
+        call Register('o00F', VendorCatalogs_VENDOR_CATALOG_ALCHEMY_SUPPLIES, VL_VENDOR_PROFILE_ORC_SIRENSONG_MALE)
+        call Register('o00J', VendorCatalogs_VENDOR_CATALOG_FISHING_SUPPLIES, VL_VENDOR_PROFILE_ORC_SIRENSONG_MALE)
+        call Register('o00Q', VendorCatalogs_VENDOR_CATALOG_REAGENTS, VL_VENDOR_PROFILE_ORC_SIRENSONG_MALE)
+        call Register('o00X', VendorCatalogs_VENDOR_CATALOG_WEAPONS, VL_VENDOR_PROFILE_ORC_SIRENSONG_MALE)
+        call Register('o00Y', VendorCatalogs_VENDOR_CATALOG_ARMOR, VL_VENDOR_PROFILE_ORC_SIRENSONG_MALE)
+        call Register('o00Z', VendorCatalogs_VENDOR_CATALOG_SHIELDS, VL_VENDOR_PROFILE_ORC_SIRENSONG_MALE)
+        call Register('o010', VendorCatalogs_VENDOR_CATALOG_TRAVELLING, VL_VENDOR_PROFILE_ORC_SIRENSONG_MALE)
+        call Register('o014', VendorCatalogs_VENDOR_CATALOG_QUARTERMASTER, VL_VENDOR_PROFILE_ORC_SIRENSONG_MALE)
 
         // Tavern, jewelry, and mystical-goods specialists.
-        call Register('o01H', VendorCatalogs_VENDOR_CATALOG_BARTENDER, "Forest Orc")
-        call Register('o01I', VendorCatalogs_VENDOR_CATALOG_BARTENDER, "Fiery Mountain Orc")
-        call Register('o01J', VendorCatalogs_VENDOR_CATALOG_JEWELCRAFTER, "Fiery Mountain Orc")
-        call Register('o01K', VendorCatalogs_VENDOR_CATALOG_SHAMANIC_GOODS, "Forest Orc")
-        call Register('o01L', VendorCatalogs_VENDOR_CATALOG_SHAMANIC_GOODS, "Sirensong Jungle Orc")
-        call Register('o01M', VendorCatalogs_VENDOR_CATALOG_FEL_CURIOS, "Fiery Mountain Orc")
-        call Register('o01N', VendorCatalogs_VENDOR_CATALOG_FEL_CURIOS, "Forest Orc")
+        call Register('o01H', VendorCatalogs_VENDOR_CATALOG_BARTENDER, VL_VENDOR_PROFILE_ORC_FOREST_MALE)
+        call Register('o01I', VendorCatalogs_VENDOR_CATALOG_BARTENDER, VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_MALE)
+        call Register('o01J', VendorCatalogs_VENDOR_CATALOG_JEWELCRAFTER, VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_MALE)
+        call Register('o01K', VendorCatalogs_VENDOR_CATALOG_SHAMANIC_GOODS, VL_VENDOR_PROFILE_ORC_FOREST_MALE)
+        call Register('o01L', VendorCatalogs_VENDOR_CATALOG_SHAMANIC_GOODS, VL_VENDOR_PROFILE_ORC_SIRENSONG_MALE)
+        call Register('o01M', VendorCatalogs_VENDOR_CATALOG_FEL_CURIOS, VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_MALE)
+        call Register('o01N', VendorCatalogs_VENDOR_CATALOG_FEL_CURIOS, VL_VENDOR_PROFILE_ORC_FOREST_MALE)
     endfunction
 endlibrary
