@@ -7,6 +7,7 @@ param(
     [string]$ExcelPath = "Voicelines/_oldExcel/VoicelinesMaster.xlsx",
     [string]$Manifest = "tools/temp/voicelines/voicelines-scan.csv",
     [string]$Speaker = "",
+    [string[]]$Keys = @(),
     [string]$ReferenceId = $env:FISH_REFERENCE_ID,
     [string]$Model = "s2-pro",
     [string]$Format = "mp3",
@@ -569,6 +570,16 @@ $generationRows = @($scanRows | Where-Object {
         -and -not [string]::IsNullOrWhiteSpace($_.text) `
         -and -not [string]::IsNullOrWhiteSpace($_.jass_sources)
 })
+if ($Keys.Count -gt 0) {
+    $keySet = @{}
+    foreach ($requestedKey in $Keys) {
+        $keySet[$requestedKey] = $true
+        if ($scanRows.key -notcontains $requestedKey) {
+            throw "Requested voiceline key was not found: $requestedKey"
+        }
+    }
+    $generationRows = @($generationRows | Where-Object { $keySet.ContainsKey($_.key) })
+}
 if ($MaxCount -gt 0) { $generationRows = @($generationRows | Select-Object -First $MaxCount) }
 
 if ($DryRun) {
