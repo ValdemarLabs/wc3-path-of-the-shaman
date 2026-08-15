@@ -107,6 +107,8 @@ globals
     private hashtable grpHt = InitHashtable()  // Group patrol hashtable
     private constant real EPSILON = 32.00
     private constant real GROUP_EPSILON = 300.00  // Larger threshold for group patrols
+    private constant real ARRIVAL_RECHECK_INTERVAL = 0.50
+    private constant real STOPPED_ORDER_RETRY_INTERVAL = 2.00
 
     // Path styles
     constant integer PATROL_STYLE_LOOP = 0
@@ -322,7 +324,9 @@ private function TimerExpire takes nothing returns nothing
     // Handle state transitions
     if state == 1 then
         // arrived → wait
-        if SquareRoot((GetUnitX(u) - LoadReal(ht, id, 1000 + idx)) * (GetUnitX(u) - LoadReal(ht, id, 1000 + idx)) + (GetUnitY(u) - LoadReal(ht, id, 2000 + idx)) * (GetUnitY(u) - LoadReal(ht, id, 2000 + idx))) <= EPSILON then
+        set x = GetUnitX(u) - LoadReal(ht, id, 1000 + idx)
+        set y = GetUnitY(u) - LoadReal(ht, id, 2000 + idx)
+        if x * x + y * y <= EPSILON * EPSILON then
             // Within tolerance → proceed
             set wait = LoadReal(ht, id, 3000 + idx)
             if wait < 0.01 then
@@ -337,12 +341,16 @@ private function TimerExpire takes nothing returns nothing
                 call StartUnitTimer(u, wait, 2, function TimerExpire)
             endif
         else
-            // Not close enough → re-issue move
-            set x = LoadReal(ht, id, 1000 + idx)
-            set y = LoadReal(ht, id, 2000 + idx)
-            call SaveBoolean(ht, id, 50, true)
-            call IssuePointOrder(u, order, x, y)
-            call StartUnitTimer(u, 0.5, 1, function TimerExpire) // check again soon
+            // Keep polling an active path and retry only after the order stops.
+            if GetUnitCurrentOrder(u) != OrderId(order) then
+                set x = LoadReal(ht, id, 1000 + idx)
+                set y = LoadReal(ht, id, 2000 + idx)
+                call SaveBoolean(ht, id, 50, true)
+                call IssuePointOrder(u, order, x, y)
+                call StartUnitTimer(u, STOPPED_ORDER_RETRY_INTERVAL, 1, function TimerExpire)
+            else
+                call StartUnitTimer(u, ARRIVAL_RECHECK_INTERVAL, 1, function TimerExpire)
+            endif
         endif
     elseif state == 2 then
         // finished waiting → move to next

@@ -26,6 +26,7 @@ library TravelAI initializer Init requires AI, TravelSystem, TravelWyvern
         private constant integer TAI_MAX_SESSIONS = 16
         private constant integer TAI_CARRIER_TYPE = 'n602'
         private constant real TAI_UPDATE_PERIOD = 0.25
+        private constant real TAI_APPROACH_CHECK_PERIOD = 1.00
         private constant real TAI_MASTER_SEARCH_RANGE = 3000.00
         private constant real TAI_BOARD_RANGE = 300.00
         private constant real TAI_APPROACH_TIMEOUT = 30.00
@@ -44,8 +45,10 @@ library TravelAI initializer Init requires AI, TravelSystem, TravelWyvern
         private integer array TAI_Waypoint
         private integer array TAI_State
         private real array TAI_Elapsed
+        private real array TAI_NextApproachCheck
         private boolean array TAI_Descending
         private timer TAI_UpdateTimer = null
+        private boolean TAI_UpdateTimerActive = false
     endglobals
 
     private function TAI_GetFreeSession takes nothing returns integer
@@ -68,6 +71,7 @@ library TravelAI initializer Init requires AI, TravelSystem, TravelWyvern
         set TAI_Waypoint[session] = 0
         set TAI_State[session] = 0
         set TAI_Elapsed[session] = 0.00
+        set TAI_NextApproachCheck[session] = 0.00
         set TAI_Descending[session] = false
     endfunction
 
@@ -206,7 +210,7 @@ library TravelAI initializer Init requires AI, TravelSystem, TravelWyvern
         set dy = GetUnitY(hero) - GetUnitY(master)
         if dx * dx + dy * dy <= TAI_BOARD_RANGE * TAI_BOARD_RANGE then
             call TAI_BeginFlight(session)
-        else
+        elseif GetUnitCurrentOrder(hero) != OrderId("move") then
             call IssuePointOrder(hero, "move", GetUnitX(master), GetUnitY(master))
         endif
         set hero = null
@@ -254,19 +258,37 @@ library TravelAI initializer Init requires AI, TravelSystem, TravelWyvern
 
     private function TAI_OnUpdate takes nothing returns nothing
         local integer session = 1
+        local boolean hasActiveSession = false
 
         loop
             exitwhen session > TAI_MAX_SESSIONS
             if TAI_State[session] != 0 then
                 set TAI_Elapsed[session] = TAI_Elapsed[session] + TAI_UPDATE_PERIOD
                 if TAI_State[session] == 1 then
-                    call TAI_UpdateApproach(session)
+                    if TAI_Elapsed[session] >= TAI_NextApproachCheck[session] then
+                        set TAI_NextApproachCheck[session] = TAI_Elapsed[session] + TAI_APPROACH_CHECK_PERIOD
+                        call TAI_UpdateApproach(session)
+                    endif
                 elseif TAI_State[session] == 2 then
                     call TAI_UpdateFlight(session)
                 endif
             endif
+            if TAI_State[session] != 0 then
+                set hasActiveSession = true
+            endif
             set session = session + 1
         endloop
+        if not hasActiveSession then
+            set TAI_UpdateTimerActive = false
+            call PauseTimer(TAI_UpdateTimer)
+        endif
+    endfunction
+
+    private function TAI_StartUpdateTimer takes nothing returns nothing
+        if not TAI_UpdateTimerActive then
+            set TAI_UpdateTimerActive = true
+            call TimerStart(TAI_UpdateTimer, TAI_UPDATE_PERIOD, true, function TAI_OnUpdate)
+        endif
     endfunction
 
     private function TAI_FindRoute takes unit hero returns integer
@@ -338,8 +360,10 @@ library TravelAI initializer Init requires AI, TravelSystem, TravelWyvern
         set TAI_Route[session] = routeId
         set TAI_State[session] = 1
         set TAI_Elapsed[session] = 0.00
+        set TAI_NextApproachCheck[session] = TAI_APPROACH_CHECK_PERIOD
         set master = TravelSystem_GetStopMaster(TravelSystem_GetRouteStart(routeId))
         call IssuePointOrder(hero, "move", GetUnitX(master), GetUnitY(master))
+        call TAI_StartUpdateTimer()
         call AI_MarkTravelRequestHandled()
         set hero = null
         set enemy = null
@@ -348,7 +372,6 @@ library TravelAI initializer Init requires AI, TravelSystem, TravelWyvern
 
     private function Init takes nothing returns nothing
         set TAI_UpdateTimer = CreateTimer()
-        call TimerStart(TAI_UpdateTimer, TAI_UPDATE_PERIOD, true, function TAI_OnUpdate)
         call AI_RegisterTravelProvider(function TAI_OnTravelRequest)
     endfunction
 endlibrary
