@@ -21,6 +21,7 @@
 
 - Restyled the crafting panel to match ShopUI, with a darker inset backdrop, clearer text hierarchy, larger recipe rows and icons, a framed profession line, and cleaner detail and action-button spacing.
 - Kribugs' dialogue now distinguishes the goblin Kribugs from his ogre carrier Mogsnort even though they share one composite unit, with situational Mogsnort interjections and the original ogre grunts, growls, hunger complaint, and fart laugh.
+- Kribugs' normal shop now has a clear Back control, reliably returns to his dialogue choices, and uses unique trade chatter and transaction reactions with occasional Mogsnort interruptions.
 - Expanded wyvern travel to Verdant Plains, Ashfang Outpost, and Sirensong, with all six flight points requiring player discovery and Verdant Plains also supporting a quest/event unlock.
 - Added gradual takeoff and landing height transitions for wyvern and bat travel, plus physical zeppelin travel for AI heroes that treats every flight point as discovered.
 - Added the scheduled neutral Ship A route between Sirensong, Dawnhold, and Stormhaven, including Dawnhold drop-out prompts and direction-aware destination choices.
@@ -31,7 +32,11 @@
 
 - Updated `UI/CraftingUI.j` with the ShopUI panel proportions, seven-row recipe list, detail-info backdrop, and pane-local crafting controls.
 - Updated `Voicelines/Voicelines_Kribugs.j` and `QuestsAndDialogs/QuestGivers/qKribugs.j` with separate `Mogsnort_XXXX` voicelines, labeled legacy ogre Sound Editor cues, registered speaker folders, and shared-unit cinematic speaker routing.
+- Updated `QuestsAndDialogs/QuestMaster.j` so unchanged quest-giver marker models persist instead of being destroyed and recreated during periodic availability refreshes.
+- Updated `UI/ShopUI.j`, `QuestsAndDialogs/QuestGivers/qKribugs.j`, and `Voicelines/Voicelines_Kribugs.j` with per-vendor return handlers, clearer shop navigation, and Kribugs-owned vendor lines.
+- Updated `Vendors/VendorLines.j` with optional per-line speaker overrides so composite vendors can randomly alternate speakers without changing ordinary vendor profiles.
 - Updated `Travel/TravelSystem.j`, `TravelWyvern.j`, `TravelAI.j`, `TravelShipA.j`, and `TravelShipB.j` with the six wind-rider masters, six shipmasters, flight-height transitions, AI zeppelin carriers, direction-aware scheduled routes, and complete local PatrolSystem paths.
+- Updated `Travel/TravelAI.j` and `PatrolFollowSystems/PatrolSystem.j` to pause idle travel updates, throttle AI approach scans, and avoid repeatedly rebuilding active patrol paths.
 - Updated `Travel/README.md` with the active master mapping, Ship A waypoint loop, default fares, quest discovery API, passenger models, and AI discovery policy.
 
 ### Known Issues
