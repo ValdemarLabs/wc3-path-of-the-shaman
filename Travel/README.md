@@ -58,9 +58,11 @@ shared getters documented in `TravelSystem.j`.
   fade. Default fares are currently zero and are configured in `TravelZeppelin.j`.
 Ship passenger proxies use `nazgrek2_shieldAttachment.mdl` for Nazgrek and
 `war3campImported\TrollMale.mdl` for Zul'kis. Their model paths, scale, and
-facing offsets are configured in `TravelShipB.j`. Passenger visuals are special
-effects positioned relative to the ship; `UnitAttachment.j` and dummy passenger
-units are not used.
+facing offsets are configured centrally in `TravelSystem.j`. Passenger visuals
+are reusable special effects that play their normal stand animation and follow
+the ship without `UnitAttachment.j` or dummy passenger units. `TravelShipA.j`
+and `TravelShipB.j` configure separate local X/Y/height values for their two
+deck slots through `TravelSystem_SetRouteDeckSlotXY`.
 
 ## Travel presentation
 
@@ -69,6 +71,9 @@ invulnerable so neutral-passive guard-position behavior cannot pull them home.
 The travel camera uses a 750 distance and 80-degree field of view while arrow
 keys remain available for rotation and angle changes. Fullscreen presentation
 keeps user control enabled for those camera key events.
+Ship journeys lock 300 height units above the ship origin so the deck, rather
+than the hull or waterline, stays near the center of the view. Flight travel
+continues to target the flying vehicle origin.
 Temporary wyvern and bat carriers use gradual Mordrax-style fly-height changes:
 they climb during takeoff, descend on final approach, and complete the arrival
 after reaching landing height. A bounded descent fallback also completes the

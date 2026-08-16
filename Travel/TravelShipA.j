@@ -32,6 +32,13 @@ library TravelShipA initializer Init requires TravelSystem, TravelUI, PatrolSyst
         private constant integer TSA_FARE_ADJACENT = 100
         private constant integer TSA_FARE_FULL = 175
         private constant integer TSA_SKIP_FEE = 100
+        // Neutral transport local deck coordinates: X forward, Y lateral.
+        private constant real TSA_DECK_SLOT_1_X = -180.00
+        private constant real TSA_DECK_SLOT_1_Y = -90.00
+        private constant real TSA_DECK_SLOT_1_HEIGHT = 220.00
+        private constant real TSA_DECK_SLOT_2_X = -180.00
+        private constant real TSA_DECK_SLOT_2_Y = 90.00
+        private constant real TSA_DECK_SLOT_2_HEIGHT = 220.00
         private constant real TSA_DOCK_WAIT = 30.00
         private constant real TSA_DOCK_CHECK_PERIOD = 0.50
         private constant real TSA_PATROL_START_DELAY = 45.00
@@ -117,6 +124,11 @@ library TravelShipA initializer Init requires TravelSystem, TravelUI, PatrolSyst
         return RegisterStopEx(name, zoneId, master, boardingArea, dropX, dropY, false)
     endfunction
 
+    private function TSA_ConfigureDeckSlots takes integer routeId returns nothing
+        call TravelSystem_SetRouteDeckSlotXY(routeId, 1, TSA_DECK_SLOT_1_X, TSA_DECK_SLOT_1_Y, TSA_DECK_SLOT_1_HEIGHT)
+        call TravelSystem_SetRouteDeckSlotXY(routeId, 2, TSA_DECK_SLOT_2_X, TSA_DECK_SLOT_2_Y, TSA_DECK_SLOT_2_HEIGHT)
+    endfunction
+
     public function RegisterDirectRoute takes integer startStop, integer endStop, integer fare, unit ship returns integer
         local integer routeId
 
@@ -128,6 +140,7 @@ library TravelShipA initializer Init requires TravelSystem, TravelUI, PatrolSyst
             call TravelSystem_SetRouteDiscoveryRequirements(routeId, false, false)
             call TravelSystem_SetRouteShowPassengers(routeId, true)
             call TravelSystem_SetRouteVehicle(routeId, ship, false, false)
+            call TSA_ConfigureDeckSlots(routeId)
         endif
         return routeId
     endfunction
@@ -144,6 +157,7 @@ library TravelShipA initializer Init requires TravelSystem, TravelUI, PatrolSyst
             call TravelSystem_SetRouteShowPassengers(routeId, true)
             call TravelSystem_SetRouteVehicle(routeId, ship, true, usesPatrolSystem)
             call TravelSystem_SetRouteAvailable(routeId, false)
+            call TSA_ConfigureDeckSlots(routeId)
         endif
         return routeId
     endfunction

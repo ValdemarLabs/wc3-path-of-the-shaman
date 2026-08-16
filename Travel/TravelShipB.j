@@ -32,12 +32,13 @@ library TravelShipB initializer Init requires TravelSystem, TravelUI, PatrolSyst
         private constant integer TSB_FARE_FRONTLINE = 100
         private constant integer TSB_FARE_IRONSPINE = 175
         private constant integer TSB_SKIP_FEE = 100
-        private constant string TSB_NAZGREK_MODEL = "nazgrek2_shieldAttachment.mdl"
-        private constant string TSB_ZULKIS_MODEL = "war3campImported\\TrollMale.mdl"
-        private constant real TSB_NAZGREK_SCALE = 1.00
-        private constant real TSB_ZULKIS_SCALE = 1.00
-        private constant real TSB_NAZGREK_FACING_OFFSET = 0.00
-        private constant real TSB_ZULKIS_FACING_OFFSET = 0.00
+        // Orc frigate local deck coordinates: X forward, Y lateral.
+        private constant real TSB_DECK_SLOT_1_X = -240.00
+        private constant real TSB_DECK_SLOT_1_Y = -140.00
+        private constant real TSB_DECK_SLOT_1_HEIGHT = 300.00
+        private constant real TSB_DECK_SLOT_2_X = -240.00
+        private constant real TSB_DECK_SLOT_2_Y = 140.00
+        private constant real TSB_DECK_SLOT_2_HEIGHT = 300.00
         private constant real TSB_DOCK_CHECK_PERIOD = 0.50
         private constant real TSB_PATROL_START_DELAY = 45.00
         private constant integer TSB_PATROL_POINT_COUNT = 87
@@ -128,17 +129,12 @@ library TravelShipB initializer Init requires TravelSystem, TravelUI, PatrolSyst
     endfunction
 
     public function ConfigureHeroModels takes string nazgrekModel, real nazgrekScale, real nazgrekFacingOffset, string zulkisModel, real zulkisScale, real zulkisFacingOffset returns nothing
-        local unit nazgrek = TravelSystem_GetNazgrek()
-        local unit zulkis = TravelSystem_GetZulkis()
+        call TravelSystem_ConfigureShipPassengerEffects(nazgrekModel, nazgrekScale, nazgrekFacingOffset, zulkisModel, zulkisScale, zulkisFacingOffset)
+    endfunction
 
-        if nazgrek != null then
-            call TravelSystem_RegisterPassengerEffect(GetUnitTypeId(nazgrek), nazgrekModel, nazgrekScale, nazgrekFacingOffset)
-        endif
-        if zulkis != null then
-            call TravelSystem_RegisterPassengerEffect(GetUnitTypeId(zulkis), zulkisModel, zulkisScale, zulkisFacingOffset)
-        endif
-        set nazgrek = null
-        set zulkis = null
+    private function TSB_ConfigureDeckSlots takes integer routeId returns nothing
+        call TravelSystem_SetRouteDeckSlotXY(routeId, 1, TSB_DECK_SLOT_1_X, TSB_DECK_SLOT_1_Y, TSB_DECK_SLOT_1_HEIGHT)
+        call TravelSystem_SetRouteDeckSlotXY(routeId, 2, TSB_DECK_SLOT_2_X, TSB_DECK_SLOT_2_Y, TSB_DECK_SLOT_2_HEIGHT)
     endfunction
 
     private function TSB_SetPatrolPoint takes integer index, rect waypoint, real waitTime returns nothing
@@ -303,6 +299,7 @@ library TravelShipB initializer Init requires TravelSystem, TravelUI, PatrolSyst
             call TravelSystem_SetRouteVehicle(routeId, ship, true, true)
             call TravelSystem_SetRouteShowPassengers(routeId, true)
             call TravelSystem_SetRouteAvailable(routeId, false)
+            call TSB_ConfigureDeckSlots(routeId)
         endif
         return routeId
     endfunction
@@ -360,8 +357,6 @@ library TravelShipB initializer Init requires TravelSystem, TravelUI, PatrolSyst
         endif
 
         call TSB_RegisterRoutes(ship)
-        call ConfigureHeroModels(TSB_NAZGREK_MODEL, TSB_NAZGREK_SCALE, TSB_NAZGREK_FACING_OFFSET, TSB_ZULKIS_MODEL, TSB_ZULKIS_SCALE, TSB_ZULKIS_FACING_OFFSET)
-
         set TSB_Initialized = true
         set TSB_CurrentDock = 0
         call TSB_OnDockCheck()

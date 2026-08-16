@@ -59,6 +59,8 @@
     - TravelSystem_RegisterWaypoint(...) / TravelSystem_AddRegisteredWaypoint(...)
     - TravelSystem_SetRouteVehicle(...)
     - TravelSystem_GetRouteVehicle(...)
+    - TravelSystem_SetRouteDeckSlotXY(...)
+    - TravelSystem_ConfigureShipPassengerEffects(...)
     - TravelSystem_SetRouteFare(...)
     - TravelSystem_SetRouteSkipFee(...)
     - TravelSystem_SetRouteDiscoveryRequirements(...)
@@ -143,6 +145,12 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         private constant string TS_DISCOVERED_NAME_COLOR = "|cFF32CD32"
         private constant string TS_MASTER_EFFECT_MODEL = "war3campImported\\ExcMark_Green_FlightPath.mdx"
         private constant string TS_FADE_TEXTURE = "ReplaceableTextures\\CameraMasks\\Black_mask.blp"
+        private constant string TS_NAZGREK_PASSENGER_MODEL = "nazgrek2_shieldAttachment.mdl"
+        private constant string TS_ZULKIS_PASSENGER_MODEL = "war3campImported\\TrollMale.mdl"
+        private constant real TS_NAZGREK_PASSENGER_SCALE = 1.00
+        private constant real TS_ZULKIS_PASSENGER_SCALE = 1.00
+        private constant real TS_NAZGREK_PASSENGER_FACING_OFFSET = 0.00
+        private constant real TS_ZULKIS_PASSENGER_FACING_OFFSET = 0.00
 
         private integer TS_StopCount = 0
         private integer array TS_StopMethod
@@ -865,6 +873,11 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         set TS_DeckHeight[index] = height
     endfunction
 
+    // Local X is forward along the vehicle facing; local Y is lateral.
+    public function SetRouteDeckSlotXY takes integer routeId, integer slot, real localX, real localY, real height returns nothing
+        call SetRouteDeckSlot(routeId, slot, SquareRoot(localX * localX + localY * localY), Atan2(localY, localX) * bj_RADTODEG, height)
+    endfunction
+
     public function RegisterWaypoint takes real x, real y returns integer
         if TS_RegisteredWaypointCount >= TS_MAX_REGISTERED_WAYPOINTS then
             return 0
@@ -925,6 +938,47 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         set TS_ProxyModel[TS_ProxyCount] = modelPath
         set TS_ProxyScale[TS_ProxyCount] = scale
         set TS_ProxyFacingOffset[TS_ProxyCount] = facingOffset
+    endfunction
+
+    public function ConfigureShipPassengerEffects takes string nazgrekModel, real nazgrekScale, real nazgrekFacingOffset, string zulkisModel, real zulkisScale, real zulkisFacingOffset returns nothing
+        local unit nazgrek = GetNazgrek()
+        local unit zulkis = GetZulkis()
+
+        if nazgrek != null then
+            call RegisterPassengerEffect(GetUnitTypeId(nazgrek), nazgrekModel, nazgrekScale, nazgrekFacingOffset)
+        endif
+        if zulkis != null then
+            call RegisterPassengerEffect(GetUnitTypeId(zulkis), zulkisModel, zulkisScale, zulkisFacingOffset)
+        endif
+        set nazgrek = null
+        set zulkis = null
+    endfunction
+
+    private function TS_RegisterPassengerEffectIfMissing takes integer unitTypeId, string modelPath, real scale, real facingOffset returns nothing
+        local integer index = 1
+
+        loop
+            exitwhen index > TS_ProxyCount
+            if TS_ProxyUnitType[index] == unitTypeId then
+                return
+            endif
+            set index = index + 1
+        endloop
+        call RegisterPassengerEffect(unitTypeId, modelPath, scale, facingOffset)
+    endfunction
+
+    private function TS_ConfigureDefaultShipPassengerEffects takes nothing returns nothing
+        local unit nazgrek = GetNazgrek()
+        local unit zulkis = GetZulkis()
+
+        if nazgrek != null then
+            call TS_RegisterPassengerEffectIfMissing(GetUnitTypeId(nazgrek), TS_NAZGREK_PASSENGER_MODEL, TS_NAZGREK_PASSENGER_SCALE, TS_NAZGREK_PASSENGER_FACING_OFFSET)
+        endif
+        if zulkis != null then
+            call TS_RegisterPassengerEffectIfMissing(GetUnitTypeId(zulkis), TS_ZULKIS_PASSENGER_MODEL, TS_ZULKIS_PASSENGER_SCALE, TS_ZULKIS_PASSENGER_FACING_OFFSET)
+        endif
+        set nazgrek = null
+        set zulkis = null
     endfunction
 
     public function IsRouteAvailable takes integer routeId returns boolean
@@ -1185,7 +1239,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
                 set angle = (facing + TS_DeckAngle[deckIndex]) * bj_DEGTORAD
                 set x = GetUnitX(TS_ActiveCarrier) + TS_DeckOffset[deckIndex] * Cos(angle)
                 set y = GetUnitY(TS_ActiveCarrier) + TS_DeckOffset[deckIndex] * Sin(angle)
-                set z = TS_GetTerrainZ(x, y) + GetUnitFlyHeight(TS_ActiveCarrier) + TS_DeckHeight[deckIndex]
+                set z = TS_GetTerrainZ(GetUnitX(TS_ActiveCarrier), GetUnitY(TS_ActiveCarrier)) + GetUnitFlyHeight(TS_ActiveCarrier) + TS_DeckHeight[deckIndex]
                 call BlzSetSpecialEffectPosition(TS_PassengerEffect[slot], x, y, z)
                 call BlzSetSpecialEffectYaw(TS_PassengerEffect[slot], (facing + TS_PassengerEffectFacingOffset[slot]) * bj_DEGTORAD)
             endif
@@ -1226,8 +1280,13 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
                     if modelPath != "" then
                         set slot = slot + 1
                         set TS_PassengerEffect[slot] = AddSpecialEffect(modelPath, GetUnitX(TS_ActiveCarrier), GetUnitY(TS_ActiveCarrier))
-                        call BlzSetSpecialEffectScale(TS_PassengerEffect[slot], TS_ProxyScale[proxyIndex])
-                        set TS_PassengerEffectFacingOffset[slot] = TS_ProxyFacingOffset[proxyIndex]
+                        if TS_PassengerEffect[slot] != null then
+                            call BlzSetSpecialEffectScale(TS_PassengerEffect[slot], TS_ProxyScale[proxyIndex])
+                            call BlzPlaySpecialEffect(TS_PassengerEffect[slot], ANIM_TYPE_STAND)
+                            set TS_PassengerEffectFacingOffset[slot] = TS_ProxyFacingOffset[proxyIndex]
+                        else
+                            set slot = slot - 1
+                        endif
                     endif
                 endif
             endif
@@ -1934,6 +1993,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         local integer stopId = 1
 
         call TS_RegisterSharedMasterEffects()
+        call TS_ConfigureDefaultShipPassengerEffects()
         loop
             exitwhen stopId > TS_StopCount
             if TS_StopDiscovered[stopId] and not TS_StopIconRegistered[stopId] then
@@ -1968,6 +2028,8 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         set TS_TransitionTimer = CreateTimer()
         set TS_EscapeTimer = CreateTimer()
         set TS_TerrainLocation = Location(0.00, 0.00)
+        call Preload(TS_NAZGREK_PASSENGER_MODEL)
+        call Preload(TS_ZULKIS_PASSENGER_MODEL)
         call InitDialogs()
         call DialogInteraction_RegisterAnySelectionHandler(function TS_OnMasterSelected)
         call TimerStart(TS_DiscoveryTimer, TS_DISCOVERY_PERIOD, true, function TS_OnDiscoveryPeriod)
