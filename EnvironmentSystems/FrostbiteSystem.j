@@ -64,6 +64,7 @@ globals
     integer array Frostbite_ExposureTime
     boolean array Frostbite_HasDebuff
     group Frostbite_TempGroup = CreateGroup()
+    boolexpr Frostbite_AliveFilter = null
     boolean Frostbite_SystemEnabled = true  // This flag enables or disables the entire system
     boolean Frostbite_Debug_Mode = true     // Debug mode, can be toggled on/off at runtime
 endglobals
@@ -139,77 +140,78 @@ endfunction
 //===========================================================================
 // MAIN LOGIC LOOP
 //===========================================================================
-// This function is called periodically to check for cold exposure and apply/remove debuffs
-function Frostbite_Periodic takes nothing returns nothing
+function Frostbite_ProcessPlayer takes player whichPlayer returns nothing
     local unit u
     local integer id
-    local player p
 
-    if not Frostbite_SystemEnabled then
-        return
-    endif
-
-    call GroupEnumUnitsInRect(Frostbite_TempGroup, bj_mapInitialPlayableArea, Condition(function ConditionIsAlive))
+    call GroupEnumUnitsOfPlayer(Frostbite_TempGroup, whichPlayer, Frostbite_AliveFilter)
     loop
         set u = FirstOfGroup(Frostbite_TempGroup)
         exitwhen u == null
-        call GroupRemoveUnit(Frostbite_TempGroup, u) 
+        call GroupRemoveUnit(Frostbite_TempGroup, u)
 
         //call Frostbite_RemoveColdBuffIfWarm(u) // << Remove Cold buff if Warmth is present
 
-        // Check if the unit is a player-controlled unit
-        set p = GetOwningPlayer(u)
-        if p == Player(0) or p == Player(19) then
-            set id = GetUnitUserData(u)
+        set id = GetUnitUserData(u)
 
-            // Initialize exposure time and debuff status if not already done
-            if Frostbite_HasDebuff[id] and not Frostbite_HasBuff(u, FROSTBITE_DEBUFF_BUFF) then
-                call Frostbite_Debug("Frostbite wore off naturally from " + GetUnitName(u) + ", resuming exposure tracking.")
-                set Frostbite_HasDebuff[id] = false
-                set Frostbite_ExposureTime[id] = 0
-            endif
+        // Initialize exposure time and debuff status if not already done
+        if Frostbite_HasDebuff[id] and not Frostbite_HasBuff(u, FROSTBITE_DEBUFF_BUFF) then
+            call Frostbite_Debug("Frostbite wore off naturally from " + GetUnitName(u) + ", resuming exposure tracking.")
+            set Frostbite_HasDebuff[id] = false
+            set Frostbite_ExposureTime[id] = 0
+        endif
 
-            // Check if the unit is in a cold area and not near a campfire
-            // If the unit is in a cold area and not near a campfire, increase exposure time
-            if Frostbite_IsInCold(u) and not Frostbite_IsNearCampfire(u) then
-                if not Frostbite_HasDebuff[id] then
+        // Check if the unit is in a cold area and not near a campfire
+        // If the unit is in a cold area and not near a campfire, increase exposure time
+        if Frostbite_IsInCold(u) and not Frostbite_IsNearCampfire(u) then
+            if not Frostbite_HasDebuff[id] then
+                // Set the GUI event trigger variables
+                set udg_Frostbite_Unit = u
+                set udg_Frostbite_ColdEvent = udg_Frostbite_ColdEvent + 1.00
+
+                set Frostbite_ExposureTime[id] = Frostbite_ExposureTime[id] + 1
+                call Frostbite_Debug("Unit " + GetUnitName(u) + " exposed to cold for " + I2S(Frostbite_ExposureTime[id]) + "s.")
+
+                if Frostbite_ExposureTime[id] >= R2I(FROSTBITE_EXPOSURE_LIMIT) then
+                    call Frostbite_Debug("Applying Frostbite to " + GetUnitName(u))
+                    call Frostbite_ApplyDebuff(u)
+                    set Frostbite_HasDebuff[id] = true
+                    set Frostbite_ExposureTime[id] = 0 // Reset exposure count
+
                     // Set the GUI event trigger variables
                     set udg_Frostbite_Unit = u
-                    set udg_Frostbite_ColdEvent = udg_Frostbite_ColdEvent + 1.00
-                    
-                    set Frostbite_ExposureTime[id] = Frostbite_ExposureTime[id] + 1
-                    call Frostbite_Debug("Unit " + GetUnitName(u) + " exposed to cold for " + I2S(Frostbite_ExposureTime[id]) + "s.")
-            
-                    if Frostbite_ExposureTime[id] >= R2I(FROSTBITE_EXPOSURE_LIMIT) then
-                        call Frostbite_Debug("Applying Frostbite to " + GetUnitName(u))
-                        call Frostbite_ApplyDebuff(u)
-                        set Frostbite_HasDebuff[id] = true
-                        set Frostbite_ExposureTime[id] = 0 // Reset exposure count
-
-                        // Set the GUI event trigger variables
-                        set udg_Frostbite_Unit = u
-                        set udg_Frostbite_FrostbiteEvent = udg_Frostbite_FrostbiteEvent + 1.00
-                    endif
+                    set udg_Frostbite_FrostbiteEvent = udg_Frostbite_FrostbiteEvent + 1.00
                 endif
-            else
-                if Frostbite_HasDebuff[id] and (not Frostbite_IsInCold(u) or Frostbite_IsNearCampfire(u)) then
-                    call Frostbite_Debug("Removing Frostbite from " + GetUnitName(u))
-                    call Frostbite_RemoveDebuff(u)
-                    set Frostbite_HasDebuff[id] = false
-
-                    // Reset FrostbiteEvent when removing the debuff
-                    set udg_Frostbite_FrostbiteEvent = 0  // Reset event counter
-                endif
-                if Frostbite_ExposureTime[id] > 0 then
-                    call Frostbite_Debug("Resetting exposure time for " + GetUnitName(u))
-                    set Frostbite_ExposureTime[id] = Frostbite_ExposureTime[id] - 1
-                endif
-                set udg_Frostbite_ColdEvent = 0
             endif
+        else
+            if Frostbite_HasDebuff[id] and (not Frostbite_IsInCold(u) or Frostbite_IsNearCampfire(u)) then
+                call Frostbite_Debug("Removing Frostbite from " + GetUnitName(u))
+                call Frostbite_RemoveDebuff(u)
+                set Frostbite_HasDebuff[id] = false
+
+                // Reset FrostbiteEvent when removing the debuff
+                set udg_Frostbite_FrostbiteEvent = 0  // Reset event counter
+            endif
+            if Frostbite_ExposureTime[id] > 0 then
+                call Frostbite_Debug("Resetting exposure time for " + GetUnitName(u))
+                set Frostbite_ExposureTime[id] = Frostbite_ExposureTime[id] - 1
+            endif
+            set udg_Frostbite_ColdEvent = 0
         endif
 
         set u = null
     endloop
+    set whichPlayer = null
+endfunction
+
+// This function is called periodically to check for cold exposure and apply/remove debuffs
+function Frostbite_Periodic takes nothing returns nothing
+    if not Frostbite_SystemEnabled then
+        return
+    endif
+
+    call Frostbite_ProcessPlayer(Player(0))
+    call Frostbite_ProcessPlayer(Player(19))
 endfunction
 
 //===========================================================================
@@ -225,6 +227,8 @@ function Frostbite_OnUnitEntersTent takes nothing returns nothing
 
     // Optional: restrict to specific tent types
     if GetUnitTypeId(tent) != FROSTBITE_TENT_UNIT_TYPE then
+        set u = null
+        set tent = null
         return
     endif
 
@@ -238,6 +242,8 @@ function Frostbite_OnUnitEntersTent takes nothing returns nothing
         call Frostbite_Debug("Resetting exposure time for " + GetUnitName(u) + " due to tent shelter.")
         set Frostbite_ExposureTime[id] = 0
     endif
+    set u = null
+    set tent = null
 endfunction
 
 //===========================================================================
@@ -248,6 +254,7 @@ function Frostbite_StartSystem takes nothing returns nothing
     local trigger t = CreateTrigger()
     call TriggerRegisterTimerEvent(t, 1.00, true)
     call TriggerAddAction(t, function Frostbite_Periodic)
+    set t = null
 endfunction
 
 // This function initializes the system and sets up the triggers
@@ -255,6 +262,7 @@ function InitTrig_FrostbiteSystem takes nothing returns nothing
     local trigger startTrigger = CreateTrigger()
     // Tent entry detection
     local trigger tentTrigger = CreateTrigger()
+    set Frostbite_AliveFilter = Condition(function ConditionIsAlive)
     call TriggerRegisterTimerEvent(startTrigger, 1.00, false) // Delay start by 1 second
     call TriggerAddAction(startTrigger, function Frostbite_StartSystem)
     // Tent related triggers
@@ -262,4 +270,6 @@ function InitTrig_FrostbiteSystem takes nothing returns nothing
     call TriggerAddAction(tentTrigger, function Frostbite_OnUnitEntersTent)
     call Frostbite_ToggleDebugMode(false) // Disable debug mode by default
     set udg_Frostbite_Debug = false // Debug messages are disabled by default
+    set startTrigger = null
+    set tentTrigger = null
 endfunction

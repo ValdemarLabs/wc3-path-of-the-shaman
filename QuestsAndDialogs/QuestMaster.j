@@ -71,8 +71,10 @@ globals
 	private unit array QuestGiverList
 
 	// Availability evaluation
-	private constant real QUEST_EVAL_INTERVAL = 5.00
+	private constant real QUEST_EVAL_BATCH_INTERVAL = 0.25
+	private constant integer QUEST_EVAL_BATCH_COUNT = 20
 	private timer QuestEvalTimer = null
+	private integer QuestEvalBatchIndex = 0
 	private trigger QuestLevelRefreshTrigger = null
 	private boolean array QuestEventFlags
 	
@@ -117,6 +119,7 @@ globals
 	private integer QUEST_ICON_EFFECT_ID = StringHash("effect")
 	private integer QUEST_ICON_MODEL_ID = StringHash("model")
 	private integer QUEST_ICON_MINIMAP_ID = StringHash("minimaps")
+	private integer QUEST_ICON_MINIMAP_STYLE_ID = StringHash("minimapstyle")
 	private integer QUEST_ICON_QUESTS_ID = StringHash("quests")
 
 	private minimapicon array QuestIconMapPing
@@ -492,18 +495,23 @@ private function RemoveOldMapPing takes unit u returns nothing
 	if index >= 0 and index < MinimapIconIndex then
 		call IconQuery_UnregisterIcon(QuestIconMapPing[index])
 		set QuestIconMapPing[index] = null
-		call iconTable.integer.remove(QUEST_ICON_MINIMAP_ID)
 	endif
+	call iconTable.integer.remove(QUEST_ICON_MINIMAP_ID)
+	call iconTable.integer.remove(QUEST_ICON_MINIMAP_STYLE_ID)
 endfunction
 
 private function CreateMapPingForUnit takes unit u, integer style returns nothing
 	local minimapicon qi
+	local Table iconTable
 
 	call RemoveOldMapPing(u)
 	set qi = IconQuery_RegisterQuestGiverUnitIcon(u, style)
 	if qi != null then
 		call StoreQuestMinimapIcon(u, qi)
+		set iconTable = QuestIconTable.link(GetHandleId(u))
+		set iconTable.integer[QUEST_ICON_MINIMAP_STYLE_ID] = style
 	endif
+	set qi = null
 endfunction
 
 private function RemoveOldEffect takes unit u returns nothing
@@ -525,6 +533,7 @@ endfunction
 public function IconRefresh takes unit u, integer questID, string questType, integer questState returns nothing
 	local string model = ""
 	local effect e
+	local minimapicon qi
 	local integer pingStyle = -1
 	local Table iconTable
 
@@ -566,11 +575,16 @@ public function IconRefresh takes unit u, integer questID, string questType, int
 		endif
 	endif
 
-	call RemoveOldMapPing(u)
-	if pingStyle != -1 then
+	set qi = GetQuestMinimapIcon(u)
+	if pingStyle == -1 then
+		if qi != null or iconTable.integer.has(QUEST_ICON_MINIMAP_ID) then
+			call RemoveOldMapPing(u)
+		endif
+	elseif qi == null or not iconTable.integer.has(QUEST_ICON_MINIMAP_STYLE_ID) or iconTable.integer[QUEST_ICON_MINIMAP_STYLE_ID] != pingStyle then
 		call CreateMapPingForUnit(u, pingStyle)
 	endif
 	set e = null
+	set qi = null
 endfunction
 
 private function IconStatePriority takes integer state returns integer
@@ -3040,7 +3054,17 @@ public function RefreshAvailability takes nothing returns nothing
 endfunction
 
 private function EvalTimerTick takes nothing returns nothing
-	call RefreshAvailability()
+	local integer i = QuestEvalBatchIndex + 1
+	local unit u
+
+	loop
+		exitwhen i > QuestGiverCount
+		set u = QuestGiverList[i]
+		call RefreshAvailabilityForGiver(u)
+		set i = i + QUEST_EVAL_BATCH_COUNT
+	endloop
+	set QuestEvalBatchIndex = ModuloInteger(QuestEvalBatchIndex + 1, QUEST_EVAL_BATCH_COUNT)
+	set u = null
 endfunction
 
 private function OnHeroLevel takes nothing returns nothing
@@ -3065,7 +3089,7 @@ private function Init takes nothing returns nothing
 	set QuestMaster_OnDelayedDiscovered = CreateTrigger()
 	set QuestMaster_OnDailyReset = CreateTrigger()
 	set QuestEvalTimer = CreateTimer()
-	call TimerStart(QuestEvalTimer, QUEST_EVAL_INTERVAL, true, function EvalTimerTick)
+	call TimerStart(QuestEvalTimer, QUEST_EVAL_BATCH_INTERVAL, true, function EvalTimerTick)
 	set QuestLevelRefreshTrigger = CreateTrigger()
 	call TriggerRegisterPlayerUnitEvent(QuestLevelRefreshTrigger, Player(0), EVENT_PLAYER_HERO_LEVEL, null)
 	call TriggerAddAction(QuestLevelRefreshTrigger, function OnHeroLevel)

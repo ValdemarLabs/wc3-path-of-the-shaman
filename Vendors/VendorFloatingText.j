@@ -2,7 +2,7 @@
     VendorFloatingText
 
     Author: Valdemar
-    Version: 1.1.1
+    Version: 1.2.0
 
     Description:
     Displays a vendor-type label above registered Shop units while they are in
@@ -15,8 +15,8 @@
     - Totems.j camera-local floating-text visibility pattern
 
     How to install:
-    Import after Shop and Table. Vendor libraries may initialize in any order;
-    registered vendor units are discovered periodically.
+    Import after Shop and Table. Preplaced vendors are discovered after map
+    initialization, while newly entering vendor units register automatically.
 
     API:
     - call VendorFloatingText_RegisterUnit(vendor)
@@ -32,7 +32,6 @@ library VendorFloatingText initializer Init requires Shop, Table, FallenHeroStat
         private constant real VFT_TEXT_CHARACTER_WIDTH = 5.00
         private constant real VFT_VISIBLE_RANGE = 1000.00
         private constant real VFT_UPDATE_PERIOD = 0.25
-        private constant real VFT_DISCOVERY_PERIOD = 5.00
         private constant integer VFT_TEXT_RED = 255
         private constant integer VFT_TEXT_GREEN = 204
         private constant integer VFT_TEXT_BLUE = 0
@@ -40,13 +39,14 @@ library VendorFloatingText initializer Init requires Shop, Table, FallenHeroStat
         private Table VFT_TrackedByHandle = 0
         private group VFT_EnumGroup = null
         private timer VFT_UpdateTimer = null
+        private timer VFT_StartupDiscoveryTimer = null
+        private trigger VFT_EnterTrigger = null
         private unit array VFT_Vendors
         private unit array VFT_VisibleVendors
         private real array VFT_VisibleDistanceSquared
         private texttag array VFT_LabelPool
         private integer VFT_VendorCount = 0
         private integer VFT_VisibleCount = 0
-        private real VFT_DiscoveryElapsed = VFT_DISCOVERY_PERIOD
         private boolean VFT_Enabled = true
     endglobals
 
@@ -104,6 +104,7 @@ library VendorFloatingText initializer Init requires Shop, Table, FallenHeroStat
     endfunction
 
     private function VFT_DiscoverVendors takes nothing returns nothing
+        local timer expiredTimer = GetExpiredTimer()
         local unit vendor
 
         call GroupEnumUnitsInRect(VFT_EnumGroup, bj_mapInitialPlayableArea, null)
@@ -115,6 +116,18 @@ library VendorFloatingText initializer Init requires Shop, Table, FallenHeroStat
                 call VendorFloatingText_RegisterUnit(vendor)
             endif
         endloop
+        call DestroyGroup(VFT_EnumGroup)
+        set VFT_EnumGroup = null
+        call DestroyTimer(expiredTimer)
+        set VFT_StartupDiscoveryTimer = null
+        set expiredTimer = null
+        set vendor = null
+    endfunction
+
+    private function VFT_OnUnitEnter takes nothing returns nothing
+        local unit vendor = GetEnteringUnit()
+
+        call VendorFloatingText_RegisterUnit(vendor)
         set vendor = null
     endfunction
 
@@ -210,12 +223,6 @@ library VendorFloatingText initializer Init requires Shop, Table, FallenHeroStat
         endloop
         call VFT_RenderVisibleLabels()
 
-        set VFT_DiscoveryElapsed = VFT_DiscoveryElapsed + VFT_UPDATE_PERIOD
-        if VFT_DiscoveryElapsed >= VFT_DISCOVERY_PERIOD then
-            set VFT_DiscoveryElapsed = 0.00
-            call VFT_DiscoverVendors()
-        endif
-
         set vendor = null
     endfunction
 
@@ -245,7 +252,12 @@ library VendorFloatingText initializer Init requires Shop, Table, FallenHeroStat
         set VFT_TrackedByHandle = Table.create()
         set VFT_EnumGroup = CreateGroup()
         set VFT_UpdateTimer = CreateTimer()
+        set VFT_StartupDiscoveryTimer = CreateTimer()
+        set VFT_EnterTrigger = CreateTrigger()
         call VFT_CreateLabelPool()
+        call TriggerRegisterEnterRectSimple(VFT_EnterTrigger, bj_mapInitialPlayableArea)
+        call TriggerAddAction(VFT_EnterTrigger, function VFT_OnUnitEnter)
+        call TimerStart(VFT_StartupDiscoveryTimer, 0.10, false, function VFT_DiscoverVendors)
         call TimerStart(VFT_UpdateTimer, VFT_UPDATE_PERIOD, true, function VFT_Update)
     endfunction
 endlibrary
