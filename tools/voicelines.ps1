@@ -300,6 +300,75 @@ function Get-JassRows {
                 Add-Row -Rows $rows -Key (Format-SequenceKey -SoundType $family.sound_type -LineIndex $lineIndex) -Text $catalog.texts[$i] -Source $file.Name -ExpectedFolder $family.folder -DefinitionId "$($file.Name):${familyConstant}:${catalogName}:$lineIndex"
             }
         }
+
+        $vendorQuestTypes = @{}
+        foreach ($m in [regex]::Matches($text, 'constant\s+string\s+(VL_VENDORQUEST_([A-Z0-9_]+)_TYPE)\s*=\s*"((?:[^"\\]|\\.)*)"')) {
+            $vendorQuestTypes[$m.Groups[1].Value] = [pscustomobject]@{
+                family = $m.Groups[2].Value
+                sound_type = ConvertFrom-JassString $m.Groups[3].Value
+                folder = ""
+                last_line = 0
+            }
+        }
+
+        foreach ($m in [regex]::Matches($text, 'ExSound_RegisterSequence\(\s*(VL_VENDORQUEST_[A-Z0-9_]+_TYPE)\s*,\s*\d+\s*,\s*(\d+)\s*,\s*"((?:[^"\\]|\\.)*)"\s*\)')) {
+            $typeConstant = $m.Groups[1].Value
+            if (-not $vendorQuestTypes.ContainsKey($typeConstant)) { continue }
+
+            $folder = ConvertFrom-JassString $m.Groups[3].Value
+            $vendorQuestTypes[$typeConstant].folder = $folder.Replace('Pots\Sound\Voicelines\', '').TrimEnd('\')
+            $vendorQuestTypes[$typeConstant].last_line = [int]$m.Groups[2].Value
+        }
+
+        $vendorQuestTexts = @{}
+        foreach ($m in [regex]::Matches($text, 'constant\s+string\s+VL_VENDORQUEST_([A-Z0-9]+)_(\d{4})\s*=\s*"((?:[^"\\]|\\.)*)"')) {
+            $vendorQuestTexts["$($m.Groups[1].Value):$([int]$m.Groups[2].Value)"] = ConvertFrom-JassString $m.Groups[3].Value
+        }
+
+        $heroQuestTextConstants = @(
+            'VL_QUEST_HERO_ACCEPT',
+            'VL_QUEST_HERO_COMPLETE_KILL',
+            'VL_QUEST_HERO_COMPLETE_TALK',
+            'VL_QUEST_HERO_COMPLETE_FETCH',
+            'VL_QUEST_HERO_PROGRESS',
+            'VL_QUEST_HERO_REQUEST_SUPPLY',
+            'VL_QUEST_HERO_ASK_TO_BUY'
+        )
+        $heroQuestTexts = @()
+        foreach ($constantName in $heroQuestTextConstants) {
+            $m = [regex]::Match($text, 'constant\s+string\s+' + [regex]::Escape($constantName) + '\s*=\s*"((?:[^"\\]|\\.)*)"')
+            if ($m.Success) { $heroQuestTexts += (ConvertFrom-JassString $m.Groups[1].Value) }
+        }
+
+        $dailyQuestTexts = @{}
+        $dailySetPattern = 'call\s+RegisterDailySet\(\s*(VL_VENDORQUEST_[A-Z0-9_]+_TYPE)\s*,\s*[^,]+,\s*(\d+)\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*\)'
+        foreach ($m in [regex]::Matches($text, $dailySetPattern)) {
+            for ($i = 0; $i -lt 3; $i++) {
+                $dailyQuestTexts["$($m.Groups[1].Value):$([int]$m.Groups[2].Value + $i)"] = ConvertFrom-JassString $m.Groups[3 + $i].Value
+            }
+        }
+
+        foreach ($typeConstant in $vendorQuestTypes.Keys) {
+            $voiceType = $vendorQuestTypes[$typeConstant]
+            $textFamily = $voiceType.family -replace '_(MALE|FEMALE)$', ''
+            for ($lineIndex = 1; $lineIndex -le $voiceType.last_line; $lineIndex++) {
+                $lineText = ""
+                $textKey = "${textFamily}:$lineIndex"
+                $dailyKey = "${typeConstant}:$lineIndex"
+                if ($vendorQuestTexts.ContainsKey($textKey)) {
+                    $lineText = $vendorQuestTexts[$textKey]
+                }
+                elseif ($dailyQuestTexts.ContainsKey($dailyKey)) {
+                    $lineText = $dailyQuestTexts[$dailyKey]
+                }
+                elseif ($textFamily -in @('NAZGREK', 'ZULKIS') -and $lineIndex -le $heroQuestTexts.Count) {
+                    $lineText = $heroQuestTexts[$lineIndex - 1]
+                }
+                if (-not [string]::IsNullOrWhiteSpace($lineText)) {
+                    Add-Row -Rows $rows -Key (Format-SequenceKey -SoundType $voiceType.sound_type -LineIndex $lineIndex) -Text $lineText -Source $file.Name -ExpectedFolder $voiceType.folder -DefinitionId "$($file.Name):${typeConstant}:$lineIndex"
+                }
+            }
+        }
     }
 
     foreach ($file in Get-ChildItem -LiteralPath "AI" -Recurse -Filter "*.j" -File -ErrorAction SilentlyContinue) {

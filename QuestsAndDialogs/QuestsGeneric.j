@@ -2,7 +2,7 @@
     QuestsGeneric
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
     Reusable kill, fetch, talk, and purchase quest templates built on
@@ -23,6 +23,7 @@
     - QuestsGeneric_SetObjective(...) changes an uninstantiated definition.
     - QuestsGeneric_SetFactionReward(...) configures reputation rewards.
     - QuestsGeneric_SetExtendedDialogue(...) adds authored normal-quest lines.
+    - QuestsGeneric_ConfigureSharedDialogue(...) sets shared text and hero voices.
     - QuestsGeneric_RegisterDailyAcceptanceVariant(...) adds a random line.
     - QuestsGeneric_RegisterProgressVariant(...) adds shared incomplete dialogue.
     - QuestsGeneric_HasDefinitionForUnitType(...) checks template ownership.
@@ -94,6 +95,8 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         private string QG_HeroCompleteTalkText = ""
         private string QG_HeroProgressText = ""
         private string QG_GiverProgressPrefix = ""
+        private string QG_NazgrekVoiceType = ""
+        private string QG_ZulkisVoiceType = ""
 
         private integer QG_PendingQuestId = 0
         private integer QG_PendingDefinitionId = 0
@@ -119,13 +122,15 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         return QG_FormatSoundKey(voiceType, lineIndex)
     endfunction
 
-    public function ConfigureSharedDialogue takes string heroAccept, string heroCompleteKill, string heroCompleteFetch, string heroCompleteTalk, string heroProgress, string giverProgressPrefix returns nothing
+    public function ConfigureSharedDialogue takes string heroAccept, string heroCompleteKill, string heroCompleteFetch, string heroCompleteTalk, string heroProgress, string giverProgressPrefix, string nazgrekVoiceType, string zulkisVoiceType returns nothing
         set QG_HeroAcceptText = heroAccept
         set QG_HeroCompleteKillText = heroCompleteKill
         set QG_HeroCompleteFetchText = heroCompleteFetch
         set QG_HeroCompleteTalkText = heroCompleteTalk
         set QG_HeroProgressText = heroProgress
         set QG_GiverProgressPrefix = giverProgressPrefix
+        set QG_NazgrekVoiceType = nazgrekVoiceType
+        set QG_ZulkisVoiceType = zulkisVoiceType
     endfunction
 
     private function QG_RegisterDefinition takes integer giverUnitTypeId, string questName, string questType, integer questLevel, string title, string iconPath, string description, integer objectiveType, integer targetType, integer targetAmount, string targetName, integer goldBonus, string voiceType, integer voiceIndex, string introText, string completeText returns integer
@@ -420,6 +425,21 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         return QG_HeroCompleteFetchText
     endfunction
 
+    private function QG_GetHeroCompleteVoiceIndex takes integer definitionId returns integer
+        if QG_ObjectiveType[definitionId] == OBJECTIVE_KILL then
+            return 2
+        elseif QG_ObjectiveType[definitionId] == OBJECTIVE_TALK then
+            return 3
+        endif
+        return 4
+    endfunction
+
+    private function QG_AddHeroLookAtLine takes integer seq, unit hero, unit lookTarget, string text, integer voiceIndex returns nothing
+        call DialogInteraction_AddHeroLookAtLineForVoices(seq, hero, lookTarget, text, QG_FormatSoundKey(QG_NazgrekVoiceType, voiceIndex), QG_FormatSoundKey(QG_ZulkisVoiceType, voiceIndex))
+        set hero = null
+        set lookTarget = null
+    endfunction
+
     private function QG_AddDailyAcceptanceVariant takes integer seq, unit giver, string giverName, integer definitionId returns nothing
         local integer index = 1
         local integer count = 0
@@ -499,7 +519,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         if pendingAction == QG_PENDING_ACCEPT then
             set soundKey = QG_FormatSoundKey(QG_VoiceType[definitionId], QG_VoiceIndex[definitionId])
             call DialogSystem_AddLine(seq, giver, giverName, QG_IntroText[definitionId], soundKey, true)
-            call DialogInteraction_AddHeroLookAtLine(seq, hero, giver, QG_HeroAcceptText, "")
+            call QG_AddHeroLookAtLine(seq, hero, giver, QG_HeroAcceptText, 1)
             if QG_QuestType[definitionId] == "daily" then
                 call QG_AddDailyAcceptanceVariant(seq, giver, giverName, definitionId)
             elseif QG_AcceptExtraText[definitionId] != "" then
@@ -507,7 +527,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
                 call DialogSystem_AddLine(seq, giver, giverName, QG_AcceptExtraText[definitionId], soundKey, true)
             endif
         elseif pendingAction == QG_PENDING_COMPLETE then
-            call DialogInteraction_AddHeroLookAtLine(seq, hero, giver, QG_GetHeroCompleteText(definitionId), "")
+            call QG_AddHeroLookAtLine(seq, hero, giver, QG_GetHeroCompleteText(definitionId), QG_GetHeroCompleteVoiceIndex(definitionId))
             set soundKey = QG_FormatSoundKey(QG_VoiceType[definitionId], QG_VoiceIndex[definitionId] + 1)
             call DialogSystem_AddLine(seq, giver, giverName, QG_CompleteText[definitionId], soundKey, true)
             if QG_CompleteExtraText[definitionId] != "" then
@@ -515,7 +535,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
                 call DialogSystem_AddLine(seq, giver, giverName, QG_CompleteExtraText[definitionId], soundKey, true)
             endif
         else
-            call DialogInteraction_AddHeroLookAtLine(seq, hero, giver, QG_HeroProgressText, "")
+            call QG_AddHeroLookAtLine(seq, hero, giver, QG_HeroProgressText, 5)
             call QG_AddProgressVariant(seq, giver, giverName, definitionId, q)
         endif
         set giver = null

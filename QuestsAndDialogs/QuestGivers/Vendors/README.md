@@ -77,12 +77,12 @@ unchanged.
 | `n04G` | Bolguk Broadwall | Heavy Metal | Daily | `VendorQuestBonecrusher_0005-0006` |
 | `n04H` | Kragmog Skullstake | Pit Supplies | Daily | `VendorQuestBonecrusher_0007-0008` |
 | `n04J` | Gubmog Stewpot | The Bigger Stew | Normal | `VendorQuestBonecrusher_0009-0010, 0015-0016` |
-| `h00L` | Aerendir Sunblade | Wraiths at the Forge | Daily | `VendorQuestElarindor_0001-0002` |
-| `h00L` | Aerendir Sunblade | Relics of the Fallen Forge | Normal | `VendorQuestElarindor_0009-0012` |
-| `h00Q` | Elowen Starweaver | Fragments of Elarindor | Daily | `VendorQuestElarindor_0003-0004` |
-| `h00R` | Vaeriel Dawnflask | Dawn's Restorative | Daily | `VendorQuestElarindor_0005-0006` |
-| `h00S` | Maerith Silvercrest | A Precise Inventory | Daily | `VendorQuestElarindor_0007-0008` |
-| `h00S` | Maerith Silvercrest | The Quartermaster's Oath | Normal | `VendorQuestElarindor_0013-0016` |
+| `h00L` | Aerendir Sunblade | Wraiths at the Forge | Daily | `VendorQuestElarindorMale_0001-0002` |
+| `h00L` | Aerendir Sunblade | Relics of the Fallen Forge | Normal | `VendorQuestElarindorMale_0009-0012` |
+| `h00Q` | Elowen Starweaver | Fragments of Elarindor | Daily | `VendorQuestElarindorFemale_0003-0004` |
+| `h00R` | Vaeriel Dawnflask | Dawn's Restorative | Daily | `VendorQuestElarindorFemale_0005-0006` |
+| `h00S` | Maerith Silvercrest | A Precise Inventory | Daily | `VendorQuestElarindorFemale_0007-0008` |
+| `h00S` | Maerith Silvercrest | The Quartermaster's Oath | Normal | `VendorQuestElarindorFemale_0013-0016` |
 | `o01B` | Boran Flintmane | Fuel for the Warforge | Daily | `VendorQuestTauren_0001-0002` |
 | `o01C` | Tawa Deepvein | Stonebreaker's Measure | Daily | `VendorQuestTauren_0003-0004` |
 | `o01D` | Koro Windpack | Gnolls on the Supply Trail | Daily | `VendorQuestTauren_0005-0006` |
@@ -95,13 +95,20 @@ Expected external sound folders:
 - `Pots\Sound\Voicelines\VendorQuestHuman\`
 - `Pots\Sound\Voicelines\VendorQuestGoblin\`
 - `Pots\Sound\Voicelines\VendorQuestBonecrusher\`
-- `Pots\Sound\Voicelines\VendorQuestElarindor\`
+- `Pots\Sound\Voicelines\VendorQuestElarindorMale\`
+- `Pots\Sound\Voicelines\VendorQuestElarindorFemale\`
 - `Pots\Sound\Voicelines\VendorQuestTauren\`
+- `Pots\Sound\Voicelines\VendorQuestNazgrek\`
+- `Pots\Sound\Voicelines\VendorQuestZulkis\`
 
 Each original quest pair uses the odd-numbered key for acceptance and the
 following even-numbered key for completion. Every normal quest additionally
 uses an acceptance extension and completion extension. Daily quests select
 exactly one follow-up from a three-line objective/voice pool: Orc `0035-0043`,
 Satyr `0019-0027`, Human `0029-0037`, Goblin `0027-0035`, Bonecrusher
-`0017-0025`, Elarindor `0017-0025`, and Tauren `0009-0014`. Missing files fall back to ExSound's
-text-duration estimation until recordings are imported.
+`0017-0025`, Elarindor male/female `0017-0025`, and Tauren `0009-0014`.
+Nazgrek and Zul'kis use `VendorQuestNazgrek_0001-0007` and
+`VendorQuestZulkis_0001-0007` for accept, kill completion, talk completion,
+fetch completion, progress, supply handoff, and purchase-request replies.
+Missing files fall back to ExSound's text-duration estimation until recordings
+are imported.

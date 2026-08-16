@@ -25,6 +25,8 @@
     - call DialogInteraction_StartConfiguredDialogEntryTransition(...)
     - call DialogInteraction_CancelActiveTransition()
     - call DialogInteraction_PlayGreetSequenceEx(...)
+    - call DialogInteraction_AddHeroLineForVoices(...)
+    - call DialogInteraction_AddHeroLookAtLineForVoices(...)
     - call DialogInteraction_BeginCombatSensitiveInteraction(npc, hero, onInterrupt)
     - call DialogInteraction_BeginCombatSensitiveInteractionEx(npc, hero, onInterrupt, endOnCombat)
     - call DialogInteraction_EndCombatSensitiveInteraction()
@@ -331,22 +333,38 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         return GetUnitName(hero)
     endfunction
 
-    public function AddHeroLine takes integer seq, unit hero, string text, string nazgrekSound returns nothing
+    public function AddHeroLineForVoices takes integer seq, unit hero, string text, string nazgrekSound, string zulkisSound returns nothing
         if hero == null then
             return
         endif
         if hero == udg_Nazgrek then
             call DialogSystem_AddLine(seq, hero, "Nazgrek", text, nazgrekSound, true)
+        elseif hero == udg_Zulkis then
+            call DialogSystem_AddLine(seq, hero, "Zulkis", text, zulkisSound, true)
         else
             call DialogSystem_AddLine(seq, hero, GetHeroName(hero), text, "", true)
         endif
+        set hero = null
     endfunction
 
-    public function AddHeroLookAtLine takes integer seq, unit hero, unit lookTarget, string text, string nazgrekSound returns nothing
+    public function AddHeroLookAtLineForVoices takes integer seq, unit hero, unit lookTarget, string text, string nazgrekSound, string zulkisSound returns nothing
         if hero != null and lookTarget != null then
             call DialogSystem_AddLookAtUnit(seq, hero, lookTarget, 0.50)
         endif
-        call AddHeroLine(seq, hero, text, nazgrekSound)
+        call AddHeroLineForVoices(seq, hero, text, nazgrekSound, zulkisSound)
+        set hero = null
+        set lookTarget = null
+    endfunction
+
+    public function AddHeroLine takes integer seq, unit hero, string text, string nazgrekSound returns nothing
+        call AddHeroLineForVoices(seq, hero, text, nazgrekSound, "")
+        set hero = null
+    endfunction
+
+    public function AddHeroLookAtLine takes integer seq, unit hero, unit lookTarget, string text, string nazgrekSound returns nothing
+        call AddHeroLookAtLineForVoices(seq, hero, lookTarget, text, nazgrekSound, "")
+        set hero = null
+        set lookTarget = null
     endfunction
 
     public function GetUnitDisplayName takes unit u returns string

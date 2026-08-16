@@ -2,7 +2,7 @@
     VoicelinesQuests
 
     Author: Valdemar
-    Version: 3.1.0
+    Version: 3.2.0
 
     Description:
     Central source of truth for reusable and vendor quest dialogue, random
@@ -15,6 +15,8 @@
 
     API:
     - VL_VENDORQUEST_* constants contain authored vendor quest dialogue.
+    - VL_VENDORQUEST_NAZGREK_TYPE and VL_VENDORQUEST_ZULKIS_TYPE identify
+      shared selectable-hero reply sequences.
     - Daily objective and voice variants register automatically.
 
 **/
@@ -25,8 +27,11 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound
         constant string VL_VENDORQUEST_HUMAN_TYPE = "VendorQuestHuman_"
         constant string VL_VENDORQUEST_GOBLIN_TYPE = "VendorQuestGoblin_"
         constant string VL_VENDORQUEST_BONECRUSHER_TYPE = "VendorQuestBonecrusher_"
-        constant string VL_VENDORQUEST_ELARINDOR_TYPE = "VendorQuestElarindor_"
+        constant string VL_VENDORQUEST_ELARINDOR_MALE_TYPE = "VendorQuestElarindorMale_"
+        constant string VL_VENDORQUEST_ELARINDOR_FEMALE_TYPE = "VendorQuestElarindorFemale_"
         constant string VL_VENDORQUEST_TAUREN_TYPE = "VendorQuestTauren_"
+        constant string VL_VENDORQUEST_NAZGREK_TYPE = "VendorQuestNazgrek_"
+        constant string VL_VENDORQUEST_ZULKIS_TYPE = "VendorQuestZulkis_"
         constant string VL_QUEST_GENERIC_TYPE = "QuestGeneric_"
 
         // Shared unvoiced hero and progress dialogue.
@@ -230,9 +235,12 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound
         call RegisterDailySet(VL_VENDORQUEST_BONECRUSHER_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 20, "Bring all pieces. Ogre counting uses both hands.", "If it breaks on road, it was not good enough anyway.", "Heavy goods are best goods. Means more goods.")
         call RegisterDailySet(VL_VENDORQUEST_BONECRUSHER_TYPE, QuestsGeneric_OBJECTIVE_TALK, 23, "Ask merchant. Take crate. Do not eat crate.", "Other head says check seal. This head says check snacks.", "Bring parcel back before someone makes it lighter.")
 
-        call RegisterDailySet(VL_VENDORQUEST_ELARINDOR_TYPE, QuestsGeneric_OBJECTIVE_KILL, 17, "Let precision guide you where anger would waste strength.", "Each fallen threat buys another quiet hour for our people.", "Return safely. Elarindor has buried enough brave souls.")
-        call RegisterDailySet(VL_VENDORQUEST_ELARINDOR_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 20, "Choose intact pieces; damaged magic remembers the wound.", "Carry them gently and let no careless hand disturb them.", "What you recover today may preserve a century tomorrow.")
-        call RegisterDailySet(VL_VENDORQUEST_ELARINDOR_TYPE, QuestsGeneric_OBJECTIVE_TALK, 23, "Speak the agreed phrase and accept only the sealed parcel.", "Treat the exchange with patience; trust is our rarest supply.", "Return by the warded road, even if the longer path tempts you.")
+        call RegisterDailySet(VL_VENDORQUEST_ELARINDOR_MALE_TYPE, QuestsGeneric_OBJECTIVE_KILL, 17, "Let precision guide you where anger would waste strength.", "Each fallen threat buys another quiet hour for our people.", "Return safely. Elarindor has buried enough brave souls.")
+        call RegisterDailySet(VL_VENDORQUEST_ELARINDOR_MALE_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 20, "Choose intact pieces; damaged magic remembers the wound.", "Carry them gently and let no careless hand disturb them.", "What you recover today may preserve a century tomorrow.")
+        call RegisterDailySet(VL_VENDORQUEST_ELARINDOR_MALE_TYPE, QuestsGeneric_OBJECTIVE_TALK, 23, "Speak the agreed phrase and accept only the sealed parcel.", "Treat the exchange with patience; trust is our rarest supply.", "Return by the warded road, even if the longer path tempts you.")
+        call RegisterDailySet(VL_VENDORQUEST_ELARINDOR_FEMALE_TYPE, QuestsGeneric_OBJECTIVE_KILL, 17, "Let precision guide you where anger would waste strength.", "Each fallen threat buys another quiet hour for our people.", "Return safely. Elarindor has buried enough brave souls.")
+        call RegisterDailySet(VL_VENDORQUEST_ELARINDOR_FEMALE_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 20, "Choose intact pieces; damaged magic remembers the wound.", "Carry them gently and let no careless hand disturb them.", "What you recover today may preserve a century tomorrow.")
+        call RegisterDailySet(VL_VENDORQUEST_ELARINDOR_FEMALE_TYPE, QuestsGeneric_OBJECTIVE_TALK, 23, "Speak the agreed phrase and accept only the sealed parcel.", "Treat the exchange with patience; trust is our rarest supply.", "Return by the warded road, even if the longer path tempts you.")
 
         call RegisterDailySet(VL_VENDORQUEST_TAUREN_TYPE, QuestsGeneric_OBJECTIVE_KILL, 9, "Walk with purpose and let no threat follow you home.", "Strength is measured by what your journey protects.", "Return beneath an open sky when the trail is safe.")
         call RegisterDailySet(VL_VENDORQUEST_TAUREN_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 12, "Take only what the earth offers freely, and waste nothing.", "Choose sound materials; patient work begins with honest substance.", "Carry the burden evenly and the road will feel shorter.")
@@ -254,14 +262,17 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound
     endfunction
 
     private function Init takes nothing returns nothing
-        call QuestsGeneric_ConfigureSharedDialogue(VL_QUEST_HERO_ACCEPT, VL_QUEST_HERO_COMPLETE_KILL, VL_QUEST_HERO_COMPLETE_FETCH, VL_QUEST_HERO_COMPLETE_TALK, VL_QUEST_HERO_PROGRESS, VL_QUEST_GIVER_PROGRESS)
+        call QuestsGeneric_ConfigureSharedDialogue(VL_QUEST_HERO_ACCEPT, VL_QUEST_HERO_COMPLETE_KILL, VL_QUEST_HERO_COMPLETE_FETCH, VL_QUEST_HERO_COMPLETE_TALK, VL_QUEST_HERO_PROGRESS, VL_QUEST_GIVER_PROGRESS, VL_VENDORQUEST_NAZGREK_TYPE, VL_VENDORQUEST_ZULKIS_TYPE)
         call ExSound_RegisterSequence(VL_VENDORQUEST_ORC_TYPE, 1, 43, "Pots\\Sound\\Voicelines\\VendorQuestOrc\\")
         call ExSound_RegisterSequence(VL_VENDORQUEST_SATYR_TYPE, 1, 27, "Pots\\Sound\\Voicelines\\VendorQuestSatyr\\")
         call ExSound_RegisterSequence(VL_VENDORQUEST_HUMAN_TYPE, 1, 37, "Pots\\Sound\\Voicelines\\VendorQuestHuman\\")
         call ExSound_RegisterSequence(VL_VENDORQUEST_GOBLIN_TYPE, 1, 35, "Pots\\Sound\\Voicelines\\VendorQuestGoblin\\")
         call ExSound_RegisterSequence(VL_VENDORQUEST_BONECRUSHER_TYPE, 1, 25, "Pots\\Sound\\Voicelines\\VendorQuestBonecrusher\\")
-        call ExSound_RegisterSequence(VL_VENDORQUEST_ELARINDOR_TYPE, 1, 25, "Pots\\Sound\\Voicelines\\VendorQuestElarindor\\")
+        call ExSound_RegisterSequence(VL_VENDORQUEST_ELARINDOR_MALE_TYPE, 1, 25, "Pots\\Sound\\Voicelines\\VendorQuestElarindorMale\\")
+        call ExSound_RegisterSequence(VL_VENDORQUEST_ELARINDOR_FEMALE_TYPE, 1, 25, "Pots\\Sound\\Voicelines\\VendorQuestElarindorFemale\\")
         call ExSound_RegisterSequence(VL_VENDORQUEST_TAUREN_TYPE, 1, 14, "Pots\\Sound\\Voicelines\\VendorQuestTauren\\")
+        call ExSound_RegisterSequence(VL_VENDORQUEST_NAZGREK_TYPE, 1, 7, "Pots\\Sound\\Voicelines\\VendorQuestNazgrek\\")
+        call ExSound_RegisterSequence(VL_VENDORQUEST_ZULKIS_TYPE, 1, 7, "Pots\\Sound\\Voicelines\\VendorQuestZulkis\\")
         call ExSound_RegisterSequence(VL_QUEST_GENERIC_TYPE, 1, 12, "Pots\\Sound\\Voicelines\\QuestGeneric\\")
         call RegisterDailyDialogue()
         call RegisterProgressDialogue()
