@@ -15,6 +15,41 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [16.8.2026]
+
+### Player-Facing Updates
+
+- Crafting cameras now remain locked to the active crafting unit during normal and repeated query crafting.
+- Ship-travel cameras now target above the vehicle origin, keeping the deck centered instead of framing the hull and waterline.
+- Nazgrek and Zul'kis ship proxies now use standing character effects with separately tuned neutral-ship and orc-frigate deck positions.
+- Human, goblin, Bonecrusher ogre, Elarindor, and Tauren vendor quests now play their generated race and gender voice files for introductions, completions, and daily follow-up dialogue.
+- Nazgrek and Zul'kis now use their own voiced replies when accepting, progressing, completing, collecting, or purchasing for vendor quests.
+
+### Technical Updates
+
+- Extended `Camera/FixedCameraLock.j` with a backward-compatible configurable target-height offset and updated `Travel/TravelSystem.j` to use a 300-unit offset for ships only.
+- Updated `Travel/TravelSystem.j`, `TravelShipA.j`, and `TravelShipB.j` with centrally registered passenger effects, reusable local-X/local-Y deck slots, per-ship deck configuration, model preloading, and explicit stand animation playback.
+- Updated `Camera/DialogCamera.j` to use the persistent fixed-camera lock for focused cameras and release it before restoring normal camera control.
+- Updated `EnvironmentSystems/FrostbiteSystem.j` to scan only the two relevant player owners and reuse its unit filter instead of enumerating the entire map every second.
+- Updated `QuestsAndDialogs/QuestMaster.j` to preserve unchanged minimap icons and distribute periodic quest-giver availability checks across smaller timer batches, preventing five-second refresh spikes.
+- Updated `Vendors/VendorFloatingText.j` to replace its recurring full-map vendor scan with startup discovery and event-driven registration for newly entering units.
+- Updated `Voicelines/Voicelines_Quests.j`, `QuestsAndDialogs/QuestsGeneric.j`, `QuestsVendor.j`, and `DialogInteraction.j` with selectable-hero quest voice routing and separate male/female Elarindor vendor-quest families.
+- Updated the Elarindor vendor quest libraries and `QuestsAndDialogs/QuestGivers/Vendors/README.md` with gender-specific sound prefixes and folder mappings.
+- Added `Voicelines/FishAudioVoiceIds.md` as the non-secret reference-ID map for current vendor, vendor-quest, Nazgrek, and Zul'kis FishAudio voices.
+- Updated `Voicelines/Voicelines_Quests.j`, the vendor-quest README, and the FishAudio ID map so Nazgrek and Zul'kis vendor-quest replies use their character-specific generic sound folders.
+
+### Tool Updates
+
+- Updated `tools/voicelines.ps1` to discover computed `VendorQuestXXXX_0000` definitions, daily variants, hero replies, sequence ranges, and expected folders directly from `Voicelines_Quests.j`.
+
+### Imports
+
+- Added 175 generated vendor-quest MP3s across human, goblin, Bonecrusher ogre, Elarindor male, Elarindor female, Tauren, Nazgrek, and Zul'kis voice folders.
+
+### Actions Remaining
+
+- Generate the 43 Orc and 27 satyr vendor-quest files after suitable FishAudio voice references are available.
+
 ## [15.8.2026]
 
 ### Player-Facing Updates
