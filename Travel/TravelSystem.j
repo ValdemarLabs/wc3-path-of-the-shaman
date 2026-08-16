@@ -130,6 +130,8 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         private constant real TS_CAMERA_FOV = 80.00
         private constant real TS_CAMERA_ANGLE_FLIGHT = 330.00
         private constant real TS_CAMERA_ANGLE_SHIP = 335.00
+        private constant real TS_CAMERA_Z_OFFSET_FLIGHT = 0.00
+        private constant real TS_CAMERA_Z_OFFSET_SHIP = 300.00
         private constant real TS_FADE_DURATION = 0.50
         private constant real TS_FLIGHT_ASCENT_RATE = 50.00
         private constant real TS_FLIGHT_DESCENT_RATE = 50.00
@@ -1766,6 +1768,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         local integer fare
         local real cameraAngle
         local real cameraRotation
+        local real cameraZOffset
 
         if not TS_Active or not TS_Starting or not TS_IsValidRoute(routeId) then
             return
@@ -1796,11 +1799,13 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         set cameraRotation = GetUnitFacing(TS_ActiveCarrier)
         if TS_RouteMethod[routeId] == TRAVEL_METHOD_WYVERN or TS_RouteMethod[routeId] == TRAVEL_METHOD_ZEPPELIN then
             set cameraAngle = TS_CAMERA_ANGLE_FLIGHT
+            set cameraZOffset = TS_CAMERA_Z_OFFSET_FLIGHT
         else
             set cameraAngle = TS_CAMERA_ANGLE_SHIP
+            set cameraZOffset = TS_CAMERA_Z_OFFSET_SHIP
         endif
         call CameraControl_SuspendInteractiveEx(Player(0), TS_CAMERA_DISTANCE, TS_CAMERA_FAR_Z, TS_CAMERA_FOV, cameraAngle, cameraRotation)
-        call FCL_Lock(TS_ActiveCarrier, Player(0))
+        call FCL_LockEx(TS_ActiveCarrier, Player(0), cameraZOffset)
         call TS_CreatePassengerEffects()
         call DialogSystem_SetEscapeAction(function TS_OnEscape)
         if TS_RouteScheduled[routeId] then
