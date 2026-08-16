@@ -10,8 +10,9 @@ library FixedCameraLock initializer Init
                                                                           A P I
     =============================================================================================================================================================
 
-    FCL_Lock(whichUnit, whichPlayer)            Locks the camera of the specified player to the specified unit.
-    FCL_Release(whichPlayer)                    Releases the camera of the specified player.
+    FCL_Lock(whichUnit, whichPlayer)                    Locks the camera of the specified player to the specified unit.
+    FCL_LockEx(whichUnit, whichPlayer, heightOffset)    Locks above the unit origin by the configured height.
+    FCL_Release(whichPlayer)                            Releases the camera of the specified player.
 
     =============================================================================================================================================================
                                                                         C O N F I G
@@ -30,6 +31,7 @@ library FixedCameraLock initializer Init
         private timer MASTER_TIMER = CreateTimer()
         private unit anchor
         private boolean lockEnabled = false
+        private real anchorHeightOffset = 0.00
         private location moveableLoc = Location(0, 0)
 		private trigger array relockTrigger
     endglobals
@@ -39,13 +41,18 @@ library FixedCameraLock initializer Init
         return GetLocationZ(moveableLoc)
     endfunction
 
-    function FCL_Lock takes unit whichUnit, player whichPlayer returns nothing
+    function FCL_LockEx takes unit whichUnit, player whichPlayer, real heightOffset returns nothing
         if GetLocalPlayer() == whichPlayer then
 			call EnableTrigger(relockTrigger[GetPlayerId(whichPlayer)])
             call SetCameraTargetController(whichUnit, 0, 0, false)
             set lockEnabled = true
             set anchor = whichUnit
+            set anchorHeightOffset = heightOffset
         endif
+    endfunction
+
+    function FCL_Lock takes unit whichUnit, player whichPlayer returns nothing
+        call FCL_LockEx(whichUnit, whichPlayer, 0.00)
     endfunction
 
     function FCL_Release takes player whichPlayer returns nothing
@@ -53,13 +60,15 @@ library FixedCameraLock initializer Init
 			call DisableTrigger(relockTrigger[GetPlayerId(whichPlayer)])
             call ResetToGameCamera(0)
             set lockEnabled = false
+            set anchorHeightOffset = 0.00
+            set anchor = null
         endif
     endfunction
 
     private function AdjustCameraHeight takes nothing returns nothing
         local real dz
         if lockEnabled then
-            set dz = GetLocZ(GetUnitX(anchor), GetUnitY(anchor)) + GetUnitFlyHeight(anchor) - (GetCameraTargetPositionZ() - GetCameraField(CAMERA_FIELD_ZOFFSET))
+            set dz = GetLocZ(GetUnitX(anchor), GetUnitY(anchor)) + GetUnitFlyHeight(anchor) + anchorHeightOffset - (GetCameraTargetPositionZ() - GetCameraField(CAMERA_FIELD_ZOFFSET))
             if dz > 0 then
                 call SetCameraField(CAMERA_FIELD_ZOFFSET, ADJUSTMENT_STRENGTH_UP*dz, ADJUSTMENT_INTERVAL)
             else
@@ -90,5 +99,6 @@ library FixedCameraLock initializer Init
             endif
 			set i = i + 1
         endloop
+        set whichPlayer = null
     endfunction
 endlibrary
