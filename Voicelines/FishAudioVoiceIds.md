@@ -20,6 +20,12 @@ example `VendorQuestHuman_0001` uses
 | `Nazgrek`, `VendorQuestNazgrek` | Nazgrek2 | `82895e2c2e62463bb023c0c858a55b9d` | Nazgrek dialogue and vendor-quest replies |
 | `Zulkis`, `VendorQuestZulkis` | Shadowhunter | `139c8b251a2f4a97a2dbce510e1f94cf` | Zul'kis dialogue and vendor-quest replies |
 
+Vendor-quest hero reply files retain their `VendorQuestNazgrek_XXXX` and
+`VendorQuestZulkis_XXXX` keys, but use the shared character generic folders:
+
+- `Pots\Sound\Voicelines\Nazgrek\NazgrekGeneric\`
+- `Pots\Sound\Voicelines\Zulkis\ZulkisGeneric\`
+
 No suitable FishAudio reference ID is currently configured for these families:
 
 - `VendorOrcMale`, `VendorQuestOrc`

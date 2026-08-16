@@ -98,8 +98,8 @@ Expected external sound folders:
 - `Pots\Sound\Voicelines\VendorQuestElarindorMale\`
 - `Pots\Sound\Voicelines\VendorQuestElarindorFemale\`
 - `Pots\Sound\Voicelines\VendorQuestTauren\`
-- `Pots\Sound\Voicelines\VendorQuestNazgrek\`
-- `Pots\Sound\Voicelines\VendorQuestZulkis\`
+- `Pots\Sound\Voicelines\Nazgrek\NazgrekGeneric\`
+- `Pots\Sound\Voicelines\Zulkis\ZulkisGeneric\`
 
 Each original quest pair uses the odd-numbered key for acceptance and the
 following even-numbered key for completion. Every normal quest additionally
