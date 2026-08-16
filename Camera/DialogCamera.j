@@ -2,7 +2,7 @@
     DialogCamera
 
     Author: Valdemar
-    Version: 2.1.0
+    Version: 2.1.1
 
     Description:
     Focuses a player's camera on a dialogue unit, provides reusable cinematic
@@ -12,10 +12,10 @@
     before selecting a shot.
 
     Credits:
-    - Path of the Shaman CameraControl system
+    - Path of the Shaman CameraControl and FixedCameraLock systems
 
     How to install:
-    Import after CameraControl.
+    Import after CameraControl and FixedCameraLock.
 
     API:
     - call DialogCameraStart(...)
@@ -35,7 +35,7 @@
     - DialogCamera_PRESET_ELEVATED
 
 **/
-library DialogCamera initializer Init requires CameraControl
+library DialogCamera initializer Init requires CameraControl, FixedCameraLock
     globals
         public constant integer PRESET_CLOSE_LEFT = 1
         public constant integer PRESET_CLOSE_RIGHT = 2
@@ -196,8 +196,8 @@ library DialogCamera initializer Init requires CameraControl
 
         if GetLocalPlayer() == p then
             call CameraSetSmoothingFactor(1)
-            call SetCameraTargetController(u, 0.00, 0.00, false)
         endif
+        call FCL_Lock(u, p)
 
         call PanCameraToTimedForPlayer(p, x, y, transitionTime)
         call SetCameraFieldForPlayer(p, CAMERA_FIELD_TARGET_DISTANCE, distance, transitionTime)
@@ -364,6 +364,7 @@ library DialogCamera initializer Init requires CameraControl
         if DialogCamera_Active[pid] then
             set DialogCamera_Active[pid] = false
             set target = CameraControl_GetTargetUnit(p)
+            call FCL_Release(p)
             if GetLocalPlayer() == p then
                 call CameraSetSmoothingFactor(1)
                 if target != null then
