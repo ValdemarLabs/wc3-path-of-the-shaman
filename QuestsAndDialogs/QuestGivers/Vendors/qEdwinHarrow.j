@@ -18,6 +18,6 @@
 **/
 library qEdwinHarrow initializer Init requires QuestsVendor, VoicelinesQuests
     private function Init takes nothing returns nothing
-        call QuestsVendor_RegisterFetchQuest('n03T', "Morning Herbs", "daily", 6, "Morning Herbs", "ReplaceableTextures\\CommandButtons\\BTNHerb.blp", "Gather herbs for Mira's daily restorative potion batch.", 'I60Y', 8, 35, VL_VENDORQUEST_HUMAN_TYPE, 17, VL_VENDORQUEST_HUMAN_0017, VL_VENDORQUEST_HUMAN_0018)
+        call QuestsVendor_RegisterFetchQuest('n03T', "Morning Herbs", "daily", 6, "Morning Herbs", "ReplaceableTextures\\CommandButtons\\BTNHerb.blp", "Gather herbs for Mira's daily restorative potion batch.", 'I60Y', 8, 35, VL_HUMAN_MALE_1_TYPE, 1017, VL_VENDORQUEST_HUMAN_0017, VL_VENDORQUEST_HUMAN_0018)
     endfunction
 endlibrary

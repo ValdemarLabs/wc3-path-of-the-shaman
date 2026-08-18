@@ -20,6 +20,7 @@
 library VendorSatyrs initializer Init requires VendorCatalogs
     private function Register takes integer unitTypeId, integer catalogType returns nothing
         call VendorCatalogs_RegisterUnitType(unitTypeId, catalogType, VL_VENDOR_PROFILE_SATYR_MALE)
+        call VendorLines_BindUnitTypeVoiceType(unitTypeId, VL_SATYR_MALE_1_TYPE)
         call Reputation_RegisterUnitTypeFaction(unitTypeId, "Satyr")
     endfunction
 

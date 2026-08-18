@@ -255,10 +255,10 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
         call DialogSystem_SetSequenceDefaultSpeaker(seq, vendor, speakerName)
         call DialogSystem_AddMakeFaceEachOther(seq, vendor, hero, 0.45, 0.00)
         if QV_RequiresPurchase[supplyIndex] then
-            call DialogInteraction_AddHeroLookAtLineForVoices(seq, hero, vendor, VL_QUEST_HERO_ASK_TO_BUY, QuestsGeneric_FormatSoundKey(VL_VENDORQUEST_NAZGREK_TYPE, 7), QuestsGeneric_FormatSoundKey(VL_VENDORQUEST_ZULKIS_TYPE, 7))
+            call DialogInteraction_AddHeroLookAtLineForVoices(seq, hero, vendor, VL_QUEST_HERO_ASK_TO_BUY, QuestsGeneric_FormatSoundKey(VL_NAZGREK_GENERIC_TYPE, 7), QuestsGeneric_FormatSoundKey(VL_ZULKIS_GENERIC_TYPE, 7))
             call DialogSystem_AddLine(seq, vendor, speakerName, VL_QUEST_VENDOR_PURCHASE, "", true)
         else
-            call DialogInteraction_AddHeroLookAtLineForVoices(seq, hero, vendor, VL_QUEST_HERO_REQUEST_SUPPLY, QuestsGeneric_FormatSoundKey(VL_VENDORQUEST_NAZGREK_TYPE, 6), QuestsGeneric_FormatSoundKey(VL_VENDORQUEST_ZULKIS_TYPE, 6))
+            call DialogInteraction_AddHeroLookAtLineForVoices(seq, hero, vendor, VL_QUEST_HERO_REQUEST_SUPPLY, QuestsGeneric_FormatSoundKey(VL_NAZGREK_GENERIC_TYPE, 6), QuestsGeneric_FormatSoundKey(VL_ZULKIS_GENERIC_TYPE, 6))
             if alreadyHandedOff then
                 call DialogSystem_AddLine(seq, vendor, speakerName, VL_QUEST_VENDOR_ALREADY_HANDED_OFF, "", true)
             else

@@ -18,13 +18,14 @@
 
 **/
 library VendorTrolls initializer Init requires VendorCatalogs
-    private function Register takes integer unitTypeId, integer catalogType returns nothing
+    private function Register takes integer unitTypeId, integer catalogType, string voiceType returns nothing
         call VendorCatalogs_RegisterUnitType(unitTypeId, catalogType, VL_VENDOR_PROFILE_TROLL_HORDE_MALE)
+        call VendorLines_BindUnitTypeVoiceType(unitTypeId, voiceType)
         call Reputation_RegisterUnitTypeFaction(unitTypeId, "Horde")
     endfunction
 
     private function Init takes nothing returns nothing
-        call Register('n05H', VendorCatalogs_VENDOR_CATALOG_JEWELCRAFTER)
-        call Register('n05J', VendorCatalogs_VENDOR_CATALOG_VOODOO_GOODS)
+        call Register('n05H', VendorCatalogs_VENDOR_CATALOG_JEWELCRAFTER, VL_TROLL_MALE_1_TYPE)
+        call Register('n05J', VendorCatalogs_VENDOR_CATALOG_VOODOO_GOODS, VL_TROLL_MALE_2_TYPE)
     endfunction
 endlibrary

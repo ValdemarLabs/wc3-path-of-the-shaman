@@ -18,6 +18,6 @@
 **/
 library qKragmogSkullstake initializer Init requires QuestsVendor, VoicelinesQuests
     private function Init takes nothing returns nothing
-        call QuestsVendor_RegisterSupplyQuest('n04H', "Pit Supplies", "daily", 11, "Pit Supplies", "ReplaceableTextures\\CommandButtons\\BTNPackBeast.blp", "Collect arena supplies from Borlug Clanstock and return them to Gromm.", 'n04N', "Borlug Clanstock", 'I010', 65, VL_VENDORQUEST_BONECRUSHER_TYPE, 7, VL_VENDORQUEST_BONECRUSHER_0007, VL_VENDORQUEST_BONECRUSHER_0008)
+        call QuestsVendor_RegisterSupplyQuest('n04H', "Pit Supplies", "daily", 11, "Pit Supplies", "ReplaceableTextures\\CommandButtons\\BTNPackBeast.blp", "Collect arena supplies from Borlug Clanstock and return them to Gromm.", 'n04N', "Borlug Clanstock", 'I010', 65, VL_OGRE_BONECRUSHER_MALE_1_TYPE, 1007, VL_VENDORQUEST_BONECRUSHER_0007, VL_VENDORQUEST_BONECRUSHER_0008)
     endfunction
 endlibrary

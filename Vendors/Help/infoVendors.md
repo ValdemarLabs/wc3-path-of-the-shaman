@@ -15,7 +15,7 @@ VendorVoiceProfiles.j | Compatibility wrapper for older import lists; new dialog
 
 To change spoken vendor content, edit `Voicelines_VendorLines.j`; to change generic quest dialogue, edit `Voicelines_Quests.j`. Vendor faction, catalog, and `qVendorName.j` files only bind or reference those centralized definitions.
 
-All Morgrim Clan Dwarf vendors are male. Keep their Object Editor names aligned with `VendorsHelper.md` and use only the `Morgrim Clan Dwarf Male` profile and `VendorDwarfMorgrimMale_0001-0015` voice range; no female Dwarf vendor profile is defined.
+All Morgrim Clan Dwarf vendors are male. Keep their Object Editor names aligned with `VendorsHelper.md` and use the `Morgrim Clan Dwarf Male` dialogue profile with the reusable `DwarfMorgrimMale1` voice; no female Dwarf profile is defined.
 
 ShopUI transaction outcomes are selected from the bought, sold, bought-and-sold, or no-transaction pools when its X button is pressed. The panel then returns to the vendor's dialogue choices. Choosing Exit there restores normal gameplay first and plays the vendor farewell outside cinematic mode.
 

@@ -6,7 +6,7 @@ param(
     [string]$TempRoot = "tools/temp/fishaudio-review",
     [string]$ExcelPath = "Voicelines/_oldExcel/VoicelinesMaster.xlsx",
     [string]$Manifest = "tools/temp/voicelines/voicelines-scan.csv",
-    [string]$Speaker = "",
+    [string[]]$Speaker = @(),
     [string[]]$Keys = @(),
     [string]$ReferenceId = $env:FISH_REFERENCE_ID,
     [string]$Model = "s2-pro",
@@ -25,6 +25,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$Speaker = @($Speaker | ForEach-Object { $_ -split ',' } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { $_.Trim() })
 
 $PrefixFolders = @{
     "Aradion" = "AradionFarseer"
@@ -180,6 +181,14 @@ function Get-AudioIndex {
 
 function Get-JassRows {
     $rows = [System.Collections.Generic.List[object]]::new()
+    $soundTypeByConstant = @{}
+
+    foreach ($voiceFile in Get-ChildItem -LiteralPath "Voicelines" -Filter "Voicelines_*.j" -File -ErrorAction SilentlyContinue) {
+        $voiceText = [IO.File]::ReadAllText($voiceFile.FullName)
+        foreach ($m in [regex]::Matches($voiceText, 'constant\s+string\s+(VL_[A-Z0-9_]+_TYPE)\s*=\s*"((?:[^"\\]|\\.)*)"')) {
+            $soundTypeByConstant[$m.Groups[1].Value] = ConvertFrom-JassString $m.Groups[2].Value
+        }
+    }
 
     foreach ($file in Get-ChildItem -LiteralPath "Voicelines" -Filter "Voicelines_*.j" -File -ErrorAction SilentlyContinue) {
         $text = [IO.File]::ReadAllText($file.FullName)
@@ -219,12 +228,7 @@ function Get-JassRows {
             }
         }
 
-        $soundTypeByConstant = @{}
-        foreach ($m in [regex]::Matches($text, 'constant\s+string\s+(VL_VENDOR_[A-Z0-9_]+_TYPE)\s*=\s*"((?:[^"\\]|\\.)*)"')) {
-            $soundTypeByConstant[$m.Groups[1].Value] = ConvertFrom-JassString $m.Groups[2].Value
-        }
-
-        $voicedProfilePattern = 'RegisterVoicedProfile\(\s*[A-Z0-9_]+\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*(VL_VENDOR_[A-Z0-9_]+_TYPE)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)'
+        $voicedProfilePattern = 'RegisterVoicedProfile\(\s*[A-Z0-9_]+\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*(VL_[A-Z0-9_]+_TYPE)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)'
         $extraVendorTexts = @(
             "Take your time. The right purchase is worth considering.",
             "A wise purchase. I hope it serves you well.",
@@ -241,16 +245,21 @@ function Get-JassRows {
             $soundTypeConstant = $m.Groups[7].Value
             if (-not $soundTypeByConstant.ContainsKey($soundTypeConstant)) { continue }
 
-            $soundType = $soundTypeByConstant[$soundTypeConstant]
             $firstLine = [int]$m.Groups[8].Value
             $extraFirstLine = [int]$m.Groups[9].Value
-            for ($i = 0; $i -lt 6; $i++) {
-                $lineIndex = $firstLine + $i
-                Add-Row -Rows $rows -Key (Format-SequenceKey -SoundType $soundType -LineIndex $lineIndex) -Text (ConvertFrom-JassString $m.Groups[$i + 1].Value) -Source $file.Name -ExpectedFolder "" -DefinitionId "$($file.Name):$($soundTypeConstant):$lineIndex"
-            }
-            for ($i = 0; $i -lt $extraVendorTexts.Count; $i++) {
-                $lineIndex = $extraFirstLine + $i
-                Add-Row -Rows $rows -Key (Format-SequenceKey -SoundType $soundType -LineIndex $lineIndex) -Text $extraVendorTexts[$i] -Source $file.Name -ExpectedFolder "" -DefinitionId "$($file.Name):$($soundTypeConstant):$lineIndex"
+            $familyConstant = $soundTypeConstant -replace '_\d+_TYPE$', ''
+            foreach ($candidateConstant in $soundTypeByConstant.Keys) {
+                if (($candidateConstant -replace '_\d+_TYPE$', '') -ne $familyConstant) { continue }
+
+                $soundType = $soundTypeByConstant[$candidateConstant]
+                for ($i = 0; $i -lt 6; $i++) {
+                    $lineIndex = $firstLine + $i
+                    Add-Row -Rows $rows -Key (Format-SequenceKey -SoundType $soundType -LineIndex $lineIndex) -Text (ConvertFrom-JassString $m.Groups[$i + 1].Value) -Source $file.Name -ExpectedFolder "" -DefinitionId "$($file.Name):$($candidateConstant):$lineIndex"
+                }
+                for ($i = 0; $i -lt $extraVendorTexts.Count; $i++) {
+                    $lineIndex = $extraFirstLine + $i
+                    Add-Row -Rows $rows -Key (Format-SequenceKey -SoundType $soundType -LineIndex $lineIndex) -Text $extraVendorTexts[$i] -Source $file.Name -ExpectedFolder "" -DefinitionId "$($file.Name):$($candidateConstant):$lineIndex"
+                }
             }
         }
 
@@ -273,7 +282,7 @@ function Get-JassRows {
         }
 
         $voiceFamilies = @{}
-        $familyPattern = 'call\s+RegisterVoiceFamily\(\s*(VL_VENDOR_[A-Z0-9_]+_TYPE)\s*,\s*(\d+)\s*,\s*"((?:[^"\\]|\\.)*)"\s*\)'
+        $familyPattern = 'call\s+RegisterVoiceFamily\(\s*(VL_[A-Z0-9_]+_TYPE)\s*,\s*(\d+)\s*,\s*"((?:[^"\\]|\\.)*)"\s*\)'
         foreach ($m in [regex]::Matches($text, $familyPattern)) {
             if (-not $soundTypeByConstant.ContainsKey($m.Groups[1].Value)) { continue }
 
@@ -286,7 +295,7 @@ function Get-JassRows {
             }
         }
 
-        $catalogVoicePattern = 'call\s+RegisterVoiceCatalog\(\s*(VL_VENDOR_[A-Z0-9_]+_TYPE)\s*,\s*"((?:[^"\\]|\\.)*)"\s*\)'
+        $catalogVoicePattern = 'call\s+RegisterVoiceCatalog\(\s*(VL_[A-Z0-9_]+_TYPE)\s*,\s*"((?:[^"\\]|\\.)*)"\s*\)'
         foreach ($m in [regex]::Matches($text, $catalogVoicePattern)) {
             $familyConstant = $m.Groups[1].Value
             $catalogName = ConvertFrom-JassString $m.Groups[2].Value
@@ -301,23 +310,35 @@ function Get-JassRows {
             }
         }
 
-        $vendorQuestTypes = @{}
-        foreach ($m in [regex]::Matches($text, 'constant\s+string\s+(VL_VENDORQUEST_([A-Z0-9_]+)_TYPE)\s*=\s*"((?:[^"\\]|\\.)*)"')) {
-            $vendorQuestTypes[$m.Groups[1].Value] = [pscustomobject]@{
-                family = $m.Groups[2].Value
-                sound_type = ConvertFrom-JassString $m.Groups[3].Value
-                folder = ""
-                last_line = 0
-            }
-        }
-
-        foreach ($m in [regex]::Matches($text, 'ExSound_RegisterSequence\(\s*(VL_VENDORQUEST_[A-Z0-9_]+_TYPE)\s*,\s*\d+\s*,\s*(\d+)\s*,\s*"((?:[^"\\]|\\.)*)"\s*\)')) {
+        $questVoiceTypes = @{}
+        foreach ($m in [regex]::Matches($text, 'ExSound_RegisterSequence\(\s*(VL_[A-Z0-9_]+_TYPE)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*"((?:[^"\\]|\\.)*)"\s*\)')) {
             $typeConstant = $m.Groups[1].Value
-            if (-not $vendorQuestTypes.ContainsKey($typeConstant)) { continue }
+            $firstLine = [int]$m.Groups[2].Value
+            if ($firstLine -lt 1000 -and $typeConstant -notin @('VL_NAZGREK_GENERIC_TYPE', 'VL_ZULKIS_GENERIC_TYPE')) { continue }
+            if (-not $soundTypeByConstant.ContainsKey($typeConstant)) { continue }
 
-            $folder = ConvertFrom-JassString $m.Groups[3].Value
-            $vendorQuestTypes[$typeConstant].folder = $folder.Replace('Pots\Sound\Voicelines\', '').TrimEnd('\')
-            $vendorQuestTypes[$typeConstant].last_line = [int]$m.Groups[2].Value
+            $textFamily = switch -Regex ($typeConstant) {
+                'NAZGREK' { 'NAZGREK'; break }
+                'ZULKIS' { 'ZULKIS'; break }
+                'OGRE_BONECRUSHER' { 'BONECRUSHER'; break }
+                'ELARINDOR' { 'ELARINDOR'; break }
+                'GOBLIN' { 'GOBLIN'; break }
+                'HUMAN' { 'HUMAN'; break }
+                'ORC' { 'ORC'; break }
+                'SATYR' { 'SATYR'; break }
+                'TAUREN' { 'TAUREN'; break }
+                default { '' }
+            }
+            if ([string]::IsNullOrWhiteSpace($textFamily)) { continue }
+
+            $folder = ConvertFrom-JassString $m.Groups[4].Value
+            $questVoiceTypes[$typeConstant] = [pscustomobject]@{
+                family = $textFamily
+                sound_type = $soundTypeByConstant[$typeConstant]
+                folder = $folder.Replace('Pots\Sound\Voicelines\', '').TrimEnd('\')
+                first_line = $firstLine
+                last_line = [int]$m.Groups[3].Value
+            }
         }
 
         $vendorQuestTexts = @{}
@@ -340,20 +361,27 @@ function Get-JassRows {
             if ($m.Success) { $heroQuestTexts += (ConvertFrom-JassString $m.Groups[1].Value) }
         }
 
+        $heroGenericTexts = @{}
+        foreach ($m in [regex]::Matches($text, 'constant\s+string\s+VL_(NAZGREK|ZULKIS)_GENERIC_(\d{4})\s*=\s*"((?:[^"\\]|\\.)*)"')) {
+            $heroGenericTexts["$($m.Groups[1].Value):$([int]$m.Groups[2].Value)"] = ConvertFrom-JassString $m.Groups[3].Value
+        }
+
         $dailyQuestTexts = @{}
-        $dailySetPattern = 'call\s+RegisterDailySet\(\s*(VL_VENDORQUEST_[A-Z0-9_]+_TYPE)\s*,\s*[^,]+,\s*(\d+)\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*\)'
+        $dailySetPattern = 'call\s+RegisterDailySet\(\s*(VL_[A-Z0-9_]+_TYPE)\s*,\s*[^,]+,\s*(\d+)\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*\)'
         foreach ($m in [regex]::Matches($text, $dailySetPattern)) {
             for ($i = 0; $i -lt 3; $i++) {
                 $dailyQuestTexts["$($m.Groups[1].Value):$([int]$m.Groups[2].Value + $i)"] = ConvertFrom-JassString $m.Groups[3 + $i].Value
             }
         }
 
-        foreach ($typeConstant in $vendorQuestTypes.Keys) {
-            $voiceType = $vendorQuestTypes[$typeConstant]
-            $textFamily = $voiceType.family -replace '_(MALE|FEMALE)$', ''
-            for ($lineIndex = 1; $lineIndex -le $voiceType.last_line; $lineIndex++) {
+        foreach ($typeConstant in $questVoiceTypes.Keys) {
+            $voiceType = $questVoiceTypes[$typeConstant]
+            $textFamily = $voiceType.family
+            for ($lineIndex = $voiceType.first_line; $lineIndex -le $voiceType.last_line; $lineIndex++) {
                 $lineText = ""
-                $textKey = "${textFamily}:$lineIndex"
+                $sourceIndex = $lineIndex
+                if ($lineIndex -ge 1000) { $sourceIndex = $lineIndex - 1000 }
+                $textKey = "${textFamily}:$sourceIndex"
                 $dailyKey = "${typeConstant}:$lineIndex"
                 if ($vendorQuestTexts.ContainsKey($textKey)) {
                     $lineText = $vendorQuestTexts[$textKey]
@@ -361,8 +389,11 @@ function Get-JassRows {
                 elseif ($dailyQuestTexts.ContainsKey($dailyKey)) {
                     $lineText = $dailyQuestTexts[$dailyKey]
                 }
-                elseif ($textFamily -in @('NAZGREK', 'ZULKIS') -and $lineIndex -le $heroQuestTexts.Count) {
-                    $lineText = $heroQuestTexts[$lineIndex - 1]
+                elseif ($textFamily -in @('NAZGREK', 'ZULKIS') -and $heroGenericTexts.ContainsKey($textKey)) {
+                    $lineText = $heroGenericTexts[$textKey]
+                }
+                elseif ($textFamily -in @('NAZGREK', 'ZULKIS') -and $sourceIndex -le $heroQuestTexts.Count) {
+                    $lineText = $heroQuestTexts[$sourceIndex - 1]
                 }
                 if (-not [string]::IsNullOrWhiteSpace($lineText)) {
                     Add-Row -Rows $rows -Key (Format-SequenceKey -SoundType $voiceType.sound_type -LineIndex $lineIndex) -Text $lineText -Source $file.Name -ExpectedFolder $voiceType.folder -DefinitionId "$($file.Name):${typeConstant}:$lineIndex"
@@ -536,9 +567,16 @@ function Build-ScanRows {
 
     $scanRows = [System.Collections.Generic.List[object]]::new()
     foreach ($key in @($keys.Keys | Sort-Object)) {
-        if (-not [string]::IsNullOrWhiteSpace($Speaker)) {
+        if ($Speaker.Count -gt 0) {
             $folderForFilter = Get-ExpectedFolderForKey $key
-            if ($key -notlike "$Speaker*" -and $folderForFilter -notlike "$Speaker*" -and $folderForFilter -notlike "*$Speaker*") { continue }
+            $speakerMatches = $false
+            foreach ($speakerFilter in $Speaker) {
+                if (-not [string]::IsNullOrWhiteSpace($speakerFilter) -and ($key -like "$speakerFilter*" -or $folderForFilter -like "$speakerFilter*" -or $folderForFilter -like "*$speakerFilter*")) {
+                    $speakerMatches = $true
+                    break
+                }
+            }
+            if (-not $speakerMatches) { continue }
         }
 
         $j = @()

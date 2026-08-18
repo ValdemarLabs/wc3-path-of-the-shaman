@@ -15,6 +15,56 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [18.8.2026]
+
+### Player-Facing Updates
+
+- Generic Human, Orc, Troll, Goblin, Tauren, Satyr, Morgrim dwarf, Elarindor, and Bonecrusher voices now support multiple reusable FishAudio profiles instead of treating every member of a race and gender as one speaker.
+- Vendors now distribute regional and role-appropriate voice profiles across their roster, and quest-giving vendors retain the same voice while trading and giving quests.
+- Nazgrek and Zul'kis now have twelve additional reusable generic quest replies each.
+
+### Technical Updates
+
+- Updated `Vendors/VendorLines.j` with per-unit and per-unit-type voice bindings independent of regional dialogue profiles.
+- Updated `Voicelines/Voicelines_VendorLines.j`, `Voicelines_Quests.j`, vendor faction libraries, and vendor quest libraries to use reusable numbered voice prefixes and a shared `1001+` generic-quest range.
+- Updated `tools/voicelines.ps1` to discover reusable numbered profiles, shared vendor/quest sequences, and multiple speaker filters in one generation run.
+- Updated `Voicelines/FishAudioVoiceIds.md` and the vendor-quest README with reference IDs, regional/role usage, folders, and normalized duplicate profile labels.
+
+### Imports
+
+- Re-keyed 2,558 existing approved vendor and quest MP3s into reusable profile folders without replacing their source recordings.
+- Added 24 new reusable Nazgrek and Zul'kis generic quest-reply MP3s.
+
+- New models (from WoW vanilla):
+  - Goblins:
+    - Alchemist Pestlezugg.mdx
+    - Arena Promoter.mdx
+    - Auctioneer Kresky.mdx
+    - Baron Revilgaz.mdx
+    - Crank Fizzlebub.mdx
+    - Fin Fizracket.mdx
+    - Frezza.mdx
+    - Grimestack.mdx
+     -Grizzlowe.mdx
+    - Jazzrik.mdx
+    - Narkk.mdx
+  - Humans:
+    - HumanFemaleFarmer.mdx
+    - HumanFemalePeasant.mdx
+    - HumanMaleBlacksmith.mdx
+  - Ogres:
+    - Ogre.mdx
+    - OgreMage.mdx
+    - OgreWarlord.mdx
+  - Zeppelin:
+    - transport_zeppelin.mdx
+    - zepanimation.mdx
+
+
+### Actions Remaining
+
+- Import the 175 validated numbered-profile files currently in FishAudio review and generate the remaining 3,450 files when external tool access is available again.
+
 ## [16.8.2026]
 
 ### Player-Facing Updates

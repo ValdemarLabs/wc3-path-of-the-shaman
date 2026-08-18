@@ -20,6 +20,7 @@
 library VendorDwarves initializer Init requires VendorCatalogs
     private function Register takes integer unitTypeId, integer catalogType returns nothing
         call VendorCatalogs_RegisterUnitType(unitTypeId, catalogType, VL_VENDOR_PROFILE_DWARF_MORGRIM_MALE)
+        call VendorLines_BindUnitTypeVoiceType(unitTypeId, VL_DWARF_MORGRIM_MALE_1_TYPE)
         call Reputation_RegisterUnitTypeFaction(unitTypeId, "Morgrim Clan")
     endfunction
 
