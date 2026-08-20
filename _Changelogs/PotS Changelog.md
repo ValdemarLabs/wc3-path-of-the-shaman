@@ -19,12 +19,17 @@
 
 ### Player-Facing Updates
 
+- Expanded `Professions/Drunk.j` with escalating puke and exponential pass-out chances, temporary hit/armor penalties, sleep effects, randomized witness reactions, player-hero fade/relocation wakeups, five-minute Hangovers, and configurable wake locations.
+- Added the repeatable, self-completing quest `A Night To Remember`, which asks the hungover hero to question the other owned player hero and three random Orc, Tauren, or Troll vendors about the previous night.
 - Converted the Satyr rare-goods, reagent, enchanting, and potion vendors to Velyssra the Covetous, Malthera Duskmoss, Ithryssa Runehorn, and Selyth Venomcup, with a mean and cunning female Satyr voice profile shared by their vendor and quest dialogue.
 - Nazgrek and Zul'kis now each have four personality-specific randomized replies for generic quest acceptance, kill completion, talk completion, fetch completion, progress, supply handoffs, and quest purchases.
 - Generic vendor and quest voices now use clearly reusable `GenericRaceGenderN` profile names instead of vendor-oriented or ambiguous speaker names.
 
 ### Technical Updates
 
+- Added `QuestsAndDialogs/QuestGivers/qANightToRemember.j`, `Voicelines/Voicelines_Drunk.j`, `Professions/DrunkObjectEditorSetup.md`, and the Troll witness libraries `qZanjinGemeye.j` and `qRokjinHexsmoke.j`.
+- Updated `Vendors/VendorDialogs.j` and 13 existing Horde vendor qXXX libraries with contextual last-night dialogue and a 15-vendor witness registry.
+- Updated `tools/voicelines.ps1`, added `tools/generate-drunk-voicelines.ps1`, and updated `Voicelines/FishAudioVoiceIds.md` plus the vendor quest README for the new hero, AI companion, and reusable Horde vendor voice pools.
 - Added and registered `GenericSatyrFemale1` across `Voicelines/Voicelines_VendorLines.j`, `Voicelines_Quests.j`, Satyr vendor bindings, and the four matched vendor-quest definitions.
 - Moved Nazgrek and Zul'kis generic quest text, keys, sound registration, and reply-variant registration into `Voicelines/Voicelines_Nazgrek.j` and `Voicelines_Zulkis.j`.
 - Updated `QuestsAndDialogs/QuestsGeneric.j` and `QuestsVendor.j` to select matching randomized hero text and audio by interaction type.
@@ -42,6 +47,8 @@
 
 ### Actions Remaining
 
+- Replace the placeholder `ADRK`, `APUK`, and `AHNG` rawcodes with the three configured Object Editor aura/buff abilities, register the final preplaced pass-out rects, and configure death/decay fallbacks for models without sleep animations.
+- Generate and review the staged Drunk/Hangover MP3 set after Fish Audio tool usage becomes available; Aveline also needs a Fish Audio reference ID.
 - Decide whether to delete the 14 legacy `Vendor*` and `VendorQuest*` folders. Their 2,544 MP3s are hash-identical to mapped files in the reusable profiles and no active JASS registration uses the legacy paths.
 - Run a full JassHelper map compile and in-game vendor/quest dialogue test.
 
