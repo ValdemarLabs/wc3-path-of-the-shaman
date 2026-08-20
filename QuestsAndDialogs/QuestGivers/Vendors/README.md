@@ -116,12 +116,23 @@ are imported.
 
 ## A Night To Remember witnesses
 
-`qANightToRemember.j` selects three placed witnesses per hangover run from a
-15-vendor Horde pool. The eligible qXXX libraries register Kargun, Drokmar,
-Varok, Rukgar, Nargash, Hurgan, Brakkun, Mordrak, Gorthak, Boran, Tawa, Koro,
-Nara, Zanjin, and Rokjin. This keeps the pool limited to Orc, Tauren, and Troll
-vendors while distributing targets across several zones.
+`qANightToRemember.j` selects three witnesses per hangover run. When active AI
+company heroes are available, one or two are selected and the remaining slots
+come from the 15-vendor Horde pool. Stored AI unit references remain valid if
+the companion later leaves or is kicked, provided the unit remains alive and
+non-hostile. The eligible qXXX libraries register Kargun, Drokmar, Varok,
+Rukgar, Nargash, Hurgan, Brakkun, Mordrak, Gorthak, Boran, Tawa, Koro, Nara,
+Zanjin, and Rokjin.
 
-The shared profile reply pools use `1101-1103` for Orc and Tauren voices and
-`1001-1003` for Troll voices. `qZanjinGemeye.j` and `qRokjinHexsmoke.j` are
-registration-only libraries until those vendors receive ordinary quests.
+One or two witnesses may require a small kill, supply, or apology task before
+the requirement completes. These use the same lightweight objective concepts
+as generic/vendor quests, but remain staged inside the repeatable Night quest
+to avoid creating conflicting child quests.
+
+The shared profile reply pools use `1101-1107` for Orc and Tauren voices and
+`1001-1007` for Troll voices: five personal recollections, one amends request,
+and one forgiveness reply. Recollections share five story categories with
+Nazgrek and Zul'kis response pools, so the hungover hero's next line answers
+the event that the witness actually described. `qZanjinGemeye.j` and
+`qRokjinHexsmoke.j` are registration-only libraries until those vendors
+receive ordinary quests.

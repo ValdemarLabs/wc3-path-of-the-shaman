@@ -282,15 +282,16 @@ function Get-JassRows {
         }
 
         # Drunk/Night vendor replies are authored once per reusable voice
-        # profile and occupy three consecutive keys.
-        $drunkVendorPattern = 'call\s+RegisterVendorVoice\(\s*(VL_[A-Z0-9_]+_TYPE)\s*,\s*(\d+)\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*\)'
+        # profile and occupy seven consecutive keys: five recollections, a
+        # task request, and a forgiveness reply.
+        $drunkVendorPattern = 'call\s+RegisterVendorVoice\(\s*(VL_[A-Z0-9_]+_TYPE)\s*,\s*(\d+)\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*\)'
         foreach ($m in [regex]::Matches($text, $drunkVendorPattern)) {
             $soundTypeConstant = $m.Groups[1].Value
             if (-not $soundTypeByConstant.ContainsKey($soundTypeConstant)) { continue }
 
             $firstLine = [int]$m.Groups[2].Value
             $folder = ConvertFrom-JassString $m.Groups[3].Value
-            for ($i = 0; $i -lt 3; $i++) {
+            for ($i = 0; $i -lt 7; $i++) {
                 $lineIndex = $firstLine + $i
                 Add-Row -Rows $rows -Key (Format-SequenceKey -SoundType $soundTypeByConstant[$soundTypeConstant] -LineIndex $lineIndex) -Text (ConvertFrom-JassString $m.Groups[4 + $i].Value) -Source $file.Name -ExpectedFolder $folder -DefinitionId "$($file.Name):${soundTypeConstant}:$lineIndex"
             }

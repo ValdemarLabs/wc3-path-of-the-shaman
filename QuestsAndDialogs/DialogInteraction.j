@@ -20,6 +20,8 @@
     API:
     - call DialogInteraction_Register(unit npc)
     - call DialogInteraction_RegisterSelectionHandler(unit npc, function OnSelected)
+    - call DialogInteraction_RegisterPreSelectionHandler(function OnPreSelected)
+    - call DialogInteraction_ConsumeSelection()
     - call DialogInteraction_RegisterAnySelectionHandler(function OnAnySelected)
     - call DialogInteraction_ConfigureDialogTransition(...)
     - call DialogInteraction_StartConfiguredDialogEntryTransition(...)
@@ -38,7 +40,9 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
 
         private Table DialogInteraction_SelectHandlers = 0
         private trigger DialogInteraction_SelectTrigger = null
+        private trigger DialogInteraction_PreSelectHandlers = null
         private trigger DialogInteraction_AnySelectHandlers = null
+        private boolean DialogInteraction_SelectionConsumed = false
         private Table DialogInteraction_FirstGreetDone = 0
         private Table DialogInteraction_SkipNextGreet = 0
         private Table DialogInteraction_GreetOrder = 0
@@ -128,16 +132,21 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         local trigger t
 
         set DialogInteraction_SelectedUnit = u
-        if u != null and DialogInteraction_SelectHandlers != 0 then
+        set DialogInteraction_SelectionConsumed = false
+        if u != null and DialogInteraction_PreSelectHandlers != null then
+            call TriggerExecute(DialogInteraction_PreSelectHandlers)
+        endif
+        if u != null and not DialogInteraction_SelectionConsumed and DialogInteraction_SelectHandlers != 0 then
             set t = DialogInteraction_SelectHandlers.trigger[GetHandleId(u)]
             if t != null then
                 call TriggerExecute(t)
             endif
         endif
-        if u != null and DialogInteraction_AnySelectHandlers != null then
+        if u != null and not DialogInteraction_SelectionConsumed and DialogInteraction_AnySelectHandlers != null then
             call TriggerExecute(DialogInteraction_AnySelectHandlers)
         endif
         set DialogInteraction_SelectedUnit = null
+        set DialogInteraction_SelectionConsumed = false
         set t = null
         set u = null
     endfunction
@@ -168,6 +177,21 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         call TriggerAddAction(t, handler)
         set DialogInteraction_SelectHandlers.trigger[GetHandleId(u)] = t
         set t = null
+    endfunction
+
+    public function RegisterPreSelectionHandler takes code handler returns nothing
+        if handler == null then
+            return
+        endif
+        call EnsureSelectTrigger()
+        if DialogInteraction_PreSelectHandlers == null then
+            set DialogInteraction_PreSelectHandlers = CreateTrigger()
+        endif
+        call TriggerAddAction(DialogInteraction_PreSelectHandlers, handler)
+    endfunction
+
+    public function ConsumeSelection takes nothing returns nothing
+        set DialogInteraction_SelectionConsumed = true
     endfunction
 
     public function RegisterAnySelectionHandler takes code handler returns nothing

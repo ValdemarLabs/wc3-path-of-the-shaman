@@ -42,15 +42,15 @@ the same voice profile used by their shop dialogue.
 | `GenericElarindorFemale1` | Elf (VereesaWindrunner) | Elarindor female | `eefc6b82be3d4907bf419c640d021b0b` | Armor, potions, and jewellery; matched vendor quests |
 | `GenericElarindorFemale2` | BloodElfFemale | Elarindor female | `b02accf6560f41419210b67f9431fd5f` | Enchanting and quartermaster; matched vendor quests |
 | `GenericOgreBonecrusherMale1` | OgreMale | Bonecrusher ogre male | `065c2be6b4814fe59916ece73d6660b3` | Bonecrusher vendors, bag merchant, and generic quests |
-| `NazgrekGeneric` | Nazgrek2 | Nazgrek reusable replies | `82895e2c2e62463bb023c0c858a55b9d` | Generic quest acceptance, progress, completion, supply, and purchase replies |
-| `ZulkisGeneric` | Shadowhunter | Zul'kis reusable replies | `139c8b251a2f4a97a2dbce510e1f94cf` | Generic quest acceptance, progress, completion, supply, and purchase replies |
+| `NazgrekGeneric` | Nazgrek2 | Nazgrek reusable replies | `82895e2c2e62463bb023c0c858a55b9d` | Generic quests plus matched LastNight responses |
+| `ZulkisGeneric` | Shadowhunter | Zul'kis reusable replies | `139c8b251a2f4a97a2dbce510e1f94cf` | Generic quests plus matched LastNight responses |
 | `HeroEngineer` | HeroEngineer | Engineer AI hero | `b901bbbb4b3748e5ae04a4defaf7a3c9` | Drunk reaction lines and AI companion dialogue |
 | `HeroPaladin` | HeroPaladin | Paladin AI hero | `ffa580e4304440e2b78bf2a02d493942` | Drunk reaction lines and AI companion dialogue |
 | `HeroShaman` / `HeroRestoshaman` | HeroRestoshaman | Restoration shaman AI hero | `2f5da025973948bea9c3d21b09a73d8f` | Drunk reaction lines and AI companion dialogue |
 | `HeroRogue` | HeroRogue | Rogue AI hero | `6f5776ec9e67431b9aee2ed1f17f902d` | Drunk reaction lines and AI companion dialogue |
 | `HeroWarlock` | HeroWarlock | Warlock AI hero | `06209f0d44a146b08ba67d5a8d121f74` | Drunk reaction lines and AI companion dialogue |
 | `HeroWarrior` | HeroWarrior | Warrior AI hero | `8be8a11dd4524e6a813ac34ce1580008` | Drunk reaction lines and AI companion dialogue |
-| `Aveline` | AI_Aveline | Aveline AI hero | _Reference ID still required_ | Text fallback only for drunk reactions until a Fish reference is supplied |
+| `Aveline` | AI_Aveline | Aveline AI hero | `829032b867d447ebbabc6c30ebba911c` | Drunk reactions, last-night witness lines, amends tasks, and forgiveness replies |
 
 Nazgrek and Zul'kis each register 28 generic lines: four randomized replies
 for acceptance, kill completion, talk completion, fetch completion, progress,
