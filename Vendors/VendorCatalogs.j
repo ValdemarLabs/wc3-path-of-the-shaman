@@ -123,11 +123,11 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
 
         // Satyr vendors
         call RegisterVendorName('n02Y', "Xyros Bloodwager")
-        call RegisterVendorName('n02Z', "Vaelith the Covetous")
-        call RegisterVendorName('n030', "Sythren Duskmoss")
-        call RegisterVendorName('n031', "Malyr Runehorn")
+        call RegisterVendorName('n02Z', "Velyssra the Covetous")
+        call RegisterVendorName('n030', "Malthera Duskmoss")
+        call RegisterVendorName('n031', "Ithryssa Runehorn")
         call RegisterVendorName('n032', "Zarethis Oddhoof")
-        call RegisterVendorName('n033', "Nymor Vialtongue")
+        call RegisterVendorName('n033', "Selyth Venomcup")
         call RegisterVendorName('n034', "Krythos Thornblade")
         call RegisterVendorName('n036', "Velthyr Nighthide")
         call RegisterVendorName('n037', "Ozyr Blackhorn")

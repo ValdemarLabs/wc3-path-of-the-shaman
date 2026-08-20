@@ -58,11 +58,11 @@ Notes:
 | Rawcode | Name | Editor suffix | Gender | Intended zone | Quest giver | Placed |
 |---|---|---|---|---|---|---| 
 | `n02Y` | Xyros Bloodwager | Arena Quartermaster | Male | Sereneglade / Weeping Hollow | Yes (Daily) | Yes |
-| `n02Z` | Vaelith the Covetous | Rare Goods Dealer | Male | Sereneglade / Weeping Hollow | Yes (Daily + Normal) | Yes |
-| `n030` | Sythren Duskmoss | Reagent Merchant | Male | Sereneglade / Weeping Hollow | Yes (Daily) | Yes |
-| `n031` | Malyr Runehorn | Enchanting Supplier | Male | Sereneglade / Weeping Hollow | Yes (Daily) | Yes |
+| `n02Z` | Velyssra the Covetous | Rare Goods Dealer | Female | Sereneglade / Weeping Hollow | Yes (Daily + Normal) | Yes |
+| `n030` | Malthera Duskmoss | Reagent Merchant | Female | Sereneglade / Weeping Hollow | Yes (Daily) | Yes |
+| `n031` | Ithryssa Runehorn | Enchanting Supplier | Female | Sereneglade / Weeping Hollow | Yes (Daily) | Yes |
 | `n032` | Zarethis Oddhoof | Curiosity Merchant | Male | Sereneglade / Weeping Hollow | — | Yes |
-| `n033` | Nymor Vialtongue | Potion Seller | Male | Sereneglade / Weeping Hollow | Yes (Daily) | Yes |
+| `n033` | Selyth Venomcup | Potion Seller | Female | Sereneglade / Weeping Hollow | Yes (Daily) | Yes |
 | `n034` | Krythos Thornblade | Weapons Vendor | Male | Weeping Hollow | — | Yes |
 | `n036` | Velthyr Nighthide | Armor Vendor | Male | Weeping Hollow | — | Yes |
 | `n037` | Ozyr Blackhorn | Shield Vendor | Male | Weeping Hollow | — | Yes |
@@ -207,7 +207,7 @@ These rawcodes are explicitly bound to Horde reputation; placing them under the 
 | `o01F` | Harn Earthbrew | Horde Bartender | Male | Ghostwalkridge / Ironspine Post | — | Yes |
 | `o01G` | Tobar Keghoof | Horde Bartender | Male | Sirensong | — | Yes |
 
-Trade dialogue uses the `TaurenMale1-3` reusable profiles. The four daily quests use `1001-1014` under the same profile assigned to each giver; missing recordings use text-duration fallback.
+Trade dialogue uses the `GenericTaurenMale1-3` reusable profiles. The four daily quests use `1001-1014` under the same profile assigned to each giver; missing recordings use text-duration fallback.
 
 ### Morgrim Clan Dwarf vendors
 
@@ -225,11 +225,11 @@ Use `Player(7)` as the Morgrim Clan owner. The vendor libraries also bind these 
 | `h010` | Magdor Caskcoin | Morgrim Trade Goods Merchant | Male | Havenwoods | — | Yes |
 | `h013` | Bromli Alethane | Morgrim Bartender | Male | Dragonfire Peaks | — | Yes |
 
-All Morgrim Dwarf vendors are male. `VendorCatalogs.j` and `VendorDwarves.j` bind `h00T`-`h010` plus bartender `h013` directly. Morgrim trade dialogue uses the reusable `DwarfMorgrimMale1` profile; missing recordings use text-duration fallback.
+All Morgrim Dwarf vendors are male. `VendorCatalogs.j` and `VendorDwarves.j` bind `h00T`-`h010` plus bartender `h013` directly. Morgrim trade dialogue uses the reusable `GenericDwarfMorgrimMale1` profile; missing recordings use text-duration fallback.
 
 ### Horde Troll vendors
 
-Use Horde ownership where practical. `VendorTrolls.j` binds both rawcodes explicitly to Horde reputation and distributes them between `TrollMale1` and `TrollMale2`.
+Use Horde ownership where practical. `VendorTrolls.j` binds both rawcodes explicitly to Horde reputation and distributes them between `GenericTrollMale1` and `GenericTrollMale2`.
 
 | Rawcode | Name | Editor suffix | Gender | Intended zone | Quest giver | Placed |
 |---|---|---|---|---|---|---|

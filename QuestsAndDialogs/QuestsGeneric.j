@@ -2,7 +2,7 @@
     QuestsGeneric
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Reusable kill, fetch, talk, and purchase quest templates built on
@@ -24,6 +24,8 @@
     - QuestsGeneric_SetFactionReward(...) configures reputation rewards.
     - QuestsGeneric_SetExtendedDialogue(...) adds authored normal-quest lines.
     - QuestsGeneric_ConfigureSharedDialogue(...) sets shared text and hero voices.
+    - QuestsGeneric_RegisterHeroVoiceVariant(...) adds a selectable-hero reply.
+    - QuestsGeneric_AddHeroVoiceVariantLine(...) plays a matching random reply.
     - QuestsGeneric_RegisterDailyAcceptanceVariant(...) adds a random line.
     - QuestsGeneric_RegisterProgressVariant(...) adds shared incomplete dialogue.
     - QuestsGeneric_HasDefinitionForUnitType(...) checks template ownership.
@@ -40,10 +42,19 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         public constant integer OBJECTIVE_TALK = 3
         public constant integer OBJECTIVE_PURCHASE = 4
 
+        public constant integer HERO_LINE_ACCEPT = 1
+        public constant integer HERO_LINE_COMPLETE_KILL = 2
+        public constant integer HERO_LINE_COMPLETE_TALK = 3
+        public constant integer HERO_LINE_COMPLETE_FETCH = 4
+        public constant integer HERO_LINE_PROGRESS = 5
+        public constant integer HERO_LINE_REQUEST_SUPPLY = 6
+        public constant integer HERO_LINE_ASK_TO_BUY = 7
+
         private constant integer QG_MAX_DEFINITIONS = 128
         private constant integer QG_MAX_QUESTS = 512
         private constant integer QG_MAX_DAILY_VARIANTS = 96
         private constant integer QG_MAX_PROGRESS_VARIANTS = 16
+        private constant integer QG_MAX_HERO_VOICE_VARIANTS = 128
         private constant integer QG_ACTION_BASE = 10000
         private constant integer QG_PENDING_ACCEPT = 1
         private constant integer QG_PENDING_COMPLETE = 2
@@ -88,6 +99,12 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         private integer array QG_ProgressVariantObjectiveType
         private string array QG_ProgressVariantText
         private string array QG_ProgressVariantSoundKey
+
+        private integer QG_HeroVoiceVariantCount = 0
+        private integer array QG_HeroVoiceVariantLineType
+        private string array QG_HeroVoiceVariantVoiceType
+        private string array QG_HeroVoiceVariantText
+        private integer array QG_HeroVoiceVariantIndex
 
         private string QG_HeroAcceptText = ""
         private string QG_HeroCompleteKillText = ""
@@ -226,6 +243,17 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         set QG_DailyVariantObjectiveType[QG_DailyVariantCount] = objectiveType
         set QG_DailyVariantText[QG_DailyVariantCount] = text
         set QG_DailyVariantVoiceIndex[QG_DailyVariantCount] = voiceIndex
+    endfunction
+
+    public function RegisterHeroVoiceVariant takes integer lineType, string voiceType, string text, integer voiceIndex returns nothing
+        if lineType < HERO_LINE_ACCEPT or lineType > HERO_LINE_ASK_TO_BUY or voiceType == null or voiceType == "" or text == null or text == "" or voiceIndex <= 0 or QG_HeroVoiceVariantCount >= QG_MAX_HERO_VOICE_VARIANTS then
+            return
+        endif
+        set QG_HeroVoiceVariantCount = QG_HeroVoiceVariantCount + 1
+        set QG_HeroVoiceVariantLineType[QG_HeroVoiceVariantCount] = lineType
+        set QG_HeroVoiceVariantVoiceType[QG_HeroVoiceVariantCount] = voiceType
+        set QG_HeroVoiceVariantText[QG_HeroVoiceVariantCount] = text
+        set QG_HeroVoiceVariantIndex[QG_HeroVoiceVariantCount] = voiceIndex
     endfunction
 
     public function RegisterProgressVariant takes integer objectiveType, string text, string soundKey returns nothing
@@ -427,15 +455,61 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
 
     private function QG_GetHeroCompleteVoiceIndex takes integer definitionId returns integer
         if QG_ObjectiveType[definitionId] == OBJECTIVE_KILL then
-            return 2
+            return 5
         elseif QG_ObjectiveType[definitionId] == OBJECTIVE_TALK then
-            return 3
+            return 9
         endif
-        return 4
+        return 13
     endfunction
 
-    private function QG_AddHeroLookAtLine takes integer seq, unit hero, unit lookTarget, string text, integer voiceIndex returns nothing
-        call DialogInteraction_AddHeroLookAtLineForVoices(seq, hero, lookTarget, text, QG_FormatSoundKey(QG_NazgrekVoiceType, voiceIndex), QG_FormatSoundKey(QG_ZulkisVoiceType, voiceIndex))
+    public function AddHeroVoiceVariantLine takes integer seq, unit hero, unit lookTarget, integer lineType, string fallbackText, integer fallbackVoiceIndex returns nothing
+        local string voiceType = ""
+        local string selectedText = fallbackText
+        local string soundKey = ""
+        local integer index = 1
+        local integer count = 0
+        local integer selected = 0
+
+        if hero == udg_Nazgrek then
+            set voiceType = QG_NazgrekVoiceType
+        elseif hero == udg_Zulkis then
+            set voiceType = QG_ZulkisVoiceType
+        endif
+        if voiceType != "" then
+            loop
+                exitwhen index > QG_HeroVoiceVariantCount
+                if QG_HeroVoiceVariantLineType[index] == lineType and QG_HeroVoiceVariantVoiceType[index] == voiceType then
+                    set count = count + 1
+                endif
+                set index = index + 1
+            endloop
+            if count > 0 then
+                set selected = GetRandomInt(1, count)
+                set index = 1
+                set count = 0
+                loop
+                    exitwhen index > QG_HeroVoiceVariantCount
+                    if QG_HeroVoiceVariantLineType[index] == lineType and QG_HeroVoiceVariantVoiceType[index] == voiceType then
+                        set count = count + 1
+                        if count == selected then
+                            set selectedText = QG_HeroVoiceVariantText[index]
+                            set soundKey = QG_FormatSoundKey(voiceType, QG_HeroVoiceVariantIndex[index])
+                            set index = QG_HeroVoiceVariantCount
+                        endif
+                    endif
+                    set index = index + 1
+                endloop
+            elseif fallbackVoiceIndex > 0 then
+                set soundKey = QG_FormatSoundKey(voiceType, fallbackVoiceIndex)
+            endif
+        endif
+        if hero == udg_Nazgrek then
+            call DialogInteraction_AddHeroLookAtLineForVoices(seq, hero, lookTarget, selectedText, soundKey, "")
+        elseif hero == udg_Zulkis then
+            call DialogInteraction_AddHeroLookAtLineForVoices(seq, hero, lookTarget, selectedText, "", soundKey)
+        else
+            call DialogInteraction_AddHeroLookAtLineForVoices(seq, hero, lookTarget, selectedText, "", "")
+        endif
         set hero = null
         set lookTarget = null
     endfunction
@@ -519,7 +593,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         if pendingAction == QG_PENDING_ACCEPT then
             set soundKey = QG_FormatSoundKey(QG_VoiceType[definitionId], QG_VoiceIndex[definitionId])
             call DialogSystem_AddLine(seq, giver, giverName, QG_IntroText[definitionId], soundKey, true)
-            call QG_AddHeroLookAtLine(seq, hero, giver, QG_HeroAcceptText, 1)
+            call AddHeroVoiceVariantLine(seq, hero, giver, HERO_LINE_ACCEPT, QG_HeroAcceptText, 1)
             if QG_QuestType[definitionId] == "daily" then
                 call QG_AddDailyAcceptanceVariant(seq, giver, giverName, definitionId)
             elseif QG_AcceptExtraText[definitionId] != "" then
@@ -527,7 +601,13 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
                 call DialogSystem_AddLine(seq, giver, giverName, QG_AcceptExtraText[definitionId], soundKey, true)
             endif
         elseif pendingAction == QG_PENDING_COMPLETE then
-            call QG_AddHeroLookAtLine(seq, hero, giver, QG_GetHeroCompleteText(definitionId), QG_GetHeroCompleteVoiceIndex(definitionId))
+            if QG_ObjectiveType[definitionId] == OBJECTIVE_KILL then
+                call AddHeroVoiceVariantLine(seq, hero, giver, HERO_LINE_COMPLETE_KILL, QG_GetHeroCompleteText(definitionId), QG_GetHeroCompleteVoiceIndex(definitionId))
+            elseif QG_ObjectiveType[definitionId] == OBJECTIVE_TALK then
+                call AddHeroVoiceVariantLine(seq, hero, giver, HERO_LINE_COMPLETE_TALK, QG_GetHeroCompleteText(definitionId), QG_GetHeroCompleteVoiceIndex(definitionId))
+            else
+                call AddHeroVoiceVariantLine(seq, hero, giver, HERO_LINE_COMPLETE_FETCH, QG_GetHeroCompleteText(definitionId), QG_GetHeroCompleteVoiceIndex(definitionId))
+            endif
             set soundKey = QG_FormatSoundKey(QG_VoiceType[definitionId], QG_VoiceIndex[definitionId] + 1)
             call DialogSystem_AddLine(seq, giver, giverName, QG_CompleteText[definitionId], soundKey, true)
             if QG_CompleteExtraText[definitionId] != "" then
@@ -535,7 +615,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
                 call DialogSystem_AddLine(seq, giver, giverName, QG_CompleteExtraText[definitionId], soundKey, true)
             endif
         else
-            call QG_AddHeroLookAtLine(seq, hero, giver, QG_HeroProgressText, 5)
+            call AddHeroVoiceVariantLine(seq, hero, giver, HERO_LINE_PROGRESS, QG_HeroProgressText, 17)
             call QG_AddProgressVariant(seq, giver, giverName, definitionId, q)
         endif
         set giver = null

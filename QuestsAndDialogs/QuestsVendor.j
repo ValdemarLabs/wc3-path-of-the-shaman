@@ -2,7 +2,7 @@
     QuestsVendor
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Shop-vendor adapter for QuestsGeneric. Generic giver quests are delegated
@@ -255,10 +255,10 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
         call DialogSystem_SetSequenceDefaultSpeaker(seq, vendor, speakerName)
         call DialogSystem_AddMakeFaceEachOther(seq, vendor, hero, 0.45, 0.00)
         if QV_RequiresPurchase[supplyIndex] then
-            call DialogInteraction_AddHeroLookAtLineForVoices(seq, hero, vendor, VL_QUEST_HERO_ASK_TO_BUY, QuestsGeneric_FormatSoundKey(VL_NAZGREK_GENERIC_TYPE, 7), QuestsGeneric_FormatSoundKey(VL_ZULKIS_GENERIC_TYPE, 7))
+            call QuestsGeneric_AddHeroVoiceVariantLine(seq, hero, vendor, QuestsGeneric_HERO_LINE_ASK_TO_BUY, VL_QUEST_HERO_ASK_TO_BUY, 25)
             call DialogSystem_AddLine(seq, vendor, speakerName, VL_QUEST_VENDOR_PURCHASE, "", true)
         else
-            call DialogInteraction_AddHeroLookAtLineForVoices(seq, hero, vendor, VL_QUEST_HERO_REQUEST_SUPPLY, QuestsGeneric_FormatSoundKey(VL_NAZGREK_GENERIC_TYPE, 6), QuestsGeneric_FormatSoundKey(VL_ZULKIS_GENERIC_TYPE, 6))
+            call QuestsGeneric_AddHeroVoiceVariantLine(seq, hero, vendor, QuestsGeneric_HERO_LINE_REQUEST_SUPPLY, VL_QUEST_HERO_REQUEST_SUPPLY, 21)
             if alreadyHandedOff then
                 call DialogSystem_AddLine(seq, vendor, speakerName, VL_QUEST_VENDOR_ALREADY_HANDED_OFF, "", true)
             else

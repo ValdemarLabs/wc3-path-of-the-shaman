@@ -3,7 +3,7 @@
 These reference IDs are not API secrets. Keep the FishAudio API key only in
 the local `FISH_API_KEY` environment variable. `tools/voicelines.ps1` derives a
 speaker-specific environment variable from the key prefix, for example
-`GoblinMale3_0001` uses `FISH_REFERENCE_ID_GOBLINMALE3`.
+`GenericGoblinMale3_0001` uses `FISH_REFERENCE_ID_GENERICGOBLINMALE3`.
 
 The prefixes below describe reusable character voices, not vendor-only voices.
 Vendor chatter, catalog dialogue, and generic quest dialogue can use the same
@@ -12,46 +12,52 @@ the same voice profile used by their shop dialogue.
 
 | PotS key prefix / speaker filter | FishAudio name | Description | Reference ID | Current use |
 |---|---|---|---|---|
-| `HumanMale1` | HumanPaladin | Generic human male | `ffa580e4304440e2b78bf2a02d493942` | Alternating Riverbane, Stormhaven, Havenwoods/neutral male vendors and their quests |
-| `HumanMale2` | HumanCommander / HumanMale2 | Commander or normal human male; both FishAudio labels resolve to this reference | `9f479b87ab104589affd84b3a31d8362` | Alternating Riverbane, Stormhaven, Havenwoods/neutral male vendors and their quests |
-| `HumanFemaleGeneric1` | HumanFemale1 | Generic human female | `550c2688c6794111858bc5d625a73a95` | Alternating Riverbane, Stormhaven, and neutral female vendors |
-| `HumanFemaleGeneric2` | HumanFemale2 | Generic human female | `cf65d0a5aa184eb7bbb394cbfb26ae93` | Alternating Riverbane, Stormhaven, and neutral female vendors |
-| `OrcMale1` | HeroRogue | Agile generic orc male | `6f5776ec9e67431b9aee2ed1f17f902d` | Fiery Mountain rare goods; forest/Sirensong hunters, fishers, and opportunists |
-| `OrcMale2` | Kilrogg | Hostile, battle-worn orc male | `d5a4cf05a9c8427e8e9fb6e6de640833` | Fiery Mountain arena/bartender and Sirensong armor |
-| `OrcMale3` | Varok | Wise orc male | `b29f7aa78b9c42098b08a3fab7adbe9f` | Fiery Mountain shields; forest/Sirensong travelling, quartermaster, trade, and profession roles |
-| `OrcMale4` | OrcGrunt | Orc grunt | `7f2e1215df0444af865febb74d324593` | Armor, shields, blacksmithing, leatherworking, beast supplies, and blacksmiths |
-| `OrcMale5` | OrcPeon | Orc peon | `f21002b6d17b4819b0c9ad5107bff001` | Mining, cooking, provisions, and forest bartender roles |
-| `OrcMale6` | Orc (Drakthul) | Orc warlock | `c0a73a35c26949b3bc8e9f7501644ae9` | Forest enchanting and Fiery Mountain fel curios |
-| `OrcMale7` | Orc (Guldan) | Orc warlock | `5eb0665ce6974a92a38ca309f331d19c` | Sirensong alchemy and forest fel/potion roles |
-| `OrcMale8` | Shaman | Orc shaman | `dab87e7b8c7549d691a90076609bc317` | Forest/Sirensong spirit speakers, reagents, and Sirensong quartermaster |
-| `OrcMale9` | Shaman (fighter) | Orc fighter | `90a80ffccde247c69af75edf5d66cad2` | Fiery Mountain and Sirensong weapons merchants |
-| `TrollMale1` | TrollMale1 | Troll male | `749a792a18654ac19c8668fe9ceb6a31` | Horde Troll jeweller |
-| `TrollMale2` | Troll Witch Doctor | Troll witch doctor | `11573f63b7cb42cd919a0ebd0f74aa84` | Horde Troll voodoo merchant |
-| `GoblinMale1` | Goblin2 | Goblin male | `b3e77482cd444ad09b04a33fe6817c32` | Riverbane weapons/professions, travelling trade, reagents, and expedition supplies |
-| `GoblinMale2` | Goblin1 | Goblin male | `c8fe49fa32b245c786a26ad2a28e771f` | Riverbane armor/potions, travelling trade, Stormhaven bartender, Sirensong beast supplies |
-| `GoblinMale3` | Goblin3 | Goblin male | `7bd87fcdbe1c430a9618e2b5d2bea58d` | Riverbane shields, Stormhaven fishing, Sirensong cooking, and arena quartermaster |
-| `GoblinMale4` | Goblin4 | Goblin male | `95394ac5223a4c7bb8314f937c22172e` | Riverbane mining, Sirensong alchemy, Stormhaven provisions, and travelling rare goods |
-| `TaurenMale1` | HeroWarrior | Tauren male | `8be8a11dd4524e6a813ac34ce1580008` | Weapons, provisions, blacksmithing, and travelling; matched vendor quests |
-| `TaurenMale2` | Furbolg | Deep Tauren-compatible male | `a12406c85a944d7bae13e9164517f920` | Armor, beast supplies, mining, and bartender; matched vendor quests |
-| `TaurenMale3` | Tauren Spirit Walker | Tauren spirit walker | `7fa831b0ab1646b58dc7571a65550662` | Shields, quartermaster, trade goods, and bartender; matched vendor quests |
-| `SatyrFemale1` | Demoness | Satyr/demon female | `a168d04c08e042c49311278cb7558473` | Reserved for female Satyr generic dialogue; no current vendor assignment |
-| `SatyrMale1` | SatyrGeneric3 | Satyr male | `3c8c373ad71a46cab3d95f491cfff368` | Current male Satyr vendors and their quests |
-| `DwarfMorgrimMale1` | DwarfMale1 | Morgrim dwarf male | `c090db335e8f4fef8427ac98572978c9` | Morgrim vendors and reusable Morgrim dialogue |
-| `ElarindorMale1` | Human (Emissary) | Elarindor male | `34a5f0dfbce3461180f1f8c788d3b7c0` | Weapons, reagents, and magister; matched vendor quests |
-| `ElarindorMale2` | ElfMale | Elarindor male | `772caa672ad846a49d7ea5c68648c6a8` | Shields and expedition supplies; matched vendor quests |
-| `ElarindorFemale1` | Elf (VereesaWindrunner) | Elarindor female | `eefc6b82be3d4907bf419c640d021b0b` | Armor, potions, and jewellery; matched vendor quests |
-| `ElarindorFemale2` | BloodElfFemale | Elarindor female | `b02accf6560f41419210b67f9431fd5f` | Enchanting and quartermaster; matched vendor quests |
-| `OgreBonecrusherMale1` | OgreMale | Bonecrusher ogre male | `065c2be6b4814fe59916ece73d6660b3` | Bonecrusher vendors, bag merchant, and generic quests |
+| `GenericHumanMale1` | HumanPaladin | Generic human male | `ffa580e4304440e2b78bf2a02d493942` | Alternating Riverbane, Stormhaven, Havenwoods/neutral male vendors and their quests |
+| `GenericHumanMale2` | HumanCommander / HumanMale2 | Commander or normal human male; both FishAudio labels resolve to this reference | `9f479b87ab104589affd84b3a31d8362` | Alternating Riverbane, Stormhaven, Havenwoods/neutral male vendors and their quests |
+| `GenericHumanFemale1` | HumanFemale1 | Generic human female | `550c2688c6794111858bc5d625a73a95` | Alternating Riverbane, Stormhaven, and neutral female vendors |
+| `GenericHumanFemale2` | HumanFemale2 | Generic human female | `cf65d0a5aa184eb7bbb394cbfb26ae93` | Alternating Riverbane, Stormhaven, and neutral female vendors |
+| `GenericOrcMale1` | HeroRogue | Agile generic orc male | `6f5776ec9e67431b9aee2ed1f17f902d` | Fiery Mountain rare goods; forest/Sirensong hunters, fishers, and opportunists |
+| `GenericOrcMale2` | Kilrogg | Hostile, battle-worn orc male | `d5a4cf05a9c8427e8e9fb6e6de640833` | Fiery Mountain arena/bartender and Sirensong armor |
+| `GenericOrcMale3` | Varok | Wise orc male | `b29f7aa78b9c42098b08a3fab7adbe9f` | Fiery Mountain shields; forest/Sirensong travelling, quartermaster, trade, and profession roles |
+| `GenericOrcMale4` | OrcGrunt | Orc grunt | `7f2e1215df0444af865febb74d324593` | Armor, shields, blacksmithing, leatherworking, beast supplies, and blacksmiths |
+| `GenericOrcMale5` | OrcPeon | Orc peon | `f21002b6d17b4819b0c9ad5107bff001` | Mining, cooking, provisions, and forest bartender roles |
+| `GenericOrcMale6` | Orc (Drakthul) | Orc warlock | `c0a73a35c26949b3bc8e9f7501644ae9` | Forest enchanting and Fiery Mountain fel curios |
+| `GenericOrcMale7` | Orc (Guldan) | Orc warlock | `5eb0665ce6974a92a38ca309f331d19c` | Sirensong alchemy and forest fel/potion roles |
+| `GenericOrcMale8` | Shaman | Orc shaman | `dab87e7b8c7549d691a90076609bc317` | Forest/Sirensong spirit speakers, reagents, and Sirensong quartermaster |
+| `GenericOrcMale9` | Shaman (fighter) | Orc fighter | `90a80ffccde247c69af75edf5d66cad2` | Fiery Mountain and Sirensong weapons merchants |
+| `GenericTrollMale1` | TrollMale1 | Troll male | `749a792a18654ac19c8668fe9ceb6a31` | Horde Troll jeweller |
+| `GenericTrollMale2` | Troll Witch Doctor | Troll witch doctor | `11573f63b7cb42cd919a0ebd0f74aa84` | Horde Troll voodoo merchant |
+| `GenericGoblinMale1` | Goblin2 | Goblin male | `b3e77482cd444ad09b04a33fe6817c32` | Riverbane weapons/professions, travelling trade, reagents, and expedition supplies |
+| `GenericGoblinMale2` | Goblin1 | Goblin male | `c8fe49fa32b245c786a26ad2a28e771f` | Riverbane armor/potions, travelling trade, Stormhaven bartender, Sirensong beast supplies |
+| `GenericGoblinMale3` | Goblin3 | Goblin male | `7bd87fcdbe1c430a9618e2b5d2bea58d` | Riverbane shields, Stormhaven fishing, Sirensong cooking, and arena quartermaster |
+| `GenericGoblinMale4` | Goblin4 | Goblin male | `95394ac5223a4c7bb8314f937c22172e` | Riverbane mining, Sirensong alchemy, Stormhaven provisions, and travelling rare goods |
+| `GenericTaurenMale1` | HeroWarrior | Tauren male | `8be8a11dd4524e6a813ac34ce1580008` | Weapons, provisions, blacksmithing, and travelling; matched vendor quests |
+| `GenericTaurenMale2` | Furbolg | Deep Tauren-compatible male | `a12406c85a944d7bae13e9164517f920` | Armor, beast supplies, mining, and bartender; matched vendor quests |
+| `GenericTaurenMale3` | Tauren Spirit Walker | Tauren spirit walker | `7fa831b0ab1646b58dc7571a65550662` | Shields, quartermaster, trade goods, and bartender; matched vendor quests |
+| `GenericSatyrFemale1` | Demoness | Mean, cunning Satyr/demon female | `a168d04c08e042c49311278cb7558473` | Velyssra, Malthera, Ithryssa, and Selyth vendor dialogue, matched vendor quests, and reusable generic quests |
+| `GenericSatyrMale1` | SatyrGeneric3 | Satyr male | `3c8c373ad71a46cab3d95f491cfff368` | Current male Satyr vendors and their quests |
+| `GenericDwarfMorgrimMale1` | DwarfMale1 | Morgrim dwarf male | `c090db335e8f4fef8427ac98572978c9` | Morgrim vendors and reusable Morgrim dialogue |
+| `GenericElarindorMale1` | Human (Emissary) | Elarindor male | `34a5f0dfbce3461180f1f8c788d3b7c0` | Weapons, reagents, and magister; matched vendor quests |
+| `GenericElarindorMale2` | ElfMale | Elarindor male | `772caa672ad846a49d7ea5c68648c6a8` | Shields and expedition supplies; matched vendor quests |
+| `GenericElarindorFemale1` | Elf (VereesaWindrunner) | Elarindor female | `eefc6b82be3d4907bf419c640d021b0b` | Armor, potions, and jewellery; matched vendor quests |
+| `GenericElarindorFemale2` | BloodElfFemale | Elarindor female | `b02accf6560f41419210b67f9431fd5f` | Enchanting and quartermaster; matched vendor quests |
+| `GenericOgreBonecrusherMale1` | OgreMale | Bonecrusher ogre male | `065c2be6b4814fe59916ece73d6660b3` | Bonecrusher vendors, bag merchant, and generic quests |
 | `NazgrekGeneric` | Nazgrek2 | Nazgrek reusable replies | `82895e2c2e62463bb023c0c858a55b9d` | Generic quest acceptance, progress, completion, supply, and purchase replies |
 | `ZulkisGeneric` | Shadowhunter | Zul'kis reusable replies | `139c8b251a2f4a97a2dbce510e1f94cf` | Generic quest acceptance, progress, completion, supply, and purchase replies |
 
-The submitted profile list contained duplicate labels. The two Human male
-labels shared one reference ID and are represented by `HumanMale2`. The two
-different entries labelled `OrcMale6` were normalized to `OrcMale6` (Drakthul)
-and `OrcMale7` (Gul'dan); the following Shaman/fighter entries consequently use
-`OrcMale8` and `OrcMale9`.
+Nazgrek and Zul'kis each register 28 generic lines: four randomized replies
+for acceptance, kill completion, talk completion, fetch completion, progress,
+supply handoff, and quest purchase. Their text, keys, and sound registration
+are owned by `Voicelines_Nazgrek.j` and `Voicelines_Zulkis.j`.
 
-`HumanFemaleGeneric1` avoids colliding with the existing story speaker prefix
+The submitted profile list contained duplicate labels. The two Human male
+labels shared one reference ID and are represented by `GenericHumanMale2`. The
+two different submitted entries labelled `OrcMale6` were normalized to
+`GenericOrcMale6` (Drakthul) and `GenericOrcMale7` (Gul'dan); the following
+Shaman/fighter entries consequently use `GenericOrcMale8` and
+`GenericOrcMale9`.
+
+`GenericHumanFemale1` avoids colliding with the existing story speaker prefix
 `HumanFemale1`. Nazgrek and Zul'kis generic files are stored in:
 
 - `Pots\Sound\Voicelines\Nazgrek\NazgrekGeneric\`
@@ -62,6 +68,6 @@ Example generation command:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\voicelines.ps1 `
     -Mode Generate `
-    -Speaker GoblinMale3 `
+    -Speaker GenericGoblinMale3 `
     -ReferenceId 7bd87fcdbe1c430a9618e2b5d2bea58d
 ```

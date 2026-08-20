@@ -18,6 +18,6 @@
 **/
 library qNibbsHotpan initializer Init requires QuestsVendor, VoicelinesQuests
     private function Init takes nothing returns nothing
-        call QuestsVendor_RegisterFetchQuest('n043', "Emergency Skewers", "daily", 7, "Emergency Skewers", "ReplaceableTextures\\CommandButtons\\BTNMonsterLure.blp", "Bring meat for Bimble's unexpectedly successful skewer stall.", 'I620', 7, 40, VL_GOBLIN_MALE_3_TYPE, 1011, VL_VENDORQUEST_GOBLIN_0011, VL_VENDORQUEST_GOBLIN_0012)
+        call QuestsVendor_RegisterFetchQuest('n043', "Emergency Skewers", "daily", 7, "Emergency Skewers", "ReplaceableTextures\\CommandButtons\\BTNMonsterLure.blp", "Bring meat for Bimble's unexpectedly successful skewer stall.", 'I620', 7, 40, VL_GENERIC_GOBLIN_MALE_3_TYPE, 1011, VL_VENDORQUEST_GOBLIN_0011, VL_VENDORQUEST_GOBLIN_0012)
     endfunction
 endlibrary

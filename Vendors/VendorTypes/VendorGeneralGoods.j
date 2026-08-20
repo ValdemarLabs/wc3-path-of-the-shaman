@@ -78,9 +78,9 @@ library GeneralGoodsVendor initializer Init requires Shop, VoicelinesVendorLines
 
     private function BindVoiceProfiles takes nothing returns nothing
         call VendorLines_BindUnitTypeProfile(VGG_UNIT_TYPE_UTILITIES_VENDOR, VL_VENDOR_PROFILE_ORC_FOREST_SUPPLIES_MALE)
-        call VendorLines_BindUnitTypeVoiceType(VGG_UNIT_TYPE_UTILITIES_VENDOR, VL_ORC_MALE_3_TYPE)
+        call VendorLines_BindUnitTypeVoiceType(VGG_UNIT_TYPE_UTILITIES_VENDOR, VL_GENERIC_ORC_MALE_3_TYPE)
         call VendorLines_BindUnitTypeProfile(VGG_UNIT_TYPE_THRAKNAR, VL_VENDOR_PROFILE_ORC_FOREST_SUPPLIES_MALE)
-        call VendorLines_BindUnitTypeVoiceType(VGG_UNIT_TYPE_THRAKNAR, VL_ORC_MALE_3_TYPE)
+        call VendorLines_BindUnitTypeVoiceType(VGG_UNIT_TYPE_THRAKNAR, VL_GENERIC_ORC_MALE_3_TYPE)
     endfunction
 
     private function Init takes nothing returns nothing

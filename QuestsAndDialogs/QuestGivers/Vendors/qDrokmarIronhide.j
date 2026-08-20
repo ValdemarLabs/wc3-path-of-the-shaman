@@ -18,6 +18,6 @@
 **/
 library qDrokmarIronhide initializer Init requires QuestsVendor, VoicelinesQuests
     private function Init takes nothing returns nothing
-        call QuestsVendor_RegisterKillQuest('o012', "Thin the Shadowdancers", "daily", 8, "Thin the Shadowdancers", "ReplaceableTextures\\CommandButtons\\BTNSatyrTrickster.blp", "Reduce the satyr threat against Mazgura's hide and metal caravans.", 'nsty', 6, 40, VL_ORC_MALE_4_TYPE, 1003, VL_VENDORQUEST_ORC_0003, VL_VENDORQUEST_ORC_0004)
+        call QuestsVendor_RegisterKillQuest('o012', "Thin the Shadowdancers", "daily", 8, "Thin the Shadowdancers", "ReplaceableTextures\\CommandButtons\\BTNSatyrTrickster.blp", "Reduce the satyr threat against Mazgura's hide and metal caravans.", 'nsty', 6, 40, VL_GENERIC_ORC_MALE_4_TYPE, 1003, VL_VENDORQUEST_ORC_0003, VL_VENDORQUEST_ORC_0004)
     endfunction
 endlibrary

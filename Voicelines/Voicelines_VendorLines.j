@@ -2,7 +2,7 @@
     VoicelinesVendorLines
 
     Author: Valdemar
-    Version: 2.0.0
+    Version: 2.2.0
 
     Description:
     Central source of truth for merchant greetings, trade chatter, transaction
@@ -42,6 +42,7 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         constant string VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_BLACKSMITH_MALE = "Fiery Mountain Orc Blacksmith"
         constant string VL_VENDOR_PROFILE_ORC_FOREST_SUPPLIES_MALE = "Forest Orc Supplies"
         constant string VL_VENDOR_PROFILE_SATYR_MALE = "Satyr Merchant"
+        constant string VL_VENDOR_PROFILE_SATYR_FEMALE = "Satyr Female Merchant"
         constant string VL_VENDOR_PROFILE_OGRE_BONECRUSHER_MALE = "Bonecrusher Ogre"
         constant string VL_VENDOR_PROFILE_OGRE_BONECRUSHER_BAG_MERCHANT_MALE = "Bonecrusher Ogre Bag Merchant"
         constant string VL_VENDOR_PROFILE_GOBLIN_RIVERBANE_MALE = "Goblin Riverbane"
@@ -51,35 +52,36 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         constant string VL_VENDOR_PROFILE_GOBLIN_ARENA_MALE = "Goblin Arena Vendor"
 
         // Reusable FishAudio voice profiles. Vendor and quest dialogue share these keys.
-        constant string VL_HUMAN_MALE_1_TYPE = "HumanMale1_"
-        constant string VL_HUMAN_MALE_2_TYPE = "HumanMale2_"
-        constant string VL_HUMAN_FEMALE_1_TYPE = "HumanFemaleGeneric1_"
-        constant string VL_HUMAN_FEMALE_2_TYPE = "HumanFemaleGeneric2_"
-        constant string VL_TAUREN_MALE_1_TYPE = "TaurenMale1_"
-        constant string VL_TAUREN_MALE_2_TYPE = "TaurenMale2_"
-        constant string VL_TAUREN_MALE_3_TYPE = "TaurenMale3_"
-        constant string VL_DWARF_MORGRIM_MALE_1_TYPE = "DwarfMorgrimMale1_"
-        constant string VL_ELARINDOR_MALE_1_TYPE = "ElarindorMale1_"
-        constant string VL_ELARINDOR_MALE_2_TYPE = "ElarindorMale2_"
-        constant string VL_ELARINDOR_FEMALE_1_TYPE = "ElarindorFemale1_"
-        constant string VL_ELARINDOR_FEMALE_2_TYPE = "ElarindorFemale2_"
-        constant string VL_TROLL_MALE_1_TYPE = "TrollMale1_"
-        constant string VL_TROLL_MALE_2_TYPE = "TrollMale2_"
-        constant string VL_ORC_MALE_1_TYPE = "OrcMale1_"
-        constant string VL_ORC_MALE_2_TYPE = "OrcMale2_"
-        constant string VL_ORC_MALE_3_TYPE = "OrcMale3_"
-        constant string VL_ORC_MALE_4_TYPE = "OrcMale4_"
-        constant string VL_ORC_MALE_5_TYPE = "OrcMale5_"
-        constant string VL_ORC_MALE_6_TYPE = "OrcMale6_"
-        constant string VL_ORC_MALE_7_TYPE = "OrcMale7_"
-        constant string VL_ORC_MALE_8_TYPE = "OrcMale8_"
-        constant string VL_ORC_MALE_9_TYPE = "OrcMale9_"
-        constant string VL_SATYR_MALE_1_TYPE = "SatyrMale1_"
-        constant string VL_OGRE_BONECRUSHER_MALE_1_TYPE = "OgreBonecrusherMale1_"
-        constant string VL_GOBLIN_MALE_1_TYPE = "GoblinMale1_"
-        constant string VL_GOBLIN_MALE_2_TYPE = "GoblinMale2_"
-        constant string VL_GOBLIN_MALE_3_TYPE = "GoblinMale3_"
-        constant string VL_GOBLIN_MALE_4_TYPE = "GoblinMale4_"
+        constant string VL_GENERIC_HUMAN_MALE_1_TYPE = "GenericHumanMale1_"
+        constant string VL_GENERIC_HUMAN_MALE_2_TYPE = "GenericHumanMale2_"
+        constant string VL_GENERIC_HUMAN_FEMALE_1_TYPE = "GenericHumanFemale1_"
+        constant string VL_GENERIC_HUMAN_FEMALE_2_TYPE = "GenericHumanFemale2_"
+        constant string VL_GENERIC_TAUREN_MALE_1_TYPE = "GenericTaurenMale1_"
+        constant string VL_GENERIC_TAUREN_MALE_2_TYPE = "GenericTaurenMale2_"
+        constant string VL_GENERIC_TAUREN_MALE_3_TYPE = "GenericTaurenMale3_"
+        constant string VL_GENERIC_DWARF_MORGRIM_MALE_1_TYPE = "GenericDwarfMorgrimMale1_"
+        constant string VL_GENERIC_ELARINDOR_MALE_1_TYPE = "GenericElarindorMale1_"
+        constant string VL_GENERIC_ELARINDOR_MALE_2_TYPE = "GenericElarindorMale2_"
+        constant string VL_GENERIC_ELARINDOR_FEMALE_1_TYPE = "GenericElarindorFemale1_"
+        constant string VL_GENERIC_ELARINDOR_FEMALE_2_TYPE = "GenericElarindorFemale2_"
+        constant string VL_GENERIC_TROLL_MALE_1_TYPE = "GenericTrollMale1_"
+        constant string VL_GENERIC_TROLL_MALE_2_TYPE = "GenericTrollMale2_"
+        constant string VL_GENERIC_ORC_MALE_1_TYPE = "GenericOrcMale1_"
+        constant string VL_GENERIC_ORC_MALE_2_TYPE = "GenericOrcMale2_"
+        constant string VL_GENERIC_ORC_MALE_3_TYPE = "GenericOrcMale3_"
+        constant string VL_GENERIC_ORC_MALE_4_TYPE = "GenericOrcMale4_"
+        constant string VL_GENERIC_ORC_MALE_5_TYPE = "GenericOrcMale5_"
+        constant string VL_GENERIC_ORC_MALE_6_TYPE = "GenericOrcMale6_"
+        constant string VL_GENERIC_ORC_MALE_7_TYPE = "GenericOrcMale7_"
+        constant string VL_GENERIC_ORC_MALE_8_TYPE = "GenericOrcMale8_"
+        constant string VL_GENERIC_ORC_MALE_9_TYPE = "GenericOrcMale9_"
+        constant string VL_GENERIC_SATYR_MALE_1_TYPE = "GenericSatyrMale1_"
+        constant string VL_GENERIC_SATYR_FEMALE_1_TYPE = "GenericSatyrFemale1_"
+        constant string VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE = "GenericOgreBonecrusherMale1_"
+        constant string VL_GENERIC_GOBLIN_MALE_1_TYPE = "GenericGoblinMale1_"
+        constant string VL_GENERIC_GOBLIN_MALE_2_TYPE = "GenericGoblinMale2_"
+        constant string VL_GENERIC_GOBLIN_MALE_3_TYPE = "GenericGoblinMale3_"
+        constant string VL_GENERIC_GOBLIN_MALE_4_TYPE = "GenericGoblinMale4_"
 
         private constant integer VL_VENDOR_CATALOG_LINE_COUNT = 19
         private hashtable VL_VendorCatalog = InitHashtable()
@@ -174,6 +176,25 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call VendorLines_RegisterProfileVoiceLine(profileName, VendorLines_LINE_NO_TRANSACTION, "Nothing suited you? That is disappointing.", extraFirstLine + 8)
     endfunction
 
+    private function RegisterSatyrFemaleProfile takes nothing returns nothing
+        call VendorLines_RegisterProfileSoundType(VL_VENDOR_PROFILE_SATYR_FEMALE, VL_GENERIC_SATYR_FEMALE_1_TYPE)
+        call VendorLines_RegisterProfileVoiceLine(VL_VENDOR_PROFILE_SATYR_FEMALE, VendorLines_LINE_CHATTER, "How brave of you to approach. Let us discover whether you are equally wealthy.", 1)
+        call VendorLines_RegisterProfileVoiceLine(VL_VENDOR_PROFILE_SATYR_FEMALE, VendorLines_LINE_CHATTER, "Everything here has a price. The clever discover it before paying.", 2)
+        call VendorLines_RegisterProfileVoiceLine(VL_VENDOR_PROFILE_SATYR_FEMALE, VendorLines_LINE_BOUGHT, "A lovely choice. It almost disguises your limitations.", 3)
+        call VendorLines_RegisterProfileVoiceLine(VL_VENDOR_PROFILE_SATYR_FEMALE, VendorLines_LINE_SOLD, "Oh, I can find a more deserving owner for this.", 4)
+        call VendorLines_RegisterProfileVoiceLine(VL_VENDOR_PROFILE_SATYR_FEMALE, VendorLines_LINE_BOUGHT_AND_SOLD, "You leave satisfied; I leave knowing precisely what satisfaction cost you.", 5)
+        call VendorLines_RegisterProfileVoiceLine(VL_VENDOR_PROFILE_SATYR_FEMALE, VendorLines_LINE_NO_TRANSACTION, "Leaving empty-handed? How disciplined. How terribly dull.", 6)
+        call VendorLines_RegisterProfileVoiceLine(VL_VENDOR_PROFILE_SATYR_FEMALE, VendorLines_LINE_CHATTER, "Take your time. Hesitation makes desire so easy to measure.", 7)
+        call VendorLines_RegisterProfileVoiceLine(VL_VENDOR_PROFILE_SATYR_FEMALE, VendorLines_LINE_BOUGHT, "At last, a purchase worthy of your better instincts.", 8)
+        call VendorLines_RegisterProfileVoiceLine(VL_VENDOR_PROFILE_SATYR_FEMALE, VendorLines_LINE_BOUGHT, "That one suits you. Deceptive at first glance.", 9)
+        call VendorLines_RegisterProfileVoiceLine(VL_VENDOR_PROFILE_SATYR_FEMALE, VendorLines_LINE_SOLD, "I can turn this little disappointment into someone else's temptation.", 10)
+        call VendorLines_RegisterProfileVoiceLine(VL_VENDOR_PROFILE_SATYR_FEMALE, VendorLines_LINE_SOLD, "Barely used, carelessly owned, and soon profitably forgotten.", 11)
+        call VendorLines_RegisterProfileVoiceLine(VL_VENDOR_PROFILE_SATYR_FEMALE, VendorLines_LINE_BOUGHT_AND_SOLD, "You traded certainty for possibility. I do adore optimists.", 12)
+        call VendorLines_RegisterProfileVoiceLine(VL_VENDOR_PROFILE_SATYR_FEMALE, VendorLines_LINE_BOUGHT_AND_SOLD, "Your pack is different; your weaknesses remain charmingly familiar.", 13)
+        call VendorLines_RegisterProfileVoiceLine(VL_VENDOR_PROFILE_SATYR_FEMALE, VendorLines_LINE_NO_TRANSACTION, "All that longing, and not one coin surrendered.", 14)
+        call VendorLines_RegisterProfileVoiceLine(VL_VENDOR_PROFILE_SATYR_FEMALE, VendorLines_LINE_NO_TRANSACTION, "Nothing tempted you? Then I have underestimated your fear.", 15)
+    endfunction
+
     private function RegisterVoiceFamily takes string soundType, integer catalogFirstLine, string folder returns nothing
         call SaveInteger(VL_VoiceFamily, StringHash(soundType), 0, catalogFirstLine)
         call SaveStr(VL_VoiceFamily, StringHash(soundType), 1, folder)
@@ -194,13 +215,13 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
     private function RegisterDefaultAndSpecialistLines takes nothing returns nothing
         call RegisterUnvoicedBasicProfile("Merchant", "Take a look. Fair prices today.", "If you have coin, I have goods.", "Let us see what changes hands.", "Come back when your purse is heavier.", "Take your time. Good goods do not fear inspection.", "If you need it for the road, I probably have it.", "A good purchase. May it serve you well.", "I can find a buyer for that.", "A fair exchange both ways.", "Nothing today? The stock will still be here.")
         call RegisterBasicProfile("Blacksmith", "Steel is honest. Coin should be too.", "Blades, mail, tools. All tested before they leave my forge.", "Pick it up if you mean to buy it.", "Keep the edge dry.", "A balanced weapon feels light before it ever strikes.", "Armor should stop a blade, not stop you walking.", "Good choice. I stand behind that work.", "I can melt that down or put a new edge on it.", "Old steel out, better steel in. Sensible.", "No sparks today? Come back when you need honest steel.")
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_RIVERBANE_BLACKSMITH_MALE, "Riverbane roads are hard on boots, buckles, and blades.", "Good steel earns its keep on every patrol.", "That will hold through a Riverbane winter.", "The lower forge can reclaim this metal.", "Worn steel out, Riverbane steel in.", "No work for the forge today? Keep your gear dry.", VL_HUMAN_MALE_1_TYPE, 46, 52)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_BLACKSMITH_MALE, "Mountain fire makes hard steel and harder smiths.", "If the edge chips, you struck like a human.", "Strong iron for a strong hand.", "I hammer this into something less embarrassing.", "Weak gear out. Mountain steel in.", "No trade? Then stop cooling my forge.", VL_ORC_MALE_4_TYPE, 19, 58)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_RIVERBANE_BLACKSMITH_MALE, "Riverbane roads are hard on boots, buckles, and blades.", "Good steel earns its keep on every patrol.", "That will hold through a Riverbane winter.", "The lower forge can reclaim this metal.", "Worn steel out, Riverbane steel in.", "No work for the forge today? Keep your gear dry.", VL_GENERIC_HUMAN_MALE_1_TYPE, 46, 52)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_BLACKSMITH_MALE, "Mountain fire makes hard steel and harder smiths.", "If the edge chips, you struck like a human.", "Strong iron for a strong hand.", "I hammer this into something less embarrassing.", "Weak gear out. Mountain steel in.", "No trade? Then stop cooling my forge.", VL_GENERIC_ORC_MALE_4_TYPE, 19, 58)
         call RegisterCatalogBasicProfile("Graknar", "Strong bags. Strong price.", "A bigger pack saves longer walks.", "No bag to carry. I make your pack bigger now.", "Travel lighter, come back richer.")
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_OGRE_BONECRUSHER_BAG_MERCHANT_MALE, "Bonecrusher stitching. Even rocks stay inside.", "Tiny bag makes tiny loot. Graknar fixes.", "Bigger bag. Now bring bigger treasure.", "Graknar keeps this. Maybe sells twice.", "Pack changes, coin changes. Graknar approves.", "No bag? Then carry regret in pockets.", VL_OGRE_BONECRUSHER_MALE_1_TYPE, 7, 22)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_OGRE_BONECRUSHER_BAG_MERCHANT_MALE, "Bonecrusher stitching. Even rocks stay inside.", "Tiny bag makes tiny loot. Graknar fixes.", "Bigger bag. Now bring bigger treasure.", "Graknar keeps this. Maybe sells twice.", "Pack changes, coin changes. Graknar approves.", "No bag? Then carry regret in pockets.", VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, 7, 22)
         call RegisterBasicProfile("General Goods Merchant", "Supplies for the road, friend.", "A full pack keeps trouble small.", "Take what you need and leave the rest for someone poorer.", "Safe roads and steady coin.", "Rope, water, salves. Heroes always remember them one mile too late.", "The cheapest supply is the one that gets you home.", "Packed and ready. Try not to lose it.", "Used, perhaps. Useless, never.", "A lighter pack and better supplies. Good business.", "Window-shopping is free. My patience is nearly so.")
         call RegisterProfile("Goblin General Goods", "Guaranteed genuine until proven otherwise!", "Bulk discount starts immediately after you buy in bulk.", "No refunds, but compliments are always accepted.", "I know three people who will pay twice that.", "You leave supplied and I leave richer. Perfect balance!", "Not even one purchase? My projections are ruined!")
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ORC_FOREST_SUPPLIES_MALE, "Thornwoods punish travelers who pack poorly.", "A dry bedroll matters when the forest turns cold.", "Use it well, and return from the wilds.", "The clan will find another use for this.", "Good supplies traded without waste.", "Return when the forest teaches you what you forgot.", VL_ORC_MALE_3_TYPE, 25, 67)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ORC_FOREST_SUPPLIES_MALE, "Thornwoods punish travelers who pack poorly.", "A dry bedroll matters when the forest turns cold.", "Use it well, and return from the wilds.", "The clan will find another use for this.", "Good supplies traded without waste.", "Return when the forest teaches you what you forgot.", VL_GENERIC_ORC_MALE_3_TYPE, 25, 67)
     endfunction
 
     private function RegisterCatalogRoleLines takes nothing returns nothing
@@ -240,254 +261,261 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
     endfunction
 
     private function RegisterRaceAndFactionLines takes nothing returns nothing
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_RIVERBANE_MALE, "Riverbane caravans bring new stock every week.", "Keep your purse close in the market quarter.", "A practical choice for Riverbane roads.", "Someone in the lower ward will want this.", "A tidy exchange. Riverbane prospers on trade.", "Another time, then. The market stays busy.", VL_HUMAN_MALE_1_TYPE, 1, 19)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_STORMHAVEN_MALE, "Stormhaven workmanship travels farther than its banners.", "Salt air ruins cheap metal and cheaper cloth.", "Stormhaven quality. Treat it accordingly.", "I will see what the harbor buyers offer.", "Goods out, goods in. The harbor never rests.", "No trade? Enjoy the harbor while you are here.", VL_HUMAN_MALE_1_TYPE, 7, 28)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_NEUTRAL_MALE, "Coin has fewer loyalties than people do.", "I trade with anyone who keeps the peace.", "Fair coin for useful goods.", "No questions asked, within reason.", "That is how neutral ground stays prosperous.", "We can disagree about price another day.", VL_HUMAN_MALE_1_TYPE, 13, 37)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_RIVERBANE_FEMALE, "Riverbane's market wakes before the watch does.", "A careful buyer keeps coin and cargo equally close.", "A sound choice for the roads beyond the walls.", "The lower ward can give this a second life.", "Fair goods for fair coin. Riverbane moves forward.", "Another time. The next caravan may bring something new.", VL_HUMAN_FEMALE_1_TYPE, 1, 19)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_STORMHAVEN_FEMALE, "Stormhaven craft carries well beyond the harbor.", "Sea air tests every buckle, stitch, and blade.", "A fine choice. Keep it clear of the salt spray.", "The harbor buyers will find a use for this.", "One cargo exchanged for another. That is harbor life.", "Nothing today? The tide may bring you back.", VL_HUMAN_FEMALE_1_TYPE, 7, 28)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_NEUTRAL_FEMALE, "Trade travels farther when banners stay outside.", "Peaceful customers receive peaceful prices.", "Useful goods deserve useful hands.", "I know a buyer who values discretion.", "A balanced exchange keeps neutral ground stable.", "We can settle on a price another day.", VL_HUMAN_FEMALE_1_TYPE, 13, 37)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_TAUREN_HORDE_MALE, "The Horde's roads are long; choose supplies that endure.", "Earth, hide, and iron each reward patient hands.", "Carry it with strength and purpose.", "Nothing useful should be wasted.", "A fair exchange honors both sides.", "Walk in peace. Return when the road provides a need.", VL_TAUREN_MALE_1_TYPE, 1, 7)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_DWARF_MORGRIM_MALE, "Morgrim steel is shaped for mountains, not market shelves.", "A patient hammer leaves no weakness for the cold to find.", "Aye, that piece will earn its weight on the climb.", "There is useful metal beneath these scars.", "Good coin and honest craft; the clan prospers by both.", "Return when stone, steel, or the road gives you reason.", VL_DWARF_MORGRIM_MALE_1_TYPE, 1, 7)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ELARINDOR_MALE, "Elarindor's forges burn softly, but they have not gone cold.", "Every restored relic returns a fragment of our home.", "May it serve you in Elarindor's defense.", "We will restore what usefulness remains.", "A measured exchange, worthy of trusted allies.", "Another time. Patience has preserved us this long.", VL_ELARINDOR_MALE_1_TYPE, 1, 7)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ELARINDOR_FEMALE, "The arcane currents around Elarindor still bless careful craft.", "What survives the ruins deserves a discerning keeper.", "Carry it with the grace its makers intended.", "This may yet find purpose among our people.", "A fair exchange strengthens Elarindor.", "Browse as you wish. Memory has taught us patience.", VL_ELARINDOR_FEMALE_1_TYPE, 1, 7)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_TROLL_HORDE_MALE, "Horde roads carry good coin and better stories, mon.", "Every charm got a spirit, and every spirit got a price.", "Good choice. Dis one got strong mojo.", "I know where dis can find a second life.", "Goods move, coin moves, fortune moves with dem.", "No trade today? The spirits bring you back.", VL_TROLL_MALE_1_TYPE, 1, 7)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_RIVERBANE_MALE, "Riverbane caravans bring new stock every week.", "Keep your purse close in the market quarter.", "A practical choice for Riverbane roads.", "Someone in the lower ward will want this.", "A tidy exchange. Riverbane prospers on trade.", "Another time, then. The market stays busy.", VL_GENERIC_HUMAN_MALE_1_TYPE, 1, 19)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_STORMHAVEN_MALE, "Stormhaven workmanship travels farther than its banners.", "Salt air ruins cheap metal and cheaper cloth.", "Stormhaven quality. Treat it accordingly.", "I will see what the harbor buyers offer.", "Goods out, goods in. The harbor never rests.", "No trade? Enjoy the harbor while you are here.", VL_GENERIC_HUMAN_MALE_1_TYPE, 7, 28)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_NEUTRAL_MALE, "Coin has fewer loyalties than people do.", "I trade with anyone who keeps the peace.", "Fair coin for useful goods.", "No questions asked, within reason.", "That is how neutral ground stays prosperous.", "We can disagree about price another day.", VL_GENERIC_HUMAN_MALE_1_TYPE, 13, 37)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_RIVERBANE_FEMALE, "Riverbane's market wakes before the watch does.", "A careful buyer keeps coin and cargo equally close.", "A sound choice for the roads beyond the walls.", "The lower ward can give this a second life.", "Fair goods for fair coin. Riverbane moves forward.", "Another time. The next caravan may bring something new.", VL_GENERIC_HUMAN_FEMALE_1_TYPE, 1, 19)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_STORMHAVEN_FEMALE, "Stormhaven craft carries well beyond the harbor.", "Sea air tests every buckle, stitch, and blade.", "A fine choice. Keep it clear of the salt spray.", "The harbor buyers will find a use for this.", "One cargo exchanged for another. That is harbor life.", "Nothing today? The tide may bring you back.", VL_GENERIC_HUMAN_FEMALE_1_TYPE, 7, 28)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_NEUTRAL_FEMALE, "Trade travels farther when banners stay outside.", "Peaceful customers receive peaceful prices.", "Useful goods deserve useful hands.", "I know a buyer who values discretion.", "A balanced exchange keeps neutral ground stable.", "We can settle on a price another day.", VL_GENERIC_HUMAN_FEMALE_1_TYPE, 13, 37)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_TAUREN_HORDE_MALE, "The Horde's roads are long; choose supplies that endure.", "Earth, hide, and iron each reward patient hands.", "Carry it with strength and purpose.", "Nothing useful should be wasted.", "A fair exchange honors both sides.", "Walk in peace. Return when the road provides a need.", VL_GENERIC_TAUREN_MALE_1_TYPE, 1, 7)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_DWARF_MORGRIM_MALE, "Morgrim steel is shaped for mountains, not market shelves.", "A patient hammer leaves no weakness for the cold to find.", "Aye, that piece will earn its weight on the climb.", "There is useful metal beneath these scars.", "Good coin and honest craft; the clan prospers by both.", "Return when stone, steel, or the road gives you reason.", VL_GENERIC_DWARF_MORGRIM_MALE_1_TYPE, 1, 7)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ELARINDOR_MALE, "Elarindor's forges burn softly, but they have not gone cold.", "Every restored relic returns a fragment of our home.", "May it serve you in Elarindor's defense.", "We will restore what usefulness remains.", "A measured exchange, worthy of trusted allies.", "Another time. Patience has preserved us this long.", VL_GENERIC_ELARINDOR_MALE_1_TYPE, 1, 7)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ELARINDOR_FEMALE, "The arcane currents around Elarindor still bless careful craft.", "What survives the ruins deserves a discerning keeper.", "Carry it with the grace its makers intended.", "This may yet find purpose among our people.", "A fair exchange strengthens Elarindor.", "Browse as you wish. Memory has taught us patience.", VL_GENERIC_ELARINDOR_FEMALE_1_TYPE, 1, 7)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_TROLL_HORDE_MALE, "Horde roads carry good coin and better stories, mon.", "Every charm got a spirit, and every spirit got a price.", "Good choice. Dis one got strong mojo.", "I know where dis can find a second life.", "Goods move, coin moves, fortune moves with dem.", "No trade today? The spirits bring you back.", VL_GENERIC_TROLL_MALE_1_TYPE, 1, 7)
 
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_MALE, "Ash keeps weak steel honest.", "Mountain paths reward a well-packed warrior.", "Good. That belongs in a warrior's hands.", "I can hammer some use back into this.", "You leave better armed and less burdened.", "Then quit blocking the heat from my forge.", VL_ORC_MALE_1_TYPE, 1, 31)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ORC_FOREST_MALE, "The Thornwoods take payment from careless travelers.", "Sereneglade herbs, Riverbane iron, orcish prices.", "Carry it with honor.", "The forest wastes nothing. Neither do I.", "A worthy exchange beneath the old trees.", "Listen to the leaves, then return with coin.", VL_ORC_MALE_1_TYPE, 7, 40)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ORC_SIRENSONG_MALE, "Jungle damp spoils anything packed badly.", "Sirensong paths hide teeth behind every leaf.", "Keep it dry and keep it close.", "The jungle will give this a second purpose.", "Better supplies for the green road ahead.", "The jungle waits even when customers do not.", VL_ORC_MALE_1_TYPE, 13, 49)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_SATYR_MALE, "Desire makes every price seem reasonable.", "I acquire curios from paths mortals fear to walk.", "An indulgence well chosen.", "How charming. I know exactly who wants this.", "We have each surrendered something tempting.", "Restraint? How unexpectedly dull.", VL_SATYR_MALE_1_TYPE, 1, 7)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_OGRE_BONECRUSHER_MALE, "Bonecrusher goods survive Bonecrusher customers.", "Two eyes check stock. One eye checks coin.", "Good buy. Hard to break.", "We find use. Or lunch. Probably use.", "You get goods. We get goods. Very clever.", "No buy? Both heads disappointed.", VL_OGRE_BONECRUSHER_MALE_1_TYPE, 1, 13)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_GOBLIN_RIVERBANE_MALE, "Riverbane tolls are included in the price. Mostly.", "Local goods, imported goods, plausibly acquired goods!", "Excellent investment! For me and possibly you.", "I already have a buyer with poor judgment.", "You traded up. I traded profitably.", "Browsing fee waived this time.", VL_GOBLIN_MALE_1_TYPE, 1, 31)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_GOBLIN_STORMHAVEN_MALE, "Fresh off the ship, or at least near a ship recently.", "Harbor prices change with the wind and my mood.", "Seaworthy enough! Probably.", "Dockside buyers love mysterious provenance.", "Cargo exchanged and no customs officer in sight.", "Come back after payday or piracy.", VL_GOBLIN_MALE_1_TYPE, 7, 40)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_GOBLIN_SIRENSONG_MALE, "Jungle-tested means it survived the walk to my stall.", "Nothing here bites unless you skip payment.", "A survival essential at a luxury margin.", "Jungle salvage! Very fashionable.", "Supplies rotate, profits accumulate.", "The mosquitoes browse longer than you.", VL_GOBLIN_MALE_1_TYPE, 13, 49)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_GOBLIN_TRAVELLING_MALE, "My shop moves, so decide before it does.", "Every road has customers and unattended cargo.", "Portable, profitable, and now your problem.", "I will sell it three towns from here.", "A complete trade before the wheels cool.", "Next time you see me, the price may have legs.", VL_GOBLIN_MALE_1_TYPE, 19, 58)
-        call RegisterVoicedProfile(VL_VENDOR_PROFILE_GOBLIN_ARENA_MALE, "Arena rules forbid refunds after dismemberment.", "Champions buy quality. Survivors buy replacements.", "That should improve the odds. Slightly.", "Blood washes off. Value remains.", "Old gear out, arena gear in. Bold strategy.", "Spectating is cheaper, but far less profitable for me.", VL_GOBLIN_MALE_1_TYPE, 25, 67)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_MALE, "Ash keeps weak steel honest.", "Mountain paths reward a well-packed warrior.", "Good. That belongs in a warrior's hands.", "I can hammer some use back into this.", "You leave better armed and less burdened.", "Then quit blocking the heat from my forge.", VL_GENERIC_ORC_MALE_1_TYPE, 1, 31)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ORC_FOREST_MALE, "The Thornwoods take payment from careless travelers.", "Sereneglade herbs, Riverbane iron, orcish prices.", "Carry it with honor.", "The forest wastes nothing. Neither do I.", "A worthy exchange beneath the old trees.", "Listen to the leaves, then return with coin.", VL_GENERIC_ORC_MALE_1_TYPE, 7, 40)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_ORC_SIRENSONG_MALE, "Jungle damp spoils anything packed badly.", "Sirensong paths hide teeth behind every leaf.", "Keep it dry and keep it close.", "The jungle will give this a second purpose.", "Better supplies for the green road ahead.", "The jungle waits even when customers do not.", VL_GENERIC_ORC_MALE_1_TYPE, 13, 49)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_SATYR_MALE, "Desire makes every price seem reasonable.", "I acquire curios from paths mortals fear to walk.", "An indulgence well chosen.", "How charming. I know exactly who wants this.", "We have each surrendered something tempting.", "Restraint? How unexpectedly dull.", VL_GENERIC_SATYR_MALE_1_TYPE, 1, 7)
+        call RegisterSatyrFemaleProfile()
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_OGRE_BONECRUSHER_MALE, "Bonecrusher goods survive Bonecrusher customers.", "Two eyes check stock. One eye checks coin.", "Good buy. Hard to break.", "We find use. Or lunch. Probably use.", "You get goods. We get goods. Very clever.", "No buy? Both heads disappointed.", VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, 1, 13)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_GOBLIN_RIVERBANE_MALE, "Riverbane tolls are included in the price. Mostly.", "Local goods, imported goods, plausibly acquired goods!", "Excellent investment! For me and possibly you.", "I already have a buyer with poor judgment.", "You traded up. I traded profitably.", "Browsing fee waived this time.", VL_GENERIC_GOBLIN_MALE_1_TYPE, 1, 31)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_GOBLIN_STORMHAVEN_MALE, "Fresh off the ship, or at least near a ship recently.", "Harbor prices change with the wind and my mood.", "Seaworthy enough! Probably.", "Dockside buyers love mysterious provenance.", "Cargo exchanged and no customs officer in sight.", "Come back after payday or piracy.", VL_GENERIC_GOBLIN_MALE_1_TYPE, 7, 40)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_GOBLIN_SIRENSONG_MALE, "Jungle-tested means it survived the walk to my stall.", "Nothing here bites unless you skip payment.", "A survival essential at a luxury margin.", "Jungle salvage! Very fashionable.", "Supplies rotate, profits accumulate.", "The mosquitoes browse longer than you.", VL_GENERIC_GOBLIN_MALE_1_TYPE, 13, 49)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_GOBLIN_TRAVELLING_MALE, "My shop moves, so decide before it does.", "Every road has customers and unattended cargo.", "Portable, profitable, and now your problem.", "I will sell it three towns from here.", "A complete trade before the wheels cool.", "Next time you see me, the price may have legs.", VL_GENERIC_GOBLIN_MALE_1_TYPE, 19, 58)
+        call RegisterVoicedProfile(VL_VENDOR_PROFILE_GOBLIN_ARENA_MALE, "Arena rules forbid refunds after dismemberment.", "Champions buy quality. Survivors buy replacements.", "That should improve the odds. Slightly.", "Blood washes off. Value remains.", "Old gear out, arena gear in. Bold strategy.", "Spectating is cheaper, but far less profitable for me.", VL_GENERIC_GOBLIN_MALE_1_TYPE, 25, 67)
     endfunction
 
     private function RegisterVoiceFamilies takes nothing returns nothing
-        call RegisterVoiceFamily(VL_HUMAN_MALE_1_TYPE, 61, "Pots\\Sound\\Voicelines\\HumanMale1\\")
-        call RegisterVoiceFamily(VL_HUMAN_MALE_2_TYPE, 61, "Pots\\Sound\\Voicelines\\HumanMale2\\")
-        call RegisterVoiceFamily(VL_HUMAN_FEMALE_1_TYPE, 46, "Pots\\Sound\\Voicelines\\HumanFemaleGeneric1\\")
-        call RegisterVoiceFamily(VL_HUMAN_FEMALE_2_TYPE, 46, "Pots\\Sound\\Voicelines\\HumanFemaleGeneric2\\")
-        call RegisterVoiceFamily(VL_TAUREN_MALE_1_TYPE, 16, "Pots\\Sound\\Voicelines\\TaurenMale1\\")
-        call RegisterVoiceFamily(VL_TAUREN_MALE_2_TYPE, 16, "Pots\\Sound\\Voicelines\\TaurenMale2\\")
-        call RegisterVoiceFamily(VL_TAUREN_MALE_3_TYPE, 16, "Pots\\Sound\\Voicelines\\TaurenMale3\\")
-        call RegisterVoiceFamily(VL_DWARF_MORGRIM_MALE_1_TYPE, 16, "Pots\\Sound\\Voicelines\\DwarfMorgrimMale1\\")
-        call RegisterVoiceFamily(VL_ELARINDOR_MALE_1_TYPE, 16, "Pots\\Sound\\Voicelines\\ElarindorMale1\\")
-        call RegisterVoiceFamily(VL_ELARINDOR_MALE_2_TYPE, 16, "Pots\\Sound\\Voicelines\\ElarindorMale2\\")
-        call RegisterVoiceFamily(VL_ELARINDOR_FEMALE_1_TYPE, 16, "Pots\\Sound\\Voicelines\\ElarindorFemale1\\")
-        call RegisterVoiceFamily(VL_ELARINDOR_FEMALE_2_TYPE, 16, "Pots\\Sound\\Voicelines\\ElarindorFemale2\\")
-        call RegisterVoiceFamily(VL_TROLL_MALE_1_TYPE, 16, "Pots\\Sound\\Voicelines\\TrollMale1\\")
-        call RegisterVoiceFamily(VL_TROLL_MALE_2_TYPE, 16, "Pots\\Sound\\Voicelines\\TrollMale2\\")
-        call RegisterVoiceFamily(VL_ORC_MALE_1_TYPE, 76, "Pots\\Sound\\Voicelines\\OrcMale1\\")
-        call RegisterVoiceFamily(VL_ORC_MALE_2_TYPE, 76, "Pots\\Sound\\Voicelines\\OrcMale2\\")
-        call RegisterVoiceFamily(VL_ORC_MALE_3_TYPE, 76, "Pots\\Sound\\Voicelines\\OrcMale3\\")
-        call RegisterVoiceFamily(VL_ORC_MALE_4_TYPE, 76, "Pots\\Sound\\Voicelines\\OrcMale4\\")
-        call RegisterVoiceFamily(VL_ORC_MALE_5_TYPE, 76, "Pots\\Sound\\Voicelines\\OrcMale5\\")
-        call RegisterVoiceFamily(VL_ORC_MALE_6_TYPE, 76, "Pots\\Sound\\Voicelines\\OrcMale6\\")
-        call RegisterVoiceFamily(VL_ORC_MALE_7_TYPE, 76, "Pots\\Sound\\Voicelines\\OrcMale7\\")
-        call RegisterVoiceFamily(VL_ORC_MALE_8_TYPE, 76, "Pots\\Sound\\Voicelines\\OrcMale8\\")
-        call RegisterVoiceFamily(VL_ORC_MALE_9_TYPE, 76, "Pots\\Sound\\Voicelines\\OrcMale9\\")
-        call RegisterVoiceFamily(VL_SATYR_MALE_1_TYPE, 16, "Pots\\Sound\\Voicelines\\SatyrMale1\\")
-        call RegisterVoiceFamily(VL_OGRE_BONECRUSHER_MALE_1_TYPE, 31, "Pots\\Sound\\Voicelines\\OgreBonecrusherMale1\\")
-        call RegisterVoiceFamily(VL_GOBLIN_MALE_1_TYPE, 76, "Pots\\Sound\\Voicelines\\GoblinMale1\\")
-        call RegisterVoiceFamily(VL_GOBLIN_MALE_2_TYPE, 76, "Pots\\Sound\\Voicelines\\GoblinMale2\\")
-        call RegisterVoiceFamily(VL_GOBLIN_MALE_3_TYPE, 76, "Pots\\Sound\\Voicelines\\GoblinMale3\\")
-        call RegisterVoiceFamily(VL_GOBLIN_MALE_4_TYPE, 76, "Pots\\Sound\\Voicelines\\GoblinMale4\\")
+        call RegisterVoiceFamily(VL_GENERIC_HUMAN_MALE_1_TYPE, 61, "Pots\\Sound\\Voicelines\\GenericHumanMale1\\")
+        call RegisterVoiceFamily(VL_GENERIC_HUMAN_MALE_2_TYPE, 61, "Pots\\Sound\\Voicelines\\GenericHumanMale2\\")
+        call RegisterVoiceFamily(VL_GENERIC_HUMAN_FEMALE_1_TYPE, 46, "Pots\\Sound\\Voicelines\\GenericHumanFemale1\\")
+        call RegisterVoiceFamily(VL_GENERIC_HUMAN_FEMALE_2_TYPE, 46, "Pots\\Sound\\Voicelines\\GenericHumanFemale2\\")
+        call RegisterVoiceFamily(VL_GENERIC_TAUREN_MALE_1_TYPE, 16, "Pots\\Sound\\Voicelines\\GenericTaurenMale1\\")
+        call RegisterVoiceFamily(VL_GENERIC_TAUREN_MALE_2_TYPE, 16, "Pots\\Sound\\Voicelines\\GenericTaurenMale2\\")
+        call RegisterVoiceFamily(VL_GENERIC_TAUREN_MALE_3_TYPE, 16, "Pots\\Sound\\Voicelines\\GenericTaurenMale3\\")
+        call RegisterVoiceFamily(VL_GENERIC_DWARF_MORGRIM_MALE_1_TYPE, 16, "Pots\\Sound\\Voicelines\\GenericDwarfMorgrimMale1\\")
+        call RegisterVoiceFamily(VL_GENERIC_ELARINDOR_MALE_1_TYPE, 16, "Pots\\Sound\\Voicelines\\GenericElarindorMale1\\")
+        call RegisterVoiceFamily(VL_GENERIC_ELARINDOR_MALE_2_TYPE, 16, "Pots\\Sound\\Voicelines\\GenericElarindorMale2\\")
+        call RegisterVoiceFamily(VL_GENERIC_ELARINDOR_FEMALE_1_TYPE, 16, "Pots\\Sound\\Voicelines\\GenericElarindorFemale1\\")
+        call RegisterVoiceFamily(VL_GENERIC_ELARINDOR_FEMALE_2_TYPE, 16, "Pots\\Sound\\Voicelines\\GenericElarindorFemale2\\")
+        call RegisterVoiceFamily(VL_GENERIC_TROLL_MALE_1_TYPE, 16, "Pots\\Sound\\Voicelines\\GenericTrollMale1\\")
+        call RegisterVoiceFamily(VL_GENERIC_TROLL_MALE_2_TYPE, 16, "Pots\\Sound\\Voicelines\\GenericTrollMale2\\")
+        call RegisterVoiceFamily(VL_GENERIC_ORC_MALE_1_TYPE, 76, "Pots\\Sound\\Voicelines\\GenericOrcMale1\\")
+        call RegisterVoiceFamily(VL_GENERIC_ORC_MALE_2_TYPE, 76, "Pots\\Sound\\Voicelines\\GenericOrcMale2\\")
+        call RegisterVoiceFamily(VL_GENERIC_ORC_MALE_3_TYPE, 76, "Pots\\Sound\\Voicelines\\GenericOrcMale3\\")
+        call RegisterVoiceFamily(VL_GENERIC_ORC_MALE_4_TYPE, 76, "Pots\\Sound\\Voicelines\\GenericOrcMale4\\")
+        call RegisterVoiceFamily(VL_GENERIC_ORC_MALE_5_TYPE, 76, "Pots\\Sound\\Voicelines\\GenericOrcMale5\\")
+        call RegisterVoiceFamily(VL_GENERIC_ORC_MALE_6_TYPE, 76, "Pots\\Sound\\Voicelines\\GenericOrcMale6\\")
+        call RegisterVoiceFamily(VL_GENERIC_ORC_MALE_7_TYPE, 76, "Pots\\Sound\\Voicelines\\GenericOrcMale7\\")
+        call RegisterVoiceFamily(VL_GENERIC_ORC_MALE_8_TYPE, 76, "Pots\\Sound\\Voicelines\\GenericOrcMale8\\")
+        call RegisterVoiceFamily(VL_GENERIC_ORC_MALE_9_TYPE, 76, "Pots\\Sound\\Voicelines\\GenericOrcMale9\\")
+        call RegisterVoiceFamily(VL_GENERIC_SATYR_MALE_1_TYPE, 16, "Pots\\Sound\\Voicelines\\GenericSatyrMale1\\")
+        call RegisterVoiceFamily(VL_GENERIC_SATYR_FEMALE_1_TYPE, 16, "Pots\\Sound\\Voicelines\\GenericSatyrFemale1\\")
+        call RegisterVoiceFamily(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, 31, "Pots\\Sound\\Voicelines\\GenericOgreBonecrusherMale1\\")
+        call RegisterVoiceFamily(VL_GENERIC_GOBLIN_MALE_1_TYPE, 76, "Pots\\Sound\\Voicelines\\GenericGoblinMale1\\")
+        call RegisterVoiceFamily(VL_GENERIC_GOBLIN_MALE_2_TYPE, 76, "Pots\\Sound\\Voicelines\\GenericGoblinMale2\\")
+        call RegisterVoiceFamily(VL_GENERIC_GOBLIN_MALE_3_TYPE, 76, "Pots\\Sound\\Voicelines\\GenericGoblinMale3\\")
+        call RegisterVoiceFamily(VL_GENERIC_GOBLIN_MALE_4_TYPE, 76, "Pots\\Sound\\Voicelines\\GenericGoblinMale4\\")
     endfunction
 
     private function RegisterVoiceCatalogs takes nothing returns nothing
-        call RegisterVoiceCatalog(VL_DWARF_MORGRIM_MALE_1_TYPE, "Armor Merchant")
-        call RegisterVoiceCatalog(VL_DWARF_MORGRIM_MALE_1_TYPE, "Bartender")
-        call RegisterVoiceCatalog(VL_DWARF_MORGRIM_MALE_1_TYPE, "Blacksmith")
-        call RegisterVoiceCatalog(VL_DWARF_MORGRIM_MALE_1_TYPE, "Blacksmithing Supplier")
-        call RegisterVoiceCatalog(VL_DWARF_MORGRIM_MALE_1_TYPE, "Miner")
-        call RegisterVoiceCatalog(VL_DWARF_MORGRIM_MALE_1_TYPE, "Trade Goods Merchant")
-        call RegisterVoiceCatalog(VL_DWARF_MORGRIM_MALE_1_TYPE, "Weapons Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_DWARF_MORGRIM_MALE_1_TYPE, "Armor Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_DWARF_MORGRIM_MALE_1_TYPE, "Bartender")
+        call RegisterVoiceCatalog(VL_GENERIC_DWARF_MORGRIM_MALE_1_TYPE, "Blacksmith")
+        call RegisterVoiceCatalog(VL_GENERIC_DWARF_MORGRIM_MALE_1_TYPE, "Blacksmithing Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_DWARF_MORGRIM_MALE_1_TYPE, "Miner")
+        call RegisterVoiceCatalog(VL_GENERIC_DWARF_MORGRIM_MALE_1_TYPE, "Trade Goods Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_DWARF_MORGRIM_MALE_1_TYPE, "Weapons Merchant")
 
-        call RegisterVoiceCatalog(VL_ELARINDOR_FEMALE_1_TYPE, "Armor Merchant")
-        call RegisterVoiceCatalog(VL_ELARINDOR_FEMALE_1_TYPE, "Jewelcrafter")
-        call RegisterVoiceCatalog(VL_ELARINDOR_FEMALE_1_TYPE, "Potion Seller")
+        call RegisterVoiceCatalog(VL_GENERIC_ELARINDOR_FEMALE_1_TYPE, "Armor Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_ELARINDOR_FEMALE_1_TYPE, "Jewelcrafter")
+        call RegisterVoiceCatalog(VL_GENERIC_ELARINDOR_FEMALE_1_TYPE, "Potion Seller")
 
-        call RegisterVoiceCatalog(VL_ELARINDOR_FEMALE_2_TYPE, "Enchanting Supplier")
-        call RegisterVoiceCatalog(VL_ELARINDOR_FEMALE_2_TYPE, "Faction Quartermaster")
+        call RegisterVoiceCatalog(VL_GENERIC_ELARINDOR_FEMALE_2_TYPE, "Enchanting Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_ELARINDOR_FEMALE_2_TYPE, "Faction Quartermaster")
 
-        call RegisterVoiceCatalog(VL_ELARINDOR_MALE_1_TYPE, "Magister")
-        call RegisterVoiceCatalog(VL_ELARINDOR_MALE_1_TYPE, "Reagent Merchant")
-        call RegisterVoiceCatalog(VL_ELARINDOR_MALE_1_TYPE, "Weapons Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_ELARINDOR_MALE_1_TYPE, "Magister")
+        call RegisterVoiceCatalog(VL_GENERIC_ELARINDOR_MALE_1_TYPE, "Reagent Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_ELARINDOR_MALE_1_TYPE, "Weapons Merchant")
 
-        call RegisterVoiceCatalog(VL_ELARINDOR_MALE_2_TYPE, "Expedition Supplier")
-        call RegisterVoiceCatalog(VL_ELARINDOR_MALE_2_TYPE, "Shield Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_ELARINDOR_MALE_2_TYPE, "Expedition Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_ELARINDOR_MALE_2_TYPE, "Shield Merchant")
 
-        call RegisterVoiceCatalog(VL_GOBLIN_MALE_1_TYPE, "Curiosity Merchant")
-        call RegisterVoiceCatalog(VL_GOBLIN_MALE_1_TYPE, "Expedition Supplier")
-        call RegisterVoiceCatalog(VL_GOBLIN_MALE_1_TYPE, "Profession Supplier")
-        call RegisterVoiceCatalog(VL_GOBLIN_MALE_1_TYPE, "Reagent Merchant")
-        call RegisterVoiceCatalog(VL_GOBLIN_MALE_1_TYPE, "Trade Goods Merchant")
-        call RegisterVoiceCatalog(VL_GOBLIN_MALE_1_TYPE, "Weapons Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_1_TYPE, "Curiosity Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_1_TYPE, "Expedition Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_1_TYPE, "Profession Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_1_TYPE, "Reagent Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_1_TYPE, "Trade Goods Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_1_TYPE, "Weapons Merchant")
 
-        call RegisterVoiceCatalog(VL_GOBLIN_MALE_2_TYPE, "Armor Merchant")
-        call RegisterVoiceCatalog(VL_GOBLIN_MALE_2_TYPE, "Bartender")
-        call RegisterVoiceCatalog(VL_GOBLIN_MALE_2_TYPE, "Beastmaster Supplier")
-        call RegisterVoiceCatalog(VL_GOBLIN_MALE_2_TYPE, "Jewelcrafter")
-        call RegisterVoiceCatalog(VL_GOBLIN_MALE_2_TYPE, "Potion Seller")
-        call RegisterVoiceCatalog(VL_GOBLIN_MALE_2_TYPE, "Travelling Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_2_TYPE, "Armor Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_2_TYPE, "Bartender")
+        call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_2_TYPE, "Beastmaster Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_2_TYPE, "Jewelcrafter")
+        call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_2_TYPE, "Potion Seller")
+        call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_2_TYPE, "Travelling Merchant")
 
-        call RegisterVoiceCatalog(VL_GOBLIN_MALE_3_TYPE, "Cook")
-        call RegisterVoiceCatalog(VL_GOBLIN_MALE_3_TYPE, "Faction Quartermaster")
-        call RegisterVoiceCatalog(VL_GOBLIN_MALE_3_TYPE, "Fisher")
-        call RegisterVoiceCatalog(VL_GOBLIN_MALE_3_TYPE, "Shield Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_3_TYPE, "Cook")
+        call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_3_TYPE, "Faction Quartermaster")
+        call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_3_TYPE, "Fisher")
+        call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_3_TYPE, "Shield Merchant")
 
-        call RegisterVoiceCatalog(VL_GOBLIN_MALE_4_TYPE, "Alchemy Supplier")
-        call RegisterVoiceCatalog(VL_GOBLIN_MALE_4_TYPE, "Miner")
-        call RegisterVoiceCatalog(VL_GOBLIN_MALE_4_TYPE, "Provisioner")
-        call RegisterVoiceCatalog(VL_GOBLIN_MALE_4_TYPE, "Rare Goods Dealer")
+        call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_4_TYPE, "Alchemy Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_4_TYPE, "Miner")
+        call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_4_TYPE, "Provisioner")
+        call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_4_TYPE, "Rare Goods Dealer")
 
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_1_TYPE, "Alchemy Supplier")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_1_TYPE, "Arena Quartermaster")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_1_TYPE, "Bartender")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_1_TYPE, "Cooking Supplier")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_1_TYPE, "Expedition Supplier")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_1_TYPE, "Fisher")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_1_TYPE, "Fishing Supplier")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_1_TYPE, "Leatherworking Supplier")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_1_TYPE, "Potion Seller")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_1_TYPE, "Profession Supplier")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_1_TYPE, "Provisioner")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_1_TYPE, "Shield Merchant")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_1_TYPE, "Skinning Supplier")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_1_TYPE, "Weapons Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_1_TYPE, "Alchemy Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_1_TYPE, "Arena Quartermaster")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_1_TYPE, "Bartender")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_1_TYPE, "Cooking Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_1_TYPE, "Expedition Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_1_TYPE, "Fisher")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_1_TYPE, "Fishing Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_1_TYPE, "Leatherworking Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_1_TYPE, "Potion Seller")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_1_TYPE, "Profession Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_1_TYPE, "Provisioner")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_1_TYPE, "Shield Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_1_TYPE, "Skinning Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_1_TYPE, "Weapons Merchant")
 
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_2_TYPE, "Armor Merchant")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_2_TYPE, "Bartender")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_2_TYPE, "Blacksmithing Supplier")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_2_TYPE, "Cook")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_2_TYPE, "Curiosity Merchant")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_2_TYPE, "Enchanting Supplier")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_2_TYPE, "Faction Quartermaster")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_2_TYPE, "Miner")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_2_TYPE, "Mining Supplier")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_2_TYPE, "Rare Goods Dealer")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_2_TYPE, "Reagent Merchant")
-        call RegisterVoiceCatalog(VL_HUMAN_FEMALE_2_TYPE, "Travelling Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_2_TYPE, "Armor Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_2_TYPE, "Bartender")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_2_TYPE, "Blacksmithing Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_2_TYPE, "Cook")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_2_TYPE, "Curiosity Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_2_TYPE, "Enchanting Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_2_TYPE, "Faction Quartermaster")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_2_TYPE, "Miner")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_2_TYPE, "Mining Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_2_TYPE, "Rare Goods Dealer")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_2_TYPE, "Reagent Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_2_TYPE, "Travelling Merchant")
 
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_1_TYPE, "Alchemy Supplier")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_1_TYPE, "Arcanist")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_1_TYPE, "Arena Quartermaster")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_1_TYPE, "Blacksmith")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_1_TYPE, "Cooking Supplier")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_1_TYPE, "Expedition Supplier")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_1_TYPE, "Fisher")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_1_TYPE, "Fishing Supplier")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_1_TYPE, "Leatherworking Supplier")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_1_TYPE, "Potion Seller")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_1_TYPE, "Profession Supplier")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_1_TYPE, "Provisioner")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_1_TYPE, "Shield Merchant")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_1_TYPE, "Skinning Supplier")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_1_TYPE, "Weapons Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_1_TYPE, "Alchemy Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_1_TYPE, "Arcanist")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_1_TYPE, "Arena Quartermaster")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_1_TYPE, "Blacksmith")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_1_TYPE, "Cooking Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_1_TYPE, "Expedition Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_1_TYPE, "Fisher")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_1_TYPE, "Fishing Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_1_TYPE, "Leatherworking Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_1_TYPE, "Potion Seller")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_1_TYPE, "Profession Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_1_TYPE, "Provisioner")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_1_TYPE, "Shield Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_1_TYPE, "Skinning Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_1_TYPE, "Weapons Merchant")
 
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_2_TYPE, "Armor Merchant")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_2_TYPE, "Bartender")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_2_TYPE, "Blacksmithing Supplier")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_2_TYPE, "Cook")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_2_TYPE, "Curiosity Merchant")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_2_TYPE, "Enchanting Supplier")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_2_TYPE, "Faction Quartermaster")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_2_TYPE, "Miner")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_2_TYPE, "Mining Supplier")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_2_TYPE, "Rare Goods Dealer")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_2_TYPE, "Reagent Merchant")
-        call RegisterVoiceCatalog(VL_HUMAN_MALE_2_TYPE, "Travelling Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_2_TYPE, "Armor Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_2_TYPE, "Bartender")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_2_TYPE, "Blacksmithing Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_2_TYPE, "Cook")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_2_TYPE, "Curiosity Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_2_TYPE, "Enchanting Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_2_TYPE, "Faction Quartermaster")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_2_TYPE, "Miner")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_2_TYPE, "Mining Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_2_TYPE, "Rare Goods Dealer")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_2_TYPE, "Reagent Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_2_TYPE, "Travelling Merchant")
 
-        call RegisterVoiceCatalog(VL_OGRE_BONECRUSHER_MALE_1_TYPE, "Arena Quartermaster")
-        call RegisterVoiceCatalog(VL_OGRE_BONECRUSHER_MALE_1_TYPE, "Armor Merchant")
-        call RegisterVoiceCatalog(VL_OGRE_BONECRUSHER_MALE_1_TYPE, "Bartender")
-        call RegisterVoiceCatalog(VL_OGRE_BONECRUSHER_MALE_1_TYPE, "Blacksmithing Supplier")
-        call RegisterVoiceCatalog(VL_OGRE_BONECRUSHER_MALE_1_TYPE, "Cook")
-        call RegisterVoiceCatalog(VL_OGRE_BONECRUSHER_MALE_1_TYPE, "Faction Quartermaster")
-        call RegisterVoiceCatalog(VL_OGRE_BONECRUSHER_MALE_1_TYPE, "Graknar")
-        call RegisterVoiceCatalog(VL_OGRE_BONECRUSHER_MALE_1_TYPE, "Miner")
-        call RegisterVoiceCatalog(VL_OGRE_BONECRUSHER_MALE_1_TYPE, "Profession Supplier")
-        call RegisterVoiceCatalog(VL_OGRE_BONECRUSHER_MALE_1_TYPE, "Shield Merchant")
-        call RegisterVoiceCatalog(VL_OGRE_BONECRUSHER_MALE_1_TYPE, "Trade Goods Merchant")
-        call RegisterVoiceCatalog(VL_OGRE_BONECRUSHER_MALE_1_TYPE, "Weapons Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "Arena Quartermaster")
+        call RegisterVoiceCatalog(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "Armor Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "Bartender")
+        call RegisterVoiceCatalog(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "Blacksmithing Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "Cook")
+        call RegisterVoiceCatalog(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "Faction Quartermaster")
+        call RegisterVoiceCatalog(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "Graknar")
+        call RegisterVoiceCatalog(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "Miner")
+        call RegisterVoiceCatalog(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "Profession Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "Shield Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "Trade Goods Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "Weapons Merchant")
 
-        call RegisterVoiceCatalog(VL_ORC_MALE_1_TYPE, "Curiosity Merchant")
-        call RegisterVoiceCatalog(VL_ORC_MALE_1_TYPE, "Expedition Supplier")
-        call RegisterVoiceCatalog(VL_ORC_MALE_1_TYPE, "Fisher")
-        call RegisterVoiceCatalog(VL_ORC_MALE_1_TYPE, "Fishing Supplier")
-        call RegisterVoiceCatalog(VL_ORC_MALE_1_TYPE, "Rare Goods Dealer")
-        call RegisterVoiceCatalog(VL_ORC_MALE_1_TYPE, "Skinning Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_1_TYPE, "Curiosity Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_1_TYPE, "Expedition Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_1_TYPE, "Fisher")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_1_TYPE, "Fishing Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_1_TYPE, "Rare Goods Dealer")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_1_TYPE, "Skinning Supplier")
 
-        call RegisterVoiceCatalog(VL_ORC_MALE_2_TYPE, "Arena Quartermaster")
-        call RegisterVoiceCatalog(VL_ORC_MALE_2_TYPE, "Armor Merchant")
-        call RegisterVoiceCatalog(VL_ORC_MALE_2_TYPE, "Bartender")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_2_TYPE, "Arena Quartermaster")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_2_TYPE, "Armor Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_2_TYPE, "Bartender")
 
-        call RegisterVoiceCatalog(VL_ORC_MALE_3_TYPE, "Faction Quartermaster")
-        call RegisterVoiceCatalog(VL_ORC_MALE_3_TYPE, "General Goods Merchant")
-        call RegisterVoiceCatalog(VL_ORC_MALE_3_TYPE, "Jewelcrafter")
-        call RegisterVoiceCatalog(VL_ORC_MALE_3_TYPE, "Profession Supplier")
-        call RegisterVoiceCatalog(VL_ORC_MALE_3_TYPE, "Shield Merchant")
-        call RegisterVoiceCatalog(VL_ORC_MALE_3_TYPE, "Trade Goods Merchant")
-        call RegisterVoiceCatalog(VL_ORC_MALE_3_TYPE, "Travelling Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_3_TYPE, "Faction Quartermaster")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_3_TYPE, "General Goods Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_3_TYPE, "Jewelcrafter")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_3_TYPE, "Profession Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_3_TYPE, "Shield Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_3_TYPE, "Trade Goods Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_3_TYPE, "Travelling Merchant")
 
-        call RegisterVoiceCatalog(VL_ORC_MALE_4_TYPE, "Armor Merchant")
-        call RegisterVoiceCatalog(VL_ORC_MALE_4_TYPE, "Beastmaster Supplier")
-        call RegisterVoiceCatalog(VL_ORC_MALE_4_TYPE, "Blacksmith")
-        call RegisterVoiceCatalog(VL_ORC_MALE_4_TYPE, "Blacksmithing Supplier")
-        call RegisterVoiceCatalog(VL_ORC_MALE_4_TYPE, "Leatherworking Supplier")
-        call RegisterVoiceCatalog(VL_ORC_MALE_4_TYPE, "Shield Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_4_TYPE, "Armor Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_4_TYPE, "Beastmaster Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_4_TYPE, "Blacksmith")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_4_TYPE, "Blacksmithing Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_4_TYPE, "Leatherworking Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_4_TYPE, "Shield Merchant")
 
-        call RegisterVoiceCatalog(VL_ORC_MALE_5_TYPE, "Bartender")
-        call RegisterVoiceCatalog(VL_ORC_MALE_5_TYPE, "Cook")
-        call RegisterVoiceCatalog(VL_ORC_MALE_5_TYPE, "Cooking Supplier")
-        call RegisterVoiceCatalog(VL_ORC_MALE_5_TYPE, "Miner")
-        call RegisterVoiceCatalog(VL_ORC_MALE_5_TYPE, "Mining Supplier")
-        call RegisterVoiceCatalog(VL_ORC_MALE_5_TYPE, "Provisioner")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_5_TYPE, "Bartender")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_5_TYPE, "Cook")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_5_TYPE, "Cooking Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_5_TYPE, "Miner")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_5_TYPE, "Mining Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_5_TYPE, "Provisioner")
 
-        call RegisterVoiceCatalog(VL_ORC_MALE_6_TYPE, "Enchanting Supplier")
-        call RegisterVoiceCatalog(VL_ORC_MALE_6_TYPE, "Fel Curio Dealer")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_6_TYPE, "Enchanting Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_6_TYPE, "Fel Curio Dealer")
 
-        call RegisterVoiceCatalog(VL_ORC_MALE_7_TYPE, "Alchemy Supplier")
-        call RegisterVoiceCatalog(VL_ORC_MALE_7_TYPE, "Fel Curio Dealer")
-        call RegisterVoiceCatalog(VL_ORC_MALE_7_TYPE, "Potion Seller")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_7_TYPE, "Alchemy Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_7_TYPE, "Fel Curio Dealer")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_7_TYPE, "Potion Seller")
 
-        call RegisterVoiceCatalog(VL_ORC_MALE_8_TYPE, "Faction Quartermaster")
-        call RegisterVoiceCatalog(VL_ORC_MALE_8_TYPE, "Reagent Merchant")
-        call RegisterVoiceCatalog(VL_ORC_MALE_8_TYPE, "Spirit Speaker")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_8_TYPE, "Faction Quartermaster")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_8_TYPE, "Reagent Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_8_TYPE, "Spirit Speaker")
 
-        call RegisterVoiceCatalog(VL_ORC_MALE_9_TYPE, "Weapons Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_9_TYPE, "Weapons Merchant")
 
-        call RegisterVoiceCatalog(VL_SATYR_MALE_1_TYPE, "Arena Quartermaster")
-        call RegisterVoiceCatalog(VL_SATYR_MALE_1_TYPE, "Armor Merchant")
-        call RegisterVoiceCatalog(VL_SATYR_MALE_1_TYPE, "Curiosity Merchant")
-        call RegisterVoiceCatalog(VL_SATYR_MALE_1_TYPE, "Enchanting Supplier")
-        call RegisterVoiceCatalog(VL_SATYR_MALE_1_TYPE, "Potion Seller")
-        call RegisterVoiceCatalog(VL_SATYR_MALE_1_TYPE, "Rare Goods Dealer")
-        call RegisterVoiceCatalog(VL_SATYR_MALE_1_TYPE, "Reagent Merchant")
-        call RegisterVoiceCatalog(VL_SATYR_MALE_1_TYPE, "Shield Merchant")
-        call RegisterVoiceCatalog(VL_SATYR_MALE_1_TYPE, "Travelling Merchant")
-        call RegisterVoiceCatalog(VL_SATYR_MALE_1_TYPE, "Weapons Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_SATYR_MALE_1_TYPE, "Arena Quartermaster")
+        call RegisterVoiceCatalog(VL_GENERIC_SATYR_MALE_1_TYPE, "Armor Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_SATYR_MALE_1_TYPE, "Curiosity Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_SATYR_MALE_1_TYPE, "Enchanting Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_SATYR_MALE_1_TYPE, "Potion Seller")
+        call RegisterVoiceCatalog(VL_GENERIC_SATYR_MALE_1_TYPE, "Rare Goods Dealer")
+        call RegisterVoiceCatalog(VL_GENERIC_SATYR_MALE_1_TYPE, "Reagent Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_SATYR_MALE_1_TYPE, "Shield Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_SATYR_MALE_1_TYPE, "Travelling Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_SATYR_MALE_1_TYPE, "Weapons Merchant")
 
-        call RegisterVoiceCatalog(VL_TAUREN_MALE_1_TYPE, "Blacksmithing Supplier")
-        call RegisterVoiceCatalog(VL_TAUREN_MALE_1_TYPE, "Provisioner")
-        call RegisterVoiceCatalog(VL_TAUREN_MALE_1_TYPE, "Travelling Merchant")
-        call RegisterVoiceCatalog(VL_TAUREN_MALE_1_TYPE, "Weapons Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_SATYR_FEMALE_1_TYPE, "Enchanting Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_SATYR_FEMALE_1_TYPE, "Potion Seller")
+        call RegisterVoiceCatalog(VL_GENERIC_SATYR_FEMALE_1_TYPE, "Rare Goods Dealer")
+        call RegisterVoiceCatalog(VL_GENERIC_SATYR_FEMALE_1_TYPE, "Reagent Merchant")
 
-        call RegisterVoiceCatalog(VL_TAUREN_MALE_2_TYPE, "Armor Merchant")
-        call RegisterVoiceCatalog(VL_TAUREN_MALE_2_TYPE, "Bartender")
-        call RegisterVoiceCatalog(VL_TAUREN_MALE_2_TYPE, "Beastmaster Supplier")
-        call RegisterVoiceCatalog(VL_TAUREN_MALE_2_TYPE, "Miner")
+        call RegisterVoiceCatalog(VL_GENERIC_TAUREN_MALE_1_TYPE, "Blacksmithing Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_TAUREN_MALE_1_TYPE, "Provisioner")
+        call RegisterVoiceCatalog(VL_GENERIC_TAUREN_MALE_1_TYPE, "Travelling Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_TAUREN_MALE_1_TYPE, "Weapons Merchant")
 
-        call RegisterVoiceCatalog(VL_TAUREN_MALE_3_TYPE, "Bartender")
-        call RegisterVoiceCatalog(VL_TAUREN_MALE_3_TYPE, "Faction Quartermaster")
-        call RegisterVoiceCatalog(VL_TAUREN_MALE_3_TYPE, "Shield Merchant")
-        call RegisterVoiceCatalog(VL_TAUREN_MALE_3_TYPE, "Trade Goods Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_TAUREN_MALE_2_TYPE, "Armor Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_TAUREN_MALE_2_TYPE, "Bartender")
+        call RegisterVoiceCatalog(VL_GENERIC_TAUREN_MALE_2_TYPE, "Beastmaster Supplier")
+        call RegisterVoiceCatalog(VL_GENERIC_TAUREN_MALE_2_TYPE, "Miner")
 
-        call RegisterVoiceCatalog(VL_TROLL_MALE_1_TYPE, "Jewelcrafter")
+        call RegisterVoiceCatalog(VL_GENERIC_TAUREN_MALE_3_TYPE, "Bartender")
+        call RegisterVoiceCatalog(VL_GENERIC_TAUREN_MALE_3_TYPE, "Faction Quartermaster")
+        call RegisterVoiceCatalog(VL_GENERIC_TAUREN_MALE_3_TYPE, "Shield Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_TAUREN_MALE_3_TYPE, "Trade Goods Merchant")
 
-        call RegisterVoiceCatalog(VL_TROLL_MALE_2_TYPE, "Voodoo Merchant")
+        call RegisterVoiceCatalog(VL_GENERIC_TROLL_MALE_1_TYPE, "Jewelcrafter")
+
+        call RegisterVoiceCatalog(VL_GENERIC_TROLL_MALE_2_TYPE, "Voodoo Merchant")
     endfunction
 
     private function Init takes nothing returns nothing
@@ -495,35 +523,36 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call RegisterCatalogRoleLines()
         call RegisterRaceAndFactionLines()
         call RegisterVoiceFamilies()
-        call ExSound_RegisterSequence(VL_HUMAN_MALE_1_TYPE, 1, 60, "Pots\\Sound\\Voicelines\\HumanMale1\\")
-        call ExSound_RegisterSequence(VL_HUMAN_MALE_2_TYPE, 1, 60, "Pots\\Sound\\Voicelines\\HumanMale2\\")
-        call ExSound_RegisterSequence(VL_HUMAN_FEMALE_1_TYPE, 1, 45, "Pots\\Sound\\Voicelines\\HumanFemaleGeneric1\\")
-        call ExSound_RegisterSequence(VL_HUMAN_FEMALE_2_TYPE, 1, 45, "Pots\\Sound\\Voicelines\\HumanFemaleGeneric2\\")
-        call ExSound_RegisterSequence(VL_TAUREN_MALE_1_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\TaurenMale1\\")
-        call ExSound_RegisterSequence(VL_TAUREN_MALE_2_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\TaurenMale2\\")
-        call ExSound_RegisterSequence(VL_TAUREN_MALE_3_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\TaurenMale3\\")
-        call ExSound_RegisterSequence(VL_DWARF_MORGRIM_MALE_1_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\DwarfMorgrimMale1\\")
-        call ExSound_RegisterSequence(VL_ELARINDOR_MALE_1_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\ElarindorMale1\\")
-        call ExSound_RegisterSequence(VL_ELARINDOR_MALE_2_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\ElarindorMale2\\")
-        call ExSound_RegisterSequence(VL_ELARINDOR_FEMALE_1_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\ElarindorFemale1\\")
-        call ExSound_RegisterSequence(VL_ELARINDOR_FEMALE_2_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\ElarindorFemale2\\")
-        call ExSound_RegisterSequence(VL_TROLL_MALE_1_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\TrollMale1\\")
-        call ExSound_RegisterSequence(VL_TROLL_MALE_2_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\TrollMale2\\")
-        call ExSound_RegisterSequence(VL_ORC_MALE_1_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\OrcMale1\\")
-        call ExSound_RegisterSequence(VL_ORC_MALE_2_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\OrcMale2\\")
-        call ExSound_RegisterSequence(VL_ORC_MALE_3_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\OrcMale3\\")
-        call ExSound_RegisterSequence(VL_ORC_MALE_4_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\OrcMale4\\")
-        call ExSound_RegisterSequence(VL_ORC_MALE_5_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\OrcMale5\\")
-        call ExSound_RegisterSequence(VL_ORC_MALE_6_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\OrcMale6\\")
-        call ExSound_RegisterSequence(VL_ORC_MALE_7_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\OrcMale7\\")
-        call ExSound_RegisterSequence(VL_ORC_MALE_8_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\OrcMale8\\")
-        call ExSound_RegisterSequence(VL_ORC_MALE_9_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\OrcMale9\\")
-        call ExSound_RegisterSequence(VL_SATYR_MALE_1_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\SatyrMale1\\")
-        call ExSound_RegisterSequence(VL_OGRE_BONECRUSHER_MALE_1_TYPE, 1, 30, "Pots\\Sound\\Voicelines\\OgreBonecrusherMale1\\")
-        call ExSound_RegisterSequence(VL_GOBLIN_MALE_1_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\GoblinMale1\\")
-        call ExSound_RegisterSequence(VL_GOBLIN_MALE_2_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\GoblinMale2\\")
-        call ExSound_RegisterSequence(VL_GOBLIN_MALE_3_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\GoblinMale3\\")
-        call ExSound_RegisterSequence(VL_GOBLIN_MALE_4_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\GoblinMale4\\")
+        call ExSound_RegisterSequence(VL_GENERIC_HUMAN_MALE_1_TYPE, 1, 60, "Pots\\Sound\\Voicelines\\GenericHumanMale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_HUMAN_MALE_2_TYPE, 1, 60, "Pots\\Sound\\Voicelines\\GenericHumanMale2\\")
+        call ExSound_RegisterSequence(VL_GENERIC_HUMAN_FEMALE_1_TYPE, 1, 45, "Pots\\Sound\\Voicelines\\GenericHumanFemale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_HUMAN_FEMALE_2_TYPE, 1, 45, "Pots\\Sound\\Voicelines\\GenericHumanFemale2\\")
+        call ExSound_RegisterSequence(VL_GENERIC_TAUREN_MALE_1_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\GenericTaurenMale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_TAUREN_MALE_2_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\GenericTaurenMale2\\")
+        call ExSound_RegisterSequence(VL_GENERIC_TAUREN_MALE_3_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\GenericTaurenMale3\\")
+        call ExSound_RegisterSequence(VL_GENERIC_DWARF_MORGRIM_MALE_1_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\GenericDwarfMorgrimMale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ELARINDOR_MALE_1_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\GenericElarindorMale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ELARINDOR_MALE_2_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\GenericElarindorMale2\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ELARINDOR_FEMALE_1_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\GenericElarindorFemale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ELARINDOR_FEMALE_2_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\GenericElarindorFemale2\\")
+        call ExSound_RegisterSequence(VL_GENERIC_TROLL_MALE_1_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\GenericTrollMale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_TROLL_MALE_2_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\GenericTrollMale2\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_1_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\GenericOrcMale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_2_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\GenericOrcMale2\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_3_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\GenericOrcMale3\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_4_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\GenericOrcMale4\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_5_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\GenericOrcMale5\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_6_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\GenericOrcMale6\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_7_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\GenericOrcMale7\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_8_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\GenericOrcMale8\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_9_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\GenericOrcMale9\\")
+        call ExSound_RegisterSequence(VL_GENERIC_SATYR_MALE_1_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\GenericSatyrMale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_SATYR_FEMALE_1_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\GenericSatyrFemale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, 1, 30, "Pots\\Sound\\Voicelines\\GenericOgreBonecrusherMale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_GOBLIN_MALE_1_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\GenericGoblinMale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_GOBLIN_MALE_2_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\GenericGoblinMale2\\")
+        call ExSound_RegisterSequence(VL_GENERIC_GOBLIN_MALE_3_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\GenericGoblinMale3\\")
+        call ExSound_RegisterSequence(VL_GENERIC_GOBLIN_MALE_4_TYPE, 1, 75, "Pots\\Sound\\Voicelines\\GenericGoblinMale4\\")
         call RegisterVoiceCatalogs()
     endfunction
 endlibrary

@@ -2,7 +2,7 @@
     VoicelinesQuests
 
     Author: Valdemar
-    Version: 4.0.0
+    Version: 4.2.0
 
     Description:
     Central source of truth for reusable and vendor quest dialogue, random
@@ -11,20 +11,17 @@
     Credits:
 
     How to install:
-    Import after QuestsGeneric, ExSound, and VoicelinesVendorLines.
+    Import after QuestsGeneric, ExSound, VoicelinesVendorLines,
+    VoicelinesNazgrek, and VoicelinesZulkis.
 
     API:
     - VL_VENDORQUEST_* constants contain authored generic quest dialogue.
-    - VL_NAZGREK_GENERIC_TYPE and VL_ZULKIS_GENERIC_TYPE identify reusable
-      selectable-hero reply sequences.
     - Daily objective and voice variants register automatically.
 
 **/
-library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound, VoicelinesVendorLines
+library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound, VoicelinesVendorLines, VoicelinesNazgrek, VoicelinesZulkis
     globals
-        constant string VL_NAZGREK_GENERIC_TYPE = "NazgrekGeneric_"
-        constant string VL_ZULKIS_GENERIC_TYPE = "ZulkisGeneric_"
-        constant string VL_QUEST_GENERIC_TYPE = "QuestGeneric_"
+        constant string VL_GENERIC_QUEST_TYPE = "GenericQuest_"
 
         // Shared unvoiced hero and progress dialogue.
         constant string VL_QUEST_HERO_ACCEPT = "I will see it done."
@@ -38,32 +35,6 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound, Voice
         constant string VL_QUEST_VENDOR_HANDOFF = "It is ready. Take it back to the one who sent you."
         constant string VL_QUEST_VENDOR_ALREADY_HANDED_OFF = "I already gave you the parcel. Keep it safe until you deliver it."
         constant string VL_QUEST_VENDOR_PURCHASE = "It is in my regular stock. Buy it through trade, then return it to your quest giver."
-
-        // Additional reusable selectable-hero replies for generic quests.
-        constant string VL_NAZGREK_GENERIC_0008 = "Understood. I will handle it."
-        constant string VL_NAZGREK_GENERIC_0009 = "The spirits have shown me where to begin."
-        constant string VL_NAZGREK_GENERIC_0010 = "It is done."
-        constant string VL_NAZGREK_GENERIC_0011 = "Nothing else stands in our way."
-        constant string VL_NAZGREK_GENERIC_0012 = "I have brought what was needed."
-        constant string VL_NAZGREK_GENERIC_0013 = "The delivery is complete."
-        constant string VL_NAZGREK_GENERIC_0014 = "I spoke with them."
-        constant string VL_NAZGREK_GENERIC_0015 = "Your message reached its destination."
-        constant string VL_NAZGREK_GENERIC_0016 = "Tell me what still remains."
-        constant string VL_NAZGREK_GENERIC_0017 = "I have not forgotten the task."
-        constant string VL_NAZGREK_GENERIC_0018 = "Show me where I am needed."
-        constant string VL_NAZGREK_GENERIC_0019 = "What would you have me do next?"
-        constant string VL_ZULKIS_GENERIC_0008 = "Understood, mon. I be handlin' it."
-        constant string VL_ZULKIS_GENERIC_0009 = "Da spirits showed me where to begin."
-        constant string VL_ZULKIS_GENERIC_0010 = "It be done."
-        constant string VL_ZULKIS_GENERIC_0011 = "Nothin' else be standin' in our way."
-        constant string VL_ZULKIS_GENERIC_0012 = "I brought what ya needed."
-        constant string VL_ZULKIS_GENERIC_0013 = "Da delivery be complete."
-        constant string VL_ZULKIS_GENERIC_0014 = "I spoke wit' them."
-        constant string VL_ZULKIS_GENERIC_0015 = "Ya message reached where it needed to go."
-        constant string VL_ZULKIS_GENERIC_0016 = "Tell me what still be remainin'."
-        constant string VL_ZULKIS_GENERIC_0017 = "I ain't forgotten da task, mon."
-        constant string VL_ZULKIS_GENERIC_0018 = "Show me where I be needed."
-        constant string VL_ZULKIS_GENERIC_0019 = "What ya need me doin' next?"
 
         // Horde Tauren quest dialogue.
         constant string VL_VENDORQUEST_TAUREN_0001 = "The warforge needs eight bundles of clean fuel before the evening hammers begin."
@@ -233,134 +204,136 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound, Voice
     endfunction
 
     private function RegisterDailyDialogue takes nothing returns nothing
-        call RegisterDailySet(VL_ORC_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1035, "Do not count blows. Count enemies that do not rise.", "Strike hard enough that tomorrow's work stays quiet.", "Return with proof in your eyes, not boasts on your tongue.")
-        call RegisterDailySet(VL_ORC_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1035, "Do not count blows. Count enemies that do not rise.", "Strike hard enough that tomorrow's work stays quiet.", "Return with proof in your eyes, not boasts on your tongue.")
-        call RegisterDailySet(VL_ORC_MALE_3_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1035, "Do not count blows. Count enemies that do not rise.", "Strike hard enough that tomorrow's work stays quiet.", "Return with proof in your eyes, not boasts on your tongue.")
-        call RegisterDailySet(VL_ORC_MALE_4_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1035, "Do not count blows. Count enemies that do not rise.", "Strike hard enough that tomorrow's work stays quiet.", "Return with proof in your eyes, not boasts on your tongue.")
-        call RegisterDailySet(VL_ORC_MALE_5_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1035, "Do not count blows. Count enemies that do not rise.", "Strike hard enough that tomorrow's work stays quiet.", "Return with proof in your eyes, not boasts on your tongue.")
-        call RegisterDailySet(VL_ORC_MALE_6_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1035, "Do not count blows. Count enemies that do not rise.", "Strike hard enough that tomorrow's work stays quiet.", "Return with proof in your eyes, not boasts on your tongue.")
-        call RegisterDailySet(VL_ORC_MALE_7_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1035, "Do not count blows. Count enemies that do not rise.", "Strike hard enough that tomorrow's work stays quiet.", "Return with proof in your eyes, not boasts on your tongue.")
-        call RegisterDailySet(VL_ORC_MALE_8_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1035, "Do not count blows. Count enemies that do not rise.", "Strike hard enough that tomorrow's work stays quiet.", "Return with proof in your eyes, not boasts on your tongue.")
-        call RegisterDailySet(VL_ORC_MALE_9_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1035, "Do not count blows. Count enemies that do not rise.", "Strike hard enough that tomorrow's work stays quiet.", "Return with proof in your eyes, not boasts on your tongue.")
-        call RegisterDailySet(VL_ORC_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1038, "Bring solid goods. I have no use for cracked scraps.", "Take only what is needed, but bring every piece promised.", "The work waits on your hands now. Move quickly.")
-        call RegisterDailySet(VL_ORC_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1038, "Bring solid goods. I have no use for cracked scraps.", "Take only what is needed, but bring every piece promised.", "The work waits on your hands now. Move quickly.")
-        call RegisterDailySet(VL_ORC_MALE_3_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1038, "Bring solid goods. I have no use for cracked scraps.", "Take only what is needed, but bring every piece promised.", "The work waits on your hands now. Move quickly.")
-        call RegisterDailySet(VL_ORC_MALE_4_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1038, "Bring solid goods. I have no use for cracked scraps.", "Take only what is needed, but bring every piece promised.", "The work waits on your hands now. Move quickly.")
-        call RegisterDailySet(VL_ORC_MALE_5_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1038, "Bring solid goods. I have no use for cracked scraps.", "Take only what is needed, but bring every piece promised.", "The work waits on your hands now. Move quickly.")
-        call RegisterDailySet(VL_ORC_MALE_6_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1038, "Bring solid goods. I have no use for cracked scraps.", "Take only what is needed, but bring every piece promised.", "The work waits on your hands now. Move quickly.")
-        call RegisterDailySet(VL_ORC_MALE_7_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1038, "Bring solid goods. I have no use for cracked scraps.", "Take only what is needed, but bring every piece promised.", "The work waits on your hands now. Move quickly.")
-        call RegisterDailySet(VL_ORC_MALE_8_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1038, "Bring solid goods. I have no use for cracked scraps.", "Take only what is needed, but bring every piece promised.", "The work waits on your hands now. Move quickly.")
-        call RegisterDailySet(VL_ORC_MALE_9_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1038, "Bring solid goods. I have no use for cracked scraps.", "Take only what is needed, but bring every piece promised.", "The work waits on your hands now. Move quickly.")
-        call RegisterDailySet(VL_ORC_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1041, "Speak plainly and keep the parcel sealed.", "The other merchant knows the bargain. Make them honor it.", "Bring back the goods, not a tale about where they went.")
-        call RegisterDailySet(VL_ORC_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1041, "Speak plainly and keep the parcel sealed.", "The other merchant knows the bargain. Make them honor it.", "Bring back the goods, not a tale about where they went.")
-        call RegisterDailySet(VL_ORC_MALE_3_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1041, "Speak plainly and keep the parcel sealed.", "The other merchant knows the bargain. Make them honor it.", "Bring back the goods, not a tale about where they went.")
-        call RegisterDailySet(VL_ORC_MALE_4_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1041, "Speak plainly and keep the parcel sealed.", "The other merchant knows the bargain. Make them honor it.", "Bring back the goods, not a tale about where they went.")
-        call RegisterDailySet(VL_ORC_MALE_5_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1041, "Speak plainly and keep the parcel sealed.", "The other merchant knows the bargain. Make them honor it.", "Bring back the goods, not a tale about where they went.")
-        call RegisterDailySet(VL_ORC_MALE_6_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1041, "Speak plainly and keep the parcel sealed.", "The other merchant knows the bargain. Make them honor it.", "Bring back the goods, not a tale about where they went.")
-        call RegisterDailySet(VL_ORC_MALE_7_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1041, "Speak plainly and keep the parcel sealed.", "The other merchant knows the bargain. Make them honor it.", "Bring back the goods, not a tale about where they went.")
-        call RegisterDailySet(VL_ORC_MALE_8_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1041, "Speak plainly and keep the parcel sealed.", "The other merchant knows the bargain. Make them honor it.", "Bring back the goods, not a tale about where they went.")
-        call RegisterDailySet(VL_ORC_MALE_9_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1041, "Speak plainly and keep the parcel sealed.", "The other merchant knows the bargain. Make them honor it.", "Bring back the goods, not a tale about where they went.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1035, "Do not count blows. Count enemies that do not rise.", "Strike hard enough that tomorrow's work stays quiet.", "Return with proof in your eyes, not boasts on your tongue.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1035, "Do not count blows. Count enemies that do not rise.", "Strike hard enough that tomorrow's work stays quiet.", "Return with proof in your eyes, not boasts on your tongue.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_3_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1035, "Do not count blows. Count enemies that do not rise.", "Strike hard enough that tomorrow's work stays quiet.", "Return with proof in your eyes, not boasts on your tongue.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_4_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1035, "Do not count blows. Count enemies that do not rise.", "Strike hard enough that tomorrow's work stays quiet.", "Return with proof in your eyes, not boasts on your tongue.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_5_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1035, "Do not count blows. Count enemies that do not rise.", "Strike hard enough that tomorrow's work stays quiet.", "Return with proof in your eyes, not boasts on your tongue.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_6_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1035, "Do not count blows. Count enemies that do not rise.", "Strike hard enough that tomorrow's work stays quiet.", "Return with proof in your eyes, not boasts on your tongue.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_7_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1035, "Do not count blows. Count enemies that do not rise.", "Strike hard enough that tomorrow's work stays quiet.", "Return with proof in your eyes, not boasts on your tongue.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_8_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1035, "Do not count blows. Count enemies that do not rise.", "Strike hard enough that tomorrow's work stays quiet.", "Return with proof in your eyes, not boasts on your tongue.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_9_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1035, "Do not count blows. Count enemies that do not rise.", "Strike hard enough that tomorrow's work stays quiet.", "Return with proof in your eyes, not boasts on your tongue.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1038, "Bring solid goods. I have no use for cracked scraps.", "Take only what is needed, but bring every piece promised.", "The work waits on your hands now. Move quickly.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1038, "Bring solid goods. I have no use for cracked scraps.", "Take only what is needed, but bring every piece promised.", "The work waits on your hands now. Move quickly.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_3_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1038, "Bring solid goods. I have no use for cracked scraps.", "Take only what is needed, but bring every piece promised.", "The work waits on your hands now. Move quickly.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_4_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1038, "Bring solid goods. I have no use for cracked scraps.", "Take only what is needed, but bring every piece promised.", "The work waits on your hands now. Move quickly.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_5_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1038, "Bring solid goods. I have no use for cracked scraps.", "Take only what is needed, but bring every piece promised.", "The work waits on your hands now. Move quickly.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_6_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1038, "Bring solid goods. I have no use for cracked scraps.", "Take only what is needed, but bring every piece promised.", "The work waits on your hands now. Move quickly.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_7_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1038, "Bring solid goods. I have no use for cracked scraps.", "Take only what is needed, but bring every piece promised.", "The work waits on your hands now. Move quickly.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_8_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1038, "Bring solid goods. I have no use for cracked scraps.", "Take only what is needed, but bring every piece promised.", "The work waits on your hands now. Move quickly.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_9_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1038, "Bring solid goods. I have no use for cracked scraps.", "Take only what is needed, but bring every piece promised.", "The work waits on your hands now. Move quickly.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1041, "Speak plainly and keep the parcel sealed.", "The other merchant knows the bargain. Make them honor it.", "Bring back the goods, not a tale about where they went.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1041, "Speak plainly and keep the parcel sealed.", "The other merchant knows the bargain. Make them honor it.", "Bring back the goods, not a tale about where they went.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_3_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1041, "Speak plainly and keep the parcel sealed.", "The other merchant knows the bargain. Make them honor it.", "Bring back the goods, not a tale about where they went.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_4_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1041, "Speak plainly and keep the parcel sealed.", "The other merchant knows the bargain. Make them honor it.", "Bring back the goods, not a tale about where they went.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_5_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1041, "Speak plainly and keep the parcel sealed.", "The other merchant knows the bargain. Make them honor it.", "Bring back the goods, not a tale about where they went.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_6_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1041, "Speak plainly and keep the parcel sealed.", "The other merchant knows the bargain. Make them honor it.", "Bring back the goods, not a tale about where they went.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_7_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1041, "Speak plainly and keep the parcel sealed.", "The other merchant knows the bargain. Make them honor it.", "Bring back the goods, not a tale about where they went.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_8_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1041, "Speak plainly and keep the parcel sealed.", "The other merchant knows the bargain. Make them honor it.", "Bring back the goods, not a tale about where they went.")
+        call RegisterDailySet(VL_GENERIC_ORC_MALE_9_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1041, "Speak plainly and keep the parcel sealed.", "The other merchant knows the bargain. Make them honor it.", "Bring back the goods, not a tale about where they went.")
 
-        call RegisterDailySet(VL_SATYR_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1019, "Try to make their end less tedious than their life.", "A little terror before the final blow improves the lesson.", "Do return with something more interesting than remorse.")
-        call RegisterDailySet(VL_SATYR_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1022, "Quality first. Quantity is merely the minimum price of admission.", "Handle everything delicately; replacement costs offend me.", "Bring precisely what I requested and nothing that asks questions.")
-        call RegisterDailySet(VL_SATYR_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1025, "Use my name sparingly. It has value in the right ears.", "Accept the parcel and decline every invitation to inspect it.", "Courtesy is useful, but silence is indispensable.")
+        call RegisterDailySet(VL_GENERIC_SATYR_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1019, "Try to make their end less tedious than their life.", "A little terror before the final blow improves the lesson.", "Do return with something more interesting than remorse.")
+        call RegisterDailySet(VL_GENERIC_SATYR_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1022, "Quality first. Quantity is merely the minimum price of admission.", "Handle everything delicately; replacement costs offend me.", "Bring precisely what I requested and nothing that asks questions.")
+        call RegisterDailySet(VL_GENERIC_SATYR_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1025, "Use my name sparingly. It has value in the right ears.", "Accept the parcel and decline every invitation to inspect it.", "Courtesy is useful, but silence is indispensable.")
+        call RegisterDailySet(VL_GENERIC_SATYR_FEMALE_1_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1019, "Make their last moments memorable. Terror is wasted on a swift death.", "Remove them cleanly; I dislike mess unless I arranged it.", "Bring me proof, darling. Trust is for creatures with fewer ambitions.")
+        call RegisterDailySet(VL_GENERIC_SATYR_FEMALE_1_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1022, "Bring only flawless pieces. I can find mediocrity without your help.", "Handle them delicately; your payment is less fragile than my patience.", "Return with exactly what I requested. Surprises are my privilege.")
+        call RegisterDailySet(VL_GENERIC_SATYR_FEMALE_1_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1025, "Use my name once, softly. Fear carries it farther than shouting.", "Deliver the parcel sealed. Curiosity looks dreadful on the dying.", "Be charming, be brief, and remember every lie they tell you.")
 
-        call RegisterDailySet(VL_HUMAN_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1029, "Keep the road clear and give civilians room to breathe.", "Do the work carefully; we need safety, not another problem.", "Return when the threat is truly ended, not merely scattered.")
+        call RegisterDailySet(VL_GENERIC_HUMAN_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1029, "Keep the road clear and give civilians room to breathe.", "Do the work carefully; we need safety, not another problem.", "Return when the threat is truly ended, not merely scattered.")
 
-        call RegisterDailySet(VL_HUMAN_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1029, "Keep the road clear and give civilians room to breathe.", "Do the work carefully; we need safety, not another problem.", "Return when the threat is truly ended, not merely scattered.")
-        call RegisterDailySet(VL_HUMAN_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1032, "Check every piece before you bring it back.", "Good preparation saves twice the labor at the workshop.", "Take care on the road. Useful cargo attracts desperate hands.")
-        call RegisterDailySet(VL_HUMAN_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1032, "Check every piece before you bring it back.", "Good preparation saves twice the labor at the workshop.", "Take care on the road. Useful cargo attracts desperate hands.")
-        call RegisterDailySet(VL_HUMAN_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1035, "Give them my name and wait for a clear answer.", "Keep the delivery dry, sealed, and accounted for.", "A simple errand stays simple when everyone keeps their word.")
-        call RegisterDailySet(VL_HUMAN_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1035, "Give them my name and wait for a clear answer.", "Keep the delivery dry, sealed, and accounted for.", "A simple errand stays simple when everyone keeps their word.")
+        call RegisterDailySet(VL_GENERIC_HUMAN_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1029, "Keep the road clear and give civilians room to breathe.", "Do the work carefully; we need safety, not another problem.", "Return when the threat is truly ended, not merely scattered.")
+        call RegisterDailySet(VL_GENERIC_HUMAN_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1032, "Check every piece before you bring it back.", "Good preparation saves twice the labor at the workshop.", "Take care on the road. Useful cargo attracts desperate hands.")
+        call RegisterDailySet(VL_GENERIC_HUMAN_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1032, "Check every piece before you bring it back.", "Good preparation saves twice the labor at the workshop.", "Take care on the road. Useful cargo attracts desperate hands.")
+        call RegisterDailySet(VL_GENERIC_HUMAN_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1035, "Give them my name and wait for a clear answer.", "Keep the delivery dry, sealed, and accounted for.", "A simple errand stays simple when everyone keeps their word.")
+        call RegisterDailySet(VL_GENERIC_HUMAN_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1035, "Give them my name and wait for a clear answer.", "Keep the delivery dry, sealed, and accounted for.", "A simple errand stays simple when everyone keeps their word.")
 
-        call RegisterDailySet(VL_GOBLIN_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1027, "Every enemy removed improves the market! Especially my market.", "Be efficient. Heroic flourishes are expensive to insure.", "If they drop anything valuable, remember who sponsored the trip.")
+        call RegisterDailySet(VL_GENERIC_GOBLIN_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1027, "Every enemy removed improves the market! Especially my market.", "Be efficient. Heroic flourishes are expensive to insure.", "If they drop anything valuable, remember who sponsored the trip.")
 
-        call RegisterDailySet(VL_GOBLIN_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1027, "Every enemy removed improves the market! Especially my market.", "Be efficient. Heroic flourishes are expensive to insure.", "If they drop anything valuable, remember who sponsored the trip.")
+        call RegisterDailySet(VL_GENERIC_GOBLIN_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1027, "Every enemy removed improves the market! Especially my market.", "Be efficient. Heroic flourishes are expensive to insure.", "If they drop anything valuable, remember who sponsored the trip.")
 
-        call RegisterDailySet(VL_GOBLIN_MALE_3_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1027, "Every enemy removed improves the market! Especially my market.", "Be efficient. Heroic flourishes are expensive to insure.", "If they drop anything valuable, remember who sponsored the trip.")
+        call RegisterDailySet(VL_GENERIC_GOBLIN_MALE_3_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1027, "Every enemy removed improves the market! Especially my market.", "Be efficient. Heroic flourishes are expensive to insure.", "If they drop anything valuable, remember who sponsored the trip.")
 
-        call RegisterDailySet(VL_GOBLIN_MALE_4_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1027, "Every enemy removed improves the market! Especially my market.", "Be efficient. Heroic flourishes are expensive to insure.", "If they drop anything valuable, remember who sponsored the trip.")
-        call RegisterDailySet(VL_GOBLIN_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1030, "Bring the good pieces first. I can sell the ugly ones later.", "Time is money, and right now you are spending mine.", "Count twice before returning. Short shipments hurt friendships.")
-        call RegisterDailySet(VL_GOBLIN_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1030, "Bring the good pieces first. I can sell the ugly ones later.", "Time is money, and right now you are spending mine.", "Count twice before returning. Short shipments hurt friendships.")
-        call RegisterDailySet(VL_GOBLIN_MALE_3_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1030, "Bring the good pieces first. I can sell the ugly ones later.", "Time is money, and right now you are spending mine.", "Count twice before returning. Short shipments hurt friendships.")
-        call RegisterDailySet(VL_GOBLIN_MALE_4_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1030, "Bring the good pieces first. I can sell the ugly ones later.", "Time is money, and right now you are spending mine.", "Count twice before returning. Short shipments hurt friendships.")
-        call RegisterDailySet(VL_GOBLIN_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_PURCHASE, 1033, "Buy only the marked stock. Substitutions ruin the margins.", "Pay the listed price, then let me complain about it afterward.", "Keep the receipt, the parcel, and especially your fingers.")
-        call RegisterDailySet(VL_GOBLIN_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_PURCHASE, 1033, "Buy only the marked stock. Substitutions ruin the margins.", "Pay the listed price, then let me complain about it afterward.", "Keep the receipt, the parcel, and especially your fingers.")
-        call RegisterDailySet(VL_GOBLIN_MALE_3_TYPE, QuestsGeneric_OBJECTIVE_PURCHASE, 1033, "Buy only the marked stock. Substitutions ruin the margins.", "Pay the listed price, then let me complain about it afterward.", "Keep the receipt, the parcel, and especially your fingers.")
-        call RegisterDailySet(VL_GOBLIN_MALE_4_TYPE, QuestsGeneric_OBJECTIVE_PURCHASE, 1033, "Buy only the marked stock. Substitutions ruin the margins.", "Pay the listed price, then let me complain about it afterward.", "Keep the receipt, the parcel, and especially your fingers.")
+        call RegisterDailySet(VL_GENERIC_GOBLIN_MALE_4_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1027, "Every enemy removed improves the market! Especially my market.", "Be efficient. Heroic flourishes are expensive to insure.", "If they drop anything valuable, remember who sponsored the trip.")
+        call RegisterDailySet(VL_GENERIC_GOBLIN_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1030, "Bring the good pieces first. I can sell the ugly ones later.", "Time is money, and right now you are spending mine.", "Count twice before returning. Short shipments hurt friendships.")
+        call RegisterDailySet(VL_GENERIC_GOBLIN_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1030, "Bring the good pieces first. I can sell the ugly ones later.", "Time is money, and right now you are spending mine.", "Count twice before returning. Short shipments hurt friendships.")
+        call RegisterDailySet(VL_GENERIC_GOBLIN_MALE_3_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1030, "Bring the good pieces first. I can sell the ugly ones later.", "Time is money, and right now you are spending mine.", "Count twice before returning. Short shipments hurt friendships.")
+        call RegisterDailySet(VL_GENERIC_GOBLIN_MALE_4_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1030, "Bring the good pieces first. I can sell the ugly ones later.", "Time is money, and right now you are spending mine.", "Count twice before returning. Short shipments hurt friendships.")
+        call RegisterDailySet(VL_GENERIC_GOBLIN_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_PURCHASE, 1033, "Buy only the marked stock. Substitutions ruin the margins.", "Pay the listed price, then let me complain about it afterward.", "Keep the receipt, the parcel, and especially your fingers.")
+        call RegisterDailySet(VL_GENERIC_GOBLIN_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_PURCHASE, 1033, "Buy only the marked stock. Substitutions ruin the margins.", "Pay the listed price, then let me complain about it afterward.", "Keep the receipt, the parcel, and especially your fingers.")
+        call RegisterDailySet(VL_GENERIC_GOBLIN_MALE_3_TYPE, QuestsGeneric_OBJECTIVE_PURCHASE, 1033, "Buy only the marked stock. Substitutions ruin the margins.", "Pay the listed price, then let me complain about it afterward.", "Keep the receipt, the parcel, and especially your fingers.")
+        call RegisterDailySet(VL_GENERIC_GOBLIN_MALE_4_TYPE, QuestsGeneric_OBJECTIVE_PURCHASE, 1033, "Buy only the marked stock. Substitutions ruin the margins.", "Pay the listed price, then let me complain about it afterward.", "Keep the receipt, the parcel, and especially your fingers.")
 
-        call RegisterDailySet(VL_OGRE_BONECRUSHER_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1017, "Hit enemies until counting becomes easy.", "Broken enemies do not bother carts. Good system.", "Come back standing. Standing heroes carry more loot.")
-        call RegisterDailySet(VL_OGRE_BONECRUSHER_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1020, "Bring all pieces. Ogre counting uses both hands.", "If it breaks on road, it was not good enough anyway.", "Heavy goods are best goods. Means more goods.")
-        call RegisterDailySet(VL_OGRE_BONECRUSHER_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1023, "Ask merchant. Take crate. Do not eat crate.", "Other head says check seal. This head says check snacks.", "Bring parcel back before someone makes it lighter.")
+        call RegisterDailySet(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1017, "Hit enemies until counting becomes easy.", "Broken enemies do not bother carts. Good system.", "Come back standing. Standing heroes carry more loot.")
+        call RegisterDailySet(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1020, "Bring all pieces. Ogre counting uses both hands.", "If it breaks on road, it was not good enough anyway.", "Heavy goods are best goods. Means more goods.")
+        call RegisterDailySet(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1023, "Ask merchant. Take crate. Do not eat crate.", "Other head says check seal. This head says check snacks.", "Bring parcel back before someone makes it lighter.")
 
-        call RegisterDailySet(VL_ELARINDOR_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1017, "Let precision guide you where anger would waste strength.", "Each fallen threat buys another quiet hour for our people.", "Return safely. Elarindor has buried enough brave souls.")
+        call RegisterDailySet(VL_GENERIC_ELARINDOR_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1017, "Let precision guide you where anger would waste strength.", "Each fallen threat buys another quiet hour for our people.", "Return safely. Elarindor has buried enough brave souls.")
 
-        call RegisterDailySet(VL_ELARINDOR_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1017, "Let precision guide you where anger would waste strength.", "Each fallen threat buys another quiet hour for our people.", "Return safely. Elarindor has buried enough brave souls.")
-        call RegisterDailySet(VL_ELARINDOR_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1020, "Choose intact pieces; damaged magic remembers the wound.", "Carry them gently and let no careless hand disturb them.", "What you recover today may preserve a century tomorrow.")
-        call RegisterDailySet(VL_ELARINDOR_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1020, "Choose intact pieces; damaged magic remembers the wound.", "Carry them gently and let no careless hand disturb them.", "What you recover today may preserve a century tomorrow.")
-        call RegisterDailySet(VL_ELARINDOR_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1023, "Speak the agreed phrase and accept only the sealed parcel.", "Treat the exchange with patience; trust is our rarest supply.", "Return by the warded road, even if the longer path tempts you.")
-        call RegisterDailySet(VL_ELARINDOR_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1023, "Speak the agreed phrase and accept only the sealed parcel.", "Treat the exchange with patience; trust is our rarest supply.", "Return by the warded road, even if the longer path tempts you.")
-        call RegisterDailySet(VL_ELARINDOR_FEMALE_1_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1017, "Let precision guide you where anger would waste strength.", "Each fallen threat buys another quiet hour for our people.", "Return safely. Elarindor has buried enough brave souls.")
-        call RegisterDailySet(VL_ELARINDOR_FEMALE_2_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1017, "Let precision guide you where anger would waste strength.", "Each fallen threat buys another quiet hour for our people.", "Return safely. Elarindor has buried enough brave souls.")
-        call RegisterDailySet(VL_ELARINDOR_FEMALE_1_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1020, "Choose intact pieces; damaged magic remembers the wound.", "Carry them gently and let no careless hand disturb them.", "What you recover today may preserve a century tomorrow.")
-        call RegisterDailySet(VL_ELARINDOR_FEMALE_2_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1020, "Choose intact pieces; damaged magic remembers the wound.", "Carry them gently and let no careless hand disturb them.", "What you recover today may preserve a century tomorrow.")
-        call RegisterDailySet(VL_ELARINDOR_FEMALE_1_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1023, "Speak the agreed phrase and accept only the sealed parcel.", "Treat the exchange with patience; trust is our rarest supply.", "Return by the warded road, even if the longer path tempts you.")
-        call RegisterDailySet(VL_ELARINDOR_FEMALE_2_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1023, "Speak the agreed phrase and accept only the sealed parcel.", "Treat the exchange with patience; trust is our rarest supply.", "Return by the warded road, even if the longer path tempts you.")
+        call RegisterDailySet(VL_GENERIC_ELARINDOR_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1017, "Let precision guide you where anger would waste strength.", "Each fallen threat buys another quiet hour for our people.", "Return safely. Elarindor has buried enough brave souls.")
+        call RegisterDailySet(VL_GENERIC_ELARINDOR_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1020, "Choose intact pieces; damaged magic remembers the wound.", "Carry them gently and let no careless hand disturb them.", "What you recover today may preserve a century tomorrow.")
+        call RegisterDailySet(VL_GENERIC_ELARINDOR_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1020, "Choose intact pieces; damaged magic remembers the wound.", "Carry them gently and let no careless hand disturb them.", "What you recover today may preserve a century tomorrow.")
+        call RegisterDailySet(VL_GENERIC_ELARINDOR_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1023, "Speak the agreed phrase and accept only the sealed parcel.", "Treat the exchange with patience; trust is our rarest supply.", "Return by the warded road, even if the longer path tempts you.")
+        call RegisterDailySet(VL_GENERIC_ELARINDOR_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1023, "Speak the agreed phrase and accept only the sealed parcel.", "Treat the exchange with patience; trust is our rarest supply.", "Return by the warded road, even if the longer path tempts you.")
+        call RegisterDailySet(VL_GENERIC_ELARINDOR_FEMALE_1_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1017, "Let precision guide you where anger would waste strength.", "Each fallen threat buys another quiet hour for our people.", "Return safely. Elarindor has buried enough brave souls.")
+        call RegisterDailySet(VL_GENERIC_ELARINDOR_FEMALE_2_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1017, "Let precision guide you where anger would waste strength.", "Each fallen threat buys another quiet hour for our people.", "Return safely. Elarindor has buried enough brave souls.")
+        call RegisterDailySet(VL_GENERIC_ELARINDOR_FEMALE_1_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1020, "Choose intact pieces; damaged magic remembers the wound.", "Carry them gently and let no careless hand disturb them.", "What you recover today may preserve a century tomorrow.")
+        call RegisterDailySet(VL_GENERIC_ELARINDOR_FEMALE_2_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1020, "Choose intact pieces; damaged magic remembers the wound.", "Carry them gently and let no careless hand disturb them.", "What you recover today may preserve a century tomorrow.")
+        call RegisterDailySet(VL_GENERIC_ELARINDOR_FEMALE_1_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1023, "Speak the agreed phrase and accept only the sealed parcel.", "Treat the exchange with patience; trust is our rarest supply.", "Return by the warded road, even if the longer path tempts you.")
+        call RegisterDailySet(VL_GENERIC_ELARINDOR_FEMALE_2_TYPE, QuestsGeneric_OBJECTIVE_TALK, 1023, "Speak the agreed phrase and accept only the sealed parcel.", "Treat the exchange with patience; trust is our rarest supply.", "Return by the warded road, even if the longer path tempts you.")
 
-        call RegisterDailySet(VL_TAUREN_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1009, "Walk with purpose and let no threat follow you home.", "Strength is measured by what your journey protects.", "Return beneath an open sky when the trail is safe.")
+        call RegisterDailySet(VL_GENERIC_TAUREN_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1009, "Walk with purpose and let no threat follow you home.", "Strength is measured by what your journey protects.", "Return beneath an open sky when the trail is safe.")
 
-        call RegisterDailySet(VL_TAUREN_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1009, "Walk with purpose and let no threat follow you home.", "Strength is measured by what your journey protects.", "Return beneath an open sky when the trail is safe.")
+        call RegisterDailySet(VL_GENERIC_TAUREN_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1009, "Walk with purpose and let no threat follow you home.", "Strength is measured by what your journey protects.", "Return beneath an open sky when the trail is safe.")
 
-        call RegisterDailySet(VL_TAUREN_MALE_3_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1009, "Walk with purpose and let no threat follow you home.", "Strength is measured by what your journey protects.", "Return beneath an open sky when the trail is safe.")
-        call RegisterDailySet(VL_TAUREN_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1012, "Take only what the earth offers freely, and waste nothing.", "Choose sound materials; patient work begins with honest substance.", "Carry the burden evenly and the road will feel shorter.")
-        call RegisterDailySet(VL_TAUREN_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1012, "Take only what the earth offers freely, and waste nothing.", "Choose sound materials; patient work begins with honest substance.", "Carry the burden evenly and the road will feel shorter.")
-        call RegisterDailySet(VL_TAUREN_MALE_3_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1012, "Take only what the earth offers freely, and waste nothing.", "Choose sound materials; patient work begins with honest substance.", "Carry the burden evenly and the road will feel shorter.")
+        call RegisterDailySet(VL_GENERIC_TAUREN_MALE_3_TYPE, QuestsGeneric_OBJECTIVE_KILL, 1009, "Walk with purpose and let no threat follow you home.", "Strength is measured by what your journey protects.", "Return beneath an open sky when the trail is safe.")
+        call RegisterDailySet(VL_GENERIC_TAUREN_MALE_1_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1012, "Take only what the earth offers freely, and waste nothing.", "Choose sound materials; patient work begins with honest substance.", "Carry the burden evenly and the road will feel shorter.")
+        call RegisterDailySet(VL_GENERIC_TAUREN_MALE_2_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1012, "Take only what the earth offers freely, and waste nothing.", "Choose sound materials; patient work begins with honest substance.", "Carry the burden evenly and the road will feel shorter.")
+        call RegisterDailySet(VL_GENERIC_TAUREN_MALE_3_TYPE, QuestsGeneric_OBJECTIVE_FETCH, 1012, "Take only what the earth offers freely, and waste nothing.", "Choose sound materials; patient work begins with honest substance.", "Carry the burden evenly and the road will feel shorter.")
     endfunction
 
     private function RegisterProgressDialogue takes nothing returns nothing
-        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_KILL, "The danger remains.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 1))
-        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_KILL, "The road is not safe yet.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 2))
-        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_KILL, "Finish the hunt, then return.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 3))
-        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_FETCH, "The shipment is still short.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 4))
-        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_FETCH, "I still need the remaining materials.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 5))
-        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_FETCH, "Bring the full amount before we settle this.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 6))
-        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_TALK, "The message has not reached its destination.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 7))
-        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_TALK, "Speak with the one I named, then come back.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 8))
-        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_TALK, "The other party is still waiting for you.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 9))
-        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_PURCHASE, "The required goods have not been purchased yet.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 10))
-        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_PURCHASE, "Return after you have bought the full order.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 11))
-        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_PURCHASE, "The merchant still has what this commission needs.", QuestsGeneric_FormatSoundKey(VL_QUEST_GENERIC_TYPE, 12))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_KILL, "The danger remains.", QuestsGeneric_FormatSoundKey(VL_GENERIC_QUEST_TYPE, 1))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_KILL, "The road is not safe yet.", QuestsGeneric_FormatSoundKey(VL_GENERIC_QUEST_TYPE, 2))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_KILL, "Finish the hunt, then return.", QuestsGeneric_FormatSoundKey(VL_GENERIC_QUEST_TYPE, 3))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_FETCH, "The shipment is still short.", QuestsGeneric_FormatSoundKey(VL_GENERIC_QUEST_TYPE, 4))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_FETCH, "I still need the remaining materials.", QuestsGeneric_FormatSoundKey(VL_GENERIC_QUEST_TYPE, 5))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_FETCH, "Bring the full amount before we settle this.", QuestsGeneric_FormatSoundKey(VL_GENERIC_QUEST_TYPE, 6))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_TALK, "The message has not reached its destination.", QuestsGeneric_FormatSoundKey(VL_GENERIC_QUEST_TYPE, 7))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_TALK, "Speak with the one I named, then come back.", QuestsGeneric_FormatSoundKey(VL_GENERIC_QUEST_TYPE, 8))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_TALK, "The other party is still waiting for you.", QuestsGeneric_FormatSoundKey(VL_GENERIC_QUEST_TYPE, 9))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_PURCHASE, "The required goods have not been purchased yet.", QuestsGeneric_FormatSoundKey(VL_GENERIC_QUEST_TYPE, 10))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_PURCHASE, "Return after you have bought the full order.", QuestsGeneric_FormatSoundKey(VL_GENERIC_QUEST_TYPE, 11))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_PURCHASE, "The merchant still has what this commission needs.", QuestsGeneric_FormatSoundKey(VL_GENERIC_QUEST_TYPE, 12))
     endfunction
 
     private function Init takes nothing returns nothing
         call QuestsGeneric_ConfigureSharedDialogue(VL_QUEST_HERO_ACCEPT, VL_QUEST_HERO_COMPLETE_KILL, VL_QUEST_HERO_COMPLETE_FETCH, VL_QUEST_HERO_COMPLETE_TALK, VL_QUEST_HERO_PROGRESS, VL_QUEST_GIVER_PROGRESS, VL_NAZGREK_GENERIC_TYPE, VL_ZULKIS_GENERIC_TYPE)
-        call ExSound_RegisterSequence(VL_ORC_MALE_1_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\OrcMale1\\")
-        call ExSound_RegisterSequence(VL_ORC_MALE_2_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\OrcMale2\\")
-        call ExSound_RegisterSequence(VL_ORC_MALE_3_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\OrcMale3\\")
-        call ExSound_RegisterSequence(VL_ORC_MALE_4_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\OrcMale4\\")
-        call ExSound_RegisterSequence(VL_ORC_MALE_5_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\OrcMale5\\")
-        call ExSound_RegisterSequence(VL_ORC_MALE_6_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\OrcMale6\\")
-        call ExSound_RegisterSequence(VL_ORC_MALE_7_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\OrcMale7\\")
-        call ExSound_RegisterSequence(VL_ORC_MALE_8_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\OrcMale8\\")
-        call ExSound_RegisterSequence(VL_ORC_MALE_9_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\OrcMale9\\")
-        call ExSound_RegisterSequence(VL_SATYR_MALE_1_TYPE, 1001, 1027, "Pots\\Sound\\Voicelines\\SatyrMale1\\")
-        call ExSound_RegisterSequence(VL_HUMAN_MALE_1_TYPE, 1001, 1037, "Pots\\Sound\\Voicelines\\HumanMale1\\")
-        call ExSound_RegisterSequence(VL_HUMAN_MALE_2_TYPE, 1001, 1037, "Pots\\Sound\\Voicelines\\HumanMale2\\")
-        call ExSound_RegisterSequence(VL_GOBLIN_MALE_1_TYPE, 1001, 1035, "Pots\\Sound\\Voicelines\\GoblinMale1\\")
-        call ExSound_RegisterSequence(VL_GOBLIN_MALE_2_TYPE, 1001, 1035, "Pots\\Sound\\Voicelines\\GoblinMale2\\")
-        call ExSound_RegisterSequence(VL_GOBLIN_MALE_3_TYPE, 1001, 1035, "Pots\\Sound\\Voicelines\\GoblinMale3\\")
-        call ExSound_RegisterSequence(VL_GOBLIN_MALE_4_TYPE, 1001, 1035, "Pots\\Sound\\Voicelines\\GoblinMale4\\")
-        call ExSound_RegisterSequence(VL_OGRE_BONECRUSHER_MALE_1_TYPE, 1001, 1025, "Pots\\Sound\\Voicelines\\OgreBonecrusherMale1\\")
-        call ExSound_RegisterSequence(VL_ELARINDOR_MALE_1_TYPE, 1001, 1025, "Pots\\Sound\\Voicelines\\ElarindorMale1\\")
-        call ExSound_RegisterSequence(VL_ELARINDOR_MALE_2_TYPE, 1001, 1025, "Pots\\Sound\\Voicelines\\ElarindorMale2\\")
-        call ExSound_RegisterSequence(VL_ELARINDOR_FEMALE_1_TYPE, 1001, 1025, "Pots\\Sound\\Voicelines\\ElarindorFemale1\\")
-        call ExSound_RegisterSequence(VL_ELARINDOR_FEMALE_2_TYPE, 1001, 1025, "Pots\\Sound\\Voicelines\\ElarindorFemale2\\")
-        call ExSound_RegisterSequence(VL_TAUREN_MALE_1_TYPE, 1001, 1014, "Pots\\Sound\\Voicelines\\TaurenMale1\\")
-        call ExSound_RegisterSequence(VL_TAUREN_MALE_2_TYPE, 1001, 1014, "Pots\\Sound\\Voicelines\\TaurenMale2\\")
-        call ExSound_RegisterSequence(VL_TAUREN_MALE_3_TYPE, 1001, 1014, "Pots\\Sound\\Voicelines\\TaurenMale3\\")
-        call ExSound_RegisterSequence(VL_NAZGREK_GENERIC_TYPE, 1, 19, "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekGeneric\\")
-        call ExSound_RegisterSequence(VL_ZULKIS_GENERIC_TYPE, 1, 19, "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisGeneric\\")
-        call ExSound_RegisterSequence(VL_QUEST_GENERIC_TYPE, 1, 12, "Pots\\Sound\\Voicelines\\QuestGeneric\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_1_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\GenericOrcMale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_2_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\GenericOrcMale2\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_3_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\GenericOrcMale3\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_4_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\GenericOrcMale4\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_5_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\GenericOrcMale5\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_6_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\GenericOrcMale6\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_7_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\GenericOrcMale7\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_8_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\GenericOrcMale8\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_9_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\GenericOrcMale9\\")
+        call ExSound_RegisterSequence(VL_GENERIC_SATYR_MALE_1_TYPE, 1001, 1027, "Pots\\Sound\\Voicelines\\GenericSatyrMale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_SATYR_FEMALE_1_TYPE, 1001, 1027, "Pots\\Sound\\Voicelines\\GenericSatyrFemale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_HUMAN_MALE_1_TYPE, 1001, 1037, "Pots\\Sound\\Voicelines\\GenericHumanMale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_HUMAN_MALE_2_TYPE, 1001, 1037, "Pots\\Sound\\Voicelines\\GenericHumanMale2\\")
+        call ExSound_RegisterSequence(VL_GENERIC_GOBLIN_MALE_1_TYPE, 1001, 1035, "Pots\\Sound\\Voicelines\\GenericGoblinMale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_GOBLIN_MALE_2_TYPE, 1001, 1035, "Pots\\Sound\\Voicelines\\GenericGoblinMale2\\")
+        call ExSound_RegisterSequence(VL_GENERIC_GOBLIN_MALE_3_TYPE, 1001, 1035, "Pots\\Sound\\Voicelines\\GenericGoblinMale3\\")
+        call ExSound_RegisterSequence(VL_GENERIC_GOBLIN_MALE_4_TYPE, 1001, 1035, "Pots\\Sound\\Voicelines\\GenericGoblinMale4\\")
+        call ExSound_RegisterSequence(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, 1001, 1025, "Pots\\Sound\\Voicelines\\GenericOgreBonecrusherMale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ELARINDOR_MALE_1_TYPE, 1001, 1025, "Pots\\Sound\\Voicelines\\GenericElarindorMale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ELARINDOR_MALE_2_TYPE, 1001, 1025, "Pots\\Sound\\Voicelines\\GenericElarindorMale2\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ELARINDOR_FEMALE_1_TYPE, 1001, 1025, "Pots\\Sound\\Voicelines\\GenericElarindorFemale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ELARINDOR_FEMALE_2_TYPE, 1001, 1025, "Pots\\Sound\\Voicelines\\GenericElarindorFemale2\\")
+        call ExSound_RegisterSequence(VL_GENERIC_TAUREN_MALE_1_TYPE, 1001, 1014, "Pots\\Sound\\Voicelines\\GenericTaurenMale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_TAUREN_MALE_2_TYPE, 1001, 1014, "Pots\\Sound\\Voicelines\\GenericTaurenMale2\\")
+        call ExSound_RegisterSequence(VL_GENERIC_TAUREN_MALE_3_TYPE, 1001, 1014, "Pots\\Sound\\Voicelines\\GenericTaurenMale3\\")
+        call ExSound_RegisterSequence(VL_GENERIC_QUEST_TYPE, 1, 12, "Pots\\Sound\\Voicelines\\GenericQuest\\")
         call RegisterDailyDialogue()
         call RegisterProgressDialogue()
     endfunction

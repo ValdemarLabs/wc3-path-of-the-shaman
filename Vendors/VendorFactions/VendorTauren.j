@@ -25,17 +25,17 @@ library VendorTauren initializer Init requires VendorCatalogs
     endfunction
 
     private function Init takes nothing returns nothing
-        call Register('o015', VendorCatalogs_VENDOR_CATALOG_WEAPONS, VL_TAUREN_MALE_1_TYPE)
-        call Register('o016', VendorCatalogs_VENDOR_CATALOG_ARMOR, VL_TAUREN_MALE_2_TYPE)
-        call Register('o017', VendorCatalogs_VENDOR_CATALOG_SHIELDS, VL_TAUREN_MALE_3_TYPE)
-        call Register('o018', VendorCatalogs_VENDOR_CATALOG_FOOD_AND_DRINK, VL_TAUREN_MALE_1_TYPE)
-        call Register('o019', VendorCatalogs_VENDOR_CATALOG_BEAST_SUPPLIES, VL_TAUREN_MALE_2_TYPE)
-        call Register('o01A', VendorCatalogs_VENDOR_CATALOG_QUARTERMASTER, VL_TAUREN_MALE_3_TYPE)
-        call Register('o01B', VendorCatalogs_VENDOR_CATALOG_BLACKSMITHING_SUPPLIES, VL_TAUREN_MALE_1_TYPE)
-        call Register('o01C', VendorCatalogs_VENDOR_CATALOG_MINER, VL_TAUREN_MALE_2_TYPE)
-        call Register('o01D', VendorCatalogs_VENDOR_CATALOG_TRADE_GOODS, VL_TAUREN_MALE_3_TYPE)
-        call Register('o01E', VendorCatalogs_VENDOR_CATALOG_TRAVELLING, VL_TAUREN_MALE_1_TYPE)
-        call Register('o01F', VendorCatalogs_VENDOR_CATALOG_BARTENDER, VL_TAUREN_MALE_2_TYPE)
-        call Register('o01G', VendorCatalogs_VENDOR_CATALOG_BARTENDER, VL_TAUREN_MALE_3_TYPE)
+        call Register('o015', VendorCatalogs_VENDOR_CATALOG_WEAPONS, VL_GENERIC_TAUREN_MALE_1_TYPE)
+        call Register('o016', VendorCatalogs_VENDOR_CATALOG_ARMOR, VL_GENERIC_TAUREN_MALE_2_TYPE)
+        call Register('o017', VendorCatalogs_VENDOR_CATALOG_SHIELDS, VL_GENERIC_TAUREN_MALE_3_TYPE)
+        call Register('o018', VendorCatalogs_VENDOR_CATALOG_FOOD_AND_DRINK, VL_GENERIC_TAUREN_MALE_1_TYPE)
+        call Register('o019', VendorCatalogs_VENDOR_CATALOG_BEAST_SUPPLIES, VL_GENERIC_TAUREN_MALE_2_TYPE)
+        call Register('o01A', VendorCatalogs_VENDOR_CATALOG_QUARTERMASTER, VL_GENERIC_TAUREN_MALE_3_TYPE)
+        call Register('o01B', VendorCatalogs_VENDOR_CATALOG_BLACKSMITHING_SUPPLIES, VL_GENERIC_TAUREN_MALE_1_TYPE)
+        call Register('o01C', VendorCatalogs_VENDOR_CATALOG_MINER, VL_GENERIC_TAUREN_MALE_2_TYPE)
+        call Register('o01D', VendorCatalogs_VENDOR_CATALOG_TRADE_GOODS, VL_GENERIC_TAUREN_MALE_3_TYPE)
+        call Register('o01E', VendorCatalogs_VENDOR_CATALOG_TRAVELLING, VL_GENERIC_TAUREN_MALE_1_TYPE)
+        call Register('o01F', VendorCatalogs_VENDOR_CATALOG_BARTENDER, VL_GENERIC_TAUREN_MALE_2_TYPE)
+        call Register('o01G', VendorCatalogs_VENDOR_CATALOG_BARTENDER, VL_GENERIC_TAUREN_MALE_3_TYPE)
     endfunction
 endlibrary

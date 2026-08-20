@@ -263,6 +263,24 @@ function Get-JassRows {
             }
         }
 
+        $profileSoundTypes = @{}
+        $profileSoundTypePattern = 'call\s+VendorLines_RegisterProfileSoundType\(\s*([A-Z0-9_]+)\s*,\s*(VL_[A-Z0-9_]+_TYPE)\s*\)'
+        foreach ($m in [regex]::Matches($text, $profileSoundTypePattern)) {
+            $profileSoundTypes[$m.Groups[1].Value] = $m.Groups[2].Value
+        }
+
+        $directProfileLinePattern = 'call\s+VendorLines_RegisterProfileVoiceLine\(\s*([A-Z0-9_]+)\s*,\s*[^,]+\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*(\d+)\s*\)'
+        foreach ($m in [regex]::Matches($text, $directProfileLinePattern)) {
+            $profileConstant = $m.Groups[1].Value
+            if (-not $profileSoundTypes.ContainsKey($profileConstant)) { continue }
+
+            $soundTypeConstant = $profileSoundTypes[$profileConstant]
+            if (-not $soundTypeByConstant.ContainsKey($soundTypeConstant)) { continue }
+
+            $lineIndex = [int]$m.Groups[3].Value
+            Add-Row -Rows $rows -Key (Format-SequenceKey -SoundType $soundTypeByConstant[$soundTypeConstant] -LineIndex $lineIndex) -Text (ConvertFrom-JassString $m.Groups[2].Value) -Source $file.Name -ExpectedFolder "" -DefinitionId "$($file.Name):${profileConstant}:$lineIndex"
+        }
+
         $vendorCatalogs = @{}
         $vendorCatalogCount = 0
         $catalogCallPattern = '(?m)^\s*call\s+(RegisterBasicProfile|RegisterCatalogBasicProfile)\(([^\r\n]+)\)'
@@ -362,7 +380,7 @@ function Get-JassRows {
         }
 
         $heroGenericTexts = @{}
-        foreach ($m in [regex]::Matches($text, 'constant\s+string\s+VL_(NAZGREK|ZULKIS)_GENERIC_(\d{4})\s*=\s*"((?:[^"\\]|\\.)*)"')) {
+        foreach ($m in [regex]::Matches($text, 'constant\s+string\s+VL_(NAZGREK|ZULKIS)_GENERIC_(\d{4})_TEXT\s*=\s*"((?:[^"\\]|\\.)*)"')) {
             $heroGenericTexts["$($m.Groups[1].Value):$([int]$m.Groups[2].Value)"] = ConvertFrom-JassString $m.Groups[3].Value
         }
 
@@ -718,7 +736,7 @@ if ($ambiguousRows.Count -gt 0) {
 }
 
 $generationRows = @($scanRows | Where-Object {
-    -not $_.present_in_master `
+    (-not $_.present_in_master -or $Force) `
         -and (-not $_.pending_review -or $Force) `
         -and -not $_.duplicate_text_variants `
         -and -not [string]::IsNullOrWhiteSpace($_.text) `
@@ -746,7 +764,7 @@ $apiKey = Get-RequiredEnvironmentValue -Name "FISH_API_KEY"
 $generated = 0
 $skipped = 0
 foreach ($row in $generationRows) {
-    $folder = ($row.expected_folder -split " \\|\\| ")[0]
+    $folder = @($row.expected_folder -split " \\|\\| " | Sort-Object Length -Descending)[0]
     $outputDir = Join-Path $TempRoot $folder
     $outputPath = Join-Path $outputDir $row.file_name
     New-Item -ItemType Directory -Path $outputDir -Force | Out-Null

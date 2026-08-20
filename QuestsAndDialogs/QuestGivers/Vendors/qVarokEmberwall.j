@@ -18,6 +18,6 @@
 **/
 library qVarokEmberwall initializer Init requires QuestsVendor, VoicelinesQuests
     private function Init takes nothing returns nothing
-        call QuestsVendor_RegisterFetchQuest('o013', "Straps for the Line", "daily", 5, "Straps for the Line", "ReplaceableTextures\\CommandButtons\\BTNLeatherUpgradeOne.blp", "Gather leather for the straps and grips on Brakka's shields.", 'I6A6', 6, 30, VL_ORC_MALE_3_TYPE, 1005, VL_VENDORQUEST_ORC_0005, VL_VENDORQUEST_ORC_0006)
+        call QuestsVendor_RegisterFetchQuest('o013', "Straps for the Line", "daily", 5, "Straps for the Line", "ReplaceableTextures\\CommandButtons\\BTNLeatherUpgradeOne.blp", "Gather leather for the straps and grips on Brakka's shields.", 'I6A6', 6, 30, VL_GENERIC_ORC_MALE_3_TYPE, 1005, VL_VENDORQUEST_ORC_0005, VL_VENDORQUEST_ORC_0006)
     endfunction
 endlibrary

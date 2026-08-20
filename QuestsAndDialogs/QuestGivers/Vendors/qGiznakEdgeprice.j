@@ -18,6 +18,6 @@
 **/
 library qGiznakEdgeprice initializer Init requires QuestsVendor, VoicelinesQuests
     private function Init takes nothing returns nothing
-        call QuestsVendor_RegisterKillQuest('n03Y', "Field-Tested Steel", "daily", 5, "Field-Tested Steel", "ReplaceableTextures\\CommandButtons\\BTNGnoll.blp", "Field-test Razzik's weapon advice against nearby gnolls.", 'ngno', 9, 35, VL_GOBLIN_MALE_1_TYPE, 1005, VL_VENDORQUEST_GOBLIN_0005, VL_VENDORQUEST_GOBLIN_0006)
+        call QuestsVendor_RegisterKillQuest('n03Y', "Field-Tested Steel", "daily", 5, "Field-Tested Steel", "ReplaceableTextures\\CommandButtons\\BTNGnoll.blp", "Field-test Razzik's weapon advice against nearby gnolls.", 'ngno', 9, 35, VL_GENERIC_GOBLIN_MALE_1_TYPE, 1005, VL_VENDORQUEST_GOBLIN_0005, VL_VENDORQUEST_GOBLIN_0006)
     endfunction
 endlibrary

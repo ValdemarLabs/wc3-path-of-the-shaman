@@ -91,13 +91,13 @@ library BlacksmithVendor initializer Init requires Shop, VoicelinesVendorLines, 
 
     private function BindVoiceProfiles takes nothing returns nothing
         call VendorLines_BindUnitTypeProfile(VB_UNIT_TYPE_HUMAN_BLACKSMITH, VL_VENDOR_PROFILE_HUMAN_RIVERBANE_BLACKSMITH_MALE)
-        call VendorLines_BindUnitTypeVoiceType(VB_UNIT_TYPE_HUMAN_BLACKSMITH, VL_HUMAN_MALE_1_TYPE)
+        call VendorLines_BindUnitTypeVoiceType(VB_UNIT_TYPE_HUMAN_BLACKSMITH, VL_GENERIC_HUMAN_MALE_1_TYPE)
         call VendorLines_BindUnitTypeProfile(VB_UNIT_TYPE_ORC_BLACKSMITH, VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_BLACKSMITH_MALE)
-        call VendorLines_BindUnitTypeVoiceType(VB_UNIT_TYPE_ORC_BLACKSMITH, VL_ORC_MALE_4_TYPE)
+        call VendorLines_BindUnitTypeVoiceType(VB_UNIT_TYPE_ORC_BLACKSMITH, VL_GENERIC_ORC_MALE_4_TYPE)
         call VendorLines_BindUnitTypeProfile(VB_UNIT_TYPE_BROKKAR, VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_BLACKSMITH_MALE)
-        call VendorLines_BindUnitTypeVoiceType(VB_UNIT_TYPE_BROKKAR, VL_ORC_MALE_4_TYPE)
+        call VendorLines_BindUnitTypeVoiceType(VB_UNIT_TYPE_BROKKAR, VL_GENERIC_ORC_MALE_4_TYPE)
         call VendorLines_BindUnitTypeProfile(VB_UNIT_TYPE_THROGAR, VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_BLACKSMITH_MALE)
-        call VendorLines_BindUnitTypeVoiceType(VB_UNIT_TYPE_THROGAR, VL_ORC_MALE_4_TYPE)
+        call VendorLines_BindUnitTypeVoiceType(VB_UNIT_TYPE_THROGAR, VL_GENERIC_ORC_MALE_4_TYPE)
     endfunction
 
     private function Init takes nothing returns nothing

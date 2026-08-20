@@ -25,7 +25,7 @@ library VendorTrolls initializer Init requires VendorCatalogs
     endfunction
 
     private function Init takes nothing returns nothing
-        call Register('n05H', VendorCatalogs_VENDOR_CATALOG_JEWELCRAFTER, VL_TROLL_MALE_1_TYPE)
-        call Register('n05J', VendorCatalogs_VENDOR_CATALOG_VOODOO_GOODS, VL_TROLL_MALE_2_TYPE)
+        call Register('n05H', VendorCatalogs_VENDOR_CATALOG_JEWELCRAFTER, VL_GENERIC_TROLL_MALE_1_TYPE)
+        call Register('n05J', VendorCatalogs_VENDOR_CATALOG_VOODOO_GOODS, VL_GENERIC_TROLL_MALE_2_TYPE)
     endfunction
 endlibrary

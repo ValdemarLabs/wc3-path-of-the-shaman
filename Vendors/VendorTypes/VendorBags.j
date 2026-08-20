@@ -65,7 +65,7 @@ library VendorBags initializer Init requires Shop, VoicelinesVendorLines
 
     private function BindVoiceProfile takes nothing returns nothing
         call VendorLines_BindUnitTypeProfile(VBAG_UNIT_TYPE_GRAKNAR, VL_VENDOR_PROFILE_OGRE_BONECRUSHER_BAG_MERCHANT_MALE)
-        call VendorLines_BindUnitTypeVoiceType(VBAG_UNIT_TYPE_GRAKNAR, VL_OGRE_BONECRUSHER_MALE_1_TYPE)
+        call VendorLines_BindUnitTypeVoiceType(VBAG_UNIT_TYPE_GRAKNAR, VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE)
     endfunction
 
     private function Init takes nothing returns nothing

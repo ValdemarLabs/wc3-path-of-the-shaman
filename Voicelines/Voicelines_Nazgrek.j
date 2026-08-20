@@ -2,28 +2,101 @@
     VoicelinesNazgrek
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
-    Speaker-owned voiceline keys and text constants migrated from active
-    qAradion dialog usage. This library also registers the referenced
-    sound keys against the speaker folder used by local PotS files.
+    Speaker-owned story and reusable generic quest voicelines for Nazgrek.
+    This library owns their text, keys, sound registration, and generic
+    quest reply variants.
 
     Credits:
     - Voicelines/_oldExcel/VoicelinesMaster.xlsx
     - QuestsAndDialogs/QuestGivers/qAradion.j
 
     How to install:
-    Import after `Voicelines.j`. Consumers require this library directly.
+    Import after `Voicelines.j` and `QuestsGeneric.j`. Consumers require this
+    library directly.
 
     API:
-    Global `VL_NAZGREK_####_KEY` and `VL_NAZGREK_####_TEXT` constants.
+    Global `VL_NAZGREK_####_*` and `VL_NAZGREK_GENERIC_####_*` constants.
 
 **/
-library VoicelinesNazgrek initializer Init requires Voicelines
+library VoicelinesNazgrek initializer Init requires Voicelines, QuestsGeneric
 
 globals
     constant string VL_NAZGREK_FOLDER = "Nazgrek"
+    constant string VL_NAZGREK_GENERIC_FOLDER = "NazgrekGeneric"
+    constant string VL_NAZGREK_GENERIC_TYPE = "NazgrekGeneric_"
+
+    // Reusable generic quest replies: accept.
+    constant string VL_NAZGREK_GENERIC_0001_KEY = "NazgrekGeneric_0001"
+    constant string VL_NAZGREK_GENERIC_0001_TEXT = "I will see it done."
+    constant string VL_NAZGREK_GENERIC_0002_KEY = "NazgrekGeneric_0002"
+    constant string VL_NAZGREK_GENERIC_0002_TEXT = "Understood. I will handle it."
+    constant string VL_NAZGREK_GENERIC_0003_KEY = "NazgrekGeneric_0003"
+    constant string VL_NAZGREK_GENERIC_0003_TEXT = "The spirits have shown me where to begin."
+    constant string VL_NAZGREK_GENERIC_0004_KEY = "NazgrekGeneric_0004"
+    constant string VL_NAZGREK_GENERIC_0004_TEXT = "Point me toward the task, and I will finish it."
+
+    // Reusable generic quest replies: kill completion.
+    constant string VL_NAZGREK_GENERIC_0005_KEY = "NazgrekGeneric_0005"
+    constant string VL_NAZGREK_GENERIC_0005_TEXT = "The threat has been dealt with."
+    constant string VL_NAZGREK_GENERIC_0006_KEY = "NazgrekGeneric_0006"
+    constant string VL_NAZGREK_GENERIC_0006_TEXT = "The path is safe again."
+    constant string VL_NAZGREK_GENERIC_0007_KEY = "NazgrekGeneric_0007"
+    constant string VL_NAZGREK_GENERIC_0007_TEXT = "Those enemies will trouble us no longer."
+    constant string VL_NAZGREK_GENERIC_0008_KEY = "NazgrekGeneric_0008"
+    constant string VL_NAZGREK_GENERIC_0008_TEXT = "The spirits are quiet now. It is done."
+
+    // Reusable generic quest replies: talk completion.
+    constant string VL_NAZGREK_GENERIC_0009_KEY = "NazgrekGeneric_0009"
+    constant string VL_NAZGREK_GENERIC_0009_TEXT = "I spoke with the one you named."
+    constant string VL_NAZGREK_GENERIC_0010_KEY = "NazgrekGeneric_0010"
+    constant string VL_NAZGREK_GENERIC_0010_TEXT = "Your message reached its destination."
+    constant string VL_NAZGREK_GENERIC_0011_KEY = "NazgrekGeneric_0011"
+    constant string VL_NAZGREK_GENERIC_0011_TEXT = "They heard your words and gave me their answer."
+    constant string VL_NAZGREK_GENERIC_0012_KEY = "NazgrekGeneric_0012"
+    constant string VL_NAZGREK_GENERIC_0012_TEXT = "The discussion is finished."
+
+    // Reusable generic quest replies: fetch completion.
+    constant string VL_NAZGREK_GENERIC_0013_KEY = "NazgrekGeneric_0013"
+    constant string VL_NAZGREK_GENERIC_0013_TEXT = "I brought what you asked for."
+    constant string VL_NAZGREK_GENERIC_0014_KEY = "NazgrekGeneric_0014"
+    constant string VL_NAZGREK_GENERIC_0014_TEXT = "The delivery is complete."
+    constant string VL_NAZGREK_GENERIC_0015_KEY = "NazgrekGeneric_0015"
+    constant string VL_NAZGREK_GENERIC_0015_TEXT = "Everything you requested is here."
+    constant string VL_NAZGREK_GENERIC_0016_KEY = "NazgrekGeneric_0016"
+    constant string VL_NAZGREK_GENERIC_0016_TEXT = "I gathered the full amount."
+
+    // Reusable generic quest replies: progress.
+    constant string VL_NAZGREK_GENERIC_0017_KEY = "NazgrekGeneric_0017"
+    constant string VL_NAZGREK_GENERIC_0017_TEXT = "What remains to be done?"
+    constant string VL_NAZGREK_GENERIC_0018_KEY = "NazgrekGeneric_0018"
+    constant string VL_NAZGREK_GENERIC_0018_TEXT = "I have not forgotten the task."
+    constant string VL_NAZGREK_GENERIC_0019_KEY = "NazgrekGeneric_0019"
+    constant string VL_NAZGREK_GENERIC_0019_TEXT = "Show me where I am still needed."
+    constant string VL_NAZGREK_GENERIC_0020_KEY = "NazgrekGeneric_0020"
+    constant string VL_NAZGREK_GENERIC_0020_TEXT = "Tell me what still stands unfinished."
+
+    // Reusable generic quest replies: supply handoff.
+    constant string VL_NAZGREK_GENERIC_0021_KEY = "NazgrekGeneric_0021"
+    constant string VL_NAZGREK_GENERIC_0021_TEXT = "I was sent to collect the supplies you are holding."
+    constant string VL_NAZGREK_GENERIC_0022_KEY = "NazgrekGeneric_0022"
+    constant string VL_NAZGREK_GENERIC_0022_TEXT = "I am here for the parcel entrusted to you."
+    constant string VL_NAZGREK_GENERIC_0023_KEY = "NazgrekGeneric_0023"
+    constant string VL_NAZGREK_GENERIC_0023_TEXT = "You have supplies meant for my quest."
+    constant string VL_NAZGREK_GENERIC_0024_KEY = "NazgrekGeneric_0024"
+    constant string VL_NAZGREK_GENERIC_0024_TEXT = "Hand me the supplies, and I will see them delivered."
+
+    // Reusable generic quest replies: quest purchase.
+    constant string VL_NAZGREK_GENERIC_0025_KEY = "NazgrekGeneric_0025"
+    constant string VL_NAZGREK_GENERIC_0025_TEXT = "I was told you carry the item needed for this commission."
+    constant string VL_NAZGREK_GENERIC_0026_KEY = "NazgrekGeneric_0026"
+    constant string VL_NAZGREK_GENERIC_0026_TEXT = "Show me the goods set aside for this task."
+    constant string VL_NAZGREK_GENERIC_0027_KEY = "NazgrekGeneric_0027"
+    constant string VL_NAZGREK_GENERIC_0027_TEXT = "This commission requires an item from your stock."
+    constant string VL_NAZGREK_GENERIC_0028_KEY = "NazgrekGeneric_0028"
+    constant string VL_NAZGREK_GENERIC_0028_TEXT = "I am here to purchase what the quest requires."
 
     // Legacy Excel draft/reference rows not yet wired to active code.
 
@@ -638,7 +711,40 @@ globals
     constant string VL_NAZGREK_0384_TEXT = "This place seems to have tendency to take a grip of even the kindest people..."
 endglobals
 
+private function RegisterGenericQuestLines takes nothing returns nothing
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_ACCEPT, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0001_TEXT, 1)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_ACCEPT, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0002_TEXT, 2)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_ACCEPT, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0003_TEXT, 3)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_ACCEPT, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0004_TEXT, 4)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_COMPLETE_KILL, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0005_TEXT, 5)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_COMPLETE_KILL, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0006_TEXT, 6)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_COMPLETE_KILL, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0007_TEXT, 7)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_COMPLETE_KILL, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0008_TEXT, 8)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_COMPLETE_TALK, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0009_TEXT, 9)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_COMPLETE_TALK, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0010_TEXT, 10)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_COMPLETE_TALK, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0011_TEXT, 11)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_COMPLETE_TALK, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0012_TEXT, 12)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_COMPLETE_FETCH, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0013_TEXT, 13)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_COMPLETE_FETCH, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0014_TEXT, 14)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_COMPLETE_FETCH, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0015_TEXT, 15)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_COMPLETE_FETCH, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0016_TEXT, 16)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_PROGRESS, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0017_TEXT, 17)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_PROGRESS, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0018_TEXT, 18)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_PROGRESS, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0019_TEXT, 19)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_PROGRESS, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0020_TEXT, 20)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_REQUEST_SUPPLY, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0021_TEXT, 21)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_REQUEST_SUPPLY, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0022_TEXT, 22)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_REQUEST_SUPPLY, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0023_TEXT, 23)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_REQUEST_SUPPLY, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0024_TEXT, 24)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_ASK_TO_BUY, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0025_TEXT, 25)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_ASK_TO_BUY, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0026_TEXT, 26)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_ASK_TO_BUY, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0027_TEXT, 27)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_ASK_TO_BUY, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0028_TEXT, 28)
+endfunction
+
 private function Init takes nothing returns nothing
+    call ExSound_RegisterSequence(VL_NAZGREK_GENERIC_TYPE, 1, 28, "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekGeneric\\")
+    call RegisterGenericQuestLines()
     call Voicelines_RegisterKey(VL_NAZGREK_FOLDER, VL_NAZGREK_0331_KEY)
     call Voicelines_RegisterKey(VL_NAZGREK_FOLDER, VL_NAZGREK_0332_KEY)
     call Voicelines_RegisterKey(VL_NAZGREK_FOLDER, VL_NAZGREK_0333_KEY)
