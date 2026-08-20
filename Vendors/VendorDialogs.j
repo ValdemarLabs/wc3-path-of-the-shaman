@@ -26,7 +26,7 @@
     - Combat interruption is enabled by default through DialogInteraction.
 
 **/
-library VendorDialogs initializer Init requires Table, DialogInteraction, DialogCamera, DialogSystem, Shop, ShopUI, VendorCatalogs, VendorOrcs, VendorSatyrs, VendorHumans, VendorGoblins, VendorBonecrusherOgres, VendorElarindor, VendorTauren, VendorDwarves, VendorTrolls, VendorLines, Reputation, Interface, optional QuestsVendor
+library VendorDialogs initializer Init requires Table, DialogInteraction, DialogCamera, DialogSystem, Shop, ShopUI, VendorCatalogs, VendorOrcs, VendorSatyrs, VendorHumans, VendorGoblins, VendorBonecrusherOgres, VendorElarindor, VendorTauren, VendorDwarves, VendorTrolls, VendorLines, Reputation, Interface, qANightToRemember, optional QuestsVendor
     globals
         private constant real VDI_DIALOG_RANGE = 900.00
         private constant real VDI_DIALOG_COOLDOWN = 3.00
@@ -61,6 +61,7 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         private Table VDI_CustomReturnHandler = 0
         private unit VDI_SelectedVendor = null
         private unit VDI_SelectedHero = null
+        private boolean VDI_NightQuestPending = false
     endglobals
 
     private function VDI_IsSelectedContextValid takes nothing returns boolean
@@ -202,6 +203,7 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
             static if LIBRARY_QuestsVendor then
                 call QuestsVendor_CancelPendingAction()
             endif
+            call qANightToRemember_CancelVendorTalk()
             call VDI_EndDialog(true)
             set vendor = null
             set hero = null
@@ -232,6 +234,8 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         static if LIBRARY_QuestsVendor then
             call QuestsVendor_CancelPendingAction()
         endif
+        call qANightToRemember_CancelVendorTalk()
+        set VDI_NightQuestPending = false
         call VDI_EndDialog(true)
     endfunction
 
@@ -253,9 +257,14 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
     private function VDI_OnQuestSequenceEnd takes nothing returns nothing
         local boolean openTrade = false
 
-        static if LIBRARY_QuestsVendor then
-            call QuestsVendor_FinishPendingAction()
-            set openTrade = QuestsVendor_ConsumeOpenTradeRequest()
+        if VDI_NightQuestPending then
+            call qANightToRemember_FinishVendorTalk()
+            set VDI_NightQuestPending = false
+        else
+            static if LIBRARY_QuestsVendor then
+                call QuestsVendor_FinishPendingAction()
+                set openTrade = QuestsVendor_ConsumeOpenTradeRequest()
+            endif
         endif
         if openTrade then
             call VDI_OnTrade()
@@ -272,8 +281,15 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
             return
         endif
 
-        static if LIBRARY_QuestsVendor then
-            set seq = QuestsVendor_BeginAction(DialogSystem_LastAction, VDI_SelectedVendor, VDI_SelectedHero)
+        set VDI_NightQuestPending = false
+        if qANightToRemember_IsVendorTalkAction(DialogSystem_LastAction) then
+            set seq = qANightToRemember_BeginVendorTalk(VDI_SelectedVendor, VDI_SelectedHero)
+            set VDI_NightQuestPending = seq > 0
+        endif
+        if seq == 0 then
+            static if LIBRARY_QuestsVendor then
+                set seq = QuestsVendor_BeginAction(DialogSystem_LastAction, VDI_SelectedVendor, VDI_SelectedHero)
+            endif
         endif
         if seq > 0 then
             call DialogInteraction_BeginDialogSequence()
@@ -304,6 +320,7 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         static if LIBRARY_QuestsVendor then
             call QuestsVendor_AddDialogButtons(VDI_Dialog, VDI_SelectedVendor, function VDI_OnQuest)
         endif
+        call qANightToRemember_AddVendorDialogButton(VDI_Dialog, VDI_SelectedVendor, VDI_SelectedHero, function VDI_OnQuest)
 
         set b = DialogSystem_AddButtonTrade(VDI_Dialog, VDI_ACTION_TRADE)
         call DialogSystem_BindButtonCode(b, function VDI_OnTrade)

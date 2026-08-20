@@ -113,3 +113,15 @@ registered for each accept, kill completion, talk completion, fetch completion,
 progress, supply-handoff, and quest-purchase interaction.
 Missing files fall back to ExSound's text-duration estimation until recordings
 are imported.
+
+## A Night To Remember witnesses
+
+`qANightToRemember.j` selects three placed witnesses per hangover run from a
+15-vendor Horde pool. The eligible qXXX libraries register Kargun, Drokmar,
+Varok, Rukgar, Nargash, Hurgan, Brakkun, Mordrak, Gorthak, Boran, Tawa, Koro,
+Nara, Zanjin, and Rokjin. This keeps the pool limited to Orc, Tauren, and Troll
+vendors while distributing targets across several zones.
+
+The shared profile reply pools use `1101-1103` for Orc and Tauren voices and
+`1001-1003` for Troll voices. `qZanjinGemeye.j` and `qRokjinHexsmoke.j` are
+registration-only libraries until those vendors receive ordinary quests.

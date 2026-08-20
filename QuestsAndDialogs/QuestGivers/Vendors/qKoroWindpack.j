@@ -16,9 +16,10 @@
     - Registers Koro Windpack's vendor quest automatically.
 
 **/
-library qKoroWindpack initializer Init requires QuestsVendor, VoicelinesQuests
+library qKoroWindpack initializer Init requires QuestsVendor, VoicelinesQuests, qANightToRemember
     private function Init takes nothing returns nothing
         local integer definitionId = QuestsVendor_RegisterKillQuest('o01D', "Gnolls on the Supply Trail", "daily", 7, "Gnolls on the Supply Trail", "ReplaceableTextures\\CommandButtons\\BTNGnoll.blp", "Defeat eight gnolls threatening Koro's supply trail.", 'ngno', 8, 40, VL_GENERIC_TAUREN_MALE_3_TYPE, 1005, VL_VENDORQUEST_TAUREN_0005, VL_VENDORQUEST_TAUREN_0006)
+        call qANightToRemember_RegisterVendorType('o01D', VL_GENERIC_TAUREN_MALE_3_TYPE, 1101)
         call QuestsVendor_SetFactionReward(definitionId, "Horde", 15, false)
     endfunction
 endlibrary
