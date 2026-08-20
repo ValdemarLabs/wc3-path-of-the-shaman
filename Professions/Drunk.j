@@ -65,7 +65,7 @@ globals
     private constant real D_PUKE_ANIMATION_TIME = 2.50
     private constant real D_PUKE_AFTER_TIME = 10.00
     private constant real D_PUKE_ARMOR_PENALTY = 12.00
-    private constant real D_PUKE_HIT_PENALTY = 65.00
+    private constant integer D_PUKE_HIT_PENALTY = 65
     private constant real D_PASSOUT_MIN_LEVEL = 0.45
     private constant real D_PASSOUT_BASE_CHANCE = 0.50
     private constant real D_PASSOUT_MAX_CHANCE = 60.00
@@ -109,6 +109,7 @@ globals
     private Table D_PassOutAnimation = 0
     private trigger D_WakeHandlers = null
     unit Drunk_WakeUnit = null
+    private trigger D_PassOutRectInit = null
 
     private boolean array D_FilterActive
     private real array D_SwayPhase
@@ -974,12 +975,40 @@ public function HasHangover takes unit whichUnit returns boolean
     return D_Hangover[unitId]
 endfunction
 
+private function D_RegisterPassOutRects takes nothing returns nothing
+    // Register all allowed player pass-out destinations here.
+    call Drunk_RegisterPassOutRect(gg_rct_Passout1)
+    call Drunk_RegisterPassOutRect(gg_rct_Passout2)
+    call Drunk_RegisterPassOutRect(gg_rct_Passout3)
+    call Drunk_RegisterPassOutRect(gg_rct_Passout4)
+    call Drunk_RegisterPassOutRect(gg_rct_Passout5)
+    call Drunk_RegisterPassOutRect(gg_rct_Passout6)
+    call Drunk_RegisterPassOutRect(gg_rct_Passout7)
+    call Drunk_RegisterPassOutRect(gg_rct_Passout8)
+    call Drunk_RegisterPassOutRect(gg_rct_Passout9)
+    call Drunk_RegisterPassOutRect(gg_rct_Passout10)
+    call Drunk_RegisterPassOutRect(gg_rct_Passout11)
+    call Drunk_RegisterPassOutRect(gg_rct_Passout12)
+    call Drunk_RegisterPassOutRect(gg_rct_Passout13)
+    call Drunk_RegisterPassOutRect(gg_rct_Passout14)
+    call Drunk_RegisterPassOutRect(gg_rct_Passout15)
+
+    // Initialization is one-shot, so the trigger is no longer needed.
+    call DestroyTrigger(D_PassOutRectInit)
+    set D_PassOutRectInit = null
+endfunction
+
 private function Init takes nothing returns nothing
     set D_TimerGeneration = Table.create()
     set D_PassOutAnimation = Table.create()
     set D_DrunkUnits = CreateGroup()
     set D_TickTimer = CreateTimer()
     call TimerStart(D_TickTimer, D_TICK_PERIOD, true, function D_Tick)
+
+    // Delay map-specific rect registration until preplaced rects exist.
+    set D_PassOutRectInit = CreateTrigger()
+    call TriggerRegisterTimerEvent(D_PassOutRectInit, 0.10, false)
+    call TriggerAddAction(D_PassOutRectInit, function D_RegisterPassOutRects)
 endfunction
 
 endlibrary
