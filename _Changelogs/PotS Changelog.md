@@ -15,6 +15,36 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [20.8.2026]
+
+### Player-Facing Updates
+
+- Converted the Satyr rare-goods, reagent, enchanting, and potion vendors to Velyssra the Covetous, Malthera Duskmoss, Ithryssa Runehorn, and Selyth Venomcup, with a mean and cunning female Satyr voice profile shared by their vendor and quest dialogue.
+- Nazgrek and Zul'kis now each have four personality-specific randomized replies for generic quest acceptance, kill completion, talk completion, fetch completion, progress, supply handoffs, and quest purchases.
+- Generic vendor and quest voices now use clearly reusable `GenericRaceGenderN` profile names instead of vendor-oriented or ambiguous speaker names.
+
+### Technical Updates
+
+- Added and registered `GenericSatyrFemale1` across `Voicelines/Voicelines_VendorLines.j`, `Voicelines_Quests.j`, Satyr vendor bindings, and the four matched vendor-quest definitions.
+- Moved Nazgrek and Zul'kis generic quest text, keys, sound registration, and reply-variant registration into `Voicelines/Voicelines_Nazgrek.j` and `Voicelines_Zulkis.j`.
+- Updated `QuestsAndDialogs/QuestsGeneric.j` and `QuestsVendor.j` to select matching randomized hero text and audio by interaction type.
+- Renamed reusable profile constants, sound keys, registered paths, vendor bindings, quest bindings, documentation, and generator filters to the `Generic*` convention.
+- Updated `tools/voicelines.ps1` to regenerate official keys with `-Force`, read speaker-owned hero text constants, and prefer specific nested sound folders during generation.
+- Updated `tools/voicelines.ps1` to scan directly registered personality voice lines, including the custom female Satyr profile.
+
+### Imports
+
+- Generated, validated, and imported all 118 registered `GenericSatyrFemale1` MP3s: 15 personality lines, 76 catalog-role lines, and 27 reusable Satyr quest lines.
+- Imported the 175 previously validated Elarindor and Goblin review files into their renamed official generic folders.
+- Generated and imported 3,468 previously missing generic-profile MP3s.
+- Regenerated and replaced 38 existing Nazgrek and Zul'kis generic MP3s whose reply categories changed, and added 18 new replies, producing 28 active generic replies per hero.
+- Renamed the active reusable sound folders and MP3 keys to `Generic*`; all 6,225 selected registered keys are present in the official tree.
+
+### Actions Remaining
+
+- Decide whether to delete the 14 legacy `Vendor*` and `VendorQuest*` folders. Their 2,544 MP3s are hash-identical to mapped files in the reusable profiles and no active JASS registration uses the legacy paths.
+- Run a full JassHelper map compile and in-game vendor/quest dialogue test.
+
 ## [18.8.2026]
 
 ### Player-Facing Updates
@@ -59,12 +89,6 @@
   - Zeppelin:
     - transport_zeppelin.mdx
     - zepanimation.mdx
-
-
-### Actions Remaining
-
-- Import the 175 validated numbered-profile files currently in FishAudio review and generate the remaining 3,450 files when external tool access is available again.
-
 ## [16.8.2026]
 
 ### Player-Facing Updates
