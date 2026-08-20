@@ -19,6 +19,7 @@
 
 ### Player-Facing Updates
 
+- Replaced the native Quests button with a custom quest journal using the established `TasQuestBox` presentation, improved `ShopUI`-style controls, live objective/status details, Normal/Daily/Repeatable type filters, and Story/Dungeon/Class/Profession content-category filters.
 - Expanded `A Night To Remember` so one or two of its three random witnesses can be active AI company heroes, with stored witness references remaining usable after a companion leaves the party.
 - Added randomized make-amends stages to one or two witness requirements, including small kill, supply replacement, and apology errands followed by a return for forgiveness.
 - Expanded every LastNight witness to five personal recollections involving the speaker's reputation, property, rescue efforts, stolen goods, or a final absurd incident. Nazgrek and Zul'kis now answer each recollection with a matching voiced response.
@@ -26,6 +27,8 @@
 
 ### Technical Updates
 
+- Added `UI/QuestUI.j` as a direct `QuestMaster` consumer and updated `UI/MasterUI.j` so the replacement quest button, centralized panel hiding, ESC handling, and cinematic visibility work with the existing UI lifecycle.
+- Updated `QuestsAndDialogs/QuestMaster.j`, `QuestsAndDialogs/QuestGiver.j`, and `QuestsAndDialogs/QuestsGeneric.j` with all-quest enumeration, shared display-data notifications, native-independent objective flags, category support, capacity guards, and custom quest-button notifications. Existing native quest handles remain as a hidden compatibility mirror for legacy JASS and GUI quest paths.
 - Updated `QuestsAndDialogs/QuestGivers/qANightToRemember.j` with persistent AI witnesses, staged task requirements, party kill credit, dynamic vendor buttons, and self-completion after all forgiveness requirements finish.
 - Added consumable pre-selection handlers to `QuestsAndDialogs/DialogInteraction.j` so quest-specific AI witness conversations can take priority over a named hero's ordinary selection dialog.
 - Expanded `Voicelines/Voicelines_Drunk.j`, `tools/voicelines.ps1`, `tools/generate-drunk-voicelines.ps1`, vendor documentation, and Object Editor setup notes for AI witness dialogue and seven-line vendor Hangover pools.
@@ -40,6 +43,8 @@
 
 ### Actions Remaining
 
+- Import and order `UI/QuestUI.j` after `QuestMaster`, `MasterUI`, `Interface`, and `Table`, then run a full JassHelper map compile and in-game test of category filtering, live objective refreshes, daily reset, quest-button flashing, cinematic hiding, and the retained legacy GUI/native compatibility paths.
+- Move any remaining optional native quest-log entries used only as game-guide information into a dedicated `MasterUI` information panel when their GUI trigger definitions are available.
 - Run a full JassHelper map compile and in-game test of matched recollection replies, AI witness persistence, all three task types, and vendor dialogue interruption paths.
 
 ## [20.8.2026]
