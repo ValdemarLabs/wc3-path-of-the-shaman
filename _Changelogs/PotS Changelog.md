@@ -15,6 +15,33 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [21.8.2026]
+
+### Player-Facing Updates
+
+- Expanded `A Night To Remember` so one or two of its three random witnesses can be active AI company heroes, with stored witness references remaining usable after a companion leaves the party.
+- Added randomized make-amends stages to one or two witness requirements, including small kill, supply replacement, and apology errands followed by a return for forgiveness.
+- Expanded every LastNight witness to five personal recollections involving the speaker's reputation, property, rescue efforts, stolen goods, or a final absurd incident. Nazgrek and Zul'kis now answer each recollection with a matching voiced response.
+- Reworked the repeated Stormhaven adventures across Twilight Grove, Ashfang Falls, Bonecrush Stronghold, Havenwoods, Riverbane, the Maw of Cinders, Morgrim's Claim, the Ruins of Zul'Garok, Serpentshore, Redwind Pass, Ironspine Post, and the Circle of Blood. Paladin and Aveline retain distinct Stormhaven incidents.
+
+### Technical Updates
+
+- Updated `QuestsAndDialogs/QuestGivers/qANightToRemember.j` with persistent AI witnesses, staged task requirements, party kill credit, dynamic vendor buttons, and self-completion after all forgiveness requirements finish.
+- Added consumable pre-selection handlers to `QuestsAndDialogs/DialogInteraction.j` so quest-specific AI witness conversations can take priority over a named hero's ordinary selection dialog.
+- Expanded `Voicelines/Voicelines_Drunk.j`, `tools/voicelines.ps1`, `tools/generate-drunk-voicelines.ps1`, vendor documentation, and Object Editor setup notes for AI witness dialogue and seven-line vendor Hangover pools.
+- Updated `QuestsAndDialogs/QuestGivers/qANightToRemember.j` to carry the selected story category into the hungover hero's reply and complete the other-player-hero requirement only after the paired dialogue finishes.
+- Added exact-key filtering to `tools/generate-drunk-voicelines.ps1` so corrected dialogue can be regenerated without rebuilding the entire review set.
+- Added Aveline's Fish Audio voice ID `829032b867d447ebbabc6c30ebba911c` and retained the integer `D_PUKE_HIT_PENALTY` required by the integer `udg_Stats_Hit` scale.
+
+### Imports
+
+- Generated and imported 174 Drunk/Hangover MP3s for Nazgrek, Zul'kis, Engineer, Paladin, Restoration Shaman, Rogue, Warlock, Warrior, Aveline, and eleven reusable Horde vendor profiles.
+- Regenerated and imported the 15 LastNight recordings revised with zone-specific adventures without replacing unaffected audio.
+
+### Actions Remaining
+
+- Run a full JassHelper map compile and in-game test of matched recollection replies, AI witness persistence, all three task types, and vendor dialogue interruption paths.
+
 ## [20.8.2026]
 
 ### Player-Facing Updates
