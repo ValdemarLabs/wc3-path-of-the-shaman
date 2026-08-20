@@ -18,6 +18,7 @@
     - call MasterUI_ShowGameButton()
     - call MasterUI_HideGameButton()
     - call MasterUI_IsGameButtonVisible()
+    - call MasterUI_ClosePanels()
 
     Pressing ESC closes MasterUI and every panel registered in its centralized
     hide list.
@@ -150,6 +151,14 @@ private function MUI_HideAllPanels takes nothing returns nothing
     call ExecuteFunc("CommandsUI_Hide")
     call ExecuteFunc("CheatsUI_Hide")
     call ExecuteFunc("SettingsUI_Hide")
+    static if LIBRARY_QuestUI then
+        call ExecuteFunc("QuestUI_Hide")
+    endif
+endfunction
+
+public function ClosePanels takes nothing returns nothing
+    call MUI_HideMaster()
+    call MUI_HideAllPanels()
 endfunction
 
 private function MUI_HideAllPanelsForCinematic takes nothing returns nothing
@@ -437,6 +446,9 @@ public function ShowGameButton takes nothing returns nothing
     endif
     set MUI_OpenButtonVisible = true
     call MUI_ApplyOpenButtonVisibility()
+    static if LIBRARY_QuestUI then
+        call ExecuteFunc("QuestUI_ShowButton")
+    endif
     call ExecuteFunc("StatsLiteUI_ShowAfterCinematic")
 endfunction
 
@@ -447,6 +459,9 @@ public function HideGameButton takes nothing returns nothing
     call MUI_HideAllPanelsForCinematic()
     set MUI_OpenButtonVisible = false
     call MUI_ApplyOpenButtonVisibility()
+    static if LIBRARY_QuestUI then
+        call ExecuteFunc("QuestUI_HideButton")
+    endif
 endfunction
 
 public function IsGameButtonVisible takes nothing returns boolean

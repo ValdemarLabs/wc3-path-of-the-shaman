@@ -21,6 +21,7 @@
     - QuestsGeneric_RegisterKillQuest(...) registers a kill template.
     - QuestsGeneric_RegisterTalkQuest(...) registers a manual talk template.
     - QuestsGeneric_SetObjective(...) changes an uninstantiated definition.
+    - QuestsGeneric_SetQuestCategory(...) assigns story/content grouping.
     - QuestsGeneric_SetFactionReward(...) configures reputation rewards.
     - QuestsGeneric_SetExtendedDialogue(...) adds authored normal-quest lines.
     - QuestsGeneric_ConfigureSharedDialogue(...) sets shared text and hero voices.
@@ -51,7 +52,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         public constant integer HERO_LINE_ASK_TO_BUY = 7
 
         private constant integer QG_MAX_DEFINITIONS = 128
-        private constant integer QG_MAX_QUESTS = 512
+        private constant integer QG_MAX_QUESTS = 500
         private constant integer QG_MAX_DAILY_VARIANTS = 96
         private constant integer QG_MAX_PROGRESS_VARIANTS = 16
         private constant integer QG_MAX_HERO_VOICE_VARIANTS = 128
@@ -63,6 +64,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         private integer array QG_GiverUnitType
         private string array QG_QuestName
         private string array QG_QuestType
+        private string array QG_QuestCategory
         private integer array QG_QuestLevel
         private string array QG_Title
         private string array QG_IconPath
@@ -171,6 +173,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         set QG_GiverUnitType[definitionId] = giverUnitTypeId
         set QG_QuestName[definitionId] = questName
         set QG_QuestType[definitionId] = questType
+        set QG_QuestCategory[definitionId] = "general"
         set QG_QuestLevel[definitionId] = questLevel
         set QG_Title[definitionId] = title
         set QG_IconPath[definitionId] = iconPath
@@ -213,6 +216,17 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         set QG_TargetType[definitionId] = targetType
         set QG_TargetAmount[definitionId] = targetAmount
         set QG_TargetName[definitionId] = targetName
+    endfunction
+
+    public function SetQuestCategory takes integer definitionId, string category returns nothing
+        if definitionId <= 0 or definitionId > QG_DefinitionCount then
+            return
+        endif
+        if category == "story" or category == "dungeon" or category == "class" or category == "profession" then
+            set QG_QuestCategory[definitionId] = category
+        else
+            set QG_QuestCategory[definitionId] = "general"
+        endif
     endfunction
 
     public function SetFactionReward takes integer definitionId, string factionName, integer reputationBonus, boolean linked returns nothing
@@ -297,6 +311,11 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         endif
         set info2Text = "|cffffcc00Recommended level:|r " + I2S(QG_QuestLevel[definitionId]) + "\n\n"
         set q = QuestGiver_CreateConfiguredQuest(QG_QuestName[definitionId], giver, QG_QuestType[definitionId], QG_QuestLevel[definitionId], null, QG_Title[definitionId], QG_IconPath[definitionId], QG_Description[definitionId] + "\n\n", QG_GetInfoText(QG_QuestType[definitionId]), info2Text, QG_QuestLevel[definitionId], true, true, true, factionName, giverName)
+        if q == 0 then
+            set giver = null
+            return
+        endif
+        call QuestGiver_SetQuestCategory(q, QG_QuestCategory[definitionId])
         if factionName != null and factionName != "" then
             call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_NEUTRAL)
         endif

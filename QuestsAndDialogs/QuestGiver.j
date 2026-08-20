@@ -19,6 +19,7 @@
     - QuestGiver_RegisterItemRequirement(...) tracks gathered items.
     - QuestGiver_RegisterUnitKillRequirement(...) tracks unit kills.
     - QuestGiver_RegisterTalkToRequirement(...) tracks manual conversations.
+    - QuestGiver_SetQuestCategory(...) assigns story/content grouping.
     - QuestGiver_ResetRequirements(questId) clears objective progress.
 
 **/
@@ -871,6 +872,7 @@ public function ApplyQuestMetadata takes QuestData q, string title, string iconP
 	if receiverDisplayName != "" then
 		call q.setReceiverDisplayName(receiverDisplayName)
 	endif
+	call QuestMaster_NotifyDataChanged(q.id)
 endfunction
 
 public function CreateConfiguredQuest takes string questName, unit questGiver, string questType, integer questLevel, unit questReceiver, string title, string iconPath, string description, string infoText, string info2Text, integer requiredLevel, boolean useAllowedHeroesForLevelCheck, boolean allowNazgrek, boolean allowZulkis, string faction, string receiverDisplayName returns QuestData
@@ -891,6 +893,13 @@ public function SetQuestRequiredReputation takes QuestData q, integer reputation
 		return
 	endif
 	call q.setRequiredReputation(reputation)
+endfunction
+
+public function SetQuestCategory takes QuestData q, string category returns nothing
+	if q == 0 then
+		return
+	endif
+	call QuestMaster_SetQuestCategory(q.id, category)
 endfunction
 
 public function SetQuestCustomCondition takes QuestData q, trigger conditionTrigger returns nothing

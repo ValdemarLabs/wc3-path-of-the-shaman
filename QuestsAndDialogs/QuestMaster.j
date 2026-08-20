@@ -5,8 +5,9 @@
     Version: 1.1.0
 
     Description:
-    Owns PotS quest data, state transitions, rewards, availability, quest-log
-    entries, quest-giver markers, and daily quest resets.
+    Owns PotS quest data, state transitions, rewards, availability, custom
+    journal data, native compatibility entries, quest-giver markers, and
+    daily quest resets.
 
     Credits:
 
@@ -16,7 +17,10 @@
 
     API:
     - QuestMaster_Create(...) creates and registers quest data.
+    - QuestMaster_GetQuestCount() and GetQuestIdByIndex(...) enumerate quests.
+    - QuestMaster_SetQuestCategory(...) assigns story/content grouping.
     - QuestMaster_AddStateChangedAction(handler) listens for state changes.
+    - QuestMaster_AddDataChangedAction(handler) listens for display-data changes.
     - QuestMaster_AddDailyResetAction(handler) listens for daily resets.
     - QuestMaster_ResetDailyQuests() manually resets completed daily quests.
 
@@ -141,6 +145,7 @@ globals
 
 	// State change event bridge
 	trigger QuestMaster_OnStateChanged = null
+	trigger QuestMaster_OnDataChanged = null
 	trigger QuestMaster_OnDelayedDiscovered = null
 	trigger QuestMaster_OnDailyReset = null
 	private trigger QuestDailyResetTrigger = null
@@ -184,6 +189,13 @@ private function FireDelayedQuestDiscovered takes integer questId, integer quest
 	call TriggerExecute(QuestMaster_OnDelayedDiscovered)
 endfunction
 
+private function FlashQuestLogButton takes nothing returns nothing
+	call FlashQuestDialogButtonBJ()
+	static if LIBRARY_QuestUI then
+		call ExecuteFunc("QuestUI_FlashButton")
+	endif
+endfunction
+
 private function ShowDelayedQuestDiscovered takes nothing returns nothing
 	local timer t = GetExpiredTimer()
 	local integer tId = GetHandleId(t)
@@ -203,7 +215,7 @@ private function ShowDelayedQuestDiscovered takes nothing returns nothing
 		endif
 		call ClearTextMessages()
 		call QuestMessageBJ(bj_FORCE_ALL_PLAYERS, bj_QUESTMESSAGE_DISCOVERED, msg)
-		call FlashQuestDialogButtonBJ()
+		call FlashQuestLogButton()
 		call FireDelayedQuestDiscovered(q.id, q.state)
 	endif
 	
@@ -261,7 +273,7 @@ private function ShowNextQuestUpdate takes nothing returns nothing
 	if msg != "" then
 		call ClearTextMessages()
 		call QuestMessageBJ(bj_FORCE_ALL_PLAYERS, bj_QUESTMESSAGE_UPDATED, msg)
-		call FlashQuestDialogButtonBJ()
+		call FlashQuestLogButton()
 	endif
 	
 	if QuestUpdateQueueSize > 0 then
@@ -439,6 +451,17 @@ endfunction
 //===========================================================================
 public function GetById takes integer questId returns QuestData
 	return QuestById.integer[ questId ]
+endfunction
+
+public function GetQuestCount takes nothing returns integer
+	return QuestCount
+endfunction
+
+public function GetQuestIdByIndex takes integer index returns integer
+	if index <= 0 or index > QuestCount then
+		return 0
+	endif
+	return QuestIdList[index]
 endfunction
 
 public function StoreQuestMinimapIcon takes unit u, minimapicon mi returns nothing
@@ -785,6 +808,7 @@ public function StateChanged takes integer questId, integer newState returns not
 	set QuestMaster_EventQuestId = questId
 	set QuestMaster_EventState = newState
 	call TriggerExecute(QuestMaster_OnStateChanged)
+	call TriggerExecute(QuestMaster_OnDataChanged)
 endfunction
 
 public function AddStateChangedAction takes code actionFunc returns nothing
@@ -794,6 +818,24 @@ public function AddStateChangedAction takes code actionFunc returns nothing
 		return
 	endif
 	call TriggerAddAction(QuestMaster_OnStateChanged, actionFunc)
+endfunction
+
+public function NotifyDataChanged takes integer questId returns nothing
+	local QuestData q = GetById(questId)
+
+	if q == 0 or QuestMaster_OnDataChanged == null then
+		return
+	endif
+	set QuestMaster_EventQuestId = questId
+	set QuestMaster_EventState = q.state
+	call TriggerExecute(QuestMaster_OnDataChanged)
+endfunction
+
+public function AddDataChangedAction takes code actionFunc returns nothing
+	if QuestMaster_OnDataChanged == null then
+		return
+	endif
+	call TriggerAddAction(QuestMaster_OnDataChanged, actionFunc)
 endfunction
 
 public function AddDelayedDiscoveredAction takes code actionFunc returns nothing
@@ -817,6 +859,7 @@ struct QuestData
 	integer id
 	string name
 	string questType
+	string questCategory
 	unit giver
 	unit receiver
 	integer questLevel
@@ -935,7 +978,13 @@ struct QuestData
 	real rewardRepMult
 
 	static method create takes string questName, unit questGiver, string qType, integer qLevel, unit questReceiver returns thistype
-		local thistype this = thistype.allocate()
+		local thistype this
+
+		if QuestNextId > QUEST_MAX then
+			call DebugMsg("Quest limit reached; could not create " + questName)
+			return 0
+		endif
+		set this = thistype.allocate()
 
 		set this.id = QuestNextId
 		set QuestNextId = QuestNextId + 1
@@ -949,6 +998,7 @@ struct QuestData
 			set this.receiver = questReceiver
 		endif
 		set this.questType = qType
+		set this.questCategory = "general"
 		set this.questLevel = qLevel
 		if questGiver != null then
 			set this.giverLevel = GetHeroLevel(questGiver)
@@ -1092,6 +1142,7 @@ struct QuestData
 		elseif index == 8 then
 			set this.requirement8 = text
 		endif
+		call NotifyDataChanged(this.id)
 	endmethod
 
 	method getRequirementText takes integer index returns string
@@ -1251,31 +1302,48 @@ struct QuestData
 	endmethod
 
 	method markRequirementCompleted takes integer index, boolean flag returns nothing
-		if index == 1 and this.req1 != null then
-			call QuestItemSetCompleted(this.req1, flag)
+		if index == 1 then
 			set this.req1Completed = flag
-		elseif index == 2 and this.req2 != null then
-			call QuestItemSetCompleted(this.req2, flag)
+			if this.req1 != null then
+				call QuestItemSetCompleted(this.req1, flag)
+			endif
+		elseif index == 2 then
 			set this.req2Completed = flag
-		elseif index == 3 and this.req3 != null then
-			call QuestItemSetCompleted(this.req3, flag)
+			if this.req2 != null then
+				call QuestItemSetCompleted(this.req2, flag)
+			endif
+		elseif index == 3 then
 			set this.req3Completed = flag
-		elseif index == 4 and this.req4 != null then
-			call QuestItemSetCompleted(this.req4, flag)
+			if this.req3 != null then
+				call QuestItemSetCompleted(this.req3, flag)
+			endif
+		elseif index == 4 then
 			set this.req4Completed = flag
-		elseif index == 5 and this.req5 != null then
-			call QuestItemSetCompleted(this.req5, flag)
+			if this.req4 != null then
+				call QuestItemSetCompleted(this.req4, flag)
+			endif
+		elseif index == 5 then
 			set this.req5Completed = flag
-		elseif index == 6 and this.req6 != null then
-			call QuestItemSetCompleted(this.req6, flag)
+			if this.req5 != null then
+				call QuestItemSetCompleted(this.req5, flag)
+			endif
+		elseif index == 6 then
 			set this.req6Completed = flag
-		elseif index == 7 and this.req7 != null then
-			call QuestItemSetCompleted(this.req7, flag)
+			if this.req6 != null then
+				call QuestItemSetCompleted(this.req6, flag)
+			endif
+		elseif index == 7 then
 			set this.req7Completed = flag
-		elseif index == 8 and this.req8 != null then
-			call QuestItemSetCompleted(this.req8, flag)
+			if this.req7 != null then
+				call QuestItemSetCompleted(this.req7, flag)
+			endif
+		elseif index == 8 then
 			set this.req8Completed = flag
+			if this.req8 != null then
+				call QuestItemSetCompleted(this.req8, flag)
+			endif
 		endif
+		call NotifyDataChanged(this.id)
 	endmethod
 
 	method updateRequirementText takes integer index, string text returns nothing
@@ -1310,6 +1378,7 @@ struct QuestData
 		elseif text != "" then
 			call this.addRequirement(index, text)
 		endif
+		call NotifyDataChanged(this.id)
 	endmethod
 
 	method setRewardLine takes integer index, string text returns nothing
@@ -1325,6 +1394,7 @@ struct QuestData
 			set this.rewardLine5 = text
 		endif
 		call this.buildRewardsText()
+		call NotifyDataChanged(this.id)
 	endmethod
 
 	method buildRewardsText takes nothing returns nothing
@@ -1667,13 +1737,13 @@ struct QuestData
 	method showDiscoveredMessage takes nothing returns nothing
 		call ClearTextMessages()
 		call QuestMessageBJ(bj_FORCE_ALL_PLAYERS, bj_QUESTMESSAGE_DISCOVERED, this.formatDiscoverMessage())
-		call FlashQuestDialogButtonBJ()
+		call FlashQuestLogButton()
 	endmethod
 
 	method showUpdatedMessage takes string msg returns nothing
 		call ClearTextMessages()
 		call QuestMessageBJ(bj_FORCE_ALL_PLAYERS, bj_QUESTMESSAGE_UPDATED, msg)
-		call FlashQuestDialogButtonBJ()
+		call FlashQuestLogButton()
 	endmethod
 
 	method showCompletedMessage takes nothing returns nothing
@@ -1698,14 +1768,14 @@ struct QuestData
 		if msg != "" then
 			call ClearTextMessages()
 			call QuestMessageBJ(bj_FORCE_ALL_PLAYERS, bj_QUESTMESSAGE_COMPLETED, msg)
-			call FlashQuestDialogButtonBJ()
+			call FlashQuestLogButton()
 		endif
 	endmethod
 
 	method showFailedMessage takes nothing returns nothing
 		call ClearTextMessages()
 		call QuestMessageBJ(bj_FORCE_ALL_PLAYERS, bj_QUESTMESSAGE_FAILED, this.formatFailedMessage())
-		call FlashQuestDialogButtonBJ()
+		call FlashQuestLogButton()
 	endmethod
 
 	method clampNonNegative takes integer value returns integer
@@ -1755,6 +1825,7 @@ struct QuestData
 		set this.rewardRepLinked = repLinked
 
 		call this.computeRewards()
+		call NotifyDataChanged(this.id)
 	endmethod
 
 	method setRewardItemType takes integer itemType returns nothing
@@ -1765,6 +1836,7 @@ struct QuestData
 			set this.rewardItemActive = false
 		endif
 		call this.computeRewards()
+		call NotifyDataChanged(this.id)
 	endmethod
 
 	method setRequiredLevel takes integer level returns nothing
@@ -1779,6 +1851,15 @@ struct QuestData
 
 	method setFaction takes string factionName returns nothing
 		set this.faction = factionName
+	endmethod
+
+	method setQuestCategory takes string category returns nothing
+		if category == "story" or category == "dungeon" or category == "class" or category == "profession" then
+			set this.questCategory = category
+		else
+			set this.questCategory = "general"
+		endif
+		call NotifyDataChanged(this.id)
 	endmethod
 
 	method setRequiredReputation takes integer reputation returns nothing
@@ -1820,10 +1901,12 @@ struct QuestData
 
 	method setGiverDisplayName takes string displayName returns nothing
 		set this.giverDisplayName = displayName
+		call NotifyDataChanged(this.id)
 	endmethod
 
 	method setReceiverDisplayName takes string displayName returns nothing
 		set this.receiverDisplayName = displayName
+		call NotifyDataChanged(this.id)
 	endmethod
 
 	method setAutoComplete takes boolean flag returns nothing
@@ -2174,6 +2257,7 @@ public function Discover takes integer questId returns nothing
 		if q.state == QUEST_STATE_UNAVAILABLE then
 			call q.setState(QUEST_STATE_AVAILABLE)
 		endif
+		call NotifyDataChanged(questId)
 	endif
 endfunction
 
@@ -2181,6 +2265,7 @@ public function Update takes integer questId returns nothing
 	local QuestData q = GetById(questId)
 	if q != 0 then
 		call q.update()
+		call NotifyDataChanged(questId)
 	endif
 endfunction
 
@@ -2195,6 +2280,7 @@ public function Fail takes integer questId, string reason returns nothing
 	local QuestData q = GetById(questId)
 	if q != 0 then
 		call q.fail(reason)
+		call NotifyDataChanged(questId)
 	endif
 endfunction
 
@@ -2249,6 +2335,7 @@ public function SetRequirements takes integer questId, string heading, string r1
 	set q.requirement7 = r7
 	set q.requirement8 = r8
 	call q.applyRequirementsToLog()
+	call NotifyDataChanged(questId)
 endfunction
 
 public function SetRequirement takes integer questId, integer index, string text returns nothing
@@ -2256,7 +2343,6 @@ public function SetRequirement takes integer questId, integer index, string text
 	local string objectivesList
 	
 	if q != 0 and q.title != "" then
-		call q.setRequirement(index, text)
 		call q.updateRequirementText(index, text)
 		call q.refreshQuestLog()
 		if text != "" then
@@ -2556,6 +2642,20 @@ public function SetReceiverDisplayNameByNameAndGiver takes string questName, uni
 	local QuestData q = GetByNameAndGiver(questName, questGiver)
 	if q != 0 then
 		call q.setReceiverDisplayName(displayName)
+	endif
+endfunction
+
+public function SetQuestCategory takes integer questId, string category returns nothing
+	local QuestData q = GetById(questId)
+	if q != 0 then
+		call q.setQuestCategory(category)
+	endif
+endfunction
+
+public function SetQuestCategoryByNameAndGiver takes string questName, unit questGiver, string category returns nothing
+	local QuestData q = GetByNameAndGiver(questName, questGiver)
+	if q != 0 then
+		call q.setQuestCategory(category)
 	endif
 endfunction
 
@@ -3086,6 +3186,7 @@ private function Init takes nothing returns nothing
 	set QuestDiscoveredTimerData = Table.create()
 	set QuestCompletedTimerData = Table.create()
 	set QuestMaster_OnStateChanged = CreateTrigger()
+	set QuestMaster_OnDataChanged = CreateTrigger()
 	set QuestMaster_OnDelayedDiscovered = CreateTrigger()
 	set QuestMaster_OnDailyReset = CreateTrigger()
 	set QuestEvalTimer = CreateTimer()
