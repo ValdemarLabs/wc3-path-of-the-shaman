@@ -233,5 +233,5 @@ Use Horde ownership where practical. `VendorTrolls.j` binds both rawcodes explic
 
 | Rawcode | Name | Editor suffix | Gender | Intended zone | Quest giver | Placed |
 |---|---|---|---|---|---|---|
-| `n05H` | Zanjin Gemeye | Horde Jewelcrafter | Male | Thornwoods / Sereneglade | — | Yes |
+| `n05H` | Zanjin Gemeye | Horde Jewelcrafter | Male | Horde Lumber mill | — | Yes |
 | `n05J` | Rokjin Hexsmoke | Horde Voodoo Merchant | Male | Sirensong | — | Yes |
