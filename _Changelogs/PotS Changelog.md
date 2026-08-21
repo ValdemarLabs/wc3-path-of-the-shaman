@@ -27,7 +27,7 @@
 
 ### Technical Updates
 
-- Updated `Vendors/VendorFloatingText.j` to use the centralized `Events.j` unit-enter dispatcher instead of registering another playable-map region event.
+- Fixed the confirmed map-wide unit movement freeze by updating `Vendors/VendorFloatingText.j` to use the centralized `Events.j` unit-enter dispatcher instead of registering another playable-map region event.
 - Added `UI/QuestUI.j` as a direct `QuestMaster` consumer and updated `UI/MasterUI.j` so the replacement quest button, centralized panel hiding, ESC handling, and cinematic visibility work with the existing UI lifecycle.
 - Updated `QuestsAndDialogs/QuestMaster.j`, `QuestsAndDialogs/QuestGiver.j`, and `QuestsAndDialogs/QuestsGeneric.j` with all-quest enumeration, shared display-data notifications, native-independent objective flags, category support, capacity guards, and custom quest-button notifications. Existing native quest handles remain as a hidden compatibility mirror for legacy JASS and GUI quest paths.
 - Updated `QuestsAndDialogs/QuestGivers/qANightToRemember.j` with persistent AI witnesses, staged task requirements, party kill credit, dynamic vendor buttons, and self-completion after all forgiveness requirements finish.
@@ -36,6 +36,10 @@
 - Updated `QuestsAndDialogs/QuestGivers/qANightToRemember.j` to carry the selected story category into the hungover hero's reply and complete the other-player-hero requirement only after the paired dialogue finishes.
 - Added exact-key filtering to `tools/generate-drunk-voicelines.ps1` so corrected dialogue can be regenerated without rebuilding the entire review set.
 - Added Aveline's Fish Audio voice ID `829032b867d447ebbabc6c30ebba911c` and retained the integer `D_PUKE_HIT_PENALTY` required by the integer `udg_Stats_Hit` scale.
+
+### Critical Development Note
+
+> **CRITICAL:** Do not add separate `unit enters playable map area`, `TriggerRegisterEnterRectSimple(..., bj_mapInitialPlayableArea)`, or equivalent world-region events. Additional map-wide enter registrations can cause units across the map to stop moving. All new shared unit-enter consumers must register through `Events_RegisterUnitEnter` or `Events_RegisterUnitEnterTrigger` in `Events/Events.j`. Audit and centralize an existing direct registration before introducing any new map-wide unit-enter behavior.
 
 ### Imports
 
