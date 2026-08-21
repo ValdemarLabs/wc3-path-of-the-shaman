@@ -17,8 +17,13 @@
 
 ## [22.8.2026]
 
+### Player-Facing Updates
+
+- Fixed Outcast Jin'Zun randomly walking away during dialogue.
+
 ### Technical Updates
 
+- Updated `QuestsAndDialogs/QuestGivers/qOutcastJinzun.j` to lock Jin'Zun's movement for the full dialogue and restore his prior movement speed afterward.
 - Updated `QuestsAndDialogs/QuestGivers/qRagno.j` to block Ragno interactions throughout Protect the Outpost, cancel pending dialog entry when the encounter starts, and prevent its cinematics from replacing a greeting before the quest choices appear.
 - Updated `UI/MasterUI.j` and `UI/ShopUI.j` so a newly starting cinematic silently closes an active shop session without playing trade outcomes, returning to the vendor dialog, or restoring gameplay over the incoming cinematic.
 - Added `_developer/Test Plans/Recent Changes Test Plan 2026-08-22.md` with prioritized, fillable compile, gameplay, UI, multiplayer, performance, and tooling checks for the major changes made from 14-21 August 2026.
