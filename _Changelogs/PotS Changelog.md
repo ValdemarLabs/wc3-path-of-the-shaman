@@ -15,6 +15,12 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [22.8.2026]
+
+### Technical Updates
+
+- Added `_developer/Test Plans/Recent Changes Test Plan 2026-08-22.md` with prioritized, fillable compile, gameplay, UI, multiplayer, performance, and tooling checks for the major changes made from 14-21 August 2026.
+
 ## [21.8.2026]
 
 ### Player-Facing Updates
