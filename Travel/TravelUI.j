@@ -410,6 +410,13 @@ library TravelUI initializer Init requires TravelSystem, Table, Interface, Dialo
         call ShowForStop(TravelSystem_GetSelectedStop())
     endfunction
 
+    private function TUI_ReleasePromptFocus takes nothing returns nothing
+        if GetLocalPlayer() == Player(0) then
+            call BlzFrameSetFocus(TUI_PromptConfirmButton, false)
+            call BlzFrameSetFocus(TUI_PromptCancelButton, false)
+        endif
+    endfunction
+
     private function TUI_UpdatePrompt takes nothing returns nothing
         local integer promptType = TravelSystem_GetPromptType()
         local integer routeId = TravelSystem_GetActiveRoute()
@@ -417,6 +424,7 @@ library TravelUI initializer Init requires TravelSystem, Table, Interface, Dialo
 
         if promptType == TRAVEL_PROMPT_NONE or routeId <= 0 then
             call BlzFrameSetVisible(TUI_PromptParent, false)
+            call TUI_ReleasePromptFocus()
             return
         endif
         if promptType == TRAVEL_PROMPT_SKIP then

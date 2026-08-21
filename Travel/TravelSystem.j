@@ -1396,6 +1396,8 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         endif
         if restoreFullscreen and TS_Active and not TS_Ending then
             call FullscreenUI_SetEnabled(true)
+            // END_CINEMATIC can leave native input disabled after ESC closes the prompt.
+            call EnableUserControl(true)
         endif
     endfunction
 
@@ -1582,6 +1584,8 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         endif
         set cost = GetTotalSkipFee(TS_ActiveRoute)
         set TS_PromptVisible = true
+        // Full user control is required for frame-button interaction during travel.
+        call EnableUserControl(true)
         if TS_PromptChangedHandlers != null then
             call TriggerExecute(TS_PromptChangedHandlers)
             call FullscreenUI_Refresh()
@@ -1599,6 +1603,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         endif
         set TS_PromptStop = stopId
         set TS_StopPromptVisible = true
+        call EnableUserControl(true)
         if TS_PromptChangedHandlers != null then
             call TriggerExecute(TS_PromptChangedHandlers)
             call FullscreenUI_Refresh()
@@ -1629,6 +1634,10 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
 
     private function TS_ClearEscapeLock takes nothing returns nothing
         set TS_EscapeLocked = false
+        // Reapply after every ESC handler has run so camera arrow-key input survives prompt cancellation.
+        if TS_Active and not TS_Ending then
+            call EnableUserControl(true)
+        endif
     endfunction
 
     private function TS_OnEscape takes nothing returns nothing
