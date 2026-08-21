@@ -2,7 +2,7 @@
     QuestUI
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.0.1
 
     Description:
     Replaces the native Quests button with a TasQuestBox-styled quest journal
@@ -199,6 +199,47 @@ private function QUI_GetReceiverName takes QuestData q returns string
     return ""
 endfunction
 
+private function QUI_TrimLineBreaks takes string text returns string
+    local integer length = StringLength(text)
+
+    loop
+        exitwhen length <= 0 or SubString(text, 0, 1) != "\n"
+        set text = SubString(text, 1, length)
+        set length = length - 1
+    endloop
+    loop
+        exitwhen length <= 0 or SubString(text, length - 1, length) != "\n"
+        set text = SubString(text, 0, length - 1)
+        set length = length - 1
+    endloop
+    return text
+endfunction
+
+private function QUI_AppendParagraph takes string text, string paragraph returns string
+    set paragraph = QUI_TrimLineBreaks(paragraph)
+    if paragraph == "" then
+        return text
+    elseif text == "" then
+        return paragraph
+    endif
+    return text + "\n\n" + paragraph
+endfunction
+
+private function QUI_StartsWith takes string text, string prefix returns boolean
+    local integer prefixLength = StringLength(prefix)
+
+    return prefixLength > 0 and StringLength(text) >= prefixLength and SubString(text, 0, prefixLength) == prefix
+endfunction
+
+private function QUI_IsRecommendedLevelText takes string text returns boolean
+    return QUI_StartsWith(QUI_TrimLineBreaks(text), "|cffffcc00Recommended level:|r")
+endfunction
+
+private function QUI_IsLegacyMetadataText takes string text returns boolean
+    set text = QUI_TrimLineBreaks(text)
+    return QUI_StartsWith(text, "|cffffcc00Quest giver:|r") or QUI_StartsWith(text, "|cffffcc00Quest receiver:|r") or QUI_StartsWith(text, "|cffffcc00Recommended level:|r") or QUI_StartsWith(text, "|cff80a0ffDaily quest|r") or QUI_StartsWith(text, "|cff80a0ffRepeatable quest|r") or text == "|cffffcc00Quest|r"
+endfunction
+
 private function QUI_FormatObjective takes string objectiveText, boolean completed returns string
     if objectiveText == "" then
         return ""
@@ -220,39 +261,107 @@ private function QUI_BuildObjectives takes QuestData q returns string
     set text = text + QUI_FormatObjective(q.requirement7, q.req7Completed)
     set text = text + QUI_FormatObjective(q.requirement8, q.req8Completed)
     if text == "" then
-        return ""
+        return "|cff808080No objectives listed.|r"
     endif
-    return "|cffffcc00Objectives:|r\n" + text
+    return QUI_TrimLineBreaks(text)
 endfunction
 
-private function QUI_BuildQuestText takes QuestData q returns string
+private function QUI_BuildDetails takes QuestData q returns string
     local string text
     local string giverName = QUI_GetGiverName(q)
     local string receiverName = QUI_GetReceiverName(q)
-    local string objectives = QUI_BuildObjectives(q)
+    local boolean sameContact = giverName != "" and receiverName != "" and giverName == receiverName
+
+    if q.giver != null and q.receiver != null then
+        set sameContact = q.giver == q.receiver
+    endif
 
     set text = "|cffffcc00Type:|r " + QUI_GetTypeLabel(q.questType) + "    |cffffcc00Level:|r " + I2S(q.questLevel) + "\n"
     if q.questCategory != "" and q.questCategory != "general" then
         set text = text + "|cffffcc00Category:|r " + QUI_GetQuestCategoryLabel(q.questCategory) + "\n"
     endif
     set text = text + "|cffffcc00Status:|r " + QUI_GetStatusLabel(q) + "\n"
-    if giverName != "" then
-        set text = text + "|cffffcc00Quest giver:|r " + giverName + "\n"
+    if QUI_IsRecommendedLevelText(q.infoText) then
+        set text = text + QUI_TrimLineBreaks(q.infoText) + "\n"
     endif
-    if receiverName != "" and receiverName != giverName then
-        set text = text + "|cffffcc00Quest receiver:|r " + receiverName + "\n"
+    if QUI_IsRecommendedLevelText(q.info2Text) then
+        set text = text + QUI_TrimLineBreaks(q.info2Text) + "\n"
+    endif
+    if giverName != "" and q.autoCompletes then
+        set text = text + "|cffffcc00Quest giver:|r " + giverName + "\n"
+        set text = text + "|cffffcc00Completion:|r Automatic\n"
+    elseif giverName != "" and sameContact then
+        set text = text + "|cffffcc00Quest giver / turn-in:|r " + giverName + "\n"
+    elseif giverName != "" then
+        set text = text + "|cffffcc00Quest giver:|r " + giverName + "\n"
+        if receiverName != "" then
+            set text = text + "|cffffcc00Turn in to:|r " + receiverName + "\n"
+        endif
+    elseif receiverName != "" then
+        set text = text + "|cffffcc00Turn in to:|r " + receiverName + "\n"
+    elseif q.autoCompletes then
+        set text = text + "|cffffcc00Completion:|r Automatic\n"
     endif
     if q.failed and q.failReasonText != "" then
         set text = text + "|cffff6060Failure:|r " + q.failReasonText + "\n"
     endif
+    return QUI_TrimLineBreaks(text)
+endfunction
 
-    set text = text + "\n" + q.description + q.infoText + q.info2Text
-    if objectives != "" then
-        set text = text + objectives + "\n"
+private function QUI_BuildDescription takes QuestData q returns string
+    local string text = ""
+
+    set text = QUI_AppendParagraph(text, q.description)
+    if not QUI_IsLegacyMetadataText(q.infoText) then
+        set text = QUI_AppendParagraph(text, q.infoText)
     endif
-    if q.rewardsHeading != "" or q.rewardsText != "" then
-        set text = text + q.rewardsHeading + q.rewardsText
+    if not QUI_IsLegacyMetadataText(q.info2Text) then
+        set text = QUI_AppendParagraph(text, q.info2Text)
     endif
+    if text == "" then
+        return "|cff808080No description provided.|r"
+    endif
+    return text
+endfunction
+
+private function QUI_BuildRewards takes QuestData q returns string
+    local string text = ""
+
+    if q.rewardXPActive then
+        set text = text + "|cff8080ffExperience:|r " + I2S(q.rewardXP) + "\n"
+    endif
+    if q.rewardGoldActive then
+        set text = text + "|cffffff00Gold:|r " + I2S(q.rewardGold) + "\n"
+    endif
+    if q.rewardArenaActive then
+        set text = text + "|cffff8080Arena Marks:|r " + I2S(q.rewardArena) + "\n"
+    endif
+    if q.rewardRepActive then
+        set text = text + "|cff8080ffReputation:|r " + I2S(q.rewardRep)
+        if q.faction != "" then
+            set text = text + " with " + q.faction
+        endif
+        set text = text + "\n"
+    endif
+    if q.rewardItemActive and q.rewardItemType != 0 then
+        set text = text + "|cff00ffffItem:|r " + GetObjectName(q.rewardItemType) + "\n"
+    endif
+    if text == "" then
+        set text = QUI_TrimLineBreaks(q.rewardsText)
+    endif
+    if text == "" then
+        return "|cff808080No rewards listed.|r"
+    endif
+    return QUI_TrimLineBreaks(text)
+endfunction
+
+private function QUI_BuildQuestText takes QuestData q returns string
+    local string text
+
+    set text = "|cffffcc00Quest Details|r\n" + QUI_BuildDetails(q)
+    set text = text + "\n\n|cffffcc00Description|r\n" + QUI_BuildDescription(q)
+    set text = text + "\n\n|cffffcc00Objectives|r\n" + QUI_BuildObjectives(q)
+    set text = text + "\n\n|cffffcc00Rewards|r\n" + QUI_BuildRewards(q)
     return text
 endfunction
 

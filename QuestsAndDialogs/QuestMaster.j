@@ -1537,7 +1537,7 @@ struct QuestData
 		endif
 		if this.rewardItemActive and this.rewardItemType != 0 then
 			set this.rewardItemText = GetObjectName(this.rewardItemType)
-			set this.rewardLine5 = "\n|cff00ffffItem: |r" + this.rewardItemText + "\n"
+			set this.rewardLine5 = "|cff00ffffItem: |r" + this.rewardItemText + "\n"
 		else
 			set this.rewardLine5 = ""
 		endif
