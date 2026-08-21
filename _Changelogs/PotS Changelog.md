@@ -27,6 +27,7 @@
 
 ### Technical Updates
 
+- Updated `Vendors/VendorFloatingText.j` to use the centralized `Events.j` unit-enter dispatcher instead of registering another playable-map region event.
 - Added `UI/QuestUI.j` as a direct `QuestMaster` consumer and updated `UI/MasterUI.j` so the replacement quest button, centralized panel hiding, ESC handling, and cinematic visibility work with the existing UI lifecycle.
 - Updated `QuestsAndDialogs/QuestMaster.j`, `QuestsAndDialogs/QuestGiver.j`, and `QuestsAndDialogs/QuestsGeneric.j` with all-quest enumeration, shared display-data notifications, native-independent objective flags, category support, capacity guards, and custom quest-button notifications. Existing native quest handles remain as a hidden compatibility mirror for legacy JASS and GUI quest paths.
 - Updated `QuestsAndDialogs/QuestGivers/qANightToRemember.j` with persistent AI witnesses, staged task requirements, party kill credit, dynamic vendor buttons, and self-completion after all forgiveness requirements finish.
