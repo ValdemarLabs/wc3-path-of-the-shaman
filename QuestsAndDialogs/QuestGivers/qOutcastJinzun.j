@@ -2,7 +2,7 @@
     qOutcastJinzun
 
     Author: Valdemar
-    Version: 1.1.1
+    Version: 1.1.2
 
     Description:
     Quest, dialogue, patrol, fishing, ward-placement, tree-restoration, and
@@ -110,12 +110,14 @@ library qOutcastJinzun initializer Init requires QuestGiver, QuestMaster, Dialog
         private string PendingQuestName = ""
         private boolean PendingQuestCompletion = false
         private boolean JinzunTalking = false
+        private boolean JinzunMovementLocked = false
         private boolean InitWaitingLogged = false
         private boolean UnknownSlimeRequirementRegistered = false
         private boolean FishingSpotMode = false
         private boolean FishingAnimationPlaying = false
         private integer PlagueWardsPlaced = 0
         private integer SeedsTreesRestored = 0
+        private real JinzunMoveSpeedBeforeDialog = 0.00
         private boolean array PlagueWardPlaced
         private boolean array SeedsTreeRestored
     endglobals
@@ -129,6 +131,8 @@ library qOutcastJinzun initializer Init requires QuestGiver, QuestMaster, Dialog
     private function SyncUnitReferences takes nothing returns nothing
         if udg_OutcastJinzun != null and udg_OutcastJinzun != Jinzun then
             set Jinzun = udg_OutcastJinzun
+            set JinzunMovementLocked = false
+            set JinzunMoveSpeedBeforeDialog = 0.00
         endif
         if udg_Nazgrek != null and udg_Nazgrek != Nazgrek then
             set Nazgrek = udg_Nazgrek
@@ -290,7 +294,12 @@ library qOutcastJinzun initializer Init requires QuestGiver, QuestMaster, Dialog
     private function PausePatrol takes nothing returns nothing
         set JinzunTalking = true
         if DialogInteraction_IsUnitAlive(Jinzun) then
+            if not JinzunMovementLocked then
+                set JinzunMoveSpeedBeforeDialog = GetUnitMoveSpeed(Jinzun)
+                set JinzunMovementLocked = true
+            endif
             call PatrolSystem_Pause(Jinzun)
+            call SetUnitMoveSpeed(Jinzun, 0.00)
             if FishingSpotMode and FishingAnimationPlaying then
                 call SetUnitAnimation(Jinzun, "stand")
                 set FishingAnimationPlaying = false
@@ -301,11 +310,17 @@ library qOutcastJinzun initializer Init requires QuestGiver, QuestMaster, Dialog
     private function ContinuePatrol takes nothing returns nothing
         set JinzunTalking = false
         if DialogInteraction_IsUnitAlive(Jinzun) then
+            if JinzunMovementLocked then
+                call SetUnitMoveSpeed(Jinzun, JinzunMoveSpeedBeforeDialog)
+                set JinzunMovementLocked = false
+            endif
             if FishingSpotMode then
                 call ResumeFishingSpotBehavior()
             else
                 call PatrolSystem_Continue(Jinzun)
             endif
+        else
+            set JinzunMovementLocked = false
         endif
     endfunction
 
