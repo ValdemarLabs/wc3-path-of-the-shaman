@@ -164,6 +164,7 @@ endfunction
 private function MUI_HideAllPanelsForCinematic takes nothing returns nothing
     call MUI_HideMaster()
     call MUI_HideAllPanels()
+    call ExecuteFunc("ShopUI_HideForCinematic")
     call ExecuteFunc("StatsLiteUI_HideForCinematic")
 endfunction
 

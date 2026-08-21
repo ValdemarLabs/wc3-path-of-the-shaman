@@ -2,7 +2,7 @@
     ShopUI
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.1.1
 
     Description:
     Frame UI for PotS merchant vendors. The panel can browse merchant stock or
@@ -28,6 +28,7 @@
     - set vendor = ShopUI_GetVendorUnit()
     - set buyer = ShopUI_GetBuyerUnit()
     - call ShopUI_Hide()
+    - call ShopUI_HideForCinematic()
     - call ShopUI_Refresh()
     - Vendor trade sessions reject combat and end immediately when either
       participant attacks, is attacked, dies, or enters combat.
@@ -607,7 +608,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call SUI_SyncListScrollFrame(whichPlayer, totalCount)
     endfunction
 
-    private function SUI_EndTradeSession takes boolean playOutcome, boolean returnToDialog returns nothing
+    private function SUI_EndTradeSession takes boolean playOutcome, boolean returnToDialog, boolean restoreGameplay returns nothing
         local unit buyer = SUI_BuyerUnit
         local unit vendor = SUI_VendorUnit
         local trigger returnHandler = null
@@ -640,11 +641,13 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         endif
         if not returnHandled then
             call DialogSystem_StopDialogCamera(Player(0), SUI_CAMERA_RESET_TIME, SUI_USE_DIALOG_CAMERA)
-            call DialogInteraction_EndCinematicSequence(SUI_CINEMATIC)
-            if buyer != null and DialogInteraction_IsUnitAlive(buyer) then
-                call ShowUnit(buyer, true)
-                call PauseUnit(buyer, false)
-                call SelectUnitForPlayerSingle(buyer, Player(0))
+            if restoreGameplay then
+                call DialogInteraction_EndCinematicSequence(SUI_CINEMATIC)
+                if buyer != null and DialogInteraction_IsUnitAlive(buyer) then
+                    call ShowUnit(buyer, true)
+                    call PauseUnit(buyer, false)
+                    call SelectUnitForPlayerSingle(buyer, Player(0))
+                endif
             endif
         endif
 
@@ -653,7 +656,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         set returnHandler = null
     endfunction
 
-    private function SUI_HideInternal takes boolean playSound, boolean playOutcome returns nothing
+    private function SUI_HideInternal takes boolean playSound, boolean playOutcome, boolean restoreGameplay returns nothing
         local boolean returnToDialog = SUI_ReturnToDialog and playOutcome
 
         if SUI_Parent != null then
@@ -662,7 +665,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
             endif
             call BlzFrameSetVisible(SUI_Parent, false)
         endif
-        call SUI_EndTradeSession(playOutcome, returnToDialog)
+        call SUI_EndTradeSession(playOutcome, returnToDialog, restoreGameplay)
         set SUI_ReturnToDialog = false
         set SUI_VendorUnit = null
         set SUI_BuyerUnit = null
@@ -675,7 +678,14 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
     endfunction
 
     public function Hide takes nothing returns nothing
-        call SUI_HideInternal(true, true)
+        call SUI_HideInternal(true, true, true)
+    endfunction
+
+    // The incoming cinematic owns control and fullscreen restoration.
+    public function HideForCinematic takes nothing returns nothing
+        if SUI_IsVisible() then
+            call SUI_HideInternal(false, false, false)
+        endif
     endfunction
 
     public function Refresh takes nothing returns nothing
@@ -703,7 +713,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
             set SUI_ExternalInterruptHandler = null
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, p)
             call DisplayTextToPlayer(p, 0.00, 0.00, "|cffff8080Trade interrupted.|r")
-            call SUI_HideInternal(false, false)
+            call SUI_HideInternal(false, false, true)
             if interruptHandler != null then
                 call TriggerExecute(interruptHandler)
                 call DestroyTrigger(interruptHandler)
@@ -1095,7 +1105,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         endif
 
         if SUI_IsVisible() then
-            call SUI_HideInternal(false, false)
+            call SUI_HideInternal(false, false, true)
         endif
         if not DialogInteraction_BeginCombatSensitiveInteractionEx(vendor, buyer, function SUI_InterruptTrade, endOnCombat) then
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, GetOwningPlayer(buyer))
