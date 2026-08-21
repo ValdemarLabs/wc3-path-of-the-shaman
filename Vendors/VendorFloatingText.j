@@ -2,7 +2,7 @@
     VendorFloatingText
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.2.1
 
     Description:
     Displays a vendor-type label above registered Shop units while they are in
@@ -15,15 +15,16 @@
     - Totems.j camera-local floating-text visibility pattern
 
     How to install:
-    Import after Shop and Table. Preplaced vendors are discovered after map
-    initialization, while newly entering vendor units register automatically.
+    Import after Shop, Table, FallenHeroState, and Events. Preplaced vendors
+    are discovered after map initialization, while newly entering vendor units
+    register automatically through the shared unit-enter dispatcher.
 
     API:
     - call VendorFloatingText_RegisterUnit(vendor)
     - call VendorFloatingText_SetEnabled(enabled)
 
 **/
-library VendorFloatingText initializer Init requires Shop, Table, FallenHeroState
+library VendorFloatingText initializer Init requires Shop, Table, FallenHeroState, Events
     globals
         private constant integer VFT_MAX_VENDORS = 256
         private constant integer VFT_MAX_VISIBLE_LABELS = 8
@@ -40,7 +41,6 @@ library VendorFloatingText initializer Init requires Shop, Table, FallenHeroStat
         private group VFT_EnumGroup = null
         private timer VFT_UpdateTimer = null
         private timer VFT_StartupDiscoveryTimer = null
-        private trigger VFT_EnterTrigger = null
         private unit array VFT_Vendors
         private unit array VFT_VisibleVendors
         private real array VFT_VisibleDistanceSquared
@@ -125,7 +125,7 @@ library VendorFloatingText initializer Init requires Shop, Table, FallenHeroStat
     endfunction
 
     private function VFT_OnUnitEnter takes nothing returns nothing
-        local unit vendor = GetEnteringUnit()
+        local unit vendor = GetTriggerUnit()
 
         call VendorFloatingText_RegisterUnit(vendor)
         set vendor = null
@@ -253,10 +253,8 @@ library VendorFloatingText initializer Init requires Shop, Table, FallenHeroStat
         set VFT_EnumGroup = CreateGroup()
         set VFT_UpdateTimer = CreateTimer()
         set VFT_StartupDiscoveryTimer = CreateTimer()
-        set VFT_EnterTrigger = CreateTrigger()
         call VFT_CreateLabelPool()
-        call TriggerRegisterEnterRectSimple(VFT_EnterTrigger, bj_mapInitialPlayableArea)
-        call TriggerAddAction(VFT_EnterTrigger, function VFT_OnUnitEnter)
+        call Events_RegisterUnitEnter(function VFT_OnUnitEnter)
         call TimerStart(VFT_StartupDiscoveryTimer, 0.10, false, function VFT_DiscoverVendors)
         call TimerStart(VFT_UpdateTimer, VFT_UPDATE_PERIOD, true, function VFT_Update)
     endfunction
