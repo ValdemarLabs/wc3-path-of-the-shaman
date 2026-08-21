@@ -1,5 +1,9 @@
 # Drunk Object Editor setup
 
+Create the integer array GUI variable `Stats_Drunk`. Its generated JASS name
+must be `udg_Stats_Drunk[]`; `Drunk.j` treats values from 0 through 100 as the
+authoritative MUI intoxication stat.
+
 `Drunk.j` uses three map abilities for its visible status buffs:
 
 - `S01M`: Drunk status aura. Base it on a hidden aura, target Self only, use a

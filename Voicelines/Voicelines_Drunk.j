@@ -2,7 +2,7 @@
     VoicelinesDrunk
 
     Author: Valdemar
-    Version: 2.1.0
+    Version: 2.2.0
 
     Description:
     Randomized hero, AI companion, wake-up, and Horde vendor lines used by
@@ -16,6 +16,7 @@
 
     API:
     call VoicelinesDrunk_PickHeroReaction(speaker, passOut)
+    call VoicelinesDrunk_PickLastNightQuestion(speaker)
     call VoicelinesDrunk_PickHeroNightReply(speaker)
     call VoicelinesDrunk_PickNightHeroResponse(speaker, storyIndex)
     call VoicelinesDrunk_PickAIReaction(speaker, passOut)
@@ -63,6 +64,10 @@ globals
     constant string VL_NAZGREKDRUNK_WAKE2_TEXT = "The elements are far too loud this morning."
     constant string VL_NAZGREKDRUNK_WAKE3_KEY = "Nazgrek_HangoverWake3"
     constant string VL_NAZGREKDRUNK_WAKE3_TEXT = "Where am I, and why do I smell like a brewery?"
+    constant string VL_NAZGREKDRUNK_QUESTION1_KEY = "Nazgrek_LastNightQuestion1"
+    constant string VL_NAZGREKDRUNK_QUESTION1_TEXT = "What happened last night?"
+    constant string VL_NAZGREKDRUNK_QUESTION2_KEY = "Nazgrek_LastNightQuestion2"
+    constant string VL_NAZGREKDRUNK_QUESTION2_TEXT = "Tell me plainly. What did I do last night?"
     constant string VL_NAZGREKDRUNK_NIGHT1_KEY = "Nazgrek_LastNight1"
     constant string VL_NAZGREKDRUNK_NIGHT1_TEXT = "You called me a windbag in front of half the market, then asked the vendors to vote on it. They did."
     constant string VL_NAZGREKDRUNK_NIGHT2_KEY = "Nazgrek_LastNight2"
@@ -99,6 +104,10 @@ globals
     constant string VL_ZULKISDRUNK_WAKE2_TEXT = "My head be hurtin' in three different languages."
     constant string VL_ZULKISDRUNK_WAKE3_KEY = "Zulkis_HangoverWake3"
     constant string VL_ZULKISDRUNK_WAKE3_TEXT = "I remember a barrel, a song, and den nothin'."
+    constant string VL_ZULKISDRUNK_QUESTION1_KEY = "Zulkis_LastNightQuestion1"
+    constant string VL_ZULKISDRUNK_QUESTION1_TEXT = "What happened last night, mon?"
+    constant string VL_ZULKISDRUNK_QUESTION2_KEY = "Zulkis_LastNightQuestion2"
+    constant string VL_ZULKISDRUNK_QUESTION2_TEXT = "Tell me true. What did I do last night?"
     constant string VL_ZULKISDRUNK_NIGHT1_KEY = "Zulkis_LastNight1"
     constant string VL_ZULKISDRUNK_NIGHT1_TEXT = "Ya told everyone my finest hex was just fancy smoke, den made me prove it on ya hat."
     constant string VL_ZULKISDRUNK_NIGHT2_KEY = "Zulkis_LastNight2"
@@ -307,6 +316,15 @@ public function PickHeroReaction takes unit speaker, boolean passOut returns not
         call PickTwo(VL_ZULKISDRUNK_PASSOUT1_TEXT, VL_ZULKISDRUNK_PASSOUT1_KEY, VL_ZULKISDRUNK_PASSOUT2_TEXT, VL_ZULKISDRUNK_PASSOUT2_KEY)
     else
         call PickTwo(VL_ZULKISDRUNK_PUKE1_TEXT, VL_ZULKISDRUNK_PUKE1_KEY, VL_ZULKISDRUNK_PUKE2_TEXT, VL_ZULKISDRUNK_PUKE2_KEY)
+    endif
+    set speaker = null
+endfunction
+
+public function PickLastNightQuestion takes unit speaker returns nothing
+    if speaker == udg_Nazgrek then
+        call PickTwo(VL_NAZGREKDRUNK_QUESTION1_TEXT, VL_NAZGREKDRUNK_QUESTION1_KEY, VL_NAZGREKDRUNK_QUESTION2_TEXT, VL_NAZGREKDRUNK_QUESTION2_KEY)
+    else
+        call PickTwo(VL_ZULKISDRUNK_QUESTION1_TEXT, VL_ZULKISDRUNK_QUESTION1_KEY, VL_ZULKISDRUNK_QUESTION2_TEXT, VL_ZULKISDRUNK_QUESTION2_KEY)
     endif
     set speaker = null
 endfunction
@@ -542,6 +560,8 @@ private function Init takes nothing returns nothing
     call Voicelines_RegisterKey(VL_NAZGREKDRUNK_FOLDER, VL_NAZGREKDRUNK_WAKE1_KEY)
     call Voicelines_RegisterKey(VL_NAZGREKDRUNK_FOLDER, VL_NAZGREKDRUNK_WAKE2_KEY)
     call Voicelines_RegisterKey(VL_NAZGREKDRUNK_FOLDER, VL_NAZGREKDRUNK_WAKE3_KEY)
+    call Voicelines_RegisterKey(VL_NAZGREKDRUNK_FOLDER, VL_NAZGREKDRUNK_QUESTION1_KEY)
+    call Voicelines_RegisterKey(VL_NAZGREKDRUNK_FOLDER, VL_NAZGREKDRUNK_QUESTION2_KEY)
     call Voicelines_RegisterKey(VL_NAZGREKDRUNK_FOLDER, VL_NAZGREKDRUNK_NIGHT1_KEY)
     call Voicelines_RegisterKey(VL_NAZGREKDRUNK_FOLDER, VL_NAZGREKDRUNK_NIGHT2_KEY)
     call Voicelines_RegisterKey(VL_NAZGREKDRUNK_FOLDER, VL_NAZGREKDRUNK_NIGHT3_KEY)
@@ -559,6 +579,8 @@ private function Init takes nothing returns nothing
     call Voicelines_RegisterKey(VL_ZULKISDRUNK_FOLDER, VL_ZULKISDRUNK_WAKE1_KEY)
     call Voicelines_RegisterKey(VL_ZULKISDRUNK_FOLDER, VL_ZULKISDRUNK_WAKE2_KEY)
     call Voicelines_RegisterKey(VL_ZULKISDRUNK_FOLDER, VL_ZULKISDRUNK_WAKE3_KEY)
+    call Voicelines_RegisterKey(VL_ZULKISDRUNK_FOLDER, VL_ZULKISDRUNK_QUESTION1_KEY)
+    call Voicelines_RegisterKey(VL_ZULKISDRUNK_FOLDER, VL_ZULKISDRUNK_QUESTION2_KEY)
     call Voicelines_RegisterKey(VL_ZULKISDRUNK_FOLDER, VL_ZULKISDRUNK_NIGHT1_KEY)
     call Voicelines_RegisterKey(VL_ZULKISDRUNK_FOLDER, VL_ZULKISDRUNK_NIGHT2_KEY)
     call Voicelines_RegisterKey(VL_ZULKISDRUNK_FOLDER, VL_ZULKISDRUNK_NIGHT3_KEY)

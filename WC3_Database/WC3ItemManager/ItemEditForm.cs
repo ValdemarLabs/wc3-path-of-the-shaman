@@ -3586,7 +3586,8 @@ namespace WC3ItemManager
                     "Blacksmithing",
                     "Leatherworking",
                     "Enchanting",
-                    "Cooking"
+                    "Cooking",
+                    "Drunk"
                 };
 
                 var generatedAbilities = new List<string>();

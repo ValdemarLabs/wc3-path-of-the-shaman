@@ -2,7 +2,7 @@
     Drunk
 
     Author: Valdemar
-    Version: 2.0.0
+    Version: 2.1.0
 
     Description:
     Handles drunken visuals, camera sway, movement/casting mishaps, puking,
@@ -20,7 +20,7 @@
     until the next Drunk tick.
 
     API:
-    call Drunk_Add(whichUnit, amount, duration)
+    call Drunk_Add(whichUnit, amount)
     call Drunk_Clear(whichUnit)
     set amount = Drunk_GetLevel(whichUnit)
     call Drunk_RefreshPlayer(whichPlayer)
@@ -32,12 +32,14 @@
 
 **/
 
-library Drunk initializer Init requires TimerUtils, Table, CameraControl, FallenHeroState, DialogSystem, AI, Companions, VoicelinesDrunk
+library Drunk initializer Init requires TimerUtils, Table, CameraControl, FullscreenUI, FallenHeroState, DialogSystem, AI, Companions, VoicelinesDrunk
 
 globals
     // Core configuration.
     private constant real D_TICK_PERIOD = 0.35
-    private constant real D_MAX_LEVEL = 3.00
+    private constant integer D_MAX_LEVEL = 100
+    private constant integer D_DECAY_AMOUNT = 1
+    private constant integer D_DECAY_TICKS = 14
     private constant real D_MIN_ROLL = 1.25
     private constant real D_MAX_ROLL = 7.00
     private constant real D_MISHAP_MIN_LEVEL = 0.30
@@ -48,6 +50,9 @@ globals
     private constant string D_FILTER_TEXTURE = "ReplaceableTextures\\CameraMasks\\DiagonalSlash_mask.blp"
     private constant string D_TARGET_EFFECT = "Abilities\\Spells\\Other\\DrunkenHaze\\DrunkenHazeTarget.mdl"
     private constant string D_TARGET_ATTACH = "overhead"
+    private constant string D_PUKE_EFFECT = "Abilities\\Spells\\NightElf\\CorrosiveBreath\\CorrosiveBreathMissile.mdl"
+    private constant string D_PUKE_ATTACH = "head"
+    private constant real D_PUKE_EFFECT_SCALE = 0.65
 
     // Object Editor configuration. Replace these placeholders with hidden,
     // self-only aura abilities that display the Drunk, Puking, and Hangover
@@ -72,6 +77,10 @@ globals
     private constant real D_PASSOUT_FADE_OUT = 2.00
     private constant real D_PASSOUT_FADE_IN = 2.00
     private constant real D_PASSOUT_SLEEP_AFTER_FADE = 3.00
+    private constant real D_PASSOUT_CAMERA_STEP = 1.25
+    private constant real D_PASSOUT_CAMERA_FAR = 3000.00
+    private constant real D_PASSOUT_CAMERA_MIDDLE = 1900.00
+    private constant real D_PASSOUT_CAMERA_NEAR = 1050.00
     private constant real D_AI_PASSOUT_TIME = 8.00
     private constant real D_EVENT_COOLDOWN = 18.00
     private constant real D_REACTION_RANGE = 1600.00
@@ -81,14 +90,12 @@ globals
     private constant string D_PASSOUT_ATTACH = "overhead"
     private constant string D_BLACK_FILTER = "ReplaceableTextures\\CameraMasks\\Black_mask.blp"
 
-    private Table D_TimerGeneration = 0
-    private real array D_UnitLevel
     private unit array D_Unit
     private effect array D_UnitEffect
-    private timer array D_UnitTimer
-    private integer array D_UnitGeneration
     private integer array D_NextMishapTick
     private integer array D_NextEventTick
+    private integer array D_NextDecayTick
+    private integer array D_LastNoticeBand
     private boolean array D_HadDrunkAbility
     private boolean array D_Puking
     private boolean array D_HadPukeAbility
@@ -99,6 +106,9 @@ globals
     private effect array D_SleepEffect
     private timer array D_PassOutTimer
     private boolean array D_CameraSuspendedByPassOut
+    private boolean array D_WasInvulnerable
+    private boolean array D_FullscreenWasEnabled
+    private integer array D_PassOutCameraStage
     private boolean array D_Hangover
     private boolean array D_HadHangoverAbility
     private timer array D_HangoverTimer
@@ -135,30 +145,24 @@ private function D_IsUnitAlive takes unit whichUnit returns boolean
     return FallenHeroState_IsAlive(whichUnit)
 endfunction
 
-private function D_ClampLevel takes real value returns real
-    if value < 0.00 then
-        return 0.00
+private function D_ClampLevel takes integer value returns integer
+    if value < 0 then
+        return 0
     elseif value > D_MAX_LEVEL then
         return D_MAX_LEVEL
     endif
     return value
 endfunction
 
-private function D_NormalizeLevel takes real value returns real
-    set value = D_ClampLevel(value) / D_MAX_LEVEL
-    if value < 0.00 then
-        return 0.00
-    elseif value > 1.00 then
-        return 1.00
-    endif
-    return value
+private function D_NormalizeLevel takes integer value returns real
+    return I2R(D_ClampLevel(value))/I2R(D_MAX_LEVEL)
 endfunction
 
-private function D_GetFilterAlpha takes real level returns integer
+private function D_GetFilterAlpha takes integer level returns integer
     return R2I(35.00 + D_NormalizeLevel(level) * 135.00)
 endfunction
 
-private function D_ShowFilter takes player whichPlayer, real level returns nothing
+private function D_ShowFilter takes player whichPlayer, integer level returns nothing
     local integer alpha = D_GetFilterAlpha(level)
     if GetLocalPlayer() == whichPlayer then
         call SetCineFilterTexture(D_FILTER_TEXTURE)
@@ -185,7 +189,7 @@ private function D_ShouldPlayerSeeDrunkUnit takes player whichPlayer, unit which
     if unitId <= 0 then
         return false
     endif
-    return D_IsUnitAlive(whichUnit) and GetOwningPlayer(whichUnit) == whichPlayer and D_UnitLevel[unitId] > 0.00
+    return D_IsUnitAlive(whichUnit) and GetOwningPlayer(whichUnit) == whichPlayer and udg_Stats_Drunk[unitId] > 0
 endfunction
 
 private function D_GetPlayerViewUnit takes player whichPlayer returns unit
@@ -207,7 +211,7 @@ private function D_RefreshPlayerIndex takes integer playerIndex returns nothing
 
     if D_ShouldPlayerSeeDrunkUnit(whichPlayer, whichUnit) then
         set D_FilterActive[playerIndex] = true
-        call D_ShowFilter(whichPlayer, D_UnitLevel[unitId])
+        call D_ShowFilter(whichPlayer, udg_Stats_Drunk[unitId])
     else
         if D_FilterActive[playerIndex] then
             call D_ClearLocalPlayerView(whichPlayer)
@@ -301,19 +305,54 @@ private function D_PlayReaction takes unit subject, boolean passOut returns noth
     set companyHero = null
 endfunction
 
+private function D_IsPlayerPartyUnit takes unit whichUnit returns boolean
+    return whichUnit == udg_Nazgrek or whichUnit == udg_Zulkis or (udg_Companion_Group != null and IsUnitInGroup(whichUnit, udg_Companion_Group))
+endfunction
+
+private function D_GetNoticeBand takes integer level returns integer
+    if level >= 95 then
+        return 5
+    elseif level >= 80 then
+        return 4
+    elseif level >= 60 then
+        return 3
+    elseif level >= 40 then
+        return 2
+    elseif level >= 20 then
+        return 1
+    endif
+    return 0
+endfunction
+
+private function D_ShowLevelNotice takes unit whichUnit, integer oldLevel, integer newLevel returns nothing
+    local integer unitId = D_GetUnitId(whichUnit)
+    local integer band = D_GetNoticeBand(newLevel)
+    local string unitName
+    local string message = ""
+
+    if unitId <= 0 or newLevel <= oldLevel or band <= D_LastNoticeBand[unitId] or GetOwningPlayer(whichUnit) != Player(0) or not D_IsPlayerPartyUnit(whichUnit) then
+        return
+    endif
+    set unitName = GetUnitName(whichUnit)
+    if band == 1 then
+        set message = unitName + " is feeling light-headed."
+    elseif band == 2 then
+        set message = unitName + " is feeling dizzy."
+    elseif band == 3 then
+        set message = unitName + " is visibly drunk."
+    elseif band == 4 then
+        set message = unitName + " can barely stand."
+    else
+        set message = unitName + " is about to pass out..."
+    endif
+    set D_LastNoticeBand[unitId] = band
+    call DisplayTimedTextToPlayer(Player(0), 0.00, 0.00, 5.00, "|cffffcc66" + message + "|r")
+endfunction
+
 private function D_DestroyUnitVisual takes integer unitId returns nothing
     if D_UnitEffect[unitId] != null then
         call DestroyEffect(D_UnitEffect[unitId])
         set D_UnitEffect[unitId] = null
-    endif
-endfunction
-
-private function D_ReleaseUnitTimer takes integer unitId returns nothing
-    if D_UnitTimer[unitId] != null then
-        call PauseTimer(D_UnitTimer[unitId])
-        call D_TimerGeneration.integer.remove(GetHandleId(D_UnitTimer[unitId]))
-        call ReleaseTimer(D_UnitTimer[unitId])
-        set D_UnitTimer[unitId] = null
     endif
 endfunction
 
@@ -343,15 +382,29 @@ private function D_EndPuke takes nothing returns nothing
 
     set D_PukeTimer[unitId] = null
     call D_RemovePuke(unitId)
-    if D_UnitLevel[unitId] <= 0.00 and not D_PassedOut[unitId] and not D_Hangover[unitId] then
+    if udg_Stats_Drunk[unitId] <= 0 and not D_PassedOut[unitId] and not D_Hangover[unitId] then
         set D_Unit[unitId] = null
     endif
     call ReleaseTimer(expired)
     set expired = null
 endfunction
 
+private function D_EndPukeAnimation takes nothing returns nothing
+    local timer expired = GetExpiredTimer()
+    local integer unitId = GetTimerData(expired)
+    local unit whichUnit = D_Unit[unitId]
+
+    if whichUnit != null and D_IsUnitAlive(whichUnit) and not D_PassedOut[unitId] then
+        call SetUnitAnimation(whichUnit, "stand")
+    endif
+    call TimerStart(expired, D_PUKE_AFTER_TIME, false, function D_EndPuke)
+    set expired = null
+    set whichUnit = null
+endfunction
+
 private function D_StartPuke takes unit whichUnit, integer unitId returns nothing
     local timer t
+    local effect pukeEffect
 
     if D_Puking[unitId] or D_PassedOut[unitId] then
         return
@@ -366,14 +419,17 @@ private function D_StartPuke takes unit whichUnit, integer unitId returns nothin
     call BlzSetUnitArmor(whichUnit, BlzGetUnitArmor(whichUnit) - D_PUKE_ARMOR_PENALTY)
     call IssueImmediateOrder(whichUnit, "stop")
     call SetUnitAnimation(whichUnit, "stand puke")
-    call DestroyEffect(AddSpecialEffectTarget(D_TARGET_EFFECT, whichUnit, "origin"))
+    set pukeEffect = AddSpecialEffectTarget(D_PUKE_EFFECT, whichUnit, D_PUKE_ATTACH)
+    call BlzSetSpecialEffectScale(pukeEffect, D_PUKE_EFFECT_SCALE)
+    call DestroyEffect(pukeEffect)
     call D_PlayReaction(whichUnit, false)
 
     set t = NewTimer()
     set D_PukeTimer[unitId] = t
     call SetTimerData(t, unitId)
-    call TimerStart(t, D_PUKE_ANIMATION_TIME + D_PUKE_AFTER_TIME, false, function D_EndPuke)
+    call TimerStart(t, D_PUKE_ANIMATION_TIME, false, function D_EndPukeAnimation)
     set t = null
+    set pukeEffect = null
 endfunction
 
 private function D_RemoveHangover takes integer unitId returns nothing
@@ -393,7 +449,7 @@ private function D_EndHangover takes nothing returns nothing
 
     set D_HangoverTimer[unitId] = null
     call D_RemoveHangover(unitId)
-    if D_UnitLevel[unitId] <= 0.00 and not D_Puking[unitId] and not D_PassedOut[unitId] then
+    if udg_Stats_Drunk[unitId] <= 0 and not D_Puking[unitId] and not D_PassedOut[unitId] then
         set D_Unit[unitId] = null
     endif
     call ReleaseTimer(expired)
@@ -458,6 +514,9 @@ private function D_WakeFromPassOut takes nothing returns nothing
         if not D_WasPaused[unitId] and D_IsUnitAlive(whichUnit) then
             call PauseUnit(whichUnit, false)
         endif
+        if not D_WasInvulnerable[unitId] then
+            call SetUnitInvulnerable(whichUnit, false)
+        endif
         if D_IsUnitAlive(whichUnit) then
             call SetUnitAnimation(whichUnit, "stand")
             call D_StartHangover(whichUnit, unitId)
@@ -473,16 +532,50 @@ private function D_WakeFromPassOut takes nothing returns nothing
                 call DisplayCineFilter(false)
             endif
             call CameraControl_ResumeWithDuration(owner, 0.75)
+            if not D_FullscreenWasEnabled[unitId] then
+                call FullscreenUI_SetEnabled(false)
+            endif
         endif
     endif
     set D_PassedOut[unitId] = false
     set D_WasPaused[unitId] = false
     set D_HadSleepAbility[unitId] = false
     set D_CameraSuspendedByPassOut[unitId] = false
-    if D_UnitLevel[unitId] <= 0.00 and not D_Hangover[unitId] and not D_Puking[unitId] then
+    set D_WasInvulnerable[unitId] = false
+    set D_FullscreenWasEnabled[unitId] = false
+    set D_PassOutCameraStage[unitId] = 0
+    if udg_Stats_Drunk[unitId] <= 0 and not D_Hangover[unitId] and not D_Puking[unitId] then
         set D_Unit[unitId] = null
     endif
     call ReleaseTimer(expired)
+    set expired = null
+    set whichUnit = null
+    set owner = null
+endfunction
+
+private function D_AdvancePassOutCamera takes nothing returns nothing
+    local timer expired = GetExpiredTimer()
+    local integer unitId = GetTimerData(expired)
+    local unit whichUnit = D_Unit[unitId]
+    local player owner
+
+    if whichUnit == null or not D_PassedOut[unitId] then
+        set D_PassOutTimer[unitId] = null
+        call ReleaseTimer(expired)
+        set expired = null
+        set whichUnit = null
+        return
+    endif
+    set owner = GetOwningPlayer(whichUnit)
+    set D_PassOutCameraStage[unitId] = D_PassOutCameraStage[unitId] + 1
+    call PanCameraToTimedForPlayer(owner, GetUnitX(whichUnit), GetUnitY(whichUnit), D_PASSOUT_CAMERA_STEP)
+    if D_PassOutCameraStage[unitId] == 1 then
+        call SetCameraFieldForPlayer(owner, CAMERA_FIELD_TARGET_DISTANCE, D_PASSOUT_CAMERA_MIDDLE, D_PASSOUT_CAMERA_STEP)
+        call TimerStart(expired, D_PASSOUT_CAMERA_STEP, false, function D_AdvancePassOutCamera)
+    elseif D_PassOutCameraStage[unitId] == 2 then
+        call SetCameraFieldForPlayer(owner, CAMERA_FIELD_TARGET_DISTANCE, D_PASSOUT_CAMERA_NEAR, D_PASSOUT_CAMERA_STEP)
+        call TimerStart(expired, D_PASSOUT_CAMERA_STEP + D_PASSOUT_SLEEP_AFTER_FADE, false, function D_WakeFromPassOut)
+    endif
     set expired = null
     set whichUnit = null
     set owner = null
@@ -513,9 +606,13 @@ private function D_RelocatePassedOut takes nothing returns nothing
     set owner = GetOwningPlayer(whichUnit)
     if D_CameraSuspendedByPassOut[unitId] then
         call PanCameraToTimedForPlayer(owner, GetUnitX(whichUnit), GetUnitY(whichUnit), 0.00)
+        call SetCameraFieldForPlayer(owner, CAMERA_FIELD_TARGET_DISTANCE, D_PASSOUT_CAMERA_FAR, 0.00)
         call D_ShowBlackFade(owner, false, D_PASSOUT_FADE_IN)
+        set D_PassOutCameraStage[unitId] = 0
+        call TimerStart(expired, D_PASSOUT_FADE_IN, false, function D_AdvancePassOutCamera)
+    else
+        call TimerStart(expired, D_PASSOUT_SLEEP_AFTER_FADE, false, function D_WakeFromPassOut)
     endif
-    call TimerStart(expired, D_PASSOUT_FADE_IN + D_PASSOUT_SLEEP_AFTER_FADE, false, function D_WakeFromPassOut)
     set expired = null
     set whichUnit = null
     set owner = null
@@ -541,6 +638,8 @@ private function D_StartPassOut takes unit whichUnit, integer unitId returns not
     endif
     set D_PassedOut[unitId] = true
     set D_WasPaused[unitId] = IsUnitPaused(whichUnit)
+    set D_WasInvulnerable[unitId] = BlzIsUnitInvulnerable(whichUnit)
+    call SetUnitInvulnerable(whichUnit, true)
     set D_HadSleepAbility[unitId] = GetUnitAbilityLevel(whichUnit, D_SLEEP_ABILITY_ID) > 0
     if not D_HadSleepAbility[unitId] then
         call UnitAddAbility(whichUnit, D_SLEEP_ABILITY_ID)
@@ -552,12 +651,12 @@ private function D_StartPassOut takes unit whichUnit, integer unitId returns not
     call Companions_SetExternalOrderOverride(whichUnit, true)
     call D_PlayReaction(whichUnit, true)
 
-    call D_ReleaseUnitTimer(unitId)
     if D_UnitEffect[unitId] != null then
         call DestroyEffect(D_UnitEffect[unitId])
         set D_UnitEffect[unitId] = null
     endif
-    set D_UnitLevel[unitId] = 0.00
+    set udg_Stats_Drunk[unitId] = 0
+    set D_LastNoticeBand[unitId] = 0
     call GroupRemoveUnit(D_DrunkUnits, whichUnit)
     if not D_HadDrunkAbility[unitId] then
         call UnitRemoveAbility(whichUnit, D_DRUNK_ABILITY_ID)
@@ -571,6 +670,8 @@ private function D_StartPassOut takes unit whichUnit, integer unitId returns not
     if playerHero then
         if not udg_InCinematic and CameraControl_GetTargetUnit(owner) == whichUnit and not CameraControl_IsSuspended(owner) then
             set D_CameraSuspendedByPassOut[unitId] = true
+            set D_FullscreenWasEnabled[unitId] = FullscreenUI_IsEnabled()
+            call FullscreenUI_SetEnabled(true)
             call CameraControl_Suspend(owner)
             call D_ShowBlackFade(owner, true, D_PASSOUT_FADE_OUT)
         endif
@@ -583,7 +684,7 @@ private function D_StartPassOut takes unit whichUnit, integer unitId returns not
 endfunction
 
 private function D_TryDrinkEvent takes unit whichUnit, integer unitId returns nothing
-    local real level = D_NormalizeLevel(D_UnitLevel[unitId])
+    local real level = D_NormalizeLevel(udg_Stats_Drunk[unitId])
     local real chance
 
     if D_PassedOut[unitId] or D_TickCount < D_NextEventTick[unitId] then
@@ -614,7 +715,6 @@ private function D_ClearById takes integer unitId returns nothing
         return
     endif
 
-    call D_ReleaseUnitTimer(unitId)
     call D_DestroyUnitVisual(unitId)
     if D_PukeTimer[unitId] != null then
         call PauseTimer(D_PukeTimer[unitId])
@@ -640,11 +740,17 @@ private function D_ClearById takes integer unitId returns nothing
             call PauseUnit(whichUnit, false)
             call SetUnitAnimation(whichUnit, "stand")
         endif
+        if not D_WasInvulnerable[unitId] then
+            call SetUnitInvulnerable(whichUnit, false)
+        endif
         if D_CameraSuspendedByPassOut[unitId] then
             if GetLocalPlayer() == GetOwningPlayer(whichUnit) then
                 call DisplayCineFilter(false)
             endif
             call CameraControl_ResumeWithDuration(GetOwningPlayer(whichUnit), 0.75)
+            if not D_FullscreenWasEnabled[unitId] then
+                call FullscreenUI_SetEnabled(false)
+            endif
         endif
     endif
     if D_HangoverTimer[unitId] != null then
@@ -656,7 +762,8 @@ private function D_ClearById takes integer unitId returns nothing
     if whichUnit != null and not D_HadDrunkAbility[unitId] then
         call UnitRemoveAbility(whichUnit, D_DRUNK_ABILITY_ID)
     endif
-    set D_UnitLevel[unitId] = 0.00
+    set udg_Stats_Drunk[unitId] = 0
+    set D_LastNoticeBand[unitId] = 0
     set D_NextMishapTick[unitId] = 0
     set D_NextEventTick[unitId] = 0
     set D_HadDrunkAbility[unitId] = false
@@ -664,58 +771,14 @@ private function D_ClearById takes integer unitId returns nothing
     set D_WasPaused[unitId] = false
     set D_HadSleepAbility[unitId] = false
     set D_CameraSuspendedByPassOut[unitId] = false
-    set D_UnitGeneration[unitId] = D_UnitGeneration[unitId] + 1
+    set D_WasInvulnerable[unitId] = false
+    set D_FullscreenWasEnabled[unitId] = false
+    set D_PassOutCameraStage[unitId] = 0
     call GroupRemoveUnit(D_DrunkUnits, whichUnit)
     set D_Unit[unitId] = null
 
     call D_RefreshPlayersForUnit(whichUnit)
     set whichUnit = null
-endfunction
-
-private function D_Expire takes nothing returns nothing
-    local timer t = GetExpiredTimer()
-    local integer timerId = GetHandleId(t)
-    local integer unitId = GetTimerData(t)
-    local integer generation = D_TimerGeneration.integer[timerId]
-    local unit whichUnit = D_Unit[unitId]
-
-    call D_TimerGeneration.integer.remove(timerId)
-    if generation == D_UnitGeneration[unitId] then
-        set D_UnitTimer[unitId] = null
-        call D_DestroyUnitVisual(unitId)
-        set D_UnitLevel[unitId] = 0.00
-        set D_NextMishapTick[unitId] = 0
-        call GroupRemoveUnit(D_DrunkUnits, whichUnit)
-        if whichUnit != null and not D_HadDrunkAbility[unitId] then
-            call UnitRemoveAbility(whichUnit, D_DRUNK_ABILITY_ID)
-        endif
-        set D_HadDrunkAbility[unitId] = false
-        if not D_Puking[unitId] and not D_PassedOut[unitId] and not D_Hangover[unitId] then
-            set D_Unit[unitId] = null
-        endif
-        call D_RefreshPlayersForUnit(whichUnit)
-    endif
-
-    call ReleaseTimer(t)
-    set t = null
-    set whichUnit = null
-endfunction
-
-private function D_StartTimer takes integer unitId, real duration returns nothing
-    local timer t
-
-    call D_ReleaseUnitTimer(unitId)
-    if duration <= 0.00 then
-        return
-    endif
-
-    set D_UnitGeneration[unitId] = D_UnitGeneration[unitId] + 1
-    set t = NewTimer()
-    set D_UnitTimer[unitId] = t
-    call SetTimerData(t, unitId)
-    set D_TimerGeneration.integer[GetHandleId(t)] = D_UnitGeneration[unitId]
-    call TimerStart(t, duration, false, function D_Expire)
-    set t = null
 endfunction
 
 // Only gameplay abilities are eligible. This excludes profession/UI abilities
@@ -819,7 +882,7 @@ private function D_ApplyMishap takes nothing returns nothing
         return
     endif
 
-    set level = D_NormalizeLevel(D_UnitLevel[unitId])
+    set level = D_NormalizeLevel(udg_Stats_Drunk[unitId])
     if level < D_MISHAP_MIN_LEVEL then
         set whichUnit = null
         return
@@ -849,6 +912,37 @@ private function D_ApplyMishap takes nothing returns nothing
     set whichUnit = null
 endfunction
 
+private function D_ApplyDecay takes nothing returns nothing
+    local unit whichUnit = GetEnumUnit()
+    local integer unitId = D_GetUnitId(whichUnit)
+
+    if unitId <= 0 then
+        set whichUnit = null
+        return
+    endif
+    if D_NextDecayTick[unitId] <= 0 then
+        set D_NextDecayTick[unitId] = D_TickCount + D_DECAY_TICKS
+    elseif D_TickCount >= D_NextDecayTick[unitId] then
+        set udg_Stats_Drunk[unitId] = D_ClampLevel(udg_Stats_Drunk[unitId] - D_DECAY_AMOUNT)
+        set D_NextDecayTick[unitId] = D_TickCount + D_DECAY_TICKS
+        if udg_Stats_Drunk[unitId] <= 0 then
+            call D_DestroyUnitVisual(unitId)
+            call GroupRemoveUnit(D_DrunkUnits, whichUnit)
+            if not D_HadDrunkAbility[unitId] then
+                call UnitRemoveAbility(whichUnit, D_DRUNK_ABILITY_ID)
+            endif
+            set D_HadDrunkAbility[unitId] = false
+            set D_LastNoticeBand[unitId] = 0
+            set D_NextMishapTick[unitId] = 0
+            if not D_Puking[unitId] and not D_PassedOut[unitId] and not D_Hangover[unitId] then
+                set D_Unit[unitId] = null
+            endif
+        endif
+        call D_RefreshPlayersForUnit(whichUnit)
+    endif
+    set whichUnit = null
+endfunction
+
 private function D_Tick takes nothing returns nothing
     local integer playerIndex = 0
     local player whichPlayer
@@ -859,6 +953,7 @@ private function D_Tick takes nothing returns nothing
     local real swayScale
 
     set D_TickCount = D_TickCount + 1
+    call ForGroup(D_DrunkUnits, function D_ApplyDecay)
     call ForGroup(D_DrunkUnits, function D_ApplyMishap)
 
     loop
@@ -868,9 +963,9 @@ private function D_Tick takes nothing returns nothing
         set unitId = D_GetUnitId(whichUnit)
 
         if D_ShouldPlayerSeeDrunkUnit(whichPlayer, whichUnit) then
-            set level = D_NormalizeLevel(D_UnitLevel[unitId])
+            set level = D_NormalizeLevel(udg_Stats_Drunk[unitId])
             set D_FilterActive[playerIndex] = true
-            call D_ShowFilter(whichPlayer, D_UnitLevel[unitId])
+            call D_ShowFilter(whichPlayer, udg_Stats_Drunk[unitId])
             set D_SwayPhase[playerIndex] = D_SwayPhase[playerIndex] + 0.70 + level*0.55 + 0.08*Sin(D_SwayPhase[playerIndex]*0.73 + I2R(playerIndex))
             set swayScale = 1.00 + 0.18*Sin(D_SwayPhase[playerIndex]*2.31 + I2R(playerIndex)*1.77)
             set roll = Sin(D_SwayPhase[playerIndex])*(D_MIN_ROLL + (D_MAX_ROLL - D_MIN_ROLL)*level)*swayScale
@@ -891,29 +986,32 @@ private function D_Tick takes nothing returns nothing
     set whichUnit = null
 endfunction
 
-public function Add takes unit whichUnit, real amount, real duration returns nothing
+public function Add takes unit whichUnit, integer amount returns nothing
     local integer unitId = D_GetUnitId(whichUnit)
+    local integer oldLevel
 
-    if whichUnit == null or unitId <= 0 or amount <= 0.00 or D_PassedOut[unitId] then
+    if whichUnit == null or unitId <= 0 or amount <= 0 or D_PassedOut[unitId] then
         return
     endif
 
     set D_Unit[unitId] = whichUnit
-    if D_UnitLevel[unitId] <= 0.00 then
+    set oldLevel = udg_Stats_Drunk[unitId]
+    if oldLevel <= 0 then
         set D_HadDrunkAbility[unitId] = GetUnitAbilityLevel(whichUnit, D_DRUNK_ABILITY_ID) > 0
         if not D_HadDrunkAbility[unitId] then
             call UnitAddAbility(whichUnit, D_DRUNK_ABILITY_ID)
             call BlzUnitHideAbility(whichUnit, D_DRUNK_ABILITY_ID, true)
         endif
     endif
-    set D_UnitLevel[unitId] = D_ClampLevel(D_UnitLevel[unitId] + amount)
+    set udg_Stats_Drunk[unitId] = D_ClampLevel(oldLevel + amount)
+    set D_NextDecayTick[unitId] = D_TickCount + D_DECAY_TICKS
     call GroupAddUnit(D_DrunkUnits, whichUnit)
-    call D_ScheduleNextMishap(unitId, D_NormalizeLevel(D_UnitLevel[unitId]))
+    call D_ScheduleNextMishap(unitId, D_NormalizeLevel(udg_Stats_Drunk[unitId]))
     if D_UnitEffect[unitId] == null then
         set D_UnitEffect[unitId] = AddSpecialEffectTarget(D_TARGET_EFFECT, whichUnit, D_TARGET_ATTACH)
     endif
 
-    call D_StartTimer(unitId, duration)
+    call D_ShowLevelNotice(whichUnit, oldLevel, udg_Stats_Drunk[unitId])
     call D_RefreshPlayersForUnit(whichUnit)
     call D_TryDrinkEvent(whichUnit, unitId)
 endfunction
@@ -922,12 +1020,12 @@ public function Clear takes unit whichUnit returns nothing
     call D_ClearById(D_GetUnitId(whichUnit))
 endfunction
 
-public function GetLevel takes unit whichUnit returns real
+public function GetLevel takes unit whichUnit returns integer
     local integer unitId = D_GetUnitId(whichUnit)
     if unitId <= 0 then
-        return 0.00
+        return 0
     endif
-    return D_UnitLevel[unitId]
+    return udg_Stats_Drunk[unitId]
 endfunction
 
 public function RefreshPlayer takes player whichPlayer returns nothing
@@ -999,7 +1097,6 @@ private function D_RegisterPassOutRects takes nothing returns nothing
 endfunction
 
 private function Init takes nothing returns nothing
-    set D_TimerGeneration = Table.create()
     set D_PassOutAnimation = Table.create()
     set D_DrunkUnits = CreateGroup()
     set D_TickTimer = CreateTimer()

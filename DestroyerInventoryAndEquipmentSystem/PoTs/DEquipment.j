@@ -1231,6 +1231,8 @@ set DEqStatNames[45] = "Blacksmithing"
 set DEqStatNames[46] = "Leatherworking"
 set DEqStatNames[47] = "Enchanting"
 set DEqStatNames[48] = "Cooking"
+// Dummy display stat used by consumable tooltips; Drunk.j owns the runtime value.
+set DEqStatNames[49] = "Drunk"
 
 //call BJDebugMsg("before DEqStatsCounter")
 

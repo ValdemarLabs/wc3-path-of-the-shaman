@@ -25,7 +25,7 @@
     buff may be active on a unit at the same time. Applying a new food replaces
     only the previous food stats/aura; applying a new drink replaces only the
     previous drink stats/aura. Only drinks with configured drunk amount above
-    0.00 call Drunk_Add; non-alcohol drinks are still normal drink buffs.
+    0 call Drunk_Add; non-alcohol drinks are still normal drink buffs.
     Cooked item object data should grant only Eat/Drink ('A0F5') to consume a
     charge. Recipe aura abilities belong on the unit at runtime and must not be
     added to the food or beverage item itself.
@@ -258,7 +258,7 @@ globals
     private integer array PC_EffectStatType
     private real array PC_EffectStatAmount
     private real array PC_EffectDuration
-    private real array PC_EffectDrunkAmount
+    private integer array PC_EffectDrunkAmount
     private boolean array PC_EffectIsBeverage
     private string array PC_EffectName
     private string array PC_EffectText
@@ -418,7 +418,7 @@ private function PC_RegisterConsumable takes integer itemCode, string effectName
     set PC_EffectText[PC_EffectCount] = effectText
     set PC_EffectDuration[PC_EffectCount] = duration
     set PC_EffectIsBeverage[PC_EffectCount] = isBeverage
-    set PC_EffectDrunkAmount[PC_EffectCount] = drunkAmount
+    set PC_EffectDrunkAmount[PC_EffectCount] = R2I(drunkAmount)
     set PC_EffectAuraAbility[PC_EffectCount] = 0
     set PC_ItemEffect.integer[itemCode] = PC_EffectCount
     return PC_EffectCount
@@ -595,8 +595,8 @@ private function PC_ApplyConsumable takes unit whichUnit, integer effectId retur
 
     if PC_EffectIsBeverage[effectId] then
         call PC_ApplyDrinkBuff(whichUnit, unitId, effectId)
-        if PC_EffectDrunkAmount[effectId] > 0.00 then
-            call Drunk_Add(whichUnit, PC_EffectDrunkAmount[effectId], PC_EffectDuration[effectId])
+        if PC_EffectDrunkAmount[effectId] > 0 then
+            call Drunk_Add(whichUnit, PC_EffectDrunkAmount[effectId])
         endif
     else
         call PC_ApplyFoodBuff(whichUnit, unitId, effectId)
@@ -931,12 +931,12 @@ private function PC_RegisterEffects takes nothing returns nothing
     call PC_AddEffectStat(effectId, PC_STAT_HITPOINTS, 50.00)
     call PC_AddEffectStat(effectId, PC_STAT_INTELLIGENCE, -1.00)
 
-    set effectId = PC_RegisterConsumable(PC_ITEM_CACTUS_ALE, "Bitter Cactus Ale", "+1 Strength, -2 Intelligence, and -1 Armor for 10 minutes.", PC_DEFAULT_BEVERAGE_DURATION, true, 0.20)
+    set effectId = PC_RegisterConsumable(PC_ITEM_CACTUS_ALE, "Bitter Cactus Ale", "+1 Strength, -2 Intelligence, -1 Armor, and +20 Drunk.", PC_DEFAULT_BEVERAGE_DURATION, true, 20.00)
     call PC_AddEffectStat(effectId, PC_STAT_STRENGTH, 1.00)
     call PC_AddEffectStat(effectId, PC_STAT_INTELLIGENCE, -2.00)
     call PC_AddEffectStat(effectId, PC_STAT_ARMOR, -1.00)
 
-    set effectId = PC_RegisterConsumable(PC_ITEM_STOUT_MEAD, "Stout Mead", "+3 Strength, -2 Intelligence, and -1 Armor for 10 minutes.", PC_DEFAULT_BEVERAGE_DURATION, true, 0.35)
+    set effectId = PC_RegisterConsumable(PC_ITEM_STOUT_MEAD, "Stout Mead", "+3 Strength, -2 Intelligence, -1 Armor, and +35 Drunk.", PC_DEFAULT_BEVERAGE_DURATION, true, 35.00)
     call PC_AddEffectStat(effectId, PC_STAT_STRENGTH, 3.00)
     call PC_AddEffectStat(effectId, PC_STAT_INTELLIGENCE, -2.00)
     call PC_AddEffectStat(effectId, PC_STAT_ARMOR, -1.00)
@@ -946,12 +946,12 @@ private function PC_RegisterEffects takes nothing returns nothing
     call PC_AddEffectStat(effectId, PC_STAT_MANA, 60.00)
     call PC_AddEffectStat(effectId, PC_STAT_ARMOR, -1.00)
 
-    set effectId = PC_RegisterConsumable(PC_ITEM_BLACKMOUTH_GROG, "Blackmouth Grog", "+5 Damage, -2 Hit, and -3 Intelligence for 10 minutes.", PC_DEFAULT_BEVERAGE_DURATION, true, 0.45)
+    set effectId = PC_RegisterConsumable(PC_ITEM_BLACKMOUTH_GROG, "Blackmouth Grog", "+5 Damage, -2 Hit, -3 Intelligence, and +45 Drunk.", PC_DEFAULT_BEVERAGE_DURATION, true, 45.00)
     call PC_AddEffectStat(effectId, PC_STAT_DAMAGE, 5.00)
     call PC_AddEffectStat(effectId, PC_STAT_HIT, -2.00)
     call PC_AddEffectStat(effectId, PC_STAT_INTELLIGENCE, -3.00)
 
-    set effectId = PC_RegisterConsumable(PC_ITEM_FIREFIN_WHISKEY, "Firefin Whiskey", "+3 Critical Chance, +6 Damage, -4 Intelligence, and -2 Armor for 10 minutes.", PC_DEFAULT_BEVERAGE_DURATION, true, 0.60)
+    set effectId = PC_RegisterConsumable(PC_ITEM_FIREFIN_WHISKEY, "Firefin Whiskey", "+3 Critical Chance, +6 Damage, -4 Intelligence, -2 Armor, and +60 Drunk.", PC_DEFAULT_BEVERAGE_DURATION, true, 60.00)
     call PC_AddEffectStat(effectId, PC_STAT_CRIT, 3.00)
     call PC_AddEffectStat(effectId, PC_STAT_DAMAGE, 6.00)
     call PC_AddEffectStat(effectId, PC_STAT_INTELLIGENCE, -4.00)
@@ -962,18 +962,18 @@ private function PC_RegisterEffects takes nothing returns nothing
     call PC_AddEffectStat(effectId, PC_STAT_MANA_REGEN, 1.00)
     call PC_AddEffectStat(effectId, PC_STAT_ARMOR, -1.00)
 
-    set effectId = PC_RegisterConsumable(PC_ITEM_DEVIATE_RUM, "Deviate Rum", "+5 Dodge, -5 Hit, +20 sight range, and -4 Intelligence for 10 minutes.", PC_DEFAULT_BEVERAGE_DURATION, true, 0.80)
+    set effectId = PC_RegisterConsumable(PC_ITEM_DEVIATE_RUM, "Deviate Rum", "+5 Dodge, -5 Hit, +20 sight range, -4 Intelligence, and +80 Drunk.", PC_DEFAULT_BEVERAGE_DURATION, true, 80.00)
     call PC_AddEffectStat(effectId, PC_STAT_DODGE, 5.00)
     call PC_AddEffectStat(effectId, PC_STAT_HIT, -5.00)
     call PC_AddEffectStat(effectId, PC_STAT_SIGHT_RANGE, 20.00)
     call PC_AddEffectStat(effectId, PC_STAT_INTELLIGENCE, -4.00)
 
-    set effectId = PC_RegisterConsumable(PC_ITEM_NIGHTFIN_WINE, "Nightfin Wine", "+15 Spell Power, -20 movement speed, and -2 Armor for 10 minutes.", PC_DEFAULT_BEVERAGE_DURATION, true, 0.50)
+    set effectId = PC_RegisterConsumable(PC_ITEM_NIGHTFIN_WINE, "Nightfin Wine", "+15 Spell Power, -20 movement speed, -2 Armor, and +50 Drunk.", PC_DEFAULT_BEVERAGE_DURATION, true, 50.00)
     call PC_AddEffectStat(effectId, PC_STAT_SPELL_POWER_FLAT, 15.00)
     call PC_AddEffectStat(effectId, PC_STAT_MOVEMENT_SPEED, -20.00)
     call PC_AddEffectStat(effectId, PC_STAT_ARMOR, -2.00)
 
-    set effectId = PC_RegisterConsumable(PC_ITEM_STONESCALE_PORTER, "Stonescale Porter", "+4 Armor, +4 Block, and -4 Agility for 10 minutes.", PC_DEFAULT_BEVERAGE_DURATION, true, 0.55)
+    set effectId = PC_RegisterConsumable(PC_ITEM_STONESCALE_PORTER, "Stonescale Porter", "+4 Armor, +4 Block, -4 Agility, and +55 Drunk.", PC_DEFAULT_BEVERAGE_DURATION, true, 55.00)
     call PC_AddEffectStat(effectId, PC_STAT_ARMOR, 4.00)
     call PC_AddEffectStat(effectId, PC_STAT_BLOCK, 4.00)
     call PC_AddEffectStat(effectId, PC_STAT_AGILITY, -4.00)
@@ -983,19 +983,19 @@ private function PC_RegisterEffects takes nothing returns nothing
     call PC_AddEffectStat(effectId, PC_STAT_HITPOINT_REGEN, 2.00)
     call PC_AddEffectStat(effectId, PC_STAT_INTELLIGENCE, -3.00)
 
-    set effectId = PC_RegisterConsumable(PC_ITEM_DRAGONFIRE_PUNCH, "Dragonfire Punch", "+20 Damage, +5 Critical Chance, -5 Intelligence, and -4 Armor for 10 minutes.", PC_DEFAULT_BEVERAGE_DURATION, true, 0.90)
+    set effectId = PC_RegisterConsumable(PC_ITEM_DRAGONFIRE_PUNCH, "Dragonfire Punch", "+20 Damage, +5 Critical Chance, -5 Intelligence, -4 Armor, and +90 Drunk.", PC_DEFAULT_BEVERAGE_DURATION, true, 90.00)
     call PC_AddEffectStat(effectId, PC_STAT_DAMAGE, 20.00)
     call PC_AddEffectStat(effectId, PC_STAT_CRIT, 5.00)
     call PC_AddEffectStat(effectId, PC_STAT_INTELLIGENCE, -5.00)
     call PC_AddEffectStat(effectId, PC_STAT_ARMOR, -4.00)
 
-    set effectId = PC_RegisterConsumable(PC_ITEM_WINTER_ABSINTHE, "Winter Squid Absinthe", "+10% Spell Power, +10 Spell Power, -5 Hit, and -6 Intelligence for 10 minutes.", PC_DEFAULT_BEVERAGE_DURATION, true, 1.00)
+    set effectId = PC_RegisterConsumable(PC_ITEM_WINTER_ABSINTHE, "Winter Squid Absinthe", "+10% Spell Power, +10 Spell Power, -5 Hit, -6 Intelligence, and +100 Drunk.", PC_DEFAULT_BEVERAGE_DURATION, true, 100.00)
     call PC_AddEffectStat(effectId, PC_STAT_SPELL_POWER_PCT, 10.00)
     call PC_AddEffectStat(effectId, PC_STAT_SPELL_POWER_FLAT, 10.00)
     call PC_AddEffectStat(effectId, PC_STAT_HIT, -5.00)
     call PC_AddEffectStat(effectId, PC_STAT_INTELLIGENCE, -6.00)
 
-    set effectId = PC_RegisterConsumable(PC_ITEM_BAD_IDEAS_BREW, "Brew of Bad Ideas", "+10 Critical Chance, +10 Damage, -10 Intelligence, -5 Dodge, and -5 Armor for 10 minutes.", PC_DEFAULT_BEVERAGE_DURATION, true, 1.00)
+    set effectId = PC_RegisterConsumable(PC_ITEM_BAD_IDEAS_BREW, "Brew of Bad Ideas", "+10 Critical Chance, +10 Damage, -10 Intelligence, -5 Dodge, -5 Armor, and +100 Drunk.", PC_DEFAULT_BEVERAGE_DURATION, true, 100.00)
     call PC_AddEffectStat(effectId, PC_STAT_CRIT, 10.00)
     call PC_AddEffectStat(effectId, PC_STAT_DAMAGE, 10.00)
     call PC_AddEffectStat(effectId, PC_STAT_INTELLIGENCE, -10.00)
@@ -1392,7 +1392,7 @@ endfunction
 public function IsCookingIntoxicatingDrink takes integer itemCode returns boolean
     local integer effectId = PC_GetEffectIdByItem(itemCode)
 
-    return effectId > 0 and PC_EffectIsBeverage[effectId] and PC_EffectDrunkAmount[effectId] > 0.00
+    return effectId > 0 and PC_EffectIsBeverage[effectId] and PC_EffectDrunkAmount[effectId] > 0
 endfunction
 
 public function GetCookingAuraAbility takes integer itemCode returns integer

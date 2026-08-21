@@ -18,7 +18,8 @@ namespace WC3ItemManager
                     (45, 'profession_blacksmithing', 'Blacksmithing', 'Blacksmithing profession skill bonus', '+{value}', '#708090', 45, TRUE),
                     (46, 'profession_leatherworking', 'Leatherworking', 'Leatherworking profession skill bonus', '+{value}', '#8B4513', 46, TRUE),
                     (47, 'profession_enchanting', 'Enchanting', 'Enchanting profession skill bonus', '+{value}', '#DA70D6', 47, TRUE),
-                    (48, 'profession_cooking', 'Cooking', 'Cooking profession skill bonus', '+{value}', '#FF8C00', 48, TRUE)
+                    (48, 'profession_cooking', 'Cooking', 'Cooking profession skill bonus', '+{value}', '#FF8C00', 48, TRUE),
+                    (49, 'drunk', 'Drunk', 'Intoxication added when consumed', '+{value}', '#DDA0DD', 49, TRUE)
                 ON CONFLICT (id) DO UPDATE SET
                     stat_code = EXCLUDED.stat_code,
                     stat_name = EXCLUDED.stat_name,
@@ -28,7 +29,7 @@ namespace WC3ItemManager
                     display_order = EXCLUDED.display_order,
                     is_active = EXCLUDED.is_active;
 
-                SELECT setval('item_stats_id_seq', GREATEST((SELECT COALESCE(MAX(id), 1) FROM item_stats), 48), true);";
+                SELECT setval('item_stats_id_seq', GREATEST((SELECT COALESCE(MAX(id), 1) FROM item_stats), 49), true);";
 
             using (var cmd = new NpgsqlCommand(seedQuery, conn))
             {

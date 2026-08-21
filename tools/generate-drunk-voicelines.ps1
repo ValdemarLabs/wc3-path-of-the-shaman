@@ -36,6 +36,7 @@ try {
         "Nazgrek_DrunkPuke1", "Nazgrek_DrunkPuke2",
         "Nazgrek_DrunkPassOut1", "Nazgrek_DrunkPassOut2",
         "Nazgrek_HangoverWake1", "Nazgrek_HangoverWake2", "Nazgrek_HangoverWake3",
+        "Nazgrek_LastNightQuestion1", "Nazgrek_LastNightQuestion2",
         "Nazgrek_LastNight1", "Nazgrek_LastNight2", "Nazgrek_LastNight3", "Nazgrek_LastNight4", "Nazgrek_LastNight5",
         "Nazgrek_LastNightResponse1", "Nazgrek_LastNightResponse2", "Nazgrek_LastNightResponse3", "Nazgrek_LastNightResponse4", "Nazgrek_LastNightResponse5"
     )
@@ -43,6 +44,7 @@ try {
         "Zulkis_DrunkPuke1", "Zulkis_DrunkPuke2",
         "Zulkis_DrunkPassOut1", "Zulkis_DrunkPassOut2",
         "Zulkis_HangoverWake1", "Zulkis_HangoverWake2", "Zulkis_HangoverWake3",
+        "Zulkis_LastNightQuestion1", "Zulkis_LastNightQuestion2",
         "Zulkis_LastNight1", "Zulkis_LastNight2", "Zulkis_LastNight3", "Zulkis_LastNight4", "Zulkis_LastNight5",
         "Zulkis_LastNightResponse1", "Zulkis_LastNightResponse2", "Zulkis_LastNightResponse3", "Zulkis_LastNightResponse4", "Zulkis_LastNightResponse5"
     )

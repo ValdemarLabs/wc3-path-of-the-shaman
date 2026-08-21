@@ -2380,6 +2380,10 @@ public function Zones_GetZoneName takes integer zoneId returns string
     return "Unknown Zone"
 endfunction
 
+public function GetZoneName takes integer zoneId returns string
+    return Zones_GetZoneName(zoneId)
+endfunction
+
 public function IsZoneEnabled takes integer zoneId returns boolean
     local ZoneData z = GetZoneData(zoneId)
     return zoneEnabled[zoneId]

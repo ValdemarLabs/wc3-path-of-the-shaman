@@ -2,7 +2,7 @@
     qANightToRemember
 
     Author: Valdemar
-    Version: 2.1.0
+    Version: 2.2.0
 
     Description:
     Creates a repeatable, self-completing hangover quest. Each run asks the
@@ -28,7 +28,7 @@
     call qANightToRemember_CancelVendorTalk()
 
 **/
-library qANightToRemember initializer Init requires Drunk, QuestGiver, QuestMaster, DialogInteraction, DialogSystem, VendorLines, VoicelinesDrunk, VoicelinesQuests, Companions, AI, HeroItemCheck, UnitDeathEvent
+library qANightToRemember initializer Init requires Drunk, QuestGiver, QuestMaster, DialogInteraction, DialogSystem, VendorLines, VoicelinesDrunk, VoicelinesQuests, Companions, AI, HeroItemCheck, UnitDeathEvent, ZonesCore
 
 globals
     private constant string NTR_QUEST_NAME = "A Night To Remember"
@@ -114,6 +114,32 @@ private function NTR_GetTargetName takes integer targetIndex returns string
         return GetUnitName(NTR_TargetUnit[targetIndex])
     endif
     return VendorLines_GetVendorSpeakerName(NTR_TargetUnit[targetIndex])
+endfunction
+
+private function NTR_GetUnitLocation takes unit whichUnit returns string
+    local integer zoneId
+    local integer parentZoneId
+    local string zoneName
+
+    if whichUnit == null then
+        return "unknown location"
+    endif
+    set zoneId = ZonesCore_GetZoneIdAtPoint(GetUnitX(whichUnit), GetUnitY(whichUnit))
+    if zoneId <= 0 then
+        set whichUnit = null
+        return "unknown location"
+    endif
+    set zoneName = ZonesCore_GetZoneName(zoneId)
+    set parentZoneId = ZonesCore_GetParentZoneId(zoneId)
+    if parentZoneId > 0 then
+        set zoneName = zoneName + " (" + ZonesCore_GetZoneName(parentZoneId) + ")"
+    endif
+    set whichUnit = null
+    return zoneName
+endfunction
+
+private function NTR_GetLocatedTargetName takes integer targetIndex returns string
+    return NTR_GetTargetName(targetIndex) + " — " + NTR_GetUnitLocation(NTR_TargetUnit[targetIndex])
 endfunction
 
 private function NTR_GetRequirementIndex takes integer targetIndex returns integer
@@ -434,11 +460,11 @@ private function NTR_SetRequirements takes nothing returns nothing
     local string requirement4
 
     if NTR_OtherHero != null then
-        set requirement1 = "Talk to " + DialogInteraction_GetHeroName(NTR_OtherHero) + " about last night"
+        set requirement1 = "Talk to " + DialogInteraction_GetHeroName(NTR_OtherHero) + " about last night — " + NTR_GetUnitLocation(NTR_OtherHero)
     endif
-    set requirement2 = "Talk to " + NTR_GetTargetName(1) + " about last night"
-    set requirement3 = "Talk to " + NTR_GetTargetName(2) + " about last night"
-    set requirement4 = "Talk to " + NTR_GetTargetName(3) + " about last night"
+    set requirement2 = "Talk to " + NTR_GetLocatedTargetName(1) + " about last night"
+    set requirement3 = "Talk to " + NTR_GetLocatedTargetName(2) + " about last night"
+    set requirement4 = "Talk to " + NTR_GetLocatedTargetName(3) + " about last night"
     call NTR_ClearRequirementTexts()
     if NTR_HasOtherHeroRequirement then
         call QuestGiver_SetRequirements(NTR_Quest.id, "Find out what happened and make amends:", requirement1, requirement2, requirement3, requirement4, "", "", "", "")
@@ -466,13 +492,13 @@ private function NTR_UpdateTaskRequirement takes integer targetIndex returns not
     local string text
 
     if NTR_TargetStage[targetIndex] == NTR_STAGE_RETURN then
-        set text = "Return to " + witnessName + " for forgiveness"
+        set text = "Return to " + witnessName + " — " + NTR_GetUnitLocation(NTR_TargetUnit[targetIndex]) + " for forgiveness"
     elseif NTR_TargetTaskType[targetIndex] == NTR_TASK_KILL then
         set text = "Make amends with " + witnessName + ": defeat " + I2S(NTR_TaskAmount[targetIndex]) + " " + GetObjectName(NTR_TaskTargetType[targetIndex]) + " (" + I2S(NTR_TaskCurrent[targetIndex]) + "/" + I2S(NTR_TaskAmount[targetIndex]) + ")"
     elseif NTR_TargetTaskType[targetIndex] == NTR_TASK_FETCH then
         set text = "Replace " + witnessName + "'s supplies: bring " + I2S(NTR_TaskAmount[targetIndex]) + " " + GetObjectName(NTR_TaskTargetType[targetIndex])
     else
-        set text = "Make amends with " + witnessName + ": apologize to " + VendorLines_GetVendorSpeakerName(NTR_TaskTalkTarget[targetIndex])
+        set text = "Make amends with " + witnessName + ": apologize to " + VendorLines_GetVendorSpeakerName(NTR_TaskTalkTarget[targetIndex]) + " — " + NTR_GetUnitLocation(NTR_TaskTalkTarget[targetIndex])
     endif
     call QuestGiver_UpdateRequirementText(NTR_Quest.id, NTR_GetRequirementIndex(targetIndex), text)
 endfunction
@@ -592,7 +618,8 @@ private function NTR_CreateWitnessSequence takes integer targetIndex, unit hero 
     call DialogSystem_SetSequenceDefaultSpeaker(seq, witness, witnessName)
     call DialogSystem_AddMakeFaceEachOther(seq, witness, hero, 0.45, 0.00)
     if NTR_TargetStage[targetIndex] == NTR_STAGE_TALK then
-        call DialogSystem_AddLine(seq, hero, DialogInteraction_GetHeroName(hero), "What happened last night?", "", true)
+        call VoicelinesDrunk_PickLastNightQuestion(hero)
+        call DialogSystem_AddLine(seq, hero, DialogInteraction_GetHeroName(hero), VoicelinesDrunk_PickedText, VoicelinesDrunk_PickedKey, true)
         call NTR_AddWitnessNightExchange(seq, targetIndex, hero)
         if NTR_TargetTaskType[targetIndex] == NTR_TASK_NONE then
             set NTR_PendingAction = NTR_PENDING_COMPLETE
@@ -666,7 +693,8 @@ private function NTR_OnPreSelected takes nothing returns nothing
         set seq = DialogSystem_CreateSequence()
         call DialogSystem_SetSequenceDefaultSpeaker(seq, NTR_OtherHero, DialogInteraction_GetHeroName(NTR_OtherHero))
         call DialogSystem_AddMakeFaceEachOther(seq, NTR_OtherHero, NTR_HangoverHero, 0.45, 0.00)
-        call DialogSystem_AddLine(seq, NTR_HangoverHero, DialogInteraction_GetHeroName(NTR_HangoverHero), "What happened last night?", "", true)
+        call VoicelinesDrunk_PickLastNightQuestion(NTR_HangoverHero)
+        call DialogSystem_AddLine(seq, NTR_HangoverHero, DialogInteraction_GetHeroName(NTR_HangoverHero), VoicelinesDrunk_PickedText, VoicelinesDrunk_PickedKey, true)
         call VoicelinesDrunk_PickHeroNightReply(NTR_OtherHero)
         set storyIndex = VoicelinesDrunk_PickedNightIndex
         call DialogSystem_AddLine(seq, NTR_OtherHero, DialogInteraction_GetHeroName(NTR_OtherHero), VoicelinesDrunk_PickedText, VoicelinesDrunk_PickedKey, true)

@@ -2,7 +2,7 @@
     DebugCommands
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Chat-driven debug commands for Path of the Shaman testing. Commands are
@@ -24,10 +24,11 @@
     - /debug ability give '<rawcode-or-name>'
     - /debug ability lookup '<rawcode-or-name>'
     - /debug fishpool spawn
+    - /debug drunk
     - /debug creeprespawn dungeon respawn [zoneId]
 
 **/
-library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, GatherNodeUnits, GatherNodeSkills, ZonesCore, Dungeon
+library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, GatherNodeUnits, GatherNodeSkills, ZonesCore, Dungeon, Drunk
     globals
         private constant string DBG_ROOT = "/debug"
         private constant string DBG_PREFIX = "/debug "
@@ -675,6 +676,17 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
         call DBG_Message(whichPlayer, "Respawned dead dungeon creeps and bosses for zone " + I2S(zoneId) + ".")
     endfunction
 
+    private function DBG_ShowSelectedDrunk takes player whichPlayer returns nothing
+        local unit target = DBG_GetSelectedUnit(whichPlayer)
+
+        if target == null then
+            call DBG_Message(whichPlayer, "Select a unit before using /debug drunk.")
+        else
+            call DBG_Message(whichPlayer, DBG_GetUnitLabel(target) + " Drunk: " + I2S(Drunk_GetLevel(target)) + "/100.")
+        endif
+        set target = null
+    endfunction
+
     private function DBG_ShowHelp takes player whichPlayer returns nothing
         call DBG_Message(whichPlayer, "Commands:")
         call DBG_Message(whichPlayer, "/debug item create '<rawcode-or-name>'")
@@ -684,6 +696,7 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
         call DBG_Message(whichPlayer, "/debug ability give '<rawcode-or-name>'")
         call DBG_Message(whichPlayer, "/debug ability lookup '<rawcode-or-name>'")
         call DBG_Message(whichPlayer, "/debug fishpool spawn")
+        call DBG_Message(whichPlayer, "/debug drunk")
         call DBG_Message(whichPlayer, "/debug creeprespawn dungeon respawn [zoneId]")
     endfunction
 
@@ -731,6 +744,8 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
             call DBG_GiveAbilityToSelected(whichPlayer, "")
         elseif lowerCommand == "fishpool spawn" or lowerCommand == "fish pool spawn" or lowerCommand == "fishing pool spawn" then
             call DBG_SpawnRandomFishPool(whichPlayer, cameraX, cameraY, hasCamera)
+        elseif lowerCommand == "drunk" or lowerCommand == "stat drunk" then
+            call DBG_ShowSelectedDrunk(whichPlayer)
         elseif lowerCommand == "creeprespawn dungeon respawn" or lowerCommand == "dungeon respawn" then
             call DBG_RespawnDungeonUnits(whichPlayer, "")
         elseif DBG_StartsWith(lowerCommand, "creeprespawn dungeon respawn ") then
