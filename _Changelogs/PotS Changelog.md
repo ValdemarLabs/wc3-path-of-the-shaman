@@ -19,6 +19,8 @@
 
 ### Technical Updates
 
+- Updated `QuestsAndDialogs/DialogSystem.j` so ESC-skipped greeting sequences finish on the next timer tick, allowing quest-giver choices such as Ragno's to appear reliably after the skip.
+- Updated `UI/MasterUI.j` and `UI/ShopUI.j` so a newly starting cinematic silently closes an active shop session without playing trade outcomes, returning to the vendor dialog, or restoring gameplay over the incoming cinematic.
 - Added `_developer/Test Plans/Recent Changes Test Plan 2026-08-22.md` with prioritized, fillable compile, gameplay, UI, multiplayer, performance, and tooling checks for the major changes made from 14-21 August 2026.
 
 ## [21.8.2026]
