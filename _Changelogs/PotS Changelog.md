@@ -19,6 +19,10 @@
 
 ### Player-Facing Updates
 
+- Added a persistent 0–100 Drunk stat for alcoholic cooking drinks, party-only intoxication threshold notices, slow natural sobering, a head-attached corrosive puke stream, and a staged fullscreen pass-out camera approach with sleep invulnerability.
+- Added zone and subzone hints to `A Night To Remember` witness and apology objectives, and voiced randomized Nazgrek/Zul'kis questions at the start of Last Night conversations.
+- Fixed travel skip/drop-out prompts so their choices remain clickable and cancelling them with ESC preserves player-controlled camera rotation and angle.
+- Reorganized custom quest-journal details into consistent Quest Details, Description, Objectives, and Rewards sections, with clearer quest-giver/turn-in contacts and explicit empty objective or reward states.
 - Replaced the native Quests button with a custom quest journal using the established `TasQuestBox` presentation, improved `ShopUI`-style controls, live objective/status details, Normal/Daily/Repeatable type filters, and Story/Dungeon/Class/Profession content-category filters.
 - Expanded `A Night To Remember` so one or two of its three random witnesses can be active AI company heroes, with stored witness references remaining usable after a companion leaves the party.
 - Added randomized make-amends stages to one or two witness requirements, including small kill, supply replacement, and apology errands followed by a return for forgiveness.
@@ -27,7 +31,11 @@
 
 ### Technical Updates
 
+- Updated `Professions/Drunk.j`, `Professions/ProfessionsCooking.j`, `DestroyerInventoryAndEquipmentSystem/PoTs/DEquipment.j`, `WC3_Database/WC3ItemManager/ProfessionItemStatsSeeder.cs`, `WC3_Database/WC3ItemManager/ItemEditForm.cs`, and `Debug/DebugCommands.j` to use `udg_Stats_Drunk[]`, expose the Drunk dummy display stat, and add `/debug drunk` for the selected unit.
+- Updated `Zones/ZonesCore.j`, `QuestsAndDialogs/QuestGivers/qANightToRemember.j`, `Voicelines/Voicelines_Drunk.j`, and `tools/generate-drunk-voicelines.ps1` for localized quest directions and voiced Last Night questions.
+- Updated `Travel/TravelSystem.j` and `Travel/TravelUI.j` to restore native user control after travel ESC handling and release hidden prompt-button focus.
 - Fixed the confirmed map-wide unit movement freeze by updating `Vendors/VendorFloatingText.j` to use the centralized `Events.j` unit-enter dispatcher instead of registering another playable-map region event.
+- Updated `UI/QuestUI.j` to render reward data directly from `QuestMaster` flags for experience, gold, arena marks, faction reputation, and item rewards, and normalized the item-reward line formatting in `QuestsAndDialogs/QuestMaster.j`.
 - Added `UI/QuestUI.j` as a direct `QuestMaster` consumer and updated `UI/MasterUI.j` so the replacement quest button, centralized panel hiding, ESC handling, and cinematic visibility work with the existing UI lifecycle.
 - Updated `QuestsAndDialogs/QuestMaster.j`, `QuestsAndDialogs/QuestGiver.j`, and `QuestsAndDialogs/QuestsGeneric.j` with all-quest enumeration, shared display-data notifications, native-independent objective flags, category support, capacity guards, and custom quest-button notifications. Existing native quest handles remain as a hidden compatibility mirror for legacy JASS and GUI quest paths.
 - Updated `QuestsAndDialogs/QuestGivers/qANightToRemember.j` with persistent AI witnesses, staged task requirements, party kill credit, dynamic vendor buttons, and self-completion after all forgiveness requirements finish.
@@ -43,6 +51,7 @@
 
 ### Imports
 
+- Generated and imported 4 Last Night question MP3s for Nazgrek and Zul'kis into the official voice folders.
 - Generated and imported 174 Drunk/Hangover MP3s for Nazgrek, Zul'kis, Engineer, Paladin, Restoration Shaman, Rogue, Warlock, Warrior, Aveline, and eleven reusable Horde vendor profiles.
 - Regenerated and imported the 15 LastNight recordings revised with zone-specific adventures without replacing unaffected audio.
 
