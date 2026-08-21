@@ -311,7 +311,7 @@ private function CanOfferProtectOutpost takes nothing returns boolean
 endfunction
 
 private function IsRagnoDialogEnabled takes nothing returns boolean
-    return true
+    return not MountainDefenseActive
 endfunction
 
 private function RefreshRagnoAvailabilityInternal takes nothing returns nothing
@@ -1257,6 +1257,7 @@ private function OnProtectOutpostCompletionCinematicEnd takes nothing returns no
     call ReturnPlayerUnitsFromProtectOutpostCinematic()
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, OUTPOST_CINEMATIC_END_FADE_DURATION, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
     call DialogInteraction_EndCinematicSequence(CINEMATIC)
+    set MountainDefenseActive = false
     call UnhideProtectOutpostPreplacedGnolls()
     if DialogInteraction_IsUnitAlive(Ragno) then
         call IssuePointOrder(Ragno, "move", GetRectCenterX(gg_rct_RagnoIntroRagno2), GetRectCenterY(gg_rct_RagnoIntroRagno2))
@@ -1348,7 +1349,6 @@ private function CompleteProtectOutpost takes nothing returns nothing
         call PauseTimer(ProtectOutpostSecondWaveTimer)
     endif
     set ProtectOutpostCompleted = true
-    set MountainDefenseActive = false
 
     if q != 0 and not q.completed then
         if not q.active then
@@ -1398,6 +1398,7 @@ private function StartProtectOutpostEncounter takes nothing returns nothing
     set ProtectOutpostStarted = true
     set ProtectOutpostSecondWaveSpawned = false
     set MountainDefenseActive = true
+    call DialogInteraction_CancelActiveTransition()
 
     call QuestGiver_AcceptQuestByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno)
     set q = GetRagnoQuest(QUEST_PROTECT_OUTPOST)
