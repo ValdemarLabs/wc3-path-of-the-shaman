@@ -2,7 +2,7 @@
     TravelWyvern
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
     Registers all six placed Wind Rider Masters and the directed flight
@@ -14,7 +14,8 @@
 
     How to install:
     Import after TravelSystem and TravelUI. Keep the three legacy boarding
-    areas and FlyHere rects. Masters 4..6 use their placed unit positions.
+    areas, FlyHere rects, and configured FPRoute rects. Masters 4..6 use their
+    placed unit positions.
 
     API:
     - set stopId = TravelWyvern_RegisterStation(...)
@@ -44,6 +45,7 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
 
         private integer array TW_Stop
         private integer array TW_Waypoint
+        private integer array TW_FlightWaypoint
         private integer TW_ScoutBaseStop = 0
         private integer TW_LumberMillStop = 0
         private integer TW_GoldMineStop = 0
@@ -123,6 +125,10 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
         endif
     endfunction
 
+    private function TW_RegisterFlightWaypoint takes integer index, rect waypointRect returns nothing
+        set TW_FlightWaypoint[index] = TravelSystem_RegisterWaypoint(TW_RectCenterX(waypointRect), TW_RectCenterY(waypointRect))
+    endfunction
+
     private function TW_CreateWaypoints takes nothing returns boolean
         local integer index = 1
 
@@ -134,7 +140,72 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
             endif
             set index = index + 1
         endloop
+
+        call TW_RegisterFlightWaypoint(1, gg_rct_FPRoute001)
+        call TW_RegisterFlightWaypoint(2, gg_rct_FPRoute002)
+        call TW_RegisterFlightWaypoint(3, gg_rct_FPRoute003)
+        call TW_RegisterFlightWaypoint(4, gg_rct_FPRoute004)
+        call TW_RegisterFlightWaypoint(5, gg_rct_FPRoute005)
+        call TW_RegisterFlightWaypoint(6, gg_rct_FPRoute006)
+        call TW_RegisterFlightWaypoint(7, gg_rct_FPRoute007)
+        call TW_RegisterFlightWaypoint(8, gg_rct_FPRoute008)
+        call TW_RegisterFlightWaypoint(9, gg_rct_FPRoute009)
+        call TW_RegisterFlightWaypoint(10, gg_rct_FPRoute010)
+        call TW_RegisterFlightWaypoint(11, gg_rct_FPRoute011)
+        call TW_RegisterFlightWaypoint(12, gg_rct_FPRoute012)
+        call TW_RegisterFlightWaypoint(13, gg_rct_FPRoute013)
+        call TW_RegisterFlightWaypoint(14, gg_rct_FPRoute014)
+        call TW_RegisterFlightWaypoint(15, gg_rct_FPRoute015)
+        call TW_RegisterFlightWaypoint(16, gg_rct_FPRoute016)
+        call TW_RegisterFlightWaypoint(17, gg_rct_FPRoute017)
+        call TW_RegisterFlightWaypoint(18, gg_rct_FPRoute018)
+        call TW_RegisterFlightWaypoint(19, gg_rct_FPRoute019)
+        call TW_RegisterFlightWaypoint(20, gg_rct_FPRoute020)
+        call TW_RegisterFlightWaypoint(21, gg_rct_FPRoute021)
+        call TW_RegisterFlightWaypoint(22, gg_rct_FPRoute022)
+        call TW_RegisterFlightWaypoint(23, gg_rct_FPRoute023)
+        call TW_RegisterFlightWaypoint(24, gg_rct_FPRoute024)
+        call TW_RegisterFlightWaypoint(25, gg_rct_FPRoute025)
+        call TW_RegisterFlightWaypoint(26, gg_rct_FPRoute026)
+        call TW_RegisterFlightWaypoint(27, gg_rct_FPRoute027)
+        call TW_RegisterFlightWaypoint(28, gg_rct_FPRoute028)
+
+        set index = 1
+        loop
+            exitwhen index > 28
+            if TW_FlightWaypoint[index] <= 0 then
+                return false
+            endif
+            set index = index + 1
+        endloop
         return true
+    endfunction
+
+    private function TW_AddWaypointRange takes integer routeId, integer firstIndex, integer lastIndex returns nothing
+        local integer step = 1
+
+        if firstIndex > lastIndex then
+            set step = -1
+        endif
+        loop
+            call TravelSystem_AddRegisteredWaypoint(routeId, TW_FlightWaypoint[firstIndex], 0)
+            exitwhen firstIndex == lastIndex
+            set firstIndex = firstIndex + step
+        endloop
+    endfunction
+
+    private function TW_AddConfiguredRouteWaypoints takes integer routeId, integer startIndex, integer endIndex returns nothing
+        if startIndex == TRAVEL_WINDRIDER_MASTER_SIRENSONG and endIndex == TRAVEL_WINDRIDER_MASTER_HORDE_SCOUT_BASE then
+            call TW_AddWaypointRange(routeId, 1, 19)
+        elseif startIndex == TRAVEL_WINDRIDER_MASTER_HORDE_SCOUT_BASE and endIndex == TRAVEL_WINDRIDER_MASTER_SIRENSONG then
+            call TW_AddWaypointRange(routeId, 19, 1)
+        elseif startIndex == TRAVEL_WINDRIDER_MASTER_HORDE_SCOUT_BASE and endIndex == TRAVEL_WINDRIDER_MASTER_ASHFANG_OUTPOST then
+            call TW_AddWaypointRange(routeId, 19, 15)
+            call TW_AddWaypointRange(routeId, 20, 28)
+        elseif startIndex == TRAVEL_WINDRIDER_MASTER_ASHFANG_OUTPOST and endIndex == TRAVEL_WINDRIDER_MASTER_HORDE_SCOUT_BASE then
+            call TW_AddWaypointRange(routeId, 28, 20)
+            call TW_AddWaypointRange(routeId, 15, 19)
+        endif
     endfunction
 
     private function TW_CreateNetwork takes nothing returns nothing
@@ -155,6 +226,8 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
                     endif
                     set routeId = RegisterDirectedRoute(TW_Stop[startIndex], TW_Stop[endIndex], fare)
                     if routeId > 0 then
+                        call TW_AddConfiguredRouteWaypoints(routeId, startIndex, endIndex)
+                        // Keep the stop drop point last so the carrier lands after all route rects.
                         call TravelSystem_AddRegisteredWaypoint(routeId, TW_Waypoint[endIndex], 0)
                     endif
                 endif
