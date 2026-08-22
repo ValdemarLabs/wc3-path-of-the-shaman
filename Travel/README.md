@@ -42,6 +42,11 @@ shared getters documented in `TravelSystem.j`.
   are Verdant Plains, Ashfang Outpost, and Sirensong respectively and use their
   placed unit positions. All 30 directed routes between the six stations are
   registered; destination discovery remains required for player travel.
+  Sirensong-Horde Scout Base uses `gg_rct_FPRoute001` through
+  `gg_rct_FPRoute019`. Horde Scout Base-Ashfang Outpost follows shared points
+  019 down through 015 and then points 020 through 028. Reverse flights traverse
+  each sequence in reverse order, and every configured route still appends its
+  destination drop point after the final route rect.
 - `TravelShipA.j` owns the 64-point Sirensong-Dawnhold-Stormhaven neutral-ship
   loop. It pauses at both passes through `gg_rct_SirensongShip012`, and uses the
   supplied dock, boarding, and deck rects for all three harbours. Adjacent fares
