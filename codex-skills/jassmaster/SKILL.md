@@ -12,12 +12,20 @@ Write PotS JASS in the local project style first and generic JASS style second. 
 ## Workflow
 
 1. Read the target file and at least one nearby PotS library with similar purpose before editing.
-2. Preserve established naming, layout, and library organization unless the user asks for a larger cleanup.
-3. Prefer PotS-local helpers and patterns over introducing fresh abstractions.
-4. Check core language rules and available natives against the relevant reference sources before inventing workarounds.
-5. Use parser-aware tooling guidance from [references/jass-tree-sitter-rust.md](references/jass-tree-sitter-rust.md) when structural analysis, cross-file symbol resolution, import handling, or leak diagnostics matter.
-6. Add or fix comments only where they improve maintainability.
-7. Ensure every standalone library has the required top header block. Use `Valdemar` as the default author unless the user provides another name.
+2. When the task affects a quest, quest giver, story dialogue, dungeon quest, or story-driven world event, read `_developer/Design Plans/Story and Quest Design.md` and reconcile the change with its implementation status, dependencies, canonical names, zone IDs, and open decisions.
+3. Preserve established naming, layout, and library organization unless the user asks for a larger cleanup.
+4. Prefer PotS-local helpers and patterns over introducing fresh abstractions.
+5. Check core language rules and available natives against the relevant reference sources before inventing workarounds.
+6. Use parser-aware tooling guidance from [references/jass-tree-sitter-rust.md](references/jass-tree-sitter-rust.md) when structural analysis, cross-file symbol resolution, import handling, or leak diagnostics matter.
+7. Add or fix comments only where they improve maintainability.
+8. Ensure every standalone library has the required top header block. Use `Valdemar` as the default author unless the user provides another name.
+
+## Story and Quest Guardrail
+
+- Treat current JASS, World Editor data, and `Zones/ZonesCore.j` as higher authority than outdated Articy exports.
+- Inspect recoverable or unexported GUI behavior before replacing a legacy quest or claiming conversion parity.
+- Use the current quest model: `normal`, `daily`, or `repeatable` as type; `story`, `dungeon`, `class`, or `profession` as category.
+- Update the master design plan when implementation changes a quest's status, dependencies, location, canonical identity, or durable story outcome.
 
 ## Core JASS Principles
 

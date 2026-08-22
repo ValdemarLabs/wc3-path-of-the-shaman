@@ -34,6 +34,10 @@ Recent history uses short, direct, sentence-case summaries without Conventional 
 Always update `Pots Changelog.md` on the current date. Use for example "Added/updated `Arena/ArenaModes.j`" this styling when updating library.
 Write short commit messages in chat per changed files or sometimes for many files if the commit is clearly for many files.
 
+## Story and quest design source of truth
+
+Before creating or materially updating a quest, quest giver, story dialogue, dungeon quest, or story-driven world event, read `_developer/Design Plans/Story and Quest Design.md`. Reconcile the proposed change with its implementation ledger, story dependencies, canonical names, zone ID, and open decisions. Current JASS, current World Editor data, and `Zones/ZonesCore.j` take priority over outdated Articy material; inspect unexported GUI triggers before claiming or replacing their behavior. When implementation changes a quest's status, dependencies, location, identity, or story outcome, update the design plan and the current-date changelog in the same change.
+
 ## Subagent policy
 
 Use subagents only for independent, bounded work.

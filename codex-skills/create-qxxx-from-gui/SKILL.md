@@ -13,12 +13,14 @@ The goal is gameplay-equivalent conversion, not a line-by-line GUI rewrite. Pref
 
 ## Required Workflow
 
-1. Read the old GUI trigger export or user-provided trigger text first.
-2. Read the relevant structure in `QuestsAndDialogs/QuestGivers/qAradion.j`; use `rg` for sections such as `CreateQuests`, `BuildDialog`, `OnSelected`, `StartExitFadeOut`, and `InitDelayed`.
-3. Read the master APIs needed for the conversion, starting with `QuestGiver.j`, `QuestMaster.j`, `DialogInteraction.j`, `DialogSystem.j`, and `Camera/DialogCamera.j`.
-4. Read [references/qxxx-conversion.md](references/qxxx-conversion.md) before creating or materially changing a qXXX library.
-5. If a scaffold is useful, inspect `QuestsAndDialogs/QuestGivers/tools/qxxx-generator.html`, but treat its output as a draft that still needs manual prerequisites, requirement tracking, and quest-specific behavior.
-6. Also follow PotS JASS style rules from `jassmaster` when that skill is available.
+1. Read `_developer/Design Plans/Story and Quest Design.md` and locate the giver, quest status, canonical names, zone IDs, dependencies, legacy conflicts, and intended story connections.
+2. Read the old GUI trigger export or user-provided trigger text. If the user's map contains unexported GUI triggers, inspect or request those triggers before claiming full parity; Articy and voice lines alone are design evidence.
+3. Read the relevant structure in `QuestsAndDialogs/QuestGivers/qAradion.j`; use `rg` for sections such as `CreateQuests`, `BuildDialog`, `OnSelected`, `StartExitFadeOut`, and `InitDelayed`.
+4. Read the master APIs needed for the conversion, starting with `QuestGiver.j`, `QuestMaster.j`, `DialogInteraction.j`, `DialogSystem.j`, and `Camera/DialogCamera.j`.
+5. Read [references/qxxx-conversion.md](references/qxxx-conversion.md) before creating or materially changing a qXXX library.
+6. If a scaffold is useful, inspect `QuestsAndDialogs/QuestGivers/tools/qxxx-generator.html`, but treat its output as a draft that still needs manual prerequisites, requirement tracking, and quest-specific behavior.
+7. Also follow PotS JASS style rules from `jassmaster` when that skill is available.
+8. After implementation, update the master plan's implementation ledger, dependencies, and open decisions when they changed, and add the current-date changelog entry.
 
 ## Conversion Rules
 
@@ -28,6 +30,7 @@ The goal is gameplay-equivalent conversion, not a line-by-line GUI rewrite. Pref
 - Keep qXXX globals focused on configuration, unit references, quest-specific state, triggers, timers, dialogs, and public hooks called by map events.
 - Prefer delayed initialization that waits for required `udg_` unit variables before registration and quest creation.
 - Keep custom code local only when it is actually quest-specific.
+- Preserve the current quest metadata model: use `normal`, `daily`, or `repeatable` for type and set `story`, `dungeon`, `class`, or `profession` separately as category where applicable.
 
 ## Deliverables
 
