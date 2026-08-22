@@ -10,15 +10,15 @@ Run P0 tests first. Stop and fix the build if a P0 test fails. Run multiplayer-m
 
 | Field | Value |
 |---|---|
-| Map/build | |
+| Map/build | 5007 |
 | Git commit | |
-| Warcraft III version | |
-| Test map or full map | |
-| Tester(s) | |
-| Date started | |
+| Warcraft III version | 2.0.4.23745|
+| Test map or full map | Full map |
+| Tester(s) | Valdemar |
+| Date started | 22.8.2026 |
 | Date completed | |
 | Single-player result | Not run |
-| Multiplayer result | Not run |
+| Multiplayer result | N/A |
 | Overall result | Not run |
 
 Status values: `Not run`, `Pass`, `Fail`, or `Blocked`.
@@ -31,9 +31,9 @@ Update this table as tests are completed. Put detailed observations in the match
 
 | ID | Priority | Test | Associated libraries | Status |
 |---|---|---|---|---|
-| BUILD-01 | P0 | Import order and full-map compile | `QuestMaster`, `QuestUI`, `MasterUI`, `TravelSystem`, `Drunk`, `qANightToRemember` | Not run |
-| BUILD-02 | P0 | Map startup and movement smoke test | `Events`, `VendorFloatingText`, `MasterUI` | Not run |
-| QUI-01 | P1 | Open, close, and reopen the custom journal | `QuestUI`, `MasterUI` | Not run |
+| BUILD-01 | P0 | Import order and full-map compile | `QuestMaster`, `QuestUI`, `MasterUI`, `TravelSystem`, `Drunk`, `qANightToRemember` | Pass |
+| BUILD-02 | P0 | Map startup and movement smoke test | `Events`, `VendorFloatingText`, `MasterUI` | Pass |
+| QUI-01 | P1 | Open, close, and reopen the custom journal | `QuestUI`, `MasterUI` | Pass |
 | QUI-02 | P1 | Type and content filters | `QuestUI`, `QuestMaster` | Not run |
 | QUI-03 | P1 | Quest details and empty states | `QuestUI`, `QuestMaster`, `QuestGiver` | Not run |
 | QUI-04 | P1 | Reward display | `QuestUI`, `QuestMaster` | Not run |
@@ -95,7 +95,7 @@ Update this table as tests are completed. Put detailed observations in the match
 
 **Expected:** The map compiles without errors or missing-library messages. No frame, sound, object-data, or initialization error appears at launch.
 
-**Result:** Not run  
+**Result:** Pass  
 **Tester / date / build:**  
 **Actual result:**  
 **Evidence or issue link:**
