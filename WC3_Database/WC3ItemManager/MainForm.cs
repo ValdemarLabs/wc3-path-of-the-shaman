@@ -809,7 +809,6 @@ namespace WC3ItemManager
                     EnsurePowerUpAutoUseIntegrity(conn);
                     EnsureLootLevelColumn(conn);
                     EnsureRequiredItemClasses(conn);
-                    ProfessionItemStatsSeeder.Ensure(conn);
                     EnsureItemClassColors(conn);
                     LoadClassFilter(conn);
                     isConnected = true;

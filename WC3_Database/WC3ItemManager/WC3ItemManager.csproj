@@ -24,6 +24,7 @@
     <Compile Remove="tmpobj\**" />
     <Compile Remove="tmpobj2\**" />
     <Compile Remove="CookingItemsSeeder.cs" />
+    <Compile Remove="ProfessionItemStatsSeeder.cs" />
     <None Remove="BACKUPS\**" />
     <Content Remove="BACKUPS\**" />
   </ItemGroup>

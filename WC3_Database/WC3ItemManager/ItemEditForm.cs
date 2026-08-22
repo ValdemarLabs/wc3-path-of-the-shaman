@@ -49,6 +49,8 @@ namespace WC3ItemManager
         private TextBox txtItemCode;
         private TextBox txtItemName;
         private ComboBox cmbBaseId;
+        private TextBox txtCooldownGroup;
+        private CheckBox chkIgnoreCooldown;
         private CheckBox chkAutoIncrementCode;
         private NumericUpDown numLevel;
         private NumericUpDown numLootLevel;
@@ -148,11 +150,11 @@ namespace WC3ItemManager
             // Ensure database has required columns and seed data before loading UI values.
             EnsureManualAbilitiesColumn();
             EnsureLootLevelColumn();
+            EnsureItemCooldownFields();
             EnsureAbilityLookupColumns();
             EnsurePowerUpAutoUseIntegrity();
             EnsureRequiredItemClasses();
             EnsureItemClassColors();
-            EnsureProfessionItemStats();
 
             LoadDropdownData(); // Load database values into dropdowns
             LoadBaseItems(); // Load base items from database
@@ -954,8 +956,31 @@ namespace WC3ItemManager
                 DropDownStyle = ComboBoxStyle.DropDownList,
                 DropDownHeight = 300
             };
+            cmbBaseId.SelectedIndexChanged += (s, e) =>
+            {
+                if (!isLoadingItem && txtCooldownGroup != null)
+                {
+                    var selectedBaseItem = cmbBaseId.SelectedItem as BaseItemEntry;
+                    txtCooldownGroup.Text = selectedBaseItem?.Code ?? "";
+                }
+            };
             tab.Controls.Add(cmbBaseId);
             tab.Controls.Add(new Label { Text = "(Vanilla WC3 base item)", Location = new Point(controlX + 310, y), AutoSize = true, ForeColor = Color.Gray });
+            y += lineHeight;
+
+            tab.Controls.Add(new Label { Text = "Stats - Cooldown Group:", Location = new Point(labelX, y), AutoSize = true });
+            txtCooldownGroup = new TextBox { Location = new Point(controlX, y), Width = 100, MaxLength = 4 };
+            tab.Controls.Add(txtCooldownGroup);
+            tab.Controls.Add(new Label { Text = "(icid; Base Item ID changes this value)", Location = new Point(controlX + 110, y), AutoSize = true, ForeColor = Color.Gray });
+            y += lineHeight;
+
+            chkIgnoreCooldown = new CheckBox
+            {
+                Text = "Stats - Ignore Cooldown (iicd)",
+                Location = new Point(controlX, y),
+                AutoSize = true
+            };
+            tab.Controls.Add(chkIgnoreCooldown);
             y += lineHeight;
 
             // Rarity
@@ -2419,6 +2444,9 @@ namespace WC3ItemManager
                                         }
                                     }
                                 }
+
+                                txtCooldownGroup.Text = reader["cooldown_group"]?.ToString() ?? "";
+                                chkIgnoreCooldown.Checked = reader["ignore_cooldown"] != DBNull.Value && Convert.ToBoolean(reader["ignore_cooldown"]);
                                 
                                 numLevel.Value = reader["item_level"] != DBNull.Value ? Convert.ToDecimal(reader["item_level"]) : 1;
                                 numGoldCost.Value = reader["gold_cost"] != DBNull.Value ? Convert.ToDecimal(reader["gold_cost"]) : 0;
@@ -2723,6 +2751,8 @@ namespace WC3ItemManager
                             UPDATE items SET
                                 item_name = @item_name,
                                 base_id = @base_id,
+                                cooldown_group = @cooldown_group,
+                                ignore_cooldown = @ignore_cooldown,
                                 rarity_id = @rarity_id,
                                 class_id = @class_id,
                                 type_id = @type_id,
@@ -2767,14 +2797,14 @@ namespace WC3ItemManager
                         // Insert
                         string insertQuery = @"
                             INSERT INTO items (
-                                item_code, item_name, base_id, rarity_id, class_id, type_id,
+                                item_code, item_name, base_id, cooldown_group, ignore_cooldown, rarity_id, class_id, type_id,
                                 item_level, item_level_unclassified, gold_cost, lumber_cost, max_charges, max_stack, stock_max, stock_replenish,
                                 tooltip, tooltip_extended, description, hotkey,
                                 icon_path, model_path, wc3_abilities, wc3_abilities_attachments, manual_abilities_data, wc3_classification,
                                 is_powerup, use_automatically,
                                 is_droppable, is_sellable, is_pawnable, actively_used, dropped_on_death, specific_drop_only
                             ) VALUES (
-                                @item_code, @item_name, @base_id, @rarity_id, @class_id, @type_id,
+                                @item_code, @item_name, @base_id, @cooldown_group, @ignore_cooldown, @rarity_id, @class_id, @type_id,
                                 @item_level, @item_level_unclassified, @gold_cost, @lumber_cost, @max_charges, @max_stack, @stock_max, @stock_replenish,
                                 @tooltip, @tooltip_extended, @description, @hotkey,
                                 @icon_path, @model_path, @wc3_abilities, @wc3_abilities_attachments, @manual_abilities_data, @wc3_classification,
@@ -2862,6 +2892,8 @@ namespace WC3ItemManager
                 
                 var selectedBaseItem = cmbBaseId.SelectedItem as BaseItemEntry;
                 cmd.Parameters.AddWithValue("base_id", selectedBaseItem != null ? (object)selectedBaseItem.Code : DBNull.Value);
+                cmd.Parameters.AddWithValue("cooldown_group", string.IsNullOrWhiteSpace(txtCooldownGroup.Text) ? DBNull.Value : (object)txtCooldownGroup.Text.Trim());
+                cmd.Parameters.AddWithValue("ignore_cooldown", chkIgnoreCooldown.Checked);
                 
                 cmd.Parameters.AddWithValue("rarity_id", rarityId);
                 cmd.Parameters.AddWithValue("class_id", classId);
@@ -4042,19 +4074,28 @@ namespace WC3ItemManager
             }
         }
 
-        private void EnsureProfessionItemStats()
+        private void EnsureItemCooldownFields()
         {
             try
             {
                 using (var conn = new NpgsqlConnection(connectionString))
                 {
                     conn.Open();
-                    ProfessionItemStatsSeeder.Ensure(conn);
+                    const string alterQuery = @"
+                        ALTER TABLE items
+                        ADD COLUMN IF NOT EXISTS cooldown_group VARCHAR(50);
+                        ALTER TABLE items
+                        ADD COLUMN IF NOT EXISTS ignore_cooldown BOOLEAN DEFAULT FALSE";
+
+                    using (var cmd = new NpgsqlCommand(alterQuery, conn))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[EnsureProfessionItemStats] Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[EnsureItemCooldownFields] Error: {ex.Message}");
             }
         }
 

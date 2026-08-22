@@ -2,9 +2,11 @@ using Npgsql;
 
 namespace WC3ItemManager
 {
+    // Historical one-time development seeder. This file is excluded from the normal build;
+    // run it only when intentionally preparing a development database.
     internal static class ProfessionItemStatsSeeder
     {
-        public static void Ensure(NpgsqlConnection conn)
+        public static void RunOnce(NpgsqlConnection conn)
         {
             const string seedQuery = @"
                 INSERT INTO item_stats (id, stat_code, stat_name, stat_description, display_format, color_hex, display_order, is_active)
@@ -20,14 +22,7 @@ namespace WC3ItemManager
                     (47, 'profession_enchanting', 'Enchanting', 'Enchanting profession skill bonus', '+{value}', '#DA70D6', 47, TRUE),
                     (48, 'profession_cooking', 'Cooking', 'Cooking profession skill bonus', '+{value}', '#FF8C00', 48, TRUE),
                     (49, 'drunk', 'Drunk', 'Intoxication added when consumed', '+{value}', '#DDA0DD', 49, TRUE)
-                ON CONFLICT (id) DO UPDATE SET
-                    stat_code = EXCLUDED.stat_code,
-                    stat_name = EXCLUDED.stat_name,
-                    stat_description = EXCLUDED.stat_description,
-                    display_format = EXCLUDED.display_format,
-                    color_hex = EXCLUDED.color_hex,
-                    display_order = EXCLUDED.display_order,
-                    is_active = EXCLUDED.is_active;
+                ON CONFLICT DO NOTHING;
 
                 SELECT setval('item_stats_id_seq', GREATEST((SELECT COALESCE(MAX(id), 1) FROM item_stats), 49), true);";
 
