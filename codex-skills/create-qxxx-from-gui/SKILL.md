@@ -25,6 +25,7 @@ The goal is gameplay-equivalent conversion, not a line-by-line GUI rewrite. Pref
 ## Conversion Rules
 
 - Preserve the old questgiver's visible behavior: offered quests, dialog outcomes, rewards, objective progress, failure/retry behavior, companions, and triggered world events.
+- Treat `_MISC/war3map.wts` as a read-only snapshot exported from World Editor. Use it only as supporting evidence; never edit it. The user owns map-specific World Editor changes, so list required Object Editor, GUI trigger, placed-unit, region, or string changes as manual WE follow-up.
 - Do not preserve obsolete GUI implementation details when a master library already provides the same result.
 - Use `QuestGiver_` wrappers over direct `QuestMaster_` calls in qXXX libraries unless the local pattern needs a `QuestData` method.
 - Keep qXXX globals focused on configuration, unit references, quest-specific state, triggers, timers, dialogs, and public hooks called by map events.

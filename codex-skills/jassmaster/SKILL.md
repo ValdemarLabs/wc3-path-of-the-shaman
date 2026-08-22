@@ -23,6 +23,7 @@ Write PotS JASS in the local project style first and generic JASS style second. 
 ## Story and Quest Guardrail
 
 - Treat current JASS, World Editor data, and `Zones/ZonesCore.j` as higher authority than outdated Articy exports.
+- Treat `_MISC/war3map.wts` as a read-only, point-in-time World Editor export. It may be inspected for evidence, but never edit it or use it as the target for map-specific changes. The user performs Object Editor, trigger, unit-placement, and other map-specific World Editor edits; record any required WE follow-up instead.
 - Inspect recoverable or unexported GUI behavior before replacing a legacy quest or claiming conversion parity.
 - Use the current quest model: `normal`, `daily`, or `repeatable` as type; `story`, `dungeon`, `class`, or `profession` as category.
 - Update the master design plan when implementation changes a quest's status, dependencies, location, canonical identity, or durable story outcome.

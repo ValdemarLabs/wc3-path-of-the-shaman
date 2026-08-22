@@ -17,6 +17,10 @@ powershell -ExecutionPolicy Bypass -File .\Installer\build-installer.ps1
 
 The installer command requires prepared `Installer/payload/` content and Inno Setup. Validate gameplay code by importing it through the normal Warcraft III/JassHelper workflow, compiling an affected test map, then compiling the full map. Standalone `pjass` is insufficient for these vJASS libraries.
 
+## World Editor export boundaries
+
+Treat `_MISC/war3map.wts` as a read-only, point-in-time export from the Warcraft III World Editor. It may be inspected as supporting evidence but must never be edited. The user performs map-specific Object Editor, GUI trigger, placed-unit, region, and string changes in World Editor; report those changes as manual WE follow-up instead of modifying exported map data.
+
 ## Coding Style & Naming Conventions
 
 Use four-space indentation and follow the closest comparable library. Keep callees before callers, initialization order explicit, and public/private APIs clearly separated. Prefix globals and internal helpers with the owning system (`Arena_Active`, `MUI_CreateFrames`); use descriptive PascalCase library and file names. Standalone libraries require the standard header sections: `Description`, `Credits`, `How to install`, and `API`. Destroy owned handles when required, then null local handle variables on every exit path. Keep comments short and reserve them for configuration or non-obvious flow.

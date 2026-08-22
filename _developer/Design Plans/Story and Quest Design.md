@@ -79,6 +79,8 @@ A one-time story quest is therefore `normal` + `story`. A repeatable dungeon tas
 | Emberpeak Highlands | Emperpeak | Use Emberpeak; the other spelling survives in some voice evidence only. |
 | Deadwoods | Dead Woods | Use Deadwoods. |
 
+`_MISC/war3map.wts` is a read-only export from one point in the map's history, not an editable source of truth. Its remaining “Velaria” unit and Chains of Seduction strings mean the Velyssara rename still requires a manual World Editor change by the map author; a later export may then reflect it.
+
 ### Existing named-unit evidence
 
 These rawcodes or named globals are evidence that the character already exists in the map data. They do not, by themselves, prove the final location or active trigger state.
