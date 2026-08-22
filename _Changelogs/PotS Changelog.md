@@ -19,12 +19,14 @@
 
 ### Player-Facing Updates
 
+- Renamed the female satyr/succubus formerly called Velaria to Velyssara, clearly separating her from the Elarindor ranger Valeria.
 - Fixed Outcast Jin'Zun randomly walking away during dialogue.
 - Updated all 40 cooking foods and 15 drinks with explicit Well Fed or Well Hydrated durations, balanced alcoholic drinks around repeated consumption, and removed their shared item cooldown restriction.
 - Wyvern flights between Sirensong, Horde Scout Base, and Ashfang Outpost now follow the first configured scenic waypoint routes in both directions.
 
 ### Technical Updates
 
+- Updated `Zones/ZonesCore.j`, `_MISC/war3map.wts`, `Debug/DebugObjectRegistry.j`, and `_developer/Design Plans/Story and Quest Design.md` with Velyssara's canonical name, existing `n636` identity, legacy-name lookup rule, and unresolved story decisions.
 - Added `_developer/Design Plans/Story and Quest Design.md` as the master implementation ledger and forward plan for current quests, recovered Articy/GUI story material, zone-linked generic quests, dungeon packages, story branches, and cross-library event contracts.
 - Updated `AGENTS.md`, `codex-skills/jassmaster/SKILL.md`, and `codex-skills/create-qxxx-from-gui/SKILL.md` so future quest and story work consults and maintains the master design plan.
 - Updated `QuestsAndDialogs/QuestGivers/qOutcastJinzun.j` to lock Jin'Zun's movement for the full dialogue and restore his prior movement speed afterward.
