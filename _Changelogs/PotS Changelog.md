@@ -20,13 +20,23 @@
 ### Player-Facing Updates
 
 - Fixed Outcast Jin'Zun randomly walking away during dialogue.
+- Updated all 40 cooking foods and 15 drinks with explicit Well Fed or Well Hydrated durations, balanced alcoholic drinks around repeated consumption, and removed their shared item cooldown restriction.
+- Wyvern flights between Sirensong, Horde Scout Base, and Ashfang Outpost now follow the first configured scenic waypoint routes in both directions.
 
 ### Technical Updates
 
 - Updated `QuestsAndDialogs/QuestGivers/qOutcastJinzun.j` to lock Jin'Zun's movement for the full dialogue and restore his prior movement speed afterward.
+- Updated `Professions/ProfessionsCooking.j` so registered alcoholic descriptions remain limited to the 10-minute Well Hydrated effect while runtime effect-text APIs append the configured 6-30 Drunk value automatically.
+- Updated `Travel/TravelWyvern.j` and `Travel/README.md` with reusable `FPRoute001`-`FPRoute028` rect waypoints while retaining each route's existing start and final destination drop point.
 - Updated `QuestsAndDialogs/QuestGivers/qRagno.j` to block Ragno interactions throughout Protect the Outpost, cancel pending dialog entry when the encounter starts, and prevent its cinematics from replacing a greeting before the quest choices appear.
 - Updated `UI/MasterUI.j` and `UI/ShopUI.j` so a newly starting cinematic silently closes an active shop session without playing trade outcomes, returning to the vendor dialog, or restoring gameplay over the incoming cinematic.
 - Added `_developer/Test Plans/Recent Changes Test Plan 2026-08-22.md` with prioritized, fillable compile, gameplay, UI, multiplayer, performance, and tooling checks for the major changes made from 14-21 August 2026.
+
+### Tool Updates
+
+- Updated `WC3_Database/WC3ItemManager/ItemEditForm.cs` with editable `icid` Cooldown Group and `iicd` Ignore Cooldown fields; selecting a Base Item ID updates only the cooldown group.
+- Updated `WC3_Database/WC3ItemManager/MainForm.cs`, `WC3_Database/WC3ItemManager/ProfessionItemStatsSeeder.cs`, and `WC3_Database/WC3ItemManager/WC3ItemManager.csproj` so profession stat seeding is an explicit one-time development action that never overwrites existing database values during normal use.
+- Added and applied `WC3_Database/database/update_cooking_consumables_20260822.sql` to update all cooking consumable texts, per-item ability descriptions, Drunk stats, `Alxk` cooldown groups, and Ignore Cooldown values.
 
 ## [21.8.2026]
 
