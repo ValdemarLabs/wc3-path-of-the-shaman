@@ -25,6 +25,8 @@
 
 ### Technical Updates
 
+- Added `_developer/Design Plans/Story and Quest Design.md` as the master implementation ledger and forward plan for current quests, recovered Articy/GUI story material, zone-linked generic quests, dungeon packages, story branches, and cross-library event contracts.
+- Updated `AGENTS.md`, `codex-skills/jassmaster/SKILL.md`, and `codex-skills/create-qxxx-from-gui/SKILL.md` so future quest and story work consults and maintains the master design plan.
 - Updated `QuestsAndDialogs/QuestGivers/qOutcastJinzun.j` to lock Jin'Zun's movement for the full dialogue and restore his prior movement speed afterward.
 - Updated `Professions/ProfessionsCooking.j` so registered alcoholic descriptions remain limited to the 10-minute Well Hydrated effect while runtime effect-text APIs append the configured 6-30 Drunk value automatically.
 - Updated `Travel/TravelWyvern.j` and `Travel/README.md` with reusable `FPRoute001`-`FPRoute028` rect waypoints while retaining each route's existing start and final destination drop point.
