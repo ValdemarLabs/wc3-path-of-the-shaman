@@ -72,7 +72,8 @@ A one-time story quest is therefore `normal` + `story`. A repeatable dungeon tas
 | Current canonical name | Legacy or conflicting form | Rule |
 |---|---|---|
 | Chieftain Thork | Thork Hellscream | Use Chieftain Thork. Treat the surname as obsolete unless deliberately restored. |
-| Valeria | Velaria | Current unit variable, qXXX library, and Elarindor story use Valeria. “Velaria” is a legacy alias or possibly a different character; do not merge identities silently. |
+| Valeria | Some old Elarindor GUI references say Velaria | Use Valeria for the Elarindor ranger and companion. Treat “Velaria” near Aradion or companion logic as a probable old misspelling and verify its unit rawcode. |
+| Velyssara | Velaria | Use Velyssara for the separate female satyr/succubus, unit `n636`, and Chains of Seduction antagonist. Keep “Velaria” only as a legacy Articy/GUI search term. |
 | Garthork | Gar'thork | Use Garthork in current code and player-facing text. |
 | Outcast Jin'Zun | Jin'Zun variants | Use Outcast Jin'Zun on first reference and Jin'Zun afterward. |
 | Emberpeak Highlands | Emperpeak | Use Emberpeak; the other spelling survives in some voice evidence only. |
@@ -100,6 +101,7 @@ These rawcodes or named globals are evidence that the character already exists i
 | Atex Blix | `n01A` | Boom-chain contractor, betrayer, and dungeon boss identity |
 | Kribugs | `n61E` | Comic Ogre side-quest hub |
 | Prince Zaekolaerr | `n62W` | Satyr diplomacy branch endpoint and manipulator |
+| Velyssara | `n636` | Female satyr/succubus tied to Chains of Seduction and Zaekolaerr's corruption arc |
 | Aradion | `h00A` | Elarindor leader and late-midgame story hub |
 | Valeria | `n01W` | Elarindor ranger, companion, and story quest giver |
 
@@ -238,7 +240,7 @@ Legacy concepts such as draining orc life, killing Ragno, and setting the base o
 | ST-A2-07 | Shadowclaw's Demise | **Legacy Articy cinematic** | Recommended canon: the cure fails or succeeds only spiritually; Shadowclaw dies free and later returns as an ancestral guide motif. Do not implement the death until companion-system cleanup, future summon behavior, and cinematic state are designed together. |
 | ST-A2-08 | Deadwoods and the Ghost | **Proposed synthesis** | Route Ironspine Post into Deadwoods, Jin'Zun's resurgence/Crypt content, and the threatened road to Dawnhold. |
 
-The “Chains of Seduction” and fight against “Velaria” concept is **Blocked by decision**. Current Valeria is an Elarindor ranger and companion. Determine whether the Articy figure was an obsolete version of Valeria, a disguised satyr, or a separate character before reusing any part of that chain.
+The “Chains of Seduction” and fight against legacy “Velaria” belong to **Velyssara**, a separate female satyr/succubus with unit rawcode `n636`. The identity conflict is resolved: Valeria remains the Elarindor ranger and companion. Recover the remaining GUI triggers before deciding Velyssara's exact allegiance, encounter flow, and fate.
 
 ### Act III — Roads, islands, and uneasy allies (levels 10–18)
 
@@ -457,17 +459,18 @@ Before implementing the following, export or inspect the old GUI triggers and co
 | Grum Bloodfang | Whelps, eggs, drakes, Mordrax | Exact counts/items, boss identity/location, reward and egg consequence |
 | Erduk | Existing named quest giver | Entire active GUI quest set, placement, and intended arc |
 | Grim | Existing named quest giver | Entire active GUI quest set, placement, and intended arc |
-| Valeria | Current qValeria plus unexported legacy triggers | Identify which legacy objectives remain missing and whether any use obsolete “Velaria” characterization |
+| Valeria | Current qValeria plus unexported legacy triggers | Identify which companion objectives remain missing; verify old “Velaria” references by rawcode so they are not confused with Velyssara |
+| Velyssara | Existing succubus unit `n636`; Chains of Seduction and fight text; legacy Articy “Velaria” | Recover her GUI triggers, relationship with Zaekolaerr, dispel sequence, boss event, rewards, and final outcome |
 | Other Horde NPCs | Krezgrel, Drek'thor, Ogmar, Graknar and related triggers | Inventory before assigning new generic quests to avoid ownership conflicts |
 
 ## 13. Open canon and implementation decisions
 
 Resolve these deliberately and record the answer here:
 
-1. **Valeria versus Velaria:** one revised character, two characters, or obsolete Articy identity?
-2. **Mountain outpost defenses:** is the Articy/Granis defense a second battle after Ragno's current Protect the Outpost?
-3. **Shadowclaw's fate:** permanent death, spiritual transformation, or player-influenced outcome? What replaces gameplay dependencies?
-4. **Zaekolaerr branch limits:** which dark actions are playable, threatened, or discarded, and how can the main hub remain usable?
+1. **Mountain outpost defenses:** is the Articy/Granis defense a second battle after Ragno's current Protect the Outpost?
+2. **Shadowclaw's fate:** permanent death, spiritual transformation, or player-influenced outcome? What replaces gameplay dependencies?
+3. **Zaekolaerr branch limits:** which dark actions are playable, threatened, or discarded, and how can the main hub remain usable?
+4. **Velyssara's allegiance and fate:** Zaekolaerr's agent, independent corrupter, coerced ally, or rival—and can she be cleansed, spared, or only defeated?
 5. **Main antagonist:** which force connects gnolls, satyrs, undead, void rifts, Dark Horde, and elemental exploitation without making every faction secretly identical?
 6. **Granis/Garthork task ownership:** exact QuestData titles and public completion hooks expected by `qChieftainThork`.
 7. **Act III settlement `1704`:** final name, faction, services, and narrative purpose.

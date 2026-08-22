@@ -15787,14 +15787,14 @@ I'll dispel dis curse dat binds ya, but ya best be handlin' the succubus behind 
 
 STRING 2901
 {
-Kill the succubus Velaria
+Kill the succubus Velyssara
 }
 
 STRING 2902
 {
 |cffffcc00QUEST|r
 Chains of Seduction
-  - Kill the succubus Velaria
+  - Kill the succubus Velyssara
 }
 
 STRING 2903
@@ -38451,13 +38451,13 @@ DummyPurge
 }
 
 STRING 10256
-// Units: n636 (Velaria), Name (Name)
+// Units: n636 (Velyssara), Name (Name)
 {
-Velaria
+Velyssara
 }
 
 STRING 10257
-// Units: n636 (Velaria), EditorSuffix (Name - Editor Suffix)
+// Units: n636 (Velyssara), EditorSuffix (Name - Editor Suffix)
 {
 (Succubus)
 }

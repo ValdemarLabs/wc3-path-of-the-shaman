@@ -1953,7 +1953,7 @@ library DebugObjectRegistry initializer Init
         call DOR_RegisterUnit('n02C', "Ursa (Level 16)")
         call DOR_RegisterUnit('o62U', "Utilities (Utilities Vendor)")
         call DOR_RegisterUnit('n01W', "Valeria")
-        call DOR_RegisterUnit('n636', "Velaria (Succubus)")
+        call DOR_RegisterUnit('n636', "Velyssara (Succubus)")
         call DOR_RegisterUnit('n01Z', "Void Entity (Level 25)")
         call DOR_RegisterUnit('n63N', "Vorkatha (Level 20) - Devilsaur")
         call DOR_RegisterUnit('e604', "Vulture")

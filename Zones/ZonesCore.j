@@ -610,7 +610,7 @@ private function ConfigureZones takes nothing returns nothing
     call z.setLevelRange(1, 9)
     set z.factions = "Horde, Satyr, Gnolls"
     set z.notableEntities = "Kobold, Gnoll, Salamander, Wolf, Spider, Stag, Crab, Frenzy"
-    set z.notableCharacters = "Outcast Jin'Zun, Ragno, Prince Zaekolaerr, Velaria"
+    set z.notableCharacters = "Outcast Jin'Zun, Ragno, Prince Zaekolaerr, Velyssara"
     set z.iconPath = "zones\\zone02_sereneglade.blp"
     call z.addEnterRegion(gg_rct_02SereneGlade)
     call z.addWeatherRect(gg_rct_02SereneGlade)
