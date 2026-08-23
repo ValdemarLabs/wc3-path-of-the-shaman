@@ -2,7 +2,7 @@
     qANightToRemember
 
     Author: Valdemar
-    Version: 2.2.0
+    Version: 2.3.0
 
     Description:
     Creates a repeatable, self-completing hangover quest. Each run asks the
@@ -448,6 +448,7 @@ private function NTR_ClearRequirementTexts takes nothing returns nothing
     local integer index = 1
     loop
         exitwhen index > 8
+        call QuestGiver_SetObjectiveTarget(NTR_Quest.id, index, null)
         call NTR_Quest.updateRequirementText(index, "")
         set index = index + 1
     endloop
@@ -469,10 +470,14 @@ private function NTR_SetRequirements takes nothing returns nothing
     if NTR_HasOtherHeroRequirement then
         call QuestGiver_SetRequirements(NTR_Quest.id, "Find out what happened and make amends:", requirement1, requirement2, requirement3, requirement4, "", "", "", "")
         set NTR_RequirementCount = 4
+        call QuestGiver_SetObjectiveTarget(NTR_Quest.id, 1, NTR_OtherHero)
     else
         call QuestGiver_SetRequirements(NTR_Quest.id, "Find out what happened and make amends:", requirement2, requirement3, requirement4, "", "", "", "", "")
         set NTR_RequirementCount = 3
     endif
+    call QuestGiver_SetObjectiveTarget(NTR_Quest.id, NTR_GetRequirementIndex(1), NTR_TargetUnit[1])
+    call QuestGiver_SetObjectiveTarget(NTR_Quest.id, NTR_GetRequirementIndex(2), NTR_TargetUnit[2])
+    call QuestGiver_SetObjectiveTarget(NTR_Quest.id, NTR_GetRequirementIndex(3), NTR_TargetUnit[3])
 endfunction
 
 private function NTR_CompleteRequirement takes integer requirementIndex returns nothing
@@ -485,6 +490,20 @@ private function NTR_CompleteRequirement takes integer requirementIndex returns 
     if NTR_CompletedCount >= NTR_RequirementCount then
         call QuestGiver_CompleteQuestByNameAndGiver(NTR_QUEST_NAME, null)
     endif
+endfunction
+
+private function NTR_UpdateObjectiveTarget takes integer targetIndex returns nothing
+    local unit target = null
+
+    if NTR_TargetStage[targetIndex] == NTR_STAGE_TALK or NTR_TargetStage[targetIndex] == NTR_STAGE_RETURN then
+        set target = NTR_TargetUnit[targetIndex]
+    elseif NTR_TargetStage[targetIndex] == NTR_STAGE_TASK and NTR_TargetTaskType[targetIndex] == NTR_TASK_TALK then
+        set target = NTR_TaskTalkTarget[targetIndex]
+    elseif NTR_TargetStage[targetIndex] == NTR_STAGE_TASK and NTR_TargetTaskType[targetIndex] == NTR_TASK_FETCH then
+        set target = NTR_TargetUnit[targetIndex]
+    endif
+    call QuestGiver_SetObjectiveTarget(NTR_Quest.id, NTR_GetRequirementIndex(targetIndex), target)
+    set target = null
 endfunction
 
 private function NTR_UpdateTaskRequirement takes integer targetIndex returns nothing
@@ -505,6 +524,7 @@ endfunction
 
 private function NTR_StartTask takes integer targetIndex returns nothing
     set NTR_TargetStage[targetIndex] = NTR_STAGE_TASK
+    call NTR_UpdateObjectiveTarget(targetIndex)
     call NTR_UpdateTaskRequirement(targetIndex)
 endfunction
 
@@ -513,6 +533,7 @@ private function NTR_MarkTaskReady takes integer targetIndex returns nothing
         return
     endif
     set NTR_TargetStage[targetIndex] = NTR_STAGE_RETURN
+    call NTR_UpdateObjectiveTarget(targetIndex)
     call NTR_UpdateTaskRequirement(targetIndex)
 endfunction
 
@@ -536,6 +557,7 @@ private function NTR_CompleteTarget takes integer targetIndex returns nothing
         return
     endif
     set NTR_TargetStage[targetIndex] = NTR_STAGE_COMPLETE
+    call NTR_UpdateObjectiveTarget(targetIndex)
     call NTR_CompleteRequirement(NTR_GetRequirementIndex(targetIndex))
 endfunction
 
@@ -562,6 +584,7 @@ private function NTR_FinishPendingTalk takes nothing returns nothing
             call NTR_CompleteTarget(targetIndex)
         else
             set NTR_TargetStage[targetIndex] = NTR_STAGE_TASK
+            call NTR_UpdateObjectiveTarget(targetIndex)
             call NTR_UpdateTaskRequirement(targetIndex)
         endif
     endif

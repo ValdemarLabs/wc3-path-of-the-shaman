@@ -2,7 +2,7 @@
     QuestGiver
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
     Provides PotS quest creation helpers, objective tracking, quest-item
@@ -19,6 +19,7 @@
     - QuestGiver_RegisterItemRequirement(...) tracks gathered items.
     - QuestGiver_RegisterUnitKillRequirement(...) tracks unit kills.
     - QuestGiver_RegisterTalkToRequirement(...) tracks manual conversations.
+    - QuestGiver_SetObjectiveTarget(...) updates the current marked target.
     - QuestGiver_SetQuestCategory(...) assigns story/content grouping.
     - QuestGiver_ResetRequirements(questId) clears objective progress.
 
@@ -88,6 +89,14 @@ globals
 	private unit array TalkToReqNPC
 	private unit array TalkToReqGiver
 	private boolean array TalkToReqComplete
+
+	// Current unit targets for objectives that should display a question mark.
+	private constant integer MAX_OBJECTIVE_TARGETS = 100
+	private integer ObjectiveTargetCount = 0
+	private integer array ObjectiveTargetQuestId
+	private integer array ObjectiveTargetReqIndex
+	private unit array ObjectiveTargetUnit
+	private boolean array ObjectiveTargetVisible
 
 	// FindNPC requirement tracking (proximity-based)
 	private constant integer MAX_FINDNPC_REQUIREMENTS = 50
@@ -1950,6 +1959,100 @@ endfunction
 //===========================================================================
 // TalkTo requirement tracking (manually completed)
 //===========================================================================
+private function IsRequirementCompleted takes QuestData q, integer reqIndex returns boolean
+	if reqIndex == 1 then
+		return q.req1Completed
+	elseif reqIndex == 2 then
+		return q.req2Completed
+	elseif reqIndex == 3 then
+		return q.req3Completed
+	elseif reqIndex == 4 then
+		return q.req4Completed
+	elseif reqIndex == 5 then
+		return q.req5Completed
+	elseif reqIndex == 6 then
+		return q.req6Completed
+	elseif reqIndex == 7 then
+		return q.req7Completed
+	elseif reqIndex == 8 then
+		return q.req8Completed
+	endif
+	return true
+endfunction
+
+private function FindObjectiveTarget takes integer questId, integer reqIndex returns integer
+	local integer index = 1
+	loop
+		exitwhen index > ObjectiveTargetCount
+		if ObjectiveTargetQuestId[index] == questId and ObjectiveTargetReqIndex[index] == reqIndex then
+			return index
+		endif
+		set index = index + 1
+	endloop
+	return 0
+endfunction
+
+private function RefreshObjectiveTarget takes integer index returns nothing
+	local integer questId = ObjectiveTargetQuestId[index]
+	local integer reqIndex = ObjectiveTargetReqIndex[index]
+	local unit target = ObjectiveTargetUnit[index]
+	local QuestData q = QuestMaster_GetById(questId)
+	local boolean shouldShow = q != 0 and q.active and not q.completed and not q.failed and target != null and DialogInteraction_IsUnitAlive(target) and not IsRequirementCompleted(q, reqIndex)
+
+	if shouldShow then
+		call QuestMaster_IconRegisterObjective(target, questId, reqIndex)
+	elseif ObjectiveTargetVisible[index] and target != null then
+		call QuestMaster_IconRemoveObjective(target, questId, reqIndex)
+	endif
+	set ObjectiveTargetVisible[index] = shouldShow
+	set target = null
+endfunction
+
+private function RefreshObjectiveTargets takes nothing returns nothing
+	local integer index = 1
+	loop
+		exitwhen index > ObjectiveTargetCount
+		call RefreshObjectiveTarget(index)
+		set index = index + 1
+	endloop
+endfunction
+
+public function SetObjectiveTarget takes integer questId, integer reqIndex, unit target returns nothing
+	local integer index
+	local unit oldTarget
+
+	if questId <= 0 or reqIndex < 1 or reqIndex > 8 then
+		set target = null
+		return
+	endif
+	set index = FindObjectiveTarget(questId, reqIndex)
+	if index == 0 then
+		if target == null or ObjectiveTargetCount >= MAX_OBJECTIVE_TARGETS then
+			set target = null
+			return
+		endif
+		set ObjectiveTargetCount = ObjectiveTargetCount + 1
+		set index = ObjectiveTargetCount
+		set ObjectiveTargetQuestId[index] = questId
+		set ObjectiveTargetReqIndex[index] = reqIndex
+	else
+		set oldTarget = ObjectiveTargetUnit[index]
+		if ObjectiveTargetVisible[index] and oldTarget != null and oldTarget != target then
+			call QuestMaster_IconRemoveObjective(oldTarget, questId, reqIndex)
+			set ObjectiveTargetVisible[index] = false
+		endif
+	endif
+
+	set ObjectiveTargetUnit[index] = target
+	call RefreshObjectiveTarget(index)
+	set oldTarget = null
+	set target = null
+endfunction
+
+private function OnQuestDataChanged takes nothing returns nothing
+	call RefreshObjectiveTargets()
+endfunction
+
 public function RegisterTalkToRequirement takes integer questId, unit questGiver, integer reqIndex, unit targetNPC, string npcName returns nothing
 	local string reqText
 	local QuestData q
@@ -1975,6 +2078,7 @@ public function RegisterTalkToRequirement takes integer questId, unit questGiver
 	if q != 0 then
 		call q.setRequirement(reqIndex, reqText)
 	endif
+	call SetObjectiveTarget(questId, reqIndex, targetNPC)
 
 	call DebugMsg("Registered TalkTo requirement: quest=" + I2S(questId) + ", npc=" + npcName)
 endfunction
@@ -2577,6 +2681,7 @@ private function Init takes nothing returns nothing
 	// Register with centralized death event system at map start
 	call UnitDeathEvent_Register(function OnUnitDeath)
 	call QuestMaster_AddDailyResetAction(function OnDailyReset)
+	call QuestMaster_AddDataChangedAction(function OnQuestDataChanged)
 	
 	// Map GUI variables to library variables (if they exist in the map)
 	// For reference types (groups, sounds), we store the reference

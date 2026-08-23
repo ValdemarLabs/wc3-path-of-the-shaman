@@ -2,7 +2,7 @@
     QuestsVendor
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.3.0
 
     Description:
     Shop-vendor adapter for QuestsGeneric. Generic giver quests are delegated
@@ -38,6 +38,7 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
         private integer array QV_SupplyDefinitionId
         private integer array QV_TargetVendorUnitType
         private string array QV_TargetVendorName
+        private unit array QV_TargetVendor
         private integer array QV_SupplyItemType
         private boolean array QV_RequiresPurchase
         private boolean array QV_ModeConfigured
@@ -141,13 +142,41 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
         endloop
     endfunction
 
+    private function QV_RefreshObjectiveTargets takes nothing returns nothing
+        local integer index = 1
+        local integer definitionId
+        local integer supplyIndex
+        local integer questId
+
+        loop
+            exitwhen index > QuestsGeneric_GetQuestCount()
+            set questId = QuestsGeneric_GetQuestIdByIndex(index)
+            set definitionId = QuestsGeneric_GetDefinitionForQuest(questId)
+            set supplyIndex = QV_SupplyIndexByDefinition.integer[definitionId]
+            if supplyIndex > 0 and QV_TargetVendor[supplyIndex] != null then
+                call QuestGiver_SetObjectiveTarget(questId, 1, QV_TargetVendor[supplyIndex])
+            endif
+            set index = index + 1
+        endloop
+    endfunction
+
     public function RegisterUnit takes unit vendor returns nothing
+        local integer supplyIndex = 1
+
         if vendor == null then
             set vendor = null
             return
         endif
         call QV_ConfigureSupplyObjectives()
+        loop
+            exitwhen supplyIndex > QV_SupplyCount
+            if QV_TargetVendorUnitType[supplyIndex] == GetUnitTypeId(vendor) then
+                set QV_TargetVendor[supplyIndex] = vendor
+            endif
+            set supplyIndex = supplyIndex + 1
+        endloop
         call QuestsGeneric_RegisterUnit(vendor, VendorLines_GetVendorSpeakerName(vendor))
+        call QV_RefreshObjectiveTargets()
         set vendor = null
     endfunction
 

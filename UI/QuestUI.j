@@ -2,7 +2,7 @@
     QuestUI
 
     Author: Valdemar
-    Version: 1.0.1
+    Version: 1.1.0
 
     Description:
     Replaces the native Quests button with a TasQuestBox-styled quest journal
@@ -37,6 +37,9 @@ globals
     private constant integer QUI_CATEGORY_COUNT = 8
     private constant real QUI_CATEGORY_BUTTON_WIDTH = 0.057
     private constant real QUI_CATEGORY_BUTTON_HEIGHT = 0.024
+    private constant integer QUI_SECTION_COUNT = 4
+    private constant real QUI_SECTION_BUTTON_WIDTH = 0.070
+    private constant real QUI_SECTION_BUTTON_HEIGHT = 0.022
 
     private constant integer QUI_CATEGORY_ALL = 0
     private constant integer QUI_CATEGORY_NORMAL = 1
@@ -47,6 +50,11 @@ globals
     private constant integer QUI_CATEGORY_CLASS = 6
     private constant integer QUI_CATEGORY_PROFESSION = 7
 
+    private constant integer QUI_SECTION_DETAILS = 0
+    private constant integer QUI_SECTION_DESCRIPTION = 1
+    private constant integer QUI_SECTION_OBJECTIVES = 2
+    private constant integer QUI_SECTION_REWARDS = 3
+
     private boolean QUI_Initialized = false
     private boolean QUI_FramesCreated = false
     private boolean QUI_OpenButtonVisible = false
@@ -56,6 +64,7 @@ globals
     private integer array QUI_Category
     private integer array QUI_ViewOffset
     private integer array QUI_SelectedQuestId
+    private integer array QUI_DetailSection
     private integer array QUI_FilteredCount
     private integer array QUI_SliderMaxCache
     private integer array QUI_SliderValueCache
@@ -68,20 +77,26 @@ globals
     private framehandle QUI_TextArea = null
     private framehandle QUI_Slider = null
     private framehandle QUI_WheelArea = null
+    private framehandle QUI_RewardItemIcon = null
+    private framehandle QUI_RewardItemName = null
     private framehandle array QUI_RowButton
     private framehandle array QUI_RowIcon
     private framehandle array QUI_RowText
     private framehandle array QUI_CategoryButton
     private framehandle array QUI_CategoryText
+    private framehandle array QUI_SectionButton
+    private framehandle array QUI_SectionText
 
     private Table QUI_RowByButton = 0
     private Table QUI_CategoryByButton = 0
+    private Table QUI_SectionByButton = 0
     private Table QUI_FilteredQuest = 0
 
     private trigger QUI_OpenTrigger = null
     private trigger QUI_CloseTrigger = null
     private trigger QUI_RowTrigger = null
     private trigger QUI_CategoryTrigger = null
+    private trigger QUI_SectionTrigger = null
     private trigger QUI_SliderTrigger = null
     private trigger QUI_WheelTrigger = null
     private trigger QUI_ClearFocusTrigger = null
@@ -128,6 +143,17 @@ private function QUI_GetTypeLabel takes string questType returns string
         return "Profession"
     endif
     return "Normal"
+endfunction
+
+private function QUI_GetSectionLabel takes integer section returns string
+    if section == QUI_SECTION_DETAILS then
+        return "Details"
+    elseif section == QUI_SECTION_OBJECTIVES then
+        return "Objectives"
+    elseif section == QUI_SECTION_REWARDS then
+        return "Rewards"
+    endif
+    return "Description"
 endfunction
 
 private function QUI_GetQuestCategoryLabel takes string category returns string
@@ -326,6 +352,7 @@ endfunction
 
 private function QUI_BuildRewards takes QuestData q returns string
     local string text = ""
+    local string itemTooltip = ""
 
     if q.rewardXPActive then
         set text = text + "|cff8080ffExperience:|r " + I2S(q.rewardXP) + "\n"
@@ -344,7 +371,10 @@ private function QUI_BuildRewards takes QuestData q returns string
         set text = text + "\n"
     endif
     if q.rewardItemActive and q.rewardItemType != 0 then
-        set text = text + "|cff00ffffItem:|r " + GetObjectName(q.rewardItemType) + "\n"
+        set itemTooltip = BlzGetAbilityExtendedTooltip(q.rewardItemType, 0)
+        if itemTooltip != null and itemTooltip != "" then
+            set text = text + "\n|cffffcc00Item details|r\n" + itemTooltip + "\n"
+        endif
     endif
     if text == "" then
         set text = QUI_TrimLineBreaks(q.rewardsText)
@@ -355,14 +385,15 @@ private function QUI_BuildRewards takes QuestData q returns string
     return QUI_TrimLineBreaks(text)
 endfunction
 
-private function QUI_BuildQuestText takes QuestData q returns string
-    local string text
-
-    set text = "|cffffcc00Quest Details|r\n" + QUI_BuildDetails(q)
-    set text = text + "\n\n|cffffcc00Description|r\n" + QUI_BuildDescription(q)
-    set text = text + "\n\n|cffffcc00Objectives|r\n" + QUI_BuildObjectives(q)
-    set text = text + "\n\n|cffffcc00Rewards|r\n" + QUI_BuildRewards(q)
-    return text
+private function QUI_BuildSectionText takes QuestData q, integer section returns string
+    if section == QUI_SECTION_DETAILS then
+        return QUI_BuildDetails(q)
+    elseif section == QUI_SECTION_OBJECTIVES then
+        return QUI_BuildObjectives(q)
+    elseif section == QUI_SECTION_REWARDS then
+        return QUI_BuildRewards(q)
+    endif
+    return QUI_BuildDescription(q)
 endfunction
 
 private function QUI_RebuildFilter takes player whichPlayer returns nothing
@@ -457,6 +488,39 @@ private function QUI_UpdateCategoryButtons takes integer pid returns nothing
     endloop
 endfunction
 
+private function QUI_UpdateSectionButtons takes integer pid returns nothing
+    local integer section = 0
+    local string label
+
+    loop
+        exitwhen section >= QUI_SECTION_COUNT
+        set label = QUI_GetSectionLabel(section)
+        if QUI_DetailSection[pid] == section then
+            call BlzFrameSetText(QUI_SectionText[section], "|cffffffff" + label + "|r")
+        else
+            call BlzFrameSetText(QUI_SectionText[section], "|cffffcc00" + label + "|r")
+        endif
+        set section = section + 1
+    endloop
+endfunction
+
+private function QUI_UpdateRewardItem takes QuestData q, integer section returns nothing
+    local boolean showItem = q != 0 and section == QUI_SECTION_REWARDS and q.rewardItemActive and q.rewardItemType != 0
+
+    call BlzFrameClearAllPoints(QUI_TextArea)
+    if showItem then
+        call BlzFrameSetSize(QUI_TextArea, 0.300, 0.135)
+        call BlzFrameSetTexture(QUI_RewardItemIcon, BlzGetAbilityIcon(q.rewardItemType), 0, true)
+        call BlzFrameSetText(QUI_RewardItemName, "|cff00ffffItem:|r " + GetObjectName(q.rewardItemType))
+    else
+        call BlzFrameSetSize(QUI_TextArea, 0.300, 0.178)
+        call BlzFrameSetText(QUI_RewardItemName, "")
+    endif
+    call BlzFrameSetPoint(QUI_TextArea, FRAMEPOINT_BOTTOMRIGHT, QUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.010, 0.010)
+    call BlzFrameSetVisible(QUI_RewardItemIcon, showItem)
+    call BlzFrameSetVisible(QUI_RewardItemName, showItem)
+endfunction
+
 private function QUI_UpdateRows takes integer pid returns nothing
     local integer rowIndex = 1
     local integer questId
@@ -498,13 +562,16 @@ endfunction
 private function QUI_UpdateDetail takes integer pid returns nothing
     local QuestData q = QuestMaster_GetById(QUI_SelectedQuestId[pid])
 
+    call QUI_UpdateSectionButtons(pid)
     if q == 0 then
         call BlzFrameSetText(QUI_TitleFrame, "Quest Log - " + QUI_GetCategoryLabel(QUI_Category[pid]))
         call BlzFrameSetText(QUI_TextArea, "No discovered quests in this category.")
+        call QUI_UpdateRewardItem(q, QUI_DetailSection[pid])
         return
     endif
     call BlzFrameSetText(QUI_TitleFrame, "Quest Log - " + q.title)
-    call BlzFrameSetText(QUI_TextArea, QUI_BuildQuestText(q))
+    call BlzFrameSetText(QUI_TextArea, QUI_BuildSectionText(q, QUI_DetailSection[pid]))
+    call QUI_UpdateRewardItem(q, QUI_DetailSection[pid])
 endfunction
 
 private function QUI_UpdateForPlayer takes player whichPlayer returns nothing
@@ -625,6 +692,7 @@ private function QUI_RowAction takes nothing returns nothing
 
     if questId > 0 then
         set QUI_SelectedQuestId[pid] = questId
+        set QUI_DetailSection[pid] = QUI_SECTION_DESCRIPTION
         if GetLocalPlayer() == p then
             call QUI_UpdateForPlayer(p)
         endif
@@ -640,11 +708,25 @@ private function QUI_CategoryAction takes nothing returns nothing
     set QUI_Category[pid] = category
     set QUI_ViewOffset[pid] = 0
     set QUI_SelectedQuestId[pid] = 0
+    set QUI_DetailSection[pid] = QUI_SECTION_DESCRIPTION
     set QUI_SliderMaxCache[pid] = -1
     set QUI_SliderValueCache[pid] = -1
     if GetLocalPlayer() == p then
         call Interface_NotifyTabChanged()
         call QUI_UpdateForPlayer(p)
+    endif
+    set p = null
+endfunction
+
+private function QUI_SectionAction takes nothing returns nothing
+    local player p = GetTriggerPlayer()
+    local integer pid = GetPlayerId(p)
+    local integer section = QUI_SectionByButton.integer[GetHandleId(BlzGetTriggerFrame())]
+
+    set QUI_DetailSection[pid] = section
+    if GetLocalPlayer() == p then
+        call Interface_NotifyTabChanged()
+        call QUI_UpdateDetail(pid)
     endif
     set p = null
 endfunction
@@ -709,9 +791,29 @@ private function QUI_CreateCategoryButton takes integer category returns nothing
     call BlzTriggerRegisterFrameEvent(QUI_ClearFocusTrigger, QUI_CategoryButton[category], FRAMEEVENT_CONTROL_CLICK)
 endfunction
 
+private function QUI_CreateSectionButton takes integer section returns nothing
+    local real x = 0.193 + I2R(section)*(QUI_SECTION_BUTTON_WIDTH + 0.003)
+
+    set QUI_SectionButton[section] = BlzCreateFrameByType("GLUETEXTBUTTON", "QuestUISectionButton" + I2S(section), QUI_Parent, "ScriptDialogButton", 0)
+    call BlzFrameSetSize(QUI_SectionButton[section], QUI_SECTION_BUTTON_WIDTH, QUI_SECTION_BUTTON_HEIGHT)
+    call BlzFrameSetPoint(QUI_SectionButton[section], FRAMEPOINT_TOPLEFT, QUI_Parent, FRAMEPOINT_TOPLEFT, x, -0.085)
+    call BlzFrameSetText(QUI_SectionButton[section], "")
+
+    set QUI_SectionText[section] = BlzCreateFrameByType("TEXT", "QuestUISectionText" + I2S(section), QUI_SectionButton[section], "", 0)
+    call BlzFrameSetAllPoints(QUI_SectionText[section], QUI_SectionButton[section])
+    call BlzFrameSetTextAlignment(QUI_SectionText[section], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
+    call BlzFrameSetScale(QUI_SectionText[section], 0.72)
+    call BlzFrameSetEnable(QUI_SectionText[section], false)
+
+    set QUI_SectionByButton.integer[GetHandleId(QUI_SectionButton[section])] = section
+    call BlzTriggerRegisterFrameEvent(QUI_SectionTrigger, QUI_SectionButton[section], FRAMEEVENT_CONTROL_CLICK)
+    call BlzTriggerRegisterFrameEvent(QUI_ClearFocusTrigger, QUI_SectionButton[section], FRAMEEVENT_CONTROL_CLICK)
+endfunction
+
 private function QUI_CreateFrames takes nothing returns nothing
     local integer rowIndex = 1
     local integer category = 0
+    local integer section = 0
 
     if QUI_FramesCreated then
         return
@@ -728,11 +830,11 @@ private function QUI_CreateFrames takes nothing returns nothing
     set QUI_CloseButton = BlzGetFrameByName("TasQuestBoxCloseButton1", QUI_FRAME_CONTEXT)
 
     call BlzFrameClearAllPoints(QUI_TextArea)
-    call BlzFrameSetSize(QUI_TextArea, 0.300, 0.205)
+    call BlzFrameSetSize(QUI_TextArea, 0.300, 0.178)
     call BlzFrameSetPoint(QUI_TextArea, FRAMEPOINT_BOTTOMRIGHT, QUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.010, 0.010)
     call BlzFrameClearAllPoints(QUI_Slider)
     call BlzFrameSetSize(QUI_Slider, 0.012, 0.205)
-    call BlzFrameSetPoint(QUI_Slider, FRAMEPOINT_TOPRIGHT, QUI_TextArea, FRAMEPOINT_TOPLEFT, 0.0, 0.0)
+    call BlzFrameSetPoint(QUI_Slider, FRAMEPOINT_TOPRIGHT, QUI_Parent, FRAMEPOINT_TOPLEFT, 0.190, -0.085)
     call BlzFrameSetMinMaxValue(QUI_Slider, 0.0, 0.0)
     call BlzFrameSetStepSize(QUI_Slider, 1.0)
     call BlzTriggerRegisterFrameEvent(QUI_SliderTrigger, QUI_Slider, FRAMEEVENT_SLIDER_VALUE_CHANGED)
@@ -752,6 +854,24 @@ private function QUI_CreateFrames takes nothing returns nothing
         call QUI_CreateCategoryButton(category)
         set category = category + 1
     endloop
+
+    loop
+        exitwhen section >= QUI_SECTION_COUNT
+        call QUI_CreateSectionButton(section)
+        set section = section + 1
+    endloop
+
+    set QUI_RewardItemIcon = BlzCreateFrameByType("BACKDROP", "QuestUIRewardItemIcon", QUI_Parent, "IconButtonTemplate", 0)
+    call BlzFrameSetSize(QUI_RewardItemIcon, 0.034, 0.034)
+    call BlzFrameSetPoint(QUI_RewardItemIcon, FRAMEPOINT_TOPLEFT, QUI_Parent, FRAMEPOINT_TOPLEFT, 0.205, -0.115)
+    set QUI_RewardItemName = BlzCreateFrameByType("TEXT", "QuestUIRewardItemName", QUI_Parent, "", 0)
+    call BlzFrameSetPoint(QUI_RewardItemName, FRAMEPOINT_TOPLEFT, QUI_RewardItemIcon, FRAMEPOINT_TOPRIGHT, 0.008, 0.0)
+    call BlzFrameSetPoint(QUI_RewardItemName, FRAMEPOINT_BOTTOMRIGHT, QUI_Parent, FRAMEPOINT_TOPRIGHT, -0.020, -0.149)
+    call BlzFrameSetTextAlignment(QUI_RewardItemName, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
+    call BlzFrameSetScale(QUI_RewardItemName, 0.90)
+    call BlzFrameSetEnable(QUI_RewardItemName, false)
+    call BlzFrameSetVisible(QUI_RewardItemIcon, false)
+    call BlzFrameSetVisible(QUI_RewardItemName, false)
 
     loop
         exitwhen rowIndex > QUI_VISIBLE_ROWS
@@ -800,12 +920,14 @@ public function Init takes nothing returns nothing
     set QUI_Initialized = true
     set QUI_RowByButton = Table.create()
     set QUI_CategoryByButton = Table.create()
+    set QUI_SectionByButton = Table.create()
     set QUI_FilteredQuest = Table.create()
     set QUI_FlashTimer = CreateTimer()
 
     loop
         exitwhen pid >= bj_MAX_PLAYERS
         set QUI_Category[pid] = QUI_CATEGORY_ALL
+        set QUI_DetailSection[pid] = QUI_SECTION_DESCRIPTION
         set QUI_SliderMaxCache[pid] = -1
         set QUI_SliderValueCache[pid] = -1
         set pid = pid + 1
@@ -819,6 +941,8 @@ public function Init takes nothing returns nothing
     call TriggerAddAction(QUI_RowTrigger, function QUI_RowAction)
     set QUI_CategoryTrigger = CreateTrigger()
     call TriggerAddAction(QUI_CategoryTrigger, function QUI_CategoryAction)
+    set QUI_SectionTrigger = CreateTrigger()
+    call TriggerAddAction(QUI_SectionTrigger, function QUI_SectionAction)
     set QUI_SliderTrigger = CreateTrigger()
     call TriggerAddAction(QUI_SliderTrigger, function QUI_SliderAction)
     set QUI_WheelTrigger = CreateTrigger()

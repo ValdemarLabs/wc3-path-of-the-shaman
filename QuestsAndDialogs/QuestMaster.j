@@ -2,7 +2,7 @@
     QuestMaster
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Owns PotS quest data, state transitions, rewards, availability, custom
@@ -21,6 +21,7 @@
     - QuestMaster_SetQuestCategory(...) assigns story/content grouping.
     - QuestMaster_AddStateChangedAction(handler) listens for state changes.
     - QuestMaster_AddDataChangedAction(handler) listens for display-data changes.
+    - QuestMaster_IconRegisterObjective(...) tracks current unit objectives.
     - QuestMaster_AddDailyResetAction(handler) listens for daily resets.
     - QuestMaster_ResetDailyQuests() manually resets completed daily quests.
 
@@ -798,6 +799,26 @@ public function RemoveDummyQuestIcon takes unit u returns nothing
 		return
 	endif
 	call IconRemoveQuest(u, QUEST_DUMMY_OFFSET + GetHandleId(u))
+endfunction
+
+private function ObjectiveIconId takes integer questId, integer reqIndex returns integer
+	// Negative IDs cannot collide with real quest IDs or per-unit dummy IDs.
+	return -(questId*10 + reqIndex)
+endfunction
+
+public function IconRegisterObjective takes unit u, integer questId, integer reqIndex returns nothing
+	local QuestData q = GetById(questId)
+	if u == null or q == 0 or reqIndex < 1 or reqIndex > 8 then
+		return
+	endif
+	call IconRegisterQuest(u, ObjectiveIconId(questId, reqIndex), q.questType, QUEST_STATE_READY_TURNIN)
+endfunction
+
+public function IconRemoveObjective takes unit u, integer questId, integer reqIndex returns nothing
+	if u == null or questId <= 0 or reqIndex < 1 or reqIndex > 8 then
+		return
+	endif
+	call IconRemoveQuest(u, ObjectiveIconId(questId, reqIndex))
 endfunction
 
 public function StateChanged takes integer questId, integer newState returns nothing
