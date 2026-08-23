@@ -17,6 +17,26 @@
 
 ## [24.8.2026]
 
+### Player-Facing Updates
+
+- Added Granis's `Punish` quest against Rol'jin and the separate nine-wave `Mountain Defense` follow-up at Ragno's outpost, including defender survival conditions, helper-item drops, failure cleanup, and retries.
+- Added Garthork's `The Magical Eye` story quest against Mur'gal, including the Eye of Mur'gal turn-in and Adept Shaman Claws reward.
+- Added Krezgrel's `Murloc Fins` and `Rescue The Grunts` daily quests; eight randomized water-rescue targets can yield either a rescued survivor or a drowned grunt.
+
+### Technical Updates
+
+- Added `UnitSystems/UnitWaves.j` as a reusable staged attack-wave event library with configurable delays, spawn rects or points, attack targets, order refreshes, completion polling, callbacks, cancellation, and reset cleanup.
+- Added `QuestsAndDialogs/QuestGivers/qGranis.j`, `QuestsAndDialogs/QuestGivers/qGarthork.j`, and `QuestsAndDialogs/QuestGivers/qKrezgrel.j` by converting the recovered legacy GUI quest and dialogue exports to QuestGiver, QuestMaster, DialogInteraction, and DialogSystem APIs.
+- Updated `QuestsAndDialogs/QuestGivers/qChieftainThork.j` so `Duty For The Horde` tracks Granis's `Punish` and Garthork's `The Magical Eye` as separate proof requirements with explicit completion reports and QuestData recovery.
+- Clarified `QuestsAndDialogs/QuestGivers/qGranis.j` and the story ledger that Granis owns and rewards `Mountain Defense`, while Ragno is its field commander, encounter anchor, required survivor, and principal battlefield speaker.
+- Updated `_developer/Design Plans/Story and Quest Design.md` with the implemented quest identities, Thornwoods zone ownership, the resolved second-outpost-defense decision, Krezgrel's recovered role, and the Reforged-safe rescue proxy/effect approach.
+
+### Actions Remaining
+
+- After importing the replacement libraries, disable the legacy Granis, Garthork, and Krezgrel GUI trigger groups in World Editor to prevent duplicate quest/dialogue execution.
+- In World Editor, remove the eight placed upside-down grunt units; retain `gg_rct_UpsideGrunt01` through `gg_rct_UpsideGrunt08` and `gg_rct_UpsideGruntRemoval` for `qKrezgrel.j`.
+- Compile the affected test map and full map with JassHelper, then runtime-test all quest accept/decline/turn-in paths, Mountain Defense success and both failure cases, daily reset behavior, rescue target selection, and the negative-pitch grunt effects in Reforged.
+
 ### Imports
 
 - Generated ten normal-speed FishAudio review candidates for `Zulkis_DrunkPassOut3` and promoted the selected `v05` take to the official voice folder.
