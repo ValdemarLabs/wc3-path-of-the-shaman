@@ -2,7 +2,7 @@
     VoicelinesDrunk
 
     Author: Valdemar
-    Version: 2.2.0
+    Version: 2.2.1
 
     Description:
     Randomized hero, AI companion, wake-up, and Horde vendor lines used by
@@ -506,23 +506,24 @@ public function PickVendorLine takes string voiceType, integer firstIndex return
     set VoicelinesDrunk_PickedNightIndex = roll
     loop
         exitwhen index > VD_VendorVoiceCount
-        if VD_VendorVoiceType[index] == voiceType and VD_VendorFirstIndex[index] == firstIndex then
+        if VD_VendorVoiceType[index] == voiceType then
             if roll == 1 then
-                call SetPicked(VD_VendorText1[index], voiceType + I2S(firstIndex))
+                call SetPicked(VD_VendorText1[index], voiceType + I2S(VD_VendorFirstIndex[index]))
             elseif roll == 2 then
-                call SetPicked(VD_VendorText2[index], voiceType + I2S(firstIndex + 1))
+                call SetPicked(VD_VendorText2[index], voiceType + I2S(VD_VendorFirstIndex[index] + 1))
             elseif roll == 3 then
-                call SetPicked(VD_VendorText3[index], voiceType + I2S(firstIndex + 2))
+                call SetPicked(VD_VendorText3[index], voiceType + I2S(VD_VendorFirstIndex[index] + 2))
             elseif roll == 4 then
-                call SetPicked(VD_VendorText4[index], voiceType + I2S(firstIndex + 3))
+                call SetPicked(VD_VendorText4[index], voiceType + I2S(VD_VendorFirstIndex[index] + 3))
             else
-                call SetPicked(VD_VendorText5[index], voiceType + I2S(firstIndex + 4))
+                call SetPicked(VD_VendorText5[index], voiceType + I2S(VD_VendorFirstIndex[index] + 4))
             endif
             return
         endif
         set index = index + 1
     endloop
     set VoicelinesDrunk_PickedNightIndex = 1
+    call BJDebugMsg("VoicelinesDrunk WARNING: no Last Night vendor voice profile for '" + voiceType + "' at " + I2S(firstIndex) + ".")
     call SetPicked("I remember enough to know you owe someone an apology.", "")
 endfunction
 
@@ -530,12 +531,13 @@ public function PickVendorTaskRequest takes string voiceType, integer firstIndex
     local integer index = 1
     loop
         exitwhen index > VD_VendorVoiceCount
-        if VD_VendorVoiceType[index] == voiceType and VD_VendorFirstIndex[index] == firstIndex then
-            call SetPicked(VD_VendorTaskText[index], voiceType + I2S(firstIndex + 5))
+        if VD_VendorVoiceType[index] == voiceType then
+            call SetPicked(VD_VendorTaskText[index], voiceType + I2S(VD_VendorFirstIndex[index] + 5))
             return
         endif
         set index = index + 1
     endloop
+    call BJDebugMsg("VoicelinesDrunk WARNING: no task vendor voice profile for '" + voiceType + "' at " + I2S(firstIndex) + ".")
     call SetPicked("Set right what you damaged, then come back.", "")
 endfunction
 
@@ -543,12 +545,13 @@ public function PickVendorForgiveness takes string voiceType, integer firstIndex
     local integer index = 1
     loop
         exitwhen index > VD_VendorVoiceCount
-        if VD_VendorVoiceType[index] == voiceType and VD_VendorFirstIndex[index] == firstIndex then
-            call SetPicked(VD_VendorForgiveText[index], voiceType + I2S(firstIndex + 6))
+        if VD_VendorVoiceType[index] == voiceType then
+            call SetPicked(VD_VendorForgiveText[index], voiceType + I2S(VD_VendorFirstIndex[index] + 6))
             return
         endif
         set index = index + 1
     endloop
+    call BJDebugMsg("VoicelinesDrunk WARNING: no forgiveness vendor voice profile for '" + voiceType + "' at " + I2S(firstIndex) + ".")
     call SetPicked("You made amends. We will call it settled.", "")
 endfunction
 

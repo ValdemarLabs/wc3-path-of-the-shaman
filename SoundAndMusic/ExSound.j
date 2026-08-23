@@ -1941,8 +1941,13 @@ private function ExSound_PlayInternal takes string key, boolean is3D, real x, re
     set es_CurrentSoundCount = es_CurrentSoundCount + 1
     set es_CurrentHash = StringHash(key)
     
+    // External files may not expose their duration until playback has begun.
+    // Start first so newly added voicelines do not report a false missing file
+    // or remain silent on their first use.
+    call SetSoundVolume(s, EXSOUND_VOLUME)
+    call StartSound(s)
+
     // Duration
-    // Try to get actual sound duration
     set durMS = GetSoundDuration(s)
 
     if durMS > EXSOUND_MIN_DURATION then
@@ -1953,9 +1958,6 @@ private function ExSound_PlayInternal takes string key, boolean is3D, real x, re
     endif
 
     //call BJDebugMsg("Play: " + key + " (" + R2S(udg_ExSoundDuration) + "s)")
-
-    call SetSoundVolume(s, EXSOUND_VOLUME)
-    call StartSound(s)
 
     set s = null
 
