@@ -2,6 +2,7 @@
 
 - **Status:** Living master design plan
 - **Created:** 22 August 2026
+- **Last reviewed:** 23 August 2026
 - **Scope:** Main story, side stories, generic quests, dungeon quests, quest-giver connections, and world-event dependencies
 
 ## 1. Purpose
@@ -29,8 +30,9 @@ When sources disagree, use this order unless a deliberate redesign is recorded h
 1. Current JASS behavior, current World Editor objects/placements, and `Zones/ZonesCore.j`.
 2. Current voice-line constants, current names, and the changelog.
 3. Recoverable GUI triggers and other map-authored legacy behavior.
-4. `_developer/_articyExports/` as design evidence. Its story and quest objects are marked outdated and must not override current implementation automatically.
-5. New proposals in this plan.
+4. Dated design notes under `_developer/_Other/` as legacy brainstorming evidence, not current implementation specifications.
+5. `_developer/_articyExports/` as design evidence. Its story and quest objects are marked outdated and must not override current implementation automatically.
+6. New proposals in this plan.
 
 An unexported GUI trigger is missing evidence, not permission to invent its exact objectives, rewards, or state transitions. Inspect it in World Editor before converting the affected quest.
 
@@ -41,9 +43,12 @@ An unexported GUI trigger is missing evidence, not permission to invent its exac
 - Current narrator, Granis, Garthork, Boom Brothers, Atex Blix, and Grum Bloodfang voice-line libraries for recoverable authored intent.
 - Current dungeon/boss libraries for Rol'jin, Boom Mine, and Mad Blix.
 - `_developer/_articyExports/Articy XML/Path of the shaman.xml` and the companion document export for flow hierarchy, quest banks, entities, and connections.
+- `_developer/_Other/WC3 Pots notes.odt` and `_developer/_Other/WC3 Pots notes other.odt` for older prologue, Shadowclaw, Ghostwalk/Deadwoods, Crypt, and character concepts. The first document has a May 2024 creation timestamp; the second is user-identified as 2024/2025 legacy material.
 - `_developer/gui-variables.md` and unit-assignment evidence for named map globals/rawcodes.
 
 The Articy export was useful as a graph, but its story and quest records are marked `Outdated`. Act I contains the densest connected flow, Act II is mostly a loose quest bank, and Act III is empty. Most exported dialogue is placeholder-level except for recoverable Granis material. Articy therefore informs missing intent; it does not certify current names, placement, or implementation.
+
+The ODT notes contain more concrete objectives than Articy for the prologue, Shadowclaw's demise, the Ghostwalk-to-Felfire campaign, and the Crypt. They also use obsolete geography and generic boss names. Their strongest encounter and emotional beats are retained below, while current `ZonesCore`, current rawcodes, and current boss rosters remain authoritative.
 
 ### Status legend
 
@@ -78,6 +83,8 @@ A one-time story quest is therefore `normal` + `story`. A repeatable dungeon tas
 | Outcast Jin'Zun | Jin'Zun variants | Use Outcast Jin'Zun on first reference and Jin'Zun afterward. |
 | Emberpeak Highlands | Emperpeak | Use Emberpeak; the other spelling survives in some voice evidence only. |
 | Deadwoods | Dead Woods | Use Deadwoods. |
+| Ghostwalk Ridge | Ghostridge | Use Ghostwalk Ridge for zone `19`. Legacy quest titles may retain Ghostridge only until they receive final player-facing names. |
+| Dawnhold | Legacy ruined “Vanguard” city and docks | The map author confirms that the old ruined undead city and docks are current Dawnhold `20`. Vanguard Vale `9` remains Elarindor and must never inherit this legacy content because of the shared “Vanguard” wording. |
 
 `_MISC/war3map.wts` is a read-only export from one point in the map's history, not an editable source of truth. Its remaining “Velaria” unit and Chains of Seduction strings mean the Velyssara rename still requires a manual World Editor change by the map author; a later export may then reflect it.
 
@@ -95,6 +102,7 @@ These rawcodes or named globals are evidence that the character already exists i
 | Grim | `o60C` | Existing quest-giver candidate; exact GUI story to recover |
 | Grum Bloodfang | `o62R` | Emberpeak dragon-hunt chain |
 | Outcast Jin'Zun | `o60X` | Sereneglade/Crypt nature and undeath side story |
+| Gar | `n60Z` | Existing Deadwoods unit; legacy notes describe a flesh-golem experiment tied to Dawnhold's necromancer |
 | Drek'thor | `o60D` | Thornwoods supporting quest giver; exact GUI role to recover |
 | Ogmar | `o612` | Existing supporting NPC; verify current placement and triggers |
 | Erduk | `o61C` | Existing quest-giver candidate; exact GUI story to recover |
@@ -104,6 +112,7 @@ These rawcodes or named globals are evidence that the character already exists i
 | Kribugs | `n61E` | Comic Ogre side-quest hub |
 | Prince Zaekolaerr | `n62W` | Satyr diplomacy branch endpoint and manipulator |
 | Velyssara | `n636` | Female satyr/succubus tied to Chains of Seduction and Zaekolaerr's corruption arc |
+| Zul'karak | `n65F` | Existing troll unit; legacy notes describe Zul'kis's warrior brother and a possible later recruit |
 | Aradion | `h00A` | Elarindor leader and late-midgame story hub |
 | Valeria | `n01W` | Elarindor ranger, companion, and story quest giver |
 
@@ -119,7 +128,7 @@ Granis, Garthork, Boom Brothers, Grum Bloodfang, Erduk, Grim, Valeria, and other
 | 1–10 | Thornwoods `6`, Stonetooth Camp `601`, Bloodtusk Tribe `602`, Horde Scout Base `8810` | Chieftain Thork, Granis, Garthork, Rol'jin, murloc and gnoll pressure, Horde acceptance |
 | 5–15 | Havenwoods `7`, Bonecrush Stronghold `8`, Riverbane `10`, inns/cellars `12010`–`12021` | Alliance/Ogre/Bonecrusher relations, patrols, trade, and faction consequences |
 | 5–14 | Ghostwalk Ridge `19`, Ironspine Post `1901`, Deadwoods `11`, Crypt `102` | Shadowclaw tragedy, corruption, undeath, Jin'Zun follow-up, and Dawnhold approach |
-| 10–18 | Felfire Bastion `12`, Felfire Citadel `1201`, Stormhaven `13`, Dawnhold `20` | Fel escalation, refugees, necromancer activity, outpost and ship-repair progression |
+| 10–18 | Felfire Bastion `12`, Felfire Citadel `1201`, Stormhaven `13`, Dawnhold `20` | Fel escalation, refugees, necromancer activity, Dawnhold's ruined undead city and docks, and ship-repair progression |
 | 10–20 | Sirensong Isles `14`, Mok'natha `1401`, Zul'Garok Ruins `1402`, Urgmar `1403`, Serpentshore `1404`, Zul'Gurak `15` | Boom Brothers, goblins, naga/hydra pressure, island factions, Boom Mine `104` |
 | 15–20 | Verdant Plains `17`, Chimairo's Roost `1701`, Weeping Hollow `1702`, Redwind Pass `1703`, settlement TBD `1704`, Vael'Anorath `1705`, Vanguard Vale `9` | Elarindor, Aradion, Valeria, mana rifts, satyrs, void escalation |
 | 20–30 | Dragonfire Peaks `4`, Ashfang Outpost `401`, Wyrmfall `402`, Morgrim's Claim `403`, Maw of Cinders `404`, Ashfang Falls `405` | Grum's dragon chain, Dark Horde, dragons, elemental crisis, endgame assaults |
@@ -161,6 +170,11 @@ The generic quest plan below complements that set; it must not recreate an exist
 | Boom Mine | `DungeonBoomBrothersMine.j` registers zone `104`, patrol waves, and explosive/barrel events. | The Boom Brothers chain can lead into a real dungeon rather than a disconnected narrative instance. |
 | Mad Blix | `BossMadBlix.j` contains a recoverable mana-absorption mechanic; legacy phase files are empty. | Mark the boss **Partial**. Design additional mechanics only after testing the current encounter and recovering GUI evidence. |
 | Rol'jin | `BossRoljin.j` exists. | Granis's voiced Rol'jin hunt can target an existing boss encounter. |
+| Nazgrek's Flask | Item `I61L` is registered by `ProfessionsAlchemy.j`, equipment exports, loot data, and debug tools; item ability evidence includes `A63V`. | The legacy prologue flask idea now has real object evidence, but the existing reusable alchemy item must not automatically become a disposable tutorial prop. Decide whether the quest unlocks the recipe, creates a separate vision draught, or deliberately rebalances the existing flask. |
+| Zul'karak | Unit `n65F` is present in the debug object registry and reputation unit list. | The unit exists, but the older-brother personality, abilities, recruitment timing, and companion behavior remain **Legacy evidence** until confirmed in current WE triggers/code. |
+| Crypt boss roster | `ZonesCore` names Skullreaver, Rotspine, Bone Golem, Darkmaw the Soul Devourer, and Marduk the Endbringer for Crypt `102`. | Treat the ODT's Warden, Cryptlord, and king's shade as encounter roles or discarded working names until deliberately mapped to current bosses. |
+| Gar | Unit `n60Z` exists and `ZonesCore` lists Gar among Deadwoods `11` notable characters. | The ODT's flesh-golem experiment is compatible with current placement evidence. Keep him in Deadwoods and tie his creator/lore to Dawnhold unless current WE triggers contradict it. |
+| Dawnhold ship service | `TravelShipA.j` already owns an active Sirensong–Dawnhold–Stormhaven neutral route and registers Dawnhold stop `20`. | Legacy Fix the Ship must not blindly unlock baseline travel. Use it for a separate goblin vessel, route/service upgrade, fare benefit, repair incident, or an intentional availability gate designed with the current travel system. |
 | Quest journal | `QuestMaster`, `QuestGiver`, `QuestsGeneric`, and `QuestUI` expose quest type/category and live objectives. | New story and dungeon quests should set their categories instead of relying only on title or description. |
 
 ## 6. Story pillars and player role
@@ -202,11 +216,11 @@ Prologue: Nazgrek + Shadowclaw in Sereneglade
 
 | Design ID | Quest / beat | Status | Purpose and connection |
 |---|---|---|---|
-| ST-P-01 | Intro cinematic: Nazgrek and Shadowclaw | **Partial / current voice evidence** | Establish the blood-refusal backstory, the bond with Shadowclaw, and Sereneglade as a hoped-for sanctuary. Keep exposition short and let the first hunt teach controls. |
-| ST-P-02 | First signs of unrest | **Proposed** | A short wildlife/gnoll trail sends the player toward Ragno. This can absorb a valid recovered objective from Articy's “Nazgrek's Flask” only if the GUI/map evidence supports it. |
+| ST-P-01 | Intro cinematic: Nazgrek and Shadowclaw | **Partial / current voice + legacy ODT evidence** | Establish the blood-refusal backstory, the bond with Shadowclaw, and Sereneglade as sanctuary. The old sequence adds a dismissive orc patrol, the walk to Nazgrek's hut, and a successful rabbit hunt; retain only the beats that fit the current opening's pace and staging. |
+| ST-P-02 | Nazgrek's Flask / First signs of unrest | **Legacy ODT + current object evidence; redesign required** | Nazgrek senses spiritual discord, gathers ingredients, and prepares a draught to sharpen his insight before following the disturbance toward Ragno. Exact reagents and regions require GUI/WE recovery. Do not consume or grant existing alchemy item `I61L` by default; a quest-only vision draught or later recipe unlock is safer. |
 | ST-P-03 | Protect the Outpost | **Implemented JASS** | First visible act of service. Ragno survives, notices Nazgrek, and becomes the early repeatable hub. |
 
-Do not make “Nazgrek's Flask” mandatory from its Articy title alone; its reliable current objectives have not been recovered.
+Legacy intro beats worth retaining are Shadowclaw reacting defensively when the patrol mocks Nazgrek, Nazgrek choosing restraint, the hut serving as the first quiet player-controlled space, and the flask vision turning vague unease into a playable trail. Avoid making the patrol scene a long exposition dump or implying all Horde orcs share the patrol's contempt.
 
 ### Act I — Earning a place (levels 3–10)
 
@@ -233,14 +247,17 @@ Legacy concepts such as draining orc life, killing Ragno, and setting the base o
 
 | Design ID | Quest / beat | Status | Purpose and connection |
 |---|---|---|---|
-| ST-A2-01 | A Howl Silenced | **Legacy Articy** | Shadowclaw behaves erratically or vanishes near Ghostwalk Ridge. Begin with tracking, not immediate villain framing. |
-| ST-A2-02 | Blood Trail | **Legacy Articy** | Follow signs through Wolf Den `12111` and Ironspine approaches; connect wildlife corruption to the wider force. |
-| ST-A2-03 | Broken Chains | **Legacy Articy** | Reveal attempted control, imprisonment, or corruption of beasts and spirits. Recover any map-specific captor before choosing the antagonist. |
-| ST-A2-04 | Curse of Ghostridge | **Legacy Articy** | Garthork/Jin'Zun helps identify the curse. Give the player a cleansing attempt and evidence that death/fel/void forces overlap. |
-| ST-A2-05 | Whispers in the Void | **Legacy Articy** | The first explicit void clue points toward later Elarindor mana rifts without revealing the full antagonist. |
-| ST-A2-06 | Lair of Rage | **Legacy Articy** | Confront the controller or corrupted pack in a bespoke lair/world event. |
-| ST-A2-07 | Shadowclaw's Demise | **Legacy Articy cinematic** | Recommended canon: the cure fails or succeeds only spiritually; Shadowclaw dies free and later returns as an ancestral guide motif. Do not implement the death until companion-system cleanup, future summon behavior, and cinematic state are designed together. |
+| ST-A2-00 | Shadowclaw's Demise | **Legacy ODT/Articy cinematic; canon decision pending** | Shadowclaw follows a scent through a cursed Ghostwalk settlement and is found slain by a fel-orc warrior. Preserve Nazgrek's grief, a brief rage confrontation, and a spiritual farewell. The exact killer, permanence, and later spirit role remain open. |
+| ST-A2-01 | A Howl Silenced | **Legacy ODT/Articy** | Inspect the killer's marked weapon or body, then scout the Ghostwalk outskirts for the responsible warband. Shadowclaw's death is the inciting event, not this quest's final reward. |
+| ST-A2-02 | Blood Trail | **Legacy ODT/Articy** | Follow blood, disturbed earth, scouts, and warbeasts to a hidden camp. Use Wolf Den `12111` or another verified location only if current WE geography supports it. |
+| ST-A2-03 | Broken Chains | **Legacy ODT/Articy** | Destroy fel-orc supplies, free captive villagers forced to work on cursed artifacts, escort survivors, and confront the overseer. Exact captive count and faction remain TBD. |
+| ST-A2-04 | Curse of Ghostwalk Ridge | **Legacy title: Curse of Ghostridge** | Destroy three ritual totems under escalating attack and defeat their fel-orc shaman. The shaman reveals demonic support and points toward Felfire Bastion. |
+| ST-A2-05 | Whispers in the Void | **Legacy ODT/Articy; terminology review required** | Infiltrate a forward camp, confront the demonic emissary empowering the warband, and sever its link. Decide whether “void” is literal void magic or obsolete wording for Legion/fel influence. |
+| ST-A2-06 | The Lair of Rage | **Legacy ODT/Articy** | Assault the fel-orc stronghold with earned allies, defeat its warlord, and destroy the summoning altar. Earlier cleansing, rescue, outpost, and scouting outcomes should alter this battle. |
+| ST-A2-07 | Run Free | **Proposed epilogue** | Give Shadowclaw's farewell room after the assault and establish any ancestral-guide motif without undoing the cost of the loss. |
 | ST-A2-08 | Deadwoods and the Ghost | **Proposed synthesis** | Route Ironspine Post into Deadwoods, Jin'Zun's resurgence/Crypt content, and the threatened road to Dawnhold. |
+
+The direct fel-orc killing from the old notes is the clearest causal version and gives the later Felfire campaign personal weight. Use it as the leading option, but keep the playable investigation and assault central: Nazgrek's automatic rage strike should be a short emotional beat or boss opening, not a cinematic that resolves the player's revenge for them.
 
 The “Chains of Seduction” and fight against legacy “Velaria” belong to **Velyssara**, a separate female satyr/succubus with unit rawcode `n636`. The identity conflict is resolved: Valeria remains the Elarindor ranger and companion. Recover the remaining GUI triggers before deciding Velyssara's exact allegiance, encounter flow, and fate.
 
@@ -248,12 +265,29 @@ The “Chains of Seduction” and fight against legacy “Velaria” belong to *
 
 | Design ID | Quest / beat | Status | Purpose and connection |
 |---|---|---|---|
-| ST-A3-01 | Ironspine supply and scouting chain | **Legacy Articy / proposed consolidation** | Combine Scouting Party, Totems of Strength, Supply Lines, Wandering Berserker, and Fel Contamination into a focused route through Deadwoods, Felfire, and Stormhaven. Avoid five unrelated fetch quests. |
-| ST-A3-02 | Dawnhold curse | **Legacy Articy** | Investigate the necromancer threat and the “Gar the Mighty Giant” lead. Decide whether Gar is ally, victim, or boss after recovering map triggers. |
-| ST-A3-03 | The Goblin Negotiator / Fix the Ship | **Legacy Articy** | Secure passage to or from Sirensong. Outcomes from the Boom Brothers and local goblin reputation reduce cost or create an alternate repair solution. |
-| ST-A3-04 | Sirensong regional arc | **Proposed synthesis** | Link Mok'natha, Zul'Garok Ruins, Urgmar, Serpentshore, Kelziss, and Jinnvorrak through raids, ruins, and a growing naga/hydra threat. |
-| ST-A3-05 | Boom Brothers chain | **Legacy voiced design + partial dungeon** | A comedic engineering story becomes useful to the main route because its explosives or tools open a blocked passage/ship repair. Completion grants free or friendly Boom Mine access, not a mandatory grind. |
-| ST-A3-06 | Felfire evidence | **Proposed synthesis** | Evidence from the Citadel shows the corruption is organized and linked to elemental/dragon exploitation farther east. |
+| ST-A3-01 | The Orc Outpost / Ironspine alliance | **Legacy ODT; proposed remap** | The old northern outpost most naturally maps to Ironspine Post `1901`, subject to WE verification. Defend it, fortify it, and gain troops/intelligence for The Lair of Rage. |
+| ST-A3-02 | Ghosts in the Deadwoods | **Legacy ODT/Articy** | Use a spirit amulet to find frightened human survivors, then calm, defend, or escort them. Their trust provides regional knowledge without forcing hostility with all humans. |
+| ST-A3-03 | Dawnhold's Curse | **Legacy title: Vanguard's Curse; location resolved** | Defeat undead captains in Dawnhold `20`, assemble pieces of a cursed artifact, and destroy or cleanse it at an altar. Exact captains, artifact pieces, altar, and WE regions remain unverified. |
+| ST-A3-04 | Gar the Mighty Giant | **Legacy ODT + current unit/zone evidence** | Gar is unit `n60Z` in Deadwoods `11`, described as a flesh golem created by the Dawnhold necromancer. Lure or weaken him with special explosives, then defeat him for crafting material. Exact encounter mechanics and WE rect remain unverified. |
+| ST-A3-05 | The Goblin Negotiator / Fix the Ship | **Legacy ODT/Articy; reward redesign required** | Recover three classes of ship parts, optionally trade for rare components, and defend repairs. Because Ship A already serves Sirensong–Dawnhold–Stormhaven, reward a separate vessel, fare/service improvement, new destination, or story access rather than claiming to unlock all ship travel. |
+| ST-A3-06 | Sirensong regional arc | **Proposed synthesis** | Link Mok'natha, Zul'Garok Ruins, Urgmar, Serpentshore, Kelziss, and Jinnvorrak through raids, ruins, and a growing naga/hydra threat. |
+| ST-A3-07 | Boom Brothers chain | **Legacy voiced design + partial dungeon** | A comedic engineering story becomes useful to the main route because its explosives or tools open a blocked passage/ship repair. Completion grants free or friendly Boom Mine access, not a mandatory grind. |
+| ST-A3-08 | Felfire evidence | **Proposed synthesis** | Evidence from the Citadel shows the corruption is organized and linked to elemental/dragon exploitation farther east. |
+
+Legacy outpost-support hooks can become a compact preparation layer for The Lair of Rage instead of ten unrelated errands:
+
+| Legacy quest | Useful retained hook | Recommended treatment |
+|---|---|---|
+| Supply Lines | Meat, abandoned weapons, or negotiated supplies | One normal quest with optional acquisition routes; upgrades outpost consumables or assault support. |
+| The Wandering Berserker | Track and subdue an unstable orc without killing him | Character quest; successful cleansing adds the berserker to a later battle. |
+| Totems of Strength | Valor, Spirit, and Resilience totems in distinct danger sites | Short optional chain; avoid duplicating shaman class-quest rewards. |
+| The Scouting Party | Follow broken weapons/blood signs and rescue survivors | Fold into regional reconnaissance if it duplicates Blood Trail. |
+| Spirits of the Past | Free trapped orc souls and perform an altar ritual | Connect the necromancer reveal to Garthork and the Crypt. |
+| Echoes of the Forge | Dark ore, molten shard, and ancestral hammer | Profession-support quest or one-time assault upgrade, not both. |
+| Fel Contamination | Herbs, poisoned water, fel alchemist, cleansing ritual | Strong regional normal quest with visible outpost recovery. |
+| Cursed Captives | Break spectral chains and give dead warriors a proper release | Connect to Restless Souls while keeping living rescues and spirit releases distinct. |
+| Silent Negotiations | Recover plans and optionally sabotage the camp | Redesign as reconnaissance/sabotage; do not assume Nazgrek owns a Stealth ability. |
+| Goblin Negotiator | Protect a scavenging run and secure trade | Fold into Fix the Ship unless a persistent trade network is implemented. |
 
 Boom Brothers legacy sequence to preserve when converting `qBoomBrothers.j`:
 
@@ -423,6 +457,27 @@ Each dungeon should eventually have a small package rather than one isolated kil
 | Firelands `105` | Elemental covenant/endgame route | Endgame elemental tasks | Zone and boss references exist; story proposed |
 | Dreadforge `106` | Stop demon/fel-orc production and final campaign support | Forge sabotage/material recovery | Zone exists; story proposed |
 
+### Crypt `102` legacy design kit
+
+The old ODT provides a useful seven-quest dungeon package. Preserve the functions below, but align all bosses, ruler lore, rooms, and rewards with the current map before implementation.
+
+| Package ID | Legacy quest | Type + category | Retained objective role | Reconciliation |
+|---|---|---|---|---|
+| DQ-102-01 | The Whispering Tombs | Normal + Dungeon | Find the whispering chamber, destroy a Soul Nexus, and survive its guardian waves. | Corresponds to planned GQ-019; Jin'Zun or Garthork may provide the breadcrumb. |
+| DQ-102-02 | Crypt Delvers | Normal + Dungeon | Escort a goblin excavation team, secure its work area, and survive the guardian it awakens. | Connect the reward to ship repairs or goblin services; build robust escort failure/retry cleanup. |
+| DQ-102-03 | Shadow of the Cryptlord | Normal + Story + Dungeon | Reach an inner sanctum through traps/puzzles and defeat the dungeon's major abomination. | “Cryptlord” is a legacy role, not an approved boss name. Map it to Skullreaver, Rotspine, Bone Golem, Darkmaw, or Marduk only after inspecting current encounters. |
+| DQ-102-04 | The Cursed Crown | Normal + Dungeon | Recover a ruler's crown and choose to return it for release or keep its power and curse. | The old “Vanguard king” now means a former ruler of Dawnhold; the exact identity remains TBD. The keep branch requires durable cursed-item behavior. |
+| DQ-102-05 | Secrets of the Necromancer | Normal + Story + Dungeon | Solve library/ward puzzles, collect texts, and confront a projection that reveals identity, motive, or weakness. | Corresponds to planned GQ-021 and should advance the Deadwoods/Dawnhold story rather than award lore with no consumer. |
+| DQ-102-06 | Relic Hunters | Normal + Dungeon | Recover several guarded relics and choose one personal reward while the rest aid allies. | Final relic names and power require item-system and reward-balance review. |
+| DQ-102-07 | Restless Souls | Daily or Normal + Dungeon | Break warding stones, defend a release ritual, and guide bound spirits onward. | Corresponds to planned GQ-020. Prefer Normal for the authored human-survivor story; create a separate Daily only if repeatable targets make narrative sense. |
+
+Reusable Crypt encounter elements from the notes:
+
+- **Encounter roles:** an entrance warden, a corpse-built inner guardian, and a bound royal shade. These are functional archetypes, not replacements for the current named boss roster.
+- **Hazards:** poison-gas pressure plates, readable floor/pit traps, vermin swarms, summoned waves, and puzzle-locked chambers. Use only hazards that remain readable with Warcraft III pathing and camera constraints.
+- **Lore objects:** an Ancient Necromancy Tome for Garthork, a former Dawnhold ruler's journal, and a Tome of Forgotten Magic. Each book needs one clear story consumer; avoid three interchangeable book pickups.
+- **Branch reward:** returning the crown grants release/blessing, while keeping it grants stronger immediate power with a real persistent curse. Do not offer the keep choice until the equipment/save systems can honor that consequence.
+
 ## 11. Quest-giver and event contracts
 
 Future qXXX libraries should expose explicit hooks rather than reading one another's private globals.
@@ -463,6 +518,10 @@ Before implementing the following, export or inspect the old GUI triggers and co
 | Grim | Existing named quest giver | Entire active GUI quest set, placement, and intended arc |
 | Valeria | Current qValeria plus unexported legacy triggers | Identify which companion objectives remain missing; verify old “Velaria” references by rawcode so they are not confused with Velyssara |
 | Velyssara | Existing succubus unit `n636`; Chains of Seduction and fight text; legacy Articy “Velaria” | Recover her GUI triggers, relationship with Zaekolaerr, dispel sequence, boss event, rewards, and final outcome |
+| Nazgrek's Flask | Existing alchemy item `I61L`; old intro describes a self-made insight flask | Recover the original quest triggers/ingredients and decide between a quest-only vision draught, a later recipe unlock, or deliberate reuse of `I61L` |
+| Zul'karak | Existing unit `n65F`; ODT describes Zul'kis's warrior brother and possible later recruit | Confirm current placement, faction, dialogue, companion eligibility, and whether the older-brother relationship remains canon |
+| Ghostwalk/Deadwoods/Dawnhold legacy campaign | Shadowclaw death, fel-orc warband, Ironspine-like outpost, human survivors, Dawnhold curse, Gar, and ship | Ruined “Vanguard” maps to Dawnhold `20`; Gar `n60Z` maps to Deadwoods `11`; Ship A already serves Dawnhold. Verify exact rects, triggers, and intended quest-specific vessel/service changes. |
+| Crypt `102` | Seven legacy quests, three encounter roles, hazards, books, and a cursed-crown branch | Map roles to current bosses/rooms, identify the buried culture/ruler, validate traps, and design persistent reward consequences |
 | Other Horde NPCs | Krezgrel, Drek'thor, Ogmar, Graknar and related triggers | Inventory before assigning new generic quests to avoid ownership conflicts |
 
 ## 13. Open canon and implementation decisions
@@ -470,13 +529,13 @@ Before implementing the following, export or inspect the old GUI triggers and co
 Resolve these deliberately and record the answer here:
 
 1. **Mountain outpost defenses:** is the Articy/Granis defense a second battle after Ragno's current Protect the Outpost?
-2. **Shadowclaw's fate:** permanent death, spiritual transformation, or player-influenced outcome? What replaces gameplay dependencies?
+2. **Shadowclaw's fate:** the old notes explicitly use permanent death by a fel-orc warrior; decide whether current canon keeps that direct murder, adds a failed cleansing attempt, or allows a player-influenced outcome. Define what replaces gameplay dependencies and whether Shadowclaw later appears only as a spirit motif.
 3. **Zaekolaerr branch limits:** which dark actions are playable, threatened, or discarded, and how can the main hub remain usable?
 4. **Velyssara's allegiance and fate:** Zaekolaerr's agent, independent corrupter, coerced ally, or rival—and can she be cleansed, spared, or only defeated?
 5. **Main antagonist:** which force connects gnolls, satyrs, undead, void rifts, Dark Horde, and elemental exploitation without making every faction secretly identical?
 6. **Granis/Garthork task ownership:** exact QuestData titles and public completion hooks expected by `qChieftainThork`.
 7. **Act III settlement `1704`:** final name, faction, services, and narrative purpose.
-8. **Dawnhold's Gar:** ally, cursed victim, boss, or obsolete Articy concept?
+8. **Gar's encounter and outcome:** Gar is current unit `n60Z` in Deadwoods `11`; the ODT defines him as a flesh-golem experiment of the Dawnhold necromancer, weakened by explosives. Confirm his active WE triggers, exact rect, boss mechanics, and whether destruction or another resolution is canonical.
 9. **Grum and the eggs:** protective plan, reckless weaponization, betrayal, or misunderstanding?
 10. **Dungeon reset policy:** which objectives are daily versus freely repeatable, and how boss/instance state resets safely.
 
@@ -484,17 +543,20 @@ Recommended antagonist structure: use a coalition or chain of exploitation rathe
 
 ## 14. Recommended implementation order
 
-1. Recover Granis and Garthork GUI triggers and create their modern qXXX libraries so Duty For The Horde has real dependencies.
-2. Decide and implement the second mountain defense versus current Protect the Outpost.
-3. Finish Satyr Negotiations outcome state and one convergent follow-up per choice.
-4. Add the Gnoll Hideout one-time package and use its evidence in Thork's Act I conclusion.
-5. Audit Shadowclaw's current companion systems, then write the Act II chain without implementing the demise until cleanup/replacement behavior is safe.
-6. Convert the Boom Brothers chain against the existing dungeon and recover Mad Blix behavior.
-7. Build the Ironspine–Deadwoods–Dawnhold travel/story bridge and connect the implemented Jin'Zun chain.
-8. Complete the Sirensong regional arc and ship route.
-9. Categorize and validate the implemented Aradion/Valeria quests as story or side-story content, then add their Verdant consequence quests.
-10. Recover Grum's chain and design Dragonfire/Wyrmhold/Firelands/Dreadforge as the endgame campaign.
-11. Add generic quests zone by zone after checking the vendor ledger and WE placement, prioritizing hubs that currently have no repeatable support.
+1. Decide how the old Nazgrek's Flask prologue relates to existing alchemy item `I61L`, then recover its GUI ingredients/regions and current intro staging.
+2. Recover Granis and Garthork GUI triggers and create their modern qXXX libraries so Duty For The Horde has real dependencies.
+3. Decide and implement the second mountain defense versus current Protect the Outpost.
+4. Finish Satyr Negotiations outcome state and one convergent follow-up per choice.
+5. Add the Gnoll Hideout one-time package and use its evidence in Thork's Act I conclusion.
+6. Use Dawnhold `20` for the ODT's ruined Vanguard city/docks and Deadwoods `11` for Gar `n60Z`, then verify exact quest rects plus the northern-outpost and Ghostridge mappings before placing Act II/III objectives.
+7. Audit Shadowclaw's current companion systems, decide the death variant, then write the Act II chain without implementing the demise until cleanup/replacement behavior is safe.
+8. Reconcile the seven Crypt quests and encounter roles with the current five-boss roster, room layout, and Jin'Zun/Garthork dependencies.
+9. Convert the Boom Brothers chain against the existing dungeon and recover Mad Blix behavior.
+10. Build the Ironspine–Deadwoods–Dawnhold travel/story bridge and connect the implemented Jin'Zun chain.
+11. Complete the Sirensong regional arc and ship route.
+12. Categorize and validate the implemented Aradion/Valeria quests as story or side-story content, then add their Verdant consequence quests.
+13. Recover Grum's chain and design Dragonfire/Wyrmhold/Firelands/Dreadforge as the endgame campaign.
+14. Add generic quests zone by zone after checking the vendor ledger and WE placement, prioritizing hubs that currently have no repeatable support.
 
 ## 15. Quest design and implementation checklist
 
@@ -517,6 +579,7 @@ Before creating or changing a quest:
 
 - Keep working titles until the corresponding dialogue and objectives are approved; do not churn stable QuestData IDs for cosmetic naming changes.
 - Never mark a quest **Implemented JASS** from Articy, voice lines, or GUI screenshots alone.
+- Treat the original ODT files as read-only legacy evidence. Record accepted ideas and conflicts here instead of rewriting the historical notes.
 - When a legacy concept is rejected, record the decision and replacement briefly instead of deleting all trace of the conflict.
 - When a new NPC is created, add its canonical name, faction, zone, placement, rawcode/global, quest ownership, and later connections to this document.
 - When a quest moves zone, update both the quest implementation and this plan; use `ZonesCore` for the final zone identity.

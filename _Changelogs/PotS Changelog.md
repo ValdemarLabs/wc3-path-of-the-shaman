@@ -15,6 +15,18 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [23.8.2026]
+
+### Technical Updates
+
+- Updated `_developer/Design Plans/Story and Quest Design.md` after reviewing the legacy `_developer/_Other/WC3 Pots notes.odt` and `_developer/_Other/WC3 Pots notes other.odt`, recovering detailed prologue, Shadowclaw/fel-orc, outpost, Deadwoods, ship, Zul'karak, and Crypt concepts while separating them from current canon and implementation.
+- Reconciled the old notes with current `Zones/ZonesCore.j`, Nazgrek's existing Flask item `I61L`, Zul'karak unit `n65F`, Gar unit `n60Z` in Deadwoods, the current Crypt boss roster, Ghostwalk Ridge, Elarindor's Vanguard Vale, and the confirmed mapping of the old ruined “Vanguard” city/docks to Dawnhold `20`.
+- Recorded that `Travel/TravelShipA.j` already serves Sirensong, Dawnhold, and Stormhaven, so the legacy Fix the Ship quest must improve or add a service instead of duplicating the existing travel unlock.
+
+### Actions Remaining
+
+- In World Editor, identify the exact Dawnhold city/dock quest rects and triggers plus the northern Orc outpost, legacy Ghostridge village within Ghostwalk Ridge, Gar encounter mechanics, Nazgrek's Flask prologue, Zul'karak recruitment, and Crypt rooms before implementing those legacy concepts.
+
 ## [22.8.2026]
 
 ### Player-Facing Updates
