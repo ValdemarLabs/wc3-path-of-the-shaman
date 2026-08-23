@@ -2,7 +2,7 @@
     Drunk
 
     Author: Valdemar
-    Version: 2.2.0
+    Version: 2.4.0
 
     Description:
     Handles drunken visuals, camera sway, movement/casting mishaps, puking,
@@ -83,12 +83,17 @@ globals
     private constant real D_PASSOUT_BASE_CHANCE = 0.50
     private constant real D_PASSOUT_MAX_CHANCE = 60.00
     private constant real D_PASSOUT_FADE_OUT = 2.00
+    private constant real D_PASSOUT_BLACK_HOLD = 5.00
     private constant real D_PASSOUT_FADE_IN = 2.00
     private constant real D_PASSOUT_SLEEP_AFTER_FADE = 3.00
     private constant real D_PASSOUT_CAMERA_STEP = 1.25
-    private constant real D_PASSOUT_CAMERA_FAR = 3000.00
-    private constant real D_PASSOUT_CAMERA_MIDDLE = 1900.00
-    private constant real D_PASSOUT_CAMERA_NEAR = 1050.00
+    private constant real D_PASSOUT_CAMERA_FAR = 1800.00
+    private constant real D_PASSOUT_CAMERA_MIDDLE = 1350.00
+    private constant real D_PASSOUT_CAMERA_NEAR = 950.00
+    private constant real D_PASSOUT_PARTY_MIN_DISTANCE = 575.00
+    private constant real D_PASSOUT_PARTY_MAX_DISTANCE = 750.00
+    private constant real D_PASSOUT_PARTY_APPROACH_DISTANCE = 190.00
+    private constant real D_PASSOUT_PARTY_ANGLE_STEP = 2.39996323
     private constant real D_AI_PASSOUT_TIME = 8.00
     private constant real D_EVENT_COOLDOWN = 12.00
     private constant real D_REACTION_RANGE = 1600.00
@@ -131,6 +136,12 @@ globals
     private boolean array D_FullscreenWasEnabled
     private boolean array D_MasterButtonWasVisible
     private integer array D_PassOutCameraStage
+    private group array D_PassOutParty
+    private group array D_PassOutPartyControlled
+    private integer array D_PassOutPartyCount
+    private real array D_PassOutPartyAngle
+    private Table D_PassOutPartySuspendCount = 0
+    private Table D_PassOutPartySuspendOwned = 0
     private boolean array D_Hangover
     private boolean array D_HadHangoverAbility
     private timer array D_HangoverTimer
@@ -307,24 +318,83 @@ private function D_GetRandomCompanyResponder takes unit subject returns unit
     return selected
 endfunction
 
+private function D_QueueReaction takes unit speaker, unit subject, boolean passOut returns nothing
+    if speaker == udg_Nazgrek or speaker == udg_Zulkis then
+        call VoicelinesDrunk_PickHeroReaction(speaker, passOut)
+    elseif passOut then
+        call VoicelinesDrunk_PickAIPassOutReaction(speaker, subject)
+    else
+        call VoicelinesDrunk_PickAIReaction(speaker, false)
+    endif
+    call DialogSystem_QueueFieldLine(speaker, "", VoicelinesDrunk_PickedKey, VoicelinesDrunk_PickedText)
+    set speaker = null
+    set subject = null
+endfunction
+
 private function D_PlayReaction takes unit subject, boolean passOut returns nothing
     local unit otherHero = D_GetOtherPlayerHero(subject)
     local unit companyHero
+    local unit candidate
+    local unit responder1 = null
+    local unit responder2 = null
+    local integer index = 1
+    local integer count = 0
+    local integer roll
+    local integer desired
+
+    if passOut then
+        if otherHero != null and IsUnitInRange(otherHero, subject, D_REACTION_RANGE) then
+            set count = 1
+            set responder1 = otherHero
+        endif
+        loop
+            exitwhen index > Companions_GetControlledDisplayCount()
+            set candidate = Companions_GetControlledDisplayUnit(index)
+            if candidate != null and candidate != subject and AI_GetInstance(candidate) > 0 and IsUnitType(candidate, UNIT_TYPE_HERO) and D_IsUnitAlive(candidate) and IsUnitInRange(candidate, subject, D_REACTION_RANGE) then
+                set count = count + 1
+                if count == 1 then
+                    set responder1 = candidate
+                elseif count == 2 then
+                    set responder2 = candidate
+                else
+                    set roll = GetRandomInt(1, count)
+                    if roll == 1 then
+                        set responder1 = candidate
+                    elseif roll == 2 then
+                        set responder2 = candidate
+                    endif
+                endif
+            endif
+            set index = index + 1
+        endloop
+        if count > 0 then
+            set desired = GetRandomInt(1, 2)
+            call D_QueueReaction(responder1, subject, true)
+            if desired == 2 and responder2 != null then
+                call D_QueueReaction(responder2, subject, true)
+            endif
+        endif
+        set otherHero = null
+        set companyHero = null
+        set candidate = null
+        set responder1 = null
+        set responder2 = null
+        return
+    endif
 
     if otherHero != null and IsUnitInRange(otherHero, subject, D_REACTION_RANGE) then
-        call VoicelinesDrunk_PickHeroReaction(otherHero, passOut)
-        call DialogSystem_QueueFieldLine(otherHero, "", VoicelinesDrunk_PickedKey, VoicelinesDrunk_PickedText)
+        call D_QueueReaction(otherHero, subject, false)
     endif
-    if not passOut then
-        set companyHero = D_GetRandomCompanyResponder(subject)
-        if companyHero != null then
-            call VoicelinesDrunk_PickAIReaction(companyHero, false)
-            call DialogSystem_QueueFieldLine(companyHero, "", VoicelinesDrunk_PickedKey, VoicelinesDrunk_PickedText)
-        endif
+    set companyHero = D_GetRandomCompanyResponder(subject)
+    if companyHero != null then
+        call D_QueueReaction(companyHero, subject, false)
     endif
 
     set otherHero = null
     set companyHero = null
+    set candidate = null
+    set responder1 = null
+    set responder2 = null
 endfunction
 
 private function D_IsPlayerPartyUnit takes unit whichUnit returns boolean
@@ -637,6 +707,111 @@ private function D_FireWakeHandlers takes unit whichUnit returns nothing
     set Drunk_WakeUnit = null
 endfunction
 
+private function D_ReleasePassOutParty takes integer unitId returns nothing
+    local unit member
+    local integer memberHandleId
+    local integer suspendCount
+
+    if D_PassOutPartyControlled[unitId] != null then
+        loop
+            set member = FirstOfGroup(D_PassOutPartyControlled[unitId])
+            exitwhen member == null
+            call GroupRemoveUnit(D_PassOutPartyControlled[unitId], member)
+            set memberHandleId = GetHandleId(member)
+            set suspendCount = D_PassOutPartySuspendCount.integer[memberHandleId] - 1
+            if suspendCount <= 0 then
+                call D_PassOutPartySuspendCount.integer.remove(memberHandleId)
+                if D_PassOutPartySuspendOwned.boolean[memberHandleId] and Companions_IsControlled(member) then
+                    call Companions_Resume(member)
+                endif
+                call D_PassOutPartySuspendOwned.boolean.remove(memberHandleId)
+            else
+                set D_PassOutPartySuspendCount.integer[memberHandleId] = suspendCount
+            endif
+        endloop
+        call DestroyGroup(D_PassOutPartyControlled[unitId])
+        set D_PassOutPartyControlled[unitId] = null
+    endif
+    if D_PassOutParty[unitId] != null then
+        call DestroyGroup(D_PassOutParty[unitId])
+        set D_PassOutParty[unitId] = null
+    endif
+    set D_PassOutPartyCount[unitId] = 0
+    set D_PassOutPartyAngle[unitId] = 0.00
+    set member = null
+endfunction
+
+private function D_AddPassOutPartyMember takes unit subject, unit member, integer unitId returns nothing
+    local integer memberId
+    local integer memberHandleId
+    local real angle
+    local real startDistance
+    local real x = GetUnitX(subject)
+    local real y = GetUnitY(subject)
+
+    if member == null or member == subject or not D_IsUnitAlive(member) or IsUnitHidden(member) or IsUnitInGroup(member, D_PassOutParty[unitId]) then
+        set subject = null
+        set member = null
+        return
+    endif
+    set memberId = D_GetUnitId(member)
+    if (memberId > 0 and D_PassedOut[memberId]) or (member == udg_TamedUnit and udg_Pet_Dead) then
+        set subject = null
+        set member = null
+        return
+    endif
+
+    call GroupAddUnit(D_PassOutParty[unitId], member)
+    if Companions_IsControlled(member) then
+        if D_PassOutPartyControlled[unitId] == null then
+            set D_PassOutPartyControlled[unitId] = CreateGroup()
+        endif
+        set memberHandleId = GetHandleId(member)
+        if D_PassOutPartySuspendCount.integer[memberHandleId] == 0 and not Companions_IsSuspended(member) then
+            set D_PassOutPartySuspendOwned.boolean[memberHandleId] = true
+            call Companions_Suspend(member)
+        endif
+        set D_PassOutPartySuspendCount.integer[memberHandleId] = D_PassOutPartySuspendCount.integer[memberHandleId] + 1
+        call GroupAddUnit(D_PassOutPartyControlled[unitId], member)
+    endif
+
+    set angle = D_PassOutPartyAngle[unitId] + I2R(D_PassOutPartyCount[unitId])*D_PASSOUT_PARTY_ANGLE_STEP
+    set startDistance = GetRandomReal(D_PASSOUT_PARTY_MIN_DISTANCE, D_PASSOUT_PARTY_MAX_DISTANCE)
+    call SetUnitPosition(member, x + startDistance*Cos(angle), y + startDistance*Sin(angle))
+    call IssuePointOrder(member, "move", x + D_PASSOUT_PARTY_APPROACH_DISTANCE*Cos(angle), y + D_PASSOUT_PARTY_APPROACH_DISTANCE*Sin(angle))
+    set D_PassOutPartyCount[unitId] = D_PassOutPartyCount[unitId] + 1
+
+    set subject = null
+    set member = null
+endfunction
+
+private function D_GatherPassOutParty takes unit subject, integer unitId returns nothing
+    local unit otherHero = D_GetOtherPlayerHero(subject)
+    local unit member
+    local integer index = 1
+
+    call D_ReleasePassOutParty(unitId)
+    set D_PassOutParty[unitId] = CreateGroup()
+    set D_PassOutPartyAngle[unitId] = GetRandomReal(0.00, 2.00*bj_PI)
+    call D_AddPassOutPartyMember(subject, otherHero, unitId)
+    loop
+        exitwhen index > udg_CompanionCount
+        set member = udg_CompanionUnit[index]
+        call D_AddPassOutPartyMember(subject, member, unitId)
+        set index = index + 1
+    endloop
+    if Companions_IsControlled(udg_TamedUnit) then
+        call D_AddPassOutPartyMember(subject, udg_TamedUnit, unitId)
+    endif
+    if Companions_IsControlled(udg_Shadowclaw) then
+        call D_AddPassOutPartyMember(subject, udg_Shadowclaw, unitId)
+    endif
+
+    set otherHero = null
+    set member = null
+    set subject = null
+endfunction
+
 private function D_WakeFromPassOut takes nothing returns nothing
     local timer expired = GetExpiredTimer()
     local integer unitId = GetTimerData(expired)
@@ -682,6 +857,7 @@ private function D_WakeFromPassOut takes nothing returns nothing
             call D_FireWakeHandlers(whichUnit)
         endif
     endif
+    call D_ReleasePassOutParty(unitId)
     set D_PassedOut[unitId] = false
     set D_WasPaused[unitId] = false
     set D_HadSleepAbility[unitId] = false
@@ -707,6 +883,7 @@ private function D_AdvancePassOutCamera takes nothing returns nothing
 
     if whichUnit == null or not D_PassedOut[unitId] then
         set D_PassOutTimer[unitId] = null
+        call D_ReleasePassOutParty(unitId)
         call ReleaseTimer(expired)
         set expired = null
         set whichUnit = null
@@ -738,6 +915,7 @@ private function D_RelocatePassedOut takes nothing returns nothing
 
     if whichUnit == null or not D_PassedOut[unitId] then
         set D_PassOutTimer[unitId] = null
+        call D_ReleasePassOutParty(unitId)
         call ReleaseTimer(expired)
         set expired = null
         set whichUnit = null
@@ -749,6 +927,7 @@ private function D_RelocatePassedOut takes nothing returns nothing
         set y = GetRandomReal(GetRectMinY(destination), GetRectMaxY(destination))
         call SetUnitPosition(whichUnit, x, y)
     endif
+    call D_GatherPassOutParty(whichUnit, unitId)
     set owner = GetOwningPlayer(whichUnit)
     if D_CameraSuspendedByPassOut[unitId] then
         call PanCameraToTimedForPlayer(owner, GetUnitX(whichUnit), GetUnitY(whichUnit), 0.00)
@@ -830,7 +1009,7 @@ private function D_StartPassOut takes unit whichUnit, integer unitId returns not
             call D_ShowBlackFade(owner, true, D_PASSOUT_FADE_OUT)
         endif
         call D_PlayReaction(whichUnit, true)
-        call TimerStart(t, D_PASSOUT_FADE_OUT, false, function D_RelocatePassedOut)
+        call TimerStart(t, D_PASSOUT_FADE_OUT + D_PASSOUT_BLACK_HOLD, false, function D_RelocatePassedOut)
     else
         call TimerStart(t, D_AI_PASSOUT_TIME, false, function D_WakeFromPassOut)
     endif
@@ -889,6 +1068,7 @@ private function D_ClearById takes integer unitId returns nothing
         call DestroyEffect(D_SleepEffect[unitId])
         set D_SleepEffect[unitId] = null
     endif
+    call D_ReleasePassOutParty(unitId)
     if D_PassedOut[unitId] and whichUnit != null then
         call Companions_SetExternalOrderOverride(whichUnit, false)
         if not D_HadSleepAbility[unitId] then
@@ -1288,6 +1468,8 @@ endfunction
 
 private function Init takes nothing returns nothing
     set D_PassOutAnimation = Table.create()
+    set D_PassOutPartySuspendCount = Table.create()
+    set D_PassOutPartySuspendOwned = Table.create()
     set D_DrunkUnits = CreateGroup()
     set D_TickTimer = CreateTimer()
     call TimerStart(D_TickTimer, D_TICK_PERIOD, true, function D_Tick)

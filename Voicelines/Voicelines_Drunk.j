@@ -2,7 +2,7 @@
     VoicelinesDrunk
 
     Author: Valdemar
-    Version: 2.2.1
+    Version: 2.3.2
 
     Description:
     Randomized hero, AI companion, wake-up, and Horde vendor lines used by
@@ -16,6 +16,7 @@
 
     API:
     call VoicelinesDrunk_PickHeroReaction(speaker, passOut)
+    call VoicelinesDrunk_PickAIPassOutReaction(speaker, subject)
     call VoicelinesDrunk_PickLastNightQuestion(speaker)
     call VoicelinesDrunk_PickHeroNightReply(speaker)
     call VoicelinesDrunk_PickNightHeroResponse(speaker, storyIndex)
@@ -58,6 +59,10 @@ globals
     constant string VL_NAZGREKDRUNK_PASSOUT1_TEXT = "Zul'kis! Wake up, you reckless troll!"
     constant string VL_NAZGREKDRUNK_PASSOUT2_KEY = "Nazgrek_DrunkPassOut2"
     constant string VL_NAZGREKDRUNK_PASSOUT2_TEXT = "Zul'kis? Spirits, what have you done?"
+    constant string VL_NAZGREKDRUNK_PASSOUT3_KEY = "Nazgrek_DrunkPassOut3"
+    constant string VL_NAZGREKDRUNK_PASSOUT3_TEXT = "Zul'kis, stay with me! This is no place to collapse!"
+    constant string VL_NAZGREKDRUNK_PASSOUT4_KEY = "Nazgrek_DrunkPassOut4"
+    constant string VL_NAZGREKDRUNK_PASSOUT4_TEXT = "Zul'kis?! How many drinks have you had?"
     constant string VL_NAZGREKDRUNK_WAKE1_KEY = "Nazgrek_HangoverWake1"
     constant string VL_NAZGREKDRUNK_WAKE1_TEXT = "My skull feels like a kodo drum."
     constant string VL_NAZGREKDRUNK_WAKE2_KEY = "Nazgrek_HangoverWake2"
@@ -98,6 +103,10 @@ globals
     constant string VL_ZULKISDRUNK_PASSOUT1_TEXT = "Nazgrek?! What ya doin', mon? Wake up!"
     constant string VL_ZULKISDRUNK_PASSOUT2_KEY = "Zulkis_DrunkPassOut2"
     constant string VL_ZULKISDRUNK_PASSOUT2_TEXT = "Nazgrek, dis not be a good place for a nap!"
+    constant string VL_ZULKISDRUNK_PASSOUT3_KEY = "Zulkis_DrunkPassOut3"
+    constant string VL_ZULKISDRUNK_PASSOUT3_TEXT = "Nazgrek! Stay awake, mon! Dis ground ain't safe!"
+    constant string VL_ZULKISDRUNK_PASSOUT4_KEY = "Zulkis_DrunkPassOut4"
+    constant string VL_ZULKISDRUNK_PASSOUT4_TEXT = "No, no! Keep ya eyes open! I not be carryin' ya outta another disaster!"
     constant string VL_ZULKISDRUNK_WAKE1_KEY = "Zulkis_HangoverWake1"
     constant string VL_ZULKISDRUNK_WAKE1_TEXT = "Da spirits be whisperin'. Could dey whisper softer?"
     constant string VL_ZULKISDRUNK_WAKE2_KEY = "Zulkis_HangoverWake2"
@@ -257,6 +266,35 @@ globals
     constant string VL_AVELINEDRUNK_FORGIVE_KEY = "Aveline_HangoverForgive"
     constant string VL_AVELINEDRUNK_FORGIVE_TEXT = "The matter is resolved. Consider this your only warning."
 
+    constant string VL_HEROENGINEERDRUNK_PASSOUT1_KEY = "HeroEngineer_DrunkPassOut1"
+    constant string VL_HEROENGINEERDRUNK_PASSOUT1_TEXT = "Your systems are shutting down. Stay awake!"
+    constant string VL_HEROENGINEERDRUNK_PASSOUT2_KEY = "HeroEngineer_DrunkPassOut2"
+    constant string VL_HEROENGINEERDRUNK_PASSOUT2_TEXT = "This is no place for a shutdown. Open your eyes!"
+    constant string VL_HEROPALADINDRUNK_PASSOUT1_KEY = "HeroPaladin_DrunkPassOut1"
+    constant string VL_HEROPALADINDRUNK_PASSOUT1_TEXT = "Stay with us! You cannot surrender here."
+    constant string VL_HEROPALADINDRUNK_PASSOUT2_KEY = "HeroPaladin_DrunkPassOut2"
+    constant string VL_HEROPALADINDRUNK_PASSOUT2_TEXT = "Wake up! This is no place to collapse."
+    constant string VL_HEROSHAMANDRUNK_PASSOUT1_KEY = "HeroShaman_DrunkPassOut1"
+    constant string VL_HEROSHAMANDRUNK_PASSOUT1_TEXT = "Stay awake. The spirits are not calling you yet."
+    constant string VL_HEROSHAMANDRUNK_PASSOUT2_KEY = "HeroShaman_DrunkPassOut2"
+    constant string VL_HEROSHAMANDRUNK_PASSOUT2_TEXT = "No, keep your eyes open. This ground is not safe."
+    constant string VL_HEROROGUEDRUNK_PASSOUT1_KEY = "HeroRogue_DrunkPassOut1"
+    constant string VL_HEROROGUEDRUNK_PASSOUT1_TEXT = "Seriously? This is where you choose to pass out?"
+    constant string VL_HEROROGUEDRUNK_PASSOUT2_KEY = "HeroRogue_DrunkPassOut2"
+    constant string VL_HEROROGUEDRUNK_PASSOUT2_TEXT = "Up. Now. I am not carrying you through this place."
+    constant string VL_HEROWARLOCKDRUNK_PASSOUT1_KEY = "HeroWarlock_DrunkPassOut1"
+    constant string VL_HEROWARLOCKDRUNK_PASSOUT1_TEXT = "Wake up before something decides you look defenseless."
+    constant string VL_HEROWARLOCKDRUNK_PASSOUT2_KEY = "HeroWarlock_DrunkPassOut2"
+    constant string VL_HEROWARLOCKDRUNK_PASSOUT2_TEXT = "No. You do not get to die from something this embarrassing."
+    constant string VL_HEROWARRIORDRUNK_PASSOUT1_KEY = "HeroWarrior_DrunkPassOut1"
+    constant string VL_HEROWARRIORDRUNK_PASSOUT1_TEXT = "On your feet! This is no place to fall."
+    constant string VL_HEROWARRIORDRUNK_PASSOUT2_KEY = "HeroWarrior_DrunkPassOut2"
+    constant string VL_HEROWARRIORDRUNK_PASSOUT2_TEXT = "Stay awake! I will not let a bottle defeat you."
+    constant string VL_AVELINEDRUNK_PASSOUT1_KEY = "Aveline_DrunkPassOut1"
+    constant string VL_AVELINEDRUNK_PASSOUT1_TEXT = "Stay awake. That is an order."
+    constant string VL_AVELINEDRUNK_PASSOUT2_KEY = "Aveline_DrunkPassOut2"
+    constant string VL_AVELINEDRUNK_PASSOUT2_TEXT = "No, no--eyes open. This is not a safe place to collapse."
+
     private constant integer VD_AI_ENGINEER = 1
     private constant integer VD_AI_PALADIN = 2
     private constant integer VD_AI_SHAMAN = 3
@@ -290,6 +328,19 @@ private function PickTwo takes string text1, string key1, string text2, string k
     endif
 endfunction
 
+private function PickFour takes string text1, string key1, string text2, string key2, string text3, string key3, string text4, string key4 returns nothing
+    local integer index = GetRandomInt(1, 4)
+    if index == 1 then
+        call SetPicked(text1, key1)
+    elseif index == 2 then
+        call SetPicked(text2, key2)
+    elseif index == 3 then
+        call SetPicked(text3, key3)
+    else
+        call SetPicked(text4, key4)
+    endif
+endfunction
+
 private function PickFive takes string text1, string key1, string text2, string key2, string text3, string key3, string text4, string key4, string text5, string key5 returns nothing
     set VoicelinesDrunk_PickedNightIndex = GetRandomInt(1, 5)
     if VoicelinesDrunk_PickedNightIndex == 1 then
@@ -308,12 +359,12 @@ endfunction
 public function PickHeroReaction takes unit speaker, boolean passOut returns nothing
     if speaker == udg_Nazgrek then
         if passOut then
-            call PickTwo(VL_NAZGREKDRUNK_PASSOUT1_TEXT, VL_NAZGREKDRUNK_PASSOUT1_KEY, VL_NAZGREKDRUNK_PASSOUT2_TEXT, VL_NAZGREKDRUNK_PASSOUT2_KEY)
+            call PickFour(VL_NAZGREKDRUNK_PASSOUT1_TEXT, VL_NAZGREKDRUNK_PASSOUT1_KEY, VL_NAZGREKDRUNK_PASSOUT2_TEXT, VL_NAZGREKDRUNK_PASSOUT2_KEY, VL_NAZGREKDRUNK_PASSOUT3_TEXT, VL_NAZGREKDRUNK_PASSOUT3_KEY, VL_NAZGREKDRUNK_PASSOUT4_TEXT, VL_NAZGREKDRUNK_PASSOUT4_KEY)
         else
             call PickTwo(VL_NAZGREKDRUNK_PUKE1_TEXT, VL_NAZGREKDRUNK_PUKE1_KEY, VL_NAZGREKDRUNK_PUKE2_TEXT, VL_NAZGREKDRUNK_PUKE2_KEY)
         endif
     elseif passOut then
-        call PickTwo(VL_ZULKISDRUNK_PASSOUT1_TEXT, VL_ZULKISDRUNK_PASSOUT1_KEY, VL_ZULKISDRUNK_PASSOUT2_TEXT, VL_ZULKISDRUNK_PASSOUT2_KEY)
+        call PickFour(VL_ZULKISDRUNK_PASSOUT1_TEXT, VL_ZULKISDRUNK_PASSOUT1_KEY, VL_ZULKISDRUNK_PASSOUT2_TEXT, VL_ZULKISDRUNK_PASSOUT2_KEY, VL_ZULKISDRUNK_PASSOUT3_TEXT, VL_ZULKISDRUNK_PASSOUT3_KEY, VL_ZULKISDRUNK_PASSOUT4_TEXT, VL_ZULKISDRUNK_PASSOUT4_KEY)
     else
         call PickTwo(VL_ZULKISDRUNK_PUKE1_TEXT, VL_ZULKISDRUNK_PUKE1_KEY, VL_ZULKISDRUNK_PUKE2_TEXT, VL_ZULKISDRUNK_PUKE2_KEY)
     endif
@@ -406,9 +457,33 @@ private function GetAIKind takes unit speaker returns integer
     return VD_AI_WARRIOR
 endfunction
 
+public function PickAIPassOutReaction takes unit speaker, unit subject returns nothing
+    local integer aiKind = GetAIKind(speaker)
+
+    if aiKind == VD_AI_ENGINEER then
+        call PickTwo(VL_HEROENGINEERDRUNK_PASSOUT1_TEXT, VL_HEROENGINEERDRUNK_PASSOUT1_KEY, VL_HEROENGINEERDRUNK_PASSOUT2_TEXT, VL_HEROENGINEERDRUNK_PASSOUT2_KEY)
+    elseif aiKind == VD_AI_PALADIN then
+        call PickTwo(VL_HEROPALADINDRUNK_PASSOUT1_TEXT, VL_HEROPALADINDRUNK_PASSOUT1_KEY, VL_HEROPALADINDRUNK_PASSOUT2_TEXT, VL_HEROPALADINDRUNK_PASSOUT2_KEY)
+    elseif aiKind == VD_AI_SHAMAN then
+        call PickTwo(VL_HEROSHAMANDRUNK_PASSOUT1_TEXT, VL_HEROSHAMANDRUNK_PASSOUT1_KEY, VL_HEROSHAMANDRUNK_PASSOUT2_TEXT, VL_HEROSHAMANDRUNK_PASSOUT2_KEY)
+    elseif aiKind == VD_AI_ROGUE then
+        call PickTwo(VL_HEROROGUEDRUNK_PASSOUT1_TEXT, VL_HEROROGUEDRUNK_PASSOUT1_KEY, VL_HEROROGUEDRUNK_PASSOUT2_TEXT, VL_HEROROGUEDRUNK_PASSOUT2_KEY)
+    elseif aiKind == VD_AI_WARLOCK then
+        call PickTwo(VL_HEROWARLOCKDRUNK_PASSOUT1_TEXT, VL_HEROWARLOCKDRUNK_PASSOUT1_KEY, VL_HEROWARLOCKDRUNK_PASSOUT2_TEXT, VL_HEROWARLOCKDRUNK_PASSOUT2_KEY)
+    elseif aiKind == VD_AI_AVELINE then
+        call PickTwo(VL_AVELINEDRUNK_PASSOUT1_TEXT, VL_AVELINEDRUNK_PASSOUT1_KEY, VL_AVELINEDRUNK_PASSOUT2_TEXT, VL_AVELINEDRUNK_PASSOUT2_KEY)
+    else
+        call PickTwo(VL_HEROWARRIORDRUNK_PASSOUT1_TEXT, VL_HEROWARRIORDRUNK_PASSOUT1_KEY, VL_HEROWARRIORDRUNK_PASSOUT2_TEXT, VL_HEROWARRIORDRUNK_PASSOUT2_KEY)
+    endif
+    set speaker = null
+    set subject = null
+endfunction
+
 public function PickAIReaction takes unit speaker, boolean passOut returns nothing
     local integer aiKind = GetAIKind(speaker)
-    if aiKind == VD_AI_ENGINEER then
+    if passOut then
+        call PickAIPassOutReaction(speaker, null)
+    elseif aiKind == VD_AI_ENGINEER then
         call PickTwo(VL_HEROENGINEERDRUNK_PUKE1_TEXT, VL_HEROENGINEERDRUNK_PUKE1_KEY, VL_HEROENGINEERDRUNK_PUKE2_TEXT, VL_HEROENGINEERDRUNK_PUKE2_KEY)
     elseif aiKind == VD_AI_PALADIN then
         call PickTwo(VL_HEROPALADINDRUNK_PUKE1_TEXT, VL_HEROPALADINDRUNK_PUKE1_KEY, VL_HEROPALADINDRUNK_PUKE2_TEXT, VL_HEROPALADINDRUNK_PUKE2_KEY)
@@ -560,6 +635,8 @@ private function Init takes nothing returns nothing
     call Voicelines_RegisterKey(VL_NAZGREKDRUNK_FOLDER, VL_NAZGREKDRUNK_PUKE2_KEY)
     call Voicelines_RegisterKey(VL_NAZGREKDRUNK_FOLDER, VL_NAZGREKDRUNK_PASSOUT1_KEY)
     call Voicelines_RegisterKey(VL_NAZGREKDRUNK_FOLDER, VL_NAZGREKDRUNK_PASSOUT2_KEY)
+    call Voicelines_RegisterKey(VL_NAZGREKDRUNK_FOLDER, VL_NAZGREKDRUNK_PASSOUT3_KEY)
+    call Voicelines_RegisterKey(VL_NAZGREKDRUNK_FOLDER, VL_NAZGREKDRUNK_PASSOUT4_KEY)
     call Voicelines_RegisterKey(VL_NAZGREKDRUNK_FOLDER, VL_NAZGREKDRUNK_WAKE1_KEY)
     call Voicelines_RegisterKey(VL_NAZGREKDRUNK_FOLDER, VL_NAZGREKDRUNK_WAKE2_KEY)
     call Voicelines_RegisterKey(VL_NAZGREKDRUNK_FOLDER, VL_NAZGREKDRUNK_WAKE3_KEY)
@@ -579,6 +656,8 @@ private function Init takes nothing returns nothing
     call Voicelines_RegisterKey(VL_ZULKISDRUNK_FOLDER, VL_ZULKISDRUNK_PUKE2_KEY)
     call Voicelines_RegisterKey(VL_ZULKISDRUNK_FOLDER, VL_ZULKISDRUNK_PASSOUT1_KEY)
     call Voicelines_RegisterKey(VL_ZULKISDRUNK_FOLDER, VL_ZULKISDRUNK_PASSOUT2_KEY)
+    call Voicelines_RegisterKey(VL_ZULKISDRUNK_FOLDER, VL_ZULKISDRUNK_PASSOUT3_KEY)
+    call Voicelines_RegisterKey(VL_ZULKISDRUNK_FOLDER, VL_ZULKISDRUNK_PASSOUT4_KEY)
     call Voicelines_RegisterKey(VL_ZULKISDRUNK_FOLDER, VL_ZULKISDRUNK_WAKE1_KEY)
     call Voicelines_RegisterKey(VL_ZULKISDRUNK_FOLDER, VL_ZULKISDRUNK_WAKE2_KEY)
     call Voicelines_RegisterKey(VL_ZULKISDRUNK_FOLDER, VL_ZULKISDRUNK_WAKE3_KEY)
@@ -596,6 +675,8 @@ private function Init takes nothing returns nothing
     call Voicelines_RegisterKey(VL_ZULKISDRUNK_FOLDER, VL_ZULKISDRUNK_RESPONSE5_KEY)
     call Voicelines_RegisterKey(VL_HEROENGINEERDRUNK_FOLDER, VL_HEROENGINEERDRUNK_PUKE1_KEY)
     call Voicelines_RegisterKey(VL_HEROENGINEERDRUNK_FOLDER, VL_HEROENGINEERDRUNK_PUKE2_KEY)
+    call Voicelines_RegisterKey(VL_HEROENGINEERDRUNK_FOLDER, VL_HEROENGINEERDRUNK_PASSOUT1_KEY)
+    call Voicelines_RegisterKey(VL_HEROENGINEERDRUNK_FOLDER, VL_HEROENGINEERDRUNK_PASSOUT2_KEY)
     call Voicelines_RegisterKey(VL_HEROENGINEERDRUNK_FOLDER, VL_HEROENGINEERDRUNK_NIGHT1_KEY)
     call Voicelines_RegisterKey(VL_HEROENGINEERDRUNK_FOLDER, VL_HEROENGINEERDRUNK_NIGHT2_KEY)
     call Voicelines_RegisterKey(VL_HEROENGINEERDRUNK_FOLDER, VL_HEROENGINEERDRUNK_NIGHT3_KEY)
@@ -605,6 +686,8 @@ private function Init takes nothing returns nothing
     call Voicelines_RegisterKey(VL_HEROENGINEERDRUNK_FOLDER, VL_HEROENGINEERDRUNK_FORGIVE_KEY)
     call Voicelines_RegisterKey(VL_HEROPALADINDRUNK_FOLDER, VL_HEROPALADINDRUNK_PUKE1_KEY)
     call Voicelines_RegisterKey(VL_HEROPALADINDRUNK_FOLDER, VL_HEROPALADINDRUNK_PUKE2_KEY)
+    call Voicelines_RegisterKey(VL_HEROPALADINDRUNK_FOLDER, VL_HEROPALADINDRUNK_PASSOUT1_KEY)
+    call Voicelines_RegisterKey(VL_HEROPALADINDRUNK_FOLDER, VL_HEROPALADINDRUNK_PASSOUT2_KEY)
     call Voicelines_RegisterKey(VL_HEROPALADINDRUNK_FOLDER, VL_HEROPALADINDRUNK_NIGHT1_KEY)
     call Voicelines_RegisterKey(VL_HEROPALADINDRUNK_FOLDER, VL_HEROPALADINDRUNK_NIGHT2_KEY)
     call Voicelines_RegisterKey(VL_HEROPALADINDRUNK_FOLDER, VL_HEROPALADINDRUNK_NIGHT3_KEY)
@@ -614,6 +697,8 @@ private function Init takes nothing returns nothing
     call Voicelines_RegisterKey(VL_HEROPALADINDRUNK_FOLDER, VL_HEROPALADINDRUNK_FORGIVE_KEY)
     call Voicelines_RegisterKey(VL_HEROSHAMANDRUNK_FOLDER, VL_HEROSHAMANDRUNK_PUKE1_KEY)
     call Voicelines_RegisterKey(VL_HEROSHAMANDRUNK_FOLDER, VL_HEROSHAMANDRUNK_PUKE2_KEY)
+    call Voicelines_RegisterKey(VL_HEROSHAMANDRUNK_FOLDER, VL_HEROSHAMANDRUNK_PASSOUT1_KEY)
+    call Voicelines_RegisterKey(VL_HEROSHAMANDRUNK_FOLDER, VL_HEROSHAMANDRUNK_PASSOUT2_KEY)
     call Voicelines_RegisterKey(VL_HEROSHAMANDRUNK_FOLDER, VL_HEROSHAMANDRUNK_NIGHT1_KEY)
     call Voicelines_RegisterKey(VL_HEROSHAMANDRUNK_FOLDER, VL_HEROSHAMANDRUNK_NIGHT2_KEY)
     call Voicelines_RegisterKey(VL_HEROSHAMANDRUNK_FOLDER, VL_HEROSHAMANDRUNK_NIGHT3_KEY)
@@ -623,6 +708,8 @@ private function Init takes nothing returns nothing
     call Voicelines_RegisterKey(VL_HEROSHAMANDRUNK_FOLDER, VL_HEROSHAMANDRUNK_FORGIVE_KEY)
     call Voicelines_RegisterKey(VL_HEROROGUEDRUNK_FOLDER, VL_HEROROGUEDRUNK_PUKE1_KEY)
     call Voicelines_RegisterKey(VL_HEROROGUEDRUNK_FOLDER, VL_HEROROGUEDRUNK_PUKE2_KEY)
+    call Voicelines_RegisterKey(VL_HEROROGUEDRUNK_FOLDER, VL_HEROROGUEDRUNK_PASSOUT1_KEY)
+    call Voicelines_RegisterKey(VL_HEROROGUEDRUNK_FOLDER, VL_HEROROGUEDRUNK_PASSOUT2_KEY)
     call Voicelines_RegisterKey(VL_HEROROGUEDRUNK_FOLDER, VL_HEROROGUEDRUNK_NIGHT1_KEY)
     call Voicelines_RegisterKey(VL_HEROROGUEDRUNK_FOLDER, VL_HEROROGUEDRUNK_NIGHT2_KEY)
     call Voicelines_RegisterKey(VL_HEROROGUEDRUNK_FOLDER, VL_HEROROGUEDRUNK_NIGHT3_KEY)
@@ -632,6 +719,8 @@ private function Init takes nothing returns nothing
     call Voicelines_RegisterKey(VL_HEROROGUEDRUNK_FOLDER, VL_HEROROGUEDRUNK_FORGIVE_KEY)
     call Voicelines_RegisterKey(VL_HEROWARLOCKDRUNK_FOLDER, VL_HEROWARLOCKDRUNK_PUKE1_KEY)
     call Voicelines_RegisterKey(VL_HEROWARLOCKDRUNK_FOLDER, VL_HEROWARLOCKDRUNK_PUKE2_KEY)
+    call Voicelines_RegisterKey(VL_HEROWARLOCKDRUNK_FOLDER, VL_HEROWARLOCKDRUNK_PASSOUT1_KEY)
+    call Voicelines_RegisterKey(VL_HEROWARLOCKDRUNK_FOLDER, VL_HEROWARLOCKDRUNK_PASSOUT2_KEY)
     call Voicelines_RegisterKey(VL_HEROWARLOCKDRUNK_FOLDER, VL_HEROWARLOCKDRUNK_NIGHT1_KEY)
     call Voicelines_RegisterKey(VL_HEROWARLOCKDRUNK_FOLDER, VL_HEROWARLOCKDRUNK_NIGHT2_KEY)
     call Voicelines_RegisterKey(VL_HEROWARLOCKDRUNK_FOLDER, VL_HEROWARLOCKDRUNK_NIGHT3_KEY)
@@ -641,6 +730,8 @@ private function Init takes nothing returns nothing
     call Voicelines_RegisterKey(VL_HEROWARLOCKDRUNK_FOLDER, VL_HEROWARLOCKDRUNK_FORGIVE_KEY)
     call Voicelines_RegisterKey(VL_HEROWARRIORDRUNK_FOLDER, VL_HEROWARRIORDRUNK_PUKE1_KEY)
     call Voicelines_RegisterKey(VL_HEROWARRIORDRUNK_FOLDER, VL_HEROWARRIORDRUNK_PUKE2_KEY)
+    call Voicelines_RegisterKey(VL_HEROWARRIORDRUNK_FOLDER, VL_HEROWARRIORDRUNK_PASSOUT1_KEY)
+    call Voicelines_RegisterKey(VL_HEROWARRIORDRUNK_FOLDER, VL_HEROWARRIORDRUNK_PASSOUT2_KEY)
     call Voicelines_RegisterKey(VL_HEROWARRIORDRUNK_FOLDER, VL_HEROWARRIORDRUNK_NIGHT1_KEY)
     call Voicelines_RegisterKey(VL_HEROWARRIORDRUNK_FOLDER, VL_HEROWARRIORDRUNK_NIGHT2_KEY)
     call Voicelines_RegisterKey(VL_HEROWARRIORDRUNK_FOLDER, VL_HEROWARRIORDRUNK_NIGHT3_KEY)
@@ -650,6 +741,8 @@ private function Init takes nothing returns nothing
     call Voicelines_RegisterKey(VL_HEROWARRIORDRUNK_FOLDER, VL_HEROWARRIORDRUNK_FORGIVE_KEY)
     call Voicelines_RegisterKey(VL_AVELINEDRUNK_FOLDER, VL_AVELINEDRUNK_PUKE1_KEY)
     call Voicelines_RegisterKey(VL_AVELINEDRUNK_FOLDER, VL_AVELINEDRUNK_PUKE2_KEY)
+    call Voicelines_RegisterKey(VL_AVELINEDRUNK_FOLDER, VL_AVELINEDRUNK_PASSOUT1_KEY)
+    call Voicelines_RegisterKey(VL_AVELINEDRUNK_FOLDER, VL_AVELINEDRUNK_PASSOUT2_KEY)
     call Voicelines_RegisterKey(VL_AVELINEDRUNK_FOLDER, VL_AVELINEDRUNK_NIGHT1_KEY)
     call Voicelines_RegisterKey(VL_AVELINEDRUNK_FOLDER, VL_AVELINEDRUNK_NIGHT2_KEY)
     call Voicelines_RegisterKey(VL_AVELINEDRUNK_FOLDER, VL_AVELINEDRUNK_NIGHT3_KEY)

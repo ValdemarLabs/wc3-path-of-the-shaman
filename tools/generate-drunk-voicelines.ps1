@@ -1,6 +1,8 @@
 param(
     [switch]$DryRun,
     [switch]$Force,
+    [ValidateRange(0.5, 2.0)]
+    [double]$Speed = 1.0,
     [string[]]$OnlyKeys
 )
 
@@ -24,6 +26,7 @@ function Invoke-VoiceBatch {
         Mode = "Generate"
         Keys = $selectedKeys
         ReferenceId = $ReferenceId
+        Speed = $Speed
     }
     if ($DryRun) { $arguments.DryRun = $true }
     if ($Force) { $arguments.Force = $true }
@@ -34,7 +37,7 @@ Push-Location $repoRoot
 try {
     Invoke-VoiceBatch "82895e2c2e62463bb023c0c858a55b9d" @(
         "Nazgrek_DrunkPuke1", "Nazgrek_DrunkPuke2",
-        "Nazgrek_DrunkPassOut1", "Nazgrek_DrunkPassOut2",
+        "Nazgrek_DrunkPassOut1", "Nazgrek_DrunkPassOut2", "Nazgrek_DrunkPassOut3", "Nazgrek_DrunkPassOut4",
         "Nazgrek_HangoverWake1", "Nazgrek_HangoverWake2", "Nazgrek_HangoverWake3",
         "Nazgrek_LastNightQuestion1", "Nazgrek_LastNightQuestion2",
         "Nazgrek_LastNight1", "Nazgrek_LastNight2", "Nazgrek_LastNight3", "Nazgrek_LastNight4", "Nazgrek_LastNight5",
@@ -42,20 +45,20 @@ try {
     )
     Invoke-VoiceBatch "139c8b251a2f4a97a2dbce510e1f94cf" @(
         "Zulkis_DrunkPuke1", "Zulkis_DrunkPuke2",
-        "Zulkis_DrunkPassOut1", "Zulkis_DrunkPassOut2",
+        "Zulkis_DrunkPassOut1", "Zulkis_DrunkPassOut2", "Zulkis_DrunkPassOut3", "Zulkis_DrunkPassOut4",
         "Zulkis_HangoverWake1", "Zulkis_HangoverWake2", "Zulkis_HangoverWake3",
         "Zulkis_LastNightQuestion1", "Zulkis_LastNightQuestion2",
         "Zulkis_LastNight1", "Zulkis_LastNight2", "Zulkis_LastNight3", "Zulkis_LastNight4", "Zulkis_LastNight5",
         "Zulkis_LastNightResponse1", "Zulkis_LastNightResponse2", "Zulkis_LastNightResponse3", "Zulkis_LastNightResponse4", "Zulkis_LastNightResponse5"
     )
 
-    Invoke-VoiceBatch "b901bbbb4b3748e5ae04a4defaf7a3c9" @("HeroEngineer_DrunkPuke1", "HeroEngineer_DrunkPuke2", "HeroEngineer_LastNight1", "HeroEngineer_LastNight2", "HeroEngineer_LastNight3", "HeroEngineer_LastNight4", "HeroEngineer_LastNight5", "HeroEngineer_HangoverTask", "HeroEngineer_HangoverForgive")
-    Invoke-VoiceBatch "ffa580e4304440e2b78bf2a02d493942" @("HeroPaladin_DrunkPuke1", "HeroPaladin_DrunkPuke2", "HeroPaladin_LastNight1", "HeroPaladin_LastNight2", "HeroPaladin_LastNight3", "HeroPaladin_LastNight4", "HeroPaladin_LastNight5", "HeroPaladin_HangoverTask", "HeroPaladin_HangoverForgive")
-    Invoke-VoiceBatch "2f5da025973948bea9c3d21b09a73d8f" @("HeroShaman_DrunkPuke1", "HeroShaman_DrunkPuke2", "HeroShaman_LastNight1", "HeroShaman_LastNight2", "HeroShaman_LastNight3", "HeroShaman_LastNight4", "HeroShaman_LastNight5", "HeroShaman_HangoverTask", "HeroShaman_HangoverForgive")
-    Invoke-VoiceBatch "6f5776ec9e67431b9aee2ed1f17f902d" @("HeroRogue_DrunkPuke1", "HeroRogue_DrunkPuke2", "HeroRogue_LastNight1", "HeroRogue_LastNight2", "HeroRogue_LastNight3", "HeroRogue_LastNight4", "HeroRogue_LastNight5", "HeroRogue_HangoverTask", "HeroRogue_HangoverForgive")
-    Invoke-VoiceBatch "06209f0d44a146b08ba67d5a8d121f74" @("HeroWarlock_DrunkPuke1", "HeroWarlock_DrunkPuke2", "HeroWarlock_LastNight1", "HeroWarlock_LastNight2", "HeroWarlock_LastNight3", "HeroWarlock_LastNight4", "HeroWarlock_LastNight5", "HeroWarlock_HangoverTask", "HeroWarlock_HangoverForgive")
-    Invoke-VoiceBatch "8be8a11dd4524e6a813ac34ce1580008" @("HeroWarrior_DrunkPuke1", "HeroWarrior_DrunkPuke2", "HeroWarrior_LastNight1", "HeroWarrior_LastNight2", "HeroWarrior_LastNight3", "HeroWarrior_LastNight4", "HeroWarrior_LastNight5", "HeroWarrior_HangoverTask", "HeroWarrior_HangoverForgive")
-    Invoke-VoiceBatch "829032b867d447ebbabc6c30ebba911c" @("Aveline_DrunkPuke1", "Aveline_DrunkPuke2", "Aveline_LastNight1", "Aveline_LastNight2", "Aveline_LastNight3", "Aveline_LastNight4", "Aveline_LastNight5", "Aveline_HangoverTask", "Aveline_HangoverForgive")
+    Invoke-VoiceBatch "b901bbbb4b3748e5ae04a4defaf7a3c9" @("HeroEngineer_DrunkPuke1", "HeroEngineer_DrunkPuke2", "HeroEngineer_DrunkPassOut1", "HeroEngineer_DrunkPassOut2", "HeroEngineer_LastNight1", "HeroEngineer_LastNight2", "HeroEngineer_LastNight3", "HeroEngineer_LastNight4", "HeroEngineer_LastNight5", "HeroEngineer_HangoverTask", "HeroEngineer_HangoverForgive")
+    Invoke-VoiceBatch "ffa580e4304440e2b78bf2a02d493942" @("HeroPaladin_DrunkPuke1", "HeroPaladin_DrunkPuke2", "HeroPaladin_DrunkPassOut1", "HeroPaladin_DrunkPassOut2", "HeroPaladin_LastNight1", "HeroPaladin_LastNight2", "HeroPaladin_LastNight3", "HeroPaladin_LastNight4", "HeroPaladin_LastNight5", "HeroPaladin_HangoverTask", "HeroPaladin_HangoverForgive")
+    Invoke-VoiceBatch "2f5da025973948bea9c3d21b09a73d8f" @("HeroShaman_DrunkPuke1", "HeroShaman_DrunkPuke2", "HeroShaman_DrunkPassOut1", "HeroShaman_DrunkPassOut2", "HeroShaman_LastNight1", "HeroShaman_LastNight2", "HeroShaman_LastNight3", "HeroShaman_LastNight4", "HeroShaman_LastNight5", "HeroShaman_HangoverTask", "HeroShaman_HangoverForgive")
+    Invoke-VoiceBatch "6f5776ec9e67431b9aee2ed1f17f902d" @("HeroRogue_DrunkPuke1", "HeroRogue_DrunkPuke2", "HeroRogue_DrunkPassOut1", "HeroRogue_DrunkPassOut2", "HeroRogue_LastNight1", "HeroRogue_LastNight2", "HeroRogue_LastNight3", "HeroRogue_LastNight4", "HeroRogue_LastNight5", "HeroRogue_HangoverTask", "HeroRogue_HangoverForgive")
+    Invoke-VoiceBatch "06209f0d44a146b08ba67d5a8d121f74" @("HeroWarlock_DrunkPuke1", "HeroWarlock_DrunkPuke2", "HeroWarlock_DrunkPassOut1", "HeroWarlock_DrunkPassOut2", "HeroWarlock_LastNight1", "HeroWarlock_LastNight2", "HeroWarlock_LastNight3", "HeroWarlock_LastNight4", "HeroWarlock_LastNight5", "HeroWarlock_HangoverTask", "HeroWarlock_HangoverForgive")
+    Invoke-VoiceBatch "8be8a11dd4524e6a813ac34ce1580008" @("HeroWarrior_DrunkPuke1", "HeroWarrior_DrunkPuke2", "HeroWarrior_DrunkPassOut1", "HeroWarrior_DrunkPassOut2", "HeroWarrior_LastNight1", "HeroWarrior_LastNight2", "HeroWarrior_LastNight3", "HeroWarrior_LastNight4", "HeroWarrior_LastNight5", "HeroWarrior_HangoverTask", "HeroWarrior_HangoverForgive")
+    Invoke-VoiceBatch "829032b867d447ebbabc6c30ebba911c" @("Aveline_DrunkPuke1", "Aveline_DrunkPuke2", "Aveline_DrunkPassOut1", "Aveline_DrunkPassOut2", "Aveline_LastNight1", "Aveline_LastNight2", "Aveline_LastNight3", "Aveline_LastNight4", "Aveline_LastNight5", "Aveline_HangoverTask", "Aveline_HangoverForgive")
 
     Invoke-VoiceBatch "6f5776ec9e67431b9aee2ed1f17f902d" @("GenericOrcMale1_1101", "GenericOrcMale1_1102", "GenericOrcMale1_1103", "GenericOrcMale1_1104", "GenericOrcMale1_1105", "GenericOrcMale1_1106", "GenericOrcMale1_1107")
     Invoke-VoiceBatch "b29f7aa78b9c42098b08a3fab7adbe9f" @("GenericOrcMale3_1101", "GenericOrcMale3_1102", "GenericOrcMale3_1103", "GenericOrcMale3_1104", "GenericOrcMale3_1105", "GenericOrcMale3_1106", "GenericOrcMale3_1107")

@@ -14,6 +14,8 @@ param(
     [int]$Mp3Bitrate = 128,
     [double]$Temperature = 0.7,
     [double]$TopP = 0.7,
+    [ValidateRange(0.5, 2.0)]
+    [double]$Speed = 1.0,
     [ValidateSet("low", "balanced", "normal")]
     [string]$Latency = "normal",
     [int]$Retries = 3,
@@ -697,7 +699,7 @@ function Invoke-FishTextToSpeech {
         latency = $Latency
         normalize = $true
         prosody = @{
-            speed = 1.0
+            speed = $Speed
             volume = 0
             normalize_loudness = $true
         }
