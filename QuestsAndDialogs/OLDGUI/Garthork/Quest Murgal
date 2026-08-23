@@ -1,0 +1,12 @@
+Quest Murgal
+    Events
+    Conditions
+    Actions
+        Unit - Create 1 Mur'gal for Player 12 (Brown) at (Center of Murgal <gen>) facing 310.00 degrees
+        Set VariableSet Murgal = (Last created unit)
+        Wait 5.00 seconds
+        Trigger - Run Quest Murgal Discover <gen> (checking conditions)
+        Wait 10.00 seconds
+        -------- Chat with Zulkis --------
+        Cinematic - Send transmission to (All players) from Zulkis named Zul'kis: Play Zulkis_0004 <gen> and display I be hearin' dat th....  Modify duration: Set to 20.00 seconds and Wait
+        Trigger - Remove (This trigger) from the trigger queue

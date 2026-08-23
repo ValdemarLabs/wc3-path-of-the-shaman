@@ -1,0 +1,177 @@
+Quests of Granis
+    Events
+        Player - Player 1 (Red) Selects a unit
+    Conditions
+        (Triggering unit) Equal to Granis
+        (Distance between (Position of Granis) and (Position of Nazgrek)) Less than or equal to 500.00
+        (Remaining time for DialogOverTimer) Equal to 0.00
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- ======== CINEMATIC STARTS ======== --------
+        Trigger - Run Cinematic ON <gen> (checking conditions)
+        -------- Camera --------
+        Cinematic - Turn cinematic mode On for (All players)
+        Camera - Apply GranisCamera <gen> for Player 1 (Red) over 0.00 seconds
+        Camera - Pan camera for Player 1 (Red) to (Position of Granis) over 1.00 seconds
+        Wait 1.00 seconds
+        Unit - Make Granis face Nazgrek over 0.75 seconds
+        Unit - Make Nazgrek face Granis over 0.75 seconds
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestRoljin is completed) Equal to False
+                (QuestRoljin is discovered) Equal to False
+            Then - Actions
+                -------- INTRODUCTION / PUNISH (ROL'JIN) --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GranisDialog01DeclineBoolean Equal to False
+                    Then - Actions
+                        -------- If the Player has previosly not declined the quest --------
+                        Cinematic - Send transmission to (All players) from Granis named Granis: Play Granis_0001 <gen> and display Lok'tar! What bring....  Modify duration: Set to 4.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0130 <gen> and display I was sent by Hells....  Modify duration: Set to 2.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Granis named Granis: Play Granis_0010 <gen> and display Hear me, brave warr....  Modify duration: Set to 16.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Granis named Granis: Play Granis_0011 <gen> and display The trolls gather s....  Modify duration: Set to 15.00 seconds and Wait
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GranisDialog01DeclineBoolean Equal to True
+                    Then - Actions
+                        -------- If the Player has previosly not declined the quest --------
+                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0135 <gen> and display Lok'tar ogar!.  Modify duration: Set to 2.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Granis named Granis: Play Granis_0012 <gen> and display I've seen too many ....  Modify duration: Set to 15.00 seconds and Wait
+                    Else - Actions
+                -------- Run "Create Dialog" --------
+                Trigger - Run Create GranisDialog01 <gen> (checking conditions)
+                Trigger - Turn on (This trigger)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestRoljin is discovered) Equal to True
+                (QuestRoljin is completed) Equal to False
+                And - All (Conditions) are true
+                    Conditions
+                        (Nazgrek has ItemTrollHead) Equal to False
+                        (Zulkis has ItemTrollHead) Equal to False
+            Then - Actions
+                -------- INTRODUCTION / PUNISH (ROL'JIN) - UNFINISHED --------
+                Cinematic - Send transmission to (All players) from Granis named Granis: Play Granis_0016 <gen> and display I see no trophy of ....  Modify duration: Set to 8.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0143 <gen> and display Rest assured, Rol'j....  Modify duration: Set to 6.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply GranisCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Trigger - Turn on (This trigger)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestRoljin is discovered) Equal to True
+                (QuestRoljin is completed) Equal to False
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Nazgrek has ItemTrollHead) Equal to True
+                        (Zulkis has ItemTrollHead) Equal to True
+            Then - Actions
+                -------- INTRODUCTION / PUNISH (ROL'JIN) - COMPLETED --------
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0144 <gen> and display Let the trolls trem....  Modify duration: Set to 6.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Granis named Granis: Play Granis_0017 <gen> and display Ah, you return, vic....  Modify duration: Set to 19.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply GranisCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                Special Effect - Destroy QuestGiverGranis
+                -------- Rewards --------
+                Item - Remove ItemTrollHead
+                Player - Add 1000 to Player 1 (Red).Current gold
+                Hero - Add 300 experience to Nazgrek, Show level-up graphics
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Wait Campaign quest delay seconds
+                Trigger - Run Quest Roljin Completed <gen> (checking conditions)
+                Trigger - Turn on (This trigger)
+                Skip remaining actions
+            Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (QuestRoljin is completed) Equal to True
+                        (QuestMountainDefense is completed) Equal to False
+                        (QuestMountainDefense is discovered) Equal to False
+                    Then - Actions
+                        -------- MOUNTAIN DEFENSE --------
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                GranisDialog02DeclineBoolean Equal to False
+                            Then - Actions
+                                -------- If the Player has previosly not declined the quest --------
+                                Cinematic - Send transmission to (All players) from Granis named Granis: Play Granis_0025 <gen> and display Our scouts have ret....  Modify duration: Set to 10.00 seconds and Wait
+                                Cinematic - Send transmission to (All players) from Granis named Granis: Play Granis_0026 <gen> and display We must prepare our....  Modify duration: Set to 5.00 seconds and Wait
+                                Cinematic - Send transmission to (All players) from Granis named Granis: Play Granis_0027 <gen> and display Make haste to meet ....  Modify duration: Set to 9.00 seconds and Wait
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                GranisDialog02DeclineBoolean Equal to True
+                            Then - Actions
+                                -------- If the Player has previosly not declined the quest --------
+                                Cinematic - Send transmission to (All players) from Granis named Granis: Play Granis_0027 <gen> and display Make haste to meet ....  Modify duration: Set to 9.00 seconds and Wait
+                            Else - Actions
+                        -------- Run "Create Dialog" --------
+                        Trigger - Run Create GranisDialog02 <gen> (checking conditions)
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (QuestMountainDefense is discovered) Equal to True
+                                (QuestMountainDefense is completed) Equal to False
+                            Then - Actions
+                                -------- use q requirement / etc. to check if done / unfinished --------
+                                -------- MOUNTAIN DEFENSE - UNFINISHED --------
+                                Cinematic - Send transmission to (All players) from Granis named Granis: Play Granis_0040 <gen> and display The gnolls have bec....  Modify duration: Set to 9.00 seconds and Wait
+                                -------- DEFAULT CAMERA --------
+                                Camera - Apply GranisCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                                -------- ======== CINEMATIC ENDS ======== --------
+                                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                                Trigger - Turn on (This trigger)
+                                Skip remaining actions
+                            Else - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (QuestMountainDefense is discovered) Equal to True
+                                        (QuestMountainDefense is completed) Equal to False
+                                        QuestMountainDefenseDone Equal to True
+                                    Then - Actions
+                                        -------- MOUNTAIN DEFENSE - COMPLETED --------
+                                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0166 <gen> and display The savage gnolls h....  Modify duration: Set to 8.00 seconds and Wait
+                                        Cinematic - Send transmission to (All players) from Granis named Granis: Play Granis_0041 <gen> and display Well performed Nazg....  Modify duration: Set to 11.00 seconds and Wait
+                                        Cinematic - Send transmission to (All players) from Granis named Granis: Play Granis_0042 <gen> and display Here is your well e....  Modify duration: Set to 4.00 seconds and Wait
+                                        -------- DEFAULT CAMERA --------
+                                        Camera - Apply GranisCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                                        Special Effect - Destroy QuestGiverGranis
+                                        -------- Rewards --------
+                                        Player - Add 1000 to Player 1 (Red).Current gold
+                                        Hero - Add 300 experience to Nazgrek, Show level-up graphics
+                                        -------- ======== CINEMATIC ENDS ======== --------
+                                        Trigger - Run Cinematic OFF <gen> (checking conditions)
+                                        Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                                        Wait Campaign quest delay seconds
+                                        Trigger - Run Quest Mountain Defense Completed <gen> (checking conditions)
+                                        Trigger - Turn on (This trigger)
+                                        Skip remaining actions
+                                    Else - Actions
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                (QuestRoljin is completed) Equal to True
+                                                (QuestMountainDefense is completed) Equal to True
+                                            Then - Actions
+                                                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0135 <gen> and display Lok'tar ogar!.  Modify duration: Set to 1.00 seconds and Wait
+                                                Cinematic - Send transmission to (All players) from Granis named Granis: Play Granis_0007 <gen> and display Victory or death!.  Modify duration: Set to 2.00 seconds and Wait
+                                                -------- DEFAULT CAMERA --------
+                                                Camera - Apply GranisCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                                                -------- ======== CINEMATIC ENDS ======== --------
+                                                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                                                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                                                Trigger - Turn on (This trigger)
+                                                Skip remaining actions
+                                            Else - Actions

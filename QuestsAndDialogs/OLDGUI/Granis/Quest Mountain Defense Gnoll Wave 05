@@ -1,0 +1,75 @@
+Quest Mountain Defense Gnoll Wave 05
+    Events
+        Time - QuestMountainDefenseWaveTimer expires
+    Conditions
+        (QuestMountainDefense is failed) Equal to False
+    Actions
+        -------- Run / turn on/off triggers --------
+        Trigger - Turn off (This trigger)
+        Trigger - Run Quest Mountain Defense Attack begins <gen> (checking conditions)
+        Trigger - Turn on Quest Mountain Defense Attack during <gen>
+        Trigger - Turn on Quest Mountain Defense Gnoll Wave 05 Finished <gen>
+        Trigger - Turn on Quest Mountain Defense Gnoll Wave Attack Cycle <gen>
+        -------- ================ WAVE ================  --------
+        -------- group 1 --------
+        -------- == MOB --------
+        Set VariableSet VarPoint = (Center of GnollAttackRegion04 <gen>)
+        Unit - Create 1 Gnoll Overseer for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollWaveAttackGroup
+        -------- == MOB --------
+        Unit - Create 1 Gnoll for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollWaveAttackGroup
+        -------- == MOB --------
+        Unit - Create 1 Gnoll for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollWaveAttackGroup
+        -------- == MOB --------
+        Unit - Create 1 Gnoll for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollWaveAttackGroup
+        -------- == MOB --------
+        Unit - Create 1 Gnoll Poacher for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollWaveAttackGroup
+        -------- == MOB --------
+        Unit - Create 1 Gnoll Poacher for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollWaveAttackGroup
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- group 2 --------
+        -------- == MOB --------
+        Set VariableSet VarPoint = (Center of GnollAttackRegion02 <gen>)
+        Unit - Create 1 Gnoll Brute for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollWaveAttackGroup
+        -------- == MOB --------
+        Unit - Create 1 Gnoll Brute for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollWaveAttackGroup
+        -------- == MOB --------
+        Unit - Create 1 Gnoll for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollWaveAttackGroup
+        -------- == MOB --------
+        Unit - Create 1 Gnoll for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollWaveAttackGroup
+        -------- == MOB --------
+        Unit - Create 1 Gnoll for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollWaveAttackGroup
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- group 3 --------
+        Set VariableSet VarPoint = (Center of GnollAttackRegion03 <gen>)
+        Unit - Create 1 Gnoll Brute for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollWaveAttackGroup
+        -------- == MOB --------
+        Unit - Create 1 Gnoll Brute for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollWaveAttackGroup
+        -------- == MOB --------
+        Unit - Create 1 Gnoll for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollWaveAttackGroup
+        -------- == MOB --------
+        Unit - Create 1 Gnoll for Player 12 (Brown) at VarPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to GnollWaveAttackGroup
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- group 4 --------
+        -------- attack --------
+        Set VariableSet VarPoint = (Center of HordeMountainCamp <gen>)
+        Unit Group - Pick every unit in GnollWaveAttackGroup and do (Actions)
+            Loop - Actions
+                Unit - Order (Picked unit) to Attack-Move To VarPoint
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- ================ ================  --------
+        Trigger - Remove (This trigger) from the trigger queue

@@ -1,0 +1,128 @@
+Button Pressed in KrezgrelDialog01
+    Events
+        Dialog - A dialog button is clicked for KrezgrelDialog01
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to KrezgrelDialog01Q1
+            Then - Actions
+                -------- MURLOC FINS - ACCEPT --------
+                Set VariableSet KrezgrelDialog01FarewellBool = True
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Krezgrel named Krezgrel: Play Krezgrel_0020 <gen> and display Our food offerings ....  Modify duration: Set to 7.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Krezgrel named Krezgrel: Play Krezgrel_0021 <gen> and display So, I have an idea.....  Modify duration: Set to 8.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply KrezgrelCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Trigger - Run Quest Murloc Fins <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to KrezgrelDialog01Q1C
+            Then - Actions
+                -------- MURLOC FINS - COMPLETED --------
+                Set VariableSet KrezgrelDialog01FarewellBool = True
+                Cinematic - Disable user control for (All players).
+                Camera - Apply KrezgrelCamera01 <gen> for Player 1 (Red) over 0.00 seconds
+                Cinematic - Send transmission to (All players) from Krezgrel named Krezgrel: Play Krezgrel_0022 <gen> and display Eh, at least it sme....  Modify duration: Set to 4.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply KrezgrelCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- Remove quest items --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Charges remaining in (Item carried by Nazgrek of type Murloc Fin)) Greater than or equal to 10
+                        (Charges remaining in (Item carried by Zulkis of type Murloc Fin)) Less than 20
+                    Then - Actions
+                        Item - Set charges remaining in (Item carried by Nazgrek of type Murloc Fin) to ((Charges remaining in (Item carried by Nazgrek of type Murloc Fin)) - 10)
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Charges remaining in (Item carried by Zulkis of type Murloc Fin)) Greater than or equal to 20
+                        (Charges remaining in (Item carried by Nazgrek of type Murloc Fin)) Less than 10
+                    Then - Actions
+                        Item - Set charges remaining in (Item carried by Zulkis of type Murloc Fin) to ((Charges remaining in (Item carried by Zulkis of type Murloc Fin)) - 10)
+                    Else - Actions
+                -------- Remove Charged items that have 0 charges --------
+                Trigger - Run Item Stack Clear Empty <gen> (checking conditions)
+                -------- Rewards --------
+                Player - Add 300 to Player 1 (Red).Current gold
+                Hero - Add 100 experience to Nazgrek, Show level-up graphics
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Wait Campaign quest delay seconds
+                Trigger - Run Quest Murloc Fins Completed <gen> (checking conditions)
+                -------- Change quest mark --------
+                Special Effect - Destroy QuestGiverKrezgrel
+                Special Effect - Create a special effect attached to the overhead of Krezgrel using war3campImported\ExcMark_Blue_RepetableQuest.mdx
+                Set VariableSet QuestGiverKrezgrel = (Last created special effect)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to KrezgrelDialog01Q2
+            Then - Actions
+                -------- RESCUE THE GRUNTS - ACCEPT --------
+                Set VariableSet KrezgrelDialog01FarewellBool = True
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Krezgrel named Krezgrel: Play Krezgrel_0010 <gen> and display I had some bad news....  Modify duration: Set to 5.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Krezgrel named Krezgrel: Play Krezgrel_0011 <gen> and display Rescue the grunts f....  Modify duration: Set to 4.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Krezgrel named Krezgrel: Play Krezgrel_0012 <gen> and display Hurry before they a....  Modify duration: Set to 5.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply KrezgrelCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                Set VariableSet UpsideGruntsRescuedInt = 0
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Trigger - Run Quest Rescue The Grunts <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to KrezgrelDialog01Q2C
+            Then - Actions
+                -------- RESCUE THE GRUNTS - COMPLETED --------
+                Set VariableSet KrezgrelDialog01FarewellBool = True
+                Cinematic - Disable user control for (All players).
+                Camera - Apply KrezgrelCamera01 <gen> for Player 1 (Red) over 0.00 seconds
+                Cinematic - Send transmission to (All players) from Krezgrel named Krezgrel: Play Krezgrel_0013 <gen> and display You’ve rescued ou....  Modify duration: Set to 6.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Krezgrel named Krezgrel: Play Krezgrel_0014 <gen> and display The warriors who yo....  Modify duration: Set to 3.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply KrezgrelCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- Rewards --------
+                Player - Add 300 to Player 1 (Red).Current gold
+                Hero - Add 100 experience to Nazgrek, Show level-up graphics
+                -------- Restore units --------
+                Unit Group - Pick every unit in PlayerCinemaGroup and do (Actions)
+                    Loop - Actions
+                        Unit - Change ownership of (Picked unit) to Player 1 (Red) and Retain color
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Wait Campaign quest delay seconds
+                Trigger - Run Quest Rescue The Grunts Completed <gen> (checking conditions)
+                -------- Change quest mark --------
+                Special Effect - Destroy QuestGiverKrezgrel
+                Special Effect - Create a special effect attached to the overhead of Krezgrel using war3campImported\ExcMark_Blue_RepetableQuest.mdx
+                Set VariableSet QuestGiverKrezgrel = (Last created special effect)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to KrezgrelDialog01Farewell
+            Then - Actions
+                Set VariableSet KrezgrelDialog01FarewellBool = True
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0004 <gen> and display Until our paths cro....  Modify duration: Set to 5.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Krezgrel named Krezgrel: Play Krezgrel_0007 <gen> and display Well, it seems our ....  Modify duration: Set to 5.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply KrezgrelCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Skip remaining actions
+            Else - Actions

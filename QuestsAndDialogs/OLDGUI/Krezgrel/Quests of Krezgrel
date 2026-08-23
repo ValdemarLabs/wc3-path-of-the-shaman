@@ -1,0 +1,41 @@
+Quests of Krezgrel
+    Events
+        Player - Player 1 (Red) Selects a unit
+    Conditions
+        (Triggering unit) Equal to Krezgrel
+        (Distance between (Position of Krezgrel) and (Position of Nazgrek)) Less than or equal to 500.00
+        (Remaining time for DialogOverTimer) Equal to 0.00
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- ======== CINEMATIC STARTS ======== --------
+        Trigger - Run Cinematic ON <gen> (checking conditions)
+        -------- Camera --------
+        Cinematic - Turn cinematic mode On for (All players)
+        Camera - Pan camera for Player 1 (Red) to (Position of Krezgrel) over 1.00 seconds
+        Camera - Apply KrezgrelCamera02 <gen> for Player 1 (Red) over 0.00 seconds
+        Wait 1.00 seconds
+        Unit - Make Krezgrel face Nazgrek over 0.75 seconds
+        Unit - Make Nazgrek face Krezgrel over 0.75 seconds
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- NORMAL DIALOG --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        KrezgrelDialog01FarewellBool Equal to False
+                    Then - Actions
+                        -------- If the Player has previosly not declined the quest --------
+                        Cinematic - Send transmission to (All players) from Krezgrel named Krezgrel: Play Krezgrel_0001 <gen> and display Greetings, warrior!....  Modify duration: Set to 5.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Krezgrel named Krezgrel: Play Krezgrel_0002 <gen> and display Looking for a taste....  Modify duration: Set to 9.00 seconds and Wait
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        KrezgrelDialog01FarewellBool Equal to True
+                    Then - Actions
+                        Cinematic - Send transmission to (All players) from Krezgrel named Krezgrel: Play Krezgrel_0006 <gen> and display I see you approach ....  Modify duration: Set to 5.00 seconds and Wait
+                    Else - Actions
+                -------- Run "Create Dialog" --------
+                Trigger - Run Create KrezgrelDialog01 <gen> (checking conditions)
+                Trigger - Turn on (This trigger)
+                Skip remaining actions
+            Else - Actions

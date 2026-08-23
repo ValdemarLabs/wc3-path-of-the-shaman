@@ -1,0 +1,11 @@
+Quest Murloc Fins Create
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create the quest objects --------
+        Quest - Create a Required, undiscovered quest titled Murloc Fins with the description Krezgrel wants to y..., using icon path ReplaceableTextures\CommandButtons\BTNMurloc.blp
+        Set VariableSet QuestMurlocFins = (Last created quest)
+        Quest - Create a quest requirement for QuestMurlocFins with the description Gather 10 Murloc fi...
+        Set VariableSet QuestMurlocFinsReqFins = (Last created quest requirement)

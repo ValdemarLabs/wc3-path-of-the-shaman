@@ -1,0 +1,12 @@
+Quest Mountain Defense Gnoll Wave Attack Cycle
+    Events
+        Time - Every (Random real number between 40.00 and 150.00) seconds of game time
+    Conditions
+    Actions
+        -------- This is created to prevent gnolls retriet to their initial spawn locations / or atleast return to attack --------
+        Set VariableSet VarPoint = (Center of HordeMountainCamp <gen>)
+        Unit Group - Pick every unit in GnollWaveAttackGroup and do (Actions)
+            Loop - Actions
+                Unit - Order (Picked unit) to Attack-Move To VarPoint
+        Custom script:   call DestroyGroup(udg_GroupVar)
+        Custom script:   call RemoveLocation(udg_VarPoint)

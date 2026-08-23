@@ -1,0 +1,33 @@
+Create GarthorkDialog01
+    Events
+    Conditions
+    Actions
+        Cinematic - Enable user control for (All players).
+        Dialog - Clear GarthorkDialog01
+        Dialog - Change the title of GarthorkDialog01 to Available Quests
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestMurgal is discovered) Equal to False
+                (QuestMurgal is completed) Equal to False
+            Then - Actions
+                Dialog - Create a dialog button for GarthorkDialog01 labelled The Magical Eye (Ac...
+                Set VariableSet GarthorkDialog01MagicalEye = (Last created dialog Button)
+                Dialog - Show GarthorkDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestMurgal is discovered) Equal to False
+                (QuestMurgal is completed) Equal to False
+            Then - Actions
+                Dialog - Create a dialog button for GarthorkDialog01 labelled - Decline
+                Set VariableSet GarthorkDialog01Decline = (Last created dialog Button)
+                Dialog - Show GarthorkDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestMurgal is completed) Equal to True
+            Then - Actions
+                Dialog - Create a dialog button for GarthorkDialog01 labelled - Farewell
+                Set VariableSet GarthorkDialog01Farewell = (Last created dialog Button)
+                Dialog - Show GarthorkDialog01 for Player 1 (Red)
+            Else - Actions

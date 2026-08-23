@@ -1,0 +1,78 @@
+Create KrezgrelDialog01
+    Events
+    Conditions
+    Actions
+        Dialog - Clear KrezgrelDialog01
+        Dialog - Change the title of KrezgrelDialog01 to Available Quests
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        And - All (Conditions) are true
+                            Conditions
+                                (QuestMurlocFins is discovered) Equal to False
+                                (QuestMurlocFins is completed) Equal to False
+                        And - All (Conditions) are true
+                            Conditions
+                                (QuestMurlocFins is completed) Equal to True
+            Then - Actions
+                -------- Daily Quest - Murloc Fins - Accept --------
+                Dialog - Create a dialog button for KrezgrelDialog01 labelled Murloc Fins (Daily ...
+                Set VariableSet KrezgrelDialog01Q1 = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show KrezgrelDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestMurlocFins is discovered) Equal to True
+                (QuestMurlocFins is completed) Equal to False
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Charges remaining in (Item carried by Nazgrek of type Murloc Fin)) Greater than or equal to 10
+                        (Charges remaining in (Item carried by Zulkis of type Murloc Fin)) Greater than or equal to 10
+            Then - Actions
+                -------- Daily Quest - Murloc Fins - Completion --------
+                Dialog - Create a dialog button for KrezgrelDialog01 labelled Murloc Fins (Comple...
+                Set VariableSet KrezgrelDialog01Q1C = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show KrezgrelDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        And - All (Conditions) are true
+                            Conditions
+                                (QuestRescueGrunts is discovered) Equal to False
+                                (QuestRescueGrunts is completed) Equal to False
+                        And - All (Conditions) are true
+                            Conditions
+                                (QuestRescueGrunts is completed) Equal to True
+            Then - Actions
+                -------- Daily Quest - Rescue The Grunts - Accept --------
+                Dialog - Create a dialog button for KrezgrelDialog01 labelled Rescue The Grunts (...
+                Set VariableSet KrezgrelDialog01Q2 = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show KrezgrelDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestRescueGrunts is discovered) Equal to True
+                (QuestRescueGrunts is completed) Equal to False
+                UpsideGruntsRescuedInt Greater than or equal to 3
+            Then - Actions
+                -------- Daily Quest - Rescue The Grunts - Completion --------
+                Dialog - Create a dialog button for KrezgrelDialog01 labelled Rescue The Grunts (...
+                Set VariableSet KrezgrelDialog01Q2C = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show KrezgrelDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- Exit dialog --------
+                Dialog - Create a dialog button for KrezgrelDialog01 labelled - Farewell
+                Set VariableSet KrezgrelDialog01Farewell = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show KrezgrelDialog01 for Player 1 (Red)
+            Else - Actions

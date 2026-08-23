@@ -1,0 +1,78 @@
+Quest Mountain Defense Gnoll Wave 08 Finished
+    Events
+        Time - Every 2.00 seconds of game time
+    Conditions
+        (All units of GnollWaveAttackGroup are dead) Equal to True
+        (QuestMountainDefense is failed) Equal to False
+    Actions
+        Trigger - Turn off (This trigger)
+        Trigger - Turn off Quest Mountain Defense Attack during <gen>
+        Trigger - Turn on Quest Mountain Defense Gnoll Wave 09 <gen>
+        Countdown Timer - Start QuestMountainDefenseWaveTimer as a One-shot timer that will expire in (Random real number between 30.00 and 60.00) seconds
+        -------- Create helper items --------
+        Set VariableSet QuestMountainDefenseItemChance = (Random integer number between 1 and 10)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                QuestMountainDefenseItemChance Equal to 1
+            Then - Actions
+                Set VariableSet VarPoint = (Center of MountainDefenseItems <gen>)
+                Item - Create Healing Salve at VarPoint
+                Item - Create |cFFFFFFFFSpring Water|r at VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Set VariableSet QuestMountainDefenseItemChance = 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                QuestMountainDefenseItemChance Equal to 2
+            Then - Actions
+                Set VariableSet VarPoint = (Center of MountainDefenseItems <gen>)
+                Item - Create Healing Potion at VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Set VariableSet QuestMountainDefenseItemChance = 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                QuestMountainDefenseItemChance Equal to 3
+            Then - Actions
+                Set VariableSet VarPoint = (Center of MountainDefenseItems <gen>)
+                Item - Create Scroll of Restoration at VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Set VariableSet QuestMountainDefenseItemChance = 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                QuestMountainDefenseItemChance Equal to 4
+            Then - Actions
+                Set VariableSet VarPoint = (Center of MountainDefenseItems <gen>)
+                Item - Create Scroll of Healing at VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Set VariableSet QuestMountainDefenseItemChance = 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                QuestMountainDefenseItemChance Equal to 5
+            Then - Actions
+                Set VariableSet VarPoint = (Center of MountainDefenseItems <gen>)
+                Item - Create Scroll of Mana at VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Set VariableSet QuestMountainDefenseItemChance = 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                QuestMountainDefenseItemChance Equal to 6
+            Then - Actions
+                Set VariableSet VarPoint = (Center of MountainDefenseItems <gen>)
+                Item - Create Health Stone at VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Set VariableSet QuestMountainDefenseItemChance = 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                QuestMountainDefenseItemChance Equal to 7
+            Then - Actions
+                Set VariableSet VarPoint = (Center of MountainDefenseItems <gen>)
+                Item - Create Replenishment Potion at VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Set VariableSet QuestMountainDefenseItemChance = 0
+            Else - Actions
+        Trigger - Remove (This trigger) from the trigger queue

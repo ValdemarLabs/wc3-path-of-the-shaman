@@ -1,0 +1,11 @@
+Quest Murgal Create
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create the quest objects --------
+        Quest - Create a Required, undiscovered quest titled The Magical Eye with the description Gar'thork wants you..., using icon path ReplaceableTextures\CommandButtons\BTNMurloc.blp
+        Set VariableSet QuestMurgal = (Last created quest)
+        Quest - Create a quest requirement for QuestMurgal with the description Bring Mur'gal's mag...
+        Set VariableSet QuestMurgalReqEye = (Last created quest requirement)

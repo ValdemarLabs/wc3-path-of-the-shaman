@@ -1,0 +1,7 @@
+Quest Rescue The Grunts Grunt Remove
+    Events
+        Unit - A unit enters UpsideGruntRemoval <gen>
+    Conditions
+        ((Triggering unit) is in UpsideGruntGroup.) Equal to True
+    Actions
+        Unit - Remove (Triggering unit) from the game

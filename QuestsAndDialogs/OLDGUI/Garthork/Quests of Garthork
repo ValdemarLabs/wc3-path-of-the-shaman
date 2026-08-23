@@ -1,0 +1,139 @@
+Quests of Garthork
+    Events
+        Player - Player 1 (Red) Selects a unit
+    Conditions
+        (Triggering unit) Equal to Garthork
+        (Distance between (Position of Garthork) and (Position of Nazgrek)) Less than or equal to 500.00
+        (Remaining time for DialogOverTimer) Equal to 0.00
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Music --------
+        Set VariableSet ExMusicInteger = 18
+        Custom script:   call ExMusic_PlayTrack(udg_ExMusicInteger)
+        -------- ======== CINEMATIC STARTS ======== --------
+        Trigger - Run Cinematic ON <gen> (checking conditions)
+        -------- Camera --------
+        Cinematic - Turn cinematic mode On for (All players)
+        Camera - Apply GarthorkCamera01 <gen> for Player 1 (Red) over 0.00 seconds
+        Camera - Pan camera for Player 1 (Red) to (Position of Garthork) over 1.00 seconds
+        Wait 1.00 seconds
+        Unit - Make Garthork face Nazgrek over 0.75 seconds
+        Unit - Make Nazgrek face Garthork over 0.75 seconds
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestMurgal is completed) Equal to False
+                (QuestMurgal is discovered) Equal to False
+            Then - Actions
+                -------- INTRODUCTION / MAGICAL EYE --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GarthorkDialog01DeclineBoolean Equal to False
+                    Then - Actions
+                        -------- If the Player has previosly not declined the quest --------
+                        Cinematic - Send transmission to (All players) from Garthork named Gar'thork: Play Garthork_0002 <gen> and display Greetings, fellow s....  Modify duration: Set to 15.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0072 <gen> and display Lok'tar, Garthork! ....  Modify duration: Set to 8.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0073 <gen> and display What is your story ....  Modify duration: Set to 2.00 seconds and Wait
+                        Camera - Apply GarthorkCamera02 <gen> for Player 1 (Red) over 0.00 seconds
+                        Camera - Apply GarthorkCamera03 <gen> for Player 1 (Red) over 25.00 seconds
+                        Cinematic - Send transmission to (All players) from Garthork named Gar'thork: Play Garthork_0003 <gen> and display I once stood by Ner....  Modify duration: Set to 24.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Garthork named Gar'thork: Play Garthork_0004 <gen> and display You Nazgrek, were a....  Modify duration: Set to 7.00 seconds and Wait
+                        Camera - Apply GarthorkCamera05 <gen> for Player 1 (Red) over 0.00 seconds
+                        Camera - Apply GarthorkCamera04 <gen> for Player 1 (Red) over 22.00 seconds
+                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0074 <gen> and display Yes... That is corr....  Modify duration: Set to 22.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Garthork named Gar'thork: Play Garthork_0005 <gen> and display You and I show the ....  Modify duration: Set to 24.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Garthork named Gar'thork: Play Garthork_0010 <gen> and display I sense a great pot....  Modify duration: Set to 10.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0080 <gen> and display What are you talkin....  Modify duration: Set to 5.00 seconds and Wait
+                        Camera - Apply GarthorkCamera03 <gen> for Player 1 (Red) over 0.00 seconds
+                        Cinematic - Send transmission to (All players) from Garthork named Gar'thork: Play Garthork_0011 <gen> and display The murlocs don't e....  Modify duration: Set to 19.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0081 <gen> and display What is this magica....  Modify duration: Set to 5.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Garthork named Gar'thork: Play Garthork_0012 <gen> and display The magical power l....  Modify duration: Set to 20.00 seconds and Don't wait
+                        Wait 20.00 seconds
+                        Cinematic - Send transmission to (All players) from Garthork named Gar'thork: Play No sound and display This murloc is more....  Modify duration: Set to 19.00 seconds and Don't wait
+                        Wait 19.00 seconds
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GarthorkDialog01DeclineBoolean Equal to True
+                    Then - Actions
+                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0076 <gen> and display Hello Garthork..  Modify duration: Set to 2.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Garthork named Gar'thork: Play Garthork_0011 <gen> and display The murlocs don't e....  Modify duration: Set to 19.00 seconds and Wait
+                    Else - Actions
+                Trigger - Run Create GarthorkDialog01 <gen> (checking conditions)
+                Trigger - Turn on (This trigger)
+                Skip remaining actions
+            Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (QuestMurgal is discovered) Equal to True
+                        (QuestMurgal is completed) Equal to False
+                        And - All (Conditions) are true
+                            Conditions
+                                (Nazgrek has ItemMagicalEye) Equal to False
+                                (Zulkis has ItemMagicalEye) Equal to False
+                    Then - Actions
+                        -------- INTRODUCTION / MAGICAL EYE - UNFINISHED --------
+                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0085 <gen> and display I have not found th....  Modify duration: Set to 3.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Garthork named Gar'thork: Play Garthork_0015 <gen> and display The magic within th....  Modify duration: Set to 11.00 seconds and Wait
+                        -------- DEFAULT CAMERA --------
+                        Camera - Apply GarthorkCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                        -------- ======== CINEMATIC ENDS ======== --------
+                        Trigger - Run Cinematic OFF <gen> (checking conditions)
+                        Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                        -------- Music --------
+                        Set VariableSet ExMusicInteger = 0
+                        Custom script:   call ExMusic_PlayTrack(udg_ExMusicInteger)
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (QuestMurgal is discovered) Equal to True
+                                (QuestMurgal is completed) Equal to False
+                                Or - Any (Conditions) are true
+                                    Conditions
+                                        (Nazgrek has ItemMagicalEye) Equal to True
+                                        (Zulkis has ItemMagicalEye) Equal to True
+                            Then - Actions
+                                -------- INTRODUCTION / MAGICAL EYE - COMPLETED --------
+                                Cinematic - Send transmission to (All players) from Garthork named Gar'thork: Play Garthork_0016 <gen> and display You have returned v....  Modify duration: Set to 16.00 seconds and Wait
+                                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0087 <gen> and display Poor murlocs though....  Modify duration: Set to 8.00 seconds and Wait
+                                Cinematic - Send transmission to (All players) from Garthork named Gar'thork: Play Garthork_0017 <gen> and display Here is a reward fo....  Modify duration: Set to 5.00 seconds and Wait
+                                -------- DEFAULT CAMERA --------
+                                Camera - Apply GarthorkCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                                Special Effect - Destroy QuestGiverGarthork
+                                -------- Rewards --------
+                                Item - Remove ItemMagicalEye
+                                Item - Create Adept Shaman Claws at (Center of RewardsOfGarthork <gen>)
+                                Player - Add 250 to Player 1 (Red).Current gold
+                                Hero - Add 300 experience to Nazgrek, Show level-up graphics
+                                -------- Restore units --------
+                                Unit Group - Pick every unit in PlayerCinemaGroup and do (Actions)
+                                    Loop - Actions
+                                        Unit - Change ownership of (Picked unit) to Player 1 (Red) and Retain color
+                                -------- Music --------
+                                Set VariableSet ExMusicInteger = 0
+                                Custom script:   call ExMusic_PlayTrack(udg_ExMusicInteger)
+                                -------- ======== CINEMATIC ENDS ======== --------
+                                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                                Wait Campaign quest delay seconds
+                                Trigger - Run Quest Murgal Completed <gen> (checking conditions)
+                                Trigger - Turn on (This trigger)
+                                Skip remaining actions
+                            Else - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (QuestMurgal is completed) Equal to True
+                                    Then - Actions
+                                        Cinematic - Send transmission to (All players) from Garthork named Gar'thork: Play Garthork_0007 <gen> and display May the ancestors w....  Modify duration: Set to 5.00 seconds and Wait
+                                        -------- DEFAULT CAMERA --------
+                                        Camera - Apply GarthorkCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                                        -------- Music --------
+                                        Set VariableSet ExMusicInteger = 0
+                                        Custom script:   call ExMusic_PlayTrack(udg_ExMusicInteger)
+                                        -------- ======== CINEMATIC ENDS ======== --------
+                                        Trigger - Run Cinematic OFF <gen> (checking conditions)
+                                        Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                                        Trigger - Turn on (This trigger)
+                                        Skip remaining actions
+                                    Else - Actions

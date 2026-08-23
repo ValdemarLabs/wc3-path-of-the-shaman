@@ -1,0 +1,54 @@
+Button Pressed in GranisDialog01
+    Events
+        Dialog - A dialog button is clicked for GranisDialog01
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to GranisDialog01Punish
+            Then - Actions
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0140 <gen> and display The threat of the f....  Modify duration: Set to 8.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Granis named Granis: Play Granis_0013 <gen> and display Venture into the he....  Modify duration: Set to 13.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0141 <gen> and display I've faced countles....  Modify duration: Set to 8.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Granis named Granis: Play Granis_0014 <gen> and display Do not underestimat....  Modify duration: Set to 18.00 seconds and Wait
+                Special Effect - Destroy QuestGiverGranis
+                Special Effect - Create a special effect attached to the overhead of Granis using war3campImported\Completed_Quest_NOT.mdx
+                Set VariableSet QuestGiverGranis = (Last created special effect)
+                -------- DEFAULT CAMERA --------
+                Camera - Apply GranisCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Trigger - Run Quest Roljin <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to GranisDialog01Decline
+            Then - Actions
+                Set VariableSet GranisDialog01DeclineBoolean = True
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0142 <gen> and display I have better thing....  Modify duration: Set to 2.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Granis named Granis: Play Granis_0015 <gen> and display The threat of Rol'j....  Modify duration: Set to 14.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply GranisCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to GranisDialog01Farewell
+            Then - Actions
+                Set VariableSet GranisDialog01DeclineBoolean = True
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0136 <gen> and display Farewell..  Modify duration: Set to 1.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply GranisCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Skip remaining actions
+            Else - Actions

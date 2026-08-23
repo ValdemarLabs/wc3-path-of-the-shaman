@@ -1,0 +1,11 @@
+Quest Mountain Defense Create
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create the quest objects --------
+        Quest - Create a Required, undiscovered quest titled Mountain Defense with the description Aid Ragno in defens..., using icon path ReplaceableTextures\CommandButtons\BTNDefend.blp
+        Set VariableSet QuestMountainDefense = (Last created quest)
+        Quest - Create a quest requirement for QuestMountainDefense with the description Aid Ragno in defens...
+        Set VariableSet QuestMountainDefenseReq1 = (Last created quest requirement)

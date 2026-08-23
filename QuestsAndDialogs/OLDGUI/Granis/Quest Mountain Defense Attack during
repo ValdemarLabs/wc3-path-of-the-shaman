@@ -1,0 +1,28 @@
+Quest Mountain Defense Attack during
+    Events
+        Time - Every (Random real number between 60.00 and 120.00) seconds of game time
+    Conditions
+    Actions
+        Set VariableSet RandomVoiceLine = (Random integer number between 1 and 3)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                RandomVoiceLine Equal to 1
+            Then - Actions
+                Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0060 <gen> and display Die you mongrels!.  Modify duration: Set to 2.00 seconds and Wait
+                Set VariableSet RandomVoiceLine = 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                RandomVoiceLine Equal to 2
+            Then - Actions
+                Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0061 <gen> and display Stay down!.  Modify duration: Set to 2.00 seconds and Wait
+                Set VariableSet RandomVoiceLine = 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                RandomVoiceLine Equal to 3
+            Then - Actions
+                Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0062 <gen> and display We are loosing in n....  Modify duration: Set to 3.00 seconds and Wait
+                Set VariableSet RandomVoiceLine = 0
+            Else - Actions
+        Trigger - Remove (This trigger) from the trigger queue

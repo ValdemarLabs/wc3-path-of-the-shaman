@@ -1,0 +1,56 @@
+Button Pressed in GarthorkDialog01
+    Events
+        Dialog - A dialog button is clicked for GarthorkDialog01
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to GarthorkDialog01MagicalEye
+            Then - Actions
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0083 <gen> and display That sounds intrigu....  Modify duration: Set to 8.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Garthork named Gar'thork: Play Garthork_0013 <gen> and display You'll find the Mur....  Modify duration: Set to 8.00 seconds and Wait
+                Special Effect - Destroy QuestGiverGarthork
+                Special Effect - Create a special effect attached to the overhead of Garthork using war3campImported\Completed_Quest_NOT.mdx
+                Set VariableSet QuestGiverGarthork = (Last created special effect)
+                -------- DEFAULT CAMERA --------
+                Camera - Apply GarthorkCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Trigger - Run Quest Murgal <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to GarthorkDialog01Decline
+            Then - Actions
+                Set VariableSet GarthorkDialog01DeclineBoolean = True
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0084 <gen> and display I apologize, but th....  Modify duration: Set to 9.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Garthork named Gar'thork: Play Garthork_0014 <gen> and display Your choice is resp....  Modify duration: Set to 16.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply GarthorkCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- Music --------
+                Sound - Clear the music list
+                Sound - Play Music
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to GarthorkDialog01Farewell
+            Then - Actions
+                Set VariableSet GarthorkDialog01DeclineBoolean = True
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0077 <gen> and display Dabu, friend. Until....  Modify duration: Set to 4.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply GarthorkCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- Music --------
+                Sound - Clear the music list
+                Sound - Play Music
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+            Else - Actions

@@ -1,0 +1,11 @@
+Quest Roljin Create
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create the quest objects --------
+        Quest - Create a Required, undiscovered quest titled Punish with the description Granis wants you to..., using icon path ReplaceableTextures\CommandButtons\BTNForestTroll.blp
+        Set VariableSet QuestRoljin = (Last created quest)
+        Quest - Create a quest requirement for QuestRoljin with the description Bring Rol'jin's hea...
+        Set VariableSet QuestRoljinReqHead = (Last created quest requirement)

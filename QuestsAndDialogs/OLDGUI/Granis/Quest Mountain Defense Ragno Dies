@@ -1,0 +1,31 @@
+Quest Mountain Defense Ragno Dies
+    Events
+        Unit - A unit Dies
+    Conditions
+        (Triggering unit) Equal to Ragno
+    Actions
+        Trigger - Turn off (This trigger)
+        Trigger - Turn off Quest Mountain Defense Attack during <gen>
+        Trigger - Turn off Quest Mountain Defense Too Many Orcs Die <gen>
+        Trigger - Turn off Quest Mountain Defense Gnoll Wave Attack Cycle <gen>
+        Wait Campaign quest delay seconds
+        Trigger - Run Quest Mountain Defense Failure 1 <gen> (checking conditions)
+        -------- Remove attack wave group(s) --------
+        -------- Turn off necessary triggers --------
+        -------- Fade Out --------
+        Cinematic - Fade out over 1.00 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        Wait 1.00 seconds
+        -------- Pick all quest related orcs --------
+        Unit Group - Pick every unit in QuestMountainDefenseOrcs and do (Actions)
+            Loop - Actions
+                Unit - Remove (Picked unit) from the game
+        -------- Pick all mountain outpost orcs and make them invisible --------
+        Unit Group - Pick every unit in (Units in HordeMountainCamp2 <gen> owned by Player 6 (Orange)) and do (Actions)
+            Loop - Actions
+                Unit - Unhide (Picked unit)
+        -------- Fade In --------
+        Cinematic - Fade in over 1.00 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        Wait Campaign quest delay seconds
+        Set VariableSet QuestMountainDefenseActive = False
+        Unit - Change ownership of Ragno to Player 6 (Orange) and Change color
+        Trigger - Remove (This trigger) from the trigger queue

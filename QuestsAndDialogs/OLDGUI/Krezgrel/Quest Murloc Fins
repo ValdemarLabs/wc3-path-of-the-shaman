@@ -1,0 +1,12 @@
+Quest Murloc Fins
+    Events
+    Conditions
+    Actions
+        -------- RESET Quest, if previously done --------
+        Quest - Mark QuestMurlocFins as Incomplete
+        Quest - Mark QuestMurlocFinsReqFins as Incomplete
+        -------- Quest related triggers / activities --------
+        -------- Quest activate --------
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Murloc Fins Discover <gen> (checking conditions)
+        Trigger - Remove (This trigger) from the trigger queue

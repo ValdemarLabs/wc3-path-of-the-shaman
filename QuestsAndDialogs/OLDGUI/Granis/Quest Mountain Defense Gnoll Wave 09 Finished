@@ -1,0 +1,62 @@
+Quest Mountain Defense Gnoll Wave 09 Finished
+    Events
+        Time - Every 2.00 seconds of game time
+    Conditions
+        (All units of GnollWaveAttackGroup are dead) Equal to True
+        (QuestMountainDefense is failed) Equal to False
+    Actions
+        -------- ======== CINEMATIC STARTS ======== --------
+        Trigger - Run Cinematic ON <gen> (checking conditions)
+        -------- Run / turn on/off triggers --------
+        Trigger - Turn off (This trigger)
+        Trigger - Turn off Quest Mountain Defense Attack during <gen>
+        Trigger - Turn off Quest Mountain Defense Ragno Dies <gen>
+        Trigger - Turn off Quest Mountain Defense Too Many Orcs Die <gen>
+        Trigger - Turn off Quest Mountain Defense Gnoll Wave Attack Cycle <gen>
+        -------- Fade Out --------
+        Cinematic - Fade out over 1.00 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        Wait 1.00 seconds
+        Set VariableSet VarPoint = (Center of MountainDefenseCin1 <gen>)
+        Unit - Move Ragno instantly to VarPoint, facing 285.00 degrees
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Center of MountainDefenseCin2 <gen>)
+        Unit - Move Nazgrek instantly to VarPoint, facing 240.00 degrees
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- Run cinematic / voice lines --------
+        -------- Camera --------
+        Cinematic - Turn cinematic mode On for (All players)
+        Camera - Apply MountainDefenseOver01 <gen> for Player 1 (Red) over 0.00 seconds
+        Camera - Pan camera for Player 1 (Red) to (Position of Ragno) over 1.00 seconds
+        Wait 1.00 seconds
+        Unit - Make Ragno face Nazgrek over 0.75 seconds
+        Unit - Make Nazgrek face Ragno over 0.75 seconds
+        Camera - Apply MountainDefenseOver01 <gen> for Player 1 (Red) over 0.00 seconds
+        Camera - Apply MountainDefenseOver02 <gen> for Player 1 (Red) over 10.00 seconds
+        Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0063 <gen> and display The gnoll attack is....  Modify duration: Set to 3.00 seconds and Wait
+        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0163 <gen> and display Though the battle m....  Modify duration: Set to 6.00 seconds and Wait
+        Wait 1.00 seconds
+        Camera - Apply MountainDefenseOver04 <gen> for Player 1 (Red) over 0.00 seconds
+        Camera - Apply MountainDefenseOver03 <gen> for Player 1 (Red) over 15.00 seconds
+        Cinematic - Send transmission to (All players) from Ragno named Ragno: Play OrcGrunt_0064 <gen> and display Yes, I fear that th....  Modify duration: Set to 8.00 seconds and Wait
+        -------- Fade Out --------
+        Cinematic - Fade out over 1.00 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        Wait 1.00 seconds
+        -------- Pick all quest related orcs --------
+        Unit Group - Pick every unit in QuestMountainDefenseOrcs and do (Actions)
+            Loop - Actions
+                Unit - Remove (Picked unit) from the game
+        -------- Pick all mountain outpost orcs and make them invisible --------
+        Unit Group - Pick every unit in (Units in HordeMountainCamp2 <gen> owned by Player 6 (Orange)) and do (Actions)
+            Loop - Actions
+                Unit - Unhide (Picked unit)
+        -------- Fade In --------
+        Cinematic - Fade in over 1.00 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        Camera - Apply RagnoCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+        -------- ======== CINEMATIC ENDS ======== --------
+        Trigger - Run Cinematic OFF <gen> (checking conditions)
+        -------- ==== Return gaming mode END ==== --------
+        Wait Campaign quest delay seconds
+        Trigger - Run Quest Mountain Defense Update 2 <gen> (checking conditions)
+        Set VariableSet QuestMountainDefenseDone = True
+        Set VariableSet QuestMountainDefenseActive = False
+        Trigger - Remove (This trigger) from the trigger queue

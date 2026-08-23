@@ -1,0 +1,12 @@
+Quest Rescue The Grunts Completed
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Rescue The Grunts Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestRescueGrunts as Discovered
+        Quest - Mark QuestRescueGruntsReq as Completed
+        Quest - Mark QuestRescueGrunts as Completed
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Completed message: |cffffcc00DAILY QUE...

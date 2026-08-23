@@ -1,0 +1,112 @@
+Quest Rescue The Grunts Grunt Selected
+    Events
+        Player - Player 1 (Red) Selects a unit
+    Conditions
+        (QuestRescueGrunts is discovered) Equal to True
+        (QuestRescueGrunts is completed) Equal to False
+        (Unit-type of (Triggering unit)) Equal to Grunt (Upsidedown)
+        Or - Any (Conditions) are true
+            Conditions
+                (Distance between (Position of (Triggering unit)) and (Position of Nazgrek)) Less than or equal to 250.00
+                (Distance between (Position of (Triggering unit)) and (Position of Zulkis)) Less than or equal to 250.00
+        UpsideGruntsRescuedInt Less than 3
+    Actions
+        Trigger - Turn off (This trigger)
+        Set VariableSet UpsideGrunt_Index = (UpsideGrunt_Index + 1)
+        Set VariableSet UpsideGrunt[UpsideGrunt_Index] = (Triggering unit)
+        -------- Dead orc --------
+        Set VariableSet UpsideGruntChance = (Random integer number between 1 and 2)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                UpsideGruntChance Equal to 1
+            Then - Actions
+                Sound - Play WaterSplash <gen> at 100.00% volume, attached to UpsideGrunt[UpsideGrunt_Index]
+                Special Effect - Create a special effect attached to the origin of (Triggering unit) using war3campImported\Water_Effect.mdx
+                Set VariableSet UpsideGruntEffect = (Last created special effect)
+                Wait 0.50 seconds
+                Unit - Hide UpsideGrunt[UpsideGrunt_Index]
+                -------- Unhide Loop --------
+                Set VariableSet UpsideGrunt_Counter[UpsideGrunt_Index] = 0
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        UpsideGrunt_Index Greater than or equal to 1
+                    Then - Actions
+                        Trigger - Turn on Quest Rescue The Grunts Grunt Unhide Loop <gen>
+                    Else - Actions
+                -------- Unhide loop ends --------
+                Special Effect - Destroy UpsideGruntEffect
+                Set VariableSet VarPoint = (Position of UpsideGrunt[UpsideGrunt_Index])
+                Unit - Create 1 Grunt for Player 2 (Blue) at VarPoint facing (Random angle) degrees
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Unit - Kill (Last created unit)
+                Floating Text - Create floating text that reads Grunt has drowned! above (Last created unit) with Z offset 25.00, using font size 13.00, color (100.00%, 5.00%, 10.00%), and 0.00% transparency
+                Floating Text - Set the velocity of (Last created floating text) to 75.00 towards 90.00 degrees
+                Floating Text - Change (Last created floating text): Disable permanence
+                Floating Text - Change the lifespan of (Last created floating text) to 3.50 seconds
+                Floating Text - Change the fading age of (Last created floating text) to 1.40 seconds
+                Trigger - Turn on (This trigger)
+                Skip remaining actions
+            Else - Actions
+        -------- Living orc --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                UpsideGruntChance Equal to 2
+            Then - Actions
+                Set VariableSet UpsideGruntsRescuedInt = (UpsideGruntsRescuedInt + 1)
+                Sound - Play WaterSplash <gen> at 100.00% volume, attached to UpsideGrunt[UpsideGrunt_Index]
+                Special Effect - Create a special effect attached to the origin of (Triggering unit) using war3campImported\Water_Effect.mdx
+                Set VariableSet UpsideGruntEffect = (Last created special effect)
+                Wait 0.50 seconds
+                Unit - Hide UpsideGrunt[UpsideGrunt_Index]
+                -------- Unhide Loop --------
+                Set VariableSet UpsideGrunt_Counter[UpsideGrunt_Index] = 0
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        UpsideGrunt_Index Greater than or equal to 1
+                    Then - Actions
+                        Trigger - Turn on Quest Rescue The Grunts Grunt Unhide Loop <gen>
+                    Else - Actions
+                -------- Unhide loop ends --------
+                Special Effect - Destroy UpsideGruntEffect
+                Set VariableSet VarPoint = (Position of UpsideGrunt[UpsideGrunt_Index])
+                Unit - Create 1 Grunt for Player 2 (Blue) at VarPoint facing (Random angle) degrees
+                Unit Group - Add (Last created unit) to UpsideGruntGroup
+                Set VariableSet UpsideGruntRescued = (Last created unit)
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Set VariableSet UpsideGruntChatChance = (Random integer number between 1 and 3)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        UpsideGruntChatChance Equal to 1
+                    Then - Actions
+                        Cinematic - Send transmission to (All players) from (Last created unit) named Grunt: Play OrcGrunt_0120 <gen> and display Well that was horri....  Modify duration: Set to 3.00 seconds and Wait
+                        Wait 1.00 seconds
+                        Set VariableSet VarPoint = (Center of UpsideGruntRemoval <gen>)
+                        Unit - Order UpsideGruntRescued to Move To VarPoint
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        UpsideGruntChatChance Equal to 2
+                    Then - Actions
+                        Cinematic - Send transmission to (All players) from (Last created unit) named Grunt: Play OrcGrunt_0121 <gen> and display I would not have be....  Modify duration: Set to 4.00 seconds and Wait
+                        Wait 1.00 seconds
+                        Set VariableSet VarPoint = (Center of UpsideGruntRemoval <gen>)
+                        Unit - Order UpsideGruntRescued to Move To VarPoint
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        UpsideGruntChatChance Equal to 3
+                    Then - Actions
+                        Cinematic - Send transmission to (All players) from (Last created unit) named Grunt: Play OrcGrunt_0122 <gen> and display These damn murlocs!.  Modify duration: Set to 3.00 seconds and Wait
+                        Wait 1.00 seconds
+                        Set VariableSet VarPoint = (Center of UpsideGruntRemoval <gen>)
+                        Unit - Order UpsideGruntRescued to Move To VarPoint
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+                    Else - Actions
+                -------- Update Quest --------
+                Quest - Change the description of QuestRescueGruntsReq to (Grunts rescued:  + ((String(UpsideGruntsRescuedInt)) +  / 3))
+                Quest - Display to (All players) the Quest Update message: |cffffcc00DAILY QUE...
+                Quest - Display to (All players) the Quest Update message: (Grunts rescued:  + ((String(UpsideGruntsRescuedInt)) +  / 3))
+                Trigger - Turn on (This trigger)
+            Else - Actions

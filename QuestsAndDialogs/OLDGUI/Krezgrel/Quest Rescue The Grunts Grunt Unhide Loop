@@ -1,0 +1,24 @@
+Quest Rescue The Grunts Grunt Unhide Loop
+    Events
+        Time - Every 1.00 seconds of game time
+    Conditions
+    Actions
+        For each (Integer UpsideGruntLoopInteger) from 1 to UpsideGrunt_Index, do (Actions)
+            Loop - Actions
+                Set VariableSet UpsideGrunt_Counter[UpsideGruntLoopInteger] = (UpsideGrunt_Counter[UpsideGruntLoopInteger] + 1)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        UpsideGrunt_Counter[UpsideGruntLoopInteger] Greater than or equal to 240
+                    Then - Actions
+                        Unit - Unhide UpsideGrunt[UpsideGruntLoopInteger]
+                        Set VariableSet UpsideGrunt[UpsideGruntLoopInteger] = UpsideGrunt[UpsideGrunt_Index]
+                        Set VariableSet UpsideGrunt_Counter[UpsideGruntLoopInteger] = UpsideGrunt_Counter[UpsideGrunt_Index]
+                        Set VariableSet UpsideGrunt_Index = (UpsideGrunt_Index - 1)
+                        Set VariableSet UpsideGruntLoopInteger = (UpsideGruntLoopInteger - 1)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                UpsideGrunt_Index Equal to 0
+                            Then - Actions
+                                Trigger - Turn off (This trigger)
+                            Else - Actions
+                    Else - Actions

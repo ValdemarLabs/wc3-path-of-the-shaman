@@ -1,0 +1,11 @@
+Quest Rescue The Grunts Create
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create the quest objects --------
+        Quest - Create a Required, undiscovered quest titled Rescue The Grunts with the description Murlocs have taken ..., using icon path ReplaceableTextures\CommandButtons\BTNGrunt.blp
+        Set VariableSet QuestRescueGrunts = (Last created quest)
+        Quest - Create a quest requirement for QuestRescueGrunts with the description Rescue 3 Grunts fro...
+        Set VariableSet QuestRescueGruntsReq = (Last created quest requirement)

@@ -1,0 +1,9 @@
+Quest Roljin
+    Events
+    Conditions
+    Actions
+        Unit - Create 1 Rol'jin for Player 12 (Brown) at (Center of Roljin <gen>) facing 345.00 degrees
+        Set VariableSet Roljin = (Last created unit)
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Roljin Discover <gen> (checking conditions)
+        Trigger - Remove (This trigger) from the trigger queue

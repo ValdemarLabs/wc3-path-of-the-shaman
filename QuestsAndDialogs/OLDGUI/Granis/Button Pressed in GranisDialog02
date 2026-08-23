@@ -1,0 +1,52 @@
+Button Pressed in GranisDialog02
+    Events
+        Dialog - A dialog button is clicked for GranisDialog02
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to GranisDialog02Def
+            Then - Actions
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0153 <gen> and display Count me in. I will....  Modify duration: Set to 6.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Granis named Granis: Play Granis_0028 <gen> and display Time is of the esse....  Modify duration: Set to 8.00 seconds and Wait
+                Special Effect - Destroy QuestGiverGranis
+                Special Effect - Create a special effect attached to the overhead of Granis using war3campImported\Completed_Quest_NOT.mdx
+                Set VariableSet QuestGiverGranis = (Last created special effect)
+                -------- DEFAULT CAMERA --------
+                Camera - Apply GranisCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Trigger - Run Quest Mountain Defense <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to GranisDialog02Decline
+            Then - Actions
+                Set VariableSet GranisDialog02DeclineBoolean = True
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0154 <gen> and display I'm sorry, but I ca....  Modify duration: Set to 10.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Granis named Granis: Play Granis_0029 <gen> and display I understand if you....  Modify duration: Set to 14.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply GranisCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to GranisDialog02Farewell
+            Then - Actions
+                Set VariableSet GranisDialog02DeclineBoolean = True
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0136 <gen> and display Farewell..  Modify duration: Set to 1.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply GranisCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Skip remaining actions
+            Else - Actions

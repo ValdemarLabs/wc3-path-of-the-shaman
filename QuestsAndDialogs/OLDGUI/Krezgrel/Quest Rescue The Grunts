@@ -1,0 +1,12 @@
+Quest Rescue The Grunts
+    Events
+    Conditions
+    Actions
+        -------- RESET Quest, if previously done --------
+        Quest - Mark QuestRescueGrunts as Incomplete
+        Quest - Mark QuestRescueGruntsReq as Incomplete
+        -------- Quest related triggers / activities --------
+        -------- Quest activate --------
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Rescue The Grunts Discover <gen> (checking conditions)
+        Trigger - Remove (This trigger) from the trigger queue

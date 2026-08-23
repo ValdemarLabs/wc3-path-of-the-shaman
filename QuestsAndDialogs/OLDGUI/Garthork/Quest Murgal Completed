@@ -1,0 +1,12 @@
+Quest Murgal Completed
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Murgal Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestMurgal as Discovered
+        Quest - Mark QuestMurgalReqEye as Completed
+        Quest - Mark QuestMurgal as Completed
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Completed message: |cffffcc00MAIN QUES...

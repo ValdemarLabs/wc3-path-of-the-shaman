@@ -1,0 +1,14 @@
+Upsidedown Grunts
+    Events
+        Time - Elapsed game time is 0.03 seconds
+    Conditions
+    Actions
+        Custom script:   set bj_wantDestroyGroup = true
+        Unit Group - Pick every unit in (Units in (Playable map area)) and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Unit-type of (Picked unit)) Equal to Grunt (Upsidedown)
+                    Then - Actions
+                        Unit - Set Unit: (Picked unit)'s Real Field: Maximum Pitch Angle (degrees) ('umxp') to Value: -180.00
+                    Else - Actions

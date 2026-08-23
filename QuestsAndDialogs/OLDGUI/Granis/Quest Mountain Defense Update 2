@@ -1,0 +1,12 @@
+Quest Mountain Defense Update 2
+    Events
+    Conditions
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Mountain Defense Create <gen> (checking conditions)
+        -------- Display a quest message. --------
+        Quest - Create a quest requirement for QuestMountainDefense with the description Return to Granis
+        Set VariableSet QuestMountainDefenseReq4 = (Last created quest requirement)
+        -------- Update quest --------
+        Quest - Display to (All players) the Quest Update message: |cffffcc00MAIN QUES...
