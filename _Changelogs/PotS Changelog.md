@@ -15,13 +15,50 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [24.8.2026]
+
+### Imports
+
+- Generated ten normal-speed FishAudio review candidates for `Zulkis_DrunkPassOut3` and promoted the selected `v05` take to the official voice folder.
+
 ## [23.8.2026]
+
+### Player-Facing Updates
+
+- Split each custom quest-journal entry into Details, Description, Objectives, and Rewards tabs; item rewards now display their Object Editor icon and extended tooltip.
+- Added live question-mark markers to current talk-objective targets, including `A Night To Remember` witnesses, supply handoffs, apology targets, and forgiveness returns.
+- Alcohol now absorbs one Drunk point at a time before natural decay begins, while repeatable puke and pass-out checks rise steeply at high intoxication instead of occurring only when a drink is consumed.
+- Puking now lasts three seconds: the unit first staggers toward a random point 250 range away, then uses a spell animation while a scaled chimera acid missile travels from head height to the ground; its hit and armor penalties remain for the configured 10 seconds afterward.
+- Player pass-outs now hide MasterUI and the replacement quest-log button, restore them after the wake camera finishes, and display wake-up dialogue after the fullscreen cinematic UI has been removed.
+- Player pass-outs now hold the black screen for five seconds, begin their sleeping camera at a closer distance, and let one or two nearby companions or the other player hero react before the hungover hero wakes.
+- Nazgrek and Zul'kis now each choose from four urgent reactions when the other player hero passes out; these remain separate from the passed-out hero's Hangover wake-up lines.
+- Nazgrek's fourth Zul'kis pass-out reaction now asks how many drinks he has had.
+- After a player pass-out relocation, the other player hero, the full active companion party, and the active pet now appear nearby and move toward the sleeping hero during the fade-in cinematic.
+- Travel ships, wyverns, and zeppelins now update zone music, ambience, fog, lighting, effects, and callbacks as their carrier crosses into a new zone.
+- Configured Sirensong-Scout Base and Scout Base-Ashfang Outpost wyvern routes now validate their full scenic waypoint sequence instead of silently falling back to direct travel.
 
 ### Technical Updates
 
+- Updated `UI/QuestUI.j`, `QuestsAndDialogs/QuestMaster.j`, `QuestsAndDialogs/QuestGiver.j`, `QuestsAndDialogs/QuestsVendor.j`, and `QuestsAndDialogs/QuestGivers/qANightToRemember.j` with tabbed quest details, item-reward presentation, and centralized objective-target marker registration and cleanup.
+- Updated `Professions/Drunk.j`, `SoundAndMusic/ExSound.j`, and `Voicelines/Voicelines_Drunk.j` with MUI alcohol absorption, recurring exponential mishap rolls, a timed puke projectile, custom-UI pass-out lifecycle handling, first-play external audio startup before duration probing, robust vendor voice-profile lookup, and explicit missing-profile diagnostics.
+- Updated `Professions/Drunk.j`, `Voicelines/Voicelines_Drunk.j`, and `tools/generate-drunk-voicelines.ps1` with a closer three-stage wake camera, a configurable five-second black hold, randomized one-or-two-speaker pass-out reactions, and personality-specific voiced reactions for AI companions.
+- Updated `Voicelines/Voicelines_Drunk.j` and `tools/generate-drunk-voicelines.ps1` with four-line Nazgrek and Zul'kis pass-out reaction pools.
+- Updated `Professions/Drunk.j` with pathing-aware party placement, inward cinematic movement, duplicate filtering, and restoration of prior companion suspension state after the Hangover transition.
+- Updated `Travel/TravelSystem.j`, `Travel/TravelWyvern.j`, `Zones/ZoneEvent.j`, and `Travel/README.md` with carrier-position zone tracking, movement-safe player-hero zone entry forwarding, stop-ID-based waypoint assignment, and checked route construction.
 - Updated `_developer/Design Plans/Story and Quest Design.md` after reviewing the legacy `_developer/_Other/WC3 Pots notes.odt` and `_developer/_Other/WC3 Pots notes other.odt`, recovering detailed prologue, Shadowclaw/fel-orc, outpost, Deadwoods, ship, Zul'karak, and Crypt concepts while separating them from current canon and implementation.
 - Reconciled the old notes with current `Zones/ZonesCore.j`, Nazgrek's existing Flask item `I61L`, Zul'karak unit `n65F`, Gar unit `n60Z` in Deadwoods, the current Crypt boss roster, Ghostwalk Ridge, Elarindor's Vanguard Vale, and the confirmed mapping of the old ruined “Vanguard” city/docks to Dawnhold `20`.
 - Recorded that `Travel/TravelShipA.j` already serves Sirensong, Dawnhold, and Stormhaven, so the legacy Fix the Ship quest must improve or add a service instead of duplicating the existing travel unlock.
+
+### Tool Updates
+
+- Added configurable FishAudio prosody speed to `tools/voicelines.ps1` and `tools/generate-drunk-voicelines.ps1` for lines that need a quicker or slower delivery.
+
+### Imports
+
+- Generated and imported 14 FishAudio pass-out reactions for Engineer, Paladin, Restoration Shaman, Rogue, Warlock, Warrior, and Aveline into their official voice folders.
+- Generated and imported four additional FishAudio pass-out reactions for Nazgrek and Zul'kis into their official voice folders.
+- Re-generated `Zulkis_DrunkPassOut3`, `Zulkis_DrunkPassOut4`, and the revised `Nazgrek_DrunkPassOut4` FishAudio recordings.
+- Re-generated `Zulkis_DrunkPassOut3` again at the normal `1.0x` FishAudio prosody speed after rejecting the accelerated take.
 
 ### Actions Remaining
 
