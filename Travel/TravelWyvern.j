@@ -2,7 +2,7 @@
     TravelWyvern
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.1.1
 
     Description:
     Registers all six placed Wind Rider Masters and the directed flight
@@ -181,31 +181,39 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
         return true
     endfunction
 
-    private function TW_AddWaypointRange takes integer routeId, integer firstIndex, integer lastIndex returns nothing
+    private function TW_AddWaypointRange takes integer routeId, integer firstIndex, integer lastIndex returns boolean
         local integer step = 1
 
         if firstIndex > lastIndex then
             set step = -1
         endif
         loop
-            call TravelSystem_AddRegisteredWaypoint(routeId, TW_FlightWaypoint[firstIndex], 0)
+            if not TravelSystem_AddRegisteredWaypoint(routeId, TW_FlightWaypoint[firstIndex], 0) then
+                return false
+            endif
             exitwhen firstIndex == lastIndex
             set firstIndex = firstIndex + step
         endloop
+        return true
     endfunction
 
-    private function TW_AddConfiguredRouteWaypoints takes integer routeId, integer startIndex, integer endIndex returns nothing
-        if startIndex == TRAVEL_WINDRIDER_MASTER_SIRENSONG and endIndex == TRAVEL_WINDRIDER_MASTER_HORDE_SCOUT_BASE then
-            call TW_AddWaypointRange(routeId, 1, 19)
-        elseif startIndex == TRAVEL_WINDRIDER_MASTER_HORDE_SCOUT_BASE and endIndex == TRAVEL_WINDRIDER_MASTER_SIRENSONG then
-            call TW_AddWaypointRange(routeId, 19, 1)
-        elseif startIndex == TRAVEL_WINDRIDER_MASTER_HORDE_SCOUT_BASE and endIndex == TRAVEL_WINDRIDER_MASTER_ASHFANG_OUTPOST then
-            call TW_AddWaypointRange(routeId, 19, 15)
-            call TW_AddWaypointRange(routeId, 20, 28)
-        elseif startIndex == TRAVEL_WINDRIDER_MASTER_ASHFANG_OUTPOST and endIndex == TRAVEL_WINDRIDER_MASTER_HORDE_SCOUT_BASE then
-            call TW_AddWaypointRange(routeId, 28, 20)
-            call TW_AddWaypointRange(routeId, 15, 19)
+    private function TW_AddConfiguredRouteWaypoints takes integer routeId, integer startStop, integer endStop returns boolean
+        if startStop == TW_SirensongStop and endStop == TW_ScoutBaseStop then
+            return TW_AddWaypointRange(routeId, 1, 19)
+        elseif startStop == TW_ScoutBaseStop and endStop == TW_SirensongStop then
+            return TW_AddWaypointRange(routeId, 19, 1)
+        elseif startStop == TW_ScoutBaseStop and endStop == TW_AshfangOutpostStop then
+            if not TW_AddWaypointRange(routeId, 19, 15) then
+                return false
+            endif
+            return TW_AddWaypointRange(routeId, 20, 28)
+        elseif startStop == TW_AshfangOutpostStop and endStop == TW_ScoutBaseStop then
+            if not TW_AddWaypointRange(routeId, 28, 20) then
+                return false
+            endif
+            return TW_AddWaypointRange(routeId, 15, 19)
         endif
+        return true
     endfunction
 
     private function TW_CreateNetwork takes nothing returns nothing
@@ -226,9 +234,11 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
                     endif
                     set routeId = RegisterDirectedRoute(TW_Stop[startIndex], TW_Stop[endIndex], fare)
                     if routeId > 0 then
-                        call TW_AddConfiguredRouteWaypoints(routeId, startIndex, endIndex)
                         // Keep the stop drop point last so the carrier lands after all route rects.
-                        call TravelSystem_AddRegisteredWaypoint(routeId, TW_Waypoint[endIndex], 0)
+                        if not TW_AddConfiguredRouteWaypoints(routeId, TW_Stop[startIndex], TW_Stop[endIndex]) or not TravelSystem_AddRegisteredWaypoint(routeId, TW_Waypoint[endIndex], 0) then
+                            call TravelSystem_SetRouteEnabled(routeId, false)
+                            call BJDebugMsg("|cffff8080[TravelWyvern] Failed to build route " + I2S(startIndex) + " -> " + I2S(endIndex) + ".|r")
+                        endif
                     endif
                 endif
                 set endIndex = endIndex + 1

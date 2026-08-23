@@ -4,7 +4,7 @@ library ZoneEvent initializer Init requires ZonesCore, Table, DNC, ExMusic, TasQ
     ZoneEvent
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.2.1
 
     Purpose:
         Central handler for per-zone behaviour and transitions. Responsibilities
@@ -49,6 +49,10 @@ library ZoneEvent initializer Init requires ZonesCore, Table, DNC, ExMusic, TasQ
 
         - ZoneEvent_EnterZone(integer zoneId, unit whichUnit) returns nothing
             Manually trigger the full zone entry flow for the specified unit.
+
+        - ZoneEvent_EnterTravelZone(integer zoneId, unit whichUnit) returns nothing
+            Applies zone entry for a moving travel passenger without executing
+            portal or start-region movement.
 
         - ZoneEvent_SetZoneSilent(integer zoneId) returns nothing
             Set the current zone without triggering discovery/enter effects
@@ -942,13 +946,11 @@ endfunction
 //===========================================================================
 // Zone Transition Handler
 //===========================================================================
-private function HandleZoneEnter takes integer newZoneId, unit triggeringUnit returns nothing
+private function HandleZoneEnter takes integer newZoneId, unit triggeringUnit, boolean allowEntranceMovement returns nothing
     local ZoneData z
     local player triggerPlayer = GetOwningPlayer(triggeringUnit)
     local boolean isDay = udg_DNE_IsDaytime
     local boolean array zoneEnabled
-    local integer pid
-    local integer discoverKey
     local integer currentZone = ZonesCore_GetCurrentZone()
     
     set zoneEnabled[newZoneId] = ZonesCore_IsZoneEnabled(newZoneId)
@@ -960,25 +962,35 @@ private function HandleZoneEnter takes integer newZoneId, unit triggeringUnit re
         if DEBUG then   
             call Debug("System not enabled! (return)")
         endif
+        set triggerPlayer = null
         return
     endif
     if not zoneEnabled[newZoneId] then
         if DEBUG then   
             call Debug("ERROR: Zone " + I2S(newZoneId) + " not enabled! (return)")
         endif
+        set triggerPlayer = null
         return  // Zone disabled
+    endif
+    set z = ZonesCore_GetZoneData(newZoneId)
+    if z == 0 then
+        if DEBUG then
+            call Debug("ERROR: Zone " + I2S(newZoneId) + " not found! (return)")
+        endif
+        set triggerPlayer = null
+        return
     endif
     call NotifyUnitZoneEnter(newZoneId, triggeringUnit)
     if newZoneId == currentZone then
         if DEBUG then
             call Debug("Already in this zone - " + I2S(newZoneId) + " (return)")
         endif
+        set triggerPlayer = null
         return  // Already in this zone
     endif
-    set z = ZonesCore_GetZoneData(newZoneId)
 
     // If this zone has a startRegion/moveRegion, move units
-    if z.startRegion != null and z.moveRegion != null then
+    if allowEntranceMovement and z.startRegion != null and z.moveRegion != null then
         call MoveStart(z, triggeringUnit)
         call CameraControl_UpdateTargetCache(triggerPlayer)
     endif
@@ -987,7 +999,6 @@ private function HandleZoneEnter takes integer newZoneId, unit triggeringUnit re
     call ZonesCore_SetCurrentZone(newZoneId)
 
     // Show discovered/entered title
-    set pid = GetPlayerId(triggerPlayer)
     if not zoneDiscovered[newZoneId] then
         set zoneDiscovered[newZoneId] = true
         // Zone Discovered
@@ -1012,12 +1023,6 @@ private function HandleZoneEnter takes integer newZoneId, unit triggeringUnit re
                 call StartSound(ZONE_ENTER_SOUND)
             endif
         endif
-    endif
-    if z == 0 then
-        if DEBUG then
-            call Debug("ERROR: Zone " + I2S(newZoneId) + " not found! (return)")
-        endif
-        return
     endif
     if DEBUG then
         call Debug("Entering: " + z.name + " (ID: " + I2S(newZoneId) + ")")
@@ -1060,6 +1065,7 @@ private function HandleZoneEnter takes integer newZoneId, unit triggeringUnit re
         endif
     endif
     set z_EnteringUnit = triggeringUnit
+    set triggerPlayer = null
 endfunction
 
 public function RunPendingParentZoneEnter takes nothing returns nothing
@@ -1075,7 +1081,7 @@ public function RunPendingParentZoneEnter takes nothing returns nothing
     endif
 
     if ZonesCore_GetCurrentZone() != zoneId then
-        call HandleZoneEnter(zoneId, whichUnit)
+        call HandleZoneEnter(zoneId, whichUnit, true)
     endif
 
     set whichUnit = null
@@ -1134,7 +1140,7 @@ private function OnUnitEnterRegion takes nothing returns nothing
         endif
         return
     endif
-    call HandleZoneEnter(zoneId, trigUnit)
+    call HandleZoneEnter(zoneId, trigUnit, true)
 
 endfunction
 
@@ -1187,7 +1193,7 @@ public function ForceUpdate takes unit whichUnit returns nothing
     set zoneDayNightEvent = true
     // Re-enter current zone to update fog/ambient
     if currentZone > 0 then
-        call HandleZoneEnter(currentZone, whichUnit)
+        call HandleZoneEnter(currentZone, whichUnit, true)
     endif
     set zoneDayNightEvent = false
 endfunction
@@ -1206,7 +1212,11 @@ endfunction
 public function EnterZone takes integer zoneId, unit whichUnit returns nothing
     // Manually trigger zone entry (useful for teleportation, testing, etc.)
     call ZonesCore_EnableZone(zoneId, true)
-    call HandleZoneEnter(zoneId, whichUnit) 
+    call HandleZoneEnter(zoneId, whichUnit, true)
+endfunction
+
+public function EnterTravelZone takes integer zoneId, unit whichUnit returns nothing
+    call HandleZoneEnter(zoneId, whichUnit, false)
 endfunction
 
 public function TriggerLeaveCleanup takes integer zoneId, unit whichUnit returns nothing

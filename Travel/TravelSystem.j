@@ -2,7 +2,7 @@
     TravelSystem
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
     Configurable travel-stop, route, passenger, discovery, movement, camera,
@@ -122,6 +122,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         private constant integer TS_TRAVEL_UNIT_OWNER_ID = 5
         private constant real TS_DISCOVERY_RANGE = 600.00
         private constant real TS_DISCOVERY_PERIOD = 1.00
+        private constant real TS_ZONE_UPDATE_PERIOD = 0.50
         private constant real TS_ARRIVAL_RANGE = 96.00
         private constant real TS_UPDATE_PERIOD = 0.03
         private constant real TS_TRAVEL_TIMEOUT = 180.00
@@ -219,6 +220,8 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         private integer TS_ActiveRoute = 0
         private integer TS_ActiveWaypoint = 0
         private real TS_ActiveElapsed = 0.00
+        private real TS_ZoneUpdateElapsed = 0.00
+        private integer TS_ActiveZone = 0
         private unit TS_ActiveCarrier = null
         private unit TS_ActiveCarrierB = null
         private boolean TS_ActiveCarrierTemporary = false
@@ -1441,6 +1444,8 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         set TS_ActiveRoute = 0
         set TS_ActiveWaypoint = 0
         set TS_ActiveElapsed = 0.00
+        set TS_ZoneUpdateElapsed = 0.00
+        set TS_ActiveZone = 0
         set TS_LastSafeStop = stopId
         set TS_EndStop = 0
         set TS_EndResumeScheduled = false
@@ -1717,6 +1722,34 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         endif
     endfunction
 
+    private function TS_UpdateTravelZone takes nothing returns nothing
+        local integer zoneId
+        local integer index = 1
+
+        set TS_ZoneUpdateElapsed = TS_ZoneUpdateElapsed + TS_UPDATE_PERIOD
+        if TS_ZoneUpdateElapsed < TS_ZONE_UPDATE_PERIOD then
+            return
+        endif
+        set TS_ZoneUpdateElapsed = 0.00
+        set zoneId = ZonesCore_GetZoneIdAtPoint(GetUnitX(TS_ActiveCarrier), GetUnitY(TS_ActiveCarrier))
+        if zoneId <= 0 or zoneId == TS_ActiveZone then
+            return
+        endif
+
+        // Hidden passengers cannot fire region events, so selected heroes enter
+        // the zone represented by the moving carrier.
+        loop
+            exitwhen index > TS_PassengerCount
+            if TS_PassengerSelected[index] and TS_PassengerHero[index] then
+                call ZoneEvent_EnterTravelZone(zoneId, TS_Passenger[index])
+            endif
+            set index = index + 1
+        endloop
+        if ZonesCore_GetCurrentZone() == zoneId then
+            set TS_ActiveZone = zoneId
+        endif
+    endfunction
+
     private function TS_OnUpdate takes nothing returns nothing
         if not TS_Active then
             return
@@ -1731,6 +1764,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         endif
         set TS_ActiveElapsed = TS_ActiveElapsed + TS_UPDATE_PERIOD
         call TS_UpdatePassengerEffects()
+        call TS_UpdateTravelZone()
         if not TS_RouteScheduled[TS_ActiveRoute] and not TS_PromptVisible and not TS_StopPromptVisible then
             call TS_UpdateDirectTravel()
         endif
@@ -1824,6 +1858,8 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         set TS_ActiveRoute = 0
         set TS_ActiveWaypoint = 0
         set TS_ActiveElapsed = 0.00
+        set TS_ZoneUpdateElapsed = 0.00
+        set TS_ActiveZone = 0
         set TS_LastSafeStop = 0
         set udg_InCinematic = false
         call TS_ClearPassengerList()
@@ -1856,6 +1892,8 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         endif
         call TS_RemoveUnselectedCompanions()
         call TS_HideSelectedPassengers()
+        set TS_ZoneUpdateElapsed = 0.00
+        set TS_ActiveZone = ZonesCore_GetCurrentZone()
         set TS_Starting = false
         set TS_HeldVehicle = null
         set TS_HeldUsesPatrol = false

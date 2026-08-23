@@ -83,6 +83,11 @@ Temporary wyvern and bat carriers use gradual Mordrax-style fly-height changes:
 they climb during takeoff, descend on final approach, and complete the arrival
 after reaching landing height. A bounded descent fallback also completes the
 arrival if Warcraft fails to report the carrier's changing fly height.
+While passengers are hidden, TravelSystem resolves the moving carrier's zone
+and enters newly crossed zones through the selected player heroes. This keeps
+zone music, ambient sound, fog, day/night lighting, special effects, and zone
+listeners current during ship, wyvern, and zeppelin journeys without executing
+portal or start-region movement beneath the route.
 
 `TRAVEL_HIDE_MASTER_UI_GAME_BUTTON` in `TravelSystem.j` controls whether the
 MasterUI Game button is hidden for the journey. ESC and intermediate-stop
