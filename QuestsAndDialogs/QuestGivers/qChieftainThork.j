@@ -1,22 +1,25 @@
-//============================================================================
-// qChieftainThork
-//============================================================================
-// Chieftain Thork quest giver conversion from legacy GUI triggers.
-//
-// Converted GUI trigger group:
-// - ChieftainThork
-//
-// Purpose:
-// - Completes Ragno's "Call of the Horde" quest at Chieftain Thork.
-// - Unlocks Zulkis and creates the early Horde follow-up quest,
-//   "Duty For The Horde".
-//
-// Notes:
-// - Source dialog text has been normalized to the current display name,
-//   "Chieftain Thork" or short "Thork".
-// - Later Thork story branches remain external and can signal this library
-//   through the public Duty For The Horde helpers.
-//============================================================================
+/**
+    qChieftainThork
+
+    Author: Valdemar
+    Version:
+
+    Description:
+    Handles Ragno's Call of the Horde handoff and Chieftain Thork's Duty For
+    The Horde proof quest. Granis and Garthork report their proof tasks
+    independently, and completed QuestData is also queried for recovery.
+
+    Credits:
+    Converted from the original ChieftainThork GUI triggers.
+
+    How to install:
+    Import after qRagno and the required quest, dialog, inventory, equipment,
+    item-check, and voiceline libraries.
+
+    API:
+    Public Duty For The Horde and respawn hooks are declared at the end.
+
+**/
 library qChieftainThork initializer Init requires qRagno, QuestGiver, QuestMaster, DialogInteraction, DialogSystem, HeroItemCheck, DInventory, DEquipment, VoicelinesThork, VoicelinesNazgrek, VoicelinesZulkis
 
 globals
@@ -24,6 +27,8 @@ globals
 
     private constant string QUEST_GIVING_LETTER = "Call of the Horde"
     private constant string QUEST_DUTY_FOR_HORDE = "Duty For The Horde"
+    private constant string QUEST_GRANIS_PROOF = "Punish"
+    private constant string QUEST_GARTHORK_PROOF = "The Magical Eye"
     private constant string THORK_NAME = "Chieftain Thork"
 
     private constant integer ITEM_BLOOD_SIGNED_LETTER = 'I625'
@@ -65,6 +70,8 @@ globals
     private timer ThorkDialogCooldown = null
     private timer PostCallOfHordeDialogTimer = null
     private boolean DutyForHordeUnlocked = false
+    private boolean GranisProofComplete = false
+    private boolean GarthorkProofComplete = false
     private boolean ThorkInitWaitingLogged = false
 endglobals
 
@@ -152,9 +159,35 @@ private function CanOfferDutyForHorde takes nothing returns boolean
     return DutyForHordeUnlocked
 endfunction
 
+private function RefreshDutyForHordeProofs takes nothing returns nothing
+    local QuestData q = GetDutyForHordeQuest()
+
+    if Granis != null and QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_GRANIS_PROOF, Granis) then
+        set GranisProofComplete = true
+    endif
+    if Garthork != null and QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_GARTHORK_PROOF, Garthork) then
+        set GarthorkProofComplete = true
+    endif
+
+    if q != 0 and q.active and not q.completed and not q.failed then
+        call q.markRequirementCompleted(1, GranisProofComplete)
+        call q.markRequirementCompleted(2, GarthorkProofComplete)
+        if GranisProofComplete and GarthorkProofComplete then
+            call q.addReturnRequirement()
+            call q.setState(QUEST_STATE_READY_TURNIN)
+        elseif q.state == QUEST_STATE_READY_TURNIN then
+            call q.removeReturnRequirement()
+            call q.setState(QUEST_STATE_IN_PROGRESS)
+        endif
+    endif
+
+    set q = 0
+endfunction
+
 private function RefreshThorkAvailabilityInternal takes nothing returns nothing
     local QuestData q = GetGivingLetterQuest()
 
+    call RefreshDutyForHordeProofs()
     if Thork != null then
         call QuestGiver_RefreshAvailabilityForGiver(Thork)
     endif
@@ -307,6 +340,7 @@ private function OnCompleteDutyForHordeEnd takes nothing returns nothing
     local QuestData q = GetDutyForHordeQuest()
     if q != 0 and q.active and not q.completed then
         call q.markRequirementCompleted(1, true)
+        call q.markRequirementCompleted(2, true)
         call QuestGiver_CompleteQuestByNameAndGiver(QUEST_DUTY_FOR_HORDE, Thork)
         call RefreshThorkAvailabilityInternal()
     endif
@@ -449,7 +483,7 @@ private function CreateQuests takes nothing returns nothing
         set availabilityCondition = CreateTrigger()
         call TriggerAddCondition(availabilityCondition, Condition(function CanOfferDutyForHorde))
         call QuestGiver_SetQuestCustomCondition(q, availabilityCondition)
-        call QuestGiver_SetRequirements(q.id, "", "Complete Garthork's and Granis' tasks", "", "", "", "", "", "", "")
+        call QuestGiver_SetRequirements(q.id, "", "Complete Granis' Punish quest", "Complete Garthork's The Magical Eye quest", "", "", "", "", "", "")
         call QuestGiver_SetStateByNameAndGiver(QUEST_DUTY_FOR_HORDE, Thork, QUEST_STATE_UNAVAILABLE)
     endif
 
@@ -511,6 +545,9 @@ public function MarkDutyForHordeReady takes nothing returns nothing
     local QuestData q = GetDutyForHordeQuest()
     if q != 0 and q.active and not q.completed and not q.failed then
         call q.markRequirementCompleted(1, true)
+        call q.markRequirementCompleted(2, true)
+        set GranisProofComplete = true
+        set GarthorkProofComplete = true
         call q.setState(QUEST_STATE_READY_TURNIN)
         call q.addReturnRequirement()
         call RefreshThorkAvailabilityInternal()
@@ -522,10 +559,21 @@ public function CompleteDutyForHorde takes nothing returns nothing
     local QuestData q = GetDutyForHordeQuest()
     if q != 0 and not q.completed then
         call q.markRequirementCompleted(1, true)
+        call q.markRequirementCompleted(2, true)
         call QuestGiver_CompleteQuestByNameAndGiver(QUEST_DUTY_FOR_HORDE, Thork)
         call RefreshThorkAvailabilityInternal()
     endif
     set q = 0
+endfunction
+
+public function ReportGranisTaskComplete takes nothing returns nothing
+    set GranisProofComplete = true
+    call RefreshThorkAvailabilityInternal()
+endfunction
+
+public function ReportGarthorkTaskComplete takes nothing returns nothing
+    set GarthorkProofComplete = true
+    call RefreshThorkAvailabilityInternal()
 endfunction
 
 endlibrary

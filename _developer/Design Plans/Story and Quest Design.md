@@ -2,7 +2,7 @@
 
 - **Status:** Living master design plan
 - **Created:** 22 August 2026
-- **Last reviewed:** 23 August 2026
+- **Last reviewed:** 24 August 2026
 - **Scope:** Main story, side stories, generic quests, dungeon quests, quest-giver connections, and world-event dependencies
 
 ## 1. Purpose
@@ -40,7 +40,7 @@ An unexported GUI trigger is missing evidence, not permission to invent its exac
 
 - `Zones/ZonesCore.j` for active zone IDs, hierarchy, level ranges, factions, caves, dungeons, and named encounters.
 - Current `QuestsAndDialogs/QuestGivers/q*.j` libraries and the vendor quest README for implemented QuestData, prerequisites, objective locations, and external hooks.
-- Current narrator, Granis, Garthork, Boom Brothers, Atex Blix, and Grum Bloodfang voice-line libraries for recoverable authored intent.
+- Current narrator, Granis, Garthork, Krezgrel, Boom Brothers, Atex Blix, and Grum Bloodfang voice-line libraries for recoverable authored intent.
 - Current dungeon/boss libraries for Rol'jin, Boom Mine, and Mad Blix.
 - `_developer/_articyExports/Articy XML/Path of the shaman.xml` and the companion document export for flow hierarchy, quest banks, entities, and connections.
 - `_developer/_Other/WC3 Pots notes.odt` and `_developer/_Other/WC3 Pots notes other.odt` for older prologue, Shadowclaw, Ghostwalk/Deadwoods, Crypt, and character concepts. The first document has a May 2024 creation timestamp; the second is user-identified as 2024/2025 legacy material.
@@ -98,7 +98,7 @@ These rawcodes or named globals are evidence that the character already exists i
 | Ragno | `o61L` | Sereneglade outpost commander and repeatable hub |
 | Granis | `o60F` | Thornwoods military quest giver; Rol'jin and outpost defense |
 | Garthork | `o60A` | Shadowmoon shaman; magical investigation and Nazgrek lore |
-| Krezgrel | `o608` | Thornwoods/Horde supporting quest giver; exact GUI role to recover |
+| Krezgrel | `o608` | Thornwoods grunt commander; Murloc Fins and Rescue The Grunts daily quests |
 | Grim | `o60C` | Existing quest-giver candidate; exact GUI story to recover |
 | Grum Bloodfang | `o62R` | Emberpeak dragon-hunt chain |
 | Outcast Jin'Zun | `o60X` | Sereneglade/Crypt nature and undeath side story |
@@ -116,7 +116,7 @@ These rawcodes or named globals are evidence that the character already exists i
 | Aradion | `h00A` | Elarindor leader and late-midgame story hub |
 | Valeria | `n01W` | Elarindor ranger, companion, and story quest giver |
 
-Granis, Garthork, Boom Brothers, Grum Bloodfang, Erduk, Grim, Valeria, and other characters still have unexported GUI triggers in the map. Recover those triggers before deleting, replacing, or claiming full parity with their legacy quests.
+Boom Brothers, Grum Bloodfang, Erduk, Grim, Valeria, and other characters still have unexported GUI triggers in the map. Recover those triggers before deleting, replacing, or claiming full parity with their legacy quests. Granis, Garthork, and Krezgrel now have recovered trigger exports and modern qXXX conversions.
 
 ## 4. Zone progression and narrative use
 
@@ -146,8 +146,11 @@ This section records current qXXX content at the time this plan was created. Upd
 
 | Library / giver | Current quests | Status and important dependencies |
 |---|---|---|
-| `qRagno.j` | Protect the Outpost; Gnoll Headcount; Lumberjack Duties; Kobold Thieves; Satyr Negotiations; Call of the Horde | **Implemented JASS.** Protect the Outpost is externally started and auto-completed by its scripted defense. The current `QUEST_MOUNTAIN_DEFENSE` alias shares this same QuestData instead of defining a second battle. Satyr Negotiations currently reaches Zaekolaerr and immediately resolves after the dialogue choice; the arena, escape, betrayal, and trust consequences are not implemented. Call of the Horde requires Protect the Outpost and an external unlock. |
-| `qChieftainThork.j` | Duty For The Horde | **Implemented JASS, partial chain.** It waits for completion signals from Granis and Garthork tasks, but their modern qXXX libraries are absent. Later Thork branches remain external/legacy. |
+| `qRagno.j` | Protect the Outpost; Gnoll Headcount; Lumberjack Duties; Kobold Thieves; Satyr Negotiations; Call of the Horde | **Implemented JASS.** Protect the Outpost is externally started and auto-completed by its scripted defense. Its legacy `QUEST_MOUNTAIN_DEFENSE` alias still points to Protect the Outpost internally. Granis owns the separate QuestData for the later Mountain Defense, but Ragno remains that quest's field commander, encounter anchor, required survivor, and principal battlefield speaker. Satyr Negotiations currently reaches Zaekolaerr and immediately resolves after the dialogue choice; the arena, escape, betrayal, and trust consequences are not implemented. Call of the Horde requires Protect the Outpost and an external unlock. |
+| `qChieftainThork.j` | Duty For The Horde | **Implemented JASS.** Tracks Granis's Punish and Garthork's The Magical Eye as separate proof requirements, receives explicit completion reports, and recovers their state from completed QuestData. Later Thork branches remain external/legacy. |
+| `qGranis.j` | Punish; Mountain Defense | **Implemented JASS.** Punish targets the existing Rol'jin boss and item `I600`. Granis commissions, owns, and rewards Mountain Defense, while Ragno commands the battle in the field. The distinct second outpost assault uses nine reusable `UnitWaves` stages, fails if Ragno dies or fewer than five temporary defenders survive, and supports retry cleanup. Both are Normal + Story in Thornwoods `6`. |
+| `qGarthork.j` | The Magical Eye | **Implemented JASS.** Spawns/reuses Mur'gal `n607`, tracks Eye of Mur'gal `I601`, awards Adept Shaman Claws `I66R`, and reports the completed proof task to Thork. Normal + Story in Thornwoods `6`. |
+| `qKrezgrel.j` | Murloc Fins; Rescue The Grunts | **Implemented JASS.** Both are Daily quests in Thornwoods `6`. Rescue targets use invisible selectable grunt proxies paired with negative-pitch special effects and randomized positions in `gg_rct_UpsideGrunt01` through `08`; targets recycle after 240 seconds. The old placed upside-down grunt units must be removed in World Editor. |
 | `qAradion.j` | Ranger Missing; Crystals of Hope; Fading Sparks; Rifts of Corruption | **Implemented JASS.** Ranger Missing leads to two parallel collection/investigation quests, then Rifts requires all three. Uses Vanguard Vale, Verdant Plains, and Redwind Pass. Test quests are disabled. Valeria's post-reunion Dash rawcode remains a TODO. |
 | `qValeria.j` | Token of Love; Lost Supplies | **Implemented JASS.** Token follows Ranger Missing; Lost Supplies follows Token. Uses dedicated token and seven supplies rects. |
 | `qOutcastJinzun.j` | Plague Upon Trees; Lurking In The Shadows; Unknown Entity; Seeds of Life; Resurgence of Dead I; Resurgence of Dead II; Da Fishing Pole Missing | **Implemented JASS.** Forms a nature-to-undeath side arc through tree runes, lake, dead trees, graveyard, Zaekolaerr inquiry, and Crypt-facing escalation. |
@@ -227,10 +230,10 @@ Legacy intro beats worth retaining are Shadowclaw reacting defensively when the 
 | Design ID | Quest / beat | Status | Purpose and connection |
 |---|---|---|---|
 | ST-A1-01 | Call of the Horde | **Implemented JASS** | Carry Ragno's blood-signed letter to Chieftain Thork after the defense. |
-| ST-A1-02 | Duty For The Horde | **Implemented JASS, partial dependencies** | Thork requires proof from both Granis and Garthork. It is the Act I spine, not a generic reputation grind. |
-| ST-A1-03 | Punish the Traitor / Rol'jin's Head | **Legacy voice + GUI evidence** | Granis sends Nazgrek to kill Rol'jin and return his head. Confirm the exact old title, reward, rects, and completion event before creating `qGranis.j`. |
-| ST-A1-04 | The Magical Eye | **Legacy voice + GUI evidence** | Garthork identifies Nazgrek's Thunderlord past and requests Mur'gal's eye. Use the task to introduce spiritual sight and hint that local aggression is being directed. |
-| ST-A1-05 | Defense of the Mountain Outpost | **Legacy voice + Articy evidence; reconciliation required** | Granis sends Nazgrek back to Ragno for a later defense. This must be a distinct second assault with a new QuestData ID, or its dialogue must be folded into Protect the Outpost. Do not alias both battles to one state. |
+| ST-A1-02 | Duty For The Horde | **Implemented JASS** | Thork requires the separately tracked completion of Granis's Punish and Garthork's The Magical Eye. It is the Act I spine, not a generic reputation grind. |
+| ST-A1-03 | Punish / Rol'jin's Head | **Implemented JASS** | Granis sends Nazgrek to kill the existing Rol'jin boss and return item `I600`; completion reports Granis's proof to Thork. |
+| ST-A1-04 | The Magical Eye | **Implemented JASS** | Garthork identifies Nazgrek's Thunderlord past, requests Mur'gal's eye `I601`, and reports the proof to Thork. The later spiritual-sight follow-up remains proposed. |
+| ST-A1-05 | Mountain Defense | **Implemented JASS** | Granis commissions the quest and receives the final report, but Ragno is its field commander and operational story anchor. It is a distinct second assault after Ragno's Protect the Outpost, with nine staged waves, defender/Ragno survival rules, and retry cleanup. |
 | ST-A1-06 | Gnoll camp clue → Gnoll Hideout | **Legacy Articy; proposed bridge** | A southern-camp objective reveals stolen Horde resources and an external organizer, then unlocks dungeon `101`. The dungeon book/ledger becomes story evidence instead of a standalone collectible. |
 | ST-A1-07 | Satyr Negotiations | **Implemented opening, partial branches** | Zaekolaerr offers an arena test, a hostile rupture/escape, or apparent cooperation. Record the outcome as durable story state and let all routes converge on proof that Zaek is manipulating both factions. |
 | ST-A1-08 | Thork's judgement | **Proposed** | Thork evaluates Granis, Garthork, dungeon, and satyr outcomes. Nazgrek gains conditional standing with the Horde and a route toward Ghostwalk Ridge. |
@@ -369,8 +372,8 @@ These are candidates, not promises. Before implementation, search the vendor REA
 
 | Plan ID | Working title | Type + category | Giver | Objective location | Connection |
 |---|---|---|---|---|---|
-| GQ-007 | Murloc Fins | Daily | Existing Horde cook/quartermaster | Thornwoods shore | Articy daily candidate; verify it does not duplicate vendor objectives. |
-| GQ-008 | Rescue the Grunts | Daily | Existing Horde medic | Thornwoods patrol routes | Recover living patrol members; reinforces the cost of local attacks. |
+| GQ-007 | Murloc Fins | Daily | Krezgrel | Thornwoods shore | **Implemented JASS.** Gather ten Murloc Fins `I6AE`; no duplicate title exists in the vendor ledger. |
+| GQ-008 | Rescue The Grunts | Daily | Krezgrel | Thornwoods murloc waters | **Implemented JASS.** Rescue three living grunts through eight randomized effect/proxy targets; some selected grunts have already drowned. |
 | GQ-009 | The Big Bear Tooth | Daily | Existing hunter | Thornwoods wildlife area | Articy daily candidate and trophy hunt. |
 | GQ-010 | The Road to the Scout Base | Normal | Granis or existing scout | Route to Horde Scout Base `8810` | Clear ambush points and unlock safe travel/patrol visibility. |
 | GQ-011 | Teeth Beneath the Hill | Normal + Dungeon | Granis | Gnoll camp → Gnoll Hideout `101` | Breadcrumb quest for the dungeon and its stolen-resource clue. |
@@ -510,8 +513,6 @@ Before implementing the following, export or inspect the old GUI triggers and co
 
 | Owner | Known recoverable intent | Still needed |
 |---|---|---|
-| Granis | Rol'jin hunt; later mountain-outpost defense | Exact titles, conditions, rects, rewards, boss completion event, relation to Protect the Outpost |
-| Garthork | Nazgrek/Shadowmoon greeting; Magical Eye from Mur'gal | Mur'gal unit identity, eye item, objective tracking, reward, follow-up |
 | Boom Brothers / Atex Blix | Five-step Boom Mine chain | Exact items, escort route, failure/retry behavior, mine access flags, Mad Blix phases |
 | Grum Bloodfang | Whelps, eggs, drakes, Mordrax | Exact counts/items, boss identity/location, reward and egg consequence |
 | Erduk | Existing named quest giver | Entire active GUI quest set, placement, and intended arc |
@@ -522,18 +523,18 @@ Before implementing the following, export or inspect the old GUI triggers and co
 | Zul'karak | Existing unit `n65F`; ODT describes Zul'kis's warrior brother and possible later recruit | Confirm current placement, faction, dialogue, companion eligibility, and whether the older-brother relationship remains canon |
 | Ghostwalk/Deadwoods/Dawnhold legacy campaign | Shadowclaw death, fel-orc warband, Ironspine-like outpost, human survivors, Dawnhold curse, Gar, and ship | Ruined “Vanguard” maps to Dawnhold `20`; Gar `n60Z` maps to Deadwoods `11`; Ship A already serves Dawnhold. Verify exact rects, triggers, and intended quest-specific vessel/service changes. |
 | Crypt `102` | Seven legacy quests, three encounter roles, hazards, books, and a cursed-crown branch | Map roles to current bosses/rooms, identify the buried culture/ruler, validate traps, and design persistent reward consequences |
-| Other Horde NPCs | Krezgrel, Drek'thor, Ogmar, Graknar and related triggers | Inventory before assigning new generic quests to avoid ownership conflicts |
+| Other Horde NPCs | Drek'thor, Ogmar, Graknar and related triggers | Inventory before assigning new generic quests to avoid ownership conflicts. Krezgrel's two legacy daily quests are now recovered and implemented. |
 
-## 13. Open canon and implementation decisions
+## 13. Open and resolved canon and implementation decisions
 
 Resolve these deliberately and record the answer here:
 
-1. **Mountain outpost defenses:** is the Articy/Granis defense a second battle after Ragno's current Protect the Outpost?
+1. **Resolved - Mountain outpost defenses:** Mountain Defense has separate QuestData owned and rewarded by Granis, but it remains strongly tied to Ragno as the field commander, encounter anchor, required survivor, and battlefield voice. It is a distinct second battle after Ragno's Protect the Outpost.
 2. **Shadowclaw's fate:** the old notes explicitly use permanent death by a fel-orc warrior; decide whether current canon keeps that direct murder, adds a failed cleansing attempt, or allows a player-influenced outcome. Define what replaces gameplay dependencies and whether Shadowclaw later appears only as a spirit motif.
 3. **Zaekolaerr branch limits:** which dark actions are playable, threatened, or discarded, and how can the main hub remain usable?
 4. **Velyssara's allegiance and fate:** Zaekolaerr's agent, independent corrupter, coerced ally, or rival—and can she be cleansed, spared, or only defeated?
 5. **Main antagonist:** which force connects gnolls, satyrs, undead, void rifts, Dark Horde, and elemental exploitation without making every faction secretly identical?
-6. **Granis/Garthork task ownership:** exact QuestData titles and public completion hooks expected by `qChieftainThork`.
+6. **Resolved - Granis/Garthork task ownership:** `qChieftainThork` requires Granis's `Punish` and Garthork's `The Magical Eye`; each producer exposes proof-state queries and sends an explicit completion report, while Thork also recovers from QuestData state.
 7. **Act III settlement `1704`:** final name, faction, services, and narrative purpose.
 8. **Gar's encounter and outcome:** Gar is current unit `n60Z` in Deadwoods `11`; the ODT defines him as a flesh-golem experiment of the Dawnhold necromancer, weakened by explosives. Confirm his active WE triggers, exact rect, boss mechanics, and whether destruction or another resolution is canonical.
 9. **Grum and the eggs:** protective plan, reckless weaponization, betrayal, or misunderstanding?
