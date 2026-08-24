@@ -1,0 +1,7 @@
+Graknar Trade Over
+    Events
+        Time - GraknarTradeTimer expires
+    Conditions
+    Actions
+        Set VariableSet GraknarTrade = False
+        Trigger - Turn off Graknar Floating Text Trade <gen>

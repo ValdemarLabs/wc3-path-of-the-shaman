@@ -1,0 +1,31 @@
+Quest Mistaken Kin Update 2
+    Events
+        Game - WithinRangeEvent becomes Equal to 1.00
+    Conditions
+        WithinRangeUnit Equal to Graknar
+        (Distance between (Position of Graknar) and (Position of KodoGrak)) Less than or equal to 500.00
+        (Owner of WithinRangeEnteringUnit) Equal to Player 1 (Red)
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- ======= ================================= ========================== --------
+        -------- ======= ADJUST WHICH QUEST --------
+        Set VariableSet QuestTemp = QuestMistakenKin
+        -------- ======= DONT MODIFY: LOAD HASHTABLE --------
+        Trigger - Run Quest System Load Hashtable <gen> (ignoring conditions)
+        -------- ======= ================================= ========================== --------
+        Quest - Mark QuestMistakenKinReq2 as Completed
+        Quest - Display to (All players) the Quest Update message: |cffffcc00QUEST UPD...
+        Quest - Display to (All players) the Quest Update message: - Talk to Graknar
+        Quest - Flash the quest dialog button
+        -------- ======= ================================= ========================== --------
+        -------- REFRESH QUEST ICON --------
+        -------- ======= QUEST State 1-5: (unavailable, available, in progress, complete, ready to turn in) --------
+        Custom script:   set udg_QuestState[udg_QuestID_Temp] = 5
+        Custom script:   call QuestIcon_RegisterQuest(udg_QuestGiverUnit[udg_QuestID_Temp], udg_QuestID_Temp, udg_QuestType[udg_QuestID_Temp], udg_QuestState[udg_QuestID_Temp] )
+        -------- Set follow --------
+        Set VariableSet FollowSystem_Source = KodoGrak
+        Custom script:   call FollowSystem_RemoveUnit(udg_FollowSystem_Source)
+        -------- force unit move --------
+        Set VariableSet GraknarPoint = (Center of KodoEnd <gen>)
+        Unit - Order KodoGrak to Move To GraknarPoint
+        Custom script:   call RemoveLocation(udg_GraknarPoint)

@@ -1,0 +1,116 @@
+Button Pressed in GraknarDialog01
+    Events
+        Dialog - A dialog button is clicked for GraknarDialog01
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_QuestAccept[1]
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- MISTAKEN KIN (KODO QUEST) - ACCEPT --------
+                Set VariableSet GraknarFarewellBoolean = True
+                Custom script:   call EnableTrigger(gg_trg_GraknarDialog01_Accept_Quest_1)
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = XXX To-be-made
+                Custom script:   call ExSound_Play("Graknar_0001", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Graknar named Graknar: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = XXX To-be-made
+                Custom script:   call ExSound_Play("Graknar_0001", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Graknar named Graknar: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = XXX To-be-made
+                Custom script:   call ExSound_Play("Nazgrek_0XXX", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- OVER --------
+                Custom script:   call TriggerExecute(gg_trg_GraknarDialog01_Accept_Quest_1)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_QuestComplete[1]
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- MISTAKEN KIN (KODO QUEST) - COMPLETED --------
+                Set VariableSet GraknarFarewellBoolean = True
+                Custom script:   call EnableTrigger(gg_trg_GraknarDialog01_Complete_Quest_1)
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = XXX To-be-made
+                Custom script:   call ExSound_Play("Graknar_0001", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Graknar named Graknar: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = XXX To-be-made
+                Custom script:   call ExSound_Play("Graknar_0001", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Graknar named Graknar: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Custom script:   call TriggerExecute(gg_trg_GraknarDialog01_Complete_Quest_1)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_Trade
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                -------- TRADE --------
+                Set VariableSet GraknarFarewellBoolean = True
+                Set VariableSet GraknarTrade = True
+                Countdown Timer - Start GraknarTradeTimer as a One-shot timer that will expire in 30.00 seconds
+                -------- --- --------
+                Set VariableSet GraknarTradeCountdown = 30
+                Custom script:   call EnableTrigger(gg_trg_Graknar_Floating_Text_Trade)
+                -------- DEFAULT CAMERA --------
+                -------- ================================ --------
+                -------- DIALOG CAMERA == RESET --------
+                -------- USAGE: call DialogCameraReset(p, duration) to restore original camera over 'duration' seconds --------
+                Custom script:   call DialogCameraReset(Player(0), 2.0)
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_Farewell
+            Then - Actions
+                Set VariableSet GraknarFarewellBoolean = True
+                Cinematic - Disable user control for (All players).
+                -------- ===================================== --------
+                Custom script:   call TriggerExecute(gg_trg_Nazgrek_Farewell)
+                Wait ExSoundDuration seconds
+                -------- ===================================== --------
+                Set VariableSet GraknarRandomGreet = (Random integer number between 1 and 2)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GraknarRandomGreet Equal to 1
+                    Then - Actions
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = XXX To-be-made
+                        Custom script:   call ExSound_Play("Graknar_0001", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from Graknar named Graknar: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                    Else - Actions
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = XXX To-be-made
+                        Custom script:   call ExSound_Play("Graknar_0001", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from Graknar named Graknar: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                -------- ===================================== --------
+                -------- DEFAULT CAMERA --------
+                -------- ================================ --------
+                -------- DIALOG CAMERA == RESET --------
+                -------- USAGE: call DialogCameraReset(p, duration) to restore original camera over 'duration' seconds --------
+                Custom script:   call DialogCameraReset(Player(0), 2.0)
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Skip remaining actions
+            Else - Actions

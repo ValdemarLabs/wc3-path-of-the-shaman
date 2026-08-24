@@ -1,0 +1,48 @@
+Create GraknarDialog01
+    Events
+    Conditions
+    Actions
+        Cinematic - Enable user control for (All players).
+        Dialog - Clear GraknarDialog01
+        Dialog - Change the title of GraknarDialog01 to Graknar
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestMistakenKin is discovered) Equal to False
+            Then - Actions
+                -------- Quest - Accept --------
+                Dialog - Create a dialog button for GraknarDialog01 labelled Mistaken Kin (Quest)
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_QuestInt = 1
+                Set VariableSet DialogBTN_QuestAccept[DialogBTN_QuestInt] = (Last created dialog Button)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestMistakenKin is discovered) Equal to True
+                (QuestMistakenKinReq1 is completed) Equal to True
+                (QuestMistakenKinReq2 is completed) Equal to True
+                (QuestMistakenKin is completed) Equal to False
+            Then - Actions
+                -------- Quest  - Completion --------
+                Dialog - Create a dialog button for GraknarDialog01 labelled Mistaken Kin (Compl...
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_QuestInt = 1
+                Set VariableSet DialogBTN_QuestComplete[DialogBTN_QuestInt] = (Last created dialog Button)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- Trade --------
+                Dialog - Create a dialog button for GraknarDialog01 labelled Trade
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_Trade = (Last created dialog Button)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- Exit dialog --------
+                Dialog - Create a dialog button for GraknarDialog01 labelled - Farewell
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_Farewell = (Last created dialog Button)
+            Else - Actions
+        -------- ======= SHOW DIALOG --------
+        Dialog - Show GraknarDialog01 for Player 1 (Red)

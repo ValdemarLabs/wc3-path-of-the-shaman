@@ -1,0 +1,140 @@
+Quests of Graknar
+    Events
+        Player - Player 1 (Red) Selects a unit
+    Conditions
+        (Triggering unit) Equal to Graknar
+        GraknarTrade Equal to False
+        (Distance between (Position of Graknar) and (Position of Nazgrek)) Less than or equal to 500.00
+        (Remaining time for DialogOverTimer) Equal to 0.00
+    Actions
+        -------- ======== Initial check of the selected unit ======== --------
+        Set VariableSet CV = (Custom value of (Triggering unit))
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        UnitIsCasting[CV] Equal to True
+                        GCSM_UnitInCombat[CV] Equal to True
+            Then - Actions
+                -------- ======== Cinematic / dialogue cannot be started because of the conditions ======== --------
+                Skip remaining actions
+                -------- ======== ======== --------
+            Else - Actions
+        -------- ======== START ======== --------
+        Trigger - Turn off (This trigger)
+        -------- ======== CINEMATIC STARTS ======== --------
+        -------- ======== CINEMATIC MOVE ======== --------
+        Set VariableSet CinematicTriggerUnit = Nazgrek
+        Set VariableSet CinematicMoveMode = 1
+        Set VariableSet CinematicMovePoint[1] = ((Position of Graknar) offset by 256.00 towards 210.00 degrees.)
+        Set VariableSet CinematicMovePoint[2] = ((Position of Graknar) offset by 256.00 towards 210.00 degrees.)
+        Trigger - Run Cinematic ON <gen> (checking conditions)
+        Custom script:   call RemoveLocation(udg_CinematicMovePoint[1])
+        Custom script:   call RemoveLocation(udg_CinematicMovePoint[2])
+        -------- ================================ --------
+        Cinematic - Turn cinematic mode On for (All players)
+        Cinematic - Fade out and back in over 1.00 seconds using texture Black Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        Wait 0.25 seconds
+        Unit - Make Graknar face Nazgrek over 0.75 seconds
+        Unit - Make Nazgrek face Graknar over 0.75 seconds
+        Wait 1.00 seconds
+        -------- DIALOG CAMERA == START --------
+        Set VariableSet DialogNPC = Graknar
+        -------- USAGE: call DialogCameraStart(p, u, dist, zOffset, angle, rotationOffset, farZ, fov, blockRadius, doBlockCheck) --------
+        -------- Typical values (no blocking): call DialogCameraStart(Player(0), udg_DialogNPC, 1200.0, 0.0, 0.0, 0.0, 10000.0, 75.0, 0.0, false) --------
+        -------- Typical values (blocking): call DialogCameraStart(Player(0), udg_DialogNPC, 1000.0, 0.0, 0.0, 0.0, 10000.0, 70.0, 0.0, true) --------
+        Custom script:   call DialogCameraStart(Player(0), udg_DialogNPC, 1050.0, 20.0, 350.0, 180.0, 10000.0, 60.0, 0.0, true)
+        -------- ================================ --------
+        Wait 1.00 seconds
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- FIRST DIALOG --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GraknarFarewellBoolean Equal to False
+                    Then - Actions
+                        -------- If the Player has previosly not declined the quest --------
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = XXX To-be-made
+                        Custom script:   call ExSound_Play("Graknar_0001", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from Graknar named Graknar: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = XXX To-be-made
+                        Custom script:   call ExSound_Play("Nazgrek_0XXX", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = XXX To-be-made
+                        Custom script:   call ExSound_Play("Graknar_0001", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from Graknar named Graknar: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                        -------- ====================== --------
+                        -------- Run "Create Dialog" --------
+                        Trigger - Run Create GraknarDialog01 <gen> (checking conditions)
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+                -------- DIALOG (QUEST(s) UNFINISHED --------
+                Custom script:   call TriggerExecute(gg_trg_Nazgrek_Greet)
+                Wait ExSoundDuration seconds
+                -------- ======================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (QuestMistakenKin is discovered) Equal to True
+                        (QuestMistakenKin is completed) Equal to False
+                    Then - Actions
+                        -------- MISTAKEN KIN --------
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Random integer number between 1 and 2) Equal to 1
+                            Then - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = XXX To-be-made
+                                Custom script:   call ExSound_Play("Graknar_0001", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from Graknar named Graknar: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                            Else - Actions
+                                Set VariableSet ExSoundString = XXX To-be-made
+                                Custom script:   call ExSound_Play("Graknar_0001", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from Graknar named Graknar: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Random integer number between 1 and 2) Equal to 1
+                            Then - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = XXX To-be-made
+                                Custom script:   call ExSound_Play("Nazgrek_0XXX", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                            Else - Actions
+                                -------- ===================================== --------
+                        -------- ====================== --------
+                        -------- Run "Create Dialog" --------
+                        Trigger - Run Create GraknarDialog01 <gen> (checking conditions)
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+                -------- NORMAL DIALOG - NEUTRAL --------
+                Set VariableSet GraknarRandomGreet = (Random integer number between 1 and 2)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GraknarRandomGreet Equal to 1
+                    Then - Actions
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = XXX To-be-made
+                        Custom script:   call ExSound_Play("Graknar_0001", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from Graknar named Graknar: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                    Else - Actions
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = XXX To-be-made
+                        Custom script:   call ExSound_Play("Graknar_0001", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from Graknar named Graknar: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                -------- ====================== --------
+                -------- Run "Create Dialog" --------
+                Trigger - Run Create GraknarDialog01 <gen> (checking conditions)
+                Trigger - Turn on (This trigger)
+                Skip remaining actions
+            Else - Actions

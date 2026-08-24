@@ -1,0 +1,7 @@
+UnitEnters KodoDrak
+    Events
+        Unit - A unit enters KodoEnd <gen>
+    Conditions
+        (Triggering unit) Equal to KodoGrak
+    Actions
+        Unit - Make KodoGrak face 275.00 over 0.50 seconds

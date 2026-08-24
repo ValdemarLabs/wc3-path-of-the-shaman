@@ -1,0 +1,18 @@
+Quest Mistaken Kin
+    Events
+    Conditions
+    Actions
+        -------- RESET Quest, if previously done --------
+        Quest - Mark QuestMistakenKin as Incomplete
+        Quest - Mark QuestMistakenKinReq1 as Incomplete
+        Quest - Mark QuestMistakenKinReq2 as Incomplete
+        Wait Campaign quest delay game-time seconds
+        Custom script:   call TriggerExecute(gg_trg_Quest_Mistaken_Kin_Discover)
+        -------- Create Kodo --------
+        Set VariableSet GraknarPoint = (Center of KodoSpawn <gen>)
+        Unit - Create 1 Kodo (KodoGrak) for Neutral Passive at GraknarPoint facing Default building facing degrees
+        Set VariableSet KodoGrak = (Last created unit)
+        Custom script:   call RemoveLocation(udg_GraknarPoint)
+        Custom script:   call TriggerExecute(gg_trg_WithinRange_Register_KodoDrak)
+        Custom script:   call TriggerExecute(gg_trg_WithinRange_Register_Graknar)
+        Trigger - Remove (This trigger) from the trigger queue
