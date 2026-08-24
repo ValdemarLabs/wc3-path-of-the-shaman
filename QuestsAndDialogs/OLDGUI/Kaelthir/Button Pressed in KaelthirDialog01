@@ -1,0 +1,199 @@
+Button Pressed in KaelthirDialog01
+    Events
+        Dialog - A dialog button is clicked for KaelthirDialog01
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_QuestAccept[1]
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- KAELTHIR STRUGGLE - ACCEPT --------
+                Set VariableSet KaelthirFarewellBoolean = True
+                Custom script:   call EnableTrigger(gg_trg_KaelthirDialog01_Accept_Quest_1)
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Please… someone… I can feel it clawing at me. I am not ready… not yet.
+                Custom script:   call ExSound_Play("Kaelthir_0009", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Kaelthir named Kaelthir: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = I don’t want to become like them.
+                Custom script:   call ExSound_Play("Kaelthir_0010", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Kaelthir named Kaelthir: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Help me, orc. I can still remember who I was. But time is running out.
+                Custom script:   call ExSound_Play("Kaelthir_0011", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Kaelthir named Kaelthir: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Bring me any mana crystals you can find!
+                Custom script:   call ExSound_Play("Kaelthir_0016", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Kaelthir named Kaelthir: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- OVER --------
+                Custom script:   call TriggerExecute(gg_trg_KaelthirDialog01_Accept_Quest_1)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_QuestComplete[1]
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- KAELTHIR STRUGGLE - COMPLETED --------
+                Set VariableSet KaelthirFarewellBoolean = True
+                Custom script:   call EnableTrigger(gg_trg_KaelthirDialog01_Complete_Quest_1)
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = …Ah… it eases… just a little. I can still think… still feel…
+                Custom script:   call ExSound_Play("Kaelthir_0014", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Kaelthir named Kaelthir: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Thank you. For this moment… for what little comfort you could bring.
+                Custom script:   call ExSound_Play("Kaelthir_0015", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Kaelthir named Kaelthir: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- OVER --------
+                Custom script:   call TriggerExecute(gg_trg_KaelthirDialog01_Complete_Quest_1)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_QuestAccept[2]
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- KAELTHIR HUNGER - ACCEPT --------
+                Set VariableSet KaelthirFarewellBoolean = True
+                Custom script:   call EnableTrigger(gg_trg_KaelthirDialog01_Accept_Quest_2)
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = I can’t resist any much longer…
+                Custom script:   call ExSound_Play("Kaelthir_0018", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Kaelthir named Kaelthir: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Every heartbeat… every breath… it drags me closer.
+                Custom script:   call ExSound_Play("Kaelthir_0019", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Kaelthir named Kaelthir: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = It burns. Do something, anything!
+                Custom script:   call ExSound_Play("Kaelthir_0020", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Kaelthir named Kaelthir: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- OVER --------
+                Custom script:   call TriggerExecute(gg_trg_KaelthirDialog01_Accept_Quest_2)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_QuestAccept[3]
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- DEFAULT CAMERA --------
+                -------- ================================ --------
+                -------- DIALOG CAMERA == RESET --------
+                -------- USAGE: call DialogCameraReset(p, duration) to restore original camera over 'duration' seconds --------
+                Custom script:   call DialogCameraReset(Player(0), 2.0)
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_QuestAccept[4]
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- DEFAULT CAMERA --------
+                -------- ================================ --------
+                -------- DIALOG CAMERA == RESET --------
+                -------- USAGE: call DialogCameraReset(p, duration) to restore original camera over 'duration' seconds --------
+                Custom script:   call DialogCameraReset(Player(0), 2.0)
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_QuestAccept[5]
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- DEFAULT CAMERA --------
+                -------- ================================ --------
+                -------- DIALOG CAMERA == RESET --------
+                -------- USAGE: call DialogCameraReset(p, duration) to restore original camera over 'duration' seconds --------
+                Custom script:   call DialogCameraReset(Player(0), 2.0)
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_Farewell
+            Then - Actions
+                Set VariableSet KaelthirFarewellBoolean = True
+                Cinematic - Disable user control for (All players).
+                -------- ===================================== --------
+                Custom script:   call TriggerExecute(gg_trg_Nazgrek_Farewell)
+                Wait ExSoundDuration seconds
+                -------- ===================================== --------
+                Set VariableSet KaelthirRandomGreet = (Random integer number between 1 and 3)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        KaelthirRandomGreet Equal to 1
+                    Then - Actions
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = Please… come back!
+                        Custom script:   call ExSound_Play("Kaelthir_0005", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from Kaelthir named Kaelthir: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        KaelthirRandomGreet Equal to 2
+                    Then - Actions
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = Don’t leave me here!
+                        Custom script:   call ExSound_Play("Kaelthir_0006", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from Kaelthir named Kaelthir: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        KaelthirRandomGreet Equal to 3
+                    Then - Actions
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = Must… resist… the darkness!
+                        Custom script:   call ExSound_Play("Kaelthir_0007", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from Kaelthir named Kaelthir: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                    Else - Actions
+                -------- DEFAULT CAMERA --------
+                -------- ================================ --------
+                -------- DIALOG CAMERA == RESET --------
+                -------- USAGE: call DialogCameraReset(p, duration) to restore original camera over 'duration' seconds --------
+                Custom script:   call DialogCameraReset(Player(0), 2.0)
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Skip remaining actions
+            Else - Actions

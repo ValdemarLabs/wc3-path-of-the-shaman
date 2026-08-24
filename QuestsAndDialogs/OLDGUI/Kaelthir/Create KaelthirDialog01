@@ -1,0 +1,91 @@
+Create KaelthirDialog01
+    Events
+    Conditions
+    Actions
+        Cinematic - Enable user control for (All players).
+        Dialog - Clear KaelthirDialog01
+        Dialog - Change the title of KaelthirDialog01 to Kaelthir
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestKaelthirStruggle is discovered) Equal to False
+            Then - Actions
+                -------- Quest - Accept --------
+                Dialog - Create a dialog button for KaelthirDialog01 labelled Kaelthir's Struggle...
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_QuestInt = 1
+                Set VariableSet DialogBTN_QuestAccept[DialogBTN_QuestInt] = (Last created dialog Button)
+            Else - Actions
+        -------- CHECK ITEM --------
+        Set VariableSet DInvItemType = Mana Crystal
+        Set VariableSet DInvItemAmount = 1
+        Custom script:   set udg_DInvItemCarrierHasItems = HeroItemCheckBoth(udg_DInvItemType, udg_DInvItemAmount)
+        -------- ================================ --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestKaelthirStruggle is discovered) Equal to True
+                (QuestKaelthirStruggle is completed) Equal to False
+                DInvItemCarrierHasItems Equal to True
+            Then - Actions
+                -------- Quest  - Completion --------
+                Dialog - Create a dialog button for KaelthirDialog01 labelled Kaelthir’s Strugg...
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_QuestInt = 1
+                Set VariableSet DialogBTN_QuestComplete[DialogBTN_QuestInt] = (Last created dialog Button)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestKaelthirStruggle is completed) Equal to True
+                (QuestKaelthirHunger is discovered) Equal to False
+            Then - Actions
+                -------- Quest - Accept --------
+                Dialog - Create a dialog button for KaelthirDialog01 labelled Kaelthir's Hunger (...
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_QuestInt = 2
+                Set VariableSet DialogBTN_QuestAccept[DialogBTN_QuestInt] = (Last created dialog Button)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestKaelthirStruggle is completed) Equal to True
+                (QuestKaelthirHunger is discovered) Equal to True
+                (QuestKaelthirHunger is completed) Equal to False
+            Then - Actions
+                -------- Quest  - Completion --------
+                Dialog - Create a dialog button for KaelthirDialog01 labelled Kaelthir's Hunger (...
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_QuestInt = 3
+                Set VariableSet DialogBTN_QuestComplete[DialogBTN_QuestInt] = (Last created dialog Button)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestKaelthirStruggle is completed) Equal to True
+                (QuestKaelthirHunger is discovered) Equal to True
+                (QuestKaelthirHunger is completed) Equal to False
+            Then - Actions
+                -------- Quest  - Completion --------
+                Dialog - Create a dialog button for KaelthirDialog01 labelled Kaelthir's Hunger (...
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_QuestInt = 4
+                Set VariableSet DialogBTN_QuestComplete[DialogBTN_QuestInt] = (Last created dialog Button)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestKaelthirStruggle is completed) Equal to True
+                (QuestKaelthirHunger is discovered) Equal to True
+                (QuestKaelthirHunger is completed) Equal to False
+            Then - Actions
+                -------- Quest  - Completion --------
+                Dialog - Create a dialog button for KaelthirDialog01 labelled Kaelthir's Hunger (...
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_QuestInt = 5
+                Set VariableSet DialogBTN_QuestComplete[DialogBTN_QuestInt] = (Last created dialog Button)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- Exit dialog --------
+                Dialog - Create a dialog button for KaelthirDialog01 labelled - Farewell
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_Farewell = (Last created dialog Button)
+            Else - Actions
+        -------- ======= SHOW DIALOG --------
+        Dialog - Show KaelthirDialog01 for Player 1 (Red)

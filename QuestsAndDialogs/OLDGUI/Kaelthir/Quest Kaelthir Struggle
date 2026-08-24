@@ -1,0 +1,10 @@
+Quest Kaelthir Struggle
+    Events
+    Conditions
+    Actions
+        -------- RESET Quest, if previously done --------
+        Quest - Mark QuestKaelthirStruggle as Incomplete
+        Quest - Mark QuestKaelthirStruggleReq as Incomplete
+        Wait Campaign quest delay game-time seconds
+        Custom script:   call TriggerExecute(gg_trg_Quest_Kaelthir_Struggle_Discover)
+        Trigger - Remove (This trigger) from the trigger queue
