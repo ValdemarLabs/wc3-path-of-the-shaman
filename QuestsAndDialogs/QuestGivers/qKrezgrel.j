@@ -462,14 +462,17 @@ private function BuildDialog takes nothing returns nothing
 endfunction
 
 private function PlayDialogGreeting takes unit hero returns nothing
-    local integer seq = DialogInteraction_CreateGreetSequenceBase(Krezgrel, KREZGREL_NAME, hero, DIALOG_FADE_OUT, DIALOG_FADE_IN, false)
+    local integer seq
     if not DialogInteraction_IsFirstGreetDone(Krezgrel) then
+        set seq = DialogInteraction_CreateBaseSequence(Krezgrel, KREZGREL_NAME)
         call DialogSystem_AddLine(seq, Krezgrel, KREZGREL_NAME, VL_KREZGREL_0001_TEXT, VL_KREZGREL_0001_KEY, true)
         call DialogSystem_AddLine(seq, Krezgrel, KREZGREL_NAME, VL_KREZGREL_0002_TEXT, VL_KREZGREL_0002_KEY, true)
+        call DialogInteraction_PlayFirstGreetSequenceEx(Krezgrel, Player(0), KrezgrelDialog, seq, CINEMATIC)
     else
+        set seq = DialogInteraction_CreateGreetSequenceBase(Krezgrel, KREZGREL_NAME, hero, DIALOG_FADE_OUT, DIALOG_FADE_IN, false)
         call DialogSystem_AddLine(seq, Krezgrel, KREZGREL_NAME, VL_KREZGREL_0006_TEXT, VL_KREZGREL_0006_KEY, true)
+        call DialogInteraction_PlayGreetSequenceEx(seq, Krezgrel, Player(0), KrezgrelDialog, CINEMATIC)
     endif
-    call DialogInteraction_PlayGreetSequenceEx(seq, Krezgrel, Player(0), KrezgrelDialog, CINEMATIC)
 endfunction
 
 private function ContinueToDialogInternal takes nothing returns nothing

@@ -427,6 +427,7 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
     endfunction
 
     private function ReleasePendingGreetSequenceToDialog takes nothing returns nothing
+        call EndCinematicSequence(DialogInteraction_PendingSequenceCinematic)
         set DialogInteraction_PendingSequenceCinematic = false
     endfunction
 

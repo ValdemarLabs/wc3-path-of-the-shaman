@@ -598,10 +598,26 @@ private function AddPreDialogBark takes integer seq returns nothing
     set defense = 0
 endfunction
 
+private function AddFirstDialogGreeting takes integer seq returns nothing
+    call DialogSystem_AddLine(seq, Granis, GRANIS_NAME, VL_GRANIS_0001_TEXT, VL_GRANIS_0001_KEY, true)
+    call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0130_TEXT, VL_NAZGREK_0130_KEY, true)
+    call DialogSystem_AddLine(seq, Granis, GRANIS_NAME, VL_GRANIS_0010_TEXT, VL_GRANIS_0010_KEY, true)
+    call DialogSystem_AddLine(seq, Granis, GRANIS_NAME, VL_GRANIS_0011_TEXT, VL_GRANIS_0011_KEY, true)
+endfunction
+
 private function PlayDialogGreeting takes unit hero returns nothing
-    local integer seq = DialogInteraction_CreateGreetSequenceBase(Granis, GRANIS_NAME, hero, DIALOG_FADE_OUT, DIALOG_FADE_IN, false)
-    call AddPreDialogBark(seq)
-    call DialogInteraction_PlayGreetSequenceEx(seq, Granis, Player(0), GranisDialog, CINEMATIC)
+    local integer seq
+    local QuestData punish = GetGranisQuest(QUEST_PUNISH)
+    if not DialogInteraction_IsFirstGreetDone(Granis) and punish != 0 and punish.state == QUEST_STATE_AVAILABLE and not punish.completed then
+        set seq = DialogInteraction_CreateBaseSequence(Granis, GRANIS_NAME)
+        call AddFirstDialogGreeting(seq)
+        call DialogInteraction_PlayFirstGreetSequenceEx(Granis, Player(0), GranisDialog, seq, CINEMATIC)
+    else
+        set seq = DialogInteraction_CreateGreetSequenceBase(Granis, GRANIS_NAME, hero, DIALOG_FADE_OUT, DIALOG_FADE_IN, false)
+        call AddPreDialogBark(seq)
+        call DialogInteraction_PlayGreetSequenceEx(seq, Granis, Player(0), GranisDialog, CINEMATIC)
+    endif
+    set punish = 0
 endfunction
 
 private function ContinueToDialogInternal takes nothing returns nothing

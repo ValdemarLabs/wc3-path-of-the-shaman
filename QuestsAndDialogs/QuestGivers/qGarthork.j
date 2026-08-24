@@ -218,10 +218,34 @@ private function AddPreDialogBark takes integer seq returns nothing
     set q = 0
 endfunction
 
+private function AddFirstDialogGreeting takes integer seq returns nothing
+    call DialogSystem_AddLine(seq, Garthork, GARTHORK_NAME, VL_GARTHORK_0002_TEXT, VL_GARTHORK_0002_KEY, true)
+    call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0072_TEXT, VL_NAZGREK_0072_KEY, true)
+    call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0073_TEXT, VL_NAZGREK_0073_KEY, true)
+    call DialogSystem_AddLine(seq, Garthork, GARTHORK_NAME, VL_GARTHORK_0003_TEXT, VL_GARTHORK_0003_KEY, true)
+    call DialogSystem_AddLine(seq, Garthork, GARTHORK_NAME, VL_GARTHORK_0004_TEXT, VL_GARTHORK_0004_KEY, true)
+    call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0074_TEXT, VL_NAZGREK_0074_KEY, true)
+    call DialogSystem_AddLine(seq, Garthork, GARTHORK_NAME, VL_GARTHORK_0005_TEXT, VL_GARTHORK_0005_KEY, true)
+    call DialogSystem_AddLine(seq, Garthork, GARTHORK_NAME, VL_GARTHORK_0010_TEXT, VL_GARTHORK_0010_KEY, true)
+    call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0080_TEXT, VL_NAZGREK_0080_KEY, true)
+    call DialogSystem_AddLine(seq, Garthork, GARTHORK_NAME, VL_GARTHORK_0011_TEXT, VL_GARTHORK_0011_KEY, true)
+    call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0081_TEXT, VL_NAZGREK_0081_KEY, true)
+    call DialogSystem_AddLine(seq, Garthork, GARTHORK_NAME, VL_GARTHORK_0012_TEXT, VL_GARTHORK_0012_KEY, true)
+endfunction
+
 private function PlayDialogGreeting takes unit hero returns nothing
-    local integer seq = DialogInteraction_CreateGreetSequenceBase(Garthork, GARTHORK_NAME, hero, DIALOG_FADE_OUT, DIALOG_FADE_IN, false)
-    call AddPreDialogBark(seq)
-    call DialogInteraction_PlayGreetSequenceEx(seq, Garthork, Player(0), GarthorkDialog, CINEMATIC)
+    local integer seq
+    local QuestData q = GetMagicalEyeQuest()
+    if not DialogInteraction_IsFirstGreetDone(Garthork) and q != 0 and q.state == QUEST_STATE_AVAILABLE and not q.completed then
+        set seq = DialogInteraction_CreateBaseSequence(Garthork, GARTHORK_NAME)
+        call AddFirstDialogGreeting(seq)
+        call DialogInteraction_PlayFirstGreetSequenceEx(Garthork, Player(0), GarthorkDialog, seq, CINEMATIC)
+    else
+        set seq = DialogInteraction_CreateGreetSequenceBase(Garthork, GARTHORK_NAME, hero, DIALOG_FADE_OUT, DIALOG_FADE_IN, false)
+        call AddPreDialogBark(seq)
+        call DialogInteraction_PlayGreetSequenceEx(seq, Garthork, Player(0), GarthorkDialog, CINEMATIC)
+    endif
+    set q = 0
 endfunction
 
 private function ContinueToDialogInternal takes nothing returns nothing
