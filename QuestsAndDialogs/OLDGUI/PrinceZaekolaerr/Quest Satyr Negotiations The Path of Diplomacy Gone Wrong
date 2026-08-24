@@ -1,0 +1,8 @@
+Quest Satyr Negotiations The Path of Diplomacy Gone Wrong
+    Events
+    Conditions
+    Actions
+        Special Effect - Destroy QuestGiverZaekolaerr
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Satyr Negotiations Update The Path of Diplomacy Gone Wrong <gen> (checking conditions)
+        Trigger - Remove (This trigger) from the trigger queue

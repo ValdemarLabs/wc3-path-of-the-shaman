@@ -1,0 +1,10 @@
+Quest Satyr Negotiations Arena
+    Events
+    Conditions
+    Actions
+        Special Effect - Destroy QuestGiverZaekolaerr
+        Special Effect - Create a special effect attached to the overhead of Zaekolaerr using war3campImported\Completed_Quest_NOT.mdx
+        Set VariableSet QuestGiverZaekolaerr = (Last created special effect)
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Satyr Negotiations Update Arena <gen> (checking conditions)
+        Trigger - Remove (This trigger) from the trigger queue

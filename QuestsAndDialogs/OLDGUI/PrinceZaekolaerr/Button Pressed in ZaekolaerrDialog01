@@ -1,0 +1,48 @@
+Button Pressed in ZaekolaerrDialog01
+    Events
+        Dialog - A dialog button is clicked for ZaekolaerrDialog01
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to ZaekolaerrDialog01Negot
+            Then - Actions
+                -------- SATYR NEGOTIATIONS - CONTINUE --------
+                Set VariableSet ZaekolaerrDialog01FarewellBool = True
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Zaekolaerr named Prince Zaekolaerr: Play Satyr_0026 <gen> and display So, an orc dares to....  Modify duration: Set to 6.00 seconds and Wait
+                Camera - Apply ZaekolaerrCamera03 <gen> for Player 1 (Red) over 0.00 seconds
+                Unit - Make SatyrQueen face Zaekolaerr over 0.75 seconds
+                Unit - Make Nazgrek face SatyrQueen over 1.20 seconds
+                Animation - Queue SatyrQueen's stand 03 animation
+                Animation - Reset SatyrQueen's animation
+                Wait 0.50 seconds
+                Cinematic - Send transmission to (All players) from Queen of Suffering 1160 <gen> named Demoness: Play Demoness_0003 <gen> and display Prince, why are we ....  Modify duration: Set to 8.00 seconds and Wait
+                Unit - Make Zaekolaerr face SatyrQueen over 0.75 seconds
+                Animation - Play Zaekolaerr's spell slam animation
+                Animation - Reset Zaekolaerr's animation
+                Cinematic - Send transmission to (All players) from Zaekolaerr named Prince Zaekolaerr: Play Satyr_0047 <gen> and display Silence! Let’s he....  Modify duration: Set to 3.00 seconds and Wait
+                Unit - Make SatyrQueen face Nazgrek over 0.75 seconds
+                Unit - Make Nazgrek face Zaekolaerr over 0.75 seconds
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display XXX.  Modify duration: Set to 5.00 seconds and Wait
+                Unit - Make Zaekolaerr face Nazgrek over 0.75 seconds
+                Cinematic - Send transmission to (All players) from Zaekolaerr named Prince Zaekolaerr: Play Satyr_0029 <gen> and display Coexist? With your ....  Modify duration: Set to 9.00 seconds and Wait
+                Trigger - Run Create ZaekolaerrDialog02 <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to ZaekolaerrDialog01Farewell
+            Then - Actions
+                Set VariableSet ZaekolaerrDialog01FarewellBool = True
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display XXX.  Modify duration: Set to 5.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Zaekolaerr named Prince Zaekolaerr: Play Satyr_0020 <gen> and display Leave, and do not r....  Modify duration: Set to 9.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply ZaekolaerrCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Skip remaining actions
+            Else - Actions

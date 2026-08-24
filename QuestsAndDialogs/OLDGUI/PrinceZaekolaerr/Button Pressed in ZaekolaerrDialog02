@@ -1,0 +1,80 @@
+Button Pressed in ZaekolaerrDialog02
+    Events
+        Dialog - A dialog button is clicked for ZaekolaerrDialog02
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to ZaekolaerrDialog02NegotArena
+            Then - Actions
+                -------- SATYR NEGOTIATIONS - CONTINUE --------
+                Cinematic - Disable user control for (All players).
+                Camera - Apply ZaekolaerrCamera01 <gen> for Player 1 (Red) over 0.00 seconds
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display XXX.  Modify duration: Set to 5.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Zaekolaerr named Prince Zaekolaerr: Play Satyr_0032 <gen> and display We shall see if you....  Modify duration: Set to 10.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply ZaekolaerrCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Trigger - Run Quest Satyr Negotiations Arena <gen> (checking conditions)
+                Set VariableSet QuestSatyrNegotiationsSelected = True
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to ZaekolaerrDialog02NegotTaunt
+            Then - Actions
+                -------- TAUNT --------
+                Cinematic - Disable user control for (All players).
+                Camera - Apply ZaekolaerrCamera01 <gen> for Player 1 (Red) over 0.00 seconds
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display XXX.  Modify duration: Set to 5.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Zaekolaerr named Prince Zaekolaerr: Play Satyr_0043 <gen> and display What foolishness is....  Modify duration: Set to 6.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Zaekolaerr named Prince Zaekolaerr: Play Satyr_0044 <gen> and display Now prepare for the....  Modify duration: Set to 4.00 seconds and Wait
+                -------- Satyr will be remain ENEMEY of Player --------
+                Player - Make Player 1 (Red) treat Player 13 (Maroon) as an Enemy
+                Player - Make Player 13 (Maroon) treat Player 1 (Red) as an Enemy
+                Trigger - Turn off Trigger
+                -------- - --------
+                -------- DEFAULT CAMERA --------
+                Camera - Apply ZaekolaerrCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Trigger - Run Quest Satyr Negotiations The Path of Diplomacy Gone Wrong <gen> (checking conditions)
+                Set VariableSet QuestSatyrNegotiationsSelected = True
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to ZaekolaerrDialog02NegotJoin
+            Then - Actions
+                -------- BETRAY ORCS --------
+                Cinematic - Disable user control for (All players).
+                Camera - Apply ZaekolaerrCamera01 <gen> for Player 1 (Red) over 0.00 seconds
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display XXX.  Modify duration: Set to 5.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Zaekolaerr named Prince Zaekolaerr: Play Satyr_0037 <gen> and display Turning against you....  Modify duration: Set to 6.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply ZaekolaerrCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Trigger - Run Quest Satyr Negotiations Update Unlikely Alliances <gen> (checking conditions)
+                Set VariableSet QuestSatyrNegotiationsSelected = True
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to ZaekolaerrDialog02Farewell
+            Then - Actions
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display XXX.  Modify duration: Set to 5.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Zaekolaerr named Prince Zaekolaerr: Play Satyr_0020 <gen> and display Leave, and do not r....  Modify duration: Set to 9.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply ZaekolaerrCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Skip remaining actions
+            Else - Actions

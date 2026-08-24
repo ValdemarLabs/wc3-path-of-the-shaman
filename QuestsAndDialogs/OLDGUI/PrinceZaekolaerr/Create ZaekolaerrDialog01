@@ -1,0 +1,29 @@
+Create ZaekolaerrDialog01
+    Events
+    Conditions
+    Actions
+        Dialog - Clear ZaekolaerrDialog01
+        Dialog - Change the title of ZaekolaerrDialog01 to Options
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                And - All (Conditions) are true
+                    Conditions
+                        (QuestSatyrNegotiations is discovered) Equal to True
+                        (QuestSatyrNegotiations is completed) Equal to False
+                        QuestSatyrNegotiationsSelected Equal to False
+            Then - Actions
+                -------- Satyr Negotiations - Q - Continue --------
+                Dialog - Create a dialog button for ZaekolaerrDialog01 labelled Satyr Negotiations ...
+                Set VariableSet ZaekolaerrDialog01Negot = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show ZaekolaerrDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- Exit dialog --------
+                Dialog - Create a dialog button for ZaekolaerrDialog01 labelled - Farewell
+                Set VariableSet ZaekolaerrDialog01Farewell = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show ZaekolaerrDialog01 for Player 1 (Red)
+            Else - Actions

@@ -1,0 +1,42 @@
+Create ZaekolaerrDialog02
+    Events
+    Conditions
+    Actions
+        Dialog - Clear ZaekolaerrDialog02
+        Dialog - Change the title of ZaekolaerrDialog02 to Options
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- ARENA --------
+                Dialog - Create a dialog button for ZaekolaerrDialog02 labelled - Arena?
+                Set VariableSet ZaekolaerrDialog02NegotArena = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show ZaekolaerrDialog02 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- TAUNT --------
+                Dialog - Create a dialog button for ZaekolaerrDialog02 labelled - Taunt the satyr
+                Set VariableSet ZaekolaerrDialog02NegotTaunt = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show ZaekolaerrDialog02 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- JOIN --------
+                Dialog - Create a dialog button for ZaekolaerrDialog02 labelled - Alliance?
+                Set VariableSet ZaekolaerrDialog02NegotJoin = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show ZaekolaerrDialog02 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- Exit dialog --------
+                Dialog - Create a dialog button for ZaekolaerrDialog01 labelled - Farewell
+                Set VariableSet ZaekolaerrDialog02Farewell = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show ZaekolaerrDialog02 for Player 1 (Red)
+            Else - Actions

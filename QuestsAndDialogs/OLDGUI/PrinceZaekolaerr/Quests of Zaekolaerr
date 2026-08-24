@@ -1,0 +1,72 @@
+Quests of Zaekolaerr
+    Events
+        Player - Player 1 (Red) Selects a unit
+    Conditions
+        (Triggering unit) Equal to Zaekolaerr
+        (Distance between (Position of Zaekolaerr) and (Position of Nazgrek)) Less than or equal to 500.00
+        (Remaining time for DialogOverTimer) Equal to 0.00
+        (Player 13 (Maroon) is an enemy of Player 1 (Red).) Equal to False
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- ======== CINEMATIC STARTS ======== --------
+        Trigger - Run Cinematic ON <gen> (checking conditions)
+        -------- Camera --------
+        Cinematic - Turn cinematic mode On for (All players)
+        Camera - Pan camera for Player 1 (Red) to (Position of Zaekolaerr) over 0.00 seconds
+        Camera - Apply ZaekolaerrCamera02 <gen> for Player 1 (Red) over 0.00 seconds
+        Wait 1.00 seconds
+        Unit - Make Zaekolaerr face Nazgrek over 0.75 seconds
+        Unit - Make Nazgrek face Zaekolaerr over 0.75 seconds
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- NORMAL DIALOG --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ZaekolaerrDialog01FarewellBool Equal to False
+                    Then - Actions
+                        -------- If the Player has previosly not declined the quest --------
+                        Cinematic - Send transmission to (All players) from Zaekolaerr named Prince Zaekolaerr: Play Satyr_0002 <gen> and display Hmmm... what have w....  Modify duration: Set to 12.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display XXX.  Modify duration: Set to 3.00 seconds and Wait
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ZaekolaerrDialog01FarewellBool Equal to True
+                    Then - Actions
+                        Set VariableSet PrinceZaekolaerrRandomGreet = (Random integer number between 1 and 5)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                PrinceZaekolaerrRandomGreet Equal to 1
+                            Then - Actions
+                                Cinematic - Send transmission to (All players) from Zaekolaerr named Prince Zaekolaerr: Play Satyr_0013 <gen> and display Oh, it's you again.....  Modify duration: Set to 7.00 seconds and Wait
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                PrinceZaekolaerrRandomGreet Equal to 2
+                            Then - Actions
+                                Cinematic - Send transmission to (All players) from Zaekolaerr named Prince Zaekolaerr: Play Satyr_0014 <gen> and display Look who decided to....  Modify duration: Set to 8.00 seconds and Wait
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                PrinceZaekolaerrRandomGreet Equal to 3
+                            Then - Actions
+                                Cinematic - Send transmission to (All players) from Zaekolaerr named Prince Zaekolaerr: Play Satyr_0015 <gen> and display Oh, it's you... Wha....  Modify duration: Set to 7.00 seconds and Wait
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                PrinceZaekolaerrRandomGreet Equal to 4
+                            Then - Actions
+                                Cinematic - Send transmission to (All players) from Zaekolaerr named Prince Zaekolaerr: Play Satyr_0016 <gen> and display Hmph... you again. ....  Modify duration: Set to 11.00 seconds and Wait
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                PrinceZaekolaerrRandomGreet Equal to 5
+                            Then - Actions
+                                Cinematic - Send transmission to (All players) from Zaekolaerr named Prince Zaekolaerr: Play Satyr_0017 <gen> and display You dare to stand b....  Modify duration: Set to 10.00 seconds and Wait
+                            Else - Actions
+                    Else - Actions
+                -------- Run "Create Dialog" --------
+                Trigger - Run Create ZaekolaerrDialog01 <gen> (checking conditions)
+                Trigger - Turn on (This trigger)
+                Skip remaining actions
+            Else - Actions
