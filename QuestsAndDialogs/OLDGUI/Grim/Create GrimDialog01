@@ -1,0 +1,48 @@
+Create GrimDialog01
+    Events
+    Conditions
+    Actions
+        Dialog - Clear GrimDialog01
+        Dialog - Change the title of GrimDialog01 to Available Quests
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        And - All (Conditions) are true
+                            Conditions
+                                (QuestBearTooth is discovered) Equal to False
+                                (QuestBearTooth is completed) Equal to False
+                        And - All (Conditions) are true
+                            Conditions
+                                (QuestBearTooth is completed) Equal to True
+            Then - Actions
+                -------- Daily Quest - Bear Tooth - Accept --------
+                Dialog - Create a dialog button for GrimDialog01 labelled Big Bear Tooth (Dai...
+                Set VariableSet GrimDialog01Q1 = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show GrimDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestBearTooth is discovered) Equal to True
+                (QuestBearTooth is completed) Equal to False
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Nazgrek has an item of type Big Bear Tooth) Equal to True
+                        (Zulkis has an item of type Big Bear Tooth) Equal to True
+            Then - Actions
+                -------- Daily Quest - Big Bear Tooth - Completion --------
+                Dialog - Create a dialog button for GrimDialog01 labelled Big Bear Tooth (Com...
+                Set VariableSet GrimDialog01Q1C = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show GrimDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- Exit dialog --------
+                Dialog - Create a dialog button for GrimDialog01 labelled - Farewell
+                Set VariableSet GrimDialog01Farewell = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show GrimDialog01 for Player 1 (Red)
+            Else - Actions

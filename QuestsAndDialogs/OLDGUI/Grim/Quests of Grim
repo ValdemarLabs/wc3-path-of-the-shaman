@@ -1,0 +1,41 @@
+Quests of Grim
+    Events
+        Player - Player 1 (Red) Selects a unit
+    Conditions
+        (Triggering unit) Equal to Grim
+        (Distance between (Position of Grim) and (Position of Nazgrek)) Less than or equal to 500.00
+        (Remaining time for DialogOverTimer) Equal to 0.00
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- ======== CINEMATIC STARTS ======== --------
+        Trigger - Run Cinematic ON <gen> (checking conditions)
+        -------- Camera --------
+        Cinematic - Turn cinematic mode On for (All players)
+        Camera - Pan camera for Player 1 (Red) to (Position of Grim) over 1.00 seconds
+        Camera - Apply GrimCamera01 <gen> for Player 1 (Red) over 0.00 seconds
+        Wait 1.00 seconds
+        Unit - Make Grim face Nazgrek over 0.75 seconds
+        Unit - Make Nazgrek face Grim over 0.75 seconds
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- NORMAL DIALOG --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrimDialog01FarewellBoolean Equal to False
+                    Then - Actions
+                        -------- If the Player has previosly not declined the quest --------
+                        Cinematic - Send transmission to (All players) from Grim named Grim: Play OrcPeon_0022 <gen> and display Me want tooth of a ....  Modify duration: Set to 6.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Grim named Grim: Play OrcPeon_0023 <gen> and display Can you fetch me a ....  Modify duration: Set to 4.00 seconds and Wait
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrimDialog01FarewellBoolean Equal to True
+                    Then - Actions
+                        Cinematic - Send transmission to (All players) from Grim named Grim: Play OrcPeon_0020 <gen> and display Yes? What is it?.  Modify duration: Set to 2.00 seconds and Wait
+                    Else - Actions
+                -------- Run "Create Dialog" --------
+                Trigger - Run Create GrimDialog01 <gen> (checking conditions)
+                Trigger - Turn on (This trigger)
+                Skip remaining actions
+            Else - Actions

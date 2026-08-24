@@ -1,0 +1,11 @@
+Quest Big Bear Tooth Create
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create the quest objects --------
+        Quest - Create a Required, undiscovered quest titled Big Bear Tooth with the description Grim wants you to k..., using icon path ReplaceableTextures\CommandButtons\BTNGrizzlyBear.blp
+        Set VariableSet QuestBearTooth = (Last created quest)
+        Quest - Create a quest requirement for QuestBearTooth with the description Bring Big Bear Toot...
+        Set VariableSet QuestBearToothReq = (Last created quest requirement)

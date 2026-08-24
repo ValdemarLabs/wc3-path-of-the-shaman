@@ -1,0 +1,78 @@
+Button Pressed in GrimDialog01
+    Events
+        Dialog - A dialog button is clicked for GrimDialog01
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to GrimDialog01Q1
+            Then - Actions
+                -------- BIG BEAR TOOTH - ACCEPT --------
+                Set VariableSet GrimDialog01FarewellBoolean = True
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Grim named Grim: Play OrcPeon_00024 <gen> and display Kill a bear and rem....  Modify duration: Set to 7.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply GrimCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Trigger - Run Quest Big Bear Tooth <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to GrimDialog01Q1C
+            Then - Actions
+                -------- BIG BEAR TOOTH - COMPLETED --------
+                Set VariableSet GrimDialog01FarewellBoolean = True
+                Cinematic - Disable user control for (All players).
+                Camera - Apply GrimCamera02 <gen> for Player 1 (Red) over 0.00 seconds
+                Cinematic - Send transmission to (All players) from Grim named Grim: Play OrcPeon_0025 <gen> and display Oooh nice! You stil....  Modify duration: Set to 5.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply GrimCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- Remove quest items --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Nazgrek has an item of type Big Bear Tooth) Equal to True
+                        (Zulkis has an item of type Big Bear Tooth) Equal to False
+                    Then - Actions
+                        Item - Remove (Item carried by Nazgrek of type Big Bear Tooth)
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Nazgrek has an item of type Big Bear Tooth) Equal to False
+                        (Zulkis has an item of type Big Bear Tooth) Equal to True
+                    Then - Actions
+                        Item - Remove (Item carried by Zulkis of type Big Bear Tooth)
+                    Else - Actions
+                -------- Rewards --------
+                Player - Add 300 to Player 1 (Red).Current gold
+                Hero - Add 100 experience to Nazgrek, Show level-up graphics
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Wait Campaign quest delay seconds
+                Trigger - Run Quest Big Bear Tooth Completed <gen> (checking conditions)
+                -------- Change quest mark --------
+                Special Effect - Destroy QuestGiverGrim
+                Special Effect - Create a special effect attached to the overhead of Grim using war3campImported\ExcMark_Blue_RepetableQuest.mdx
+                Set VariableSet QuestGiverGrim = (Last created special effect)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to GrimDialog01Farewell
+            Then - Actions
+                Set VariableSet GrimDialog01FarewellBoolean = True
+                Cinematic - Disable user control for (All players).
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0004 <gen> and display Until our paths cro....  Modify duration: Set to 5.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Grim named Grim: Play No sound and display Okay... Bye!.  Modify duration: Set to 2.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply GrimCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ==== Return gaming mode END ==== --------
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Skip remaining actions
+            Else - Actions

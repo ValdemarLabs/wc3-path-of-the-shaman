@@ -1,0 +1,10 @@
+Quest Big Bear Tooth
+    Events
+    Conditions
+    Actions
+        -------- RESET Quest, if previously done --------
+        Quest - Mark QuestBearTooth as Incomplete
+        Quest - Mark QuestBearToothReq as Incomplete
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Big Bear Tooth Discover <gen> (checking conditions)
+        Trigger - Remove (This trigger) from the trigger queue

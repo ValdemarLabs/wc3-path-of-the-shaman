@@ -1,0 +1,10 @@
+Quest Big Bear Tooth Discover
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Big Bear Tooth Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestBearTooth as Discovered
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Discovered message: |cffffcc00DAILY QUE...
