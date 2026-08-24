@@ -5,9 +5,9 @@
     Version:
 
     Description:
-    Runs the map preload flow immediately after the loading screen. It keeps
-    player start setup from being executed until sound, music, and ability
-    preloading have completed.
+    Asks the player to choose a normal preload or a fast developer check
+    immediately after the loading screen. It keeps player start setup from
+    being executed until the selected preload stages have completed.
 
     Credits:
 
@@ -20,8 +20,9 @@
     GameMode calls Start_Start() after mode and difficulty are selected.
     Ability preloading creates a temporary AbilityLoader unit from
     rawcode 'h60N' and removes it immediately after ability data is loaded.
-    Saved-game loading runs sound/music preload only and does not execute
-    player start setup.
+    Fast developer checks still preload abilities but bypass the sound and
+    music preload stages. Saved-game loading repeats those stages only when
+    the normal option was selected and never executes player start setup.
 
     API:
     call Preloader_Start()
@@ -49,17 +50,23 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
         private constant string PRL_TEXT_COLOR = "|cffffffff"
         private constant string PRL_TEXT_HIGHLIGHT = "|cffffcc00"
         private constant string PRL_TEXT_END = "|r"
+        private constant integer PRL_CONTROL_PLAYER_ID = 0
         private constant integer PRL_ABILITY_LOADER_UNIT_ID = 'h60N'
         private constant real PRL_ABILITY_LOADER_FACING = 270.00
 
         private trigger PRL_StartTrigger = null
         private trigger PRL_LoadedGameTrigger = null
+        private trigger PRL_ChoiceTrigger = null
         private timer PRL_Timer = null
+        private dialog PRL_ChoiceDialog = null
+        private button PRL_FastCheckButton = null
         private integer PRL_Step = 0
         private boolean PRL_Started = false
         private boolean PRL_Finished = false
         private boolean PRL_RunGameStartOnFinish = true
         private boolean PRL_RunAbilityStage = true
+        private boolean PRL_RunSoundAndMusicStages = true
+        private boolean PRL_ChoiceResolved = false
         private boolean PRL_GameUIHidden = false
     endglobals
 
@@ -159,9 +166,15 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
             set PRL_Step = 2
             call TimerStart(PRL_Timer, PRL_STAGE_DELAY, false, function PRL_RunStep)
         elseif PRL_Step == 2 then
-            call PRL_ShowStatus(PRL_IMAGE_SOUNDS, PRL_BuildPreloadText("Sounds"))
-            set PRL_Step = 3
-            call TimerStart(PRL_Timer, PRL_RENDER_DELAY, false, function PRL_RunStep)
+            if PRL_RunSoundAndMusicStages then
+                call PRL_ShowStatus(PRL_IMAGE_SOUNDS, PRL_BuildPreloadText("Sounds"))
+                set PRL_Step = 3
+                call TimerStart(PRL_Timer, PRL_RENDER_DELAY, false, function PRL_RunStep)
+            else
+                call PRL_ShowDoneImage()
+                set PRL_Step = 7
+                call TimerStart(PRL_Timer, PRL_DONE_DELAY, false, function PRL_RunStep)
+            endif
         elseif PRL_Step == 3 then
             call ExSound_PreloadAll()
             set PRL_Step = 4
@@ -183,7 +196,7 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
         endif
     endfunction
 
-    private function PRL_StartMode takes boolean runGameStartOnFinish, boolean runAbilityStage returns nothing
+    private function PRL_StartMode takes boolean runGameStartOnFinish, boolean runAbilityStage, boolean runSoundAndMusicStages returns nothing
         if PRL_Started and not PRL_Finished then
             if runGameStartOnFinish then
                 return
@@ -198,6 +211,7 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
         set PRL_Step = 0
         set PRL_RunGameStartOnFinish = runGameStartOnFinish
         set PRL_RunAbilityStage = runAbilityStage
+        set PRL_RunSoundAndMusicStages = runSoundAndMusicStages
 
         if PRL_Timer == null then
             set PRL_Timer = CreateTimer()
@@ -209,12 +223,60 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
         call TimerStart(PRL_Timer, PRL_START_MESSAGE_DELAY, false, function PRL_RunStep)
     endfunction
 
+    private function PRL_DestroyChoiceDialog takes nothing returns nothing
+        if PRL_ChoiceDialog != null then
+            call DialogDisplay(Player(PRL_CONTROL_PLAYER_ID), PRL_ChoiceDialog, false)
+        endif
+        if PRL_ChoiceTrigger != null then
+            call DisableTrigger(PRL_ChoiceTrigger)
+            call DestroyTrigger(PRL_ChoiceTrigger)
+            set PRL_ChoiceTrigger = null
+        endif
+        if PRL_ChoiceDialog != null then
+            call DialogDestroy(PRL_ChoiceDialog)
+            set PRL_ChoiceDialog = null
+        endif
+        set PRL_FastCheckButton = null
+    endfunction
+
+    private function PRL_OnPreloadChoice takes nothing returns nothing
+        local button clickedButton = GetClickedButton()
+
+        set PRL_RunSoundAndMusicStages = clickedButton != PRL_FastCheckButton
+        set PRL_ChoiceResolved = true
+        call PRL_DestroyChoiceDialog()
+        call PRL_StartMode(true, true, PRL_RunSoundAndMusicStages)
+
+        set clickedButton = null
+    endfunction
+
+    private function PRL_ShowPreloadChoice takes nothing returns nothing
+        if PRL_ChoiceDialog == null then
+            set PRL_ChoiceDialog = DialogCreate()
+            set PRL_ChoiceTrigger = CreateTrigger()
+            call TriggerRegisterDialogEvent(PRL_ChoiceTrigger, PRL_ChoiceDialog)
+            call TriggerAddAction(PRL_ChoiceTrigger, function PRL_OnPreloadChoice)
+        endif
+
+        call DialogClear(PRL_ChoiceDialog)
+        call DialogSetMessage(PRL_ChoiceDialog, "Choose preload mode")
+        call DialogAddButton(PRL_ChoiceDialog, "Normal - preload sounds and music", 0)
+        set PRL_FastCheckButton = DialogAddButton(PRL_ChoiceDialog, "Fast check - skip audio preload", 0)
+        call DialogDisplay(Player(PRL_CONTROL_PLAYER_ID), PRL_ChoiceDialog, true)
+    endfunction
+
     public function Start takes nothing returns nothing
-        call PRL_StartMode(true, true)
+        if PRL_ChoiceResolved then
+            call PRL_StartMode(true, true, PRL_RunSoundAndMusicStages)
+        else
+            call PRL_ShowPreloadChoice()
+        endif
     endfunction
 
     public function StartLoadedGame takes nothing returns nothing
-        call PRL_StartMode(false, false)
+        if PRL_RunSoundAndMusicStages then
+            call PRL_StartMode(false, false, true)
+        endif
     endfunction
 
     private function PRL_AutoStart takes nothing returns nothing
