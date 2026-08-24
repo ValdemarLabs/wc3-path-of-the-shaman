@@ -1,0 +1,11 @@
+Quest Whelps of Destruction
+    Events
+    Conditions
+    Actions
+        -------- RESET Quest, if previously done --------
+        Quest - Mark QuestWhelpsDestruction as Incomplete
+        Quest - Mark QuestWhelpsDestructionReq1 as Incomplete
+        Wait Campaign quest delay game-time seconds
+        Custom script:   call TriggerExecute(gg_trg_Quest_Whelps_of_Destruction_Discover)
+        Custom script:   call EnableTrigger(gg_trg_Quest_Whelps_of_Destruction_Update)
+        Trigger - Remove (This trigger) from the trigger queue

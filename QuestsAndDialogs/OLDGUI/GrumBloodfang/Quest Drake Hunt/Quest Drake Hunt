@@ -1,0 +1,12 @@
+Quest Drake Hunt
+    Events
+    Conditions
+    Actions
+        -------- RESET Quest, if previously done --------
+        Quest - Mark QuestDrakeHunt as Incomplete
+        Quest - Mark QuestDrakeHuntReq1 as Incomplete
+        Quest - Mark QuestDrakeHuntReq2 as Incomplete
+        Wait Campaign quest delay game-time seconds
+        Custom script:   call TriggerExecute(gg_trg_Quest_Drake_Hunt_Discover)
+        Custom script:   call EnableTrigger(gg_trg_Quest_Drake_Hunt_Update)
+        Trigger - Remove (This trigger) from the trigger queue

@@ -1,0 +1,11 @@
+Quest Dragon Egg Hunt
+    Events
+    Conditions
+    Actions
+        -------- RESET Quest, if previously done --------
+        Quest - Mark QuestDragonEggHunt as Incomplete
+        Quest - Mark QuestDragonEggHuntReq1 as Incomplete
+        Wait Campaign quest delay game-time seconds
+        Custom script:   call TriggerExecute(gg_trg_Quest_Dragon_Egg_Hunt_Discover)
+        Custom script:   call EnableTrigger(gg_trg_Quest_Dragon_Egg_Hunt_Update)
+        Trigger - Remove (This trigger) from the trigger queue

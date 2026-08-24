@@ -1,0 +1,11 @@
+Quest Desolator
+    Events
+    Conditions
+    Actions
+        -------- RESET Quest, if previously done --------
+        Quest - Mark QuestDesolator as Incomplete
+        Quest - Mark QuestDesolatorReq1 as Incomplete
+        Wait Campaign quest delay game-time seconds
+        Custom script:   call TriggerExecute(gg_trg_Quest_Desolator_Discover)
+        Custom script:   call EnableTrigger(gg_trg_Quest_Desolator_Update)
+        Trigger - Remove (This trigger) from the trigger queue

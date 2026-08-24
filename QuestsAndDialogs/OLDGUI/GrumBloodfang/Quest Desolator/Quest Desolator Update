@@ -1,0 +1,25 @@
+Quest Desolator Update
+    Events
+        Unit - A unit Acquires an item
+    Conditions
+        (QuestDesolator is discovered) Equal to True
+        (QuestDesolator is completed) Equal to False
+        (Owner of (Triggering unit)) Equal to Player 1 (Red)
+        (Item-type of (Item being manipulated)) Equal to |cff0000ffScale of Mordrax|r
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- ======= ADJUST WHICH QUEST --------
+        Set VariableSet QuestTemp = QuestDesolator
+        -------- ======= DONT MODIFY: LOAD HASHTABLE --------
+        Trigger - Run Quest System Load Hashtable <gen> (ignoring conditions)
+        -------- REFRESH QUEST ICON --------
+        -------- ======= QUEST State 1-5: (unavailable, available, in progress, complete, ready to turn in) --------
+        Custom script:   set udg_QuestState[udg_QuestID_Temp] = 5
+        Custom script:   call QuestIcon_RegisterQuest(udg_QuestGiverUnit[udg_QuestID_Temp], udg_QuestID_Temp, udg_QuestType[udg_QuestID_Temp], udg_QuestState[udg_QuestID_Temp] )
+        -------- ==================== --------
+        Quest - Mark QuestDesolatorReq1 as Completed
+        Quest - Create a quest requirement for QuestDesolator with the description Bring the Scale of ...
+        Set VariableSet QuestDesolatorReq2 = (Last created quest requirement)
+        Quest - Display to (All players) the Quest Update message: |cffffcc00QUEST|r  ...
+        Quest - Display to (All players) the Quest Update message: - Bring the Scale o...
+        Quest - Flash the quest dialog button

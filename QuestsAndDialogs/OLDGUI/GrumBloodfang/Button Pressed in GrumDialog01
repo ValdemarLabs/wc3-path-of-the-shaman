@@ -1,0 +1,668 @@
+Button Pressed in GrumDialog01
+    Events
+        Dialog - A dialog button is clicked for GrumDialog01
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_QuestAccept[1]
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- WHELPS OF DESTRUCTION - ACCEPT --------
+                Set VariableSet GrumFarewellBoolean = True
+                Trigger - Turn on GrumDialog01 Accept Quest 1 <gen>
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = You look like you have some fight in you, but do you have the courage to face a dragon’s brood?
+                Custom script:   call ExSound_Play("GrumBloodfang_0020", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Accept_Quest_1)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = The Emberpeak Highland has started to crawl with dragon whelps. They may be small now, but if we don't cull their numbers, they’ll grow into full-fledged dragons and breathe fire upon us all!
+                Custom script:   call ExSound_Play("GrumBloodfang_0021", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Accept_Quest_1)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = I need a warrior with the guts to take them down before they become a real threat. 
+                Custom script:   call ExSound_Play("GrumBloodfang_0022", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Accept_Quest_1)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = I can handle the dragon whelps.
+                Custom script:   call ExSound_Play("Nazgrek_0292", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Accept_Quest_1)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = The Emberpeak Highlands lies just ahead. Slay the whelps and bring back their scales as proof. Show no mercy!
+                Custom script:   call ExSound_Play("GrumBloodfang_0023", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Accept_Quest_1)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- OVER --------
+                Trigger - Run GrumDialog01 Accept Quest 1 <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_QuestComplete[1]
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- WHELPS OF DESTRUCTION - COMPLETED --------
+                Set VariableSet GrumFarewellBoolean = True
+                Trigger - Turn on GrumDialog01 Complete Quest 1 <gen>
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Hah! You return victorius. You’ve proven your strength. The Horde needs more warriors like you. 
+                Custom script:   call ExSound_Play("GrumBloodfang_0026", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Complete_Quest_1)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = But this is just the beginning of our hunt…
+                Custom script:   call ExSound_Play("GrumBloodfang_0027", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Complete_Quest_1)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- OVER --------
+                Trigger - Run GrumDialog01 Complete Quest 1 <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_QuestAccept[2]
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- DRAGON EGG HUNT - ACCEPT --------
+                Set VariableSet GrumFarewellBoolean = True
+                Trigger - Turn on GrumDialog01 Accept Quest 2 <gen>
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = My hunters have spotted many dragon eggs around the highlands.
+                Custom script:   call ExSound_Play("GrumBloodfang_0031", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Accept_Quest_2)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = They must be taken, before they hatch.
+                Custom script:   call ExSound_Play("GrumBloodfang_0032", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Accept_Quest_2)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Bring me the eggs you find, preferably unhatched.
+                Custom script:   call ExSound_Play("GrumBloodfang_0033", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Accept_Quest_2)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Why wouldn’t you just destroy the eggs?
+                Custom script:   call ExSound_Play("Nazgrek_0303", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Accept_Quest_2)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Do not ask questions you do not want answers to. Just bring the eggs.
+                Custom script:   call ExSound_Play("GrumBloodfang_0035", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Accept_Quest_2)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- OVER --------
+                Trigger - Run GrumDialog01 Accept Quest 2 <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_QuestComplete[2]
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- DRAGON EGG HUNT - COMPLETED --------
+                Set VariableSet GrumFarewellBoolean = True
+                Trigger - Turn on GrumDialog01 Complete Quest 2 <gen>
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Good. The eggs will be… taken where they must go.
+                Custom script:   call ExSound_Play("GrumBloodfang_0036", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Complete_Quest_2)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = I hope you didn’t alert the mother dragon…
+                Custom script:   call ExSound_Play("GrumBloodfang_0037", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Complete_Quest_2)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = What are you going to do with the eggs?
+                Custom script:   call ExSound_Play("Nazgrek_0307", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Complete_Quest_2)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Your reward. Take it. And forget all about the eggs…
+                Custom script:   call ExSound_Play("GrumBloodfang_0038", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Complete_Quest_2)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- OVER --------
+                Trigger - Run GrumDialog01 Complete Quest 2 <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_QuestAccept[3]
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- DRAKE HUNT - ACCEPT --------
+                Set VariableSet GrumFarewellBoolean = True
+                Trigger - Turn on GrumDialog01 Accept Quest 3 <gen>
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = The whelps grow into drakes. Drakes grow into dragons. You see the problem?
+                Custom script:   call ExSound_Play("GrumBloodfang_0042", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Accept_Quest_3)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Hunt them down before they start to scorch our precious Thornwoods to ashes.
+                Custom script:   call ExSound_Play("GrumBloodfang_0043", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Accept_Quest_3)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- OVER --------
+                Trigger - Run GrumDialog01 Accept Quest 3 <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_QuestComplete[3]
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- DRAKE HUNT - COMPLETE --------
+                Set VariableSet GrumFarewellBoolean = True
+                Trigger - Turn on GrumDialog01 Complete Quest 3 <gen>
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = I’ve slain the drakes.
+                Custom script:   call ExSound_Play("Nazgrek_0316", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Complete_Quest_3)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = You’ve struck down the drakes with your eyebrowns still intact. Grum honors your acts.
+                Custom script:   call ExSound_Play("GrumBloodfang_0046", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Complete_Quest_3)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = You have earned this reward.
+                Custom script:   call ExSound_Play("GrumBloodfang_0047", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Complete_Quest_3)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- OVER --------
+                Trigger - Run GrumDialog01 Complete Quest 3 <gen> (checking conditions)
+                Skip remaining actions
+                -------- ============ --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_QuestAccept[4]
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- DESOLATOR - ACCEPT --------
+                Set VariableSet GrumFarewellBoolean = True
+                Trigger - Turn on GrumDialog01 Accept Quest 4 <gen>
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = The whelps, the eggs, the drakes… all of it leads to this.
+                Custom script:   call ExSound_Play("GrumBloodfang_0051", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Accept_Quest_4)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = There is one dragon that casts a shadow over them all: Mordrax the Desolator. Ancient. Cunning. Wrath incarnate.
+                Custom script:   call ExSound_Play("GrumBloodfang_0052", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Accept_Quest_4)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = I’ve heard about Mordrax, she is very powerful dragon. It will not be an easy fight...
+                Custom script:   call ExSound_Play("Nazgrek_0323", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Accept_Quest_4)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Few who face him live to speak of it. But if you are the warrior you claim to be, you will slay him.
+                Custom script:   call ExSound_Play("GrumBloodfang_0053", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Accept_Quest_4)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = <wip text>
+                Custom script:   call ExSound_Play("Nazgrek_00011", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Accept_Quest_4)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Do what I and my hunters have not accomplished; Bring me a piece of his shattered scale, proof of his end.
+                Custom script:   call ExSound_Play("GrumBloodfang_0054", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Accept_Quest_4)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- OVER --------
+                Trigger - Run GrumDialog01 Accept Quest 4 <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_QuestComplete[4]
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- DESOLATOR - COMPLETE --------
+                Set VariableSet GrumFarewellBoolean = True
+                Trigger - Turn on GrumDialog01 Complete Quest 4 <gen>
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Here is the scale of mighty Mordrax.
+                Custom script:   call ExSound_Play("Nazgrek_0327", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Complete_Quest_4)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = The great dragon Mordrax is dead, and his shadow lifts from the Highlands.
+                Custom script:   call ExSound_Play("GrumBloodfang_0057", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Complete_Quest_4)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = You are the dragonslayer. The Horde will remember your name!
+                Custom script:   call ExSound_Play("GrumBloodfang_0058", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Complete_Quest_4)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Take this reward. It may not match the glory of your deed, but know that Grum Bloodfang honors you.
+                Custom script:   call ExSound_Play("GrumBloodfang_0059", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Custom script:   call DisableTrigger(gg_trg_GrumDialog01_Complete_Quest_4)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- OVER --------
+                Trigger - Run GrumDialog01 Complete Quest 4 <gen> (checking conditions)
+                Skip remaining actions
+                -------- ============ --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to DialogBTN_Farewell
+            Then - Actions
+                Set VariableSet GrumFarewellBoolean = True
+                Cinematic - Disable user control for (All players).
+                -------- ===================================== --------
+                Custom script:   call TriggerExecute(gg_trg_Nazgrek_Farewell)
+                Wait ExSoundDuration seconds
+                -------- ===================================== --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumDrakeActive Equal to True
+                    Then - Actions
+                        -------- ==== DRAKE ATTACK >>>> RESET DIALOGUE --------
+                        Custom script:   call TriggerExecute(gg_trg_Grum_Reset_Camera)
+                        Skip remaining actions
+                    Else - Actions
+                -------- ===================================== --------
+                Set VariableSet GrumRandomGreet = (Random integer number between 1 and 2)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        GrumRandomGreet Equal to 1
+                    Then - Actions
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = Slay them all, warrior.
+                        Custom script:   call ExSound_Play("GrumBloodfang_0004", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                    Else - Actions
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = For the Horde.
+                        Custom script:   call ExSound_Play("GrumBloodfang_0005", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                -------- DEFAULT CAMERA --------
+                -------- ================================ --------
+                -------- DIALOG CAMERA == RESET --------
+                -------- USAGE: call DialogCameraReset(p, duration) to restore original camera over 'duration' seconds --------
+                Custom script:   call DialogCameraReset(Player(0), 2.0)
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Skip remaining actions
+            Else - Actions

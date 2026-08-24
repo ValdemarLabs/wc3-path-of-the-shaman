@@ -1,0 +1,35 @@
+Quest Whelps of Destruction Update
+    Events
+        Unit - A unit Acquires an item
+    Conditions
+        (QuestWhelpsDestruction is discovered) Equal to True
+        (QuestWhelpsDestruction is completed) Equal to False
+        (Owner of (Triggering unit)) Equal to Player 1 (Red)
+        (Item-type of (Item being manipulated)) Equal to Whelp Scale
+    Actions
+        -------- ================================ --------
+        -------- CHECK ITEM --------
+        Set VariableSet DInvItemType = Whelp Scale
+        Set VariableSet DInvItemAmount = 10
+        Custom script:   set udg_DInvItemCarrierHasItems = HeroItemCheckBoth(udg_DInvItemType, udg_DInvItemAmount)
+        -------- ================================ --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                DInvItemCarrierHasItems Equal to True
+            Then - Actions
+                Trigger - Turn off (This trigger)
+                -------- ======= ADJUST WHICH QUEST --------
+                Set VariableSet QuestTemp = QuestWhelpsDestruction
+                -------- ======= DONT MODIFY: LOAD HASHTABLE --------
+                Trigger - Run Quest System Load Hashtable <gen> (ignoring conditions)
+                -------- ======= ================================= ========================== --------
+                Quest - Mark QuestWhelpsDestructionReq1 as Completed
+                Quest - Display to (All players) the Quest Update message: |cffffcc00QUEST|r  ...
+                Quest - Display to (All players) the Quest Update message: - All whelp scales ...
+                Quest - Flash the quest dialog button
+                -------- ======= ================================= ========================== --------
+                -------- REFRESH QUEST ICON --------
+                -------- ======= QUEST State 1-5: (unavailable, available, in progress, complete, ready to turn in) --------
+                Custom script:   set udg_QuestState[udg_QuestID_Temp] = 5
+                Custom script:   call QuestIcon_RegisterQuest(udg_QuestGiverUnit[udg_QuestID_Temp], udg_QuestID_Temp, udg_QuestType[udg_QuestID_Temp], udg_QuestState[udg_QuestID_Temp] )
+            Else - Actions

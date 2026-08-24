@@ -1,0 +1,135 @@
+Create GrumDialog01
+    Events
+    Conditions
+    Actions
+        Cinematic - Enable user control for (All players).
+        Dialog - Clear GrumDialog01
+        Dialog - Change the title of GrumDialog01 to Grum Bloodfang
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestWhelpsDestruction is discovered) Equal to False
+            Then - Actions
+                -------- Quest - Accept --------
+                Dialog - Create a dialog button for GrumDialog01 labelled Whelps of Destructi...
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_QuestInt = 1
+                Set VariableSet DialogBTN_QuestAccept[DialogBTN_QuestInt] = (Last created dialog Button)
+            Else - Actions
+        -------- ================================ --------
+        -------- CHECK ITEM --------
+        Set VariableSet DInvItemType = Whelp Scale
+        Set VariableSet DInvItemAmount = 10
+        Custom script:   set udg_DInvItemCarrierHasItems = HeroItemCheckBoth(udg_DInvItemType, udg_DInvItemAmount)
+        -------- ================================ --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestWhelpsDestruction is discovered) Equal to True
+                (QuestWhelpsDestruction is completed) Equal to False
+                DInvItemCarrierHasItems Equal to True
+            Then - Actions
+                -------- Quest  - Completion --------
+                Dialog - Create a dialog button for GrumDialog01 labelled Whelps of Destructi...
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_QuestInt = 1
+                Set VariableSet DialogBTN_QuestComplete[DialogBTN_QuestInt] = (Last created dialog Button)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestWhelpsDestruction is completed) Equal to True
+                (QuestDragonEggHunt is discovered) Equal to False
+            Then - Actions
+                -------- Quest - Accept --------
+                Dialog - Create a dialog button for GrumDialog01 labelled Dragon Egg Hunt (Qu...
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_QuestInt = 2
+                Set VariableSet DialogBTN_QuestAccept[DialogBTN_QuestInt] = (Last created dialog Button)
+            Else - Actions
+        -------- ================================ --------
+        -------- CHECK ITEM --------
+        Set VariableSet DInvItemType = Dragon Egg
+        Set VariableSet DInvItemAmount = 6
+        Custom script:   set udg_DInvItemCarrierHasItems = HeroItemCheckBoth(udg_DInvItemType, udg_DInvItemAmount)
+        -------- ================================ --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestWhelpsDestruction is completed) Equal to True
+                (QuestDragonEggHunt is discovered) Equal to True
+                (QuestDragonEggHunt is completed) Equal to False
+                DInvItemCarrierHasItems Equal to True
+            Then - Actions
+                -------- Quest  - Completion --------
+                Dialog - Create a dialog button for GrumDialog01 labelled Dragon Egg Hunt (Co...
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_QuestInt = 2
+                Set VariableSet DialogBTN_QuestComplete[DialogBTN_QuestInt] = (Last created dialog Button)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestWhelpsDestruction is completed) Equal to True
+                (QuestDragonEggHunt is completed) Equal to True
+                (QuestDrakeHunt is discovered) Equal to False
+            Then - Actions
+                -------- Quest - Accept --------
+                Dialog - Create a dialog button for GrumDialog01 labelled Drake Hunt (Quest)
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_QuestInt = 3
+                Set VariableSet DialogBTN_QuestAccept[DialogBTN_QuestInt] = (Last created dialog Button)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestWhelpsDestruction is completed) Equal to True
+                (QuestDragonEggHunt is completed) Equal to True
+                (QuestDrakeHunt is discovered) Equal to True
+                (QuestDrakeHunt is completed) Equal to False
+                QuestDrakeHuntCount Greater than or equal to 6
+            Then - Actions
+                -------- Quest  - Completion --------
+                Dialog - Create a dialog button for GrumDialog01 labelled Drake Hunt (Complet...
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_QuestInt = 3
+                Set VariableSet DialogBTN_QuestComplete[DialogBTN_QuestInt] = (Last created dialog Button)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestWhelpsDestruction is completed) Equal to True
+                (QuestDragonEggHunt is completed) Equal to True
+                (QuestDrakeHunt is completed) Equal to True
+                (QuestDesolator is discovered) Equal to False
+            Then - Actions
+                -------- Quest - Accept --------
+                Dialog - Create a dialog button for GrumDialog01 labelled The Desolator (Ques...
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_QuestInt = 4
+                Set VariableSet DialogBTN_QuestAccept[DialogBTN_QuestInt] = (Last created dialog Button)
+            Else - Actions
+        -------- ================================ --------
+        -------- CHECK ITEM --------
+        Set VariableSet DInvItemType = |cff0000ffScale of Mordrax|r
+        Set VariableSet DInvItemAmount = 1
+        Custom script:   set udg_DInvItemCarrierHasItems = HeroItemCheckBoth(udg_DInvItemType, udg_DInvItemAmount)
+        -------- ================================ --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestWhelpsDestruction is completed) Equal to True
+                (QuestDragonEggHunt is completed) Equal to True
+                (QuestDrakeHunt is completed) Equal to True
+                (QuestDesolator is discovered) Equal to True
+                (QuestDesolator is completed) Equal to False
+                DInvItemCarrierHasItems Equal to True
+            Then - Actions
+                -------- Quest  - Completion --------
+                Dialog - Create a dialog button for GrumDialog01 labelled The Desolator (Comp...
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_QuestInt = 4
+                Set VariableSet DialogBTN_QuestComplete[DialogBTN_QuestInt] = (Last created dialog Button)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- Exit dialog --------
+                Dialog - Create a dialog button for GrumDialog01 labelled - Farewell
+                -------- BTN variable --------
+                Set VariableSet DialogBTN_Farewell = (Last created dialog Button)
+            Else - Actions
+        -------- ======= SHOW DIALOG --------
+        Dialog - Show GrumDialog01 for Player 1 (Red)

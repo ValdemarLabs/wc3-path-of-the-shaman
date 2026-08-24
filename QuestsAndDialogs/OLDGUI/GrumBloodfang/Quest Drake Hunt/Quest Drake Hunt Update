@@ -1,0 +1,40 @@
+Quest Drake Hunt Update
+    Events
+        Unit - A unit Dies
+    Conditions
+        (QuestDrakeHunt is discovered) Equal to True
+        (QuestDrakeHunt is completed) Equal to False
+        QuestDrakeHuntCount Less than 6
+        Or - Any (Conditions) are true
+            Conditions
+                (Unit-type of (Triggering unit)) Equal to Red Drake (Level 10)
+                (Unit-type of (Triggering unit)) Equal to Scorching Drake (Level 10)
+                (Unit-type of (Triggering unit)) Equal to Red Drake (Level 20)
+                (Unit-type of (Triggering unit)) Equal to Scorching Drake (level 20)
+    Actions
+        Set VariableSet QuestDrakeHuntCount = (QuestDrakeHuntCount + 1)
+        Quest - Change the description of QuestDrakeHuntReq1 to (Kill 6 Drakes ( + ((String(QuestDrakeHuntCount)) +  / 6)))
+        Quest - Display to (All players) the Quest Update message: |cffffcc00QUEST|r  ...
+        Quest - Display to (All players) the Quest Update message: (Kill Drakes  + ((String(QuestDrakeHuntCount)) +  / 6))
+        -------- ============ --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                QuestDrakeHuntCount Greater than or equal to 6
+            Then - Actions
+                Trigger - Turn off (This trigger)
+                -------- ======= ================================= ========================== --------
+                -------- ======= ADJUST WHICH QUEST --------
+                Set VariableSet QuestTemp = QuestDrakeHunt
+                -------- ======= DONT MODIFY: LOAD HASHTABLE --------
+                Trigger - Run Quest System Load Hashtable <gen> (ignoring conditions)
+                -------- ======= ================================= ========================== --------
+                Quest - Mark QuestDrakeHuntReq1 as Completed
+                Quest - Display to (All players) the Quest Update message: |cffffcc00QUEST|r  ...
+                Quest - Display to (All players) the Quest Update message: - Drakes killed
+                Quest - Flash the quest dialog button
+                -------- ======= ================================= ========================== --------
+                -------- REFRESH QUEST ICON --------
+                -------- ======= QUEST State 1-5: (unavailable, available, in progress, complete, ready to turn in) --------
+                Custom script:   set udg_QuestState[udg_QuestID_Temp] = 5
+                Custom script:   call QuestIcon_RegisterQuest(udg_QuestGiverUnit[udg_QuestID_Temp], udg_QuestID_Temp, udg_QuestType[udg_QuestID_Temp], udg_QuestState[udg_QuestID_Temp] )
+            Else - Actions

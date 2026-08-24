@@ -1,0 +1,117 @@
+Grum Drake Attack
+    Events
+        Time - Every (Random real number between 180.00 and 300.00) seconds of game time
+    Conditions
+        (Number of units in GrumDrakeGroup) Equal to 0
+    Actions
+        -------- ================== --------
+        -------- Restore Grum HP --------
+        Unit - Set life of Grum to 100.00%
+        -------- ================== --------
+        Set VariableSet GrumPoint = (Center of EmberpeakDrakeSpawn01 <gen>)
+        Unit - Create 1 Scorching Drake (Level 10) for Player 12 (Brown) at GrumPoint facing Default building facing degrees
+        Custom script:   call RemoveLocation(udg_GrumPoint)
+        Unit Group - Add (Last created unit) to GrumDrakeGroup
+        -------- ================== --------
+        Set VariableSet GrumPoint = (Position of Grum)
+        Unit - Order (Last created unit) to Attack-Move To GrumPoint
+        Custom script:   call RemoveLocation(udg_GrumPoint)
+        -------- ================== --------
+        -------- Orc spearthrower --------
+        Set VariableSet GrumPoint = (Center of EmberpeakDrakeSpawn01 <gen>)
+        Set VariableSet TempGroup = (Units in GrumBloodfangArea <gen> matching ((Unit-type of (Matching unit)) Equal to Spearthrower (Level 12)))
+        Set VariableSet TempUnit = (Random unit from TempGroup)
+        Unit - Make TempUnit face GrumPoint over 0.50 seconds
+        Custom script:   call RemoveLocation(udg_GrumPoint)
+        Custom script:   call DestroyGroup(udg_TempGroup)
+        Wait Campaign quest delay seconds
+        Set VariableSet GrumPoint = (Position of Grum)
+        Set VariableSet TempGroup = (Units within 1500.00 of GrumPoint matching ((Owner of (Matching unit)) Equal to Player 1 (Red)).)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (TempGroup is empty) Equal to False
+            Then - Actions
+                Set VariableSet CV = (Custom value of TempUnit)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        IsUnitAlive[CV] Equal to True
+                    Then - Actions
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = Incoming drake!
+                        Custom script:   call ExSound_Play("GrumBloodfang_0062", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from TempUnit named Orc Spearthrower: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- DRAKE ATTACK - ACTIVE --------
+                        Set VariableSet GrumDrakeActive = True
+                        -------- ===================================== --------
+                    Else - Actions
+                Set VariableSet CV = (Custom value of Grum)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        IsUnitAlive[CV] Equal to True
+                    Then - Actions
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = Hah! Another drake to test our mettle. Kill it quickly!
+                        Custom script:   call ExSound_Play("GrumBloodfang_0063", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                    Else - Actions
+            Else - Actions
+        -------- DRAKE ATTACK - ACTIVE --------
+        Set VariableSet GrumDrakeActive = True
+        -------- -------------------------- --------
+        Set VariableSet TempUnit = No unit
+        Custom script:   call RemoveLocation(udg_GrumPoint)
+        Custom script:   call DestroyGroup(udg_TempGroup)
+        Wait 15.00 seconds
+        Set VariableSet TempGroup = (Units in GrumBloodfangArea <gen> matching ((Unit-type of (Matching unit)) Equal to Spearthrower (Level 12)))
+        Set VariableSet TempUnit = (Random unit from TempGroup)
+        Custom script:   call DestroyGroup(udg_TempGroup)
+        Set VariableSet GrumPoint = (Position of Grum)
+        Set VariableSet TempGroup = (Units within 1500.00 of GrumPoint matching ((Owner of (Matching unit)) Equal to Player 1 (Red)).)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (TempGroup is empty) Equal to False
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Random integer number between 1 and 2) Equal to 1
+                    Then - Actions
+                        Set VariableSet CV = (Custom value of TempUnit)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                IsUnitAlive[CV] Equal to True
+                            Then - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = It’s… too… powerful!
+                                Custom script:   call ExSound_Play("GrumBloodfang_0064", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from TempUnit named Orc Spearthrower: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                            Else - Actions
+                        Set VariableSet CV = (Custom value of Grum)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                IsUnitAlive[CV] Equal to True
+                            Then - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = Stand your ground!
+                                Custom script:   call ExSound_Play("GrumBloodfang_0066", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                            Else - Actions
+                    Else - Actions
+                        Set VariableSet CV = (Custom value of Grum)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                IsUnitAlive[CV] Equal to True
+                            Then - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = Bring the beast down!
+                                Custom script:   call ExSound_Play("GrumBloodfang_0065", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from Grum named Grum Bloodfang: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                            Else - Actions
+            Else - Actions
+        Custom script:   call RemoveLocation(udg_GrumPoint)
+        Custom script:   call DestroyGroup(udg_TempGroup)
+        -------- ================== --------
+        Set VariableSet GrumDrakeActive = False
