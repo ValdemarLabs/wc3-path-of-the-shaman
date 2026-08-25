@@ -2,7 +2,7 @@
 
 - **Status:** Living master design plan
 - **Created:** 22 August 2026
-- **Last reviewed:** 25 August 2026
+- **Last reviewed:** 26 August 2026
 - **Scope:** Main story, side stories, generic quests, dungeon quests, quest-giver connections, and world-event dependencies
 
 ## 1. Purpose
@@ -185,7 +185,7 @@ Graknar `o61S` is a named quest giver as well as the original bag merchant. Do n
 | Nazgrek's Flask | Item `I61L` is registered by `ProfessionsAlchemy.j`, equipment exports, loot data, and debug tools; item ability evidence includes `A63V`. | The legacy prologue flask idea now has real object evidence, but the existing reusable alchemy item must not automatically become a disposable tutorial prop. Decide whether the quest unlocks the recipe, creates a separate vision draught, or deliberately rebalances the existing flask. |
 | Zul'karak | Unit `n65F` is present in the debug object registry and reputation unit list. | The unit exists, but the older-brother personality, abilities, recruitment timing, and companion behavior remain **Legacy evidence** until confirmed in current WE triggers/code. |
 | Crypt boss roster | `ZonesCore` names Skullreaver, Rotspine, Bone Golem, Darkmaw the Soul Devourer, and Marduk the Endbringer for Crypt `102`. | Treat the ODT's Warden, Cryptlord, and king's shade as encounter roles or discarded working names until deliberately mapped to current bosses. |
-| Gar | Unit `n60Z` exists and `ZonesCore` lists Gar among Deadwoods `11` notable characters. | The ODT's flesh-golem experiment is compatible with current placement evidence. Keep him in Deadwoods and tie his creator/lore to Dawnhold unless current WE triggers contradict it. |
+| Gar | `BossGar.j` creates unit `n60Z` only through `BossGar_Spawn()`, then patrols `gg_rct_GarWP01` through `gg_rct_GarWP06` at 60 movement speed. | **Partial JASS.** The reusable two-phase encounter and quest/event spawn hook are implemented in Deadwoods. Quest ownership, explosives, reward, and canonical outcome remain open. |
 | Dawnhold ship service | `TravelShipA.j` already owns an active Sirensong–Dawnhold–Stormhaven neutral route and registers Dawnhold stop `20`. | Legacy Fix the Ship must not blindly unlock baseline travel. Use it for a separate goblin vessel, route/service upgrade, fare benefit, repair incident, or an intentional availability gate designed with the current travel system. |
 | Quest journal | `QuestMaster`, `QuestGiver`, `QuestsGeneric`, and `QuestUI` expose quest type/category and live objectives. | New story and dungeon quests should set their categories instead of relying only on title or description. |
 
@@ -280,7 +280,7 @@ The “Chains of Seduction” and fight against legacy “Velaria” belong to *
 | ST-A3-01 | The Orc Outpost / Ironspine alliance | **Legacy ODT; proposed remap** | The old northern outpost most naturally maps to Ironspine Post `1901`, subject to WE verification. Defend it, fortify it, and gain troops/intelligence for The Lair of Rage. |
 | ST-A3-02 | Ghosts in the Deadwoods | **Legacy ODT/Articy** | Use a spirit amulet to find frightened human survivors, then calm, defend, or escort them. Their trust provides regional knowledge without forcing hostility with all humans. |
 | ST-A3-03 | Dawnhold's Curse | **Legacy title: Vanguard's Curse; location resolved** | Defeat undead captains in Dawnhold `20`, assemble pieces of a cursed artifact, and destroy or cleanse it at an altar. Exact captains, artifact pieces, altar, and WE regions remain unverified. |
-| ST-A3-04 | Gar the Mighty Giant | **Legacy ODT + current unit/zone evidence** | Gar is unit `n60Z` in Deadwoods `11`, described as a flesh golem created by the Dawnhold necromancer. Lure or weaken him with special explosives, then defeat him for crafting material. Exact encounter mechanics and WE rect remain unverified. |
+| ST-A3-04 | Gar the Mighty Giant | **Partial JASS + legacy ODT** | Gar is unit `n60Z` in Deadwoods `11`, described as a flesh golem created by the Dawnhold necromancer. `BossGar.j` now provides an event-controlled spawn at `gg_rct_GarWP01`, a six-point patrol, and a simple frenzy phase. Quest ownership, explosives, crafting reward, and canonical outcome remain unverified. |
 | ST-A3-05 | The Goblin Negotiator / Fix the Ship | **Legacy ODT/Articy; reward redesign required** | Recover three classes of ship parts, optionally trade for rare components, and defend repairs. Because Ship A already serves Sirensong–Dawnhold–Stormhaven, reward a separate vessel, fare/service improvement, new destination, or story access rather than claiming to unlock all ship travel. |
 | ST-A3-06 | Sirensong regional arc | **Proposed synthesis** | Link Mok'natha, Zul'Garok Ruins, Urgmar, Serpentshore, Kelziss, and Jinnvorrak through raids, ruins, and a growing naga/hydra threat. |
 | ST-A3-07 | Boom Brothers chain | **Legacy voiced design + partial dungeon** | A comedic engineering story becomes useful to the main route because its explosives or tools open a blocked passage/ship repair. Completion grants free or friendly Boom Mine access, not a mandatory grind. |
@@ -544,7 +544,7 @@ Resolve these deliberately and record the answer here:
 5. **Main antagonist:** which force connects gnolls, satyrs, undead, void rifts, Dark Horde, and elemental exploitation without making every faction secretly identical?
 6. **Resolved - Granis/Garthork task ownership:** `qChieftainThork` requires Granis's `Punish` and Garthork's `The Magical Eye`; each producer exposes proof-state queries and sends an explicit completion report, while Thork also recovers from QuestData state.
 7. **Act III settlement `1704`:** final name, faction, services, and narrative purpose.
-8. **Gar's encounter and outcome:** Gar is current unit `n60Z` in Deadwoods `11`; the ODT defines him as a flesh-golem experiment of the Dawnhold necromancer, weakened by explosives. Confirm his active WE triggers, exact rect, boss mechanics, and whether destruction or another resolution is canonical.
+8. **Gar's encounter and outcome:** Gar is unit `n60Z` in Deadwoods `11`. His quest-controlled spawn at `gg_rct_GarWP01`, six-point patrol, and simple frenzy phase are implemented in `BossGar.j`; decide the explosives mechanic, quest owner, reward, and whether destruction or another resolution is canonical.
 9. **Grum and the eggs:** protective plan, reckless weaponization, betrayal, or misunderstanding?
 10. **Dungeon reset policy:** which objectives are daily versus freely repeatable, and how boss/instance state resets safely.
 
