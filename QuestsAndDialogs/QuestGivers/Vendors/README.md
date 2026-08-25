@@ -114,6 +114,18 @@ progress, supply-handoff, and quest-purchase interaction.
 Missing files fall back to ExSound's text-duration estimation until recordings
 are imported.
 
+## Named bag vendors
+
+Graknar is both the original bag merchant and the owner of `Mistaken Kin` in
+`qGraknar.j`. Rawcode `o61S` must therefore identify only the canonical
+Graknar placed in World Editor. Replace any additional placed `o61S` bag
+merchants with distinct unit rawcodes and names before importing qGraknar.
+
+`VendorBags.j` currently binds the Graknar bag catalog by unit type. New bag
+merchants should receive explicit catalog/name setup for their own rawcodes;
+do not register another identity as `o61S`, because quest-giver assignment and
+respawn restoration also use that rawcode.
+
 ## A Night To Remember witnesses
 
 `qANightToRemember.j` selects three witnesses per hangover run. When active AI
