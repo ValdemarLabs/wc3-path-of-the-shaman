@@ -15,6 +15,51 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [25.8.2026]
+
+### Player-Facing Updates
+
+- Added Graknar's `Mistaken Kin` level-2 quest: find his lost Kodo, draw nearby hostile creatures into the recovery, escort the Kodo home, and retry if it is slain.
+- Replaced Graknar's legacy 30-second trade window with his existing persistent bag shop in the same quest dialog.
+- Added Grum Bloodfang's voiced `Whelps of Destruction`, `Dragon Egg Hunt`, `Drake Hunt`, and `The Desolator` story chain in Emberpeak Highlands, including the recovered periodic Scorching Drake attack on his camp.
+- Added Grim's voiced `Big Bear Tooth` daily quest in Thornwoods, with shared item tracking and turn-in support for tooth `I6AB`.
+- Fixed converted Granis, Garthork, and Krezgrel conversations so completing or skipping their greeting with Escape reveals the available dialog choices.
+- Restored Garthork's first meeting with Nazgrek before he introduces `The Magical Eye` quest.
+- Added Kaelthir's `Kaelthir's Struggle` and `Kaelthir's Hunger` story quests, including the mercy, mana-wraith, and failed Aradion cure outcomes.
+- Fixed Prince Zaekolaerr's first greeting, Escape handling, negotiation menus, missing Nazgrek replies, sound playback, and cinematic placement at `gg_rct_SatyrPrinceRect`.
+- Updated the Satyr Negotiations arena choice so it directs the player to satyr arena master `n62V` and only becomes ready to report after a successful Coliseum of Ages challenge.
+
+### Technical Updates
+
+- Added `QuestsAndDialogs/QuestGivers/qGraknar.j` by converting the recovered Graknar GUI quest, dialogue flow, Kodo proximity tracking, FollowSystem escort, failure/retry handling, and VendorBags/ShopUI handoff to the current master APIs.
+- Updated `CreepRespawn/CreepUnitAssignment.j` to restore Graknar's quest, custom dialog, and vendor hooks after respawn and removed its obsolete direct dependency on the legacy Mistaken Kin quest handle.
+- Updated `_developer/Design Plans/Story and Quest Design.md` with Graknar's recovered quest ownership and the requirement that canonical Graknar alone retain unit rawcode `o61S`.
+- Updated `QuestsAndDialogs/QuestGivers/Vendors/README.md` with the named-bag-vendor rawcode and catalog rules for Graknar and future bag sellers.
+- Added `QuestsAndDialogs/QuestGivers/qGrumBloodfang.j` by converting the recovered Grum GUI quest, dialogue, combined drake-kill tracking, item turn-ins, item rewards, and camp-attack event to the current quest/dialog APIs.
+- Updated `CreepRespawn/CreepUnitAssignment.j` to restore Grum's selection and quest-giver hooks after respawn, and updated `_developer/Design Plans/Story and Quest Design.md` with the recovered chain's exact levels, items, Emberpeak zone, implementation status, and remaining egg/Mordrax decisions.
+- Added `QuestsAndDialogs/QuestGivers/qGrim.j` by converting the recovered Grim GUI quest and dialogue to QuestGiver, QuestMaster, DialogInteraction, DialogSystem, and item-tracking APIs.
+- Updated `CreepRespawn/CreepUnitAssignment.j` to restore Grim's quest-giver registration and selection hooks after respawn, and updated `_developer/Design Plans/Story and Quest Design.md` with Grim's recovered quest ownership and implementation status.
+- Updated `Preload/Preloader.j` with a pre-preload choice between the normal sound/music preload and a fast developer-check path that keeps ability preloading but skips the audio preload stages, including their saved-game reload pass.
+- Updated `QuestsAndDialogs/DialogInteraction.j` to leave fullscreen cinematic mode before displaying a native dialog after a greeting sequence.
+- Updated `QuestsAndDialogs/QuestGivers/qGranis.j`, `QuestsAndDialogs/QuestGivers/qGarthork.j`, and `QuestsAndDialogs/QuestGivers/qKrezgrel.j` to use the shared first-greeting completion path and preserve their dedicated introductions.
+- Added `QuestsAndDialogs/QuestGivers/qKaelthir.j` by converting the recovered legacy GUI quests and dialogue to QuestGiver, QuestMaster, DialogInteraction, DialogSystem, item tracking, and escort APIs.
+- Updated `_developer/Design Plans/Story and Quest Design.md` with Kaelthir's canonical rawcode, Vanguard Vale quest ownership, Act IV placement, and durable Hunger outcome contract.
+- Updated `QuestsAndDialogs/QuestGivers/qZaekolaerr.j` and `QuestsAndDialogs/QuestGivers/qRagno.j` from the recovered PrinceZaekolaerr GUI triggers with one-shot negotiation outcome routing and deferred arena completion.
+- Updated `Arena/Arena.j` with reusable arena-end callbacks so quest systems can react to successful or failed sessions without replacing mode callbacks.
+- Updated `Voicelines/Voicelines_Satyr.j` and `Voicelines/Voicelines_Demoness.j` to register their owned sound keys with ExSound.
+- Updated `_developer/Design Plans/Story and Quest Design.md` with the implemented Satyr Negotiations arena gate and remaining branch gaps.
+
+### Actions Remaining
+
+- Import `qGraknar.j`, disable the legacy Graknar GUI trigger group, and runtime-test quest acceptance, Kodo discovery, hostile aggro, following, return, death/retry, turn-in, bag trading, trade return, and respawned-Graknar hooks.
+- In World Editor, keep only the canonical Graknar on rawcode `o61S`, create distinct rawcodes and identities for the other placed bag merchants, remove the old placed Kodo near Graknar, and verify the intended Graknar, `KodoSpawn`, and `KodoEnd` placement and zone.
+- Import `qGrumBloodfang.j`, disable the legacy Grum GUI quest/dialog/drake-attack trigger groups, and runtime-test all four accept/turn-in paths, combined drake kills, item rewards, Escape handling, respawn hooks, both raid rects, and Mordrax's current scale drop.
+- Import `qGrim.j`, disable the legacy Grim GUI trigger group, and runtime-test first/repeat greetings, acceptance, tooth pickup readiness, turn-in from either hero inventory, daily reset, and respawned-Grim interaction hooks.
+- Compile the full map with JassHelper and runtime-test both preload choices, including loading a saved game created after each choice.
+- Runtime-test natural completion and Escape skipping for the first and repeat interactions with Granis, Garthork, and Krezgrel.
+- Import `qKaelthir.j`, disable the legacy Kaelthir GUI trigger group, and runtime-test Struggle item removal plus all three Hunger outcomes, including the escort to `gg_rct_AradionPlace`.
+- Import the updated Zaekolaerr and arena libraries, disable the legacy PrinceZaekolaerr GUI trigger group to prevent overlapping dialogs, then runtime-test first/repeat greetings, Escape at every sequence/menu, all three negotiation choices, satyr arena failure/retry/success, sounds, camera restoration, and the `gg_rct_SatyrPrinceRect` placement.
+
 ## [24.8.2026]
 
 ### Player-Facing Updates
