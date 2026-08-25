@@ -2,7 +2,7 @@
 
 - **Status:** Living master design plan
 - **Created:** 22 August 2026
-- **Last reviewed:** 24 August 2026
+- **Last reviewed:** 25 August 2026
 - **Scope:** Main story, side stories, generic quests, dungeon quests, quest-giver connections, and world-event dependencies
 
 ## 1. Purpose
@@ -99,14 +99,14 @@ These rawcodes or named globals are evidence that the character already exists i
 | Granis | `o60F` | Thornwoods military quest giver; Rol'jin and outpost defense |
 | Garthork | `o60A` | Shadowmoon shaman; magical investigation and Nazgrek lore |
 | Krezgrel | `o608` | Thornwoods grunt commander; Murloc Fins and Rescue The Grunts daily quests |
-| Grim | `o60C` | Existing quest-giver candidate; exact GUI story to recover |
+| Grim | `o60C` | Thornwoods hunter and Big Bear Tooth daily quest giver |
 | Grum Bloodfang | `o62R` | Emberpeak dragon-hunt chain |
 | Outcast Jin'Zun | `o60X` | Sereneglade/Crypt nature and undeath side story |
 | Gar | `n60Z` | Existing Deadwoods unit; legacy notes describe a flesh-golem experiment tied to Dawnhold's necromancer |
 | Drek'thor | `o60D` | Thornwoods supporting quest giver; exact GUI role to recover |
 | Ogmar | `o612` | Existing supporting NPC; verify current placement and triggers |
 | Erduk | `o61C` | Existing quest-giver candidate; exact GUI story to recover |
-| Graknar | `o61S` | Existing supporting NPC; verify current placement and triggers |
+| Graknar | `o61S` | Bag merchant and Mistaken Kin quest giver; reserve this rawcode for the canonical Graknar and verify his final placement |
 | Boom Brothers | `n013` | Sirensong engineering chain and Boom Mine dungeon |
 | Atex Blix | `n01A` | Boom-chain contractor, betrayer, and dungeon boss identity |
 | Kribugs | `n61E` | Comic Ogre side-quest hub |
@@ -115,8 +115,9 @@ These rawcodes or named globals are evidence that the character already exists i
 | Zul'karak | `n65F` | Existing troll unit; legacy notes describe Zul'kis's warrior brother and a possible later recruit |
 | Aradion | `h00A` | Elarindor leader and late-midgame story hub |
 | Valeria | `n01W` | Elarindor ranger, companion, and story quest giver |
+| Kaelthir | `n01X` | Elarindor wretched survivor whose fate branches between mercy, mana-wraith transformation, and Aradion's failed cure |
 
-Boom Brothers, Grum Bloodfang, Erduk, Grim, Valeria, and other characters still have unexported GUI triggers in the map. Recover those triggers before deleting, replacing, or claiming full parity with their legacy quests. Granis, Garthork, and Krezgrel now have recovered trigger exports and modern qXXX conversions.
+Boom Brothers, Erduk, Valeria, and other characters still have unexported GUI triggers in the map. Recover those triggers before deleting, replacing, or claiming full parity with their legacy quests. Granis, Garthork, Krezgrel, Grim, Graknar, and Grum Bloodfang now have recovered trigger exports and modern qXXX conversions.
 
 ## 4. Zone progression and narrative use
 
@@ -128,10 +129,11 @@ Boom Brothers, Grum Bloodfang, Erduk, Grim, Valeria, and other characters still 
 | 1–10 | Thornwoods `6`, Stonetooth Camp `601`, Bloodtusk Tribe `602`, Horde Scout Base `8810` | Chieftain Thork, Granis, Garthork, Rol'jin, murloc and gnoll pressure, Horde acceptance |
 | 5–15 | Havenwoods `7`, Bonecrush Stronghold `8`, Riverbane `10`, inns/cellars `12010`–`12021` | Alliance/Ogre/Bonecrusher relations, patrols, trade, and faction consequences |
 | 5–14 | Ghostwalk Ridge `19`, Ironspine Post `1901`, Deadwoods `11`, Crypt `102` | Shadowclaw tragedy, corruption, undeath, Jin'Zun follow-up, and Dawnhold approach |
+| 10–15 | Emberpeak Highlands `3`, Cinderfall `12110` | Grum's dragon-hunt chain, the Mordrax confrontation, and the unresolved fate of the recovered eggs |
 | 10–18 | Felfire Bastion `12`, Felfire Citadel `1201`, Stormhaven `13`, Dawnhold `20` | Fel escalation, refugees, necromancer activity, Dawnhold's ruined undead city and docks, and ship-repair progression |
 | 10–20 | Sirensong Isles `14`, Mok'natha `1401`, Zul'Garok Ruins `1402`, Urgmar `1403`, Serpentshore `1404`, Zul'Gurak `15` | Boom Brothers, goblins, naga/hydra pressure, island factions, Boom Mine `104` |
 | 15–20 | Verdant Plains `17`, Chimairo's Roost `1701`, Weeping Hollow `1702`, Redwind Pass `1703`, settlement TBD `1704`, Vael'Anorath `1705`, Vanguard Vale `9` | Elarindor, Aradion, Valeria, mana rifts, satyrs, void escalation |
-| 20–30 | Dragonfire Peaks `4`, Ashfang Outpost `401`, Wyrmfall `402`, Morgrim's Claim `403`, Maw of Cinders `404`, Ashfang Falls `405` | Grum's dragon chain, Dark Horde, dragons, elemental crisis, endgame assaults |
+| 20–30 | Dragonfire Peaks `4`, Ashfang Outpost `401`, Wyrmfall `402`, Morgrim's Claim `403`, Maw of Cinders `404`, Ashfang Falls `405` | Dark Horde, dragons, elemental crisis, and endgame assaults that can react to Grum's earlier Emberpeak chain |
 | Dungeon/endgame | Gnoll Hideout `101`, Wyrmhold Sanctum `103`, Firelands `105`, Dreadforge `106` | Major story reveals, boss conclusions, and replayable dungeon objectives |
 | Competitive | Coliseum of Ages `18`, Circle of Blood `21` | Optional arena introductions, daily trials, and reputation outcomes |
 | Local caves | Cinderfall `12110`, Wolf Den `12111`, Shadowmaw `12112`, Kobold Mine `12113`, Blazehollow `12114` | Focused normal, daily, and repeatable quest destinations |
@@ -146,17 +148,21 @@ This section records current qXXX content at the time this plan was created. Upd
 
 | Library / giver | Current quests | Status and important dependencies |
 |---|---|---|
-| `qRagno.j` | Protect the Outpost; Gnoll Headcount; Lumberjack Duties; Kobold Thieves; Satyr Negotiations; Call of the Horde | **Implemented JASS.** Protect the Outpost is externally started and auto-completed by its scripted defense. Its legacy `QUEST_MOUNTAIN_DEFENSE` alias still points to Protect the Outpost internally. Granis owns the separate QuestData for the later Mountain Defense, but Ragno remains that quest's field commander, encounter anchor, required survivor, and principal battlefield speaker. Satyr Negotiations currently reaches Zaekolaerr and immediately resolves after the dialogue choice; the arena, escape, betrayal, and trust consequences are not implemented. Call of the Horde requires Protect the Outpost and an external unlock. |
+| `qRagno.j` | Protect the Outpost; Gnoll Headcount; Lumberjack Duties; Kobold Thieves; Satyr Negotiations; Call of the Horde | **Implemented JASS.** Protect the Outpost is externally started and auto-completed by its scripted defense. Its legacy `QUEST_MOUNTAIN_DEFENSE` alias still points to Protect the Outpost internally. Granis owns the separate QuestData for the later Mountain Defense, but Ragno remains that quest's field commander, encounter anchor, required survivor, and principal battlefield speaker. Satyr Negotiations reaches Zaekolaerr; its arena outcome now waits for a successful Coliseum challenge started through satyr arena master `n62V`, while the escape, betrayal, and trust follow-ups remain partial. Call of the Horde requires Protect the Outpost and an external unlock. |
 | `qChieftainThork.j` | Duty For The Horde | **Implemented JASS.** Tracks Granis's Punish and Garthork's The Magical Eye as separate proof requirements, receives explicit completion reports, and recovers their state from completed QuestData. Later Thork branches remain external/legacy. |
 | `qGranis.j` | Punish; Mountain Defense | **Implemented JASS.** Punish targets the existing Rol'jin boss and item `I600`. Granis commissions, owns, and rewards Mountain Defense, while Ragno commands the battle in the field. The distinct second outpost assault uses nine reusable `UnitWaves` stages, fails if Ragno dies or fewer than five temporary defenders survive, and supports retry cleanup. Both are Normal + Story in Thornwoods `6`. |
 | `qGarthork.j` | The Magical Eye | **Implemented JASS.** Spawns/reuses Mur'gal `n607`, tracks Eye of Mur'gal `I601`, awards Adept Shaman Claws `I66R`, and reports the completed proof task to Thork. Normal + Story in Thornwoods `6`. |
 | `qKrezgrel.j` | Murloc Fins; Rescue The Grunts | **Implemented JASS.** Both are Daily quests in Thornwoods `6`. Rescue targets use invisible selectable grunt proxies paired with negative-pitch special effects and randomized positions in `gg_rct_UpsideGrunt01` through `08`; targets recycle after 240 seconds. The old placed upside-down grunt units must be removed in World Editor. |
+| `qGrim.j` | Big Bear Tooth | **Implemented JASS.** Daily quest in Thornwoods `6`; tracks Big Bear Tooth `I6AB`, preserves Grim's recovered voiced greeting/acceptance/completion/farewell dialogue, and relies on the existing bear loot definitions. |
+| `qGraknar.j` | Mistaken Kin | **Implemented JASS.** Level 2 Normal side quest that spawns Kodo `o008` at `gg_rct_KodoSpawn`, finds it at 500 range, escorts it through `FollowSystem`, and returns it to Graknar before turn-in. Graknar's Trade option opens the existing bag shop rather than the legacy 30-second trade timer. The quest's zone and canonical `o61S` placement still require WE verification; every other bag merchant currently using `o61S` needs a distinct unit rawcode and identity. |
+| `qGrumBloodfang.j` | Whelps of Destruction; Dragon Egg Hunt; Drake Hunt; The Desolator | **Implemented JASS.** Four sequential Normal + Story quests in Emberpeak Highlands `3`, at levels 10, 10, 12, and 15. They track ten Whelp Scales `I00S`, six Dragon Eggs `I00P`, six kills shared across the four current red/scorching drake types, and one Scale of Mordrax `I00T`. The recovered periodic Scorching Drake attack at Grum is also converted. Egg delivery and Mordrax completion have semantic public queries; the eggs' later treatment remains unresolved. |
 | `qAradion.j` | Ranger Missing; Crystals of Hope; Fading Sparks; Rifts of Corruption | **Implemented JASS.** Ranger Missing leads to two parallel collection/investigation quests, then Rifts requires all three. Uses Vanguard Vale, Verdant Plains, and Redwind Pass. Test quests are disabled. Valeria's post-reunion Dash rawcode remains a TODO. |
 | `qValeria.j` | Token of Love; Lost Supplies | **Implemented JASS.** Token follows Ranger Missing; Lost Supplies follows Token. Uses dedicated token and seven supplies rects. |
+| `qKaelthir.j` | Kaelthir's Struggle; Kaelthir's Hunger | **Implemented JASS.** Normal + Story in Vanguard Vale `9`. Struggle consumes one Mana Crystal `I00Y`. Hunger requires Struggle and records one durable QuestData outcome: mercy, feeding Kaelthir into a Mana Wraith `n002`, or escorting him to Aradion for a failed cure. The Aradion path uses `gg_rct_AradionPlace`. |
 | `qOutcastJinzun.j` | Plague Upon Trees; Lurking In The Shadows; Unknown Entity; Seeds of Life; Resurgence of Dead I; Resurgence of Dead II; Da Fishing Pole Missing | **Implemented JASS.** Forms a nature-to-undeath side arc through tree runes, lake, dead trees, graveyard, Zaekolaerr inquiry, and Crypt-facing escalation. |
 | `qKribugs.j` | Ogre Lost His Sandwich; Kribugs Lost His Satchel; Ogre Is Very Thirsty; Meat For The Ogre; Ogre Ate Too Much; Angry Customers | **Implemented JASS.** Three early normals, two repeatables, and one gnoll-kill follow-up. Keep as comic relief rather than a main-story gate. |
 | `qANightToRemember.j` | A Night To Remember | **Implemented JASS.** Repeatable, zone-aware social quest with three witnesses and randomized make-amends tasks. It is an optional character vignette, not a canonical story requirement. |
-| `qZaekolaerr.j` | Satyr Negotiations and fishing-pole dialogue endpoints | **Partial support.** It does not own a QuestData definition. Treat it as an external dialogue endpoint until the satyr branch is implemented deliberately. |
+| `qZaekolaerr.j` | Satyr Negotiations and fishing-pole dialogue endpoints | **Partial support.** It owns the durable negotiation outcome and completes the arena route only after a successful Coliseum challenge started through satyr arena master `n62V`; Ragno still owns the QuestData and reward. The hostile escape and false-alliance consequences remain future work. |
 
 At this revision, the core named qXXX libraries do not consistently assign the new content categories. The Story/Dungeon labels in this plan are design intent until an explicit category pass is implemented and validated.
 
@@ -165,6 +171,8 @@ At this revision, the core named qXXX libraries do not consistently assign the n
 `QuestsAndDialogs/QuestGivers/Vendors/README.md` is the implementation ledger for the vendor quest set. It currently records 58 quests across 50 qVendor libraries: 43 Daily and 15 Normal. Keep that README authoritative for exact vendor quest titles, rawcodes, objectives, and setup.
 
 The generic quest plan below complements that set; it must not recreate an existing vendor task under a second quest ID. Exact vendor and generic-NPC placements must be checked in World Editor because the source repository does not provide a complete placement inventory.
+
+Graknar `o61S` is a named quest giver as well as the original bag merchant. Do not reuse `o61S` for generic bag sellers: create distinct vendor identities and rawcodes, then bind their intended bag catalogs separately so Graknar's quest reference and respawn hooks remain unambiguous.
 
 ### Existing runtime systems tied to planned content
 
@@ -235,7 +243,7 @@ Legacy intro beats worth retaining are Shadowclaw reacting defensively when the 
 | ST-A1-04 | The Magical Eye | **Implemented JASS** | Garthork identifies Nazgrek's Thunderlord past, requests Mur'gal's eye `I601`, and reports the proof to Thork. The later spiritual-sight follow-up remains proposed. |
 | ST-A1-05 | Mountain Defense | **Implemented JASS** | Granis commissions the quest and receives the final report, but Ragno is its field commander and operational story anchor. It is a distinct second assault after Ragno's Protect the Outpost, with nine staged waves, defender/Ragno survival rules, and retry cleanup. |
 | ST-A1-06 | Gnoll camp clue → Gnoll Hideout | **Legacy Articy; proposed bridge** | A southern-camp objective reveals stolen Horde resources and an external organizer, then unlocks dungeon `101`. The dungeon book/ledger becomes story evidence instead of a standalone collectible. |
-| ST-A1-07 | Satyr Negotiations | **Implemented opening, partial branches** | Zaekolaerr offers an arena test, a hostile rupture/escape, or apparent cooperation. Record the outcome as durable story state and let all routes converge on proof that Zaek is manipulating both factions. |
+| ST-A1-07 | Satyr Negotiations | **Implemented opening and arena gate; partial branches** | Zaekolaerr offers an arena test, a hostile rupture/escape, or apparent cooperation. `qZaekolaerr` records the selected outcome; the arena route requires completing any challenge in the Coliseum of Ages through satyr arena master `n62V`. The later escape, betrayal, trust, and convergence consequences remain to be implemented. |
 | ST-A1-08 | Thork's judgement | **Proposed** | Thork evaluates Granis, Garthork, dungeon, and satyr outcomes. Nazgrek gains conditional standing with the Horde and a route toward Ghostwalk Ridge. |
 
 Recommended satyr consequences:
@@ -311,17 +319,18 @@ Exact item rawcodes, objective rects, failure handling, and rewards must come fr
 | ST-A4-03 | Crystals of Hope | **Implemented JASS** | Stabilize Elarindor using Vanguard Vale mana crystals. |
 | ST-A4-04 | Fading Sparks | **Implemented JASS** | Use Tel'anor's Rod against wraiths; connect Deadwoods/void clues to Elarindor's crisis. |
 | ST-A4-05 | Rifts of Corruption | **Implemented JASS** | Aradion and Valeria perform three rift rituals. This is the Act IV convergence and should expose the endgame source or route. |
+| ST-A4-05A | Kaelthir's Struggle -> Kaelthir's Hunger | **Implemented JASS side chain** | Give immediate personal stakes to Elarindor's magical collapse. The chosen mercy, mana-wraith, or failed-cure outcome is stored through the completed Hunger requirement for later dialogue. |
 | ST-A4-06 | Weeping Hollow / Vael'Anorath consequence | **Proposed** | Use the player's satyr choice and ritual success to alter assistance, enemy composition, and dialogue in Verdant Plains. |
 | ST-A4-07 | Chimairo and Morthun | **Proposed zone story** | Optional elite/world-boss arc that proves whether the land is healing; do not make trophy farming a story gate. |
 
-### Act V — Fire, blood, and balance (levels 20–30)
+### Act V — Fire, blood, and balance (levels 10–30)
 
 | Design ID | Quest / beat | Status | Purpose and connection |
 |---|---|---|---|
-| ST-A5-01 | Whelps of Destruction | **Legacy voiced design** | Grum Bloodfang sends Nazgrek for whelp scales in Emberpeak. Frame it as threat assessment, not indiscriminate extermination. |
-| ST-A5-02 | Dragon Egg Hunt | **Legacy voiced design** | Recover eggs; Grum's suspicious handling creates a trust question and later consequence. |
-| ST-A5-03 | Drake Hunt | **Legacy voiced design** | Kill corrupted/aggressive drakes and survive a possible drake ambush. |
-| ST-A5-04 | The Desolator | **Legacy voiced design** | Defeat Mordrax and recover the shattered scale. Confirm the boss's current location and encounter state in WE. |
+| ST-A5-01 | Whelps of Destruction | **Implemented JASS** | Level 10 Normal + Story quest in Emberpeak `3`; bring ten Whelp Scales `I00S`. The journal frames the hunt around dangerous whelps threatening Emberpeak. |
+| ST-A5-02 | Dragon Egg Hunt | **Implemented JASS; consequence open** | Level 10 Normal + Story follow-up; deliver six Dragon Eggs `I00P`. `qGrumBloodfang_AreEggsDelivered()` exposes the delivery, while Grum's intended treatment and its later consequence remain unresolved. |
+| ST-A5-03 | Drake Hunt | **Implemented JASS** | Level 12 Normal + Story follow-up; kill six aggressive red or scorching drakes across the current level-10 and level-20 rawcodes. Grum's recovered periodic Scorching Drake attack is active independently of quest progress. |
+| ST-A5-04 | The Desolator | **Implemented JASS; encounter verification remains** | Level 15 Normal + Story conclusion; bring Scale of Mordrax `I00T` and receive Dragonslayer's Sword `I00U`. `qGrumBloodfang_IsMordraxDefeated()` exposes completion; confirm Mordrax's current WE encounter and drop path during integration testing. |
 | ST-A5-05 | Ashfang and Morgrim fronts | **Proposed synthesis** | Morgrok, Morgrim's Claim, Wyrmfall, Maw of Cinders, and Scorchion expose competing Dark Horde and elemental operations. |
 | ST-A5-06 | Wyrmhold Sanctum | **Proposed dungeon story** | Confront Dragon Mother Seretha and decide how surviving eggs/dragons factor into the final assault. |
 | ST-A5-07 | Firelands / Dreadforge | **Proposed endgame** | Stop the exploitation of elemental power and the forge supplying the campaign. Use the selected final dungeon order to provide distinct allies or encounter advantages. |
@@ -374,7 +383,7 @@ These are candidates, not promises. Before implementation, search the vendor REA
 |---|---|---|---|---|---|
 | GQ-007 | Murloc Fins | Daily | Krezgrel | Thornwoods shore | **Implemented JASS.** Gather ten Murloc Fins `I6AE`; no duplicate title exists in the vendor ledger. |
 | GQ-008 | Rescue The Grunts | Daily | Krezgrel | Thornwoods murloc waters | **Implemented JASS.** Rescue three living grunts through eight randomized effect/proxy targets; some selected grunts have already drowned. |
-| GQ-009 | The Big Bear Tooth | Daily | Existing hunter | Thornwoods wildlife area | Articy daily candidate and trophy hunt. |
+| GQ-009 | Big Bear Tooth | Daily | Grim | Thornwoods wildlife area | **Implemented JASS.** Bring one Big Bear Tooth `I6AB`; the existing bear loot definitions provide the item. |
 | GQ-010 | The Road to the Scout Base | Normal | Granis or existing scout | Route to Horde Scout Base `8810` | Clear ambush points and unlock safe travel/patrol visibility. |
 | GQ-011 | Teeth Beneath the Hill | Normal + Dungeon | Granis | Gnoll camp → Gnoll Hideout `101` | Breadcrumb quest for the dungeon and its stolen-resource clue. |
 | GQ-012 | Deathlord Fel'Dok | Normal + Dungeon | Granis or dungeon survivor | Gnoll Hideout `101` | Kill the dungeon boss; spelling must match current object/boss data. |
@@ -514,16 +523,14 @@ Before implementing the following, export or inspect the old GUI triggers and co
 | Owner | Known recoverable intent | Still needed |
 |---|---|---|
 | Boom Brothers / Atex Blix | Five-step Boom Mine chain | Exact items, escort route, failure/retry behavior, mine access flags, Mad Blix phases |
-| Grum Bloodfang | Whelps, eggs, drakes, Mordrax | Exact counts/items, boss identity/location, reward and egg consequence |
 | Erduk | Existing named quest giver | Entire active GUI quest set, placement, and intended arc |
-| Grim | Existing named quest giver | Entire active GUI quest set, placement, and intended arc |
 | Valeria | Current qValeria plus unexported legacy triggers | Identify which companion objectives remain missing; verify old “Velaria” references by rawcode so they are not confused with Velyssara |
 | Velyssara | Existing succubus unit `n636`; Chains of Seduction and fight text; legacy Articy “Velaria” | Recover her GUI triggers, relationship with Zaekolaerr, dispel sequence, boss event, rewards, and final outcome |
 | Nazgrek's Flask | Existing alchemy item `I61L`; old intro describes a self-made insight flask | Recover the original quest triggers/ingredients and decide between a quest-only vision draught, a later recipe unlock, or deliberate reuse of `I61L` |
 | Zul'karak | Existing unit `n65F`; ODT describes Zul'kis's warrior brother and possible later recruit | Confirm current placement, faction, dialogue, companion eligibility, and whether the older-brother relationship remains canon |
 | Ghostwalk/Deadwoods/Dawnhold legacy campaign | Shadowclaw death, fel-orc warband, Ironspine-like outpost, human survivors, Dawnhold curse, Gar, and ship | Ruined “Vanguard” maps to Dawnhold `20`; Gar `n60Z` maps to Deadwoods `11`; Ship A already serves Dawnhold. Verify exact rects, triggers, and intended quest-specific vessel/service changes. |
 | Crypt `102` | Seven legacy quests, three encounter roles, hazards, books, and a cursed-crown branch | Map roles to current bosses/rooms, identify the buried culture/ruler, validate traps, and design persistent reward consequences |
-| Other Horde NPCs | Drek'thor, Ogmar, Graknar and related triggers | Inventory before assigning new generic quests to avoid ownership conflicts. Krezgrel's two legacy daily quests are now recovered and implemented. |
+| Other Horde NPCs | Drek'thor, Ogmar and related triggers | Inventory before assigning new generic quests to avoid ownership conflicts. Krezgrel's two legacy daily quests and Graknar's Mistaken Kin are now recovered and implemented. |
 
 ## 13. Open and resolved canon and implementation decisions
 
