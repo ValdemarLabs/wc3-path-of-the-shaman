@@ -1,0 +1,92 @@
+Button Pressed in SuccubusDialog01
+    Events
+        Dialog - A dialog button is clicked for SuccubusDialog01
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to SuccubusDialog01Accept
+            Then - Actions
+                -------- YES --------
+                Set VariableSet SuccubusDialog01FarewellBool = True
+                Cinematic - Disable user control for (All players).
+                Camera - Apply SuccubusCamera03 <gen> for Player 1 (Red) over 0.00 seconds
+                Wait 1.00 seconds
+                Animation - Queue Succubus's stand 2 animation
+                Cinematic - Send transmission to (All players) from Succubus named Succubus: Play Demoness_0024 <gen> and display I sense a hunger wi....  Modify duration: Set to 8.00 seconds and Wait
+                Camera - Apply SuccubusCamera02 <gen> for Player 1 (Red) over 0.00 seconds
+                Animation - Queue Succubus's stand 3 animation
+                Wait 1.50 seconds
+                Animation - Queue Succubus's stand 2 animation
+                Cinematic - Send transmission to (All players) from Succubus named Succubus: Play Demoness_0023 <gen> and display Come closer, my dea....  Modify duration: Set to 10.00 seconds and Don't wait
+                Wait 5.00 seconds
+                Set VariableSet VarPoint = (Center of SuccubusNazgrekMove <gen>)
+                Unit - Order Nazgrek to Move To VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Wait 1.00 seconds
+                Unit - Make Succubus face Nazgrek over 0.75 seconds
+                Unit - Make Nazgrek face Succubus over 0.75 seconds
+                Wait 5.00 seconds
+                Animation - Queue Succubus's spell throw animation
+                Animation - Queue Succubus's stand animation
+                Sound - Play SuccubusCurse <gen> at 100.00% volume, attached to Succubus
+                Wait 2.00 seconds
+                Cinematic - Send transmission to (All players) from Succubus named Succubus: Play Demoness_0026 <gen> and display Feel the chains of ....  Modify duration: Set to 6.00 seconds and Wait
+                Set VariableSet SuccubusSeduced = True
+                -------- DEFAULT CAMERA --------
+                Camera - Apply SuccubusCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Trigger - Run Quest Chains of Seduction <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Clicked dialog button) Equal to SuccubusDialog01Challenge
+                        (Clicked dialog button) Equal to SuccubusDialog01Decline
+            Then - Actions
+                Set VariableSet SuccubusDialog01FarewellBool = True
+                Cinematic - Disable user control for (All players).
+                Camera - Apply SuccubusCamera03 <gen> for Player 1 (Red) over 0.00 seconds
+                Cinematic - Send transmission to (All players) from Succubus named Succubus: Play Demoness_0040 <gen> and display You are blind to no....  Modify duration: Set to 3.00 seconds and Wait
+                Wait 1.00 seconds
+                Unit - Make Succubus face Nazgrek over 0.75 seconds
+                Cinematic - Send transmission to (All players) from Succubus named Succubus: Play Demoness_0041 <gen> and display Now I'll make you s....  Modify duration: Set to 5.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply SuccubusCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                -------- ACTIONS --------
+                Player - Make Player 1 (Red) treat Player 13 (Maroon) as an Enemy
+                Player - Make Player 13 (Maroon) treat Player 1 (Red) as an Enemy
+                Countdown Timer - Start SatyrHostileTimer[1] as a One-shot timer that will expire in 300.00 seconds
+                Set VariableSet VarPoint = (Position of Nazgrek)
+                Unit - Order Succubus to Move To VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Unit - Make Succubus Vulnerable
+                Wait 0.50 seconds
+                Unit - Order Succubus to Attack Once Nazgrek
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Clicked dialog button) Equal to SuccubusDialog01Farewell
+            Then - Actions
+                Set VariableSet SuccubusDialog01FarewellBool = True
+                Cinematic - Disable user control for (All players).
+                Camera - Apply SuccubusCamera03 <gen> for Player 1 (Red) over 0.00 seconds
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0201 <gen> and display I think I will pass....  Modify duration: Set to 5.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from Succubus named Succubus: Play Demoness_0025 <gen> and display You've made your ch....  Modify duration: Set to 6.00 seconds and Wait
+                -------- DEFAULT CAMERA --------
+                Camera - Apply SuccubusCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Skip remaining actions
+            Else - Actions

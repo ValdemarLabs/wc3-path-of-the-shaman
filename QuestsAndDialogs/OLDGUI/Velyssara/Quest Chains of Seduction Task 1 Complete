@@ -1,0 +1,35 @@
+Quest Chains of Seduction Task 1 Complete
+    Events
+        Player - Player 1 (Red) types a chat message containing task1c as An exact match
+        Time - Every 1.00 seconds of game time
+    Conditions
+        SuccubusTask1Rumors Greater than or equal to 4
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Remove Unit Group --------
+        Custom script:   call DestroyGroup(udg_SuccubusEventGroup)
+        -------- Mark Task (quest requirement) completed --------
+        Quest - Display to (All players) the Quest Update message: |cffffcc00QUEST UPD...
+        Quest - Mark QuestChainsOfSeductionTask1 as Completed
+        -------- Succubus voice lines --------
+        Wait Campaign quest delay seconds
+        Cinematic - Send transmission to (All players) from Succubus named Succubus: Play Demoness_0035 <gen> and display Ah, such sweet obed....  Modify duration: Set to 4.00 seconds and Wait
+        Wait 5.00 seconds
+        Cinematic - Send transmission to (All players) from Succubus named Succubus: Play Demoness_0028 <gen> and display Now let’s make th....  Modify duration: Set to 6.00 seconds and Wait
+        Set VariableSet VarPoint = (Center of GnollPillageSpawn <gen>)
+        Item - Create |cFFFFFFFFGnoll Pillage|r at VarPoint
+        Item - Make (Last created item) Invulnerable
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- Create Grunt Patrol that will guard the item --------
+        Set VariableSet VarPoint = (Center of PillagePatrol02 <gen>)
+        Unit - Create 1 Grunt for Player 6 (Orange) at VarPoint facing Default building facing degrees
+        Set VariableSet PillageGuard = (Last created unit)
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Set VariableSet VarPoint = (Center of PillagePatrol01 <gen>)
+        Unit - Order PillageGuard to Patrol To VarPoint
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- . --------
+        Wait Campaign quest delay seconds
+        Trigger - Run Quest Chains of Seduction Update Task 2 <gen> (checking conditions)
+        Trigger - Turn on Quest Chains of Seduction Task 2 Complete <gen>
+        Trigger - Turn on Quest Chains of Seduction Task 2 Event Patrol <gen>

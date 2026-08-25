@@ -1,0 +1,12 @@
+Quest Chains of Seduction
+    Events
+    Conditions
+    Actions
+        -------- Quest related triggers / activities --------
+        Unit - Make Succubus Invulnerable
+        Trigger - Turn on Quest Chains of Seduction Succubus Follow <gen>
+        -------- Quest activate --------
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Chains of Seduction Discover <gen> (checking conditions)
+        Trigger - Run Quest Chains of Seduction Task 1 <gen> (checking conditions)
+        Trigger - Remove (This trigger) from the trigger queue

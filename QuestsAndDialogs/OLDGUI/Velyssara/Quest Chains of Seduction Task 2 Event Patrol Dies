@@ -1,0 +1,12 @@
+Quest Chains of Seduction Task 2 Event Patrol Dies
+    Events
+        Unit - A unit Dies
+    Conditions
+        (Triggering unit) Equal to PillageGuard
+    Actions
+        Game - Display to (All players) the text: You are considered ...
+        Player - Make Player 6 (Orange) treat Player 1 (Red) as an Enemy
+        Player - Make Player 1 (Red) treat Player 6 (Orange) as an Enemy
+        Wait 60.00 seconds
+        Player - Make Player 6 (Orange) treat Player 1 (Red) as an Ally
+        Player - Make Player 1 (Red) treat Player 6 (Orange) as an Ally

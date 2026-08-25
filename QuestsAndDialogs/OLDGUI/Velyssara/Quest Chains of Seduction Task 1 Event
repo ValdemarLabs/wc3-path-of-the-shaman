@@ -1,0 +1,76 @@
+Quest Chains of Seduction Task 1 Event
+    Events
+        Player - Player 1 (Red) Selects a unit
+    Conditions
+        (Owner of (Triggering unit)) Equal to Player 6 (Orange)
+        (Triggering unit) Not equal to Ragno
+        (Distance between (Position of (Triggering unit)) and (Position of Nazgrek)) Less than or equal to 500.00
+        (Remaining time for DialogOverTimer) Equal to 0.00
+        SuccubusTask1Rumors Less than 4
+        ((Triggering unit) is in SuccubusEventGroup.) Equal to False
+        ((Triggering unit) is A structure) Equal to False
+        (Unit-type of (Triggering unit)) Not equal to Kodo (Mount)
+    Actions
+        Trigger - Turn off (This trigger)
+        Set VariableSet SuccubusEventUnit = (Triggering unit)
+        Set VariableSet SuccubusEventUnitCV = (Custom value of (Triggering unit))
+        Unit Group - Add SuccubusEventUnit to SuccubusEventGroup
+        -------- ======== CINEMATIC STARTS ======== --------
+        Trigger - Run Cinematic ON <gen> (checking conditions)
+        -------- Camera --------
+        Cinematic - Turn cinematic mode On for (All players)
+        Camera - Apply SuccubusEventCamera01 <gen> for Player 1 (Red) over 0.00 seconds
+        Camera - Pan camera for Player 1 (Red) to (Position of Nazgrek) over 0.00 seconds
+        Wait 1.00 seconds
+        Unit - Make SuccubusEventUnit face Nazgrek over 0.75 seconds
+        Unit - Make Nazgrek face SuccubusEventUnit over 0.75 seconds
+        Set VariableSet SuccubusEventInt = (Random integer number between 1 and 4)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                SuccubusEventInt Equal to 1
+            Then - Actions
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display I saw Ragno steal s....  Modify duration: Set to 3.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from SuccubusEventUnit named (Name of SuccubusEventUnit): Play No sound and display What?! He wouldn't ....  Modify duration: Set to 3.00 seconds and Wait
+                Set VariableSet SuccubusTask1Rumors = (SuccubusTask1Rumors + 1)
+                Set VariableSet SuccubusEventInt = 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                SuccubusEventInt Equal to 2
+            Then - Actions
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display I saw Ragno steal s....  Modify duration: Set to 3.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from SuccubusEventUnit named (Name of SuccubusEventUnit): Play No sound and display Why would Ragno do ....  Modify duration: Set to 3.00 seconds and Wait
+                Set VariableSet SuccubusTask1Rumors = (SuccubusTask1Rumors + 1)
+                Set VariableSet SuccubusEventInt = 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                SuccubusEventInt Equal to 3
+            Then - Actions
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display I saw someone steal....  Modify duration: Set to 3.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from SuccubusEventUnit named (Name of SuccubusEventUnit): Play No sound and display Who does this thief....  Modify duration: Set to 3.00 seconds and Wait
+                Set VariableSet SuccubusTask1Rumors = (SuccubusTask1Rumors + 1)
+                Set VariableSet SuccubusEventInt = 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                SuccubusEventInt Equal to 4
+            Then - Actions
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display I saw some orc warr....  Modify duration: Set to 3.00 seconds and Wait
+                Cinematic - Send transmission to (All players) from SuccubusEventUnit named (Name of SuccubusEventUnit): Play No sound and display If that is true, we....  Modify duration: Set to 3.00 seconds and Wait
+                Set VariableSet SuccubusTask1Rumors = (SuccubusTask1Rumors + 1)
+                Set VariableSet SuccubusEventInt = 0
+            Else - Actions
+        -------- ==== Return gaming mode START ==== --------
+        Cinematic - Enable user control for (All players).
+        Camera - Apply SuccubusCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+        Set VariableSet VarPoint = (Position of Nazgrek)
+        Camera - Pan camera for Player 1 (Red) to VarPoint over 0.00 seconds
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Selection - Select Nazgrek
+        Cinematic - Turn cinematic mode Off for (All players)
+        -------- ==== Return gaming mode END ==== --------
+        Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 1.00 seconds
+        -------- ======== CINEMATIC ENDS ======== --------
+        Trigger - Turn on (This trigger)
+        Trigger - Run Cinematic OFF <gen> (checking conditions)

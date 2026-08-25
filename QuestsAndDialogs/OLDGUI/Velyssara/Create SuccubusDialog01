@@ -1,0 +1,47 @@
+Create SuccubusDialog01
+    Events
+    Conditions
+    Actions
+        Dialog - Clear SuccubusDialog01
+        Dialog - Change the title of SuccubusDialog01 to Options
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestChainsOfSeduction is discovered) Equal to False
+                (QuestChainsOfSeduction is completed) Equal to False
+            Then - Actions
+                -------- Yes --------
+                Dialog - Create a dialog button for SuccubusDialog01 labelled - Yes
+                Set VariableSet SuccubusDialog01Accept = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show SuccubusDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestChainsOfSeduction is discovered) Equal to False
+                (QuestChainsOfSeduction is completed) Equal to False
+            Then - Actions
+                -------- No --------
+                Dialog - Create a dialog button for SuccubusDialog01 labelled - No
+                Set VariableSet SuccubusDialog01Decline = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show SuccubusDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestChainsOfSeduction is completed) Equal to True
+            Then - Actions
+                -------- Challenge --------
+                Dialog - Create a dialog button for SuccubusDialog01 labelled - Challenge
+                Set VariableSet SuccubusDialog01Challenge = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show SuccubusDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- No --------
+                Dialog - Create a dialog button for SuccubusDialog01 labelled - Farewell
+                Set VariableSet SuccubusDialog01Farewell = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show SuccubusDialog01 for Player 1 (Red)
+            Else - Actions

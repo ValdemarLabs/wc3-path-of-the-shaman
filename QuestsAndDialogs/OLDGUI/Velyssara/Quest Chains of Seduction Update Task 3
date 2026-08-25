@@ -1,0 +1,12 @@
+Quest Chains of Seduction Update Task 3
+    Events
+    Conditions
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Chains of Seduction Create <gen> (checking conditions)
+        -------- Display a quest message. --------
+        Quest - Create a quest requirement for QuestChainsOfSeduction with the description Task 3: Kill member...
+        Set VariableSet QuestChainsOfSeductionTask3 = (Last created quest requirement)
+        -------- Update quest --------
+        Quest - Display to (All players) the Quest Update message: |cffffcc00QUEST|r  ...

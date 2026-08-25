@@ -1,0 +1,65 @@
+Quest Chains of Seduction Task 4 Complete
+    Events
+        Unit - A unit Finishes reviving
+    Conditions
+        (Reviving Hero) Equal to Nazgrek
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Mark Task (quest requirement) completed --------
+        Quest - Display to (All players) the Quest Update message: |cffffcc00QUEST UPD...
+        Quest - Mark QuestChainsOfSeductionTask4 as Completed
+        Set VariableSet VarPoint = (Position of Nazgrek)
+        Set VariableSet VarPoint2 = (Position of Succubus)
+        Special Effect - Create a special effect at VarPoint using Abilities\Spells\Undead\Darksummoning\DarkSummonTarget.mdl
+        Set VariableSet SuccubusTeleport1 = (Last created special effect)
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Animation - Queue Succubus's spell channel throw animation
+        Special Effect - Create a special effect at VarPoint2 using Abilities\Spells\Undead\Darksummoning\DarkSummonTarget.mdl
+        Set VariableSet SuccubusTeleport2 = (Last created special effect)
+        Custom script:   call RemoveLocation(udg_VarPoint2)
+        Wait 2.00 seconds
+        Set VariableSet VarPoint = (Position of Nazgrek)
+        Unit - Move Succubus instantly to VarPoint
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Animation - Queue Succubus's spell channel throw animation
+        Wait 1.00 seconds
+        Animation - Queue Succubus's stand animation
+        Special Effect - Destroy SuccubusTeleport1
+        Special Effect - Destroy SuccubusTeleport2
+        -------- Succubus voice lines --------
+        Wait 1.00 seconds
+        Cinematic - Send transmission to (All players) from Succubus named Succubus: Play Demoness_0037 <gen> and display Embrace the shadows....  Modify duration: Set to 4.00 seconds and Wait
+        -------- ======== CINEMATIC STARTS ======== --------
+        Trigger - Run Cinematic ON <gen> (checking conditions)
+        -------- Camera --------
+        Cinematic - Turn cinematic mode On for (All players)
+        Camera - Apply SuccubusEventCamera03 <gen> for Player 1 (Red) over 0.00 seconds
+        Set VariableSet VarPoint = (Position of Nazgrek)
+        Camera - Pan camera for Player 1 (Red) to VarPoint over 0.00 seconds
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Wait 1.00 seconds
+        Unit - Make Succubus face Nazgrek over 0.75 seconds
+        Unit - Make Nazgrek face Succubus over 0.75 seconds
+        Wait 2.00 seconds
+        Cinematic - Send transmission to (All players) from Succubus named Succubus: Play Demoness_0032 <gen> and display Ah, my precious ser....  Modify duration: Set to 7.00 seconds and Wait
+        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0208 <gen> and display I serve only you, m....  Modify duration: Set to 6.00 seconds and Wait
+        Cinematic - Send transmission to (All players) from Succubus named Succubus: Play Demoness_0033 <gen> and display I bestow upon you t....  Modify duration: Set to 9.00 seconds and Wait
+        Set VariableSet SuccubusSeduced = False
+        Animation - Queue Succubus's spell throw animation
+        Hero - Add 300 experience to Nazgrek, Show level-up graphics
+        Hero - Create Orb of Lifesteal and give it to Nazgrek
+        Animation - Queue Succubus's stand animation
+        -------- DEFAULT CAMERA --------
+        Camera - Apply SuccubusCameraSkipped <gen> for Player 1 (Red) over 0.00 seconds
+        -------- ======== CINEMATIC ENDS ======== --------
+        Trigger - Run Cinematic OFF <gen> (checking conditions)
+        Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+        Trigger - Turn off Quest Chains of Seduction Succubus Follow <gen>
+        Wait Campaign quest delay seconds
+        Trigger - Run Quest Chains of Seduction Completed <gen> (checking conditions)
+        Set VariableSet VarPoint = (Center of SuccubusLocation <gen>)
+        Unit - Order Succubus to Move To VarPoint
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Unit - Make Succubus Vulnerable
+        Wait Campaign quest delay seconds
+        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0209 <gen> and display What the hell just ....  Modify duration: Set to 7.00 seconds and Wait

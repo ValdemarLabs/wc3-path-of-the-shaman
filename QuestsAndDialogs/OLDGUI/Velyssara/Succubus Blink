@@ -1,0 +1,41 @@
+Succubus Blink
+    Events
+        Unit - A unit Is attacked
+    Conditions
+        (Unit-type of (Triggering unit)) Equal to Velyssara (Succubus)
+        ((Triggering unit) has buff Drain Life (Caster)) Equal to False
+    Actions
+        Set VariableSet SuccubusBlinkChance = (Random integer number between 1 and 9)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                SuccubusBlinkChance Equal to 1
+            Then - Actions
+                Set VariableSet VarPoint = ((Position of (Triggering unit)) offset by (300.00, 300.00))
+                Unit - Order (Triggering unit) to Night Elf Warden - Blink VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                SuccubusBlinkChance Equal to 2
+            Then - Actions
+                Set VariableSet VarPoint = ((Position of (Triggering unit)) offset by (150.00, -150.00))
+                Unit - Order (Triggering unit) to Night Elf Warden - Blink VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                SuccubusBlinkChance Equal to 3
+            Then - Actions
+                Set VariableSet VarPoint = ((Position of (Triggering unit)) offset by (-300.00, 100.00))
+                Unit - Order (Triggering unit) to Night Elf Warden - Blink VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                SuccubusBlinkChance Equal to 4
+            Then - Actions
+                Set VariableSet VarPoint = ((Position of (Triggering unit)) offset by (200.00, -200.00))
+                Unit - Order (Triggering unit) to Night Elf Warden - Blink VarPoint
+                Custom script:   call RemoveLocation(udg_VarPoint)
+            Else - Actions
+        Set VariableSet SuccubusBlinkChance = 0

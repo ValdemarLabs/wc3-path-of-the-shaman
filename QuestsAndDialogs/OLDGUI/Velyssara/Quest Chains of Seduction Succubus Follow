@@ -1,0 +1,6 @@
+Quest Chains of Seduction Succubus Follow
+    Events
+        Time - Every 2.00 seconds of game time
+    Conditions
+    Actions
+        Unit - Order Succubus to Follow Nazgrek

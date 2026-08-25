@@ -1,0 +1,13 @@
+Quest Chains of Seduction Task 2 Event Patrol
+    Events
+        Unit - A unit owned by Player 1 (Red) Acquires an item
+    Conditions
+        (Item-type of (Item being manipulated)) Equal to |cFFFFFFFFGnoll Pillage|r
+        (PillageGuardArea <gen> contains PillageGuard) Equal to True
+        (Remaining time for PillageGuardTimer) Equal to 0.00
+    Actions
+        Cinematic - Send transmission to (All players) from PillageGuard named Grunt: Play PillageGuard <gen> and display Time to die!.  Modify duration: Set to 2.00 seconds and Wait
+        Unit - Order PillageGuard to Attack (Hero manipulating item)
+        Countdown Timer - Start PillageGuardTimer as a One-shot timer that will expire in 10.00 seconds
+        Trigger - Turn on Quest Chains of Seduction Task 2 Event Normal <gen>
+        Trigger - Remove (This trigger) from the trigger queue

@@ -1,0 +1,13 @@
+Quest Chains of Seduction Create
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create the quest objects --------
+        Quest - Create a Required, undiscovered quest titled Chains of Seduction with the description You have fallen und..., using icon path ReplaceableTextures\CommandButtons\BTNBlueDemoness.blp
+        Set VariableSet QuestChainsOfSeduction = (Last created quest)
+        Quest - Create a quest requirement for QuestChainsOfSeduction with the description (Option 1): Do as t...
+        Set VariableSet QuestChainsOfSeductionReq1 = (Last created quest requirement)
+        Quest - Create a quest requirement for QuestChainsOfSeduction with the description (Option 2): Try to ...
+        Set VariableSet QuestChainsOfSeductionReq2 = (Last created quest requirement)

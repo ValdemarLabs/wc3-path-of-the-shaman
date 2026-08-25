@@ -1,0 +1,13 @@
+Quest Chains of Seduction Succubus Killed
+    Events
+        Unit - A unit Dies
+    Conditions
+        (Triggering unit) Equal to Succubus
+        (QuestChainsOfSeduction is completed) Equal to False
+        (QuestChainsOfSeduction is discovered) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        Wait Campaign quest delay seconds
+        Trigger - Turn off Quest Chains of Seduction Succubus Follow <gen>
+        Trigger - Run Quest Chains of Seduction Completed <gen> (checking conditions)
+        Trigger - Remove (This trigger) from the trigger queue

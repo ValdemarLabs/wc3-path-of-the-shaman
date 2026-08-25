@@ -1,0 +1,18 @@
+Quest Chains of Seduction Completed
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Chains of Seduction Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestChainsOfSeduction as Discovered
+        Quest - Mark QuestChainsOfSeductionReq1 as Completed
+        Quest - Mark QuestChainsOfSeductionReq2 as Completed
+        Quest - Mark QuestChainsOfSeductionTask1 as Completed
+        Quest - Mark QuestChainsOfSeductionTask2 as Completed
+        Quest - Mark QuestChainsOfSeductionTask3 as Completed
+        Quest - Mark QuestChainsOfSeductionTask4 as Completed
+        Quest - Mark QuestChainsOfSeductionKill as Completed
+        Quest - Mark QuestChainsOfSeduction as Completed
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Completed message: |cffffcc00QUEST COM...

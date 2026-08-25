@@ -1,0 +1,10 @@
+Quest Chains of Seduction Discover
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Chains of Seduction Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestChainsOfSeduction as Discovered
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Discovered message: |cffffcc00QUEST|r  ...

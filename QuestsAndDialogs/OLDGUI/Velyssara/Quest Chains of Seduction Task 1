@@ -1,0 +1,11 @@
+Quest Chains of Seduction Task 1
+    Events
+    Conditions
+    Actions
+        -------- Succubus voice lines --------
+        Set VariableSet SuccubusTask1Rumors = 0
+        Cinematic - Send transmission to (All players) from Succubus named Succubus: Play Demoness_0027 <gen> and display Your first task is ....  Modify duration: Set to 8.00 seconds and Wait
+        Wait Campaign quest delay seconds
+        Trigger - Run Quest Chains of Seduction Update Task 1 <gen> (checking conditions)
+        Trigger - Turn on Quest Chains of Seduction Task 1 Complete <gen>
+        Trigger - Turn on Quest Chains of Seduction Task 1 Event <gen>

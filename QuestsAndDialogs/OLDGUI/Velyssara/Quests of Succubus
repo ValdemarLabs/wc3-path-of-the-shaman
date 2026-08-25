@@ -1,0 +1,59 @@
+Quests of Succubus
+    Events
+        Player - Player 1 (Red) Selects a unit
+    Conditions
+        (Triggering unit) Equal to Succubus
+        (Distance between (Position of Succubus) and (Position of Nazgrek)) Less than or equal to 500.00
+        (Remaining time for DialogOverTimer) Equal to 0.00
+        (Player 13 (Maroon) is an enemy of Player 1 (Red).) Equal to False
+        QuestChainsOfSeductionDispelld Equal to False
+    Actions
+        Trigger - Turn off (This trigger)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestChainsOfSeduction is discovered) Equal to True
+                (QuestChainsOfSeduction is completed) Equal to False
+            Then - Actions
+                Unit - Make Succubus face Nazgrek over 0.75 seconds
+                Unit - Make Nazgrek face Succubus over 0.75 seconds
+                Cinematic - Send transmission to (All players) from Succubus named Succubus: Play Demoness_0036 <gen> and display How thrilling it is....  Modify duration: Set to 3.00 seconds and Wait
+                Trigger - Turn on (This trigger)
+                Skip remaining actions
+            Else - Actions
+        -------- ======== CINEMATIC STARTS ======== --------
+        Trigger - Run Cinematic ON <gen> (checking conditions)
+        -------- Camera --------
+        Cinematic - Turn cinematic mode On for (All players)
+        Set VariableSet VarPoint = (Position of Succubus)
+        Camera - Pan camera for Player 1 (Red) to VarPoint over 0.00 seconds
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Camera - Apply SuccubusCamera01 <gen> for Player 1 (Red) over 0.00 seconds
+        Wait 1.00 seconds
+        Unit - Make Succubus face Nazgrek over 0.75 seconds
+        Unit - Make Nazgrek face Succubus over 0.75 seconds
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- NORMAL DIALOG --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        SuccubusDialog01FarewellBool Equal to False
+                    Then - Actions
+                        -------- If the Player has previosly not declined the quest --------
+                        Cinematic - Send transmission to (All players) from Succubus named Succubus: Play Demoness_0020 <gen> and display Oh, sweet adventure....  Modify duration: Set to 9.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play Nazgrek_0196 <gen> and display I… I was just che....  Modify duration: Set to 7.00 seconds and Wait
+                        Camera - Apply SuccubusCamera02 <gen> for Player 1 (Red) over 0.00 seconds
+                        Cinematic - Send transmission to (All players) from Succubus named Succubus: Play Demoness_0021 <gen> and display Oh, you're a curiou....  Modify duration: Set to 7.00 seconds and Wait
+                        Cinematic - Send transmission to (All players) from Succubus named Succubus: Play Demoness_0022 <gen> and display Listen closely. I o....  Modify duration: Set to 13.00 seconds and Wait
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        SuccubusDialog01FarewellBool Equal to True
+                    Then - Actions
+                        Cinematic - Send transmission to (All players) from Succubus named Succubus: Play Demoness_0021 <gen> and display Oh, you're a curiou....  Modify duration: Set to 7.00 seconds and Wait
+                    Else - Actions
+                -------- Run "Create Dialog" --------
+                Trigger - Run Create SuccubusDialog01 <gen> (checking conditions)
+                Trigger - Turn on (This trigger)
+                Skip remaining actions
+            Else - Actions

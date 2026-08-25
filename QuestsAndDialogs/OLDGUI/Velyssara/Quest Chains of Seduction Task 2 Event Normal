@@ -1,0 +1,12 @@
+Quest Chains of Seduction Task 2 Event Normal
+    Events
+        Time - Every 1.00 seconds of game time
+    Conditions
+        (Remaining time for PillageGuardTimer) Equal to 0.00
+    Actions
+        Trigger - Turn off (This trigger)
+        Unit - Change ownership of PillageGuard to Player 6 (Orange) and Retain color
+        Set VariableSet VarPoint = (Center of PillagePatrol01 <gen>)
+        Unit - Order PillageGuard to Patrol To VarPoint
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Trigger - Remove (This trigger) from the trigger queue

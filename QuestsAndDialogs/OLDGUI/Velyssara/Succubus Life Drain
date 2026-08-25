@@ -1,0 +1,36 @@
+Succubus Life Drain
+    Events
+        Unit - A unit Begins channeling an ability
+    Conditions
+        (Ability being cast) Equal to Life Drain (Succubus)
+        (Unit-type of (Triggering unit)) Equal to Velyssara (Succubus)
+    Actions
+        Set VariableSet SuccubusChatInt = (Random integer number between 1 and 4)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                SuccubusChatInt Equal to 1
+            Then - Actions
+                Cinematic - Send transmission to (All players) from (Triggering unit) named (Name of (Triggering unit)): Play Demoness_0040 <gen> and display You are blind to no....  Modify duration: Set to 3.00 seconds and Wait
+                Set VariableSet SuccubusChatInt = 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                SuccubusChatInt Equal to 2
+            Then - Actions
+                Cinematic - Send transmission to (All players) from (Triggering unit) named (Name of (Triggering unit)): Play Demoness_0043 <gen> and display You will obey me!.  Modify duration: Set to 2.00 seconds and Wait
+                Set VariableSet SuccubusChatInt = 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                SuccubusChatInt Equal to 3
+            Then - Actions
+                Cinematic - Send transmission to (All players) from (Triggering unit) named (Name of (Triggering unit)): Play Demoness_0044 <gen> and display Wait until you see ....  Modify duration: Set to 3.00 seconds and Wait
+                Set VariableSet SuccubusChatInt = 0
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                SuccubusChatInt Equal to 4
+            Then - Actions
+                Cinematic - Send transmission to (All players) from (Triggering unit) named (Name of (Triggering unit)): Play Demoness_0045 <gen> and display Submit your life to....  Modify duration: Set to 4.00 seconds and Wait
+                Set VariableSet SuccubusChatInt = 0
+            Else - Actions

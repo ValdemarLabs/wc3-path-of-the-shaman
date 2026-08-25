@@ -1,0 +1,20 @@
+Quest Chains of Seduction Task 3 Complete
+    Events
+        Unit - A unit owned by Player 2 (Blue) Dies
+        Unit - A unit owned by Player 6 (Orange) Dies
+    Conditions
+        (Owner of (Killing unit)) Equal to Player 1 (Red)
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Mark Task (quest requirement) completed --------
+        Quest - Display to (All players) the Quest Update message: |cffffcc00QUEST UPD...
+        Quest - Mark QuestChainsOfSeductionTask3 as Completed
+        -------- Succubus voice lines --------
+        Wait Campaign quest delay seconds
+        Cinematic - Send transmission to (All players) from Succubus named Succubus: Play Demoness_0038 <gen> and display Uuh… such devotio....  Modify duration: Set to 5.00 seconds and Wait
+        Wait 5.00 seconds
+        Cinematic - Send transmission to (All players) from Succubus named Succubus: Play Demoness_0030 <gen> and display One final task to s....  Modify duration: Set to 4.00 seconds and Wait
+        Cinematic - Send transmission to (All players) from Succubus named Succubus: Play Demoness_0031 <gen> and display Offer up your very ....  Modify duration: Set to 15.00 seconds and Wait
+        Wait Campaign quest delay seconds
+        Trigger - Run Quest Chains of Seduction Update Task 4 <gen> (checking conditions)
+        Trigger - Turn on Quest Chains of Seduction Task 4 Complete <gen>
