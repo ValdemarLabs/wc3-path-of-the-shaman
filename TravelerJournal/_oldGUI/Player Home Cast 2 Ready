@@ -1,0 +1,34 @@
+Player Home Cast 2 Ready
+    Events
+        Time - PlayerHomeCastTimer expires
+    Conditions
+        (PlayerHomeCaster is alive) Equal to True
+    Actions
+        -------- ================================= --------
+        Trigger - Turn off Player Home Cast 1b Actions During Teleportation <gen>
+        Trigger - Turn off Player Home Cast 1c Any Command During Teleportation <gen>
+        -------- ================================= --------
+        -------- Set InDungeon = False, if teleporting from dungeon --------
+        Set VariableSet InDungeon_GnollHideout = False
+        -------- ================================= --------
+        Unit - Remove Return Home (Fake cast) from PlayerHomeCaster
+        -------- Ensure caster is still alive --------
+        -------- Teleport successful --------
+        -------- ================================= --------
+        Game - Display to (All players) the text: |cFFFFCC00Traveler'...
+        Unit Group - Pick every unit in PlayerHomeGroup and do (Actions)
+            Loop - Actions
+                Unit - Pause (Picked unit)
+                Unit - Make (Picked unit) Invulnerable
+        Cinematic - Fade out over 1.00 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        Wait 1.00 seconds
+        Unit Group - Pick every unit in PlayerHomeGroup and do (Actions)
+            Loop - Actions
+                Unit - Unpause (Picked unit)
+                Unit - Make (Picked unit) Vulnerable
+                Unit - Move (Picked unit) instantly to PlayerHomeLocation
+        Unit Group - Remove all units from PlayerHomeGroup.
+        Cinematic - Fade in over 1.00 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        Camera - Pan camera for Player 1 (Red) to PlayerHomeLocation over 0.00 seconds
+        Unit - Set PlayerHomeCaster acquisition range to (Default acquisition range of PlayerHomeUnit)
+        Countdown Timer - Start PlayerHomeCooldown as a One-shot timer that will expire in 1800.00 seconds

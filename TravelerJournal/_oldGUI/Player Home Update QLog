@@ -1,0 +1,29 @@
+Player Home Update QLog
+    Events
+    Conditions
+    Actions
+        -------- ================================= --------
+        -------- Update quest log (Traveler's Journal) --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (PlayerHome1 <gen> contains PlayerHomeUnit) Equal to True
+            Then - Actions
+                -------- ================================= --------
+                Quest - Create a quest requirement for PlayerHomeQLog with the description |cFFFFCC00Home loca...
+                Skip remaining actions
+                -------- ================================= --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (PlayerHome2 <gen> contains PlayerHomeUnit) Equal to True
+            Then - Actions
+                -------- ================================= --------
+                Quest - Create a quest requirement for PlayerHomeQLog with the description |cFFFFCC00Home loca...
+                Skip remaining actions
+                -------- ================================= --------
+            Else - Actions
+
+
+
+Show: 
+- Location + Zone of the Home

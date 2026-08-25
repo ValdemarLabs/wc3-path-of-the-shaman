@@ -1,0 +1,26 @@
+Player Home Cast 1c Any Command During Teleportation
+    Events
+        Unit - A unit owned by Player 1 (Red) Is issued an order targeting an object
+        Unit - A unit owned by Player 1 (Red) Is issued an order targeting a point
+        Unit - A unit owned by Player 1 (Red) Is issued an order with no target
+        Unit - A unit owned by Player 1 (Red) Is issued an order with no target
+    Conditions
+        (Triggering unit) Equal to PlayerHomeCaster
+    Actions
+        Trigger - Turn off (This trigger)
+        Trigger - Turn off Player Home Cast 1b Actions During Teleportation <gen>
+        Trigger - Turn off Player Home Cast 2 Ready <gen>
+        --------   --------
+        -------- Cancel casting if player gives any command to the Caster unit --------
+        Unit - Pause PlayerHomeCaster
+        Unit - Order PlayerHomeCaster to Stop.
+        Unit - Unpause PlayerHomeCaster
+        --------   --------
+        -------- Anim --------
+        Animation - Play PlayerHomeCaster's stand hit slam animation
+        Animation - Queue PlayerHomeCaster's stand animation
+        --------   --------
+        Game - Display to (All players) the text: |cFFFFCC00Traveler'...
+        Unit - Set PlayerHomeCaster acquisition range to (Default acquisition range of PlayerHomeUnit)
+        Unit - Remove Return Home (Fake cast) from PlayerHomeCaster
+        Countdown Timer - Start PlayerHomeCastTimer as a One-shot timer that will expire in 0.50 seconds

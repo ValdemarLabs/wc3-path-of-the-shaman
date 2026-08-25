@@ -1,0 +1,28 @@
+Player Home Dialog
+    Events
+    Conditions
+    Actions
+        -------- ================================= --------
+        Dialog - Clear PlayerHomeDialog
+        Dialog - Change the title of PlayerHomeDialog to Traveler's Journal
+        -------- ================================= --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- Set this location as Player's home --------
+                Dialog - Create a dialog button for PlayerHomeDialog labelled Set this location a...
+                Set VariableSet PlayerHomeDialogBTN1 = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show PlayerHomeDialog for Player 1 (Red)
+                -------- ================================= --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- Exit dialog --------
+                Dialog - Create a dialog button for PlayerHomeDialog labelled Cancel
+                Set VariableSet PlayerHomeDialogBTN3 = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show PlayerHomeDialog for Player 1 (Red)
+                -------- ================================= --------
+            Else - Actions

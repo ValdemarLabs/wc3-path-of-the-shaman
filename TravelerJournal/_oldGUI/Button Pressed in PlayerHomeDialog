@@ -1,0 +1,109 @@
+Button Pressed in PlayerHomeDialog
+    Events
+        Dialog - A dialog button is clicked for PlayerHomeDialog
+    Conditions
+    Actions
+        -------- ================================= --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to PlayerHomeDialogBTN1
+            Then - Actions
+                -------- ================================= --------
+                Cinematic - Disable user control for (All players).
+                -------- =========================== --------
+                -------- DEFAULT CAMERA --------
+                -------- =========================== --------
+                -------- Check if the faction units are enemy with player --------
+                Set VariableSet PlayerHomeTempPoint = (Position of PlayerHomeTravelersJournal)
+                Custom script:   set bj_wantDestroyGroup = true
+                Unit Group - Pick every unit in (Units within 900.00 of PlayerHomeTempPoint.) and do (Actions)
+                    Loop - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                ((Picked unit) belongs to an ally of Player 1 (Red).) Equal to True
+                            Then - Actions
+                                Set VariableSet PlayerHomeAllyFound = True
+                            Else - Actions
+                                Set VariableSet PlayerHomeAllyFound = False
+                Custom script:   call RemoveLocation(udg_PlayerHomeTempPoint)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        PlayerHomeAllyFound Equal to True
+                    Then - Actions
+                        -------- ================================= --------
+                        -------- Set current location as home --------
+                        Game - Display to (All players) the text: |cFFFFCC00Traveler'...
+                        Set VariableSet PlayerHomeLocation = (Position of PlayerHomeTravelersJournal)
+                        Set VariableSet PlayerHomeTravelersJournalSel = PlayerHomeTravelersJournal
+                        -------- Update quest log (Traveler's Journal) --------
+                        Trigger - Run Player Home Update QLog <gen> (checking conditions)
+                        -------- Effects --------
+                        Special Effect - Create a special effect attached to the origin of PlayerHomeUnit using Abilities\Spells\Human\MassTeleport\MassTeleportTo.mdl
+                        Special Effect - Destroy (Last created special effect)
+                        Sound - Play PlayerHomeSet <gen> at 100.00% volume, attached to PlayerHomeTravelersJournal
+                        -------- Animations of Travelers Journals --------
+                        Custom script:   set bj_wantDestroyGroup = true
+                        Unit Group - Pick every unit in (Units in (Playable map area)) and do (Actions)
+                            Loop - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (Unit-type of (Picked unit)) Equal to Traveler's Journal 2
+                                        (Picked unit) Not equal to PlayerHomeTravelersJournal
+                                    Then - Actions
+                                        Animation - Play (Picked unit)'s stand animation
+                                    Else - Actions
+                        -------- Animations of selected as home Journall --------
+                        Animation - Play PlayerHomeTravelersJournal's stand second animation
+                        -------- =========================== --------
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (PlayerHomeUnit has an item of type Traveler's Journal) Equal to False
+                            Then - Actions
+                                Hero - Create Traveler's Journal and give it to PlayerHomeUnit
+                                Sound - Play ItemReceived <gen>
+                            Else - Actions
+                    Else - Actions
+                        Game - Display to (All players) the text: |cFFFFCC00Traveler'...
+                        Sound - Play Error <gen>
+                -------- ======== CINEMATIC ENDS ======== --------
+                Camera - Apply TravelersJournalCamera <gen> for Player 1 (Red) over 0.00 seconds
+                Camera - Apply TravelersJournalCamera2 <gen> for Player 1 (Red) over 3.00 seconds
+                Camera - Pan camera for Player 1 (Red) to (Position of PlayerHomeTravelersJournal) over 0.00 seconds
+                Wait 3.00 seconds
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 1.00 seconds
+                Trigger - Run Hint 6 Travelers Journal 2 <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to PlayerHomeDialogBTN2
+            Then - Actions
+                Cinematic - Disable user control for (All players).
+                -------- =========================== --------
+                Hero - Create Traveler's Journal and give it to PlayerHomeUnit
+                Sound - Play ItemReceived <gen>
+                Camera - Apply TravelersJournalCamera <gen> for Player 1 (Red) over 0.00 seconds
+                Camera - Apply TravelersJournalCamera2 <gen> for Player 1 (Red) over 5.00 seconds
+                Wait 5.00 seconds
+                -------- DEFAULT CAMERA --------
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 1.00 seconds
+                -------- =========================== --------
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to PlayerHomeDialogBTN3
+            Then - Actions
+                Cinematic - Disable user control for (All players).
+                -------- DEFAULT CAMERA --------
+                -------- ======== CINEMATIC ENDS ======== --------
+                Camera - Apply TravelersJournalCamera <gen> for Player 1 (Red) over 0.00 seconds
+                Camera - Apply TravelersJournalCamera2 <gen> for Player 1 (Red) over 5.00 seconds
+                Wait 5.00 seconds
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 1.00 seconds
+                Skip remaining actions
+            Else - Actions

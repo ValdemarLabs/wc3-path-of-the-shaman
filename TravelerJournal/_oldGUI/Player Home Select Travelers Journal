@@ -1,0 +1,43 @@
+Player Home Select Travelers Journal
+    Events
+        Player - Player 1 (Red) Selects a unit
+    Conditions
+        (Unit-type of (Triggering unit)) Equal to Traveler's Journal 2
+        (Remaining time for DialogOverTimer) Equal to 0.00
+    Actions
+        -------- SET --------
+        Set VariableSet PlayerHomeTravelersJournal = (Triggering unit)
+        Set VariableSet PlayerHomeTempPoint = (Position of PlayerHomeTravelersJournal)
+        Set VariableSet PlayerHomeUnit = (Random unit from (Units within 300.00 of PlayerHomeTempPoint matching (((Matching unit) Equal to Nazgrek) or ((Matching unit) Equal to Zulkis)).))
+        Custom script:   call RemoveLocation(udg_PlayerHomeTempPoint)
+        -------- SET --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        PlayerHomeUnit Equal to Nazgrek
+                        PlayerHomeUnit Equal to Zulkis
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        PlayerHomeTravelersJournal Not equal to PlayerHomeTravelersJournalSel
+                    Then - Actions
+                        Trigger - Turn off (This trigger)
+                        -------- ======== CINEMATIC STARTS ======== --------
+                        Trigger - Run Cinematic ON <gen> (checking conditions)
+                        -------- Camera --------
+                        Cinematic - Turn cinematic mode On for (All players)
+                        Camera - Apply TravelersJournalCamera2 <gen> for Player 1 (Red) over 0.00 seconds
+                        Camera - Apply TravelersJournalCamera <gen> for Player 1 (Red) over 3.00 seconds
+                        Camera - Pan camera for Player 1 (Red) to (Position of PlayerHomeTravelersJournal) over 0.00 seconds
+                        Wait 1.00 seconds
+                        Unit - Make PlayerHomeUnit face PlayerHomeTravelersJournal over 0.75 seconds
+                        -------- Run "Create Dialog" --------
+                        Wait 2.00 seconds
+                        Trigger - Run Player Home Dialog <gen> (checking conditions)
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+                        Game - Display to (All players) the text: |cFFFFCC00Traveler'...
+                        Trigger - Run Hint 3 Travelers Journal 1 <gen> (checking conditions)
+            Else - Actions

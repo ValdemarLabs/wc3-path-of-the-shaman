@@ -1,0 +1,63 @@
+Player Home Cast 1b Actions During Teleportation
+    Events
+        Game - UnitMovingEvent becomes Equal to 1.00
+        Game - DamageModifierEvent becomes Equal to 1.00
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                DamageEventTarget Equal to PlayerHomeCaster
+            Then - Actions
+                Trigger - Turn off (This trigger)
+                Trigger - Turn off Player Home Cast 1c Any Command During Teleportation <gen>
+                Trigger - Turn off Player Home Cast 2 Ready <gen>
+                --------   --------
+                -------- Anim --------
+                Animation - Play PlayerHomeCaster's stand hit slam animation
+                Animation - Queue PlayerHomeCaster's stand animation
+                -------- Cancel casting if attacked --------
+                Game - Display to (All players) the text: |cFFFFCC00Traveler'...
+                Unit - Set PlayerHomeCaster acquisition range to (Default acquisition range of PlayerHomeUnit)
+                Unit - Remove Return Home (Fake cast) from PlayerHomeCaster
+                Animation - Reset PlayerHomeCaster's animation
+                Countdown Timer - Start PlayerHomeCastTimer as a One-shot timer that will expire in 0.50 seconds
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                DamageEventSource Equal to PlayerHomeCaster
+            Then - Actions
+                Trigger - Turn off (This trigger)
+                Trigger - Turn off Player Home Cast 1c Any Command During Teleportation <gen>
+                Trigger - Turn off Player Home Cast 2 Ready <gen>
+                --------   --------
+                -------- Anim --------
+                Animation - Play PlayerHomeCaster's stand hit slam animation
+                Animation - Queue PlayerHomeCaster's stand animation
+                -------- Cancel casting if attacking --------
+                Game - Display to (All players) the text: |cFFFFCC00Traveler'...
+                Unit - Set PlayerHomeCaster acquisition range to (Default acquisition range of PlayerHomeUnit)
+                Unit - Remove Return Home (Fake cast) from PlayerHomeCaster
+                Animation - Reset PlayerHomeCaster's animation
+                Countdown Timer - Start PlayerHomeCastTimer as a One-shot timer that will expire in 0.50 seconds
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                UDexUnits[UDex] Equal to PlayerHomeCaster
+            Then - Actions
+                Trigger - Turn off (This trigger)
+                Trigger - Turn off Player Home Cast 1c Any Command During Teleportation <gen>
+                Trigger - Turn off Player Home Cast 2 Ready <gen>
+                --------   --------
+                -------- Anim --------
+                Animation - Play PlayerHomeCaster's stand hit slam animation
+                Animation - Queue PlayerHomeCaster's stand animation
+                -------- Cancel casting if moving --------
+                Game - Display to (All players) the text: |cFFFF0000Hearthsto...
+                Unit - Set PlayerHomeCaster acquisition range to (Default acquisition range of PlayerHomeUnit)
+                Unit - Remove Return Home (Fake cast) from PlayerHomeCaster
+                Animation - Reset PlayerHomeCaster's animation
+                Countdown Timer - Start PlayerHomeCastTimer as a One-shot timer that will expire in 0.50 seconds
+                Skip remaining actions
+            Else - Actions

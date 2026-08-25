@@ -1,0 +1,66 @@
+Player Home Cast 1a Start
+    Events
+        Unit - A unit owned by Player 1 (Red) Starts the effect of an ability
+    Conditions
+        (Ability being cast) Equal to Return Home (Traveler's Journal)
+    Actions
+        -------- ================================= --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Triggering unit) Equal to Nazgrek
+                        (Triggering unit) Equal to Zulkis
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Remaining time for PlayerHomeCooldown) Equal to 0.00
+                        (Remaining time for PlayerHomeCastTimer) Equal to 0.00
+                    Then - Actions
+                        -------- Stop the caster and prepare for teleport --------
+                        Set VariableSet PlayerHomeCaster = (Triggering unit)
+                        Set VariableSet VarPoint = (Position of PlayerHomeCaster)
+                        Unit Group - Pick every unit in (Units within 900.00 of VarPoint.) and do (Actions)
+                            Loop - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (Unit-type of (Picked unit)) Not equal to Stash
+                                        (Unit-type of (Picked unit)) Not equal to Bag
+                                        (Unit-type of (Picked unit)) Not equal to Companions
+                                        Or - Any (Conditions) are true
+                                            Conditions
+                                                (Owner of (Picked unit)) Equal to (Owner of PlayerHomeCaster)
+                                                ((Picked unit) is in Companion_Group.) Equal to True
+                                                ((Picked unit) is in TamedUnits.) Equal to True
+                                    Then - Actions
+                                        Unit Group - Add (Picked unit) to PlayerHomeGroup
+                                    Else - Actions
+                        -------- ================================= --------
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+                        -------- ================================= --------
+                        Cinematic - Ping minimap for (All players) at PlayerHomeLocation for 10.00 seconds
+                        Countdown Timer - Start PlayerHomeCastTimer as a One-shot timer that will expire in 10.00 seconds
+                        Unit - Order PlayerHomeCaster to Stop.
+                        -------- We want to prevent the "caster" to not aggro nearby hostile units during the cast, unless the player itself commands --------
+                        Unit - Set PlayerHomeCaster acquisition range to 0.00
+                        -------- Adding and forcing the caster unit to cast Return Home --------
+                        Unit - Add Return Home (Fake cast) to PlayerHomeCaster
+                        Unit - Order PlayerHomeCaster to Human Priest - Inner Fire PlayerHomeCaster
+                        Unit - For PlayerHomeCaster, Ability Return Home (Fake cast), Hide ability: True
+                        Animation - Play PlayerHomeCaster's spell ready 2 animation
+                        -------- Turn on Check & Ready triggers --------
+                        Trigger - Turn on Player Home Cast 1b Actions During Teleportation <gen>
+                        Trigger - Turn on Player Home Cast 1c Any Command During Teleportation <gen>
+                        Trigger - Turn on Player Home Cast 2 Ready <gen>
+                        -------- ----------------- --------
+                        Game - Display to (All players) the text: |cFFFFCC00Traveler'...
+                        Trigger - Run Hint 8 Travelers Journal 4 <gen> (checking conditions)
+                        -------- ================================= --------
+                    Else - Actions
+                        -------- ================================= --------
+                        Game - Display to (All players) the text: (|cFFFFCC00Traveler's Journal|r|cFFFFFFFF: You will have to wait for |r + ((String((Integer((Remaining time for PlayerHomeCooldown))))) + |cFFFFFFFF seconds until you can return home.|r))
+                        -------- ================================= --------
+            Else - Actions
+                -------- ================================= --------
+                Trigger - Run Hint 7 Travelers Journal 3 <gen> (checking conditions)
+                -------- ================================= --------
