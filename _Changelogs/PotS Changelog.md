@@ -19,6 +19,8 @@
 
 ### Player-Facing Updates
 
+- Added Velyssara's `Chains of Seduction` story quest in Sereneglade: submit to four escalating tasks or seek Jin'Zun's dispel and turn on her.
+- Charmed Nazgrek is now bound to Sereneglade until the spell is broken or Velyssara's tasks are completed; escape attempts immediately return him to his last safe position in the zone.
 - Added destination zone icons to the travel window, with subzones inheriting their parent zone icon when they do not define one.
 - Added Graknar's `Mistaken Kin` level-2 quest: find his lost Kodo, draw nearby hostile creatures into the recovery, escort the Kodo home, and retry if it is slain.
 - Replaced Graknar's legacy 30-second trade window with his existing persistent bag shop in the same quest dialog.
@@ -32,6 +34,9 @@
 
 ### Technical Updates
 
+- Added `QuestsAndDialogs/QuestGivers/qVelyssara.j` by converting the recovered Velyssara/Succubus GUI dialogue, task events, follow behavior, combat reactions, reward, charm state, and public confinement/escape/dispel hooks to the current master APIs.
+- Updated `QuestsAndDialogs/QuestGivers/qOutcastJinzun.j` to dispel Chains of Seduction through `qVelyssara` instead of calling the legacy GUI trigger, and updated `CreepRespawn/CreepUnitAssignment.j` to restore Velyssara's quest-giver hooks after respawn.
+- Updated `_developer/Design Plans/Story and Quest Design.md` with Velyssara's canonical name, implemented quest flow, Sereneglade confinement contract, reward, and remaining allegiance/fate decision.
 - Updated `Travel/TravelUI.j` and `Zones/ZonesCore.j` with discovered-route icon frames and reusable parent-zone icon fallback resolution.
 - Added `QuestsAndDialogs/QuestGivers/qGraknar.j` by converting the recovered Graknar GUI quest, dialogue flow, Kodo proximity tracking, FollowSystem escort, failure/retry handling, and VendorBags/ShopUI handoff to the current master APIs.
 - Updated `CreepRespawn/CreepUnitAssignment.j` to restore Graknar's quest, custom dialog, and vendor hooks after respawn and removed its obsolete direct dependency on the legacy Mistaken Kin quest handle.
@@ -53,6 +58,8 @@
 
 ### Actions Remaining
 
+- Import `qVelyssara.j`, disable the legacy Velyssara/Succubus and Jin'Zun Chains of Seduction GUI branches, and runtime-test acceptance, all four tasks, Jin'Zun dispel, both completion routes, escape teleportation, combat barks/blink, reward delivery, and respawn hooks.
+- In World Editor, rename remaining player-facing `Succubus` or `Velaria` references for unit `n636` to Velyssara while retaining those names only as legacy search terms.
 - Import `qGraknar.j`, disable the legacy Graknar GUI trigger group, and runtime-test quest acceptance, Kodo discovery, hostile aggro, following, return, death/retry, turn-in, bag trading, trade return, and respawned-Graknar hooks.
 - In World Editor, keep only the canonical Graknar on rawcode `o61S`, create distinct rawcodes and identities for the other placed bag merchants, remove the old placed Kodo near Graknar, and verify the intended Graknar, `KodoSpawn`, and `KodoEnd` placement and zone.
 - Import `qGrumBloodfang.j`, disable the legacy Grum GUI quest/dialog/drake-attack trigger groups, and runtime-test all four accept/turn-in paths, combined drake kills, item rewards, Escape handling, respawn hooks, both raid rects, and Mordrax's current scale drop.
