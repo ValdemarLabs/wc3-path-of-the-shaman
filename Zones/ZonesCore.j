@@ -21,6 +21,7 @@
     - ZoneData.addDungeonEnterRegion(sourceRect, destinationRect, facing)
     - ZoneData.addDungeonExitRegion(sourceRect, destinationRect, facing)
     - ZonesCore_GetZoneData(zoneId) returns ZoneData
+    - ZonesCore_GetEffectiveZoneIconPath(zoneId) returns string
     - ZonesCore_GetZoneIdAtPoint(x, y) returns integer
 
 **/
@@ -34,6 +35,7 @@ globals
 // Constants
     private constant boolean DEBUG = false               // Enable/disable debug messages
     private constant integer ZC_MAX_ZONE_LOOKUP_ID = 13000
+    private constant string ZC_DEFAULT_ZONE_ICON = "ReplaceableTextures\\CommandButtons\\BTNSunderingBlades.blp"
     private string array DEFAULT_WEATHER_TYPES
 
 // Internal variables
@@ -429,7 +431,7 @@ struct ZoneData
         set this.factions = "Unknown"
         set this.notableEntities = "Unknown"
         set this.notableCharacters = "Unknown"
-        set this.iconPath = "ReplaceableTextures\\CommandButtons\\BTNSunderingBlades.blp"
+        set this.iconPath = ZC_DEFAULT_ZONE_ICON
         set this.isDungeon = false              // Default false
         set this.enterRegionCount = 0
         set this.leaveRegionCount = 0
@@ -2258,6 +2260,29 @@ endfunction
 
 public function HasParentZone takes integer zoneId returns boolean
     return GetParentZoneId(zoneId) > 0
+endfunction
+
+public function GetEffectiveZoneIconPath takes integer zoneId returns string
+    local integer parentZoneId
+    local integer depth = 0
+    local ZoneData z
+
+    loop
+        exitwhen zoneId <= 0 or depth >= 16
+        set z = GetZoneData(zoneId)
+        exitwhen z == 0
+        set parentZoneId = z.getParentZoneId()
+        if z.iconPath != null and z.iconPath != "" and (parentZoneId <= 0 or z.iconPath != ZC_DEFAULT_ZONE_ICON) then
+            return z.iconPath
+        endif
+        if parentZoneId <= 0 then
+            return z.iconPath
+        endif
+        set zoneId = parentZoneId
+        set depth = depth + 1
+    endloop
+
+    return ""
 endfunction
 
 public function IsChildZoneOf takes integer zoneId, integer parentZoneId returns boolean

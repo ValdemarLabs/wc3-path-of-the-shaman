@@ -19,6 +19,7 @@
 
 ### Player-Facing Updates
 
+- Added destination zone icons to the travel window, with subzones inheriting their parent zone icon when they do not define one.
 - Added Graknar's `Mistaken Kin` level-2 quest: find his lost Kodo, draw nearby hostile creatures into the recovery, escort the Kodo home, and retry if it is slain.
 - Replaced Graknar's legacy 30-second trade window with his existing persistent bag shop in the same quest dialog.
 - Added Grum Bloodfang's voiced `Whelps of Destruction`, `Dragon Egg Hunt`, `Drake Hunt`, and `The Desolator` story chain in Emberpeak Highlands, including the recovered periodic Scorching Drake attack on his camp.
@@ -31,6 +32,7 @@
 
 ### Technical Updates
 
+- Updated `Travel/TravelUI.j` and `Zones/ZonesCore.j` with discovered-route icon frames and reusable parent-zone icon fallback resolution.
 - Added `QuestsAndDialogs/QuestGivers/qGraknar.j` by converting the recovered Graknar GUI quest, dialogue flow, Kodo proximity tracking, FollowSystem escort, failure/retry handling, and VendorBags/ShopUI handoff to the current master APIs.
 - Updated `CreepRespawn/CreepUnitAssignment.j` to restore Graknar's quest, custom dialog, and vendor hooks after respawn and removed its obsolete direct dependency on the legacy Mistaken Kin quest handle.
 - Updated `_developer/Design Plans/Story and Quest Design.md` with Graknar's recovered quest ownership and the requirement that canonical Graknar alone retain unit rawcode `o61S`.

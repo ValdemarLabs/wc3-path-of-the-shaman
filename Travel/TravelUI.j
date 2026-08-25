@@ -6,14 +6,14 @@
 
     Description:
     ShopUI-styled destination and passenger selection panel for TravelSystem.
-    It presents discovery, vehicle, fare, party, and gold requirements before
-    committing a journey.
+    It presents destination zone icons plus discovery, vehicle, fare, party,
+    and gold requirements before committing a journey.
 
     Credits:
     PotS ShopUI frame layout and interaction conventions.
 
     How to install:
-    Import after TravelSystem, Table, Interface, and DialogSystem.
+    Import after TravelSystem, ZonesCore, Table, Interface, and DialogSystem.
 
     API:
     - call TravelUI_ShowForStop(integer stopId)
@@ -22,7 +22,7 @@
     - set visible = TravelUI_IsVisible()
 
 **/
-library TravelUI initializer Init requires TravelSystem, Table, Interface, DialogSystem
+library TravelUI initializer Init requires TravelSystem, ZonesCore, Table, Interface, DialogSystem
     globals
         private constant integer TUI_MAX_ROUTE_ROWS = 7
         private constant integer TUI_MAX_PASSENGER_ROWS = 10
@@ -40,6 +40,7 @@ library TravelUI initializer Init requires TravelSystem, Table, Interface, Dialo
         private framehandle TUI_LeftPane = null
         private framehandle TUI_RightPane = null
         private framehandle array TUI_RouteButton
+        private framehandle array TUI_RouteIcon
         private framehandle array TUI_RouteText
         private framehandle array TUI_RoutePrice
         private framehandle array TUI_RouteHighlight
@@ -135,6 +136,7 @@ library TravelUI initializer Init requires TravelSystem, Table, Interface, Dialo
         local integer endStop
         local string routeText
         local string priceText
+        local string iconPath
 
         loop
             exitwhen row > TUI_MAX_ROUTE_ROWS
@@ -145,8 +147,10 @@ library TravelUI initializer Init requires TravelSystem, Table, Interface, Dialo
                 if not TravelSystem_IsRouteDiscovered(routeId) then
                     set routeText = "|cff9f9f9fUndiscovered travel point|r"
                     set priceText = "|cff9f9f9fLocked|r"
+                    set iconPath = ""
                 else
                     set routeText = TravelSystem_GetStopName(endStop)
+                    set iconPath = ZonesCore_GetEffectiveZoneIconPath(TravelSystem_GetStopZoneId(endStop))
                     if TravelSystem_GetRouteFare(routeId) > 0 then
                         set priceText = I2S(TravelSystem_GetRouteFare(routeId)) + "g each"
                     else
@@ -156,11 +160,18 @@ library TravelUI initializer Init requires TravelSystem, Table, Interface, Dialo
                         set priceText = "|cffff8040Unavailable|r"
                     endif
                 endif
+                if iconPath != null and iconPath != "" then
+                    call BlzFrameSetTexture(TUI_RouteIcon[row], iconPath, 0, true)
+                    call BlzFrameSetVisible(TUI_RouteIcon[row], true)
+                else
+                    call BlzFrameSetVisible(TUI_RouteIcon[row], false)
+                endif
                 call BlzFrameSetText(TUI_RouteText[row], routeText)
                 call BlzFrameSetText(TUI_RoutePrice[row], priceText)
                 call BlzFrameSetVisible(TUI_RouteButton[row], true)
                 call BlzFrameSetVisible(TUI_RouteHighlight[row], routeId == TUI_SelectedRoute)
             else
+                call BlzFrameSetVisible(TUI_RouteIcon[row], false)
                 call BlzFrameSetVisible(TUI_RouteButton[row], false)
                 call BlzFrameSetVisible(TUI_RouteHighlight[row], false)
             endif
@@ -509,9 +520,14 @@ library TravelUI initializer Init requires TravelSystem, Table, Interface, Dialo
             call BlzTriggerRegisterFrameEvent(TUI_ClearFocusTrigger, TUI_RouteButton[row], FRAMEEVENT_CONTROL_CLICK)
             set TUI_RouteFrameRow.integer[GetHandleId(TUI_RouteButton[row])] = row
 
+            set TUI_RouteIcon[row] = BlzCreateFrameByType("BACKDROP", "TravelUIRouteIcon" + I2S(row), TUI_RouteButton[row], "IconButtonTemplate", 0)
+            call BlzFrameSetPoint(TUI_RouteIcon[row], FRAMEPOINT_LEFT, TUI_RouteButton[row], FRAMEPOINT_LEFT, 0.005, 0.0)
+            call BlzFrameSetSize(TUI_RouteIcon[row], 0.026, 0.026)
+            call BlzFrameSetEnable(TUI_RouteIcon[row], false)
+
             set TUI_RouteText[row] = BlzCreateFrameByType("TEXT", "TravelUIRouteText" + I2S(row), TUI_RouteButton[row], "", 0)
-            call BlzFrameSetPoint(TUI_RouteText[row], FRAMEPOINT_TOPLEFT, TUI_RouteButton[row], FRAMEPOINT_TOPLEFT, 0.008, -0.004)
-            call BlzFrameSetPoint(TUI_RouteText[row], FRAMEPOINT_BOTTOMRIGHT, TUI_RouteButton[row], FRAMEPOINT_BOTTOMRIGHT, -0.067, 0.004)
+            call BlzFrameSetPoint(TUI_RouteText[row], FRAMEPOINT_TOPLEFT, TUI_RouteButton[row], FRAMEPOINT_TOPLEFT, 0.036, -0.004)
+            call BlzFrameSetPoint(TUI_RouteText[row], FRAMEPOINT_BOTTOMRIGHT, TUI_RouteButton[row], FRAMEPOINT_BOTTOMRIGHT, -0.055, 0.004)
             call BlzFrameSetTextAlignment(TUI_RouteText[row], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
             call BlzFrameSetScale(TUI_RouteText[row], 0.86)
             call BlzFrameSetEnable(TUI_RouteText[row], false)
