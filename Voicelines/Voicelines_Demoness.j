@@ -5,22 +5,21 @@
     Version:
 
     Description:
-    Speaker-owned voiceline key/text constants migrated from legacy
-    Excel draft/reference rows. Runtime consumers require this
-    library directly when they need these constants.
+    Speaker-owned voiceline key/text constants and sound registration
+    migrated from legacy Excel draft/reference rows. Runtime consumers
+    require this library directly when they need these constants.
 
     Credits:
     - Voicelines/_oldExcel/VoicelinesMaster.xlsx
 
     How to install:
-    Import after `Voicelines.j`. Add runtime registration when a
-    consumer starts using these constants.
+    Import after `Voicelines.j`.
 
     API:
     Global `VL_DEMONESS_*` constants.
 
 **/
-library VoicelinesDemoness requires Voicelines
+library VoicelinesDemoness initializer Init requires Voicelines
 
 globals
     constant string VL_DEMONESS_FOLDER = "Demoness"
@@ -125,5 +124,37 @@ globals
     constant string VL_DEMONESS_0045_KEY = "Demoness_0045"
     constant string VL_DEMONESS_0045_TEXT = "Submit your life to me!"
 endglobals
+
+private function Init takes nothing returns nothing
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0001_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0002_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0003_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0004_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0020_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0021_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0022_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0023_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0024_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0025_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0026_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0027_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0028_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0029_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0030_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0031_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0032_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0033_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0035_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0036_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0037_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0038_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0039_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0040_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0041_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0042_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0043_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0044_KEY)
+    call Voicelines_RegisterKey(VL_DEMONESS_FOLDER, VL_DEMONESS_0045_KEY)
+endfunction
 
 endlibrary

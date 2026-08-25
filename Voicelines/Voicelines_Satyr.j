@@ -5,22 +5,21 @@
     Version:
 
     Description:
-    Speaker-owned voiceline key/text constants migrated from legacy
-    Excel draft/reference rows. Runtime consumers require this
-    library directly when they need these constants.
+    Speaker-owned voiceline key/text constants and sound registration
+    migrated from legacy Excel draft/reference rows. Runtime consumers
+    require this library directly when they need these constants.
 
     Credits:
     - Voicelines/_oldExcel/VoicelinesMaster.xlsx
 
     How to install:
-    Import after `Voicelines.j`. Add runtime registration when a
-    consumer starts using these constants.
+    Import after `Voicelines.j`.
 
     API:
     Global `VL_SATYR_*` constants.
 
 **/
-library VoicelinesSatyr requires Voicelines
+library VoicelinesSatyr initializer Init requires Voicelines
 
 globals
     constant string VL_SATYR_FOLDER = "Satyr"
@@ -99,5 +98,33 @@ globals
     constant string VL_SATYR_0047_KEY = "Satyr_0047"
     constant string VL_SATYR_0047_TEXT = "Silence! Let's hear what the orc has to say."
 endglobals
+
+private function Init takes nothing returns nothing
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0001_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0002_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0003_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0004_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0013_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0014_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0015_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0016_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0017_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0020_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0021_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0022_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0023_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0024_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0026_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0027_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0028_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0029_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0031_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0032_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0036_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0037_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0043_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0044_KEY)
+    call Voicelines_RegisterKey(VL_SATYR_FOLDER, VL_SATYR_0047_KEY)
+endfunction
 
 endlibrary

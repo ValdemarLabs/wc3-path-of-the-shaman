@@ -18,6 +18,7 @@
 
     API:
     - call Arena_RegisterMode(modeId, name, startCb, stopCb, unitDeathCb, participantDeathCb)
+    - call Arena_RegisterEndCallback(callback)
     - call Arena_Start(modeId, arenaId, difficulty, master, nazgrek, zulkis, companions, pet)
     - call Arena_End(success)
     - call Arena_AwardMarks(baseAmount)
@@ -68,6 +69,7 @@ library Arena initializer Init requires Table, UnitDeathEvent, ItemLootSystem, E
         private trigger array Arena_ModeStopTrigger
         private trigger array Arena_ModeUnitDeathTrigger
         private trigger array Arena_ModeParticipantDeathTrigger
+        private trigger Arena_EndCallbackTrigger = null
         private string array Arena_ModeName
         private boolean array Arena_ModeRegistered
 
@@ -680,6 +682,22 @@ library Arena initializer Init requires Table, UnitDeathEvent, ItemLootSystem, E
         set stopTrigger = null
     endfunction
 
+    private function Arena_RunEndCallbacks takes boolean success returns nothing
+        if Arena_EndCallbackTrigger == null then
+            return
+        endif
+
+        set Arena_EventModeId = Arena_ActiveModeId
+        set Arena_EventArenaId = Arena_ActiveArenaId
+        set Arena_EventDifficulty = Arena_ActiveDifficulty
+        set Arena_EventSuccess = success
+        call TriggerExecute(Arena_EndCallbackTrigger)
+        set Arena_EventSuccess = false
+        set Arena_EventModeId = ARENA_MODE_NONE
+        set Arena_EventArenaId = ARENA_ID_NONE
+        set Arena_EventDifficulty = ARENA_DIFFICULTY_EASY
+    endfunction
+
     private function Arena_ResetSessionState takes nothing returns nothing
         set Arena_Active = false
         set Arena_Ending = false
@@ -712,6 +730,7 @@ library Arena initializer Init requires Table, UnitDeathEvent, ItemLootSystem, E
         set Arena_Ending = true
         set Arena_LastResult = success
         call Arena_RunStopCallback(success)
+        call Arena_RunEndCallbacks(success)
 
         if success then
             static if LIBRARY_RegionTitles then
@@ -735,6 +754,16 @@ library Arena initializer Init requires Table, UnitDeathEvent, ItemLootSystem, E
             call DisplayTextToPlayer(Player(0), 0.00, 0.00, "|cffff8080" + reason + "|r")
         endif
         call End(false)
+    endfunction
+
+    public function RegisterEndCallback takes code callback returns nothing
+        if callback == null then
+            return
+        endif
+        if Arena_EndCallbackTrigger == null then
+            set Arena_EndCallbackTrigger = CreateTrigger()
+        endif
+        call TriggerAddAction(Arena_EndCallbackTrigger, callback)
     endfunction
 
     public function RegisterMode takes integer modeId, string modeName, code startCallback, code stopCallback, code unitDeathCallback, code participantDeathCallback returns nothing

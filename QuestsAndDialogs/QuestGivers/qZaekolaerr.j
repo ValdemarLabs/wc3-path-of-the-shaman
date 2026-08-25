@@ -2,21 +2,22 @@
     qZaekolaerr
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Prince Zaekolaerr dialog conversion for the Ragno-owned Satyr
-    Negotiations quest and Jin'Zun's missing fishing pole inquiry. This
-    library restores Zaekolaerr as an external quest-dialog endpoint while
-    keeping quest ownership, completion, and reward flow with each giver.
+    Negotiations quest and Jin'Zun's missing fishing pole inquiry. The
+    negotiation outcome is retained here, including the Coliseum challenge
+    started through the satyr arena master, while Ragno keeps quest ownership.
 
     Credits:
     - Legacy Ragno GUI trigger notes.
     - Voicelines/_oldExcel/VoicelinesMaster.xlsx
 
     How to install:
-    Import after qRagno, qOutcastJinzun, QuestGiver, DialogInteraction,
-    DialogSystem, VoicelinesSatyr, and VoicelinesDemoness.
+    Import after qRagno, qOutcastJinzun, Arena, QuestGiver,
+    DialogInteraction, DialogSystem, VoicelinesSatyr, and
+    VoicelinesDemoness.
     CreepUnitAssignment should refresh this library when the Zaekolaerr unit
     type respawns.
 
@@ -24,9 +25,10 @@
     qZaekolaerr_RefreshAvailability()
     qZaekolaerr_RefreshRespawnedUnitHooks()
     qZaekolaerr_ContinueToDialogAfterSelection()
+    qZaekolaerr_GetSatyrNegotiationOutcome()
 
 **/
-library qZaekolaerr initializer Init requires qRagno, qOutcastJinzun, QuestGiver, DialogInteraction, DialogSystem, VoicelinesSatyr, VoicelinesDemoness
+library qZaekolaerr initializer Init requires qRagno, qOutcastJinzun, Arena, QuestGiver, DialogInteraction, DialogSystem, VoicelinesSatyr, VoicelinesDemoness
 
 globals
     private constant boolean DEBUG = false
@@ -35,10 +37,14 @@ globals
     private constant real DIALOG_RANGE = 500.00
     private constant real DIALOG_COOLDOWN = 6.00
     private constant real DIALOG_FADE_OUT = 1.00
-    private constant real DIALOG_FADE_IN = 1.00
-    private constant integer CINEMATIC_MOVE_MODE = 1
-    private constant real CINEMATIC_MOVE_OFFSET = 256.00
-    private constant real CINEMATIC_MOVE_ANGLE = 210.00
+    private constant integer CINEMATIC_MOVE_ALL = 1
+    private constant integer CINEMATIC_MOVE_NAZGREK = 7
+    private constant integer CINEMATIC_MOVE_ZULKIS = 8
+
+    public constant integer SATYR_NEGOTIATION_OUTCOME_NONE = 0
+    public constant integer SATYR_NEGOTIATION_OUTCOME_ARENA = 1
+    public constant integer SATYR_NEGOTIATION_OUTCOME_HOSTILE = 2
+    public constant integer SATYR_NEGOTIATION_OUTCOME_ALLIANCE = 3
 
     private constant boolean ALLOW_NAZGREK = true
     private constant boolean ALLOW_ZULKIS = true
@@ -62,8 +68,9 @@ globals
     private dialog ZaekolaerrChoiceDialog = null
     private timer ZaekolaerrDialogCooldown = null
 
-    private boolean ZaekolaerrFirstMeetDone = false
     private boolean SatyrNegotiationIntroDone = false
+    private boolean SatyrArenaTrialPending = false
+    private integer SatyrNegotiationOutcome = SATYR_NEGOTIATION_OUTCOME_NONE
     private boolean ZaekolaerrInitWaitingLogged = false
 endglobals
 
@@ -95,13 +102,31 @@ private function ResolveDialogHero takes nothing returns unit
     return hero
 endfunction
 
+private function CanChooseSatyrNegotiationOutcome takes nothing returns boolean
+    return SatyrNegotiationOutcome == SATYR_NEGOTIATION_OUTCOME_NONE and qRagno_IsSatyrNegotiationsOpen()
+endfunction
+
+private function ConfigureDialogTransitionForHero takes unit hero returns nothing
+    local integer moveMode = CINEMATIC_MOVE_ALL
+    local real dx = GetRectCenterX(gg_rct_SatyrPrinceRect) - GetUnitX(Zaekolaerr)
+    local real dy = GetRectCenterY(gg_rct_SatyrPrinceRect) - GetUnitY(Zaekolaerr)
+
+    if hero == Nazgrek then
+        set moveMode = CINEMATIC_MOVE_NAZGREK
+    elseif hero == Zulkis then
+        set moveMode = CINEMATIC_MOVE_ZULKIS
+    endif
+
+    call DialogInteraction_ConfigureDialogTransition(Zaekolaerr, moveMode, SquareRoot(dx * dx + dy * dy), Atan2(dy, dx) * bj_RADTODEG, CAMERA_DIST, CAMERA_Z_OFFSET, CAMERA_ANGLE, CAMERA_ROT_OFFSET, CAMERA_FAR_Z, CAMERA_FOV, CAMERA_BLOCK_RADIUS, CAMERA_BLOCK_CHECK)
+endfunction
+
 private function RefreshZaekolaerrAvailabilityInternal takes nothing returns nothing
     call SyncUnitReferences()
     if Zaekolaerr == null then
         return
     endif
 
-    if qRagno_IsSatyrNegotiationsOpen() or qOutcastJinzun_IsFishingPoleQuestActive() then
+    if CanChooseSatyrNegotiationOutcome() or qOutcastJinzun_IsFishingPoleQuestActive() then
         call QuestGiver_CreateDummyQuestIcon(Zaekolaerr, "normal", QUEST_STATE_READY_TURNIN)
     else
         call QuestGiver_RemoveDummyQuestIcon(Zaekolaerr)
@@ -153,7 +178,9 @@ endfunction
 
 private function AddFirstMeetLine takes integer seq returns nothing
     call DialogSystem_AddLine(seq, Zaekolaerr, ZA_NAME, VL_SATYR_0002_TEXT, VL_SATYR_0002_KEY, true)
-    set ZaekolaerrFirstMeetDone = true
+    if SelectedHero != null then
+        call DialogSystem_AddLineNoSound(seq, SelectedHero, DialogInteraction_GetHeroName(SelectedHero), "Ragno sent me. I came to learn whether peace between the Horde and the satyrs is still possible.")
+    endif
 endfunction
 
 private function GetSatyrQueenUnit takes nothing returns unit
@@ -167,6 +194,9 @@ private function AddSatyrNegotiationIntro takes integer seq returns nothing
     call DialogSystem_AddLine(seq, Zaekolaerr, ZA_NAME, VL_SATYR_0026_TEXT, VL_SATYR_0026_KEY, true)
     call DialogSystem_AddLine(seq, GetSatyrQueenUnit(), "Demoness", VL_DEMONESS_0003_TEXT, VL_DEMONESS_0003_KEY, true)
     call DialogSystem_AddLine(seq, Zaekolaerr, ZA_NAME, VL_SATYR_0047_TEXT, VL_SATYR_0047_KEY, true)
+    if SelectedHero != null then
+        call DialogSystem_AddLineNoSound(seq, SelectedHero, DialogInteraction_GetHeroName(SelectedHero), "I did not come to trade threats. The Horde wants to know whether our peoples can coexist.")
+    endif
     call DialogSystem_AddLine(seq, Zaekolaerr, ZA_NAME, VL_SATYR_0029_TEXT, VL_SATYR_0029_KEY, true)
     set SatyrNegotiationIntroDone = true
 endfunction
@@ -194,8 +224,10 @@ private function ApplySkippedCamera takes nothing returns nothing
 endfunction
 
 private function OnTrialByCombatEnd takes nothing returns nothing
+    set SatyrNegotiationOutcome = SATYR_NEGOTIATION_OUTCOME_ARENA
+    set SatyrArenaTrialPending = true
     call qRagno_UpdateSatyrNegotiationsArena()
-    call qRagno_MarkSatyrNegotiationsReady()
+    call RefreshZaekolaerrAvailabilityInternal()
     call ApplySkippedCamera()
     call StartExitFadeOut()
 endfunction
@@ -205,12 +237,16 @@ private function OnTrialByCombat takes nothing returns nothing
 
     call DialogInteraction_BeginDialogSequence()
     set seq = DialogInteraction_CreateBaseSequence(Zaekolaerr, ZA_NAME)
+    if SelectedHero != null then
+        call DialogSystem_AddLineNoSound(seq, SelectedHero, DialogInteraction_GetHeroName(SelectedHero), "If strength is the only language you respect, name your trial.")
+    endif
     call DialogSystem_AddLine(seq, Zaekolaerr, ZA_NAME, VL_SATYR_0032_TEXT, VL_SATYR_0032_KEY, true)
     call DialogSystem_SetSequenceCallbacks(seq, function OnNegotiationChoiceStart, function OnTrialByCombatEnd)
     call DialogSystem_PlaySequence(seq, Player(0), Zaekolaerr)
 endfunction
 
 private function OnUnlikelyAllianceEnd takes nothing returns nothing
+    set SatyrNegotiationOutcome = SATYR_NEGOTIATION_OUTCOME_ALLIANCE
     call qRagno_UpdateSatyrNegotiationsUnlikelyAlliances()
     call qRagno_MarkSatyrNegotiationsReady()
     call ApplySkippedCamera()
@@ -222,12 +258,16 @@ private function OnUnlikelyAlliance takes nothing returns nothing
 
     call DialogInteraction_BeginDialogSequence()
     set seq = DialogInteraction_CreateBaseSequence(Zaekolaerr, ZA_NAME)
+    if SelectedHero != null then
+        call DialogSystem_AddLineNoSound(seq, SelectedHero, DialogInteraction_GetHeroName(SelectedHero), "If the Horde refuses peace, perhaps I should stand with those who will.")
+    endif
     call DialogSystem_AddLine(seq, Zaekolaerr, ZA_NAME, VL_SATYR_0037_TEXT, VL_SATYR_0037_KEY, true)
     call DialogSystem_SetSequenceCallbacks(seq, function OnNegotiationChoiceStart, function OnUnlikelyAllianceEnd)
     call DialogSystem_PlaySequence(seq, Player(0), Zaekolaerr)
 endfunction
 
 private function OnDiplomacyGoneWrongEnd takes nothing returns nothing
+    set SatyrNegotiationOutcome = SATYR_NEGOTIATION_OUTCOME_HOSTILE
     call qRagno_UpdateSatyrNegotiationsDiplomacyGoneWrong()
     call qRagno_MarkSatyrNegotiationsReady()
     call SetPlayerAllianceStateBJ(Player(0), Player(12), bj_ALLIANCE_UNALLIED)
@@ -241,6 +281,9 @@ private function OnDiplomacyGoneWrong takes nothing returns nothing
 
     call DialogInteraction_BeginDialogSequence()
     set seq = DialogInteraction_CreateBaseSequence(Zaekolaerr, ZA_NAME)
+    if SelectedHero != null then
+        call DialogSystem_AddLineNoSound(seq, SelectedHero, DialogInteraction_GetHeroName(SelectedHero), "Peace requires honor. So far, I have seen none from you.")
+    endif
     call DialogSystem_AddLine(seq, Zaekolaerr, ZA_NAME, VL_SATYR_0043_TEXT, VL_SATYR_0043_KEY, true)
     call DialogSystem_AddLine(seq, Zaekolaerr, ZA_NAME, VL_SATYR_0044_TEXT, VL_SATYR_0044_KEY, true)
     call DialogSystem_SetSequenceCallbacks(seq, function OnNegotiationChoiceStart, function OnDiplomacyGoneWrongEnd)
@@ -335,7 +378,7 @@ private function BuildDialog takes nothing returns nothing
     call DialogSystem_ClearDialog(ZaekolaerrDialog)
     call DialogSystem_SetTitle(ZaekolaerrDialog, ZA_NAME)
 
-    if qRagno_IsSatyrNegotiationsOpen() then
+    if CanChooseSatyrNegotiationOutcome() then
         set b = DialogSystem_AddButton(ZaekolaerrDialog, "Satyr Negotiations (Continue Quest)", 1)
         call DialogSystem_BindButtonCode(b, function OnNegotiate)
     endif
@@ -351,7 +394,7 @@ private function BuildDialog takes nothing returns nothing
 endfunction
 
 private function AddPreDialogBark takes integer seq returns nothing
-    if not ZaekolaerrFirstMeetDone then
+    if not DialogInteraction_IsFirstGreetDone(Zaekolaerr) then
         call AddFirstMeetLine(seq)
     else
         call AddRandomGreetingLine(seq)
@@ -365,7 +408,11 @@ private function PlayDialogGreeting takes unit hero returns nothing
     endif
     call DialogSystem_AddDelay(seq, DIALOG_FADE_OUT)
     call AddPreDialogBark(seq)
-    call DialogInteraction_PlayGreetSequenceEx(seq, Zaekolaerr, Player(0), ZaekolaerrDialog, CINEMATIC)
+    if not DialogInteraction_IsFirstGreetDone(Zaekolaerr) then
+        call DialogInteraction_PlayFirstGreetSequenceEx(Zaekolaerr, Player(0), ZaekolaerrDialog, seq, CINEMATIC)
+    else
+        call DialogInteraction_PlayGreetSequenceEx(seq, Zaekolaerr, Player(0), ZaekolaerrDialog, CINEMATIC)
+    endif
 endfunction
 
 private function ContinueToDialogInternal takes nothing returns nothing
@@ -386,6 +433,8 @@ private function ContinueToDialogInternal takes nothing returns nothing
     call RefreshZaekolaerrAvailabilityInternal()
     call BuildDialog()
     call DialogSystem_SetEscapeAction(function OnZaekolaerrEscape)
+    call SetUnitFacingToFaceUnitTimed(hero, Zaekolaerr, 0.75)
+    call SetUnitFacingToFaceUnitTimed(Zaekolaerr, hero, 0.75)
     call PlayDialogGreeting(hero)
 
     set hero = null
@@ -408,10 +457,26 @@ private function OnSelected takes nothing returns nothing
         return
     endif
 
+    call ConfigureDialogTransitionForHero(SelectedHero)
     call DialogInteraction_StartConfiguredDialogEntryTransition(Zaekolaerr, SelectedHero, true, USE_DIALOG_CAMERA, CINEMATIC, "qZaekolaerr_ContinueToDialogAfterSelection")
 endfunction
 
+private function OnArenaEnd takes nothing returns nothing
+    local unit arenaMaster = Arena_GetActiveMaster()
+
+    if SatyrArenaTrialPending and SatyrNegotiationOutcome == SATYR_NEGOTIATION_OUTCOME_ARENA and qRagno_IsSatyrNegotiationsActive() and Arena_EventSuccess and Arena_EventArenaId == ARENA_ID_COLISEUM_OF_AGES and arenaMaster != null and GetUnitTypeId(arenaMaster) == ARENA_MASTER_SATYR then
+        set SatyrArenaTrialPending = false
+        call qRagno_CompleteSatyrNegotiationsArena()
+        call RefreshZaekolaerrAvailabilityInternal()
+        call DisplayTextToPlayer(Player(0), 0.00, 0.00, "|cff80ff80Satyr trial complete. Return to Ragno.|r")
+    endif
+
+    set arenaMaster = null
+endfunction
+
 private function InitDelayed takes nothing returns nothing
+    local timer initTimer = GetExpiredTimer()
+
     call SyncUnitReferences()
 
     if Zaekolaerr == null or Nazgrek == null then
@@ -419,20 +484,26 @@ private function InitDelayed takes nothing returns nothing
             call DebugMsg("Waiting for Zaekolaerr and Nazgrek unit references.")
             set ZaekolaerrInitWaitingLogged = true
         endif
-        call TimerStart(GetExpiredTimer(), 0.50, false, function InitDelayed)
+        call TimerStart(initTimer, 0.50, false, function InitDelayed)
+        set initTimer = null
         return
     endif
 
     call QuestGiver_Register(Zaekolaerr)
-    call DialogInteraction_ConfigureDialogTransition(Zaekolaerr, CINEMATIC_MOVE_MODE, CINEMATIC_MOVE_OFFSET, CINEMATIC_MOVE_ANGLE, CAMERA_DIST, CAMERA_Z_OFFSET, CAMERA_ANGLE, CAMERA_ROT_OFFSET, CAMERA_FAR_Z, CAMERA_FOV, CAMERA_BLOCK_RADIUS, CAMERA_BLOCK_CHECK)
     call RefreshZaekolaerrAvailabilityInternal()
     call DialogInteraction_RegisterSelectionHandler(Zaekolaerr, function OnSelected)
     call DebugMsg("Initialized.")
+    call DestroyTimer(initTimer)
+    set initTimer = null
 endfunction
 
 private function Init takes nothing returns nothing
+    local timer initTimer = CreateTimer()
+
     set ZaekolaerrDialogCooldown = CreateTimer()
-    call TimerStart(CreateTimer(), 0.00, false, function InitDelayed)
+    call Arena_RegisterEndCallback(function OnArenaEnd)
+    call TimerStart(initTimer, 0.00, false, function InitDelayed)
+    set initTimer = null
 endfunction
 
 public function RefreshAvailability takes nothing returns nothing
@@ -443,10 +514,13 @@ public function RefreshRespawnedUnitHooks takes nothing returns nothing
     call SyncUnitReferences()
     if Zaekolaerr != null then
         call QuestGiver_Register(Zaekolaerr)
-        call DialogInteraction_ConfigureDialogTransition(Zaekolaerr, CINEMATIC_MOVE_MODE, CINEMATIC_MOVE_OFFSET, CINEMATIC_MOVE_ANGLE, CAMERA_DIST, CAMERA_Z_OFFSET, CAMERA_ANGLE, CAMERA_ROT_OFFSET, CAMERA_FAR_Z, CAMERA_FOV, CAMERA_BLOCK_RADIUS, CAMERA_BLOCK_CHECK)
         call DialogInteraction_RegisterSelectionHandler(Zaekolaerr, function OnSelected)
         call RefreshAvailability()
     endif
+endfunction
+
+public function GetSatyrNegotiationOutcome takes nothing returns integer
+    return SatyrNegotiationOutcome
 endfunction
 
 endlibrary

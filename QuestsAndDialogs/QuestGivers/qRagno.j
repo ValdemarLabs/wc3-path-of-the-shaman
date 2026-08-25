@@ -1816,7 +1816,7 @@ private function CreateQuests takes nothing returns nothing
     endif
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_GNOLL_HEADCOUNT, Ragno) then
-        set q = QuestGiver_CreateConfiguredQuest(QUEST_GNOLL_HEADCOUNT, Ragno, "daily", 2, null, QUEST_GNOLL_HEADCOUNT, "ReplaceableTextures\\CommandButtons\\BTNGnoll.blp", "Ragno wants you to thin out the gnolls threatening the mountain outpost.\n\n", infoText, info2DailyText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
+        set q = QuestGiver_CreateConfiguredQuest(QUEST_GNOLL_HEADCOUNT, Ragno, "daily", 1, null, QUEST_GNOLL_HEADCOUNT, "ReplaceableTextures\\CommandButtons\\BTNGnoll.blp", "Ragno wants you to thin out the gnolls threatening the mountain outpost.\n\n", infoText, info2DailyText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
         call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_NEUTRAL)
         call QuestGiver_SetQuestRewards(q, true, 0, true, 200, false, 0, true, 0, false)
         call QuestGiver_SetRequirements(q.id, "", "Bring 20 Gnoll Heads to Ragno", "", "", "", "", "", "", "")
@@ -1824,7 +1824,7 @@ private function CreateQuests takes nothing returns nothing
     endif
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_LUMBERJACK_DUTIES, Ragno) then
-        set q = QuestGiver_CreateConfiguredQuest(QUEST_LUMBERJACK_DUTIES, Ragno, "daily", 2, null, QUEST_LUMBERJACK_DUTIES, "ReplaceableTextures\\CommandButtons\\BTNBundleOfLumber.blp", "Harvest 10 Pile Of Wood for the mountain outpost. A peon will help, but he must survive.\n\n", infoText, info2DailyText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
+        set q = QuestGiver_CreateConfiguredQuest(QUEST_LUMBERJACK_DUTIES, Ragno, "daily", 1, null, QUEST_LUMBERJACK_DUTIES, "ReplaceableTextures\\CommandButtons\\BTNBundleOfLumber.blp", "Harvest 10 Pile Of Wood for the mountain outpost. A peon will help, but he must survive.\n\n", infoText, info2DailyText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
         call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_NEUTRAL)
         call QuestGiver_SetQuestRewards(q, true, 0, true, 200, false, 0, true, 0, false)
         call QuestGiver_SetRequirements(q.id, "", "Harvest 10 Pile Of Wood", "Peon must survive", "", "", "", "", "", "")
@@ -1832,7 +1832,7 @@ private function CreateQuests takes nothing returns nothing
     endif
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_KOBOLD_THIEVES, Ragno) then
-        set q = QuestGiver_CreateConfiguredQuest(QUEST_KOBOLD_THIEVES, Ragno, "daily", 2, null, QUEST_KOBOLD_THIEVES, "ReplaceableTextures\\CommandButtons\\BTNKobold.blp", "Kill the kobold leader and recover the stolen goods taken from the Horde.\n\n", infoText, info2DailyText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
+        set q = QuestGiver_CreateConfiguredQuest(QUEST_KOBOLD_THIEVES, Ragno, "daily", 1, null, QUEST_KOBOLD_THIEVES, "ReplaceableTextures\\CommandButtons\\BTNKobold.blp", "Kill the kobold leader and recover the stolen goods taken from the Horde.\n\n", infoText, info2DailyText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
         call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_NEUTRAL)
         call QuestGiver_SetQuestRewards(q, true, 0, true, 200, false, 0, true, 0, false)
         call QuestGiver_SetRequirements(q.id, "", "Kill Razzlewhip Mudgrubber", "Retrieve 6 Stolen Goods", "", "", "", "", "", "")
@@ -1840,7 +1840,7 @@ private function CreateQuests takes nothing returns nothing
     endif
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_SATYR_NEGOTIATIONS, Ragno) then
-        set q = QuestGiver_CreateConfiguredQuest(QUEST_SATYR_NEGOTIATIONS, Ragno, "normal", 3, null, QUEST_SATYR_NEGOTIATIONS, "ReplaceableTextures\\CommandButtons\\BTNForestTroll.blp", "The relations between the Horde and the satyrs are unstable. Meet with them and learn whether diplomacy is still possible.\n\n", infoText, info2MainText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
+        set q = QuestGiver_CreateConfiguredQuest(QUEST_SATYR_NEGOTIATIONS, Ragno, "normal", 1, null, QUEST_SATYR_NEGOTIATIONS, "ReplaceableTextures\\CommandButtons\\BTNForestTroll.blp", "The relations between the Horde and the satyrs are unstable. Meet with them and learn whether diplomacy is still possible.\n\n", infoText, info2MainText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
         call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_NEUTRAL)
         call QuestGiver_SetQuestRewards(q, true, 0, true, 150, false, 0, true, 0, false)
         call QuestGiver_SetRequirements(q.id, "", "Meet with the satyrs and learn what they want", "", "", "", "", "", "", "")
@@ -1968,7 +1968,7 @@ public function UpdateSatyrNegotiationsArena takes nothing returns nothing
     local QuestData q = GetRagnoQuest(QUEST_SATYR_NEGOTIATIONS)
     if q != 0 and q.active and not q.completed and not q.failed then
         call q.markRequirementCompleted(1, true)
-        call q.updateRequirementText(2, "Enter the Coliseum and survive the satyr trial")
+        call q.updateRequirementText(2, "Speak with the satyr arena master and complete a challenge in the Coliseum of Ages")
         call q.refreshQuestLog()
     endif
     set q = 0
@@ -2002,6 +2002,16 @@ public function MarkSatyrNegotiationsReady takes nothing returns nothing
         call q.addReturnRequirement()
     endif
     call RefreshZaekolaerrAvailabilityExternal()
+    set q = 0
+endfunction
+
+public function CompleteSatyrNegotiationsArena takes nothing returns nothing
+    local QuestData q = GetRagnoQuest(QUEST_SATYR_NEGOTIATIONS)
+    if q != 0 and q.active and not q.completed and not q.failed then
+        call q.markRequirementCompleted(2, true)
+        call q.refreshQuestLog()
+        call MarkSatyrNegotiationsReady()
+    endif
     set q = 0
 endfunction
 
