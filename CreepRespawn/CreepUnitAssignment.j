@@ -62,6 +62,8 @@ private function TriggerQuestEvaluation_Delayed takes nothing returns nothing
         call ExecuteFunc("qOutcastJinzun_RefreshRespawnedUnitHooks")
     elseif unitTypeId == 'n62W' then
         call ExecuteFunc("qZaekolaerr_RefreshRespawnedUnitHooks")
+    elseif unitTypeId == 'n636' then
+        call ExecuteFunc("qVelyssara_RefreshRespawnedUnitHooks")
     elseif unitTypeId == 'n61E' then
         call ExecuteFunc("qKribugs_RefreshRespawnedUnitHooks")
     elseif unitTypeId == 'o60C' then
@@ -144,6 +146,7 @@ function CreepUnitAssignment takes integer utype returns nothing
     // SATYR
     elseif utype == 'n636' then
         set udg_Succubus = bj_lastCreatedUnit
+        call TriggerQuestEvaluation(bj_lastCreatedUnit)
     elseif utype == 'n62W' then
         set udg_Zaekolaerr = bj_lastCreatedUnit
         call TriggerQuestEvaluation(bj_lastCreatedUnit)

@@ -2,7 +2,7 @@
     qOutcastJinzun
 
     Author: Valdemar
-    Version: 1.1.2
+    Version: 1.1.3
 
     Description:
     Quest, dialogue, patrol, fishing, ward-placement, tree-restoration, and
@@ -28,7 +28,7 @@
     - call qOutcastJinzun_RefreshRespawnedUnitHooks()
 
 **/
-library qOutcastJinzun initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, BossUnknownEntity, PatrolSystem, HeroItemCheck, ExSound, VoicelinesJinzun, VoicelinesNazgrek, VoicelinesDemoness
+library qOutcastJinzun initializer Init requires qVelyssara, QuestGiver, QuestMaster, DialogInteraction, DialogSystem, BossUnknownEntity, PatrolSystem, HeroItemCheck, ExSound, VoicelinesJinzun, VoicelinesNazgrek, VoicelinesDemoness
     globals
         private constant boolean DEBUG = false
 
@@ -914,25 +914,14 @@ library qOutcastJinzun initializer Init requires QuestGiver, QuestMaster, Dialog
     endfunction
 
     private function CanDispelChainsOfSeduction takes nothing returns boolean
-        return udg_QuestChainsOfSeduction != null and IsQuestDiscovered(udg_QuestChainsOfSeduction) and not IsQuestCompleted(udg_QuestChainsOfSeduction) and not udg_QuestChainsOfSeductionDispelld
+        return qVelyssara_CanDispelCharm(SelectedHero)
     endfunction
 
     private function OnDispelChainsEnd takes nothing returns nothing
         local effect dispelEffect
         set dispelEffect = AddSpecialEffectTarget("Abilities\\Spells\\Items\\AIma\\AImaTarget.mdl", SelectedHero, "origin")
         call DestroyEffect(dispelEffect)
-        set udg_QuestChainsOfSeductionDispelld = true
-        set udg_SuccubusSeduced = false
-        if udg_QuestChainsOfSeductionReq2 != null then
-            call QuestItemSetCompleted(udg_QuestChainsOfSeductionReq2, true)
-        endif
-        call ExecuteFunc("Trig_Quest_Chains_of_Seduction_Update_Dispelled_Actions")
-        if udg_Succubus != null then
-            call SetPlayerAllianceStateBJ(Player(0), GetOwningPlayer(udg_Succubus), bj_ALLIANCE_UNALLIED)
-            call SetPlayerAllianceStateBJ(GetOwningPlayer(udg_Succubus), Player(0), bj_ALLIANCE_UNALLIED)
-            call SetUnitInvulnerable(udg_Succubus, false)
-            call IssueTargetOrder(udg_Succubus, "attack", SelectedHero)
-        endif
+        call qVelyssara_DispelCharm(SelectedHero)
         set dispelEffect = null
         call StartExitFadeOut()
     endfunction
@@ -944,8 +933,8 @@ library qOutcastJinzun initializer Init requires QuestGiver, QuestMaster, Dialog
         call DialogInteraction_AddHeroLookAtLine(seq, SelectedHero, Jinzun, VL_NAZGREK_0194_TEXT, VL_NAZGREK_0194_KEY)
         call DialogSystem_AddLine(seq, Jinzun, JINZUN_NAME, VL_JINZUN_0100_TEXT, VL_JINZUN_0100_KEY, true)
         call DialogSystem_AddLine(seq, Jinzun, JINZUN_NAME, VL_JINZUN_0101_TEXT, VL_JINZUN_0101_KEY, true)
-        call DialogSystem_AddLine(seq, udg_Succubus, "Succubus", VL_DEMONESS_0042_TEXT, VL_DEMONESS_0042_KEY, true)
-        call DialogSystem_AddLine(seq, udg_Succubus, "Succubus", VL_DEMONESS_0041_TEXT, VL_DEMONESS_0041_KEY, true)
+        call DialogSystem_AddLine(seq, udg_Succubus, "Velyssara", VL_DEMONESS_0042_TEXT, VL_DEMONESS_0042_KEY, true)
+        call DialogSystem_AddLine(seq, udg_Succubus, "Velyssara", VL_DEMONESS_0041_TEXT, VL_DEMONESS_0041_KEY, true)
         call DialogSystem_SetSequenceCallbacks(seq, null, function OnDispelChainsEnd)
         call DialogSystem_PlaySequence(seq, Player(0), Jinzun)
     endfunction
