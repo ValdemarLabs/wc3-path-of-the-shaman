@@ -15,6 +15,23 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [26.8.2026]
+
+### Player-Facing Updates
+
+- Added Gar as a quest/event-spawned Deadwoods boss with a slow six-point patrol and a faster-attacking frenzy below half health.
+
+### Technical Updates
+
+- Removed the old `Hero Death and Resurrect` GUI trigger folder.
+- Removed the old `Revive System Player` GUI trigger folder.
+- Added `DungeonsAndBosses/OpenWorld/Gar/BossGar.j` with the `BossGar_Spawn()` hook, `udg_BossGar` assignment, event-owned respawning, patrol/reset handling, and two-phase boss registration.
+- Updated `_developer/Design Plans/Story and Quest Design.md` with Gar's implemented spawn rect, patrol, phase scope, and remaining quest/outcome decisions.
+
+### Actions Remaining
+
+- Import `BossGar.j` after Boss and PatrolSystem, create/verify `gg_rct_GarWP01` through `gg_rct_GarWP06` and `udg_BossGar` in World Editor, keep Gar unplaced, then call `BossGar_Spawn()` from the owning quest/event and runtime-test patrol, reset, frenzy, death, and explicit re-spawn.
+
 ## [25.8.2026]
 
 ### Player-Facing Updates
