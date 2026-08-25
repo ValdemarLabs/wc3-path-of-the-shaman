@@ -64,6 +64,12 @@ private function TriggerQuestEvaluation_Delayed takes nothing returns nothing
         call ExecuteFunc("qZaekolaerr_RefreshRespawnedUnitHooks")
     elseif unitTypeId == 'n61E' then
         call ExecuteFunc("qKribugs_RefreshRespawnedUnitHooks")
+    elseif unitTypeId == 'o60C' then
+        call ExecuteFunc("qGrim_RefreshRespawnedUnitHooks")
+    elseif unitTypeId == 'o62R' then
+        call ExecuteFunc("qGrumBloodfang_RefreshRespawnedUnitHooks")
+    elseif unitTypeId == 'o61S' then
+        call ExecuteFunc("qGraknar_RefreshRespawnedUnitHooks")
     endif
     
     // Cleanup
@@ -106,6 +112,7 @@ function CreepUnitAssignment takes integer utype returns nothing
         call TriggerQuestEvaluation(bj_lastCreatedUnit)
     elseif utype == 'o60C' then
         set udg_Grim = bj_lastCreatedUnit
+        call TriggerQuestEvaluation(bj_lastCreatedUnit)
     elseif utype == 'o62R' then
         set udg_Grum = bj_lastCreatedUnit
         call TriggerQuestEvaluation(bj_lastCreatedUnit)
@@ -119,16 +126,10 @@ function CreepUnitAssignment takes integer utype returns nothing
     elseif utype == 'o61C' then
         set udg_Erduk = bj_lastCreatedUnit
     elseif utype == 'o61S' then
-        set udg_Graknar = bj_lastCreatedUnit 
+        set udg_Graknar = bj_lastCreatedUnit
+        call TriggerQuestEvaluation(bj_lastCreatedUnit)
     elseif utype == 'o008' then
-        set udg_KodoGrak = bj_lastCreatedUnit 
-        // Start follow movement (if quest active)
-        // Todo note >> use new Quest systems functions to check quest state and manage follow system!
-        if IsQuestDiscovered(udg_QuestMistakenKin) and not IsQuestCompleted(udg_QuestMistakenKin) then
-            set udg_FollowSystem_Source = udg_KodoGrak
-            set udg_FollowSystem_Target = udg_Nazgrek
-            call FollowSystem_SetFollow(udg_FollowSystem_Source, udg_FollowSystem_Target, 800.0, true, 5.0, FOLLOW_STYLE_PASSIVE, true, true)
-        endif
+        set udg_KodoGrak = bj_lastCreatedUnit
     //===========================================================================
     // GOBLINS
     elseif utype == 'n013' then
