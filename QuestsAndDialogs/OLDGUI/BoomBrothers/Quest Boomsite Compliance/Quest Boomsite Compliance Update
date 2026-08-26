@@ -1,0 +1,7 @@
+Quest Boomsite Compliance Update
+    Events
+    Conditions
+    Actions
+        Quest - Change the description of QuestBoomsiteComplianceReq1 to (Logs inspected:  + ((String(AtexBlixWoodInt)) +  / 10))
+        Quest - Display to (All players) the Quest Update message: |cffffcc00QUEST|r  ...
+        Quest - Display to (All players) the Quest Update message: (Logs inspected:  + ((String(AtexBlixWoodInt)) +  / 10))

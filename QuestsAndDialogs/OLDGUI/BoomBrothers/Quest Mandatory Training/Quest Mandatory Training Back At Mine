@@ -1,0 +1,115 @@
+Quest Mandatory Training Back At Mine
+    Events
+        Time - Every 5.00 seconds of game time
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (BoomBrotherMineEntrance <gen> contains Nazgrek) Equal to True
+                (BoomBrotherMineEntrance <gen> contains Zulkis) Equal to True
+        (BoomBrotherMineEntrance <gen> contains BoomBrothers) Equal to True
+    Actions
+        -------- Check if Boom Brothers are with Player --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Distance between (Position of BoomBrothers) and (Position of Nazgrek)) Less than or equal to 1000.00
+            Then - Actions
+                -------- ======== Initial check of the selected unit ======== --------
+                Set VariableSet CV = (Custom value of BoomBrothers)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Or - Any (Conditions) are true
+                            Conditions
+                                IsUnitAlive[CV] Equal to False
+                                GCSM_UnitInCombat[CV] Equal to True
+                    Then - Actions
+                        -------- ======== Cinematic / dialogue cannot be started because of the conditions ======== --------
+                        Skip remaining actions
+                        -------- ======== ======== --------
+                    Else - Actions
+                -------- ======== START ======== --------
+                Trigger - Turn off (This trigger)
+                Trigger - Turn off Quest Mandatory Training Chat <gen>
+                Trigger - Turn off Quest Mandatory Training Follow <gen>
+                -------- ======== Setting ======== --------
+                Unit - Order BoomBrothers to Stop.
+                Unit - Change ownership of BoomBrothers to Neutral Passive and Retain color
+                Unit Group - Pick every unit in BoomBrotherGroup and do (Actions)
+                    Loop - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Unit-type of (Picked unit)) Equal to Goblin Miner (Level 10)
+                            Then - Actions
+                                Unit - Remove (Picked unit) from the game
+                            Else - Actions
+                -------- ======== CINEMATIC STARTS ======== --------
+                Trigger - Run Cinematic ON <gen> (checking conditions)
+                -------- Camera --------
+                Cinematic - Turn cinematic mode On for (All players)
+                Camera - Pan camera for Player 1 (Red) to (Position of BoomBrothers) over 0.00 seconds
+                Camera - Apply BoomBrothersCam06 <gen> for Player 1 (Red) over 0.00 seconds
+                Wait 1.00 seconds
+                Unit - Make BoomBrothers face Nazgrek over 0.75 seconds
+                Unit - Make Nazgrek face BoomBrothers over 0.75 seconds
+                Wait 1.00 seconds
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play Boomers_0077 <gen> and display Hey! Where’s Blix....  Modify duration: Set to 4.00 seconds and Wait
+                -------- ======== MAD BLIX TIME ======== --------
+                -------- create Mad Blix temp unit --------
+                Set VariableSet BoomBrothersPoint = (Center of MadBlixPoint1 <gen>)
+                Unit - Create 1 Mad Blix for Neutral Passive at BoomBrothersPoint facing Default building facing degrees
+                Set VariableSet BossMadBlixTemp = (Last created unit)
+                Unit - Add Ghost (Visible) to BossMadBlixTemp
+                Custom script:   call RemoveLocation(udg_BoomBrothersPoint)
+                -------- issue Mad Blix to move --------
+                Set VariableSet BoomBrothersPoint = (Center of BoomBrothersWP01 <gen>)
+                Unit - Order BossMadBlixTemp to Move To BoomBrothersPoint
+                Custom script:   call RemoveLocation(udg_BoomBrothersPoint)
+                Wait 2.00 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = You fools returned already. 
+                Custom script:   call ExSound_Play("AtexBlix_0058", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from AtexBlix named Mad Blix: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = The mine is now under my control. I am the hazard now.
+                Custom script:   call ExSound_Play("AtexBlix_0059", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from AtexBlix named Mad Blix: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = I knew I smelled rat grease and betrayal!
+                Custom script:   call ExSound_Play("Nazgrek_0278", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = He stole OUR MINE?!
+                Custom script:   call ExSound_Play("Boomers_0083", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = We have been deceived. All this safety non-sense was all just to distract us!
+                Custom script:   call ExSound_Play("Boomers_0078", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = You will regret this, Mad Blix!
+                Custom script:   call ExSound_Play("Boomers_0079", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Cinematic - Send transmission to (All players) from AtexBlix named Mad Blix: Play AtexBlix_0060 <gen> and display Ahahaha!.  Modify duration: Set to 2.65 seconds and Wait
+                Cinematic - Send transmission to (All players) from AtexBlix named Mad Blix: Play AtexBlix_0061 <gen> and display Fools! I will never....  Modify duration: Set to 3.25 seconds and Wait
+                -------- issue Mad Blix to move --------
+                Set VariableSet BoomBrothersPoint = (Center of BoomBrothersWP02 <gen>)
+                Unit - Order BossMadBlixTemp to Move To BoomBrothersPoint
+                Trigger - Turn on Quest Mandatory Training Remove MadBlix <gen>
+                Wait 1.00 seconds
+                Custom script:   set bj_wantDestroyGroup = true
+                Unit Group - Pick every unit in (Units in BoomBrotherMineEntrance <gen>) and do (Actions)
+                    Loop - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Unit-type of (Picked unit)) Equal to Turret (Level 10)
+                            Then - Actions
+                                Unit - Change ownership of (Picked unit) to Player 12 (Brown) and Retain color
+                                Unit - Order (Picked unit) to Attack BoomBrothers
+                            Else - Actions
+                Custom script:   call RemoveLocation(udg_BoomBrothersPoint)
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Wait Campaign quest delay seconds
+                Trigger - Run Quest Mandatory Training Completed <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+            Else - Actions

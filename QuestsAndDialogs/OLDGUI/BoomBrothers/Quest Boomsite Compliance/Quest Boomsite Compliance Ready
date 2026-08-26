@@ -1,0 +1,22 @@
+Quest Boomsite Compliance Ready
+    Events
+    Conditions
+    Actions
+        -------- ======= ================================= ========================== --------
+        -------- ======= ADJUST WHICH QUEST --------
+        Set VariableSet QuestTemp = QuestBoomsiteCompliance
+        -------- ======= DONT MODIFY: LOAD HASHTABLE --------
+        Trigger - Run Quest System Load Hashtable <gen> (ignoring conditions)
+        -------- ======= ================================= ========================== --------
+        Quest - Mark QuestBoomsiteComplianceReq1 as Completed
+        Quest - Display to (All players) the Quest Update message: |cffffcc00QUEST|r  ...
+        Quest - Display to (All players) the Quest Update message: All woods collected
+        Quest - Flash the quest dialog button
+        -------- ======= ================================= ========================== --------
+        -------- REFRESH QUEST ICON --------
+        -------- ======= QUEST State 1-5: (unavailable, available, in progress, complete, ready to turn in) --------
+        Custom script:   set udg_QuestState[udg_QuestID_Temp] = 5
+        Custom script:   call QuestIcon_RegisterQuest(udg_QuestGiverUnit[udg_QuestID_Temp], udg_QuestID_Temp, udg_QuestType[udg_QuestID_Temp], udg_QuestState[udg_QuestID_Temp] )
+        -------- Adjust quest icon - Removing manually Quest Icon --------
+        Set VariableSet QuestGiverUnitTemp = AtexBlix
+        Custom script:   call RemoveDummyQuestIcon(udg_QuestGiverUnitTemp)

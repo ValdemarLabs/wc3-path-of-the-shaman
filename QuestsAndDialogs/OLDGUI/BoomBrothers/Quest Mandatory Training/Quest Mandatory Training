@@ -1,0 +1,20 @@
+Quest Mandatory Training
+    Events
+    Conditions
+    Actions
+        -------- RESET Quest, if previously done --------
+        Quest - Mark QuestMandatoryTraining as Incomplete
+        Quest - Mark QuestMandatoryTrainingReq1 as Incomplete
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Mandatory Training Discover <gen> (checking conditions)
+        -------- Turn on quest related triggers & events --------
+        Trigger - Turn on Quest Mandatory Training At Kobold Mine <gen>
+        Trigger - Turn on Quest Mandatory Training Chat <gen>
+        Trigger - Turn on Quest Mandatory Training Follow <gen>
+        -------- Other --------
+        Unit - Change ownership of BoomBrothers to Player 19 (Mint) and Retain color
+        -------- Spawn Safety instructions item --------
+        Set VariableSet BoomBrothersPoint = (Position of Nazgrek)
+        Item - Create |cFFFFFFFFSafety Instructions|r at BoomBrothersPoint
+        Custom script:   call RemoveLocation(udg_BoomBrothersPoint)
+        Trigger - Remove (This trigger) from the trigger queue

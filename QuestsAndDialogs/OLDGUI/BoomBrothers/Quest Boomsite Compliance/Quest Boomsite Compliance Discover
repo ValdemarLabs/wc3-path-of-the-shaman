@@ -1,0 +1,17 @@
+Quest Boomsite Compliance Discover
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Boomsite Compliance Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestBoomsiteCompliance as Discovered
+        -------- ======= ================================= ========================== --------
+        -------- ======= ADJUST WHICH QUEST --------
+        Set VariableSet QuestTemp = QuestBoomsiteCompliance
+        -------- ======= DONT MODIFY: LOAD HASHTABLE --------
+        Trigger - Run Quest System Load Hashtable <gen> (ignoring conditions)
+        -------- ======= ================================= ========================== --------
+        -------- Display a quest message. --------
+        Trigger - Run Quest System Discover <gen> (ignoring conditions)
+        -------- ======= ================================= ========================== --------

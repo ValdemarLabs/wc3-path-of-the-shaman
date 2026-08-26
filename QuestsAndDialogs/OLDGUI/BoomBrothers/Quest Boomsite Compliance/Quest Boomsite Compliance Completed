@@ -1,0 +1,26 @@
+Quest Boomsite Compliance Completed
+    Events
+    Conditions
+    Actions
+        -------- ======= ================================= ========================== --------
+        -------- ======= ADJUST WHICH QUEST --------
+        Set VariableSet QuestTemp = QuestBoomsiteCompliance
+        -------- ======= DONT MODIFY: LOAD HASHTABLE --------
+        Trigger - Run Quest System Load Hashtable <gen> (ignoring conditions)
+        -------- ======= ================================= ========================== --------
+        -------- ======= REWARDS --------
+        Trigger - Run Quest System Complete Rewards <gen> (ignoring conditions)
+        -------- ======= ================================= ========================== --------
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Boomsite Compliance Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestBoomsiteCompliance as Discovered
+        Quest - Mark QuestBoomsiteComplianceReq1 as Completed
+        Quest - Mark QuestBoomsiteCompliance as Completed
+        -------- Display a quest message. --------
+        Trigger - Run Quest System Complete <gen> (ignoring conditions)
+        -------- REFRESH QUEST ICON --------
+        -------- ======= QUEST State 1-5: (unavailable, available, in progress, complete, ready to turn in) --------
+        Custom script:   set udg_QuestState[udg_QuestID_Temp] = 4
+        Custom script:   call QuestIcon_RegisterQuest(udg_QuestGiverUnit[udg_QuestID_Temp], udg_QuestID_Temp, udg_QuestType[udg_QuestID_Temp], udg_QuestState[udg_QuestID_Temp] )
+        -------- ======= ================================= ========================== --------

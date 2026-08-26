@@ -1,0 +1,11 @@
+Quest Mandatory Training Update
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Quest - Mark QuestMandatoryTrainingReq1 as Completed
+        Quest - Create a quest requirement for QuestMandatoryTraining with the description Return with the Boo...
+        Set VariableSet QuestMandatoryTrainingReq2 = (Last created quest requirement)
+        Quest - Display to (All players) the Quest Update message: |cffffcc00QUEST|r  ...
+        Quest - Display to (All players) the Quest Update message: - Return with the B...
+        Quest - Flash the quest dialog button

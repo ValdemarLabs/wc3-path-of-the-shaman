@@ -1,0 +1,32 @@
+Quest More Hazard Mitigation Completed
+    Events
+    Conditions
+    Actions
+        -------- ======= ================================= ========================== --------
+        -------- ======= ADJUST WHICH QUEST --------
+        Set VariableSet QuestTemp = QuestDustMitigation
+        -------- ======= DONT MODIFY: LOAD HASHTABLE --------
+        Trigger - Run Quest System Load Hashtable <gen> (ignoring conditions)
+        -------- ======= ================================= ========================== --------
+        -------- ======= REWARDS --------
+        Trigger - Run Quest System Complete Rewards <gen> (ignoring conditions)
+        -------- ======= ================================= ========================== --------
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest More Hazard Mitigation Create <gen> (checking conditions)
+        Trigger - Turn off Quest More Hazard Mitigation Update <gen>
+        -------- Update the quest --------
+        Quest - Mark QuestDustMitigation as Discovered
+        Quest - Mark QuestDustMitigationReq1 as Completed
+        Quest - Mark QuestDustMitigationReq2 as Completed
+        Quest - Mark QuestDustMitigationReq3 as Completed
+        Quest - Mark QuestDustMitigation as Completed
+        -------- Display a quest message. --------
+        Trigger - Run Quest System Complete <gen> (ignoring conditions)
+        -------- REFRESH QUEST ICON --------
+        -------- ======= QUEST State 1-5: (unavailable, available, in progress, complete, ready to turn in) --------
+        Custom script:   set udg_QuestState[udg_QuestID_Temp] = 4
+        Custom script:   call QuestIcon_RegisterQuest(udg_QuestGiverUnit[udg_QuestID_Temp], udg_QuestID_Temp, udg_QuestType[udg_QuestID_Temp], udg_QuestState[udg_QuestID_Temp] )
+        -------- Adjust quest icon - Removing manually created "9999" Quest ID --------
+        Set VariableSet QuestGiverUnitTemp = AtexBlix
+        Custom script:   call QuestIcon_RemoveQuest(udg_QuestGiverUnitTemp, 9999)
+        -------- ======= ================================= ========================== --------

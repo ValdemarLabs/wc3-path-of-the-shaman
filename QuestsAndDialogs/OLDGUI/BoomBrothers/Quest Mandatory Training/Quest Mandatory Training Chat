@@ -1,0 +1,113 @@
+Quest Mandatory Training Chat
+    Events
+        Time - Every (Random real number between 30.00 and 120.00) seconds of game time
+    Conditions
+        InCinematic Equal to False
+    Actions
+        -------- ======== Initial check of the unit ======== --------
+        Set VariableSet CV = (Custom value of BoomBrothers)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        IsUnitAlive[CV] Equal to False
+                        GCSM_UnitInCombat[CV] Equal to True
+            Then - Actions
+                -------- ======== Cinematic / dialogue cannot be started because of the conditions ======== --------
+                Skip remaining actions
+                -------- ======== ======== --------
+            Else - Actions
+        -------- ======== START ======== --------
+        Set VariableSet BoomBrothersInt = (Random integer number between 1 and 14)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BoomBrothersInt Equal to 1
+            Then - Actions
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = You sure this is the right way?
+                Custom script:   call ExSound_Play("Boomers_0060", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BoomBrothersInt Equal to 2
+            Then - Actions
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Are we going to get snacks when we get there?
+                Custom script:   call ExSound_Play("Boomers_0061", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Yes! We can grill some kobold meat with dynamite.
+                Custom script:   call ExSound_Play("Boomers_0062", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BoomBrothersInt Equal to 3
+            Then - Actions
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Can we unionize against safety? Is that a thing?
+                Custom script:   call ExSound_Play("Boomers_0063", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Sometimes you just got to play along.
+                Custom script:   call ExSound_Play("Boomers_0064", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BoomBrothersInt Equal to 4
+            Then - Actions
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = I brought my lucky detonator. You know, in case the training gets boring.
+                Custom script:   call ExSound_Play("Boomers_0065", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = That’s the one that blew off your eyebrows last week.
+                Custom script:   call ExSound_Play("Boomers_0066", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Exactly! Super lucky. My lucky charm.
+                Custom script:   call ExSound_Play("Boomers_0067", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BoomBrothersInt Equal to 5
+            Then - Actions
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Hehee, I passed explosives handling exam just by drawing a stick figure with dynamines on his hands. True story.
+                Custom script:   call ExSound_Play("Boomers_0068", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Explains a lot.
+                Custom script:   call ExSound_Play("Boomers_0069", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                BoomBrothersInt Equal to 6
+            Then - Actions
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Remind me again why we’re trusting the guy named Blix? That name sounds like a fuse already halfway lit.
+                Custom script:   call ExSound_Play("Boomers_0070", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Didn’t you say that he is your cousin's good friend and trustworthy?
+                Custom script:   call ExSound_Play("Boomers_0071", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = I don’t remember how he ended up joining our crew… He just popped up!
+                Custom script:   call ExSound_Play("Boomers_0072", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Hmmm… 
+                Custom script:   call ExSound_Play("Boomers_0073", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+            Else - Actions

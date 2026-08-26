@@ -1,0 +1,33 @@
+Quest More Hazard Mitigation Update
+    Events
+        Unit - A unit Acquires an item
+    Conditions
+        (Owner of (Triggering unit)) Equal to Player 1 (Red)
+        Or - Any (Conditions) are true
+            Conditions
+                (Item-type of (Item being manipulated)) Equal to Dust Collector M25
+                (Item-type of (Item being manipulated)) Equal to Dustfilter 9000-BA
+                (Item-type of (Item being manipulated)) Equal to Vent-o-Matic Blower R200
+    Actions
+        Quest - Display to (All players) the Quest Update message: |cffffcc00QUEST|r  ...
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Item-type of (Item being manipulated)) Equal to Dust Collector M25
+            Then - Actions
+                Quest - Display to (All players) the Quest Update message: Dust Collector M25 ...
+                Quest - Mark QuestDustMitigationReq1 as Completed
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Item-type of (Item being manipulated)) Equal to Dustfilter 9000-BA
+            Then - Actions
+                Quest - Display to (All players) the Quest Update message: Dustfilter 9000-BA ...
+                Quest - Mark QuestDustMitigationReq2 as Completed
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Item-type of (Item being manipulated)) Equal to Vent-o-Matic Blower R200
+            Then - Actions
+                Quest - Display to (All players) the Quest Update message: Vent-o-Matic Blower...
+                Quest - Mark QuestDustMitigationReq3 as Completed
+            Else - Actions

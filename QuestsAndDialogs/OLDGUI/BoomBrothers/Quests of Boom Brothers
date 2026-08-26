@@ -1,0 +1,276 @@
+Quests of Boom Brothers
+    Events
+        Player - Player 1 (Red) Selects a unit
+    Conditions
+        (Triggering unit) Equal to BoomBrothers
+        (Distance between (Position of BoomBrothers) and (Position of Nazgrek)) Less than or equal to 500.00
+        (Remaining time for DialogOverTimer) Equal to 0.00
+    Actions
+        -------- ======== Initial check of the selected unit ======== --------
+        Set VariableSet CV = (Custom value of (Triggering unit))
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        UnitIsCasting[CV] Equal to True
+                        GCSM_UnitInCombat[CV] Equal to True
+                        UnitMoving[CV] Equal to True
+            Then - Actions
+                -------- ======== Cinematic / dialogue cannot be started because of the conditions ======== --------
+                Skip remaining actions
+                -------- ======== ======== --------
+            Else - Actions
+        -------- ======== START ======== --------
+        Trigger - Turn off (This trigger)
+        -------- ======== CINEMATIC STARTS ======== --------
+        -------- ======== CINEMATIC MOVE ======== --------
+        Set VariableSet CinematicTriggerUnit = Nazgrek
+        Set VariableSet CinematicMoveMode = 1
+        Set VariableSet CinematicMovePoint[1] = ((Position of BoomBrothers) offset by 256.00 towards 210.00 degrees.)
+        Set VariableSet CinematicMovePoint[2] = ((Position of BoomBrothers) offset by 256.00 towards 210.00 degrees.)
+        Trigger - Run Cinematic ON <gen> (checking conditions)
+        Custom script:   call RemoveLocation(udg_CinematicMovePoint[1])
+        Custom script:   call RemoveLocation(udg_CinematicMovePoint[2])
+        -------- Camera --------
+        Cinematic - Turn cinematic mode On for (All players)
+        Camera - Apply BoomBrothersCam01 <gen> for Player 1 (Red) over 0.00 seconds
+        Camera - Pan camera for Player 1 (Red) to (Position of BoomBrothers) over 0.00 seconds
+        Wait 1.00 seconds
+        Unit - Make BoomBrothers face Nazgrek over 0.75 seconds
+        Unit - Make Nazgrek face BoomBrothers over 0.75 seconds
+        -------- Nazgrek Greet --------
+        Custom script:   call TriggerExecute(gg_trg_Nazgrek_Greet)
+        Wait ExSoundDuration seconds
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- NORMAL DIALOG --------
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BoomBrothersFarewellBoolean Equal to False
+                        (QuestBoomWillBeBack is discovered) Equal to False
+                    Then - Actions
+                        -------- If the Player has previosly not declined the quest --------
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = Whoa there, big green! You're about to trespass on Boom Brothers Mining & Mayhem™ property!
+                        Custom script:   call ExSound_Play("Boomers_0001a", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                        Camera - Apply BoomBrothersCam02 <gen> for Player 1 (Red) over 0.00 seconds
+                        Wait 1.00 seconds
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = This here mine is ours! Claimed fair and square with sweat, soot, and slightly unstable explosives!
+                        Custom script:   call ExSound_Play("Boomers_0002", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = And if you're here to steal our claim, think again — we sleep on the fuse pile!
+                        Custom script:   call ExSound_Play("Boomers_0002", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                        Camera - Apply BoomBrothersCam03 <gen> for Player 1 (Red) over 0.00 seconds
+                        Wait 1.00 seconds
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = I seek no claim, goblins. I’m just looking around.
+                        Custom script:   call ExSound_Play("Nazgrek_0260", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BoomBrothersFarewellBoolean Equal to True
+                        And - All (Conditions) are true
+                            Conditions
+                                Or - Any (Conditions) are true
+                                    Conditions
+                                        (QuestExplosiveCrisis is discovered) Equal to False
+                                        (QuestExplosiveCrisis is completed) Equal to True
+                                Or - Any (Conditions) are true
+                                    Conditions
+                                        (QuestBoomsiteCompliance is discovered) Equal to False
+                                        (QuestBoomsiteCompliance is completed) Equal to True
+                                Or - Any (Conditions) are true
+                                    Conditions
+                                        (QuestDustMitigation is discovered) Equal to False
+                                        (QuestDustMitigation is completed) Equal to True
+                                Or - Any (Conditions) are true
+                                    Conditions
+                                        (QuestMandatoryTraining is discovered) Equal to False
+                                        (QuestMandatoryTraining is completed) Equal to True
+                        And - All (Conditions) are true
+                            Conditions
+                                (QuestBoomWillBeBack is discovered) Equal to False
+                                (QuestBoomWillBeBack is completed) Equal to False
+                    Then - Actions
+                        Set VariableSet BoomBrothersRandomGreet = (Random integer number between 1 and 2)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BoomBrothersRandomGreet Equal to 1
+                            Then - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = Still here? Good. We need all the boom-friendly muscles we can get!
+                                Custom script:   call ExSound_Play("Boomers_0006", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BoomBrothersRandomGreet Equal to 2
+                            Then - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = You look like a walking accident — just our type!
+                                Custom script:   call ExSound_Play("Boomers_0007", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                            Else - Actions
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BoomBrothersFarewellBoolean Equal to True
+                        (QuestBoomWillBeBack is completed) Equal to True
+                    Then - Actions
+                        Set VariableSet BoomBrothersRandomGreet = (Random integer number between 1 and 4)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BoomBrothersRandomGreet Equal to 1
+                            Then - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = Everything is back how it should be - thanks to you!
+                                Custom script:   call ExSound_Play("Boomers_0096", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BoomBrothersRandomGreet Equal to 2
+                            Then - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = Have you found any rare ore vein from the mine yet?
+                                Custom script:   call ExSound_Play("Boomers_0099", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BoomBrothersRandomGreet Equal to 3
+                            Then - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = I’m now head of kaboom logistics. Self-promoted.
+                                Custom script:   call ExSound_Play("Boomers_0097", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BoomBrothersRandomGreet Equal to 4
+                            Then - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = Hey Nazgrek — want to help dig a hot tub tunnel? No reason…
+                                Custom script:   call ExSound_Play("Boomers_0099", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                            Else - Actions
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BoomBrothersFarewellBoolean Equal to True
+                        (QuestExplosiveCrisis is discovered) Equal to True
+                        (QuestExplosiveCrisis is completed) Equal to False
+                    Then - Actions
+                        Set VariableSet BoomBrothersRandomGreet = (Random integer number between 1 and 2)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BoomBrothersRandomGreet Equal to 1
+                            Then - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = Any sign of our barrels? Or did you just come back to look explosive?
+                                Custom script:   call ExSound_Play("Boomers_0017", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = It's a work in progress…
+                                Custom script:   call ExSound_Play("Nazgrek_0030", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BoomBrothersRandomGreet Equal to 2
+                            Then - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = No pressure, but without those barrels, this mine’s just a damp hole full of dreams and disappointment.
+                                Custom script:   call ExSound_Play("Boomers_0018", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                Or - Any (Conditions) are true
+                                    Conditions
+                                        (Charges remaining in (Item carried by Nazgrek of type Barrel of Explosives)) Greater than or equal to 6
+                                        (Charges remaining in (Item carried by Zulkis of type Barrel of Explosives)) Greater than or equal to 6
+                            Then - Actions
+                                -------- Run "Create Dialog" --------
+                                Trigger - Run Create BoomBrothersDialog01 <gen> (checking conditions)
+                                Trigger - Turn on (This trigger)
+                                Skip remaining actions
+                            Else - Actions
+                                -------- ======== CINEMATIC ENDS ======== --------
+                                -------- DEFAULT CAMERA --------
+                                Camera - Apply BoomBrothersCamSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                                -------- ======== CINEMATIC ENDS ======== --------
+                                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                                -------- ======== ======== --------
+                                Trigger - Turn on (This trigger)
+                                Skip remaining actions
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BoomBrothersFarewellBoolean Equal to True
+                        (QuestBoomWillBeBack is discovered) Equal to True
+                        (QuestBoomWillBeBack is completed) Equal to False
+                    Then - Actions
+                        Set VariableSet BoomBrothersRandomGreet = (Random integer number between 1 and 2)
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                BoomBrothersRandomGreet Equal to 1
+                            Then - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = Be careful, his goons have probably rigged the tunnels with turrets and traps!
+                                Custom script:   call ExSound_Play("Boomers_0089", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                            Else - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = Sprokk, can I go into the mine to blast these infiltrators?!
+                                Custom script:   call ExSound_Play("Boomers_0090", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = No Fizzit, let him do the job, we will support - 100 %.
+                                Custom script:   call ExSound_Play("Boomers_0091", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                        -------- == MAD BLIX KILLED == --------
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (QuestBoomWillBeBackReq1 is completed) Equal to True
+                            Then - Actions
+                                -------- Run "Create Dialog" --------
+                                Trigger - Run Create BoomBrothersDialog01 <gen> (checking conditions)
+                                Trigger - Turn on (This trigger)
+                                Skip remaining actions
+                            Else - Actions
+                        -------- ======== CINEMATIC ENDS ======== --------
+                        -------- DEFAULT CAMERA --------
+                        Camera - Apply BoomBrothersCamSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                        -------- ======== CINEMATIC ENDS ======== --------
+                        Trigger - Run Cinematic OFF <gen> (checking conditions)
+                        Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                        -------- ======== ======== --------
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                    Else - Actions
+                -------- Run "Create Dialog" --------
+                Trigger - Run Create BoomBrothersDialog01 <gen> (checking conditions)
+                Trigger - Turn on (This trigger)
+                Skip remaining actions
+            Else - Actions

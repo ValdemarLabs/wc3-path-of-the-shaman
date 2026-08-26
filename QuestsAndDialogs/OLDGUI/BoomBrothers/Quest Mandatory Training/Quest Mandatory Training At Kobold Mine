@@ -1,0 +1,81 @@
+Quest Mandatory Training At Kobold Mine
+    Events
+        Time - Every 5.00 seconds of game time
+    Conditions
+        Or - Any (Conditions) are true
+            Conditions
+                (KoboldCamp <gen> contains Nazgrek) Equal to True
+                (KoboldCamp <gen> contains Zulkis) Equal to True
+        (KoboldCamp <gen> contains BoomBrothers) Equal to True
+    Actions
+        -------- Check if Boom Brothers are with Player --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Distance between (Position of BoomBrothers) and (Position of Nazgrek)) Less than or equal to 1000.00
+            Then - Actions
+                -------- ======== Initial check of the selected unit ======== --------
+                Set VariableSet CV = (Custom value of BoomBrothers)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Or - Any (Conditions) are true
+                            Conditions
+                                UnitIsCasting[CV] Equal to True
+                                GCSM_UnitInCombat[CV] Equal to True
+                                UnitMoving[CV] Equal to True
+                    Then - Actions
+                        -------- ======== Cinematic / dialogue cannot be started because of the conditions ======== --------
+                        Skip remaining actions
+                        -------- ======== ======== --------
+                    Else - Actions
+                -------- ======== START ======== --------
+                Trigger - Turn off (This trigger)
+                -------- ======== CINEMATIC STARTS ======== --------
+                Trigger - Run Cinematic ON <gen> (checking conditions)
+                -------- Camera --------
+                Cinematic - Turn cinematic mode On for (All players)
+                Camera - Apply BoomBrothersCam06 <gen> for Player 1 (Red) over 0.00 seconds
+                Camera - Pan camera for Player 1 (Red) to (Position of BoomBrothers) over 0.00 seconds
+                Wait 1.00 seconds
+                Unit - Make BoomBrothers face Nazgrek over 0.75 seconds
+                Unit - Make Nazgrek face BoomBrothers over 0.75 seconds
+                Wait 1.00 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Gentlemen! We have arrived at our destination!
+                Custom script:   call ExSound_Play("Boomers_0074", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Wait 1.00 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Okay, we are not really doing this ”training” stuff, its ridiculous.
+                Custom script:   call ExSound_Play("Boomers_0075", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Let's just put check mark on all the objectives on the list to please Blix and head back.
+                Custom script:   call ExSound_Play("Boomers_0076", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = I couldn’t agree more, let’s go back.
+                Custom script:   call ExSound_Play("Nazgrek_0277", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                -------- ======== CINEMATIC ENDS ======== --------
+                -------- DEFAULT CAMERA --------
+                Camera - Apply BoomBrothersCamSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                Camera - Pan camera for Player 1 (Red) to (Position of BoomBrothers) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                -------- ======== MAD BLIX TIME ======== --------
+                Trigger - Turn on Quest Mandatory Training Back At Mine <gen>
+                Unit - Remove AtexBlix from the game
+                -------- turrets --------
+                Set VariableSet BoomBrothersPoint = (Center of BoomBrotherTurret1 <gen>)
+                Unit - Create 1 Turret (Level 10) for Neutral Passive at BoomBrothersPoint facing Default building facing degrees
+                Custom script:   call RemoveLocation(udg_BoomBrothersPoint)
+                Set VariableSet BoomBrothersPoint = (Center of BoomBrotherTurret2 <gen>)
+                Unit - Create 1 Turret (Level 10) for Neutral Passive at BoomBrothersPoint facing Default building facing degrees
+                Custom script:   call RemoveLocation(udg_BoomBrothersPoint)
+                -------- ======== ======== --------
+                Wait Campaign quest delay seconds
+                Trigger - Run Quest Mandatory Training Update <gen> (checking conditions)
+            Else - Actions

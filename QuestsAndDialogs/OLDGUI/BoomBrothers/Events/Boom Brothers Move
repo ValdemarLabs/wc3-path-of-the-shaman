@@ -1,0 +1,50 @@
+Boom Brothers Move
+    Events
+        Time - Every 12.00 seconds of game time
+    Conditions
+        InCinematic Equal to False
+        BoomBrothersMoving Equal to False
+    Actions
+        -------- ===================================== --------
+        Set VariableSet CV = (Custom value of BoomBrothers)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                IsUnitAlive[CV] Equal to True
+                UnitIsCasting[CV] Equal to False
+                GCSM_UnitInCombat[CV] Equal to False
+                UnitMoving[CV] Equal to False
+            Then - Actions
+                -------- ===================================== --------
+                Set VariableSet BoomBrothersInt = (Random integer number between 1 and 4)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BoomBrothersInt Equal to 1
+                    Then - Actions
+                        Set VariableSet BoomBrothersPoint = (Center of BoomBrothersWP01 <gen>)
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BoomBrothersInt Equal to 2
+                    Then - Actions
+                        Set VariableSet BoomBrothersPoint = (Center of BoomBrothersWP02 <gen>)
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BoomBrothersInt Equal to 3
+                    Then - Actions
+                        Set VariableSet BoomBrothersPoint = (Center of BoomBrothersWP03 <gen>)
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BoomBrothersInt Equal to 4
+                    Then - Actions
+                        Set VariableSet BoomBrothersPoint = (Center of BoomBrothersWP04 <gen>)
+                    Else - Actions
+                -------- ===================================== --------
+                -------- Run to random WP --------
+                Unit - Order BoomBrothers to Move To BoomBrothersPoint
+                -------- ===================================== --------
+                Custom script:   call RemoveLocation(udg_BoomBrothersPoint)
+                -------- ===================================== --------
+            Else - Actions
+        -------- ===================================== --------

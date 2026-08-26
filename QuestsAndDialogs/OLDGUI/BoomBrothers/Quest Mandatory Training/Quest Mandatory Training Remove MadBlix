@@ -1,0 +1,8 @@
+Quest Mandatory Training Remove MadBlix
+    Events
+        Unit - A unit enters MadBlixRemove <gen>
+    Conditions
+        (Triggering unit) Equal to BossMadBlixTemp
+    Actions
+        Trigger - Turn off (This trigger)
+        Unit - Remove (Triggering unit) from the game

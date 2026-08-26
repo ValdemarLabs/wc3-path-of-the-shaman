@@ -1,0 +1,10 @@
+BoomBrotherBarrelExplosion
+    Events
+    Conditions
+    Actions
+        Set VariableSet BoomBrothersPoint = (Position of BoomBrothers)
+        Sound - Play Explosion <gen> at 100.00% volume, attached to BoomBrothers
+        Special Effect - Create a special effect attached to the chest of BoomBrothers using Objects\Spawnmodels\Human\HCancelDeath\HCancelDeath.mdl
+        Special Effect - Destroy (Last created special effect)
+        Custom script:   call RemoveLocation(udg_BoomBrothersPoint)
+        -------- SPLASH DMG - Barrel --------

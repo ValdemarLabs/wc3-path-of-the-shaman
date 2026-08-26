@@ -1,0 +1,383 @@
+Quests of AtexBlix
+    Events
+        Player - Player 1 (Red) Selects a unit
+    Conditions
+        (Triggering unit) Equal to AtexBlix
+        (Distance between (Position of AtexBlix) and (Position of Nazgrek)) Less than or equal to 500.00
+        (Remaining time for DialogOverTimer) Equal to 0.00
+    Actions
+        -------- ======== Initial check of the selected unit ======== --------
+        Set VariableSet CV = (Custom value of (Triggering unit))
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                Or - Any (Conditions) are true
+                    Conditions
+                        UnitIsCasting[CV] Equal to True
+                        GCSM_UnitInCombat[CV] Equal to True
+                        UnitMoving[CV] Equal to True
+            Then - Actions
+                -------- ======== Cinematic / dialogue cannot be started because of the conditions ======== --------
+                Skip remaining actions
+                -------- ======== ======== --------
+            Else - Actions
+        -------- ======== START ======== --------
+        Trigger - Turn off (This trigger)
+        -------- ======== CINEMATIC STARTS ======== --------
+        Trigger - Run Cinematic ON <gen> (checking conditions)
+        -------- Camera --------
+        Cinematic - Turn cinematic mode On for (All players)
+        Camera - Apply BoomBrothersCam01 <gen> for Player 1 (Red) over 0.00 seconds
+        Camera - Pan camera for Player 1 (Red) to (Position of AtexBlix) over 0.00 seconds
+        Wait 1.00 seconds
+        Unit - Make AtexBlix face Nazgrek over 0.75 seconds
+        Unit - Make Nazgrek face AtexBlix over 0.75 seconds
+        -------- Nazgrek Greet --------
+        Custom script:   call TriggerExecute(gg_trg_Nazgrek_Greet)
+        Wait ExSoundDuration seconds
+        -------- NORMAL DIALOG - FIRST GREET --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                AtexBlixGreetBoolean Equal to False
+            Then - Actions
+                Camera - Apply BoomBrothersCam02 <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Welcome! Please sign a visitor form and grab a safety helmet if you’re about to enter the mine.
+                Custom script:   call ExSound_Play("AtexBlix_0001", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet AtexBlixGreetBoolean = True
+            Else - Actions
+                -------- NORMAL DIALOG --------
+                Camera - Apply BoomBrothersCam02 <gen> for Player 1 (Red) over 0.00 seconds
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Random integer number between 1 and 2) Equal to 1
+                    Then - Actions
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = Back again?
+                        Custom script:   call ExSound_Play("AtexBlix_0006", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                    Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Random integer number between 1 and 2) Equal to 1
+                            Then - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = Oh good, it’s you.
+                                Custom script:   call ExSound_Play("AtexBlix_0007", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+                            Else - Actions
+                                -------- ===================================== --------
+                                Set VariableSet ExSoundString = I will teach these Boom Brothers a lesson or two…
+                                Custom script:   call ExSound_Play("AtexBlix_0008", udg_ExSoundString)
+                                Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                -------- ===================================== --------
+        Wait 1.00 seconds
+        -------- INSPECT WOOD - BOOMSITE COMPLIANCE --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                AtexBlixWoodInt Less than 10
+                (QuestBoomsiteCompliance is discovered) Equal to True
+                (QuestBoomsiteCompliance is completed) Equal to False
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Charges remaining in (Item carried by Nazgrek of type Pile Of Wood)) Greater than or equal to 1
+                        (Charges remaining in (Item carried by Zulkis of type Pile Of Wood)) Greater than or equal to 1
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        -------- ============ TOTAL WOOD --------
+                        -------- Charges are consumed appropriately from Nazgrek first, then Zulkis. --------
+                        Set VariableSet AtexBlixTotalWood = 0
+                        Set VariableSet AtexBlixTotalWood = (Charges remaining in (Item carried by Nazgrek of type Pile Of Wood))
+                        -------- ======== ======== --------
+                        For each (Integer AtexBlixIntLoop) from 1 to AtexBlixTotalWood, do (Actions)
+                            Loop - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        AtexBlixWoodInt Greater than or equal to 10
+                                    Then - Actions
+                                        -------- ======== ======== --------
+                                        -------- Complete quest if all 10 collected --------
+                                        Trigger - Run Quest Boomsite Compliance Ready <gen> (ignoring conditions)
+                                        -------- ======== ======== --------
+                                        -------- ======== CINEMATIC ENDS ======== --------
+                                        -------- DEFAULT CAMERA --------
+                                        Camera - Apply BoomBrothersCamSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                                        -------- ======== CINEMATIC ENDS ======== --------
+                                        Trigger - Run Cinematic OFF <gen> (checking conditions)
+                                        Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                                        -------- ======== ======== --------
+                                        Trigger - Turn on (This trigger)
+                                        -------- ======== ======== --------
+                                        Skip remaining actions
+                                    Else - Actions
+                                -------- 50/50 chance to be good wood --------
+                                Game - Display to (All players) for 4.00 seconds the text: |cffd45e19Explosive...
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (Random integer number between 1 and 2) Equal to 1
+                                    Then - Actions
+                                        -------- GOOD WOOD --------
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                (Random integer number between 1 and 2) Equal to 1
+                                            Then - Actions
+                                                -------- ===================================== --------
+                                                Set VariableSet ExSoundString = Ah! This one seems fine, no warping and overall looks great.
+                                                Custom script:   call ExSound_Play("AtexBlix_0029", udg_ExSoundString)
+                                                Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                                -------- ===================================== --------
+                                            Else - Actions
+                                                -------- ===================================== --------
+                                                Set VariableSet ExSoundString = Beautiful grains! No rot, no termites, barely any bite marks. This stuff screams safe detonation zone.
+                                                Custom script:   call ExSound_Play("AtexBlix_0030", udg_ExSoundString)
+                                                Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                                -------- ===================================== --------
+                                        Set VariableSet AtexBlixBadWood = False
+                                        Set VariableSet AtexBlixWoodInt = (AtexBlixWoodInt + 1)
+                                        -------- Update quest log --------
+                                        Trigger - Run Quest Boomsite Compliance Update <gen> (checking conditions)
+                                        -------- ======== ======== --------
+                                    Else - Actions
+                                        -------- BAD WOOD --------
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                (Random integer number between 1 and 2) Equal to 1
+                                            Then - Actions
+                                                -------- ===================================== --------
+                                                Set VariableSet ExSoundString = Nope. Too bendy. This would turn into a noodle during the first controlled detonation.
+                                                Custom script:   call ExSound_Play("AtexBlix_0031", udg_ExSoundString)
+                                                Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                                -------- ===================================== --------
+                                            Else - Actions
+                                                -------- ===================================== --------
+                                                Set VariableSet ExSoundString = Did this come from kobolds? Either way, rejected!
+                                                Custom script:   call ExSound_Play("AtexBlix_0032", udg_ExSoundString)
+                                                Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                                -------- ===================================== --------
+                                        Set VariableSet AtexBlixBadWood = True
+                                        -------- ======== ======== --------
+                                        -------- Boomers additional dialog --------
+                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                            If - Conditions
+                                                AtexBlixBadWood Equal to False
+                                            Then - Actions
+                                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                    If - Conditions
+                                                        (Random integer number between 1 and 2) Equal to 1
+                                                    Then - Actions
+                                                        Unit - Make BoomBrothers face AtexBlix over 0.75 seconds
+                                                        Unit - Make AtexBlix face BoomBrothers over 0.75 seconds
+                                                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                                            If - Conditions
+                                                                (Random integer number between 1 and 2) Equal to 1
+                                                            Then - Actions
+                                                                -------- ===================================== --------
+                                                                Set VariableSet ExSoundString = Tastes like real wood, too! 
+                                                                Custom script:   call ExSound_Play("Boomers_0029", udg_ExSoundString)
+                                                                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                                                -------- ===================================== --------
+                                                                Set VariableSet ExSoundString = Fizzit, stop licking the support beams!
+                                                                Custom script:   call ExSound_Play("Boomers_0030", udg_ExSoundString)
+                                                                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                                                -------- ===================================== --------
+                                                            Else - Actions
+                                                                -------- ===================================== --------
+                                                                Set VariableSet ExSoundString = So... we’re good to blast now?
+                                                                Custom script:   call ExSound_Play("Boomers_0031", udg_ExSoundString)
+                                                                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                                                                -------- ===================================== --------
+                                                        Unit - Make Nazgrek face AtexBlix over 0.75 seconds
+                                                        -------- ======== ======== --------
+                                                    Else - Actions
+                                                        -------- ======== ======== --------
+                                            Else - Actions
+                                -------- ======== ======== --------
+                                -------- Remove quest items --------
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (Charges remaining in (Item carried by Nazgrek of type Pile Of Wood)) Greater than or equal to 1
+                                        (Charges remaining in (Item carried by Zulkis of type Pile Of Wood)) Less than 1
+                                    Then - Actions
+                                        Item - Set charges remaining in (Item carried by Nazgrek of type Pile Of Wood) to ((Charges remaining in (Item carried by Nazgrek of type Pile Of Wood)) - 1)
+                                    Else - Actions
+                                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                                    If - Conditions
+                                        (Charges remaining in (Item carried by Zulkis of type Pile Of Wood)) Greater than or equal to 1
+                                        (Charges remaining in (Item carried by Nazgrek of type Pile Of Wood)) Less than 1
+                                    Then - Actions
+                                        Item - Set charges remaining in (Item carried by Zulkis of type Pile Of Wood) to ((Charges remaining in (Item carried by Zulkis of type Pile Of Wood)) - 1)
+                                    Else - Actions
+                                -------- Remove Charged items that have 0 charges --------
+                                Trigger - Run Item Stack Clear Empty <gen> (checking conditions)
+                                -------- ======== ======== --------
+                        -------- ======== CINEMATIC ENDS ======== --------
+                        -------- DEFAULT CAMERA --------
+                        Camera - Apply BoomBrothersCamSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                        -------- ======== CINEMATIC ENDS ======== --------
+                        Trigger - Run Cinematic OFF <gen> (checking conditions)
+                        Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                        -------- ======== ======== --------
+                        Trigger - Turn on (This trigger)
+                        -------- ======== ======== --------
+                    Else - Actions
+                        -------- ======== CINEMATIC ENDS ======== --------
+                        -------- DEFAULT CAMERA --------
+                        Camera - Apply BoomBrothersCamSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                        -------- ======== CINEMATIC ENDS ======== --------
+                        Trigger - Run Cinematic OFF <gen> (checking conditions)
+                        Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                        -------- ======== ======== --------
+                        Trigger - Turn on (This trigger)
+                        Skip remaining actions
+                        -------- ======== ======== --------
+            Else - Actions
+        -------- MORE HAZARD MITIGATION --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestBoomsiteCompliance is completed) Equal to True
+                (QuestDustMitigation is discovered) Equal to True
+                (QuestDustMitigation is completed) Equal to False
+                Or - Any (Conditions) are true
+                    Conditions
+                        And - All (Conditions) are true
+                            Conditions
+                                (Nazgrek has an item of type Vent-o-Matic Blower R200) Equal to True
+                                (Nazgrek has an item of type Dust Collector M25) Equal to True
+                                (Nazgrek has an item of type Dustfilter 9000-BA) Equal to True
+                        And - All (Conditions) are true
+                            Conditions
+                                (Zulkis has an item of type Vent-o-Matic Blower R200) Equal to True
+                                (Zulkis has an item of type Dust Collector M25) Equal to True
+                                (Zulkis has an item of type Dustfilter 9000-BA) Equal to True
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        -------- ======== ======== --------
+                        -------- Remove quest items --------
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Nazgrek has an item of type Vent-o-Matic Blower R200) Equal to True
+                                (Nazgrek has an item of type Dust Collector M25) Equal to True
+                                (Nazgrek has an item of type Dustfilter 9000-BA) Equal to True
+                            Then - Actions
+                                Item - Remove (Item carried by Nazgrek of type Vent-o-Matic Blower R200)
+                                Item - Remove (Item carried by Nazgrek of type Dust Collector M25)
+                                Item - Remove (Item carried by Nazgrek of type Dustfilter 9000-BA)
+                            Else - Actions
+                        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                            If - Conditions
+                                (Zulkis has an item of type Vent-o-Matic Blower R200) Equal to True
+                                (Zulkis has an item of type Dust Collector M25) Equal to True
+                                (Zulkis has an item of type Dustfilter 9000-BA) Equal to True
+                            Then - Actions
+                                Item - Remove (Item carried by Zulkis of type Vent-o-Matic Blower R200)
+                                Item - Remove (Item carried by Zulkis of type Dust Collector M25)
+                                Item - Remove (Item carried by Zulkis of type Dustfilter 9000-BA)
+                            Else - Actions
+                        -------- Remove Charged items that have 0 charges --------
+                        Trigger - Run Item Stack Clear Empty <gen> (checking conditions)
+                        -------- ======== ======== --------
+                        Unit - Add Ghost (Visible) to AtexBlix
+                        Set VariableSet BoomBrothersPoint = (Center of BoomBrothersWP02 <gen>)
+                        Unit - Order AtexBlix to Move To BoomBrothersPoint
+                        Custom script:   call RemoveLocation(udg_BoomBrothersPoint)
+                        Unit - Make BoomBrothers face AtexBlix over 3.00 seconds
+                        Unit - Make Nazgrek face AtexBlix over 3.00 seconds
+                        Wait Campaign quest delay seconds
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = Filter’s aligned... airflow steady... yep, still louder than a kodo stampede, but safe enough.
+                        Custom script:   call ExSound_Play("AtexBlix_0041", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                        Wait Campaign quest delay seconds
+                        Set VariableSet BoomBrothersPoint = (Center of BoomBrothersWP01 <gen>)
+                        Unit - Order AtexBlix to Move To BoomBrothersPoint
+                        Custom script:   call RemoveLocation(udg_BoomBrothersPoint)
+                        Unit - Make BoomBrothers face AtexBlix over 3.00 seconds
+                        Unit - Make Nazgrek face AtexBlix over 3.00 seconds
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = Excellent airflow! We’ve reduced spontaneous combustion risk by 82%. The air's still awful, but at least it won't ignite.
+                        Custom script:   call ExSound_Play("AtexBlix_0042", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                        Unit - Remove Ghost (Visible) from AtexBlix
+                        Unit - Make BoomBrothers face AtexBlix over 3.00 seconds
+                        Unit - Make Nazgrek face AtexBlix over 3.00 seconds
+                        Unit - Make AtexBlix face BoomBrothers over 0.75 seconds
+                        Wait 2.00 seconds
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = Alright. Support beams secured. Dust under control. But what happens when something goes boom where it shouldn’t?
+                        Custom script:   call ExSound_Play("AtexBlix_0047", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                        Unit - Make AtexBlix face BoomBrothers over 0.75 seconds
+                        Unit - Make Nazgrek face BoomBrothers over 0.75 seconds
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = We run. Screaming. It's tradition!
+                        Custom script:   call ExSound_Play("Boomers_0052", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = Usually in circles. Once Fizzit even drilled a hole just by running around.
+                        Custom script:   call ExSound_Play("Boomers_0053", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                        Unit - Make Nazgrek face AtexBlix over 0.75 seconds
+                        Unit - Make AtexBlix face Nazgrek over 0.75 seconds
+                        Wait 1.00 seconds
+                        Unit - Make AtexBlix face BoomBrothers over 0.75 seconds
+                        Unit - Make Nazgrek face BoomBrothers over 0.75 seconds
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = NOW we can blast, right?! My boom finger’s twitching!!!
+                        Custom script:   call ExSound_Play("Boomers_0047", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                        Unit - Make BoomBrothers face AtexBlix over 0.75 seconds
+                        Unit - Make Nazgrek face AtexBlix over 0.75 seconds
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = Not yet! Section 4-A of the um…. Goblin Safety Manual — all mine workers must complete mandatory training!
+                        Custom script:   call ExSound_Play("AtexBlix_0044", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                        Unit - Make AtexBlix face Nazgrek over 0.75 seconds
+                        Unit - Make Nazgrek face BoomBrothers over 0.75 seconds
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = Are you serious???
+                        Custom script:   call ExSound_Play("Boomers_0048", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                        Wait 1.00 seconds
+                        -------- ======== CINEMATIC ENDS ======== --------
+                        -------- DEFAULT CAMERA --------
+                        Camera - Apply BoomBrothersCamSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                        -------- ======== CINEMATIC ENDS ======== --------
+                        Trigger - Run Cinematic OFF <gen> (checking conditions)
+                        Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                        -------- ======== ======== --------
+                        Trigger - Turn on (This trigger)
+                        -------- ======== ======== --------
+                        -------- Update quest log --------
+                        Trigger - Run Quest More Hazard Mitigation Completed <gen> (checking conditions)
+                        -------- NEW QUEST AVAILABLE --------
+                        Set VariableSet QuestGiverUnitTemp = BoomBrothers
+                        Custom script:   call CreateDummyQuestIcon(udg_QuestGiverUnitTemp, "normal", 2)
+                        -------- ======== ======== --------
+                    Else - Actions
+                        -------- ======== ======== --------
+            Else - Actions
+                -------- ======== CINEMATIC ENDS ======== --------
+                -------- DEFAULT CAMERA --------
+                Camera - Apply BoomBrothersCamSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                -------- ======== ======== --------
+                Trigger - Turn on (This trigger)
+                Skip remaining actions
+                -------- ======== ======== --------
+        -------- ======== ======== --------

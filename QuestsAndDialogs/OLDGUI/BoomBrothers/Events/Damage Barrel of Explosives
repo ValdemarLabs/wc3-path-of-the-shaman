@@ -1,0 +1,55 @@
+Damage Barrel of Explosives
+    Events
+        Game - DamageEvent becomes Equal to 1.00
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (DamageEventTarget has an item of type Barrel of Explosives) Equal to True
+                (Random integer number between 1 and 5) Equal to 1
+            Then - Actions
+                Sound - Play Explosion <gen> at 100.00% volume, attached to DamageEventTarget
+                Special Effect - Create a special effect attached to the chest of DamageEventTarget using Objects\Spawnmodels\Human\HCancelDeath\HCancelDeath.mdl
+                Special Effect - Destroy (Last created special effect)
+                --------   --------
+                -------- DMG --------
+                Set VariableSet DamageEventAmount = 600.00
+                Set VariableSet DamageEventType = DamageTypeCriticalStrike
+                --------   --------
+                -------- SPLASH DMG --------
+                Set VariableSet VarPoint = (Position of DamageEventTarget)
+                Unit - Create 1 DummyDamage for Neutral Passive at VarPoint facing Default building facing degrees
+                Unit - Add a 0.50 second Generic expiration timer to (Last created unit)
+                Unit - Cause (Last created unit) to damage circular area after 0.00 seconds of radius 500.00 at VarPoint, dealing 250.00 damage of attack type Chaos and damage type Fire
+                -------- Destroy all items of type --------
+                Item - Remove (Item carried by DamageEventTarget of type Barrel of Explosives)
+                -------- Leaks --------
+                Custom script:   call RemoveLocation(udg_VarPoint)
+            Else - Actions
+        -------- IF The barrel(s) are carried in BAG --------
+        Unit Group - Pick every unit in VarBags and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        ((Picked unit) has an item of type Barrel of Explosives) Equal to True
+                        (Random integer number between 1 and 5) Equal to 1
+                    Then - Actions
+                        Sound - Play Explosion <gen> at 100.00% volume, attached to Nazgrek
+                        Special Effect - Create a special effect attached to the chest of Nazgrek using Objects\Spawnmodels\Human\HCancelDeath\HCancelDeath.mdl
+                        Special Effect - Destroy (Last created special effect)
+                        --------   --------
+                        -------- DMG --------
+                        Set VariableSet DamageEventAmount = 600.00
+                        Set VariableSet DamageEventType = DamageTypeCriticalStrike
+                        --------   --------
+                        -------- SPLASH DMG --------
+                        Set VariableSet VarPoint = (Position of Nazgrek)
+                        Unit - Create 1 DummyDamage for Neutral Passive at VarPoint facing Default building facing degrees
+                        Unit - Add a 0.50 second Generic expiration timer to (Last created unit)
+                        Unit - Cause (Last created unit) to damage circular area after 0.00 seconds of radius 500.00 at VarPoint, dealing 250.00 damage of attack type Chaos and damage type Fire
+                        -------- Destroy all items of type --------
+                        Item - Remove (Item carried by (Picked unit) of type Barrel of Explosives)
+                        Item - Remove (Item carried by Nazgrek of type Barrel of Explosives)
+                        -------- Leaks --------
+                        Custom script:   call RemoveLocation(udg_VarPoint)
+                    Else - Actions

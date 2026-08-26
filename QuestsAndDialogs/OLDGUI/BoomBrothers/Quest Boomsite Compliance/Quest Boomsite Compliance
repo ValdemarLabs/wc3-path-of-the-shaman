@@ -1,0 +1,10 @@
+Quest Boomsite Compliance
+    Events
+    Conditions
+    Actions
+        -------- RESET Quest, if previously done --------
+        Quest - Mark QuestBoomsiteCompliance as Incomplete
+        Quest - Mark QuestBoomsiteComplianceReq1 as Incomplete
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Boomsite Compliance Discover <gen> (checking conditions)
+        Trigger - Remove (This trigger) from the trigger queue

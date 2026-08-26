@@ -1,0 +1,149 @@
+Create BoomBrothersDialog01
+    Events
+    Conditions
+    Actions
+        Dialog - Clear BoomBrothersDialog01
+        Dialog - Change the title of BoomBrothersDialog01 to Boom Brothers
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestExplosiveCrisis is discovered) Equal to False
+            Then - Actions
+                -------- Quest - Explosive Crisis - Accept --------
+                Dialog - Create a dialog button for BoomBrothersDialog01 labelled Explosive Crisis (Q...
+                Set VariableSet BoomBrothersDialog01Q1 = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show BoomBrothersDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestExplosiveCrisis is discovered) Equal to True
+                (QuestExplosiveCrisis is completed) Equal to False
+                Or - Any (Conditions) are true
+                    Conditions
+                        (Charges remaining in (Item carried by Nazgrek of type Barrel of Explosives)) Greater than or equal to 6
+                        (Charges remaining in (Item carried by Zulkis of type Barrel of Explosives)) Greater than or equal to 6
+            Then - Actions
+                -------- Quest  - Completion --------
+                Dialog - Create a dialog button for BoomBrothersDialog01 labelled Explosive Crisis (C...
+                Set VariableSet BoomBrothersDialog01Q1C = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show BoomBrothersDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestExplosiveCrisis is completed) Equal to True
+                (QuestBoomsiteCompliance is discovered) Equal to False
+            Then - Actions
+                -------- Quest - Boomsite Compliance - Accept --------
+                Dialog - Create a dialog button for BoomBrothersDialog01 labelled Boomsite Compliance...
+                Set VariableSet BoomBrothersDialog02Q1 = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show BoomBrothersDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestExplosiveCrisis is completed) Equal to True
+                (QuestBoomsiteCompliance is discovered) Equal to True
+                (QuestBoomsiteCompliance is completed) Equal to False
+                AtexBlixWoodInt Greater than or equal to 10
+            Then - Actions
+                -------- Quest  - Completion --------
+                Dialog - Create a dialog button for BoomBrothersDialog01 labelled Boomsite Compliance...
+                Set VariableSet BoomBrothersDialog02Q1C = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show BoomBrothersDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestExplosiveCrisis is completed) Equal to True
+                (QuestBoomsiteCompliance is completed) Equal to True
+                (QuestDustMitigation is discovered) Equal to False
+            Then - Actions
+                -------- Quest - More Hazard Mitigation - Accept --------
+                Dialog - Create a dialog button for BoomBrothersDialog01 labelled More Hazard Mitigat...
+                Set VariableSet BoomBrothersDialog03Q1 = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show BoomBrothersDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestExplosiveCrisis is completed) Equal to True
+                (QuestBoomsiteCompliance is completed) Equal to True
+                (QuestDustMitigation is completed) Equal to True
+                (QuestMandatoryTraining is discovered) Equal to False
+            Then - Actions
+                -------- Quest - Mandatory Training - Accept --------
+                Dialog - Create a dialog button for BoomBrothersDialog01 labelled Mandatory Training ...
+                Set VariableSet BoomBrothersDialog04Q1 = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show BoomBrothersDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestExplosiveCrisis is completed) Equal to True
+                (QuestBoomsiteCompliance is completed) Equal to True
+                (QuestDustMitigation is completed) Equal to True
+                (QuestMandatoryTraining is discovered) Equal to True
+                (QuestMandatoryTraining is completed) Equal to False
+                BoomBrothersFollow Equal to True
+            Then - Actions
+                -------- Stop following --------
+                Dialog - Create a dialog button for BoomBrothersDialog01 labelled Stop following
+                Set VariableSet BoomBrothersDialogStopFollow = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show BoomBrothersDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestExplosiveCrisis is completed) Equal to True
+                (QuestBoomsiteCompliance is completed) Equal to True
+                (QuestDustMitigation is completed) Equal to True
+                (QuestMandatoryTraining is discovered) Equal to True
+                (QuestMandatoryTraining is completed) Equal to False
+                BoomBrothersFollow Equal to False
+            Then - Actions
+                -------- start follow --------
+                Dialog - Create a dialog button for BoomBrothersDialog01 labelled Follow me
+                Set VariableSet BoomBrothersDialogStopFollow = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show BoomBrothersDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestExplosiveCrisis is completed) Equal to True
+                (QuestBoomsiteCompliance is completed) Equal to True
+                (QuestDustMitigation is completed) Equal to True
+                (QuestMandatoryTraining is completed) Equal to True
+                (QuestBoomWillBeBack is discovered) Equal to False
+            Then - Actions
+                -------- Quest - Boom Will Be Back - Accept --------
+                Dialog - Create a dialog button for BoomBrothersDialog01 labelled Boom Will Be Back (...
+                Set VariableSet BoomBrothersDialog05Q1 = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show BoomBrothersDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestExplosiveCrisis is completed) Equal to True
+                (QuestBoomsiteCompliance is completed) Equal to True
+                (QuestDustMitigation is completed) Equal to True
+                (QuestMandatoryTraining is completed) Equal to True
+                (QuestBoomWillBeBack is discovered) Equal to True
+                (QuestBoomWillBeBackReq1 is completed) Equal to True
+                (QuestBoomWillBeBack is completed) Equal to False
+            Then - Actions
+                -------- Quest - Boom Will Be Back - Completion --------
+                Dialog - Create a dialog button for BoomBrothersDialog01 labelled Boom Will Be Back (...
+                Set VariableSet BoomBrothersDialog05Q1C = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show BoomBrothersDialog01 for Player 1 (Red)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+            Then - Actions
+                -------- Exit dialog --------
+                Dialog - Create a dialog button for BoomBrothersDialog01 labelled - Farewell
+                Set VariableSet BoomBrothersDialogFarewell = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show BoomBrothersDialog01 for Player 1 (Red)
+            Else - Actions

@@ -1,0 +1,11 @@
+Quest Explosive Crisis
+    Events
+    Conditions
+    Actions
+        -------- RESET Quest, if previously done --------
+        Quest - Mark QuestExplosiveCrisis as Incomplete
+        Quest - Mark QuestExplosiveCrisisReq1 as Incomplete
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Explosive Crisis Discover <gen> (checking conditions)
+        Trigger - Run Hint 11 Barrels of Explosives <gen> (checking conditions)
+        Trigger - Remove (This trigger) from the trigger queue

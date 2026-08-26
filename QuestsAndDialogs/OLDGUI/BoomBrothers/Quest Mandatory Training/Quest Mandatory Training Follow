@@ -1,0 +1,33 @@
+Quest Mandatory Training Follow
+    Events
+        Time - Every 2.00 seconds of game time
+    Conditions
+    Actions
+        -------- BOOM BROTHERS --------
+        Set VariableSet CV = (Custom value of BoomBrothers)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                IsUnitAlive[CV] Equal to True
+                GCSM_UnitInCombat[CV] Equal to False
+                UnitMoving[CV] Equal to False
+            Then - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        (Distance between (Position of BoomBrothers) and (Position of Nazgrek)) Less than 1000.00
+                    Then - Actions
+                        Unit - Order BoomBrothers to Right-Click Nazgrek
+                    Else - Actions
+                        Unit - Order BoomBrothers to Stop.
+            Else - Actions
+        -------- GOBLIN MINERS --------
+        Unit Group - Pick every unit in BoomBrotherGroup and do (Actions)
+            Loop - Actions
+                Set VariableSet CV = (Custom value of (Picked unit))
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        IsUnitAlive[CV] Equal to True
+                        UnitMoving[CV] Equal to False
+                        (Unit-type of (Picked unit)) Equal to Goblin Miner (Level 10)
+                    Then - Actions
+                        Unit - Order (Picked unit) to Right-Click BoomBrothers
+                    Else - Actions

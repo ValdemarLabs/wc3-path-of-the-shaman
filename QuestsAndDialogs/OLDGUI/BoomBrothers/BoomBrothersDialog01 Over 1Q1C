@@ -1,0 +1,78 @@
+BoomBrothersDialog01 Over 1Q1C
+    Events
+        Player - Player 1 (Red) skips a cinematic sequence
+    Conditions
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- SKIPPED --------
+        Set VariableSet DialogSkipped = True
+        -------- SKIPPED --------
+        -------- Give Item --------
+        -------- Fade Out --------
+        Cinematic - Fade out over 0.50 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        Wait 0.50 seconds
+        -------- Reset Camera --------
+        Camera - Reset camera smoothing factor
+        Camera - Reset camera for Player 1 (Red) to standard game-view over 0.00 seconds
+        Camera - Pan camera for Player 1 (Red) to (Target of BoomBrothersCamSkipped <gen>) over 0.00 seconds
+        Wait 0.50 seconds
+        -------- Fade In --------
+        Cinematic - Fade in over 0.50 seconds using texture White Mask and color (0.00%, 0.00%, 0.00%) with 0.00% transparency
+        Wait 0.50 seconds
+        -------- ======== CINEMATIC ENDS ======== --------
+        -------- DEFAULT CAMERA --------
+        Camera - Apply BoomBrothersCamSkipped <gen> for Player 1 (Red) over 0.00 seconds
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Charges remaining in (Item carried by Nazgrek of type Barrel of Explosives)) Greater than or equal to 6
+                (Charges remaining in (Item carried by Zulkis of type Barrel of Explosives)) Less than 6
+            Then - Actions
+                Item - Set charges remaining in (Item carried by Nazgrek of type Barrel of Explosives) to ((Charges remaining in (Item carried by Nazgrek of type Barrel of Explosives)) - 6)
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Charges remaining in (Item carried by Zulkis of type Barrel of Explosives)) Greater than or equal to 6
+                (Charges remaining in (Item carried by Nazgrek of type Barrel of Explosives)) Less than 6
+            Then - Actions
+                Item - Set charges remaining in (Item carried by Zulkis of type Barrel of Explosives) to ((Charges remaining in (Item carried by Zulkis of type Barrel of Explosives)) - 6)
+            Else - Actions
+        -------- Remove Charged items that have 0 charges --------
+        Trigger - Run Item Stack Clear Empty <gen> (checking conditions)
+        -------- ===================================== --------
+        -------- ======== TEMPORALY TURN OFF BOOMERS MOVEMENT ======== --------
+        Trigger - Turn off Boom Brothers Move <gen>
+        -------- ===================================== --------
+        -------- ======== CINEMATIC ENDS ======== --------
+        Trigger - Run Cinematic OFF <gen> (checking conditions)
+        Wait Campaign quest delay seconds
+        Trigger - Run Quest Explosive Crisis Completed <gen> (checking conditions)
+        -------- ===================================== --------
+        -------- ======== PRE-EVENT to next QUEST ======== --------
+        Wait Campaign quest delay seconds
+        -------- ===================================== --------
+        Set VariableSet ExSoundString = Now we can finally blast Shaft B open!
+        Custom script:   call ExSound_Play("Boomers_0025", udg_ExSoundString)
+        Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+        -------- ===================================== --------
+        Wait 1.50 seconds
+        Set VariableSet BoomBrothersPoint = ((Position of BoomBrothers) offset by 256.00 towards (Facing of BoomBrothers) degrees.)
+        Unit - Order AtexBlix to Move To BoomBrothersPoint
+        Custom script:   call RemoveLocation(udg_BoomBrothersPoint)
+        Wait 1.00 seconds
+        Unit - Make BoomBrothers face AtexBlix over 0.75 seconds
+        Wait 0.50 seconds
+        Unit - Make AtexBlix face BoomBrothers over 0.75 seconds
+        -------- ===================================== --------
+        Set VariableSet ExSoundString = Whoah! Unauthorized explosive transfer? Without my hazard analysis? You gobbos just love tempting fate, huh?
+        Custom script:   call ExSound_Play("AtexBlix_0023", udg_ExSoundString)
+        Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+        -------- ===================================== --------
+        Set VariableSet ExSoundString = Relax, Blix! He barely dropped any barrels!
+        Custom script:   call ExSound_Play("Boomers_0026", udg_ExSoundString)
+        Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+        -------- ===================================== --------
+        Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+        -------- NEW QUEST AVAILABLE --------
+        -------- ======= QUEST State 1-5: (unavailable, available, in progress, complete, ready to turn in) --------
+        Set VariableSet QuestGiverUnitTemp = BoomBrothers
+        Custom script:   call CreateDummyQuestIcon(udg_QuestGiverUnitTemp, "normal", 2)

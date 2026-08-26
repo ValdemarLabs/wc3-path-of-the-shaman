@@ -1,0 +1,10 @@
+Quest Boom Will Be Back
+    Events
+    Conditions
+    Actions
+        -------- RESET Quest, if previously done --------
+        Quest - Mark QuestBoomWillBeBack as Incomplete
+        Quest - Mark QuestBoomWillBeBackReq1 as Incomplete
+        Wait Campaign quest delay game-time seconds
+        Trigger - Run Quest Boom Will Be Back Discover <gen> (checking conditions)
+        Trigger - Remove (This trigger) from the trigger queue

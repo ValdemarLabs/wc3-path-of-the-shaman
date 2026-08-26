@@ -1,0 +1,615 @@
+Button Pressed in BoomBrothersDialog01
+    Events
+        Dialog - A dialog button is clicked for BoomBrothersDialog01
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to BoomBrothersDialog01Q1
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- EXPLOSIVE CRISIS - ACCEPT --------
+                Set VariableSet BoomBrothersFarewellBoolean = True
+                Trigger - Turn on BoomBrothersDialog01 Over 1Q1 <gen>
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Camera - Apply BoomBrothersCam02 <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Our precious boom barrels are gone, stolen right out from under our soot-covered noses during the night! 
+                Custom script:   call ExSound_Play("Boomers_0010", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = We can't leave the mine to chase 'em down — if we do, someone else’ll stake a claim before sunrise!
+                Custom script:   call ExSound_Play("Boomers_0011", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Camera - Apply BoomBrothersCam03 <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = You look tough and possibly reckless. Find our missing barrels... or bring us new ones. Either way, we need boom, fast!
+                Custom script:   call ExSound_Play("Boomers_0012", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Wait 1.00 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Camera - Apply BoomBrothersCam04 <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = I’ll find your barrels. If they explode on me, I’m sending the pieces back one at a time
+                Custom script:   call ExSound_Play("Nazgrek_0262", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = That’s the spirit! Just remember — the barrels are unstable. Don’t smack ‘em, shake ‘em, or think too hard near ‘em!
+                Custom script:   call ExSound_Play("Boomers_0015", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Find the thieves, check shady traders, maybe shake a kobold or two. Just bring us our boom back!
+                Custom script:   call ExSound_Play("Boomers_0016", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- OVER --------
+                Trigger - Run BoomBrothersDialog01 Over 1Q1 <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to BoomBrothersDialog01Q1C
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- EXPLOSIVE CRISIS - COMPLETED --------
+                Set VariableSet BoomBrothersFarewellBoolean = True
+                Trigger - Turn on BoomBrothersDialog01 Over 1Q1C <gen>
+                Cinematic - Disable user control for (All players).
+                Camera - Apply BoomBrothersCam03 <gen> for Player 1 (Red) over 0.00 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = I found your barrels. Don't let anyone steal them this time.
+                Custom script:   call ExSound_Play("Nazgrek_0264", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Yes! Our beautiful barrels! Still tickin’ too... oh wait—NO don’t touch that fuse—!"
+                Custom script:   call ExSound_Play("Boomers_0019", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Custom script:   call TriggerExecute(gg_trg_BoomBrotherBarrelExplosion)
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Wait 2.00 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = You’ve got the guts and the muscle. If we blow open the next shaft, you're gettin’ a cut!
+                Custom script:   call ExSound_Play("Boomers_0019", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- OVER --------
+                Trigger - Run BoomBrothersDialog01 Over 1Q1C <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to BoomBrothersDialog02Q1
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- BOOMSITE COMPLIANCE - ACCEPT --------
+                Set VariableSet BoomBrothersFarewellBoolean = True
+                Trigger - Turn on BoomBrothersDialog01 Over 2Q1 <gen>
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Camera - Apply BoomBrothersCam02 <gen> for Player 1 (Red) over 0.00 seconds
+                Unit - Make Nazgrek face AtexBlix over 0.75 seconds
+                Unit - Make BoomBrothers face AtexBlix over 0.75 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Excellent delivery! Zero explosion rate. But now we’ve got a structural integrity nightmare. These tunnels are held up by dreams and termites!
+                Custom script:   call ExSound_Play("AtexBlix_0024", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Unit - Make Nazgrek face BoomBrothers over 0.75 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Come on, Blix! That support beam only creaks if you sneeze directly at it.
+                Custom script:   call ExSound_Play("Boomers_0027", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Unit - Make BoomBrothers face Nazgrek over 0.75 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Besides, wood's wood. Oak, pine, rotted fence post—it’s all the same underground.
+                Custom script:   call ExSound_Play("Boomers_0028", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Unit - Make Nazgrek face AtexBlix over 0.75 seconds
+                Unit - Make BoomBrothers face AtexBlix over 0.75 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Wrong. According to Goblin Boom Safety Standard 6.9, subsection ‘Splinters & Doom’, we need quality timber to reinforce these shafts.
+                Custom script:   call ExSound_Play("AtexBlix_0025", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Unit - Make BoomBrothers face Nazgrek over 0.75 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Let me guess. I’m now your certified log-hauler?
+                Custom script:   call ExSound_Play("Nazgrek_0265", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Unit - Make BoomBrothers face AtexBlix over 0.75 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Incorrect. You will be working as Unofficial Assistant Safety Inspector under my supervision. No badge, just lots of walking.
+                Custom script:   call ExSound_Play("AtexBlix_0026", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Unit - Make BoomBrothers face Nazgrek over 0.75 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Every time I help you goblins, I get roped into more work.
+                Custom script:   call ExSound_Play("Nazgrek_0266", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Unit - Make BoomBrothers face AtexBlix over 0.75 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = You’ll need to obtain ten logs that meet Goblin Reinforcement Class-3B standards. That means: low sap, high tension, no mushrooms and not curved like banana.
+                Custom script:   call ExSound_Play("AtexBlix_0027", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Unit - Make BoomBrothers face Nazgrek over 0.75 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Got it.
+                Custom script:   call ExSound_Play("Nazgrek_0267", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Unit - Make BoomBrothers face AtexBlix over 0.75 seconds
+                -------- OVER --------
+                Trigger - Run BoomBrothersDialog01 Over 2Q1 <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to BoomBrothersDialog02Q1C
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- BOOMSITE COMPLIANCE - COMPLETED --------
+                Set VariableSet BoomBrothersFarewellBoolean = True
+                Trigger - Turn on BoomBrothersDialog01 Over 2Q1C <gen>
+                Cinematic - Disable user control for (All players).
+                Camera - Apply BoomBrothersCam03 <gen> for Player 1 (Red) over 0.00 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Unit - Make AtexBlix face Nazgrek over 0.75 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = These logs should fulfill the requirements of your standards.
+                Custom script:   call ExSound_Play("Nazgrek_0270", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Unit - Make Nazgrek face AtexBlix over 0.75 seconds
+                Unit - Make BoomBrothers face AtexBlix over 0.75 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Ten logs of glory! This mine might not collapse now…
+                Custom script:   call ExSound_Play("AtexBlix_0033", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Unit - Make Nazgrek face BoomBrothers over 0.75 seconds
+                Unit - Make AtexBlix face BoomBrothers over 0.75 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = We’re actually following safety regs? What’s next, unionizing!?
+                Custom script:   call ExSound_Play("Boomers_0032", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Don’t say a thing anymore or else we will keep doing these stupid things forever…
+                Custom script:   call ExSound_Play("Boomers_0033", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Wait 1.00 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Can we explode things now? Please?
+                Custom script:   call ExSound_Play("Boomers_0035", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Let’s create the support columns first, perhaps we can then start blasting….
+                Custom script:   call ExSound_Play("Boomers_0036", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- OVER --------
+                Trigger - Run BoomBrothersDialog01 Over 2Q1C <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to BoomBrothersDialog03Q1
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- MORE HAZARD MITIGATION - ACCEPT --------
+                Set VariableSet BoomBrothersFarewellBoolean = True
+                Trigger - Turn on BoomBrothersDialog01 Over 3Q1 <gen>
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Camera - Apply BoomBrothersCam02 <gen> for Player 1 (Red) over 0.00 seconds
+                Unit - Make BoomBrothers face AtexBlix over 0.75 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = He’s not joking. Last time we skipped this, Sprokk’s eyebrows caught fire for a week.
+                Custom script:   call ExSound_Play("Boomers_0045", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Still smelled better than the soup Fizzit made that night.
+                Custom script:   call ExSound_Play("Boomers_0046", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Next he'll make us wear full-face anti-static sniff masks!
+                Custom script:   call ExSound_Play("Boomers_0044", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Unit - Make Nazgrek face AtexBlix over 0.75 seconds
+                Unit - Make BoomBrothers face AtexBlix over 0.75 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Not a bad idea, actually. But first — we need proper ventilation and dust-clearing equipment.
+                Custom script:   call ExSound_Play("AtexBlix_0038", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Unit - Make BoomBrothers face Nazgrek over 0.75 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = You mean... sweeping?
+                Custom script:   call ExSound_Play("Nazgrek_0271", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Unit - Make BoomBrothers face AtexBlix over 0.75 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Before any sanctioned detonation, subsection 3-C of the Goblin Kaboom Safety Doctrine demands dust mitigation
+                Custom script:   call ExSound_Play("AtexBlix_0039", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = We need proper ventilation. Industrial-grade goblin dust mitigation tech: filters, blowers, and a vacuum tank that doesn’t scream when powered.
+                Custom script:   call ExSound_Play("AtexBlix_0040", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Unit - Make BoomBrothers face Nazgrek over 0.75 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Of course. Can't blow things up ‘til we’ve vacuumed the cave.
+                Custom script:   call ExSound_Play("Nazgrek_0272", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- OVER --------
+                Trigger - Run BoomBrothersDialog01 Over 3Q1 <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to BoomBrothersDialog04Q1
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- MANDATORY TRAINING - ACCEPT --------
+                Set VariableSet BoomBrothersFarewellBoolean = True
+                Trigger - Turn on BoomBrothersDialog01 Over 4Q1 <gen>
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Camera - Apply BoomBrothersCam02 <gen> for Player 1 (Red) over 0.00 seconds
+                Unit - Make AtexBlix face BoomBrothers over 0.75 seconds
+                Unit - Make BoomBrothers face AtexBlix over 0.75 seconds
+                Unit - Make Nazgrek face AtexBlix over 0.75 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Final safety compliance step! 
+                Custom script:   call ExSound_Play("AtexBlix_0050", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = All boom-handlers and pit-grunts must attend formal explosive certification at the Kobold-run safety camp. It’s... very official. Totally above board.
+                Custom script:   call ExSound_Play("AtexBlix_0051", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Haven’t we done this million times already?
+                Custom script:   call ExSound_Play("Boomers_0056", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Wait 1.00 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Unit - Make AtexBlix face Nazgrek over 0.75 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = You my friend. Escord Fizzit and Sprokk and the crew to that kobold-run safety camp.
+                Custom script:   call ExSound_Play("AtexBlix_0052", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Unit - Make AtexBlix face BoomBrothers over 0.75 seconds
+                Unit - Make Nazgrek face BoomBrothers over 0.75 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Kobolds? They tried to eat my pants last time 
+                Custom script:   call ExSound_Play("Boomers_0057", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Unit - Make BoomBrothers face Nazgrek over 0.75 seconds
+                Unit - Make AtexBlix face Nazgrek over 0.75 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = What the hell we are supposed to do there? Those kobolds surely won’t make the camp safer…
+                Custom script:   call ExSound_Play("Nazgrek_0275", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Unit - Make BoomBrothers face AtexBlix over 0.75 seconds
+                Unit - Make Nazgrek face AtexBlix over 0.75 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Driving away those pesky kobolds is minor inconvenience that can be seen as part of the physical training on top of the safety training.
+                Custom script:   call ExSound_Play("AtexBlix_0053", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = However, your primary training objectives are outlined in the formal safety instructions I give you.
+                Custom script:   call ExSound_Play("AtexBlix_0054", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from AtexBlix named Explosive Risk Asse...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Unit - Make BoomBrothers face Nazgrek over 0.75 seconds
+                Unit - Make AtexBlix face Nazgrek over 0.75 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Feels like nonsense. But fine. One last trip.
+                Custom script:   call ExSound_Play("Nazgrek_0276", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Camera - Apply BoomBrothersCam05 <gen> for Player 1 (Red) over 0.00 seconds
+                Wait 1.00 seconds
+                -------- ============ --------
+                -------- Create Goblin Miners --------
+                Set VariableSet BoomBrothersPoint = (Center of BoomBrothersWP02 <gen>)
+                Unit - Create 1 Goblin Miner (Level 10) for Player 19 (Mint) at BoomBrothersPoint facing Default building facing degrees
+                Unit Group - Add (Last created unit) to BoomBrotherGroup
+                Unit - Create 1 Goblin Miner (Level 10) for Player 19 (Mint) at BoomBrothersPoint facing Default building facing degrees
+                Unit Group - Add (Last created unit) to BoomBrotherGroup
+                Unit - Create 1 Goblin Miner (Level 10) for Player 19 (Mint) at BoomBrothersPoint facing Default building facing degrees
+                Unit Group - Add (Last created unit) to BoomBrotherGroup
+                Unit - Create 1 Goblin Miner (Level 10) for Player 19 (Mint) at BoomBrothersPoint facing Default building facing degrees
+                Unit Group - Add (Last created unit) to BoomBrotherGroup
+                Custom script:   call RemoveLocation(udg_BoomBrothersPoint)
+                Set VariableSet BoomBrothersPoint = (Random point in BoomBrotherGather <gen>)
+                Unit Group - Pick every unit in BoomBrotherGroup and do (Actions)
+                    Loop - Actions
+                        Unit - Order (Picked unit) to Move To BoomBrothersPoint
+                Custom script:   call RemoveLocation(udg_BoomBrothersPoint)
+                -------- ============ --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Unit - Make Nazgrek face BoomBrothers over 0.75 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Listen up boys! We’re moving to the safety camp!
+                Custom script:   call ExSound_Play("Boomers_0058", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Unit Group - Pick every unit in BoomBrotherGroup and do (Actions)
+                    Loop - Actions
+                        Unit - Make (Picked unit) face BoomBrothers over 0.75 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = And afterwards… it’s BLASTING TIME, BABY!
+                Custom script:   call ExSound_Play("Boomers_0059", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Wait 1.00 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- OVER --------
+                Trigger - Run BoomBrothersDialog01 Over 4Q1 <gen> (checking conditions)
+                Skip remaining actions
+                -------- ============ --------
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to BoomBrothersDialog05Q1
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- BOOM WILL BE BACK - ACCEPT --------
+                Set VariableSet BoomBrothersFarewellBoolean = True
+                Trigger - Turn on BoomBrothersDialog01 Over 5Q1 <gen>
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Camera - Apply BoomBrothersCam02 <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = He played you like fools! I should’ve known…
+                Custom script:   call ExSound_Play("Nazgrek_0282", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Nobody betrays the Boom Brothers and lives to file about it.
+                Custom script:   call ExSound_Play("Boomers_0084", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = We’re about to file a complaint... with DYNAMITE.
+                Custom script:   call ExSound_Play("Boomers_0085", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Wait 1.00 seconds
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = I know it’s a lot asked, but you must defeat Mad Blix and reclaim the mine back for us!
+                Custom script:   call ExSound_Play("Boomers_0086", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Blix picked the wrong orc to mess with.
+                Custom script:   call ExSound_Play("Nazgrek_0283", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = We will support you with explosives. 
+                Custom script:   call ExSound_Play("Boomers_0087", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Blast the heck out of that ...troublemaker! Haha!
+                Custom script:   call ExSound_Play("Boomers_0088", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                -------- OVER --------
+                Trigger - Run BoomBrothersDialog01 Over 5Q1 <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to BoomBrothersDialog05Q1C
+            Then - Actions
+                -------- SKIPPED - restore state --------
+                Set VariableSet DialogSkipped = False
+                -------- BOOM WILL BE BACK - ACCEPT --------
+                Set VariableSet BoomBrothersFarewellBoolean = True
+                Trigger - Turn on BoomBrothersDialog01 Over 5Q1C <gen>
+                Cinematic - Disable user control for (All players).
+                If (DialogSkipped Equal to True) then do (Skip remaining actions) else do (Do nothing)
+                Camera - Apply BoomBrothersCam02 <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Mad Blix is down. The mine is yours again and this time you may blast as you like.
+                Custom script:   call ExSound_Play("Nazgrek_0284", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = That’ll teach him to mess with demolition experts!
+                Custom script:   call ExSound_Play("Boomers_0092", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Heh. I bet Mr. Explosive Risk Assessor Blix didn’t assess that risk.
+                Custom script:   call ExSound_Play("Nazgrek_0285", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Nicey nice! You are our hero!
+                Custom script:   call ExSound_Play("Boomers_0093", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = We are forever in your debt and so therefore as reward, you may anytime go inside the mine and gather ore or what ever you’ll find!
+                Custom script:   call ExSound_Play("Boomers_0094", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                -------- OVER --------
+                Trigger - Run BoomBrothersDialog01 Over 5Q1C <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to BoomBrothersDialogStopFollow
+                BoomBrothersFollow Equal to True
+            Then - Actions
+                Set VariableSet BoomBrothersFollow = False
+                Cinematic - Disable user control for (All players).
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Stop following me for now.
+                Custom script:   call ExSound_Play("Nazgrek_0XXX", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Okay xxx
+                Custom script:   call ExSound_Play("Boomers_00XX", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                -------- DEFAULT CAMERA --------
+                Camera - Apply BoomBrothersCamSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to BoomBrothersDialogStopFollow
+                BoomBrothersFollow Equal to False
+            Then - Actions
+                Set VariableSet BoomBrothersFollow = True
+                Cinematic - Disable user control for (All players).
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = OK follow me
+                Custom script:   call ExSound_Play("Nazgrek_0XXX", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                Set VariableSet ExSoundString = Okay xxx
+                Custom script:   call ExSound_Play("Boomers_00XX", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                -------- ===================================== --------
+                -------- DEFAULT CAMERA --------
+                Camera - Apply BoomBrothersCamSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to BoomBrothersDialogFarewell
+            Then - Actions
+                Set VariableSet BoomBrothersFarewellBoolean = True
+                Cinematic - Disable user control for (All players).
+                -------- ===================================== --------
+                Custom script:   call TriggerExecute(gg_trg_Nazgrek_Farewell)
+                Wait ExSoundDuration seconds
+                -------- ===================================== --------
+                Set VariableSet BoomBrothersRandomGreet = (Random integer number between 1 and 2)
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BoomBrothersRandomGreet Equal to 1
+                    Then - Actions
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = Tick-tock, muscle-head. Time’s blowin’ away!
+                        Custom script:   call ExSound_Play("Boomers_0004", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Fizz...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                    Else - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        BoomBrothersRandomGreet Equal to 2
+                    Then - Actions
+                        -------- ===================================== --------
+                        Set VariableSet ExSoundString = If we’re not here when you get back... look for the crater.
+                        Custom script:   call ExSound_Play("Boomers_0005", udg_ExSoundString)
+                        Cinematic - Send transmission to (All players) from BoomBrothers named Boom Brothers (Spro...: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Wait
+                        -------- ===================================== --------
+                    Else - Actions
+                -------- DEFAULT CAMERA --------
+                Camera - Apply BoomBrothersCamSkipped <gen> for Player 1 (Red) over 0.00 seconds
+                -------- ======== CINEMATIC ENDS ======== --------
+                Trigger - Run Cinematic OFF <gen> (checking conditions)
+                Countdown Timer - Start DialogOverTimer as a One-shot timer that will expire in 6.00 seconds
+                Skip remaining actions
+            Else - Actions
