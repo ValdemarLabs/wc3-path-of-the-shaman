@@ -2,7 +2,7 @@
 
 - **Status:** Living master design plan
 - **Created:** 22 August 2026
-- **Last reviewed:** 26 August 2026
+- **Last reviewed:** 27 August 2026
 - **Scope:** Main story, side stories, generic quests, dungeon quests, quest-giver connections, and world-event dependencies
 
 ## 1. Purpose
@@ -77,6 +77,7 @@ A one-time story quest is therefore `normal` + `story`. A repeatable dungeon tas
 | Current canonical name | Legacy or conflicting form | Rule |
 |---|---|---|
 | Chieftain Thork | Thork Hellscream | Use Chieftain Thork. Treat the surname as obsolete unless deliberately restored. |
+| Zul'kis | Zulkis | Use Zul'kis in player-facing text. Keep `Zulkis` in raw identifiers, globals, filenames, and API names where renaming would break current code. |
 | Valeria | Some old Elarindor GUI references say Velaria | Use Valeria for the Elarindor ranger and companion. Treat “Velaria” near Aradion or companion logic as a probable old misspelling and verify its unit rawcode. |
 | Velyssara | Velaria | Use Velyssara for the separate female satyr/succubus, unit `n636`, and Chains of Seduction antagonist. Keep “Velaria” only as a legacy Articy/GUI search term. |
 | Garthork | Gar'thork | Use Garthork in current code and player-facing text. |
@@ -112,7 +113,7 @@ These rawcodes or named globals are evidence that the character already exists i
 | Kribugs | `n61E` | Comic Ogre side-quest hub |
 | Prince Zaekolaerr | `n62W` | Satyr diplomacy branch endpoint and manipulator |
 | Velyssara | `n636` | Female satyr/succubus tied to Chains of Seduction and Zaekolaerr's corruption arc |
-| Zul'karak | `n65F` | Existing troll unit; legacy notes describe Zul'kis's warrior brother and a possible later recruit |
+| Zul'karak | `n65F`, `udg_Zulkarak` | Existing preplaced troll unit referenced by the World Editor unit variable; Zul'kis's older brother and a possible later recruit |
 | Aradion | `h00A` | Elarindor leader and late-midgame story hub |
 | Valeria | `n01W` | Elarindor ranger, companion, and story quest giver |
 | Kaelthir | `n01X` | Elarindor wretched survivor whose fate branches between mercy, mana-wraith transformation, and Aradion's failed cure |
@@ -148,8 +149,9 @@ This section records current qXXX content at the time this plan was created. Upd
 
 | Library / giver | Current quests | Status and important dependencies |
 |---|---|---|
-| `qRagno.j` | Protect the Outpost; Gnoll Headcount; Lumberjack Duties; Kobold Thieves; Satyr Negotiations; Call of the Horde | **Implemented JASS.** Protect the Outpost is externally started and auto-completed by its scripted defense. Its legacy `QUEST_MOUNTAIN_DEFENSE` alias still points to Protect the Outpost internally. Granis owns the separate QuestData for the later Mountain Defense, but Ragno remains that quest's field commander, encounter anchor, required survivor, and principal battlefield speaker. Satyr Negotiations reaches Zaekolaerr; its arena outcome now waits for a successful Coliseum challenge started through satyr arena master `n62V`, while the escape, betrayal, and trust follow-ups remain partial. Call of the Horde requires Protect the Outpost and an external unlock. |
-| `qChieftainThork.j` | Duty For The Horde | **Implemented JASS.** Tracks Granis's Punish and Garthork's The Magical Eye as separate proof requirements, receives explicit completion reports, and recovers their state from completed QuestData. Later Thork branches remain external/legacy. |
+| `qNazgrek.j` | Wolf Hunt I; Nazgrek's Flask | **Partial prologue JASS.** Two self-discovered Normal + Story quests in Sereneglade `2`. `qNazgrek_StartIntroQuestChain()` begins Wolf Hunt I; killing six current wolf/alpha-wolf units and collecting six Wolf Skin `I61F` auto-completes it and starts the converted legacy flask quest. The flask tracks six Forest Flower `I60Y`, three Agave `I60W`, two Earth Roots `I60X`, six Stag Hair `I614`, two Frog Slime `I615`, and the delayed Empty Flask `I61M` reminder, then auto-completes when existing flask `I61L` is crafted or acquired. Wolf Hunt II–III remain planned until their unique trophy and Shamanic Cowl objects/recipe are defined. |
+| `qRagno.j` | Protect the Outpost; Gnoll Headcount; Lumberjack Duties; Kobold Thieves; Satyr Negotiations; Call of the Horde | **Implemented JASS.** Protect the Outpost is externally started and auto-completed by its scripted defense. Its legacy `QUEST_MOUNTAIN_DEFENSE` alias still points to Protect the Outpost internally. Granis owns the separate QuestData for the later Mountain Defense, but Ragno remains that quest's field commander, encounter anchor, required survivor, and principal battlefield speaker. Satyr Negotiations reaches Zaekolaerr; its arena outcome now waits for a successful Coliseum challenge started through satyr arena master `n62V`, while the escape, betrayal, and trust follow-ups remain partial. Call of the Horde requires Protect the Outpost and an external unlock. The new fade/control handoff from Protect the Outpost to Zul'kis's prologue is not implemented. |
+| `qChieftainThork.j` | Duty For The Horde | **Implemented JASS; Zul'kis convergence revision pending.** Tracks Granis's Punish and Garthork's The Magical Eye as separate proof requirements, receives explicit completion reports, and recovers their state from completed QuestData. Its current Call of the Horde completion scene already introduces and enables Zul'kis, but it does so without checking the new Rescue the Brother completion contract. Later Thork branches remain external/legacy. |
 | `qGranis.j` | Punish; Mountain Defense | **Implemented JASS.** Punish targets the existing Rol'jin boss and item `I600`. Granis commissions, owns, and rewards Mountain Defense, while Ragno commands the battle in the field. The distinct second outpost assault uses nine reusable `UnitWaves` stages, fails if Ragno dies or fewer than five temporary defenders survive, and supports retry cleanup. Both are Normal + Story in Thornwoods `6`. |
 | `qGarthork.j` | The Magical Eye | **Implemented JASS.** Spawns/reuses Mur'gal `n607`, tracks Eye of Mur'gal `I601`, awards Adept Shaman Claws `I66R`, and reports the completed proof task to Thork. Normal + Story in Thornwoods `6`. |
 | `qKrezgrel.j` | Murloc Fins; Rescue The Grunts | **Implemented JASS.** Both are Daily quests in Thornwoods `6`. Rescue targets use invisible selectable grunt proxies paired with negative-pitch special effects and randomized positions in `gg_rct_UpsideGrunt01` through `08`; targets recycle after 240 seconds. The old placed upside-down grunt units must be removed in World Editor. |
@@ -184,8 +186,8 @@ Graknar `o61S` is a named quest giver as well as the original bag merchant. Do n
 | Boom Mine | `DungeonBoomBrothersMine.j` registers zone `104`, patrol waves, and explosive/barrel events; `qBoomBrothers.j` targets that dungeon and exposes reclaimed/access state. | The converted chain now leads into the real dungeon. The dungeon portal is still physically ungated, so the semantic access flag must be consumed if chain-gated entry or post-completion ore access is added. |
 | Mad Blix | `BossMadBlix.j` contains the recoverable mana-absorption mechanic and reports `BOSS_EVENT_DEATH` to `qBoomBrothers_ReportMadBlixDefeated`; legacy phase files are empty. | Quest completion is wired, but the boss remains **Partial** until additional mechanics are deliberately designed and tested. |
 | Rol'jin | `BossRoljin.j` exists. | Granis's voiced Rol'jin hunt can target an existing boss encounter. |
-| Nazgrek's Flask | Item `I61L` is registered by `ProfessionsAlchemy.j`, equipment exports, loot data, and debug tools; item ability evidence includes `A63V`. | The legacy prologue flask idea now has real object evidence, but the existing reusable alchemy item must not automatically become a disposable tutorial prop. Decide whether the quest unlocks the recipe, creates a separate vision draught, or deliberately rebalances the existing flask. |
-| Zul'karak | Unit `n65F` is present in the debug object registry and reputation unit list. | The unit exists, but the older-brother personality, abilities, recruitment timing, and companion behavior remain **Legacy evidence** until confirmed in current WE triggers/code. |
+| Nazgrek's Flask | Item `I61L`, its six-material recipe, item ability evidence `A63V`, and the converted `qNazgrek.j` quest all exist. | **Implemented/rebalanced for the prologue.** The existing reusable flask is deliberately reused rather than replaced by a disposable vision draught. Its recipe retains the recovered GUI material costs but now requires Alchemy 0 so the level-1 story is possible. Runtime balance and the flask's exact advantage against Wolf Mother still need testing/design. |
+| Zul'karak | Unit `n65F` is present in the debug object registry and reputation unit list, is already preplaced on the Darkspear shore, and is bound to `udg_Zulkarak`. | His older-brother identity, berserker role, rescue, later Horde-base quests, and eventual recruitment are now approved design. Treat `udg_Zulkarak` as the authoritative unit handle and relocate that unit through the landing, captivity, rescue, and Horde-base states rather than searching by rawcode or creating duplicates. Faction, active dialogue, simple AI, home-return behavior, and current WE trigger conflicts remain unimplemented and require verification. |
 | Crypt boss roster | `ZonesCore` names Skullreaver, Rotspine, Bone Golem, Darkmaw the Soul Devourer, and Marduk the Endbringer for Crypt `102`. | Treat the ODT's Warden, Cryptlord, and king's shade as encounter roles or discarded working names until deliberately mapped to current bosses. |
 | Gar | `BossGar.j` creates unit `n60Z` only through `BossGar_Spawn()`, then patrols `gg_rct_GarWP01` through `gg_rct_GarWP06` at 60 movement speed. | **Partial JASS.** The reusable two-phase encounter and quest/event spawn hook are implemented in Deadwoods. Quest ownership, explosives, reward, and canonical outcome remain open. |
 | Dawnhold ship service | `TravelShipA.j` already owns an active Sirensong–Dawnhold–Stormhaven neutral route and registers Dawnhold stop `20`. | Legacy Fix the Ship must not blindly unlock baseline travel. Use it for a separate goblin vessel, route/service upgrade, fare benefit, repair incident, or an intentional availability gate designed with the current travel system. |
@@ -212,9 +214,12 @@ The following is the recommended canonical synthesis. Existing quest titles are 
 ### Story flow overview
 
 ```text
-Prologue: Nazgrek + Shadowclaw in Sereneglade
-    -> Ragno's outpost defense
-    -> Call of the Horde
+Nazgrek prologue: Shadowclaw -> Wolf Hunt I -> Nazgrek's Flask -> Wolf Hunt II
+    -> optional Wolf Hunt III crafting epilogue
+    -> Protect the Outpost -> fade to Zul'kis
+Zul'kis prologue: Darkspear landing -> Thork -> destroyed landing camp
+    -> Rescue the Brother -> return to the Horde base -> fade to Nazgrek
+Nazgrek: Call of the Horde -> Nazgrek and Zul'kis meet at Thork
     -> Duty For The Horde
        -> Granis military task ----\
        -> Garthork spirit task -----+-> Gnoll / satyr truth -> accepted but tested
@@ -231,16 +236,40 @@ Prologue: Nazgrek + Shadowclaw in Sereneglade
 | Design ID | Quest / beat | Status | Purpose and connection |
 |---|---|---|---|
 | ST-P-01 | Intro cinematic: Nazgrek and Shadowclaw | **Partial / current voice + legacy ODT evidence** | Establish the blood-refusal backstory, the bond with Shadowclaw, and Sereneglade as sanctuary. The old sequence adds a dismissive orc patrol, the walk to Nazgrek's hut, and a successful rabbit hunt; retain only the beats that fit the current opening's pace and staging. |
-| ST-P-02 | Nazgrek's Flask / First signs of unrest | **Legacy ODT + current object evidence; redesign required** | Nazgrek senses spiritual discord, gathers ingredients, and prepares a draught to sharpen his insight before following the disturbance toward Ragno. Exact reagents and regions require GUI/WE recovery. Do not consume or grant existing alchemy item `I61L` by default; a quest-only vision draught or later recipe unlock is safer. |
-| ST-P-03 | Protect the Outpost | **Implemented JASS** | First visible act of service. Ragno survives, notices Nazgrek, and becomes the early repeatable hub. |
+| ST-P-02 | Wolf Hunt I | **Implemented JASS; WE start hook required** | `qNazgrek_StartIntroQuestChain()` starts a self-discovered hunt to kill six wolves across the current Sereneglade wolf/alpha-wolf rawcodes and gather six Wolf Skin `I61F`. It is a compact player-control beat rather than a separate quest-giver conversation, and its completion starts Nazgrek's Flask without consuming the skins needed by the later cowl. |
+| ST-P-03 | Nazgrek's Flask | **Implemented JASS; runtime balance pending** | Nazgrek realizes ordinary preparation may not be enough for the Wolf Mother. The converted quest uses the recovered six Forest Flower, three Agave, two Earth Roots, six Stag Hair, two Frog Slime, and one delayed Empty Flask requirements, then completes on acquisition of existing flask `I61L`. The existing alchemy recipe is deliberately reused at skill 0 and remains a reusable item; define/test what advantage it gives in the Wolf Mother encounter. |
+| ST-P-04 | Wolf Hunt II | **Planned; object/encounter work required** | Enter Wolf Den `12111` in northern Sereneglade, defeat Wolf Mother `n648`, and recover one unique trophy. Use a dedicated Wolf Mother's Head or Pelt item; ordinary Wolf Skin cannot distinguish this kill from Wolf Hunt I. The trophy naming decision must also satisfy Wolf Hunt III. |
+| ST-P-05 | Wolf Hunt III | **Planned optional crafting epilogue** | Create a Shamanic Cowl from the Wolf Mother trophy, the retained six Wolf Skin `I61F`, two Light Leather `I6A6`, and one Thread `I66L`. It should be a skill-0 introductory Leatherworking recipe and must not delay Protect the Outpost or the Zul'kis handoff. Define the cowl/trophy rawcodes, confirm early Light Leather and Thread acquisition, and decide whether the trophy is the head, pelt, or both before implementation. |
+| ST-P-06 | Protect the Outpost | **Implemented JASS** | First visible act of service. Ragno survives, notices Nazgrek, and gives the Call of the Horde letter. Its completion ends the separate Nazgrek section with a fade to Zul'kis's intro. |
 
-Legacy intro beats worth retaining are Shadowclaw reacting defensively when the patrol mocks Nazgrek, Nazgrek choosing restraint, the hut serving as the first quiet player-controlled space, and the flask vision turning vague unease into a playable trail. Avoid making the patrol scene a long exposition dump or implying all Horde orcs share the patrol's contempt.
+Legacy intro beats worth retaining are Shadowclaw reacting defensively when the patrol mocks Nazgrek, Nazgrek choosing restraint, and the hut serving as the first quiet player-controlled space. Keep new cinematics short: the wolf/flask objectives carry the playable introduction, Wolf Hunt III is optional, and no extra Nazgrek quest should be inserted before Protect the Outpost without replacing an existing beat.
+
+Current self-discovered scope is limited to Wolf Hunt I–III and Nazgrek's Flask. No other Nazgrek-owned self-discovered quest is approved in this plan. The later elemental and ancestral shaman progression may contain spontaneous spirit encounters, but those class quests still need confirmed trainers/spirits, ability rewards, and rawcodes and should not be treated as additional prologue errands.
+
+### Parallel prologue — Zul'kis and the broken landing (levels 1–3)
+
+Zul'kis's separate playable opening begins only after Nazgrek completes Protect the Outpost. It ends before Nazgrek turns in Call of the Horde, so the two heroes first meet during that existing completion scene at Chieftain Thork. This parallel section is deliberately short and linear.
+
+| Design ID | Quest / beat | Status | Purpose and connection |
+|---|---|---|---|
+| ST-ZP-01 | Darkspear landing cinematic | **Proposed; partial WE staging confirmed** | Zul'kis arrives by river with his Darkspear kin and older brother Zul'karak. Use ship unit `'odes'`; fade in from `IntroZulkisCam1` and slowly transition to `IntroZulkisCam2` while the ship moves from `gg_rct_ZulkisShipWP1` to `gg_rct_ZulkisShipWP2`, then fade out. Fade in on `IntroZulkisCam3` moving toward `IntroZulkisCam4`, and place Zul'kis at confirmed start rect `gg_rct_ZulkisStart` when control begins. Zul'karak `n65F` is already preplaced on the shore and available through `udg_Zulkarak`. Stage six living landing-party trolls at `gg_rct_CorpseTroll01` through `gg_rct_CorpseTroll06`, matching the later corpse composition: headhunters at 01, 02, 04, 05, and 06, and a witch doctor at 03. The cameras, ship waypoints, ownership, and exact ship/passenger transition still require World Editor verification. |
+| ST-ZP-02 | Brothers on the shore | **Proposed dialogue** | Zul'karak warns that humans are unusually active. Zul'kis answers that the orc chieftain promised a quick meeting. Zul'karak remains to guard the ship and landing party while Zul'kis goes inland. Keep this to three short exchanges and preserve Zul'karak as the cautious elder brother. |
+| ST-ZP-03 | Meet with Chieftain Thork | **Proposed Normal + Story** | Zul'kis reaches Thork at the Horde base in Thornwoods; the exact subzone/rect remains a WE check. Thork welcomes him, questions where the rest of his tribe is, and immediately orders him back to escort them in while warning of heavy human activity in Havenwoods. This is Thork's setup for the false account of what follows. |
+| ST-ZP-04 | The broken landing | **Proposed continuation; legacy corpse staging recovered** | Zul'kis returns to a burning ship and dead landing party. At the return transition, replace the five living headhunters with permanent fleshy corpses at `gg_rct_CorpseTroll01`, `02`, `04`, `05`, and `06`, using random facing and suspended decay. Leave the witch doctor at `gg_rct_CorpseTroll03` barely alive as the witness; he says Zul'karak was taken to a nearby forest-troll village, begins to identify the actual attackers, and dies before finishing. Then replace him with the permanent fleshy witch-doctor corpse at the same rect, reaching the exact final layout recovered from `Dead Darkspear Trolls`. Do not retain that trigger's elapsed-game-time 5-second event; the future prologue library must own both swap moments so the trolls remain alive during the arrival. The forest trolls may be the captors without being the force that destroyed the landing, preserving the later false-flag reveal. |
+| ST-ZP-05 | Rescue the Brother | **Proposed Normal + Story** | Rescue the existing Zul'karak unit `udg_Zulkarak` (`n65F`) from the verified forest-troll village and bring him to the Horde base. On completion Zul'karak becomes a stationary quest giver, not an immediate companion. Zul'kis remains at the base for the convergence scene; fade back to Nazgrek, who now carries Ragno's Call of the Horde letter. |
+| ST-ZP-06 | Call of the Horde convergence | **Partially implemented; integration change required** | Nazgrek turns in Call of the Horde at Thork and meets Zul'kis for the first time. The current `qChieftainThork.j` already stages their dialogue and enables Zul'kis, but it presently assumes Zul'kis is ready without checking the new intro/rescue completion. A future Zul'kis prologue library must expose a stable completion query consumed before this scene. |
+
+Hidden story truth: Thork arranged or knowingly enabled the attack so Zul'kis would blame humans or forest trolls and bind the surviving Darkspear to his Horde base. Do not reveal this during the prologue. Seed recoverable inconsistencies—weapon marks, attack timing, missing supplies, or survivor testimony—for a later investigation, and keep forest-troll culpability limited to captivity unless later evidence deliberately broadens it.
+
+Zul'karak's post-rescue arc uses two phases. First he gives a short, non-gating quest set from the Horde base. After those quests, he becomes recruitable through the shared companion system. His combat support should use a small dedicated berserker AI—assist Zul'kis's current target, use one or two configured combat abilities, leash/teleport back when separated, and stop while dismissed or at home—not the advanced role logic used by `AIWarrior`. Kicking him removes companion ownership and orders him home; if he does not reach the verified Horde-base home rect within the timeout, teleport him there and restore quest-giver state.
+
+Use the witch doctor at `gg_rct_CorpseTroll03` as the dying survivor, so every visible arrival troll has a return-scene outcome and the sixth corpse appears naturally after the testimony. Move or hide `udg_Zulkarak` when the landing is destroyed, then relocate that same unit to captivity; never leave a shore copy behind, search for another `n65F`, or create a second brother for the rescue.
 
 ### Act I — Earning a place (levels 3–10)
 
 | Design ID | Quest / beat | Status | Purpose and connection |
 |---|---|---|---|
-| ST-A1-01 | Call of the Horde | **Implemented JASS** | Carry Ragno's blood-signed letter to Chieftain Thork after the defense. |
+| ST-A1-01 | Call of the Horde | **Implemented JASS; Zul'kis gate pending** | After both separate prologues, carry Ragno's blood-signed letter to Chieftain Thork. Its completion is the first Nazgrek/Zul'kis meeting and the point where shared gameplay begins; add the Zul'kis prologue completion gate before enabling him. |
 | ST-A1-02 | Duty For The Horde | **Implemented JASS** | Thork requires the separately tracked completion of Granis's Punish and Garthork's The Magical Eye. It is the Act I spine, not a generic reputation grind. |
 | ST-A1-03 | Punish / Rol'jin's Head | **Implemented JASS** | Granis sends Nazgrek to kill the existing Rol'jin boss and return item `I600`; completion reports Granis's proof to Thork. |
 | ST-A1-04 | The Magical Eye | **Implemented JASS** | Garthork identifies Nazgrek's Thunderlord past, requests Mur'gal's eye `I601`, and reports the proof to Thork. The later spiritual-sight follow-up remains proposed. |
@@ -379,6 +408,7 @@ These are candidates, not promises. Before implementation, search the vendor REA
 | GQ-004 | Roots That Remember | Normal | New Twilight spirit tender | Twilight Grove ancient trees | Place wards or listen at roots; hints that beasts are reacting to distant corruption. |
 | GQ-005 | Predators in the Mist | Daily | Existing Grove sentinel | Twilight Grove wolf/bear areas | Rescue travelers or kill marked predators without targeting Shadowclaw's pack identity. |
 | GQ-006 | Twilight Samples | Repeatable | Existing herbalist | Twilight Grove | Gather non-unique samples used by Garthork/Jin'Zun research. |
+| GQ-017 | Wolf Hunt I–III | Normal + Story chain | Nazgrek (self-discovered) | Sereneglade / Wolf Den `12111` | Promoted into Nazgrek's prologue. Wolf Hunt I and the interposed Nazgrek's Flask quest are implemented in `qNazgrek`; Wolf Hunt II targets Wolf Mother `n648`, and optional Wolf Hunt III crafts the Shamanic Cowl once its trophy and recipe objects are defined. |
 
 ### Thornwoods and Gnoll Hideout
 
@@ -399,7 +429,6 @@ These are candidates, not promises. Before implementation, search the vendor REA
 |---|---|---|---|---|---|
 | GQ-015 | Watchfires in the Fog | Daily | Existing Ironspine guard | Ironspine Post `1901` approaches | Relight posts and report unusual tracks; supports Shadowclaw arc atmosphere. |
 | GQ-016 | The Mine That Whispers | Normal | Existing miner or new prospector | Cinderfall Cave `12110` | Rescue workers and recover a corrupted ore sample for Garthork. |
-| GQ-017 | Wolf Hunt I–III | Normal chain | Existing hunter | Ghostwalk Ridge / Wolf Den `12111` | Recover Articy's optional chain as tracking and pack-behavior study, not generic wolf slaughter. |
 | GQ-018 | Cinderfall Cores | Repeatable | Existing smith | Cinderfall Cave `12110` | Optional materials after GQ-016; check profession quests before implementation. |
 | GQ-019 | Whispering Tombs | Normal + Dungeon | Jin'Zun or Deadwoods survivor | Crypt `102` | Introduce the Crypt through voices leaking into Deadwoods. |
 | GQ-020 | Restless Souls | Daily + Dungeon | Spirit speaker | Crypt `102` | Release marked spirits; rotate targets only if the objective system supports it cleanly. |
@@ -499,6 +528,12 @@ Future qXXX libraries should expose explicit hooks rather than reading one anoth
 
 | Producer | Consumer | Required contract |
 |---|---|---|
+| Nazgrek intro cinematic | `qNazgrek` | Call `qNazgrek_StartIntroQuestChain()` when player control begins; do not start the quest during the opening fade/camera sequence. |
+| Wolf Hunt I | Nazgrek's Flask | `qNazgrek` owns the automatic transition and preserves the six Wolf Skin for the later Shamanic Cowl. |
+| Nazgrek's Flask | Wolf Hunt II | Add a semantic flask-completion query/encounter gate; decide whether possession, consumption, or a temporary encounter effect overcomes Wolf Mother. |
+| Protect the Outpost | Zul'kis prologue | After Ragno's defense and letter award, fade out and transfer active control to Zul'kis without completing or consuming Call of the Horde. |
+| Zul'kis landing cinematic | Broken landing | Stage living trolls at `gg_rct_CorpseTroll01`–`06`; after Zul'kis returns from Thork, replace the five headhunters with permanent corpses, keep the witch doctor at 03 alive for his testimony, and replace him only after he dies. Disable the legacy elapsed-time trigger so it cannot perform the swap early. |
+| Rescue the Brother | Call of the Horde | Zul'kis's future intro library exposes a durable completion query; fade back to Nazgrek, stage Zul'kis at Thork, and let `qChieftainThork` enable shared gameplay only after that query is true. |
 | Protect the Outpost | Call of the Horde | Stable completion state plus the current external unlock event |
 | Call of the Horde | Duty For The Horde | Thork sees Ragno's letter/completion without duplicating quest state |
 | `qGranis` and `qGarthork` | `qChieftainThork` | Public completion notifications for their assigned proof quests; preserve retries and failure cleanup |
@@ -528,8 +563,9 @@ Before implementing the following, export or inspect the old GUI triggers and co
 | Erduk | Existing named quest giver | Entire active GUI quest set, placement, and intended arc |
 | Valeria | Current qValeria plus unexported legacy triggers | Identify which companion objectives remain missing; verify old “Velaria” references by rawcode so they are not confused with Velyssara |
 | Velyssara / Zaekolaerr link | `qVelyssara` now implements the recovered Chains of Seduction tasks, Jin'Zun dispel route, combat event, reward, and Sereneglade confinement | Decide who the unnamed master in Velyssara's combat line is, whether she serves or rivals Zaekolaerr, and whether a future branch can cleanse or spare her. |
-| Nazgrek's Flask | Existing alchemy item `I61L`; old intro describes a self-made insight flask | Recover the original quest triggers/ingredients and decide between a quest-only vision draught, a later recipe unlock, or deliberate reuse of `I61L` |
-| Zul'karak | Existing unit `n65F`; ODT describes Zul'kis's warrior brother and possible later recruit | Confirm current placement, faction, dialogue, companion eligibility, and whether the older-brother relationship remains canon |
+| Wolf Hunt II–III | Wolf Mother `n648`, ordinary Wolf Skin `I61F`, Light Leather `I6A6`, Thread `I66L`, Wolf Den `12111`, and the requested Shamanic Cowl conclusion | Create/confirm a unique Wolf Mother trophy and Shamanic Cowl rawcode, settle head versus pelt naming, verify early acquisition for two Light Leather and one Thread, register the introductory recipe, verify the Wolf Den encounter, and define the flask's encounter advantage. |
+| Nazgrek's Flask | Existing item `I61L`, the exact recovered GUI ingredients, the active alchemy recipe, and `qNazgrek.j` now align | Import/start the new library, disable the legacy GUI folder, verify the skill-0 recipe and reusable flask balance, and runtime-test delayed Empty Flask discovery plus completion after crafting. The old completion also disabled `Spawn Plants Intro`; confirm that spawner still exists and wire its shutdown to `qNazgrek_IsFlaskCompleted()` or remove the obsolete extra spawn in WE. |
+| Zul'kis prologue / Zul'karak | Zul'karak `n65F` is preplaced on shore and bound to `udg_Zulkarak`; `gg_rct_ZulkisStart` is confirmed; requested four-camera river arrival and ship `'odes'`; legacy `Dead Darkspear Trolls` recovers six corpse slots at `gg_rct_CorpseTroll01`–`06` with five headhunters and one witch doctor at 03; Thork meeting, destroyed landing, rescue, and later quest-giver/recruit role | Verify/create `IntroZulkisCam1`–`4`, `gg_rct_ZulkisShipWP1`–`2`, base/village/home rects, ship/passenger staging, living-troll rawcodes/ownership, and any other unexported GUI. Use the witch doctor at 03 as the dying survivor, disable the legacy 5-second corpse trigger, access and relocate Zul'karak through `udg_Zulkarak`, and implement a dedicated intro/quest library, timed living-to-corpse shore swap, simple berserker AI, companion home-return contract, and the completion gate consumed by `qChieftainThork`. |
 | Ghostwalk/Deadwoods/Dawnhold legacy campaign | Shadowclaw death, fel-orc warband, Ironspine-like outpost, human survivors, Dawnhold curse, Gar, and ship | Ruined “Vanguard” maps to Dawnhold `20`; Gar `n60Z` maps to Deadwoods `11`; Ship A already serves Dawnhold. Verify exact rects, triggers, and intended quest-specific vessel/service changes. |
 | Crypt `102` | Seven legacy quests, three encounter roles, hazards, books, and a cursed-crown branch | Map roles to current bosses/rooms, identify the buried culture/ruler, validate traps, and design persistent reward consequences |
 | Other Horde NPCs | Drek'thor, Ogmar and related triggers | Inventory before assigning new generic quests to avoid ownership conflicts. Krezgrel's two legacy daily quests and Graknar's Mistaken Kin are now recovered and implemented. |
@@ -549,14 +585,16 @@ Resolve these deliberately and record the answer here:
 9. **Grum and the eggs:** protective plan, reckless weaponization, betrayal, or misunderstanding?
 10. **Dungeon reset policy:** which objectives are daily versus freely repeatable, and how boss/instance state resets safely.
 11. **Boom Mine access benefit:** the converted chain exposes semantic reclaimed/access state, but `DungeonBoomBrothersMine.j` does not yet gate entry or create the promised renewable ore access. Decide whether entry is ever locked and what post-completion mining benefit is safe for the economy.
+12. **Wolf Mother trophy and flask effect:** decide whether Wolf Hunt II awards a Head, Pelt, or both; create the Shamanic Cowl output around the planned trophy + six Wolf Skin + two Light Leather + one Thread recipe; and choose a clear encounter mechanic for Nazgrek's reusable flask that does not make the boss impossible after the flask buff expires or the item is lost.
+13. **Thork's false-flag reveal:** the prologue truth is that Thork arranged or knowingly enabled the Darkspear landing attack. Decide the actual attackers, Thork's motive and level of direct responsibility, the evidence trail, when Zul'kis learns the truth, and whether confrontation changes Horde standing or only later support/dialogue.
 
 Recommended antagonist structure: use a coalition or chain of exploitation rather than one controller behind everything. Satyrs exploit local division, necromancers exploit death, the Dark Horde and demons industrialize fel/elemental power, and the void presence opportunistically amplifies the damage. This preserves faction identity while giving Nazgrek one thematic conflict.
 
 ## 14. Recommended implementation order
 
-1. Decide how the old Nazgrek's Flask prologue relates to existing alchemy item `I61L`, then recover its GUI ingredients/regions and current intro staging.
-2. Recover Granis and Garthork GUI triggers and create their modern qXXX libraries so Duty For The Horde has real dependencies.
-3. Decide and implement the second mountain defense versus current Protect the Outpost.
+1. Import and runtime-test `qNazgrek.j`, its Wolf Hunt I start hook, the skill-0 `I61L` recipe, delayed Empty Flask objective, and legacy GUI replacement; then create the unique Wolf Mother trophy and Shamanic Cowl data needed for Wolf Hunt II–III.
+2. Verify the Zul'kis cameras, ship waypoints, village/base/home rects, living-troll rawcodes/ownership, and current placed units/triggers in World Editor. Preserve confirmed `gg_rct_ZulkisStart`, use `udg_Zulkarak` for the preplaced Zul'karak `n65F`, stage the six living trolls at `gg_rct_CorpseTroll01`–`06`, and disable the old 5-second corpse trigger; then implement the compact Zul'kis prologue, return-timed corpse swap, Rescue the Brother, Zul'karak AI/home behavior, and `qChieftainThork` convergence gate.
+3. Runtime-validate the implemented second Mountain Defense as distinct from Protect the Outpost and keep their completion/failure state separate while adding the new prologue handoff.
 4. Finish Satyr Negotiations outcome state and one convergent follow-up per choice.
 5. Add the Gnoll Hideout one-time package and use its evidence in Thork's Act I conclusion.
 6. Use Dawnhold `20` for the ODT's ruined Vanguard city/docks and Deadwoods `11` for Gar `n60Z`, then verify exact quest rects plus the northern-outpost and Ghostridge mappings before placing Act II/III objectives.
