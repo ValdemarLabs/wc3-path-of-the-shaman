@@ -19,6 +19,8 @@
 
 ### Player-Facing Updates
 
+- Added the voiced five-part Boom Brothers and Atex Blix story chain, from recovering unstable explosives through Mad Blix's takeover, the Boom Mine dungeon conclusion, and its Crown of Kings +5 reward.
+- Snikka Sparkdust in Sirensong now keeps up to two costly Barrel of Explosives in stock, with a long replenishment time, as an alternative route for Explosive Crisis.
 - Updated Hints with a short publication delay, a spaced notification queue, heading-only chat messages, and persistent unread effects on the Game and Hints buttons.
 - Added contextual hints for hero revival and graveyards, Traveler's Journals, quests, free return flights, ability and talent points, specializations, Spirit Shards, companions, pet fatigue, reputation, and Boom Brothers Mine explosives.
 - Added Gar as a quest/event-spawned Deadwoods boss with a slow six-point patrol and a faster-attacking frenzy below half health.
@@ -27,6 +29,9 @@
 
 ### Technical Updates
 
+- Added `QuestsAndDialogs/QuestGivers/qBoomBrothers.j` and `QuestsAndDialogs/QuestGivers/qAtexBlix.j` by converting the recovered five-quest GUI chain to the current quest, dialogue, inventory, escort, dungeon, and boss APIs.
+- Updated `DungeonsAndBosses/Dungeons/Boom Brothers Mine/BossMadBlix.j`, `CreepRespawn/CreepUnitAssignment.j`, `Vendors/VendorCatalogs.j`, and `Vendors/VendorFactions/VendorGoblins.j` with Mad Blix quest completion, quest-giver respawn restoration, and Snikka Sparkdust's capped explosives stock.
+- Updated `_developer/Design Plans/Story and Quest Design.md` and `QuestsAndDialogs/QuestGivers/Vendors/README.md` with the implemented Boom Mine chain, exact objective data, dependency contracts, vendor fallback, and remaining physical access/ore decision.
 - Updated `UI/HintsUI.j` and `UI/MasterUI.j` with queued publication state, duplicate suppression, unread tracking, compact notifications, and reusable alert sprites.
 - Updated `Death/Revival.j`, `PlayerHome/PlayerHome.j`, `Abilities/AbilityPoints.j`, `Abilities/Talents.j`, `Abilities/AbilityTrainerDialogs.j`, `Death/Death.j`, `Companions/Companions.j`, `Companions/Pet.j`, `Reputation/Reputation.j`, `QuestsAndDialogs/QuestMaster.j`, `Travel/TravelWyvern.j`, and `DungeonsAndBosses/Dungeons/Boom Brothers Mine/DungeonBoomBrothersMine.j` with event-driven hint publishers.
 - Removed the old `Hero Death and Resurrect` GUI trigger folder.
@@ -39,6 +44,8 @@
 
 ### Actions Remaining
 
+- Import `qBoomBrothers.j` and `qAtexBlix.j` after their listed dependencies, disable both legacy GUI folders, verify all placed globals and Boom Brothers rects in World Editor, then compile and runtime-test barrel detonation, Snikka stock/restock, log inspection, dust turn-in, escort/betrayal staging, turret ownership, Mad Blix death readiness, final turn-in, and both quest-giver respawn hooks.
+- Decide whether Boom Mine entry should consume `qBoomBrothers_IsMineAccessGranted()` and implement the promised renewable ore benefit without creating an economy exploit.
 - Compile the full map with JassHelper and runtime-test queued hint timing, duplicate suppression, unread clearing, alert sprite placement, and simultaneous level-up/quest/reputation notifications.
 - Import `BossGar.j` after Boss and PatrolSystem, create/verify `gg_rct_GarWP01` through `gg_rct_GarWP06` and `udg_BossGar` in World Editor, keep Gar unplaced, then call `BossGar_Spawn()` from the owning quest/event and runtime-test patrol, reset, frenzy, death, and explicit re-spawn.
 - Import `PlayerHome.j` and `PlayerHomeUI.j` in dependency order, remove `CheatsUI.j` from the map import list, disable the legacy Player Home GUI triggers, and remove the old Traveler's Journal optional quest creation from Game Guide.

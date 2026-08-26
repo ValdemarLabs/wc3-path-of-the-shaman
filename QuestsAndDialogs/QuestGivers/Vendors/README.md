@@ -126,6 +126,15 @@ merchants should receive explicit catalog/name setup for their own rawcodes;
 do not register another identity as `o61S`, because quest-giver assignment and
 respawn restoration also use that rawcode.
 
+## Explosive Crisis fallback stock
+
+Snikka Sparkdust `n047`, the Sirensong reagent merchant, uses the dedicated
+`VENDOR_CATALOG_EXPLOSIVES_AND_REAGENTS` catalog. Alongside the normal reagent
+stock, Snikka sells Barrel of Explosives `I00F` for 500 gold per barrel. Each
+purchase grants one barrel, stock is capped at two, and one barrel replenishes
+every 600 seconds. This is the costly fallback route for `Explosive Crisis`;
+recovering the stolen barrels remains the intended primary route.
+
 ## A Night To Remember witnesses
 
 `qANightToRemember.j` selects three witnesses per hangover run. When active AI

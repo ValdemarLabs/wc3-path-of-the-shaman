@@ -117,7 +117,7 @@ These rawcodes or named globals are evidence that the character already exists i
 | Valeria | `n01W` | Elarindor ranger, companion, and story quest giver |
 | Kaelthir | `n01X` | Elarindor wretched survivor whose fate branches between mercy, mana-wraith transformation, and Aradion's failed cure |
 
-Boom Brothers, Erduk, Valeria, and other characters still have unexported GUI triggers in the map. Recover those triggers before deleting, replacing, or claiming full parity with their legacy quests. Granis, Garthork, Krezgrel, Grim, Graknar, and Grum Bloodfang now have recovered trigger exports and modern qXXX conversions.
+Erduk, Valeria, and other characters still have unexported GUI triggers in the map. Recover those triggers before deleting, replacing, or claiming full parity with their legacy quests. Boom Brothers, Atex Blix, Granis, Garthork, Krezgrel, Grim, Graknar, and Grum Bloodfang now have recovered trigger exports and modern qXXX conversions.
 
 ## 4. Zone progression and narrative use
 
@@ -156,6 +156,8 @@ This section records current qXXX content at the time this plan was created. Upd
 | `qGrim.j` | Big Bear Tooth | **Implemented JASS.** Daily quest in Thornwoods `6`; tracks Big Bear Tooth `I6AB`, preserves Grim's recovered voiced greeting/acceptance/completion/farewell dialogue, and relies on the existing bear loot definitions. |
 | `qGraknar.j` | Mistaken Kin | **Implemented JASS.** Level 2 Normal side quest that spawns Kodo `o008` at `gg_rct_KodoSpawn`, finds it at 500 range, escorts it through `FollowSystem`, and returns it to Graknar before turn-in. Graknar's Trade option opens the existing bag shop rather than the legacy 30-second trade timer. The quest's zone and canonical `o61S` placement still require WE verification; every other bag merchant currently using `o61S` needs a distinct unit rawcode and identity. |
 | `qGrumBloodfang.j` | Whelps of Destruction; Dragon Egg Hunt; Drake Hunt; The Desolator | **Implemented JASS.** Four sequential Normal + Story quests in Emberpeak Highlands `3`, at levels 10, 10, 12, and 15. They track ten Whelp Scales `I00S`, six Dragon Eggs `I00P`, six kills shared across the four current red/scorching drake types, and one Scale of Mordrax `I00T`. The recovered periodic Scorching Drake attack at Grum is also converted. Egg delivery and Mordrax completion have semantic public queries; the eggs' later treatment remains unresolved. |
+| `qBoomBrothers.j` | Explosive Crisis; Boomsite Compliance Inspection; Dust Isn't Just Dirt - It's Combustible Culture; Mandatory Training; Boom Will Be Back | **Implemented JASS.** Owns the sequential Normal/Story chain and level-15 Dungeon conclusion, the carried-barrel detonation risk, Mandatory Training escort through `gg_rct_KoboldCamp`, Atex's betrayal at `gg_rct_BoomBrotherMineEntrance`, temporary Mad Blix reveal, hostile turret handoff, semantic mine-state queries, and the boss-death report consumed from `BossMadBlix.j`. `Boom Will Be Back` targets Boom Mine zone `104`; the current dungeon remains physically ungated until its portal/access policy is implemented. |
+| `qAtexBlix.j` | Boomsite Compliance Inspection; Dust Isn't Just Dirt - It's Combustible Culture | **Implemented JASS receiver support.** Atex consumes one Pile Of Wood `I60K` per inspection with the recovered 50% approval chance until ten logs pass, then receives Dust Collector M25 `I00I`, Dustfilter 9000-BA `I00G`, and Vent-o-Matic Blower R200 `I00H`. Atex is hidden when the betrayal removes his contractor identity from the mine entrance. |
 | `qAradion.j` | Ranger Missing; Crystals of Hope; Fading Sparks; Rifts of Corruption | **Implemented JASS.** Ranger Missing leads to two parallel collection/investigation quests, then Rifts requires all three. Uses Vanguard Vale, Verdant Plains, and Redwind Pass. Test quests are disabled. Valeria's post-reunion Dash rawcode remains a TODO. |
 | `qValeria.j` | Token of Love; Lost Supplies | **Implemented JASS.** Token follows Ranger Missing; Lost Supplies follows Token. Uses dedicated token and seven supplies rects. |
 | `qKaelthir.j` | Kaelthir's Struggle; Kaelthir's Hunger | **Implemented JASS.** Normal + Story in Vanguard Vale `9`. Struggle consumes one Mana Crystal `I00Y`. Hunger requires Struggle and records one durable QuestData outcome: mercy, feeding Kaelthir into a Mana Wraith `n002`, or escorting him to Aradion for a failed cure. The Aradion path uses `gg_rct_AradionPlace`. |
@@ -179,8 +181,8 @@ Graknar `o61S` is a named quest giver as well as the original bag merchant. Do n
 
 | System | Current evidence | Design consequence |
 |---|---|---|
-| Boom Mine | `DungeonBoomBrothersMine.j` registers zone `104`, patrol waves, and explosive/barrel events. | The Boom Brothers chain can lead into a real dungeon rather than a disconnected narrative instance. |
-| Mad Blix | `BossMadBlix.j` contains a recoverable mana-absorption mechanic; legacy phase files are empty. | Mark the boss **Partial**. Design additional mechanics only after testing the current encounter and recovering GUI evidence. |
+| Boom Mine | `DungeonBoomBrothersMine.j` registers zone `104`, patrol waves, and explosive/barrel events; `qBoomBrothers.j` targets that dungeon and exposes reclaimed/access state. | The converted chain now leads into the real dungeon. The dungeon portal is still physically ungated, so the semantic access flag must be consumed if chain-gated entry or post-completion ore access is added. |
+| Mad Blix | `BossMadBlix.j` contains the recoverable mana-absorption mechanic and reports `BOSS_EVENT_DEATH` to `qBoomBrothers_ReportMadBlixDefeated`; legacy phase files are empty. | Quest completion is wired, but the boss remains **Partial** until additional mechanics are deliberately designed and tested. |
 | Rol'jin | `BossRoljin.j` exists. | Granis's voiced Rol'jin hunt can target an existing boss encounter. |
 | Nazgrek's Flask | Item `I61L` is registered by `ProfessionsAlchemy.j`, equipment exports, loot data, and debug tools; item ability evidence includes `A63V`. | The legacy prologue flask idea now has real object evidence, but the existing reusable alchemy item must not automatically become a disposable tutorial prop. Decide whether the quest unlocks the recipe, creates a separate vision draught, or deliberately rebalances the existing flask. |
 | Zul'karak | Unit `n65F` is present in the debug object registry and reputation unit list. | The unit exists, but the older-brother personality, abilities, recruitment timing, and companion behavior remain **Legacy evidence** until confirmed in current WE triggers/code. |
@@ -283,7 +285,7 @@ The “Chains of Seduction” and fight against legacy “Velaria” belong to *
 | ST-A3-04 | Gar the Mighty Giant | **Partial JASS + legacy ODT** | Gar is unit `n60Z` in Deadwoods `11`, described as a flesh golem created by the Dawnhold necromancer. `BossGar.j` now provides an event-controlled spawn at `gg_rct_GarWP01`, a six-point patrol, and a simple frenzy phase. Quest ownership, explosives, crafting reward, and canonical outcome remain unverified. |
 | ST-A3-05 | The Goblin Negotiator / Fix the Ship | **Legacy ODT/Articy; reward redesign required** | Recover three classes of ship parts, optionally trade for rare components, and defend repairs. Because Ship A already serves Sirensong–Dawnhold–Stormhaven, reward a separate vessel, fare/service improvement, new destination, or story access rather than claiming to unlock all ship travel. |
 | ST-A3-06 | Sirensong regional arc | **Proposed synthesis** | Link Mok'natha, Zul'Garok Ruins, Urgmar, Serpentshore, Kelziss, and Jinnvorrak through raids, ruins, and a growing naga/hydra threat. |
-| ST-A3-07 | Boom Brothers chain | **Legacy voiced design + partial dungeon** | A comedic engineering story becomes useful to the main route because its explosives or tools open a blocked passage/ship repair. Completion grants free or friendly Boom Mine access, not a mandatory grind. |
+| ST-A3-07 | Boom Brothers chain | **Implemented JASS + partial dungeon boss** | The five voiced quests now run through `qBoomBrothers.j` and `qAtexBlix.j`, culminating in Mad Blix's death in Boom Mine `104`. Completion exposes free/friendly mine-access state; a physical portal gate and renewable ore benefit remain follow-up dungeon work. |
 | ST-A3-08 | Felfire evidence | **Proposed synthesis** | Evidence from the Citadel shows the corruption is organized and linked to elemental/dragon exploitation farther east. |
 
 Legacy outpost-support hooks can become a compact preparation layer for The Lair of Rage instead of ten unrelated errands:
@@ -301,15 +303,15 @@ Legacy outpost-support hooks can become a compact preparation layer for The Lair
 | Silent Negotiations | Recover plans and optionally sabotage the camp | Redesign as reconnaissance/sabotage; do not assume Nazgrek owns a Stealth ability. |
 | Goblin Negotiator | Protect a scavenging run and secure trade | Fold into Fix the Ship unless a persistent trade network is implemented. |
 
-Boom Brothers legacy sequence to preserve when converting `qBoomBrothers.j`:
+Implemented Boom Brothers sequence:
 
-1. **Explosive Crisis** — recover or replace stolen explosive barrels.
-2. **Boomsite Compliance Inspection** — obtain ten suitable logs through Atex Blix.
-3. **Dust Isn't Just Dirt — It's Combustible Culture** — install or recover ventilation, filter, blower, and vacuum parts.
-4. **Mandatory Training** — escort the crew to a kobold safety camp; Blix betrays them and takes the mine.
-5. **Boom Will Be Back** — defeat Mad Blix in Boom Mine `104` and reclaim it.
+1. **Explosive Crisis** — bring six Barrel of Explosives `I00F`; carried barrels retain the recovered one-in-five damage-triggered detonation risk. Thieves remain the primary route, while Sirensong reagent merchant Snikka Sparkdust `n047` sells a costly fallback at 500 gold per barrel, two in stock, replenishing one every 600 seconds.
+2. **Boomsite Compliance Inspection** — Atex consumes Pile Of Wood `I60K` one at a time, approving each with the recovered 50% chance until ten pass.
+3. **Dust Isn't Just Dirt — It's Combustible Culture** — bring Dust Collector M25 `I00I`, Dustfilter 9000-BA `I00G`, and Vent-o-Matic Blower R200 `I00H` to Atex.
+4. **Mandatory Training** — escort the invulnerable Boom Brothers follower to `gg_rct_KoboldCamp`, then return them to `gg_rct_BoomBrotherMineEntrance`; Atex disappears, two `n01I` turrets turn hostile, and a temporary `n01B` Mad Blix reveals the theft.
+5. **Boom Will Be Back** — defeat the registered Mad Blix boss in Boom Mine `104`, return to the Boom Brothers, receive Crown of Kings +5 `ckng`, and set the mine-reclaimed/access state.
 
-Exact item rawcodes, objective rects, failure handling, and rewards must come from the unexported GUI triggers and WE data.
+The escort giver is temporarily invulnerable so ordinary combat cannot strand the chain without a valid quest giver. World Editor integration must keep the referenced rects and placed globals, disable the recovered GUI folders, and compile both new qXXX libraries after their dependencies.
 
 ### Act IV — Rifts of Elarindor (levels 15–20)
 
@@ -466,7 +468,7 @@ Each dungeon should eventually have a small package rather than one isolated kil
 | Gnoll Hideout `101` | Act I stolen resources/ledger and Deathlord Fel'Dok | Supplies, rescues, or marked elites | Zone exists; story package proposed |
 | Crypt `102` | Jin'Zun resurgence, necromancer evidence, cursed relic choice | Restless souls or relic recovery | Zone/boss roster exists; Articy quest bank recovered |
 | Wyrmhold Sanctum `103` | Dragon Mother Seretha and dragon-fate decision | Scales/eggs only when lore-safe and non-unique | Zone/boss named; package proposed |
-| Boom Mine `104` | Defeat Mad Blix and return the mine | Engineering materials or hazard-clearing | Runtime dungeon partial; boss mechanics incomplete |
+| Boom Mine `104` | Defeat Mad Blix and return the mine | Engineering materials or hazard-clearing | One-time story chain implemented; runtime dungeon and boss mechanics remain partial |
 | Firelands `105` | Elemental covenant/endgame route | Endgame elemental tasks | Zone and boss references exist; story proposed |
 | Dreadforge `106` | Stop demon/fel-orc production and final campaign support | Forge sabotage/material recovery | Zone exists; story proposed |
 
@@ -503,7 +505,7 @@ Future qXXX libraries should expose explicit hooks rather than reading one anoth
 | Satyr Negotiations / Zaekolaerr | Later Granis, Elarindor, and Verdant dialogue | One durable outcome enum/flags, not title-string comparisons scattered across libraries |
 | Gnoll Hideout story quest | Thork judgement | Dungeon evidence completion signal independent of replayable dungeon tasks |
 | Shadowclaw arc | Companion and ability systems | Explicit join/leave/death/spiritual-successor state before the demise cinematic |
-| Boom Brothers chain | Boom Mine and Mad Blix | Dungeon unlock, crew escort outcome, boss completion, and mine ownership/access state |
+| Boom Brothers chain | Boom Mine and Mad Blix | `qBoomBrothers_ReportMadBlixDefeated()` receives the boss death; `qBoomBrothers_IsTrainingActive()`, `qBoomBrothers_IsMineClaimedByBlix()`, `qBoomBrothers_IsMineReclaimed()`, and `qBoomBrothers_IsMineAccessGranted()` expose escort and ownership/access state. |
 | Jin'Zun/Crypt | Deadwoods/Dawnhold | Undeath evidence state that later NPCs can acknowledge |
 | Rifts of Corruption | Verdant and endgame arcs | Ritual outcome and any damaged/saved rift state |
 | Grum dragon chain | Wyrmhold/Dragonfire | Egg treatment, Mordrax completion, and dragon-allegiance consequences |
@@ -523,7 +525,6 @@ Before implementing the following, export or inspect the old GUI triggers and co
 
 | Owner | Known recoverable intent | Still needed |
 |---|---|---|
-| Boom Brothers / Atex Blix | Five-step Boom Mine chain | Exact items, escort route, failure/retry behavior, mine access flags, Mad Blix phases |
 | Erduk | Existing named quest giver | Entire active GUI quest set, placement, and intended arc |
 | Valeria | Current qValeria plus unexported legacy triggers | Identify which companion objectives remain missing; verify old “Velaria” references by rawcode so they are not confused with Velyssara |
 | Velyssara / Zaekolaerr link | `qVelyssara` now implements the recovered Chains of Seduction tasks, Jin'Zun dispel route, combat event, reward, and Sereneglade confinement | Decide who the unnamed master in Velyssara's combat line is, whether she serves or rivals Zaekolaerr, and whether a future branch can cleanse or spare her. |
@@ -547,6 +548,7 @@ Resolve these deliberately and record the answer here:
 8. **Gar's encounter and outcome:** Gar is unit `n60Z` in Deadwoods `11`. His quest-controlled spawn at `gg_rct_GarWP01`, six-point patrol, and simple frenzy phase are implemented in `BossGar.j`; decide the explosives mechanic, quest owner, reward, and whether destruction or another resolution is canonical.
 9. **Grum and the eggs:** protective plan, reckless weaponization, betrayal, or misunderstanding?
 10. **Dungeon reset policy:** which objectives are daily versus freely repeatable, and how boss/instance state resets safely.
+11. **Boom Mine access benefit:** the converted chain exposes semantic reclaimed/access state, but `DungeonBoomBrothersMine.j` does not yet gate entry or create the promised renewable ore access. Decide whether entry is ever locked and what post-completion mining benefit is safe for the economy.
 
 Recommended antagonist structure: use a coalition or chain of exploitation rather than one controller behind everything. Satyrs exploit local division, necromancers exploit death, the Dark Horde and demons industrialize fel/elemental power, and the void presence opportunistically amplifies the damage. This preserves faction identity while giving Nazgrek one thematic conflict.
 
@@ -560,7 +562,7 @@ Recommended antagonist structure: use a coalition or chain of exploitation rathe
 6. Use Dawnhold `20` for the ODT's ruined Vanguard city/docks and Deadwoods `11` for Gar `n60Z`, then verify exact quest rects plus the northern-outpost and Ghostridge mappings before placing Act II/III objectives.
 7. Audit Shadowclaw's current companion systems, decide the death variant, then write the Act II chain without implementing the demise until cleanup/replacement behavior is safe.
 8. Reconcile the seven Crypt quests and encounter roles with the current five-boss roster, room layout, and Jin'Zun/Garthork dependencies.
-9. Convert the Boom Brothers chain against the existing dungeon and recover Mad Blix behavior.
+9. Runtime-test the converted Boom Brothers chain against the existing dungeon, then decide the physical mine-access and renewable-ore policy before consuming its semantic access hook.
 10. Build the Ironspine–Deadwoods–Dawnhold travel/story bridge and connect the implemented Jin'Zun chain.
 11. Complete the Sirensong regional arc and ship route.
 12. Categorize and validate the implemented Aradion/Valeria quests as story or side-story content, then add their Verdant consequence quests.

@@ -2,10 +2,11 @@
     BossMadBlix
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
-    Implements Mad Blix's only recoverable exported combat mechanic.
+    Implements Mad Blix's only recoverable exported combat mechanic and
+    reports his death to the converted Boom Brothers quest chain.
 
     Credits:
     - DungeonsAndBosses/Dungeons/Boom Brothers Mine/_oldGUI/Boss Mad Blix
@@ -16,6 +17,7 @@
 
     API:
     - BossMadBlix_GetId() returns integer
+    - On death, calls qBoomBrothers_ReportMadBlixDefeated through ExecuteFunc.
 
 **/
 library BossMadBlix initializer Init requires Boss, DungeonBoomBrothersMine
@@ -56,6 +58,9 @@ library BossMadBlix initializer Init requires Boss, DungeonBoomBrothersMine
         if Boss_EventBossId == BossId then
             call PauseTimer(ChargeTimer)
             call GroupClear(TargetGroup)
+            if Boss_EventType == BOSS_EVENT_DEATH then
+                call ExecuteFunc("qBoomBrothers_ReportMadBlixDefeated")
+            endif
         endif
     endfunction
 

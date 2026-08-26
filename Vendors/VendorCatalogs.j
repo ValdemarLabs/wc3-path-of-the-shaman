@@ -2,7 +2,7 @@
     VendorCatalogs
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.3.0
 
     Description:
     Ready-to-use PotS vendor definitions for equipment, professions, factions,
@@ -20,7 +20,7 @@
     VendorTrolls afterward when those object families are present.
 
     API:
-    - VendorCatalogs_VENDOR_CATALOG_* constants select one of the 34 catalogs.
+    - VendorCatalogs_VENDOR_CATALOG_* constants select one of the 35 catalogs.
     - set vendorId = VendorCatalogs_GetVendorId(catalogType)
     - call VendorCatalogs_RegisterUnit(vendor, catalogType, voiceProfile)
     - call VendorCatalogs_RegisterUnitType(unitTypeId, catalogType, voiceProfile)
@@ -63,8 +63,9 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
         public constant integer VENDOR_CATALOG_VOODOO_GOODS = 32
         public constant integer VENDOR_CATALOG_ARCANIST = 33
         public constant integer VENDOR_CATALOG_MAGISTER = 34
+        public constant integer VENDOR_CATALOG_EXPLOSIVES_AND_REAGENTS = 35
 
-        private constant integer VC_MAX_CATALOGS = 34
+        private constant integer VC_MAX_CATALOGS = 35
         private integer array VC_VendorId
     endglobals
 
@@ -315,6 +316,7 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
         call CreateCatalog(VENDOR_CATALOG_VOODOO_GOODS, "Voodoo Merchant", VendorLines_TYPE_VOODOO_GOODS, 0)
         call CreateCatalog(VENDOR_CATALOG_ARCANIST, "Arcanist", VendorLines_TYPE_ARCANIST, 0)
         call CreateCatalog(VENDOR_CATALOG_MAGISTER, "Magister", VendorLines_TYPE_MAGISTER, 0)
+        call CreateCatalog(VENDOR_CATALOG_EXPLOSIVES_AND_REAGENTS, "Explosives and Reagent Merchant", VendorLines_TYPE_REAGENTS, 0)
     endfunction
 
     private function ConfigureEquipmentStock takes nothing returns nothing
@@ -455,6 +457,14 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
         call AddStock(VENDOR_CATALOG_REAGENTS, 'I6C6', 80, "Essences")
         call AddStock(VENDOR_CATALOG_REAGENTS, 'I003', 55, "Crystals")
         call AddStock(VENDOR_CATALOG_REAGENTS, 'I6BB', 35, "Water")
+
+        call AddStock(VENDOR_CATALOG_EXPLOSIVES_AND_REAGENTS, 'I60Y', 20, "Herbs")
+        call AddStock(VENDOR_CATALOG_EXPLOSIVES_AND_REAGENTS, 'I6C6', 80, "Essences")
+        call AddStock(VENDOR_CATALOG_EXPLOSIVES_AND_REAGENTS, 'I003', 55, "Crystals")
+        call AddStock(VENDOR_CATALOG_EXPLOSIVES_AND_REAGENTS, 'I6BB', 35, "Water")
+        set stockId = AddStock(VENDOR_CATALOG_EXPLOSIVES_AND_REAGENTS, 'I00F', 500, "Explosives")
+        call Shop_SetStockCharges(stockId, 1)
+        call Shop_SetStockSupply(stockId, 2, 600.00)
 
         call AddStock(VENDOR_CATALOG_FOOD_AND_DRINK, 'j2b0', 20, "Food")
         call AddStock(VENDOR_CATALOG_FOOD_AND_DRINK, 'j2b4', 55, "Food")
