@@ -1,0 +1,20 @@
+Quest Nazgreks Flask Completed
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Nazgreks Flask Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestNazgreksFlask as Discovered
+        Quest - Mark QuestNazgreksFlaskHerb01 as Completed
+        Quest - Mark QuestNazgreksFlaskHerb02 as Completed
+        Quest - Mark QuestNazgreksFlaskHerb03 as Completed
+        Quest - Mark QuestNazgreksFlaskStagHair as Completed
+        Quest - Mark QuestNazgreksFlaskFrogSlime as Completed
+        Quest - Mark QuestNazgreksFlaskFrogSlime as Completed
+        Quest - Mark QuestNazgreksFlaskFlask as Completed
+        Quest - Mark QuestNazgreksFlaskCreate as Completed
+        Quest - Mark QuestNazgreksFlask as Completed
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Completed message: |cffffcc00MAIN QUES...
+        -------- Turn off Quest Item Spawn --------

@@ -1,0 +1,22 @@
+Nazgreks Flask Need For Empty Flask
+    Events
+        Time - Elapsed game time is 175.00 seconds
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                GnollAttackFirstActive Equal to True
+            Then - Actions
+                Trigger - Run Quest Nazgreks Flask Empty Flask Update <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                InCinematic Equal to False
+            Then - Actions
+                Set VariableSet ExSoundString = Hmmm... I forgot that I do not have empty flask in my stack. I need to search for a place that sells them.... I could also use some other items like vials to create everyday potions.
+                Custom script:   call ExSound_Play("Nazgrek_0008", udg_ExSoundString)
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display ExSoundString.  Modify duration: Set to ExSoundDuration seconds and Don't wait
+            Else - Actions
+        Wait 14.00 seconds
+        Trigger - Run Quest Nazgreks Flask Empty Flask Update <gen> (checking conditions)

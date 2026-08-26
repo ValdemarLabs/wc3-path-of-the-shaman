@@ -1,0 +1,13 @@
+Quest Nazgreks Flask Flowers Updated
+    Events
+        Time - Every 2.00 seconds of game time
+    Conditions
+        (Charges remaining in (Item carried by Nazgrek of type Forest Flower)) Greater than or equal to 6
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Nazgreks Flask Create <gen> (checking conditions)
+        -------- Display a quest message. --------
+        Quest - Mark QuestNazgreksFlaskHerb01 as Completed
+        Quest - Display to (All players) the Quest Requirement message: |cFFFFCC00Nazgrek's...
+        Sound - Play QuestActivateWhat1 <gen>

@@ -1,0 +1,21 @@
+Quest Nazgreks Flask Create
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create the quest objects --------
+        Quest - Create a Required, undiscovered quest titled Nazgrek's Flask with the description Gather required ite..., using icon path ReplaceableTextures\CommandButtons\BTNGreaterInvulneralbility.blp
+        Set VariableSet QuestNazgreksFlask = (Last created quest)
+        Quest - Create a quest requirement for QuestNazgreksFlask with the description Create Nazgrek's Fl...
+        Set VariableSet QuestNazgreksFlaskCreate = (Last created quest requirement)
+        Quest - Create a quest requirement for QuestNazgreksFlask with the description Gather 6 Forest Flo...
+        Set VariableSet QuestNazgreksFlaskHerb01 = (Last created quest requirement)
+        Quest - Create a quest requirement for QuestNazgreksFlask with the description Gather 3 Agaves
+        Set VariableSet QuestNazgreksFlaskHerb02 = (Last created quest requirement)
+        Quest - Create a quest requirement for QuestNazgreksFlask with the description Gather 2 Earth Roots
+        Set VariableSet QuestNazgreksFlaskHerb03 = (Last created quest requirement)
+        Quest - Create a quest requirement for QuestNazgreksFlask with the description Gather 6 Stag Hair
+        Set VariableSet QuestNazgreksFlaskStagHair = (Last created quest requirement)
+        Quest - Create a quest requirement for QuestNazgreksFlask with the description Gather 2 Frog Slime
+        Set VariableSet QuestNazgreksFlaskFrogSlime = (Last created quest requirement)

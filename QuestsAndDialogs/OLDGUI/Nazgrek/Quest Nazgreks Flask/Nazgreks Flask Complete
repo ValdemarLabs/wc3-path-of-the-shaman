@@ -1,0 +1,12 @@
+Nazgreks Flask Complete
+    Events
+        Unit - A unit Acquires an item
+    Conditions
+        (Hero manipulating item) Equal to Nazgrek
+        (Item-type of (Item being manipulated)) Equal to Nazgrek's Flask
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Turn off ADDITIONAL quest herbs spawning --------
+        Trigger - Turn off gg_trg_Spawn_Plants_Intro
+        Wait 2.00 seconds
+        Trigger - Run Quest Nazgreks Flask Completed <gen> (checking conditions)

@@ -1,0 +1,12 @@
+Quest Nazgreks Flask Empty Flask Update
+    Events
+    Conditions
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Nazgreks Flask Create <gen> (checking conditions)
+        -------- Display a quest message. --------
+        Quest - Create a quest requirement for QuestNazgreksFlask with the description Buy Empty Flask
+        Set VariableSet QuestNazgreksFlaskFlask = (Last created quest requirement)
+        -------- Update quest --------
+        Quest - Display to (All players) the Quest Update message: |cFFFFCC00Nazgrek's...
