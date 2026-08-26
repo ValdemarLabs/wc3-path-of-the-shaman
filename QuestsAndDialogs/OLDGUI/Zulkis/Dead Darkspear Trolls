@@ -1,0 +1,35 @@
+Dead Darkspear Trolls
+    Events
+        Time - Elapsed game time is 5.00 seconds
+    Conditions
+    Actions
+        -------- CORPSE X --------
+        Set VariableSet CorpsePoint = (Center of CorpseTroll01 <gen>)
+        Unit - Create a permanent Fleshy Headhunter corpse for Player 2 (Blue) at CorpsePoint facing (Random angle) degrees
+        Unit - Suspend corpse decay for (Last created unit)
+        Custom script:   call RemoveLocation(udg_CorpsePoint)
+        -------- CORPSE X --------
+        Set VariableSet CorpsePoint = (Center of CorpseTroll02 <gen>)
+        Unit - Create a permanent Fleshy Headhunter corpse for Player 2 (Blue) at CorpsePoint facing (Random angle) degrees
+        Unit - Suspend corpse decay for (Last created unit)
+        Custom script:   call RemoveLocation(udg_CorpsePoint)
+        -------- CORPSE X --------
+        Set VariableSet CorpsePoint = (Center of CorpseTroll03 <gen>)
+        Unit - Create a permanent Fleshy Witch Doctor corpse for Player 2 (Blue) at CorpsePoint facing (Random angle) degrees
+        Unit - Suspend corpse decay for (Last created unit)
+        Custom script:   call RemoveLocation(udg_CorpsePoint)
+        -------- CORPSE X --------
+        Set VariableSet CorpsePoint = (Center of CorpseTroll04 <gen>)
+        Unit - Create a permanent Fleshy Headhunter corpse for Player 2 (Blue) at CorpsePoint facing (Random angle) degrees
+        Unit - Suspend corpse decay for (Last created unit)
+        Custom script:   call RemoveLocation(udg_CorpsePoint)
+        -------- CORPSE X --------
+        Set VariableSet CorpsePoint = (Center of CorpseTroll05 <gen>)
+        Unit - Create a permanent Fleshy Headhunter corpse for Player 2 (Blue) at CorpsePoint facing (Random angle) degrees
+        Unit - Suspend corpse decay for (Last created unit)
+        Custom script:   call RemoveLocation(udg_CorpsePoint)
+        -------- CORPSE X --------
+        Set VariableSet CorpsePoint = (Center of CorpseTroll06 <gen>)
+        Unit - Create a permanent Fleshy Headhunter corpse for Player 2 (Blue) at CorpsePoint facing (Random angle) degrees
+        Unit - Suspend corpse decay for (Last created unit)
+        Custom script:   call RemoveLocation(udg_CorpsePoint)
